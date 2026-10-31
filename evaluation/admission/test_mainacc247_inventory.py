@@ -12,11 +12,12 @@ import core_981419_inventory as selected
 import core_5cda_inventory as historical
 import core_cc846_inventory as inventory
 import parsing
+import core_34c47_inventory as prepared
 
 
 class MainAcc247InventoryTests(unittest.TestCase):
     def test_exact_phase_sources_instances_and_causal_history_refusals(self):
-        actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        actual = prepared.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))
         rows = actual['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                           sum(x['ignored'] for x in rows.values())), (109, 4108, 37))
@@ -30,11 +31,11 @@ class MainAcc247InventoryTests(unittest.TestCase):
         self.assertEqual((len(actual['harness_test_counts']['serial_launch']),
                           sum(x['tests'] for x in actual['harness_test_counts']['serial_launch'].values())), (27, 1039))
         with patch.object(inventory, 'require_historical361') as earlier:
-            self.assertIsNone(inventory.require_current(actual))
+            self.assertIsNone(inventory.require_historical362(actual))
             earlier.assert_called_once_with(old)
         for wrong in (old, previous.before_current(old)):
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-                inventory.require_current(wrong)
+                inventory.require_historical362(wrong)
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main20cbe_inventory_differs$'):
             previous.before_current(actual)
         self.assertEqual(previous.peel_current(actual, 'catalog_control', 'source_control'), previous.before_current(old))
@@ -48,7 +49,7 @@ class MainAcc247InventoryTests(unittest.TestCase):
                     wrong = copy.deepcopy(actual); wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainacc247_inventory_differs$'):
                         current.before_current(wrong)
-        identities = historical.python_identities(Path(__file__).parent)
+        identities = prepared.before_python(historical.python_identities(Path(__file__).parent))
         old_ids = current.before_python(identities)
         self.assertEqual((len(identities), len(old_ids)), (362, 361))
         self.assertEqual(current.digest(old_ids), previous.PYTHON_CURRENT)
@@ -121,12 +122,21 @@ class MainAcc247InventoryTests(unittest.TestCase):
             changed_raw = raw.replace(literal.encode(), altered.encode())
             changed_prior = prior.replace(literal.encode(), altered.encode())
             self.assertNotEqual(changed_raw, raw)
+            prepared_input = prepared.source_before(path, raw, 'upstream_control')
+            changed_prepared = prepared_input.replace(literal.encode(), altered.encode())
+            outer = {}
+            if path in prepared.DATA['projections']:
+                row = copy.deepcopy(prepared.DATA['projections'][path])
+                row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()
+                row['previous_sha256'] = hashlib.sha256(changed_prepared).hexdigest()
+                outer[path] = row
             row = copy.deepcopy(current.DATA['projections'][path])
-            row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()
+            row['current_sha256'] = hashlib.sha256(changed_prepared).hexdigest()
             row['previous_sha256'] = hashlib.sha256(changed_prior).hexdigest()
             def changed(candidate):
                 return changed_raw if candidate == target else read(candidate)
-            with patch.dict(current.DATA['projections'], {path: row}):
+            with patch.dict(prepared.DATA['projections'], outer), \
+                 patch.dict(current.DATA['projections'], {path: row}):
                 self.assertEqual(current.source_before(path, changed_raw,
                     'phase_old_declaration_inverse'), changed_prior)
                 with patch.object(Path, 'read_bytes', changed), \

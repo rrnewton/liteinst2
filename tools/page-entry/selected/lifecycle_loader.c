@@ -1,5 +1,7 @@
 #define _GNU_SOURCE
-#ifdef LI2_PERSISTENT_EPOCH
+#if defined(LI2_PERSISTENT_GROUP)
+#include "persistent_group_runtime.h"
+#elif defined(LI2_PERSISTENT_EPOCH)
 #include "persistent_runtime.h"
 #endif
 #ifdef LI2_LINKED_EPOCH
@@ -1000,7 +1002,9 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #include "span_source.inc"
 #ifdef LI2_LINKED_EPOCH
 #include "linked_source.inc"
-#ifdef LI2_PERSISTENT_EPOCH
+#if defined(LI2_PERSISTENT_GROUP)
+#include "persistent_group_source.inc"
+#elif defined(LI2_PERSISTENT_EPOCH)
 #include "persistent_source.inc"
 #endif
 #ifdef LI2_LINKED_NATIVE_HINT
@@ -1041,4 +1045,7 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #endif
 #ifdef LI2_PERSISTENT_DYNAMIC_CAPTURE
 #include "persistent_dynamic_observe_memory.inc"
+#endif
+#ifdef LI2_PERSISTENT_GROUP_CAPTURE
+#include "persistent_group_observe_memory.inc"
 #endif

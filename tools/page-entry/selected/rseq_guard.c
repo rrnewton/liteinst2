@@ -526,6 +526,8 @@ int li2_rseq_native_closed(void) {
 #ifdef LI2_LINKED_EPOCH
 #include "linked_rseq.inc"
 #endif
-#ifdef LI2_PERSISTENT_EPOCH
+#if defined(LI2_PERSISTENT_GROUP)
+#include "persistent_group_rseq.inc"
+#elif defined(LI2_PERSISTENT_EPOCH)
 #include "persistent_rseq.inc"
 #endif

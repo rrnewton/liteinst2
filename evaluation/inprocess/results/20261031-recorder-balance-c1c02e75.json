@@ -1,0 +1,119 @@
+{
+  "command": {
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "ba1bbaaa9489590af0a4cc11e2777a31b7cd91c70e9f803a282d68b88c72971d",
+    "reaped_descendants": 0,
+    "seconds": 167.73920931085013,
+    "termination": null
+  },
+  "counts": {
+    "errors": 0,
+    "failures": 0,
+    "skips": 0,
+    "tests": 363
+  },
+  "cpus": [
+    10,
+    40,
+    43,
+    44
+  ],
+  "driver": {
+    "bytes": 1475,
+    "sha256": "c8102f3d282efd432ab1853f8db8656252d69341b66b174bbb4e8636e4fd7b21"
+  },
+  "driver_publication_path": "evaluation/inprocess/diagnostics/recorder_timing.py",
+  "environment": "Four externally reserved CPUs, original controlled recorder environment and180-second/8MiB outer guard.",
+  "hardware": {
+    "affinity_cpu_count": 4,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 10,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "moves": [
+    {
+      "measured_wall_ns": 26893564658,
+      "module": "test_main_query_inventory",
+      "new_worker": 1,
+      "old_worker": 2
+    },
+    {
+      "measured_wall_ns": 9799464909,
+      "module": "test_runtime_inventory",
+      "new_worker": 1,
+      "old_worker": 2
+    },
+    {
+      "measured_wall_ns": 14891920892,
+      "module": "test_runtime_stack_consumer_inventory",
+      "new_worker": 3,
+      "old_worker": 0
+    },
+    {
+      "measured_wall_ns": 8751640782,
+      "module": "test_backing_cleanup",
+      "new_worker": 3,
+      "old_worker": 0
+    }
+  ],
+  "observed_worker_cpu_ns": [
+    148458541011,
+    85862310124,
+    160762811892,
+    98325594598
+  ],
+  "observed_worker_wall_ns": [
+    149359411640,
+    86370885142,
+    161937882978,
+    99353396243
+  ],
+  "original_limits": {
+    "output_bytes": 8388608,
+    "wall_seconds": 180,
+    "workers": 4
+  },
+  "predicted_worker_wall_ns": [
+    125715849966,
+    123063914709,
+    125244853411,
+    122996957917
+  ],
+  "prediction_scope": "Sum of actual original per-case wall measurements after these whole-module moves; this is not a measured rebalance result.",
+  "profile": "recorder-case-balance-diagnostic-v1",
+  "qualification_credit": false,
+  "raw_csv": {
+    "bytes": 46148,
+    "file": "20261031-recorder-balance-c1c02e75.csv",
+    "rows": 363,
+    "sha256": "c3b9404dda8ae164a835c42e3a26b4a312bc3363861374053dd234342851b685"
+  },
+  "reproduce": [
+    "python3",
+    "-B",
+    "evaluation/inprocess/diagnostics/recorder_timing.py"
+  ],
+  "reproduction_source": "Run against the exact recorded source revision; extract the recorded driver from its later publication into target/page-region-next/recorder-balance/profile.py before checking out that revision. Its identical three-directory placement resolves the same repository root.",
+  "schema": 1,
+  "scope": "Complete original recorder suite with per-case Python wall/CPU clocks; validation scheduling diagnostic, no native-performance credit.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "c1c02e75d7c253634405373a204d0b34ef4417ce",
+    "source_manifest_sha256": "be8836eb08feae20233b51b1f4ecfe3f383552ca0abca318ce4005a28036eee8",
+    "tracked_clean": true,
+    "tree": "1241b2723ada8e6fa81a7ad17938b11151424bd2"
+  },
+  "source_unchanged": true
+}
