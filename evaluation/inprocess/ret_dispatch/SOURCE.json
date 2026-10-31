@@ -7,9 +7,9 @@
       "sha256": "62d45f84172ebcba7ae04ebfbfbbfa7f9d2dc357c37062ada43acff3f12321c7"
     },
     "evaluation/inprocess/call_push_native/SOURCE.json": {
-      "bytes": 5802,
+      "bytes": 6502,
       "mode": "0644",
-      "sha256": "a4d52e22b2d49df3298db71f9f927e63d713dd86aed69bc4382dba6f661ee131"
+      "sha256": "3c64ee45b85c635260730d8885fab3a839e87b7f54c911a3eed10e5bdec29136"
     },
     "evaluation/inprocess/call_push_native/inspect.py": {
       "bytes": 7352,
