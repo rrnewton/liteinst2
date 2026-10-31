@@ -1,63 +1,23 @@
-# Owned module batch reproduction proposal
+# Owned module batch reproduction
 
-This unexecuted adapter builds the fixed CSV/strnlen subject DSO and the real C
-four-call caller, then runs exactly one fresh release libtest invocation:
-`owned_module_native_four_call_batches_epochs_and_close`. The native control
-exercises three safe batch calls, two sampled epochs, the removed state, real
-outer-return checkpoints, and close. It retains the existing assertions; it is
-not the separate hardware single-step oracle, a performance comparison, or A5
-qualification.
+The adapter builds the fixed CSV/strnlen subject DSO and real C four-call caller, then dispatches exactly one fresh release invocation of `owned_module_native_four_call_batches_epochs_and_close`. [Recorded results](result-v1/README.md) preserve the caller-format failure, the later SIGABRT and unsuccessful GDB diagnostic, and the passing fixed integration control at `5b90ed28c1145bb721edb2da58cf052e21feb260`.
 
-The eventual tracked location is `evaluation/owned-module-batch/reproduce.py`.
-Until root applies it, use this private script path. From the repository root,
-inside a root-owned **one-CPU HARD reservation**, the complete interface is:
+From a clean checkout of the chosen exact revision, inside an externally owned **one-CPU HARD reservation** and a 1200-second outer owner with an 8 MiB log bound:
 
 ```sh
-python3 -I -B evaluation/owned-module-batch/reproduce.py \
+python3.9 -I -B evaluation/owned-module-batch/reproduce.py \
   --root "$PWD" --revision "$(git rev-parse HEAD)" \
   --toolchain "$(rustc --print sysroot)" \
   --user-home "$HOME" --cargo-home "${CARGO_HOME:-$HOME/.cargo}" \
   --output "$PWD/ignored/owned-module-batch-run-v1"
 ```
 
-Root owns the reservation and an overall bounded outer process; the script does
-not acquire/release CPUs or introduce a dispatcher. The output directory and
-matching `target/evaluation/<output-name>` capture directory must both be fresh.
-The adapter records actual inherited single-CPU affinity, load, CPU flags, boot,
-cgroup, kernel, source revision, source hashes, tool hashes/versions and selected
-GCC subtool hashes. No external admission document or metadata approval is
-required. The reservation evidence remains with the outer owner.
+Use the recorded tool versions and exact revision for a comparable reproduction. Both the output directory and `target/evaluation/<output-name>` must be fresh. The caller owns reservation/release and overall containment; the adapter records inherited singleton affinity, CPU flags, load, boot/cgroup, source and tool identities. It neither allocates CPUs nor retries.
 
-Each fixed command uses `evaluation/admission/processes.py` around the existing
-`tools/unwind-oracle/bounded_command.py`. C builds have 60 CPU seconds, 90 wall
-seconds and 128 MiB per file; the release libtest build has 120/180 seconds and
-128 MiB. Metadata and the single native invocation have 20/30 seconds and 1 MiB.
-The native test also retains its original absolute 15-second deadline. Each
-outer helper has wall+25 seconds and a 1 MiB private log. Root should use the
-existing 1200-second outer owner; this is a fixed sequence with no retry.
+Each stage uses the existing `evaluation/admission/processes.py` and `tools/unwind-oracle/bounded_command.py`. C builds allow 60 CPU/90 wall seconds and 128 MiB per file; release libtest build allows 120/180 seconds and 128 MiB. Metadata and native invocation allow 20/30 seconds and 1 MiB. Stage owners add 25 wall seconds with a 1 MiB private log. The native test retains its absolute 15-second deadline. Release opt-level 3, debug 0, debug assertions/overflow checks, offline Cargo, one build job and disabled incremental compilation are fixed by the adapter.
 
-The script reuses the unchanged module recipe's symbol, complete-body CFG and
-123-byte/40-head/four-CALL/four-store/outer-RET caller checks. It captures full
-readelf headers/segments/dynamic symbols/relocations and actual disassemblies,
-refuses init/fini/dependencies/IFUNC, and creates full-byte equal, distinct-inode
-candidate copies. Cargo's JSON artifact identifies the actual optimized libtest
-with debug/overflow checks retained; no filename glob selects a binary.
+The existing module recipe checks complete selected-body CFGs and the actual 123-byte/40-head/four-CALL/four-store/outer-RET caller, full ELF headers/dynamic symbols/relocations, and forbidden dependencies/constructors/IFUNC. Fresh candidate copies must match the complete trusted bytes and have distinct inodes. Cargo JSON selects the exact release libtest artifact.
 
-Native safety is the fixed source/test's explicit integration envelope: known C
-semantics cover every accepted input, exact caller and selected body geometry,
-private sealed source/retained loader and installed owners, actual thread stack
-and callback state checks, blocked asynchronous signals, no foreign entry or
-unsafe mapping writer, and genuine ordinary returns. The existing loader checks
-actual SHSTK status and runtime code detects xstate/clock support. The adapter
-requires RDTSCP advertised on its CPU and refuses advertised IBT. Those flags
-are trusted running-kernel evidence, not independent physical CPUID/MSR proof;
-absence of an ELF CET property is not used as evidence. Arbitrary hostile
-in-process unsafe code, nonlocal exits and foreign mapping changes are outside
-this finite integration profile. Blocking or refusal never fabricates return.
+The passed control exercises three safe application batches, two sampled epochs, removed outcomes, twelve ordinary returns/stores and final close. It retains the fixed test's unsafe setup obligations: known semantics for every admitted 0..=64-byte input, exact geometry and retained sealed/installed owners, actual thread stack/callback state, no foreign entry/writer/unload/reentry or nonlocal exits, and genuine ordinary returns. Asynchronous signals are blocked while reserved synchronous SIGILL remains unblocked; an inherited blocked SIGILL mask refuses. Existing SHSTK and xstate/clock guards still execute. The adapter requires advertised RDTSCP and refuses advertised IBT; these are trusted kernel observations, not physical CPUID/MSR proof.
 
-All command requests, outer closures, inner receipts and raw logs remain private
-and numeric values are retained in JSON. Owner closure is authenticated before
-child output is interpreted. A failure stops dispatch, stays failed and leaves
-later stages unexecuted; reuse of the same output namespace refuses. Success
-requires exactly the named test to pass with no skipped test or stderr. No
-compilation, test or native invocation has been run by the author.
+Authenticate each outer closure before reading child evidence. Failure stops the sequence and remains failed; success requires exactly the named test to pass, with no ignored test or stderr. `native_attempts` counts dispatch intent, not a PID/reap observation. Requests, receipts and raw logs remain private. This fixed integration result does not establish performance, accuracy, full A5 qualification, the separate hardware single-step oracle or safety against arbitrary hostile in-process unsafe code.
