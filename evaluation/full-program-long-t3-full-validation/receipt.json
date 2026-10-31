@@ -1,0 +1,283 @@
+{
+  "revision": "701c4c87e80efcb287a37c57c5b1d7ce5aecee0c",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "status": "PASS_CORRECTNESS_ONLY",
+  "script": "evaluation/short-neighbor-parallel/validate.py",
+  "script_sha256": "968956df64edd3f5754a0adbd4b900ac68535d188be01af0628eff94d2ed6d10",
+  "cpu_count": 12,
+  "cpus": [
+    8,
+    16,
+    19,
+    20,
+    23,
+    27,
+    33,
+    37,
+    43,
+    45,
+    52,
+    56
+  ],
+  "cargo_jobs": 12,
+  "test_threads": 12,
+  "serial_threads": 1,
+  "outer_seconds": 938.2812123419717,
+  "outer_wall_limit": 1200,
+  "log_cap_bytes": 8388608,
+  "all_owners_normal_zero_rescues": true,
+  "source_unchanged": true,
+  "stages": [
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 9.883000632980838,
+      "exit_code": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "load_before": [
+        "47.06",
+        "41.42",
+        "41.29"
+      ],
+      "load_after": [
+        "46.52",
+        "41.49",
+        "41.31"
+      ]
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 30.719529507914558,
+      "exit_code": 0,
+      "log_sha256": "c8f1e5e71202af18167d306dbf4e653964d606a372fdc571b6c8bd4847d5a969",
+      "load_before": [
+        "46.52",
+        "41.49",
+        "41.31"
+      ],
+      "load_after": [
+        "50.85",
+        "43.08",
+        "41.85"
+      ]
+    },
+    {
+      "name": "check",
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 22.292046016082168,
+      "exit_code": 0,
+      "log_sha256": "19f8e1a453e38a2c24d93c101565b1b608f477126b1a44a916d953c8fc8417d5",
+      "load_before": [
+        "50.85",
+        "43.08",
+        "41.85"
+      ],
+      "load_after": [
+        "53.19",
+        "44.20",
+        "42.25"
+      ]
+    },
+    {
+      "name": "workspace",
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "12",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "wall_limit": 900,
+      "elapsed_seconds": 749.5920664239675,
+      "exit_code": 0,
+      "log_sha256": "578f5a6fddbc92ac1d2dc07f808335290ffd92116185d0055dda2905cc716c65",
+      "load_before": [
+        "53.19",
+        "44.20",
+        "42.25"
+      ],
+      "load_after": [
+        "44.31",
+        "45.26",
+        "44.00"
+      ]
+    },
+    {
+      "name": "serial-launch",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 125.71702871401794,
+      "exit_code": 0,
+      "log_sha256": "4f61e800d4be269def16a4cf3c8350ff5c31a4f5104a98ea8af1e20df6ff95e2",
+      "load_before": [
+        "44.31",
+        "45.26",
+        "44.00"
+      ],
+      "load_after": [
+        "39.28",
+        "43.26",
+        "43.44"
+      ]
+    }
+  ],
+  "workspace": {
+    "passed": 4268,
+    "failed": 0,
+    "ignored": 39,
+    "raw_passed": 4271,
+    "controlled_nested_child_passes": 3,
+    "all_prior_tests_contexts_statuses_and_ignore_reasons_retained": true,
+    "added_tests": [
+      "disassembly::whole::tests::whole_long_t3_ownership_keeps_denominator_and_finds_alternate_victim",
+      "neighbor::long_ownership_tests::long_t3_ownership_checks_selected_member_and_original_authority",
+      "neighbor::long_ownership_tests::long_t3_ownership_conflicting_victims_and_existing_caps_still_refuse",
+      "neighbor::long_ownership_tests::long_t3_ownership_continues_past_consumed_suffix_and_keeps_exact_pair"
+    ],
+    "counted_multiset_sha256": "639a3e9e310b87d02ed6fa5ba99a11a275bdc17189d7bafa3cbe1165619f3af0"
+  },
+  "serial_launch": {
+    "passed": 1039,
+    "failed": 0,
+    "ignored": 0,
+    "complete_prior_multiset_retained": true
+  },
+  "release": {
+    "original_owner_pid_absent": true,
+    "exact_child_scope_absent": true
+  },
+  "baseline_revision": "cbb585d9e2f250f5365b34aa654e14bf5e87aa48",
+  "scope": "Full root-workspace correctness only; no performance/native full-program/A5 qualification. Original failed runs remain in prior receipts.",
+  "protocol_reference": "../full-program-gnu-full-validation/receipt.json",
+  "environment": {
+    "mode": "Nine overrides on inherited environment; not a clean environment",
+    "overrides": {
+      "PATH": "${STABLE_TOOLCHAIN_BIN}:${CARGO_BIN}:/usr/bin:/bin",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_BUILD_JOBS": "12",
+      "CARGO_TARGET_DIR": "${ROOT}/target",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "RUST_TEST_THREADS": "12",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    }
+  },
+  "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14), LLVM22.1.6; separate release build at this exact revision",
+  "additional_focused_attempt": "The separate 180-second neighbor oracle timed out (-9, six rescued descendants); retained in ../full-program-long-t3-result-v1/receipt.json. This required full gate is a distinct invocation with unchanged bounds.",
+  "provenance": {
+    "outer_log_sha256": "94ecfbf136428ea52798468242d9b42d8b19fb776f47b7d44191686e5cca11a3",
+    "closed_census_script_sha256": "3699cd4e17419abf9ce93da75952d618efa51ded9718c30f2ea950d97eaa7445"
+  },
+  "reproduction": {
+    "script": "evaluation/short-neighbor-parallel/validate.py",
+    "sha256": "968956df64edd3f5754a0adbd4b900ac68535d188be01af0628eff94d2ed6d10",
+    "helper": "evaluation/admission/processes.py",
+    "helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+    "argv": [
+      "/usr/bin/python3.9",
+      "${ROOT}/evaluation/short-neighbor-parallel/validate.py",
+      "--revision",
+      "701c4c87e80efcb287a37c57c5b1d7ce5aecee0c",
+      "--output",
+      "${ROOT}/ignored/${FRESH_OUTPUT}"
+    ],
+    "outer_wall_seconds": 1200,
+    "combined_log_cap_bytes": 8388608,
+    "commands": [
+      {
+        "name": "fmt",
+        "argv": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "wall_seconds": 180
+      },
+      {
+        "name": "clippy",
+        "argv": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "wall_seconds": 180
+      },
+      {
+        "name": "check",
+        "argv": [
+          "cargo",
+          "check",
+          "--workspace",
+          "--all-features",
+          "--all-targets"
+        ],
+        "wall_seconds": 180
+      },
+      {
+        "name": "workspace",
+        "argv": [
+          "cargo",
+          "test",
+          "-j",
+          "12",
+          "--workspace",
+          "--no-fail-fast"
+        ],
+        "wall_seconds": 900
+      },
+      {
+        "name": "serial-launch",
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst-launch",
+          "--tests",
+          "--",
+          "--test-threads=1",
+          "--nocapture"
+        ],
+        "wall_seconds": 180
+      }
+    ]
+  }
+}
