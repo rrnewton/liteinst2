@@ -48,7 +48,7 @@ def discover():
     from core_5cda_inventory import python_identities
     declared = python_identities(HERE)
     count = json.loads((HERE / 'corpus.json').read_bytes())['recorder_tests']
-    require(type(count) is int and count == 362 and len(identities) == count
+    require(type(count) is int and count == 363 and len(identities) == count
             and len(set(identities)) == count and sorted(identities) == sorted(declared),
             'changed_recorder_identity_population')
     from recorder_shards_inventory import ADDED
@@ -69,6 +69,8 @@ def discover():
     require(EXACT37_CONTROL in identities, 'missing_exact37_control')
     from core_acc247_inventory import ADDED as PHASE_CONTROL
     require(PHASE_CONTROL in identities, 'missing_phase_control')
+    from core_34c47_inventory import ADDED as PREPARED_CONTROL
+    require(PREPARED_CONTROL in identities, 'missing_prepared_control')
     return cases, identities
 
 
@@ -78,7 +80,7 @@ def partition(identities, workers):
             and len(set(identities)) == len(identities), 'invalid_identity_population')
     from recorder_shards_inventory import ADDED
     # The pure helper also accepts synthetic/non-shard populations.
-    # Actual workers authenticate all362 and allfour in discover().
+    # Actual workers authenticate all363 and allfour in discover().
     if not all(name in identities for name in ADDED):
         modules = list(dict.fromkeys(name.split('.', 1)[0] for name in identities))
         groups = [[] for _ in range(workers)]
@@ -101,6 +103,15 @@ def partition(identities, workers):
     modules = list(dict.fromkeys(name.split('.', 1)[0] for name in identities
                                 if name not in ADDED))
     assigned = {name: index % workers for index, name in enumerate(ADDED)}
+    if workers == 4:
+        # Measured ordinary-module costs; preserve the four historical shards
+        # and every worker's original discovery order.
+        moved = {'test_main_query_inventory': 1, 'test_runtime_inventory': 1,
+                 'test_runtime_stack_consumer_inventory': 3, 'test_backing_cleanup': 3}
+        for name in identities:
+            module = name.split('.', 1)[0]
+            if name not in assigned and module in moved:
+                assigned[name] = moved[module]
     groups = [[] for _ in range(workers)]
     for name in identities:
         index = assigned[name] if name in assigned else modules.index(name.split('.', 1)[0]) % workers

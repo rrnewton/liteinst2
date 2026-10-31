@@ -38,12 +38,16 @@ def child(config, ready, release):
     os.execve(c['argv'][0], c['argv'], c['environment'])
 
 
-def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', kernel_callchains=False):
+def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', kernel_callchains=False, user_dwarf=False):
     """One fresh exact launch. Caller still validates source/namespace/terminal reports."""
     import page_default_ls_release_provenance as provenance
     observe, same = provenance.observe, provenance.same
     from page_cost_profile_read import summarize, bridge_file, same_bridge
     need(type(kernel_callchains) is bool, 'explicit scalar or kernel-callchain profile')
+    need(type(user_dwarf) is bool and not (kernel_callchains and user_dwarf),
+         'distinct explicit user-DWARF profile')
+    if user_dwarf:
+        from persistent_dynamic_profile_read import summarize
     directory = Path(directory).resolve(); directory.mkdir(exist_ok=False)
     python = str(Path(sys.executable).resolve()); perf = str(Path(perf).resolve()); bridge = Path(bridge).resolve()
     need(tuple(row['bounds']) == TARGET and row['capture_limit'] == 16 << 20,
@@ -64,6 +68,9 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
     procs = {}; pidfds = {}; fds = set(); streams = {}; error = None
     before = {str(Path(p).resolve()): identity(p) for p in
               (perf, python, __file__, Path(__file__).with_name('page_cost_profile_read.py'), provenance.__file__, bridge)}
+    if user_dwarf:
+        reader = Path(__file__).with_name('persistent_dynamic_profile_read.py')
+        before[str(reader.resolve())] = identity(reader)
     need(all(before[str(Path(bridge).resolve())][k] == bridge_fact[k] for k in ('bytes', 'sha256')),
          'independently supplied actual bridge fact')
     bridge_identity_before = bridge_file(bridge)[2]
@@ -74,6 +81,7 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
         target=row, perf=dict(bounds=list(PERF)), inputs_before=before, cleanup_errors=[],
         adopted=[], children_before='ECHILD', children_after=None, target_bounds=list(TARGET), cpu=cpu, owner_pid=os.getpid())
     if kernel_callchains: result.update(format='page-cost-kernel-callchains-v1', kernel_callchains=True)
+    if user_dwarf: result.update(format='persistent-dynamic-user-dwarf-v1', user_dwarf=True)
     row.update(pid=None, exit=None, reaped=False, timed_out=False, error=None, cleanup_errors=[])
 
     def pipe():
@@ -136,7 +144,16 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
             '--delay=-1', '--control=fd:'+str(cr)+','+str(aw), '--pid', str(target.pid),
             '--output', str((directory/'perf.data').resolve())]
         if kernel_callchains: perf_argv[2:2] = ['--call-graph', 'fp,64', '--kernel-callchains']
+        if user_dwarf:
+            perf_argv[3] = 'cpu-clock:u'
+            perf_argv[2:2] = ['--call-graph', 'dwarf,4096', '--user-callchains',
+                             '--no-buildid', '--no-buildid-cache']
+            perf_argv[perf_argv.index('--mmap-pages=256')] = '--mmap-pages=64'
         env = dict(row['environment'], PERF_CONFIG='/dev/null')
+        if user_dwarf:
+            env.update(PERF_CONFIG_NOSYSTEM='1', PERF_CONFIG_NOGLOBAL='1', DEBUGINFOD_URLS='')
+            for key, name in (('PERF_BUILDID_DIR', 'buildids'), ('XDG_CACHE_HOME', 'cache'), ('TMPDIR', 'tmp')):
+                (directory/name).mkdir(); env[key] = str(directory/name)
         result['perf'].update(argv=perf_argv, environment=env, start_ns=time.monotonic_ns())
         profiler = spawn('perf', perf_argv, env, (cr, aw), PERF); close(cr); close(aw)
         need(os.write(cw, b'enable\n') == 7, 'complete enable command')
@@ -160,7 +177,14 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
         need(pidfds['target'] in done, 'target wall bound or profiler stopped before target exit')
         result['target_exit_ready_ns'] = time.monotonic_ns()
         # Hold unreaped PID identities through group cleanup and perf's final drain.
-        group('target'); row['exit'] = target.wait(timeout=3); row['reaped'] = True
+        group('target')
+        if user_dwarf:
+            waited, status, usage = os.wait4(target.pid, 0)
+            need(waited == target.pid, 'actual target wait4 identity after pidfd readiness')
+            target.returncode = os.waitstatus_to_exitcode(status)
+            row['usage'] = dict(user_seconds=usage.ru_utime, system_seconds=usage.ru_stime,
+                                maxrss_kib=usage.ru_maxrss, wait_status=status)
+        row['exit'] = target.wait(timeout=3); row['reaped'] = True
         row['process_reaped_ns'] = time.monotonic_ns()
         if not select.select([pidfds['perf']], [], [], 0)[0]:
             need(os.write(cw, b'stop\n') == 5, 'complete perf stop control command')

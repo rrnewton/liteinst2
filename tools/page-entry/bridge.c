@@ -24,12 +24,16 @@ static struct image bridge_image;
 const char *const *bridge_environment(void) { return initial_environment; }
 const struct image *bridge_runtime_image(void) { return &bridge_image; }
 
-#ifdef LI2_PERSISTENT_EPOCH
+#if defined(LI2_PERSISTENT_GROUP)
+extern void li2_pg_rseq_raw(void);
+#elif defined(LI2_PERSISTENT_EPOCH)
 extern void li2_pe_rseq_raw(void);
 #endif
 #ifdef LI2_MAPS_PHASE_REUSE
 long raw(long n,long a,long b,long c,long d,long e,long f) {
-#ifdef LI2_PERSISTENT_EPOCH
+#if defined(LI2_PERSISTENT_GROUP)
+    li2_pg_rseq_raw();
+#elif defined(LI2_PERSISTENT_EPOCH)
     li2_pe_rseq_raw();
 #endif
 #ifdef LI2_EVENT_PROFILE

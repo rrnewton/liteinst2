@@ -11,13 +11,14 @@ import core_dd75_inventory as previous
 import core_5cda_inventory as historical
 import core_cc846_inventory as inventory
 import parsing
+import core_34c47_inventory as prepared
 import core_acc247_inventory as incoming
 import core_20cbe_inventory as newest
 
 
 class Main981419InventoryTests(unittest.TestCase):
     def test_exact_accuracy_sources_catalog_and_causal_refusals(self):
-        actual = newest.before_current(incoming.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes())))
+        actual = newest.before_current(incoming.before_current(prepared.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))))
         rows = actual['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                           sum(x['ignored'] for x in rows.values())), (109, 4085, 37))
@@ -49,7 +50,7 @@ class Main981419InventoryTests(unittest.TestCase):
                     wrong = copy.deepcopy(actual); wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main981419_inventory_differs$'):
                         current.before_current(wrong)
-        identities = newest.before_python(incoming.before_python(historical.python_identities(Path(__file__).parent)))
+        identities = newest.before_python(incoming.before_python(prepared.before_python(historical.python_identities(Path(__file__).parent))))
         old_ids = current.before_python(identities)
         self.assertEqual((len(identities), len(old_ids)), (360, 359))
         self.assertEqual(current.digest(old_ids), previous.PYTHON_CURRENT)
@@ -124,12 +125,20 @@ class Main981419InventoryTests(unittest.TestCase):
             changed_raw = raw.replace(literal.encode(), altered.encode())
             changed_prior = prior.replace(literal.encode(), altered.encode())
             self.assertNotEqual(changed_raw, raw)
+            prepared_input = prepared.source_before(path, raw, 'upstream_control')
+            changed_prepared = prepared_input.replace(literal.encode(), altered.encode())
+            newest_outer = {}
+            if path in prepared.DATA['projections']:
+                row = copy.deepcopy(prepared.DATA['projections'][path])
+                row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()
+                row['previous_sha256'] = hashlib.sha256(changed_prepared).hexdigest()
+                newest_outer[path] = row
             incoming_input = incoming.source_before(path, raw, 'upstream_control')
             changed_incoming = incoming_input.replace(literal.encode(), altered.encode())
             outer = {}
             if path in incoming.DATA['projections']:
                 row = copy.deepcopy(incoming.DATA['projections'][path])
-                row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()
+                row['current_sha256'] = hashlib.sha256(changed_prepared).hexdigest()
                 row['previous_sha256'] = hashlib.sha256(changed_incoming).hexdigest()
                 outer[path] = row
             current_input = newest.source_before(path, raw, 'upstream_control')
@@ -145,7 +154,8 @@ class Main981419InventoryTests(unittest.TestCase):
             projection['previous_sha256'] = hashlib.sha256(changed_prior).hexdigest()
             def changed(candidate):
                 return changed_raw if candidate == target else read(candidate)
-            with patch.dict(incoming.DATA['projections'], outer), \
+            with patch.dict(prepared.DATA['projections'], newest_outer), \
+                 patch.dict(incoming.DATA['projections'], outer), \
                  patch.dict(newest.DATA['projections'], upstream), \
                  patch.dict(current.DATA['projections'], {path: projection}):
                 # This positive join fails if an upstream gate still masks the

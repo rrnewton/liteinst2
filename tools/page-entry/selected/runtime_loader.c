@@ -269,6 +269,9 @@ static void selected_persistent_report(unsigned,unsigned,long);
 #ifdef LI2_PERSISTENT_DYNAMIC_CAPTURE
 #include "persistent_dynamic_observe.h"
 #endif
+#ifdef LI2_PERSISTENT_GROUP_CAPTURE
+#include "persistent_group_observe.h"
+#endif
 #endif
 static volatile sig_atomic_t selected_linked_epoch_active,selected_linked_epoch_busy;
 static void selected_linked_epoch_initialize(void);
@@ -528,6 +531,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 #ifdef LI2_PERSISTENT_DYNAMIC_CAPTURE
     pdo_finish(status,code,detail);
+#endif
+#ifdef LI2_PERSISTENT_GROUP_CAPTURE
+    pgo_finish(status,code,detail);
 #endif
     selected_persistent_report(status,code,detail);
 #endif
@@ -911,7 +917,9 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_LINKED_EPOCH
 #include "linked_controller.inc"
 #ifdef LI2_PERSISTENT_EPOCH
-#ifdef LI2_PERSISTENT_DYNAMIC
+#if defined(LI2_PERSISTENT_GROUP)
+#include "persistent_group_controller.inc"
+#elif defined(LI2_PERSISTENT_DYNAMIC)
 #include "persistent_dynamic_controller.inc"
 #else
 #include "persistent_controller.inc"
@@ -937,6 +945,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
 #ifdef LI2_PERSISTENT_DYNAMIC_CAPTURE
     pdo_ingress(sig,si,ptr);
+#endif
+#ifdef LI2_PERSISTENT_GROUP_CAPTURE
+    pgo_ingress(sig,si,ptr);
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_ingress(sig,si,ptr);
@@ -1312,6 +1323,9 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #endif
 #ifdef LI2_PERSISTENT_DYNAMIC_CAPTURE
     pdo_initialize();
+#endif
+#ifdef LI2_PERSISTENT_GROUP_CAPTURE
+    pgo_initialize();
 #endif
 #endif
 #else
