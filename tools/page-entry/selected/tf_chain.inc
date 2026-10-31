@@ -1,6 +1,10 @@
 /* Included by step_owner.c only in LI2_TF_HANDOFF builds. Reuses unchanged
    frame/identity/revoke helpers and the complete existing generic owner. */
 #include "tf_chain.h"
+#ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
+/* Observation-only callback: no owner or saved application frame edits. */
+extern void li2_pro_trace_closed(const struct li2_tf_chain *,const struct li2_tf_chain_slot *);
+#endif
 #ifdef LI2_CURRENT_TF_CAPTURE
 #include "current_tf_observe.h"
 #endif
@@ -519,6 +523,9 @@ enum li2_chain_result li2_tf_chain_trace(struct li2_tf_chain *c,int sig,siginfo_
     chain_need(c,chain_closed(p) && chain_frame_equal(&p->owner.step.after,uc,1),LI2_CHAIN_FRAME,4);
 #ifdef LI2_TF_SAME_PAGE_LEASE
     chain_same_page_closed(c,p);
+#endif
+#ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
+    li2_pro_trace_closed(c,p);
 #endif
     chain_count(c,&c->steps);c->pending=0;
     struct li2_tf_chain_slot *s=chain_next(c,previous^1);s->origin=2;

@@ -2,6 +2,9 @@
    The real ld.so runs against an explicit namespace of inherited sealed DSOs. */
 #include "bridge.h"
 #include "lifecycle_loader.h"
+#ifdef LI2_PERSISTENT_GROUP_COUNTERS
+#include "persistent_group_counters.h"
+#endif
 #ifdef LI2_CURRENT_TF_CAPTURE
 #include "current_tf_observe.h"
 #endif
@@ -272,6 +275,9 @@ static void selected_persistent_report(unsigned,unsigned,long);
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
 #include "persistent_group_observe.h"
 #endif
+#ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
+#include "persistent_resident_observe.h"
+#endif
 #endif
 static volatile sig_atomic_t selected_linked_epoch_active,selected_linked_epoch_busy;
 static void selected_linked_epoch_initialize(void);
@@ -535,6 +541,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
     pgo_finish(status,code,detail);
 #endif
+#ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
+    pro_finish(status,code,detail);
+#endif
     selected_persistent_report(status,code,detail);
 #endif
 #else
@@ -604,6 +613,9 @@ static void protect(uintptr_t first,size_t bytes) {
     checked(bytes && first<=UINTPTR_MAX-bytes && protected_count<RANGES,201,0);
     protected[protected_count++]=(struct li2_fork_range){first,first+bytes};
 }
+#ifdef LI2_PERSISTENT_GROUP_COUNTERS
+#include "persistent_group_counters.inc"
+#endif
 static int private_intersects(uintptr_t first,size_t bytes) {
     if (!bytes || first>UINTPTR_MAX-bytes) return 1;
     for(size_t i=0;i<protected_count;i++) if(first<protected[i].end && protected[i].first<first+bytes) return 1;
@@ -949,6 +961,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
     pgo_ingress(sig,si,ptr);
 #endif
+#ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
+    pro_ingress(sig,si,ptr);
+#endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_ingress(sig,si,ptr);
 #endif
@@ -1219,6 +1234,9 @@ static size_t parse_fds(int fds[32]) {
     return count;
 }
 void runtime_arm(const struct image *main,const struct image *interp,size_t minimum) {
+#ifdef LI2_PERSISTENT_GROUP_COUNTERS
+    pgc_attach();
+#endif
     checked(minimum && minimum<ALT_BYTES-16384,226,0); original_main=*main;original_interpreter=*interp;
     checked(raw(SYS_getpid,0,0,0,0,0,0)==raw(SYS_gettid,0,0,0,0,0,0),227,0);
     long fd=raw(SYS_fcntl,2,F_DUPFD_CLOEXEC,100,0,0,0);checked(fd>=0,228,fd);report_fd=(int)fd;
@@ -1326,6 +1344,9 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #endif
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
     pgo_initialize();
+#endif
+#ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
+    pro_initialize();
 #endif
 #endif
 #else

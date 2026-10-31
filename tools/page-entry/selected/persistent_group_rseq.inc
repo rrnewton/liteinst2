@@ -182,9 +182,17 @@ int li2_pg_rseq_live(const struct li2_pg_token *t,const ucontext_t *uc,struct li
 int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,const ucontext_t *uc) {
     if(!pgr_token(t) || pg_rseq.first_error || !pg_rseq.seed_complete || !region_rseq_current(uc) ||
        !p || p->version!=LI2_PG_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
-       p->reserved || p->reserved2 || p->heads<=64 || p->heads>LI2_PG_HEADS ||
+       p->reserved || p->reserved2 ||
+#ifdef LI2_PERSISTENT_DISPATCH
+       !p->heads || p->heads>LI2_PG_HEADS ||
+       p->member_heads[0]!=(p->heads<64?p->heads:64) ||
+       p->member_heads[1]!=(p->heads>64?p->heads-64:0) ||
+       !p->exits || p->exits>8 || p->links>8 || p->links+p->exits>8)
+#else
+       p->heads<=64 || p->heads>LI2_PG_HEADS ||
        p->member_heads[0]!=64 || p->member_heads[1]!=p->heads-64 ||
        !p->exits || p->exits>8 || !p->links || p->links>8 || p->links+p->exits>8)
+#endif
         return pgr_bad(LI2_RSEQ_PLAN,500);
     const struct li2_pg_sources *source=li2_pg_source_view(t);
     const struct li2_pg_layout *layout=li2_pg_owner_layout(t);
@@ -221,10 +229,36 @@ int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,co
             struct li2_mg_store actual_store={0};
             if(actual.ready || !actual.refusal || li2_decoder_mov_store(d->decoded.pc,window,n,&actual_store) ||
                actual_store.ready!=1 || actual_store.refusal ||
+#ifdef LI2_PERSISTENT_DISPATCH
+               !region_rseq_equal(&actual_store,&p->instruction[i].mov,sizeof actual_store) ||
+               !region_rseq_equal(&actual_store,&p->guard[i].mov.original,sizeof actual_store))
+#else
                !region_rseq_equal(&actual_store,&p->store_original[i],sizeof actual_store) ||
                !region_rseq_equal(&actual_store,&p->guard[i].original,sizeof actual_store))
+#endif
                 return pgr_bad(LI2_RSEQ_PLAN,505);
             ++stores;
+#ifdef LI2_PERSISTENT_DISPATCH
+        } else if(h->kind==LI2_PG_DISPATCH) {
+            struct li2_jd_descriptor descriptor={0};
+            const struct li2_jd_plan *guard=&p->guard[i].dispatch;
+            const uintptr_t delta=offsetof(struct li2_pg_plan,table)-offsetof(struct li2_pg_plan,original);
+            if(actual.ready || !actual.refusal || h->successor_count || h->successors[0] || h->successors[1] ||
+               li2_jd_describe(d->decoded.pc,window,n,&descriptor) || descriptor.ready!=1 || descriptor.refusal ||
+               !region_rseq_equal(&descriptor.decoded,&actual.decoded,sizeof actual.decoded) ||
+               !region_rseq_equal(&descriptor,&p->instruction[i].dispatch,sizeof descriptor) ||
+               !region_rseq_equal(&descriptor,&guard->original,sizeof descriptor) ||
+               p->table.address<delta || guard->binding.rows!=p->table.address-delta ||
+               guard->binding.heads!=p->heads || guard->binding.head!=i ||
+               !region_rseq_equal(guard->binding.image,p->layout.generated,sizeof p->layout.generated) ||
+               guard->generated!=p->layout.generated[i/64]+(uintptr_t)(i%64)*LI2_PE_SLOT_BYTES ||
+               guard->spill!=p->layout.spill || guard->record.image_bytes!=h->generated_length ||
+               li2_jd_validate(guard))return pgr_bad(LI2_RSEQ_PLAN,528);
+            /* Independently authenticate the original guest's NONE footprint.
+               Trusted private spill/cell writes are established by the exact
+               emitter and retained protected range, never called guest NONE. */
+            int e=decoded_footprint(&actual.decoded,uc,1);if(e)return pgr_bad((unsigned)e,529);
+#endif
         } else return pgr_bad(LI2_RSEQ_PLAN,506);
         bytes+=h->source_length;
     }

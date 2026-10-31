@@ -1,0 +1,721 @@
+{
+  "affinity": [
+    15,
+    35,
+    50,
+    80
+  ],
+  "artifact_manifest_sha256": "1c2b9d30a57f8e91fef92db73b3fd3423f0673c33a65cfb40aadc3118bfa08a9",
+  "artifacts_unchanged": true,
+  "attempts": 1,
+  "cleanup_complete": true,
+  "command": {
+    "argv": [
+      "cargo",
+      "test",
+      "-p",
+      "liteinst-launch",
+      "--tests",
+      "--",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "backing_cleanup_harnesses_count": {
+      "catalog_rows": 1,
+      "qualified": 1
+    },
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "dynamic_admission_fixtures_count": {
+      "catalog_rows": 15,
+      "qualified": 15
+    },
+    "dynamic_matrix_cases_count": {
+      "catalog_rows": 388,
+      "qualified": 388
+    },
+    "environment_delta": {
+      "LITEINST_EVALUATION": "1"
+    },
+    "evidence_status": "complete",
+    "exit_code": 0,
+    "harness_totals": {
+      "complete_harnesses": 27,
+      "expected_harnesses": 27,
+      "expected_ignored": 0,
+      "expected_tests": 1039,
+      "observed": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1039
+      }
+    },
+    "id": "serial_launch",
+    "native_cases_count": {
+      "catalog_rows": 50,
+      "qualified": 50
+    },
+    "native_validation_fixtures_count": {
+      "catalog_rows": 110,
+      "qualified": 110
+    },
+    "private_log_sha256": "94cda5d213e42f4fc27510b61ab164fb3a7bebe6aecd6e4bbc3818ddbf578605",
+    "reaped_descendants": 0,
+    "seconds": 154.3469659970142,
+    "start_utc": "2026-10-31T06:46:08.182160+00:00",
+    "status": "passed",
+    "termination": null,
+    "timeout_seconds": 180
+  },
+  "configuration_unchanged": true,
+  "error_type": null,
+  "failed_prior": {
+    "bytes": 11458,
+    "sha256": "946627428d6ccf9b8e8e8a5ce5d29e4b63d33bd948739795e4068dc6f9990f40"
+  },
+  "final_errors": [],
+  "full_required_checks_credit": false,
+  "hardware": {
+    "affinity_cpu_count": 4,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 15,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "log": {
+    "bytes": 1404568,
+    "sha256": "94cda5d213e42f4fc27510b61ab164fb3a7bebe6aecd6e4bbc3818ddbf578605"
+  },
+  "performance_credit": false,
+  "private_receipt": {
+    "bytes": 372468,
+    "sha256": "e1c125dff45f64f74326da43f9fc01b34ea3bff46a0323c5dbbf279b18dbf7d6"
+  },
+  "profile": "serial-180-diagnostic-v1",
+  "reproduction": {
+    "environment": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "target",
+      "CARGO_TERM_COLOR": "never",
+      "LANG": "C.UTF-8",
+      "LC_ALL": "C.UTF-8",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RLIMIT_CORE": 0,
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOCFLAGS": "",
+      "RUSTFLAGS": "",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "private_run/tmp"
+    },
+    "scope": "The tracked script runs the complete six-check cohort; this observation reran only its unchanged serial command once using the same process owner, environment and evidence parser. The original full attempt stays failed.",
+    "script": [
+      "python3",
+      "evaluation/inprocess/checks.py",
+      "--expect-revision",
+      "d402d96052fcdcdf1d3b0857b0bbd64d16cc06e3"
+    ],
+    "serial_argv": [
+      "cargo",
+      "test",
+      "-p",
+      "liteinst-launch",
+      "--tests",
+      "--",
+      "--test-threads=1",
+      "--nocapture"
+    ]
+  },
+  "runner": {
+    "bytes": 13076,
+    "sha256": "d677c06b52d62638e551332ee36c0ddaad9aa6323d10d66672481f0cbc5da4ba"
+  },
+  "schema": 1,
+  "scope": "One full serial cohort only; prior full checks remain failed. No retry loop.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "d402d96052fcdcdf1d3b0857b0bbd64d16cc06e3",
+    "source_manifest_sha256": "6db7ea6c42dfd154d56a63cbb939b2cb89112da0858a022996b60e2ba3d0515c",
+    "tracked_clean": true,
+    "tree": "03ec505db93af2a655db61bedd9dddb6c30c1d1c"
+  },
+  "source_packet": {
+    "bytes": 302,
+    "sha256": "1251c68b1ea6bbcb315c5b0a0695636aeb32b7ab960506461c85fa40a3b0057d"
+  },
+  "source_unchanged": true,
+  "status": "passed",
+  "timings": [
+    {
+      "artifact": "target/debug/deps/liteinst_launch-11d49a8d76592146",
+      "finished_seconds": 59.08,
+      "harness": "unittests src/lib.rs",
+      "last_started_test": "trap_coverage::pending::tests::pending_retains_exact_refused_report_and_each_kind_without_resolving_resume",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 745
+      }
+    },
+    {
+      "artifact": "target/debug/deps/b2_mode_reference-27d4772e4f967af5",
+      "finished_seconds": 2.16,
+      "harness": "tests/b2_mode_reference.rs",
+      "last_started_test": "timestamps_processor_id_and_scripted_syscall_agree_in_all_four_modes",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 6
+      }
+    },
+    {
+      "artifact": "target/debug/deps/b3_exec_admission-16e8d708e9c81c34",
+      "finished_seconds": 6.43,
+      "harness": "tests/b3_exec_admission.rs",
+      "last_started_test": "stale_exec_source_reply_preserves_actual_replacement_without_commit",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 7
+      }
+    },
+    {
+      "artifact": "target/debug/deps/b3_mapping_admission-b5e948cd80ea9c83",
+      "finished_seconds": 6.31,
+      "harness": "tests/b3_mapping_admission.rs",
+      "last_started_test": "stale_capture_reply_after_real_second_rx_preserves_partial_kernel_history",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 5
+      }
+    },
+    {
+      "artifact": "target/debug/deps/b3_signal_admission-3c29db313c617f64",
+      "finished_seconds": 3.79,
+      "harness": "tests/b3_signal_admission.rs",
+      "last_started_test": "pristine_comparator_rejects_metadata_and_unrelated_state_corruption",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 5
+      }
+    },
+    {
+      "artifact": "target/debug/deps/checkpoint-af24e28f967634c6",
+      "finished_seconds": 0.55,
+      "harness": "tests/checkpoint.rs",
+      "last_started_test": "unknown_signal_cannot_be_suppressed_as_an_owned_fault",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 23
+      }
+    },
+    {
+      "artifact": "target/debug/deps/concurrent_control-d4fa76c7542f99d5",
+      "finished_seconds": 0.2,
+      "harness": "tests/concurrent_control.rs",
+      "last_started_test": "unacknowledged_worker_fault_refuses_trusted_execution_and_group_resume",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 3
+      }
+    },
+    {
+      "artifact": "target/debug/deps/concurrent_gate-b404f2db5f7a28fa",
+      "finished_seconds": 0.95,
+      "harness": "tests/concurrent_gate.rs",
+      "last_started_test": "valid_clone_after_membership_freeze_is_refused_and_all_tasks_are_reaped",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 10
+      }
+    },
+    {
+      "artifact": "target/debug/deps/dynamic_admission-e6fb9deb3c904605",
+      "finished_seconds": 60.19,
+      "harness": "tests/dynamic_admission.rs",
+      "last_started_test": "provider_panic_cancels_actual_owner_and_physically_reaps",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 15
+      }
+    },
+    {
+      "artifact": "target/debug/deps/dynamic_control-374a2c872fc42ba7",
+      "finished_seconds": 0.27,
+      "harness": "tests/dynamic_control.rs",
+      "last_started_test": "static_exec_stop_and_exact_kernel_exec_return_preserve_original_entry",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 8
+      }
+    },
+    {
+      "artifact": "target/debug/deps/dynamic_exec-8e09db5cd0bdefb7",
+      "finished_seconds": 0.28,
+      "harness": "tests/dynamic_exec.rs",
+      "last_started_test": "later_static_exec_matches_native_event_exit_and_first_user_state",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 8
+      }
+    },
+    {
+      "artifact": "target/debug/deps/dynamic_fork-8d9315813e8a3bea",
+      "finished_seconds": 0.24,
+      "harness": "tests/dynamic_fork.rs",
+      "last_started_test": "running_fork_pair_deadline_closes_and_physically_reaps_both",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 7
+      }
+    },
+    {
+      "artifact": "target/debug/deps/dynamic_signals-a8e21fc7188ec679",
+      "finished_seconds": 0.17,
+      "harness": "tests/dynamic_signals.rs",
+      "last_started_test": "queued_realtime_payloads_and_handler_frames_match_untraced_native_exactly",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 4
+      }
+    },
+    {
+      "artifact": "target/debug/deps/dynamic_thread-4a1821e5736bace3",
+      "finished_seconds": 0.51,
+      "harness": "tests/dynamic_thread.rs",
+      "last_started_test": "syscall_free_thread_pair_deadline_closes_and_physically_reaps_both",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 12
+      }
+    },
+    {
+      "artifact": "target/debug/deps/exec_backing_cleanup-06768c7c7960bbb1",
+      "finished_seconds": null,
+      "harness": "tests/exec_backing_cleanup.rs",
+      "last_started_test": null,
+      "outer": null
+    },
+    {
+      "artifact": "target/debug/deps/lifecycle-8450d3751a1a99ee",
+      "finished_seconds": 0.0,
+      "harness": "tests/lifecycle.rs",
+      "last_started_test": "vfork_parent_stays_held_until_child_exec_and_exact_done_event",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 16
+      }
+    },
+    {
+      "artifact": "target/debug/deps/lifecycle_exec_event-7d5ec4e441d3f189",
+      "finished_seconds": 0.0,
+      "harness": "tests/lifecycle_exec_event.rs",
+      "last_started_test": "proved_early_exec_failure_keeps_the_existing_pure_transaction_contract",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 6
+      }
+    },
+    {
+      "artifact": "target/debug/deps/lifecycle_exec_exit-78ad0a039ff4e8b5",
+      "finished_seconds": 0.0,
+      "harness": "tests/lifecycle_exec_exit.rs",
+      "last_started_test": "unknown_other_thread_signal_survives_exec_without_becoming_classified",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 11
+      }
+    },
+    {
+      "artifact": "target/debug/deps/lifecycle_exiting-a833d5b3435af563",
+      "finished_seconds": 0.0,
+      "harness": "tests/lifecycle_exiting.rs",
+      "last_started_test": "preexit_retains_identity_and_obligations_until_independent_terminal_status",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 3
+      }
+    },
+    {
+      "artifact": "target/debug/deps/lifecycle_thread-ecedced023382776",
+      "finished_seconds": 0.0,
+      "harness": "tests/lifecycle_thread.rs",
+      "last_started_test": "thread_creation_shares_process_and_mm_but_preserves_distinct_return_phases",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 5
+      }
+    },
+    {
+      "artifact": "target/debug/deps/native_int80-385ecfbc88546690",
+      "finished_seconds": 0.79,
+      "harness": "tests/native_int80.rs",
+      "last_started_test": "unqualified_int80_native_page_request_stays_guarded_and_cannot_resume",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 6
+      }
+    },
+    {
+      "artifact": "target/debug/deps/native_selected-a1dabd25743148c6",
+      "finished_seconds": 3.37,
+      "harness": "tests/native_selected.rs",
+      "last_started_test": "rdtscp_zero_parity",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 50
+      }
+    },
+    {
+      "artifact": "target/debug/deps/native_syscall-a1810a2a1a465546",
+      "finished_seconds": 0.5,
+      "harness": "tests/native_syscall.rs",
+      "last_started_test": "selected_page_native_syscalls_match_raw_completion_and_continuation",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 7
+      }
+    },
+    {
+      "artifact": "target/debug/deps/oracle_gate-4944eeb25bcbb836",
+      "finished_seconds": 0.0,
+      "harness": "tests/oracle_gate.rs",
+      "last_started_test": "planner_rejects_foreign_snapshot_entries_policy_and_target_before_resolution",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 3
+      }
+    },
+    {
+      "artifact": "target/debug/deps/page_gate-0eaf13e02b0bdece",
+      "finished_seconds": 0.89,
+      "harness": "tests/page_gate.rs",
+      "last_started_test": "unselected_mmap_and_clone_syscalls_are_refused_before_kernel_execution",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 17
+      }
+    },
+    {
+      "artifact": "target/debug/deps/selected_gate-81f6634be8d0133c",
+      "finished_seconds": 4.87,
+      "harness": "tests/selected_gate.rs",
+      "last_started_test": "undeclared_mismatched_and_misplaced_aliases_refuse_before_publication_or_callback",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 24
+      }
+    },
+    {
+      "artifact": "target/debug/deps/selected_semantics-d754b34195b218b7",
+      "finished_seconds": 0.0,
+      "harness": "tests/selected_semantics.rs",
+      "last_started_test": "x64_getid_completion_preserves_full_state_and_defines_rcx_r11",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 17
+      }
+    },
+    {
+      "artifact": "target/debug/deps/trap_coverage-453584db5748bc0b",
+      "finished_seconds": 0.01,
+      "harness": "tests/trap_coverage.rs",
+      "last_started_test": "unresolved_candidate_is_guarded_without_inventing_entry_evidence",
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 16
+      }
+    }
+  ],
+  "toolchain": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "usage_delta": {
+    "children": {
+      "ru_inblock": 0,
+      "ru_majflt": 0,
+      "ru_minflt": 8082694,
+      "ru_nivcsw": 36598,
+      "ru_nvcsw": 267294,
+      "ru_oublock": 41032,
+      "ru_stime": 49.43163,
+      "ru_utime": 38.012584
+    },
+    "self": {
+      "ru_inblock": 0,
+      "ru_majflt": 0,
+      "ru_minflt": 144,
+      "ru_nivcsw": 18,
+      "ru_nvcsw": 11250,
+      "ru_oublock": 2824,
+      "ru_stime": 0.20898400000000006,
+      "ru_utime": 0.28554800000000036
+    }
+  }
+}
