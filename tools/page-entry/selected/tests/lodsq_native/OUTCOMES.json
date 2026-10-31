@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "prospective_only": true,
+  "record_header_format": "<17Q",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_extent": "Original header + 22 complete sample slots + 40 classifier bytes; new LODSQ commands append exact 64-byte trailer.",
+  "record_limit_bytes": 16777216,
+  "requires": [
+    "exact source/archive/binary binding",
+    "fresh actual singleton child and owned fd3",
+    "retained raw signal preparation",
+    "zero process cleanup errors, actual reap, no timeout",
+    "all capture hashes and exact stdout/stderr/exit",
+    "full actual header and record extent, sample field replay"
+  ],
+  "bounds": {
+    "cpu_seconds": 5,
+    "address_space_bytes": 536870912,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15,
+    "cpu_affinity_count": 1
+  },
+  "old_generic_protocol": {
+    "bytes": 4010,
+    "sha256": "c46f253a0d1ce8b8c60a5324b5c87d50d6d443b8356967eba4917b00dee34d03"
+  },
+  "commands": [
+    {
+      "name": "positive",
+      "argv": [
+        "generic-tf-fixture"
+      ],
+      "exit": 0,
+      "stdout": "LI2_GENERIC_TF_PASS pairs=21 generic=20 selftest=1 refusal_bytes=47 full_state=21 full_memory=21 live_endpoints=21\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 21,
+        "refusals": 47,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 0,
+        "completed": 21,
+        "expected_failure_verified": 0,
+        "owner_failure": 0,
+        "owner_detail_abs": 0
+      },
+      "process_outcome": "completed finite pair cohort"
+    },
+    {
+      "name": "load-fault",
+      "argv": [
+        "generic-tf-fixture",
+        "load-fault"
+      ],
+      "exit": 125,
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 21,
+        "refusals": 47,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 1,
+        "completed": 1,
+        "expected_failure_verified": 1,
+        "owner_failure": 7,
+        "owner_detail_abs": 11
+      },
+      "process_outcome": "failed operation; expected refusal and actual cleanup verified separately"
+    },
+    {
+      "name": "unowned-target",
+      "argv": [
+        "generic-tf-fixture",
+        "unowned-target"
+      ],
+      "exit": 125,
+      "stdout": "LI2_TF_EXPECTED_FAILURE 101\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 21,
+        "refusals": 47,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 2,
+        "completed": 1,
+        "expected_failure_verified": 1,
+        "owner_failure": 101,
+        "owner_detail_abs": 305
+      },
+      "process_outcome": "failed operation; expected refusal and actual cleanup verified separately"
+    },
+    {
+      "name": "rsp-domain",
+      "argv": [
+        "generic-tf-fixture",
+        "rsp-domain"
+      ],
+      "exit": 125,
+      "stdout": "LI2_TF_EXPECTED_FAILURE 103\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 21,
+        "refusals": 47,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 3,
+        "completed": 1,
+        "expected_failure_verified": 1,
+        "owner_failure": 103,
+        "owner_detail_abs": 0
+      },
+      "process_outcome": "failed operation; expected refusal and actual cleanup verified separately"
+    },
+    {
+      "name": "lodsq-positive",
+      "argv": [
+        "lodsq-native"
+      ],
+      "environment_delta": {
+        "LI2_LODSQ_CASE": "positive"
+      },
+      "exit": 0,
+      "stdout": "LI2_LODSQ_TF_PASS pairs=9 lodsq=8 selftest=1 old_refusal_bytes=47 route_checks=28 footprint_checks=16 full_state=9 full_memory=9 live_endpoints=9\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 9,
+        "refusals": 47,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 0,
+        "completed": 9,
+        "expected_failure_verified": 0,
+        "owner_failure": 0,
+        "owner_detail_abs": 0
+      },
+      "trailer_equals": {
+        "magic": 3553713133825307212,
+        "version": 1,
+        "bytes": 64,
+        "route_checks": 28,
+        "footprint_checks": 16,
+        "lodsq_pairs": 8,
+        "native_faults": 0,
+        "stepped_faults": 0
+      },
+      "process_outcome": "completed finite pair cohort"
+    },
+    {
+      "name": "lodsq-none-df0",
+      "argv": [
+        "lodsq-native"
+      ],
+      "environment_delta": {
+        "LI2_LODSQ_CASE": "none-df0"
+      },
+      "exit": 125,
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 9,
+        "refusals": 47,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 1,
+        "completed": 1,
+        "expected_failure_verified": 1,
+        "owner_failure": 7,
+        "owner_detail_abs": 11
+      },
+      "trailer_equals": {
+        "magic": 3553713133825307212,
+        "version": 1,
+        "bytes": 64,
+        "route_checks": 28,
+        "footprint_checks": 2,
+        "lodsq_pairs": 0,
+        "native_faults": 1,
+        "stepped_faults": 1
+      },
+      "process_outcome": "failed operation; expected refusal and actual cleanup verified separately"
+    },
+    {
+      "name": "lodsq-none-df1",
+      "argv": [
+        "lodsq-native"
+      ],
+      "environment_delta": {
+        "LI2_LODSQ_CASE": "none-df1"
+      },
+      "exit": 125,
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 9,
+        "refusals": 47,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 2,
+        "completed": 1,
+        "expected_failure_verified": 1,
+        "owner_failure": 7,
+        "owner_detail_abs": 11
+      },
+      "trailer_equals": {
+        "magic": 3553713133825307212,
+        "version": 1,
+        "bytes": 64,
+        "route_checks": 28,
+        "footprint_checks": 2,
+        "lodsq_pairs": 0,
+        "native_faults": 1,
+        "stepped_faults": 1
+      },
+      "process_outcome": "failed operation; expected refusal and actual cleanup verified separately"
+    },
+    {
+      "name": "lodsq-split-df0",
+      "argv": [
+        "lodsq-native"
+      ],
+      "environment_delta": {
+        "LI2_LODSQ_CASE": "split-df0"
+      },
+      "exit": 125,
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 9,
+        "refusals": 47,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 3,
+        "completed": 1,
+        "expected_failure_verified": 1,
+        "owner_failure": 7,
+        "owner_detail_abs": 11
+      },
+      "trailer_equals": {
+        "magic": 3553713133825307212,
+        "version": 1,
+        "bytes": 64,
+        "route_checks": 28,
+        "footprint_checks": 2,
+        "lodsq_pairs": 0,
+        "native_faults": 1,
+        "stepped_faults": 1
+      },
+      "process_outcome": "failed operation; expected refusal and actual cleanup verified separately"
+    },
+    {
+      "name": "lodsq-split-df1",
+      "argv": [
+        "lodsq-native"
+      ],
+      "environment_delta": {
+        "LI2_LODSQ_CASE": "split-df1"
+      },
+      "exit": 125,
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 9,
+        "refusals": 47,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 4,
+        "completed": 1,
+        "expected_failure_verified": 1,
+        "owner_failure": 7,
+        "owner_detail_abs": 11
+      },
+      "trailer_equals": {
+        "magic": 3553713133825307212,
+        "version": 1,
+        "bytes": 64,
+        "route_checks": 28,
+        "footprint_checks": 2,
+        "lodsq_pairs": 0,
+        "native_faults": 1,
+        "stepped_faults": 1
+      },
+      "process_outcome": "failed operation; expected refusal and actual cleanup verified separately"
+    }
+  ],
+  "lodsq_trailer_fields": [
+    "magic",
+    "version",
+    "bytes",
+    "route_checks",
+    "footprint_checks",
+    "lodsq_pairs",
+    "native_faults",
+    "stepped_faults"
+  ]
+}
