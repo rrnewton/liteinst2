@@ -1760,3 +1760,7 @@ mod cross_function_native;
 // Separate short-victim population; legacy comparison populations stay unchanged.
 #[path = "support/neighbor_short_eviction_oracle.rs"]
 mod short_neighbor;
+
+// Finite artifact-only JRCXZ native state population; prior cohorts stay exact.
+#[path = "support/jrcxz_artifact_oracle.rs"]
+mod jrcxz_artifact_native;
