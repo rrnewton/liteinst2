@@ -77,20 +77,25 @@ impl Custody {
             assert_eq!(actual, self.bytes);
             assert_eq!(Stamp::read(&self.paths[i]), self.stamps[i]);
         }
-        for (spans, mode) in [(&self.source, "r-xp"), (&self.generated, "r-xs")] {
-            for (address, bytes) in spans {
-                let (a, b) = csv::mapping(*address, mode);
-                assert!(
-                    a <= *address
-                        && address
-                            .checked_add(bytes.len() as u64)
-                            .is_some_and(|end| end <= b)
-                );
+        // Fresh only after both complete file/stamp checks. The loader's
+        // continuous immutable mapping/permission contract excludes protection
+        // changes and VMA split/merge of these owned ranges between lookups.
+        csv::with_mapping_snapshot(|maps| {
+            for (spans, mode) in [(&self.source, "r-xp"), (&self.generated, "r-xs")] {
+                for (address, bytes) in spans {
+                    let (a, b) = maps.mapping(*address, mode);
+                    assert!(
+                        a <= *address
+                            && address
+                                .checked_add(bytes.len() as u64)
+                                .is_some_and(|end| end <= b)
+                    );
+                }
+                // Process-lived sealed owners and the no-writer/no-unmap contract
+                // remain authority. A scan alone does not establish safe custody.
+                unsafe { immutable(spans) };
             }
-            // Process-lived sealed owners and the no-writer/no-unmap contract
-            // remain authority. A scan alone does not establish safe custody.
-            unsafe { immutable(spans) };
-        }
+        });
     }
     pub(in crate::normal) fn worker(&self, expected: Identity) {
         assert_eq!(std::process::id(), expected.pid);
@@ -99,11 +104,20 @@ impl Custody {
             expected.tid
         );
         cpu_is(expected.cpu);
-        assert_eq!(csv::stack_bounds(), expected.stack);
-        assert_eq!(
-            csv::mapping(csv::invoke as *const () as usize as u64, "r-xp"),
-            expected.caller
-        );
+        // Touch the actual worker's marker before reading its containing VMA.
+        // This snapshot dies before the unchanged task and whole-file checks.
+        let mut marker = 0_u64;
+        std::hint::black_box(&mut marker);
+        csv::with_mapping_snapshot(|maps| {
+            assert_eq!(
+                maps.mapping(std::ptr::from_ref(&marker) as usize as u64, "rw-p"),
+                expected.stack
+            );
+            assert_eq!(
+                maps.mapping(csv::invoke as *const () as usize as u64, "r-xp"),
+                expected.caller
+            );
+        });
         let mut tasks: Vec<u64> = std::fs::read_dir("/proc/self/task")
             .unwrap()
             .map(|e| e.unwrap().file_name().to_str().unwrap().parse().unwrap())

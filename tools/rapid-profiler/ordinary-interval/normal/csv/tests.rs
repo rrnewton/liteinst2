@@ -392,4 +392,121 @@ fn csv_mapping_classes_keep_private_source_and_shared_images_distinct() {
         mapping_in(&maps.replace("r-xs", "rwxs"), 0x3000, "r-xs"),
         None
     );
+
+    // The borrowed snapshot keeps the literal parser's unique-containing-row
+    // rule, including a second containing row with a different permission.
+    with_mapping_snapshot_from(
+        || Ok(maps.to_owned()),
+        |snapshot| {
+            for (address, mode, end) in [
+                (0x1000, "r-xp", 0x2000),
+                (0x3000, "r-xs", 0x4000),
+                (0x5000, "rw-p", 0x6000),
+            ] {
+                assert_eq!(snapshot.mapping(address, mode), (address, end));
+                assert_eq!(snapshot.mapping(end - 1, mode), (address, end));
+                assert!(std::panic::catch_unwind(|| snapshot.mapping(end, mode)).is_err());
+                for wrong in [
+                    "r-xp", "r-xs", "rw-p", "rw-s", "rwxp", "rwxs", "r--p", "---p",
+                ] {
+                    if wrong != mode {
+                        assert!(
+                            std::panic::catch_unwind(|| snapshot.mapping(address, wrong)).is_err()
+                        );
+                    }
+                }
+            }
+        },
+    );
+    for bad in [
+        String::new(),
+        maps.replace("1000-2000", "1001-2000"),
+        maps.replace("1000-2000", "0000-1000"),
+        maps.replace("r-xp", "r-xs"),
+        format!("{maps}1000-2000 r-xp 00000000 00:00 1 /source\n"),
+        format!("{maps}0800-1800 r-xp 00000000 00:00 3 /overlap\n"),
+        format!("{maps}1000-1800 rw-p 00000000 00:00 3 /other-mode\n"),
+    ] {
+        assert!(
+            std::panic::catch_unwind(|| with_mapping_snapshot_from(
+                || Ok(bad),
+                |snapshot| {
+                    snapshot.mapping(0x1000, "r-xp");
+                },
+            ))
+            .is_err()
+        );
+    }
+    // A unique containing row does not substitute different saved VMA bounds.
+    for changed in [
+        maps.replace("1000-2000", "0800-2000"),
+        maps.replace("1000-2000", "1000-2800"),
+    ] {
+        assert!(
+            std::panic::catch_unwind(|| with_mapping_snapshot_from(
+                || Ok(changed),
+                |snapshot| assert_eq!(snapshot.mapping(0x1000, "r-xp"), (0x1000, 0x2000)),
+            ))
+            .is_err()
+        );
+    }
+    // Malformed rows keep the existing filter_map semantics; a valid unique
+    // containing row is still required, with half-open u64 endpoints.
+    with_mapping_snapshot_from(
+        || {
+            Ok(format!(
+                "not-a-map\nzz-2000 r-xp\n1000-nothex r-xp\n{maps}\
+                 fffffffffffffffe-ffffffffffffffff r-xs\n"
+            ))
+        },
+        |snapshot| {
+            assert_eq!(snapshot.mapping(0x1000, "r-xp"), (0x1000, 0x2000));
+            assert_eq!(
+                snapshot.mapping(u64::MAX - 1, "r-xs"),
+                (u64::MAX - 1, u64::MAX)
+            );
+            assert!(std::panic::catch_unwind(|| snapshot.mapping(u64::MAX, "r-xs")).is_err());
+        },
+    );
+    // Exactly one read supplies all lookups in a check; the next check reads
+    // again and observes a permission mutation instead of reusing prior text.
+    let reads = std::cell::Cell::new(0);
+    let entered = std::cell::Cell::new(0);
+    with_mapping_snapshot_from(
+        || {
+            reads.set(reads.get() + 1);
+            Ok(maps.to_owned())
+        },
+        |snapshot| {
+            entered.set(entered.get() + 1);
+            assert_eq!(snapshot.mapping(0x1000, "r-xp"), (0x1000, 0x2000));
+            assert_eq!(snapshot.mapping(0x3000, "r-xs"), (0x3000, 0x4000));
+            assert_eq!(reads.get(), 1);
+        },
+    );
+    assert!(
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| with_mapping_snapshot_from(
+            || {
+                reads.set(reads.get() + 1);
+                Ok(maps.replace("r-xs", "rwxs"))
+            },
+            |snapshot| {
+                entered.set(entered.get() + 1);
+                snapshot.mapping(0x3000, "r-xs");
+            },
+        )))
+        .is_err()
+    );
+    assert_eq!((reads.get(), entered.get()), (2, 2));
+    assert!(
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| with_mapping_snapshot_from(
+            || {
+                reads.set(reads.get() + 1);
+                Err(std::io::ErrorKind::PermissionDenied.into())
+            },
+            |_| entered.set(entered.get() + 1),
+        )))
+        .is_err()
+    );
+    assert_eq!((reads.get(), entered.get()), (3, 2));
 }

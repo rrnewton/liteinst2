@@ -132,6 +132,29 @@ fn mapping_in(maps: &str, address: u64, permissions: &str) -> Option<(u64, u64)>
         _ => None,
     }
 }
+// This borrowed view exists only inside one local check. It cannot escape the
+// higher-ranked, unit-returning closure or become retained Custody state.
+// Reusing a view requires the existing continuous immutable mapping/permission
+// contract; it does not detect forbidden mprotect, VMA split/merge or unmapping
+// that occurs after the read. It must not be reused across custody passes.
+pub(super) struct MappingSnapshot<'maps> {
+    maps: &'maps str,
+}
+impl MappingSnapshot<'_> {
+    pub(super) fn mapping(&self, address: u64, permissions: &str) -> (u64, u64) {
+        mapping_in(self.maps, address, permissions).expect("exact owned mapping class")
+    }
+}
+pub(super) fn with_mapping_snapshot(check: impl for<'maps> FnOnce(MappingSnapshot<'maps>)) {
+    with_mapping_snapshot_from(|| std::fs::read_to_string("/proc/self/maps"), check);
+}
+fn with_mapping_snapshot_from(
+    read: impl FnOnce() -> std::io::Result<String>,
+    check: impl for<'maps> FnOnce(MappingSnapshot<'maps>),
+) {
+    let maps = read().unwrap();
+    check(MappingSnapshot { maps: &maps });
+}
 pub(super) fn stack_bounds() -> (u64, u64) {
     let mut marker = 0_u64;
     std::hint::black_box(&mut marker);
