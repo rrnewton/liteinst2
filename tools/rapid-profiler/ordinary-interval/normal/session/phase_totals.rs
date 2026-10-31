@@ -1,6 +1,6 @@
 //! Fixed diagnostic accounting; never an input to runtime acceptance.
-//! The caller supplies every sample. This module takes no clock samples and
-//! performs no allocation, I/O, locking or worker-lifecycle observation.
+//! Top-level samples are supplied by the caller. Opt-in custody marks take
+//! Instant samples only; no allocation, I/O, locking or lifecycle observation.
 use std::fmt;
 use std::time::{Duration, Instant};
 
@@ -263,6 +263,244 @@ impl fmt::Display for WorkerSnapshot {
     }
 }
 
+// Nested diagnostics only: these windows are subsets of the existing three
+// custody phases. Never add them to worker/controller elapsed totals.
+const CUSTODY_PARENTS: [WorkerPhase; 3] = [
+    WorkerPhase::BeforeCustody,
+    WorkerPhase::AfterCustody,
+    WorkerPhase::CheckpointCustody,
+];
+#[derive(Clone, Copy)]
+#[repr(usize)]
+pub(in crate::normal) enum CustodyStage {
+    Identity,
+    MapsRead,
+    MapsParse,
+    Mapping,
+    Tasks,
+    Stamp,
+    FileRead,
+    FileCompare,
+    LiveBytes,
+    Remainder,
+}
+const CUSTODY_STAGES: [CustodyStage; 10] = [
+    CustodyStage::Identity,
+    CustodyStage::MapsRead,
+    CustodyStage::MapsParse,
+    CustodyStage::Mapping,
+    CustodyStage::Tasks,
+    CustodyStage::Stamp,
+    CustodyStage::FileRead,
+    CustodyStage::FileCompare,
+    CustodyStage::LiveBytes,
+    CustodyStage::Remainder,
+];
+impl CustodyStage {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Identity => "identity",
+            Self::MapsRead => "maps_read",
+            Self::MapsParse => "maps_parse",
+            Self::Mapping => "mapping",
+            Self::Tasks => "tasks",
+            Self::Stamp => "stamp",
+            Self::FileRead => "file_read",
+            Self::FileCompare => "file_compare",
+            Self::LiveBytes => "live_bytes",
+            Self::Remainder => "remainder",
+        }
+    }
+}
+pub(in crate::normal) struct CustodyTotals {
+    valid: bool,
+    started: u64,
+    completed: u64,
+    parents: [Bucket; 3],
+    stages: [Bucket; 10],
+    // An ended pass is not yet a proved subset of a completed parent phase.
+    pending: Option<(WorkerPhase, Instant)>,
+}
+impl Default for CustodyTotals {
+    fn default() -> Self {
+        Self {
+            valid: true,
+            started: 0,
+            completed: 0,
+            parents: [Bucket::default(); 3],
+            stages: [Bucket::default(); 10],
+            pending: None,
+        }
+    }
+}
+impl WorkerTrace {
+    pub(in crate::normal) fn custody_parent(&self) -> Option<(WorkerPhase, Instant)> {
+        self.active
+            .filter(|(phase, _)| CUSTODY_PARENTS.contains(phase))
+    }
+}
+impl CustodyTotals {
+    pub(in crate::normal) fn begin(
+        &mut self,
+        parent: (WorkerPhase, Instant),
+        at: Instant,
+    ) -> CustodyPass<'_> {
+        let index = CUSTODY_PARENTS.iter().position(|phase| *phase == parent.0);
+        self.valid &= index.is_some()
+            && self.pending.is_none()
+            && at.checked_duration_since(parent.1).is_some();
+        if let Some(next) = self.started.checked_add(1) {
+            self.started = next;
+        } else {
+            self.valid = false;
+        }
+        CustodyPass {
+            totals: self,
+            parent: parent.0,
+            index,
+            start: at,
+            last: at,
+            stage: CustodyStage::Identity,
+            finished: false,
+        }
+    }
+    // Reuses the actual next top-level mark, without taking a new sample.
+    pub(in crate::normal) fn boundary(
+        &mut self,
+        parent: Option<(WorkerPhase, Instant)>,
+        at: Instant,
+    ) {
+        if let Some((phase, end)) = self.pending.take() {
+            self.valid &= parent.is_some_and(|(old, _)| old == phase)
+                && at.checked_duration_since(end).is_some();
+        }
+    }
+    pub(in crate::normal) fn finish(mut self, worker: &WorkerSnapshot) -> CustodySnapshot {
+        self.valid &= worker.is_valid() && self.pending.is_none() && self.started == self.completed;
+        let sum = |buckets: &[Bucket]| {
+            buckets.iter().try_fold(0_u128, |total, bucket| {
+                bucket.is_valid().then_some(())?;
+                total.checked_add(bucket.sum_ns())
+            })
+        };
+        let parent_sum = sum(&self.parents);
+        self.valid &= parent_sum.is_some() && parent_sum == sum(&self.stages);
+        for (index, phase) in CUSTODY_PARENTS.into_iter().enumerate() {
+            let outer = worker.bucket(phase);
+            let inner = &self.parents[index];
+            self.valid &= inner.count() == outer.count() && inner.sum_ns() <= outer.sum_ns();
+        }
+        let parent_count = self
+            .parents
+            .iter()
+            .try_fold(0_u64, |count, b| count.checked_add(b.count()));
+        self.valid &= parent_count == Some(self.completed);
+        CustodySnapshot {
+            totals: self,
+            partition: parent_sum,
+        }
+    }
+}
+pub(in crate::normal) struct CustodyPass<'a> {
+    totals: &'a mut CustodyTotals,
+    parent: WorkerPhase,
+    index: Option<usize>,
+    start: Instant,
+    last: Instant,
+    stage: CustodyStage,
+    finished: bool,
+}
+impl CustodyPass<'_> {
+    pub(in crate::normal) fn mark(&mut self, next: CustodyStage, at: Instant) {
+        if self.totals.valid {
+            self.totals.valid &= self.totals.stages[self.stage as usize]
+                .observe(at.checked_duration_since(self.last));
+            self.last = at;
+            self.stage = next;
+        }
+    }
+    pub(in crate::normal) fn finish(mut self, at: Instant) {
+        self.mark(CustodyStage::Remainder, at);
+        if self.totals.valid {
+            if let Some(index) = self.index {
+                self.totals.valid &=
+                    self.totals.parents[index].observe(at.checked_duration_since(self.start));
+            }
+            if let Some(next) = self.totals.completed.checked_add(1) {
+                self.totals.completed = next;
+            } else {
+                self.totals.valid = false;
+            }
+            self.totals.pending = Some((self.parent, at));
+        }
+        self.finished = true;
+    }
+}
+impl Drop for CustodyPass<'_> {
+    fn drop(&mut self) {
+        // A read/check panic or unconsumed pass is never a completed partition.
+        // This does not intercept the original refusal or disarm FailStop.
+        if !self.finished {
+            self.totals.valid = false;
+        }
+    }
+}
+// The disabled path takes no clocks. The caller keeps the original statements
+// and their errors; these samples can affect timing, never runtime acceptance.
+pub(in crate::normal) fn custody_mark(
+    trace: &mut Option<&mut CustodyPass<'_>>,
+    stage: CustodyStage,
+) {
+    if let Some(trace) = trace.as_mut() {
+        trace.mark(stage, Instant::now());
+    }
+}
+pub(in crate::normal) struct CustodySnapshot {
+    totals: CustodyTotals,
+    partition: Option<u128>,
+}
+impl fmt::Display for CustodySnapshot {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let t = &self.totals;
+        let status = if !t.valid {
+            "INVALID"
+        } else if t.completed == 0 {
+            "UNAVAILABLE"
+        } else {
+            "VALID"
+        };
+        let partition = (t.valid && t.completed != 0)
+            .then_some(self.partition)
+            .flatten();
+        writeln!(
+            f,
+            "custody_substages_v1 status={status} started={} completed={} partition_ns={} scope=nested_three_custody_phases_not_additive spans_not_operations=true",
+            t.started,
+            t.completed,
+            Nanoseconds(partition)
+        )?;
+        for (index, phase) in CUSTODY_PARENTS.into_iter().enumerate() {
+            writeln!(f, "custody_parent {} {}", phase.name(), t.parents[index])?;
+        }
+        for stage in CUSTODY_STAGES {
+            writeln!(
+                f,
+                "custody_stage {} {}",
+                stage.name(),
+                t.stages[stage as usize]
+            )?;
+        }
+        Ok(())
+    }
+}
+// Existing worker block <=12*256 plus <=512-byte identity/scope. Nested block
+// <=14*256, existing controller <=4096: combined <=11264, below unchanged16KiB.
+const _: () = {
+    assert!(std::mem::size_of::<CustodyTotals>() <= 4096);
+    assert!(std::mem::size_of::<CustodySnapshot>() <= 4096);
+    assert!((12 + 14) * 256 + 512 + 4096 <= 16 * 1024);
+};
+
 // No caller-controlled text, widths or collection sizes are formatted. A u128
 // has at most 39 decimal digits, a u64 20; each of the fixed twelve lines is
 // bounded by 256 bytes, even for invalid retained statistics at numeric maxima.
@@ -286,6 +524,133 @@ mod tests {
             bucket.min_ns(),
             bucket.max_ns(),
         )
+    }
+
+    fn custody_partition_checks(base: Instant) {
+        let mut worker = WorkerTrace::new();
+        let mut totals = CustodyTotals::default();
+        worker.start(base);
+        assert!(worker.custody_parent().is_none());
+        let mut tick = 0;
+        for phase in CUSTODY_PARENTS {
+            tick += 1;
+            worker.mark(phase, at(base, tick));
+            tick += 1;
+            let mut pass = totals.begin(worker.custody_parent().unwrap(), at(base, tick));
+            for next in CUSTODY_STAGES.into_iter().skip(1) {
+                tick += 1;
+                pass.mark(next, at(base, tick));
+            }
+            tick += 1;
+            pass.finish(at(base, tick));
+            tick += 1;
+            totals.boundary(worker.custody_parent(), at(base, tick));
+            worker.mark(WorkerPhase::Receive, at(base, tick));
+        }
+        for phase in [WorkerPhase::Setup, WorkerPhase::Cleanup] {
+            worker.mark(phase, at(base, tick));
+            assert!(worker.custody_parent().is_none());
+        }
+        let parent = worker.finish(at(base, tick));
+        let nested = totals.finish(&parent);
+        assert!(parent.is_valid() && nested.totals.valid);
+        assert_eq!((nested.totals.started, nested.totals.completed), (3, 3));
+        assert_eq!(nested.partition, Some(30));
+        for b in nested.totals.stages {
+            assert_eq!(statistics(&b), (3, 3, Some(1), Some(1)));
+        }
+        for (i, phase) in CUSTODY_PARENTS.into_iter().enumerate() {
+            assert_eq!(
+                statistics(&nested.totals.parents[i]),
+                (1, 10, Some(10), Some(10))
+            );
+            assert_eq!(parent.bucket(phase).sum_ns(), 12);
+        }
+        // Nested spans never change the top-level39ns partition or represent
+        // its unmeasured entry/exit remainder as another additive duration.
+        assert_eq!(parent.window_ns(), Some(39));
+        assert!(
+            nested
+                .to_string()
+                .contains("status=VALID started=3 completed=3 partition_ns=30")
+        );
+        assert!(!CustodyTotals::default().finish(&parent).totals.valid);
+
+        let mut empty = WorkerTrace::new();
+        empty.start(base);
+        let empty = empty.finish(base);
+        let unavailable = CustodyTotals::default().finish(&empty);
+        assert!(
+            unavailable
+                .to_string()
+                .contains("status=UNAVAILABLE started=0 completed=0 partition_ns=none")
+        );
+    }
+
+    fn custody_refusal_checks(base: Instant) {
+        for mutation in 0..10 {
+            let mut worker = WorkerTrace::new();
+            worker.start(base);
+            worker.mark(WorkerPhase::BeforeCustody, at(base, 1));
+            let mut totals = CustodyTotals::default();
+            if mutation == 6 {
+                totals.started = u64::MAX;
+            }
+            if mutation == 7 {
+                totals.stages[0].sum_ns = u128::MAX;
+            }
+            if mutation == 8 {
+                totals.completed = u64::MAX;
+            }
+            let parent = if mutation == 9 {
+                (WorkerPhase::Setup, at(base, 1))
+            } else {
+                worker.custody_parent().unwrap()
+            };
+            let mut pass = totals.begin(parent, at(base, if mutation == 0 { 0 } else { 2 }));
+            pass.mark(
+                CustodyStage::MapsRead,
+                at(base, if mutation == 1 { 1 } else { 4 }),
+            );
+            pass.finish(at(base, if mutation == 2 { 3 } else { 5 }));
+            if mutation != 5 {
+                let parent = if mutation == 4 {
+                    Some((WorkerPhase::AfterCustody, base))
+                } else {
+                    worker.custody_parent()
+                };
+                totals.boundary(parent, at(base, if mutation == 3 { 4 } else { 6 }));
+            }
+            worker.mark(WorkerPhase::Receive, at(base, 6));
+            let parent = worker.finish(at(base, 7));
+            let child = totals.finish(&parent);
+            assert!(
+                parent.is_valid(),
+                "diagnostic refusal must not alter old trace"
+            );
+            assert!(!child.totals.valid, "nested mutation {mutation}");
+            assert!(child.to_string().contains("partition_ns=none"));
+        }
+        // A caught read/check unwind retains a prefix but not completion.
+        let mut worker = WorkerTrace::new();
+        worker.start(base);
+        worker.mark(WorkerPhase::BeforeCustody, at(base, 1));
+        let mut totals = CustodyTotals::default();
+        let refusal = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let mut pass = totals.begin(worker.custody_parent().unwrap(), at(base, 2));
+            pass.mark(CustodyStage::MapsRead, at(base, 3));
+            panic!("forced read/parse/check refusal");
+        }));
+        assert!(refusal.is_err());
+        totals.boundary(worker.custody_parent(), at(base, 4));
+        worker.mark(WorkerPhase::Receive, at(base, 4));
+        let child = totals.finish(&worker.finish(at(base, 5)));
+        assert!(!child.totals.valid);
+        assert_eq!((child.totals.started, child.totals.completed), (1, 0));
+        assert_eq!(
+            statistics(&child.totals.stages[0]),
+            (1, 1, Some(1), Some(1))
+        );
     }
 
     #[test]
@@ -371,6 +736,7 @@ mod tests {
                 .to_string()
                 .contains("status=VALID bucket_scope=complete_partition")
         );
+        custody_partition_checks(base);
     }
 
     #[test]
@@ -444,6 +810,7 @@ mod tests {
         assert!(!invalid.is_valid());
         assert_eq!(invalid.bucket(WorkerPhase::Receive).count(), u64::MAX);
         assert_eq!(invalid.bucket(WorkerPhase::Receive).sum_ns(), 0);
+        custody_refusal_checks(base);
     }
 
     #[test]
@@ -493,5 +860,25 @@ mod tests {
         assert_eq!(output.matches(&u64::MAX.to_string()).count(), 11);
         // Width/precision cannot expand the fixed representation.
         assert_eq!(format!("{snapshot:10000.10000}"), output);
+        let nested = CustodySnapshot {
+            totals: CustodyTotals {
+                valid: false,
+                started: u64::MAX,
+                completed: u64::MAX,
+                parents: [bucket; 3],
+                stages: [bucket; 10],
+                pending: None,
+            },
+            partition: Some(u128::MAX),
+        };
+        let child = nested.to_string();
+        assert_eq!(child.lines().count(), 14);
+        assert!(child.lines().all(|line| line.len() < 256));
+        assert!(child.len() <= 14 * 256);
+        assert!(child.contains("partition_ns=none"));
+        assert_eq!(child.matches(&u128::MAX.to_string()).count(), 39);
+        assert_eq!(child.matches(&u64::MAX.to_string()).count(), 15);
+        assert_eq!(format!("{nested:10000.10000}"), child);
+        assert!(output.len() + child.len() + 512 + 4096 <= 16 * 1024);
     }
 }

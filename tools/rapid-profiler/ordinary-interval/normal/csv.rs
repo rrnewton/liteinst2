@@ -196,6 +196,40 @@ impl MappingScratch {
         read: impl FnOnce(&mut String) -> std::io::Result<()>,
         check: impl for<'maps> FnOnce(MappingSnapshot<'maps>),
     ) {
+        self.with_snapshot_from_traced(read, None, |maps, _trace| check(maps));
+    }
+    pub(super) fn with_snapshot_traced<'trace, 'totals>(
+        &mut self,
+        trace: Option<&'trace mut session::phase_totals::CustodyPass<'totals>>,
+        check: impl for<'maps> FnOnce(
+            MappingSnapshot<'maps>,
+            Option<&'trace mut session::phase_totals::CustodyPass<'totals>>,
+        ),
+    ) {
+        match trace {
+            None => self.with_snapshot(|maps| check(maps, None)),
+            Some(trace) => self.with_snapshot_from_traced(
+                |maps| {
+                    File::open("/proc/self/maps")?
+                        .read_to_string(maps)
+                        .map(|_| ())
+                },
+                Some(trace),
+                check,
+            ),
+        }
+    }
+    fn with_snapshot_from_traced<'trace, 'totals>(
+        &mut self,
+        read: impl FnOnce(&mut String) -> std::io::Result<()>,
+        mut trace: Option<&'trace mut session::phase_totals::CustodyPass<'totals>>,
+        check: impl for<'maps> FnOnce(
+            MappingSnapshot<'maps>,
+            Option<&'trace mut session::phase_totals::CustodyPass<'totals>>,
+        ),
+    ) {
+        use session::phase_totals::{CustodyStage, custody_mark};
+        custody_mark(&mut trace, CustodyStage::MapsRead);
         self.maps.clear();
         self.rows.clear();
         let result = read(&mut self.maps);
@@ -204,6 +238,7 @@ impl MappingScratch {
             self.maps.clear();
         }
         result.unwrap();
+        custody_mark(&mut trace, CustodyStage::MapsParse);
         let maps = self.maps.as_str();
         self.rows.extend(maps.lines().filter_map(|line| {
             let mut fields = line.split_whitespace();
@@ -226,10 +261,14 @@ impl MappingScratch {
                 permissions: offset..limit,
             })
         }));
-        check(MappingSnapshot {
-            maps: &self.maps,
-            rows: &self.rows,
-        });
+        custody_mark(&mut trace, CustodyStage::Mapping);
+        check(
+            MappingSnapshot {
+                maps: &self.maps,
+                rows: &self.rows,
+            },
+            trace,
+        );
         self.rows.clear();
         self.maps.clear();
         // If check unwinds, the next invocation still clears before reading;

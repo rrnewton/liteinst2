@@ -1,7 +1,9 @@
 //! Private leaf-set adapter; shared receive/idle/Stop loop and actual invoke body.
 use super::*;
 use rapid_profiler::frontend_native::NormalLeafSetClient;
-use shared::phase_totals::{WorkerPhase, WorkerSnapshot, WorkerTrace};
+use shared::phase_totals::{
+    CustodySnapshot, CustodyTotals, WorkerPhase, WorkerSnapshot, WorkerTrace,
+};
 use shared::worker::{Event, Runtime};
 
 // Written once, only after real detach and final custody. The controller may
@@ -10,6 +12,7 @@ pub(super) struct CompletedTrace {
     identity: pair_worker::Identity,
     totals: NormalTotals,
     snapshot: WorkerSnapshot,
+    custody: CustodySnapshot,
 }
 pub(super) type TracePublication = Arc<OnceLock<CompletedTrace>>;
 
@@ -30,8 +33,8 @@ pub(super) fn trace_diagnostic(
     format!(
         "worker_phase_v1 diagnostic_only=true pid={} tid={} terminal_totals={totals:?}\n\
          worker_scope=after_ready_send_through_detach_postflight spans_not_operations=true \
-         wall_includes_observer_and_scheduler_cost=true\n{}",
-        ready.pid, ready.tid, completed.snapshot
+         wall_includes_observer_and_scheduler_cost=true\n{}{}",
+        ready.pid, ready.tid, completed.snapshot, completed.custody
     )
 }
 pub(in crate::normal) struct Call {
@@ -63,7 +66,7 @@ struct Worker<const N: usize> {
     expectations: Expectations<N>,
     custody: Arc<pair_worker::Custody>,
     identity: pair_worker::Identity,
-    trace: Option<(TracePublication, WorkerTrace)>,
+    trace: Option<(TracePublication, WorkerTrace, CustodyTotals)>,
     // Last field: preserve FailStop and every existing owner's drop order.
     scratch: pair_worker::WorkerScratch,
 }
@@ -74,9 +77,19 @@ fn complete_record(pending: usize, n: usize) -> bool {
 }
 impl<const N: usize> Worker<N> {
     fn postflight(&mut self) {
-        self.custody.worker_with(self.identity, &mut self.scratch);
+        // Setup/cancel/cleanup have no selected parent and take no child clocks.
+        let mut child = self.trace.as_mut().and_then(|(_, trace, totals)| {
+            trace
+                .custody_parent()
+                .map(|parent| totals.begin(parent, Instant::now()))
+        });
+        self.custody
+            .worker_with_trace(self.identity, &mut self.scratch, child.as_mut());
         for call in &self.calls {
             call.check(N);
+        }
+        if let Some(child) = child {
+            child.finish(Instant::now());
         }
     }
     fn attach(
@@ -146,8 +159,10 @@ impl<const N: usize> Runtime for Worker<N> {
         self.prepared.is_some()
     }
     fn trace_phase(&mut self, phase: WorkerPhase) {
-        if let Some((_, trace)) = &mut self.trace {
-            trace.mark(phase, Instant::now());
+        if let Some((_, trace, custody)) = &mut self.trace {
+            let at = Instant::now();
+            custody.boundary(trace.custody_parent(), at);
+            trace.mark(phase, at);
         }
     }
     fn poll_deferred(&mut self) {
@@ -288,13 +303,16 @@ impl<const N: usize> Runtime for Worker<N> {
             totals
         );
         self.postflight();
-        if let Some((publication, trace)) = self.trace.take() {
+        if let Some((publication, trace, custody)) = self.trace.take() {
             // No live reads, extra detach, drain or checkpoint for diagnostics.
             // Finished send still follows the consuming finish() in the driver.
+            let snapshot = trace.finish(Instant::now());
+            let custody = custody.finish(&snapshot);
             let _ = publication.set(CompletedTrace {
                 identity: self.identity,
                 totals,
-                snapshot: trace.finish(Instant::now()),
+                snapshot,
+                custody,
             });
         }
         self.fail_stop.0 = false;
@@ -329,9 +347,10 @@ pub(super) fn run<const N: usize>(
     );
     let id = worker.identity;
     ready.set(id).unwrap();
-    worker.trace = publication.map(|publication| (publication, WorkerTrace::new()));
+    worker.trace =
+        publication.map(|publication| (publication, WorkerTrace::new(), CustodyTotals::default()));
     tx.send(Event::Ready { tid: id.tid }).unwrap();
-    if let Some((_, trace)) = &mut worker.trace {
+    if let Some((_, trace, _)) = &mut worker.trace {
         trace.start(Instant::now());
     }
     shared::worker::drive(worker, rx, tx);
@@ -359,12 +378,14 @@ mod tests {
         let mut trace = WorkerTrace::new();
         trace.start(start);
         let snapshot = trace.finish(start + Duration::from_nanos(3));
+        let custody = CustodyTotals::default().finish(&snapshot);
         assert!(
             publication
                 .set(CompletedTrace {
                     identity: id,
                     totals,
-                    snapshot
+                    snapshot,
+                    custody
                 })
                 .is_ok()
         );
@@ -445,6 +466,9 @@ mod tests {
         assert!(exported.starts_with("worker_phase_v1 diagnostic_only=true pid=7 tid=8 "));
         assert!(exported.len() < 9 * 1024);
         assert!(exported.contains(&format!("terminal_totals={totals:?}")));
+        assert!(exported.contains("custody_substages_v1 status=UNAVAILABLE"));
+        assert_eq!(exported.matches("custody_stage ").count(), 10);
+        assert_eq!(exported.matches("custody_parent ").count(), 3);
     }
     fn refuse(f: impl FnOnce()) {
         assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).is_err());

@@ -1,6 +1,7 @@
 //! Module adapter for the existing receive/idle-flush/stop loop.
 use super::*;
 use rapid_profiler::frontend_native::{NormalModuleClient, NormalModuleThread};
+use shared::phase_totals::{CustodyPass, CustodyStage, custody_mark};
 use shared::worker::{Event, Runtime};
 use std::path::PathBuf;
 use std::sync::OnceLock;
@@ -95,15 +96,22 @@ impl Custody {
         let mut scratch = WorkerScratch::default();
         let pass = scratch.pass();
         let WorkerScratch { maps, actual, .. } = &mut *pass.0;
-        self.files_and_code_with(maps, actual);
+        self.files_and_code_with(maps, actual, None);
     }
-    fn files_and_code_with(&self, maps: &mut csv::MappingScratch, actual: &mut Vec<u8>) {
+    fn files_and_code_with(
+        &self,
+        maps: &mut csv::MappingScratch,
+        actual: &mut Vec<u8>,
+        mut trace: Option<&mut CustodyPass<'_>>,
+    ) {
         assert_eq!(std::process::id(), self.pid);
         // The pass cleared the logical length. Reserve is only an allocation
         // hint; the unchanged bounded full read still detects trailing bytes.
         actual.reserve(self.bytes.len().min(1024 * 1024 + 1));
         for i in 0..2 {
+            custody_mark(&mut trace, CustodyStage::Stamp);
             assert_eq!(Stamp::read(&self.paths[i]), self.stamps[i]);
+            custody_mark(&mut trace, CustodyStage::FileRead);
             // Reuse only empty capacity. Each file is opened and read in full
             // again; no prior bytes or stamp replace that read.
             actual.clear();
@@ -112,14 +120,17 @@ impl Custody {
                 .take(1024 * 1024 + 1)
                 .read_to_end(actual)
                 .unwrap();
+            custody_mark(&mut trace, CustodyStage::FileCompare);
             assert_eq!(*actual, self.bytes);
+            custody_mark(&mut trace, CustodyStage::Stamp);
             assert_eq!(Stamp::read(&self.paths[i]), self.stamps[i]);
         }
         // Fresh only after both complete file/stamp checks. The loader's
         // continuous immutable mapping/permission contract excludes protection
         // changes and VMA split/merge of these owned ranges between lookups.
-        maps.with_snapshot(|maps| {
+        maps.with_snapshot_traced(trace, |maps, mut trace| {
             for (spans, mode) in [(&self.source, "r-xp"), (&self.generated, "r-xs")] {
+                custody_mark(&mut trace, CustodyStage::Mapping);
                 for (address, bytes) in spans {
                     let (a, b) = maps.mapping(*address, mode);
                     assert!(
@@ -131,14 +142,24 @@ impl Custody {
                 }
                 // Process-lived sealed owners and the no-writer/no-unmap contract
                 // remain authority. A scan alone does not establish safe custody.
+                custody_mark(&mut trace, CustodyStage::LiveBytes);
                 unsafe { immutable(spans) };
             }
+            custody_mark(&mut trace, CustodyStage::Remainder);
         });
     }
     pub(in crate::normal) fn worker(&self, expected: Identity) {
         self.worker_with(expected, &mut WorkerScratch::default());
     }
     pub(in crate::normal) fn worker_with(&self, expected: Identity, scratch: &mut WorkerScratch) {
+        self.worker_with_trace(expected, scratch, None);
+    }
+    pub(in crate::normal) fn worker_with_trace(
+        &self,
+        expected: Identity,
+        scratch: &mut WorkerScratch,
+        mut trace: Option<&mut CustodyPass<'_>>,
+    ) {
         let pass = scratch.pass();
         let WorkerScratch {
             maps,
@@ -155,7 +176,7 @@ impl Custody {
         // This snapshot dies before the unchanged task and whole-file checks.
         let mut marker = 0_u64;
         std::hint::black_box(&mut marker);
-        maps.with_snapshot(|maps| {
+        maps.with_snapshot_traced(trace.as_deref_mut(), |maps, _trace| {
             assert_eq!(
                 maps.mapping(std::ptr::from_ref(&marker) as usize as u64, "rw-p"),
                 expected.stack
@@ -165,6 +186,7 @@ impl Custody {
                 expected.caller
             );
         });
+        custody_mark(&mut trace, CustodyStage::Tasks);
         tasks.clear();
         tasks.extend(std::fs::read_dir("/proc/self/task").unwrap().map(|e| {
             e.unwrap()
@@ -181,7 +203,8 @@ impl Custody {
         assert_eq!(*tasks, expected_tasks);
         // The second fresh capture still follows both complete file/stamp
         // checks. The pass guard clears all logical state before returning.
-        self.files_and_code_with(maps, actual);
+        custody_mark(&mut trace, CustodyStage::Remainder);
+        self.files_and_code_with(maps, actual, trace);
     }
 }
 pub(in crate::normal) fn cpu_is(cpu: usize) {
