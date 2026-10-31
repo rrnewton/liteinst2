@@ -12,12 +12,24 @@
 #ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
 #include "persistent_resident_observe.h"
 #endif
+#ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
+#include "persistent_retained_two_observe.h"
+#endif
+#if defined(LI2_PERSISTENT_RETAINED_TWO)
+#if LI2_PERSISTENT_RETAINED_TWO != 1 || !defined(LI2_PERSISTENT_DISPATCH) || LI2_PERSISTENT_DISPATCH != 1 || LI2_PG_BINDING_VERSION != 1 || LI2_PG_GROUP_BINDING_VERSION != 3 || LI2_PERSISTENT_EPOCH != 1
+#error "two retained certificates require the distinct version3 resident policy"
+#endif
+#if defined(LI2_PERSISTENT_GROUP_CAPTURE) || defined(LI2_PERSISTENT_RESIDENT_CAPTURE)
+#error "retained certificates require their own actual slot capture"
+#endif
+#else
 #if defined(LI2_PERSISTENT_DISPATCH)
 #if LI2_PG_BINDING_VERSION != 1 || LI2_PG_GROUP_BINDING_VERSION != 2 || LI2_PERSISTENT_EPOCH != 1
 #error "dispatch version2 policy and archive binding required"
 #endif
 #elif LI2_PG_BINDING_VERSION != 1 || LI2_PG_GROUP_BINDING_VERSION != 1 || LI2_PERSISTENT_EPOCH != 1
 #error "exact group archive, policy and whole-image configuration required"
+#endif
 #endif
 #if defined(LI2_LINKED_EPOCH_CAPTURE) || defined(LI2_LINKED_PREEDGE) || \
     defined(LI2_SCALAR_SPAN_CAPTURE) || defined(LI2_CURRENT_TF_CAPTURE) || \
@@ -116,13 +128,41 @@ struct ped_permit {
     struct li2_pg_source_key generation_source;
     struct li2_pg_rseq_progress rseq;
 };
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+#define LI2_PTR_SLOTS 2U
+/* Fixed-address authority. A selection is never an execution/source permit. */
+struct li2_ptr_slot_ref {
+    const struct li2_pg_epoch *owner;
+    uint64_t generation;
+    unsigned index,reserved;
+};
+struct li2_ptr_slot {
+    struct li2_ptr_slot_ref identity;
+    uintptr_t proof;
+    struct ped_bank banks[2];
+    struct li2_pg_generation generation;
+    struct ped_permit permit;
+    struct pe_payload publication;
+    size_t registry_count;
+    struct li2_fork_range registry[RANGES];
+    uint64_t last_completed;
+    unsigned code_allocated,code_registered,proof_allocated,proof_registered;
+};
+#endif
 struct li2_pg_epoch {
     struct li2_pg_progress p,last_terminal;
     uint64_t next_serial,next_generation,offers,publications,hits,cold_attempts,cancelled,retirements,permit_claims;
     uint64_t misses[LI2_PGD_REASON_COUNT];
     unsigned selected_bank,resuming,warm;
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    struct li2_ptr_slot retained[LI2_PTR_SLOTS];
+    unsigned selected_slot;
+    struct li2_ptr_slot_ref selection,previous_selection;
+#endif
+#ifndef LI2_PERSISTENT_RETAINED_TWO
     struct ped_bank banks[2];
     struct ped_permit permit;
+#endif
     struct li2_pg_miss miss;
     struct li2_private_code_query claim_code[3];
     struct pg_proof_query claim_proof;
@@ -133,7 +173,11 @@ struct li2_pg_epoch {
     size_t candidate_registry_count;
     struct li2_fork_range candidate_registry[RANGES];
     struct pe_payload candidate;
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    unsigned initialized,registered;
+#else
     unsigned initialized,registered,code_allocated,proof_allocated,code_registered,proof_registered;
+#endif
     unsigned close_started,close_complete,prepare_started,prepare_complete,build_started,build_returned;
     unsigned redirected,exit_seen,exit_index,recovery_started,recovery_complete,guest_data_fault;
     unsigned cleanup_started,cleanup_complete,consumed,plan_proofs,none_proofs;
@@ -145,19 +189,25 @@ struct li2_pg_epoch {
     const struct li2_tf_span_transfer *ticket;
     struct li2_span_transfer_progress transfer;
     struct li2_fetch_ref ref;
+#ifndef LI2_PERSISTENT_RETAINED_TWO
     struct li2_pg_generation generation;
+#endif
     struct le_frame ingress,before,after,unexpected_frame;
     struct li2_link_rseq_live live[3];
     struct li2_pg_recovered recovered;
     struct li2_fetch_progress final_fetch;
     struct pg_proof_query proof_exit;
     struct li2_private_code_query code_exit[3];
+#ifndef LI2_PERSISTENT_RETAINED_TWO
     size_t registry_count;
     struct li2_fork_range registry[RANGES];
+#endif
     struct li2_mg_range exclusions[LI2_MG_RANGES];
     struct li2_pg_plan cold,rebuild;
     struct li2_pg_compact compact_rebuild;
+#ifndef LI2_PERSISTENT_RETAINED_TWO
     struct pe_payload publication;
+#endif
 #ifdef LI2_PERSISTENT_DISPATCH
     union li2_pg_guard recovery_scratch;
 #else
@@ -165,6 +215,17 @@ struct li2_pg_epoch {
 #endif
 };
 static struct li2_pg_epoch pe;
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+#define PE_SLOT(field) (pe.retained[pe.selected_slot].field)
+static int ptr_storage(void);
+static int ptr_selected(void);
+static int ptr_stored(unsigned);
+static int ptr_slots(unsigned,unsigned);
+static int ptr_permitted(unsigned);
+static unsigned ptr_choose(uintptr_t);
+#else
+#define PE_SLOT(field) pe.field
+#endif
 static volatile sig_atomic_t pe_busy,pe_active,pe_failing,pe_closing,pe_decoding,pe_terminal_ingress;
 static const unsigned char pe_archive[32]=LI2_PG_ARCHIVE_SHA256;
 static const unsigned char pe_policy[32]=LI2_PG_POLICY_SHA256;
@@ -173,6 +234,9 @@ static const unsigned pe_greg[16]={REG_RAX,REG_RCX,REG_RDX,REG_RBX,REG_RSP,REG_R
 static _Noreturn void selected_persistent_abort(unsigned,long);
 static void pe_need(int yes,unsigned code,long detail) {if(!yes)selected_persistent_abort(code,detail);}
 unsigned li2_pg_owner_phase(const struct li2_pg_token *t) {
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    if(!ptr_selected())return 0;
+#endif
     return t && t->owner==&pe && t->serial && t->serial==pe.p.serial &&
         pe.initialized && pe.registered?pe.p.phase:0;
 }
@@ -181,19 +245,23 @@ int li2_pg_epoch_interlock(void) {
 }
 const struct li2_pg_progress *li2_pg_epoch_progress(void) {return &pe.p;}
 static int pe_token(const struct li2_pg_token *t) {return li2_pg_owner_phase(t)!=0;}
-static const struct pe_payload *pe_payload(void) {return (const void *)pe.generation.proof;}
+static const struct pe_payload *pe_payload(void) {return (const void *)PE_SLOT(generation).proof;}
 static int pe_registered_storage(void) {
-    if(!pe.initialized || !pe.registered || pe.code_allocated!=2 || !pe.proof_allocated ||
-       pe.code_registered!=2 || !pe.proof_registered || pe.selected_bank>1 ||
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    return ptr_storage();
+#else
+    if(!pe.initialized || !pe.registered || PE_SLOT(code_allocated)!=2 || !PE_SLOT(proof_allocated) ||
+       PE_SLOT(code_registered)!=2 || !PE_SLOT(proof_registered) || pe.selected_bank>1 ||
        selected_run_protect_contains(0,(uintptr_t)&pe,sizeof pe)!=1 ||
-       selected_run_protect_contains(0,pe.generation.proof,PE_PROOF_BYTES)!=1)return 0;
-    for(unsigned i=0;i<2;i++)if(pe.banks[i].allocated!=1 || pe.banks[i].registered!=1 ||
-       selected_run_protect_contains(0,pe.banks[i].generated,PE_ALLOC_BYTES)!=1)return 0;
+       selected_run_protect_contains(0,PE_SLOT(generation).proof,PE_PROOF_BYTES)!=1)return 0;
+    for(unsigned i=0;i<2;i++)if(PE_SLOT(banks)[i].allocated!=1 || PE_SLOT(banks)[i].registered!=1 ||
+       selected_run_protect_contains(0,PE_SLOT(banks)[i].generated,PE_ALLOC_BYTES)!=1)return 0;
     return 1;
+#endif
 }
 static int pe_registry(void) {
-    return pe.registry_count==protected_count && protected_count<=RANGES &&
-        equal(pe.registry,protected,protected_count*sizeof *protected);
+    return PE_SLOT(registry_count)==protected_count && protected_count<=RANGES &&
+        equal(PE_SLOT(registry),protected,protected_count*sizeof *protected);
 }
 static int pe_identity(void) {
     const struct li2_step_session *s=&pe.session;
@@ -289,7 +357,10 @@ static unsigned char pg_code_byte(const struct li2_pg_compact *p,size_t i) {
         p->stub_image[i-2U*LI2_PE_IMAGE_BYTES];
 }
 static int pg_slots(unsigned linked) {
-    const struct li2_pg_generation *g=&pe.generation;
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    return ptr_selected() && ptr_slots(pe.selected_slot,linked);
+#else
+    const struct li2_pg_generation *g=&PE_SLOT(generation);
     const struct li2_pg_compact *p=&pe_payload()->plan;
 #ifdef LI2_PERSISTENT_DISPATCH
     if(linked>1 || g->linked!=linked || !p->exits || p->exits>LI2_PG_BOUNDARIES ||
@@ -304,9 +375,10 @@ static int pg_slots(unsigned linked) {
         if(b[i]!=(unsigned char)(value>>(8*k)))return 0;
     }
     return 1;
+#endif
 }
 static int pg_refs(unsigned linked) {
-    const struct li2_pg_generation *g=&pe.generation;
+    const struct li2_pg_generation *g=&PE_SLOT(generation);
     if(linked>1 || g->active_refs!=linked || g->member_refs[0]!=linked || g->member_refs[1]!=linked)return 0;
     uint64_t incoming[2]={0,0};
     if(linked) {
@@ -321,7 +393,7 @@ static int pg_refs(unsigned linked) {
 /* All code is independently queried NX before a slot write. A partial prefix
    retains references and cannot issue a completed replacement permit. */
 static int pg_link_data(unsigned step) {
-    struct li2_pg_generation *g=&pe.generation;
+    struct li2_pg_generation *g=&PE_SLOT(generation);
     const struct li2_pg_compact *p=&pe_payload()->plan;
     if(step>2 || !g->installed || !g->proof_complete || !g->complete)return PE_STATE;
     unsigned linked=step==1;
@@ -366,19 +438,22 @@ static int pg_link_data(unsigned step) {
     t->complete=1;return 0;
 }
 static int pe_bytes(void) {
-    const struct li2_pg_generation *g=&pe.generation;
+    const struct li2_pg_generation *g=&PE_SLOT(generation);
     const struct pe_payload *p=pe_payload();
     const volatile unsigned char *code=(const void *)g->generated,*proof=(const void *)g->proof;
-    const unsigned char *expected=(const void *)&pe.publication;
+    const unsigned char *expected=(const void *)&PE_SLOT(publication);
     for(size_t i=0;i<PE_CODE_BYTES;i++)if(code[i]!=pg_code_byte(&p->plan,i))return PE_PUBLICATION;
     for(size_t i=0;i<PE_PROOF_BYTES;i++)
-        if(proof[i]!=(i<sizeof pe.publication?expected[i]:0))return PE_PUBLICATION;
+        if(proof[i]!=(i<sizeof PE_SLOT(publication)?expected[i]:0))return PE_PUBLICATION;
     return 0;
 }
 /* Pure fixed-address generation authentication, before recovery scratch or
    any spill access. Mutable cold scratch alone never grants this authority. */
 static int ped_stored(void) {
-    const struct li2_pg_generation *g=&pe.generation;
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    return ptr_selected() && ptr_stored(pe.selected_slot);
+#else
+    const struct li2_pg_generation *g=&PE_SLOT(generation);
     if(!pe_registered_storage() || g->installed!=1 || g->complete!=1 || g->proof_complete!=1 ||
        !g->generation || g->generation!=pe.next_generation || g->ready_generation!=g->generation ||
        !g->build_serial || g->build_serial>pe.next_serial || !pg_closed(&g->layout,g->code_sealed) ||
@@ -388,12 +463,12 @@ static int ped_stored(void) {
        g->proof_verified!=PE_PROOF_BYTES || g->member_generation[0]!=2*g->generation ||
        g->member_generation[1]!=2*g->generation+1)return 0;
     unsigned found=0;
-    for(unsigned i=0;i<2;i++)found+=g->generated==pe.banks[i].generated &&
-        g->spill==pe.banks[i].spill && pg_layout_equal(&g->layout,&pe.banks[i].layout);
+    for(unsigned i=0;i<2;i++)found+=g->generated==PE_SLOT(banks)[i].generated &&
+        g->spill==PE_SLOT(banks)[i].spill && pg_layout_equal(&g->layout,&PE_SLOT(banks)[i].layout);
     if(found!=1)return 0;
     const struct pe_payload *p=pe_payload();
-    return equal(&p->header,&pe.publication.header,sizeof p->header) &&
-        equal(&p->source,&pe.publication.source,sizeof p->source) &&
+    return equal(&p->header,&PE_SLOT(publication).header,sizeof p->header) &&
+        equal(&p->source,&PE_SLOT(publication).source,sizeof p->source) &&
         p->header.version==1 && p->header.serial==g->build_serial &&
         p->header.generation==g->generation && p->header.registry==(uintptr_t)&pe &&
         p->header.generated==g->generated && p->header.spill==g->spill &&
@@ -418,11 +493,12 @@ static int ped_stored(void) {
         p->plan.member_heads[0]==LI2_PE_HEADS && p->plan.member_heads[1]==p->plan.heads-LI2_PE_HEADS &&
         p->plan.links && p->plan.exits && p->plan.links+p->plan.exits<=LI2_PG_BOUNDARIES;
 #endif
+#endif
 }
 static int pe_ready(void) {
     if(!ped_stored() || !pe_token(&pe.token) || !pe_registry() || !pe.consumed ||
-       pe.p.generation!=pe.generation.generation || pe.p.publication!=1 ||
-       !pg_layout_equal(&pe.p.layout,&pe.generation.layout))return 0;
+       pe.p.generation!=PE_SLOT(generation).generation || pe.p.publication!=1 ||
+       !pg_layout_equal(&pe.p.layout,&PE_SLOT(generation).layout))return 0;
     const struct li2_pg_sources *s=li2_pg_source_view(&pe.token);
     const struct li2_pg_rseq_progress *r=li2_pg_rseq_progress();
     const struct pe_payload *p=pe_payload();
@@ -462,16 +538,19 @@ static int ped_capacity(void) {
 int li2_pg_owner_cancel_prot(const struct li2_pg_token *t,unsigned extent) {
     if(extent>=3 || !pe_token(t) || pe.p.phase!=LI2_PG_CANCELLING || !pe_busy || pe_active ||
        pe.consumed || pe.redirected || pe.p.opened_pages || pe.selected_bank>1 ||
-       !pg_layout_equal(&pe.p.layout,&pe.banks[pe.selected_bank].layout) || !pe_registered_storage())return 0;
-    const struct ped_bank *b=&pe.banks[pe.selected_bank];
+       !pg_layout_equal(&pe.p.layout,&PE_SLOT(banks)[pe.selected_bank].layout) || !pe_registered_storage())return 0;
+    const struct ped_bank *b=&PE_SLOT(banks)[pe.selected_bank];
     if(b->virgin==1 && b->prot==(PROT_READ|PROT_WRITE) &&
        pg_query_complete(&b->initial[extent],pg_extent(&b->layout,extent),pg_extent_bytes(extent),
                          PROT_READ|PROT_WRITE))return PROT_READ|PROT_WRITE;
     return !b->virgin && b->prot==PROT_READ?PROT_READ:0;
 }
 static int ped_permitted(void) {
-    const struct ped_permit *p=&pe.permit;
-    const struct li2_pg_generation *g=&pe.generation;
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    return ptr_selected() && ptr_permitted(pe.selected_slot);
+#else
+    const struct ped_permit *p=&PE_SLOT(permit);
+    const struct li2_pg_generation *g=&PE_SLOT(generation);
     const struct li2_pg_source_progress *s=&p->source;
     const struct li2_pg_rseq_progress *r=&p->rseq;
     if(!(p->valid==1 && p->serial && p->serial<=pe.next_serial && ped_stored() &&
@@ -489,14 +568,14 @@ static int ped_permitted(void) {
         s->release_started==1 && s->release_complete==1 && s->source.complete==1 &&
         s->closed_extents==3 && s->closed_pages==17 &&
         pg_layout_equal(&s->layout,&g->layout) && s->source.anchor.sequence==p->ref_sequence &&
-        equal(&p->generation_source,&pe.publication.source,sizeof p->generation_source) &&
+        equal(&p->generation_source,&PE_SLOT(publication).source,sizeof p->generation_source) &&
         li2_pg_source_key_equal(&s->source.key,&p->generation_source) &&
         r->token.owner==&pe && r->token.serial==p->serial && !r->active && !r->first_error &&
         !r->unsafe_terminal && r->seed_complete==1 && r->entry_complete==1 && r->close_complete==1 &&
         !r->cancel_started && !r->cancel_complete &&
-        r->registration_epoch==pe.publication.header.registered_epoch &&
-        r->address==pe.publication.header.rseq_address && r->length==pe.publication.header.rseq_length &&
-        r->signature==pe.publication.header.rseq_signature &&
+        r->registration_epoch==PE_SLOT(publication).header.registered_epoch &&
+        r->address==PE_SLOT(publication).header.rseq_address && r->length==PE_SLOT(publication).header.rseq_length &&
+        r->signature==PE_SLOT(publication).header.rseq_signature &&
         !r->word_before && !r->word_entry && !r->word_after))return 0;
     for(unsigned i=0;i<3;i++)if(!pg_query_complete(&s->closed[i],pg_extent(&g->layout,i),
         pg_extent_bytes(i),PROT_READ))return 0;
@@ -508,19 +587,23 @@ static int ped_permitted(void) {
        *(const volatile uint64_t *)(g->spill+32))return 0;
 #endif
     return 1;
+#endif
 }
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+#include "persistent_retained_two.inc"
+#endif
 static void ped_claim(void) {
     pe_need(ped_permitted() && !pe_bytes(),PE_RELEASE,10);
-    pe_need(!pg_queries(&pe.generation.layout,PROT_READ,pe.claim_code) &&
-        !pg_proof_query(pe.generation.proof,PROT_READ,&pe.claim_proof) &&
-        !pe_query(pe.generation.spill,PAGE,PROT_READ|PROT_WRITE,&pe.claim_spill) &&
-        !pe_query(pe.generation.layout.slots,PAGE,PROT_READ,&pe.claim_slots),PE_RELEASE,11);
-    pe.permit.valid=0;ped_count(PGC_REF(permit_claims));__asm__ volatile("":::"memory");
+    pe_need(!pg_queries(&PE_SLOT(generation).layout,PROT_READ,pe.claim_code) &&
+        !pg_proof_query(PE_SLOT(generation).proof,PROT_READ,&pe.claim_proof) &&
+        !pe_query(PE_SLOT(generation).spill,PAGE,PROT_READ|PROT_WRITE,&pe.claim_spill) &&
+        !pe_query(PE_SLOT(generation).layout.slots,PAGE,PROT_READ,&pe.claim_slots),PE_RELEASE,11);
+    PE_SLOT(permit).valid=0;ped_count(PGC_REF(permit_claims));__asm__ volatile("":::"memory");
 }
 static void ped_reset_attempt(void) {
     pe_need(!pe_busy && !pe_active && !pe.resuming &&
         (pe.p.phase==LI2_PG_IDLE || pe.p.phase==LI2_PG_CLOSED || pe.p.phase==LI2_PG_CANCELLED) &&
-        !pe.p.first_error && (!pe.generation.installed || ped_permitted()),PE_STATE,30);
+        !pe.p.first_error && (!PE_SLOT(generation).installed || ped_permitted()),PE_STATE,30);
     pe.last_terminal=pe.p;
     le_zero(&pe.p,sizeof pe.p);le_zero(&pe.ingress,sizeof pe.ingress);le_zero(&pe.before,sizeof pe.before);
     le_zero(&pe.after,sizeof pe.after);le_zero(&pe.unexpected_frame,sizeof pe.unexpected_frame);
@@ -549,30 +632,43 @@ static void selected_persistent_initialize(void) {
     unsigned a=0,b=0;for(unsigned i=0;i<32;i++){a|=pe_archive[i];b|=pe_policy[i];}
     pe_need(a && b && selected_run_protect_contains(0,(uintptr_t)&pe,sizeof pe)==1,PE_STATE,1);
     pe.registered=1;pe.session=selected_session;
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    pe_need(protected_count<=RANGES-3U*LI2_PTR_SLOTS,PE_STATE,40);
+    for(unsigned slot=0;slot<LI2_PTR_SLOTS;slot++) {
+        pe.selected_slot=slot;
+        pe.retained[slot].identity=(struct li2_ptr_slot_ref){.owner=&pe,.index=slot};
+#endif
     for(unsigned i=0;i<2;i++) {
         long v=raw(SYS_mmap,0,PE_ALLOC_BYTES,PROT_READ|PROT_WRITE,
             MAP_PRIVATE|MAP_ANONYMOUS|(i?0:MAP_32BIT),-1,0);
         pe.code_allocation=v;
         pe_need(v>0 && !((uintptr_t)v&(PAGE-1)) && (uintptr_t)v<(UINT64_C(1)<<47)-PE_ALLOC_BYTES &&
             (i || (uintptr_t)v<(UINT64_C(1)<<31)-PE_ALLOC_BYTES),PE_PUBLICATION,v);
-        struct ped_bank *bank=&pe.banks[i];bank->generated=(uintptr_t)v;bank->layout=pg_layout((uintptr_t)v);bank->spill=bank->layout.spill;
-        bank->allocated=1;bank->virgin=1;bank->prot=PROT_READ|PROT_WRITE;++pe.code_allocated;
+        struct ped_bank *bank=&PE_SLOT(banks)[i];bank->generated=(uintptr_t)v;bank->layout=pg_layout((uintptr_t)v);bank->spill=bank->layout.spill;
+        bank->allocated=1;bank->virgin=1;bank->prot=PROT_READ|PROT_WRITE;++PE_SLOT(code_allocated);
         pe_need(!selected_run_protect_add(0,(uintptr_t)v,PE_ALLOC_BYTES),PE_STATE,2);
-        bank->registered=1;++pe.code_registered;
+        bank->registered=1;++PE_SLOT(code_registered);
         pe_need(!pg_queries(&bank->layout,PROT_READ|PROT_WRITE,bank->initial),PE_PUBLICATION,1);
     }
-    pe.generation.generated=pe.banks[0].generated;pe.generation.spill=pe.banks[0].spill;
-    pe.generation.layout=pe.banks[0].layout;
+    PE_SLOT(generation).generated=PE_SLOT(banks)[0].generated;PE_SLOT(generation).spill=PE_SLOT(banks)[0].spill;
+    PE_SLOT(generation).layout=PE_SLOT(banks)[0].layout;
     pe.proof_allocation=raw(SYS_mmap,0,PE_PROOF_BYTES,PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);
     long v=pe.proof_allocation;
     pe_need(v>0 && !((uintptr_t)v&(PAGE-1)) && (uintptr_t)v<(UINT64_C(1)<<47)-PE_PROOF_BYTES,PE_PUBLICATION,v);
-    pe.generation.proof=(uintptr_t)v;pe.proof_allocated=1;
-    pe_need(!selected_run_protect_add(0,(uintptr_t)v,PE_PROOF_BYTES),PE_STATE,3);pe.proof_registered=1;
-    pe_need(!pg_proof_query(pe.generation.proof,PROT_READ|PROT_WRITE,&pe.generation.proof_writable),PE_PUBLICATION,2);
-    for(unsigned i=0;i<2;i++)pe_need(!pe_query(pe.banks[i].spill,PAGE,PROT_READ|PROT_WRITE,
-        &pe.banks[i].initial_spill),PE_PUBLICATION,3);
-    for(unsigned i=0;i<2;i++)pe_need(!pe_query(pe.banks[i].layout.slots,PAGE,PROT_READ|PROT_WRITE,
-        &pe.banks[i].initial_slots),PE_PUBLICATION,4);
+    PE_SLOT(generation).proof=(uintptr_t)v;PE_SLOT(proof_allocated)=1;
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    pe.retained[pe.selected_slot].proof=(uintptr_t)v;
+#endif
+    pe_need(!selected_run_protect_add(0,(uintptr_t)v,PE_PROOF_BYTES),PE_STATE,3);PE_SLOT(proof_registered)=1;
+    pe_need(!pg_proof_query(PE_SLOT(generation).proof,PROT_READ|PROT_WRITE,&PE_SLOT(generation).proof_writable),PE_PUBLICATION,2);
+    for(unsigned i=0;i<2;i++)pe_need(!pe_query(PE_SLOT(banks)[i].spill,PAGE,PROT_READ|PROT_WRITE,
+        &PE_SLOT(banks)[i].initial_spill),PE_PUBLICATION,3);
+    for(unsigned i=0;i<2;i++)pe_need(!pe_query(PE_SLOT(banks)[i].layout.slots,PAGE,PROT_READ|PROT_WRITE,
+        &PE_SLOT(banks)[i].initial_slots),PE_PUBLICATION,4);
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    }
+    pe.selected_slot=0;pe.selection=pe.retained[0].identity;
+#endif
     pe_need(!li2_pg_source_initialize() && pe_identity(),PE_SOURCE,0);
     pe.initialized=1;pe_busy=0;
 }
@@ -585,9 +681,9 @@ int li2_pg_epoch_begin(const struct li2_tf_span_transfer *ticket,uint64_t serial
        sig!=pe.before.sig || !le_unchanged(&pe.before,si,uc) || !le_quiet(0) ||
        pe.selected_bank>1 || pe.next_serial==UINT64_MAX)return PE_STATE;
     pe.p.serial=++pe.next_serial;pe.p.transfer_serial=serial;pe.p.phase=LI2_PG_SEEDING;
-    pe.p.generated=pe.banks[pe.selected_bank].generated;pe.p.spill=pe.banks[pe.selected_bank].spill;
-    pe.p.layout=pe.banks[pe.selected_bank].layout;
-    pe.p.proof=pe.generation.proof;pe.p.table=pe.p.proof+offsetof(struct pe_payload,plan.table);
+    pe.p.generated=PE_SLOT(banks)[pe.selected_bank].generated;pe.p.spill=PE_SLOT(banks)[pe.selected_bank].spill;
+    pe.p.layout=PE_SLOT(banks)[pe.selected_bank].layout;
+    pe.p.proof=PE_SLOT(generation).proof;pe.p.table=pe.p.proof+offsetof(struct pe_payload,plan.table);
     pe.token=(struct li2_pg_token){&pe,pe.p.serial};pe.ticket=ticket;*out=pe.token;
     int e=li2_pg_source_begin(&pe.token,&pe.p.layout);if(e)return e;
     e=li2_pg_rseq_begin(&pe.token,session,uc);if(e)return e;
@@ -612,12 +708,12 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         r && r->active && r->seed_complete && r->registration_epoch==pe.p.registration_epoch,PE_STATE,4);
     pe.candidate_registry_count=protected_count;pe_need(protected_count<=RANGES,PE_STATE,5);
     copy(pe.candidate_registry,protected,protected_count*sizeof *protected);
-    if(pe.generation.installed && ped_stored() && pe_registry() &&
-       pe.generation.generated==pe.p.generated &&
-       li2_pg_source_key_equal(&pe.publication.source,&s->key) &&
-       pe.publication.header.registered_epoch==r->registration_epoch &&
-       pe.publication.header.rseq_address==r->address &&
-       pe.publication.header.rseq_length==r->length && pe.publication.header.rseq_signature==r->signature) {
+    if(PE_SLOT(generation).installed && ped_stored() && pe_registry() &&
+       PE_SLOT(generation).generated==pe.p.generated &&
+       li2_pg_source_key_equal(&PE_SLOT(publication).source,&s->key) &&
+       PE_SLOT(publication).header.registered_epoch==r->registration_epoch &&
+       PE_SLOT(publication).header.rseq_address==r->address &&
+       PE_SLOT(publication).header.rseq_length==r->length && PE_SLOT(publication).header.rseq_signature==r->signature) {
         pe_need(ped_permitted() && !pe_bytes(),PE_PUBLICATION,10);pe.warm=1;
     } else {
         le_zero(&pe.candidate,sizeof pe.candidate);
@@ -669,9 +765,9 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
     pe_need(pe.transfer.phase==LI2_ST_CONSUMED && pe.transfer.consumed==1,PE_EVENT,2);return 1;
 }
 int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generation *generation) {
-    if(!pe_token(t) || generation!=&pe.generation || pe.p.phase!=LI2_PG_CONSUMED ||
+    if(!pe_token(t) || generation!=&PE_SLOT(generation) || pe.p.phase!=LI2_PG_CONSUMED ||
        !pe.consumed || pe.p.publication || !pe_busy || pe_active)return PE_STATE;
-    struct li2_pg_generation *g=&pe.generation;
+    struct li2_pg_generation *g=&PE_SLOT(generation);
     if(pe.warm) {
         if(!ped_permitted() || !pe_registry() || g->generated!=pe.p.generated)return PE_STATE;
         ped_claim();
@@ -687,11 +783,24 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
        pe.candidate.plan.result || pe.next_generation>=UINT64_MAX/2)return PE_STATE;
     if(g->installed) {
         ped_claim();g->ready_generation=0;__asm__ volatile("":::"memory");ped_count(PGC_REF(retirements));
-    } else if(pe.next_generation || pe.permit.valid)return PE_STATE;
-    const struct ped_bank *b=&pe.banks[pe.selected_bank];
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+        pe.retained[pe.selected_slot].identity.generation=0;
+        pe.selection.generation=0;
+#endif
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    } else if(PE_SLOT(permit).valid || pe.retained[pe.selected_slot].identity.generation ||
+              pe.retained[pe.selected_slot].last_completed)return PE_STATE;
+#else
+    } else if(pe.next_generation || PE_SLOT(permit).valid)return PE_STATE;
+#endif
+    const struct ped_bank *b=&PE_SLOT(banks)[pe.selected_bank];
     if((b->virgin?b->prot!=(PROT_READ|PROT_WRITE):b->prot!=PROT_READ) ||
        pg_queries(&b->layout,b->prot,pe.bank_before))return PE_PUBLICATION;
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    int proof_prot=g->installed?PROT_READ:PROT_READ|PROT_WRITE;
+#else
     int proof_prot=pe.next_generation?PROT_READ:PROT_READ|PROT_WRITE;
+#endif
     if(pg_proof_query(g->proof,proof_prot,&pe.proof_before))return PE_PUBLICATION;
     uintptr_t proof=g->proof;
     if(pg_permissions(&b->layout,PROT_READ|PROT_WRITE,pe.reopen_code,0) ||
@@ -704,9 +813,9 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
     g->member_generation[0]=2*g->generation;g->member_generation[1]=2*g->generation+1;
     g->plan_proofs=pe.plan_proofs;g->none_proofs=pe.none_proofs;
     pe.p.generation=g->generation;pe.p.phase=LI2_PG_PUBLISHING;
-    pe.registry_count=pe.candidate_registry_count;copy(pe.registry,pe.candidate_registry,pe.registry_count*sizeof *pe.registry);
+    PE_SLOT(registry_count)=pe.candidate_registry_count;copy(PE_SLOT(registry),pe.candidate_registry,PE_SLOT(registry_count)*sizeof *PE_SLOT(registry));
     if(!pe_registry())return PE_PUBLICATION;
-    pe.publication=pe.candidate;struct pe_header *h=&pe.publication.header;
+    PE_SLOT(publication)=pe.candidate;struct pe_header *h=&PE_SLOT(publication).header;
     const struct li2_pg_rseq_progress *r=li2_pg_rseq_progress();
     h->version=1;h->layout=g->layout;
     copy(h->member_generation,g->member_generation,sizeof g->member_generation);h->serial=g->build_serial;h->generation=g->generation;h->registry=(uintptr_t)&pe;
@@ -714,34 +823,38 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
     h->plan_proof=g->plan_proofs;h->none_proof=g->none_proofs;
     h->source_validations=li2_pg_source_progress()->validations;h->registered_epoch=pe.p.registration_epoch;
     h->rseq_address=r->address;h->rseq_length=r->length;h->rseq_signature=r->signature;
-    copy(h->archive,pe_archive,32);copy(h->policy,pe_policy,32);pe.publication.source=li2_pg_source_view(t)->key;
+    copy(h->archive,pe_archive,32);copy(h->policy,pe_policy,32);PE_SLOT(publication).source=li2_pg_source_view(t)->key;
     volatile unsigned char *code=(void *)g->generated,*proof_bytes=(void *)g->proof;
-    for(size_t i=0;i<PE_CODE_BYTES;i++){code[i]=pg_code_byte(&pe.publication.plan,i);g->code_copied=i+1;}
+    for(size_t i=0;i<PE_CODE_BYTES;i++){code[i]=pg_code_byte(&PE_SLOT(publication).plan,i);g->code_copied=i+1;}
     for(size_t i=0;i<PE_PROOF_BYTES;i++){proof_bytes[i]=0;g->proof_zeroed=i+1;}
-    const unsigned char *src=(const void *)&pe.publication;
-    for(size_t i=0;i<sizeof pe.publication;i++){proof_bytes[i]=src[i];g->proof_copied=i+1;}
+    const unsigned char *src=(const void *)&PE_SLOT(publication);
+    for(size_t i=0;i<sizeof PE_SLOT(publication);i++){proof_bytes[i]=src[i];g->proof_copied=i+1;}
     int e=pg_permissions(&g->layout,PROT_READ,g->code_sealed,0);if(e)return e;
-    pe.banks[pe.selected_bank].virgin=0;pe.banks[pe.selected_bank].prot=PROT_READ;
+    PE_SLOT(banks)[pe.selected_bank].virgin=0;PE_SLOT(banks)[pe.selected_bank].prot=PROT_READ;
     e=pg_proof_permission(g->proof,PROT_READ,&g->proof_sealed);if(e)return e;
-    for(size_t i=0;i<PE_CODE_BYTES;i++){if(code[i]!=pg_code_byte(&pe.publication.plan,i))return PE_PUBLICATION;g->code_verified=i+1;}
+    for(size_t i=0;i<PE_CODE_BYTES;i++){if(code[i]!=pg_code_byte(&PE_SLOT(publication).plan,i))return PE_PUBLICATION;g->code_verified=i+1;}
     for(size_t i=0;i<PE_PROOF_BYTES;i++) {
-        if(proof_bytes[i]!=(i<sizeof pe.publication?src[i]:0))return PE_PUBLICATION;
+        if(proof_bytes[i]!=(i<sizeof PE_SLOT(publication)?src[i]:0))return PE_PUBLICATION;
         g->proof_verified=i+1;
     }
     g->proof_complete=1;g->complete=1;pe.p.publication=1;ped_count(PGC_REF(publications));
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    pe.retained[pe.selected_slot].identity.generation=g->generation;
+    pe.selection=pe.retained[pe.selected_slot].identity;
+#endif
     __asm__ volatile("":::"memory");g->ready_generation=g->generation;pe.p.phase=LI2_PG_BOUND;
     if((e=pg_link_data(0)))return e;
     return pe_ready()?0:PE_PUBLICATION;
 }
 int li2_pg_epoch_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,ucontext_t *uc) {
     if(!pe_token(t) || pe.p.phase!=LI2_PG_BOUND || !pe_ready() || !pe_busy || pe_active)return PE_STATE;
-    const struct pe_payload *p=pe_payload();struct li2_pg_generation *g=&pe.generation;
+    const struct pe_payload *p=pe_payload();struct li2_pg_generation *g=&PE_SLOT(generation);
     if(pe_bytes() || !pe_registry() || !le_unchanged(&pe.before,si,uc))return PE_PUBLICATION;
     pe.p.phase=LI2_PG_OPENING;
     int e=pg_link_data(1);if(e)return e;
     e=pg_permissions(&g->layout,PROT_READ|PROT_EXEC,g->open,&pe.p.opened_pages);if(e)return e;
     if(pe.p.opened_pages!=17 || !pg_refs(1) || !pg_slots(1))return PE_PUBLICATION;
-    pe.banks[pe.selected_bank].prot=PROT_READ|PROT_EXEC;
+    PE_SLOT(banks)[pe.selected_bank].prot=PROT_READ|PROT_EXEC;
     if((e=li2_pg_source_opened(t,&p->plan)))return e;
     if((e=li2_pg_rseq_live(t,uc,&pe.live[1])))return e;
     pe_tls(&pe.before);
@@ -787,7 +900,7 @@ int li2_pg_epoch_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
        Donor recovery reads only initialized dirty spills; no blanket spill
        read or old-plan cast precedes its boundary-state validation. */
     pe.recovery_result=li2_pg_compact_recover(&pe_payload()->plan,pc,raw,(uint64_t)g[REG_EFL],
-        (const uint64_t *)pe.generation.spill,&pe.recovery_scratch,&pe.recovered);
+        (const uint64_t *)PE_SLOT(generation).spill,&pe.recovery_scratch,&pe.recovered);
     if(!pe.recovery_result && pe.recovered.complete) {
         pe.recovery_complete=1;
         pe.guest_data_fault=sig==SIGSEGV && si->si_signo==SIGSEGV && !si->si_errno &&
@@ -821,12 +934,12 @@ static void pe_preserved(void) {
 int li2_pg_epoch_drain(const struct li2_pg_token *t) {
     if(!pe_token(t) || !pe_active || !pe_busy || pe.p.phase!=LI2_PG_RECOVERING ||
        !pe.exit_seen || !pe.recovery_complete || !pe_ready())return PE_STATE;
-    const struct pe_payload *p=pe_payload();struct li2_pg_generation *g=&pe.generation;
+    const struct pe_payload *p=pe_payload();struct li2_pg_generation *g=&PE_SLOT(generation);
     pe.p.phase=LI2_PG_CLOSING;
     int e=pg_permissions(&g->layout,PROT_READ,g->close,&pe.p.closed_pages);if(e)return e;
     if(pe.p.closed_pages!=17 || !pg_closed(&g->layout,g->close))return PE_PUBLICATION;
     if((e=pg_link_data(2)))return e;
-    pe.banks[pe.selected_bank].prot=PROT_READ;
+    PE_SLOT(banks)[pe.selected_bank].prot=PROT_READ;
     if(pe_bytes() || pg_proof_query(g->proof,PROT_READ,&pe.proof_exit))return PE_PUBLICATION;
     pe.p.phase=LI2_PG_RELEASING;
     pe.release_result=li2_pg_source_release(t,&p->plan);if(pe.release_result)return pe.release_result;
@@ -869,6 +982,9 @@ int li2_pg_epoch_cancel(const struct li2_pg_token *t,int sig,siginfo_t *si,ucont
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
     pgo_cancelled(sig,si,uc,*result);
 #endif
+#ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
+    ptr2o_cancelled(sig,si,uc,*result);
+#endif
     __asm__ volatile("":::"memory");pe_busy=0;pe.resuming=0;
 #if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
     if(*result==LI2_CHAIN_NX_FALLBACK && selected_chain.slots[selected_chain.active].fallback==LI2_CHAIN_OLD_STEP)
@@ -877,16 +993,23 @@ int li2_pg_epoch_cancel(const struct li2_pg_token *t,int sig,siginfo_t *si,ucont
     return 0;
 }
 static _Noreturn void selected_persistent_abort(unsigned code,long detail) {
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    /* No selected-slot dereference is safe after a corrupt index. Process
+       death is terminal; do not invent a cleanup or completion permit. */
+    if(pe.selected_slot>=LI2_PTR_SLOTS) {
+        (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
+    }
+#endif
     if(!pe.p.first_error){pe.p.first_error=code;pe.p.first_detail=detail;}
     if(pe_failing){(void)li2_raw6(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();}
-    pe_failing=1;pe_busy=1;pe.p.completion_permit=0;pe.generation.ready_generation=0;
+    pe_failing=1;pe_busy=1;pe.p.completion_permit=0;PE_SLOT(generation).ready_generation=0;
     if(pe_closing || pe.resuming)li2_tf_chain_abort(&selected_chain,code,detail);
     pe.p.phase=LI2_PG_FAILED;li2_maps_phase_fail();
-    if(!pe.cleanup_started && pe.code_allocated && pe.code_registered) {
+    if(!pe.cleanup_started && PE_SLOT(code_allocated) && PE_SLOT(code_registered)) {
         pe.cleanup_started=1;
-        const struct li2_pg_layout *layout=pe.p.serial?&pe.p.layout:&pe.generation.layout;
-        int e=pg_permissions(layout,PROT_READ,pe.generation.cleanup,&pe.p.closed_pages);
-        if(!e && pe.generation.active_refs)e=pg_link_data(2);
+        const struct li2_pg_layout *layout=pe.p.serial?&pe.p.layout:&PE_SLOT(generation).layout;
+        int e=pg_permissions(layout,PROT_READ,PE_SLOT(generation).cleanup,&pe.p.closed_pages);
+        if(!e && PE_SLOT(generation).active_refs)e=pg_link_data(2);
         if(!e) {
             pe.p.closed_pages=17;
             if(pe.p.serial) {
@@ -914,6 +1037,9 @@ static _Noreturn void selected_persistent_abort(unsigned code,long detail) {
 #ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
     pro_terminal(1);
 #endif
+#ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
+    ptr2o_terminal(1);
+#endif
     report(125,pe.p.first_error,pe.p.first_detail);
     (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
 }
@@ -925,8 +1051,14 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
        !li2_pg_source_pair_advisory(pc))return 0;
     /* Pure necessary placement before any offer, capture, reset or real
        TRACE close. A decline leaves the original dispatch path intact. */
+#ifdef LI2_PERSISTENT_RETAINED_TWO
     const unsigned bank_index=ped_bank_for(pc);
-    const struct ped_bank *bank=&pe.banks[bank_index];
+    const unsigned slot_index=ptr_choose(pc);
+    const struct ped_bank *bank=&pe.retained[slot_index].banks[bank_index];
+#else
+    const unsigned bank_index=ped_bank_for(pc);
+    const struct ped_bank *bank=&PE_SLOT(banks)[bank_index];
+#endif
     const int placement=li2_pg_placement(pc,&bank->layout);
     pe_need(placement>=0 && bank->allocated==1 && bank->registered==1 &&
         bank->generated<(UINT64_C(1)<<47)-PE_ALLOC_BYTES &&
@@ -939,7 +1071,16 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
     pro_begin(sig,si,uc);
 #endif
+#ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
+    ptr2o_begin(sig,si,uc,slot_index);
+#endif
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    ped_reset_attempt();pe.previous_selection=pe.selection;pe.selected_slot=slot_index;
+    pe.selection=pe.retained[slot_index].identity;pe.selected_bank=bank_index;
+    pe_need(ptr_selected(),PE_STATE,41);
+#else
     ped_reset_attempt();pe.selected_bank=bank_index;
+#endif
     pe_closing=1;pe_busy=1;ped_count(PGC_REF(offers));__asm__ volatile("":::"memory");
     pe_need(!le_capture(&pe.ingress,sig,si,uc),PE_FRAME,0);pe.close_started=1;
     int e=li2_tf_chain_span_close(&selected_chain,sig,si,uc,&pe.ticket);
@@ -955,6 +1096,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
     pro_closed();
+#endif
+#ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
+    ptr2o_closed();
 #endif
     pe_need(!li2_pg_epoch_begin(pe.ticket,pe.transfer.serial,&selected_session,sig,si,uc,&pe.token),PE_RSEQ,2);
     le_zero(&selected_borrow,sizeof selected_borrow);le_zero(&selected_view,sizeof selected_view);
@@ -973,16 +1117,22 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
     pro_miss_held();
 #endif
+#ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
+    ptr2o_miss_held();
+#endif
         enum li2_chain_result result;
         pe_need(!li2_pg_epoch_cancel(&pe.token,sig,si,uc,&result),PE_EVENT,3);return 1;
     }
-    pe_need(!li2_pg_epoch_bind(&pe.token,&pe.generation),PE_PUBLICATION,2);
+    pe_need(!li2_pg_epoch_bind(&pe.token,&PE_SLOT(generation)),PE_PUBLICATION,2);
     pe_need(!li2_pg_epoch_enter(&pe.token,sig,si,uc),PE_PUBLICATION,3);
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
     pgo_entered(sig,si,uc);
 #endif
 #ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
     pro_entered(sig,si,uc);
+#endif
+#ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
+    ptr2o_entered(sig,si,uc);
 #endif
     selected_initialized();__asm__ volatile("":::"memory");pe_busy=0;return 1;
 }
@@ -1005,15 +1155,18 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
     pe_need(!li2_pg_epoch_drain(&pe.token) && le_unchanged(&pe.after,si,uc) &&
         le_quiet(0) && pe_registry(),PE_RELEASE,0);
     ped_count(PGC_REF(completed));pe.p.completion_permit=1;
-    pe_need(!pe.permit.valid,PE_RELEASE,12);
-    pe.permit=(struct ped_permit){.valid=1,.serial=pe.p.serial,.generation=pe.generation.generation,
-        .ref_sequence=pe.ref.sequence,.generated=pe.generation.generated,.proof=pe.generation.proof,
-        .layout=pe.generation.layout,.reset_slots=pe.generation.slots[2].seal.query,
+    pe_need(!PE_SLOT(permit).valid,PE_RELEASE,12);
+    PE_SLOT(permit)=(struct ped_permit){.valid=1,.serial=pe.p.serial,.generation=PE_SLOT(generation).generation,
+        .ref_sequence=pe.ref.sequence,.generated=PE_SLOT(generation).generated,.proof=PE_SLOT(generation).proof,
+        .layout=PE_SLOT(generation).layout,.reset_slots=PE_SLOT(generation).slots[2].seal.query,
         .proof_query=pe.proof_exit,.fetch=pe.final_fetch,
-        .source=*li2_pg_source_progress(),.generation_source=pe.publication.source,
+        .source=*li2_pg_source_progress(),.generation_source=PE_SLOT(publication).source,
         .rseq=*li2_pg_rseq_progress()};
-    copy(pe.permit.close,pe.generation.close,sizeof pe.permit.close);
-    copy(pe.permit.member_generation,pe.generation.member_generation,sizeof pe.permit.member_generation);
+    copy(PE_SLOT(permit).close,PE_SLOT(generation).close,sizeof PE_SLOT(permit).close);
+    copy(PE_SLOT(permit).member_generation,PE_SLOT(generation).member_generation,sizeof PE_SLOT(permit).member_generation);
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    pe.retained[pe.selected_slot].last_completed=pe.p.serial;
+#endif
     pe_need(ped_permitted(),PE_RELEASE,13);
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
     pgo_terminal(0);
@@ -1021,38 +1174,64 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
     pro_terminal(0);
 #endif
+#ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
+    ptr2o_terminal(0);
+#endif
     selected_logical_flags=(uint64_t)pe.after.frame.greg[REG_EFL]&~SELECTED_RF;selected_flags_known=1;
     pe_active=0;selected_step_pending=0;selected_pending_route=SELECTED_NO_STEP;
     __asm__ volatile("":::"memory");pe_busy=0;selected_fetch(sig,si,uc);
 }
 static void selected_persistent_report(unsigned status,unsigned code,long detail) {
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    if(pe.selected_slot>=LI2_PTR_SLOTS) {
+        (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
+    }
+    struct writer w={.used=0};text(&w,"LI2_PERSISTENT_RETAINED_TWO {\"version\":3");
+#else
 #ifdef LI2_PERSISTENT_DISPATCH
     struct writer w={.used=0};text(&w,"LI2_PERSISTENT_RESIDENT {\"version\":2");
 #else
     struct writer w={.used=0};text(&w,"LI2_PERSISTENT_GROUP {\"version\":1");
 #endif
+#endif
     field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
     field(&w,",\"detail_abs\":",detail<0?0ULL-(uint64_t)detail:(uint64_t)detail);
     field(&w,",\"detail_negative\":",detail<0);
     field(&w,",\"phase\":",pe.p.phase);field(&w,",\"serial\":",pe.p.serial);
-    field(&w,",\"generation\":",pe.generation.generation);field(&w,",\"build_serial\":",pe.generation.build_serial);
+    field(&w,",\"generation\":",PE_SLOT(generation).generation);field(&w,",\"build_serial\":",PE_SLOT(generation).build_serial);
     field(&w,",\"offers\":",PGC_VALUE(offers));field(&w,",\"cold_attempts\":",PGC_VALUE(cold_attempts));
     field(&w,",\"publications\":",PGC_VALUE(publications));field(&w,",\"hits\":",PGC_VALUE(hits));
     field(&w,",\"cancelled\":",PGC_VALUE(cancelled));field(&w,",\"retirements\":",PGC_VALUE(retirements));
     field(&w,",\"permit_claims\":",PGC_VALUE(permit_claims));field(&w,",\"entries\":",PGC_VALUE(entries));
     field(&w,",\"completed\":",PGC_VALUE(completed));field(&w,",\"unexpected\":",PGC_VALUE(unexpected));
-    field(&w,",\"permit\":",pe.permit.valid);field(&w,",\"opened_pages\":",pe.p.opened_pages);
+    field(&w,",\"permit\":",PE_SLOT(permit).valid);field(&w,",\"opened_pages\":",pe.p.opened_pages);
     field(&w,",\"closed_pages\":",pe.p.closed_pages);field(&w,",\"anchor_released\":",pe.p.anchor_released);
     field(&w,",\"registration_rechecked\":",pe.p.registration_rechecked);
     field(&w,",\"guest_data_fault\":",pe.guest_data_fault);field(&w,",\"recovery_complete\":",pe.recovery_complete);
     field(&w,",\"first_error\":",pe.p.first_error);field(&w,",\"active\":",pe_active);field(&w,",\"busy\":",pe_busy);
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+    field(&w,",\"selected_slot\":",pe.selected_slot);
+    field(&w,",\"slot0_generation\":",pe.retained[0].identity.generation);
+    field(&w,",\"slot1_generation\":",pe.retained[1].identity.generation);
+    field(&w,",\"slot0_permit\":",pe.retained[0].permit.valid);
+    field(&w,",\"slot1_permit\":",pe.retained[1].permit.valid);
+    field(&w,",\"slot0_completed_serial\":",pe.retained[0].last_completed);
+    field(&w,",\"slot1_completed_serial\":",pe.retained[1].last_completed);
+#endif
     text(&w,",\"misses\":[");for(unsigned i=0;i<LI2_PGD_REASON_COUNT;i++){if(i)text(&w,",");number(&w,PGC_MISS_VALUE(i));}
     text(&w,"]}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
 }
+#ifdef LI2_PERSISTENT_RETAINED_TWO
+_Static_assert(55*21+1500<=sizeof(((struct writer *)0)->bytes),"bounded retained-two report");
+#else
 _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct group report");
+#endif
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
 #include "persistent_group_observe.inc"
 #endif
 #ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
 #include "persistent_resident_observe.inc"
+#endif
+#ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
+#include "persistent_retained_two_observe.inc"
 #endif

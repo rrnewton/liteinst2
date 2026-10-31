@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 
 from parsing import require
+import core_d8d85_inventory as maind8d85
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
@@ -49,12 +50,14 @@ def source_before23d6(path, raw, error):
 
 
 def source_before(path, raw, error):
+    raw = maind8d85.source_before(path, raw, error)
     raw = source_before_bf8b(path, raw, error)
     raw = source_before23d6(path, raw, error)
     return inverse(path, raw, DATA['projections'], error)
 
 
 def source_before_evaluation(path, raw, error):
+    raw = maind8d85.source_before_evaluation(path, raw, error)
     return inverse(path, raw, DATA['evaluation_projections'], error)
 
 
@@ -64,7 +67,9 @@ def require_sources(error='main34c47_source_inventory_differs'):
             observed = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
-        raw = source_before_bf8b(path, observed, error)
+        raw = maind8d85.source_before(path, observed, error)
+        raw = maind8d85.source_before_evaluation(path, raw, error)
+        raw = source_before_bf8b(path, raw, error)
         if path in DATA['source_projections_bf8b']:
             row = DATA['source_projections_bf8b'][path]
             require(expected == row['current_sha256'], error)
@@ -110,6 +115,7 @@ def before_current(declared, error='main34c47_inventory_differs',
 
 
 def peel_current(declared, error, source_error):
+    declared = maind8d85.peel_current(declared, error, source_error)
     return before_current(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENT else declared
 
 
@@ -124,4 +130,5 @@ def before_python(identities, error='main34c47_python_inventory_differs'):
 
 
 def peel_python(identities, error='main34c47_python_inventory_differs'):
+    identities = maind8d85.peel_python(identities, error)
     return before_python(identities, error) if type(identities) is list and digest(identities) == PYTHON_CURRENT else identities

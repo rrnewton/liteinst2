@@ -11,6 +11,7 @@ import core_dd75_inventory as previous
 import core_5cda_inventory as historical
 import core_cc846_inventory as inventory
 import parsing
+import core_d8d85_inventory as artifact
 import core_34c47_inventory as prepared
 import core_acc247_inventory as incoming
 import core_20cbe_inventory as newest
@@ -18,7 +19,7 @@ import core_20cbe_inventory as newest
 
 class Main981419InventoryTests(unittest.TestCase):
     def test_exact_accuracy_sources_catalog_and_causal_refusals(self):
-        actual = newest.before_current(incoming.before_current(prepared.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))))
+        actual = newest.before_current(incoming.before_current(prepared.before_current(artifact.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes())))))
         rows = actual['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                           sum(x['ignored'] for x in rows.values())), (109, 4085, 37))
@@ -50,7 +51,7 @@ class Main981419InventoryTests(unittest.TestCase):
                     wrong = copy.deepcopy(actual); wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main981419_inventory_differs$'):
                         current.before_current(wrong)
-        identities = newest.before_python(incoming.before_python(prepared.before_python(historical.python_identities(Path(__file__).parent))))
+        identities = newest.before_python(incoming.before_python(prepared.before_python(artifact.before_python(historical.python_identities(Path(__file__).parent)))))
         old_ids = current.before_python(identities)
         self.assertEqual((len(identities), len(old_ids)), (360, 359))
         self.assertEqual(current.digest(old_ids), previous.PYTHON_CURRENT)
