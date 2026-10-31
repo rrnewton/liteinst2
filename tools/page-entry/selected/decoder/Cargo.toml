@@ -18,6 +18,7 @@ scalar-region = ["iced-x86/instr_info"]
 scalar-span = ["scalar-region"]
 linked-epoch = ["scalar-span"]
 mov-guard = []
+add-guard = ["scalar-region"]
 
 [profile.release]
 opt-level = 2

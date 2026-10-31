@@ -7,7 +7,7 @@ import shutil
 import struct
 from maps_view import (need, fact, SELECTED, UNITS, MACROS, recipe, expand, headers,
                        bridge_check, ENV, hidden_memset, body_check, digest, H)
-from linked_epoch_build import FIXED_DOMAIN
+from linked_epoch_build import FIXED_DOMAIN, fixed_domain_source
 from scalar_span_trace_build import fast_bytes
 from persistent_epoch_build import FEATURES, dynamic_original_image
 from persistent_group_build import (DISPATCH_POLICY_INPUTS, PROVIDERS, DISPATCH_PROVIDERS,
@@ -29,7 +29,7 @@ def binding_config(builder, archive, image, output, pin, binary, run, *, retaine
         path = pin(SELECTED / name)
         value = fact(path)
         if name in FIXED_DOMAIN:
-            size, sha = FIXED_DOMAIN[name]
+            size, sha = fixed_domain_source(name,path)
             need(digest(value) == digest(dict(bytes=size, sha256=sha)), 'unchanged reviewed scalar/NONE decoder domain')
         if name.endswith('.rs'):
             need(digest(builder.record['dep_info'].get('tools/page-entry/selected/' + name)) == digest(value), 'actual archive compiled each bound decoder source')

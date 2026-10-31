@@ -6297,6 +6297,14 @@
         "ignored": 0,
         "tests": 1
       },
+      "test/indexed_dso_source": {
+        "ignored": 0,
+        "tests": 87
+      },
+      "test/indexed_unwind": {
+        "ignored": 0,
+        "tests": 8
+      },
       "test/integration": {
         "ignored": 0,
         "tests": 19
@@ -6515,7 +6523,7 @@
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
-        "tests": 155
+        "tests": 165
       },
       "unit/liteinst_rewrite/main": {
         "ignored": 0,
@@ -7606,6 +7614,6 @@
       }
     ]
   },
-  "recorder_tests": 364,
+  "recorder_tests": 366,
   "schema_version": 1
 }

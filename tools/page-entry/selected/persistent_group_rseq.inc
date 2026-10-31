@@ -20,6 +20,26 @@ static int pgr_token(const struct li2_pg_token *t) {
         li2_pg_owner_phase(t) && pg_rseq.active;
 }
 static int pgr_binding(void) {
+#ifdef LI2_PERSISTENT_UNREGISTERED
+    if(pg_rseq.lifetime_mode==LI2_PGU_UNREGISTERED) {
+        const struct li2_native_pair_progress *p=li2_native_pair_progress();
+        const struct li2_step_session *s=pg_rseq.session;
+        return pgr_token(&pg_rseq.token) && state.initialized && !state.first_error &&
+            state.registered==0 && state.held==0 && state.phase==LI2_RSEQ_IDLE &&
+            state.pid==pg_rseq.pid && state.tid==pg_rseq.tid &&
+            state.epoch==pg_rseq.registration_epoch && state.calls==pg_rseq.registration_calls &&
+            state.tls_attempted==1 &&
+            state.tls_complete==1 && !state.fs_result && !state.gs_result &&
+            state.fs_base==pg_rseq.fs && state.gs_base==pg_rseq.gs &&
+            p->initialized==1 && p->session==s && s && s->initialized==1 &&
+            s->self_test_complete==1 && s->pid>0 && s->pid==s->tid &&
+            p->pid==s->pid && p->tid==s->tid && s->pid==pg_rseq.pid && s->tid==pg_rseq.tid &&
+            !s->sync_register && s->sync_query>=0 && (s->sync_query&96)==96 &&
+            !pg_rseq.address && !pg_rseq.page && !pg_rseq.length && !pg_rseq.signature &&
+            !pg_rseq.word_observed;
+    }
+    if(pg_rseq.lifetime_mode!=LI2_PGU_REGISTERED)return 0;
+#endif
     return pgr_token(&pg_rseq.token) && native_pin() && state.pid==pg_rseq.pid && state.tid==pg_rseq.tid &&
         state.address==pg_rseq.address && state.page==pg_rseq.page && state.length==pg_rseq.length &&
         state.signature==pg_rseq.signature && state.epoch==pg_rseq.registration_epoch &&
@@ -29,7 +49,18 @@ static void pgr_zero(uint64_t *out) {
     if(pg_rseq.checking)pgr_unsafe(LI2_RN_REENTRY,500);
     pg_rseq.checking=1;__asm__ volatile("":::"memory");
     if(!pgr_binding())pgr_unsafe(LI2_RN_PIN,500);
+#ifdef LI2_PERSISTENT_UNREGISTERED
+    if(pg_rseq.lifetime_mode==LI2_PGU_UNREGISTERED) {
+        /* This field remains unobserved, with explicit mode/word_observed.
+           Never synthesize a descriptor address or read address zero+8. */
+        if(*out)pgr_unsafe(LI2_RN_WORD,540);
+        __asm__ volatile("":::"memory");pg_rseq.checking=0;return;
+    }
+#endif
     *out=*(const volatile uint64_t *)(pg_rseq.address+8);
+#ifdef LI2_PERSISTENT_UNREGISTERED
+    pg_rseq.word_observed=1;
+#endif
     if(*out)pgr_unsafe(LI2_RN_WORD,500);
     __asm__ volatile("":::"memory");pg_rseq.checking=0;
 }
@@ -53,12 +84,26 @@ static int pgr_tls(void) {
     if(pg_rseq.fs_result || pg_rseq.gs_result || pg_rseq.fs!=state.fs_base ||
        pg_rseq.gs!=state.gs_base || fs!=pg_rseq.fs_selector || gs!=pg_rseq.gs_selector)
         return pgr_bad(LI2_RN_TLS,500);
+#ifdef LI2_PERSISTENT_UNREGISTERED
+    pg_rseq.tls_complete=1;
+#endif
     return 0;
 }
 
 /* The lifecycle source owns these actual queries. Rseq closure independently
    binds all three rows, not an aggregate17 or one old eight-page query. */
 static int pgr_source_terminal(const struct li2_pg_token *t,unsigned cancelled) {
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+    const struct li2_pgd_source_progress *domain=li2_pgd_source_progress();
+    if(!domain)return 0;
+    if(cancelled) {
+        if(domain->bound || domain->first_error || pg_rseq.domain_bound || pg_rseq.domain_count)return 0;
+        const unsigned char *b=(const void *)pg_rseq.domain_ref;
+        for(size_t i=0;i<sizeof pg_rseq.domain_ref;i++)if(b[i])return 0;
+    } else if(pg_rseq.domain_bound!=1 || pg_rseq.domain_count!=domain->count ||
+              !region_rseq_equal(pg_rseq.domain_ref,domain->ref,sizeof domain->ref) ||
+              !li2_pgd_source_terminal(t))return 0;
+#endif
     const struct li2_pg_source_progress *s=li2_pg_source_progress();
     const struct li2_pg_layout *l=li2_pg_owner_layout(t);
     if(!s || !l || !li2_pg_source_view(t) || s->serial!=t->serial ||
@@ -154,6 +199,33 @@ int li2_pg_rseq_begin(const struct li2_pg_token *t,const struct li2_step_session
         volatile unsigned char *b=(void *)&pg_rseq;for(size_t i=0;i<sizeof pg_rseq;i++)b[i]=0;
     } else if(pg_rseq.token.owner || pg_rseq.seed_complete || pg_rseq.close_complete ||
               pg_rseq.cancel_started || pg_rseq.cancel_complete)return pgr_bad(LI2_RN_STATE,507);
+#ifdef LI2_PERSISTENT_UNREGISTERED
+    if(state.registered==0) {
+        /* The native-pair contract already permits genuine IDLE/unheld state.
+           TLS is observed while this owner is inactive, so tls_observe's
+           temporary cache-incomplete state is not mistaken for a live pin. */
+        if(ready() || state.held || state.phase!=LI2_RSEQ_IDLE || !region_rseq_current(uc))
+            pgr_unsafe(LI2_RN_PIN,540);
+        const long pid=state.pid,tid=state.tid;const uint64_t epoch=state.epoch;
+        li2_maps_phase_end();
+        if(tls_observe())return pgr_bad(LI2_RN_TLS,state.first_detail);
+        if(state.registered || state.held || state.phase!=LI2_RSEQ_IDLE || state.pid!=pid ||
+           state.tid!=tid || state.epoch!=epoch || !region_rseq_current(uc) ||
+           li2_native_pair_progress()->session!=session)pgr_unsafe(LI2_RN_PIN,541);
+        pg_rseq.token=*t;pg_rseq.session=session;pg_rseq.pid=pid;pg_rseq.tid=tid;
+        pg_rseq.registration_epoch=epoch;pg_rseq.lifetime_mode=LI2_PGU_UNREGISTERED;
+        pg_rseq.registration_calls=state.calls;
+        pg_rseq.fs=state.fs_base;pg_rseq.gs=state.gs_base;
+        __asm__ volatile("mov %%fs,%0; mov %%gs,%1":"=r"(pg_rseq.fs_selector),"=r"(pg_rseq.gs_selector)::"memory");
+        pg_rseq.active=1;__asm__ volatile("":::"memory");pgr_zero(&pg_rseq.word_before);
+        int e=pgr_tls();if(e)return e;
+        pgr_zero(&pg_rseq.word_before);
+        if(!li2_pgu_progress_valid(&pg_rseq))pgr_unsafe(LI2_RN_PIN,542);
+        pg_rseq.seed_complete=1;return 0;
+    }
+    pg_rseq.lifetime_mode=LI2_PGU_REGISTERED;
+    pg_rseq.registration_calls=state.calls;
+#endif
     /* The selected registered entry cannot return through cleanup RAW if its
        actual registration pin is already contradictory. */
     if(!native_pin() || !region_rseq_current(uc))pgr_unsafe(LI2_RN_PIN,501);
@@ -164,7 +236,12 @@ int li2_pg_rseq_begin(const struct li2_pg_token *t,const struct li2_step_session
     pg_rseq.length=state.length;pg_rseq.signature=state.signature;pg_rseq.before=state.data;
     __asm__ volatile("mov %%fs,%0; mov %%gs,%1":"=r"(pg_rseq.fs_selector),"=r"(pg_rseq.gs_selector)::"memory");
     pg_rseq.active=1;__asm__ volatile("":::"memory");pgr_zero(&pg_rseq.word_before);
+#ifdef LI2_RSEQ_CURRENT_DATA
+    li2_maps_phase_end();int e=li2_lifecycle_rseq_data_current(state.address,&pg_rseq.current_observed);
+    pg_rseq.observed=pg_rseq.current_observed.data;
+#else
     li2_maps_phase_end();int e=li2_lifecycle_rseq_data(state.address,&pg_rseq.observed);
+#endif
     if(e || !same_data(&pg_rseq.before,&pg_rseq.observed))return pgr_bad(LI2_RN_PIN,e?e:501);
     if((e=pgr_tls()))return e;
     pgr_zero(&pg_rseq.word_before);pg_rseq.seed_complete=1;return 0;
@@ -174,11 +251,71 @@ int li2_pg_rseq_live(const struct li2_pg_token *t,const ucontext_t *uc,struct li
         return pgr_bad(LI2_RN_STATE,502);
     pgr_zero(&pg_rseq.word_entry);
     int e=li2_rseq_link_live(uc,out);
+#ifdef LI2_PERSISTENT_UNREGISTERED
+    if(e || !out || out->complete!=1 || !li2_pgu_progress_valid(&pg_rseq) ||
+       out->registered!=(pg_rseq.lifetime_mode==LI2_PGU_REGISTERED) ||
+#else
     if(e || !out || out->complete!=1 || out->registered!=1 ||
+#endif
        out->epoch!=pg_rseq.registration_epoch || out->session!=(uintptr_t)pg_rseq.session)
         return pgr_bad(LI2_RN_PIN,e?e:502);
     pgr_zero(&pg_rseq.word_entry);pg_rseq.entry_complete=1;return 0;
 }
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+int li2_pgd_rseq_bind(const struct li2_pg_token *t,const ucontext_t *uc) {
+    const struct li2_pgd_view *v=li2_pgd_owner_view(t);
+    const struct li2_pgd_source_progress *d=li2_pgd_source_progress();
+    const struct li2_pg_source_progress *s=li2_pg_source_progress();
+    if(!pgr_token(t) || li2_pg_owner_phase(t)!=LI2_PG_BOUND || pg_rseq.first_error ||
+       !pg_rseq.seed_complete || pg_rseq.close_complete || pg_rseq.cancel_started || pg_rseq.cancel_complete ||
+       pg_rseq.domain_bound || pg_rseq.domain_count || !region_rseq_current(uc) ||
+       !v || v->token.owner!=t->owner || v->token.serial!=t->serial || v->reserved ||
+       !v->count || v->count>LI2_PGD_MEMBERS || !v->directory ||
+       !d || d->token.owner!=t->owner || d->token.serial!=t->serial || d->bound!=1 ||
+       d->count!=v->count || d->first_error || d->opened || d->closed || d->released ||
+       !s || s->phase!=LI2_PGS_HELD || s->serial!=t->serial || s->first_error || s->aborted ||
+       !s->source.complete || s->source.serial!=t->serial || s->opened_extents || s->closed_extents ||
+       s->release_started || s->cancel_started)return pgr_bad(LI2_RN_STATE,511);
+    const unsigned char *b=(const void *)pg_rseq.domain_ref;
+    for(size_t i=0;i<sizeof pg_rseq.domain_ref;i++)if(b[i])return pgr_bad(LI2_RN_STATE,512);
+    for(unsigned i=0;i<v->count;i++) {
+        if(!region_rseq_equal(&d->ref[i],&v->member[i].identity,sizeof d->ref[i]) ||
+           !v->member[i].key || !v->member[i].plan ||
+           v->member[i].identity.root!=v->member[i].key->entry ||
+           v->member[i].identity.root!=v->member[i].plan->entry ||
+           v->member[i].identity.layout.directory!=v->directory ||
+           !li2_pgd_source_pair_equal(v->member[i].key,&s->source.key))
+            return pgr_bad(LI2_RN_PIN,511);
+    }
+    /* The authenticated controller separately retains each member's complete
+       original cold proof and registration binding. This joins both to this
+       one fresh actual ACTIVE registration and one complete held source pair;
+       no decoder proof or second registration is invented here. */
+    pgr_zero(&pg_rseq.word_entry);
+    pg_rseq.domain_count=d->count;
+    for(unsigned i=0;i<d->count;i++)pg_rseq.domain_ref[i]=d->ref[i];
+    __asm__ volatile("":::"memory");pg_rseq.domain_bound=1;return 0;
+}
+#endif
+#ifdef LI2_ADD_GUARD
+/* This joins the independent write classifier to the current register EA.
+   It does not grant a future EA: the emitted guard checks every execution. */
+static int pgr_add_footprint(const struct li2_ag_descriptor *a,const ucontext_t *uc) {
+    struct li2_write_registers regs;registers(uc,&regs);
+    struct li2_write_footprint actual={0},expected={.pc=a->tf.pc,.next_pc=a->tf.next_pc,
+        .abi_version=1,.code=a->tf.code,.length=a->tf.length};
+    uint64_t first=a->rip_relative?a->rip_target:a->displacement;
+    if(!a->rip_relative) {
+        if(a->base<16)first+=regs.gpr[a->base];
+        if(a->index<16)first+=regs.gpr[a->index]*a->scale;
+    }
+    if(first<=UINT64_MAX-8) {
+        expected.policy=LI2_WRITE_RANGE;expected.first=first;expected.end=first+8;
+    }
+    return li2_decoder_write_footprint(a->tf.pc,a->bytes,a->available,&regs,&actual) ||
+        !region_rseq_equal(&actual,&expected,sizeof expected);
+}
+#endif
 int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,const ucontext_t *uc) {
     if(!pgr_token(t) || pg_rseq.first_error || !pg_rseq.seed_complete || !region_rseq_current(uc) ||
        !p || p->version!=LI2_PG_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
@@ -238,6 +375,23 @@ int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,co
 #endif
                 return pgr_bad(LI2_RSEQ_PLAN,505);
             ++stores;
+#ifdef LI2_ADD_GUARD
+        } else if(h->kind==LI2_PG_ADD) {
+            struct li2_ag_descriptor descriptor={0};
+            const struct li2_ag_plan *guard=&p->guard[i].add;
+            if(actual.ready || actual.refusal!=LI2_REGION_OPERANDS ||
+               li2_decoder_add_rmw(d->decoded.pc,window,n,&descriptor) ||
+               descriptor.ready!=1 || descriptor.refusal || descriptor.flags_written!=LI2_AG_STATUS ||
+               descriptor.width_bytes!=8 || descriptor.memory_access!=LI2_AG_READ_WRITE ||
+               !region_rseq_equal(&descriptor,&p->instruction[i].add,sizeof descriptor) ||
+               !region_rseq_equal(&descriptor,&guard->original,sizeof descriptor) ||
+               !region_rseq_equal(&guard->table,&p->table,sizeof p->table) ||
+               guard->generated!=p->layout.generated[i/64]+(uintptr_t)(i%64)*LI2_PE_SLOT_BYTES ||
+               guard->spill!=p->layout.spill || guard->image_bytes!=h->generated_length ||
+               li2_ag_validate(guard) || pgr_add_footprint(&descriptor,uc))
+                return pgr_bad(LI2_RSEQ_PLAN,530);
+            ++stores;
+#endif
 #ifdef LI2_PERSISTENT_DISPATCH
         } else if(h->kind==LI2_PG_DISPATCH) {
             struct li2_jd_descriptor descriptor={0};
@@ -250,6 +404,9 @@ int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,co
                !region_rseq_equal(&descriptor,&guard->original,sizeof descriptor) ||
                p->table.address<delta || guard->binding.rows!=p->table.address-delta ||
                guard->binding.heads!=p->heads || guard->binding.head!=i ||
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+               !p->layout.directory || guard->binding.directory!=p->layout.directory ||
+#endif
                !region_rseq_equal(guard->binding.image,p->layout.generated,sizeof p->layout.generated) ||
                guard->generated!=p->layout.generated[i/64]+(uintptr_t)(i%64)*LI2_PE_SLOT_BYTES ||
                guard->spill!=p->layout.spill || guard->record.image_bytes!=h->generated_length ||
@@ -274,8 +431,22 @@ int li2_pg_rseq_close(const struct li2_pg_token *t,const ucontext_t *uc) {
     if(!pgr_token(t) || pg_rseq.first_error || !pg_rseq.seed_complete || !pg_rseq.entry_complete ||
        li2_lifecycle_fetch_interlock() || !region_rseq_current(uc) || !pgr_source_terminal(t,0))
         return pgr_bad(LI2_RN_STATE,503);
+#ifdef LI2_PERSISTENT_UNREGISTERED
+    if(pg_rseq.lifetime_mode==LI2_PGU_UNREGISTERED) {
+        pgr_zero(&pg_rseq.word_after);li2_maps_phase_end();
+        int e=pgr_tls();if(e)return e;
+        pgr_zero(&pg_rseq.word_after);
+        if(!li2_pgu_progress_valid(&pg_rseq))return pgr_bad(LI2_RN_PIN,543);
+        pg_rseq.close_complete=1;__asm__ volatile("":::"memory");pg_rseq.active=0;return 0;
+    }
+#endif
     pgr_zero(&pg_rseq.word_after);li2_maps_phase_end();
+#ifdef LI2_RSEQ_CURRENT_DATA
+    int e=li2_lifecycle_rseq_data_current(state.address,&pg_rseq.current_after);
+    pg_rseq.after=pg_rseq.current_after.data;
+#else
     int e=li2_lifecycle_rseq_data(state.address,&pg_rseq.after);
+#endif
     if(e || !same_data(&pg_rseq.before,&pg_rseq.after))return pgr_bad(LI2_RN_PIN,e?e:503);
     if((e=pgr_tls()))return e;
     pgr_zero(&pg_rseq.word_after);pg_rseq.close_complete=1;
@@ -287,8 +458,22 @@ int li2_pg_rseq_cancel(const struct li2_pg_token *t,const ucontext_t *uc) {
        pg_rseq.cancel_complete || li2_lifecycle_fetch_interlock() || !region_rseq_current(uc))
         return pgr_bad(LI2_RN_STATE,508);
     if(!pgr_source_terminal(t,1))return pgr_bad(LI2_RN_STATE,510);
+#ifdef LI2_PERSISTENT_UNREGISTERED
+    if(pg_rseq.lifetime_mode==LI2_PGU_UNREGISTERED) {
+        pg_rseq.cancel_started=1;pgr_zero(&pg_rseq.word_after);li2_maps_phase_end();
+        int e=pgr_tls();if(e)return e;
+        pgr_zero(&pg_rseq.word_after);
+        if(!li2_pgu_progress_valid(&pg_rseq))return pgr_bad(LI2_RN_PIN,544);
+        pg_rseq.cancel_complete=1;__asm__ volatile("":::"memory");pg_rseq.active=0;return 0;
+    }
+#endif
     pg_rseq.cancel_started=1;pgr_zero(&pg_rseq.word_after);li2_maps_phase_end();
+#ifdef LI2_RSEQ_CURRENT_DATA
+    int e=li2_lifecycle_rseq_data_current(state.address,&pg_rseq.current_after);
+    pg_rseq.after=pg_rseq.current_after.data;
+#else
     int e=li2_lifecycle_rseq_data(state.address,&pg_rseq.after);
+#endif
     if(e || !same_data(&pg_rseq.before,&pg_rseq.after))return pgr_bad(LI2_RN_PIN,e?e:508);
     if((e=pgr_tls()))return e;
     pgr_zero(&pg_rseq.word_after);pg_rseq.cancel_complete=1;

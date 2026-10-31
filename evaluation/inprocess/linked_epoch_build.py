@@ -13,6 +13,32 @@ FIXED_DOMAIN={
     'decoder/src/write_footprint.rs':(10124,'754fbc625a52f27dfe20ce3353f761586a4eb1640c64fe846634c8d14501dfe7'),
     'region_decode.h':(7150,'d9ccb59abd39bff378ecb30460e6d5c45142c2f77636b2c25068db9446a6e529'),
 }
+# The register/scalar/span/NONE domains stay fixed. Only the ordinary-PC
+# LODSQ addition is removed for this historical source identity check.
+# Current whole bytes still bind every archive and published policy below.
+LODSQ_SOURCE = {
+    'decoder/src/tf.rs': ((45401, '5fd89946fa54d32528f098e87ec592964d28343c67d2f8f970faddc6f56937ee'), (
+        (b'    if instruction.code() == Code::Lodsq_RAX_m64 {\n        // One original-PC load into RAX and DF-directed RSI +/-8. The CPU\n        // owns the read/fault; flags and every other register are unchanged.\n        // No REP, ignored REX, segment/address override or narrower LODS.\n        if source[..instruction.len()] != [0x48, 0xad] { return Ok(out); }\n    } else if instruction.code() == Code::Endbr64 {\n', b'    if instruction.code() == Code::Endbr64 {\n'),
+        (b'        | Code::Mov_rm16_Sreg | Code::Lodsq_RAX_m64\n', b'        | Code::Mov_rm16_Sreg\n'),
+    )),
+    'decoder/src/write_footprint.rs': ((10412, '5cd8a8b5d360775da81c55cdc47bfc3df999c85fac9622b1c8d3cd798cd74b9c'), (
+        (b'        // The TF gate admits exactly 48 AD. LODSQ reads [RSI] and writes\n        // only RAX/RSI, for either DF value, including when the read faults.\n        // NONE says no application-memory write, never that the read is safe.\n        Code::Lodsq_RAX_m64 => return Ok(no_write(out)),\n', b''),
+    )),
+}
+
+
+def fixed_domain_source(name,path):
+    """Authenticate the exact current source and its exact historical inverse."""
+    original=FIXED_DOMAIN[name]
+    if name not in LODSQ_SOURCE:return original
+    expected,inverse=LODSQ_SOURCE[name];raw=path.read_bytes()
+    need((len(raw),H(raw))==expected,'exact complete LODSQ source successor '+name)
+    for after,before in inverse:
+        need(raw.count(after)==1,'one exact LODSQ source inverse span '+name)
+        raw=raw.replace(after,before,1)
+    need((len(raw),H(raw))==original,'whole historical fixed-domain source inverse '+name)
+    return expected
+
 # Exact order is part of the production binder's canonical policy digest.
 POLICY_INPUTS=(
     'decoder/Cargo.toml','decoder/src/region.rs','decoder/src/tf.rs',
@@ -51,7 +77,7 @@ def binding_config(builder,archive,output,pin,binary,run,*,native_hint=False,pre
     for name in PREEDGE_POLICY_INPUTS if preedge else HINT_POLICY_INPUTS if native_hint else POLICY_INPUTS:
         path=pin(SELECTED/name);value=fact(path)
         if name in FIXED_DOMAIN:
-            size,sha=FIXED_DOMAIN[name]
+            size,sha=fixed_domain_source(name,path)
             need(digest(value)==digest(dict(bytes=size,sha256=sha)),'exact reviewed linked131/NONE policy '+name)
         if name.endswith('.rs'):
             need(digest(builder.record['dep_info'].get('tools/page-entry/selected/'+name))==digest(value),

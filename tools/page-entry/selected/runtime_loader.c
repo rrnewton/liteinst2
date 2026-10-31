@@ -281,6 +281,15 @@ static void selected_persistent_report(unsigned,unsigned,long);
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
 #include "persistent_retained_two_observe.h"
 #endif
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
+#include "persistent_active_domain_observe.h"
+#endif
+#ifdef LI2_PERSISTENT_STARTUP_CAPTURE
+#include "persistent_startup_observe.h"
+#endif
+#ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
+#include "persistent_subentry_observe.h"
+#endif
 #endif
 static volatile sig_atomic_t selected_linked_epoch_active,selected_linked_epoch_busy;
 static void selected_linked_epoch_initialize(void);
@@ -352,6 +361,9 @@ static const struct li2_run_protection selected_run_protection;
 static void selected_repeat_report(unsigned,unsigned,long);
 #ifdef LI2_NATIVE_PAIR
 #include "native_pair_report.inc"
+#endif
+#ifdef LI2_LINKED_NATIVE_PROBE
+#include "linked_native_probe_report.inc"
 #endif
 static void report(unsigned status,unsigned code,long detail) {
     if(reported) return;
@@ -549,6 +561,15 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
     ptr2o_finish(status,code,detail);
+#endif
+#if defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) || defined(LI2_PERSISTENT_STARTUP_CAPTURE)
+    pdao_finish(status,code,detail);
+#endif
+#ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
+    pso_finish(status,code,detail);
+#endif
+#ifdef LI2_LINKED_NATIVE_PROBE
+    selected_link_native_probe_report(status,code,detail);
 #endif
     selected_persistent_report(status,code,detail);
 #endif
@@ -973,6 +994,12 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
     ptr2o_ingress(sig,si,ptr);
 #endif
+#if defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) || defined(LI2_PERSISTENT_STARTUP_CAPTURE)
+    pdao_ingress(sig,si,ptr);
+#endif
+#ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
+    pso_ingress(sig,si,ptr);
+#endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
     lpeo_ingress(sig,si,ptr);
 #endif
@@ -1232,7 +1259,10 @@ static size_t parse_fds(int fds[32]) {
         size_t j=0;while(j<sizeof(key)-1 && env[i][j]==key[j])j++;
         if(j==sizeof(key)-1) { checked(!value,220,0);value=env[i]+j; }
     }
-    checked(value && *value,221,0);size_t count=0;
+    checked(value!=0,221,0);
+    /* An explicit empty namespace needs both authenticated source proofs below. */
+    if(!*value)return 0;
+    size_t count=0;
     for(;;) {
         checked(count<32,222,0);unsigned fd=0,digits=0;
         while(*value && *value!=',') { checked(*value>='0' && *value<='9' && fd<=100000,223,0);fd=fd*10+(unsigned)(*value++-'0');++digits; }
@@ -1268,10 +1298,12 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
     stack_t stack={.ss_sp=(char *)area+PAGE,.ss_size=ALT_BYTES}; fork_gate_stack=stack;checked(!raw(SYS_sigaltstack,(long)&stack,0,0,0,0,0),233,0);
     int fds[32];dependency_count=parse_fds(fds);
 #ifdef LI2_INITIAL_CODE_PROTECTION
-    const struct li2_lifecycle_hooks hooks={raw,fail,intersects,intersects_mprotect};li2_lifecycle_initialize(fds,dependency_count,&hooks);
+    const struct li2_lifecycle_hooks hooks={raw,fail,intersects,intersects_mprotect};
 #else
-    const struct li2_lifecycle_hooks hooks={raw,fail,intersects};li2_lifecycle_initialize(fds,dependency_count,&hooks);
+    const struct li2_lifecycle_hooks hooks={raw,fail,intersects};
 #endif
+    if(dependency_count)li2_lifecycle_initialize(fds,dependency_count,&hooks);
+    else li2_lifecycle_initialize_empty(main,interp,&hooks);
 #ifdef LI2_RSEQ_INACTIVE
     int rseq_error=li2_rseq_initialize(private_intersects);
     checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
@@ -1359,6 +1391,12 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
     ptr2o_initialize();
+#endif
+#if defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) || defined(LI2_PERSISTENT_STARTUP_CAPTURE)
+    pdao_initialize();
+#endif
+#ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
+    pso_initialize();
 #endif
 #endif
 #else

@@ -103,6 +103,10 @@ pub(crate) fn one(pc: u64, source: &[u8], state: &Registers) -> Result<Footprint
     // Source memory of CALL/PUSH is read-only, but their implicit stack store
     // must be considered before inspecting the explicit operand roles.
     match instruction.code() {
+        // The TF gate admits exactly 48 AD. LODSQ reads [RSI] and writes
+        // only RAX/RSI, for either DF value, including when the read faults.
+        // NONE says no application-memory write, never that the read is safe.
+        Code::Lodsq_RAX_m64 => return Ok(no_write(out)),
         Code::Call_rel32_64 | Code::Call_rm64 | Code::Push_r64 | Code::Push_rm64
         | Code::Pushq_imm32 | Code::Pushq_imm8 => {
             return Ok(match state.gpr[4].checked_sub(8) {

@@ -40,7 +40,7 @@ PAIR_EXPECTED=dict(observed_retained_two_pair=1,invocations=1,generated_complete
     interior_signals=0,qualification_credit=False)
 EXPECTED_STATUS={('native',0):'observed_native_retained_two',('gated',0):'observed_generated_retained_two'}
 COMPONENT_ORDER=('retained_authority',)
-COMPONENT_INPUTS={'persistent_retained_two.inc': {'bytes': 11263, 'sha256': 'e47dbc5839de1b1937521e12dda43ceb7e9f220809a995949a188cb70c2d2d7b'}, 'tests/persistent_retained_two/prepare.py': {'bytes': 3151, 'sha256': '832919b3a0a40ba2bc89467acf596640e129ad3d05e20a7ec0247d1d6efe8d93'}, 'tests/persistent_retained_two/build.sh': {'bytes': 1553, 'sha256': '00710df709d458921301f56a236d93be5eec97ba22479f7a9b34da46cabe4034'}, 'tests/persistent_retained_two/metadata.c': {'bytes': 11284, 'sha256': '298d8c1b7976280ca00fff60785e2ab456dab824e5fa19aa46555f5a846723cf'}}
+COMPONENT_INPUTS={'persistent_retained_two.inc': {'bytes': 12064, 'sha256': '905a1953f33fbc766ebbd058bc24dd64dad2793d5bc8e234b8f19ea406abe4d8'}, 'tests/persistent_retained_two/prepare.py': {'bytes': 3700, 'sha256': 'e1c97130d4c84f23802c20745eac61c7c44f99817d26576ad32ffd3f462bc219'}, 'tests/persistent_retained_two/build.sh': {'bytes': 1553, 'sha256': '00710df709d458921301f56a236d93be5eec97ba22479f7a9b34da46cabe4034'}, 'tests/persistent_retained_two/metadata.c': {'bytes': 11284, 'sha256': '298d8c1b7976280ca00fff60785e2ab456dab824e5fa19aa46555f5a846723cf'}}
 COMPONENT_STDOUT=b'retained-two positives=5 refusals=40 selections=8 blocked=2 bytes=2\n'
 COMPONENT_SUMMARY=dict(positives=5,refusals=40,selections=8,blocked=2,bytes=2,synthetic_observations=1,emitted_execution=0)
 RETAINED_WIRE_BYTES=4169600

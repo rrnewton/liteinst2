@@ -4,7 +4,12 @@
 #include "region_decode.h"
 #include "tf_owner.h"
 #include "write_footprint.h"
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+#include "linked_jmp_domain.h"
+#define LI2_JD_VERSION 2U
+#else
 #define LI2_JD_VERSION 1U
+#endif
 #define LI2_JD_HEADS 128U
 #define LI2_JD_MEMBER_HEADS 64U
 #define LI2_JD_SLOT_BYTES 512U
@@ -38,6 +43,9 @@ struct li2_jd_record {
 struct li2_jd_binding {
     uintptr_t rows,image[2];
     uint32_t heads,head;
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+    uintptr_t directory;
+#endif
 };
 struct li2_jd_plan {
     struct li2_jd_record record;
@@ -65,7 +73,15 @@ _Static_assert(sizeof(struct li2_span_decoded)==336 && offsetof(struct li2_span_
                "literal immutable original-row stride and PC field");
 _Static_assert(sizeof(struct li2_jd_descriptor)==144,"typed descriptor fits old store width");
 _Static_assert(sizeof(struct li2_jd_record)==1584,"typed recovery fits old guard width");
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+_Static_assert(sizeof(struct li2_jd_binding)==40,"actual domain directory and local binding");
+#else
 _Static_assert(sizeof(struct li2_jd_binding)==32,"actual row/image/head binding");
+#endif
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+_Static_assert(sizeof(struct li2_jd_plan)==2296,"bounded full domain dispatch emitter");
+#else
 _Static_assert(sizeof(struct li2_jd_plan)==2288,"bounded full dispatch emitter");
+#endif
 _Static_assert(sizeof(struct li2_jd_recovered)==152,"logical integer frame");
 #endif

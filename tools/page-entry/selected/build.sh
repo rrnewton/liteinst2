@@ -27,6 +27,7 @@ case "${LI2_DECODER_FEATURES-}" in
   scalar-span) set -- --features scalar-span ;;
   linked-epoch) set -- --features linked-epoch ;;
   linked-epoch,mov-guard) set -- --features linked-epoch,mov-guard ;;
+  linked-epoch,mov-guard,add-guard) set -- --features linked-epoch,mov-guard,add-guard ;;
   *) echo "unsupported decoder feature profile" >&2; exit 2 ;;
 esac
 "$cargo_bin" rustc --manifest-path "$source_dir/decoder/Cargo.toml" \

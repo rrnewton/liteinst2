@@ -7,6 +7,9 @@ enum li2_tf_entry_route li2_tf_entry_route(const struct li2_decoded *d) {
        d->available>15 || d->pc>UINTPTR_MAX-d->length || d->next_pc!=d->pc+d->length)
         return LI2_TF_ENTRY_UNKNOWN;
     /* Guarded byte forms precede the shared-Code plain route. */
+    if(d->code==350) /* LODSQ: no REP, ignored REX or other prefix aliases. */
+        return d->length==2 && d->bytes[0]==0x48 && d->bytes[1]==0xad
+            ?LI2_TF_ENTRY_PLAIN:LI2_TF_ENTRY_UNKNOWN;
     if(d->code==765 && d->length==7 && d->bytes[0]==0xf2 &&
        d->bytes[1]==0xff && d->bytes[2]==0x25)return LI2_TF_ENTRY_BND;
     if(d->code==825)return LI2_TF_ENTRY_XGETBV;

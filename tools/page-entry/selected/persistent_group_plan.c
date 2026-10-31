@@ -59,6 +59,29 @@ static int writer(struct li2_pg_plan *p,const struct li2_span_decoded *d,const u
     if(s->ready && (s->tf.policy!=1 || (s->width_bytes!=4 && s->width_bytes!=8)))return LI2_PG_DECODER;
     return 0;
 }
+#ifdef LI2_ADD_GUARD
+static int add_writer(struct li2_pg_plan *p,const struct li2_span_decoded *d,
+    const unsigned char *b,size_t n,struct li2_ag_descriptor *a) {
+    p->decoder_result=li2_decoder_add_rmw(d->decoded.pc,b,n,a);
+    if(p->decoder_result || a->version!=LI2_AG_VERSION || a->available!=n || a->reserved ||
+       a->ready>1 || (a->ready?a->refusal!=0:a->refusal==0) ||
+       a->tf.abi_version!=1 || a->tf.pc!=d->decoded.pc || a->tf.next_pc!=d->decoded.next_pc ||
+       a->tf.code!=d->decoded.code || a->tf.length!=d->decoded.length || !equal(a->bytes,b,n))
+        return LI2_PG_DECODER;
+    for(size_t i=n;i<16;i++)if(a->bytes[i])return LI2_PG_DECODER;
+    if(a->ready && (d->ready || d->refusal!=LI2_REGION_OPERANDS || d->decoded.kind!=LI2_NONE ||
+       a->tf.policy!=1 || a->tf.code!=8 || a->width_bytes!=8 || a->memory_access!=3 ||
+       a->flags_written!=LI2_AG_STATUS || a->source_reg>=16))return LI2_PG_DECODER;
+    return 0;
+}
+#endif
+static int guarded_write(unsigned kind) {
+    return kind==LI2_PE_MOV
+#ifdef LI2_ADD_GUARD
+        || kind==LI2_PG_ADD
+#endif
+        ;
+}
 struct node { uintptr_t pc;unsigned decoded,token; };
 static int enqueue(struct li2_pg_plan *p,struct node q[LI2_PG_HEADS+LI2_PG_BOUNDARIES],unsigned *n,uintptr_t pc) {
     unsigned page,offset;if(!location(p,pc,&page,&offset))return -1;
@@ -73,6 +96,20 @@ static int resolve(const struct node *q,unsigned n,uintptr_t pc,unsigned *token)
 static int token_valid(const struct li2_pg_plan *p,unsigned k) {
     return k<p->heads || (k>=LI2_PG_HEADS && k-LI2_PG_HEADS<p->exits);
 }
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+static int layout_valid(const struct li2_pg_layout *l) {
+    uintptr_t a[5]={l->generated[0],l->generated[1],l->stubs,l->slots,l->spill};
+    size_t n[5]={LI2_PE_IMAGE_BYTES,LI2_PE_IMAGE_BYTES,LI2_REGION_PAGE,LI2_REGION_PAGE,LI2_REGION_PAGE};
+    for(unsigned i=0;i<5;i++) {
+        if(a[i]<LI2_REGION_PAGE || (a[i]&4095U) || !address(a[i],n[i]))return 0;
+        for(unsigned j=0;j<i;j++)if(overlap(a[i],n[i],a[j],n[j]))return 0;
+    }
+    if(l->directory<LI2_REGION_PAGE || (l->directory&4095U) ||
+       !address(l->directory,LI2_JD_DOMAIN_BYTES))return 0;
+    for(unsigned i=0;i<5;i++)if(overlap(l->directory,LI2_JD_DOMAIN_BYTES,a[i],n[i]))return 0;
+    return 1;
+}
+#else
 static int layout_valid(const struct li2_pg_layout *l) {
     uintptr_t a[5]={l->generated[0],l->generated[1],l->stubs,l->slots,l->spill};
     size_t n[5]={LI2_PE_IMAGE_BYTES,LI2_PE_IMAGE_BYTES,LI2_REGION_PAGE,LI2_REGION_PAGE,LI2_REGION_PAGE};
@@ -82,6 +119,7 @@ static int layout_valid(const struct li2_pg_layout *l) {
     }
     return 1;
 }
+#endif
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
 int li2_pg_dispatch_binding(const uintptr_t pages[2],const struct li2_pg_layout *layout,
     uintptr_t table,unsigned heads,unsigned head,struct li2_jd_binding *out) {
@@ -108,7 +146,13 @@ int li2_pg_dispatch_binding(const uintptr_t pages[2],const struct li2_pg_layout 
         LI2_REGION_PAGE,LI2_REGION_PAGE,LI2_REGION_PAGE};
     if(!address(rows,bytes))return LI2_PG_ARGUMENT;
     for(unsigned i=0;i<7;i++)if(overlap(rows,bytes,at[i],extents[i]))return LI2_PG_ARGUMENT;
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+    if(overlap(layout->directory,LI2_JD_DOMAIN_BYTES,base,table_offset+sizeof(struct li2_mg_table)))return LI2_PG_ARGUMENT;
+    for(unsigned i=0;i<2;i++)if(overlap(layout->directory,LI2_JD_DOMAIN_BYTES,pages[i],LI2_REGION_PAGE))return LI2_PG_ARGUMENT;
+    *out=(struct li2_jd_binding){rows,{layout->generated[0],layout->generated[1]},heads,head,layout->directory};
+#else
     *out=(struct li2_jd_binding){rows,{layout->generated[0],layout->generated[1]},heads,head};
+#endif
     return 0;
 }
 static int dispatch_form(const unsigned char *bytes,size_t n) {
@@ -264,6 +308,9 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
     for(unsigned at=0;at<n;at++) {
         unsigned char bytes[15];size_t count=window(p,q[at].pc,bytes);
         struct li2_span_decoded d;struct li2_mg_store s={0};
+#ifdef LI2_ADD_GUARD
+        struct li2_ag_descriptor add={0};
+#endif
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
         struct li2_jd_descriptor dispatch={0};
 #endif
@@ -279,6 +326,12 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
         unsigned kind=LI2_PE_NONE;
         if(d.ready) { if((e=static_none(p,&d,bytes,count)))return e; }
         else { if((e=writer(p,&d,bytes,count,&s)))return e;kind=s.ready?LI2_PE_MOV:0; }
+#ifdef LI2_ADD_GUARD
+        if(!kind) {
+            if((e=add_writer(p,&d,bytes,count,&add)))return e;
+            if(add.ready)kind=LI2_PG_ADD;
+        }
+#endif
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
         if(!kind && dispatch_form(bytes,count)) {
             if((e=dispatch_describe(p,&d,bytes,count,&dispatch)))return e;
@@ -310,6 +363,9 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
         h->kind=kind;h->source_length=d.decoded.length;p->source_bytes+=h->source_length;p->original[i]=d;
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
         if(kind==LI2_PE_MOV) { p->instruction[i].mov=s;++p->stores; }
+#ifdef LI2_ADD_GUARD
+        if(kind==LI2_PG_ADD) { p->instruction[i].add=add;++p->stores; }
+#endif
         if(kind==LI2_PG_DISPATCH) {
             p->instruction[i].dispatch=dispatch;
             /* This is one real BEFORE-JMP unknown-target exit, not a static
@@ -320,7 +376,7 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
 #else
         if(kind==LI2_PE_MOV) { p->store_original[i]=s;++p->stores; }
 #endif
-        unsigned flow=kind==LI2_PE_MOV?LI2_REGION_NEXT:d.flow;
+        unsigned flow=guarded_write(kind)?LI2_REGION_NEXT:d.flow;
         if(flow==LI2_REGION_NEXT) {
             if(enqueue(p,q,&n,d.decoded.next_pc)<0) {pgd_enqueue_refusal(p,q,n,q[at].pc,d.decoded.next_pc,miss);return LI2_PG_GRAPH;}
         } else if(flow==LI2_REGION_JCC || flow==LI2_REGION_JMP) {
@@ -337,7 +393,7 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
         if(h->kind==LI2_PG_DISPATCH)continue;
 #endif
-        unsigned flow=h->kind==LI2_PE_MOV?LI2_REGION_NEXT:d->flow;
+        unsigned flow=guarded_write(h->kind)?LI2_REGION_NEXT:d->flow;
         h->successor_count=flow==LI2_REGION_JCC?2:1;
         if(!resolve(q,n,flow==LI2_REGION_NEXT?d->decoded.next_pc:d->target,&h->successors[0]) ||
            (h->successor_count==2 && !resolve(q,n,d->decoded.next_pc,&h->successors[1])))return LI2_PG_GRAPH;
@@ -427,6 +483,21 @@ static int pgd_emit(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
             h->generated_length=g->record.image_bytes;copy(out,g->image,h->generated_length);continue;
         }
 #endif
+#ifdef LI2_ADD_GUARD
+        if(h->kind==LI2_PG_ADD) {
+            unsigned char bytes[15];size_t n=window(p,d->decoded.pc,bytes);
+            struct li2_ag_plan *g=&p->guard[i].add;
+            p->guard_result=(unsigned)li2_ag_emit(d->decoded.pc,bytes,n,generated,p->layout.spill,
+                destination(p,i,0),&p->table,g);
+            /* Until a distinct ADD relocation diagnosis exists, an emitter
+               refusal remains terminal; never borrow a MOV cancellation. */
+            if(p->guard_result)return p->guard_result==LI2_AG_RELOCATION?LI2_PG_RELOCATION:LI2_PG_DECODER;
+            if(!equal(&g->original,&p->instruction[i].add,sizeof g->original) ||
+               g->ready!=1 || !g->image_bytes || g->image_bytes>LI2_PE_SLOT_BYTES ||
+               !equal(&g->table,&p->table,sizeof p->table))return LI2_PG_DECODER;
+            h->generated_length=g->image_bytes;copy(out,g->image,h->generated_length);continue;
+        }
+#endif
         if(h->kind==LI2_PE_MOV) {
             unsigned char bytes[15];size_t n=window(p,d->decoded.pc,bytes);
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
@@ -510,6 +581,9 @@ int li2_pg_plan_pages(const uintptr_t pages[2],const unsigned char source[2][LI2
         if(!address(at[i],bytes[i]) || (i<2 && (at[i]&4095U)))goto done;
         for(unsigned j=0;j<i;j++)if(overlap(at[i],bytes[i],at[j],bytes[j]))goto done;
     }
+#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+    for(unsigned i=0;i<8;i++)if(overlap(layout->directory,LI2_JD_DOMAIN_BYTES,at[i],bytes[i]))goto done;
+#endif
     copy(out->page,pages,sizeof out->page);copy(out->source,source,sizeof out->source);
     out->entry=entry;out->layout=*layout;copy(&out->table,table,sizeof *table);
     unsigned page,offset;if(!location(out,entry,&page,&offset))goto done;
