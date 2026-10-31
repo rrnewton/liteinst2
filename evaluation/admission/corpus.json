@@ -6531,7 +6531,7 @@
       },
       "unit/ordinary_interval/main": {
         "ignored": 1,
-        "tests": 507
+        "tests": 518
       },
       "unit/rapid_profiler/lib": {
         "ignored": 31,

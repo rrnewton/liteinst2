@@ -24,6 +24,12 @@
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
 #include "persistent_subentry_observe.h"
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+#include "persistent_direct_frontier_observe.h"
+#endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+#include "persistent_cold_admission_observe.h"
+#endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
 #include "persistent_cross_pair_observe.h"
 #endif
@@ -570,6 +576,15 @@ static int ped_stored(void) {
 }
 #ifdef LI2_PERSISTENT_SUBENTRY
 static unsigned ped_bank_for(uintptr_t);
+#ifdef LI2_REUSE_CENSUS
+static void rcc_select_reset(void);
+static int rcc_select_test(unsigned,int);
+#define RCC_SELECT_RESET() rcc_select_reset()
+#define RCC_SELECT_TEST(bit,value) rcc_select_test((bit),(value))
+#else
+#define RCC_SELECT_RESET() ((void)0)
+#define RCC_SELECT_TEST(bit,value) (value)
+#endif
 #include "persistent_subentry.inc"
 #endif
 static int pe_ready(void) {
@@ -683,6 +698,12 @@ static int ped_permitted(void) {
 }
 #ifdef LI2_PERSISTENT_RETAINED_TWO
 #include "persistent_retained_two.inc"
+#endif
+#ifdef LI2_REUSE_CENSUS
+#include "reuse_census_owner.inc"
+#define RCC_TEST(bit,value) rcc_test((bit),!!(value))
+#else
+#define RCC_TEST(bit,value) (value)
 #endif
 static void ped_claim(void) {
     pe_need(ped_permitted() && !pe_bytes(),PE_RELEASE,10);
@@ -813,20 +834,26 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         r && r->active && r->seed_complete && r->registration_epoch==pe.p.registration_epoch,PE_STATE,4);
     pe.candidate_registry_count=protected_count;pe_need(protected_count<=RANGES,PE_STATE,5);
     copy(pe.candidate_registry,protected,protected_count*sizeof *protected);
-    if(PE_SLOT(generation).installed && ped_stored() && pe_registry() &&
-       PE_SLOT(generation).generated==pe.p.generated &&
+#ifdef LI2_REUSE_CENSUS
+    rcc_source(s,r);
+#endif
+    if(RCC_TEST(0,PE_SLOT(generation).installed) && RCC_TEST(1,ped_stored()) && RCC_TEST(2,pe_registry()) &&
+       RCC_TEST(3,PE_SLOT(generation).generated==pe.p.generated) &&
 #ifdef LI2_PERSISTENT_SUBENTRY
-       pe_sub_candidate(s,pe_payload()) &&
+       RCC_TEST(4,pe_sub_candidate(s,pe_payload())) &&
 #else
-       li2_pg_source_key_equal(&PE_SLOT(publication).source,&s->key) &&
+       RCC_TEST(4,li2_pg_source_key_equal(&PE_SLOT(publication).source,&s->key)) &&
 #endif
 #ifdef LI2_PERSISTENT_UNREGISTERED
-       pe_lifetime_matches(&PE_SLOT(publication).header,r) &&
+       RCC_TEST(5,pe_lifetime_matches(&PE_SLOT(publication).header,r)) &&
 #endif
-       PE_SLOT(publication).header.registered_epoch==r->registration_epoch &&
-       PE_SLOT(publication).header.rseq_address==r->address &&
-       PE_SLOT(publication).header.rseq_length==r->length && PE_SLOT(publication).header.rseq_signature==r->signature) {
+       RCC_TEST(6,PE_SLOT(publication).header.registered_epoch==r->registration_epoch) &&
+       RCC_TEST(7,PE_SLOT(publication).header.rseq_address==r->address) &&
+       RCC_TEST(8,PE_SLOT(publication).header.rseq_length==r->length) && RCC_TEST(9,PE_SLOT(publication).header.rseq_signature==r->signature)) {
         pe_need(ped_permitted() && !pe_bytes(),PE_PUBLICATION,10);pe.warm=1;
+#ifdef LI2_REUSE_CENSUS
+        rcc_plan(pe.subentry_selected?2U:1U);
+#endif
 #ifdef LI2_PERSISTENT_SUBENTRY
         pe_need(!pe_sub_fill(),PE_SOURCE,110);
 #endif
@@ -851,7 +878,11 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         if(pe.build_result) {
             pe_need(li2_pg_miss_valid(&pe.cold,&pe.miss,pe.build_result) &&
                 pe.miss.reason>0 && pe.miss.reason<LI2_PGD_REASON_COUNT,PE_PLAN,pe.build_result);
-            ped_count(PGC_MISS_REF(pe.miss.reason));pe_decoding=0;selected_initialized();return 0;
+            ped_count(PGC_MISS_REF(pe.miss.reason));pe_decoding=0;selected_initialized();
+#ifdef LI2_REUSE_CENSUS
+            rcc_plan(3);
+#endif
+            return 0;
         }
 #ifdef LI2_PERSISTENT_DISPATCH
         pe_need(pe.cold.ready==1 && !pe.cold.result && pe.miss.version==LI2_PG_VERSION &&
@@ -863,6 +894,9 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         pe_need(!li2_pg_compact_build(&pe.cold,&pe.rebuild,&pe.candidate.plan),PE_PLAN,1);++pe.plan_proofs;
         pe_need(!li2_pg_compact_validate(&pe.candidate.plan,&pe.rebuild,&pe.compact_rebuild),PE_PLAN,2);++pe.plan_proofs;
         pe_need(!li2_pg_rseq_cold(&pe.token,&pe.cold,uc),PE_RSEQ,1);++pe.none_proofs;
+#ifdef LI2_REUSE_CENSUS
+        rcc_plan(4);
+#endif
         __asm__ volatile("":::"memory");pe_decoding=0;selected_initialized();
     }
     const struct li2_pg_compact *plan=pe.warm?&pe_payload()->plan:&pe.candidate.plan;
@@ -874,7 +908,11 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         equal(pe.candidate_registry,protected,protected_count*sizeof *protected) && pe_identity() &&
         le_quiet(&pe.ref) && !li2_pg_rseq_live(&pe.token,uc,&pe.live[0]) &&
         le_unchanged(&pe.before,si,uc),PE_SOURCE,1);
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+    for(unsigned i=0;i<plan->heads;i++)if(plan->head[i].kind==LI2_PE_NONE || plan->head[i].kind==LI2_PG_DIRECT) {
+#else
     for(unsigned i=0;i<plan->heads;i++)if(plan->head[i].kind==LI2_PE_NONE) {
+#endif
         const struct li2_span_decoded *d=&plan->original[i];
         pe.gpr_written|=d->gpr_write;
         pe.flags_written|=d->flags_written|d->flags_set|d->flags_cleared|d->flags_undefined;
@@ -1021,12 +1059,19 @@ int li2_pg_epoch_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,
     return 0;
 }
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+static int pe_exit_index(uintptr_t pc,uint64_t flags) {
+    if(!pe_ready())return -2;
+    return li2_pg_compact_exit(&pe_payload()->plan,pc,flags);
+}
+#else
 static int pe_exit_index(uintptr_t pc) {
     if(!pe_ready())return -1;
     const struct li2_pg_compact *p=&pe_payload()->plan;
     for(unsigned i=0;i<p->exits;i++)if(p->exit_pc[i]==pc)return (int)i;
     return -1;
 }
+#endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
 int li2_pg_epoch_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
     return pda_preentry(sig,si,uc);
@@ -1146,6 +1191,9 @@ int li2_pg_epoch_cancel(const struct li2_pg_token *t,int sig,siginfo_t *si,ucont
     selected_step_pending=*result==LI2_CHAIN_RUNNING;
     selected_pending_route=selected_step_pending?SELECTED_GENERIC_TF:SELECTED_NO_STEP;
     pe.p.phase=LI2_PG_CANCELLED;pe.ticket=0;selected_initialized();ped_count(PGC_REF(cancelled));
+#ifdef LI2_REUSE_CENSUS
+    rcc_finish(1);
+#endif
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
     pgo_cancelled(sig,si,uc,*result);
 #endif
@@ -1225,13 +1273,29 @@ static int pe_cross_page_trace_coarse(int sig,const siginfo_t *si,const ucontext
     return li2_tf_chain_span_cross_page_eligible(&selected_chain,sig,si,uc);
 }
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+static int pe_direct_trace_coarse(int sig,const siginfo_t *si,const ucontext_t *uc) {
+    if(selected_selftesting || !selected_linked_epoch.initialized ||
+       selected_linked_epoch_active || selected_linked_epoch_busy || selected_linked_epoch.first_error ||
+       selected_pending_route!=SELECTED_GENERIC_TF || selected_step_pending!=1 ||
+       handling!=1 || !si || !uc || selected_chain.active<0 || selected_chain.active>=2 ||
+       !selected_chain.pending || selected_chain.in_handler || selected_chain.first_error)return 0;
+    return li2_tf_chain_span_direct_eligible(&selected_chain,sig,si,uc);
+}
+#endif
 static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_CROSS_PAIR
     if(!pe.initialized || pe_busy || pe_active || !ped_capacity())return 0;
     unsigned cross_page=0;
     if(!le_trace_coarse(sig,si,uc)) {
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+        if(pe_cross_page_trace_coarse(sig,si,uc))cross_page=1;
+        else if(pe_direct_trace_coarse(sig,si,uc))cross_page=2;
+        else return 0;
+#else
         if(!pe_cross_page_trace_coarse(sig,si,uc))return 0;
         cross_page=1;
+#endif
     }
 #else
     if(!pe.initialized || pe_busy || pe_active || !ped_capacity() || !le_trace_coarse(sig,si,uc))return 0;
@@ -1288,6 +1352,12 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_begin(sig,si,uc,slot_index);
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+    pdo_begin(sig,si,uc,slot_index);
+#endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+    pco_begin(sig,si,uc,slot_index);
+#endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     pxo_begin(sig,si,uc,slot_index);
 #endif
@@ -1303,10 +1373,19 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     ped_reset_attempt();pe.selected_bank=bank_index;
 #endif
     pe_closing=1;pe_busy=1;ped_count(PGC_REF(offers));__asm__ volatile("":::"memory");
+#ifdef LI2_REUSE_CENSUS
+    rcc_begin(pc);
+#endif
     pe_need(!le_capture(&pe.ingress,sig,si,uc),PE_FRAME,0);pe.close_started=1;
 #ifdef LI2_PERSISTENT_CROSS_PAIR
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+    int e=cross_page==2?li2_tf_chain_span_close_direct(&selected_chain,sig,si,uc,&pe.ticket):
+        cross_page==1?li2_tf_chain_span_close_cross_page(&selected_chain,sig,si,uc,&pe.ticket):
+        li2_tf_chain_span_close(&selected_chain,sig,si,uc,&pe.ticket);
+#else
     int e=cross_page?li2_tf_chain_span_close_cross_page(&selected_chain,sig,si,uc,&pe.ticket):
         li2_tf_chain_span_close(&selected_chain,sig,si,uc,&pe.ticket);
+#endif
 #else
     int e=li2_tf_chain_span_close(&selected_chain,sig,si,uc,&pe.ticket);
 #endif
@@ -1331,6 +1410,12 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_closed();
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+    pdo_closed();
+#endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+    pco_closed();
 #endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     pxo_closed();
@@ -1363,6 +1448,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
         pe_need(!li2_pg_epoch_cancel(&pe.token,sig,si,uc,&result),PE_EVENT,3);return 1;
     }
     pe_need(!li2_pg_epoch_bind(&pe.token,&PE_SLOT(generation)),PE_PUBLICATION,2);
+#ifdef LI2_REUSE_CENSUS
+    rcc_bound();
+#endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
     pe_need(!pda_bind(uc),PE_PUBLICATION,70);
 #endif
@@ -1381,6 +1469,12 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_entered(sig,si,uc);
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+    pdo_entered(sig,si,uc);
+#endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+    pco_entered(sig,si,uc);
 #endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     pxo_entered(sig,si,uc);
@@ -1407,6 +1501,9 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
         le_quiet(0) && pe_registry(),PE_RELEASE,0);
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
     pda_complete();
+#ifdef LI2_REUSE_CENSUS
+    rcc_finish(2);
+#endif
 #else
     ped_count(PGC_REF(completed));pe.p.completion_permit=1;
     pe_need(!PE_SLOT(permit).valid,PE_RELEASE,12);
@@ -1437,6 +1534,12 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_terminal(0);
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+    pdo_terminal(0);
+#endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+    pco_terminal(0);
 #endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     pxo_terminal(0);
@@ -1552,6 +1655,12 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
 #include "persistent_subentry_observe.inc"
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+#include "persistent_direct_frontier_observe.inc"
+#endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+#include "persistent_cold_admission_observe.inc"
 #endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
 #include "persistent_cross_pair_observe.inc"

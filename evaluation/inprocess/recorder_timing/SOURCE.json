@@ -1,0 +1,126 @@
+{
+  "artifacts": {
+    "INVERSES.json": {
+      "bytes": 1609,
+      "mode": 420,
+      "sha256": "938316bf778b9ac5b16812a397c9621badf5d09618e27d6b6908cf42a448115c"
+    },
+    "PATCH.diff": {
+      "bytes": 1715,
+      "mode": 420,
+      "sha256": "da7f953ff7e0dbc792b087d45c259422b4c95f03b71c45591ee3ab37656ec6be"
+    },
+    "README.md": {
+      "bytes": 3201,
+      "mode": 420,
+      "sha256": "4d7dd21aa9d3447e6a952e4627cc0d789b9a0ce14357051aa8bc5afe5a275485"
+    },
+    "observation.csv": {
+      "bytes": 3978,
+      "mode": 420,
+      "sha256": "d75290b96b4893a4cb014604392fb7c693ddf318a63c4be08e91236c90b9016d"
+    },
+    "observation.json": {
+      "bytes": 9816,
+      "mode": 420,
+      "sha256": "1536dc769d9b127a4de438cdc3c8bfae074cce6ce9ca4901a061e439012fd713"
+    },
+    "recorder_parallel.py": {
+      "bytes": 15414,
+      "mode": 493,
+      "sha256": "75df9ac98a85b01cb0c9c8336aa0dbec98d1eb2e1b1c5d36313942d0d3172e34"
+    },
+    "run.py": {
+      "bytes": 9980,
+      "mode": 493,
+      "sha256": "767d917262be9d818578e4c944bde3096b7be85e5e0f66a72d37efb53f023f51"
+    }
+  },
+  "base_revision": "cd435d120c3e77a5bce91459e6503e9e415bc5b0",
+  "candidate_imports": 0,
+  "candidate_runs": 0,
+  "conserved_ledger_methods": {
+    "__init__": "9c1225a1fc6e7cd2b228e2bd5ff63bea6dcb7353e44989fa158cc4da2d077a5d",
+    "addSuccess": "3597f3bcac9a72bbf3434abc8ad5b0b80712bef591f44b4da87266807c912ca9"
+  },
+  "executed_private_source": {
+    "bytes": 4082,
+    "mode": 420,
+    "sha256": "c1f231f1d9a01c1d3930c8afb3f0f71cd89489d1469c1a167d36a06bbc0ab09e"
+  },
+  "inputs": {
+    "evaluation/admission/core_5cda_inventory.py": {
+      "bytes": 4536,
+      "mode": 420,
+      "sha256": "3b787406588a05685e2727e2a07274e8c97736a7debedd98ae32093bf472fe8e"
+    },
+    "evaluation/admission/core_cc846_inventory.py": {
+      "bytes": 15166,
+      "mode": 420,
+      "sha256": "69f5dbcac4a8e0e2a602b23d75fc665e216202b5854222c8044c25d1699153ac"
+    },
+    "evaluation/admission/corpus.json": {
+      "bytes": 229856,
+      "mode": 420,
+      "sha256": "31de1a27c5202a4d88b243fdee91205267b8dbdbf07c6e359e76d16d71d0d8bd"
+    },
+    "evaluation/admission/processes.py": {
+      "bytes": 15760,
+      "mode": 420,
+      "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+    },
+    "evaluation/admission/recorder_parallel.py": {
+      "bytes": 14537,
+      "mode": 420,
+      "sha256": "ebff154214da423816778dc146f528bc12b2cf4a0903222159965a2e611c7ea1"
+    },
+    "evaluation/admission/recorder_shards_inventory.json": {
+      "bytes": 26627,
+      "mode": 420,
+      "sha256": "55e4cdcc53533e6cc2f335b91acbaead6daa6356b787786e50532c9fbda5b453"
+    },
+    "evaluation/admission/recorder_shards_inventory.py": {
+      "bytes": 3199,
+      "mode": 420,
+      "sha256": "d90dca81509cdc6ee4fa874213a2a4337ba060c001508109fc04ecb19eb8c233"
+    },
+    "evaluation/admission/run.py": {
+      "bytes": 21614,
+      "mode": 420,
+      "sha256": "d9462b5ec03f3085564907d0fa1d42e882d49900651e05899d5b3f4122ddab3f"
+    },
+    "evaluation/inprocess/checks.py": {
+      "bytes": 7782,
+      "mode": 420,
+      "sha256": "04c89dcabf70a7986225bca51a59725a98fc620caef24c78519112ebe1c71e39"
+    }
+  },
+  "inverse_spans": 4,
+  "limits": {
+    "cleanup_seconds": 3,
+    "log_bytes": 8388608,
+    "wall_seconds": 180,
+    "workers": 4
+  },
+  "original_tests": 366,
+  "original_whole_function_asts": {
+    "coordinate": "e59eee54bb199251d2bb825eb84f5a6712eebd2edeee242cad5ea44118cbdecd",
+    "digest": "ef2be9c4640ca69645f24500583ca11ad3850135387a1762a2e5d89aad7c0df3",
+    "discover": "eee9969381002816853006bffba7ae9253abbd67da31f5240ebed92729147346",
+    "flatten": "aed0aa012a71c9caf6cbdf33a4b6be4c1d340e83ad199a2d061c87c63cd64dde",
+    "main": "282fbb1b208c7e700c98fe32e32989abea705e789b7ceef7d992d2cd17f745be",
+    "parse_worker": "73a2c1c08f044533aafce8d6ba03897f82e91d0674b3d262bd263c5bee6498e8",
+    "partition": "1d08cc68bf05d05bc745d9fddc70f0edbb218902151a3d852d465db8bcb27722",
+    "require": "61326a9f2c20d277ff5d69624c891b91425305f22e4d5acd7fb8d3d9e4967cc7",
+    "unique": "4a07e527cdb5a47cf9a80d89d16ea1f954a6ce852d88b5cffb4b17e121a320d8",
+    "validate": "c8149da533c19f1548bd682257795cc6930db2dddcf878108ed84e016eef8459",
+    "worker": "1ab3e10712a7d163a599c63c9ba30c5f821536e2c40ce9da94a75855b6723462",
+    "worker_row": "56f9ecc674cef2c76a82442cbbbf7aa182cd74bb573426f02cf9a6781d2e213f"
+  },
+  "performance_credit": false,
+  "provenance": "Script bytes exact to the private execution; only packaging and compact projections differ.",
+  "public_adapter_runs": 0,
+  "qualification_credit": false,
+  "schema": 1,
+  "scope": "PORTABLE_SOURCE_ONLY_ADAPTER_FOR_EXECUTED_PRIVATE_FACADE_NO_QUALIFICATION"
+}

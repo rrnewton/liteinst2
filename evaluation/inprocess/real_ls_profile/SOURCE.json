@@ -1,0 +1,187 @@
+{
+  "conservation": {
+    "control_replay": false,
+    "old_program_runner_changed": false,
+    "owner_byte_exact": true,
+    "owner_donor": "evaluation/inprocess/startup_profile/capture_profile.py",
+    "parser_changed": false,
+    "pure_prerequisite_validator": "direct_frontier_program.direct_prerequisite"
+  },
+  "counter_protocol": {
+    "bytes": 752,
+    "final_seals": 23,
+    "initial_seals": 6,
+    "page": 4096,
+    "post_wait4_only": true,
+    "transaction_arithmetic": false,
+    "version": 2
+  },
+  "exact_environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "LD_BIND_NOW": "1",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "execution": {
+    "builds": 0,
+    "candidate_imports": 0,
+    "guests": 0,
+    "perf": 0
+  },
+  "files": {
+    "capture_profile.py": {
+      "bytes": 30599,
+      "mode": 420,
+      "sha256": "2b4bb05c9351b6f2385eaa3b8c7c94e171af5c663814ea46158ea3cd548debd8"
+    },
+    "run.py": {
+      "bytes": 28113,
+      "mode": 493,
+      "sha256": "f640b8bd28cbf11b47901f7fb6e1d47e0f458463adc7a3b9b59416e7b002d309"
+    }
+  },
+  "historical_observation": {
+    "run": {
+      "bytes": 27030,
+      "sha256": "531c89328232586b7ca336b20405aae782b156383c2f9053c64b313b713c4aa0"
+    },
+    "source": {
+      "bytes": 7245,
+      "sha256": "33872022293d805d792cb14c784408f67ba44d2bb2275231323d30a5ff32b1ed"
+    },
+    "wrapper": {
+      "bytes": 10243,
+      "sha256": "fa9176589afa97d60a6cf1182c8384dd1bac3296513b1ce84867ce2cdad108e4"
+    },
+    "wrapper_source": {
+      "bytes": 9329,
+      "sha256": "7226b90e14f82b0637d8c137edfcfc3b6a24572d0bb285ee498e896f016fdfbd"
+    }
+  },
+  "inputs": {
+    "evaluation/inprocess/direct_frontier_program.py": {
+      "bytes": 36871,
+      "sha256": "62e44a7d73ea285e64fd9e0170256dc3899fdc7397b2a73d6415e127275fdb0c"
+    },
+    "evaluation/inprocess/linked_frontier_census.py": {
+      "bytes": 28149,
+      "sha256": "1094ffcf0492c55e67794ea227653cb670d91f664e3efb4b4c9205e21254cb67"
+    },
+    "evaluation/inprocess/page_cost_profile.py": {
+      "bytes": 26578,
+      "sha256": "7b507bb98d91b7d8f6a9dc84be282160031284840140fb1d99272fd583e93cdc"
+    },
+    "evaluation/inprocess/page_cost_profile_read.py": {
+      "bytes": 35971,
+      "sha256": "ef6cfe33985a58596063822cb9b40df2ec301cdf5d51d6dd3ea6e05c12f9ccd2"
+    },
+    "evaluation/inprocess/page_default_ls_release_provenance.py": {
+      "bytes": 1989,
+      "sha256": "1fe9f09c8f4628629dbb231fbce1049d0022e423dcaaf9458d359d5e2b2f7d88"
+    },
+    "evaluation/inprocess/page_native_pair_performance.py": {
+      "bytes": 48569,
+      "sha256": "072b17b41fc5818543e0cfb8547259fd7ecac24840431439d2293862eddeb056"
+    },
+    "evaluation/inprocess/page_selected.py": {
+      "bytes": 29973,
+      "sha256": "941c10dca909c9eed84af6606da38e0f88e4f76eda7f3deaf034282680674e17"
+    },
+    "evaluation/inprocess/page_selected_process.py": {
+      "bytes": 7089,
+      "sha256": "71cc09047a01bd62c79d994587998aac17655f0f65a4464c94f12df461f1f773"
+    },
+    "evaluation/inprocess/page_selected_register_time_build.py": {
+      "bytes": 9738,
+      "sha256": "c6354248d89f8622b328cb21c744a4e9c37221f0d152cd5c3fbed7f48e6fe84d"
+    },
+    "evaluation/inprocess/persistent_dynamic_profile_read.py": {
+      "bytes": 33341,
+      "sha256": "7062f1c6f402168ca10a0f60601983f6a42fbec916c213ad309f417f55048eb4"
+    },
+    "evaluation/inprocess/persistent_group_counter_process.py": {
+      "bytes": 16372,
+      "sha256": "5030b0c0f6d4f96f0fe4cf8485ad02345ed43f3979e8179bcea32e9ef6e8039a"
+    },
+    "evaluation/inprocess/persistent_resident_profile.py": {
+      "bytes": 34182,
+      "sha256": "974ba98525f2e892d73c7ecea6c0a0bae6c888d48b6402410cd448fa190cfcf3"
+    },
+    "evaluation/inprocess/run.py": {
+      "bytes": 13593,
+      "sha256": "3e239969f1d043c9a4261ccfe8a464f18eecbf6a5ef9a4dd6139e2023c1f3bd2"
+    },
+    "evaluation/inprocess/startup_profile/capture_profile.py": {
+      "bytes": 30599,
+      "sha256": "2b4bb05c9351b6f2385eaa3b8c7c94e171af5c663814ea46158ea3cd548debd8"
+    },
+    "evaluation/inprocess/startup_profile/run.py": {
+      "bytes": 21672,
+      "sha256": "d0ffcd774df745d7dd57377894fe31d1bda99f1e63f6b4b2abd64160baf7d8b2"
+    },
+    "tools/page-entry/carrier.py": {
+      "bytes": 13001,
+      "sha256": "71a967495e86c32cacdad45f8739ece08bb6c4fc51c0797a6ddda7d9013bcdd3"
+    },
+    "tools/page-entry/namespace.py": {
+      "bytes": 12816,
+      "sha256": "cfd4bb628584b1ad718705015bbd6b85f8ef41cd12005e0bb93402f2d0352cfa"
+    },
+    "tools/page-entry/selected/build-persistent-direct-frontier-counters.sh": {
+      "bytes": 4646,
+      "sha256": "b7f36711950c0789199f9cc98a3f2374fe61208fe368f63dff041277eec8ecaf"
+    },
+    "tools/page-entry/selected/persistent_direct_frontier_binding.py": {
+      "bytes": 4085,
+      "sha256": "be16d77e039ba1c28587a6e12437ce7b097bf0c6bc6d46bb02f98d3f34b60103"
+    },
+    "tools/page-entry/selected/persistent_group_compact.c": {
+      "bytes": 32854,
+      "sha256": "b28191d927cdd6431eafa2f1d463b22e7bfe3ac2ac5322f6da0445a0aab20d63"
+    },
+    "tools/page-entry/selected/persistent_group_controller.inc": {
+      "bytes": 85062,
+      "sha256": "2c65ab18f31688ee7aaee5fa52d6022d4064ba85fc1c8126a097dbbf518b7c93"
+    }
+  },
+  "interface": {
+    "output_beneath": "target/evaluation/inprocess",
+    "required": [
+      "--expect-revision",
+      "--expect-origin-revision",
+      "--origin-receipt",
+      "--expect-origin-sha256",
+      "--output"
+    ],
+    "same_cpu": "exact origin CPU"
+  },
+  "observer": [
+    30,
+    1073741824,
+    134217728,
+    80
+  ],
+  "old_failures_preserved": true,
+  "performance_credit": false,
+  "qualification_credit": false,
+  "readme": {
+    "bytes": 5015,
+    "sha256": "981a39eba2c2e4141c14bc2f0a567de0cdb92d6509e3da59af11a53274b792cd"
+  },
+  "review_baseline": "22613d9b26f8be5438fe389d690feb221f62d3db",
+  "ring_bytes": 16777216,
+  "sample_hz": 99,
+  "schema": 1,
+  "scope": "SOURCE_ONLY_INPUT_BOUND_REAL_LS_PROFILE_SUCCESSOR",
+  "stack_bytes": 4096,
+  "target": [
+    30,
+    536870912,
+    16777216,
+    60
+  ],
+  "whole_exec_and_exit": true,
+  "zero_loss_required": true
+}

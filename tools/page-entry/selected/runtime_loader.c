@@ -4,6 +4,9 @@
 #include "lifecycle_loader.h"
 #ifdef LI2_PERSISTENT_GROUP_COUNTERS
 #include "persistent_group_counters.h"
+#ifdef LI2_REUSE_CENSUS
+#include "reuse_census.h"
+#endif
 #endif
 #ifdef LI2_CURRENT_TF_CAPTURE
 #include "current_tf_observe.h"
@@ -290,6 +293,12 @@ static void selected_persistent_report(unsigned,unsigned,long);
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
 #include "persistent_subentry_observe.h"
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+#include "persistent_direct_frontier_observe.h"
+#endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+#include "persistent_cold_admission_observe.h"
+#endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
 #include "persistent_cross_pair_observe.h"
 #endif
@@ -571,6 +580,12 @@ static void report(unsigned status,unsigned code,long detail) {
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_finish(status,code,detail);
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+    pdo_finish(status,code,detail);
+#endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+    pco_finish(status,code,detail);
+#endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     pxo_finish(status,code,detail);
 #endif
@@ -648,6 +663,9 @@ static void protect(uintptr_t first,size_t bytes) {
 }
 #ifdef LI2_PERSISTENT_GROUP_COUNTERS
 #include "persistent_group_counters.inc"
+#ifdef LI2_REUSE_CENSUS
+#include "reuse_census_attach.inc"
+#endif
 #endif
 static int private_intersects(uintptr_t first,size_t bytes) {
     if (!bytes || first>UINTPTR_MAX-bytes) return 1;
@@ -1006,6 +1024,12 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_ingress(sig,si,ptr);
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+    pdo_ingress(sig,si,ptr);
+#endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+    pco_ingress(sig,si,ptr);
+#endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     pxo_ingress(sig,si,ptr);
 #endif
@@ -1284,6 +1308,9 @@ static size_t parse_fds(int fds[32]) {
 void runtime_arm(const struct image *main,const struct image *interp,size_t minimum) {
 #ifdef LI2_PERSISTENT_GROUP_COUNTERS
     pgc_attach();
+#ifdef LI2_REUSE_CENSUS
+    rcc_attach();
+#endif
 #endif
     checked(minimum && minimum<ALT_BYTES-16384,226,0); original_main=*main;original_interpreter=*interp;
     checked(raw(SYS_getpid,0,0,0,0,0,0)==raw(SYS_gettid,0,0,0,0,0,0),227,0);
@@ -1406,6 +1433,12 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     pso_initialize();
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+    pdo_initialize();
+#endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+    pco_initialize();
 #endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     pxo_initialize();

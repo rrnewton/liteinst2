@@ -1,0 +1,18 @@
+[
+  {
+    "old": "HERE = Path(__file__).resolve().parent\nROOT = HERE.parents[1]",
+    "new": "# Diagnostic facade only: all discovered tests and source validators retain\n# their actual tracked module paths. Workers re-exec this private __file__.\nHERE = Path(os.environ['LI2_RECORDER_SOURCE_ROOT']).resolve(strict=True) / 'evaluation/admission'\nROOT = HERE.parents[1]\nsys.path.insert(0, str(HERE))"
+  },
+  {
+    "old": "class Ledger(unittest.TextTestResult):",
+    "new": "def timing_event(event, test):\n    # These inclusive timings include result/output bookkeeping. Process CPU\n    # excludes descendant CPU; no timing can qualify a test or a repository run.\n    row = dict(schema=1, event=event, test=test.id(), pid=os.getpid(),\n               affinity=sorted(os.sched_getaffinity(0)),\n               monotonic_ns=time.monotonic_ns(), process_time_ns=time.process_time_ns())\n    print('RECORDER_TIMING ' + json.dumps(row, sort_keys=True, separators=(',', ':'),\n                                         allow_nan=False), flush=True)\n\n\nclass Ledger(unittest.TextTestResult):"
+  },
+  {
+    "old": "    def startTest(self, test):\n        self.started_ids.append(test.id())",
+    "new": "    def startTest(self, test):\n        timing_event('start', test)\n        self.started_ids.append(test.id())"
+  },
+  {
+    "old": "    def stopTest(self, test):\n        self.completed_ids.append(test.id())\n        super().stopTest(test)",
+    "new": "    def stopTest(self, test):\n        self.completed_ids.append(test.id())\n        super().stopTest(test)\n        timing_event('stop', test)"
+  }
+]

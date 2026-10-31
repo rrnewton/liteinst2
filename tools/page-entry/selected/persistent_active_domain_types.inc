@@ -8,6 +8,18 @@ struct pda_member_completion {
     struct li2_pg_generation generation;
     struct pg_proof_query proof;
 };
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+/* Saved before the completed plan can be replaced. No sibling pointer is
+   needed to validate original bytes, selected arm or the closed member. */
+struct pda_direct_exit {
+    unsigned complete,member,heads,head,exits,index,arm,reserved;
+    uint64_t flags;
+    struct li2_pe_head row;
+    struct li2_span_decoded original;
+    struct li2_dd_descriptor direct;
+};
+_Static_assert(sizeof(struct pda_direct_exit)==528,"by-value direct exit custody");
+#endif
 struct pda_completion {
     uint64_t id,serial;
     unsigned count,complete;
@@ -17,6 +29,9 @@ struct pda_completion {
     struct li2_pg_rseq_progress rseq;
     struct li2_fetch_progress fetch;
     struct li2_private_code_query directory_closed;
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+    struct pda_direct_exit direct_exit;
+#endif
 };
 struct pda_claim_observation {
     struct li2_private_code_query code[3],spill,slots;

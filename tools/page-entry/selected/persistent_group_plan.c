@@ -107,6 +107,11 @@ static int layout_valid(const struct li2_pg_layout *l) {
     if(l->directory<LI2_REGION_PAGE || (l->directory&4095U) ||
        !address(l->directory,LI2_JD_DOMAIN_BYTES))return 0;
     for(unsigned i=0;i<5;i++)if(overlap(l->directory,LI2_JD_DOMAIN_BYTES,a[i],n[i]))return 0;
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+    if(l->window<LI2_REGION_PAGE || (l->window&4095U) || !address(l->window,LI2_CD_WINDOW_PAGE) ||
+       overlap(l->window,LI2_CD_WINDOW_PAGE,l->directory,LI2_JD_DOMAIN_BYTES))return 0;
+    for(unsigned i=0;i<5;i++)if(overlap(l->window,LI2_CD_WINDOW_PAGE,a[i],n[i]))return 0;
+#endif
     return 1;
 }
 #else
@@ -155,6 +160,37 @@ int li2_pg_dispatch_binding(const uintptr_t pages[2],const struct li2_pg_layout 
 #endif
     return 0;
 }
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+int li2_pg_call_binding(const uintptr_t pages[2],const struct li2_pg_layout *layout,
+    uintptr_t table,unsigned heads,unsigned head,struct li2_cd_binding *out) {
+    if(!storage(pages,2*sizeof *pages) || !storage(layout,sizeof *layout) || !storage(out,sizeof *out) ||
+       (uintptr_t)pages%_Alignof(uintptr_t) || (uintptr_t)layout%_Alignof(struct li2_pg_layout) ||
+       (uintptr_t)out%_Alignof(struct li2_cd_binding) ||
+       overlap((uintptr_t)out,sizeof *out,(uintptr_t)pages,2*sizeof *pages) ||
+       overlap((uintptr_t)out,sizeof *out,(uintptr_t)layout,sizeof *layout))return LI2_PG_ARGUMENT;
+    zero(out,sizeof *out);struct li2_jd_binding common;
+    if(li2_pg_dispatch_binding(pages,layout,table,heads,head,&common))return LI2_PG_ARGUMENT;
+    const uintptr_t base=table-offsetof(struct li2_pg_plan,table);
+    if(overlap(layout->window,LI2_CD_WINDOW_PAGE,base,offsetof(struct li2_pg_plan,table)+sizeof(struct li2_mg_table)))return LI2_PG_ARGUMENT;
+    for(unsigned i=0;i<2;i++)if(overlap(layout->window,LI2_CD_WINDOW_PAGE,pages[i],LI2_REGION_PAGE))return LI2_PG_ARGUMENT;
+    *out=(struct li2_cd_binding){common.rows,{common.image[0],common.image[1]},heads,head,common.directory,layout->window};
+    return 0;
+}
+static int call_form(const unsigned char *bytes,size_t n) {
+    if(!n)return 0;
+    const unsigned prefix=bytes[0]==0x41?1U:0U;
+    return n>=prefix+2U && bytes[prefix]==0xff && bytes[prefix+1]>=0xd0 && bytes[prefix+1]<=0xd7;
+}
+static int call_describe(struct li2_pg_plan *p,const struct li2_span_decoded *d,
+    const unsigned char *bytes,size_t n,struct li2_cd_descriptor *out) {
+    p->decoder_result=(unsigned)li2_cd_describe(d->decoded.pc,bytes,n,out);
+    if(p->decoder_result || out->version!=LI2_CD_VERSION || out->ready!=1 || out->refusal ||
+       out->available!=n || !equal(&out->decoded,&d->decoded,sizeof d->decoded))return LI2_PG_DECODER;
+    struct li2_span_decoded expected={0};
+    expected.decoded=out->decoded;expected.version=1;expected.refusal=LI2_REGION_UNSUPPORTED;
+    return equal(d,&expected,sizeof expected)?0:LI2_PG_DECODER;
+}
+#endif
 static int dispatch_form(const unsigned char *bytes,size_t n) {
     if(!n)return 0;
     const unsigned prefix=bytes[0]==0x41?1U:0U;
@@ -313,6 +349,9 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
 #endif
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
         struct li2_jd_descriptor dispatch={0};
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+        struct li2_cd_descriptor call={0};
+#endif
 #endif
         int e=describe(p,q[at].pc,bytes,count,&d);if(e) {
             if(e==LI2_PG_BOUNDARY)pgd_source_boundary(&d,count,miss);
@@ -338,6 +377,12 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
             kind=LI2_PG_DISPATCH;
         }
 #endif
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+        if(!kind && call_form(bytes,count)) {
+            if((e=call_describe(p,&d,bytes,count,&call)))return e;
+            kind=LI2_PG_CALL;
+        }
+#endif
         q[at].decoded=1;
         if(!kind) {
             if(!at) {
@@ -351,8 +396,22 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
             if(p->exits==LI2_PG_BOUNDARIES) {pgd_mark(miss,LI2_PGD_EXIT_LIMIT,LI2_PGD_SOURCE,q[at].pc,p->exits);return LI2_PG_GRAPH;}
             unsigned x=p->exits++;p->frontier[x]=d;p->exit_pc[x]=q[at].pc;q[at].token=LI2_PG_HEADS+x;continue;
         }
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+        unsigned external=0;
+        if(kind==LI2_PE_NONE && (d.flow==LI2_REGION_JMP || d.flow==LI2_REGION_JCC)) {
+            unsigned page,offset;
+            if(!location(p,d.target,&page,&offset))external|=1;
+            if(d.flow==LI2_REGION_JCC && !location(p,d.decoded.next_pc,&page,&offset))external|=2;
+            if(external)kind=LI2_PG_DIRECT;
+        }
+#endif
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
         if(kind==LI2_PG_DISPATCH && p->exits==LI2_PG_BOUNDARIES) {
+            pgd_mark(miss,LI2_PGD_EXIT_LIMIT,LI2_PGD_SOURCE,q[at].pc,p->exits);return LI2_PG_GRAPH;
+        }
+#endif
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+        if(kind==LI2_PG_CALL && p->exits==LI2_PG_BOUNDARIES) {
             pgd_mark(miss,LI2_PGD_EXIT_LIMIT,LI2_PGD_SOURCE,q[at].pc,p->exits);return LI2_PG_GRAPH;
         }
 #endif
@@ -366,6 +425,15 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
 #ifdef LI2_ADD_GUARD
         if(kind==LI2_PG_ADD) { p->instruction[i].add=add;++p->stores; }
 #endif
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+        if(kind==LI2_PG_CALL) {
+            p->instruction[i].call=call;++p->stores;
+            /* No static callee or return-continuation borrow. The one exit
+               is the exact original CALL before any architectural effect. */
+            unsigned x=p->exits++;p->frontier[x]=d;p->exit_pc[x]=q[at].pc;
+            continue;
+        }
+#endif
         if(kind==LI2_PG_DISPATCH) {
             p->instruction[i].dispatch=dispatch;
             /* This is one real BEFORE-JMP unknown-target exit, not a static
@@ -376,12 +444,35 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
 #else
         if(kind==LI2_PE_MOV) { p->store_original[i]=s;++p->stores; }
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+        if(kind==LI2_PG_DIRECT) {
+            p->decoder_result=(unsigned)li2_dd_describe(d.decoded.pc,bytes,count,external,&p->instruction[i].direct);
+            if(p->decoder_result)return LI2_PG_DECODER;
+            const unsigned arms=d.flow==LI2_REGION_JCC?2:1;
+            for(unsigned arm=0;arm<arms;arm++)if(external&(1U<<arm)) {
+                if(p->exits==LI2_PG_BOUNDARIES) {
+                    pgd_mark(miss,LI2_PGD_EXIT_LIMIT,LI2_PGD_SOURCE,q[at].pc,p->exits);return LI2_PG_GRAPH;
+                }
+                /* Arm identity is (this head, this ordinal, this token).
+                   Equal targets must not collapse two conditional arms. */
+                unsigned x=p->exits++;p->frontier[x]=d;p->exit_pc[x]=d.decoded.pc;
+                h->successors[arm]=LI2_PG_HEADS+x;
+            }
+        }
+#endif
         unsigned flow=guarded_write(kind)?LI2_REGION_NEXT:d.flow;
         if(flow==LI2_REGION_NEXT) {
             if(enqueue(p,q,&n,d.decoded.next_pc)<0) {pgd_enqueue_refusal(p,q,n,q[at].pc,d.decoded.next_pc,miss);return LI2_PG_GRAPH;}
         } else if(flow==LI2_REGION_JCC || flow==LI2_REGION_JMP) {
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+            if(!(external&1U) && enqueue(p,q,&n,d.target)<0) {pgd_enqueue_refusal(p,q,n,q[at].pc,d.target,miss);return LI2_PG_GRAPH;}
+            if(flow==LI2_REGION_JCC && !(external&2U) && enqueue(p,q,&n,d.decoded.next_pc)<0) {
+                pgd_enqueue_refusal(p,q,n,q[at].pc,d.decoded.next_pc,miss);return LI2_PG_GRAPH;
+            }
+#else
             if(enqueue(p,q,&n,d.target)<0) {pgd_enqueue_refusal(p,q,n,q[at].pc,d.target,miss);return LI2_PG_GRAPH;}
             if(flow==LI2_REGION_JCC && enqueue(p,q,&n,d.decoded.next_pc)<0) {pgd_enqueue_refusal(p,q,n,q[at].pc,d.decoded.next_pc,miss);return LI2_PG_GRAPH;}
+#endif
         } else return LI2_PG_DECODER;
     }
     if(!p->heads || !p->exits) {
@@ -392,6 +483,24 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
         struct li2_pe_head *h=&p->head[i];const struct li2_span_decoded *d=&p->original[i];
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
         if(h->kind==LI2_PG_DISPATCH)continue;
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+        if(h->kind==LI2_PG_CALL)continue;
+#endif
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+        if(h->kind==LI2_PG_DIRECT) {
+            const struct li2_dd_descriptor *a=&p->instruction[i].direct;
+            h->successor_count=d->flow==LI2_REGION_JCC?2:1;
+            for(unsigned arm=0;arm<h->successor_count;arm++) {
+                if(a->external_mask&(1U<<arm)) {
+                    unsigned k=h->successors[arm];
+                    if(k<LI2_PG_HEADS || k-LI2_PG_HEADS>=p->exits ||
+                       p->exit_pc[k-LI2_PG_HEADS]!=d->decoded.pc ||
+                       !equal(&p->frontier[k-LI2_PG_HEADS],d,sizeof *d))return LI2_PG_GRAPH;
+                } else if(!resolve(q,n,a->target[arm],&h->successors[arm]))return LI2_PG_GRAPH;
+            }
+            continue;
+        }
 #endif
         unsigned flow=guarded_write(h->kind)?LI2_REGION_NEXT:d->flow;
         h->successor_count=flow==LI2_REGION_JCC?2:1;
@@ -459,6 +568,50 @@ static int pgd_emit(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
     for(unsigned i=0;i<p->heads;i++) {
         struct li2_pe_head *h=&p->head[i];const struct li2_span_decoded *d=&p->original[i];
         uintptr_t generated=head_generated(p,i);unsigned char *out=head_image(p,i);
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+        if(h->kind==LI2_PG_CALL) {
+            struct li2_cd_binding binding;
+            if(h->successor_count || h->successors[0] || h->successors[1] ||
+               li2_pg_call_binding(p->page,&p->layout,p->table.address,p->heads,i,&binding))return LI2_PG_CORRUPT;
+            unsigned exits=0;
+            for(unsigned j=0;j<p->exits;j++)if(p->exit_pc[j]==d->decoded.pc) {
+                if(!equal(&p->frontier[j],d,sizeof *d))return LI2_PG_CORRUPT;
+                ++exits;
+            }
+            if(exits!=1)return LI2_PG_CORRUPT;
+            unsigned char bytes[15];size_t n=window(p,d->decoded.pc,bytes);
+            struct li2_cd_plan *g=&p->guard[i].call;
+            p->guard_result=(unsigned)li2_cd_emit(d->decoded.pc,bytes,n,generated,p->layout.spill,&binding,g);
+            if(p->guard_result)return p->guard_result==LI2_CD_RELOCATION?LI2_PG_RELOCATION:LI2_PG_DECODER;
+            if(!equal(&g->original,&p->instruction[i].call,sizeof g->original) ||
+               !equal(&g->binding,&binding,sizeof binding) || g->record.ready!=1 ||
+               !g->record.image_bytes || g->record.image_bytes>LI2_PE_SLOT_BYTES ||
+               g->generated!=generated || g->spill!=p->layout.spill)return LI2_PG_DECODER;
+            /* literal_offset504 is data beyond image_bytes248. Preserve the
+               whole slot, including the exact zero gap and original-next-PC. */
+            h->generated_length=g->record.image_bytes;copy(out,g->image,LI2_CD_SLOT_BYTES);continue;
+        }
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+        if(h->kind==LI2_PG_DIRECT) {
+            struct li2_jd_binding binding;uintptr_t internal[2]={0};
+            const struct li2_dd_descriptor *a=&p->instruction[i].direct;
+            if(li2_pg_dispatch_binding(p->page,&p->layout,p->table.address,p->heads,i,&binding))return LI2_PG_CORRUPT;
+            for(unsigned arm=0;arm<h->successor_count;arm++)if(!(a->external_mask&(1U<<arm))) {
+                internal[arm]=destination(p,i,arm);if(!internal[arm])return LI2_PG_CORRUPT;
+            }
+            unsigned char bytes[15];size_t n=window(p,d->decoded.pc,bytes);
+            struct li2_dd_plan *g=&p->guard[i].direct;
+            p->guard_result=(unsigned)li2_dd_emit(d->decoded.pc,bytes,n,a->external_mask,
+                generated,p->layout.spill,&binding,internal,g);
+            if(p->guard_result)return p->guard_result==LI2_DD_RELOCATION?LI2_PG_RELOCATION:LI2_PG_DECODER;
+            if(!equal(&g->original,a,sizeof *a) || !equal(&g->binding,&binding,sizeof binding) ||
+               !equal(g->internal,internal,sizeof internal) || g->record.ready!=1 ||
+               !g->record.image_bytes || g->record.image_bytes>LI2_PE_SLOT_BYTES ||
+               g->generated!=generated || g->spill!=p->layout.spill)return LI2_PG_DECODER;
+            h->generated_length=g->record.image_bytes;copy(out,g->image,h->generated_length);continue;
+        }
+#endif
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
         if(h->kind==LI2_PG_DISPATCH) {
             struct li2_jd_binding binding;
@@ -583,6 +736,9 @@ int li2_pg_plan_pages(const uintptr_t pages[2],const unsigned char source[2][LI2
     }
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
     for(unsigned i=0;i<8;i++)if(overlap(layout->directory,LI2_JD_DOMAIN_BYTES,at[i],bytes[i]))goto done;
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+    for(unsigned i=0;i<8;i++)if(overlap(layout->window,LI2_CD_WINDOW_PAGE,at[i],bytes[i]))goto done;
+#endif
 #endif
     copy(out->page,pages,sizeof out->page);copy(out->source,source,sizeof out->source);
     out->entry=entry;out->layout=*layout;copy(&out->table,table,sizeof *table);

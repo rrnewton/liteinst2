@@ -1,21 +1,31 @@
+/* The unchanged pure selector component includes this leaf directly. */
+#ifndef LI2_REUSE_CENSUS
+#ifndef RCC_SELECT_RESET
+#define RCC_SELECT_RESET() ((void)0)
+#endif
+#ifndef RCC_SELECT_TEST
+#define RCC_SELECT_TEST(bit,value) (value)
+#endif
+#endif
 /* Only advisory selection is performed before real TRACE closure. The old
    selector still authenticates every retained claim and wins exact roots. */
 struct pe_sub_choice { unsigned slot,bank,subentry;uintptr_t page[2]; };
 static int pe_sub_choose(uintptr_t pc,struct pe_sub_choice *out) {
     if(!out)return 0;
     *out=(struct pe_sub_choice){0};
+    RCC_SELECT_RESET();
     unsigned slot=ptr_choose(pc);uintptr_t page=pc&~(PAGE-1);
     const struct li2_ptr_slot *chosen=&pe.retained[slot];
     if(chosen->generation.installed && chosen->publication.source.entry==pc) {
-        if(!li2_pg_source_pair_advisory(pc))return 0;
+        if(!RCC_SELECT_TEST(0,li2_pg_source_pair_advisory(pc)))return 0;
         *out=(struct pe_sub_choice){slot,ped_bank_for(pc),0,{page,page+PAGE}};return 1;
     }
     for(unsigned i=0;i<LI2_PTR_SLOTS;i++) {
         const struct li2_ptr_slot *s=&pe.retained[i];if(!s->generation.installed)continue;
         const struct pe_payload *p=(const void *)s->proof;struct li2_pgs_target target;
-        int found=li2_pgs_head_lookup(&p->plan,pc,&target);
+        int found=RCC_SELECT_TEST(4+i,li2_pgs_head_lookup(&p->plan,pc,&target));
         pe_need(found>=0,PE_PUBLICATION,110);
-        if(!found || !li2_pgs_source_pair_advisory(pc,target.page))continue;
+        if(!found || !RCC_SELECT_TEST(1+i,li2_pgs_source_pair_advisory(pc,target.page)))continue;
         unsigned bank=2;
         for(unsigned j=0;j<2;j++)if(s->generation.generated==s->banks[j].generated &&
             pg_layout_equal(&s->generation.layout,&s->banks[j].layout)) {
@@ -24,7 +34,7 @@ static int pe_sub_choose(uintptr_t pc,struct pe_sub_choice *out) {
         pe_need(bank<2 && target.root==p->source.entry && target.pc!=target.root,PE_STATE,111);
         *out=(struct pe_sub_choice){i,bank,1,{target.page[0],target.page[1]}};return 1;
     }
-    if(!li2_pg_source_pair_advisory(pc))return 0;
+    if(!RCC_SELECT_TEST(3,li2_pg_source_pair_advisory(pc)))return 0;
     *out=(struct pe_sub_choice){slot,ped_bank_for(pc),0,{page,page+PAGE}};return 1;
 }
 static int pe_sub_candidate(const struct li2_pg_sources *s,const struct pe_payload *p) {

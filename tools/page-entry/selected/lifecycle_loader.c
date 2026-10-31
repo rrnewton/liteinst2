@@ -1181,6 +1181,12 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
 #include "persistent_subentry_observe_memory.inc"
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+#include "persistent_direct_frontier_observe_memory.inc"
+#endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+#include "persistent_cold_admission_observe_memory.inc"
+#endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
 #include "persistent_cross_pair_observe_memory.inc"
 #endif

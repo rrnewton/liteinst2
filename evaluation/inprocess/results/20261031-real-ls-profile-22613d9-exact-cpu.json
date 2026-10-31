@@ -1,0 +1,49 @@
+{
+  "command_returncode": 0,
+  "cpu": 3,
+  "parent_affinity_unchanged": true,
+  "performance_credit": false,
+  "profile_receipt": {
+    "bytes": 1998042,
+    "mode": 420,
+    "sha256": "35ac01edad2518111df53ea4c4bab40347fda2ef0174f9da9ea3dcbdb49f7587"
+  },
+  "profile_summary": {
+    "bytes": 14498,
+    "mode": 420,
+    "sha256": "f4773478152dd0b575ca49bb4426a51ff8254682959f5225c62b0d24d5b47882"
+  },
+  "qualification": false,
+  "recipe_scope": "Authoritative exact-CPU recipe supersedes only the inner summary generic --cores 1 hint. Do not taskset the parent. The unmodified allocator must prove HARD on another allowed core before its sole observed command. Source-bound wrapper completion never implies target completion, qualification or speedup.",
+  "released": true,
+  "reproduce": [
+    "env",
+    "PYTHONDONTWRITEBYTECODE=1",
+    "python3",
+    "-B",
+    "target/page-region-next/linked-persistent-epoch/retained-active-domain/direct-frontier-candidate/real-ls-profile-r1/exact-cpu-r2/run_exact_cpu.py",
+    "--expect-revision",
+    "22613d9b26f8be5438fe389d690feb221f62d3db",
+    "--origin-receipt",
+    "target/evaluation/inprocess/20261031T185004.241929Z-direct-frontier-program-22613d9b26f8/receipt.json",
+    "--expect-origin-sha256",
+    "cb382fd5277176ed8720cb80ecbf77b8125b95222521f1cb94367be796a934a6",
+    "--output",
+    "${FRESH_PRIVATE_WRAPPER_OUTPUT}"
+  ],
+  "schema": 1,
+  "source_unchanged": true,
+  "status": "observed_wrapper_complete",
+  "target_exit": -9,
+  "target_outcome": "failed_prefix",
+  "wrapper_receipt": {
+    "bytes": 64698,
+    "mode": 420,
+    "sha256": "1f9574bb193e9f2818deae97ab6811651953b4c1dfb869b8518e7ce5968842eb"
+  },
+  "wrapper_source": {
+    "bytes": 9329,
+    "mode": 420,
+    "sha256": "7226b90e14f82b0637d8c137edfcfc3b6a24572d0bb285ee498e896f016fdfbd"
+  }
+}

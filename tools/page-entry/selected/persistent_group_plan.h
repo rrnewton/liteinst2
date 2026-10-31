@@ -1,6 +1,25 @@
 #ifndef LI2_PERSISTENT_GROUP_PLAN_H
 #define LI2_PERSISTENT_GROUP_PLAN_H
 #include "persistent_plan.h"
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+#include "linked_call_dispatch.h"
+#ifdef LI2_ADD_GUARD
+#error "CALL dispatch does not enable guarded ADD"
+#endif
+#if defined(LI2_PERSISTENT_RETAINED_EIGHT) || defined(LI2_REUSE_CENSUS) || \
+    defined(LI2_PERSISTENT_EPOCH_CAPTURE) || defined(LI2_PERSISTENT_DYNAMIC_CAPTURE) || \
+    defined(LI2_PERSISTENT_GROUP_CAPTURE) || defined(LI2_PERSISTENT_RESIDENT_CAPTURE) || \
+    defined(LI2_PERSISTENT_RETAINED_TWO_CAPTURE) || defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) || \
+    defined(LI2_PERSISTENT_STARTUP_CAPTURE) || defined(LI2_PERSISTENT_JOINT_STARTUP_CAPTURE) || \
+    defined(LI2_PERSISTENT_JOINT_SUBENTRY_CAPTURE) || defined(LI2_PERSISTENT_SUBENTRY_CAPTURE) || \
+    defined(LI2_PERSISTENT_CROSS_PAIR_CAPTURE) || defined(LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE) || \
+    defined(LI2_PERSISTENT_COLD_ADMISSION_CAPTURE)
+#error "CALL dispatch requires its own typed capture and retained-profile composition"
+#endif
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+#include "linked_direct_dispatch.h"
+#endif
 #if !defined(LI2_PERSISTENT_GROUP) || LI2_PERSISTENT_GROUP != 1
 #error "distinct two-member persistent group required"
 #endif
@@ -19,13 +38,33 @@
 #define LI2_PG_VERSION 2U
 #endif
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+#undef LI2_PG_VERSION
+#define LI2_PG_VERSION 5U
+#endif
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+#undef LI2_PG_VERSION
+#define LI2_PG_VERSION 6U
+#endif
 /* New profile semantics; old group and persistent kinds remain unchanged. */
 enum li2_pg_instruction_kind { LI2_PG_DISPATCH=3
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+    ,LI2_PG_CALL=6
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+    ,LI2_PG_DIRECT=5
+#endif
 #ifdef LI2_ADD_GUARD
     ,LI2_PG_ADD=4
 #endif
 };
 union li2_pg_instruction { struct li2_mg_store mov;struct li2_jd_descriptor dispatch;
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+    struct li2_cd_descriptor call;
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+    struct li2_dd_descriptor direct;
+#endif
 #ifdef LI2_ADD_GUARD
     struct li2_ag_descriptor add;
 #endif
@@ -33,6 +72,12 @@ union li2_pg_instruction { struct li2_mg_store mov;struct li2_jd_descriptor disp
 union li2_pg_guard {
     struct li2_mg_plan mov;
     struct li2_jd_plan dispatch;
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+    struct li2_cd_plan call;
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+    struct li2_dd_plan direct;
+#endif
 #ifdef LI2_ADD_GUARD
     struct li2_ag_plan add;
 #endif
@@ -61,6 +106,12 @@ enum li2_pg_status { LI2_PG_OK=0,LI2_PG_MISS=1,LI2_PG_ARGUMENT=2800,
 enum li2_pg_edge_kind { LI2_PG_CAPACITY_LINK=1 };
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
 enum li2_pg_map_kind { LI2_PG_COPIED=1,LI2_PG_BRANCH,LI2_PG_EDGE,LI2_PG_GUARD,LI2_PG_LINK,LI2_PG_DISPATCH_MAP
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+    ,LI2_PG_CALL_MAP=10
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+    ,LI2_PG_DIRECT_MAP=8
+#endif
 #ifdef LI2_ADD_GUARD
     ,LI2_PG_ADD_GUARD
 #endif
@@ -70,7 +121,11 @@ enum li2_pg_map_kind { LI2_PG_COPIED=1,LI2_PG_BRANCH,LI2_PG_EDGE,LI2_PG_GUARD,LI
 #endif
 #define LI2_PG_COMMITTED_EDGE 4U
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+struct li2_pg_layout { uintptr_t generated[2],stubs,slots,spill,directory,window; };
+#else
 struct li2_pg_layout { uintptr_t generated[2],stubs,slots,spill,directory; };
+#endif
 #else
 struct li2_pg_layout { uintptr_t generated[2],stubs,slots,spill; };
 #endif
@@ -146,6 +201,12 @@ int li2_pg_plan_validate(const struct li2_pg_plan *,struct li2_pg_plan *);
 int li2_pg_dispatch_binding(const uintptr_t[2],const struct li2_pg_layout *,
     uintptr_t,unsigned,unsigned,struct li2_jd_binding *);
 #endif
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+/* Descriptive stable window address, not an activation permit. The owner
+   independently prepares and seals the current activation value before entry. */
+int li2_pg_call_binding(const uintptr_t[2],const struct li2_pg_layout *,
+    uintptr_t,unsigned,unsigned,struct li2_cd_binding *);
+#endif
 /* Immediate protected-output consistency, never independent source authority.
    Exact selected-root independent decode/refusal contract is retained. */
 int li2_pg_miss_valid(const struct li2_pg_plan *,const struct li2_pg_miss *,int);
@@ -153,7 +214,11 @@ int li2_pg_miss_valid(const struct li2_pg_plan *,const struct li2_pg_miss *,int)
    Pure necessary-only advisory; no mapped memory or authority. */
 int li2_pg_placement(uintptr_t,const struct li2_pg_layout *);
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+_Static_assert(sizeof(struct li2_pg_layout)==56,"separate stable CALL window address");
+#else
 _Static_assert(sizeof(struct li2_pg_layout)==48,"three code extents plus sealed domain directory");
+#endif
 #else
 _Static_assert(sizeof(struct li2_pg_layout)==40,"three code extents and private data");
 #endif
@@ -161,7 +226,11 @@ _Static_assert(sizeof(struct li2_pg_edge)==48,"exact directed original edge");
 _Static_assert(sizeof(struct li2_pg_miss)==32,"separate protected diagnosis");
 _Static_assert(sizeof(struct li2_pg_recovered)==168,"member or committed edge recovery");
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+_Static_assert(sizeof(struct li2_pg_plan)==981328,"exact CALL-aware full description");
+#else
 _Static_assert(sizeof(struct li2_pg_plan)==981320,"exact domain-aware full description");
+#endif
 #else
 _Static_assert(sizeof(struct li2_pg_plan)==981312,"exact separate two-member full description");
 #endif

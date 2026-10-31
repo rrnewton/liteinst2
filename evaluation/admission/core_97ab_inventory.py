@@ -9,10 +9,11 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '540484b2da77b6519c62c11af536555871ae7709810ab930b2d57554ee276b45',
+require(hashlib.sha256(RAW).hexdigest() == '94e5a5d17ffa115e845e35ef08dde98f6af72e8b4edfed6634266cc47480c310',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
+NATIVE_INDEXED_CURRENT = DATA['source_successor_29859']['previous_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
 PYTHON_CURRENT = DATA['python_current_sha256']
 PYTHON_PREVIOUS = DATA['python_previous_sha256']
@@ -71,9 +72,22 @@ def require_sources(error='main97ab_source_inventory_differs'):
         source_before_evaluation(path, raw, error)
 
 
+def before_29859(declared, error='main97ab_inventory_differs'):
+    """Project only the exact new catalog; source validation remains mandatory below."""
+    require(type(declared) is dict and digest(declared) == CURRENT, error)
+    old = copy.deepcopy(declared)
+    change = DATA['source_successor_29859']['workspace_change']
+    rows = old['harness_test_counts']['workspace_tests']
+    require(digest(rows[change['identity']]) == digest(change['current']), error)
+    rows[change['identity']] = copy.deepcopy(change['previous'])
+    require(digest(old) == NATIVE_INDEXED_CURRENT, error)
+    return old
+
+
 def before_current(declared, error='main97ab_inventory_differs',
                    source_error='main97ab_source_inventory_differs'):
-    require(type(declared) is dict and digest(declared) == CURRENT, error)
+    declared = before_29859(declared, error)
+    require(type(declared) is dict and digest(declared) == NATIVE_INDEXED_CURRENT, error)
     require_sources(source_error)
     old = copy.deepcopy(declared)
     require(type(old['recorder_tests']) is int and old['recorder_tests'] == RECORDER_TESTS, error)
