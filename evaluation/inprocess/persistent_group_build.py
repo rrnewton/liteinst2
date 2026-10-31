@@ -194,7 +194,7 @@ def capture_extents(builder, bridge, symbols, pin, run, state):
     match = re.fullmatch(rb'LI2_PGO_EXTENTS ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+)\n', out)
     need(not err and match is not None, 'one exact actual group capture DWARF extent row')
     sizes = tuple(map(int, match.groups()))
-    need(sizes == (4175360, 1442176, 321280, 3792, 45816, 14520) and sizes[0]+64 < 4*1024*1024,
+    need(sizes == (4183424, 1444288, 322240, 3792, 46296, 15160) and sizes[0]+64 < 4*1024*1024,
          'actual whole loop-only capture fits unchanged4MiB record bound')
     rows = [line.split() for line in symbols.splitlines() if line.split()[-1:] == [b'pgo_wire']]
     need(len(rows) == 1 and len(rows[0]) == 4 and rows[0][2] in (b'b', b'B') and

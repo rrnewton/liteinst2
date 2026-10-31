@@ -50,9 +50,12 @@ struct pgo_epoch_info {
     struct li2_pg_recovered recovered;
     struct li2_mg_plan recovery_scratch;
     struct li2_fetch_progress final_fetch;
-    struct li2_private_code_query proof_exit,claim_proof,claim_spill,claim_slots,proof_before;
+    struct pg_proof_query proof_exit,claim_proof;
+    struct li2_private_code_query claim_spill,claim_slots;
+    struct pg_proof_query proof_before;
     struct li2_private_code_query code_exit[3],claim_code[3],bank_before[3];
-    struct le_permission reopen_code[3],reopen_proof;
+    struct le_permission reopen_code[3];
+    struct pg_proof_permission reopen_proof;
     size_t registry_count;
     struct li2_fork_range registry[RANGES];
     struct ped_bank banks[2];
@@ -134,8 +137,8 @@ static struct pgo_wire pgo_wire;
 static unsigned pgo_ready,pgo_finished,pgo_capturing,pgo_kind,pgo_index,pgo_epochs,pgo_misses,pgo_miss_index,pgo_miss_next;
 static const uint64_t pgo_step_frame_fp_alignment __attribute__((used))=__alignof__(((struct li2_step_frame *)0)->fp);
 _Static_assert(sizeof(struct pgo_wire)+64<4U*1024U*1024U,"complete loop-only group evidence within original4MiB record bound");
-_Static_assert(sizeof(struct pgo_wire)==4175360 && sizeof(struct pgo_epoch)==1442176 &&
-    sizeof(struct pgo_miss)==321280 && sizeof(struct pgo_slot_progress)==3792,
+_Static_assert(sizeof(struct pgo_wire)==4183424 && sizeof(struct pgo_epoch)==1444288 &&
+    sizeof(struct pgo_miss)==322240 && sizeof(struct pgo_slot_progress)==3792,
     "exact source-model group capture extents; actual DWARF still mandatory");
 static void pgo_copy(void *to,const void *from,size_t n) {
     unsigned char *d=to;const volatile unsigned char *s=from;

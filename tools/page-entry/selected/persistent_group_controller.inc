@@ -38,6 +38,21 @@ struct pe_payload {
 #define PE_CODE_BYTES (LI2_PG_CODE_PAGES*PAGE)
 #define PE_ALLOC_BYTES (PE_CODE_BYTES+2U*PAGE)
 _Static_assert(PE_PROOF_BYTES<=96U*PAGE,"one bounded immutable source/plan publication");
+/* The private query API retains its 64-page limit. Both actual receipts cover
+   the one 89-page proof; no fabricated aggregate query stands in for either. */
+#define PG_PROOF_FIRST_BYTES (64U*PAGE)
+_Static_assert(PE_PROOF_BYTES==89U*PAGE,"exact current group proof extent");
+struct pg_proof_query { struct li2_private_code_query part[2]; };
+struct pg_proof_permission {
+    unsigned started,returned,sync_started,sync_returned,complete;
+    int prot;
+    long result,sync_result;
+    struct pg_proof_query query;
+};
+_Static_assert(sizeof(struct pg_proof_query)==2U*sizeof(struct li2_private_code_query),
+    "two complete actual bounded queries");
+_Static_assert(offsetof(struct pg_proof_permission,query)==offsetof(struct le_permission,query),
+    "unchanged whole permission transition prefix");
 struct pg_slot_transition {
     struct li2_private_code_query code[3];
     struct le_permission write,seal;
@@ -52,8 +67,12 @@ struct li2_pg_generation {
     uint64_t member_generation[2],active_refs,incoming[2],member_refs[2];
     unsigned linked;
     size_t code_copied,code_verified,proof_zeroed,proof_copied,proof_verified;
-    struct li2_private_code_query code_writable[3],proof_writable,spill_query,slot_query;
-    struct le_permission code_sealed[3],proof_sealed,open[3],close[3],cleanup[3];
+    struct li2_private_code_query code_writable[3];
+    struct pg_proof_query proof_writable;
+    struct li2_private_code_query spill_query,slot_query;
+    struct le_permission code_sealed[3];
+    struct pg_proof_permission proof_sealed;
+    struct le_permission open[3],close[3],cleanup[3];
     struct pg_slot_transition slots[3]; /* initial RESET, LINKED, drained RESET */
 };
 struct ped_bank {
@@ -71,7 +90,7 @@ struct ped_permit {
     struct li2_pg_layout layout;
     uint64_t member_generation[2];
     struct li2_private_code_query reset_slots;
-    struct li2_private_code_query proof_query;
+    struct pg_proof_query proof_query;
     struct li2_fetch_progress fetch;
     struct li2_pg_source_progress source;
     struct li2_pg_source_key generation_source;
@@ -85,8 +104,12 @@ struct li2_pg_epoch {
     struct ped_bank banks[2];
     struct ped_permit permit;
     struct li2_pg_miss miss;
-    struct li2_private_code_query claim_code[3],claim_proof,claim_spill,claim_slots,bank_before[3],proof_before;
-    struct le_permission reopen_code[3],reopen_proof;
+    struct li2_private_code_query claim_code[3];
+    struct pg_proof_query claim_proof;
+    struct li2_private_code_query claim_spill,claim_slots,bank_before[3];
+    struct pg_proof_query proof_before;
+    struct le_permission reopen_code[3];
+    struct pg_proof_permission reopen_proof;
     size_t candidate_registry_count;
     struct li2_fork_range candidate_registry[RANGES];
     struct pe_payload candidate;
@@ -107,7 +130,8 @@ struct li2_pg_epoch {
     struct li2_link_rseq_live live[3];
     struct li2_pg_recovered recovered;
     struct li2_fetch_progress final_fetch;
-    struct li2_private_code_query proof_exit,code_exit[3];
+    struct pg_proof_query proof_exit;
+    struct li2_private_code_query code_exit[3];
     size_t registry_count;
     struct li2_fork_range registry[RANGES];
     struct li2_mg_range exclusions[LI2_MG_RANGES];
@@ -159,6 +183,12 @@ static int pe_query(uintptr_t address,size_t bytes,int prot,struct li2_private_c
         q->end!=address+bytes || q->pages_checked!=bytes/PAGE || q->expected_prot!=prot ||
         q->actual_prot!=prot?PE_PUBLICATION:0;
 }
+static int pg_proof_query(uintptr_t address,int prot,struct pg_proof_query *q) {
+    if(!q || !address || (address&(PAGE-1)) || address>UINTPTR_MAX-PE_PROOF_BYTES)return PE_PUBLICATION;
+    int e=pe_query(address,PG_PROOF_FIRST_BYTES,prot,&q->part[0]);
+    if(e)return e;
+    return pe_query(address+PG_PROOF_FIRST_BYTES,PE_PROOF_BYTES-PG_PROOF_FIRST_BYTES,prot,&q->part[1]);
+}
 static int pe_permission(uintptr_t address,size_t bytes,int prot,struct le_permission *p) {
     if(p->started)return PE_STATE;
     p->started=1;p->prot=prot;__asm__ volatile("":::"memory");
@@ -166,6 +196,16 @@ static int pe_permission(uintptr_t address,size_t bytes,int prot,struct le_permi
     p->sync_started=1;__asm__ volatile("":::"memory");
     p->sync_result=raw(SYS_membarrier,32,0,0,0,0,0);p->sync_returned=1;
     int e=pe_query(address,bytes,prot,&p->query);
+    if(p->result || p->sync_result || e)return PE_PUBLICATION;
+    p->complete=1;return 0;
+}
+static int pg_proof_permission(uintptr_t address,int prot,struct pg_proof_permission *p) {
+    if(p->started)return PE_STATE;
+    p->started=1;p->prot=prot;__asm__ volatile("":::"memory");
+    p->result=raw(SYS_mprotect,address,PE_PROOF_BYTES,prot,0,0,0);p->returned=1;
+    p->sync_started=1;__asm__ volatile("":::"memory");
+    p->sync_result=raw(SYS_membarrier,32,0,0,0,0,0);p->sync_returned=1;
+    int e=pg_proof_query(address,prot,&p->query);
     if(p->result || p->sync_result || e)return PE_PUBLICATION;
     p->complete=1;return 0;
 }
@@ -201,6 +241,17 @@ static int pg_permissions(const struct li2_pg_layout *l,int prot,struct le_permi
 static int pg_query_complete(const struct li2_private_code_query *q,uintptr_t a,size_t n,int prot) {
     return q->attempted==1 && q->complete==1 && !q->result && q->first==a &&
         q->end==a+n && q->pages_checked==n/PAGE && q->expected_prot==prot && q->actual_prot==prot;
+}
+static int pg_proof_query_complete(const struct pg_proof_query *q,uintptr_t address,int prot) {
+    return q && address && !(address&(PAGE-1)) && address<=UINTPTR_MAX-PE_PROOF_BYTES &&
+        pg_query_complete(&q->part[0],address,PG_PROOF_FIRST_BYTES,prot) &&
+        pg_query_complete(&q->part[1],address+PG_PROOF_FIRST_BYTES,
+                          PE_PROOF_BYTES-PG_PROOF_FIRST_BYTES,prot);
+}
+static int pg_proof_permission_complete(const struct pg_proof_permission *p,uintptr_t address,int prot) {
+    return p->started==1 && p->returned==1 && p->sync_started==1 && p->sync_returned==1 &&
+        p->complete==1 && p->prot==prot && !p->result && !p->sync_result &&
+        pg_proof_query_complete(&p->query,address,prot);
 }
 static int pg_closed(const struct li2_pg_layout *l,const struct le_permission rows[3]) {
     for(unsigned i=0;i<3;i++)if(rows[i].started!=1 || rows[i].returned!=1 ||
@@ -290,7 +341,8 @@ static int ped_stored(void) {
     if(!pe_registered_storage() || g->installed!=1 || g->complete!=1 || g->proof_complete!=1 ||
        !g->generation || g->generation!=pe.next_generation || g->ready_generation!=g->generation ||
        !g->build_serial || g->build_serial>pe.next_serial || !pg_closed(&g->layout,g->code_sealed) ||
-       !g->proof_sealed.complete || g->code_copied!=PE_CODE_BYTES || g->code_verified!=PE_CODE_BYTES ||
+       !pg_proof_permission_complete(&g->proof_sealed,g->proof,PROT_READ) ||
+       g->code_copied!=PE_CODE_BYTES || g->code_verified!=PE_CODE_BYTES ||
        g->proof_zeroed!=PE_PROOF_BYTES || g->proof_copied!=sizeof(struct pe_payload) ||
        g->proof_verified!=PE_PROOF_BYTES || g->member_generation[0]!=2*g->generation ||
        g->member_generation[1]!=2*g->generation+1)return 0;
@@ -365,7 +417,7 @@ static int ped_permitted(void) {
         p->ref_sequence && p->fetch.sequence==p->ref_sequence && !p->fetch.held &&
         p->fetch.complete==1 && !p->fetch.first_error &&
         equal(p->close,g->close,sizeof p->close) && pg_closed(&g->layout,p->close) &&
-        pg_query_complete(&p->proof_query,g->proof,PE_PROOF_BYTES,PROT_READ) &&
+        pg_proof_query_complete(&p->proof_query,g->proof,PROT_READ) &&
         s->serial==p->serial && s->phase==LI2_PGS_RELEASED && !s->first_error &&
         s->release_started==1 && s->release_complete==1 && s->source.complete==1 &&
         s->closed_extents==3 && s->closed_pages==17 &&
@@ -386,7 +438,7 @@ static int ped_permitted(void) {
 static void ped_claim(void) {
     pe_need(ped_permitted() && !pe_bytes(),PE_RELEASE,10);
     pe_need(!pg_queries(&pe.generation.layout,PROT_READ,pe.claim_code) &&
-        !pe_query(pe.generation.proof,PE_PROOF_BYTES,PROT_READ,&pe.claim_proof) &&
+        !pg_proof_query(pe.generation.proof,PROT_READ,&pe.claim_proof) &&
         !pe_query(pe.generation.spill,PAGE,PROT_READ|PROT_WRITE,&pe.claim_spill) &&
         !pe_query(pe.generation.layout.slots,PAGE,PROT_READ,&pe.claim_slots),PE_RELEASE,11);
     pe.permit.valid=0;ped_count(&pe.permit_claims);__asm__ volatile("":::"memory");
@@ -442,7 +494,7 @@ static void selected_persistent_initialize(void) {
     pe_need(v>0 && !((uintptr_t)v&(PAGE-1)) && (uintptr_t)v<(UINT64_C(1)<<47)-PE_PROOF_BYTES,PE_PUBLICATION,v);
     pe.generation.proof=(uintptr_t)v;pe.proof_allocated=1;
     pe_need(!selected_run_protect_add(0,(uintptr_t)v,PE_PROOF_BYTES),PE_STATE,3);pe.proof_registered=1;
-    pe_need(!pe_query(pe.generation.proof,PE_PROOF_BYTES,PROT_READ|PROT_WRITE,&pe.generation.proof_writable),PE_PUBLICATION,2);
+    pe_need(!pg_proof_query(pe.generation.proof,PROT_READ|PROT_WRITE,&pe.generation.proof_writable),PE_PUBLICATION,2);
     for(unsigned i=0;i<2;i++)pe_need(!pe_query(pe.banks[i].spill,PAGE,PROT_READ|PROT_WRITE,
         &pe.banks[i].initial_spill),PE_PUBLICATION,3);
     for(unsigned i=0;i<2;i++)pe_need(!pe_query(pe.banks[i].layout.slots,PAGE,PROT_READ|PROT_WRITE,
@@ -559,10 +611,10 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
     if((b->virgin?b->prot!=(PROT_READ|PROT_WRITE):b->prot!=PROT_READ) ||
        pg_queries(&b->layout,b->prot,pe.bank_before))return PE_PUBLICATION;
     int proof_prot=pe.next_generation?PROT_READ:PROT_READ|PROT_WRITE;
-    if(pe_query(g->proof,PE_PROOF_BYTES,proof_prot,&pe.proof_before))return PE_PUBLICATION;
+    if(pg_proof_query(g->proof,proof_prot,&pe.proof_before))return PE_PUBLICATION;
     uintptr_t proof=g->proof;
     if(pg_permissions(&b->layout,PROT_READ|PROT_WRITE,pe.reopen_code,0) ||
-       pe_permission(proof,PE_PROOF_BYTES,PROT_READ|PROT_WRITE,&pe.reopen_proof))return PE_PUBLICATION;
+       pg_proof_permission(proof,PROT_READ|PROT_WRITE,&pe.reopen_proof))return PE_PUBLICATION;
     le_zero(g,sizeof *g);g->generated=b->generated;g->spill=b->spill;g->proof=proof;g->layout=b->layout;
     for(unsigned i=0;i<3;i++)g->code_writable[i]=pe.reopen_code[i].query;
     g->proof_writable=pe.reopen_proof.query;
@@ -589,7 +641,7 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
     for(size_t i=0;i<sizeof pe.publication;i++){proof_bytes[i]=src[i];g->proof_copied=i+1;}
     int e=pg_permissions(&g->layout,PROT_READ,g->code_sealed,0);if(e)return e;
     pe.banks[pe.selected_bank].virgin=0;pe.banks[pe.selected_bank].prot=PROT_READ;
-    e=pe_permission(g->proof,PE_PROOF_BYTES,PROT_READ,&g->proof_sealed);if(e)return e;
+    e=pg_proof_permission(g->proof,PROT_READ,&g->proof_sealed);if(e)return e;
     for(size_t i=0;i<PE_CODE_BYTES;i++){if(code[i]!=pg_code_byte(&pe.publication.plan,i))return PE_PUBLICATION;g->code_verified=i+1;}
     for(size_t i=0;i<PE_PROOF_BYTES;i++) {
         if(proof_bytes[i]!=(i<sizeof pe.publication?src[i]:0))return PE_PUBLICATION;
@@ -690,7 +742,7 @@ int li2_pg_epoch_drain(const struct li2_pg_token *t) {
     if(pe.p.closed_pages!=17 || !pg_closed(&g->layout,g->close))return PE_PUBLICATION;
     if((e=pg_link_data(2)))return e;
     pe.banks[pe.selected_bank].prot=PROT_READ;
-    if(pe_bytes() || pe_query(g->proof,PE_PROOF_BYTES,PROT_READ,&pe.proof_exit))return PE_PUBLICATION;
+    if(pe_bytes() || pg_proof_query(g->proof,PROT_READ,&pe.proof_exit))return PE_PUBLICATION;
     pe.p.phase=LI2_PG_RELEASING;
     pe.release_result=li2_pg_source_release(t,&p->plan);if(pe.release_result)return pe.release_result;
     pe.p.anchor_released=1;pe.final_fetch=*li2_lifecycle_fetch_progress();

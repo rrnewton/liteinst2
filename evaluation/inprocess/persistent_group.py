@@ -27,7 +27,7 @@ import persistent_group_reports as reports
 from persistent_dynamic import (BOUNDS,MASK,H,digest,named,counts,control_table,
     seed_prerequisite,prepare_inputs,image_inventory,raw_emission,fixed_prerequisite)
 ORDER=(('native',0,0),('gated',0,0))
-APP_COUNTS={0:16};OWNER_COUNTS={0:67}
+APP_COUNTS={0:16};OWNER_COUNTS={0:79}
 PAIR_COUNTS={0:4};TERMINAL_COUNTS={(0,0):63}
 EXPECTED_STATUS={('native',0):'observed_native_loop',('gated',0):'observed_generated_loop'}
 CASE_FIELDS=('label','lane','mode','control','expected_exit','status','launched','exit','whole_process_ns','timed_out','captures','pair','owner_summary','error_type')
@@ -151,8 +151,8 @@ def observed_layout(builder,bridge,private,pin,binary,run,r):
         profile='inspect',env=dict(builder.environment,MALLOC_ARENA_MAX='1'))
     need(not err and out.endswith(b'\n')and out.count(b'\n')==1,'one actual bounded DWARF observation; no inferior execution')
     layout=json.loads(out);need(layout['record']=='pgo_wire'and
-        layout['types']['pgo_wire']['bytes']==r['release_build']['capture_extents']['wire']==4175360 and
-        r['release_build']['capture_extents']['stream']==4175424<4<<20,'actual retained owner wire and original4MiB record bound')
+        layout['types']['pgo_wire']['bytes']==r['release_build']['capture_extents']['wire']==4183424 and
+        r['release_build']['capture_extents']['stream']==4183488<4<<20,'actual retained owner wire and original4MiB record bound')
     path=private/'owner-dwarf-layout.json'
     with path.open('xb')as f:f.write(out)
     r['owner_layout']=dict(artifact=fact(binary(path)),bridge=fact(bridge),reader=fact(script));return layout

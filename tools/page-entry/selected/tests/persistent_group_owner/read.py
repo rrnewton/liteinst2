@@ -49,6 +49,17 @@ class Check(old.Check):
         need(len(b)==3*self.r.types['li2_private_code_query']['bytes'],'three exact code queries')
         for i,row in enumerate(rows):self.query(row,self.geometry[i],prot,pages=8 if i<2 else 1)
 
+    def proof_query(self,b,address,prot):
+        rows=self.r.items(b,'pg_proof_query','part','li2_private_code_query')
+        need(len(rows)==2,'exact two actual proof query chunks')
+        for row,offset,pages in zip(rows,(0,64*PAGE),(64,25),strict=True):
+            self.query(row,address+offset,prot,pages=pages)
+
+    def proof_permission(self,b,address,prot):
+        t='pg_proof_permission'
+        self.eq(b,t,started=1,returned=1,sync_started=1,sync_returned=1,complete=1,prot=prot,result=0,sync_result=0)
+        self.proof_query(self.f(b,t,'query'),address,prot)
+
     def permission3(self,b,prot):
         n=self.r.types['le_permission']['bytes'];need(len(b)==3*n,'three exact permission transitions')
         for i in range(3):self.permission(b[i*n:(i+1)*n],self.geometry[i],prot,8 if i<2 else 1)
@@ -113,7 +124,7 @@ class Check(old.Check):
         serial=self.i(b,t,'serial');seq=self.i(b,t,'ref_sequence');need(serial>0 and seq>0,'actual completed group permit serial/borrow')
         saved=self.geometry;self.geometry=self.layout(self.f(b,t,'layout'))
         need(self.f(b,t,'layout')==self.f(g,gt,'layout')and self.f(b,t,'member_generation')==self.f(g,gt,'member_generation')and self.f(b,t,'close')==self.f(g,gt,'close'),'permit binds actual complete member identities and17-page close')
-        self.permission3(self.f(b,t,'close'),1);self.query(self.f(b,t,'proof_query'),self.i(b,t,'proof'),1,pages=89);self.query(self.f(b,t,'reset_slots'),self.geometry[3],1)
+        self.permission3(self.f(b,t,'close'),1);self.proof_query(self.f(b,t,'proof_query'),self.i(b,t,'proof'),1);self.query(self.f(b,t,'reset_slots'),self.geometry[3],1)
         n=self.r.types['pg_slot_transition']['bytes'];reset=self.f(g,gt,'slots')[2*n:3*n]
         need(self.f(b,t,'reset_slots')==self.f(self.f(reset,'pg_slot_transition','seal'),'le_permission','query'),'permit slot reset query from actual completed transition')
         f=self.f(b,t,'fetch');self.progress(f,seq,False)
@@ -407,8 +418,8 @@ class Check(old.Check):
         self.eq(g,gt,installed=1,complete=1,proof_complete=1,generation=gen,ready_generation=gen,build_serial=buildserial,plan_proofs=2,none_proofs=1,generated=self.generated,proof=self.proof,spill=self.spill,active_refs=1,linked=1,code_copied=69632,code_verified=69632,proof_zeroed=364544,proof_copied=362624,proof_verified=364544)
         need(self.f(g,gt,'layout')==self.f(ph,'pe_header','layout')and self.f(g,gt,'member_generation')==self.f(ph,'pe_header','member_generation')and q(self.f(g,gt,'incoming'))==q(self.f(g,gt,'member_refs'))==(1,1),'actual linked member generations and incoming/active refs')
         need(self.i(ph,'pe_header','serial')==buildserial and(buildserial<serial if warm else buildserial==serial),'cold publication serial persists on warm')
-        self.query3(self.f(g,gt,'code_writable'),3);self.query(self.f(g,gt,'proof_writable'),self.proof,3,pages=89);self.query(self.f(g,gt,'spill_query'),self.spill,3);zero(self.f(g,gt,'slot_query'),'unused aggregate slot query remains zero')
-        self.permission3(self.f(g,gt,'code_sealed'),1);self.permission(self.f(g,gt,'proof_sealed'),self.proof,1,89);self.permission3(self.f(g,gt,'open'),5)
+        self.query3(self.f(g,gt,'code_writable'),3);self.proof_query(self.f(g,gt,'proof_writable'),self.proof,3);self.query(self.f(g,gt,'spill_query'),self.spill,3);zero(self.f(g,gt,'slot_query'),'unused aggregate slot query remains zero')
+        self.permission3(self.f(g,gt,'code_sealed'),1);self.proof_permission(self.f(g,gt,'proof_sealed'),self.proof,1);self.permission3(self.f(g,gt,'open'),5)
         for k in('close','cleanup'):zero(self.f(g,gt,k),'no premature group code close')
         transitions=self.r.items(g,gt,'slots','pg_slot_transition');self.slots_transition(transitions[0],False);self.slots_transition(transitions[1],True);zero(transitions[2],'no premature RESET after entry')
         self.r.change(g,eg,gt,values=dict(active_refs=0,linked=0),observed=('incoming','member_refs','close','slots'))
@@ -429,16 +440,16 @@ class Check(old.Check):
             else:need(self.i(bank,'ped_bank','virgin')in(0,1)and self.i(bank,'ped_bank','prot')in(1,3),'actual unused or completed alternative bank')
         self.geometry=saved
         if installed:
-            save=self.geometry;self.geometry=self.layout(self.f(resident,gt,'layout'));self.query3(self.f(info,it,'claim_code'),1);self.query(self.f(info,it,'claim_proof'),self.proof,1,pages=89);self.query(self.f(info,it,'claim_spill'),self.geometry[4],3);self.query(self.f(info,it,'claim_slots'),self.geometry[3],1);self.geometry=save
+            save=self.geometry;self.geometry=self.layout(self.f(resident,gt,'layout'));self.query3(self.f(info,it,'claim_code'),1);self.proof_query(self.f(info,it,'claim_proof'),self.proof,1);self.query(self.f(info,it,'claim_spill'),self.geometry[4],3);self.query(self.f(info,it,'claim_slots'),self.geometry[3],1);self.geometry=save
         else:
             for k in('claim_code','claim_proof','claim_spill','claim_slots'):zero(self.f(info,it,k),'no fabricated virgin claim')
         if warm:
             for k in('bank_before','proof_before','reopen_code','reopen_proof'):zero(self.f(info,it,k),'warm never reopens primary or code writable')
         else:
             rows=self.r.items(info,it,'bank_before','li2_private_code_query');prot=self.i(rows[0],'li2_private_code_query','actual_prot');need(prot in(1,3),'cold target is closed or virgin');self.query3(self.f(info,it,'bank_before'),prot)
-            self.query(self.f(info,it,'proof_before'),self.proof,1 if pc['next_generation']else 3,pages=89);self.permission3(self.f(info,it,'reopen_code'),3);self.permission(self.f(info,it,'reopen_proof'),self.proof,3,89)
+            self.proof_query(self.f(info,it,'proof_before'),self.proof,1 if pc['next_generation']else 3);self.permission3(self.f(info,it,'reopen_code'),3);self.proof_permission(self.f(info,it,'reopen_proof'),self.proof,3)
             for a,z in zip(self.r.items(g,gt,'code_writable','li2_private_code_query'),self.r.items(info,it,'reopen_code','le_permission'),strict=True):need(a==self.f(z,'le_permission','query'),'whole actual code reopen publication join')
-            need(self.f(g,gt,'proof_writable')==self.f(self.f(info,it,'reopen_proof'),'le_permission','query'),'whole actual proof reopen publication join')
+            need(self.f(g,gt,'proof_writable')==self.f(self.f(info,it,'reopen_proof'),'pg_proof_permission','query'),'whole actual proof reopen publication join')
         before=self.frame(self.f(b,t,'before'));ingress=self.normalized(self.f(b,t,'ingress'),before);returned=self.frame(self.f(b,t,'returned'));after=self.frame(self.f(b,t,'after'));flags=before['greg'][17]
         self.eq(info,it,flags=flags);self.trace(ingress,self.head,flags|TF);self.trace(before,self.head,flags);self.same_event(ingress,before,flags)
         want=list(before['greg']);want[16]=self.generated
@@ -469,7 +480,7 @@ class Check(old.Check):
         lives=self.r.items(info,it,'live','li2_link_rseq_live')
         for x in lives[:2]:self.live_rseq(x,estate,before)
         self.live_rseq(lives[2],zstate,after)
-        self.query(self.f(info,it,'proof_exit'),self.proof,1,pages=89)
+        self.proof_query(self.f(info,it,'proof_exit'),self.proof,1)
         for k in('code_exit','recovered','recovery_scratch'):zero(self.f(info,it,k),'normal group exit claims no unexpected recovery')
         self.permit(self.f(end,st,'permit'),eg,zs,zr,self.f(end,st,'fetch'));self.eq(self.f(entered,st,'permit'),'ped_permit',valid=0)
         need(self.f(self.f(end,st,'permit'),'ped_permit','generation_source')==key,'actual immutable source in completed group permit')
@@ -581,7 +592,7 @@ class Check(old.Check):
     def finish(self,status):
         h=self.h;t='pgo_wire';r=self.r
         need(type(status)is int and status==0 and self.app['mode']==0,'actual successful loop-only process and mode')
-        need(h[:9]==(0x314f475049324c,1,4175360,r.layout['registrations']['pe']['bytes'],362624,364544,69632,968,128),'actual distinct group record version and complete extents')
+        need(h[:9]==(0x314f475049324c,1,4183424,r.layout['registrations']['pe']['bytes'],362624,364544,69632,968,128),'actual distinct group record version and complete extents')
         need(canonical(self.bias)and self.bias%PAGE==0 and h[9:12]==tuple(self.symbol(n)for n in('li2_raw6','li2_gateway_start','li2_gateway_end'))and h[10]<=h[9]<h[11],'actual emitted gateway identity')
         need(h[12]%PAGE==0 and h[13]==524288 and h[14:16]==(1,0)and h[16]&(3|0x400|0x800)==1 and h[17:20]==(0,1,0),'actual altstack and FD3/profile')
         need(h[20:26]==tuple(self.symbol(n)for n in('pe','pgo_wire','pg_source','pg_rseq','selected_chain','span_progress')),'actual protected group addresses')
@@ -642,7 +653,7 @@ def terminal(parsed,owner):
     return dict(fields=len(expected),protected_group_row=1,inherited_row_protection=0)
 
 
-CONTROL_COUNTS={0:67}
+CONTROL_COUNTS={0:79}
 
 def controls(data,layout,image,app,pid,cpu,exit_status):
     """Bounded supplied corruptions of this actual loop record; no native operations."""
@@ -735,5 +746,22 @@ def controls(data,layout,image,app,pid,cpu,exit_status):
     mutant=bytearray(data)
     for stage in(mh,mr):mutant[at(pt,'transfer_serial',at(st,'progress',stage))]^=1
     reject('coherent_cancel_transfer_serial',mutant,'actual cancelled group progress binds CLOSED transfer serial')
+    # Each independent real64/25-page query must retain its own complete
+    # coverage, permissions and maps receipt; no aggregate substitutes for it.
+    proof=at(gt,'proof_writable',at(st,'generation',ent))
+    for index in(0,1):
+        row=at('pg_proof_query','part',proof,index,'li2_private_code_query')
+        maps=at('li2_private_code_query','maps',row)
+        observation=at('li2_fetch_map_progress','observation',maps)
+        coverage='end'if index==0 else'first'
+        for name,offset,width,value,message in(
+          ('coverage',at('li2_private_code_query',coverage,row),8,struct.unpack_from('<Q',data,at('li2_private_code_query',coverage,row))[0]-PAGE,'exact li2_private_code_query.'+coverage),
+          ('page_count',at('li2_private_code_query','pages_checked',row),8,(64 if index==0 else 25)-1,'exact li2_private_code_query.pages_checked'),
+          ('completion',at('li2_private_code_query','complete',row),4,0,'exact li2_private_code_query.complete'),
+          ('protection',at('li2_private_code_query','actual_prot',row),4,7,'exact li2_private_code_query.actual_prot'),
+          ('maps_close',at('li2_fetch_map_progress','closed',maps),4,0,'exact li2_fetch_map_progress.closed'),
+          ('maps_receipt',at('li2_maps_observation','io_performed',observation),4,struct.unpack_from('<I',data,at('li2_maps_observation','io_performed',observation))[0]^1,'exact maintained acquisition class and physical I/O')):
+            mutant=bytearray(data);struct.pack_into('<Q'if width==8 else'<I',mutant,offset,value)
+            reject('proof_part'+str(index)+'_'+name,mutant,message)
     need(len(refused)==CONTROL_COUNTS[0],'all exact separately counted loop group controls')
     return dict(original_sha256=hashlib.sha256(data).hexdigest(),refusals=refused,native_operations=0,mode=0)
