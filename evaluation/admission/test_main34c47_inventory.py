@@ -88,9 +88,21 @@ class Main34c47InventoryTests(unittest.TestCase):
             target = current.ROOT / path; raw = read(target)
             changed_raw = raw.replace(before.encode(), after.encode())
             self.assertNotEqual(changed_raw, raw)
+            # Preserve the same declaration stimulus through the new exact
+            # current-to34c source inverse, then repair only its upstream facts.
+            upstream = copy.deepcopy(current.DATA['source_projections_23d6'])
+            prior_raw = current.source_before23d6(path, raw, 'snapshot_declaration_inverse')
+            changed_prior = prior_raw.replace(before.encode(), after.encode())
+            if path in upstream:
+                upstream[path]['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()
+                upstream[path]['previous_sha256'] = hashlib.sha256(changed_prior).hexdigest()
+            with patch.dict(current.DATA['source_projections_23d6'], upstream):
+                self.assertEqual(current.source_before23d6(path, changed_raw,
+                    'snapshot_declaration_inverse'), changed_prior)
             def changed(candidate):
                 return changed_raw if candidate == target else read(candidate)
-            with patch.object(Path, 'read_bytes', changed), \
+            with patch.dict(current.DATA['source_projections_23d6'], upstream), \
+                 patch.object(Path, 'read_bytes', changed), \
                  patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_raw).hexdigest()}), \
                  patch.object(current, 'source_before', side_effect=lambda p, b, e: b if p != path else (_ for _ in ()).throw(AssertionError('declaration gate omitted'))):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^main34c47_source_inventory_differs$'):
@@ -127,3 +139,38 @@ class Main34c47InventoryTests(unittest.TestCase):
                      patch.object(previous, 'source_before', side_effect=lambda p, b, e: b if p != path else (_ for _ in ()).throw(AssertionError('historical declaration gate omitted'))):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainacc247_source_inventory_differs$'):
                         previous.require_sources()
+
+        # No new test identity or corpus. All three actual incoming blobs are
+        # required; historical bytes and repaired current-only hashes refuse.
+        self.assertEqual(set(current.DATA['source_projections_23d6']), {
+            'tools/rapid-profiler/ordinary-interval/normal/csv.rs',
+            'tools/rapid-profiler/ordinary-interval/normal/csv/tests.rs',
+            'tools/rapid-profiler/ordinary-interval/normal/module/session/worker.rs',
+        })
+        for path, row in current.DATA['source_projections_23d6'].items():
+            target = current.ROOT / path; raw = read(target)
+            restored = current.source_before23d6(path, raw, 'snapshot_inverse_control')
+            self.assertEqual(hashlib.sha256(raw).hexdigest(), row['current_sha256'])
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            self.assertEqual(row['current_sha256'], current.DATA['sources'][path])
+            for wrong in (raw + b'\n', raw[:-1], restored, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^snapshot_inverse_control$'):
+                    current.source_before23d6(path, wrong, 'snapshot_inverse_control')
+            with patch.dict(current.DATA['sources'], {path: row['previous_sha256']}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main34c47_source_inventory_differs$'):
+                    current.require_sources()
+            broken = copy.deepcopy(row); broken['edits'][0][2] += '\n'
+            with patch.dict(current.DATA['source_projections_23d6'], {path: broken}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^snapshot_bad_inverse_control$'):
+                    current.source_before23d6(path, raw, 'snapshot_bad_inverse_control')
+            altered = raw + b'\n'; repaired = copy.deepcopy(row)
+            repaired['current_sha256'] = hashlib.sha256(altered).hexdigest()
+            with patch.dict(current.DATA['source_projections_23d6'], {path: repaired}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^snapshot_prior_hash_control$'):
+                    current.source_before23d6(path, altered, 'snapshot_prior_hash_control')
+            for altered in (restored, raw + b'\n'):
+                def changed(candidate):
+                    return altered if candidate == target else read(candidate)
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main34c47_source_inventory_differs$'):
+                        current.require_sources()

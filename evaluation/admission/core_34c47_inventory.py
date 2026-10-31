@@ -9,7 +9,7 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == 'b72ccefee6e191658e0e108ac2a662f91af03ad904ac6651ad05d7029056674c',
+require(hashlib.sha256(RAW).hexdigest() == 'b4c948f9d004c5a138b126a25fa96443781c0b2e9f9e1bf6ff495c494a8d2551',
         'main34c47_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
@@ -40,7 +40,12 @@ def inverse(path, raw, rows, error):
     return raw
 
 
+def source_before23d6(path, raw, error):
+    return inverse(path, raw, DATA['source_projections_23d6'], error)
+
+
 def source_before(path, raw, error):
+    raw = source_before23d6(path, raw, error)
     return inverse(path, raw, DATA['projections'], error)
 
 
@@ -51,9 +56,14 @@ def source_before_evaluation(path, raw, error):
 def require_sources(error='main34c47_source_inventory_differs'):
     for path, expected in DATA['sources'].items():
         try:
-            raw = (ROOT / path).read_bytes()
+            observed = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
+        if path in DATA['source_projections_23d6']:
+            row = DATA['source_projections_23d6'][path]
+            require(expected == row['current_sha256'], error)
+            expected = row['previous_sha256']
+        raw = source_before23d6(path, observed, error)
         require(hashlib.sha256(raw).hexdigest() == expected, error)
         if path in DATA['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
@@ -67,8 +77,8 @@ def require_sources(error='main34c47_source_inventory_differs'):
         if path in DATA['module_chains']:
             require(all(raw.decode().count(literal) == 1
                         for literal in DATA['module_chains'][path]), error)
-        source_before(path, raw, error)
-        source_before_evaluation(path, raw, error)
+        source_before(path, observed, error)
+        source_before_evaluation(path, observed, error)
 
 
 def before_current(declared, error='main34c47_inventory_differs',
