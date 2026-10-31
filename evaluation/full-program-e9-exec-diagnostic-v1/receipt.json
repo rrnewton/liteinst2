@@ -1,0 +1,221 @@
+{
+  "attempts": {
+    "candidate_exec_requests": 1,
+    "debugger_runs": 1,
+    "original_arms": 0,
+    "retries": 0
+  },
+  "bounds": {
+    "aggregate_lane_cpus_max": 12,
+    "core_bytes": 0,
+    "debugger_log_bytes": 262144,
+    "observer_as_bytes": 2147483648,
+    "observer_cpu_seconds": 30,
+    "observer_file_bytes": 1048576,
+    "observer_wall_seconds": 10,
+    "outer_cpu_seconds": 40,
+    "outer_log_bytes": 131072,
+    "outer_wall_seconds": 60,
+    "stop_count": 16,
+    "subject_as_bytes": 1073741824,
+    "subject_cpu_seconds": 5,
+    "subject_file_bytes": 65536,
+    "trace_bytes": 262144
+  },
+  "candidate": {
+    "bytes": 282324,
+    "mode": "0500",
+    "sha256": "eabf1d463a75d5644ec114bed7b66ace8c7a00f6a64892a4600e8a5661547afc"
+  },
+  "cause": "UNRESOLVED",
+  "commands": {
+    "debugger_argv": [
+      "/usr/bin/prlimit",
+      "--cpu=30",
+      "--as=2147483648",
+      "--fsize=1048576",
+      "--core=0",
+      "--",
+      "/usr/libexec/gdb",
+      "-q",
+      "-nx",
+      "-nh",
+      "-batch",
+      "-iex",
+      "set auto-load off",
+      "-iex",
+      "set debuginfod enabled off",
+      "-iex",
+      "set index-cache enabled off",
+      "-iex",
+      "maint set worker-threads 1",
+      "-iex",
+      "python import sys; sys.dont_write_bytecode = True",
+      "-ex",
+      "python CONFIG = 'OUT/config.json'",
+      "-x",
+      "OBSERVER",
+      "--args",
+      "/usr/bin/python3.9",
+      "-I",
+      "-B",
+      "ROOT/evaluation/offline-corpus/run_e9_help_parity.py",
+      "--exec-arm",
+      "candidate",
+      "CANDIDATE",
+      "OUT/candidate",
+      "1"
+    ],
+    "outer_argv": [
+      "/usr/bin/prlimit",
+      "--cpu=40",
+      "--as=2147483648",
+      "--fsize=1048576",
+      "--core=0",
+      "--",
+      "/usr/bin/python3.9",
+      "-I",
+      "-B",
+      "RUN_DIAGNOSTIC",
+      "--revision",
+      "3c1972d634428f7f73cd3ca0ac8cc8ec247481b6",
+      "--cpu",
+      "1",
+      "--out",
+      "OUT",
+      "--candidate",
+      "CANDIDATE"
+    ],
+    "substitutions": {
+      "CANDIDATE": "authenticated executable input",
+      "OBSERVER": "executed private copy, byte-identical to observe_exec.py",
+      "OUT": "fresh target/evaluation output directory",
+      "ROOT": "repository root",
+      "RUN_DIAGNOSTIC": "executed private copy, byte-identical to run_diagnostic.py"
+    }
+  },
+  "cpu": [
+    1
+  ],
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "TZ": "UTC"
+  },
+  "execution_revision": "3c1972d634428f7f73cd3ca0ac8cc8ec247481b6",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "limits": [
+    "No successful exec event, AT_ENTRY hit, returned exec error or candidate terminal signal was observed. Observer cleanup is not a candidate outcome.",
+    "The loaded system libthread_db and GDB error identify an observer problem; stale state across exec is a hypothesis. No image-transition or AS causation is proved.",
+    "The earlier original-help pass and candidate SIGSEGV failure remain separate and unchanged. No help parity, whole-program/native LI2, accuracy, performance, full-corpus or A5 qualification.",
+    "Scripts are byte-identical executed assets relocated for reproduction; the later publication revision is not the execution revision. No reproduction rerun has occurred."
+  ],
+  "load_after": [
+    37.4,
+    40.01,
+    40.24
+  ],
+  "load_before": [
+    37.4,
+    40.01,
+    40.24
+  ],
+  "observations": {
+    "actual_fd_argv_environment_limits_authenticated": true,
+    "argv": [
+      "e9patch",
+      "--help"
+    ],
+    "candidate_entry_hits": 0,
+    "candidate_exit_code": null,
+    "candidate_stderr_bytes": 0,
+    "candidate_stdout_bytes": 0,
+    "candidate_terminal_signal": null,
+    "cleanup": "Observer explicitly killed the inferior after the GDB error; inferior PID then 0.",
+    "error": "Cannot find user-level thread for LWP <inferior_pid>: generic error",
+    "exec_return_stops": 0,
+    "fd": 3,
+    "number": 322,
+    "observation_complete": false,
+    "signal_delivery_stops": 0,
+    "successful_exec_events": 0,
+    "syscall": "execveat",
+    "threads_at_request": 1
+  },
+  "owners": {
+    "debugger": {
+      "cleanup_complete": true,
+      "exit_code": 1,
+      "reaped_descendants": 0,
+      "seconds": 0.18903432111255825,
+      "start_utc": "2026-10-31T22:00:11.990961+00:00",
+      "termination": null
+    },
+    "external_lease_release": "Not asserted by this receipt.",
+    "outer": {
+      "cleanup_complete": true,
+      "exit_code": 1,
+      "reaped_descendants": 0,
+      "seconds": 0.33811123319901526,
+      "start_utc": "2026-10-31T22:00:11.910236+00:00",
+      "termination": null
+    },
+    "source_unchanged": true
+  },
+  "pins": {
+    "closed_debugger": {
+      "bytes": 6490,
+      "sha256": "09e0e4d797b9f89a76763088fb22eea6b6a263ce0a5eb277c9f6794514f98ab1"
+    },
+    "closed_outer": {
+      "bytes": 4322,
+      "sha256": "42b2209922151240938a0ffc4294e8cb4a80b3f7e0fdc77309c9db24c1089141"
+    },
+    "raw_gdb_log": {
+      "bytes": 400,
+      "sha256": "d0d672ee89909dbf4b7e881b988b54cf47de148667dca2d955adbea16792e395"
+    },
+    "raw_trace": {
+      "bytes": 16921,
+      "sha256": "1ecc3889965128240edf1fa9728dda7eab2a00fb45c6ce5fdb201c0f099bd09a"
+    },
+    "scripts": {
+      "observe_exec.py": {
+        "bytes": 11500,
+        "sha256": "45d78d1fe744fd20121bd59560594566c471318cadea57c9f9450b44fb4fe6d8"
+      },
+      "run_diagnostic.py": {
+        "bytes": 5986,
+        "sha256": "7e3050cbd3a5f6bef281bf8cedcf13484805ba4537b734aef33a8b0ca1adb86f"
+      }
+    },
+    "tools_and_helpers": {
+      "amd64-linux.xml": {
+        "bytes": 21397,
+        "sha256": "a7a04515a1ad8bdf6d1cc2dbf3b5aba3063cfb76c6b8c5cbc0abc80b3a93d1bc"
+      },
+      "gdb": {
+        "bytes": 17179552,
+        "sha256": "cf8ae9d5192667cf681eabedf50ef39ecd11fac784c15cea6e3961880d3a16ed"
+      },
+      "prlimit": {
+        "bytes": 28416,
+        "sha256": "942bcd8596c242d4d33dca657372a83e1f55908afd59b525389362cd6d282933"
+      },
+      "processes.py": {
+        "bytes": 15760,
+        "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+      },
+      "python3.9": {
+        "bytes": 15448,
+        "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+      },
+      "run_e9_help_parity.py": {
+        "bytes": 9256,
+        "sha256": "a3a17f093c79774781247e767fb97687c51ed03cbbe576ce4e721e2e26b5bf88"
+      }
+    }
+  },
+  "status": "FAILED_OBSERVER_INCOMPLETE"
+}

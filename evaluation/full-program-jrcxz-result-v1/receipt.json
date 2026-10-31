@@ -1,0 +1,427 @@
+{
+  "schema": "complete-program-jrcxz-followup-v1",
+  "status": "FINITE_JRCXZ_PASS_WHOLE_PROGRAM_REFUSALS_RETAINED",
+  "revision": "3c1972d634428f7f73cd3ca0ac8cc8ec247481b6",
+  "tree": "030a350a002a1407144c93bc4eacb2385f2f4973",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "protocol_reference": "../full-program-long-t3-result-v1/receipt.json",
+  "toolchain": {
+    "rustc": "1.97.1 (8bab26f4f 2026-07-14)",
+    "LLVM": "22.1.6",
+    "python": "3.9.25"
+  },
+  "population": {
+    "heads": 13143,
+    "selected_jumps": 2053,
+    "rpc_messages": 14997,
+    "rpc_bytes": 1544550,
+    "qualification_complete": false
+  },
+  "unchanged_inputs": {
+    "original_sha256": "890f76cb5741b6c7cfba3414ae72a64fd7deddc7d2dd33b17d53e8b906529fdb",
+    "csv_sha256": "591845048470e947952fe064286d61f4a06413e5d01ae80c8504597e6c089562",
+    "policies_sha256": {
+      "16m": "d097e98b33b96421657e70bbbca4aa7fe48335adb6908746a04efc76d662f672",
+      "2g": "ef09bcd4c78949ff4b93a928c59e04b545081f9e56c2056f2cfcdfe068604cce"
+    },
+    "materials": "Exact unchanged ledger/inventory/RPC pins in ../full-program-gnu-result-v1/receipt.json; full2053-site roster joined."
+  },
+  "source_change": "Exact two-byte JRCXZ artifact originals use an explicit nine-byte PIC bridge with complete fixups/PC ownership; live emitter and generic unsupported-address refusal remain unchanged.",
+  "focused": {
+    "cpus": [
+      13,
+      25,
+      34,
+      35,
+      52,
+      53,
+      67,
+      70,
+      72,
+      73,
+      91,
+      92
+    ],
+    "load_before": [
+      36.84,
+      38.91,
+      39.78
+    ],
+    "load_after": [
+      40.02,
+      39.45,
+      39.93
+    ],
+    "environment": "Same GNU-result focused.environment_overrides: jobs12/threads12,debug0,nonincremental,offline",
+    "wall_cap_seconds_each": 180,
+    "log_cap_bytes_each": 8388608,
+    "commands": [
+      {
+        "name": "fmt",
+        "argv": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "result": {
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 9.811415191041306,
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "clippy",
+        "argv": [
+          "cargo",
+          "clippy",
+          "-j12",
+          "-p",
+          "liteinst2",
+          "-p",
+          "liteinst-rewrite",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "result": {
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 12.397985371062532,
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "private_log_sha256": "4dbe6470b174ca5682c91cde59c266622f23b116cdd4eda728540f5d784a53d8"
+        }
+      },
+      {
+        "name": "jrcxz-core",
+        "argv": [
+          "cargo",
+          "test",
+          "--offline",
+          "--locked",
+          "-j12",
+          "-p",
+          "liteinst2",
+          "--lib",
+          "jrcxz",
+          "--",
+          "--test-threads=12"
+        ],
+        "result": {
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 7.771325511159375,
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "private_log_sha256": "1d5f925c06e6cf2684bae56736d4efc73d61ba139b26e9b0d5167b64b143cc58"
+        }
+      },
+      {
+        "name": "artifact-core",
+        "argv": [
+          "cargo",
+          "test",
+          "--offline",
+          "--locked",
+          "-j12",
+          "-p",
+          "liteinst2",
+          "--lib",
+          "artifact_emission_tests",
+          "--",
+          "--test-threads=12"
+        ],
+        "result": {
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 0.0283912590239197,
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "private_log_sha256": "c9c6106df9aa451e1d707a1e8bf461fa16ef1c095d50f4686cf63701323ee901"
+        }
+      }
+    ],
+    "new_pure_controls_passed": 4,
+    "artifact_family_passed": 11,
+    "source_unchanged": true
+  },
+  "native": {
+    "build": {
+      "cpus": [
+        6
+      ],
+      "load_before": [
+        39.3,
+        39.31,
+        39.88
+      ],
+      "load_after": [
+        34.79,
+        38.12,
+        39.43
+      ],
+      "result": {
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 85.06803629919887,
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "private_log_sha256": "4682ede1343de2bd8e40536eaff6ca5be5cb356a2cd733d65fb617e494d14606"
+      },
+      "source_unchanged": true
+    },
+    "run": {
+      "cpus": [
+        1
+      ],
+      "load_before": [
+        34.89,
+        38.08,
+        39.41
+      ],
+      "load_after": [
+        34.89,
+        38.08,
+        39.41
+      ],
+      "result": {
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.32544558495283127,
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "private_log_sha256": "9c495fad80386f0b7b4a47cc21d53c7f1ebf4584566021d25c3d2eec8561a97d"
+      },
+      "source_unchanged": true
+    },
+    "product": {
+      "bytes": 4860552,
+      "sha256": "a9281b0e119fdc0082abd142c8a925d20dfab2e567012a6e865aed2dc77d99ed"
+    },
+    "cargo_profile": {
+      "opt_level": "3",
+      "debuginfo": 0,
+      "debug_assertions": true,
+      "overflow_checks": true,
+      "test": true
+    },
+    "planned_attempts": 1,
+    "actual_attempts": 1,
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "rcx_values": [
+      "0",
+      "1",
+      "4294967296",
+      "18446744073709551615"
+    ],
+    "seeds": 2,
+    "original_traces": 16,
+    "linked_state_comparisons": 16,
+    "restored_state_comparisons": 16,
+    "observing_callbacks": 8,
+    "original_branches": {
+      "taken": 2,
+      "fallthrough": 6
+    },
+    "full_original_state_comparator_unchanged": true,
+    "qualification_complete": false,
+    "reproduction_script": "reproduce_native.py",
+    "reproduction_script_sha256": "4f6e64b268386d716e354f1cc63f16275a8735700f468b03df49818c5a3d7979",
+    "reproduction_script_status": "Source-reviewed portable reproduction; historical execution used private controllers with the same build/native argv and bounds.",
+    "build_limits": {
+      "cpu_seconds": 240,
+      "wall_seconds": 300,
+      "address_space_bytes": 4294967296,
+      "file_bytes": 134217728,
+      "log_bytes": 8388608
+    },
+    "native_limits": {
+      "cpu_seconds": 45,
+      "wall_seconds": 60,
+      "address_space_bytes": 4294967296,
+      "file_bytes": 8388608,
+      "log_bytes": 8388608
+    },
+    "inner_existing_helper": {
+      "cpu_seconds": 20,
+      "wall_seconds": 30,
+      "trace_seconds": 15,
+      "step_limit": 20000
+    }
+  },
+  "build": {
+    "cpus": [
+      1
+    ],
+    "load_before": [
+      33.38,
+      37.65,
+      39.25
+    ],
+    "load_after": [
+      33.32,
+      37.43,
+      39.15
+    ],
+    "result": {
+      "exit_code": 0,
+      "termination": null,
+      "seconds": 17.885704210959375,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "private_log_sha256": "005501837706f1e28ffbadd1067a163be5daa3db4f58f0c5c4fb7afa30f5747a"
+    },
+    "source_unchanged": true,
+    "receipt_sha256": "354f1f38b36e1205ad5762273d364ed10d21608163df823dae0ea7126d44eb86",
+    "products": {
+      "full_program_bridge": {
+        "bytes": 2240176,
+        "sha256": "19b722c14e697872da17179c8bd25b231358466a8aa7ba02b594c1d2a97f1975"
+      },
+      "disassembly_sites": {
+        "bytes": 4484944,
+        "sha256": "d0be30ac0fc9572acfafc5c860c81a6b36a187359bf6f855a4518c5a4e02b492"
+      }
+    },
+    "argv_and_environment": "Exact protocol_reference.build; same private build recipe with this revision and product pins."
+  },
+  "attempt": {
+    "cpus": [
+      3
+    ],
+    "load_before": [
+      33.69,
+      37.44,
+      39.15
+    ],
+    "load_after": [
+      67.31,
+      46.79,
+      42.28
+    ],
+    "result": {
+      "exit_code": 0,
+      "termination": null,
+      "seconds": 42.20455266605131,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "private_log_sha256": "0f375585bd98c9b80b07029ec722aa1ed09557b38f68295370450a09618f8c6d"
+    },
+    "source_unchanged": true,
+    "receipt_sha256": "2cc4ef37beffa5802fb048a16c1e5aed1616fbd59c631a5532432bd5befe77a8",
+    "commands": "Exact protocol_reference.attempt commands/limits/environment; replace revision, product/build pins and fresh paths. Same --li2-only, one attempt per frozen profile.",
+    "material_result": {
+      "exit_code": 0,
+      "termination": null,
+      "seconds": 0.03704822692088783,
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "private_log_sha256": "88b5e461edc0e15352c5f5ed3bcf2c348f83af4931a91349faffc31a1cc34826"
+    },
+    "native_attempts": 0,
+    "e9_backend_attempts": 0
+  },
+  "profiles": [
+    {
+      "profile": "li2-16m",
+      "rows": 2053,
+      "exit": 2,
+      "owner_wall_seconds": 22.121280120918527,
+      "atomic_withheld_local_plans": 1749,
+      "primary_refusals": {
+        "AllocationUnavailable": 14,
+        "ExpectedBytesChanged": 129,
+        "NoPatchWindow": 160,
+        "OwnershipConflict": 1
+      },
+      "withheld_tactics": {
+        "B1": 1486,
+        "B2": 33,
+        "T1": 25,
+        "T2": 96,
+        "T3": 109
+      },
+      "candidate_complete": false,
+      "load_before": [
+        35.96,
+        37.84,
+        39.27
+      ],
+      "load_after": [
+        76.76,
+        46.95,
+        42.23
+      ],
+      "report": {
+        "bytes": 335220,
+        "sha256": "174ebbafa5116f24d74058f3be457799e46a5a87cd4b28cd8973c03fb3300dd4"
+      },
+      "complete_sha256": "c3f31ff5b9509ae5f1741dc3081e0335c55b2f7f93266859c9fc5ee184f225d6"
+    },
+    {
+      "profile": "li2-2g",
+      "rows": 2053,
+      "exit": 2,
+      "owner_wall_seconds": 18.56739286496304,
+      "atomic_withheld_local_plans": 2014,
+      "primary_refusals": {
+        "AllocationUnavailable": 5,
+        "ExpectedBytesChanged": 9,
+        "NoPatchWindow": 21,
+        "OwnershipConflict": 4
+      },
+      "withheld_tactics": {
+        "B1": 1519,
+        "B2": 329,
+        "T1": 111,
+        "T2": 23,
+        "T3": 32
+      },
+      "candidate_complete": false,
+      "load_before": [
+        76.76,
+        46.95,
+        42.23
+      ],
+      "load_after": [
+        67.31,
+        46.79,
+        42.28
+      ],
+      "report": {
+        "bytes": 364154,
+        "sha256": "94e4e8e237b6e1e853386352e944a52d3b9c338add0716274a674ac91fcba87e"
+      },
+      "complete_sha256": "55cb29add2e019ff3ae42de8592fc68038eaae545d36116ebd06a1fde184c18f"
+    }
+  ],
+  "delta_from_701c": {
+    "all2053_row_identities_equal_per_profile": true,
+    "changed_sites": {
+      "16m": [],
+      "2g": [
+        1425
+      ]
+    },
+    "site1425": {
+      "pc": 43348,
+      "original_bytes": "e304",
+      "before": "UnmodelledEncoding",
+      "after": "T1 local plan withheld by atomic whole-program refusal"
+    },
+    "all_other_report_fields_identical": true
+  },
+  "scope": [
+    "Finite observing T3 native fixture, not full-program execution or callback-free/internal-self native coverage.",
+    "Both full-program profiles remain refused; no emitted candidate, performance, PIE startup or A5 qualification.",
+    "Prior failures, original roster/resource/ownership/atomic checks and strict1342/2048 profiler result are unchanged.",
+    "Durations describe bounded correctness operations on a shared host, not performance comparisons."
+  ]
+}

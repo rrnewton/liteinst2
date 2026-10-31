@@ -1,0 +1,289 @@
+{
+  "revision": "3c1972d634428f7f73cd3ca0ac8cc8ec247481b6",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "status": "PASS_CORRECTNESS_ONLY",
+  "script": "evaluation/short-neighbor-parallel/validate.py",
+  "script_sha256": "968956df64edd3f5754a0adbd4b900ac68535d188be01af0628eff94d2ed6d10",
+  "cpu_count": 12,
+  "cpus": [
+    8,
+    13,
+    50,
+    53,
+    64,
+    65,
+    70,
+    73,
+    90,
+    92,
+    98,
+    100
+  ],
+  "cargo_jobs": 12,
+  "test_threads": 12,
+  "serial_threads": 1,
+  "outer_seconds": 927.0031653679907,
+  "outer_wall_limit": 1200,
+  "log_cap_bytes": 8388608,
+  "all_owners_normal_zero_rescues": true,
+  "source_unchanged": true,
+  "stages": [
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 9.854593894910067,
+      "exit_code": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "load_before": [
+        "55.75",
+        "45.71",
+        "42.04"
+      ],
+      "load_after": [
+        "50.62",
+        "44.95",
+        "41.83"
+      ]
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 29.584901865106076,
+      "exit_code": 0,
+      "log_sha256": "631bd0dfdb6aa2a24ea668eab851f99e0c710906bec3e82a22d4544021bac1e6",
+      "load_before": [
+        "50.62",
+        "44.95",
+        "41.83"
+      ],
+      "load_after": [
+        "43.68",
+        "43.79",
+        "41.55"
+      ]
+    },
+    {
+      "name": "check",
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 22.486673379084095,
+      "exit_code": 0,
+      "log_sha256": "14349632e76ce48717ffc98e74cce5590e6c2b94fe925244f065ff048026d664",
+      "load_before": [
+        "43.68",
+        "43.79",
+        "41.55"
+      ],
+      "load_after": [
+        "42.48",
+        "43.56",
+        "41.52"
+      ]
+    },
+    {
+      "name": "workspace",
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "12",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "wall_limit": 900,
+      "elapsed_seconds": 738.631507602986,
+      "exit_code": 0,
+      "log_sha256": "d8fdba8ce53ce47c95943d66dd403e8f0a961556c76c43aad6dd635f86fe7f62",
+      "load_before": [
+        "42.48",
+        "43.56",
+        "41.52"
+      ],
+      "load_after": [
+        "41.75",
+        "43.98",
+        "41.43"
+      ]
+    },
+    {
+      "name": "serial-launch",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 126.37310789106414,
+      "exit_code": 0,
+      "log_sha256": "0027eaa5417147b39f622e262a61f9bae29fe8ebc7c4f67589bb4e8e3d09abf8",
+      "load_before": [
+        "41.75",
+        "43.98",
+        "41.43"
+      ],
+      "load_after": [
+        "31.00",
+        "39.13",
+        "39.97"
+      ]
+    }
+  ],
+  "workspace": {
+    "passed": 4273,
+    "failed": 0,
+    "ignored": 39,
+    "raw_passed": 4276,
+    "controlled_nested_child_passes": 3,
+    "all_prior_tests_contexts_statuses_and_ignore_reasons_retained": true,
+    "added_tests": [
+      "artifact_emission_tests::jrcxz_artifact_bridge_has_complete_fields_paths_and_pc_ownership",
+      "artifact_emission_tests::jrcxz_artifact_bridge_routes_internal_entries_and_keeps_finite_refusals",
+      "artifact_emission_tests::jrcxz_artifact_engine_keeps_source_pair_and_allocation_authority",
+      "jrcxz_artifact_native::native_jrcxz_artifact_preserves_integer_flags_and_stack",
+      "trampoline::artifact_jrcxz::tests::fixed_jrcxz_bridge_rejects_template_index_and_field_corruption"
+    ],
+    "counted_multiset_sha256": "d25b3ee6f02223a47cedf5a3a4e99385f37467f5bdef3888408b2db3a5346fab"
+  },
+  "serial_launch": {
+    "passed": 1039,
+    "failed": 0,
+    "ignored": 0,
+    "complete_prior_multiset_retained": true
+  },
+  "native_finite_census": [
+    {
+      "context": "Running tests/neighbor_eviction_oracle.rs (target/debug/deps/neighbor_eviction_oracle-<cargo-hash>)",
+      "line": 3062,
+      "text": "artifact JRCXZ: 4 RCX values x 2 seeds, 16 original/16 linked/16 restored traces, 8 observing callbacks; no qualification claim"
+    }
+  ],
+  "release": {
+    "original_owner_pid_absent": true,
+    "exact_child_scope_absent": true
+  },
+  "baseline_revision": "701c4c87e80efcb287a37c57c5b1d7ce5aecee0c",
+  "scope": "Full root-workspace correctness only; no performance/native full-program/A5 qualification. Original failed runs remain in prior receipts.",
+  "environment": {
+    "mode": "Nine overrides on inherited environment; not a clean environment",
+    "overrides": {
+      "PATH": "${STABLE_TOOLCHAIN_BIN}:${CARGO_BIN}:/usr/bin:/bin",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_BUILD_JOBS": "12",
+      "CARGO_TARGET_DIR": "${ROOT}/target",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "RUST_TEST_THREADS": "12",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    }
+  },
+  "reproduction": {
+    "script": "evaluation/short-neighbor-parallel/validate.py",
+    "sha256": "968956df64edd3f5754a0adbd4b900ac68535d188be01af0628eff94d2ed6d10",
+    "helper": "evaluation/admission/processes.py",
+    "helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+    "argv": [
+      "/usr/bin/python3.9",
+      "${ROOT}/evaluation/short-neighbor-parallel/validate.py",
+      "--revision",
+      "3c1972d634428f7f73cd3ca0ac8cc8ec247481b6",
+      "--output",
+      "${ROOT}/ignored/${FRESH_OUTPUT}"
+    ],
+    "outer_wall_seconds": 1200,
+    "combined_log_cap_bytes": 8388608,
+    "commands": [
+      {
+        "name": "fmt",
+        "argv": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "wall_seconds": 180
+      },
+      {
+        "name": "clippy",
+        "argv": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "wall_seconds": 180
+      },
+      {
+        "name": "check",
+        "argv": [
+          "cargo",
+          "check",
+          "--workspace",
+          "--all-features",
+          "--all-targets"
+        ],
+        "wall_seconds": 180
+      },
+      {
+        "name": "workspace",
+        "argv": [
+          "cargo",
+          "test",
+          "-j",
+          "12",
+          "--workspace",
+          "--no-fail-fast"
+        ],
+        "wall_seconds": 900
+      },
+      {
+        "name": "serial-launch",
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst-launch",
+          "--tests",
+          "--",
+          "--test-threads=1",
+          "--nocapture"
+        ],
+        "wall_seconds": 180
+      }
+    ]
+  },
+  "private_evidence": {
+    "outer_sha256": "40f033f0a88e05cf978995dcfefe488a70b7e4e6f87a3a8f8ec6cdf06a7a9d03",
+    "reader_sha256": "68ed7895ff0451e8554a6ebaf30ce7df8e334ecdce7a4b994ab15ebe1e85f570",
+    "census_sha256": "1b147052f981ff73cc6991c79386fdba6208bab1a244b2408f7643fe988593ba"
+  }
+}
