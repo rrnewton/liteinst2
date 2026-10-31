@@ -796,3 +796,144 @@ fn current_placement_keeps_successor_and_neighbor_placement_literal() {
         assert_current_steps(&fixture, &predecessor, &new);
     }
 }
+
+#[test]
+fn current_placement_generalized_pun_preserves_seed_and_uses_remaining_page_once() {
+    use crate::search::{RefusalClass, SearchDomain};
+    let mut fixture = Fixture::new(Tactic::GeneralizedPun);
+    fixture.selected.max_candidates = 1;
+    fixture.selected.max_mapped_bytes = 4096;
+    let predecessor = fixture.predecessor();
+    let saved = predecessor.clone();
+    let seed = fixture.selected.preferred_address.unwrap();
+    let seed_page = AddressRange::new(seed & !4095, 4096).unwrap();
+    let remaining_page = AddressRange::new(seed_page.end(), 4096).unwrap();
+    assert_eq!(seed % 4096, 0x85);
+    assert_eq!(
+        fixture.selected.ranges,
+        [AddressRange::new(seed_page.start(), 8192).unwrap()]
+    );
+    let window = AddressRange::new(S + 5 + 0x2ab8_0000, 1 << 16).unwrap();
+    let old = engine::plan_with_emission_after_and_long_t3_ownership(
+        &fixture.request(HookSemantics::Observe),
+        &predecessor,
+        &fixture.victim,
+        fixture.policy(),
+    )
+    .unwrap();
+    let same = engine::plan_with_emission_after_and_current_placement(
+        &fixture.request(HookSemantics::Observe),
+        &predecessor,
+        &fixture.victim,
+        fixture.policy(),
+    )
+    .unwrap();
+    assert_eq!(same.source_steps(), old.source_steps());
+    assert_eq!(same.images().next().unwrap().address(), seed);
+    assert_eq!(
+        same.images().next().unwrap().bytes(),
+        old.images().next().unwrap().bytes()
+    );
+    assert_eq!(
+        format!("{:?}", same.metrics()),
+        format!("{:?}", old.metrics())
+    );
+
+    let mut occupied = fixture.emission.occupied().to_vec();
+    occupied.push(seed_page);
+    fixture.emission = ArtifactEmission::new(
+        fixture.emission.profile().clone(),
+        fixture.emission.hook(),
+        occupied,
+    );
+    let blocked = engine::plan_with_emission_after_and_long_t3_ownership(
+        &fixture.request(HookSemantics::Observe),
+        &predecessor,
+        &fixture.victim,
+        fixture.policy(),
+    )
+    .unwrap_err();
+    assert_eq!(blocked.reason, Refusal::AllocationUnavailable);
+    assert_eq!(blocked.attempts.len(), 1);
+    assert_eq!(blocked.attempts[0].tactic, Tactic::GeneralizedPun);
+    assert!(
+        blocked.attempts[0]
+            .search
+            .refusals
+            .iter()
+            .any(|r| r.class == RefusalClass::AddressPolicy)
+    );
+    let blocked_runs: Vec<_> = blocked.attempts[0]
+        .search
+        .runs
+        .iter()
+        .filter(|run| run.domain == SearchDomain::SelectedImages)
+        .collect();
+    assert_eq!(blocked_runs.len(), 1);
+    assert_eq!((blocked_runs[0].limit, blocked_runs[0].examined), (1, 1));
+    let fallback = engine::plan_with_emission_after_and_current_placement(
+        &fixture.request(HookSemantics::Observe),
+        &predecessor,
+        &fixture.victim,
+        fixture.policy(),
+    )
+    .unwrap();
+    assert_eq!(
+        fallback.images().next().unwrap().address(),
+        remaining_page.start()
+    );
+    for (plan, page) in [
+        (&old, seed_page),
+        (&same, seed_page),
+        (&fallback, remaining_page),
+    ] {
+        assert_current_steps(&fixture, &predecessor, plan);
+        let ArtifactMetrics::Engine(
+            Tactic::GeneralizedPun,
+            engine::SelectedMetrics::Single(metrics),
+            attempts,
+        ) = plan.metrics()
+        else {
+            panic!("single B2 metrics")
+        };
+        assert_eq!(metrics.allocation_attempts, 1);
+        assert_eq!(attempts.len(), 1);
+        let runs: Vec<_> = attempts[0]
+            .search
+            .runs
+            .iter()
+            .filter(|run| run.domain == SearchDomain::SelectedImages)
+            .collect();
+        assert_eq!(runs.len(), 1);
+        assert_eq!((runs[0].limit, runs[0].examined), (1, 1));
+        assert_eq!(plan.images().count(), 1);
+        let image = plan.images().next().unwrap();
+        assert!(!image.bytes().is_empty());
+        assert!(page.covers(AddressRange::new(image.address(), image.bytes().len()).unwrap()));
+        assert!(window.contains(image.address()));
+        let parts = plan.source_steps()[0].parts();
+        let PlanKind::GeneralizedPun(pun) = &parts.kind else {
+            panic!("B2")
+        };
+        assert_eq!(pun.target_window, window);
+        assert_eq!(parts.displaced, AddressRange::new(S, 3).unwrap());
+        assert_eq!(pun.consumed, AddressRange::new(S, 5).unwrap());
+        assert_eq!(
+            parts.allocations,
+            [AllocationRequest {
+                range: page,
+                alignment: 4096
+            }]
+        );
+        assert_eq!(pun.store.address, S);
+        assert_eq!(pun.store.bytes.len(), 4);
+        assert_eq!(pun.store.bytes[3], 0xb8);
+        assert_eq!(&parts.reads[0].bytes[19..], &fixture.code[19..]);
+        let mut composed = predecessor.clone();
+        composed.append(&plan.source_steps()[0]).unwrap();
+        assert_eq!(&composed.final_bytes()[0].bytes[..16], &fixture.code[..16]);
+        assert_eq!(&composed.final_bytes()[0].bytes[19..], &fixture.code[19..]);
+    }
+    assert!(!seed_page.overlaps(remaining_page));
+    assert_eq!(predecessor, saved);
+}
