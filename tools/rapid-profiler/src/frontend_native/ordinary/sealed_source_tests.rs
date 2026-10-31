@@ -82,7 +82,12 @@ fn sealed_copy_kernel_refuses_write_resize_new_seals_and_shared_writer() {
     let after = sealed_source_stamp(&mut file, &expected).unwrap();
     assert_eq!(
         (after.device, after.inode, after.size, after.mode),
-        (original.device, original.inode, original.size, original.mode)
+        (
+            original.device,
+            original.inode,
+            original.size,
+            original.mode
+        )
     );
 }
 
