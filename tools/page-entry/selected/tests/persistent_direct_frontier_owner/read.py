@@ -1136,7 +1136,7 @@ def read(data,layout,image,app,pid,cpu,exit_status):
 
 
 def terminal(parsed,owner):
-    expected=owner['terminal'];need(type(parsed)is dict and set(parsed)==set(expected)and all(type(v)is int for k,v in parsed.items()if k!='misses')and type(parsed['misses'])is list and all(type(v)is int for v in parsed['misses'])and parsed==expected,'whole actual protected cross-pair terminal row')
+    expected=owner['terminal'];need(type(parsed)is dict and set(parsed)==set(expected)and all(type(v)is int for k,v in parsed.items()if k!='misses')and type(parsed['misses'])is list and all(type(v)is int for v in parsed['misses'])and parsed==expected,'whole actual protected direct-frontier terminal row')
     return dict(fields=len(expected),protected_direct_frontier_row=1,inherited_row_protection=0)
 
 
@@ -1371,7 +1371,7 @@ def lifetime_controls(data,layout,image,app,pid,cpu,exit_status):
 
 def subentry_terminal(parsed,owner):
     expected=owner['subentry_terminal']
-    need(type(parsed)is dict and list(parsed)==list(expected)and all(type(v)is int for v in parsed.values())and parsed==expected,'whole actual protected cross-pair subentry event row')
+    need(type(parsed)is dict and list(parsed)==list(expected)and all(type(v)is int for v in parsed.values())and parsed==expected,'whole actual protected direct-frontier subentry event row')
     return dict(fields=15,protected_subentry_event_row=1)
 
 
