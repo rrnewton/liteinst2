@@ -115,7 +115,8 @@ def binding_config(builder, archive, image, output, pin, binary, run):
 def protected_extents(builder, bridge, symbols, pin, run, state):
     """Inspect compiler-derived storage sizes without executing the bridge."""
     gdb = pin(shutil.which('gdb', path=ENV['PATH']))
-    _, out, err = run('persistent-gdb-version', [gdb, '--version'], profile='inspect', env=builder.environment)
+    gdb_environment = dict(builder.environment, MALLOC_ARENA_MAX='1')
+    _, out, err = run('persistent-gdb-version', [gdb, '--version'], profile='inspect', env=gdb_environment)
     need(out and not err, 'actual GDB tool identity')
     expression = ('printf "LI2_PE_EXTENTS %llu %llu %llu %llu %llu\\n", '
                   '(unsigned long long)sizeof(struct pe_payload), (unsigned long long)sizeof(pe), '
@@ -124,7 +125,8 @@ def protected_extents(builder, bridge, symbols, pin, run, state):
                   '(unsigned long long)sizeof(struct li2_mg_plan)')
     _, out, err = run('persistent-protected-extents', [gdb, '-nx', '-nh', '-batch',
                      '-iex', 'set auto-load off', '-iex', 'set debuginfod enabled off',
-                     '-ex', 'file '+str(bridge), '-ex', expression], profile='inspect', env=builder.environment)
+                     '-iex', 'set index-cache enabled off', '-iex', 'maintenance set worker-threads 1',
+                     '-ex', 'file '+str(bridge), '-ex', expression], profile='inspect', env=gdb_environment)
     match = re.fullmatch(rb'LI2_PE_EXTENTS ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+)\n', out)
     need(not err and match is not None, 'one actual DWARF storage-size result')
     payload, owner, compact, code, recovery = map(int, match.groups())
