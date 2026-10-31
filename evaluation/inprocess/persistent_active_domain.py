@@ -517,13 +517,18 @@ def native_probe_component(builder,private,pin,binary,run,r):
     state.update(status='passed',counts=PROBE_COUNTS)
 
 
-def repeat_setup_completed(stderr,image,summary):
-    """Add an exact fixture-site join after the unchanged positive REP reader."""
-    prefix=b'LI2_REPEAT_LEASE ';lines=[x for x in stderr.splitlines()if x.startswith(prefix)]
-    need(len(lines)==1,'one actual positive fixture REP row')
-    row=reports.maps_view.pair.pair_reports.rseq.decode(lines[0][len(prefix):])
-    need(prefix+json.dumps(row,separators=(',',':'),allow_nan=False).encode()==lines[0],
-         'canonical actual fixture REP row')
+def repeat_setup_completed(stderr,image,summary,application,protected_tls):
+    """Exact positive fixture site and observed-TLS identity; no row rewriting."""
+    parsed={}
+    for key,prefix in (('repeat_lease',b'LI2_REPEAT_LEASE '),('rseq',b'LI2_RSEQ ')):
+        lines=[x for x in stderr.splitlines()if x.startswith(prefix)]
+        need(len(lines)==1,'one actual positive fixture REP/rseq row')
+        parsed[key]=reports.maps_view.pair.pair_reports.rseq.decode(lines[0][len(prefix):])
+        need(prefix+json.dumps(parsed[key],separators=(',',':'),allow_nan=False).encode()==lines[0],
+             'canonical actual fixture REP/rseq row')
+    observed=reports.repeat_observed_identity(parsed,application['header'][6],application,protected_tls)
+    need(summary['observed_tls']==observed,'whole actual observed-TLS REP summary')
+    row=parsed['repeat_lease']
     setup=image['repeat_setup'];pc=setup['pc'];destination=setup['destination']
     binding=summary['source_binding']
     need(row['request'][:4]==[pc,setup['next_pc'],346,3]and
@@ -532,7 +537,7 @@ def repeat_setup_completed(stderr,image,summary):
          row['progress'][0]==8 and row['frames'][2:4]==[8,destination]and
          row['frames'][9:11]==[0,destination+64]and
          summary['last_code']==346 and summary['last_initial_count']==8 and
-         summary['registration_scope']=='before_first_registration'and
+         summary['registration_scope']==reports.REPEAT_TLS_SCOPE and
          binding['module']==summary['source_module']==0 and
          binding['file_offset']==summary['source_file_offset']==setup['file_offset']and
          binding['emitted_bytes']=='f348ab'and binding['image_sha256']==image['sha256'],
@@ -608,11 +613,15 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                 owner_args=(record,layout,image,parsed,row['pid'],r['cpu'],row['exit'])
                 actual_owner=owner_reader.read(*owner_args)
                 terminal_args=(row['pid'],row['exit'],row['stdout_provenance_before'],images,raws,fact(carrier),carrier_bytes,actual_owner,owner_reader,mode)
-                terminal,c['terminal']=reports.check(stderr,*terminal_args,lane=lane);r['terminal_reports'][label]=terminal
-                repeat_setup_completed(stderr,app_layout,c['terminal']['repeat_lease'])
+                terminal,c['terminal']=reports.check(stderr,*terminal_args,lane=lane,application=parsed);r['terminal_reports'][label]=terminal
+                repeat_setup_completed(stderr,app_layout,c['terminal']['repeat_lease'],parsed,
+                    tuple((x['before']['fs'],x['before']['gs'])for x in actual_owner['attempts']))
+                c['repeat_tls_controls']=reports.repeat_tls_controls(stderr,terminal,row['pid'],images,raws,
+                    fact(carrier),carrier_bytes,actual_owner,parsed)
+                named(c['repeat_tls_controls'],reports.REPEAT_TLS_CONTROLS,H(stderr),hash_key='original_stderr_sha256')
                 c['native_probe_controls']=reports.probe.controls(stderr,terminal)
                 named(c['native_probe_controls'],reports.probe.CONTROL_COUNT,H(stderr),hash_key='original_stderr_sha256')
-                c['terminal_controls']=reports.controls(stderr,*terminal_args,lane=lane)
+                c['terminal_controls']=reports.controls(stderr,*terminal_args,lane=lane,application=parsed)
                 named(c['terminal_controls'],TERMINAL_COUNTS[mode,0],H(stderr),hash_key='original_stderr_sha256')
                 c['owner_summary']={k:actual_owner[k]for k in('mode','cold_publications','warm_entries','dual_entries','replacements','permit_claims','interior_signals','word','code','detail','status')}
                 need(all(type(v)is int and 0<=v<1<<64 for v in c['owner_summary'].values()),'only actual bounded owner counters')
@@ -645,6 +654,8 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
          'two complete native/generated pairs and each separate exact supplied control population')
     need(sum(len(c.get('native_probe_controls',{}).get('refusals',[]))for c in r['cases'])==44 and
          reports.probe.CONTROL_COUNT==22,'both separate exact native-probe reader populations')
+    need(sum(len(c.get('repeat_tls_controls',{}).get('refusals',[]))for c in r['cases'])==66 and
+         reports.REPEAT_TLS_CONTROLS==33,'both separate exact observed-TLS REP reader populations')
 
 
 
@@ -839,6 +850,7 @@ def main():
             application_reader_refusals=sum(len(c.get('application_controls',{}).get('refusals',[]))for c in r['cases']),
             terminal_reader_refusals=sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases']),
             native_probe_reader_refusals=sum(len(c.get('native_probe_controls',{}).get('refusals',[]))for c in r['cases']),
+            repeat_tls_reader_refusals=sum(len(c.get('repeat_tls_controls',{}).get('refusals',[]))for c in r['cases']),
             owner_reader_refusals=sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases']),
             pair_reader_refusals=sum(len(c.get('pair_controls',{}).get('refusals',[]))for c in r['cases']),
             cold_publications=sum(c.get('owner_summary',{}).get('cold_publications',0)for c in r['cases']),
@@ -859,6 +871,8 @@ def main():
         public['rseq_mapping']={c['lane']:c.get('rseq_mapping')for c in r['cases']if c['lane']!='native'}
         public['native_probe']={c['lane']:dict(row=c.get('terminal',{}).get('native_probe'),
             controls=c.get('native_probe_controls'))for c in r['cases']if c['lane']!='native'}
+        public['repeat_tls']={c['lane']:dict(scope=c.get('terminal',{}).get('repeat_lease',{}).get('registration_scope'),
+            controls=c.get('repeat_tls_controls'))for c in r['cases']if c['lane']!='native'}
         public.update(hardware=hw,private_receipt=fact(private/'receipt.json'),
             reproduce=['python3','-B','evaluation/inprocess/persistent_active_domain.py','--expect-revision',args.expect_revision,'--fixed-receipt',str(args.fixed_receipt.resolve().relative_to(ROOT)),'--dynamic-receipt',str(args.dynamic_receipt.resolve().relative_to(ROOT)),'--group-receipt',str(args.group_receipt.resolve().relative_to(ROOT)),'--resident-receipt',str(args.resident_receipt.resolve().relative_to(ROOT)),'--retained-receipt',str(args.retained_receipt.resolve().relative_to(ROOT))],
             input_manifest_sha256=digest(pins),artifact_manifest_sha256=digest(artifacts),command_count=len(r['commands']),commands_sha256=digest(r['commands']),

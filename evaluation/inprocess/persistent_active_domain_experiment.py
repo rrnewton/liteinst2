@@ -6,7 +6,7 @@ build and mandatory byte oracle precede one /bin/ls -d . subject under the old
 30 CPU-second/60 wall-second/512 MiB/16 MiB limits. No retry, native baseline,
 aggregate or speedup is produced. This does not replace any fixed or dynamic profile check or qualify group faults.
 """
-import argparse,csv,io,json,os,platform,re,sys,types,shutil
+import argparse,csv,io,json,os,platform,re,sys,types,shutil,struct
 from pathlib import Path
 sys.dont_write_bytecode=True
 from linked_frontier_census import need,fact,git,git_bytes,source_paths,H,D
@@ -148,7 +148,8 @@ def active_prerequisite(path,r,pin,binary,archive,active):
          'fresh successful active-domain pairs on same exact source CPU and hardware')
     totals=dict(planned=3,launched=3,observed=3,native_references=1,generated_loops=2,observed_pairs=2,
         application_reader_refusals=24,terminal_reader_refusals=146,owner_reader_refusals=242,
-        pair_reader_refusals=24,cold_publications=4,warm_entries=2,interior_signals=0,native_probe_reader_refusals=44)
+        pair_reader_refusals=24,cold_publications=4,warm_entries=2,interior_signals=0,native_probe_reader_refusals=44,
+        repeat_tls_reader_refusals=66)
     need(digest(a['totals'])==digest(totals)and digest(public['totals'])==digest(totals)and
          public['performance_credit']is False and public['whole_ls_eligibility_credit']is False and
          public['group_fault_qualification']is False,
@@ -243,8 +244,35 @@ def active_prerequisite(path,r,pin,binary,archive,active):
             named(c['owner_reader_controls'],121,row['captures']['record']['sha256'])
             named(c['terminal_controls'],73,row['captures']['stderr']['sha256'],hash_key='original_stderr_sha256')
             named(c['native_probe_controls'],22,row['captures']['stderr']['sha256'],hash_key='original_stderr_sha256')
+            named(c['repeat_tls_controls'],33,row['captures']['stderr']['sha256'],hash_key='original_stderr_sha256')
             probe_bytes=binary(private/row['captures']['stderr']['file']).read_bytes()
-            active.repeat_setup_completed(probe_bytes,a['application_layout'],c['terminal']['repeat_lease'])
+            app_bytes=binary(private/row['captures']['stdout']['file']).read_bytes()
+            need(len(app_bytes)==842096,'complete actual application TLS evidence')
+            app_header=struct.unpack_from('<48Q',app_bytes)
+            need(app_header[:9]==(0x344150444132494c,4,18888,823208,0,0,row['pid'],row['pid'],a['cpu']),
+                 'actual same-process application prefix for observed-TLS REP')
+            application=dict(header=app_header,machine=struct.unpack_from('<8Q',app_bytes,2144))
+            layout_path=binary(private/(lane+'-build')/'owner-dwarf-layout.json')
+            need(digest(fact(layout_path))==digest(a['lanes'][lane]['owner_layout']['artifact']),
+                 'exact retained actual DWARF for protected TLS join')
+            layout=json.loads(layout_path.read_bytes());types=layout['types']
+            record=binary(private/row['captures']['record']['file']).read_bytes()
+            epochs=types['pdao_wire']['fields']['epochs'];epoch=types['pdao_epoch'];frame=types['le_frame']
+            need(layout['record']=='pdao_wire'and len(record)==types['pdao_wire']['bytes']+64==4161728 and
+                 epochs['bytes']==3*epoch['bytes']and epoch['fields']['before']['bytes']==frame['bytes'],
+                 'whole three actual protected before frames')
+            protected_tls=[]
+            for i in range(3):
+                at=epochs['offset']+i*epoch['bytes']+epoch['fields']['before']['offset'];values=[]
+                for name,width in (('fs',8),('gs',8),('fs_result',8),('gs_result',8),('tls_complete',4)):
+                    field=frame['fields'][name];start=at+field['offset']
+                    need(field['bytes']==width and 0<=field['offset']<=frame['bytes']-width and
+                         0<=start<=len(record)-width,'exact actual protected TLS field extent')
+                    values.append(int.from_bytes(record[start:start+width],'little'))
+                need(values[2:]==[0,0,1],'complete successful actual protected before TLS observation')
+                protected_tls.append(tuple(values[:2]))
+            active.repeat_setup_completed(probe_bytes,a['application_layout'],c['terminal']['repeat_lease'],
+                application,tuple(protected_tls))
             actual_probe=probe.split(probe_bytes)[0]
             need(digest(actual_probe)==digest(c['terminal']['native_probe'])==
                  digest(a['terminal_reports'][c['label']]['native_probe']),
@@ -275,6 +303,9 @@ def active_prerequisite(path,r,pin,binary,archive,active):
     need(digest(public['native_probe'])==digest({c['lane']:dict(row=c['terminal']['native_probe'],
          controls=c['native_probe_controls'])for c in a['cases']if c['lane']!='native'}),
          'complete actual probe rows and separate reader controls in public projection')
+    need(digest(public['repeat_tls'])==digest({c['lane']:dict(scope=c['terminal']['repeat_lease']['registration_scope'],
+         controls=c['repeat_tls_controls'])for c in a['cases']if c['lane']!='native'}),
+         'exact separate observed-TLS REP scope and causal controls in public projection')
     states=a['component_oracles']
     need([s['name']for s in states]==['active_authority','active_dispatch'],
          'actual authority and dispatch model components independently required')
