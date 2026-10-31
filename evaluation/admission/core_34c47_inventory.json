@@ -136,7 +136,7 @@
       "previous_sha256": "ec64c5bca821c3079845769b905ef5d68a0202ce3981b0c1581bbfa4165908a3"
     },
     "evaluation/admission/recorder_parallel.py": {
-      "current_sha256": "f47aaa5801b09ceace088d2c7a214149c1245db95238ec35c37563ea95b2c937",
+      "current_sha256": "103916388007f513de7dea61a3661843237db17a1f804f42185e35cf5e7c106f",
       "edits": [
         [
           1392,
@@ -152,6 +152,11 @@
           3501,
           3569,
           "    # Actual workers authenticate all362 and allfour in discover().\n"
+        ],
+        [
+          4938,
+          5437,
+          ""
         ]
       ],
       "previous_sha256": "9ffd067f0e0f48794647079034fa79a204d757a5a6e016c255caedb7e4809926"
@@ -1550,7 +1555,7 @@
     "evaluation/admission/core_813_inventory.py": "60766302d63b6b0f9be47ba1b5508ee998e4724a06048fb7a8e603d436070caf",
     "evaluation/admission/core_acc247_inventory.py": "085d7a5a5231de1b6567599d24e56caa96f2854b92389a6063596f6dadc3fc08",
     "evaluation/admission/core_cc846_inventory.py": "fb84ad3363f39505705d066cfb3d674c535baf869cd70edaaf961bcf60d00f2d",
-    "evaluation/admission/recorder_parallel.py": "f47aaa5801b09ceace088d2c7a214149c1245db95238ec35c37563ea95b2c937",
+    "evaluation/admission/recorder_parallel.py": "103916388007f513de7dea61a3661843237db17a1f804f42185e35cf5e7c106f",
     "evaluation/admission/test_main0fb574_inventory.py": "232d801637ccedd7d3b430405d28cef19457e5cd36297e7411ef41e5bbdd3c19",
     "evaluation/admission/test_main20cbe_inventory.py": "bb8e28fc90657c735d89e0d71cea8fcca786d370bc03af80d3caa6b8b2be31f9",
     "evaluation/admission/test_main34c47_inventory.py": "bef04a28507735772a6e3b59afbc8ea8e61edb347fd6dde44b192bb0189402b0",

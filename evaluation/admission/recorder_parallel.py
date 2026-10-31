@@ -103,6 +103,15 @@ def partition(identities, workers):
     modules = list(dict.fromkeys(name.split('.', 1)[0] for name in identities
                                 if name not in ADDED))
     assigned = {name: index % workers for index, name in enumerate(ADDED)}
+    if workers == 4:
+        # Measured ordinary-module costs; preserve the four historical shards
+        # and every worker's original discovery order.
+        moved = {'test_main_query_inventory': 1, 'test_runtime_inventory': 1,
+                 'test_runtime_stack_consumer_inventory': 3, 'test_backing_cleanup': 3}
+        for name in identities:
+            module = name.split('.', 1)[0]
+            if name not in assigned and module in moved:
+                assigned[name] = moved[module]
     groups = [[] for _ in range(workers)]
     for name in identities:
         index = assigned[name] if name in assigned else modules.index(name.split('.', 1)[0]) % workers
