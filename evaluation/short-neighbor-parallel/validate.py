@@ -30,16 +30,17 @@ def main():
         ('fmt', ['cargo', 'fmt', '--check'], 180),
         ('clippy', ['cargo', 'clippy', '--workspace', '--all-targets', '--all-features', '--', '-D', 'warnings'], 180),
         ('check', ['cargo', 'check', '--workspace', '--all-features', '--all-targets'], 180),
-        ('workspace', ['cargo', 'test', '-j', '16', '--workspace', '--no-fail-fast'], 900),
+        ('workspace', ['cargo', 'test', '-j', '12', '--workspace', '--no-fail-fast'], 900),
         ('serial-launch', ['cargo', 'test', '-p', 'liteinst-launch', '--tests', '--', '--test-threads=1', '--nocapture'], 180),
     ]
     load = lambda: Path('/proc/loadavg').read_text().split()[:3]
     env = dict(os.environ)
-    # Preserve the host's 316-thread test concurrency even with reserved CPUs.
-    env['RUST_TEST_THREADS'] = '316'
+    # Bound builds and test harnesses to the lane's twelve-CPU budget.
+    env['CARGO_BUILD_JOBS'] = '12'
+    env['RUST_TEST_THREADS'] = '12'
     planned = dict(revision=args.revision, commands=commands,
                    affinity=sorted(os.sched_getaffinity(0)),
-                   test_threads=316, load_average=load(), output_cap=8 * 1024 * 1024,
+                   build_jobs=12, test_threads=12, load_average=load(), output_cap=8 * 1024 * 1024,
                    qualification='NONE',
                    scope='Parallel correctness command with prospectively declared wall bounds; not a performance qualification.')
     (out / 'planned.json').write_text(json.dumps(planned, indent=2) + '\n')
