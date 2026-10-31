@@ -163,6 +163,8 @@ def main():
             for k in ('status','counts','exit','duration_ns','native_operations','qualification_credit')}
         summary['cold_direct_handoff_component']={k:r.get('cold_direct_handoff_component',{}).get(k)
             for k in ('status','counts','exit','duration_ns','native_operations','qualification_credit')}
+        summary['cold_seed_plan_component']={k:r.get('cold_seed_plan_component',{}).get(k)
+            for k in ('status','counts','source_pair','exit','duration_ns','native_operations','qualification_credit')}
         summary['copy_oracle']={k:r.get('application_build',{}).get('copy_oracle',{}).get(k)
             for k in ('status','counts','body','exit','duration_ns')}
         summary['closure']=dict(inputs=len(pins),artifacts=len(artifacts),commands=len(r['commands']),

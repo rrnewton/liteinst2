@@ -74,7 +74,7 @@ def elf(data, native_policy):
     expected[0x240:0x242]=bytes.fromhex('0f0b')
     expected[0xffa:0x1000]=bytes.fromhex('0f8440f2ffff')
     expected[0x1000:0x1015]=bytes.fromhex('4889074883c007488947084883e9017502ff23ff26')
-    expected[0x10fe:0x1107]=bytes.fromhex('66906690e90cffffff')
+    expected[0x10fe:0x1107]=bytes.fromhex('669089c0e90cffffff')
     need(source==expected,'whole four-page source including alternate arms and immutable branch pointers')
     for name,offset,size in (('head',0x1100,7),('target',0x1000,21),('first_store',0x1000,0),('second_store',0x1007,0),
         ('seed_jump',0x1102,0),('branch_table',0x100,24),('capture_pointer',0x118,8),
@@ -223,7 +223,8 @@ def trace_model(prefix):
     out=[(pc,tuple(g),flags,data,stack)]
     for _ in range(19):
         off=pc-page
-        if off in(0x10fe,0x1100):pc+=2
+        if off==0x10fe:pc+=2
+        elif off==0x1100:g[0]&=0xffffffff;pc+=2
         elif off==0x1102:pc=page+0x1013
         elif off==0x1013:
             need(g[6]==prefix['symbols']['region_app_branch_table']+8*mode,'actual immutable branch-pointer address')

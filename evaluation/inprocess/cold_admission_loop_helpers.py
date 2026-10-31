@@ -140,6 +140,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,original):
     r['application_layout']={k:v for k,v in app_layout.items()if k not in('source','sources')}
     r['application_layout']['source_pairs']=[dict(bytes=len(value),sha256=H(value))
         for value in app_layout['source_pairs']]
+    cold_seed_plan_component(builder,products,private,pin,binary,aliases,run,r,original,app_layout)
     seed_reference=seed_prerequisite(builder,private,pin,binary,run,r)
     subjects={}
     for lane in ('maintained','differential'):
@@ -566,4 +567,68 @@ def direct_frontier_component(builder,products,private,pin,binary,aliases,run,r)
          fact(executable)==state['artifact']and fact(script)==state['recipe'],
          'complete component inputs/artifact/archive stable after actual run')
     state.update(status='passed',counts=observed,exit=row['exit'],duration_ns=row['duration_ns'],
+        bounds=row['bounds'],captures={k:{j:v[j]for j in ('bytes','sha256')}for k,v in row['captures'].items()})
+
+
+
+def cold_seed_plan_component(builder,products,private,pin,binary,aliases,run,r,original,app_layout):
+    """Actual decoder/planner on the complete inspected source pair; no guest."""
+    fixture=SELECTED/'tests/persistent_cold_seed_plan'
+    script=pin(fixture/'build.sh');unit=pin(fixture/'oracle.c');archive=pin(products['archive'])
+    expected_sources={'oracle.c': {'bytes': 8003, 'sha256': 'b66aa296b915ad27b58a83595a2603d093129df0232555806b56d3e8283452ef'}, 'build.sh': {'bytes': 1102, 'sha256': 'fe31827653c59a27d1625dd4a638dcacac3bee1f082092b709673ca4d21ba180'}}
+    need(all(fact(pin(fixture/name))==value for name,value in expected_sources.items()),
+         'exact reviewed cold seed actual-planner fixture and recipe')
+    need(app_layout['page_b']==0x411000 and app_layout['head']==0x411100 and
+         len(app_layout['source_pairs'])==2 and
+         all(type(x)is bytes and len(x)==8192 for x in app_layout['source_pairs'])and
+         app_layout['source_pairs'][0]==app_layout['source_pairs'][1]and
+         fact(original)==dict(bytes=app_layout['bytes'],sha256=app_layout['sha256']),
+         'whole actual inspected same-pair S/T source and original ELF identity')
+    output=private/'cold-seed-plan';output.mkdir();executable=output/'oracle';vector=output/'source.bin'
+    with vector.open('xb')as f:f.write(app_layout['source_pairs'][0])
+    vector=pin(binary(vector))
+    rows=recipe(script,'"$cc_bin"');need(len(rows)==1,'one exact cold seed planner recipe')
+    argv=expand(rows[0],{'$cc_bin':builder.tools['cc'],'$fixture':fixture,
+        '$selected':SELECTED,'$archive':archive,'$output':executable})
+    units=[str(unit)]+[str(pin(SELECTED/n))for n in
+        ('persistent_group_plan.c','persistent_group_compact.c','linked_direct_dispatch.c',
+         'linked_jmp_dispatch.c','linked_mov_guard.c','tests/decoder/support.c')]
+    macros=('PERSISTENT_GROUP','PERSISTENT_EPOCH','MOV_GUARD','PERSISTENT_DISPATCH',
+        'PERSISTENT_ACTIVE_DOMAIN','PERSISTENT_CROSS_PAIR','PERSISTENT_DIRECT_FRONTIER')
+    need([x for x in argv if x.endswith('.c')]==units and argv[-2:]==['-o',str(executable)]and
+        [x for x in argv if x.startswith('-DLI2_')]==['-DLI2_'+n+'=1'for n in macros]and
+        all(x in argv for x in ('-O2','-g','-Wall','-Wextra','-Werror','-mgeneral-regs-only',
+            '-fno-builtin','-fno-tree-loop-distribute-patterns','-fno-tree-vectorize',str(archive)))and
+        '-DNDEBUG'not in argv,'complete seven-TU actual planner and unchanged assertion/compiler policy')
+    expected=dict(version=1,cases=3,descriptors=5,validations=6,refusals=4,source_bytes=8192,
+        emitted_execution=0,owner_credit=0)
+    state=r['cold_seed_plan_component']=dict(status='failed',recipe=fact(script),archive=fact(archive),
+        source_elf=fact(original),source_pair=fact(vector),argv=argv,expected_counts=expected,
+        native_operations=0,qualification_credit=False,performance_credit=False)
+    flags=[x for x in argv[1:-2]if x not in units and x!=str(archive)and not x.startswith(('-Wl,','-l'))]
+    _,out,err=run('cold-seed-plan-headers',[builder.tools['cc'],*flags,'-M','-MT','li2_cold_seed',*units],
+        profile='release_build',env=builder.environment)
+    rules=out.decode().replace('\\\n',' ').splitlines()
+    need(not err and len(rules)==7 and all(line.startswith('li2_cold_seed: ')for line in rules),
+         'complete actual seven translation-unit include rules')
+    includes={}
+    for line in rules:
+        for item in shlex.split(line.split(':',1)[1]):
+            alias=Path(item).absolute();resolved=str(pin(alias))
+            need(str(alias)not in aliases or aliases[str(alias)]==resolved,'unchanged cold seed header alias')
+            aliases[str(alias)]=resolved;includes[resolved]=fact(resolved)
+    need(set(units)|{str(SELECTED/n)for n in ('persistent_group_plan.h','persistent_group_compact.h',
+         'region_decode.h','decoder.h')}<=set(includes),'whole actual decoder/planner/compact source and type closure')
+    state['headers']=includes
+    _,out,err=run('cold-seed-plan-link',argv,profile='release_build',env=builder.environment)
+    need(out==err==b'','strict actual cold seed planner compile')
+    state['artifact']=fact(binary(executable))
+    row,out,err=run('cold-seed-plan-run',[executable,vector],profile='finite',env=builder.environment)
+    need(row['exit']==0 and not err and out==(json.dumps(expected,separators=(',',':'))+'\n').encode(),
+         'actual old NOP typed refusal, complete MOV effects/zero-extension and both full ready graphs')
+    need(all(fact(path)==value for path,value in includes.items())and fact(archive)==state['archive']and
+         fact(executable)==state['artifact']and fact(script)==state['recipe']and
+         fact(vector)==state['source_pair']and fact(original)==state['source_elf'],
+         'whole cold seed sources, inspected ELF/vector, decoder archive and executable stable after run')
+    state.update(status='passed',counts=expected,exit=row['exit'],duration_ns=row['duration_ns'],
         bounds=row['bounds'],captures={k:{j:v[j]for j in ('bytes','sha256')}for k,v in row['captures'].items()})

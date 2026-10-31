@@ -193,7 +193,7 @@ def guard(source, page, entry, generated, spill, successor, table_bytes):
 def source_image():
     out=bytearray(b'\xcc'*8192)
     out[:21]=bytes.fromhex('4889074883c007488947084883e9017502ff23ff26')
-    out[0xfe:0x107]=bytes.fromhex('66906690e90cffffff')
+    out[0xfe:0x107]=bytes.fromhex('669089c0e90cffffff')
     return bytes(out)
 
 
@@ -204,7 +204,7 @@ def descriptions(page,entry):
             (0x40 if condition<16 else 0,0,0,0,0),flow=1 if condition<16 else 2,
             target=target,condition=condition)
     if entry==page+0x100:
-        return (0x100,0x102),(ins('6690',299,step=1),branch('e90cffffff',696,page+0x13,16,32)),((1,),(128,)),(0x13,)
+        return (0x100,0x102),(ins('89c0',281,(reg(0,32,2),reg(0,32,1)),step=1),branch('e90cffffff',696,page+0x13,16,32)),((1,),(128,)),(0x13,)
     need(entry==page,'one exact target root')
     return (0,3,7,11,15),(ins('488907',282),
         ins('4883c007',249,(reg(0,64,3),imm(7,64,8)),arithmetic),ins('48894708',282),
@@ -252,7 +252,7 @@ def graph(source,page,entry,layout,table_bytes):
         if heads[i][0]==1:
             gpr_written|=struct.unpack_from('<I',d,316)[0]
             for value in struct.unpack_from('<4I',d,296):flags_written|=value
-    need((n,source_bytes,len(stores),gpr_written,flags_written)==((2,7,0,0,0)if entry-page==0x100 else(5,17,2,3,0x8d5)),
+    need((n,source_bytes,len(stores),gpr_written,flags_written)==((2,7,0,1,0)if entry-page==0x100 else(5,17,2,3,0x8d5)),
          'exact seed/target graph and complete ordinary effects')
     exit_pcs=tuple(page+x for x in exit_offsets);last=n-1
     return dict(head=b''.join(struct.pack('<8I',*h)for h in heads)+bytes((128-n)*32),

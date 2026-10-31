@@ -173,7 +173,8 @@ region_app_predecessor:
     .byte 0x66,0x90
 .type region_app_head,@function
 region_app_head:
-    .byte 0x66,0x90
+    /* Canonical MOV EAX,EAX: preserves the seed1, writes/zero-extends RAX. */
+    .byte 0x89,0xc0
 region_app_seed_jump:
     .byte 0xe9
     .long region_app_return_frontier-(.+4)

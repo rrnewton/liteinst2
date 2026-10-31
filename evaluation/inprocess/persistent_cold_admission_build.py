@@ -255,7 +255,7 @@ def capture_config(builder, image, output, pin, binary, run):
     whole[0x240:0x242] = bytes.fromhex('0f0b')
     whole[0xffa:0x1000] = bytes.fromhex('0f84')+struct.pack('<i',0x240-0x1000)
     whole[0x1000:0x1015] = bytes.fromhex('4889074883c007488947084883e9017502ff23ff26')
-    whole[0x10fe:0x1107] = bytes.fromhex('66906690e9')+struct.pack('<i',0x1013-0x1107)
+    whole[0x10fe:0x1107] = bytes.fromhex('669089c0e9')+struct.pack('<i',0x1013-0x1107)
     need(source == bytes(whole), 'all16384 original bytes, every seed/target/branch/pointer/alternate')
     next_pc=base+16384
     suffix=[p for p in ph if p[0]==1 and p[1]==5 and p[5]<=p[6] and

@@ -72,7 +72,7 @@ def configuration(data):
     expected[0x240:0x242] = bytes.fromhex('0f0b')
     expected[0xffa:0x1000] = bytes.fromhex('0f84')+struct.pack('<i',0x240-0x1000)
     expected[0x1000:0x1015] = bytes.fromhex('4889074883c007488947084883e9017502ff23ff26')
-    expected[0x10fe:0x1107] = bytes.fromhex('66906690e9')+struct.pack('<i',0x1013-0x1107)
+    expected[0x10fe:0x1107] = bytes.fromhex('669089c0e9')+struct.pack('<i',0x1013-0x1107)
     need(source == bytes(expected), 'whole actual16384-byte seed/target source, every alternate byte and pointer')
     next_pc, next_size = found[b'region_app_capture']
     need(4096 <= next_pc < 1 << 31 and next_pc % 4096 == 0 and next_size == 6 and
