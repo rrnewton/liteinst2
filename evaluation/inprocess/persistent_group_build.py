@@ -38,6 +38,10 @@ DISPATCH_POLICY_INPUTS = tuple({'build-persistent-group.sh': 'build-persistent-r
     for name in POLICY_INPUTS) + ('persistent_group_binding.py', 'linked_jmp_dispatch.h', 'linked_jmp_dispatch.c')
 DISPATCH_PROVIDERS = ('li2_decoder_decode', 'li2_jd_describe', 'li2_jd_emit', 'li2_jd_validate',
                       'li2_jd_recover', 'li2_pg_dispatch_binding', 'li2_pg_compact_dispatch')
+RESIDENT_COUNTER_POLICY_INPUTS = DISPATCH_POLICY_INPUTS + (
+    'persistent_group_counters.h', 'persistent_group_counters.inc',
+    'build-persistent-resident-counters.sh', 'persistent_resident_counter_binding.py',
+)
 
 PROVIDERS = ('li2_decoder_link_none', 'li2_link_plan_page', 'li2_link_plan_validate',
              'li2_decoder_mov_store', 'li2_pg_plan_pages', 'li2_pg_plan_validate',
@@ -48,11 +52,13 @@ PROVIDERS = ('li2_decoder_link_none', 'li2_link_plan_page', 'li2_link_plan_valid
              'li2_pg_source_key_equal', 'li2_pg_rseq_begin', 'li2_pg_rseq_close', 'li2_pg_rseq_cancel')
 
 
-def binding_config(builder, archive, image, output, pin, binary, run, *, dispatch=False, counters=False):
+def binding_config(builder, archive, image, output, pin, binary, run, *, dispatch=False, counters=False, resident_counters=False):
     need(type(dispatch) is bool, 'explicit typed resident policy selector')
     need(type(counters) is bool and not (counters and dispatch), 'counter and resident policy selectors are mutually exclusive')
+    need(type(resident_counters) is bool and (not resident_counters or (dispatch and not counters)),
+         'explicit separate resident counter policy selector')
     image = pin(binary(image)); original = dynamic_original_image(image); values = []
-    policy_inputs = (DISPATCH_POLICY_INPUTS if dispatch else POLICY_INPUTS) + (
+    policy_inputs = RESIDENT_COUNTER_POLICY_INPUTS if resident_counters else (DISPATCH_POLICY_INPUTS if dispatch else POLICY_INPUTS) + (
         ('persistent_group_counters.h', 'persistent_group_counters.inc',
          'build-persistent-group-counters.sh', 'persistent_group_counter_binding.py') if counters else ())
     for name in policy_inputs:
@@ -76,10 +82,10 @@ def binding_config(builder, archive, image, output, pin, binary, run, *, dispatc
                   '#define LI2_PG_ARCHIVE_SHA256 '+literal(archive_fact['sha256'])+'\n'
                   '#define LI2_PG_POLICY_SHA256 '+literal(policy)+'\n#endif\n').encode()
     expected = {'linked_epoch_config.h': linked, 'persistent_group_config.h': persistent}
-    manifest = output/('persistent_resident_binding.json' if dispatch else 'persistent_group_binding.json')
+    manifest = output/('persistent_resident_counter_binding.json' if resident_counters else 'persistent_resident_binding.json' if dispatch else 'persistent_group_binding.json')
     need(not manifest.exists() and not any((output/n).exists() for n in expected), 'fresh binding outputs')
     _, out, err = run('persistent-group-policy-binding', [builder.tools['python'], '-B',
-                     SELECTED/('persistent_group_counter_binding.py' if counters else 'persistent_resident_binding.py' if dispatch else 'persistent_group_binding.py'),
+                     SELECTED/('persistent_resident_counter_binding.py' if resident_counters else 'persistent_group_counter_binding.py' if counters else 'persistent_resident_binding.py' if dispatch else 'persistent_group_binding.py'),
                      SELECTED, archive, image, output], env=builder.environment)
     need(out == err == b'', 'source-owned persistent binder has no diagnostics')
     header_facts = {}
@@ -88,7 +94,7 @@ def binding_config(builder, archive, image, output, pin, binary, run, *, dispatc
         need(path.read_bytes() == data, 'whole independent archive/policy/image header')
         header_facts[name] = dict(path=str(path), **fact(path))
     record = dict(version=2 if dispatch else 1,
-                  profile='persistent-group-final-counters-v1' if counters else 'persistent-resident-dispatch-v2' if dispatch else 'persistent-group-two-image-v1', archive=archive_fact,
+                  profile='persistent-resident-final-counters-v2' if resident_counters else 'persistent-group-final-counters-v1' if counters else 'persistent-resident-dispatch-v2' if dispatch else 'persistent-group-two-image-v1', archive=archive_fact,
                   policy_sha256=policy, original=original, sources=values,
                   headers={name: dict(bytes=len(data), sha256=H(data)) for name, data in expected.items()})
     manifest = pin(binary(manifest))
@@ -309,11 +315,13 @@ def resident_capture_extents(builder, bridge, symbols, pin, run, state):
     state['capture_extents'].update(footer=64, stream=sizes[0]+64, record_limit=4*1024*1024)
 
 
-def build_bridge(builder, products, private, pin, binary, aliases, run, record, image, *, capture=False, dispatch=False, counters=False):
+def build_bridge(builder, products, private, pin, binary, aliases, run, record, image, *, capture=False, dispatch=False, counters=False, resident_counters=False):
     need(type(dispatch) is bool, 'explicit typed resident release or separate capture selector')
     need(type(capture) is bool, 'explicit separate group capture selector')
     need(type(counters) is bool and not (capture and counters), 'separate release-only final-counter selector')
     need(not (dispatch and counters), 'counter and resident build selectors are mutually exclusive')
+    need(type(resident_counters) is bool and (not resident_counters or (dispatch and not counters and not capture)),
+         'explicit resident counters require release dispatch without either old counter or capture selector')
     need(builder.mov_guard is True and builder.linked_epoch is True and builder.scalar_span is True and
          builder.extra_decoder_sources == ('region.rs', 'mov_guard.rs') and
          builder.decoder_features == FEATURES and builder.record.get('decoder_features') == list(FEATURES) and
@@ -328,10 +336,10 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
          ('li2_decoder_region_describe', 'li2_decoder_span_describe', 'li2_decoder_link_none',
           'li2_decoder_mov_store', 'li2_decoder_tf_classify', 'li2_decoder_write_footprint')),
          'every actual descriptor/NONE provider is present exactly once')
-    output = private/('persistent-group-counters' if counters else ('persistent-resident-capture' if capture else 'persistent-resident-release') if dispatch else ('persistent-group-capture' if capture else 'persistent-group-release')); output.mkdir()
-    binding = binding_config(builder, archive, image, output, pin, binary, run, dispatch=dispatch, counters=counters)
+    output = private/('persistent-resident-counters' if resident_counters else 'persistent-group-counters' if counters else ('persistent-resident-capture' if capture else 'persistent-resident-release') if dispatch else ('persistent-group-capture' if capture else 'persistent-group-release')); output.mkdir()
+    binding = binding_config(builder, archive, image, output, pin, binary, run, dispatch=dispatch, counters=counters, resident_counters=resident_counters)
     observation = (resident_capture_config if dispatch else capture_config)(builder, image, output, pin, binary, run) if capture else None
-    script = pin(SELECTED/('build-persistent-group-counters.sh' if counters else ('build-persistent-resident-capture.sh' if capture else 'build-persistent-resident.sh') if dispatch else ('build-persistent-group-capture.sh' if capture else 'build-persistent-group.sh'))); rows = recipe(script, '"$cc_bin"')
+    script = pin(SELECTED/('build-persistent-resident-counters.sh' if resident_counters else 'build-persistent-group-counters.sh' if counters else ('build-persistent-resident-capture.sh' if capture else 'build-persistent-resident.sh') if dispatch else ('build-persistent-group-capture.sh' if capture else 'build-persistent-group.sh'))); rows = recipe(script, '"$cc_bin"')
     need(len(rows) == 1, 'one source-owned persistent compiler recipe')
     argv = expand(rows[0], {'$cc_bin': builder.tools['cc'], '$selected_dir': SELECTED,
                   '$parent_dir': SELECTED.parent, '$archive': archive, '$output': output})
@@ -349,7 +357,9 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
         macros = ('PERSISTENT_RESIDENT_CAPTURE' if dispatch else 'PERSISTENT_GROUP_CAPTURE',)+macros
     if counters:
         macros = ('PERSISTENT_GROUP_COUNTERS',)+macros
-    name = 'bridge-persistent-group-counters.so' if counters else ('bridge-persistent-resident-capture.so' if capture else 'bridge-persistent-resident.so') if dispatch else ('bridge-persistent-group-capture.so' if capture else 'bridge-persistent-group.so')
+    if resident_counters:
+        macros = ('PERSISTENT_RESIDENT_COUNTERS', 'PERSISTENT_GROUP_COUNTERS')+macros
+    name = 'bridge-persistent-resident-counters.so' if resident_counters else 'bridge-persistent-group-counters.so' if counters else ('bridge-persistent-resident-capture.so' if capture else 'bridge-persistent-resident.so') if dispatch else ('bridge-persistent-group-capture.so' if capture else 'bridge-persistent-group.so')
     need(argv[-2:] == ['-o', str(output/name)] and
          [x for x in argv if x.endswith(('.c', '.S'))] == units and
          [x for x in argv if x.startswith('-DLI2_')] == ['-DLI2_'+n+'=1' for n in macros] and
@@ -358,7 +368,7 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
              '-fno-tree-vectorize', '-Wall', '-Wextra', '-Werror')),
          'exact25-TU resident no-FP release recipe' if dispatch else 'exact24-TU group-only no-FP release recipe')
     state = record['release_build'] = dict(status='failed',
-              profile='persistent-group-final-counters-v1' if counters else ('persistent-resident-loop-capture-v2' if capture else 'persistent-resident-dispatch-v2') if dispatch else ('persistent-group-loop-capture-v1' if capture else 'persistent-group-two-image-v1'),
+              profile='persistent-resident-final-counters-v2' if resident_counters else 'persistent-group-final-counters-v1' if counters else ('persistent-resident-loop-capture-v2' if capture else 'persistent-resident-dispatch-v2') if dispatch else ('persistent-group-loop-capture-v1' if capture else 'persistent-group-two-image-v1'),
               recipe=fact(script), archive=fact(archive), argv=argv, persistent_binding=binding,
               capture=capture, qualification_credit=False)
     if dispatch:
@@ -394,7 +404,7 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
                  'persistent_epoch_config.h', 'persistent_dynamic_capture_config.h',
                  'selected_scalar_span.inc', 'selected_scalar_span_reuse.inc', 'unrolled_hash_nested_fp.h'}
     counter_names = {'persistent_group_counters.h', 'persistent_group_counters.inc'}
-    need(names.intersection(counter_names) == (counter_names if counters else set()),
+    need(names.intersection(counter_names) == (counter_names if counters or resident_counters else set()),
          'exact counter bootstrap/header compiler closure only in explicit release diagnostic')
     observation_names = {'persistent_group_observe.h', 'persistent_group_observe.inc',
                          'persistent_group_observe_memory.h', 'persistent_group_observe_memory.inc'}
@@ -427,13 +437,15 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     need(not err, 'actual reset disassembly')
     state['reset'] = hidden_memset(bridge, body_check(bridge, symbols, assembly, 'fast', symbol_name='memset'))
     protected_extents(builder, bridge, symbols, pin, run, state)
-    if counters:
+    if counters or resident_counters:
         for wanted, extent in ((b'pgc_bootstrap', 752), (b'li2_pgc_current', 8)):
             rows = [line.split() for line in symbols.splitlines() if line.split()[-1:] == [wanted]]
             need(len(rows) == 1 and len(rows[0]) == 4 and rows[0][2] in (b'b', b'B', b'd', b'D') and
                  int(rows[0][1], 16) == extent, 'actual final-counter storage/type extent')
         state['counter_schema'] = dict(version=2, bytes=752, page=4096, initial_seals=6, final_seals=23)
         state['counters'] = True
+    if resident_counters:
+        state['resident_counters'] = True
     if capture:
         (resident_capture_extents if dispatch else capture_extents)(builder, bridge, symbols, pin, run, state)
     fast_bytes(builder, output, pin, binary, aliases, run, state)
