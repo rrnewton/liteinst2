@@ -24,7 +24,7 @@ BOUNDS=dict(PROFILES,release_build=[30,512<<20,16<<20,60],program=[30,512<<20,16
 MASK=((1<<64)-1)^sum(1<<(s-1)for s in(4,5,9,11,19,31))
 H=lambda b:hashlib.sha256(b).hexdigest()
 ORDER=(('native',0,0),('native',1,0),('gated',0,0),('gated',1,0),('gated',2,0))
-APP_COUNTS={0:16,1:16};OWNER_COUNTS={0:54,1:30,2:30};PAIR_COUNTS={0:4,1:4}
+APP_COUNTS={0:16,1:16};OWNER_COUNTS={0:55,1:30,2:30};PAIR_COUNTS={0:4,1:4}
 TERMINAL_COUNTS={(m,0):60 for m in range(3)}
 CASE_FIELDS=('label','lane','mode','control','expected_exit','status','launched','exit','whole_process_ns','timed_out','captures','pair','owner_summary','error_type')
 CSV_FIELDS=('lane','mode','control','status','expected_exit','exit','whole_process_ns','application_control_count','terminal_control_count','owner_control_count','pair_control_count')
@@ -497,7 +497,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
          'all five actual persistent outcomes required without skipped or relabelled failures')
     need(sum(c.get('pair',{}).get('qualified_pair',0)for c in r['cases'])==2 and
          sum(len(c.get('application_controls',{}).get('refusals',[]))for c in r['cases'])==32 and
-         sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases'])==114 and
+         sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases'])==115 and
          sum(len(c.get('pair_controls',{}).get('refusals',[]))for c in r['cases'])==8 and
          sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases'])==180,
          'two native full-state pairs, one independent protected-word rejection and exact controls')

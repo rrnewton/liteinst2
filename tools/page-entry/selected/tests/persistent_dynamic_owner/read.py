@@ -273,7 +273,7 @@ class Check(old.Check):
         flags=ingress['greg'][17]&~TF
         self.eq(st,qt,phase=5 if closed else 3,first_error=0,in_handler=0,self_test=0,trace_seen=int(closed),revoke_sync_started=int(closed),first_detail=0,session=self.symbol('selected_session'),open_sync=0,revoke_sync=0,destination=0,width=0,immediate=0,effect=0,source=0)
         request=self.f(st,qt,'request');self.eq(request,'li2_step_request',page_count=1,original_flags=flags);self.decoded(self.f(request,'li2_step_request','decoded'),pc,kind)
-        cl=self.f(o,'li2_tf_owner','classification');self.eq(cl,'li2_tf_classification',pc=pc,next_pc=pc+length,abi_version=1,policy=1,code=code,length=length,flow=1 if kind=='nop'else 2,family=1 if kind=='nop'else 4)
+        cl=self.f(o,'li2_tf_owner','classification');self.eq(cl,'li2_tf_classification',pc=pc,next_pc=pc+length,abi_version=1,policy=1,code=code,length=length,flow=1 if kind=='nop'else 2,family=1 if kind=='nop'else 3)
         desc=self.f(slot,t,'descriptive_classification')
         if origin==2:need(desc==cl,'actual TRACE descriptive classification')
         else:zero(desc,'NX origin has no separate descriptive classification')
@@ -626,7 +626,7 @@ def terminal(parsed,owner):
     return dict(fields=len(expected),protected_dynamic_row=1,inherited_row_protection=0)
 
 
-CONTROL_COUNTS={0:54,1:30,2:30}
+CONTROL_COUNTS={0:55,1:30,2:30}
 
 def controls(data,layout,image,app,pid,cpu,exit_status):
     """Supplied mutations of actual finite records, never native evidence."""
@@ -726,5 +726,19 @@ def controls(data,layout,image,app,pid,cpu,exit_status):
                 need(str(error)=='complete exact transition li2_rseq_state','exact ordinary-resume counter control refusal '+name)
                 refused.append(name)
             else:raise ValueError('supplied ordinary-resume counter corruption accepted '+name)
+        # Both actual TRACE copies must reject CALL's family even when their
+        # whole descriptive/owner classification equality remains satisfied.
+        chain=at('pdo_miss','resumed_chain',m)
+        active=struct.unpack_from('<I',data,at('li2_tf_chain','active',chain))[0]
+        successor=at('li2_tf_chain','slots',chain,active,'li2_tf_chain_slot')
+        owner_classification=at('li2_tf_owner','classification',at('li2_tf_chain_slot','owner',successor))
+        descriptive=at('li2_tf_chain_slot','descriptive_classification',successor)
+        mutant=bytearray(data)
+        for base in(owner_classification,descriptive):struct.pack_into('<I',mutant,at('li2_tf_classification','family',base),4)
+        try:read(bytes(mutant),layout,image,app,pid,cpu,exit_status)
+        except ValueError as error:
+            need(str(error)=='exact li2_tf_classification.family','exact coherent JMP/CALL family refusal')
+            refused.append('miss_coherent_call_family')
+        else:raise ValueError('coherent CALL-family classification accepted for actual JMP')
     need(len(refused)==CONTROL_COUNTS[mode],'all exact separately counted dynamic owner controls')
     return dict(original_sha256=hashlib.sha256(data).hexdigest(),refusals=refused,native_operations=0,mode=mode)
