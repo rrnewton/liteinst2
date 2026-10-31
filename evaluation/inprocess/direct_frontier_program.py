@@ -184,7 +184,7 @@ def direct_prerequisite(path, r, pin, binary, archive):
     for state in states:
         component_output('component-'+state['name']+'-run', component.COMPONENT_STDOUT[state['name']])
     expected_components = {
-        'subentry_component': dict(lookup=112, selection=33, entry=47, lifetime=19, history=25),
+        'subentry_component': dict(lookup=112, selection=33, entry=47, lifetime=19, history=25, registered_address=118),
         'empty_namespace_component': dict(images=74, pairs=4, parser=18, callers=10),
         'cross_page_handoff_component': dict(eligibility=64, refusals=71, close=34, fresh=29, consume=18, total=216),
         'native_probe_component': component.PROBE_COUNTS, 'maps_parse_component': component.MAPS_PARSE_COUNTS}
