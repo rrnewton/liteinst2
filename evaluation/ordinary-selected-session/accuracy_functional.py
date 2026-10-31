@@ -21,30 +21,44 @@ MIB = 1048576
 PROFILE = 'selected-accuracy-functional-first-v1'
 PHASE_PROFILE = 'selected-accuracy-phase-functional-first-v1'
 PREPARED_PHASE_PROFILE = 'selected-accuracy-prepared-phase-functional-first-v1'
+COORDINATE_PROFILE = 'selected-accuracy-coordinate-functional-v1'
 STAGES = ('truth','assembly','elf','disassembly')
 PREMISES = ('complete_symbol_extent','complete_cfg_and_return','complete_elf_and_source_page',
     'complete_ordinary_rust_caller','immutable_path_and_object_lifetime','scalar_sysv_abi_and_readable_inputs',
     'termination_no_hidden_calls_or_exits','sole_worker_no_reentry_or_concurrency','cet_and_signal_preconditions')
 
 
-def profile(epoch_phase, prepared=False):
+def coordinates():
+    return load('_functional_coordinates', HERE/'accuracy_coordinates.py')
+
+
+def profile(epoch_phase, prepared=False, coordinate=None):
     assert type(prepared) is bool and (not prepared or epoch_phase is not None)
     assert epoch_phase is None or (type(epoch_phase) is str and epoch_phase in ('random','locked'))
+    if coordinate is not None:
+        assert prepared and coordinates().checked(coordinate)['epoch-phase'] == epoch_phase
+        return COORDINATE_PROFILE
     return PREPARED_PHASE_PROFILE if prepared else (PROFILE if epoch_phase is None else PHASE_PROFILE)
 
 
-def chosen_policy(checker, producer, epoch_phase, prepared=False):
-    profile(epoch_phase, prepared)
+def chosen_policy(checker, producer, epoch_phase, prepared=False, coordinate=None):
+    profile(epoch_phase, prepared, coordinate)
+    if coordinate is not None:
+        return coordinates().authority(checker.truth, coordinate)[2]
     return dict(producer.POLICY) if epoch_phase is None else producer.phase_policy(checker, epoch_phase)
 
 
-def prepare_phase(epoch_phase, prepared=False):
-    profile(epoch_phase, prepared)
+def prepare_phase(epoch_phase, prepared=False, coordinate=None):
+    profile(epoch_phase, prepared, coordinate)
+    if coordinate is not None:
+        return 'coordinate-prepare'
     return 'prepared-phase-prepare' if prepared else ('accuracy-prepare' if epoch_phase is None else 'phase-prepare')
 
 
-def preparation_status(epoch_phase, prepared=False):
-    profile(epoch_phase, prepared)
+def preparation_status(epoch_phase, prepared=False, coordinate=None):
+    profile(epoch_phase, prepared, coordinate)
+    if coordinate is not None:
+        return 'COORDINATE_PREPARATION_PASS'
     return 'PREPARED_PHASE_PREPARATION_PASS' if prepared else ('ACCURACY_PREPARATION_PASS' if epoch_phase is None else 'PHASE_PREPARATION_PASS')
 
 
@@ -67,9 +81,13 @@ def qualifications():
         matrix_complete=False, executable_retirement=False)
 
 
-def phase_commands(directory, tools, producer):
+def stage_names(coordinate=None):
+    return STAGES if coordinate is None else ('coordinate-controls',)+STAGES
+
+
+def phase_commands(directory, tools, producer, coordinate=None):
     t = {k:str(v) for k,v in tools.items()}
-    return (
+    commands = (
         [t['python'],'-B',str(ROOT/'evaluation/ordinary-accuracy/truth.py'),'--master',producer.MASTER,
          '--phase','calibration','--trial','1','--workload','late_expensive','--output',str(directory/'truth-data')],
         [t['gcc'],'-O2','-fPIC','-shared','-nostdlib','-fno-builtin','-fno-stack-protector','-fomit-frame-pointer',
@@ -79,11 +97,20 @@ def phase_commands(directory, tools, producer):
         [t['readelf'],'--wide','--file-header','--program-headers','--section-headers','--symbols','--dynamic','--relocs',str(directory/'exact-final.so')],
         [t['objdump'],'-d','-M','intel','--insn-width=16','--disassemble=exact_work_nonempty',str(directory/'exact-final.so')],
     )
+    if coordinate is None:
+        return commands
+    c = coordinates().checked(coordinate)
+    truth = [t['python'],'-B',str(ROOT/'evaluation/ordinary-accuracy/truth.py'),'--master',c['master'],
+        '--phase',c['population-phase'],'--trial',str(c['trial']),'--workload',c['workload'],'--output',str(directory/'truth-data')]
+    return ([t['python'],'-B',str(HERE/'coordinate_controls.py'),'-v'],truth,*commands[1:])
 
 
-def check_truth(run, driver, recipe, directory, checker, producer):
-    files, manifest = checker.truth.artifacts(producer.MASTER,'calibration',1,'late_expensive')
-    expected = dict(files, **{'manifest.json':checker.truth.canonical(manifest)})
+def check_truth(run, driver, recipe, directory, checker, producer, coordinate=None):
+    if coordinate is None:
+        files, manifest = checker.truth.artifacts(producer.MASTER,'calibration',1,'late_expensive')
+        expected = dict(files, **{'manifest.json':checker.truth.canonical(manifest)})
+    else:
+        expected, _, _ = coordinates().authority(checker.truth, coordinate)
     assert set(expected) == set(producer.MATERIALS)
     assert sorted(p.name for p in (directory/'truth-data').iterdir()) == sorted(expected)
     for name, value in expected.items():
@@ -91,7 +118,7 @@ def check_truth(run, driver, recipe, directory, checker, producer):
     return {name:str(directory/'truth-data'/name) for name in producer.MATERIALS}
 
 
-def geometry_facts(run, driver, recipe, directory, build, fixture, checker, producer, *, epoch_phase=None, prepared=False):
+def geometry_facts(run, driver, recipe, directory, build, fixture, checker, producer, *, epoch_phase=None, prepared=False, coordinate=None):
     trusted, candidate = directory/'exact-final.so', directory/'exact-candidate.so'
     whole = driver.raw_pin(run,recipe,trusted,cap=MIB)
     details = fixture.describe(whole)
@@ -117,34 +144,39 @@ def geometry_facts(run, driver, recipe, directory, build, fixture, checker, prod
     table = [dict(function_id=41,operation='exact_work_nonempty',policy='whole',elf_va=details['elf_va'],extent=37,returns=[36])]
     binary = build_dir/'products/ordinary-interval'
     driver.raw_pin(run,recipe,binary,build['products']['ordinary-interval'],128*MIB)
-    materials = check_truth(run,driver,recipe,directory,checker,producer)
+    materials = check_truth(run,driver,recipe,directory,checker,producer,coordinate)
     args = dict(manifest_bytes=recipe.read(Path(materials['manifest.json']),65536),
         input_bytes=recipe.read(Path(materials['input.csv']),MIB), selected_bytes=recipe.read(Path(materials['selected.txt']),MIB),
         truth_bytes=recipe.read(Path(materials['truth.csv']),MIB), table=tuple(dict(r,returns=tuple(r['returns'])) for r in table),
-        caller=dict(extent=20,continuation=15),body_bytes=producer.BODY,abi=producer.ABI,policy=chosen_policy(checker,producer,epoch_phase,prepared),cpus=tuple(run.cpus[:2]))
+        caller=dict(extent=20,continuation=15),body_bytes=producer.BODY,abi=producer.ABI,policy=chosen_policy(checker,producer,epoch_phase,prepared,coordinate),cpus=tuple(run.cpus[:2]))
     checker.authority(**args)
-    facts = dict(revision=run.a.revision,profile=profile(epoch_phase, prepared),build=reference(run.a.build,run.a.build_sha),
+    facts = dict(revision=run.a.revision,profile=profile(epoch_phase, prepared, coordinate),build=reference(run.a.build,run.a.build_sha),
         selection=selection, trusted=dict(path=str(trusted),**recipe.pin(whole)),
         candidate=dict(path=str(candidate),**recipe.pin(whole)), binary=dict(path=str(binary),**build['products']['ordinary-interval']),
         caller_actual=shape, caller=dict(extent=20,continuation=15),table=table,abi=producer.ABI,
         caller_captures={name:run.retained[str(build_dir/name/'stdout')] for name in ('ordinary-interval-elf','ordinary-interval-disassembly')},
         materials={name:dict(path=path,**run.retained[path]) for name,path in materials.items()},
         coordinate=dict(master=producer.MASTER,phase='calibration',trial=1,workload='late_expensive',records=2048),
-        policy=chosen_policy(checker,producer,epoch_phase,prepared), **qualifications())
+        policy=chosen_policy(checker,producer,epoch_phase,prepared,coordinate), **qualifications())
+    if coordinate is not None:
+        facts['coordinate'] = coordinates().checked(coordinate)
     if prepared:
         facts['prepared_phase'] = producer.prepared_target(facts['policy'])
     return facts
 
 
-def prepare(run, driver, recipe, builder, result, build, fixture, checker, producer, *, epoch_phase=None, prepared=False):
-    commands = phase_commands(run.raw,run.tools,producer)
+def prepare(run, driver, recipe, builder, result, build, fixture, checker, producer, *, epoch_phase=None, prepared=False, coordinate=None):
+    commands = phase_commands(run.raw,run.tools,producer,coordinate)
     result['commands'] = commands
-    for name, argv in zip(STAGES, commands):
+    for name, argv in zip(stage_names(coordinate), commands):
         row, out, err = builder.bounded(run,driver,recipe,name,run.raw/name,argv,(20,30,MIB))
         result['preparation_stages'].append(row)
-        assert err == b''
+        if name == 'coordinate-controls':
+            run.coordinate_controls.reuse_python_controls(out,err,coordinates().CONTROLS)
+        else:
+            assert err == b''
         if name == 'truth':
-            materials = check_truth(run,driver,recipe,run.raw,checker,producer)
+            materials = check_truth(run,driver,recipe,run.raw,checker,producer,coordinate)
             manifest = recipe.read(Path(materials['manifest.json']),65536)
             assert json.loads(out) == dict(status='INPUTS_PREPARED',**recipe.pin(manifest))
         if name == 'assembly':
@@ -153,19 +185,21 @@ def prepare(run, driver, recipe, builder, result, build, fixture, checker, produ
             details = fixture.describe(whole)
             builder.copy_product(run,recipe,run.raw/'exact-final.so',run.raw/'exact-candidate.so')
             run.freeze(run.raw/'selection.json',dict(details,revision=run.a.revision))
-    result['facts'] = geometry_facts(run,driver,recipe,run.raw,build,fixture,checker,producer,epoch_phase=epoch_phase, prepared=prepared)
+    result['facts'] = geometry_facts(run,driver,recipe,run.raw,build,fixture,checker,producer,epoch_phase=epoch_phase, prepared=prepared,coordinate=coordinate)
     run.freeze(run.raw/'geometry-facts.json',result['facts'])
-    result['status'] = preparation_status(epoch_phase, prepared)
+    result['status'] = preparation_status(epoch_phase, prepared,coordinate)
 
 
-def read_preparation(run, driver, recipe, adapter, result, build, fixture, checker, producer, *, epoch_phase=None, prepared=False):
+def read_preparation(run, driver, recipe, adapter, result, build, fixture, checker, producer, *, epoch_phase=None, prepared=False, coordinate=None):
     a = run.a
     previous = driver.read_json(run,recipe,a.preparation,a.preparation_sha,32*MIB)
     directory = a.preparation.parent
-    assert previous['status'] == preparation_status(epoch_phase, prepared) and previous['profile'] == profile(epoch_phase, prepared)
-    assert previous['phase'] == prepare_phase(epoch_phase, prepared) and previous['revision'] == a.revision
+    assert previous['status'] == preparation_status(epoch_phase, prepared,coordinate) and previous['profile'] == profile(epoch_phase, prepared,coordinate)
+    assert previous['phase'] == prepare_phase(epoch_phase, prepared,coordinate) and previous['revision'] == a.revision
     assert previous['custody_closed'] is True and previous['retention_verified'] is True
-    assert previous['source_unchanged'] is True and previous['functional'] == initial_row(epoch_phase, prepared)
+    assert previous['source_unchanged'] is True and previous['functional'] == initial_row(epoch_phase, prepared,coordinate)
+    if coordinate is not None:
+        assert previous['coordinate'] == coordinate
     assert previous['cpus'] == run.cpus and previous['hardware'] == a.hardware
     assert previous['reservation_tag'] == a.reservation_tag
     assert all(previous[k] == v for k,v in qualifications().items())
@@ -185,12 +219,12 @@ def read_preparation(run, driver, recipe, adapter, result, build, fixture, check
     assert outer['attempts'] == 1 and outer['reserved_cpus'] == run.cpus and outer['hardware'] == a.hardware
     assert outer['wall_limit_seconds'] == 1200 and outer['output_limit_bytes'] == 8*MIB
     options = dict(previous['arguments'], owner=str(a.preparation_owner))
-    expected = {k:str(getattr(a,k.replace('-','_'))) for k in adapter.COMMON+adapter.extras(prepare_phase(epoch_phase, prepared))
+    expected = {k:str(getattr(a,k.replace('-','_'))) for k in adapter.COMMON+adapter.extras(prepare_phase(epoch_phase, prepared,coordinate))
         if k not in ('phase','owner','raw')}
-    expected.update(phase=prepare_phase(epoch_phase, prepared),owner=str(a.preparation_owner),raw=str(directory))
+    expected.update(phase=prepare_phase(epoch_phase, prepared,coordinate),owner=str(a.preparation_owner),raw=str(directory))
     assert options == expected
     invocation, command = adapter.commands(options,str(run.tools['python']),outer['public_owner']['invocation'][2])
-    assert outer['public_owner'] == dict(schema=adapter.SCHEMA,phase=prepare_phase(epoch_phase, prepared),revision=a.revision,
+    assert outer['public_owner'] == dict(schema=adapter.SCHEMA,phase=prepare_phase(epoch_phase, prepared,coordinate),revision=a.revision,
         recipe='evaluation/ordinary-selected-session/accuracy_functional_owner.py',
         recipe_sha256=run.sources[str(HERE/'accuracy_functional_owner.py')]['sha256'],invocation=invocation)
     assert outer['command'] == command == previous['invocation']
@@ -198,16 +232,20 @@ def read_preparation(run, driver, recipe, adapter, result, build, fixture, check
         PATH=options['toolchain']+'/bin:/usr/bin:/bin',PYTHONDONTWRITEBYTECODE='1',PYTHONNOUSERSITE='1',LC_ALL='C')
     log = driver.raw_pin(run,recipe,a.preparation_owner.with_suffix('.log'),cap=8*MIB)
     assert driver.sha(log) == outer['closed']['private_log_sha256'] and json.loads(log) == summary(previous)
-    commands = phase_commands(directory,run.tools,producer)
+    commands = phase_commands(directory,run.tools,producer,coordinate)
     assert previous['commands'] == [list(command) for command in commands]
-    assert [r['name'] for r in previous['preparation_stages']] == list(STAGES)
-    assert [r['name'] for r in previous['attempted_stages']] == [n+'-owner' for n in STAGES]
-    for name, argv, row, owned in zip(STAGES,commands,previous['preparation_stages'],previous['attempted_stages']):
+    assert [r['name'] for r in previous['preparation_stages']] == list(stage_names(coordinate))
+    assert [r['name'] for r in previous['attempted_stages']] == [n+'-owner' for n in stage_names(coordinate)]
+    for name, argv, row, owned in zip(stage_names(coordinate),commands,previous['preparation_stages'],previous['attempted_stages']):
         d = directory/name
         request = dict(argv=argv,cwd=str(ROOT),env=env,stdout=str(d/'stdout'),stderr=str(d/'stderr'),
             cpu_seconds=20,wall_seconds=30,file_bytes=MIB)
         code,out,err,receipt = driver.closed_stage(run,recipe,d,request,row['closed'])
-        assert code == 0 and err == b'' and owned == dict(name=name+'-owner',status='CLOSED_EXIT_0',closed=row['closed'])
+        assert code == 0 and owned == dict(name=name+'-owner',status='CLOSED_EXIT_0',closed=row['closed'])
+        if name == 'coordinate-controls':
+            run.coordinate_controls.reuse_python_controls(out,err,coordinates().CONTROLS)
+        else:
+            assert err == b''
         assert row == dict(name=name,request_sha256=run.retained[str(d/'request.json')]['sha256'],
             receipt_sha256=run.retained[str(d/'receipt.json')]['sha256'],closed=row['closed'],
             stdout_sha256=driver.sha(out),stderr_sha256=driver.sha(err))
@@ -222,19 +260,22 @@ def read_preparation(run, driver, recipe, adapter, result, build, fixture, check
         if name == 'truth':
             manifest = recipe.read(directory/'truth-data/manifest.json',65536)
             assert json.loads(out) == dict(status='INPUTS_PREPARED',**recipe.pin(manifest))
-    facts = geometry_facts(run,driver,recipe,directory,build,fixture,checker,producer,epoch_phase=epoch_phase, prepared=prepared)
+    facts = geometry_facts(run,driver,recipe,directory,build,fixture,checker,producer,epoch_phase=epoch_phase, prepared=prepared,coordinate=coordinate)
     assert previous['facts'] == facts == driver.read_json(run,recipe,directory/'geometry-facts.json')
     result['preparation'] = reference(a.preparation,a.preparation_sha)
     return facts
 
 
-def accept_geometry(value, facts, preparation_sha, revision, *, epoch_phase=None, prepared=False):
+def accept_geometry(value, facts, preparation_sha, revision, *, epoch_phase=None, prepared=False, coordinate=None):
     assert set(value) == {'kind','status','scope','revision','preparation_sha256','facts','premises','review','native_state'}
-    assert value['kind'] == ('selected-accuracy-prepared-phase-functional-geometry-acceptance-v1' if prepared else
+    assert value['kind'] == ('selected-accuracy-coordinate-functional-geometry-acceptance-v1' if coordinate is not None else
+        'selected-accuracy-prepared-phase-functional-geometry-acceptance-v1' if prepared else
         ('selected-accuracy-functional-geometry-acceptance-v1' if epoch_phase is None
          else 'selected-accuracy-phase-functional-geometry-acceptance-v1'))
     assert value['status'] == 'INDEPENDENTLY_ACCEPTED_FOR_FIXED_SCALAR_EXECUTION'
-    assert value['scope'] == profile(epoch_phase, prepared) and value['revision'] == revision and value['preparation_sha256'] == preparation_sha
+    assert value['scope'] == profile(epoch_phase, prepared,coordinate) and value['revision'] == revision and value['preparation_sha256'] == preparation_sha
+    if coordinate is not None:
+        assert facts['coordinate'] == coordinates().checked(coordinate)
     assert value['facts'] == facts and value['native_state'] == 'UNRUN_SEPARATE_REQUIRED'
     assert set(value['premises']) == set(PREMISES) and all(value['premises'][k] is True for k in PREMISES)
     assert type(value['review']) is str and 1 <= len(value['review']) <= 16384
@@ -242,7 +283,7 @@ def accept_geometry(value, facts, preparation_sha, revision, *, epoch_phase=None
     # from equal body bytes, control success, or a self-computed geometry digest.
 
 
-def input_plan(run, recipe, facts, producer, *, epoch_phase=None, prepared=False):
+def input_plan(run, recipe, facts, producer, *, epoch_phase=None, prepared=False, coordinate=None):
     pins = dict(run.sources, **run.tool_pins)
     pins.update({item['path']:{k:item[k] for k in ('bytes','sha256')} for item in facts['materials'].values()})
     for key in ('binary','candidate','trusted'):
@@ -251,7 +292,7 @@ def input_plan(run, recipe, facts, producer, *, epoch_phase=None, prepared=False
     pins[str(run.a.geometry)] = run.retained[str(run.a.geometry)]
     pins[str(run.a.preparation)] = run.retained[str(run.a.preparation)]
     paths = {name:item['path'] for name,item in facts['materials'].items()}
-    plan = dict(profile=profile(epoch_phase, prepared),revision=run.a.revision,attempt=1,cpus=run.cpus,policy=dict(producer.POLICY) if epoch_phase is None else dict(facts['policy']),
+    plan = dict(profile=profile(epoch_phase, prepared,coordinate),revision=run.a.revision,attempt=1,cpus=run.cpus,policy=dict(producer.POLICY) if epoch_phase is None else dict(facts['policy']),
         pins=pins,materials=paths,geometry=str(run.a.geometry),facts=facts,
         preparation=str(run.a.preparation),preparation_sha256=run.a.preparation_sha,table=facts['table'],caller=facts['caller'],
         binary=facts['binary']['path'],candidate=facts['candidate']['path'],trusted=facts['trusted']['path'],
@@ -268,6 +309,11 @@ def input_plan(run, recipe, facts, producer, *, epoch_phase=None, prepared=False
         assert all(type(facts['prepared_phase'][k]) is int for k in plan['prepared_phase'])
         plan['argv'][1] = 'normal-selected-accuracy-prepared-phase-session'
         plan['argv'][10:10] = ['1']
+    if coordinate is not None:
+        plan['coordinate'] = coordinates().checked(coordinate)
+        assert facts['coordinate'] == plan['coordinate']
+        assert (plan['policy']['k'],plan['policy']['period_ms'],plan['policy']['epochs']) == (coordinate['k'],coordinate['period-ms'],520)
+        plan['argv'][5:8] = [str(coordinate['k']),str(coordinate['period-ms']),'520']
     return plan
 
 
@@ -299,17 +345,19 @@ def json_records(value):
     return value
 
 
-def functional(run, driver, recipe, result, facts, checker, producer, *, epoch_phase=None, prepared=False):
+def functional(run, driver, recipe, result, facts, checker, producer, *, epoch_phase=None, prepared=False, coordinate=None):
     accepted = driver.read_json(run,recipe,run.a.geometry,run.a.geometry_sha)
-    accept_geometry(accepted,facts,run.a.preparation_sha,run.a.revision,epoch_phase=epoch_phase, prepared=prepared)
-    plan = input_plan(run,recipe,facts,producer,epoch_phase=epoch_phase, prepared=prepared)
-    args = producer.prepared_phase_arguments(plan,checker) if prepared else (producer.arguments(plan,checker) if epoch_phase is None else producer.phase_arguments(plan,checker))
+    accept_geometry(accepted,facts,run.a.preparation_sha,run.a.revision,epoch_phase=epoch_phase, prepared=prepared,coordinate=coordinate)
+    plan = input_plan(run,recipe,facts,producer,epoch_phase=epoch_phase, prepared=prepared,coordinate=coordinate)
+    args = producer.coordinate_arguments(plan,checker) if coordinate is not None else (producer.prepared_phase_arguments(plan,checker) if prepared else (producer.arguments(plan,checker) if epoch_phase is None else producer.phase_arguments(plan,checker)))
+    if coordinate is not None:
+        result['facts'] = facts
     run.freeze(run.raw/'plan.json',plan,MIB)
     raw = run.raw/'application'
     argv = [run.tools['python'],'-B',HERE/'accuracy_produce.py','--plan',run.raw/'plan.json',
         '--plan-sha',run.retained[str(run.raw/'plan.json')]['sha256'],'--raw',raw]
     if epoch_phase is not None:
-        argv += ['--profile',profile(epoch_phase, prepared)]
+        argv += ['--profile',profile(epoch_phase, prepared,coordinate)]
     d = run.raw/'functional-io'
     request = run.request(d,argv,cpu=20,wall=30,cap=8*MIB)
     run.plan_bounded('functional',d,request)
@@ -329,7 +377,9 @@ def functional(run, driver, recipe, result, facts, checker, producer, *, epoch_p
     result['functional'].update(result=run_result,raw={name:run.retained[str(raw/name)]
         for name in ('result.json','stdout.txt','stderr.txt','overflow.bin')})
     assert err == b'' and json.loads(out) == run_result
-    assert (run_result['profile'],run_result['revision'],run_result['attempt']) == (profile(epoch_phase, prepared),run.a.revision,1)
+    assert (run_result['profile'],run_result['revision'],run_result['attempt']) == (profile(epoch_phase, prepared,coordinate),run.a.revision,1)
+    if coordinate is not None:
+        assert run_result['coordinate'] == coordinate
     assert run_result['stdout_sha256'] == driver.sha(transcript) and run_result['stderr_sha256'] == driver.sha(errors)
     assert run_result['normal_reaps'] == 1 and run_result['rescue'] is False and run_result['cleanup_error'] is None
     if run_result['overflow'] is None:
@@ -363,19 +413,30 @@ def functional(run, driver, recipe, result, facts, checker, producer, *, epoch_p
     result['functional'].update(status='PASS',records=2048,totals=checked['totals'],
         joined=reference(run.raw/'joined.json',run.retained[str(run.raw/'joined.json')]['sha256']))
     result['status'] = 'PREPARED_PHASE_FUNCTIONAL_STRUCTURAL_PASS' if prepared else ('ACCURACY_FUNCTIONAL_STRUCTURAL_PASS' if epoch_phase is None else 'PHASE_FUNCTIONAL_STRUCTURAL_PASS')
+    if coordinate is not None:
+        result['status'] = 'COORDINATE_FUNCTIONAL_STRUCTURAL_PASS'
 
 
-def initial_row(epoch_phase=None, prepared=False):
-    profile(epoch_phase, prepared)
+def initial_row(epoch_phase=None, prepared=False, coordinate=None):
+    profile(epoch_phase, prepared,coordinate)
+    if coordinate is not None:
+        return dict(name=coordinates().name(coordinate),status='UNRUN',attempts=0,records=2048)
     suffix = ('-prepared-phase-'+epoch_phase) if prepared else ('' if epoch_phase is None else '-phase-'+epoch_phase)
     return dict(name='calibration-trial1-late_expensive-k10-period10-e520'+suffix,status='UNRUN',attempts=0,records=2048)
 
 
 def summary(result):
-    assert result['profile'] in (PROFILE,PHASE_PROFILE,PREPARED_PHASE_PROFILE)
-    return dict(status=result['status'],profile=result['profile'],phase=result['phase'],revision=result['revision'],
+    assert result['profile'] in (PROFILE,PHASE_PROFILE,PREPARED_PHASE_PROFILE,COORDINATE_PROFILE)
+    value = dict(status=result['status'],profile=result['profile'],phase=result['phase'],revision=result['revision'],
         functional={k:result['functional'][k] for k in ('name','status','attempts','records')},
         custody_closed=result['custody_closed'],retention_verified=result['retention_verified'],**qualifications())
+    if result['profile'] == COORDINATE_PROFILE:
+        value['coordinate'] = coordinates().checked(result['coordinate'])
+        # The owner's authenticated stdout binds policy/material facts and the
+        # exact joined identity consumed by the new catalog, including failures.
+        value['coordinate_evidence_sha256'] = hashlib.sha256(coordinates().canonical(
+            dict(facts=result.get('facts'),functional=result['functional']))).hexdigest()
+    return value
 
 
 def main():
@@ -383,7 +444,7 @@ def main():
     # Authenticate the finite adapter before importing any project helper.
     own = Path(__file__).resolve()
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--phase',choices=('accuracy-prepare','accuracy-functional','phase-prepare','phase-functional','prepared-phase-prepare','prepared-phase-functional'),required=True)
+    parser.add_argument('--phase',choices=('accuracy-prepare','accuracy-functional','phase-prepare','phase-functional','prepared-phase-prepare','prepared-phase-functional','coordinate-prepare','coordinate-functional'),required=True)
     for name in ('revision','reservation-tag','hardware'):
         parser.add_argument('--'+name,required=True)
     for name in ('raw','toolchain','user-home','cargo-home','build','build-owner','controls','controls-owner'):
@@ -395,31 +456,44 @@ def main():
     for name in ('preparation-sha','preparation-owner-sha','geometry-sha'):
         parser.add_argument('--'+name)
     parser.add_argument('--epoch-phase',choices=('random','locked'))
+    coordinate_fields = ('master','population-phase','trial','workload','k','period-ms')
+    for name in coordinate_fields:
+        parser.add_argument('--'+name)
     a = parser.parse_args()
-    prepared = a.phase in ('prepared-phase-prepare','prepared-phase-functional')
+    coordinate_mode = a.phase in ('coordinate-prepare','coordinate-functional')
+    assert all(getattr(a,k.replace('-','_')) is not None for k in coordinate_fields) if coordinate_mode else all(getattr(a,k.replace('-','_')) is None for k in coordinate_fields)
+    prepared = coordinate_mode or a.phase in ('prepared-phase-prepare','prepared-phase-functional')
     assert (a.epoch_phase is not None) == (prepared or a.phase in ('phase-prepare','phase-functional'))
     epoch_phase = a.epoch_phase
     extras = (a.preparation,a.preparation_sha,a.preparation_owner,a.preparation_owner_sha,a.geometry,a.geometry_sha)
-    assert all(x is not None for x in extras) if a.phase in ('accuracy-functional','phase-functional','prepared-phase-functional') else all(x is None for x in extras)
-    for name in ('accuracy_functional.py','accuracy_functional_owner.py','build.py'):
+    assert all(x is not None for x in extras) if a.phase in ('accuracy-functional','phase-functional','prepared-phase-functional','coordinate-functional') else all(x is None for x in extras)
+    checked_sources = ('accuracy_functional.py','accuracy_functional_owner.py','build.py')
+    if coordinate_mode:
+        checked_sources += ('accuracy_coordinates.py','coordinate_controls.py')
+    for name in checked_sources:
         path = HERE/name
         assert path.is_file() and not path.is_symlink() and path.stat().st_size <= MIB
         assert path.read_bytes() == subprocess.check_output(['/usr/bin/git','-C',ROOT,'show',a.revision+':'+str(path.relative_to(ROOT))],timeout=15)
+    coordinate = coordinates().options({k:getattr(a,k.replace('-','_')) for k in (*coordinate_fields,'epoch-phase')}) if coordinate_mode else None
     builder = load('_accuracy_functional_builder',HERE/'build.py')
     driver = builder.load_driver(a.revision)
     a.profile = driver.WHOLE_PROFILE
     run,recipe,_,leaf,owners,git = driver.bootstrap_context(a,started)
+    if coordinate_mode:
+        run.coordinate_controls = owners
     run.deadline = started+1200
     adapter = load('_accuracy_functional_adapter',HERE/'accuracy_functional_owner.py')
     keys = tuple(k for k in adapter.COMMON+adapter.extras(a.phase) if k != 'owner')
     arguments = {k:str(getattr(a,k.replace('-','_'))) for k in keys}
     invocation = [str(run.tools['python']),'-B',str(own)]+[word for k in keys for word in ('--'+k,arguments[k])]
     assert invocation == [str(run.tools['python']),'-B',sys.argv[0],*sys.argv[1:]]
-    result = dict(status='FAILED',profile=profile(epoch_phase, prepared),phase=a.phase,revision=a.revision,arguments=arguments,invocation=invocation,
+    result = dict(status='FAILED',profile=profile(epoch_phase, prepared,coordinate),phase=a.phase,revision=a.revision,arguments=arguments,invocation=invocation,
         build=reference(a.build,a.build_sha),build_owner=reference(a.build_owner,a.build_owner_sha),
         controls=reference(a.controls,a.controls_sha),controls_owner=reference(a.controls_owner,a.controls_owner_sha),
-        functional=initial_row(epoch_phase, prepared),preparation_stages=[],environment=run.env,hardware=a.hardware,cpus=run.cpus,
+        functional=initial_row(epoch_phase, prepared,coordinate),preparation_stages=[],environment=run.env,hardware=a.hardware,cpus=run.cpus,
         reservation_tag=a.reservation_tag,load_before=list(os.getloadavg()),source_unchanged=False,**qualifications())
+    if coordinate is not None:
+        result['coordinate'] = coordinate
     try:
         build = driver.accept_build(run,recipe,a.build,a.build_sha,a.build_owner,a.build_owner_sha,git)
         assert 'producer' in build and build['revision'] == a.revision and build['hardware'] == a.hardware and build['cpus'] == run.cpus
@@ -438,11 +512,11 @@ def main():
         reader_name = 'prepared_phase_output.py' if prepared else ('output.py' if epoch_phase is None else 'phase_output.py')
         checker = load('_accuracy_functional_checker',ROOT/'evaluation/ordinary-accuracy'/reader_name)
         producer = load('_accuracy_functional_producer',HERE/'accuracy_produce.py')
-        if a.phase == prepare_phase(epoch_phase, prepared):
-            prepare(run,driver,recipe,builder,result,build,fixture,checker,producer,epoch_phase=epoch_phase, prepared=prepared)
+        if a.phase == prepare_phase(epoch_phase, prepared,coordinate):
+            prepare(run,driver,recipe,builder,result,build,fixture,checker,producer,epoch_phase=epoch_phase, prepared=prepared,coordinate=coordinate)
         else:
-            facts = read_preparation(run,driver,recipe,adapter,result,build,fixture,checker,producer,epoch_phase=epoch_phase, prepared=prepared)
-            functional(run,driver,recipe,result,facts,checker,producer,epoch_phase=epoch_phase, prepared=prepared)
+            facts = read_preparation(run,driver,recipe,adapter,result,build,fixture,checker,producer,epoch_phase=epoch_phase, prepared=prepared,coordinate=coordinate)
+            functional(run,driver,recipe,result,facts,checker,producer,epoch_phase=epoch_phase, prepared=prepared,coordinate=coordinate)
         run.unchanged()
         run.freeze(run.raw/'sources-after.json',run.sources,16*MIB)
         assert run.retained[str(run.raw/'sources-before.json')] == run.retained[str(run.raw/'sources-after.json')]
@@ -462,7 +536,7 @@ def main():
             result.update(status='FAILED',final_error=type(error).__name__+': '+str(error))
         recipe.save(run.raw/'result.json',result,32*MIB)
         print(json.dumps(summary(result),sort_keys=True))
-    return 0 if result['status'] in ('ACCURACY_PREPARATION_PASS','ACCURACY_FUNCTIONAL_STRUCTURAL_PASS','PHASE_PREPARATION_PASS','PHASE_FUNCTIONAL_STRUCTURAL_PASS','PREPARED_PHASE_PREPARATION_PASS','PREPARED_PHASE_FUNCTIONAL_STRUCTURAL_PASS') and time.monotonic() < run.deadline else 1
+    return 0 if result['status'] in ('ACCURACY_PREPARATION_PASS','ACCURACY_FUNCTIONAL_STRUCTURAL_PASS','PHASE_PREPARATION_PASS','PHASE_FUNCTIONAL_STRUCTURAL_PASS','PREPARED_PHASE_PREPARATION_PASS','PREPARED_PHASE_FUNCTIONAL_STRUCTURAL_PASS','COORDINATE_PREPARATION_PASS','COORDINATE_FUNCTIONAL_STRUCTURAL_PASS') and time.monotonic() < run.deadline else 1
 
 
 if __name__ == '__main__':

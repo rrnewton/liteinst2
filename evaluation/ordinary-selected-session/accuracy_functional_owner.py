@@ -22,10 +22,24 @@ PHASE_EXTRAS = {'phase-prepare': BUILD+CONTROLS+('epoch-phase',),
     'phase-functional': BUILD+CONTROLS+PREPARE+('geometry','geometry-sha','epoch-phase')}
 PREPARED_PHASE_EXTRAS = {'prepared-phase-prepare': BUILD+CONTROLS+('epoch-phase',),
     'prepared-phase-functional': BUILD+CONTROLS+PREPARE+('geometry','geometry-sha','epoch-phase')}
+COORDINATE_FIELDS = ('master','population-phase','trial','workload','k','period-ms','epoch-phase')
+COORDINATE_EXTRAS = {'coordinate-prepare': BUILD+CONTROLS+COORDINATE_FIELDS,
+    'coordinate-functional': BUILD+CONTROLS+PREPARE+('geometry','geometry-sha')+COORDINATE_FIELDS}
 SCHEMA = 'selected-accuracy-functional-public-owner-v1'
 
 
+def coordinates():
+    spec = importlib.util.spec_from_file_location('_functional_owner_coordinates', HERE/'accuracy_coordinates.py')
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.FIELDS == COORDINATE_FIELDS
+    return module
+
+
 def extras(phase):
+    if phase in COORDINATE_EXTRAS:
+        return COORDINATE_EXTRAS[phase]
     assert phase in EXTRAS or phase in PHASE_EXTRAS or phase in PREPARED_PHASE_EXTRAS
     return EXTRAS[phase] if phase in EXTRAS else (PHASE_EXTRAS[phase] if phase in PHASE_EXTRAS else PREPARED_PHASE_EXTRAS[phase])
 
@@ -39,7 +53,11 @@ def commands(options, python, script):
     assert re.fullmatch('[A-Za-z0-9_.-]{1,128}', options['reservation-tag'])
     assert 1 <= len(options['hardware']) <= 160 and options['hardware'].isascii() and all(32 <= ord(c) < 127 for c in options['hardware'])
     assert script in ('evaluation/ordinary-selected-session/accuracy_functional_owner.py', str(HERE/'accuracy_functional_owner.py'))
+    if phase in COORDINATE_EXTRAS:
+        coordinates().options({k:options[k] for k in COORDINATE_FIELDS})
     for key in keys:
+        if phase in COORDINATE_EXTRAS and key in COORDINATE_FIELDS:
+            continue
         if key.endswith('-sha'):
             assert re.fullmatch('[0-9a-f]{64}', options[key])
         elif key == 'epoch-phase':
@@ -54,21 +72,29 @@ def commands(options, python, script):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--phase', choices=tuple(EXTRAS)+tuple(PHASE_EXTRAS)+tuple(PREPARED_PHASE_EXTRAS), required=True)
+    parser.add_argument('--phase', choices=tuple(EXTRAS)+tuple(PHASE_EXTRAS)+tuple(PREPARED_PHASE_EXTRAS)+tuple(COORDINATE_EXTRAS), required=True)
     for name in COMMON[1:]:
         parser.add_argument('--'+name, required=True)
-    option_names = tuple(dict.fromkeys(k for row in (*EXTRAS.values(), *PHASE_EXTRAS.values(), *PREPARED_PHASE_EXTRAS.values()) for k in row))
+    option_names = tuple(dict.fromkeys(k for row in (*EXTRAS.values(), *PHASE_EXTRAS.values(), *PREPARED_PHASE_EXTRAS.values(), *COORDINATE_EXTRAS.values()) for k in row))
     for name in option_names:
         parser.add_argument('--'+name)
     args = parser.parse_args()
     permitted = COMMON+extras(args.phase)
     assert all(getattr(args,k.replace('-','_')) is None for k in set(option_names)-set(permitted))
     options = {k:getattr(args,k.replace('-','_')) for k in permitted}
+    # Only the new route imports this helper; authenticate it before commands().
+    if args.phase in COORDINATE_EXTRAS:
+        path = HERE/'accuracy_coordinates.py'
+        assert path.is_file() and not path.is_symlink() and path.stat().st_size <= 1048576
+        assert path.read_bytes() == subprocess.check_output(['/usr/bin/git','-C',ROOT,'show',
+            args.revision+':'+str(path.relative_to(ROOT))], timeout=15)
     python = str(Path(sys.executable).resolve(strict=True))
     invocation, command = commands(options, python, sys.argv[0])
     assert invocation == [python,'-B',sys.argv[0],*sys.argv[1:]]
     checked = ('owner.py','build.py','reproduce.py','accuracy_functional.py','accuracy_produce.py',
         'accuracy_functional_owner.py','accuracy_functional_controls.py')
+    if args.phase in COORDINATE_EXTRAS:
+        checked += ('accuracy_coordinates.py','coordinate_controls.py')
     for name in checked:
         path = HERE/name
         assert path.is_file() and not path.is_symlink() and path.stat().st_size <= 1048576
