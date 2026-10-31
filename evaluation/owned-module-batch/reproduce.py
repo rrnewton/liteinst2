@@ -3,7 +3,8 @@
 
 Run under an externally owned one-CPU HARD reservation. Private evidence stays
 under ignored/; existing command owners provide all child/descendant cleanup.
-This is an integration control, not a performance or full-A5 qualification.
+The optional fixed batch-cost mode is descriptive wall time, not a performance
+qualification or full-A5 result; it never replaces the integration control.
 """
 import sys
 if not __debug__ or not sys.flags.isolated or not sys.flags.dont_write_bytecode:
@@ -22,6 +23,7 @@ import time
 
 MIB = 1048576
 TEST = 'frontend_native::always_on::normal::module::owned::native::owned_module_native_four_call_batches_epochs_and_close'
+COST_TEST = 'frontend_native::always_on::normal::module::owned::native::performance::owned_module_native_fixed_work_batch_cost'
 PINS = {
     'evaluation/admission/processes.py': '0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f',
     'tools/unwind-oracle/bounded_command.py': 'c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44',
@@ -40,9 +42,11 @@ def load(name, path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--revision', required=True)
+    parser.add_argument('--mode', choices=('control', 'batch-cost'), default='control')
     for name in ('root', 'toolchain', 'user-home', 'cargo-home', 'output'):
         parser.add_argument('--' + name, type=Path, required=True)
     a = parser.parse_args()
+    selected_test = TEST if a.mode == 'control' else COST_TEST
     assert re.fullmatch('[0-9a-f]{40}', a.revision)
     root = a.root.resolve(strict=True)
     assert root == a.root and all(p.is_absolute() and p.resolve(strict=True) == p and p.is_dir()
@@ -51,7 +55,7 @@ def main():
     assert raw.is_absolute() and raw.parent.resolve(strict=True) == raw.parent and raw.is_relative_to(root/'ignored')
     raw.mkdir(mode=0o700)  # Exclusive campaign directory: never resume/retry.
     save = lambda path, value: path.open('x').write(json.dumps(value, sort_keys=True, indent=2, allow_nan=False) + '\n')
-    result = dict(status='FAILED', revision=a.revision, native_attempts=0, stages=[], performance_qualified=False, A5_qualified=False)
+    result = dict(status='FAILED', mode=a.mode, revision=a.revision, native_attempts=0, stages=[], performance_qualified=False, A5_qualified=False)
     frozen = {}; tools = {}; safe = True; started = time.monotonic()
     try:
         tools = {n: (a.toolchain/'bin'/n).resolve(strict=True) for n in ('cargo', 'rustc', 'rustdoc')}
@@ -89,7 +93,8 @@ def main():
                    'tools/rapid-profiler/strnlen-work/localize.map', 'tools/rapid-profiler/normal-work/module_caller.c',
                    'tools/rapid-profiler/normal-work/module_caller_bytes.rs',
                    'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs',
-                   'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/native.rs']
+                   'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/native.rs',
+                   'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/performance.rs']
         for name in sources:
             assert read(root/name, MIB) == git('show', a.revision+':'+name)
             retain(root/name)
@@ -109,7 +114,8 @@ def main():
                             cgroup=Path('/proc/self/cgroup').read_text(), boot_id=Path('/proc/sys/kernel/random/boot_id').read_text().strip())
         logs = root/'target/evaluation'/raw.name; logs.mkdir(parents=True, exist_ok=False)
         save(raw/'intent.json', dict(revision=a.revision, argv=sys.argv, env=env, tools={k: str(v) for k,v in tools.items()},
-                                    native_test=TEST, native_attempts=1, retries=0, scope='fixed owned-batch integration only', host=result['host']))
+                                    native_test=selected_test, native_attempts=1, retries=0, mode=a.mode,
+                                    scope='fixed owned-batch integration or fixed-work wall-time experiment; no qualification', host=result['host']))
         def stage(name, argv, cpu_seconds=20, wall=30, cap=MIB, extra=None):
             nonlocal safe
             assert time.monotonic()-started < 1200 and sorted(os.sched_getaffinity(0)) == cpus
@@ -188,18 +194,38 @@ def main():
         for prefix, (va,length) in zip(('CSV','LENGTH'), selections):
             extra['RAPID_OWNED_'+prefix+'_VA'] = str(va); extra['RAPID_OWNED_'+prefix+'_LENGTH'] = str(length)
         extra['RAPID_OWNED_CALLER_VA'] = str(caller['elf_va'])
+        if a.mode == 'batch-cost': extra['RAPID_OWNED_BATCH_COST_OUTPUT'] = str(raw/'batch-cost.jsonl')
         clean(); recipe.pins_ok(frozen)
-        out, err = stage('native', [binary, TEST, '--exact', '--ignored', '--test-threads=1', '--nocapture'], extra=extra)
-        assert err == b'' and out.decode().splitlines()[0:3] == ['', 'running 1 test', 'test '+TEST+' ... ok']
+        out, err = stage('native', [binary, selected_test, '--exact', '--ignored', '--test-threads=1', '--nocapture'], extra=extra)
+        assert err == b'' and out.decode().splitlines()[0:3] == ['', 'running 1 test', 'test '+selected_test+' ... ok']
         assert re.fullmatch(r'\ntest result: ok\. 1 passed; 0 failed; 0 ignored; 0 measured; [0-9]+ filtered out; finished in [0-9.]+s\n\n', '\n'.join(out.decode().splitlines()[3:])+'\n')
         clean(); recipe.pins_ok(frozen); assert sorted(os.sched_getaffinity(0)) == cpus
-        result.update(status='OWNED_BATCH_INTEGRATION_PASS', native_test=TEST, tests_passed=1)
+        if a.mode == 'batch-cost':
+            rows = [json.loads(line) for line in read(raw/'batch-cost.jsonl', MIB).splitlines()]
+            assert len(rows) == 11
+            for i, row in enumerate(rows[:10]):
+                pair, position = divmod(i, 2)
+                arm = ('baseline', 'owned')[position if pair % 2 == 0 else 1-position]
+                assert set(row) == {'kind', 'pair', 'arm', 'warmup_batches', 'measured_batches', 'target_calls', 'wall_ns'}
+                assert all(type(row[k]) is int for k in ('pair', 'warmup_batches', 'measured_batches', 'target_calls', 'wall_ns'))
+                assert row == dict(kind='timing', pair=pair, arm=arm, warmup_batches=64, measured_batches=256, target_calls=1024, wall_ns=row['wall_ns'])
+                assert 0 < row['wall_ns'] <= 15_000_000_000
+            assert rows[-1] == dict(kind='validated', pairs=5, timing_rows=10, warmup_batches_per_arm=320,
+                                   measured_batches_per_arm=1280, entered=6400, ret_observed=6400, confirmed=6400,
+                                   completed=6400, unsampled=0, history_actions=10, closed=True)
+            assert all(type(v) is int for k,v in rows[-1].items() if k not in ('kind', 'closed'))
+            assert rows[-1]['closed'] is True
+            result['batch_cost'] = dict(rows=rows, raw=retain(raw/'batch-cost.jsonl'),
+                                      scope='wall time of 256 ordinary batches; owned includes run_batch/checkpoint; no CPU or causal claim')
+        result.update(status='OWNED_BATCH_INTEGRATION_PASS' if a.mode == 'control' else 'OWNED_BATCH_COST_COMPLETE', native_test=selected_test, tests_passed=1)
     except BaseException as error:
         result['error'] = type(error).__name__+': '+str(error)
     finally:
+        if safe and a.mode == 'batch-cost' and (raw/'batch-cost.jsonl').exists():
+            result['batch_cost_raw'] = retain(raw/'batch-cost.jsonl')  # Failed prefixes remain unqualified.
         result.update(cleanup_complete=safe, seconds=time.monotonic()-started, load_after=os.getloadavg(), retained=frozen)
         save(raw/'result.json', result)
-    return 0 if result['status'] == 'OWNED_BATCH_INTEGRATION_PASS' else 1
+    return 0 if result['status'] in ('OWNED_BATCH_INTEGRATION_PASS', 'OWNED_BATCH_COST_COMPLETE') else 1
 
 
 if __name__ == '__main__':

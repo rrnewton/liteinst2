@@ -299,3 +299,6 @@ fn owned_module_native_four_call_batches_epochs_and_close() {
     assert_eq!(close.state(), NormalModuleCloseState::Closed);
     assert!(Instant::now() < deadline);
 }
+
+#[path = "performance.rs"]
+mod performance;
