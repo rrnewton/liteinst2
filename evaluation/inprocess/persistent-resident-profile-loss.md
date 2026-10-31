@@ -1,0 +1,11 @@
+# Resident observer event loss
+
+The retained resident release was sampled at observer revision `14720678c15e1391fcc45d08e156f6f85f1a4206` on reserved CPU 1 of the AMD EPYC 9D85. LS again failed with SIGKILL: 30.620115954 seconds process wall, 26.712937 seconds user CPU and 3.284839 seconds system CPU. Original target and observer resource limits were unchanged. This is a diagnostic observation, not a benchmark speedup.
+
+The collector failed with `sideband CPU agrees with complete actual ID_INDEX`. Independent raw inspection found genuine event loss: one LOST record reports 2,882 events; final LOST_SAMPLES counters report 68 CPU_CLOCK and 2,814 DUMMY events. Those reports overlap; they are not 5,764 distinct losses. The final synthesized records have zero location/time fields and a real event ID, which explains the reader's CPU error. All 2,586 retained samples identify the assigned CPU, but missing samples and mappings prohibit phase attribution. The original failed receipt remains failed.
+
+The final sealed counter prefix contains 46,575 events: 32,328 TRAP, 14,136 SEGV and 111 ILL. It records 17,395 fresh maps acquisitions, 815,003 maintained-view hits, 3,577 publications, 786 warm hits and 4,363 completed entries. These are partial progress counts; no whole-program reduction follows. Source and process cleanup checks passed. The 10× DynamoRIO target remains unmet.
+
+The exact reproduction command, hardware, release/archive identities, original bounds, raw capture hash and numeric loss census are in `results/20261031-resident-profile-failed-1472067.json`; the companion CSV preserves the unavailable attribution. Run its tracked `evaluation/inprocess/persistent_resident_profile.py` command under one external CPU reservation. The diagnostic retains raw perf data privately; `perf script --dump-raw-trace -i PERF_DATA` exposes its LOST records for inspection.
+
+The old observer creates 632 event IDs across 316 CPUs for a single pinned target, with 64-page rings. A CPU filter still creates an all-CPU DUMMY tracking event according to perf's documentation. The next experiment uses a distinct per-thread observer and a larger ring within the existing memory/file limits; it must retain strict target identity, complete execution coverage and zero-loss checks. No ranks are salvaged from this capture.
