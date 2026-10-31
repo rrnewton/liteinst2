@@ -1,0 +1,10 @@
+campaign,mode,attempts,status,exit,calls,frames,lookups,cpu,load_1m,seconds
+native-v1,original,1,FAILED,101,,,,55,49.41,0.21277057891711593
+native-v1,intact,1,PASS_FINITE_CHECKS,0,4,16,44,55,50.98,0.41998266498558223
+native-v1,lookup-negative,1,FAILED,101,,,,55,50.98,0.2166522059123963
+native-v2,original,1,PASS_FINITE_CHECKS,0,4,8,38,1,40.86,0.33224586909636855
+native-v2,intact,1,PASS_FINITE_CHECKS,0,4,16,44,1,40.86,0.3888986820820719
+native-v2,lookup-negative,1,PASS_FINITE_CHECKS,0,0,0,44,1,40.86,0.280726864002645
+exact-a306-reproduction,original,1,PASS_FINITE_CHECKS,0,4,8,38,1,56.79,0.39637433597818017
+exact-a306-reproduction,intact,1,PASS_FINITE_CHECKS,0,4,16,44,1,57.37,0.3987205389421433
+exact-a306-reproduction,lookup-negative,1,PASS_FINITE_CHECKS,0,0,0,44,1,57.37,0.2959703430533409

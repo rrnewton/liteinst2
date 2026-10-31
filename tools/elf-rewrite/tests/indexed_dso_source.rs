@@ -10,6 +10,15 @@
 #[path = "../examples/indexed_dso_support/caller.rs"]
 mod caller;
 #[allow(dead_code)]
+#[path = "../examples/indexed_dso_support/caller_dataflow.rs"]
+mod caller_dataflow;
+#[allow(dead_code)]
+#[path = "../examples/indexed_dso_support/cfi.rs"]
+mod cfi;
+#[allow(dead_code)]
+#[path = "../examples/indexed_dso_support/chain.rs"]
+mod chain;
+#[allow(dead_code)]
 #[path = "../examples/indexed_dso_support/elf.rs"]
 mod elf;
 #[allow(dead_code)]
@@ -19,11 +28,17 @@ mod indexed_consumer;
 #[path = "../examples/indexed_dso_support/leaf.rs"]
 mod leaf;
 #[allow(dead_code)]
+#[path = "../examples/indexed_dso_support/loaded.rs"]
+mod loaded;
+#[allow(dead_code)]
 #[path = "../examples/indexed_dso_support/observations.rs"]
 mod observations;
 #[allow(dead_code)]
 #[path = "../examples/indexed_dso_support/prepare.rs"]
 mod prepare;
+#[allow(dead_code)]
+#[path = "../examples/indexed_dso_support/runtime.rs"]
+mod runtime;
 
 #[test]
 fn snapshot_refuses_a_fifo_without_waiting_for_a_writer() {

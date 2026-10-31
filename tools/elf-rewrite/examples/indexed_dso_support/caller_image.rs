@@ -64,6 +64,16 @@ pub struct CallerImage<'a> {
     functions: [Function; 2],
     original_fdes: Vec<(u64, u64, u64)>,
 }
+
+/// Owned module coordinate of one independent 64-byte return capture. Runtime
+/// writable mappings and no-alias/single-writer custody are still required.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct RawObject {
+    pub address: u64,
+    pub size: u64,
+    pub program_header: usize,
+}
+
 impl<'a> CallerImage<'a> {
     pub fn inspect(bytes: &'a [u8]) -> std::result::Result<Self, Refusal> {
         if bytes.len() as u64 > BYTE_LIMIT {
@@ -125,6 +135,14 @@ impl<'a> CallerImage<'a> {
     pub const fn bytes(&self) -> &'a [u8] {
         self.bytes
     }
+    pub fn named_function(&self, name: &'static str) -> std::result::Result<Symbol, Refusal> {
+        let input = parse_elf(self.bytes)?;
+        let sections = sections(&input)?;
+        let (regular, dynamic) = symbol_tables(self.bytes, &sections)?;
+        Ok(required_symbol(
+            &input, &sections, &regular, &dynamic, name, true, false,
+        )?)
+    }
     pub const fn work(&self) -> &Function {
         &self.functions[0]
     }
@@ -134,6 +152,70 @@ impl<'a> CallerImage<'a> {
     pub fn original_fdes(&self) -> &[(u64, u64, u64)] {
         &self.original_fdes
     }
+
+    /// This additional gate deliberately refuses the historical caller which
+    /// only exported observations through an RSP-relative pointer reload.
+    /// Ordinary structural inspection of that earlier file remains unchanged.
+    pub fn raw_return(&self, reference: bool) -> std::result::Result<RawObject, Refusal> {
+        let name = if reference {
+            "li2_uw_reference_raw"
+        } else {
+            "li2_uw_work_raw"
+        };
+        let input = parse_elf(self.bytes)?;
+        let sections = sections(&input)?;
+        let (regular, dynamic) = symbol_tables(self.bytes, &sections)?;
+        let mut matches = regular.iter().filter(|s| s.name == name.as_bytes());
+        let symbol = matches.next().ok_or(Error::Missing(name))?;
+        if matches.next().is_some() {
+            return Err(Error::Duplicate(name).into());
+        }
+        let section = sections.get(symbol.section).ok_or(Error::Symbol(name))?;
+        if symbol.kind != 1
+            || symbol.size != 64
+            || symbol.address % 8 != 0
+            || section.kind != 1
+            || section.flags != 3
+            || symbol.address < section.address
+            || symbol.address.checked_add(symbol.size).is_none_or(|end| {
+                section
+                    .address
+                    .checked_add(section.size)
+                    .is_none_or(|limit| end > limit)
+            })
+            || !((symbol.binding == 0 && symbol.visibility == 0)
+                || (symbol.binding <= 1 && symbol.visibility == 2))
+            || dynamic.iter().any(|s| s.name == name.as_bytes())
+        {
+            return Err(Error::Symbol(name).into());
+        }
+        let owner = input
+            .virtual_to_storage(ElfVaddr(symbol.address), symbol.size)
+            .map_err(Error::Elf)?;
+        let Storage::FileBacked(file) = owner.storage else {
+            return Err(Error::Ownership.into());
+        };
+        let reverse = input
+            .file_to_virtual(file.start(), file.len())
+            .map_err(Error::Elf)?;
+        if owner.flags.0 != 6
+            || reverse.program_header != owner.program_header
+            || reverse.virtual_range.start() != ElfVaddr(symbol.address)
+            || file.start().0
+                != section
+                    .offset
+                    .checked_add(symbol.address - section.address)
+                    .ok_or(Error::Ownership)?
+        {
+            return Err(Error::Ownership.into());
+        }
+        Ok(RawObject {
+            address: symbol.address,
+            size: symbol.size,
+            program_header: owner.program_header,
+        })
+    }
+
     pub const fn qualification_complete(&self) -> bool {
         false
     }

@@ -1,0 +1,427 @@
+{
+  "schema": "indexed-dso-public-reproduction-profile-v1",
+  "revision": "a306d916315a9bb9acc112fe306e1371d929ea1a",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "recipe": {
+    "path": "/absolute/path/to/native_recipe.py",
+    "bytes": 26999,
+    "sha256": "0ae50d24d6ae80dfe355cf71528f2c4e1a1970c11d98411af172df6ca1ec1c3a"
+  },
+  "modules": {
+    "tools/unwind-oracle/indexed_dso/build_fixture.py": "265089b24d3dc56afb87e5ba5bc9a232db948f0ca4c890f88e47ae61a618e3d7",
+    "evaluation/admission/processes.py": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+  },
+  "toolchain": null,
+  "c_toolchain_files": [
+    {
+      "path": "/usr/bin/as",
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    {
+      "path": "/usr/bin/g++",
+      "bytes": 1097200,
+      "sha256": "8b58cbb443f9f3af9a6dfb333fae55ef8808ed10a78d2a343885ccd06e016e59"
+    },
+    {
+      "path": "/usr/bin/gcc",
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    {
+      "path": "/usr/bin/ld.bfd",
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    {
+      "path": "/usr/bin/python3.9",
+      "bytes": 15448,
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+    },
+    {
+      "path": "/usr/bin/timeout",
+      "bytes": 36848,
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+    },
+    {
+      "path": "/usr/include/bits/libc-header-start.h",
+      "bytes": 4286,
+      "sha256": "3484cbc18837e0ad143aafdd83bd82aac0b6e81b392ae3539e144f80b031be48"
+    },
+    {
+      "path": "/usr/include/bits/long-double.h",
+      "bytes": 970,
+      "sha256": "4203197edd94aadf2a01c675ff7bcd3fd361139a8a25d4446e954cb12ef0583b"
+    },
+    {
+      "path": "/usr/include/bits/stdint-intn.h",
+      "bytes": 1037,
+      "sha256": "50e8230b02341fc86a2a7867531aa5586e533ed52be7eff2c6de054a9c8a3c9f"
+    },
+    {
+      "path": "/usr/include/bits/stdint-uintn.h",
+      "bytes": 1049,
+      "sha256": "bcb422c06c1c8e009aebd50af2a513522ad67cbc22aec6bd30810b0f85ce015a"
+    },
+    {
+      "path": "/usr/include/bits/time64.h",
+      "bytes": 1340,
+      "sha256": "2e9214d49c9e6bdd546f8bac3af34a88ae25ce90cf0c608103575d433ebdbd0d"
+    },
+    {
+      "path": "/usr/include/bits/timesize.h",
+      "bytes": 1081,
+      "sha256": "c10f5d611d79a39c274ae90bfc89bd88ddab2e3a4f37cae952e14363d53b610a"
+    },
+    {
+      "path": "/usr/include/bits/types.h",
+      "bytes": 8806,
+      "sha256": "536ec41325b1e96b17c4b897d148495d19387334460179f84446896a3fb5e47c"
+    },
+    {
+      "path": "/usr/include/bits/types/__locale_t.h",
+      "bytes": 1722,
+      "sha256": "53c0f18313e94c2d7b0f43ba871c030f514ba5038c5263b1e85af3c15935cb68"
+    },
+    {
+      "path": "/usr/include/bits/types/locale_t.h",
+      "bytes": 983,
+      "sha256": "6b174fafe351950055cdb8bdfbff6f91b5b293fa0270395d45dc65093625eed8"
+    },
+    {
+      "path": "/usr/include/bits/typesizes.h",
+      "bytes": 3737,
+      "sha256": "c4eab974fc3e10e5936a920eafd441c783da6d43a5ff5a65f796c6eecbe67b1b"
+    },
+    {
+      "path": "/usr/include/bits/wchar.h",
+      "bytes": 1906,
+      "sha256": "2c014ce2b642d31e97e97b93b2ff7f1c6213a899231ca0fa0303a796062b2a5b"
+    },
+    {
+      "path": "/usr/include/bits/wordsize.h",
+      "bytes": 442,
+      "sha256": "716d8459074e2a082d65a28192b32eddbfd7587348372395b1c283a723ae4c18"
+    },
+    {
+      "path": "/usr/include/c++/11/cstddef",
+      "bytes": 6690,
+      "sha256": "32b39bf87a7b59d666e60d9ce5409c54fba432d57e4bf628f51da28e82443a1f"
+    },
+    {
+      "path": "/usr/include/c++/11/cstdint",
+      "bytes": 2335,
+      "sha256": "1d345e56500d32beebd1e1e4d905545b9bb734607ca5b971cd21a8bf77321267"
+    },
+    {
+      "path": "/usr/include/c++/11/cstring",
+      "bytes": 3156,
+      "sha256": "22b5d81bc9e2d6c7b26e6a4e5cb6cdf4da736e43dc4d37eec89d5a93a554b9b6"
+    },
+    {
+      "path": "/usr/include/c++/11/pstl/pstl_config.h",
+      "bytes": 7332,
+      "sha256": "b39dc1b30164702dc8a2e5ad3a0ee4ef1f69cbc12891ed3d033d1b4fb6ce483f"
+    },
+    {
+      "path": "/usr/include/c++/11/x86_64-redhat-linux/bits/c++config.h",
+      "bytes": 129531,
+      "sha256": "81d242aafac36a634b3b903575a02e3e1fdd3289b276d03c0735e305e73c3744"
+    },
+    {
+      "path": "/usr/include/c++/11/x86_64-redhat-linux/bits/cpu_defines.h",
+      "bytes": 1333,
+      "sha256": "50aa72ec4f8498ab49c75542d10edf3c5ad1837141578b44fb08eb3fbecec83f"
+    },
+    {
+      "path": "/usr/include/c++/11/x86_64-redhat-linux/bits/os_defines.h",
+      "bytes": 2711,
+      "sha256": "62d0e0097e1f51ccb2288270585c1f27eba3a55a98ccddb774b1eed255a5c3f9"
+    },
+    {
+      "path": "/usr/include/features-time64.h",
+      "bytes": 1404,
+      "sha256": "c732fbea3ea389ec922483346305612c54b71cba429b2c4385628908b8c18aa9"
+    },
+    {
+      "path": "/usr/include/features.h",
+      "bytes": 18116,
+      "sha256": "96c0471c3ef8ecf65f327048afeed611d1a7c8195b26ccb1bcdf5cc5fd0fcb09"
+    },
+    {
+      "path": "/usr/include/gnu/stubs-64.h",
+      "bytes": 481,
+      "sha256": "3836bee19ddace5e06e967be88015d8492335daa08ce39a236618f520ccc40db"
+    },
+    {
+      "path": "/usr/include/gnu/stubs.h",
+      "bytes": 384,
+      "sha256": "ef444295a0a9e8f5c40918399a00cc91ba0bd79774110cdf6e652baa6cfadb2e"
+    },
+    {
+      "path": "/usr/include/stdc-predef.h",
+      "bytes": 2290,
+      "sha256": "38bac01c137da3ec6623c5166d420cd0bdee18e1d6605921f138f74ef902f102"
+    },
+    {
+      "path": "/usr/include/stdint.h",
+      "bytes": 8474,
+      "sha256": "b8d73ae9f3e3884c7c544ad41de0e6c235fbccc5aad880f0597207972e78d086"
+    },
+    {
+      "path": "/usr/include/string.h",
+      "bytes": 19459,
+      "sha256": "d84903be79edb24ff78a93f9732835b80bcea400a0804045045a652c41663e5a"
+    },
+    {
+      "path": "/usr/include/strings.h",
+      "bytes": 4753,
+      "sha256": "5201d2f97860ac2b0697be158c3bc1b0197a32ee76e5cd6eeb150112e773ce7e"
+    },
+    {
+      "path": "/usr/include/sys/cdefs.h",
+      "bytes": 26257,
+      "sha256": "846293609ffa9ee7b1ca9ea263da1fe3fa73029ac110561b891c9c5b3c163bb4"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/crtbegin.o",
+      "bytes": 2952,
+      "sha256": "250bfab9298f3ef5c3b9027fd8e674cd30903cf3f91349a56c6bc3b598629d99"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/crtbeginS.o",
+      "bytes": 3192,
+      "sha256": "431b524821218bdc741b32338eb3eb0df31c93421e872ec8dafc6dd4285fddab"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/crtbeginT.o",
+      "bytes": 3480,
+      "sha256": "cee2e90f4f136258349c130edabdf74783992b5b0dcd6905351f443a1543ffd7"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/crtend.o",
+      "bytes": 1632,
+      "sha256": "50a9a7f09866b19579485f1bab9a3d94592b7eb954009936fc9ba47c599208a1"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/crtendS.o",
+      "bytes": 1632,
+      "sha256": "50a9a7f09866b19579485f1bab9a3d94592b7eb954009936fc9ba47c599208a1"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/crtfastmath.o",
+      "bytes": 4824,
+      "sha256": "008d5d032cf04762a4dfe971ca15395d96435c2d071009a681a3d513e216f120"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/crtoffloadbegin.o",
+      "bytes": 1656,
+      "sha256": "53f00b92dbbcb2e0227d653f0c3d9ce6193744558457d3857c5842e2a65c0594"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/crtoffloadend.o",
+      "bytes": 1648,
+      "sha256": "f291dfee3f3f51c764a32ff07e3b2a2b7ed558125db80bb4d2ee210e75d63c55"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/crtoffloadtable.o",
+      "bytes": 1872,
+      "sha256": "aaa1d49a2f3e40ac5010cf56987c6f345648bcda737a303914d5b10a59ced9bd"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/crtprec32.o",
+      "bytes": 4472,
+      "sha256": "49ce08fdc915e5eca1b433c9285b8b6e5d248fdd7901faeb156bbf1c3626c2f7"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/crtprec64.o",
+      "bytes": 4480,
+      "sha256": "1f3846736bd760c73ef81fc2dfcab59c01ef0dff36753f3a8c221ce84085bcea"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/crtprec80.o",
+      "bytes": 4472,
+      "sha256": "8d7529e05d68e7975b2d25de946468323dec9acc6f1217b898ab83f895174e8d"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/include/stddef.h",
+      "bytes": 12959,
+      "sha256": "8fe9e3ecaf491fa5fb1c8e7d7caf8fb0c69b13bec84cbf1f8ff7e399fc0c8bc7"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/include/stdint.h",
+      "bytes": 328,
+      "sha256": "86a7914ab7d6a18465a6fb9a7b54f945cad604fdbf3ca0d10e4e0254e0037911"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/include/unwind.h",
+      "bytes": 10905,
+      "sha256": "2072c3c1ee3793fdc75b3ed15a1857b5e0b95ba3bc86f6c347896c1685ed5ace"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/libasan_preinit.o",
+      "bytes": 9120,
+      "sha256": "37650887a01e6566fdb8e68f20fa578ed86c15aca83a2431ddc9b4f846ead87a"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/libgcc.a",
+      "bytes": 3133246,
+      "sha256": "f5118081c7501f5d16d3ea52038c3445e5d7d971bc53a092b5e37b4cf10d9fbb"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/libgcc_eh.a",
+      "bytes": 70272,
+      "sha256": "73876246041a101c12692c09872669bc6a8f55a338f58bf78538003fc8ab57bf"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/libgcc_s.so",
+      "bytes": 195,
+      "sha256": "1f0e19cc3d3eea1bdcf0a8469f651cd57190ce969e4c6b75c5ad523acdefb459"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/liblsan_preinit.o",
+      "bytes": 5856,
+      "sha256": "f8ab07a60a27b52d86e486b163613e5567d0484fa8e807b2fdbb98ac82a7380f"
+    },
+    {
+      "path": "/usr/lib/gcc/x86_64-redhat-linux/11/libtsan_preinit.o",
+      "bytes": 4640,
+      "sha256": "9c110f4db0dacd8cea76036bd6c936d2ea230ba04b06dcb927c48a9e8caffb47"
+    },
+    {
+      "path": "/usr/lib64/Scrt1.o",
+      "bytes": 2744,
+      "sha256": "df5dc91e3c3a8d090d8a70bbcf6570a9ecde76b026f2155c9a8b476fc2577363"
+    },
+    {
+      "path": "/usr/lib64/crti.o",
+      "bytes": 1800,
+      "sha256": "d0f6f64378800c817f9ba3a5a6f47e4c9ebef89dcdbc77394e661ca8030c9be8"
+    },
+    {
+      "path": "/usr/lib64/crtn.o",
+      "bytes": 1536,
+      "sha256": "d468c4d1438bb6c14ff3087a0ec364d4ca0b7cdfe71ab493d04c56bbb3c07a5e"
+    },
+    {
+      "path": "/usr/lib64/ld-linux-x86-64.so.2",
+      "bytes": 939216,
+      "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9"
+    },
+    {
+      "path": "/usr/lib64/libc.so",
+      "bytes": 253,
+      "sha256": "bc8e2fd8ffcf12e2156395df0a2ea6a0a139937ac835cdc1395b525ded29d7bb"
+    },
+    {
+      "path": "/usr/lib64/libc.so.6",
+      "bytes": 2553784,
+      "sha256": "4fe244b698006f2a5cc7d1e6008c195dfb3ac4038ea79a6500bdde4205efb523"
+    },
+    {
+      "path": "/usr/lib64/libc_nonshared.a",
+      "bytes": 17606,
+      "sha256": "85a30db1deb74ca4329950121ec1385dffaa4a5f325f108a31cc0510df82bf86"
+    },
+    {
+      "path": "/usr/lib64/libdl.a",
+      "bytes": 8,
+      "sha256": "f0a17a43c74d2fe5474fa2fd29c8f14799e777d7d75a2cc4d11c20a6e7b161c5"
+    },
+    {
+      "path": "/usr/lib64/libdl.so.2",
+      "bytes": 15464,
+      "sha256": "94b7f0925f8e565fcfd8c5e50dc79a5a4906f3e45591581bb4ecd488e3206c64"
+    },
+    {
+      "path": "/usr/lib64/libgcc_s-11-20240719.so.1",
+      "bytes": 116408,
+      "sha256": "3d144b557008c93e4e67567d5dc98cb81cf55187a698d1b4872ce84ba8a26bed"
+    },
+    {
+      "path": "/usr/lib64/libm.so",
+      "bytes": 110,
+      "sha256": "3909eca9423e2f5b5cb5ed20b1a56f840efea4e94d0f17930f1c4e373179e670"
+    },
+    {
+      "path": "/usr/lib64/libm.so.6",
+      "bytes": 912984,
+      "sha256": "aabb41f107632430e94ff2186082a5df8488e458894eebb7fe285825da582d01"
+    },
+    {
+      "path": "/usr/lib64/libmvec.so.1",
+      "bytes": 176816,
+      "sha256": "996a8d90d633ad9726def00be001febd8d5e37573aa4ad70e8ff6cfd8d4daaac"
+    },
+    {
+      "path": "/usr/lib64/libpthread.a",
+      "bytes": 8,
+      "sha256": "f0a17a43c74d2fe5474fa2fd29c8f14799e777d7d75a2cc4d11c20a6e7b161c5"
+    },
+    {
+      "path": "/usr/lib64/libpthread.so.0",
+      "bytes": 15480,
+      "sha256": "9c61e460c9452959bf026ac5ed279252197318fbf9ba1c0f3cdce61eae3e4762"
+    },
+    {
+      "path": "/usr/lib64/librt.a",
+      "bytes": 8,
+      "sha256": "f0a17a43c74d2fe5474fa2fd29c8f14799e777d7d75a2cc4d11c20a6e7b161c5"
+    },
+    {
+      "path": "/usr/lib64/libstdc++.so.6.0.29",
+      "bytes": 2314472,
+      "sha256": "cc5f795fb4c6cc06fd5e1c14e9105dc8db7b663b7fe41d4b4fb35a8f133aec83"
+    },
+    {
+      "path": "/usr/lib64/libutil.a",
+      "bytes": 8,
+      "sha256": "f0a17a43c74d2fe5474fa2fd29c8f14799e777d7d75a2cc4d11c20a6e7b161c5"
+    },
+    {
+      "path": "/usr/libexec/gcc/x86_64-redhat-linux/11/cc1",
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    {
+      "path": "/usr/libexec/gcc/x86_64-redhat-linux/11/cc1plus",
+      "bytes": 31173112,
+      "sha256": "a1c79509a9b992ace15445000f06e5f9405b33dde66305974be957650d014e93"
+    },
+    {
+      "path": "/usr/libexec/gcc/x86_64-redhat-linux/11/collect2",
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    {
+      "path": "/usr/libexec/gcc/x86_64-redhat-linux/11/liblto_plugin.so",
+      "bytes": 99496,
+      "sha256": "41cfbfd1c97419ae2f8a9ff6b1a6eacc0b2253c8dfa26ab3db27b61a1a723be9"
+    },
+    {
+      "path": "/usr/libexec/gcc/x86_64-redhat-linux/11/lto-wrapper",
+      "bytes": 919968,
+      "sha256": "b7d19a0a3a987a58fa277a47ad8819e2adb46e7f08db03555ea1657bcaef2922"
+    },
+    {
+      "path": "/usr/libexec/gcc/x86_64-redhat-linux/11/lto1",
+      "bytes": 27871416,
+      "sha256": "122f5a3091664049b85e08a39e79c804bbea146012fcf92b8b2659c37b68c743"
+    }
+  ],
+  "tools": {
+    "cargo": null,
+    "rustc": null,
+    "rustdoc": null,
+    "python": null,
+    "timeout": null,
+    "git": null
+  },
+  "execution_tools": [],
+  "cargo_home": "/absolute/path/to/offline-cargo-cache",
+  "semantic_review": null,
+  "native_review": null,
+  "historical_reviews": [],
+  "reservation_ledger": "/absolute/path/to/core-reservations.json",
+  "reservation_tag": "indexed-dso-public-a306"
+}
