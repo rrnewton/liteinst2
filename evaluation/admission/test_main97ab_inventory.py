@@ -221,7 +221,7 @@ class Main97abInventoryTests(unittest.TestCase):
             wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_96378(wrong)
-        incoming_stimuli = [(path, name, name + '_wrong')
+        incoming_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
             for path, names in incoming['added_default_methods'].items() for name in names]
         incoming_stimuli += [(path, literal, '')
             for path, literals in incoming['module_chains'].items() for literal in literals]

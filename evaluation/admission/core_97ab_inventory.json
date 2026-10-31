@@ -2073,6 +2073,22 @@
       ],
       "previous_sha256": "4a99698d911fe9a1b3c8246f29726814d4da41f5227d07ff42232803a44fa1cf"
     },
+    "tools/elf-rewrite/examples/support/common_core_foreign.rs": {
+      "current_sha256": "d0363b0c396aff6d16258948e5c81ff201e3dbcb165d380c363ddba2066b0891",
+      "edits": [
+        [
+          15142,
+          15496,
+          "            heads: seed::HEADS\n                .iter()\n                .filter(|h| h.function == src.function)\n                .map(|h| LegalEntry {\n                    address: h.pc,\n                    requires_endbr: false,\n                })\n                .collect(),\n"
+        ],
+        [
+          23502,
+          23565,
+          "        f.sites[1].heads.pop();\n"
+        ]
+      ],
+      "previous_sha256": "1109f454d1fc4052c2869b383eb3e4751fc2859982666baf2b6a2a46496a0e6c"
+    },
     "tools/elf-rewrite/src/adjacent_b2_frontend.rs": {
       "current_sha256": "c2ea2ccd923a8ed5cc0bc83beb604f90503ab34b33fef120a6bd7a26bcd67a90",
       "edits": [
@@ -2256,6 +2272,17 @@
         ]
       ],
       "previous_sha256": "2320f63f707dd2f0ec51a2a10e12525926737043c0c0829c2e23c6ae62678ed7"
+    },
+    "tools/elf-rewrite/src/neighbor_catalogue.rs": {
+      "current_sha256": "98547f49cbd1571cbe7e3e79b7fcb3b873e8c8f2c3eba28326614fce78a5abf2",
+      "edits": [
+        [
+          4659,
+          4710,
+          "            entries: owner.heads.clone(),\n"
+        ]
+      ],
+      "previous_sha256": "4ece0f34bb910e7f627a41c514a1ec7b90c7a321e9952484cfda1393b7f76b7d"
     },
     "tools/elf-rewrite/src/selection.rs": {
       "current_sha256": "00fe05a29ad200761b45dbc73de567e0730b20bd4ad19dd08b89b6113688a191",
@@ -3674,7 +3701,7 @@
     "evaluation/admission/test_main34c47_inventory.py": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "abac893aa10682c757a9bacb12a5c4be6f68ccc32e2d741de265852725060a87",
-    "evaluation/admission/test_main97ab_inventory.py": "38ef311a913378156e14974c4fd36cddb1503cdaa9393cdabb436bf319ccb047",
+    "evaluation/admission/test_main97ab_inventory.py": "7177bbc8f01c90a2d0346843cc1bb92543273a362044b8e2698cfd9614c30200",
     "evaluation/admission/test_main981419_inventory.py": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
     "evaluation/admission/test_mainaf81_inventory.py": "da0d6e46e1bce60e05bd28bd1effcf6bf487f3921c0ac3e08c691a9258480d6a",
