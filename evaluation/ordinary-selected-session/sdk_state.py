@@ -17,6 +17,7 @@ from pathlib import Path
 import re
 import subprocess
 import time
+from types import MappingProxyType
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
@@ -61,6 +62,50 @@ STATUS = {'sdk-build':'SDK_BUILD_PASS','sdk-controls':'SDK_CONTROLS_PASS',
 SCOPE = ('Finite actual LeafSet SDK and copied complete machine caller state only; '
          'interval banks reclaimed, executable owners process-lived; no original-address '
          'Rust ABI, executable retirement, full SDK, performance or strict 2ms qualification.')
+
+
+# Closed internal routing data. Public legacy wrappers never accept a descriptor.
+_LEGACY = MappingProxyType(dict(profile=PROFILE,schema=SCHEMA,driver='sdk_state.py',owner='owner.py',
+    owner_schema='selected-session-public-owner-v1',cohort_phase='sdk-cohort',collect_phase='sdk-collect',
+    cohort_status=STATUS['sdk-cohort'],collect_status=STATUS['sdk-collect'],
+    geometry_kind='selected-sdk-copied-geometry-acceptance-v1',
+    geometry_status='INDEPENDENTLY_ACCEPTED_FOR_FIXED_COPIED_SDK_STATE',scope=SCOPE))
+_ACCURACY = MappingProxyType(dict(profile='selected-leaf-set-accuracy-state-v1',
+    schema='selected-sdk-accuracy-public-v1',driver='accuracy_state.py',owner='accuracy_owner.py',
+    owner_schema='selected-sdk-accuracy-public-owner-v1',cohort_phase='accuracy-cohort',collect_phase='accuracy-collect',
+    cohort_status='SDK_ACCURACY_COHORT_STATE_PASS',collect_status='SDK_ACCURACY_192_STATE_PASS',
+    geometry_kind='selected-sdk-accuracy-geometry-acceptance-v1',
+    geometry_status='INDEPENDENTLY_ACCEPTED_FOR_FIXED_COPIED_ACCURACY_STATE',
+    scope='Finite copied-caller LeafSet callback state only; manual one-bank K10/K1000; '
+          'no PMU metric, cadence, strict 2ms, performance or full A5 qualification.'))
+
+
+def _checked(profile):
+    assert profile is _LEGACY or profile is _ACCURACY
+    return profile
+
+
+def _status(profile,phase):
+    _checked(profile)
+    if profile is _LEGACY: return STATUS[phase]
+    assert phase in (profile['cohort_phase'],profile['collect_phase'])
+    return profile['cohort_status'] if phase==profile['cohort_phase'] else profile['collect_status']
+
+
+def _qualification():
+    return dict(pmu_metric=False,cadence=False,performance=False)
+
+
+def _unqualified(value):
+    assert type(value) is dict and set(value)==set(_qualification())
+    assert all(flag is False for flag in value.values())
+
+
+def _evidence(result,profile):
+    if _checked(profile) is _ACCURACY:
+        result['qualification']=_qualification()
+        result['callback_state']='PASS' if (result['phase']==profile['collect_phase'] and
+            result['status']==profile['collect_status']) else 'HELD'
 
 
 def sha(raw):
@@ -135,10 +180,15 @@ def edge_set(values):
 
 
 def expected_fields(key):
+    return _expected_fields(key,_LEGACY)
+
+
+def _expected_fields(key,profile):
+    _checked(profile)
     m=meaning(key);op=int(key['function_id']==202)
     heads=sorted(set(m['visits']));edges=sorted(set(zip(m['visits'],m['visits'][1:])))
     reachable,reachable_edges=coverage(key)
-    fields=dict(profile=PROFILE,functions='2',policies='whole+whole',status='PASS',children='2',
+    fields=dict(profile=profile['profile'],functions='2',policies='whole+whole',status='PASS',children='2',
         **{k:str(v) for k,v in key.items()})
     fields.update({k:str(v) for k,v in dict(comparisons=len(m['visits'])+10,visits=len(m['visits']),
         result=m['answer'],outer_rax=m['answer'],input_reads=len(m['reads']),ret_offset=m['ret'],
@@ -152,25 +202,35 @@ def expected_fields(key):
 
 
 def terminal(key,comparisons):
-    return ('native-selected-leaf-set:profile='+PROFILE+':form='+key['form']+':k='+str(key['k'])+
+    return _terminal(key,comparisons,_LEGACY)
+
+
+def _terminal(key,comparisons,profile):
+    _checked(profile)
+    return ('native-selected-leaf-set:profile='+profile['profile']+':form='+key['form']+':k='+str(key['k'])+
         ':seed='+str(key['seed'])+':function='+str(key['function_id'])+':input='+str(key['input_index'])+
         ':required=1:pairs=1:children=2:comparisons='+str(comparisons)+
         ':target-calls=2:target-returns=2:real-outer-ret=2:normal-reaps=2:scope=copied-body-only:complete\n').encode('ascii')
 
 
 def pair_output(raw,stdout,stderr,key):
+    return _pair_output(raw,stdout,stderr,key,_LEGACY)
+
+
+def _pair_output(raw,stdout,stderr,key,profile):
+    _checked(profile)
     assert stderr==b'' and type(raw) is bytes and 0<len(raw)<=MIB
     assert raw.startswith(HEADER.encode()) and raw.endswith(b'\n') and b'\r' not in raw
     lines=raw.splitlines(keepends=True);assert len(lines)==2 and len(lines[1])<=768
     assert all(byte==10 or 32<=byte<127 for byte in raw)
     fields=lines[1][:-1].decode('ascii').split(',');columns=HEADER.strip().split(',')
     assert len(fields)==len(columns)==39
-    row=dict(zip(columns,fields));expected=expected_fields(key)
+    row=dict(zip(columns,fields));expected=_expected_fields(key,profile)
     assert set(row)==set(expected)|{'original_steps','candidate_steps'}
     assert {name:row[name] for name in expected}==expected
     for name in ('original_steps','candidate_steps'):
         assert uint(row['comparisons'])<=uint(row[name])<=20000
-    assert stdout==terminal(key,uint(row['comparisons']))
+    assert stdout==_terminal(key,uint(row['comparisons']),profile)
     return row
 
 
@@ -201,8 +261,14 @@ def sdk_commands(cargo):
 
 
 def load_context(args,started):
+    return _load_context(args,started,_LEGACY)
+
+
+def _load_context(args,started,profile):
+    _checked(profile)
     # Authenticate all new imports before loading any project module.
-    for name in ('sdk_state.py','sdk_state_controls.py','build.py','reproduce.py','owner.py'):
+    for name in ('sdk_state.py','sdk_state_controls.py','build.py','reproduce.py','owner.py') + (
+            ('accuracy_state.py','accuracy_owner.py','accuracy_state_controls.py') if profile is _ACCURACY else ()):
         path=HERE/name
         assert path.is_file() and not path.is_symlink() and path.stat().st_size<=MIB
         assert path.read_bytes()==subprocess.check_output(['/usr/bin/git','-C',ROOT,'show',args.revision+':'+str(path.relative_to(ROOT))],timeout=15)
@@ -213,15 +279,16 @@ def load_context(args,started):
     run,recipe,new,leaf,owners,git=driver.bootstrap_context(args,started)
     run.deadline=started+1200
     run.scalar_environment=dict(run.env)
-    adapter=driver.load('sdk_owner',HERE/'owner.py')
+    adapter=driver.load('sdk_owner',HERE/profile['owner'])
     required=set(adapter.COMMON)-{'owner'} | set(adapter.SDK_EXTRAS[args.phase])
     arguments={key:str(getattr(args,key.replace('-','_'))) for key in required}
-    run.result=dict(schema=SCHEMA,profile=PROFILE,phase=args.phase,revision=args.revision,
+    run.result=dict(schema=profile['schema'],profile=profile['profile'],phase=args.phase,revision=args.revision,
         status='FAILED',arguments=arguments,environment=run.env,hardware=args.hardware,cpus=run.cpus,
-        invocation=[str(run.tools['python']),'-B',str(HERE/'sdk_state.py'),*sys.argv[1:]],
-        stages=[],rows=initial_rows(args.cohort) if args.phase=='sdk-cohort' else initial_rows() if args.phase=='sdk-collect' else [],
-        custody_closed=False,retention_verified=False,load_before=list(os.getloadavg()),scope=SCOPE)
-    expected,_=adapter.commands(dict(arguments,owner=str(args.raw.parent/'unused-owner.json')),str(run.tools['python']),str(HERE/'owner.py'))
+        invocation=[str(run.tools['python']),'-B',str(HERE/profile['driver']),*sys.argv[1:]],
+        stages=[],rows=initial_rows(args.cohort) if args.phase==profile['cohort_phase'] else initial_rows() if args.phase==profile['collect_phase'] else [],
+        custody_closed=False,retention_verified=False,load_before=list(os.getloadavg()),scope=profile['scope'])
+    _evidence(run.result,profile)
+    expected,_=adapter.commands(dict(arguments,owner=str(args.raw.parent/'unused-owner.json')),str(run.tools['python']),str(HERE/profile['owner']))
     # Child grammar does not depend on the outer owner destination.
     _,child=adapter.commands(dict(arguments,owner=str(args.raw.parent/'unused-owner.json')),str(run.tools['python']),expected[2])
     assert run.result['invocation']==child
@@ -241,23 +308,40 @@ def read_reference(run,recipe,driver,value,cap=32*MIB):
 
 
 def projection(result):
-    return dict(schema=SCHEMA,profile=PROFILE,phase=result['phase'],revision=result['revision'],
+    return _projection(result,_LEGACY)
+
+
+def _projection(result,profile):
+    _checked(profile)
+    out=dict(schema=profile['schema'],profile=profile['profile'],phase=result['phase'],revision=result['revision'],
         status=result['status'],rows=len(result['rows']),passed=sum(r['status']=='PASS' for r in result['rows']),
         failed=sum(r['status']=='FAILED' for r in result['rows']),unrun=sum(r['status']=='UNRUN' for r in result['rows']),
         custody_closed=result['custody_closed'],retention_verified=result['retention_verified'])
+    if profile is _ACCURACY:
+        out.update(callback_state=result['callback_state'],qualification=result['qualification'])
+    return out
 
 
 def record(run,recipe,driver,adapter,result_ref,owner_ref,phase,allow_failed=False):
+    return _record(run,recipe,driver,adapter,result_ref,owner_ref,phase,allow_failed,_LEGACY)
+
+
+def _record(run,recipe,driver,adapter,result_ref,owner_ref,phase,allow_failed,profile):
+    _checked(profile)
     result=read_reference(run,recipe,driver,result_ref);directory=Path(result_ref['path']).parent
-    assert result['schema']==SCHEMA and result['profile']==PROFILE and result['phase']==phase
-    assert result['revision']==run.a.revision and result['scope']==SCOPE
-    assert result['status'] in ((STATUS[phase],'FAILED') if allow_failed else (STATUS[phase],))
+    assert result['schema']==profile['schema'] and result['profile']==profile['profile'] and result['phase']==phase
+    assert result['revision']==run.a.revision and result['scope']==profile['scope']
+    assert result['status'] in ((_status(profile,phase),'FAILED') if allow_failed else (_status(profile,phase),))
+    if profile is _ACCURACY:
+        expected=dict(result);_evidence(expected,profile)
+        _unqualified(result['qualification'])
+        assert result['callback_state']==expected['callback_state']
     assert result['custody_closed'] is True and result['retention_verified'] is True
     assert result['environment']==run.env and result['hardware']==run.a.hardware
     assert result['cpus']==run.cpus
     owner=read_reference(run,recipe,driver,owner_ref)
     recipe.normal_closed(owner['closed'])
-    assert owner['closed']['exit_code']==(0 if result['status']==STATUS[phase] else 1)
+    assert owner['closed']['exit_code']==(0 if result['status']==_status(profile,phase) else 1)
     assert owner['base']==run.a.revision and owner['working_source_sha256']=={} and owner['source_unchanged'] is True
     assert owner['reserved_cpus']==run.cpus and owner['attempts']==1 and owner['log_archived'] is True
     assert owner['wall_limit_seconds']==1200 and owner['output_limit_bytes']==8*MIB
@@ -266,15 +350,15 @@ def record(run,recipe,driver,adapter,result_ref,owner_ref,phase,allow_failed=Fal
     for name in ('revision','reservation-tag','toolchain','user-home','cargo-home','hardware'):
         assert options[name]==str(getattr(run.a,name.replace('-','_')))
     assert owner['hardware']==run.a.hardware
-    public=owner['public_owner'];assert public['schema']=='selected-session-public-owner-v1'
+    public=owner['public_owner'];assert public['schema']==profile['owner_schema']
     assert public['phase']==phase and public['revision']==run.a.revision
-    assert public['recipe']=='evaluation/ordinary-selected-session/owner.py'
-    assert public['recipe_sha256']==run.sources[str(HERE/'owner.py')]['sha256']
+    assert public['recipe']=='evaluation/ordinary-selected-session/'+profile['owner']
+    assert public['recipe_sha256']==run.sources[str(HERE/profile['owner'])]['sha256']
     invocation,child=adapter.commands(options,str(run.tools['python']),public['invocation'][2])
     assert public['invocation']==invocation and owner['command']==child==result['invocation']
     assert owner['env']==adapter.environment(options)
     raw=driver.raw_pin(run,recipe,Path(owner_ref['path']).with_suffix('.log'),cap=8*MIB)
-    assert sha(raw)==owner['closed']['private_log_sha256'] and json.loads(raw)==projection(result)
+    assert sha(raw)==owner['closed']['private_log_sha256'] and json.loads(raw)==_projection(result,profile)
     for name in ('sources-before.json','sources-after.json'):
         assert driver.read_json(run,recipe,directory/name,cap=16*MIB)==run.sources
     assert result['evidence_budget']['exceeded'] is False and result['evidence_budget']['reservation_active'] is False
@@ -405,8 +489,18 @@ def accept_controls(run,recipe,driver,adapter,leaf,owners,build,sdk):
 
 
 def geometry_shape(value,build,sdk_ref):
-    assert value['kind']=='selected-sdk-copied-geometry-acceptance-v1' and value['scope']==PROFILE
-    assert value['status']=='INDEPENDENTLY_ACCEPTED_FOR_FIXED_COPIED_SDK_STATE'
+    return _geometry_shape(value,build,sdk_ref,_LEGACY)
+
+
+def _geometry_shape(value,build,sdk_ref,profile):
+    _checked(profile)
+    assert value['kind']==profile['geometry_kind'] and value['scope']==profile['profile']
+    assert value['status']==profile['geometry_status']
+    if profile is _ACCURACY:
+        _unqualified(value['qualification'])
+        policy=value['accuracy_policy']
+        assert type(policy) is dict and all(type(policy[n]) is int for n in ('epoch_ms','epochs','calls'))
+        assert policy==dict(k=[10,1000],epoch_ms=10,epochs=1,calls=4096,arm='manual-one-bank')
     assert value['native_state']=='UNRUN_SEPARATE_REQUIRED' and value['sdk_build']==sdk_ref
     assert value['build_revision']==build['revision'] and value['products']==build['products']
     required=('complete_symbol_extents','complete_cfg_and_all_returns','complete_elf_and_source_pages',
@@ -426,9 +520,14 @@ def geometry_shape(value,build,sdk_ref):
 
 
 def accept_geometry(run,recipe,driver,new,build):
+    return _accept_geometry(run,recipe,driver,new,build,_LEGACY)
+
+
+def _accept_geometry(run,recipe,driver,new,build,profile):
+    _checked(profile)
     value=driver.read_json(run,recipe,run.a.geometry,run.a.geometry_sha)
     assert value['build_result_sha256']==run.a.build_sha
-    table=geometry_shape(value,build,reference(run.a,'sdk-build'))
+    table=_geometry_shape(value,build,reference(run.a,'sdk-build'),profile)
     for name,pin in value['fact_pins'].items(): driver.raw_pin(run,recipe,Path(name),pin)
     ordered=tuple(dict(row,returns=tuple(row['returns'])) for row in table)
     new['output'].geometry(ordered,value['caller'],tuple(run.cpus[:2]),profile=driver.WHOLE_PROFILE)
@@ -441,13 +540,23 @@ def accept_geometry(run,recipe,driver,new,build):
 
 
 def pair_argv(binary,copies,output,key,table):
+    return _pair_argv(binary,copies,output,key,table,_LEGACY)
+
+
+def _pair_argv(binary,copies,output,key,table,profile):
+    _checked(profile)
     checked_key(key);assert len(table)==2
-    return [str(binary),PROFILE,*[str(copies[k]) for k in ('dso_candidate','dso_trusted','app_candidate','app_trusted')],
+    return [str(binary),profile['profile'],*[str(copies[k]) for k in ('dso_candidate','dso_trusted','app_candidate','app_trusted')],
         str(output),key['form'],str(key['k']),str(key['seed']),str(key['function_id']),str(key['input_index']),
         *[str(row[k]) for row in table for k in ('elf_va','extent')]]
 
 
 def prepare_cohort(run,recipe,driver,builder,build,sdk,geometry):
+    return _prepare_cohort(run,recipe,driver,builder,build,sdk,geometry,_LEGACY)
+
+
+def _prepare_cohort(run,recipe,driver,builder,build,sdk,geometry,profile):
+    _checked(profile)
     products=Path(run.a.build).parent/'products';copies={}
     dso='leaves.so' if run.a.cohort.startswith('unstripped-') else 'leaves-stripped.so'
     for label,source in [('dso_candidate',products/dso),('dso_trusted',products/dso),
@@ -458,18 +567,24 @@ def prepare_cohort(run,recipe,driver,builder,build,sdk,geometry):
     binary=sdk['products']['frontend-native-oracle']['path'];plans=[]
     for index,row in enumerate(run.result['rows']):
         name='pair-'+str(index).zfill(2);directory=run.raw/(name+'-io');output=directory/'output'
-        argv=pair_argv(binary,copies,output,row['key'],geometry['table']);assert len(argv)==16
+        argv=_pair_argv(binary,copies,output,row['key'],geometry['table'],profile);assert len(argv)==16
         request=run.request(directory,argv,cpu=20,wall=30,cap=4*MIB);run.plan_bounded(name,directory,request)
         plans.append(dict(name=name,key=row['key'],request=request,output=str(output)))
-    plan=dict(schema=SCHEMA,profile=PROFILE,cohort=run.a.cohort,all_keys=keys(),keys=keys(run.a.cohort),plans=plans,copies=copies,
+    plan=dict(schema=profile['schema'],profile=profile['profile'],cohort=run.a.cohort,all_keys=keys(),keys=keys(run.a.cohort),plans=plans,copies=copies,
         build=reference(run.a,'build'),build_owner=reference(run.a,'build-owner'),sdk_build=reference(run.a,'sdk-build'),
         sdk_build_owner=reference(run.a,'sdk-build-owner'),sdk_controls=reference(run.a,'sdk-controls'),
         sdk_controls_owner=reference(run.a,'sdk-controls-owner'),geometry=reference(run.a,'geometry'),
         attempts_per_key=1,cpu_seconds=20,wall_seconds=30,pair_seconds=15,steps_per_child=20000)
+    if profile is _ACCURACY: plan.update(callback_state='HELD',qualification=_qualification())
     run.freeze(run.raw/'plan.json',plan,4*MIB);return plan
 
 
 def execute_cohort(run,recipe,driver,plan):
+    return _execute_cohort(run,recipe,driver,plan,_LEGACY)
+
+
+def _execute_cohort(run,recipe,driver,plan,profile):
+    _checked(profile)
     for row,spec in zip(run.result['rows'],plan['plans']):
         try:
             recipe.bounded_ready(run,spec['request'],app_files=True)
@@ -482,7 +597,7 @@ def execute_cohort(run,recipe,driver,plan):
             row['child_exit']=code
             assert output.is_dir() and not output.is_symlink() and sorted(p.name for p in output.iterdir())==[OUTPUT]
             raw=driver.raw_pin(run,recipe,output/OUTPUT,cap=MIB)
-            row['observed']=pair_output(raw,out,err,row['key']);assert code==0
+            row['observed']=_pair_output(raw,out,err,row['key'],profile);assert code==0
             row['output_pin']=run.retained[str(output/OUTPUT)]
             row['status']='PASS'
         except BaseException as error:
@@ -492,20 +607,27 @@ def execute_cohort(run,recipe,driver,plan):
             if stage is not None and 'closed' in stage: row['closed']=stage['closed']
         if not run.safe: break
         run.budget.complete();run.unchanged()
-    if population(run.result['rows'],run.a.cohort): run.result['status']=STATUS['sdk-cohort']
+    if population(run.result['rows'],run.a.cohort): run.result['status']=profile['cohort_status']
 
 
 def collect(run,recipe,driver,adapter,build,sdk,geometry):
+    return _collect(run,recipe,driver,adapter,build,sdk,geometry,_LEGACY)
+
+
+def _collect(run,recipe,driver,adapter,build,sdk,geometry,profile):
+    _checked(profile)
     refs=driver.read_json(run,recipe,run.a.cohorts,run.a.cohorts_sha)
     assert type(refs) is list and len(refs)==4
     assert [r['cohort'] for r in refs]==list(COHORTS)
     output=[]
     for cohort,item in zip(COHORTS,refs):
         assert set(item)=={'cohort','result','owner'}
-        r=record(run,recipe,driver,adapter,item['result'],item['owner'],'sdk-cohort',allow_failed=True)
+        r=_record(run,recipe,driver,adapter,item['result'],item['owner'],profile['cohort_phase'],True,profile)
         assert r['arguments']['cohort']==cohort
         directory=Path(item['result']['path']).parent;plan=driver.read_json(run,recipe,directory/'plan.json',cap=4*MIB)
-        assert plan['schema']==SCHEMA and plan['profile']==PROFILE and plan['cohort']==cohort
+        assert plan['schema']==profile['schema'] and plan['profile']==profile['profile'] and plan['cohort']==cohort
+        if profile is _ACCURACY:
+            assert plan['callback_state']=='HELD';_unqualified(plan['qualification'])
         assert plan['all_keys']==keys() and plan['keys']==keys(cohort) and [s['key'] for s in plan['plans']]==keys(cohort)
         assert (plan['attempts_per_key'],plan['cpu_seconds'],plan['wall_seconds'],plan['pair_seconds'],plan['steps_per_child'])==(1,20,30,15,20000)
         for name in ('build','build-owner','sdk-build','sdk-build-owner','sdk-controls','sdk-controls-owner','geometry'):
@@ -520,7 +642,7 @@ def collect(run,recipe,driver,adapter,build,sdk,geometry):
         assert [s['name'] for s in r['stages']]==['pair-'+str(i).zfill(2) for i in range(sum(x['attempts'] for x in r['rows']))]
         for index,(row,spec) in enumerate(zip(r['rows'],plan['plans'])):
             name='pair-'+str(index).zfill(2);d=directory/(name+'-io');dest=d/'output'
-            argv=pair_argv(sdk['products']['frontend-native-oracle']['path'],copies,dest,row['key'],geometry['table'])
+            argv=_pair_argv(sdk['products']['frontend-native-oracle']['path'],copies,dest,row['key'],geometry['table'],profile)
             request=dict(argv=argv,cwd=str(ROOT),env=run.env,stdout=str(d/'stdout.txt'),stderr=str(d/'stderr.txt'),cpu_seconds=20,wall_seconds=30,file_bytes=4*MIB)
             assert spec==dict(name=name,key=row['key'],request=request,output=str(dest))
             assert driver.read_json(run,recipe,d/'request.json')==request
@@ -532,7 +654,7 @@ def collect(run,recipe,driver,adapter,build,sdk,geometry):
                 assert code==0
                 assert sorted(p.name for p in dest.iterdir())==[OUTPUT] and not dest.is_symlink()
                 raw=driver.raw_pin(run,recipe,dest/OUTPUT,row['output_pin'],MIB)
-                assert pair_output(raw,out,err,row['key'])==row['observed']
+                assert _pair_output(raw,out,err,row['key'],profile)==row['observed']
             output.append(row)
             run.result['rows'][len(output)-1]=row
     assert [r['key'] for r in output]==keys();run.result['rows']=output
@@ -551,12 +673,17 @@ def collect(run,recipe,driver,adapter,build,sdk,geometry):
                             returns.add(uint(r['observed']['ret_offset']))
                         expected,expected_edges=coverage(group[0]['key'])
                         assert observed==set(expected) and edges==set(expected_edges) and returns==set(RETURNS[int(function==202)])
-        run.result['status']=STATUS['sdk-collect']
+        run.result['status']=profile['collect_status']
 
 
 def main():
+    return _main(_LEGACY)
+
+
+def _main(profile):
+    _checked(profile)
     started=time.monotonic();parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--phase',choices=tuple(STATUS),required=True)
+    parser.add_argument('--phase',choices=tuple(STATUS) if profile is _LEGACY else (profile['cohort_phase'],profile['collect_phase']),required=True)
     for name in ('revision','reservation-tag','hardware'): parser.add_argument('--'+name,required=True)
     for name in ('raw','toolchain','user-home','cargo-home'): parser.add_argument('--'+name,type=Path,required=True)
     paths=('build','build-owner','sdk-build','sdk-build-owner','controls','controls-owner','sdk-controls','sdk-controls-owner','geometry','cohorts')
@@ -565,26 +692,30 @@ def main():
     parser.add_argument('--cohort',choices=COHORTS)
     args=parser.parse_args()
     # Validate phase grammar before module loading or allocating any output.
-    required={'sdk-build':('build','build-owner'),
+    requirements={'sdk-build':('build','build-owner'),
         'sdk-controls':('build','build-owner','sdk-build','sdk-build-owner','controls','controls-owner'),
         'sdk-cohort':('build','build-owner','sdk-build','sdk-build-owner','sdk-controls','sdk-controls-owner','geometry'),
-        'sdk-collect':('build','build-owner','sdk-build','sdk-build-owner','sdk-controls','sdk-controls-owner','geometry','cohorts')}[args.phase]
+        'sdk-collect':('build','build-owner','sdk-build','sdk-build-owner','sdk-controls','sdk-controls-owner','geometry','cohorts')}
+    if profile is _ACCURACY:
+        requirements={profile['cohort_phase']:requirements['sdk-cohort'],profile['collect_phase']:requirements['sdk-collect']}
+    required=requirements[args.phase]
     for name in paths:
         values=(getattr(args,name.replace('-','_')),getattr(args,(name+'-sha').replace('-','_')))
         assert all(v is not None for v in values) if name in required else all(v is None for v in values)
-    assert (args.cohort is not None)==(args.phase=='sdk-cohort')
-    run,recipe,driver,builder,adapter,new,leaf,owners,git=load_context(args,started);run.git=git
+    assert (args.cohort is not None)==(args.phase==profile['cohort_phase'])
+    run,recipe,driver,builder,adapter,new,leaf,owners,git=_load_context(args,started,profile);run.git=git
+    legacy_adapter=adapter if profile is _LEGACY else driver.load('sdk_legacy_owner',HERE/'owner.py')
     try:
         build=accept_inputs(run,recipe,driver)
         if args.phase=='sdk-build': build_sdk(run,recipe,driver,builder,build)
         else:
-            sdk=accept_sdk_build(run,recipe,driver,adapter,build)
+            sdk=accept_sdk_build(run,recipe,driver,legacy_adapter,build)
             if args.phase=='sdk-controls': sdk_controls(run,recipe,driver,leaf,owners,build,sdk)
             else:
-                accept_controls(run,recipe,driver,adapter,leaf,owners,build,sdk)
-                geometry=accept_geometry(run,recipe,driver,new,build)
-                if args.phase=='sdk-cohort': execute_cohort(run,recipe,driver,prepare_cohort(run,recipe,driver,builder,build,sdk,geometry))
-                else: collect(run,recipe,driver,adapter,build,sdk,geometry)
+                accept_controls(run,recipe,driver,legacy_adapter,leaf,owners,build,sdk)
+                geometry=_accept_geometry(run,recipe,driver,new,build,profile)
+                if args.phase==profile['cohort_phase']: _execute_cohort(run,recipe,driver,_prepare_cohort(run,recipe,driver,builder,build,sdk,geometry,profile),profile)
+                else: _collect(run,recipe,driver,adapter,build,sdk,geometry,profile)
         run.unchanged();run.freeze(run.raw/'sources-after.json',run.sources,16*MIB)
     except BaseException as error:
         run.result.update(status='FAILED',error=type(error).__name__+': '+str(error))
@@ -596,9 +727,10 @@ def main():
             assert run.safe and not run.budget.exceeded and run.budget.used<=recipe.EVIDENCE_LIMIT-recipe.FINAL_ALLOWANCE
             run.unchanged();run.result['retention_verified']=True
         except BaseException as error: run.result.update(status='FAILED',final_error=type(error).__name__+': '+str(error))
+        _evidence(run.result,profile)
         recipe.save(run.raw/'result.json',run.result,32*MIB)
-        print(json.dumps(projection(run.result),sort_keys=True))
-    return 0 if run.result['status']==STATUS[args.phase] and time.monotonic()<run.deadline else 1
+        print(json.dumps(_projection(run.result,profile),sort_keys=True))
+    return 0 if run.result['status']==_status(profile,args.phase) and time.monotonic()<run.deadline else 1
 
 
 if __name__=='__main__':

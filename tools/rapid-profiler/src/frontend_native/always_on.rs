@@ -85,6 +85,9 @@ enum BindingProfile {
     LeafSet {
         site: Arc<site::ordinary::LeafSetSite>,
         functions: normal::leaf_set::LeafFunctions,
+        // None is the unchanged legacy leaf-set profile. Some is explicitly
+        // constructed accuracy policy, authenticated with the fixed Config.
+        accuracy: Option<super::backoff::Policy>,
     },
 }
 impl BindingProfile {

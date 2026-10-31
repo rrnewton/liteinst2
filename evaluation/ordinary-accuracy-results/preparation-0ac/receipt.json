@@ -1,0 +1,196 @@
+{
+  "schema": "accuracy-release-preparation-failure-v1",
+  "revision": "0ac5765ee6b3df5ba74c84b06737959dafa29ade",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "status": "FAILED",
+  "reservation": {
+    "tag": "li2core-accuracy-sdk-v1",
+    "cpus": [
+      110,
+      178,
+      227
+    ]
+  },
+  "phases": [
+    {
+      "phase": "products",
+      "status": "BUILD_AND_ELF_CAPTURE_PASS",
+      "exit_code": 0,
+      "start_utc": "2026-10-30T21:12:57.085990+00:00",
+      "seconds": 104.78938687080517,
+      "load_before": [
+        44.64,
+        59.34,
+        76.9
+      ],
+      "load_after": [
+        57.66,
+        59.36,
+        75.01
+      ],
+      "command": [
+        "/usr/bin/python3.9",
+        "-B",
+        "evaluation/ordinary-selected-session/owner.py",
+        "--phase",
+        "products",
+        "--revision",
+        "0ac5765ee6b3df5ba74c84b06737959dafa29ade",
+        "--reservation-tag",
+        "li2core-accuracy-sdk-v1",
+        "--owner",
+        "${RUN}/products-owner.json",
+        "--raw",
+        "${RUN}/accuracy-sdk-v1-products",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--hardware",
+        "AMD EPYC Zen 5 dev host"
+      ],
+      "owner_sha256": "b56eb20ca1ace16c1ee44fd28d7f415533d7fe5d246dec498022e5c5c0169286",
+      "result_sha256": "b5cab70d5ada882ff078c00ba5c611a2fff56ebd4fdde023f3707658a2a89a23",
+      "log_sha256": "39e7bb861fbe529e99991a0e371c3961be4dfc0d57b2646f3efe67edd32296b8"
+    },
+    {
+      "phase": "tests",
+      "status": "RELEASE_TEST_BUILD_PASS",
+      "exit_code": 0,
+      "start_utc": "2026-10-30T21:15:11.621006+00:00",
+      "seconds": 89.05824279901572,
+      "load_before": [
+        53.17,
+        58.1,
+        74.09
+      ],
+      "load_after": [
+        50.09,
+        56.17,
+        71.96
+      ],
+      "command": [
+        "/usr/bin/python3.9",
+        "-B",
+        "evaluation/ordinary-selected-session/owner.py",
+        "--phase",
+        "tests",
+        "--revision",
+        "0ac5765ee6b3df5ba74c84b06737959dafa29ade",
+        "--reservation-tag",
+        "li2core-accuracy-sdk-v1",
+        "--owner",
+        "${RUN}/tests-owner.json",
+        "--raw",
+        "${RUN}/accuracy-sdk-v1-tests",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--hardware",
+        "AMD EPYC Zen 5 dev host",
+        "--build",
+        "${RUN}/accuracy-sdk-v1-products/result.json",
+        "--build-sha",
+        "b5cab70d5ada882ff078c00ba5c611a2fff56ebd4fdde023f3707658a2a89a23",
+        "--build-owner",
+        "${RUN}/products-owner.json",
+        "--build-owner-sha",
+        "b56eb20ca1ace16c1ee44fd28d7f415533d7fe5d246dec498022e5c5c0169286"
+      ],
+      "owner_sha256": "5a3a90a78b7029b4fc73472296850c87e4907ca0392fed455d12d3951d3e5b78",
+      "result_sha256": "c92a56eddfe1cfcc7adc41faba82e22a931b38080ba7169053e2f00772a20b60",
+      "log_sha256": "21d19a4853c24fa689d46bba9634867f0af2944cf24e680a9ec91336fd924312"
+    },
+    {
+      "phase": "controls",
+      "status": "FAILED",
+      "exit_code": 1,
+      "start_utc": "2026-10-30T21:17:08.293537+00:00",
+      "seconds": 43.23045852105133,
+      "load_before": [
+        48.95,
+        55.29,
+        71.16
+      ],
+      "load_after": [
+        57.95,
+        57.01,
+        71.08
+      ],
+      "command": [
+        "/usr/bin/python3.9",
+        "-B",
+        "evaluation/ordinary-selected-session/owner.py",
+        "--phase",
+        "controls",
+        "--revision",
+        "0ac5765ee6b3df5ba74c84b06737959dafa29ade",
+        "--reservation-tag",
+        "li2core-accuracy-sdk-v1",
+        "--owner",
+        "${RUN}/controls-owner.json",
+        "--raw",
+        "${RUN}/accuracy-sdk-v1-controls",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--hardware",
+        "AMD EPYC Zen 5 dev host",
+        "--build",
+        "${RUN}/accuracy-sdk-v1-products/result.json",
+        "--build-sha",
+        "b5cab70d5ada882ff078c00ba5c611a2fff56ebd4fdde023f3707658a2a89a23",
+        "--build-owner",
+        "${RUN}/products-owner.json",
+        "--build-owner-sha",
+        "b56eb20ca1ace16c1ee44fd28d7f415533d7fe5d246dec498022e5c5c0169286",
+        "--test-product",
+        "${RUN}/accuracy-sdk-v1-tests/result.json",
+        "--test-product-sha",
+        "c92a56eddfe1cfcc7adc41faba82e22a931b38080ba7169053e2f00772a20b60",
+        "--test-owner",
+        "${RUN}/tests-owner.json",
+        "--test-owner-sha",
+        "5a3a90a78b7029b4fc73472296850c87e4907ca0392fed455d12d3951d3e5b78",
+        "--profile",
+        "selected-session-whole-functional-v1"
+      ],
+      "owner_sha256": "d744cc9315e972108dea6e3e3e3697470eb8fcbe6ce97ff0eaa05c6c46d26aa1",
+      "result_sha256": "0d52667d775fd2dd3da74a9b23d6cc810a910e7bb183ce144d4267667fe715c9",
+      "log_sha256": "2e525bd22adc63436d08f57233a86aeeb91958d85937c46e8be385da33b0906c"
+    }
+  ],
+  "failure": {
+    "stage": "controls-rust-list",
+    "reason": "Legacy exact leaf-set roster refuses nine new leaf-set accuracy tests. Two new IO accuracy tests also need mandatory selected release coverage.",
+    "raw_error": "AssertionError: ",
+    "repair_required": "Keep all original92 required Rust tests and require all11 new ordinary accuracy tests in the selected release roster; no test filtering or weakened equality."
+  },
+  "native": {
+    "status": "UNRUN",
+    "prospective_pairs": 192,
+    "attempted_pairs": 0
+  },
+  "sdk_preparation": "UNRUN",
+  "closure": {
+    "cleanup_complete": true,
+    "rescued_descendants": 0,
+    "source_unchanged": true,
+    "retention_verified": true,
+    "custody_closed": true
+  },
+  "reproduce": "evaluation/ordinary-selected-session/BUILD.md; execute the recorded first three phases at this exact revision with one three-CPU reservation and fresh output paths. Preserve this expected failure.",
+  "qualification": {
+    "performance": false,
+    "pmu_metric": false,
+    "cadence": false
+  }
+}

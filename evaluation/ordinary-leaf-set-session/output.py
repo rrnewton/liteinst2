@@ -146,13 +146,26 @@ def check(stdout, stderr, *, records, table, caller, k, epochs, outcome, input_e
 
 
 def _check(stdout, stderr, *, records, table, caller, k, epochs, outcome, input_error, cpus,
-           operations, version, semantic_rows, command, status):
+           operations, version, semantic_rows, command, status, accuracy_policy=None):
     # Private semantic seam. The old public wrapper passes its original exact
     # vocabulary and derives every value as before; wire/ownership logic is shared.
     _geometry(table, caller, cpus, operations)
     n = len(table)
     limit = min(2048, 4096 // n)
-    integer(k); assert k in (10, 1000)
+    if accuracy_policy is None:
+        integer(k); assert k in (10, 1000)
+        period_ms = 10
+    else:
+        # Explicit additive wire only. Old wrappers cannot select this branch.
+        assert type(accuracy_policy) is dict and set(accuracy_policy) == {'k', 'period_ms', 'epochs'}
+        assert (version, command, operations) == (
+            'selected-accuracy-session-v1', 'normal-selected-accuracy-session',
+            ('exact_work_nonempty',))
+        assert n == 1 and semantic_rows is not None and len(records) == 2048
+        integer(k); assert k in (1, 10, 100, 1000)
+        period_ms = accuracy_policy['period_ms']
+        integer(period_ms); assert period_ms in (1, 10, 100)
+        assert accuracy_policy == dict(k=k, period_ms=period_ms, epochs=epochs)
     integer(epochs, 1, 520)
     assert type(records) is tuple and len(records) <= limit
     expected = tuple(truths(payload) for payload in records)
@@ -202,7 +215,7 @@ def _check(stdout, stderr, *, records, table, caller, k, epochs, outcome, input_
     assert ordered[0][0] == 'READY'
     assert all(len(parsed[tag]) == 1 for tag in ('READY', 'IO', 'DONE'))
     ready = parsed['READY'][0]
-    fixed = dict(k=k, epochs=epochs, period_ms=10, lateness_ms=2, payload_cap=64,
+    fixed = dict(k=k, epochs=epochs, period_ms=period_ms, lateness_ms=2, payload_cap=64,
                  record_cap=limit, batch_call_cap=n, registration=1, install=INSTALL,
                  controller_cpu=cpus[0], worker_cpu=cpus[1], n=n, code_generation=1)
     assert all(ready[key] == value for key, value in fixed.items())

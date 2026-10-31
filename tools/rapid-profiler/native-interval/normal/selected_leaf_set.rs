@@ -9,6 +9,7 @@ use rapid_profiler::frontend_native::{
     NormalModuleContract, NormalModulePreparationPolicy, NormalModuleRoleKind,
     PreparedNormalLeafSetSessionController,
 };
+mod accuracy;
 mod check;
 use check::{INSTALL, identity};
 const CONTRACT: NormalModuleContract = NormalModuleContract {
@@ -135,6 +136,7 @@ fn child(
     subject: &Path,
     selections: &[&TrustedFunctionSelection<'_>],
     artifact: &Artifact,
+    accuracy: bool,
 ) -> i32 {
     current_single_main();
     let deadline = context.deadline();
@@ -280,12 +282,22 @@ fn child(
             }
         }
         let site = publish(prep);
-        let mut prepared = PreparedNormalLeafSetSessionController::new(
-            site,
-            INSTALL,
-            &check::functions(&ready),
-            case.k(),
-        )
+        let mut prepared = if accuracy {
+            PreparedNormalLeafSetSessionController::new_accuracy(
+                site,
+                INSTALL,
+                &check::functions(&ready),
+                rapid_profiler::frontend_native::backoff::Policy::accuracy(case.k(), 10, 1, 4096)
+                    .unwrap(),
+            )
+        } else {
+            PreparedNormalLeafSetSessionController::new(
+                site,
+                INSTALL,
+                &check::functions(&ready),
+                case.k(),
+            )
+        }
         .unwrap();
         let mut banks = prepared.prepare_epoch_storage().unwrap();
         check::banks(banks.len(), true);
@@ -306,6 +318,7 @@ fn child(
             .unwrap()
             .expect("LeafSet Published transfer");
         check::stream(&ready, std::process::id(), &stream(published.stream()));
+        assert_eq!(published.stream().accuracy_policy().is_some(), accuracy);
         check::chunk(epoch.generation(), true, &chunk(&published));
         assert_eq!(
             published.binding_at(0),
@@ -317,7 +330,7 @@ fn child(
         let stack = unsafe { ReadableStack::new(low, high) }.unwrap();
         let journal = IntervalJournal::allocate();
         let address = journal.address();
-        let attached = unsafe { client.attach(1, stack, journal) }.unwrap();
+        let attached = unsafe { accuracy::Attachment::attach(&client, stack, journal, accuracy) };
         assert_eq!(attached.totals().unwrap(), NormalTotals::default());
         ready.journal = Some(JournalReady {
             address,
@@ -363,9 +376,9 @@ fn child(
         assert_eq!(attached.totals().unwrap(), check::totals(0));
         // SAFETY: actual target/outer returns and complete source/input/result/
         // immutable/stack custody postflight precede this caller checkpoint.
-        let batch = unsafe { attached.checkpoint_after_returns() }
-            .unwrap()
-            .unwrap();
+        let retained = unsafe { attached.checkpoint_after_returns() }.unwrap();
+        retained.check(accuracy);
+        let batch = retained.normal();
         check::metadata(
             &ready,
             std::process::id(),
@@ -394,12 +407,10 @@ fn child(
             batch.journal(),
         );
         assert_eq!(attached.totals().unwrap(), check::totals(1));
-        assert!(
-            unsafe { attached.checkpoint_after_returns() }
-                .unwrap()
-                .is_none()
-        );
-        assert_eq!(attached.detach().unwrap(), check::totals(1));
+        assert!(unsafe { attached.checkpoint_after_returns() }.is_none());
+        let (totals, counter_close) = attached.detach();
+        assert_eq!(totals, check::totals(1));
+        assert_eq!(counter_close.is_some(), accuracy);
         controller.disarm(&epoch).unwrap();
         let removed = controller
             .drain_history()
@@ -438,7 +449,14 @@ fn child(
         check::banks(banks.len(), true);
         closed_history(&controller, &ready, &removed);
         drop((
-            batch, attached, client, controller, banks, published, removed,
+            retained,
+            counter_close,
+            attached,
+            client,
+            controller,
+            banks,
+            published,
+            removed,
         ));
     }
     current_single_main();
@@ -483,6 +501,51 @@ pub(crate) fn run(
     case: Case,
     deadline: Deadline,
 ) {
+    run_profile(
+        subject,
+        expected,
+        app,
+        app_expected,
+        output,
+        case,
+        deadline,
+        false,
+    );
+}
+
+/// Same full architectural-state comparator, with the opt-in PMU callback path.
+pub(crate) fn run_accuracy(
+    subject: &Path,
+    expected: &Path,
+    app: &Path,
+    app_expected: &Path,
+    output: &Path,
+    case: Case,
+    deadline: Deadline,
+) {
+    run_profile(
+        subject,
+        expected,
+        app,
+        app_expected,
+        output,
+        case,
+        deadline,
+        true,
+    );
+}
+
+#[allow(clippy::too_many_arguments)] // Explicit profile switch; all input owners stay distinct.
+fn run_profile(
+    subject: &Path,
+    expected: &Path,
+    app: &Path,
+    app_expected: &Path,
+    output: &Path,
+    case: Case,
+    deadline: Deadline,
+    accuracy: bool,
+) {
     deadline.check();
     current_single_main();
     let _ = case.form();
@@ -516,7 +579,7 @@ pub(crate) fn run(
             eprintln!("Selected compiled LeafSet child FAILED: {info}");
             std::process::abort();
         }));
-        child(candidate, context, subject, &selected, &artifact)
+        child(candidate, context, subject, &selected, &artifact, accuracy)
     });
     artifact.verify().unwrap();
     assert_eq!(trusted(subject, expected), elf);
@@ -526,13 +589,28 @@ pub(crate) fn run(
     );
     deadline.check();
     current_single_main();
-    let row = leaf::pair_row(case, artifact.plan(), &pair, &trace);
+    let mut row = leaf::pair_row(case, artifact.plan(), &pair, &trace);
+    if accuracy {
+        row = row.replacen(
+            "selected-leaf-set-copied-state-v1,",
+            "selected-leaf-set-accuracy-state-v1,",
+            1,
+        );
+        assert!(row.starts_with("selected-leaf-set-accuracy-state-v1,"));
+    }
     std::fs::write(
         output.join("selected-leaf-set-pair.csv"),
         leaf::HEADER.to_owned() + &row,
     )
     .unwrap();
-    let terminal = leaf::terminal(case, pair.comparisons);
+    let mut terminal = leaf::terminal(case, pair.comparisons);
+    if accuracy {
+        terminal = terminal.replace(
+            "selected-leaf-set-copied-state-v1",
+            "selected-leaf-set-accuracy-state-v1",
+        );
+        assert!(terminal.contains("selected-leaf-set-accuracy-state-v1"));
+    }
     let mut out = std::io::stdout().lock();
     out.write_all(terminal.as_bytes()).unwrap();
     out.flush().unwrap();
