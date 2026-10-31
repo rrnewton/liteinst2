@@ -911,7 +911,9 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_LINKED_EPOCH
 #include "linked_controller.inc"
 #ifdef LI2_PERSISTENT_EPOCH
-#ifdef LI2_PERSISTENT_DYNAMIC
+#if defined(LI2_PERSISTENT_GROUP)
+#include "persistent_group_controller.inc"
+#elif defined(LI2_PERSISTENT_DYNAMIC)
 #include "persistent_dynamic_controller.inc"
 #else
 #include "persistent_controller.inc"

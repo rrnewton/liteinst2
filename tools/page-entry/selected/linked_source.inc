@@ -19,7 +19,9 @@ int li2_lifecycle_link_initialize(void) {
     linked_registered=1;return 0;
 }
 int li2_lifecycle_link_interlock(void) {
-#ifdef LI2_PERSISTENT_EPOCH
+#if defined(LI2_PERSISTENT_GROUP)
+    if(li2_pg_source_interlock())return 1;
+#elif defined(LI2_PERSISTENT_EPOCH)
     if(li2_pe_source_interlock())return 1;
 #endif
 #ifdef LI2_LINKED_PREEDGE
