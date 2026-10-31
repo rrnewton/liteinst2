@@ -1,0 +1,1319 @@
+{
+ "actions": [
+  {
+   "attempts": 1,
+   "charged_rounded_bytes": 15638528,
+   "exit_code": 0,
+   "facts": {
+    "bytes": 12186,
+    "sha256": "079ec8f5258d77b08e9fc925d07aa478c198104b372c0b684b6eb986c9b37ab2"
+   },
+   "load_after": [
+    53.51,
+    51.3,
+    54.46
+   ],
+   "load_before": [
+    43.39,
+    50.17,
+    54.48
+   ],
+   "name": "products",
+   "outcome": "PASS",
+   "owner": {
+    "bytes": 3118,
+    "sha256": "7d2525c57e5ac01a696fb2a85ecab9493ef7dd7b89568e5bddc588849ea6bd34"
+   },
+   "owner_log": {
+    "bytes": 590,
+    "sha256": "ca61c590b05ec6edda4af4ff7309585a365876c31b09c875b6c4952760268a5f"
+   },
+   "result": {
+    "bytes": 406433,
+    "sha256": "d06cbd8b184dffc1252b4871bb69a4e829c7d5117ee938879f803b1dca99453f"
+   },
+   "review": {
+    "bytes": 774,
+    "sha256": "a586fbcd0e3f090fbfd37375dfc745520efe7cbe1cc8e88e64452bf0c9531802"
+   },
+   "seconds": 86.73940254584886,
+   "start_utc": "2026-10-31T17:13:26.848005+00:00"
+  },
+  {
+   "attempts": 1,
+   "charged_rounded_bytes": 10514432,
+   "exit_code": 0,
+   "facts": {
+    "bytes": 6326,
+    "sha256": "0256e8a288c424c258cfbd4a6120ddef8c8788699222ad9760b889357e15e0e4"
+   },
+   "load_after": [
+    71.22,
+    60.73,
+    57.47
+   ],
+   "load_before": [
+    66.57,
+    56.51,
+    55.91
+   ],
+   "name": "tests",
+   "outcome": "PASS",
+   "owner": {
+    "bytes": 4133,
+    "sha256": "69c07109c22f7b2adf23cae467aa439b46539b471db897067fcd2b98c35f9d92"
+   },
+   "owner_log": {
+    "bytes": 5220,
+    "sha256": "f699356d2e0c3a32b2f1742a2bd23e28708712d4cfdb381bd2a19f67c43898af"
+   },
+   "result": {
+    "bytes": 5036,
+    "sha256": "d5da8e58290fea648de314622901585fa39079e55436d66c4e20647aef5859f0"
+   },
+   "review": {
+    "bytes": 903,
+    "sha256": "96e93c342b098c5ce96b043a5e845e4126555e5d1902de4e9c87594e4bb8a347"
+   },
+   "seconds": 97.39433361613192,
+   "start_utc": "2026-10-31T17:17:06.328847+00:00"
+  },
+  {
+   "attempts": 1,
+   "charged_rounded_bytes": 1875968,
+   "exit_code": 0,
+   "facts": {
+    "bytes": 9753,
+    "sha256": "53d3828600f0f389a738c01f24ec3bd2e0daf4c2106140bfdf953ae57428c5d8"
+   },
+   "load_after": [
+    56.81,
+    58.18,
+    56.96
+   ],
+   "load_before": [
+    56.56,
+    58.62,
+    57.02
+   ],
+   "name": "controls",
+   "outcome": "PASS",
+   "owner": {
+    "bytes": 5276,
+    "sha256": "2e799bcf06eeaf13d4029458771ddf8c27831e341bb41e4679bbb4d7957655c8"
+   },
+   "owner_log": {
+    "bytes": 1822,
+    "sha256": "f6a0fbe746364b7b972a2db25db9e9781b37ca13b073a9ac8f27868cf27b4876"
+   },
+   "result": {
+    "bytes": 257941,
+    "sha256": "12e43e376aaae01589b9e330067ee010cb25fbd3dd8eb8f1a08c4db4441b6f29"
+   },
+   "review": {
+    "bytes": 1173,
+    "sha256": "7c9b66dfc0b2012bf94bce4e781079a9ff09d51b8ac7a19a9ef55d6f9a7d6710"
+   },
+   "seconds": 61.10975466389209,
+   "start_utc": "2026-10-31T17:20:14.605746+00:00"
+  },
+  {
+   "attempts": 1,
+   "charged_rounded_bytes": 1843200,
+   "exit_code": 0,
+   "facts": {
+    "bytes": 11805,
+    "sha256": "3aa6b9c221b78362ca7b50096426c49c63798cf7481f2dc2f59690e841811932"
+   },
+   "load_after": [
+    79.63,
+    66.93,
+    60.47
+   ],
+   "load_before": [
+    70.73,
+    62.71,
+    58.72
+   ],
+   "name": "short-prepare",
+   "outcome": "PASS",
+   "owner": {
+    "bytes": 5884,
+    "sha256": "f463a3e1873aac1f32855ae5a842ff9ef7dac685eb3017f4ea97ab4b83fd38d8"
+   },
+   "owner_log": {
+    "bytes": 907,
+    "sha256": "9eafb915eb45e93761d5a9f2a9aba34cb5c55f0aa3afca81fcaa3a40757cc1f3"
+   },
+   "result": {
+    "bytes": 90867,
+    "sha256": "8258cff26267456d31c0ebba2c3540be375c6716f01c9c33e8eb2f32ed862387"
+   },
+   "review": {
+    "bytes": 1269,
+    "sha256": "b32ada98a36523955dd4b8ef85655d9a6efa25ee3e85c2f65a50c3fb7b913c89"
+   },
+   "seconds": 70.64168033283204,
+   "start_utc": "2026-10-31T17:22:59.900790+00:00"
+  },
+  {
+   "attempts": 1,
+   "charged_rounded_bytes": 2240512,
+   "exit_code": 0,
+   "facts": {
+    "bytes": 12042,
+    "sha256": "8c858553f276455b30c2a5c506ed77a049e78c411e4de7a4a1b2e36a536afb32"
+   },
+   "load_after": [
+    69.57,
+    70.68,
+    63.25
+   ],
+   "load_before": [
+    82.19,
+    71.82,
+    62.97
+   ],
+   "name": "long-prepare",
+   "outcome": "PASS",
+   "owner": {
+    "bytes": 5895,
+    "sha256": "daa3dbab278ce4bf451a8b9c8163edf70d9f671bc5e45b2fe978463a063c793d"
+   },
+   "owner_log": {
+    "bytes": 921,
+    "sha256": "8f5793b37fdd6d6c8bfb1d7b6228ffcc8b069cf704a55a6ce877c5fdf4e754dc"
+   },
+   "result": {
+    "bytes": 90853,
+    "sha256": "45a455e3c386e410a37cfca7dafee4b46d22d61669236fa39e26bcd16181655b"
+   },
+   "review": {
+    "bytes": 1269,
+    "sha256": "1e2ac8658f0cc71b0d22f3276486e334646632244e839cd962b6be4c6c9cd57f"
+   },
+   "seconds": 70.15921298600733,
+   "start_utc": "2026-10-31T17:26:04.471561+00:00"
+  },
+  {
+   "attempts": 1,
+   "charged_rounded_bytes": 2957312,
+   "exit_code": 1,
+   "facts": {
+    "bytes": 17248,
+    "sha256": "8b457fd4442da220c50809d76942317121c52a5025c612d273b907c5effcafe2"
+   },
+   "load_after": [
+    59.41,
+    54.32,
+    57.07
+   ],
+   "load_before": [
+    47.73,
+    51.99,
+    56.51
+   ],
+   "name": "short-functional",
+   "outcome": "AUTHENTICATED_FAILED_ONCE",
+   "owner": {
+    "bytes": 7516,
+    "sha256": "0d4b727d02e3852746af781ae30ee0c47690205a368a7561ff82f2d66a2e3331"
+   },
+   "owner_log": {
+    "bytes": 890,
+    "sha256": "122814a956e0e7e7c27f688c4cc7fb7e810c143baac107d3d2f0faf2f50d43b9"
+   },
+   "result": {
+    "bytes": 92170,
+    "sha256": "150ae70f29b4f4fa88ebb6c2a4b1b33319c7901c57fff9b14c0ae6209169e9ea"
+   },
+   "review": {
+    "bytes": 1452,
+    "sha256": "24c26398aec7abda4d0f2f71fbb97630eb459c1b73abdd8ac1ca141c0e8d46bb"
+   },
+   "seconds": 45.77034003310837,
+   "start_utc": "2026-10-31T17:33:28.810229+00:00"
+  },
+  {
+   "attempts": 1,
+   "charged_rounded_bytes": 12185600,
+   "exit_code": 0,
+   "facts": {
+    "bytes": 11953,
+    "sha256": "fd12b21f7d40fcef84c107ed433eb2167ffc0db71c6a8e2ee99539dc039f01e0"
+   },
+   "load_after": [
+    51.72,
+    55.17,
+    57.15
+   ],
+   "load_before": [
+    56.2,
+    56.36,
+    57.61
+   ],
+   "name": "long-functional",
+   "outcome": "PASS_STRUCTURAL_ONLY",
+   "owner": {
+    "bytes": 7521,
+    "sha256": "d2fbefa96b41501725fe2b080a590b8da3f05419c583f6758f73ef688dbb867b"
+   },
+   "owner_log": {
+    "bytes": 933,
+    "sha256": "b03c80d33c91473c582b3b011242ff385a447e226359637035df2faeb1bf64d5"
+   },
+   "result": {
+    "bytes": 94034,
+    "sha256": "32c6eed0388ca8b53c992ca925b5f5e9259212240231b2aac0231a27a0a81e5b"
+   },
+   "review": {
+    "bytes": 1510,
+    "sha256": "e8eb3ddd633f116f75f3c043fa686a9d7eceeb1f579cd54b144d1deb67627e43"
+   },
+   "seconds": 45.702552251983434,
+   "start_utc": "2026-10-31T17:36:00.303517+00:00"
+  }
+ ],
+ "aggregate": "FAILED_SHORT_INCOMPLETE_POPULATION_PRESERVED",
+ "bounds": {
+  "arm_deadline_ns": 2000000,
+  "controls_prepare_cpu_seconds": 20,
+  "controls_prepare_stream_bytes": 1048576,
+  "controls_prepare_wall_seconds": 30,
+  "coordinate_preparation_each_cpu_seconds": 20,
+  "coordinate_preparation_each_stream_bytes": 1048576,
+  "coordinate_preparation_each_wall_seconds": 30,
+  "coordinate_preparation_stages": 5,
+  "elf_cpu_seconds": 20,
+  "elf_stream_bytes": 4194304,
+  "elf_wall_seconds": 30,
+  "evidence_final_allowance_bytes": 67108864,
+  "evidence_limit_per_existing_run_bytes": 2147483648,
+  "failure_retention_envelope": 13874,
+  "functional_cpu_seconds": 20,
+  "functional_generated_reservation_bytes": 90185728,
+  "functional_stream_bytes": 8388608,
+  "functional_wall_seconds": 30,
+  "helper_owner_seconds": 55,
+  "line_bytes": 350,
+  "offending_overflow_bytes": 8192,
+  "outer_log_bytes": 8388608,
+  "outer_wall_seconds": 1200,
+  "producer_absolute_seconds": 15,
+  "release_build_cpu_seconds": 120,
+  "release_build_stream_bytes": 134217728,
+  "release_build_wall_seconds": 180,
+  "success_row_cap": 13873,
+  "tests_driver_wall_seconds": 600
+ },
+ "capacity_after_release": {
+  "ceiling_bytes": 20000000000,
+  "headroom_bytes": 3550320640,
+  "load": [
+   60.56,
+   62.99,
+   60.44
+  ],
+  "policy": "One target; debug0/nonincremental. Lossless verified archive/compression of closed history before fixed reserve is consumed. No manual target removal.",
+  "receipt": {
+   "bytes": 596,
+   "sha256": "0217c6710e203bbcf29d1c642e7142cdeb5c8fcea0def7cf1895d23049fc9518"
+  },
+  "sizes": {
+   "ignored": {
+    "allocated": 14867779584,
+    "apparent": 14163024737
+   },
+   "slot": {
+    "allocated": 16449679360,
+    "apparent": 15723434755
+   },
+   "target": {
+    "allocated": 1395593216,
+    "apparent": 1389680408
+   }
+  },
+  "utc": "2026-10-31T17:40:25.386754+00:00"
+ },
+ "catalog": {
+  "attempted_once": 2,
+  "cells": 43200,
+  "failed": 1,
+  "qualified_cells": 0,
+  "structural_only": 1,
+  "unattempted": 43198
+ },
+ "closure": {
+  "all_actions_attempts": 1,
+  "all_cleanup_complete": true,
+  "all_owners_normal": true,
+  "all_rescues": 0,
+  "all_sources_unchanged": true,
+  "original_allocator_and_shell_absent": true,
+  "parent_attempts": 1,
+  "parent_exit": 0,
+  "release": {
+   "bytes": 965,
+   "sha256": "cc582ddd77f99c106b22adeb1fa2285792805b4063eaaee7c5f685c76559d3d5"
+  },
+  "release_utc": "2026-10-31T17:39:15.212352+00:00",
+  "reservation_tag_absent": true,
+  "scope_absent": true,
+  "shared_ledger_still_exists": true
+ },
+ "diagnostics": {
+  "cell": "short",
+  "completed_custody_passes": 4027,
+  "controller": {
+   "completed": 522408,
+   "current": 1,
+   "decisions": {
+    "arm": 520,
+    "other": 0,
+    "refused": 0,
+    "stop": 1,
+    "wait": 521888
+   },
+   "replies": {
+    "batch": 1342,
+    "finished": 1,
+    "flushed": 0,
+    "other": 0
+   },
+   "reply_calls": 1342,
+   "started": 522409,
+   "status": "OBSERVED",
+   "tail": {
+    "max_ns": 1303998,
+    "min_ns": 1303998,
+    "spans": 1,
+    "sum_ns": 1303998,
+    "valid": true
+   },
+   "unfinished_from": "dispatch",
+   "zero_progress_completed": 519229
+  },
+  "independently_derived_parent_spans": {
+   "after_custody": 1342,
+   "before_custody": 1342,
+   "checkpoint_custody": 1343
+  },
+  "nested_custody_ns": 507987547,
+  "nested_percent_worker_wall": "96.8691131323",
+  "outer_custody_ns": 508386678,
+  "parent_buckets": {
+   "after_custody": {
+    "max_ns": 206029,
+    "min_ns": 115754,
+    "spans": 1342,
+    "sum_ns": 168702357,
+    "valid": true
+   },
+   "before_custody": {
+    "max_ns": 210005,
+    "min_ns": 117777,
+    "spans": 1342,
+    "sum_ns": 170932834,
+    "valid": true
+   },
+   "checkpoint_custody": {
+    "max_ns": 203295,
+    "min_ns": 116074,
+    "spans": 1343,
+    "sum_ns": 168352356,
+    "valid": true
+   }
+  },
+  "raw_tables": "phases.csv has all11 worker buckets and10 nested custody stages; each share uses its own explicit partition.",
+  "scope": "Completed wall spans include observer/scheduler overhead. Nested stages partition custody, already inside worker parents: never add them to worker time. Controller wall overlaps worker wall. Counts are spans; n/n/(n+1) is independently justified only for this complete N=1 retirement boundary. No pure I/O/CPU cost, causal speedup, throughput sufficiency or accuracy inference. Successful long emits no diagnostic suffix; no long timings invented.",
+  "started_custody_passes": 4027,
+  "status": "OBSERVED_VALID",
+  "worker_partition_ns": 524406109
+ },
+ "geometry": {
+  "binding": {
+   "bytes": 8721,
+   "sha256": "afd9d2068701369eff8c655561d228c4ad4d0391a7c0a06565e3403ef7ea2fe2"
+  },
+  "boot_before": {
+   "bytes": 4012,
+   "sha256": "5cd6f3c4982a654b014845b0d53e284ea3ff45d6202f157cb5e72ebfe2f68e25"
+  },
+  "boot_recheck": {
+   "bytes": 4019,
+   "sha256": "27b4210a3d267d54208c825b085e853eb85f94cab3d6c19566b1c3b5317cff68"
+  },
+  "clock": {
+   "bytes": 545,
+   "sha256": "f6a45a1f725b9539326abc2a3c30f1bc03496610e1ea217e9d783786169b8d5a"
+  },
+  "clock_renewed": false,
+  "clock_seconds": 1200,
+  "kind": "selected-accuracy-coordinate-functional-geometry-acceptance-v1",
+  "metadata_correction": {
+   "corrected": {
+    "bytes": 8721,
+    "sha256": "afd9d2068701369eff8c655561d228c4ad4d0391a7c0a06565e3403ef7ea2fe2"
+   },
+   "meaning": "Before admission/native, missing old-schema scope/closure UTC+monotonic/clock-authority keys were added. Original bytes, both acceptance decisions and original deadline retained; native auditors unchanged.",
+   "original": {
+    "bytes": 5132,
+    "sha256": "2908ec36875a617310592037beb5f52b741d17415d3db31e227466eb11066354"
+   }
+  },
+  "native_attempts_at_acceptance": {
+   "long": 0,
+   "short": 0
+  },
+  "nine_premises": [
+   "complete_symbol_extent",
+   "complete_cfg_and_return",
+   "complete_elf_and_source_page",
+   "complete_ordinary_rust_caller",
+   "immutable_path_and_object_lifetime",
+   "scalar_sysv_abi_and_readable_inputs",
+   "termination_no_hidden_calls_or_exits",
+   "sole_worker_no_reentry_or_concurrency",
+   "cet_and_signal_preconditions"
+  ],
+  "runtime_guards": "Fresh exact files/pages/CFG/caller and all nine continuing owner/ABI/sole-worker/CET/signal premises; root live boot/lease/source rechecked before each native entry.",
+  "scope": "selected-accuracy-coordinate-functional-v1"
+ },
+ "hardware": {
+  "label": "AMD EPYC Zen 5 dev host",
+  "load_semantics": "Recorded host load averages (1/5/15 minutes), not a per-process CPU-time or idle-capacity measurement.",
+  "reservation": "One externally verified HARD three-CPU parent for all seven sequential actions.",
+  "reserved_cpus": [
+   1,
+   50,
+   53
+  ],
+  "roles": {
+   "controller": 1,
+   "producer": 53,
+   "worker": 50
+  }
+ },
+ "history": {
+  "failed_campaigns_retained": [
+   "coordinate-97ab",
+   "coordinate-6d8",
+   "coordinate-fd0766",
+   "coordinate-b077",
+   "coordinate-7e205",
+   "coordinate-f57bf"
+  ],
+  "failed_validation_retained": "789f8 FAILED_CLIPPY before the unchanged-bound lint repair and bcbb gate.",
+  "other_history": "Earlier strict-clock/prepared failures and superseded zero-attempt plans remain retained; no previous outcome is rewritten."
+ },
+ "limits": [
+  "Exactly two once-only cells out of43200; all qualifications false or UNRESOLVED.",
+  "CALLTIME encloses the instrumented caller including CALL/store/RET; it is not an exact leaf-entry/RET timestamp. No transform joins its Instant origin to producer, TSC or PMU clocks.",
+  "Short five at/after-end pre-samples are retained accepted-queue drainage, not a widened520ms input window.",
+  "Both native runs obey unchanged2ms ARM,2048 population and original ends/fences/resources. Long followed only the fixed safely closed short-failure rule; aggregate remains FAILED.",
+  "Raw logs and machine-specific path/identity records remain private under exact hashes. Parent release is custody closure only. No new runtime, benchmark or gate execution was performed for publication."
+ ],
+ "native": {
+  "long": {
+   "ARM": {
+    "accepted": 13,
+    "count": 13,
+    "first": {
+     "accepted": true,
+     "completed_ns": 21413,
+     "due_ns": 0,
+     "generation": 1,
+     "number": 1,
+     "started_ns": 5889
+    },
+    "last": {
+     "accepted": true,
+     "completed_ns": 1200004442,
+     "due_ns": 1200000000,
+     "generation": 13,
+     "number": 13,
+     "started_ns": 1200000346
+    },
+    "max_completion_minus_due_ns": 21413,
+    "max_start_minus_due_ns": 5889,
+    "target": {
+     "accepted": true,
+     "completed_ns": 100013772,
+     "due_ns": 100000000,
+     "generation": 2,
+     "number": 2,
+     "started_ns": 100000882
+    }
+   },
+   "call_dispositions": {
+    "removed": 5,
+    "sampled": 2043
+   },
+   "gate": {
+    "first_poll_ns": 2664,
+    "opened_ns": 140861777
+   },
+   "gate_target_lateness_ns": 235869,
+   "helper_seconds": 3.841153990942985,
+   "joined": {
+    "bytes": 8753318,
+    "sha256": "854d7ea2627ce0f1ebda6aaef39a00ef809ff1bee2f7182fe19fe164a8a62f4e"
+   },
+   "outcome": "STRUCTURAL_PASS_ONLY",
+   "pmu": {
+    "close_result": 0,
+    "disable_result": 0,
+    "full_running_windows": 2048,
+    "read_errors": 0,
+    "reads": 4096,
+    "scope": "Raw acquisition/window/identity checks only; no hardware metric qualification.",
+    "successful_32_byte_reads": 4096
+   },
+   "producer_seconds": 3.7994159599766135,
+   "raw_pins": {
+    "overflow.bin": {
+     "bytes": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "result.json": {
+     "bytes": 2196,
+     "sha256": "f895602f865a8c9a14577da7c0e0dce45363d73bc44c9210e7de6d646d34feb4"
+    },
+    "stderr.txt": {
+     "bytes": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stdout.txt": {
+     "bytes": 1230592,
+     "sha256": "34e7eb9297a561ea573691847b7020a028ff2d0f709c16a6282b37ca8af74044"
+    }
+   },
+   "raw_row_counts": {
+    "ARM": 13,
+    "CALL": 2048,
+    "CALLTIME": 2048,
+    "COVERAGE": 1,
+    "DONE": 1,
+    "GATE": 1,
+    "HISTORY": 14,
+    "IO": 1,
+    "LEAF": 1,
+    "PMU": 4096,
+    "PMUATTR": 4,
+    "PMUCLOSE": 1,
+    "PMUCTL": 4,
+    "PMUOPEN": 1,
+    "PREPARED": 1,
+    "PREPARED_PHASE": 1,
+    "READY": 1,
+    "RELEASE": 1,
+    "REPORT": 13,
+    "RESULT": 2048,
+    "RET": 1,
+    "SAMPLE": 2043,
+    "TARGET_ARM": 1
+   },
+   "retained_files": 306,
+   "target_ns": 140625908,
+   "totals": {
+    "batches": 2048,
+    "calls": 2048,
+    "epochs": 13,
+    "functions": 1,
+    "records": 2048,
+    "sampled": 2043,
+    "unsampled": 5
+   },
+   "wire_lines": 12344
+  },
+  "short": {
+   "call_dispositions": {
+    "closed": 818,
+    "removed": 5,
+    "sampled": 519
+   },
+   "classification": "FROZEN_INPUT_POPULATION_NOT_CONSUMED_AT_FINALIZATION",
+   "error": "selected input must consume every frozen row exactly once",
+   "helper_seconds": 1.306709106080234,
+   "observations": {
+    "ARM2": {
+     "before_ns": 1001132,
+     "completed_ns": 1003256,
+     "due_ns": 1000000,
+     "generation": 2,
+     "number": 2
+    },
+    "arm_count": 520,
+    "arm_max_complete_minus_due_ns": 41348,
+    "arm_max_start_minus_due_ns": 39936,
+    "first_calltime": [
+     1138529,
+     1150797
+    ],
+    "first_gate_poll_ns": 3154,
+    "gate_open_ns": 1138269,
+    "last_calltime": [
+     523367229,
+     523369762
+    ],
+    "original_end_ns": 520000000,
+    "prepared_ns": 4687,
+    "release_enter_ns": 1138269,
+    "released_ns": 1138269,
+    "retained_call_samples_at_or_after_end": 5,
+    "retained_call_statuses": {
+     "closed": 818,
+     "removed": 5,
+     "sampled": 519
+    },
+    "retained_full_running_windows": 1342,
+    "retained_pmu_reads": 2684,
+    "return_fence_ns": 2520000000,
+    "target_lateness_ns": 138269,
+    "target_ns": 1000000
+   },
+   "outcome": "FAILED",
+   "producer_seconds": 1.2576032970100641,
+   "raw_pins": {
+    "overflow.bin": {
+     "bytes": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "result.json": {
+     "bytes": 930,
+     "sha256": "ca5443521e85d2b936797ae05e5602fcab575dca9abd3c89639748610caeeb6d"
+    },
+    "stderr.txt": {
+     "bytes": 6813,
+     "sha256": "183fe85d099f24b9f8cfa32fc355b3cd27e42098b8ba6498f93e4a6cc0cbc206"
+    },
+    "stdout.txt": {
+     "bytes": 755486,
+     "sha256": "67a1d077da1d0e3915e3b7178a4550917560d2627c07e8523cfb3bbaf4c57a88"
+    }
+   },
+   "raw_row_counts": {
+    "ARM": 520,
+    "CALL": 1342,
+    "CALLTIME": 1342,
+    "GATE": 1,
+    "HISTORY": 521,
+    "LEAF": 1,
+    "PMU": 2684,
+    "PMUATTR": 4,
+    "PMUCTL": 2,
+    "PMUOPEN": 1,
+    "PREPARED": 1,
+    "PREPARED_PHASE": 1,
+    "READY": 1,
+    "RELEASE": 1,
+    "REPORT": 520,
+    "RESULT": 1342,
+    "RET": 1,
+    "TARGET_ARM": 1
+   },
+   "retained_files": 305,
+   "terminal_scope": "Incomplete1342/2048 observed prefix; no DONE/PMUCLOSE. Normal OS reap and authenticated diagnostic retirement do not supply terminal wire rows or full-population success.",
+   "wire_bytes": 755486,
+   "wire_lines": 8286
+  }
+ },
+ "products": {
+  "exact_selected_dso": {
+   "bytes": 13360,
+   "sha256": "ec282b162def940f84a37e8945adfb745a96991bd0c1458a3f782d6308d57b20"
+  },
+  "leaves-stripped.so": {
+   "bytes": 12984,
+   "sha256": "cc97222d7a0957001269ec15ffd3feb7ae9a3b1b870e32c5b46628bf54c2c504"
+  },
+  "leaves.so": {
+   "bytes": 13488,
+   "sha256": "3d6eed6fecbfeeeb227cd9ee5b4c5ae92938d9bdd88f454a80a73f1c211d0980"
+  },
+  "ordinary-interval": {
+   "bytes": 9985344,
+   "sha256": "2595ba1e4495364bb1d858380d7e481762d25bda1956802503f8398cb512eb2c"
+  },
+  "reference": {
+   "bytes": 17992,
+   "sha256": "a0508b9a20bd3413b518090e24cbdb34db3b6c9393c6ef25dc1ce10522589827"
+  },
+  "test_binary": {
+   "bytes": 9078392,
+   "sha256": "b9afff82a1f04969161b0b5bd98a10dd4a779ed36d4d04e88a37a883997ab580"
+  }
+ },
+ "qualification": {
+  "executable_retirement": false,
+  "hardware_status": "UNRESOLVED",
+  "matrix_complete": false,
+  "metric_qualified": false,
+  "native_state_qualified": false,
+  "performance_qualified": false,
+  "requested_phase_status": "UNRESOLVED"
+ },
+ "reproduction": {
+  "actions": [
+   {
+    "actual_child_argv_sha256": "18194272b86e785f47c2cfca546f60bf2c1c7bc11a5e6a0c817108f9e25414eb",
+    "actual_public_owner_argv_sha256": "9196afddb438508966ef803934aa71bdea722027dd28f048bee3248749b62c46",
+    "argv_parts": [
+     "prefix",
+     [
+      "evaluation/ordinary-selected-session/owner.py",
+      "--phase",
+      "products"
+     ],
+     "source_lease",
+     [
+      "--owner",
+      "${COORD_RAW}/products-owner.json",
+      "--raw",
+      "${COORD_RAW}/accuracy-coordinate-v9-products"
+     ],
+     "platform"
+    ],
+    "name": "products",
+    "template_argv_sha256": "2e6435107873172b3602644bdc8f428fdd33f5b76fd717adb59dfbc91f7ecac2"
+   },
+   {
+    "actual_child_argv_sha256": "3438c736164dd084c551b3363101a8a59ac417503068b663967dd73c1556f98e",
+    "actual_public_owner_argv_sha256": "f3bc369f1aec6d9fd8a561ff478e2ee3fedea47879dfde2f8f3b99a91f02fc73",
+    "argv_parts": [
+     "prefix",
+     [
+      "evaluation/ordinary-selected-session/owner.py",
+      "--phase",
+      "tests"
+     ],
+     "source_lease",
+     [
+      "--owner",
+      "${COORD_RAW}/tests-owner.json",
+      "--raw",
+      "${COORD_RAW}/accuracy-coordinate-v9-tests"
+     ],
+     "platform",
+     "build"
+    ],
+    "name": "tests",
+    "template_argv_sha256": "86ba39e7e1939c19db4289032e11a330e33cb9c4b53f2a69b0c9078e604ff5f1"
+   },
+   {
+    "actual_child_argv_sha256": "e155764159e917af908ddc3266fc21b15d1da4d2287c8b8063357d268fd7122e",
+    "actual_public_owner_argv_sha256": "8250f23a04d082486ff7cf04e4406be8a4ae329563b6a037123918f1d5771d2d",
+    "argv_parts": [
+     "prefix",
+     [
+      "evaluation/ordinary-selected-session/owner.py",
+      "--phase",
+      "controls"
+     ],
+     "source_lease",
+     [
+      "--owner",
+      "${COORD_RAW}/controls-owner.json",
+      "--raw",
+      "${COORD_RAW}/accuracy-coordinate-v9-controls"
+     ],
+     "platform",
+     "build",
+     "tests",
+     [
+      "--profile",
+      "selected-session-whole-functional-v1"
+     ]
+    ],
+    "name": "controls",
+    "template_argv_sha256": "1f9d7d75322cc3196badc9775e0a994c2d091478afe0e86a108b34fce5bbe78d"
+   },
+   {
+    "actual_child_argv_sha256": "ca1cc461f7fe38a002e643e7b0f4249ad7029fa978198191e372c73020286f43",
+    "actual_public_owner_argv_sha256": "8539dd1532bde5d00a706f72025464657b55d702191891274bd81ddb7730a90e",
+    "argv_parts": [
+     "prefix",
+     [
+      "evaluation/ordinary-selected-session/accuracy_functional_owner.py",
+      "--phase",
+      "coordinate-prepare"
+     ],
+     "source_lease",
+     [
+      "--owner",
+      "${COORD_RAW}/short-prepare-owner.json",
+      "--raw",
+      "${COORD_RAW}/accuracy-coordinate-v9-short-prepare"
+     ],
+     "platform",
+     "build",
+     "controls",
+     "short_coordinate"
+    ],
+    "name": "short-prepare",
+    "template_argv_sha256": "16ac6263cd87054df092e1003b0ca7898804087e19ad1334b93591e323b170a5"
+   },
+   {
+    "actual_child_argv_sha256": "0a4ed6d6312ddfc93da80c2705b7f01d19f30af489564c3fe549a3fb1d8375be",
+    "actual_public_owner_argv_sha256": "3b40407dbc3fe276efaafc20748d6729cea94c340544a30a4fc04ce88a2e1cdf",
+    "argv_parts": [
+     "prefix",
+     [
+      "evaluation/ordinary-selected-session/accuracy_functional_owner.py",
+      "--phase",
+      "coordinate-prepare"
+     ],
+     "source_lease",
+     [
+      "--owner",
+      "${COORD_RAW}/long-prepare-owner.json",
+      "--raw",
+      "${COORD_RAW}/accuracy-coordinate-v9-long-prepare"
+     ],
+     "platform",
+     "build",
+     "controls",
+     "long_coordinate"
+    ],
+    "name": "long-prepare",
+    "template_argv_sha256": "499859bc136316b9520158f84f2141427653dfc11429e67773cfb5cfc90e5f19"
+   },
+   {
+    "actual_child_argv_sha256": "7dc71ba8e2443d8e29752c15ffb496ef75b9a58caef12f9bbd0c1b7ef964d977",
+    "actual_public_owner_argv_sha256": "31b3f8d75af84c51189d05e780b0c23364c763e1ee42f4f4e437ccb070a4155e",
+    "argv_parts": [
+     "prefix",
+     [
+      "evaluation/ordinary-selected-session/accuracy_functional_owner.py",
+      "--phase",
+      "coordinate-functional"
+     ],
+     "source_lease",
+     [
+      "--owner",
+      "${COORD_RAW}/short-functional-owner.json",
+      "--raw",
+      "${COORD_RAW}/accuracy-coordinate-v9-short-functional"
+     ],
+     "platform",
+     "build",
+     "controls",
+     "short_preparation",
+     "short_coordinate"
+    ],
+    "name": "short-functional",
+    "template_argv_sha256": "95e1f005029b19ad6d7fbd11cdb3a68d9f4a4cb01266db1d2676e05a7b4f6167"
+   },
+   {
+    "actual_child_argv_sha256": "b0231589c548fb1e7ff6b650ddcb17d13d40d7a4cb90f809c7135eb986a5ee13",
+    "actual_public_owner_argv_sha256": "81fe5c926c0aa1630e7c7c27fe888a41f481f88d897b06e82ebc8da8281c2b91",
+    "argv_parts": [
+     "prefix",
+     [
+      "evaluation/ordinary-selected-session/accuracy_functional_owner.py",
+      "--phase",
+      "coordinate-functional"
+     ],
+     "source_lease",
+     [
+      "--owner",
+      "${COORD_RAW}/long-functional-owner.json",
+      "--raw",
+      "${COORD_RAW}/accuracy-coordinate-v9-long-functional"
+     ],
+     "platform",
+     "build",
+     "controls",
+     "long_preparation",
+     "long_coordinate"
+    ],
+    "name": "long-functional",
+    "template_argv_sha256": "af90264ca87d0a0af7776de643c6402ee028bc0477151154b073d65d92709e88"
+   }
+  ],
+  "argv_digest_encoding": "SHA256 of UTF-8 compact JSON list (ASCII escapes, comma/colon separators). Actual digests bind private original argv.",
+  "argv_fragments": {
+   "build": [
+    "--build",
+    "${COORD_RAW}/accuracy-coordinate-v9-products/result.json",
+    "--build-sha",
+    "${COORD_BUILD_SHA}",
+    "--build-owner",
+    "${COORD_RAW}/products-owner.json",
+    "--build-owner-sha",
+    "${COORD_BUILD_OWNER_SHA}"
+   ],
+   "controls": [
+    "--controls",
+    "${COORD_RAW}/accuracy-coordinate-v9-controls/result.json",
+    "--controls-sha",
+    "${COORD_CONTROLS_SHA}",
+    "--controls-owner",
+    "${COORD_RAW}/controls-owner.json",
+    "--controls-owner-sha",
+    "${COORD_CONTROLS_OWNER_SHA}"
+   ],
+   "long_coordinate": [
+    "--master",
+    "16b3b34b02c2f1054381195ee3d0767b493b427ad041bbfd8924e630d0f369b1",
+    "--population-phase",
+    "comparison",
+    "--trial",
+    "100",
+    "--workload",
+    "long",
+    "--k",
+    "1000",
+    "--period-ms",
+    "100",
+    "--epoch-phase",
+    "random"
+   ],
+   "long_preparation": [
+    "--preparation",
+    "${COORD_RAW}/accuracy-coordinate-v9-long-prepare/result.json",
+    "--preparation-sha",
+    "${COORD_LONG_PREPARE_SHA}",
+    "--preparation-owner",
+    "${COORD_RAW}/long-prepare-owner.json",
+    "--preparation-owner-sha",
+    "${COORD_LONG_PREPARE_OWNER_SHA}",
+    "--geometry",
+    "${COORD_RAW}/geometry/long-acceptance.json",
+    "--geometry-sha",
+    "${COORD_LONG_GEOMETRY_SHA}"
+   ],
+   "platform": [
+    "--toolchain",
+    "${COORD_TOOLCHAIN}",
+    "--user-home",
+    "${COORD_USER_HOME}",
+    "--cargo-home",
+    "${COORD_CARGO_HOME}",
+    "--hardware",
+    "AMD EPYC Zen 5 dev host"
+   ],
+   "prefix": [
+    "/usr/bin/taskset",
+    "--cpu-list",
+    "${COORD_CPUS}",
+    "/usr/bin/python3.9",
+    "-B"
+   ],
+   "short_coordinate": [
+    "--master",
+    "16b3b34b02c2f1054381195ee3d0767b493b427ad041bbfd8924e630d0f369b1",
+    "--population-phase",
+    "holdout",
+    "--trial",
+    "100",
+    "--workload",
+    "short",
+    "--k",
+    "1",
+    "--period-ms",
+    "1",
+    "--epoch-phase",
+    "locked"
+   ],
+   "short_preparation": [
+    "--preparation",
+    "${COORD_RAW}/accuracy-coordinate-v9-short-prepare/result.json",
+    "--preparation-sha",
+    "${COORD_SHORT_PREPARE_SHA}",
+    "--preparation-owner",
+    "${COORD_RAW}/short-prepare-owner.json",
+    "--preparation-owner-sha",
+    "${COORD_SHORT_PREPARE_OWNER_SHA}",
+    "--geometry",
+    "${COORD_RAW}/geometry/short-acceptance.json",
+    "--geometry-sha",
+    "${COORD_SHORT_GEOMETRY_SHA}"
+   ],
+   "source_lease": [
+    "--revision",
+    "${COORD_REVISION}",
+    "--reservation-tag",
+    "li2core-accuracy-coordinate-v9"
+   ],
+   "tests": [
+    "--test-product",
+    "${COORD_RAW}/accuracy-coordinate-v9-tests/result.json",
+    "--test-product-sha",
+    "${COORD_TEST_SHA}",
+    "--test-owner",
+    "${COORD_RAW}/tests-owner.json",
+    "--test-owner-sha",
+    "${COORD_TEST_OWNER_SHA}"
+   ]
+  },
+  "cwd": "${COORD_ROOT}",
+  "environment": {
+   "CARGO_HOME": "${COORD_CARGO_HOME}",
+   "HOME": "${COORD_USER_HOME}",
+   "LC_ALL": "C",
+   "PATH": "${COORD_TOOLCHAIN}/bin:/usr/bin:/bin",
+   "PYTHONDONTWRITEBYTECODE": "1",
+   "PYTHONNOUSERSITE": "1"
+  },
+  "existing_scripts": {
+   "accuracy_functional.py": {
+    "bytes": 36379,
+    "sha256": "7dda267f2de970f2ab107c29e6375ae6884cf4beeeebbaa4b730f0576271dcaf"
+   },
+   "accuracy_functional_owner.py": {
+    "bytes": 6015,
+    "sha256": "8594a3e9f10e5304357db0cd02ff44f6de9d50c39d1a35d3377f0218a5f7b68d"
+   },
+   "build.py": {
+    "bytes": 16209,
+    "sha256": "cf50f5e8d9fbf816dc3144c0fbc4f0fe75fae9d0789a17ce53b220683e3c4c88"
+   },
+   "owner.py": {
+    "bytes": 12443,
+    "sha256": "d3fea69c64a2187eeb195afcc0418a3a3ca5aa531926928d2b9f2c618e19101c"
+   },
+   "reproduce.py": {
+    "bytes": 55935,
+    "sha256": "933e1be206412e7021fab10d13af7a8f8e114471e1420fd1fe05383ac546c67d"
+   }
+  },
+  "instructions": "Concatenate argv_parts in order: a string names argv_fragments; a list is literal tokens. Substitute COORD_* once without shell retokenization. The command records are exact source-bound recipes, not automatic geometry/admission permission. Use a fresh raw root/tag and actual fresh dependency hashes, current tools/boot/lease and independently accepted actual geometries.",
+  "parent_actual_argv_sha256": "7c8d30e432f39608b2221a201bd1fb315da0f45f53a818ed2919e120cff8e30a",
+  "parent_argv": [
+   "/usr/bin/env",
+   "-i",
+   "HOME=${COORD_USER_HOME}",
+   "PATH=/usr/bin:/bin",
+   "XDG_RUNTIME_DIR=${COORD_RUNTIME_DIR}",
+   "DBUS_SESSION_BUS_ADDRESS=${COORD_DBUS_ADDRESS}",
+   "PYTHONDONTWRITEBYTECODE=1",
+   "PYTHONNOUSERSITE=1",
+   "LC_ALL=C",
+   "HISTFILE=/dev/null",
+   "/usr/local/bin/python3",
+   "-B",
+   "${COORD_ALLOCATOR}",
+   "run",
+   "--cores",
+   "3",
+   "--sample-s",
+   "1",
+   "--tag",
+   "${COORD_TAG}",
+   "--",
+   "/bin/bash",
+   "--noprofile",
+   "--norc",
+   "-i"
+  ],
+  "path_substitutions": {
+   "COORD_ALLOCATOR": "ABSOLUTE_PINNED_EXISTING_CPUSET_ALLOCATOR",
+   "COORD_CARGO_HOME": "ACTUAL_CARGO_HOME",
+   "COORD_DBUS_ADDRESS": "ACTUAL_SESSION_BUS",
+   "COORD_RAW": "ABSOLUTE_FRESH_OUTPUT_ROOT",
+   "COORD_ROOT": "ABSOLUTE_REPOSITORY_ROOT",
+   "COORD_RUNTIME_DIR": "ACTUAL_RUNTIME_DIR",
+   "COORD_TOOLCHAIN": "ABSOLUTE_PINNED_RUST_TOOLCHAIN",
+   "COORD_USER_HOME": "ACTUAL_USER_HOME"
+  },
+  "recorded_substitutions": {
+   "COORD_BUILD_OWNER_SHA": "7d2525c57e5ac01a696fb2a85ecab9493ef7dd7b89568e5bddc588849ea6bd34",
+   "COORD_BUILD_SHA": "d06cbd8b184dffc1252b4871bb69a4e829c7d5117ee938879f803b1dca99453f",
+   "COORD_CONTROLS_OWNER_SHA": "2e799bcf06eeaf13d4029458771ddf8c27831e341bb41e4679bbb4d7957655c8",
+   "COORD_CONTROLS_SHA": "12e43e376aaae01589b9e330067ee010cb25fbd3dd8eb8f1a08c4db4441b6f29",
+   "COORD_CPUS": "1,50,53",
+   "COORD_LONG_GEOMETRY_SHA": "ed63f2d977478504bed3dca0e8f70e6f1e7ac190d9241ef04bd5a1776b33a586",
+   "COORD_LONG_PREPARE_OWNER_SHA": "daa3dbab278ce4bf451a8b9c8163edf70d9f671bc5e45b2fe978463a063c793d",
+   "COORD_LONG_PREPARE_SHA": "45a455e3c386e410a37cfca7dafee4b46d22d61669236fa39e26bcd16181655b",
+   "COORD_REVISION": "01ca665f3af77d0f3234505ff75c2caad27c9f1d",
+   "COORD_SHORT_GEOMETRY_SHA": "10bc1c449efa99125b952b59c7dd46c0bfd24f48af74b0190698fe771f7deada",
+   "COORD_SHORT_PREPARE_OWNER_SHA": "f463a3e1873aac1f32855ae5a842ff9ef7dac685eb3017f4ea97ab4b83fd38d8",
+   "COORD_SHORT_PREPARE_SHA": "8258cff26267456d31c0ebba2c3540be375c6716f01c9c33e8eb2f32ed862387",
+   "COORD_TAG": "li2core-accuracy-coordinate-v9",
+   "COORD_TEST_OWNER_SHA": "69c07109c22f7b2adf23cae467aa439b46539b471db897067fcd2b98c35f9d92",
+   "COORD_TEST_SHA": "d5da8e58290fea648de314622901585fa39079e55436d66c4e20647aef5859f0"
+  }
+ },
+ "revision": "01ca665f3af77d0f3234505ff75c2caad27c9f1d",
+ "schema": "coordinate-01ca-closed-public-receipt-v1",
+ "setup": {
+  "controls_stages_passed": 13,
+  "mandatory": "All old130 Rust plus11 diagnostics; CSV7/capacity2 included. Full518 listing is not execution credit.",
+  "preparation_each": {
+   "coordinate_controls_passed": 16,
+   "materials": 4,
+   "policies": 24,
+   "records": 2048,
+   "stages_passed": 5
+  },
+  "products_stages_passed": 12,
+  "python_passed": 104,
+  "rust_listed_separately": 518,
+  "rust_passed": 141,
+  "tests_build_stages_passed": 1
+ },
+ "source": {
+  "build_profile": {
+   "build_jobs": 4,
+   "c_fixture_optimization": "-O2",
+   "debug": 0,
+   "debug_assertions": true,
+   "incremental": 0,
+   "offline": true,
+   "opt_level": 3,
+   "overflow_checks": true,
+   "scope": "Rust Cargo application/test products"
+  },
+  "carry_change": "Exactly five publication files in evaluation/custody-substage-validation; no executable source changes.",
+  "complete_source_inventory": {
+   "bytes": 1548512,
+   "sha256": "749322c466380396286151c981e1c7688e8119feddb7a7b82d4ccfd1576cccee"
+  },
+  "gate_receipt": {
+   "bytes": 16268,
+   "sha256": "9f457e140d21f8f912fde1f4d97941554bf80d8cba9c5cef34236c60c668fbf8"
+  },
+  "gate_scope": "Five listed root-workspace commands at bcbb only; workspace4229/0/37 and serial1039/0/0. No separate page-entry/C-workspace suite or exact01ca gate run claimed; failed789f8 Clippy remains failed.",
+  "preflight": {
+   "bytes": 4646,
+   "sha256": "10dabe893fc403600d139b8f4e66ba813239c0046f5271585751cc8cd9470653"
+  },
+  "root_workspace_gate": "../../custody-substage-validation/receipt.json",
+  "runtime_equals_tested_revision": "bcbbdfe2b54c58eae0d35ddf34c4bb9238b0c959",
+  "source_counts": {
+   "accuracy": 3198,
+   "build": 2997,
+   "focused": 75,
+   "outer": 3188
+  }
+ },
+ "tools": {
+  "allocator_metadata": {
+   "head": "d7adaf6858378b75ebaa91b4a538efd1ca19ba93"
+  },
+  "allocator_source_files": 31,
+  "inventory": {
+   "bytes": 28726,
+   "sha256": "814ded6321b9b52157298df4c6111f21449e762ac33458207b1fb2435397d173"
+  },
+  "roles": {
+   "allocator_python": {
+    "bytes": 27602536,
+    "invoked": "/usr/local/bin/python3",
+    "sha256": "ef3abbc980a3e35cfe7e06c015fa322ea8b3732b3c21233f85a0f8f4425e12cc"
+   },
+   "as": {
+    "bytes": 727360,
+    "invoked": "/usr/bin/as",
+    "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+   },
+   "cargo": {
+    "bytes": 42839824,
+    "invoked": "${COORD_TOOLCHAIN}/bin/cargo",
+    "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+   },
+   "cc1": {
+    "bytes": 28991152,
+    "invoked": "/usr/libexec/gcc/x86_64-redhat-linux/11/cc1",
+    "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+   },
+   "clang": {
+    "bytes": 130792,
+    "invoked": "/usr/bin/clang",
+    "sha256": "953ea1ca38bec62e4b2b9c916db4d76d5a48edb91e0cce0d5c4d7efe62e34b97"
+   },
+   "collect2": {
+    "bytes": 349536,
+    "invoked": "/usr/libexec/gcc/x86_64-redhat-linux/11/collect2",
+    "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+   },
+   "env": {
+    "bytes": 45088,
+    "invoked": "/usr/bin/env",
+    "sha256": "1caef498bf8afe1633c37cbe6ec6e10908cfdf032505d85c0b14ce906bae489f"
+   },
+   "gcc": {
+    "bytes": 1093144,
+    "invoked": "/usr/bin/gcc",
+    "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+   },
+   "git": {
+    "bytes": 4397400,
+    "invoked": "/usr/bin/git",
+    "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+   },
+   "ld": {
+    "bytes": 1791600,
+    "invoked": "/usr/bin/ld",
+    "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+   },
+   "objdump": {
+    "bytes": 423000,
+    "invoked": "/usr/bin/objdump",
+    "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+   },
+   "python": {
+    "bytes": 15448,
+    "invoked": "/usr/bin/python3.9",
+    "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+   },
+   "readelf": {
+    "bytes": 683296,
+    "invoked": "/usr/bin/readelf",
+    "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+   },
+   "rg": {
+    "bytes": 4746600,
+    "invoked": "/usr/bin/rg",
+    "sha256": "741ce2e8dcc850c674d158675aaf6d13bcc3f19779c518ac10333d40a096e98a"
+   },
+   "rustc": {
+    "bytes": 645000,
+    "invoked": "${COORD_TOOLCHAIN}/bin/rustc",
+    "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+   },
+   "rustdoc": {
+    "bytes": 13680928,
+    "invoked": "${COORD_TOOLCHAIN}/bin/rustdoc",
+    "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+   },
+   "shell": {
+    "bytes": 1389072,
+    "invoked": "/bin/bash",
+    "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+   },
+   "strip": {
+    "bytes": 189816,
+    "invoked": "/usr/bin/strip",
+    "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+   },
+   "systemd_run": {
+    "bytes": 111360,
+    "invoked": "/usr/bin/systemd-run",
+    "sha256": "125b1c6475f305d7112a165069a7e3f6906db4360973977edceeb9ae115a871a"
+   },
+   "taskset": {
+    "bytes": 23784,
+    "invoked": "/usr/bin/taskset",
+    "sha256": "e195f3da0a3c33e2e3d91a6579432e536064869b1cb5585131a8fc6983163741"
+   },
+   "true": {
+    "bytes": 27936,
+    "invoked": "/usr/bin/true",
+    "sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171"
+   }
+  },
+  "scope": "Exact installed tool bytes and 31 allocator sources were rechecked; compiler/kernel/runtime semantics remain the declared trusted installed-build contract.",
+  "versions_first_line": {
+   "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+   "clang": "clang version 22.1.3 (CentOS 22.1.3-1.el9)",
+   "gcc": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)",
+   "objdump": "GNU objdump version 2.35.2-72.el9",
+   "readelf": "GNU readelf version 2.35.2-72.el9",
+   "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+   "strip": "GNU strip version 2.35.2-72.el9"
+  }
+ },
+ "tree": "0c7b6e801a36044bf25889c67d5952efbf5b6c0d"
+}
