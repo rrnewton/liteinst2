@@ -260,7 +260,11 @@ def preedge_failure_capture_config(path,output,pin,binary):
     return dict(image=fact(path),rvas=rvas,source_sha256=H(source),header=fact(header),path=str(header))
 
 
-def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capture_image=None,*,native_hint=False,graph_observe=False,preedge=False,preedge_differential=False):
+def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capture_image=None,*,native_hint=False,graph_observe=False,preedge=False,preedge_differential=False,frontier_census=False):
+    need(type(frontier_census)is bool and (not frontier_census or
+         preedge is True and native_hint is True and graph_observe is False and
+         preedge_differential is False and extra==()and capture_image is None),
+         'explicit counter-only pre-edge release census; no capture or differential')
     need(type(preedge_differential)is bool and (not preedge_differential or
          preedge is True and native_hint is True and graph_observe is False and
          extra==('MAPS_DIFFERENTIAL',)and capture_image is None),
@@ -288,7 +292,7 @@ def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capt
     need((capture_image is not None)==capture,'fresh image iff explicit linked capture profile')
     output=private/'release';output.mkdir();binding=binding_config(builder,archive,output,pin,binary,run,native_hint=native_hint,preedge=preedge)
     config=(preedge_failure_capture_config(capture_image,output,pin,binary)if preedge_failure else preedge_capture_config(capture_image,output,pin,binary)if preedge_capture else capture_config(capture_image,output,pin,binary,reuse or preedge_reuse,preedge_reuse=preedge_reuse,preedge_full=preedge_full))if capture else None
-    script=pin(SELECTED/('build-linked-preedge-failure-capture.sh'if preedge_failure else'build-linked-preedge-full-capture.sh'if preedge_full else'build-linked-preedge-reuse-capture.sh'if preedge_reuse else'build-linked-preedge-capture.sh'if preedge_capture else'build-linked-epoch-reuse-capture.sh'if reuse else'build-linked-epoch-capture.sh'if capture else'build-linked-preedge.sh'if preedge else'build-linked-epoch-graph-observe.sh'if graph_observe else'build-linked-epoch-native-hint.sh'if native_hint else'build-linked-epoch.sh'))
+    script=pin(SELECTED/('build-linked-preedge-failure-capture.sh'if preedge_failure else'build-linked-preedge-full-capture.sh'if preedge_full else'build-linked-preedge-reuse-capture.sh'if preedge_reuse else'build-linked-preedge-capture.sh'if preedge_capture else'build-linked-epoch-reuse-capture.sh'if reuse else'build-linked-epoch-capture.sh'if capture else'build-linked-preedge-frontier-census.sh'if frontier_census else'build-linked-preedge.sh'if preedge else'build-linked-epoch-graph-observe.sh'if graph_observe else'build-linked-epoch-native-hint.sh'if native_hint else'build-linked-epoch.sh'))
     rows=recipe(script,'"$cc_bin"');need(len(rows)==1,'one exact linked runtime compiler recipe')
     argv=expand(rows[0],{'$cc_bin':builder.tools['cc'],'$selected_dir':SELECTED,'$parent_dir':SELECTED.parent,
         '$archive':archive,'$output':output})
@@ -298,7 +302,7 @@ def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capt
     elif not capture:argv[1:1]=['-DLI2_'+x+'=1'for x in extra]
     elif native_hint and not (preedge_capture or preedge_reuse or preedge_full or preedge_failure):argv.insert(argv.index('-DLI2_LINKED_EPOCH=1'),'-DLI2_LINKED_NATIVE_HINT=1')
     units=[str(SELECTED.parent/x)for x in UNITS]+[str(SELECTED/x)for x in(('unrolled_hash_plan.c','region_plan.c','linked_plan.c','linked_preedge_plan.c')if preedge else('unrolled_hash_plan.c','region_plan.c','linked_plan.c'))]
-    macros=(('LINKED_PREEDGE',)if preedge else())+(('LINK_GRAPH_OBSERVE',)if graph_observe else())+extra+(('LINKED_NATIVE_HINT',)if native_hint else())+('LINKED_EPOCH','SCALAR_SPAN','SCALAR_SPAN_TRACE','SPAN_FAST_BYTES','MAPS_CURRENT_TF',
+    macros=(('LINKED_PREEDGE',)if preedge else())+(('LINK_FRONTIER_CENSUS',)if frontier_census else())+(('LINK_GRAPH_OBSERVE',)if graph_observe else())+extra+(('LINKED_NATIVE_HINT',)if native_hint else())+('LINKED_EPOCH','SCALAR_SPAN','SCALAR_SPAN_TRACE','SPAN_FAST_BYTES','MAPS_CURRENT_TF',
         'SCALAR_REGION','SCALAR_REGION_REUSE','INITIAL_CODE_PROTECTION','UNROLLED_HASH','MAPS_MAINTAINED')+MACROS
     need(argv[-2:]==['-o',str(output/'bridge-linked-epoch.so')]and
          [x for x in argv if x.endswith(('.c','.S'))]==units and
@@ -319,11 +323,13 @@ def build_bridge(builder,products,private,pin,binary,aliases,run,r,extra=(),capt
         expected=expected.replace(b'\"$output\" native-hint',b'\"$output\" native-hint-preedge',1).replace(b'-DLI2_LINKED_NATIVE_HINT=1',b'-DLI2_LINKED_PREEDGE=1 -DLI2_LINKED_NATIVE_HINT=1',1)
         expected=expected.replace(b'--undefined=li2_link_plan_validate ',b'--undefined=li2_link_plan_validate,--undefined=li2_preedge_plan_page,--undefined=li2_preedge_plan_validate ',1)
         expected=expected.replace(b'\"$selected_dir/linked_plan.c\" \"$archive\"',b'\"$selected_dir/linked_plan.c\" \"$selected_dir/linked_preedge_plan.c\" \"$archive\"',1)
+        if frontier_census:expected=expected.replace(b'-DLI2_LINKED_PREEDGE=1',b'-DLI2_LINKED_PREEDGE=1 -DLI2_LINK_FRONTIER_CENSUS=1',1)
         if preedge_failure:expected=expected.replace(b'-DLI2_LINKED_PREEDGE=1',b'-DLI2_LINKED_PREEDGE=1 -DLI2_LINKED_PREEDGE_FAILURE_CAPTURE=1',1)
         if preedge_full:expected=expected.replace(b'-DLI2_LINKED_PREEDGE=1',b'-DLI2_LINKED_PREEDGE=1 -DLI2_LINKED_PREEDGE_FULL_CAPTURE=1',1)
         if preedge_reuse:expected=expected.replace(b'-DLI2_LINKED_PREEDGE=1',b'-DLI2_LINKED_PREEDGE=1 -DLI2_LINKED_PREEDGE_REUSE_CAPTURE=1',1)
         if preedge_capture:expected=expected.replace(b'-DLI2_LINKED_PREEDGE=1',b'-DLI2_LINKED_PREEDGE=1 -DLI2_LINKED_PREEDGE_CAPTURE=1',1)
         need(script.read_bytes()==expected,'whole v2 recipe differs only by explicit profile, providers, TU and selected capture macro')
+    if frontier_census:state['frontier_census']=dict(version=1,codes=4936,channels=6,bytes=592616)
     if graph_observe:
         donor=pin(SELECTED/'build-linked-epoch-native-hint.sh')
         need(script.read_bytes()==donor.read_bytes().replace(b'-DLI2_LINKED_NATIVE_HINT=1',

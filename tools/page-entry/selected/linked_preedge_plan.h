@@ -51,6 +51,65 @@ unsigned li2_preedge_frontier_kind(uintptr_t,const struct li2_span_decoded *);
 int li2_preedge_plan_page(uintptr_t,const unsigned char *,uintptr_t,uintptr_t,
                            struct li2_preedge_plan *);
 int li2_preedge_plan_validate(const struct li2_preedge_plan *);
+
+#ifdef LI2_LINK_FRONTIER_CENSUS
+#if LI2_LINK_FRONTIER_CENSUS != 1 || !defined(LI2_LINKED_NATIVE_HINT) || \
+    defined(LI2_LINKED_PREEDGE_CAPTURE) || defined(LI2_LINKED_PREEDGE_REUSE_CAPTURE) || \
+    defined(LI2_LINKED_PREEDGE_FULL_CAPTURE) || defined(LI2_LINKED_PREEDGE_FAILURE_CAPTURE) || \
+    defined(LI2_LINKED_EPOCH_CAPTURE) || defined(LI2_PERSISTENT_EPOCH)
+#error "frontier census is a distinct release-only pre-edge observer"
+#endif
+#define LI2_LFC_CODES 4936U /* Exact locked iced-x86 1.21.0 Code population. */
+#define LI2_LFC_CHANNELS 6U
+/* Cold BFS encounters (unsupported/cut), root MISS (unsupported/cut), and
+   actually completed generated exits (unsupported/cut). These are different
+   denominators: internal candidate frontiers need not execute. */
+enum li2_lfc_reason {
+    LI2_LG_INITIAL,LI2_LG_PAGE,LI2_LG_QUEUE,LI2_LG_OVERLAP,LI2_LG_EXITS,
+    LI2_LG_HEADS,LI2_LG_EMPTY,LI2_LG_NO_FRONTIER,LI2_LG_PRIMARY,
+    LI2_LG_FALLTHROUGH,LI2_LG_KAHN_STALL,LI2_LG_DISTANCE,LI2_LG_INCOMING,
+    LI2_LFC_REASONS
+};
+struct li2_lfc_code {
+    uint64_t count[LI2_LFC_CHANNELS],different[LI2_LFC_CHANNELS];
+    uint32_t length,step;
+    unsigned char encoding[16]; /* First actual encoding, not an effect claim. */
+};
+struct li2_frontier_census {
+    uint64_t overflow,invalid,started,returned,results[8],reasons[LI2_LFC_REASONS];
+    uint64_t totals[LI2_LFC_CHANNELS],rsp_mov[LI2_LFC_CHANNELS];
+    struct li2_lfc_code codes[LI2_LFC_CODES];
+};
+static inline void li2_lfc_add(struct li2_frontier_census *c,uint64_t *v) {
+    if(*v==UINT64_MAX)c->overflow=1;else ++*v;
+}
+static inline void li2_lfc_observe(struct li2_frontier_census *c,unsigned channel,
+                                  const struct li2_span_decoded *d) {
+    if(!c)return;
+    const struct li2_decoded *a=&d->decoded;
+    if(channel>=LI2_LFC_CHANNELS || a->decode_status!=LI2_VALID ||
+       !a->length || a->length>15 || a->code>=LI2_LFC_CODES) {
+        c->invalid=1;return;
+    }
+    struct li2_lfc_code *v=&c->codes[a->code];
+    if(!v->length) {
+        v->length=a->length;v->step=a->step_disposition;
+        for(unsigned i=0;i<a->length;i++)v->encoding[i]=a->bytes[i];
+    }
+    unsigned different=v->length!=a->length || v->step!=a->step_disposition;
+    for(unsigned i=0;i<a->length;i++)if(v->encoding[i]!=a->bytes[i])different=1;
+    li2_lfc_add(c,&c->totals[channel]);li2_lfc_add(c,&v->count[channel]);
+    if(different)li2_lfc_add(c,&v->different[channel]);
+    /* This existing decoder tag covers only its recognized MOV-to-SP/ESP/RSP
+       forms. Refused descriptors carry no general GPR-effect information. */
+    if(a->step_disposition==LI2_STEP_RSP_WRITE)li2_lfc_add(c,&c->rsp_mov[channel]);
+}
+int li2_preedge_plan_page_observed(uintptr_t,const unsigned char *,uintptr_t,
+    uintptr_t,struct li2_preedge_plan *,struct li2_frontier_census *);
+_Static_assert(sizeof(struct li2_lfc_code)==120,"bounded Code histogram cell");
+_Static_assert(sizeof(struct li2_frontier_census)==592616,"bounded protected census");
+#endif
+
 _Static_assert(sizeof(struct li2_preedge_plan)==40744,"pre-edge v2 ABI");
 _Static_assert(sizeof(struct li2_preedge_plan)<65536,"bounded full reconstruction");
 _Static_assert(LI2_PREEDGE_HEADS==LI2_LINK_HEADS && LI2_PREEDGE_EXITS==LI2_LINK_EXITS &&

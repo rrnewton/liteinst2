@@ -145,6 +145,9 @@ static struct {
 #endif
     struct le_slot slots[LE_PAGES];
     struct le_record current,last;
+#ifdef LI2_LINK_FRONTIER_CENSUS
+    struct li2_frontier_census frontier_census;
+#endif
 } selected_linked_epoch;
 static volatile sig_atomic_t selected_linked_epoch_active,selected_linked_epoch_busy;
 static volatile sig_atomic_t selected_linked_epoch_failing,selected_linked_epoch_decoding;
@@ -647,12 +650,18 @@ static int selected_linked_epoch_try(int sig,siginfo_t *si,ucontext_t *uc,uint64
         uintptr_t entry=le_entry(r->source.key.entry,slot);
         le_need(!selected_linked_epoch_decoding,LE_REENTRY,3);
         r->build_started=1;selected_linked_epoch_decoding=1;__asm__ volatile("":::"memory");
+#ifdef LI2_LINK_FRONTIER_CENSUS
+        e=li2_preedge_plan_page_observed(r->source.key.page.address,r->source.key.bytes,
+            r->source.key.entry,entry,&selected_linked_epoch.scratch,
+            &selected_linked_epoch.frontier_census);
+#else
 #ifdef LI2_LINKED_PREEDGE
         e=li2_preedge_plan_page(r->source.key.page.address,r->source.key.bytes,r->source.key.entry,
 #else
         e=li2_link_plan_page(r->source.key.page.address,r->source.key.bytes,r->source.key.entry,
 #endif
             entry,&selected_linked_epoch.scratch);
+#endif
         r->build_result=e;r->build_returned=1;__asm__ volatile("":::"memory");selected_linked_epoch_decoding=0;
         selected_initialized();int refusal=le_refusal(e);
         if(refusal>=0) {
@@ -1096,6 +1105,10 @@ static void selected_linked_epoch_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_LINKED_PREEDGE
     if(frontier_kind==LI2_PREEDGE_PAGE_CUT)le_count(&selected_linked_epoch.cut_exits);
 #endif
+#ifdef LI2_LINK_FRONTIER_CENSUS
+    li2_lfc_observe(&selected_linked_epoch.frontier_census,
+        4+(frontier_kind==LI2_PREEDGE_PAGE_CUT),&le_plan(s)->frontier[exit]);
+#endif
     copy(&selected_linked_epoch.last,r,sizeof *r);
     /* Only the original exit RIP is already present. Import every actual
        logical flag, including AF; no GPR, guest data or FP is predicted/reset. */
@@ -1201,6 +1214,28 @@ static void selected_linked_epoch_report(unsigned status,unsigned code,long deta
 #undef LNH_FIELD
     text(&q,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)q.bytes,q.used,0,0,0);
 #endif
+#ifdef LI2_LINK_FRONTIER_CENSUS
+    const struct li2_frontier_census *fc=&selected_linked_epoch.frontier_census;
+    struct writer fw={.used=0};text(&fw,"LI2_LINKED_FRONTIER_CENSUS {\"version\":1");
+    field(&fw,",\"status\":",status);field(&fw,",\"failure_code\":",code);
+    field(&fw,",\"overflow\":",fc->overflow);field(&fw,",\"invalid\":",fc->invalid);
+    field(&fw,",\"started\":",fc->started);field(&fw,",\"returned\":",fc->returned);
+    selected_repeat_array(&fw,",\"results\":",fc->results,8);
+    selected_repeat_array(&fw,",\"reasons\":",fc->reasons,LI2_LFC_REASONS);
+    selected_repeat_array(&fw,",\"totals\":",fc->totals,LI2_LFC_CHANNELS);
+    selected_repeat_array(&fw,",\"rsp_mov\":",fc->rsp_mov,LI2_LFC_CHANNELS);
+    text(&fw,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)fw.bytes,fw.used,0,0,0);
+    for(unsigned i=0;i<LI2_LFC_CODES;i++) {
+        const struct li2_lfc_code *v=&fc->codes[i];if(!v->length)continue;
+        struct writer cw={.used=0};text(&cw,"LI2_LINKED_FRONTIER_CODE {\"code\":");number(&cw,i);
+        selected_repeat_array(&cw,",\"counts\":",v->count,LI2_LFC_CHANNELS);
+        selected_repeat_array(&cw,",\"different\":",v->different,LI2_LFC_CHANNELS);
+        field(&cw,",\"sample_length\":",v->length);field(&cw,",\"sample_step\":",v->step);
+        uint64_t bytes[16];for(unsigned j=0;j<16;j++)bytes[j]=v->encoding[j];
+        selected_repeat_array(&cw,",\"sample_bytes\":",bytes,16);
+        text(&cw,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)cw.bytes,cw.used,0,0,0);
+    }
+#endif
 #ifdef LI2_LINK_GRAPH_OBSERVE
     const struct li2_link_graph_observation *g=li2_link_graph_observation();
     struct writer gw={.used=0};text(&gw,"LI2_LINKED_GRAPH_OBSERVE {\"version\":1");
@@ -1210,6 +1245,10 @@ static void selected_linked_epoch_report(unsigned status,unsigned code,long deta
     text(&gw,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)gw.bytes,gw.used,0,0,0);
 #endif
 }
+#ifdef LI2_LINK_FRONTIER_CENSUS
+_Static_assert(40*21+300<=sizeof(((struct writer *)0)->bytes),"bounded frontier census report");
+_Static_assert(31*21+200<=sizeof(((struct writer *)0)->bytes),"bounded frontier Code report");
+#endif
 #ifdef LI2_LINK_GRAPH_OBSERVE
 _Static_assert(17*21+160<=sizeof(((struct writer *)0)->bytes),"bounded graph observation report");
 #endif

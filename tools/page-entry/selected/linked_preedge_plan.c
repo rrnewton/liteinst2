@@ -119,9 +119,19 @@ unsigned li2_preedge_frontier_kind(uintptr_t page,const struct li2_span_decoded 
     if(d->flow==LI2_REGION_JCC)return (next_out || target_out)?LI2_PREEDGE_PAGE_CUT:LI2_PREEDGE_NONE;
     return LI2_PREEDGE_INVALID;
 }
+#ifdef LI2_LINK_FRONTIER_CENSUS
+#define LFC_ARGUMENT ,struct li2_frontier_census *census
+#define LFC_NONE ,NULL
+#define LG_ENQUEUE(page,pc) ((pc)<(page) || (pc)-(page)>=LI2_REGION_PAGE?LI2_LG_PAGE:LI2_LG_QUEUE)
+#define LG_GRAPH(reason) do { if(census)li2_lfc_add(census,&census->reasons[(reason)]); \
+    return LI2_REGION_PLAN_GRAPH; } while(0)
+#else
+#define LFC_ARGUMENT
+#define LFC_NONE
 #define LG_GRAPH(reason) return LI2_REGION_PLAN_GRAPH
+#endif
 
-static int graph(struct li2_preedge_plan *p) {
+static int graph(struct li2_preedge_plan *p LFC_ARGUMENT) {
     struct link_node q[LI2_PREEDGE_HEADS+LI2_PREEDGE_EXITS]={0};unsigned count=0;
     unsigned char occupied[LI2_REGION_PAGE]={0};
     if(enqueue(q,&count,p->page,p->entry)!=0)LG_GRAPH(LI2_LG_INITIAL);
@@ -139,6 +149,11 @@ static int graph(struct li2_preedge_plan *p) {
         unsigned kind=li2_preedge_frontier_kind(p->page,&d);
         if(kind==LI2_PREEDGE_INVALID)return LI2_REGION_PLAN_DECODER;
         if(kind!=LI2_PREEDGE_NONE) {
+#ifdef LI2_LINK_FRONTIER_CENSUS
+            unsigned channel=kind==LI2_PREEDGE_PAGE_CUT;
+            li2_lfc_observe(census,channel,&d);
+            if(!at)li2_lfc_observe(census,channel+2,&d);
+#endif
             if(!at)return LI2_REGION_PLAN_MISS;
             if(p->exits==LI2_PREEDGE_EXITS)LG_GRAPH(LI2_LG_EXITS);
             unsigned i=p->exits++;p->exit_pc[i]=q[at].pc;p->frontier[i]=d;
@@ -188,6 +203,9 @@ static int graph(struct li2_preedge_plan *p) {
     return LI2_REGION_PLAN_OK;
 }
 #undef LG_GRAPH
+#ifdef LI2_LINK_FRONTIER_CENSUS
+#undef LG_ENQUEUE
+#endif
 static uintptr_t destination(const struct li2_preedge_plan *p,unsigned k) {
     return k<p->heads?p->generated+p->head[k].generated_offset:p->exit_pc[k-LI2_PREEDGE_HEADS];
 }
@@ -281,11 +299,44 @@ int li2_preedge_plan_page(uintptr_t page,const unsigned char *source,uintptr_t e
     if(!page_range(page) || !page_range(generated) || page==generated ||
        entry<page || entry-page>=LI2_REGION_PAGE)return LI2_REGION_PLAN_ARGUMENT;
     out->page=page;out->entry=entry;out->generated=generated;copy(out->source,source,LI2_REGION_PAGE);
-    int result=graph(out);if(result)return result;
+    int result=graph(out LFC_NONE);if(result)return result;
     result=emit(out);if(result)return result;
     if(out->decoder_calls!=out->heads+out->exits+out->maps)return LI2_REGION_PLAN_DECODER;
     out->ready=1;return LI2_REGION_PLAN_OK;
 }
+#ifdef LI2_LINK_FRONTIER_CENSUS
+/* Same complete cold planner; no observer is installed for rebuild calls. */
+static int observed_page(uintptr_t page,const unsigned char *source,uintptr_t entry,
+                       uintptr_t generated,struct li2_preedge_plan *out,struct li2_frontier_census *census) {
+    if(!storage(out,sizeof(*out)) || (uintptr_t)out%_Alignof(struct li2_preedge_plan) ||
+       !storage(source,LI2_REGION_PAGE) || overlap(out,sizeof(*out),source,LI2_REGION_PAGE))
+        return LI2_REGION_PLAN_ARGUMENT;
+    zero(out,sizeof(*out));out->version=LI2_PREEDGE_VERSION;out->bytes=sizeof(*out);
+    if(!page_range(page) || !page_range(generated) || page==generated ||
+       entry<page || entry-page>=LI2_REGION_PAGE)return LI2_REGION_PLAN_ARGUMENT;
+    out->page=page;out->entry=entry;out->generated=generated;copy(out->source,source,LI2_REGION_PAGE);
+    int result=graph(out,census);if(result)return result;
+    result=emit(out);if(result)return result;
+    if(out->decoder_calls!=out->heads+out->exits+out->maps)return LI2_REGION_PLAN_DECODER;
+    out->ready=1;return LI2_REGION_PLAN_OK;
+}
+int li2_preedge_plan_page_observed(uintptr_t page,const unsigned char *source,
+    uintptr_t entry,uintptr_t generated,struct li2_preedge_plan *out,
+    struct li2_frontier_census *census) {
+    if(census)li2_lfc_add(census,&census->started);
+    int result=observed_page(page,source,entry,generated,out,census);
+    if(census) {
+        li2_lfc_add(census,&census->returned);
+        unsigned index=result==0?0:result==1?1:
+            result>=LI2_REGION_PLAN_ARGUMENT && result<=LI2_REGION_PLAN_CORRUPT?
+            2+(unsigned)(result-LI2_REGION_PLAN_ARGUMENT):8;
+        if(index<8)li2_lfc_add(census,&census->results[index]);else census->invalid=1;
+    }
+    return result;
+}
+#endif
+#undef LFC_ARGUMENT
+#undef LFC_NONE
 int li2_preedge_plan_validate(const struct li2_preedge_plan *p) {
     if(!storage(p,sizeof(*p)) || (uintptr_t)p%_Alignof(struct li2_preedge_plan))
         return LI2_REGION_PLAN_ARGUMENT;
