@@ -387,7 +387,8 @@ def main():
         summary.update(hardware=hw,private_receipt=fact(receipt),private_receipt_file=str(receipt.relative_to(ROOT)),
             original=r.get('original'),carrier=r.get('carrier'),bridge=r.get('bridge'),archive=r.get('archive'),
             policy_sha256=r.get('policy_sha256'),decoder_archive=r.get('decoder_archive'),
-            target_exit=target.get('exit'),target_process_ns=target.get('duration_ns'),
+            target_exit=target.get('exit'),target_process_ns=target.get('process_ns'),
+            target_wrapper_interval_ns=target.get('duration_ns'),
             error_type=r['error'].split(':',1)[0]if r['error']else None,final_error_count=len(r['final_errors']),
             tool_versions=builder.record.get('numeric_versions'),
             reproduce=['python3','-B','evaluation/inprocess/startup_counter.py','--expect-revision',args.expect_revision,
@@ -411,7 +412,7 @@ def main():
         public.write_bytes(payload)
         with public.with_suffix('.csv').open('w',newline='')as f:
             w=csv.writer(f,lineterminator='\n')
-            w.writerow(('revision','kind','name','value','exit','process_ns','status'))
+            w.writerow(('revision','kind','name','value','exit','wrapper_interval_ns','status'))
             for case in summary['cases']:
                 w.writerow((args.expect_revision,'subject',case['lane'],'',case.get('exit'),case.get('whole_process_ns'),case['status']))
             if r['counts']is not None:
