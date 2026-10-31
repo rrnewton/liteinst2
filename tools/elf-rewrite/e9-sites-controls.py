@@ -931,3 +931,221 @@ if __name__ == '__main__':
     absolute_selection_controls()
     absolute_cli_controls()
     absolute_comparison_controls()
+
+
+# Additive PIE controls. Every ET_EXEC cohort above remains byte-identical.
+# These independently emitted bytes are format controls, never actual E9/native
+# evidence. No source inventory or dynamic-router completeness is inferred.
+def pie_fixture(failed=False, trap=False, negative=False, refactor=False):
+    f = fixture(failed, trap)
+    original = bytearray(f['original'])
+    struct.pack_into('<H', original, 16, 3)
+    struct.pack_into('<Q', original, 24, 0x200)
+    struct.pack_into('<H', original, 56, 4)
+    struct.pack_into('<IIQQQQQQ', original, 64, 1, 5, 0, 0, 0, 4096, 4096, 4096)
+    struct.pack_into('<IIQQQQQQ', original, 120, 4, 4, 416, 416, 0, 16, 16, 4)
+    interpreter = b'/lib64/ld-linux-x86-64.so.2\0'
+    struct.pack_into('<IIQQQQQQ', original, 176, 3, 4, 320, 320, 0, len(interpreter), len(interpreter), 1)
+    struct.pack_into('<IIQQQQQQ', original, 232, 2, 4, 384, 384, 0, 32, 32, 8)
+    original[320:320 + len(interpreter)] = interpreter
+    struct.pack_into('<qQqQ', original, 384, 0x6ffffffb, 0x08000000, 0, 0)
+    original = bytes(original)
+    raw = f['selection'].replace(a.sha(f['original']).encode(), a.sha(original).encode())
+    raw = raw.replace(b'0x400200', b'0x200').replace(b'0x400210', b'0x210')
+    policy = json.loads(f['policy']); policy.update(original_sha256=a.sha(original), selection_sha256=a.sha(raw))
+    rows = [json.loads(row) for row in f['rpc'].splitlines()]
+    for row in rows:
+        if row['method'] == 'instruction': row['params']['address'] -= 0x400000
+    f.update(original=original, selection=raw, policy=json.dumps(policy).encode(),
+             rpc=b''.join(json.dumps(row).encode()+b'\n' for row in rows))
+    base = -4096 if negative else 0x600000
+    source_offset, tramp_offset = (4096, 8192) if refactor else (0, 4096)
+    maps = [dict(kind='trampoline', va=base, length=4096, prot=5, offset=tramp_offset)]
+    if refactor: maps.append(dict(kind='refactoring', va=0, length=4096, prot=5, offset=4096))
+    loader_offset = tramp_offset + 4096
+    candidate = bytearray(original + (original if refactor else b'') + bytes(4096))
+    outcomes = []
+    for pc, off, low, omit in [(0x210,528,base+16,failed), (0x200,512,base,False)]:
+        if omit:
+            outcomes.append(f'debug: failed to patch instruction at address {pc:#x} (5)\n')
+            continue
+        candidate[source_offset+off:source_offset+off+5] = b'\xe9'+struct.pack('<i', low-pc-5)
+        body = b'\xcc' if trap else original[off:off+5]+b'\xe9'+struct.pack('<i', pc+5-low-10)
+        at = tramp_offset+low-base; candidate[at:at+len(body)] = body
+        outcomes.append(f'debug: patched instruction {pc:#x} [size=5, tactic=B1, trampoline={low:#x}..{low+len(body):#x}]\n')
+    stream = f['loader']+bytes.fromhex('ba0500000041ba12000000')
+    previous = (-1,5,-1)
+    progress = ''
+    for m in maps:
+        va, length, prot, off = (m[k] for k in ('va','length','prot','offset'))
+        # Independent fixture emitter; never call the production mmap encoder.
+        encoded = b'\xbf'+struct.pack('<i',va) if va >= 0 else b'\x48\xbf'+struct.pack('<q',va)
+        encoded += bytes.fromhex('4c01e7')
+        if length != previous[0]: encoded += b'\xbe'+struct.pack('<i',length)
+        if prot != previous[1]: encoded += b'\xba'+struct.pack('<i',prot)
+        if off != previous[2]: encoded += b'\x41\xb9'+struct.pack('<i',off)
+        encoded += bytes.fromhex('4489e80f054839f8740341ffe6')
+        stream += encoded; previous = (length,prot,off)
+        extra = len(encoded)-21
+        progress += '\x1b[36m0\x1b[0m' if extra <= 0 else chr((ord('0') if extra < 10 else ord('A'))+extra)
+        outcomes.append(f"debug: load {m['kind']}: mmap({va:#x}, {length}, PROT_READ | PROT_EXEC | 0, MAP_FIXED | MAP_PRIVATE, fd, +{off})\n")
+    stream += bytes.fromhex('4c89c7b8030000000f05b8000200004c01e05f5e5a594159415a415b415c415d415e415f4158ffe0')
+    candidate += stream
+    struct.pack_into('<Q', candidate, 24, 0x20FEDC000)
+    struct.pack_into('<IIQQQQQQ', candidate, 120, 1,5,loader_offset,0x20FEDC000,0,len(stream),len(stream),4096)
+    old_size = len(f['candidate'])
+    f['stdout'] = f['stdout'].replace(b'\nL\n\n', ('\n'+progress+'\n\n').encode())
+    old_stat = f'output_file_size      = {old_size} ({old_size/4096*100:.2f}%)'.encode()
+    new_stat = f'output_file_size      = {len(candidate)} ({len(candidate)/4096*100:.2f}%)'.encode()
+    assert old_stat in f['stdout']; f['stdout'] = f['stdout'].replace(old_stat,new_stat)
+    f.update(candidate=bytes(candidate), stderr=''.join(outcomes).encode())
+    return f
+
+
+def pie_case(f, lane='stock-algorithm'):
+    profile = a.PIE_ARTIFACT_PROFILE
+    sites, policy = a._selection(f['selection'], f['original'], f['policy'], None, artifact_profile=profile)
+    intent = a.rpc(f['rpc'], f['original'], sites, '/fixture/original', policy, None, None, False, artifact_profile=profile)
+    outcomes, maps, bypass = a.pie_debug(f['stderr'], sites)
+    saved = a.PRODUCERS
+    assert f['loader'] == b'CONTROL-LOADER'
+    a.PRODUCERS = {**saved, lane: (*saved[lane][:2],a.sha(f['loader']))}
+    try:
+        result = a.artifact(f['original'], f['candidate'], f['loader'], intent, outcomes, maps, bypass,
+                            lane=lane, artifact_profile=profile)
+    finally:
+        a.PRODUCERS = saved
+    a.statistics(f['stdout'],outcomes,result,'/fixture/original')
+    return result, a.wire(sites,policy,outcomes,intent['trap'])
+
+
+def pie_positive_controls():
+    saved = a.PRODUCERS
+    for negative in (False,True):
+        for refactor in (False,True):
+            for failed,trap,expected in [(False,False,['trampoline','trampoline']),
+                                         (True,False,['trampoline','refused']),
+                                         (False,True,['trap','trap'])]:
+                f = pie_fixture(failed,trap,negative,refactor)
+                result,wire = pie_case(f)
+                assert [r.split('\t')[4] for r in wire.decode().splitlines()[7:]] == expected
+                assert len(wire.decode().splitlines()) == 9
+                assert result['physical_pages'] == result['virtual_pages'] == 1
+                assert len(result['mappings']) == 1+refactor
+                assert len(result['site_witnesses']) == 2-int(failed)
+                assert result['site_witnesses'][0]['pc'] == (0x200 if failed else 0x210)
+                assert a.pie_elf(f['original'])['pie_identity']['entry'] == 0x200
+                owned_reject('legacy selection never infers PIE',
+                    lambda: a.selection(f['selection'],f['original'],f['policy']), 'ELF type/machine')
+                owned_reject('legacy RPC never infers PIE', lambda: a.rpc(
+                    f['rpc'],f['original'],[], '/fixture/original',json.loads(f['policy']),None,None,False), 'ELF type/machine')
+    # The historical unsigned-address refusal remains; PIE offsets are symbolic,
+    # so an entire negative page ending at zero is valid in the new domain only.
+    image = a.pie_elf(pie_fixture()['original'])
+    maps = [dict(kind='trampoline',va=-4096,length=4096,prot=5,offset=4096)]
+    owned_reject('old unsigned view overflow', lambda: a.extent_fragments(image,maps,-4096,4096,8192), 'view address overflow')
+    assert a.extent_fragments(image,maps,-4096,4096,8192,relative=True) == [(-4096,0,4096,maps[0])]
+    f = pie_fixture()
+    a.PRODUCERS = {**saved, 'stock-algorithm': (*saved['stock-algorithm'][:2],a.sha(f['loader']))}
+    try:
+        owned_reject('legacy artifact never infers PIE', lambda: a.artifact(
+            f['original'],f['candidate'],f['loader'],{},[],[],[],lane='stock-algorithm'), 'ELF type/machine')
+    finally:
+        a.PRODUCERS = saved
+    candidate = f['candidate'][:-len(a.RESTORE_SUFFIX['stock-algorithm'])]+a.RESTORE_SUFFIX['bootstrap-patched-reference']
+    pie_case(dict(f,candidate=candidate),'bootstrap-patched-reference')
+    owned_reject('lane-specific restore order',lambda:pie_case(dict(f,candidate=candidate)), 'whole pinned loader/mmap/old-entry bytes')
+    assert a.PRODUCERS is saved
+    print('PIE positive controls: relative/negative/refactored, complete refusals/traps and exact lane suffixes; synthetic only')
+
+
+def pie_mutation_controls():
+    f = pie_fixture()
+    def changed_candidate(needle,replacement):
+        assert f['candidate'].count(needle) == 1
+        return dict(f,candidate=f['candidate'].replace(needle,replacement))
+    for label,needle,replacement in [
+        ('stage one changed',b'CONTROL-LOADER',b'CONTROL-LOADEQ'),
+        ('mmap bias omitted',bytes.fromhex('4c01e7'),b'\x90'*3),
+        ('mmap bias wrong register',bytes.fromhex('4c01e7'),bytes.fromhex('4c01ef')),
+        ('entry bias omitted',bytes.fromhex('4c01e0'),b'\x90'*3),
+        ('entry bias wrong register',bytes.fromhex('4c01e0'),bytes.fromhex('4c01e8')),
+        ('old entry changed',bytes.fromhex('b8000200004c01e0'),bytes.fromhex('b8100200004c01e0')),
+    ]:
+        owned_reject(label,lambda needle=needle,replacement=replacement:pie_case(changed_candidate(needle,replacement)),
+                     'whole pinned loader/mmap/old-entry bytes')
+    for raw in [f['stderr'].replace(b'trampoline=0x600010..0x60001a',b'trampoline=[absolute] 0x600010..[absolute] 0x60001a'),
+                f['stderr'].replace(b'mmap(0x600000',b'mmap([absolute] 0x600000'),
+                f['stderr']+b'debug: bypass 0x200 and jump directly to [absolute] 0x600000\n']:
+        owned_reject('absolute coordinates never stripped',lambda raw=raw:pie_case(dict(f,stderr=raw)), 'PIE absolute addresses unsupported')
+    for label,off,raw,reason in [
+        ('candidate type',16,struct.pack('<H',2),'ELF type/machine'),
+        ('candidate entry',24,struct.pack('<Q',0x210),''),
+        ('missing interpreter',176,struct.pack('<I',0),'PIE unique interpreter'),
+        ('missing dynamic',232,struct.pack('<I',0),'PIE unique dynamic'),
+        ('PIE bit removed',392,struct.pack('<Q',0),'PIE DF_1_PIE identity'),
+        ('different interpreter',321,b'X','PIE metadata preserved'),
+        ('gateway changed',513,b'\0','source gateway reaches reported emitted trampoline'),
+        ('unowned source changed',700,b'X','unowned original-file change'),
+    ]:
+        candidate=bytearray(f['candidate']);candidate[off:off+len(raw)]=raw
+        owned_reject(label,lambda candidate=candidate:pie_case(dict(f,candidate=bytes(candidate))),reason)
+    # Complete census and map/backing checks are still shared with ET_EXEC.
+    for label,raw,reason in [
+        ('omitted outcome',b'\n'.join(f['stderr'].splitlines()[1:])+b'\n','exact per-site debug outcomes'),
+        ('mapped owner mismatch',f['stderr'].replace(b'mmap(0x600000',b'mmap(0x601000'),'whole pinned loader/mmap/old-entry bytes'),
+        ('out-of-domain relative',f['stderr'].replace(b'mmap(0x600000',b'mmap(0x6000000000000000'),'PIE relative address domain'),
+    ]:
+        owned_reject(label,lambda raw=raw:pie_case(dict(f,stderr=raw)),reason)
+    policy=json.loads(f['policy']);policy['instrumentation']='real-hook'
+    owned_reject('new PIE mode never admits hook',lambda:pie_case(dict(f,policy=json.dumps(policy).encode())), 'PIE null instrumentation only')
+    rows=[json.loads(row) for row in f['rpc'].splitlines()]
+    rows.insert(2,dict(jsonrpc='2.0',method='instruction',params=dict(address=384,length=5,offset=384),id=0))
+    for i,row in enumerate(rows):row['id']=i
+    hostile=b''.join(json.dumps(row).encode()+b'\n' for row in rows)
+    owned_reject('metadata cannot be declared patchable RPC context',lambda:pie_case(dict(f,rpc=hostile)), 'PIE instruction overlaps identity metadata')
+    original=bytearray(f['original']);struct.pack_into('<I',original,120,3)
+    owned_reject('duplicate interpreter identity',lambda:a.pie_elf(bytes(original)), 'PIE unique interpreter')
+    owned_reject('PIE type required',lambda:a.pie_elf(fixture()['original']),'ELF type/machine')
+    # Bound identities remain full bytes, not a type-relabelled ELF or projection.
+    original=bytearray(f['original']);original[700]^=1
+    owned_reject('stale whole original digest',lambda:pie_case(dict(f,original=bytes(original))))
+    exact=owned_rebind(f,f['selection']+b'\n'*(1024*1024-len(f['selection'])))
+    assert len(a._selection(exact['selection'],exact['original'],exact['policy'],None,artifact_profile=a.PIE_ARTIFACT_PROFILE)[0])==2
+    large=owned_rebind(exact,exact['selection']+b'\n')
+    owned_reject('same one MiB selection bound',lambda:pie_case(large),'selection length/newline')
+    owned_reject('same sixteen MiB ELF bound',lambda:a.pie_elf(f['original']+bytes(a.MAX_FILE+1-len(f['original']))),'ELF identity')
+    print('PIE mutation controls: exact loader bias/entry, identity/metadata, ownership, full denominator and old bounds')
+
+
+def pie_cli_controls():
+    argv=['/fixture/envelope','/fixture/new-output','--envelope-sha256','a'*64]
+    assert a.arguments(argv).artifact_profile is None
+    for option in (['--artifact-profile',a.PIE_ARTIFACT_PROFILE],['--artifact-profile='+a.PIE_ARTIFACT_PROFILE]):
+        assert a.arguments(argv+option).artifact_profile==a.PIE_ARTIFACT_PROFILE
+    for extra,kind in [
+        (['--artifact-profile',a.PIE_ARTIFACT_PROFILE]*2,AssertionError),
+        (['--artifact-profile='+a.PIE_ARTIFACT_PROFILE]*2,AssertionError),
+        (['--artifact-p',a.PIE_ARTIFACT_PROFILE],AssertionError),
+        (['--artifact-profile','unknown'],SystemExit),
+        (['--artifact-profile'],SystemExit),
+        (['--artifact-profile',a.PIE_ARTIFACT_PROFILE,'--selection-profile',a.ABSOLUTE_STARTUP_PROFILE],AssertionError),
+    ]:
+        try:a.arguments(argv+extra)
+        except kind as error:
+            if isinstance(error,SystemExit):assert error.code==2
+        else:raise AssertionError('PIE CLI accepted '+str(extra))
+    # Production producer pins remain mandatory; no synthetic end-to-end pass.
+    roles={'original','selection','policy','candidate','frontend','backend','loader','transport_frontend','helper'}|{p+'_'+r for p in ('transport','producer') for r in ('request','receipt','stdout','stderr')}
+    for lane in a.PRODUCERS:
+        envelope=dict(schema=1,lane=lane,reference_commit=a.REVISION,reference_tree=a.TREE,
+                      archive_sha256=a.ARCHIVE,capstone_revision=a.CAPSTONE,abi_delta_patch_sha256=a.ABI_PATCH,
+                      common_argv=[],hook=None,files=dict.fromkeys(roles,{}))
+        owned_reject('PIE production pins',lambda:a.validate_pie(envelope,dict.fromkeys(roles,b'not-pinned')),'pinned producer lane')
+    print('PIE CLI controls: explicit distinct mode and unchanged real producer pins')
+
+
+if __name__ == '__main__':
+    pie_positive_controls()
+    pie_mutation_controls()
+    pie_cli_controls()

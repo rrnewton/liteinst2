@@ -45,6 +45,8 @@ LOADER_ADDRESS = 0x20FEDC000
 SHORT_T3_OWNERSHIP_PROFILE = 'elf-disassembly-null-jumps-short-t3-ownership-v1'
 SHORT_T3_PENDING_PROFILE = 'elf-disassembly-null-jumps-short-t3-pending-v1'
 ABSOLUTE_STARTUP_PROFILE = 'elf-disassembly-null-jumps-static-exec-router-absolute-prerequisites-v1'
+PIE_ARTIFACT_PROFILE = 'elf-pie-relative-null-v1'
+RELATIVE_LIMIT = 0x1FFFFFFFFFFFF000  # pinned e9alloc.h; tagged absolute != relative
 
 
 def sha(data):
@@ -127,6 +129,59 @@ def owner(image, pc, length, executable=False):
     return p[2] + pc - p[3]
 
 
+def pie_elf(data):
+    # Explicit executable PIE domain, not the ET_DYN shared-object/DT_INIT route.
+    # This authenticates file coordinates, not a live load bias or startup ABI.
+    image = elf(data, 3)
+    loads_ = [p for p in image['rows'] if p[0] == 1]
+    assert all(0 <= p[3] < p[3] + p[6] <= RELATIVE_LIMIT for p in loads_), 'PIE relative LOAD domain'
+    assert 0 < image['entry'] < RELATIVE_LIMIT, 'PIE entry domain'
+    owner(image, image['entry'], 1, True)
+    protected = [(0, 64), (image['phoff'], 56 * len(image['rows']))]
+    metadata = {}
+    for tag, name in ((3, 'interpreter'), (2, 'dynamic')):
+        rows = [p for p in image['rows'] if p[0] == tag]
+        assert len(rows) == 1, 'PIE unique ' + name
+        p = rows[0]
+        assert 0 < p[5] == p[6] and owner(image, p[3], p[5]) == p[2], 'PIE file-backed ' + name
+        assert next(q for q in loads_ if q[3] <= p[3] and p[3] + p[5] <= q[3] + q[5])[1] & 4, 'PIE readable metadata'
+        metadata[name] = data[p[2]:p[2] + p[5]]
+        protected.append((p[2], p[5]))
+    interpreter = metadata['interpreter']
+    assert 2 <= len(interpreter) <= PAGE and interpreter.startswith(b'/') and interpreter.endswith(b'\0') and interpreter.count(b'\0') == 1, 'PIE interpreter string'
+    dynamic = metadata['dynamic']
+    assert len(dynamic) % 16 == 0, 'PIE dynamic entries'
+    rows = list(struct.iter_unpack('<qQ', dynamic))
+    end = next((i for i, (tag, _) in enumerate(rows) if tag == 0), None)
+    assert end is not None, 'PIE dynamic terminator'
+    flags = [value for tag, value in rows[:end] if tag == 0x6ffffffb]
+    assert len(flags) == 1 and flags[0] & 0x08000000, 'PIE DF_1_PIE identity'
+    image['pie_protected'] = protected
+    image['pie_identity'] = dict(elf_type=3, entry=image['entry'],
+        interpreter_sha256=sha(interpreter), dynamic_sha256=sha(dynamic))
+    return image
+
+
+def pie_debug(raw, sites):
+    # The old parser deliberately erased this tag for ET_EXEC. Never erase it
+    # before deciding the PIE coordinate domain: absolute owners need a distinct
+    # proof and are refused wholesale here, not omitted from the site census.
+    assert b'[absolute]' not in raw, 'PIE absolute addresses unsupported'
+    outcomes, maps, bypass = debug(raw, sites)
+    values = [r[k] for r in outcomes if r['tactic'] is not None for k in ('low', 'high')]
+    values += [edge for r in maps for edge in (r['va'], r['va'] + r['length'])]
+    values += [target for _, target in bypass]
+    assert all(-RELATIVE_LIMIT <= value <= RELATIVE_LIMIT for value in values), 'PIE relative address domain'
+    return outcomes, maps, bypass
+
+
+def pie_loader_mmap(row, previous):
+    encoded, next_ = loader_mmap(row, previous)
+    address_bytes = 5 if 0 <= row['va'] < 1 << 31 else 10
+    # e9elf.cpp::emitLoaderMmap(pic=true, absolute=false): add R12 to RDI.
+    return encoded[:address_bytes] + bytes.fromhex('4c01e7') + encoded[address_bytes:], next_
+
+
 
 def dynamic_symbol(data, name, optional=False):
     shoff = struct.unpack_from('<Q', data, 40)[0]
@@ -183,7 +238,9 @@ def selection_absolute_startup(raw, original, policy_raw):
     return _selection(raw, original, policy_raw, ABSOLUTE_STARTUP_PROFILE)
 
 
-def _selection(raw, original, policy_raw, selection_profile):
+def _selection(raw, original, policy_raw, selection_profile, *, artifact_profile=None):
+    assert artifact_profile in (None, PIE_ARTIFACT_PROFILE), 'artifact profile'
+    assert artifact_profile is None or selection_profile is None, 'PIE selection profile is separate'
     assert selection_profile in (None, SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE, ABSOLUTE_STARTUP_PROFILE), 'selection profile'
     assert 0 < len(raw) <= 1024 * 1024 and raw.endswith(b'\n'), 'selection length/newline'
     policy = loads(policy_raw)
@@ -192,6 +249,7 @@ def _selection(raw, original, policy_raw, selection_profile):
     assert policy['original_sha256'] == sha(original) and policy['selection_sha256'] == sha(raw)
     assert policy['e9_revision'] == REVISION
     assert policy['instrumentation'] in ('null', 'real-hook')
+    assert artifact_profile is None or policy['instrumentation'] == 'null', 'PIE null instrumentation only'
     assert policy['selection_style'] in ('jump-site', 'heap-write', 'forced-puzzle')
     lines = raw.decode().splitlines()
     if selection_profile == ABSOLUTE_STARTUP_PROFILE:
@@ -261,7 +319,10 @@ def _selection(raw, original, policy_raw, selection_profile):
     assert 0 < len(sites) <= 1024 and len({p['pc'] for p in sites}) == len(sites)
     assert len({p['file_offset'] for p in sites}) == len(sites)
     for p in sites:
-        assert owner(elf(original, 2), p['pc'], p['length'], True) == p['file_offset']
+        if artifact_profile is None:
+            assert owner(elf(original, 2), p['pc'], p['length'], True) == p['file_offset']
+        else:
+            assert owner(pie_elf(original), p['pc'], p['length'], True) == p['file_offset']
     # All non-site text stays digest-bound. This is a site adapter, not a second
     # implementation of the core selection/planner validation contract.
     return sites, policy
@@ -274,7 +335,9 @@ def hook_template(target):
     ] + list(bytes.fromhex('58047f9e5f5e5a594158415958415a415b488da42400400000')) + ['$instruction', '$continue']
 
 
-def rpc(raw, original, sites, original_path, policy, hook, hook_bytes, trap_all):
+def rpc(raw, original, sites, original_path, policy, hook, hook_bytes, trap_all, *, artifact_profile=None):
+    assert artifact_profile in (None, PIE_ARTIFACT_PROFILE), 'artifact profile'
+    assert artifact_profile is None or (policy['instrumentation'] == 'null' and hook is None and hook_bytes is None), 'PIE null instrumentation only'
     lines = raw.decode().splitlines()
     assert raw.endswith(b'\n') and 5 <= len(lines) <= MAX_MESSAGES and all(lines)
     rows = [loads(line) for line in lines]
@@ -284,7 +347,10 @@ def rpc(raw, original, sites, original_path, policy, hook, hook_bytes, trap_all)
         assert type(row['params']) is dict
     assert rows[0]['method'] == 'binary' and rows[0]['params'] == {'filename': original_path, 'mode': 'exe'}
     assert rows[-1]['method'] == 'emit' and rows[-1]['params'] == {'filename': 'a.out', 'format': 'binary', 'mapping_size': PAGE}
-    image = elf(original, 2)
+    if artifact_profile is None:
+        image = elf(original, 2)
+    else:
+        image = pie_elf(original)
     instructions, patches, templates, reserves = {}, [], {}, []
     started = False
     for row in rows[1:-1]:
@@ -395,12 +461,15 @@ def loader_mmap(row, previous):
     return out, (length, prot, off)
 
 
-def extent_fragments(image, maps, pc, size, file_length, executable=True, mapped_only=False):
+def extent_fragments(image, maps, pc, size, file_length, executable=True, mapped_only=False, *, relative=False):
     # Partition at every ownership boundary. A partial MAP_FIXED override must
     # never disappear into a whole-span LOAD fallback. File aliases are allowed;
     # ambiguous virtual ownership is not. Callers validate complete maps first.
     assert 0 < size <= MAX_FILE and -(1 << 63) < pc <= U64
-    assert (pc & U64) <= U64 - size, 'view address overflow'
+    if not relative:
+        assert (pc & U64) <= U64 - size, 'view address overflow'
+    else:
+        assert -RELATIVE_LIMIT <= pc < pc + size <= RELATIVE_LIMIT, 'PIE relative view overflow'
     end = pc + size
     boundaries = {pc, end}
     ranges = [(r['va'], r['length']) for r in maps]
@@ -425,13 +494,29 @@ def extent_fragments(image, maps, pc, size, file_length, executable=True, mapped
     return result
 
 
-def artifact(original, candidate, loader, intent, outcomes, maps, bypass, *, lane):
+def artifact(original, candidate, loader, intent, outcomes, maps, bypass, *, lane, artifact_profile=None):
+    assert artifact_profile in (None, PIE_ARTIFACT_PROFILE), 'artifact profile'
     assert lane in PRODUCERS and sha(loader) == PRODUCERS[lane][2], 'pinned loader lane'
-    old, new = elf(original, 2), elf(candidate, 2)
+    if artifact_profile is None:
+        old, new = elf(original, 2), elf(candidate, 2)
+    else:
+        old, new = pie_elf(original), pie_elf(candidate)
+        assert not intent['reserves'], 'PIE reserved hooks unsupported'
+        assert all(off + length <= start or start + size <= off
+                   for off, (_, length) in intent['instructions'].items()
+                   for start, size in old['pie_protected']), 'PIE instruction overlaps identity metadata'
+        assert {k: v for k, v in old['pie_identity'].items() if k != 'entry'} == {
+            k: v for k, v in new['pie_identity'].items() if k != 'entry'}, 'PIE metadata preserved'
+        values = [r[k] for r in outcomes if r['tactic'] is not None for k in ('low', 'high')]
+        values += [edge for r in maps for edge in (r['va'], r['va'] + r['length'])]
+        values += [target for _, target in bypass]
+        assert all(-RELATIVE_LIMIT <= value <= RELATIVE_LIMIT for value in values), 'PIE relative address domain'
     assert old['phoff'] == new['phoff'] and len(old['rows']) == len(new['rows'])
     changed = [i for i, pair in enumerate(zip(old['rows'], new['rows'])) if pair[0] != pair[1]]
     assert len(changed) == 1 and old['rows'][changed[0]][0] == 4, 'one PT_NOTE becomes loader'
     index = changed[0]
+    if artifact_profile is not None:
+        assert index == max(i for i, row in enumerate(old['rows']) if row[0] == 4), 'PIE pinned last PT_NOTE replacement'
     p = new['rows'][index]
     assert p[:2] == (1, 5) and p[3:5] == (LOADER_ADDRESS, 0) and p[5] == p[6] and p[7] == PAGE
     assert p[2] % PAGE == 0 and p[2] >= (len(original) + PAGE - 1) // PAGE * PAGE
@@ -445,15 +530,26 @@ def artifact(original, candidate, loader, intent, outcomes, maps, bypass, *, lan
         assert 0 < row['length'] <= MAX_FILE and row['offset'] + row['length'] <= p[2]
         assert row['offset'] >= 0, 'mapping file offset'
         assert -(1 << 63) < row['va'] <= (1 << 63) - row['length'], 'mapping signed address overflow'
-        assert (row['va'] & U64) <= U64 - row['length'], 'mapping address overflow'
+        if artifact_profile is None:
+            assert (row['va'] & U64) <= U64 - row['length'], 'mapping address overflow'
+        else:
+            assert -RELATIVE_LIMIT <= row['va'] < row['va'] + row['length'] <= RELATIVE_LIMIT, 'PIE relative mapping overflow'
         assert row['prot'] in (1, 2, 3, 4, 5, 6), 'no RWX or empty mapping'
-        encoded, previous = loader_mmap(row, previous)
+        if artifact_profile is None:
+            encoded, previous = loader_mmap(row, previous)
+        else:
+            encoded, previous = pie_loader_mmap(row, previous)
         stream += encoded
-        extra = len(encoded) - 18
+        if artifact_profile is None:
+            extra = len(encoded) - 18
+        else:
+            extra = len(encoded) - 21
         loader_progress += '\x1b[36m0\x1b[0m' if extra <= 0 else chr((ord('0') if extra < 10 else ord('A')) + extra)
     stream += bytes.fromhex('4c89c7b8030000000f05')
     entry = old['entry']
     stream += b'\xb8' + struct.pack('<I', entry) if entry < 1 << 31 else b'\x48\xb8' + struct.pack('<Q', entry)
+    if artifact_profile is not None:
+        stream += bytes.fromhex('4c01e0')  # emitLoadFuncPtrIntoRAX: add R12 to RAX
     stream += RESTORE_SUFFIX[lane]
     assert candidate[p[2]:] == stream, 'whole pinned loader/mmap/old-entry bytes'
     physical = set()
@@ -480,7 +576,10 @@ def artifact(original, candidate, loader, intent, outcomes, maps, bypass, *, lan
         permitted.update(range(off, off + length))
     assert all(a == b or i in permitted for i, (a, b) in enumerate(zip(original, candidate[:len(original)]))), 'unowned original-file change'
     def view(pc, size, executable=True):
-        fragments = extent_fragments(new, maps, pc, size, len(candidate), executable)
+        if artifact_profile is None:
+            fragments = extent_fragments(new, maps, pc, size, len(candidate), executable)
+        else:
+            fragments = extent_fragments(new, maps, pc, size, len(candidate), executable, relative=True)
         return b''.join(candidate[at:at + high - low] for low, high, at, _ in fragments)
     for r in refactors:
         off = executable_page_owner(old, r['va'], r['length'], len(original))
@@ -500,7 +599,10 @@ def artifact(original, candidate, loader, intent, outcomes, maps, bypass, *, lan
         if row['tactic'] is None:
             continue
         pc, low, high = row['pc'], row['low'], row['high']
-        fragments = extent_fragments(new, trampolines, low, high - low, len(candidate), mapped_only=True)
+        if artifact_profile is None:
+            fragments = extent_fragments(new, trampolines, low, high - low, len(candidate), mapped_only=True)
+        else:
+            fragments = extent_fragments(new, trampolines, low, high - low, len(candidate), mapped_only=True, relative=True)
         at = pc
         if row['tactic'] == 'T3':
             b = view(at, 2)
@@ -645,7 +747,13 @@ def validate(envelope, blobs):
     return _validate(envelope, blobs, None)
 
 
-def _validate(envelope, blobs, selection_profile):
+def validate_pie(envelope, blobs):
+    return _validate(envelope, blobs, None, artifact_profile=PIE_ARTIFACT_PROFILE)
+
+
+def _validate(envelope, blobs, selection_profile, *, artifact_profile=None):
+    assert artifact_profile in (None, PIE_ARTIFACT_PROFILE), 'artifact profile'
+    assert artifact_profile is None or selection_profile is None, 'PIE selection profile is separate'
     assert selection_profile in (None, SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE, ABSOLUTE_STARTUP_PROFILE), 'selection profile'
     assert envelope.keys() == {'schema', 'lane', 'reference_commit', 'reference_tree', 'archive_sha256', 'capstone_revision', 'abi_delta_patch_sha256', 'common_argv', 'hook', 'files'}
     assert type(envelope['schema']) is int and envelope['schema'] == 1
@@ -656,7 +764,10 @@ def _validate(envelope, blobs, selection_profile):
     assert files.keys() == roles | ({'hook_elf'} if envelope['hook'] is not None else set())
     assert tuple(sha(blobs[r]) for r in ('frontend', 'backend', 'loader')) == PRODUCERS[lane], 'pinned producer lane'
     assert sha(blobs['transport_frontend']) == TRANSPORT
-    sites, policy = _selection_for_profile(blobs['selection'], blobs['original'], blobs['policy'], selection_profile)
+    if artifact_profile is None:
+        sites, policy = _selection_for_profile(blobs['selection'], blobs['original'], blobs['policy'], selection_profile)
+    else:
+        sites, policy = _selection(blobs['selection'], blobs['original'], blobs['policy'], None, artifact_profile=artifact_profile)
     common = envelope['common_argv']
     assert type(common) is list and all(type(v) is str and '\0' not in v for v in common)
     singles, actions = set(), []
@@ -692,11 +803,18 @@ def _validate(envelope, blobs, selection_profile):
     assert requests['transport']['argv'] == [files['transport_frontend']['path'], *common, '--format=json', '--output=-', files['original']['path']]
     assert requests['producer']['argv'] == [files['frontend']['path'], *common, '--format=binary', '--output=' + files['candidate']['path'], '--backend=' + files['backend']['path'], '--option=--debug', files['original']['path']]
     assert blobs['transport_stderr'] == b'', 'transport warnings/errors'
-    intent = rpc(blobs['transport_stdout'], blobs['original'], sites, files['original']['path'], policy, envelope['hook'], blobs.get('hook_elf'), '--trap-all' in common)
+    if artifact_profile is None:
+        intent = rpc(blobs['transport_stdout'], blobs['original'], sites, files['original']['path'], policy, envelope['hook'], blobs.get('hook_elf'), '--trap-all' in common)
+    else:
+        intent = rpc(blobs['transport_stdout'], blobs['original'], sites, files['original']['path'], policy, envelope['hook'], blobs.get('hook_elf'), '--trap-all' in common, artifact_profile=artifact_profile)
     if policy['instrumentation'] == 'real-hook':
         assert intent['template_name'] == 'call_CB_' + envelope['hook']['symbol'] + '_' + files['hook_elf']['path']
-    outcomes, maps, bypass = debug(blobs['producer_stderr'], sites)
-    ownership = artifact(blobs['original'], blobs['candidate'], blobs['loader'], intent, outcomes, maps, bypass, lane=lane)
+    if artifact_profile is None:
+        outcomes, maps, bypass = debug(blobs['producer_stderr'], sites)
+        ownership = artifact(blobs['original'], blobs['candidate'], blobs['loader'], intent, outcomes, maps, bypass, lane=lane)
+    else:
+        outcomes, maps, bypass = pie_debug(blobs['producer_stderr'], sites)
+        ownership = artifact(blobs['original'], blobs['candidate'], blobs['loader'], intent, outcomes, maps, bypass, lane=lane, artifact_profile=artifact_profile)
     stats = statistics(blobs['producer_stdout'], outcomes, ownership, files['original']['path'])
     tsv = wire(sites, policy, outcomes, intent['trap'])
     result = dict(schema=1, scope='STRUCTURAL_CANDIDATE_SITE_INVENTORY_ONLY', lane=lane,
@@ -705,6 +823,15 @@ def _validate(envelope, blobs, selection_profile):
         site_inventory_sha256=sha(tsv), candidate_sha256=sha(blobs['candidate']),
         qualification_complete=False, runtime_executed_by_adapter=False,
         architectural_equivalence_proved=False, transport_witness_is_patch_success=False)
+    if artifact_profile is not None:
+        result['artifact_profile'] = artifact_profile
+        result['pie'] = dict(original=pie_elf(blobs['original'])['pie_identity'],
+            candidate=pie_elf(blobs['candidate'])['pie_identity'],
+            coordinates='all original LOADs, mappings, gateways and entry share symbolic load bias B',
+            load_bias_source='pinned stage 1 R12 = runtime loader entry - LOADER_ADDRESS',
+            runtime_load_bias_observed=False, complete_code_ledger_proved=False,
+            runtime_mapping_ranges_proved=False,
+            li2_dynamic_router_executed=False, startup_execution_proved=False)
     return tsv, _selection_binding(result, selection_profile)
 
 
@@ -714,6 +841,7 @@ def arguments(argv=None):
     parser.add_argument('new_output', type=Path)
     parser.add_argument('--envelope-sha256', required=True)
     parser.add_argument('--selection-profile', choices=(SHORT_T3_OWNERSHIP_PROFILE, SHORT_T3_PENDING_PROFILE, ABSOLUTE_STARTUP_PROFILE), action='append')
+    parser.add_argument('--artifact-profile', choices=(PIE_ARTIFACT_PROFILE,), action='append')
     values = list(sys.argv[1:] if argv is None else argv)
     args = parser.parse_args(values)
     if args.selection_profile is not None:
@@ -722,6 +850,13 @@ def arguments(argv=None):
             value.split('=', 1)[0] == '--selection-profile' for value in options
         ) == 1, 'one exact selection-profile option required'
         args.selection_profile = args.selection_profile[0]
+    if args.artifact_profile is not None:
+        options = values[:values.index('--')] if '--' in values else values
+        assert len(args.artifact_profile) == 1 and sum(
+            value.split('=', 1)[0] == '--artifact-profile' for value in options
+        ) == 1, 'one exact artifact-profile option required'
+        assert args.selection_profile is None, 'PIE selection profile is separate'
+        args.artifact_profile = args.artifact_profile[0]
     return args
 
 
@@ -734,7 +869,10 @@ def main():
     blobs, owners = {}, {}
     for role, row in envelope['files'].items():
         blobs[role], owners[role] = read_bound(row)
-    tsv, result = _validate(envelope, blobs, args.selection_profile)
+    if args.artifact_profile is None:
+        tsv, result = _validate(envelope, blobs, args.selection_profile)
+    else:
+        tsv, result = validate_pie(envelope, blobs)
     for role, row in envelope['files'].items():
         current, identity = read_bound(row)
         assert current == blobs[role] and identity == owners[role], 'inputs changed during adapter read'
