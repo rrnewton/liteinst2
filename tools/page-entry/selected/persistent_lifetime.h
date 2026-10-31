@@ -1,6 +1,6 @@
 #ifndef LI2_PERSISTENT_LIFETIME_H
 #define LI2_PERSISTENT_LIFETIME_H
-#include "persistent_plan.h"
+#include "persistent_compact.h"
 #include "tf_span_transfer.h"
 #include "rseq_guard.h"
 #include "private_code_query.h"
@@ -64,7 +64,13 @@ const struct li2_pe_sources *li2_pe_epoch_sources_view(const struct li2_pe_token
    genuine transfer before any publication write; replacement additionally
    consumes the exact old completed-generation permit before code/proof/table W.
    Warm bind uses immutable primary payload, current source key, actual private
-   registry generation and current rseq pin. No decoder on warm entry. */
+   registry generation and current rseq pin. No decoder on warm entry.
+   The resident primary is the ready-only li2_pe_compact, with one common
+   actual table/image/source pair. Full li2_pe_plan objects are cold protected
+   scratch, not resident authority. Seal all45 proof pages R/NX only after
+   whole compact reconstruction; authenticate the unused slot tail as zero.
+   Earliest recovery owns a separate6488-byte donor materialization buffer;
+   it cannot alias the active primary, raw frame, spill or output. */
 int li2_pe_epoch_bind(const struct li2_pe_token *,const struct li2_pe_generation *);
 /* Actual whole source, code RX, proof/table R/NX, spill RW/NX, session/full
    frame/AF/TLS/mask/rseq checks immediately precede redirection. Only actual

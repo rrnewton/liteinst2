@@ -1,6 +1,6 @@
 /* Pure component. Addresses below are descriptions, never executable mappings.
    No registered/source/lifecycle authority or hardware state is supplied. */
-#include "persistent_plan.h"
+#include "persistent_compact.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -11,6 +11,11 @@ static unsigned char source[2][4096];
 static const uintptr_t pages[2]={0x400000,0x401000};
 static const uintptr_t code=0x10000000,spill=0x10010000,table_at=0x10012000;
 static unsigned positives,refusals,corruptions,recoveries;
+static struct li2_pe_compact compact,compact_scratch,compact_changed;
+static struct li2_mg_plan materialized;
+static unsigned compact_positives,compact_guards,compact_recoveries,compact_refusals,compact_corruptions;
+static void compact_accepted(void);
+
 static void put32(unsigned char *b,uint32_t n) {
     for(unsigned i=0;i<4;i++)b[i]=(unsigned char)(n>>(i*8));
 }
@@ -41,6 +46,87 @@ static void accepted(uintptr_t entry,unsigned heads,unsigned stores,unsigned byt
     assert(!li2_pe_plan_validate(&plan,&scratch));
     assert(!memcmp(&plan,&scratch,sizeof plan));
     ++positives;
+    compact_accepted();
+}
+static void compact_accepted(void) {
+    assert(!li2_pe_compact_build(&plan,&scratch,&compact));
+    assert(compact.version==LI2_PE_COMPACT_VERSION && compact.bytes==sizeof compact &&
+        compact.ready==1 && !compact.result && compact.heads==plan.heads && compact.stores==plan.stores);
+    assert(!li2_pe_compact_validate(&compact,&scratch,&compact_scratch));
+    assert(!memcmp(&compact,&compact_scratch,sizeof compact));
+    assert(!memcmp(compact.source,plan.source,sizeof plan.source));
+    assert(!memcmp(compact.image,plan.image,sizeof plan.image));
+    assert(!memcmp(&compact.table,&plan.table,sizeof plan.table));
+    for(unsigned i=0;i<plan.heads;i++)if(plan.head[i].kind==LI2_PE_MOV) {
+        assert(!li2_pe_compact_guard(&compact,i,&materialized));
+        assert(!memcmp(&materialized,&plan.guard[i],sizeof materialized));
+        ++compact_guards;
+    }
+    ++compact_positives;
+}
+static void compact_recovery(void) {
+    uint64_t raw[16],saved[4];
+    for(unsigned i=0;i<16;i++)raw[i]=UINT64_C(0x1234000000000000)+17*i;
+    for(unsigned i=0;i<4;i++)saved[i]=UINT64_C(0xaabb000000000000)+31*i;
+    const uint64_t flags=UINT64_C(0x102d7);
+    struct li2_pe_recovered old,actual;
+    for(unsigned i=0;i<plan.heads;i++) {
+        const struct li2_pe_head *h=&plan.head[i];const struct li2_span_decoded *d=&plan.original[i];
+        uintptr_t base=code+(uintptr_t)i*LI2_PE_SLOT_BYTES;
+        if(h->kind==LI2_PE_MOV) {
+            const struct li2_mg_plan *g=&plan.guard[i];
+            for(unsigned j=0;j<g->boundaries;j++) {
+                uint64_t frame[16];memcpy(frame,raw,sizeof frame);
+                if(g->boundary[j].flags)frame[0]=(frame[0]&~UINT64_C(0xffff))|
+                    ((flags&UINT64_C(0xd5))<<8)|((flags>>11)&1);
+                assert(!li2_pe_recover(&plan,base+g->boundary[j].offset,frame,flags,saved,&old));
+                assert(!li2_pe_compact_recover(&compact,base+g->boundary[j].offset,frame,flags,saved,&materialized,&actual));
+                assert(!memcmp(&old,&actual,sizeof actual));
+                ++compact_recoveries;
+            }
+        } else {
+            assert(!li2_pe_recover(&plan,base,raw,flags,saved,&old));
+            assert(!li2_pe_compact_recover(&compact,base,raw,flags,saved,&materialized,&actual));
+            assert(!memcmp(&old,&actual,sizeof actual));++compact_recoveries;
+            if(d->flow!=LI2_REGION_JMP) {
+                unsigned offset=d->flow==LI2_REGION_NEXT?h->source_length:6;
+                assert(!li2_pe_recover(&plan,base+offset,raw,flags,saved,&old));
+                assert(!li2_pe_compact_recover(&compact,base+offset,raw,flags,saved,&materialized,&actual));
+                assert(!memcmp(&old,&actual,sizeof actual));++compact_recoveries;
+            }
+        }
+        uintptr_t invalid[2]={base+1,base+h->generated_length};
+        for(unsigned j=0;j<2;j++) {
+            assert(li2_pe_recover(&plan,invalid[j],raw,flags,saved,&old)==LI2_PE_MISS);
+            assert(li2_pe_compact_recover(&compact,invalid[j],raw,flags,saved,&materialized,&actual)==LI2_PE_MISS);
+            assert(!memcmp(&old,&actual,sizeof actual));++compact_refusals;
+        }
+    }
+    assert(li2_pe_recover(&plan,code+LI2_PE_IMAGE_BYTES,raw,flags,saved,&old)==LI2_PE_MISS);
+    assert(li2_pe_compact_recover(&compact,code+LI2_PE_IMAGE_BYTES,raw,flags,saved,&materialized,&actual)==LI2_PE_MISS);
+    assert(!memcmp(&old,&actual,sizeof actual));++compact_refusals;
+    compact_changed=compact;compact_changed.head[0].successors[0]=63;
+    assert(li2_pe_compact_recover(&compact_changed,code,raw,flags,saved,&materialized,&actual)==LI2_PE_CORRUPT && !actual.complete);
+    ++compact_corruptions;
+    compact_changed=compact;compact_changed.guard[0].boundary[0].dirty=1;
+    assert(li2_pe_compact_recover(&compact_changed,code,raw,flags,saved,&materialized,&actual)==LI2_PE_CORRUPT && !actual.complete);
+    ++compact_corruptions;
+    compact_changed=compact;compact_changed.guard[0].boundary[1].offset=0;
+    assert(li2_pe_compact_recover(&compact_changed,code,raw,flags,saved,&materialized,&actual)==LI2_PE_CORRUPT && !actual.complete);
+    ++compact_corruptions;
+    const size_t offsets[]={offsetof(struct li2_pe_compact,source)+0x100,
+        offsetof(struct li2_pe_compact,image)+LI2_PE_SLOT_BYTES-1,
+        offsetof(struct li2_pe_compact,table)+offsetof(struct li2_mg_table,root),
+        offsetof(struct li2_pe_compact,guard)+offsetof(struct li2_pe_guard_record,store_offset),
+        offsetof(struct li2_pe_compact,guard)+offsetof(struct li2_pe_guard_record,boundary),
+        offsetof(struct li2_pe_compact,guard)+63*sizeof(struct li2_pe_guard_record),
+        offsetof(struct li2_pe_compact,guard)+offsetof(struct li2_pe_guard_record,scratch_regs),
+        offsetof(struct li2_pe_compact,page)};
+    for(unsigned i=0;i<sizeof offsets/sizeof offsets[0];i++) {
+        compact_changed=compact;((unsigned char *)&compact_changed)[offsets[i]]^=1;
+        assert(li2_pe_compact_validate(&compact_changed,&scratch,&compact_scratch)==LI2_PE_CORRUPT);
+        ++compact_corruptions;
+    }
 }
 static void recovery(void) {
     uint64_t raw[16],saved[4];
@@ -120,7 +206,7 @@ static void cases(void) {
     loop();accepted(pages[0]+0x100,6,1,25,1);
     assert(plan.source_mask==3 && plan.exit_pc[0]==pages[0]+0x110);
     assert(plan.head[5].successors[0]==0 && plan.original[5].flow==LI2_REGION_JMP);
-    recovery();corrupt();
+    recovery();corrupt();compact_recovery();
     /* Original MOV width/form remains exact. */
     static const unsigned char first32[]={0x89,0x07,0x48,0x83,0xc0,1,
         0x48,0x39,0xc8,0x0f,0x82,0,0,0,0,0xc3};
@@ -156,9 +242,17 @@ int main(void) {
         {spill,spill+4096},{table_at,table_at+8192},{0x70000008,0x70000010}};
     assert(!li2_mg_table_build(ranges,sizeof ranges/sizeof ranges[0],table_at,&table));
     cases();
+    changed=plan; /* The last original case retains its actual failed prefix. */
+    assert(li2_pe_compact_build(&plan,&scratch,&compact_changed)==LI2_PE_CORRUPT &&
+        !compact_changed.ready && compact_changed.result==LI2_PE_CORRUPT);
+    assert(!memcmp(&changed,&plan,sizeof plan));++compact_corruptions;
     assert(!li2_decoder_stats(&after) && !memcmp(&before,&after,sizeof before));
     assert(positives==3 && refusals==19 && corruptions==12 && recoveries==46);
     printf("{\"schema\":1,\"positives\":%u,\"refusals\":%u,\"corruptions\":%u,\"recoveries\":%u,\"postseal_equal\":1}\n",
         positives,refusals,corruptions,recoveries);
+    assert(compact_positives==3 && compact_guards==3 && compact_recoveries==46 &&
+        compact_refusals==13 && compact_corruptions==12);
+    printf("{\"compact_schema\":1,\"positives\":%u,\"whole_guards\":%u,\"recoveries\":%u,\"refusals\":%u,\"corruptions\":%u,\"primary_bytes\":%zu}\n",
+        compact_positives,compact_guards,compact_recoveries,compact_refusals,compact_corruptions,sizeof compact);
     return 0;
 }
