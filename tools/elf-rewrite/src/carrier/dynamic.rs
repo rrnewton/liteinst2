@@ -128,6 +128,18 @@ pub struct SymbolReference {
     pub symbol: u32,
 }
 
+/// Exact symbol-table extent consumed by the complete metadata pass. A hash
+/// count authenticates a bounded extent, not name lookup or provider semantics.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SymbolExtent {
+    pub file: FileRange,
+    pub virtual_range: VirtualRange,
+    pub count: u64,
+    /// True only when DT_HASH or DT_GNU_HASH supplied the parser's count.
+    /// False denotes the existing maximum-relocation-reference fallback.
+    pub hash_authoritative: bool,
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct Inventory {
     pub writes: Vec<RelocationWrite>,
@@ -138,6 +150,8 @@ pub struct Inventory {
     pub protected: Vec<FileRange>,
     pub dynamic_entries: usize,
     pub relocation_records: usize,
+    /// Derived only while inspecting the actual DT_SYMTAB; absent otherwise.
+    pub symbol_extent: Option<SymbolExtent>,
 }
 
 impl Inventory {

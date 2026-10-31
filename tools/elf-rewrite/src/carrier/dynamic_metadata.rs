@@ -239,7 +239,8 @@ pub(super) fn inspect<'a>(
     let last_nul = strings.and_then(|bytes| bytes.iter().rposition(|byte| *byte == 0));
     if let Some(&address) = tags.get(&6) {
         work.charge(symbols, 0)?;
-        let table = checked(input, address, times(symbols, 24)?, out, &mut work)?;
+        let length = times(symbols, 24)?;
+        let table = checked(input, address, length, out, &mut work)?;
         symbol_table = Some(table);
         for symbol in table.chunks_exact(24) {
             // An absent string table is acceptable only for unnamed records;
@@ -249,6 +250,18 @@ pub(super) fn inspect<'a>(
                 string(name, last_nul, 6)?;
             }
         }
+        // Retain the exact already-validated owner without charging/scanning
+        // again or changing the old metadata pass's acceptance and limits.
+        let owner = input.virtual_to_storage(ElfVaddr(address), length)?;
+        let Storage::FileBacked(file) = owner.storage else {
+            return Err(Error::MetadataNotFileBacked);
+        };
+        out.symbol_extent = Some(SymbolExtent {
+            file,
+            virtual_range: owner.virtual_range,
+            count: symbols,
+            hash_authoritative: authoritative.is_some(),
+        });
     } else if authoritative.is_some()
         || referenced != 0
         || tags.contains_key(&VERSYM)
