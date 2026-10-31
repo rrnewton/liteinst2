@@ -9,12 +9,23 @@
     !defined(LI2_PERSISTENT_GROUP) || LI2_PERSISTENT_GROUP != 1 || LI2_MAPS_MAINTAINED != 1
 #error "final counter storage requires the explicit group maintained-map diagnostic"
 #endif
+#if defined(LI2_PERSISTENT_RETAINED_TWO_COUNTERS)
+#if LI2_PERSISTENT_RETAINED_TWO_COUNTERS != 1 || !defined(LI2_PERSISTENT_RETAINED_TWO) || LI2_PERSISTENT_RETAINED_TWO != 1 || !defined(LI2_PERSISTENT_DISPATCH) || LI2_PERSISTENT_DISPATCH != 1 || defined(LI2_PERSISTENT_RESIDENT_COUNTERS)
+#error "retained-two counters require their distinct release selector and runtime"
+#endif
+#elif defined(LI2_PERSISTENT_RETAINED_TWO)
+#error "retained-two counters require the distinct retained-two selector"
+#else
 #if defined(LI2_PERSISTENT_RESIDENT_COUNTERS)
 #if LI2_PERSISTENT_RESIDENT_COUNTERS != 1 || !defined(LI2_PERSISTENT_DISPATCH) || LI2_PERSISTENT_DISPATCH != 1
 #error "resident counters require explicit dispatch and resident counter selectors"
 #endif
 #elif defined(LI2_PERSISTENT_DISPATCH)
 #error "dispatch counters require the distinct resident counter selector"
+#endif
+#endif
+#if defined(LI2_PERSISTENT_RETAINED_TWO_CAPTURE)
+#error "retained-two capture cannot share final counter storage"
 #endif
 #if defined(LI2_PERSISTENT_GROUP_CAPTURE) || defined(LI2_PERSISTENT_DYNAMIC) || \
     defined(LI2_PERSISTENT_EPOCH_CAPTURE) || defined(LI2_EVENT_PROFILE) || defined(LI2_COST_PROFILE) || \

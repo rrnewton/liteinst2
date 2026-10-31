@@ -1053,3 +1053,6 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
 #include "persistent_resident_observe_memory.inc"
 #endif
+#ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
+#include "persistent_retained_two_observe_memory.inc"
+#endif

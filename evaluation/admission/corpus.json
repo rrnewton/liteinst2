@@ -6365,6 +6365,10 @@
         "ignored": 0,
         "tests": 1
       },
+      "test/owned_group_candidate": {
+        "ignored": 0,
+        "tests": 12
+      },
       "test/page_gate": {
         "ignored": 0,
         "tests": 17
@@ -6483,7 +6487,7 @@
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 406
+        "tests": 418
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
@@ -7602,6 +7606,6 @@
       }
     ]
   },
-  "recorder_tests": 363,
+  "recorder_tests": 364,
   "schema_version": 1
 }

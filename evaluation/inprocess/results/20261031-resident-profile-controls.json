@@ -1,0 +1,175 @@
+{
+  "bounds": [
+    30,
+    1073741824,
+    134217728,
+    80
+  ],
+  "bridge": {
+    "bytes": 4540936,
+    "sha256": "ec0e32842a7de4e127f9a00c713ce5e7c2778e1659da0931f4b944645f698ecd"
+  },
+  "capture_cpu": 16,
+  "capture_hardware": {
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "capture_revision": "cff913e09d4c225ec924323764f901797a640d90",
+  "cleanup_complete": true,
+  "control_affinity": [
+    6
+  ],
+  "control_count": 5,
+  "controls": [
+    {
+      "after": [
+        16
+      ],
+      "before": [
+        18446744073709551615
+      ],
+      "elapsed_ns": 34489606,
+      "expected": "each no-inherit ID_INDEX binds one actual event/any-CPU/attached thread",
+      "mutant": {
+        "bytes": 35590436,
+        "sha256": "afd14943737fe5306ee71ad6e61eb0b6e922574e715419938bbbac4705305be0"
+      },
+      "name": "id_index_sentinel",
+      "observed": "each no-inherit ID_INDEX binds one actual event/any-CPU/attached thread",
+      "offset": 472,
+      "status": "rejected_exactly"
+    },
+    {
+      "after": [
+        17
+      ],
+      "before": [
+        16
+      ],
+      "elapsed_ns": 39185144,
+      "expected": "complete sample on reserved CPU",
+      "mutant": {
+        "bytes": 35590436,
+        "sha256": "37c3be41671a3e5a92eb29a20ced9c66c3eaa5a2fc1aaae51d49a495302e4b51"
+      },
+      "name": "sample_cpu",
+      "observed": "complete sample on reserved CPU",
+      "offset": 39256,
+      "status": "rejected_exactly"
+    },
+    {
+      "after": [
+        2765371,
+        2765371
+      ],
+      "before": [
+        2765370,
+        2765370
+      ],
+      "elapsed_ns": 41814841,
+      "expected": "DWARF sample PID/TID equals the actual attached ID_INDEX thread",
+      "mutant": {
+        "bytes": 35590436,
+        "sha256": "3958e95f9d4d474036ac822970bd1f5e86d528fd00da203e6216c828b32df2c5"
+      },
+      "name": "sample_pid_tid",
+      "observed": "DWARF sample PID/TID equals the actual attached ID_INDEX thread",
+      "offset": 39240,
+      "status": "rejected_exactly"
+    },
+    {
+      "after": [
+        18850649953
+      ],
+      "before": [
+        18850658145
+      ],
+      "elapsed_ns": 16548568,
+      "expected": "exact no-inherit DUMMY retains task/MMAP2/COMM_EXEC child tracking",
+      "mutant": {
+        "bytes": 35590436,
+        "sha256": "f391ce9fedc3e407ed973722fa3aba15382edf3f15be3c2ecf2e3a1ad1ab01ca"
+      },
+      "name": "dummy_task_flag",
+      "observed": "exact no-inherit DUMMY retains task/MMAP2/COMM_EXEC child tracking",
+      "offset": 320,
+      "status": "rejected_exactly"
+    },
+    {
+      "after": [
+        7
+      ],
+      "before": [
+        4
+      ],
+      "elapsed_ns": 1876611176,
+      "expected": "exact attached-thread EXIT only; no unbound child scope",
+      "mutant": {
+        "bytes": 35590436,
+        "sha256": "df63d07b57ead1bfa9e42c77194448db33fb5f0526b2438f46951d509776aa80"
+      },
+      "name": "exit_becomes_fork",
+      "observed": "exact attached-thread EXIT only; no unbound child scope",
+      "offset": 35201128,
+      "status": "rejected_exactly"
+    }
+  ],
+  "elapsed_ns": 2986786791,
+  "inputs_unchanged": true,
+  "perf_executions": 0,
+  "perf_input": {
+    "bytes": 35590436,
+    "sha256": "b6701a726c3796d6c8e7a72e9ed80482a94b8605b2147e1f4fadd134180ebb29"
+  },
+  "performance_credit": false,
+  "private_result": {
+    "bytes": 6469,
+    "sha256": "47d3ff7dfa32beae9519d4e3d7efb09450ae930b9dc01332e2d1424ae6557750"
+  },
+  "python": {
+    "bytes": 13542408,
+    "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+  },
+  "qualification": false,
+  "readers": {
+    "page_cost_profile_read.py": {
+      "bytes": 35971,
+      "sha256": "ef6cfe33985a58596063822cb9b40df2ec301cdf5d51d6dd3ea6e05c12f9ccd2"
+    },
+    "persistent_dynamic_profile_read.py": {
+      "bytes": 33341,
+      "sha256": "7062f1c6f402168ca10a0f60601983f6a42fbec916c213ad309f417f55048eb4"
+    }
+  },
+  "receipt": {
+    "bytes": 1992372,
+    "sha256": "1c65346a6d5ac857f437383de49ac3ac94afd31d8b653eedadfb33ee0498e16e"
+  },
+  "reproduction": [
+    "python3",
+    "-I",
+    "-S",
+    "-B",
+    "evaluation/inprocess/persistent_profile_controls.py",
+    "--receipt",
+    "<closed-v3-receipt.json>",
+    "--output",
+    "target/<fresh-private-output>"
+  ],
+  "schema": 1,
+  "scope": "Exactly five mutations of one retained real capture; one externally reserved CPU. No original target, perf or unwind rerun. The original failed target stays failed.",
+  "script": {
+    "bytes": 14689,
+    "sha256": "4ddcac65f386fa96f6e3b15e0af735ac72f35d1ebe7ab8980875683e1073438c"
+  },
+  "source_profile": "persistent-resident-per-thread-user-dwarf-counters-v3",
+  "source_target_exit": -9,
+  "status": "passed",
+  "target_executions": 0
+}
