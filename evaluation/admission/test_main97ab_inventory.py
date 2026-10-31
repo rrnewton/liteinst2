@@ -16,9 +16,14 @@ import parsing
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
-        rows = actual['harness_test_counts']['workspace_tests']
+        native_indexed = current.before_29859(actual)
+        rows = native_indexed['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                           sum(x['ignored'] for x in rows.values())), (112, 4255, 37))
+        self.assertEqual(current.digest(native_indexed), current.NATIVE_INDEXED_CURRENT)
+        rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
+                          sum(x['ignored'] for x in rows.values())), (112, 4266, 37))
         self.assertEqual(current.DATA['default_test_additions'], 58)
         self.assertEqual(current.DATA['default_harness_changes'], 0)
         self.assertEqual(current.DATA['default_ignore_changes'], 0)
@@ -124,3 +129,57 @@ class Main97abInventoryTests(unittest.TestCase):
         self.assertEqual(current.DATA['native_example'], dict(
             name='indexed_dso_native', test=False, bench=False, default_test_harness=False))
         self.assertNotIn('unit/indexed_dso_native/indexed_dso_native', rows)
+
+        # Exact current phase diagnostics add eleven real tests in the existing
+        # harness. The old native-indexed whole catalog remains a predecessor,
+        # never an alternative accepted by the current qualification entrypoint.
+        phase = current.DATA['source_successor_29859']
+        self.assertEqual((phase['default_method_additions'], phase['default_method_removals'],
+                          phase['default_harness_changes'], phase['default_ignore_changes'],
+                          phase['recorder_identity_changes']), (11, 0, 0, 0, 0))
+        self.assertEqual(sum(len(names) for names in phase['added_default_methods'].values()), 11)
+        self.assertEqual(phase['default_method_instances'], {
+            path: ['unit/ordinary_interval/main'] for path in phase['added_default_methods']})
+        self.assertEqual(actual['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],
+                         dict(tests=518, ignored=1))
+        self.assertEqual(native_indexed['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],
+                         dict(tests=507, ignored=1))
+        for wrong in (native_indexed, old):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_29859(wrong)
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                inventory.require_current(wrong)
+        for field in ('tests', 'ignored'):
+            for value in (None, True, float(rows['unit/ordinary_interval/main'][field]),
+                          rows['unit/ordinary_interval/main'][field] + 1):
+                wrong = copy.deepcopy(actual)
+                wrong['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'][field] = value
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                    current.before_29859(wrong)
+        new_stimuli = [(path, name, name + '_wrong')
+                       for path, names in phase['added_default_methods'].items() for name in names]
+        new_stimuli += [(path, literal, '')
+                        for path, literals in phase['module_chains'].items() for literal in literals]
+        self.assertEqual(len(new_stimuli), 22)
+        for path, literal, replacement in new_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            # Repair the outer hash so the declaration/module gate, rather
+            # than the inverse or stale whole-file pin, must reject the change.
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('phase declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        for path in phase['source_paths']:
+            target = current.ROOT / path; raw = read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate != target: return read(candidate)
+                    if missing: raise FileNotFoundError(path)
+                    return raw + b'\n'
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                        current.require_sources()

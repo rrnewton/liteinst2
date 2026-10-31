@@ -1,0 +1,47 @@
+--- evaluation/admission/recorder_parallel.py
++++ private/recorder_parallel.py
+@@ -12,8 +12,11 @@
+ import unittest
+ 
+ sys.dont_write_bytecode = True
+-HERE = Path(__file__).resolve().parent
++# Diagnostic facade only: all discovered tests and source validators retain
++# their actual tracked module paths. Workers re-exec this private __file__.
++HERE = Path(os.environ['LI2_RECORDER_SOURCE_ROOT']).resolve(strict=True) / 'evaluation/admission'
+ ROOT = HERE.parents[1]
++sys.path.insert(0, str(HERE))
+ LIMIT = 8 * 1024 * 1024
+ WALL = 180
+ MARKER = b'RECORDER_WORKER '
+@@ -126,6 +129,16 @@
+     return groups
+ 
+ 
++def timing_event(event, test):
++    # These inclusive timings include result/output bookkeeping. Process CPU
++    # excludes descendant CPU; no timing can qualify a test or a repository run.
++    row = dict(schema=1, event=event, test=test.id(), pid=os.getpid(),
++               affinity=sorted(os.sched_getaffinity(0)),
++               monotonic_ns=time.monotonic_ns(), process_time_ns=time.process_time_ns())
++    print('RECORDER_TIMING ' + json.dumps(row, sort_keys=True, separators=(',', ':'),
++                                         allow_nan=False), flush=True)
++
++
+ class Ledger(unittest.TextTestResult):
+     def __init__(self, *args):
+         super().__init__(*args)
+@@ -134,12 +147,14 @@
+         self.success_ids = []
+ 
+     def startTest(self, test):
++        timing_event('start', test)
+         self.started_ids.append(test.id())
+         super().startTest(test)
+ 
+     def stopTest(self, test):
+         self.completed_ids.append(test.id())
+         super().stopTest(test)
++        timing_event('stop', test)
+ 
+     def addSuccess(self, test):
+         self.success_ids.append(test.id())

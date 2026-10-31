@@ -140,6 +140,77 @@ int li2_tf_chain_span_cross_page_eligible(const struct li2_tf_chain *c,int sig,
     for(unsigned i=0;i<16;i++)if(uc->uc_mcontext.gregs[regs[i]]!=p->before.greg[regs[i]])return 0;
     return 1;
 }
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+int li2_tf_chain_span_direct_eligible(const struct li2_tf_chain *c,int sig,
+                                    const siginfo_t *si,const ucontext_t *uc) {
+    if(!chain_registered_ok(c) || !c->pending || c->in_handler || c->first_error ||
+       !si || !uc || __atomic_load_n(&span_transfer.valid,__ATOMIC_ACQUIRE) ||
+       (span_transfer.progress.phase!=LI2_ST_IDLE &&
+        span_transfer.progress.phase!=LI2_ST_CONSUMED &&
+        span_transfer.progress.phase!=LI2_ST_RESUMED &&
+        span_transfer.progress.phase!=LI2_ST_REFAULT) || span_transfer_serial==UINT64_MAX)
+        return 0;
+    const struct li2_tf_chain_slot *s=&c->slots[c->active];
+    const struct li2_step_owner *p=&s->owner.step;
+    const struct li2_decoded *d=&p->request.decoded;
+    const struct li2_tf_classification *cl=&s->owner.classification;
+    if(s->phase!=LI2_CHAIN_EXECUTING || c->event_id<=s->event_id ||
+       p->phase!=LI2_STEP_RUNNING || p->in_handler ||
+       p->request.page_count!=1 || s->fetch.page_count!=1 ||
+       !s->fetch.ref.owner || !s->fetch.ref.sequence ||
+       sig!=SIGTRAP || si->si_signo!=SIGTRAP || si->si_code!=TRAP_TRACE || si->si_errno ||
+       uc->uc_mcontext.gregs[REG_TRAPNO]!=1 || uc->uc_mcontext.gregs[REG_ERR] ||
+       (uintptr_t)si->si_addr!=(uintptr_t)uc->uc_mcontext.gregs[REG_RIP] ||
+       ((uint64_t)uc->uc_mcontext.gregs[REG_EFL]&(LI2_STEP_TF|LI2_STEP_RF))!=LI2_STEP_TF ||
+       (uint64_t)uc->uc_mcontext.gregs[REG_EFL]!=(p->request.original_flags|LI2_STEP_TF))return 0;
+    unsigned length,offset,condition;
+    if(d->length==5 && d->bytes[0]==0xe9 && d->code==696) {
+        length=5;offset=1;condition=16;
+    } else if(d->length==6 && d->bytes[0]==0x0f &&
+              d->bytes[1]>=0x80 && d->bytes[1]<=0x8f &&
+              d->code==1856U+3U*(d->bytes[1]&15U)) {
+        length=6;offset=2;condition=d->bytes[1]&15U;
+    } else return 0;
+    uintptr_t pc=(uintptr_t)uc->uc_mcontext.gregs[REG_RIP];
+    uintptr_t page=p->request.pages[0].address,target=pc&~(LI2_STEP_PAGE-1);
+    if(page<LI2_STEP_PAGE || (page&(LI2_STEP_PAGE-1)) ||
+       page>(UINT64_C(1)<<47)-LI2_STEP_PAGE || target==page ||
+       target<LI2_STEP_PAGE || target>(UINT64_C(1)<<47)-LI2_STEP_PAGE ||
+       pc-target>LI2_STEP_PAGE-15 || s->fetch.pages[0].address!=page ||
+       d->pc<page || d->pc-page>LI2_STEP_PAGE-length ||
+       d->abi_version!=1 || d->decode_status!=LI2_VALID || d->kind!=LI2_NONE ||
+       d->destination!=16 || d->width_bits || d->reserved ||
+       d->step_disposition!=LI2_STEP_UNSUPPORTED || d->available<length || d->available>15 ||
+       d->next_pc!=d->pc+length || !equal(d,&s->decoded,sizeof *d) ||
+       s->fetch.pc!=d->pc || s->fetch.length!=d->available ||
+       !equal(d->bytes,s->fetch.bytes,d->available) ||
+       cl->abi_version!=1 || cl->policy!=1 || cl->pc!=d->pc || cl->next_pc!=d->next_pc ||
+       cl->code!=d->code || cl->length!=length || cl->flow!=LI2_TF_NEAR_FLOW || cl->family!=LI2_TF_BRANCH)
+        return 0;
+    for(unsigned i=d->available;i<16;i++)if(d->bytes[i])return 0;
+    uint32_t bits=0;for(unsigned i=0;i<4;i++)bits|=(uint32_t)d->bytes[offset+i]<<(8*i);
+    int64_t delta=bits&UINT32_C(0x80000000)?(int64_t)bits-INT64_C(4294967296):(int64_t)bits;
+    if((delta<0 && (uint64_t)(-delta)>d->next_pc) ||
+       (delta>=0 && (uint64_t)delta>UINT64_MAX-d->next_pc))return 0;
+    uint64_t branch=d->next_pc+(uint64_t)delta;
+    if(branch>=UINT64_C(0x800000000000) && branch<UINT64_C(0xffff800000000000))return 0;
+    unsigned taken=1;
+    if(condition<16) {
+        uint64_t flags=p->request.original_flags;
+        unsigned of=(flags>>11)&1,cf=flags&1,zf=(flags>>6)&1,sf=(flags>>7)&1,pf=(flags>>2)&1;
+        switch(condition/2) {
+        case 0:taken=of;break;case 1:taken=cf;break;case 2:taken=zf;break;case 3:taken=cf|zf;break;
+        case 4:taken=sf;break;case 5:taken=pf;break;case 6:taken=sf^of;break;default:taken=zf|(sf^of);break;
+        }
+        if(condition&1)taken^=1;
+    }
+    if(pc!=(taken?branch:d->next_pc))return 0;
+    static const unsigned regs[16]={REG_RAX,REG_RCX,REG_RDX,REG_RBX,REG_RSP,REG_RBP,REG_RSI,REG_RDI,
+        REG_R8,REG_R9,REG_R10,REG_R11,REG_R12,REG_R13,REG_R14,REG_R15};
+    for(unsigned i=0;i<16;i++)if(uc->uc_mcontext.gregs[regs[i]]!=p->before.greg[regs[i]])return 0;
+    return 1;
+}
+#endif
 static int span_close(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext_t *uc,
                       const struct li2_tf_span_transfer **out,unsigned cross_page) {
 #else
@@ -173,6 +244,11 @@ int li2_tf_chain_span_close(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontex
     uintptr_t page=p->owner.step.request.pages[0].address;
 #ifdef LI2_PERSISTENT_CROSS_PAIR
     if(cross_page) {
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+        if(cross_page==2) {
+            if(!li2_tf_chain_span_direct_eligible(c,sig,si,uc))return LI2_ST_ORIGIN;
+        } else
+#endif
         if(cross_page!=1 || !li2_tf_chain_span_cross_page_eligible(c,sig,si,uc))return LI2_ST_ORIGIN;
     } else
 #endif
@@ -215,6 +291,12 @@ int li2_tf_chain_span_close(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontex
 #ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
     li2_pso_trace_closed(c,p);
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+    li2_pdo_trace_closed(c,p);
+#endif
+#ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
+    li2_pco_trace_closed(c,p);
+#endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     li2_pxo_trace_closed(c,p);
 #endif
@@ -245,6 +327,12 @@ int li2_tf_chain_span_close_cross_page(struct li2_tf_chain *c,int sig,siginfo_t 
                                       const struct li2_tf_span_transfer **out) {
     return span_close(c,sig,si,uc,out,1);
 }
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+int li2_tf_chain_span_close_direct(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext_t *uc,
+                                  const struct li2_tf_span_transfer **out) {
+    return span_close(c,sig,si,uc,out,2);
+}
+#endif
 #endif
 static int span_fresh(unsigned held,struct li2_span_fetch_observation *out) {
     int error=li2_lifecycle_span_fetch_snapshot(out);if(error)return error;

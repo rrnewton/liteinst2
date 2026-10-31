@@ -1,0 +1,76 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "commands": 0,
+      "error": "ValueError: admission Git mode",
+      "facade_only": true,
+      "final_error": "ValueError: staged source changed",
+      "guest_executions": 0,
+      "performance_credit": false,
+      "qualification_credit": false,
+      "receipt": {
+        "bytes": 1669,
+        "sha256": "24776ec24fca8f902c42fbfa77c1d139f985000a58636b0ae6b008d7ce5a84ba"
+      },
+      "source_packet_sha256": "97a63398b9dbcdb136c8971fa4c4520bf3686167fa019a3517bd3332990823d0",
+      "source_revision": "11ff0bba39c6b19ad7212ee84b3dc2d6e6737602",
+      "source_unchanged": true,
+      "staging_unchanged": true,
+      "status": "failed",
+      "wrapper_unchanged": true
+    },
+    {
+      "attempt": 2,
+      "command": {
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "id": "current_inventory_and_two_original_tests",
+        "reaped_descendants": 0,
+        "seconds": 8.076985062099993,
+        "termination": null,
+        "wrapper_seconds": 8.077127436175942
+      },
+      "commands": 1,
+      "facade_only": true,
+      "guest_executions": 0,
+      "limits": {
+        "cleanup_seconds": 3,
+        "cpus": 1,
+        "log_bytes": 8388608,
+        "wall_seconds": 180
+      },
+      "original_admission_unchanged": true,
+      "performance_credit": false,
+      "qualification_credit": false,
+      "receipt": {
+        "bytes": 187078,
+        "sha256": "e4e9f7deeebbd26b9103d3177c76da68c72862830d3aaef19a515269b49cabe7"
+      },
+      "source_packet_sha256": "97a63398b9dbcdb136c8971fa4c4520bf3686167fa019a3517bd3332990823d0",
+      "source_revision": "11ff0bba39c6b19ad7212ee84b3dc2d6e6737602",
+      "source_unchanged": true,
+      "staging_unchanged": true,
+      "status": "passed",
+      "worker": {
+        "errors": 0,
+        "expected_failures": 0,
+        "expected_tests": [
+          "test_main97ab_inventory.Main97abInventoryTests.test_exact_native_indexed_sources_and_historical_refusals",
+          "test_mainaf81_inventory.MainAf81InventoryTests.test_exact_adc_compiled_sources_catalog_and_refusals"
+        ],
+        "facade_only": true,
+        "failures": 0,
+        "inventory_current": true,
+        "qualification_credit": false,
+        "skipped": 0,
+        "status": "passed",
+        "tests_run": 2,
+        "unexpected_successes": 0
+      },
+      "wrapper_unchanged": true
+    }
+  ],
+  "schema": 1,
+  "scope": "Private staged inventory facade only; no installed-tree, native or performance qualification"
+}

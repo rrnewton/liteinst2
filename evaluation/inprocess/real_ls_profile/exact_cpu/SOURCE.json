@@ -1,0 +1,277 @@
+{
+  "actual_api_ast": {
+    "cpuset_allocator.py:_probe_hard_pin": "ad1309a3b859fef05e1a83b5806bcb00bed4187de2de72792e3534e35b58fd35",
+    "cpuset_allocator.py:_run_reserved_hard": "79da7a729b3a500e97e4b137812a8441bb2164fb02a4fc8bc9006af1fd304ebf",
+    "cpuset_allocator.py:_scope_argv": "d9d355d37e875bb36de6f121b6a6bb9258b9017619b893b18d1e806a0ff5e07d",
+    "cpuset_allocator.py:cmd_run": "03097614b2bc3471315ea5eedea473251fb2a9afb2512f6f0f3c27c0eb84dafe",
+    "reservation.py:Reservation": "5c53d08d021cafc9259277e19a8be822cb725662e7d45d41607d00ed1fc69319",
+    "reservation.py:acquire": "e4990df2c927846779f141974ce17abab8df78497cce626b5710694eef680e99",
+    "reservation.py:reserve_cores": "c9f77263a00c2a38b6df5f2e09f440fc823dc20792437e80894cdb99071443e7"
+  },
+  "executables": {
+    "python": {
+      "fact": {
+        "bytes": 13542408,
+        "mode": 493,
+        "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+      },
+      "resolver": "sys.executable"
+    },
+    "systemd-run": {
+      "fact": {
+        "bytes": 111360,
+        "mode": 493,
+        "sha256": "125b1c6475f305d7112a165069a7e3f6906db4360973977edceeb9ae115a871a"
+      },
+      "resolver": "PATH"
+    },
+    "true": {
+      "fact": {
+        "bytes": 27936,
+        "mode": 493,
+        "sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171"
+      },
+      "resolver": "PATH"
+    }
+  },
+  "execution": {
+    "allocator_runs": 0,
+    "candidate_imports": 0,
+    "guests": 0,
+    "perf": 0
+  },
+  "external_tool_commit": "335829243ebec4d4afbdca8e89da44664c2e3b22",
+  "hard_probe_unchanged": true,
+  "historical_source": {
+    "bytes": 9329,
+    "sha256": "7226b90e14f82b0637d8c137edfcfc3b6a24572d0bb285ee498e896f016fdfbd"
+  },
+  "interface": {
+    "inner_output": "profile",
+    "output_beneath": "target/evaluation/inprocess",
+    "required": [
+      "--tool-root",
+      "--cpu",
+      "--expect-revision",
+      "--expect-origin-revision",
+      "--origin-receipt",
+      "--expect-origin-sha256",
+      "--output"
+    ]
+  },
+  "no_fallback": true,
+  "no_retry": true,
+  "performance_credit": false,
+  "profile": {
+    "README.md": {
+      "bytes": 5015,
+      "mode": 420,
+      "sha256": "981a39eba2c2e4141c14bc2f0a567de0cdb92d6509e3da59af11a53274b792cd"
+    },
+    "SOURCE.json": {
+      "bytes": 6133,
+      "mode": 420,
+      "sha256": "13ced1d70255a8954cb855db76f22d902bad01538863c34f1a4d282ec992fffc"
+    },
+    "capture_profile.py": {
+      "bytes": 30599,
+      "mode": 420,
+      "sha256": "2b4bb05c9351b6f2385eaa3b8c7c94e171af5c663814ea46158ea3cd548debd8"
+    },
+    "run.py": {
+      "bytes": 28113,
+      "mode": 493,
+      "sha256": "f640b8bd28cbf11b47901f7fb6e1d47e0f458463adc7a3b9b59416e7b002d309"
+    }
+  },
+  "profiler_leaves_unchanged": false,
+  "qualification_credit": false,
+  "readme": {
+    "bytes": 850,
+    "mode": 420,
+    "sha256": "1e6fc71c2b6194e42da6f0467036aa5797f768cf7a8ba14ba71150298510561e"
+  },
+  "schema": 1,
+  "scope": "SOURCE_ONLY_PORTABLE_EXACT_CPU_INPUT_BINDING_SUCCESSOR",
+  "selection": {
+    "count": 1,
+    "cpu": "explicit actual origin CPU",
+    "exclude": "original_allowed_minus_requested",
+    "ledger_override": false,
+    "max_irq_rate": null,
+    "parent_affinity_changed": false,
+    "sample_s": 0.3
+  },
+  "tool_sources": {
+    "bin/cpuset-alloc": {
+      "bytes": 8739,
+      "mode": 493,
+      "sha256": "5fd30ee080223240aa401da47675477eb011c48e3153061e4bc4d0bc6a4148a4"
+    },
+    "py/bin/cpuset-alloc": {
+      "bytes": 18512,
+      "mode": 493,
+      "sha256": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da"
+    },
+    "py/dagrun/__init__.py": {
+      "bytes": 7253,
+      "mode": 420,
+      "sha256": "6fa42195184b1ed623c4e245f9415e474faf17e8611539b4d04ffc3231ac2493"
+    },
+    "py/dagrun/__main__.py": {
+      "bytes": 393,
+      "mode": 493,
+      "sha256": "efd0c8b9a289ab0ebc702b65d048e7fce178dd031301cf4430810a587c85adc7"
+    },
+    "py/dagrun/admission.py": {
+      "bytes": 32467,
+      "mode": 420,
+      "sha256": "c0805887a3f31205b8f38e02148c4b455fbb62ef256f58e70b51ee3e34eb1a52"
+    },
+    "py/dagrun/ambient.py": {
+      "bytes": 9342,
+      "mode": 420,
+      "sha256": "288795b6a2e403fb50fe2a408019c34e60622d78e2d4a1678adda30a89fad7c1"
+    },
+    "py/dagrun/analyze.py": {
+      "bytes": 3705,
+      "mode": 420,
+      "sha256": "04bd070ebe9eb693f56f878f1fb9a8d3754aba69d8b7f0fd58640374053c032a"
+    },
+    "py/dagrun/attribution.py": {
+      "bytes": 27493,
+      "mode": 420,
+      "sha256": "ccc64b3acdfcc6b0aef1ec8b05990d62e1199716cdac8596e8ee1397994cae90"
+    },
+    "py/dagrun/capabilities.py": {
+      "bytes": 12336,
+      "mode": 420,
+      "sha256": "9680774e6e370a1eed85f691bfd8cf1431155e08f11a2bc94d1012df0edfaece"
+    },
+    "py/dagrun/cgroup.py": {
+      "bytes": 132323,
+      "mode": 420,
+      "sha256": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76"
+    },
+    "py/dagrun/cli.py": {
+      "bytes": 198890,
+      "mode": 420,
+      "sha256": "e5a255167f4192fcb8c225ed7bb6602f7233eca09d160be196282da474b992d8"
+    },
+    "py/dagrun/cpuset_allocator.py": {
+      "bytes": 18512,
+      "mode": 493,
+      "sha256": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da"
+    },
+    "py/dagrun/envcheck.py": {
+      "bytes": 11198,
+      "mode": 420,
+      "sha256": "cdd97ad08d50cea716f6c89b0725fa90b3f0daf8ff4cf08693ff74a397c0c495"
+    },
+    "py/dagrun/estimates.py": {
+      "bytes": 110632,
+      "mode": 420,
+      "sha256": "ff9879ec94effe5dbda85c3b5f9eea16951f27b69e60c4a51919e5b973f14203"
+    },
+    "py/dagrun/gh_resolve.py": {
+      "bytes": 5650,
+      "mode": 420,
+      "sha256": "03c6dc80d902c51ff163b629b0b44106d2ada6d772cd1c618ecc25923b04a438"
+    },
+    "py/dagrun/io.py": {
+      "bytes": 62129,
+      "mode": 420,
+      "sha256": "d1ef3241ffa133948e51446be58be046843e6d627f3c12f7d6acaa89327e82d2"
+    },
+    "py/dagrun/memory_feedback.py": {
+      "bytes": 24441,
+      "mode": 420,
+      "sha256": "31d9126ffbb96e8ea7e7295ef17ff4e3098fda317e0d3a784952f0ca56693939"
+    },
+    "py/dagrun/model.py": {
+      "bytes": 65947,
+      "mode": 420,
+      "sha256": "a4aea0dc8391eedc176cfd1e5d60920984445828a0879ba0093cd1526701bf2c"
+    },
+    "py/dagrun/perflog.py": {
+      "bytes": 36436,
+      "mode": 420,
+      "sha256": "ab48263730e226e11f377671d4c2ebc91a88aac222f840c82632f7dae1de13ac"
+    },
+    "py/dagrun/proccpu.py": {
+      "bytes": 27248,
+      "mode": 420,
+      "sha256": "23d03ba34acd9020eef23b399dcef04a3ccee93562583165d7e9a421b43d9a62"
+    },
+    "py/dagrun/procstat.py": {
+      "bytes": 2845,
+      "mode": 420,
+      "sha256": "f4a05f8d37d90a37eb3f4ec37206791742df7c61b2f20608c38461f9e6002a6f"
+    },
+    "py/dagrun/profile_capture.py": {
+      "bytes": 75380,
+      "mode": 420,
+      "sha256": "095ced03d5d035e4729ac7eb262cbcb13d4d352d4b1fcf57b767f86ea57c08cc"
+    },
+    "py/dagrun/profile_enrich.py": {
+      "bytes": 6514,
+      "mode": 420,
+      "sha256": "8f2a073a1a32de112aa0486debceb75c2ce038c0594810c3fafe963fd20a01b8"
+    },
+    "py/dagrun/profile_report.py": {
+      "bytes": 79271,
+      "mode": 420,
+      "sha256": "a8da24d411c42387ef784d26ba8ed5b48d00b991bf4dbb22299c32a1973a51dc"
+    },
+    "py/dagrun/protocols.py": {
+      "bytes": 20719,
+      "mode": 420,
+      "sha256": "112cc489c3ce34db323aaf8c2cb5e7696bd45b71e9e1571a15d0ab76f1b7dfa5"
+    },
+    "py/dagrun/reservation.py": {
+      "bytes": 18980,
+      "mode": 420,
+      "sha256": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+    },
+    "py/dagrun/scheduler.py": {
+      "bytes": 127323,
+      "mode": 420,
+      "sha256": "8b3270b45a81f11961e3b3fec5bcfcc1e1adddb594ffa66fc1a90e42363d8855"
+    },
+    "py/dagrun/sizing.py": {
+      "bytes": 26537,
+      "mode": 420,
+      "sha256": "8ff630b5eeaae9a2a0820b73eaaa4726d734caea4661c1798608e2dfeb7d6866"
+    },
+    "py/dagrun/summary.py": {
+      "bytes": 23318,
+      "mode": 420,
+      "sha256": "eb44f99d0690f8c2f4d9aa9a0a6a82f111f614e9648d18d874524097b9b00f46"
+    },
+    "py/dagrun/sweep.py": {
+      "bytes": 18041,
+      "mode": 420,
+      "sha256": "e8d2c38e3a1814e5b372813641916fcab1926bdf21d6812979dbdc2fb0ec9aee"
+    },
+    "py/dagrun/sync.py": {
+      "bytes": 22792,
+      "mode": 420,
+      "sha256": "f03feabf3ee2de3d5ed877f9e6481bd41d41cc049f9cbc8818defd48a1705c1b"
+    },
+    "py/dagrun/teardown.py": {
+      "bytes": 33555,
+      "mode": 420,
+      "sha256": "7fd0bbcbc5758e0968441460c2c73be880043339e88d418a612772adad945909"
+    },
+    "py/dagrun/viz.py": {
+      "bytes": 10675,
+      "mode": 420,
+      "sha256": "03dce1fb1bc44f9dcbe5dc86803512475b267eb2f236103ff5edf34cb84e498a"
+    }
+  },
+  "wrapper": {
+    "bytes": 11014,
+    "mode": 493,
+    "sha256": "4023683482a783cbbbb6feccf7b732b28cfb577cb0bfe29d966bac4bba8dfc7b"
+  }
+}

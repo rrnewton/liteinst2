@@ -49,6 +49,14 @@ int li2_tf_chain_span_cross_page_eligible(const struct li2_tf_chain *,int,
 int li2_tf_chain_span_close_cross_page(struct li2_tf_chain *,int,siginfo_t *,ucontext_t *,
                                       const struct li2_tf_span_transfer **);
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+/* Separate completed E9/0F8x branch route. Only the actual saved-flags arm at
+   a genuine TRACE may select a fresh target; no target authority is inferred. */
+int li2_tf_chain_span_direct_eligible(const struct li2_tf_chain *,int,
+                                    const siginfo_t *,const ucontext_t *);
+int li2_tf_chain_span_close_direct(struct li2_tf_chain *,int,siginfo_t *,ucontext_t *,
+                                  const struct li2_tf_span_transfer **);
+#endif
 int li2_tf_chain_span_quiet(const struct li2_tf_span_transfer *);
 /* Binds current actual held fetch to the exact real closed frame. Does not
    edit it, publish code, change permissions, or authorize an old plan cast. */

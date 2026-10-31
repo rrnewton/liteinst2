@@ -403,6 +403,48 @@ int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,co
                 return pgr_bad(LI2_RSEQ_PLAN,530);
             ++stores;
 #endif
+#ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+        } else if(h->kind==LI2_PG_DIRECT) {
+            const struct li2_dd_descriptor *a=&p->instruction[i].direct;
+            const struct li2_dd_plan *guard=&p->guard[i].direct;
+            struct li2_dd_descriptor descriptor={0};struct li2_write_footprint independent={0};
+            struct li2_jd_binding binding;
+            if(actual.ready!=1 || actual.refusal ||
+               li2_dd_describe(d->decoded.pc,window,n,a->external_mask,&descriptor) ||
+               !region_rseq_equal(a,&descriptor,sizeof descriptor) ||
+               !region_rseq_equal(a,&guard->original,sizeof descriptor) ||
+               li2_decoder_link_none(d->decoded.pc,window,n,&independent) ||
+               independent.abi_version!=1 || independent.policy!=LI2_WRITE_NONE || independent.first || independent.end ||
+               independent.pc!=d->decoded.pc || independent.next_pc!=d->decoded.next_pc ||
+               independent.code!=d->decoded.code || independent.length!=h->source_length ||
+               li2_pg_dispatch_binding(p->page,&p->layout,p->table.address,p->heads,i,&binding) ||
+               !region_rseq_equal(&binding,&guard->binding,sizeof binding) ||
+               guard->generated!=p->layout.generated[i/64]+(uintptr_t)(i%64)*LI2_PE_SLOT_BYTES ||
+               guard->spill!=p->layout.spill || guard->record.image_bytes!=h->generated_length ||
+               li2_dd_validate(guard))return pgr_bad(LI2_RSEQ_PLAN,531);
+            if(h->successor_count!=(a->flow==LI2_REGION_JCC?2U:1U) ||
+               (h->successor_count==1 && h->successors[1]))return pgr_bad(LI2_RSEQ_PLAN,533);
+            for(unsigned arm=0;arm<2;arm++) {
+                uintptr_t expected=0;
+                if(arm<h->successor_count && !(a->external_mask&(1U<<arm))) {
+                    unsigned k=h->successors[arm];
+                    if(k>=LI2_PG_HEADS) {
+                        if(k-LI2_PG_HEADS>=p->exits)return pgr_bad(LI2_RSEQ_PLAN,534);
+                        expected=p->exit_pc[k-LI2_PG_HEADS];
+                    } else {
+                        if(k>=p->heads)return pgr_bad(LI2_RSEQ_PLAN,534);
+                        if(k/64==i/64)expected=p->layout.generated[k/64]+(uintptr_t)(k%64)*LI2_PE_SLOT_BYTES;
+                        else for(unsigned j=0;j<p->links;j++)if(p->edge[j].source_head==i && p->edge[j].successor==arm) {
+                            if(expected || p->edge[j].target_head!=k)return pgr_bad(LI2_RSEQ_PLAN,534);
+                            expected=p->edge[j].stub;
+                        }
+                    }
+                    if(!expected)return pgr_bad(LI2_RSEQ_PLAN,534);
+                }
+                if(guard->internal[arm]!=expected)return pgr_bad(LI2_RSEQ_PLAN,535);
+            }
+            int e=decoded_footprint(&actual.decoded,uc,1);if(e)return pgr_bad((unsigned)e,532);
+#endif
 #ifdef LI2_PERSISTENT_DISPATCH
         } else if(h->kind==LI2_PG_DISPATCH) {
             struct li2_jd_descriptor descriptor={0};
