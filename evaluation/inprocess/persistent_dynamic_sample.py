@@ -529,7 +529,8 @@ def main():
     prior=json.loads(receipt_path.read_bytes())
     allocator=shutil.which(a.allocator or 'cpuset-alloc')
     need(allocator is not None,'explicit or PATH-resolved cpuset-alloc required')
-    allocator=str(Path(allocator).resolve(strict=True))
+    # Dispatch wrappers can select their tool from argv[0]; keep that symlink.
+    allocator=str(Path(allocator).absolute())
     sampler_dir='evaluation/inprocess'if HERE==root/'evaluation/inprocess'else '<SAMPLER_DIR>'
     reproduction=dict(cwd='repository root at source_revision',
         argv=['python3','-B',sampler_dir+'/'+SAMPLER_FILES[0],
