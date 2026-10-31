@@ -56,7 +56,12 @@ def facts(cell):
 
 
 def closed_fixture(directory):
-    """Real parser/receipt joins over synthetic data; never execution authority."""
+    """Real parser/receipt joins over synthetic data; never execution authority.
+
+    The complete joined payload exceeds this control's 1 MiB file limit.
+    Keep only those synthetic payload bytes in memory; all other receipt reads
+    use the real file reader. Production joined-file I/O is unchanged.
+    """
     rows,args = prior.fixture.fixture(kind='random')
     checked = prior.fixture.check(rows,args)
     joined = {k:v for k,v in checked.items() if k not in ('raw','stderr','wire_rows','numeric')}
@@ -65,10 +70,22 @@ def closed_fixture(directory):
     joined = recipe.json_records(joined)
     cell = coordinate(master='12'*32,workload='varied',**{'epoch-phase':'random'})
     files,_,policy = c.authority(reader.truth,cell)
+    joined_paths = {directory/'raw'/'joined.json', directory/'other.json'}
+    joined_bytes = {}
     def put(path,value):
         raw = c.canonical(value)
-        path.write_bytes(raw)
+        if path in joined_paths:
+            joined_bytes[path] = raw
+        else:
+            assert len(raw) <= 1048576
+            path.write_bytes(raw)
         return dict(path=str(path),bytes=len(raw),sha256=producer.sha(raw))
+    def read(path,cap):
+        if path in joined_bytes:
+            raw = joined_bytes[path]
+            assert len(raw) <= cap
+            return raw
+        return producer.read(path,cap)
     raw = directory/'raw';raw.mkdir()
     opts = options('coordinate-functional',cell)
     opts.update(owner=str(directory/'owner.json'),raw=str(raw))
@@ -111,7 +128,8 @@ def closed_fixture(directory):
             recipe='evaluation/ordinary-selected-session/accuracy_functional_owner.py',
             recipe_sha256=sources[str(HERE/'accuracy_functional_owner.py')]['sha256'],invocation=invocation))
     event=dict(coordinate=cell,attempt=1,owner=put(Path(opts['owner']),outer),result=result_ref)
-    return SimpleNamespace(event=event,result=result,joined=joined,put=put)
+    return SimpleNamespace(event=event,result=result,joined=joined,put=put,
+        producer=SimpleNamespace(read=read,sha=producer.sha,prepared_target=producer.prepared_target))
 
 
 class Controls(unittest.TestCase):
@@ -353,8 +371,13 @@ class Controls(unittest.TestCase):
     def test_catalog_real_closed_success_binds_coordinate_policy_and_joined(self):
         with tempfile.TemporaryDirectory() as directory:
             f=closed_fixture(Path(directory).resolve())
+            joined_path=Path(f.result['functional']['joined']['path'])
+            joined_bytes=f.producer.read(joined_path,24*1048576)
+            self.assertEqual(json.loads(joined_bytes),f.joined)
+            self.assertEqual((len(f.joined['calls']),f.joined['totals']['calls']),(2048,2048))
+            with self.assertRaises(AssertionError):f.producer.read(joined_path,len(joined_bytes)-1)
             def project(event):
-                return c.closed_report(event,producer,recipe,owner,normal.normal_closed,
+                return c.closed_report(event,f.producer,recipe,owner,normal.normal_closed,
                     truth=reader.truth,revision='1'*40)
             self.assertEqual(project(f.event),'STRUCTURAL_PASS')
             owner_path=Path(f.event['owner']['path']);owner_bytes=owner_path.read_bytes()

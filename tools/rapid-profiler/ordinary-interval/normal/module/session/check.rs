@@ -570,6 +570,31 @@ pub(in crate::normal) fn report_shape_for<const N: usize>(
             && (capacity == N * 10 || capacity == N * 1000)
             && records.len() <= capacity
     );
+    report_rows_for(generation, records, capacity, functions);
+}
+// The opt-in accuracy route carries its constructor policy independently of
+// report rows and Engine capacity. Legacy wrappers above remain closed.
+pub(in crate::normal) fn report_shape_accuracy_for<const N: usize>(
+    generation: u64,
+    records: &[RecordObservation],
+    capacity: usize,
+    functions: &[FunctionId; N],
+    policy: rapid_profiler::frontend_native::backoff::Policy,
+) {
+    assert!(policy.is_accuracy() && (1..=4).contains(&N));
+    let expected = N
+        .checked_mul(policy.retained())
+        .expect("configured accuracy report capacity");
+    assert_eq!(capacity, expected);
+    assert!(generation != 0 && records.len() <= capacity);
+    report_rows_for(generation, records, capacity, functions);
+}
+fn report_rows_for<const N: usize>(
+    generation: u64,
+    records: &[RecordObservation],
+    capacity: usize,
+    functions: &[FunctionId; N],
+) {
     let mut ranks = [0; N];
     for (i, row) in records.iter().enumerate() {
         let a = row.record.admission;

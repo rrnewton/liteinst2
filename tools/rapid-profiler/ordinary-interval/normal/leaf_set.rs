@@ -201,6 +201,7 @@ fn validate_line(line: &str) {
 pub(in crate::normal) struct Controller<const N: usize> {
     inner: NormalLeafSetSessionController,
     functions: [FunctionId; N],
+    accuracy: Option<Policy>,
 }
 impl<const N: usize> shared::engine::Controller for Controller<N> {
     type History = NormalLeafSetHistoryBatch;
@@ -231,7 +232,7 @@ impl<const N: usize> shared::engine::Controller for Controller<N> {
         self.inner.disarm(epoch)
     }
     fn check_report(&self, generation: u64, rows: &[RecordObservation], capacity: usize) {
-        population::report_shape_for(generation, rows, capacity, &self.functions);
+        check::report_shape(generation, rows, capacity, &self.functions, self.accuracy);
     }
     fn final_check(&self, history: &[Self::History]) -> Result<(), String> {
         let w = self.inner.history_window().map_err(failure)?;
@@ -980,8 +981,13 @@ fn run_common_timing<const N: usize>(
     let (inner, client) = unsafe { prepared.activate_concurrent() }.map_err(failure)?;
     assert_eq!(client.accuracy_policy(), accuracy);
     let stream = inner.history_window().map_err(failure)?.stream().clone();
+    assert_eq!(stream.accuracy_policy(), accuracy);
     let mut engine = shared::engine::Engine {
-        controller: Controller { inner, functions },
+        controller: Controller {
+            inner,
+            functions,
+            accuracy,
+        },
         epochs: [None, None, None],
         banks,
         current: None,
