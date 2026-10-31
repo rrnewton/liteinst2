@@ -498,7 +498,10 @@ impl fmt::Display for CustodySnapshot {
 const _: () = {
     assert!(std::mem::size_of::<CustodyTotals>() <= 4096);
     assert!(std::mem::size_of::<CustodySnapshot>() <= 4096);
-    assert!((12 + 14) * 256 + 512 + 4096 <= 16 * 1024);
+    assert!(
+        (PHASES.len() + CUSTODY_PARENTS.len() + CUSTODY_STAGES.len() + 2) * 256 + 512 + 4096
+            <= 16 * 1024
+    );
 };
 
 // No caller-controlled text, widths or collection sizes are formatted. A u128
