@@ -25,6 +25,37 @@
     (destination)[4] = c_14; (destination)[5] = c_15; \
 } while (0)
 
+/* Explicit nonzero initializers keep both complete cells in file-backed data.
+ * Runtime ownership can then use the retained file's inode and offset. Every
+ * call still resets all 64 bytes before capturing eight fresh physical values. */
+LI2_UW_HIDDEN volatile struct Li2UwRawReturn li2_uw_work_raw = {
+    .result = UINT64_C(0x776f726b72617731)
+};
+LI2_UW_HIDDEN volatile struct Li2UwRawReturn li2_uw_reference_raw = {
+    .result = UINT64_C(0x7265667261773031)
+};
+_Static_assert(sizeof(struct Li2UwRawReturn) == 64, "raw return ABI");
+_Static_assert(offsetof(struct Li2UwRawReturn, rsp) == 8, "raw RSP ABI");
+_Static_assert(offsetof(struct Li2UwRawReturn, callee) == 16, "raw callee ABI");
+
+/* Capture first, then let C export its ordinary observations. The RAX input
+ * ties the actual C return value to RAX without changing any callee register.
+ * The machine-code gate must still prove no reload/rematerialization between
+ * CALL and this block, and exact physical-register stores at all eight cells.
+ * A damaged RSP can therefore never choose the capture destination. */
+#define LI2_CAPTURE_RETURN(label, raw, returned, destination) \
+    __asm__ volatile(".global " label "\n.hidden " label "\n" label ":\n" \
+                     "movq %%rsp, %0\n" \
+                     "movq %%rax, " #raw "(%%rip)\n" \
+                     "movq %%rsp, " #raw "+8(%%rip)\n" \
+                     "movq %%rbx, " #raw "+16(%%rip)\n" \
+                     "movq %%rbp, " #raw "+24(%%rip)\n" \
+                     "movq %%r12, " #raw "+32(%%rip)\n" \
+                     "movq %%r13, " #raw "+40(%%rip)\n" \
+                     "movq %%r14, " #raw "+48(%%rip)\n" \
+                     "movq %%r15, " #raw "+56(%%rip)\n" \
+                     : "=&d"(destination) : "a"(returned) : "memory")
+
 static void observe_box(const uint64_t box[5], uint64_t guard[4], uint64_t *value) {
     /* Volatile reads retain the actual guarded memory, not inferred constants.
      * The writable output is one element of this real five-element C array. */
@@ -148,9 +179,10 @@ int li2_uw_call_work(const struct Li2UwCallerControl *control, Li2UwWorkFunction
         finish(control, out);
         return 0;
     }
+    li2_uw_work_raw = (struct Li2UwRawReturn){0};
     out->invocation_dispatched = 1;
     uint64_t result = work(input, length, seed, &box[2]);
-    LI2_SAMPLE("li2_uw_caller_work_post", out->rsp_post);
+    LI2_CAPTURE_RETURN("li2_uw_caller_work_post", li2_uw_work_raw, result, out->rsp_post);
     LI2_OBSERVE_CANARIES("li2_uw_caller_work_canary_after");
     LI2_SAVE_CANARIES(out->callee_after);
     out->result = result;
@@ -202,9 +234,10 @@ int li2_uw_call_reference(const struct Li2UwCallerControl *control,
         finish(control, out);
         return 0;
     }
+    li2_uw_reference_raw = (struct Li2UwRawReturn){0};
     out->invocation_dispatched = 1;
     uint64_t result = reference(value);
-    LI2_SAMPLE("li2_uw_caller_reference_post", out->rsp_post);
+    LI2_CAPTURE_RETURN("li2_uw_caller_reference_post", li2_uw_reference_raw, result, out->rsp_post);
     LI2_OBSERVE_CANARIES("li2_uw_caller_reference_canary_after");
     LI2_SAVE_CANARIES(out->callee_after);
     out->result = result;

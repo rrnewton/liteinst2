@@ -53,6 +53,16 @@ struct Li2UwCallerObservation {
     uint32_t normal_returned, end_attempted;
 };
 
+/* Independent return observations. The post-CALL asm writes these cells using
+ * only RIP-relative addresses, before reloading any caller-frame pointer.
+ * The driver reads the actual owned cells as well as CallerObservation and
+ * requires exact agreement. Single-threaded, non-reentrant fixture only. */
+struct Li2UwRawReturn {
+    uint64_t result, rsp, callee[6];
+};
+extern LI2_UW_HIDDEN volatile struct Li2UwRawReturn li2_uw_work_raw;
+extern LI2_UW_HIDDEN volatile struct Li2UwRawReturn li2_uw_reference_raw;
+
 /* These two functions have different target types and paths. The reference
  * path never receives or invokes the selected-work function. Return 1 means
  * only that the local comparisons passed; it is not unwinder qualification.

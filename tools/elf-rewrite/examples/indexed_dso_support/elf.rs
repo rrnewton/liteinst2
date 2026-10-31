@@ -197,6 +197,80 @@ impl Snapshot {
         )
     }
 
+    /// A separately selected fixture function, including a static collector
+    /// helper. Its bytes and linkage are authenticated; semantics are not.
+    pub fn named_function(&self, name: &'static str, exported: bool) -> Result<Symbol> {
+        let input = self.elf()?;
+        let sections = sections(&input)?;
+        let (regular, dynamic) = symbol_tables(&self.bytes, &sections)?;
+        required_symbol(&input, &sections, &regular, &dynamic, name, true, exported)
+    }
+
+    pub fn original_metadata(&self) -> Result<(u64, &[u8])> {
+        original_metadata(&self.bytes)
+    }
+
+    /// Bind the collector's direct CALL to the actual standard GNU PLT entry
+    /// and its exact `_Unwind_Backtrace` relocation. Runtime resolution of the
+    /// returned GOT coordinate must still equal the qualified consumer address.
+    pub fn backtrace_plt(&self) -> Result<(u64, u64)> {
+        let input = self.elf()?;
+        let sections = sections(&input)?;
+        let (_, dynamic_symbols) = symbol_tables(&self.bytes, &sections)?;
+        let mut named = dynamic_symbols
+            .iter()
+            .enumerate()
+            .filter(|(_, s)| s.name == b"_Unwind_Backtrace");
+        let (symbol_index, symbol) = named.next().ok_or(Error::Missing("_Unwind_Backtrace"))?;
+        if named.next().is_some()
+            || symbol.section != 0
+            || symbol.binding != 1
+            || symbol.visibility != 0
+            || !matches!(symbol.kind, 0 | 2)
+        {
+            return Err(Error::Symbol("_Unwind_Backtrace"));
+        }
+        let inventory = dynamic::inspect(&input, dynamic::Limits::default())?;
+        let mut slots = inventory.writes.iter().filter(|r| {
+            r.symbol as usize == symbol_index
+                && r.table == dynamic::TableKind::JumpRela
+                && r.kind == 7
+                && r.range.len() == 8
+        });
+        let slot = slots.next().ok_or(Error::Missing("Backtrace JUMP_SLOT"))?;
+        if slots.next().is_some() {
+            return Err(Error::Duplicate("Backtrace JUMP_SLOT"));
+        }
+        let got = slot.range.start().0;
+        let mut plts = sections.iter().filter(|s| s.name == b".plt");
+        let plt = plts.next().ok_or(Error::Missing(".plt"))?;
+        if plts.next().is_some()
+            || plt.kind != 1
+            || plt.flags != 6
+            || plt.size < 32
+            || plt.size % 16 != 0
+        {
+            return Err(Error::Format("GNU PLT extent"));
+        }
+        let code = owned_code(&input, plt.address, plt.size)?;
+        if code.file.start().0 != plt.offset {
+            return Err(Error::Ownership);
+        }
+        let mut found = None;
+        for (i, bytes) in code.bytes.chunks_exact(16).enumerate().skip(1) {
+            if bytes[..2] != [0xff, 0x25] {
+                return Err(Error::Format("GNU PLT indirect JMP"));
+            }
+            let address = add(plt.address, i as u64 * 16)?;
+            let displacement = i32::from_le_bytes(bytes[2..6].try_into().unwrap());
+            let resolved = i128::from(add(address, 6)?) + i128::from(displacement);
+            if resolved == i128::from(got) && found.replace(address).is_some() {
+                return Err(Error::Duplicate("Backtrace PLT entry"));
+            }
+        }
+        Ok((found.ok_or(Error::Missing("Backtrace PLT entry"))?, got))
+    }
+
     /// `carrier_bytes` includes its complete relocated program-header table,
     /// payload and CFI/index. These are reservations, not permission to overrun.
     /// Independent file, summed mapped-byte and span limits all remain 16 MiB.
@@ -257,6 +331,32 @@ impl Snapshot {
     }
 }
 
+/// Unique immutable original .eh_frame bytes for exact CIE/FDE joins. This
+/// proves storage coordinates, not the recovery semantics of its programs.
+pub fn original_metadata(bytes: &[u8]) -> Result<(u64, &[u8])> {
+    let input = parse_elf(bytes)?;
+    let sections = sections(&input)?;
+    let mut matches = sections.iter().filter(|s| s.name == b".eh_frame");
+    let s = matches.next().ok_or(Error::Missing(".eh_frame"))?;
+    if matches.next().is_some() {
+        return Err(Error::Duplicate(".eh_frame"));
+    }
+    if s.kind != 1 || s.flags != 2 || s.size == 0 {
+        return Err(Error::Format("original .eh_frame storage"));
+    }
+    let owner = input.virtual_to_storage(ElfVaddr(s.address), s.size)?;
+    let inverse = input.file_to_virtual(elf64::FileOffset(s.offset), s.size)?;
+    let expected = FileRange::checked(elf64::FileOffset(s.offset), s.size)?;
+    if owner.flags.0 != 4
+        || owner.storage != Storage::FileBacked(expected)
+        || inverse.program_header != owner.program_header
+        || inverse.virtual_range.start().0 != s.address
+    {
+        return Err(Error::Ownership);
+    }
+    Ok((s.address, slice(bytes, s.offset, s.size)?))
+}
+
 #[path = "caller_image.rs"]
 pub mod caller_image;
 
@@ -299,7 +399,7 @@ fn parse_elf(bytes: &[u8]) -> Result<Elf64<'_>> {
         },
     )?)
 }
-fn owned_code<'a>(elf: &Elf64<'a>, address: u64, size: u64) -> Result<Code<'a>> {
+pub(super) fn owned_code<'a>(elf: &Elf64<'a>, address: u64, size: u64) -> Result<Code<'a>> {
     let mapping = elf.virtual_to_storage(ElfVaddr(address), size)?;
     let Storage::FileBacked(file) = mapping.storage else {
         return Err(Error::Ownership);

@@ -75,3 +75,10 @@ name = "indexed_dso_inspect"
 path = "examples/indexed_dso_inspect.rs"
 test = false
 bench = false
+
+# Opt-in trusted compiled-fixture witness, never automatic DSO execution.
+[[example]]
+name = "indexed_dso_native"
+path = "examples/indexed_dso_native.rs"
+test = false
+bench = false

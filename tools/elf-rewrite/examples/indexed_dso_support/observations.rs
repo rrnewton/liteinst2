@@ -193,6 +193,16 @@ pub struct CallerObservation {
     pub normal_returned: u32,
     pub end_attempted: u32,
 }
+/// Independent RIP-relative post-CALL capture, read from its separately owned
+/// writable DSO object. The pointer/mapping and actual eight stores remain
+/// obligations of the driver and machine-code checker.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct RawReturn {
+    pub result: u64,
+    pub rsp: u64,
+    pub callee: [u64; 6],
+}
 pub type CallWorkFn = unsafe extern "C" fn(
     *const CallerControl,
     Option<WorkFn>,
@@ -223,6 +233,8 @@ const _: () = {
     assert!(offset_of!(Config, layout) == 120 && offset_of!(Config, records) == 160);
     assert!(offset_of!(CallerControl, return_pc) == 200);
     assert!(offset_of!(CallerObservation, status_before) == 232);
+    assert!(size_of::<RawReturn>() == 64);
+    assert!(offset_of!(RawReturn, rsp) == 8 && offset_of!(RawReturn, callee) == 16);
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -401,6 +413,28 @@ fn word(bytes: &[u8], offset: usize) -> u64 {
     )
 }
 impl CallChecks<'_> {
+    /// Require the independent physical-register capture as well as every
+    /// original caller comparison. No expected value comes from the raw cell.
+    pub fn check_raw_return(&self, raw: &RawReturn) -> Result<()> {
+        if raw.rsp != self.observation.rsp_sample as u64
+            || raw.rsp != self.observation.rsp_post as u64
+        {
+            return Err(Error::Stack);
+        }
+        if raw.callee != CANARIES || raw.callee != self.observation.callee_after {
+            return Err(Error::Callee);
+        }
+        let result = if self.expected.mode == Mode::Reference {
+            self.expected.case.reference()
+        } else {
+            self.expected.case.work().0
+        };
+        if raw.result != result || raw.result != self.observation.result {
+            return Err(Error::Result);
+        }
+        Ok(())
+    }
+
     pub fn check_trace(&self, expected: &TraceExpectation<'_>) -> Result<()> {
         if self.expected.mode == Mode::OriginalWork {
             return Err(Error::Counts);
@@ -631,6 +665,33 @@ mod tests {
             }
         }
         (e, o, records, frames, context)
+    }
+
+    #[test]
+    fn independent_raw_return_rejects_each_changed_physical_register() {
+        for mode in [Mode::OriginalWork, Mode::CandidateWork, Mode::Reference] {
+            for case in Case::ALL {
+                let (expected, o, records, _, _) = fixture(mode, case);
+                let checked = check_call(expected, 1, &o, &records).unwrap();
+                let raw = RawReturn {
+                    result: o.result,
+                    rsp: o.rsp_sample as u64,
+                    callee: CANARIES,
+                };
+                checked.check_raw_return(&raw).unwrap();
+                let mut bad = raw;
+                bad.result ^= 1;
+                assert_eq!(checked.check_raw_return(&bad), Err(Error::Result));
+                let mut bad = raw;
+                bad.rsp ^= 16;
+                assert_eq!(checked.check_raw_return(&bad), Err(Error::Stack));
+                for i in 0..6 {
+                    let mut bad = raw;
+                    bad.callee[i] ^= 1;
+                    assert_eq!(checked.check_raw_return(&bad), Err(Error::Callee));
+                }
+            }
+        }
     }
 
     #[test]
