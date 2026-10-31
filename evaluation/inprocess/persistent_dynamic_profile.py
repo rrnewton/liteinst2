@@ -23,6 +23,29 @@ sys.path.insert(0,str(ROOT/'tools/page-entry'))
 import namespace
 
 
+def observer_libraries(data, interpreter, pin):
+    """Pin the actual host profiler closure; this is not a sealed guest plan."""
+    need(type(data) is bytes and len(data)<=65536,'bounded observer loader listing')
+    lines=data.decode('ascii').splitlines()
+    need(2<=len(lines)<=129,'bounded observer dependency population')
+    expected={};total=0
+    for line in lines:
+        if re.fullmatch(r'\s*linux-vdso\.so\.1 \(0x[0-9a-f]+\)',line):continue
+        m=re.fullmatch(r'\s*(\S+)(?: => (\/\S+))? \(0x[0-9a-f]+\)',line)
+        need(m is not None,'closed actual observer dependency listing')
+        name,path=m.group(1),m.group(2)or m.group(1)
+        need(path.startswith('/')and (name.startswith('/')or re.fullmatch(r'[A-Za-z0-9_.+-]{1,255}',name)),
+             'absolute observer object and plain SONAME or interpreter')
+        actual=Path(path).resolve(strict=True);size=actual.stat().st_size
+        need(actual.is_file()and actual not in expected and 1<=size<=PERF[1]-total,
+             'distinct regular observer objects within one bounded input manifest')
+        actual=pin(path);need(actual.stat().st_size==size,'observer dependency size stable while pinned')
+        expected[actual]=set()if name.startswith('/')else{name};total+=size
+    need(interpreter in expected,'actual observer interpreter present')
+    resolved_libraries(data,expected,interpreter,pin)
+    return expected
+
+
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--receipt',type=Path,required=True)
@@ -168,13 +191,9 @@ def main():
             'fresh carrier has all four exact original content identities')
         state=dict(objects=objects,description=description,argv=[str(original),'-d','.'],carrier=carrier)
         perf=binary('/usr/bin/perf');perfinterp=pin(interpreter(perf))
-        pobj,pdesc=namespace.plan(perf,[Path('/usr/lib64')],bytes.fromhex(fact(perf)['sha256']),bytes.fromhex(fact(perfinterp)['sha256']))
-        pexpected={perfinterp:set()}
-        for item in pobj:
-            p=pin(item['path'],dict(bytes=len(item['bytes']),sha256=H(item['bytes'])))
-            pexpected.setdefault(p,set()).update(item['names'])
         _,listed,errors=run('perf-libraries',[perfinterp,'--list',perf])
-        need(not errors,'actual observer loader dependency listing');resolved_libraries(listed,pexpected,perfinterp,pin)
+        need(not errors,'actual observer loader dependency listing')
+        pexpected=observer_libraries(listed,perfinterp,pin)
         r['observer_libraries']={str(p):fact(p)for p in pexpected}
         wrapper_python=pin(Path(sys.executable).resolve())
         r['observer_tools']=dict(perf=fact(perf),target_python=fact(python),wrapper_python=fact(wrapper_python),
