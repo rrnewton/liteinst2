@@ -1039,3 +1039,6 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #ifdef LI2_PERSISTENT_EPOCH_CAPTURE
 #include "persistent_epoch_observe_memory.inc"
 #endif
+#ifdef LI2_PERSISTENT_DYNAMIC_CAPTURE
+#include "persistent_dynamic_observe_memory.inc"
+#endif

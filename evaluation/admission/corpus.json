@@ -6519,7 +6519,7 @@
       },
       "unit/ordinary_interval/main": {
         "ignored": 1,
-        "tests": 480
+        "tests": 489
       },
       "unit/rapid_profiler/lib": {
         "ignored": 31,
@@ -7602,6 +7602,6 @@
       }
     ]
   },
-  "recorder_tests": 361,
+  "recorder_tests": 362,
   "schema_version": 1
 }
