@@ -128,12 +128,23 @@ class Main981419InventoryTests(unittest.TestCase):
             changed_raw = raw.replace(literal.encode(), altered.encode())
             changed_prior = prior.replace(literal.encode(), altered.encode())
             self.assertNotEqual(changed_raw, raw)
+            # Transport the same mutation through the new outer source join;
+            # its edit spans stay exact, so the old declaration must still fire.
+            native_input = native_indexed.source_before(path, raw, 'upstream_control')
+            changed_native = native_input.replace(literal.encode(), altered.encode())
+            self.assertEqual(artifact.source_before(path, raw, 'upstream_control'), native_input)
+            native_outer = {}
+            if path in native_indexed.DATA['projections']:
+                native_row = copy.deepcopy(native_indexed.DATA['projections'][path])
+                native_row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()
+                native_row['previous_sha256'] = hashlib.sha256(changed_native).hexdigest()
+                native_outer[path] = native_row
             prepared_input = prepared.source_before(path, raw, 'upstream_control')
             changed_prepared = prepared_input.replace(literal.encode(), altered.encode())
             newest_outer = {}
             if path in prepared.DATA['projections']:
                 row = copy.deepcopy(prepared.DATA['projections'][path])
-                row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()
+                row['current_sha256'] = hashlib.sha256(changed_native).hexdigest()
                 row['previous_sha256'] = hashlib.sha256(changed_prepared).hexdigest()
                 newest_outer[path] = row
             incoming_input = incoming.source_before(path, raw, 'upstream_control')
@@ -157,7 +168,8 @@ class Main981419InventoryTests(unittest.TestCase):
             projection['previous_sha256'] = hashlib.sha256(changed_prior).hexdigest()
             def changed(candidate):
                 return changed_raw if candidate == target else read(candidate)
-            with patch.dict(prepared.DATA['projections'], newest_outer), \
+            with patch.dict(native_indexed.DATA['projections'], native_outer), \
+                 patch.dict(prepared.DATA['projections'], newest_outer), \
                  patch.dict(incoming.DATA['projections'], outer), \
                  patch.dict(newest.DATA['projections'], upstream), \
                  patch.dict(current.DATA['projections'], {path: projection}):
