@@ -10,6 +10,7 @@ import core_367_inventory as current
 import core_5cda_inventory as historical
 import core_cc846_inventory as inventory
 import parsing
+import core_97ab_inventory as native_indexed
 import core_f353_inventory as indexed
 import core_d8d85_inventory as artifact
 import core_34c47_inventory as prepared
@@ -21,7 +22,7 @@ import recorder_shards_inventory as shards
 
 class Main367InventoryTests(unittest.TestCase):
     def test_exact_absolute_startup_sources_catalog_and_refusals(self):
-        actual = current.mainc712.before_current(current.mainc712.main0fb574.before_current(current.mainc712.main0fb574.mainaf81.before_current(current.mainc712.main0fb574.mainaf81.maindd75.before_current(latest.before_current(newest.before_current(incoming.before_current(prepared.before_current(artifact.before_current(indexed.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes())))))))))))
+        actual = current.mainc712.before_current(current.mainc712.main0fb574.before_current(current.mainc712.main0fb574.mainaf81.before_current(current.mainc712.main0fb574.mainaf81.maindd75.before_current(latest.before_current(newest.before_current(incoming.before_current(prepared.before_current(artifact.before_current(indexed.before_current(native_indexed.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))))))))))))
         rows = actual['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                           sum(x['ignored'] for x in rows.values())), (106, 3831, 37))
@@ -52,7 +53,7 @@ class Main367InventoryTests(unittest.TestCase):
             wrong = dict(actual); wrong[key] = None
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main367_inventory_differs$'):
                 current.before_current(wrong)
-        identities = current.mainc712.before_python(current.mainc712.main0fb574.before_python(current.mainc712.main0fb574.mainaf81.before_python(current.mainc712.main0fb574.mainaf81.maindd75.before_python(latest.before_python(newest.before_python(incoming.before_python(prepared.before_python(artifact.before_python(indexed.before_python(historical.python_identities(Path(__file__).parent)))))))))))
+        identities = current.mainc712.before_python(current.mainc712.main0fb574.before_python(current.mainc712.main0fb574.mainaf81.before_python(current.mainc712.main0fb574.mainaf81.maindd75.before_python(latest.before_python(newest.before_python(incoming.before_python(prepared.before_python(artifact.before_python(indexed.before_python(native_indexed.before_python(historical.python_identities(Path(__file__).parent))))))))))))
         self.assertEqual(len(identities), 355)
         previous = current.before_python(identities)
         self.assertEqual((len(previous), current.digest(previous)), (354, shards.PYTHON_CURRENT))

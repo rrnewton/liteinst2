@@ -11,11 +11,12 @@ import core_d8d85_inventory as previous
 import core_5cda_inventory as historical
 import core_cc846_inventory as inventory
 import parsing
+import core_97ab_inventory as native_indexed
 
 
 class MainF353InventoryTests(unittest.TestCase):
     def test_exact_indexed_sources_and_historical_refusals(self):
-        actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        actual = native_indexed.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))
         rows = actual['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                           sum(x['ignored'] for x in rows.values())), (112, 4197, 37))
@@ -29,11 +30,11 @@ class MainF353InventoryTests(unittest.TestCase):
         self.assertEqual((len(actual['harness_test_counts']['serial_launch']),
                           sum(x['tests'] for x in actual['harness_test_counts']['serial_launch'].values())), (27, 1039))
         with patch.object(inventory, 'require_historical364') as earlier:
-            self.assertIsNone(inventory.require_current(actual))
+            self.assertIsNone(inventory.require_historical365(actual))
             earlier.assert_called_once_with(old)
         for wrong in (old, previous.before_current(old)):
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-                inventory.require_current(wrong)
+                inventory.require_historical365(wrong)
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^maind8d85_inventory_differs$'):
             previous.before_current(actual)
         self.assertEqual(previous.peel_current(actual, 'catalog_control', 'source_control'), previous.before_current(old))
@@ -47,7 +48,7 @@ class MainF353InventoryTests(unittest.TestCase):
                     wrong = copy.deepcopy(actual); wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainf353_inventory_differs$'):
                         current.before_current(wrong)
-        identities = historical.python_identities(Path(__file__).parent)
+        identities = native_indexed.before_python(historical.python_identities(Path(__file__).parent))
         old_ids = current.before_python(identities)
         self.assertEqual((len(identities), len(old_ids)), (365, 364))
         self.assertEqual(current.digest(old_ids), previous.PYTHON_CURRENT)
@@ -79,12 +80,29 @@ class MainF353InventoryTests(unittest.TestCase):
             target = current.ROOT/path; raw = read(target)
             self.assertEqual(raw.count(before.encode()), 1)
             wrong = raw.replace(before.encode(), after.encode())
+            # Carry the original length-changing stimulus through the new
+            # outer source inverse; every inverse donor byte remains exact.
+            upstream = copy.deepcopy(native_indexed.DATA['projections'])
+            prior = native_indexed.source_before(path, raw, 'indexed_outer_inverse')
+            wrong_prior = prior.replace(before.encode(), after.encode())
+            if path in upstream:
+                at = raw.index(before.encode()); stop = at + len(before.encode())
+                delta = len(after.encode()) - len(before.encode())
+                rebased = []
+                for first, end, donor in upstream[path]['edits']:
+                    self.assertTrue(end <= at or first >= stop)
+                    shift = delta if first >= stop else 0
+                    rebased.append([first + shift, end + shift, donor])
+                upstream[path].update(current_sha256=hashlib.sha256(wrong).hexdigest(),
+                    previous_sha256=hashlib.sha256(wrong_prior).hexdigest(), edits=rebased)
             def changed(candidate): return wrong if candidate == target else read(candidate)
-            with patch.object(Path, 'read_bytes', changed), \
-                 patch.dict(current.DATA['sources'], {path:hashlib.sha256(wrong).hexdigest()}), \
-                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('indexed declaration gate omitted'))):
-                with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainf353_source_inventory_differs$'):
-                    current.require_sources()
+            with patch.dict(native_indexed.DATA['projections'], upstream):
+                self.assertEqual(native_indexed.source_before(path, wrong, 'indexed_outer_inverse'), wrong_prior)
+                with patch.object(Path, 'read_bytes', changed), \
+                     patch.dict(current.DATA['sources'], {path:hashlib.sha256(wrong_prior).hexdigest()}), \
+                     patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('indexed declaration gate omitted'))):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainf353_source_inventory_differs$'):
+                        current.require_sources()
         for path in current.DATA['added_default_methods']:
             target = current.ROOT/path; raw = read(target)
             def changed(candidate): return raw+b'\n' if candidate == target else read(candidate)

@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 
 from parsing import require
+import core_97ab_inventory as main97ab
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
@@ -41,19 +42,23 @@ def inverse(path, raw, rows, error):
 
 
 def source_before(path, raw, error):
+    raw = main97ab.source_before(path, raw, error)
     return inverse(path, raw, DATA['projections'], error)
 
 
 def source_before_evaluation(path, raw, error):
+    raw = main97ab.source_before_evaluation(path, raw, error)
     return inverse(path, raw, DATA['evaluation_projections'], error)
 
 
 def require_sources(error='mainf353_source_inventory_differs'):
     for path, expected in DATA['sources'].items():
         try:
-            raw = (ROOT / path).read_bytes()
+            observed = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
+        raw = main97ab.source_before(path, observed, error)
+        raw = main97ab.source_before_evaluation(path, raw, error)
         require(hashlib.sha256(raw).hexdigest() == expected, error)
         if path in DATA['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
@@ -67,8 +72,8 @@ def require_sources(error='mainf353_source_inventory_differs'):
         if path in DATA['module_chains']:
             require(all(raw.decode().count(literal) == 1
                         for literal in DATA['module_chains'][path]), error)
-        source_before(path, raw, error)
-        source_before_evaluation(path, raw, error)
+        source_before(path, observed, error)
+        source_before_evaluation(path, observed, error)
 
 
 def before_current(declared, error='mainf353_inventory_differs',
@@ -90,6 +95,7 @@ def before_current(declared, error='mainf353_inventory_differs',
 
 
 def peel_current(declared, error, source_error):
+    declared = main97ab.peel_current(declared, error, source_error)
     return before_current(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENT else declared
 
 
@@ -104,4 +110,5 @@ def before_python(identities, error='mainf353_python_inventory_differs'):
 
 
 def peel_python(identities, error='mainf353_python_inventory_differs'):
+    identities = main97ab.peel_python(identities, error)
     return before_python(identities, error) if type(identities) is list and digest(identities) == PYTHON_CURRENT else identities

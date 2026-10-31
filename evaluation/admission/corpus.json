@@ -6299,7 +6299,7 @@
       },
       "test/indexed_dso_source": {
         "ignored": 0,
-        "tests": 29
+        "tests": 87
       },
       "test/indexed_unwind": {
         "ignored": 0,
@@ -7614,6 +7614,6 @@
       }
     ]
   },
-  "recorder_tests": 365,
+  "recorder_tests": 366,
   "schema_version": 1
 }
