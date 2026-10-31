@@ -67,8 +67,8 @@ def summarize(path, bridge, target_pid, cpu, directory, release_ns, exit_ready_n
                  regs==0xff0fff and stack==4096,
                  'user-only 4096-byte DWARF/IP/TID/time/CPU/period/identifier sample with BP/SP/IP')
         else:
-            need(sample_type==0x10187 and regs==stack==0 and flags==0x463943763,
-                 'exact non-DWARF DUMMY sideband with MMAP2 and COMM_EXEC')
+            need(sample_type==0x10187 and regs==stack==0 and flags==0x463963763,
+                 'exact non-DWARF DUMMY sideband with data MMAP2 and COMM_EXEC')
         off,n=struct.unpack_from('<QQ',data,at+entry-16)
         need(header<=off<=attrs and 0<n<=attrs-off and n%8==0 and
              all(off+n<=lo or hi<=off for lo,hi in ranges), 'bounded disjoint event ID sections')
@@ -348,7 +348,8 @@ def attribute(directory,bridge,script_output,target_pid):
         need(len(loads)==1,'authenticated live bridge offset belongs to one executable PT_LOAD')
         va=loads[0][3]+off-loads[0][2];found=[s for s in obj['symbols']if s[0]<=va<s[1]]
         if len({(s[0],s[1])for s in found})!=1:return 'unknown:bridge_symbol_interval'
-        return 'bridge:'+'|'.join(sorted({s[2]for s in found}))
+        lo,hi=next(iter({(s[0],s[1])for s in found}))
+        return 'bridge:'+hex(lo)+'-'+hex(hi)+':'+'|'.join(sorted({s[2]for s in found}))
     for row,chain in zip(rows,chains,strict=True):
         while cursor<row['maps_upto']:
             m=mappings[cursor]
