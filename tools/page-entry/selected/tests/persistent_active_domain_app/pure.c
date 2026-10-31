@@ -3,8 +3,21 @@
 #include <stddef.h>
 #include <stdint.h>
 #define PURE __attribute__((section(".li2_ua_pure"),noinline,used))
-/* Exact production bridge copy body; no shortened observation or tail read. */
-PURE void copy(void *v,const void *w,size_t n) { unsigned char *d=v;const unsigned char *s=w;while(n--)*d++=*s++; }
+/* Full requested bytes only. Overlap preserves the original forward-byte
+   behavior; disjoint ranges use unaligned, alias-anything words plus a tail. */
+PURE void copy(void *v,const void *w,size_t n) {
+    unsigned char *d=v;const unsigned char *s=w;
+    uintptr_t a=(uintptr_t)v,b=(uintptr_t)w;
+    if(n && (a<=b ? n<=b-a : n<=a-b)) {
+        typedef uint64_t word __attribute__((__may_alias__,__aligned__(1)));
+        _Static_assert(sizeof(word)==8 && __alignof__(word)==1,"bounded unaligned copy word");
+        while(n>=sizeof(word)) {
+            *(word *)(void *)d=*(const word *)(const void *)s;
+            d+=sizeof(word);s+=sizeof(word);n-=sizeof(word);
+        }
+    }
+    while(n--)*d++=*s++;
+}
 PURE int same(const void *a,const void *b,size_t n) {
     const unsigned char *x=a,*y=b;
 #ifdef LI2_FAST_EQUAL

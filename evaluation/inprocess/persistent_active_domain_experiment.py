@@ -127,6 +127,7 @@ def active_prerequisite(path,r,pin,binary,archive,active):
     from persistent_dynamic import BOUNDS,named,digest
     from scalar_reuse_performance import closed
     from scalar_span_trace_build import fast_bytes_completed
+    from page_selected import elf
     path=Path(path).resolve(strict=True)
     need(path.parent==HERE/'results'and path.suffix=='.json'and path.stat().st_size<=32<<10,
          'exact compact active-domain public prerequisite')
@@ -177,6 +178,34 @@ def active_prerequisite(path,r,pin,binary,archive,active):
         for cap in row['captures'].values():
             need(digest(fact(binary(private/cap['file'])))==digest({k:cap[k]for k in('bytes','sha256')}),
                  'whole actual active-domain capture')
+    copy=a['application_build']['copy_oracle'];copy_row=commands['app-copy-run']
+    expected_copy=dict(disjoint=2432,overlap=10032,guards=140,large=3)
+    expected_output=b'active-app-copy disjoint=2432 overlap=10032 guards=140 large=3\n'
+    need(copy['status']=='passed'and digest(copy['counts'])==digest(copy['expected_counts'])==
+         digest(active.COPY_COUNTS)==digest(expected_copy)and active.COPY_STDOUT==expected_output and
+         copy['qualification_credit']is False and copy['performance_credit']is False and
+         digest([copy['exit'],copy_row['exit'],copy_row['expected_exit']])==digest([0,0,0])and
+         copy_row['profile']=='finite'and digest(copy_row['bounds'])==digest(copy['bounds'])==digest(BOUNDS['finite'])and
+         copy_row['argv']==[copy['argv'][-1]]and copy['duration_ns']==copy_row['duration_ns']and
+         digest(copy['captures'])==digest({k:{j:v[j]for j in('bytes','sha256')}for k,v in copy_row['captures'].items()}),
+         'mandatory actual copy oracle preserves every exact case and original finite bounds')
+    need(binary(private/copy_row['captures']['stdout']['file']).read_bytes()==expected_output and
+         binary(private/copy_row['captures']['stderr']['file']).read_bytes()==b'',
+         'whole copy oracle output independently proves the exact required population')
+    for image_path,at,n in ((a['application_build']['argv'][-1],copy['app_symbol']['address'],copy['app_symbol']['bytes']),
+                      (copy['argv'][-1],copy['oracle_symbol']['address'],copy['oracle_symbol']['bytes'])):
+        raw,_,segments=elf(binary(image_path))
+        owners=[s for s in segments if s[0]==1 and s[1]==5 and s[3]<=at<at+n<=s[3]+s[5]]
+        need(len(owners)==1 and n>0,'complete independently bound copy body in actual RX load')
+        item=owners[0];offset=item[2]+at-item[3]
+        need(digest(dict(bytes=n,sha256=H(raw[offset:offset+n])))==digest(copy['body']),
+             'actual application and oracle contain the same whole emitted copy body')
+    need(digest(copy['app_symbol'])==digest(a['application_build']['symbols']['copy'])and
+         digest(fact(binary(copy['argv'][-1])))==digest(copy['artifact'])and
+         digest(public['copy_oracle'])==digest({k:v for k,v in copy.items()if k in
+            ('status','expected_counts','counts','recipe','artifact','body','exit','duration_ns','bounds','captures',
+             'qualification_credit','performance_credit')}),
+         'actual copy artifact, application symbol and whole compact public proof join')
     need(digest([(c['lane'],c['mode'],c['control'])for c in a['cases']])==digest(active.ORDER)==
          digest((('native',0,0),('maintained',0,0),('differential',0,0))),
          'exact native392 and two generated active-domain subjects')

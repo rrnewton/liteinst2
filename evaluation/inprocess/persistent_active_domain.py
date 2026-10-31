@@ -45,6 +45,8 @@ PAIR_EXPECTED=dict(observed_active_domain_pair=1,invocations=1,generated_complet
 EXPECTED_STATUS={('native',0):'observed_native_active_domain',
     ('maintained',0):'observed_generated_active_domain_maintained',
     ('differential',0):'observed_generated_active_domain_differential'}
+COPY_COUNTS=dict(disjoint=2432,overlap=10032,guards=140,large=3)
+COPY_STDOUT=b'active-app-copy disjoint=2432 overlap=10032 guards=140 large=3\n'
 COMPONENT_ORDER=('active_authority','active_dispatch')
 COMPONENT_INPUTS={'tests/persistent_active_domain/authority.c': {'bytes': 14511, 'sha256': '1f934a8708e9e44e194b9cf662a84f1d363a91a5ad39e5bfb8e659066ef50606'}, 'tests/persistent_active_domain/build-authority.sh': {'bytes': 1622, 'sha256': 'a1b94c84ed0f01c0fa1c76aa45735138ad90dbcfa4b24d40a7822776fcc0fdfd'}, 'tests/persistent_active_domain/build-dispatch.sh': {'bytes': 1057, 'sha256': '2cccefa5a9b8bab38769f140cbf421c90ea106601110fe2bca01f4e75affa351'}, 'tests/persistent_active_domain/dispatch.c': {'bytes': 11184, 'sha256': '7dd5b631264851945897d4c5d0dc77cebbeec62d397d95200cc2cb39451f7483'}, 'tests/persistent_active_domain/domain_model.c': {'bytes': 7488, 'sha256': '9776beb43b7d976d8502c9d5bc35abc989b02ce29e6b30e03c7bc98eae32b5df'}, 'tests/persistent_active_domain/prepare.py': {'bytes': 4041, 'sha256': 'd7a2e86f07c2de9aab525130758a2cd6175a7e5bf17999ead8b3704ca8e714a0'}}
 COMPONENT_STDOUT={'active_authority': b'active-domain-authority positives=9 refusals=30 claims=2 reuse=3 bytes=2 blocked=3 directories=2 owners=17\n', 'active_dispatch': b'active-domain-dispatch proofs=2 descriptors=16 decoded=74 models=4930 handoffs=192 refusals=487 steps=416230 typed=43520\n'}
@@ -126,8 +128,92 @@ def compile_subject(builder,private,pin,binary,run,r):
     for name in ('copy','same','ua_data_pattern','ua_stack_pattern'):
         need(re.search(r'\bmovabsq?\s+\$0x'+format(symbols[name]['address'],'x')+r',',main_assembly)is not None,
              'actual main materializes each full-width high helper address without truncated relocation')
+    copy_oracle(builder,private,pin,binary,run,state,original,symbols['copy'])
     state.update(status='passed',artifact=fact(original),symbols=symbols);return original
 
+
+
+def copy_oracle(builder,private,pin,binary,run,state,original,app_symbol):
+    """Bound the actual fixture helper to an independent complete-byte oracle."""
+    script=pin(FIXTURE/'build-copy-oracle.sh');output=private/'active-app-copy-oracle'
+    rows=recipe(script,'"$cc"');need(len(rows)==1,'one actual two-TU copy oracle recipe')
+    argv=expand(rows[0],{'$cc':builder.tools['cc'],'$source_dir':FIXTURE,'$output':output})
+    units=[str(pin(FIXTURE/n))for n in('copy_oracle.c','pure.c')]
+    app_units=[str(FIXTURE/n)for n in('main.c','pure.c','machine.S')]
+    flags=lambda args,inputs:[x for x in args[1:-2]if x not in inputs and not x.startswith('-Wl,')]
+    need(argv[-2:]==['-o',str(output)]and[x for x in argv if x.endswith('.c')]==units and
+         flags(argv,units)==flags(state['argv'],app_units)and '-DNDEBUG'not in argv and
+         '-Wl,-z,relro,-z,now,-z,noexecstack'in argv,
+         'copy oracle uses exact actual application helper-affecting compiler flags')
+    observed=state['copy_oracle']=dict(status='failed',recipe=fact(script),argv=argv,
+        expected_counts=COPY_COUNTS,qualification_credit=False,performance_credit=False)
+    _,out,err=run('app-copy-headers',[builder.tools['cc'],*flags(argv,units),'-M','-MT','li2_copy',*units],
+        profile='finite',env=builder.environment)
+    lines=out.decode().replace('\\\n',' ').splitlines()
+    need(not err and len(lines)==2 and all(x.startswith('li2_copy: ')for x in lines),
+         'whole actual two-TU copy oracle header closure')
+    includes={str(pin(n)):fact(pin(n))for line in lines for n in shlex.split(line.split(':',1)[1])}
+    need(set(units)|{str(FIXTURE/'app.h')}<=set(includes)and
+         includes[str(FIXTURE/'pure.c')]==state['headers'][str(FIXTURE/'pure.c')],
+         'oracle and application use the same complete actual helper source')
+    observed['headers']=includes
+    run('app-copy-link',argv,profile='finite',env=builder.environment)
+    executable=binary(output);data,head,segments=elf(executable)
+    need(head[1:4]==(2,62,1)and all(s[2]+s[5]<=len(data)and s[5]<=s[6]and s[1]&3!=3
+         for s in segments if s[0]==1),'complete actual non-PIE copy oracle without WX')
+    _,symbols,err=run('app-copy-symbols',[builder.tools['nm'],'-S','--defined-only',executable],
+        profile='finite',env=builder.environment)
+    found=[line.split()for line in symbols.splitlines()if line.split()[-1:]==[b'copy']]
+    need(not err and len(found)==1 and len(found[0])==4 and found[0][2]==b'T'and int(found[0][1],16)>0,
+         'one complete nonempty actual copy oracle text symbol')
+    address,size=int(found[0][0],16),int(found[0][1],16)
+    def body(image,at,n):
+        raw,_,loads=elf(image)
+        owners=[s for s in loads if s[0]==1 and s[1]==5 and s[3]<=at<at+n<=s[3]+s[5]]
+        need(len(owners)==1 and n>0,'whole copy body lies in one actual RX load')
+        item=owners[0];offset=item[2]+at-item[3];return raw[offset:offset+n]
+    actual=body(executable,address,size);expected=body(original,app_symbol['address'],app_symbol['bytes'])
+    need(actual==expected,'oracle executes the exact whole emitted application copy body')
+    objdump=pin(shutil.which('objdump',path=ENV['PATH']))
+    _,assembly,err=run('app-copy-body',[objdump,'-d','-w','-M','att',
+        '--start-address='+hex(address),'--stop-address='+hex(address+size),executable],
+        profile='finite',env=builder.environment)
+    need(not err and b'<copy>:'in assembly,'actual complete copy disassembly')
+    emitted=[];cursor=address;instructions=[]
+    for line in assembly.decode().splitlines():
+        match=re.fullmatch(r'\s*([0-9a-f]+):\s+((?:[0-9a-f]{2}\s+)+)(.*)',line)
+        if match:
+            chunk=bytes.fromhex(match[2]);need(int(match[1],16)==cursor and chunk and cursor+len(chunk)<=address+size,
+                'complete contiguous actual copy instruction bytes')
+            emitted.append(chunk);instructions.append(match[3]);cursor+=len(chunk)
+    need(cursor==address+size and b''.join(emitted)==actual,'whole copy disassembly equals both actual ELFs')
+    forbidden=r'\b(?:l?callq?|rep(?:e|ne|z|nz)?|(?:movs|stos|lods|scas|cmps|ins|outs)[bwlq]?)\b|%[xyz]?mm[0-9]+\b'
+    need(all(re.search(forbidden,x)is None for x in instructions),
+         'actual copy has no call, string, REP or vector instruction')
+    observed['body']=dict(bytes=len(actual),sha256=H(actual))
+    observed['app_symbol']=app_symbol;observed['oracle_symbol']=dict(address=address,bytes=size)
+    interps=[s for s in segments if s[0]==3];need(len(interps)==1,'one actual copy oracle interpreter')
+    item=interps[0];literal=data[item[2]:item[2]+item[5]]
+    need(literal.startswith(b'/')and literal.endswith(b'\0')and b'\0'not in literal[:-1],
+         'complete literal copy oracle interpreter')
+    loader=pin(os.fsdecode(literal[:-1]));observed['runtime_libraries']={}
+    _,out,err=run('app-copy-libraries',[loader,'--list',executable],profile='finite',env=builder.environment)
+    need(not err,'actual complete copy oracle runtime library listing')
+    for line in out.decode().splitlines():
+        if re.fullmatch(r'\s*linux-vdso.so.1 \(0x[0-9a-f]+\)',line):continue
+        match=re.fullmatch(r'\s*(?:\S+ => )?(/\S+) \(0x[0-9a-f]+\)',line)
+        need(match is not None,'one resolved actual copy oracle library')
+        path=pin(match[1]);need(path.name not in observed['runtime_libraries'],'unique copy oracle library name')
+        observed['runtime_libraries'][path.name]=dict(path=str(path),**fact(path))
+    need(any(v['path']==str(loader)for v in observed['runtime_libraries'].values()),
+         'actual interpreter belongs to complete copy oracle runtime closure')
+    observed['artifact']=fact(executable)
+    label='app-copy-run'
+    row,out,err=run(label,[executable],profile='finite',env=builder.environment)
+    need(out==COPY_STDOUT and err==b''and row['exit']==0,'every exact copy oracle case completes')
+    need(all(fact(path)==value for path,value in includes.items()),'copy oracle whole source closure unchanged')
+    observed.update(status='passed',counts=COPY_COUNTS,exit=row['exit'],duration_ns=row['duration_ns'],
+        bounds=row['bounds'],captures={k:{j:v[j]for j in('bytes','sha256')}for k,v in row['captures'].items()})
 
 
 def observed_layout(builder,bridge,private,pin,binary,run,r):
@@ -570,6 +656,7 @@ def main():
              'persistent_active_domain_observe_memory.h','persistent_active_domain_observe_memory.inc')}
         required|={'evaluation/inprocess/persistent_retained_two.py','evaluation/inprocess/persistent_retained_two_experiment.py',
             'evaluation/inprocess/persistent_retained_two_reports.py','evaluation/inprocess/persistent_retained_two_build.py'}
+        required|={str((FIXTURE/name).relative_to(ROOT))for name in ('copy_oracle.c','build-copy-oracle.sh')}
         required|={str((SELECTED/name).relative_to(ROOT))for name in
             ('persistent_active_domain.h','persistent_active_domain_types.inc','linked_jmp_domain.h','linked_jmp_domain_emit.inc',
              'rseq_current_data.h','rseq_current_data.inc','persistent_retained_two.inc',
@@ -666,6 +753,7 @@ def main():
         public['component_oracles']=[{k:v for k,v in s.items()if k in
             ('name','status','launched','expected_exit','bounds','emitted_instruction_execution','hardware_subjects','performance_credit',
              'recipe','archive','features','artifact','exit','duration_ns','timed_out','captures','summaries')}for s in r['component_oracles']]
+        public['copy_oracle']={k:v for k,v in r.get('application_build',{}).get('copy_oracle',{}).items()if k in ('status','expected_counts','counts','recipe','artifact','body','exit','duration_ns','bounds','captures','qualification_credit','performance_credit')}
         public['cases']=[public_case(c)for c in r['cases']]
         public['rseq_mapping']={c['lane']:c.get('rseq_mapping')for c in r['cases']if c['lane']!='native'}
         public.update(hardware=hw,private_receipt=fact(private/'receipt.json'),
