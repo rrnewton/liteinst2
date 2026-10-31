@@ -372,7 +372,9 @@ def pair(native,gated,owner):
     compare(a['predecessor_before'],frames[0],'original')
     compare(a['ingress'],frames[1],'original');compare(a['before'],frames[1],'closed')
     compare(a['logical'],frames[4],'nx');compare(a['next_trace'],frames[5],'original',exitpc)
-    compare(b['predecessor_before'],frames[8],'original',exitpc)
+    # chain_begin_trace saves the next step's before frame after the preceding
+    # TRACE has closed and before rearming TF. All other flags remain literal.
+    compare(b['predecessor_before'],frames[8],'closed',exitpc)
     compare(b['ingress'],frames[9],'original',exitpc);compare(b['before'],frames[9],'closed',exitpc)
     compare(b['logical'],frames[10],'nx');compare(b['next_trace'],frames[11],'original',exitpc)
     need(a['kind']=='cold'and b['kind']=='subentry'and a['slot']==b['slot']and a['generation']==b['generation']and a['build_serial']==b['build_serial'],'actual same immutable certificate reused at second-member head')
@@ -387,11 +389,11 @@ def pair(native,gated,owner):
     need(all(reference[k]==actual[k]for k in('before','after','live','data','stack'))and gated['effects']==native['effects']and gated['suffix']is not None,'whole actual final application state and later registration lifecycle')
     return dict(observed_subentry_pair=1,invocations=1,generated_completed=2,cold_publications=1,warm_entries=1,subentry_entries=1,dual_entries=0,closed_pages=34,lifetime_mode=2,registration_epoch=0,registration_calls=0,word_observed=0,word_available=False,architectural_compiled_instructions=68,measured_interior_signals=0,native_instructions=75,native_full_frames=12,qualification_credit=False)
 
-PAIR_CONTROL_COUNTS={0:20}
+PAIR_CONTROL_COUNTS={0:21}
 def pair_controls(native,gated,owner):
     import copy
     pair(native,gated,owner);refused=[]
-    for name in('cold_AF','cold_CR2','full_FP','cold_store','warm_store','warm_stack','next_trace_PC','next_trace_AF','entry_RDX','predecessor_RSP','closed_pages','lifetime_mode','registration_epoch','registration_calls','word_available','same_generation','same_slot','same_build','subentry_entries','source'):
+    for name in('cold_AF','cold_CR2','full_FP','cold_store','warm_store','warm_stack','next_trace_PC','next_trace_AF','entry_RDX','predecessor_RSP','closed_pages','lifetime_mode','registration_epoch','registration_calls','word_available','same_generation','same_slot','same_build','subentry_entries','source','predecessor_TF'):
         m=copy.deepcopy(owner);a=m['attempts'][0];b=m['attempts'][1]
         expected='all23 GREG/65536 FP including AF and exact CR2 history'
         if name in('cold_AF','cold_CR2'):
@@ -401,6 +403,7 @@ def pair_controls(native,gated,owner):
             f=a if name=='cold_store'else b;k='stack'if name=='warm_stack'else'data';z=bytearray(f['after_memory'][k]);z[0]^=1;f['after_memory'][k]=bytes(z);expected='whole actual compiled source/stack/store effects'
         elif name in('next_trace_PC','next_trace_AF','entry_RDX','predecessor_RSP'):
             f=b['next_trace']if name.startswith('next')else b['before']if name=='entry_RDX'else b['predecessor_before'];g=list(f['greg']);j=16 if name=='next_trace_PC'else 17 if name=='next_trace_AF'else GREG[2]if name=='entry_RDX'else GREG[4];g[j]^=16 if name=='next_trace_AF'else 1;f['greg']=tuple(g)
+        elif name=='predecessor_TF':g=list(b['predecessor_before']['greg']);g[17]^=TF;b['predecessor_before']['greg']=tuple(g)
         elif name=='closed_pages':b['closed_pages']=34;expected='each actual single-certificate17-page closed lifetime'
         elif name.startswith('same_'):b[{'same_generation':'generation','same_slot':'slot','same_build':'build_serial'}[name]]^=1;expected='actual same immutable certificate reused at second-member head'
         elif name=='subentry_entries':m[name]=0;expected='actual focal publication/claim accounting'
@@ -409,5 +412,5 @@ def pair_controls(native,gated,owner):
         try:pair(native,gated,m)
         except ValueError as error:need(str(error)==expected,'exact supplied subentry pair refusal '+name);refused.append(name)
         else:raise ValueError('supplied subentry pair corruption accepted '+name)
-    need(len(refused)==PAIR_CONTROL_COUNTS[0],'literal20 subentry pair controls')
+    need(len(refused)==PAIR_CONTROL_COUNTS[0],'literal21 subentry pair controls')
     return dict(refusals=refused,native_operations=0,mode=0)

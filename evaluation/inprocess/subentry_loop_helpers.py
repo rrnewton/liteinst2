@@ -13,7 +13,7 @@ ROOT=Path(__file__).resolve().parents[2]
 SELECTED=ROOT/'tools/page-entry/selected'
 FIXTURE=SELECTED/'tests/persistent_subentry_app'
 OWNER=SELECTED/'tests/persistent_subentry_owner'
-APP_COUNTS={0:32};PAIR_COUNTS={0:20};TERMINAL_COUNTS={(0,0):73}
+APP_COUNTS={0:32};PAIR_COUNTS={0:21};TERMINAL_COUNTS={(0,0):73}
 OWNER_COUNTS={0:200}
 PAIR_EXPECTED=dict(observed_subentry_pair=1,invocations=1,generated_completed=2,cold_publications=1,
     warm_entries=1,subentry_entries=1,dual_entries=0,closed_pages=34,lifetime_mode=2,registration_epoch=0,
