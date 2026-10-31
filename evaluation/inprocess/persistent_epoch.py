@@ -15,7 +15,7 @@ from page_selected_generic_build import Build,PROFILES
 from page_selected_process import invoke
 from page_selected_effect_ls import program_invoke
 from page_selected_oneshot_build import before_default
-from page_selected_register_time_build import expand,recipe
+from page_selected_register_time_build import expand,recipe,headers
 from persistent_epoch_build import build_bridge
 import namespace
 import unrolled_hash_owner as donor
@@ -31,6 +31,14 @@ CSV_FIELDS=('lane','mode','control','status','expected_exit','exit','whole_proce
 EXPECTED_STATUS={('native',0):'qualified_native_success',('native',1):'qualified_native_late_fault',
     ('gated',0):'qualified_generated_success',('gated',1):'qualified_generated_late_fault',('gated',2):'qualified_protected_word_rejection'}
 LOADED=[]
+
+# These pure oracles are prerequisites, never additional hardware subjects.
+COMPONENT_ORDER=('mov_guard','persistent_plan_compact')
+COMPONENT_INPUTS={'tests/linked_mov_guard/build.sh': {'bytes': 705, 'sha256': 'defbb2795ac7d941bd65338ddf83b06f83f29e6f0b9a34cf8fcb0330a3d37a5d'}, 'tests/linked_mov_guard/metadata.c': {'bytes': 12126, 'sha256': '9b076910e6a3f9da7d7d0d8a60d421d1c6027e8b5b2dc8701a91fd4e01141484'}, 'tests/linked_mov_guard/model.c': {'bytes': 6081, 'sha256': 'cac232356cd6eabb4f1c81dda3ce496d318372b39c87e6a0835387cc170d17cc'}, 'tests/linked_mov_guard/model.h': {'bytes': 349, 'sha256': 'abc0641bdf3306548c7c48f133b4c7593b0c28ba9847ad057b906977eaf09370'}, 'tests/persistent_plan/build.sh': {'bytes': 873, 'sha256': '8757042e90d0994206a7b542e117f0f8fb240fa9cc9dc3f28f0ea5ef0f3d9206'}, 'tests/persistent_plan/metadata.c': {'bytes': 15765, 'sha256': 'f5740b30ef7d07e3f3cfef1aeb6a57eb285b7865de0d7de09c8d104cd390ba6c'}}
+COMPONENT_STDOUT={
+    'mov_guard':b'{"schema":1,"store_codes":4,"descriptors":704,"byte_models":3272,"refusals":15,"corruptions":19,"interval_edges":465,"max_tree_height":8,"postseal_equal":1,"emitted_instruction_execution":0}\n',
+    'persistent_plan_compact':b'{"schema":1,"positives":3,"refusals":19,"corruptions":12,"recoveries":46,"postseal_equal":1}\n'
+        b'{"compact_schema":1,"positives":3,"whole_guards":3,"recoveries":46,"refusals":13,"corruptions":12,"primary_bytes":182168}\n'}
 seed_prerequisite=donor.seed_prerequisite
 prepare_inputs=donor.prepare_inputs
 image_inventory=donor.image_inventory
@@ -229,7 +237,98 @@ def counts(value):
     return [[k,value[k]]for k in sorted(value)]
 
 
+def component_oracles(builder,products,private,pin,binary,aliases,run,r):
+    """Execute unchanged pure recipes against this build's exact retained archive."""
+    features=('scalar-region','scalar-span','linked-epoch','mov-guard')
+    need(builder.mov_guard is True and builder.linked_epoch is True and builder.scalar_span is True and
+         builder.extra_decoder_sources==('region.rs','mov_guard.rs')and builder.decoder_features==features and
+         builder.record['decoder_features']==list(features)and
+         builder.environment.get('LI2_DECODER_FEATURES')=='linked-epoch,mov-guard',
+         'pure components use the same actual four-feature decoder as the persistent owner')
+    archive=pin(products['archive']);retained=builder.record['artifacts']['decoder.a']
+    need(builder.record['status']=='passed'and builder.record['command_completed']is True and
+         archive==builder.paths['archive']==builder.retained/'decoder.a'and str(archive)==retained['path']and
+         digest(fact(archive))==digest({k:retained[k]for k in('bytes','sha256')}),
+         'both pure components consume the fresh retained actual archive')
+    need(all(type(builder.record['archive_text_exports'].get(n))is int and
+         builder.record['archive_text_exports'][n]==1 for n in
+         ('li2_decoder_region_describe','li2_decoder_span_describe','li2_decoder_link_none',
+          'li2_decoder_mov_store','li2_decoder_tf_classify','li2_decoder_write_footprint')),
+         'all actual pure-component decoder providers present exactly once')
+    for name,expected in COMPONENT_INPUTS.items():
+        need(digest(fact(pin(SELECTED/name)))==digest(expected),'unchanged complete pure component fixture '+name)
+    shell_tools={n:dict(path=str(p),**fact(p))for n in('realpath','dirname')
+        for p in[pin(shutil.which(n,path=builder.environment['PATH']))]}
+    environment=dict(builder.environment,LI2_CC=str(builder.tools['cc']))
+    def finite_run(name,argv,profile='metadata',env=None):
+        return run(name,argv,profile='finite',env=env)
+    output=private/'pure-components';output.mkdir()
+    for state in r['component_oracles']:
+        name=state['name'];label='component-'+name;state['status']='failed'
+        fixture=SELECTED/'tests'/('linked_mov_guard'if name=='mov_guard'else'persistent_plan')
+        script=pin(fixture/'build.sh');exe=output/name
+        rows=recipe(script,'"$cc_bin"');need(len(rows)==1,'one exact pure component compile recipe')
+        argv=expand(rows[0],{'$cc_bin':builder.tools['cc'],'$selected':SELECTED,'$fixture':fixture,
+            '$archive':archive,'$output':exe})
+        units=[str(fixture/'metadata.c')]
+        if name=='mov_guard':units+=[str(fixture/'model.c')]
+        else:units+=[str(SELECTED/'persistent_plan.c'),str(SELECTED/'persistent_compact.c')]
+        units+=[str(SELECTED/'tests/decoder/support.c'),str(SELECTED/'linked_mov_guard.c')]
+        defines=['-DLI2_MOV_GUARD=1']if name=='mov_guard'else['-DLI2_PERSISTENT_EPOCH=1','-DLI2_MOV_GUARD=1']
+        need(argv[-2:]==['-o',str(exe)]and[x for x in argv if x.startswith('-D')]==defines and
+             [x for x in argv if x.endswith('.c')]==units and all(x in argv for x in
+             ('-std=gnu11','-O2','-g','-fno-builtin','-fno-stack-protector','-fno-tree-loop-distribute-patterns',
+              '-fno-tree-vectorize','-mgeneral-regs-only','-fno-asynchronous-unwind-tables','-fno-omit-frame-pointer',
+              '-fstack-usage','-Wall','-Wextra','-Werror','-Wl,-z,now,-z,relro,--no-undefined')),
+             'unchanged complete pure recipe, assertions enabled, exact translation units and feature macros')
+        state.update(recipe=fact(script),argv=argv,archive=fact(archive),features=list(features),shell_tools=shell_tools)
+        headers(label+'-headers',argv,units,archive,builder,pin,aliases,finite_run,state)
+        required={'decoder.h','linked_mov_guard.h','write_footprint.h'}
+        if name=='mov_guard':required.add('tests/linked_mov_guard/model.h')
+        else:required|={'persistent_plan.h','persistent_compact.h','region_plan.h','region_decode.h','linked_rseq.h'}
+        need({str(pin(SELECTED/x))for x in required}<=set(state['headers']),
+             'complete actual typed pure-component header closure, including compact successor')
+        need(not exe.exists(),'new exclusive pure component executable')
+        args=([SELECTED]if name=='mov_guard'else[])+[archive,exe]
+        run(label+'-build',[builder.tools['sh'],script,*args],profile='finite',env=environment)
+        exe=binary(exe);data,head,segments=elf(exe)
+        need(head[1]in(2,3)and head[2:4]==(62,1)and
+             all(s[2]+s[5]<=len(data)and s[5]<=s[6]and s[1]&3!=3 for s in segments if s[0]==1),
+             'complete actual x86-64 pure executable loads without WX')
+        interps=[s for s in segments if s[0]==3];need(len(interps)==1,'one actual pure executable interpreter')
+        item=interps[0];literal=data[item[2]:item[2]+item[5]]
+        need(literal.startswith(b'/')and literal.endswith(b'\0')and b'\0'not in literal[:-1],'whole literal interpreter')
+        loader=pin(os.fsdecode(literal[:-1]));state['runtime_libraries']={}
+        _,out,err=run(label+'-libraries',[loader,'--list',exe],profile='finite',env=builder.environment)
+        need(not err,'actual pure-component loader listing')
+        for line in out.decode().splitlines():
+            if re.fullmatch(r'\s*linux-vdso.so.1 \(0x[0-9a-f]+\)',line):continue
+            match=re.fullmatch(r'\s*(?:\S+ => )?(/\S+) \(0x[0-9a-f]+\)',line)
+            need(match is not None,'one resolved actual pure-component library')
+            path=pin(match[1]);need(path.name not in state['runtime_libraries'],'unique library basename')
+            state['runtime_libraries'][path.name]=dict(path=str(path),**fact(path))
+        need(any(v['path']==str(loader)for v in state['runtime_libraries'].values()),'actual interpreter in complete runtime closure')
+        _,_,err=run(label+'-elf',[builder.tools['readelf'],'-h','-l','-d','-r','-W',exe],profile='finite',env=builder.environment)
+        need(not err,'complete actual pure-component ELF inspection')
+        state['artifact']=fact(exe)
+        try:row,out,err=run(label+'-run',[exe],profile='finite',env=builder.environment)
+        finally:
+            actual=r['commands'][-1]
+            if actual['name']==label+'-run':
+                state.update(exit=actual.get('exit'),duration_ns=actual.get('duration_ns'),timed_out=actual.get('timed_out'),
+                    launched=type(actual.get('pid'))is int,captures={k:{n:v[n]for n in('bytes','sha256')}
+                    for k,v in actual.get('captures',{}).items()})
+        need(type(row['exit'])is int and row['exit']==0 and err==b''and out==COMPONENT_STDOUT[name],
+             'exact complete source-owned pure stdout rows, empty stderr and actual zero exit')
+        need(digest(fact(archive))==digest(state['archive']),'same actual archive through complete pure execution')
+        state.update(status='passed',summaries=[json.loads(line)for line in out.splitlines()])
+    need(tuple(s['name']for s in r['component_oracles'])==COMPONENT_ORDER and
+         all(s['status']=='passed'and s['launched']is True for s in r['component_oracles']),
+         'both complete pure oracles mandatory before seed or native hardware subjects')
+
+
 def cohort(builder,products,private,pin,binary,aliases,run,r):
+    component_oracles(builder,products,private,pin,binary,aliases,run,r)
     reader,owner_reader,native_policy=reader_support(builder,private,pin,binary,run,r)
     original=compile_subject(builder,private,pin,binary,run,r)
     app_layout=reader.elf(original.read_bytes(),native_policy)
@@ -319,6 +418,8 @@ def main():
         hardware=hardware(cpu),commands=[],cases=[dict(label='subject-'+lane+'-'+str(mode)+'-'+str(control),lane=lane,mode=mode,control=control,
         expected_exit=0 if mode==0 else 125,status='unexecuted',launched=False)for lane,mode,control in ORDER],
         namespace_aliases={},terminal_reports={},bounds=BOUNDS,error=None,final_errors=[],
+        component_oracles=[dict(name=n,status='unexecuted',launched=False,expected_exit=0,bounds=BOUNDS['finite'],
+            emitted_instruction_execution=0,hardware_subjects=0,performance_credit=False)for n in COMPONENT_ORDER],
         seed_prerequisite=dict(planned=1,status='unexecuted',launched=False,expected_exit=0,
             bounds=BOUNDS['seed'],owner_subjects=0,completed_applications=0,performance_credit=False))
     def pin(path):
@@ -393,6 +494,7 @@ def main():
         required.add(str((SELECTED/'tests/b2_reference/xstate.py').relative_to(ROOT)))
         required|={str((SELECTED/name).relative_to(ROOT))for name in
             ('span_fast_bytes.h','tests/span_fast_bytes/oracle.c','tests/span_fast_bytes/build.sh')}
+        required|={str((SELECTED/name).relative_to(ROOT))for name in COMPONENT_INPUTS}
         need(required<=tracked,'all application/owner/build/reader sources committed')
         for name in sorted(tracked):
             if not name.startswith('evaluation/inprocess/results/'):pin(ROOT/name)
@@ -410,6 +512,8 @@ def main():
         cohort(builder,products,private,pin,binary,aliases,run,r)
         need(len(r['cases'])==5 and all(c['status']==EXPECTED_STATUS[c['lane'],c['mode']]for c in r['cases']),
              'all five exact persistent hardware outcomes required')
+        need(all(s['status']=='passed'for s in r['component_oracles']),
+             'both actual pure component prerequisites remain mandatory independently of hardware totals')
         need(r['seed_prerequisite']['status']=='passed','independent seed prerequisite remains separately mandatory')
         r['status']='passed'
     except BaseException as error:
@@ -469,6 +573,9 @@ def main():
         public['seed_prerequisite']={k:v for k,v in r['seed_prerequisite'].items()if k in
             ('planned','status','launched','expected_exit','bounds','owner_subjects','completed_applications','performance_credit',
              'elf','exit','pid','whole_process_ns','timed_out','captures','profile')}
+        public['component_oracles']=[{k:v for k,v in s.items()if k in
+            ('name','status','launched','expected_exit','bounds','emitted_instruction_execution','hardware_subjects','performance_credit',
+             'recipe','archive','features','artifact','exit','duration_ns','timed_out','captures','summaries')}for s in r['component_oracles']]
         public['cases']=[public_case(c)for c in r['cases']]
         public.update(hardware=hw,private_receipt=fact(private/'receipt.json'),
             reproduce=['python3','-B','evaluation/inprocess/persistent_epoch.py','--expect-revision',args.expect_revision],
