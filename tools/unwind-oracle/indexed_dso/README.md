@@ -102,4 +102,4 @@ inputs and compares exact raw lifecycle/result/state records; its expected
 frames must come independently from the admitted compiled code and CFI. The
 separate five-symbol consumer entrypoint preserves the old six-symbol
 registration oracle's checks and makes no registration query of its own.
-All these new build, inspection and native paths remain **UNRUN**.
+Build and structural inspection have passed; native DSO execution remains **UNRUN**.
