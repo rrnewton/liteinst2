@@ -1,0 +1,734 @@
+{
+  "added_default_methods": {
+    "tests/support/native_exact_accuracy/tests.rs": [
+      "exact_accuracy_keys_cover_all_lengths_and_reject_noncanonical_or_foreign_cases",
+      "exact_accuracy_wire_binds_version_key_function_policy_and_complete_payload",
+      "exact_accuracy_ready_refuses_incomplete_or_aliasing_source_and_boundary_owners",
+      "exact_accuracy_trace_covers_every_loop_visit_and_all_128_keys",
+      "exact_accuracy_trace_refuses_wrong_itinerary_input_scalar_stack_xstate_and_counts",
+      "exact_accuracy_row_requires_exact_completion_reaps_counts_and_return_identity"
+    ],
+    "tools/rapid-profiler/native-interval/normal/selected_leaf_set/exact_check.rs": [
+      "exact_accuracy_batch_joins_identity_rank_sequence_and_all_journal_words",
+      "exact_accuracy_history_report_and_bank_reclaim_require_complete_state"
+    ]
+  },
+  "base_revision": "981419079d5b4bbf860934eb66b6ade0ab465639",
+  "checkout_revision": "357ae877e6e296c53da279b197dd364971352c7a",
+  "current_corpus_sha256": "690df0b131c4f7f9ab7ef2ca42bc81b44d20911e7f9f7f8e5c2bd7e5582a6869",
+  "default_harness_changes": 0,
+  "default_ignore_changes": 0,
+  "default_method_instances": {
+    "tests/support/native_exact_accuracy/tests.rs": [
+      "test/frontend_native_calibrations",
+      "unit/ordinary_interval/main"
+    ],
+    "tools/rapid-profiler/native-interval/normal/selected_leaf_set/exact_check.rs": [
+      "test/frontend_native_calibrations"
+    ]
+  },
+  "default_test_additions": 14,
+  "evaluation_projections": {
+    "evaluation/admission/core_813_inventory.py": {
+      "current_sha256": "1257636d4090a83c5841efce04acf0019778da9455c1122d700deec965e1b873",
+      "edits": [
+        [
+          4806,
+          5419,
+          "              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE, MAINSHORTENGINE, MAINSHORTOWNERSHIP, MAINSHORTPENDING, MAINADJACENT, MAINFRONTEND, MAINROUTED, MAINROUTEDNATIVE, MAINSTARTUP, MAIN091, main367.DATA, main367.mainc712.DATA, main367.mainc712.main0fb574.DATA, main367.mainc712.main0fb574.mainaf81.DATA, main367.mainc712.main0fb574.mainaf81.maindd75.DATA, main367.mainc712.main0fb574.mainaf81.maindd75.main981419.DATA)\n"
+        ]
+      ],
+      "previous_sha256": "4edbdb65553d1f06f7a10f7aab75cafb56d67252904e0b2ba1e3ee17bf4f030e"
+    },
+    "evaluation/admission/core_981419_inventory.py": {
+      "current_sha256": "525036113d9f6fdf0de56f2b0cb14d9ea61330d702603173824d6fe59ecc0c1b",
+      "edits": [
+        [
+          184,
+          225,
+          ""
+        ],
+        [
+          1611,
+          1663,
+          ""
+        ],
+        [
+          1771,
+          1834,
+          ""
+        ],
+        [
+          2138,
+          2284,
+          ""
+        ],
+        [
+          3271,
+          3372,
+          "        source_before(path, raw, error)\n        source_before_evaluation(path, raw, error)\n"
+        ],
+        [
+          4224,
+          4293,
+          ""
+        ],
+        [
+          4984,
+          5042,
+          ""
+        ]
+      ],
+      "previous_sha256": "6476deba19aea13902b972ce61c3d0c27a6052832329dc4237131d4824a12424"
+    },
+    "evaluation/admission/core_cc846_inventory.py": {
+      "current_sha256": "03293bbd3856835f7045d71f5e4b55b311723a25c4b61e4f75cb752febab3f48",
+      "edits": [
+        [
+          820,
+          1018,
+          "RECORDER_TESTS = main367.mainc712.main0fb574.mainaf81.maindd75.main981419.RECORDER_TESTS\nPYTHON_CURRENT = main367.mainc712.main0fb574.mainaf81.maindd75.main981419.PYTHON_CURRENT\n"
+        ],
+        [
+          12697,
+          12734,
+          "def require_current(declared):\n"
+        ],
+        [
+          13004,
+          13313,
+          ""
+        ]
+      ],
+      "previous_sha256": "35ba0a1cebd3fe12f2fa58ad8b631758c34c4fe94e2f9bd9738474cbf015e065"
+    },
+    "evaluation/admission/recorder_parallel.py": {
+      "current_sha256": "45afcd2f1d72de8a9f7b1ec08d497a88db82992ab30a1b6690704115d67b0333",
+      "edits": [
+        [
+          1392,
+          1469,
+          "    require(type(count) is int and count == 360 and len(identities) == count\n"
+        ],
+        [
+          2660,
+          2792,
+          ""
+        ],
+        [
+          3239,
+          3307,
+          "    # Actual workers authenticate all360 and allfour in discover().\n"
+        ]
+      ],
+      "previous_sha256": "dcc09299873170f2bbb8705ed6262b83a70dfd473f1cb2894327bf658d756908"
+    },
+    "evaluation/admission/test_main0fb574_inventory.py": {
+      "current_sha256": "a23f6352c184666422f7f6ecdaf88abc36586f9b4c7a900a6beff4367b6b95d4",
+      "edits": [
+        [
+          371,
+          409,
+          ""
+        ],
+        [
+          571,
+          774,
+          "        actual = current.mainaf81.before_current(current.mainaf81.maindd75.before_current(latest.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))))\n"
+        ],
+        [
+          2987,
+          3177,
+          "        identities = current.mainaf81.before_python(current.mainaf81.maindd75.before_python(latest.before_python(historical.python_identities(Path(__file__).parent))))\n"
+        ]
+      ],
+      "previous_sha256": "d3ba787f03f64a81f8c03905930479edd57050ebbba50eee4e32a5dd9e6764d0"
+    },
+    "evaluation/admission/test_main367_inventory.py": {
+      "current_sha256": "9963e5339685cda5a1513c8851cfb1d7485ca04a302d79c0bd55b8cf9d0aba38",
+      "edits": [
+        [
+          329,
+          367,
+          ""
+        ],
+        [
+          571,
+          891,
+          "        actual = current.mainc712.before_current(current.mainc712.main0fb574.before_current(current.mainc712.main0fb574.mainaf81.before_current(current.mainc712.main0fb574.mainaf81.maindd75.before_current(latest.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))))))\n"
+        ],
+        [
+          3034,
+          3339,
+          "        identities = current.mainc712.before_python(current.mainc712.main0fb574.before_python(current.mainc712.main0fb574.mainaf81.before_python(current.mainc712.main0fb574.mainaf81.maindd75.before_python(latest.before_python(historical.python_identities(Path(__file__).parent))))))\n"
+        ]
+      ],
+      "previous_sha256": "7d21bba978ce8a049679cc1ad5c7d6415c2188e913598b7fa0cfae90bf4f93ed"
+    },
+    "evaluation/admission/test_main981419_inventory.py": {
+      "current_sha256": "fa869efa7fc378a23e44092cfb2cdcca6417f6d68539cc98771597da224d2010",
+      "edits": [
+        [
+          373,
+          411,
+          ""
+        ],
+        [
+          535,
+          640,
+          "        actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())\n"
+        ],
+        [
+          1662,
+          1733,
+          "            self.assertIsNone(inventory.require_current(actual))\n"
+        ],
+        [
+          1936,
+          1991,
+          "                inventory.require_current(wrong)\n"
+        ],
+        [
+          2986,
+          3081,
+          "        identities = historical.python_identities(Path(__file__).parent)\n"
+        ],
+        [
+          9469,
+          9982,
+          ""
+        ],
+        [
+          10056,
+          10141,
+          "            projection['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()\n"
+        ],
+        [
+          10342,
+          10489,
+          "            with patch.dict(current.DATA['projections'], {path: projection}):\n"
+        ]
+      ],
+      "previous_sha256": "409906c2eb093bfaf64523831f88f1ef71e873c5a74ef3252d743e53d7f877f9"
+    },
+    "evaluation/admission/test_mainaf81_inventory.py": {
+      "current_sha256": "65c09f90102b8f94b76d1bc14841216c8a3172be36fb55f43721f32305999d52",
+      "edits": [
+        [
+          371,
+          409,
+          ""
+        ],
+        [
+          567,
+          728,
+          "        actual = current.maindd75.before_current(latest.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes())))\n"
+        ],
+        [
+          3806,
+          3955,
+          "        identities = current.maindd75.before_python(latest.before_python(historical.python_identities(Path(__file__).parent)))\n"
+        ]
+      ],
+      "previous_sha256": "094721bc10f985cbc42fede73d73be8cac5f851c92f19bbd08d2d8710973f5c4"
+    },
+    "evaluation/admission/test_mainc712_inventory.py": {
+      "current_sha256": "95367ee4e46696b3c72009f6e390f8862e8e8ab8728dedafe3a595c23cd76187",
+      "edits": [
+        [
+          360,
+          398,
+          ""
+        ],
+        [
+          563,
+          823,
+          "        actual = current.main0fb574.before_current(current.main0fb574.mainaf81.before_current(current.main0fb574.mainaf81.maindd75.before_current(latest.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes())))))\n"
+        ],
+        [
+          3290,
+          3536,
+          "        identities = current.main0fb574.before_python(current.main0fb574.mainaf81.before_python(current.main0fb574.mainaf81.maindd75.before_python(latest.before_python(historical.python_identities(Path(__file__).parent)))))\n"
+        ]
+      ],
+      "previous_sha256": "c8222f577129547b92984c0ee34f3108b55b73d9ba5b51ef67e4fa7f58503855"
+    },
+    "evaluation/admission/test_maindd75_inventory.py": {
+      "current_sha256": "8148057f8c77eb3836e09b02a78c0d9d5f53847f0cb02ab95755d9fe57653085",
+      "edits": [
+        [
+          373,
+          411,
+          ""
+        ],
+        [
+          579,
+          707,
+          "        actual = latest.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))\n"
+        ],
+        [
+          2416,
+          2533,
+          "        identities = latest.before_python(historical.python_identities(Path(__file__).parent))\n"
+        ]
+      ],
+      "previous_sha256": "bf2a5ac64e3c9d9cb8e27f6f7f45e4357432c7c5a56d1dec5923080fca32fae6"
+    }
+  },
+  "main_revision": "20cbe068487f10b47c08b02505ba0dcda7248f54",
+  "methods": {
+    "tests/support/native_exact_accuracy/tests.rs": {
+      "all": [
+        "exact_accuracy_keys_cover_all_lengths_and_reject_noncanonical_or_foreign_cases",
+        "exact_accuracy_wire_binds_version_key_function_policy_and_complete_payload",
+        "exact_accuracy_ready_refuses_incomplete_or_aliasing_source_and_boundary_owners",
+        "exact_accuracy_trace_covers_every_loop_visit_and_all_128_keys",
+        "exact_accuracy_trace_refuses_wrong_itinerary_input_scalar_stack_xstate_and_counts",
+        "exact_accuracy_row_requires_exact_completion_reaps_counts_and_return_identity"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/native-interval/normal/selected_leaf_set/exact_check.rs": {
+      "all": [
+        "exact_accuracy_batch_joins_identity_rank_sequence_and_all_journal_words",
+        "exact_accuracy_history_report_and_bank_reclaim_require_complete_state"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    }
+  },
+  "module_chains": {
+    "Cargo.toml": [
+      "[workspace]\nmembers = [\"tools/rapid-profiler\", \"tools/exception-oracle\", \"crates/liteinst-admission\", \"crates/liteinst-launch\", \"crates/liteinst-artifact\", \"tools/elf-rewrite\", \"crates/liteinst-inprocess\"]"
+    ],
+    "tests/support/native_exact_accuracy.rs": [
+      "#[cfg(test)]\n#[path = \"native_exact_accuracy/tests.rs\"]\nmod tests;"
+    ],
+    "tests/support/native_interval_oracle.rs": [
+      "#[path = \"native_ordinary.rs\"]\npub mod native_ordinary;"
+    ],
+    "tests/support/native_normal_caller.rs": [
+      "#[path = \"native_exact_accuracy.rs\"]\npub mod exact_accuracy;"
+    ],
+    "tests/support/native_ordinary.rs": [
+      "#[path = \"native_normal_caller.rs\"]\npub mod normal_caller;"
+    ],
+    "tools/rapid-profiler/Cargo.toml": [
+      "[[test]]\nname = \"frontend-native-calibrations\"\npath = \"native-interval/calibrations.rs\"",
+      "[[bin]]\nname = \"ordinary-interval\"\npath = \"ordinary-interval/main.rs\"\ntest = true\nbench = false"
+    ],
+    "tools/rapid-profiler/native-interval/calibrations.rs": [
+      "#[path = \"../../../tests/support/native_interval_oracle.rs\"]\nmod oracle;",
+      "#[path = \"normal/selected_leaf_set/exact_check.rs\"]\nmod exact_accuracy_check;"
+    ],
+    "tools/rapid-profiler/native-interval/normal/selected_leaf_set/exact_check.rs": [
+      "#[cfg(test)]\nmod tests {"
+    ],
+    "tools/rapid-profiler/ordinary-interval/main.rs": [
+      "#[path = \"../../../tests/support/native_interval_oracle.rs\"]\nmod oracle;"
+    ]
+  },
+  "previous_corpus_sha256": "6883ce5e294f4d531b376a5bf4a887d7245d2baaa5829a14cc7a8d783de85139",
+  "projections": {
+    "evaluation/ordinary-selected-session/build.py": {
+      "current_sha256": "2ad2ec022580f4f8df1e854bc7ec6d3e2f85ffdc1b4854487076570771533a48",
+      "edits": [
+        [
+          11972,
+          13471,
+          ""
+        ]
+      ],
+      "previous_sha256": "864f03a50dc8cbb87c2b9e94badfc41ef6e6fb4453f55d7c790356065762d1ce"
+    },
+    "evaluation/ordinary-selected-session/owner.py": {
+      "current_sha256": "d3fea69c64a2187eeb195afcc0418a3a3ca5aa531926928d2b9f2c618e19101c",
+      "edits": [
+        [
+          8542,
+          8778,
+          "        ('accuracy_owner.py','selected-sdk-accuracy-public-owner-v1'))\n"
+        ],
+        [
+          9439,
+          9646,
+          "    before=builder.outer_source_inventory(driver,args.revision)\n"
+        ],
+        [
+          11575,
+          11655,
+          "        try: result['source_unchanged']=builder.outer_source_inventory(driver,args.revision)==before\n"
+        ]
+      ],
+      "previous_sha256": "d6d02d303ec37b4b876b01e1f0f4a0d9ad19d1a844fd0c9b369232d742fd0c80"
+    },
+    "tests/neighbor_eviction_oracle.rs": {
+      "current_sha256": "6e9d19dec269a0ed57a8186e6b9ab364721f53fa34bbedb7d3e9f7fab37a43e5",
+      "edits": [
+        [
+          1197,
+          1197,
+          "use std::sync::{Mutex, MutexGuard};\n\n// Legacy neighbor fixtures share source-relative exact image windows. Hold one\n// crate-local guard through image retirement and teardown. Short fixtures own\n// separate address arenas; they and the other workspace test crates run parallel.\nstatic EXACT_ADDRESS_WINDOW: Mutex<()> = Mutex::new(());\n\nfn exact_address_window() -> MutexGuard<'static, ()> {\n    EXACT_ADDRESS_WINDOW\n        .lock()\n        .expect(\"neighbor exact-address window poisoned\")\n}\n"
+        ],
+        [
+          7139,
+          7139,
+          "    let _address_window = exact_address_window();\n"
+        ],
+        [
+          7726,
+          7827,
+          "    let mut oracle = NativeOracle::new(&puzzle.code);\n"
+        ],
+        [
+          8967,
+          9228,
+          ""
+        ],
+        [
+          47372,
+          47372,
+          "    let _address_window = exact_address_window();\n"
+        ],
+        [
+          47501,
+          47602,
+          "    let mut oracle = NativeOracle::new(&puzzle.code);\n"
+        ],
+        [
+          48979,
+          49077,
+          ""
+        ],
+        [
+          64853,
+          64936,
+          "// Separate short-victim population; every legacy test above remains literal.\n"
+        ]
+      ],
+      "previous_sha256": "553f4bda0a64bd55c03ba145487e57be7acce9a7fef6a83d0f64b0b94f5ecc23"
+    },
+    "tests/support/native_copied_capture.rs": {
+      "current_sha256": "5ae74e222d74fb18f214ddbdf4e9a014b1fa2072f73cd0cf48ec5286a5d156c6",
+      "edits": [
+        [
+          5615,
+          5776,
+          "        WalkReady::CopiedRust(_) | WalkReady::LeafSetCopied(_) | WalkReady::SelectedLeafSet(_)\n"
+        ]
+      ],
+      "previous_sha256": "40033a0667498d583634214fa5b7c2db188ac5e88cd458be3efffb6080abd33b"
+    },
+    "tests/support/native_normal_caller.rs": {
+      "current_sha256": "327eaf21cc8b621c5ba9ac17bb079e5e5450fb7e4cfa6782c5fdb8627d6289ff",
+      "edits": [
+        [
+          540,
+          601,
+          ""
+        ],
+        [
+          3710,
+          3868,
+          "                    WalkReady::LeafSetCopied(_) | WalkReady::SelectedLeafSet(_)\n"
+        ],
+        [
+          4754,
+          4912,
+          "                    WalkReady::LeafSetCopied(_) | WalkReady::SelectedLeafSet(_)\n"
+        ],
+        [
+          5823,
+          5981,
+          "                    WalkReady::LeafSetCopied(_) | WalkReady::SelectedLeafSet(_)\n"
+        ],
+        [
+          6902,
+          7060,
+          "                    WalkReady::LeafSetCopied(_) | WalkReady::SelectedLeafSet(_)\n"
+        ],
+        [
+          7966,
+          8124,
+          "                    WalkReady::LeafSetCopied(_) | WalkReady::SelectedLeafSet(_)\n"
+        ],
+        [
+          9830,
+          9871,
+          ""
+        ],
+        [
+          10416,
+          10471,
+          ""
+        ],
+        [
+          10788,
+          10843,
+          ""
+        ],
+        [
+          11199,
+          11254,
+          ""
+        ],
+        [
+          11614,
+          11682,
+          ""
+        ],
+        [
+          28930,
+          28983,
+          ""
+        ],
+        [
+          30288,
+          30332,
+          ""
+        ],
+        [
+          31733,
+          31788,
+          ""
+        ],
+        [
+          34031,
+          34576,
+          ""
+        ],
+        [
+          36659,
+          36704,
+          ""
+        ],
+        [
+          38216,
+          38250,
+          ""
+        ],
+        [
+          42422,
+          42574,
+          "        } else if self.selected_leaf_set.is_some() || self.leaf_set_copied.is_some() {\n"
+        ],
+        [
+          53039,
+          53087,
+          ""
+        ],
+        [
+          60097,
+          60352,
+          ""
+        ],
+        [
+          62150,
+          62377,
+          ""
+        ],
+        [
+          82816,
+          82968,
+          "        } else if self.selected_leaf_set.is_some() || self.leaf_set_copied.is_some() {\n"
+        ],
+        [
+          83999,
+          84185,
+          ""
+        ]
+      ],
+      "previous_sha256": "de800414c5a08d58fab0e74107d9b8d1bda442643f13b6a08b155b457f0fc72c"
+    },
+    "tests/support/native_normal_module.rs": {
+      "current_sha256": "26839ba9cabc3984026b6adf8f39de275020caafeaab6265beca54e32abdfbe5",
+      "edits": [
+        [
+          6964,
+          7006,
+          ""
+        ],
+        [
+          7025,
+          7235,
+          ""
+        ],
+        [
+          8640,
+          8688,
+          ""
+        ],
+        [
+          9060,
+          9108,
+          ""
+        ],
+        [
+          9536,
+          9595,
+          ""
+        ],
+        [
+          9992,
+          10044,
+          ""
+        ],
+        [
+          10463,
+          10521,
+          ""
+        ],
+        [
+          11020,
+          11092,
+          ""
+        ],
+        [
+          11595,
+          11679,
+          ""
+        ],
+        [
+          12498,
+          12580,
+          ""
+        ],
+        [
+          25292,
+          25441,
+          "        if let Some(p) = &self.selected_leaf_set {\n"
+        ],
+        [
+          25990,
+          26135,
+          "        if let Some(p) = &self.selected_leaf_set {\n"
+        ],
+        [
+          27313,
+          27374,
+          ""
+        ],
+        [
+          27585,
+          27738,
+          ""
+        ]
+      ],
+      "previous_sha256": "a2792882d440347c9cfb221261fe8a5ab66f1ad7c83cf7cd801f322ecf3d38e1"
+    },
+    "tests/support/neighbor_fixture_arena.rs": {
+      "current_sha256": "40d3564b0aa99f8aa61c95ed8f52c58b20c06931a98850ed849c886efadf9e2e",
+      "edits": [
+        [
+          0,
+          65,
+          "// Per-fixture address-space ownership for the short-neighbor oracle.\n"
+        ]
+      ],
+      "previous_sha256": "a4d18c3bbfbe0d17f48362a4172771d7c2f2cfcf2d6d0dc7f7480949bacda19a"
+    },
+    "tools/rapid-profiler/native-interval/calibrations.rs": {
+      "current_sha256": "e16e47eedc7adb007806c17045379e6225ba7b5fa67a5c052c00efde06fe24c2",
+      "edits": [
+        [
+          1293,
+          1454,
+          ""
+        ]
+      ],
+      "previous_sha256": "78dcde0715abf8d663113348aa5288a7604972d54d50e00e687684faa4c710e6"
+    },
+    "tools/rapid-profiler/native-interval/main.rs": {
+      "current_sha256": "7b12ba40876ed9aa5bbd7a4e1461bd357945516ef0fea93ea1c79c94e2c44b61",
+      "edits": [
+        [
+          39821,
+          41126,
+          ""
+        ]
+      ],
+      "previous_sha256": "504ffe8cff89d5a97e4d2b8c05a5e8c77c4de0186276e4e239e80219378db540"
+    },
+    "tools/rapid-profiler/native-interval/normal/selected_leaf_set.rs": {
+      "current_sha256": "e5444a977385e5d74ae67a2ba757132109136e79397ed92504c8d12ebc3df1e4",
+      "edits": [
+        [
+          604,
+          626,
+          ""
+        ]
+      ],
+      "previous_sha256": "f1b1e7046286b97c1ab2fd66d2fc7a75220d7eb61a3d0b083a0a318298198625"
+    }
+  },
+  "python_current_sha256": "30c940c045f3dd12c5b5bbf31082ac3f20ff89031a3f8c5526fc1fb62b1b8867",
+  "python_previous_sha256": "4be68d8bcbe2584053f3987349840a9ce9c9c8f610a9bb8b6b80b3d0b70538b8",
+  "schema": 1,
+  "sources": {
+    "Cargo.lock": "4aad718e815f59f813573d5f1302ea87c35b178a949bd5159882d5ee1301d89a",
+    "Cargo.toml": "0400cda5659feb04aac0d698560dd17087658c712e3e7d2765243100675160df",
+    "evaluation/admission/core_813_inventory.py": "1257636d4090a83c5841efce04acf0019778da9455c1122d700deec965e1b873",
+    "evaluation/admission/core_981419_inventory.py": "525036113d9f6fdf0de56f2b0cb14d9ea61330d702603173824d6fe59ecc0c1b",
+    "evaluation/admission/core_cc846_inventory.py": "03293bbd3856835f7045d71f5e4b55b311723a25c4b61e4f75cb752febab3f48",
+    "evaluation/admission/recorder_parallel.py": "45afcd2f1d72de8a9f7b1ec08d497a88db82992ab30a1b6690704115d67b0333",
+    "evaluation/admission/test_main0fb574_inventory.py": "a23f6352c184666422f7f6ecdaf88abc36586f9b4c7a900a6beff4367b6b95d4",
+    "evaluation/admission/test_main20cbe_inventory.py": "73c25518b86bba7dc7c020e1206f1b182ab9050e3277d24cce7ed658a05e7ffa",
+    "evaluation/admission/test_main367_inventory.py": "9963e5339685cda5a1513c8851cfb1d7485ca04a302d79c0bd55b8cf9d0aba38",
+    "evaluation/admission/test_main981419_inventory.py": "fa869efa7fc378a23e44092cfb2cdcca6417f6d68539cc98771597da224d2010",
+    "evaluation/admission/test_mainaf81_inventory.py": "65c09f90102b8f94b76d1bc14841216c8a3172be36fb55f43721f32305999d52",
+    "evaluation/admission/test_mainc712_inventory.py": "95367ee4e46696b3c72009f6e390f8862e8e8ab8728dedafe3a595c23cd76187",
+    "evaluation/admission/test_maindd75_inventory.py": "8148057f8c77eb3836e09b02a78c0d9d5f53847f0cb02ab95755d9fe57653085",
+    "evaluation/ordinary-selected-session/accuracy_functional.py": "f32077048da22770263c653378b4bb6b5e6bad6f0eff27049c3b135fbcc05582",
+    "evaluation/ordinary-selected-session/accuracy_functional_controls.py": "6b46a5fccfdfc9b6d23d0e2213d3c0470c1bbcc3c777359cfec313761956db43",
+    "evaluation/ordinary-selected-session/accuracy_functional_owner.py": "a8652da16071a4c8c95e8c5397b0075a5d73d818c6e1e4c48ee9c5d04ed276ce",
+    "evaluation/ordinary-selected-session/accuracy_produce.py": "0b4757ee54e40fd28697e8663303e4ce90c0ba765dc7f188a399583fb176f78b",
+    "evaluation/ordinary-selected-session/build.py": "2ad2ec022580f4f8df1e854bc7ec6d3e2f85ffdc1b4854487076570771533a48",
+    "evaluation/ordinary-selected-session/exact_state.py": "77e0eeb9e90742bd8e5ca122687848ed986b2ce9261d56466021dc9173ad45e3",
+    "evaluation/ordinary-selected-session/exact_state_controls.py": "d087e17f8e710704a1694794c01156b29ed30465643c1530fd7a91c34c5df24e",
+    "evaluation/ordinary-selected-session/exact_state_geometry.py": "32a8415f10e6ad55f113de2b3559492852801feb22e2400ceef868cc17dc6c7f",
+    "evaluation/ordinary-selected-session/exact_state_owner.py": "2d1a9ef57ccddce9b8331f29c264624a072c8005ce3ecd231558406ebb650dbc",
+    "evaluation/ordinary-selected-session/owner.py": "d3fea69c64a2187eeb195afcc0418a3a3ca5aa531926928d2b9f2c618e19101c",
+    "tests/neighbor_eviction_oracle.rs": "6e9d19dec269a0ed57a8186e6b9ab364721f53fa34bbedb7d3e9f7fab37a43e5",
+    "tests/support/native_copied_capture.rs": "5ae74e222d74fb18f214ddbdf4e9a014b1fa2072f73cd0cf48ec5286a5d156c6",
+    "tests/support/native_exact_accuracy.rs": "0d8284adf55f5f364085701ab4b64fb144d62951085f89574dd2300f8564d0b2",
+    "tests/support/native_exact_accuracy/tests.rs": "9d026f0c7166e8fdda2bcd70e8305aba28606a10b5b64abe6321d265f0c39e00",
+    "tests/support/native_exact_accuracy/trace.rs": "2ec25a896b3db920aae6563dffd52c5d20a5864eb9e4188262cc4c0235ffc378",
+    "tests/support/native_interval_oracle.rs": "bbe091d18e001851410c9a26a9fe23ad55e809b58920b14e53b950cec19a6460",
+    "tests/support/native_normal_caller.rs": "327eaf21cc8b621c5ba9ac17bb079e5e5450fb7e4cfa6782c5fdb8627d6289ff",
+    "tests/support/native_normal_module.rs": "26839ba9cabc3984026b6adf8f39de275020caafeaab6265beca54e32abdfbe5",
+    "tests/support/native_ordinary.rs": "dea6b6c34c2c9e8a296da6a3dda7a5b5e30044682d5481ec19a8c2f8a1e18571",
+    "tests/support/neighbor_fixture_arena.rs": "40d3564b0aa99f8aa61c95ed8f52c58b20c06931a98850ed849c886efadf9e2e",
+    "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+    "tools/rapid-profiler/native-interval/calibrations.rs": "e16e47eedc7adb007806c17045379e6225ba7b5fa67a5c052c00efde06fe24c2",
+    "tools/rapid-profiler/native-interval/main.rs": "7b12ba40876ed9aa5bbd7a4e1461bd357945516ef0fea93ea1c79c94e2c44b61",
+    "tools/rapid-profiler/native-interval/normal/selected_leaf_set.rs": "e5444a977385e5d74ae67a2ba757132109136e79397ed92504c8d12ebc3df1e4",
+    "tools/rapid-profiler/native-interval/normal/selected_leaf_set/exact.rs": "0b0d7b3be4c3735d140b210c2e04fd3c2bd2bbb62b4566eec71a87a6a84cbc48",
+    "tools/rapid-profiler/native-interval/normal/selected_leaf_set/exact_check.rs": "3dec7932b4c293e5d0d3617edf2ebc80d912c22b907976ebc52146bc273f2861",
+    "tools/rapid-profiler/ordinary-interval/main.rs": "3a6780fa6e8251b614989a2e1667b8640eb16b252b370402faaed49a27a802cc"
+  },
+  "workspace_changes": {
+    "test/frontend_native_calibrations": {
+      "current": {
+        "ignored": 1,
+        "tests": 233
+      },
+      "previous": {
+        "ignored": 1,
+        "tests": 225
+      }
+    },
+    "unit/ordinary_interval/main": {
+      "current": {
+        "ignored": 1,
+        "tests": 480
+      },
+      "previous": {
+        "ignored": 1,
+        "tests": 474
+      }
+    }
+  }
+}

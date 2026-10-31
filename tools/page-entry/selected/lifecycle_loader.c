@@ -1,4 +1,7 @@
 #define _GNU_SOURCE
+#ifdef LI2_PERSISTENT_EPOCH
+#include "persistent_runtime.h"
+#endif
 #ifdef LI2_LINKED_EPOCH
 #include "linked_source.h"
 #endif
@@ -997,6 +1000,9 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #include "span_source.inc"
 #ifdef LI2_LINKED_EPOCH
 #include "linked_source.inc"
+#ifdef LI2_PERSISTENT_EPOCH
+#include "persistent_source.inc"
+#endif
 #ifdef LI2_LINKED_NATIVE_HINT
 #include "linked_native_hint.inc"
 #endif
@@ -1020,4 +1026,16 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 
 #ifdef LI2_LINKED_EPOCH_CAPTURE
 #include "linked_epoch_observe_memory.inc"
+#endif
+#if defined(LI2_LINKED_PREEDGE_CAPTURE) || defined(LI2_LINKED_PREEDGE_REUSE_CAPTURE)
+#include "linked_preedge_observe_memory.inc"
+#endif
+#ifdef LI2_LINKED_PREEDGE_FULL_CAPTURE
+#include "linked_preedge_full_observe_memory.inc"
+#endif
+#ifdef LI2_LINKED_PREEDGE_FAILURE_CAPTURE
+#include "linked_preedge_failure_observe_memory.inc"
+#endif
+#ifdef LI2_PERSISTENT_EPOCH_CAPTURE
+#include "persistent_epoch_observe_memory.inc"
 #endif

@@ -1,0 +1,6 @@
+lane,mode,control,status,expected_exit,exit,whole_process_ns,application_control_count,terminal_control_count,owner_control_count,pair_control_count,registry_control_count
+native,0,0,qualified_native_success,0,0,137542369,16,0,0,0,0
+native,1,0,qualified_native_late_fault,125,125,134082897,16,0,0,0,0
+gated,0,0,failed,0,0,8845795371,0,0,0,0,0
+gated,1,0,failed,125,125,5401349862,0,0,0,0,0
+gated,2,0,failed,125,125,5477142113,0,0,0,0,0

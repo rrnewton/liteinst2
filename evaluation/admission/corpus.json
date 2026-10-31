@@ -6291,7 +6291,7 @@
       },
       "test/frontend_native_calibrations": {
         "ignored": 1,
-        "tests": 225
+        "tests": 233
       },
       "test/generalized_pun_contract": {
         "ignored": 0,
@@ -6519,11 +6519,11 @@
       },
       "unit/ordinary_interval/main": {
         "ignored": 1,
-        "tests": 463
+        "tests": 480
       },
       "unit/rapid_profiler/lib": {
         "ignored": 31,
-        "tests": 537
+        "tests": 564
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,
@@ -7602,6 +7602,6 @@
       }
     ]
   },
-  "recorder_tests": 359,
+  "recorder_tests": 361,
   "schema_version": 1
 }

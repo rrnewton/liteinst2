@@ -19,4 +19,7 @@ int li2_rseq_check_link_cold(const struct li2_link_plan *,const ucontext_t *);
    or RX only at its respective caller phases; pre-begin live guards retain
    the fresh held fetch. Live state is never cached in the payload. */
 int li2_rseq_link_live(const ucontext_t *,struct li2_link_rseq_live *);
+#ifdef LI2_LINKED_PREEDGE
+#include "linked_preedge_rseq.h"
+#endif
 #endif

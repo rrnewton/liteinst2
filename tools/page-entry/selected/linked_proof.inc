@@ -2,6 +2,11 @@
    mirror. Only this publication/retirement path writes it. All guest effects
    retain the existing strict whole protected-range guards. */
 #include "linked_epoch_config.h"
+#ifdef LI2_LINKED_PREEDGE
+#if LI2_LINK_PREEDGE_BINDING_VERSION != 2
+#error "exact v2 pre-edge policy binding required"
+#endif
+#endif
 #if LI2_LINKED_EPOCH != 1 || LI2_LINK_BINDING_VERSION != 1
 #error "exact linked archive and policy binding required"
 #endif
@@ -63,9 +68,17 @@ static int le_proof_ready(const struct le_slot *s) {
        s->proof!=lep.arena+slot*LI2_LINK_PROOF_BYTES || s->generated!=ler.entry[slot] ||
        ler.live[slot]!=s->identity || !ler_address(slot,s->generated))return 0;
     const struct le_proof_publication *q=&lep.slot_publication[slot];
+#ifdef LI2_LINKED_PREEDGE
+    const struct li2_preedge_proof_header *h=&q->header;
+#else
     const struct li2_link_proof_header *h=&q->header;
+#endif
     if(q->started!=1 || q->complete!=1 || q->zeroed!=LI2_LINK_PROOF_BYTES ||
+#ifdef LI2_LINKED_PREEDGE
+       q->copied!=sizeof(struct li2_preedge_proof) || q->verified!=LI2_LINK_PROOF_BYTES ||
+#else
        q->copied!=sizeof(struct li2_link_proof) || q->verified!=LI2_LINK_PROOF_BYTES ||
+#endif
        q->writable.attempted!=1 || q->writable.complete!=1 || q->writable.result ||
        q->writable.first!=s->proof || q->writable.end!=s->proof+LI2_LINK_PROOF_BYTES ||
        q->writable.pages_checked!=16 || q->writable.expected_prot!=(PROT_READ|PROT_WRITE) ||
@@ -76,14 +89,27 @@ static int le_proof_ready(const struct le_slot *s) {
        q->sealed.query.complete!=1 || q->sealed.query.result ||
        q->sealed.query.expected_prot!=PROT_READ || q->sealed.query.actual_prot!=PROT_READ ||
        q->sealed.query.first!=s->proof || q->sealed.query.end!=s->proof+LI2_LINK_PROOF_BYTES ||
+#ifdef LI2_LINKED_PREEDGE
+       q->sealed.query.pages_checked!=16 || h->version!=2 || h->bytes!=LI2_LINK_PROOF_BYTES ||
+#else
        q->sealed.query.pages_checked!=16 || h->version!=1 || h->bytes!=LI2_LINK_PROOF_BYTES ||
+#endif
        h->registry!=(uintptr_t)&lep || h->slot!=slot || h->generation!=s->identity ||
        h->generated!=s->generated || !h->plan_proof || !h->none_proof ||
        h->plan_proof>selected_linked_epoch.plan_checks || h->none_proof>selected_linked_epoch.rseq_checks ||
        h->reserved[0] || h->reserved[1] || h->reserved[2] || h->reserved[3] ||
        !equal(h->archive,le_archive,32) || !equal(h->policy,le_policy,32))return 0;
+#ifdef LI2_LINKED_PREEDGE
+    const struct li2_preedge_proof *p=le_payload(s);
+#else
     const struct li2_link_proof *p=le_payload(s);
+#endif
+#ifdef LI2_LINKED_PREEDGE
+    return equal(&p->header,h,sizeof(*h)) && p->plan.version==LI2_PREEDGE_VERSION && p->plan.ready==1 &&
+        p->plan.bytes==sizeof(p->plan) && !p->plan.reserved &&
+#else
     return equal(&p->header,h,sizeof(*h)) && p->plan.version==LI2_LINK_VERSION && p->plan.ready==1 &&
+#endif
         p->plan.generated==s->generated && p->plan.page==p->key.page.address && p->plan.entry==p->key.entry;
 }
 static int le_proof_check(const struct le_slot *s,struct li2_private_code_query *q) {
@@ -116,7 +142,11 @@ static void le_proof_publish(struct le_slot *s) {
         s->publication.complete==1 && s->publication.prot==PROT_READ &&
         s->filled==PAGE && s->verified==PAGE && selected_linked_epoch_busy && !selected_linked_epoch_active,
         LE_STATE,427);
+#ifdef LI2_LINKED_PREEDGE
+    p->started=1;p->header.version=2;p->header.bytes=LI2_LINK_PROOF_BYTES;
+#else
     p->started=1;p->header.version=1;p->header.bytes=LI2_LINK_PROOF_BYTES;
+#endif
     p->header.registry=(uintptr_t)&lep;p->header.slot=slot;p->header.generation=s->identity;
     p->header.generated=s->generated;
     p->header.plan_proof=selected_linked_epoch.current.cold_plan_proof;

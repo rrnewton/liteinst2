@@ -76,9 +76,12 @@ def _retained_inputs(images, image_bytes, carrier, carrier_bytes):
 
 
 def check(stdout, stderr, pid, exit_code, parent, images, image_bytes, carrier,
-          carrier_bytes, *, workload, cache_completed=None, chain_closure=None):
+          carrier_bytes, *, workload, cache_completed=None, chain_closure=None, true_repeat=None):
     """Return actual parsed rows and closure only after exact application output."""
     need(workload in ('ls', 'true'), 'explicit whole-process ls or true subject')
+    need(true_repeat is None or type(true_repeat)is str and
+         true_repeat=='linked-true-before-first-rseq-v1' and workload=='true',
+         'explicit linked true REP contract, never a changed LS/default domain')
     need(type(stdout) is bytes and stdout == (b'.\n' if workload == 'ls' else b''),
          'complete exact real-program stdout')
     need(type(exit_code) is int and exit_code == 0, 'actual successful process required')
@@ -93,7 +96,11 @@ def check(stdout, stderr, pid, exit_code, parent, images, image_bytes, carrier,
     lease = original.lease.counters(parsed)
     original.effect_exit(parsed)
     trace = original.trace_completed(parsed)
-    retained = _unused_repeat(parsed)
+    if true_repeat is None:
+        retained = _unused_repeat(parsed)
+    else:
+        import linked_true_repeat_reports as positive
+        retained = positive.completed(parsed,pid,images,image_bytes,carrier,carrier_bytes)
     inputs = _retained_inputs(images, image_bytes, carrier, carrier_bytes)
     native, effect, oneshot = parsed['native'], parsed['effect'], parsed['oneshot']
     return parsed, dict(
@@ -102,7 +109,8 @@ def check(stdout, stderr, pid, exit_code, parent, images, image_bytes, carrier,
         default_rseq_registered=parsed['rseq']['owner'][1] == 1,
         cache_reuse=(original.reuse_completed if cache_completed is None else cache_completed)(parsed['run'], parsed['reuse']),
         gate=gate, lease=lease, trace_run=trace, repeat_lease=retained,
-        repeat_lease_source=None, legacy_repeat_source=None, input_authentication=inputs,
+        repeat_lease_source=None if true_repeat is None else retained['source_binding'],
+        legacy_repeat_source=None, input_authentication=inputs,
         selected=dict(attempts=effect['attempts'], completed=effect['completed'],
                       classes=effect['classes'], unreturned_exit=1),
         publication={k: oneshot[k] for k in (
@@ -239,16 +247,20 @@ def _terminal_controls(stderr, pid, exit_code, parent, images, image_bytes, carr
 
 
 def supplied_controls(stdout, stderr, pid, exit_code, parent, images,
-                      image_bytes, carrier, carrier_bytes, *, workload, cache_completed=None, chain_closure=None):
+                      image_bytes, carrier, carrier_bytes, *, workload, cache_completed=None, chain_closure=None, true_repeat=None):
     """Supplied changes to accepted actual evidence; no additional native credit."""
     args = (pid, exit_code, parent, images, image_bytes, carrier, carrier_bytes)
-    check(stdout, stderr, *args, workload=workload,cache_completed=cache_completed,chain_closure=chain_closure)
+    check(stdout, stderr, *args, workload=workload,cache_completed=cache_completed,chain_closure=chain_closure,true_repeat=true_repeat)
     actual_stdout, actual_stderr = H(stdout), H(stderr)
     if workload == 'ls':
         result = original.supplied_controls(stderr, *args, workload='ls',cache_completed=cache_completed,chain_closure=chain_closure)
+    elif true_repeat is not None:
+        import linked_true_repeat_reports as positive
+        result = positive.controls(stderr,*args,cache_completed=cache_completed,
+            read=partial(check,stdout,cache_completed=cache_completed,chain_closure=chain_closure,true_repeat=true_repeat))
     else:
         result = _terminal_controls(stderr, *args, workload='true', cache_completed=cache_completed,
-                                    read=partial(check, stdout, cache_completed=cache_completed,chain_closure=chain_closure))
+                                    read=partial(check, stdout, cache_completed=cache_completed,chain_closure=chain_closure,true_repeat=true_repeat))
     names = list(result['refusals'])
     for name, changed_stdout, changed_exit in (
             ('unexpected_stdout', stdout + b'!', exit_code),
@@ -256,7 +268,7 @@ def supplied_controls(stdout, stderr, pid, exit_code, parent, images,
         refused = False
         try:
             check(changed_stdout, stderr, pid, changed_exit, parent, images,
-                  image_bytes, carrier, carrier_bytes, workload=workload,cache_completed=cache_completed,chain_closure=chain_closure)
+                  image_bytes, carrier, carrier_bytes, workload=workload,cache_completed=cache_completed,chain_closure=chain_closure,true_repeat=true_repeat)
         except ValueError:
             refused = True
         need(refused, 'same complete reader refuses supplied ' + name)

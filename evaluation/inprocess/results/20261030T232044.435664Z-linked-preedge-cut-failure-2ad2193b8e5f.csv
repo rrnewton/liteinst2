@@ -1,0 +1,4 @@
+lane,mode,control,status,expected_exit,exit,whole_process_ns,application_control_count,terminal_control_count,owner_control_count,pair_control_count
+native,0,0,qualified_native_fault_reference,125,125,155511667,40,0,0,0
+gated,0,0,qualified_original_cut_fault,125,125,4739013399,21,53,57,6
+gated,1,0,qualified_cut_revoke_failure,125,125,4827871647,21,53,52,0

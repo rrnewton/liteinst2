@@ -2481,7 +2481,10 @@ class Main813InventoryTests(unittest.TestCase):
         for path, row in main813.MAIN8F622_CURRENT.items():
             raw = read_bytes(main813.ROOT / path)
             restored = main813.source_at_8f622(path, raw, 'changed')
-            self.assertEqual(hashlib.sha256(raw).hexdigest(), row['current_sha256'])
+            # Later whole-source inverses authenticate the actual current blob;
+            # this row binds their exact output at the historical 12e boundary.
+            projected = main813.source_before_short_native(path, raw, 'changed')
+            self.assertEqual(hashlib.sha256(projected).hexdigest(), row['current_sha256'])
             self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
             self.assertEqual(main813.source_before_8f622(path, raw, 'changed'),
                              main813.source_before_12e(path, raw, 'changed'))

@@ -3,6 +3,9 @@
 #include "span_source.h"
 #include "linked_plan.h"
 #include "private_code_query.h"
+#ifdef LI2_LINKED_PREEDGE
+#include "linked_preedge_source.h"
+#endif
 /* A full-page span_source is reused only as a fresh descriptive snapshot.
    The distinct private lifecycle epoch below is the actual exclusion owner. */
 struct li2_link_epoch;

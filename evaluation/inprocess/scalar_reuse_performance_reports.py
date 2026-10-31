@@ -32,11 +32,11 @@ def current(row):
         need(c==expected,'entire final non-entry prefix is canonical and owns no generated execution')
 
 
-def check(stdout,stderr,args,kind,lane, *, cache_completed=None, chain_closure=None):
+def check(stdout,stderr,args,kind,lane, *, cache_completed=None, chain_closure=None, true_repeat=None):
     need(lane in('scalar-reuse','differential'),'explicit scalar-reuse release profile')
     scalar,retirement,suffix=reuse.split(stderr)
     parsed,summary,view,unrolled,unused=old.check(stdout,suffix,args,kind,
-        'differential'if lane=='differential'else'unrolled',cache_completed=cache_completed,chain_closure=chain_closure)
+        'differential'if lane=='differential'else'unrolled',cache_completed=cache_completed,chain_closure=chain_closure,true_repeat=true_repeat)
     reuse.scalar_completed(scalar,retirement);current(scalar)
     need(all(scalar[k]==unrolled[k]==parsed['loader'][k]for k in
          ('status','failure_code','detail_abs','detail_negative')),
@@ -46,10 +46,10 @@ def check(stdout,stderr,args,kind,lane, *, cache_completed=None, chain_closure=N
     return parsed,summary,view,unrolled,scalar,retirement
 
 
-def controls(stdout,stderr,args,kind,lane, *, cache_completed=None, chain_closure=None):
-    _,_,_,_,scalar,retirement=check(stdout,stderr,args,kind,lane,cache_completed=cache_completed,chain_closure=chain_closure)
+def controls(stdout,stderr,args,kind,lane, *, cache_completed=None, chain_closure=None, true_repeat=None):
+    _,_,_,_,scalar,retirement=check(stdout,stderr,args,kind,lane,cache_completed=cache_completed,chain_closure=chain_closure,true_repeat=true_repeat)
     _,_,suffix=reuse.split(stderr)
-    prior=old.controls(stdout,suffix,args,kind,'differential'if lane=='differential'else'unrolled',cache_completed=cache_completed,chain_closure=chain_closure)
+    prior=old.controls(stdout,suffix,args,kind,'differential'if lane=='differential'else'unrolled',cache_completed=cache_completed,chain_closure=chain_closure,true_repeat=true_repeat)
     lines=stderr[:-1].split(b'\n');trials=[]
     def changed(name,index,value):
         rows=list(lines);prefix=reuse.PREFIX if index==-2 else reuse.old.PREFIX
@@ -83,7 +83,7 @@ def controls(stdout,stderr,args,kind,lane, *, cache_completed=None, chain_closur
     names=[]
     for name,data in trials:
         rejected=False
-        try:check(stdout,data,args,kind,lane,cache_completed=cache_completed,chain_closure=chain_closure)
+        try:check(stdout,data,args,kind,lane,cache_completed=cache_completed,chain_closure=chain_closure,true_repeat=true_repeat)
         except ValueError:rejected=True
         need(rejected,'complete release reader refuses supplied '+name);names.append(name)
     return dict(original=prior,scalar_reuse_refusals=names,native_operations=0,
