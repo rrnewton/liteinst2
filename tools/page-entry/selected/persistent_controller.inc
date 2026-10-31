@@ -2,6 +2,9 @@
    no replacement/warm-cache or old-profile qualification is implied. */
 #include "persistent_runtime.h"
 #include "persistent_epoch_config.h"
+#ifdef LI2_PERSISTENT_EPOCH_CAPTURE
+#include "persistent_epoch_observe.h"
+#endif
 #if LI2_PE_BINDING_VERSION != 1 || LI2_PERSISTENT_EPOCH != 1
 #error "exact persistent archive, policy and original-image configuration required"
 #endif
@@ -401,6 +404,9 @@ static _Noreturn void selected_persistent_abort(unsigned code,long detail) {
         }
     }
     const struct li2_fetch_progress *f=li2_lifecycle_fetch_progress();if(f)pe.final_fetch=*f;
+#ifdef LI2_PERSISTENT_EPOCH_CAPTURE
+    peo_terminal(1);
+#endif
     report(125,pe.p.first_error,pe.p.first_detail);
     (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
 }
@@ -412,12 +418,18 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     if(r->registered!=1 || r->phase!=LI2_RSEQ_ACTIVE)return 0;
     pe_closing=1;pe_busy=1;__asm__ volatile("":::"memory");
     pe_need(!le_capture(&pe.ingress,sig,si,uc),PE_FRAME,0);pe.close_started=1;
+#ifdef LI2_PERSISTENT_EPOCH_CAPTURE
+    peo_begin();
+#endif
     int e=li2_tf_chain_span_close(&selected_chain,sig,si,uc,&pe.ticket);
     pe_need(!e && pe.ticket,PE_EVENT,e);pe.transfer=*li2_tf_chain_span_progress();
     pe_need(pe.transfer.phase==LI2_ST_CLOSED && pe.transfer.issued==1 &&
         pe.transfer.event==selected_chain.event_id && pe.transfer.pc==pc &&
         pe.transfer.flags==((uint64_t)pe.ingress.frame.greg[REG_EFL]&~SELECTED_TF),PE_EVENT,0);
     pe.close_complete=1;pe_closing=0;pe.flags=pe.transfer.flags;
+#ifdef LI2_PERSISTENT_EPOCH_CAPTURE
+    peo_closed();
+#endif
     selected_logical_flags=pe.flags;selected_flags_known=1;selected_step_pending=0;selected_pending_route=SELECTED_NO_STEP;
     pe_need(!le_capture(&pe.before,sig,si,uc),PE_FRAME,1);
     pe_need(!li2_pe_epoch_begin(pe.ticket,pe.transfer.serial,&selected_session,sig,si,uc,&pe.token),PE_RSEQ,2);
@@ -435,7 +447,12 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     pe_need(!li2_pe_epoch_sources(&pe.token,&selected_borrow,pages),PE_SOURCE,4);
     pe_build(sig,si,uc);pe_need(!li2_pe_epoch_bind(&pe.token,&pe.generation),PE_PUBLICATION,2);
     pe_need(!li2_pe_epoch_enter(&pe.token,sig,si,uc),PE_PUBLICATION,3);
+#ifdef LI2_PERSISTENT_EPOCH_CAPTURE
+    selected_initialized();peo_entered(sig,si,uc);
+    __asm__ volatile("":::"memory");pe_busy=0;return 1;
+#else
     selected_initialized();__asm__ volatile("":::"memory");pe_busy=0;return 1;
+#endif
 }
 static void selected_persistent_preentry(int sig,siginfo_t *si,ucontext_t *uc) {
     int e=li2_pe_epoch_preentry(sig,si,uc);
@@ -456,6 +473,9 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
     pe_need(!li2_pe_epoch_drain(&pe.token) && le_unchanged(&pe.after,si,uc) &&
         le_quiet(0) && pe_registry(),PE_RELEASE,0);
     pe.completed=1;pe.p.completion_permit=1;
+#ifdef LI2_PERSISTENT_EPOCH_CAPTURE
+    peo_terminal(0);
+#endif
     selected_logical_flags=(uint64_t)pe.after.frame.greg[REG_EFL]&~SELECTED_RF;selected_flags_known=1;
     pe_active=0;selected_step_pending=0;selected_pending_route=SELECTED_NO_STEP;
     __asm__ volatile("":::"memory");pe_busy=0;selected_fetch(sig,si,uc);
@@ -476,3 +496,6 @@ static void selected_persistent_report(unsigned status,unsigned code,long detail
     text(&w,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
 }
 _Static_assert(18*21+400<=sizeof(((struct writer *)0)->bytes),"bounded distinct primitive report");
+#ifdef LI2_PERSISTENT_EPOCH_CAPTURE
+#include "persistent_epoch_observe.inc"
+#endif
