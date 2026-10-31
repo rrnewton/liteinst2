@@ -308,11 +308,11 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     state['reset'] = hidden_memset(bridge, body_check(bridge, symbols, assembly, 'fast', symbol_name='memset'))
     protected_extents(builder, bridge, symbols, pin, run, state)
     if counters:
-        for wanted, extent in ((b'pgc_bootstrap', 552), (b'li2_pgc_current', 8)):
+        for wanted, extent in ((b'pgc_bootstrap', 752), (b'li2_pgc_current', 8)):
             rows = [line.split() for line in symbols.splitlines() if line.split()[-1:] == [wanted]]
             need(len(rows) == 1 and len(rows[0]) == 4 and rows[0][2] in (b'b', b'B', b'd', b'D') and
                  int(rows[0][1], 16) == extent, 'actual final-counter storage/type extent')
-        state['counter_schema'] = dict(version=1, bytes=552, page=4096, initial_seals=6, final_seals=23)
+        state['counter_schema'] = dict(version=2, bytes=752, page=4096, initial_seals=6, final_seals=23)
         state['counters'] = True
     if capture:
         capture_extents(builder, bridge, symbols, pin, run, state)
