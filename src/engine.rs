@@ -436,6 +436,59 @@ pub fn plan_with_emission_after_and_short_t3_pending(
 mod foreign;
 pub use foreign::plan_with_emission_after_with_foreign;
 
+/// Opt-in current-view address preference for artifact B1/B2/T1 only.
+///
+/// Original bytes and the complete current overlay are authenticated exactly as
+/// in the long-T3 ownership entrypoint. Selected allocation must explicitly
+/// declare 1..=16 page-aligned ranges, one image candidate, one mapping and 4 KiB.
+/// No range or budget is extended. A geometrically available original
+/// ordinal-zero target is retained, even if its sole real emission later exceeds
+/// its remaining page. The emission context must include all original, reserved
+/// and predecessor-image occupancy; the composition authenticates source bytes
+/// but cannot discover ownership omitted by its caller.
+/// Otherwise one low-offset address is derived from the actual physical entry
+/// mask or current pun window and occupied pages. No image probe/retry occurs.
+///
+/// T2/T3 keep the original placement policy and current-overlay/complete-pair
+/// ownership checks. This does not repair negative pun windows, constrain earlier
+/// source writes for future sites, or predict complete-program coverage. Existing
+/// entrypoints remain legacy. The caller must still append every returned step
+/// and enforce all dependency, aggregate, hook, entry and publication obligations.
+pub fn plan_with_emission_after_and_current_placement(
+    request: &ArtifactRequest<'_>,
+    predecessor: &Composition,
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+) -> Result<ArtifactPlan, EngineFailure> {
+    let current = predecessor
+        .planning_overlay(
+            request.site.identity,
+            request.site.base_address,
+            request.site.code,
+        )
+        .map_err(|reason| EngineFailure {
+            reason,
+            attempts: Vec::new(),
+        })?;
+    crate::emission::placement::validate(request.site.allocation).map_err(|reason| {
+        EngineFailure {
+            reason,
+            attempts: Vec::new(),
+        }
+    })?;
+    let original = PlanningRequest::artifact(request);
+    plan_core_family_with_placement(
+        &original.with_code(&current),
+        victim_allocation,
+        policy,
+        false,
+        Some(predecessor),
+        None,
+        true,
+    )
+    .map(artifact_plan)
+}
+
 fn artifact_plan(plan: EnginePlan) -> ArtifactPlan {
     ArtifactPlan::bundle(
         plan.bundle(),
@@ -489,6 +542,26 @@ fn plan_core_family_with_pending(
     inherited: Option<&Composition>,
     pending: Option<&[AddressRange]>,
 ) -> Result<EnginePlan, EngineFailure> {
+    plan_core_family_with_placement(
+        request,
+        victim_allocation,
+        policy,
+        short_only,
+        inherited,
+        pending,
+        false,
+    )
+}
+
+fn plan_core_family_with_placement(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+    short_only: bool,
+    inherited: Option<&Composition>,
+    pending: Option<&[AddressRange]>,
+    current_placement: bool,
+) -> Result<EnginePlan, EngineFailure> {
     const ORDER: [Tactic; 5] = [
         Tactic::GeneralizedPun,
         Tactic::Relocation,
@@ -507,7 +580,12 @@ fn plan_core_family_with_pending(
     for &tactic in tactics {
         let (result, candidates, search) = match tactic {
             Tactic::GeneralizedPun | Tactic::Relocation | Tactic::PrefixedPun => {
-                let request = request.with_search(quiescent::SearchPolicy {
+                let placed = if current_placement {
+                    request.with_current_placement()
+                } else {
+                    *request
+                };
+                let request = placed.with_search(quiescent::SearchPolicy {
                     tactics: match tactic {
                         Tactic::GeneralizedPun => TacticPolicy::GeneralizedPunOnly,
                         Tactic::Relocation => TacticPolicy::RelocationOnly,

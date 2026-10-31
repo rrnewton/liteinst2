@@ -12,6 +12,8 @@ use crate::trampoline::{
     HookCallback, SavedExtendedStateLayout, TrampolineError, TrampolineImage, TrampolinePlan,
 };
 
+pub(crate) mod placement;
+
 /// Source facts independent of a build-process callback pointer.
 #[derive(Clone, Copy, Debug)]
 pub struct PlanningSite<'a> {
@@ -151,6 +153,7 @@ pub struct ArtifactRequest<'a> {
 pub(crate) enum EmissionContext<'a> {
     Live(HookCallback),
     Artifact(&'a ArtifactEmission),
+    CurrentPlacement(&'a ArtifactEmission),
 }
 
 #[derive(Clone, Copy)]
@@ -170,6 +173,15 @@ impl<'a> std::ops::Deref for PlanningRequest<'a> {
 }
 
 impl<'a> PlanningRequest<'a> {
+    pub(crate) fn with_current_placement(&self) -> Self {
+        Self {
+            emission: match self.emission {
+                EmissionContext::Artifact(input) => EmissionContext::CurrentPlacement(input),
+                other => other,
+            },
+            ..*self
+        }
+    }
     pub(crate) fn live(request: &InstallRequest<'a>) -> Self {
         Self {
             site: request.into(),
@@ -222,16 +234,19 @@ impl<'a> PlanningRequest<'a> {
 }
 
 impl EmissionContext<'_> {
+    pub(crate) const fn current_placement(self) -> bool {
+        matches!(self, Self::CurrentPlacement(_))
+    }
     pub(crate) fn qualify(self) -> Result<(), Refusal> {
         match self {
             Self::Live(_) => crate::quiescent::qualify_host(),
-            Self::Artifact(_) => Ok(()),
+            Self::Artifact(_) | Self::CurrentPlacement(_) => Ok(()),
         }
     }
     pub(crate) fn occupied(self) -> Result<Vec<AddressRange>, Refusal> {
         match self {
             Self::Live(_) => crate::quiescent::occupied_ranges(),
-            Self::Artifact(input) => Ok(input.occupied.clone()),
+            Self::Artifact(input) | Self::CurrentPlacement(input) => Ok(input.occupied.clone()),
         }
     }
     pub(crate) fn window(
@@ -246,7 +261,7 @@ impl EmissionContext<'_> {
             Self::Live(hook) => {
                 TrampolinePlan::from_window(scan, physical, logical, end, hook, replace)
             }
-            Self::Artifact(_) => {
+            Self::Artifact(_) | Self::CurrentPlacement(_) => {
                 TrampolinePlan::from_symbolic_window(scan, physical, logical, end, replace)
             }
         }
@@ -261,7 +276,7 @@ impl EmissionContext<'_> {
             Self::Live(hook) => {
                 TrampolinePlan::from_short_instruction(scan, physical, hook, replace)
             }
-            Self::Artifact(_) => {
+            Self::Artifact(_) | Self::CurrentPlacement(_) => {
                 TrampolinePlan::from_symbolic_short_instruction(scan, physical, replace)
             }
         }
@@ -273,7 +288,9 @@ impl EmissionContext<'_> {
     ) -> Result<TrampolineImage, TrampolineError> {
         match self {
             Self::Live(_) => plan.emit_at(address),
-            Self::Artifact(input) => plan.emit_artifact_at(address, input),
+            Self::Artifact(input) | Self::CurrentPlacement(input) => {
+                plan.emit_artifact_at(address, input)
+            }
         }
     }
 }
