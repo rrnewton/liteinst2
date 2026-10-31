@@ -1,0 +1,9 @@
+# Saved-target RET ordering observation
+
+The fixed 15-lane hardware diagnostic completed with all full-state checks passing on source `6bae78dc85d2a90c085e85fee89a0b21f2cfab49`, CPU 3. This does not qualify a production RET continuation or cached program.
+
+Across five targets, the original RET and saved-target private RET with owned TF produced the same checked logical event/state. RX stopped before its first instruction. For mapped NX and unmapped targets, owned TF produced TRACE before target fetch; the unstepped originals instead faulted on fetch after SP advanced by eight. Both noncanonical values produced #GP with original logical SP. All five private-operand lanes preserved the saved target after the original guest word was poisoned. The complete actual handler and the exact five-instruction load/store sequence passed ELF/disassembly inspection before native execution.
+
+The first attempt failed before build at the exact disassembler identity check. The second built successfully but failed the original adjacency inspection before native execution. Both remain failed. The corrected third attempt ran the unchanged 5×3 matrix and all 32 bounded commands exited zero. Build/metadata remained 30 CPU / 60 wall seconds; native/inspection/reader remained 5 CPU / 15 wall seconds, all with 512 MiB address space and 16 MiB output.
+
+The [numeric summary](2026-10-31-ret-saved-target-ordering.json) retains all 15 per-lane outcomes, raw/frame/stack digests, exact receipt identities, command bounds and closures. Full raw state remains in the private record. The [portable reproducer](../ret_resume_native/README.md) is an unexecuted public adapter of the reviewed collector, with the separate public RET32 prerequisite. No asynchronous or nested pending owner, domain drain, translated fault delivery, production admission, performance target, or original 392/522 gate is established here.

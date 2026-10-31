@@ -1,0 +1,265 @@
+{
+  "bounds": {
+    "build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "native": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "commands": [
+    "resolve-cc1",
+    "resolve-collect2",
+    "resolve-as",
+    "resolve-ld",
+    "version-cc",
+    "version-as",
+    "version-ld",
+    "version-objdump",
+    "link-input-crt1.o",
+    "link-input-Scrt1.o",
+    "link-input-crti.o",
+    "link-input-crtn.o",
+    "link-input-crtbegin.o",
+    "link-input-crtbeginS.o",
+    "link-input-crtend.o",
+    "link-input-crtendS.o",
+    "link-input-libgcc.a",
+    "link-input-libgcc_s.so",
+    "link-input-libc.so",
+    "link-input-libc_nonshared.a",
+    "link-input-libc.so.6",
+    "link-input-libgcc_s.so.1",
+    "compiler-specs",
+    "headers-0",
+    "headers-1",
+    "build",
+    "emitted-inspection",
+    "handler-disassembly",
+    "operand-load-inspection",
+    "runtime-dependencies",
+    "native-0",
+    "read-ordering"
+  ],
+  "files": {
+    "evaluation/admission/processes.py": {
+      "bytes": 15760,
+      "mode": "0644",
+      "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+    },
+    "evaluation/admission/run.py": {
+      "bytes": 21614,
+      "mode": "0644",
+      "sha256": "d9462b5ec03f3085564907d0fa1d42e882d49900651e05899d5b3f4122ddab3f"
+    },
+    "evaluation/inprocess/call_push_native/inspect.py": {
+      "bytes": 7352,
+      "mode": "0755",
+      "sha256": "57275fd74eb6fafac162d99d33f40f131e0a22adfd8f32602108d20c7e8f43f8"
+    },
+    "evaluation/inprocess/checks.py": {
+      "bytes": 7782,
+      "mode": "0644",
+      "sha256": "04c89dcabf70a7986225bca51a59725a98fc620caef24c78519112ebe1c71e39"
+    },
+    "evaluation/inprocess/page_selected.py": {
+      "bytes": 29973,
+      "mode": "0644",
+      "sha256": "941c10dca909c9eed84af6606da38e0f88e4f76eda7f3deaf034282680674e17"
+    },
+    "evaluation/inprocess/page_selected_process.py": {
+      "bytes": 7089,
+      "mode": "0644",
+      "sha256": "71cc09047a01bd62c79d994587998aac17655f0f65a4464c94f12df461f1f773"
+    },
+    "evaluation/inprocess/ret_dispatch/SOURCE.json": {
+      "bytes": 7699,
+      "mode": "0644",
+      "sha256": "be708aa90b232f86ab65384909feb4c5184677bfbac12dc6315fc6989c40739e"
+    },
+    "evaluation/inprocess/ret_dispatch/run.py": {
+      "bytes": 41500,
+      "mode": "0755",
+      "sha256": "c37b679a22671e8408755b8dc2a80da8541947086f5707db87cbaab746904002"
+    },
+    "evaluation/inprocess/ret_resume_native/README.md": {
+      "bytes": 4735,
+      "mode": "0644",
+      "sha256": "0dd1d13c5c441e7f7298ad70833b4324f3bc1bc552f681dd3f6a9ad75cc95039"
+    },
+    "evaluation/inprocess/ret_resume_native/inspect-load.py": {
+      "bytes": 5373,
+      "mode": "0755",
+      "sha256": "6678ecb547cf2c3804da676d9150509b6da9bf6ca2849289b8d8a31d1c75c86d"
+    },
+    "evaluation/inprocess/ret_resume_native/run.py": {
+      "bytes": 29668,
+      "mode": "0755",
+      "sha256": "1e47118edb6b009bf7ad93bb99332ccbc5c8df93b9d31652523c86ac1eaee3f8"
+    },
+    "evaluation/inprocess/run.py": {
+      "bytes": 13593,
+      "mode": "0644",
+      "sha256": "3e239969f1d043c9a4261ccfe8a464f18eecbf6a5ef9a4dd6139e2023c1f3bd2"
+    },
+    "tools/page-entry/selected/tests/ret_native/build.sh": {
+      "bytes": 422,
+      "mode": "0755",
+      "sha256": "740c5a7a68180a84f303dc9fdca05adff1a7b8c7bc8f4012dec42a1e995a140a"
+    },
+    "tools/page-entry/selected/tests/ret_native/probe.S": {
+      "bytes": 1846,
+      "mode": "0644",
+      "sha256": "734a8e4eba941f3b69c4031c5281cb0b2ccc35c9b92fbc53596ebe95a9ed86b9"
+    },
+    "tools/page-entry/selected/tests/ret_native/probe.c": {
+      "bytes": 14335,
+      "mode": "0644",
+      "sha256": "a62235a98f98400ca0da2e09946bdf5ca4da5619370f6ab1bc3500d7a6d4b718"
+    },
+    "tools/page-entry/selected/tests/ret_native/read.py": {
+      "bytes": 10229,
+      "mode": "0755",
+      "sha256": "3fcba2fed1c00869825db50c462949dce9f948bffdc24b30e80c0cddc0bf334e"
+    },
+    "tools/page-entry/selected/tests/ret_resume_native/build.sh": {
+      "bytes": 422,
+      "mode": "0755",
+      "sha256": "740c5a7a68180a84f303dc9fdca05adff1a7b8c7bc8f4012dec42a1e995a140a"
+    },
+    "tools/page-entry/selected/tests/ret_resume_native/probe.S": {
+      "bytes": 1846,
+      "mode": "0644",
+      "sha256": "734a8e4eba941f3b69c4031c5281cb0b2ccc35c9b92fbc53596ebe95a9ed86b9"
+    },
+    "tools/page-entry/selected/tests/ret_resume_native/probe.c": {
+      "bytes": 15481,
+      "mode": "0644",
+      "sha256": "95c2629569cc45a2f543bf479b24610e5c6d2ad3e0f2e1dd7d31544eb6229cc9"
+    },
+    "tools/page-entry/selected/tests/ret_resume_native/read.py": {
+      "bytes": 14354,
+      "mode": "0755",
+      "sha256": "b6957b9d3bb05eee20028915f3c4d05978f986b1638b4aa07304094ac405ffe5"
+    }
+  },
+  "fixture": "tools/page-entry/selected/tests/ret_resume_native",
+  "inspector": "evaluation/inprocess/call_push_native/inspect.py",
+  "matrix": {
+    "chunks": 1,
+    "fp_bytes_per_frame": 65536,
+    "frames": 30,
+    "guest_stack_bytes": 16384,
+    "lanes": 15,
+    "private_page_bytes": 4096,
+    "raw_bytes": 2879240,
+    "read_once_poison_cases": 5,
+    "record_bytes": 191928,
+    "routes": 3,
+    "targets": 5
+  },
+  "objdump": {
+    "bytes": 423000,
+    "mode": "0755",
+    "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+  },
+  "original_RET32_replaced": false,
+  "original_RET_adapter_cases_replaced": false,
+  "owner_credit": false,
+  "performance_credit": false,
+  "prerequisite": {
+    "bounds": {
+      "build": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "component": [
+        5,
+        536870912,
+        16777216,
+        15
+      ],
+      "native": [
+        5,
+        536870912,
+        16777216,
+        15
+      ]
+    },
+    "commands": [
+      "tool-cc-dependencies",
+      "tool-nm-dependencies",
+      "tool-python-dependencies",
+      "tool-git-dependencies",
+      "resolve-cc1",
+      "tool-cc1-dependencies",
+      "resolve-collect2",
+      "tool-collect2-dependencies",
+      "resolve-as",
+      "tool-as-dependencies",
+      "resolve-ld",
+      "tool-ld-dependencies",
+      "version-cc",
+      "version-as",
+      "version-ld",
+      "version-nm",
+      "version-python",
+      "version-git",
+      "link-crt1.o",
+      "link-Scrt1.o",
+      "link-crti.o",
+      "link-crtn.o",
+      "link-crtbegin.o",
+      "link-crtbeginS.o",
+      "link-crtend.o",
+      "link-crtendS.o",
+      "link-libgcc.a",
+      "link-libgcc_eh.a",
+      "link-libgcc_s.so",
+      "link-libgcc_s.so.1",
+      "link-libc.so",
+      "link-libc_nonshared.a",
+      "link-libc.so.6",
+      "link-libdl.a",
+      "link-libpthread.a",
+      "link-libm.so",
+      "link-libm.so.6",
+      "link-libmvec.so.1",
+      "compiler-specs",
+      "archive-exports",
+      "ret_native-headers",
+      "ret_native-build",
+      "ret_native-dependencies",
+      "ret_native-inspection",
+      "ret_native-native",
+      "ret_native-reader",
+      "ret_dispatch-headers",
+      "ret_dispatch-build",
+      "ret_dispatch-dependencies",
+      "ret_dispatch-component",
+      "ret_dispatch_native-headers",
+      "ret_dispatch_native-build",
+      "ret_dispatch_native-dependencies",
+      "ret_dispatch_native-inspection",
+      "ret_dispatch_native-native",
+      "ret_dispatch_native-reader"
+    ],
+    "profile": "experimental-ret-components-native-v1",
+    "status": "finite_experiments_passed"
+  },
+  "production_continuation": false,
+  "profile": "public-ret-resume-native-ordering-v1",
+  "public_runner_executed": false,
+  "qualification_credit": false,
+  "reader": "tools/page-entry/selected/tests/ret_resume_native/read.py",
+  "schema": 1,
+  "source_only": true
+}
