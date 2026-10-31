@@ -1,0 +1,431 @@
+{
+  "schema": "full-program-whole-attempt-v1",
+  "revision": "0bf01dd405fb5d7761b368edd9e76fe29d3f5436",
+  "status": "MATERIALS_READY_PLANNERS_REFUSED_BACKEND_RESOURCE_FAILURE",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "cpus": [
+    1
+  ],
+  "reservation": "cpuset-alloc HARD one-CPU reservation; owner-recorded affinity/cgroup, no contemporaneous independent root live check",
+  "denominator": {
+    "heads": 13143,
+    "rpc_messages": 14997,
+    "selected_jumps": 2053
+  },
+  "native_attempts": 0,
+  "qualification_complete": false,
+  "scripts": {
+    "full_program_policy.py": "abba5a403f60cd13669a2d60c10702a56ec31835c409dc4b7f6eedc61437b115",
+    "run_full_program_attempt.py": "79c7db2f699098d3f2ca0574a4a4cd67c43fa44bbf607a970ae2785baffa9ac9"
+  },
+  "input": {
+    "bytes": 93520,
+    "sha256": "890f76cb5741b6c7cfba3414ae72a64fd7deddc7d2dd33b17d53e8b906529fdb",
+    "upstream": "https://github.com/GJDuck/e9patch",
+    "revision": "0d5d36e4c4edcac37ca2499694d64302a391136f",
+    "provider_capture_sha256": "591845048470e947952fe064286d61f4a06413e5d01ae80c8504597e6c089562",
+    "ledger_sha256": "727d43acbbb31ac419ba2a87f75433a495c2b838fa9d6d08a138d16c6e52e60d",
+    "trust": "Caller-supplied complete-code/no-overlap/no-code-as-data/private-image premise, including both RX gaps; hashes do not prove it."
+  },
+  "build": {
+    "command": [
+      "/usr/bin/prlimit",
+      "--cpu=240",
+      "--as=4294967296",
+      "--fsize=134217728",
+      "--core=0",
+      "--",
+      "cargo",
+      "build",
+      "--offline",
+      "--locked",
+      "--release",
+      "-j1",
+      "-p",
+      "liteinst-rewrite",
+      "--example",
+      "full_program_bridge",
+      "--example",
+      "disassembly_sites"
+    ],
+    "revision": "0bf01dd405fb5d7761b368edd9e76fe29d3f5436",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+    "profile": {
+      "release": true,
+      "opt_level": 3,
+      "debug": 0,
+      "debug_assertions": true,
+      "overflow_checks": true,
+      "jobs": 1,
+      "incremental": false
+    },
+    "products": {
+      "full_program_bridge": {
+        "bytes": 2240040,
+        "sha256": "99990c05fd33b55dfb7eed267d7a5897ff3f64a85f475182673b9074c34c7bf3"
+      },
+      "disassembly_sites": {
+        "bytes": 4474144,
+        "sha256": "460520ef9ddabc78e05b4a2de108c6865b677623f74cd0aaac7c2fe8bb4765ec"
+      }
+    },
+    "result": {
+      "start_utc": "2026-10-31T20:20:11.476255+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "seconds": 19.686188594903797,
+      "private_log_sha256": "4ef317bada120597e7b6b492d4c2dc045ae03fef1d62c0e8ba07751ec2fef0a7",
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+    },
+    "source_unchanged": true,
+    "bounds": {
+      "cpu_seconds": 240,
+      "wall_seconds": 300,
+      "address_space_bytes": 4294967296,
+      "per_file_bytes": 134217728,
+      "combined_log_bytes": 8388608
+    },
+    "cpus": [
+      3
+    ],
+    "load_before": [
+      46.71,
+      39.92,
+      50.72
+    ],
+    "load_after": [
+      55.33,
+      42.32,
+      51.28
+    ]
+  },
+  "policy": {
+    "names": [
+      "full-e9patch-packed-source-whole-resources-16m-v1",
+      "full-e9patch-packed-source-whole-resources-2g-v1"
+    ],
+    "resource_fields": [
+      "input_bytes",
+      "sites",
+      "images",
+      "image_bytes",
+      "new_load_pages",
+      "output_bytes",
+      "added_file_bytes",
+      "program_headers",
+      "virtual_span"
+    ],
+    "common_resources": [
+      1048576,
+      4096,
+      2896,
+      11862016,
+      2936,
+      12120064,
+      12026544,
+      2910
+    ],
+    "virtual_spans": [
+      16777216,
+      2147483648
+    ],
+    "search": "preferred 64 256 64 none 256 4096",
+    "per_role": {
+      "candidates": 1,
+      "mappings": 1,
+      "bytes": 4096
+    },
+    "derivation": "1210 long sites at most one image each plus843 short sites at most two; retain full denominator. The historical32-image/128-page fixture profile and old1024-site refusal remain unchanged.",
+    "generator_command": [
+      "python3.9",
+      "-I",
+      "-B",
+      "evaluation/offline-corpus/full_program_policy.py",
+      "--original",
+      "ignored/a3/upstream/e9patch-pldi2020/e9patch",
+      "--ledger",
+      "ignored/a3/full-program-bridge-actual-v1/materials/ledger.txt",
+      "--inventory",
+      "ignored/a3/full-program-bridge-actual-v1/materials/sites.tsv",
+      "--target",
+      "ignored/a3/offline-current-v1/target/stdout.txt",
+      "--out",
+      "target/evaluation/full-program-whole-policies-v1"
+    ],
+    "target_text": "target xsave64 743 4:576:256 32:832:64 64:896:512 128:1408:1024 512:2432:8\n"
+  },
+  "stages": [
+    {
+      "name": "materials",
+      "attempts": 1,
+      "status": "EXIT_ZERO_UNQUALIFIED",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=30",
+        "--as=536870912",
+        "--fsize=536870912",
+        "--core=0",
+        "--",
+        "${ROOT}/target/release/examples/full_program_bridge",
+        "--whole-program-4096",
+        "--trusted-complete-code",
+        "${ROOT}/ignored/a3/upstream/e9patch-pldi2020/e9patch",
+        "${ROOT}/ignored/a3/full-program-provider-v1/closed/provider.DISASM.csv",
+        "591845048470e947952fe064286d61f4a06413e5d01ae80c8504597e6c089562",
+        "${ROOT}/target/evaluation/full-program-whole-attempt-v1/materials"
+      ],
+      "working_directory": "${ROOT}",
+      "cpu_seconds": 30,
+      "wall_seconds": 45,
+      "address_space_bytes": 536870912,
+      "result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "88b5e461edc0e15352c5f5ed3bcf2c348f83af4931a91349faffc31a1cc34826",
+        "reaped_descendants": 0,
+        "seconds": 0.03540366422384977,
+        "start_utc": "2026-10-31T20:22:53.187737+00:00",
+        "termination": null
+      },
+      "load_before": [
+        56.89,
+        48.85,
+        52.51
+      ],
+      "load_after": [
+        56.89,
+        48.85,
+        52.51
+      ],
+      "products": {
+        "COMPLETE": {
+          "bytes": 735,
+          "sha256": "a1d7fc616bf125ecc9a177242ff1be8b49ea42b55ddab4e59ea0efa860786e6e"
+        },
+        "ledger.txt": {
+          "bytes": 264399,
+          "sha256": "727d43acbbb31ac419ba2a87f75433a495c2b838fa9d6d08a138d16c6e52e60d"
+        },
+        "regions.tsv": {
+          "bytes": 601,
+          "sha256": "269d867c73592c2ef41dc785e2a902d9289a8ad73cbe5aa854a95b7467759801"
+        },
+        "request.jsonl": {
+          "bytes": 1544550,
+          "sha256": "30c5237ccaceb9a08a3fe12381b3b480c210ebfb0dc108d3ee39cdd6361245fd"
+        },
+        "sites.tsv": {
+          "bytes": 77834,
+          "sha256": "ce8931ab852a4c10a27862d93de23d87a44e530a6999442e7479b4b03dd7d59f"
+        }
+      }
+    },
+    {
+      "name": "li2-16m",
+      "attempts": 1,
+      "status": "FAILED_OR_REFUSED",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=180",
+        "--as=3221225472",
+        "--fsize=536870912",
+        "--core=0",
+        "--",
+        "${ROOT}/target/release/examples/disassembly_sites",
+        "--whole-program-4096",
+        "${ROOT}/ignored/a3/upstream/e9patch-pldi2020/e9patch",
+        "${ROOT}/target/evaluation/full-program-whole-attempt-v1/materials/ledger.txt",
+        "727d43acbbb31ac419ba2a87f75433a495c2b838fa9d6d08a138d16c6e52e60d",
+        "${ROOT}/ignored/a3/full-program-whole-attempt-v1/policies/policy-16m.txt",
+        "d097e98b33b96421657e70bbbca4aa7fe48335adb6908746a04efc76d662f672",
+        "${ROOT}/target/evaluation/full-program-whole-attempt-v1/li2-16m"
+      ],
+      "working_directory": "${ROOT}",
+      "cpu_seconds": 180,
+      "wall_seconds": 240,
+      "address_space_bytes": 3221225472,
+      "result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 2,
+        "private_log_sha256": "be5f1611525a7a30775f55b912795eb2960131a75f761f58a3a66d8cc12b2a36",
+        "reaped_descendants": 0,
+        "seconds": 0.24431005911901593,
+        "start_utc": "2026-10-31T20:22:53.286389+00:00",
+        "termination": null
+      },
+      "load_before": [
+        56.89,
+        48.85,
+        52.51
+      ],
+      "load_after": [
+        56.89,
+        48.85,
+        52.51
+      ],
+      "products": {
+        "COMPLETE": {
+          "bytes": 701,
+          "sha256": "bf82112d5be21abf26e69695af3949a0e99eaf25a7af87f9ace0918011b5902b"
+        },
+        "program-failure.tsv": {
+          "bytes": 452,
+          "sha256": "8a06e372a7e99acc86f2c26b9ae8ae13f6fc8da805447b4b3d5d398fae86009c"
+        }
+      },
+      "diagnostic": "dynamic: InvalidMetadata { tag: 6 }",
+      "site_planning_started": false
+    },
+    {
+      "name": "li2-2g",
+      "attempts": 1,
+      "status": "FAILED_OR_REFUSED",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=180",
+        "--as=3221225472",
+        "--fsize=536870912",
+        "--core=0",
+        "--",
+        "${ROOT}/target/release/examples/disassembly_sites",
+        "--whole-program-4096",
+        "${ROOT}/ignored/a3/upstream/e9patch-pldi2020/e9patch",
+        "${ROOT}/target/evaluation/full-program-whole-attempt-v1/materials/ledger.txt",
+        "727d43acbbb31ac419ba2a87f75433a495c2b838fa9d6d08a138d16c6e52e60d",
+        "${ROOT}/ignored/a3/full-program-whole-attempt-v1/policies/policy-2g.txt",
+        "ef09bcd4c78949ff4b93a928c59e04b545081f9e56c2056f2cfcdfe068604cce",
+        "${ROOT}/target/evaluation/full-program-whole-attempt-v1/li2-2g"
+      ],
+      "working_directory": "${ROOT}",
+      "cpu_seconds": 180,
+      "wall_seconds": 240,
+      "address_space_bytes": 3221225472,
+      "result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 2,
+        "private_log_sha256": "be5f1611525a7a30775f55b912795eb2960131a75f761f58a3a66d8cc12b2a36",
+        "reaped_descendants": 0,
+        "seconds": 0.2466143388301134,
+        "start_utc": "2026-10-31T20:22:53.587351+00:00",
+        "termination": null
+      },
+      "load_before": [
+        56.89,
+        48.85,
+        52.51
+      ],
+      "load_after": [
+        56.89,
+        48.85,
+        52.51
+      ],
+      "products": {
+        "COMPLETE": {
+          "bytes": 701,
+          "sha256": "a4a48ae1f695e274a0fd64b4d15075865a2fba85af61c5d3e482565bbdfe2087"
+        },
+        "program-failure.tsv": {
+          "bytes": 452,
+          "sha256": "0c63cc6c8c7041661dec3bffbcf9b5e95e692dd670f112c8c1e9e9aa8dc81cdc"
+        }
+      },
+      "diagnostic": "dynamic: InvalidMetadata { tag: 6 }",
+      "site_planning_started": false
+    },
+    {
+      "name": "e9-backend",
+      "attempts": 1,
+      "status": "FAILED_OR_REFUSED",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=60",
+        "--as=1073741824",
+        "--fsize=536870912",
+        "--core=0",
+        "--",
+        "/usr/bin/env",
+        "--chdir=${ROOT}/target/evaluation/full-program-whole-attempt-v1/e9",
+        "--",
+        "${ROOT}/ignored/a3/upstream/e9patch-pldi2020/e9patch",
+        "--debug",
+        "--input",
+        "${ROOT}/target/evaluation/full-program-whole-attempt-v1/materials/request.jsonl"
+      ],
+      "working_directory": "${ROOT}/target/evaluation/full-program-whole-attempt-v1/e9",
+      "cpu_seconds": 60,
+      "wall_seconds": 90,
+      "address_space_bytes": 1073741824,
+      "result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 1,
+        "private_log_sha256": "c87b6e19e125743d28719919e31bdc7dc0f481ba587dcdf70e63455fa7a75cf4",
+        "reaped_descendants": 0,
+        "seconds": 0.004414388909935951,
+        "start_utc": "2026-10-31T20:22:53.891645+00:00",
+        "termination": null
+      },
+      "load_before": [
+        56.89,
+        48.85,
+        52.51
+      ],
+      "load_after": [
+        56.89,
+        48.85,
+        52.51
+      ],
+      "products": {},
+      "diagnostic": "error: failed to reserve 34359831888 bytes for file buffer: Cannot allocate memory",
+      "failure_scope": "Address-space budget prevented initial file-buffer reservation; no tactic-coverage result."
+    }
+  ],
+  "outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "a25163b5a9368b4828ccf8be631515d7ed0a3c92e7025d4ecb5c4c7e9a4c7505",
+    "reaped_descendants": 0,
+    "seconds": 0.8450309040490538,
+    "start_utc": "2026-10-31T20:22:53.090469+00:00",
+    "termination": null
+  },
+  "source_unchanged": true,
+  "load_before": [
+    56.89,
+    48.85,
+    52.51
+  ],
+  "load_after": [
+    56.89,
+    48.85,
+    52.51
+  ],
+  "limits": {
+    "concurrent_children": 1,
+    "per_file_bytes": 536870912,
+    "post_stage_workspace_bytes": 2147483648,
+    "combined_log_bytes": 8388608,
+    "rpc_bytes": 16777216,
+    "raw_summary_note": "The private runner summary field capture_and_rpc_bytes said16MiB; the dispatched process owner actually enforces8MiB combined logs and16MiB is the RPC bound."
+  },
+  "outcomes": "Complete materials and shared selections were emitted; both planners refused dynamic metadata before site search. E9Patch could not reserve its initial buffer within the declared1GiB virtual-address limit. No candidate or native execution succeeded.",
+  "retained_private_bytes": 4696327,
+  "limitations": [
+    "All four fixed stages were attempted once; no retries or selected subset.",
+    "No complete-program tactic success, coverage percentage, backend equivalence, native execution, performance or A5 qualification is inferred.",
+    "Larger resource profiles are explicitly separate from historical16MiB fixture results; the two new rows differ in span and range clipping only."
+  ],
+  "outer_bounds": {
+    "cpu_seconds": 900,
+    "wall_seconds": 900,
+    "address_space_bytes": 4294967296,
+    "per_file_bytes": 536870912,
+    "combined_log_bytes": 8388608
+  }
+}
