@@ -65,10 +65,16 @@ impl Custody {
         }
     }
     pub(in crate::normal) fn files_and_code(&self) {
+        self.files_and_code_with(&mut csv::MappingScratch::default());
+    }
+    fn files_and_code_with(&self, maps: &mut csv::MappingScratch) {
         assert_eq!(std::process::id(), self.pid);
+        let mut actual = Vec::new();
         for i in 0..2 {
             assert_eq!(Stamp::read(&self.paths[i]), self.stamps[i]);
-            let mut actual = Vec::new();
+            // Retain capacity only inside this pass. Each file is opened and
+            // read in full again; no prior bytes or stamp replace that read.
+            actual.clear();
             File::open(&self.paths[i])
                 .unwrap()
                 .take(1024 * 1024 + 1)
@@ -80,7 +86,7 @@ impl Custody {
         // Fresh only after both complete file/stamp checks. The loader's
         // continuous immutable mapping/permission contract excludes protection
         // changes and VMA split/merge of these owned ranges between lookups.
-        csv::with_mapping_snapshot(|maps| {
+        maps.with_snapshot(|maps| {
             for (spans, mode) in [(&self.source, "r-xp"), (&self.generated, "r-xs")] {
                 for (address, bytes) in spans {
                     let (a, b) = maps.mapping(*address, mode);
@@ -104,11 +110,12 @@ impl Custody {
             expected.tid
         );
         cpu_is(expected.cpu);
+        let mut maps = csv::MappingScratch::default();
         // Touch the actual worker's marker before reading its containing VMA.
         // This snapshot dies before the unchanged task and whole-file checks.
         let mut marker = 0_u64;
         std::hint::black_box(&mut marker);
-        csv::with_mapping_snapshot(|maps| {
+        maps.with_snapshot(|maps| {
             assert_eq!(
                 maps.mapping(std::ptr::from_ref(&marker) as usize as u64, "rw-p"),
                 expected.stack
@@ -127,7 +134,9 @@ impl Custody {
         expected_tasks.sort_unstable();
         assert_ne!(expected.tid, u64::from(expected.pid));
         assert_eq!(tasks, expected_tasks);
-        self.files_and_code();
+        // Reuse only scratch capacity. The second capture still occurs after
+        // both complete file/stamp checks; nothing is retained across passes.
+        self.files_and_code_with(&mut maps);
     }
 }
 pub(in crate::normal) fn cpu_is(cpu: usize) {

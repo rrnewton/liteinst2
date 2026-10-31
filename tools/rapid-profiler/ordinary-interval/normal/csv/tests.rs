@@ -509,4 +509,195 @@ fn csv_mapping_classes_keep_private_source_and_shared_images_distinct() {
         .is_err()
     );
     assert_eq!((reads.get(), entered.get()), (3, 2));
+
+    // Exhaust the Cartesian product of representative span spellings, token
+    // spellings, separators, endpoints and requested modes against the literal
+    // old parser. In particular, neither Unicode whitespace nor a nonstandard
+    // permission token changes that parser's admission rules.
+    let mut scratch = MappingScratch::default();
+    let addresses = [
+        0,
+        1,
+        0xfff,
+        0x1000,
+        0x1001,
+        0x17ff,
+        0x1800,
+        0x1fff,
+        0x2000,
+        0x3000,
+        0x3fff,
+        0x4000,
+        u64::MAX - 1,
+        u64::MAX,
+    ];
+    let modes = ["r-xp", "r-xs", "rw-p", "rwxs", "---p", "é", ""];
+    for range in [
+        "",
+        "not-a-map",
+        "1000-2000",
+        "00001000-00002000",
+        "+1000-+2000",
+        "0x1000-0x2000",
+        "1000-2000-3000",
+        "1000-",
+        "-2000",
+        "-1000-2000",
+        "0-1",
+        "0-0",
+        "2000-1000",
+        "1000-1000",
+        "10000000000000000-2000",
+        "1000-10000000000000000",
+        "fffffffffffffffe-ffffffffffffffff",
+        "FFFFFFFFFFFFFFFE-FFFFFFFFFFFFFFFF",
+    ] {
+        for token in ["r-xp", "rw-p", "rwxs", "é", ""] {
+            for whitespace in [" ", "\t", "\u{a0}", "\u{2003}"] {
+                let text = format!("{whitespace}{range}{whitespace}{token}\n");
+                scratch.with_snapshot_from(
+                    |buffer| {
+                        assert!(buffer.is_empty());
+                        buffer.push_str(&text);
+                        Ok(())
+                    },
+                    |snapshot| {
+                        for address in addresses {
+                            for mode in modes {
+                                assert_eq!(
+                                    snapshot.lookup(address, mode),
+                                    mapping_in(&text, address, mode),
+                                    "maps={text:?} address={address:x} mode={mode:?}"
+                                );
+                            }
+                        }
+                    },
+                );
+                assert!(scratch.maps.is_empty() && scratch.rows.is_empty());
+            }
+        }
+    }
+    for text in [
+        "\n\r\n\u{a0}\t\n",
+        "1000-2000\n3000-4000 r-xs ignored trailing fields\n",
+        "3000-4000 r-xs\n1000-2000 r-xp\n",
+        "1000-2000 r-xp\n1000-2000 rw-p\n",
+        "1000-2000 rw-p\n1000-2000 r-xp\n",
+        "1000-2000 r-xp\n0800-1800 r-xs\n",
+        "1000-2000 r-xp\n1000-2000\ninvalid r-xp\n3000-4000 r-xs\n",
+        "\u{2003}1000-2000\u{a0}é\r\n3000-4000\tr-xs\r\n",
+        "2000-1000 r-xp\n1000-1000 r-xp\n1000-2000 r-xp\n",
+    ] {
+        scratch.with_snapshot_from(
+            |buffer| {
+                assert!(buffer.is_empty());
+                buffer.push_str(text);
+                Ok(())
+            },
+            |snapshot| {
+                for address in addresses {
+                    for mode in modes {
+                        assert_eq!(
+                            snapshot.lookup(address, mode),
+                            mapping_in(text, address, mode),
+                            "maps={text:?} address={address:x} mode={mode:?}"
+                        );
+                    }
+                }
+            },
+        );
+        assert!(scratch.maps.is_empty() && scratch.rows.is_empty());
+    }
+
+    // Reuse the same allocations: a shorter fresh capture must not inherit
+    // either text or parsed rows from the long capture, even after a panic.
+    let reads = std::cell::Cell::new(0);
+    let entered = std::cell::Cell::new(0);
+    let long = format!("{}{}", "not-a-map with ignored suffix\n".repeat(128), maps);
+    scratch.with_snapshot_from(
+        |buffer| {
+            assert!(buffer.is_empty());
+            reads.set(reads.get() + 1);
+            buffer.push_str(&long);
+            Ok(())
+        },
+        |snapshot| {
+            entered.set(entered.get() + 1);
+            assert_eq!(snapshot.rows.len(), 3);
+            for _ in 0..8 {
+                assert_eq!(snapshot.mapping(0x1000, "r-xp"), (0x1000, 0x2000));
+                assert_eq!(snapshot.mapping(0x3000, "r-xs"), (0x3000, 0x4000));
+                assert_eq!(reads.get(), 1);
+            }
+        },
+    );
+    assert!(scratch.maps.is_empty() && scratch.rows.is_empty());
+    let capacities = (scratch.maps.capacity(), scratch.rows.capacity());
+    scratch.with_snapshot_from(
+        |buffer| {
+            assert!(buffer.is_empty());
+            reads.set(reads.get() + 1);
+            buffer.push_str("1000-1800 rw-p\n");
+            Ok(())
+        },
+        |snapshot| {
+            entered.set(entered.get() + 1);
+            assert_eq!(snapshot.rows.len(), 1);
+            assert_eq!(snapshot.mapping(0x1000, "rw-p"), (0x1000, 0x1800));
+            assert_eq!(snapshot.lookup(0x1000, "r-xp"), None);
+            assert_eq!(snapshot.lookup(0x1800, "rw-p"), None);
+            assert_eq!(snapshot.lookup(0x3000, "r-xs"), None);
+            assert_eq!(snapshot.lookup(0x5000, "rw-p"), None);
+            assert_eq!(reads.get(), 2);
+        },
+    );
+    assert!(scratch.maps.is_empty() && scratch.rows.is_empty());
+    assert_eq!(
+        (scratch.maps.capacity(), scratch.rows.capacity()),
+        capacities
+    );
+    assert!(
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| scratch.with_snapshot_from(
+            |buffer| {
+                assert!(buffer.is_empty());
+                reads.set(reads.get() + 1);
+                buffer.push_str(maps);
+                Err(std::io::ErrorKind::PermissionDenied.into())
+            },
+            |_| entered.set(entered.get() + 1),
+        )))
+        .is_err()
+    );
+    assert_eq!((reads.get(), entered.get()), (3, 2));
+    assert!(scratch.maps.is_empty() && scratch.rows.is_empty());
+    assert!(
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| scratch.with_snapshot_from(
+            |buffer| {
+                assert!(buffer.is_empty());
+                reads.set(reads.get() + 1);
+                buffer.push_str(maps);
+                Ok(())
+            },
+            |snapshot| {
+                entered.set(entered.get() + 1);
+                snapshot.mapping(0x3000, "rw-p");
+            },
+        )))
+        .is_err()
+    );
+    scratch.with_snapshot_from(
+        |buffer| {
+            assert!(buffer.is_empty());
+            reads.set(reads.get() + 1);
+            Ok(())
+        },
+        |snapshot| {
+            entered.set(entered.get() + 1);
+            assert!(snapshot.maps.is_empty() && snapshot.rows.is_empty());
+            assert_eq!(snapshot.lookup(0x1000, "r-xp"), None);
+            assert_eq!(snapshot.lookup(0x3000, "r-xs"), None);
+        },
+    );
+    assert_eq!((reads.get(), entered.get()), (5, 4));
+    assert!(scratch.maps.is_empty() && scratch.rows.is_empty());
 }
