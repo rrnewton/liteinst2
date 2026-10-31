@@ -25,6 +25,14 @@ fn fixture(candidate: &str, expected: &str) -> Vec<u8> {
     expected_file(Path::new(&candidate), Path::new(&expected))
 }
 fn publish(prep: NormalModuleSitePreparation) -> InstalledNormalModuleSite {
+    // Routed interior entries require the reserved synchronous SIGILL router.
+    // Do not silently unblock an inherited mask or replace its disposition.
+    let mut actual_mask: libc::sigset_t = unsafe { std::mem::zeroed() };
+    assert_eq!(
+        unsafe { libc::pthread_sigmask(libc::SIG_SETMASK, std::ptr::null(), &mut actual_mask) },
+        0
+    );
+    assert_eq!(unsafe { libc::sigismember(&actual_mask, libc::SIGILL) }, 0);
     let planned = prep.plan();
     assert_eq!(planned.plan().originals().len(), 1);
     let original = &planned.plan().originals()[0];
@@ -49,7 +57,13 @@ fn publish(prep: NormalModuleSitePreparation) -> InstalledNormalModuleSite {
             protect(source, libc::PROT_READ | libc::PROT_EXEC)
         })
     };
-    if result.is_err() {
+    if let Err(failure) = &result {
+        use std::io::Write;
+        // Best-effort diagnostics only; no unwind or recovery from publication.
+        let _ = writeln!(
+            std::io::stderr().lock(),
+            "owned module publication FAILED: {failure:?}"
+        );
         std::process::abort();
     }
     assert!(!lease.is_poisoned());
@@ -69,6 +83,9 @@ fn owned_module_native_four_call_batches_epochs_and_close() {
     pin(None);
     let mut signals: libc::sigset_t = unsafe { std::mem::zeroed() };
     assert_eq!(unsafe { libc::sigfillset(&mut signals) }, 0);
+    // Keep asynchronous signals blocked while preserving the core's owned
+    // synchronous entry-routing signal; foreign delivery/reentry stays excluded.
+    assert_eq!(unsafe { libc::sigdelset(&mut signals, libc::SIGILL) }, 0);
     assert_eq!(
         unsafe { libc::pthread_sigmask(libc::SIG_BLOCK, &signals, std::ptr::null_mut()) },
         0
