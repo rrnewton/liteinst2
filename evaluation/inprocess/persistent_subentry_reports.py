@@ -304,13 +304,13 @@ def subentry_controls(stderr,owner,owner_reader):
         else:raise ValueError('accepted supplied subentry row mutation')
     lines=stderr[:-1].split(b'\n')
     cases=(('missing',b'\n'.join(lines[:-2]+lines[-1:])+b'\n'),('duplicate',b'\n'.join(lines[:-1]+lines[-2:])+b'\n'),
-           ('version',stderr.replace(SUBENTRY_PREFIX+b'{"version":1,',SUBENTRY_PREFIX+b'{"version":0,',1)),('truncated',stderr[:-1]))
+           ('parser_version',stderr.replace(SUBENTRY_PREFIX+b'{"version":1,',SUBENTRY_PREFIX+b'{"version":0,',1)),('truncated',stderr[:-1]))
     for name,value in cases:
         need(value!=stderr,'actual causal subentry parser mutation')
         try:subentry_split(value)
         except ValueError:refused.append(name)
         else:raise ValueError('accepted malformed subentry terminal row')
-    need(len(refused)==SUBENTRY_CONTROL_COUNT,'all15 protected subentry cells and4 parser controls')
+    need(len(refused)==len(set(refused))==SUBENTRY_CONTROL_COUNT,'all15 protected subentry cells and4 parser controls')
     return dict(refusals=refused,native_operations=0,original_stderr_sha256=H(stderr))
 
 def probe_controls(stderr,parsed):
