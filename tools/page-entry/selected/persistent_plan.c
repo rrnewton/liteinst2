@@ -284,3 +284,7 @@ int li2_pe_recover(const struct li2_pe_plan *p,uintptr_t pc,const uint64_t raw[1
     } else return LI2_PE_CORRUPT;
     out->complete=1;return 0;
 }
+
+#ifdef LI2_PERSISTENT_DYNAMIC
+#include "persistent_dynamic_plan.inc"
+#endif

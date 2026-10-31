@@ -18,6 +18,13 @@ from scalar_span_trace_build import fast_bytes
 
 FEATURES = ('scalar-region', 'scalar-span', 'linked-epoch', 'mov-guard')
 POLICY_INPUTS = ('decoder/Cargo.toml', 'decoder/src/lib.rs', 'decoder/src/region.rs', 'decoder/src/mov_guard.rs', 'decoder/src/tf.rs', 'decoder/src/write_footprint.rs', 'region_decode.h', 'linked_plan.h', 'linked_plan.c', 'linked_source.h', 'linked_source.inc', 'linked_rseq.h', 'linked_rseq.inc', 'linked_proof.h', 'linked_proof.inc', 'linked_controller.inc', 'linked_reuse.inc', 'lifecycle_loader.c', 'span_source.inc', 'rseq_guard.c', 'rseq_region.inc', 'runtime_loader.c', 'selected_globals.inc', 'selected_chain.inc', 'native_lifecycle.inc', 'native_pair_lifecycle.inc', 'tf_span_transfer.inc', 'span_fetch.inc', 'span_fast_bytes.h', 'persistent_plan.h', 'persistent_plan.c', 'persistent_compact.h', 'persistent_compact.c', 'persistent_lifetime.h', 'persistent_runtime.h', 'persistent_source.inc', 'persistent_rseq.inc', 'persistent_controller.inc', 'linked_mov_guard.h', 'linked_mov_guard.c', '../bridge.c', 'build-persistent-epoch.sh', 'persistent_epoch_binding.py')
+DYNAMIC_POLICY_INPUTS = tuple({
+    'persistent_controller.inc': 'persistent_dynamic_controller.inc',
+    'build-persistent-epoch.sh': 'build-persistent-dynamic.sh',
+    'persistent_epoch_binding.py': 'persistent_dynamic_binding.py',
+}.get(name, name) for name in POLICY_INPUTS) + (
+    'persistent_dynamic_plan.h', 'persistent_dynamic_plan.inc', 'persistent_epoch_binding.py',
+)
 PROVIDERS = ('li2_decoder_link_none', 'li2_link_plan_page', 'li2_link_plan_validate',
              'li2_decoder_mov_store', 'li2_pe_plan_pages', 'li2_pe_plan_validate',
              'li2_pe_compact_build', 'li2_pe_compact_validate', 'li2_pe_compact_guard',
@@ -69,9 +76,33 @@ def original_image(path):
                 source_pages=[first, second], source=dict(bytes=8192, sha256=H(source)))
 
 
-def binding_config(builder, archive, image, output, pin, binary, run):
-    image = pin(binary(image)); original = original_image(image); values = []
-    for name in POLICY_INPUTS:
+def dynamic_original_image(path):
+    """Whole ELF identity only; runtime chooses and authenticates each source pair."""
+    data = path.read_bytes()
+    def take(at, n):
+        need(type(at) is int and type(n) is int and 0 <= at <= len(data) and
+             0 <= n <= len(data)-at, 'bounded actual dynamic ELF input')
+        return data[at:at+n]
+    h = struct.unpack('<16sHHIQQQIHHHHHH', take(0, 64))
+    need(h[0][:7] == b'\x7fELF\x02\x01\x01' and h[1] in (2, 3) and h[2:4] == (62, 1) and
+         h[8:10] == (64, 56) and 0 < h[10] <= 128, 'actual dynamic ET_EXEC/ET_DYN input')
+    program = take(h[5], h[10]*56)
+    loads = [struct.unpack('<IIQQQQQQ', program[56*i:56*(i+1)]) for i in range(h[10])]
+    loads = [row for row in loads if row[0] == 1]
+    need(loads and all(row[5] <= row[6] and row[3] < 1 << 47 and row[6] <= (1 << 47)-row[3]
+                       and row[1] & ~7 == 0 for row in loads), 'whole dynamic LOAD bounds/flags')
+    for row in loads:
+        take(row[2], row[5])
+    need(any(row[1] & 1 and row[3] <= h[4] < row[3]+row[5] for row in loads),
+         'dynamic original entry is in actual file-backed executable bytes')
+    return dict(image=fact(path), elf_type=h[1], entry=h[4], load_count=len(loads),
+                program_headers=dict(bytes=len(program), sha256=H(program)))
+
+
+def binding_config(builder, archive, image, output, pin, binary, run, *, dynamic=False):
+    need(type(dynamic) is bool, 'explicit dynamic binding selector')
+    image = pin(binary(image)); original = dynamic_original_image(image) if dynamic else original_image(image); values = []
+    for name in (DYNAMIC_POLICY_INPUTS if dynamic else POLICY_INPUTS):
         path = pin(SELECTED/name); value = fact(path)
         if name in FIXED_DOMAIN:
             size, sha = FIXED_DOMAIN[name]
@@ -87,29 +118,83 @@ def binding_config(builder, archive, image, output, pin, binary, run):
               '#define LI2_LINK_BINDING_VERSION 1\n'
               '#define LI2_LINK_ARCHIVE_SHA256 '+literal(archive_fact['sha256'])+'\n'
               '#define LI2_LINK_POLICY_SHA256 '+literal(policy)+'\n#endif\n').encode()
-    persistent = ('#ifndef LI2_PERSISTENT_EPOCH_CONFIG_H\n#define LI2_PERSISTENT_EPOCH_CONFIG_H\n'
-                  '#define LI2_PE_BINDING_VERSION 1\n'
-                  '#define LI2_PE_ARCHIVE_SHA256 '+literal(archive_fact['sha256'])+'\n'
-                  '#define LI2_PE_POLICY_SHA256 '+literal(policy)+'\n'
-                  '#define LI2_PE_APP_HEAD_RVA 0x%xULL\n' % original['head_rva']+
-                  '#define LI2_PE_APP_SECOND_PAGE_RVA 0x%xULL\n' % original['second_page_rva']+'#endif\n').encode()
+    if not dynamic:
+        persistent = ('#ifndef LI2_PERSISTENT_EPOCH_CONFIG_H\n#define LI2_PERSISTENT_EPOCH_CONFIG_H\n'
+                      '#define LI2_PE_BINDING_VERSION 1\n'
+                      '#define LI2_PE_ARCHIVE_SHA256 '+literal(archive_fact['sha256'])+'\n'
+                      '#define LI2_PE_POLICY_SHA256 '+literal(policy)+'\n'
+                      '#define LI2_PE_APP_HEAD_RVA 0x%xULL\n' % original['head_rva']+
+                      '#define LI2_PE_APP_SECOND_PAGE_RVA 0x%xULL\n' % original['second_page_rva']+'#endif\n').encode()
+    if dynamic:
+        persistent = ('#ifndef LI2_PERSISTENT_EPOCH_CONFIG_H\n#define LI2_PERSISTENT_EPOCH_CONFIG_H\n'
+                      '#define LI2_PE_BINDING_VERSION 1\n#define LI2_PE_DYNAMIC_BINDING_VERSION 1\n'
+                      '#define LI2_PE_ARCHIVE_SHA256 '+literal(archive_fact['sha256'])+'\n'
+                      '#define LI2_PE_POLICY_SHA256 '+literal(policy)+'\n#endif\n').encode()
     expected = {'linked_epoch_config.h': linked, 'persistent_epoch_config.h': persistent}
     manifest = output/'persistent_epoch_binding.json'
     need(not manifest.exists() and not any((output/n).exists() for n in expected), 'fresh binding outputs')
     _, out, err = run('persistent-policy-binding', [builder.tools['python'], '-B',
-                     SELECTED/'persistent_epoch_binding.py', SELECTED, archive, image, output], env=builder.environment)
+                     SELECTED/('persistent_dynamic_binding.py' if dynamic else 'persistent_epoch_binding.py'), SELECTED, archive, image, output], env=builder.environment)
     need(out == err == b'', 'source-owned persistent binder has no diagnostics')
     header_facts = {}
     for name, data in expected.items():
         path = pin(binary(output/name))
         need(path.read_bytes() == data, 'whole independent archive/policy/image header')
         header_facts[name] = dict(path=str(path), **fact(path))
-    record = dict(version=1, profile='persistent-registered-two-page-v1', archive=archive_fact,
+    record = dict(version=1, profile=('persistent-dynamic-adjacent-two-page-v1' if dynamic else 'persistent-registered-two-page-v1'), archive=archive_fact,
                   policy_sha256=policy, original=original, sources=values,
                   headers={name: dict(bytes=len(data), sha256=H(data)) for name, data in expected.items()})
     manifest = pin(binary(manifest))
     need(manifest.read_bytes() == (json.dumps(record, sort_keys=True)+'\n').encode(), 'complete typed persistent binding manifest')
     return dict(**record, header_paths=header_facts, manifest=dict(path=str(manifest), **fact(manifest)))
+
+
+def dynamic_capture_config(builder, image, output, pin, binary, run):
+    """Actual fixture symbols select observations only; release admission is unchanged."""
+    image = pin(binary(image)); original = original_image(image); data = image.read_bytes()
+    def take(at, count):
+        need(type(at) is int and type(count) is int and 0 <= at <= len(data) and
+             0 <= count <= len(data)-at, 'bounded dynamic observation ELF range')
+        return data[at:at+count]
+    h = struct.unpack('<16sHHIQQQIHHHHHH', take(0, 64))
+    sections = [struct.unpack('<IIQQQQIIQQ', take(h[6]+i*64, 64)) for i in range(h[12])]
+    tables = [row for row in sections if row[1] == 2]
+    need(len(tables) == 1 and tables[0][9] == 24 and tables[0][5] % 24 == 0 and
+         tables[0][6] < len(sections), 'one whole actual dynamic capture symbol table')
+    table = tables[0]; strings = sections[table[6]]
+    need(strings[1] == 3, 'actual dynamic observation symbol strings')
+    names = take(strings[4], strings[5]); found = {}
+    expected = {'region_app_miss': (0x100, 3), 'region_app_head': (0x200, 25),
+                'region_app_replacement': (0x400, 11)}
+    for at in range(table[4], table[4]+table[5], 24):
+        name, info, other, section, value, size = struct.unpack('<IBBHQQ', take(at, 24))
+        need(name < len(names) and b'\0' in names[name:], 'complete observation symbol name')
+        raw = names[name:names.index(b'\0', name)]
+        for wanted in expected:
+            if raw == wanted.encode():
+                need(section != 0 and wanted not in found and info & 15 == 2,
+                     'unique defined function for each observation')
+                found[wanted] = (value, size)
+    base = original['source_pages'][0]
+    need(found == {name: (base+offset, size) for name, (offset, size) in expected.items()},
+         'exact actual M/A/B observation symbols and sizes')
+    values = {key: found[name][0] for key, name in
+              (('MISS', 'region_app_miss'), ('A', 'region_app_head'), ('B', 'region_app_replacement'))}
+    header = ('#ifndef LI2_PERSISTENT_DYNAMIC_CAPTURE_CONFIG_H\n'
+              '#define LI2_PERSISTENT_DYNAMIC_CAPTURE_CONFIG_H\n'
+              '#define LI2_PD_CAPTURE_VERSION 1\n'+
+              ''.join('#define LI2_PD_'+key+'_RVA 0x%xULL\n' % value for key, value in values.items())+
+              '#endif\n').encode()
+    destination = output/'persistent_dynamic_capture_config.h'
+    need(not destination.exists(), 'fresh dynamic capture configuration')
+    script = pin(SELECTED/'persistent_dynamic_capture_binding.py')
+    _, out, err = run('persistent-dynamic-capture-binding',
+                     [builder.tools['python'], '-B', script, image, output], env=builder.environment)
+    need(out == err == b'', 'dynamic observation binder has no diagnostics')
+    destination = pin(binary(destination))
+    need(destination.read_bytes() == header, 'whole independently derived observation-only configuration')
+    return dict(version=1, original=original, symbols=values, script=dict(path=str(script), **fact(script)),
+                header=dict(path=str(destination), **fact(destination)))
 
 
 def protected_extents(builder, bridge, symbols, pin, run, state):
@@ -140,8 +225,9 @@ def protected_extents(builder, bridge, symbols, pin, run, state):
                                      compact=compact, code=code, spill=4096, recovery=recovery)
 
 
-def build_bridge(builder, products, private, pin, binary, aliases, run, record, image, *, capture=False):
+def build_bridge(builder, products, private, pin, binary, aliases, run, record, image, *, capture=False, dynamic=False):
     need(type(capture) is bool, 'explicit persistent capture selector')
+    need(type(dynamic) is bool, 'explicit dynamic release/capture selector; fixed capture remains separate')
     need(builder.mov_guard is True and builder.linked_epoch is True and builder.scalar_span is True and
          builder.extra_decoder_sources == ('region.rs', 'mov_guard.rs') and
          builder.decoder_features == FEATURES and builder.record.get('decoder_features') == list(FEATURES) and
@@ -156,9 +242,10 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
          ('li2_decoder_region_describe', 'li2_decoder_span_describe', 'li2_decoder_link_none',
           'li2_decoder_mov_store', 'li2_decoder_tf_classify', 'li2_decoder_write_footprint')),
          'every actual descriptor/NONE provider is present exactly once')
-    output = private/('persistent-capture' if capture else 'persistent-release'); output.mkdir()
-    binding = binding_config(builder, archive, image, output, pin, binary, run)
-    script = pin(SELECTED/('build-persistent-epoch-capture.sh' if capture else 'build-persistent-epoch.sh')); rows = recipe(script, '"$cc_bin"')
+    output = private/(('persistent-dynamic-capture' if capture else 'persistent-dynamic-release') if dynamic else ('persistent-capture' if capture else 'persistent-release')); output.mkdir()
+    binding = binding_config(builder, archive, image, output, pin, binary, run, dynamic=dynamic)
+    dynamic_capture = dynamic_capture_config(builder, image, output, pin, binary, run) if dynamic and capture else None
+    script = pin(SELECTED/(('build-persistent-dynamic-capture.sh' if capture else 'build-persistent-dynamic.sh') if dynamic else ('build-persistent-epoch-capture.sh' if capture else 'build-persistent-epoch.sh'))); rows = recipe(script, '"$cc_bin"')
     need(len(rows) == 1, 'one source-owned persistent compiler recipe')
     argv = expand(rows[0], {'$cc_bin': builder.tools['cc'], '$selected_dir': SELECTED,
                   '$parent_dir': SELECTED.parent, '$archive': archive, '$output': output})
@@ -168,17 +255,20 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     macros = ('PERSISTENT_EPOCH', 'MOV_GUARD', 'LINKED_EPOCH', 'SCALAR_SPAN', 'SCALAR_SPAN_TRACE',
               'SPAN_FAST_BYTES', 'MAPS_CURRENT_TF', 'SCALAR_REGION', 'SCALAR_REGION_REUSE',
               'INITIAL_CODE_PROTECTION', 'UNROLLED_HASH', 'MAPS_MAINTAINED')+MACROS
-    if capture:macros = ('PERSISTENT_EPOCH_CAPTURE',)+macros
-    name = 'bridge-persistent-epoch-capture.so' if capture else 'bridge-persistent-epoch.so'
+    if capture:macros = (('PERSISTENT_DYNAMIC_CAPTURE' if dynamic else 'PERSISTENT_EPOCH_CAPTURE'),)+macros
+    if dynamic:macros = ('PERSISTENT_DYNAMIC',)+macros
+    name = ('bridge-persistent-dynamic-capture.so' if capture else 'bridge-persistent-dynamic.so') if dynamic else ('bridge-persistent-epoch-capture.so' if capture else 'bridge-persistent-epoch.so')
     need(argv[-2:] == ['-o', str(output/name)] and
          [x for x in argv if x.endswith(('.c', '.S'))] == units and
          [x for x in argv if x.startswith('-DLI2_')] == ['-DLI2_'+n+'=1' for n in macros] and
          all(x in argv for x in ('-O2', '-g', '-nostdlib', '-shared', '-fPIC', '-fvisibility=hidden',
              '-mgeneral-regs-only', '-fno-builtin', '-fno-tree-loop-distribute-patterns',
              '-fno-tree-vectorize', '-Wall', '-Wextra', '-Werror')), 'exact24-TU persistent-only no-FP release recipe')
-    state = record['release_build'] = dict(status='failed', profile='persistent-registered-two-page-v1',
+    state = record['release_build'] = dict(status='failed', profile=('persistent-dynamic-adjacent-two-page-v1' if dynamic else 'persistent-registered-two-page-v1'),
               recipe=fact(script), archive=fact(archive), argv=argv, persistent_binding=binding,
               capture=capture, qualification_credit=False)
+    if dynamic:state['dynamic'] = True
+    if dynamic_capture is not None:state['dynamic_capture'] = dynamic_capture
     headers('persistent-release-headers', argv, units, archive, builder, pin, aliases, run, state)
     for value in binding['sources']:
         if value['path'].endswith(('.c', '.h', '.inc')):
@@ -194,19 +284,35 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     need(all(str((SELECTED/n).resolve()) in state['headers'] for n in required), 'whole inherited map/custody/owner source closure')
     capture_names = {'persistent_epoch_observe.h', 'persistent_epoch_observe.inc',
                      'persistent_epoch_observe_memory.h', 'persistent_epoch_observe_memory.inc'}
+    if dynamic and capture:
+        capture_names = {'persistent_dynamic_observe.h', 'persistent_dynamic_observe.inc',
+                         'persistent_dynamic_observe_memory.h', 'persistent_dynamic_observe_memory.inc'}
+    if dynamic_capture is not None:
+        value = dynamic_capture['header']
+        need(digest(state['headers'].get(value['path'])) == digest({k: value[k] for k in ('bytes', 'sha256')}),
+             'actual observation-only configuration is a compiler input')
+    need(('persistent_dynamic_capture_config.h' in {Path(n).name for n in state['headers']}) == (dynamic and capture),
+         'dynamic observation configuration is absent from every other profile')
     actual_capture = {Path(n).name for n in state['headers'] if 'observe' in Path(n).name}
     need(actual_capture == (capture_names if capture else set()) and
          all(str((SELECTED/n).resolve()) in state['headers'] for n in (capture_names if capture else ())) and
          not any(Path(n).name.startswith(('linked_preedge_', 'linked_native_hint')) or
                  Path(n).name in ('selected_scalar_span.inc', 'selected_scalar_span_reuse.inc', 'unrolled_hash_nested_fp.h')
                  for n in state['headers']), 'only the exact selected persistent capture closure; no old observer or wire alias')
+    if dynamic:
+        need(all(str((SELECTED/n).resolve()) in state['headers'] for n in
+             ('persistent_dynamic_controller.inc', 'persistent_dynamic_plan.h', 'persistent_dynamic_plan.inc')) and
+             str((SELECTED/'persistent_controller.inc').resolve()) not in state['headers'],
+             'distinct dynamic controller/classifier and no fixed-entry owner body')
     bridge = Path(argv[-1]); run('persistent-release-link', argv, profile='release_build', env=builder.environment)
     state['bridge'] = fact(binary(bridge)); state['elf'] = bridge_check(bridge)
     _, out, err = run('persistent-release-undefined', [builder.tools['nm'], '-u', bridge], profile='inspect', env=builder.environment)
     need(out == err == b'', 'persistent bridge has no unresolved imports')
     _, symbols, err = run('persistent-release-symbols', [builder.tools['nm'], '-S', '--defined-only', bridge], profile='inspect', env=builder.environment)
     need(not err, 'complete actual persistent symbol census')
-    for name in PROVIDERS:
+    providers = PROVIDERS + (('li2_pe_plan_pages_dynamic', 'li2_pe_dynamic_miss_valid', 'li2_pe_source_cancel',
+                              'li2_pe_rseq_cancel', 'li2_pe_source_key_equal') if dynamic else ())
+    for name in providers:
         found = [line.split() for line in symbols.splitlines() if line.split()[-1:] == [name.encode()]]
         need(len(found) == 1 and len(found[0]) == 4 and found[0][2] in (b't', b'T') and int(found[0][1], 16) > 0,
              'actual nonempty persistent proof/owner provider '+name)
@@ -223,5 +329,9 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
          all(fact(v['path']) == {k: v[k] for k in ('bytes', 'sha256')} for v in binding['header_paths'].values()) and
          fact(binding['manifest']['path']) == {k: binding['manifest'][k] for k in ('bytes', 'sha256')},
          'archive, original image, full policy and configuration unchanged through build and byte oracle')
+    if dynamic_capture is not None:
+        need(fact(image) == dynamic_capture['original']['image'] and
+             all(fact(dynamic_capture[name]['path']) == {key: dynamic_capture[name][key] for key in ('bytes', 'sha256')}
+                 for name in ('script', 'header')), 'dynamic observation image, binder and header unchanged through build')
     state['status'] = 'passed'
     return bridge

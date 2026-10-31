@@ -5,6 +5,9 @@ static struct {
     struct li2_pe_source_progress p;
     struct li2_pe_token token;
     struct owned_page original[2];
+#ifdef LI2_PERSISTENT_DYNAMIC
+    struct li2_pe_source_progress previous;
+#endif
 } pe_source;
 static int pes_bad(unsigned code,long detail) {
     if(!pe_source.p.first_error) {pe_source.p.first_error=code;pe_source.p.first_detail=detail;}
@@ -18,7 +21,11 @@ int li2_pe_source_initialize(void) {
 }
 int li2_pe_source_interlock(void) {
     unsigned p=pe_source.p.phase;
+#ifdef LI2_PERSISTENT_DYNAMIC
+    return p!=LI2_PES_IDLE && p!=LI2_PES_RELEASED && p!=LI2_PES_CANCELLED;
+#else
     return p!=LI2_PES_IDLE && p!=LI2_PES_RELEASED;
+#endif
 }
 const struct li2_pe_source_progress *li2_pe_source_progress(void) {return &pe_source.p;}
 static int pes_token(const struct li2_pe_token *t) {
@@ -26,10 +33,47 @@ static int pes_token(const struct li2_pe_token *t) {
         li2_pe_owner_phase(t) && pe_source.p.initialized && pe_source.p.serial==t->serial;
 }
 int li2_pe_source_begin(const struct li2_pe_token *t,uintptr_t generated) {
+#ifdef LI2_PERSISTENT_DYNAMIC
+    if(!t || !t->serial || li2_pe_owner_phase(t)!=LI2_PE_SEEDING || !pe_source.p.initialized ||
+       li2_pe_source_interlock() || pe_source.p.first_error || pe_source.p.aborted ||
+       t->serial<=pe_source.p.serial || !generated || (generated&(PAGE-1)) ||
+       generated>(UINT64_C(1)<<47)-LI2_PE_IMAGE_BYTES ||
+       li2_lifecycle_fetch_interlock() || li2_lifecycle_run_reuse_quiet(0))return LI2_FETCH_STATE;
+    const struct li2_pe_rseq_progress *r=li2_pe_rseq_progress();
+    if(!r || r->active || r->checking || r->first_error || r->unsafe_terminal)return LI2_FETCH_STATE;
+    if(pe_source.p.serial) {
+        const struct li2_pe_source_progress *p=&pe_source.p;
+        if(pe_source.token.owner!=t->owner || pe_source.token.serial!=p->serial ||
+           r->token.owner!=t->owner || r->token.serial!=p->serial || r->seed_complete!=1 ||
+           !p->source.complete || p->source.serial!=p->serial ||
+           p->release_started!=1 || p->release_complete!=1 ||
+           !((p->phase==LI2_PES_RELEASED && !p->cancel_started && !p->cancel_complete &&
+              r->entry_complete==1 && r->close_complete==1 && !r->cancel_started && !r->cancel_complete &&
+              p->closed.complete==1 && !p->closed.result && p->closed.pages_checked==8 &&
+              p->closed.actual_prot==PROT_READ) ||
+             (p->phase==LI2_PES_CANCELLED && p->cancel_started==1 && p->cancel_complete==1 &&
+              !r->close_complete && r->cancel_started==1 && r->cancel_complete==1 &&
+              p->cancel_code.complete==1 && !p->cancel_code.result &&
+              p->cancel_code.pages_checked==8 && p->cancel_code.actual_prot==p->cancel_expected_prot &&
+              (p->cancel_expected_prot==PROT_READ || p->cancel_expected_prot==(PROT_READ|PROT_WRITE)) &&
+              p->cancelled_fetch.complete==1 && !p->cancelled_fetch.progress.held)))return LI2_FETCH_STATE;
+        pe_source.previous=pe_source.p;
+        /* Previous terminal evidence stays in bounded protected storage. The
+           new controller's SEEDING token/busy owner is installed before this. */
+        volatile unsigned char *b=(void *)&pe_source.p;
+        for(size_t i=0;i<sizeof pe_source.p;i++)b[i]=0;
+        b=(void *)pe_source.original;for(size_t i=0;i<sizeof pe_source.original;i++)b[i]=0;
+        pe_source.p.initialized=1;
+    } else if(pe_source.p.phase!=LI2_PES_IDLE || pe_source.token.owner || pe_source.token.serial ||
+              r->token.owner || r->token.serial || r->seed_complete || r->entry_complete ||
+              r->close_complete || r->cancel_started || r->cancel_complete)
+        return LI2_FETCH_STATE;
+#else
     if(!t || li2_pe_owner_phase(t)!=LI2_PE_SEEDING || !pe_source.p.initialized ||
        li2_pe_source_interlock() || pe_source.p.first_error || pe_source.p.serial ||
        !generated || (generated&(PAGE-1)) || generated>(UINT64_C(1)<<47)-LI2_PE_IMAGE_BYTES ||
        li2_lifecycle_fetch_interlock() || li2_lifecycle_run_reuse_quiet(0))return LI2_FETCH_STATE;
+#endif
     pe_source.token=*t;pe_source.p.serial=t->serial;pe_source.p.generated=generated;
     pe_source.p.phase=LI2_PES_SEEDING;return 0;
 }
@@ -160,3 +204,55 @@ int li2_pe_source_abort(const struct li2_pe_token *t) {
     if(!e) {pe_source.p.release_started=1;e=li2_lifecycle_fetch_release(&pe_source.p.source.anchor);if(!e)pe_source.p.release_complete=1;}
     pe_source.p.phase=LI2_PES_FAILED;return e?pes_bad((unsigned)e,61):0;
 }
+#ifdef LI2_PERSISTENT_DYNAMIC
+int li2_pe_source_key_equal(const struct li2_pe_source_key *a,const struct li2_pe_source_key *b) {
+    if(!a || !b || a->entry!=b->entry)return 0;
+    for(unsigned i=0;i<LI2_PE_SOURCES;i++)
+        if(!span_source_page_equal(&a->page[i].identity,&b->page[i].identity) ||
+           !span_source_backing_equal(&a->page[i].backing,&b->page[i].backing) ||
+           !equal(a->page[i].bytes,b->page[i].bytes,LI2_REGION_PAGE))return 0;
+    return 1;
+}
+int li2_pe_source_pair_advisory(uintptr_t pc) {
+    uintptr_t page=pc&~(PAGE-1);
+    if(!active || tx.guard || used>RECORDS || object_count>OBJECTS || pc>=(UINT64_C(1)<<47) ||
+       pc-page>PAGE-15 || page>(UINT64_C(1)<<47)-2*PAGE)return 0;
+    /* Direct read-only scan: current() also writes a location memo. The old
+       entry page can still be RX under its real predecessor at this point. */
+    for(unsigned j=0;j<2;j++) {
+        const struct owned_page *p=0;uintptr_t address=page+(uintptr_t)j*PAGE;
+        for(size_t i=used;i;i--)if(records[i-1].live && records[i-1].address==address) {
+            p=&records[i-1];break;
+        }
+        if(!p || !p->allocation || !p->generation || p->admitted ||
+           p->backing!=SEALED || p->object>=object_count ||
+           p->logical!=(PROT_READ|PROT_EXEC) || p->actual!=PROT_READ)return 0;
+    }
+    return 1;
+}
+int li2_pe_source_cancel(const struct li2_pe_token *t) {
+    struct li2_pe_source_progress *p=&pe_source.p;
+    if(!pes_token(t) || li2_pe_owner_phase(t)!=LI2_PE_CANCELLING ||
+       p->phase!=LI2_PES_HELD || p->source.complete!=1 || p->first_error || p->aborted ||
+       p->cancel_started || p->cancel_complete || p->release_started || p->release_complete ||
+       p->opened.attempted || p->closed.attempted || fetch_ref(&p->source.anchor))return LI2_FETCH_STATE;
+    int prot=li2_pe_owner_cancel_prot(t);
+    if(prot!=PROT_READ && prot!=(PROT_READ|PROT_WRITE))return LI2_FETCH_STATE;
+    p->cancel_expected_prot=prot;p->cancel_started=1;
+    int e=li2_lifecycle_private_code_query(p->generated,LI2_PE_IMAGE_BYTES,prot,&p->cancel_code);
+    if(e || !p->cancel_code.complete || p->cancel_code.pages_checked!=8 ||
+       p->cancel_code.actual_prot!=prot)return pes_bad(LI2_FETCH_PAGE,70);
+    if((e=pes_live(t)))return e;
+    p->release_started=1;e=li2_lifecycle_fetch_release(&p->source.anchor);
+    if(e)return pes_bad((unsigned)e,71);
+    p->release_complete=1;e=li2_lifecycle_span_fetch_snapshot(&p->cancelled_fetch);
+    const struct li2_span_fetch_observation *f=&p->cancelled_fetch;
+    if(e || f->complete!=1 || f->progress.held || !f->progress.complete ||
+       f->progress.first_error || f->length!=15 || f->page_count!=1 ||
+       f->pc!=p->source.key.entry || f->ref.owner!=p->source.anchor.owner ||
+       f->ref.sequence!=p->source.anchor.sequence || f->progress.sequence!=f->ref.sequence ||
+       !f->progress.validation_calls || !f->progress.last_backing_observed)
+        return pes_bad(LI2_FETCH_STALE,e?e:72);
+    p->cancel_complete=1;p->phase=LI2_PES_CANCELLED;return 0;
+}
+#endif
