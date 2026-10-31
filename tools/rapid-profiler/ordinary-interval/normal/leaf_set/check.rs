@@ -3,6 +3,22 @@ use super::*;
 use population::{Metadata, Population, Seen};
 use rapid_profiler::frontend_native::NormalLeafSetHistoryStream;
 use std::fmt::Write as _;
+// Shared by actual retirement and final-ledger validation; neither route may
+// derive the accuracy K from an observed capacity or report population.
+pub(super) fn report_shape<const N: usize>(
+    generation: u64,
+    records: &[RecordObservation],
+    capacity: usize,
+    functions: &[FunctionId; N],
+    accuracy: Option<Policy>,
+) {
+    match accuracy {
+        None => population::report_shape_for(generation, records, capacity, functions),
+        Some(policy) => {
+            population::report_shape_accuracy_for(generation, records, capacity, functions, policy);
+        }
+    }
+}
 pub(super) struct Ledger<const N: usize> {
     pub population: Population<N>,
     stream: NormalLeafSetHistoryStream,
@@ -242,15 +258,20 @@ impl<const N: usize> Ledger<N> {
         assert_eq!(totals.entered, totals.ret_observed);
         assert_eq!(totals.confirmed, totals.entered);
         assert_eq!(totals.confirmed, totals.completed + totals.unsampled);
+        let accuracy = self.stream.accuracy_policy();
+        if let Some(policy) = accuracy {
+            assert_eq!(policy.retained(), self.population.k);
+        }
         let mut reported = BTreeSet::new();
         let mut generations = BTreeSet::new();
         for (generation, records) in reports {
             assert!(generations.insert(*generation));
-            population::report_shape_for(
+            report_shape(
                 *generation,
                 records,
                 self.population.k * N,
                 &self.leaves.map(|l| l.function),
+                accuracy,
             );
             for observed in records {
                 let a = observed.record.admission;
@@ -740,6 +761,71 @@ mod tests {
         let observations: Vec<_> = p.rows[..N * k].iter().map(|&s| observation(s, g)).collect();
         population::report_shape_for(g.get(), &observations, N * k, &f);
         assert_eq!(observations.len(), N * k);
+        accuracy_report_checks(k, g, &f, &observations);
+    }
+    fn accuracy_report_checks<const N: usize>(
+        k: usize,
+        generation: GenerationId,
+        functions: &[FunctionId; N],
+        observations: &[RecordObservation],
+    ) {
+        let policy = Policy::accuracy(k, 1, 520, 4096).unwrap();
+        let capacity = N * k;
+        assert_eq!(observations.len(), capacity);
+        // Empty setup epochs still require the exact configured capacity.
+        for count in [0, capacity / 2, capacity] {
+            let rows = &observations[..count];
+            report_shape(generation.get(), rows, capacity, functions, Some(policy));
+            let other_capacity = N * if k == 1 { 10 } else { 1 };
+            for wrong in [0, capacity - 1, capacity + 1, other_capacity] {
+                refuse(|| report_shape(generation.get(), rows, wrong, functions, Some(policy)));
+            }
+        }
+        let other = Policy::accuracy(if k == 1 { 10 } else { 1 }, 1, 520, 4096).unwrap();
+        refuse(|| report_shape(generation.get(), &[], capacity, functions, Some(other)));
+        refuse(|| report_shape(0, &[], capacity, functions, Some(policy)));
+        let legacy = Policy::ten_ms(10, 520, 4096).unwrap();
+        refuse(|| report_shape(generation.get(), &[], N * 10, functions, Some(legacy)));
+        if matches!(k, 1 | 100) {
+            refuse(|| report_shape(generation.get(), &[], capacity, functions, None));
+            refuse(|| population::report_shape(generation.get(), &[], 2 * k));
+        }
+        if N >= 2 {
+            // Total <= N*K cannot excuse one function receiving K+1 samples.
+            let mut excess = observations[..k + 1].to_vec();
+            for (i, row) in excess.iter_mut().enumerate() {
+                row.record.admission.function = functions[0];
+                row.record.terminal = Some(Terminal::Completed {
+                    value: i as u64,
+                    disposition: Disposition::Retained { rank: i },
+                });
+                row.payload.as_mut().unwrap().admission = row.record.admission;
+            }
+            refuse(|| {
+                report_shape(generation.get(), &excess, capacity, functions, Some(policy));
+            });
+        }
+    }
+    fn accuracy_budget<const N: usize>(k: usize) {
+        let (mut p, functions, generation) = fixture::<N>(k);
+        for _ in 0..=k {
+            let (metadata, rows, bindings) = next(&mut p, functions, generation);
+            p.join_for(metadata, &rows, &journal(&rows), &bindings, functions);
+        }
+        assert_eq!(p.totals.completed, (N * k) as u64);
+        assert_eq!(p.totals.unsampled, N as u64);
+        assert!(p.rows[N * k..].iter().all(|s| {
+            s.rank.is_none()
+                && s.row.record.raw.owner
+                    == RawIntervalOwner::FunctionClosed {
+                        generation: generation.get(),
+                    }
+        }));
+        let observations: Vec<_> = p.rows[..N * k]
+            .iter()
+            .map(|&s| observation(s, generation))
+            .collect();
+        accuracy_report_checks(k, generation, &functions, &observations);
     }
     #[test]
     fn mixed_history_and_full_budget_keep_one_based_call_and_zero_based_sample() {
@@ -748,6 +834,12 @@ mod tests {
             budget::<2>(k);
             budget::<3>(k);
             budget::<4>(k);
+        }
+        for k in [1, 100] {
+            accuracy_budget::<1>(k);
+            accuracy_budget::<2>(k);
+            accuracy_budget::<3>(k);
+            accuracy_budget::<4>(k);
         }
         let (mut p, f, g) = fixture::<3>(10);
         let (m, mut rows, mut b) = next(&mut p, f, g);
@@ -877,6 +969,18 @@ mod tests {
             }
             refuse(|| {
                 population::report_shape_for(g.get(), &changed, 40, &f);
+                for (o, s) in changed.iter().zip(&p.rows) {
+                    sample_line(o, *s, 0);
+                }
+            });
+            refuse(|| {
+                report_shape(
+                    g.get(),
+                    &changed,
+                    40,
+                    &f,
+                    Some(Policy::accuracy(10, 1, 520, 4096).unwrap()),
+                );
                 for (o, s) in changed.iter().zip(&p.rows) {
                     sample_line(o, *s, 0);
                 }
