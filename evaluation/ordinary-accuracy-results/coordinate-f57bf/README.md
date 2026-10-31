@@ -1,0 +1,22 @@
+# Worker scratch reuse: closed f57 campaign
+
+The campaign **FAILED**. Short retained **1,359 of 2,048** CALL/RESULT rows and exited 1 because it did not consume every frozen input. Long completed 2,048 rows with a structural pass. Seven actions and both native cells ran once; no retry. Execution revision: f57bf246f397ade73b12db0c6556081c916d9b60.
+
+| Cell (trial 100) | Coordinate | Observed / planned | Sampled / closed / removed | Outcome |
+|---|---|---:|---:|---|
+| short | holdout, K1, P1ms, locked | 1359 / 2048 | 519 / 834 / 6 | FAILED |
+| long | comparison, K1000, P100ms, random | 2048 / 2048 | 2044 / 0 / 4 | STRUCTURAL PASS ONLY |
+
+Short has 1,353 before-samples before 520ms and six after it during accepted queue drainage. Its last invocation enclosure ended at 523,878,444ns within the unchanged 2.52s fence. The retained prefix is not an exhaustive physical-return census; DONE and PMUCLOSE are absent. Normal OS reap and diagnostic retirement do not supply those terminal rows. All 520 observed ARMs met 2ms (maximum completion lateness 44,216ns); long had 13 ARMs (maximum 24,106ns), 4,096 successful 32-byte PMU reads and normal close. [results.csv](results.csv) retains endpoints/counts; requested-phase and hardware status remain UNRESOLVED.
+
+Three custody buckets total 508,351,903ns of the 525,257,073ns completed worker partition: **96.7815435776%**. [phases.csv](phases.csv) preserves all eleven buckets/extrema. Counts are completed spans, not operations. Worker/controller wall intervals overlap and include scheduling/observer overhead; no CPU cost, substep bottleneck or causal speedup follows. Prior [7e205](../coordinate-7e205/README.md) retained 1,307 short rows; both fail the same 2,048-input requirement.
+
+The source reuses exclusive worker buffer capacities and clears logical contents at entry and Drop. All three custody passes, six fresh maps reads, full file reads/stamps, byte checks and lifetime guards remain. One existing lifecycle test was extended; no new ID. The exact merged full gate passed **4,229/0/37** workspace and **1,039/0** serial tests. Raw 4,232 excludes the same three controlled child summaries; complete census/ignores are unchanged. [full-gate.json](full-gate.json) carries its commands and separate closure; e91's earlier gate remains premerge history.
+
+Products, test build, controls and both preparations passed once. Controls: 141 Rust/104 Python. Each preparation ran five stages including the same 16 coordinate controls, recomputing 2,048 inputs, four materials and 24 policies. Setup durations are not throughput. The complete **43,200-cell** catalog has two attempted outcomes: one failed, one structural pass, 43,198 unattempted; no matrix qualification.
+
+Reproduce using [receipt.json](receipt.json)'s seven ordered argv_parts with argv_fragments, parent argv and environments, under one externally verified three-CPU HARD lease. Concatenate arrays then substitute COORD_* without shell retokenization. Authenticate each closed owner before its child and dependency SHA. Recorded roles: controller 128/worker 203/producer 220; exact tools/products/source and per-action load are retained. Use the existing [public owner recipe](../prepared-27e/README.md) with this receipt's coordinate statuses, geometry kind/scope and bounds. Both fresh geometries require all nine independently reviewed premises and current boot evidence within one nonrenewable 1,200s window; no script grants unsafe approval. Setup failure stops dependencies. Only authenticated safe short failure permits one independent long; unknown custody, rescue, changed source or lost lease stops work.
+
+The 20CPU/30s functional cap, 15s producer, 2ms ARM, 520ms/2.52s short end/fence and 52s/54s long end/fence remain. Per-file limits cover every regular file. Root recorded parent exit0, absent original allocator/shell processes and scope, and reservation tag absent from the shared ledger; the ledger remains. This closes custody, not the failed campaign.
+
+All prior failed/unrun outcomes remain: [97ab preparation](../coordinate-97ab/README.md), [6d8 short abort](../coordinate-6d8/README.md), [fd0766 short1188](../coordinate-fd0766/README.md), [b077 short1197](../coordinate-b077/README.md), 7e205 and earlier strict-clock/prepared failures. V7 was superseded before execution. No PMU, full native-state, phase, performance, executable-retirement or full-matrix qualification is claimed; A3/A5 remain incomplete. Raw evidence stays privately retained under the receipt hashes.

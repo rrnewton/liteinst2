@@ -1,0 +1,417 @@
+{
+  "schema": "liteinst2-merged-worker-scratch-full-gate-v1",
+  "status": "CLOSED_CORRECTNESS_PASS",
+  "revision": "f57bf246f397ade73b12db0c6556081c916d9b60",
+  "tree": "eebd07bf8e9d21ac416e1c97279f543476f17b0e",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "attempts": 1,
+  "qualification": "NONE",
+  "source": {
+    "overlay": {},
+    "unchanged": true,
+    "reproducer_pins": {
+      "evaluation/admission/processes.py": {
+        "bytes": 15760,
+        "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+      },
+      "evaluation/short-neighbor-parallel/validate.py": {
+        "bytes": 3717,
+        "sha256": "8306bef5d68bd786b15cf43bcf8fffe457ccb024812b0b323957779fec74e7bd"
+      }
+    },
+    "change": "Merge the already reviewed scratch source with the recorded main revision. The complete merge delta has 288 paths (238 additions and 50 modifications); all three reviewed scratch files and the root Cargo workspace, member source/tests and validator remain unchanged. The added page-entry Cargo manifests define separate workspaces; their tests are not claimed executed by this gate. Exclusive scratch still reuses allocation capacity only, retaining every custody check and observation. No performance benefit is inferred.",
+    "formatted_source_review": {
+      "bytes": 2828,
+      "sha256": "3d223270567989920f13e6de046d28966b787f75b1f39cd6f61454d0bd9cbefe"
+    },
+    "exact_commit_attestation": {
+      "bytes": 1993,
+      "sha256": "196c1bba5c0761e45caf2ceab55c260458a9cd502aafccf89a5bc2aafdbeb05b"
+    },
+    "parents": [
+      "e91ac530603782ed730607e642bb3a4ffe45570a",
+      "1627c3d2691bcc2afbcb561c9c6b776083a4421d"
+    ],
+    "scratch_source_binding": {
+      "bytes": 1049,
+      "sha256": "c5153d8f0bc14f4f3ed93d352fd92c83a31fae2b433546dc262df974ab13269d"
+    },
+    "merge_source_binding": {
+      "bytes": 137053,
+      "sha256": "c0b62f0035d5217398d58238dc1ce9225c4c8c9c0cc3f8839458cde1d34c8a8d"
+    },
+    "verified_scope": {
+      "merge_delta_paths": 288,
+      "tracked_git_blob_and_mode_entries": 7205,
+      "scratch_paths_unchanged": 3,
+      "historical_scratch_review_scope": "Formatted-source review and exact-commit attestation below cover e91; the fresh merged closed review authenticates those same bytes at f57."
+    }
+  },
+  "reproduce": {
+    "argv": [
+      "/usr/bin/python3.9",
+      "-B",
+      "evaluation/short-neighbor-parallel/validate.py",
+      "--revision",
+      "f57bf246f397ade73b12db0c6556081c916d9b60",
+      "--output",
+      "${RUN}"
+    ],
+    "env": {
+      "HOME": "${USER_HOME}",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_TARGET_DIR": "${ROOT}/target",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TERM_COLOR": "never",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+      "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+      "LANG": "C.UTF-8",
+      "LC_ALL": "C.UTF-8",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "LITEINST_EVALUATION": "1",
+      "TMPDIR": "${RUN_TMP}",
+      "TEMP": "${RUN_TMP}",
+      "TMP": "${RUN_TMP}"
+    },
+    "validator_env_addition": {
+      "RUST_TEST_THREADS": "316"
+    },
+    "instructions": "At the exact clean revision, reserve 16 CPUs externally. Substitute ROOT, fresh RUN under ignored, RUN_TMP, USER_HOME, CARGO_HOME and TOOLCHAIN. Create RUN_TMP and outer log parent under ROOT/target/evaluation. Call evaluation/admission/processes.py:run_command(argv, env, log, 1200, 8388608). Authenticate outer closure before child records; retain every outcome. The tracked validator runs all five commands."
+  },
+  "outer": {
+    "wall_seconds": 1200,
+    "log_cap_bytes": 8388608,
+    "elapsed_seconds": 963.1648273901083,
+    "start_utc": "2026-10-31T15:09:42.393121+00:00",
+    "cpus": [
+      6,
+      17,
+      23,
+      64,
+      65,
+      111,
+      121,
+      139,
+      146,
+      154,
+      170,
+      179,
+      198,
+      215,
+      236,
+      276
+    ],
+    "load_before": [
+      "55.04",
+      "63.58",
+      "69.76"
+    ],
+    "load_after": [
+      "54.11",
+      "60.18",
+      "64.06"
+    ],
+    "log": {
+      "bytes": 2630,
+      "sha256": "12114cce71587d1e955c7b8cc687374322527b733fe9ef2ff9c4e364bd6a0f60"
+    }
+  },
+  "common_closure": {
+    "applies_to": "outer and all five children",
+    "exit_code": 0,
+    "termination": null,
+    "cleanup_complete": true,
+    "rescued_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+  },
+  "per_command_log_cap_bytes": 8388608,
+  "commands": [
+    {
+      "name": "fmt",
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wall_seconds": 180,
+      "elapsed_seconds": 10.101154366042465,
+      "load_before": [
+        "55.04",
+        "63.58",
+        "69.76"
+      ],
+      "load_after": [
+        "58.59",
+        "64.06",
+        "69.85"
+      ],
+      "log": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "start_utc": "2026-10-31T15:09:42.443594+00:00"
+    },
+    {
+      "name": "clippy",
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "wall_seconds": 180,
+      "elapsed_seconds": 0.1625230391509831,
+      "load_before": [
+        "58.59",
+        "64.06",
+        "69.85"
+      ],
+      "load_after": [
+        "58.59",
+        "64.06",
+        "69.85"
+      ],
+      "log": {
+        "bytes": 60,
+        "sha256": "63bd8a3ac13f8b1c160887cdaf9b30715b07e638d60df463cb8815f661518191"
+      },
+      "start_utc": "2026-10-31T15:09:52.545705+00:00"
+    },
+    {
+      "name": "check",
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "wall_seconds": 180,
+      "elapsed_seconds": 0.12516786204650998,
+      "load_before": [
+        "58.59",
+        "64.06",
+        "69.85"
+      ],
+      "load_after": [
+        "58.59",
+        "64.06",
+        "69.85"
+      ],
+      "log": {
+        "bytes": 60,
+        "sha256": "9ddcb7a97f3589835ba8f354c41d25b0a805bd5f85ddbccaff009e6f6dc7236c"
+      },
+      "start_utc": "2026-10-31T15:09:52.709043+00:00"
+    },
+    {
+      "name": "workspace",
+      "argv": [
+        "cargo",
+        "test",
+        "-j",
+        "16",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "wall_seconds": 900,
+      "elapsed_seconds": 823.2379528069869,
+      "load_before": [
+        "58.59",
+        "64.06",
+        "69.85"
+      ],
+      "load_after": [
+        "59.28",
+        "63.81",
+        "65.63"
+      ],
+      "log": {
+        "bytes": 504668,
+        "sha256": "a6c094bbe1371ad63dbb5d83636046b0219fa229f0585996e9637805b1c551b7"
+      },
+      "start_utc": "2026-10-31T15:09:52.834777+00:00"
+    },
+    {
+      "name": "serial-launch",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "wall_seconds": 180,
+      "elapsed_seconds": 129.46193404495716,
+      "load_before": [
+        "59.28",
+        "63.81",
+        "65.63"
+      ],
+      "load_after": [
+        "54.11",
+        "60.18",
+        "64.06"
+      ],
+      "log": {
+        "bytes": 1403217,
+        "sha256": "1ec547069fe01531fa207254ffadda06fcf3657f0b057ca3b3c79397f4c2f275"
+      },
+      "start_utc": "2026-10-31T15:23:36.075007+00:00"
+    }
+  ],
+  "census": {
+    "workspace": {
+      "passed": 4229,
+      "failed": 0,
+      "ignored": 37,
+      "summaries": 113
+    },
+    "workspace_raw": {
+      "passed": 4232,
+      "failed": 0,
+      "ignored": 37,
+      "filtered_out": 105,
+      "summaries": 116
+    },
+    "nested_exclusions": "Only the same three controlled_oracle runtime_control_oracle_modes child summaries; no parent test removed.",
+    "serial": {
+      "passed": 1039,
+      "failed": 0,
+      "ignored": 0,
+      "summaries": 27
+    },
+    "required_names": 202,
+    "required_passing_contexts": 208,
+    "sdk45": 45,
+    "ordinary": {
+      "passed": 517,
+      "failed": 0,
+      "ignored": 1
+    },
+    "ignored_distinct_names": 36,
+    "ignored_multiset_sha256": "39be6ef5f12ce77303ac54ac2eafd2e000ba70a4a9ccb4f7bd20bd66a71f0bcc",
+    "required_inventory_sha256": "d3906a906423abe822f0d6877e15fef8ef50142ee402182bcb8add51e1721947",
+    "extra_csv_guard": "normal::csv::tests::csv_mapping_classes_keep_private_source_and_shared_images_distinct",
+    "rapid_regression": "rapid::tests::live::install_rejects_each_mutated_window_byte",
+    "failure_sensitive_groups": {
+      "observing_control": 8,
+      "prefixed_pun": 5,
+      "rapid": 15,
+      "short_neighbor": 21
+    },
+    "extended_capacity_tests": {
+      "names": [
+        "normal::leaf_set::check::tests::mixed_history_and_full_budget_keep_one_based_call_and_zero_based_sample",
+        "normal::leaf_set::check::tests::report_payload_and_wire_refuse_shift_missing_duplicate_and_unavailable_corruption"
+      ],
+      "passing_occurrences_each": 1,
+      "additional_to_historical_202_name_subset": true
+    },
+    "csv_suite": {
+      "unchanged_test_ids": 7,
+      "passing_occurrences_each": 1,
+      "expanded_mapping_test_representative_equivalence_pairs": 36162,
+      "all_old_assertions_retained": true,
+      "test_bodies_unchanged_vs_e91": true
+    },
+    "old_ignore_reasons_multiplicities_custom_harnesses_unchanged": true,
+    "counted_terminal_multiset_sha256": "805d7ca32e34db7842269700cffb614cb915de6dc44dd6c82adac90be7852b4e",
+    "phase_diagnostic_controls": {
+      "mandatory_names": 11,
+      "names_sha256": "aedbdd70e693fbcfa1762ca21520999228309d88736325afd879ea65fe6896af",
+      "new_in_this_revision": 0,
+      "passing_occurrences_each": 1
+    },
+    "baseline_revision": "e91ac530603782ed730607e642bb3a4ffe45570a",
+    "new_or_removed_test_identities": 0,
+    "extended_existing_lifecycle_test": {
+      "name": "normal::module::session::worker::prepared_owner_tests::prepared_guard_is_owned_before_call_and_unused_drop_retains_controller_record",
+      "passing_occurrences": 1,
+      "additional_to_historical_202_name_subset": true
+    },
+    "exact_e91_complete_terminal_context_summary_multisets": true,
+    "raw_terminal_multiset_sha256": "d720e85febfa45abd39ec84f73fd33ca41438559ab784fbbfc4aeb9ef4b38a94",
+    "serial_terminal_multiset_sha256": "ea64d93fd50bf29ccf83f017a26217ce119a067e1adc31de79cd0f820624e9cc",
+    "nested_child_summary_lines": [
+      2683,
+      2690,
+      2698
+    ]
+  },
+  "evidence": {
+    "outer": {
+      "bytes": 2525,
+      "sha256": "a83fdbbafc873b39a2ed7fa5423109ee90128533d43c3cc731ed5156bcc20430"
+    },
+    "child": {
+      "bytes": 5372,
+      "sha256": "e6edeacd3da3d40816f048ea144ace0614d5a7ab9c628bd1989fe58a55f752a4"
+    },
+    "independent_review": {
+      "bytes": 3905,
+      "sha256": "965ba0123f0af81795d2618c53c6a52ce33357cc54e056026143f271c13592cf"
+    },
+    "closed_census": {
+      "bytes": 33912,
+      "sha256": "5303bd08edac7130ca2230c90b587748bf81b29ecfdde49d085ff67c35058268"
+    },
+    "root_closure_and_parent_release_report": {
+      "bytes": 3067,
+      "sha256": "945eb561b6adf7e7c00ba9983b2b042a800f7896a83cc2e0c0211b38028cd734"
+    },
+    "baseline_closed_review": {
+      "bytes": 3845,
+      "sha256": "60ef3ad111e4344d71c3ab18724665b1f475627790fa0c2d0cea12b0bcef6925"
+    },
+    "auditor_source_review": {
+      "bytes": 1472,
+      "sha256": "855c9ee69b1f82afeb297bddf23c611849d387a7350ab686810c156daa06b4c6"
+    },
+    "parser_correction_proof": {
+      "bytes": 5545,
+      "sha256": "2b6a6734cb4d2386584a4a8c48717bdad011fcd0df67e27bfb3b2c948c788247"
+    },
+    "parser_correction_review": {
+      "bytes": 4009,
+      "sha256": "b2b6a9c702300cba3a6202b3b8f20f47f06d2c5e4055a24bf26ba4ff4d13faae"
+    }
+  },
+  "limits": [
+    "Correctness timing, not performance; workspace and serial coverage overlap. Complete test identities, contexts, status/reason multiplicities and custom records equal e91, including all 37 ignored occurrences. No test IDs were added or removed; cached build timings are not a speedup comparison.",
+    "Configured tool paths/environment only; this generic validator did not record contemporaneous compiler binary hashes or versions. Later tool inventories do not supply that missing contemporaneous custody.",
+    "Parent release is the authenticated root report, not a new live-state observation by this projection. It records absent original allocator/shell processes and scope, and reservation tag absent from the shared ledger; the ledger itself is not claimed absent.",
+    "Failed 97ab preparation, 6d8 short capacity SIGABRT, fd0766 short 1188/2048, b077 short 1197/2048 and 7e205 short 1307/2048 incomplete populations remain failures. Prior complete long runs remain structural-only. The full 43,200-cell denominator is unchanged.",
+    "No successor coordinate native attempt had run at this merged full-gate closure. Any later campaign is separate. No phase, PMU, performance, matrix accuracy or general unwind qualification; A3/A5 remain incomplete.",
+    "Existing failure-only aggregates include observer and scheduler cost; worker/controller wall spans overlap. Successful wire grammar is unchanged, but timing equality and zero overhead are not claimed. This Cargo gate does not itself execute the separate 39 Python controls."
+  ],
+  "projection_utc": "2026-10-31T15:29:43.976301+00:00",
+  "audit_parser_history": "The exact reviewed interleaving parser and same three controlled-child exclusions were reused with all parents retained. The explicit optimized-Python refusal remains. Historical parser/source refusals remain recorded; the merged auditor has no new filtering or census exception. The root audit ran once and an independent in-memory closed-data replay matched its entire retained result; neither operation repeated any project test or native campaign.",
+  "parent_release": {
+    "evidence": "Authenticated root report; no new projection ledger/kernel query.",
+    "parent_exit_code": 0,
+    "release_utc": "2026-10-31T15:26:08.799653+00:00",
+    "allocator_pid_absent": true,
+    "shell_pid_absent": true,
+    "scope_absent": true,
+    "reservation_tag_absent": true
+  }
+}
