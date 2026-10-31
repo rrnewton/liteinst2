@@ -51,7 +51,7 @@ pub struct NeighborGeometry {
     pub selected_len: usize,
     /// Original victim instruction head.
     pub victim: u64,
-    /// Whole original victim length: 10..=15, or 6..=9 via the short-only API.
+    /// Whole original victim length: 10..=15, or 6..=9 via an explicit short family.
     pub victim_len: usize,
     /// Exact second E9 address, victim + 5.
     pub relay: u64,
@@ -292,6 +292,32 @@ pub(crate) fn plan_neighbor_short_pending_core(
     )
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum VictimFamily {
+    Long,
+    Short,
+    Mixed,
+}
+
+pub(crate) fn plan_neighbor_mixed_pending_core(
+    request: &PlanningRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+) -> Result<PlannedNeighbor, NeighborFailure> {
+    plan_neighbor_family_with_pending(
+        request,
+        victim_allocation,
+        search,
+        budget,
+        VictimFamily::Mixed,
+        Some(predecessor),
+        Some(pending),
+    )
+}
+
 fn plan_neighbor_mode_with_inherited(
     request: &PlanningRequest<'_>,
     victim_allocation: &AllocationPolicy,
@@ -320,6 +346,31 @@ fn plan_neighbor_mode_with_pending(
     inherited: Option<&Composition>,
     pending: Option<&[AddressRange]>,
 ) -> Result<PlannedNeighbor, NeighborFailure> {
+    plan_neighbor_family_with_pending(
+        request,
+        victim_allocation,
+        search,
+        budget,
+        if short_victims {
+            VictimFamily::Short
+        } else {
+            VictimFamily::Long
+        },
+        inherited,
+        pending,
+    )
+}
+
+fn plan_neighbor_family_with_pending(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+    family: VictimFamily,
+    inherited: Option<&Composition>,
+    pending: Option<&[AddressRange]>,
+) -> Result<PlannedNeighbor, NeighborFailure> {
+    let short_victims = family == VictimFamily::Short;
     let mut attempts = Vec::new();
     let mut search_evidence = SearchEvidence::default();
     let result = (|| {
@@ -383,6 +434,18 @@ fn plan_neighbor_mode_with_pending(
                     return Err(Refusal::NotInstructionHead);
                 }
             }
+        } else if family == VictimFamily::Mixed {
+            scan.instructions()
+                .iter()
+                .rev()
+                .filter(|item| {
+                    (6..=15).contains(&item.len())
+                        && AddressRange::new(item.address(), item.len()).is_ok_and(|range| {
+                            !range.overlaps(selected_range) && request.function.covers(range)
+                        })
+                        && short_redirect(selected.address(), item.address()).is_ok()
+                })
+                .collect()
         } else if short_victims {
             scan.instructions()
                 .iter()
@@ -437,6 +500,11 @@ fn plan_neighbor_mode_with_pending(
         for (victim_index, victim) in candidates.into_iter().take(search.max_victims).enumerate() {
             let victims_examined = victim_index + 1;
             search_evidence.visit(victims);
+            // The mixed domain uses the existing proof for this victim's length,
+            // including the complete ten-byte fetch for every 6..=9-byte victim.
+            // Its one descending catalogue shares the same victim and pair scopes.
+            let short_victims =
+                short_victims || (family == VictimFamily::Mixed && (6..=9).contains(&victim.len()));
             let victim_scope = SearchScope {
                 physical_pc: Some(victim.address()),
                 ..SearchScope::default()

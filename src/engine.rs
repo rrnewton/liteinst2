@@ -489,6 +489,71 @@ pub fn plan_with_emission_after_and_current_placement(
     .map(artifact_plan)
 }
 
+/// Current B1/B2/T1 placement with one mixed T3 search and pending ownership.
+///
+/// The complete original source and current composition are authenticated first.
+/// Pending ranges must be canonical, covered and unclaimed, and must include
+/// every outstanding original selected instruction except the current site.
+/// The caller supplies that complete population; this slice cannot prove it.
+/// Selected allocation has the same explicit one-candidate, one-page contract
+/// as [`plan_with_emission_after_and_current_placement`], including retention of
+/// a valid seed even when the sole real emission later exceeds its page.
+///
+/// T3 visits one descending union of same-function 6..=15-byte victims, with one
+/// shared victim/pair budget and no forced-victim substitution. Each 6..=9-byte
+/// victim retains the complete ten-byte fetch, suffix and entry-scope proof;
+/// each 10..=15-byte victim retains the original long proof. Every complete pair
+/// must append all source steps to a predecessor clone and leave pending ranges
+/// unclaimed. A refusal consumes that pair without resetting any budget.
+///
+/// T2 and T3 retain their original address policies. The first four tactics keep
+/// their first local success: the caller must append every step and check all
+/// pending ranges before committing, and an outer refusal does not retry T3.
+/// Occupancy remains the caller's complete emission context. Final dependency,
+/// resource, entry, hook, publication and retirement checks remain required.
+/// This API neither mutates the predecessor nor grants live execution authority.
+pub fn plan_with_emission_after_and_current_placement_mixed_t3_pending(
+    request: &ArtifactRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+) -> Result<ArtifactPlan, EngineFailure> {
+    let current = predecessor
+        .planning_overlay(
+            request.site.identity,
+            request.site.base_address,
+            request.site.code,
+        )
+        .map_err(|reason| EngineFailure {
+            reason,
+            attempts: Vec::new(),
+        })?;
+    predecessor
+        .require_unclaimed_ranges(pending)
+        .map_err(|reason| EngineFailure {
+            reason,
+            attempts: Vec::new(),
+        })?;
+    crate::emission::placement::validate(request.site.allocation).map_err(|reason| {
+        EngineFailure {
+            reason,
+            attempts: Vec::new(),
+        }
+    })?;
+    let original = PlanningRequest::artifact(request);
+    plan_core_family_with_neighbor_family(
+        &original.with_code(&current),
+        victim_allocation,
+        policy,
+        neighbor::VictimFamily::Mixed,
+        Some(predecessor),
+        Some(pending),
+        true,
+    )
+    .map(artifact_plan)
+}
+
 fn artifact_plan(plan: EnginePlan) -> ArtifactPlan {
     ArtifactPlan::bundle(
         plan.bundle(),
@@ -562,6 +627,31 @@ fn plan_core_family_with_placement(
     pending: Option<&[AddressRange]>,
     current_placement: bool,
 ) -> Result<EnginePlan, EngineFailure> {
+    plan_core_family_with_neighbor_family(
+        request,
+        victim_allocation,
+        policy,
+        if short_only {
+            neighbor::VictimFamily::Short
+        } else {
+            neighbor::VictimFamily::Long
+        },
+        inherited,
+        pending,
+        current_placement,
+    )
+}
+
+fn plan_core_family_with_neighbor_family(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+    family: neighbor::VictimFamily,
+    inherited: Option<&Composition>,
+    pending: Option<&[AddressRange]>,
+    current_placement: bool,
+) -> Result<EnginePlan, EngineFailure> {
+    let short_only = family == neighbor::VictimFamily::Short;
     const ORDER: [Tactic; 5] = [
         Tactic::GeneralizedPun,
         Tactic::Relocation,
@@ -641,7 +731,22 @@ fn plan_core_family_with_placement(
                     ),
                 }
             }
-            Tactic::NeighborEviction => match if let (true, Some(predecessor), Some(pending)) =
+            Tactic::NeighborEviction => match if family == neighbor::VictimFamily::Mixed {
+                let (Some(predecessor), Some(pending)) = (inherited, pending) else {
+                    return Err(EngineFailure {
+                        reason: Refusal::InvalidRange,
+                        attempts,
+                    });
+                };
+                neighbor::plan_neighbor_mixed_pending_core(
+                    request,
+                    predecessor,
+                    pending,
+                    victim_allocation,
+                    policy.neighbor,
+                    policy.bundle,
+                )
+            } else if let (true, Some(predecessor), Some(pending)) =
                 (short_only, inherited, pending)
             {
                 neighbor::plan_neighbor_short_pending_core(

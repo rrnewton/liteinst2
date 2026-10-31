@@ -29,6 +29,8 @@ pub(crate) enum NeighborMode {
     WholeLongT3Ownership,
     // Explicit artifact placement for B1/B2/T1; T3 still admits complete pairs.
     WholeCurrentPlacement,
+    // Separate mixed T3 family with one complete pending-selection map.
+    WholeCurrentPlacementMixedPending,
     ShortOnly,
     ShortT3Ownership,
     ShortT3Pending,
@@ -39,6 +41,7 @@ impl NeighborMode {
             Self::LongOnly => PROFILE,
             Self::WholeLongT3Ownership => whole::PROFILE,
             Self::WholeCurrentPlacement => whole::PROFILE,
+            Self::WholeCurrentPlacementMixedPending => whole::PROFILE,
             Self::ShortOnly => SHORT_ONLY_PROFILE,
             Self::ShortT3Ownership => SHORT_T3_OWNERSHIP_PROFILE,
             Self::ShortT3Pending => SHORT_T3_PENDING_PROFILE,
@@ -49,6 +52,7 @@ impl NeighborMode {
             Self::LongOnly => "",
             Self::WholeLongT3Ownership => whole::NEIGHBOR_METADATA,
             Self::WholeCurrentPlacement => whole::CURRENT_PLACEMENT_METADATA,
+            Self::WholeCurrentPlacementMixedPending => whole::MIXED_PENDING_METADATA,
             Self::ShortOnly => SHORT_FAMILY,
             Self::ShortT3Ownership => SHORT_OWNERSHIP,
             Self::ShortT3Pending => SHORT_PENDING,
@@ -233,7 +237,9 @@ impl Disassembly {
         let ledger_id = ContentId::of(&self.ledger);
         let (shift, header) = match mode {
             NeighborMode::LongOnly => (0, "LI2DISASM-POLICY 1"),
-            NeighborMode::WholeLongT3Ownership | NeighborMode::WholeCurrentPlacement => {
+            NeighborMode::WholeLongT3Ownership
+            | NeighborMode::WholeCurrentPlacement
+            | NeighborMode::WholeCurrentPlacementMixedPending => {
                 return Err(Error::new(
                     "neighbor-mode",
                     "whole mode requires shared importer",
@@ -291,7 +297,9 @@ impl Disassembly {
         )?;
         let projection_family = match mode {
             NeighborMode::LongOnly => "",
-            NeighborMode::WholeLongT3Ownership | NeighborMode::WholeCurrentPlacement => {
+            NeighborMode::WholeLongT3Ownership
+            | NeighborMode::WholeCurrentPlacement
+            | NeighborMode::WholeCurrentPlacementMixedPending => {
                 return Err(Error::new(
                     "neighbor-mode",
                     "whole mode requires shared importer",
@@ -368,7 +376,9 @@ impl Disassembly {
         // Check the FULL new bytes before invoking the old projection parser.
         let mut selection = match mode {
             NeighborMode::LongOnly => selection::parse(projection.as_bytes())?,
-            NeighborMode::WholeLongT3Ownership | NeighborMode::WholeCurrentPlacement => {
+            NeighborMode::WholeLongT3Ownership
+            | NeighborMode::WholeCurrentPlacement
+            | NeighborMode::WholeCurrentPlacementMixedPending => {
                 return Err(Error::new(
                     "neighbor-mode",
                     "whole mode requires shared importer",

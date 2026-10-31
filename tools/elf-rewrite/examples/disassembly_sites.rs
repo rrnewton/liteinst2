@@ -70,6 +70,7 @@ enum Mode {
     ShortT3Pending,
     Whole4096,
     WholeCurrentPlacement4096,
+    WholeCurrentPlacementMixedPending4096,
 }
 
 fn arguments_with_ownership(args: &[String]) -> Result<(&[String], Mode), String> {
@@ -157,8 +158,35 @@ fn arguments_with_current_placement(args: &[String]) -> Result<(&[String], Mode)
     }
 }
 
+// Opt-in only at this complete leading form; all prior wrappers stay literal.
+fn arguments_with_mixed_pending(args: &[String]) -> Result<(&[String], Mode), String> {
+    if args.len() == 8 && args[1] == "--whole-program-current-placement-mixed-neighbors-4096" {
+        if args[2..].iter().any(|s| {
+            matches!(
+                s.as_str(),
+                "--whole-program-current-placement-mixed-neighbors-4096"
+                    | "--whole-program-current-placement-4096"
+                    | "--whole-program-4096"
+                    | "--short-neighbors-only"
+                    | "--short-neighbors-owned"
+                    | "--short-neighbors-pending"
+            )
+        }) {
+            return Err("disassembly_sites --whole-program-current-placement-mixed-neighbors-4096 ORIGINAL LEDGER LEDGER_SHA256 POLICY POLICY_SHA256 NEW_DIRECTORY".into());
+        }
+        Ok((&args[2..], Mode::WholeCurrentPlacementMixedPending4096))
+    } else {
+        arguments_with_current_placement(args)
+    }
+}
+
 fn labels_with_ownership(mode: Mode) -> (&'static str, &'static str, &'static str) {
     match mode {
+        Mode::WholeCurrentPlacementMixedPending4096 => (
+            disassembly::whole::PROFILE,
+            disassembly::whole::MIXED_PENDING_METADATA,
+            " neighbor_victims=mixed-short-and-long neighbor_ownership=inherited-t3 pending_selected=full-instruction-ownership artifact_placement=current-composition-single-candidate-v1 selected_placement_tactics=B1,B2,T1 paired_placement_tactics=legacy-T2,mixed-T3 paired_ownership=inherited-mixed-T3",
+        ),
         Mode::Whole4096 => (disassembly::whole::PROFILE, "", ""),
         Mode::WholeCurrentPlacement4096 => (
             disassembly::whole::PROFILE,
@@ -197,6 +225,7 @@ fn prepare_inputs(
         match mode {
             Mode::Whole4096 => imported.inventory_whole_program(),
             Mode::WholeCurrentPlacement4096 => imported.inventory_whole_program(),
+            Mode::WholeCurrentPlacementMixedPending4096 => imported.inventory_whole_program(),
             Mode::LongOnly => imported.inventory(),
             Mode::ShortOnly => imported.inventory_short_neighbors(),
             Mode::ShortT3Ownership => imported.inventory_short_t3_ownership(),
@@ -204,6 +233,14 @@ fn prepare_inputs(
         },
     );
     let selected = match mode {
+        Mode::WholeCurrentPlacementMixedPending4096 => {
+            let selected = imported.bind_whole_program(policy, expected_policy)?;
+            assert_eq!(selected.profile(), profile);
+            files.insert("selection.txt".into(), selected.manifest().to_vec());
+            return liteinst_rewrite::prepare_disassembly_whole_current_placement_mixed_neighbors(
+                original, &selected,
+            );
+        }
         Mode::WholeCurrentPlacement4096 => {
             let selected = imported.bind_whole_program(policy, expected_policy)?;
             assert_eq!(selected.profile(), profile);
@@ -230,7 +267,7 @@ fn prepare_inputs(
 
 fn run() -> Result<bool, String> {
     let raw_args: Vec<_> = std::env::args().collect();
-    let (args, mode) = arguments_with_current_placement(&raw_args)?;
+    let (args, mode) = arguments_with_mixed_pending(&raw_args)?;
     let (profile, family, stdout_family) = labels_with_ownership(mode);
     let expected_ledger = selection::id(&args[2]).map_err(|e| e.to_string())?;
     let expected_policy = selection::id(&args[4]).map_err(|e| e.to_string())?;

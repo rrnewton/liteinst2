@@ -573,3 +573,247 @@ fn whole_current_placement_exhaustion_keeps_full_atomic_refusal_and_one_candidat
     assert!(!refused.files().contains_key("candidate.elf"));
     assert!(!refused.files().keys().any(|n| n.starts_with("image-")));
 }
+
+// Two selected branches share a complete original region. The closest T3
+// victim is itself still selected; the next victim is either short or long.
+// In the all-selected case both victims remain protected. No bytes execute.
+fn mixed_pending_fixture(
+    long: bool,
+    all_selected: bool,
+    pairs: usize,
+) -> (Vec<u8>, String, String) {
+    assert!(!long || !all_selected);
+    let mut code = vec![
+        0x2e, 0xb8, 0x37, 0x31, 0x42, 0x53, 0xb8, 1, 1, 1, 1, 0xc3, 0x90, 0x90, 0x90, 0x90, 0x0f,
+        0x85, 10, 0, 0, 0, 0xb8, 1, 1, 1, 1, 0xc3, 0x90, 0x90, 0x90, 0x90, 0x75, 0, 0xc3,
+    ];
+    let heads = if long {
+        code[..10].copy_from_slice(&[0x48, 0xb8, 0x37, 0x31, 0x42, 0x53, 0x64, 0x75, 0x86, 0x97]);
+        code[10] = 0xc3;
+        code[11] = 0x90;
+        vec![
+            0, 10, 11, 12, 13, 14, 15, 16, 22, 27, 28, 29, 30, 31, 32, 34,
+        ]
+    } else {
+        if all_selected {
+            code[..6].copy_from_slice(&[0x0f, 0x85, 10, 0, 0, 0]);
+        }
+        vec![0, 6, 11, 12, 13, 14, 15, 16, 22, 27, 28, 29, 30, 31, 32, 34]
+    };
+    let (mut original, _) = fixture(2, 0);
+    original[0x1100..0x1100 + code.len()].copy_from_slice(&code);
+    let mut text = format!(
+        "LI2DISASM 1\noriginal {}\ncontract complete-code no-overlap no-code-as-data private-image\nregion {PC} 4352 {}\n",
+        digest(&original),
+        code.len()
+    );
+    for (index, &offset) in heads.iter().enumerate() {
+        let end = heads.get(index + 1).copied().unwrap_or(code.len());
+        writeln!(
+            text,
+            "head {} {}",
+            PC + offset as u64,
+            ledger::hex(&code[offset..end])
+        )
+        .unwrap();
+    }
+    writeln!(text, "region {HOOK} 73472 1\nhead {HOOK} c3").unwrap();
+    let mut p = policy(&original, &text, 0);
+    let selected = PC + 0x0101_01d2;
+    let victim = PC + 0x0600_0080;
+    let mut rows = Vec::new();
+    if all_selected {
+        rows.push(("B1", PC + 0x0500_0080));
+    }
+    rows.extend([("B1", PC + 0x0400_0080), ("T3", selected)]);
+    for (index, (tactic, target)) in rows.into_iter().enumerate() {
+        let id = index + 1;
+        writeln!(p, "search {id} {tactic} 0 80 1 none 2 {pairs}\nallocation {id} selected {target} 1 4096 {}:4096\nallocation {id} victim {victim} 1 4096 {}:4096", target & !4095, victim & !4095).unwrap();
+    }
+    (original, text, p)
+}
+
+fn mixed_pending_attempts(report: &crate::SiteReport, second: Option<(u64, bool)>) {
+    use li2core::contracts::Refusal;
+    use li2core::neighbor::{NeighborAttempt, NeighborAttemptStage};
+    let row = |victim: u64, target: u64, conflict: bool| NeighborAttempt {
+        victim,
+        stage: NeighborAttemptStage::Composition,
+        victim_target: Some(PC + 0x0600_0080),
+        selected_target: Some(target),
+        refusal: conflict.then_some(Refusal::OwnershipConflict),
+    };
+    let mut expected = vec![row(PC + 16, PC + 0x0101_01d2, true)];
+    if let Some((target, conflict)) = second {
+        expected.push(row(PC, target, conflict));
+    }
+    let actual: String = report.diagnostics.split_whitespace().collect();
+    let expected: String = format!("candidates:Neighbor({expected:#?},)")
+        .split_whitespace()
+        .collect();
+    assert!(actual.contains(&expected));
+    assert_eq!(actual.matches("candidates:Neighbor(").count(), 1);
+}
+
+#[test]
+fn whole_mixed_pending_uses_short_and_long_alternates_without_claiming_selected_victims() {
+    use li2core::engine::Tactic;
+    for long in [false, true] {
+        let (original, text, p) = mixed_pending_fixture(long, false, 2);
+        let saved = original.clone();
+        let selected = bind(&original, &text, &p).unwrap();
+        let saved_files = selected.files.clone();
+        assert_eq!(
+            selected
+                .selection
+                .sites
+                .iter()
+                .map(|s| (s.id, s.pc, s.length))
+                .collect::<Vec<_>>(),
+            [(1, PC + 16, 6), (2, PC + 32, 2)]
+        );
+        assert!(selected.selection.sites.iter().all(|s| {
+            s.heads.len() == 16 && s.completeness == EntryCompleteness::AllInstructionHeads
+        }));
+        if !long {
+            let old =
+                crate::prepare_disassembly_whole_current_placement(&original, &selected).unwrap();
+            assert!(!old.candidate_complete());
+            assert!(!old.files().contains_key("candidate.elf"));
+            assert!(
+                old.files()["planning-profile.tsv"]
+                    .ends_with(CURRENT_PLACEMENT_METADATA.as_bytes())
+            );
+        }
+        let product = crate::prepare_disassembly_whole_current_placement_mixed_neighbors(
+            &original, &selected,
+        )
+        .unwrap();
+        assert!(product.candidate_complete());
+        assert!(!product.qualification_complete());
+        assert_eq!(
+            product.reports().iter().map(|r| r.id).collect::<Vec<_>>(),
+            [1, 2]
+        );
+        assert!(
+            product
+                .reports()
+                .iter()
+                .all(|r| r.refusal.is_none() && r.candidate_emitted)
+        );
+        assert_eq!(product.reports()[0].core_tactic, Some(Tactic::Relocation));
+        assert_eq!(
+            product.reports()[1].core_tactic,
+            Some(Tactic::NeighborEviction)
+        );
+        let evidence = &product.reports()[1].diagnostics;
+        assert!(evidence.contains("OwnershipConflict") && evidence.contains("stage: Composition"));
+        assert!(evidence.contains("victims_examined: 2") && evidence.contains("pairs_examined: 2"));
+        mixed_pending_attempts(
+            &product.reports()[1],
+            Some((PC + if long { 0x0101_01d2 } else { 0x0101_01c2 }, false)),
+        );
+        let mut expected = original[0x1100..0x1123].to_vec();
+        expected[..5].copy_from_slice(&[0xe9, 0x7b, 0, 0, 6]);
+        expected[5..10].copy_from_slice(if long {
+            &[0xe9, 0xc8, 1, 1, 1]
+        } else {
+            &[0xe9, 0xb8, 1, 1, 1]
+        });
+        expected[16..21].copy_from_slice(&[0xe9, 0x6b, 0, 0, 4]);
+        expected[32..34].copy_from_slice(&[0xeb, 0xe3]);
+        assert_eq!(&product.files()["candidate.elf"][0x1100..0x1123], &expected);
+        assert_eq!(product.files()["candidate.elf"][0x11f00], 0xc3);
+        assert_eq!(
+            product
+                .files()
+                .keys()
+                .filter(|n| n.starts_with("image-"))
+                .count(),
+            3
+        );
+        assert_eq!(product.files()["disassembly-policy.txt"], p.as_bytes());
+        assert_eq!(
+            product.files()["disassembly-inventory.tsv"],
+            saved_files["disassembly-inventory.tsv"]
+        );
+        let profile = std::str::from_utf8(&product.files()["planning-profile.tsv"]).unwrap();
+        assert!(profile.contains(MIXED_PENDING_METADATA));
+        assert!(!profile.contains("neighbor_victims\tlong-only\n"));
+        assert!(
+            std::str::from_utf8(&selected.files["planning-profile.tsv"])
+                .unwrap()
+                .contains(NEIGHBOR_METADATA)
+        );
+        assert_eq!(selected.files, saved_files);
+        assert_eq!(original, saved);
+    }
+}
+
+#[test]
+fn whole_mixed_pending_pair_cap_and_all_selected_victims_keep_exact_atomic_refusals() {
+    for (all_selected, pairs, ids) in [(false, 1, vec![1, 2]), (true, 2, vec![1, 2, 3])] {
+        let (original, text, p) = mixed_pending_fixture(false, all_selected, pairs);
+        let selected = bind(&original, &text, &p).unwrap();
+        let product = crate::prepare_disassembly_whole_current_placement_mixed_neighbors(
+            &original, &selected,
+        )
+        .unwrap();
+        assert_eq!(
+            product.reports().iter().map(|r| r.id).collect::<Vec<_>>(),
+            ids
+        );
+        assert!(!product.candidate_complete());
+        assert!(!product.qualification_complete());
+        assert!(!product.files().contains_key("candidate.elf"));
+        assert!(!product.files().contains_key("source.li2sparse"));
+        assert!(
+            product
+                .reports()
+                .iter()
+                .all(|r| r.refusal.is_some() && !r.candidate_emitted)
+        );
+        let high = product.reports().last().unwrap();
+        assert_eq!(high.core_tactic, None);
+        assert_eq!(high.refusal_code, Some(12));
+        assert_eq!(high.refusal.as_ref().unwrap().stage, "core");
+        assert_eq!(high.refusal.as_ref().unwrap().detail, "OwnershipConflict");
+        mixed_pending_attempts(high, all_selected.then_some((PC + 0x0101_01c2, true)));
+        assert_eq!(high.diagnostics.matches("NeighborAttempt {").count(), pairs);
+        let runs: Vec<_> = high.diagnostics.split("SearchRun {").skip(1).collect();
+        let joint = runs
+            .iter()
+            .find(|r| r.contains("domain: JointPairs,"))
+            .unwrap();
+        assert!(joint.contains(&format!("examined: {pairs},")));
+        assert!(joint.contains(if all_selected {
+            "stop: UnclassifiedBoundedStop"
+        } else {
+            "stop: BudgetLimited"
+        }));
+        assert!(!high.diagnostics.contains("stop: Accepted"));
+        for low in &product.reports()[..ids.len() - 1] {
+            assert_eq!(low.core_tactic, Some(li2core::engine::Tactic::Relocation));
+            assert_eq!(low.refusal_code, Some(10_003));
+            assert_eq!(low.refusal.as_ref().unwrap().stage, "atomic-selection");
+        }
+        assert_eq!(
+            product
+                .files()
+                .keys()
+                .filter(|n| n.starts_with("image-"))
+                .count(),
+            ids.len() - 1
+        );
+        assert_eq!(
+            product.files()["disassembly-inventory.tsv"],
+            selected.files["disassembly-inventory.tsv"]
+        );
+        assert_eq!(product.files()["disassembly-policy.txt"], p.as_bytes());
+        assert!(
+            std::str::from_utf8(&product.files()["planning-profile.tsv"])
+                .unwrap()
+                .contains(MIXED_PENDING_METADATA)
+        );
+    }
+}

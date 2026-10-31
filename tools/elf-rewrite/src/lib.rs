@@ -141,6 +141,34 @@ pub fn prepare_disassembly_whole_current_placement(
     Ok(product)
 }
 
+/// Explicit mixed 6..=15-byte T3 with complete pending selected ownership.
+///
+/// B1/B2/T1 retain current-composition placement and T2 retains its existing
+/// policy. Mixed T3 uses one shared victim/pair budget and admits each complete
+/// pair against inherited ownership and every other outstanding instruction.
+/// The full pending set is built once; only successful atomic commits remove
+/// entries. A first-four local success can still refuse the final pending check
+/// without restarting search. All source, dependency, hook and resource checks
+/// remain mandatory. No candidate bytes are executed or qualified here.
+pub fn prepare_disassembly_whole_current_placement_mixed_neighbors(
+    original: &[u8],
+    selected: &disassembly::whole::WholeProgramSelection,
+) -> Result<Product, Error> {
+    let mut product = prepare_selection_with_mode(
+        original,
+        selected.selection.clone(),
+        false,
+        disassembly::NeighborMode::WholeCurrentPlacementMixedPending,
+    )?;
+    product.files.remove("bundle-index.tsv");
+    product.files.extend(selected.mixed_pending_files());
+    product.files.insert(
+        "bundle-index.tsv".into(),
+        ledger::index(selected.selection.original, &product.files),
+    );
+    Ok(product)
+}
+
 fn prepare_mode(original: &[u8], manifest: &[u8], owned_neighbors: bool) -> Result<Product, Error> {
     let selection = selection::parse(manifest)?;
     prepare_selection_mode(original, selection, owned_neighbors, false)
@@ -337,9 +365,13 @@ fn prepare_selection_transaction(
     let snapshots = original_snapshots(&elf, &s.sites)?;
     let composition =
         Composition::new(identity, snapshots).map_err(|e| Error::new("composition-original", e))?;
-    // Only the sealed pending mode supplies the complete original instruction set.
+    // Only explicit pending modes supply the complete original instruction set.
     // Keep failed sites in this table; a successful commit alone discharges one.
-    let mut pending = if mode == disassembly::NeighborMode::ShortT3Pending {
+    let mut pending = if matches!(
+        mode,
+        disassembly::NeighborMode::ShortT3Pending
+            | disassembly::NeighborMode::WholeCurrentPlacementMixedPending
+    ) {
         s.sites
             .iter()
             .enumerate()
@@ -349,7 +381,11 @@ fn prepare_selection_transaction(
         Vec::new()
     };
     pending.sort_by_key(|(_, range)| range.start());
-    if mode == disassembly::NeighborMode::ShortT3Pending {
+    if matches!(
+        mode,
+        disassembly::NeighborMode::ShortT3Pending
+            | disassembly::NeighborMode::WholeCurrentPlacementMixedPending
+    ) {
         composition
             .require_unclaimed_ranges(&pending.iter().map(|(_, range)| *range).collect::<Vec<_>>())
             .map_err(|e| Error::new("pending-selected", e))?;
@@ -755,7 +791,15 @@ fn attempt_singleton(
                 max_virtual_span: s.limits.virtual_span,
             },
         };
-        let result = if mode == disassembly::NeighborMode::WholeCurrentPlacement {
+        let result = if mode == disassembly::NeighborMode::WholeCurrentPlacementMixedPending {
+            engine::plan_with_emission_after_and_current_placement_mixed_t3_pending(
+                &request,
+                composition,
+                &pending_ranges,
+                &site.victim_allocation,
+                policy,
+            )
+        } else if mode == disassembly::NeighborMode::WholeCurrentPlacement {
             engine::plan_with_emission_after_and_current_placement(
                 &request,
                 composition,
@@ -893,7 +937,11 @@ fn attempt_singleton(
         }
         // Preserve every existing append/dependency/resource/hook failure first.
         // First-four local success may refuse here; this never restarts search.
-        if mode == disassembly::NeighborMode::ShortT3Pending {
+        if matches!(
+            mode,
+            disassembly::NeighborMode::ShortT3Pending
+                | disassembly::NeighborMode::WholeCurrentPlacementMixedPending
+        ) {
             next.require_unclaimed_ranges(&pending_ranges)
                 .map_err(|e| Error::new("pending-selected", e))?;
         }
