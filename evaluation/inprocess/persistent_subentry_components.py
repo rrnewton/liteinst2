@@ -21,6 +21,7 @@ from persistent_subentry_build import build_bridge
 ROOT = Path(__file__).resolve().parents[2]
 SELECTED = ROOT/'tools/page-entry/selected'
 PROFILES = dict(BUILD_PROFILES, component=[5, 512 << 20, 16 << 20, 15],
+                finite=[5, 512 << 20, 16 << 20, 15],
                 release_build=[30, 512 << 20, 16 << 20, 60])
 NATIVE_EXPECTED = dict(schema=1, heads=68, source_pages=2, members=2,
     original_generated_pairs=4356, success_pairs=4352, fault_pairs=4,
@@ -76,7 +77,7 @@ def main():
 
     def run(label, argv, profile='metadata', env=None):
         closure()
-        row = dict(name=label, argv=list(map(str, argv)), bounds=PROFILES[profile],
+        row = dict(name=label, argv=list(map(str, argv)), profile=profile, bounds=PROFILES[profile],
                    expected_exit=0, capture_limit=16 << 20, environment=dict(ENV if env is None else env))
         need(not any(c['name'] == label for c in r['commands']), 'unique command label')
         r['commands'].append(row)
