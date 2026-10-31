@@ -1,0 +1,9 @@
+# Fixed owned C batch cost
+
+At revision `002cf64b288735c185d1c3863d1dbdfd893373eb`, one release process completed all five predeclared baseline/instrumented pairs and validated 6,400 instrumented calls, ten history actions and final close. The median paired wall-time ratio was **113.03×** (range 106.54–138.24×). The per-batch means across the five pairs were 10.12–11.48 µs for instrumented four-call batches and 80.98–98.19 ns for baseline batches.
+
+These numbers measure the safe owned batch API on two small C functions. Instrumented timing includes callbacks, checkpointing, allocations and result retention. Each arm used independent sealed mappings of the same module and caller, 64 warmup batches and 256 measured batches. Arm order alternated. Additional test-level result, return, journal and ownership comparisons ran after timing; run_batch’s internal return/census/checkpoint checks remain inside. Every raw timing row is in [timings.json](timings.json); [receipt.json](receipt.json) records the exact revision, hardware, command, bounds and process closure.
+
+Reproduce using [the existing script](../reproduce.py) with `--mode batch-cost` and the recorded revision, under a fresh one-CPU `cpuset-alloc run --cores 1` reservation. Supply the absolute checkout, stable Rust toolchain, user home, Cargo home and a fresh private output directory using the arguments in the receipt. The script builds offline in release mode with one Cargo job and runs exactly one selected test with one harness thread. It preserves partial rows on failure and never retries.
+
+This is a descriptive wall-time experiment, not strict profiler qualification or A5 completion. The existing strict short case remains failed at 1,342/2,048; its 2 ms/520 ms limits are unchanged. No throughput improvement is claimed.

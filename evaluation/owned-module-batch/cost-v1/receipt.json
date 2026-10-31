@@ -1,0 +1,152 @@
+{
+  "schema": "owned-module-fixed-batch-cost-v1",
+  "revision": "002cf64b288735c185d1c3863d1dbdfd893373eb",
+  "status": "OWNED_BATCH_COST_COMPLETE",
+  "native_attempts": 1,
+  "retries": 0,
+  "hardware": {
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": "AMD EPYC 9D85 158-Core Processor",
+    "reserved_cpus": [
+      3
+    ],
+    "load_before": [
+      63.81,
+      50.84,
+      73.14
+    ],
+    "load_after": [
+      64.14,
+      54.84,
+      72.64
+    ],
+    "reservation": "cpuset-alloc HARD AllowedCPUs, one CPU",
+    "utc": "2026-10-31T20:01:13.532687+00:00"
+  },
+  "reproduce": {
+    "script": "evaluation/owned-module-batch/reproduce.py",
+    "sha256": "5871fecb6a119c9e5b352c6707a709f79b7da2c0ace51ee81d752bed9bdd1b8d",
+    "argv": [
+      "python3",
+      "-I",
+      "-B",
+      "evaluation/owned-module-batch/reproduce.py",
+      "--mode",
+      "batch-cost",
+      "--revision",
+      "002cf64b288735c185d1c3863d1dbdfd893373eb",
+      "--root",
+      "<checkout>",
+      "--toolchain",
+      "<stable-toolchain>",
+      "--user-home",
+      "<user-home>",
+      "--cargo-home",
+      "<cargo-home>",
+      "--output",
+      "<checkout>/ignored/<fresh-run>"
+    ]
+  },
+  "build": {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "--release",
+      "--jobs",
+      "1",
+      "-p",
+      "rapid-profiler",
+      "--lib",
+      "--no-run",
+      "--message-format=json-render-diagnostics"
+    ],
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 0,
+      "opt_level": "3",
+      "overflow_checks": true,
+      "test": true
+    },
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+    "binary": {
+      "bytes": 11046768,
+      "sha256": "3df26072ce7b820038e0e20f7e72ef216a7c16f6c6aa565c7c5a27c3c680c42f"
+    }
+  },
+  "experiment": {
+    "native_test": "frontend_native::always_on::normal::module::owned::native::performance::owned_module_native_fixed_work_batch_cost",
+    "harness_threads": 1,
+    "pairs": 5,
+    "order": [
+      "baseline/owned",
+      "owned/baseline",
+      "baseline/owned",
+      "owned/baseline",
+      "baseline/owned"
+    ],
+    "warmup_batches_per_arm_per_pair": 64,
+    "measured_batches_per_arm_per_pair": 256,
+    "calls_per_batch": 4,
+    "fixture": "Two admitted C functions: csv_fields and FreeBSD strnlen, with the same compiled four-CALL caller; separate sealed unpatched baseline and installed mappings.",
+    "timed_scope": "256 complete caller batches with result retention. Owned includes run_batch, callbacks, allocations and its internal return/census/identity/journal/health/checkpoint checks. The test's additional full result/journal/report/history comparisons and baseline.verify_original checks are outside timing.",
+    "strict_qualification": false,
+    "A5_complete": false
+  },
+  "outcomes": {
+    "counters": {
+      "closed": true,
+      "completed": 6400,
+      "confirmed": 6400,
+      "entered": 6400,
+      "history_actions": 10,
+      "kind": "validated",
+      "measured_batches_per_arm": 1280,
+      "pairs": 5,
+      "ret_observed": 6400,
+      "timing_rows": 10,
+      "unsampled": 0,
+      "warmup_batches_per_arm": 320
+    },
+    "paired_owned_over_baseline": [
+      138.2350837568229,
+      128.0187632645186,
+      113.02519143752176,
+      110.43698840381992,
+      106.53582368619962
+    ],
+    "median_paired_ratio": 113.02519143752176,
+    "all_21_prerequisite_and_native_stages_closed_exit_zero": true,
+    "native_seconds": 0.24655033880844712,
+    "outer": {
+      "start_utc": "2026-10-31T20:01:13.296075+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "seconds": 84.65343794296496,
+      "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "source_unchanged": true
+    }
+  },
+  "bounds": {
+    "native_cpu_seconds": 20,
+    "native_wall_seconds": 30,
+    "native_internal_deadline_seconds": 15,
+    "release_cpu_seconds": 120,
+    "release_wall_seconds": 180,
+    "outer_wall_seconds": 1200
+  },
+  "raw": {
+    "file": "timings.json",
+    "original_jsonl_sha256": "5f7ac374a2eee2c55e887e160bf59e98c13f41685b65f34e5635955529f75390",
+    "original_jsonl_bytes": 1452
+  },
+  "limitations": [
+    "One process on one reserved CPU; descriptive wall time, not a causal performance estimate or general workload throughput.",
+    "The baseline is tiny. Owned-path wall time includes instrumentation and the safe result/checkpoint API.",
+    "The existing strict profiler short case remains FAILED at 1342/2048 with the original 2 ms and 520 ms gates unchanged."
+  ]
+}

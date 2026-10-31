@@ -1,0 +1,106 @@
+[
+  {
+    "arm": "baseline",
+    "kind": "timing",
+    "measured_batches": 256,
+    "pair": 0,
+    "target_calls": 1024,
+    "wall_ns": 21252,
+    "warmup_batches": 64
+  },
+  {
+    "arm": "owned",
+    "kind": "timing",
+    "measured_batches": 256,
+    "pair": 0,
+    "target_calls": 1024,
+    "wall_ns": 2937772,
+    "warmup_batches": 64
+  },
+  {
+    "arm": "owned",
+    "kind": "timing",
+    "measured_batches": 256,
+    "pair": 1,
+    "target_calls": 1024,
+    "wall_ns": 2654085,
+    "warmup_batches": 64
+  },
+  {
+    "arm": "baseline",
+    "kind": "timing",
+    "measured_batches": 256,
+    "pair": 1,
+    "target_calls": 1024,
+    "wall_ns": 20732,
+    "warmup_batches": 64
+  },
+  {
+    "arm": "baseline",
+    "kind": "timing",
+    "measured_batches": 256,
+    "pair": 2,
+    "target_calls": 1024,
+    "wall_ns": 22984,
+    "warmup_batches": 64
+  },
+  {
+    "arm": "owned",
+    "kind": "timing",
+    "measured_batches": 256,
+    "pair": 2,
+    "target_calls": 1024,
+    "wall_ns": 2597771,
+    "warmup_batches": 64
+  },
+  {
+    "arm": "owned",
+    "kind": "timing",
+    "measured_batches": 256,
+    "pair": 3,
+    "target_calls": 1024,
+    "wall_ns": 2590410,
+    "warmup_batches": 64
+  },
+  {
+    "arm": "baseline",
+    "kind": "timing",
+    "measured_batches": 256,
+    "pair": 3,
+    "target_calls": 1024,
+    "wall_ns": 23456,
+    "warmup_batches": 64
+  },
+  {
+    "arm": "baseline",
+    "kind": "timing",
+    "measured_batches": 256,
+    "pair": 4,
+    "target_calls": 1024,
+    "wall_ns": 25137,
+    "warmup_batches": 64
+  },
+  {
+    "arm": "owned",
+    "kind": "timing",
+    "measured_batches": 256,
+    "pair": 4,
+    "target_calls": 1024,
+    "wall_ns": 2677991,
+    "warmup_batches": 64
+  },
+  {
+    "closed": true,
+    "completed": 6400,
+    "confirmed": 6400,
+    "entered": 6400,
+    "history_actions": 10,
+    "kind": "validated",
+    "measured_batches_per_arm": 1280,
+    "pairs": 5,
+    "ret_observed": 6400,
+    "timing_rows": 10,
+    "unsampled": 0,
+    "warmup_batches_per_arm": 320
+  }
+]
