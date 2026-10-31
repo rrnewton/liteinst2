@@ -123,3 +123,28 @@ and untouched cells remain explicit. The caller checks lease release after
 return. Keep complete raw manifests, logs and profiles ignored, and publish
 only the compact result projection. `PASS_FINITE_CHECKS` still requires the
 stated semantic premises and is not general native-unwind qualification.
+
+## Merged validation
+
+Main `17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7` was merged as
+`1bd48b13ce92f3c6b4fd14b448a2e9649bcfa473`. The unchanged native sources
+and published recipe retain their `a306d916` execution attribution. The merged
+Cargo gate passed once: **4,218 workspace tests, 0 failures, 37 unchanged
+ignores; 1,039 serial-launch tests, 0 failures**. Formatting, strict Clippy and
+all-target/all-feature checking also passed. All owners closed normally with
+complete cleanup and zero rescued descendants.
+
+[merged-validation.json](merged-validation.json) records the exact revision,
+commands, environment, postclosure tool hashes, CPU reservation, loads, limits and
+outcomes. The tool hashes matched the a306 profile after closure; the merged
+owner recorded tool paths, without a contemporaneous tool-byte capture.
+The executed reproduction driver is
+[validate.py](../../short-neighbor-parallel/validate.py); supply the recorded
+revision and a fresh output directory under `ignored/`, using the recorded
+environment and a fresh 16-CPU reservation. Harness concurrency remains 316,
+with the separate launch command explicitly serial. The outer run took
+960.377 seconds; these debug correctness durations are not performance results.
+
+The separately pinned admission recorder still refers to two older unwind
+source hashes and a test inventory 105 cases smaller than this workspace.
+This merged Cargo run does not execute or qualify that separate pipeline.
