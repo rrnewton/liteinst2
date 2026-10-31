@@ -18,6 +18,7 @@ CAP, CHUNK, LINE = 8 * 1024 * 1024, 8192, 350
 PROFILE = 'selected-accuracy-functional-first-v1'
 PHASE_PROFILE = 'selected-accuracy-phase-functional-first-v1'
 PREPARED_PHASE_PROFILE = 'selected-accuracy-prepared-phase-functional-first-v1'
+COORDINATE_PROFILE = 'selected-accuracy-coordinate-functional-v1'
 MASTER = '16b3b34b02c2f1054381195ee3d0767b493b427ad041bbfd8924e630d0f369b1'
 POLICY = dict(k=10, period_ms=10, epochs=520, phase='locked', delay_ns=0)
 BODY = bytes.fromhex('31c04c8d04370fb60f83f15a4801c848ffc74c39c772ef48ba157c4a7fb979379e4831d0c3')
@@ -68,6 +69,16 @@ def phase_policy(checker, kind):
     return dict(choices[0], epochs=520)
 
 
+def coordinates():
+    return load('_producer_coordinates', Path(__file__).resolve().with_name('accuracy_coordinates.py'))
+
+
+def coordinate_arguments(plan, checker):
+    assert checker.VERSION == 'selected-accuracy-prepared-phase-session-v1'
+    coordinate = coordinates().checked(plan['coordinate'])
+    return _arguments(plan, checker, coordinate['epoch-phase'], prepared=True, coordinate=coordinate)
+
+
 def arguments(plan, checker):
     return _arguments(plan, checker, None)
 
@@ -92,10 +103,16 @@ def prepared_phase_arguments(plan, checker):
     return _arguments(plan, checker, plan['policy']['phase'], prepared=True)
 
 
-def _arguments(plan, checker, epoch_phase, *, prepared=False):
+def _arguments(plan, checker, epoch_phase, *, prepared=False, coordinate=None):
     assert type(prepared) is bool and (not prepared or epoch_phase is not None)
-    policy = POLICY if epoch_phase is None else phase_policy(checker, epoch_phase)
-    profile = PREPARED_PHASE_PROFILE if prepared else (PROFILE if epoch_phase is None else PHASE_PROFILE)
+    if coordinate is None:
+        policy = POLICY if epoch_phase is None else phase_policy(checker, epoch_phase)
+        profile = PREPARED_PHASE_PROFILE if prepared else (PROFILE if epoch_phase is None else PHASE_PROFILE)
+    else:
+        assert prepared and coordinate['epoch-phase'] == epoch_phase
+        expected_files, expected_manifest, policy = coordinates().authority(checker.truth, coordinate)
+        profile = COORDINATE_PROFILE
+        assert str(Path(__file__).resolve().with_name('accuracy_coordinates.py')) in plan['pins']
     assert plan['profile'] == profile and plan['attempt'] == 1
     assert type(plan['revision']) is str and len(plan['revision']) == 40 and all(c in '0123456789abcdef' for c in plan['revision'])
     assert plan['policy'] == policy and all(type(plan['policy'][k]) is type(v) for k, v in policy.items())
@@ -112,9 +129,11 @@ def _arguments(plan, checker, epoch_phase, *, prepared=False):
     assert str(gate_path) in plan['pins']
     gate = load('_accuracy_functional_geometry_gate', gate_path)
     geometry = json.loads(read(Path(plan['geometry']), 1024 * 1024))
-    gate.accept_geometry(geometry, plan['facts'], plan['preparation_sha256'], plan['revision'], epoch_phase=epoch_phase, prepared=prepared)
+    gate.accept_geometry(geometry, plan['facts'], plan['preparation_sha256'], plan['revision'], epoch_phase=epoch_phase, prepared=prepared,coordinate=coordinate)
     assert plan['pins'][plan['preparation']]['sha256'] == plan['preparation_sha256']
     facts = plan['facts']
+    if coordinate is not None:
+        assert facts['coordinate'] == plan['coordinate'] == coordinate
     assert facts['table'] == plan['table'] and facts['caller'] == plan['caller'] and facts['policy'] == policy
     if prepared:
         target = prepared_target(policy)
@@ -129,9 +148,14 @@ def _arguments(plan, checker, epoch_phase, *, prepared=False):
         selected_bytes=read(paths['selected.txt'], CAP), truth_bytes=read(paths['truth.csv'], CAP),
         table=table, caller=plan['caller'], body_bytes=BODY, abi=ABI, policy=dict(policy), cpus=tuple(cpus[:2]))
     manifest, _, records, _ = checker.authority(**checked)
-    assert (manifest['master'], manifest['phase'], manifest['trial'], manifest['workload']) == (MASTER, 'calibration', 1, 'late_expensive')
-    assert len(records) == 2048 and tuple(map(len, records)) == (1,) * 1024 + (64,) * 1024
-    assert len(checked['input_bytes']) == 68608 and plan['input_sha256'] == sha(checked['input_bytes'])
+    if coordinate is None:
+        assert (manifest['master'], manifest['phase'], manifest['trial'], manifest['workload']) == (MASTER, 'calibration', 1, 'late_expensive')
+        assert len(records) == 2048 and tuple(map(len, records)) == (1,) * 1024 + (64,) * 1024
+        assert len(checked['input_bytes']) == 68608 and plan['input_sha256'] == sha(checked['input_bytes'])
+    else:
+        assert manifest == expected_manifest and len(records) == 2048
+        assert checked['input_bytes'] == expected_files['input.csv']
+        assert plan['input_sha256'] == sha(checked['input_bytes'])
     assert plan['caller'] == dict(extent=20, continuation=15)
     assert len(table) == 1 and table[0] == dict(function_id=41, operation='exact_work_nonempty', policy='whole',
         elf_va=table[0]['elf_va'], extent=37, returns=(36,))
@@ -146,16 +170,23 @@ def _arguments(plan, checker, epoch_phase, *, prepared=False):
     if prepared:
         argv[1] = 'normal-selected-accuracy-prepared-phase-session'
         argv[10:10] = ['1']
+    if coordinate is not None:
+        argv[5:8] = [str(policy['k']),str(policy['period_ms']),'520']
     assert plan['argv'] == argv
     return checked
 
 
-def ready_row(raw, pid, cpus, checker):
+def ready_row(raw, pid, cpus, checker, *, policy=None):
     assert type(raw) is bytes and 0 < len(raw) + 1 <= LINE
     row = raw.decode('ascii').split(',')
     assert len(row) == 19 and row[:2] == ['READY', checker.VERSION]
     values = [checker.uint(word) for word in row[2:]]
-    assert values[:9] == [10, 520, 10, 2, 64, 2048, 1, 1, checker.shared.INSTALL]
+    if policy is None:
+        assert values[:9] == [10, 520, 10, 2, 64, 2048, 1, 1, checker.shared.INSTALL]
+    else:
+        prepared_target(policy)
+        assert policy['epochs'] == 520
+        assert values[:9] == [policy['k'],520,policy['period_ms'],2,64,2048,1,1,checker.shared.INSTALL]
     assert type(pid) is int and 0 < pid <= (1 << 32) - 1
     assert values[9:11] == [pid, pid] and 0 < values[11] != pid
     assert values[12:14] == list(cpus[:2]) and 0 < values[14] <= (1 << 64) - 21
@@ -178,8 +209,12 @@ def append_observed(target, data, role, overflow):
     target.extend(data)
 
 
-def write_input(fd, outgoing, sent, writes, clock=time.monotonic_ns, writer=os.write):
-    assert outgoing and sent >= 0 and len(writes) < 68608
+def write_input(fd, outgoing, sent, writes, clock=time.monotonic_ns, writer=os.write, *, limit=None):
+    if limit is None:
+        assert outgoing and sent >= 0 and len(writes) < 68608
+    else:
+        assert type(limit) is int and 4096 <= limit <= 133120
+        assert outgoing and 0 <= sent < limit and sent + len(outgoing) == limit and len(writes) < limit
     before = clock()
     count = writer(fd, outgoing[:CHUNK])
     after = clock()
@@ -204,12 +239,23 @@ def prepared_phase_exchange(plan, checked, checker):
     return _exchange(plan, checked, checker, phase_profile=True, prepared=True)
 
 
-def _exchange(plan, checked, checker, *, phase_profile, prepared=False):
+def coordinate_exchange(plan, checked, checker):
+    assert plan['profile'] == COORDINATE_PROFILE and checker.VERSION == 'selected-accuracy-prepared-phase-session-v1'
+    c = coordinates().checked(plan['coordinate'])
+    files, _, policy = coordinates().authority(checker.truth, c)
+    assert checked['input_bytes'] == files['input.csv'] and checked['policy'] == plan['policy'] == policy
+    return _exchange(plan, checked, checker, phase_profile=True, prepared=True, coordinate=c)
+
+
+def _exchange(plan, checked, checker, *, phase_profile, prepared=False, coordinate=None):
     assert type(prepared) is bool and (not prepared or phase_profile)
     transcript, errors, buffer, outgoing = bytearray(), bytearray(), bytearray(), bytearray()
     result = dict(status='FAILED', profile=PREPARED_PHASE_PROFILE if prepared else (PHASE_PROFILE if phase_profile else PROFILE), revision=plan['revision'], attempt=1,
         hardware_status='UNRESOLVED', requested_phase_status='UNRESOLVED', metric_qualified=False,
         native_state_qualified=False, performance_qualified=False, writes=[], ready_receipt_ns=None, eof_close_ns=None)
+    if coordinate is not None:
+        assert prepared and phase_profile
+        result.update(profile=COORDINATE_PROFILE,coordinate=coordinate)
     sent, phase, lines, normal_reaps = 0, 0, 0, 0
     selector, child, failure = None, None, None
     rescue, overflow = False, {}
@@ -228,7 +274,10 @@ def _exchange(plan, checked, checker, *, phase_profile, prepared=False):
             remaining(deadline)
             if outgoing and not child.stdin.closed:
                 try:
-                    sent = write_input(child.stdin.fileno(), outgoing, sent, result['writes'])
+                    if coordinate is None:
+                        sent = write_input(child.stdin.fileno(), outgoing, sent, result['writes'])
+                    else:
+                        sent = write_input(child.stdin.fileno(), outgoing, sent, result['writes'],limit=len(checked['input_bytes']))
                 except BlockingIOError:
                     pass
                 except BrokenPipeError:
@@ -256,7 +305,10 @@ def _exchange(plan, checked, checker, *, phase_profile, prepared=False):
                         lines += 1
                         assert lines <= (checker.envelope_limit(520) if prepared else (checker.row_limit(520) if phase_profile else 11820))
                         if phase == 0:
-                            ready_row(bytes(raw), child.pid, plan['cpus'], checker)
+                            if coordinate is None:
+                                ready_row(bytes(raw), child.pid, plan['cpus'], checker)
+                            else:
+                                ready_row(bytes(raw), child.pid, plan['cpus'], checker,policy=plan['policy'])
                             result['ready_receipt_ns'] = time.monotonic_ns()
                             outgoing.extend(checked['input_bytes'])
                             phase = 1
@@ -310,7 +362,7 @@ def main():
     parser.add_argument('--plan', type=Path, required=True)
     parser.add_argument('--plan-sha', required=True)
     parser.add_argument('--raw', type=Path, required=True)
-    parser.add_argument('--profile', choices=(PROFILE, PHASE_PROFILE, PREPARED_PHASE_PROFILE), default=PROFILE)
+    parser.add_argument('--profile', choices=(PROFILE, PHASE_PROFILE, PREPARED_PHASE_PROFILE, COORDINATE_PROFILE), default=PROFILE)
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
     assert args.raw.is_absolute() and args.raw.is_relative_to(repo / 'ignored') and not os.path.lexists(args.raw)
@@ -323,17 +375,20 @@ def main():
     required = (own, repo/'evaluation/ordinary-accuracy/output.py', repo/'evaluation/ordinary-accuracy/truth.py',
         repo/'evaluation/ordinary-leaf-set-session/output.py')
     assert all(str(path) in plan['pins'] for path in required)
-    prepared = args.profile == PREPARED_PHASE_PROFILE
-    phase_profile = args.profile in (PHASE_PROFILE, PREPARED_PHASE_PROFILE)
+    coordinate_mode = args.profile == COORDINATE_PROFILE
+    if coordinate_mode:
+        assert str(own.with_name('accuracy_coordinates.py')) in plan['pins']
+    prepared = args.profile in (PREPARED_PHASE_PROFILE, COORDINATE_PROFILE)
+    phase_profile = args.profile in (PHASE_PROFILE, PREPARED_PHASE_PROFILE, COORDINATE_PROFILE)
     reader = repo/'evaluation/ordinary-accuracy'/('prepared_phase_output.py' if prepared else 'phase_output.py') if phase_profile else required[1]
     if prepared:
         assert str(repo/'evaluation/ordinary-accuracy/phase_output.py') in plan['pins']
     assert str(reader) in plan['pins']
     checker = load('_functional_accuracy_output', reader)
-    checked = prepared_phase_arguments(plan, checker) if prepared else (phase_arguments(plan, checker) if phase_profile else arguments(plan, checker))
+    checked = coordinate_arguments(plan,checker) if coordinate_mode else (prepared_phase_arguments(plan, checker) if prepared else (phase_arguments(plan, checker) if phase_profile else arguments(plan, checker)))
     assert os.sched_getaffinity(0) == set(plan['cpus'])
     args.raw.mkdir(mode=0o700)
-    result, out, err, overflow, deadline = (prepared_phase_exchange if prepared else (phase_exchange if phase_profile else exchange))(plan, checked, checker)
+    result, out, err, overflow, deadline = (coordinate_exchange if coordinate_mode else (prepared_phase_exchange if prepared else (phase_exchange if phase_profile else exchange)))(plan, checked, checker)
     try:
         assert read(args.plan, 1024 * 1024) == raw_plan
     except BaseException as error:
