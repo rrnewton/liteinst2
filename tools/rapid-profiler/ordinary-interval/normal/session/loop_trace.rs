@@ -1,6 +1,7 @@
 //! Failure-only fixed loop telemetry. Never an input to Schedule or acceptance.
 //! Two RUSAGE_THREAD syscalls and wall observations per iteration have real cost.
 //! Accounting samples have their own brackets, not the original poll endpoints.
+use super::phase_totals::Bucket;
 use std::fmt::{self, Write};
 use std::time::Instant;
 
@@ -179,12 +180,80 @@ struct Iteration {
     command: &'static str,
     progress: bool,
 }
+
+const DECISIONS: [&str; 5] = ["arm", "stop", "wait", "refused", "other"];
+const REPLIES: [&str; 4] = ["batch", "flushed", "finished", "other"];
+
+// Fixed controller-local arithmetic only. These buckets reuse observations
+// already paid for by Trace; they do not read a clock, rusage or worker state.
+#[derive(Clone, Copy)]
+struct Aggregate {
+    spans: [Bucket; 11],
+    gaps: Bucket,
+    started: u64,
+    completed: u64,
+    zero_progress: u64,
+    decisions: [u64; 5],
+    replies: [u64; 4],
+    reply_calls: u64,
+    valid: bool,
+}
+impl Default for Aggregate {
+    fn default() -> Self {
+        Self {
+            spans: [Bucket::default(); 11],
+            gaps: Bucket::default(),
+            started: 0,
+            completed: 0,
+            zero_progress: 0,
+            decisions: [0; 5],
+            replies: [0; 4],
+            reply_calls: 0,
+            valid: true,
+        }
+    }
+}
+fn add(counter: &mut u64, amount: u64) -> bool {
+    if let Some(value) = counter.checked_add(amount) {
+        *counter = value;
+        true
+    } else {
+        false
+    }
+}
+impl Aggregate {
+    fn boundaries(&mut self, item: &Iteration, complete: bool) {
+        // A failure's synthetic End is never a completed Wait->End span.
+        let end = if complete {
+            Phase::End as usize
+        } else {
+            item.marks[..Phase::End as usize]
+                .iter()
+                .rposition(Option::is_some)
+                .unwrap_or(0)
+        };
+        for i in 0..end {
+            let duration = item.marks[i]
+                .zip(item.marks[i + 1])
+                .and_then(|(a, b)| b.checked_duration_since(a));
+            self.valid &= self.spans[i].observe(duration);
+        }
+    }
+}
 #[derive(Default)]
 pub(in crate::normal) struct Trace {
     last: Option<Iteration>,
     current: Option<Iteration>,
+    aggregate: Aggregate,
+    aggregate_enabled: bool,
 }
 impl Trace {
+    pub(in crate::normal) fn with_aggregates() -> Self {
+        Self {
+            aggregate_enabled: true,
+            ..Self::default()
+        }
+    }
     pub(in crate::normal) fn begin(&mut self, observed: Instant, state: State) {
         self.begin_with(observed, state, Bracket::read());
     }
@@ -193,6 +262,16 @@ impl Trace {
         self.decision("refused");
     }
     fn begin_with(&mut self, observed: Instant, state: State, sample: Bracket) {
+        if self.aggregate_enabled {
+            self.aggregate.valid &= self.current.is_none();
+            self.aggregate.valid &= add(&mut self.aggregate.started, 1);
+            if let Some(previous) = &self.last {
+                self.aggregate.valid &= self.aggregate.gaps.observe(
+                    previous.marks[Phase::End as usize]
+                        .and_then(|end| observed.checked_duration_since(end)),
+                );
+            }
+        }
         let mut marks = [None; 12];
         marks[Phase::Poll as usize] = Some(observed);
         marks[Phase::PollReturned as usize] = Some(sample.before);
@@ -221,6 +300,10 @@ impl Trace {
     pub(in crate::normal) fn decision(&mut self, name: &'static str) {
         if let Some(current) = &mut self.current {
             current.decision = name;
+            if self.aggregate_enabled {
+                let index = DECISIONS.iter().position(|&s| s == name).unwrap_or(4);
+                self.aggregate.valid &= add(&mut self.aggregate.decisions[index], 1);
+            }
         }
     }
     pub(in crate::normal) fn reply(&mut self, name: &'static str, worker: usize, calls: usize) {
@@ -228,6 +311,13 @@ impl Trace {
             current.reply = name;
             current.worker = worker;
             current.reply_calls = calls;
+            if self.aggregate_enabled {
+                let index = REPLIES.iter().position(|&s| s == name).unwrap_or(3);
+                self.aggregate.valid &= add(&mut self.aggregate.replies[index], 1);
+                self.aggregate.valid &= u64::try_from(calls)
+                    .ok()
+                    .is_some_and(|calls| add(&mut self.aggregate.reply_calls, calls));
+            }
         }
     }
     pub(in crate::normal) fn command(&mut self, name: &'static str) {
@@ -245,6 +335,17 @@ impl Trace {
     }
     fn complete_with(&mut self, state: State, sample: Bracket) {
         self.end_with(sample, Some(state));
+        if self.aggregate_enabled {
+            if let Some(current) = &self.current {
+                self.aggregate.boundaries(current, true);
+                self.aggregate.valid &= add(&mut self.aggregate.completed, 1);
+                if !current.progress {
+                    self.aggregate.valid &= add(&mut self.aggregate.zero_progress, 1);
+                }
+            } else {
+                self.aggregate.valid = false;
+            }
+        }
         self.last = self.current.take();
     }
     fn end_with(&mut self, sample: Bracket, state: Option<State>) {
@@ -260,6 +361,72 @@ impl Trace {
             self.end_with(Bracket::read(), None);
         }
         self.report()
+    }
+    pub(in crate::normal) fn aggregate_report(&self) -> String {
+        if !self.aggregate_enabled {
+            return " controller_phase_totals_v1=[status=UNAVAILABLE reason=disabled]\n".into();
+        }
+        // Failure-only allocation/formatting. A copy includes the current
+        // observed prefix exactly once, without consuming or duplicating it.
+        let mut totals = self.aggregate;
+        let mut tail = None;
+        let mut unfinished_from = "none";
+        if let Some(current) = &self.current {
+            totals.boundaries(current, false);
+            if let Some((index, at)) = current.marks[..Phase::End as usize]
+                .iter()
+                .enumerate()
+                .rev()
+                .find_map(|(i, at)| at.map(|at| (i, at)))
+            {
+                unfinished_from = NAMES[index];
+                if let Some(last) = current.last {
+                    let mut observed = Bucket::default();
+                    totals.valid &= observed.observe(last.after.checked_duration_since(at));
+                    tail = Some(observed);
+                }
+            } else {
+                totals.valid = false;
+            }
+        }
+        let status = if !totals.valid {
+            "INVALID"
+        } else if totals.started == 0 {
+            "UNAVAILABLE"
+        } else {
+            "OBSERVED"
+        };
+        let mut out = format!(
+            " controller_phase_totals_v1=[status={status} started={} completed={} current={} zero_progress_completed={} reply_calls={} decisions={{",
+            totals.started,
+            totals.completed,
+            u8::from(self.current.is_some()),
+            totals.zero_progress,
+            totals.reply_calls,
+        );
+        for (name, count) in DECISIONS.iter().zip(totals.decisions) {
+            let _ = write!(out, "{name}:{count},");
+        }
+        out.push_str("} replies={");
+        for (name, count) in REPLIES.iter().zip(totals.replies) {
+            let _ = write!(out, "{name}:{count},");
+        }
+        out.push_str("} completed_boundary_spans_ns={");
+        for (i, bucket) in totals.spans.iter().enumerate() {
+            let _ = write!(out, "{}->{}:({bucket}),", NAMES[i], NAMES[i + 1]);
+        }
+        let _ = write!(
+            out,
+            "}} inter_iteration_end_to_poll_ns=({}) unfinished_from={unfinished_from} unfinished_through_error_ns=",
+            totals.gaps,
+        );
+        if let Some(tail) = tail {
+            let _ = write!(out, "({tail})");
+        } else {
+            out.push_str("UNAVAILABLE");
+        }
+        out.push_str(" scope=controller_wall_observations_not_worker_or_performance]\n");
+        out
     }
     fn report(&self) -> String {
         // Fixed two records and twelve boundaries; allocate only after failure.
@@ -525,5 +692,158 @@ mod tests {
         assert!(report.contains("user_us: 1, system_us: 0"));
         assert!(!report.contains("off_cpu"));
         assert!(!report.contains("preemption"));
+    }
+
+    #[test]
+    fn controller_aggregate_counts_completed_iterations_and_partial_failure_once() {
+        let base = Instant::now();
+        let mut trace = Trace::with_aggregates();
+        trace.begin_with(base, State::default(), bracket(base, 1, value(0)));
+        for (i, phase) in [
+            Phase::PollArm,
+            Phase::ReplyHistory,
+            Phase::Retire,
+            Phase::Input,
+            Phase::Dispatch,
+            Phase::Finalize,
+            Phase::Write,
+            Phase::WaitBound,
+            Phase::Wait,
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            trace.at(phase, base + Duration::from_nanos(i as u64 + 3));
+        }
+        trace.decision("wait");
+        trace.complete_with(State::default(), bracket(base, 12, value(0)));
+        assert_eq!(trace.aggregate.completed, 1);
+        assert_eq!(trace.aggregate.zero_progress, 1);
+        assert_eq!(trace.aggregate.replies, [0; 4]);
+        assert_eq!(trace.aggregate.reply_calls, 0);
+        assert!(trace.aggregate.spans.iter().all(|b| b.count() == 1));
+        assert_eq!(
+            trace
+                .aggregate
+                .spans
+                .iter()
+                .map(Bucket::sum_ns)
+                .sum::<u128>(),
+            13
+        );
+        trace.begin_with(
+            base + Duration::from_nanos(20),
+            State::default(),
+            bracket(base, 22, value(0)),
+        );
+        trace.decision("refused");
+        // Count actual observation events, not only the last/current label.
+        trace.reply("batch", 1, 2);
+        trace.reply("batch", 2, 3);
+        trace.progress(true);
+        assert_eq!(trace.aggregate.replies, [2, 0, 0, 0]);
+        assert_eq!(trace.aggregate.reply_calls, 5);
+        trace.at(Phase::PollArm, base + Duration::from_nanos(25));
+        trace.at(Phase::ReplyHistory, base + Duration::from_nanos(26));
+        trace.at(Phase::Retire, base + Duration::from_nanos(28));
+        trace.end_with(bracket(base, 30, value(0)), None);
+        let report = trace.aggregate_report();
+        assert_eq!(trace.aggregate_report(), report);
+        assert_eq!(trace.aggregate.completed, 1);
+        assert!(trace.aggregate.spans.iter().all(|b| b.count() == 1));
+        let mut with_prefix = trace.aggregate;
+        with_prefix.boundaries(trace.current.as_ref().unwrap(), false);
+        assert!(with_prefix.spans[..4].iter().all(|b| b.count() == 2));
+        assert!(with_prefix.spans[4..].iter().all(|b| b.count() == 1));
+        let named = with_prefix.spans.iter().map(Bucket::sum_ns).sum::<u128>();
+        assert_eq!(named, 21);
+        assert_eq!(trace.aggregate.gaps.sum_ns(), 7);
+        assert_eq!(named + trace.aggregate.gaps.sum_ns() + 3, 31);
+        assert!(report.contains("started=2 completed=1 current=1"));
+        assert!(report.contains(
+            "unfinished_from=retire unfinished_through_error_ns=(valid=true spans=1 sum_ns=3"
+        ));
+        assert!(!trace.report().contains("controller_phase_totals"));
+    }
+
+    #[test]
+    fn controller_aggregate_refuses_clock_holes_regression_and_counter_overflow() {
+        let base = Instant::now();
+        let mut regression = Trace::with_aggregates();
+        regression.begin_with(
+            base + Duration::from_nanos(10),
+            State::default(),
+            bracket(base, 5, value(0)),
+        );
+        regression.end_with(bracket(base, 20, value(0)), None);
+        assert!(regression.aggregate_report().contains("status=INVALID"));
+        let mut hole = Trace::with_aggregates();
+        hole.begin_with(base, State::default(), bracket(base, 1, value(0)));
+        hole.at(Phase::ReplyHistory, base + Duration::from_nanos(3));
+        assert!(hole.aggregate_report().contains("status=INVALID"));
+        let mut overflow = Trace::with_aggregates();
+        overflow.aggregate.started = u64::MAX;
+        overflow.begin_with(base, State::default(), bracket(base, 1, value(0)));
+        assert_eq!(overflow.aggregate.started, u64::MAX);
+        assert!(!overflow.aggregate.valid);
+        assert!(overflow.aggregate_report().contains("status=INVALID"));
+        let mut missing = Trace::with_aggregates();
+        missing.complete_with(State::default(), bracket(base, 1, value(0)));
+        assert_eq!(missing.aggregate.completed, 0);
+        assert!(!missing.aggregate.valid);
+        // A repeated completion cannot charge any iteration a second time.
+        missing.complete_with(State::default(), bracket(base, 2, value(0)));
+        assert_eq!(missing.aggregate.completed, 0);
+    }
+
+    #[test]
+    fn controller_aggregate_format_is_fixed_and_missing_terminal_time_is_unavailable() {
+        let base = Instant::now();
+        let mut inactive = Trace::default();
+        inactive.begin_with(base, State::default(), bracket(base, 1, value(0)));
+        inactive.decision("wait");
+        inactive.reply("batch", 1, 1);
+        inactive.complete_with(State::default(), bracket(base, 2, value(0)));
+        assert_eq!(inactive.aggregate.started, 0);
+        assert_eq!(inactive.aggregate.completed, 0);
+        assert_eq!(inactive.aggregate.decisions, [0; 5]);
+        assert_eq!(inactive.aggregate.replies, [0; 4]);
+        assert!(inactive.aggregate.spans.iter().all(|b| b.count() == 0));
+        assert!(inactive.aggregate.valid);
+        assert!(
+            inactive
+                .aggregate_report()
+                .contains("status=UNAVAILABLE reason=disabled")
+        );
+        let mut trace = Trace::with_aggregates();
+        assert!(trace.aggregate_report().contains("status=UNAVAILABLE"));
+        trace.begin_with(base, State::default(), bracket(base, 1, value(0)));
+        let before = trace.report();
+        let report = trace.aggregate_report();
+        assert!(report.contains("status=OBSERVED"));
+        assert!(
+            report
+                .contains("unfinished_from=poll_returned unfinished_through_error_ns=UNAVAILABLE")
+        );
+        assert_eq!(trace.report(), before);
+        // Large duration values and maximum event counters stay bounded,
+        // independent of record IDs or the original error length. Buckets
+        // format only five fixed scalar fields (u64/u128/optional u128).
+        trace.aggregate.started = u64::MAX;
+        trace.aggregate.completed = u64::MAX;
+        trace.aggregate.zero_progress = u64::MAX;
+        trace.aggregate.reply_calls = u64::MAX;
+        trace.aggregate.decisions = [u64::MAX; 5];
+        trace.aggregate.replies = [u64::MAX; 4];
+        for b in &mut trace.aggregate.spans {
+            assert!(b.observe(Some(Duration::MAX)));
+        }
+        assert!(trace.aggregate.gaps.observe(Some(Duration::MAX)));
+        let report = trace.aggregate_report();
+        assert!(report.len() < 4096);
+        assert!(report.ends_with('\n'));
+        assert!(!report.contains("off_cpu"));
+        assert!(!report.contains("preemption"));
+        assert!(std::mem::size_of::<Aggregate>() < 2048);
     }
 }

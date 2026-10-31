@@ -103,6 +103,23 @@ PREPARED_CONTROLS = (
 )
 APP_CONTROLS += PREPARED_CONTROLS
 
+# Additive failure-diagnostic controls; the original 54 names stay literal.
+DIAGNOSTIC_PREFIXES = ('normal::session::phase_totals::',)
+DIAGNOSTIC_CONTROLS = (
+    'normal::leaf_set::worker::tests::worker_trace_export_requires_retirement_identity_and_totals',
+    'normal::session::loop_trace::tests::controller_aggregate_counts_completed_iterations_and_partial_failure_once',
+    'normal::session::loop_trace::tests::controller_aggregate_format_is_fixed_and_missing_terminal_time_is_unavailable',
+    'normal::session::loop_trace::tests::controller_aggregate_refuses_clock_holes_regression_and_counter_overflow',
+    'normal::session::phase_totals::tests::bucket_distinguishes_empty_zero_and_exact_extrema',
+    'normal::session::phase_totals::tests::bucket_missing_and_overflow_latch_without_replacing_statistics',
+    'normal::session::phase_totals::tests::worker_formatter_has_fixed_numeric_and_line_bounds',
+    'normal::session::phase_totals::tests::worker_missing_or_repeated_start_never_resets_a_trace',
+    'normal::session::phase_totals::tests::worker_partition_conserves_all_phases_and_repeated_marks',
+    'normal::session::phase_totals::tests::worker_regression_and_bucket_overflow_keep_only_valid_prefix',
+    'normal::session::phase_totals::tests::worker_zero_window_is_observed_and_finish_consumes_the_active_trace',
+)
+APP_CONTROLS += DIAGNOSTIC_CONTROLS
+
 SDK_CONTROLS = ('frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_selection_count_order_and_source_are_exact', 'frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_page_union_refuses_conflicts_gaps_and_third_page', 'frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_overlay_retains_every_unselected_byte', 'frontend_native::module::ordinary::normal_leaf_set::tests::leaf_set_last_selection_refuses_before_loader', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_roles_and_policies_cover_all_members', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_budget_refuses_aggregate_overflow', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_identity_and_complete_union_are_required', 'frontend_native::always_on::site::ordinary::normal_leaf_set::tests::leaf_set_control_lookup_keeps_exact_function', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_profile_requires_exact_count_k_history_and_mode', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_banks_prepare_once_and_preserve_refused_identity', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_runtime_keeps_saved_function_and_closed_receipt', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_transfer_validates_every_row_and_journal_word', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_transfer_refusals_leave_receipt_and_cursors_unchanged', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_output_captures_complete_identity_before_consumption', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_reclaim_preserves_shared_owners_and_fresh_generation', 'frontend_native::always_on::normal::leaf_set::tests::leaf_set_handles_refuse_all_old_profiles', 'frontend_native::always_on::normal::leaf_set::history::tests::leaf_set_history_full_identity_and_replay_are_exact', 'frontend_native::always_on::normal::leaf_set::history::tests::leaf_set_history_streams_do_not_retain_epochs')
 # Derive the old broad ownership prefixes from the unchanged eighteen names
 # before appending modules whose registration is accuracy_tests, not tests.
@@ -180,15 +197,23 @@ def ordinary_inventory(inventory, recipe, single, module):
     prepared_modules = tuple(n for n in PREPARED_CONTROLS if n.startswith(PREPARED_PREFIXES))
     assert len(prepared_modules) == 15
     assert set(n for n in inventory if n.startswith(PREPARED_PREFIXES)) == set(prepared_modules)
+    assert len(DIAGNOSTIC_CONTROLS) == len(set(DIAGNOSTIC_CONTROLS)) == 11
+    diagnostic_trace = tuple(n for n in DIAGNOSTIC_CONTROLS if n.startswith(single.TRACE_PREFIX))
+    assert len(diagnostic_trace) == 3
+    assert set(n for n in inventory if n.startswith(single.TRACE_PREFIX)) == set(single.TRACE + diagnostic_trace)
+    diagnostic_modules = tuple(n for n in DIAGNOSTIC_CONTROLS if n.startswith(DIAGNOSTIC_PREFIXES))
+    assert len(diagnostic_modules) == 7
+    assert set(n for n in inventory if n.startswith(DIAGNOSTIC_PREFIXES)) == set(diagnostic_modules)
     prefixes = ('normal::leaf_set::', 'normal::module::session::input::leaf_set_tests::',
-                'normal::session::worker::leaf_set_tests::') + ACCURACY_PREFIXES + PHASE_PREFIXES + PREPARED_PREFIXES
-    assert set(n for n in inventory if n.startswith(prefixes)) == set(APP_CONTROLS)
+                'normal::session::worker::leaf_set_tests::') + ACCURACY_PREFIXES + PHASE_PREFIXES + PREPARED_PREFIXES + DIAGNOSTIC_PREFIXES
+    assert set(n for n in inventory if n.startswith(prefixes) or n in diagnostic_trace) == set(APP_CONTROLS)
     prior = recipe.ordinary_inventory([n for n in inventory if n not in APP_CONTROLS],
                                      single, module, recipe.OWNER_CONTROLS)
-    assert len(prior) == 52 and len(APP_CONTROLS[:27]) == 27 and len(APP_CONTROLS) == 54
-    assert APP_CONTROLS[27:36] == PHASE_CONTROLS and APP_CONTROLS[36:] == PREPARED_CONTROLS
+    assert len(prior) == 52 and len(APP_CONTROLS[:27]) == 27 and len(APP_CONTROLS) == 65
+    assert APP_CONTROLS[27:36] == PHASE_CONTROLS and APP_CONTROLS[36:54] == PREPARED_CONTROLS
+    assert APP_CONTROLS[54:] == DIAGNOSTIC_CONTROLS
     wanted = tuple(prior) + APP_CONTROLS
-    assert len(wanted) == len(set(wanted)) == 106
+    assert len(wanted) == len(set(wanted)) == 117
     return wanted
 
 

@@ -523,9 +523,9 @@ def selected_inventory(inventory, leaf, recipe, modules):
     assert len(SELECTED_RUST) == len(set(SELECTED_RUST)) == 24
     assert set(name for name in inventory if name.startswith(SELECTED_PREFIX)) == set(SELECTED_RUST)
     old = tuple(leaf.ordinary_inventory(inventory, recipe, modules['single'], modules['module']))
-    assert len(old) == len(set(old)) == 106
+    assert len(old) == len(set(old)) == 117
     expected = old + SELECTED_RUST
-    assert len(expected) == len(set(expected)) == 130 and set(expected) <= set(inventory)
+    assert len(expected) == len(set(expected)) == 141 and set(expected) <= set(inventory)
     return expected
 
 
@@ -613,7 +613,7 @@ def run_controls(run, recipe, leaf, owners, new, test_binary):
     assert tuple(spec['name'] for spec in specs) == control_stage_labels(selected_profile(run.a))
     assert sum(row['count'] for row in python_results) == python_control_count(selected_profile(run.a))
     return dict(stage_specs=specs, inventory=list(inventory), rust=rust,
-                python=python_results, rust_count=130, python_count=python_control_count(selected_profile(run.a)))
+                python=python_results, rust_count=141, python_count=python_control_count(selected_profile(run.a)))
 
 
 def accept_test_product(run,recipe,path,digest,owner_path,owner_digest,build,build_path,git):
@@ -680,7 +680,7 @@ def replay_controls(run,recipe,leaf,owners,path,digest,owner_path,owner_digest,b
     actual=result['controls'];specs=actual['stage_specs']
     assert tuple(spec['name'] for spec in specs)==control_stage_labels(selected_profile(run.a))
     assert tuple(row['name'] for row in result['stages'])==control_stage_labels(selected_profile(run.a))
-    assert actual['rust_count']==130 and actual['python_count']==python_control_count(selected_profile(run.a))
+    assert actual['rust_count']==141 and actual['python_count']==python_control_count(selected_profile(run.a))
     observed=[]
     for spec,row in zip(specs,result['stages']):
         name=spec['name'];d=directory/(name+'-io');outer=directory/name

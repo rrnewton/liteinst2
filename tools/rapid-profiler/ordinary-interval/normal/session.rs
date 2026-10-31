@@ -11,6 +11,7 @@ pub(in crate::normal) mod epoch_storage;
 pub(in crate::normal) mod io;
 pub(in crate::normal) mod loop_trace;
 pub(in crate::normal) mod phase;
+pub(in crate::normal) mod phase_totals;
 mod protocol;
 pub(crate) mod two;
 pub(in crate::normal) mod worker;
@@ -324,6 +325,9 @@ pub(in crate::normal) trait Application: application_sealed::Sealed {
         io: &mut Io,
     ) -> Result<(), String>;
     fn final_checks(&self) -> Result<(), String>;
+    /// Diagnostic notification only, after actual join/task retirement and the
+    /// complete engine check. It grants no completion or custody authority.
+    fn worker_retired(&mut self, _tid: u64, _totals: NormalTotals) {}
     fn final_custody(&self) -> Result<(), String>;
     fn terminal(
         &self,
@@ -689,6 +693,7 @@ pub(in crate::normal) fn drive<A: Application>(
                         u64::from(schedule.armed()) + 1
                     );
                     engine.final_check()?;
+                    app.worker_retired(tid, totals);
                     cancelled =
                         app.cancelled_finish(totals, &engine.reports, &engine.history, io)?;
                     if cancelled.is_none() {

@@ -122,6 +122,8 @@ pub(in crate::normal) trait Runtime {
     }
     fn poll_deferred(&mut self) {}
     fn cancel_deferred(&mut self) {}
+    // Diagnostic-only; default adapters take no clocks or other observations.
+    fn trace_phase(&mut self, _phase: super::phase_totals::WorkerPhase) {}
     fn call(&mut self, command: Self::Command);
     fn flush(&mut self, tx: &mpsc::SyncSender<Event<Self::Call, Self::Batch>>);
     fn totals(&self) -> NormalTotals;
@@ -132,7 +134,9 @@ pub(in crate::normal) fn drive<R: Runtime>(
     rx: mpsc::Receiver<R::Command>,
     tx: mpsc::SyncSender<Event<R::Call, R::Batch>>,
 ) {
+    use super::phase_totals::WorkerPhase;
     loop {
+        runtime.trace_phase(WorkerPhase::Receive);
         let command = match rx.try_recv() {
             Ok(command) => command,
             Err(TryRecvError::Empty) if runtime.deferred() => {
@@ -148,10 +152,12 @@ pub(in crate::normal) fn drive<R: Runtime>(
                 if runtime.pending() != 0 {
                     runtime.flush(&tx);
                 }
+                runtime.trace_phase(WorkerPhase::Receive);
                 rx.recv().expect("session controller remains alive")
             }
             Err(TryRecvError::Disconnected) => panic!("session controller disconnected"),
         };
+        runtime.trace_phase(WorkerPhase::Dispatch);
         match command.kind() {
             1 => {
                 runtime.call(command);
@@ -162,6 +168,7 @@ pub(in crate::normal) fn drive<R: Runtime>(
             2 => {
                 let id = command.flush_id().expect("closed Flush variant");
                 runtime.flush(&tx);
+                runtime.trace_phase(WorkerPhase::Reply);
                 tx.send(Event::Flushed {
                     id,
                     totals: runtime.totals(),
@@ -169,6 +176,7 @@ pub(in crate::normal) fn drive<R: Runtime>(
                 .unwrap();
             }
             3 => {
+                runtime.trace_phase(WorkerPhase::Cleanup);
                 runtime.cancel_deferred();
                 runtime.flush(&tx);
                 let totals = runtime.finish();

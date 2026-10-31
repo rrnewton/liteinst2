@@ -292,8 +292,30 @@ pub(in crate::normal) struct Application<const N: usize> {
     phase: Option<Arc<phase::Shared>>,
     prepared: Option<Arc<phase::prepared::Shared>>,
     phase_emitted: usize,
+    worker_trace: Option<worker::TracePublication>,
+    retired_trace: Option<(u64, NormalTotals)>,
 }
 impl<const N: usize> Application<N> {
+    fn failure_trace(&self, trace: &shared::loop_trace::Trace) {
+        if let Some(publication) = &self.worker_trace {
+            // Append after the original error. Diagnostics never replace that
+            // error, write stdout, or acquire any unfinished worker ownership.
+            let worker = worker::trace_diagnostic(
+                publication,
+                self.ready.get().copied(),
+                self.retired_trace,
+            );
+            let controller = trace.aggregate_report();
+            use std::io::Write;
+            let mut stderr = std::io::stderr().lock();
+            if worker.len() + controller.len() <= 16 * 1024 {
+                let _ = stderr.write_all(worker.as_bytes());
+                let _ = stderr.write_all(controller.as_bytes());
+            } else {
+                let _ = stderr.write_all(b"phase_totals_v1 status=INVALID reason=format_bound\n");
+            }
+        }
+    }
     fn ready(&mut self, tid: u64, io: &mut Io) -> Result<(), String> {
         let id = *self.ready.get().expect("owned actual worker handshake");
         assert_eq!(id.tid, tid);
@@ -371,6 +393,11 @@ impl<const N: usize> ApplicationTrait for Application<N> {
     type Call = worker::Call;
     type Batch = counter::Batch;
     type Completion = Result<(), input::InputCompletion>;
+    fn worker_retired(&mut self, tid: u64, totals: NormalTotals) {
+        // Called only after the existing Finished/join/TID/task-retirement and
+        // engine checks. A published OnceLock by itself is not this evidence.
+        self.retired_trace = Some((tid, totals));
+    }
     fn start_clock(&mut self, origin: Instant, policy: Policy) -> Result<(), String> {
         if let Some(gate) = &self.prepared {
             gate.start(origin, policy).map_err(failure)?;
@@ -1037,6 +1064,8 @@ fn run_common_timing<const N: usize>(
         phase: phase_request.map(phase::Shared::new),
         prepared: None,
         phase_emitted: 0,
+        worker_trace: prepared_request.map(|_| Arc::new(OnceLock::new())),
+        retired_trace: None,
     };
     application.prepared = prepared_request.map(|request| {
         phase::prepared::Shared::new(request, Arc::clone(application.phase.as_ref().unwrap()))
@@ -1052,6 +1081,7 @@ fn run_common_timing<const N: usize>(
     let worker_counter = application.counter.as_ref().map(|c| Arc::clone(&c.custody));
     let worker_phase = application.phase.as_ref().map(Arc::clone);
     let worker_prepared = application.prepared.as_ref().map(Arc::clone);
+    let worker_trace = application.worker_trace.as_ref().map(Arc::clone);
     // The additive barrier shares one original two-second attachment budget.
     let prepare_deadline = prepared_request.map(|_| Instant::now() + WAIT);
     let mut handle = Some(joined_task::spawn(move || {
@@ -1059,7 +1089,13 @@ fn run_common_timing<const N: usize>(
             (entries, expectations),
             client,
             worker_custody,
-            (ready, worker_counter, worker_phase, worker_prepared),
+            (
+                ready,
+                worker_counter,
+                worker_phase,
+                worker_prepared,
+                worker_trace,
+            ),
             rx,
             events,
             cpus[1],
@@ -1067,7 +1103,11 @@ fn run_common_timing<const N: usize>(
     }));
     let mut joined = None;
     let mut state = shared::LoopState::default();
-    let mut trace = shared::loop_trace::Trace::default();
+    let mut trace = if application.worker_trace.is_some() {
+        shared::loop_trace::Trace::with_aggregates()
+    } else {
+        shared::loop_trace::Trace::default()
+    };
     // All accepted/pending/returned/output owners remain outside this borrowing scope.
     let mut active_fail_stop = csv::FailStop(true);
     let outcome = (|| -> Result<Result<(), input::InputCompletion>, String> {
@@ -1109,6 +1149,7 @@ fn run_common_timing<const N: usize>(
                 .as_ref()
                 .map_or_else(String::new, |task| format!("; {}", task.diagnostic()));
             eprintln!("{command} FAILED: {error}{details}{retirement}");
+            application.failure_trace(&trace);
             std::process::exit(1);
         }
         Ok(Err(completion)) => {
@@ -1120,6 +1161,7 @@ fn run_common_timing<const N: usize>(
                     completion_stderr(completion).replacen("normal-leaf-set-session", command, 1)
                 );
             }
+            application.failure_trace(&trace);
             std::process::exit(1);
         }
         Ok(Ok(())) => {}

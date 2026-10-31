@@ -166,14 +166,21 @@ struct MappingRow {
     end: u64,
     permissions: std::ops::Range<usize>,
 }
-// Capacity is local to one custody pass; no captured answer is retained.
-// Every use clears both logical lengths before opening a fresh maps file.
+// Only empty capacity may persist in exclusive worker scratch. No captured
+// answer or borrowed view survives a pass. Every use clears both logical
+// lengths before opening a fresh maps file.
 #[derive(Default)]
 pub(super) struct MappingScratch {
     maps: String,
     rows: Vec<MappingRow>,
 }
 impl MappingScratch {
+    // Storage hygiene for an enclosing custody pass, including unwind. This
+    // never publishes a snapshot or replaces the fresh-read path below.
+    pub(super) fn clear(&mut self) {
+        self.maps.clear();
+        self.rows.clear();
+    }
     pub(super) fn with_snapshot(&mut self, check: impl for<'maps> FnOnce(MappingSnapshot<'maps>)) {
         self.with_snapshot_from(
             |maps| {
