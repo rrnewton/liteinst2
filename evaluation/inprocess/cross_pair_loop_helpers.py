@@ -136,6 +136,8 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,original):
     reader,owner_reader,native_policy=reader_support(builder,private,pin,binary,run,r)
     app_layout=reader.elf(original.read_bytes(),native_policy)
     r['application_layout']={k:v for k,v in app_layout.items()if k not in('source','sources')}
+    r['application_layout']['source_pairs']=[dict(bytes=len(value),sha256=H(value))
+        for value in app_layout['source_pairs']]
     seed_reference=seed_prerequisite(builder,private,pin,binary,run,r)
     subjects={}
     for lane in ('maintained','differential'):
