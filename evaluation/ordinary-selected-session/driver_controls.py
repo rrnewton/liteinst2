@@ -253,7 +253,7 @@ class Controls(unittest.TestCase):
             'normal::session::io::accuracy_tests::both_caps_refuse_one_byte_over_without_discarding_pending_output',
         )
         self.assertEqual(leaf.ACCURACY_CONTROLS, accuracy)
-        self.assertEqual(leaf.APP_CONTROLS[16:], accuracy)
+        self.assertEqual(leaf.APP_CONTROLS[16:27], accuracy)
         self.assertEqual(len(old), 68)
         self.assertEqual(len(driver.SELECTED_RUST), 24)
         self.assertEqual(len(accuracy), 11)
@@ -262,15 +262,19 @@ class Controls(unittest.TestCase):
         with patch.object(leaf, 'ordinary_inventory', wraps=leaf.ordinary_inventory) as inherited:
             self.assertEqual(driver.selected_inventory(inventory, leaf, recipe, modules), wanted)
             inherited.assert_called_once_with(inventory, recipe, single, module)
-        self.assertEqual(len(wanted), 103)
-        self.assertEqual(set(wanted), set(old + driver.SELECTED_RUST + accuracy))
+        self.assertEqual(len(wanted), 112)
+        self.assertEqual(set(wanted), set(old + driver.SELECTED_RUST + accuracy + leaf.PHASE_CONTROLS))
         for name in wanted:
             for changed in ([n for n in inventory if n != name], inventory + [name]):
                 with self.assertRaises(AssertionError, msg=name):
                     driver.selected_inventory(changed, leaf, recipe, modules)
         with self.assertRaises(AssertionError):
             driver.selected_inventory(list(old + driver.SELECTED_RUST), leaf, recipe, modules)
-        prefixes = ('normal::leaf_set::accuracy_tests::',
+        self.assertEqual(len(leaf.PHASE_CONTROLS),9)
+        self.assertEqual(leaf.APP_CONTROLS[27:],leaf.PHASE_CONTROLS)
+        with self.assertRaises(AssertionError):
+            driver.selected_inventory(list(old+driver.SELECTED_RUST+accuracy),leaf,recipe,modules)
+        prefixes = leaf.PHASE_PREFIXES + ('normal::leaf_set::accuracy_tests::',
                     'normal::leaf_set::selected::accuracy_tests::',
                     'normal::leaf_set::counter::tests::',
                     'normal::session::io::accuracy_tests::',

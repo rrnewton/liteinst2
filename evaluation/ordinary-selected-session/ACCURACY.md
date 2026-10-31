@@ -110,3 +110,77 @@ Bytes use explicit `bytes_hex` fields; original streams remain separately pinned
 No scaling, body-only/per-call perf interpretation, hardware accuracy, calibrated
 phase, performance, bank-exhaustion or executable-retirement claim is made.
 Installed code owners remain process-lived; interval-bank reclamation is separate.
+
+
+A separate phase-observation functional profile
+`selected-accuracy-phase-functional-first-v1` uses the same public owner and
+bounded producer. It preserves the original `accuracy-prepare` and
+`accuracy-functional` modes and their first fixed trial. Its two explicit modes
+are `phase-prepare` and `phase-functional`; both require `--epoch-phase random`
+or `--epoch-phase locked`. No arbitrary delay, command or subset selector exists.
+For this finite extension the coordinate remains calibration trial 1,
+`late_expensive`, K=10, period=10 ms, E=520, all 2,048 records. The requested delay
+is recomputed from that exact `truth.py` manifest. Random/locked is the epoch
+policy, distinct from the manifest's calibration/holdout/comparison population.
+
+Use fresh products/tests/whole controls from the exact integrated revision as
+in [BUILD.md](BUILD.md); the mandatory whole control roster is now 112 Rust and
+104 Python, preserving every prior required name and adding all nine Rust phase
+controls. Run the 14 new pure reader and eight finite-adapter controls separately
+under the existing bounded owner before using this new profile:
+
+```sh
+python3 -B evaluation/ordinary-accuracy/phase_controls.py -v
+python3 -B evaluation/ordinary-selected-session/phase_functional_controls.py -v
+```
+
+With `REV`, `TAG`, `ROOT`, `TOOLCHAIN`, `USER_HOME`, `CARGO_HOME`, `HARDWARE` and the
+closed `BUILD*`/`CONTROLS*` paths/digests set as in the existing functional recipe,
+run under the existing three-CPU reservation. Use a new absolute ignored path
+for each owner/raw result; canonical option order is checked:
+
+```sh
+python3 -B evaluation/ordinary-selected-session/accuracy_functional_owner.py \
+  --phase phase-prepare --revision "$REV" --reservation-tag "$TAG" \
+  --owner "$ROOT/ignored/$TAG/phase-prepare-owner.json" --raw "$ROOT/ignored/$TAG/phase-prepare" \
+  --toolchain "$TOOLCHAIN" --user-home "$USER_HOME" --cargo-home "$CARGO_HOME" --hardware "$HARDWARE" \
+  --build "$BUILD" --build-sha "$BUILD_SHA" --build-owner "$BUILD_OWNER" --build-owner-sha "$BUILD_OWNER_SHA" \
+  --controls "$CONTROLS" --controls-sha "$CONTROLS_SHA" --controls-owner "$CONTROLS_OWNER" --controls-owner-sha "$CONTROLS_OWNER_SHA" \
+  --epoch-phase random
+```
+
+Require its closed `PHASE_PREPARATION_PASS` and independently review the complete
+actual ELF/source page/caller facts and all nine original invocation premises.
+A phase acceptance has kind
+`selected-accuracy-phase-functional-geometry-acceptance-v1`, scope
+`selected-accuracy-phase-functional-first-v1`, and the exact new preparation
+hash/facts. An old-profile acceptance cannot substitute. Preparation itself
+leaves the application UNRUN and grants no execution authority.
+
+```sh
+python3 -B evaluation/ordinary-selected-session/accuracy_functional_owner.py \
+  --phase phase-functional --revision "$REV" --reservation-tag "$TAG" \
+  --owner "$ROOT/ignored/$TAG/phase-functional-owner.json" --raw "$ROOT/ignored/$TAG/phase-functional" \
+  --toolchain "$TOOLCHAIN" --user-home "$USER_HOME" --cargo-home "$CARGO_HOME" --hardware "$HARDWARE" \
+  --build "$BUILD" --build-sha "$BUILD_SHA" --build-owner "$BUILD_OWNER" --build-owner-sha "$BUILD_OWNER_SHA" \
+  --controls "$CONTROLS" --controls-sha "$CONTROLS_SHA" --controls-owner "$CONTROLS_OWNER" --controls-owner-sha "$CONTROLS_OWNER_SHA" \
+  --preparation "$PREPARATION" --preparation-sha "$PREPARATION_SHA" --preparation-owner "$PREPARATION_OWNER" --preparation-owner-sha "$PREPARATION_OWNER_SHA" \
+  --geometry "$GEOMETRY" --geometry-sha "$GEOMETRY_SHA" --epoch-phase random
+```
+
+The original READY PID/worker/CPU checks gate the full input release. The adapter
+retains one attempt, normal closure and all raw failure bytes; the application
+then uses its own once-only first-call gate and shared-origin observations.
+Limits remain 15 s adapter, 20 CPU/30 wall seconds, 55 s helper and 1,200 s outer,
+8 MiB streams, 350 bytes/line and the unchanged 2 ms ARM deadline. The consumed
+overflow prefix plus at most 8,192 offending bytes are retained separately, then
+refused. See [the phase wire contract](../ordinary-accuracy/READER.md).
+
+A `PHASE_FUNCTIONAL_STRUCTURAL_PASS` proves only complete structural observations.
+Requested phase realization, PMU/body/window accuracy, native state, performance,
+2 ms qualification and matrix completion are not granted. Code owners remain
+process-lived; bank reclaim is not executable retirement. The full three
+populations × 100 seeds × six workloads × 24 policies (43,200 cells) and prior
+strict-2-ms one-PASS/four-FAIL history remain unchanged. This extension neither
+enumerates that matrix nor sets a calibration threshold. All source controls and
+native phase execution require separately retained execution results.

@@ -10,6 +10,7 @@ pub(in crate::normal) mod engine;
 pub(in crate::normal) mod epoch_storage;
 pub(in crate::normal) mod io;
 pub(in crate::normal) mod loop_trace;
+pub(in crate::normal) mod phase;
 mod protocol;
 pub(crate) mod two;
 pub(in crate::normal) mod worker;
@@ -279,6 +280,9 @@ pub(in crate::normal) trait Application: application_sealed::Sealed {
     type Call;
     type Batch;
     type Completion;
+    fn start_clock(&mut self, _origin: Instant, _policy: Policy) -> Result<(), String> {
+        Ok(())
+    }
     fn observe_arms(&self) -> bool {
         false
     }
@@ -454,6 +458,7 @@ pub(in crate::normal) fn drive<A: Application>(
     } = context;
     let started = Instant::now();
     let mut schedule = Schedule::new(started, policy).map_err(failure)?;
+    app.start_clock(started, policy)?;
     let mut previous_poll = started;
     let mut last_wait: Option<(Duration, Duration)> = None;
     loop {

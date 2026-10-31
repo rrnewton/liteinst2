@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Two fixed Exact37 phases through the unchanged public process owner."""
+"""Fixed legacy/phase Exact37 modes through the unchanged public process owner."""
 import sys
 if not __debug__:
     raise SystemExit('assertions required')
@@ -18,13 +18,20 @@ CONTROLS = ('controls','controls-sha','controls-owner','controls-owner-sha')
 PREPARE = ('preparation','preparation-sha','preparation-owner','preparation-owner-sha')
 EXTRAS = {'accuracy-prepare': BUILD+CONTROLS,
     'accuracy-functional': BUILD+CONTROLS+PREPARE+('geometry','geometry-sha')}
+PHASE_EXTRAS = {'phase-prepare': BUILD+CONTROLS+('epoch-phase',),
+    'phase-functional': BUILD+CONTROLS+PREPARE+('geometry','geometry-sha','epoch-phase')}
 SCHEMA = 'selected-accuracy-functional-public-owner-v1'
+
+
+def extras(phase):
+    assert phase in EXTRAS or phase in PHASE_EXTRAS
+    return EXTRAS[phase] if phase in EXTRAS else PHASE_EXTRAS[phase]
+
 
 
 def commands(options, python, script):
     phase = options['phase']
-    assert phase in EXTRAS
-    keys = COMMON+EXTRAS[phase]
+    keys = COMMON+extras(phase)
     assert set(options) == set(keys) and all(type(v) is str and v for v in options.values())
     assert re.fullmatch('[0-9a-f]{40}', options['revision'])
     assert re.fullmatch('[A-Za-z0-9_.-]{1,128}', options['reservation-tag'])
@@ -33,6 +40,8 @@ def commands(options, python, script):
     for key in keys:
         if key.endswith('-sha'):
             assert re.fullmatch('[0-9a-f]{64}', options[key])
+        elif key == 'epoch-phase':
+            assert options[key] in ('random', 'locked')
         elif key not in ('phase','revision','reservation-tag','hardware'):
             assert Path(options[key]).is_absolute()
     invocation = [python,'-B',script]+[word for key in keys for word in ('--'+key,options[key])]
@@ -43,15 +52,15 @@ def commands(options, python, script):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--phase', choices=tuple(EXTRAS), required=True)
+    parser.add_argument('--phase', choices=tuple(EXTRAS)+tuple(PHASE_EXTRAS), required=True)
     for name in COMMON[1:]:
         parser.add_argument('--'+name, required=True)
-    extras = tuple(dict.fromkeys(k for row in EXTRAS.values() for k in row))
-    for name in extras:
+    option_names = tuple(dict.fromkeys(k for row in (*EXTRAS.values(), *PHASE_EXTRAS.values()) for k in row))
+    for name in option_names:
         parser.add_argument('--'+name)
     args = parser.parse_args()
-    permitted = COMMON+EXTRAS[args.phase]
-    assert all(getattr(args,k.replace('-','_')) is None for k in set(extras)-set(permitted))
+    permitted = COMMON+extras(args.phase)
+    assert all(getattr(args,k.replace('-','_')) is None for k in set(option_names)-set(permitted))
     options = {k:getattr(args,k.replace('-','_')) for k in permitted}
     python = str(Path(sys.executable).resolve(strict=True))
     invocation, command = commands(options, python, sys.argv[0])
