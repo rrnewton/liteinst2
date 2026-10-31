@@ -236,9 +236,11 @@ def main():
         execute_loader(args.carrier, args.original, args.library_root, args.namespace, args.argv,
                        (args.report_parent, args.report_child), args.child_failure)
     else:
+        counter_options = {} if args.counter_fd is None and args.counter_nonce is None else {
+            "counter_fd": args.counter_fd, "counter_nonce": args.counter_nonce}
         execute_loader(args.carrier, args.original, args.library_root, args.namespace, args.argv,
                        disable_rseq=args.disable_rseq, provider_policy=args.provider_policy, late_sonames=args.late_soname,
-                       counter_fd=args.counter_fd, counter_nonce=args.counter_nonce)
+                       **counter_options)
 
 
 if __name__ == "__main__":
