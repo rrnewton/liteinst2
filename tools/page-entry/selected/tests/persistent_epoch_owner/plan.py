@@ -88,12 +88,12 @@ def imm(v,w,b):return (v&U64,3,0,w,1,b,0)
 def ins(raw,code,ops=(),flags=(0,0,0,0,0),address=None,reloc=0,step=0,flow=0,target=0,condition=16):
     return dict(raw=bytes.fromhex(raw) if isinstance(raw,str) else raw,code=code,ops=ops,flags=flags,address=address,reloc=reloc,step=step,flow=flow,target=target,condition=condition)
 
-def descriptor(row,pc,source,offset,refusal=False):
+def descriptor(row,pc,source,offset,refusal=0):
     d=bytearray(336);raw=row['raw'];length=len(raw)
     struct.pack_into('<QQ10I',d,0,pc,pc+length,1,0,row['code'],0,16,0,row['step'],15,length,0)
     d[56:72]=source[offset:offset+15]+b'\0'
     struct.pack_into('<I',d,256,1)
-    if refusal:struct.pack_into('<I',d,264,1);return bytes(d)
+    if refusal:struct.pack_into('<I',d,264,refusal);return bytes(d)
     struct.pack_into('<Q',d,72,row['target'])
     regs=[]
     for i,o in enumerate(row['ops']):
@@ -127,9 +127,11 @@ def descriptors(source,page):
           ins('4883c708',249,(reg(7,64,3),imm(8,64,8)),arithmetic),
           ins(source[0x1104:0x1109],696,((page+0x200,4,0,64,1,32,0),),flow=2,target=page+0x200))
     offsets=(0x200,0x203,0x207,0x20a,0x1100,0x1104)
+    # Actual scalar-span refusal codes: memory-destination MOV is OPERANDS5;
+    # the indirect JMP frontier is UNSUPPORTED1. Neither is a ready NONE head.
     original=[]
     for i,(off,row) in enumerate(zip(offsets,rows,strict=True)):
         need(source[off:off+len(row['raw'])]==row['raw'],'actual fixed descriptor bytes')
-        original.append(descriptor(row,page+off,source,off,refusal=i==0))
-    frontier=descriptor(ins('ff2500000000',765),page+0x210,source,0x210,refusal=True)
+        original.append(descriptor(row,page+off,source,off,refusal=5 if i==0 else 0))
+    frontier=descriptor(ins('ff2500000000',765),page+0x210,source,0x210,refusal=1)
     return b''.join(original)+bytes(58*336),frontier+bytes(7*336)

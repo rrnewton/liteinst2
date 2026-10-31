@@ -314,7 +314,7 @@ class Check(old.Check):
         for i,(off,n)in enumerate(zip(offsets,lengths,strict=True)):
             d=originals[i];decoded=self.f(d,'li2_span_decoded','decoded');self.eq(decoded,'li2_decoded',pc=self.page+off,next_pc=self.page+off+n,abi_version=1,decode_status=0,available=15,length=n,reserved=0)
             need(self.f(decoded,'li2_decoded','bytes')==self.app['source'][off:off+15]+b'\0','whole real decoder input window')
-            self.eq(d,'li2_span_decoded',version=1,ready=int(i!=0),refusal=int(i==0),reserved=0)
+            self.eq(d,'li2_span_decoded',version=1,ready=int(i!=0),refusal=5 if i==0 else 0,reserved=0)
             if i:zero(stores[i],'NONE head has no invented store descriptor')
         for d in originals[6:]:zero(d,'whole unused original descriptor')
         for d in stores[6:]:zero(d,'whole unused store descriptor')
