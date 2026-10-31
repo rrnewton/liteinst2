@@ -1,0 +1,1572 @@
+{
+  "added_default_methods": {
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/check.rs": [
+      "cancelled_first_keeps_accepted_owner_and_refuses_any_native_or_extra_population"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/prepared.rs": [
+      "prepared_setup_uses_one_absolute_deadline_without_input_or_owner_extension"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/selected.rs": [
+      "prepared_cli_is_disjoint_and_requires_fixed_j_inside_original_epochs",
+      "prepared_cli_retains_complete_2048_nonempty_population_and_original_delay"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/module/session/worker.rs": [
+      "prepared_guard_is_owned_before_call_and_unused_drop_retains_controller_record",
+      "prepared_guard_refuses_corruption_and_wrong_initial_record"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": [
+      "prepared_pause_does_not_accept_prefetched_rows_or_promise_early_eof"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/session/phase/prepared/tests.rs": [
+      "prepared_request_is_fixed_j_no_extra_epoch_and_original_profiles_unchanged",
+      "prepared_barrier_precedes_one_origin_and_records_actual_ready_lead",
+      "prepared_requires_actual_accepted_arm2_and_keeps_generation_not_epoch_arithmetic",
+      "prepared_gate_checks_target_edges_whole_period_misses_end_and_clock_regression",
+      "prepared_cancel_never_fabricates_release_return_or_full_population",
+      "prepared_real_phase_clock_requires_all2048_and_keeps_shared_monotonicity",
+      "prepared_final_admission_refuses_end_after_custody_without_fabricated_timing",
+      "prepared_poll_acquires_origin_before_sampling_and_keeps_real_regressions"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/session/worker/prepared_tests.rs": [
+      "prepared_queued_stop_wins_before_poll_and_only_idle_checkpoint_detaches",
+      "prepared_wait_does_not_block_internal_stop_or_invent_return",
+      "prepared_stop_after_release_waits_for_actual_return_and_flush_before_detach"
+    ]
+  },
+  "base_revision": "76fe4847edc978e7054a2d72fdd88a6698a49cb7",
+  "current_corpus_sha256": "134f7df76650778af0ffc78b57e3e99f46026b883bf2d844c3c9aab7c7e7dd46",
+  "default_harness_changes": 0,
+  "default_ignore_changes": 0,
+  "default_method_instances": {
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/check.rs": [
+      "unit/ordinary_interval/main"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/prepared.rs": [
+      "unit/ordinary_interval/main"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/selected.rs": [
+      "unit/ordinary_interval/main"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/module/session/worker.rs": [
+      "unit/ordinary_interval/main"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": [
+      "unit/ordinary_interval/main"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/session/phase/prepared/tests.rs": [
+      "unit/ordinary_interval/main"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/session/worker/prepared_tests.rs": [
+      "unit/ordinary_interval/main"
+    ]
+  },
+  "default_test_additions": 18,
+  "evaluation_projections": {
+    "evaluation/admission/core_813_inventory.py": {
+      "current_sha256": "60766302d63b6b0f9be47ba1b5508ee998e4724a06048fb7a8e603d436070caf",
+      "edits": [
+        [
+          4806,
+          5597,
+          "              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE, MAINSHORTENGINE, MAINSHORTOWNERSHIP, MAINSHORTPENDING, MAINADJACENT, MAINFRONTEND, MAINROUTED, MAINROUTEDNATIVE, MAINSTARTUP, MAIN091, main367.DATA, main367.mainc712.DATA, main367.mainc712.main0fb574.DATA, main367.mainc712.main0fb574.mainaf81.DATA, main367.mainc712.main0fb574.mainaf81.maindd75.DATA, main367.mainc712.main0fb574.mainaf81.maindd75.main981419.DATA, main367.mainc712.main0fb574.mainaf81.maindd75.main981419.main20cbe.DATA, main367.mainc712.main0fb574.mainaf81.maindd75.main981419.main20cbe.mainacc247.DATA)\n"
+        ]
+      ],
+      "previous_sha256": "3dc7b49e02c6458a836e1ecf6348001203044e0e67617a99ad9a490db81f56b6"
+    },
+    "evaluation/admission/core_acc247_inventory.py": {
+      "current_sha256": "085d7a5a5231de1b6567599d24e56caa96f2854b92389a6063596f6dadc3fc08",
+      "edits": [
+        [
+          183,
+          224,
+          ""
+        ],
+        [
+          1617,
+          1669,
+          ""
+        ],
+        [
+          1777,
+          1840,
+          ""
+        ],
+        [
+          2144,
+          2290,
+          ""
+        ],
+        [
+          3277,
+          3378,
+          "        source_before(path, raw, error)\n        source_before_evaluation(path, raw, error)\n"
+        ],
+        [
+          4230,
+          4299,
+          ""
+        ],
+        [
+          4990,
+          5048,
+          ""
+        ]
+      ],
+      "previous_sha256": "edf3258bb426b271579246b02ffd0bb35cd86f9a1b39be897e5167f684427eeb"
+    },
+    "evaluation/admission/core_cc846_inventory.py": {
+      "current_sha256": "fb84ad3363f39505705d066cfb3d674c535baf869cd70edaaf961bcf60d00f2d",
+      "edits": [
+        [
+          820,
+          1060,
+          "RECORDER_TESTS = main367.mainc712.main0fb574.mainaf81.maindd75.main981419.main20cbe.mainacc247.RECORDER_TESTS\nPYTHON_CURRENT = main367.mainc712.main0fb574.mainaf81.maindd75.main981419.main20cbe.mainacc247.PYTHON_CURRENT\n"
+        ],
+        [
+          13363,
+          13400,
+          "def require_current(declared):\n"
+        ],
+        [
+          13690,
+          14026,
+          ""
+        ]
+      ],
+      "previous_sha256": "ec64c5bca821c3079845769b905ef5d68a0202ce3981b0c1581bbfa4165908a3"
+    },
+    "evaluation/admission/recorder_parallel.py": {
+      "current_sha256": "f47aaa5801b09ceace088d2c7a214149c1245db95238ec35c37563ea95b2c937",
+      "edits": [
+        [
+          1392,
+          1469,
+          "    require(type(count) is int and count == 362 and len(identities) == count\n"
+        ],
+        [
+          2919,
+          3054,
+          ""
+        ],
+        [
+          3501,
+          3569,
+          "    # Actual workers authenticate all362 and allfour in discover().\n"
+        ]
+      ],
+      "previous_sha256": "9ffd067f0e0f48794647079034fa79a204d757a5a6e016c255caedb7e4809926"
+    },
+    "evaluation/admission/test_main0fb574_inventory.py": {
+      "current_sha256": "232d801637ccedd7d3b430405d28cef19457e5cd36297e7411ef41e5bbdd3c19",
+      "edits": [
+        [
+          371,
+          411,
+          ""
+        ],
+        [
+          652,
+          905,
+          "        actual = current.mainaf81.before_current(current.mainaf81.maindd75.before_current(latest.before_current(newest.before_current(incoming.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))))))\n"
+        ],
+        [
+          3118,
+          3356,
+          "        identities = current.mainaf81.before_python(current.mainaf81.maindd75.before_python(latest.before_python(newest.before_python(incoming.before_python(historical.python_identities(Path(__file__).parent))))))\n"
+        ]
+      ],
+      "previous_sha256": "6fa206367ae4e8d7c01ea7cbf263a292446df6c3277044cf741f6bdc15a33b2e"
+    },
+    "evaluation/admission/test_main20cbe_inventory.py": {
+      "current_sha256": "bb8e28fc90657c735d89e0d71cea8fcca786d370bc03af80d3caa6b8b2be31f9",
+      "edits": [
+        [
+          413,
+          453,
+          ""
+        ],
+        [
+          620,
+          752,
+          "        actual = incoming.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))\n"
+        ],
+        [
+          3098,
+          3219,
+          "        identities = incoming.before_python(historical.python_identities(Path(__file__).parent))\n"
+        ]
+      ],
+      "previous_sha256": "972ad5673e27becae007159507c4578a70c0c754f96605a104650267ba09e8c5"
+    },
+    "evaluation/admission/test_main367_inventory.py": {
+      "current_sha256": "53f374c0eb27e75c855573676e0457ddb9b711e64c368059a4fe6915a27233a6",
+      "edits": [
+        [
+          329,
+          369,
+          ""
+        ],
+        [
+          652,
+          1022,
+          "        actual = current.mainc712.before_current(current.mainc712.main0fb574.before_current(current.mainc712.main0fb574.mainaf81.before_current(current.mainc712.main0fb574.mainaf81.maindd75.before_current(latest.before_current(newest.before_current(incoming.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))))))))\n"
+        ],
+        [
+          3165,
+          3518,
+          "        identities = current.mainc712.before_python(current.mainc712.main0fb574.before_python(current.mainc712.main0fb574.mainaf81.before_python(current.mainc712.main0fb574.mainaf81.maindd75.before_python(latest.before_python(newest.before_python(incoming.before_python(historical.python_identities(Path(__file__).parent))))))))\n"
+        ]
+      ],
+      "previous_sha256": "e9de653b72c48318781e2f8e69990fbf338531e1b12e230173198cb2aca107da"
+    },
+    "evaluation/admission/test_main981419_inventory.py": {
+      "current_sha256": "60f04946ce2ccc5561b2728ffda5e37d2690a4db80b9614d3926a6fb587d0f56",
+      "edits": [
+        [
+          373,
+          413,
+          ""
+        ],
+        [
+          616,
+          771,
+          "        actual = newest.before_current(incoming.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes())))\n"
+        ],
+        [
+          3117,
+          3260,
+          "        identities = newest.before_python(incoming.before_python(historical.python_identities(Path(__file__).parent)))\n"
+        ],
+        [
+          9648,
+          10183,
+          ""
+        ],
+        [
+          10504,
+          10589,
+          "                row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()\n"
+        ],
+        [
+          11587,
+          11730,
+          "            with patch.dict(incoming.DATA['projections'], outer), \\\n"
+        ]
+      ],
+      "previous_sha256": "168dea4b92f1894af45cd3a93cccd8ab056e2077ad332b8bf13aa8bc26adfd9b"
+    },
+    "evaluation/admission/test_mainacc247_inventory.py": {
+      "current_sha256": "2ffd7c70824266d2f31fc0e79c78607465634ddc132f9a2d54920a3f7d868499",
+      "edits": [
+        [
+          431,
+          471,
+          ""
+        ],
+        [
+          602,
+          709,
+          "        actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())\n"
+        ],
+        [
+          1730,
+          1801,
+          "            self.assertIsNone(inventory.require_current(actual))\n"
+        ],
+        [
+          2004,
+          2059,
+          "                inventory.require_current(wrong)\n"
+        ],
+        [
+          3055,
+          3152,
+          "        identities = historical.python_identities(Path(__file__).parent)\n"
+        ],
+        [
+          8680,
+          9201,
+          ""
+        ],
+        [
+          9268,
+          9349,
+          "            row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()\n"
+        ],
+        [
+          9543,
+          9682,
+          "            with patch.dict(current.DATA['projections'], {path: row}):\n"
+        ]
+      ],
+      "previous_sha256": "7407dad7e368f6216fba624ff72c5bde9ba42a428c29f482f2e8eac2f47e74b1"
+    },
+    "evaluation/admission/test_mainaf81_inventory.py": {
+      "current_sha256": "60bb3f2e4513d89cffde359c088682e17a5ffdf7e88db084e3b4d7fb01c14943",
+      "edits": [
+        [
+          371,
+          411,
+          ""
+        ],
+        [
+          648,
+          859,
+          "        actual = current.maindd75.before_current(latest.before_current(newest.before_current(incoming.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes())))))\n"
+        ],
+        [
+          3937,
+          4134,
+          "        identities = current.maindd75.before_python(latest.before_python(newest.before_python(incoming.before_python(historical.python_identities(Path(__file__).parent)))))\n"
+        ]
+      ],
+      "previous_sha256": "9b4c0fc49736d2e8923b8941ff46f4887ccee63f3b607882526a4cb1c6bf2f48"
+    },
+    "evaluation/admission/test_mainc712_inventory.py": {
+      "current_sha256": "cf585b375f5cf772b9260b209f23fe81bc955178f1d5d3e04e791b21672cc99e",
+      "edits": [
+        [
+          360,
+          400,
+          ""
+        ],
+        [
+          644,
+          954,
+          "        actual = current.main0fb574.before_current(current.main0fb574.mainaf81.before_current(current.main0fb574.mainaf81.maindd75.before_current(latest.before_current(newest.before_current(incoming.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes())))))))\n"
+        ],
+        [
+          3421,
+          3715,
+          "        identities = current.main0fb574.before_python(current.main0fb574.mainaf81.before_python(current.main0fb574.mainaf81.maindd75.before_python(latest.before_python(newest.before_python(incoming.before_python(historical.python_identities(Path(__file__).parent)))))))\n"
+        ]
+      ],
+      "previous_sha256": "cfcd79e327073630268c72ec85b574ae65cf93385ce74034a2b21f59c96318c7"
+    },
+    "evaluation/admission/test_maindd75_inventory.py": {
+      "current_sha256": "a110d1c073da09c2a6aa348b7751c50ecaf6847fa23821c24dba1b04224786af",
+      "edits": [
+        [
+          373,
+          413,
+          ""
+        ],
+        [
+          660,
+          838,
+          "        actual = latest.before_current(newest.before_current(incoming.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))))\n"
+        ],
+        [
+          2547,
+          2712,
+          "        identities = latest.before_python(newest.before_python(incoming.before_python(historical.python_identities(Path(__file__).parent))))\n"
+        ]
+      ],
+      "previous_sha256": "e5467bf4b8d0540822a94a09136902b2aa7d61b3f8616707336a9d2c381168b6"
+    }
+  },
+  "main_revision": "34c47f5b8bdbeb5a7c73db067cf5b4aee36fc37f",
+  "methods": {
+    "tools/rapid-profiler/ordinary-interval/main.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set.rs": {
+      "all": [
+        "canonical_table_cli_keeps_all_functions_and_refuses_invalid_last",
+        "operations_match_accepted_encoded_bytes_without_calling_targets",
+        "typed_completion_and_wire_bounds_keep_all_outcomes",
+        "accepted_pending_leaf_record_survives_full_queue_and_disconnect"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/check.rs": {
+      "all": [
+        "cancelled_first_keeps_accepted_owner_and_refuses_any_native_or_extra_population",
+        "ordered_population_n1_through_n4_keeps_global_and_local_coordinates",
+        "population_refuses_full_table_identity_and_each_journal_word",
+        "mixed_history_and_full_budget_keep_one_based_call_and_zero_based_sample",
+        "report_payload_and_wire_refuse_shift_missing_duplicate_and_unavailable_corruption"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/prepared.rs": {
+      "all": [
+        "prepared_setup_uses_one_absolute_deadline_without_input_or_owner_extension"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/selected.rs": {
+      "all": [
+        "phase_cli_is_explicit_and_mutually_refuses_legacy_grammars",
+        "phase_parser_requires_every_nonempty_frozen_input_without_changing_old_table",
+        "prepared_cli_is_disjoint_and_requires_fixed_j_inside_original_epochs",
+        "prepared_cli_retains_complete_2048_nonempty_population_and_original_delay"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/worker.rs": {
+      "all": [
+        "command_flush_boundary_is_exact_for_each_cardinality_and_old_default",
+        "guarded_return_checks_all_operations_and_owner_retention"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/module/session/worker.rs": {
+      "all": [
+        "prepared_guard_is_owned_before_call_and_unused_drop_retains_controller_record",
+        "prepared_guard_refuses_corruption_and_wrong_initial_record"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/session.rs": {
+      "all": [
+        "guarded_wait_preserves_original_due_end_and_shutdown_boundaries",
+        "accepted_full_queue_retains_pending_before_stop_and_disconnect"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": {
+      "all": [
+        "partial_input_eof_and_multiple_lines_preserve_exact_frames",
+        "full_output_retains_exact_unsent_bytes_then_drains_without_duplication",
+        "csv_frames_keep_partial_bytes_empty_record_and_observed_eof_distinct",
+        "csv_transport_refuses_extra_cap_byte_overlong_and_unterminated_without_discard",
+        "history_stack_preserves_exact_legacy_bytes_at_numeric_extremes",
+        "history_stack_and_borrowed_rows_refuse_without_output_mutation",
+        "history_stack_keeps_exact_output_cap_and_refusal_state",
+        "prepared_pause_does_not_accept_prefetched_rows_or_promise_early_eof"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/session/phase.rs": {
+      "all": [
+        "request_is_separate_and_never_changes_the_accuracy_policy",
+        "origin_first_arm_and_clock_failures_are_terminal",
+        "zero_and_random_gate_are_once_only_and_keep_whole_period_lateness",
+        "return_clock_refusal_keeps_release_and_never_invents_timing",
+        "all_2048_rows_join_exact_identity_without_duplicate_or_missing_credit",
+        "observations_preserve_actual_thread_errno",
+        "phase_wire_fits_old_8mib_and_exact_geometry_rejects_every_changed_byte"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/session/phase/prepared.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/session/phase/prepared/tests.rs": {
+      "all": [
+        "prepared_request_is_fixed_j_no_extra_epoch_and_original_profiles_unchanged",
+        "prepared_barrier_precedes_one_origin_and_records_actual_ready_lead",
+        "prepared_requires_actual_accepted_arm2_and_keeps_generation_not_epoch_arithmetic",
+        "prepared_gate_checks_target_edges_whole_period_misses_end_and_clock_regression",
+        "prepared_cancel_never_fabricates_release_return_or_full_population",
+        "prepared_real_phase_clock_requires_all2048_and_keeps_shared_monotonicity",
+        "prepared_final_admission_refuses_end_after_custody_without_fabricated_timing",
+        "prepared_poll_acquires_origin_before_sampling_and_keeps_real_regressions"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/session/worker.rs": {
+      "all": [
+        "actual_drive_flushes_each_three_call_command_before_next"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/session/worker/prepared_tests.rs": {
+      "all": [
+        "prepared_queued_stop_wins_before_poll_and_only_idle_checkpoint_detaches",
+        "prepared_wait_does_not_block_internal_stop_or_invent_return",
+        "prepared_stop_after_release_waits_for_actual_return_and_flush_before_detach"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    }
+  },
+  "module_chains": {
+    "Cargo.toml": [
+      "[workspace]\nmembers = [\"tools/rapid-profiler\", \"tools/exception-oracle\", \"crates/liteinst-admission\", \"crates/liteinst-launch\", \"crates/liteinst-artifact\", \"tools/elf-rewrite\", \"crates/liteinst-inprocess\"]"
+    ],
+    "tools/rapid-profiler/Cargo.toml": [
+      "[[bin]]\nname = \"ordinary-interval\"\npath = \"ordinary-interval/main.rs\"\ntest = true\nbench = false"
+    ],
+    "tools/rapid-profiler/ordinary-interval/main.rs": [
+      "mod normal;"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal.rs": [
+      "pub(super) mod leaf_set;",
+      "pub(super) mod session;",
+      "pub(super) mod module;"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set.rs": [
+      "mod selected;",
+      "mod prepared;",
+      "mod check;"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/check.rs": [
+      "#[cfg(test)]\npub(in crate::normal) mod selected_controls {"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/prepared.rs": [
+      "#[cfg(test)]\nmod tests {"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/selected.rs": [
+      "#[cfg(test)]\nmod phase_tests {"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/module.rs": [
+      "pub(crate) mod session;"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/module/session.rs": [
+      "pub(in crate::normal) mod worker;"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/module/session/worker.rs": [
+      "#[cfg(test)]\nmod prepared_owner_tests {"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/session.rs": [
+      "pub(in crate::normal) mod phase;",
+      "pub(in crate::normal) mod io;",
+      "pub(in crate::normal) mod worker;"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": [
+      "#[cfg(test)]\nmod prepared_input_tests {"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/session/phase.rs": [
+      "pub(in crate::normal) mod prepared;"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/session/phase/prepared.rs": [
+      "#[cfg(test)]\nmod tests;"
+    ],
+    "tools/rapid-profiler/ordinary-interval/normal/session/worker.rs": [
+      "#[cfg(test)]\nmod prepared_tests;"
+    ]
+  },
+  "previous_checkout_revision": "6de8c62320a7a04884e1fbbdf9d2fcd082bcba3e",
+  "previous_corpus_sha256": "0db493d14de1b040449bbce48c03cd31c607223365c820d616e4194eb3c24987",
+  "projections": {
+    "A3-OFFLINE.md": {
+      "current_sha256": "17c5899d51f3c7d5fea7249a3497740d51ea60b1cf5e6fbebf8bc1009759af5d",
+      "edits": [
+        [
+          7812,
+          8357,
+          ""
+        ]
+      ],
+      "previous_sha256": "5912484867995298752920550878848909e3042dc07cf63cd8453524eb45115c"
+    },
+    "evaluation/ordinary-accuracy/output.py": {
+      "current_sha256": "d88c3843e01b26a2c5f52635be78fccee535452acd408967ce6839236f505565",
+      "edits": [
+        [
+          14212,
+          14290,
+          "    # Only these two source-defined adapters share the numeric/PMU/history gates.\n"
+        ],
+        [
+          14432,
+          14626,
+          "        'selected-accuracy-phase-session-v1': 'normal-selected-accuracy-phase-session'}\n"
+        ]
+      ],
+      "previous_sha256": "2fb7935556bb338f924c9b91edd964e6f977041bdd5f07fffac76b69a67f447a"
+    },
+    "evaluation/ordinary-accuracy/phase_output.py": {
+      "current_sha256": "7a974575214c91fce44d94dc24af401888a4c76e75fb123d76693e9771207545",
+      "edits": [
+        [
+          1455,
+          1758,
+          "    need(len(rows) >= 4 and rows[0][:2] == ['READY', VERSION], 'explicit phase header')\n    need(rows[3] == ['PHASE', policy['phase'], str(policy['delay_ns'])], 'requested manifest phase/delay')\n"
+        ],
+        [
+          3988,
+          4072,
+          "        arms = result['arms']\n        need(arms and arms[0]['completed_ns'] <= release['gate_enter_ns'] <= release['released_ns']\n             <= times[0]['before_invoke_ns'], 'first arm/gate/release/call order')\n        period = policy['period_ms'] * 1000000\n        fence = policy['epochs'] * period + 2000000000\n        need(policy['delay_ns'] <= release['released_ns'] < fence, 'original release delay/fence')\n        need(release['gate_enter_ns'] < policy['delay_ns'] or\n             release['released_ns'] == release['gate_enter_ns'], 'already-due gate is released without another observation')\n        need(all(t['after_return_ns'] < fence for t in times), 'original call safety fence')\n        release.update(requested_delay_ns=policy['delay_ns'],\n            absolute_lateness_ns=release['released_ns'] - policy['delay_ns'],\n            epoch_index=release['released_ns'] // period, remainder_ns=release['released_ns'] % period)\n        for timing, call in zip(times, result['calls']):\n            normal = call['call']\n            need(normal['ordinal'] == timing['ordinal'] and normal['record_id'] == timing['record_id']\n                 and normal['index'] == 0, 'timing/NORMAL identity')\n            # This is interval overlap only. NORMAL/history owns generation, and\n            # the enclosure includes the ordinary call wrapper/store/RET.\n            before, after = timing['before_invoke_ns'], timing['after_return_ns']\n            overlap = [a['number'] for a in arms if a['started_ns'] <= after and before <= a['completed_ns']]\n            due = [a['number'] for a in arms if before <= a['due_ns'] <= after]\n            timing.update(before_requested_error_ns=before-policy['delay_ns'],\n                after_requested_error_ns=after-policy['delay_ns'],\n                before_epoch_index=before // period, before_remainder_ns=before % period,\n                after_epoch_index=after // period, after_remainder_ns=after % period,\n                overlapping_arm_count=len(overlap), first_overlapping_arm=overlap[0] if overlap else None,\n                last_overlapping_arm=overlap[-1] if overlap else None,\n                enclosed_due_count=len(due), first_enclosed_due=due[0] if due else None,\n                last_enclosed_due=due[-1] if due else None)\n            call['call_timing'] = timing\n        result.update(wire_rows=rows, phase_observations=dict(requested=dict(phase=policy['phase'],\n            delay_ns=policy['delay_ns']), release=release, clock='shared in-process Instant origin',\n            timing_scope='Enclosure of csv::invoke, including CALL/store/RET; not exact leaf entry/RET instants.',\n            calibration_status='UNRESOLVED', phase_realization_status='UNRESOLVED',\n            clock_transform='NONE: no join to producer monotonic_ns, TSC or PMU clocks'))\n"
+        ],
+        [
+          4276,
+          6976,
+          ""
+        ]
+      ],
+      "previous_sha256": "29c1bef56ffc6516c7f6918391afe8e1fac003da5c3cbbed7ea2fe41da6b3cdf"
+    },
+    "evaluation/ordinary-call-pair-session/freeze.py": {
+      "current_sha256": "20a24fe3cfc2e82dbbe8014e64d9f6a468df818cf21ba5660e91c28979ef0cc6",
+      "edits": [
+        [
+          495,
+          577,
+          "LAUNCHER_SHA = 'be851431935577e3f604e4a9ec61aa988678e01b063e9910609a18bfe3f94df6'\n"
+        ]
+      ],
+      "previous_sha256": "964f9957c99e8220253ad7b6f9a1bc6139388ed63478f9cf5ee1b9b05fde283b"
+    },
+    "evaluation/ordinary-call-pair-session/launch.py": {
+      "current_sha256": "d8733f1c8acf51759bdacceaeba23ac432aa1839fffefeb8a081ceb3222248f1",
+      "edits": [
+        [
+          890,
+          972,
+          "CAMPAIGN_SHA = '8392ee61bd872506d4087a556511ea79b9350fde220ebba23df5188286be3845'\n"
+        ]
+      ],
+      "previous_sha256": "be851431935577e3f604e4a9ec61aa988678e01b063e9910609a18bfe3f94df6"
+    },
+    "evaluation/ordinary-call-pair-session/native_receipt.py": {
+      "current_sha256": "7bda6fc160286e9440ca270ace64ee64714d4faf03e6a42f438a8a81427c22bc",
+      "edits": [
+        [
+          741,
+          2817,
+          "SOURCE_PINS = {'evaluation/ordinary-module-session/reproduce.py': {'bytes': 57511, 'sha256': '4389493950775ca1c494bf7e28ff8326cbd61d2fbbda0ef53af953a4ff24f659'}, 'evaluation/ordinary-module-native/reproduce.py': {'bytes': 44878, 'sha256': '5cce60e76d7ec2011c8facb0a5c1101e0100e13aac8ed9b6317846de35fd3146'}, 'evaluation/ordinary-call-pair-native/reproduce.py': {'bytes': 45011, 'sha256': '540f43ef7c29fc2f260ed9cc25ca0c6c749d4ee0714e5705cf25938af4401ea6'}, 'evaluation/ordinary-csv/reproduce.py': {'bytes': 13439, 'sha256': 'ae70dac850876452d1f09a8480d4381a5814846e1a7e394a33f620bb00699cf3'}, 'evaluation/ordinary-module/reproduce.py': {'bytes': 17353, 'sha256': '60a73415980261fa1f1176f58423da8c77bf6775c2033def4f7469c74677c84c'}, 'evaluation/ordinary-rust-invoke-native/caller.py': {'bytes': 3565, 'sha256': 'aa2d28441c9b477e5e85fea0a61b160cb5026c55bbc129c2b40502c3a5d12d4c'}, 'evaluation/ordinary-call-pair-native/call_pair_native.py': {'bytes': 13366, 'sha256': '928933236372eb8ea8333e05b980708644d6196a2df50757262a2e4e7c41ce1c'}, 'tools/rapid-profiler/selected-work/check_output.py': {'bytes': 7232, 'sha256': '5855c42be2b9a42e85b121f9d8b763e51747f842c8cf85e05dc1736a4f10e4a9'}, 'evaluation/ordinary-rust-invoke-native/reproduce.py': {'bytes': 23732, 'sha256': '434ffdc1be5107a408767d81e85a77ee1a21878b482b8bcb0951e0ee4c4f38de'}, 'evaluation/ordinary-leaf-set-native/reproduce.py': {'bytes': 38376, 'sha256': 'b0aee80e836f0e78fba601d12cdbdbc86cff21a95bf8c1add71b490a5a7f6349'}, 'evaluation/ordinary-leaf-set-session/reproduce.py': {'bytes': 47290, 'sha256': 'be48a4c172579a93278a08b806f2820912033ac3795a2411706f6350c550a844'}, 'tools/rapid-profiler/reference-work/check_output.py': {'bytes': 17495, 'sha256': 'a5e0683ade47a94913afb53a15123a53b316172d8d9936f3a925b8a2b64b7189'}, 'tools/rapid-profiler/verify_normal_interval.py': {'bytes': 58210, 'sha256': '7a1e480c8fb815bb62165773650a0f8590c5bdc6ba39fc1189c63bceb1e085a7'}, 'tools/rapid-profiler/verify_strnlen_interval.py': {'bytes': 34037, 'sha256': '9a37fa20311984d5ba755458e7858578165e0d7a2df583599a1b2057e50e6126'}}\n"
+        ]
+      ],
+      "previous_sha256": "533cd498dbe43fed871f72e889d064cc27bdd403ee7138e55cd8a139f98ac345"
+    },
+    "evaluation/ordinary-call-pair-session/original_controls.py": {
+      "current_sha256": "4c8a167917e0ec383a4a11594d7f0ec3340b2652eb7a406ab7d5d3643ddb0e69",
+      "edits": [
+        [
+          355,
+          508,
+          "assert not PARSER.is_symlink() and hashlib.sha256(PARSER.read_bytes()).hexdigest() == '416ad7da0d83138d25b2a124cdf4d64aa3c0aeb67ccb5d849315c90ce5aaa159'\n"
+        ],
+        [
+          8526,
+          8636,
+          "        altered = source.replace('9686ecdb63cd5228954bb8724856195eb64c2c2d8b54465ec3f3e91649cba4ae','0'*64,1)\n"
+        ]
+      ],
+      "previous_sha256": "ff12c9e782d162ea7e65bc31da4b29d361fb1f7f33ff429ec9d9010761eb2297"
+    },
+    "evaluation/ordinary-call-pair-session/original_output.py": {
+      "current_sha256": "3f50181dd6060389c51d0a2472ba65a0863031816825ca9544281eccab9c307a",
+      "edits": [
+        [
+          425,
+          555,
+          "assert hashlib.sha256(_DEPENDENCY.read_bytes()).hexdigest() == '9686ecdb63cd5228954bb8724856195eb64c2c2d8b54465ec3f3e91649cba4ae'\n"
+        ]
+      ],
+      "previous_sha256": "416ad7da0d83138d25b2a124cdf4d64aa3c0aeb67ccb5d849315c90ce5aaa159"
+    },
+    "evaluation/ordinary-call-pair-session/owner_controls.py": {
+      "current_sha256": "5c34d9ec073fcb3cb62c52d8a7ccbded88a1750a312b1703edc9c051bc07c7b1",
+      "edits": [
+        [
+          390,
+          463,
+          "SHA = 'be851431935577e3f604e4a9ec61aa988678e01b063e9910609a18bfe3f94df6'\n"
+        ]
+      ],
+      "previous_sha256": "9ef72746621dc64ace820dfe95c75a762a497706cc477e396bddb4cf8a9828c1"
+    },
+    "evaluation/ordinary-call-pair-session/reproduce.py": {
+      "current_sha256": "ed1c72cefecc5fb0ad68f0c7855c4cd4ed4004955673d69127a80c74d6d3eca8",
+      "edits": [
+        [
+          737,
+          822,
+          "RECEIPT_API_SHA = '533cd498dbe43fed871f72e889d064cc27bdd403ee7138e55cd8a139f98ac345'\n"
+        ],
+        [
+          17652,
+          19728,
+          "HELPER_PINS = {'evaluation/ordinary-module-session/reproduce.py': {'bytes': 57511, 'sha256': '4389493950775ca1c494bf7e28ff8326cbd61d2fbbda0ef53af953a4ff24f659'}, 'evaluation/ordinary-module-native/reproduce.py': {'bytes': 44878, 'sha256': '5cce60e76d7ec2011c8facb0a5c1101e0100e13aac8ed9b6317846de35fd3146'}, 'evaluation/ordinary-call-pair-native/reproduce.py': {'bytes': 45011, 'sha256': '540f43ef7c29fc2f260ed9cc25ca0c6c749d4ee0714e5705cf25938af4401ea6'}, 'evaluation/ordinary-csv/reproduce.py': {'bytes': 13439, 'sha256': 'ae70dac850876452d1f09a8480d4381a5814846e1a7e394a33f620bb00699cf3'}, 'evaluation/ordinary-module/reproduce.py': {'bytes': 17353, 'sha256': '60a73415980261fa1f1176f58423da8c77bf6775c2033def4f7469c74677c84c'}, 'evaluation/ordinary-rust-invoke-native/caller.py': {'bytes': 3565, 'sha256': 'aa2d28441c9b477e5e85fea0a61b160cb5026c55bbc129c2b40502c3a5d12d4c'}, 'evaluation/ordinary-call-pair-native/call_pair_native.py': {'bytes': 13366, 'sha256': '928933236372eb8ea8333e05b980708644d6196a2df50757262a2e4e7c41ce1c'}, 'tools/rapid-profiler/selected-work/check_output.py': {'bytes': 7232, 'sha256': '5855c42be2b9a42e85b121f9d8b763e51747f842c8cf85e05dc1736a4f10e4a9'}, 'evaluation/ordinary-rust-invoke-native/reproduce.py': {'bytes': 23732, 'sha256': '434ffdc1be5107a408767d81e85a77ee1a21878b482b8bcb0951e0ee4c4f38de'}, 'evaluation/ordinary-leaf-set-native/reproduce.py': {'bytes': 38376, 'sha256': 'b0aee80e836f0e78fba601d12cdbdbc86cff21a95bf8c1add71b490a5a7f6349'}, 'evaluation/ordinary-leaf-set-session/reproduce.py': {'bytes': 47290, 'sha256': 'be48a4c172579a93278a08b806f2820912033ac3795a2411706f6350c550a844'}, 'tools/rapid-profiler/reference-work/check_output.py': {'bytes': 17495, 'sha256': 'a5e0683ade47a94913afb53a15123a53b316172d8d9936f3a925b8a2b64b7189'}, 'tools/rapid-profiler/verify_normal_interval.py': {'bytes': 58210, 'sha256': '7a1e480c8fb815bb62165773650a0f8590c5bdc6ba39fc1189c63bceb1e085a7'}, 'tools/rapid-profiler/verify_strnlen_interval.py': {'bytes': 34037, 'sha256': '9a37fa20311984d5ba755458e7858578165e0d7a2df583599a1b2057e50e6126'}}\n"
+        ],
+        [
+          23503,
+          23558,
+          "    assert len(old) == 88 and len(APP_CONTROLS) == 12\n"
+        ],
+        [
+          23595,
+          23645,
+          "    assert len(wanted) == len(set(wanted)) == 100\n"
+        ]
+      ],
+      "previous_sha256": "8392ee61bd872506d4087a556511ea79b9350fde220ebba23df5188286be3845"
+    },
+    "evaluation/ordinary-call-pair-session/runner_controls.py": {
+      "current_sha256": "14d36c65342fb4373a8bbadc351ead4027a5d33f30d7bfc16fd6c6da444100ed",
+      "edits": [
+        [
+          12419,
+          12465,
+          "        self.assertEqual(len(inherited), 88)\n"
+        ],
+        [
+          12648,
+          12691,
+          "        self.assertEqual(len(wanted), 100)\n"
+        ],
+        [
+          13484,
+          13609,
+          "        for prefix in (*leaf.ACCURACY_PREFIXES, *leaf.PHASE_PREFIXES, 'normal::call_pair::tests::',\n"
+        ],
+        [
+          13910,
+          14262,
+          "        self.assertEqual(leaf.APP_CONTROLS[27:],leaf.PHASE_CONTROLS)\n"
+        ],
+        [
+          14414,
+          14483,
+          "        for name in leaf.ACCURACY_CONTROLS:\n"
+        ]
+      ],
+      "previous_sha256": "d6ffed71b10f58078ca8ac85da1c29965ac0345c1d27dc5aeb84c9a88659f87f"
+    },
+    "evaluation/ordinary-leaf-set-session/original_controls.py": {
+      "current_sha256": "f0c358a473c05e444737a4b6918fedaa723bf00c264e443b9744b82c2165f090",
+      "edits": [
+        [
+          389,
+          514,
+          "assert hashlib.sha256(SOURCE.read_bytes()).hexdigest() == '88a356a01c43237d43d37d193336d3e2f023bcd1f4e3fe9259d0f5d1275e6cd2'\n"
+        ]
+      ],
+      "previous_sha256": "71d3c2fbd6940047a45aad0b0deb193afc82a795b445c48734363bd27f9af7e1"
+    },
+    "evaluation/ordinary-leaf-set-session/original_output.py": {
+      "current_sha256": "7db9e8e7a329ae65544902258120fce3c6fafcad3bf4d96abdbc6794896d5e7d",
+      "edits": [
+        [
+          310,
+          440,
+          "assert hashlib.sha256(_DEPENDENCY.read_bytes()).hexdigest() == '9686ecdb63cd5228954bb8724856195eb64c2c2d8b54465ec3f3e91649cba4ae'\n"
+        ]
+      ],
+      "previous_sha256": "88a356a01c43237d43d37d193336d3e2f023bcd1f4e3fe9259d0f5d1275e6cd2"
+    },
+    "evaluation/ordinary-leaf-set-session/output.py": {
+      "current_sha256": "3d8b92c0a90caf5f6e31097af9521782fa583d7f6dfef8a55a318afc12662de8",
+      "edits": [
+        [
+          6964,
+          7306,
+          "        if version == 'selected-accuracy-phase-session-v1':\n"
+        ]
+      ],
+      "previous_sha256": "9686ecdb63cd5228954bb8724856195eb64c2c2d8b54465ec3f3e91649cba4ae"
+    },
+    "evaluation/ordinary-leaf-set-session/reproduce.py": {
+      "current_sha256": "762313ac6180efa8901eeca66df3b4dd67290249f9a45b24fb1f5dd826e51eff",
+      "edits": [
+        [
+          5481,
+          8149,
+          ""
+        ],
+        [
+          17744,
+          18279,
+          "    assert set(n for n in inventory if n.startswith(PHASE_PREFIXES)) == set(PHASE_CONTROLS)\n"
+        ],
+        [
+          18369,
+          18487,
+          "                'normal::session::worker::leaf_set_tests::') + ACCURACY_PREFIXES + PHASE_PREFIXES\n"
+        ],
+        [
+          18734,
+          18915,
+          "    assert len(prior) == 52 and len(APP_CONTROLS[:27]) == 27 and len(APP_CONTROLS) == 36\n"
+        ],
+        [
+          18956,
+          19006,
+          "    assert len(wanted) == len(set(wanted)) == 88\n"
+        ]
+      ],
+      "previous_sha256": "be48a4c172579a93278a08b806f2820912033ac3795a2411706f6350c550a844"
+    },
+    "evaluation/ordinary-leaf-set-session/runner_controls.py": {
+      "current_sha256": "e80c2030688b57dec5d74e65e48c4203cf6bac537d2b78527b4766e763f1b4e4",
+      "edits": [
+        [
+          11872,
+          11965,
+          "        self.assertEqual(len(runner.ordinary_inventory(inventory,recipe,single,module)),88)\n"
+        ],
+        [
+          12274,
+          13077,
+          "        self.assertEqual(runner.APP_CONTROLS[27:],runner.PHASE_CONTROLS)\n"
+        ]
+      ],
+      "previous_sha256": "9cdf329afe3d0f35c290cf0e02d23cae300cfa876a79c885722bf84e7a43b52f"
+    },
+    "evaluation/ordinary-selected-session/accuracy_functional.py": {
+      "current_sha256": "3a9d0dbf5b2cf1f89ce5dad176d36f0874f3a12d10192ba7280af5d75e920284",
+      "edits": [
+        [
+          579,
+          659,
+          ""
+        ],
+        [
+          1033,
+          1155,
+          "def profile(epoch_phase):\n"
+        ],
+        [
+          1255,
+          1358,
+          "    return PROFILE if epoch_phase is None else PHASE_PROFILE\n"
+        ],
+        [
+          1360,
+          1462,
+          "def chosen_policy(checker, producer, epoch_phase):\n    profile(epoch_phase)\n"
+        ],
+        [
+          1569,
+          1770,
+          "def prepare_phase(epoch_phase):\n    profile(epoch_phase)\n    return 'accuracy-prepare' if epoch_phase is None else 'phase-prepare'\n"
+        ],
+        [
+          1772,
+          2005,
+          "def preparation_status(epoch_phase):\n    profile(epoch_phase)\n    return 'ACCURACY_PREPARATION_PASS' if epoch_phase is None else 'PHASE_PREPARATION_PASS'\n"
+        ],
+        [
+          4241,
+          4365,
+          "def geometry_facts(run, driver, recipe, directory, build, fixture, checker, producer, *, epoch_phase=None):\n"
+        ],
+        [
+          6681,
+          6856,
+          "        caller=dict(extent=20,continuation=15),body_bytes=producer.BODY,abi=producer.ABI,policy=chosen_policy(checker,producer,epoch_phase),cpus=tuple(run.cpus[:2]))\n"
+        ],
+        [
+          6886,
+          7012,
+          "    return dict(revision=run.a.revision,profile=profile(epoch_phase),build=reference(run.a.build,run.a.build_sha),\n"
+        ],
+        [
+          7688,
+          7887,
+          "        policy=chosen_policy(checker,producer,epoch_phase), **qualifications())\n"
+        ],
+        [
+          7889,
+          8012,
+          "def prepare(run, driver, recipe, builder, result, build, fixture, checker, producer, *, epoch_phase=None):\n"
+        ],
+        [
+          8966,
+          9104,
+          "    result['facts'] = geometry_facts(run,driver,recipe,run.raw,build,fixture,checker,producer,epoch_phase=epoch_phase)\n"
+        ],
+        [
+          9166,
+          9231,
+          "    result['status'] = preparation_status(epoch_phase)\n"
+        ],
+        [
+          9233,
+          9365,
+          "def read_preparation(run, driver, recipe, adapter, result, build, fixture, checker, producer, *, epoch_phase=None):\n"
+        ],
+        [
+          9499,
+          9740,
+          "    assert previous['status'] == preparation_status(epoch_phase) and previous['profile'] == profile(epoch_phase)\n    assert previous['phase'] == prepare_phase(epoch_phase) and previous['revision'] == a.revision\n"
+        ],
+        [
+          9829,
+          9942,
+          "    assert previous['source_unchanged'] is True and previous['functional'] == initial_row(epoch_phase)\n"
+        ],
+        [
+          11456,
+          11586,
+          "    expected = {k:str(getattr(a,k.replace('-','_'))) for k in adapter.COMMON+adapter.extras(prepare_phase(epoch_phase))\n"
+        ],
+        [
+          11631,
+          11745,
+          "    expected.update(phase=prepare_phase(epoch_phase),owner=str(a.preparation_owner),raw=str(directory))\n"
+        ],
+        [
+          11892,
+          12019,
+          "    assert outer['public_owner'] == dict(schema=adapter.SCHEMA,phase=prepare_phase(epoch_phase),revision=a.revision,\n"
+        ],
+        [
+          14566,
+          14696,
+          "    facts = geometry_facts(run,driver,recipe,directory,build,fixture,checker,producer,epoch_phase=epoch_phase)\n"
+        ],
+        [
+          14888,
+          14987,
+          "def accept_geometry(value, facts, preparation_sha, revision, *, epoch_phase=None):\n"
+        ],
+        [
+          15113,
+          15390,
+          "    assert value['kind'] == ('selected-accuracy-functional-geometry-acceptance-v1' if epoch_phase is None\n        else 'selected-accuracy-phase-functional-geometry-acceptance-v1')\n"
+        ],
+        [
+          15472,
+          15617,
+          "    assert value['scope'] == profile(epoch_phase) and value['revision'] == revision and value['preparation_sha256'] == preparation_sha\n"
+        ],
+        [
+          16058,
+          16141,
+          "def input_plan(run, recipe, facts, producer, *, epoch_phase=None):\n"
+        ],
+        [
+          16657,
+          16840,
+          "    plan = dict(profile=profile(epoch_phase),revision=run.a.revision,attempt=1,cpus=run.cpus,policy=dict(producer.POLICY) if epoch_phase is None else dict(facts['policy']),\n"
+        ],
+        [
+          17675,
+          18035,
+          ""
+        ],
+        [
+          19293,
+          19401,
+          "def functional(run, driver, recipe, result, facts, checker, producer, *, epoch_phase=None):\n"
+        ],
+        [
+          19479,
+          19865,
+          "    accept_geometry(accepted,facts,run.a.preparation_sha,run.a.revision,epoch_phase=epoch_phase)\n    plan = input_plan(run,recipe,facts,producer,epoch_phase=epoch_phase)\n    args = producer.arguments(plan,checker) if epoch_phase is None else producer.phase_arguments(plan,checker)\n"
+        ],
+        [
+          20151,
+          20212,
+          "        argv += ['--profile',PHASE_PROFILE]\n"
+        ],
+        [
+          21440,
+          21573,
+          "    assert (run_result['profile'],run_result['revision'],run_result['attempt']) == (profile(epoch_phase),run.a.revision,1)\n"
+        ],
+        [
+          23649,
+          23836,
+          "    result['status'] = 'ACCURACY_FUNCTIONAL_STRUCTURAL_PASS' if epoch_phase is None else 'PHASE_FUNCTIONAL_STRUCTURAL_PASS'\n"
+        ],
+        [
+          23838,
+          24042,
+          "def initial_row(epoch_phase=None):\n    profile(epoch_phase)\n    suffix = '' if epoch_phase is None else '-phase-'+epoch_phase\n"
+        ],
+        [
+          24187,
+          24266,
+          "    assert result['profile'] in (PROFILE,PHASE_PROFILE)\n"
+        ],
+        [
+          24808,
+          24996,
+          "    parser.add_argument('--phase',choices=('accuracy-prepare','accuracy-functional','phase-prepare','phase-functional'),required=True)\n"
+        ],
+        [
+          25746,
+          25931,
+          "    assert (a.epoch_phase is not None) == a.phase.startswith('phase-')\n"
+        ],
+        [
+          26080,
+          26247,
+          "    assert all(x is not None for x in extras) if a.phase in ('accuracy-functional','phase-functional') else all(x is None for x in extras)\n"
+        ],
+        [
+          27282,
+          27432,
+          "    result = dict(status='FAILED',profile=profile(epoch_phase),phase=a.phase,revision=a.revision,arguments=arguments,invocation=invocation,\n"
+        ],
+        [
+          27652,
+          27783,
+          "        functional=initial_row(epoch_phase),preparation_stages=[],environment=run.env,hardware=a.hardware,cpus=run.cpus,\n"
+        ],
+        [
+          29127,
+          29253,
+          "        reader_name = 'output.py' if epoch_phase is None else 'phase_output.py'\n"
+        ],
+        [
+          29440,
+          29628,
+          "        if a.phase == prepare_phase(epoch_phase):\n            prepare(run,driver,recipe,builder,result,build,fixture,checker,producer,epoch_phase=epoch_phase)\n"
+        ],
+        [
+          29642,
+          29902,
+          "            facts = read_preparation(run,driver,recipe,adapter,result,build,fixture,checker,producer,epoch_phase=epoch_phase)\n            functional(run,driver,recipe,result,facts,checker,producer,epoch_phase=epoch_phase)\n"
+        ],
+        [
+          31057,
+          31342,
+          "    return 0 if result['status'] in ('ACCURACY_PREPARATION_PASS','ACCURACY_FUNCTIONAL_STRUCTURAL_PASS','PHASE_PREPARATION_PASS','PHASE_FUNCTIONAL_STRUCTURAL_PASS') and time.monotonic() < run.deadline else 1\n"
+        ]
+      ],
+      "previous_sha256": "ac2c5e50e416cb3096aadc0e420b68bbc45f4a7799b6acf567a16515d9a418ac"
+    },
+    "evaluation/ordinary-selected-session/accuracy_functional_owner.py": {
+      "current_sha256": "6a058a32ab13167dc78ca1313c38c99b0281334f275a4cb638055665c589eeb5",
+      "edits": [
+        [
+          1002,
+          1185,
+          ""
+        ],
+        [
+          1262,
+          1478,
+          "    assert phase in EXTRAS or phase in PHASE_EXTRAS\n    return EXTRAS[phase] if phase in EXTRAS else PHASE_EXTRAS[phase]\n"
+        ],
+        [
+          2804,
+          2926,
+          "    parser.add_argument('--phase', choices=tuple(EXTRAS)+tuple(PHASE_EXTRAS), required=True)\n"
+        ],
+        [
+          3008,
+          3151,
+          "    option_names = tuple(dict.fromkeys(k for row in (*EXTRAS.values(), *PHASE_EXTRAS.values()) for k in row))\n"
+        ]
+      ],
+      "previous_sha256": "f907fc361f61cfe90f4e62fa7e6afe5e783778bb7f3f13b92c1be23960152b24"
+    },
+    "evaluation/ordinary-selected-session/accuracy_produce.py": {
+      "current_sha256": "46876f306c8273b479bfe39b2f7aeb40de5c33396eea92bf7f37be5c5cfb4f91",
+      "edits": [
+        [
+          518,
+          598,
+          ""
+        ],
+        [
+          2928,
+          3905,
+          "def _arguments(plan, checker, epoch_phase):\n"
+        ],
+        [
+          3988,
+          4094,
+          "    profile = PROFILE if epoch_phase is None else PHASE_PROFILE\n"
+        ],
+        [
+          5260,
+          5400,
+          "    gate.accept_geometry(geometry, plan['facts'], plan['preparation_sha256'], plan['revision'], epoch_phase=epoch_phase)\n"
+        ],
+        [
+          5622,
+          5866,
+          ""
+        ],
+        [
+          7892,
+          8005,
+          ""
+        ],
+        [
+          10027,
+          10427,
+          "def _exchange(plan, checked, checker, *, phase_profile):\n"
+        ],
+        [
+          10521,
+          10689,
+          "    result = dict(status='FAILED', profile=PHASE_PROFILE if phase_profile else PROFILE, revision=plan['revision'], attempt=1,\n"
+        ],
+        [
+          13017,
+          13157,
+          "                        assert lines <= (checker.row_limit(520) if phase_profile else 11820)\n"
+        ],
+        [
+          16023,
+          16135,
+          "    parser.add_argument('--profile', choices=(PROFILE, PHASE_PROFILE), default=PROFILE)\n"
+        ],
+        [
+          16820,
+          17202,
+          "    phase_profile = args.profile == PHASE_PROFILE\n    reader = repo/'evaluation/ordinary-accuracy/phase_output.py' if phase_profile else required[1]\n"
+        ],
+        [
+          17299,
+          17450,
+          "    checked = phase_arguments(plan, checker) if phase_profile else arguments(plan, checker)\n"
+        ],
+        [
+          17537,
+          17695,
+          "    result, out, err, overflow, deadline = (phase_exchange if phase_profile else exchange)(plan, checked, checker)\n"
+        ]
+      ],
+      "previous_sha256": "8bf03064fbe1371014d9da3cc5b9a371daf6d96bc71f4de8bbe9b4b70cb7ae96"
+    },
+    "evaluation/ordinary-selected-session/build.py": {
+      "current_sha256": "cf50f5e8d9fbf816dc3144c0fbc4f0fe75fae9d0789a17ce53b220683e3c4c88",
+      "edits": [
+        [
+          12237,
+          12361,
+          ""
+        ]
+      ],
+      "previous_sha256": "14b083d5182b86e151e7abfc6b84b274be0add222a341a672722588bb841bf50"
+    },
+    "evaluation/ordinary-selected-session/driver_controls.py": {
+      "current_sha256": "e7f11ba1261ad7de5d91d6a8a2b7e4a9146fad97f1c38b2c8a2bf1debf882050",
+      "edits": [
+        [
+          14792,
+          14964,
+          "        self.assertEqual(len(wanted), 112)\n        self.assertEqual(set(wanted), set(old + driver.SELECTED_RUST + accuracy + leaf.PHASE_CONTROLS))\n"
+        ],
+        [
+          15418,
+          18172,
+          "        self.assertEqual(leaf.APP_CONTROLS[27:],leaf.PHASE_CONTROLS)\n"
+        ],
+        [
+          18319,
+          18424,
+          "        prefixes = leaf.PHASE_PREFIXES + ('normal::leaf_set::accuracy_tests::',\n"
+        ],
+        [
+          18951,
+          18992,
+          "        for name in accuracy:\n"
+        ]
+      ],
+      "previous_sha256": "5ba2abc041cb10bc9966cf58e1261b7bd2652af68e0fe6190b42212fb76303a5"
+    },
+    "evaluation/ordinary-selected-session/reproduce.py": {
+      "current_sha256": "dd357db7b22e234e74d655dd75ab157989aa70be8094b728482166b2cf271bd3",
+      "edits": [
+        [
+          30416,
+          30460,
+          "    assert len(old) == len(set(old)) == 88\n"
+        ],
+        [
+          30495,
+          30585,
+          "    assert len(expected) == len(set(expected)) == 112 and set(expected) <= set(inventory)\n"
+        ],
+        [
+          36198,
+          36313,
+          "                python=python_results, rust_count=112, python_count=python_control_count(selected_profile(run.a)))\n"
+        ],
+        [
+          41290,
+          41401,
+          "    assert actual['rust_count']==112 and actual['python_count']==python_control_count(selected_profile(run.a))\n"
+        ]
+      ],
+      "previous_sha256": "1809ee356e2a97e8fbfafbe024bab5bb339cf875689b4c9016a5127c812c8694"
+    },
+    "tools/rapid-profiler/ordinary-interval/main.rs": {
+      "current_sha256": "76c776c72b6818743a18a47dff80ad14f4cd03567bd62183ddf05d11eb2527a9",
+      "edits": [
+        [
+          14590,
+          14813,
+          ""
+        ]
+      ],
+      "previous_sha256": "51ba49c428772e0302395a07cbdb85040cafd1cd2a9feb2191d1adb25feecf28"
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set.rs": {
+      "current_sha256": "a05492997d3b2b9d7e805a5322b9e3d165a78072e7ac75a6a7b6065e19f528ee",
+      "edits": [
+        [
+          1267,
+          1359,
+          ""
+        ],
+        [
+          10621,
+          10673,
+          ""
+        ],
+        [
+          11520,
+          11718,
+          "                    |phase| phase.request().ready(),\n"
+        ],
+        [
+          12814,
+          13023,
+          "            emit(io, phase.request().header())?;\n"
+        ],
+        [
+          13492,
+          13645,
+          "        if let Some(phase) = &self.phase {\n"
+        ],
+        [
+          14629,
+          14959,
+          ""
+        ],
+        [
+          14999,
+          15949,
+          ""
+        ],
+        [
+          18320,
+          18482,
+          ""
+        ],
+        [
+          19697,
+          19799,
+          ""
+        ],
+        [
+          29937,
+          30564,
+          "    let command = if phase_request.is_some() {\n"
+        ],
+        [
+          36768,
+          36792,
+          ""
+        ],
+        [
+          36825,
+          36988,
+          ""
+        ],
+        [
+          37390,
+          37617,
+          ""
+        ],
+        [
+          37783,
+          37851,
+          "            (ready, worker_counter, worker_phase),\n"
+        ],
+        [
+          38308,
+          38650,
+          "        let shared::worker::Event::Ready { tid } = replies.recv_timeout(WAIT).map_err(failure)?\n"
+        ],
+        [
+          38789,
+          38916,
+          ""
+        ]
+      ],
+      "previous_sha256": "33547501323f64e788c0bc30a3bb6e3c0c0e65b21fe1560439886c9272dd1b7d"
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/check.rs": {
+      "current_sha256": "c1e247f2a2c139945efcbe0419419fe3d1a912fe18cf610c4879602ba92f58c2",
+      "edits": [
+        [
+          8091,
+          8552,
+          ""
+        ],
+        [
+          12356,
+          12902,
+          ""
+        ],
+        [
+          15652,
+          16727,
+          ""
+        ]
+      ],
+      "previous_sha256": "9c448f20130ab80283f5a9e606c588ca3be4c34d98a920752ba9c5087f0c9874"
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/selected.rs": {
+      "current_sha256": "5544cf97920cd8b0a2215ee26dc4c2fe7783d6eab9382607700628ce796b908d",
+      "edits": [
+        [
+          15775,
+          16756,
+          ""
+        ],
+        [
+          20548,
+          23131,
+          ""
+        ]
+      ],
+      "previous_sha256": "96d143c0fd809ca29849938556cd7e9d164ebe72b9b46e9726cd7c922020a953"
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/worker.rs": {
+      "current_sha256": "7d7db1e6cb782681a846a0eafd325bf28afdfa1979a716dc1bd0ba256fde6037",
+      "edits": [
+        [
+          845,
+          957,
+          ""
+        ],
+        [
+          1661,
+          1780,
+          "        phase: Option<Arc<phase::Shared>>,\n"
+        ],
+        [
+          1796,
+          1832,
+          ""
+        ],
+        [
+          2835,
+          2881,
+          ""
+        ],
+        [
+          3424,
+          3497,
+          ""
+        ],
+        [
+          3542,
+          5159,
+          ""
+        ],
+        [
+          5570,
+          6142,
+          ""
+        ],
+        [
+          8494,
+          8536,
+          ""
+        ],
+        [
+          9103,
+          9145,
+          ""
+        ],
+        [
+          9443,
+          9657,
+          "    let (ready, counter, phase) = evidence;\n    let worker = Worker::attach(targets.0, targets.1, client, custody, cpu, counter, phase);\n"
+        ]
+      ],
+      "previous_sha256": "7da08f5bf988a989a21689f948e41e2ae941c6cd5a1ab0d909ae3dbfc4b4e475"
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/module/session/worker.rs": {
+      "current_sha256": "ee2d927abbc7cada156743a11c1fb9893a8eff948bdf40205177fecad631724f",
+      "edits": [
+        [
+          4446,
+          5944,
+          ""
+        ],
+        [
+          14800,
+          16235,
+          ""
+        ]
+      ],
+      "previous_sha256": "01cca8a40a3b8f4c5d45569b9b99885c5d6d31736236770ede9533b427029cfe"
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/session.rs": {
+      "current_sha256": "5404a668044dcdf68c4eacebfbe2be34c11d82b5d3caeef138954bd19c09ff1c",
+      "edits": [
+        [
+          10080,
+          10429,
+          ""
+        ],
+        [
+          15615,
+          15645,
+          ""
+        ],
+        [
+          22186,
+          22337,
+          "        if !schedule.is_stopping() && !state.requested && state.pending.is_none() {\n"
+        ],
+        [
+          25518,
+          25838,
+          "                    app.finish(totals, &engine.reports, &engine.history, io)?;\n                    app.final_checks()?;\n"
+        ],
+        [
+          26034,
+          26346,
+          "                    app.terminal(\n                        &schedule,\n                        engine.history.last().unwrap().range().end,\n                        totals,\n                        io,\n                    )?;\n"
+        ],
+        [
+          26779,
+          26882,
+          ""
+        ]
+      ],
+      "previous_sha256": "8cb50d0f0c3d7ddb3cd44a2763f9ddc2efa760e7aee3aa313d20b79e031e6918"
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": {
+      "current_sha256": "ee02acba7f8fcfa9981bdf6a3801413d4e3a7c7920bc6e15716e930c41577afb",
+      "edits": [
+        [
+          19183,
+          21679,
+          ""
+        ]
+      ],
+      "previous_sha256": "3cda143a2777035651557b9cc7f0516c2fef3174d8a8d7f48e785c4445e99e74"
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/session/phase.rs": {
+      "current_sha256": "90656205157ed2d028a05316c3cd87f50ad300df5b649f379f10749cc0e146c0",
+      "edits": [
+        [
+          280,
+          317,
+          ""
+        ]
+      ],
+      "previous_sha256": "8b0d90c5e85c2887b576fd6e8982b629aec3136ecedc42ae8eb89efad1013cf9"
+    },
+    "tools/rapid-profiler/ordinary-interval/normal/session/worker.rs": {
+      "current_sha256": "5f675202b4517ff6a461e739d1bd6cb884db84c24644132557a0ef48bba3fdcb",
+      "edits": [
+        [
+          3714,
+          3839,
+          ""
+        ],
+        [
+          4291,
+          4578,
+          ""
+        ],
+        [
+          5517,
+          5560,
+          ""
+        ],
+        [
+          5816,
+          5850,
+          ""
+        ]
+      ],
+      "previous_sha256": "b2e616dc9e1b9c2c85a500e8bdc12af0feadd9e9066eef219b11b7fdec67eb12"
+    }
+  },
+  "python_current_sha256": "6b16aa6c8f4547ceb25922762f0a5209a928d7a92d991e3f44a921c492a707ad",
+  "python_previous_sha256": "0d3d6f32a14f7d7b96639439ad0f7387d68428687f7e584975ddc16f0647eed4",
+  "schema": 1,
+  "sources": {
+    "A3-OFFLINE.md": "17c5899d51f3c7d5fea7249a3497740d51ea60b1cf5e6fbebf8bc1009759af5d",
+    "Cargo.lock": "4aad718e815f59f813573d5f1302ea87c35b178a949bd5159882d5ee1301d89a",
+    "Cargo.toml": "0400cda5659feb04aac0d698560dd17087658c712e3e7d2765243100675160df",
+    "evaluation/admission/core_813_inventory.py": "60766302d63b6b0f9be47ba1b5508ee998e4724a06048fb7a8e603d436070caf",
+    "evaluation/admission/core_acc247_inventory.py": "085d7a5a5231de1b6567599d24e56caa96f2854b92389a6063596f6dadc3fc08",
+    "evaluation/admission/core_cc846_inventory.py": "fb84ad3363f39505705d066cfb3d674c535baf869cd70edaaf961bcf60d00f2d",
+    "evaluation/admission/recorder_parallel.py": "f47aaa5801b09ceace088d2c7a214149c1245db95238ec35c37563ea95b2c937",
+    "evaluation/admission/test_main0fb574_inventory.py": "232d801637ccedd7d3b430405d28cef19457e5cd36297e7411ef41e5bbdd3c19",
+    "evaluation/admission/test_main20cbe_inventory.py": "bb8e28fc90657c735d89e0d71cea8fcca786d370bc03af80d3caa6b8b2be31f9",
+    "evaluation/admission/test_main34c47_inventory.py": "864045914fa158cdffbf7e33e989e64105904baa099e73e7b74bbb6c1f854dbf",
+    "evaluation/admission/test_main367_inventory.py": "53f374c0eb27e75c855573676e0457ddb9b711e64c368059a4fe6915a27233a6",
+    "evaluation/admission/test_main981419_inventory.py": "60f04946ce2ccc5561b2728ffda5e37d2690a4db80b9614d3926a6fb587d0f56",
+    "evaluation/admission/test_mainacc247_inventory.py": "2ffd7c70824266d2f31fc0e79c78607465634ddc132f9a2d54920a3f7d868499",
+    "evaluation/admission/test_mainaf81_inventory.py": "60bb3f2e4513d89cffde359c088682e17a5ffdf7e88db084e3b4d7fb01c14943",
+    "evaluation/admission/test_mainc712_inventory.py": "cf585b375f5cf772b9260b209f23fe81bc955178f1d5d3e04e791b21672cc99e",
+    "evaluation/admission/test_maindd75_inventory.py": "a110d1c073da09c2a6aa348b7751c50ecaf6847fa23821c24dba1b04224786af",
+    "evaluation/ordinary-accuracy-results/prepared-focused-27e/reproduce.py": "a4dd66dbb2cb4948aa8bbad74a10c1416302431fdc62f3e355c42f3d3ce0f311",
+    "evaluation/ordinary-accuracy/output.py": "d88c3843e01b26a2c5f52635be78fccee535452acd408967ce6839236f505565",
+    "evaluation/ordinary-accuracy/phase_output.py": "7a974575214c91fce44d94dc24af401888a4c76e75fb123d76693e9771207545",
+    "evaluation/ordinary-accuracy/prepared_phase_controls.py": "98c19cb037deab2b31780b95302a36835429b06b7c476a670527aa1eba852583",
+    "evaluation/ordinary-accuracy/prepared_phase_output.py": "96f61330220eda76780e991d1274ff95c441370274e239626faf441a7436e3f2",
+    "evaluation/ordinary-call-pair-session/freeze.py": "20a24fe3cfc2e82dbbe8014e64d9f6a468df818cf21ba5660e91c28979ef0cc6",
+    "evaluation/ordinary-call-pair-session/launch.py": "d8733f1c8acf51759bdacceaeba23ac432aa1839fffefeb8a081ceb3222248f1",
+    "evaluation/ordinary-call-pair-session/native_receipt.py": "7bda6fc160286e9440ca270ace64ee64714d4faf03e6a42f438a8a81427c22bc",
+    "evaluation/ordinary-call-pair-session/original_controls.py": "4c8a167917e0ec383a4a11594d7f0ec3340b2652eb7a406ab7d5d3643ddb0e69",
+    "evaluation/ordinary-call-pair-session/original_output.py": "3f50181dd6060389c51d0a2472ba65a0863031816825ca9544281eccab9c307a",
+    "evaluation/ordinary-call-pair-session/owner_controls.py": "5c34d9ec073fcb3cb62c52d8a7ccbded88a1750a312b1703edc9c051bc07c7b1",
+    "evaluation/ordinary-call-pair-session/reproduce.py": "ed1c72cefecc5fb0ad68f0c7855c4cd4ed4004955673d69127a80c74d6d3eca8",
+    "evaluation/ordinary-call-pair-session/runner_controls.py": "14d36c65342fb4373a8bbadc351ead4027a5d33f30d7bfc16fd6c6da444100ed",
+    "evaluation/ordinary-leaf-set-session/original_controls.py": "f0c358a473c05e444737a4b6918fedaa723bf00c264e443b9744b82c2165f090",
+    "evaluation/ordinary-leaf-set-session/original_output.py": "7db9e8e7a329ae65544902258120fce3c6fafcad3bf4d96abdbc6794896d5e7d",
+    "evaluation/ordinary-leaf-set-session/output.py": "3d8b92c0a90caf5f6e31097af9521782fa583d7f6dfef8a55a318afc12662de8",
+    "evaluation/ordinary-leaf-set-session/reproduce.py": "762313ac6180efa8901eeca66df3b4dd67290249f9a45b24fb1f5dd826e51eff",
+    "evaluation/ordinary-leaf-set-session/runner_controls.py": "e80c2030688b57dec5d74e65e48c4203cf6bac537d2b78527b4766e763f1b4e4",
+    "evaluation/ordinary-selected-session/accuracy_functional.py": "3a9d0dbf5b2cf1f89ce5dad176d36f0874f3a12d10192ba7280af5d75e920284",
+    "evaluation/ordinary-selected-session/accuracy_functional_owner.py": "6a058a32ab13167dc78ca1313c38c99b0281334f275a4cb638055665c589eeb5",
+    "evaluation/ordinary-selected-session/accuracy_produce.py": "46876f306c8273b479bfe39b2f7aeb40de5c33396eea92bf7f37be5c5cfb4f91",
+    "evaluation/ordinary-selected-session/build.py": "cf50f5e8d9fbf816dc3144c0fbc4f0fe75fae9d0789a17ce53b220683e3c4c88",
+    "evaluation/ordinary-selected-session/driver_controls.py": "e7f11ba1261ad7de5d91d6a8a2b7e4a9146fad97f1c38b2c8a2bf1debf882050",
+    "evaluation/ordinary-selected-session/prepared_phase_functional_controls.py": "f75d6619dc25a55a6be6f748bdd575fbfdc54974dbefdefbc6f9be645b362127",
+    "evaluation/ordinary-selected-session/reproduce.py": "dd357db7b22e234e74d655dd75ab157989aa70be8094b728482166b2cf271bd3",
+    "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+    "tools/rapid-profiler/ordinary-interval/main.rs": "76c776c72b6818743a18a47dff80ad14f4cd03567bd62183ddf05d11eb2527a9",
+    "tools/rapid-profiler/ordinary-interval/normal.rs": "0618d34ca349bcd15db6cd3061912cbb2e8f939e1cf38277b49e6b60d20a35a3",
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set.rs": "a05492997d3b2b9d7e805a5322b9e3d165a78072e7ac75a6a7b6065e19f528ee",
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/check.rs": "c1e247f2a2c139945efcbe0419419fe3d1a912fe18cf610c4879602ba92f58c2",
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/prepared.rs": "f0bdfc33e1c4acafcd95a4c1850b65f91c541dc7879e4276050f3356687edbf2",
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/selected.rs": "5544cf97920cd8b0a2215ee26dc4c2fe7783d6eab9382607700628ce796b908d",
+    "tools/rapid-profiler/ordinary-interval/normal/leaf_set/worker.rs": "7d7db1e6cb782681a846a0eafd325bf28afdfa1979a716dc1bd0ba256fde6037",
+    "tools/rapid-profiler/ordinary-interval/normal/module.rs": "11a4fbbbd5d14fac2af8c4d99c61e0580a387e48ab82604163eafe88933fbb8b",
+    "tools/rapid-profiler/ordinary-interval/normal/module/session.rs": "30227b7453d0dfdf47a7e957062103d2b3f8c362029a863e47e4bd761474c1d5",
+    "tools/rapid-profiler/ordinary-interval/normal/module/session/worker.rs": "ee2d927abbc7cada156743a11c1fb9893a8eff948bdf40205177fecad631724f",
+    "tools/rapid-profiler/ordinary-interval/normal/session.rs": "5404a668044dcdf68c4eacebfbe2be34c11d82b5d3caeef138954bd19c09ff1c",
+    "tools/rapid-profiler/ordinary-interval/normal/session/io.rs": "ee02acba7f8fcfa9981bdf6a3801413d4e3a7c7920bc6e15716e930c41577afb",
+    "tools/rapid-profiler/ordinary-interval/normal/session/phase.rs": "90656205157ed2d028a05316c3cd87f50ad300df5b649f379f10749cc0e146c0",
+    "tools/rapid-profiler/ordinary-interval/normal/session/phase/prepared.rs": "f2ae8d58104dd6ee97a5a573d4fda8ec5fc262afda55d5283d964d6971813d60",
+    "tools/rapid-profiler/ordinary-interval/normal/session/phase/prepared/tests.rs": "b76c32ba214a453330d44286658ad6980d8505e87b750f96d77ea4c0a91f0a1c",
+    "tools/rapid-profiler/ordinary-interval/normal/session/worker.rs": "5f675202b4517ff6a461e739d1bd6cb884db84c24644132557a0ef48bba3fdcb",
+    "tools/rapid-profiler/ordinary-interval/normal/session/worker/prepared_tests.rs": "2f992635e7900a948efcb230bce44825b8d4cb0624b299fbfe7f73046122f3ef"
+  },
+  "workspace_changes": {
+    "unit/ordinary_interval/main": {
+      "current": {
+        "ignored": 1,
+        "tests": 507
+      },
+      "previous": {
+        "ignored": 1,
+        "tests": 489
+      }
+    }
+  }
+}
