@@ -307,3 +307,136 @@ fn whole_shared_complete_population_caps_and_policy_guards_are_not_subsets() {
     assert_eq!(edge.len(), SELECTION_LIMIT);
     assert!(parse(&vec![b'x'; SELECTION_LIMIT + 1], &imported(&o, &l)).is_err());
 }
+
+fn long_ownership_fixture() -> (Vec<u8>, String, String) {
+    let (mut original, _) = fixture(2, 0);
+    let mut chunks = vec![vec![0x75, 0], vec![0xc3]];
+    chunks.extend((3..16).map(|_| vec![0x90]));
+    chunks.push(vec![
+        0x48, 0xb8, 0x37, 0x31, 0x42, 0x53, 0x64, 0x75, 0x86, 0x97,
+    ]);
+    chunks.extend((26..30).map(|_| vec![0x90]));
+    chunks.push(vec![0x75, 0]);
+    chunks.push(vec![
+        0x48, 0xb8, 0x27, 0x31, 0x42, 0x53, 0x64, 0x75, 0x86, 0x97,
+    ]);
+    chunks.push(vec![0xc3]);
+    chunks.extend((43..48).map(|_| vec![0x90]));
+    let code: Vec<_> = chunks.iter().flatten().copied().collect();
+    assert_eq!(code.len(), 48);
+    original[0x1100..0x1130].copy_from_slice(&code);
+    let mut text = format!(
+        "LI2DISASM 1\noriginal {}\ncontract complete-code no-overlap no-code-as-data private-image\nregion {PC} 4352 48\n",
+        digest(&original)
+    );
+    let mut pc = PC;
+    for bytes in chunks {
+        writeln!(text, "head {pc} {}", ledger::hex(&bytes)).unwrap();
+        pc += bytes.len() as u64;
+    }
+    writeln!(text, "region {HOOK} 73472 1\nhead {HOOK} c3").unwrap();
+    let mut p = policy(&original, &text, 0);
+    let selected = PC + 0x0100_0080;
+    let victim = PC + 0x0600_0080;
+    let prior = PC + 35 + 0x27b8_4800;
+    writeln!(p, "search 1 T3 0 15 1 none 2 2\nallocation 1 selected {selected} 1 8192 {}:8192\nallocation 1 victim {victim} 1 8192 {}:8192\nsearch 2 B2 0 15 1 none 2 2\nallocation 2 selected {prior} 1 8192 {}:8192\nallocation 2 victim {victim} 1 8192 {}:8192", selected & !4095, victim & !4095, prior & !4095, victim & !4095).unwrap();
+    (original, text, p)
+}
+
+#[test]
+fn whole_long_t3_ownership_keeps_denominator_and_finds_alternate_victim() {
+    let (original, text, p) = long_ownership_fixture();
+    let selected = bind(&original, &text, &p).unwrap();
+    assert_eq!(
+        selected
+            .selection
+            .sites
+            .iter()
+            .map(|s| s.pc)
+            .collect::<Vec<_>>(),
+        [PC, PC + 30]
+    );
+    let legacy = crate::prepare_selection_with_mode(
+        &original,
+        selected.selection.clone(),
+        false,
+        NeighborMode::LongOnly,
+    )
+    .unwrap();
+    assert!(!legacy.candidate_complete());
+    assert_eq!(
+        legacy.reports()[0].refusal.as_ref().unwrap().stage,
+        "composition"
+    );
+    assert_eq!(
+        legacy.reports()[0].refusal.as_ref().unwrap().detail,
+        "OwnershipConflict"
+    );
+    assert!(!legacy.files().contains_key("candidate.elf"));
+    let product = crate::prepare_disassembly_whole(&original, &selected).unwrap();
+    assert!(product.candidate_complete());
+    assert!(!product.qualification_complete());
+    assert_eq!(
+        product.reports().iter().map(|r| r.id).collect::<Vec<_>>(),
+        [1, 2]
+    );
+    assert!(
+        product
+            .reports()
+            .iter()
+            .all(|r| r.refusal.is_none() && r.candidate_emitted)
+    );
+    assert_eq!(
+        product.reports()[0].core_tactic,
+        Some(li2core::engine::Tactic::NeighborEviction)
+    );
+    assert_eq!(
+        product.reports()[1].core_tactic,
+        Some(li2core::engine::Tactic::GeneralizedPun)
+    );
+    let d = &product.reports()[0].diagnostics;
+    assert!(d.contains("OwnershipConflict") && d.contains("stage: Composition"));
+    assert!(d.contains("victims_examined: 2") && d.contains("pairs_examined: 2"));
+    let mut expected = original[0x1100..0x1130].to_vec();
+    expected[..2].copy_from_slice(&[0xeb, 19]);
+    let victim = PC + 0x0600_0080;
+    let selected_target = PC + 0x0100_0080;
+    expected[16] = 0xe9;
+    expected[17..21].copy_from_slice(&i32::try_from(victim - (PC + 21)).unwrap().to_le_bytes());
+    expected[21] = 0xe9;
+    expected[22..26].copy_from_slice(
+        &i32::try_from(selected_target - (PC + 26))
+            .unwrap()
+            .to_le_bytes(),
+    );
+    expected[30..32].copy_from_slice(&[0xe9, 0]);
+    assert_eq!(&product.files()["candidate.elf"][0x1100..0x1130], &expected);
+    assert_eq!(product.files()["candidate.elf"][0x11f00], 0xc3);
+    let profile = std::str::from_utf8(&product.files()["planning-profile.tsv"]).unwrap();
+    assert!(profile.contains(NEIGHBOR_METADATA));
+    assert_eq!(
+        selected.profile(),
+        "elf-disassembly-null-jumps-shared-4096-v1"
+    );
+    let capped = p.replace("search 1 T3 0 15 1 none 2 2", "search 1 T3 0 15 1 none 2 1");
+    let refused =
+        crate::prepare_disassembly_whole(&original, &bind(&original, &text, &capped).unwrap())
+            .unwrap();
+    assert!(!refused.candidate_complete());
+    assert_eq!(
+        refused.reports().iter().map(|r| r.id).collect::<Vec<_>>(),
+        [1, 2]
+    );
+    assert!(
+        refused
+            .reports()
+            .iter()
+            .all(|r| r.refusal.is_some() && !r.candidate_emitted)
+    );
+    assert!(!refused.files().contains_key("candidate.elf"));
+    assert!(
+        refused.reports()[0]
+            .diagnostics
+            .contains("OwnershipConflict")
+    );
+}

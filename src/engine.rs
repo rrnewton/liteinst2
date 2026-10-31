@@ -198,6 +198,47 @@ pub fn plan_with_emission_after(
     plan_core(&original.with_code(&current), victim_allocation, policy).map(artifact_plan)
 }
 
+/// Long-only T3 with inherited admission for each complete candidate pair.
+///
+/// The predecessor authenticates the complete original source and supplies its
+/// current overlay. Original instruction identity remains distinct. A complete
+/// 10..=15-byte victim pair must append every source step to a fresh predecessor
+/// clone before selection; refusal consumes the same charged pair and continues
+/// within the existing victim, image and pair budgets. No candidate is skipped
+/// or retried with a fresh budget.
+///
+/// The first four tactics retain their first local success and may still fail
+/// the caller's later append. This does not mutate the predecessor or publish
+/// executable code. The caller retains final append, dependency, aggregate,
+/// entry, hook, publication and retirement checks. Legacy entrypoints are
+/// unchanged; this API does not admit short or foreign victims.
+pub fn plan_with_emission_after_and_long_t3_ownership(
+    request: &ArtifactRequest<'_>,
+    predecessor: &Composition,
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+) -> Result<ArtifactPlan, EngineFailure> {
+    let current = predecessor
+        .planning_overlay(
+            request.site.identity,
+            request.site.base_address,
+            request.site.code,
+        )
+        .map_err(|reason| EngineFailure {
+            reason,
+            attempts: Vec::new(),
+        })?;
+    let original = PlanningRequest::artifact(request);
+    plan_core_family_with_inherited(
+        &original.with_code(&current),
+        victim_allocation,
+        policy,
+        false,
+        Some(predecessor),
+    )
+    .map(artifact_plan)
+}
+
 /// The same five-tactic engine with an explicit short-only T3 family.
 ///
 /// Generalized pun, relocation, prefixed pun and successor eviction retain their
@@ -549,6 +590,14 @@ fn plan_core_family_with_pending(
                         policy.bundle,
                     ),
                 }
+            } else if let Some(predecessor) = inherited {
+                neighbor::plan_neighbor_long_after_core(
+                    request,
+                    predecessor,
+                    victim_allocation,
+                    policy.neighbor,
+                    policy.bundle,
+                )
             } else {
                 neighbor::plan_neighbor_core(
                     request,

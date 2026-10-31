@@ -85,7 +85,9 @@ pub fn prepare_disassembly(
 }
 
 /// Explicit whole-program shared-head selection, same complete transaction and
-/// long-only tactic semantics. No PIE startup, runtime or memory-fit admission.
+/// long-only victims with inherited T3 pair admission. The first four tactics
+/// retain local selection; final composition and every original budget remain.
+/// No PIE startup, runtime or memory-fit admission.
 pub fn prepare_disassembly_whole(
     original: &[u8],
     selected: &disassembly::whole::WholeProgramSelection,
@@ -94,7 +96,7 @@ pub fn prepare_disassembly_whole(
         original,
         selected.selection.clone(),
         false,
-        disassembly::NeighborMode::LongOnly,
+        disassembly::NeighborMode::WholeLongT3Ownership,
     )?;
     product.files.remove("bundle-index.tsv");
     product.files.extend(selected.files.clone());
@@ -719,7 +721,14 @@ fn attempt_singleton(
                 max_virtual_span: s.limits.virtual_span,
             },
         };
-        let result = if mode == disassembly::NeighborMode::ShortT3Pending {
+        let result = if mode == disassembly::NeighborMode::WholeLongT3Ownership {
+            engine::plan_with_emission_after_and_long_t3_ownership(
+                &request,
+                composition,
+                &site.victim_allocation,
+                policy,
+            )
+        } else if mode == disassembly::NeighborMode::ShortT3Pending {
             engine::plan_with_emission_after_and_short_t3_pending(
                 &request,
                 composition,

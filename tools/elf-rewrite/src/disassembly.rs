@@ -25,6 +25,8 @@ const SHORT_OWNERSHIP: &str = "neighbor_victims\tshort-only\nneighbor_ownership\
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum NeighborMode {
     LongOnly,
+    // Only the typed whole-program frontend constructs this planning mode.
+    WholeLongT3Ownership,
     ShortOnly,
     ShortT3Ownership,
     ShortT3Pending,
@@ -33,6 +35,7 @@ impl NeighborMode {
     fn profile(self) -> &'static str {
         match self {
             Self::LongOnly => PROFILE,
+            Self::WholeLongT3Ownership => whole::PROFILE,
             Self::ShortOnly => SHORT_ONLY_PROFILE,
             Self::ShortT3Ownership => SHORT_T3_OWNERSHIP_PROFILE,
             Self::ShortT3Pending => SHORT_T3_PENDING_PROFILE,
@@ -41,6 +44,7 @@ impl NeighborMode {
     fn metadata(self) -> &'static str {
         match self {
             Self::LongOnly => "",
+            Self::WholeLongT3Ownership => whole::NEIGHBOR_METADATA,
             Self::ShortOnly => SHORT_FAMILY,
             Self::ShortT3Ownership => SHORT_OWNERSHIP,
             Self::ShortT3Pending => SHORT_PENDING,
@@ -225,6 +229,12 @@ impl Disassembly {
         let ledger_id = ContentId::of(&self.ledger);
         let (shift, header) = match mode {
             NeighborMode::LongOnly => (0, "LI2DISASM-POLICY 1"),
+            NeighborMode::WholeLongT3Ownership => {
+                return Err(Error::new(
+                    "neighbor-mode",
+                    "whole mode requires shared importer",
+                ));
+            }
             NeighborMode::ShortOnly => (1, "LI2DISASM-POLICY 2"),
             NeighborMode::ShortT3Ownership => (2, "LI2DISASM-POLICY 3"),
             NeighborMode::ShortT3Pending => (3, "LI2DISASM-POLICY 4"),
@@ -277,6 +287,12 @@ impl Disassembly {
         )?;
         let projection_family = match mode {
             NeighborMode::LongOnly => "",
+            NeighborMode::WholeLongT3Ownership => {
+                return Err(Error::new(
+                    "neighbor-mode",
+                    "whole mode requires shared importer",
+                ));
+            }
             NeighborMode::ShortOnly => "neighbor-victims short-only\n",
             NeighborMode::ShortT3Ownership => {
                 "neighbor-victims short-only\nneighbor-ownership inherited-t3\n"
@@ -348,6 +364,12 @@ impl Disassembly {
         // Check the FULL new bytes before invoking the old projection parser.
         let mut selection = match mode {
             NeighborMode::LongOnly => selection::parse(projection.as_bytes())?,
+            NeighborMode::WholeLongT3Ownership => {
+                return Err(Error::new(
+                    "neighbor-mode",
+                    "whole mode requires shared importer",
+                ));
+            }
             NeighborMode::ShortOnly => {
                 selection::parse_short_neighbor_projection(projection.as_bytes())?
             }

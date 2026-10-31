@@ -213,6 +213,23 @@ pub(crate) fn plan_neighbor_core(
     plan_neighbor_mode(request, victim_allocation, search, budget, false)
 }
 
+pub(crate) fn plan_neighbor_long_after_core(
+    request: &PlanningRequest<'_>,
+    predecessor: &Composition,
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+) -> Result<PlannedNeighbor, NeighborFailure> {
+    plan_neighbor_mode_with_inherited(
+        request,
+        victim_allocation,
+        search,
+        budget,
+        false,
+        Some(predecessor),
+    )
+}
+
 pub(crate) fn plan_neighbor_short_core(
     request: &PlanningRequest<'_>,
     victim_allocation: &AllocationPolicy,
@@ -858,3 +875,7 @@ mod tests {
         assert_eq!(short_redirect(0, 128), Err(Refusal::NoPatchWindow));
     }
 }
+
+#[cfg(test)]
+#[path = "neighbor_long_ownership_tests.rs"]
+mod long_ownership_tests;

@@ -5,6 +5,8 @@ use li2core::contracts::LegalEntry;
 use std::sync::Arc;
 
 pub const PROFILE: &str = "elf-disassembly-null-jumps-shared-4096-v1";
+pub(super) const NEIGHBOR_METADATA: &str =
+    "neighbor_victims\tlong-only\nneighbor_ownership\tinherited-t3\n";
 pub const MATERIAL_PROFILE: &str = "e9patch-full-sections-null-jumps-4096-v1";
 pub const SITE_LIMIT: usize = 4096;
 pub const HEAD_LIMIT: usize = 16384;
@@ -200,7 +202,7 @@ impl Disassembly {
             },
         )?;
         let profile = format!(
-            "LI2PLANNING\t1\nprofile\t{PROFILE}\nscope\tartifact-code-regions-not-functions\nentries\tall-verified-instruction-heads\noriginal_sha256\t{}\nledger_sha256\t{}\npolicy_sha256\t{}\nselection_sha256\t{}\ncomplete_jump_count\t{}\nqualification_complete\tfalse\n",
+            "LI2PLANNING\t1\nprofile\t{PROFILE}\n{NEIGHBOR_METADATA}scope\tartifact-code-regions-not-functions\nentries\tall-verified-instruction-heads\noriginal_sha256\t{}\nledger_sha256\t{}\npolicy_sha256\t{}\nselection_sha256\t{}\ncomplete_jump_count\t{}\nqualification_complete\tfalse\n",
             ledger::hex(&self.original.0),
             ledger::hex(&ledger_id.0),
             ledger::hex(&expected_policy.0),
