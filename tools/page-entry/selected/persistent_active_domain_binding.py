@@ -15,6 +15,7 @@ LEAVES = tuple({
     'linked_jmp_domain.h', 'linked_jmp_domain_emit.inc',
     'persistent_active_domain.h', 'persistent_active_domain_types.inc',
     'persistent_active_domain.inc', 'rseq_current_data.h', 'rseq_current_data.inc',
+    'linked_native_probe.h', 'linked_native_probe.inc', 'linked_native_probe_report.inc',
 )
 MODES = ('release', 'capture', 'differential', 'counters')
 
@@ -50,7 +51,7 @@ def main():
                   '#define LI2_PG_ARCHIVE_SHA256 ' + literal(actual_archive['sha256']) + '\n'
                   '#define LI2_PG_POLICY_SHA256 ' + literal(policy) + '\n#endif\n')
     headers = {'linked_epoch_config.h': linked, 'persistent_group_config.h': persistent}
-    record = dict(version=4, profile='persistent-active-domain-' + mode + '-v4', mode=mode,
+    record = dict(version=4, profile='persistent-active-domain-' + mode + '-v4', mode=mode, native_probe=True,
                   archive=actual_archive, policy_sha256=policy, original=original, sources=values,
                   headers={name: fact(text.encode()) for name, text in headers.items()})
     paths = [output / name for name in headers] + [output / 'persistent_active_domain_binding.json']

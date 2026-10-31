@@ -12,6 +12,7 @@ sys.dont_write_bytecode=True
 from linked_frontier_census import need,fact,git,git_bytes,source_paths,H,D
 from persistent_resident_experiment import resident_prerequisite
 from persistent_retained_two_experiment import retained_prerequisite
+import linked_native_probe_reports as probe
 HERE=Path(__file__).resolve().parent
 ROOT=HERE.parents[1]
 SCRIPT='evaluation/inprocess/persistent_active_domain_experiment.py'
@@ -68,6 +69,9 @@ def counters(stderr):
     need(not any(x.startswith((b'LI2_PERSISTENT_EPOCH ',b'LI2_PERSISTENT_DYNAMIC ',b'LI2_LINKED_PREEDGE ',
          b'LI2_LINKED_NATIVE_HINT ',b'LI2_LINKED_FRONTIER_CENSUS ',b'LI2_PERSISTENT_GROUP ',b'LI2_PERSISTENT_RESIDENT ',b'LI2_PERSISTENT_RETAINED_TWO '))for x in stderr.splitlines()),
          'no old group, fixed, preedge, hint or observer population substituted for resident release')
+    result['LI2_LINKED_NATIVE_PROBE']=probe.split(stderr)[0]
+    result['LI2_CHAIN']=probe.chain_row(stderr)
+    result['LI2_NATIVE_PAIR']=probe.pair_row(stderr)
     return result
 
 
@@ -119,6 +123,7 @@ def completed(raw):
              ((17*d['domain_members'],17*d['domain_members'],1)if d['phase']==13 else(0,0,0)), 'exact executed versus unentered terminal extent')
         need(d['domain_members'] in (1,2) if d['phase']==13 else d['domain_members']==0,
              'actual one/two-member domain or unbound cancellation')
+    probe.completed(raw['LI2_LINKED_NATIVE_PROBE'],l,n,d,raw['LI2_CHAIN'],raw['LI2_NATIVE_PAIR'])
 
 
 
@@ -143,7 +148,7 @@ def active_prerequisite(path,r,pin,binary,archive,active):
          'fresh successful active-domain pairs on same exact source CPU and hardware')
     totals=dict(planned=3,launched=3,observed=3,native_references=1,generated_loops=2,observed_pairs=2,
         application_reader_refusals=24,terminal_reader_refusals=146,owner_reader_refusals=242,
-        pair_reader_refusals=24,cold_publications=4,warm_entries=2,interior_signals=0)
+        pair_reader_refusals=24,cold_publications=4,warm_entries=2,interior_signals=0,native_probe_reader_refusals=44)
     need(digest(a['totals'])==digest(totals)and digest(public['totals'])==digest(totals)and
          public['performance_credit']is False and public['whole_ls_eligibility_credit']is False and
          public['group_fault_qualification']is False,
@@ -162,8 +167,9 @@ def active_prerequisite(path,r,pin,binary,archive,active):
              build['capture']is True and build['profile']=='persistent-active-domain-'+mode+'-v4'and
              build['persistent_binding']['profile']=='persistent-active-domain-'+mode+'-v4'and
              type(build['persistent_binding']['version'])is int and build['persistent_binding']['version']==4 and
+             build['persistent_binding']['native_probe']is True and
              digest(build['active_domain'])==digest(dict(version=4,slots=2,same_source_pair=True,
-                 joint_receipts=3,directory_heads=256,maintained_rseq=True,differential=lane=='differential',
+                 joint_receipts=3,directory_heads=256,maintained_rseq=True,differential=lane=='differential',native_probe=True,
                  immutable_reconstruction='two-shared-certificates')),
              'same archive, distinct version4 policy and exact independent lane build')
         need(D(build['capture_extents'])==D(dict(build['capture_extents'],
@@ -226,6 +232,12 @@ def active_prerequisite(path,r,pin,binary,archive,active):
         else:
             named(c['owner_reader_controls'],121,row['captures']['record']['sha256'])
             named(c['terminal_controls'],73,row['captures']['stderr']['sha256'],hash_key='original_stderr_sha256')
+            named(c['native_probe_controls'],22,row['captures']['stderr']['sha256'],hash_key='original_stderr_sha256')
+            probe_bytes=binary(private/row['captures']['stderr']['file']).read_bytes()
+            actual_probe=probe.split(probe_bytes)[0]
+            need(digest(actual_probe)==digest(c['terminal']['native_probe'])==
+                 digest(a['terminal_reports'][c['label']]['native_probe']),
+                 'whole actual probe terminal row binds private evidence')
             need(digest(c['pair'])==digest(pair_expected)==digest(active.PAIR_EXPECTED),
                  'whole actual native392 and shared-lifetime pair')
             controls=c['pair_controls']
@@ -249,6 +261,9 @@ def active_prerequisite(path,r,pin,binary,archive,active):
          digest(public['rseq_mapping'])==digest({c['lane']:c['rseq_mapping']for c in a['cases']if c['lane']!='native'})and
          path.with_suffix('.csv').read_bytes()==active.csv_projection(public['cases']),
          'exact complete active-domain numerical public projection')
+    need(digest(public['native_probe'])==digest({c['lane']:dict(row=c['terminal']['native_probe'],
+         controls=c['native_probe_controls'])for c in a['cases']if c['lane']!='native'}),
+         'complete actual probe rows and separate reader controls in public projection')
     states=a['component_oracles']
     need([s['name']for s in states]==['active_authority','active_dispatch'],
          'actual authority and dispatch model components independently required')
@@ -265,6 +280,20 @@ def active_prerequisite(path,r,pin,binary,archive,active):
             need(state['synthetic_observations']is True and state['decoder_archive_used']is False,
                  'authority metadata observations are not generated execution')
         else:need(digest(state['archive'])==digest(fact(archive)),'dispatch model uses the same decoder archive')
+    state=a['native_probe_component'];row=commands['native-probe-run']
+    need(state['status']=='passed'and state['launched']is True and
+         digest([state['exit'],state['expected_exit'],row['exit'],row['expected_exit']])==digest([0]*4)and
+         row['profile']=='finite'and digest(row['bounds'])==digest(state['bounds'])==digest(BOUNDS['finite'])and
+         state['timed_out']is False and state['duration_ns']==row['duration_ns']and
+         digest(state['counts'])==digest(active.PROBE_COUNTS)and
+         digest(state['captures'])==digest({k:{n:v[n]for n in('bytes','sha256')}for k,v in row['captures'].items()})and
+         binary(private/row['captures']['stdout']['file']).read_bytes()==active.PROBE_STDOUT and
+         binary(private/row['captures']['stderr']['file']).read_bytes()==b''and
+         row['argv']==[state['argv'][-1]]and digest(fact(binary(state['argv'][-1])))==digest(state['artifact'])and
+         state['emitted_instruction_execution']==state['hardware_subjects']==0 and state['performance_credit']is False,
+         'separate actual native-probe component and unchanged finite bounds; no native authority credit')
+    need(digest(public['native_probe_component'])==digest({k:v for k,v in state.items()if k in active.PROBE_PUBLIC_FIELDS}),
+         'whole actual public native-probe component projection')
     seed=a['seed_prerequisite']
     need(seed['status']=='passed'and seed['launched']is True and digest([seed['exit'],seed['expected_exit']])==digest([0,0])and
          digest(seed['bounds'])==digest(BOUNDS['seed'])and
@@ -455,9 +484,10 @@ def main():
                  shared_boundaries=8,code_pages=17,emitter_slot_bytes=512,emitter_boundaries=64)) and
              r['release_build'].get('counters') is True and r['release_build'].get('retained_counters') is True and
              D(r['release_build'].get('active_domain'))==D(dict(version=4,slots=2,same_source_pair=True,joint_receipts=3,
-                 directory_heads=256,maintained_rseq=True,differential=False,immutable_reconstruction=None))and
+                 directory_heads=256,maintained_rseq=True,differential=False,native_probe=True,immutable_reconstruction=None))and
              D(r['release_build']['counter_schema'])==D(dict(version=2,bytes=752,page=4096,initial_seals=6,final_seals=23))and
              r['release_build']['persistent_binding']['profile']=='persistent-active-domain-counters-v4'and
+             r['release_build']['persistent_binding']['native_probe']is True and
              type(r['release_build']['persistent_binding']['version'])is int and
              r['release_build']['persistent_binding']['version']==4,
              'actual distinct active-domain-v4 release and authoritative counter ABI; no capture')
@@ -529,6 +559,7 @@ def main():
         row.update({'maps_'+name:v.get(name)for name in ('queries','hits','refreshes','comparisons','updates',
             'invalidations','stack_probes','mismatches','unexplained','poisoned')})
         row.update({'native_'+name:n.get(name)for name in ('attempts','admissions','closed','blocked','low_address_refusals')})
+        row.update({'probe_'+name:raw.get('LI2_LINKED_NATIVE_PROBE',{}).get(name)for name in probe.KEYS})
         prefix=public_prefix(c.get('final_counter_prefix'))
         observed=prefix if prefix and prefix.get('usable')is True else {}
         row['prefix_usable']=bool(observed)
@@ -566,7 +597,7 @@ def main():
         summary['reproduction_argv'].extend(x for name in ('fixed','dynamic','group','resident','retained','active')
             for x in ('--'+name+'-receipt',str(getattr(a,name+'_receipt').relative_to(ROOT))))
         summary['prerequisites']={name:r.get(name+'_prerequisite') for name in ('fixed','dynamic','group','resident','retained','active')}
-        summary['counter_scope']='Authoritative per-cell values after actual reap, including split transactions; never a completed terminal row or qualification. Terminal row fields, including both slot identities, remain null if no report was emitted. The unchanged counter page contains no per-slot fields.'
+        summary['counter_scope']='Authoritative per-cell values after actual reap, including split transactions; never a completed terminal row or qualification. Terminal row fields, including both slot identities, remain null if no report was emitted. The unchanged counter page contains neither per-slot nor native-probe fields; all probe fields remain unavailable without the actual separate terminal row.'
         text=json.dumps(summary,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n'
         stream=io.StringIO();writer=csv.DictWriter(stream,fieldnames=list(row),lineterminator='\n');writer.writeheader();writer.writerow(row)
         need(len(text.encode())<=32<<10 and len(stream.getvalue().encode())<=8<<10 and

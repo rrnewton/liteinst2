@@ -55,6 +55,12 @@ COMPONENT_SUMMARIES={
  'active_dispatch':dict(proofs=2,descriptors=16,decoded=74,models=4930,handoffs=192,refusals=487,steps=416230,typed=43520,synthetic_observations=1,emitted_execution=0)}
 RETAINED_WIRE_BYTES=4161664
 
+PROBE_INPUTS={'tests/linked_native_probe/oracle.c': {'bytes': 16859, 'sha256': '8542d8dc42fcb452eee31f81a7b3411c9f6b19ed3a597ed0408d6d64d792e434'}, 'tests/linked_native_probe/build.sh': {'bytes': 1786, 'sha256': 'b3e915e55786783eee7c1524fb9c04a20f1ace5acc517adb4983918c4860ec77'}}
+PROBE_STDOUT=b'{"version":1,"component_only":1,"current_controls":25,"policy_controls":5,"refault_controls":6,"outcome_controls":27,"lifetime_cases":5,"terminal_controls":6,"actual_in_place_renewal":1,"raw_calls":0}\n'
+PROBE_COUNTS={'version': 1, 'component_only': 1, 'current_controls': 25, 'policy_controls': 5, 'refault_controls': 6, 'outcome_controls': 27, 'lifetime_cases': 5, 'terminal_controls': 6, 'actual_in_place_renewal': 1, 'raw_calls': 0}
+PROBE_PUBLIC_FIELDS=('status','launched','expected_exit','bounds','recipe','artifact','exit','duration_ns','timed_out','captures','counts','emitted_instruction_execution','hardware_subjects','performance_credit')
+
+
 
 def reader_support(builder,private,pin,binary,run,r):
     reader=load('persistent_active_domain_app_read',FIXTURE/'read.py',pin)
@@ -454,9 +460,67 @@ def dispatch_component(builder,products,private,pin,binary,aliases,run,r):
          'both active pure oracles mandatory before seed or any hardware subject')
 
 
+def native_probe_component(builder,private,pin,binary,run,r):
+    """Actual lifecycle predicates with supplied observations; no native permission credit."""
+    state=r['native_probe_component'];state['status']='failed'
+    fixture=SELECTED/'tests/linked_native_probe';script=pin(fixture/'build.sh')
+    for name,want in PROBE_INPUTS.items():
+        need(digest(fact(pin(SELECTED/name)))==digest(want),'exact native-probe component source '+name)
+    output=private/'native-probe-component';output.mkdir();exe=output/'linked-native-probe-oracle'
+    rows=recipe(script,'"$cc_bin"');need(len(rows)==1,'one actual native-probe two-TU recipe')
+    argv=expand(rows[0],{'$cc_bin':builder.tools['cc'],'$owner_context':SELECTED,
+        '$selected_context':SELECTED,'$parent_context':SELECTED.parent,'$fixture_dir':fixture,'$output_dir':output})
+    units=[str(pin(fixture/'oracle.c')),str(pin(SELECTED/'native_policy.c'))]
+    need(argv[-2:]==['-o',str(exe)]and[x for x in argv if x.endswith('.c')]==units and
+         [x for x in argv if x.startswith('-D')]==['-DLI2_LINKED_NATIVE_PROBE=1', '-DLI2_PERSISTENT_ACTIVE_DOMAIN=1', '-DLI2_RSEQ_CURRENT_DATA=1', '-DLI2_PERSISTENT_RETAINED_TWO=1', '-DLI2_PERSISTENT_DISPATCH=1', '-DLI2_PERSISTENT_GROUP=1', '-DLI2_PERSISTENT_EPOCH=1', '-DLI2_MOV_GUARD=1', '-DLI2_LINKED_EPOCH=1', '-DLI2_SCALAR_SPAN=1', '-DLI2_SCALAR_SPAN_TRACE=1', '-DLI2_SPAN_FAST_BYTES=1', '-DLI2_MAPS_CURRENT_TF=1', '-DLI2_SCALAR_REGION=1', '-DLI2_SCALAR_REGION_REUSE=1', '-DLI2_INITIAL_CODE_PROTECTION=1', '-DLI2_UNROLLED_HASH=1', '-DLI2_MAPS_MAINTAINED=1', '-DLI2_NATIVE_PAIR=1', '-DLI2_REPEAT_RX_LEASE=1', '-DLI2_RUN_CACHE_REUSE=1', '-DLI2_EFFECT_PROVIDER=1', '-DLI2_ONESHOT_REUSABLE=1', '-DLI2_ONESHOT_PUBLICATION=1', '-DLI2_TF_SEALED_CUSTODY=1', '-DLI2_TF_SAME_PAGE_LEASE=1', '-DLI2_TF_HANDOFF=1', '-DLI2_REGISTER_RUN=1', '-DLI2_MAPS_PHASE_REUSE=1', '-DLI2_RSEQ_INACTIVE=1', '-DLI2_NATIVE_PAGES=1', '-DLI2_CPUID_NX_ONLY=1', '-DLI2_RSEQ_NATIVE=1', '-DLI2_RSEQ_NATIVE_BOUNDARY=1', '-DLI2_RSEQ_TCGETS_BTRFS=1', '-DLI2_RSEQ_TIOCGWINSZ_BTRFS=1', '-DLI2_FAST_MEMSET=1', '-DLI2_FAST_EQUAL=1'] and
+         not any(x.endswith('.a')for x in argv)and '-DNDEBUG'not in argv and all(x in argv for x in
+         ('-std=gnu11','-O2','-g','-fno-builtin','-mgeneral-regs-only','-Wall','-Wextra','-Werror',
+          '-Wl,--gc-sections,-z,now,-z,relro,-z,noexecstack,--no-undefined')),
+         'exact assertion-enabled actual lifecycle/native-policy component, no decoder archive')
+    flags=[x for x in argv[1:-2]if x not in units and not x.startswith('-Wl,')]
+    _,out,err=run('native-probe-headers',[builder.tools['cc'],*flags,'-M','-MT','li2_probe',*units],
+        profile='finite',env=builder.environment)
+    lines=out.decode().replace('\\\n',' ').splitlines()
+    need(not err and len(lines)==2 and all(x.startswith('li2_probe: ')for x in lines),
+         'complete actual two-TU native-probe dependency rules')
+    includes={str(pin(name)):fact(pin(name))for line in lines for name in shlex.split(line.split(':',1)[1])}
+    need(set(units)|{str(SELECTED/n)for n in('lifecycle_loader.c','linked_native_probe.h','linked_native_probe.inc',
+         'native_policy.h','span_source.inc','oneshot_reusable_generation.inc')}<=set(includes),
+         'whole actual probe implementation, renewal, native policy and source in compiler closure')
+    state.update(recipe=fact(script),argv=argv,headers=includes)
+    run('native-probe-build',argv,profile='finite',env=builder.environment)
+    exe=binary(exe);data,head,segments=elf(exe)
+    need(head[1]in(2,3)and head[2:4]==(62,1)and
+         all(s[2]+s[5]<=len(data)and s[5]<=s[6]and s[1]&3!=3 for s in segments if s[0]==1),
+         'complete native-probe executable without WX loads')
+    loader=pin(interpreter(exe));state['runtime_libraries']={}
+    _,out,err=run('native-probe-libraries',[loader,'--list',exe],profile='finite',env=builder.environment)
+    need(not err,'actual native-probe loader listing')
+    for line in out.decode().splitlines():
+        if re.fullmatch(r'\s*linux-vdso.so.1 \(0x[0-9a-f]+\)',line):continue
+        match=re.fullmatch(r'\s*(?:\S+ => )?(/\S+) \(0x[0-9a-f]+\)',line)
+        need(match is not None,'one resolved actual native-probe library')
+        path=pin(match[1]);need(path.name not in state['runtime_libraries'],'unique native-probe library basename')
+        state['runtime_libraries'][path.name]=dict(path=str(path),**fact(path))
+    need(any(v['path']==str(loader)for v in state['runtime_libraries'].values()),
+         'actual interpreter in complete native-probe runtime closure')
+    state['artifact']=fact(exe)
+    try:row,out,err=run('native-probe-run',[exe],profile='finite',env=builder.environment)
+    finally:
+        actual=r['commands'][-1]
+        if actual['name']=='native-probe-run':
+            state.update(exit=actual.get('exit'),duration_ns=actual.get('duration_ns'),timed_out=actual.get('timed_out'),
+                launched=type(actual.get('pid'))is int,captures={k:{n:v[n]for n in('bytes','sha256')}
+                for k,v in actual.get('captures',{}).items()})
+    need(row['exit']==0 and out==PROBE_STDOUT and err==b'','whole exact actual native-probe component population')
+    need(all(fact(name)==value for name,value in includes.items()),'whole native-probe component inputs unchanged')
+    state.update(status='passed',counts=PROBE_COUNTS)
+
+
 def cohort(builder,products,private,pin,binary,aliases,run,r):
     authority_component(builder,products,private,pin,binary,aliases,run,r)
     dispatch_component(builder,products,private,pin,binary,aliases,run,r)
+    native_probe_component(builder,private,pin,binary,run,r)
     reader,owner_reader,native_policy=reader_support(builder,private,pin,binary,run,r)
     original=compile_subject(builder,private,pin,binary,run,r)
     app_layout=reader.elf(original.read_bytes(),native_policy)
@@ -475,7 +539,9 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
         subjects[lane]=(bridge,layout,*inputs)
         need(holder['release_build']['status']=='passed'and
              holder['release_build']['profile']=='persistent-active-domain-'+('differential'if lane=='differential'else'capture')+'-v4'and
-             holder['release_build']['active_domain']['differential']==(lane=='differential'),
+             holder['release_build']['active_domain']['differential']==(lane=='differential')and
+             holder['release_build']['active_domain']['native_probe']is True and
+             holder['release_build']['persistent_binding']['native_probe']is True,
              'separate exact maintained/differential actual builds')
     need(digest(r['lanes']['maintained']['subject_artifacts']['original'])==
          digest(r['lanes']['differential']['subject_artifacts']['original'])==digest(fact(original)),
@@ -521,6 +587,8 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                 actual_owner=owner_reader.read(*owner_args)
                 terminal_args=(row['pid'],row['exit'],row['stdout_provenance_before'],images,raws,fact(carrier),carrier_bytes,actual_owner,owner_reader,mode)
                 terminal,c['terminal']=reports.check(stderr,*terminal_args,lane=lane);r['terminal_reports'][label]=terminal
+                c['native_probe_controls']=reports.probe.controls(stderr,terminal)
+                named(c['native_probe_controls'],reports.probe.CONTROL_COUNT,H(stderr),hash_key='original_stderr_sha256')
                 c['terminal_controls']=reports.controls(stderr,*terminal_args,lane=lane)
                 named(c['terminal_controls'],TERMINAL_COUNTS[mode,0],H(stderr),hash_key='original_stderr_sha256')
                 c['owner_summary']={k:actual_owner[k]for k in('mode','cold_publications','warm_entries','dual_entries','replacements','permit_claims','interior_signals','word','code','detail','status')}
@@ -552,6 +620,8 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
          sum(len(c.get('pair_controls',{}).get('refusals',[]))for c in r['cases'])==2*PAIR_COUNTS[0] and
          sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases'])==2*TERMINAL_COUNTS[0,0],
          'two complete native/generated pairs and each separate exact supplied control population')
+    need(sum(len(c.get('native_probe_controls',{}).get('refusals',[]))for c in r['cases'])==44 and
+         reports.probe.CONTROL_COUNT==22,'both separate exact native-probe reader populations')
 
 
 
@@ -571,6 +641,8 @@ def main():
         hardware=hardware(cpu),commands=[],cases=[dict(label='subject-'+lane+'-'+str(mode)+'-'+str(control),lane=lane,mode=mode,control=control,
         expected_exit=0,status='unexecuted',launched=False)for lane,mode,control in ORDER],
         namespace_aliases={},terminal_reports={},lanes={},bounds=BOUNDS,error=None,final_errors=[],
+        native_probe_component=dict(status='unexecuted',launched=False,expected_exit=0,bounds=BOUNDS['finite'],
+            emitted_instruction_execution=0,hardware_subjects=0,performance_credit=False),
         component_oracles=[dict(name=n,status='unexecuted',launched=False,expected_exit=0,bounds=BOUNDS['finite'],
             emitted_instruction_execution=0,hardware_subjects=0,performance_credit=False)for n in COMPONENT_ORDER],
         seed_prerequisite=dict(planned=1,status='unexecuted',launched=False,expected_exit=0,
@@ -660,12 +732,15 @@ def main():
         required|={str((SELECTED/name).relative_to(ROOT))for name in
             ('persistent_active_domain.h','persistent_active_domain_types.inc','linked_jmp_domain.h','linked_jmp_domain_emit.inc',
              'rseq_current_data.h','rseq_current_data.inc','persistent_retained_two.inc',
-             'build-persistent-active-domain-differential.sh')}
+             'build-persistent-active-domain-differential.sh','linked_native_probe.h','linked_native_probe.inc')}
         required|={str((SELECTED/'tests/provider_app/seed_probe'/n).relative_to(ROOT))for n in('probe.c','record.h','read.py','build.sh')}
         required.add(str((SELECTED/'tests/b2_reference/xstate.py').relative_to(ROOT)))
         required|={str((SELECTED/name).relative_to(ROOT))for name in
             ('span_fast_bytes.h','tests/span_fast_bytes/oracle.c','tests/span_fast_bytes/build.sh')}
         required|={str((SELECTED/name).relative_to(ROOT))for name in COMPONENT_INPUTS}
+        required|={str((SELECTED/name).relative_to(ROOT))for name in PROBE_INPUTS}
+        required|={'evaluation/inprocess/linked_native_probe_reports.py',
+            'tools/page-entry/selected/linked_native_probe_report.inc'}
         need(required<=tracked,'all application/owner/build/reader sources committed')
         for name in sorted(tracked):
             if not name.startswith('evaluation/inprocess/results/'):pin(ROOT/name)
@@ -691,6 +766,7 @@ def main():
         need(all(s['status']=='passed'for s in r['component_oracles']),
              'both active components mandatory independently of the three hardware subjects')
         need(r['seed_prerequisite']['status']=='passed','independent seed prerequisite remains separately mandatory')
+        need(r['native_probe_component']['status']=='passed','actual probe component mandatory before any hardware')
         r['status']='passed'
     except BaseException as error:
         if r['error']is None:r['error']=type(error).__name__+': '+str(error)
@@ -739,6 +815,7 @@ def main():
             observed_pairs=sum(c.get('pair',{}).get('observed_active_domain_pair',0)for c in r['cases']if c['status']in('observed_generated_active_domain_maintained','observed_generated_active_domain_differential')),
             application_reader_refusals=sum(len(c.get('application_controls',{}).get('refusals',[]))for c in r['cases']),
             terminal_reader_refusals=sum(len(c.get('terminal_controls',{}).get('refusals',[]))for c in r['cases']),
+            native_probe_reader_refusals=sum(len(c.get('native_probe_controls',{}).get('refusals',[]))for c in r['cases']),
             owner_reader_refusals=sum(len(c.get('owner_reader_controls',{}).get('refusals',[]))for c in r['cases']),
             pair_reader_refusals=sum(len(c.get('pair_controls',{}).get('refusals',[]))for c in r['cases']),
             cold_publications=sum(c.get('owner_summary',{}).get('cold_publications',0)for c in r['cases']),
@@ -753,9 +830,12 @@ def main():
         public['component_oracles']=[{k:v for k,v in s.items()if k in
             ('name','status','launched','expected_exit','bounds','emitted_instruction_execution','hardware_subjects','performance_credit',
              'recipe','archive','features','artifact','exit','duration_ns','timed_out','captures','summaries')}for s in r['component_oracles']]
+        public['native_probe_component']={k:v for k,v in r['native_probe_component'].items()if k in PROBE_PUBLIC_FIELDS}
         public['copy_oracle']={k:v for k,v in r.get('application_build',{}).get('copy_oracle',{}).items()if k in ('status','expected_counts','counts','recipe','artifact','body','exit','duration_ns','bounds','captures','qualification_credit','performance_credit')}
         public['cases']=[public_case(c)for c in r['cases']]
         public['rseq_mapping']={c['lane']:c.get('rseq_mapping')for c in r['cases']if c['lane']!='native'}
+        public['native_probe']={c['lane']:dict(row=c.get('terminal',{}).get('native_probe'),
+            controls=c.get('native_probe_controls'))for c in r['cases']if c['lane']!='native'}
         public.update(hardware=hw,private_receipt=fact(private/'receipt.json'),
             reproduce=['python3','-B','evaluation/inprocess/persistent_active_domain.py','--expect-revision',args.expect_revision,'--fixed-receipt',str(args.fixed_receipt.resolve().relative_to(ROOT)),'--dynamic-receipt',str(args.dynamic_receipt.resolve().relative_to(ROOT)),'--group-receipt',str(args.group_receipt.resolve().relative_to(ROOT)),'--resident-receipt',str(args.resident_receipt.resolve().relative_to(ROOT)),'--retained-receipt',str(args.retained_receipt.resolve().relative_to(ROOT))],
             input_manifest_sha256=digest(pins),artifact_manifest_sha256=digest(artifacts),command_count=len(r['commands']),commands_sha256=digest(r['commands']),

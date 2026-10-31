@@ -15,7 +15,7 @@ POLICY_INPUTS = tuple({'build-persistent-resident.sh':'build-persistent-active-d
     'persistent_resident_binding.py':'persistent_active_domain_binding.py'}.get(n,n)
     for n in DISPATCH_POLICY_INPUTS)+('persistent_retained_two.inc','linked_jmp_domain.h','linked_jmp_domain_emit.inc',
     'persistent_active_domain.h','persistent_active_domain_types.inc','persistent_active_domain.inc',
-    'rseq_current_data.h','rseq_current_data.inc')
+    'rseq_current_data.h','rseq_current_data.inc','linked_native_probe.h','linked_native_probe.inc','linked_native_probe_report.inc')
 
 
 # The active owner drains through the domain wrapper; the linked image keeps
@@ -26,6 +26,9 @@ ACTIVE_PROVIDERS = tuple('li2_pgd_source_release' if name == 'li2_pg_source_rele
     'li2_pgd_owner_view', 'li2_pgd_source_bind', 'li2_pgd_source_opened',
     'li2_pgd_source_pair_equal', 'li2_pgd_source_progress', 'li2_pgd_source_terminal',
     'li2_pgd_rseq_bind', 'li2_lifecycle_rseq_data_current',
+    'li2_lifecycle_link_native_probe_choose', 'li2_lifecycle_link_native_probe_refault',
+    'li2_lifecycle_link_native_probe_outcome',
+    'li2_lifecycle_link_native_probe_progress',
 )
 
 def binding_config(builder, archive, image, output, pin, binary, run, *, mode):
@@ -61,7 +64,7 @@ def binding_config(builder, archive, image, output, pin, binary, run, *, mode):
         path = pin(binary(output / name))
         need(path.read_bytes() == data, 'whole independent archive/policy/image header')
         header_facts[name] = dict(path=str(path), **fact(path))
-    record = dict(version=4, profile='persistent-active-domain-'+mode+'-v4', mode=mode, archive=archive_fact, policy_sha256=policy, original=original, sources=values, headers={name: dict(bytes=len(data), sha256=H(data)) for name, data in expected.items()})
+    record = dict(version=4, profile='persistent-active-domain-'+mode+'-v4', mode=mode, native_probe=True, archive=archive_fact, policy_sha256=policy, original=original, sources=values, headers={name: dict(bytes=len(data), sha256=H(data)) for name, data in expected.items()})
     manifest = pin(binary(manifest))
     need(manifest.read_bytes() == (json.dumps(record, sort_keys=True) + '\n').encode(), 'complete typed persistent binding manifest')
     return dict(**record, header_paths=header_facts, manifest=dict(path=str(manifest), **fact(manifest)))
@@ -89,7 +92,7 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     units = [str(SELECTED.parent / x) for x in UNITS] + [str(SELECTED / x) for x in ('unrolled_hash_plan.c', 'region_plan.c', 'linked_plan.c', 'persistent_group_plan.c', 'persistent_group_compact.c', 'linked_mov_guard.c')]
     units.append(str(SELECTED / 'linked_jmp_dispatch.c'))
     macros = ('PERSISTENT_GROUP', 'PERSISTENT_EPOCH', 'MOV_GUARD', 'LINKED_EPOCH', 'SCALAR_SPAN', 'SCALAR_SPAN_TRACE', 'SPAN_FAST_BYTES', 'MAPS_CURRENT_TF', 'SCALAR_REGION', 'SCALAR_REGION_REUSE', 'INITIAL_CODE_PROTECTION', 'UNROLLED_HASH', 'MAPS_MAINTAINED') + MACROS
-    macros = ('PERSISTENT_ACTIVE_DOMAIN','RSEQ_CURRENT_DATA','PERSISTENT_RETAINED_TWO','PERSISTENT_DISPATCH') + macros
+    macros = ('LINKED_NATIVE_PROBE','PERSISTENT_ACTIVE_DOMAIN','RSEQ_CURRENT_DATA','PERSISTENT_RETAINED_TWO','PERSISTENT_DISPATCH') + macros
     if capture:
         macros = ('PERSISTENT_ACTIVE_DOMAIN_CAPTURE',) + macros
     if differential:
@@ -100,7 +103,7 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     need(argv[-2:] == ['-o', str(output / name)] and [x for x in argv if x.endswith(('.c', '.S'))] == units and ([x for x in argv if x.startswith('-DLI2_')] == ['-DLI2_' + n + '=1' for n in macros]) and all((x in argv for x in ('-O2', '-g', '-nostdlib', '-shared', '-fPIC', '-fvisibility=hidden', '-mgeneral-regs-only', '-fno-builtin', '-fno-tree-loop-distribute-patterns', '-fno-tree-vectorize', '-Wall', '-Wextra', '-Werror'))), 'exact25-TU resident no-FP release recipe')
     state = record['release_build'] = dict(status='failed', profile='persistent-active-domain-'+mode+'-v4', recipe=fact(script), archive=fact(archive), argv=argv, persistent_binding=binding, capture=capture, qualification_credit=False)
     state['active_domain'] = dict(version=4, slots=2, same_source_pair=True, joint_receipts=3, directory_heads=256,
-        maintained_rseq=True,differential=differential,immutable_reconstruction='two-shared-certificates' if capture else None)
+        maintained_rseq=True,differential=differential,native_probe=True,immutable_reconstruction='two-shared-certificates' if capture else None)
     state['dispatch'] = dict(version=3, heads_min=1, heads_max=128, header_abi=1, shared_boundaries=8, code_pages=17, emitter_slot_bytes=512, emitter_boundaries=64)
     if capture:
         state['capture_config'] = observation
@@ -116,7 +119,7 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     need(str((SELECTED / 'linked_jmp_dispatch.h').resolve()) in state['headers'], 'actual resident descriptor and recovery header is a compiler input')
     required_group = ('persistent_group_plan.h', 'persistent_group_compact.h', 'persistent_group_lifetime.h', 'persistent_group_runtime.h', 'persistent_group_source.inc', 'persistent_group_rseq.inc', 'persistent_group_controller.inc','persistent_retained_two.inc','persistent_active_domain.inc',
         'persistent_active_domain.h','persistent_active_domain_types.inc','linked_jmp_domain.h','linked_jmp_domain_emit.inc',
-        'rseq_current_data.h','rseq_current_data.inc')
+        'rseq_current_data.h','rseq_current_data.inc','linked_native_probe.h','linked_native_probe.inc','linked_native_probe_report.inc')
     forbidden = {'persistent_plan.c', 'persistent_compact.c', 'persistent_lifetime.h', 'persistent_runtime.h', 'persistent_source.inc', 'persistent_rseq.inc', 'persistent_controller.inc', 'persistent_dynamic_controller.inc', 'persistent_dynamic_plan.h', 'persistent_dynamic_plan.inc', 'persistent_epoch_config.h', 'persistent_dynamic_capture_config.h', 'selected_scalar_span.inc', 'selected_scalar_span_reuse.inc', 'unrolled_hash_nested_fp.h'}
     counter_names = {'persistent_group_counters.h', 'persistent_group_counters.inc'}
     need(names.intersection(counter_names) == (counter_names if retained_counters else set()), 'exact counter bootstrap/header compiler closure only in explicit release diagnostic')

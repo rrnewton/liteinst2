@@ -4,6 +4,7 @@ Legacy report predicates are reused literally. The active-domain row has its own
 schema and protected-owner join; no old version or prefix is normalized.
 """
 import copy,json
+import linked_native_probe_reports as probe
 from page_selected import need
 from persistent_dynamic_reports import (prior,old,reuse,unrolled,current,maps_view,H,
     registration_completed,repeat_completed,effect_exit,gate_prefix)
@@ -46,13 +47,18 @@ def validate(p,view,pid,exit_status,parent,images,image_bytes,carrier,carrier_by
 
 def check(stderr,*args,lane):
     need(lane in('maintained','differential'),'explicit active mapping lane')
-    group,suffix=split(stderr);linked,linked_reuse,suffix=prior.split(suffix)
+    native_probe,original_stream=probe.split(stderr)
+    group,suffix=split(original_stream);linked,linked_reuse,suffix=prior.split(suffix)
     scalar,scalar_reuse,suffix=reuse.split(suffix);u,suffix=unrolled.split(suffix)
     cur,suffix=current.split_current(suffix);view,original=maps_view.split_report(suffix,lane)
     parsed=old.reports(original);old.extensions(parsed)
     parsed.update(group=group,linked=linked,linked_reuse=linked_reuse,
         scalar_region=scalar,scalar_reuse=scalar_reuse,unrolled=u,current_tf=cur)
-    return parsed,validate(parsed,view,*args)
+    result=validate(parsed,view,*args)
+    result['native_probe']=probe.completed(native_probe,linked,parsed['native'],group,
+        parsed['chain'],parsed['native_pair'],exercise=True)
+    parsed['native_probe']=native_probe
+    return parsed,result
 
 
 def controls(stderr,*args,lane):

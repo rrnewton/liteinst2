@@ -356,6 +356,9 @@ static void selected_repeat_report(unsigned,unsigned,long);
 #ifdef LI2_NATIVE_PAIR
 #include "native_pair_report.inc"
 #endif
+#ifdef LI2_LINKED_NATIVE_PROBE
+#include "linked_native_probe_report.inc"
+#endif
 static void report(unsigned status,unsigned code,long detail) {
     if(reported) return;
     reported=1;
@@ -555,6 +558,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
     pdao_finish(status,code,detail);
+#endif
+#ifdef LI2_LINKED_NATIVE_PROBE
+    selected_link_native_probe_report(status,code,detail);
 #endif
     selected_persistent_report(status,code,detail);
 #endif
