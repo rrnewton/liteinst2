@@ -139,7 +139,7 @@ def main():
              'same actual fresh archive in original392 and cross-pair cohorts')
         need(cpublic['cases']==cross.public_cases(c['cases'])and cpublic['command_count']==len(c['commands'])and
              cpublic['commands_sha256']==digest(c['commands']),'whole compact cross-pair case and command projection')
-        crows=commands(c,cdir);cases(c,crows,cross.PAIR_EXPECTED,cross.EXPECTED_STATUS,36,304,24,33,True)
+        crows=commands(c,cdir);cases(c,crows,cross.PAIR_EXPECTED,cross.EXPECTED_STATUS,36,320,24,33,True)
         need(all(c[k]['status']=='passed'for k in('capture_codec_component','empty_namespace_component',
             'subentry_component','native_probe_component','maps_parse_component','seed_prerequisite'))and
             c['application_build']['copy_oracle']['status']=='passed'and

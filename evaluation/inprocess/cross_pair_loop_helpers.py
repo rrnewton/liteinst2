@@ -14,7 +14,7 @@ SELECTED=ROOT/'tools/page-entry/selected'
 FIXTURE=SELECTED/'tests/persistent_cross_pair_app'
 OWNER=SELECTED/'tests/persistent_cross_pair_owner'
 APP_COUNTS={0:36};PAIR_COUNTS={0:24};TERMINAL_COUNTS={(0,0):73}
-OWNER_COUNTS={0:304}
+OWNER_COUNTS={0:320}
 PAIR_EXPECTED=dict(observed_cross_pair=1,invocations=1,generated_completed=3,cold_publications=2,
     warm_entries=1,dual_entries=1,retained_generations=2,shared_domain_lifetimes=1,joint_source_pairs=2,
     joint_source_pages=4,joint_closed_pages=34,modeled_joint_retired_instructions=512,

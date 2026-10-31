@@ -915,7 +915,13 @@ class Check(old.Check):
         es=self.f(entered,st,'source');zs=self.f(end,st,'source');self.source(es,serial,entry,key,ref,distinct_peer=warm);self.source(zs,serial,entry,key,ref,terminal=True,distinct_peer=warm);need(self.f(es,'li2_pg_source_progress','source')==self.f(zs,'li2_pg_source_progress','source'),'one complete source anchor held through all internal transfers')
         self.domain_source(self.f(entered,st,'domain_source'),refs,serial,False,es);self.domain_source(self.f(end,st,'domain_source'),refs,serial,True,zs)
         er=self.f(entered,st,'rseq');zr=self.f(end,st,'rseq');estate=self.f(entered,st,'state');zstate=self.f(end,st,'state');a=self.pin(er,estate,serial,0 if warm else heads,refs);z=self.pin(zr,zstate,serial,0 if warm else heads,refs,terminal=True);need(z>a and estate==zstate,'actual observed-unregistered pin and complete state unchanged throughout shared lifetime')
-        lastpc=self.page+(0x207 if index==0 else 0x240e if index==1 else 0x2411);code,length=(282,3)if index==1 else(765,2)
+        if warm:
+            # Unregistered ordinary instruction checks return before footprint
+            # mutation; warm reuse performs no new cold-head inspection. Keep
+            # the complete actual cold-B state, not the predecessor JMP's PC.
+            prior_state=self.f(self.f(self.epochs[1],t,'terminal'),st,'state')
+            need(estate==zstate==prior_state,'whole warm rseq state inherits cold-B terminal inspection')
+        lastpc=self.page+(0x207 if index==0 else 0x240e);code,length=(765,2)if index==0 else(282,3)
         self.eq(estate,'li2_rseq_state',last_first=0,last_end=0,last_pc=lastpc,last_code=code,last_policy=1);self.eq(self.f(estate,'li2_rseq_state','last_footprint'),'li2_write_footprint',pc=lastpc,next_pc=lastpc+length,first=0,end=0,abi_version=1,policy=1,code=code,length=length)
         self.progress(self.f(entered,st,'fetch'),seq,True);self.progress(self.f(end,st,'fetch'),seq,False);need(self.f(info,it,'final_fetch')==self.f(end,st,'fetch'),'whole actual released shared fetch')
         for k,actual_value in(('source',zs),('domain_source',self.f(end,st,'domain_source')),('rseq',zr),('fetch',self.f(end,st,'fetch'))):need(self.f(c,'pda_completion',k)==actual_value,'joint completion retains whole actual '+k)
@@ -1400,7 +1406,7 @@ def entry_controls(data,layout,image,app,pid,cpu,exit_status):
 
 
 
-CONTROL_COUNTS={0:304}
+CONTROL_COUNTS={0:320}
 
 def controls(data,layout,image,app,pid,cpu,exit_status):
     """Full semantic mutations are encoded again and pass the actual transport.
@@ -1462,5 +1468,40 @@ def controls(data,layout,image,app,pid,cpu,exit_status):
                 mutant=bytearray(raw);struct.pack_into('<Q',mutant,offset,expected+delta)
                 reject('source_validations_'+str(index)+'_'+stage+'_'+suffix,mutant,
                        'exact li2_pg_source_progress.validations')
+    # Coherent changes in both warm snapshots pass their same-lifetime equality
+    # and must fail the separate complete cold-B inheritance join.
+    state_offsets=[at('pxo_stage','state',stage)for stage in(entered,terminal_stage)]
+    inherit_error='whole warm rseq state inherits cold-B terminal inspection'
+    for field in('last_first','last_end','last_pc','last_code','last_policy'):
+        mutant=bytearray(raw)
+        for state in state_offsets:mutant[at('li2_rseq_state',field,state)]^=1
+        reject('warm_inherited_'+field,mutant,inherit_error)
+    for field in('pc','next_pc','first','end','abi_version','policy','code','length'):
+        mutant=bytearray(raw)
+        for state in state_offsets:
+            mutant[at('li2_write_footprint',field,at('li2_rseq_state','last_footprint',state))]^=1
+        reject('warm_inherited_footprint_'+field,mutant,inherit_error)
+    # The old erroneous assumption was the actual preceding B register JMP.
+    # Substitute its coherent complete footprint, never an arbitrary zero row.
+    mutant=bytearray(raw);jmp=app['source_page_address']+0x2411
+    for state in state_offsets:
+        for field,value in(('last_first',0),('last_end',0),('last_pc',jmp),('last_code',765),('last_policy',1)):
+            struct.pack_into('<Q',mutant,at('li2_rseq_state',field,state),value)
+        struct.pack_into('<4Q4I',mutant,at('li2_rseq_state','last_footprint',state),jmp,jmp+2,0,0,1,1,765,2)
+    reject('warm_predecessor_is_not_last_inspection',mutant,inherit_error)
+    cold_a=at('pxo_stage','state',at('pxo_epoch','terminal',at('pxo_wire','epochs',index=0,child='pxo_epoch')))
+    mutant=bytearray(raw)
+    for state in state_offsets:
+        for field in('last_first','last_end','last_pc','last_code','last_policy','last_footprint'):
+            spec=types['li2_rseq_state']['fields'][field];offset=spec['offset'];size=spec['bytes']
+            mutant[state+offset:state+offset+size]=raw[cold_a+offset:cold_a+offset+size]
+    reject('warm_does_not_restore_cold_A_inspection',mutant,inherit_error)
+    # The inherited predecessor is itself independently fixed by cold B's
+    # literal final BFS head. Mutating both cold snapshots cannot redefine it.
+    cold_b=at('pxo_wire','epochs',index=1,child='pxo_epoch');mutant=bytearray(raw)
+    for stage in('entered','terminal'):
+        state=at('pxo_stage','state',at('pxo_epoch',stage,cold_b))
+        mutant[at('li2_rseq_state','last_pc',state)]^=1
+    reject('cold_B_inspection_literal_pc',mutant,'exact li2_rseq_state.last_pc')
     need(len(refused)==len(set(refused))==CONTROL_COUNTS[0],'all exact cross-pair semantic and transport control cases')
     return dict(original_sha256=hashlib.sha256(data).hexdigest(),refusals=refused,native_operations=0,mode=0)
