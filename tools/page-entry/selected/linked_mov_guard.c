@@ -22,7 +22,8 @@ static uint64_t tree(struct li2_mg_table *t,unsigned lo,unsigned hi,unsigned dep
     return node_address(t,m);
 }
 int li2_mg_table_build(const struct li2_mg_range *ranges,size_t count,uintptr_t at,struct li2_mg_table *out){
-    if(!out)return LI2_MG_ARGUMENT;zero(out,sizeof *out);
+    if(!out)return LI2_MG_ARGUMENT;
+    zero(out,sizeof *out);
     if(!ranges || !count || count>LI2_MG_RANGES || (at&7) || !address(at,sizeof *out))return LI2_MG_ARGUMENT;
     struct li2_mg_range sorted[LI2_MG_RANGES];zero(sorted,sizeof sorted);
     for(size_t i=0;i<count;i++){
@@ -47,7 +48,8 @@ int li2_mg_table_validate(const struct li2_mg_table *t){
 }
 int li2_mg_interval_allowed(const struct li2_mg_table *t,uint64_t first,unsigned width){
     if((width!=4 && width!=8) || li2_mg_table_validate(t))return -LI2_MG_ARGUMENT;
-    if(first>UINT64_MAX-width)return 0;uint64_t end=first+width,p=t->root;unsigned visits=0;
+    if(first>UINT64_MAX-width)return 0;
+    uint64_t end=first+width,p=t->root;unsigned visits=0;
     while(p){
         if(++visits>8 || p<node_address(t,0) || (p-node_address(t,0))%32)return -LI2_MG_CORRUPT;
         uint64_t i=(p-node_address(t,0))/32;if(i>=t->count)return -LI2_MG_CORRUPT;
@@ -69,7 +71,8 @@ static unsigned branch(struct writer *w,unsigned condition){
     if(condition==16){b[0]=0xe9;return emit(w,b,5);}return emit(w,b,6);
 }
 static void patch(struct writer *w,unsigned at,unsigned target){
-    if(w->error)return;unsigned n=w->p->image[at]==0xe9?5:6;uint32_t d;
+    if(w->error)return;
+    unsigned n=w->p->image[at]==0xe9?5:6;uint32_t d;
     if(!disp(w->p->generated+at+n,w->p->generated+target,&d)){w->error=LI2_MG_RELOCATION;return;}
     put32(w->p->image+at+n-4,d);
 }
@@ -88,7 +91,8 @@ static void memory(struct writer *w,unsigned opcode,unsigned reg,unsigned base,u
 static void restore(struct writer *w){
     static const unsigned char add[]={0x04,0x7f},sahf[]={0x9e};
     emit(w,add,2);w->flags=LI2_MG_AH_PHYSICAL_OF;emit(w,sahf,1);w->flags=LI2_MG_PHYSICAL;
-    for(unsigned i=1;i<4;i++)spill(w,i,1);spill(w,0,1);
+    for(unsigned i=1;i<4;i++)spill(w,i,1);
+    spill(w,0,1);
 }
 static int build(uintptr_t pc,const unsigned char *bytes,size_t length,uintptr_t generated,uintptr_t spill_at,uintptr_t successor,
                  const struct li2_mg_table *table,struct li2_mg_plan *p){
@@ -107,7 +111,9 @@ static int build(uintptr_t pc,const unsigned char *bytes,size_t length,uintptr_t
        s->tf.next_pc!=pc+s->tf.length || (s->width_bytes!=4 && s->width_bytes!=8) ||
        !same(s->bytes,bytes,length) || s->base>16 || s->index>16 || s->source_reg>16)return LI2_MG_FORM;
     unsigned blocked=(1U<<0)|(1U<<4)|(1U<<12);
-    if(s->base<16)blocked|=1U<<s->base;if(s->index<16)blocked|=1U<<s->index;if(s->source_reg<16)blocked|=1U<<s->source_reg;
+    if(s->base<16)blocked|=1U<<s->base;
+    if(s->index<16)blocked|=1U<<s->index;
+    if(s->source_reg<16)blocked|=1U<<s->source_reg;
     p->scratch_regs[0]=0;unsigned count=1;
     for(unsigned i=1;i<16 && count<4;i++)if(!(blocked&(1U<<i)))p->scratch_regs[count++]=i;
     if(count!=4)return LI2_MG_FORM;
@@ -120,7 +126,8 @@ static int build(uintptr_t pc,const unsigned char *bytes,size_t length,uintptr_t
     ea[0]=(unsigned char)(0x48|((A>>3)<<2)|(s->opcode_offset?s->bytes[0]&3:0));ea[1]=0x8d;
     copy(ea+2,s->bytes+s->modrm_offset,end-s->modrm_offset);ea[2]=(unsigned char)((ea[2]&0xc7)|((A&7)<<3));
     if(s->rip_relative){unsigned at=2+s->displacement_offset-s->modrm_offset;
-        if(s->displacement_bytes!=4 || at+4>en || !disp(generated+p->image_bytes+en,s->rip_target,&d))return LI2_MG_RELOCATION;put32(ea+at,d);}
+        if(s->displacement_bytes!=4 || at+4>en || !disp(generated+p->image_bytes+en,s->rip_target,&d))return LI2_MG_RELOCATION;
+        put32(ea+at,d);}
     emit(&w,ea,en);w.dirty|=2;
     static const unsigned char lahf[]={0x9f},seto[]={0x0f,0x90,0xc0};emit(&w,lahf,1);w.dirty|=1;w.flags=LI2_MG_AH_PHYSICAL_OF;
     emit(&w,seto,3);w.flags=LI2_MG_AH_AL;
@@ -151,7 +158,8 @@ static int build(uintptr_t pc,const unsigned char *bytes,size_t length,uintptr_t
     p->ready=1;return 0;
 }
 int li2_mg_emit(uintptr_t pc,const unsigned char *bytes,size_t length,uintptr_t generated,uintptr_t spill_at,uintptr_t successor,const struct li2_mg_table *table,struct li2_mg_plan *out){
-    if(!out)return LI2_MG_ARGUMENT;zero(out,sizeof *out);
+    if(!out)return LI2_MG_ARGUMENT;
+    zero(out,sizeof *out);
     int e=build(pc,bytes,length,generated,spill_at,successor,table,out);out->result=(uint32_t)e;if(e)out->ready=0;return e;
 }
 int li2_mg_validate(const struct li2_mg_plan *p){
@@ -160,7 +168,8 @@ int li2_mg_validate(const struct li2_mg_plan *p){
     return e || !same(p,&expected,sizeof *p)?LI2_MG_CORRUPT:0;
 }
 int li2_mg_recover(const struct li2_mg_plan *p,uintptr_t pc,const uint64_t raw[16],uint64_t flags,const uint64_t spill_words[4],struct li2_mg_recovered *out){
-    if(!out)return LI2_MG_ARGUMENT;zero(out,sizeof *out);
+    if(!out)return LI2_MG_ARGUMENT;
+    zero(out,sizeof *out);
     if(!p || !raw || !spill_words || p->version!=1 || p->ready!=1 || p->result || !p->boundaries || p->boundaries>LI2_MG_BOUNDARIES || pc<p->generated)return LI2_MG_ARGUMENT;
     const struct li2_mg_boundary *m=0;for(unsigned i=0;i<p->boundaries;i++)if(pc-p->generated==p->boundary[i].offset){m=&p->boundary[i];break;}
     if(!m || m->spill_valid&~15U || m->dirty&~m->spill_valid || m->flags>LI2_MG_AH_AL || m->phase>LI2_MG_REJECT || p->scratch_regs[0]!=0)return LI2_MG_CORRUPT;
