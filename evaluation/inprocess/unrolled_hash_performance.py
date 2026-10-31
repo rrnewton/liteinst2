@@ -25,7 +25,7 @@ H=lambda b:hashlib.sha256(b).hexdigest()
 KEYS=maps.KEYS
 ROUTES=maps.ROUTES
 UNROLLED_KEYS=tuple(k for k in reports.KEYS if k not in ('current','signals'))
-DEPENDENCIES=dict(maps.DEPENDENCIES,**{'evaluation/inprocess/maps_view.py':{'bytes': 34640, 'sha256': '6df3b322e000451bf7fe00b27962be40f1c9ff2601629018c89670c431f03ac7'}})
+DEPENDENCIES=dict(maps.DEPENDENCIES,**{'evaluation/inprocess/maps_view.py':{'bytes': 34640, 'sha256': '8807c646311f7f9b036fe4e860535e9eaa554bf10afb4748a2435e1ed59fcd5e'}})
 
 
 def prerequisite(public,revision,pin,binary,kind):
