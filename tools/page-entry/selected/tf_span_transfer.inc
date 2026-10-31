@@ -91,8 +91,61 @@ static int span_origin(const struct li2_tf_span_transfer *t) {
 int li2_tf_chain_span_quiet(const struct li2_tf_span_transfer *t) {
     return span_origin(t);
 }
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+int li2_tf_chain_span_cross_page_eligible(const struct li2_tf_chain *c,int sig,
+                                        const siginfo_t *si,const ucontext_t *uc) {
+    if(!chain_registered_ok(c) || !c->pending || c->in_handler || c->first_error ||
+       !si || !uc || __atomic_load_n(&span_transfer.valid,__ATOMIC_ACQUIRE) ||
+       (span_transfer.progress.phase!=LI2_ST_IDLE &&
+        span_transfer.progress.phase!=LI2_ST_CONSUMED &&
+        span_transfer.progress.phase!=LI2_ST_RESUMED &&
+        span_transfer.progress.phase!=LI2_ST_REFAULT) || span_transfer_serial==UINT64_MAX)
+        return 0;
+    const struct li2_tf_chain_slot *s=&c->slots[c->active];
+    const struct li2_step_owner *p=&s->owner.step;
+    const struct li2_decoded *d=&p->request.decoded;
+    const struct li2_tf_classification *cl=&s->owner.classification;
+    if(s->phase!=LI2_CHAIN_EXECUTING || c->event_id<=s->event_id ||
+       p->phase!=LI2_STEP_RUNNING || p->in_handler ||
+       p->request.page_count!=1 || s->fetch.page_count!=1 ||
+       !s->fetch.ref.owner || !s->fetch.ref.sequence ||
+       sig!=SIGTRAP || si->si_signo!=SIGTRAP || si->si_code!=TRAP_TRACE || si->si_errno ||
+       uc->uc_mcontext.gregs[REG_TRAPNO]!=1 || uc->uc_mcontext.gregs[REG_ERR] ||
+       (uintptr_t)si->si_addr!=(uintptr_t)uc->uc_mcontext.gregs[REG_RIP] ||
+       ((uint64_t)uc->uc_mcontext.gregs[REG_EFL]&(LI2_STEP_TF|LI2_STEP_RF))!=LI2_STEP_TF ||
+       (uint64_t)uc->uc_mcontext.gregs[REG_EFL]!=(p->request.original_flags|LI2_STEP_TF))return 0;
+    unsigned prefix=d->bytes[0]==0x41?1U:0U,length=prefix+2U;
+    uintptr_t pc=(uintptr_t)uc->uc_mcontext.gregs[REG_RIP];
+    uintptr_t page=p->request.pages[0].address,target=pc&~(LI2_STEP_PAGE-1);
+    if(page<LI2_STEP_PAGE || (page&(LI2_STEP_PAGE-1)) ||
+       page>(UINT64_C(1)<<47)-LI2_STEP_PAGE || target==page ||
+       target<LI2_STEP_PAGE || target>(UINT64_C(1)<<47)-LI2_STEP_PAGE ||
+       pc-target>LI2_STEP_PAGE-15 || s->fetch.pages[0].address!=page ||
+       d->pc<page || d->pc-page>LI2_STEP_PAGE-length ||
+       !equal(d,&s->decoded,sizeof *d))return 0;
+    /* Only canonical FF E0..E7 / 41 FF E0..E7. Direct/Jcc/CALL/RET and
+       prefixed alternatives retain their original ordinary-chain routing. */
+    if(d->abi_version!=1 || d->decode_status!=LI2_VALID || d->code!=765 ||
+       d->kind!=LI2_NONE || d->destination!=16 || d->width_bits || d->reserved ||
+       d->step_disposition!=LI2_STEP_UNSUPPORTED || d->available<length || d->available>15 ||
+       d->length!=length || d->next_pc!=d->pc+length ||
+       d->bytes[prefix]!=0xff || d->bytes[prefix+1]<0xe0 || d->bytes[prefix+1]>0xe7 ||
+       cl->abi_version!=1 || cl->policy!=1 || cl->pc!=d->pc || cl->next_pc!=d->next_pc ||
+       cl->code!=765 || cl->length!=length || cl->flow!=LI2_TF_NEAR_FLOW || cl->family!=LI2_TF_BRANCH)
+        return 0;
+    static const unsigned regs[16]={REG_RAX,REG_RCX,REG_RDX,REG_RBX,REG_RSP,REG_RBP,REG_RSI,REG_RDI,
+        REG_R8,REG_R9,REG_R10,REG_R11,REG_R12,REG_R13,REG_R14,REG_R15};
+    unsigned reg=(d->bytes[prefix+1]&7U)+8U*prefix;
+    if((uint64_t)uc->uc_mcontext.gregs[regs[reg]]!=pc)return 0;
+    for(unsigned i=0;i<16;i++)if(uc->uc_mcontext.gregs[regs[i]]!=p->before.greg[regs[i]])return 0;
+    return 1;
+}
+static int span_close(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext_t *uc,
+                      const struct li2_tf_span_transfer **out,unsigned cross_page) {
+#else
 int li2_tf_chain_span_close(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext_t *uc,
                            const struct li2_tf_span_transfer **out) {
+#endif
     if(!out)return LI2_ST_ARGUMENT;
     *out=0;
     if(!chain_registered_ok(c) || !c->pending || c->in_handler || c->first_error ||
@@ -118,6 +171,11 @@ int li2_tf_chain_span_close(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontex
         return LI2_ST_ORIGIN;
     uintptr_t pc=(uintptr_t)uc->uc_mcontext.gregs[REG_RIP];
     uintptr_t page=p->owner.step.request.pages[0].address;
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+    if(cross_page) {
+        if(cross_page!=1 || !li2_tf_chain_span_cross_page_eligible(c,sig,si,uc))return LI2_ST_ORIGIN;
+    } else
+#endif
     if(pc<page || pc-page>LI2_STEP_PAGE-15)return LI2_ST_ORIGIN;
     /* New caller's busy guard is already visible. From here all fallible old
        operations retain the actual old chain cleanup prefix and terminate. */
@@ -178,6 +236,16 @@ int li2_tf_chain_span_close(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontex
     chain_need(c,!span_origin(t) && span_frame_equal(sig,si,uc),LI2_ST_ORIGIN,1);
     *out=t;return 0;
 }
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+int li2_tf_chain_span_close(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext_t *uc,
+                           const struct li2_tf_span_transfer **out) {
+    return span_close(c,sig,si,uc,out,0);
+}
+int li2_tf_chain_span_close_cross_page(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext_t *uc,
+                                      const struct li2_tf_span_transfer **out) {
+    return span_close(c,sig,si,uc,out,1);
+}
+#endif
 static int span_fresh(unsigned held,struct li2_span_fetch_observation *out) {
     int error=li2_lifecycle_span_fetch_snapshot(out);if(error)return error;
     const struct li2_tf_span_transfer *t=&span_transfer;

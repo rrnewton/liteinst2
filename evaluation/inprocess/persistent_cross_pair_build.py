@@ -31,6 +31,7 @@ ACTIVE_PROVIDERS = tuple('li2_pgd_source_release' if name == 'li2_pg_source_rele
     'li2_lifecycle_link_native_probe_progress',
     'li2_pgs_head_lookup','li2_pgs_entry_source','li2_pgs_entry_value','li2_pgs_owner_entry',
     'li2_lifecycle_initialize_empty',
+    'li2_tf_chain_span_cross_page_eligible','li2_tf_chain_span_close_cross_page',
     'li2_pgx_owner_offer','li2_pgx_source_prepare','li2_pgx_guard_union','li2_pgx_source_value',
 )
 

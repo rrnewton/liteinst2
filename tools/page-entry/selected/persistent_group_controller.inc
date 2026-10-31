@@ -1213,8 +1213,29 @@ static _Noreturn void selected_persistent_abort(unsigned code,long detail) {
     report(125,pe.p.first_error,pe.p.first_detail);
     (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
 }
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+static int pe_cross_page_trace_coarse(int sig,const siginfo_t *si,const ucontext_t *uc) {
+    /* Keep the old linked coarse gate literal. This separate branch-target
+       route changes no old eligibility and performs no RAW or source read. */
+    if(selected_selftesting || !selected_linked_epoch.initialized ||
+       selected_linked_epoch_active || selected_linked_epoch_busy || selected_linked_epoch.first_error ||
+       selected_pending_route!=SELECTED_GENERIC_TF || selected_step_pending!=1 ||
+       handling!=1 || !si || !uc || selected_chain.active<0 || selected_chain.active>=2 ||
+       !selected_chain.pending || selected_chain.in_handler || selected_chain.first_error)return 0;
+    return li2_tf_chain_span_cross_page_eligible(&selected_chain,sig,si,uc);
+}
+#endif
 static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+    if(!pe.initialized || pe_busy || pe_active || !ped_capacity())return 0;
+    unsigned cross_page=0;
+    if(!le_trace_coarse(sig,si,uc)) {
+        if(!pe_cross_page_trace_coarse(sig,si,uc))return 0;
+        cross_page=1;
+    }
+#else
     if(!pe.initialized || pe_busy || pe_active || !ped_capacity() || !le_trace_coarse(sig,si,uc))return 0;
+#endif
     uintptr_t pc=(uintptr_t)uc->uc_mcontext.gregs[REG_RIP];
     const struct li2_rseq_state *r=li2_rseq_snapshot();
 #ifdef LI2_PERSISTENT_UNREGISTERED
@@ -1283,7 +1304,12 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
     pe_closing=1;pe_busy=1;ped_count(PGC_REF(offers));__asm__ volatile("":::"memory");
     pe_need(!le_capture(&pe.ingress,sig,si,uc),PE_FRAME,0);pe.close_started=1;
+#ifdef LI2_PERSISTENT_CROSS_PAIR
+    int e=cross_page?li2_tf_chain_span_close_cross_page(&selected_chain,sig,si,uc,&pe.ticket):
+        li2_tf_chain_span_close(&selected_chain,sig,si,uc,&pe.ticket);
+#else
     int e=li2_tf_chain_span_close(&selected_chain,sig,si,uc,&pe.ticket);
+#endif
     pe_need(!e && pe.ticket,PE_EVENT,e);pe.transfer=*li2_tf_chain_span_progress();
     pe_need(pe.transfer.phase==LI2_ST_CLOSED && pe.transfer.issued==1 &&
         pe.transfer.event==selected_chain.event_id && pe.transfer.pc==pc &&
