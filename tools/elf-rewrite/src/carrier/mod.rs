@@ -6,6 +6,7 @@
 
 pub mod dynamic;
 pub mod startup;
+pub mod unwind;
 pub use startup::{
     StartupLayout, StartupLimits, StaticExecAbsolutePrerequisites, StaticExecStartup,
 };
@@ -123,6 +124,9 @@ pub struct CarrierOutput {
     pub dynamic: dynamic::Inventory,
     /// Present only for the explicit static ET_EXEC startup-bearing profile.
     pub startup: Option<StartupLayout>,
+    /// Present only for the separately requested indexed normal-backtrace profile.
+    /// Structural metadata is not loader, consumer or lifetime qualification.
+    pub unwind: Option<unwind::UnwindPlacement>,
 }
 
 impl CarrierOutput {
@@ -590,8 +594,7 @@ fn append_internal(
         })?;
     let original_len = input.bytes().len() as u64;
     let carrier_offset = align_up(original_len, policy.page_size)?;
-    let table_range = FileRange::checked(FileOffset(carrier_offset), new_table_len)?;
-    let payload_offset = align_up(table_range.end().0, 8)?;
+    let (table_range, payload_offset) = table_and_payload(carrier_offset, new_table_len)?;
     let payload_range = FileRange::checked(FileOffset(payload_offset), payload.len() as u64)?;
     let mut output_len = payload_range.end().0;
     let mut startup_layout = startup
@@ -971,6 +974,7 @@ fn append_internal(
         new_load_pages,
         dynamic,
         startup: startup_layout,
+        unwind: None,
     })
 }
 
@@ -1171,6 +1175,10 @@ fn host_index(value: u64) -> Result<usize, Error> {
     value.try_into().map_err(|_| Error::Arithmetic {
         operation: "host file-size conversion",
     })
+}
+fn table_and_payload(offset: u64, length: u64) -> Result<(FileRange, u64), Error> {
+    let table = FileRange::checked(FileOffset(offset), length)?;
+    Ok((table, align_up(table.end().0, 8)?))
 }
 fn budget(resource: &'static str, required: u64, limit: u64) -> Result<(), Error> {
     if required > limit {

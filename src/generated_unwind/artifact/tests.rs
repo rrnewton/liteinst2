@@ -200,6 +200,13 @@ fn encoded_artifact_rows_recover_original_caller_at_both_call_return_conventions
         .unwrap();
         assert!(prepared.matches_trace(&emission));
         assert_eq!(prepared.source_step(), emission.source_step());
+        let retained = prepared.source_records();
+        assert_eq!(retained.len(), 1);
+        let original = source_record(fp);
+        assert_eq!(retained[0].cie_address, original.cie_address);
+        assert_eq!(retained[0].cie, original.cie);
+        assert_eq!(retained[0].fde_address, original.fde_address);
+        assert_eq!(retained[0].fde, original.fde);
         assert!(!prepared.qualification_complete());
         assert!(
             emission
