@@ -1,0 +1,440 @@
+{
+  "schema": "owned-batch-full-workspace-validation-v1",
+  "status": "PASS_CLOSED_COMPLETE_CENSUS",
+  "execution_revision": "5b90ed28c1145bb721edb2da58cf052e21feb260",
+  "git_tree": "e55493361b3e7abcff36ac78c8554537ef976611",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "scope": "Five root-workspace correctness commands; no separate C workspace, full-corpus, profiler-completion or performance qualification.",
+  "reproduction": {
+    "script": "evaluation/short-neighbor-parallel/validate.py",
+    "script_pin": {
+      "bytes": 3717,
+      "sha256": "8306bef5d68bd786b15cf43bcf8fffe457ccb024812b0b323957779fec74e7bd"
+    },
+    "owner_helper": "evaluation/admission/processes.py",
+    "owner_helper_pin": {
+      "bytes": 15760,
+      "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+    },
+    "outer_argv": [
+      "/usr/bin/python3.9",
+      "${ROOT}/evaluation/short-neighbor-parallel/validate.py",
+      "--revision",
+      "5b90ed28c1145bb721edb2da58cf052e21feb260",
+      "--output",
+      "${RUN}"
+    ],
+    "environment_overrides": {
+      "PATH": "${TOOLCHAIN_BIN}:${CARGO_BIN}:/usr/bin:/bin",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_TARGET_DIR": "${ROOT}/target",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "RUST_TEST_THREADS": "316",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "environment_scope": "Recorded overrides on the inherited environment; no complete environment snapshot is claimed.",
+    "substitutions": {
+      "ROOT": "clean checkout of execution_revision",
+      "RUN": "one fresh absent output directory under ${ROOT}/ignored",
+      "TOOLCHAIN_BIN": "selected stable Rust toolchain bin directory",
+      "CARGO_BIN": "Cargo user bin directory"
+    },
+    "outer_wall_seconds": 1200,
+    "each_combined_log_cap_bytes": 8388608,
+    "workspace_jobs": 16,
+    "test_threads": 316,
+    "reservation": "One disjoint 16-CPU HARD reservation retained through completion; record actual IDs on reproduction."
+  },
+  "cpus": [
+    13,
+    16,
+    35,
+    44,
+    67,
+    70,
+    98,
+    100,
+    113,
+    116,
+    131,
+    146,
+    154,
+    159,
+    165,
+    181
+  ],
+  "outer": {
+    "start_utc": "2026-10-31T19:23:47.010603+00:00",
+    "exit_code": 0,
+    "termination": null,
+    "seconds": 1058.3534768579993,
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "source_unchanged": true,
+    "log_sha256": "b2afd811678aeb820c76082aacf422db768c2bd7c6beae7518d526fcfb0e8b6b"
+  },
+  "commands": [
+    {
+      "name": "fmt",
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wall_seconds": 180,
+      "result": {
+        "start_utc": "2026-10-31T19:23:47.099475+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 10.934180635027587,
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "log": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "load_before": [
+        "73.18",
+        "63.60",
+        "90.44"
+      ],
+      "load_after": [
+        "74.19",
+        "64.14",
+        "90.33"
+      ]
+    },
+    {
+      "name": "clippy",
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "wall_seconds": 180,
+      "result": {
+        "start_utc": "2026-10-31T19:23:58.036130+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 21.865343207027763,
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "log_sha256": "64f753e46249aba23f476f8af1ece1bebfbd27905d8270e7ee7c9d9fda48c20a"
+      },
+      "log": {
+        "bytes": 300,
+        "sha256": "64f753e46249aba23f476f8af1ece1bebfbd27905d8270e7ee7c9d9fda48c20a"
+      },
+      "load_before": [
+        "74.19",
+        "64.14",
+        "90.33"
+      ],
+      "load_after": [
+        "71.42",
+        "64.33",
+        "89.70"
+      ]
+    },
+    {
+      "name": "check",
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "wall_seconds": 180,
+      "result": {
+        "start_utc": "2026-10-31T19:24:19.902625+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 15.378602795070037,
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "log_sha256": "65e41e982ed1a402c56bc5551c3318bfecde37a4d89bddd10f300791ed7a154f"
+      },
+      "log": {
+        "bytes": 300,
+        "sha256": "65e41e982ed1a402c56bc5551c3318bfecde37a4d89bddd10f300791ed7a154f"
+      },
+      "load_before": [
+        "71.42",
+        "64.33",
+        "89.70"
+      ],
+      "load_after": [
+        "71.27",
+        "64.65",
+        "89.40"
+      ]
+    },
+    {
+      "name": "workspace",
+      "argv": [
+        "cargo",
+        "test",
+        "-j",
+        "16",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "wall_seconds": 900,
+      "result": {
+        "start_utc": "2026-10-31T19:24:35.282054+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 872.4010607060045,
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "log_sha256": "a70c1c3c9ee637e7113b66049969105cc25e8cf307d5a756cf029c78f1d0b9ed"
+      },
+      "log": {
+        "bytes": 508168,
+        "sha256": "a70c1c3c9ee637e7113b66049969105cc25e8cf307d5a756cf029c78f1d0b9ed"
+      },
+      "load_before": [
+        "71.27",
+        "64.65",
+        "89.40"
+      ],
+      "load_after": [
+        "1248.86",
+        "331.06",
+        "165.28"
+      ]
+    },
+    {
+      "name": "serial-launch",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "wall_seconds": 180,
+      "result": {
+        "start_utc": "2026-10-31T19:39:07.731655+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 137.60244874702767,
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "log_sha256": "a60f086a87311300f72418084c2af958a8268a2eed6dc65fc810088040bd53b7"
+      },
+      "log": {
+        "bytes": 1291931,
+        "sha256": "a60f086a87311300f72418084c2af958a8268a2eed6dc65fc810088040bd53b7"
+      },
+      "load_before": [
+        "1248.86",
+        "331.06",
+        "165.28"
+      ],
+      "load_after": [
+        "162.39",
+        "224.87",
+        "148.83"
+      ]
+    }
+  ],
+  "census": {
+    "workspace": {
+      "passed": 4252,
+      "failed": 0,
+      "ignored": 38,
+      "raw_passed": 4255,
+      "raw_summaries": 117,
+      "counted_summaries": 114,
+      "raw_filtered_total": 105,
+      "excluded_child_summaries": 3,
+      "exclusion": "Same three controlled runtime_control_oracle_modes child summaries, each 1 pass/35 filtered; every parent terminal retained.",
+      "counted_multiset_sha256": "ff46ddbdf50645e965a6f9ba57ef963cea9fc1ab71e9b37c5e95fd442c1e18ac",
+      "raw_multiset_sha256": "e67a096afd887932cc246c3261011496d2fda319e499f68a0218557f12b56a7d",
+      "ignored_multiset_sha256": "ab87e1ac90798b407b7f354322baef5e06c45d825a876878a2c3b4aa2ba98e70"
+    },
+    "serial_launch": {
+      "passed": 1039,
+      "failed": 0,
+      "ignored": 0,
+      "summaries": 27,
+      "multiset_sha256": "ea64d93fd50bf29ccf83f017a26217ce119a067e1adc31de79cd0f820624e9cc"
+    },
+    "comparison": "Complete context/name/status/reason multisets, every context summary and all custom-harness records; no count-only acceptance.",
+    "baseline_revision": "bcbbdfe2b54c58eae0d35ddf34c4bb9238b0c959",
+    "added_passes": {
+      "sealed_source_controls": 6,
+      "owned_batch_and_caller_controls": 8,
+      "full_program_bridge_controls": 7,
+      "ownership_compile_fail_doctests": 2,
+      "total": 23
+    },
+    "old_ignores_retained": 37,
+    "added_ignored_test": {
+      "name": "frontend_native::always_on::normal::module::owned::native::owned_module_native_four_call_batches_epochs_and_close",
+      "reason": "requires one exact fresh release process and independently admitted module/caller C fixtures"
+    },
+    "two_old_doctest_source_line_relocations": [
+      [
+        370,
+        371
+      ],
+      [
+        375,
+        376
+      ]
+    ],
+    "doctest_relocation_scope": "Only the two NormalThread compile-fail IDs; their documentation and entire following source are byte-identical.",
+    "mandatory": {
+      "original_names": 202,
+      "original_context_occurrences": 208,
+      "sdk_names": 45,
+      "csv_names": 7,
+      "capacity_names": 2,
+      "phase_names": 11,
+      "extended_lifecycle_name": 1
+    },
+    "historical_groups": {
+      "rapid": {
+        "passed": 15,
+        "ignored": 1,
+        "multiset_sha256": "81f5f258e8c5448f4c4c9fbe664f2dca896e5285f106f94f948d9f0266315c75"
+      },
+      "observing_control": {
+        "passed": 8,
+        "ignored": 0,
+        "multiset_sha256": "b747a40dcba56aea4ec6869b723b44c2fb18436dd92b86aa1a8ce4feb930115a"
+      },
+      "prefixed_pun": {
+        "passed": 5,
+        "ignored": 0,
+        "multiset_sha256": "c5ed5e3605e39c439a27d4628861407f058aa53b6b112d7db90ef7ee239811bf"
+      },
+      "short_neighbor": {
+        "passed": 21,
+        "ignored": 0,
+        "multiset_sha256": "523f9a7c294a151b03c314205283d3d87026158ea49130cf14af11cd863b2d4b"
+      },
+      "exec_sources": {
+        "passed": 8,
+        "ignored": 0,
+        "multiset_sha256": "1b402c2aee2f7dcf4f27426ee6ca092829d46edebb779f19c5733eb2d49fd632"
+      }
+    },
+    "custom_harnesses": {
+      "Running tests/exec_backing_cleanup.rs (target/debug/deps/exec_backing_cleanup-<cargo-hash>)": {
+        "rows": 8,
+        "sha256": "96793a6abfc444e30c215e243d7afa1b2d2f46bc005ba68ade238c9df6636603"
+      },
+      "Running tests/precontext_native.rs (target/debug/deps/precontext_native-<cargo-hash>)": {
+        "rows": 1,
+        "sha256": "4e93451465a09e14681ffd95899944ca87c0e65fb147429b0d2ed7c110122724"
+      }
+    }
+  },
+  "retained_history": [
+    {
+      "revision": "3f4d0bb4d93a6c47154a63018d2ea67fdb32e86d",
+      "status": "FAILED_TEST",
+      "workspace_pass_fail_ignore": [
+        4234,
+        1,
+        37
+      ],
+      "serial_pass_fail_ignore": [
+        1039,
+        0,
+        0
+      ],
+      "census_sha256": "80514dc5a25c8ac7ed06d454a438b2ef31f230bd18a1697e3a42ba50e7701312"
+    },
+    {
+      "revision": "03e1a41315c4859441b9e9c12e57a2fd0ad1a8d0",
+      "status": "FAILED_FORMAT_AND_WORKSPACE_TIMEOUT",
+      "workspace_complete": false,
+      "completed_prefix_pass_fail_ignore": [
+        2812,
+        0,
+        4
+      ],
+      "serial_pass_fail_ignore": [
+        1039,
+        0,
+        0
+      ],
+      "census_sha256": "c566bb8709bde073952666fdfed7f07aca739481a32b622b763df77c3dffe3c2"
+    }
+  ],
+  "historical_test_correction": "The original sealed-source test required timestamps to stay equal after rejected pwrite. Its separately reviewed correction compares non-time fields across rejected mutation attempts; production full-stamp/seal/byte guards remain strict and explicit modified/changed mismatch refusals were added. This is a disclosed test-comparator change, not a reclassification of the old failure.",
+  "release": {
+    "verdict": "RELEASE_VERIFIED",
+    "checks": {
+      "original_owner_pid_absent": true,
+      "original_allocator_pid_absent": true,
+      "exact_HARD_scope_absent": true,
+      "reservation_tag_absent": true,
+      "original_allocator_reservation_absent": true,
+      "shared_ledger_exists": true
+    },
+    "evidence_pin": {
+      "bytes": 2423,
+      "sha256": "a7de896c424c6b15edf66d31db116d22891cf70972be7c508515a6127630b11c"
+    },
+    "scope": "Peer independently checked exact original owner/allocator processes, child HARD scope and reservation tag absent; shared ledger remains. Parent session exit zero is root-reported. This projection makes no new live-state observation."
+  },
+  "evidence": {
+    "private_complete_census": {
+      "bytes": 38730,
+      "sha256": "710b9d502ba5c02893d8411fa2bb6cb9071d10be324ba381bd6025242dec4230"
+    },
+    "outer": {
+      "bytes": 371,
+      "sha256": "a3a50a78baa9cfcabd07cb478e2904924481e9cf269971d83813ad67d4b0e160"
+    },
+    "child": {
+      "bytes": 5381,
+      "sha256": "1f5c1966ee78ee2239c876962c05d185fad9ab6ae24e50b446b5e635896c3921"
+    },
+    "live_reservation": {
+      "bytes": 5179,
+      "sha256": "b5d1ffd0367c7b325e7209b72f17f85a62767fb6cac827279cbe5d2df28d4949"
+    },
+    "last_complete_green_review": {
+      "bytes": 3983,
+      "sha256": "1b8c11206681f2d558f8c732482e1160c4bc8060baa12e3542ce4a545e23e757"
+    },
+    "stamp_correction_review": {
+      "bytes": 4557,
+      "sha256": "82f0db367d452a8dff666a27d2c6b742faeea73f498fcc43899859a3e15a4b3f"
+    }
+  },
+  "limitations": [
+    "Wall durations and ambient load describe correctness execution, not throughput, CPU cost or speedup.",
+    "The newly ignored owned-native test has a separate admitted native history; this workspace result gives it no passing credit.",
+    "No old test was newly skipped. The 37 old ignored identities/reasons remain, plus the one new explicit native prerequisite.",
+    "The complete 43,200-coordinate profiler denominator and previous failed/incomplete campaigns remain separate and unchanged.",
+    "Seven bridge controls do not promote the separately refused complete 2,053-site program into successful material generation or execution.",
+    "Only pure closed-log metadata analysis ran for this census; no test, compiler or native workload was repeated."
+  ]
+}
