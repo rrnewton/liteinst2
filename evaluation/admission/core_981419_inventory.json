@@ -198,6 +198,17 @@
       ],
       "previous_sha256": "75707edcff54aadac9c6a80109ad40c5e7305151dfc75432afbd94bbe38e3205"
     },
+    "evaluation/admission/test_main813_inventory.py": {
+      "current_sha256": "687bcdd69fa86b8ee26d73d48017fa554df887c7188ddc9a299e68debd964aa9",
+      "edits": [
+        [
+          157300,
+          157701,
+          "            restored = main813.source_at_8f622(path, raw, 'changed')\n            self.assertEqual(hashlib.sha256(raw).hexdigest(), row['current_sha256'])\n"
+        ]
+      ],
+      "previous_sha256": "ac944c656868035da09109db6823cd4b6fac3edf61f23842edb54d5ec703101f"
+    },
     "evaluation/admission/test_mainaf81_inventory.py": {
       "current_sha256": "094721bc10f985cbc42fede73d73be8cac5f851c92f19bbd08d2d8710973f5c4",
       "edits": [
@@ -1877,6 +1888,7 @@
     "evaluation/admission/recorder_parallel.py": "dcc09299873170f2bbb8705ed6262b83a70dfd473f1cb2894327bf658d756908",
     "evaluation/admission/test_main0fb574_inventory.py": "d3ba787f03f64a81f8c03905930479edd57050ebbba50eee4e32a5dd9e6764d0",
     "evaluation/admission/test_main367_inventory.py": "7d21bba978ce8a049679cc1ad5c7d6415c2188e913598b7fa0cfae90bf4f93ed",
+    "evaluation/admission/test_main813_inventory.py": "687bcdd69fa86b8ee26d73d48017fa554df887c7188ddc9a299e68debd964aa9",
     "evaluation/admission/test_main981419_inventory.py": "409906c2eb093bfaf64523831f88f1ef71e873c5a74ef3252d743e53d7f877f9",
     "evaluation/admission/test_mainaf81_inventory.py": "094721bc10f985cbc42fede73d73be8cac5f851c92f19bbd08d2d8710973f5c4",
     "evaluation/admission/test_mainc712_inventory.py": "c8222f577129547b92984c0ee34f3108b55b73d9ba5b51ef67e4fa7f58503855",
