@@ -1,0 +1,9 @@
+kind,rank,key,samples,sampled_period
+functions,1,"""bridge:0x71cd0-0x720d0:project""",367,3707070670
+functions,2,"""bridge:0x9320-0x93ad:pe_bytes""",330,3333333300
+functions,3,"""bridge:0x70550-0x710b1:li2_pe_plan_pages_dynamic""",304,3070707040
+functions,remaining,126 groups,1546,15616161460
+paths,1,"[""leaf_only"",""bridge:0x71cd0-0x720d0:project"",""bridge:0x71cd0-0x720d0:project""]",367,3707070670
+paths,2,"[""bounded_observed_frames"",""bridge:0x70550-0x710b1:li2_pe_plan_pages_dynamic"",""bridge:0x70550-0x710b1:li2_pe_plan_pages_dynamic"",""bridge:0x2bd70-0x2f134:selected_generic_trace"",""bridge:0x2f140-0x31f5c:handler"",""bridge:0x4c690-0x4c6aa:li2_raw6""]",304,3070707040
+paths,3,"[""bounded_observed_frames"",""bridge:0x2a420-0x2abec:li2_pe_epoch_bind"",""bridge:0x2a420-0x2abec:li2_pe_epoch_bind"",""bridge:0x2bd70-0x2f134:selected_generic_trace"",""bridge:0x2f140-0x31f5c:handler"",""bridge:0x4c690-0x4c6aa:li2_raw6""]",173,1747474730
+paths,remaining,331 groups,1703,17202020030
