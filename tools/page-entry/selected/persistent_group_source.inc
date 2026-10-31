@@ -83,6 +83,11 @@ int li2_pg_source_begin(const struct li2_pg_token *t,const struct li2_pg_layout 
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
     if(!pgsd_reset(t,r))return LI2_FETCH_STATE;
 #endif
+#ifdef LI2_PERSISTENT_UNREGISTERED
+    if(r->token.serial) {
+        if(!li2_pgu_progress_valid(r))return LI2_FETCH_STATE;
+    } else if(r->lifetime_mode || r->word_observed || r->tls_complete || r->registration_calls)return LI2_FETCH_STATE;
+#endif
     if(pg_source.p.serial) {
         const struct li2_pg_source_progress *p=&pg_source.p;
         if(pg_source.token.owner!=t->owner || pg_source.token.serial!=p->serial ||

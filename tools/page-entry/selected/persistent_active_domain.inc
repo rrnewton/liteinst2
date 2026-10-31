@@ -47,6 +47,9 @@ static int pda_receipt(const struct pda_completion *c) {
        !c->fetch.sequence || c->fetch.sequence!=s->source.anchor.sequence ||
        c->fetch.held || c->fetch.complete!=1 || c->fetch.first_error ||
        !pg_query_complete(&c->directory_closed,pe.domain.directory,LI2_JD_DOMAIN_BYTES,PROT_READ))return 0;
+#ifdef LI2_PERSISTENT_UNREGISTERED
+    if(!li2_pgu_progress_valid(r))return 0;
+#endif
     for(unsigned i=0;i<c->count;i++) {
         const struct pda_member_completion *m=&c->member[i];
         const struct li2_pg_generation *g=&m->generation;
@@ -60,6 +63,9 @@ static int pda_receipt(const struct pda_completion *c) {
            m->header.version!=1 || m->header.generation!=v->generation || m->header.serial!=g->build_serial ||
            m->header.registry!=(uintptr_t)&pe || m->header.generated!=g->generated ||
            m->header.spill!=g->spill || !pg_layout_equal(&m->header.layout,&g->layout) ||
+#ifdef LI2_PERSISTENT_UNREGISTERED
+           !pe_lifetime_matches(&m->header,r) ||
+#endif
            m->header.registered_epoch!=r->registration_epoch || m->header.rseq_address!=r->address ||
            m->header.rseq_length!=r->length || m->header.rseq_signature!=r->signature ||
            !equal(m->header.archive,pe_archive,32) || !equal(m->header.policy,pe_policy,32) ||
@@ -145,6 +151,9 @@ static int pda_registry(unsigned slot) {
 static int pda_registration(const struct pe_payload *p) {
     const struct li2_pg_rseq_progress *r=li2_pg_rseq_progress();
     return r && r->active && r->seed_complete && !r->first_error && !r->unsafe_terminal &&
+#ifdef LI2_PERSISTENT_UNREGISTERED
+        pe_lifetime_matches(&p->header,r) &&
+#endif
         p->header.registered_epoch==r->registration_epoch && p->header.rseq_address==r->address &&
         p->header.rseq_length==r->length && p->header.rseq_signature==r->signature;
 }

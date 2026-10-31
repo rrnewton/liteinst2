@@ -284,6 +284,9 @@ static void selected_persistent_report(unsigned,unsigned,long);
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
 #include "persistent_active_domain_observe.h"
 #endif
+#ifdef LI2_PERSISTENT_STARTUP_CAPTURE
+#include "persistent_startup_observe.h"
+#endif
 #endif
 static volatile sig_atomic_t selected_linked_epoch_active,selected_linked_epoch_busy;
 static void selected_linked_epoch_initialize(void);
@@ -556,7 +559,7 @@ static void report(unsigned status,unsigned code,long detail) {
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
     ptr2o_finish(status,code,detail);
 #endif
-#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
+#if defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) || defined(LI2_PERSISTENT_STARTUP_CAPTURE)
     pdao_finish(status,code,detail);
 #endif
 #ifdef LI2_LINKED_NATIVE_PROBE
@@ -985,7 +988,7 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
     ptr2o_ingress(sig,si,ptr);
 #endif
-#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
+#if defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) || defined(LI2_PERSISTENT_STARTUP_CAPTURE)
     pdao_ingress(sig,si,ptr);
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE
@@ -1375,7 +1378,7 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
     ptr2o_initialize();
 #endif
-#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
+#if defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) || defined(LI2_PERSISTENT_STARTUP_CAPTURE)
     pdao_initialize();
 #endif
 #endif

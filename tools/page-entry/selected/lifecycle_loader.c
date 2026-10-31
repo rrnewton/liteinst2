@@ -1076,3 +1076,6 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
 #include "persistent_active_domain_observe_memory.inc"
 #endif
+#ifdef LI2_PERSISTENT_STARTUP_CAPTURE
+#include "persistent_startup_observe_memory.inc"
+#endif

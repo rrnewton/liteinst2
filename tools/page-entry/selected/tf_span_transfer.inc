@@ -151,6 +151,9 @@ int li2_tf_chain_span_close(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontex
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
     li2_ptr2o_trace_closed(c,p);
 #endif
+#ifdef LI2_PERSISTENT_STARTUP_CAPTURE
+    li2_pdao_trace_closed(c,p);
+#endif
     chain_count(c,&c->steps);c->pending=0;
     copy(&t->frame,&p->owner.step.after,sizeof t->frame);
     copy(&t->closed,uc,sizeof *uc);e->flags=(uint64_t)uc->uc_mcontext.gregs[REG_EFL];

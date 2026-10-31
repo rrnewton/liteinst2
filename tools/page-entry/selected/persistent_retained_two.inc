@@ -88,6 +88,9 @@ static int ptr_stored(unsigned index) {
     const struct pe_payload *p=((const struct pe_payload *)s->proof);
     return equal(&p->header,&s->publication.header,sizeof p->header) &&
         equal(&p->source,&s->publication.source,sizeof p->source) &&
+#ifdef LI2_PERSISTENT_UNREGISTERED
+        pe_lifetime_stored(&p->header) &&
+#endif
         p->header.version==1 && p->header.serial==g->build_serial &&
         p->header.generation==g->generation && p->header.registry==(uintptr_t)&pe &&
         p->header.generated==g->generated && p->header.spill==g->spill &&

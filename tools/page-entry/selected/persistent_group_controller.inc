@@ -18,6 +18,9 @@
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
 #include "persistent_active_domain_observe.h"
 #endif
+#ifdef LI2_PERSISTENT_STARTUP_CAPTURE
+#include "persistent_startup_observe.h"
+#endif
 #if defined(LI2_PERSISTENT_ACTIVE_DOMAIN)
 #if LI2_PERSISTENT_ACTIVE_DOMAIN != 1 || !defined(LI2_PERSISTENT_RETAINED_TWO) || LI2_PERSISTENT_RETAINED_TWO != 1 || !defined(LI2_PERSISTENT_DISPATCH) || LI2_PERSISTENT_DISPATCH != 1 || LI2_PG_BINDING_VERSION != 1 || LI2_PG_GROUP_BINDING_VERSION != 4
 #error "distinct active-domain version4 policy required"
@@ -55,9 +58,25 @@ struct pe_header {
     uint64_t member_generation[2];
     uint64_t plan_proof,none_proof,source_validations,registered_epoch;
     uint64_t rseq_address,rseq_length,rseq_signature;
+#ifdef LI2_PERSISTENT_UNREGISTERED
+    uint64_t lifetime_version,lifetime_mode;
+#endif
     unsigned char archive[32],policy[32];
     uint64_t reserved[4];
 };
+#ifdef LI2_PERSISTENT_UNREGISTERED
+static int pe_lifetime_stored(const struct pe_header *h) {
+    return h->lifetime_version==1 &&
+        ((h->lifetime_mode==LI2_PGU_REGISTERED && h->registered_epoch && h->rseq_length==32 &&
+          !(h->rseq_address&31) && h->rseq_address<=UINTPTR_MAX-32) ||
+         (h->lifetime_mode==LI2_PGU_UNREGISTERED && !h->rseq_address &&
+          !h->rseq_length && !h->rseq_signature));
+}
+static int pe_lifetime_matches(const struct pe_header *h,const struct li2_pg_rseq_progress *r) {
+    return pe_lifetime_stored(h) && li2_pgu_progress_valid(r) &&
+        h->lifetime_mode==r->lifetime_mode && h->registered_epoch==r->registration_epoch;
+}
+#endif
 struct pe_payload {
     struct pe_header header;
     struct li2_pg_source_key source;
@@ -547,6 +566,9 @@ static int pe_ready(void) {
     const struct pe_payload *p=pe_payload();
     return s && s->complete==1 && !s->reserved && s->serial==pe.p.serial &&
         li2_pg_source_key_equal(&p->source,&s->key) && r && r->active && r->seed_complete &&
+#ifdef LI2_PERSISTENT_UNREGISTERED
+        pe_lifetime_matches(&p->header,r) &&
+#endif
         p->header.registered_epoch==r->registration_epoch &&
         p->header.rseq_address==r->address && p->header.rseq_length==r->length &&
         p->header.rseq_signature==r->signature;
@@ -768,6 +790,9 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
     if(PE_SLOT(generation).installed && ped_stored() && pe_registry() &&
        PE_SLOT(generation).generated==pe.p.generated &&
        li2_pg_source_key_equal(&PE_SLOT(publication).source,&s->key) &&
+#ifdef LI2_PERSISTENT_UNREGISTERED
+       pe_lifetime_matches(&PE_SLOT(publication).header,r) &&
+#endif
        PE_SLOT(publication).header.registered_epoch==r->registration_epoch &&
        PE_SLOT(publication).header.rseq_address==r->address &&
        PE_SLOT(publication).header.rseq_length==r->length && PE_SLOT(publication).header.rseq_signature==r->signature) {
@@ -777,6 +802,10 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         size_t n=0;for(size_t i=0;i<protected_count;i++)
             pe.exclusions[n++]=(struct li2_mg_range){protected[i].first,protected[i].end};
         for(unsigned i=0;i<2;i++)pe.exclusions[n++]=(struct li2_mg_range){pe.p.source[i],pe.p.source[i]+PAGE};
+#ifdef LI2_PERSISTENT_UNREGISTERED
+        pe_need(li2_pgu_progress_valid(r),PE_RSEQ,40);
+        if(r->lifetime_mode==LI2_PGU_REGISTERED)
+#endif
         pe.exclusions[n++]=(struct li2_mg_range){r->address+8,r->address+16};
         pe_need(n<=LI2_MG_RANGES,PE_STATE,6);
         pe_need(!li2_mg_table_build(pe.exclusions,n,pe.p.table,&pe.candidate.plan.table),PE_PLAN,0);
@@ -891,6 +920,10 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
     h->plan_proof=g->plan_proofs;h->none_proof=g->none_proofs;
     h->source_validations=li2_pg_source_progress()->validations;h->registered_epoch=pe.p.registration_epoch;
     h->rseq_address=r->address;h->rseq_length=r->length;h->rseq_signature=r->signature;
+#ifdef LI2_PERSISTENT_UNREGISTERED
+    pe_need(li2_pgu_progress_valid(r),PE_RSEQ,41);
+    h->lifetime_version=1;h->lifetime_mode=r->lifetime_mode;
+#endif
     copy(h->archive,pe_archive,32);copy(h->policy,pe_policy,32);PE_SLOT(publication).source=li2_pg_source_view(t)->key;
     volatile unsigned char *code=(void *)g->generated,*proof_bytes=(void *)g->proof;
     for(size_t i=0;i<PE_CODE_BYTES;i++){code[i]=pg_code_byte(&PE_SLOT(publication).plan,i);g->code_copied=i+1;}
@@ -1136,8 +1169,16 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     if(!pe.initialized || pe_busy || pe_active || !ped_capacity() || !le_trace_coarse(sig,si,uc))return 0;
     uintptr_t pc=(uintptr_t)uc->uc_mcontext.gregs[REG_RIP];
     const struct li2_rseq_state *r=li2_rseq_snapshot();
+#ifdef LI2_PERSISTENT_UNREGISTERED
+    if(r->registered==0) {
+        if(!r->initialized || r->first_error || r->held || r->phase!=LI2_RSEQ_IDLE ||
+           r->pid<=0 || r->pid!=r->tid)return 0;
+    } else if(r->registered!=1 || r->phase!=LI2_RSEQ_ACTIVE)return 0;
+    if((pc&~(PAGE-1))<PAGE || !li2_pg_source_pair_advisory(pc))return 0;
+#else
     if((pc&~(PAGE-1))<PAGE || r->registered!=1 || r->phase!=LI2_RSEQ_ACTIVE ||
        !li2_pg_source_pair_advisory(pc))return 0;
+#endif
     /* Pure necessary placement before any offer, capture, reset or real
        TRACE close. A decline leaves the original dispatch path intact. */
 #ifdef LI2_PERSISTENT_RETAINED_TWO
@@ -1163,7 +1204,7 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
     ptr2o_begin(sig,si,uc,slot_index);
 #endif
-#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
+#if defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) || defined(LI2_PERSISTENT_STARTUP_CAPTURE)
     pdao_begin(sig,si,uc,slot_index);
 #endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO
@@ -1192,7 +1233,7 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
     ptr2o_closed();
 #endif
-#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
+#if defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) || defined(LI2_PERSISTENT_STARTUP_CAPTURE)
     pdao_closed();
 #endif
     pe_need(!li2_pg_epoch_begin(pe.ticket,pe.transfer.serial,&selected_session,sig,si,uc,&pe.token),PE_RSEQ,2);
@@ -1232,7 +1273,7 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
     ptr2o_entered(sig,si,uc);
 #endif
-#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
+#if defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) || defined(LI2_PERSISTENT_STARTUP_CAPTURE)
     pdao_entered(sig,si,uc);
 #endif
     selected_initialized();__asm__ volatile("":::"memory");pe_busy=0;return 1;
@@ -1282,7 +1323,7 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
     ptr2o_terminal(0);
 #endif
-#ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
+#if defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) || defined(LI2_PERSISTENT_STARTUP_CAPTURE)
     pdao_terminal(0);
 #endif
     selected_logical_flags=(uint64_t)pe.after.frame.greg[REG_EFL]&~SELECTED_RF;selected_flags_known=1;
@@ -1295,7 +1336,11 @@ static void selected_persistent_report(unsigned status,unsigned code,long detail
         (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
     }
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+#ifdef LI2_PERSISTENT_UNREGISTERED
+    struct writer w={.used=0};text(&w,"LI2_PERSISTENT_UNREGISTERED {\"version\":1");
+#else
     struct writer w={.used=0};text(&w,"LI2_PERSISTENT_ACTIVE_DOMAIN {\"version\":4");
+#endif
 #else
     struct writer w={.used=0};text(&w,"LI2_PERSISTENT_RETAINED_TWO {\"version\":3");
 #endif
@@ -1373,4 +1418,7 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
 #include "persistent_active_domain_observe.inc"
+#endif
+#ifdef LI2_PERSISTENT_STARTUP_CAPTURE
+#include "persistent_startup_observe.inc"
 #endif
