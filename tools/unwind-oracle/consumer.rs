@@ -191,32 +191,12 @@ fn executable_backings() -> [Backing; 2] {
     ]
 }
 
-// The handle is deliberately never closed. The core retains this owner and
-// registration for the process lifetime, including retirement and failure.
 pub struct Consumer {
-    path: PathBuf,
-    bytes: Vec<u8>,
-    base: u64,
-    addresses: [usize; 6],
-    handle: usize,
-    backing: Backing,
-    executable_backings: [Backing; 2],
+    inner: OwnedConsumer<6>,
 }
 impl Consumer {
     pub fn qualify() -> Self {
-        for key in ["LD_PRELOAD", "LD_AUDIT", "LD_LIBRARY_PATH"] {
-            assert!(
-                std::env::var_os(key).is_none(),
-                "unadmitted loader override {key}"
-            );
-        }
-        match std::fs::read("/etc/ld.so.preload") {
-            Ok(bytes) => assert!(
-                bytes.iter().all(u8::is_ascii_whitespace),
-                "global preload is active"
-            ),
-            Err(error) => assert_eq!(error.kind(), std::io::ErrorKind::NotFound),
-        }
+        check_loader_environment();
         let path = std::fs::canonicalize(
             std::env::var_os("UW_LIBGCC_FILE").expect("root-bound actual consumer path"),
         )
@@ -224,6 +204,87 @@ impl Consumer {
         let snapshot = PathBuf::from(
             std::env::var_os("UW_LIBGCC_SNAPSHOT").expect("root-frozen consumer copy"),
         );
+        Self {
+            inner: OwnedConsumer::qualify(NAMES, path, snapshot, || {
+                let mut addresses = [0; 6];
+                unsafe {
+                    uw_consumer_addresses(addresses.as_mut_ptr());
+                }
+                addresses
+            }),
+        }
+    }
+    pub fn revalidate(&self) {
+        self.inner.revalidate();
+    }
+}
+
+// This separate entrypoint is unused by the legacy registration oracle. Its
+// profile cannot name or invoke __register_frame through this API.
+#[allow(dead_code)]
+pub struct IndexedConsumer {
+    inner: OwnedConsumer<5>,
+}
+#[allow(dead_code)]
+impl IndexedConsumer {
+    pub fn qualify(addresses: [usize; 5], path: PathBuf, snapshot: PathBuf) -> Self {
+        check_loader_environment();
+        let path = std::fs::canonicalize(path).unwrap();
+        Self {
+            inner: OwnedConsumer::qualify(
+                [
+                    "_Unwind_Find_FDE",
+                    "_Unwind_Backtrace",
+                    "_Unwind_GetIPInfo",
+                    "_Unwind_GetCFA",
+                    "_Unwind_GetGR",
+                ],
+                path,
+                snapshot,
+                || addresses,
+            ),
+        }
+    }
+    pub fn revalidate(&self) {
+        self.inner.revalidate();
+    }
+}
+
+fn check_loader_environment() {
+    for key in ["LD_PRELOAD", "LD_AUDIT", "LD_LIBRARY_PATH"] {
+        assert!(
+            std::env::var_os(key).is_none(),
+            "unadmitted loader override {key}"
+        );
+    }
+    match std::fs::read("/etc/ld.so.preload") {
+        Ok(bytes) => assert!(
+            bytes.iter().all(u8::is_ascii_whitespace),
+            "global preload is active"
+        ),
+        Err(error) => assert_eq!(error.kind(), std::io::ErrorKind::NotFound),
+    }
+}
+
+// The handle is deliberately never closed. Both callers retain their owner for
+// the process lifetime, including retirement and failure. Only the legacy
+// caller additionally owns a registration; this shared owner performs none.
+struct OwnedConsumer<const N: usize> {
+    path: PathBuf,
+    bytes: Vec<u8>,
+    base: u64,
+    addresses: [usize; N],
+    handle: usize,
+    backing: Backing,
+    executable_backings: [Backing; 2],
+}
+impl<const N: usize> OwnedConsumer<N> {
+    fn qualify(
+        names: [&'static str; N],
+        path: PathBuf,
+        snapshot: PathBuf,
+        addresses: impl FnOnce() -> [usize; N],
+    ) -> Self {
         assert!(snapshot.is_absolute());
         assert_ne!(snapshot, path);
         let bytes = std::fs::read(&snapshot).unwrap();
@@ -236,12 +297,10 @@ impl Consumer {
         assert_eq!(&bytes[..7], b"\x7fELF\x02\x01\x01");
         assert_eq!(u16_at(&bytes, 16), 3);
         assert_eq!(u16_at(&bytes, 18), 62);
-        let mut addresses = [0; 6];
-        unsafe {
-            uw_consumer_addresses(addresses.as_mut_ptr());
-        }
+        // Defer the legacy address query until after its original file checks.
+        let addresses = addresses();
         let mut base = None;
-        for (&address, name) in addresses.iter().zip(NAMES) {
+        for (&address, name) in addresses.iter().zip(names) {
             assert_ne!(address, 0);
             let mut info: libc::Dl_info = unsafe { std::mem::zeroed() };
             assert_ne!(unsafe { libc::dladdr(address as *const _, &mut info) }, 0);
@@ -290,7 +349,7 @@ impl Consumer {
         result.revalidate();
         result
     }
-    pub fn revalidate(&self) {
+    fn revalidate(&self) {
         assert_ne!(self.handle, 0);
         for backing in &self.executable_backings {
             backing.revalidate();
@@ -307,7 +366,7 @@ impl Consumer {
         assert_eq!(u16_at(&self.bytes, 54), 56);
         assert!((1..=256).contains(&count));
         assert!(phoff.checked_add(count * 56).unwrap() <= self.bytes.len());
-        let mut owners = [0; 6];
+        let mut owners = [0; N];
         let mut executable = 0;
         for n in 0..count {
             let p = phoff + n * 56;
@@ -365,12 +424,13 @@ impl Consumer {
             executable += 1;
         }
         assert!(executable > 0);
-        assert_eq!(owners, [1; 6]);
+        assert_eq!(owners, [1; N]);
         eprintln!(
-            "consumer_identity path={} base={:#x} bytes={} exported_symbols=6 executable_segments={} file_mapping_bytes_exact=true",
+            "consumer_identity path={} base={:#x} bytes={} exported_symbols={} executable_segments={} file_mapping_bytes_exact=true",
             self.path.display(),
             self.base,
             self.bytes.len(),
+            N,
             executable
         );
     }
