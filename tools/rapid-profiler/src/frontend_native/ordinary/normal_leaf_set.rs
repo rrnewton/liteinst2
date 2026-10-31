@@ -39,6 +39,28 @@ impl LoadedNormalLeafSet {
         loaded.verify_original()?;
         Ok(loaded)
     }
+    /// Load a private, fully sealed copy of the independently trusted final ELF.
+    /// The same complete 1..=4 selection, page, CFG and provenance checks apply.
+    /// No source fd, loader handle or writable view is exposed.
+    ///
+    /// # Safety
+    /// All ABI, input, entry, no-CET, publication and continuous loaded-mapping
+    /// obligations of [`Self::load_selected`] remain. Seals establish only the
+    /// copied backing's immutability; they do not prevent COW/protection changes
+    /// to private loader mappings or supply session/return rendezvous. Loaded
+    /// source/control/generated owners remain process-lived. No invocation or
+    /// executable reclamation is authorized by this constructor.
+    pub unsafe fn load_sealed_selected(
+        selections: &[&TrustedFunctionSelection<'_>],
+        contract: NormalModuleContract,
+    ) -> Result<&'static mut Self, SetupRefusal> {
+        contract.check()?;
+        // SAFETY: complete union-wide external native/mapping contract above.
+        let parts = unsafe { normal_module::load_sealed_parts(selections)? };
+        let loaded = Box::leak(Box::new(Self { parts }));
+        loaded.verify_original()?;
+        Ok(loaded)
+    }
     pub fn functions(&self) -> &[NormalModuleFunction] {
         &self.parts.functions
     }

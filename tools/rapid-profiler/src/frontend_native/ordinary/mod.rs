@@ -8,7 +8,8 @@ use object::{Object, ObjectSection, ObjectSymbol, SymbolFlags, SymbolKind};
 use std::collections::BTreeMap;
 use std::ffi::{CStr, CString};
 use std::fs::File;
-use std::os::fd::AsRawFd;
+use std::io::Write;
+use std::os::fd::{AsRawFd, FromRawFd};
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 
@@ -476,6 +477,75 @@ struct Retained {
     original: Stamp,
     device: (u32, u32),
     pid: u32,
+    source: SourceBacking,
+}
+#[derive(Clone, Copy)]
+enum SourceBacking {
+    Path,
+    SealedCopy,
+}
+const SOURCE_SEALS: libc::c_int =
+    libc::F_SEAL_WRITE | libc::F_SEAL_GROW | libc::F_SEAL_SHRINK | libc::F_SEAL_SEAL;
+
+fn check_source_seals(file: &File) -> Result<(), SetupRefusal> {
+    // SAFETY: read-only descriptor query on this live, privately owned file.
+    if unsafe { libc::fcntl(file.as_raw_fd(), libc::F_GET_SEALS) } != SOURCE_SEALS {
+        return Err(SetupRefusal::SourceBytes);
+    }
+    Ok(())
+}
+
+fn sealed_source_stamp(file: &mut File, expected: &[u8]) -> Result<Stamp, SetupRefusal> {
+    let original = stamp(file)?;
+    check_source_seals(file)?;
+    if original.size != expected.len() as u64
+        || bounded_read(file)? != expected
+        || original != stamp(file)?
+    {
+        return Err(SetupRefusal::SourceBytes);
+    }
+    check_source_seals(file)?;
+    Ok(original)
+}
+
+fn copy_sealed_source(expected: &[u8]) -> Result<File, SetupRefusal> {
+    if expected.is_empty() || expected.len() > 1024 * 1024 {
+        return Err(SetupRefusal::Format);
+    }
+    // SAFETY: fixed terminated name and supported scalar memfd options.
+    let fd = unsafe {
+        libc::memfd_create(
+            c"liteinst-normal-source".as_ptr(),
+            libc::MFD_CLOEXEC | libc::MFD_ALLOW_SEALING,
+        )
+    };
+    if fd < 0 {
+        return Err(SetupRefusal::OperatingSystem);
+    }
+    // SAFETY: this call just created the descriptor and transfers sole ownership.
+    let mut file = unsafe { File::from_raw_fd(fd) };
+    file.write_all(expected)
+        .map_err(|_| SetupRefusal::OperatingSystem)?;
+    // No writable mapping exists. Seal the complete copy before any dlopen.
+    // SAFETY: this file exclusively owns the new descriptor.
+    if unsafe { libc::fcntl(file.as_raw_fd(), libc::F_ADD_SEALS, SOURCE_SEALS) } != 0 {
+        return Err(SetupRefusal::OperatingSystem);
+    }
+    sealed_source_stamp(&mut file, expected)?;
+    Ok(file)
+}
+
+fn retained_device(owner: &Retained) -> Result<(u32, u32), SetupRefusal> {
+    match owner.source {
+        SourceBacking::Path => mount_device(owner.file.as_raw_fd()),
+        SourceBacking::SealedCopy => {
+            check_source_seals(&owner.file)?;
+            let device = stamp(&owner.file)?.device;
+            // Linux maps uses the same dev_t identity as fstat. An anonymous
+            // memfd's internal shmem mount need not be in namespace mountinfo.
+            Ok((libc::major(device), libc::minor(device)))
+        }
+    }
 }
 // The caller must have completed the private whole-ELF/code parser and retain
 // its explicit no-constructor/no-writer/no-unload contract. No subject is called.
@@ -492,6 +562,28 @@ unsafe fn retain_loader(
         return Err(SetupRefusal::SourceBytes);
     }
     let device = mount_device(file.as_raw_fd())?;
+    // SAFETY: the original complete path-owner contract remains unchanged.
+    unsafe { retain_file(file, expected, original, device, SourceBacking::Path) }
+}
+
+// Like retain_loader, but only the private copied backing becomes immutable.
+// Loaded MAP_PRIVATE pages, ABI, entry exclusion and lifetime remain unsafe.
+unsafe fn retain_sealed_loader(expected: &[u8]) -> Result<&'static mut Retained, SetupRefusal> {
+    let mut file = copy_sealed_source(expected)?;
+    let original = sealed_source_stamp(&mut file, expected)?;
+    let device = (libc::major(original.device), libc::minor(original.device));
+    // SAFETY: the caller completed the same whole-ELF preflight and owns the
+    // unchanged native/mapping contract. The exact file is sealed and retained.
+    unsafe { retain_file(file, expected, original, device, SourceBacking::SealedCopy) }
+}
+
+unsafe fn retain_file(
+    file: File,
+    expected: &[u8],
+    original: Stamp,
+    device: (u32, u32),
+    source: SourceBacking,
+) -> Result<&'static mut Retained, SetupRefusal> {
     let mut shstk = 0_u64;
     // SAFETY: read-only status query; never changes CET state.
     let status = unsafe { libc::syscall(libc::SYS_arch_prctl, 0x5005, &mut shstk) };
@@ -520,6 +612,7 @@ unsafe fn retain_loader(
         original,
         device,
         pid: std::process::id(),
+        source,
     }));
     Ok(retained)
 }
@@ -691,7 +784,7 @@ fn verify_source_provenance(
         || stamp(&owner.file)? != owner.original
         || bounded_read(&mut owner.file)? != owner.expected
         || stamp(&owner.file)? != owner.original
-        || mount_device(owner.file.as_raw_fd())? != owner.device
+        || retained_device(owner)? != owner.device
     {
         return Err(SetupRefusal::SourceBytes);
     }
@@ -802,5 +895,7 @@ unsafe fn verify_live_source(source_start: u64, whole: &[u8]) -> Result<(), Setu
     Ok(())
 }
 
+#[cfg(test)]
+mod sealed_source_tests;
 #[cfg(test)]
 mod tests;

@@ -1,7 +1,7 @@
 //! One retained normal-loader owner for two sequential, complete scalar leaves.
 use super::{
     IntegerLeafCertificate, Parsed, Retained, SetupRefusal, TrustedFunctionSelection, cfg,
-    retain_loader, selection, verify_live_source, verify_source_provenance,
+    retain_loader, retain_sealed_loader, selection, verify_live_source, verify_source_provenance,
 };
 use liteinst2::contracts::ExpectedBytes;
 use std::path::Path;
@@ -112,6 +112,38 @@ impl LoadedNormalModule {
         loaded.verify_original()?;
         Ok(loaded)
     }
+    /// Copy the exact trusted ELF into a private fully sealed memfd, then load
+    /// both selections through the same complete ELF/CFG/provenance checks.
+    /// No fd, loader handle or writable source view is exposed. The sealed copy
+    /// and loaded owners remain process-lived, including after later refusal.
+    ///
+    /// # Safety
+    /// All native ABI, selected-entry, input, quiescence, no-CET and continuous
+    /// loaded-mapping obligations of [`Self::load_selected_pair`] still apply.
+    /// The descriptors must be independently trusted final compiler/linker
+    /// output. Only backing-file immutability is provided by the seals: ld.so's
+    /// private mappings can still COW and require exclusive qualified publication
+    /// and no foreign mutation/unload. This grants no call, attach, checkpoint,
+    /// session rendezvous or executable reclamation authority.
+    pub unsafe fn load_sealed_selected_pair(
+        selections: [&TrustedFunctionSelection<'_>; 2],
+        contract: NormalModuleContract,
+    ) -> Result<&'static mut Self, SetupRefusal> {
+        contract.check()?;
+        // SAFETY: the same complete pair/union native custody contract above.
+        let parts = unsafe { load_sealed_parts(&selections)? };
+        let functions = parts
+            .functions
+            .try_into()
+            .map_err(|_| SetupRefusal::Format)?;
+        let loaded = Box::leak(Box::new(Self {
+            owner: parts.owner,
+            functions,
+            pages: parts.pages,
+        }));
+        loaded.verify_original()?;
+        Ok(loaded)
+    }
     pub fn functions(&self) -> &[NormalModuleFunction; 2] {
         &self.functions
     }
@@ -182,6 +214,22 @@ pub(super) unsafe fn load_parts(
     let parsed = preflight(selections)?;
     // SAFETY: every selected ELF/CFG and the complete union were checked before loading.
     let owner = unsafe { retain_loader(path, selections[0].trusted_final_elf())? };
+    resolve_parts(owner, parsed, selections)
+}
+pub(super) unsafe fn load_sealed_parts(
+    selections: &[&TrustedFunctionSelection<'_>],
+) -> Result<LoadedParts, SetupRefusal> {
+    let parsed = preflight(selections)?;
+    // SAFETY: the identical complete preflight precedes copying/loading, and
+    // the caller retains the native ABI/entry/mapping lifetime contract.
+    let owner = unsafe { retain_sealed_loader(selections[0].trusted_final_elf())? };
+    resolve_parts(owner, parsed, selections)
+}
+fn resolve_parts(
+    owner: &'static mut Retained,
+    parsed: Vec<Parsed>,
+    selections: &[&TrustedFunctionSelection<'_>],
+) -> Result<LoadedParts, SetupRefusal> {
     let resolved = parsed
         .iter()
         .map(|p| selection::resolve(owner, p))
