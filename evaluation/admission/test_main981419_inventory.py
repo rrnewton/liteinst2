@@ -11,11 +11,12 @@ import core_dd75_inventory as previous
 import core_5cda_inventory as historical
 import core_cc846_inventory as inventory
 import parsing
+import core_20cbe_inventory as newest
 
 
 class Main981419InventoryTests(unittest.TestCase):
     def test_exact_accuracy_sources_catalog_and_causal_refusals(self):
-        actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        actual = newest.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))
         rows = actual['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                           sum(x['ignored'] for x in rows.values())), (109, 4085, 37))
@@ -29,11 +30,11 @@ class Main981419InventoryTests(unittest.TestCase):
         self.assertEqual((len(actual['harness_test_counts']['serial_launch']),
                           sum(x['tests'] for x in actual['harness_test_counts']['serial_launch'].values())), (27, 1039))
         with patch.object(inventory, 'require_historical359') as earlier:
-            self.assertIsNone(inventory.require_current(actual))
+            self.assertIsNone(inventory.require_historical360(actual))
             earlier.assert_called_once_with(old)
         for wrong in (old, previous.before_current(old)):
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
-                inventory.require_current(wrong)
+                inventory.require_historical360(wrong)
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^maindd75_inventory_differs$'):
             previous.before_current(actual)
         self.assertEqual(previous.peel_current(actual, 'catalog_control', 'source_control'), previous.before_current(old))
@@ -47,7 +48,7 @@ class Main981419InventoryTests(unittest.TestCase):
                     wrong = copy.deepcopy(actual); wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main981419_inventory_differs$'):
                         current.before_current(wrong)
-        identities = historical.python_identities(Path(__file__).parent)
+        identities = newest.before_python(historical.python_identities(Path(__file__).parent))
         old_ids = current.before_python(identities)
         self.assertEqual((len(identities), len(old_ids)), (360, 359))
         self.assertEqual(current.digest(old_ids), previous.PYTHON_CURRENT)
@@ -122,12 +123,21 @@ class Main981419InventoryTests(unittest.TestCase):
             changed_raw = raw.replace(literal.encode(), altered.encode())
             changed_prior = prior.replace(literal.encode(), altered.encode())
             self.assertNotEqual(changed_raw, raw)
+            current_input = newest.source_before(path, raw, 'upstream_control')
+            changed_input = current_input.replace(literal.encode(), altered.encode())
+            upstream = {}
+            if path in newest.DATA['projections']:
+                row = copy.deepcopy(newest.DATA['projections'][path])
+                row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()
+                row['previous_sha256'] = hashlib.sha256(changed_input).hexdigest()
+                upstream[path] = row
             projection = copy.deepcopy(current.DATA['projections'][path])
-            projection['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()
+            projection['current_sha256'] = hashlib.sha256(changed_input).hexdigest()
             projection['previous_sha256'] = hashlib.sha256(changed_prior).hexdigest()
             def changed(candidate):
                 return changed_raw if candidate == target else read(candidate)
-            with patch.dict(current.DATA['projections'], {path: projection}):
+            with patch.dict(newest.DATA['projections'], upstream), \
+                 patch.dict(current.DATA['projections'], {path: projection}):
                 # This positive join fails if an upstream gate still masks the
                 # intended declaration stimulus or if its edits erase it.
                 self.assertEqual(current.source_before(path, changed_raw,
