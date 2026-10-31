@@ -15,13 +15,13 @@ def inspect_application(builder,private,pin,binary,run,state,original,app_units)
     objdump=pin(shutil.which('objdump',path=ENV['PATH']))
     _,out,err=run('app-objdump-version',[objdump,'--version'],env=builder.environment);need(out and not err,'actual app disassembler identity')
     _,out,err=run('app-symbols',[builder.tools['nm'],'-S','--defined-only',original],profile='inspect',env=builder.environment)
-    need(not err,'actual emitted helper symbols');symbols={}
-    for name in ('main','copy','same','ua_data_pattern','ua_stack_pattern'):
+    need(not err,'actual emitted helper symbols');symbols={};bodies={}
+    for name in ('main','collect','copy','same','ua_data_pattern','ua_stack_pattern'):
         found=[line.split()for line in out.decode().splitlines()if line.split()[-1:]==[name]]
-        need(len(found)==1 and len(found[0])==4 and found[0][2]=='T','one complete actual app text symbol')
+        need(len(found)==1 and len(found[0])==4 and found[0][2]==('t'if name=='collect'else'T'),'one complete actual app text symbol')
         address,size=int(found[0][0],16),int(found[0][1],16)
         need(size>0 and sum(p[0]==1 and p[1]==5 and p[3]<=address<address+size<=p[3]+p[5]for p in segments)==1,'whole symbol in exact actual RX segment')
-        if name!='main':need(0x200001000<=address<address+size<=0x200002000,'actual high full-range helper body')
+        if name not in ('main','collect'):need(0x200001000<=address<address+size<=0x200002000,'actual high full-range helper body')
         symbols[name]=dict(address=address,bytes=size)
         _,assembly,err=run('app-body-'+name,[objdump,'-d','-w','-M','att','--start-address='+hex(address),'--stop-address='+hex(address+size),original],profile='inspect',env=builder.environment)
         need(assembly and not err and ('<'+name+'>:').encode()in assembly,'complete emitted helper/caller inspection')
@@ -36,10 +36,14 @@ def inspect_application(builder,private,pin,binary,run,state,original,app_units)
         offset=segment[2]+address-segment[3]
         need(cursor==address+size and b''.join(emitted)==original.read_bytes()[offset:offset+size],
              'complete actual nm-sized body bytes equal the retained ELF range')
-        if name=='main':main_assembly=assembly.decode()
-    for name in ('copy','same','ua_data_pattern','ua_stack_pattern'):
-        need(re.search(r'\bmovabsq?\s+\$0x'+format(symbols[name]['address'],'x')+r',',main_assembly)is not None,
-             'actual main materializes each full-width high helper address without truncated relocation')
+        bodies[name]=assembly.decode()
+    # This fixture keeps collect out of line. Bind its complete body and the
+    # main-to-collect edge as well as every helper's actual full-width caller.
+    callers={'copy':'main','same':'collect','ua_data_pattern':'main','ua_stack_pattern':'main','collect':'main'}
+    for name,caller in callers.items():
+        need(re.search(r'\bmovabsq?\s+\$0x'+format(symbols[name]['address'],'x')+r',',bodies[caller])is not None,
+             'actual '+caller+' materializes full-width '+name+' address without truncated relocation')
+    state['helper_callers']=callers
     copy_oracle(builder,private,pin,binary,run,state,original,symbols['copy'],app_units)
     state.update(status='passed',artifact=fact(original),symbols=symbols);return original
 
