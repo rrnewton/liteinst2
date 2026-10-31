@@ -23,8 +23,10 @@ pub use call_pair::{
 mod cfg;
 mod normal;
 pub use normal::{LoadedNormalLeaf, NormalLeafContract};
+mod module_caller;
 mod normal_leaf_set;
 mod normal_module;
+pub use module_caller::LoadedNormalModuleCaller;
 pub use normal_leaf_set::LoadedNormalLeafSet;
 #[cfg(test)]
 pub(in crate::frontend_native) use normal_module::admit_for_planner_test;

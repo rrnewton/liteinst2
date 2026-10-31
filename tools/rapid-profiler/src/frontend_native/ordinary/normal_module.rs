@@ -144,6 +144,9 @@ impl LoadedNormalModule {
         loaded.verify_original()?;
         Ok(loaded)
     }
+    pub(in crate::frontend_native) fn has_sealed_source(&self) -> bool {
+        matches!(self.owner.source, super::SourceBacking::SealedCopy)
+    }
     pub fn functions(&self) -> &[NormalModuleFunction; 2] {
         &self.functions
     }

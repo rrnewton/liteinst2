@@ -120,7 +120,9 @@ pub use module::ordinary::{
 };
 /// Separate ordinary-caller admission without a per-call library gate.
 pub use module::ordinary::{LoadedNormalLeaf, NormalLeafContract};
-pub use module::ordinary::{LoadedNormalModule, NormalModuleContract, NormalModuleFunction};
+pub use module::ordinary::{
+    LoadedNormalModule, LoadedNormalModuleCaller, NormalModuleContract, NormalModuleFunction,
+};
 pub use module::ordinary::{LoadedTwoCallerNormalLeaf, TwoCallerNormalLeafContract};
 
 /// Closed two-function admission only; execution awaits its separate tree profile.
@@ -135,9 +137,10 @@ pub use always_on::normal::{
     NormalLeafSetAccuracyThread, NormalLeafSetBatch, NormalLeafSetClient,
     NormalLeafSetHistoryBatch, NormalLeafSetHistoryStream, NormalLeafSetHistoryWindow,
     NormalLeafSetSessionController, NormalLeafSetThread, NormalModuleBatch, NormalModuleClient,
-    NormalModuleController, NormalModuleHistoryBatch, NormalModuleHistoryStream,
-    NormalModuleHistoryWindow, NormalModuleRecord, NormalModuleSessionController,
-    NormalModuleThread, NormalRecord, NormalThread, NormalTotals, PreparedNormalController,
+    NormalModuleClose, NormalModuleCloseState, NormalModuleController, NormalModuleHistoryBatch,
+    NormalModuleHistoryStream, NormalModuleHistoryWindow, NormalModuleInputs, NormalModuleRecord,
+    NormalModuleSessionController, NormalModuleThread, NormalRecord, NormalThread, NormalTotals,
+    OwnedNormalModuleResult, OwnedNormalModuleThread, PreparedNormalController,
     PreparedNormalLeafSetSessionController, PreparedNormalModuleController,
     PreparedNormalModuleSessionController, PreparedTwoCallerNormalController,
 };

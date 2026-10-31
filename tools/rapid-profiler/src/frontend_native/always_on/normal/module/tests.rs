@@ -685,3 +685,94 @@ fn module_role_metadata_and_old_handle_checks_never_alias_functions() {
     assert!(!handle.matches_for(&f.state, true));
     handle.active = false; // Metadata handle only; do not poison unrelated test TLS.
 }
+
+#[test]
+fn owned_batch_census_requires_four_real_observations_in_semantic_order() {
+    for order in [[0, 1], [1, 0]] {
+        let mut f = Fixture::new(1);
+        let selected = order.map(|i| f.state.selection(i).unwrap());
+        let before = owned::drained(&f.state).unwrap();
+        for i in [order[0], order[1], order[0], order[1]] {
+            f.call(i);
+        }
+        let words = [WORD + 8, WORD + 16, WORD + 24, WORD + 32];
+        assert_eq!(
+            (
+                f.state.totals.entered,
+                f.state.totals.ret_observed,
+                f.state.totals.confirmed
+            ),
+            (4, 4, 3)
+        );
+        owned::returned(&f.state, before, selected, words).unwrap();
+        assert!(owned::drained(&f.state).is_err());
+        let old = snapshot(&f.state);
+        assert!(owned::returned(&f.state, before, [selected[1], selected[0]], words).is_err());
+        for i in 0..4 {
+            let mut wrong = words;
+            wrong[i] += 1;
+            assert!(owned::returned(&f.state, before, selected, wrong).is_err());
+        }
+        assert_eq!(snapshot(&f.state), old, "failed census consumes no receipt");
+        let batch = f.transfer();
+        assert_eq!(
+            batch.totals().1,
+            NormalTotals {
+                entered: 4,
+                ret_observed: 4,
+                confirmed: 4,
+                completed: 2,
+                unsampled: 2,
+            }
+        );
+        assert_eq!(
+            batch
+                .records()
+                .iter()
+                .map(|r| r.function)
+                .collect::<Vec<_>>(),
+            [
+                selected[0].function,
+                selected[1].function,
+                selected[0].function,
+                selected[1].function
+            ]
+        );
+        assert_eq!(
+            batch.records()[3].record.acknowledgement,
+            NormalAcknowledgement::CallerCheckpoint
+        );
+        owned::drained(&f.state).unwrap();
+    }
+}
+
+#[test]
+fn owned_batch_rejects_missing_return_extra_call_and_nonempty_drain_without_consuming() {
+    let mut f = Fixture::new(16);
+    let before = owned::drained(&f.state).unwrap();
+    let selected = [f.state.selection(0).unwrap(), f.state.selection(1).unwrap()];
+    let words = [WORD + 8, WORD + 16, WORD + 24, WORD + 32];
+    for i in [0, 1, 0] {
+        f.call(i);
+    }
+    f.enter(1);
+    let old = snapshot(&f.state);
+    assert!(owned::returned(&f.state, before, selected, words).is_err());
+    assert_eq!(snapshot(&f.state), old);
+    f.observe(1);
+    owned::returned(&f.state, before, selected, words).unwrap();
+    f.call(0);
+    let old = snapshot(&f.state);
+    assert!(owned::returned(&f.state, before, selected, words).is_err());
+    assert_eq!(snapshot(&f.state), old);
+    f.transfer();
+    owned::drained(&f.state).unwrap();
+    // Equal totals alone do not prove a drained journal or healthy attachment.
+    f.state.journal.word(4, 1);
+    assert!(balanced(f.state.totals));
+    assert!(owned::drained(&f.state).is_err());
+    f.state.journal.word(4, 0);
+    owned::drained(&f.state).unwrap();
+    f.state.fail(error(Cause::Identity));
+    assert!(owned::drained(&f.state).is_err());
+}

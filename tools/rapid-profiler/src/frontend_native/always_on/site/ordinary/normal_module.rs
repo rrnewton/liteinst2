@@ -55,8 +55,13 @@ pub(in crate::frontend_native::always_on) struct ModuleSite {
     identity: CodeIdentity,
     functions: [NormalModuleFunctionSite; 2],
     roles: Vec<ModuleRole>,
+    // Set only from the actual retained loader during preparation.
+    sealed_source: bool,
 }
 impl ModuleSite {
+    pub(in crate::frontend_native::always_on) fn has_sealed_source(&self) -> bool {
+        self.sealed_source
+    }
     pub(in crate::frontend_native::always_on) fn identity(&self) -> CodeIdentity {
         self.identity
     }
@@ -144,6 +149,7 @@ impl ModuleSite {
             identity,
             functions,
             roles,
+            sealed_source: false,
         })
     }
     pub(in crate::frontend_native::always_on) fn control_for(
@@ -227,13 +233,16 @@ impl NormalModuleSitePreparation {
             certificate: f.certificate(),
             source_range: f.source_range(),
         });
-        let (planned, site) = prepare_module(
+        let (planned, mut site) = prepare_module(
             functions,
             owner.source_pages(),
             identity,
             policies.map(NormalModulePreparationPolicy::internal),
         )?;
         owner.verify_original().map_err(SiteError::Source)?;
+        Arc::get_mut(&mut site)
+            .ok_or(SiteError::Correspondence)?
+            .sealed_source = owner.has_sealed_source();
         Ok(Self {
             owner,
             planned,
@@ -344,6 +353,7 @@ fn prepare_module(
             identity,
             functions,
             roles,
+            sealed_source: false,
         }),
     ))
 }

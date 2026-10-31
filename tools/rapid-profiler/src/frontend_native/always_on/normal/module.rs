@@ -2,6 +2,11 @@
 //! This finite facade grants neither a gate nor nested/concurrent execution.
 use super::*;
 use liteinst2::contracts::CodeIdentity;
+mod owned;
+pub use owned::{
+    NormalModuleClose, NormalModuleCloseState, NormalModuleInputs, OwnedNormalModuleResult,
+    OwnedNormalModuleThread,
+};
 mod session;
 mod session_history;
 pub use session::{NormalModuleSessionController, PreparedNormalModuleSessionController};

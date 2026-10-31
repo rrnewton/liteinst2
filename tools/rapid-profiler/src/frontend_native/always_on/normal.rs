@@ -25,10 +25,11 @@ pub use leaf_set::{
 };
 mod two_callers;
 pub use module::{
-    NormalModuleBatch, NormalModuleClient, NormalModuleController, NormalModuleHistoryBatch,
-    NormalModuleHistoryStream, NormalModuleHistoryWindow, NormalModuleRecord,
-    NormalModuleSessionController, NormalModuleThread, PreparedNormalModuleController,
-    PreparedNormalModuleSessionController,
+    NormalModuleBatch, NormalModuleClient, NormalModuleClose, NormalModuleCloseState,
+    NormalModuleController, NormalModuleHistoryBatch, NormalModuleHistoryStream,
+    NormalModuleHistoryWindow, NormalModuleInputs, NormalModuleRecord,
+    NormalModuleSessionController, NormalModuleThread, OwnedNormalModuleResult,
+    OwnedNormalModuleThread, PreparedNormalModuleController, PreparedNormalModuleSessionController,
 };
 pub use two_callers::PreparedTwoCallerNormalController;
 
