@@ -386,6 +386,7 @@ def main():
             'counts','terminal','subentry_counts','target_outcome')}
         summary.update(hardware=hw,private_receipt=fact(receipt),private_receipt_file=str(receipt.relative_to(ROOT)),
             original=r.get('original'),carrier=r.get('carrier'),bridge=r.get('bridge'),archive=r.get('archive'),
+            reference_interpreter=r.get('application_build',{}).get('interpreter'),
             policy_sha256=r.get('policy_sha256'),decoder_archive=r.get('decoder_archive'),
             target_exit=target.get('exit'),target_process_ns=target.get('process_ns'),
             target_wrapper_interval_ns=target.get('duration_ns'),
