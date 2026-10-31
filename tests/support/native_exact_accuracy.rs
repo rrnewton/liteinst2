@@ -304,10 +304,7 @@ impl Ready {
             assert_eq!(code, BODY);
             assert_eq!(
                 heads,
-                HEADS
-                    .iter()
-                    .map(|&at| f.entry + at)
-                    .collect::<Vec<_>>()
+                HEADS.iter().map(|&at| f.entry + at).collect::<Vec<_>>()
             );
             assert_eq!(
                 returns,

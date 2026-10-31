@@ -1,4 +1,4 @@
-// Per-fixture address-space ownership for the short-neighbor oracle.
+// Per-fixture address-space ownership for the neighbor oracles.
 // Source and hand-emitted calibration pages never leave their reservation.
 // The unchanged live planner requires vacant image windows, so those explicit
 // windows are released before planning. A low-canonical namespace keeps them
