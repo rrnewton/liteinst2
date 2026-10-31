@@ -174,3 +174,50 @@ class Main34c47InventoryTests(unittest.TestCase):
                 with patch.object(Path, 'read_bytes', changed):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main34c47_source_inventory_differs$'):
                         current.require_sources()
+
+        # Coordinate sources add no recorder identity or Rust instance. The
+        # actual current blobs must peel exactly to the retained23d6 snapshot.
+        coordinate_changed = {
+            'evaluation/ordinary-selected-session/accuracy_functional.py',
+            'evaluation/ordinary-selected-session/accuracy_functional_owner.py',
+            'evaluation/ordinary-selected-session/accuracy_produce.py',
+        }
+        coordinate_added = {
+            'evaluation/ordinary-selected-session/accuracy_coordinates.py',
+            'evaluation/ordinary-selected-session/coordinate_controls.py',
+            'evaluation/ordinary-selected-session/COORDINATES.md',
+        }
+        self.assertEqual(set(current.DATA['source_projections_bf8b']), coordinate_changed)
+        self.assertTrue(coordinate_added <= set(current.DATA['sources']))
+        for path, row in current.DATA['source_projections_bf8b'].items():
+            raw = read(current.ROOT / path)
+            prior = current.source_before_bf8b(path, raw, 'coordinate_inverse_control')
+            self.assertEqual(hashlib.sha256(raw).hexdigest(), current.DATA['sources'][path])
+            self.assertEqual(hashlib.sha256(prior).hexdigest(), row['previous_sha256'])
+            self.assertEqual(row['previous_sha256'], current.DATA['projections'][path]['current_sha256'])
+            self.assertEqual(current.source_before(path, raw, 'coordinate_whole_history'),
+                current.inverse(path, prior, current.DATA['projections'], 'coordinate_whole_history'))
+            for wrong in (raw+b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^coordinate_inverse_control$'):
+                    current.source_before_bf8b(path, wrong, 'coordinate_inverse_control')
+            broken = copy.deepcopy(row); broken['edits'][0][2] += '\n'
+            with patch.dict(current.DATA['source_projections_bf8b'], {path: broken}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^coordinate_bad_inverse_control$'):
+                    current.source_before_bf8b(path, raw, 'coordinate_bad_inverse_control')
+            altered = raw+b'\n'; repaired = copy.deepcopy(row)
+            repaired['current_sha256'] = hashlib.sha256(altered).hexdigest()
+            with patch.dict(current.DATA['source_projections_bf8b'], {path: repaired}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^coordinate_prior_hash_control$'):
+                    current.source_before_bf8b(path, altered, 'coordinate_prior_hash_control')
+        for path in coordinate_changed | coordinate_added:
+            target = current.ROOT / path; raw = read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate == target:
+                        if missing:
+                            raise FileNotFoundError(path)
+                        return raw+b'\n'
+                    return read(candidate)
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main34c47_source_inventory_differs$'):
+                        current.require_sources()

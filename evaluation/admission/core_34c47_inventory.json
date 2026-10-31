@@ -1502,6 +1502,8 @@
   "python_previous_sha256": "0d3d6f32a14f7d7b96639439ad0f7387d68428687f7e584975ddc16f0647eed4",
   "schema": 1,
   "source_overlay_base_revision": "34c47f5b8bdbeb5a7c73db067cf5b4aee36fc37f",
+  "source_overlay_bf8b_previous_revision": "23d6bad2f021ce361a24dbf0b2ef7df6931f131d",
+  "source_overlay_bf8b_revision": "bf8b9622cb989d2196a9a6e25164dabd52ac53af",
   "source_overlay_revision": "23d6bad2f021ce361a24dbf0b2ef7df6931f131d",
   "source_projections_23d6": {
     "tools/rapid-profiler/ordinary-interval/normal/csv.rs": {
@@ -1548,6 +1550,451 @@
       "previous_sha256": "ee2d927abbc7cada156743a11c1fb9893a8eff948bdf40205177fecad631724f"
     }
   },
+  "source_projections_bf8b": {
+    "evaluation/ordinary-selected-session/accuracy_functional.py": {
+      "current_sha256": "7dda267f2de970f2ab107c29e6375ae6884cf4beeeebbaa4b730f0576271dcaf",
+      "edits": [
+        [
+          659,
+          725,
+          ""
+        ],
+        [
+          1099,
+          1254,
+          "def profile(epoch_phase, prepared=False):\n"
+        ],
+        [
+          1434,
+          1591,
+          ""
+        ],
+        [
+          1696,
+          1927,
+          "def chosen_policy(checker, producer, epoch_phase, prepared=False):\n    profile(epoch_phase, prepared)\n"
+        ],
+        [
+          2034,
+          2213,
+          "def prepare_phase(epoch_phase, prepared=False):\n    profile(epoch_phase, prepared)\n"
+        ],
+        [
+          2333,
+          2526,
+          "def preparation_status(epoch_phase, prepared=False):\n    profile(epoch_phase, prepared)\n"
+        ],
+        [
+          3287,
+          3465,
+          "def phase_commands(directory, tools, producer):\n"
+        ],
+        [
+          3509,
+          3526,
+          "    return (\n"
+        ],
+        [
+          4439,
+          4861,
+          ""
+        ],
+        [
+          4863,
+          5247,
+          "def check_truth(run, driver, recipe, directory, checker, producer):\n    files, manifest = checker.truth.artifacts(producer.MASTER,'calibration',1,'late_expensive')\n    expected = dict(files, **{'manifest.json':checker.truth.canonical(manifest)})\n"
+        ],
+        [
+          5601,
+          5742,
+          "def geometry_facts(run, driver, recipe, directory, build, fixture, checker, producer, *, epoch_phase=None, prepared=False):\n"
+        ],
+        [
+          7636,
+          7721,
+          "    materials = check_truth(run,driver,recipe,directory,checker,producer)\n"
+        ],
+        [
+          8069,
+          8255,
+          "        caller=dict(extent=20,continuation=15),body_bytes=producer.BODY,abi=producer.ABI,policy=chosen_policy(checker,producer,epoch_phase,prepared),cpus=tuple(run.cpus[:2]))\n"
+        ],
+        [
+          8285,
+          8423,
+          "    facts = dict(revision=run.a.revision,profile=profile(epoch_phase, prepared),build=reference(run.a.build,run.a.build_sha),\n"
+        ],
+        [
+          9099,
+          9294,
+          "        policy=chosen_policy(checker,producer,epoch_phase,prepared), **qualifications())\n"
+        ],
+        [
+          9406,
+          9615,
+          "def prepare(run, driver, recipe, builder, result, build, fixture, checker, producer, *, epoch_phase=None, prepared=False):\n    commands = phase_commands(run.raw,run.tools,producer)\n"
+        ],
+        [
+          9649,
+          9711,
+          "    for name, argv in zip(STAGES, commands):\n"
+        ],
+        [
+          9854,
+          10030,
+          "        assert err == b''\n"
+        ],
+        [
+          10058,
+          10149,
+          "            materials = check_truth(run,driver,recipe,run.raw,checker,producer)\n"
+        ],
+        [
+          10689,
+          10849,
+          "    result['facts'] = geometry_facts(run,driver,recipe,run.raw,build,fixture,checker,producer,epoch_phase=epoch_phase, prepared=prepared)\n"
+        ],
+        [
+          10911,
+          10987,
+          "    result['status'] = preparation_status(epoch_phase, prepared)\n"
+        ],
+        [
+          10989,
+          11138,
+          "def read_preparation(run, driver, recipe, adapter, result, build, fixture, checker, producer, *, epoch_phase=None, prepared=False):\n"
+        ],
+        [
+          11272,
+          11546,
+          "    assert previous['status'] == preparation_status(epoch_phase, prepared) and previous['profile'] == profile(epoch_phase, prepared)\n    assert previous['phase'] == prepare_phase(epoch_phase, prepared) and previous['revision'] == a.revision\n"
+        ],
+        [
+          11635,
+          11842,
+          "    assert previous['source_unchanged'] is True and previous['functional'] == initial_row(epoch_phase, prepared)\n"
+        ],
+        [
+          13356,
+          13497,
+          "    expected = {k:str(getattr(a,k.replace('-','_'))) for k in adapter.COMMON+adapter.extras(prepare_phase(epoch_phase, prepared))\n"
+        ],
+        [
+          13542,
+          13667,
+          "    expected.update(phase=prepare_phase(epoch_phase, prepared),owner=str(a.preparation_owner),raw=str(directory))\n"
+        ],
+        [
+          13814,
+          13952,
+          "    assert outer['public_owner'] == dict(schema=adapter.SCHEMA,phase=prepare_phase(epoch_phase, prepared),revision=a.revision,\n"
+        ],
+        [
+          14614,
+          14685,
+          "    commands = phase_commands(directory,run.tools,producer)\n"
+        ],
+        [
+          14760,
+          15099,
+          "    assert [r['name'] for r in previous['preparation_stages']] == list(STAGES)\n    assert [r['name'] for r in previous['attempted_stages']] == [n+'-owner' for n in STAGES]\n    for name, argv, row, owned in zip(STAGES,commands,previous['preparation_stages'],previous['attempted_stages']):\n"
+        ],
+        [
+          15374,
+          15657,
+          "        assert code == 0 and err == b'' and owned == dict(name=name+'-owner',status='CLOSED_EXIT_0',closed=row['closed'])\n"
+        ],
+        [
+          16722,
+          16874,
+          "    facts = geometry_facts(run,driver,recipe,directory,build,fixture,checker,producer,epoch_phase=epoch_phase, prepared=prepared)\n"
+        ],
+        [
+          17066,
+          17182,
+          "def accept_geometry(value, facts, preparation_sha, revision, *, epoch_phase=None, prepared=False):\n"
+        ],
+        [
+          17308,
+          17527,
+          "    assert value['kind'] == ('selected-accuracy-prepared-phase-functional-geometry-acceptance-v1' if prepared else\n"
+        ],
+        [
+          17771,
+          18030,
+          "    assert value['scope'] == profile(epoch_phase, prepared) and value['revision'] == revision and value['preparation_sha256'] == preparation_sha\n"
+        ],
+        [
+          18471,
+          18571,
+          "def input_plan(run, recipe, facts, producer, *, epoch_phase=None, prepared=False):\n"
+        ],
+        [
+          19087,
+          19281,
+          "    plan = dict(profile=profile(epoch_phase, prepared),revision=run.a.revision,attempt=1,cpus=run.cpus,policy=dict(producer.POLICY) if epoch_phase is None else dict(facts['policy']),\n"
+        ],
+        [
+          20476,
+          20852,
+          ""
+        ],
+        [
+          22110,
+          22235,
+          "def functional(run, driver, recipe, result, facts, checker, producer, *, epoch_phase=None, prepared=False):\n"
+        ],
+        [
+          22313,
+          22883,
+          "    accept_geometry(accepted,facts,run.a.preparation_sha,run.a.revision,epoch_phase=epoch_phase, prepared=prepared)\n    plan = input_plan(run,recipe,facts,producer,epoch_phase=epoch_phase, prepared=prepared)\n    args = producer.prepared_phase_arguments(plan,checker) if prepared else (producer.arguments(plan,checker) if epoch_phase is None else producer.phase_arguments(plan,checker))\n"
+        ],
+        [
+          23169,
+          23241,
+          "        argv += ['--profile',profile(epoch_phase, prepared)]\n"
+        ],
+        [
+          24469,
+          24698,
+          "    assert (run_result['profile'],run_result['revision'],run_result['attempt']) == (profile(epoch_phase, prepared),run.a.revision,1)\n"
+        ],
+        [
+          26961,
+          27059,
+          ""
+        ],
+        [
+          27061,
+          27302,
+          "def initial_row(epoch_phase=None, prepared=False):\n    profile(epoch_phase, prepared)\n"
+        ],
+        [
+          27565,
+          27781,
+          "    assert result['profile'] in (PROFILE,PHASE_PROFILE,PREPARED_PHASE_PROFILE)\n    return dict(status=result['status'],profile=result['profile'],phase=result['phase'],revision=result['revision'],\n"
+        ],
+        [
+          27993,
+          28468,
+          ""
+        ],
+        [
+          28681,
+          28914,
+          "    parser.add_argument('--phase',choices=('accuracy-prepare','accuracy-functional','phase-prepare','phase-functional','prepared-phase-prepare','prepared-phase-functional'),required=True)\n"
+        ],
+        [
+          29636,
+          29799,
+          ""
+        ],
+        [
+          29827,
+          30186,
+          "    prepared = a.phase in ('prepared-phase-prepare','prepared-phase-functional')\n"
+        ],
+        [
+          30439,
+          30858,
+          "    assert all(x is not None for x in extras) if a.phase in ('accuracy-functional','phase-functional','prepared-phase-functional') else all(x is None for x in extras)\n    for name in ('accuracy_functional.py','accuracy_functional_owner.py','build.py'):\n"
+        ],
+        [
+          31119,
+          31266,
+          ""
+        ],
+        [
+          31486,
+          31551,
+          ""
+        ],
+        [
+          32019,
+          32180,
+          "    result = dict(status='FAILED',profile=profile(epoch_phase, prepared),phase=a.phase,revision=a.revision,arguments=arguments,invocation=invocation,\n"
+        ],
+        [
+          32400,
+          32542,
+          "        functional=initial_row(epoch_phase, prepared),preparation_stages=[],environment=run.env,hardware=a.hardware,cpus=run.cpus,\n"
+        ],
+        [
+          32661,
+          32734,
+          ""
+        ],
+        [
+          34272,
+          34493,
+          "        if a.phase == prepare_phase(epoch_phase, prepared):\n            prepare(run,driver,recipe,builder,result,build,fixture,checker,producer,epoch_phase=epoch_phase, prepared=prepared)\n"
+        ],
+        [
+          34507,
+          34811,
+          "            facts = read_preparation(run,driver,recipe,adapter,result,build,fixture,checker,producer,epoch_phase=epoch_phase, prepared=prepared)\n            functional(run,driver,recipe,result,facts,checker,producer,epoch_phase=epoch_phase, prepared=prepared)\n"
+        ],
+        [
+          35966,
+          36321,
+          "    return 0 if result['status'] in ('ACCURACY_PREPARATION_PASS','ACCURACY_FUNCTIONAL_STRUCTURAL_PASS','PHASE_PREPARATION_PASS','PHASE_FUNCTIONAL_STRUCTURAL_PASS','PREPARED_PHASE_PREPARATION_PASS','PREPARED_PHASE_FUNCTIONAL_STRUCTURAL_PASS') and time.monotonic() < run.deadline else 1\n"
+        ]
+      ],
+      "previous_sha256": "3a9d0dbf5b2cf1f89ce5dad176d36f0874f3a12d10192ba7280af5d75e920284"
+    },
+    "evaluation/ordinary-selected-session/accuracy_functional_owner.py": {
+      "current_sha256": "8594a3e9f10e5304357db0cd02ff44f6de9d50c39d1a35d3377f0218a5f7b68d",
+      "edits": [
+        [
+          1185,
+          1460,
+          ""
+        ],
+        [
+          1518,
+          1861,
+          ""
+        ],
+        [
+          1880,
+          1955,
+          ""
+        ],
+        [
+          2777,
+          2885,
+          ""
+        ],
+        [
+          2906,
+          2995,
+          ""
+        ],
+        [
+          3694,
+          3841,
+          "    parser.add_argument('--phase', choices=tuple(EXTRAS)+tuple(PHASE_EXTRAS)+tuple(PREPARED_PHASE_EXTRAS), required=True)\n"
+        ],
+        [
+          3923,
+          4095,
+          "    option_names = tuple(dict.fromkeys(k for row in (*EXTRAS.values(), *PHASE_EXTRAS.values(), *PREPARED_PHASE_EXTRAS.values()) for k in row))\n"
+        ],
+        [
+          4406,
+          4830,
+          ""
+        ],
+        [
+          5194,
+          5306,
+          ""
+        ]
+      ],
+      "previous_sha256": "6a058a32ab13167dc78ca1313c38c99b0281334f275a4cb638055665c589eeb5"
+    },
+    "evaluation/ordinary-selected-session/accuracy_produce.py": {
+      "current_sha256": "982a6c1fb88758db0ea1a6eac9a3014b6ae750a1c59749145ac71fe5b9f0b3ad",
+      "edits": [
+        [
+          598,
+          664,
+          ""
+        ],
+        [
+          2752,
+          3157,
+          ""
+        ],
+        [
+          4233,
+          4313,
+          "def _arguments(plan, checker, epoch_phase, *, prepared=False):\n"
+        ],
+        [
+          4393,
+          4934,
+          "    policy = POLICY if epoch_phase is None else phase_policy(checker, epoch_phase)\n    profile = PREPARED_PHASE_PROFILE if prepared else (PROFILE if epoch_phase is None else PHASE_PROFILE)\n"
+        ],
+        [
+          6100,
+          6262,
+          "    gate.accept_geometry(geometry, plan['facts'], plan['preparation_sha256'], plan['revision'], epoch_phase=epoch_phase, prepared=prepared)\n"
+        ],
+        [
+          6373,
+          6475,
+          ""
+        ],
+        [
+          7651,
+          8241,
+          "    assert (manifest['master'], manifest['phase'], manifest['trial'], manifest['workload']) == (MASTER, 'calibration', 1, 'late_expensive')\n    assert len(records) == 2048 and tuple(map(len, records)) == (1,) * 1024 + (64,) * 1024\n    assert len(checked['input_bytes']) == 68608 and plan['input_sha256'] == sha(checked['input_bytes'])\n"
+        ],
+        [
+          9224,
+          9325,
+          ""
+        ],
+        [
+          9378,
+          9434,
+          "def ready_row(raw, pid, cpus, checker):\n"
+        ],
+        [
+          9656,
+          9950,
+          "    assert values[:9] == [10, 520, 10, 2, 64, 2048, 1, 1, checker.shared.INSTALL]\n"
+        ],
+        [
+          10825,
+          11187,
+          "def write_input(fd, outgoing, sent, writes, clock=time.monotonic_ns, writer=os.write):\n    assert outgoing and sent >= 0 and len(writes) < 68608\n"
+        ],
+        [
+          12049,
+          12623,
+          "def _exchange(plan, checked, checker, *, phase_profile, prepared=False):\n"
+        ],
+        [
+          13174,
+          13319,
+          ""
+        ],
+        [
+          14180,
+          14481,
+          "                    sent = write_input(child.stdin.fileno(), outgoing, sent, result['writes'])\n"
+        ],
+        [
+          15813,
+          16096,
+          "                            ready_row(bytes(raw), child.pid, plan['cpus'], checker)\n"
+        ],
+        [
+          18839,
+          18971,
+          "    parser.add_argument('--profile', choices=(PROFILE, PHASE_PROFILE, PREPARED_PHASE_PROFILE), default=PROFILE)\n"
+        ],
+        [
+          19656,
+          19986,
+          "    prepared = args.profile == PREPARED_PHASE_PROFILE\n    phase_profile = args.profile in (PHASE_PROFILE, PREPARED_PHASE_PROFILE)\n"
+        ],
+        [
+          20335,
+          20547,
+          "    checked = prepared_phase_arguments(plan, checker) if prepared else (phase_arguments(plan, checker) if phase_profile else arguments(plan, checker))\n"
+        ],
+        [
+          20634,
+          20838,
+          "    result, out, err, overflow, deadline = (prepared_phase_exchange if prepared else (phase_exchange if phase_profile else exchange))(plan, checked, checker)\n"
+        ]
+      ],
+      "previous_sha256": "46876f306c8273b479bfe39b2f7aeb40de5c33396eea92bf7f37be5c5cfb4f91"
+    }
+  },
   "sources": {
     "A3-OFFLINE.md": "17c5899d51f3c7d5fea7249a3497740d51ea60b1cf5e6fbebf8bc1009759af5d",
     "Cargo.lock": "4aad718e815f59f813573d5f1302ea87c35b178a949bd5159882d5ee1301d89a",
@@ -1558,7 +2005,7 @@
     "evaluation/admission/recorder_parallel.py": "103916388007f513de7dea61a3661843237db17a1f804f42185e35cf5e7c106f",
     "evaluation/admission/test_main0fb574_inventory.py": "232d801637ccedd7d3b430405d28cef19457e5cd36297e7411ef41e5bbdd3c19",
     "evaluation/admission/test_main20cbe_inventory.py": "bb8e28fc90657c735d89e0d71cea8fcca786d370bc03af80d3caa6b8b2be31f9",
-    "evaluation/admission/test_main34c47_inventory.py": "bef04a28507735772a6e3b59afbc8ea8e61edb347fd6dde44b192bb0189402b0",
+    "evaluation/admission/test_main34c47_inventory.py": "52f0bc76ab8b8d53c405f97b921627c0d58112deeca6b0d7dd2e0e33fb9bed70",
     "evaluation/admission/test_main367_inventory.py": "53f374c0eb27e75c855573676e0457ddb9b711e64c368059a4fe6915a27233a6",
     "evaluation/admission/test_main981419_inventory.py": "60f04946ce2ccc5561b2728ffda5e37d2690a4db80b9614d3926a6fb587d0f56",
     "evaluation/admission/test_mainacc247_inventory.py": "2ffd7c70824266d2f31fc0e79c78607465634ddc132f9a2d54920a3f7d868499",
@@ -1583,10 +2030,13 @@
     "evaluation/ordinary-leaf-set-session/output.py": "3d8b92c0a90caf5f6e31097af9521782fa583d7f6dfef8a55a318afc12662de8",
     "evaluation/ordinary-leaf-set-session/reproduce.py": "762313ac6180efa8901eeca66df3b4dd67290249f9a45b24fb1f5dd826e51eff",
     "evaluation/ordinary-leaf-set-session/runner_controls.py": "e80c2030688b57dec5d74e65e48c4203cf6bac537d2b78527b4766e763f1b4e4",
-    "evaluation/ordinary-selected-session/accuracy_functional.py": "3a9d0dbf5b2cf1f89ce5dad176d36f0874f3a12d10192ba7280af5d75e920284",
-    "evaluation/ordinary-selected-session/accuracy_functional_owner.py": "6a058a32ab13167dc78ca1313c38c99b0281334f275a4cb638055665c589eeb5",
-    "evaluation/ordinary-selected-session/accuracy_produce.py": "46876f306c8273b479bfe39b2f7aeb40de5c33396eea92bf7f37be5c5cfb4f91",
+    "evaluation/ordinary-selected-session/COORDINATES.md": "3bad5e8ab4b872bacfedc99cafb82ccdbd2c5e8174ce1d8d1e3b4e2e738fe3ec",
+    "evaluation/ordinary-selected-session/accuracy_coordinates.py": "322c36ed31616a6394e98d49ab185212f57fe5897566717f38780a3e8f681840",
+    "evaluation/ordinary-selected-session/accuracy_functional.py": "7dda267f2de970f2ab107c29e6375ae6884cf4beeeebbaa4b730f0576271dcaf",
+    "evaluation/ordinary-selected-session/accuracy_functional_owner.py": "8594a3e9f10e5304357db0cd02ff44f6de9d50c39d1a35d3377f0218a5f7b68d",
+    "evaluation/ordinary-selected-session/accuracy_produce.py": "982a6c1fb88758db0ea1a6eac9a3014b6ae750a1c59749145ac71fe5b9f0b3ad",
     "evaluation/ordinary-selected-session/build.py": "cf50f5e8d9fbf816dc3144c0fbc4f0fe75fae9d0789a17ce53b220683e3c4c88",
+    "evaluation/ordinary-selected-session/coordinate_controls.py": "bfc936816f51b8ecb4b89d609afd7441398b09f8513a6ca6b87ccf79d9771838",
     "evaluation/ordinary-selected-session/driver_controls.py": "e7f11ba1261ad7de5d91d6a8a2b7e4a9146fad97f1c38b2c8a2bf1debf882050",
     "evaluation/ordinary-selected-session/prepared_phase_functional_controls.py": "f75d6619dc25a55a6be6f748bdd575fbfdc54974dbefdefbc6f9be645b362127",
     "evaluation/ordinary-selected-session/reproduce.py": "dd357db7b22e234e74d655dd75ab157989aa70be8094b728482166b2cf271bd3",

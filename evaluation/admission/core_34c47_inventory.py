@@ -9,7 +9,7 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == 'd862392ec7a6e619a57b8e9cd2e760df7d2565aaa8e4ff0f71d487092d64749e',
+require(hashlib.sha256(RAW).hexdigest() == 'f5f50c2729f23589e3c62b5b99bbaefa9685a386ee8e7103d6dc91d464938770',
         'main34c47_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
@@ -40,11 +40,16 @@ def inverse(path, raw, rows, error):
     return raw
 
 
+def source_before_bf8b(path, raw, error):
+    return inverse(path, raw, DATA['source_projections_bf8b'], error)
+
+
 def source_before23d6(path, raw, error):
     return inverse(path, raw, DATA['source_projections_23d6'], error)
 
 
 def source_before(path, raw, error):
+    raw = source_before_bf8b(path, raw, error)
     raw = source_before23d6(path, raw, error)
     return inverse(path, raw, DATA['projections'], error)
 
@@ -59,11 +64,16 @@ def require_sources(error='main34c47_source_inventory_differs'):
             observed = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
+        raw = source_before_bf8b(path, observed, error)
+        if path in DATA['source_projections_bf8b']:
+            row = DATA['source_projections_bf8b'][path]
+            require(expected == row['current_sha256'], error)
+            expected = row['previous_sha256']
         if path in DATA['source_projections_23d6']:
             row = DATA['source_projections_23d6'][path]
             require(expected == row['current_sha256'], error)
             expected = row['previous_sha256']
-        raw = source_before23d6(path, observed, error)
+        raw = source_before23d6(path, raw, error)
         require(hashlib.sha256(raw).hexdigest() == expected, error)
         if path in DATA['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
