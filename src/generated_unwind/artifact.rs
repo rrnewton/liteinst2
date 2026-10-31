@@ -35,7 +35,7 @@ pub struct ArtifactSourceCertificate {
     bias_domain: u64,
     points: Vec<u64>,
     rows: Vec<parser::Rows>,
-    _records: Vec<OriginalArtifactCfi>,
+    records: Vec<OriginalArtifactCfi>,
 }
 
 impl ArtifactSourceCertificate {
@@ -96,7 +96,7 @@ impl ArtifactSourceCertificate {
             bias_domain,
             points,
             rows,
-            _records: records,
+            records,
         };
         for &point in &result.points {
             result.row(point)?;
@@ -164,7 +164,7 @@ pub struct PreparedArtifactUnwind {
     address: u64,
     bytes: Vec<u8>,
     fdes: Vec<(u64, u64, usize)>,
-    _source: Arc<ArtifactSourceCertificate>,
+    source: Arc<ArtifactSourceCertificate>,
 }
 
 impl PreparedArtifactUnwind {
@@ -277,7 +277,7 @@ impl PreparedArtifactUnwind {
             address,
             bytes,
             fdes,
-            _source: source,
+            source,
         })
     }
 
@@ -297,6 +297,13 @@ impl PreparedArtifactUnwind {
     /// planning; a carrier must authenticate them when embedding these bytes.
     pub const fn source_step(&self) -> &PatchPlan {
         &self.source_step
+    }
+    /// Exact original CIE/FDE copies retained by the source certificate.
+    /// A carrier must match their addresses and complete bytes to its preserved
+    /// original record stream. This byte check does not establish the separate
+    /// exact-point semantics required by `ArtifactSourceCertificate::certify`.
+    pub fn source_records(&self) -> &[OriginalArtifactCfi] {
+        &self.source.records
     }
     /// Exact source/image/hook/domain association, without runtime authority.
     pub fn matches_trace(&self, emission: &ArtifactFrameTrace) -> bool {

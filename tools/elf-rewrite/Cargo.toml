@@ -68,3 +68,10 @@ path = "examples/offline_router_sites.rs"
 required-features = ["offline-router"]
 test = true
 bench = false
+
+# Inspect the separately built ordinary-C fixture; never loads or executes it.
+[[example]]
+name = "indexed_dso_inspect"
+path = "examples/indexed_dso_inspect.rs"
+test = false
+bench = false
