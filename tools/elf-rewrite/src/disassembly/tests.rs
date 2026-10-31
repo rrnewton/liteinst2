@@ -1119,7 +1119,7 @@ fn pending_high_plan(
         scope: site.function,
         provenance: EntryProvenance::Declared("pending fixture".into()),
         completeness: site.completeness,
-        entries: site.heads.clone(),
+        entries: site.heads.as_ref().clone(),
         resumes: site.resumes.clone(),
     };
     let emission = ArtifactEmission::new(
@@ -1776,7 +1776,7 @@ fn pending_selected_guard_reads_actual_transactional_coverage_and_locks() {
         scope: site.function,
         provenance: EntryProvenance::Declared("pending preflight fixture".into()),
         completeness: site.completeness,
-        entries: site.heads.clone(),
+        entries: site.heads.as_ref().clone(),
         resumes: site.resumes.clone(),
     };
     let emission = ArtifactEmission::new(

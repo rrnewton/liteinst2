@@ -68,6 +68,7 @@ enum Mode {
     ShortOnly,
     ShortT3Ownership,
     ShortT3Pending,
+    Whole4096,
 }
 
 fn arguments_with_ownership(args: &[String]) -> Result<(&[String], Mode), String> {
@@ -112,8 +113,30 @@ fn arguments_with_pending(args: &[String]) -> Result<(&[String], Mode), String> 
     }
 }
 
+// Only the new complete leading form selects this profile. A seven-argument
+// invocation still treats every positional token as a literal filename/digest.
+fn arguments_with_whole(args: &[String]) -> Result<(&[String], Mode), String> {
+    if args.len() == 8 && args[1] == "--whole-program-4096" {
+        if args[2..].iter().any(|s| {
+            matches!(
+                s.as_str(),
+                "--whole-program-4096"
+                    | "--short-neighbors-only"
+                    | "--short-neighbors-owned"
+                    | "--short-neighbors-pending"
+            )
+        }) {
+            return Err("disassembly_sites --whole-program-4096 ORIGINAL LEDGER LEDGER_SHA256 POLICY POLICY_SHA256 NEW_DIRECTORY".into());
+        }
+        Ok((&args[2..], Mode::Whole4096))
+    } else {
+        arguments_with_pending(args)
+    }
+}
+
 fn labels_with_ownership(mode: Mode) -> (&'static str, &'static str, &'static str) {
     match mode {
+        Mode::Whole4096 => (disassembly::whole::PROFILE, "", ""),
         Mode::LongOnly => labels(false),
         Mode::ShortOnly => labels(true),
         Mode::ShortT3Pending => (
@@ -129,9 +152,48 @@ fn labels_with_ownership(mode: Mode) -> (&'static str, &'static str, &'static st
     }
 }
 
+fn prepare_inputs(
+    original: &[u8],
+    ledger: &[u8],
+    expected_ledger: ContentId,
+    policy: &[u8],
+    expected_policy: ContentId,
+    mode: Mode,
+    files: &mut BTreeMap<String, Vec<u8>>,
+) -> Result<liteinst_rewrite::Product, liteinst_rewrite::Error> {
+    let (profile, _, _) = labels_with_ownership(mode);
+    let imported = disassembly::import(original, ledger, expected_ledger)?;
+    // This denominator is retained even if policy/placement/loader refuses.
+    files.insert(
+        "disassembly-inventory.tsv".into(),
+        match mode {
+            Mode::Whole4096 => imported.inventory_whole_program(),
+            Mode::LongOnly => imported.inventory(),
+            Mode::ShortOnly => imported.inventory_short_neighbors(),
+            Mode::ShortT3Ownership => imported.inventory_short_t3_ownership(),
+            Mode::ShortT3Pending => imported.inventory_short_t3_pending(),
+        },
+    );
+    let selected = match mode {
+        Mode::Whole4096 => {
+            let selected = imported.bind_whole_program(policy, expected_policy)?;
+            assert_eq!(selected.profile(), profile);
+            files.insert("selection.txt".into(), selected.manifest().to_vec());
+            return liteinst_rewrite::prepare_disassembly_whole(original, &selected);
+        }
+        Mode::LongOnly => imported.bind(policy, expected_policy)?,
+        Mode::ShortOnly => imported.bind_short_neighbors(policy, expected_policy)?,
+        Mode::ShortT3Ownership => imported.bind_short_t3_ownership(policy, expected_policy)?,
+        Mode::ShortT3Pending => imported.bind_short_t3_pending(policy, expected_policy)?,
+    };
+    assert_eq!(selected.profile(), profile);
+    files.insert("selection.txt".into(), selected.manifest().to_vec());
+    prepare_disassembly(original, &selected)
+}
+
 fn run() -> Result<bool, String> {
     let raw_args: Vec<_> = std::env::args().collect();
-    let (args, mode) = arguments_with_pending(&raw_args)?;
+    let (args, mode) = arguments_with_whole(&raw_args)?;
     let (profile, family, stdout_family) = labels_with_ownership(mode);
     let expected_ledger = selection::id(&args[2]).map_err(|e| e.to_string())?;
     let expected_policy = selection::id(&args[4]).map_err(|e| e.to_string())?;
@@ -142,28 +204,15 @@ fn run() -> Result<bool, String> {
         ("disassembly.txt".to_owned(), ledger.clone()),
         ("disassembly-policy.txt".to_owned(), policy.clone()),
     ]);
-    let prepared = (|| {
-        let imported = disassembly::import(&original, &ledger, expected_ledger)?;
-        // This denominator is retained even if policy/placement/loader refuses.
-        files.insert(
-            "disassembly-inventory.tsv".into(),
-            match mode {
-                Mode::LongOnly => imported.inventory(),
-                Mode::ShortOnly => imported.inventory_short_neighbors(),
-                Mode::ShortT3Ownership => imported.inventory_short_t3_ownership(),
-                Mode::ShortT3Pending => imported.inventory_short_t3_pending(),
-            },
-        );
-        let selected = match mode {
-            Mode::LongOnly => imported.bind(&policy, expected_policy)?,
-            Mode::ShortOnly => imported.bind_short_neighbors(&policy, expected_policy)?,
-            Mode::ShortT3Ownership => imported.bind_short_t3_ownership(&policy, expected_policy)?,
-            Mode::ShortT3Pending => imported.bind_short_t3_pending(&policy, expected_policy)?,
-        };
-        assert_eq!(selected.profile(), profile);
-        files.insert("selection.txt".into(), selected.manifest().to_vec());
-        prepare_disassembly(&original, &selected)
-    })();
+    let prepared = prepare_inputs(
+        &original,
+        &ledger,
+        expected_ledger,
+        &policy,
+        expected_policy,
+        mode,
+        &mut files,
+    );
     // Same input reread ordering as the existing prepare CLI: no outcome is
     // dispatched and no output is published before all three snapshots agree.
     if read(Path::new(&args[0]), disassembly::INPUT_LIMIT)? != original
@@ -439,3 +488,7 @@ mod tests {
         assert!(arguments_with_pending(&extra).is_err());
     }
 }
+
+#[cfg(test)]
+#[path = "disassembly_sites/whole_tests.rs"]
+mod whole_tests;

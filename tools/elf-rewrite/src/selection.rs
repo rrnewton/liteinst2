@@ -7,19 +7,76 @@ use li2core::planner::HookSemantics;
 use li2core::quiescent::{AllocationPolicy, SearchPolicy, TacticPolicy};
 use li2core::trampoline::SavedExtendedStateLayout;
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Arc;
+
+/// Only the sealed complete-code importer supplies these independently decoded
+/// regions and sites. A compact manifest cannot supply its own authority.
+pub(crate) struct SharedRegion {
+    pub range: AddressRange,
+    pub heads: Arc<Vec<LegalEntry>>,
+}
+pub(crate) struct SharedEntries<'a> {
+    pub original: ContentId,
+    pub ledger: ContentId,
+    pub regions: &'a [SharedRegion],
+    pub sites: &'a [crate::disassembly::JumpSite],
+    pub null_hook: u64,
+}
 
 pub fn parse(bytes: &[u8]) -> Result<Selection, Error> {
     if bytes.len() > 1024 * 1024 {
         return Err(bad("manifest exceeds 1 MiB"));
     }
+    parse_records(bytes, None)
+}
+
+pub(crate) fn parse_shared_projection(
+    bytes: &[u8],
+    expected: &SharedEntries<'_>,
+) -> Result<Selection, Error> {
+    use crate::disassembly::whole::{HEAD_LIMIT, SELECTION_LIMIT, SITE_LIMIT};
+    if bytes.len() > SELECTION_LIMIT {
+        return Err(bad("shared manifest exceeds 2 MiB"));
+    }
+    let count = expected
+        .regions
+        .iter()
+        .try_fold(0_usize, |n, r| n.checked_add(r.heads.len()));
+    if expected.regions.is_empty()
+        || count.is_none_or(|n| n == 0 || n > HEAD_LIMIT)
+        || expected.sites.is_empty()
+        || expected.sites.len() > SITE_LIMIT
+    {
+        return Err(bad("shared complete population bound"));
+    }
+    if bytes.last() != Some(&b'\n')
+        || bytes
+            .iter()
+            .any(|b| *b != b'\n' && !(b' '..=b'~').contains(b))
+        || bytes[..bytes.len().saturating_sub(1)]
+            .split(|b| *b == b'\n')
+            .any(|line| line.is_empty() || line.split(|b| *b == b' ').any(|part| part.is_empty()))
+    {
+        return Err(bad("shared canonical ASCII text"));
+    }
+    parse_records(bytes, Some(expected))
+}
+
+fn parse_records(bytes: &[u8], shared: Option<&SharedEntries<'_>>) -> Result<Selection, Error> {
     let text = std::str::from_utf8(bytes).map_err(|e| bad(e.to_string()))?;
     let mut lines = text.lines();
-    if lines.next() != Some("LI2TOOL 1") {
+    let header = if shared.is_some() {
+        "LI2TOOL-SHARED-REGIONS 1"
+    } else {
+        "LI2TOOL 1"
+    };
+    if lines.next() != Some(header) {
         return Err(bad("missing version-one header"));
     }
     let mut globals = BTreeMap::<&str, Vec<&str>>::new();
     let mut records = Vec::new();
     let mut keys = BTreeSet::new();
+    let mut region_rows = Vec::new();
     for line in lines {
         if line.is_empty() {
             continue;
@@ -29,6 +86,20 @@ pub fn parse(bytes: &[u8]) -> Result<Selection, Error> {
             return Err(bad("whitespace-only record"));
         }
         match f[0] {
+            "profile" | "ledger" if shared.is_some() => {
+                if globals.insert(f[0], f[1..].to_vec()).is_some() {
+                    return Err(bad("duplicate shared global"));
+                }
+            }
+            "region-entries" if shared.is_some() => region_rows.push(f),
+            "entries-ref" if shared.is_some() => {
+                exact(&f, 3)?;
+                if !keys.insert((f[0], num(f[1])?, "")) {
+                    return Err(bad("duplicate shared site reference"));
+                }
+                records.push(f);
+            }
+            "entries" if shared.is_some() => return Err(bad("expanded entries in shared profile")),
             "original" | "target" | "domain" | "carrier" | "limits" => {
                 if globals.insert(f[0], f[1..].to_vec()).is_some() {
                     return Err(bad("duplicate global"));
@@ -58,6 +129,42 @@ pub fn parse(bytes: &[u8]) -> Result<Selection, Error> {
     };
     let original = get("original")?;
     exact(original, 1)?;
+    if let Some(expected) = shared {
+        use crate::disassembly::whole::PROFILE;
+        if get("profile")?.as_slice() != [PROFILE]
+            || get("ledger")?.len() != 1
+            || id(get("ledger")?[0])? != expected.ledger
+            || id(original[0])? != expected.original
+            || region_rows.len() != expected.regions.len()
+        {
+            return Err(bad("shared profile/original/ledger/region census"));
+        }
+        for (index, (f, region)) in region_rows.iter().zip(expected.regions).enumerate() {
+            if f.len() != 4 + region.heads.len()
+                || num(f[1])? != index as u64 + 1
+                || f[2] != "all-instruction-heads"
+                || id(f[3])? != expected.ledger
+            {
+                return Err(bad("shared region shape/order/provenance"));
+            }
+            for (field, head) in f[4..].iter().zip(region.heads.iter()) {
+                if *field != format!("{}:{}", head.address, usize::from(head.requires_endbr)) {
+                    return Err(bad("shared independently decoded head/order/ENDBR"));
+                }
+            }
+        }
+    }
+    if let Some(expected) = shared {
+        let references: Vec<_> = records.iter().filter(|r| r[0] == "entries-ref").collect();
+        if references.len() != expected.sites.len()
+            || references
+                .iter()
+                .zip(expected.sites)
+                .any(|(r, site)| num(r[1]).ok() != Some(site.id))
+        {
+            return Err(bad("shared complete reference census/order"));
+        }
+    }
     let domain = get("domain")?;
     exact(domain, 1)?;
     let carrier = get("carrier")?;
@@ -75,7 +182,12 @@ pub fn parse(bytes: &[u8]) -> Result<Selection, Error> {
         program_headers: size(f[7])?,
         virtual_span: num(f[8])?,
     };
-    if limits.sites > 1024
+    let site_limit = if shared.is_some() {
+        crate::disassembly::whole::SITE_LIMIT
+    } else {
+        1024
+    };
+    if limits.sites > site_limit
         || limits.input_bytes > 256 * 1024 * 1024
         || limits.output_bytes > 512 * 1024 * 1024
         || limits.images > 4096
@@ -116,9 +228,37 @@ pub fn parse(bytes: &[u8]) -> Result<Selection, Error> {
             expected: id(f[4])?,
         });
     }
+    if let Some(expected) = shared {
+        if hooks.len() != 1
+            || hooks[0].id != 1
+            || hooks[0].pc != expected.null_hook
+            || hooks[0].length != 1
+            || hooks[0].expected != ContentId::of(&[0xc3])
+        {
+            return Err(bad("shared imported null hook"));
+        }
+    }
     for f in records.iter().filter(|f| f[0] == "site") {
         exact(f, 14)?;
         let site_id = num(f[1])?;
+        if let Some(expected) = shared {
+            let s = expected
+                .sites
+                .get(sites.len())
+                .ok_or_else(|| bad("extra shared site"))?;
+            if site_id != s.id
+                || num(f[2])? != s.pc
+                || size(f[3])? != s.length
+                || num(f[4])? != s.file_offset
+                || range(f[5], f[6])? != s.region
+                || range(f[7], f[8])? != s.region
+                || range(f[9], f[10])? != s.block
+                || f[11] != "1"
+                || f[12] != "observe"
+            {
+                return Err(bad("shared complete site geometry/order"));
+            }
+        }
         let lookup = |kind: &str, which: Option<&str>| -> Result<&Vec<&str>, Error> {
             records
                 .iter()
@@ -129,32 +269,52 @@ pub fn parse(bytes: &[u8]) -> Result<Selection, Error> {
                 })
                 .ok_or_else(|| bad(format!("missing {kind} for {site_id}")))
         };
-        let e = lookup("entries", None)?;
-        if e.len() < 5 {
-            return Err(bad("entries require provenance and at least one head"));
-        }
-        let completeness = match e[2] {
-            "complete" => EntryCompleteness::Complete,
-            "unknown" => EntryCompleteness::Incomplete,
-            _ => return Err(bad("entry completeness")),
-        };
-        let mut heads = Vec::new();
-        for head in &e[4..] {
-            let p: Vec<_> = head.split(':').collect();
-            exact(&p, 2)?;
-            let requires_endbr = match p[1] {
-                "0" => false,
-                "1" => true,
-                _ => return Err(bad("ENDBR flag")),
+        let (heads, completeness) = if let Some(expected) = shared {
+            let e = lookup("entries-ref", None)?;
+            exact(e, 3)?;
+            let index = size(e[2])?
+                .checked_sub(1)
+                .ok_or_else(|| bad("shared region zero"))?;
+            let region = expected
+                .regions
+                .get(index)
+                .ok_or_else(|| bad("unknown shared region"))?;
+            if region.range != range(f[5], f[6])? {
+                return Err(bad("cross-region shared head reference"));
+            }
+            (
+                Arc::clone(&region.heads),
+                EntryCompleteness::AllInstructionHeads,
+            )
+        } else {
+            let e = lookup("entries", None)?;
+            if e.len() < 5 {
+                return Err(bad("entries require provenance and at least one head"));
+            }
+            let completeness = match e[2] {
+                "complete" => EntryCompleteness::Complete,
+                "unknown" => EntryCompleteness::Incomplete,
+                _ => return Err(bad("entry completeness")),
             };
-            heads.push(LegalEntry {
-                address: num(p[0])?,
-                requires_endbr,
-            });
-        }
-        if !heads.windows(2).all(|w| w[0].address < w[1].address) {
-            return Err(bad("head ordering"));
-        }
+            let mut heads = Vec::new();
+            for head in &e[4..] {
+                let p: Vec<_> = head.split(':').collect();
+                exact(&p, 2)?;
+                let requires_endbr = match p[1] {
+                    "0" => false,
+                    "1" => true,
+                    _ => return Err(bad("ENDBR flag")),
+                };
+                heads.push(LegalEntry {
+                    address: num(p[0])?,
+                    requires_endbr,
+                });
+            }
+            if !heads.windows(2).all(|w| w[0].address < w[1].address) {
+                return Err(bad("head ordering"));
+            }
+            (Arc::new(heads), completeness)
+        };
         let r = lookup("resumes", None)?;
         let resumes = match r[2] {
             "none" => {
@@ -170,6 +330,9 @@ pub fn parse(bytes: &[u8]) -> Result<Selection, Error> {
             ),
             _ => return Err(bad("resume mode")),
         };
+        if shared.is_some() && resumes != ResumeObligation::NoneExist {
+            return Err(bad("shared private-image resume contract"));
+        }
         let s = lookup("search", None)?;
         exact(s, 9)?;
         let forced = match s[2] {
@@ -238,7 +401,10 @@ pub fn parse(bytes: &[u8]) -> Result<Selection, Error> {
             heads,
             completeness,
             resumes,
-            provenance: id(e[3])?,
+            provenance: match shared {
+                Some(expected) => expected.ledger,
+                None => id(lookup("entries", None)?[3])?,
+            },
         });
         if f[13] != "original-decode" {
             return Err(bad("original decode assertion required"));
@@ -250,6 +416,9 @@ pub fn parse(bytes: &[u8]) -> Result<Selection, Error> {
         || hooks.len() > limits.sites
     {
         return Err(bad("site/hook count"));
+    }
+    if shared.is_some_and(|expected| sites.len() != expected.sites.len()) {
+        return Err(bad("shared complete site census"));
     }
     sites.sort_by_key(|s| s.id);
     hooks.sort_by_key(|h| h.id);

@@ -633,6 +633,7 @@ fn check(ok: bool, why: &'static str) -> Result<(), Error> {
 }
 
 pub mod adjacent_b2;
+pub mod whole;
 pub use adjacent_b2::{AdjacentB2DisassemblySelection, AdjacentB2Limits};
 
 pub mod adjacent_routed_jmp;

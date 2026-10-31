@@ -397,14 +397,16 @@ mod tests {
             forced_victim: None,
             max_victims: 256,
             max_pairs: 4096,
-            heads: seed::HEADS
-                .iter()
-                .filter(|h| h.function == src.function)
-                .map(|h| LegalEntry {
-                    address: h.pc,
-                    requires_endbr: false,
-                })
-                .collect(),
+            heads: std::sync::Arc::new(
+                seed::HEADS
+                    .iter()
+                    .filter(|h| h.function == src.function)
+                    .map(|h| LegalEntry {
+                        address: h.pc,
+                        requires_endbr: false,
+                    })
+                    .collect(),
+            ),
             completeness: EntryCompleteness::Complete,
             resumes: ResumeObligation::NoneExist,
             provenance: ContentId::of(b"synthetic owner declaration"),
@@ -609,7 +611,7 @@ mod tests {
         f.report.pop();
         f.refuses();
         let mut f = Fixture::new();
-        f.sites[1].heads.pop();
+        std::sync::Arc::make_mut(&mut f.sites[1].heads).pop();
         f.refuses();
         let mut f = Fixture::new();
         f.sites[1].resumes = ResumeObligation::Unresolved;

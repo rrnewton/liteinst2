@@ -441,7 +441,7 @@ fn rj06_rj07_original_dispatch_exclusions_never_retry_another_family() {
             0 => changed.sites[1].forced = Some(Tactic::GeneralizedPun),
             1 => changed.sites[0].forced = Some(Tactic::Relocation),
             2 => changed.sites[0].search.max_sites = 0,
-            3 => changed.sites[0].heads[0].requires_endbr = true,
+            3 => std::sync::Arc::make_mut(&mut changed.sites[0].heads)[0].requires_endbr = true,
             4 => changed.sites[0].resumes = ResumeObligation::Unresolved,
             5 => changed.sites[0].hook = 2,
             6 => changed.sites[0].completeness = EntryCompleteness::Incomplete,
@@ -1354,22 +1354,22 @@ fn rj07_rj08_complete_original_domain_and_head_mutants_refuse() {
             7 => changed.sites[0].provenance = ContentId::of(b"wrong original provenance"),
             8 => {
                 for site in &mut changed.sites {
-                    site.heads.retain(|h| h.address != F);
+                    std::sync::Arc::make_mut(&mut site.heads).retain(|h| h.address != F);
                 }
             }
             9 => {
                 for site in &mut changed.sites {
-                    site.heads.retain(|h| h.address != E);
+                    std::sync::Arc::make_mut(&mut site.heads).retain(|h| h.address != E);
                 }
             }
             10 => {
                 for site in &mut changed.sites {
-                    site.heads.retain(|h| h.address != 0x401bbe);
+                    std::sync::Arc::make_mut(&mut site.heads).retain(|h| h.address != 0x401bbe);
                 }
             }
             11 => {
                 for site in &mut changed.sites {
-                    site.heads.retain(|h| h.address != 0x401c45);
+                    std::sync::Arc::make_mut(&mut site.heads).retain(|h| h.address != 0x401c45);
                 }
             }
             _ => {

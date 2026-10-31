@@ -326,3 +326,196 @@ fn full_program_rpc_numbers_paths_and_byte_caps_are_explicit() {
     assert!(append(&mut out, "x", TEXT_LIMIT, "ledger").is_err());
     assert_eq!(out.len(), TEXT_LIMIT);
 }
+
+#[test]
+fn full_program_whole_profile_keeps_2053_sites_and_old_default_refusal() {
+    let mut code = [0x75, 0].repeat(2052);
+    code.push(0xc3);
+    let mut widths = vec![2; 2052];
+    widths.push(1);
+    let (original, csv) = fixture(&code, &widths);
+    let legacy = bridge(&original, &csv, "/fixed/original").unwrap();
+    let whole = bridge_profile(&original, &csv, "/fixed/original", Profile::Whole4096).unwrap();
+    assert_eq!((whole.heads, whole.sites), (2056, 2053));
+    assert_eq!(legacy.ledger, whole.ledger);
+    assert_eq!(legacy.regions, whole.regions);
+    assert_eq!(
+        legacy.rpc.unwrap_err(),
+        "site bound: required 2053, limit 1024"
+    );
+    assert_eq!(
+        whole.inventory,
+        text(&legacy.inventory)
+            .replacen(disassembly::PROFILE, disassembly::whole::PROFILE, 1)
+            .into_bytes()
+    );
+    let transport = whole.rpc.unwrap();
+    let lines: Vec<_> = text(&transport).lines().collect();
+    assert_eq!(
+        lines
+            .iter()
+            .filter(|l| l.contains("\"method\":\"patch\""))
+            .count(),
+        2053
+    );
+    let heads = csv_heads(&csv).unwrap();
+    let imported =
+        disassembly::import(&original, &whole.ledger, ContentId::of(&whole.ledger)).unwrap();
+    let selected: Vec<_> = imported
+        .jumps()
+        .iter()
+        .map(|s| heads.binary_search_by_key(&s.pc, |h| h.pc).unwrap())
+        .collect();
+    let events = events_whole(&heads, &selected).unwrap();
+    assert_eq!(
+        events
+            .iter()
+            .filter_map(|e| match e {
+                Event::Patch(i) => Some(*i),
+                _ => None,
+            })
+            .collect::<Vec<_>>(),
+        selected.iter().rev().copied().collect::<Vec<_>>()
+    );
+    assert_eq!(lines.len(), events.len() + 3);
+    let (small, csv) = ordinary();
+    assert_eq!(
+        bridge(&small, &csv, "/fixed/original").unwrap().rpc,
+        bridge_profile(&small, &csv, "/fixed/original", Profile::Whole4096)
+            .unwrap()
+            .rpc
+    );
+}
+
+#[test]
+fn full_program_whole_transport_preserves_complete_roster_and_all_caps() {
+    // Synthetic transport census with the actual program's population sizes.
+    // This is not a claim that these fabricated locations are the actual ELF.
+    let heads: Vec<_> = (0..12941)
+        .chain(20000..20202)
+        .map(|pc| Head {
+            pc,
+            offset: pc,
+            length: 1,
+        })
+        .collect();
+    let selected: Vec<_> = (0..2053).map(|i| i * 12940 / 2052).collect();
+    assert_eq!(heads.len(), 13143);
+    let result = events_whole(&heads, &selected).unwrap();
+    assert_eq!(result.len() + 3, 14997);
+    let mut observed: Vec<_> = result
+        .iter()
+        .filter_map(|e| match e {
+            Event::Instruction(i) => Some(*i),
+            _ => None,
+        })
+        .collect();
+    observed.sort_unstable();
+    assert_eq!(observed, (0..12941).collect::<Vec<_>>());
+    assert_eq!(
+        result
+            .iter()
+            .filter_map(|e| match e {
+                Event::Patch(i) => Some(*i),
+                _ => None,
+            })
+            .collect::<Vec<_>>(),
+        selected.iter().rev().copied().collect::<Vec<_>>()
+    );
+    assert_eq!(
+        rpc_profile(&heads, &selected, "/fixed/original", Profile::Whole4096)
+            .unwrap()
+            .split(|b| *b == b'\n')
+            .count()
+            - 1,
+        14997
+    );
+    assert_eq!(
+        events(&heads, &selected).unwrap_err(),
+        "site bound: required 2053, limit 1024"
+    );
+    let all: Vec<_> = (0..disassembly::whole::HEAD_LIMIT + 1)
+        .map(|pc| Head {
+            pc: pc as u64,
+            offset: pc as u64,
+            length: 1,
+        })
+        .collect();
+    assert!(events_whole(&all[..disassembly::whole::HEAD_LIMIT], &[0]).is_ok());
+    assert_eq!(
+        events_whole(&all, &[0]).unwrap_err(),
+        "head bound: required 16385, limit 16384"
+    );
+    let cap: Vec<_> = (0..disassembly::whole::SITE_LIMIT).collect();
+    assert!(events_whole(&all[..disassembly::whole::HEAD_LIMIT], &cap).is_ok());
+    let mut excess = cap;
+    excess.push(disassembly::whole::SITE_LIMIT);
+    assert_eq!(
+        events_whole(&all[..disassembly::whole::HEAD_LIMIT], &excess).unwrap_err(),
+        "site bound: required 4097, limit 4096"
+    );
+    assert!(events_whole(&heads, &[1, 0]).is_err());
+    assert!(events_whole(&heads, &[1, 1]).is_err());
+    assert!(events_whole(&heads, &[heads.len()]).is_err());
+    assert!(events_whole(&heads, &[]).is_err());
+    assert!(events_bounded(&heads, &selected, 4096, 14997).is_ok());
+    assert_eq!(
+        events_bounded(&heads, &selected, 4096, 14996).unwrap_err(),
+        "RPC message bound: required 14997, limit 14996"
+    );
+    let mut out = "x".repeat(FILE_LIMIT - 1);
+    append(&mut out, "x", FILE_LIMIT, "RPC").unwrap();
+    assert!(append(&mut out, "x", FILE_LIMIT, "RPC").is_err());
+    assert_eq!(out.len(), FILE_LIMIT);
+}
+
+#[test]
+fn full_program_whole_profile_requires_explicit_cli_and_complete_import() {
+    let old: Vec<String> = [
+        "bridge",
+        "--trusted-complete-code",
+        "original",
+        "dump.csv",
+        "pin",
+        "output",
+    ]
+    .into_iter()
+    .map(str::to_owned)
+    .collect();
+    assert_eq!(arguments(&old).unwrap(), (old.as_slice(), Profile::Legacy));
+    let mut args = old.clone();
+    args.insert(1, "--whole-program-4096".into());
+    assert_eq!(arguments(&args).unwrap(), (&args[1..], Profile::Whole4096));
+    let mut bad = args.clone();
+    bad[2] = "--whole-program-4096".into();
+    assert!(arguments(&bad).is_err());
+    assert!(arguments(&args[..6]).is_err());
+    let (original, csv) = ordinary();
+    let omitted = text(&csv).replace("0x403000,+12288,1\n", "");
+    assert!(
+        bridge_profile(
+            &original,
+            omitted.as_bytes(),
+            "/fixed/original",
+            Profile::Whole4096
+        )
+        .is_err()
+    );
+    let false_head =
+        text(&csv).replace("0x401100,+4352,2\n", "0x401100,+4352,1\n0x401101,+4353,1\n");
+    assert!(
+        bridge_profile(
+            &original,
+            false_head.as_bytes(),
+            "/fixed/original",
+            Profile::Whole4096
+        )
+        .is_err()
+    );
+    assert!(
+        bridge_profile(&original, &csv, "relative", Profile::Whole4096)
+            .unwrap()
+            .rpc
+            .is_err()
+    );
+}

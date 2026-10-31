@@ -254,7 +254,7 @@ fn entries(s: &SelectedSite, identity: CodeIdentity) -> LegalEntrySet {
             ledger::hex(&s.provenance.0)
         )),
         completeness: s.completeness,
-        entries: s.heads.clone(),
+        entries: s.heads.as_ref().clone(),
         resumes: s.resumes.clone(),
     }
 }

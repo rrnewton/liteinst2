@@ -117,7 +117,7 @@ pub(crate) fn collect<'a>(
                 ledger::hex(&owner.provenance.0),
             )),
             completeness: owner.completeness,
-            entries: owner.heads.clone(),
+            entries: owner.heads.as_ref().clone(),
             resumes: owner.resumes.clone(),
         };
         for instruction in scan.instructions() {

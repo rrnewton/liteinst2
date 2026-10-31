@@ -1853,12 +1853,12 @@ fn f14_f15_static_exclusions_keep_every_selected_row_and_old_search() {
         match name {
             "nonadjacent" => upper.pc += 1,
             "cet" => {
-                lower.heads[0].requires_endbr = true;
+                std::sync::Arc::make_mut(&mut lower.heads)[0].requires_endbr = true;
                 upper.heads = lower.heads.clone();
             }
             "replace" => lower.semantics = HookSemantics::ReplaceFirst,
             "heads" => {
-                lower.heads.pop();
+                std::sync::Arc::make_mut(&mut lower.heads).pop();
             }
             "resume" => {
                 lower.resumes = ResumeObligation::Enumerated(vec![B + 4, B]);

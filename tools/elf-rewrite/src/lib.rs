@@ -84,6 +84,27 @@ pub fn prepare_disassembly(
     Ok(product)
 }
 
+/// Explicit whole-program shared-head selection, same complete transaction and
+/// long-only tactic semantics. No PIE startup, runtime or memory-fit admission.
+pub fn prepare_disassembly_whole(
+    original: &[u8],
+    selected: &disassembly::whole::WholeProgramSelection,
+) -> Result<Product, Error> {
+    let mut product = prepare_selection_with_mode(
+        original,
+        selected.selection.clone(),
+        false,
+        disassembly::NeighborMode::LongOnly,
+    )?;
+    product.files.remove("bundle-index.tsv");
+    product.files.extend(selected.files.clone());
+    product.files.insert(
+        "bundle-index.tsv".into(),
+        ledger::index(selected.selection.original, &product.files),
+    );
+    Ok(product)
+}
+
 fn prepare_mode(original: &[u8], manifest: &[u8], owned_neighbors: bool) -> Result<Product, Error> {
     let selection = selection::parse(manifest)?;
     prepare_selection_mode(original, selection, owned_neighbors, false)
@@ -650,7 +671,7 @@ fn attempt_singleton(
                 ledger::hex(&site.provenance.0)
             )),
             completeness: site.completeness,
-            entries: site.heads.clone(),
+            entries: site.heads.as_ref().clone(),
             resumes: site.resumes.clone(),
         };
         let hook = s

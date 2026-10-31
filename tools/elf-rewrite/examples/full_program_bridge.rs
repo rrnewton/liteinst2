@@ -24,6 +24,19 @@ const SECTION_LIMIT: usize = 4096;
 const SITE_LIMIT: usize = 1024;
 const MESSAGE_LIMIT: usize = 4096;
 const CONTEXT: u64 = 127 + 2 + 15;
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Profile {
+    Legacy,
+    Whole4096,
+}
+impl Profile {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Legacy => "e9patch-full-sections-null-jumps-v1",
+            Self::Whole4096 => disassembly::whole::MATERIAL_PROFILE,
+        }
+    }
+}
 type Result<T> = std::result::Result<T, String>;
 
 fn need(condition: bool, reason: &str) -> Result<()> {
@@ -311,10 +324,34 @@ enum Event {
     Patch(usize),
 }
 fn events(heads: &[Head], selected: &[usize]) -> Result<Vec<Event>> {
+    events_bounded(heads, selected, SITE_LIMIT, MESSAGE_LIMIT)
+}
+fn events_whole(heads: &[Head], selected: &[usize]) -> Result<Vec<Event>> {
     need(
-        !selected.is_empty() && selected.len() <= SITE_LIMIT,
+        heads.len() <= disassembly::whole::HEAD_LIMIT,
         &format!(
-            "site bound: required {}, limit {SITE_LIMIT}",
+            "head bound: required {}, limit {}",
+            heads.len(),
+            disassembly::whole::HEAD_LIMIT
+        ),
+    )?;
+    events_bounded(
+        heads,
+        selected,
+        disassembly::whole::SITE_LIMIT,
+        disassembly::whole::MESSAGE_LIMIT,
+    )
+}
+fn events_bounded(
+    heads: &[Head],
+    selected: &[usize],
+    site_limit: usize,
+    message_limit: usize,
+) -> Result<Vec<Event>> {
+    need(
+        !selected.is_empty() && selected.len() <= site_limit,
+        &format!(
+            "site bound: required {}, limit {site_limit}",
             selected.len()
         ),
     )?;
@@ -350,8 +387,8 @@ fn events(heads: &[Head], selected: &[usize]) -> Result<Vec<Event>> {
     }
     let required = events.len() + 3; // binary, trampoline, emit.
     need(
-        required <= MESSAGE_LIMIT,
-        &format!("RPC message bound: required {required}, limit {MESSAGE_LIMIT}"),
+        required <= message_limit,
+        &format!("RPC message bound: required {required}, limit {message_limit}"),
     )?;
     Ok(events)
 }
@@ -375,8 +412,19 @@ fn quoted_path(path: &str) -> Result<String> {
     ))
 }
 fn rpc(heads: &[Head], selected: &[usize], path: &str) -> Result<Vec<u8>> {
+    rpc_profile(heads, selected, path, Profile::Legacy)
+}
+fn rpc_profile(
+    heads: &[Head],
+    selected: &[usize],
+    path: &str,
+    profile: Profile,
+) -> Result<Vec<u8>> {
     let path = quoted_path(path)?;
-    let events = events(heads, selected)?;
+    let events = match profile {
+        Profile::Legacy => events(heads, selected)?,
+        Profile::Whole4096 => events_whole(heads, selected)?,
+    };
     let mut messages = vec![
         ("binary", format!("\"filename\":{path},\"mode\":\"exe\"")),
         (
@@ -434,6 +482,9 @@ struct Materials {
     rpc: Result<Vec<u8>>,
 }
 fn bridge(original: &[u8], csv: &[u8], path: &str) -> Result<Materials> {
+    bridge_profile(original, csv, path, Profile::Legacy)
+}
+fn bridge_profile(original: &[u8], csv: &[u8], path: &str, profile: Profile) -> Result<Materials> {
     let (regions, region_inventory) = regions(original)?;
     let heads = csv_heads(csv)?;
     let ledger = ledger(original, &regions, &heads)?.into_bytes();
@@ -455,7 +506,10 @@ fn bridge(original: &[u8], csv: &[u8], path: &str) -> Result<Materials> {
             Ok(i)
         })
         .collect::<Result<Vec<_>>>()?;
-    let inventory = imported.inventory();
+    let inventory = match profile {
+        Profile::Legacy => imported.inventory(),
+        Profile::Whole4096 => imported.inventory_whole_program(),
+    };
     need(
         inventory.len() <= FILE_LIMIT,
         "complete inventory exceeds 16 MiB",
@@ -466,7 +520,10 @@ fn bridge(original: &[u8], csv: &[u8], path: &str) -> Result<Materials> {
         regions: region_inventory.into_bytes(),
         heads: heads.len(),
         sites: selected.len(),
-        rpc: rpc(&heads, &selected, path),
+        rpc: match profile {
+            Profile::Legacy => rpc(&heads, &selected, path),
+            Profile::Whole4096 => rpc_profile(&heads, &selected, path, profile),
+        },
     })
 }
 
@@ -521,7 +578,21 @@ fn write(path: &Path, bytes: &[u8]) -> Result<()> {
         .and_then(|()| file.sync_all())
         .map_err(|e| e.to_string())
 }
+fn arguments(args: &[String]) -> Result<(&[String], Profile)> {
+    if args.get(1).is_some_and(|s| s == "--whole-program-4096") {
+        need(
+            args.len() == 7
+                && args[2] == "--trusted-complete-code"
+                && !args[2..].iter().any(|s| s == "--whole-program-4096"),
+            "full_program_bridge --whole-program-4096 --trusted-complete-code ORIGINAL DISASM.csv CSV_SHA256 NEW_DIRECTORY",
+        )?;
+        Ok((&args[1..], Profile::Whole4096))
+    } else {
+        Ok((args, Profile::Legacy))
+    }
+}
 fn run(args: &[String]) -> Result<bool> {
+    let (args, profile) = arguments(args)?;
     need(
         args.len() == 6 && args[1] == "--trusted-complete-code",
         "full_program_bridge --trusted-complete-code ORIGINAL DISASM.csv CSV_SHA256 NEW_DIRECTORY",
@@ -544,7 +615,10 @@ fn run(args: &[String]) -> Result<bool> {
     )?;
     let resolved = original_path.canonicalize().map_err(|e| e.to_string())?;
     let path = resolved.to_str().ok_or("non-UTF8 original path")?;
-    let result = bridge(&original.0, &csv.0, path);
+    let result = match profile {
+        Profile::Legacy => bridge(&original.0, &csv.0, path),
+        Profile::Whole4096 => bridge_profile(&original.0, &csv.0, path, profile),
+    };
     need(
         read(original_path, FILE_LIMIT)? == original
             && read(&resolved, FILE_LIMIT)? == original
@@ -578,7 +652,8 @@ fn run(args: &[String]) -> Result<bool> {
         files.push(("refusal.txt", format!("{e}\n").into_bytes()));
     }
     let mut complete = format!(
-        "LI2FULL-PROGRAM-MATERIALS\t1\nprofile\te9patch-full-sections-null-jumps-v1\nstatus\t{}\noriginal_sha256\t{}\ncsv_sha256\t{}\n{counts}complete_code_premise\tcaller_supplied_not_proved\nplanning_attempted\tfalse\nqualification_complete\tfalse\n",
+        "LI2FULL-PROGRAM-MATERIALS\t1\nprofile\t{}\nstatus\t{}\noriginal_sha256\t{}\ncsv_sha256\t{}\n{counts}complete_code_premise\tcaller_supplied_not_proved\nplanning_attempted\tfalse\nqualification_complete\tfalse\n",
+        profile.name(),
         if ready {
             "MATERIALS_READY"
         } else {

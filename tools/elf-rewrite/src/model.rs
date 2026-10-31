@@ -5,6 +5,7 @@ use li2core::engine::Tactic;
 use li2core::planner::HookSemantics;
 use li2core::quiescent::{AllocationPolicy, SearchPolicy};
 use li2core::trampoline::SavedExtendedStateLayout;
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct Hook {
@@ -34,7 +35,8 @@ pub struct SelectedSite {
     pub forced_victim: Option<u64>,
     pub max_victims: usize,
     pub max_pairs: usize,
-    pub heads: Vec<LegalEntry>,
+    /// Shared frontend storage only; core plans still own cloned entry vectors.
+    pub heads: Arc<Vec<LegalEntry>>,
     pub completeness: EntryCompleteness,
     pub resumes: ResumeObligation,
     pub provenance: ContentId,
