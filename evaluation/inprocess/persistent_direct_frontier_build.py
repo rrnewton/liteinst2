@@ -380,7 +380,7 @@ def cross_pair_extents(builder, bridge, symbols, pin, run, state):
         '(char*)&pg_source.domain.entry-(char*)&pg_source.domain')
     expression = ('printf "LI2_PGX_EXTENTS '+' '.join(['%llu']*len(expressions))+'\\n", '+
                   ', '.join('(unsigned long long)('+value+')' for value in expressions))
-    _, out, err = run('persistent-direct-frontier-extents', [gdb, '-nx', '-nh', '-batch',
+    _, out, err = run('persistent-cross-pair-extents', [gdb, '-nx', '-nh', '-batch',
         '-iex', 'set auto-load off', '-iex', 'set debuginfod enabled off',
         '-iex', 'set index-cache enabled off', '-iex', 'maintenance set worker-threads 1',
         '-ex', 'file '+str(bridge), '-ex', expression], profile='inspect',
