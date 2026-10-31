@@ -52,6 +52,31 @@ the controller's first epoch. Only actual execution timestamps can establish
 its realization; input generation cannot do so. The randomized offset is
 paired across K at a given cadence. No process is retried by this generator.
 
+Two opt-in execution profiles record timing on the controller's shared
+`Instant` clock. `normal-selected-accuracy-phase-session` records the first
+release against the original requested delay. The separate
+`normal-selected-accuracy-prepared-phase-session` prepares the first accepted
+input and its guarded return storage before starting that clock. Its fixed
+target is epoch index 1 plus the original delay; it waits for the actual second
+accepted arm before admitting the call. Later CSV polling resumes after that
+call returns. This removes first-input preparation from the epoch interval.
+
+The prepared profile adds `PREPARED_PHASE`, `PREPARED`, `TARGET_ARM` and `GATE`
+observations to the existing release and per-call timing rows. Its reader
+joins the target arm to the actual history publication, requires all 2,048
+calls, and retains both absolute error against the original delay and lateness
+against the fixed target, including whole missed periods. The original 2 ms
+arm deadline, session end and shutdown fence remain unchanged. Cancellation
+before invocation is a failed, incomplete population after real cleanup;
+it cannot produce `DONE` or a successful accuracy result.
+
+The public owner exposes `prepared-phase-prepare` and
+`prepared-phase-functional` through
+[`accuracy_functional_owner.py`](../ordinary-selected-session/accuracy_functional_owner.py).
+Both observation profiles leave phase realization and hardware accuracy
+unresolved. A pre-call clock sample cannot bound subsequent scheduler delay.
+Earlier phase results and the full experiment denominator remain separate.
+
 These leaf workloads are one part of A5. Straight-line, nested, recursive,
 multiple/tail-return, crossing-epoch and cache-model workloads still require
 their own ground truth and execution profiles. Hardware counter errors and

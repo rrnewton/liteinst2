@@ -4,6 +4,8 @@ use rapid_profiler::frontend_native::backoff::Policy;
 use std::sync::{Arc, OnceLock};
 use std::time::{Duration, Instant};
 
+pub(in crate::normal) mod prepared;
+
 type Result<T> = std::result::Result<T, &'static str>;
 pub(in crate::normal) const COMMAND: &str = "normal-selected-accuracy-phase-session";
 pub(in crate::normal) const WIRE: &str = "selected-accuracy-phase-session-v1";

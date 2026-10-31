@@ -293,6 +293,18 @@ pub(in crate::normal) trait Application: application_sealed::Sealed {
     ) -> Result<(), String> {
         Ok(())
     }
+    fn input_enabled(&self) -> bool {
+        true
+    }
+    fn cancelled_finish(
+        &mut self,
+        _totals: NormalTotals,
+        _reports: &[(u64, Vec<RecordObservation>)],
+        _history: &[<Self::Controller as engine::Controller>::History],
+        _io: &mut Io,
+    ) -> Result<Option<&'static str>, String> {
+        Ok(None)
+    }
     fn accepted_len(&self) -> usize;
     fn input(&mut self, io: &mut Io) -> Result<Option<Self::Command>, String>;
     fn accept(&mut self, command: &Self::Command) -> Result<(), String>;
@@ -459,6 +471,7 @@ pub(in crate::normal) fn drive<A: Application>(
     let started = Instant::now();
     let mut schedule = Schedule::new(started, policy).map_err(failure)?;
     app.start_clock(started, policy)?;
+    let mut cancelled = None;
     let mut previous_poll = started;
     let mut last_wait: Option<(Duration, Duration)> = None;
     loop {
@@ -601,7 +614,11 @@ pub(in crate::normal) fn drive<A: Application>(
         loop_trace.mark(loop_trace::Phase::ReplyHistory);
         engine.retire(io)?;
         loop_trace.mark(loop_trace::Phase::Retire);
-        if !schedule.is_stopping() && !state.requested && state.pending.is_none() {
+        if !schedule.is_stopping()
+            && !state.requested
+            && state.pending.is_none()
+            && app.input_enabled()
+        {
             if let Some(command) = app.input(io)? {
                 loop_trace.command(command.name());
                 if command.kind() == 3 {
@@ -672,18 +689,24 @@ pub(in crate::normal) fn drive<A: Application>(
                         u64::from(schedule.armed()) + 1
                     );
                     engine.final_check()?;
-                    app.finish(totals, &engine.reports, &engine.history, io)?;
-                    app.final_checks()?;
+                    cancelled =
+                        app.cancelled_finish(totals, &engine.reports, &engine.history, io)?;
+                    if cancelled.is_none() {
+                        app.finish(totals, &engine.reports, &engine.history, io)?;
+                        app.final_checks()?;
+                    }
                     single_main();
                     unsafe { immutable(spans) };
                     app.final_custody()?;
                     io.emit(format!("IO,{}\n", io.write_blocked()))?;
-                    app.terminal(
-                        &schedule,
-                        engine.history.last().unwrap().range().end,
-                        totals,
-                        io,
-                    )?;
+                    if cancelled.is_none() {
+                        app.terminal(
+                            &schedule,
+                            engine.history.last().unwrap().range().end,
+                            totals,
+                            io,
+                        )?;
+                    }
                     state.final_output = true;
                 }
             }
@@ -695,6 +718,9 @@ pub(in crate::normal) fn drive<A: Application>(
             schedule
                 .check_completion(Instant::now())
                 .map_err(|e| clock_failure(e, "final-output", engine.committed_arms, &schedule))?;
+            if let Some(reason) = cancelled {
+                return Err(reason.into());
+            }
             return Ok(app.completion());
         }
         let observed = Instant::now();

@@ -117,6 +117,11 @@ pub(in crate::normal) trait Runtime {
     fn flush_after_command(&self) -> bool {
         self.pending() == 4
     }
+    fn deferred(&self) -> bool {
+        false
+    }
+    fn poll_deferred(&mut self) {}
+    fn cancel_deferred(&mut self) {}
     fn call(&mut self, command: Self::Command);
     fn flush(&mut self, tx: &mpsc::SyncSender<Event<Self::Call, Self::Batch>>);
     fn totals(&self) -> NormalTotals;
@@ -130,6 +135,14 @@ pub(in crate::normal) fn drive<R: Runtime>(
     loop {
         let command = match rx.try_recv() {
             Ok(command) => command,
+            Err(TryRecvError::Empty) if runtime.deferred() => {
+                runtime.poll_deferred();
+                if runtime.pending() != 0 {
+                    runtime.flush(&tx);
+                }
+                std::hint::spin_loop();
+                continue;
+            }
             Err(TryRecvError::Empty) => {
                 // A lone returned request need not wait for another command.
                 if runtime.pending() != 0 {
@@ -156,6 +169,7 @@ pub(in crate::normal) fn drive<R: Runtime>(
                 .unwrap();
             }
             3 => {
+                runtime.cancel_deferred();
                 runtime.flush(&tx);
                 let totals = runtime.finish();
                 tx.send(Event::Finished(totals)).unwrap();
@@ -165,6 +179,9 @@ pub(in crate::normal) fn drive<R: Runtime>(
         }
     }
 }
+#[cfg(test)]
+mod prepared_tests;
+
 struct Single {
     attached: Option<rapid_profiler::frontend_native::NormalThread>,
     calls: Vec<Call>,

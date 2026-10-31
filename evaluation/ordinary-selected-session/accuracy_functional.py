@@ -20,30 +20,32 @@ HERE = Path(__file__).resolve().parent
 MIB = 1048576
 PROFILE = 'selected-accuracy-functional-first-v1'
 PHASE_PROFILE = 'selected-accuracy-phase-functional-first-v1'
+PREPARED_PHASE_PROFILE = 'selected-accuracy-prepared-phase-functional-first-v1'
 STAGES = ('truth','assembly','elf','disassembly')
 PREMISES = ('complete_symbol_extent','complete_cfg_and_return','complete_elf_and_source_page',
     'complete_ordinary_rust_caller','immutable_path_and_object_lifetime','scalar_sysv_abi_and_readable_inputs',
     'termination_no_hidden_calls_or_exits','sole_worker_no_reentry_or_concurrency','cet_and_signal_preconditions')
 
 
-def profile(epoch_phase):
+def profile(epoch_phase, prepared=False):
+    assert type(prepared) is bool and (not prepared or epoch_phase is not None)
     assert epoch_phase is None or (type(epoch_phase) is str and epoch_phase in ('random','locked'))
-    return PROFILE if epoch_phase is None else PHASE_PROFILE
+    return PREPARED_PHASE_PROFILE if prepared else (PROFILE if epoch_phase is None else PHASE_PROFILE)
 
 
-def chosen_policy(checker, producer, epoch_phase):
-    profile(epoch_phase)
+def chosen_policy(checker, producer, epoch_phase, prepared=False):
+    profile(epoch_phase, prepared)
     return dict(producer.POLICY) if epoch_phase is None else producer.phase_policy(checker, epoch_phase)
 
 
-def prepare_phase(epoch_phase):
-    profile(epoch_phase)
-    return 'accuracy-prepare' if epoch_phase is None else 'phase-prepare'
+def prepare_phase(epoch_phase, prepared=False):
+    profile(epoch_phase, prepared)
+    return 'prepared-phase-prepare' if prepared else ('accuracy-prepare' if epoch_phase is None else 'phase-prepare')
 
 
-def preparation_status(epoch_phase):
-    profile(epoch_phase)
-    return 'ACCURACY_PREPARATION_PASS' if epoch_phase is None else 'PHASE_PREPARATION_PASS'
+def preparation_status(epoch_phase, prepared=False):
+    profile(epoch_phase, prepared)
+    return 'PREPARED_PHASE_PREPARATION_PASS' if prepared else ('ACCURACY_PREPARATION_PASS' if epoch_phase is None else 'PHASE_PREPARATION_PASS')
 
 
 def load(name, path):
@@ -89,7 +91,7 @@ def check_truth(run, driver, recipe, directory, checker, producer):
     return {name:str(directory/'truth-data'/name) for name in producer.MATERIALS}
 
 
-def geometry_facts(run, driver, recipe, directory, build, fixture, checker, producer, *, epoch_phase=None):
+def geometry_facts(run, driver, recipe, directory, build, fixture, checker, producer, *, epoch_phase=None, prepared=False):
     trusted, candidate = directory/'exact-final.so', directory/'exact-candidate.so'
     whole = driver.raw_pin(run,recipe,trusted,cap=MIB)
     details = fixture.describe(whole)
@@ -119,19 +121,22 @@ def geometry_facts(run, driver, recipe, directory, build, fixture, checker, prod
     args = dict(manifest_bytes=recipe.read(Path(materials['manifest.json']),65536),
         input_bytes=recipe.read(Path(materials['input.csv']),MIB), selected_bytes=recipe.read(Path(materials['selected.txt']),MIB),
         truth_bytes=recipe.read(Path(materials['truth.csv']),MIB), table=tuple(dict(r,returns=tuple(r['returns'])) for r in table),
-        caller=dict(extent=20,continuation=15),body_bytes=producer.BODY,abi=producer.ABI,policy=chosen_policy(checker,producer,epoch_phase),cpus=tuple(run.cpus[:2]))
+        caller=dict(extent=20,continuation=15),body_bytes=producer.BODY,abi=producer.ABI,policy=chosen_policy(checker,producer,epoch_phase,prepared),cpus=tuple(run.cpus[:2]))
     checker.authority(**args)
-    return dict(revision=run.a.revision,profile=profile(epoch_phase),build=reference(run.a.build,run.a.build_sha),
+    facts = dict(revision=run.a.revision,profile=profile(epoch_phase, prepared),build=reference(run.a.build,run.a.build_sha),
         selection=selection, trusted=dict(path=str(trusted),**recipe.pin(whole)),
         candidate=dict(path=str(candidate),**recipe.pin(whole)), binary=dict(path=str(binary),**build['products']['ordinary-interval']),
         caller_actual=shape, caller=dict(extent=20,continuation=15),table=table,abi=producer.ABI,
         caller_captures={name:run.retained[str(build_dir/name/'stdout')] for name in ('ordinary-interval-elf','ordinary-interval-disassembly')},
         materials={name:dict(path=path,**run.retained[path]) for name,path in materials.items()},
         coordinate=dict(master=producer.MASTER,phase='calibration',trial=1,workload='late_expensive',records=2048),
-        policy=chosen_policy(checker,producer,epoch_phase), **qualifications())
+        policy=chosen_policy(checker,producer,epoch_phase,prepared), **qualifications())
+    if prepared:
+        facts['prepared_phase'] = producer.prepared_target(facts['policy'])
+    return facts
 
 
-def prepare(run, driver, recipe, builder, result, build, fixture, checker, producer, *, epoch_phase=None):
+def prepare(run, driver, recipe, builder, result, build, fixture, checker, producer, *, epoch_phase=None, prepared=False):
     commands = phase_commands(run.raw,run.tools,producer)
     result['commands'] = commands
     for name, argv in zip(STAGES, commands):
@@ -148,19 +153,19 @@ def prepare(run, driver, recipe, builder, result, build, fixture, checker, produ
             details = fixture.describe(whole)
             builder.copy_product(run,recipe,run.raw/'exact-final.so',run.raw/'exact-candidate.so')
             run.freeze(run.raw/'selection.json',dict(details,revision=run.a.revision))
-    result['facts'] = geometry_facts(run,driver,recipe,run.raw,build,fixture,checker,producer,epoch_phase=epoch_phase)
+    result['facts'] = geometry_facts(run,driver,recipe,run.raw,build,fixture,checker,producer,epoch_phase=epoch_phase, prepared=prepared)
     run.freeze(run.raw/'geometry-facts.json',result['facts'])
-    result['status'] = preparation_status(epoch_phase)
+    result['status'] = preparation_status(epoch_phase, prepared)
 
 
-def read_preparation(run, driver, recipe, adapter, result, build, fixture, checker, producer, *, epoch_phase=None):
+def read_preparation(run, driver, recipe, adapter, result, build, fixture, checker, producer, *, epoch_phase=None, prepared=False):
     a = run.a
     previous = driver.read_json(run,recipe,a.preparation,a.preparation_sha,32*MIB)
     directory = a.preparation.parent
-    assert previous['status'] == preparation_status(epoch_phase) and previous['profile'] == profile(epoch_phase)
-    assert previous['phase'] == prepare_phase(epoch_phase) and previous['revision'] == a.revision
+    assert previous['status'] == preparation_status(epoch_phase, prepared) and previous['profile'] == profile(epoch_phase, prepared)
+    assert previous['phase'] == prepare_phase(epoch_phase, prepared) and previous['revision'] == a.revision
     assert previous['custody_closed'] is True and previous['retention_verified'] is True
-    assert previous['source_unchanged'] is True and previous['functional'] == initial_row(epoch_phase)
+    assert previous['source_unchanged'] is True and previous['functional'] == initial_row(epoch_phase, prepared)
     assert previous['cpus'] == run.cpus and previous['hardware'] == a.hardware
     assert previous['reservation_tag'] == a.reservation_tag
     assert all(previous[k] == v for k,v in qualifications().items())
@@ -180,12 +185,12 @@ def read_preparation(run, driver, recipe, adapter, result, build, fixture, check
     assert outer['attempts'] == 1 and outer['reserved_cpus'] == run.cpus and outer['hardware'] == a.hardware
     assert outer['wall_limit_seconds'] == 1200 and outer['output_limit_bytes'] == 8*MIB
     options = dict(previous['arguments'], owner=str(a.preparation_owner))
-    expected = {k:str(getattr(a,k.replace('-','_'))) for k in adapter.COMMON+adapter.extras(prepare_phase(epoch_phase))
+    expected = {k:str(getattr(a,k.replace('-','_'))) for k in adapter.COMMON+adapter.extras(prepare_phase(epoch_phase, prepared))
         if k not in ('phase','owner','raw')}
-    expected.update(phase=prepare_phase(epoch_phase),owner=str(a.preparation_owner),raw=str(directory))
+    expected.update(phase=prepare_phase(epoch_phase, prepared),owner=str(a.preparation_owner),raw=str(directory))
     assert options == expected
     invocation, command = adapter.commands(options,str(run.tools['python']),outer['public_owner']['invocation'][2])
-    assert outer['public_owner'] == dict(schema=adapter.SCHEMA,phase=prepare_phase(epoch_phase),revision=a.revision,
+    assert outer['public_owner'] == dict(schema=adapter.SCHEMA,phase=prepare_phase(epoch_phase, prepared),revision=a.revision,
         recipe='evaluation/ordinary-selected-session/accuracy_functional_owner.py',
         recipe_sha256=run.sources[str(HERE/'accuracy_functional_owner.py')]['sha256'],invocation=invocation)
     assert outer['command'] == command == previous['invocation']
@@ -217,18 +222,19 @@ def read_preparation(run, driver, recipe, adapter, result, build, fixture, check
         if name == 'truth':
             manifest = recipe.read(directory/'truth-data/manifest.json',65536)
             assert json.loads(out) == dict(status='INPUTS_PREPARED',**recipe.pin(manifest))
-    facts = geometry_facts(run,driver,recipe,directory,build,fixture,checker,producer,epoch_phase=epoch_phase)
+    facts = geometry_facts(run,driver,recipe,directory,build,fixture,checker,producer,epoch_phase=epoch_phase, prepared=prepared)
     assert previous['facts'] == facts == driver.read_json(run,recipe,directory/'geometry-facts.json')
     result['preparation'] = reference(a.preparation,a.preparation_sha)
     return facts
 
 
-def accept_geometry(value, facts, preparation_sha, revision, *, epoch_phase=None):
+def accept_geometry(value, facts, preparation_sha, revision, *, epoch_phase=None, prepared=False):
     assert set(value) == {'kind','status','scope','revision','preparation_sha256','facts','premises','review','native_state'}
-    assert value['kind'] == ('selected-accuracy-functional-geometry-acceptance-v1' if epoch_phase is None
-        else 'selected-accuracy-phase-functional-geometry-acceptance-v1')
+    assert value['kind'] == ('selected-accuracy-prepared-phase-functional-geometry-acceptance-v1' if prepared else
+        ('selected-accuracy-functional-geometry-acceptance-v1' if epoch_phase is None
+         else 'selected-accuracy-phase-functional-geometry-acceptance-v1'))
     assert value['status'] == 'INDEPENDENTLY_ACCEPTED_FOR_FIXED_SCALAR_EXECUTION'
-    assert value['scope'] == profile(epoch_phase) and value['revision'] == revision and value['preparation_sha256'] == preparation_sha
+    assert value['scope'] == profile(epoch_phase, prepared) and value['revision'] == revision and value['preparation_sha256'] == preparation_sha
     assert value['facts'] == facts and value['native_state'] == 'UNRUN_SEPARATE_REQUIRED'
     assert set(value['premises']) == set(PREMISES) and all(value['premises'][k] is True for k in PREMISES)
     assert type(value['review']) is str and 1 <= len(value['review']) <= 16384
@@ -236,7 +242,7 @@ def accept_geometry(value, facts, preparation_sha, revision, *, epoch_phase=None
     # from equal body bytes, control success, or a self-computed geometry digest.
 
 
-def input_plan(run, recipe, facts, producer, *, epoch_phase=None):
+def input_plan(run, recipe, facts, producer, *, epoch_phase=None, prepared=False):
     pins = dict(run.sources, **run.tool_pins)
     pins.update({item['path']:{k:item[k] for k in ('bytes','sha256')} for item in facts['materials'].values()})
     for key in ('binary','candidate','trusted'):
@@ -245,7 +251,7 @@ def input_plan(run, recipe, facts, producer, *, epoch_phase=None):
     pins[str(run.a.geometry)] = run.retained[str(run.a.geometry)]
     pins[str(run.a.preparation)] = run.retained[str(run.a.preparation)]
     paths = {name:item['path'] for name,item in facts['materials'].items()}
-    plan = dict(profile=profile(epoch_phase),revision=run.a.revision,attempt=1,cpus=run.cpus,policy=dict(producer.POLICY) if epoch_phase is None else dict(facts['policy']),
+    plan = dict(profile=profile(epoch_phase, prepared),revision=run.a.revision,attempt=1,cpus=run.cpus,policy=dict(producer.POLICY) if epoch_phase is None else dict(facts['policy']),
         pins=pins,materials=paths,geometry=str(run.a.geometry),facts=facts,
         preparation=str(run.a.preparation),preparation_sha256=run.a.preparation_sha,table=facts['table'],caller=facts['caller'],
         binary=facts['binary']['path'],candidate=facts['candidate']['path'],trusted=facts['trusted']['path'],
@@ -256,6 +262,12 @@ def input_plan(run, recipe, facts, producer, *, epoch_phase=None):
         assert plan['policy']['phase'] == epoch_phase
         plan['argv'][1] = 'normal-selected-accuracy-phase-session'
         plan['argv'][8:8] = [epoch_phase,str(plan['policy']['delay_ns'])]
+    if prepared:
+        plan['prepared_phase'] = producer.prepared_target(plan['policy'])
+        assert facts['prepared_phase'] == plan['prepared_phase']
+        assert all(type(facts['prepared_phase'][k]) is int for k in plan['prepared_phase'])
+        plan['argv'][1] = 'normal-selected-accuracy-prepared-phase-session'
+        plan['argv'][10:10] = ['1']
     return plan
 
 
@@ -287,17 +299,17 @@ def json_records(value):
     return value
 
 
-def functional(run, driver, recipe, result, facts, checker, producer, *, epoch_phase=None):
+def functional(run, driver, recipe, result, facts, checker, producer, *, epoch_phase=None, prepared=False):
     accepted = driver.read_json(run,recipe,run.a.geometry,run.a.geometry_sha)
-    accept_geometry(accepted,facts,run.a.preparation_sha,run.a.revision,epoch_phase=epoch_phase)
-    plan = input_plan(run,recipe,facts,producer,epoch_phase=epoch_phase)
-    args = producer.arguments(plan,checker) if epoch_phase is None else producer.phase_arguments(plan,checker)
+    accept_geometry(accepted,facts,run.a.preparation_sha,run.a.revision,epoch_phase=epoch_phase, prepared=prepared)
+    plan = input_plan(run,recipe,facts,producer,epoch_phase=epoch_phase, prepared=prepared)
+    args = producer.prepared_phase_arguments(plan,checker) if prepared else (producer.arguments(plan,checker) if epoch_phase is None else producer.phase_arguments(plan,checker))
     run.freeze(run.raw/'plan.json',plan,MIB)
     raw = run.raw/'application'
     argv = [run.tools['python'],'-B',HERE/'accuracy_produce.py','--plan',run.raw/'plan.json',
         '--plan-sha',run.retained[str(run.raw/'plan.json')]['sha256'],'--raw',raw]
     if epoch_phase is not None:
-        argv += ['--profile',PHASE_PROFILE]
+        argv += ['--profile',profile(epoch_phase, prepared)]
     d = run.raw/'functional-io'
     request = run.request(d,argv,cpu=20,wall=30,cap=8*MIB)
     run.plan_bounded('functional',d,request)
@@ -317,7 +329,7 @@ def functional(run, driver, recipe, result, facts, checker, producer, *, epoch_p
     result['functional'].update(result=run_result,raw={name:run.retained[str(raw/name)]
         for name in ('result.json','stdout.txt','stderr.txt','overflow.bin')})
     assert err == b'' and json.loads(out) == run_result
-    assert (run_result['profile'],run_result['revision'],run_result['attempt']) == (profile(epoch_phase),run.a.revision,1)
+    assert (run_result['profile'],run_result['revision'],run_result['attempt']) == (profile(epoch_phase, prepared),run.a.revision,1)
     assert run_result['stdout_sha256'] == driver.sha(transcript) and run_result['stderr_sha256'] == driver.sha(errors)
     assert run_result['normal_reaps'] == 1 and run_result['rescue'] is False and run_result['cleanup_error'] is None
     if run_result['overflow'] is None:
@@ -350,17 +362,17 @@ def functional(run, driver, recipe, result, facts, checker, producer, *, epoch_p
     run.budget.complete()
     result['functional'].update(status='PASS',records=2048,totals=checked['totals'],
         joined=reference(run.raw/'joined.json',run.retained[str(run.raw/'joined.json')]['sha256']))
-    result['status'] = 'ACCURACY_FUNCTIONAL_STRUCTURAL_PASS' if epoch_phase is None else 'PHASE_FUNCTIONAL_STRUCTURAL_PASS'
+    result['status'] = 'PREPARED_PHASE_FUNCTIONAL_STRUCTURAL_PASS' if prepared else ('ACCURACY_FUNCTIONAL_STRUCTURAL_PASS' if epoch_phase is None else 'PHASE_FUNCTIONAL_STRUCTURAL_PASS')
 
 
-def initial_row(epoch_phase=None):
-    profile(epoch_phase)
-    suffix = '' if epoch_phase is None else '-phase-'+epoch_phase
+def initial_row(epoch_phase=None, prepared=False):
+    profile(epoch_phase, prepared)
+    suffix = ('-prepared-phase-'+epoch_phase) if prepared else ('' if epoch_phase is None else '-phase-'+epoch_phase)
     return dict(name='calibration-trial1-late_expensive-k10-period10-e520'+suffix,status='UNRUN',attempts=0,records=2048)
 
 
 def summary(result):
-    assert result['profile'] in (PROFILE,PHASE_PROFILE)
+    assert result['profile'] in (PROFILE,PHASE_PROFILE,PREPARED_PHASE_PROFILE)
     return dict(status=result['status'],profile=result['profile'],phase=result['phase'],revision=result['revision'],
         functional={k:result['functional'][k] for k in ('name','status','attempts','records')},
         custody_closed=result['custody_closed'],retention_verified=result['retention_verified'],**qualifications())
@@ -371,7 +383,7 @@ def main():
     # Authenticate the finite adapter before importing any project helper.
     own = Path(__file__).resolve()
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--phase',choices=('accuracy-prepare','accuracy-functional','phase-prepare','phase-functional'),required=True)
+    parser.add_argument('--phase',choices=('accuracy-prepare','accuracy-functional','phase-prepare','phase-functional','prepared-phase-prepare','prepared-phase-functional'),required=True)
     for name in ('revision','reservation-tag','hardware'):
         parser.add_argument('--'+name,required=True)
     for name in ('raw','toolchain','user-home','cargo-home','build','build-owner','controls','controls-owner'):
@@ -384,10 +396,11 @@ def main():
         parser.add_argument('--'+name)
     parser.add_argument('--epoch-phase',choices=('random','locked'))
     a = parser.parse_args()
-    assert (a.epoch_phase is not None) == a.phase.startswith('phase-')
+    prepared = a.phase in ('prepared-phase-prepare','prepared-phase-functional')
+    assert (a.epoch_phase is not None) == (prepared or a.phase in ('phase-prepare','phase-functional'))
     epoch_phase = a.epoch_phase
     extras = (a.preparation,a.preparation_sha,a.preparation_owner,a.preparation_owner_sha,a.geometry,a.geometry_sha)
-    assert all(x is not None for x in extras) if a.phase in ('accuracy-functional','phase-functional') else all(x is None for x in extras)
+    assert all(x is not None for x in extras) if a.phase in ('accuracy-functional','phase-functional','prepared-phase-functional') else all(x is None for x in extras)
     for name in ('accuracy_functional.py','accuracy_functional_owner.py','build.py'):
         path = HERE/name
         assert path.is_file() and not path.is_symlink() and path.stat().st_size <= MIB
@@ -402,10 +415,10 @@ def main():
     arguments = {k:str(getattr(a,k.replace('-','_'))) for k in keys}
     invocation = [str(run.tools['python']),'-B',str(own)]+[word for k in keys for word in ('--'+k,arguments[k])]
     assert invocation == [str(run.tools['python']),'-B',sys.argv[0],*sys.argv[1:]]
-    result = dict(status='FAILED',profile=profile(epoch_phase),phase=a.phase,revision=a.revision,arguments=arguments,invocation=invocation,
+    result = dict(status='FAILED',profile=profile(epoch_phase, prepared),phase=a.phase,revision=a.revision,arguments=arguments,invocation=invocation,
         build=reference(a.build,a.build_sha),build_owner=reference(a.build_owner,a.build_owner_sha),
         controls=reference(a.controls,a.controls_sha),controls_owner=reference(a.controls_owner,a.controls_owner_sha),
-        functional=initial_row(epoch_phase),preparation_stages=[],environment=run.env,hardware=a.hardware,cpus=run.cpus,
+        functional=initial_row(epoch_phase, prepared),preparation_stages=[],environment=run.env,hardware=a.hardware,cpus=run.cpus,
         reservation_tag=a.reservation_tag,load_before=list(os.getloadavg()),source_unchanged=False,**qualifications())
     try:
         build = driver.accept_build(run,recipe,a.build,a.build_sha,a.build_owner,a.build_owner_sha,git)
@@ -422,14 +435,14 @@ def main():
         run.unchanged()
         run.freeze(run.raw/'sources-before.json',run.sources,16*MIB)
         fixture = load('_accuracy_exact_fixture',ROOT/'tools/rapid-profiler/normal-work/exact_fixture.py')
-        reader_name = 'output.py' if epoch_phase is None else 'phase_output.py'
+        reader_name = 'prepared_phase_output.py' if prepared else ('output.py' if epoch_phase is None else 'phase_output.py')
         checker = load('_accuracy_functional_checker',ROOT/'evaluation/ordinary-accuracy'/reader_name)
         producer = load('_accuracy_functional_producer',HERE/'accuracy_produce.py')
-        if a.phase == prepare_phase(epoch_phase):
-            prepare(run,driver,recipe,builder,result,build,fixture,checker,producer,epoch_phase=epoch_phase)
+        if a.phase == prepare_phase(epoch_phase, prepared):
+            prepare(run,driver,recipe,builder,result,build,fixture,checker,producer,epoch_phase=epoch_phase, prepared=prepared)
         else:
-            facts = read_preparation(run,driver,recipe,adapter,result,build,fixture,checker,producer,epoch_phase=epoch_phase)
-            functional(run,driver,recipe,result,facts,checker,producer,epoch_phase=epoch_phase)
+            facts = read_preparation(run,driver,recipe,adapter,result,build,fixture,checker,producer,epoch_phase=epoch_phase, prepared=prepared)
+            functional(run,driver,recipe,result,facts,checker,producer,epoch_phase=epoch_phase, prepared=prepared)
         run.unchanged()
         run.freeze(run.raw/'sources-after.json',run.sources,16*MIB)
         assert run.retained[str(run.raw/'sources-before.json')] == run.retained[str(run.raw/'sources-after.json')]
@@ -449,7 +462,7 @@ def main():
             result.update(status='FAILED',final_error=type(error).__name__+': '+str(error))
         recipe.save(run.raw/'result.json',result,32*MIB)
         print(json.dumps(summary(result),sort_keys=True))
-    return 0 if result['status'] in ('ACCURACY_PREPARATION_PASS','ACCURACY_FUNCTIONAL_STRUCTURAL_PASS','PHASE_PREPARATION_PASS','PHASE_FUNCTIONAL_STRUCTURAL_PASS') and time.monotonic() < run.deadline else 1
+    return 0 if result['status'] in ('ACCURACY_PREPARATION_PASS','ACCURACY_FUNCTIONAL_STRUCTURAL_PASS','PHASE_PREPARATION_PASS','PHASE_FUNCTIONAL_STRUCTURAL_PASS','PREPARED_PHASE_PREPARATION_PASS','PREPARED_PHASE_FUNCTIONAL_STRUCTURAL_PASS') and time.monotonic() < run.deadline else 1
 
 
 if __name__ == '__main__':

@@ -402,6 +402,24 @@ fn phase_arguments_with(
     Ok((request, leaves, table))
 }
 
+type PreparedArguments = (super::phase::prepared::Request, Vec<Selection>, Arc<Table>);
+pub(super) fn prepared_arguments(args: &[OsString]) -> Result<PreparedArguments, String> {
+    prepared_arguments_with(args, read_table)
+}
+fn prepared_arguments_with(
+    args: &[OsString],
+    load: impl FnOnce(&Path, &[FunctionId]) -> Result<Table, String>,
+) -> Result<PreparedArguments, String> {
+    if args.len() != 15 || number(&args[8])? != 1 || number(&args[5])? <= 1 {
+        return Err("normal-selected-accuracy-prepared-phase-session CANDIDATE TRUSTED_FINAL TABLE K EPOCH_MS EPOCHS PHASE DELAY_NS 1 1 41 exact_work_nonempty ELF_VA 37 whole; EPOCHS>1".into());
+    }
+    let mut ordinary_phase = args.to_vec();
+    ordinary_phase.remove(8); // literal fixed j, never an extra epoch
+    let (phase, leaves, table) = phase_arguments_with(&ordinary_phase, load)?;
+    let request = super::phase::prepared::Request::new(phase, 1).map_err(failure)?;
+    Ok((request, leaves, table))
+}
+
 #[cfg(test)]
 #[path = "selected_tests.rs"]
 pub(in crate::normal) mod controls;
@@ -510,5 +528,63 @@ mod phase_tests {
         assert!(phase_arguments_with(&args(), |_, f| table(f, 2048, "-")).is_err());
         assert!(phase_arguments_with(&args(), |_, f| table(f, 2048, &"41".repeat(64))).is_ok());
         assert!(phase_arguments_with(&args(), |_, f| table(f, 2048, &"41".repeat(65))).is_err());
+    }
+
+    #[test]
+    fn prepared_cli_is_disjoint_and_requires_fixed_j_inside_original_epochs() {
+        let old = args();
+        let mut prepared = old.clone();
+        prepared.insert(8, "1".into());
+        let (request, leaves, values) =
+            prepared_arguments_with(&prepared, |_, f| table(f, 2048, "41")).unwrap();
+        assert_eq!(
+            request.phase().policy(),
+            Policy::accuracy(10, 10, 520, 4096).unwrap()
+        );
+        assert_eq!(leaves.len(), 1);
+        assert_eq!(values.count(), 2048);
+        assert!(phase_arguments_with(&prepared, |_, _| panic!("old phase refuses")).is_err());
+        assert!(accuracy_arguments_with(&prepared, |_, _| panic!("old accuracy refuses")).is_err());
+        assert!(arguments_with(&prepared, |_, _| panic!("old selected refuses")).is_err());
+        assert!(
+            prepared_arguments_with(&old, |_, _| panic!("new facade refuses old grammar")).is_err()
+        );
+        for (column, value) in [(8, "0"), (8, "2"), (8, "01"), (5, "0"), (5, "1")] {
+            let mut bad = prepared.clone();
+            bad[column] = value.into();
+            assert!(
+                prepared_arguments_with(&bad, |_, _| panic!("refuse before table load")).is_err()
+            );
+        }
+        for (column, value) in [
+            (3, "2"),
+            (4, "2"),
+            (5, "521"),
+            (9, "2"),
+            (10, "42"),
+            (13, "36"),
+            (14, "certified"),
+        ] {
+            let mut bad = prepared.clone();
+            bad[column] = value.into();
+            assert!(prepared_arguments_with(&bad, |_, f| table(f, 2048, "41")).is_err());
+        }
+    }
+    #[test]
+    fn prepared_cli_retains_complete_2048_nonempty_population_and_original_delay() {
+        let mut a = args();
+        a.insert(8, "1".into());
+        a[6] = "random".into();
+        a[7] = "581334".into();
+        let (r, _, _) = prepared_arguments_with(&a, |_, f| table(f, 2048, "41")).unwrap();
+        assert_eq!(r.header(), "PREPARED_PHASE,random,581334,1,10581334\n");
+        for count in [1, 2047] {
+            assert!(prepared_arguments_with(&a, |_, f| table(f, count, "41")).is_err());
+        }
+        assert!(prepared_arguments_with(&a, |_, f| table(f, 2048, "-")).is_err());
+        assert!(prepared_arguments_with(&a, |_, f| table(f, 2048, &"41".repeat(64))).is_ok());
+        assert!(prepared_arguments_with(&a, |_, f| table(f, 2048, &"41".repeat(65))).is_err());
+        a[7] = "10000000".into();
+        assert!(prepared_arguments_with(&a, |_, f| table(f, 2048, "41")).is_err());
     }
 }

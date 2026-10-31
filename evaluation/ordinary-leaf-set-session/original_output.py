@@ -8,7 +8,7 @@ if not __debug__:
     raise SystemExit('assertions required')
 sys.dont_write_bytecode = True
 _DEPENDENCY = Path(__file__).resolve().with_name('output.py')
-assert hashlib.sha256(_DEPENDENCY.read_bytes()).hexdigest() == '9686ecdb63cd5228954bb8724856195eb64c2c2d8b54465ec3f3e91649cba4ae'
+assert hashlib.sha256(_DEPENDENCY.read_bytes()).hexdigest() == '3d8b92c0a90caf5f6e31097af9521782fa583d7f6dfef8a55a318afc12662de8'
 _spec = importlib.util.spec_from_file_location('_leaf_original_truth', _DEPENDENCY)
 _truth = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_truth)

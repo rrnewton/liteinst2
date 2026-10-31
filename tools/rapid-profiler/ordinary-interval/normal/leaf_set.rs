@@ -27,6 +27,8 @@ pub(in crate::normal) use selected::controls as selected_controls;
 #[cfg(test)]
 pub(in crate::normal) use worker::selected_controls as selected_worker_controls;
 mod preparation_diagnostic;
+mod prepared;
+pub(crate) use prepared::run as run_selected_accuracy_prepared_phase_session;
 mod worker;
 const INSTALL: u64 = 0x6d6f_6401;
 
@@ -287,6 +289,7 @@ pub(in crate::normal) struct Application<const N: usize> {
     arm_observations: Vec<shared::ArmObservation>,
     counter: Option<counter::Evidence>,
     phase: Option<Arc<phase::Shared>>,
+    prepared: Option<Arc<phase::prepared::Shared>>,
     phase_emitted: usize,
 }
 impl<const N: usize> Application<N> {
@@ -309,7 +312,10 @@ impl<const N: usize> Application<N> {
                         self.epochs,
                         self.accuracy
                     ),
-                    |phase| phase.request().ready(),
+                    |phase| self
+                        .prepared
+                        .as_ref()
+                        .map_or_else(|| phase.request().ready(), |gate| gate.request().ready()),
                 ),
                 record_cap(N),
                 N,
@@ -345,7 +351,12 @@ impl<const N: usize> Application<N> {
             }
         }
         if let Some(phase) = &self.phase {
-            emit(io, phase.request().header())?;
+            emit(
+                io,
+                self.prepared
+                    .as_ref()
+                    .map_or_else(|| phase.request().header(), |gate| gate.request().header()),
+            )?;
         }
         if let Some(counter) = &mut self.counter {
             counter.ready(id, io)?;
@@ -360,7 +371,9 @@ impl<const N: usize> ApplicationTrait for Application<N> {
     type Batch = counter::Batch;
     type Completion = Result<(), input::InputCompletion>;
     fn start_clock(&mut self, origin: Instant, policy: Policy) -> Result<(), String> {
-        if let Some(phase) = &self.phase {
+        if let Some(gate) = &self.prepared {
+            gate.start(origin, policy).map_err(failure)?;
+        } else if let Some(phase) = &self.phase {
             phase.start(origin, policy).map_err(failure)?;
         }
         Ok(())
@@ -386,7 +399,40 @@ impl<const N: usize> ApplicationTrait for Application<N> {
                 phase.first_arm(observation.completed).map_err(failure)?;
             }
         }
+        if let Some(gate) = &self.prepared {
+            if observation.number == 1 {
+                emit(io, gate.barrier_line().map_err(failure)?)?;
+            }
+            if observation.number == 2 && observation.accepted {
+                emit(io, gate.target_arm(observation).map_err(failure)?)?;
+            }
+        }
         emit(io, arm_line(observation))
+    }
+    fn input_enabled(&self) -> bool {
+        self.prepared.as_ref().is_none_or(|gate| !gate.hold_input())
+    }
+    fn cancelled_finish(
+        &mut self,
+        totals: NormalTotals,
+        reports: &[(u64, Vec<RecordObservation>)],
+        history: &[NormalLeafSetHistoryBatch],
+        io: &mut Io,
+    ) -> Result<Option<&'static str>, String> {
+        let Some(gate) = self.prepared.as_ref().filter(|g| g.cancelled()) else {
+            return Ok(None);
+        };
+        self.ledger.history_reports(history, reports);
+        self.ledger.cancelled_first(totals, reports);
+        assert_eq!(self.phase_emitted, 0);
+        self.counter
+            .as_mut()
+            .expect("prepared accuracy counter owner")
+            .finish(totals, io)?;
+        emit(io, gate.cancellation_line().map_err(failure)?)?;
+        Ok(Some(
+            "prepared first record cancelled without invocation; full population incomplete",
+        ))
     }
     fn accepted_len(&self) -> usize {
         self.ledger.population.accepted.len()
@@ -445,6 +491,9 @@ impl<const N: usize> ApplicationTrait for Application<N> {
                 if let Some(timing) = timing {
                     let phase = self.phase.as_ref().expect("phase timing owner");
                     if self.phase_emitted == 0 {
+                        if let Some(gate) = &self.prepared {
+                            emit(io, gate.gate_line().map_err(failure)?)?;
+                        }
                         emit(io, phase.release().map_err(failure)?.line())?;
                     }
                     emit(io, timing.line())?;
@@ -479,6 +528,9 @@ impl<const N: usize> ApplicationTrait for Application<N> {
         self.ledger.expectations.complete(self.accepted_len())?;
         if let Some(phase) = &self.phase {
             phase.complete(self.phase_emitted).map_err(failure)?;
+        }
+        if let Some(gate) = &self.prepared {
+            gate.complete().map_err(failure)?;
         }
         Ok(())
     }
@@ -777,7 +829,29 @@ fn run_common_profile<const N: usize>(
     accuracy: Option<Policy>,
     phase_request: Option<phase::Request>,
 ) -> Result<(), String> {
-    let command = if phase_request.is_some() {
+    run_common_timing(
+        args,
+        k,
+        epochs,
+        leaves,
+        expectations,
+        accuracy,
+        (phase_request, None),
+    )
+}
+fn run_common_timing<const N: usize>(
+    args: &[std::ffi::OsString],
+    k: usize,
+    epochs: u32,
+    leaves: [Selection; N],
+    expectations: Expectations<N>,
+    accuracy: Option<Policy>,
+    timing: (Option<phase::Request>, Option<phase::prepared::Request>),
+) -> Result<(), String> {
+    let (phase_request, prepared_request) = timing;
+    let command = if prepared_request.is_some() {
+        phase::prepared::COMMAND
+    } else if phase_request.is_some() {
         phase::COMMAND
     } else if accuracy.is_some() {
         "normal-selected-accuracy-session"
@@ -955,8 +1029,12 @@ fn run_common_profile<const N: usize>(
         }),
         counter: accuracy.map(|_| counter::Evidence::new(record_cap(N) * N)),
         phase: phase_request.map(phase::Shared::new),
+        prepared: None,
         phase_emitted: 0,
     };
+    application.prepared = prepared_request.map(|request| {
+        phase::prepared::Shared::new(request, Arc::clone(application.phase.as_ref().unwrap()))
+    });
     let mut io = if accuracy.is_some() {
         Io::new_accuracy()?
     } else {
@@ -967,12 +1045,15 @@ fn run_common_profile<const N: usize>(
     let worker_custody = Arc::clone(&custody);
     let worker_counter = application.counter.as_ref().map(|c| Arc::clone(&c.custody));
     let worker_phase = application.phase.as_ref().map(Arc::clone);
+    let worker_prepared = application.prepared.as_ref().map(Arc::clone);
+    // The additive barrier shares one original two-second attachment budget.
+    let prepare_deadline = prepared_request.map(|_| Instant::now() + WAIT);
     let mut handle = Some(joined_task::spawn(move || {
         worker::run::<N>(
             (entries, expectations),
             client,
             worker_custody,
-            (ready, worker_counter, worker_phase),
+            (ready, worker_counter, worker_phase, worker_prepared),
             rx,
             events,
             cpus[1],
@@ -985,11 +1066,21 @@ fn run_common_profile<const N: usize>(
     let mut active_fail_stop = csv::FailStop(true);
     let outcome = (|| -> Result<Result<(), input::InputCompletion>, String> {
         pin(Some(cpus[0]));
-        let shared::worker::Event::Ready { tid } = replies.recv_timeout(WAIT).map_err(failure)?
+        let ready_wait = match prepare_deadline {
+            Some(until) => until
+                .checked_duration_since(Instant::now())
+                .ok_or("prepared setup deadline")?,
+            None => WAIT,
+        };
+        let shared::worker::Event::Ready { tid } =
+            replies.recv_timeout(ready_wait).map_err(failure)?
         else {
             return Err("leaf-set worker attachment handshake".into());
         };
         application.ready(tid, &mut io)?;
+        if let Some(until) = prepare_deadline {
+            prepared::prime(&mut application, &mut io, &tx, until)?;
+        }
         shared::drive(shared::Loop {
             app: &mut application,
             engine: &mut engine,

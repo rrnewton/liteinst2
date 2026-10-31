@@ -133,6 +133,48 @@ struct Stored {
     value: u64,
     after: [u64; 2],
 }
+/// Owned guarded storage before any invocation; never a returned Call.
+pub(in crate::normal) struct PreparedCall {
+    record: Arc<input::Record>,
+    stored: Box<Stored>,
+}
+impl PreparedCall {
+    pub(in crate::normal) fn new(record: Arc<input::Record>) -> Self {
+        assert_eq!(record.id, 1);
+        assert!((1..=64).contains(&record.length));
+        let owner = Self {
+            record,
+            stored: Box::new(Stored {
+                before: [0xa7a7; 2],
+                value: u64::MAX,
+                after: [0x5a5a; 2],
+            }),
+        };
+        owner.check();
+        owner
+    }
+    pub(in crate::normal) fn check(&self) {
+        self.record.check();
+        assert_eq!(self.stored.before, [0xa7a7; 2]);
+        assert_eq!(self.stored.value, u64::MAX);
+        assert_eq!(self.stored.after, [0x5a5a; 2]);
+    }
+    /// Same scalar target/ABI/lifetime contract as Call::invoke_phase. The caller
+    /// has checked the complete guard, admitted the fixed gate, and retained its
+    /// pre-CALL timing. Do not repeat custody scans after that final sample.
+    pub(in crate::normal) unsafe fn invoke(mut self, target: csv::Csv) -> (Call, Instant) {
+        unsafe { csv::invoke(target, self.record.bytes(), &mut self.stored.value) };
+        let observed = shared::phase::now();
+        (
+            Call {
+                record: self.record,
+                function: 0,
+                stored: self.stored,
+            },
+            observed,
+        )
+    }
+}
 pub(in crate::normal) struct Call {
     pub record: Arc<input::Record>,
     pub function: usize,
@@ -378,4 +420,42 @@ pub(super) fn run(
     ready.set(identity).unwrap();
     tx.send(Event::Ready { tid: identity.tid }).unwrap();
     shared::worker::drive(worker, rx, tx);
+}
+
+#[cfg(test)]
+mod prepared_owner_tests {
+    use super::*;
+    #[test]
+    fn prepared_guard_is_owned_before_call_and_unused_drop_retains_controller_record() {
+        for length in [1, 64] {
+            let record = Arc::new(input::Record::new(1, &vec![b'A'; length]).unwrap());
+            let owner = PreparedCall::new(Arc::clone(&record));
+            assert_eq!(Arc::strong_count(&record), 2);
+            owner.check();
+            assert_eq!(owner.stored.value, u64::MAX);
+            drop(owner); // no csv::invoke, no Call, no NORMAL acknowledgement
+            assert_eq!(Arc::strong_count(&record), 1);
+            record.check();
+        }
+    }
+    #[test]
+    fn prepared_guard_refuses_corruption_and_wrong_initial_record() {
+        for field in 0..3 {
+            let mut owner = PreparedCall::new(Arc::new(input::Record::new(1, b"A").unwrap()));
+            match field {
+                0 => owner.stored.before[0] ^= 1,
+                1 => owner.stored.value = 0,
+                _ => owner.stored.after[1] ^= 1,
+            }
+            assert!(std::panic::catch_unwind(|| owner.check()).is_err());
+        }
+        for (id, bytes) in [(2, b"A".as_slice()), (1, b"".as_slice())] {
+            assert!(
+                std::panic::catch_unwind(|| PreparedCall::new(Arc::new(
+                    input::Record::new(id, bytes).unwrap()
+                )))
+                .is_err()
+            );
+        }
+    }
 }

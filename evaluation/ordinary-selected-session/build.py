@@ -231,6 +231,8 @@ ACCURACY_SOURCES = (
     'evaluation/ordinary-accuracy/output.py',
     'evaluation/ordinary-accuracy/phase_output.py',
     'evaluation/ordinary-accuracy/phase_controls.py',
+    'evaluation/ordinary-accuracy/prepared_phase_output.py',
+    'evaluation/ordinary-accuracy/prepared_phase_controls.py',
     'evaluation/ordinary-accuracy/reader_controls.py',
     'evaluation/ordinary-accuracy/test_truth.py',
     'evaluation/ordinary-accuracy/truth.py',

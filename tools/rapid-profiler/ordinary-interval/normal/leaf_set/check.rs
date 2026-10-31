@@ -216,6 +216,18 @@ impl<const N: usize> Ledger<N> {
             assert_eq!(reports.iter().filter(|r| r.0 == generation).count(), 1);
         }
     }
+    pub(super) fn cancelled_first(
+        &self,
+        totals: NormalTotals,
+        reports: &[(u64, Vec<RecordObservation>)],
+    ) {
+        // Only a failure disposition, never a substitute for finish's full counts.
+        cancelled_population(&self.population, totals, reports);
+        self.expectations
+            .record(&self.population.accepted[0])
+            .unwrap();
+        assert!(self.calls.is_empty() && self.journals.is_empty());
+    }
     pub(super) fn finish(
         &self,
         totals: NormalTotals,
@@ -319,6 +331,22 @@ impl<const N: usize> Ledger<N> {
         Ok(())
     }
 }
+fn cancelled_population<const N: usize>(
+    population: &Population<N>,
+    totals: NormalTotals,
+    reports: &[(u64, Vec<RecordObservation>)],
+) {
+    assert_eq!(N, 1);
+    assert_eq!(population.accepted.len(), 1);
+    let record = &population.accepted[0];
+    assert_eq!(record.id, 1);
+    record.check();
+    assert_eq!(totals, NormalTotals::default());
+    assert_eq!(population.totals, totals);
+    assert!(population.rows.is_empty());
+    assert_eq!(population.batches, 0);
+    assert!(reports.iter().all(|(_, rows)| rows.is_empty()));
+}
 fn call_line(seen: Seen, f: usize, entry: u64, batch: u64) -> String {
     let r = seen.row.record;
     let raw = r.raw;
@@ -410,6 +438,28 @@ mod tests {
     use rapid_profiler::generation::{Admission, Epoch, GenerationId, Record};
     fn refuse(f: impl FnOnce()) {
         assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).is_err());
+    }
+    #[test]
+    fn cancelled_first_keeps_accepted_owner_and_refuses_any_native_or_extra_population() {
+        let (mut p, _, _) = fixture::<1>(10);
+        let record = Arc::new(input::Record::new(1, b"A").unwrap());
+        p.accept_with_limit(&record, 2048);
+        cancelled_population(&p, NormalTotals::default(), &[(7, vec![])]);
+        assert_eq!(p.accepted.len(), 1);
+        assert!(Arc::ptr_eq(&record, &p.accepted[0]));
+        let nonzero = NormalTotals {
+            entered: 1,
+            ..NormalTotals::default()
+        };
+        refuse(|| cancelled_population(&p, nonzero, &[]));
+        p.batches = 1;
+        refuse(|| cancelled_population(&p, NormalTotals::default(), &[]));
+        p.batches = 0;
+        p.accept_with_limit(&Arc::new(input::Record::new(2, b"B").unwrap()), 2048);
+        refuse(|| cancelled_population(&p, NormalTotals::default(), &[]));
+        assert_eq!(p.accepted.len(), 2); // refusal never deletes accepted evidence
+        p.accepted.clear();
+        refuse(|| cancelled_population(&p, NormalTotals::default(), &[]));
     }
     // Real core IDs plus fabricated scalar observations; no native owner/receipt/stream.
     fn fixture<const N: usize>(k: usize) -> (Population<N>, [FunctionId; N], GenerationId) {

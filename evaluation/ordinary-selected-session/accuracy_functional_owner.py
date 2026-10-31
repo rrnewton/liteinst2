@@ -20,12 +20,14 @@ EXTRAS = {'accuracy-prepare': BUILD+CONTROLS,
     'accuracy-functional': BUILD+CONTROLS+PREPARE+('geometry','geometry-sha')}
 PHASE_EXTRAS = {'phase-prepare': BUILD+CONTROLS+('epoch-phase',),
     'phase-functional': BUILD+CONTROLS+PREPARE+('geometry','geometry-sha','epoch-phase')}
+PREPARED_PHASE_EXTRAS = {'prepared-phase-prepare': BUILD+CONTROLS+('epoch-phase',),
+    'prepared-phase-functional': BUILD+CONTROLS+PREPARE+('geometry','geometry-sha','epoch-phase')}
 SCHEMA = 'selected-accuracy-functional-public-owner-v1'
 
 
 def extras(phase):
-    assert phase in EXTRAS or phase in PHASE_EXTRAS
-    return EXTRAS[phase] if phase in EXTRAS else PHASE_EXTRAS[phase]
+    assert phase in EXTRAS or phase in PHASE_EXTRAS or phase in PREPARED_PHASE_EXTRAS
+    return EXTRAS[phase] if phase in EXTRAS else (PHASE_EXTRAS[phase] if phase in PHASE_EXTRAS else PREPARED_PHASE_EXTRAS[phase])
 
 
 
@@ -52,10 +54,10 @@ def commands(options, python, script):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--phase', choices=tuple(EXTRAS)+tuple(PHASE_EXTRAS), required=True)
+    parser.add_argument('--phase', choices=tuple(EXTRAS)+tuple(PHASE_EXTRAS)+tuple(PREPARED_PHASE_EXTRAS), required=True)
     for name in COMMON[1:]:
         parser.add_argument('--'+name, required=True)
-    option_names = tuple(dict.fromkeys(k for row in (*EXTRAS.values(), *PHASE_EXTRAS.values()) for k in row))
+    option_names = tuple(dict.fromkeys(k for row in (*EXTRAS.values(), *PHASE_EXTRAS.values(), *PREPARED_PHASE_EXTRAS.values()) for k in row))
     for name in option_names:
         parser.add_argument('--'+name)
     args = parser.parse_args()

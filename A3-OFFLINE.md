@@ -125,6 +125,14 @@ cannot prove those historical or future conditions. Package verification must
 check the actual linked DSO and dependency graph before native execution; these
 source interfaces alone do not qualify that package or a whole-program run.
 
+The [native startup/output receipt](evaluation/offline-router-corpus/runtime-6ed5f2d/)
+records actual execution of both complete authored programs at `6ed5f2d`:
+40 original/candidate invocations passed all ten datasets. The separate
+[matched E9 receipt](evaluation/offline-router-corpus/e9-6ed5f2d/) passed all
+80 application rows and retained every selected jump. These results establish
+full-output correctness for that admitted package, not dynamic route coverage
+or full architectural-state, ABI, unwind or arbitrary-program qualification.
+
 ## Execution contract and remaining qualification
 
 Every emitted image currently records `qualification_complete=false`. A target

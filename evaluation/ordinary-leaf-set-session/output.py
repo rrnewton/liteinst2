@@ -158,7 +158,11 @@ def _check(stdout, stderr, *, records, table, caller, k, epochs, outcome, input_
     else:
         # Explicit additive wire only. Old wrappers cannot select this branch.
         assert type(accuracy_policy) is dict and set(accuracy_policy) == {'k', 'period_ms', 'epochs'}
-        if version == 'selected-accuracy-phase-session-v1':
+        if version == 'selected-accuracy-prepared-phase-session-v1':
+            assert (version, command, operations) == (
+                'selected-accuracy-prepared-phase-session-v1', 'normal-selected-accuracy-prepared-phase-session',
+                ('exact_work_nonempty',))
+        elif version == 'selected-accuracy-phase-session-v1':
             assert (version, command, operations) == (
                 'selected-accuracy-phase-session-v1', 'normal-selected-accuracy-phase-session',
                 ('exact_work_nonempty',))
