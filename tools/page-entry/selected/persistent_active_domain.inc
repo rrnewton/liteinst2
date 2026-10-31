@@ -402,11 +402,11 @@ static int pda_bind(const ucontext_t *uc) {
         pda_select(m->identity.slot,m->identity.bank);
         if(pe_bytes())return PE_PUBLICATION;
         g->domain_refs=1;
+        for(unsigned j=0;j<m->plan->heads;j++)if(m->plan->head[j].kind==LI2_PE_NONE
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER
-        for(unsigned j=0;j<m->plan->heads;j++)if(m->plan->head[j].kind==LI2_PE_NONE || m->plan->head[j].kind==LI2_PG_DIRECT) {
-#else
-        for(unsigned j=0;j<m->plan->heads;j++)if(m->plan->head[j].kind==LI2_PE_NONE) {
+            || m->plan->head[j].kind==LI2_PG_DIRECT
 #endif
+        ) {
             const struct li2_span_decoded *d=&m->plan->original[j];
             pe.gpr_written|=d->gpr_write;
             pe.flags_written|=d->flags_written|d->flags_set|d->flags_cleared|d->flags_undefined;
