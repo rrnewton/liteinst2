@@ -508,6 +508,9 @@ static _Noreturn void pda_abort(unsigned code,long detail) {
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
     pdao_terminal(1);
 #endif
+#ifdef LI2_PERSISTENT_SUBENTRY_CAPTURE
+    pso_terminal(1);
+#endif
     report(125,pe.p.first_error,pe.p.first_detail);
     (void)li2_raw6(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
 }

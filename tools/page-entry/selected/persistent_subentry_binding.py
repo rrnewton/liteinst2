@@ -12,7 +12,7 @@ LEAVES = tuple({'build-persistent-startup.sh':'build-persistent-subentry.sh',
                 'persistent_startup_binding.py':'persistent_subentry_binding.py'}.get(n,n)
                for n in STARTUP_LEAVES) + ('persistent_subentry.h','persistent_subentry.inc',
                                          'persistent_subentry_source.inc')
-MODES = ('release', 'counters')
+MODES = ('release', 'capture', 'differential', 'counters')
 
 
 def main():

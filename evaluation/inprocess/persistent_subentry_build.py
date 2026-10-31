@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import re
 import shutil
+import struct
 from maps_view import (need, fact, SELECTED, UNITS, MACROS, recipe, expand, headers,
                        bridge_check, ENV, hidden_memset, body_check, digest, H)
 from linked_epoch_build import FIXED_DOMAIN
@@ -32,7 +33,7 @@ ACTIVE_PROVIDERS = tuple('li2_pgd_source_release' if name == 'li2_pg_source_rele
 )
 
 def binding_config(builder, archive, image, output, pin, binary, run, *, mode):
-    need(mode in ('release','counters'), 'explicit subentry release/counter mode')
+    need(mode in ('release','capture','differential','counters'), 'explicit subentry build mode')
     image = pin(binary(image))
     original = dynamic_original_image(image)
     values = []
@@ -71,9 +72,9 @@ def binding_config(builder, archive, image, output, pin, binary, run, *, mode):
 
 
 def build_bridge(builder, products, private, pin, binary, aliases, run, record, image, *, capture=False, retained_counters=False, differential=False):
-    need(capture is False and differential is False,
-         'release-only subentry builder; full capture has a separate contract')
-    mode='counters' if retained_counters else 'release'
+    need(type(capture) is bool and type(differential) is bool and (not differential or capture),
+         'differential validation is an explicit capture mode')
+    mode='counters' if retained_counters else 'differential' if differential else 'capture' if capture else 'release'
     need(type(retained_counters) is bool and not (capture and retained_counters),
          'explicit active-domain counters require release without capture')
     need(builder.mov_guard is True and builder.linked_epoch is True and (builder.scalar_span is True) and (builder.extra_decoder_sources == ('region.rs', 'mov_guard.rs')) and (builder.decoder_features == FEATURES) and (builder.record.get('decoder_features') == list(FEATURES)) and (builder.environment.get('LI2_DECODER_FEATURES') == 'linked-epoch,mov-guard'), 'one explicit persistent decoder feature/source closure')
@@ -84,6 +85,7 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     output = private / ('persistent-subentry-'+mode)
     output.mkdir()
     binding = binding_config(builder, archive, image, output, pin, binary, run, mode=mode)
+    observation = capture_config(builder, image, output, pin, binary, run) if capture else None
     script = pin(SELECTED / ('build-persistent-subentry'+('' if mode=='release' else '-'+mode)+'.sh'))
     rows = recipe(script, '"$cc_bin"')
     need(len(rows) == 1, 'one source-owned persistent compiler recipe')
@@ -92,6 +94,10 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     units.append(str(SELECTED / 'linked_jmp_dispatch.c'))
     macros = ('PERSISTENT_GROUP', 'PERSISTENT_EPOCH', 'MOV_GUARD', 'LINKED_EPOCH', 'SCALAR_SPAN', 'SCALAR_SPAN_TRACE', 'SPAN_FAST_BYTES', 'MAPS_CURRENT_TF', 'SCALAR_REGION', 'SCALAR_REGION_REUSE', 'INITIAL_CODE_PROTECTION', 'UNROLLED_HASH', 'MAPS_MAINTAINED') + MACROS
     macros = ('PERSISTENT_SUBENTRY','PERSISTENT_UNREGISTERED','MAPS_PARSE_MEMO','LINKED_NATIVE_PROBE','PERSISTENT_ACTIVE_DOMAIN','RSEQ_CURRENT_DATA','PERSISTENT_RETAINED_TWO','PERSISTENT_DISPATCH') + macros
+    if capture:
+        macros = ('PERSISTENT_SUBENTRY_CAPTURE',) + macros
+    if differential:
+        macros = ('MAPS_DIFFERENTIAL',) + macros
     if retained_counters:
         macros = ('PERSISTENT_RETAINED_TWO_COUNTERS', 'PERSISTENT_GROUP_COUNTERS') + macros
     name='bridge-persistent-subentry'+('' if mode=='release' else '-'+mode)+'.so'
@@ -100,6 +106,8 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     state['active_domain'] = dict(version=1, unregistered=True, subentry=True, slots=2, same_source_pair=True, joint_receipts=3, directory_heads=256,
         maintained_rseq=True,differential=differential,native_probe=True,parse_memo=True,immutable_reconstruction='one-whole-certificate' if capture else None)
     state['dispatch'] = dict(version=3, heads_min=1, heads_max=128, header_abi=1, shared_boundaries=8, code_pages=17, emitter_slot_bytes=512, emitter_boundaries=64)
+    if capture:
+        state['capture_config'] = observation
     headers('persistent-group-release-headers', argv, units, archive, builder, pin, aliases, run, state)
     for value in binding['sources']:
         if value['path'].endswith(('.c', '.h', '.inc')):
@@ -116,7 +124,11 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     forbidden = {'persistent_plan.c', 'persistent_compact.c', 'persistent_lifetime.h', 'persistent_runtime.h', 'persistent_source.inc', 'persistent_rseq.inc', 'persistent_controller.inc', 'persistent_dynamic_controller.inc', 'persistent_dynamic_plan.h', 'persistent_dynamic_plan.inc', 'persistent_epoch_config.h', 'persistent_dynamic_capture_config.h', 'selected_scalar_span.inc', 'selected_scalar_span_reuse.inc', 'unrolled_hash_nested_fp.h'}
     counter_names = {'persistent_group_counters.h', 'persistent_group_counters.inc'}
     need(names.intersection(counter_names) == (counter_names if retained_counters else set()), 'exact counter bootstrap/header compiler closure only in explicit release diagnostic')
-    need(all((str((SELECTED / n).resolve()) in state['headers'] for n in required_group)) and (not names.intersection(forbidden)) and (not any(('observe' in n or n.startswith(('linked_preedge_', 'linked_native_hint')) for n in names))), 'exact group release source closure without an old owner, classifier, capture or wire alias')
+    observation_names = {'persistent_subentry_observe.h','persistent_subentry_observe.inc',
+                         'persistent_subentry_observe_memory.h','persistent_subentry_observe_memory.inc'}
+    if capture:
+        need(all((str((SELECTED / n).resolve()) in state['headers'] for n in observation_names)) and digest(state['headers'].get(observation['header']['path'])) == digest({k: observation['header'][k] for k in ('bytes','sha256')}), 'all four actual observation leaves and exact generated capture header are compiler inputs')
+    need(all((str((SELECTED / n).resolve()) in state['headers'] for n in required_group)) and (not names.intersection(forbidden)) and (not any(('observe' in n and (not (capture and n in observation_names)) or n.startswith(('linked_preedge_', 'linked_native_hint')) for n in names))), 'exact group release source closure without an old owner, classifier, capture or wire alias')
     bridge = Path(argv[-1])
     run('persistent-group-release-link', argv, profile='release_build', env=builder.environment)
     state['bridge'] = fact(binary(bridge))
@@ -125,7 +137,7 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     need(out == err == b'', 'persistent bridge has no unresolved imports')
     _, symbols, err = run('persistent-group-release-symbols', [builder.tools['nm'], '-S', '--defined-only', bridge], profile='inspect', env=builder.environment)
     need(not err, 'complete actual persistent symbol census')
-    for name in ACTIVE_PROVIDERS:
+    for name in ACTIVE_PROVIDERS + (('li2_pso_trace_closed',) if capture else ()):
         found = [line.split() for line in symbols.splitlines() if line.split()[-1:] == [name.encode()]]
         need(len(found) == 1 and len(found[0]) == 4 and (found[0][2] in (b't', b'T')) and (int(found[0][1], 16) > 0), 'actual nonempty persistent proof/owner provider ' + name)
     memo = [line.split() for line in symbols.splitlines() if line.split()[-1:] == [b'maps_parse_memo']]
@@ -150,10 +162,97 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
         state['counter_schema'] = dict(version=2, bytes=752, page=4096, initial_seals=6, final_seals=23)
         state['counters'] = True
         state['retained_counters'] = True
+    if capture:
+        capture_extents(builder, bridge, symbols, pin, run, state)
     fast_bytes(builder, output, pin, binary, aliases, run, state)
     need(digest(fact(archive)) == digest(binding['archive']) and fact(image) == binding['original']['image'] and all((fact(SELECTED / v['path']) == {k: v[k] for k in ('bytes', 'sha256')} for v in binding['sources'])) and all((fact(v['path']) == {k: v[k] for k in ('bytes', 'sha256')} for v in binding['header_paths'].values())) and (fact(binding['manifest']['path']) == {k: binding['manifest'][k] for k in ('bytes', 'sha256')}), 'archive, original image, full policy and configuration unchanged through build and byte oracle')
+    if capture:
+        need(all((fact(observation[key]['path']) == {k: observation[key][k] for k in ('bytes','sha256')} for key in ('script','header'))) and all((fact(path) == value for path,value in state['headers'].items())) and fact(script) == state['recipe'], 'actual capture selectors and complete compiler inputs unchanged through byte oracle')
     state['status'] = 'passed'
     return bridge
+
+
+def capture_config(builder, image, output, pin, binary, run):
+    """Independently bind both actual entries and the whole original source pair."""
+    image = pin(binary(image))
+    original = dynamic_original_image(image)
+    data = image.read_bytes()
+    def take(at, size):
+        need(type(at) is int and type(size) is int and 0 <= at <= len(data)
+             and 0 <= size <= len(data)-at, 'whole fixture ELF range')
+        return data[at:at+size]
+    h = struct.unpack('<16sHHIQQQIHHHHHH', take(0,64))
+    need(h[1:4] == (2,62,1) and h[8:10] == (64,56) and 0 < h[10] <= 32
+         and h[11] == 64 and 0 < h[12] <= 256, 'bounded actual subentry fixture')
+    ph = [struct.unpack('<IIQQQQQQ',take(h[5]+i*56,56)) for i in range(h[10])]
+    sections = [struct.unpack('<IIQQQQIIQQ',take(h[6]+i*64,64)) for i in range(h[12])]
+    tables = [s for s in sections if s[1] == 2]
+    need(len(tables) == 1 and tables[0][9] == 24 and tables[0][5]%24 == 0,
+         'one complete source symbol table')
+    table = tables[0]
+    need(table[6] < len(sections) and sections[table[6]][1] == 3, 'source symbol strings')
+    strings = sections[table[6]]
+    names = take(strings[4],strings[5])
+    expected = {'region_app_page':0, 'region_app_predecessor':0x1fe,
+        'region_app_head':0x200, 'region_app_a_exit':0x2fc,
+        'region_app_second_page':4096, 'region_app_block_b':0x1100,
+        'region_app_b_exit':0x1107, 'region_app_trampoline':0x1120,
+        'region_app_source_end':8192, 'region_app_capture':8192}
+    wanted = set(expected) | {'region_app_subentry_pointer'}
+    found = {}
+    for at in range(table[4],table[4]+table[5],24):
+        n,info,other,section,value,size = struct.unpack('<IBBHQQ',take(at,24))
+        need(n < len(names) and b'\0' in names[n:], 'complete source symbol name')
+        name = names[n:names.index(b'\0',n)].decode()
+        if name in wanted:
+            need(section and name not in found, 'unique defined source symbol')
+            if name == 'region_app_head':
+                need(info&15 == 2 and size == 257, 'entire original root sequence')
+            found[name] = value
+    need(set(found) == wanted, 'every source pair and suffix symbol')
+    base = found['region_app_page']
+    need(base >= 4096 and not base%4096 and base+8192 < 1<<31 and
+         all(found[n] == base+offset for n,offset in expected.items()), 'exact source geometry')
+    owners = [p for p in ph if p[0] == 1 and p[1] == 5 and p[5] <= p[6]
+              and p[3] <= base and base-p[3]+8192 <= p[5]]
+    need(len(owners) == 1 and all(p == owners[0] for p in ph if p[0] == 1
+         and p[3] < base+8192 and base < p[3]+p[6]), 'one nonoverlapping original RX pair')
+    p = owners[0]
+    pair = take(p[2]+base-p[3],8192)
+    pointer = found['region_app_subentry_pointer']
+    displacement = pointer-base-0x112e
+    need(-(1<<31) <= displacement < 1<<31, 'ordinary trampoline displacement')
+    whole = bytearray(b'\xcc'*8192)
+    whole[0x1fe:0x200] = bytes.fromhex('6690')
+    whole[0x200:0x2fc] = bytes.fromhex('4883c001')*63
+    whole[0x2fc:0x301] = b'\xe9'+struct.pack('<i',0x1100-0x301)
+    whole[0x1100:0x110a] = bytes.fromhex('4889074883c20141ff23')
+    whole[0x1120:0x112e] = bytes.fromhex('49924c87c74d87e3ff25')+struct.pack('<i',displacement)
+    need(pair == bytes(whole), 'all8192 source bytes including padding and unsupported frontier')
+    pointer_owners = [p for p in ph if p[0] == 1 and p[1] == 4 and
+                      p[3] <= pointer and pointer-p[3]+8 <= p[5]]
+    need(len(pointer_owners) == 1, 'one read-only ordinary trampoline pointer')
+    q = pointer_owners[0]
+    need(struct.unpack('<Q',take(q[2]+pointer-q[3],8))[0] == base+0x1100,
+         'actual ordinary memory jump targets head64')
+    need(any(p[0] == 1 and p[1] == 5 and p[3] <= base+8192 and
+             base+8192-p[3]+6 <= p[5] for p in ph), 'original suffix executable bytes')
+    values = {'ROOT':base+0x200, 'HEAD':base+0x1100, 'EXIT':base+0x1107,
+              'TRAMPOLINE':base+0x1120, 'NEXT':base+8192}
+    header = ('#ifndef LI2_PERSISTENT_SUBENTRY_CAPTURE_CONFIG_H\n'
+              '#define LI2_PERSISTENT_SUBENTRY_CAPTURE_CONFIG_H\n'
+              '#define LI2_PSO_CAPTURE_VERSION 7\n'+
+              ''.join('#define LI2_PSO_'+k+'_RVA 0x%xULL\n'%v for k,v in values.items())+
+              '#endif\n').encode()
+    script = pin(SELECTED/'persistent_subentry_capture_binding.py')
+    _,out,err = run('subentry-capture-binding',[builder.tools['python'],'-B',script,image,output],
+                   env=builder.environment)
+    need(out == err == b'', 'observation-only binder diagnostics empty')
+    destination = pin(binary(output/'persistent_subentry_capture_config.h'))
+    need(destination.read_bytes() == header, 'complete independently derived observation header')
+    return dict(version=7,original=original,symbols=values,source_pages=[base,base+4096],
+        source_pair=dict(bytes=len(pair),sha256=H(pair)),
+        script=dict(path=str(script),**fact(script)),header=dict(path=str(destination),**fact(destination)))
 
 
 def domain_protected_extents(builder, bridge, symbols, pin, run, state):
@@ -239,3 +338,32 @@ def subentry_extents(builder, bridge, pin, run, state):
          'entry custody retained by value in all three unchanged completion cells')
     state['subentry_extents'] = dict(zip(('target','entry','owner_entry','live_entry',
         'completed_entry','domain','work','completion','receipts','owner_entry_and_counts'),sizes))
+
+
+def capture_extents(builder, bridge, symbols, pin, run, state):
+    """Actual shared literals and complete mutable transcripts under original cap."""
+    gdb = pin(shutil.which('gdb', path=ENV['PATH']))
+    expression = ('printf "LI2_PSO_EXTENTS %llu %llu %llu %llu %llu %llu %llu\\n", '
+        '(unsigned long long)sizeof(pso_wire), '
+        '(unsigned long long)sizeof(struct pso_certificate), '
+        '(unsigned long long)sizeof(struct pso_epoch), '
+        '(unsigned long long)sizeof(struct pso_next), '
+        '(unsigned long long)sizeof(struct pso_stage), '
+        '(unsigned long long)sizeof(struct pso_slots), '
+        '(unsigned long long)sizeof(struct pso_epoch_info)')
+    _, out, err = run('persistent-subentry-capture-extents', [gdb, '-nx', '-nh', '-batch',
+        '-iex', 'set auto-load off', '-iex', 'set debuginfod enabled off',
+        '-iex', 'set index-cache enabled off', '-iex', 'maintenance set worker-threads 1',
+        '-ex', 'file '+str(bridge), '-ex', expression], profile='inspect',
+        env=dict(builder.environment, MALLOC_ARENA_MAX='1'))
+    match = re.fullmatch(rb'LI2_PSO_EXTENTS ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+)\n', out)
+    need(not err and match is not None, 'exact actual active-domain capture DWARF result')
+    sizes = tuple(map(int, match.groups()))
+    need(sizes == (3057152,434240,958400,267968,104120,71432,15176) and
+         sizes[0]+64 < 4*1024*1024, 'whole exact active-domain capture fits original4MiB')
+    rows = [line.split() for line in symbols.splitlines() if line.split()[-1:] == [b'pso_wire']]
+    need(len(rows) == 1 and len(rows[0]) == 4 and rows[0][2] in (b'b',b'B') and
+         int(rows[0][1],16) == sizes[0], 'actual active-domain ELF BSS equals DWARF wire')
+    state['capture_extents'] = dict(zip(('wire','certificate','epoch','next','stage','slots','epoch_info'),sizes))
+    state['capture_extents'].update(footer=64,stream=sizes[0]+64,record_limit=4*1024*1024,
+        representation='one literal immutable certificate, two complete activation and next-TRACE records and whole byte comparisons')
