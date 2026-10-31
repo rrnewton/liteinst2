@@ -2313,6 +2313,7 @@ impl TrampolinePlan {
         };
         let mut fragments = Vec::new();
         let mut original_operands = Vec::new();
+        let mut jrcxz_bridges = Vec::new();
         let mut emitted_nops = Vec::new();
         // Give every encoder label an identity distinct from *all* original
         // addresses and operands. Direct branches are retargeted explicitly;
@@ -2492,7 +2493,14 @@ impl TrampolinePlan {
                 if let Some(bytes) = retained_nop {
                     emitted_nops.push((encoded_instructions.len(), bytes));
                 }
-                original_operands.push((encoded_instructions.len(), *original));
+                if artifact.is_some() && artifact_jrcxz::eligible(original) {
+                    // This explicit PIC bridge has its own complete field ledger.
+                    // Live emission and every other original retain the old encoder path.
+                    jrcxz_bridges.push((encoded_instructions.len(), *original));
+                    instruction = artifact_jrcxz::instruction(instruction.ip())?;
+                } else {
+                    original_operands.push((encoded_instructions.len(), *original));
+                }
                 encoded_instructions.push(instruction);
             }
             heads.push((original.ip(), entry_index, body_index, replaced));
@@ -2681,6 +2689,14 @@ impl TrampolinePlan {
                 address,
                 &block.encoded,
                 &original_operands,
+                &entry_routes,
+            )?;
+            artifact_jrcxz::append_fields(
+                &mut fields,
+                input,
+                address,
+                &block.encoded,
+                &jrcxz_bridges,
                 &entry_routes,
             )?;
             if let Some(fragment) = &return_fragment {
@@ -3624,6 +3640,9 @@ fn artifact_target(input: &ArtifactEmission, address: u64) -> Target {
         offset: i128::from(address),
     })
 }
+
+#[path = "trampoline/artifact_jrcxz.rs"]
+mod artifact_jrcxz;
 
 fn append_artifact_original_fields(
     fields: &mut Vec<Fixup>,

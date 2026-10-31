@@ -74,10 +74,20 @@ impl Encoding {
 pub enum Role {
     LogicalPc,
     HookCall,
-    OriginalBranch { original_pc: u64 },
-    OriginalRipOperand { original_pc: u64 },
+    OriginalBranch {
+        original_pc: u64,
+    },
+    /// Local edge in the finite artifact JRCXZ bridge; not a new original head.
+    OriginalBranchBridge {
+        original_pc: u64,
+    },
+    OriginalRipOperand {
+        original_pc: u64,
+    },
     Return,
-    OriginalAbsoluteOperand { original_pc: u64 },
+    OriginalAbsoluteOperand {
+        original_pc: u64,
+    },
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
