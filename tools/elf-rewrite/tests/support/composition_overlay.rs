@@ -439,7 +439,7 @@ fn predecessor_authentication_requires_exact_identity_originals_and_complete_cov
         scope: site.function,
         provenance: EntryProvenance::Declared("full fixture entries".into()),
         completeness: site.completeness,
-        entries: site.heads.clone(),
+        entries: site.heads.as_ref().clone(),
         resumes: site.resumes.clone(),
     };
     let emission = ArtifactEmission::new(
