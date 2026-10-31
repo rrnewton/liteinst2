@@ -24,6 +24,11 @@ static int layout_valid(const struct li2_pg_layout *l) {
     if(l->directory<LI2_REGION_PAGE || (l->directory&4095U) ||
        !address(l->directory,LI2_JD_DOMAIN_BYTES))return 0;
     for(unsigned i=0;i<5;i++)if(overlap(l->directory,LI2_JD_DOMAIN_BYTES,a[i],n[i]))return 0;
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+    if(l->window<LI2_REGION_PAGE || (l->window&4095U) || !address(l->window,LI2_CD_WINDOW_PAGE) ||
+       overlap(l->window,LI2_CD_WINDOW_PAGE,l->directory,LI2_JD_DOMAIN_BYTES))return 0;
+    for(unsigned i=0;i<5;i++)if(overlap(l->window,LI2_CD_WINDOW_PAGE,a[i],n[i]))return 0;
+#endif
     return 1;
 }
 #else
@@ -240,6 +245,59 @@ static int materialize_direct(const struct li2_pg_compact *p,unsigned i,struct l
     copy(out->image,head_image(p,i),out->record.image_bytes);return 0;
 }
 #endif
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+static int materialize_call(const struct li2_pg_compact *p,unsigned i,struct li2_cd_plan *out) {
+    if(i>=p->heads || i>=LI2_PG_HEADS)return LI2_PG_CORRUPT;
+    const struct li2_pe_head *h=&p->head[i];const struct li2_pg_call_record *r=&p->guard[i].call;
+    const struct li2_span_decoded *d=&p->original[i];const struct li2_cd_descriptor *a=&p->instruction[i].call;
+    if(h->kind!=LI2_PG_CALL || h->successor_count || h->successors[0] || h->successors[1] ||
+       h->source_page>=2 || h->source_offset>=LI2_REGION_PAGE ||
+       !h->source_length || h->source_length>15 || d->decoded.length!=h->source_length ||
+       d->decoded.pc!=p->page[h->source_page]+h->source_offset ||
+       d->decoded.next_pc!=d->decoded.pc+h->source_length ||
+       !h->generated_length || h->generated_length>LI2_PE_SLOT_BYTES || r->image_bytes!=h->generated_length ||
+       r->version!=LI2_CD_VERSION || r->ready!=1 || r->result ||
+       !r->boundaries || r->boundaries>LI2_CD_BOUNDARIES ||
+       d->decoded.available<h->source_length || d->decoded.available>15)return LI2_PG_CORRUPT;
+    const unsigned prefix=d->decoded.bytes[0]==0x41?1U:0U;
+    if(h->source_length!=prefix+2U || d->decoded.bytes[prefix]!=0xff ||
+       d->decoded.bytes[prefix+1]<0xd0 || d->decoded.bytes[prefix+1]>0xd7)return LI2_PG_CORRUPT;
+    struct li2_decoded decoded={.pc=d->decoded.pc,.next_pc=d->decoded.pc+h->source_length,
+        .abi_version=1,.decode_status=LI2_VALID,.code=759,.kind=LI2_NONE,.destination=16,
+        .step_disposition=LI2_STEP_UNSUPPORTED,.available=d->decoded.available,.length=h->source_length};
+    if(!address(decoded.pc,decoded.available))return LI2_PG_CORRUPT;
+    for(unsigned k=0;k<decoded.available;k++) {
+        unsigned page;uintptr_t at=decoded.pc+k;
+        for(page=0;page<2;page++)if(at>=p->page[page] && at-p->page[page]<LI2_REGION_PAGE)break;
+        if(page==2 || d->decoded.bytes[k]!=p->source[page][at-p->page[page]])return LI2_PG_CORRUPT;
+        decoded.bytes[k]=d->decoded.bytes[k];
+    }
+    if(!equal(&decoded,&d->decoded,sizeof decoded))return LI2_PG_CORRUPT;
+    struct li2_cd_descriptor expected={.decoded=decoded,
+        .tf={.pc=d->decoded.pc,.next_pc=d->decoded.next_pc,.abi_version=1,.policy=1,
+             .code=759,.length=h->source_length,.flow=LI2_TF_NEAR_FLOW,.family=LI2_TF_CALL},
+        .version=LI2_CD_VERSION,.ready=1,.available=d->decoded.available,
+        .target=(d->decoded.bytes[prefix+1]&7U)+8U*prefix};
+    if(!equal(a,&expected,sizeof expected))return LI2_PG_CORRUPT;
+    struct li2_span_decoded span={.decoded=a->decoded,.version=1,.refusal=LI2_REGION_UNSUPPORTED};
+    if(!equal(d,&span,sizeof span))return LI2_PG_CORRUPT;
+    unsigned exits=0;if(p->exits>LI2_PG_BOUNDARIES)return LI2_PG_CORRUPT;
+    for(unsigned j=0;j<p->exits;j++)if(p->exit_pc[j]==d->decoded.pc) {
+        if(!equal(&p->frontier[j],d,sizeof *d))return LI2_PG_CORRUPT;
+        ++exits;
+    }
+    if(exits!=1)return LI2_PG_CORRUPT;
+    zero(out,sizeof *out);
+    if(li2_pg_call_binding(p->page,&p->layout,p->table.address,p->heads,i,&out->binding))return LI2_PG_CORRUPT;
+    struct li2_cd_record *g=&out->record;
+    g->version=r->version;g->ready=r->ready;g->result=r->result;g->image_bytes=r->image_bytes;
+    g->boundaries=r->boundaries;g->push_offset=r->push_offset;g->transfer_offset=r->transfer_offset;g->miss_offset=r->miss_offset;
+    g->literal_offset=LI2_CD_SLOT_BYTES-8;
+    copy(g->scratch_regs,r->scratch_regs,sizeof g->scratch_regs);copy(g->boundary,r->boundary,sizeof g->boundary);
+    copy(&out->original,a,sizeof *a);out->generated=head_generated(p,i);out->spill=p->layout.spill;
+    copy(out->image,head_image(p,i),LI2_CD_SLOT_BYTES);return 0;
+}
+#endif
 static int project(const struct li2_pg_plan *p,struct li2_pg_compact *out) {
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
     union li2_pg_guard actual;
@@ -262,6 +320,16 @@ static int project(const struct li2_pg_plan *p,struct li2_pg_compact *out) {
     for(unsigned i=0;i<LI2_PG_HEADS;i++) {
         const union li2_pg_guard *whole=&p->guard[i];
         zero(&actual,sizeof actual);
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+        if(i<p->heads && p->head[i].kind==LI2_PG_CALL) {
+            const struct li2_cd_record *g=&whole->call.record;struct li2_pg_call_record *r=&out->guard[i].call;
+            r->version=g->version;r->ready=g->ready;r->result=g->result;r->image_bytes=g->image_bytes;
+            r->boundaries=g->boundaries;r->push_offset=g->push_offset;r->transfer_offset=g->transfer_offset;r->miss_offset=g->miss_offset;
+            copy(r->scratch_regs,g->scratch_regs,sizeof r->scratch_regs);copy(r->boundary,g->boundary,sizeof r->boundary);
+            if(materialize_call(out,i,&actual.call) || !equal(whole,&actual,sizeof actual))goto corrupt;
+            continue;
+        }
+#endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER
         if(i<p->heads && p->head[i].kind==LI2_PG_DIRECT) {
             copy(&out->guard[i].direct,&whole->direct.record,sizeof out->guard[i].direct);
@@ -363,6 +431,15 @@ int li2_pg_compact_exit(const struct li2_pg_compact *p,uintptr_t pc,uint64_t fla
     return selected;
 }
 #endif
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+int li2_pg_compact_call(const struct li2_pg_compact *p,unsigned member,unsigned head,struct li2_cd_plan *out) {
+    if(!storage(p,sizeof *p) || !storage(out,sizeof *out) ||
+       (uintptr_t)p%_Alignof(struct li2_pg_compact) || (uintptr_t)out%_Alignof(struct li2_cd_plan) ||
+       overlap((uintptr_t)p,sizeof *p,(uintptr_t)out,sizeof *out))return LI2_PG_ARGUMENT;
+    zero(out,sizeof *out);
+    return header(p) && member<2 && head<p->member_heads[member]?materialize_call(p,member*LI2_PE_HEADS+head,out):LI2_PG_CORRUPT;
+}
+#endif
 int li2_pg_compact_guard(const struct li2_pg_compact *p,unsigned member,unsigned head,struct li2_mg_plan *out) {
     if(!storage(p,sizeof *p) || !storage(out,sizeof *out) ||
        (uintptr_t)p%_Alignof(struct li2_pg_compact) || (uintptr_t)out%_Alignof(struct li2_mg_plan) ||
@@ -427,6 +504,27 @@ int li2_pg_compact_recover(const struct li2_pg_compact *p,uintptr_t pc,const uin
     unsigned i=member*LI2_PE_HEADS+local;
     const struct li2_pe_head *h=&p->head[i];const struct li2_span_decoded *d=&p->original[i];
 #if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+    if(h->kind==LI2_PG_CALL) {
+        zero(guard_scratch,sizeof *guard_scratch);
+        if(li2_pg_compact_call(p,member,local,&guard_scratch->call))return LI2_PG_CORRUPT;
+        const struct li2_cd_plan *g=&guard_scratch->call;struct li2_cd_recovered value;
+        if(offset>=g->record.image_bytes)return LI2_PG_MISS;
+        unsigned found=0;
+        for(unsigned j=0;j<g->record.boundaries;j++)if(g->record.boundary[j].offset==offset)++found;
+        if(!found)return LI2_PG_MISS;
+        if(found!=1)return LI2_PG_CORRUPT;
+        int e=li2_cd_recover(g,pc,raw,flags,spill,&value);
+        if(e || value.complete!=1 || value.return_pc!=d->decoded.next_pc ||
+           (value.phase!=LI2_CD_BEFORE && value.phase!=LI2_CD_PUSH && value.phase!=LI2_CD_COMMITTED) ||
+           (value.phase!=LI2_CD_COMMITTED && value.original_pc!=d->decoded.pc))return LI2_PG_CORRUPT;
+        /* COMMITTED returns target-before with the already decremented RSP.
+           It must never be relabeled as the original CALL-before exit. */
+        copy(out->gpr,value.gpr,sizeof out->gpr);out->flags=value.flags;out->original_pc=value.original_pc;
+        out->member=member;out->head=local;out->link=UINT32_MAX;
+        out->kind=LI2_PG_CALL_MAP;out->phase=value.phase;out->complete=1;return 0;
+    }
+#endif
     if(h->kind==LI2_PG_DISPATCH) {
         /* Authenticate the actual saved boundary before reading any spill.
            CELL_READY describes private-cell initialization, not JMP completion. */
