@@ -517,6 +517,28 @@ def native_probe_component(builder,private,pin,binary,run,r):
     state.update(status='passed',counts=PROBE_COUNTS)
 
 
+def repeat_setup_completed(stderr,image,summary):
+    """Add an exact fixture-site join after the unchanged positive REP reader."""
+    prefix=b'LI2_REPEAT_LEASE ';lines=[x for x in stderr.splitlines()if x.startswith(prefix)]
+    need(len(lines)==1,'one actual positive fixture REP row')
+    row=reports.maps_view.pair.pair_reports.rseq.decode(lines[0][len(prefix):])
+    need(prefix+json.dumps(row,separators=(',',':'),allow_nan=False).encode()==lines[0],
+         'canonical actual fixture REP row')
+    setup=image['repeat_setup'];pc=setup['pc'];destination=setup['destination']
+    binding=summary['source_binding']
+    need(row['request'][:4]==[pc,setup['next_pc'],346,3]and
+         row['request'][5]==0xab48f3 and row['request'][6]&0x400==0 and
+         setup['count']==8 and setup['width']==8 and setup['value']==0x8877665544332211 and
+         row['progress'][0]==8 and row['frames'][2:4]==[8,destination]and
+         row['frames'][9:11]==[0,destination+64]and
+         summary['last_code']==346 and summary['last_initial_count']==8 and
+         summary['registration_scope']=='before_first_registration'and
+         binding['module']==summary['source_module']==0 and
+         binding['file_offset']==summary['source_file_offset']==setup['file_offset']and
+         binding['emitted_bytes']=='f348ab'and binding['image_sha256']==image['sha256'],
+         'actual positive REP is the exact low fixture STOSQ and complete eight-word destination')
+
+
 def cohort(builder,products,private,pin,binary,aliases,run,r):
     authority_component(builder,products,private,pin,binary,aliases,run,r)
     dispatch_component(builder,products,private,pin,binary,aliases,run,r)
@@ -587,6 +609,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r):
                 actual_owner=owner_reader.read(*owner_args)
                 terminal_args=(row['pid'],row['exit'],row['stdout_provenance_before'],images,raws,fact(carrier),carrier_bytes,actual_owner,owner_reader,mode)
                 terminal,c['terminal']=reports.check(stderr,*terminal_args,lane=lane);r['terminal_reports'][label]=terminal
+                repeat_setup_completed(stderr,app_layout,c['terminal']['repeat_lease'])
                 c['native_probe_controls']=reports.probe.controls(stderr,terminal)
                 named(c['native_probe_controls'],reports.probe.CONTROL_COUNT,H(stderr),hash_key='original_stderr_sha256')
                 c['terminal_controls']=reports.controls(stderr,*terminal_args,lane=lane)

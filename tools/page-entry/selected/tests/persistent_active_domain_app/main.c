@@ -29,6 +29,11 @@ __attribute__((section(".li2_ua_state"))) struct ua_live ua_input,ua_before,ua_a
 __attribute__((section(".li2_ua_state"))) unsigned char ua_before_live[UA_LIVE],ua_after_live[UA_LIVE];
 static struct ra_prefix prefix;
 static struct ra_suffix suffix;
+/* Separate setup destination: eight actual STOSQ writes and two untouched
+   sentinel words. It is not part of the focal source/data/stack oracle. */
+volatile uint64_t region_app_repeat_buffer[10];
+extern unsigned char region_app_repeat_page[],region_app_repeat_site[],region_app_repeat_next[];
+void region_app_repeat_setup(volatile uint64_t *);
 static struct ra_observation *observation;
 static unsigned mode,native,handling,started,ended,frames,fault_seen,attempt;
 static uint64_t current_machine[8];
@@ -193,6 +198,17 @@ static void registration(unsigned close){
  need(!e->result,140+close);copy(e->after,(const void *)RSEQ_BASE,32);
  need(!e->before[1]&&!e->after[1],142+close);
 }
+static void repeat_setup(void){
+ need((uintptr_t)region_app_repeat_page>=UA_PAGE&&
+      (uintptr_t)region_app_repeat_page<UINT64_C(0x200000000)&&
+      !((uintptr_t)region_app_repeat_page&(UA_PAGE-1))&&
+      region_app_repeat_site-region_app_repeat_page==16&&
+      region_app_repeat_next-region_app_repeat_site==3,181);
+ for(unsigned i=0;i<10;i++)region_app_repeat_buffer[i]=UINT64_C(0x193a5c7e90b2d4f6)+i;
+ region_app_repeat_setup(&region_app_repeat_buffer[1]);
+ for(unsigned i=0;i<10;i++)need(region_app_repeat_buffer[i]==
+     (i==0||i==9?UINT64_C(0x193a5c7e90b2d4f6)+i:UINT64_C(0x8877665544332211)),182);
+}
 int main(int argc,char **argv){
  if(argc!=3||strlen(argv[1])!=1||argv[1][0]<'0'||argv[1][0]>'0'||(strcmp(argv[2],"native")&&strcmp(argv[2],"gated")))return 2;
  mode=(unsigned)(argv[1][0]-'0');native=!strcmp(argv[2],"native");
@@ -216,6 +232,9 @@ int main(int argc,char **argv){
  h[34]=endpoint;h[35]=predecessor;h[36]=traces[mode];h[37]=sizeof(struct ra_observation);h[38]=12;h[39]=391;
  h[40]=(uintptr_t)region_app_block_b;h[41]=(uintptr_t)region_app_second_page;h[42]=2*UA_PAGE;h[43]=RSEQ_BASE;h[44]=RSEQ_SIG;
  h[45]=(uintptr_t)region_app_a_exit;h[46]=(uintptr_t)region_app_b_branch;h[47]=(uintptr_t)region_app_b_exit;
+ /* Force the existing positive REP lease before its required unregistered
+    snapshot. The low original RX page is ineligible for native admission. */
+ repeat_setup();
  if(native)native_setup();
  registration(0);prefix.registration_result=suffix.effects[0].result;
  copy(prefix.rseq_before,suffix.effects[0].before,32);copy(prefix.rseq_after,suffix.effects[0].after,32);

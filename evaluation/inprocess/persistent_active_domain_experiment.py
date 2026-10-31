@@ -212,6 +212,16 @@ def active_prerequisite(path,r,pin,binary,archive,active):
             ('status','expected_counts','counts','recipe','artifact','body','exit','duration_ns','bounds','captures',
              'qualification_credit','performance_credit')}),
          'actual copy artifact, application symbol and whole compact public proof join')
+    setup=a['application_layout']['repeat_setup']
+    raw,_,segments=elf(binary(a['application_build']['argv'][-1]))
+    owners=[s for s in segments if s[0]==1 and s[1]==5 and
+        s[3]<=setup['pc']<setup['next_pc']<=s[3]+s[5]]
+    need(len(owners)==1 and 4096<=setup['pc']<setup['next_pc']<0x200000000 and
+         setup['next_pc']==setup['pc']+3 and
+         setup['file_offset']==owners[0][2]+setup['pc']-owners[0][3]and
+         raw[setup['file_offset']:setup['file_offset']+3]==b'\xf3\x48\xab'and
+         H(raw)==a['application_layout']['sha256'],
+         'actual prerequisite ELF independently binds the low original canonical REP site')
     need(digest([(c['lane'],c['mode'],c['control'])for c in a['cases']])==digest(active.ORDER)==
          digest((('native',0,0),('maintained',0,0),('differential',0,0))),
          'exact native392 and two generated active-domain subjects')
@@ -234,6 +244,7 @@ def active_prerequisite(path,r,pin,binary,archive,active):
             named(c['terminal_controls'],73,row['captures']['stderr']['sha256'],hash_key='original_stderr_sha256')
             named(c['native_probe_controls'],22,row['captures']['stderr']['sha256'],hash_key='original_stderr_sha256')
             probe_bytes=binary(private/row['captures']['stderr']['file']).read_bytes()
+            active.repeat_setup_completed(probe_bytes,a['application_layout'],c['terminal']['repeat_lease'])
             actual_probe=probe.split(probe_bytes)[0]
             need(digest(actual_probe)==digest(c['terminal']['native_probe'])==
                  digest(a['terminal_reports'][c['label']]['native_probe']),

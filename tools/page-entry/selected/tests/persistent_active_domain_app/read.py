@@ -51,6 +51,7 @@ def elf(data, native_policy):
     need(t[6] < len(sections), 'symbol string index')
     strings = sections[t[6]]; names = take(strings[4], strings[5])
     wanted = {'region_app_' + n for n in ('head', 'page', 'exit0', 'predecessor', 'block_b', 'second_page', 'source_end', 'helper', 'helper_end', 'enter', 'capture', 'seed_x87', 'pure', 'pure_end', 'capture_high', 'entry_jump', 'head_pointer', 'return_end', 'a_exit', 'b_exit', 'b_branch', 'b_move')} | {'ua_' + n for n in ('vectors', 'masks', 'host', 'host_fcw', 'input', 'before', 'after', 'before_live', 'after_live', 'target')}
+    wanted |= {'region_app_repeat_'+n for n in ('page','setup','site','next','end','buffer')}
     symbols = {}; symbol_sizes = {}
     for at in range(t[4], t[4] + t[5], 24):
         name, _, _, section, value, size = struct.unpack('<IBBHQQ', take(at, 24))
@@ -120,7 +121,22 @@ def elf(data, native_policy):
          -(1 << 31) <= displacement < 1 << 31 and
          memory(transfer, 6)[1] == b'\xff\x25' + struct.pack('<i', displacement),
          'exact seed/entry/capture positions and transparent high-to-low actual mode-pointer JMP')
-    return dict(symbols=symbols, head=head, page=page, exits=(page+0x204,page+0x40d), source=source, interpreter=path[:-1].decode(), sha256=hashlib.sha256(data).hexdigest(), bytes=len(data), phnum=h[10])
+    repeat_page=symbols['region_app_repeat_page'];repeat_buffer=symbols['region_app_repeat_buffer']
+    repeat_load,repeat_image=memory(repeat_page,PAGE)
+    repeat_body=bytes.fromhex('fcb90800000048b81122334455667788f348abc3')
+    need(PAGE<=repeat_page<0x200000000 and repeat_page%PAGE==0 and repeat_load[1]==5 and
+         symbols['region_app_repeat_setup']==repeat_page and symbol_sizes['region_app_repeat_setup']==len(repeat_body)and
+         symbols['region_app_repeat_site']==repeat_page+16 and symbols['region_app_repeat_next']==repeat_page+19 and
+         symbols['region_app_repeat_end']==repeat_page+PAGE and
+         repeat_image==repeat_body+b'\xcc'*(PAGE-len(repeat_body)),
+         'whole low original RX positive REP setup page and exact canonical STOSQ site')
+    need(repeat_buffer%8==0 and symbol_sizes['region_app_repeat_buffer']==80 and
+         sum(p[1]==6 and p[3]<=repeat_buffer<=p[3]+p[6]-80 for p in loads)==1,
+         'complete separate RW eight-word REP destination and both sentinel words')
+    repeat_setup=dict(pc=repeat_page+16,next_pc=repeat_page+19,
+        file_offset=repeat_load[2]+repeat_page+16-repeat_load[3],
+        destination=repeat_buffer+8,count=8,width=8,value=0x8877665544332211)
+    return dict(symbols=symbols, head=head, page=page, exits=(page+0x204,page+0x40d), source=source, interpreter=path[:-1].decode(), sha256=hashlib.sha256(data).hexdigest(), bytes=len(data), phnum=h[10],repeat_setup=repeat_setup)
 
 def live(data):
     need(len(data) == 152 and data[148:] == bytes(4), 'complete live state and reserved tail')

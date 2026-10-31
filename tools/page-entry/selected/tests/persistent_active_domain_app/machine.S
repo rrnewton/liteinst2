@@ -160,6 +160,24 @@ region_app_capture:
 .size region_app_capture,6
 .org 4096,0xcc
 region_app_return_end:
+/* Explicit positive setup, on a separate original low RX page. Both actual
+   application paths execute the same finite REP; no syscall or focal step. */
+.section .text.ra_repeat,"ax",@progbits
+.balign 4096
+.globl region_app_repeat_page,region_app_repeat_setup,region_app_repeat_site,region_app_repeat_next,region_app_repeat_end
+region_app_repeat_page:
+.type region_app_repeat_setup,@function
+region_app_repeat_setup:
+    cld
+    mov $8,%ecx
+    movabs $0x8877665544332211,%rax
+region_app_repeat_site:
+    .byte 0xf3,0x48,0xab /* Canonical REP STOSQ, positive RCX and forward DF. */
+region_app_repeat_next:
+    ret
+.size region_app_repeat_setup,.-region_app_repeat_setup
+.org 4096,0xcc
+region_app_repeat_end:
 .section .li2_ua_rodata,"a",@progbits
 .p2align 6
 .globl ua_vectors,ua_masks,region_app_head_pointer
