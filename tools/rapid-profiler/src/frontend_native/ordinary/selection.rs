@@ -84,6 +84,21 @@ pub(super) fn parse_with(
     )
 }
 
+// Only the finite owned four-call profile admits the fixed recipe's SYMBOLIC
+// marker. Existing call-pair and leaf selection keep their old dynamic policy.
+pub(super) fn parse_module_caller(
+    selection: &TrustedFunctionSelection<'_>,
+    admit: fn(&[u8], u64) -> Result<(), SetupRefusal>,
+) -> Result<Parsed, SetupRefusal> {
+    super::parse_admitted_selection_with_dynamic(
+        selection.trusted_final_elf,
+        selection.label,
+        Some((selection.elf_virtual_address, selection.length)),
+        admit,
+        super::module_caller::dynamic,
+    )
+}
+
 // Pure predicates shared with the metadata controls; no injected loader API.
 pub(super) fn relocated_entry(bias: u64, entry: u64) -> Result<u64, SetupRefusal> {
     let address = bias.checked_add(entry).ok_or(SetupRefusal::SymbolOwner)?;

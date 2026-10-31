@@ -55,6 +55,53 @@ fn admit(code: &[u8], entry: u64) -> Result<(), SetupRefusal> {
     Ok(())
 }
 
+// The existing fixed compiler recipe uses -Bsymbolic: exactly one
+// DT_SYMBOLIC=0 before DT_NULL is required here. With all dependencies,
+// relocations, PLT, constructors and IFUNC behavior still refused, this binding
+// marker introduces no loader call or relocation write. Default scalar/module
+// admission continues to use the unchanged parent dynamic() and rejects tag16.
+pub(super) fn dynamic(bytes: &[u8]) -> Result<(), SetupRefusal> {
+    use super::{BTreeMap, u64_at};
+    if bytes.is_empty() || bytes.len() > 4096 || bytes.len() % 16 != 0 {
+        return Err(SetupRefusal::Format);
+    }
+    let mut tags = BTreeMap::new();
+    let mut ended = false;
+    for row in bytes.chunks_exact(16) {
+        let (tag, value) = (u64_at(row, 0)?, u64_at(row, 8)?);
+        if tag == 0 {
+            if value != 0 {
+                return Err(SetupRefusal::Format);
+            }
+            ended = true;
+        } else if ended
+            || tags.insert(tag, value).is_some()
+            || !matches!(
+                tag,
+                4 | 5 | 6 | 10 | 11 | 14 | 16 | 24 | 30 | 0x6fff_fef5 | 0x6fff_fffb
+            )
+            || (matches!(tag, 16 | 24) && value != 0)
+            || (tag == 30 && value & !8 != 0)
+            || (tag == 0x6fff_fffb && value & !1 != 0)
+        {
+            return Err(SetupRefusal::Format);
+        }
+    }
+    if !ended
+        || tags.get(&16) != Some(&0)
+        || ![5, 6, 10, 11].iter().all(|t| tags.contains_key(t))
+        || tags.get(&11) != Some(&24)
+        || tags.get(&10).is_none_or(|&n| n == 0 || n > 65536)
+        || !(tags.contains_key(&4) || tags.contains_key(&0x6fff_fef5))
+        || !(tags.contains_key(&24)
+            || tags.get(&30).is_some_and(|v| v & 8 != 0)
+            || tags.get(&0x6fff_fffb).is_some_and(|v| v & 1 != 0))
+    {
+        return Err(SetupRefusal::Format);
+    }
+    Ok(())
+}
+
 /// Sealed, retained native caller for one four-call batch; no callable pointer,
 /// fd, loader handle or writer is exposed. This is the first finite application
 /// shape, not general caller discovery or a replacement for module admission.
@@ -86,7 +133,7 @@ impl LoadedNormalModuleCaller {
         if selection.label() != bytes::SYMBOL {
             return Err(SetupRefusal::EntryExit);
         }
-        let parsed = selection::parse_with(selection, admit)?;
+        let parsed = selection::parse_module_caller(selection, admit)?;
         // SAFETY: complete final ELF/loader and continuous native contract above.
         let owner = unsafe { retain_sealed_loader(selection.trusted_final_elf())? };
         let (entry, bias) = selection::resolve(owner, &parsed)?;
@@ -155,3 +202,7 @@ mod tests {
         assert!(admit(bytes::BYTES, u64::MAX - 122).is_err());
     }
 }
+
+#[cfg(test)]
+#[path = "module_caller_format_tests.rs"]
+mod format_tests;

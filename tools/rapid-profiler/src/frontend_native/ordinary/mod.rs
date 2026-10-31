@@ -185,6 +185,19 @@ fn parse_admitted_selection(
     range: Option<(u64, usize)>,
     admit_code: fn(&[u8], u64) -> Result<(), SetupRefusal>,
 ) -> Result<Parsed, SetupRefusal> {
+    parse_admitted_selection_with_dynamic(bytes, name, range, admit_code, dynamic)
+}
+
+// Only the finite four-call caller selects a different dynamic-table profile.
+// The default wrapper above and every LOAD/symbol/byte/ownership predicate below
+// remain shared; a dynamic policy cannot supply code or mapping authority.
+fn parse_admitted_selection_with_dynamic(
+    bytes: &[u8],
+    name: &str,
+    range: Option<(u64, usize)>,
+    admit_code: fn(&[u8], u64) -> Result<(), SetupRefusal>,
+    admit_dynamic: fn(&[u8]) -> Result<(), SetupRefusal>,
+) -> Result<Parsed, SetupRefusal> {
     if bytes.len() > 1024 * 1024
         || bytes.get(..7) != Some(b"\x7fELF\x02\x01\x01")
         || u16_at(bytes, 16)? != 3
@@ -325,7 +338,7 @@ fn parse_admitted_selection(
         return Err(SetupRefusal::Format);
     }
     let offset = usize::try_from(offset).map_err(|_| SetupRefusal::Format)?;
-    dynamic(
+    admit_dynamic(
         bytes
             .get(offset..offset.checked_add(length).ok_or(SetupRefusal::Format)?)
             .ok_or(SetupRefusal::Format)?,
