@@ -1,0 +1,266 @@
+{
+  "application": {
+    "bytes": 196704,
+    "sha256": "619f393966192ec4db4a058ed3dadbb88111e1e74fb650746efdf4079738b833"
+  },
+  "bounds": {
+    "capture_limit_bytes": 16777216,
+    "profiles": {
+      "build": [
+        120,
+        2147483648,
+        134217728,
+        150
+      ],
+      "finite": [
+        5,
+        536870912,
+        16777216,
+        15
+      ],
+      "inspect": [
+        10,
+        268435456,
+        4194304,
+        20
+      ],
+      "metadata": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "program": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "release_build": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "seed": [
+        5,
+        536870912,
+        16777216,
+        15
+      ]
+    },
+    "units": [
+      "cpu_seconds",
+      "address_space_bytes",
+      "file_bytes",
+      "wall_seconds"
+    ]
+  },
+  "cases": [
+    {
+      "bridge": {
+        "bytes": 5032352,
+        "sha256": "09d880d4e50567929b84150d7d749fae5cdd7ed1730c8ffbb9e355046f55cdf8"
+      },
+      "captures": {
+        "record": {
+          "bytes": 596908,
+          "sha256": "7547d36d40d9325ba68b619132791f17a76acf6ea497b54ff7e3682d4c98a9a7"
+        },
+        "stderr": {
+          "bytes": 14998,
+          "sha256": "f833cc81c48671faccaf483b5faf05e3c61470b42eb54bcfbbe8f4905644a770"
+        },
+        "stdout": {
+          "bytes": 858480,
+          "sha256": "f7628ce49148d624fa720bdc2508c2b4a17ce6c779f149dc8b6ae50269bea78b"
+        }
+      },
+      "control": 0,
+      "duration_scope": "validation_only; whole subprocess wall time, not performance",
+      "exit": 0,
+      "expected_exit": 0,
+      "lane": "maintained",
+      "mode": 0,
+      "native_probe": {
+        "admitted": 7,
+        "chosen": 7,
+        "current_declines": 0,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "errors": 0,
+        "failure_code": 0,
+        "lookups": 7,
+        "negative_hits": 0,
+        "next_nx": 7,
+        "outcome_complete": 1,
+        "outcome_result_abs": 1,
+        "outcome_result_negative": 0,
+        "pending": 0,
+        "policy_blocked": 0,
+        "policy_checks": 7,
+        "refaults": 7,
+        "refused": 0,
+        "status": 0,
+        "version": 1
+      },
+      "owner_dwarf": {
+        "bytes": 135469,
+        "sha256": "08c8d7f816a42339b108ae7f8d75426d145bf75dfe77d9c83274c7c824f705c7"
+      },
+      "status": "observed_exit_zero_only",
+      "timed_out": false,
+      "whole_process_ns": 3337266061
+    },
+    {
+      "bridge": {
+        "bytes": 5033648,
+        "sha256": "7dbec952daf0988034eb394618acede2a6177a1a40f1b42d6493aab83da2ddfb"
+      },
+      "captures": {
+        "record": {
+          "bytes": 594839,
+          "sha256": "56530a79c7c9ee403fa7beaee292b5bf9780fcc670aa56ae42458bfc6114cee5"
+        },
+        "stderr": {
+          "bytes": 15011,
+          "sha256": "1f2ecb63c847f87f81eaa030d89e02315b2c1dbfb2750899032ca6f4c9a5e1c8"
+        },
+        "stdout": {
+          "bytes": 858480,
+          "sha256": "480fbafb7ba4a3f1a54f57cd8acecc07227b8a432d5a4f819f24178fa91f6dd0"
+        }
+      },
+      "control": 0,
+      "duration_scope": "validation_only; whole subprocess wall time, not performance",
+      "exit": 0,
+      "expected_exit": 0,
+      "lane": "differential",
+      "mode": 0,
+      "native_probe": {
+        "admitted": 7,
+        "chosen": 7,
+        "current_declines": 0,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "errors": 0,
+        "failure_code": 0,
+        "lookups": 7,
+        "negative_hits": 0,
+        "next_nx": 7,
+        "outcome_complete": 1,
+        "outcome_result_abs": 1,
+        "outcome_result_negative": 0,
+        "pending": 0,
+        "policy_blocked": 0,
+        "policy_checks": 7,
+        "refaults": 7,
+        "refused": 0,
+        "status": 0,
+        "version": 1
+      },
+      "owner_dwarf": {
+        "bytes": 135469,
+        "sha256": "ae9d25f81f9bf6c7b055abcd84e950dd8c2eca4af073d6ceb1ee652590a379c6"
+      },
+      "status": "observed_exit_zero_only",
+      "timed_out": false,
+      "whole_process_ns": 5095400463
+    }
+  ],
+  "commands": {
+    "actual_zero": 94,
+    "count": 94,
+    "duration_scope": "validation only; sum of child wall durations, not cohort elapsed or speedup",
+    "expected_zero": 94,
+    "ordered_name_profile_sha256": "a2df2a979fd16582a6dc39e800fb28c7fc781248daf5656a49fc84249750b97f",
+    "profiles": {
+      "build": 1,
+      "finite": 10,
+      "inspect": 40,
+      "metadata": 33,
+      "program": 4,
+      "release_build": 6
+    },
+    "summed_command_wall_ns": 46693375682
+  },
+  "custody": {
+    "aliases": 2881,
+    "artifact_facts": 321,
+    "capture_streams": 190,
+    "cleanup_complete": true,
+    "complete_rosters_retained_in_receipt": true,
+    "input_facts": 2879,
+    "inputs_unchanged": true,
+    "source_unchanged": true
+  },
+  "decoder_archive": {
+    "bytes": 11961622,
+    "sha256": "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d"
+  },
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "isa_hash_encoding": "SHA256 of compact JSON array in recorded order",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 20,
+    "runner_cap_eff": "0000000000000000",
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "historical_failed_outcomes_unchanged": true,
+  "native_state_equality": false,
+  "performance_credit": false,
+  "profile": "bounded-fused-fresh-smoke-v1",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 2022470,
+    "sha256": "910503a325acecb37f94c9314a08290d4c37717f906d6f7b302a0c3b7f4bd330"
+  },
+  "reproduction": {
+    "argv": [
+      "python3",
+      "-B",
+      "evaluation/inprocess/bounded_fused_smoke.py",
+      "--expect-revision",
+      "82fac7898d86c9224d51289638cbfb7e8aaefc2f",
+      "--expect-decoder-sha256",
+      "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d",
+      "--cpu",
+      "20",
+      "--output",
+      "target/evaluation/inprocess/pf-fresh-smoke-attempt-2"
+    ],
+    "instructions": {
+      "bytes": 2066,
+      "path": "evaluation/inprocess/bounded_fused_smoke.md",
+      "sha256": "644024c4776af6e81a508d5ed1ad1b0719f9b95c862f6bbc9ecf846adb81e482"
+    },
+    "kind": "portable fresh rerun command, not a recorded outer argv or historical replay",
+    "prerequisites": "exact clean checkout; externally reserved CPU20; fresh output directory",
+    "script": {
+      "bytes": 13424,
+      "path": "evaluation/inprocess/bounded_fused_smoke.py",
+      "sha256": "bac0dd934161b050b1201292ac5d504da2f404427fbabdf958b11395acf384ae"
+    }
+  },
+  "schema_version": 1,
+  "scope": "fresh two-lane source/exit diagnostic only; not native-state or whole-profile qualification",
+  "source": {
+    "head_sources_match": true,
+    "revision": "82fac7898d86c9224d51289638cbfb7e8aaefc2f",
+    "source_manifest_sha256": "8b83368465bae3bc18b65eb353213887a62c349e9b8a7a6834aba7426aee2898",
+    "tracked_clean": true,
+    "tree": "30b864b872e4099fa2767d6564d6ee6c25e967ce"
+  },
+  "status": "observed_smoke_exit_zero"
+}

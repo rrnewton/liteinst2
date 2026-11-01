@@ -1,0 +1,3 @@
+revision,cpu,lane,status,expected_exit,exit,whole_process_ns,stdout_bytes,stderr_bytes,record_bytes,validation_only,qualification_credit,performance_credit,probe_lookups,probe_chosen,probe_refaults,probe_admitted,probe_errors,probe_pending
+82fac7898d86c9224d51289638cbfb7e8aaefc2f,20,maintained,observed_exit_zero_only,0,0,3337266061,858480,14998,596908,True,False,False,7,7,7,7,0,0
+82fac7898d86c9224d51289638cbfb7e8aaefc2f,20,differential,observed_exit_zero_only,0,0,5095400463,858480,15011,594839,True,False,False,7,7,7,7,0,0

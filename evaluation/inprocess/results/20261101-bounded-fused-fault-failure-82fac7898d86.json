@@ -1,0 +1,234 @@
+{
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "finite": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "program": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "release_build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "seed": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "cases": [
+    {
+      "exit": 0,
+      "expected_exit": 0,
+      "label": "subject-native-0-0",
+      "lane": "native",
+      "mode": 0,
+      "native_probe": null,
+      "status": "observed_native_bounded_fused",
+      "timed_out": false,
+      "whole_process_ns": 167245492
+    },
+    {
+      "exit": 0,
+      "expected_exit": 0,
+      "label": "subject-maintained-0-0",
+      "lane": "maintained",
+      "mode": 0,
+      "native_probe": {
+        "admitted": 7,
+        "chosen": 7,
+        "errors": 0,
+        "lookups": 7,
+        "next_nx": 7,
+        "policy_checks": 7,
+        "refaults": 7,
+        "refused": 0
+      },
+      "status": "observed_generated_bounded_fused_maintained",
+      "timed_out": false,
+      "whole_process_ns": 3570707272
+    },
+    {
+      "exit": 0,
+      "expected_exit": 0,
+      "label": "subject-differential-0-0",
+      "lane": "differential",
+      "mode": 0,
+      "native_probe": {
+        "admitted": 7,
+        "chosen": 7,
+        "errors": 0,
+        "lookups": 7,
+        "next_nx": 7,
+        "policy_checks": 7,
+        "refaults": 7,
+        "refused": 0
+      },
+      "status": "observed_generated_bounded_fused_differential",
+      "timed_out": false,
+      "whole_process_ns": 6039384103
+    },
+    {
+      "exit": 0,
+      "expected_exit": 0,
+      "label": "subject-native-1-0",
+      "lane": "native",
+      "mode": 1,
+      "native_probe": null,
+      "status": "observed_native_write_fault",
+      "timed_out": false,
+      "whole_process_ns": 156660845
+    },
+    {
+      "error": "ValueError: actual prior finite native-probe admission exercised before PF failure",
+      "exit": 125,
+      "expected_exit": 125,
+      "label": "subject-maintained-1-0",
+      "lane": "maintained",
+      "mode": 1,
+      "native_probe": {
+        "admitted": 0,
+        "chosen": 0,
+        "errors": 0,
+        "lookups": 0,
+        "next_nx": 0,
+        "policy_checks": 0,
+        "refaults": 0,
+        "refused": 0
+      },
+      "status": "failed",
+      "timed_out": false,
+      "whole_process_ns": 2663515983
+    },
+    {
+      "exit": 0,
+      "expected_exit": 0,
+      "label": "subject-native-2-0",
+      "lane": "native",
+      "mode": 2,
+      "native_probe": null,
+      "status": "observed_native_write_fault",
+      "timed_out": false,
+      "whole_process_ns": 153170342
+    },
+    {
+      "error": "ValueError: actual prior finite native-probe admission exercised before PF failure",
+      "exit": 125,
+      "expected_exit": 125,
+      "label": "subject-maintained-2-0",
+      "lane": "maintained",
+      "mode": 2,
+      "native_probe": {
+        "admitted": 0,
+        "chosen": 0,
+        "errors": 0,
+        "lookups": 0,
+        "next_nx": 0,
+        "policy_checks": 0,
+        "refaults": 0,
+        "refused": 0
+      },
+      "status": "failed",
+      "timed_out": false,
+      "whole_process_ns": 2714550468
+    }
+  ],
+  "cleanup_complete": true,
+  "cpu": 1,
+  "diagnosis": "The MOV setup took the selected-step route. Neither fault case exercised the required prior native-probe admission; later admissions in the positive cases did not establish that setup coverage.",
+  "error": "ValueError: all four actual fault/reject observations required without skips or failure relabeling",
+  "final_errors": [],
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 1,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "performance_credit": false,
+  "private_receipt": {
+    "bytes": 1943659,
+    "sha256": "fc8b2e7f60fe907d7ed85d32f41adddb97a3b635bed92f78e01afc322f3adaf8"
+  },
+  "profile": "bounded-fused-owner-v1",
+  "qualification_credit": false,
+  "real_programs_launched": 0,
+  "reproduction": {
+    "argv": [
+      "python3",
+      "-B",
+      "evaluation/inprocess/bounded_fused_owner.py",
+      "--expect-revision",
+      "82fac7898d86c9224d51289638cbfb7e8aaefc2f",
+      "--cpu",
+      "1",
+      "--direct-receipt",
+      "evaluation/inprocess/results/20261101T222938.310241Z-direct-frontier-loop-82fac7898d86.json",
+      "--direct-receipt-sha256",
+      "93714d529ea92ffb537662ca44c31cd88d99c234c6215685afa67ce035ff1262",
+      "--block-receipt",
+      "target/evaluation/inprocess/bounded-fused-prerequisite-pb-attempt-4/receipt.json",
+      "--block-receipt-sha256",
+      "82eb385d51b2f58ac1472f4fb53660b097e5e53de700ae3ce197914142f86b5a",
+      "--fused-component-receipt",
+      "target/evaluation/inprocess/bounded-fused-cohort-component-attempt-4/receipt.json",
+      "--fused-component-receipt-sha256",
+      "4feebb45cde64690381f69fd14edb339f0c6e001117c96c265875dce70c8474a",
+      "--output",
+      "target/evaluation/inprocess/<FRESH_PF_OUTPUT>"
+    ],
+    "prerequisites": "Reproduce the exact-revision native41, bounded-block and fused-component receipts named by argv first.",
+    "reservation": "one externally reserved CPU",
+    "working_directory": "repository root"
+  },
+  "revision": "82fac7898d86c9224d51289638cbfb7e8aaefc2f",
+  "schema": 1,
+  "source": {
+    "head_sources_match": true,
+    "revision": "82fac7898d86c9224d51289638cbfb7e8aaefc2f",
+    "source_manifest_sha256": "8b83368465bae3bc18b65eb353213887a62c349e9b8a7a6834aba7426aee2898",
+    "tracked_clean": true,
+    "tree": "30b864b872e4099fa2767d6564d6ee6c25e967ce"
+  },
+  "source_unchanged": true,
+  "status": "failed",
+  "timing_scope": "Validation durations only; not a performance measurement."
+}

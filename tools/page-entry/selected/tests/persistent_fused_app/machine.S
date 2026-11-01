@@ -230,9 +230,9 @@ ua_host_fcw:.zero 2
 .size ua_host_fcw,2
 .section .note.GNU-stack,"",@progbits
 
-/* Fixture-only native-clean pages. The straddling MOVABS may be reached by
-   ordinary CALL/TF or a genuine native-pair straddler. Both routes leave the
-   following one-page MOV before the exact out-of-page JMP graph refusal. */
+/* Fixture-only native-clean pages. Both canonical padding instructions use
+   the generic TF chain, not the old selected-step MOV owner. The real two-page
+   NOP closes before the one-page NOP; its TRACE precedes the GRAPH-refused JMP. */
 .section .li2_ua_probe,"ax",@progbits
 .balign 4096
 .globl region_app_probe_page,region_app_probe_second,region_app_probe_end
@@ -242,18 +242,19 @@ region_app_probe_page:
 .fill 16,1,0xcc
 .type region_app_probe_return,@function
 region_app_probe_return:
+    movabs $0x8877665544332211,%rax
     ret
 .size region_app_probe_return,.-region_app_probe_return
 .fill 4090-(.-region_app_probe_page),1,0xcc
 .type region_app_probe_setup,@function
 region_app_probe_setup:
-    .byte 0x48,0xb8,0x11,0x22,0x33,0x44
+    .byte 0x66,0x2e,0x0f,0x1f,0x84,0x00
 region_app_probe_second:
-    .byte 0x55,0x66,0x77,0x88
+    .byte 0x00,0x00,0x00,0x00
 .size region_app_probe_setup,.-region_app_probe_setup
 .type region_app_probe_one_page,@function
 region_app_probe_one_page:
-    mov %rax,%rax
+    .byte 0x0f,0x1f,0x00
 .size region_app_probe_one_page,.-region_app_probe_one_page
 .type region_app_probe_graph,@function
 region_app_probe_graph:

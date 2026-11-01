@@ -131,14 +131,14 @@ def elf(data, native_policy):
     probe_load,probe_image=memory(0x200040000,4*PAGE)
     probe_page=0x200041000
     probe_expected=bytearray(b'\xcc'*(4*PAGE))
-    probe_expected[PAGE+16]=0xc3
-    probe_expected[PAGE+4090:PAGE+4100]=bytes.fromhex('48b81122334455667788')
-    probe_expected[PAGE+4100:PAGE+4103]=bytes.fromhex('4889c0')
+    probe_expected[PAGE+16:PAGE+27]=bytes.fromhex('48b81122334455667788c3')
+    probe_expected[PAGE+4090:PAGE+4100]=bytes.fromhex('662e0f1f84000000000000')
+    probe_expected[PAGE+4100:PAGE+4103]=bytes.fromhex('0f1f00')
     probe_expected[PAGE+4103:PAGE+4108]=bytes.fromhex('e904f0ffff')
     need(probe_load[1]==5 and probe_load[3]==0x200040000 and
          probe_load[5]==probe_load[6]==4*PAGE and probe_image==bytes(probe_expected),
          'whole separate RX probe load, both source pages and unchanged-policy CC halos')
-    for name,offset,size in (('setup',4090,10),('one_page',4100,3),('graph',4103,5),('return',16,1),('page',0,8192)):
+    for name,offset,size in (('setup',4090,10),('one_page',4100,3),('graph',4103,5),('return',16,11),('page',0,8192)):
         need(symbols['region_app_probe_'+name]==probe_page+offset and
              symbol_sizes['region_app_probe_'+name]==size,'exact actual high probe instruction/source extent')
     need(symbols['region_app_probe_load']==probe_page-PAGE and
