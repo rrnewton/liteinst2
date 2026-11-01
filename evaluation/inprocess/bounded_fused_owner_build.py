@@ -13,7 +13,7 @@ from direct_frontier_loop_build import inspect_application
 
 def compile_subject(builder,private,pin,binary,aliases,run,r):
     output=private/'application';output.mkdir()
-    script=pin(FIXTURE/'build.sh');linker=pin(DONOR/'app.ld')
+    script=pin(FIXTURE/'build.sh');linker=pin(FIXTURE/'app.ld')
     rows=recipe(script,'"$cc"');need(len(rows)==2,'exact interpreter and freestanding application recipes')
     values={'$cc':builder.tools['cc'],'$source_dir':FIXTURE,'$donor_dir':DONOR,'$output':output}
     interp_unit=pin(DONOR/'fixture-interpreter.S')

@@ -1,0 +1,189 @@
+{
+  "archive": {
+    "bytes": 11961622,
+    "mode": "0644",
+    "sha256": "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d"
+  },
+  "archive_builds": 0,
+  "archive_source_provenance_verified": false,
+  "binary": {
+    "bytes": 2967648,
+    "mode": "0755",
+    "sha256": "4df57f4fe337a430bcf4f550458f3c7d3e9c7f3451bb9c77384ca779c6a8bb3c"
+  },
+  "bounds": {
+    "build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "component": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "cleanup_complete": true,
+  "collector_summary": {
+    "bytes": 33894,
+    "sha256": "edb41ab75e732b277a7f6aa410f92c33ef385c361319acc1009d215feb707d59"
+  },
+  "commands": {
+    "failed": 0,
+    "succeeded": 44,
+    "total": 44
+  },
+  "cpu": 1,
+  "generated_execution": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 1,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "measurements": {
+    "bounded_fusion_plan-build": {
+      "bounds": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "duration_ns": 3203171726,
+      "exit": 0,
+      "reaped": true,
+      "timed_out": false
+    },
+    "bounded_fusion_plan-component": {
+      "bounds": [
+        5,
+        536870912,
+        16777216,
+        15
+      ],
+      "duration_ns": 1299704396,
+      "exit": 0,
+      "reaped": true,
+      "timed_out": false
+    }
+  },
+  "native_execution": 0,
+  "owner_credit": false,
+  "performance_credit": false,
+  "private_receipt": {
+    "bytes": 230930,
+    "sha256": "a0ffcf791ab7c71e7e740054604c6c1776dec882ba2e950a0aab6e32d3ad812c"
+  },
+  "profile": "experimental-bounded-fused-component-v1",
+  "qualification_credit": false,
+  "recipe": {
+    "bytes": 1288,
+    "mode": "0755",
+    "sha256": "052e563facea68ac602557f7e57015c4bca0bbe3dcd3ed37312d67ce10549d94"
+  },
+  "reproduction": {
+    "argv": [
+      "python3",
+      "-B",
+      "evaluation/inprocess/bounded_fusion_component/run.py",
+      "--expect-revision",
+      "c396f32e98b421fc2e7427eff08aaafb57ddf66c",
+      "--cpu",
+      "1",
+      "--archive",
+      "target/evaluation/inprocess/20261101T204248.151525Z-direct-frontier-loop-c396f32e98b4/artifacts/decoder.a",
+      "--archive-sha256",
+      "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d",
+      "--output",
+      "target/evaluation/inprocess/<FRESH_PF_COMPONENT>"
+    ],
+    "output_must_not_exist": true,
+    "reservation": "one externally reserved CPU",
+    "tools": {
+      "as": {
+        "bytes": 727360,
+        "mode": "0755",
+        "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+      },
+      "cc": {
+        "bytes": 1093144,
+        "mode": "0755",
+        "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+      },
+      "cc1": {
+        "bytes": 28991152,
+        "mode": "0755",
+        "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+      },
+      "collect2": {
+        "bytes": 349536,
+        "mode": "0755",
+        "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+      },
+      "git": {
+        "bytes": 4397400,
+        "mode": "0755",
+        "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+      },
+      "ld": {
+        "bytes": 1791600,
+        "mode": "0755",
+        "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+      },
+      "nm": {
+        "bytes": 45792,
+        "mode": "0755",
+        "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+      },
+      "python": {
+        "bytes": 13542408,
+        "mode": "0755",
+        "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+      }
+    },
+    "working_directory": "repository root"
+  },
+  "result": {
+    "copied_boundaries": 56,
+    "corruptions": 14,
+    "direct_models": 1536,
+    "emitted_execution": 0,
+    "interiors": 19964,
+    "misses": 10,
+    "mov_models": 1280,
+    "old_version_refusals": 60,
+    "owner_credit": 0,
+    "plans": 14,
+    "typed_direct": 41984,
+    "typed_mov": 83456,
+    "version": 11
+  },
+  "schema": 1,
+  "scope": "Planner, independent state models and original-branch routing predicate only; no generated execution or native qualification.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "c396f32e98b421fc2e7427eff08aaafb57ddf66c",
+    "source_manifest_sha256": "e485341edb80b2493f4cbd5fddbcc8cbc5d4104597e95dd776afd720de3024fc",
+    "tracked_clean": true,
+    "tree": "4c330cdf61c5e008f9fc0d35db833f42bfab470c"
+  },
+  "source_unchanged": true,
+  "status": "components_passed",
+  "timing_scope": "Validation process durations only; no performance prediction or real-program measurement."
+}

@@ -53,6 +53,7 @@ def elf(data, native_policy):
     wanted = {'region_app_' + n for n in ('head', 'page', 'exit0', 'predecessor', 'block_b', 'second_page', 'source_end', 'helper', 'helper_end', 'enter', 'capture', 'seed_x87', 'pure', 'pure_end', 'capture_high', 'entry_jump', 'head_pointer', 'return_end', 'a_exit', 'b_exit', 'b_branch', 'b_move', 'pair_b', 'b_second_page', 'a_store', 'b_store')} | {'ua_' + n for n in ('vectors', 'masks', 'host', 'host_fcw', 'input', 'before', 'after', 'before_live', 'after_live', 'target')}
     wanted |= {'region_app_repeat_'+n for n in ('page','setup','site','next','end','buffer')}
     wanted |= {'region_app_'+n for n in ('a_direct','a_reset','b_condition','b_tail_jump','a_final')}
+    wanted |= {'region_app_probe_'+n for n in ('load','page','second','end','setup','one_page','graph','return')}
     symbols = {}; symbol_sizes = {}
     for at in range(t[4], t[4] + t[5], 24):
         name, _, _, section, value, size = struct.unpack('<IBBHQQ', take(at, 24))
@@ -127,6 +128,27 @@ def elf(data, native_policy):
          -(1 << 31) <= displacement < 1 << 31 and
          memory(transfer, 6)[1] == b'\xff\x25' + struct.pack('<i', displacement),
          'exact seed/entry/capture positions and transparent high-to-low actual mode-pointer JMP')
+    probe_load,probe_image=memory(0x200040000,4*PAGE)
+    probe_page=0x200041000
+    probe_expected=bytearray(b'\xcc'*(4*PAGE))
+    probe_expected[PAGE+16]=0xc3
+    probe_expected[PAGE+4090:PAGE+4100]=bytes.fromhex('48b81122334455667788')
+    probe_expected[PAGE+4100:PAGE+4103]=bytes.fromhex('4889c0')
+    probe_expected[PAGE+4103:PAGE+4108]=bytes.fromhex('e904f0ffff')
+    need(probe_load[1]==5 and probe_load[3]==0x200040000 and
+         probe_load[5]==probe_load[6]==4*PAGE and probe_image==bytes(probe_expected),
+         'whole separate RX probe load, both source pages and unchanged-policy CC halos')
+    for name,offset,size in (('setup',4090,10),('one_page',4100,3),('graph',4103,5),('return',16,1),('page',0,8192)):
+        need(symbols['region_app_probe_'+name]==probe_page+offset and
+             symbol_sizes['region_app_probe_'+name]==size,'exact actual high probe instruction/source extent')
+    need(symbols['region_app_probe_load']==probe_page-PAGE and
+         symbols['region_app_probe_second']==probe_page+PAGE and
+         symbols['region_app_probe_end']==probe_page+2*PAGE and
+         probe_page+4108+struct.unpack('<i',probe_image[PAGE+4104:PAGE+4108])[0]==probe_page+16,
+         'actual out-of-page linked GRAPH target and complete source geometry')
+    for address in (probe_page,probe_page+PAGE):
+        need(native_policy(memory(address-14,PAGE+28)[1])==0,
+             'each actual complete probe source page and both halos pass unchanged native policy')
     repeat_page=symbols['region_app_repeat_page'];repeat_buffer=symbols['region_app_repeat_buffer']
     repeat_load,repeat_image=memory(repeat_page,PAGE)
     repeat_body=bytes.fromhex('fcb90800000048b81122334455667788f348abc3')

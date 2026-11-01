@@ -33,6 +33,7 @@ static struct ra_suffix suffix;
 volatile uint64_t region_app_repeat_buffer[10];
 extern unsigned char region_app_repeat_page[],region_app_repeat_site[],region_app_repeat_next[];
 void region_app_repeat_setup(volatile uint64_t *);
+uint64_t region_app_probe_setup(void);
 static struct ra_observation *observation;
 static unsigned mode,native,handling,started,ended,frames,fault_seen,attempt;
 static uint64_t current_machine[8];
@@ -266,6 +267,10 @@ int main(int argc,char **argv){
  h[34]=endpoint;h[35]=predecessor;h[36]=traces[mode];h[37]=sizeof(struct ra_observation);h[38]=12;h[39]=40;
  h[40]=(uintptr_t)region_app_block_b;h[41]=(uintptr_t)region_app_second_page;h[42]=UA_SOURCE;h[43]=RSEQ_BASE;h[44]=RSEQ_SIG;
  h[45]=(uintptr_t)region_app_a_exit;h[46]=(uintptr_t)region_app_b_branch;h[47]=(uintptr_t)region_app_b_exit;
+ /* This actual high source path precedes every focal mode. It adds no
+    syscall and does not touch focal source/data/stack or vector state. Its
+    required finite-probe admission is checked by the unchanged terminal gate. */
+ need(region_app_probe_setup()==UINT64_C(0x8877665544332211),183);
  /* Force the existing positive REP lease before its required unregistered
     snapshot. The low original RX page is ineligible for native admission. */
  repeat_setup();

@@ -229,3 +229,36 @@ ua_host:.zero 64
 ua_host_fcw:.zero 2
 .size ua_host_fcw,2
 .section .note.GNU-stack,"",@progbits
+
+/* Fixture-only native-clean pages. The straddling MOVABS may be reached by
+   ordinary CALL/TF or a genuine native-pair straddler. Both routes leave the
+   following one-page MOV before the exact out-of-page JMP graph refusal. */
+.section .li2_ua_probe,"ax",@progbits
+.balign 4096
+.globl region_app_probe_page,region_app_probe_second,region_app_probe_end
+.globl region_app_probe_setup,region_app_probe_one_page,region_app_probe_graph,region_app_probe_return
+.type region_app_probe_page,@object
+region_app_probe_page:
+.fill 16,1,0xcc
+.type region_app_probe_return,@function
+region_app_probe_return:
+    ret
+.size region_app_probe_return,.-region_app_probe_return
+.fill 4090-(.-region_app_probe_page),1,0xcc
+.type region_app_probe_setup,@function
+region_app_probe_setup:
+    .byte 0x48,0xb8,0x11,0x22,0x33,0x44
+region_app_probe_second:
+    .byte 0x55,0x66,0x77,0x88
+.size region_app_probe_setup,.-region_app_probe_setup
+.type region_app_probe_one_page,@function
+region_app_probe_one_page:
+    mov %rax,%rax
+.size region_app_probe_one_page,.-region_app_probe_one_page
+.type region_app_probe_graph,@function
+region_app_probe_graph:
+    jmp region_app_probe_return
+.size region_app_probe_graph,.-region_app_probe_graph
+.fill 8192-(.-region_app_probe_page),1,0xcc
+region_app_probe_end:
+.size region_app_probe_page,.-region_app_probe_page

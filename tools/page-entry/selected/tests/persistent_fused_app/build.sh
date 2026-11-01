@@ -13,6 +13,6 @@ cc=${CC:-cc}
   -fno-stack-protector -fno-tree-loop-distribute-patterns -fno-tree-vectorize -mgeneral-regs-only \
   -DLI2_FAST_EQUAL=1 -mcmodel=large -fno-asynchronous-unwind-tables -fno-unwind-tables -fno-pie -no-pie -nostdlib \
   "-DLI2_DIRECT_FRONTIER_INTERPRETER=\"$output/fixture-interpreter.so\"" \
-  -Wl,-z,noexecstack,--build-id=none,--no-undefined -Wl,-T,"$donor_dir/app.ld" -I"$donor_dir" \
+  -Wl,-z,noexecstack,--build-id=none,--no-undefined -Wl,-T,"$source_dir/app.ld" -I"$donor_dir" \
   "$source_dir/main.c" "$donor_dir/pure.c" "$source_dir/machine.S" "$donor_dir/entry.S" \
   -o "$output/persistent-fused-app"

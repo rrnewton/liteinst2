@@ -1,0 +1,8 @@
+lane,mode,status,exit,validation_elapsed_ns,probe_lookups,probe_admitted
+native,0,observed_native_bounded_fused,0,172122200,,
+maintained,0,observed_generated_bounded_fused_maintained,0,3448024980,,
+differential,0,observed_generated_bounded_fused_differential,0,5275048779,,
+native,1,observed_native_write_fault,0,154759999,,
+maintained,1,failed,125,2605797478,0,0
+native,2,observed_native_write_fault,0,154493456,,
+maintained,2,failed,125,2652067852,0,0
