@@ -1,0 +1,330 @@
+{
+  "schema": 1,
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "tested_revision": "6c4cb01d7b0eeef2a4d0ef73698ff58819ef3bca",
+  "scope": "Correctness validation; operational durations, not performance qualification. This receipt is a subsequent evidence-only addition.",
+  "toolchain": {
+    "rustc": "1.97.1 (8bab26f4f 2026-07-14)",
+    "cargo": "1.97.1 (c980f4866 2026-06-30)"
+  },
+  "driver": {
+    "path": "evaluation/short-neighbor-parallel/validate.py",
+    "sha256": "968956df64edd3f5754a0adbd4b900ac68535d188be01af0628eff94d2ed6d10",
+    "argv": [
+      "python3.9",
+      "-I",
+      "-B",
+      "evaluation/short-neighbor-parallel/validate.py",
+      "--revision",
+      "6c4cb01d7b0eeef2a4d0ef73698ff58819ef3bca",
+      "--output",
+      "ignored/a3/functional-selfhost-validation-v2"
+    ],
+    "reservation": [
+      "cpuset-alloc",
+      "run",
+      "--cores",
+      "12",
+      "--tag",
+      "li2core-selfhost-validation-v2b",
+      "--"
+    ],
+    "environment": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_BUILD_JOBS": "12",
+      "RUST_TEST_THREADS": "12"
+    },
+    "path_note": "The reserved child PATH selects the stable toolchain named above, then /usr/bin:/bin. Machine-specific executable prefixes are omitted. Allocator PATH is unchanged.",
+    "private_closed_sha256": "2c4e6bb6cdf7d4176c5f9a5fd677f7ad2682454f2ab9ce9e5aaba3dcf73282ce"
+  },
+  "cpu_affinity": [
+    3,
+    8,
+    10,
+    13,
+    19,
+    20,
+    23,
+    33,
+    50,
+    53,
+    67,
+    72
+  ],
+  "test_threads": 12,
+  "serial_launch_test_threads": 1,
+  "build_jobs": 12,
+  "output_cap_bytes_per_command": 8388608,
+  "total_command_seconds": 856.2956603493076,
+  "results": [
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "result": {
+        "start_utc": "2026-11-01T08:35:12.497232+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 10.357591992011294,
+        "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        "35.45",
+        "49.14",
+        "57.01"
+      ],
+      "load_after": [
+        "34.36",
+        "48.46",
+        "56.71"
+      ],
+      "wall_bound_seconds": 180
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "result": {
+        "start_utc": "2026-11-01T08:35:22.855420+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.15968931815586984,
+        "private_log_sha256": "63bd8a3ac13f8b1c160887cdaf9b30715b07e638d60df463cb8815f661518191",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        "34.36",
+        "48.46",
+        "56.71"
+      ],
+      "load_after": [
+        "34.36",
+        "48.46",
+        "56.71"
+      ],
+      "wall_bound_seconds": 180
+    },
+    {
+      "name": "check",
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "result": {
+        "start_utc": "2026-11-01T08:35:23.015670+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.13087588315829635,
+        "private_log_sha256": "9ddcb7a97f3589835ba8f354c41d25b0a805bd5f85ddbccaff009e6f6dc7236c",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        "34.36",
+        "48.46",
+        "56.71"
+      ],
+      "load_after": [
+        "33.77",
+        "48.11",
+        "56.55"
+      ],
+      "wall_bound_seconds": 180
+    },
+    {
+      "name": "workspace",
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "12",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "result": {
+        "start_utc": "2026-11-01T08:35:23.147119+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 715.6029309818987,
+        "private_log_sha256": "1368c9c37d79d1f28f0429d18e9d0538d32f3c64e8a03d75f9ab923093752626",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        "33.77",
+        "48.11",
+        "56.55"
+      ],
+      "load_after": [
+        "51.59",
+        "40.58",
+        "46.32"
+      ],
+      "wall_bound_seconds": 900,
+      "all_summary_counts": {
+        "passed": 4379,
+        "failed": 0,
+        "ignored": 39,
+        "measured": 0,
+        "filtered_out": 105
+      },
+      "summary_lines": 118,
+      "nested_summary_counts": {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 105
+      },
+      "top_level_summary_counts": {
+        "passed": 4376,
+        "failed": 0,
+        "ignored": 39,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "count_note": "Three inherited child summaries are the emitter/single/grouped modes of tests/controlled_oracle.rs::runtime_control_oracle_modes, not three additional top-level tests."
+    },
+    {
+      "name": "serial-launch",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "result": {
+        "start_utc": "2026-11-01T08:47:18.754826+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 130.04457217408344,
+        "private_log_sha256": "a584c1a50df396432d54d371bea835e8e1049211005b895ea52a3f9f5d3a0f80",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        "51.59",
+        "40.58",
+        "46.32"
+      ],
+      "load_after": [
+        "38.62",
+        "39.26",
+        "45.06"
+      ],
+      "wall_bound_seconds": 180,
+      "all_summary_counts": {
+        "passed": 1039,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "summary_lines": 27
+    }
+  ],
+  "critical_parallel_regressions": [
+    "rapid::tests::live::install_rejects_each_mutated_window_byte",
+    "trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners",
+    "native_state_covers_every_prefixed_pun_and_original_successor",
+    "admitted_exec_native_first_user_and_retired_history_are_exact",
+    "admitted_exec_native_source_reply_refusal_keeps_new_mm_held",
+    "admitted_exec_native_source_profile_bound_refuses_after_exec",
+    "stale_exec_source_reply_preserves_actual_replacement_without_commit",
+    "original_exec_replacement_matches_raw_replay_and_native_full_state"
+  ],
+  "critical_parallel_regressions_result": "All listed cases and every short_neighbor test passed within the full parallel workspace run.",
+  "prior_launcher_failure": {
+    "stage": "before CPU reservation or test dispatch",
+    "error": "TypeError: unsupported operand type(s) for |: 'type' and 'type'",
+    "cause": "Applying the Rust child PATH to the allocator selected an incompatible system Python for agent-utils. The corrected launch applies that PATH only to the reserved child. No tests were retried."
+  },
+  "capacity": [
+    {
+      "when": "prevalidation",
+      "utc": "2026-11-01T08:32:00Z",
+      "cpu_affinity": [
+        8
+      ],
+      "load": [
+        56.08,
+        61.42,
+        61.91
+      ],
+      "allocated_bytes": {
+        "slot": 18107879424,
+        "ignored": 12705894400,
+        "target": 5206609920
+      },
+      "apparent_bytes": {
+        "slot": 17180674817,
+        "ignored": 11897261874,
+        "target": 5104834920
+      },
+      "command_profile": "prlimit --cpu=30 --as=268435456 --fsize=65536 --core=0 -- du --block-size=1 --count-links -s [--apparent-size] SLOT SLOT/ignored SLOT/target",
+      "wall_bound_seconds_per_scan": 60,
+      "both_exit_codes": 0,
+      "cleanup_rescues": 0,
+      "private_closed_sha256": "73f94e914ab785ad9aa740c1fe716deee94d942759d8f923fb97ee4e460b6030"
+    },
+    {
+      "when": "postvalidation",
+      "utc": "2026-11-01T08:49:48Z",
+      "cpu_affinity": [
+        10
+      ],
+      "load": [
+        38.39,
+        39.15,
+        44.9
+      ],
+      "allocated_bytes": {
+        "slot": 18124165120,
+        "ignored": 12709068800,
+        "target": 5219495936
+      },
+      "apparent_bytes": {
+        "slot": 17196749625,
+        "ignored": 11900356556,
+        "target": 5117629946
+      },
+      "command_profile": "prlimit --cpu=30 --as=268435456 --fsize=65536 --core=0 -- du --block-size=1 --count-links -s [--apparent-size] SLOT SLOT/ignored SLOT/target",
+      "wall_bound_seconds_per_scan": 60,
+      "both_exit_codes": 0,
+      "cleanup_rescues": 0,
+      "private_closed_sha256": "058bb2d8d5806c8309ce65c703e24cea64c02f5da51a473f3f3c39a2751b11d7"
+    }
+  ],
+  "storage_policy": "One target with incremental and dev/test debug disabled. Fully decode and hash closed, consumer-complete private archives before separately verified exact retirement. Preserve failures and compact receipts. Do not remove target/cache. Admit next runs against the unchanged 20000000000-byte slot ceiling.",
+  "short_neighbor_passed": 21,
+  "receipt_preparation_note": "The first receipt-generation draft incorrectly expected 23 short_neighbor tests and stopped before writing this file. The final generator compares the exact source-function name set with the exact passing-log name set: all 21 match. No test was changed or repeated."
+}
