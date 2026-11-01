@@ -1,6 +1,15 @@
 # Published two-backedge clock client
 
-This profile is **UNRUN**. It exercises the standalone
+The single release cohort **passed** at revision
+`3759e96b8c24d40a35da25e3eb5e4dbd0a2bdc92`: six original/published
+comparisons, ten exact stops and eight argument refusals. The three pure input
+and schedule tests and focused strict Clippy also passed. Full checks at the
+same revision passed: 4,396 top-level workspace tests (39 ignored), three
+separately counted controlled children, 1,039 serial launch tests, formatting,
+strict Clippy and all-target/all-feature checking. See the compact
+[receipt](receipt.json), [validation](validation.json) and literal results below.
+
+It exercises the standalone
 `examples/owned_region_clock.rs` client through the library's actual
 `PlannedInstall::publish_with` path. It does not replace the earlier manually
 installed region oracle or its release throughput measurements.
@@ -14,14 +23,14 @@ quiescence, signal, lifetime and per-call guard requirements.
 
 One release build precedes six fixed, independently launched comparisons:
 
-| Outer | Inner | Quantum | Purpose |
-| ---: | ---: | ---: | --- |
-| 1 | 1 | 1 | No taken edge or callback |
-| 1 | 4 | 2 | Inner-site callback |
-| 3 | 1 | 1 | Outer-site callbacks |
-| 3 | 4 | 2 | Both sites share one clock |
-| 4 | 3 | 11 | Stop on the last taken edge; distinct result for the same loop product |
-| 32 | 32 | 1023 | Maximum admitted dimensions and last-taken-edge stop |
+| Outer | Inner | Quantum | Result | Stops (inner/outer) | Purpose |
+| ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 1 | 1 | [1](positive-00.json) | 0/0 | No taken edge or callback |
+| 1 | 4 | 2 | [10](positive-01.json) | 1/0 | Inner-site callback |
+| 3 | 1 | 1 | [3](positive-02.json) | 0/2 | Outer-site callbacks |
+| 3 | 4 | 2 | [30](positive-03.json) | 3/2 | Both sites share one clock |
+| 4 | 3 | 11 | [24](positive-04.json) | 1/0 | Last-taken-edge stop and different result for the same loop product |
+| 32 | 32 | 1023 | [16896](positive-05.json) | 1/0 | Maximum dimensions and last-taken-edge stop |
 
 The cohort requires ten exact callbacks, six inner and four outer. Each
 compares the original and published result with an independent arithmetic
@@ -45,12 +54,12 @@ disabled. The release build has a 600-second wall limit and 2 MiB capture cap.
 The existing process owner supplies a separate three-second cleanup budget.
 Durations are operational timings, not performance measurements.
 
-After committing the source and recipe, use an installed direct Rust toolchain
-and a fresh private output directory. The allocator must reserve 12 disjoint
+Check out the measured revision in a clean checkout, then use an installed
+direct Rust toolchain and a fresh private output directory. The allocator must reserve 12 disjoint
 CPUs for the whole command; Cargo jobs and harness threads are capped at 12.
 
 ```sh
-REGION_CLIENT_REV=$(git rev-parse HEAD)
+REGION_CLIENT_REV=3759e96b8c24d40a35da25e3eb5e4dbd0a2bdc92
 mkdir -p ignored
 cpuset-alloc run --cores 12 --tag li2-region-client -- \
   env -i HOME="$HOME" PATH="$LI2_TOOLCHAIN/bin:/usr/bin:/bin" LANG=C LC_ALL=C \
@@ -60,7 +69,15 @@ cpuset-alloc run --cores 12 --tag li2-region-client -- \
 
 The runner verifies the exact revision and clean source scope, records the
 actual compiler versions and hashes, and checks source/tool/binary continuity
-through the campaign. Detailed captures stay under `ignored/`. Public results
-must retain the six literal JSON outcomes and a compact receipt with exact
-revision, hardware and commands. No result, performance improvement, deadline,
-asynchronous publication or executable reclamation is claimed before execution.
+through the campaign. Detailed captures stay under `ignored/`. The six literal JSON outcomes and compact receipt retain the exact revision,
+hardware and commands. The AMD EPYC Zen 5 dev host run used 12 reserved CPUs;
+the receipt distinguishes the allocator launch report from the runner-observed
+affinity and records both load averages. No performance improvement, deadline,
+asynchronous publication or executable reclamation is established by this cohort.
+
+The full correctness gate uses the tracked `evaluation/short-neighbor-parallel/validate.py`
+recipe with the exact environment, commands, resource bounds and revision in
+`validation.json`. The native cohort and full gate each ran once. Earlier
+allocation and mapping-identity regressions, all 21 short-neighbor cases and
+the five exec-map regressions passed in the parallel run; the exec-map cases
+also passed serially.
