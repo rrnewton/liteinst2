@@ -326,7 +326,11 @@ static void selected_ret_resume_exit(int,siginfo_t *,ucontext_t *);
 #include "persistent_subentry_observe.h"
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+#ifdef LI2_PERSISTENT_BLOCK_CAPTURE
+#include "persistent_block_observe.h"
+#else
 #include "persistent_direct_frontier_observe.h"
+#endif
 #endif
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
 #include "persistent_call_owner_observe.h"

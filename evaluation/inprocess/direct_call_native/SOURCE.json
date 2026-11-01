@@ -728,7 +728,7 @@
     "evaluation/inprocess/call_return_heads/SOURCE.json": {
       "bytes": 160505,
       "mode": "0644",
-      "sha256": "90181b4faeb2b82dfb7ec71ff5b504fc0294b807396490abf903d769d2dab8f5"
+      "sha256": "659aadb1af75c4e541c3d113a7f3cdf8268b3ef435993b11c37af8c5f396f22f"
     },
     "evaluation/inprocess/call_return_heads/original_owner.py": {
       "bytes": 2963,
@@ -768,7 +768,7 @@
     "evaluation/inprocess/ret_owner/SOURCE.json": {
       "bytes": 49621,
       "mode": "0644",
-      "sha256": "5e68d7d3c6fa972f396ae607edfb4ecb6fec1833c46e5e4eea64fc73b9c8aec8"
+      "sha256": "b50673ea6402c51018e43a385184839a383a2d919986eec165cb9cf772fba90d"
     },
     "evaluation/inprocess/ret_owner/prerequisites.py": {
       "bytes": 29668,
@@ -886,9 +886,9 @@
       "sha256": "cc06f9b9a04582abb32bcd1d8fe799446f334bdc0a0d91a05cba4f0b9ae1fa30"
     },
     "tools/page-entry/selected/persistent_active_domain.inc": {
-      "bytes": 40934,
+      "bytes": 41988,
       "mode": "0644",
-      "sha256": "2a3b83ea746f4c9ffb150030bf91e30ab939242a67540b7da69568fad27599b3"
+      "sha256": "1da630e2803f3d3613aa1b46569a7b9b54338824e0aa7700e6393f1b36621090"
     },
     "tools/page-entry/selected/persistent_compact.h": {
       "bytes": 3248,

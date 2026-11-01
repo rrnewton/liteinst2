@@ -1,6 +1,9 @@
 #ifndef LI2_PERSISTENT_GROUP_LIFETIME_H
 #define LI2_PERSISTENT_GROUP_LIFETIME_H
 #include "persistent_group_compact.h"
+#ifdef LI2_PERSISTENT_BLOCK_RUNTIME
+#include "persistent_block_runtime.h"
+#endif
 #include "tf_span_transfer.h"
 #include "rseq_guard.h"
 #include "private_code_query.h"
