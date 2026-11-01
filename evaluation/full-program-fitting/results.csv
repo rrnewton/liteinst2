@@ -1,0 +1,7 @@
+profile,revision,heads,selected_sites,locally_planned_but_withheld,primary_refusals,B1,B2,T1,T2,T3,NoPatchWindow,ExpectedBytesChanged,AllocationUnavailable,OwnershipConflict,candidate_complete,qualification_complete,status
+historical-original-16m,3c1972d634428f7f73cd3ca0ac8cc8ec247481b6,13143,2053,1749,304,1486,33,25,96,109,160,129,14,1,false,false,FAILED_COMPLETE_PROGRAM_REFUSAL
+historical-original-2g,3c1972d634428f7f73cd3ca0ac8cc8ec247481b6,13143,2053,2014,39,1519,329,111,23,32,21,9,5,4,false,false,FAILED_COMPLETE_PROGRAM_REFUSAL
+historical-owned-2g,4451a77540526c382f5fd82bd3674c4fddc4878e,13143,2053,1982,71,1542,285,67,26,62,36,32,2,1,false,false,FAILED_COMPLETE_PROGRAM_REFUSAL
+current-composition-2g,fc13f85bf8345b79a222a3bc24a8cee0b9d714d3,13143,2053,2042,11,1619,357,39,13,14,8,2,1,0,false,false,FAILED_COMPLETE_PROGRAM_REFUSAL
+mixed-neighbor-current-2g,a0fe83a84878233ff678d8f5bc9d3db3547ca9b5,13143,2053,2049,4,1620,355,39,13,22,0,0,3,1,false,false,FAILED_COMPLETE_PROGRAM_REFUSAL
+fitting-mixed-neighbor-2g,a840edc6abdedd8f79a03f6c5d89cb845a23e9c1,13143,2053,2052,1,1623,355,38,13,23,0,0,1,0,false,false,FAILED_COMPLETE_PROGRAM_REFUSAL
