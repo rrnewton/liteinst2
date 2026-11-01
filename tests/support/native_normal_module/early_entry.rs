@@ -135,10 +135,16 @@ impl Ready {
         out
     }
     pub(in super::super) fn decode(mut wire: &[u8], case: Case, scenario: Scenario) -> Self {
+        assert!(wire.len() <= WIRE_LIMIT);
         assert_eq!(take_word(&mut wire), MAGIC);
         assert_eq!(take_word(&mut wire), scenario as u64);
-        let body = take_data(&mut wire);
-        let module = super::Ready::decode_session(&body);
+        // This is a complete nested session, not one immutable blob. Its
+        // decoder retains the 8192-byte bound on each individual blob.
+        let body_len = usize::try_from(take_word(&mut wire)).unwrap();
+        // Extra is twelve gate words, marker/witness/helper words and two generations.
+        assert_eq!(body_len.checked_add(17 * 8), Some(wire.len()));
+        let (body, mut wire) = wire.split_at(body_len);
+        let module = super::Ready::decode_session(body);
         assert_eq!(module.case, case);
         let gates = std::array::from_fn(|_| std::array::from_fn(|_| take_word(&mut wire)));
         let extra = Extra {
@@ -726,5 +732,163 @@ impl NormalContext<'_> {
         );
         let wire = ready.encode(self.early_entry_scenario());
         self.ready_module_wire(wire);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::panic::{AssertUnwindSafe, catch_unwind};
+
+    fn refuses(f: impl FnOnce()) {
+        assert!(catch_unwind(AssertUnwindSafe(f)).is_err());
+    }
+
+    // Fabricated protocol data only: no native execution or gate authority.
+    fn ready(k: usize, order: usize) -> Ready {
+        let code = [0xb8, 1, 0, 0, 0, 0xc3];
+        let mut source = vec![0; PAGE];
+        source[..6].copy_from_slice(&code);
+        source[64..70].copy_from_slice(&code);
+        let mut caller = vec![0; PAGE];
+        caller[..bytes::BYTES.len()].copy_from_slice(bytes::BYTES);
+        let functions = [0x3000, 0x3040].map(|entry| Function {
+            entry,
+            heads: vec![entry, entry + 5],
+            returns: vec![entry + 5],
+            boundaries: vec![(entry, entry), (entry + 5, entry + 5)],
+        });
+        Ready {
+            module: super::super::Ready {
+                caller: 0x1000,
+                caller_immutable: vec![(0x1000, caller)],
+                functions,
+                immutable: vec![(0x3000, source.clone()), (0x5000, vec![0xa5; 8192])],
+                original_source: source,
+                journal: Some(JournalReady {
+                    address: 0x9000,
+                    a_generation: 11,
+                    b_generation: None,
+                    helper_tid: None,
+                }),
+                case: Case::new_session(0, k, 6, 6, order),
+            },
+            extra: Extra {
+                gates: [[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12]],
+                marker: 13,
+                witness: 14,
+                helper_tid: 15,
+                generations: [16, 17],
+            },
+        }
+    }
+
+    #[test]
+    fn nested_session_frame_roundtrips_multiple_immutable_blobs() {
+        for k in [10, 1000] {
+            for order in 0..2 {
+                let ready = ready(k, order);
+                let body = ready.module.encode_session();
+                assert!(body.len() > 8192);
+                assert!(
+                    ready
+                        .module
+                        .caller_immutable
+                        .iter()
+                        .chain(&ready.module.immutable)
+                        .all(|(_, bytes)| (1..=8192).contains(&bytes.len()))
+                );
+                assert!((1..=8192).contains(&ready.module.original_source.len()));
+                assert_eq!(ready.extra.words().len(), 17);
+                for scenario in [
+                    Scenario::Enabled,
+                    Scenario::Bypass,
+                    Scenario::LoadedTrueDisarm,
+                    Scenario::LoadedFalseArm,
+                    Scenario::AdmittedRearm,
+                    Scenario::ReturnedDisarm,
+                ] {
+                    let wire = ready.encode(scenario);
+                    assert_eq!(wire.len(), 3 * 8 + body.len() + 17 * 8);
+                    assert!(wire.len() <= WIRE_LIMIT);
+                    let decoded = Ready::decode(&wire, ready.module.case, scenario);
+                    assert_eq!(decoded.module.validate(true, ready.module.case).len(), 4);
+                    assert_eq!(decoded.module.encode_session(), body);
+                    assert_eq!(decoded.extra.words(), ready.extra.words());
+                    assert_eq!(decoded.encode(scenario), wire);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn nested_session_frame_rejects_truncation_and_bad_lengths() {
+        let ready = ready(10, 0);
+        let scenario = Scenario::Enabled;
+        let wire = ready.encode(scenario);
+        let body_len = ready.module.encode_session().len();
+        let suffix = 3 * 8 + body_len;
+        let reject = |bad: &[u8]| {
+            refuses(|| {
+                Ready::decode(bad, ready.module.case, scenario);
+            });
+        };
+        for end in [0, 7, 8, 15, 16, 23, 24, suffix - 1, suffix, wire.len() - 1] {
+            reject(&wire[..end]);
+        }
+        let mut missing_suffix_word = wire.clone();
+        drop(missing_suffix_word.drain(suffix..suffix + 8));
+        reject(&missing_suffix_word);
+        let mut extra_suffix_word = wire.clone();
+        extra_suffix_word.extend_from_slice(&0_u64.to_le_bytes());
+        reject(&extra_suffix_word);
+        for declared in [0, body_len as u64 - 1, body_len as u64 + 1, u64::MAX] {
+            let mut bad = wire.clone();
+            bad[16..24].copy_from_slice(&declared.to_le_bytes());
+            reject(&bad);
+        }
+        // Even self-consistent outer lengths cannot hide a truncated/extra inner byte.
+        let mut inner_short = wire.clone();
+        inner_short.remove(suffix - 1);
+        inner_short[16..24].copy_from_slice(&(body_len as u64 - 1).to_le_bytes());
+        reject(&inner_short);
+        let mut inner_extra = wire.clone();
+        inner_extra.insert(suffix, 0);
+        inner_extra[16..24].copy_from_slice(&(body_len as u64 + 1).to_le_bytes());
+        reject(&inner_extra);
+        let mut oversized = wire.clone();
+        oversized.resize(WIRE_LIMIT + 1, 0);
+        let oversized_body_len = (oversized.len() - 20 * 8) as u64;
+        oversized[16..24].copy_from_slice(&oversized_body_len.to_le_bytes());
+        reject(&oversized);
+        for (at, value) in [(0, 0_u64), (8, Scenario::Bypass as u64)] {
+            let mut bad = wire.clone();
+            bad[at..at + 8].copy_from_slice(&value.to_le_bytes());
+            reject(&bad);
+        }
+        refuses(|| {
+            Ready::decode(&wire, Case::new_session(1, 10, 6, 6, 0), scenario);
+        });
+    }
+
+    #[test]
+    fn nested_session_frame_preserves_individual_blob_limit() {
+        for length in [0, 8193] {
+            for field in 0..4 {
+                let mut ready = ready(10, 0);
+                let bytes = match field {
+                    0 => &mut ready.module.caller_immutable[0].1,
+                    1 => &mut ready.module.immutable[0].1,
+                    2 => &mut ready.module.immutable[1].1,
+                    _ => &mut ready.module.original_source,
+                };
+                bytes.resize(length, 0);
+                let wire = ready.encode(Scenario::Enabled);
+                assert!(wire.len() <= WIRE_LIMIT);
+                refuses(|| {
+                    Ready::decode(&wire, ready.module.case, Scenario::Enabled);
+                });
+            }
+        }
     }
 }
