@@ -20,6 +20,9 @@
 #include "maps_call_stack.h"
 #endif
 #include "persistent_group_runtime.h"
+#ifdef LI2_RESIDENT_SOURCE_LEASE
+#include "resident_source_lease.h"
+#endif
 #include "persistent_group_config.h"
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
 #include "persistent_group_observe.h"
@@ -370,12 +373,26 @@ static int pe_identity(void) {
         s->pid>0 && s->pid==s->tid && s->sync_query>=0 && (s->sync_query&96)==96 && !s->sync_register &&
         raw(SYS_getpid,0,0,0,0,0,0)==s->pid && raw(SYS_gettid,0,0,0,0,0,0)==s->tid;
 }
+#ifdef LI2_PERSISTENT_SEALED_GENERATION
+#include "sealed_generation.inc"
+#endif
 static int pe_query(uintptr_t address,size_t bytes,int prot,struct li2_private_code_query *q) {
+#ifdef LI2_PERSISTENT_SEALED_GENERATION
+    int used=0,e=sg_query(address,bytes,prot,q,&used);
+    if(!used)e=li2_lifecycle_private_code_query(address,bytes,prot,q);
+    if(!sg_receipt_valid(q))return PE_PUBLICATION;
+#else
     int e=li2_lifecycle_private_code_query(address,bytes,prot,q);
+#endif
     return e || q->attempted!=1 || q->complete!=1 || q->result || q->first!=address ||
         q->end!=address+bytes || q->pages_checked!=bytes/PAGE || q->expected_prot!=prot ||
         q->actual_prot!=prot?PE_PUBLICATION:0;
 }
+#ifdef LI2_PERSISTENT_SEALED_GENERATION
+int li2_pg_storage_query(uintptr_t address,size_t bytes,int prot,struct li2_private_code_query *q) {
+    return pe_query(address,bytes,prot,q);
+}
+#endif
 static int pg_proof_query(uintptr_t address,int prot,struct pg_proof_query *q) {
     if(!q || !address || (address&(PAGE-1)) || address>UINTPTR_MAX-PE_PROOF_BYTES)return PE_PUBLICATION;
     int e=pe_query(address,PG_PROOF_FIRST_BYTES,prot,&q->part[0]);
@@ -447,6 +464,9 @@ static int pg_permissions(const struct li2_pg_layout *l,int prot,struct le_permi
     return 0;
 }
 static int pg_query_complete(const struct li2_private_code_query *q,uintptr_t a,size_t n,int prot) {
+#ifdef LI2_PERSISTENT_SEALED_GENERATION
+    if(!sg_receipt_valid(q))return 0;
+#endif
     return q->attempted==1 && q->complete==1 && !q->result && q->first==a &&
         q->end==a+n && q->pages_checked==n/PAGE && q->expected_prot==prot && q->actual_prot==prot;
 }
@@ -801,6 +821,9 @@ static void selected_persistent_initialize(void) {
     unsigned a=0,b=0;for(unsigned i=0;i<32;i++){a|=pe_archive[i];b|=pe_policy[i];}
     pe_need(a && b && selected_run_protect_contains(0,(uintptr_t)&pe,sizeof pe)==1,PE_STATE,1);
     pe.registered=1;pe.session=selected_session;
+#ifdef LI2_PERSISTENT_SEALED_GENERATION
+    pe_need(!sg_initialize(),PE_PUBLICATION,190);
+#endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
     pda_initialize();
 #endif
@@ -884,6 +907,9 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
     const struct li2_pg_rseq_progress *r=li2_pg_rseq_progress();
     pe_need(s && pe.p.phase==LI2_PG_HELD && !pe_decoding && !pe.build_started &&
         r && r->active && r->seed_complete && r->registration_epoch==pe.p.registration_epoch,PE_STATE,4);
+#ifdef LI2_RESIDENT_SOURCE_LEASE
+    pe_need(!li2_rsl_bind(&pe.token),PE_SOURCE,180);
+#endif
     pe.candidate_registry_count=protected_count;pe_need(protected_count<=RANGES,PE_STATE,5);
     copy(pe.candidate_registry,protected,protected_count*sizeof *protected);
 #ifdef LI2_REUSE_CENSUS
@@ -1029,6 +1055,9 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
 #endif
     if(pg_proof_query(g->proof,proof_prot,&pe.proof_before))return PE_PUBLICATION;
     uintptr_t proof=g->proof;
+#ifdef LI2_PERSISTENT_SEALED_GENERATION
+    if(sg_reopen(b->generated,proof))return PE_PUBLICATION;
+#endif
     if(pg_permissions(&b->layout,PROT_READ|PROT_WRITE,pe.reopen_code,0) ||
        pg_proof_permission(proof,PROT_READ|PROT_WRITE,&pe.reopen_proof))return PE_PUBLICATION;
     le_zero(g,sizeof *g);g->generated=b->generated;g->spill=b->spill;g->proof=proof;g->layout=b->layout;
@@ -1065,6 +1094,9 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
     for(size_t i=0;i<PE_PROOF_BYTES;i++){proof_bytes[i]=0;g->proof_zeroed=i+1;}
     const unsigned char *src=(const void *)&PE_SLOT(publication);
     for(size_t i=0;i<sizeof PE_SLOT(publication);i++){proof_bytes[i]=src[i];g->proof_copied=i+1;}
+#ifdef LI2_PERSISTENT_SEALED_GENERATION
+    if(sg_publish(g))return PE_PUBLICATION;
+#endif
     int e=pg_permissions(&g->layout,PROT_READ,g->code_sealed,0);if(e)return e;
     PE_SLOT(banks)[pe.selected_bank].virgin=0;PE_SLOT(banks)[pe.selected_bank].prot=PROT_READ;
     e=pg_proof_permission(g->proof,PROT_READ,&g->proof_sealed);if(e)return e;
@@ -1519,6 +1551,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
         pe_need(!li2_pg_epoch_cancel(&pe.token,sig,si,uc,&result),PE_EVENT,3);return 1;
     }
     pe_need(!li2_pg_epoch_bind(&pe.token,&PE_SLOT(generation)),PE_PUBLICATION,2);
+#ifdef LI2_RESIDENT_SOURCE_PROBE
+    li2_rso_bound(&pe.token,(uintptr_t)pe.before.frame.greg[REG_RIP],&pe_payload()->plan.table);
+#endif
 #ifdef LI2_REUSE_CENSUS
     rcc_bound();
 #endif
@@ -1732,6 +1767,9 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
 #include "persistent_active_domain.inc"
+#ifdef LI2_RESIDENT_SOURCE_LEASE
+#include "resident_source_owner.inc"
+#endif
 #ifdef LI2_PERSISTENT_RET_DISPATCH
 #include "persistent_ret_resume.inc"
 #endif

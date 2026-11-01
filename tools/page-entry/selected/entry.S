@@ -153,3 +153,21 @@ li2_target: .zero 8
 li2_private_stack: .zero 262144
 li2_private_stack_end:
 .section .note.GNU-stack,"",@progbits
+
+#ifdef LI2_FLAG_STACK
+/* Linux gives the trusted signal handler a sixteen-byte ABI stack. Clear only
+   live handler AC/NT/DF/TF before C; the complete application ucontext stays intact.
+   No GPR, argument, saved context, or return address is changed. */
+.text
+.p2align 4
+.global li2_flag_stack_signal_entry
+.hidden li2_flag_stack_signal_entry
+.hidden li2_flag_stack_handler
+.type li2_flag_stack_signal_entry,@function
+li2_flag_stack_signal_entry:
+    pushfq
+    andq $-279809,(%rsp)
+    popfq
+    jmp li2_flag_stack_handler
+.size li2_flag_stack_signal_entry,.-li2_flag_stack_signal_entry
+#endif

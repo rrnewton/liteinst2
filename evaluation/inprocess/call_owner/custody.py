@@ -72,6 +72,14 @@ def whole_receipt(path, expected_sha256, current, pin, profile, status):
     return old
 
 
+def _record_archive_configuration(current, receipt_sha256, actual, expected):
+    # cargo_configuration returns location labels/status/digests, never paths
+    # or configuration contents. Retain this one read even when equality fails.
+    current.setdefault('archive_configuration_observations', []).append(
+        dict(receipt_sha256=receipt_sha256, actual=actual, expected=expected))
+    return actual
+
+
 def check_archive(path, sha256, current, pin):
     from checks import admission
     from page_selected_generic_build import package_check, PROFILES
@@ -89,7 +97,8 @@ def check_archive(path, sha256, current, pin):
          build['registry_before']==build['registry_after'] and build['decoder_features']==FEATURES and
          environment['LI2_DECODER_FEATURES']=='linked-epoch,mov-guard' and
          environment['CARGO_TARGET_DIR']==str(ROOT/'target') and
-         admission.cargo_configuration(environment)==build['cargo_configuration'],
+         _record_archive_configuration(current,sha256,admission.cargo_configuration(environment),
+                                       build['cargo_configuration'])==build['cargo_configuration'],
          'actual source/features/configuration decoder build')
     need([package_check(x) for x in build['registry_before']]==build['registry_before'],
          'whole locked registry package contents and archives')

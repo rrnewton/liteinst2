@@ -406,6 +406,14 @@ int li2_tf_chain_span_resume(const struct li2_tf_span_transfer *ticket,int sig,s
         if(!a->policy)s->fallback=LI2_CHAIN_NOT_CLASSIFIED;
         else chain_need(c,a->policy==1,LI2_CHAIN_DECODE,5);
     }
+#ifdef LI2_TF_NX_PAGE_BOUNDARY
+    /* Only a genuine closed predecessor reaches this descriptive policy.
+       The unchanged fallback tail releases the successor and preserves UC. */
+    int boundary=li2_tf_nx_page_boundary(&p->owner.step.request,
+                                       p->owner.actual_post_pc,(int)s->fallback);
+    chain_need(c,boundary>=0,LI2_CHAIN_STATE,5);
+    s->fallback=(unsigned)boundary;
+#endif
     if(s->fallback) {
 #ifdef LI2_EVENT_PROFILE
         li2_event_site(&s->fetch.pages[0],s->decoded.pc,s->decoded.code,s->fallback);

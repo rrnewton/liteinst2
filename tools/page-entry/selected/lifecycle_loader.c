@@ -8,6 +8,9 @@
 #include "linked_source.h"
 #endif
 #include "lifecycle_loader.h"
+#ifdef LI2_RESIDENT_SOURCE_LEASE
+#include "resident_source_lease.h"
+#endif
 #ifdef LI2_NATIVE_PAIR
 #include "native_pair.h"
 static int np_life_admission_guard(uintptr_t);
@@ -1086,6 +1089,9 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 
 /* Runtime-private code inspection: does not register application sources. */
 #include "private_code_query.inc"
+#ifdef LI2_FLAG_STACK
+#include "flag_stack_query.inc"
+#endif
 #ifdef LI2_RSEQ_INACTIVE
 #include "rseq_data.inc"
 #ifdef LI2_RSEQ_CURRENT_DATA
@@ -1117,6 +1123,9 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #include "linked_source.inc"
 #if defined(LI2_PERSISTENT_GROUP)
 #include "persistent_group_source.inc"
+#ifdef LI2_RESIDENT_SOURCE_LEASE
+#include "resident_source_lease.inc"
+#endif
 #elif defined(LI2_PERSISTENT_EPOCH)
 #include "persistent_source.inc"
 #endif

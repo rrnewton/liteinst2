@@ -1,0 +1,15 @@
+kind,name,status,value,unit,scope
+stage,archive,passed,16,commands,cohort_failed
+stage,flags,observed_unqualified,38,commands,cohort_failed
+stage,helper,observed_unqualified,47,commands,cohort_failed
+stage,run,bounded_subjects_completed,22,commands,cohort_failed
+stage,audit,failed,0,commands,cohort_failed
+subject,native,exit_0,0.135253280,seconds,validation_only_semantic_audit_failed
+subject,gated,exit_0,3.208973205,seconds,validation_only_semantic_audit_failed
+raw_counter,map_queries,unvalidated,145770,count,semantic_audit_failed
+raw_counter,map_refreshes,unvalidated,984,count,semantic_audit_failed
+raw_counter,ingresses,unvalidated,16029,count,semantic_audit_failed
+raw_partition,SIGSEGV_SIGTRAP_SIGILL_SIGSYS_other,unvalidated,5853;10175;1;0;0,count,semantic_audit_failed
+credit,equivalence,false,0,boolean,cohort_failed
+credit,qualification,false,0,boolean,cohort_failed
+credit,performance,false,0,boolean,cohort_failed

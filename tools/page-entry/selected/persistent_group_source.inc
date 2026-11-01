@@ -1,6 +1,13 @@
 /* Actual two-page R/NX lease. Included in lifecycle_loader.c after the exact
    old fetch/span/link helpers; no old fetch storage or API is enlarged. */
 #include "persistent_group_runtime.h"
+#ifdef LI2_PERSISTENT_SEALED_GENERATION
+/* Storage classification only. All token, source, layout and phase checks
+   below still run. The returned permission record carries the sealed tag. */
+#define PGS_CODE_QUERY li2_pg_storage_query
+#else
+#define PGS_CODE_QUERY li2_lifecycle_private_code_query
+#endif
 static struct {
     struct li2_pg_source_progress p;
     struct li2_pg_token token;
@@ -250,7 +257,7 @@ int li2_pg_source_opened(const struct li2_pg_token *t,const struct li2_pg_compac
        pg_source.p.first_error || pg_source.p.opened_extents || pg_source.p.opened_pages)
         return pgs_bad(LI2_FETCH_STATE,40);
     for(unsigned i=0;i<3;i++) {
-        int e=li2_lifecycle_private_code_query(pgs_address(&pg_source.p.layout,i),pgs_bytes(i),
+        int e=PGS_CODE_QUERY(pgs_address(&pg_source.p.layout,i),pgs_bytes(i),
             PROT_READ|PROT_EXEC,&pg_source.p.opened[i]);
         if(e || !pgs_query_done(&pg_source.p.layout,i,PROT_READ|PROT_EXEC,&pg_source.p.opened[i]))
             return pgs_bad(LI2_FETCH_PAGE,40+i);
@@ -268,7 +275,7 @@ int li2_pg_source_release(const struct li2_pg_token *t,const struct li2_pg_compa
        pg_source.p.first_error || pg_source.p.closed_extents || pg_source.p.closed_pages ||
        pg_source.p.release_started || pg_source.p.release_complete)return pgs_bad(LI2_FETCH_STATE,50);
     for(unsigned i=0;i<3;i++) {
-        int e=li2_lifecycle_private_code_query(pgs_address(&pg_source.p.layout,i),pgs_bytes(i),
+        int e=PGS_CODE_QUERY(pgs_address(&pg_source.p.layout,i),pgs_bytes(i),
             PROT_READ,&pg_source.p.closed[i]);
         if(e || !pgs_query_done(&pg_source.p.layout,i,PROT_READ,&pg_source.p.closed[i]))
             return pgs_bad(LI2_FETCH_PAGE,50+i);
@@ -302,7 +309,7 @@ int li2_pg_source_abort(const struct li2_pg_token *t) {
     for(unsigned i=0;i<3;i++) {
         struct li2_private_code_query *q=&pg_source.p.closed[i];
         if(q->attempted) {pg_source.p.phase=LI2_PGS_FAILED;return pgs_bad(LI2_FETCH_STATE,60+i);}
-        int e=li2_lifecycle_private_code_query(pgs_address(&pg_source.p.layout,i),pgs_bytes(i),PROT_READ,q);
+        int e=PGS_CODE_QUERY(pgs_address(&pg_source.p.layout,i),pgs_bytes(i),PROT_READ,q);
         if(e || !pgs_query_done(&pg_source.p.layout,i,PROT_READ,q)) {
             pg_source.p.phase=LI2_PGS_FAILED;return pgs_bad(LI2_FETCH_PAGE,63+i);
         }
@@ -358,7 +365,7 @@ int li2_pg_source_cancel(const struct li2_pg_token *t) {
     }
     p->cancel_started=1;
     for(unsigned i=0;i<3;i++) {
-        int e=li2_lifecycle_private_code_query(pgs_address(&p->layout,i),pgs_bytes(i),
+        int e=PGS_CODE_QUERY(pgs_address(&p->layout,i),pgs_bytes(i),
             p->cancel_expected_prot[i],&p->cancel_code[i]);
         if(e || !pgs_query_done(&p->layout,i,p->cancel_expected_prot[i],&p->cancel_code[i]))
             return pgs_bad(LI2_FETCH_PAGE,70+i);
@@ -557,7 +564,7 @@ int li2_pgd_source_opened(const struct li2_pg_token *t) {
        d->opened || d->closed || d->released || !pgsd_zero(d->open,sizeof d->open) ||
        !pgsd_zero(d->close,sizeof d->close))return pgsd_bad(LI2_FETCH_STATE,85);
     for(unsigned i=1;i<d->count;i++)for(unsigned j=0;j<3;j++) {
-        int e=li2_lifecycle_private_code_query(pgs_address(&d->ref[i].layout,j),pgs_bytes(j),
+        int e=PGS_CODE_QUERY(pgs_address(&d->ref[i].layout,j),pgs_bytes(j),
             PROT_READ|PROT_EXEC,&d->open[i][j]);
         if(e || !pgs_query_done(&d->ref[i].layout,j,PROT_READ|PROT_EXEC,&d->open[i][j]))
             return pgsd_bad(LI2_FETCH_PAGE,86+(long)(3*i+j));
@@ -576,7 +583,7 @@ int li2_pgd_source_release(const struct li2_pg_token *t) {
        d->opened!=1 || d->closed || d->released || !pgsd_zero(d->close,sizeof d->close))
         return pgsd_bad(LI2_FETCH_STATE,93);
     for(unsigned i=1;i<d->count;i++)for(unsigned j=0;j<3;j++) {
-        int e=li2_lifecycle_private_code_query(pgs_address(&d->ref[i].layout,j),pgs_bytes(j),PROT_READ,&d->close[i][j]);
+        int e=PGS_CODE_QUERY(pgs_address(&d->ref[i].layout,j),pgs_bytes(j),PROT_READ,&d->close[i][j]);
         if(e || !pgs_query_done(&d->ref[i].layout,j,PROT_READ,&d->close[i][j]))
             return pgsd_bad(LI2_FETCH_PAGE,94+(long)(3*i+j));
     }
@@ -594,3 +601,5 @@ int li2_pgd_source_terminal(const struct li2_pg_token *t) {
 #ifdef LI2_PERSISTENT_SUBENTRY
 #include "persistent_subentry_source.inc"
 #endif
+
+#undef PGS_CODE_QUERY

@@ -16,6 +16,10 @@
 #endif
 #ifdef LI2_INITIAL_CODE_PROTECTION
 #include "initial_code_protection.h"
+#ifdef LI2_RESIDENT_SOURCE_LEASE
+#include "resident_source_lease.h"
+static uint64_t rsl_initialization[9];
+#endif
 #endif
 #if defined(LI2_COST_PROFILE) && (!defined(LI2_NATIVE_PAIR) || LI2_COST_PROFILE != 1)
 #error "cost profile requires the explicit native-pair release profile"
@@ -269,6 +273,29 @@ static void selected_persistent_preentry(int,siginfo_t *,ucontext_t *);
 static void selected_persistent_exit(int,siginfo_t *,ucontext_t *);
 static _Noreturn void selected_persistent_abort(unsigned,long);
 static void selected_persistent_report(unsigned,unsigned,long);
+#ifdef LI2_RESIDENT_THREE_CAPTURE
+#include "resident_three_observe.h"
+#endif
+#ifdef LI2_RESIDENT_THREE
+static int selected_resident_three_trace_try(int,siginfo_t *,ucontext_t *);
+static void selected_resident_three_preentry(int,siginfo_t *,ucontext_t *);
+static void selected_resident_three_exit(int,siginfo_t *,ucontext_t *);
+static void r3_fd_guard(long,const long[6]);
+#endif
+#ifdef LI2_PERSISTENT_SEALED_GENERATION
+static void sg_fd_guard(long,const long[6]);
+#ifdef LI2_FLAG_STACK
+static volatile sig_atomic_t selected_flag_stack_failing;
+static void selected_flag_stack_initialize(void);
+static int selected_flag_stack_try(int,siginfo_t *,ucontext_t *,uint64_t);
+static void selected_flag_stack_preentry(int,siginfo_t *,ucontext_t *);
+static void selected_flag_stack_exit(int,siginfo_t *,ucontext_t *);
+static void selected_flag_stack_report(void);
+static _Noreturn void selected_flag_stack_abort(unsigned,long);
+static void fs_fd_guard(long,const long[6]);
+extern void li2_flag_stack_signal_entry(int,siginfo_t *,void *);
+#endif
+#endif
 #ifdef LI2_PERSISTENT_RET_DISPATCH
 static volatile sig_atomic_t prr_pending,prr_busy;
 static void selected_ret_resume_preentry(int,siginfo_t *,ucontext_t *);
@@ -388,9 +415,22 @@ static void selected_repeat_report(unsigned,unsigned,long);
 #ifdef LI2_LINKED_NATIVE_PROBE
 #include "linked_native_probe_report.inc"
 #endif
+#ifdef LI2_RESIDENT_SOURCE_PROBE
+#include "resident_source_probe.h"
+static void rso_initialize(void);
+static void rso_ingress(int,const siginfo_t *,const ucontext_t *);
+static void rso_effect_before(long,const long[6],const ucontext_t *);
+static void rso_effect_after(long,const long[6],int);
+static void rso_effect_done(long,const long[6]);
+static void rso_fd_guard(long,const long[6]);
+static void rso_report(unsigned,unsigned,long);
+#endif
 static void report(unsigned status,unsigned code,long detail) {
     if(reported) return;
     reported=1;
+#ifdef LI2_RESIDENT_SOURCE_PROBE
+    rso_report(status,code,detail);
+#endif
 #ifdef LI2_EVENT_PROFILE
     event_seal();
 #endif
@@ -600,6 +640,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #ifdef LI2_PERSISTENT_RET_OWNER_CAPTURE
     prto_finish(status,code,detail);
 #endif
+#ifdef LI2_RESIDENT_THREE_CAPTURE
+    r3o_finish(status,code,detail);
+#endif
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
     pco_finish(status,code,detail);
 #endif
@@ -610,6 +653,9 @@ static void report(unsigned status,unsigned code,long detail) {
     selected_link_native_probe_report(status,code,detail);
 #endif
     selected_persistent_report(status,code,detail);
+#ifdef LI2_FLAG_STACK
+    selected_flag_stack_report();
+#endif
 #endif
 #else
     selected_scalar_span_report(status,code,detail);
@@ -620,6 +666,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 }
 static void fail(unsigned code,long detail) {
+#ifdef LI2_FLAG_STACK
+    if(selected_pending_route==SELECTED_FLAG_STACK)selected_flag_stack_abort(code,detail);
+#endif
 #ifdef LI2_PERSISTENT_RET_DISPATCH
     if(prr_pending || prr_busy || selected_pending_route==SELECTED_RET_RESUME)
         selected_persistent_abort(code,detail);
@@ -807,6 +856,27 @@ static void dispatch_operation(long n,ucontext_t *context) {
 #endif
     ++syscall_count; last_syscall=n;
     long a[6]={g[REG_RDI],g[REG_RSI],g[REG_RDX],g[REG_R10],g[REG_R8],g[REG_R9]},result;
+#ifdef LI2_PERSISTENT_SEALED_GENERATION
+    sg_fd_guard(n,a);
+#ifdef LI2_FLAG_STACK
+    fs_fd_guard(n,a);
+#endif
+#endif
+#ifdef LI2_RESIDENT_THREE
+    r3_fd_guard(n,a);
+#endif
+#ifdef LI2_RESIDENT_SOURCE_LEASE
+    /* Actual prior generated execution has already drained through its owner.
+       Invalidate before every guest RAW, including error/partial operations. */
+#ifdef LI2_RESIDENT_SOURCE_PROBE
+    rso_fd_guard(n,a);rso_effect_before(n,a,context);
+#endif
+    int lease_error=li2_rsl_before_effect(n,a);
+#ifdef LI2_RESIDENT_SOURCE_PROBE
+    rso_effect_after(n,a,lease_error);
+#endif
+    checked(!lease_error,(unsigned)lease_error,n);
+#endif
 #ifdef LI2_RSEQ_INACTIVE
     int rseq_error=li2_rseq_before_syscall(n,a);
     checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
@@ -953,6 +1023,9 @@ static void dispatch_operation(long n,ucontext_t *context) {
     }
 #endif
 #ifdef LI2_RSEQ_INACTIVE
+#ifdef LI2_RESIDENT_SOURCE_PROBE
+    rso_effect_done(n,a);
+#endif
     rseq_error=li2_rseq_after_syscall(n,a);
     checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
 #endif
@@ -1003,6 +1076,9 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_PERSISTENT_EPOCH
 #if defined(LI2_PERSISTENT_GROUP)
 #include "persistent_group_controller.inc"
+#ifdef LI2_RESIDENT_THREE
+#include "resident_three_owner.inc"
+#endif
 #elif defined(LI2_PERSISTENT_DYNAMIC)
 #include "persistent_dynamic_controller.inc"
 #else
@@ -1023,7 +1099,21 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_EVENT_PROFILE
 #include "event_profile.inc"
 #endif
+#ifdef LI2_RESIDENT_SOURCE_PROBE
+#include "resident_source_probe.inc"
+#endif
+#ifdef LI2_FLAG_STACK
+#include "flag_stack_owner.inc"
+__attribute__((visibility("hidden")))
+void li2_flag_stack_handler(int sig,siginfo_t *si,void *ptr) {
+    selected_flag_stack_preentry(sig,si,ptr);
+    handler(sig,si,ptr);
+}
+#endif
 static void handler(int sig,siginfo_t *si,void *ptr) {
+#ifdef LI2_RESIDENT_THREE
+    selected_resident_three_preentry(sig,si,ptr);
+#endif
 #ifdef LI2_PERSISTENT_EPOCH_CAPTURE
     peo_ingress(sig);
 #endif
@@ -1179,6 +1269,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
     }
     checked(!handling && si && ptr,218,sig); handling=1;
+#ifdef LI2_RESIDENT_SOURCE_PROBE
+    rso_ingress(sig,si,ptr);
+#endif
 #ifdef LI2_MAPS_MAINTAINED
     if(sig==SIGSEGV) {
         const ucontext_t *uc=ptr;const greg_t *g=uc->uc_mcontext.gregs;
@@ -1203,6 +1296,16 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
 #ifdef LI2_CURRENT_TF_CAPTURE
     cto_begin(sig,si,ptr);
+#endif
+#ifdef LI2_FLAG_STACK
+    if(selected_pending_route==SELECTED_FLAG_STACK) {
+        selected_flag_stack_exit(sig,si,ptr);
+    } else
+#endif
+#ifdef LI2_RESIDENT_THREE
+    if(selected_pending_route==SELECTED_RESIDENT_THREE) {
+        selected_resident_three_exit(sig,si,ptr);
+    } else
 #endif
 #ifdef LI2_PERSISTENT_RET_DISPATCH
     if(selected_pending_route==SELECTED_RET_RESUME) {
@@ -1384,6 +1487,19 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #endif
 #endif
     li2_lifecycle_register_initial(main);li2_lifecycle_register_initial(interp);register_vdso();
+#ifdef LI2_RESIDENT_SOURCE_LEASE
+    int source_lease_error=li2_rsl_initialize(rsl_initialization);
+    if(source_lease_error) {
+        struct writer diagnostic={.used=0};
+        text(&diagnostic,"LI2_RSL_INITIALIZE {\"version\":1");
+        field(&diagnostic,",\"failure_code\":",(unsigned)source_lease_error);
+        text(&diagnostic,",\"observed\":[");
+        for(unsigned i=0;i<9;i++){if(i)text(&diagnostic,",");number(&diagnostic,rsl_initialization[i]);}
+        text(&diagnostic,"]}\n");
+        (void)raw(SYS_write,report_fd,(long)diagnostic.bytes,diagnostic.used,0,0,0);
+    }
+    checked(!source_lease_error,(unsigned)source_lease_error,180);
+#endif
     /* Closed in this partial profile. No vDSO execution/ownership claim. */
     selected_vdso_close_attempted=1;
     selected_vdso_close_result=raw(SYS_mprotect,vdso_first,vdso_end-vdso_first,PROT_READ,0,0,0);
@@ -1392,7 +1508,13 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
     selected_vdso_closed=1;
     selected_initialize();
     checked(li2_lifecycle_known_code(main->entry,1) && li2_lifecycle_known_code(interp->entry,1),234,0);
-    struct action action={handler,SA_SIGINFO|SA_ONSTACK|SA_NODEFER|0x04000000UL,li2_restorer,SELECTED_MASK};
+    struct action action={
+#ifdef LI2_FLAG_STACK
+        li2_flag_stack_signal_entry,
+#else
+        handler,
+#endif
+        SA_SIGINFO|SA_ONSTACK|SA_NODEFER|0x04000000UL,li2_restorer,SELECTED_MASK};
     fork_gate_action=action;
     checked(!raw(SYS_rt_sigaction,SIGSEGV,(long)&action,0,8,0,0) && !raw(SYS_rt_sigaction,SIGSYS,(long)&action,0,8,0,0) && !raw(SYS_rt_sigaction,SIGTRAP,(long)&action,0,8,0,0),235,0);
 #ifdef LI2_ONESHOT_PUBLICATION
@@ -1443,6 +1565,9 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #ifdef LI2_SCALAR_REGION
     selected_scalar_region_initialize();
 #endif
+#ifdef LI2_FLAG_STACK
+    selected_flag_stack_initialize();
+#endif
 #ifdef LI2_SCALAR_SPAN_TRACE
 #ifdef LI2_LINKED_EPOCH
     selected_linked_epoch_initialize();
@@ -1488,6 +1613,16 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #else
     selected_scalar_span_initialize();
 #endif
+#endif
+#ifdef LI2_RESIDENT_SOURCE_PROBE
+    rso_initialize();
+#endif
+#ifdef LI2_RESIDENT_THREE_CAPTURE
+    r3o_initialize();
+#endif
+#ifdef LI2_RESIDENT_THREE
+    /* Last registration, after every old owner and before any guest entry. */
+    checked(!r3_initialize(),4900,0);
 #endif
 #ifdef LI2_MAPS_MAINTAINED
     checked(!li2_maps_view_enable(),770,1);
