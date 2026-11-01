@@ -172,34 +172,27 @@ impl PhysicalState {
         if b.number != self.batches.checked_add(1).ok_or(error(Cause::Capacity))?
             || b.position > 4
             || state.cursor != b.before.cursor
-        {
-            return Err(error(Cause::Invariant));
-        }
-        // One local pass over immutable occupancy; no state survives this check.
-        let mut rows_fit = true;
-        let mut seen_fit = true;
-        let mut entered = 0u64;
-        let mut returned = 0u64;
-        for index in 0..4 {
-            let seen = b.seen[index].is_some();
-            let row = b.rows[index].as_ref();
-            rows_fit &= row.is_some() == (index < b.position);
-            seen_fit &= !seen || index <= b.position;
-            entered += u64::from(seen);
-            returned += u64::from(row.is_some_and(|r| r.observed_ordinal.is_some()));
-        }
-        if !rows_fit
-            || !seen_fit
+            || b.rows[..b.position].iter().any(Option::is_none)
+            || b.rows[b.position..].iter().any(Option::is_some)
+            || b.seen[b.position.saturating_add(1).min(4)..]
+                .iter()
+                .any(Option::is_some)
             || state
                 .totals
                 .entered
                 .checked_sub(b.before.cursor.totals.entered)
-                != Some(entered)
+                != Some(b.seen.iter().flatten().count() as u64)
             || state
                 .totals
                 .ret_observed
                 .checked_sub(b.before.cursor.totals.ret_observed)
-                != Some(returned)
+                != Some(
+                    b.rows
+                        .iter()
+                        .flatten()
+                        .filter(|r| r.observed_ordinal.is_some())
+                        .count() as u64,
+                )
         {
             return Err(error(Cause::Invariant));
         }
