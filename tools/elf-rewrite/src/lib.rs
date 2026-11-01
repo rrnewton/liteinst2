@@ -141,6 +141,85 @@ pub fn prepare_disassembly_whole_current_placement(
     Ok(product)
 }
 
+/// Explicit mixed 6..=15-byte T3 with complete pending selected ownership.
+///
+/// B1/B2/T1 retain current-composition placement and T2 retains its existing
+/// policy. Mixed T3 uses one shared victim/pair budget and admits each complete
+/// pair against inherited ownership and every other outstanding instruction.
+/// The full pending set is built once; only successful atomic commits remove
+/// entries. A first-four local success can still refuse the final pending check
+/// without restarting search. All source, dependency, hook and resource checks
+/// remain mandatory. No candidate bytes are executed or qualified here.
+pub fn prepare_disassembly_whole_current_placement_mixed_neighbors(
+    original: &[u8],
+    selected: &disassembly::whole::WholeProgramSelection,
+) -> Result<Product, Error> {
+    let mut product = prepare_selection_with_mode(
+        original,
+        selected.selection.clone(),
+        false,
+        disassembly::NeighborMode::WholeCurrentPlacementMixedPending,
+    )?;
+    product.files.remove("bundle-index.tsv");
+    product.files.extend(selected.mixed_pending_files());
+    product.files.insert(
+        "bundle-index.tsv".into(),
+        ledger::index(selected.selection.original, &product.files),
+    );
+    Ok(product)
+}
+
+/// Opt-in certified single-candidate placement with complete pending ownership.
+///
+/// B1/B2/T1 and both mixed-T3 roles use conservative artifact capacity bounds
+/// before their one real emission. T2 keeps its legacy placement policy. Every
+/// completed first-four bundle is admitted against inherited composition and
+/// pending instructions before tactic success; refusal consumes that attempt
+/// and advances only to the next declared tactic, while forced stays forced.
+/// All final append, dependency, hook, entry, aggregate and atomic-selection
+/// checks remain required. A capacity certificate is not execution authority.
+pub fn prepare_disassembly_whole_fitting_mixed_neighbors(
+    original: &[u8],
+    selected: &disassembly::whole::WholeProgramSelection,
+) -> Result<Product, Error> {
+    let mut product = prepare_selection_with_mode(
+        original,
+        selected.selection.clone(),
+        false,
+        disassembly::NeighborMode::WholeFittingMixedPending,
+    )?;
+    product.files.remove("bundle-index.tsv");
+    product.files.extend(selected.fitting_mixed_files());
+    product.files.insert(
+        "bundle-index.tsv".into(),
+        ledger::index(selected.selection.original, &product.files),
+    );
+    Ok(product)
+}
+
+/// Explicit short-T3 selected entry veneers within the same owned image page.
+/// Body storage and source entry remain distinct; this grants no execution or
+/// loader qualification. Complete pending ownership and final commit checks
+/// are identical to the fitting whole-program route.
+pub fn prepare_disassembly_whole_entry_veneer_mixed_neighbors(
+    original: &[u8],
+    selected: &disassembly::whole::WholeProgramSelection,
+) -> Result<Product, Error> {
+    let mut product = prepare_selection_with_mode(
+        original,
+        selected.selection.clone(),
+        false,
+        disassembly::NeighborMode::WholeEntryVeneerMixedPending,
+    )?;
+    product.files.remove("bundle-index.tsv");
+    product.files.extend(selected.entry_veneer_mixed_files());
+    product.files.insert(
+        "bundle-index.tsv".into(),
+        ledger::index(selected.selection.original, &product.files),
+    );
+    Ok(product)
+}
+
 fn prepare_mode(original: &[u8], manifest: &[u8], owned_neighbors: bool) -> Result<Product, Error> {
     let selection = selection::parse(manifest)?;
     prepare_selection_mode(original, selection, owned_neighbors, false)
@@ -337,9 +416,15 @@ fn prepare_selection_transaction(
     let snapshots = original_snapshots(&elf, &s.sites)?;
     let composition =
         Composition::new(identity, snapshots).map_err(|e| Error::new("composition-original", e))?;
-    // Only the sealed pending mode supplies the complete original instruction set.
+    // Only explicit pending modes supply the complete original instruction set.
     // Keep failed sites in this table; a successful commit alone discharges one.
-    let mut pending = if mode == disassembly::NeighborMode::ShortT3Pending {
+    let mut pending = if matches!(
+        mode,
+        disassembly::NeighborMode::ShortT3Pending
+            | disassembly::NeighborMode::WholeCurrentPlacementMixedPending
+            | disassembly::NeighborMode::WholeFittingMixedPending
+            | disassembly::NeighborMode::WholeEntryVeneerMixedPending
+    ) {
         s.sites
             .iter()
             .enumerate()
@@ -349,7 +434,13 @@ fn prepare_selection_transaction(
         Vec::new()
     };
     pending.sort_by_key(|(_, range)| range.start());
-    if mode == disassembly::NeighborMode::ShortT3Pending {
+    if matches!(
+        mode,
+        disassembly::NeighborMode::ShortT3Pending
+            | disassembly::NeighborMode::WholeCurrentPlacementMixedPending
+            | disassembly::NeighborMode::WholeFittingMixedPending
+            | disassembly::NeighborMode::WholeEntryVeneerMixedPending
+    ) {
         composition
             .require_unclaimed_ranges(&pending.iter().map(|(_, range)| *range).collect::<Vec<_>>())
             .map_err(|e| Error::new("pending-selected", e))?;
@@ -480,7 +571,11 @@ fn prepare_selection_transaction(
     let profile = ledger::target(s);
     files.insert("target.tsv".into(), profile.clone());
     files.insert("selection.txt".into(), s.manifest.clone());
-    let mut ledger = ledger::plans(s, &accepted, &composition, &dependencies)?;
+    let mut ledger = if mode == disassembly::NeighborMode::WholeEntryVeneerMixedPending {
+        ledger::plans_with_entry_veneers(s, &accepted, &composition, &dependencies)?
+    } else {
+        ledger::plans(s, &accepted, &composition, &dependencies)?
+    };
     files.insert("plan-ledger.tsv".into(), ledger.clone());
     for (index, image) in accepted.iter().flat_map(|(_, p)| p.images()).enumerate() {
         // Planned bytes remain inspectable even if another site refuses. They
@@ -755,7 +850,31 @@ fn attempt_singleton(
                 max_virtual_span: s.limits.virtual_span,
             },
         };
-        let result = if mode == disassembly::NeighborMode::WholeCurrentPlacement {
+        let result = if mode == disassembly::NeighborMode::WholeEntryVeneerMixedPending {
+            engine::plan_with_emission_after_and_entry_veneer_mixed_t3_pending(
+                &request,
+                composition,
+                &pending_ranges,
+                &site.victim_allocation,
+                policy,
+            )
+        } else if mode == disassembly::NeighborMode::WholeFittingMixedPending {
+            engine::plan_with_emission_after_and_fitting_mixed_t3_pending(
+                &request,
+                composition,
+                &pending_ranges,
+                &site.victim_allocation,
+                policy,
+            )
+        } else if mode == disassembly::NeighborMode::WholeCurrentPlacementMixedPending {
+            engine::plan_with_emission_after_and_current_placement_mixed_t3_pending(
+                &request,
+                composition,
+                &pending_ranges,
+                &site.victim_allocation,
+                policy,
+            )
+        } else if mode == disassembly::NeighborMode::WholeCurrentPlacement {
             engine::plan_with_emission_after_and_current_placement(
                 &request,
                 composition,
@@ -893,7 +1012,13 @@ fn attempt_singleton(
         }
         // Preserve every existing append/dependency/resource/hook failure first.
         // First-four local success may refuse here; this never restarts search.
-        if mode == disassembly::NeighborMode::ShortT3Pending {
+        if matches!(
+            mode,
+            disassembly::NeighborMode::ShortT3Pending
+                | disassembly::NeighborMode::WholeCurrentPlacementMixedPending
+                | disassembly::NeighborMode::WholeFittingMixedPending
+                | disassembly::NeighborMode::WholeEntryVeneerMixedPending
+        ) {
             next.require_unclaimed_ranges(&pending_ranges)
                 .map_err(|e| Error::new("pending-selected", e))?;
         }

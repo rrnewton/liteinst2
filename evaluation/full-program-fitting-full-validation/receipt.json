@@ -1,0 +1,598 @@
+{
+  "revision": "a840edc6abdedd8f79a03f6c5d89cb845a23e9c1",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "status": "PASS_CORRECTNESS_WITH_ROOT_STAT_RETENTION_LIMITATION",
+  "script": "evaluation/short-neighbor-parallel/validate.py",
+  "script_sha256": "968956df64edd3f5754a0adbd4b900ac68535d188be01af0628eff94d2ed6d10",
+  "cpu_count": 12,
+  "cpus": [
+    16,
+    20,
+    30,
+    60,
+    65,
+    82,
+    85,
+    98,
+    100,
+    102,
+    103,
+    106
+  ],
+  "cargo_jobs": 12,
+  "test_threads": 12,
+  "serial_threads": 1,
+  "outer_seconds": 935.6529932199046,
+  "outer_wall_limit": 1200,
+  "log_cap_bytes": 8388608,
+  "all_owners_normal_zero_rescues": true,
+  "source_unchanged": true,
+  "stages": [
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 9.986200341023505,
+      "exit_code": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "load_before": [
+        "30.43",
+        "54.14",
+        "57.27"
+      ],
+      "load_after": [
+        "30.28",
+        "53.33",
+        "56.97"
+      ]
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 34.217570991953835,
+      "exit_code": 0,
+      "log_sha256": "c00f1a5b0aefc414e7810a0abf29d1132006d6baa0ce20fbeaa6aa3177c154f3",
+      "load_before": [
+        "30.28",
+        "53.33",
+        "56.97"
+      ],
+      "load_after": [
+        "30.81",
+        "51.02",
+        "56.07"
+      ]
+    },
+    {
+      "name": "check",
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 22.091149484971538,
+      "exit_code": 0,
+      "log_sha256": "2b0cc56f6713132cc8fd13ec88187425a54bdf5cef23bf15126ae03f54853a4b",
+      "load_before": [
+        "30.81",
+        "51.02",
+        "56.07"
+      ],
+      "load_after": [
+        "32.01",
+        "50.00",
+        "55.63"
+      ]
+    },
+    {
+      "name": "workspace",
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "12",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "wall_limit": 900,
+      "elapsed_seconds": 737.2946383720264,
+      "exit_code": 0,
+      "log_sha256": "1c817891f57fe133d8f528d113aaa97cee9fae3b19e07b1c9efce722daaa312c",
+      "load_before": [
+        "32.01",
+        "50.00",
+        "55.63"
+      ],
+      "load_after": [
+        "31.58",
+        "33.94",
+        "42.89"
+      ]
+    },
+    {
+      "name": "serial-launch",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 131.98098686896265,
+      "exit_code": 0,
+      "log_sha256": "a04ae15affcd05f73aff5c51a448f6647dfbbc9fbbb033fffc8d7771e50275e7",
+      "load_before": [
+        "31.58",
+        "33.94",
+        "42.89"
+      ],
+      "load_after": [
+        "44.62",
+        "37.69",
+        "43.05"
+      ]
+    }
+  ],
+  "workspace": {
+    "passed": 4318,
+    "failed": 0,
+    "ignored": 39,
+    "raw_passed": 4321,
+    "controlled_nested_child_passes": 3,
+    "all_prior_tests_contexts_statuses_and_ignore_reasons_retained": true,
+    "added_tests": [
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "emission::placement::fitting_tests::fitting_preserves_certified_seed_and_replaces_only_nonfitting_seed",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "emission::placement::fitting_tests::fitting_masks_and_narrow_windows_refuse_without_larger_ranges_or_second_slot",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "emission::placement::fitting_tests::fitting_excludes_partial_pages_and_rejects_bounds_policy_and_overflow",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "quiescent::fitting_tests::fitting_b1_preserves_fitting_seed_and_avoids_known_single_image_capacity_failure",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "quiescent::fitting_tests::fitting_b2_emits_once_at_certified_window_target_and_keeps_source_padding",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "quiescent::fitting_tests::fitting_t1_keeps_exact_singleton_and_refuses_uncertified_singleton",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "trampoline::fitting::tests::prepared_bound_matches_ordinary_nop_jrcxz_and_hook_artifact_images",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "trampoline::fitting::tests::prepared_emission_keeps_field_reach_and_fixed_fragment_refusals",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "trampoline::fitting::tests::fitting_encoder_accounting_rejects_hidden_bytes_offsets_and_undersized_bound",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "neighbor::short::tests::fitting_mixed_first_four_pending_continues_without_retry",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "neighbor::short::tests::fitting_mixed_t2_complete_pair_admission_keeps_legacy_placement",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "neighbor::short::tests::fitting_mixed_certified_seeds_preserve_long_short_bytes_and_metrics",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "neighbor::short::tests::fitting_mixed_roles_fit_once_excluding_victim_and_inherited_pages",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "neighbor::short::tests::fitting_mixed_pending_union_and_pair_budget_never_restart",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "neighbor::short::tests::fitting_mixed_short_full_fetch_suffix_and_entry_scope_remain_required",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "neighbor::short::tests::fitting_mixed_preflight_authenticates_overlay_pending_and_both_allocations",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "neighbor::short::tests::fitting_mixed_inherited_complete_pair_checks_preserve_current_overlay",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests examples/disassembly_sites.rs (target/debug/examples/disassembly_sites-<cargo-hash>)",
+        "name": "whole_tests::whole_fitting_cli_is_explicit_and_preserves_every_legacy_form",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests examples/disassembly_sites.rs (target/debug/examples/disassembly_sites-<cargo-hash>)",
+        "name": "whole_tests::whole_fitting_cli_retains_mode_and_denominator_on_refusal",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst_rewrite-<cargo-hash>)",
+        "name": "disassembly::whole::tests::whole_fitting_places_once_and_keeps_complete_pending_t3_alternates",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst_rewrite-<cargo-hash>)",
+        "name": "disassembly::whole::tests::whole_fitting_admits_alternate_tactic_but_retains_full_atomic_refusal",
+        "reason": "",
+        "status": "ok"
+      }
+    ],
+    "removed_tests": [],
+    "exact_prior_raw_counted_summary_ignore_custom_census_plus_twenty_one": true,
+    "required_jrcxz_tests": [
+      "artifact_emission_tests::jrcxz_artifact_bridge_has_complete_fields_paths_and_pc_ownership",
+      "artifact_emission_tests::jrcxz_artifact_bridge_routes_internal_entries_and_keeps_finite_refusals",
+      "artifact_emission_tests::jrcxz_artifact_engine_keeps_source_pair_and_allocation_authority",
+      "jrcxz_artifact_native::native_jrcxz_artifact_preserves_integer_flags_and_stack",
+      "trampoline::artifact_jrcxz::tests::fixed_jrcxz_bridge_rejects_template_index_and_field_corruption"
+    ],
+    "counted_multiset_sha256": "cf880b0a470a4e4d54934bc46ee97220801979d16ca1a3aace4f7b9500be40c1"
+  },
+  "serial_launch": {
+    "passed": 1039,
+    "failed": 0,
+    "ignored": 0,
+    "complete_prior_multiset_retained": true
+  },
+  "native_finite_census": [
+    {
+      "context": "Running tests/neighbor_eviction_oracle.rs (target/debug/deps/neighbor_eviction_oracle-<cargo-hash>)",
+      "line": 3107,
+      "text": "artifact JRCXZ: 4 RCX values x 2 seeds, 16 original/16 linked/16 restored traces, 8 observing callbacks; no qualification claim"
+    }
+  ],
+  "release": {
+    "utc": "2026-11-01T01:20:38.498252+00:00",
+    "original_owner_pid_absent": true,
+    "exact_child_scope_absent": true,
+    "allocator_exit_code": 0
+  },
+  "baseline_revision": "a0fe83a84878233ff678d8f5bc9d3db3547ca9b5",
+  "scope": "The five listed root-workspace correctness commands only; seventeen fitting-mode Rust files and seven intervening evaluation publication/reproduction files are source provenance. Prior C/page-entry provenance is inherited from the exact mixed-mode baseline, not a separately executed C suite. No performance/native full-program/A5 qualification. Original failed runs remain in prior receipts.",
+  "root_identity_evidence": {
+    "profile": "compact-independent-root-witness-v1",
+    "root_raw_stat_retained": false,
+    "owner_raw_stat_retained": true,
+    "independent_fields": [
+      "pid",
+      "starttime",
+      "cgroup",
+      "affinity"
+    ],
+    "root_live": {
+      "bytes": 370,
+      "sha256": "3d9dbf5ca2ff9d7bd2ee5fb67fd137896b7132818a8f5c82db562b8ffb50abb8"
+    },
+    "owner_live": {
+      "bytes": 1413,
+      "sha256": "eba97aa0eac644c7d84b2eb278b20d1f8582cc7080ff34a63d608d269c53e637"
+    },
+    "limitation": "Root independently observed and authenticated the identity tuple, but its full raw stat was not retained. The root extraction cannot be replayed from raw bytes. Owner raw stat is not root raw stat."
+  },
+  "prior_metadata_reader": {
+    "status": "FAILED_METADATA_READER",
+    "command_exit": 1,
+    "reader": {
+      "bytes": 15785,
+      "sha256": "6d291c7f33da944327eedabe08241b1c4e4d4aa3c9bbb77f63303479f88bb81e"
+    },
+    "log": {
+      "bytes": 464,
+      "sha256": "14d59c86dd531ebc29277773ac2d6adbd55edafb54cf1ac22e434e4078945cfd"
+    },
+    "full_pidfd_owner_receipt_retained": false,
+    "timing_or_cleanup_inferred": false
+  },
+  "metadata_reader_profile": "compact-independent-root-witness-v1; all inherited census/source/runtime checks retained",
+  "metadata_lifecycle_history": [
+    {
+      "status": "FAILED_BEFORE_READER_DISPATCH",
+      "reader_started": false,
+      "receipt_sha256": "54124faccd9ba720fba7cff5a64ef819d6b482bad09cc5bbd716d72f3989b46b"
+    },
+    {
+      "status": "FAILED_METADATA_OWNER_LIFECYCLE",
+      "child_exit_code": 0,
+      "termination": "descendants_after_exit",
+      "reaped_descendants": 134,
+      "cleanup_complete": true,
+      "owner_sha256": "e2399e9f50c4ad52e863dcf421a30c4da561aadaa749cb8a9742565021ae2ff2",
+      "summary_sha256": "7ad6e4c03218a0be960c75daf8cedfe0dacb661047ea8b3f29ff6cc106d3e0d0"
+    }
+  ],
+  "all_owners_normal_zero_rescues_scope": "Full gate outer and five gate commands only; excludes every metadata-reader owner.",
+  "current_metadata_reader_owner_closure": {
+    "status": "PASS_CLOSED_CENSUS_WITH_ROOT_STAT_RETENTION_LIMITATION",
+    "exit_code": 0,
+    "termination": null,
+    "elapsed_seconds": 0.7943356579635292,
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "owner_pid_and_scope_absent": true,
+    "cpus": [
+      1
+    ],
+    "wall_limit_seconds": 60,
+    "log_cap_bytes": 1048576,
+    "cpu_seconds": 30,
+    "address_space_bytes": 536870912,
+    "file_bytes": 1048576,
+    "gate_reruns": 0,
+    "closure_authority": "Separate root-authenticated owner record; the summary cannot attest its own process closure."
+  },
+  "schema": "full-program-fitting-full-validation-v1",
+  "tree": "201c29a147402b5839d965c16eedf63fddbbe433",
+  "environment": {
+    "mode": "Nine overrides on inherited environment; not a clean environment",
+    "overrides": {
+      "PATH": "${STABLE_TOOLCHAIN_BIN}:${CARGO_BIN}:/usr/bin:/bin",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_BUILD_JOBS": "12",
+      "CARGO_TARGET_DIR": "${ROOT}/target",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "RUST_TEST_THREADS": "12",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    }
+  },
+  "reproduction": {
+    "script": "evaluation/short-neighbor-parallel/validate.py",
+    "sha256": "968956df64edd3f5754a0adbd4b900ac68535d188be01af0628eff94d2ed6d10",
+    "helper": "evaluation/admission/processes.py",
+    "helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+    "argv": [
+      "/usr/bin/python3.9",
+      "${ROOT}/evaluation/short-neighbor-parallel/validate.py",
+      "--revision",
+      "a840edc6abdedd8f79a03f6c5d89cb845a23e9c1",
+      "--output",
+      "${ROOT}/ignored/${FRESH_OUTPUT}"
+    ],
+    "outer_wall_seconds": 1200,
+    "combined_log_cap_bytes": 8388608,
+    "commands": [
+      {
+        "name": "fmt",
+        "argv": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "wall_seconds": 180
+      },
+      {
+        "name": "clippy",
+        "argv": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "wall_seconds": 180
+      },
+      {
+        "name": "check",
+        "argv": [
+          "cargo",
+          "check",
+          "--workspace",
+          "--all-features",
+          "--all-targets"
+        ],
+        "wall_seconds": 180
+      },
+      {
+        "name": "workspace",
+        "argv": [
+          "cargo",
+          "test",
+          "-j",
+          "12",
+          "--workspace",
+          "--no-fail-fast"
+        ],
+        "wall_seconds": 900
+      },
+      {
+        "name": "serial-launch",
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst-launch",
+          "--tests",
+          "--",
+          "--test-threads=1",
+          "--nocapture"
+        ],
+        "wall_seconds": 180
+      }
+    ]
+  },
+  "outer_result": {
+    "start_utc": "2026-11-01T01:04:50.225486+00:00",
+    "exit_code": 0,
+    "termination": null,
+    "seconds": 935.6529932199046,
+    "private_log_sha256": "09046d499a26e6038c863200af2b5f252f533c9dc12ae4cd39b35df719cd541c",
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "source_unchanged": true
+  },
+  "release_scope": "Root-captured original-owner PID and exact child-scope absence after closure; not an independent whole-host process census.",
+  "source_delta": "Seventeen Rust files add fitting placement and complete first-four inherited/pending admission, with twenty-one added passing controls. Seven intervening evaluation publication files preserve the exact mixed-mode baseline product tree. Two corrective commits change only new tests; both failed focused sequences remain failed. Prior C/page-entry provenance is inherited; no separate C suite was executed by this gate.",
+  "source_chain": {
+    "baseline_revision": "a0fe83a84878233ff678d8f5bc9d3db3547ca9b5",
+    "baseline_tree": "29aa195b88861fc0636ecbc505f15b5ceed8c822",
+    "publication_revision": "ac44eb04d08dd533eb3d19751fa75d5b78e30165",
+    "publication_files": 7,
+    "tested_revision": "a840edc6abdedd8f79a03f6c5d89cb845a23e9c1",
+    "tested_parent": "9190c6871c66b444b6f74c395a281bca5de78992",
+    "tested_tree": "201c29a147402b5839d965c16eedf63fddbbe433",
+    "changed_rust_files": 17,
+    "source_commits": [
+      "be3fce254fe571256a16559e6f6d93933587845f",
+      "511883cbaa024af79880ff0467a3c0707c298609",
+      "0db9d61f9c2418a234196966b339fb427e9ab214",
+      "9190c6871c66b444b6f74c395a281bca5de78992",
+      "a840edc6abdedd8f79a03f6c5d89cb845a23e9c1"
+    ],
+    "main_ancestor_at_source_preparation": "96378d9f7784b59df43b31baeec2c440c578e6a4"
+  },
+  "prior_receipt": "../full-program-mixed-neighbor-full-validation/receipt.json",
+  "prior_receipt_sha256": "8bef8f4f01c5554191c3b95e51d1e6e6beed7d8bbdaaec46564fce343250db01",
+  "baseline_census": {
+    "workspace_passed": 4297,
+    "workspace_failed": 0,
+    "workspace_ignored": 39,
+    "raw_passed": 4300,
+    "controlled_child_exclusions": 3,
+    "serial_passed": 1039,
+    "scope": "Historical baseline only; not the fitting result."
+  },
+  "metadata_reader_history_note": "The initial reader failed on absent raw root stat, a subsequent wrapper failed before reader dispatch, and a later child returned0 but its owner failed descendants_after_exit with134 rescues. Those outcomes remain failed. Only the final separately authenticated owner closed normal0 with zero rescues; no full gate was rerun.",
+  "private_evidence": {
+    "outer": {
+      "bytes": 371,
+      "sha256": "932bfde7cf338f7d9e7ea2cee53f063b8d0d4cb11ae8ad374f635171e4ae9d62"
+    },
+    "child": {
+      "bytes": 5345,
+      "sha256": "017bf4b9c0782e988c99105f76cf986775fda27afdc6bba9b8a85f0f8ef5a56f"
+    },
+    "summary": {
+      "bytes": 13496,
+      "sha256": "793dd87fe79d4b121cabbc4a32f3637e0875b8520d7f8d56cdf2c6e0e4bebee1"
+    },
+    "root_live": {
+      "bytes": 370,
+      "sha256": "3d9dbf5ca2ff9d7bd2ee5fb67fd137896b7132818a8f5c82db562b8ffb50abb8"
+    },
+    "owner_live": {
+      "bytes": 1413,
+      "sha256": "eba97aa0eac644c7d84b2eb278b20d1f8582cc7080ff34a63d608d269c53e637"
+    },
+    "release": {
+      "bytes": 149,
+      "sha256": "d4eb44b5cd7b74c8cac12ee0d347824f4666aa16dd4baafe2964d63e2f92d6b8"
+    },
+    "root_final_closure": {
+      "bytes": 1186,
+      "sha256": "1d37a4a4e56898ba6a1c32dfaca9626a10af6551591ddcb4155c98e4f5fb100e"
+    },
+    "source_binding": {
+      "bytes": 24974,
+      "sha256": "b8d394b29e05a9a31fdb2c46d8755946a2ba87cc962c5c49231638aba6725db8"
+    },
+    "reader": {
+      "bytes": 20843,
+      "sha256": "73b0a04f243b693b044e6efb3d8bc07d5b5b310d04b62f671d0c5b1baea779da"
+    },
+    "reader_source_review": {
+      "bytes": 6082,
+      "sha256": "730db8358d717c2667c9e23cc64e4f371bd68a8c5eb935e700e003d6e07466b4"
+    },
+    "reader_closure": {
+      "bytes": 343,
+      "sha256": "5614f8ed024eb71b3d3af2974d86740b4ccbecdc5d24a489aec208d839f153ed"
+    },
+    "reader_intent": {
+      "bytes": 1230,
+      "sha256": "0a4503883ed6036d44b375d908293e9d61d98559058989e773dfa1912e1f7849"
+    },
+    "reader_failed_metadata": {
+      "bytes": 1198,
+      "sha256": "0ba9a761ce638f3daefaec21f488951018fecd111720ddfee9c705504de845ab"
+    },
+    "reader_failed_before_dispatch": {
+      "bytes": 515,
+      "sha256": "54124faccd9ba720fba7cff5a64ef819d6b482bad09cc5bbd716d72f3989b46b"
+    },
+    "reader_failed_owner_lifecycle": {
+      "bytes": 364,
+      "sha256": "e2399e9f50c4ad52e863dcf421a30c4da561aadaa749cb8a9742565021ae2ff2"
+    },
+    "reader_log": {
+      "bytes": 11092,
+      "sha256": "654d65d6e1075cbe82927f6e54df5139fa527b380239c45755bfef381429a982"
+    }
+  }
+}

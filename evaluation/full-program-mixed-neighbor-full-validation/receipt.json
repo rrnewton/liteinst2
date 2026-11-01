@@ -1,0 +1,446 @@
+{
+  "revision": "a0fe83a84878233ff678d8f5bc9d3db3547ca9b5",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "status": "PASS_CORRECTNESS_ONLY",
+  "script": "evaluation/short-neighbor-parallel/validate.py",
+  "script_sha256": "968956df64edd3f5754a0adbd4b900ac68535d188be01af0628eff94d2ed6d10",
+  "cpu_count": 12,
+  "cpus": [
+    33,
+    34,
+    40,
+    43,
+    44,
+    45,
+    50,
+    62,
+    65,
+    67,
+    85,
+    90
+  ],
+  "cargo_jobs": 12,
+  "test_threads": 12,
+  "serial_threads": 1,
+  "outer_seconds": 962.8240788390394,
+  "outer_wall_limit": 1200,
+  "log_cap_bytes": 8388608,
+  "all_owners_normal_zero_rescues": true,
+  "source_unchanged": true,
+  "stages": [
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 10.156721499050036,
+      "exit_code": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "load_before": [
+        "44.46",
+        "42.26",
+        "41.62"
+      ],
+      "load_after": [
+        "44.14",
+        "42.26",
+        "41.63"
+      ]
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 32.69853999093175,
+      "exit_code": 0,
+      "log_sha256": "0ce78d16417839bea669f79d30fdcc18ce2b53dbdad46e65d926a6f0595fb5ab",
+      "load_before": [
+        "44.14",
+        "42.26",
+        "41.63"
+      ],
+      "load_after": [
+        "40.87",
+        "41.69",
+        "41.46"
+      ]
+    },
+    {
+      "name": "check",
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 22.512477854033932,
+      "exit_code": 0,
+      "log_sha256": "79f6aa649f8b9d4a8979fd4af7641fc80b6b50df26cd448fa96b0511b7174075",
+      "load_before": [
+        "40.87",
+        "41.69",
+        "41.46"
+      ],
+      "load_after": [
+        "39.96",
+        "41.48",
+        "41.40"
+      ]
+    },
+    {
+      "name": "workspace",
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "12",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "wall_limit": 900,
+      "elapsed_seconds": 756.9494231829885,
+      "exit_code": 0,
+      "log_sha256": "49081e786ad43990ce058cce1f494155bcb88ae98f6c48faa835fbb571146974",
+      "load_before": [
+        "39.96",
+        "41.48",
+        "41.40"
+      ],
+      "load_after": [
+        "67.92",
+        "76.30",
+        "62.92"
+      ]
+    },
+    {
+      "name": "serial-launch",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 140.41411062399857,
+      "exit_code": 0,
+      "log_sha256": "2b85371613d376a3bcb7e9cab6af3c6e941362b7d9d7862e92331eeb8d3518c7",
+      "load_before": [
+        "67.92",
+        "76.30",
+        "62.92"
+      ],
+      "load_after": [
+        "42.26",
+        "63.73",
+        "60.17"
+      ]
+    }
+  ],
+  "workspace": {
+    "passed": 4297,
+    "failed": 0,
+    "ignored": 39,
+    "raw_passed": 4300,
+    "controlled_nested_child_passes": 3,
+    "all_prior_tests_contexts_statuses_and_ignore_reasons_retained": true,
+    "added_tests": [
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "neighbor::short::tests::mixed_t3_forced_victims_retain_exact_long_and_short_plans",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "neighbor::short::tests::mixed_t3_descending_union_preserves_pending_across_both_families",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "neighbor::short::tests::mixed_t3_shared_limits_and_forced_refusals_do_not_restart",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "neighbor::short::tests::mixed_t3_short_victims_keep_full_fetch_and_suffix_proof",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "neighbor::short::tests::mixed_t3_empty_pending_keeps_complete_inherited_append",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "neighbor::short::tests::mixed_t3_preflight_preserves_identity_pending_and_allocation_refusals",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "neighbor::short::tests::mixed_t3_first_four_keep_current_placement_and_outer_pending_obligation",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst_rewrite-<cargo-hash>)",
+        "name": "disassembly::whole::tests::whole_mixed_pending_uses_short_and_long_alternates_without_claiming_selected_victims",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst_rewrite-<cargo-hash>)",
+        "name": "disassembly::whole::tests::whole_mixed_pending_pair_cap_and_all_selected_victims_keep_exact_atomic_refusals",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests examples/disassembly_sites.rs (target/debug/examples/disassembly_sites-<cargo-hash>)",
+        "name": "whole_tests::whole_mixed_pending_cli_is_explicit_and_preserves_every_legacy_form",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests examples/disassembly_sites.rs (target/debug/examples/disassembly_sites-<cargo-hash>)",
+        "name": "whole_tests::whole_mixed_pending_cli_retains_mode_and_denominator_on_refusal",
+        "reason": "",
+        "status": "ok"
+      }
+    ],
+    "removed_tests": [],
+    "exact_prior_raw_counted_summary_ignore_custom_census_plus_eleven": true,
+    "required_jrcxz_tests": [
+      "artifact_emission_tests::jrcxz_artifact_bridge_has_complete_fields_paths_and_pc_ownership",
+      "artifact_emission_tests::jrcxz_artifact_bridge_routes_internal_entries_and_keeps_finite_refusals",
+      "artifact_emission_tests::jrcxz_artifact_engine_keeps_source_pair_and_allocation_authority",
+      "jrcxz_artifact_native::native_jrcxz_artifact_preserves_integer_flags_and_stack",
+      "trampoline::artifact_jrcxz::tests::fixed_jrcxz_bridge_rejects_template_index_and_field_corruption"
+    ],
+    "counted_multiset_sha256": "9931895cb0e0a8a81883bd5edfb170ffd9b68e420351a49832d2f5fe450b2223"
+  },
+  "serial_launch": {
+    "passed": 1039,
+    "failed": 0,
+    "ignored": 0,
+    "complete_prior_multiset_retained": true
+  },
+  "native_finite_census": [
+    {
+      "context": "Running tests/neighbor_eviction_oracle.rs (target/debug/deps/neighbor_eviction_oracle-<cargo-hash>)",
+      "line": 3086,
+      "text": "artifact JRCXZ: 4 RCX values x 2 seeds, 16 original/16 linked/16 restored traces, 8 observing callbacks; no qualification claim"
+    }
+  ],
+  "release": {
+    "utc": "2026-11-01T00:17:31.658702+00:00",
+    "original_owner_pid_absent": true,
+    "exact_child_scope_absent": true,
+    "allocator_exit_code": 0
+  },
+  "baseline_revision": "fc13f85bf8345b79a222a3bc24a8cee0b9d714d3",
+  "scope": "The five listed root-workspace correctness commands only; nine mixed-mode Rust files and seven intervening evaluation publication/reproduction files are source provenance. Prior C/page-entry provenance is inherited from the exact fc13 baseline, not a separately executed C suite. No performance/native full-program/A5 qualification. Original failed runs remain in prior receipts.",
+  "environment": {
+    "mode": "Nine overrides on inherited environment; not a clean environment",
+    "overrides": {
+      "PATH": "${STABLE_TOOLCHAIN_BIN}:${CARGO_BIN}:/usr/bin:/bin",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_BUILD_JOBS": "12",
+      "CARGO_TARGET_DIR": "${ROOT}/target",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "RUST_TEST_THREADS": "12",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    }
+  },
+  "reproduction": {
+    "script": "evaluation/short-neighbor-parallel/validate.py",
+    "sha256": "968956df64edd3f5754a0adbd4b900ac68535d188be01af0628eff94d2ed6d10",
+    "helper": "evaluation/admission/processes.py",
+    "helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+    "argv": [
+      "/usr/bin/python3.9",
+      "${ROOT}/evaluation/short-neighbor-parallel/validate.py",
+      "--revision",
+      "a0fe83a84878233ff678d8f5bc9d3db3547ca9b5",
+      "--output",
+      "${ROOT}/ignored/${FRESH_OUTPUT}"
+    ],
+    "outer_wall_seconds": 1200,
+    "combined_log_cap_bytes": 8388608,
+    "commands": [
+      {
+        "name": "fmt",
+        "argv": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "wall_seconds": 180
+      },
+      {
+        "name": "clippy",
+        "argv": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "wall_seconds": 180
+      },
+      {
+        "name": "check",
+        "argv": [
+          "cargo",
+          "check",
+          "--workspace",
+          "--all-features",
+          "--all-targets"
+        ],
+        "wall_seconds": 180
+      },
+      {
+        "name": "workspace",
+        "argv": [
+          "cargo",
+          "test",
+          "-j",
+          "12",
+          "--workspace",
+          "--no-fail-fast"
+        ],
+        "wall_seconds": 900
+      },
+      {
+        "name": "serial-launch",
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst-launch",
+          "--tests",
+          "--",
+          "--test-threads=1",
+          "--nocapture"
+        ],
+        "wall_seconds": 180
+      }
+    ]
+  },
+  "outer_result": {
+    "start_utc": "2026-11-01T00:01:21.155686+00:00",
+    "exit_code": 0,
+    "termination": null,
+    "seconds": 962.8240788390394,
+    "private_log_sha256": "7e21d4e8ccb170c3f0bd81df6ebbaef7a4d836fb4502419bc84da030740843e5",
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "source_unchanged": true
+  },
+  "release_scope": "Root-captured original-owner PID and exact child-scope absence after closure; not an independent whole-host process census.",
+  "source_delta": "Nine Rust files add the explicit mixed short/long T3 mode with complete pending-selected ownership and eleven passing controls. Seven intervening evaluation publication files preserve the exact preceding fc13 product tree. Prior C/page-entry provenance is inherited; this gate does not execute a separate C suite.",
+  "source_chain": {
+    "baseline_revision": "fc13f85bf8345b79a222a3bc24a8cee0b9d714d3",
+    "baseline_tree": "27e94d6a592cf7e3c6d40803470e40076a4891f6",
+    "publication_revision": "fd4c6b28f86056c40675bd810cb6ab9bd64a1a7b",
+    "publication_files": 7,
+    "tested_revision": "a0fe83a84878233ff678d8f5bc9d3db3547ca9b5",
+    "tested_parent": "fd4c6b28f86056c40675bd810cb6ab9bd64a1a7b",
+    "tested_tree": "29aa195b88861fc0636ecbc505f15b5ceed8c822",
+    "changed_rust_files": 9,
+    "main_ancestor": "96378d9f7784b59df43b31baeec2c440c578e6a4"
+  },
+  "prior_receipt": "../full-program-current-placement-full-validation/receipt.json",
+  "private_evidence": {
+    "outer": {
+      "bytes": 371,
+      "sha256": "fd1c0bfe4298a7aca0c2e985f335d4c5e80fbc1c27d1f449eaf86dc703425969"
+    },
+    "child": {
+      "bytes": 5341,
+      "sha256": "d0c04905ff3e74c2362896ad6a53503a1a7d244ec39730141a29de5876bcd7e8"
+    },
+    "summary": {
+      "bytes": 8335,
+      "sha256": "1f86b6336c5c8a627ec44990d73ebc74cf880421e69914895ef55141fed44544"
+    },
+    "root_live": {
+      "bytes": 717,
+      "sha256": "50cd87fa17a570249a58828107528870711decee3a22bda72ad71f95c8d7ed39"
+    },
+    "release": {
+      "bytes": 148,
+      "sha256": "ee5ff3d63855aaa030f1ff852e4b2fc9b4c09a319a492f8540802b4d72e6e57f"
+    },
+    "root_closure": {
+      "bytes": 664,
+      "sha256": "0b4c71149d2441e527492030cea3b12820d351d0379802410fdcc3833415454b"
+    },
+    "reader": {
+      "bytes": 14400,
+      "sha256": "d1193602189c32de74ca63a5899fd8e8b9607372ce118c4a71495de54d5cd3d9"
+    },
+    "reader_source_review": {
+      "bytes": 4861,
+      "sha256": "f748e50525291f7dbbf53680c979fb296a9bbc147e0b7831faae4c2e6744e9e9"
+    },
+    "reader_closure": {
+      "bytes": 325,
+      "sha256": "0895b97d6b5d1cde715b7dfe61a28b94c82f0558c0f48a38fb0b45a936ce3ae7"
+    },
+    "reader_log": {
+      "bytes": 6675,
+      "sha256": "ebf4d1fca0d48ec85fa1e64e1676dcc209c36fa6e470a830cab875a1f3bbdf60"
+    },
+    "source_binding": {
+      "bytes": 13965,
+      "sha256": "327b0be1c2d8a9b9d921d9ba03f71f9c1e2af72a8133df39458bf9192791ff84"
+    }
+  },
+  "reader_note": {
+    "attempts": 1,
+    "exit_code": 0,
+    "status": "PASS_CLOSED_CENSUS",
+    "environment": {
+      "GIT_CONFIG_COUNT": "2",
+      "GIT_CONFIG_KEY_0": "index.threads",
+      "GIT_CONFIG_KEY_1": "core.preloadIndex",
+      "GIT_CONFIG_VALUE_0": "1",
+      "GIT_CONFIG_VALUE_1": "false"
+    },
+    "bounds": {
+      "cpu_seconds": 30,
+      "address_space_bytes": 536870912,
+      "file_bytes": 1048576
+    },
+    "gate_reruns": 0,
+    "scope": "One post-closure metadata read using the reviewed exact complete-census comparator. The prior gate's failed metadata read remains recorded in the prior receipt."
+  }
+}

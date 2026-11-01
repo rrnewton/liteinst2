@@ -122,6 +122,19 @@ pub(crate) fn for_relocation(
         // Geometric availability says nothing about the eventual image length.
         return Ok(policy.clone());
     }
+    let target = minimum_relocation_target(physical, mask, free, next)?;
+    let mut effective = policy.clone();
+    effective.preferred_address = Some(target);
+    Ok(effective)
+}
+
+// Shared finite argmin; callers separately decide whether to preserve a seed.
+fn minimum_relocation_target(
+    physical: u64,
+    mask: [bool; 4],
+    free: Vec<AddressRange>,
+    next: u64,
+) -> Result<u64, Refusal> {
     let fixed_mask = mask.iter().enumerate().fold(0_u64, |bits, (i, set)| {
         bits | if *set { 0xff_u64 << (i * 8) } else { 0 }
     });
@@ -148,6 +161,73 @@ pub(crate) fn for_relocation(
     let target = best.ok_or(Refusal::AllocationUnavailable)?;
     if candidate_target(physical, mask, Some(target), 0) != Some(target) {
         return Err(Refusal::InvalidPlan);
+    }
+    Ok(target)
+}
+
+/// A certificate may conservatively refuse a genuinely fitting image; it never
+/// licenses more than one page, one candidate or the caller's exact ranges.
+fn certificate(bound: usize) -> Result<(), Refusal> {
+    if bound == 0 || bound > PAGE as usize {
+        return Err(Refusal::AllocationUnavailable);
+    }
+    Ok(())
+}
+
+fn certified(target: u64, bound: usize) -> bool {
+    (target % PAGE)
+        .checked_add(bound as u64)
+        .is_some_and(|end| end <= PAGE)
+}
+
+pub(crate) fn fitting_for_pun(
+    policy: &AllocationPolicy,
+    window: AddressRange,
+    occupied: &[AddressRange],
+    source: AddressRange,
+    bound: usize,
+) -> Result<AllocationPolicy, Refusal> {
+    certificate(bound)?;
+    let free = free_pages(policy, occupied, source)?;
+    if policy.preferred_address.is_some_and(|seed| {
+        window.contains(seed) && available(seed, &free) && certified(seed, bound)
+    }) {
+        return Ok(policy.clone());
+    }
+    let mut without_seed = policy.clone();
+    without_seed.preferred_address = None;
+    let effective = for_pun(&without_seed, window, occupied, source)?;
+    let target = effective
+        .preferred_address
+        .ok_or(Refusal::AllocationUnavailable)?;
+    // for_pun returns the minimum page offset in the entire finite free/window
+    // intersection. If that offset cannot be certified, no alternative is tried.
+    if !certified(target, bound) {
+        return Err(Refusal::AllocationUnavailable);
+    }
+    Ok(effective)
+}
+
+pub(crate) fn fitting_for_relocation(
+    policy: &AllocationPolicy,
+    physical: u64,
+    mask: [bool; 4],
+    occupied: &[AddressRange],
+    source: AddressRange,
+    bound: usize,
+) -> Result<AllocationPolicy, Refusal> {
+    certificate(bound)?;
+    let free = free_pages(policy, occupied, source)?;
+    let next = physical.checked_add(5).ok_or(Refusal::InvalidRange)?;
+    next.checked_add(0x1_0000).ok_or(Refusal::InvalidRange)?;
+    if candidate_target(physical, mask, policy.preferred_address, 0)
+        .is_some_and(|seed| available(seed, &free) && certified(seed, bound))
+    {
+        return Ok(policy.clone());
+    }
+    let target = minimum_relocation_target(physical, mask, free, next)?;
+    if !certified(target, bound) {
+        return Err(Refusal::AllocationUnavailable);
     }
     let mut effective = policy.clone();
     effective.preferred_address = Some(target);
@@ -227,3 +307,75 @@ fn low_offset(low: u64, high: u64, mask: u64, value: u64, next_low: u64) -> Opti
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod fitting_tests;
+
+/// One short-T3 selected-entry envelope, computed before any body encode.
+/// The caller first preserves an available direct fitting result, and supplies
+/// the actual victim mapping among `occupied`. No policy bound is modified.
+/// Refusal means this finite certificate failed, not universal impossibility.
+pub(crate) fn entry_veneer_for_pun(
+    policy: &AllocationPolicy,
+    window: AddressRange,
+    occupied: &[AddressRange],
+    source: AddressRange,
+    bound: usize,
+) -> Result<crate::trampoline::EntryVeneerPlacement, Refusal> {
+    use crate::trampoline::EntryVeneerPlacement;
+    if bound == 0 || bound > PAGE as usize - 5 {
+        return Err(Refusal::AllocationUnavailable);
+    }
+    let free = free_pages(policy, occupied, source)?;
+    let layout = |entry: u64| EntryVeneerPlacement::new(entry & !(PAGE - 1), entry, bound);
+    if let Some(seed) = policy.preferred_address {
+        if window.contains(seed) && available(seed, &free) {
+            if let Ok(placement) = layout(seed) {
+                return Ok(placement);
+            }
+        }
+    }
+    let mut best: Option<u64> = None;
+    for range in &free {
+        let low = range.start().max(window.start());
+        let high = range.end().min(window.end());
+        if low >= high {
+            continue;
+        }
+        let first = low & !(PAGE - 1);
+        let last = (high - 1) & !(PAGE - 1);
+        let mut consider = |page: u64| -> Result<(), Refusal> {
+            // free pages are whole intervals; only the window clips this page.
+            let entry = low.max(
+                page.checked_add(bound as u64)
+                    .ok_or(Refusal::InvalidRange)?,
+            );
+            let final_entry = page.checked_add(PAGE - 5).ok_or(Refusal::InvalidRange)?;
+            if entry < high
+                && entry <= final_entry
+                && best.is_none_or(|old| (entry % PAGE, entry) < (old % PAGE, old))
+            {
+                best = Some(entry);
+            }
+            Ok(())
+        };
+        consider(first)?;
+        if last != first {
+            // The earliest complete page, when there is one, attains offset U.
+            // Later complete pages cannot improve its (offset,address) pair.
+            let next = first.checked_add(PAGE).ok_or(Refusal::InvalidRange)?;
+            if next < last {
+                consider(next)?;
+            }
+            consider(last)?;
+        }
+    }
+    let entry = best.ok_or(Refusal::AllocationUnavailable)?;
+    if !window.contains(entry) || !available(entry, &free) {
+        return Err(Refusal::InvalidPlan);
+    }
+    layout(entry)
+}
+
+#[cfg(test)]
+mod entry_veneer_tests;

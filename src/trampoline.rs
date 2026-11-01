@@ -2276,15 +2276,32 @@ impl TrampolinePlan {
         artifact: Option<&ArtifactEmission>,
         frames: Option<&mut FrameRecorder>,
     ) -> Result<TrampolineImage, TrampolineError> {
+        let preparation = self.prepare_ordered(
+            artifact,
+            frames.is_some(),
+            frames.as_deref().is_some_and(FrameRecorder::recording),
+        )?;
+        self.emit_prepared_ordered_at(address, artifact, frames, preparation, None)
+    }
+
+    // Only source/target-description facts are used here. No candidate base or
+    // relocated block encoding is involved; the exact IR is consumed below.
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    fn prepare_ordered(
+        &self,
+        artifact: Option<&ArtifactEmission>,
+        has_frames: bool,
+        recording: bool,
+    ) -> Result<OrderedPreparation, TrampolineError> {
         self.validate_stack_profile(artifact.is_some())?;
-        if self.clock.is_some() && (artifact.is_some() || frames.is_some() || self.ptrace_stops) {
+        if self.clock.is_some() && (artifact.is_some() || has_frames || self.ptrace_stops) {
             return Err(encoding_error(
                 "inline clock supports only live ordinary emission",
             ));
         }
         if !self.precontext_actions.is_empty()
             && (artifact.is_some()
-                || frames.is_some()
+                || has_frames
                 || self.ptrace_stops
                 || self.clock.is_some()
                 || self.actions.len() != self.precontext_actions.len()
@@ -2407,7 +2424,6 @@ impl TrampolinePlan {
                 // These helpers use only register/stack operands, absolute MOV
                 // immediates and internal relative branches. Their byte strings
                 // are position independent and remain contiguous below.
-                let recording = frames.as_deref().is_some_and(FrameRecorder::recording);
                 let mut instrumentation_frames = HelperFrames::with_profile(
                     FrameStage::SaveAndCall,
                     self.observation_stack_profile,
@@ -2491,7 +2507,7 @@ impl TrampolinePlan {
                     }
                 }
                 if let Some(bytes) = retained_nop {
-                    emitted_nops.push((encoded_instructions.len(), bytes));
+                    emitted_nops.push((encoded_instructions.len(), bytes.to_vec()));
                 }
                 if artifact.is_some() && artifact_jrcxz::eligible(original) {
                     // This explicit PIC bridge has its own complete field ledger.
@@ -2505,6 +2521,45 @@ impl TrampolinePlan {
             }
             heads.push((original.ip(), entry_index, body_index, replaced));
         }
+        Ok(OrderedPreparation {
+            extended_state,
+            fragments,
+            original_operands,
+            jrcxz_bridges,
+            emitted_nops,
+            encoded_instructions,
+            heads,
+            first_hook_lengths,
+            helper_frames,
+            clock_spec,
+            clock_observer,
+            precontext_specs,
+        })
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    fn emit_prepared_ordered_at(
+        &self,
+        address: u64,
+        artifact: Option<&ArtifactEmission>,
+        frames: Option<&mut FrameRecorder>,
+        preparation: OrderedPreparation,
+        size_bound: Option<usize>,
+    ) -> Result<TrampolineImage, TrampolineError> {
+        let OrderedPreparation {
+            extended_state,
+            fragments,
+            original_operands,
+            jrcxz_bridges,
+            emitted_nops,
+            encoded_instructions,
+            heads,
+            first_hook_lengths,
+            helper_frames,
+            clock_spec,
+            clock_observer,
+            precontext_specs,
+        } = preparation;
         let block = if self.clock.is_some() {
             // All gate branches keep their exact forms; no indirect expansion,
             // absolute literal or rel8 JRCXZ rewrite is admitted for this profile.
@@ -2532,8 +2587,11 @@ impl TrampolinePlan {
                 artifact.is_some(),
             )?
         };
-        for &(index, bytes) in &emitted_nops {
-            original_nops::verify(&block.encoded, index, bytes)?;
+        if let Some(bound) = size_bound {
+            fitting::verify_block(&encoded_instructions, &block, address, bound)?;
+        }
+        for (index, bytes) in &emitted_nops {
+            original_nops::verify(&block.encoded, *index, bytes)?;
         }
         let offset = |index: usize| -> Result<usize, TrampolineError> {
             block
@@ -2790,6 +2848,11 @@ impl TrampolinePlan {
                 }
             }
             frames.return_jump(return_start, return_jump.len(), self.return_address);
+        }
+        if size_bound.is_some_and(|bound| bytes.len() > bound) {
+            return Err(artifact_error(
+                "accepted artifact exceeds prepared size bound",
+            ));
         }
         debug_assert_eq!(layout.total_len(), Some(bytes.len()));
         Ok(TrampolineImage {
@@ -3643,6 +3706,12 @@ fn artifact_target(input: &ArtifactEmission, address: u64) -> Target {
 
 #[path = "trampoline/artifact_jrcxz.rs"]
 mod artifact_jrcxz;
+mod fitting;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+use fitting::OrderedPreparation;
+pub(crate) use fitting::PreparedArtifact;
+mod artifact_allocation;
+pub(crate) use artifact_allocation::{ArtifactTrampolineAllocation, EntryVeneerPlacement};
 
 fn append_artifact_original_fields(
     fields: &mut Vec<Fixup>,

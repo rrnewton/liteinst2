@@ -72,7 +72,7 @@ pub enum CandidateEvidence {
 pub struct EngineAttempt {
     /// Original leaf search evidence, even when a later bundle check refuses.
     pub search: SearchEvidence,
-    /// A later single-image bundle refusal, separate from the accepted leaf.
+    /// A later bundle or opt-in inherited/pending refusal, separate from its leaf.
     pub outer_refusal: Option<RefusalEvidence>,
     /// The exact forced leaf tactic used for this attempt.
     pub tactic: Tactic,
@@ -489,6 +489,129 @@ pub fn plan_with_emission_after_and_current_placement(
     .map(artifact_plan)
 }
 
+/// Current B1/B2/T1 placement with one mixed T3 search and pending ownership.
+///
+/// The complete original source and current composition are authenticated first.
+/// Pending ranges must be canonical, covered and unclaimed, and must include
+/// every outstanding original selected instruction except the current site.
+/// The caller supplies that complete population; this slice cannot prove it.
+/// Selected allocation has the same explicit one-candidate, one-page contract
+/// as [`plan_with_emission_after_and_current_placement`], including retention of
+/// a valid seed even when the sole real emission later exceeds its page.
+///
+/// T3 visits one descending union of same-function 6..=15-byte victims, with one
+/// shared victim/pair budget and no forced-victim substitution. Each 6..=9-byte
+/// victim retains the complete ten-byte fetch, suffix and entry-scope proof;
+/// each 10..=15-byte victim retains the original long proof. Every complete pair
+/// must append all source steps to a predecessor clone and leave pending ranges
+/// unclaimed. A refusal consumes that pair without resetting any budget.
+///
+/// T2 and T3 retain their original address policies. The first four tactics keep
+/// their first local success: the caller must append every step and check all
+/// pending ranges before committing, and an outer refusal does not retry T3.
+/// Occupancy remains the caller's complete emission context. Final dependency,
+/// resource, entry, hook, publication and retirement checks remain required.
+/// This API neither mutates the predecessor nor grants live execution authority.
+pub fn plan_with_emission_after_and_current_placement_mixed_t3_pending(
+    request: &ArtifactRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+) -> Result<ArtifactPlan, EngineFailure> {
+    let current = predecessor
+        .planning_overlay(
+            request.site.identity,
+            request.site.base_address,
+            request.site.code,
+        )
+        .map_err(|reason| EngineFailure {
+            reason,
+            attempts: Vec::new(),
+        })?;
+    predecessor
+        .require_unclaimed_ranges(pending)
+        .map_err(|reason| EngineFailure {
+            reason,
+            attempts: Vec::new(),
+        })?;
+    crate::emission::placement::validate(request.site.allocation).map_err(|reason| {
+        EngineFailure {
+            reason,
+            attempts: Vec::new(),
+        }
+    })?;
+    let original = PlanningRequest::artifact(request);
+    plan_core_family_with_neighbor_family(
+        &original.with_code(&current),
+        victim_allocation,
+        policy,
+        neighbor::VictimFamily::Mixed,
+        Some(predecessor),
+        Some(pending),
+        true,
+    )
+    .map(artifact_plan)
+}
+
+/// Size-certified artifact placement and complete local admission before fallback.
+///
+/// The original/current overlay and canonical pending ranges are authenticated
+/// before planning. The caller must supply every outstanding original selected
+/// instruction except this site, plus complete inherited mapping occupancy.
+/// Both allocation policies retain exactly one candidate and one 4096-byte page.
+/// B1/B2/T1 and both T3 images use an upper bound from their exact prepared
+/// artifact fragments to choose one preference before the sole actual emission.
+/// This is a success-size certificate, not a proof that encoding will succeed.
+/// T2 keeps its original address policy.
+///
+/// Every complete first-four local bundle appends all steps to an inherited
+/// clone and checks all pending ranges before success. Rejection preserves the
+/// leaf search and candidate evidence, then advances once to the next declared
+/// tactic; a forced tactic never falls back. No candidate is emitted again and
+/// no search budget is restarted. T3 retains one descending mixed 6..=15 victim
+/// domain, shared victim/pair budgets, full short fetch and long proofs, and
+/// complete pair admission. Its selected placement excludes the actual victim
+/// mapping as well as inherited occupancy.
+///
+/// The caller still must perform final full composition, aggregate resource,
+/// dependency, entry and hook checks. This does not mutate the predecessor or
+/// authorize native execution. Older entrypoints retain their original policy.
+pub fn plan_with_emission_after_and_fitting_mixed_t3_pending(
+    request: &ArtifactRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+) -> Result<ArtifactPlan, EngineFailure> {
+    let preflight: Result<_, Refusal> = (|| {
+        let current = predecessor.planning_overlay(
+            request.site.identity,
+            request.site.base_address,
+            request.site.code,
+        )?;
+        predecessor.require_unclaimed_ranges(pending)?;
+        crate::emission::placement::validate(request.site.allocation)?;
+        crate::emission::placement::validate(victim_allocation)?;
+        Ok(current)
+    })();
+    let current = preflight.map_err(|reason| EngineFailure {
+        reason,
+        attempts: Vec::new(),
+    })?;
+    let original = PlanningRequest::artifact(request);
+    plan_core_family_with_fitting(
+        &original.with_code(&current),
+        victim_allocation,
+        policy,
+        neighbor::VictimFamily::Mixed,
+        Some(predecessor),
+        Some(pending),
+        PlacementMode::Fitting,
+    )
+    .map(artifact_plan)
+}
+
 fn artifact_plan(plan: EnginePlan) -> ArtifactPlan {
     ArtifactPlan::bundle(
         plan.bundle(),
@@ -562,6 +685,64 @@ fn plan_core_family_with_placement(
     pending: Option<&[AddressRange]>,
     current_placement: bool,
 ) -> Result<EnginePlan, EngineFailure> {
+    plan_core_family_with_neighbor_family(
+        request,
+        victim_allocation,
+        policy,
+        if short_only {
+            neighbor::VictimFamily::Short
+        } else {
+            neighbor::VictimFamily::Long
+        },
+        inherited,
+        pending,
+        current_placement,
+    )
+}
+
+fn plan_core_family_with_neighbor_family(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+    family: neighbor::VictimFamily,
+    inherited: Option<&Composition>,
+    pending: Option<&[AddressRange]>,
+    current_placement: bool,
+) -> Result<EnginePlan, EngineFailure> {
+    plan_core_family_with_fitting(
+        request,
+        victim_allocation,
+        policy,
+        family,
+        inherited,
+        pending,
+        if current_placement {
+            PlacementMode::Current
+        } else {
+            PlacementMode::Original
+        },
+    )
+}
+
+#[derive(Clone, Copy)]
+enum PlacementMode {
+    Original,
+    Current,
+    Fitting,
+}
+
+fn plan_core_family_with_fitting(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+    family: neighbor::VictimFamily,
+    inherited: Option<&Composition>,
+    pending: Option<&[AddressRange]>,
+    placement: PlacementMode,
+) -> Result<EnginePlan, EngineFailure> {
+    let current_placement = matches!(placement, PlacementMode::Current);
+    let fitting = matches!(placement, PlacementMode::Fitting);
+    let short_only = family == neighbor::VictimFamily::Short;
     const ORDER: [Tactic; 5] = [
         Tactic::GeneralizedPun,
         Tactic::Relocation,
@@ -578,9 +759,11 @@ fn plan_core_family_with_placement(
     let mut attempts = Vec::new();
     let mut reason = Refusal::NoPatchWindow;
     for &tactic in tactics {
-        let (result, candidates, search) = match tactic {
+        let (mut result, candidates, search) = match tactic {
             Tactic::GeneralizedPun | Tactic::Relocation | Tactic::PrefixedPun => {
-                let placed = if current_placement {
+                let placed = if fitting {
+                    request.with_fitting_placement()
+                } else if current_placement {
                     request.with_current_placement()
                 } else {
                     *request
@@ -641,7 +824,27 @@ fn plan_core_family_with_placement(
                     ),
                 }
             }
-            Tactic::NeighborEviction => match if let (true, Some(predecessor), Some(pending)) =
+            Tactic::NeighborEviction => match if family == neighbor::VictimFamily::Mixed {
+                let (Some(predecessor), Some(pending)) = (inherited, pending) else {
+                    return Err(EngineFailure {
+                        reason: Refusal::InvalidRange,
+                        attempts,
+                    });
+                };
+                let placed = if fitting {
+                    request.with_fitting_placement()
+                } else {
+                    *request
+                };
+                neighbor::plan_neighbor_mixed_pending_core(
+                    &placed,
+                    predecessor,
+                    pending,
+                    victim_allocation,
+                    policy.neighbor,
+                    policy.bundle,
+                )
+            } else if let (true, Some(predecessor), Some(pending)) =
                 (short_only, inherited, pending)
             {
                 neighbor::plan_neighbor_short_pending_core(
@@ -699,14 +902,46 @@ fn plan_core_family_with_placement(
                 ),
             },
         };
+        // A completed local plan is not yet authority to consume an outstanding
+        // selected instruction. Admit every step once, retaining the accepted
+        // leaf evidence if this outer transaction refuses it. T3 already performs
+        // exactly this check per pair inside its one shared search.
+        let admission_refusal = if fitting && tactic != Tactic::NeighborEviction {
+            if let Ok((bundle, _)) = &result {
+                let admission = (|| {
+                    let predecessor = inherited.ok_or(Refusal::InvalidRange)?;
+                    let pending = pending.ok_or(Refusal::InvalidRange)?;
+                    let mut current = predecessor.clone();
+                    for step in bundle.plan().steps() {
+                        current.append(step)?;
+                    }
+                    current.require_unclaimed_ranges(pending)
+                })();
+                admission.err()
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        if let Some(reason) = &admission_refusal {
+            result = Err(reason.clone());
+        }
         // Only the single-image arms compose a bundle after a successful leaf.
         // At that exact call boundary compose's AllocationUnavailable sites are
         // explicit step or aggregate memory capacities; other errors stay local.
-        let outer_refusal = if search.accepted
+        let outer_refusal = if let Some(reason) = admission_refusal {
+            Some(RefusalEvidence {
+                reason,
+                class: RefusalClass::Prerequisite,
+                scope: SearchScope::default(),
+            })
+        } else if search.accepted
             && matches!(
                 tactic,
                 Tactic::GeneralizedPun | Tactic::Relocation | Tactic::PrefixedPun
-            ) {
+            )
+        {
             result.as_ref().err().map(|reason| RefusalEvidence {
                 reason: reason.clone(),
                 class: match reason {
@@ -737,6 +972,126 @@ fn plan_core_family_with_placement(
                 });
             }
             Err(error) => reason = error,
+        }
+    }
+    Err(EngineFailure { reason, attempts })
+}
+
+/// Explicit artifact-only fitting engine with a same-page entry veneer for a
+/// short-T3 selected image whose direct fit cannot be certified. Original and
+/// current bytes, both one-candidate/page policies and complete pending ranges
+/// have the unchanged fitting preflight. First-four tactics are the unchanged
+/// fitting dispatcher invoked once each in its original order; T2 stays direct.
+/// Mixed T3 retains one shared search, full source/entry/suffix and inherited
+/// pair checks. Only pre-encode direct AllocationUnavailable permits one finite
+/// veneer certificate; no failed encoding or admitted pair is retried. Padding
+/// is fully owned/charged, and all artifact execution/ABI/loader obligations stay.
+/// The caller must still append every step and enforce complete dependencies,
+/// resources, hooks, pending ownership and final transaction admission.
+pub fn plan_with_emission_after_and_entry_veneer_mixed_t3_pending(
+    request: &ArtifactRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+) -> Result<ArtifactPlan, EngineFailure> {
+    let preflight: Result<_, Refusal> = (|| {
+        let current = predecessor.planning_overlay(
+            request.site.identity,
+            request.site.base_address,
+            request.site.code,
+        )?;
+        predecessor.require_unclaimed_ranges(pending)?;
+        crate::emission::placement::validate(request.site.allocation)?;
+        crate::emission::placement::validate(victim_allocation)?;
+        Ok(current)
+    })();
+    let current = preflight.map_err(|reason| EngineFailure {
+        reason,
+        attempts: Vec::new(),
+    })?;
+    let original = PlanningRequest::artifact(request);
+    let request = original.with_code(&current);
+    const ORDER: [Tactic; 5] = [
+        Tactic::GeneralizedPun,
+        Tactic::Relocation,
+        Tactic::PrefixedPun,
+        Tactic::SuccessorEviction,
+        Tactic::NeighborEviction,
+    ];
+    let forced = [policy.forced.unwrap_or(Tactic::GeneralizedPun)];
+    let tactics = if policy.forced.is_some() {
+        forced.as_slice()
+    } else {
+        ORDER.as_slice()
+    };
+    let mut attempts = Vec::new();
+    let mut reason = Refusal::NoPatchWindow;
+    for &tactic in tactics {
+        if tactic != Tactic::NeighborEviction {
+            let one = EnginePolicy {
+                forced: Some(tactic),
+                ..policy
+            };
+            match plan_core_family_with_fitting(
+                &request,
+                victim_allocation,
+                one,
+                neighbor::VictimFamily::Mixed,
+                Some(predecessor),
+                Some(pending),
+                PlacementMode::Fitting,
+            ) {
+                Ok(plan) => {
+                    attempts.extend_from_slice(plan.attempts());
+                    return Ok(ArtifactPlan::bundle(
+                        plan.bundle(),
+                        ArtifactMetrics::Engine(plan.tactic(), plan.metrics().clone(), attempts),
+                    ));
+                }
+                Err(failure) => {
+                    reason = failure.reason;
+                    attempts.extend(failure.attempts);
+                }
+            }
+            continue;
+        }
+        let placed = request.with_fitting_placement();
+        match neighbor::plan_neighbor_entry_veneer_pending_core(
+            &placed,
+            predecessor,
+            pending,
+            victim_allocation,
+            policy.neighbor,
+            policy.bundle,
+        ) {
+            Ok(plan) => {
+                let ArtifactMetrics::Neighbor(geometry, metrics) = plan.metrics() else {
+                    return Err(EngineFailure {
+                        reason: Refusal::InvalidPlan,
+                        attempts,
+                    });
+                };
+                attempts.push(EngineAttempt {
+                    outer_refusal: None,
+                    search: metrics.search.clone(),
+                    tactic,
+                    refusal: None,
+                    candidates: CandidateEvidence::Neighbor(metrics.attempts.clone()),
+                });
+                let metrics = SelectedMetrics::Neighbor(*geometry, metrics.clone());
+                return Ok(plan.with_metrics(ArtifactMetrics::Engine(tactic, metrics, attempts)));
+            }
+            Err(failure) => {
+                reason = failure.reason;
+                attempts.push(EngineAttempt {
+                    outer_refusal: None,
+                    search: failure.search,
+                    tactic,
+                    refusal: Some(reason.clone()),
+                    candidates: CandidateEvidence::Neighbor(failure.attempts),
+                });
+            }
         }
     }
     Err(EngineFailure { reason, attempts })

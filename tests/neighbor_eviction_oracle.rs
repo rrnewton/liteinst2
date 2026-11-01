@@ -7,6 +7,8 @@
 //! Additional branch, RIP-relative, MOFFS-fault and LOOP families use separate
 //! independent literal grammars and native fallthrough witnesses.
 
+#[path = "support/isolated_native_test.rs"]
+mod isolated_native_test;
 #[path = "support/quiescent_oracle.rs"]
 mod oracle;
 
@@ -1764,3 +1766,7 @@ mod short_neighbor;
 // Finite artifact-only JRCXZ native state population; prior cohorts stay exact.
 #[path = "support/jrcxz_artifact_oracle.rs"]
 mod jrcxz_artifact_native;
+
+// Explicit same-page entry-to-body native evidence; previous cohorts remain exact.
+#[path = "support/entry_veneer_artifact_oracle.rs"]
+mod entry_veneer_artifact_native;

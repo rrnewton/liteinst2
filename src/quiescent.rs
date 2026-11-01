@@ -1037,8 +1037,47 @@ fn plan_pun_with_context_core(
     let low = u64::try_from(next + i128::from(i32::from_le_bytes(fixed)))
         .map_err(|_| Refusal::AllocationUnavailable)?;
     let window = AddressRange::new(low, 1_usize << (8 * free))?;
+    let make_trampoline = || {
+        if context.callback_free {
+            TrampolinePlan::from_instruction(scan, physical)
+        } else {
+            request.emission.short(
+                scan,
+                physical,
+                request.semantics == HookSemantics::ReplaceFirst,
+            )
+        }
+        .map_err(|e| Refusal::Backend(e.to_string()))
+    };
+    let fitting_trampoline = if request.emission.fitting_placement() {
+        if context.callback_free || context.exact_target.is_some() {
+            return Err(Refusal::InvalidPlan);
+        }
+        Some(make_trampoline()?)
+    } else {
+        None
+    };
+    let mut prepared = match fitting_trampoline.as_ref() {
+        Some(plan) => request
+            .emission
+            .prepare_fitting(plan)
+            .map_err(|error| Refusal::Backend(error.to_string()))?,
+        None => None,
+    };
     let effective;
-    let policy = if request.emission.current_placement() {
+    let policy = if let Some(prepared) = prepared.as_ref() {
+        effective = crate::emission::placement::fitting_for_pun(
+            request.allocation,
+            window,
+            occupied,
+            source,
+            prepared.size_bound(),
+        )
+        .inspect_err(|reason| {
+            search_evidence.refusal(scope, RefusalClass::AddressPolicy, reason)
+        })?;
+        &effective
+    } else if request.emission.current_placement() {
         if context.callback_free || context.exact_target.is_some() {
             return Err(Refusal::InvalidPlan);
         }
@@ -1059,16 +1098,10 @@ fn plan_pun_with_context_core(
         );
         return Err(Refusal::AllocationUnavailable);
     }
-    let trampoline = if context.callback_free {
-        TrampolinePlan::from_instruction(scan, physical)
-    } else {
-        request.emission.short(
-            scan,
-            physical,
-            request.semantics == HookSemantics::ReplaceFirst,
-        )
-    }
-    .map_err(|e| Refusal::Backend(e.to_string()))?;
+    let trampoline = match fitting_trampoline {
+        Some(plan) => plan,
+        None => make_trampoline()?,
+    };
     let candidates = if let Some(target) = context.exact_target {
         if policy.max_candidates == 0 || !window.contains(target) {
             return Err(Refusal::AllocationUnavailable);
@@ -1092,7 +1125,11 @@ fn plan_pun_with_context_core(
     );
     for (attempt, target) in candidates.addresses.into_iter().enumerate() {
         search_evidence.visit(image_search);
-        let image = match request.emission.emit(&trampoline, target) {
+        let emitted = match prepared.take() {
+            Some(prepared) => prepared.emit_at(target),
+            None => request.emission.emit(&trampoline, target),
+        };
+        let image = match emitted {
             Ok(image) => image,
             Err(error) => {
                 last_error = Refusal::Backend(error.to_string());
@@ -1514,8 +1551,30 @@ fn emit_relocation_window(
             mask[(head - physical - 1) as usize] = true;
         }
     }
+    if request.emission.fitting_placement()
+        && (routed.is_some() || whole_function.is_some() || controls.is_some() || clock.is_some())
+    {
+        return Err(Refusal::InvalidPlan);
+    }
+    let mut prepared = request
+        .emission
+        .prepare_fitting(&trampoline)
+        .map_err(|error| Refusal::Backend(error.to_string()))?;
     let effective;
-    let policy = if request.emission.current_placement() {
+    let policy = if let Some(prepared) = prepared.as_ref() {
+        effective = crate::emission::placement::fitting_for_relocation(
+            request.allocation,
+            physical,
+            mask,
+            occupied,
+            source,
+            prepared.size_bound(),
+        )
+        .inspect_err(|reason| {
+            search_evidence.refusal(scope, RefusalClass::AddressPolicy, reason)
+        })?;
+        &effective
+    } else if request.emission.current_placement() {
         if routed.is_some() || whole_function.is_some() || controls.is_some() || clock.is_some() {
             return Err(Refusal::InvalidPlan);
         }
@@ -1574,7 +1633,11 @@ fn emit_relocation_window(
         if !seen.insert(target) {
             continue;
         }
-        let image = match request.emission.emit(&trampoline, target) {
+        let emitted = match prepared.take() {
+            Some(prepared) => prepared.emit_at(target),
+            None => request.emission.emit(&trampoline, target),
+        };
+        let image = match emitted {
             Ok(image) => image,
             Err(e) => {
                 last_error = Refusal::Backend(e.to_string());
@@ -3020,3 +3083,6 @@ mod mandatory_prefix_qualification_tests {
         }
     }
 }
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod fitting_tests;

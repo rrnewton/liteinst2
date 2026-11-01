@@ -1,0 +1,643 @@
+{
+  "schema": "full-program-mixed-neighbor-result-v1",
+  "status": "FAILED_COMPLETE_PROGRAM_REFUSAL",
+  "revision": "a0fe83a84878233ff678d8f5bc9d3db3547ca9b5",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "population": {
+    "instruction_heads": 13143,
+    "selected_sites": 2053,
+    "identity_fields": [
+      "site",
+      "pc",
+      "file_offset",
+      "length"
+    ],
+    "selection_sha256": "8db04d435982fa008df9d8482c0e6098ab5a7d39e0456755b52faff185d70346",
+    "full_ordered_site_identities_equal": true,
+    "selection_bytes": 701984,
+    "identity_roster_sha256": "25bd3f32ccb9c079dd9a4f1fd8254924ec3ab92cc6f5b07e7654f256bbf116bc"
+  },
+  "mode": {
+    "profile": "elf-disassembly-null-jumps-shared-4096-v1",
+    "neighbor_victims": "mixed-short-and-long",
+    "neighbor_ownership": "inherited-t3",
+    "pending_selected": "full-instruction-ownership",
+    "artifact_placement": "current-composition-single-candidate-v1",
+    "selected_placement_tactics": "B1,B2,T1",
+    "paired_placement_tactics": "legacy-T2,mixed-T3",
+    "paired_ownership": "inherited-mixed-T3"
+  },
+  "policy": {
+    "bytes": 359381,
+    "sha256": "ef09bcd4c78949ff4b93a928c59e04b545081f9e56c2056f2cfcdfe068604cce",
+    "resource_fields": [
+      "input_bytes",
+      "sites",
+      "images",
+      "image_bytes",
+      "new_load_pages",
+      "output_bytes",
+      "added_file_bytes",
+      "program_headers",
+      "virtual_span"
+    ],
+    "resources": [
+      1048576,
+      4096,
+      2896,
+      11862016,
+      2936,
+      12120064,
+      12026544,
+      2910,
+      2147483648
+    ],
+    "search": "preferred 64 256 64 none 256 4096",
+    "per_role": {
+      "candidates": 1,
+      "mappings": 1,
+      "bytes": 4096
+    },
+    "generator_attempts": 0
+  },
+  "result": {
+    "locally_planned_but_withheld": 2049,
+    "primary_refusals": {
+      "core:AllocationUnavailable": 3,
+      "pending-selected:OwnershipConflict": 1
+    },
+    "withheld_tactics": {
+      "B2": 355,
+      "B1": 1620,
+      "T2": 13,
+      "T3": 22,
+      "T1": 39
+    },
+    "primary_rows": [
+      {
+        "detail": "AllocationUnavailable",
+        "identity": [
+          1392,
+          42460,
+          42460,
+          2
+        ],
+        "refusal_code": "11",
+        "stage": "core",
+        "state": "primary_refusal",
+        "tactic": "none"
+      },
+      {
+        "detail": "AllocationUnavailable",
+        "identity": [
+          1888,
+          57842,
+          57842,
+          2
+        ],
+        "refusal_code": "11",
+        "stage": "core",
+        "state": "primary_refusal",
+        "tactic": "none"
+      },
+      {
+        "detail": "OwnershipConflict",
+        "identity": [
+          2040,
+          61392,
+          61392,
+          2
+        ],
+        "refusal_code": "10001",
+        "stage": "pending-selected",
+        "state": "primary_refusal",
+        "tactic": "B2"
+      },
+      {
+        "detail": "AllocationUnavailable",
+        "identity": [
+          2041,
+          61394,
+          61394,
+          2
+        ],
+        "refusal_code": "11",
+        "stage": "core",
+        "state": "primary_refusal",
+        "tactic": "none"
+      }
+    ],
+    "refused_site_ids": [
+      1392,
+      1888,
+      2040,
+      2041
+    ],
+    "candidate_complete": false,
+    "qualification_complete": false,
+    "report": {
+      "bytes": 368040,
+      "sha256": "2c76f77e7b800eb652ca5be97446cd452dd57ca6cb395af721545a7f31de51cb"
+    },
+    "tactic_scope": "Counts include only atomic-withheld local plans; the additional B2 at2040 failed pending ownership and is not counted."
+  },
+  "build": {
+    "argv": [
+      "/usr/bin/prlimit",
+      "--cpu=240",
+      "--as=4294967296",
+      "--fsize=134217728",
+      "--core=0",
+      "--",
+      "cargo",
+      "build",
+      "--offline",
+      "--locked",
+      "--release",
+      "-j1",
+      "-p",
+      "liteinst-rewrite",
+      "--example",
+      "full_program_bridge",
+      "--example",
+      "disassembly_sites"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_PROFILE_RELEASE_DEBUG": "0",
+      "CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+      "CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS": "true",
+      "CARGO_TARGET_DIR": "${ROOT}/target",
+      "PATH": "${TOOLCHAIN_BIN}:${CARGO_BIN}:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUST_TEST_THREADS": "1"
+    },
+    "cpus": [
+      6
+    ],
+    "load_before": [
+      52.47,
+      46.75,
+      41.93
+    ],
+    "load_after": [
+      48.94,
+      46.58,
+      42.05
+    ],
+    "wall_seconds": 300,
+    "log_bytes": 8388608,
+    "result": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "cd8c2b39a00e3ded47f5eb2e3222c3f64944e41fa7a9321e7fd8a7315289c824",
+      "reaped_descendants": 0,
+      "seconds": 38.22754662903026,
+      "start_utc": "2026-10-31T23:53:02.428773+00:00",
+      "termination": null
+    },
+    "source_unchanged": true,
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+    "products": {
+      "disassembly_sites": {
+        "bytes": 4521312,
+        "sha256": "48a73657e1454e1a6a53e19c5db8500332a1b2844fee4d4b491a9fa26dd47c28"
+      },
+      "full_program_bridge": {
+        "bytes": 2241024,
+        "sha256": "f3a862dcbb2a130a7f755cdf4889141891420f85288ac44dc8473507149adeae"
+      }
+    }
+  },
+  "execution": {
+    "argv": [
+      "/usr/bin/prlimit",
+      "--cpu=180",
+      "--as=3221225472",
+      "--fsize=536870912",
+      "--core=0",
+      "--",
+      "${ROOT}/target/release/examples/disassembly_sites",
+      "--whole-program-current-placement-mixed-neighbors-4096",
+      "${ORIGINAL}",
+      "${LEDGER}",
+      "727d43acbbb31ac419ba2a87f75433a495c2b838fa9d6d08a138d16c6e52e60d",
+      "${POLICY}",
+      "ef09bcd4c78949ff4b93a928c59e04b545081f9e56c2056f2cfcdfe068604cce",
+      "${OUT}/li2-current-placement-mixed-neighbors-2g"
+    ],
+    "environment": {
+      "LANG": "C",
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "TMPDIR": "${OUT}/tmp"
+    },
+    "attempts": 1,
+    "cpus": [
+      6
+    ],
+    "load_before": [
+      47.93,
+      58.43,
+      58.62
+    ],
+    "load_after": [
+      45.74,
+      57.43,
+      58.28
+    ],
+    "bounds": {
+      "cpu_seconds": 180,
+      "address_space_bytes": 3221225472,
+      "file_bytes": 536870912,
+      "wall_seconds": 240,
+      "log_cap_bytes": 8388608
+    },
+    "result": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 2,
+      "private_log_sha256": "05371eb591797911aa16cbe5f648feae0115e9f478b5344e7ba7e572a61120dd",
+      "reaped_descendants": 0,
+      "seconds": 18.518141810083762,
+      "start_utc": "2026-11-01T00:19:18.565382+00:00",
+      "termination": null
+    },
+    "source_unchanged": true,
+    "generator_attempts": 0,
+    "backend_attempts": 0,
+    "native_attempts": 0
+  },
+  "actual_private_outer": {
+    "argv": [
+      "/usr/bin/prlimit",
+      "--cpu=300",
+      "--as=4294967296",
+      "--fsize=536870912",
+      "--core=0",
+      "--",
+      "/usr/bin/python3.9",
+      "-I",
+      "-B",
+      "${PRIVATE_CONTROLLER}",
+      "--revision",
+      "a0fe83a84878233ff678d8f5bc9d3db3547ca9b5",
+      "--output",
+      "${OUT}",
+      "--build-receipt",
+      "${BUILD_RECEIPT}",
+      "--build-receipt-sha256",
+      "b32b6eb6a1a0e1c12fee6e4a44e55a151612d4599f6b55293238db3544037803"
+    ],
+    "environment": {
+      "LANG": "C",
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "cpus": [
+      6
+    ],
+    "load_before": [
+      47.93,
+      58.43,
+      58.62
+    ],
+    "load_after": [
+      45.84,
+      57.26,
+      58.22
+    ],
+    "wall_seconds": 420,
+    "log_bytes": 8388608,
+    "result": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 2,
+      "private_log_sha256": "5cade778ca7bc710905a1c61ee8018a6a3dc2df4dc24b7a16400c234d64a4e93",
+      "reaped_descendants": 0,
+      "seconds": 19.41300422511995,
+      "start_utc": "2026-11-01T00:19:18.458375+00:00",
+      "termination": null
+    },
+    "controller": {
+      "bytes": 4773,
+      "sha256": "40b9f135fb797d2bc1e6906985b4c81901597f41576853e4ef09ed2b4fe78469"
+    },
+    "worker": {
+      "bytes": 13676,
+      "sha256": "32a12ccf35c4a4ddab84684ba4caa3903656aa8e3ef21d48363b36d991341fdf"
+    },
+    "note": "Normalized historical private-controller argv; portable script is source-reviewed and unexecuted."
+  },
+  "custody": {
+    "owners_normal_zero_rescues": true,
+    "root_and_child_identities_absent": true,
+    "scope_absent": true,
+    "reservation": "Root-recorded disjoint HARD singleton CPU; lane <=12 CPUs/1200%.",
+    "source_unchanged": true,
+    "released_utc": "2026-11-01T00:19:52.467776+00:00"
+  },
+  "retained_output": {
+    "manifest": {
+      "bytes": 393253,
+      "sha256": "169a92ac2fb7253b79af381b532e2106fbbc456941960cfa6a74123049aeae53"
+    },
+    "manifest_members_verified": 4148,
+    "manifest_member_bytes": 424877443,
+    "verified_manifest_rows_sha256": "24257080bdfffc9be950c220cda164e14e3d174f6cd7e8389b5545964bf86a62",
+    "complete_inventory": {
+      "bytes": 77834,
+      "sha256": "ce8931ab852a4c10a27862d93de23d87a44e530a6999442e7479b4b03dd7d59f"
+    },
+    "planning_profile": {
+      "bytes": 809,
+      "sha256": "c72083b4fbdb8aed64e310faa573a60ed5e2dfb6cbb10a435fea1fbb51bdc966"
+    },
+    "storage": {
+      "allocated": 438956032,
+      "apparent": 425286368,
+      "files": 4151
+    },
+    "output_limits": {
+      "per_file_bytes": 536870912,
+      "post_stage_bytes": 2147483648
+    },
+    "verification_scope": "Root/controller rehashed all4148 members; this publication independently rehashed six semantic members and compared all2053 report identities."
+  },
+  "inputs": {
+    "original": {
+      "bytes": 93520,
+      "sha256": "890f76cb5741b6c7cfba3414ae72a64fd7deddc7d2dd33b17d53e8b906529fdb"
+    },
+    "ledger": {
+      "bytes": 264399,
+      "sha256": "727d43acbbb31ac419ba2a87f75433a495c2b838fa9d6d08a138d16c6e52e60d"
+    },
+    "sites": {
+      "bytes": 77822,
+      "sha256": "7d3e1d485fad55ed75139a40fc456374f9fcdbda101096a5d137d1df758b4f5f"
+    }
+  },
+  "tools": {
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "prlimit": {
+      "bytes": 28416,
+      "sha256": "942bcd8596c242d4d33dca657372a83e1f55908afd59b525389362cd6d282933"
+    },
+    "python3.9": {
+      "bytes": 15448,
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    }
+  },
+  "provenance": {
+    "root_custody": {
+      "bytes": 3038,
+      "sha256": "e4c656325ad24ceb772db0325d0bd1860e6de7c1f61d8273d14ebb51f973aad0"
+    },
+    "outer_closed": {
+      "bytes": 674,
+      "sha256": "03b54ed89c34f800464ceada991c8debca13cd5c672bacd7bb0b29525739f825"
+    },
+    "attempt_receipt": {
+      "bytes": 16345,
+      "sha256": "2538e20e704439177d20a7bd6518a5f9201121640e9812513b4cd40df2f870b2"
+    },
+    "build_receipt": {
+      "bytes": 7906,
+      "sha256": "b32b6eb6a1a0e1c12fee6e4a44e55a151612d4599f6b55293238db3544037803"
+    },
+    "source_manifest": {
+      "bytes": 2651,
+      "sha256": "aa9de18c382836c4c12f2d8bcd8360757a550222b738eaedfce180a0192e35c5"
+    },
+    "process_owner": {
+      "bytes": 15760,
+      "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+    },
+    "comparison": {
+      "bytes": 28706,
+      "sha256": "94a848493e4d347e1064167830ec2037fb8d8dff9767320b084659e522417726"
+    },
+    "comparison_reader_closed": {
+      "bytes": 642,
+      "sha256": "fbbff47eab02d8d6342f326bee0497325378cc30e66821c34fe18ceb932756fb"
+    }
+  },
+  "reproduction": {
+    "script": "reproduce.py",
+    "script_sha256": "bb2746de1c9a2efbdf24e3f0413650567abe63b9771ba7b9881f79bad332c813",
+    "status": "SOURCE_REVIEWED_UNEXECUTED",
+    "measured_private_controllers": "Closed build and corpus results above used the separately reviewed private controllers; the portable script adds no execution credit."
+  },
+  "limits": [
+    "All 2053 selected sites remain; local plans are atomically withheld and no complete candidate exists.",
+    "The old 16MiB/2GiB and owned-policy outcomes remain failed and were not rerun.",
+    "Complete-code and non-code RX-gap premises remain caller supplied. No runtime, PIE startup, performance or A5 qualification.",
+    "The strict profiler 1342/2048 short result remains FAILED; see ../ordinary-accuracy-results/coordinate-01ca/receipt.json.",
+    "Owner durations include I/O and scheduling and are operational measurements, not a performance comparison.",
+    "This receipt covers the release build and planner. The workspace gate is recorded separately."
+  ],
+  "comparison": {
+    "ordered_identity_equal_to_all_three_baselines": true,
+    "identity_roster_sha256": "25bd3f32ccb9c079dd9a4f1fd8254924ec3ab92cc6f5b07e7654f256bbf116bc",
+    "facts": {
+      "bytes": 28706,
+      "sha256": "94a848493e4d347e1064167830ec2037fb8d8dff9767320b084659e522417726"
+    },
+    "meaning": "Resolved primary refusal means now a withheld local plan; no complete-program outcome became successful.",
+    "current_2g": {
+      "resolved_primary_ids": [
+        404,
+        537,
+        718,
+        872,
+        874,
+        877,
+        956,
+        1439
+      ],
+      "new_primary_ids": [
+        2040
+      ],
+      "remaining_primary_ids": [
+        1392,
+        1888,
+        2041
+      ],
+      "changed_rows": 12,
+      "unchanged_rows": 2041
+    },
+    "old_2g": {
+      "resolved_primary_ids": [
+        104,
+        148,
+        337,
+        404,
+        428,
+        537,
+        541,
+        543,
+        553,
+        574,
+        707,
+        718,
+        804,
+        817,
+        819,
+        821,
+        872,
+        874,
+        877,
+        931,
+        956,
+        997,
+        1247,
+        1255,
+        1257,
+        1278,
+        1281,
+        1296,
+        1297,
+        1439,
+        1590,
+        1599,
+        1803,
+        1807,
+        1850,
+        2020
+      ],
+      "new_primary_ids": [
+        2040
+      ],
+      "remaining_primary_ids": [
+        1392,
+        1888,
+        2041
+      ],
+      "changed_rows": 165,
+      "unchanged_rows": 1888
+    },
+    "owned_2g": {
+      "resolved_primary_ids": [
+        215,
+        219,
+        255,
+        282,
+        370,
+        382,
+        403,
+        404,
+        417,
+        428,
+        527,
+        537,
+        541,
+        543,
+        546,
+        553,
+        572,
+        574,
+        718,
+        796,
+        804,
+        817,
+        819,
+        821,
+        868,
+        870,
+        872,
+        874,
+        877,
+        879,
+        904,
+        931,
+        956,
+        963,
+        1103,
+        1108,
+        1247,
+        1249,
+        1251,
+        1278,
+        1281,
+        1296,
+        1297,
+        1306,
+        1318,
+        1405,
+        1406,
+        1417,
+        1421,
+        1439,
+        1590,
+        1599,
+        1604,
+        1605,
+        1667,
+        1803,
+        1805,
+        1807,
+        1850,
+        1852,
+        1871,
+        1879,
+        1891,
+        1896,
+        1913,
+        1915,
+        2020,
+        2027,
+        2045
+      ],
+      "new_primary_ids": [
+        1392,
+        2040
+      ],
+      "remaining_primary_ids": [
+        1888,
+        2041
+      ],
+      "changed_rows": 234,
+      "unchanged_rows": 1819
+    }
+  },
+  "historical_receipts": {
+    "original_16m_and_2g": {
+      "path": "../full-program-jrcxz-result-v1/receipt.json",
+      "bytes": 11652,
+      "sha256": "a1a1f67df9732681d1ecbbc14f0ceb3183e5daa14293c0859fe08b7dbe1d2797"
+    },
+    "owned_2g": {
+      "path": "../full-program-owned-placement-result-v1/receipt.json",
+      "bytes": 15715,
+      "sha256": "df5bccdc0f9751a5c27d4275e2b0e2275eba8c3164a3dbbc41ebbb0f81d63fbe"
+    },
+    "strict_profiler": {
+      "path": "../ordinary-accuracy-results/coordinate-01ca/receipt.json",
+      "bytes": 38612,
+      "sha256": "6cf39216193b2818a59c1f3aea00cd2ebeb2d8e2b653f68cb00a6bff0d4e6862",
+      "short_observed": 1342,
+      "short_required": 2048,
+      "status": "FAILED"
+    },
+    "current_placement": "../full-program-current-placement/receipt.json"
+  },
+  "tree": "29aa195b88861fc0636ecbc505f15b5ceed8c822"
+}

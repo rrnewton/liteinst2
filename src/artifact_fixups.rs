@@ -85,6 +85,10 @@ pub enum Role {
         original_pc: u64,
     },
     Return,
+    /// External artifact entry to its same-page body; not an original head.
+    EntryVeneer {
+        original_pc: u64,
+    },
     OriginalAbsoluteOperand {
         original_pc: u64,
     },

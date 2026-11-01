@@ -15,7 +15,7 @@ use crate::planner::HookSemantics;
 use crate::quiescent::{self, AllocationPolicy, InstallRequest};
 use crate::scanner::{ScanResult, ScannedInstruction};
 use crate::search::{RefusalClass, SearchDomain, SearchEvidence, SearchScope};
-use crate::trampoline::{TrampolineImage, TrampolinePlan};
+use crate::trampoline::{PreparedArtifact, TrampolineImage, TrampolinePlan};
 
 /// Independent bounds for the forced neighboring-victim search.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -51,7 +51,7 @@ pub struct NeighborGeometry {
     pub selected_len: usize,
     /// Original victim instruction head.
     pub victim: u64,
-    /// Whole original victim length: 10..=15, or 6..=9 via the short-only API.
+    /// Whole original victim length: 10..=15, or 6..=9 via an explicit short family.
     pub victim_len: usize,
     /// Exact second E9 address, victim + 5.
     pub relay: u64,
@@ -74,6 +74,8 @@ pub enum NeighborAttemptStage {
     SelectedPlacement,
     /// Both images are placed and their complete source transaction is checked.
     Composition,
+    /// Direct fit certificate refused before the same charged slot uses a veneer.
+    EntryVeneerCertificate,
 }
 
 /// Ordered, bounded search evidence; unavailable targets remain explicit.
@@ -101,6 +103,7 @@ pub struct NeighborMetrics {
     /// Charged selected-placement candidate slots across all victims/placements.
     pub pairs_examined: usize,
     /// EB, source relay E9 and generated continuation for selected fallthrough.
+    /// The explicit artifact entry-veneer path adds its checked fourth redirect.
     pub selected_fallthrough_redirects: usize,
     /// Entry E9 and generated continuation for victim fallthrough.
     pub victim_fallthrough_redirects: usize,
@@ -292,6 +295,32 @@ pub(crate) fn plan_neighbor_short_pending_core(
     )
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum VictimFamily {
+    Long,
+    Short,
+    Mixed,
+}
+
+pub(crate) fn plan_neighbor_mixed_pending_core(
+    request: &PlanningRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+) -> Result<PlannedNeighbor, NeighborFailure> {
+    plan_neighbor_family_with_pending(
+        request,
+        victim_allocation,
+        search,
+        budget,
+        VictimFamily::Mixed,
+        Some(predecessor),
+        Some(pending),
+    )
+}
+
 fn plan_neighbor_mode_with_inherited(
     request: &PlanningRequest<'_>,
     victim_allocation: &AllocationPolicy,
@@ -320,6 +349,70 @@ fn plan_neighbor_mode_with_pending(
     inherited: Option<&Composition>,
     pending: Option<&[AddressRange]>,
 ) -> Result<PlannedNeighbor, NeighborFailure> {
+    plan_neighbor_family_with_pending(
+        request,
+        victim_allocation,
+        search,
+        budget,
+        if short_victims {
+            VictimFamily::Short
+        } else {
+            VictimFamily::Long
+        },
+        inherited,
+        pending,
+    )
+}
+
+fn plan_neighbor_family_with_pending(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+    family: VictimFamily,
+    inherited: Option<&Composition>,
+    pending: Option<&[AddressRange]>,
+) -> Result<PlannedNeighbor, NeighborFailure> {
+    let result = plan_neighbor_family_with_layout(
+        request,
+        victim_allocation,
+        search,
+        budget,
+        NeighborLayout {
+            family,
+            entry_veneer: false,
+        },
+        inherited,
+        pending,
+    )?;
+    match result.pair {
+        NeighborPair::Direct(bundle) => Ok(PlannedNeighbor {
+            bundle,
+            geometry: result.geometry,
+            metrics: result.metrics,
+        }),
+        NeighborPair::Artifact(_) => Err(NeighborFailure {
+            reason: Refusal::InvalidPlan,
+            attempts: result.metrics.attempts,
+            search: result.metrics.search,
+        }),
+    }
+}
+
+fn plan_neighbor_family_with_layout(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+    layout: NeighborLayout,
+    inherited: Option<&Composition>,
+    pending: Option<&[AddressRange]>,
+) -> Result<NeighborResult, NeighborFailure> {
+    let NeighborLayout {
+        family,
+        entry_veneer,
+    } = layout;
+    let short_victims = family == VictimFamily::Short;
     let mut attempts = Vec::new();
     let mut search_evidence = SearchEvidence::default();
     let result = (|| {
@@ -383,6 +476,18 @@ fn plan_neighbor_mode_with_pending(
                     return Err(Refusal::NotInstructionHead);
                 }
             }
+        } else if family == VictimFamily::Mixed {
+            scan.instructions()
+                .iter()
+                .rev()
+                .filter(|item| {
+                    (6..=15).contains(&item.len())
+                        && AddressRange::new(item.address(), item.len()).is_ok_and(|range| {
+                            !range.overlaps(selected_range) && request.function.covers(range)
+                        })
+                        && short_redirect(selected.address(), item.address()).is_ok()
+                })
+                .collect()
         } else if short_victims {
             scan.instructions()
                 .iter()
@@ -437,6 +542,11 @@ fn plan_neighbor_mode_with_pending(
         for (victim_index, victim) in candidates.into_iter().take(search.max_victims).enumerate() {
             let victims_examined = victim_index + 1;
             search_evidence.visit(victims);
+            // The mixed domain uses the existing proof for this victim's length,
+            // including the complete ten-byte fetch for every 6..=9-byte victim.
+            // Its one descending catalogue shares the same victim and pair scopes.
+            let short_victims =
+                short_victims || (family == VictimFamily::Mixed && (6..=9).contains(&victim.len()));
             let victim_scope = SearchScope {
                 physical_pc: Some(victim.address()),
                 ..SearchScope::default()
@@ -484,19 +594,37 @@ fn plan_neighbor_mode_with_pending(
                 victim_allocation.max_candidates,
                 None,
             );
+            let mut fitted_victim = prepare_fitting_placement(
+                request,
+                &victim_plan,
+                victim_allocation,
+                source,
+                &occupied,
+                victim.address(),
+                None,
+            );
+            let effective_victim = fitted_victim
+                .as_ref()
+                .ok()
+                .and_then(|fit| fit.as_ref().map(|fit| fit.policy.clone()));
+            let victim_policy = effective_victim.as_ref().unwrap_or(victim_allocation);
             for victim_candidate in 0..victim_allocation.max_candidates {
                 search_evidence.visit(victim_images);
-                let victim_target = quiescent::candidate_target(
-                    victim.address(),
-                    [false; 4],
-                    victim_allocation.preferred_address,
-                    victim_candidate,
-                );
-                let placed = place_image(
-                    request.emission,
-                    &victim_plan,
+                let victim_target = if fitted_victim.is_err() {
+                    None
+                } else {
+                    quiescent::candidate_target(
+                        victim.address(),
+                        [false; 4],
+                        victim_policy.preferred_address,
+                        victim_candidate,
+                    )
+                };
+                let placed = place_fitting_or_original(
+                    &mut fitted_victim,
+                    (request.emission, &victim_plan),
                     victim_target,
-                    victim_allocation,
+                    victim_policy,
                     source,
                     &occupied,
                     None,
@@ -525,9 +653,52 @@ fn plan_neighbor_mode_with_pending(
                     request.allocation.max_candidates,
                     None,
                 );
-                let short_candidates = short_relay
+                // Only the new fitting context augments preference selection.
+                // The unchanged real-image check below still checks `other` too.
+                let selected_occupied = if request.emission.fitting_placement() {
+                    let mut held = occupied.clone();
+                    held.push(victim_mapping);
+                    held
+                } else {
+                    Vec::new()
+                };
+                let mut fitted_selected =
+                    if let (true, Some(short)) = (entry_veneer, short_relay.as_ref()) {
+                        prepare_entry_veneer_placement(
+                            request,
+                            &selected_plan,
+                            request.allocation,
+                            source,
+                            &selected_occupied,
+                            short.window(),
+                        )
+                    } else {
+                        prepare_fitting_placement(
+                            request,
+                            &selected_plan,
+                            request.allocation,
+                            source,
+                            if request.emission.fitting_placement() {
+                                &selected_occupied
+                            } else {
+                                &occupied
+                            },
+                            relay,
+                            short_relay.as_ref().map(|relay| relay.window()),
+                        )
+                    };
+                let effective_selected = fitted_selected
                     .as_ref()
-                    .map(|relay| quiescent::pun_candidates(relay.window(), request.allocation));
+                    .ok()
+                    .and_then(|fit| fit.as_ref().map(|fit| fit.policy.clone()));
+                let selected_policy = effective_selected.as_ref().unwrap_or(request.allocation);
+                let short_candidates = if fitted_selected.is_err() {
+                    None
+                } else {
+                    short_relay
+                        .as_ref()
+                        .map(|relay| quiescent::pun_candidates(relay.window(), selected_policy))
+                };
                 let selected_slots = short_candidates
                     .as_ref()
                     .map_or(request.allocation.max_candidates, |c| c.addresses.len());
@@ -546,23 +717,47 @@ fn plan_neighbor_mode_with_pending(
                     pairs_examined += 1;
                     search_evidence.visit(pair_search);
                     search_evidence.visit(selected_images);
+                    if fitted_selected
+                        .as_ref()
+                        .ok()
+                        .and_then(|fit| fit.as_ref())
+                        .is_some_and(|fit| fit.veneer.is_some())
+                    {
+                        search_evidence.refusal(
+                            SearchScope {
+                                victim_target: Some(victim_target),
+                                ..selected_scope
+                            },
+                            RefusalClass::ResourceCapacity,
+                            &Refusal::AllocationUnavailable,
+                        );
+                        attempts.push(NeighborAttempt {
+                            victim: victim.address(),
+                            stage: NeighborAttemptStage::EntryVeneerCertificate,
+                            victim_target: Some(victim_target),
+                            selected_target: None,
+                            refusal: Some(Refusal::AllocationUnavailable),
+                        });
+                    }
                     // This E9 starts at V+5: candidate_target adds five to that
                     // actual origin, not to the selected original instruction.
-                    let selected_target = if let Some(candidates) = &short_candidates {
+                    let selected_target = if fitted_selected.is_err() {
+                        None
+                    } else if let Some(candidates) = &short_candidates {
                         Some(candidates.addresses[selected_candidate])
                     } else {
                         quiescent::candidate_target(
                             relay,
                             [false; 4],
-                            request.allocation.preferred_address,
+                            selected_policy.preferred_address,
                             selected_candidate,
                         )
                     };
-                    let placed = place_image(
-                        request.emission,
-                        &selected_plan,
+                    let placed = place_selected_artifact_or_original(
+                        &mut fitted_selected,
+                        (request.emission, &selected_plan),
                         selected_target,
-                        request.allocation,
+                        selected_policy,
                         source,
                         &occupied,
                         Some(victim_mapping),
@@ -581,25 +776,28 @@ fn plan_neighbor_mode_with_pending(
                             continue;
                         }
                     };
-                    let selected_target = selected_image.address();
-                    let composed = compose_pair(
+                    let selected_target = selected_image.view().entry_address();
+                    let has_veneer = selected_image.view().entry_veneer().is_some();
+                    let composed = compose_selected_pair(
                         request,
                         source,
                         selected_patch,
-                        PlacedInstruction {
+                        ArtifactPlacedInstruction {
                             displaced: selected_range,
                             image: selected_image,
                             allocation: selected_mapping,
                             candidate: selected_candidate,
                         },
-                        PlacedInstruction {
+                        ArtifactPlacedInstruction {
                             displaced: victim_range,
-                            image: victim_image.clone(),
+                            image: crate::emission::ArtifactStoredImage::Direct(
+                                victim_image.clone(),
+                            ),
                             allocation: victim_mapping,
                             candidate: victim_candidate,
                         },
                         budget,
-                        short_relay.as_ref(),
+                        (short_relay.as_ref(), entry_veneer),
                     );
                     // Inherited refusal consumes this already charged pair. Check
                     // every step before recording success, without mutating prior state.
@@ -627,8 +825,8 @@ fn plan_neighbor_mode_with_pending(
                             for id in [victims, pair_search, victim_images, selected_images] {
                                 search_evidence.accept(id);
                             }
-                            return Ok(PlannedNeighbor {
-                                bundle,
+                            return Ok(NeighborResult {
+                                pair: bundle,
                                 geometry: NeighborGeometry {
                                     selected: selected.address(),
                                     selected_len: selected.len(),
@@ -643,7 +841,7 @@ fn plan_neighbor_mode_with_pending(
                                     search: SearchEvidence::default(),
                                     victims_examined,
                                     pairs_examined,
-                                    selected_fallthrough_redirects: 3,
+                                    selected_fallthrough_redirects: if has_veneer { 4 } else { 3 },
                                     victim_fallthrough_redirects: 2,
                                     attempts: attempts.clone(),
                                 },
@@ -652,29 +850,39 @@ fn plan_neighbor_mode_with_pending(
                         Err(reason) => joint_error = Some(reason),
                     }
                 }
+                if fitted_selected.is_err() {
+                    // Preparation/certification refusal consumed its one slot;
+                    // no uncapped target schedule was established.
+                    search_evidence.finish(selected_images);
+                } else {
+                    search_evidence.finish_candidates(
+                        selected_images,
+                        if let Some(candidates) = short_candidates {
+                            candidates.proof
+                        } else {
+                            quiescent::candidate_target_proof(
+                                relay,
+                                [false; 4],
+                                selected_policy.preferred_address,
+                                selected_policy.max_candidates,
+                            )
+                        },
+                    );
+                }
+            }
+            if fitted_victim.is_err() {
+                search_evidence.finish(victim_images);
+            } else {
                 search_evidence.finish_candidates(
-                    selected_images,
-                    if let Some(candidates) = short_candidates {
-                        candidates.proof
-                    } else {
-                        quiescent::candidate_target_proof(
-                            relay,
-                            [false; 4],
-                            request.allocation.preferred_address,
-                            request.allocation.max_candidates,
-                        )
-                    },
+                    victim_images,
+                    quiescent::candidate_target_proof(
+                        victim.address(),
+                        [false; 4],
+                        victim_policy.preferred_address,
+                        victim_policy.max_candidates,
+                    ),
                 );
             }
-            search_evidence.finish_candidates(
-                victim_images,
-                quiescent::candidate_target_proof(
-                    victim.address(),
-                    [false; 4],
-                    victim_allocation.preferred_address,
-                    victim_allocation.max_candidates,
-                ),
-            );
         }
         search_evidence.finish(victims);
         search_evidence.finish(pair_search);
@@ -746,6 +954,88 @@ fn short_redirect(selected: u64, victim: u64) -> Result<(u64, i8, [u8; 2]), Refu
     let rel8 =
         i8::try_from(i128::from(relay) - i128::from(next)).map_err(|_| Refusal::NoPatchWindow)?;
     Ok((relay, rel8, [0xeb, rel8 as u8]))
+}
+
+// A prepared image is owned, not Clone: exactly one charged candidate can
+// consume it. Old contexts return None before any preparation or policy change.
+struct FittingPlacement {
+    image: Option<PreparedArtifact>,
+    policy: AllocationPolicy,
+    veneer: Option<crate::trampoline::EntryVeneerPlacement>,
+}
+
+fn prepare_fitting_placement(
+    request: &PlanningRequest<'_>,
+    plan: &TrampolinePlan,
+    policy: &AllocationPolicy,
+    source: AddressRange,
+    occupied: &[AddressRange],
+    physical: u64,
+    window: Option<AddressRange>,
+) -> Result<Option<FittingPlacement>, Refusal> {
+    let Some(image) = request
+        .emission
+        .prepare_fitting(plan)
+        .map_err(|error| Refusal::Backend(error.to_string()))?
+    else {
+        return Ok(None);
+    };
+    let policy = if let Some(window) = window {
+        crate::emission::placement::fitting_for_pun(
+            policy,
+            window,
+            occupied,
+            source,
+            image.size_bound(),
+        )?
+    } else {
+        crate::emission::placement::fitting_for_relocation(
+            policy,
+            physical,
+            [false; 4],
+            occupied,
+            source,
+            image.size_bound(),
+        )?
+    };
+    Ok(Some(FittingPlacement {
+        image: Some(image),
+        policy,
+        veneer: None,
+    }))
+}
+
+fn place_fitting_or_original(
+    fitting: &mut Result<Option<FittingPlacement>, Refusal>,
+    original: (crate::emission::EmissionContext<'_>, &TrampolinePlan),
+    target: Option<u64>,
+    policy: &AllocationPolicy,
+    source: AddressRange,
+    occupied: &[AddressRange],
+    other: Option<AddressRange>,
+) -> Result<(TrampolineImage, AddressRange), Refusal> {
+    let (emission, plan) = original;
+    let prepared = match fitting {
+        Ok(None) => return place_image(emission, plan, target, policy, source, occupied, other),
+        Err(reason) => return Err(reason.clone()),
+        Ok(Some(fit)) => fit.image.take().ok_or(Refusal::InvalidPlan)?,
+    };
+    let target = target.ok_or(Refusal::AllocationUnavailable)?;
+    let image = prepared
+        .emit_at(target)
+        .map_err(|error| Refusal::Backend(error.to_string()))?;
+    // Same actual-image extent, permit, source and occupancy checks as the
+    // original path. A certificate never replaces these post-encode checks.
+    let allocation = image_allocation(&image)?;
+    if allocation.len() > policy.max_mapped_bytes as u64
+        || !policy.ranges.iter().any(|range| range.covers(allocation))
+        || source.overlaps(allocation)
+        || occupied.iter().any(|range| range.overlaps(allocation))
+        || other.is_some_and(|range| range.overlaps(allocation))
+    {
+        return Err(Refusal::AllocationUnavailable);
+    }
+    Ok((image, allocation))
 }
 
 fn place_image(
@@ -879,3 +1169,250 @@ mod tests {
 #[cfg(test)]
 #[path = "neighbor_long_ownership_tests.rs"]
 mod long_ownership_tests;
+
+// Private result adapter: old routes can only unwrap Direct; the opt-in artifact
+// route carries a checked pair without manufacturing a publishable live handle.
+struct NeighborResult {
+    pair: NeighborPair,
+    geometry: NeighborGeometry,
+    metrics: NeighborMetrics,
+}
+enum NeighborPair {
+    Direct(PlannedBundle),
+    Artifact(crate::bundle::CheckedArtifactPair),
+}
+impl NeighborPair {
+    fn plan(&self) -> &crate::bundle::BundlePlan {
+        match self {
+            Self::Direct(pair) => pair.plan(),
+            Self::Artifact(pair) => &pair.plan,
+        }
+    }
+}
+
+pub(crate) fn plan_neighbor_entry_veneer_pending_core(
+    request: &PlanningRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+) -> Result<ArtifactPlan, NeighborFailure> {
+    let result = plan_neighbor_family_with_layout(
+        request,
+        victim_allocation,
+        search,
+        budget,
+        NeighborLayout {
+            family: VictimFamily::Mixed,
+            entry_veneer: true,
+        },
+        Some(predecessor),
+        Some(pending),
+    )?;
+    match result.pair {
+        NeighborPair::Artifact(pair) => Ok(ArtifactPlan::checked_pair(
+            pair,
+            ArtifactMetrics::Neighbor(result.geometry, result.metrics),
+        )),
+        NeighborPair::Direct(_) => Err(NeighborFailure {
+            reason: Refusal::InvalidPlan,
+            attempts: result.metrics.attempts,
+            search: result.metrics.search,
+        }),
+    }
+}
+
+fn prepare_entry_veneer_placement(
+    request: &PlanningRequest<'_>,
+    plan: &TrampolinePlan,
+    policy: &AllocationPolicy,
+    source: AddressRange,
+    occupied: &[AddressRange],
+    window: AddressRange,
+) -> Result<Option<FittingPlacement>, Refusal> {
+    let image = request
+        .emission
+        .prepare_fitting(plan)
+        .map_err(|error| Refusal::Backend(error.to_string()))?
+        .ok_or(Refusal::InvalidPlan)?;
+    match crate::emission::placement::fitting_for_pun(
+        policy,
+        window,
+        occupied,
+        source,
+        image.size_bound(),
+    ) {
+        Ok(policy) => Ok(Some(FittingPlacement {
+            image: Some(image),
+            policy,
+            veneer: None,
+        })),
+        Err(Refusal::AllocationUnavailable) => {
+            let veneer = crate::emission::placement::entry_veneer_for_pun(
+                policy,
+                window,
+                occupied,
+                source,
+                image.size_bound(),
+            )?;
+            let mut policy = policy.clone();
+            policy.preferred_address = Some(veneer.entry_address());
+            Ok(Some(FittingPlacement {
+                image: Some(image),
+                policy,
+                veneer: Some(veneer),
+            }))
+        }
+        Err(reason) => Err(reason),
+    }
+}
+
+fn place_selected_artifact_or_original(
+    fitting: &mut Result<Option<FittingPlacement>, Refusal>,
+    original: (crate::emission::EmissionContext<'_>, &TrampolinePlan),
+    target: Option<u64>,
+    policy: &AllocationPolicy,
+    source: AddressRange,
+    occupied: &[AddressRange],
+    other: Option<AddressRange>,
+) -> Result<(crate::emission::ArtifactStoredImage, AddressRange), Refusal> {
+    let veneer = fitting
+        .as_ref()
+        .ok()
+        .and_then(|fit| fit.as_ref())
+        .and_then(|fit| fit.veneer);
+    let Some(placement) = veneer else {
+        return place_fitting_or_original(
+            fitting, original, target, policy, source, occupied, other,
+        )
+        .map(|(image, allocation)| {
+            (
+                crate::emission::ArtifactStoredImage::Direct(image),
+                allocation,
+            )
+        });
+    };
+    if target != Some(placement.entry_address()) {
+        return Err(Refusal::InvalidPlan);
+    }
+    let Ok(Some(fit)) = fitting else {
+        return Err(Refusal::InvalidPlan);
+    };
+    let prepared = fit.image.take().ok_or(Refusal::InvalidPlan)?;
+    let image = crate::trampoline::ArtifactTrampolineAllocation::emit(prepared, placement)
+        .map_err(|error| Refusal::Backend(error.to_string()))?;
+    let allocation = image.placement().mapping();
+    // Certificate and actual envelope must name exactly one owned page. Nothing
+    // is emitted again if any actual extent/occupancy or field check refuses.
+    let actual = AddressRange::new(image.storage_address(), image.bytes().len())?;
+    if !allocation.covers(actual)
+        || allocation.len() != 4096
+        || allocation.len() > policy.max_mapped_bytes as u64
+        || !policy.ranges.iter().any(|range| range.covers(allocation))
+        || source.overlaps(allocation)
+        || occupied.iter().any(|range| range.overlaps(allocation))
+        || other.is_some_and(|range| range.overlaps(allocation))
+    {
+        return Err(Refusal::AllocationUnavailable);
+    }
+    Ok((
+        crate::emission::ArtifactStoredImage::EntryVeneer(image),
+        allocation,
+    ))
+}
+
+struct ArtifactPlacedInstruction {
+    displaced: AddressRange,
+    image: crate::emission::ArtifactStoredImage,
+    allocation: AddressRange,
+    candidate: usize,
+}
+fn compose_selected_pair(
+    request: &PlanningRequest<'_>,
+    source: AddressRange,
+    selected_patch: [u8; 2],
+    selected: ArtifactPlacedInstruction,
+    victim: ArtifactPlacedInstruction,
+    budget: BundleBudget,
+    layout: (Option<&short::Relay>, bool),
+) -> Result<NeighborPair, Refusal> {
+    let (short_relay, artifact) = layout;
+    if !artifact {
+        return compose_pair(
+            request,
+            source,
+            selected_patch,
+            PlacedInstruction {
+                displaced: selected.displaced,
+                image: selected.image.into_direct()?,
+                allocation: selected.allocation,
+                candidate: selected.candidate,
+            },
+            PlacedInstruction {
+                displaced: victim.displaced,
+                image: victim.image.into_direct()?,
+                allocation: victim.allocation,
+                candidate: victim.candidate,
+            },
+            budget,
+            short_relay,
+        )
+        .map(NeighborPair::Direct);
+    }
+    let relay = victim
+        .displaced
+        .start()
+        .checked_add(5)
+        .ok_or(Refusal::InvalidRange)?;
+    let selected_entry = selected.image.view().entry_address();
+    let mut victim_patch = near_redirect(
+        victim.displaced.start(),
+        victim.image.view().entry_address(),
+    )?;
+    victim_patch.extend_from_slice(&near_redirect(relay, selected_entry)?);
+    if let Some(short) = short_relay {
+        short.check_patch(&victim_patch, selected_entry)?;
+    }
+    let mut source_members = [(selected, selected_patch.to_vec()), (victim, victim_patch)];
+    source_members.sort_unstable_by_key(|member| std::cmp::Reverse(member.0.displaced.start()));
+    let mut overlay = request.code.to_vec();
+    let mut members = Vec::with_capacity(2);
+    for (placed, patch) in source_members {
+        let overlaid = request.with_code(&overlay);
+        if let Some(short) = short_relay.filter(|r| r.victim() == placed.displaced.start()) {
+            short.check_current(&overlaid, source, &patch)?;
+        }
+        let member = crate::eviction::artifact_instruction_member_core(
+            &overlaid,
+            source,
+            placed.displaced,
+            placed.image,
+            placed.allocation,
+            patch,
+        )?;
+        for edit in &member.plan.parts().writes {
+            let offset = (edit.address - source.start()) as usize;
+            overlay[offset..offset + edit.bytes.len()].copy_from_slice(&edit.bytes);
+        }
+        members.push(member);
+    }
+    crate::bundle::compose_artifact_pair(
+        vec![ExpectedBytes {
+            address: source.start(),
+            bytes: request.code.to_vec(),
+        }],
+        members,
+        budget,
+    )
+    .map(NeighborPair::Artifact)
+}
+
+struct NeighborLayout {
+    family: VictimFamily,
+    entry_veneer: bool,
+}
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+#[path = "neighbor_entry_veneer_tests.rs"]
+mod entry_veneer_tests;

@@ -375,3 +375,410 @@ fn whole_current_placement_cli_retains_mode_and_denominator_on_refusal() {
     let (_, family, _) = labels_with_ownership(Mode::WholeCurrentPlacement4096);
     assert_eq!(family, disassembly::whole::CURRENT_PLACEMENT_METADATA);
 }
+
+#[test]
+fn whole_mixed_pending_cli_is_explicit_and_preserves_every_legacy_form() {
+    let base = args();
+    let flag = "--whole-program-current-placement-mixed-neighbors-4096";
+    for position in 1..base.len() {
+        let mut positional = base.clone();
+        positional[position] = flag.into();
+        assert_eq!(
+            arguments_with_mixed_pending(&positional),
+            arguments_with_current_placement(&positional)
+        );
+    }
+    for old in [
+        "--short-neighbors-only",
+        "--short-neighbors-owned",
+        "--short-neighbors-pending",
+        "--whole-program-4096",
+        "--whole-program-current-placement-4096",
+    ] {
+        let mut input = base.clone();
+        input.insert(1, old.into());
+        assert_eq!(
+            arguments_with_mixed_pending(&input),
+            arguments_with_current_placement(&input)
+        );
+        for position in 2..input.len() {
+            let mut positional = input.clone();
+            positional[position] = flag.into();
+            assert_eq!(
+                arguments_with_mixed_pending(&positional),
+                arguments_with_current_placement(&positional)
+            );
+        }
+    }
+    let mut new = base.clone();
+    new.insert(1, flag.into());
+    assert_eq!(
+        arguments_with_mixed_pending(&new).unwrap(),
+        (&base[1..], Mode::WholeCurrentPlacementMixedPending4096)
+    );
+    let (profile, family, stdout) =
+        labels_with_ownership(Mode::WholeCurrentPlacementMixedPending4096);
+    assert_eq!(profile, disassembly::whole::PROFILE);
+    assert_eq!(family, disassembly::whole::MIXED_PENDING_METADATA);
+    assert!(stdout.contains("neighbor_victims=mixed-short-and-long"));
+    assert!(stdout.contains("pending_selected=full-instruction-ownership"));
+    assert!(stdout.contains("selected_placement_tactics=B1,B2,T1"));
+    assert!(stdout.contains("paired_placement_tactics=legacy-T2,mixed-T3"));
+    assert!(stdout.contains("paired_ownership=inherited-mixed-T3"));
+    for mixed in [
+        flag,
+        "--whole-program-current-placement-4096",
+        "--whole-program-4096",
+        "--short-neighbors-only",
+        "--short-neighbors-owned",
+        "--short-neighbors-pending",
+    ] {
+        for position in 2..new.len() {
+            let mut bad = new.clone();
+            bad[position] = mixed.into();
+            assert!(arguments_with_mixed_pending(&bad).is_err());
+        }
+    }
+    assert_eq!(
+        arguments_with_mixed_pending(&new[..7]),
+        arguments_with_current_placement(&new[..7])
+    );
+    let mut extra = new.clone();
+    extra.push("extra".into());
+    assert!(arguments_with_mixed_pending(&extra).is_err());
+    new.swap(1, 2);
+    assert!(arguments_with_mixed_pending(&new).is_err());
+}
+
+#[test]
+fn whole_mixed_pending_cli_retains_mode_and_denominator_on_refusal() {
+    let (original, ledger, policy) = fixture();
+    let inventory = disassembly::import(&original, &ledger, ContentId::of(&ledger))
+        .unwrap()
+        .inventory_whole_program();
+    let mut files = BTreeMap::new();
+    // This input asks for 256 candidates/8192 bytes: the new mode must refuse
+    // the incompatible request, retaining both rows and the exact old policy.
+    let product = prepare_inputs(
+        &original,
+        &ledger,
+        ContentId::of(&ledger),
+        &policy,
+        ContentId::of(&policy),
+        Mode::WholeCurrentPlacementMixedPending4096,
+        &mut files,
+    )
+    .unwrap();
+    assert_eq!(
+        product.reports().iter().map(|r| r.id).collect::<Vec<_>>(),
+        [1, 2]
+    );
+    assert!(
+        product
+            .reports()
+            .iter()
+            .all(|r| r.refusal_code == Some(1) && !r.candidate_emitted)
+    );
+    assert!(!product.candidate_complete());
+    assert!(!product.qualification_complete());
+    assert!(!product.files().contains_key("candidate.elf"));
+    assert!(!product.files().keys().any(|n| n.starts_with("image-")));
+    assert_eq!(files["disassembly-inventory.tsv"], inventory);
+    assert_eq!(product.files()["disassembly-inventory.tsv"], inventory);
+    assert_eq!(product.files()["disassembly-policy.txt"], policy);
+    let profile = std::str::from_utf8(&product.files()["planning-profile.tsv"]).unwrap();
+    assert!(profile.contains(disassembly::whole::MIXED_PENDING_METADATA));
+    assert!(!profile.contains("neighbor_victims\tlong-only\n"));
+    let mut failed = BTreeMap::new();
+    assert!(
+        prepare_inputs(
+            &original,
+            &ledger,
+            ContentId::of(&ledger),
+            &policy,
+            ContentId([0; 32]),
+            Mode::WholeCurrentPlacementMixedPending4096,
+            &mut failed,
+        )
+        .is_err()
+    );
+    assert_eq!(failed.len(), 1);
+    assert_eq!(failed["disassembly-inventory.tsv"], inventory);
+    let (_, family, _) = labels_with_ownership(Mode::WholeCurrentPlacementMixedPending4096);
+    assert_eq!(family, disassembly::whole::MIXED_PENDING_METADATA);
+}
+
+#[test]
+fn whole_fitting_cli_is_explicit_and_preserves_every_legacy_form() {
+    let base = args();
+    let flag = "--whole-program-fitting-mixed-neighbors-4096";
+    for position in 1..base.len() {
+        let mut positional = base.clone();
+        positional[position] = flag.into();
+        assert_eq!(
+            arguments_with_fitting_mixed(&positional),
+            arguments_with_mixed_pending(&positional)
+        );
+    }
+    for old in [
+        "--short-neighbors-only",
+        "--short-neighbors-owned",
+        "--short-neighbors-pending",
+        "--whole-program-4096",
+        "--whole-program-current-placement-4096",
+        "--whole-program-current-placement-mixed-neighbors-4096",
+    ] {
+        let mut input = base.clone();
+        input.insert(1, old.into());
+        assert_eq!(
+            arguments_with_fitting_mixed(&input),
+            arguments_with_mixed_pending(&input)
+        );
+        for position in 2..input.len() {
+            let mut positional = input.clone();
+            positional[position] = flag.into();
+            assert_eq!(
+                arguments_with_fitting_mixed(&positional),
+                arguments_with_mixed_pending(&positional)
+            );
+        }
+    }
+    let mut new = base.clone();
+    new.insert(1, flag.into());
+    assert_eq!(
+        arguments_with_fitting_mixed(&new).unwrap(),
+        (&base[1..], Mode::WholeFittingMixedPending4096)
+    );
+    let (profile, family, stdout) = labels_with_ownership(Mode::WholeFittingMixedPending4096);
+    assert_eq!(profile, disassembly::whole::PROFILE);
+    assert_eq!(family, disassembly::whole::FITTING_MIXED_METADATA);
+    assert!(stdout.contains("neighbor_victims=mixed-short-and-long"));
+    assert!(stdout.contains("pending_selected=full-instruction-ownership"));
+    assert!(stdout.contains("selected_placement_tactics=B1,B2,T1"));
+    assert!(stdout.contains("paired_placement_tactics=legacy-T2,fitting-mixed-T3"));
+    assert!(stdout.contains("paired_ownership=inherited-mixed-T3"));
+    assert!(stdout.contains("artifact_placement=current-composition-certified-fit-v1"));
+    assert!(stdout.contains("local_plan_admission=inherited-and-pending-before-tactic-success"));
+    for mixed in [
+        flag,
+        "--whole-program-current-placement-4096",
+        "--whole-program-current-placement-mixed-neighbors-4096",
+        "--whole-program-4096",
+        "--short-neighbors-only",
+        "--short-neighbors-owned",
+        "--short-neighbors-pending",
+    ] {
+        for position in 2..new.len() {
+            let mut bad = new.clone();
+            bad[position] = mixed.into();
+            assert!(arguments_with_fitting_mixed(&bad).is_err());
+        }
+    }
+    assert_eq!(
+        arguments_with_fitting_mixed(&new[..7]),
+        arguments_with_mixed_pending(&new[..7])
+    );
+    let mut extra = new.clone();
+    extra.push("extra".into());
+    assert!(arguments_with_fitting_mixed(&extra).is_err());
+    new.swap(1, 2);
+    assert!(arguments_with_fitting_mixed(&new).is_err());
+}
+
+#[test]
+fn whole_fitting_cli_retains_mode_and_denominator_on_refusal() {
+    let (original, ledger, policy) = fixture();
+    let inventory = disassembly::import(&original, &ledger, ContentId::of(&ledger))
+        .unwrap()
+        .inventory_whole_program();
+    let mut files = BTreeMap::new();
+    // This input asks for 256 candidates/8192 bytes: the new mode must refuse
+    // the incompatible request, retaining both rows and the exact old policy.
+    let product = prepare_inputs(
+        &original,
+        &ledger,
+        ContentId::of(&ledger),
+        &policy,
+        ContentId::of(&policy),
+        Mode::WholeFittingMixedPending4096,
+        &mut files,
+    )
+    .unwrap();
+    assert_eq!(
+        product.reports().iter().map(|r| r.id).collect::<Vec<_>>(),
+        [1, 2]
+    );
+    assert!(
+        product
+            .reports()
+            .iter()
+            .all(|r| r.refusal_code == Some(1) && !r.candidate_emitted)
+    );
+    assert!(!product.candidate_complete());
+    assert!(!product.qualification_complete());
+    assert!(!product.files().contains_key("candidate.elf"));
+    assert!(!product.files().keys().any(|n| n.starts_with("image-")));
+    assert_eq!(files["disassembly-inventory.tsv"], inventory);
+    assert_eq!(product.files()["disassembly-inventory.tsv"], inventory);
+    assert_eq!(product.files()["disassembly-policy.txt"], policy);
+    let profile = std::str::from_utf8(&product.files()["planning-profile.tsv"]).unwrap();
+    assert!(profile.contains(disassembly::whole::FITTING_MIXED_METADATA));
+    assert!(!profile.contains("neighbor_victims\tlong-only\n"));
+    let mut failed = BTreeMap::new();
+    assert!(
+        prepare_inputs(
+            &original,
+            &ledger,
+            ContentId::of(&ledger),
+            &policy,
+            ContentId([0; 32]),
+            Mode::WholeFittingMixedPending4096,
+            &mut failed,
+        )
+        .is_err()
+    );
+    assert_eq!(failed.len(), 1);
+    assert_eq!(failed["disassembly-inventory.tsv"], inventory);
+    let (_, family, _) = labels_with_ownership(Mode::WholeFittingMixedPending4096);
+    assert_eq!(family, disassembly::whole::FITTING_MIXED_METADATA);
+}
+
+#[test]
+fn whole_entry_veneer_cli_is_explicit_and_preserves_every_legacy_form() {
+    let base = args();
+    let flag = "--whole-program-entry-veneer-mixed-neighbors-4096";
+    for position in 1..base.len() {
+        let mut positional = base.clone();
+        positional[position] = flag.into();
+        assert_eq!(
+            arguments_with_entry_veneer(&positional),
+            arguments_with_fitting_mixed(&positional)
+        );
+    }
+    for old in [
+        "--short-neighbors-only",
+        "--short-neighbors-owned",
+        "--short-neighbors-pending",
+        "--whole-program-4096",
+        "--whole-program-current-placement-4096",
+        "--whole-program-current-placement-mixed-neighbors-4096",
+        "--whole-program-fitting-mixed-neighbors-4096",
+    ] {
+        let mut input = base.clone();
+        input.insert(1, old.into());
+        assert_eq!(
+            arguments_with_entry_veneer(&input),
+            arguments_with_fitting_mixed(&input)
+        );
+        for position in 2..input.len() {
+            let mut positional = input.clone();
+            positional[position] = flag.into();
+            assert_eq!(
+                arguments_with_entry_veneer(&positional),
+                arguments_with_fitting_mixed(&positional)
+            );
+        }
+    }
+    let mut new = base.clone();
+    new.insert(1, flag.into());
+    assert_eq!(
+        arguments_with_entry_veneer(&new).unwrap(),
+        (&base[1..], Mode::WholeEntryVeneerMixedPending4096)
+    );
+    let (profile, family, stdout) = labels_with_ownership(Mode::WholeEntryVeneerMixedPending4096);
+    assert_eq!(profile, disassembly::whole::PROFILE);
+    assert_eq!(family, disassembly::whole::ENTRY_VENEER_MIXED_METADATA);
+    assert!(stdout.contains("neighbor_victims=mixed-short-and-long"));
+    assert!(stdout.contains("pending_selected=full-instruction-ownership"));
+    assert!(stdout.contains("selected_placement_tactics=B1,B2,T1"));
+    assert!(stdout.contains(
+        "paired_placement_tactics=legacy-T2,fitting-mixed-T3-short-selected-entry-veneer"
+    ));
+    assert!(stdout.contains("artifact_entry_layout=short-T3-selected-same-page-e9-v1"));
+    assert!(stdout.contains("paired_ownership=inherited-mixed-T3"));
+    assert!(stdout.contains("artifact_placement=current-composition-certified-fit-v1"));
+    assert!(stdout.contains("local_plan_admission=inherited-and-pending-before-tactic-success"));
+    for mixed in [
+        flag,
+        "--whole-program-current-placement-4096",
+        "--whole-program-current-placement-mixed-neighbors-4096",
+        "--whole-program-fitting-mixed-neighbors-4096",
+        "--whole-program-4096",
+        "--short-neighbors-only",
+        "--short-neighbors-owned",
+        "--short-neighbors-pending",
+    ] {
+        for position in 2..new.len() {
+            let mut bad = new.clone();
+            bad[position] = mixed.into();
+            assert!(arguments_with_entry_veneer(&bad).is_err());
+        }
+    }
+    assert_eq!(
+        arguments_with_entry_veneer(&new[..7]),
+        arguments_with_fitting_mixed(&new[..7])
+    );
+    let mut extra = new.clone();
+    extra.push("extra".into());
+    assert!(arguments_with_entry_veneer(&extra).is_err());
+    new.swap(1, 2);
+    assert!(arguments_with_entry_veneer(&new).is_err());
+}
+
+#[test]
+fn whole_entry_veneer_cli_retains_mode_and_denominator_on_refusal() {
+    let (original, ledger, policy) = fixture();
+    let inventory = disassembly::import(&original, &ledger, ContentId::of(&ledger))
+        .unwrap()
+        .inventory_whole_program();
+    let mut files = BTreeMap::new();
+    // This input asks for 256 candidates/8192 bytes: the new mode must refuse
+    // the incompatible request, retaining both rows and the exact old policy.
+    let product = prepare_inputs(
+        &original,
+        &ledger,
+        ContentId::of(&ledger),
+        &policy,
+        ContentId::of(&policy),
+        Mode::WholeEntryVeneerMixedPending4096,
+        &mut files,
+    )
+    .unwrap();
+    assert_eq!(
+        product.reports().iter().map(|r| r.id).collect::<Vec<_>>(),
+        [1, 2]
+    );
+    assert!(
+        product
+            .reports()
+            .iter()
+            .all(|r| r.refusal_code == Some(1) && !r.candidate_emitted)
+    );
+    assert!(!product.candidate_complete());
+    assert!(!product.qualification_complete());
+    assert!(!product.files().contains_key("candidate.elf"));
+    assert!(!product.files().keys().any(|n| n.starts_with("image-")));
+    assert_eq!(files["disassembly-inventory.tsv"], inventory);
+    assert_eq!(product.files()["disassembly-inventory.tsv"], inventory);
+    assert_eq!(product.files()["disassembly-policy.txt"], policy);
+    let profile = std::str::from_utf8(&product.files()["planning-profile.tsv"]).unwrap();
+    assert!(profile.contains(disassembly::whole::ENTRY_VENEER_MIXED_METADATA));
+    assert!(!profile.contains("neighbor_victims\tlong-only\n"));
+    let mut failed = BTreeMap::new();
+    assert!(
+        prepare_inputs(
+            &original,
+            &ledger,
+            ContentId::of(&ledger),
+            &policy,
+            ContentId([0; 32]),
+            Mode::WholeEntryVeneerMixedPending4096,
+            &mut failed,
+        )
+        .is_err()
+    );
+    assert_eq!(failed.len(), 1);
+    assert_eq!(failed["disassembly-inventory.tsv"], inventory);
+    let (_, family, _) = labels_with_ownership(Mode::WholeEntryVeneerMixedPending4096);
+    assert_eq!(family, disassembly::whole::ENTRY_VENEER_MIXED_METADATA);
+}

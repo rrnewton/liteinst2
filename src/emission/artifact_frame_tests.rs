@@ -88,8 +88,11 @@ fn opaque_artifact_trace_preserves_exact_image_and_every_requirement() {
     assert_eq!(traced.source_step(), &plan.source_steps()[0]);
     assert_eq!(traced.symbolic_hook(), input.hook());
     assert_eq!(traced.bias_domain(), DOMAIN);
-    assert_eq!(traced.exact_image(), &plan.images[0]);
-    assert!(traced.trace().matches_image(&plan.images[0]));
+    let ArtifactStoredImage::Direct(image) = &plan.images[0] else {
+        panic!("ordinary artifact frame image must stay direct")
+    };
+    assert_eq!(traced.exact_image(), image);
+    assert!(traced.trace().matches_image(image));
     assert_eq!(
         traced.image().metadata(),
         plan.images().next().unwrap().metadata()
