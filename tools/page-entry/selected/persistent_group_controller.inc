@@ -612,13 +612,14 @@ static int pe_bytes(void) {
 #endif
 #ifdef LI2_PERSISTENT_BLOCK_CENSUS
 #undef pe_bytes
-static int pe_bytes(void) {
+static int pe_bytes_census(void) {
     unsigned phase=pe.p.phase;
     rcc_scan(phase,0);
     int result=pe_bytes_census_full();
     rcc_scan(phase,result?2U:1U);
     return result;
 }
+#define pe_bytes pe_bytes_census
 #endif
 /* Pure fixed-address generation authentication, before recovery scratch or
    any spill access. Mutable cold scratch alone never grants this authority. */
