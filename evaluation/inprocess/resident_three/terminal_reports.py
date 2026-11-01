@@ -129,3 +129,136 @@ def controls(stderr):
          'all distinct causal controls and unchanged original terminal stream')
     return dict(controls=expected, refusals=refused, native_operations=0,
                 stderr_sha256=original['stderr_sha256'])
+
+
+# The three old handler ledgers begin before the actual startup NOP NX/TRACE.
+# D3 capture begins afterward. This is an exact source-derived offset, not an
+# allowance for unexplained events. The raw SIGILL frame is not in the D3 wire.
+RESIDENT_LEDGERS = ('LI2_UNROLLED_HASH', 'LI2_SCALAR_REGION', 'LI2_LINKED_EPOCH')
+RESIDENT_ONESHOT_ONE = ('attempted', 'published', 'restored', 'completed', 'retired',
+    'cpuid_patches', 'effect_started', 'effect_returned', 'last_completed_sequence',
+    'backend_prepared', 'backend_completed', 'rseq_attempts', 'rseq_retired')
+RESIDENT_ONESHOT_ZERO = ('status', 'failure_code', 'detail_abs', 'detail_negative',
+    'refused', 'syscall_patches', 'rdtsc_patches', 'active_phase', 'resetting',
+    'last_refused_sequence', 'rseq_phase', 'rseq_error')
+
+
+def _resident_rows(stderr):
+    check(stderr)  # Retain the complete original typed/ordered terminal gate.
+    decode = prior.maps_view.pair.pair_reports.rseq.decode
+    return {name.decode(): decode(body) for name, _, body in
+            (line.partition(b' ') for line in stderr[:-1].split(b'\n'))}
+
+
+def _resident_signal_join(rows, ingress):
+    need(type(ingress) is tuple and len(ingress) == 6 and
+         all(type(n) is int and 0 <= n < 1 << 64 for n in ingress),
+         'complete typed D3 ingress vector')
+    need(sum(ingress[1:]) == ingress[0] and ingress[1] >= 1 and ingress[2] >= 2 and
+         ingress[3:] == (1, 0, 0), 'exact D3 partition with one owned SIGILL')
+    one = rows['LI2_ONESHOT']; loader = rows['LI2_LOADER']
+    need(all(type(one[k]) is int and one[k] == 1 for k in RESIDENT_ONESHOT_ONE),
+         'exact one completed and retired CPUID one-shot lifecycle')
+    need(all(type(one[k]) is int and one[k] == 0 for k in RESIDENT_ONESHOT_ZERO),
+         'no other one-shot kind, refusal, error or pending phase')
+    need(loader['source_patches'] == 1 and one['retained_records'] > 0 and
+         one['generations'] == loader['generations'] == one['retained_records'] + 2,
+         'same single restored source patch and two real generation advances')
+    expected = (ingress[1] + 1, ingress[2] + 1) + ingress[3:]
+    for name in RESIDENT_LEDGERS:
+        row = rows[name]
+        need(row['initialized'] == 1 and row['events'] == ingress[0] + 2 and
+             row['signals'] == list(expected), 'exact startup-offset signal ledger: ' + name)
+    return dict(ingress=list(ingress), startup_offset=[2, 1, 1, 0, 0, 0],
+                ledgers={name: dict(events=rows[name]['events'], signals=rows[name]['signals'])
+                         for name in RESIDENT_LEDGERS},
+                runtime_authenticated_cpuid_sigill=1, completed_one_shot_sequence=1,
+                raw_sigill_frame_retained=False, qualification_credit=False, performance_credit=False)
+
+
+def resident_signals(stderr, ingress):
+    """Cross-join the actual owner ingress and complete same-process reports.
+
+    The successful one-shot path authenticates its actual #UD landing in the
+    runtime. This join does not claim a retained landing PC/frame/global index.
+    The owner reader separately requires adjacent entry/terminal/next events,
+    so the sole SIGILL cannot be inside that exact focal interval.
+    """
+    return dict(_resident_signal_join(_resident_rows(stderr), ingress),
+                stderr_sha256=hashlib.sha256(stderr).hexdigest())
+
+
+def resident_signal_controls(stderr, ingress):
+    """Additional supplied-data controls; the original terminal controls remain whole."""
+    import copy
+    rows = _resident_rows(stderr); original = resident_signals(stderr, ingress); refused = []
+
+    def reject(name, changed_rows, changed_ingress, reason):
+        need(changed_rows != rows or changed_ingress != ingress or
+             type(changed_ingress) is not type(ingress), 'changed signal-join stimulus: ' + name)
+        try:
+            _resident_signal_join(changed_rows, changed_ingress)
+        except ValueError as error:
+            need(str(error) == reason, 'exact causal signal-join refusal: ' + name)
+            refused.append(name)
+        else:
+            raise ValueError('accepted changed resident signal join: ' + name)
+        changed_stream = b''.join(key.encode() + b' ' + json.dumps(value, separators=(',', ':')).encode() + b'\n'
+                                  for key, value in changed_rows.items())
+        try:
+            resident_signals(changed_stream, changed_ingress)
+        except ValueError:
+            pass
+        else:
+            raise ValueError('accepted changed whole terminal/owner signal join: ' + name)
+
+    typed = 'complete typed D3 ingress vector'
+    partition = 'exact D3 partition with one owned SIGILL'
+    for name, value in (('short', ingress[:-1]), ('long', ingress + (0,)), ('list', list(ingress)),
+                        ('bool', (True,) + ingress[1:]), ('float', (float(ingress[0]),) + ingress[1:]),
+                        ('negative', (-1,) + ingress[1:]), ('overflow', (1 << 64,) + ingress[1:])):
+        reject('ingress_' + name, rows, value, typed)
+    for i in range(6):
+        value = list(ingress); value[i] ^= 1
+        reject('ingress_word_' + str(i), rows, tuple(value), partition)
+    first_ledger = 'exact startup-offset signal ledger: ' + RESIDENT_LEDGERS[0]
+    for i in range(1, 6):
+        value = list(ingress); value[0] += 1; value[i] += 1
+        reject('coordinated_ingress_category_total_' + str(i), rows, tuple(value),
+               first_ledger if i < 3 else partition)
+    value = list(ingress); value[1] -= 1; value[2] += 1
+    reject('ingress_segv_to_trace', rows, tuple(value), first_ledger)
+    for keys, reason in ((RESIDENT_ONESHOT_ONE, 'exact one completed and retired CPUID one-shot lifecycle'),
+                         (RESIDENT_ONESHOT_ZERO, 'no other one-shot kind, refusal, error or pending phase')):
+        for key in keys:
+            value = copy.deepcopy(rows); value['LI2_ONESHOT'][key] ^= 1
+            reject('oneshot_' + key, value, ingress, reason)
+    for count in (0, 2):
+        value = copy.deepcopy(rows)
+        for key in RESIDENT_ONESHOT_ONE:
+            value['LI2_ONESHOT'][key] = count
+        reject('coherent_oneshot_count_' + str(count), value, ingress,
+               'exact one completed and retired CPUID one-shot lifecycle')
+    for row, key in (('LI2_LOADER', 'source_patches'), ('LI2_LOADER', 'generations'),
+                     ('LI2_ONESHOT', 'generations'), ('LI2_ONESHOT', 'retained_records')):
+        value = copy.deepcopy(rows); value[row][key] += 1
+        reject(row + '_' + key, value, ingress,
+               'same single restored source patch and two real generation advances')
+    for name in RESIDENT_LEDGERS:
+        reason = 'exact startup-offset signal ledger: ' + name
+        for key in ('initialized', 'events'):
+            value = copy.deepcopy(rows); value[name][key] ^= 1
+            reject(name + '_' + key, value, ingress, reason)
+        for i in range(5):
+            value = copy.deepcopy(rows); value[name]['signals'][i] ^= 1
+            reject(name + '_signal_' + str(i), value, ingress, reason)
+            value = copy.deepcopy(rows); value[name]['signals'][i] += 1; value[name]['events'] += 1
+            reject(name + '_coordinated_category_total_' + str(i), value, ingress, reason)
+    value = copy.deepcopy(rows)
+    for name in RESIDENT_LEDGERS:
+        value[name]['signals'][0] += 1; value[name]['events'] += 1
+    reject('all_three_ledgers_coordinated_category_total', value, ingress, first_ledger)
+    need(len(refused) == len(set(refused)) == 87 and resident_signals(stderr, ingress) == original,
+         'all87 additive causal signal-join controls and unchanged original')
+    return dict(count=87, refusals=refused, stderr_sha256=original['stderr_sha256'],
+                ingress=list(ingress), native_operations=0)

@@ -337,7 +337,7 @@ class Check(donor.Check):
         need(h[12]%PAGE==0 and canonical(h[12],524288)and h[13:16]==(524288,1,0)and h[16]&(3|0x400|0x800)==1 and h[17:19]==(0,1),'actual altstack and owned regular sink flags')
         need(h[19:22]==(self.head,0x41420e,self.app['capture_pc'])and h[22]==self.app['rsp']and h[23]==self.app['capture_pointer']and h[24:28]==(1,1,1,1)and h[28]>0 and h[29]==h[28]+1 and h[30]==h[29]+1 and h[31]in(0,1)and h[32]>0,'actual one-entry/one-terminal/next-TRACE chronology')
         need(h[33:38]==(0,0,0,0,1)and h[38:41]==(h[16],0,1),'whole successful finish without incomplete or relabelled failure')
-        ingress=q(self.f(self.b,T,'ingress'));need(sum(ingress[1:])==ingress[0]>=h[30]and ingress[1]>=1 and ingress[2]>=2 and not any(ingress[3:]),'actual complete signal partition and finite focal chronology')
+        ingress=q(self.f(self.b,T,'ingress'));need(sum(ingress[1:])==ingress[0]>=h[30]and ingress[1]>=1 and ingress[2]>=2 and ingress[3:]==(1,0,0),'actual complete signal partition and finite focal chronology')
         need(q(self.f(self.b,T,'bootstrap'))==(self.pid,)*5+(0,0,24,1),'actual trusted clear-TID reset and robust-list startup observations')
         session=self.f(self.b,T,'session');self.eq(session,'li2_step_session',pid=self.pid,tid=self.pid,sync_register=0,application_mask=MASK,initialized=1,self_test_complete=1)
         need(self.i(session,'li2_step_session','sync_query')&96==96,'real private expedited sync availability')

@@ -357,6 +357,11 @@ def check(root,here,r,path,old,pin,capture,closed):
     image.update(bridge=bridge.read_bytes(),persistent_binding=binding,headers=headers,maps_mode=maps_mode)
     owner_args=(record,layout,image,application,grow['pid'],cpu,grow['exit'])
     actual=owner.read(*owner_args);owner_controls=owner.controls(*owner_args)
+    signal_join=terminal_reports.resident_signals(stderr,actual['signal_counts'])
+    signal_controls=terminal_reports.resident_signal_controls(stderr,actual['signal_counts'])
+    need(signal_controls['count']==87 and len(signal_controls['refusals'])==len(set(signal_controls['refusals']))==87 and
+         signal_controls['stderr_sha256']==H(stderr)and signal_controls['ingress']==list(actual['signal_counts'])and
+         signal_controls['native_operations']==0,'all87 additional terminal-to-owner signal controls')
     for key in('sink_initial','sink_terminal'):
         offset=layout['types']['r3o_wire']['fields'][key]['offset']
         for name,value in(('st_dev',st.st_dev),('st_ino',st.st_ino)):
@@ -376,7 +381,7 @@ def check(root,here,r,path,old,pin,capture,closed):
     # Complete source/state inventories remain external evidence; zero new processes.
     r['semantic']=dict(status='observed_unqualified',pair=pair,application_relation=relation,
         native_app_controls=native_controls,gated_app_controls=app_controls,owner_controls=owner_controls,pair_controls=pair_controls,
-        terminal=terminal,terminal_controls=terminal_controls,source_cost=actual['source_cost'],
+        terminal=terminal,terminal_controls=terminal_controls,signal_join=signal_join,signal_controls=signal_controls,source_cost=actual['source_cost'],
         source_before=actual['source_before'],source_epoch=actual['source_epoch'],source_pages=actual['source_pages'],
         app_raw=fact(gp.parent/grow['captures']['stdout']['file']),owner_raw=fact(record_path),
         layout=dict(bytes=len(layout_bytes),sha256=H(layout_bytes)),maps_mode=maps_mode,
