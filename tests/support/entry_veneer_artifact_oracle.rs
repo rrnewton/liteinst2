@@ -1,8 +1,7 @@
 //! Finite short-T3 artifact entry veneer, with independent original witnesses.
 //! All mappings and every authored entry are required; no skip, retry or fallback.
 
-#[path = "isolated_native_test.rs"]
-mod isolated_native_test;
+use super::isolated_native_test;
 
 use super::oracle::{
     EntryVeneerSpec, EntryVeneerWitness, HookEvent, HookEventLog, HookExpectation, Mapping,
@@ -738,7 +737,7 @@ fn witness_controls() {
     bytes[3957..].copy_from_slice(&exact_e9(spec.entry, spec.storage));
     let map = || TraceMap {
         boundaries: vec![(spec.logical_pc, spec.storage + 20)],
-        generated_ranges: vec![spec.storage..spec.entry + 5],
+        generated_ranges: std::iter::once(spec.storage..spec.entry + 5).collect(),
         ..TraceMap::default()
     };
     spec.validate_image(&bytes, &map()).unwrap();

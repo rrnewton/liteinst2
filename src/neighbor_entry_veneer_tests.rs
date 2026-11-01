@@ -387,11 +387,11 @@ fn entry_veneer_pairs_keep_both_source_orders_full_envelope_and_one_slot() {
                 &bytes[f.victim + 6..f.victim + 10],
                 &f.code[f.victim + 6..f.victim + 10]
             );
-            for i in 0..bytes.len() {
+            for (i, &byte) in bytes.iter().enumerate() {
                 if !(f.selected..f.selected + 2).contains(&i)
                     && !(f.victim..f.victim + 10).contains(&i)
                 {
-                    assert_eq!(bytes[i], f.code[i]);
+                    assert_eq!(byte, f.code[i]);
                 }
             }
             let allocations: Vec<_> = plan

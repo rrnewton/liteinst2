@@ -1,8 +1,7 @@
 //! Finite artifact-only JRCXZ state evidence, through the real linked T3 plan.
 //! Uses unchanged full-state capture/comparison and bounded process ownership.
 
-#[path = "isolated_native_test.rs"]
-mod isolated_native_test;
+use super::isolated_native_test;
 
 use super::oracle::{
     HookEvent, HookEventLog, HookExpectation, Mapping, NativeOracle, SourceRelay, TraceMap,

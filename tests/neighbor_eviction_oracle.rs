@@ -7,6 +7,8 @@
 //! Additional branch, RIP-relative, MOFFS-fault and LOOP families use separate
 //! independent literal grammars and native fallthrough witnesses.
 
+#[path = "support/isolated_native_test.rs"]
+mod isolated_native_test;
 #[path = "support/quiescent_oracle.rs"]
 mod oracle;
 
