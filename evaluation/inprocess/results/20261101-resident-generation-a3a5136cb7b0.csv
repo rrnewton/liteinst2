@@ -1,0 +1,6 @@
+case,audit_status,native_exit,gated_exit,native_duration_ns,gated_duration_ns,paired_finite_completions,publications,protected_full_frames,interior_signals,failure_code,failure_detail
+baseline,observed_unqualified,0,0,139410154,3331092728,1,3,3,0,0,0
+getters,observed_unqualified,0,0,259130008,7108121558,2,3,6,0,0,0
+equal-protection,observed_failed_prefix_unqualified,0,125,141916424,5027523242,,,,,4902,15
+mapping-aba,observed_failed_prefix_unqualified,0,125,137859532,5154647506,,,,,4902,15
+failed-getter,observed_failed_prefix_unqualified,0,125,141324450,5072270086,,,,,4902,15

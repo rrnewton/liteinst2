@@ -13,6 +13,11 @@ enum r3_error { R3_STATE=4900,R3_FRAME,R3_SOURCE,R3_PUBLICATION,R3_EVENT,R3_RESU
 struct r3_header {
     uint64_t version,bytes,generation,publication_serial,index,source_epoch;
     uintptr_t root,owner;
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+    /* Version 2 binds a stable content identity separately from the exact
+       execution epoch at publication. No old version-1 wire is reused. */
+    struct li2_rsl_content_ref content;
+#endif
     struct li2_pg_layout layout;
     unsigned char archive[32],policy[32];
 };
@@ -47,6 +52,9 @@ struct li2_r3_owner {
     struct li2_fetch_ref held;
     struct li2_span_fetch_observation fetch;
     struct li2_rsl_ref source;
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+    struct li2_rsl_content_ref content;
+#endif
     unsigned source_pages;
     uint64_t flags,gpr_written,flags_written;
     struct le_frame before,after;
@@ -191,7 +199,14 @@ static int r3_bytes(unsigned index) {
        c->identity.fd<0 || c->identity.code_live!=1 || c->identity.proof_live!=1 ||
        c->identity.code!=c->layout.generated[0] || c->identity.proof!=c->proof ||
        h->version!=LI2_R3_VERSION || h->bytes!=sizeof c->mirror || h->generation!=c->generation ||
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+       h->publication_serial>r3.serial ||
+       !r3.content.owner || !r3.content.generation || !r3.content.publication_epoch ||
+       !equal(&h->content,&r3.content,sizeof r3.content) ||
+       h->source_epoch!=r3.content.publication_epoch ||
+#else
        h->publication_serial>r3.serial || h->source_epoch!=r3.source.epoch ||
+#endif
        h->index!=index || h->root!=c->root || h->owner!=(uintptr_t)&r3 ||
        !equal(&h->layout,&c->layout,sizeof c->layout) || !equal(h->archive,pe_archive,32) ||
        !equal(h->policy,pe_policy,32) || !equal((const void *)c->proof,&c->mirror,sizeof c->mirror))return R3_PUBLICATION;
@@ -253,5 +268,9 @@ int li2_r3_owner_quiet(void) {
 #include "resident_three_storage.inc"
 #include "resident_three_controller.inc"
 #ifdef LI2_RESIDENT_THREE_CAPTURE
+#ifdef LI2_RESIDENT_GENERATION_CAPTURE
+#include "resident_generation_observe.inc"
+#else
 #include "resident_three_observe.inc"
+#endif
 #endif

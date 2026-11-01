@@ -55,12 +55,24 @@ static int pda_direct_exit_value(const struct pda_completion *c) {
             if(a->target[arm]>=at && a->target[arm]-at<PAGE)++in_pair;
         }
         if(in_pair>1)return 0;
+#ifdef LI2_PERSISTENT_BLOCK_RUNTIME
+        /* PB terminates at its first direct branch. Every arm is an exact
+           directory exit, including in-pair/backward targets. This separate
+           policy does not change the old outside-pair definition. */
+        external|=1U<<arm;
+#else
         if(!in_pair)external|=1U<<arm;
+#endif
         unsigned k=h->successors[arm];
         if(k>=e->heads && (k<LI2_PG_HEADS || k-LI2_PG_HEADS>=e->exits))return 0;
         if((a->external_mask&(1U<<arm)) && k<LI2_PG_HEADS)return 0;
     }
     if(external!=a->external_mask || (external==3 && h->successors[0]==h->successors[1]))return 0;
+#ifdef LI2_PERSISTENT_BLOCK_RUNTIME
+    if(e->head+1!=e->heads || e->exits!=h->successor_count || e->index!=e->arm ||
+       h->successors[0]!=LI2_PG_HEADS ||
+       (h->successor_count==2 && h->successors[1]!=LI2_PG_HEADS+1U))return 0;
+#endif
     unsigned n=0;
     for(;n<15;n++) {
         uintptr_t pc=d->decoded.pc+n;unsigned found=0;
@@ -549,7 +561,11 @@ static int pda_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
     if(exit< -1)return PE_PUBLICATION;
     unsigned member=exit>=0?0:LI2_PGD_MEMBERS;
     for(unsigned i=1;i<w->view.count;i++) {
+#ifdef LI2_PERSISTENT_BLOCK_RUNTIME
+        int candidate=li2_pb_compact_exit(w->view.member[i].plan,pc,(uint64_t)g[REG_EFL]);
+#else
         int candidate=li2_pg_compact_exit(w->view.member[i].plan,pc,(uint64_t)g[REG_EFL]);
+#endif
         if(candidate< -1)return PE_PUBLICATION;
         if(candidate>=0) {
             if(member!=LI2_PGD_MEMBERS)return PE_PUBLICATION;
@@ -596,8 +612,13 @@ static int pda_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
         return PE_EVENT;
     }
 #endif
+#ifdef LI2_PERSISTENT_BLOCK_RUNTIME
+    pe.recovery_result=li2_pb_compact_recover(m->plan,pc,raw,(uint64_t)g[REG_EFL],
+        (const uint64_t *)m->identity.layout.spill,&pe.recovery_scratch.direct,&pe.recovered);
+#else
     pe.recovery_result=li2_pg_compact_recover(m->plan,pc,raw,(uint64_t)g[REG_EFL],
         (const uint64_t *)m->identity.layout.spill,&pe.recovery_scratch,&pe.recovered);
+#endif
     if(!pe.recovery_result && pe.recovered.complete) {
         pe.recovery_complete=1;
         pe.guest_data_fault=sig==SIGSEGV && si->si_signo==SIGSEGV && !si->si_errno &&
@@ -662,7 +683,11 @@ static void pda_complete(void) {
     const struct li2_pg_compact *closed=w->view.member[w->exit_member].plan;
     const uintptr_t exit_pc=(uintptr_t)pe.after.frame.greg[REG_RIP];
     const uint64_t exit_flags=(uint64_t)pe.after.frame.greg[REG_EFL];
+#ifdef LI2_PERSISTENT_BLOCK_RUNTIME
+    pe_need(li2_pb_compact_exit(closed,exit_pc,exit_flags)==(int)pe.exit_index,PE_RELEASE,116);
+#else
     pe_need(li2_pg_compact_exit(closed,exit_pc,exit_flags)==(int)pe.exit_index,PE_RELEASE,116);
+#endif
     for(unsigned i=0;i<closed->heads;i++)if(closed->head[i].kind==LI2_PG_DIRECT &&
         closed->original[i].decoded.pc==exit_pc) {
         pe_need(!c->direct_exit.complete,PE_RELEASE,117);

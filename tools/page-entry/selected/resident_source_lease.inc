@@ -31,6 +31,9 @@ struct li2_rsl_owner {
     struct rsl_page page[LI2_RSL_PAGES];
 #ifdef LI2_RESIDENT_THREE
     struct li2_rsl_resident_progress resident;
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+    struct li2_rsl_generation_progress content;
+#endif
 #endif
 };
 static union {
@@ -114,6 +117,10 @@ static int rsl_storage_readonly(void) {
     }
     return 1;
 }
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+static int rsl_resident_token(const struct li2_r3_token *);
+static int rsl_generation_bound(const struct li2_r3_token *);
+#endif
 static int rsl_authenticate(unsigned refresh) {
     if(refresh>1 || !rsl.owner.p.initialized || !rsl.owner.p.pages ||
        rsl.owner.p.pages>LI2_RSL_PAGES || !rsl_identity())return LI2_FETCH_STATE;
@@ -142,6 +149,13 @@ static int rsl_authenticate(unsigned refresh) {
            (!refresh && !fetch_owned_equal(p,&saved->original)))return LI2_FETCH_STALE;
         struct li2_fetch_page identity=rsl_describe(p);
         if(!refresh && !span_source_page_equal(&saved->identity,&identity))return LI2_FETCH_STALE;
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+        /* A live content certificate never accepts a silently renewed page
+           generation, even when the old execution lease permits refresh. */
+        if(rsl.owner.content.state==LI2_RSG_LIVE &&
+           (!fetch_owned_equal(p,&saved->original) ||
+            !span_source_page_equal(&saved->identity,&identity)))return LI2_FETCH_STALE;
+#endif
         if(refresh) {saved->original=*p;saved->identity=identity;}
     }
     for(unsigned i=0;i<rsl.owner.p.pages;i++) {
@@ -184,6 +198,9 @@ static int rsl_token(const struct li2_pg_token *t) {
         li2_pg_owner_phase(t)!=0;
 }
 int li2_rsl_bind(const struct li2_pg_token *t) {
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+    if(rsl.owner.content.state==LI2_RSG_SUSPENDED)return LI2_FETCH_BUSY;
+#endif
     if(!t || li2_pg_owner_phase(t)!=LI2_PG_HELD || !rsl.owner.p.initialized ||
        rsl.owner.p.bindings==UINT64_MAX)return LI2_FETCH_STATE;
     const struct li2_pg_sources *source=li2_pg_source_view(t);
@@ -323,6 +340,9 @@ static int rsl_effect(long n,const long a[6]) {
     default:return LI2_FETCH_ARGUMENT;
     }
 }
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+#include "resident_source_generation.inc"
+#endif
 int li2_rsl_before_effect(long number,const long args[6]) {
     if(!args || !rsl.owner.p.initialized || !li2_rsl_owner_quiet() ||
        li2_lifecycle_fetch_interlock() || !rsl_identity() || rsl.owner.p.epoch==UINT64_MAX ||
@@ -333,8 +353,21 @@ int li2_rsl_before_effect(long number,const long args[6]) {
     rsl_resident_clear();
 #endif
     ++rsl.owner.p.epoch;++rsl.owner.p.invalidations;
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+    int content_error=rsl_generation_before(number,args);
+    if(content_error)return rsl_finish(content_error);
+#endif
     int error=rsl_finish(0);if(error)return error;
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+    error=rsl_effect(number,args);
+    if(error) {
+        int dirty=li2_rsl_generation_not_native();
+        return dirty?dirty:error;
+    }
+    return 0;
+#else
     return rsl_effect(number,args);
+#endif
 }
 const struct li2_rsl_progress *li2_rsl_progress(void) {return &rsl.owner.p;}
 #ifdef LI2_RESIDENT_THREE

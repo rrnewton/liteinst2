@@ -365,6 +365,12 @@ int li2_lifecycle_oneshot_transfer(void *context,const struct li2_oneshot_plan *
     s->released_fetch=*li2_lifecycle_fetch_progress();
     if(error || s->released_fetch.held)return os_error(s,LI2_ONESHOT_RELEASE,error);
     v->old_borrow_live=0;os_verified(&v->old_release);
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+    /* No restore exemption: invalidate after the real old borrow release,
+       before this owner can acquire or advance a writable source generation. */
+    error=li2_rsl_generation_source_mutation();
+    if(error)return os_error(s,LI2_ONESHOT_BIND,error);
+#endif
     os_start(&v->acquire);
     if(fetch.progress.held || oneshot_held || os_identity(s,0)) {
         error=s->progress.first_error?(int)s->progress.first_error:LI2_ONESHOT_REENTRY;
