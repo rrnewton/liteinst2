@@ -14,6 +14,7 @@ pub(super) struct OrderedPreparation {
     pub(super) helper_frames: Vec<(usize, u64, usize, usize, HelperFrames, HelperFrames)>,
     pub(super) clock_specs: Vec<(u64, usize, usize, backedge_clock::GateSpec)>,
     pub(super) precontext_specs: Vec<(usize, usize, usize, precontext::GateSpec)>,
+    pub(super) early_control_specs: Vec<(usize, usize, usize, early_control::GateSpec)>,
 }
 
 /// Opaque owned source/fragment preparation. Consuming it permits one actual
@@ -92,6 +93,7 @@ impl PreparedArtifact {
 fn prepared_bound(preparation: &OrderedPreparation) -> Result<usize, TrampolineError> {
     if !preparation.clock_specs.is_empty()
         || !preparation.precontext_specs.is_empty()
+        || !preparation.early_control_specs.is_empty()
         || !preparation.helper_frames.is_empty()
     {
         return Err(artifact_error("unaccounted prepared artifact extension"));

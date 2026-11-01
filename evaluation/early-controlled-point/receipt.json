@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "status": "PASS",
+  "claim": 4,
+  "complete_a4": false,
+  "adds": "Early optional point-observer gate, bounded live planner and profiler selection, with original state/race/contract requirements retained.",
+  "final_tested_revision": "c905387ff48720a1e0230d4b2e966edea167f8f8",
+  "focused_tested_revision": "0a9d29ed3cd13e0de7ff5112f0844d2bbbaeed69",
+  "hardware": {
+    "label": "AMD EPYC Zen 5 dev host",
+    "architecture": "x86_64",
+    "logical_cpus": 316,
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor"
+  },
+  "data": {
+    "focused.json": {
+      "bytes": 17213,
+      "sha256": "3d3e3004962b5849d2e3098cbcc9ccadd8300e051dcca9c614708c2b4225cc27"
+    },
+    "validation.json": {
+      "bytes": 19491,
+      "sha256": "4ecc50d239d8649ceef72fcded1a04997a25b2e3b05f0da083c1901c0f341a8a"
+    }
+  },
+  "source_reviews": {
+    "formatted": {
+      "bytes": 10381,
+      "sha256": "d09ac45945a6e4f218889835a305062ef40cc2368b6eae1659c97f20af6191ae"
+    },
+    "compile_fix": {
+      "bytes": 2203,
+      "sha256": "0875ea6b7af25b204694f8e314c90918e953fc027c971fda8722e94c2c3f603e"
+    },
+    "encoding_fix": {
+      "bytes": 2111,
+      "sha256": "1c14bef46bf5c7cbe27f4427896c2896f413069f77e96f49c404ed3b1df7b451"
+    },
+    "focused": {
+      "bytes": 14448,
+      "sha256": "4e3195516a6433d0ef405e03c2986c1f94a819c80705bf836e3c0c14204d00be"
+    },
+    "private_storage_carry": {
+      "bytes": 3053,
+      "sha256": "e9012c04d1456ee2e45388fb667e3b62f7c4774061c658216516829ca332b34b"
+    }
+  },
+  "limits": "Finite Linux x86-64 Legacy128 optional point observation, eventual control visibility, no callback drainage, no performance result, no complete topology or A4 release claim.",
+  "publication": "Final publication adds only reviewed documentation/data; raw logs and captures remain private under ignored/."
+}

@@ -1,0 +1,619 @@
+{
+  "schema": 1,
+  "status": "PASS",
+  "hardware": {
+    "label": "AMD EPYC Zen 5 dev host",
+    "architecture": "x86_64",
+    "logical_cpus": 316,
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor"
+  },
+  "scope": "Exact-source correctness; command durations are operational wall times, not performance results.",
+  "recipe": {
+    "path": "evaluation/short-neighbor-parallel/validate.py",
+    "bytes": 3757,
+    "sha256": "968956df64edd3f5754a0adbd4b900ac68535d188be01af0628eff94d2ed6d10"
+  },
+  "helper": {
+    "path": "evaluation/admission/processes.py",
+    "bytes": 15760,
+    "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+  },
+  "environment": {
+    "HOME": "{EXISTING_HOME}",
+    "PATH": "{STABLE_TOOLCHAIN}/bin:/usr/bin:/bin",
+    "LANG": "C",
+    "LC_ALL": "C",
+    "CARGO_BUILD_JOBS": "12",
+    "RUST_TEST_THREADS": "12",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "{CHECKOUT}/target"
+  },
+  "commands": [
+    [
+      "fmt",
+      [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      180
+    ],
+    [
+      "clippy",
+      [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      180
+    ],
+    [
+      "check",
+      [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      180
+    ],
+    [
+      "workspace",
+      [
+        "cargo",
+        "test",
+        "-j",
+        "12",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      900
+    ],
+    [
+      "serial-launch",
+      [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      180
+    ]
+  ],
+  "capture_limit": 8388608,
+  "reproduction": "cpuset-alloc run --cores 12 --tag li2core-early-point-validation-vN -- env -i HOME=$HOME PATH={STABLE_TOOLCHAIN}/bin:/usr/bin:/bin LANG=C LC_ALL=C CARGO_BUILD_JOBS=12 RUST_TEST_THREADS=12 CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_NET_OFFLINE=true CARGO_TARGET_DIR={CHECKOUT}/target python3 -I -B evaluation/short-neighbor-parallel/validate.py --revision REVISION --output ignored/a4/early-point-validation-vN",
+  "authority": "Root-reported allocator/environment launch. Validator records actual affinity/commands/load; no standalone live allocator witness was collected.",
+  "cohorts": [
+    {
+      "version": 1,
+      "revision": "0a9d29ed3cd13e0de7ff5112f0844d2bbbaeed69",
+      "source_tree": "9dac4d17654490e60c49f4c26421b4422885a022",
+      "status": "FAIL",
+      "explanation": "Strict Clippy refused the enlarged existing PunPlan enum. Formatting, checking, workspace and serial launch passed.",
+      "closed": {
+        "bytes": 5337,
+        "sha256": "c27c59885f2b72d6aa116e05c1ba9b7539bfd2a6ed09d9cd38428c96d76b4e57"
+      },
+      "cpu_affinity": [
+        1,
+        3,
+        6,
+        10,
+        13,
+        17,
+        20,
+        25,
+        30,
+        33,
+        43,
+        49
+      ],
+      "jobs": 12,
+      "test_threads": 12,
+      "serial_test_threads": 1,
+      "results": [
+        {
+          "name": "fmt",
+          "command": [
+            "cargo",
+            "fmt",
+            "--check"
+          ],
+          "result": {
+            "start_utc": "2026-11-01T13:13:34.765125+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 10.629404862876981,
+            "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "29.88",
+            "51.67",
+            "51.27"
+          ],
+          "load_after": [
+            "30.12",
+            "51.01",
+            "51.06"
+          ]
+        },
+        {
+          "name": "clippy",
+          "command": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "result": {
+            "start_utc": "2026-11-01T13:13:45.396225+00:00",
+            "exit_code": 101,
+            "termination": null,
+            "seconds": 11.007365576922894,
+            "private_log_sha256": "1db06e7c926268cce9631ba3bef9380f1113486b0dde58d2b74baaa2baff59b9",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "30.12",
+            "51.01",
+            "51.06"
+          ],
+          "load_after": [
+            "30.79",
+            "50.46",
+            "50.88"
+          ]
+        },
+        {
+          "name": "check",
+          "command": [
+            "cargo",
+            "check",
+            "--workspace",
+            "--all-features",
+            "--all-targets"
+          ],
+          "result": {
+            "start_utc": "2026-11-01T13:13:56.404306+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 23.5403990438208,
+            "private_log_sha256": "5d17d304e6ea10f6e177b333c946746d2d3639b55fe01d549dcd65eabc012736",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "30.79",
+            "50.46",
+            "50.88"
+          ],
+          "load_after": [
+            "47.48",
+            "52.63",
+            "51.58"
+          ]
+        },
+        {
+          "name": "workspace",
+          "command": [
+            "cargo",
+            "test",
+            "-j",
+            "12",
+            "--workspace",
+            "--no-fail-fast"
+          ],
+          "result": {
+            "start_utc": "2026-11-01T13:14:19.945376+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 838.4081565269735,
+            "private_log_sha256": "a09f4274c193f784a9a4e2644c1eea2821e07b3831d78de08501e477de7a5c2d",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "47.48",
+            "52.63",
+            "51.58"
+          ],
+          "load_after": [
+            "42.67",
+            "49.23",
+            "48.83"
+          ]
+        },
+        {
+          "name": "serial-launch",
+          "command": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst-launch",
+            "--tests",
+            "--",
+            "--test-threads=1",
+            "--nocapture"
+          ],
+          "result": {
+            "start_utc": "2026-11-01T13:28:18.358393+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 125.809797862079,
+            "private_log_sha256": "11a149870a1d72cd256105462e427038d8be0bb9f3fa6408ad52f8e2be149698",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "42.67",
+            "49.23",
+            "48.83"
+          ],
+          "load_after": [
+            "38.67",
+            "45.32",
+            "47.43"
+          ]
+        }
+      ],
+      "total_command_seconds": 1009.3951238726731,
+      "census": {
+        "workspace_all": {
+          "summary_lines": 130,
+          "passed": 4513,
+          "failed": 0,
+          "ignored": 39,
+          "measured": 0,
+          "filtered": 389
+        },
+        "workspace_nested": {
+          "passed": 11,
+          "failed": 0,
+          "ignored": 0,
+          "measured": 0,
+          "filtered": 389
+        },
+        "workspace_top_level": {
+          "passed": 4502,
+          "failed": 0,
+          "ignored": 39,
+          "measured": 0,
+          "filtered": 0
+        },
+        "serial_launch": {
+          "summary_lines": 27,
+          "passed": 1039,
+          "failed": 0,
+          "ignored": 0,
+          "measured": 0,
+          "filtered": 0
+        }
+      },
+      "short_neighbor_passed": 21,
+      "critical_regression_passed": 27
+    },
+    {
+      "version": 2,
+      "revision": "c905387ff48720a1e0230d4b2e966edea167f8f8",
+      "source_tree": "34e35790e08c50c776ed05d2dd171ef4a1a87442",
+      "status": "PASS",
+      "explanation": "Two finalized private arrays use boxed slices to recover plan space; public enum, lint and tests are unchanged.",
+      "closed": {
+        "bytes": 5343,
+        "sha256": "ae6cb6b89c21a9320412c77268fcd69da3fc42d8b3319ff1ee70f38546b7560e"
+      },
+      "cpu_affinity": [
+        6,
+        16,
+        17,
+        33,
+        34,
+        44,
+        54,
+        64,
+        66,
+        72,
+        83,
+        85
+      ],
+      "jobs": 12,
+      "test_threads": 12,
+      "serial_test_threads": 1,
+      "results": [
+        {
+          "name": "fmt",
+          "command": [
+            "cargo",
+            "fmt",
+            "--check"
+          ],
+          "result": {
+            "start_utc": "2026-11-01T13:32:15.204529+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 10.607996609061956,
+            "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "46.23",
+            "45.41",
+            "47.18"
+          ],
+          "load_after": [
+            "45.08",
+            "45.18",
+            "47.09"
+          ]
+        },
+        {
+          "name": "clippy",
+          "command": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "result": {
+            "start_utc": "2026-11-01T13:32:25.813183+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 0.1311088011134416,
+            "private_log_sha256": "da617cec9cb409cc7d90040e129ad90b46ac0d3bfc0d87a5184fe72f43403805",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "45.08",
+            "45.18",
+            "47.09"
+          ],
+          "load_after": [
+            "45.08",
+            "45.18",
+            "47.09"
+          ]
+        },
+        {
+          "name": "check",
+          "command": [
+            "cargo",
+            "check",
+            "--workspace",
+            "--all-features",
+            "--all-targets"
+          ],
+          "result": {
+            "start_utc": "2026-11-01T13:32:25.945030+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 22.697580323088914,
+            "private_log_sha256": "24c9bd9dccb1b4416d8f9d66d1443dcc184c6f1c29cb52ac2029c9ccf7765072",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "45.08",
+            "45.18",
+            "47.09"
+          ],
+          "load_after": [
+            "57.47",
+            "48.53",
+            "48.17"
+          ]
+        },
+        {
+          "name": "workspace",
+          "command": [
+            "cargo",
+            "test",
+            "-j",
+            "12",
+            "--workspace",
+            "--no-fail-fast"
+          ],
+          "result": {
+            "start_utc": "2026-11-01T13:32:48.643170+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 843.0700643209275,
+            "private_log_sha256": "1f9030d6149d8f74d46e21cb1b2c6578ddab6ba1cffde0773f3101c833d1fbc2",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "57.47",
+            "48.53",
+            "48.17"
+          ],
+          "load_after": [
+            "108.90",
+            "81.76",
+            "66.00"
+          ]
+        },
+        {
+          "name": "serial-launch",
+          "command": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst-launch",
+            "--tests",
+            "--",
+            "--test-threads=1",
+            "--nocapture"
+          ],
+          "result": {
+            "start_utc": "2026-11-01T13:46:51.721700+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 179.29252345394343,
+            "private_log_sha256": "6de571ff3b1579f789fff839ff4c5ffaaab13d6649c9359a963b183d6e779143",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_before": [
+            "108.90",
+            "81.76",
+            "66.00"
+          ],
+          "load_after": [
+            "71.87",
+            "83.97",
+            "70.24"
+          ]
+        }
+      ],
+      "total_command_seconds": 1055.7992735081352,
+      "census": {
+        "workspace_all": {
+          "summary_lines": 130,
+          "passed": 4513,
+          "failed": 0,
+          "ignored": 39,
+          "measured": 0,
+          "filtered": 389
+        },
+        "workspace_nested": {
+          "passed": 11,
+          "failed": 0,
+          "ignored": 0,
+          "measured": 0,
+          "filtered": 389
+        },
+        "workspace_top_level": {
+          "passed": 4502,
+          "failed": 0,
+          "ignored": 39,
+          "measured": 0,
+          "filtered": 0
+        },
+        "serial_launch": {
+          "summary_lines": 27,
+          "passed": 1039,
+          "failed": 0,
+          "ignored": 0,
+          "measured": 0,
+          "filtered": 0
+        }
+      },
+      "short_neighbor_passed": 21,
+      "critical_regression_passed": 27
+    }
+  ],
+  "separate_clippy_after_source_fix": {
+    "revision": "c905387ff48720a1e0230d4b2e966edea167f8f8",
+    "command": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--all-features",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cpus": [
+      3,
+      5,
+      17,
+      27,
+      33,
+      40,
+      48,
+      50,
+      52,
+      53,
+      63,
+      65
+    ],
+    "load_before": [
+      40.24,
+      44.65,
+      47.08
+    ],
+    "result": {
+      "start_utc": "2026-11-01T13:31:13.621336+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "seconds": 35.413607178023085,
+      "private_log_sha256": "a19060dffdd4568a8ca3593d486e1f98ecddb75d7b6e3d328f8f67b0190d3f67",
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+    },
+    "load_after": [
+      43.29,
+      44.84,
+      47.05
+    ]
+  },
+  "prior_named_regressions": {
+    "rapid::tests::live::install_rejects_each_mutated_window_byte": "workspace_PASS",
+    "trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners": "workspace_PASS",
+    "native_state_covers_every_prefixed_pun_and_original_successor": "workspace_PASS",
+    "overlapping_artifact_native::native_overlapping_artifact_selected_before_preserves_full_state": "workspace_PASS",
+    "overlapping_artifact_native::native_overlapping_artifact_selected_after_preserves_full_state": "workspace_PASS",
+    "region_benchmark::tests::repeated_region_schedule_matches_nested_loop": "workspace_PASS",
+    "linux::remote::dynamic::owner::admission::exec::tests::native::admitted_exec_native_first_user_and_retired_history_are_exact": "workspace_and_serial_PASS",
+    "linux::remote::dynamic::owner::admission::exec::tests::native::admitted_exec_native_source_reply_refusal_keeps_new_mm_held": "workspace_and_serial_PASS",
+    "linux::remote::dynamic::owner::admission::exec::tests::native::failures::admitted_exec_native_source_profile_bound_refuses_after_exec": "workspace_and_serial_PASS",
+    "stale_exec_source_reply_preserves_actual_replacement_without_commit": "workspace_and_serial_PASS",
+    "original_exec_replacement_matches_raw_replay_and_native_full_state": "workspace_and_serial_PASS",
+    "tests::parser_rejects_outside_finite_domain_before_runtime": "workspace_PASS",
+    "tests::literal_default_and_last_taken_stop_states": "workspace_PASS",
+    "tests::scalar_nested_loop_independently_checks_every_taken_state": "workspace_PASS",
+    "backedge_clock::batch::tests::batch_precharges_exact_budget_and_finish_does_not_reset_words": "workspace_PASS",
+    "backedge_clock::batch::tests::batch_requires_positive_checked_product_within_exact_acquired_bound": "workspace_PASS",
+    "backedge_clock::batch::tests::batch_cannot_follow_ordinary_calls_and_old_reentry_still_refuses": "workspace_PASS",
+    "backedge_clock::batch::tests::forgotten_batch_token_keeps_persistent_outstanding_state": "workspace_PASS",
+    "backedge_clock::batch::tests::dropped_batch_token_poison_cannot_be_completed_or_reused": "workspace_PASS",
+    "backedge_clock::batch::tests::incomplete_finish_and_abandoned_completed_batch_leave_lease_held": "workspace_PASS",
+    "backedge_clock::batch::tests::unwind_or_completion_called_from_unwind_cannot_release_batch": "workspace_PASS",
+    "backedge_clock::batch::tests::finish_during_unwind_cannot_clear_even_completed_batch": "workspace_PASS",
+    "backedge_clock::batch::tests::batch_entry_rejects_simulated_foreign_pid_and_tid_without_mutation": "workspace_PASS",
+    "backedge_clock::batch::tests::batch_finish_rechecks_simulated_foreign_owner_and_retains_latches": "workspace_PASS",
+    "region_benchmark::admission_comparison::tests::labels_bind_distinct_admission_to_one_counter_mode": "workspace_PASS",
+    "region_benchmark::admission_comparison::tests::every_order_retains_complete_qualification_and_timing_denominator": "workspace_PASS",
+    "region_benchmark::admission_comparison::tests::csv_retains_exact_labels_clocks_and_incomplete_rows": "workspace_PASS"
+  },
+  "accounting": "4502 top-level passes comprise the prior4417 plus9core,2planner,37static-binary,36race-binary and1profiler. Each new native binary includes35 inherited calibrations. Eleven separately visible child summaries comprise3old,4static,4race; none is an additional top-level test. All39 ignores are unchanged.",
+  "source_carry": "Focused native qualification used0a9d29ed. Finalc905387 changes only two private arrays and their five constructor finalizations; every assertion and emitted-instruction operation remains literal. The complete same-population workspace runs on finalc905387, including every new oracle and prior regression. The failed0a gate remainsFAIL; no lint allowance, wider bound or skipped case was introduced."
+}

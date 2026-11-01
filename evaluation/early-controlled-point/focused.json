@@ -1,0 +1,649 @@
+{
+  "schema": 1,
+  "scope": "Finite early optional point-observer correctness. No performance, drainage, arbitrary callback or complete A4 qualification.",
+  "recipe": "evaluation/early-controlled-point/reproduce.py",
+  "common": {
+    "hardware": {
+      "label": "AMD EPYC Zen 5 dev host",
+      "architecture": "x86_64",
+      "logical_cpus": 316,
+      "cpu_model": "AMD EPYC 9D85 158-Core Processor"
+    },
+    "commands": [
+      [
+        "core",
+        [
+          "cargo",
+          "test",
+          "--locked",
+          "--offline",
+          "-j",
+          "12",
+          "-p",
+          "liteinst2",
+          "--lib",
+          "early_control",
+          "--",
+          "--nocapture"
+        ],
+        180
+      ],
+      [
+        "planning",
+        [
+          "cargo",
+          "test",
+          "--locked",
+          "--offline",
+          "-j",
+          "12",
+          "-p",
+          "liteinst2",
+          "--test",
+          "early_control_planning",
+          "--",
+          "--nocapture"
+        ],
+        180
+      ],
+      [
+        "static-oracle",
+        [
+          "cargo",
+          "test",
+          "--locked",
+          "--offline",
+          "-j",
+          "12",
+          "-p",
+          "liteinst2",
+          "--test",
+          "early_control_oracle",
+          "--",
+          "--nocapture"
+        ],
+        240
+      ],
+      [
+        "race-oracle",
+        [
+          "cargo",
+          "test",
+          "--locked",
+          "--offline",
+          "-j",
+          "12",
+          "-p",
+          "liteinst2",
+          "--test",
+          "early_control_race_oracle",
+          "--",
+          "--nocapture"
+        ],
+        120
+      ],
+      [
+        "profiler",
+        [
+          "cargo",
+          "test",
+          "--locked",
+          "--offline",
+          "-j",
+          "12",
+          "-p",
+          "rapid-profiler",
+          "--lib",
+          "data_flag::tests::",
+          "--",
+          "--nocapture"
+        ],
+        180
+      ]
+    ],
+    "attempts": 1,
+    "jobs": 12,
+    "test_threads": 12,
+    "capture_limit": 2097152,
+    "toolchain": {
+      "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+      "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+    },
+    "script_sha256": "f3df0b571afa66f6300e09d28956727732ad93fdea21fc8a63d54ef5858cf559",
+    "expected_harness_passes": {
+      "core": [
+        9
+      ],
+      "planning": [
+        2
+      ],
+      "static-oracle": [
+        1,
+        1,
+        1,
+        1,
+        37
+      ],
+      "race-oracle": [
+        1,
+        1,
+        1,
+        1,
+        36
+      ],
+      "profiler": [
+        2
+      ]
+    }
+  },
+  "cohorts": [
+    {
+      "version": 1,
+      "revision": "8a505930f93a71968ba5c79265c156a981c379e5",
+      "source_tree": "6d9fd66f05ea174fc5665d88265c31441530f86b",
+      "status": "FAIL",
+      "explanation": "Core compilation refused local names colliding with assembler constants and an ambiguous integer type; no tests ran.",
+      "closed": {
+        "bytes": 3834,
+        "sha256": "2802189e8d9c2972e40bb5d3a55cf4f7d406a47c7cbf19ec009b49eadadda08d"
+      },
+      "cpu_affinity": [
+        8,
+        16,
+        17,
+        20,
+        23,
+        25,
+        30,
+        33,
+        35,
+        40,
+        55,
+        62
+      ],
+      "load_before": [
+        56.76,
+        61.65,
+        47.69
+      ],
+      "reservation": {
+        "allocator": "cpuset-alloc",
+        "caller_reported_tag": "li2core-early-point-focused-v1",
+        "cores": 12,
+        "authority": "Caller reservation; runner independently observes affinity only."
+      },
+      "results": [
+        {
+          "name": "core",
+          "result": {
+            "start_utc": "2026-11-01T13:04:41.382398+00:00",
+            "exit_code": 101,
+            "termination": null,
+            "seconds": 6.600787345087156,
+            "private_log_sha256": "c993f0a0108c7d2c849a3e936f65621b54b819bf3b4c4ca4443a1709cc11dc02",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_after": [
+            56.47,
+            61.43,
+            47.77
+          ],
+          "harness_summaries": []
+        }
+      ],
+      "error": null,
+      "undispatched": [
+        "planning",
+        "static-oracle",
+        "race-oracle",
+        "profiler"
+      ]
+    },
+    {
+      "version": 2,
+      "revision": "dd60c4deb821263773becb7e1db6d512dd98c971",
+      "source_tree": "87baac26be27af5bdb5a09ba507877c2995c842e",
+      "status": "FAIL",
+      "explanation": "Core/planner and the CFG/publication cases passed; the straight-line oracle rejected a redundant MOVZX displacement byte. Race/profiler were undispatched.",
+      "closed": {
+        "bytes": 6130,
+        "sha256": "d84be810cd7b4fd7f95e18c8dc6a2720d7c76a2556f9068bf9c1b5c007ef4695"
+      },
+      "cpu_affinity": [
+        8,
+        63,
+        64,
+        80,
+        157,
+        190,
+        191,
+        219,
+        273,
+        282,
+        284,
+        314
+      ],
+      "load_before": [
+        63.01,
+        58.67,
+        48.02
+      ],
+      "reservation": {
+        "allocator": "cpuset-alloc",
+        "caller_reported_tag": "li2core-early-point-focused-v2",
+        "cores": 12,
+        "authority": "Caller reservation; runner independently observes affinity only."
+      },
+      "results": [
+        {
+          "name": "core",
+          "result": {
+            "start_utc": "2026-11-01T13:06:35.133337+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 37.624591595027596,
+            "private_log_sha256": "13665dc822945abebc360d3fa648ac3a51917bb1d5e0dda41287710bbe9679e3",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_after": [
+            91.35,
+            66.51,
+            51.11
+          ],
+          "harness_summaries": [
+            {
+              "outcome": "ok",
+              "passed": 9,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 514
+            }
+          ]
+        },
+        {
+          "name": "planning",
+          "result": {
+            "start_utc": "2026-11-01T13:07:13.225995+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 6.2978076548315585,
+            "private_log_sha256": "884c0d3583d617c5f28c944d6f23206d841073311b4d8935e7363a5ce2aadedb",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_after": [
+            92.61,
+            67.19,
+            51.41
+          ],
+          "harness_summaries": [
+            {
+              "outcome": "ok",
+              "passed": 2,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 0
+            }
+          ]
+        },
+        {
+          "name": "static-oracle",
+          "result": {
+            "start_utc": "2026-11-01T13:07:19.870130+00:00",
+            "exit_code": 101,
+            "termination": null,
+            "seconds": 97.27272184402682,
+            "private_log_sha256": "525eb12d9c9d1678663de19f063ddb2b7ad6279ff6621e5801c39da7aa1e5276",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_after": [
+            88.86,
+            74.51,
+            55.73
+          ],
+          "harness_summaries": [
+            {
+              "outcome": "FAILED",
+              "passed": 0,
+              "failed": 1,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 36
+            },
+            {
+              "outcome": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 36
+            },
+            {
+              "outcome": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 36
+            },
+            {
+              "outcome": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 36
+            },
+            {
+              "outcome": "FAILED",
+              "passed": 36,
+              "failed": 1,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 0
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "undispatched": [
+        "race-oracle",
+        "profiler"
+      ]
+    },
+    {
+      "version": 3,
+      "revision": "0a9d29ed3cd13e0de7ff5112f0844d2bbbaeed69",
+      "source_tree": "9dac4d17654490e60c49f4c26421b4422885a022",
+      "status": "PASS",
+      "explanation": "The emitter now satisfies the unchanged exact three-byte load witness; all five fixed commands and all declared cases passed.",
+      "closed": {
+        "bytes": 8217,
+        "sha256": "a1dbcc08cc4498f1b008d8ff961aeaf33b63c9a58627cf5b03d123c354997269"
+      },
+      "cpu_affinity": [
+        8,
+        10,
+        40,
+        52,
+        62,
+        65,
+        93,
+        111,
+        112,
+        119,
+        120,
+        121
+      ],
+      "load_before": [
+        61.82,
+        68.89,
+        55.54
+      ],
+      "reservation": {
+        "allocator": "cpuset-alloc",
+        "caller_reported_tag": "li2core-early-point-focused-v3",
+        "cores": 12,
+        "authority": "Caller reservation; runner independently observes affinity only."
+      },
+      "results": [
+        {
+          "name": "core",
+          "result": {
+            "start_utc": "2026-11-01T13:10:31.897543+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 34.62194650899619,
+            "private_log_sha256": "8fac62c168424e362f35b15b3110d071be419972a0651c74400fa051192fca97",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_after": [
+            50.55,
+            65.32,
+            54.84
+          ],
+          "harness_summaries": [
+            {
+              "outcome": "ok",
+              "passed": 9,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 514
+            }
+          ]
+        },
+        {
+          "name": "planning",
+          "result": {
+            "start_utc": "2026-11-01T13:11:06.724657+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 5.593871919903904,
+            "private_log_sha256": "362b267dffad57094993d8eeb6e1a67eb5c64d28021cfc82875e3cd9834546e1",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_after": [
+            50.75,
+            65.12,
+            54.83
+          ],
+          "harness_summaries": [
+            {
+              "outcome": "ok",
+              "passed": 2,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 0
+            }
+          ]
+        },
+        {
+          "name": "static-oracle",
+          "result": {
+            "start_utc": "2026-11-01T13:11:12.523938+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 96.0927144519519,
+            "private_log_sha256": "428bbce1c937acb3bea6ce3d9813bc7a7591c1e1f4166f57770e047ab9718bbe",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_after": [
+            34.61,
+            55.84,
+            52.53
+          ],
+          "harness_summaries": [
+            {
+              "outcome": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 36
+            },
+            {
+              "outcome": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 36
+            },
+            {
+              "outcome": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 36
+            },
+            {
+              "outcome": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 36
+            },
+            {
+              "outcome": "ok",
+              "passed": 37,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 0
+            }
+          ]
+        },
+        {
+          "name": "race-oracle",
+          "result": {
+            "start_utc": "2026-11-01T13:12:48.804538+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 2.9604401369579136,
+            "private_log_sha256": "8b7fd94b8cd2739be98a11bffc491fdcbae546346c0cbcd4f551f59ff1a1b45f",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_after": [
+            34.24,
+            55.41,
+            52.41
+          ],
+          "harness_summaries": [
+            {
+              "outcome": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 35
+            },
+            {
+              "outcome": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 35
+            },
+            {
+              "outcome": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 35
+            },
+            {
+              "outcome": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 35
+            },
+            {
+              "outcome": "ok",
+              "passed": 36,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 0
+            }
+          ]
+        },
+        {
+          "name": "profiler",
+          "result": {
+            "start_utc": "2026-11-01T13:12:51.952612+00:00",
+            "exit_code": 0,
+            "termination": null,
+            "seconds": 8.834715232020244,
+            "private_log_sha256": "19ba960a10173afeca8dd5c6c468eb108f89963bd02d6904a31ee07e4f0eafef",
+            "cleanup_complete": true,
+            "reaped_descendants": 0,
+            "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+          },
+          "load_after": [
+            33.5,
+            54.91,
+            52.26
+          ],
+          "harness_summaries": [
+            {
+              "outcome": "ok",
+              "passed": 2,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered": 579
+            }
+          ]
+        }
+      ],
+      "error": null,
+      "undispatched": []
+    }
+  ],
+  "successful_cohort": 3,
+  "populations": {
+    "top_level_harness_passed": 86,
+    "controlled_child_passed_separately": 8,
+    "static": {
+      "cfg_comparisons": 96,
+      "cfg_events": 280,
+      "single_installed": 72,
+      "single_retired": 8,
+      "grouped_installed": 1040,
+      "grouped_retired": 16,
+      "straight_comparisons": 32,
+      "straight_events": 36,
+      "post_load_visits": 24,
+      "helper_entries": 12,
+      "verified_bypasses": 12,
+      "image_only_retention_comparisons": 8,
+      "total_trace_comparisons": 1264
+    },
+    "races": {
+      "cases": 4,
+      "original_traces": 4,
+      "candidate_traces": 8,
+      "state_boundaries": 40,
+      "post_load_release_stores": 4,
+      "enabled_callbacks": 4,
+      "case_ids": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "worker_joins": 4,
+      "process_reaps": 4
+    },
+    "profiler": {
+      "contract_tests": 2,
+      "scope": "The original and early profiles run identical reservation, force-close, rearm, K, grouping and foreign-owner assertions."
+    }
+  },
+  "interpretation": "The new point profile reuses the established static populations. Race candidates add eight separately identified traces; boundary comparisons are not counted as additional traces. Three source cohorts were required: every failed attempt and undispatched command is retained. No test, comparator, census, byte witness or resource bound was weakened."
+}

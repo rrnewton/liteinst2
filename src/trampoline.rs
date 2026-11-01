@@ -52,7 +52,7 @@ use crate::artifact_fixups::{
     Target,
 };
 use crate::artifact_fragments;
-use crate::controls::{ControlledAction, ProbeControl};
+use crate::controls::{ControlledAction, PointObservationAction, ProbeControl};
 use crate::emission::{
     ArtifactEmission, ArtifactField, ArtifactFieldEncoding, ArtifactImageMetadata,
     ArtifactRequirement,
@@ -670,6 +670,8 @@ impl HookContext {
 mod backedge_clock;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod clock_region_tests;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod early_control;
 mod original_nops;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod precontext;
@@ -782,6 +784,7 @@ pub struct TrampolineImage {
     clock_region_gates: Vec<crate::backedge_clock::ClockRegionGateLayout>,
     precontext_selector: Option<crate::precontext::PreContextSelector>,
     precontext_gates: Vec<crate::precontext::PreContextGateLayout>,
+    early_control_gates: Vec<crate::controls::EarlyControlGateLayout>,
     artifact: Option<ArtifactImageMetadata>,
 }
 
@@ -815,6 +818,9 @@ impl TrampolineImage {
     /// entire executable-code lifetime.
     /// The provided private
     /// and grouped allocators retain those references automatically.
+    /// Executing an early point image additionally requires independently
+    /// optional point callbacks; these bytes cannot authenticate hidden pairing
+    /// obligations or the caller's ordinary stack/entry/publication contract.
     pub fn bytes(&self) -> &[u8] {
         &self.bytes
     }
@@ -851,6 +857,12 @@ impl TrampolineImage {
     /// Verified optional gate/fault/slow/body addresses, never return authority.
     pub fn precontext_gates(&self) -> &[crate::precontext::PreContextGateLayout] {
         &self.precontext_gates
+    }
+
+    /// Verified early point-gate/load/helper/body addresses. Empty for old
+    /// profiles and for AfterCapture actions; no tracing or entry authority.
+    pub fn early_control_gates(&self) -> &[crate::controls::EarlyControlGateLayout] {
+        &self.early_control_gates
     }
 
     /// Returns the checked section lengths.
@@ -1195,8 +1207,11 @@ pub struct TrampolinePlan {
     controls: Vec<ControlledAction>,
     clock: Option<Box<ClockEmission>>,
     precontext_actions: Box<[crate::precontext::PreContextAction]>,
-    instructions: Vec<Instruction>,
-    source_nops: Vec<Option<Vec<u8>>>,
+    // Some selects the bounded ordinary point profile, even if all bits are
+    // false (AfterCapture). Bits correspond exactly to controls/actions.
+    point_observations: Option<Box<[bool]>>,
+    instructions: Box<[Instruction]>,
+    source_nops: Box<[Option<Vec<u8>>]>,
     logical_index: usize,
     relocated_start: usize,
     ptrace_stops: bool,
@@ -1292,8 +1307,10 @@ impl TrampolinePlan {
             controls: Vec::new(),
             clock: None,
             precontext_actions: Box::default(),
-            source_nops: original_nops::capture(scan, &[*scanned.instruction()])?,
-            instructions: vec![*scanned.instruction()],
+            point_observations: None,
+            source_nops: original_nops::capture(scan, &[*scanned.instruction()])?
+                .into_boxed_slice(),
+            instructions: vec![*scanned.instruction()].into_boxed_slice(),
             logical_index: 0,
             relocated_start: 1,
             ptrace_stops: false,
@@ -1380,8 +1397,9 @@ impl TrampolinePlan {
             controls: Vec::new(),
             clock: None,
             precontext_actions: Box::default(),
-            source_nops: original_nops::capture(scan, &instructions)?,
-            instructions,
+            point_observations: None,
+            source_nops: original_nops::capture(scan, &instructions)?.into_boxed_slice(),
+            instructions: instructions.into_boxed_slice(),
             logical_index: 0,
             relocated_start,
             ptrace_stops,
@@ -1496,8 +1514,9 @@ impl TrampolinePlan {
             controls: Vec::new(),
             clock: None,
             precontext_actions: Box::default(),
-            source_nops: original_nops::capture(scan, &instructions)?,
-            instructions,
+            point_observations: None,
+            source_nops: original_nops::capture(scan, &instructions)?.into_boxed_slice(),
+            instructions: instructions.into_boxed_slice(),
             logical_index,
             relocated_start: logical_index + usize::from(replace),
             ptrace_stops: false,
@@ -1562,8 +1581,10 @@ impl TrampolinePlan {
             controls: Vec::new(),
             clock: None,
             precontext_actions: Box::default(),
-            source_nops: original_nops::capture(scan, &[*scanned.instruction()])?,
-            instructions: vec![*scanned.instruction()],
+            point_observations: None,
+            source_nops: original_nops::capture(scan, &[*scanned.instruction()])?
+                .into_boxed_slice(),
+            instructions: vec![*scanned.instruction()].into_boxed_slice(),
             logical_index: 0,
             relocated_start: usize::from(replace),
             ptrace_stops: false,
@@ -1607,8 +1628,10 @@ impl TrampolinePlan {
             controls: Vec::new(),
             clock: None,
             precontext_actions: Box::default(),
-            source_nops: original_nops::capture(scan, &[*scanned.instruction()])?,
-            instructions: vec![*scanned.instruction()],
+            point_observations: None,
+            source_nops: original_nops::capture(scan, &[*scanned.instruction()])?
+                .into_boxed_slice(),
+            instructions: vec![*scanned.instruction()].into_boxed_slice(),
             logical_index: 0,
             relocated_start: 0,
             ptrace_stops: false,
@@ -1710,6 +1733,51 @@ impl TrampolinePlan {
         let mut plan = Self::from_actions(scan, physical, end, &static_actions)?;
         plan.controls = actions.to_vec();
         plan.observation_stack_profile = profile;
+        Ok(plan)
+    }
+
+    /// Builds ordinary observing actions with an explicit early-disable choice.
+    ///
+    /// Original heads/controls must be distinct and ordered, as for
+    /// from_controlled_actions. Only EarlyIfEnabled actions get a gate; false
+    /// bypasses that action's helper, while true still passes the unchanged
+    /// dispatcher check after complete state capture. AfterCapture retains the
+    /// old helper. Every original instruction and internal entry remains.
+    ///
+    /// This profile is live Linux x86-64, Legacy128, non-replacing observation
+    /// only, with a final page-rounded image extent of at most 8192 bytes.
+    /// Artifact, ptrace-stack, frame-trace, clock, pre-context and other stack
+    /// profiles are refused. Allocation/publication may impose tighter limits.
+    ///
+    /// Before execution the caller must establish the ordinary ISA, entry,
+    /// System V/no-CET, writable stack and executable/control lifetime contracts.
+    /// The gate uses a word below the untouched red zone within the existing
+    /// ordinary descriptor stack envelope, restoring RCX/RSP before either path.
+    /// EarlyIfEnabled must be suitable for independently optional point work:
+    /// opaque callbacks cannot be checked for hidden pairing obligations. No
+    /// RBX scratch ABI, interval conversion, stronger visibility, drainage or
+    /// reclamation guarantee is supplied.
+    pub fn from_point_observation_actions(
+        scan: &ScanResult,
+        physical: u64,
+        end: u64,
+        actions: &[PointObservationAction],
+    ) -> Result<Self, TrampolineError> {
+        if !cfg!(all(target_os = "linux", target_arch = "x86_64")) {
+            return Err(TrampolineError::UnsupportedPlatform);
+        }
+        let controlled: Vec<_> = actions
+            .iter()
+            .map(|action| action.controlled_action().clone())
+            .collect();
+        let mut plan = Self::from_controlled_actions(scan, physical, end, &controlled)?;
+        plan.point_observations = Some(
+            actions
+                .iter()
+                .map(|action| matches!(action, PointObservationAction::EarlyIfEnabled(_)))
+                .collect(),
+        );
+        plan.validate_point_observations(false, false)?;
         Ok(plan)
     }
 
@@ -1901,6 +1969,39 @@ impl TrampolinePlan {
         Ok(())
     }
 
+    fn validate_point_observations(
+        &self,
+        artifact: bool,
+        frames: bool,
+    ) -> Result<(), TrampolineError> {
+        let Some(modes) = &self.point_observations else {
+            return Ok(());
+        };
+        if artifact
+            || frames
+            || self.ptrace_stops
+            || self.clock.is_some()
+            || !self.precontext_actions.is_empty()
+            || self.observation_stack_profile != ObservationStackProfile::Legacy128
+            || self.kind != TrampolineKind::Actions
+            || self.controls.is_empty()
+            || modes.len() != self.controls.len()
+            || self.controls.len() != self.actions.len()
+            || self.relocated_start != self.logical_index
+            || self.actions.iter().any(|action| action.2)
+            || self
+                .controls
+                .iter()
+                .zip(&self.actions)
+                .any(|(control, action)| control.logical_pc != action.0)
+        {
+            return Err(encoding_error(
+                "early point profile requires unmixed live Legacy128 controlled observation",
+            ));
+        }
+        Ok(())
+    }
+
     /// Exact immutable managed point associations retained by this plan.
     /// Read-only clones cannot recover managed write authority.
     pub fn controlled_actions(&self) -> &[ControlledAction] {
@@ -1951,6 +2052,7 @@ impl TrampolinePlan {
         address: u64,
         limits: FrameTraceLimits,
     ) -> Result<FrameEmission, TrampolineError> {
+        self.validate_point_observations(false, true)?;
         if self.clock.is_some() {
             return Err(encoding_error("inline clock frame metadata unsupported"));
         }
@@ -1984,6 +2086,7 @@ impl TrampolinePlan {
         frames: Option<&mut FrameRecorder>,
     ) -> Result<TrampolineImage, TrampolineError> {
         self.validate_stack_profile(false)?;
+        self.validate_point_observations(false, frames.is_some())?;
         #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
         {
             let _ = (address, frames);
@@ -2220,6 +2323,7 @@ impl TrampolinePlan {
                 clock_region_gates: Vec::new(),
                 precontext_selector: None,
                 precontext_gates: Vec::new(),
+                early_control_gates: Vec::new(),
                 artifact: None,
                 address,
                 bytes,
@@ -2273,6 +2377,7 @@ impl TrampolinePlan {
         address: u64,
         input: &ArtifactEmission,
     ) -> Result<TrampolineImage, TrampolineError> {
+        self.validate_point_observations(true, false)?;
         #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
         {
             let _ = (address, input);
@@ -2304,6 +2409,7 @@ impl TrampolinePlan {
         input: &ArtifactEmission,
         limits: FrameTraceLimits,
     ) -> Result<FrameEmission, TrampolineError> {
+        self.validate_point_observations(true, true)?;
         #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
         {
             let _ = (address, input, limits);
@@ -2355,6 +2461,7 @@ impl TrampolinePlan {
         recording: bool,
     ) -> Result<OrderedPreparation, TrampolineError> {
         self.validate_stack_profile(artifact.is_some())?;
+        self.validate_point_observations(artifact.is_some(), has_frames)?;
         if self.clock.is_some() && (artifact.is_some() || has_frames || self.ptrace_stops) {
             return Err(encoding_error(
                 "inline clock supports only live ordinary emission",
@@ -2427,6 +2534,7 @@ impl TrampolinePlan {
         let mut action_index = 0;
         let mut clock_specs = Vec::new();
         let mut precontext_specs = Vec::new();
+        let mut early_control_specs = Vec::new();
         for (index, original) in self.instructions.iter().enumerate() {
             let entry_index = encoded_instructions.len();
             let mut entry = Instruction::with(Code::Zero_bytes);
@@ -2451,6 +2559,16 @@ impl TrampolinePlan {
                 .get(action_index)
                 .filter(|a| a.logical_pc == original.ip());
             let optional_labels = if optional.is_some() {
+                Some((identity()?, identity()?))
+            } else {
+                None
+            };
+            let early = action.is_some()
+                && self
+                    .point_observations
+                    .as_ref()
+                    .is_some_and(|modes| modes.get(action_index) == Some(&true));
+            let early_labels = if early {
                 Some((identity()?, identity()?))
             } else {
                 None
@@ -2488,6 +2606,24 @@ impl TrampolinePlan {
                 marker.set_ip(observer);
                 encoded_instructions.push(marker);
                 precontext_specs.push((action_index, entry_index, observing_index, spec));
+            }
+            if let Some((observer, body)) = early_labels {
+                let control = self
+                    .controls
+                    .get(action_index)
+                    .ok_or_else(|| encoding_error("early gate control missing"))?;
+                let spec = early_control::append(
+                    &mut encoded_instructions,
+                    &control.control,
+                    observer,
+                    body,
+                    &mut identity,
+                )?;
+                observing_index = encoded_instructions.len();
+                let mut marker = Instruction::with(Code::Zero_bytes);
+                marker.set_ip(observer);
+                encoded_instructions.push(marker);
+                early_control_specs.push((action_index, entry_index, observing_index, spec));
             }
             if let Some(&(_, hook, _)) = action {
                 // These helpers use only register/stack operands, absolute MOV
@@ -2546,7 +2682,7 @@ impl TrampolinePlan {
             }
             let body_index = encoded_instructions.len();
             let mut body = Instruction::with(Code::Zero_bytes);
-            body.set_ip(match clock_labels.or(optional_labels) {
+            body.set_ip(match clock_labels.or(optional_labels).or(early_labels) {
                 Some((_, body)) => body,
                 None => identity()?,
             });
@@ -2597,6 +2733,18 @@ impl TrampolinePlan {
         {
             return Err(encoding_error("clock region lost a required gate"));
         }
+        if let Some(modes) = &self.point_observations {
+            if action_index != modes.len()
+                || !modes
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, early)| **early)
+                    .map(|(index, _)| index)
+                    .eq(early_control_specs.iter().map(|(index, _, _, _)| *index))
+            {
+                return Err(encoding_error("early point gate population differs"));
+            }
+        }
         Ok(OrderedPreparation {
             extended_state,
             fragments,
@@ -2609,6 +2757,7 @@ impl TrampolinePlan {
             helper_frames,
             clock_specs,
             precontext_specs,
+            early_control_specs,
         })
     }
 
@@ -2621,6 +2770,7 @@ impl TrampolinePlan {
         preparation: OrderedPreparation,
         size_bound: Option<usize>,
     ) -> Result<TrampolineImage, TrampolineError> {
+        self.validate_point_observations(artifact.is_some(), frames.is_some())?;
         let OrderedPreparation {
             extended_state,
             fragments,
@@ -2633,7 +2783,20 @@ impl TrampolinePlan {
             helper_frames,
             clock_specs,
             precontext_specs,
+            early_control_specs,
         } = preparation;
+        let expected_early = self.point_observations.as_deref().unwrap_or(&[]);
+        if !expected_early
+            .iter()
+            .enumerate()
+            .filter(|(_, early)| **early)
+            .map(|(index, _)| index)
+            .eq(early_control_specs.iter().map(|(index, _, _, _)| *index))
+        {
+            return Err(encoding_error(
+                "prepared early point gate population differs",
+            ));
+        }
         let block = if self.clock.is_some() {
             // All gate branches keep their exact forms; no indirect expansion,
             // absolute literal or rel8 JRCXZ rewrite is admitted for this profile.
@@ -2724,6 +2887,28 @@ impl TrampolinePlan {
             });
         }
         let mut entry_routes = Vec::new();
+        let mut early_control_gates = Vec::new();
+        for (action, entry, observer, spec) in &early_control_specs {
+            let action = self
+                .controls
+                .get(*action)
+                .ok_or_else(|| encoding_error("early point retained action missing"))?;
+            let head = heads
+                .iter()
+                .find(|head| head.0 == action.logical_pc)
+                .ok_or_else(|| encoding_error("early point original body missing"))?;
+            if head.1 != *entry || head.3 {
+                return Err(encoding_error("early point head/entry association differs"));
+            }
+            early_control_gates.push(early_control::verify(
+                spec,
+                &encoded_instructions,
+                address,
+                &block.encoded,
+                action,
+                (*entry, *observer, head.2),
+            )?);
+        }
         let mut instruction_boundaries = Vec::new();
         let mut program_counters = Vec::new();
         let executable_end = block
@@ -2940,6 +3125,9 @@ impl TrampolinePlan {
                 "accepted artifact exceeds prepared size bound",
             ));
         }
+        if self.point_observations.is_some() {
+            early_control::validate_image_extent(address, bytes.len())?;
+        }
         debug_assert_eq!(layout.total_len(), Some(bytes.len()));
         Ok(TrampolineImage {
             clock: self
@@ -2950,6 +3138,7 @@ impl TrampolinePlan {
             clock_region_gates,
             precontext_selector: self.precontext_actions.first().map(|a| a.selector.clone()),
             precontext_gates,
+            early_control_gates,
             artifact,
             address,
             bytes,
@@ -4182,6 +4371,9 @@ fn reserve_arena_slot(next: &AtomicUsize, len: usize) -> Result<usize, Trampolin
 /// that code are retained for the same lifetime. After fork, inherited controls
 /// are independent snapshots, not process-shared enable state. Do not publish
 /// newly created controlled code or heap pointers into another process.
+/// Executing an EarlyIfEnabled action requires the caller to establish that
+/// its opaque callback may independently disappear on any logical visit.
+/// Mapping ownership does not prove callback suitability or publication safety.
 pub struct ExecutableTrampoline {
     address: u64,
     allocation_len: usize,
@@ -4216,6 +4408,9 @@ impl PendingExecutableTrampoline {
     /// live mapping, contain the complete image at its encoded address, and
     /// have no writable shared aliases. No source entry or global PC metadata
     /// may reference it yet. The caller relinquishes unmapping ownership.
+    /// Before exposing an early point image to execution, its caller must also
+    /// establish independently optional callbacks and the original execution
+    /// contract; opaque callback code cannot be classified by this allocator.
     pub(crate) unsafe fn from_owned_mapping(
         image: &TrampolineImage,
         mapping_address: u64,
@@ -4305,6 +4500,8 @@ impl ExecutableTrampoline {
     }
 
     /// Allocates a reachable page, emits the plan, and publishes an RX mapping.
+    /// This does not publish a source entry or prove that an opaque early point
+    /// callback may independently disappear; execution retains that obligation.
     pub fn allocate(plan: &TrampolinePlan) -> Result<Self, TrampolineError> {
         #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
         {
@@ -4330,6 +4527,8 @@ impl ExecutableTrampoline {
     ///
     /// The complete emitted image is backed by a fresh RX mapping claimed with
     /// MAP_FIXED_NOREPLACE. Existing mappings are never replaced.
+    /// Execution still requires the caller's original publication/stack/entry
+    /// contract and independently optional callbacks for EarlyIfEnabled actions.
     pub fn allocate_at(plan: &TrampolinePlan, address: u64) -> Result<Self, TrampolineError> {
         #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
         {

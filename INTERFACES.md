@@ -63,6 +63,24 @@ protocols for a new application.
   activation or cancelled in-flight callbacks. A0 defines this interface; A4
   must qualify concrete live toggle implementations against it.
 
+`controls::PointObservationAction` selects ordinary `AfterCapture` dispatch or
+`EarlyIfEnabled` for an optional point. The latter loads the retained atomic
+control byte before full state capture and preserves flags, RCX, RSP and the
+application red zone on both paths. The dispatcher still checks the same
+control after capture. A controller update between those checks may suppress a
+callback; a false early hint may miss an observation under eventual visibility.
+Disable supplies neither drainage nor reclamation.
+
+`quiescent::plan_point_observations_detailed` admits only live observing
+relocation with Legacy128 and at most one mapping/8,192 page-rounded bytes,
+honoring smaller caller budgets. Existing source, entry, save-stack, callback
+and ownership contracts apply even while disabled. The caller proves that each
+optional callback can independently disappear; opaque callbacks cannot be
+inspected for hidden interval or clock obligations. Mandatory actions keep
+`AfterCapture`. Existing constructors retain their emission paths. The finite
+[point qualification](evaluation/early-controlled-point/README.md) is separate
+from interval sampling and full A4 release qualification.
+
 ## Initial supported envelope
 
 Version 1 clients constructing `PlanParts` must add `kind: PlanKind::Relocation`

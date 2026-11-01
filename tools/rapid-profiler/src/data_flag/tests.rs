@@ -11,6 +11,9 @@ const B: FunctionId = FunctionId(12);
 const WAIT: Duration = Duration::from_secs(5);
 static CODE: [u8; 8] = [0xb8, 42, 0, 0, 0, 0x90, 0x90, 0xc3];
 static COUNTS: [AtomicUsize; 3] = [const { AtomicUsize::new(0) }; 3];
+// Only these two native profiles share callback counters. Other tests keep
+// their default harness parallelism and independent fixtures.
+static PROFILE_LOCK: Mutex<()> = Mutex::new(());
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub(super) enum Phase {
@@ -75,7 +78,7 @@ fn config(k: usize) -> Config {
         max_invocations: 16,
     }
 }
-fn fixture() -> (DataFlagSession, u64, Vec<u8>) {
+fn fixture(early: bool) -> (DataFlagSession, u64, Vec<u8>) {
     for counter in &COUNTS {
         counter.store(0, Ordering::SeqCst);
     }
@@ -112,9 +115,30 @@ fn fixture() -> (DataFlagSession, u64, Vec<u8>) {
     )
     .unwrap();
     let scan = InstructionScanner::default().scan(&CODE, pc).unwrap();
-    let plan =
+    let plan = if early {
+        let actions = c.point_observation_actions();
+        assert_eq!(actions.len(), 3);
+        assert!(matches!(
+            &actions[0],
+            PointObservationAction::EarlyIfEnabled(_)
+        ));
+        assert!(matches!(
+            &actions[1],
+            PointObservationAction::EarlyIfEnabled(_)
+        ));
+        assert!(matches!(
+            &actions[2],
+            PointObservationAction::AfterCapture(_)
+        ));
+        for (selected, original) in actions.iter().zip(c.actions()) {
+            assert_eq!(selected.controlled_action(), &original);
+        }
+        TrampolinePlan::from_point_observation_actions(&scan, pc, pc + CODE.len() as u64, &actions)
+            .unwrap()
+    } else {
         TrampolinePlan::from_controlled_actions(&scan, pc, pc + CODE.len() as u64, &c.actions())
-            .unwrap();
+            .unwrap()
+    };
     let image = ExecutableTrampoline::allocate(&plan).unwrap();
     // The existing executable allocator retains this image and controls for
     // process lifetime. All old images remain live in the same-PC refusal test.
@@ -160,14 +184,25 @@ fn point_rows(c: &DataFlagSession, epoch: Epoch, function: FunctionId) -> usize 
         .count()
 }
 
-// One native test owns the counters and runs a fixed straight-line fixture.
+// Each native profile owns the counters and runs the fixed straight-line fixture.
 // No ignored tests, statistical races, stress loops or optional native branches.
 // The enclosing existing bounded test/helper command remains the run authority.
 #[test]
 fn actual_managed_points_force_close_rearm_k_groups_and_wrong_owner() {
+    let _guard = PROFILE_LOCK.lock().unwrap();
+    managed_points_contract(false);
+}
+
+#[test]
+fn early_managed_points_force_close_rearm_k_groups_and_wrong_owner() {
+    let _guard = PROFILE_LOCK.lock().unwrap();
+    managed_points_contract(true);
+}
+
+fn managed_points_contract(early: bool) {
     // Acquired old owner, paused before reservation: rearm must close it and
     // the resumed A must refuse. B, reached afterward, belongs to the new owner.
-    let (mut c, address, code) = fixture();
+    let (mut c, address, code) = fixture(early);
     let old = c.stage(config(8)).unwrap();
     let arm = c.arm(old).unwrap();
     assert_eq!(c.complete(&arm), Ok(Visibility::Eventual));
@@ -207,7 +242,7 @@ fn actual_managed_points_force_close_rearm_k_groups_and_wrong_owner() {
 
     // Reserved old callback, paused before work: rearm cannot drain it. After
     // its real callback returns, all terminal/payload identities stay old.
-    let (mut c, address, code) = fixture();
+    let (mut c, address, code) = fixture(early);
     let old = c.stage(config(1)).unwrap();
     c.arm(old).unwrap();
     let (entered, release) = hold(&c, Phase::AfterReservation);
@@ -264,7 +299,7 @@ fn actual_managed_points_force_close_rearm_k_groups_and_wrong_owner() {
 
     // Independent members share one real generated image. Closing A does not
     // close B or mandatory work, and planner clones cannot change any flag.
-    let (mut c, address, code) = fixture();
+    let (mut c, address, code) = fixture(early);
     let epoch = c.stage(config(1)).unwrap();
     c.arm(epoch).unwrap();
     let (entered, release) = hold_pc(&c, Phase::BeforeReservation, CODE.as_ptr() as u64 + 5);
@@ -321,10 +356,10 @@ fn actual_managed_points_force_close_rearm_k_groups_and_wrong_owner() {
 
     // An old image at the same PCs must not use another installation's TLS
     // owners, even when both logical maps and caller install numbers match.
-    let (mut old, old_image, old_code) = fixture();
+    let (mut old, old_image, old_code) = fixture(early);
     let old_epoch = old.stage(config(8)).unwrap();
     old.arm(old_epoch).unwrap();
-    let (mut new, new_image, new_code) = fixture();
+    let (mut new, new_image, new_code) = fixture(early);
     let new_epoch = new.stage(config(8)).unwrap();
     let foreign_ticket = new.arm(new_epoch).unwrap();
     assert_eq!(old.complete(&foreign_ticket), Err(Refusal::StaleGeneration));
