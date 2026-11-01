@@ -231,7 +231,9 @@ def resident_signal_controls(stderr, ingress):
 
     def reject(name, changed_rows, changed_ingress, reason):
         need(changed_rows != rows or changed_ingress != ingress or
-             type(changed_ingress) is not type(ingress), 'changed signal-join stimulus: ' + name)
+             type(changed_ingress) is not type(ingress) or
+             any(type(a) is not type(b) for a, b in zip(changed_ingress, ingress)),
+             'changed signal-join stimulus: ' + name)
         try:
             _resident_signal_join(changed_rows, changed_ingress)
         except ValueError as error:
