@@ -80,8 +80,19 @@ pub struct QualificationSnapshot {
 /// Read only the calling worker's TLS. Another thread must receive this copied
 /// witness through its own authenticated release/acquire or channel handshake.
 pub fn qualification_snapshot() -> Result<QualificationSnapshot, BridgeError> {
-    // Nested TLS closures return only status; the owned witness has one destination.
-    let mut snapshot_result = Err(error(Cause::Attachment));
+    let mut snapshot = std::mem::MaybeUninit::uninit();
+    qualification_snapshot_into(&mut snapshot)?;
+    // SAFETY: success initialized every field and returned after both TLS
+    // borrows ended. This wrapper preserves the public owned-result API.
+    Ok(unsafe { snapshot.assume_init() })
+}
+
+// Return only status across this boundary. The observer's complete witness is
+// initialized directly in its own local slot, never returned as a large Result.
+#[inline(never)]
+fn qualification_snapshot_into(
+    destination: &mut std::mem::MaybeUninit<QualificationSnapshot>,
+) -> Result<(), BridgeError> {
     NORMAL
         .try_with(|normal| {
             let storage = normal.try_borrow().map_err(|_| error(Cause::Attachment))?;
@@ -121,7 +132,7 @@ pub fn qualification_snapshot() -> Result<QualificationSnapshot, BridgeError> {
                         }),
                         _ => return Err(error(Cause::Invariant)),
                     };
-                    snapshot_result = Ok(QualificationSnapshot {
+                    destination.write(QualificationSnapshot {
                         binding_key: Arc::as_ptr(&s.binding.key) as usize,
                         pid: s.binding.pid,
                         tid: s.tid,
@@ -145,8 +156,7 @@ pub fn qualification_snapshot() -> Result<QualificationSnapshot, BridgeError> {
                 })
                 .unwrap_or(Err(error(Cause::Attachment)))
         })
-        .unwrap_or(Err(error(Cause::Attachment)))?;
-    snapshot_result
+        .unwrap_or(Err(error(Cause::Attachment)))
 }
 type Observer = Box<dyn FnMut(PauseKind, &QualificationSnapshot)>;
 thread_local! { static OBSERVER: RefCell<Option<Observer>> = const { RefCell::new(None) }; }
@@ -182,8 +192,12 @@ pub(super) fn after_published(kind: PauseKind) {
                 .try_borrow_mut()
                 .map_err(|_| error(Cause::Attachment))?;
             if let Some(observer) = observer.as_mut() {
-                let snapshot_result = qualification_snapshot();
-                observer(kind, snapshot_result.as_ref().map_err(|error| *error)?);
+                let mut snapshot = std::mem::MaybeUninit::uninit();
+                qualification_snapshot_into(&mut snapshot)?;
+                // SAFETY: the helper returned success after initializing every
+                // field and releasing both TLS borrows. The reference cannot
+                // escape this observer call under its existing unsafe contract.
+                observer(kind, unsafe { snapshot.assume_init_ref() });
             }
             Ok(())
         })
@@ -273,3 +287,6 @@ impl OwnedEarlyEntryModuleThread {
         })
     }
 }
+
+#[cfg(test)]
+mod tests;

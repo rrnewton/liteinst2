@@ -385,10 +385,7 @@ fn checked_visit_fresh_used_keeps_entry_and_return_error_order() {
                 // Test-only access from this child module: corrupt ONLY the
                 // volatile field after proof construction, never pure metadata.
                 if bad_count {
-                    checked
-                        .state
-                        .journal
-                        .word(0, checked.journal_used as u64 + 1);
+                    checked.state.journal.word(0, prior_used as u64 + 1);
                 }
                 let before = (normal_image(checked.state), physical_image(&f.physical));
                 let owners = identities(checked.state, &f.physical);
