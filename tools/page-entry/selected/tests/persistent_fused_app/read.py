@@ -132,7 +132,7 @@ def elf(data, native_policy):
     probe_page=0x200041000
     probe_expected=bytearray(b'\xcc'*(4*PAGE))
     probe_expected[PAGE+16:PAGE+27]=bytes.fromhex('48b81122334455667788c3')
-    probe_expected[PAGE+4090:PAGE+4100]=bytes.fromhex('662e0f1f84000000000000')
+    probe_expected[PAGE+4090:PAGE+4100]=bytes.fromhex('662e0f1f840000000000')
     probe_expected[PAGE+4100:PAGE+4103]=bytes.fromhex('0f1f00')
     probe_expected[PAGE+4103:PAGE+4108]=bytes.fromhex('e904f0ffff')
     need(probe_load[1]==5 and probe_load[3]==0x200040000 and

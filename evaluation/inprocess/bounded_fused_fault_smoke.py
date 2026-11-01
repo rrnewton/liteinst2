@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT/'tools/page-entry/selected/tests/persistent_fused_app'
 PROBE_FIXTURE = {
     'machine.S': dict(bytes=8665, sha256='d4e31fda500864543a31f9908783bfce06d0a377233f99a05dea562516cb179d'),
-    'read.py': dict(bytes=42400, sha256='4ab7378b482e46f9d7fedd1f923be8c60cfc62b8be0e2441dff1cab33ddb3ef4'),
+    'read.py': dict(bytes=42398, sha256='b2a4eff201df78f5ca15db7c1fa2e1955090475dd43ed3838fb4fcd51462cc5a'),
 }
 # Keep the unchanged native policy/seed and maintained capture build path.
 # Positive/differential populations belong to the separate full PF evaluator.

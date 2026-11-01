@@ -1,0 +1,69 @@
+{
+  "cleanup_complete": true,
+  "commands_completed": 46,
+  "cpu": 6,
+  "diagnosis": {
+    "actual_nop_bytes": 10,
+    "actual_probe_rx_image_bytes": 16384,
+    "first_16384_expected_bytes_equal_actual": true,
+    "old_expected_image_bytes": 16385,
+    "old_expected_nop_literal_bytes": 11
+  },
+  "error": "ValueError: whole separate RX probe load, both source pages and unchanged-policy CC halos",
+  "fault_subjects_launched": 0,
+  "final_errors": [],
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 6,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "performance_credit": false,
+  "private_receipt": {
+    "bytes": 1569717,
+    "sha256": "973525a50d07387d97049b202718ee8b6fef294db51e21fe577bb40576e40fdb"
+  },
+  "profile": "bounded-fused-fault-smoke-v1",
+  "qualification_credit": false,
+  "reproduction": {
+    "argv": [
+      "python3",
+      "-B",
+      "evaluation/inprocess/bounded_fused_fault_smoke.py",
+      "--expect-revision",
+      "77f52dc827e9f678aed65a1923d6eb9ce8c62f60",
+      "--expect-decoder-sha256",
+      "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d",
+      "--cpu",
+      "6",
+      "--output",
+      "target/evaluation/inprocess/<FRESH_FAULT_DIAGNOSTIC>"
+    ],
+    "reservation": "one externally reserved CPU",
+    "working_directory": "repository root"
+  },
+  "revision": "77f52dc827e9f678aed65a1923d6eb9ce8c62f60",
+  "schema": 1,
+  "source": {
+    "head_sources_match": true,
+    "revision": "77f52dc827e9f678aed65a1923d6eb9ce8c62f60",
+    "source_manifest_sha256": "b69067c5e208e110b97829e6c3eb44d045f65a1441f902e97e607082829470f2",
+    "tracked_clean": true,
+    "tree": "f0564147635d6ac5bb00d17cf42defab42839546"
+  },
+  "source_unchanged": true,
+  "status": "failed",
+  "whole_captures": 92
+}
