@@ -213,13 +213,17 @@ class Main97abInventoryTests(unittest.TestCase):
                 inventory.require_current(wrong)
         for name, change in incoming['workspace_changes'].items():
             self.assertEqual(live_rows[name], change['current'])
+            # Mutate the current input; live_rows remains the exact historical boundary.
+            current_row = actual['harness_test_counts']['workspace_tests'][name]
             for field in ('tests', 'ignored'):
-                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):
+                for value in (None, True, float(current_row[field]), current_row[field] + 1):
                     wrong = copy.deepcopy(actual)
                     wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    self.assertNotEqual(current.digest(wrong), current.digest(actual))
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                         current.before_96378(wrong)
             wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            self.assertNotEqual(current.digest(wrong), current.digest(actual))
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_96378(wrong)
         incoming_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')

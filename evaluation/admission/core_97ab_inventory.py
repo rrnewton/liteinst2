@@ -9,7 +9,7 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '60592a429e2dbd018826b96d1e221ac617a17c14eca9bea10c0a0b35fd7c4bb7',
+require(hashlib.sha256(RAW).hexdigest() == 'b36618b96fde9b3269b7058852e6120f0760797a1a8f5189de155fa551d95af9',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']

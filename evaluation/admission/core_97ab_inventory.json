@@ -348,21 +348,41 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "df889c819da0cc1dba95c683e913e618d3d6574acc429f6b124112ebf6d731d8",
+      "current_sha256": "b01bd9a035c9665737c338b8d0dcf5ad715e88ec5d03f8c45c97ea1f84c40d17",
       "edits": [
         [
-          18284,
-          18380,
-          "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
-        ],
-        [
-          22223,
-          55530,
+          15162,
+          15332,
           ""
         ],
         [
-          65081,
-          67253,
+          15379,
+          15473,
+          "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n"
+        ],
+        [
+          15612,
+          15699,
+          ""
+        ],
+        [
+          15958,
+          16037,
+          ""
+        ],
+        [
+          18612,
+          18708,
+          "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
+        ],
+        [
+          22551,
+          55858,
+          ""
+        ],
+        [
+          65409,
+          67581,
           ""
         ]
       ],
@@ -8025,7 +8045,7 @@
     "evaluation/admission/test_main34c47_inventory.py": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "f2874b7589b24a963da1fe3912378fa74cf20e6e0a4eb8ebf736d93ef182039a",
-    "evaluation/admission/test_main97ab_inventory.py": "df889c819da0cc1dba95c683e913e618d3d6574acc429f6b124112ebf6d731d8",
+    "evaluation/admission/test_main97ab_inventory.py": "b01bd9a035c9665737c338b8d0dcf5ad715e88ec5d03f8c45c97ea1f84c40d17",
     "evaluation/admission/test_main981419_inventory.py": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
     "evaluation/admission/test_mainaf81_inventory.py": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
