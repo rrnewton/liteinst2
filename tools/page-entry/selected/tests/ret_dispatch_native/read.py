@@ -62,17 +62,17 @@ def plan_model(h):
     imm(1,0,32);emit(b'\x48\xc1\xe2\x05');rr(0x03,2,1)
     loop=len(image);emit(b'\x48\x3b\x59\0');found=branch(4,'hit')
     imm(1,0,32);rr(0x3b,1,2);again=branch(2,'loop')
-    loaded=len(image);restore();loaded_miss=len(image);emit(b'\xe9'+disp(loaded_miss,5,window+128))
+    loaded=len(image);restore();loaded_miss=len(image);emit(b'\xff\x25'+disp(loaded_miss,6,generated+504))
     before=len(image);state[:]=[15,7,2,0];restore();miss=len(image);emit(b'\xe9'+disp(miss,5,pc))
     hit=len(image);state[:]=[15,15,2,3];load(1,1,8);cell(1,32);state[3]=4;restore()
     state[3]=5;commit=len(image);emit(b'\x48\x8d\x64\x24\x08')
     state[3]=6;transfer=len(image);emit(b'\xff\x25'+disp(transfer,6,spill+32))
     labels=dict(before=before,loaded=loaded,hit=hit,loop=loop)
     for at,label in patches:image[at+2:at+6]=disp(at,6,generated+labels[label])
-    need((len(image),len(rows),guest_load,save,commit,transfer,miss,loaded_miss)==(284,53,68,72,273,278,226,190),
+    need((len(image),len(rows),guest_load,save,commit,transfer,miss,loaded_miss)==(285,53,68,72,274,279,227,190),
          'exact independent full emitted geometry and all53 recovery rows')
-    image+=bytes(512-len(image))
-    record=struct.pack('<16I',1,1,0,284,53,68,72,273,278,226,190,0,0,1,2,3)
+    image+=bytes(504-len(image))+struct.pack('<Q',window+128)
+    record=struct.pack('<16I',1,1,0,285,53,68,72,274,279,227,190,0,0,1,2,3)
     record+=b''.join(struct.pack('<6I',*r) for r in rows)+bytes(24*(64-len(rows)))
     decoded=struct.pack('<QQ10I',pc,pc+1,1,0,396,0,16,0,0,15,1,0)+b'\xc3'+b'\xcc'*14+b'\0'
     tf=struct.pack('<QQ6I',pc,pc+1,1,1,396,1,2,5)
@@ -132,7 +132,7 @@ def lane(raw,h,identity,which):
             else:
                 trace += [x[0]+x[1] for x in rows if labels['found']<=x[0]<labels['again']]
                 trace.append(labels['loop'])
-        trace += [x[0]+x[1] for x in rows if labels['hit']<=x[0]<278]
+        trace += [x[0]+x[1] for x in rows if labels['hit']<=x[0]<279]
     count,protect=protections(h,which,kind,permissions)
     need(r[:13]==(REC_MAGIC,RECORD,identity,which,4,group,item,pc,pc+1,target,sp,status,1) and
          r[13:20]==(1,0,2,2+len(trace) if kind==4 else 2,entry,cached,len(trace)) and
@@ -264,7 +264,7 @@ def pair(a,b):
                 generated_sha256=b['raw_sha256'],full_state_stack_equal=True)
 
 
-def read_file(path,cpu,pid):
+def read_file(path,cpu,pid,address_model='low'):
     raw=path.read_bytes();need(len(raw)==512+24*RECORD+64<16<<20,'exact complete single24-lane chunk')
     h=words(raw,64)
     need(h[:15]==(MAGIC,1,512,RECORD,FRAME,968,128,FP,STACK,PAGE,16,0,0,16,24) and
@@ -277,6 +277,15 @@ def read_file(path,cpu,pid):
     spans.sort();need(all(a>=PAGE and a%PAGE==0 and a+n<1<<47 for a,n in spans) and
          all(spans[i][0]+spans[i][1]<=spans[i+1][0] for i in range(len(spans)-1)),
          'complete actual allocation geometry/disjointness; numeric fixture only')
+    need(address_model in ('low','high'),'explicit one address cohort')
+    if address_model=='low':
+        need(all(h[i]+n<=1<<31 for i,n in ((21,PAGE),(23,2*PAGE),(30,32768),(31,32768),
+             (32,PAGE),(33,12288),(34,PAGE),(35,PAGE))), 'all original MAP_32BIT objects remain low')
+    else:
+        need((h[23],h[30],h[31],h[32],h[33],h[35])==tuple(h[21]+n*PAGE for n in (1,3,11,19,20,23)) and
+             h[34]+PAGE<=1<<31 and h[21]>h[34]+PAGE+0x7fffffff and h[21]+24*PAGE<1<<47 and
+             h[34]+128-(h[30]+190+6)<-(1<<31),
+             'one exact high cluster and low window beyond signed32 displacement; no relocation fallback')
     need(words(raw,8,len(raw)-64)==(END,1,24,len(raw),0,0,0,0),'whole exact complete footer')
     results=[];pairs=[];offset=512
     for identity in range(16):
@@ -286,7 +295,7 @@ def read_file(path,cpu,pid):
         generated=lane(memoryview(raw)[offset:offset+RECORD],h,identity,1);offset+=RECORD;results.append(generated)
         if original is not None:pairs.append(pair(original,generated))
     need(offset==len(raw)-64 and len(pairs)==8 and len(results)==24,'no omitted/extra case or lane')
-    return dict(schema=1,status='finite_ret_adapter_observed',cases=16,native_lanes=24,
+    result=dict(schema=1,status='finite_ret_adapter_observed',cases=16,native_lanes=24,
         matched_hit_pairs=6,matched_load_fault_pairs=2,typed_loaded_misses=4,before_load_misses=2,
         post_load_mutations=2,observed_trace_events=[r['observed_trace_events'] for r in results if r['kind']==4],
         observed_unique_boundaries=[r['observed_unique_boundaries'] for r in results if r['kind']==4],
@@ -297,12 +306,20 @@ def read_file(path,cpu,pid):
         loaded_miss_resumption=False,production_owner_authority=False,qualification_credit=False,
         performance_credit=False,old_RET32_replaced=False,old_component671_replaced=False,
         scope='Actual typed RET hits, load faults and stopped loaded misses; no generic RET continuation equivalence.')
+    if address_model=='high':
+        result['address_geometry']=dict(model='high-cluster-low-window',cluster=h[21],cluster_bytes=24*PAGE,
+            window=h[34],loaded_miss=h[34]+128,generated=h[30],loaded_jump_offset=190,
+            loaded_jump_bytes=6,landing_literal_offset=504,
+            signed_distance=h[34]+128-(h[30]+190+6),beyond_rel32=True)
+    return result
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--expect-cpu',type=int,required=True)
-    p.add_argument('--expect-pid',type=int,required=True);p.add_argument('record',type=Path);args=p.parse_args()
+    p.add_argument('--expect-pid',type=int,required=True)
+    p.add_argument('--expect-address-model',choices=('low','high'),default='low')
+    p.add_argument('record',type=Path);args=p.parse_args()
     need(args.expect_cpu>=0 and args.expect_pid>0,'actual reserved CPU and child PID')
-    print(json.dumps(read_file(args.record,args.expect_cpu,args.expect_pid),sort_keys=True,indent=2))
+    print(json.dumps(read_file(args.record,args.expect_cpu,args.expect_pid,args.expect_address_model),sort_keys=True,indent=2))
 
 if __name__=='__main__':main()

@@ -292,10 +292,10 @@ static void lane(unsigned id,unsigned which) {
         .heads=1,.head=0,.directory=directory_base,.window=window_base,.loaded_miss=window_base+128};
     need(!li2_rd_emit(original_pc,instruction,15,image_base[0],spill_base,&binding,&record.plan) &&
          !li2_rd_validate(&record.plan),40);
-    need(record.plan.record.image_bytes==284 && record.plan.record.boundaries==53 &&
+    need(record.plan.record.image_bytes==285 && record.plan.record.boundaries==53 &&
          record.plan.record.load_offset==68 && record.plan.record.save_offset==72 &&
-         record.plan.record.commit_offset==273 && record.plan.record.transfer_offset==278 &&
-         record.plan.record.miss_offset==226 && record.plan.record.loaded_miss_offset==190,41);
+         record.plan.record.commit_offset==274 && record.plan.record.transfer_offset==279 &&
+         record.plan.record.miss_offset==227 && record.plan.record.loaded_miss_offset==190,41);
     copy((void *)image_base[0],record.plan.image,512);
     need(equal((const void *)image_base[0],record.plan.image,512),42);
     for(unsigned i=0;i<16;i++)probe_seed[i]=UINT64_C(0x13579bdf00110000)+UINT64_C(0x100010001)*i+id;
@@ -342,7 +342,8 @@ static uintptr_t allocation(size_t n,int low) {
     need(p!=MAP_FAILED && !((uintptr_t)p&(PAGE-1U)),59);return(uintptr_t)p;
 }
 int main(int argc,char **argv) {
-    need(argc==1 && argv[0],60);
+    need((argc==1 || (argc==2 && !strcmp(argv[1],"--high"))) && argv[0],60);
+    unsigned high=argc==2;
     need(sysconf(_SC_PAGESIZE)==PAGE,61);
     cpu_set_t affinity;CPU_ZERO(&affinity);
     need(!sched_getaffinity(0,sizeof affinity,&affinity) && CPU_COUNT(&affinity)==1,62);
@@ -353,10 +354,23 @@ int main(int argc,char **argv) {
     uint32_t xlo,xhi;__asm__ volatile("xgetbv":"=a"(xlo),"=d"(xhi):"c"(0));
     uint64_t xcr0=((uint64_t)xhi<<32)|xlo;need((xcr0&3)==3,66);
     __cpuid_count(13,0,a,b,c,d);need(b>=512 && b<=FP_BYTES,67);
-    code_base=allocation(PAGE,1);stack_base=allocation(STACK_BYTES,0);target_base=allocation(2U*PAGE,1);
-    for(unsigned i=0;i<2;i++)image_base[i]=allocation(LI2_JD_IMAGE_BYTES,1);
-    rows_base=allocation(PAGE,1);directory_base=allocation(LI2_JD_DOMAIN_BYTES,1);
-    window_base=allocation(PAGE,1);spill_base=allocation(PAGE,1);
+    if(high) {
+        /* One actual high allocation keeps every remaining RIP-relative edge
+           local. The independently allocated low window is deliberately far. */
+        code_base=allocation(24U*PAGE,0);stack_base=allocation(STACK_BYTES,0);
+        target_base=code_base+PAGE;image_base[0]=code_base+3U*PAGE;
+        image_base[1]=code_base+11U*PAGE;rows_base=code_base+19U*PAGE;
+        directory_base=code_base+20U*PAGE;spill_base=code_base+23U*PAGE;
+        window_base=allocation(PAGE,1);
+        need(window_base+PAGE<=UINT64_C(0x80000000) &&
+             code_base>window_base+PAGE+UINT64_C(0x7fffffff) &&
+             code_base<UINT64_C(0x800000000000)-24U*PAGE,78);
+    } else {
+        code_base=allocation(PAGE,1);stack_base=allocation(STACK_BYTES,0);target_base=allocation(2U*PAGE,1);
+        for(unsigned i=0;i<2;i++)image_base[i]=allocation(LI2_JD_IMAGE_BYTES,1);
+        rows_base=allocation(PAGE,1);directory_base=allocation(LI2_JD_DOMAIN_BYTES,1);
+        window_base=allocation(PAGE,1);spill_base=allocation(PAGE,1);
+    }
     uintptr_t alternate=(uintptr_t)mmap(0,ALT_BYTES+2U*PAGE,PROT_NONE,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);
     need(alternate!=(uintptr_t)MAP_FAILED,68);alt_base=alternate+PAGE;
     need(!mprotect((void *)alt_base,ALT_BYTES,PROT_READ|PROT_WRITE),69);

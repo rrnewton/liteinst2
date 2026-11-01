@@ -17,6 +17,9 @@ static void selected_generic_trace(int sig,siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
     pclo_declined(context);
 #endif
+#ifdef LI2_PERSISTENT_RET_OWNER_CAPTURE
+    prto_declined(context);
+#endif
 #endif
 #ifdef LI2_SCALAR_SPAN_TRACE
 #ifdef LI2_LINKED_EPOCH

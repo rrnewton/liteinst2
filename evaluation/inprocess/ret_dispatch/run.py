@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run RET32, RET671 and RET16/24 as distinct finite experiments; no owner qualification."""
+"""Run RET32, RET671/planner and separate low/high RET16/24 cohorts; no owner qualification."""
 import argparse
 from collections import Counter
 import hashlib
@@ -21,7 +21,7 @@ BOUNDS = {'build': [30, 512 << 20, 16 << 20, 60],
 LINK_NAMES = ('crt1.o Scrt1.o crti.o crtn.o crtbegin.o crtbeginS.o crtend.o crtendS.o '
               'libgcc.a libgcc_eh.a libgcc_s.so libgcc_s.so.1 libc.so libc_nonshared.a '
               'libc.so.6 libdl.a libpthread.a libm.so libm.so.6 libmvec.so.1').split()
-CASES = {'ret_native': {'recipe_sha256': '740c5a7a68180a84f303dc9fdca05adff1a7b8c7bc8f4012dec42a1e995a140a', 'units': ['tests/ret_native/probe.c', 'tests/ret_native/probe.S'], 'headers': [], 'stdout': None, 'kind': 'ret32'}, 'ret_dispatch': {'recipe_sha256': 'd5a8b38de779e73a91a72833886fb2246877b8c8a7daf52700846edca1fa71e9', 'units': ['tests/ret_dispatch/oracle.c', 'tests/ret_dispatch/model.c', 'linked_ret_dispatch.c', 'tests/decoder/support.c'], 'headers': ['linked_ret_dispatch.h', 'tests/ret_dispatch/model.h', 'persistent_group_plan.h'], 'stdout': 'ret-dispatch descriptors=15 decoded=795 models=671 forms=512 arguments=6 bindings=16 corruptions=20 interiors=459 geometry=4 recovery_controls=16\n', 'kind': 'component'}, 'ret_dispatch_native': {'recipe_sha256': 'd7e719e5cdc915910c33fb2e31b05646d00af4788ca932d73b790b4a85db6f48', 'units': ['tests/ret_dispatch_native/probe.c', 'tests/ret_dispatch_native/probe.S', 'linked_ret_dispatch.c', 'tests/decoder/support.c'], 'headers': ['linked_ret_dispatch.h', 'linked_jmp_domain.h', 'decoder.h'], 'stdout': None, 'kind': 'adapter'}}
+CASES = {'ret_native': {'recipe_sha256': '740c5a7a68180a84f303dc9fdca05adff1a7b8c7bc8f4012dec42a1e995a140a', 'units': ['tests/ret_native/probe.c', 'tests/ret_native/probe.S'], 'headers': [], 'stdout': None, 'kind': 'ret32'}, 'ret_dispatch': {'recipe_sha256': '3a9f92fd91f943308e6c8d1e1f59563bc9d0c97fffa5fde6f88f1675e115b887', 'units': ['tests/ret_dispatch/oracle.c', 'tests/ret_dispatch/model.c', 'linked_ret_dispatch.c', 'tests/decoder/support.c'], 'headers': ['linked_ret_dispatch.h', 'tests/ret_dispatch/model.h', 'persistent_group_plan.h'], 'stdout': 'ret-dispatch descriptors=15 decoded=795 models=671 forms=512 arguments=6 bindings=16 corruptions=20 interiors=459 geometry=4 recovery_controls=16 far_models=4 literal_controls=12 relocations=6\n', 'kind': 'component'}, 'ret_dispatch_plan': {'recipe_sha256': '91db34f0fc34df963610ec494142f837f5c1a1866d54b159317b9bbc8e2864c0', 'units': ['tests/ret_dispatch_plan/oracle.c', 'tests/ret_dispatch/model.c', 'persistent_group_plan.c', 'persistent_group_compact.c', 'linked_ret_dispatch.c', 'linked_call_dispatch.c', 'linked_jmp_dispatch.c', 'linked_direct_dispatch.c', 'linked_mov_guard.c', 'tests/decoder/support.c'], 'headers': ['persistent_group_plan.h', 'persistent_group_compact.h', 'linked_ret_dispatch.h', 'linked_call_dispatch.h', 'linked_jmp_dispatch.h', 'linked_direct_dispatch.h', 'linked_mov_guard.h', 'tests/ret_dispatch/model.h'], 'stdout': 'ret-dispatch-plan plans=8 models=924 refusals=6 geometry=9 capacities=4 corruptions=36 interiors=459 landings=4098 compact_recoveries=167772 loaded_recoveries=528 rows=53 arguments=24 far_plans=2 far_corruptions=24\n', 'kind': 'component'}, 'ret_dispatch_native': {'recipe_sha256': 'd7e719e5cdc915910c33fb2e31b05646d00af4788ca932d73b790b4a85db6f48', 'units': ['tests/ret_dispatch_native/probe.c', 'tests/ret_dispatch_native/probe.S', 'linked_ret_dispatch.c', 'tests/decoder/support.c'], 'headers': ['linked_ret_dispatch.h', 'linked_jmp_domain.h', 'decoder.h'], 'stdout': None, 'kind': 'adapter'}}
 
 
 def need(ok, message):
@@ -545,32 +545,50 @@ def main():
                  inspected['qualification_credit'] is False and inspected['interpreter'] == image['interpreter'],
                  'whole actual native bootstrap and return inspection before execution')
             r['components'][name]['emitted_inspection'] = inspected
-            out, err = run(name+'-native', [output,'0'] if case['kind'] == 'ret32' else [output], 'native'); child = r['commands'][-1]
-            expected_bytes, magic, record, cases, lanes, end = (
-                (5879872,0x3154455232494c,183736,32,32,0x3145455232494c) if case['kind'] == 'ret32' else
-                (8845632,0x314e524432494c,368544,16,24,0x3145524432494c))
-            need(not err and len(out) == expected_bytes < 16 << 20, 'whole exact fixed native chunk')
-            h = struct.unpack_from('<32Q', out)
-            need(h[:4] == (magic,1,256 if case['kind'] == 'ret32' else 512,record) and h[10:17] == (cases,0,0,cases,lanes,child['pid'],args.cpu) and
-                 h[28:30] == (inspected['reload_address'],inspected['scratch_end_address']) and
-                 struct.unpack_from('<8Q',out,len(out)-64) == (end,1,lanes,len(out),0,0,0,0),
-                 'actual PID/CPU/ELF-bootstrap and complete fixed chunk/footer joins')
-            raw_path = private/child['captures']['stdout']['file']
-            out, err = run(name+'-reader', [tools['python'],'-I','-S','-B',reader,
-                '--expect-cpu',str(args.cpu),'--expect-pid',str(child['pid']),raw_path], 'native')
-            need(not err, 'complete native reader stderr empty')
-            observed = json.loads(out, object_pairs_hook=unique)
-            expected_source = dict(pid=child['pid'],bytes=expected_bytes,sha256=child['captures']['stdout']['sha256'])
-            if case['kind'] == 'adapter': expected_source['cpu'] = args.cpu
-            else: need(observed['cpu'] == args.cpu, 'actual RET32 reader CPU')
-            need(observed['source'] == expected_source, 'reader joins exact actual raw chunk/PID/CPU')
-            result = ret_compact(observed) if case['kind'] == 'ret32' else native_compact(observed)
-            if case['kind'] == 'ret32': result['observations'] = observed['observations']
-            r['components'][name].update(status=observed['status'], result=result)
-            r['native_execution'] += lanes
-            if case['kind'] == 'adapter': r['generated_execution'] = 16
-        need(list(r['components']) == list(CASES) and [v['status'] for v in r['components'].values()] == ['observed_unqualified','passed','finite_ret_adapter_observed'],
-             'all three separate complete finite results; no scope promotion')
+            for address_model in (('low','high') if case['kind'] == 'adapter' else ('original',)):
+                run_name = name+'_high' if address_model == 'high' else name
+                if address_model == 'high':
+                    r['components'][run_name] = dict(r['components'][name], status='not_run', result=None,
+                        address_model='high-cluster-low-window', executable_reused_from=name)
+                out, err = run(run_name+'-native', [output,'0'] if case['kind'] == 'ret32' else [output,*(['--high'] if address_model == 'high' else [])], 'native'); child = r['commands'][-1]
+                expected_bytes, magic, record, cases, lanes, end = (
+                    (5879872,0x3154455232494c,183736,32,32,0x3145455232494c) if case['kind'] == 'ret32' else
+                    (8845632,0x314e524432494c,368544,16,24,0x3145524432494c))
+                need(not err and len(out) == expected_bytes < 16 << 20, 'whole exact fixed native chunk')
+                h = struct.unpack_from('<64Q' if case['kind'] == 'adapter' else '<32Q', out)
+                need(h[:4] == (magic,1,256 if case['kind'] == 'ret32' else 512,record) and h[10:17] == (cases,0,0,cases,lanes,child['pid'],args.cpu) and
+                     h[28:30] == (inspected['reload_address'],inspected['scratch_end_address']) and
+                     struct.unpack_from('<8Q',out,len(out)-64) == (end,1,lanes,len(out),0,0,0,0),
+                     'actual PID/CPU/ELF-bootstrap and complete fixed chunk/footer joins')
+                raw_path = private/child['captures']['stdout']['file']
+                out, err = run(run_name+'-reader', [tools['python'],'-I','-S','-B',reader,
+                    '--expect-cpu',str(args.cpu),'--expect-pid',str(child['pid']),
+                    *(['--expect-address-model','high'] if address_model == 'high' else []),raw_path], 'native')
+                need(not err, 'complete native reader stderr empty')
+                observed = json.loads(out, object_pairs_hook=unique)
+                expected_source = dict(pid=child['pid'],bytes=expected_bytes,sha256=child['captures']['stdout']['sha256'])
+                if case['kind'] == 'adapter': expected_source['cpu'] = args.cpu
+                else: need(observed['cpu'] == args.cpu, 'actual RET32 reader CPU')
+                need(observed['source'] == expected_source, 'reader joins exact actual raw chunk/PID/CPU')
+                result = ret_compact(observed) if case['kind'] == 'ret32' else native_compact(observed)
+                if case['kind'] == 'ret32': result['observations'] = observed['observations']
+                if address_model == 'high':
+                    expected_geometry = dict(model='high-cluster-low-window',cluster=h[21],cluster_bytes=24*4096,
+                        window=h[34],loaded_miss=h[34]+128,generated=h[30],loaded_jump_offset=190,
+                        loaded_jump_bytes=6,landing_literal_offset=504,
+                        signed_distance=h[34]+128-(h[30]+196),beyond_rel32=True)
+                    need(observed['address_geometry'] == expected_geometry and expected_geometry['signed_distance'] < -(1<<31),
+                         'actual high cluster/low window joins raw chunk and exceeds signed32 reach')
+                elif case['kind'] == 'adapter':
+                    need('address_geometry' not in observed, 'original low cohort remains separately identified')
+                r['components'][run_name].update(status=observed['status'], result=result)
+                r['native_execution'] += lanes
+                if case['kind'] == 'adapter': r['generated_execution'] += 16
+        need(list(r['components']) == [*CASES,'ret_dispatch_native_high'] and
+             [v['status'] for v in r['components'].values()] ==
+             ['observed_unqualified','passed','passed','finite_ret_adapter_observed','finite_ret_adapter_observed'] and
+             r['native_execution'] == 80 and r['generated_execution'] == 32,
+             'all five separate complete finite results, original low cohort and mandatory high cohort; no scope promotion')
         r['status'] = 'finite_experiments_passed'
     except BaseException as error:
         r['error'] = type(error).__name__+': '+str(error)

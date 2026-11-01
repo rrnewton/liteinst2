@@ -142,9 +142,9 @@
       "sha256": "3e239969f1d043c9a4261ccfe8a464f18eecbf6a5ef9a4dd6139e2023c1f3bd2"
     },
     "tools/page-entry/selected/runtime_loader.c": {
-      "bytes": 60937,
+      "bytes": 61900,
       "mode": "0644",
-      "sha256": "2b9122b32b06abcd204e424131f6c0f12da5848f409580add2b8ce7a36f4235e"
+      "sha256": "bc961d3bd1cac7a28b030bbfe2a348e2d62e4916569d391646d8b7e4ac08a7bc"
     },
     "tools/page-entry/selected/tests/generic/fixture.S": {
       "bytes": 3971,
