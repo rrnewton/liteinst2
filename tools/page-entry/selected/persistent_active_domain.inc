@@ -428,7 +428,13 @@ static int pda_bind(const ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
         } else if(m->plan->head[j].kind==LI2_PG_CALL) {
             const struct li2_cd_descriptor *c=&m->plan->instruction[j].call;
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+            uintptr_t target;
+            if(c->version!=LI2_CD_VERSION || c->ready!=1 || c->refusal ||
+               (c->target>=16 && (c->target!=LI2_CD_DIRECT_TARGET || li2_cd_direct_target(c,&target))))return PE_PLAN;
+#else
             if(c->version!=LI2_CD_VERSION || c->ready!=1 || c->refusal || c->target>=16)return PE_PLAN;
+#endif
             call_stack_effect|=UINT64_C(1)<<4;
 #endif
 #ifdef LI2_PERSISTENT_RET_DISPATCH

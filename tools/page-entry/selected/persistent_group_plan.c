@@ -180,7 +180,17 @@ int li2_pg_call_binding(const uintptr_t pages[2],const struct li2_pg_layout *lay
     *out=(struct li2_cd_binding){common.rows,{common.image[0],common.image[1]},heads,head,common.directory,layout->window};
     return 0;
 }
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+static int call_form(uintptr_t pc,const unsigned char *bytes,size_t n) {
+    if(n>=5 && bytes[0]==0xe8) {
+        uint32_t bits=0;for(unsigned i=0;i<4;i++)bits|=(uint32_t)bytes[i+1]<<(8*i);
+        const uint64_t next=pc+5;
+        if(bits&UINT32_C(0x80000000))return next>=UINT64_C(0x100000000)-bits;
+        return next<UINT64_C(0x800000000000) && bits<UINT64_C(0x800000000000)-next;
+    }
+#else
 static int call_form(const unsigned char *bytes,size_t n) {
+#endif
     if(!n)return 0;
     const unsigned prefix=bytes[0]==0x41?1U:0U;
     return n>=prefix+2U && bytes[prefix]==0xff && bytes[prefix+1]>=0xd0 && bytes[prefix+1]<=0xd7;
@@ -409,7 +419,11 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
         }
 #endif
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+        if(!kind && call_form(d.decoded.pc,bytes,count)) {
+#else
         if(!kind && call_form(bytes,count)) {
+#endif
             if((e=call_describe(p,&d,bytes,count,&call)))return e;
             kind=LI2_PG_CALL;
         }
@@ -473,6 +487,32 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
             /* No static callee or return-continuation borrow. The one exit
                is the exact original CALL before any architectural effect. */
             unsigned x=p->exits++;p->frontier[x]=d;p->exit_pc[x]=q[at].pc;
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+            /* A direct callee is only a queued possible directory head.
+               No third page is borrowed and CALL still has no successor.
+               Preserve deterministic BFS: held callee, then held return. */
+            if(call.target==LI2_CD_DIRECT_TARGET) {
+                uintptr_t target;unsigned page,offset;
+                if(li2_cd_direct_target(&call,&target))return LI2_PG_DECODER;
+                if(location(p,target,&page,&offset) && enqueue(p,q,&n,target)<0) {
+                    pgd_enqueue_refusal(p,q,n,q[at].pc,target,miss);
+                    return LI2_PG_GRAPH;
+                }
+            }
+#endif
+#ifdef LI2_PERSISTENT_CALL_RETURN_HEADS
+            /* The pushed original next-PC is not a CALL successor. Certify
+               it as a possible directory head only within these held pages,
+               through the same queue, decoder and byte-ownership proof.
+               A next-PC outside the pair remains a valid pushed value and
+               grants no source read or generated entry there. */
+            unsigned page,offset;
+            if(location(p,d.decoded.next_pc,&page,&offset) &&
+               enqueue(p,q,&n,d.decoded.next_pc)<0) {
+                pgd_enqueue_refusal(p,q,n,q[at].pc,d.decoded.next_pc,miss);
+                return LI2_PG_GRAPH;
+            }
+#endif
             continue;
         }
 #endif

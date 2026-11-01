@@ -11,9 +11,61 @@ static int disp(uint64_t next,uint64_t target,uint32_t *out) {
     else { uint64_t n=next-target;if(n>UINT32_C(0x80000000))return 0;*out=0U-(uint32_t)n; }
     return 1;
 }
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+static int direct_descriptor(uintptr_t pc,const unsigned char *bytes,size_t n,
+                             struct li2_cd_descriptor *out,uintptr_t *target) {
+    if(!bytes || n<5 || n>15 || bytes[0]!=0xe8 || !address(pc,n))return LI2_CD_FORM;
+    uint32_t bits=0;for(unsigned i=0;i<4;i++)bits|=(uint32_t)bytes[i+1]<<(8*i);
+    const uint64_t next=pc+5;
+    uint64_t value;
+    if(bits&UINT32_C(0x80000000)) {
+        const uint64_t distance=UINT64_C(0x100000000)-bits;
+        if(next<distance)return LI2_CD_FORM;
+        value=next-distance;
+    } else {
+        if(next>UINT64_MAX-bits)return LI2_CD_FORM;
+        value=next+bits;
+    }
+    if(!address(value,1))return LI2_CD_FORM;
+    *out=(struct li2_cd_descriptor){
+        .decoded={.pc=pc,.next_pc=next,.abi_version=1,.decode_status=LI2_VALID,
+            .code=693,.kind=LI2_NONE,.destination=16,.step_disposition=LI2_STEP_UNSUPPORTED,
+            .available=(uint32_t)n,.length=5},
+        .tf={.pc=pc,.next_pc=next,.abi_version=1,.policy=1,.code=693,.length=5,
+            .flow=LI2_TF_NEAR_FLOW,.family=LI2_TF_CALL},
+        .version=LI2_CD_VERSION,.ready=1,.available=(uint32_t)n,.target=LI2_CD_DIRECT_TARGET};
+    copy(out->decoded.bytes,bytes,n);*target=(uintptr_t)value;return 0;
+}
+int li2_cd_direct_target(const struct li2_cd_descriptor *d,uintptr_t *target) {
+    if(!d || !target)return LI2_CD_ARGUMENT;
+    struct li2_cd_descriptor expected;uintptr_t value;
+    if(direct_descriptor(d->decoded.pc,d->decoded.bytes,d->available,&expected,&value) ||
+       !same(d,&expected,sizeof expected))return LI2_CD_CORRUPT;
+    *target=value;return 0;
+}
+static int describe_direct(uintptr_t pc,const unsigned char *bytes,size_t n,struct li2_cd_descriptor *out) {
+    struct li2_cd_descriptor expected;uintptr_t target;
+    if(direct_descriptor(pc,bytes,n,&expected,&target))return LI2_CD_FORM;
+    struct li2_write_registers regs={.gpr={[4]=0x1000}};
+    struct li2_write_footprint actual={0},wanted={.pc=pc,.next_pc=pc+5,
+        .first=0xff8,.end=0x1000,.abi_version=1,.policy=LI2_WRITE_RANGE,.code=693,.length=5};
+    if(li2_decoder_decode(pc,bytes,n,&out->decoded) ||
+       li2_decoder_tf_classify(pc,bytes,n,&out->tf) ||
+       li2_decoder_write_footprint(pc,bytes,n,&regs,&actual))return LI2_CD_DECODER;
+    if(!same(&expected.decoded,&out->decoded,sizeof out->decoded) ||
+       !same(&expected.tf,&out->tf,sizeof out->tf) || !same(&actual,&wanted,sizeof actual))return LI2_CD_FORM;
+    regs.gpr[4]=0;wanted.first=wanted.end=0;wanted.policy=LI2_WRITE_UNSUPPORTED;
+    if(li2_decoder_write_footprint(pc,bytes,n,&regs,&actual))return LI2_CD_DECODER;
+    if(!same(&actual,&wanted,sizeof actual))return LI2_CD_FORM;
+    out->target=LI2_CD_DIRECT_TARGET;return 0;
+}
+#endif
 static int describe(uintptr_t pc,const unsigned char *bytes,size_t n,struct li2_cd_descriptor *out) {
     if(!bytes || !n || n>15 || !address(pc,n))return LI2_CD_ARGUMENT;
     out->version=LI2_CD_VERSION;out->available=(uint32_t)n;
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+    if(bytes[0]==0xe8)return describe_direct(pc,bytes,n,out);
+#endif
     unsigned prefix=bytes[0]==0x41?1U:0U,length=prefix+2U;
     if(n<length || bytes[prefix]!=0xff || bytes[prefix+1]<0xd0 || bytes[prefix+1]>0xd7)return LI2_CD_FORM;
     unsigned target=(bytes[prefix+1]&7U)+8U*prefix;
@@ -126,13 +178,24 @@ static int build(uintptr_t pc,const unsigned char *bytes,size_t n,uintptr_t gene
     if(!binding(pc,n,generated,spill_at,b))return LI2_CD_ARGUMENT;
     p->record.version=LI2_CD_VERSION;p->generated=generated;p->spill=spill_at;copy(&p->binding,b,sizeof *b);
     int e=li2_cd_describe(pc,bytes,n,&p->original);if(e)return e;
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+    uintptr_t target=0;const unsigned direct=p->original.target==LI2_CD_DIRECT_TARGET;
+    if(direct && li2_cd_direct_target(&p->original,&target))return LI2_CD_FORM;
+    unsigned blocked=(1U<<0)|(1U<<4)|(1U<<12)|(direct?0U:(1U<<p->original.target));
+#else
     unsigned blocked=(1U<<0)|(1U<<4)|(1U<<12)|(1U<<p->original.target);
+#endif
     p->record.scratch_regs[0]=0;unsigned count=1;
     for(unsigned i=1;i<16 && count<4;i++)if(!(blocked&(1U<<i)))p->record.scratch_regs[count++]=i;
     if(count!=4)return LI2_CD_FORM;
     unsigned A=p->record.scratch_regs[1],E=p->record.scratch_regs[2],T=p->record.scratch_regs[3];
     struct writer w={.p=p};for(unsigned i=0;i<4;i++)spill(&w,i,0);
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+    if(direct)absolute(&w,T,target);else rr(&w,0x89,p->original.target,T);
+    w.dirty|=8;
+#else
     rr(&w,0x89,p->original.target,T);w.dirty|=8;
+#endif
     static const unsigned char lahf[]={0x9f},seto[]={0x0f,0x90,0xc0};
     emit(&w,lahf,1);w.dirty|=1;w.flags=LI2_MG_AH_PHYSICAL_OF;
     emit(&w,seto,3);w.flags=LI2_MG_AH_AL;
@@ -230,14 +293,25 @@ int li2_cd_recover(const struct li2_cd_plan *p,uintptr_t pc,const uint64_t raw[1
     out->return_pc=p->original.decoded.next_pc;out->original_rsp=out->gpr[4];
     out->phase=m->phase==LI2_CD_CELL_READY?LI2_CD_BEFORE:m->phase;
     out->original_pc=p->original.decoded.pc;
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+    uintptr_t target=0;const unsigned direct=p->original.target==LI2_CD_DIRECT_TARGET;
+    if(direct && li2_cd_direct_target(&p->original,&target))return LI2_CD_CORRUPT;
+#endif
     if(m->phase==LI2_CD_PUSH || m->phase==LI2_CD_COMMITTED) {
         if(m->dirty || m->flags!=LI2_MG_PHYSICAL || m->spill_valid!=15 ||
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+           (p->original.target>=16 && !direct) ||
+#else
            p->original.target>=16 ||
+#endif
            pc!=p->generated+(m->phase==LI2_CD_PUSH?p->record.push_offset:p->record.transfer_offset))return LI2_CD_CORRUPT;
     }
     if(m->phase==LI2_CD_COMMITTED) {
         if(!address(out->gpr[4],8) || out->gpr[4]+8>=UINT64_C(0x800000000000))return LI2_CD_CORRUPT;
         out->original_rsp=out->gpr[4]+8;
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+        if(direct)out->original_pc=target;else
+#endif
         out->original_pc=p->original.target==4?out->original_rsp:out->gpr[p->original.target];
         if(!address(out->original_pc,1))return LI2_CD_CORRUPT;
     }

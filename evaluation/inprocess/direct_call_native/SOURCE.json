@@ -1,0 +1,1131 @@
+{
+  "archive_builds": 0,
+  "artifacts": {
+    "README.md": {
+      "bytes": 3942,
+      "mode": "0644",
+      "sha256": "a2a6c0b2b6faf04bebb2be093e33a7c2468a6dd56ed4209790dc9bc2602028c7"
+    },
+    "components.py": {
+      "bytes": 11933,
+      "mode": "0644",
+      "sha256": "4b23e42a2c37a42abc61010b2b73a00a9b92085453ebb65e668a67cbd9ce8609"
+    },
+    "return_heads.py": {
+      "bytes": 16024,
+      "mode": "0644",
+      "sha256": "af36cc3c3285b531d67f2c45c71dbacb7bd15bd4762e642190d2925ee74c7ea5"
+    },
+    "run.py": {
+      "bytes": 29841,
+      "mode": "0755",
+      "sha256": "50e3290a4348f204449d3be75bf742823a4e1cbd08e1c0ddfec3627fac79f8d0"
+    }
+  },
+  "bounds": {
+    "build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "finite": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "native": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "release_build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ]
+  },
+  "commands": [
+    "resolve-cc1",
+    "resolve-collect2",
+    "resolve-as",
+    "resolve-ld",
+    "version-cc",
+    "version-as",
+    "version-ld",
+    "version-nm",
+    "link-input-crt1.o",
+    "link-input-Scrt1.o",
+    "link-input-crti.o",
+    "link-input-crtn.o",
+    "link-input-crtbegin.o",
+    "link-input-crtbeginS.o",
+    "link-input-crtend.o",
+    "link-input-crtendS.o",
+    "link-input-libgcc.a",
+    "link-input-libgcc_eh.a",
+    "link-input-libgcc_s.so",
+    "link-input-libgcc_s.so.1",
+    "link-input-libc.so",
+    "link-input-libc_nonshared.a",
+    "link-input-libc.so.6",
+    "link-input-libdl.a",
+    "link-input-libpthread.a",
+    "link-input-libm.so",
+    "link-input-libm.so.6",
+    "link-input-libmvec.so.1",
+    "compiler-specs",
+    "retained-archive-exports",
+    "components-tool-cc-dependencies",
+    "components-tool-nm-dependencies",
+    "components-tool-readelf-dependencies",
+    "components-tool-git-dependencies",
+    "components-tool-sh-dependencies",
+    "components-tool-cc1-dependencies",
+    "components-tool-collect2-dependencies",
+    "components-tool-as-dependencies",
+    "components-tool-ld-dependencies",
+    "components-tool-python-dependencies",
+    "components-link-crt1.o",
+    "components-link-Scrt1.o",
+    "components-link-crti.o",
+    "components-link-crtn.o",
+    "components-link-crtbegin.o",
+    "components-link-crtbeginS.o",
+    "components-link-crtend.o",
+    "components-link-crtendS.o",
+    "components-link-libgcc.a",
+    "components-link-libgcc_eh.a",
+    "components-link-libgcc_s.so",
+    "components-link-libgcc_s.so.1",
+    "components-link-libc.so",
+    "components-link-libc_nonshared.a",
+    "components-link-libc.so.6",
+    "components-link-libdl.a",
+    "components-link-libpthread.a",
+    "components-link-libm.so",
+    "components-link-libm.so.6",
+    "components-link-libmvec.so.1",
+    "components-archive-exports",
+    "components-call_dispatch-off-headers",
+    "components-call_dispatch-off-build",
+    "components-call_dispatch-off-dependencies",
+    "components-call_dispatch-off-component",
+    "components-ret_dispatch-off-headers",
+    "components-ret_dispatch-off-build",
+    "components-ret_dispatch-off-dependencies",
+    "components-ret_dispatch-off-component",
+    "components-call_dispatch_plan-off-headers",
+    "components-call_dispatch_plan-off-build",
+    "components-call_dispatch_plan-off-dependencies",
+    "components-call_dispatch_plan-off-component",
+    "components-ret_dispatch_plan-off-headers",
+    "components-ret_dispatch_plan-off-build",
+    "components-ret_dispatch_plan-off-dependencies",
+    "components-ret_dispatch_plan-off-component",
+    "components-call_dispatch-on-headers",
+    "components-call_dispatch-on-build",
+    "components-call_dispatch-on-dependencies",
+    "components-call_dispatch-on-component",
+    "components-ret_dispatch-on-headers",
+    "components-ret_dispatch-on-build",
+    "components-ret_dispatch-on-dependencies",
+    "components-ret_dispatch-on-component",
+    "components-call_dispatch_plan-on-headers",
+    "components-call_dispatch_plan-on-build",
+    "components-call_dispatch_plan-on-dependencies",
+    "components-call_dispatch_plan-on-component",
+    "components-ret_dispatch_plan-on-headers",
+    "components-ret_dispatch_plan-on-build",
+    "components-ret_dispatch_plan-on-dependencies",
+    "components-ret_dispatch_plan-on-component",
+    "components-call_return_heads-on-headers",
+    "components-call_return_heads-on-build",
+    "components-call_return_heads-on-dependencies",
+    "components-call_return_heads-on-component",
+    "components-call_dispatch-direct-headers",
+    "components-call_dispatch-direct-build",
+    "components-call_dispatch-direct-dependencies",
+    "components-call_dispatch-direct-component",
+    "components-ret_dispatch-direct-headers",
+    "components-ret_dispatch-direct-build",
+    "components-ret_dispatch-direct-dependencies",
+    "components-ret_dispatch-direct-component",
+    "components-call_dispatch_plan-direct-headers",
+    "components-call_dispatch_plan-direct-build",
+    "components-call_dispatch_plan-direct-dependencies",
+    "components-call_dispatch_plan-direct-component",
+    "components-ret_dispatch_plan-direct-headers",
+    "components-ret_dispatch_plan-direct-build",
+    "components-ret_dispatch_plan-direct-dependencies",
+    "components-ret_dispatch_plan-direct-component",
+    "components-call_return_heads-direct-headers",
+    "components-call_return_heads-direct-build",
+    "components-call_return_heads-direct-dependencies",
+    "components-call_return_heads-direct-component",
+    "components-direct_call_dispatch-direct-headers",
+    "components-direct_call_dispatch-direct-build",
+    "components-direct_call_dispatch-direct-dependencies",
+    "components-direct_call_dispatch-direct-component",
+    "headers-0",
+    "headers-1",
+    "headers-2",
+    "headers-3",
+    "build",
+    "native-providers",
+    "emitted-inspection",
+    "runtime-dependencies",
+    "native-0",
+    "native-1",
+    "read-all-chunks"
+  ],
+  "components": [
+    {
+      "additional_defines": [],
+      "direct_call": false,
+      "fixture": "call_dispatch",
+      "headers": [
+        "linked_call_dispatch.h",
+        "tests/call_dispatch/model.h",
+        "persistent_group_plan.h"
+      ],
+      "name": "call_dispatch-off",
+      "recipe": "tools/page-entry/selected/tests/call_dispatch/build.sh",
+      "recipe_enables_return_heads": false,
+      "recipe_fact": {
+        "bytes": 950,
+        "mode": "0755",
+        "sha256": "6dc7d25a4741a6a621e7f54b7bebc1ae4878e6d5b13d2d4b29ae07f2db408f55"
+      },
+      "return_heads": false,
+      "source_aliases": {},
+      "stdout": "call-dispatch descriptors=16 decoded=736 models=4111 forms=512 arguments=8 bindings=12 corruptions=16 interiors=466 geometry=4 recovery_controls=8\n",
+      "units": [
+        "tests/call_dispatch/oracle.c",
+        "tests/call_dispatch/model.c",
+        "linked_call_dispatch.c",
+        "tests/decoder/support.c"
+      ]
+    },
+    {
+      "additional_defines": [],
+      "direct_call": false,
+      "fixture": "ret_dispatch",
+      "headers": [
+        "linked_ret_dispatch.h",
+        "tests/ret_dispatch/model.h",
+        "persistent_group_plan.h"
+      ],
+      "name": "ret_dispatch-off",
+      "recipe": "tools/page-entry/selected/tests/ret_dispatch/build.sh",
+      "recipe_enables_return_heads": false,
+      "recipe_fact": {
+        "bytes": 981,
+        "mode": "0755",
+        "sha256": "3a9f92fd91f943308e6c8d1e1f59563bc9d0c97fffa5fde6f88f1675e115b887"
+      },
+      "return_heads": false,
+      "source_aliases": {},
+      "stdout": "ret-dispatch descriptors=15 decoded=795 models=671 forms=512 arguments=6 bindings=16 corruptions=20 interiors=459 geometry=4 recovery_controls=16 far_models=4 literal_controls=12 relocations=6\n",
+      "units": [
+        "tests/ret_dispatch/oracle.c",
+        "tests/ret_dispatch/model.c",
+        "linked_ret_dispatch.c",
+        "tests/decoder/support.c"
+      ]
+    },
+    {
+      "additional_defines": [],
+      "direct_call": false,
+      "fixture": "call_dispatch_plan",
+      "headers": [
+        "linked_call_dispatch.h",
+        "tests/call_dispatch/model.h",
+        "persistent_group_plan.h",
+        "persistent_group_compact.h"
+      ],
+      "name": "call_dispatch_plan-off",
+      "recipe": "tools/page-entry/selected/tests/call_dispatch_plan/build.sh",
+      "recipe_enables_return_heads": false,
+      "recipe_fact": {
+        "bytes": 1259,
+        "mode": "0755",
+        "sha256": "6f80a27704475286531365eb6dbb89c1ee27af1fde9ffe2e460a81ec40430442"
+      },
+      "return_heads": false,
+      "source_aliases": {},
+      "stdout": "call-dispatch-plan plans=51 models=1105 refusals=6 geometry=12 capacities=2 corruptions=17 interiors=466 compact_recoveries=164070\n",
+      "units": [
+        "tests/call_dispatch_plan/oracle.c",
+        "tests/call_dispatch/model.c",
+        "persistent_group_plan.c",
+        "persistent_group_compact.c",
+        "linked_call_dispatch.c",
+        "linked_jmp_dispatch.c",
+        "linked_direct_dispatch.c",
+        "linked_mov_guard.c",
+        "tests/decoder/support.c"
+      ]
+    },
+    {
+      "additional_defines": [],
+      "direct_call": false,
+      "fixture": "ret_dispatch_plan",
+      "headers": [
+        "persistent_group_plan.h",
+        "persistent_group_compact.h",
+        "linked_ret_dispatch.h",
+        "linked_call_dispatch.h",
+        "linked_jmp_dispatch.h",
+        "linked_direct_dispatch.h",
+        "linked_mov_guard.h",
+        "tests/ret_dispatch/model.h"
+      ],
+      "name": "ret_dispatch_plan-off",
+      "recipe": "tools/page-entry/selected/tests/ret_dispatch_plan/build.sh",
+      "recipe_enables_return_heads": false,
+      "recipe_fact": {
+        "bytes": 1353,
+        "mode": "0644",
+        "sha256": "91db34f0fc34df963610ec494142f837f5c1a1866d54b159317b9bbc8e2864c0"
+      },
+      "return_heads": false,
+      "source_aliases": {},
+      "stdout": "ret-dispatch-plan plans=8 models=924 refusals=6 geometry=9 capacities=4 corruptions=36 interiors=459 landings=4098 compact_recoveries=167772 loaded_recoveries=528 rows=53 arguments=24 far_plans=2 far_corruptions=24\n",
+      "units": [
+        "tests/ret_dispatch_plan/oracle.c",
+        "tests/ret_dispatch/model.c",
+        "persistent_group_plan.c",
+        "persistent_group_compact.c",
+        "linked_ret_dispatch.c",
+        "linked_call_dispatch.c",
+        "linked_jmp_dispatch.c",
+        "linked_direct_dispatch.c",
+        "linked_mov_guard.c",
+        "tests/decoder/support.c"
+      ]
+    },
+    {
+      "additional_defines": [
+        "-DLI2_PERSISTENT_CALL_RETURN_HEADS=1"
+      ],
+      "direct_call": false,
+      "fixture": "call_dispatch",
+      "headers": [
+        "linked_call_dispatch.h",
+        "tests/call_dispatch/model.h",
+        "persistent_group_plan.h"
+      ],
+      "name": "call_dispatch-on",
+      "recipe": "tools/page-entry/selected/tests/call_dispatch/build.sh",
+      "recipe_enables_return_heads": false,
+      "recipe_fact": {
+        "bytes": 950,
+        "mode": "0755",
+        "sha256": "6dc7d25a4741a6a621e7f54b7bebc1ae4878e6d5b13d2d4b29ae07f2db408f55"
+      },
+      "return_heads": true,
+      "source_aliases": {},
+      "stdout": "call-dispatch descriptors=16 decoded=736 models=4111 forms=512 arguments=8 bindings=12 corruptions=16 interiors=466 geometry=4 recovery_controls=8\n",
+      "units": [
+        "tests/call_dispatch/oracle.c",
+        "tests/call_dispatch/model.c",
+        "linked_call_dispatch.c",
+        "tests/decoder/support.c"
+      ]
+    },
+    {
+      "additional_defines": [
+        "-DLI2_PERSISTENT_CALL_RETURN_HEADS=1"
+      ],
+      "direct_call": false,
+      "fixture": "ret_dispatch",
+      "headers": [
+        "linked_ret_dispatch.h",
+        "tests/ret_dispatch/model.h",
+        "persistent_group_plan.h"
+      ],
+      "name": "ret_dispatch-on",
+      "recipe": "tools/page-entry/selected/tests/ret_dispatch/build.sh",
+      "recipe_enables_return_heads": false,
+      "recipe_fact": {
+        "bytes": 981,
+        "mode": "0755",
+        "sha256": "3a9f92fd91f943308e6c8d1e1f59563bc9d0c97fffa5fde6f88f1675e115b887"
+      },
+      "return_heads": true,
+      "source_aliases": {},
+      "stdout": "ret-dispatch descriptors=15 decoded=795 models=671 forms=512 arguments=6 bindings=16 corruptions=20 interiors=459 geometry=4 recovery_controls=16 far_models=4 literal_controls=12 relocations=6\n",
+      "units": [
+        "tests/ret_dispatch/oracle.c",
+        "tests/ret_dispatch/model.c",
+        "linked_ret_dispatch.c",
+        "tests/decoder/support.c"
+      ]
+    },
+    {
+      "additional_defines": [],
+      "direct_call": false,
+      "fixture": "call_dispatch_plan",
+      "headers": [
+        "linked_call_dispatch.h",
+        "tests/call_dispatch/model.h",
+        "persistent_group_plan.h",
+        "persistent_group_compact.h"
+      ],
+      "name": "call_dispatch_plan-on",
+      "recipe": "tools/page-entry/selected/tests/call_dispatch_plan/build-return-heads.sh",
+      "recipe_enables_return_heads": true,
+      "recipe_fact": {
+        "bytes": 1313,
+        "mode": "0755",
+        "sha256": "31e3cef4d25047338dcb0bc89a3b579d7aa874ff80a031f23d714bd38b73ff29"
+      },
+      "return_heads": true,
+      "source_aliases": {},
+      "stdout": "call-dispatch-plan plans=50 models=1105 refusals=6 geometry=12 capacities=2 corruptions=17 interiors=466 compact_recoveries=164070\n",
+      "units": [
+        "tests/call_dispatch_plan/return_heads_oracle.c",
+        "tests/call_dispatch/model.c",
+        "persistent_group_plan.c",
+        "persistent_group_compact.c",
+        "linked_call_dispatch.c",
+        "linked_jmp_dispatch.c",
+        "linked_direct_dispatch.c",
+        "linked_mov_guard.c",
+        "tests/decoder/support.c"
+      ]
+    },
+    {
+      "additional_defines": [],
+      "direct_call": false,
+      "fixture": "ret_dispatch_plan",
+      "headers": [
+        "persistent_group_plan.h",
+        "persistent_group_compact.h",
+        "linked_ret_dispatch.h",
+        "linked_call_dispatch.h",
+        "linked_jmp_dispatch.h",
+        "linked_direct_dispatch.h",
+        "linked_mov_guard.h",
+        "tests/ret_dispatch/model.h"
+      ],
+      "name": "ret_dispatch_plan-on",
+      "recipe": "tools/page-entry/selected/tests/ret_dispatch_plan/build-return-heads.sh",
+      "recipe_enables_return_heads": true,
+      "recipe_fact": {
+        "bytes": 1407,
+        "mode": "0644",
+        "sha256": "3f3e5e27d48732fa45b4e868413b9324b09ccb9fd01fc5cf6b8fabb3b749f50b"
+      },
+      "return_heads": true,
+      "source_aliases": {},
+      "stdout": "ret-dispatch-plan plans=8 models=924 refusals=6 geometry=9 capacities=4 corruptions=36 interiors=459 landings=4098 compact_recoveries=167772 loaded_recoveries=528 rows=53 arguments=24 far_plans=2 far_corruptions=24\n",
+      "units": [
+        "tests/ret_dispatch_plan/return_heads_oracle.c",
+        "tests/ret_dispatch/model.c",
+        "persistent_group_plan.c",
+        "persistent_group_compact.c",
+        "linked_ret_dispatch.c",
+        "linked_call_dispatch.c",
+        "linked_jmp_dispatch.c",
+        "linked_direct_dispatch.c",
+        "linked_mov_guard.c",
+        "tests/decoder/support.c"
+      ]
+    },
+    {
+      "additional_defines": [],
+      "direct_call": false,
+      "fixture": "call_return_heads",
+      "headers": [
+        "persistent_group_plan.h",
+        "persistent_group_compact.h",
+        "linked_ret_dispatch.h",
+        "linked_call_dispatch.h",
+        "tests/ret_dispatch/model.h",
+        "tests/call_dispatch/model.h"
+      ],
+      "name": "call_return_heads-on",
+      "recipe": "tools/page-entry/selected/tests/call_return_heads/build.sh",
+      "recipe_enables_return_heads": true,
+      "recipe_fact": {
+        "bytes": 1390,
+        "mode": "0755",
+        "sha256": "9ff50f627546ea65f1359d8d75cfa1f04df806735b2dd5f9d35da5a6addb938a"
+      },
+      "return_heads": true,
+      "source_aliases": {
+        "tests/call_dispatch/model.c": "tests/call_dispatch/call_model.c",
+        "tests/ret_dispatch/model.c": "tests/ret_dispatch/ret_model.c"
+      },
+      "stdout": "call-return-heads plans=105 pairs=45 rsp_misses=3 boundaries=49 deduplications=3 capacities=4 refusals=9 corruptions=8\n",
+      "units": [
+        "tests/call_return_heads/oracle.c",
+        "tests/ret_dispatch/model.c",
+        "tests/call_dispatch/model.c",
+        "persistent_group_plan.c",
+        "persistent_group_compact.c",
+        "linked_ret_dispatch.c",
+        "linked_call_dispatch.c",
+        "linked_jmp_dispatch.c",
+        "linked_direct_dispatch.c",
+        "linked_mov_guard.c",
+        "tests/decoder/support.c"
+      ]
+    },
+    {
+      "additional_defines": [
+        "-DLI2_PERSISTENT_DIRECT_CALL=1",
+        "-DLI2_PERSISTENT_CALL_RETURN_HEADS=1"
+      ],
+      "direct_call": true,
+      "fixture": "call_dispatch",
+      "headers": [
+        "linked_call_dispatch.h",
+        "tests/call_dispatch/model.h",
+        "persistent_group_plan.h"
+      ],
+      "name": "call_dispatch-direct",
+      "recipe": "tools/page-entry/selected/tests/call_dispatch/build-direct-call.sh",
+      "recipe_enables_return_heads": false,
+      "recipe_fact": {
+        "bytes": 957,
+        "mode": "0755",
+        "sha256": "2c32ac268800c3df874adaa3039519f93181c5dec32e771e192763f407cc7a9a"
+      },
+      "return_heads": true,
+      "source_aliases": {},
+      "stdout": "call-dispatch descriptors=16 decoded=736 models=4111 forms=512 arguments=8 bindings=12 corruptions=16 interiors=466 geometry=4 recovery_controls=8\n",
+      "units": [
+        "tests/call_dispatch/oracle.c",
+        "tests/call_dispatch/direct_model.c",
+        "linked_call_dispatch.c",
+        "tests/decoder/support.c"
+      ]
+    },
+    {
+      "additional_defines": [
+        "-DLI2_PERSISTENT_DIRECT_CALL=1",
+        "-DLI2_PERSISTENT_CALL_RETURN_HEADS=1"
+      ],
+      "direct_call": true,
+      "fixture": "ret_dispatch",
+      "headers": [
+        "linked_ret_dispatch.h",
+        "tests/ret_dispatch/model.h",
+        "persistent_group_plan.h"
+      ],
+      "name": "ret_dispatch-direct",
+      "recipe": "tools/page-entry/selected/tests/ret_dispatch/build.sh",
+      "recipe_enables_return_heads": false,
+      "recipe_fact": {
+        "bytes": 981,
+        "mode": "0755",
+        "sha256": "3a9f92fd91f943308e6c8d1e1f59563bc9d0c97fffa5fde6f88f1675e115b887"
+      },
+      "return_heads": true,
+      "source_aliases": {},
+      "stdout": "ret-dispatch descriptors=15 decoded=795 models=671 forms=512 arguments=6 bindings=16 corruptions=20 interiors=459 geometry=4 recovery_controls=16 far_models=4 literal_controls=12 relocations=6\n",
+      "units": [
+        "tests/ret_dispatch/oracle.c",
+        "tests/ret_dispatch/model.c",
+        "linked_ret_dispatch.c",
+        "tests/decoder/support.c"
+      ]
+    },
+    {
+      "additional_defines": [
+        "-DLI2_PERSISTENT_DIRECT_CALL=1"
+      ],
+      "direct_call": true,
+      "fixture": "call_dispatch_plan",
+      "headers": [
+        "linked_call_dispatch.h",
+        "tests/call_dispatch/model.h",
+        "persistent_group_plan.h",
+        "persistent_group_compact.h"
+      ],
+      "name": "call_dispatch_plan-direct",
+      "recipe": "tools/page-entry/selected/tests/call_dispatch_plan/build-direct-call.sh",
+      "recipe_enables_return_heads": true,
+      "recipe_fact": {
+        "bytes": 1319,
+        "mode": "0755",
+        "sha256": "73251a4c0cc4250f1bea20bf6bd590d397dc321732bba14565af144133072bca"
+      },
+      "return_heads": true,
+      "source_aliases": {},
+      "stdout": "call-dispatch-plan plans=50 models=1105 refusals=5 geometry=12 capacities=2 corruptions=17 interiors=466 compact_recoveries=164070\ncall-dispatch-plan direct_forms=1\n",
+      "units": [
+        "tests/call_dispatch_plan/direct_call_oracle.c",
+        "tests/call_dispatch/direct_model.c",
+        "persistent_group_plan.c",
+        "persistent_group_compact.c",
+        "linked_call_dispatch.c",
+        "linked_jmp_dispatch.c",
+        "linked_direct_dispatch.c",
+        "linked_mov_guard.c",
+        "tests/decoder/support.c"
+      ]
+    },
+    {
+      "additional_defines": [
+        "-DLI2_PERSISTENT_DIRECT_CALL=1"
+      ],
+      "direct_call": true,
+      "fixture": "ret_dispatch_plan",
+      "headers": [
+        "persistent_group_plan.h",
+        "persistent_group_compact.h",
+        "linked_ret_dispatch.h",
+        "linked_call_dispatch.h",
+        "linked_jmp_dispatch.h",
+        "linked_direct_dispatch.h",
+        "linked_mov_guard.h",
+        "tests/ret_dispatch/model.h"
+      ],
+      "name": "ret_dispatch_plan-direct",
+      "recipe": "tools/page-entry/selected/tests/ret_dispatch_plan/build-return-heads.sh",
+      "recipe_enables_return_heads": true,
+      "recipe_fact": {
+        "bytes": 1407,
+        "mode": "0644",
+        "sha256": "3f3e5e27d48732fa45b4e868413b9324b09ccb9fd01fc5cf6b8fabb3b749f50b"
+      },
+      "return_heads": true,
+      "source_aliases": {},
+      "stdout": "ret-dispatch-plan plans=8 models=924 refusals=6 geometry=9 capacities=4 corruptions=36 interiors=459 landings=4098 compact_recoveries=167772 loaded_recoveries=528 rows=53 arguments=24 far_plans=2 far_corruptions=24\n",
+      "units": [
+        "tests/ret_dispatch_plan/return_heads_oracle.c",
+        "tests/ret_dispatch/model.c",
+        "persistent_group_plan.c",
+        "persistent_group_compact.c",
+        "linked_ret_dispatch.c",
+        "linked_call_dispatch.c",
+        "linked_jmp_dispatch.c",
+        "linked_direct_dispatch.c",
+        "linked_mov_guard.c",
+        "tests/decoder/support.c"
+      ]
+    },
+    {
+      "additional_defines": [
+        "-DLI2_PERSISTENT_DIRECT_CALL=1"
+      ],
+      "direct_call": true,
+      "fixture": "call_return_heads",
+      "headers": [
+        "persistent_group_plan.h",
+        "persistent_group_compact.h",
+        "linked_ret_dispatch.h",
+        "linked_call_dispatch.h",
+        "tests/ret_dispatch/model.h",
+        "tests/call_dispatch/model.h"
+      ],
+      "name": "call_return_heads-direct",
+      "recipe": "tools/page-entry/selected/tests/call_return_heads/build-direct-call.sh",
+      "recipe_enables_return_heads": true,
+      "recipe_fact": {
+        "bytes": 1409,
+        "mode": "0755",
+        "sha256": "d4818767c865c603f4b3c050f22dc9f2d2cdb4f522726dd9affdc9c1edd0c8ad"
+      },
+      "return_heads": true,
+      "source_aliases": {},
+      "stdout": "call-return-heads plans=106 pairs=45 rsp_misses=3 boundaries=49 deduplications=3 capacities=4 refusals=8 corruptions=8\n",
+      "units": [
+        "tests/call_return_heads/direct_call_oracle.c",
+        "tests/ret_dispatch/model.c",
+        "tests/call_dispatch/direct_model.c",
+        "persistent_group_plan.c",
+        "persistent_group_compact.c",
+        "linked_ret_dispatch.c",
+        "linked_call_dispatch.c",
+        "linked_jmp_dispatch.c",
+        "linked_direct_dispatch.c",
+        "linked_mov_guard.c",
+        "tests/decoder/support.c"
+      ]
+    },
+    {
+      "additional_defines": [],
+      "direct_call": true,
+      "fixture": "direct_call_dispatch",
+      "headers": [
+        "persistent_group_plan.h",
+        "persistent_group_compact.h",
+        "linked_ret_dispatch.h",
+        "linked_call_dispatch.h",
+        "tests/ret_dispatch/model.h",
+        "tests/call_dispatch/model.h"
+      ],
+      "name": "direct_call_dispatch-direct",
+      "recipe": "tools/page-entry/selected/tests/direct_call_dispatch/build.sh",
+      "recipe_enables_return_heads": true,
+      "recipe_fact": {
+        "bytes": 1417,
+        "mode": "0755",
+        "sha256": "577235845f0077816157f46e06e24a3c25536ad501dc88750ed2e14a176bda44"
+      },
+      "return_heads": true,
+      "source_aliases": {},
+      "stdout": "direct-call descriptors=11 images=30 models=2594 forms=12 corruptions=512 recovery_controls=32 interiors=466 plans=13 pairs=5 boundary_misses=2 lookup_misses=2 refusals=7 graph_corruptions=12 descriptor_controls=8\n",
+      "units": [
+        "tests/direct_call_dispatch/oracle.c",
+        "tests/ret_dispatch/model.c",
+        "tests/call_dispatch/direct_model.c",
+        "persistent_group_plan.c",
+        "persistent_group_compact.c",
+        "linked_ret_dispatch.c",
+        "linked_call_dispatch.c",
+        "linked_jmp_dispatch.c",
+        "linked_direct_dispatch.c",
+        "linked_mov_guard.c",
+        "tests/decoder/support.c"
+      ]
+    }
+  ],
+  "expected": {
+    "commands": 132,
+    "components": 15,
+    "context_symlinks": 47,
+    "diagnostic_aliases": 3,
+    "native_chunks": 2,
+    "native_frames": 100,
+    "native_lanes": 48,
+    "native_pairs": 24,
+    "native_pre_push_frames": 4,
+    "native_trace_rows": 140,
+    "owner_subjects": 0,
+    "raw_chunk_bytes": 8709312,
+    "raw_total_bytes": 17418624
+  },
+  "inputs": {
+    "evaluation/inprocess/cached_ret_prerequisite.py": {
+      "bytes": 12916,
+      "mode": "0644",
+      "sha256": "9751cfcb5238a72eb8a109e7a7da7f0eaa75124d6447ef89e4434c2e27ca25e8"
+    },
+    "evaluation/inprocess/call_dispatch_native/run.py": {
+      "bytes": 33191,
+      "mode": "0755",
+      "sha256": "7ee867af3b31b5ce880eb13b88144b2a2dd7224222924574cf74777b5d19f2ee"
+    },
+    "evaluation/inprocess/call_owner/custody.py": {
+      "bytes": 8504,
+      "mode": "0644",
+      "sha256": "6835e75ceaf4b67f679668f55165101590fb1909a3d9b50245def13c0206ffa7"
+    },
+    "evaluation/inprocess/call_push_native/inspect.py": {
+      "bytes": 7352,
+      "mode": "0755",
+      "sha256": "57275fd74eb6fafac162d99d33f40f131e0a22adfd8f32602108d20c7e8f43f8"
+    },
+    "evaluation/inprocess/call_return_heads/SOURCE.json": {
+      "bytes": 160505,
+      "mode": "0644",
+      "sha256": "86fff097f5e77ce6da973593ea39a2c6d726c25fdc11c7f83fdbde25e2341678"
+    },
+    "evaluation/inprocess/call_return_heads/original_owner.py": {
+      "bytes": 2963,
+      "mode": "0644",
+      "sha256": "31f887597ac9943debf1156629ed55b3d60580a307d20051fb9ac0ec6d4898f7"
+    },
+    "evaluation/inprocess/checks.py": {
+      "bytes": 7782,
+      "mode": "0644",
+      "sha256": "04c89dcabf70a7986225bca51a59725a98fc620caef24c78519112ebe1c71e39"
+    },
+    "evaluation/inprocess/direct_call_native/return_heads.py": {
+      "bytes": 16024,
+      "mode": "0644",
+      "sha256": "af36cc3c3285b531d67f2c45c71dbacb7bd15bd4762e642190d2925ee74c7ea5"
+    },
+    "evaluation/inprocess/page_selected.py": {
+      "bytes": 29973,
+      "mode": "0644",
+      "sha256": "941c10dca909c9eed84af6606da38e0f88e4f76eda7f3deaf034282680674e17"
+    },
+    "evaluation/inprocess/page_selected_generic_build.py": {
+      "bytes": 19855,
+      "mode": "0644",
+      "sha256": "e9cc1f609c0fb0cf7ec316adc6bb77c5d64cf6ac9730e8bf1031c29f95cc2f9e"
+    },
+    "evaluation/inprocess/page_selected_process.py": {
+      "bytes": 7089,
+      "mode": "0644",
+      "sha256": "71cc09047a01bd62c79d994587998aac17655f0f65a4464c94f12df461f1f773"
+    },
+    "evaluation/inprocess/ret_dispatch/run.py": {
+      "bytes": 44152,
+      "mode": "0755",
+      "sha256": "6e4bfbc1a0fb6a78645d7a0eeb61007c45f6946c0bb35eed991a9b36d1231e7e"
+    },
+    "evaluation/inprocess/ret_owner/SOURCE.json": {
+      "bytes": 49621,
+      "mode": "0644",
+      "sha256": "a42ba016b3c0d17f0622b21012e70ef420a9094d4e540a318db868a147eed268"
+    },
+    "evaluation/inprocess/ret_owner/prerequisites.py": {
+      "bytes": 29668,
+      "mode": "0644",
+      "sha256": "bb0d21602938d43b4a9e6e1d8631941296e8f28d8f88d01cc4af4e06842729cc"
+    },
+    "evaluation/inprocess/ret_owner/run.py": {
+      "bytes": 39913,
+      "mode": "0755",
+      "sha256": "a4cac9307c5d7b22220ab6f89d773486a13a757ac7da4da8e8ba2cc60e92779b"
+    },
+    "evaluation/inprocess/run.py": {
+      "bytes": 13593,
+      "mode": "0644",
+      "sha256": "3e239969f1d043c9a4261ccfe8a464f18eecbf6a5ef9a4dd6139e2023c1f3bd2"
+    },
+    "evaluation/inprocess/scalar_span_trace_build.py": {
+      "bytes": 13086,
+      "mode": "0644",
+      "sha256": "71f44262038c3530751a70940ecb1b0c35972a51dfcecdfe3c38282857c73c95"
+    },
+    "tools/page-entry/selected/decoder.h": {
+      "bytes": 2884,
+      "mode": "0644",
+      "sha256": "c09bbc5fba41c268c42d31cdb1bb9946d8ec6aa994eb4093ee7ddb5563aba70e"
+    },
+    "tools/page-entry/selected/event_profile.h": {
+      "bytes": 1638,
+      "mode": "0644",
+      "sha256": "86681792b4ed2ef3d41b84dd384f4648402a026d50e9410b40226c5c94aa332c"
+    },
+    "tools/page-entry/selected/linked_add_guard.h": {
+      "bytes": 3341,
+      "mode": "0644",
+      "sha256": "661c80d63beb4f0ca3c04b85133ae030c874d5190a567f045bf5560149238a45"
+    },
+    "tools/page-entry/selected/linked_call_dispatch.c": {
+      "bytes": 19009,
+      "mode": "0644",
+      "sha256": "ab5d04077eacd012719df6bf0912850ecc19bee7b758c354027761499079a497"
+    },
+    "tools/page-entry/selected/linked_call_dispatch.h": {
+      "bytes": 5311,
+      "mode": "0644",
+      "sha256": "842a448e70f0cb192c167188c3c8f4ebf3882491560ce28e310dcd627ef2addd"
+    },
+    "tools/page-entry/selected/linked_direct_dispatch.c": {
+      "bytes": 16604,
+      "mode": "0644",
+      "sha256": "bc25150ca257332885c0d954788360d60604320fc76e40433b7afce7ed233fa7"
+    },
+    "tools/page-entry/selected/linked_direct_dispatch.h": {
+      "bytes": 3472,
+      "mode": "0644",
+      "sha256": "fa3a318ace89a0a305d382978c934ec6fda72a2555e20b54f9f16f09d64568e3"
+    },
+    "tools/page-entry/selected/linked_jmp_dispatch.c": {
+      "bytes": 17472,
+      "mode": "0644",
+      "sha256": "d3cca383754653c3e0de9ee348109e0c2973de724d3d6c3b1313c043763dda2d"
+    },
+    "tools/page-entry/selected/linked_jmp_dispatch.h": {
+      "bytes": 3907,
+      "mode": "0644",
+      "sha256": "39e13a0e21fc673611c4d9a8a6bd05307fbb5e65142a84a6aff6f5f3166e31ee"
+    },
+    "tools/page-entry/selected/linked_jmp_domain.h": {
+      "bytes": 1214,
+      "mode": "0644",
+      "sha256": "8d87f851e5ae0c364918b414974de9ab425a2201906a76b5b1e1a491a4eed473"
+    },
+    "tools/page-entry/selected/linked_jmp_domain_emit.inc": {
+      "bytes": 3795,
+      "mode": "0644",
+      "sha256": "1a93a761f5501a678ee39a8b5b94625765634378bb6b9b8126d85751a82f0f43"
+    },
+    "tools/page-entry/selected/linked_mov_guard.c": {
+      "bytes": 13541,
+      "mode": "0644",
+      "sha256": "98ea383ea0b43a1bcc876e365abd5f99a4a2c937574853270e791caa3658fbb2"
+    },
+    "tools/page-entry/selected/linked_mov_guard.h": {
+      "bytes": 3684,
+      "mode": "0644",
+      "sha256": "3474d562706b43429758c15e0e47b51d5356e0cda42a8644be18bb0cf1aadc09"
+    },
+    "tools/page-entry/selected/linked_plan.h": {
+      "bytes": 3066,
+      "mode": "0644",
+      "sha256": "8937bb2bb857c05faddd72dd172e63c4b858bf7db973f11a08fc48758b5f10ab"
+    },
+    "tools/page-entry/selected/linked_preedge_plan.h": {
+      "bytes": 6337,
+      "mode": "0644",
+      "sha256": "20fb22552ea7e0bdffc3e4f662696848b2039faa3353030ae40ccd1daa0d0d72"
+    },
+    "tools/page-entry/selected/linked_preedge_rseq.h": {
+      "bytes": 527,
+      "mode": "0644",
+      "sha256": "4e0965957bb887c009592ab38f818bd1c3864de429898fdc724302478af509bc"
+    },
+    "tools/page-entry/selected/linked_ret_dispatch.c": {
+      "bytes": 16654,
+      "mode": "0644",
+      "sha256": "e71e99412e8880e5d9abec43d7c0571cff77812ebd127f5dfb6ffa43875c3203"
+    },
+    "tools/page-entry/selected/linked_ret_dispatch.h": {
+      "bytes": 5603,
+      "mode": "0644",
+      "sha256": "555cb126c4801b11ee2c0266a5b4ee7a2702a7840df2261dc9937878d15cf996"
+    },
+    "tools/page-entry/selected/linked_rseq.h": {
+      "bytes": 1090,
+      "mode": "0644",
+      "sha256": "cc06f9b9a04582abb32bcd1d8fe799446f334bdc0a0d91a05cba4f0b9ae1fa30"
+    },
+    "tools/page-entry/selected/persistent_active_domain.inc": {
+      "bytes": 40934,
+      "mode": "0644",
+      "sha256": "2a3b83ea746f4c9ffb150030bf91e30ab939242a67540b7da69568fad27599b3"
+    },
+    "tools/page-entry/selected/persistent_compact.h": {
+      "bytes": 3248,
+      "mode": "0644",
+      "sha256": "e519f01f3d4381df125a3410d7af41fa93ed05716ad847d147256ca93df07582"
+    },
+    "tools/page-entry/selected/persistent_group_compact.c": {
+      "bytes": 47112,
+      "mode": "0644",
+      "sha256": "e3e25d7cf03ca0af6e8a7d1a7db9867d853d9ea661da796c8b02b2e1a19be9be"
+    },
+    "tools/page-entry/selected/persistent_group_compact.h": {
+      "bytes": 7608,
+      "mode": "0644",
+      "sha256": "69586fc20db5ff1496b196ac006f54f7a9c0ce66eb7983791f6ecd84111ee96c"
+    },
+    "tools/page-entry/selected/persistent_group_plan.c": {
+      "bytes": 58283,
+      "mode": "0644",
+      "sha256": "f345776cf456b627b56e5a2643b724526a72be988ff42f015354ed239a05542c"
+    },
+    "tools/page-entry/selected/persistent_group_plan.h": {
+      "bytes": 12813,
+      "mode": "0644",
+      "sha256": "1a8a0273efa7981bb11ecf33f5f1761ecce48095f17ca00055c25face81cfc5f"
+    },
+    "tools/page-entry/selected/persistent_plan.h": {
+      "bytes": 3595,
+      "mode": "0644",
+      "sha256": "f25cd15be92637bc2b09f90e938ebc60cf782759f852ed762b69ffcfbfdf9e94"
+    },
+    "tools/page-entry/selected/region_decode.h": {
+      "bytes": 7150,
+      "mode": "0644",
+      "sha256": "d9ccb59abd39bff378ecb30460e6d5c45142c2f77636b2c25068db9446a6e529"
+    },
+    "tools/page-entry/selected/region_plan.h": {
+      "bytes": 7464,
+      "mode": "0644",
+      "sha256": "08309b8a6d68964ea22f2ba945dd795370f73a3cd63d49f2a08a68cdf20dbab3"
+    },
+    "tools/page-entry/selected/step_owner.h": {
+      "bytes": 4364,
+      "mode": "0644",
+      "sha256": "aee2b97ec3a10d950066ac1db03a5f01f66717306fb8b7948696e66cad49059a"
+    },
+    "tools/page-entry/selected/tests/call_dispatch/build-direct-call.sh": {
+      "bytes": 957,
+      "mode": "0755",
+      "sha256": "2c32ac268800c3df874adaa3039519f93181c5dec32e771e192763f407cc7a9a"
+    },
+    "tools/page-entry/selected/tests/call_dispatch/build.sh": {
+      "bytes": 950,
+      "mode": "0755",
+      "sha256": "6dc7d25a4741a6a621e7f54b7bebc1ae4878e6d5b13d2d4b29ae07f2db408f55"
+    },
+    "tools/page-entry/selected/tests/call_dispatch/direct_model.c": {
+      "bytes": 10247,
+      "mode": "0644",
+      "sha256": "f634ae0136cad0b8465fc76f0a4a9678c8b06bf02dba8028f757269753e831b7"
+    },
+    "tools/page-entry/selected/tests/call_dispatch/model.c": {
+      "bytes": 9931,
+      "mode": "0644",
+      "sha256": "5b9973839ca1fd032ffa0f62c3fc05c2464046251ed72ecab5a012fabe218537"
+    },
+    "tools/page-entry/selected/tests/call_dispatch/model.h": {
+      "bytes": 431,
+      "mode": "0644",
+      "sha256": "ea5bda7121d01aa096cdad1d72c7a69de3eb2a74d56b5947461bb3fb4a6c4647"
+    },
+    "tools/page-entry/selected/tests/call_dispatch/oracle.c": {
+      "bytes": 12273,
+      "mode": "0644",
+      "sha256": "c9ce3dbf99e92cc225c7bbf22ed98d0439c3273cbad9bb1798a6d8b1c80deed8"
+    },
+    "tools/page-entry/selected/tests/call_dispatch_plan/build-direct-call.sh": {
+      "bytes": 1319,
+      "mode": "0755",
+      "sha256": "73251a4c0cc4250f1bea20bf6bd590d397dc321732bba14565af144133072bca"
+    },
+    "tools/page-entry/selected/tests/call_dispatch_plan/build-return-heads.sh": {
+      "bytes": 1313,
+      "mode": "0755",
+      "sha256": "31e3cef4d25047338dcb0bc89a3b579d7aa874ff80a031f23d714bd38b73ff29"
+    },
+    "tools/page-entry/selected/tests/call_dispatch_plan/build.sh": {
+      "bytes": 1259,
+      "mode": "0755",
+      "sha256": "6f80a27704475286531365eb6dbb89c1ee27af1fde9ffe2e460a81ec40430442"
+    },
+    "tools/page-entry/selected/tests/call_dispatch_plan/direct_call_oracle.c": {
+      "bytes": 14663,
+      "mode": "0644",
+      "sha256": "7450070d2e7e3e7e25bf7c62ff600c2f81abf36be4febe005af3860cb8e7290f"
+    },
+    "tools/page-entry/selected/tests/call_dispatch_plan/oracle.c": {
+      "bytes": 12421,
+      "mode": "0644",
+      "sha256": "76c058acb3d1bb4e48b428de3eb5f8cf0b93c60cb7e379255ec0b33b36334984"
+    },
+    "tools/page-entry/selected/tests/call_dispatch_plan/return_heads_oracle.c": {
+      "bytes": 12629,
+      "mode": "0644",
+      "sha256": "46949d11378843a656319b1166fce2f17bfa76ab224b77fe851b97ab701f1582"
+    },
+    "tools/page-entry/selected/tests/call_return_heads/build-direct-call.sh": {
+      "bytes": 1409,
+      "mode": "0755",
+      "sha256": "d4818767c865c603f4b3c050f22dc9f2d2cdb4f522726dd9affdc9c1edd0c8ad"
+    },
+    "tools/page-entry/selected/tests/call_return_heads/build.sh": {
+      "bytes": 1390,
+      "mode": "0755",
+      "sha256": "9ff50f627546ea65f1359d8d75cfa1f04df806735b2dd5f9d35da5a6addb938a"
+    },
+    "tools/page-entry/selected/tests/call_return_heads/direct_call_oracle.c": {
+      "bytes": 13681,
+      "mode": "0644",
+      "sha256": "ae687c2ef148a63b37f9d976865a6890cd36926a9a26acd792efb786b61997f7"
+    },
+    "tools/page-entry/selected/tests/call_return_heads/oracle.c": {
+      "bytes": 12858,
+      "mode": "0644",
+      "sha256": "f0da189c1747e64f4d02814e6e39660d1b720cb3c22b6f0e44a67403f0b6a026"
+    },
+    "tools/page-entry/selected/tests/decoder/support.c": {
+      "bytes": 1689,
+      "mode": "0644",
+      "sha256": "378440c08081156af2807a31809bec956001309b428e0cc29473f0ed2e57b4d2"
+    },
+    "tools/page-entry/selected/tests/direct_call_dispatch/build.sh": {
+      "bytes": 1417,
+      "mode": "0755",
+      "sha256": "577235845f0077816157f46e06e24a3c25536ad501dc88750ed2e14a176bda44"
+    },
+    "tools/page-entry/selected/tests/direct_call_dispatch/oracle.c": {
+      "bytes": 23411,
+      "mode": "0644",
+      "sha256": "f77727433db5ce46f2e22197484b2c3a8be5a6cc8dc0fdc814bb6480d52db2b9"
+    },
+    "tools/page-entry/selected/tests/direct_call_native/build.sh": {
+      "bytes": 1016,
+      "mode": "0755",
+      "sha256": "52bc56fd68cfefb47e045838e42752c603235e5e575693e34311756994a2df93"
+    },
+    "tools/page-entry/selected/tests/direct_call_native/probe.S": {
+      "bytes": 1846,
+      "mode": "0644",
+      "sha256": "734a8e4eba941f3b69c4031c5281cb0b2ccc35c9b92fbc53596ebe95a9ed86b9"
+    },
+    "tools/page-entry/selected/tests/direct_call_native/probe.c": {
+      "bytes": 22432,
+      "mode": "0644",
+      "sha256": "c050d35e23dba96b525a53a6e5fa8b9f30377891806f7c1eca01d8622317e12e"
+    },
+    "tools/page-entry/selected/tests/direct_call_native/read.py": {
+      "bytes": 28909,
+      "mode": "0755",
+      "sha256": "0537336ecab9a23aad14d8b09bea628e03cde98d70b2a204e8c78f63afb5b060"
+    },
+    "tools/page-entry/selected/tests/ret_dispatch/build.sh": {
+      "bytes": 981,
+      "mode": "0755",
+      "sha256": "3a9f92fd91f943308e6c8d1e1f59563bc9d0c97fffa5fde6f88f1675e115b887"
+    },
+    "tools/page-entry/selected/tests/ret_dispatch/model.c": {
+      "bytes": 12498,
+      "mode": "0644",
+      "sha256": "ae5ee6b60801f52bd0cafd895f0604730863d616fa058ff6f0a0bd4d478ed14e"
+    },
+    "tools/page-entry/selected/tests/ret_dispatch/model.h": {
+      "bytes": 546,
+      "mode": "0644",
+      "sha256": "9b82f6fae91441b2db1e424a0811f4b256339ca02c275a4b246ebd4219e58dc4"
+    },
+    "tools/page-entry/selected/tests/ret_dispatch/oracle.c": {
+      "bytes": 17941,
+      "mode": "0644",
+      "sha256": "8f560dd4bd5442d93b78a811c7c245e6dfd216fd4018522b606e4f1921cd6e62"
+    },
+    "tools/page-entry/selected/tests/ret_dispatch_plan/build-return-heads.sh": {
+      "bytes": 1407,
+      "mode": "0644",
+      "sha256": "3f3e5e27d48732fa45b4e868413b9324b09ccb9fd01fc5cf6b8fabb3b749f50b"
+    },
+    "tools/page-entry/selected/tests/ret_dispatch_plan/build.sh": {
+      "bytes": 1353,
+      "mode": "0644",
+      "sha256": "91db34f0fc34df963610ec494142f837f5c1a1866d54b159317b9bbc8e2864c0"
+    },
+    "tools/page-entry/selected/tests/ret_dispatch_plan/oracle.c": {
+      "bytes": 19245,
+      "mode": "0644",
+      "sha256": "e10a671f9cd5c774d668095d6186c5a949349a07f91779d88c7a8051d5c2db3e"
+    },
+    "tools/page-entry/selected/tests/ret_dispatch_plan/return_heads_oracle.c": {
+      "bytes": 19284,
+      "mode": "0644",
+      "sha256": "f15cfffb4f50806115becaf7bd0d59b1ebdb93e80ec71fe461353507703b933e"
+    },
+    "tools/page-entry/selected/tf_owner.h": {
+      "bytes": 5192,
+      "mode": "0644",
+      "sha256": "b3dc4dbcac4f86158831837ec306ef8b117846bfc7ade721fdb5d859c94f9a95"
+    },
+    "tools/page-entry/selected/write_footprint.h": {
+      "bytes": 1518,
+      "mode": "0644",
+      "sha256": "80444c8cab68d34ca40145637a82ad11ae986a2eaa708f12558c1be99079b1a2"
+    }
+  },
+  "link_names": [
+    "crt1.o",
+    "Scrt1.o",
+    "crti.o",
+    "crtn.o",
+    "crtbegin.o",
+    "crtbeginS.o",
+    "crtend.o",
+    "crtendS.o",
+    "libgcc.a",
+    "libgcc_eh.a",
+    "libgcc_s.so",
+    "libgcc_s.so.1",
+    "libc.so",
+    "libc_nonshared.a",
+    "libc.so.6",
+    "libdl.a",
+    "libpthread.a",
+    "libm.so",
+    "libm.so.6",
+    "libmvec.so.1"
+  ],
+  "performance_credit": false,
+  "prerequisite_copies": 0,
+  "qualification_credit": false,
+  "schema": 1,
+  "scope": "Fifteen full components and24 native E8 pairs; original-nine and return-head owner are complete retained prerequisites"
+}

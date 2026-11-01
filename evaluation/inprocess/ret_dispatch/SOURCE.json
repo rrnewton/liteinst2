@@ -67,14 +67,14 @@
       "sha256": "661c80d63beb4f0ca3c04b85133ae030c874d5190a567f045bf5560149238a45"
     },
     "tools/page-entry/selected/linked_call_dispatch.c": {
-      "bytes": 15305,
+      "bytes": 19009,
       "mode": "0644",
-      "sha256": "9e28a6a35de6006089ee84259da288053a2ec6bbff861a8eb067e0159b55d7fc"
+      "sha256": "ab5d04077eacd012719df6bf0912850ecc19bee7b758c354027761499079a497"
     },
     "tools/page-entry/selected/linked_call_dispatch.h": {
-      "bytes": 4620,
+      "bytes": 5311,
       "mode": "0644",
-      "sha256": "1d2ad2d5668c608c7e0388e648e31696498ab9cb2a26c921bf403d9bc41106c8"
+      "sha256": "842a448e70f0cb192c167188c3c8f4ebf3882491560ce28e310dcd627ef2addd"
     },
     "tools/page-entry/selected/linked_direct_dispatch.c": {
       "bytes": 16604,
@@ -152,24 +152,24 @@
       "sha256": "e519f01f3d4381df125a3410d7af41fa93ed05716ad847d147256ca93df07582"
     },
     "tools/page-entry/selected/persistent_group_compact.c": {
-      "bytes": 46606,
+      "bytes": 47112,
       "mode": "0644",
-      "sha256": "9d1d51fd4a0ba49c18a208eb0b0b1ba03135d7826e1d774a274bc2db2ec9be3b"
+      "sha256": "e3e25d7cf03ca0af6e8a7d1a7db9867d853d9ea661da796c8b02b2e1a19be9be"
     },
     "tools/page-entry/selected/persistent_group_compact.h": {
-      "bytes": 7392,
+      "bytes": 7608,
       "mode": "0644",
-      "sha256": "34da39c208a85028361f33eb1da85811a13a07bbd82aa9e1ae60c5802b59c64a"
+      "sha256": "69586fc20db5ff1496b196ac006f54f7a9c0ce66eb7983791f6ecd84111ee96c"
     },
     "tools/page-entry/selected/persistent_group_plan.c": {
-      "bytes": 56372,
+      "bytes": 58283,
       "mode": "0644",
-      "sha256": "cb13600452d572a8bdb89afc47e581c3e60481cb0b3a643c1c3ef5bf8ed7bc24"
+      "sha256": "f345776cf456b627b56e5a2643b724526a72be988ff42f015354ed239a05542c"
     },
     "tools/page-entry/selected/persistent_group_plan.h": {
-      "bytes": 12064,
+      "bytes": 12813,
       "mode": "0644",
-      "sha256": "06a4bde0320a7bac98421bb197a05ff2738fe92846c59f6e18d04a362154e177"
+      "sha256": "1a8a0273efa7981bb11ecf33f5f1761ecce48095f17ca00055c25face81cfc5f"
     },
     "tools/page-entry/selected/persistent_plan.h": {
       "bytes": 3595,
