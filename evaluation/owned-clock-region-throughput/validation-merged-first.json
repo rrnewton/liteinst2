@@ -1,0 +1,344 @@
+{
+  "schema": 1,
+  "status": "PASS",
+  "scope": "Merged-source correctness validation only. Durations are operational wall times, not benchmark timings or performance qualification.",
+  "tested_revision": "df52271f4538c15a051933da0ee388e86276a5f7",
+  "source_tree": "ef6626450e18446046dddab6a36061a95c64b12b",
+  "merge_parents": [
+    "2f1637bcbffcb5886d5ccb27807972374def65d0",
+    "e01bc3ace642dc1b63f1af47475bbd0fa29b4f5f"
+  ],
+  "first_validation": {
+    "path": "validation-first.json",
+    "bytes": 16315,
+    "sha256": "6800c8ae5d775a1a9efb8510ac580c5bd821de9109a64bbc9c9427e0f4f04403",
+    "retained_history": "Literal first receipt retains focused-v1 Clippy101, focused-v2PASS and mistyped-revision refusal before any command. None is relabeled."
+  },
+  "closed": {
+    "bytes": 5340,
+    "sha256": "743f4eb3ed2a9c77114f3e50968f6e2245e529c425f9f071279d6c52abd6245e"
+  },
+  "source_carry": {
+    "from": "2f1637bcbffcb5886d5ccb27807972374def65d0",
+    "to": "df52271f4538c15a051933da0ee388e86276a5f7",
+    "scope": [
+      "src",
+      "tests",
+      "crates",
+      "examples",
+      "Cargo.toml",
+      "Cargo.lock",
+      "tools/software-preemption",
+      "evaluation/owned-clock-region-throughput",
+      "evaluation/owned-clock-region"
+    ],
+    "diff_empty": true
+  },
+  "benchmark_attribution": {
+    "measured_revision": "2f1637bcbffcb5886d5ccb27807972374def65d0",
+    "independent_processes": 12,
+    "additional_benchmark_runs_for_this_merge": 0,
+    "note": "The sole fixed 12-process campaign remains attributed to 2f1637bc; this merge receipt supplies no new performance samples."
+  },
+  "driver": {
+    "path": "evaluation/short-neighbor-parallel/validate.py",
+    "bytes": 3757,
+    "sha256": "968956df64edd3f5754a0adbd4b900ac68535d188be01af0628eff94d2ed6d10",
+    "helper": {
+      "path": "evaluation/admission/processes.py",
+      "bytes": 15760,
+      "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+    },
+    "environment": "Identical to the SHA-bound first receipt, including env-i, stable direct toolchain, offline/incremental0/dev-test-debug0/jobs12/threads12 and single target.",
+    "argv": [
+      "python3.9",
+      "-I",
+      "-B",
+      "evaluation/short-neighbor-parallel/validate.py",
+      "--revision",
+      "df52271f4538c15a051933da0ee388e86276a5f7",
+      "--output",
+      "ignored/a3/owned-clock-region-benchmark-merged-validation-v1"
+    ],
+    "reservation": [
+      "cpuset-alloc",
+      "run",
+      "--cores",
+      "12",
+      "--tag",
+      "li2core-region-bench-merged-validation-v1",
+      "--"
+    ],
+    "launch_authority": "Root-reported launch differs from first only in revision/output/tag; actual affinity and commands are in CLOSED."
+  },
+  "cpu_affinity": [
+    8,
+    13,
+    17,
+    34,
+    40,
+    63,
+    67,
+    75,
+    77,
+    85,
+    86,
+    92
+  ],
+  "build_jobs": 12,
+  "test_threads": 12,
+  "serial_test_threads": 1,
+  "capture_cap_bytes_per_command": 8388608,
+  "cleanup_budget_seconds": 3,
+  "total_command_seconds": 872.1346254318487,
+  "results": [
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "result": {
+        "start_utc": "2026-11-01T10:25:02.805457+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 10.102973117958754,
+        "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        "50.96",
+        "54.69",
+        "59.92"
+      ],
+      "load_after": [
+        "50.47",
+        "54.47",
+        "59.79"
+      ],
+      "wall_bound_seconds": 180
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "result": {
+        "start_utc": "2026-11-01T10:25:12.909068+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.158147559966892,
+        "private_log_sha256": "63bd8a3ac13f8b1c160887cdaf9b30715b07e638d60df463cb8815f661518191",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        "50.47",
+        "54.47",
+        "59.79"
+      ],
+      "load_after": [
+        "50.47",
+        "54.47",
+        "59.79"
+      ],
+      "wall_bound_seconds": 180
+    },
+    {
+      "name": "check",
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "result": {
+        "start_utc": "2026-11-01T10:25:13.067856+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.13542092288844287,
+        "private_log_sha256": "9ddcb7a97f3589835ba8f354c41d25b0a805bd5f85ddbccaff009e6f6dc7236c",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        "50.47",
+        "54.47",
+        "59.79"
+      ],
+      "load_after": [
+        "50.47",
+        "54.47",
+        "59.79"
+      ],
+      "wall_bound_seconds": 180
+    },
+    {
+      "name": "workspace",
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "12",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "result": {
+        "start_utc": "2026-11-01T10:25:13.203851+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 734.9815119409468,
+        "private_log_sha256": "7d9ff13b4a9ee77b83ee8fccda504ab7011ab2a73f169de925500b2ed0d775b3",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        "50.47",
+        "54.47",
+        "59.79"
+      ],
+      "load_after": [
+        "45.43",
+        "47.48",
+        "52.17"
+      ],
+      "wall_bound_seconds": 900
+    },
+    {
+      "name": "serial-launch",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "result": {
+        "start_utc": "2026-11-01T10:37:28.189608+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 126.7565718900878,
+        "private_log_sha256": "b5427e881e236c74a730ac5231d5b4b24e6d5cfb414be626a1e1d3b1a6686148",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        "45.43",
+        "47.48",
+        "52.17"
+      ],
+      "load_after": [
+        "35.31",
+        "42.93",
+        "49.89"
+      ],
+      "wall_bound_seconds": 180
+    }
+  ],
+  "census": {
+    "workspace": {
+      "all_summary_lines": 118,
+      "all_counts": {
+        "passed": 4396,
+        "failed": 0,
+        "ignored": 39,
+        "measured": 0,
+        "filtered_out": 105
+      },
+      "nested_summaries": 3,
+      "nested_counts": {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 105
+      },
+      "top_level_summary_lines": 115,
+      "top_level_counts": {
+        "passed": 4393,
+        "failed": 0,
+        "ignored": 39,
+        "measured": 0,
+        "filtered_out": 0
+      }
+    },
+    "serial-launch": {
+      "all_summary_lines": 27,
+      "all_counts": {
+        "passed": 1039,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "nested_summaries": 0,
+      "nested_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "top_level_summary_lines": 27,
+      "top_level_counts": {
+        "passed": 1039,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      }
+    }
+  },
+  "nested_accounting": "Exactly three emitter/single/grouped runtime_control_oracle_modes children, each with one pass and 35 filtered tests, within the controlled_oracle context. The parent 36-test summary remains counted; no other exclusion.",
+  "summary_roster": {
+    "workspace": {
+      "same_summary_context_count_multiset_as_first": true,
+      "sha256": "129a5e6a8c33d99d35c3674e3da600d87e0422f1e729bb58b99b4ddf07762966"
+    },
+    "serial-launch": {
+      "same_summary_context_count_multiset_as_first": true,
+      "sha256": "691b4ee64698e15f443f9654f6184fba7e71b03b61f4aa60ea347a069a8731cc"
+    }
+  },
+  "short_neighbor": {
+    "count": 21,
+    "source": {
+      "bytes": 55244,
+      "sha256": "89b55d484d6b440a658bbce64bb09bd561ce29e9eebf2b0753c5964fab3ff5c1"
+    },
+    "exact_source_and_pass_sets_equal": true,
+    "names_sha256": "d254f447cacb424a9da706d870854a5aa79303fd53b08dfba61b5b1c9bc905ad"
+  },
+  "critical_regressions": {
+    "rapid::tests::live::install_rejects_each_mutated_window_byte": "workspace_PASS",
+    "trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners": "workspace_PASS",
+    "native_state_covers_every_prefixed_pun_and_original_successor": "workspace_PASS",
+    "overlapping_artifact_native::native_overlapping_artifact_selected_before_preserves_full_state": "workspace_PASS",
+    "overlapping_artifact_native::native_overlapping_artifact_selected_after_preserves_full_state": "workspace_PASS",
+    "region_benchmark::tests::repeated_region_schedule_matches_nested_loop": "workspace_PASS",
+    "linux::remote::dynamic::owner::admission::exec::tests::native::admitted_exec_native_first_user_and_retired_history_are_exact": "workspace_and_serial_PASS",
+    "linux::remote::dynamic::owner::admission::exec::tests::native::admitted_exec_native_source_reply_refusal_keeps_new_mm_held": "workspace_and_serial_PASS",
+    "linux::remote::dynamic::owner::admission::exec::tests::native::failures::admitted_exec_native_source_profile_bound_refuses_after_exec": "workspace_and_serial_PASS",
+    "stale_exec_source_reply_preserves_actual_replacement_without_commit": "workspace_and_serial_PASS",
+    "original_exec_replacement_matches_raw_replay_and_native_full_state": "workspace_and_serial_PASS"
+  },
+  "verification": "Independent read-only parsing of CLOSED captures; complete five normal0 owners/zero rescues, unchanged recipe/helper/source and same requested regression cases. No tests/build/native work performed by this review."
+}

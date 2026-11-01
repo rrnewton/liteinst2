@@ -111,9 +111,16 @@ The release `region-oracle NEW_ABSOLUTE_OUTPUT` command compares a fixed nested
 3×4 loop against native execution, checks exact stops across both sites, and
 rejects actual wrong-site/count resumes before refill. See the
 [reproducer and measured correctness results](../../evaluation/owned-clock-region/README.md).
-It uses an owned fixture installation; this profile has no production-publication
-or throughput qualification yet. The existing commands and results retain their
-original scopes.
+It uses an owned fixture installation; production-publication qualification
+remains outside this profile.
+
+The release `region-bench ORDER NEW_ABSOLUTE_OUTPUT` command measures native,
+counter and quantum-64 stop arms. `ORDER` is a permutation of
+`native,counter,stop`. Each batch retains exact clock/checksum and handoff checks;
+all qualification, warmup and measured rows survive. Use the
+[fixed 12-process campaign and results](../../evaluation/owned-clock-region-throughput/README.md)
+for its reserved CPUs, bounds, statistics and timing limits. The measurements
+include per-call guards and callback/controller checks on the tiny nested loop.
 
 ## Explicit SPSC handoff experiment
 
