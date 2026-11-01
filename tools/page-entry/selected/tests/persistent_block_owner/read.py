@@ -566,7 +566,14 @@ class Check(prior.Check):
         self.observation(self.f(tr,tt,'fresh'),pc,False,ref)
         need(self.i(hp,pt,'transfer_serial')==self.i(tr,tt,'serial'),'actual cancellation progress binds full transfer serial')
         self.eq(newslot,'li2_tf_chain_slot',index=h[8],origin=2)
+        prior_slot=last['closed_slot']
+        need(self.i(prior_slot,'li2_tf_chain_slot','index')==h[8]and
+             self.i(newslot,'li2_tf_chain_slot','generation')==self.i(prior_slot,'li2_tf_chain_slot','generation')+1,
+             'resumed slot advances its own last captured generation exactly once')
         _,fresh=self.predecessor(newslot,pc,returned,closed=False)
+        oldref=self.f(self.f(oldslot,'li2_tf_chain_slot','fetch'),'li2_chain_fetch','ref')
+        need(self.i(fresh,'li2_fetch_ref','owner')==self.i(ref,'li2_fetch_ref','owner')==self.i(oldref,'li2_fetch_ref','owner'),
+             'cancelled source and resumed predecessor retain the actual fetch singleton identity')
         self.step_frame(self.f(self.f(self.f(newslot,'li2_tf_chain_slot','owner'),'li2_tf_owner','step'),'li2_step_owner','before'),before)
         need(self.i(fresh,'li2_fetch_ref','sequence')>self.i(ref,'li2_fetch_ref','sequence')and self.i(newslot,'li2_tf_chain_slot','event_id')==self.i(tr,tt,'event'),'real new successor borrow after cancelled source release')
         self.progress(self.f(held,st,'fetch'),self.i(ref,'li2_fetch_ref','sequence'),True)
