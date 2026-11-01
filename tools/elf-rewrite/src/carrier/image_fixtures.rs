@@ -1,6 +1,9 @@
 //! Additive structural fixtures; these bytes are not a native loader qualification.
 use super::*;
 
+#[path = "rx_run_fixtures.rs"]
+mod rx_run_fixtures;
+
 #[path = "property_fixtures.rs"]
 mod property_fixtures;
 

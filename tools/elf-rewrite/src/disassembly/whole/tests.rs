@@ -1438,3 +1438,314 @@ fn whole_entry_veneer_preserves_direct_plans_and_full_pending_atomic_refusal() {
         assert_eq!(original, saved);
     }
 }
+
+// Force caller order opposite virtual order, without changing either selected
+// source or the original one-candidate/one-page planning policy.
+fn packed_rx_fixture() -> (Vec<u8>, String, String) {
+    let (original, text, mut p) = current_placement_fixture(2);
+    let source = PC & !4095;
+    let free = BASE + 0x40000;
+    for id in 1..=2 {
+        let seed = free + (id - 1) * 4096;
+        p = p.replace(
+            &format!("allocation {id} selected {source} 1 4096 "),
+            &format!("allocation {id} selected {seed} 1 4096 "),
+        );
+    }
+    (original, text, p)
+}
+
+#[test]
+fn whole_packed_rx_runs_share_headers_keep_caller_order_and_legacy_bytes() {
+    use crate::carrier::elf64::{Elf64, ElfVaddr, FileOffset, ParseLimits, SegmentType};
+    let (original, text, p) = packed_rx_fixture();
+    let saved = original.clone();
+    let selected = bind(&original, &text, &p).unwrap();
+    let saved_files = selected.files.clone();
+    let old = crate::prepare_disassembly_whole_entry_veneer_mixed_neighbors(&original, &selected)
+        .unwrap();
+    let packed =
+        crate::prepare_disassembly_whole_packed_entry_veneer_mixed_neighbors(&original, &selected)
+            .unwrap();
+    assert!(old.candidate_complete() && packed.candidate_complete());
+    assert!(!packed.qualification_complete());
+    assert_eq!(
+        packed.reports().iter().map(|r| r.id).collect::<Vec<_>>(),
+        [1, 2]
+    );
+    assert!(packed.reports().iter().all(|r| r.core_tactic
+        == Some(li2core::engine::Tactic::Relocation)
+        && r.refusal.is_none()
+        && r.candidate_emitted));
+    assert_eq!(
+        packed.files().keys().collect::<Vec<_>>(),
+        old.files().keys().collect::<Vec<_>>()
+    );
+    for (name, bytes) in old.files() {
+        if !matches!(
+            name.as_str(),
+            "candidate.elf" | "ledger.tsv" | "planning-profile.tsv" | "bundle-index.tsv"
+        ) {
+            assert_eq!(
+                &packed.files()[name],
+                bytes,
+                "unchanged plan/input/report: {name}"
+            );
+        }
+    }
+    let before = Elf64::parse(
+        &old.files()["candidate.elf"],
+        ParseLimits {
+            max_program_headers: 64,
+        },
+    )
+    .unwrap();
+    let after = Elf64::parse(
+        &packed.files()["candidate.elf"],
+        ParseLimits {
+            max_program_headers: 64,
+        },
+    )
+    .unwrap();
+    assert_eq!(before.program_headers().len(), 6);
+    assert_eq!(after.program_headers().len(), 5);
+    assert_eq!(after.header().entry, before.header().entry);
+    // Original LOADs and all per-image bytes stay exact; generated addresses
+    // and their caller identities are unchanged despite reversed file backing.
+    let original_elf = Elf64::parse(
+        &original,
+        ParseLimits {
+            max_program_headers: 64,
+        },
+    )
+    .unwrap();
+    for ph in original_elf.segments(SegmentType::Load) {
+        let old_load = before
+            .segments(SegmentType::Load)
+            .find(|p| p.vaddr == ph.vaddr)
+            .unwrap();
+        let new_load = after
+            .segments(SegmentType::Load)
+            .find(|p| p.vaddr == ph.vaddr)
+            .unwrap();
+        let mut expected = ph.clone();
+        expected.index = old_load.index;
+        assert_eq!(old_load, &expected);
+        expected.index = new_load.index;
+        assert_eq!(new_load, &expected);
+    }
+    let ledger = std::str::from_utf8(&packed.files()["ledger.tsv"]).unwrap();
+    let rows: Vec<Vec<&str>> = ledger.lines().map(|l| l.split('\t').collect()).collect();
+    let runs: Vec<_> = rows.iter().filter(|r| r[0] == "rx-run").collect();
+    let members: Vec<_> = rows.iter().filter(|r| r[0] == "rx-run-member").collect();
+    let images: Vec<_> = rows.iter().filter(|r| r[0] == "elf-image").collect();
+    assert_eq!((runs.len(), members.len(), images.len()), (1, 2, 2));
+    assert_eq!(runs[0].len(), 10);
+    assert_eq!(&runs[0][7..], &["5", "4096", "2"]);
+    assert_eq!(ledger.matches("RX-RUN-EXTENSION\t1\n").count(), 1);
+    assert!(ledger.contains("rx_run_count\t1\nrx_run_image_count\t2\n"));
+    let free = BASE + 0x40000;
+    let mut files = Vec::new();
+    for id in 0..2 {
+        let image = images[id];
+        let member = members[id];
+        assert_eq!((image.len(), member.len()), (6, 7));
+        assert_eq!(image[1], id.to_string());
+        assert_eq!(member[1], image[1]);
+        assert_eq!(member[2], runs[0][1]);
+        assert_eq!(member[3], runs[0][2]);
+        assert_eq!(member[3], image[5]);
+        assert_eq!(&member[4..], &image[2..5]);
+        let address = image[2].parse::<u64>().unwrap();
+        let offset = image[3].parse::<u64>().unwrap();
+        let bytes = &packed.files()[&format!("image-{id:04}.bin")];
+        assert_eq!(address, free + (1 - id as u64) * 4096);
+        assert_eq!(image[4].parse::<usize>().unwrap(), bytes.len());
+        assert_eq!(
+            after
+                .executable_bytes(ElfVaddr(address), bytes.len() as u64)
+                .unwrap(),
+            bytes
+        );
+        assert_eq!(
+            before
+                .executable_bytes(ElfVaddr(address), bytes.len() as u64)
+                .unwrap(),
+            bytes
+        );
+        assert_eq!(
+            after
+                .file_to_virtual(FileOffset(offset), bytes.len() as u64)
+                .unwrap()
+                .program_header,
+            image[5].parse::<usize>().unwrap()
+        );
+        files.push(offset);
+    }
+    assert_eq!(files[0] - files[1], 4096);
+    let profile = std::str::from_utf8(&packed.files()["planning-profile.tsv"]).unwrap();
+    assert!(profile.contains(PACKED_ENTRY_VENEER_MIXED_METADATA));
+    assert_eq!(
+        PACKED_ENTRY_VENEER_MIXED_METADATA,
+        format!("{ENTRY_VENEER_MIXED_METADATA}{PACKED_RX_RUNS_METADATA}")
+    );
+    assert!(
+        !std::str::from_utf8(&old.files()["ledger.tsv"])
+            .unwrap()
+            .contains("RX-RUN-EXTENSION")
+    );
+    assert!(
+        !std::str::from_utf8(&old.files()["planning-profile.tsv"])
+            .unwrap()
+            .contains("carrier_layout")
+    );
+    // Calling the new mode cannot alter the old selection or its whole output.
+    let again = crate::prepare_disassembly_whole_entry_veneer_mixed_neighbors(&original, &selected)
+        .unwrap();
+    assert_eq!(again.files(), old.files());
+    assert_eq!(selected.files, saved_files);
+    assert_eq!(original, saved);
+}
+
+#[test]
+fn whole_packed_rx_runs_retain_actual_veneer_storage_entry_and_image_bytes() {
+    use crate::carrier::elf64::{Elf64, ElfVaddr, ParseLimits};
+    let (original, text, p) = entry_veneer_fixture(0x11f7);
+    let selected = bind(&original, &text, &p).unwrap();
+    let old = crate::prepare_disassembly_whole_entry_veneer_mixed_neighbors(&original, &selected)
+        .unwrap();
+    let packed =
+        crate::prepare_disassembly_whole_packed_entry_veneer_mixed_neighbors(&original, &selected)
+            .unwrap();
+    assert!(old.candidate_complete() && packed.candidate_complete());
+    assert!(!packed.qualification_complete());
+    assert_eq!(packed.reports().len(), 1);
+    assert_eq!(
+        packed.reports()[0].core_tactic,
+        Some(li2core::engine::Tactic::NeighborEviction)
+    );
+    assert_eq!(
+        packed.reports()[0].diagnostics,
+        old.reports()[0].diagnostics
+    );
+    assert_eq!(
+        packed.files()["plan-ledger.tsv"],
+        old.files()["plan-ledger.tsv"]
+    );
+    assert_eq!(
+        packed.files()["source.li2sparse"],
+        old.files()["source.li2sparse"]
+    );
+    let plan = std::str::from_utf8(&packed.files()["plan-ledger.tsv"]).unwrap();
+    let veneer: Vec<_> = plan
+        .lines()
+        .filter(|l| l.starts_with("entry-veneer\t"))
+        .collect();
+    assert_eq!(veneer.len(), 1);
+    let v: Vec<_> = veneer[0].split('\t').collect();
+    let storage = v[3].parse::<u64>().unwrap();
+    let entry = v[4].parse::<u64>().unwrap();
+    assert_eq!(entry - storage, 3909);
+    let elf = Elf64::parse(
+        &packed.files()["candidate.elf"],
+        ParseLimits {
+            max_program_headers: 64,
+        },
+    )
+    .unwrap();
+    let mut count = 0;
+    for line in plan.lines().filter(|l| l.starts_with("image\t")) {
+        let row: Vec<_> = line.split('\t').collect();
+        let address = row[3].parse::<u64>().unwrap();
+        let bytes = &packed.files()[row[6]];
+        assert_eq!(bytes, &old.files()[row[6]]);
+        assert_eq!(
+            elf.executable_bytes(ElfVaddr(address), bytes.len() as u64)
+                .unwrap(),
+            bytes
+        );
+        count += 1;
+    }
+    assert_eq!(count, 2);
+    assert_eq!(elf.executable_bytes(ElfVaddr(entry), 1).unwrap(), &[0xe9]);
+    assert!(
+        std::str::from_utf8(&packed.files()["ledger.tsv"])
+            .unwrap()
+            .contains(veneer[0])
+    );
+}
+
+#[test]
+fn whole_packed_rx_runs_preserve_pending_and_carrier_refusal_denominators() {
+    for (all_selected, pairs, count) in [(false, 1, 2), (true, 2, 3)] {
+        let (original, text, p) = mixed_pending_fixture(false, all_selected, pairs);
+        let selected = bind(&original, &text, &p).unwrap();
+        let old =
+            crate::prepare_disassembly_whole_entry_veneer_mixed_neighbors(&original, &selected)
+                .unwrap();
+        let packed = crate::prepare_disassembly_whole_packed_entry_veneer_mixed_neighbors(
+            &original, &selected,
+        )
+        .unwrap();
+        assert_eq!(
+            packed.reports().iter().map(|r| r.id).collect::<Vec<_>>(),
+            (1..=count).collect::<Vec<_>>()
+        );
+        assert!(!packed.candidate_complete() && !packed.qualification_complete());
+        for name in [
+            "report.tsv",
+            "plan-ledger.tsv",
+            "ledger.tsv",
+            "metadata.li2meta",
+            "disassembly-inventory.tsv",
+            "disassembly-policy.txt",
+        ] {
+            assert_eq!(
+                packed.files()[name],
+                old.files()[name],
+                "unchanged refusal evidence: {name}"
+            );
+        }
+        assert!(!packed.files().contains_key("candidate.elf"));
+        assert!(!packed.files().contains_key("source.li2sparse"));
+        assert_eq!(packed.reports().last().unwrap().refusal_code, Some(12));
+        for low in &packed.reports()[..count as usize - 1] {
+            assert_eq!(low.refusal_code, Some(10_003));
+        }
+        assert!(
+            std::str::from_utf8(&packed.files()["planning-profile.tsv"])
+                .unwrap()
+                .contains(PACKED_ENTRY_VENEER_MIXED_METADATA)
+        );
+    }
+    // The new layout cannot waive the caller's stricter complete PHDR budget.
+    let (original, text, p) = packed_rx_fixture();
+    let p = p.replace("262144 64 4294967296", "262144 4 4294967296");
+    let selected = bind(&original, &text, &p).unwrap();
+    assert_eq!(selected.selection.limits.program_headers, 4);
+    let packed =
+        crate::prepare_disassembly_whole_packed_entry_veneer_mixed_neighbors(&original, &selected)
+            .unwrap();
+    assert_eq!(
+        packed.reports().iter().map(|r| r.id).collect::<Vec<_>>(),
+        [1, 2]
+    );
+    assert!(!packed.candidate_complete() && !packed.qualification_complete());
+    assert!(packed.reports().iter().all(|r| r.core_tactic
+        == Some(li2core::engine::Tactic::Relocation)
+        && r.refusal_code == Some(10_002)
+        && r.refusal.as_ref().unwrap().stage == "carrier"
+        && !r.candidate_emitted));
+    assert!(!packed.files().contains_key("candidate.elf"));
+    assert!(!packed.files().contains_key("source.li2sparse"));
+    assert_eq!(
+        packed.files()["disassembly-inventory.tsv"],
+        selected.files["disassembly-inventory.tsv"]
+    );
+    assert_eq!(packed.files()["disassembly-policy.txt"], p.as_bytes());
+    assert!(
+        std::str::from_utf8(&packed.files()["planning-profile.tsv"])
+            .unwrap()
+            .contains(PACKED_ENTRY_VENEER_MIXED_METADATA)
+    );
+}
