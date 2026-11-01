@@ -154,6 +154,7 @@ pub(crate) enum EmissionContext<'a> {
     Live(HookCallback),
     Artifact(&'a ArtifactEmission),
     CurrentPlacement(&'a ArtifactEmission),
+    Fitting(&'a ArtifactEmission),
 }
 
 #[derive(Clone, Copy)]
@@ -173,6 +174,16 @@ impl<'a> std::ops::Deref for PlanningRequest<'a> {
 }
 
 impl<'a> PlanningRequest<'a> {
+    pub(crate) fn with_fitting_placement(&self) -> Self {
+        Self {
+            emission: match self.emission {
+                EmissionContext::Artifact(input) => EmissionContext::Fitting(input),
+                other => other,
+            },
+            ..*self
+        }
+    }
+
     pub(crate) fn with_current_placement(&self) -> Self {
         Self {
             emission: match self.emission {
@@ -234,19 +245,34 @@ impl<'a> PlanningRequest<'a> {
 }
 
 impl EmissionContext<'_> {
+    pub(crate) const fn fitting_placement(self) -> bool {
+        matches!(self, Self::Fitting(_))
+    }
+    pub(crate) fn prepare_fitting(
+        self,
+        plan: &TrampolinePlan,
+    ) -> Result<Option<crate::trampoline::PreparedArtifact>, TrampolineError> {
+        match self {
+            Self::Fitting(input) => crate::trampoline::PreparedArtifact::new(plan, input).map(Some),
+            _ => Ok(None),
+        }
+    }
+
     pub(crate) const fn current_placement(self) -> bool {
         matches!(self, Self::CurrentPlacement(_))
     }
     pub(crate) fn qualify(self) -> Result<(), Refusal> {
         match self {
             Self::Live(_) => crate::quiescent::qualify_host(),
-            Self::Artifact(_) | Self::CurrentPlacement(_) => Ok(()),
+            Self::Artifact(_) | Self::CurrentPlacement(_) | Self::Fitting(_) => Ok(()),
         }
     }
     pub(crate) fn occupied(self) -> Result<Vec<AddressRange>, Refusal> {
         match self {
             Self::Live(_) => crate::quiescent::occupied_ranges(),
-            Self::Artifact(input) | Self::CurrentPlacement(input) => Ok(input.occupied.clone()),
+            Self::Artifact(input) | Self::CurrentPlacement(input) | Self::Fitting(input) => {
+                Ok(input.occupied.clone())
+            }
         }
     }
     pub(crate) fn window(
@@ -261,7 +287,7 @@ impl EmissionContext<'_> {
             Self::Live(hook) => {
                 TrampolinePlan::from_window(scan, physical, logical, end, hook, replace)
             }
-            Self::Artifact(_) | Self::CurrentPlacement(_) => {
+            Self::Artifact(_) | Self::CurrentPlacement(_) | Self::Fitting(_) => {
                 TrampolinePlan::from_symbolic_window(scan, physical, logical, end, replace)
             }
         }
@@ -276,7 +302,7 @@ impl EmissionContext<'_> {
             Self::Live(hook) => {
                 TrampolinePlan::from_short_instruction(scan, physical, hook, replace)
             }
-            Self::Artifact(_) | Self::CurrentPlacement(_) => {
+            Self::Artifact(_) | Self::CurrentPlacement(_) | Self::Fitting(_) => {
                 TrampolinePlan::from_symbolic_short_instruction(scan, physical, replace)
             }
         }
@@ -291,6 +317,10 @@ impl EmissionContext<'_> {
             Self::Artifact(input) | Self::CurrentPlacement(input) => {
                 plan.emit_artifact_at(address, input)
             }
+            Self::Fitting(_) => Err(TrampolineError::Artifact {
+                reason: ArtifactRefusalKind::InvalidFieldLedger,
+                message: "fitting emission requires its prepared artifact".into(),
+            }),
         }
     }
 }
