@@ -9,10 +9,11 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '8f190c45a287c81ba4aeeecb1ae4c7463024e8d7ecf5c40a93c9078e5e8a13b9',
+require(hashlib.sha256(RAW).hexdigest() == 'e23bf7c49f2a4001449a8fbcc6456fb67f957893b0e7c664747a07b3f5c71f30',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
+RX_PREVIOUS = DATA['source_successor_b6fea']['previous_corpus_sha256']
 ENTRY_PREVIOUS = DATA['source_successor_b0a30']['previous_corpus_sha256']
 PLACEMENT_PREVIOUS = DATA['source_successor_fd4c6']['previous_corpus_sha256']
 PHASE_CURRENT = DATA['source_successor_96378']['previous_corpus_sha256']
@@ -103,10 +104,27 @@ def require_sources(error='main97ab_source_inventory_differs'):
         source_before_evaluation(path, raw, error)
 
 
-def before_b0a30(declared, error='main97ab_inventory_differs'):
-    """Bind the complete entry-veneer catalog, preserving its whole predecessor."""
+def before_b6fea(declared, error='main97ab_inventory_differs'):
+    """Bind the packed-RX catalog, including its mandatory Linux loader harness."""
     require(type(declared) is dict and digest(declared) == CURRENT, error)
     old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in DATA['source_successor_b6fea']['workspace_changes'].items():
+        require(digest(rows[name]) == digest(change['current']), error)
+        if change['previous'] is None:
+            del rows[name]
+        else:
+            rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == RX_PREVIOUS, error)
+    return old
+
+
+def before_b0a30(declared, error='main97ab_inventory_differs'):
+    """Bind the complete entry-veneer catalog, preserving its whole predecessor."""
+    owned = plain_catalog((declared, DATA))
+    declared = before_b6fea(declared, error)
+    require(type(declared) is dict and digest(declared) == RX_PREVIOUS, error)
+    old = declared if owned else copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in DATA['source_successor_b0a30']['workspace_changes'].items():
         require(digest(rows[name]) == digest(change['current']), error)

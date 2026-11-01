@@ -6421,6 +6421,10 @@
         "ignored": 0,
         "tests": 15
       },
+      "test/rx_run_loader": {
+        "ignored": 0,
+        "tests": 2
+      },
       "test/search_eviction_evidence": {
         "ignored": 0,
         "tests": 4
@@ -6491,7 +6495,7 @@
       },
       "unit/disassembly_sites/disassembly_sites": {
         "ignored": 0,
-        "tests": 13
+        "tests": 15
       },
       "unit/full_program_bridge/full_program_bridge": {
         "ignored": 0,
@@ -6527,7 +6531,7 @@
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
-        "tests": 181
+        "tests": 192
       },
       "unit/liteinst_rewrite/main": {
         "ignored": 0,
