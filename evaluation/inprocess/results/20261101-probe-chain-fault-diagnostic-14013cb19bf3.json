@@ -1,0 +1,327 @@
+{
+  "bound_order": [
+    "cpu_seconds",
+    "address_space_bytes",
+    "file_bytes",
+    "wall_seconds"
+  ],
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "finite": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "program": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "release_build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "seed": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "cleanup_complete": true,
+  "command_exits": {
+    "0": 76,
+    "125": 2
+  },
+  "commands_completed": 78,
+  "controls_completed": {
+    "application_controls": 32,
+    "owner_reader_controls": 56,
+    "pair_controls": 24,
+    "pf_refusal_owner_controls": 24,
+    "pf_refusal_terminal_controls": 44,
+    "terminal_controls": 184
+  },
+  "cpu": 25,
+  "differential_cohort_completed": false,
+  "error": null,
+  "fault_subjects_launched": 4,
+  "final_errors": [],
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 25,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "performance_credit": false,
+  "positive_cohort_completed": false,
+  "private_receipt": {
+    "bytes": 1957291,
+    "sha256": "eb1b581797095a5dddaa37b7806620620070f60c5c405673b2eae30fac7be1f7"
+  },
+  "profile": "bounded-fused-fault-smoke-v1",
+  "qualification_credit": false,
+  "reproduction": {
+    "argv": [
+      "python3",
+      "-B",
+      "evaluation/inprocess/bounded_fused_fault_smoke.py",
+      "--expect-revision",
+      "14013cb19bf39b51a4ecc3b0df8a888bcea7132a",
+      "--expect-decoder-sha256",
+      "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d",
+      "--cpu",
+      "25",
+      "--output",
+      "target/evaluation/inprocess/<FRESH_FAULT_DIAGNOSTIC>"
+    ],
+    "reservation": "one externally reserved CPU",
+    "working_directory": "repository root"
+  },
+  "revision": "14013cb19bf39b51a4ecc3b0df8a888bcea7132a",
+  "schema": 1,
+  "scope": "Four original fault cases and all 364 original controls only. Positive, differential and whole-profile qualification remain separate mandatory evaluations; no performance credit.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "14013cb19bf39b51a4ecc3b0df8a888bcea7132a",
+    "source_manifest_sha256": "98d251b2dd44e91a3e48963b04787b334f1b540abada4734629e867c9cb4972e",
+    "tracked_clean": true,
+    "tree": "bfa06af1e0b625d7c941732f6c89adcd99cfdf9b"
+  },
+  "source_unchanged": true,
+  "status": "observed_fault_diagnostic_only",
+  "subjects": [
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 858480,
+          "sha256": "28da6931ec8879497d4a2ae1108a78216d2b912050ab55181a53af289fb1c74a"
+        }
+      },
+      "completed_control_counts": {
+        "application_controls": 16,
+        "owner_reader_controls": 0,
+        "pair_controls": 0,
+        "pf_refusal_owner_controls": 0,
+        "pf_refusal_terminal_controls": 0,
+        "terminal_controls": 0
+      },
+      "duration_ns_validation_only": 182535016,
+      "exit": 0,
+      "expected_exit": 0,
+      "label": "subject-native-1-0",
+      "lane": "native",
+      "mode": 1,
+      "native_observation": {
+        "completed_application": false,
+        "full_frames": 3,
+        "guest_effects": 0,
+        "observer_exit": 0,
+        "signal": 11,
+        "steps": 6
+      },
+      "status": "observed_native_write_fault"
+    },
+    {
+      "captures": {
+        "record": {
+          "bytes": 236426,
+          "sha256": "4ed866f239a365557aa3495937fe9ecf5196c30f716394e4f2c4a0b0aba00d6c"
+        },
+        "stderr": {
+          "bytes": 15142,
+          "sha256": "f1d4788ef028aaa631c230ccd0564522ce20571b40ce76a50fb296d3a43063b0"
+        },
+        "stdout": {
+          "bytes": 27080,
+          "sha256": "9e05097df09ad0ab0773b11e60dd402609697a2fd3edb7337c79aad0e9251d04"
+        }
+      },
+      "completed_control_counts": {
+        "application_controls": 0,
+        "owner_reader_controls": 28,
+        "pair_controls": 12,
+        "pf_refusal_owner_controls": 12,
+        "pf_refusal_terminal_controls": 22,
+        "terminal_controls": 92
+      },
+      "duration_ns_validation_only": 2794634486,
+      "exit": 125,
+      "expected_exit": 125,
+      "label": "subject-maintained-1-0",
+      "lane": "maintained",
+      "mode": 1,
+      "native_probe": {
+        "admitted": 1,
+        "chosen": 1,
+        "errors": 0,
+        "refaults": 1,
+        "refused": 0
+      },
+      "pair": {
+        "actual_signal": 11,
+        "anchor_released": 0,
+        "closed_pages": 34,
+        "cold_publications": 1,
+        "completion_permits": 0,
+        "exit_status": 125,
+        "generated_completed": 0,
+        "generated_entries": 1,
+        "guest_effects": 0,
+        "interior_signals": 0,
+        "mode": 1,
+        "native_full_frames": 3,
+        "native_signal": 11,
+        "native_steps": 6,
+        "observed_pf_terminal_negative": 1,
+        "owner_full_frames": 4,
+        "performance_credit": false,
+        "plan_version": 11,
+        "recovery_phase": 1,
+        "whole_profile_qualified": false
+      },
+      "status": "observed_pf_store_fault",
+      "terminal_code": 3304
+    },
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 858480,
+          "sha256": "773bd0af8e1cec015b75916898fd7463a7b65b56147d4f5789f399c24121a500"
+        }
+      },
+      "completed_control_counts": {
+        "application_controls": 16,
+        "owner_reader_controls": 0,
+        "pair_controls": 0,
+        "pf_refusal_owner_controls": 0,
+        "pf_refusal_terminal_controls": 0,
+        "terminal_controls": 0
+      },
+      "duration_ns_validation_only": 170715737,
+      "exit": 0,
+      "expected_exit": 0,
+      "label": "subject-native-2-0",
+      "lane": "native",
+      "mode": 2,
+      "native_observation": {
+        "completed_application": false,
+        "full_frames": 3,
+        "guest_effects": 0,
+        "observer_exit": 0,
+        "signal": 11,
+        "steps": 6
+      },
+      "status": "observed_native_write_fault"
+    },
+    {
+      "captures": {
+        "record": {
+          "bytes": 237021,
+          "sha256": "b12bd22423979f5e1c272f43164ed128432b793395a50800376c1f781ad41ec6"
+        },
+        "stderr": {
+          "bytes": 15122,
+          "sha256": "eeb0fe41e77ff5f5cba9f75d16caa67688378950220eaa8e171693d61a840dd6"
+        },
+        "stdout": {
+          "bytes": 27080,
+          "sha256": "719aacba0950afd9d28a80744050cd9cfa73737a47700de08447f5edefa17002"
+        }
+      },
+      "completed_control_counts": {
+        "application_controls": 0,
+        "owner_reader_controls": 28,
+        "pair_controls": 12,
+        "pf_refusal_owner_controls": 12,
+        "pf_refusal_terminal_controls": 22,
+        "terminal_controls": 92
+      },
+      "duration_ns_validation_only": 2629767967,
+      "exit": 125,
+      "expected_exit": 125,
+      "label": "subject-maintained-2-0",
+      "lane": "maintained",
+      "mode": 2,
+      "native_probe": {
+        "admitted": 1,
+        "chosen": 1,
+        "errors": 0,
+        "refaults": 1,
+        "refused": 0
+      },
+      "pair": {
+        "actual_signal": 4,
+        "anchor_released": 0,
+        "closed_pages": 34,
+        "cold_publications": 1,
+        "completion_permits": 0,
+        "exit_status": 125,
+        "generated_completed": 0,
+        "generated_entries": 1,
+        "guest_effects": 0,
+        "interior_signals": 0,
+        "mode": 2,
+        "native_full_frames": 3,
+        "native_signal": 11,
+        "native_steps": 6,
+        "observed_pf_terminal_negative": 1,
+        "owner_full_frames": 4,
+        "performance_credit": false,
+        "plan_version": 11,
+        "recovery_phase": 3,
+        "whole_profile_qualified": false
+      },
+      "status": "observed_pf_guard_rejection",
+      "terminal_code": 3304
+    }
+  ],
+  "whole_captures": {
+    "bytes": 3380959,
+    "count": 158,
+    "ledger_encoding": "ordered command/stream/bytes/sha256 rows; JSON sorted keys and compact separators",
+    "ledger_sha256": "b091e9084a9b551d1778560165fde27b2e7d3ef950c21f5f9be0cc6fc97eb436"
+  },
+  "whole_profile_qualified": false
+}
