@@ -161,17 +161,19 @@ class Check(donor.Check):
         rows=self.r.items(self.b,T,'registry','li2_fork_range');ranges=[self.v(x,'li2_fork_range','first end')for x in rows[:count]]
         for row in rows[count:]:zero(row,'whole unused protected registry range')
         need(all(canonical(a,z-a)for a,z in ranges),'all actual protected intervals')
-        declarations=self.r.layout['registrations'];need(set(declarations)==set(wire.REGISTERED),'whole exact compiled registration roster')
+        declarations=self.r.layout['registrations'];need(set(declarations)==set(wire.REGISTERED),'whole exact compiled registration roster');objects=[]
         headers=self.image['headers'];need(type(headers)is dict and headers,'actual complete compiler-M header closure')
         for name,(source,tag)in wire.REGISTERED.items():
             d=declarations[name];at,n=self.symbols[name];a,z=self.bias+at,self.bias+at+n
             need(set(d)=={'address','bytes','alignment','tag','source'}and(d['address'],d['bytes'],d['tag'])==(at,n,tag)and type(d['alignment'])is int and 0<d['alignment']<=PAGE and not d['alignment']&(d['alignment']-1)and a%d['alignment']==0 and d['source'].endswith('/tools/page-entry/selected/'+source),'actual complete symbol/DWARF/source identity '+name)
             need(d['source']in headers and set(headers[d['source']])=={'bytes','sha256'},'registered DWARF origin belongs to actual compiler-M closure')
+            objects.append((a,z))
             if name not in wire.LIFETIME:need(ranges.count((a,z))==1,'whole strict protected object '+name)
             loads=[p for p in self.ph if p[0]==1 and p[6]and self.bias+p[3]<z and a<self.bias+p[3]+p[6]]
             need(len(loads)==1 and loads[0][1]==6 and self.bias+loads[0][3]<=a<z<=self.bias+loads[0][3]+loads[0][6],'whole object in actual RW/NX bridge LOAD')
             p=loads[0];rounded=((self.bias+p[3])&-PAGE,(self.bias+p[3]+p[6]+PAGE-1)&-PAGE)
             need(ranges.count(rounded)==1,'whole containing bridge LOAD remains protected')
+        need(all(a%PAGE==z%PAGE==0 or(a,z)in objects for a,z in ranges),'every non-page interval is an exact source registration')
         arena=self.i(self.entered,STATE,'arena');need(canonical(arena,327*PAGE)and arena%PAGE==0 and ranges.count((arena,arena+327*PAGE))==1,'whole independent three-certificate arena protection')
         need(self.symbol('r3_memory')==self.h[9]and self.symbols['r3_memory'][1]==1249280 and self.h[3]==1246656 and self.symbols['r3_work'][1]==2329264 and self.symbols['rsl'][1]==70*PAGE and self.symbols['rsl_initialization'][1]==72,'actual complete separate owner/source/bootstrap storage')
         self.ranges=ranges
