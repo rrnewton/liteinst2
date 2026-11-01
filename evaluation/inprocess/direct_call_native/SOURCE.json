@@ -716,9 +716,9 @@
       "sha256": "7ee867af3b31b5ce880eb13b88144b2a2dd7224222924574cf74777b5d19f2ee"
     },
     "evaluation/inprocess/call_owner/custody.py": {
-      "bytes": 8504,
+      "bytes": 9027,
       "mode": "0644",
-      "sha256": "6835e75ceaf4b67f679668f55165101590fb1909a3d9b50245def13c0206ffa7"
+      "sha256": "02910015c8f43615c8d33a1dfb028f668be449cfa88ed46be3b83e59491fb818"
     },
     "evaluation/inprocess/call_push_native/inspect.py": {
       "bytes": 7352,
@@ -728,7 +728,7 @@
     "evaluation/inprocess/call_return_heads/SOURCE.json": {
       "bytes": 160505,
       "mode": "0644",
-      "sha256": "86fff097f5e77ce6da973593ea39a2c6d726c25fdc11c7f83fdbde25e2341678"
+      "sha256": "cd708a16d3af5578ecfe94f2749220a31052b6b8a300f7bfd4299e7388733707"
     },
     "evaluation/inprocess/call_return_heads/original_owner.py": {
       "bytes": 2963,
@@ -768,7 +768,7 @@
     "evaluation/inprocess/ret_owner/SOURCE.json": {
       "bytes": 49621,
       "mode": "0644",
-      "sha256": "a42ba016b3c0d17f0622b21012e70ef420a9094d4e540a318db868a147eed268"
+      "sha256": "4df226c376081b91bca320b6c8b5ae530cb4bdb3856e13dcca35b9048c129d75"
     },
     "evaluation/inprocess/ret_owner/prerequisites.py": {
       "bytes": 29668,

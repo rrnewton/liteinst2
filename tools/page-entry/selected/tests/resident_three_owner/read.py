@@ -274,7 +274,9 @@ class Check(donor.Check):
         if which in('closed','final'):need(rr==self.f(self.terminal,t,'rseq'),'whole rseq completion remains unchanged after release')
         if which=='terminal':need(self.i(rr,r,'raw_checks')>=self.i(self.f(self.entered,t,'rseq'),r,'raw_checks'),'actual lifetime RAW checks are monotonic')
         fetch=self.f(b,t,'fetch');ft='li2_fetch_progress';ref=self.f(self.f(self.b,T,'held'),'li2_span_fetch_observation','ref');sequence=self.i(ref,'li2_fetch_ref','sequence')
-        if which in('entered','terminal'):self.progress(fetch,sequence,active)
+        if which in('entered','terminal'):
+            self.progress(fetch,sequence,active,validated=not active)
+            self.eq(fetch,ft,validation_calls=0 if active else 1)
         else:
             self.eq(fetch,ft,held=0,complete=1,first_error=0,identity_observed=1,first_detail=0,last_backing_observed=1)
             need(self.i(fetch,ft,'sequence')>sequence and self.i(fetch,ft,'validation_calls')>0 and 1<=self.i(fetch,ft,'bytes_copied')<=15 and self.i(fetch,ft,'pages_copied')in(1,2),'actual later ordinary fetch released without overwriting saved source authority')
@@ -292,8 +294,24 @@ class Check(donor.Check):
         need(self.i(tr,t,'previous')in(0,1)and self.i(tr,t,'previous_generation')>0 and self.i(tr,t,'serial')>0 and self.i(tr,t,'event')>0 and 0<self.i(tr,t,'previous_borrow')<sequence,'actual consumed previous-slot and strictly later held borrow')
         released=self.f(tr,t,'released');self.observation(released,0x4101fe,False)
         self.eq(self.f(released,'li2_span_fetch_observation','ref'),'li2_fetch_ref',sequence=self.i(tr,t,'previous_borrow'))
-        self.observation(self.f(tr,t,'fresh'),self.head,True,ref);self.observation(held,self.head,True,ref)
+        self.prepared_observation(self.f(tr,t,'fresh'),ref);self.prepared_observation(held,ref)
         self.key_identity_observation(held,self.f(tr,t,'fresh'))
+
+    def prepared_observation(self,b,ref):
+        # Only this resident root's fresh, still-held prepare is unvalidated by
+        # the ordinary callback. Its complete initial backing/page/source proof
+        # remains mandatory; RSL authenticates its independent full union.
+        pc=self.head;window,count=self.source_window(pc)
+        t='li2_span_fetch_observation';self.eq(b,t,complete=1,pc=pc,length=len(window),page_count=count,pid=self.pid,tid=self.pid)
+        actual=self.f(b,t,'ref');a,n=self.v(actual,'li2_fetch_ref','owner sequence');need(canonical(a)and n>0,'actual protected singleton identity')
+        need(actual==ref,'exact real ref, not caller sequence assertion')
+        self.progress(self.f(b,t,'progress'),n,True,validated=False,length=len(window))
+        need(self.f(b,t,'bytes')==window+bytes(15-len(window)),'whole actual requested bytes and zero unused fetch tail')
+        pages=self.r.items(b,t,'pages','li2_fetch_page');backs=self.r.items(b,t,'backing','li2_fetch_backing')
+        for i in range(count):self.page_row(pages[i],(pc-self.page)//PAGE+i);self.backing(backs[i])
+        zero(self.f(b,t,'last_backing'),'prepared observation has no later validation backing')
+        for i in range(count,2):zero(pages[i],'unused singleton page');zero(backs[i],'unused singleton backing')
+        return a,n
 
     def key_identity_observation(self,a,b):
         t='li2_span_fetch_observation'
@@ -301,7 +319,7 @@ class Check(donor.Check):
         for x,y in zip(self.r.items(a,t,'backing','li2_fetch_backing'),self.r.items(b,t,'backing','li2_fetch_backing'),strict=True):
             if any(x)or any(y):need(self.backing_identity(x)==self.backing_identity(y),'same genuine held backing identity')
             else:need(x==y,'whole unused held backing')
-        need(self.backing_identity(self.f(a,t,'last_backing'))==self.backing_identity(self.f(b,t,'last_backing')),'same last independently validated backing')
+        for value in(a,b):zero(self.f(value,t,'last_backing'),'prepared observations have no later validation backing')
 
     def frames(self):
         h=self.h;s=h[22];a,b,c=self.before,self.after,self.next
@@ -519,3 +537,58 @@ def pair_controls(native,gated,owner):
         else:raise ValueError('accepted coordinated unaliased full-UC corruption '+str(offset))
     need(len(refused)==44,'all39 original plus five coordinated whole-UC controls refused')
     return dict(refusals=refused,count=44,native_operations=0)
+
+
+def prepared_fetch_controls(data,layout,image,app,pid,cpu,exit_status):
+    """Separate exact prepared/released chronology mutations; original231 stay whole."""
+    read(data,layout,image,app,pid,cpu,exit_status);types=layout['types'];refused=[]
+    def at(path):
+        t=T;offset=0;size=types[t]['bytes']
+        for item in path:
+            key,index=(item,0)if type(item)is str else item
+            field=types[t]['fields'][key];offset+=field['offset'];child=layout['edges'][t].get(key)
+            if child:
+                size=types[child]['bytes'];need((index+1)*size<=field['bytes'],'bounded prepared-fetch aggregate stimulus')
+                offset+=index*size;t=child
+            else:
+                need(index<field['bytes'],'bounded prepared-fetch scalar stimulus');offset+=index;size=field['bytes']-index
+        return offset,size
+    def reject(name,changed):
+        need(bytes(changed)!=data,'changed prepared-fetch stimulus '+name)
+        try:read(bytes(changed),layout,image,app,pid,cpu,exit_status)
+        except ValueError:refused.append(name)
+        else:raise ValueError('accepted supplied prepared/released fetch corruption '+name)
+    def flip(name,path,tail=False):
+        offset,size=at(path);changed=bytearray(data);changed[offset+(size-1 if tail else 0)]^=1;reject(name,changed)
+    prepared=(('entered',('entered','fetch')),('fresh',('transfer','fresh','progress')),('held',('held','progress')))
+    for name,path in prepared:
+        for key in('validation_calls','last_backing_observed','validation'):
+            flip(name+'_'+key,path+(key,))
+    for name,path in(('fresh',('transfer','fresh')),('held',('held',))):
+        flip(name+'_last_backing',path+('last_backing',))
+        flip(name+'_last_backing_tail',path+('last_backing',),True)
+        flip(name+'_initial_backing',path+(('backing',0),'seals'))
+        flip(name+'_initial_page',path+(('pages',0),'address'))
+        flip(name+'_source_bytes',path+('bytes',))
+    offset,size=at(('terminal','fetch','validation_calls'));need(size==8,'actual validation-call counter width')
+    for count in(0,2):
+        changed=bytearray(data);struct.pack_into('<Q',changed,offset,count);reject('terminal_validation_calls_'+str(count),changed)
+    flip('terminal_validation_closed',('terminal','fetch','validation','closed'))
+    # Copy genuine later validation evidence into every prepared observation:
+    # a coherent fabricated early validation must still refuse exact zero.
+    changed=bytearray(data);source,size=at(('terminal','fetch','validation'))
+    for name,path in prepared:
+        target,n=at(path+('validation',));need(n==size,'same actual validation-map extent')
+        changed[target:target+n]=data[source:source+n]
+        target,n=at(path+('validation_calls',));need(n==8,'prepared validation-call width');struct.pack_into('<Q',changed,target,1)
+        target,n=at(path+('last_backing_observed',));need(n==4,'prepared last-backing flag width');struct.pack_into('<I',changed,target,1)
+    for name,path in(('fresh',('transfer','fresh')),('held',('held',))):
+        source,n=at(path+(('backing',0),));target,m=at(path+('last_backing',));need(n==m,'whole backing extent')
+        changed[target:target+m]=data[source:source+n]
+    reject('coordinated_invented_preentry_validation',changed)
+    changed=bytearray(data)
+    for key in('validation_calls','last_backing_observed','validation'):
+        offset,size=at(('terminal','fetch',key));changed[offset:offset+size]=bytes(size)
+    reject('coordinated_missing_release_validation',changed)
+    need(len(refused)==len(set(refused))==24,'all24 additional prepared/released fetch controls')
+    return dict(count=24,refusals=refused,source_sha256=hashlib.sha256(data).hexdigest(),native_operations=0)

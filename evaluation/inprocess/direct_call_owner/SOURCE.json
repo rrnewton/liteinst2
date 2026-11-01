@@ -147,7 +147,7 @@
     "source_fact": {
       "bytes": 40764,
       "mode": "0644",
-      "sha256": "c261c81029916ce1e0d27d9f12ad7c54a3256086d26694700ef6ce3cbb05fd0b"
+      "sha256": "da7f4c138df64d8b5f1f8ac1b4728651c4a69726951ec1e243288cfb3b07c966"
     }
   },
   "forbidden_headers": [
@@ -217,7 +217,7 @@
     "evaluation/inprocess/call_dispatch_native/SOURCE.json": {
       "bytes": 10345,
       "mode": "0644",
-      "sha256": "0d741b06d1df0f64a0cce8dd9f3ab08e741a96fc72c19c70575a74786384a2b3"
+      "sha256": "1c32ba34d609f82aa77c678062d02c625ea745c5a125564cc42615b90a56679f"
     },
     "evaluation/inprocess/call_dispatch_native/run.py": {
       "bytes": 33191,
@@ -227,12 +227,12 @@
     "evaluation/inprocess/call_owner/SOURCE.json": {
       "bytes": 45601,
       "mode": "0644",
-      "sha256": "60adee74fd64bd670fbf0c55afd540edffdaf3a0f9d117fcf9eac738a70dbe66"
+      "sha256": "cd8bb4779f2892e4bc172fd5583e71ab9b66660eb8678157073f20dab87bc2b9"
     },
     "evaluation/inprocess/call_owner/custody.py": {
-      "bytes": 8504,
+      "bytes": 9027,
       "mode": "0644",
-      "sha256": "6835e75ceaf4b67f679668f55165101590fb1909a3d9b50245def13c0206ffa7"
+      "sha256": "02910015c8f43615c8d33a1dfb028f668be449cfa88ed46be3b83e59491fb818"
     },
     "evaluation/inprocess/call_owner/run.py": {
       "bytes": 57110,
@@ -287,7 +287,7 @@
     "evaluation/inprocess/call_return_heads/SOURCE.json": {
       "bytes": 160505,
       "mode": "0644",
-      "sha256": "86fff097f5e77ce6da973593ea39a2c6d726c25fdc11c7f83fdbde25e2341678"
+      "sha256": "cd708a16d3af5578ecfe94f2749220a31052b6b8a300f7bfd4299e7388733707"
     },
     "evaluation/inprocess/call_return_heads/components.py": {
       "bytes": 10707,
@@ -322,7 +322,7 @@
     "evaluation/inprocess/direct_call_native/SOURCE.json": {
       "bytes": 40764,
       "mode": "0644",
-      "sha256": "c261c81029916ce1e0d27d9f12ad7c54a3256086d26694700ef6ce3cbb05fd0b"
+      "sha256": "da7f4c138df64d8b5f1f8ac1b4728651c4a69726951ec1e243288cfb3b07c966"
     },
     "evaluation/inprocess/direct_call_native/components.py": {
       "bytes": 11933,
@@ -672,7 +672,7 @@
     "evaluation/inprocess/ret_owner/SOURCE.json": {
       "bytes": 49621,
       "mode": "0644",
-      "sha256": "a42ba016b3c0d17f0622b21012e70ef420a9094d4e540a318db868a147eed268"
+      "sha256": "4df226c376081b91bca320b6c8b5ae530cb4bdb3856e13dcca35b9048c129d75"
     },
     "evaluation/inprocess/ret_owner/prerequisites.py": {
       "bytes": 29668,
@@ -712,7 +712,7 @@
     "evaluation/inprocess/ret_runtime_compile/SOURCE.json": {
       "bytes": 38132,
       "mode": "0644",
-      "sha256": "4aec655795eb041b14c832fd9076343868cb00c91605eb1df8d4135bfd822c31"
+      "sha256": "6ca5151ddc1f0a68b5a5e23d066daa0eae6b4a216022ae10cd53edbc62c4e79e"
     },
     "evaluation/inprocess/run.py": {
       "bytes": 13593,
@@ -4692,14 +4692,14 @@
       "SOURCE.json": {
         "bytes": 10345,
         "mode": "0644",
-        "sha256": "0d741b06d1df0f64a0cce8dd9f3ab08e741a96fc72c19c70575a74786384a2b3"
+        "sha256": "1c32ba34d609f82aa77c678062d02c625ea745c5a125564cc42615b90a56679f"
       }
     },
     "evaluation/inprocess/call_return_heads": {
       "SOURCE.json": {
         "bytes": 160505,
         "mode": "0644",
-        "sha256": "86fff097f5e77ce6da973593ea39a2c6d726c25fdc11c7f83fdbde25e2341678"
+        "sha256": "cd708a16d3af5578ecfe94f2749220a31052b6b8a300f7bfd4299e7388733707"
       },
       "components.py": {
         "bytes": 10707,
@@ -4721,7 +4721,7 @@
       "SOURCE.json": {
         "bytes": 40764,
         "mode": "0644",
-        "sha256": "c261c81029916ce1e0d27d9f12ad7c54a3256086d26694700ef6ce3cbb05fd0b"
+        "sha256": "da7f4c138df64d8b5f1f8ac1b4728651c4a69726951ec1e243288cfb3b07c966"
       },
       "components.py": {
         "bytes": 11933,
@@ -4750,7 +4750,7 @@
       "SOURCE.json": {
         "bytes": 49621,
         "mode": "0644",
-        "sha256": "a42ba016b3c0d17f0622b21012e70ef420a9094d4e540a318db868a147eed268"
+        "sha256": "4df226c376081b91bca320b6c8b5ae530cb4bdb3856e13dcca35b9048c129d75"
       }
     },
     "evaluation/inprocess/ret_resume_native": {
@@ -4764,7 +4764,7 @@
       "SOURCE.json": {
         "bytes": 38132,
         "mode": "0644",
-        "sha256": "4aec655795eb041b14c832fd9076343868cb00c91605eb1df8d4135bfd822c31"
+        "sha256": "6ca5151ddc1f0a68b5a5e23d066daa0eae6b4a216022ae10cd53edbc62c4e79e"
       }
     },
     "tools/page-entry": {

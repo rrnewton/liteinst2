@@ -35,9 +35,9 @@
       "sha256": "d5f0345d0c63c26260262ca00c76d9f81822c70ba6cc5de0a4349a18c598ba9b"
     },
     "evaluation/inprocess/call_owner/custody.py": {
-      "bytes": 8504,
+      "bytes": 9027,
       "mode": 420,
-      "sha256": "6835e75ceaf4b67f679668f55165101590fb1909a3d9b50245def13c0206ffa7"
+      "sha256": "02910015c8f43615c8d33a1dfb028f668be449cfa88ed46be3b83e59491fb818"
     },
     "evaluation/inprocess/direct_frontier_program.py": {
       "bytes": 36871,

@@ -36,9 +36,9 @@
       "sha256": "7ee867af3b31b5ce880eb13b88144b2a2dd7224222924574cf74777b5d19f2ee"
     },
     "evaluation/inprocess/call_owner/custody.py": {
-      "bytes": 8504,
+      "bytes": 9027,
       "mode": "0644",
-      "sha256": "6835e75ceaf4b67f679668f55165101590fb1909a3d9b50245def13c0206ffa7"
+      "sha256": "02910015c8f43615c8d33a1dfb028f668be449cfa88ed46be3b83e59491fb818"
     },
     "evaluation/inprocess/call_push_native/README.md": {
       "bytes": 2720,

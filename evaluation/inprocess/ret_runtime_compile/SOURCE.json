@@ -27,7 +27,7 @@
     "evaluation/inprocess/call_dispatch_native/SOURCE.json": {
       "bytes": 10345,
       "mode": "0644",
-      "sha256": "0d741b06d1df0f64a0cce8dd9f3ab08e741a96fc72c19c70575a74786384a2b3"
+      "sha256": "1c32ba34d609f82aa77c678062d02c625ea745c5a125564cc42615b90a56679f"
     },
     "evaluation/inprocess/call_dispatch_native/run.py": {
       "bytes": 33191,
@@ -37,12 +37,12 @@
     "evaluation/inprocess/call_owner/SOURCE.json": {
       "bytes": 45601,
       "mode": "0644",
-      "sha256": "60adee74fd64bd670fbf0c55afd540edffdaf3a0f9d117fcf9eac738a70dbe66"
+      "sha256": "cd8bb4779f2892e4bc172fd5583e71ab9b66660eb8678157073f20dab87bc2b9"
     },
     "evaluation/inprocess/call_owner/custody.py": {
-      "bytes": 8504,
+      "bytes": 9027,
       "mode": "0644",
-      "sha256": "6835e75ceaf4b67f679668f55165101590fb1909a3d9b50245def13c0206ffa7"
+      "sha256": "02910015c8f43615c8d33a1dfb028f668be449cfa88ed46be3b83e59491fb818"
     },
     "evaluation/inprocess/call_owner/run.py": {
       "bytes": 57110,
