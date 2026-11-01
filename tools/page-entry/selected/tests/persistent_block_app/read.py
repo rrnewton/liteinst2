@@ -397,6 +397,36 @@ def pair(native,gated,owner):
     compare(cancelled['next'],post,'original',page+0x2404)
     actual=gated['observations'][0]
     need(all(reference[k]==actual[k]for k in('before','after','live','data','stack'))and gated['effects']==native['effects']and gated['suffix']is not None,'whole actual application state and later registration lifecycle')
+    def context(actual,ref,event,cr2=None):
+        # Join whole native/protected contexts after the original state checks.
+        # Only independently authenticated coordinates and causal event fields
+        # change; flags/link/reserved bytes and every other byte stay literal.
+        want=list(ref['greg'])
+        if event=='closed':want[17]&=~TF
+        elif event=='nx':want[17]=(want[17]&~TF)|RF;want[19],want[20],want[22]=21,14,want[16]
+        else:need(event=='original','exact genuine context event transforms')
+        if cr2 is not None:want[22]=cr2
+        si=bytearray(ref['si']);struct.pack_into('<i',si,0,11 if event=='nx'else 5);struct.pack_into('<Q',si,16,want[16])
+        need(actual['si']==bytes(si),'all128 native siginfo bytes with exact causal event transforms')
+        uc=actual['uc'];native_uc=ref['uc'];h=ref['header'];alt,cap=actual['altstack'];fp=actual['fp_address']
+        need(len(uc)==968 and len(native_uc)==1024 and native_uc[968:]==bytes(56)and h[7]==968,
+             'whole native and protected context extents')
+        need(cap==h[11]==524288 and 0<alt<(1<<47)-cap and alt%PAGE==0 and fp%16==0 and
+             alt<=fp<=alt+cap-actual['fp_bytes']and h[10]<=h[8]<=h[10]+h[11]-h[9]and
+             fp-alt==h[8]-h[10], 'same independently bounded kernel FP position on each actual altstack')
+        need(q(uc,16)[0]==alt and q(uc,32)[0]==cap and q(uc,224)[0]==fp and
+             q(native_uc,16)[0]==h[10]and q(native_uc,32)[0]==h[11]and q(native_uc,224)[0]==h[8],
+             'actual native and protected altstack and FP pointer aliases')
+        expected=bytearray(native_uc[:968]);struct.pack_into('<Q',expected,16,alt);struct.pack_into('<Q',expected,224,fp)
+        struct.pack_into('<23Q',expected,40,*want);expected[304:432]=si
+        need(uc==bytes(expected),'all968 native ucontext bytes with authenticated coordinates and causal events')
+    for value,ref,event,cr2 in (
+        (a['ingress'],frames[1],'original',None),(a['before'],frames[1],'closed',None),(a['logical'],frames[2],'nx',None),
+        (b['ingress'],frames[3],'original',page+0x204),(b['before'],frames[3],'closed',page+0x204),(b['logical'],frames[4],'nx',None),
+        (d['ingress'],frames[5],'original',page+0x2404),(d['before'],frames[5],'closed',page+0x2404),(d['logical'],frames[9],'nx',None),
+        (d['next_trace'],frames[10],'original',page+0x2404),(cancelled['before'],frames[10],'closed',page+0x2404),
+        (cancelled['returned'],frames[10],'original',page+0x2404),(cancelled['next'],post,'original',page+0x2404)):
+        context(value,ref,event,cr2)
     return dict(observed_bounded_block=1,plan_version=10,unsupported_root_cancellations=1,ordinary_resumptions=1,invocations=1,generated_completed=3,cold_publications=2,warm_entries=1,dual_entries=1,retained_generations=2,shared_domain_lifetimes=1,joint_source_pairs=2,joint_source_pages=4,joint_closed_pages=34,modeled_joint_retired_instructions=11,modeled_final_frontier_instructions=1,modeled_cross_certificate_transfers=5,measured_interior_signals=0,native_instructions=20,native_full_frames=12,lifetime_mode=2,registration_epoch=0,registration_calls=0,word_observed=0,word_available=False,qualification_credit=False)
 
 PAIR_CONTROL_COUNTS={0:36}

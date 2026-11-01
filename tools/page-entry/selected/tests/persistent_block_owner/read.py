@@ -38,6 +38,21 @@ def elf_symbols(data):
     return h,ph,symbols
 
 class Check(prior.Check):
+    def frame(self,b,tls=True):
+        f=super().frame(b,tls)
+        need(f['uc'][304:432]==f['si'],'whole actual adjacent kernel siginfo in copied context')
+        f.update(altstack=self.h[12:14],fp_address=self.i(self.f(b,'le_frame','frame'),'li2_step_frame','fp_address'))
+        return f
+
+    def preserved_context(self,a,b):
+        # Each frame independently authenticates these event-dependent fields.
+        # Every other byte, including uc_flags, uc_link and padding, is retained.
+        need(a['fp']==b['fp']and a['fp_bytes']==b['fp_bytes']and a['mask']==b['mask']==MASK and
+             (a['fs'],a['gs'])==(b['fs'],b['gs']),'entire65536 FP storage, kernel mask and actual TLS preserved')
+        expected=bytearray(a['uc']);expected[40:224]=b['uc'][40:224]
+        expected[224:232]=b['uc'][224:232];expected[304:432]=b['si']
+        need(bytes(expected)==b['uc'],'every non-event ucontext byte retained across PB execution')
+
     def source_key(self,key,entry):
         self.eq(key,'li2_pg_source_key',entry=entry)
         for i,row in enumerate(self.r.items(key,'li2_pg_source_key','page','li2_pg_source_page')):
@@ -95,6 +110,7 @@ class Check(prior.Check):
         zero(self.f(o,'li2_tf_owner','rdssp_observation'),'no unrelated SHSTK observation')
         before=self.f(st,qt,'before');g=q(self.f(before,'li2_step_frame','greg'));n=self.i(before,'li2_step_frame','fp_bytes')
         need(self.i(before,'li2_step_frame','mask')==MASK and self.i(before,'li2_step_frame','initialized')==n and n==ingress['fp_bytes']and self.f(before,'li2_step_frame','fp')==ingress['fp'],'whole real predecessor FP and mask')
+        need(self.i(before,'li2_step_frame','fp_address')==ingress['fp_address'],'saved predecessor FP pointer matches the same fixed-stack signal position')
         need(g[16]==pc and g[18]==0x2b000000000033 and g[21]==MASK and g[17]==flags|(RF if origin==1 else 0),'original real NX/TRACE predecessor frame')
         need(g[19:21]==((21,14)if origin==1 else(0,1)),'actual predecessor event class')
         if origin==1:need(g[22]==pc,'original predecessor NX CR2')
@@ -329,6 +345,7 @@ class Check(prior.Check):
         want=list(before['greg']);want[16]=self.generated;need(returned['greg']==tuple(want)and returned['fp']==before['fp']and returned['si']==before['si']and(returned['fs'],returned['gs'])==tuple(self.app['machine'][1:3]),'whole domain redirect changes only original RIP')
         uc=bytearray(before['uc']);struct.pack_into('<Q',uc,40+16*8,self.generated);need(returned['uc']==bytes(uc),'whole returned UC except actual redirect')
         self.nx(after,exitpc);need(after['fp']==before['fp']and after['fp_bytes']==before['fp_bytes']and after['mask']==MASK and(after['fs'],after['gs'])==tuple(self.app['machine'][1:3]),'all domain FP/AF/mask/TLS preserved')
+        self.preserved_context(before,after)
         projection=self.f(b,t,'predecessor');self.eq(projection,'pdo_predecessor',complete=1,unexpected_compared=self.r.types['li2_step_frame']['bytes'],unexpected_nonzero=0)
         slot=self.f(projection,'pdo_predecessor','closed')+bytes(self.r.types['li2_step_frame']['bytes']);self.r.walk(slot,'li2_tf_chain_slot')
         prefix=self.f(projection,'pdo_predecessor','before_prefix');wanted=bytearray(prefix);sf=self.r.types['li2_tf_chain_slot']['fields'];of=self.r.types['li2_tf_owner']['fields'];tf=self.r.types['li2_step_owner']['fields'];struct.pack_into('<I',wanted,sf['phase']['offset'],5);at=sf['owner']['offset']+of['step']['offset']
@@ -394,6 +411,7 @@ class Check(prior.Check):
         self.eq(b,t,expected_ordinal=last['terminal_ordinal']+1,raw_ordinal=last['terminal_ordinal']+1,capture_result=0,ingress_complete=1,closed_complete=1,tls_complete=1)
         index=self.i(b,t,'slot_index');event=self.i(b,t,'event_id');need(index in(0,1)and self.i(slot,st,'index')==index and event>self.i(slot,st,'event_id')>0,'actual next TRACE chain/index/event and closed predecessor')
         self.eq(slot,st,origin=1);frame=self.frame(self.f(b,t,'frame'));flags=(last['logical']['greg'][17]&~RF)|TF;self.trace(frame,self.page+0x240a,flags)
+        self.preserved_context(last['logical'],frame)
         need(frame['greg'][22]==self.page+0x2404 and(frame['fs'],frame['gs'])==tuple(self.app['machine'][1:3]),'actual next TRACE retains ordinary final Jcc CR2 and post-close TLS')
         before,ref=self.predecessor(slot,self.page+0x2404,frame);owner=self.f(slot,st,'owner');step=self.f(owner,'li2_tf_owner','step');self.step_frame(self.f(step,'li2_step_owner','before'),last['logical'])
         need(before['greg']==last['logical']['greg']and before['fp']==last['logical']['fp'],'ordinary original Jcc begins at actual retained exit NX frame')
@@ -435,6 +453,8 @@ class Check(prior.Check):
         self.h_alloc=self.i(r.items(initial_slots[1],'pdo_slot','banks','ped_bank')[1],'ped_bank','generated');self.h_proof_alloc=self.i(initial_slots[1],'pdo_slot','proof')
         initial_domain=self.f(self.b,t,'initial_domain')
         a=self.epoch(epochs[0],0,initial_domain);b=self.epoch(epochs[1],1,a['domain_raw']);warm=self.epoch(epochs[2],2,b['domain_raw'])
+        self.preserved_context(a['after'],b['ingress'])
+        self.preserved_context(b['after'],warm['ingress'])
         for index,previous in((1,a),(2,b)):
             need(self.f(epochs[index],'pdo_epoch','prior_counts')==previous['counts_raw']and self.f(epochs[index],'pdo_epoch','prior')==previous['slots_raw'],'next focal activation follows complete prior closure without hidden offer')
         need(a['slot']!=b['slot']and b['generation']==a['generation']+1,'two distinct actual retained identities')
@@ -501,6 +521,7 @@ class Check(prior.Check):
         self.trace(before,pc,flags);self.same_event(ingress,before,flags)
         self.trace(returned,pc,flags|TF);self.same_event(before,returned,flags|TF)
         self.trace(nxt,pc+3,flags|TF)
+        self.preserved_context(returned,nxt)
         wanted=list(returned['greg']);wanted[16]=pc+3
         need(nxt['greg']==tuple(wanted)and nxt['fp']==returned['fp']and nxt['fp_bytes']==returned['fp_bytes']and nxt['mask']==returned['mask']and(nxt['fs'],nxt['gs'])==(before['fs'],before['gs']),'real ordinary store executes once with complete GPR/FP/mask/TLS unchanged')
         need(before['greg'][22]==returned['greg'][22]==nxt['greg'][22]==self.page+0x2404,'cancellation retains real final-branch CR2')
@@ -546,6 +567,7 @@ class Check(prior.Check):
         need(self.i(hp,pt,'transfer_serial')==self.i(tr,tt,'serial'),'actual cancellation progress binds full transfer serial')
         self.eq(newslot,'li2_tf_chain_slot',index=h[8],origin=2)
         _,fresh=self.predecessor(newslot,pc,returned,closed=False)
+        self.step_frame(self.f(self.f(self.f(newslot,'li2_tf_chain_slot','owner'),'li2_tf_owner','step'),'li2_step_owner','before'),before)
         need(self.i(fresh,'li2_fetch_ref','sequence')>self.i(ref,'li2_fetch_ref','sequence')and self.i(newslot,'li2_tf_chain_slot','event_id')==self.i(tr,tt,'event'),'real new successor borrow after cancelled source release')
         self.progress(self.f(held,st,'fetch'),self.i(ref,'li2_fetch_ref','sequence'),True)
         self.progress(self.f(resumed,st,'fetch'),self.i(fresh,'li2_fetch_ref','sequence'),True)
