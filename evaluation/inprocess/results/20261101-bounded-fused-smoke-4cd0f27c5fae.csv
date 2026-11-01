@@ -1,0 +1,3 @@
+revision,cpu,lane,status,expected_exit,exit,whole_process_ns,stdout_bytes,stderr_bytes,record_bytes,validation_only,qualification_credit,performance_credit
+4cd0f27c5fae38b78bbec96ebdff6848886a6913,8,maintained,observed_exit_zero_only,0,0,3395174730,858480,14997,595972,True,False,False
+4cd0f27c5fae38b78bbec96ebdff6848886a6913,8,differential,observed_exit_zero_only,0,0,5319412601,858480,15007,594489,True,False,False

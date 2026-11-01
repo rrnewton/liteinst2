@@ -1,0 +1,222 @@
+{
+  "application": {
+    "bytes": 179552,
+    "sha256": "76ff26358ef1d48be921750c4f37f3362b667c2da2c9c7e02ce1f9e586af9b67"
+  },
+  "bounds": {
+    "capture_limit_bytes": 16777216,
+    "profiles": {
+      "build": [
+        120,
+        2147483648,
+        134217728,
+        150
+      ],
+      "finite": [
+        5,
+        536870912,
+        16777216,
+        15
+      ],
+      "inspect": [
+        10,
+        268435456,
+        4194304,
+        20
+      ],
+      "metadata": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "program": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "release_build": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "seed": [
+        5,
+        536870912,
+        16777216,
+        15
+      ]
+    },
+    "units": [
+      "cpu_seconds",
+      "address_space_bytes",
+      "file_bytes",
+      "wall_seconds"
+    ]
+  },
+  "cases": [
+    {
+      "bridge": {
+        "bytes": 5032352,
+        "sha256": "da75271c2c9f9b1345d6fd5af50cd1b745a9aeeaa54e303a8385e8dafe542e0b"
+      },
+      "captures": {
+        "record": {
+          "bytes": 595972,
+          "sha256": "d52e2e499e46945daf56cc8d5f077ae9e3d46ef67809d8478f8cfef27efc1205"
+        },
+        "stderr": {
+          "bytes": 14997,
+          "sha256": "88bd07f69c0368ce6a3a6535181118212ee16a0b2fce4c2b3c674ac3e167626f"
+        },
+        "stdout": {
+          "bytes": 858480,
+          "sha256": "acb1895fda7c5de40cd9418deaf35fd2999eba656e3807c379878760dbe7202b"
+        }
+      },
+      "control": 0,
+      "duration_scope": "validation_only; whole subprocess wall time, not performance",
+      "exit": 0,
+      "expected_exit": 0,
+      "lane": "maintained",
+      "mode": 0,
+      "owner_dwarf": {
+        "bytes": 135469,
+        "sha256": "08c8d7f816a42339b108ae7f8d75426d145bf75dfe77d9c83274c7c824f705c7"
+      },
+      "status": "observed_exit_zero_only",
+      "timed_out": false,
+      "whole_process_ns": 3395174730
+    },
+    {
+      "bridge": {
+        "bytes": 5033648,
+        "sha256": "5353563ecd400b88b3f36fad56e387e84c537959949e3ff88fa83a5cfe12bf73"
+      },
+      "captures": {
+        "record": {
+          "bytes": 594489,
+          "sha256": "b512e29f401e684ff96add4e8575f2e1c56dd5b05bd7ba727b457f5a7de8bbcd"
+        },
+        "stderr": {
+          "bytes": 15007,
+          "sha256": "b2954aeb7350ddb8c0d68e5d86c4ead87e814714ec96f457ae445c06d7ba5b4d"
+        },
+        "stdout": {
+          "bytes": 858480,
+          "sha256": "8c6a6b531537ee54c7b22393b4206596a3ba2631a8d44353a7242c1544630679"
+        }
+      },
+      "control": 0,
+      "duration_scope": "validation_only; whole subprocess wall time, not performance",
+      "exit": 0,
+      "expected_exit": 0,
+      "lane": "differential",
+      "mode": 0,
+      "owner_dwarf": {
+        "bytes": 135469,
+        "sha256": "ae9d25f81f9bf6c7b055abcd84e950dd8c2eca4af073d6ceb1ee652590a379c6"
+      },
+      "status": "observed_exit_zero_only",
+      "timed_out": false,
+      "whole_process_ns": 5319412601
+    }
+  ],
+  "commands": {
+    "actual_zero": 94,
+    "count": 94,
+    "duration_scope": "validation only; sum of child wall durations, not cohort elapsed or speedup",
+    "expected_zero": 94,
+    "ordered_name_profile_sha256": "a2df2a979fd16582a6dc39e800fb28c7fc781248daf5656a49fc84249750b97f",
+    "profiles": {
+      "build": 1,
+      "finite": 10,
+      "inspect": 40,
+      "metadata": 33,
+      "program": 4,
+      "release_build": 6
+    },
+    "summed_command_wall_ns": 49764268581
+  },
+  "custody": {
+    "aliases": 2877,
+    "artifact_facts": 321,
+    "capture_streams": 190,
+    "cleanup_complete": true,
+    "complete_rosters_retained_in_receipt": true,
+    "input_facts": 2875,
+    "inputs_unchanged": true,
+    "source_unchanged": true
+  },
+  "decoder_archive": {
+    "bytes": 11961622,
+    "sha256": "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d"
+  },
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "isa_hash_encoding": "SHA256 of compact JSON array in recorded order",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 8,
+    "runner_cap_eff": "0000000000000000",
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "historical_failed_outcomes_unchanged": true,
+  "native_state_equality": false,
+  "performance_credit": false,
+  "profile": "bounded-fused-fresh-smoke-v1",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 2020520,
+    "sha256": "d559ccb355d69ac63e12ce38631920bd537848fbbcd2eb672efdfb56aa5875ab"
+  },
+  "reproduction": {
+    "argv": [
+      "python3",
+      "-B",
+      "evaluation/inprocess/bounded_fused_smoke.py",
+      "--expect-revision",
+      "4cd0f27c5fae38b78bbec96ebdff6848886a6913",
+      "--expect-decoder-sha256",
+      "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d",
+      "--cpu",
+      "8",
+      "--output",
+      "target/evaluation/inprocess/pf-fresh-smoke-attempt-1"
+    ],
+    "instructions": {
+      "bytes": 2066,
+      "path": "evaluation/inprocess/bounded_fused_smoke.md",
+      "sha256": "644024c4776af6e81a508d5ed1ad1b0719f9b95c862f6bbc9ecf846adb81e482"
+    },
+    "kind": "portable fresh rerun command, not a recorded outer argv or historical replay",
+    "prerequisites": "exact clean checkout; externally reserved CPU8; fresh output directory",
+    "script": {
+      "bytes": 13424,
+      "path": "evaluation/inprocess/bounded_fused_smoke.py",
+      "sha256": "bac0dd934161b050b1201292ac5d504da2f404427fbabdf958b11395acf384ae"
+    }
+  },
+  "schema_version": 1,
+  "scope": "fresh two-lane source/exit diagnostic only; not native-state or whole-profile qualification",
+  "source": {
+    "head_sources_match": true,
+    "revision": "4cd0f27c5fae38b78bbec96ebdff6848886a6913",
+    "source_manifest_sha256": "e306536012fd9cc2c66aaa65456594267429eab2b41c7ff7a2be5053200cb789",
+    "tracked_clean": true,
+    "tree": "4e323000171e9eaac5793e45a0fc810646310cac"
+  },
+  "status": "observed_smoke_exit_zero"
+}
