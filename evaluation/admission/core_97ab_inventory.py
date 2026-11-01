@@ -9,10 +9,11 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '20fba2b0f65c921a5b080dca4122a10a87e8afdf9bd6e4334badd9a78d1a561c',
+require(hashlib.sha256(RAW).hexdigest() == '8acb9410b5c4e8ce9b1665cd3eec876b01442bf1a6371ff7a4a204515513bb22',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
+PLACEMENT_PREVIOUS = DATA['source_successor_fd4c6']['previous_corpus_sha256']
 PHASE_CURRENT = DATA['source_successor_96378']['previous_corpus_sha256']
 NATIVE_INDEXED_CURRENT = DATA['source_successor_29859']['previous_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
@@ -76,9 +77,22 @@ def require_sources(error='main97ab_source_inventory_differs'):
         source_before_evaluation(path, raw, error)
 
 
-def before_96378(declared, error='main97ab_inventory_differs'):
+def before_fd4c6(declared, error='main97ab_inventory_differs'):
     """Accept only the complete current catalog, then restore the exact predecessor."""
     require(type(declared) is dict and digest(declared) == CURRENT, error)
+    old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in DATA['source_successor_fd4c6']['workspace_changes'].items():
+        require(digest(rows[name]) == digest(change['current']), error)
+        rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == PLACEMENT_PREVIOUS, error)
+    return old
+
+
+def before_96378(declared, error='main97ab_inventory_differs'):
+    """Preserve the complete pre-placement catalog before the older projection."""
+    declared = before_fd4c6(declared, error)
+    require(type(declared) is dict and digest(declared) == PLACEMENT_PREVIOUS, error)
     old = copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in DATA['source_successor_96378']['workspace_changes'].items():

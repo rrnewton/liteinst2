@@ -191,7 +191,7 @@ class Main97abInventoryTests(unittest.TestCase):
         # catalog, missing harness, changed count/type nor old ignore census
         # may substitute for the actual current workspace.
         incoming = current.DATA['source_successor_96378']
-        live_rows = actual['harness_test_counts']['workspace_tests']
+        live_rows = current.before_fd4c6(actual)['harness_test_counts']['workspace_tests']
         self.assertEqual((len(live_rows), sum(x['tests'] for x in live_rows.values()),
                           sum(x['ignored'] for x in live_rows.values())), (113, 4312, 39))
         self.assertEqual(current.digest(phase_catalog), current.PHASE_CURRENT)
@@ -243,6 +243,64 @@ class Main97abInventoryTests(unittest.TestCase):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
                     current.require_sources()
         for path in incoming['source_paths']:
+            target = current.ROOT / path; raw = read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate != target: return read(candidate)
+                    if missing: raise FileNotFoundError(path)
+                    return raw + b'\n'
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                        current.require_sources()
+
+        # Current placement adds thirteen tests to three existing harnesses.
+        # Preserve the entire prior catalog and every earlier control above.
+        placement = current.DATA['source_successor_fd4c6']
+        placement_rows = actual['harness_test_counts']['workspace_tests']
+        placement_before = current.before_fd4c6(actual)
+        self.assertEqual(current.digest(placement_before), current.PLACEMENT_PREVIOUS)
+        self.assertEqual((len(placement_rows), sum(x['tests'] for x in placement_rows.values()),
+                          sum(x['ignored'] for x in placement_rows.values())), (113, 4325, 39))
+        self.assertEqual((placement['default_method_additions'], placement['default_doctest_additions'],
+                          placement['default_method_removals'], placement['default_harness_changes'],
+                          placement['default_ignore_changes'], placement['recorder_identity_changes']),
+                         (13, 0, 0, 0, 0, 0))
+        self.assertEqual(sum(len(names) * len(placement['default_method_instances'][path])
+                             for path, names in placement['added_default_methods'].items()), 13)
+        self.assertEqual((placement['added_ignored_methods'], placement['doctests']), ({}, {}))
+        for wrong in (placement_before, phase_catalog, native_indexed, old):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_fd4c6(wrong)
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                inventory.require_current(wrong)
+        for name, change in placement['workspace_changes'].items():
+            self.assertEqual(placement_rows[name], change['current'])
+            self.assertEqual(placement_before['harness_test_counts']['workspace_tests'][name],
+                             change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(placement_rows[name][field]), placement_rows[name][field] + 1):
+                    wrong = copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_fd4c6(wrong)
+            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_fd4c6(wrong)
+        placement_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
+            for path, names in placement['added_default_methods'].items() for name in names]
+        placement_stimuli += [(path, literal, '')
+            for path, literals in placement['module_chains'].items() for literal in literals]
+        for path, literal, replacement in placement_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('placement declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        for path in placement['source_paths']:
             target = current.ROOT / path; raw = read(target)
             for missing in (False, True):
                 def changed(candidate):

@@ -128,6 +128,7 @@ class MainAf81InventoryTests(unittest.TestCase):
             upstream = copy.deepcopy(native_indexed.DATA['projections'])
             changed_prior = changed_raw
             if path in ('tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs',
+                        'src/quiescent.rs',
                         'tests/support/quiescent_oracle.rs',
                         'tools/rapid-profiler/src/frontend_native/ordinary/mod.rs',
                         'tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs'):
@@ -149,6 +150,7 @@ class MainAf81InventoryTests(unittest.TestCase):
                  patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_prior).hexdigest()}), \
                  patch.object(current, 'source_before', side_effect=lambda p, b, e: b if p != path else (_ for _ in ()).throw(AssertionError('declaration gate omitted'))):
                 if path in ('tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs',
+                        'src/quiescent.rs',
                         'tests/support/quiescent_oracle.rs',
                         'tools/rapid-profiler/src/frontend_native/ordinary/mod.rs',
                         'tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs'):

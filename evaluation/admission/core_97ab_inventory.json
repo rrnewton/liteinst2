@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "6d4075e9f559eabda13f7597fbab83a32c8e00b485f0a92efee730a06bee2d42",
+  "current_corpus_sha256": "71820eeb152e1aa92b917e0776b60ea08a82201d9a7707d8bbfb5b0a5da6391f",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -435,7 +435,7 @@
       "previous_sha256": "c8b2d6c0b859e6d757fcf9c9c5f6a43c75edcd594863e819c131dd37849e189b"
     },
     "evaluation/admission/test_mainaf81_inventory.py": {
-      "current_sha256": "da0d6e46e1bce60e05bd28bd1effcf6bf487f3921c0ac3e08c691a9258480d6a",
+      "current_sha256": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
       "edits": [
         [
           371,
@@ -454,12 +454,12 @@
         ],
         [
           8610,
-          10504,
+          10548,
           "            with patch.object(Path, 'read_bytes', changed), \\\n                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_raw).hexdigest()}), \\\n"
         ],
         [
-          10676,
-          11184,
+          10720,
+          11272,
           ""
         ]
       ],
@@ -625,6 +625,34 @@
       "macro_calls": [],
       "templates": []
     },
+    "src/artifact_overlay_tests.rs": {
+      "all": [
+        "five_tactics_decode_originals_and_keep_inherited_full_reads",
+        "generalized_and_prefixed_puns_preserve_inherited_suffix_and_store_padding",
+        "all_five_tactics_refuse_changed_selected_bytes_even_when_replacing",
+        "successor_and_neighbor_refuse_changed_original_victims",
+        "changed_same_site_window_keeps_the_bounded_upstream_candidate",
+        "current_placement_preserves_seed_emits_once_and_keeps_real_extent_failure",
+        "current_placement_uses_authenticated_pun_suffix_and_keeps_negative_window_refusal",
+        "current_placement_keeps_successor_and_neighbor_placement_literal",
+        "current_placement_generalized_pun_preserves_seed_and_uses_remaining_page_once"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/emission/placement/tests.rs": {
+      "all": [
+        "fixed_bit_carry_matches_independent_finite_enumeration",
+        "low_offset_matches_independent_page_crossing_enumeration",
+        "site_215_seed_geometry_is_not_an_image_capacity_certificate",
+        "pun_preference_uses_exact_window_and_entire_free_pages",
+        "unavailable_pages_and_checked_overflow_do_not_expand_policy"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "src/neighbor.rs": {
       "all": [
         "short_redirect_has_exact_signed_endpoints_without_wrapping"
@@ -638,6 +666,22 @@
         "long_t3_ownership_continues_past_consumed_suffix_and_keeps_exact_pair",
         "long_t3_ownership_conflicting_victims_and_existing_caps_still_refuse",
         "long_t3_ownership_checks_selected_member_and_original_authority"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/quiescent.rs": {
+      "all": [
+        "unmappable_last_cache_line_refuses_without_address_overflow",
+        "indexed_endpoint_preserves_invalid_prefix_and_eager_default",
+        "invalid_choice_is_not_permanent_end_and_unproved_tail_stays_unknown",
+        "all_masks_keep_their_original_slots_and_prove_permanent_upper_end",
+        "pun_duplicate_preference_ranges_and_both_caps_have_exact_evidence",
+        "exact_five_mandatory_prefix_forms_require_admission",
+        "nearby_simd_string_address_and_extra_prefix_forms_stay_refused",
+        "exact_codes_do_not_bypass_register_or_memory_operand_checks",
+        "existing_gpr_and_refused_special_forms_keep_their_outcomes"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -819,7 +863,9 @@
     "tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs": {
       "all": [
         "whole_cli_preserves_legacy_positional_paths_and_selects_only_complete_leading_form",
-        "whole_cli_uses_shared_prepare_and_keeps_full_inventory_on_policy_refusal"
+        "whole_cli_uses_shared_prepare_and_keeps_full_inventory_on_policy_refusal",
+        "whole_current_placement_cli_is_explicit_and_preserves_every_legacy_form",
+        "whole_current_placement_cli_retains_mode_and_denominator_on_refusal"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -1129,7 +1175,9 @@
         "whole_shared_roundtrip_keeps_complete_heads_and_actual_prepare_path",
         "whole_shared_projection_refuses_head_reference_order_and_provenance_changes",
         "whole_shared_complete_population_caps_and_policy_guards_are_not_subsets",
-        "whole_long_t3_ownership_keeps_denominator_and_finds_alternate_victim"
+        "whole_long_t3_ownership_keeps_denominator_and_finds_alternate_victim",
+        "whole_current_placement_uses_declared_arena_and_committed_image_occupancy",
+        "whole_current_placement_exhaustion_keeps_full_atomic_refusal_and_one_candidate_cap"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -1362,10 +1410,18 @@
       "\"tools/elf-rewrite\",",
       "\"tools/rapid-profiler\""
     ],
+    "src/emission.rs": [
+      "pub(crate) mod placement;"
+    ],
+    "src/emission/placement.rs": [
+      "#[cfg(test)]\nmod tests;"
+    ],
     "src/lib.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod artifact_emission_tests;",
       "pub mod neighbor;",
-      "pub mod trampoline;"
+      "pub mod trampoline;",
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod artifact_overlay_tests;",
+      "pub mod emission;"
     ],
     "src/neighbor.rs": [
       "#[cfg(test)]\n#[path = \"neighbor_long_ownership_tests.rs\"]\nmod long_ownership_tests;"
@@ -1772,17 +1828,94 @@
       ],
       "previous_sha256": "dd357db7b22e234e74d655dd75ab157989aa70be8094b728482166b2cf271bd3"
     },
-    "src/engine.rs": {
-      "current_sha256": "25714218bfabb26d996810367ae38b827fb2ad43189d083a82fe33c18ef4ad83",
+    "src/artifact_overlay_tests.rs": {
+      "current_sha256": "05b65ce29e2475a90222a5493c8553dfdf51936e7c47f982a9d4fa3cfff71a12",
       "edits": [
         [
-          8198,
-          9858,
+          16394,
+          33045,
+          ""
+        ]
+      ],
+      "previous_sha256": "990ade97df5758b5ea4f5c5689e230afa92a1de96e818a603f9c8a3bb94c571e"
+    },
+    "src/emission.rs": {
+      "current_sha256": "42aaea35b043fd348d57e73bca896280543883c39a9cc23493b808df3d5f43ac",
+      "edits": [
+        [
+          679,
+          706,
           ""
         ],
         [
-          23264,
-          23570,
+          6018,
+          6062,
+          ""
+        ],
+        [
+          6594,
+          6888,
+          ""
+        ],
+        [
+          8795,
+          8909,
+          ""
+        ],
+        [
+          9050,
+          9119,
+          "            Self::Artifact(_) => Ok(()),\n"
+        ],
+        [
+          9295,
+          9392,
+          "            Self::Artifact(input) => Ok(input.occupied.clone()),\n"
+        ],
+        [
+          9770,
+          9833,
+          "            Self::Artifact(_) => {\n"
+        ],
+        [
+          10273,
+          10336,
+          "            Self::Artifact(_) => {\n"
+        ],
+        [
+          10671,
+          10810,
+          "            Self::Artifact(input) => plan.emit_artifact_at(address, input),\n"
+        ]
+      ],
+      "previous_sha256": "a48fe8255928b1d833e6437101d1b9f1afc7c8eb8af76327f0c9d1cabe063177"
+    },
+    "src/engine.rs": {
+      "current_sha256": "6962a5ae5e103f5d8540eb8194425793394dbdfc0866d813a62559d31016d780",
+      "edits": [
+        [
+          8201,
+          9861,
+          ""
+        ],
+        [
+          17499,
+          19731,
+          ""
+        ],
+        [
+          21163,
+          21646,
+          ""
+        ],
+        [
+          22280,
+          22533,
+          "                let request = request.with_search(quiescent::SearchPolicy {\n"
+        ],
+        [
+          26156,
+          26462,
           ""
         ]
       ],
@@ -1803,6 +1936,22 @@
         ]
       ],
       "previous_sha256": "8d82e0b6ecb0cb3d6b49a835bd3ca4c8a2cdbd7c624d36cc219ea5d313b7f0fb"
+    },
+    "src/quiescent.rs": {
+      "current_sha256": "812e70e4591e1c8c0e6caae29ca5dddf7f8aa07651223f35ae8f292dcdda8e25",
+      "edits": [
+        [
+          40958,
+          41490,
+          "    let policy = request.allocation;\n"
+        ],
+        [
+          58298,
+          58910,
+          "    let policy = request.allocation;\n"
+        ]
+      ],
+      "previous_sha256": "ca0b4069f5fa45300895c9e9d41d1c987cd3fe0d14f23a84cdfbe08a687fd01d"
     },
     "src/trampoline.rs": {
       "current_sha256": "b162de653668983c108e1edd8968916ceb97409315717324337dff80322a87d6",
@@ -2011,45 +2160,56 @@
       "previous_sha256": "c53543d226f89437c8dc8912c55f67b604486683a09eed923a25f723f83e8db9"
     },
     "tools/elf-rewrite/examples/disassembly_sites.rs": {
-      "current_sha256": "db553f5f3aef29602f1010bdec73ea61a5fe58d265c8e620aa3ca736d9baecec",
+      "current_sha256": "5f44f1a20e8701cbcc7b8401acb46750e508f85f4e50f1d03b62560de2b6bccc",
       "edits": [
         [
           2184,
-          2199,
+          2230,
           ""
         ],
         [
-          3721,
-          4568,
+          3752,
+          5558,
           ""
         ],
         [
-          4670,
-          4736,
+          5660,
+          6067,
           ""
         ],
         [
-          5425,
-          7221,
+          6756,
+          9039,
           ""
         ],
         [
-          7311,
-          7368,
+          9129,
+          9198,
           "    let (args, mode) = arguments_with_pending(&raw_args)?;\n"
         ],
         [
-          7975,
-          8154,
+          9805,
+          9984,
           "    let prepared = (|| {\n        let imported = disassembly::import(&original, &ledger, expected_ledger)?;\n        // This denominator is retained even if policy/placement/loader refuses.\n        files.insert(\n            \"disassembly-inventory.tsv\".into(),\n            match mode {\n                Mode::LongOnly => imported.inventory(),\n                Mode::ShortOnly => imported.inventory_short_neighbors(),\n                Mode::ShortT3Ownership => imported.inventory_short_t3_ownership(),\n                Mode::ShortT3Pending => imported.inventory_short_t3_pending(),\n            },\n        );\n        let selected = match mode {\n            Mode::LongOnly => imported.bind(&policy, expected_policy)?,\n            Mode::ShortOnly => imported.bind_short_neighbors(&policy, expected_policy)?,\n            Mode::ShortT3Ownership => imported.bind_short_t3_ownership(&policy, expected_policy)?,\n            Mode::ShortT3Pending => imported.bind_short_t3_pending(&policy, expected_policy)?,\n        };\n        assert_eq!(selected.profile(), profile);\n        files.insert(\"selection.txt\".into(), selected.manifest().to_vec());\n        prepare_disassembly(&original, &selected)\n    })();\n"
         ],
         [
-          18997,
-          19073,
+          20827,
+          20903,
           ""
         ]
       ],
       "previous_sha256": "83b1832d2e56d84e05036db7812c94a4ddd107e8be1ad4b56deb09a495355371"
+    },
+    "tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs": {
+      "current_sha256": "88ec4b2ddf951d710bf05ad96be32b1e5bb6653de89927b221492acfe783347a",
+      "edits": [
+        [
+          8747,
+          12812,
+          ""
+        ]
+      ],
+      "previous_sha256": "82210abb9f8ef74302c894e9f2d4b848238608be7f3ff1702dcd56a15b38247e"
     },
     "tools/elf-rewrite/examples/indexed_dso_support/caller_image.rs": {
       "current_sha256": "bc4008fa7ac9fd9e8f617004ea3278a9b00910815a897fb92345c6d6af264291",
@@ -2242,41 +2402,41 @@
       "previous_sha256": "357886c161da1742937f054817d140b2161e9a3b103e43a0186ed92dee417be9"
     },
     "tools/elf-rewrite/src/disassembly.rs": {
-      "current_sha256": "03a7ef9a8d8957217964d8b97aa1bcfeb3a8c346341d5ef21811f780c6bf97f3",
+      "current_sha256": "19179ae7129fd735b40ab7be906cc877370776e37341a44d9122e8393c01d478",
       "edits": [
         [
           1601,
-          1703,
+          1811,
           ""
         ],
         [
-          1881,
-          1939,
+          1989,
+          2106,
           ""
         ],
         [
-          2229,
-          2297,
+          2396,
+          2542,
           ""
         ],
         [
-          9022,
-          9243,
+          9267,
+          9526,
           ""
         ],
         [
-          11203,
-          11424,
+          11486,
+          11745,
           ""
         ],
         [
-          14423,
-          14644,
+          14744,
+          15003,
           ""
         ],
         [
-          25130,
-          25145,
+          25489,
+          25504,
           ""
         ]
       ],
@@ -2298,22 +2458,44 @@
       ],
       "previous_sha256": "4b0075db07f5902442c9e7ede7133ac41081de041fd03fa04967c613884ee56f"
     },
-    "tools/elf-rewrite/src/lib.rs": {
-      "current_sha256": "cfe27c9869df5f68787b23d58af21910d6f364e2c110a38d2c92045e11cb62df",
+    "tools/elf-rewrite/src/disassembly/whole.rs": {
+      "current_sha256": "ef4f32d328e1b7cf6d06f421d265f72f7aa7f985b38fe9ff1f788bffd3c997a1",
       "edits": [
         [
-          3120,
-          3991,
+          412,
+          714,
+          ""
+        ]
+      ],
+      "previous_sha256": "4e4e3f4d692548095898e3baf95fb3a0e70a711c1c83567620fde17c29377518"
+    },
+    "tools/elf-rewrite/src/disassembly/whole/tests.rs": {
+      "current_sha256": "adae0a330f0cbda30eb07a3da5886b7390b1c87cb187f78a297424f2df03aacd",
+      "edits": [
+        [
+          16906,
+          22098,
+          ""
+        ]
+      ],
+      "previous_sha256": "f0bd8144f9596c5fe72beb2c4c386249e9eb9e71efc68a50a7fd66b3bb6ae804"
+    },
+    "tools/elf-rewrite/src/lib.rs": {
+      "current_sha256": "4d47e2e85074fb6990951f86ffe6fb2ab3492be9864b89e8f3f0db04e9cbb211",
+      "edits": [
+        [
+          3216,
+          5623,
           ""
         ],
         [
-          24117,
-          24167,
+          25653,
+          25703,
           "            entries: site.heads.clone(),\n"
         ],
         [
-          25937,
-          26291,
+          27473,
+          28106,
           "        let result = if mode == disassembly::NeighborMode::ShortT3Pending {\n"
         ]
       ],
@@ -3735,6 +3917,129 @@
     ],
     "python_control_identity_changes": 0
   },
+  "source_successor_fd4c6": {
+    "added_default_methods": {
+      "src/artifact_overlay_tests.rs": [
+        "current_placement_preserves_seed_emits_once_and_keeps_real_extent_failure",
+        "current_placement_uses_authenticated_pun_suffix_and_keeps_negative_window_refusal",
+        "current_placement_keeps_successor_and_neighbor_placement_literal",
+        "current_placement_generalized_pun_preserves_seed_and_uses_remaining_page_once"
+      ],
+      "src/emission/placement/tests.rs": [
+        "fixed_bit_carry_matches_independent_finite_enumeration",
+        "low_offset_matches_independent_page_crossing_enumeration",
+        "site_215_seed_geometry_is_not_an_image_capacity_certificate",
+        "pun_preference_uses_exact_window_and_entire_free_pages",
+        "unavailable_pages_and_checked_overflow_do_not_expand_policy"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs": [
+        "whole_current_placement_cli_is_explicit_and_preserves_every_legacy_form",
+        "whole_current_placement_cli_retains_mode_and_denominator_on_refusal"
+      ],
+      "tools/elf-rewrite/src/disassembly/whole/tests.rs": [
+        "whole_current_placement_uses_declared_arena_and_committed_image_occupancy",
+        "whole_current_placement_exhaustion_keeps_full_atomic_refusal_and_one_candidate_cap"
+      ]
+    },
+    "added_ignored_methods": {},
+    "base_revision": "207eb8ee593d1c7bd43168966bec0c8d74723770",
+    "current_corpus_sha256": "71820eeb152e1aa92b917e0776b60ea08a82201d9a7707d8bbfb5b0a5da6391f",
+    "default_doctest_additions": 0,
+    "default_harness_changes": 0,
+    "default_ignore_changes": 0,
+    "default_method_additions": 13,
+    "default_method_instances": {
+      "src/artifact_overlay_tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "src/emission/placement/tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs": [
+        "unit/disassembly_sites/disassembly_sites"
+      ],
+      "tools/elf-rewrite/src/disassembly/whole/tests.rs": [
+        "unit/liteinst_rewrite/lib"
+      ]
+    },
+    "default_method_removals": 0,
+    "doctests": {},
+    "main_revision": "fd4c6b28f86056c40675bd810cb6ab9bd64a1a7b",
+    "merged_revision": "285c40e489640f15e908942c9bb2ca0781ce7d0b",
+    "module_chains": {
+      "src/emission.rs": [
+        "pub(crate) mod placement;"
+      ],
+      "src/emission/placement.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "src/lib.rs": [
+        "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod artifact_overlay_tests;",
+        "pub mod emission;"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites.rs": [
+        "#[cfg(test)]\n#[path = \"disassembly_sites/whole_tests.rs\"]\nmod whole_tests;"
+      ],
+      "tools/elf-rewrite/src/disassembly.rs": [
+        "pub mod whole;"
+      ],
+      "tools/elf-rewrite/src/disassembly/whole.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/elf-rewrite/src/lib.rs": [
+        "pub mod disassembly;"
+      ]
+    },
+    "previous_corpus_sha256": "6d4075e9f559eabda13f7597fbab83a32c8e00b485f0a92efee730a06bee2d42",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "src/artifact_overlay_tests.rs",
+      "src/emission.rs",
+      "src/emission/placement.rs",
+      "src/emission/placement/tests.rs",
+      "src/engine.rs",
+      "src/lib.rs",
+      "src/quiescent.rs",
+      "tools/elf-rewrite/examples/disassembly_sites.rs",
+      "tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs",
+      "tools/elf-rewrite/src/disassembly.rs",
+      "tools/elf-rewrite/src/disassembly/whole.rs",
+      "tools/elf-rewrite/src/disassembly/whole/tests.rs",
+      "tools/elf-rewrite/src/lib.rs"
+    ],
+    "workspace_changes": {
+      "unit/disassembly_sites/disassembly_sites": {
+        "current": {
+          "ignored": 0,
+          "tests": 7
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 5
+        }
+      },
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 434
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 425
+        }
+      },
+      "unit/liteinst_rewrite/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 175
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 173
+        }
+      }
+    }
+  },
   "sources": {
     "Cargo.lock": "4aad718e815f59f813573d5f1302ea87c35b178a949bd5159882d5ee1301d89a",
     "Cargo.toml": "0400cda5659feb04aac0d698560dd17087658c712e3e7d2765243100675160df",
@@ -3748,10 +4053,10 @@
     "evaluation/admission/test_main34c47_inventory.py": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "f2874b7589b24a963da1fe3912378fa74cf20e6e0a4eb8ebf736d93ef182039a",
-    "evaluation/admission/test_main97ab_inventory.py": "66b663b39e829502f21dcd1dc1916157d387411fcdfe134f4a8c6b5399b5195e",
+    "evaluation/admission/test_main97ab_inventory.py": "b12ed350a0de5ec0495580cd61883abfc078239f7ee4a6ce00237b9e369c235d",
     "evaluation/admission/test_main981419_inventory.py": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
-    "evaluation/admission/test_mainaf81_inventory.py": "da0d6e46e1bce60e05bd28bd1effcf6bf487f3921c0ac3e08c691a9258480d6a",
+    "evaluation/admission/test_mainaf81_inventory.py": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
     "evaluation/admission/test_mainc712_inventory.py": "f83655db9a2f51f91a3f245e7d04cd52a5bd749bdcf2d52c14d1d4e8c35c0825",
     "evaluation/admission/test_maind8d85_inventory.py": "c8ac5fce31e6f3be8cd6a759d4ea24551dea6f4cb7a4b51cd55b487efcc88a97",
     "evaluation/admission/test_maindd75_inventory.py": "852a822559e51563e9c1dab2f231c7025adf443a572f4943417f9edd391adc06",
@@ -3769,10 +4074,15 @@
     "evaluation/ordinary-selected-session/reproduce.py": "933e1be206412e7021fab10d13af7a8f8e114471e1420fd1fe05383ac546c67d",
     "src/artifact_emission_tests.rs": "3d99c55494ae2816bfbc75f5ff8ffdbf56ef2a4634c283e8e6d8ecb435831ead",
     "src/artifact_fixups.rs": "89ab9983e8c20649470a46e874d3ec0c81a9133d8ad19c58c43c150f7325e58b",
-    "src/engine.rs": "25714218bfabb26d996810367ae38b827fb2ad43189d083a82fe33c18ef4ad83",
+    "src/artifact_overlay_tests.rs": "05b65ce29e2475a90222a5493c8553dfdf51936e7c47f982a9d4fa3cfff71a12",
+    "src/emission.rs": "42aaea35b043fd348d57e73bca896280543883c39a9cc23493b808df3d5f43ac",
+    "src/emission/placement.rs": "33c6f10b478ee76353a1dd2937c2d3e257bca26d13821f6ba3afca58e016e4af",
+    "src/emission/placement/tests.rs": "2cc0dd6c0a26c88d4682365b375d94fd3cdab7783e0dec7770f4a7cb77f79def",
+    "src/engine.rs": "6962a5ae5e103f5d8540eb8194425793394dbdfc0866d813a62559d31016d780",
     "src/lib.rs": "b5dcdfd1d83d711c104b28303722a590ff2ab4a7ee8f580fcdff2e80e324c81a",
     "src/neighbor.rs": "6d88028f75906c100aa6498c3446f421b5194ee6119bdeebf17b87c3b23114a5",
     "src/neighbor_long_ownership_tests.rs": "992e8a3ea1d7cca8ed93641e189ed9600583667b909e67e9baee7f161f868fcd",
+    "src/quiescent.rs": "812e70e4591e1c8c0e6caae29ca5dddf7f8aa07651223f35ae8f292dcdda8e25",
     "src/trampoline.rs": "b162de653668983c108e1edd8968916ceb97409315717324337dff80322a87d6",
     "src/trampoline/artifact_jrcxz.rs": "89b78a5c4ff7668ec09b61d7dfcf1bcb5630adfaae57053efa54a710fbc0d713",
     "tests/neighbor_eviction_oracle.rs": "b3063d615123f065dfa2c8b701a73d8c780865ccf7d8cfeb996f579314f800e5",
@@ -3782,8 +4092,8 @@
     "tools/elf-rewrite/Cargo.toml": "44f89364d57a07c1f21d94467c0a619ca879d22e776368dfa9eda00c97a93e6d",
     "tools/elf-rewrite/e9-sites-controls.py": "f90efe8819b3e0c06749906b2115cc224fd415d3d3662bef72931bb31f71d7be",
     "tools/elf-rewrite/e9-sites.py": "4270f18a2128543fa0eb1b1982ed8368b77c5216c0926a5012371c8a3a9ea893",
-    "tools/elf-rewrite/examples/disassembly_sites.rs": "db553f5f3aef29602f1010bdec73ea61a5fe58d265c8e620aa3ca736d9baecec",
-    "tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs": "82210abb9f8ef74302c894e9f2d4b848238608be7f3ff1702dcd56a15b38247e",
+    "tools/elf-rewrite/examples/disassembly_sites.rs": "5f44f1a20e8701cbcc7b8401acb46750e508f85f4e50f1d03b62560de2b6bccc",
+    "tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs": "88ec4b2ddf951d710bf05ad96be32b1e5bb6653de89927b221492acfe783347a",
     "tools/elf-rewrite/examples/full_program_bridge.rs": "21686fccf07c625a6220c30d7c6664e7608546e5e4d3b18d3da127911810773f",
     "tools/elf-rewrite/examples/full_program_bridge/tests.rs": "e5dc04d32b521685b08550d1e2eb55c5665be73153b948ae7c35ba6214023268",
     "tools/elf-rewrite/examples/indexed_dso_native.rs": "8fde58161eb6117c9ac2fc19caf2564da503494489da967fbb7174d48d9d2e7f",
@@ -3803,11 +4113,11 @@
     "tools/elf-rewrite/src/carrier/dynamic_metadata.rs": "8315e03c460d0bd92a37f88b87b6c75d16694b1a8a4614d4b67f83febd627ea6",
     "tools/elf-rewrite/src/carrier/image_fixtures.rs": "8b4aded6f525d066cc6f6b6f85b6b9932052515313d9b0b3199e767815f1f41f",
     "tools/elf-rewrite/src/carrier/mod.rs": "a6b99b00be9e1b8cbda0c1f10baf032157c4a06026e35d5192f6fbea67c26898",
-    "tools/elf-rewrite/src/disassembly.rs": "03a7ef9a8d8957217964d8b97aa1bcfeb3a8c346341d5ef21811f780c6bf97f3",
+    "tools/elf-rewrite/src/disassembly.rs": "19179ae7129fd735b40ab7be906cc877370776e37341a44d9122e8393c01d478",
     "tools/elf-rewrite/src/disassembly/tests.rs": "6774aa69aec5c0081a83ce9e24eea21e4819f1f1832dfeb10d53caa810847f40",
-    "tools/elf-rewrite/src/disassembly/whole.rs": "4e4e3f4d692548095898e3baf95fb3a0e70a711c1c83567620fde17c29377518",
-    "tools/elf-rewrite/src/disassembly/whole/tests.rs": "f0bd8144f9596c5fe72beb2c4c386249e9eb9e71efc68a50a7fd66b3bb6ae804",
-    "tools/elf-rewrite/src/lib.rs": "cfe27c9869df5f68787b23d58af21910d6f364e2c110a38d2c92045e11cb62df",
+    "tools/elf-rewrite/src/disassembly/whole.rs": "ef4f32d328e1b7cf6d06f421d265f72f7aa7f985b38fe9ff1f788bffd3c997a1",
+    "tools/elf-rewrite/src/disassembly/whole/tests.rs": "adae0a330f0cbda30eb07a3da5886b7390b1c87cb187f78a297424f2df03aacd",
+    "tools/elf-rewrite/src/lib.rs": "4d47e2e85074fb6990951f86ffe6fb2ab3492be9864b89e8f3f0db04e9cbb211",
     "tools/elf-rewrite/src/model.rs": "25ce95f799669f062b774b344afdd0705299665fadd3ba666595a2efb10b191e",
     "tools/elf-rewrite/src/neighbor_catalogue.rs": "98547f49cbd1571cbe7e3e79b7fcb3b873e8c8f2c3eba28326614fce78a5abf2",
     "tools/elf-rewrite/src/selection.rs": "00fe05a29ad200761b45dbc73de567e0730b20bd4ad19dd08b89b6113688a191",
