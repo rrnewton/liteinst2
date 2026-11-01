@@ -1977,7 +1977,14 @@ impl NormalOracle {
                 let pc = walk.child.registers().rip;
                 if index == 1 {
                     if let Some(witness) = early_walk.as_mut() {
-                        witness.before(self, walk.child, r, &returns[index], &mut early_parent);
+                        witness.before(
+                            self,
+                            walk.child,
+                            r,
+                            &returns[index],
+                            &mut early_parent,
+                            walk.steps,
+                        );
                     }
                 }
                 let caller_pc = if let Some(dispatch) = &copied_dispatch {

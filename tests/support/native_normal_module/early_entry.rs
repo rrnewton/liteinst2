@@ -265,6 +265,154 @@ pub fn witness_words(header: &[u64], journal: &[u64; 512]) -> [u64; WITNESS_WORD
     out[JOURNAL..].copy_from_slice(journal);
     out
 }
+// Parent-only, fixed-capacity failure attribution. These records never decide
+// admission, skip a step, alter a child, or change any comparison or deadline.
+#[derive(Clone, Copy)]
+struct StepBoundary {
+    kind: &'static str,
+    step: usize,
+    pc: u64,
+    ordinal: usize,
+}
+#[derive(Clone, Copy)]
+struct RepeatedPc {
+    pc: u64,
+    first_step: usize,
+    last_step: usize,
+    same_rip_steps: usize,
+    bytes: [u8; 16],
+    bytes_read: isize,
+}
+#[derive(Default)]
+struct StepDiagnostics {
+    visits: usize,
+    last: Option<(u64, usize)>,
+    returns_seen: usize,
+    boundaries: [Option<StepBoundary>; 16],
+    boundary_count: usize,
+    boundary_dropped: usize,
+    repeats: [Option<RepeatedPc>; 16],
+    repeat_count: usize,
+    repeat_dropped: usize,
+    same_rip_steps: usize,
+    repeating: bool,
+    active_repeat: Option<usize>,
+}
+impl StepDiagnostics {
+    fn boundary(&mut self, kind: &'static str, step: usize, pc: u64, ordinal: usize) {
+        if let Some(slot) = self.boundaries.get_mut(self.boundary_count) {
+            *slot = Some(StepBoundary {
+                kind,
+                step,
+                pc,
+                ordinal,
+            });
+            self.boundary_count += 1;
+        } else {
+            self.boundary_dropped = self.boundary_dropped.saturating_add(1);
+        }
+    }
+    fn visit(&mut self, child: &Tracee, pc: u64, step: usize, returns: usize) {
+        self.visits = self.visits.saturating_add(1);
+        // at_return() and the existing return postflight completed on the
+        // preceding iteration; this sample is after the actual C3 step.
+        if returns != self.returns_seen {
+            self.boundary("physical_return_postflight", step, pc, returns);
+            self.returns_seen = returns;
+        }
+        if let Some((_, prior_step)) = self.last.filter(|&(prior_pc, prior_step)| {
+            prior_pc == pc && prior_step.checked_add(1) == Some(step)
+        }) {
+            self.same_rip_steps = self.same_rip_steps.saturating_add(1);
+            if !self.repeating {
+                self.repeating = true;
+                if let Some(slot) = self.repeats.get_mut(self.repeat_count) {
+                    let mut bytes = [0_u8; 16];
+                    let local = libc::iovec {
+                        iov_base: bytes.as_mut_ptr().cast(),
+                        iov_len: bytes.len(),
+                    };
+                    let remote = libc::iovec {
+                        iov_base: pc as usize as *mut libc::c_void,
+                        iov_len: bytes.len(),
+                    };
+                    // SAFETY: the local array is writable; the remote pointer
+                    // is never dereferenced here. The same ptrace-owned child
+                    // is stopped. A partial/failed read is diagnostic data,
+                    // including an instruction crossing an unmapped page.
+                    let bytes_read = unsafe {
+                        // Linux thread-local errno is valid here; preserve it
+                        // so best-effort attribution cannot affect later I/O.
+                        let errno = libc::__errno_location();
+                        let saved_errno = *errno;
+                        let read = libc::process_vm_readv(child.pid, &local, 1, &remote, 1, 0);
+                        *errno = saved_errno;
+                        read
+                    };
+                    *slot = Some(RepeatedPc {
+                        pc,
+                        first_step: prior_step,
+                        last_step: step,
+                        same_rip_steps: 0,
+                        bytes,
+                        bytes_read,
+                    });
+                    self.active_repeat = Some(self.repeat_count);
+                    self.repeat_count += 1;
+                } else {
+                    self.repeat_dropped = self.repeat_dropped.saturating_add(1);
+                }
+            }
+            if let Some(run) = self
+                .active_repeat
+                .and_then(|index| self.repeats.get_mut(index))
+                .and_then(Option::as_mut)
+            {
+                run.last_step = step;
+                run.same_rip_steps = run.same_rip_steps.saturating_add(1);
+            }
+        } else {
+            self.repeating = false;
+            self.active_repeat = None;
+        }
+        self.last = Some((pc, step));
+    }
+    fn write_failure(&self) {
+        use std::io::Write;
+        let mut stderr = std::io::stderr().lock();
+        // No child reads, formatting buffers, or checked-write panics in Drop.
+        let _ = writeln!(
+            stderr,
+            "early-entry steps: visits={} last={:?} boundaries={} boundary_dropped={} repeated_runs={} repeat_dropped={} same_rip_steps={}",
+            self.visits,
+            self.last,
+            self.boundary_count,
+            self.boundary_dropped,
+            self.repeat_count,
+            self.repeat_dropped,
+            self.same_rip_steps
+        );
+        for boundary in self.boundaries.iter().flatten() {
+            let _ = writeln!(
+                stderr,
+                "early-entry boundary: kind={} step={} pc={:#x} ordinal={}",
+                boundary.kind, boundary.step, boundary.pc, boundary.ordinal
+            );
+        }
+        for run in self.repeats.iter().flatten() {
+            let _ = writeln!(
+                stderr,
+                "early-entry repeated-pc: pc={:#x} first_step={} last_step={} same_rip_steps={} bytes_read={} bytes={:02x?}",
+                run.pc,
+                run.first_step,
+                run.last_step,
+                run.same_rip_steps,
+                run.bytes_read,
+                run.bytes
+            );
+        }
+    }
+}
 pub(in super::super) struct Witness {
     scenario: Scenario,
     extra: Extra,
@@ -279,6 +427,7 @@ pub(in super::super) struct Witness {
     binding: Option<u64>,
     command: bool,
     after_branch: Option<u64>,
+    steps: StepDiagnostics,
 }
 impl Drop for Witness {
     fn drop(&mut self) {
@@ -293,6 +442,7 @@ impl Drop for Witness {
                 self.callbacks,
                 self.returns
             );
+            self.steps.write_failure();
         }
     }
 }
@@ -312,6 +462,7 @@ impl Witness {
             binding: None,
             command: false,
             after_branch: None,
+            steps: StepDiagnostics::default(),
         }
     }
     fn read(&self, child: &Tracee) -> Vec<u64> {
@@ -359,8 +510,10 @@ impl Witness {
         ready: &WalkReady,
         returns: &[u64],
         parent: &mut Option<Parent>,
+        walk_steps: usize,
     ) {
         let pc = child.registers().rip;
+        self.steps.visit(child, pc, walk_steps, self.returns);
         if let Some(expected) = self.after_branch.take() {
             assert_eq!(
                 pc, expected,
@@ -376,6 +529,8 @@ impl Witness {
                 self.took_observing = false;
             }
             if pc == g[2] {
+                self.steps
+                    .boundary("loaded_flag_pc", walk_steps, pc, call + 1);
                 let before = self.entry.as_ref().unwrap();
                 let r = child.registers();
                 assert_eq!(child.memory(pc - 3, 3), [0x0f, 0xb6, 0x09]);
@@ -440,6 +595,12 @@ impl Witness {
             }
         }
         if pc == self.extra.marker {
+            self.steps.boundary(
+                "snapshot_marker_pc",
+                walk_steps,
+                pc,
+                self.callbacks.saturating_add(1),
+            );
             let words = self.read(child);
             self.snapshot(
                 &words,

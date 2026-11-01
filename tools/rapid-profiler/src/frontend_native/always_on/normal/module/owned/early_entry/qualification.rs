@@ -80,6 +80,8 @@ pub struct QualificationSnapshot {
 /// Read only the calling worker's TLS. Another thread must receive this copied
 /// witness through its own authenticated release/acquire or channel handshake.
 pub fn qualification_snapshot() -> Result<QualificationSnapshot, BridgeError> {
+    // Nested TLS closures return only status; the owned witness has one destination.
+    let mut snapshot_result = Err(error(Cause::Attachment));
     NORMAL
         .try_with(|normal| {
             let storage = normal.try_borrow().map_err(|_| error(Cause::Attachment))?;
@@ -119,7 +121,7 @@ pub fn qualification_snapshot() -> Result<QualificationSnapshot, BridgeError> {
                         }),
                         _ => return Err(error(Cause::Invariant)),
                     };
-                    Ok(QualificationSnapshot {
+                    snapshot_result = Ok(QualificationSnapshot {
                         binding_key: Arc::as_ptr(&s.binding.key) as usize,
                         pid: s.binding.pid,
                         tid: s.tid,
@@ -138,11 +140,13 @@ pub fn qualification_snapshot() -> Result<QualificationSnapshot, BridgeError> {
                         model_depth: s.model.depth(),
                         completed_sequence: s.model.completed_sequence(),
                         journal: s.journal.page.0,
-                    })
+                    });
+                    Ok(())
                 })
                 .unwrap_or(Err(error(Cause::Attachment)))
         })
-        .unwrap_or(Err(error(Cause::Attachment)))
+        .unwrap_or(Err(error(Cause::Attachment)))?;
+    snapshot_result
 }
 type Observer = Box<dyn FnMut(PauseKind, &QualificationSnapshot)>;
 thread_local! { static OBSERVER: RefCell<Option<Observer>> = const { RefCell::new(None) }; }
@@ -178,8 +182,8 @@ pub(super) fn after_published(kind: PauseKind) {
                 .try_borrow_mut()
                 .map_err(|_| error(Cause::Attachment))?;
             if let Some(observer) = observer.as_mut() {
-                let snapshot = qualification_snapshot()?;
-                observer(kind, &snapshot);
+                let snapshot_result = qualification_snapshot();
+                observer(kind, snapshot_result.as_ref().map_err(|error| *error)?);
             }
             Ok(())
         })
