@@ -331,7 +331,8 @@ impl Fixture {
             .max()
             .unwrap();
         assert_eq!(highest, FIRST_IMAGE + (count * PAGE) as u64);
-        assert!(highest < 8 * 1024 * 1024 && highest < SUBJECT_AS);
+        assert!(highest < 8 * 1024 * 1024);
+        assert!(highest < SUBJECT_AS);
         assert!(output.bytes().len() <= FILE_CAP);
         assert_eq!(
             elf.executable_bytes(ElfVaddr(self.finish), 6).unwrap(),
