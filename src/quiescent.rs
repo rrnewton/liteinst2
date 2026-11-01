@@ -1037,7 +1037,20 @@ fn plan_pun_with_context_core(
     let low = u64::try_from(next + i128::from(i32::from_le_bytes(fixed)))
         .map_err(|_| Refusal::AllocationUnavailable)?;
     let window = AddressRange::new(low, 1_usize << (8 * free))?;
-    let policy = request.allocation;
+    let effective;
+    let policy = if request.emission.current_placement() {
+        if context.callback_free || context.exact_target.is_some() {
+            return Err(Refusal::InvalidPlan);
+        }
+        effective =
+            crate::emission::placement::for_pun(request.allocation, window, occupied, source)
+                .inspect_err(|reason| {
+                    search_evidence.refusal(scope, RefusalClass::AddressPolicy, reason)
+                })?;
+        &effective
+    } else {
+        request.allocation
+    };
     if policy.max_mappings == 0 || policy.max_mapped_bytes < 4096 {
         search_evidence.refusal(
             scope,
@@ -1501,7 +1514,25 @@ fn emit_relocation_window(
             mask[(head - physical - 1) as usize] = true;
         }
     }
-    let policy = request.allocation;
+    let effective;
+    let policy = if request.emission.current_placement() {
+        if routed.is_some() || whole_function.is_some() || controls.is_some() || clock.is_some() {
+            return Err(Refusal::InvalidPlan);
+        }
+        effective = crate::emission::placement::for_relocation(
+            request.allocation,
+            physical,
+            mask,
+            occupied,
+            source,
+        )
+        .inspect_err(|reason| {
+            search_evidence.refusal(scope, RefusalClass::AddressPolicy, reason)
+        })?;
+        &effective
+    } else {
+        request.allocation
+    };
     if policy.max_mappings == 0 || policy.max_mapped_bytes < 4096 {
         search_evidence.refusal(
             scope,

@@ -1,0 +1,464 @@
+{
+  "revision": "fc13f85bf8345b79a222a3bc24a8cee0b9d714d3",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "status": "PASS_CORRECTNESS_ONLY",
+  "script": "evaluation/short-neighbor-parallel/validate.py",
+  "script_sha256": "968956df64edd3f5754a0adbd4b900ac68535d188be01af0628eff94d2ed6d10",
+  "cpu_count": 12,
+  "cpus": [
+    3,
+    17,
+    19,
+    29,
+    33,
+    52,
+    53,
+    54,
+    55,
+    72,
+    75,
+    91
+  ],
+  "cargo_jobs": 12,
+  "test_threads": 12,
+  "serial_threads": 1,
+  "outer_seconds": 921.2840240029618,
+  "outer_wall_limit": 1200,
+  "log_cap_bytes": 8388608,
+  "all_owners_normal_zero_rescues": true,
+  "source_unchanged": true,
+  "stages": [
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 9.868063059169799,
+      "exit_code": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "load_before": [
+        "38.22",
+        "34.16",
+        "34.27"
+      ],
+      "load_after": [
+        "38.83",
+        "34.41",
+        "34.36"
+      ]
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 33.910718196071684,
+      "exit_code": 0,
+      "log_sha256": "a2b91fc02e1fe80e76a7d99cba9613c9c21fef0a129cf206e6b60c14dd00022b",
+      "load_before": [
+        "38.83",
+        "34.41",
+        "34.36"
+      ],
+      "load_after": [
+        "46.04",
+        "36.84",
+        "35.18"
+      ]
+    },
+    {
+      "name": "check",
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 23.080464251805097,
+      "exit_code": 0,
+      "log_sha256": "81ac26d5c00cff447d181a9fdb4f79e0bbcba293165dd04c28ae5f004c06bac3",
+      "load_before": [
+        "46.04",
+        "36.84",
+        "35.18"
+      ],
+      "load_after": [
+        "45.34",
+        "37.49",
+        "35.45"
+      ]
+    },
+    {
+      "name": "workspace",
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "12",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "wall_limit": 900,
+      "elapsed_seconds": 727.4406729319599,
+      "exit_code": 0,
+      "log_sha256": "49b7bc94241028f98b0013a7cfd51e746d6e7c4111da315c77263665e15bc796",
+      "load_before": [
+        "45.34",
+        "37.49",
+        "35.45"
+      ],
+      "load_after": [
+        "41.95",
+        "40.39",
+        "38.08"
+      ]
+    },
+    {
+      "name": "serial-launch",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "wall_limit": 180,
+      "elapsed_seconds": 126.91207210998982,
+      "exit_code": 0,
+      "log_sha256": "7960de0023b8102d6df2c16c0dc5c022c0ee8acacb2c094e1049658a5e48c64a",
+      "load_before": [
+        "41.95",
+        "40.39",
+        "38.08"
+      ],
+      "load_after": [
+        "47.85",
+        "42.49",
+        "39.10"
+      ]
+    }
+  ],
+  "workspace": {
+    "passed": 4286,
+    "failed": 0,
+    "ignored": 39,
+    "raw_passed": 4289,
+    "controlled_nested_child_passes": 3,
+    "all_prior_tests_contexts_statuses_and_ignore_reasons_retained": true,
+    "added_tests": [
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "emission::placement::tests::fixed_bit_carry_matches_independent_finite_enumeration",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "emission::placement::tests::low_offset_matches_independent_page_crossing_enumeration",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "emission::placement::tests::site_215_seed_geometry_is_not_an_image_capacity_certificate",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "emission::placement::tests::pun_preference_uses_exact_window_and_entire_free_pages",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "emission::placement::tests::unavailable_pages_and_checked_overflow_do_not_expand_policy",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "artifact_overlay_tests::current_placement_preserves_seed_emits_once_and_keeps_real_extent_failure",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "artifact_overlay_tests::current_placement_uses_authenticated_pun_suffix_and_keeps_negative_window_refusal",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "artifact_overlay_tests::current_placement_keeps_successor_and_neighbor_placement_literal",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst2-<cargo-hash>)",
+        "name": "artifact_overlay_tests::current_placement_generalized_pun_preserves_seed_and_uses_remaining_page_once",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests examples/disassembly_sites.rs (target/debug/examples/disassembly_sites-<cargo-hash>)",
+        "name": "whole_tests::whole_current_placement_cli_is_explicit_and_preserves_every_legacy_form",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests examples/disassembly_sites.rs (target/debug/examples/disassembly_sites-<cargo-hash>)",
+        "name": "whole_tests::whole_current_placement_cli_retains_mode_and_denominator_on_refusal",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst_rewrite-<cargo-hash>)",
+        "name": "disassembly::whole::tests::whole_current_placement_uses_declared_arena_and_committed_image_occupancy",
+        "reason": "",
+        "status": "ok"
+      },
+      {
+        "context": "Running unittests src/lib.rs (target/debug/deps/liteinst_rewrite-<cargo-hash>)",
+        "name": "disassembly::whole::tests::whole_current_placement_exhaustion_keeps_full_atomic_refusal_and_one_candidate_cap",
+        "reason": "",
+        "status": "ok"
+      }
+    ],
+    "removed_tests": [],
+    "exact_prior_raw_counted_summary_ignore_custom_census_plus_thirteen": true,
+    "required_jrcxz_tests": [
+      "artifact_emission_tests::jrcxz_artifact_bridge_has_complete_fields_paths_and_pc_ownership",
+      "artifact_emission_tests::jrcxz_artifact_bridge_routes_internal_entries_and_keeps_finite_refusals",
+      "artifact_emission_tests::jrcxz_artifact_engine_keeps_source_pair_and_allocation_authority",
+      "jrcxz_artifact_native::native_jrcxz_artifact_preserves_integer_flags_and_stack",
+      "trampoline::artifact_jrcxz::tests::fixed_jrcxz_bridge_rejects_template_index_and_field_corruption"
+    ],
+    "counted_multiset_sha256": "f9afbdd292ac3927186aea8314f225643a060603613a3dc1ab36ee5e166a1a8e"
+  },
+  "serial_launch": {
+    "passed": 1039,
+    "failed": 0,
+    "ignored": 0,
+    "complete_prior_multiset_retained": true
+  },
+  "native_finite_census": [
+    {
+      "context": "Running tests/neighbor_eviction_oracle.rs (target/debug/deps/neighbor_eviction_oracle-<cargo-hash>)",
+      "line": 3075,
+      "text": "artifact JRCXZ: 4 RCX values x 2 seeds, 16 original/16 linked/16 restored traces, 8 observing callbacks; no qualification claim"
+    }
+  ],
+  "release": {
+    "utc": "2026-10-31T23:35:53.109770+00:00",
+    "original_owner_pid_absent": true,
+    "original_owner_identity_absent": true,
+    "exact_child_scope_absent": true,
+    "outer_exit_code": 0,
+    "outer_sha256": "c63d41452cb647823e0d0c290faa51ee4662241c9ca73f490bb24fd6640e4d6f",
+    "all_owners_normal_zero_rescues": true
+  },
+  "baseline_revision": "4451a77540526c382f5fd82bd3674c4fddc4878e",
+  "scope": "The five listed root-workspace correctness commands only;201 incoming C/evaluation paths are source provenance, not a separately executed page-entry/C suite. No performance/native full-program/A5 qualification. Original failed runs remain in prior receipts.",
+  "environment": {
+    "mode": "Nine overrides on inherited environment; not a clean environment",
+    "overrides": {
+      "PATH": "${STABLE_TOOLCHAIN_BIN}:${CARGO_BIN}:/usr/bin:/bin",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_BUILD_JOBS": "12",
+      "CARGO_TARGET_DIR": "${ROOT}/target",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "RUST_TEST_THREADS": "12",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    }
+  },
+  "reproduction": {
+    "script": "evaluation/short-neighbor-parallel/validate.py",
+    "sha256": "968956df64edd3f5754a0adbd4b900ac68535d188be01af0628eff94d2ed6d10",
+    "helper": "evaluation/admission/processes.py",
+    "helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+    "argv": [
+      "/usr/bin/python3.9",
+      "${ROOT}/evaluation/short-neighbor-parallel/validate.py",
+      "--revision",
+      "fc13f85bf8345b79a222a3bc24a8cee0b9d714d3",
+      "--output",
+      "${ROOT}/ignored/${FRESH_OUTPUT}"
+    ],
+    "outer_wall_seconds": 1200,
+    "combined_log_cap_bytes": 8388608,
+    "commands": [
+      {
+        "name": "fmt",
+        "argv": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "wall_seconds": 180
+      },
+      {
+        "name": "clippy",
+        "argv": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "wall_seconds": 180
+      },
+      {
+        "name": "check",
+        "argv": [
+          "cargo",
+          "check",
+          "--workspace",
+          "--all-features",
+          "--all-targets"
+        ],
+        "wall_seconds": 180
+      },
+      {
+        "name": "workspace",
+        "argv": [
+          "cargo",
+          "test",
+          "-j",
+          "12",
+          "--workspace",
+          "--no-fail-fast"
+        ],
+        "wall_seconds": 900
+      },
+      {
+        "name": "serial-launch",
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst-launch",
+          "--tests",
+          "--",
+          "--test-threads=1",
+          "--nocapture"
+        ],
+        "wall_seconds": 180
+      }
+    ]
+  },
+  "outer_result": {
+    "start_utc": "2026-10-31T23:20:17.353067+00:00",
+    "exit_code": 0,
+    "termination": null,
+    "seconds": 921.2840240029618,
+    "private_log_sha256": "2565398a2c2d765a4a7ed15edb797e11578e905500b4be467f7be6fa1b742338",
+    "cleanup_complete": true,
+    "reaped_descendants": 0,
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "source_unchanged": true
+  },
+  "release_scope": "Root-captured original-owner PID and exact child-scope absence after closure; not an independent whole-host process census.",
+  "source_delta": "Twelve core/frontend source files add current-composition B1/B2/T1 address selection and thirteen passing controls. Merge parents are the own implementation and main; the 201 incoming C/evaluation paths contain no Rust/Cargo changes. This workspace gate does not execute a separate page-entry/C suite.",
+  "merge": {
+    "parents": [
+      "2184195ce1708ac8f21a96f05e7ed15b7facfe0d",
+      "96378d9f7784b59df43b31baeec2c440c578e6a4"
+    ],
+    "tree": "27e94d6a592cf7e3c6d40803470e40076a4891f6"
+  },
+  "prior_receipt": "../full-program-owned-placement-full-validation/receipt.json",
+  "private_evidence": {
+    "outer": {
+      "bytes": 371,
+      "sha256": "c63d41452cb647823e0d0c290faa51ee4662241c9ca73f490bb24fd6640e4d6f"
+    },
+    "child": {
+      "bytes": 5340,
+      "sha256": "ba05033df735d88a4aa2488e4941bf8ed4c5124a99447ef58422bd9712bd664c"
+    },
+    "summary": {
+      "bytes": 8955,
+      "sha256": "3969743185e5fb6e5c2adaa4a931474b1c1adb3a3ae9a75f7f87a44449571e6c"
+    },
+    "root_live": {
+      "bytes": 715,
+      "sha256": "f010ef7da6ab77ea4efe7b69f6c1eae5597d7e6e47ea689bd10623cfed4527a6"
+    },
+    "release": {
+      "bytes": 315,
+      "sha256": "b8754b90c68a2f33047729d06ffbb5318c4159411176fd7f546d4028884a3d4f"
+    },
+    "reader": {
+      "bytes": 13524,
+      "sha256": "6e7fefd980ef1e1702e541ac4be37f414d23256ddd5c3756503531d89d064e86"
+    },
+    "reader_source_review": {
+      "bytes": 4769,
+      "sha256": "5e6ba31f290b09ccba6098e00976bf2c11a86db4e654e7b8d94211074cc04f9a"
+    },
+    "reader_thread_review": {
+      "bytes": 2830,
+      "sha256": "e5ddfd236b06caea7f77092bd292f1a5c4813ad4d1f6c621608de720b1529675"
+    },
+    "reader_closure": {
+      "bytes": 1453,
+      "sha256": "7734019e98919a9e9db637f4904b4159016f691e21a35f1b6625a7ece19553f3"
+    },
+    "failed_reader_log": {
+      "bytes": 762,
+      "sha256": "6c2d366eeaf49f4b4036206633f6899128669e7aadf64db765009fdde8b047e5"
+    },
+    "corrected_reader_log": {
+      "bytes": 7191,
+      "sha256": "9591b5c20ae3aaa3ebc43d7647f9abe6419fd7e54e4c2d6cbd81c5259d19a84a"
+    }
+  },
+  "reader_note": {
+    "first_attempt": {
+      "exit_code": 1,
+      "status": "FAILED_METADATA_READ",
+      "reason": "Git could not create threaded lstat under the inherited 512 MiB address-space bound; no summary was emitted."
+    },
+    "corrected_attempt": {
+      "exit_code": 0,
+      "status": "PASS_CLOSED_CENSUS",
+      "environment": {
+        "GIT_CONFIG_COUNT": "2",
+        "GIT_CONFIG_KEY_0": "index.threads",
+        "GIT_CONFIG_VALUE_0": "1",
+        "GIT_CONFIG_KEY_1": "core.preloadIndex",
+        "GIT_CONFIG_VALUE_1": "false"
+      }
+    },
+    "bounds": {
+      "cpu_seconds": 30,
+      "address_space_bytes": 536870912,
+      "file_bytes": 1048576
+    },
+    "unchanged_reader_and_assertions": true,
+    "gate_reruns": 0,
+    "scope": "Both metadata reads follow the same closed gate; the correction disables Git parallel index optimizations only. The first failure remains retained."
+  }
+}

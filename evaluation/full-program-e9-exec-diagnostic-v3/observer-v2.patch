@@ -1,0 +1,26 @@
+--- a/run_diagnostic.py
++++ b/run_diagnostic.py
+@@ -65 +65,2 @@
+-            "-iex", "set auto-load off", "-iex", "set debuginfod enabled off",
++            "-iex", "set auto-load off", "-iex", "set libthread-db-search-path /dev/null",
++            "-iex", "set debuginfod enabled off",
+--- a/observe_exec.py
++++ b/observe_exec.py
+@@ -54,0 +55,9 @@
++def require_lwp_observer():
++    # A nonempty search path without $sdir/$pdir prevents the standard helper.
++    # Empty would reset the default. /dev/null cannot contain libthread_db.so.1.
++    if gdb.parameter("libthread-db-search-path") != "/dev/null":
++        raise RuntimeError("native LWP observer search-path readback")
++    if b"libthread_db" in small("/proc/self/maps"):
++        raise RuntimeError("unexpected debugger libthread_db mapping")
++
++
+@@ -124,0 +134 @@
++    require_lwp_observer()
+@@ -131 +141,2 @@
+-         planned_runs=1, candidate_entry_file_va=8857174016)
++         planned_runs=1, candidate_entry_file_va=8857174016,
++         libthread_db_search_path=gdb.parameter("libthread-db-search-path"))
+@@ -140,0 +152 @@
++        require_lwp_observer()

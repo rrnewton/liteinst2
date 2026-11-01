@@ -463,3 +463,477 @@ fn changed_same_site_window_keeps_the_bounded_upstream_candidate() {
     }));
     assert_eq!(predecessor, saved);
 }
+
+// New-profile controls below do not change the fixtures or assertions above.
+// This short literal reproduces site 215's physical PC and four entry-mask
+// bytes; it is not a whole-program or executable/native qualification fixture.
+fn current_placement_mask_fixture(
+    seed: u64,
+    held: &[AddressRange],
+    current: bool,
+) -> Result<ArtifactPlan, EngineFailure> {
+    let pc = 11216;
+    let code = [0x53, 0x4c, 0x8b, 0x0f, 0x48, 0x89, 0xfb, 0xc3];
+    let source = AddressRange::new(pc, code.len()).unwrap();
+    let entries = LegalEntrySet {
+        identity: identity(),
+        scope: source,
+        provenance: EntryProvenance::Declared("literal physical/mask control only".into()),
+        completeness: EntryCompleteness::AllInstructionHeads,
+        entries: [0, 1, 4, 7]
+            .map(|offset| LegalEntry {
+                address: pc + offset,
+                requires_endbr: false,
+            })
+            .to_vec(),
+        resumes: ResumeObligation::NoneExist,
+    };
+    let allocation = AllocationPolicy {
+        ranges: vec![AddressRange::new(262144, 2147483648 - 262144).unwrap()],
+        preferred_address: Some(seed),
+        max_candidates: 1,
+        max_mappings: 1,
+        max_mapped_bytes: 4096,
+    };
+    let mut occupied = vec![AddressRange::new(pc & !4095, 4096).unwrap()];
+    occupied.extend_from_slice(held);
+    let emission = ArtifactEmission::new(
+        TargetProfile::linux_x86_64_legacy_evex(
+            SavedExtendedStateLayout::describe_target_fxsave64(),
+            7,
+        )
+        .unwrap(),
+        SymbolicHook {
+            identity: 11,
+            address: Some(pc + 0x1000),
+        },
+        occupied,
+    );
+    let request = ArtifactRequest {
+        site: PlanningSite {
+            identity: identity(),
+            code: &code,
+            base_address: pc,
+            function: source,
+            block: source,
+            logical_pc: pc,
+            entries: &entries,
+            semantics: HookSemantics::Observe,
+            allocation: &allocation,
+            search: SearchPolicy {
+                max_upstream_bytes: 0,
+                max_sites: 1,
+                ..SearchPolicy::default()
+            },
+        },
+        emission: &emission,
+    };
+    let predecessor = Composition::new(
+        identity(),
+        vec![ExpectedBytes {
+            address: pc,
+            bytes: code.to_vec(),
+        }],
+    )
+    .unwrap();
+    let policy = EnginePolicy {
+        forced: Some(Tactic::Relocation),
+        ..EnginePolicy::default()
+    };
+    if current {
+        engine::plan_with_emission_after_and_current_placement(
+            &request,
+            &predecessor,
+            &allocation,
+            policy,
+        )
+    } else {
+        engine::plan_with_emission_after_and_long_t3_ownership(
+            &request,
+            &predecessor,
+            &allocation,
+            policy,
+        )
+    }
+}
+
+#[test]
+fn current_placement_preserves_seed_emits_once_and_keeps_real_extent_failure() {
+    use crate::search::{RefusalClass, SearchDomain};
+    let old = current_placement_mask_fixture(1905890, &[], false).unwrap();
+    let same = current_placement_mask_fixture(1905890, &[], true).unwrap();
+    assert_eq!(same.source_steps(), old.source_steps());
+    assert_eq!(same.images().next().unwrap().address(), 102569179);
+    assert_eq!(
+        same.images().next().unwrap().bytes(),
+        old.images().next().unwrap().bytes()
+    );
+    let occupied = [AddressRange::new(112996315 & !4095, 4096).unwrap()];
+    let lower = current_placement_mask_fixture(12333056, &occupied, true).unwrap();
+    let image = lower.images().next().unwrap();
+    assert_eq!(image.address() % 4096, 219);
+    assert!(image.bytes().len() <= 4096 - 219);
+    assert!(!occupied[0].contains(image.address()));
+    assert!(!lower.qualification_complete());
+    for plan in [&same, &lower] {
+        let ArtifactMetrics::Engine(
+            Tactic::Relocation,
+            engine::SelectedMetrics::Single(metrics),
+            attempts,
+        ) = plan.metrics()
+        else {
+            panic!("single B1 metrics")
+        };
+        assert_eq!(metrics.allocation_attempts, 1);
+        assert_eq!(plan.images().count(), 1);
+        let runs: Vec<_> = attempts[0]
+            .search
+            .runs
+            .iter()
+            .filter(|run| run.domain == SearchDomain::SelectedImages)
+            .collect();
+        assert_eq!(runs.len(), 1);
+        assert_eq!((runs[0].limit, runs[0].examined), (1, 1));
+    }
+    // A geometrically available seed remains selected. Its real image needs
+    // more than 37 remaining bytes: no second target is tried after emission.
+    let failed = current_placement_mask_fixture(12333056, &[], true).unwrap_err();
+    assert_eq!(failed.attempts.len(), 1);
+    let runs: Vec<_> = failed.attempts[0]
+        .search
+        .runs
+        .iter()
+        .filter(|run| run.domain == SearchDomain::SelectedImages)
+        .collect();
+    assert_eq!(runs.len(), 1);
+    assert_eq!((runs[0].limit, runs[0].examined), (1, 1));
+    assert!(
+        failed.attempts[0]
+            .search
+            .refusals
+            .iter()
+            .any(|r| r.class == RefusalClass::ResourceCapacity)
+    );
+}
+
+#[test]
+fn current_placement_uses_authenticated_pun_suffix_and_keeps_negative_window_refusal() {
+    use crate::search::SearchDomain;
+    let pc = 11289;
+    let code = [0x89, 0xc0, 0xb8, 42, 0, 0, 0, 0xc3];
+    let source = AddressRange::new(pc, code.len()).unwrap();
+    let entries = LegalEntrySet {
+        identity: identity(),
+        scope: source,
+        provenance: EntryProvenance::Declared(
+            "original MOV/MOV/RET; synthetic suffix edit only".into(),
+        ),
+        completeness: EntryCompleteness::AllInstructionHeads,
+        entries: [0, 2, 7]
+            .map(|offset| LegalEntry {
+                address: pc + offset,
+                requires_endbr: false,
+            })
+            .to_vec(),
+        resumes: ResumeObligation::NoneExist,
+    };
+    let allocation = AllocationPolicy {
+        ranges: vec![AddressRange::new(262144, 2147483648 - 262144).unwrap()],
+        preferred_address: Some(544978791),
+        max_candidates: 1,
+        max_mappings: 1,
+        max_mapped_bytes: 4096,
+    };
+    let emission = ArtifactEmission::new(
+        TargetProfile::linux_x86_64_legacy_evex(
+            SavedExtendedStateLayout::describe_target_fxsave64(),
+            7,
+        )
+        .unwrap(),
+        SymbolicHook {
+            identity: 11,
+            address: Some(pc + 0x1000),
+        },
+        vec![AddressRange::new(pc & !4095, 4096).unwrap()],
+    );
+    let request = ArtifactRequest {
+        site: PlanningSite {
+            identity: identity(),
+            code: &code,
+            base_address: pc,
+            function: source,
+            block: source,
+            logical_pc: pc,
+            entries: &entries,
+            semantics: HookSemantics::Observe,
+            allocation: &allocation,
+            search: SearchPolicy {
+                max_upstream_bytes: 0,
+                max_sites: 1,
+                ..SearchPolicy::default()
+            },
+        },
+        emission: &emission,
+    };
+    for (suffix, positive) in [
+        ([0xe9, 0x10, 0xe9, 0x22], true),
+        ([0xe9, 0xe0, 0xa3, 0xbb], false),
+    ] {
+        let mut predecessor = Composition::new(
+            identity(),
+            vec![ExpectedBytes {
+                address: pc,
+                bytes: code.to_vec(),
+            }],
+        )
+        .unwrap();
+        // Checked synthetic composition setup, not a semantic/native claim.
+        let edit = PatchPlan::checked(PlanParts {
+            identity: identity(),
+            profile: ApplicationProfile::InstallOnce,
+            kind: PlanKind::Relocation,
+            logical_pc: pc + 2,
+            physical_pc: pc + 2,
+            displaced: AddressRange::new(pc + 2, 4).unwrap(),
+            reads: predecessor.final_bytes().to_vec(),
+            writes: vec![ByteEdit {
+                address: pc + 2,
+                bytes: suffix.to_vec(),
+            }],
+            dependencies: vec![source],
+            entries: LegalEntrySet {
+                completeness: EntryCompleteness::Complete,
+                entries: vec![],
+                ..entries.clone()
+            },
+            obligations: vec![],
+            allocations: vec![],
+            generated: vec![],
+            requirements: PublicationRequirements {
+                quiescent: true,
+                sync_core: true,
+                sigill_router: false,
+            },
+        })
+        .unwrap();
+        predecessor.append(&edit).unwrap();
+        let saved = predecessor.clone();
+        let result = engine::plan_with_emission_after_and_current_placement(
+            &request,
+            &predecessor,
+            &allocation,
+            EnginePolicy {
+                forced: Some(Tactic::PrefixedPun),
+                ..EnginePolicy::default()
+            },
+        );
+        if positive {
+            let plan = result.unwrap();
+            assert_eq!(plan.images().next().unwrap().address(), 585710856);
+            let PlanKind::PrefixedPun(pun) = &plan.source_steps()[0].parts().kind else {
+                panic!("T1")
+            };
+            assert_eq!(pun.target_window, AddressRange::new(585710856, 1).unwrap());
+            assert_eq!(
+                plan.source_steps()[0].parts().reads,
+                predecessor.final_bytes()
+            );
+            let mut composed = predecessor.clone();
+            for step in plan.source_steps() {
+                composed.append(step).unwrap();
+            }
+        } else {
+            let failed = result.unwrap_err();
+            assert_eq!(failed.reason, Refusal::AllocationUnavailable);
+            assert_eq!(failed.attempts.len(), 1);
+            assert!(
+                failed.attempts[0]
+                    .search
+                    .runs
+                    .iter()
+                    .all(|run| run.domain != SearchDomain::SelectedImages)
+            );
+        }
+        assert_eq!(predecessor, saved);
+    }
+}
+
+#[test]
+fn current_placement_keeps_successor_and_neighbor_placement_literal() {
+    for tactic in [Tactic::SuccessorEviction, Tactic::NeighborEviction] {
+        let mut fixture = Fixture::new(tactic);
+        fixture.selected.max_candidates = 1;
+        fixture.selected.max_mapped_bytes = 4096;
+        let predecessor = fixture.predecessor();
+        let request = fixture.request(HookSemantics::Observe);
+        let old = engine::plan_with_emission_after_and_long_t3_ownership(
+            &request,
+            &predecessor,
+            &fixture.victim,
+            fixture.policy(),
+        )
+        .unwrap();
+        let new = engine::plan_with_emission_after_and_current_placement(
+            &request,
+            &predecessor,
+            &fixture.victim,
+            fixture.policy(),
+        )
+        .unwrap();
+        assert_eq!(new.source_steps(), old.source_steps());
+        assert_eq!(
+            new.images()
+                .map(|i| (i.address(), i.bytes().to_vec()))
+                .collect::<Vec<_>>(),
+            old.images()
+                .map(|i| (i.address(), i.bytes().to_vec()))
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            format!("{:?}", new.metrics()),
+            format!("{:?}", old.metrics())
+        );
+        assert_current_steps(&fixture, &predecessor, &new);
+    }
+}
+
+#[test]
+fn current_placement_generalized_pun_preserves_seed_and_uses_remaining_page_once() {
+    use crate::search::{RefusalClass, SearchDomain};
+    let mut fixture = Fixture::new(Tactic::GeneralizedPun);
+    fixture.selected.max_candidates = 1;
+    fixture.selected.max_mapped_bytes = 4096;
+    let predecessor = fixture.predecessor();
+    let saved = predecessor.clone();
+    let seed = fixture.selected.preferred_address.unwrap();
+    let seed_page = AddressRange::new(seed & !4095, 4096).unwrap();
+    let remaining_page = AddressRange::new(seed_page.end(), 4096).unwrap();
+    assert_eq!(seed % 4096, 0x85);
+    assert_eq!(
+        fixture.selected.ranges,
+        [AddressRange::new(seed_page.start(), 8192).unwrap()]
+    );
+    let window = AddressRange::new(S + 5 + 0x2ab8_0000, 1 << 16).unwrap();
+    let old = engine::plan_with_emission_after_and_long_t3_ownership(
+        &fixture.request(HookSemantics::Observe),
+        &predecessor,
+        &fixture.victim,
+        fixture.policy(),
+    )
+    .unwrap();
+    let same = engine::plan_with_emission_after_and_current_placement(
+        &fixture.request(HookSemantics::Observe),
+        &predecessor,
+        &fixture.victim,
+        fixture.policy(),
+    )
+    .unwrap();
+    assert_eq!(same.source_steps(), old.source_steps());
+    assert_eq!(same.images().next().unwrap().address(), seed);
+    assert_eq!(
+        same.images().next().unwrap().bytes(),
+        old.images().next().unwrap().bytes()
+    );
+    assert_eq!(
+        format!("{:?}", same.metrics()),
+        format!("{:?}", old.metrics())
+    );
+
+    let mut occupied = fixture.emission.occupied().to_vec();
+    occupied.push(seed_page);
+    fixture.emission = ArtifactEmission::new(
+        fixture.emission.profile().clone(),
+        fixture.emission.hook(),
+        occupied,
+    );
+    let blocked = engine::plan_with_emission_after_and_long_t3_ownership(
+        &fixture.request(HookSemantics::Observe),
+        &predecessor,
+        &fixture.victim,
+        fixture.policy(),
+    )
+    .unwrap_err();
+    assert_eq!(blocked.reason, Refusal::AllocationUnavailable);
+    assert_eq!(blocked.attempts.len(), 1);
+    assert_eq!(blocked.attempts[0].tactic, Tactic::GeneralizedPun);
+    assert!(
+        blocked.attempts[0]
+            .search
+            .refusals
+            .iter()
+            .any(|r| r.class == RefusalClass::AddressPolicy)
+    );
+    let blocked_runs: Vec<_> = blocked.attempts[0]
+        .search
+        .runs
+        .iter()
+        .filter(|run| run.domain == SearchDomain::SelectedImages)
+        .collect();
+    assert_eq!(blocked_runs.len(), 1);
+    assert_eq!((blocked_runs[0].limit, blocked_runs[0].examined), (1, 1));
+    let fallback = engine::plan_with_emission_after_and_current_placement(
+        &fixture.request(HookSemantics::Observe),
+        &predecessor,
+        &fixture.victim,
+        fixture.policy(),
+    )
+    .unwrap();
+    assert_eq!(
+        fallback.images().next().unwrap().address(),
+        remaining_page.start()
+    );
+    for (plan, page) in [
+        (&old, seed_page),
+        (&same, seed_page),
+        (&fallback, remaining_page),
+    ] {
+        assert_current_steps(&fixture, &predecessor, plan);
+        let ArtifactMetrics::Engine(
+            Tactic::GeneralizedPun,
+            engine::SelectedMetrics::Single(metrics),
+            attempts,
+        ) = plan.metrics()
+        else {
+            panic!("single B2 metrics")
+        };
+        assert_eq!(metrics.allocation_attempts, 1);
+        assert_eq!(attempts.len(), 1);
+        let runs: Vec<_> = attempts[0]
+            .search
+            .runs
+            .iter()
+            .filter(|run| run.domain == SearchDomain::SelectedImages)
+            .collect();
+        assert_eq!(runs.len(), 1);
+        assert_eq!((runs[0].limit, runs[0].examined), (1, 1));
+        assert_eq!(plan.images().count(), 1);
+        let image = plan.images().next().unwrap();
+        assert!(!image.bytes().is_empty());
+        assert!(page.covers(AddressRange::new(image.address(), image.bytes().len()).unwrap()));
+        assert!(window.contains(image.address()));
+        let parts = plan.source_steps()[0].parts();
+        let PlanKind::GeneralizedPun(pun) = &parts.kind else {
+            panic!("B2")
+        };
+        assert_eq!(pun.target_window, window);
+        assert_eq!(parts.displaced, AddressRange::new(S, 3).unwrap());
+        assert_eq!(pun.consumed, AddressRange::new(S, 5).unwrap());
+        assert_eq!(
+            parts.allocations,
+            [AllocationRequest {
+                range: page,
+                alignment: 4096
+            }]
+        );
+        assert_eq!(pun.store.address, S);
+        assert_eq!(pun.store.bytes.len(), 4);
+        assert_eq!(pun.store.bytes[3], 0xb8);
+        assert_eq!(&parts.reads[0].bytes[19..], &fixture.code[19..]);
+        let mut composed = predecessor.clone();
+        composed.append(&plan.source_steps()[0]).unwrap();
+        assert_eq!(&composed.final_bytes()[0].bytes[..16], &fixture.code[..16]);
+        assert_eq!(&composed.final_bytes()[0].bytes[19..], &fixture.code[19..]);
+    }
+    assert!(!seed_page.overlaps(remaining_page));
+    assert_eq!(predecessor, saved);
+}
