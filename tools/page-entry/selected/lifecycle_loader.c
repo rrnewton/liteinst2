@@ -1187,6 +1187,9 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
 #include "persistent_call_owner_memory.inc"
 #endif
+#ifdef LI2_PERSISTENT_RET_OWNER_CAPTURE
+#include "persistent_ret_owner_memory.inc"
+#endif
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
 #include "persistent_cold_admission_observe_memory.inc"
 #endif

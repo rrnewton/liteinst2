@@ -79,14 +79,14 @@
       "sha256": "71cc09047a01bd62c79d994587998aac17655f0f65a4464c94f12df461f1f773"
     },
     "evaluation/inprocess/ret_dispatch/SOURCE.json": {
-      "bytes": 7699,
+      "bytes": 11718,
       "mode": "0644",
-      "sha256": "be708aa90b232f86ab65384909feb4c5184677bfbac12dc6315fc6989c40739e"
+      "sha256": "284dd4b0c2027414040eb122557dec4a1fd5edd722c734c968c0c6c7b58bc3a1"
     },
     "evaluation/inprocess/ret_dispatch/run.py": {
-      "bytes": 41500,
+      "bytes": 44152,
       "mode": "0755",
-      "sha256": "c37b679a22671e8408755b8dc2a80da8541947086f5707db87cbaab746904002"
+      "sha256": "6e4bfbc1a0fb6a78645d7a0eeb61007c45f6946c0bb35eed991a9b36d1231e7e"
     },
     "evaluation/inprocess/ret_resume_native/README.md": {
       "bytes": 4735,
@@ -99,9 +99,9 @@
       "sha256": "6678ecb547cf2c3804da676d9150509b6da9bf6ca2849289b8d8a31d1c75c86d"
     },
     "evaluation/inprocess/ret_resume_native/run.py": {
-      "bytes": 29668,
+      "bytes": 29916,
       "mode": "0755",
-      "sha256": "1e47118edb6b009bf7ad93bb99332ccbc5c8df93b9d31652523c86ac1eaee3f8"
+      "sha256": "da2ff77593159db7554eb880b7dabb29742da86c1a330d46fa07ce8259e22744"
     },
     "evaluation/inprocess/run.py": {
       "bytes": 13593,
@@ -245,12 +245,18 @@
       "ret_dispatch-build",
       "ret_dispatch-dependencies",
       "ret_dispatch-component",
+      "ret_dispatch_plan-headers",
+      "ret_dispatch_plan-build",
+      "ret_dispatch_plan-dependencies",
+      "ret_dispatch_plan-component",
       "ret_dispatch_native-headers",
       "ret_dispatch_native-build",
       "ret_dispatch_native-dependencies",
       "ret_dispatch_native-inspection",
       "ret_dispatch_native-native",
-      "ret_dispatch_native-reader"
+      "ret_dispatch_native-reader",
+      "ret_dispatch_native_high-native",
+      "ret_dispatch_native_high-reader"
     ],
     "profile": "experimental-ret-components-native-v1",
     "status": "finite_experiments_passed"

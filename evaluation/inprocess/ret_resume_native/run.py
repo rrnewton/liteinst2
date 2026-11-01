@@ -278,9 +278,11 @@ def main():
         origin = pin(args.ret_receipt)
         need(fact(origin)['sha256'] == args.ret_receipt_sha256, 'explicit whole public RET receipt')
         old_native = retained(origin,manifest['prerequisite'],r,pin,ENV)
-        need(set(old_native['components']) == {'ret_native','ret_dispatch','ret_dispatch_native'} and
-             [old_native['components'][n]['status'] for n in ('ret_native','ret_dispatch','ret_dispatch_native')] ==
-                 ['observed_unqualified','passed','finite_ret_adapter_observed'] and
+        need(set(old_native['components']) == {'ret_native','ret_dispatch','ret_dispatch_plan','ret_dispatch_native','ret_dispatch_native_high'} and
+             [old_native['components'][n]['status'] for n in
+                 ('ret_native','ret_dispatch','ret_dispatch_plan','ret_dispatch_native','ret_dispatch_native_high')] ==
+                 ['observed_unqualified','passed','passed','finite_ret_adapter_observed','finite_ret_adapter_observed'] and
+             old_native['native_execution'] == 80 and old_native['generated_execution'] == 32 and
              old_native['loaded_miss_resumption'] is False and
              old_native['production_owner_authority'] is False,
              'all prior finite stages remain distinct; no continuation or owner authority')

@@ -14,6 +14,7 @@ static const uintptr_t original_pc=0x400200,generated=0x10000000,spill_at=0x1001
 static const struct li2_rd_binding binding={.rows=0x30000000,.image={0x10000000,0x10008000},
     .heads=1,.head=0,.directory=0x70000000,.window=0x70010000,.loaded_miss=0x70010040};
 static unsigned descriptors,decoded,models,forms,arguments,bindings,corruptions,interiors,geometry,recovery_controls;
+static unsigned far_models,literal_controls,relocations;
 static uint64_t steps,recoveries;
 _Static_assert(sizeof(struct li2_rd_plan)<=sizeof(union li2_pg_guard),"unchanged actual full group guard");
 static uint64_t flags_for(unsigned n,unsigned df) {
@@ -73,10 +74,13 @@ static void exact_descriptor(void) {
                 .length=1,.flow=LI2_TF_NEAR_FLOW,.family=LI2_TF_RETURN},
             .version=1,.ready=1,.available=available};
         memcpy(expected.decoded.bytes,bytes,available);assert(!memcmp(&plan.original,&expected,sizeof expected));++descriptors;
-        assert(!li2_rd_validate(&plan) && plan.record.image_bytes==284 && plan.record.boundaries==53 &&
+        assert(!li2_rd_validate(&plan) && plan.record.image_bytes==285 && plan.record.boundaries==53 &&
             plan.record.load_offset==68 && plan.record.save_offset==72 &&
-            plan.record.loaded_miss_offset==190 && plan.record.miss_offset==226 &&
-            plan.record.commit_offset==273 && plan.record.transfer_offset==278);
+            plan.record.loaded_miss_offset==190 && plan.record.miss_offset==227 &&
+            plan.record.commit_offset==274 && plan.record.transfer_offset==279);
+        uint64_t landing=0;memcpy(&landing,plan.image+504,8);
+        assert(landing==binding.loaded_miss && !memcmp(plan.image+190,"\xff\x25\x34\x01\0\0",6));
+        for(unsigned i=285;i<504;i++)assert(!plan.image[i]);
         for(unsigned i=0;i<plan.record.boundaries;i++) {
             const struct li2_mg_boundary *m=&plan.record.boundary[i];struct li2_decoded d;
             assert(!li2_decoder_decode(generated+m->offset,plan.image+m->offset,m->length,&d) &&
@@ -182,13 +186,13 @@ static void bad_material(void) {
         if(i==8)bad.record.transfer_offset++;
         if(i==9)bad.record.save_offset++;
         if(i==10)bad.record.commit_offset++;
-        if(i==11)bad.image[284]=1;
+        if(i==11)bad.image[285]=1;
         if(i==12)bad.original.reserved[0]=1;
         if(i==13)bad.record.reserved=1;
         if(i==14)bad.image[68]^=1;
         if(i==15)bad.original.tf.family=LI2_TF_BRANCH;
         if(i==16)bad.binding.loaded_miss+=8;
-        if(i==17)bad.image[273]^=1;
+        if(i==17)bad.image[274]^=1;
         if(i==18)bad.record.loaded_miss_offset++;
         if(i==19)bad.record.boundary[14].phase=LI2_RD_SAVED;
         assert(li2_rd_validate(&bad)==LI2_RD_CORRUPT);++corruptions;
@@ -228,14 +232,73 @@ static void recovery_negatives(void) {
     r[4]=UINT64_C(0x7ffffffffff8);
     assert(li2_rd_recover_loaded_miss(&good,binding.loaded_miss,r,0x202,words,&out)==LI2_RD_CORRUPT && !out.complete);++recovery_controls;
 }
+static void far_landings(void) {
+    const uintptr_t shift=UINT64_C(0x500000000000);
+    for(unsigned high=0;high<2;high++) {
+        uintptr_t delta=high?shift:0;
+        struct li2_rd_binding b=binding;
+        b.rows+=delta;b.image[0]+=delta;b.image[1]+=delta;b.directory+=delta;
+        b.window+=high?0:shift;b.loaded_miss+=high?0:shift;
+        struct li2_rd_plan p;
+        assert(!li2_rd_emit(original_pc+delta,good.original.decoded.bytes,15,
+            generated+delta,spill_at+delta,&b,&p) && !li2_rd_validate(&p));
+        uintptr_t next=p.generated+p.record.loaded_miss_offset+6;
+        assert((next>b.loaded_miss?next-b.loaded_miss:b.loaded_miss-next)>UINT32_C(0x80000000));
+        uint64_t literal=0;memcpy(&literal,p.image+504,8);assert(literal==b.loaded_miss);
+        for(unsigned kind=0;kind<2;kind++) {
+            uint64_t r[16];registers(r);directory_value(4);window_value(r[4]);
+            for(unsigned i=0;i<4;i++) {directory.row[i].pc+=delta;directory.row[i].generated+=delta;}
+            uint64_t word=directory.row[2].pc+kind;struct rd_model_result out;
+            assert(!rd_model_run(&p,&directory,&window,r,flags_for(63,1),word,1,&out));
+            assert(out.steps==out.recoveries && out.load_attempts==1 && out.guest_reads==1 &&
+                out.target_writes==1 && !out.stack_writes && out.original_rsp==r[4] &&
+                out.loaded_target==word && !out.before_miss && !out.load_fault);
+            if(!kind)assert(out.hit==1 && !out.loaded_miss && out.cell_writes==1 && out.row_reads==3 &&
+                out.target==directory.row[2].generated && out.final_rsp==r[4]+8);
+            else assert(!out.hit && out.loaded_miss==1 && !out.cell_writes && out.row_reads==4 &&
+                out.target==b.loaded_miss && out.final_rsp==r[4]);
+            ++far_models;
+        }
+    }
+    for(unsigned i=0;i<12;i++) {
+        struct li2_rd_plan bad=good;unsigned at=i<8?504+i:192+i-8;
+        bad.image[at]^=1;
+        assert(li2_rd_validate(&bad)==LI2_RD_CORRUPT);
+        uint64_t r[16];registers(r);directory_value(4);window_value(r[4]);
+        struct rd_model_result out;
+        assert(rd_model_run(&bad,&directory,&window,r,0x202,directory.row[0].pc+1,1,&out)!=0);
+        ++literal_controls;
+    }
+    struct li2_rd_binding b=binding;
+    b.rows+=shift;b.image[0]+=shift;b.image[1]+=shift;b.directory+=shift;
+    uintptr_t g=generated+shift,next=g+227+5;
+    const uintptr_t pc[4]={next+UINT32_C(0x7fffffff),next-UINT32_C(0x80000000),
+        next+UINT32_C(0x80000000),next-UINT32_C(0x80000000)-1};
+    for(unsigned i=0;i<4;i++) {
+        struct li2_rd_plan p;int e=li2_rd_emit(pc[i],good.original.decoded.bytes,1,g,spill_at+shift,&b,&p);
+        assert(e==(i<2?0:LI2_RD_RELOCATION) && p.record.ready==(i<2));
+        if(i<2)assert(!li2_rd_validate(&p));
+        else assert(p.record.result==LI2_RD_RELOCATION);
+        ++relocations;
+    }
+    const uintptr_t far_spill[2]={g+UINT32_C(0x80000000)+8,g-UINT32_C(0x80000000)};
+    for(unsigned i=0;i<2;i++) {
+        struct li2_rd_plan p;
+        assert(li2_rd_emit(original_pc+shift,good.original.decoded.bytes,15,g,far_spill[i],&b,&p)==LI2_RD_RELOCATION &&
+            !p.record.ready && p.record.result==LI2_RD_RELOCATION);++relocations;
+    }
+}
 int main(void) {
     struct li2_decoder_stats before,after;assert(!li2_decoder_initialize(arena,sizeof arena,&before));
     exact_descriptor();window_and_directory();grammar();bad_bindings();bad_material();recovery_negatives();
+    far_landings();
     assert(!li2_decoder_stats(&after) && after.phase==2 && !after.first_fatal_reason &&
         after.allocation_calls==before.allocation_calls && after.deallocation_calls==before.deallocation_calls);
     assert(descriptors==15 && decoded==795 && models==671 && forms==512 && arguments==6 &&
         bindings==16 && corruptions==20 && interiors==459 && geometry==4 && recovery_controls==16 && steps==recoveries);
-    printf("ret-dispatch descriptors=%u decoded=%u models=%u forms=%u arguments=%u bindings=%u corruptions=%u interiors=%u geometry=%u recovery_controls=%u\n",
-        descriptors,decoded,models,forms,arguments,bindings,corruptions,interiors,geometry,recovery_controls);
+    assert(far_models==4 && literal_controls==12 && relocations==6);
+    printf("ret-dispatch descriptors=%u decoded=%u models=%u forms=%u arguments=%u bindings=%u corruptions=%u interiors=%u geometry=%u recovery_controls=%u far_models=%u literal_controls=%u relocations=%u\n",
+        descriptors,decoded,models,forms,arguments,bindings,corruptions,interiors,geometry,recovery_controls,
+        far_models,literal_controls,relocations);
     return 0;
 }

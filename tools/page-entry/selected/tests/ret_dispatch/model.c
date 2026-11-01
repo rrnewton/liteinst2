@@ -90,21 +90,9 @@ int rd_model_run(const struct li2_rd_plan *p,const struct li2_jd_domain_director
             if(n-k!=4)return 8;next+=(uint64_t)(int64_t)(int32_t)get(b+k,4);k+=4;
             if(k!=n || committed || cell_valid || out->stack_writes || memcmp(r,original,sizeof r) || flags!=original_flags)return 9;
             out->target=next;out->final_rsp=r[4];
-            if(offset==p->record.miss_offset) {
-                if(next!=p->original.decoded.pc || loaded || target_valid || out->load_attempts || out->guest_reads)return 10;
-                out->before_miss=1;return 0;
-            }
-            if(offset!=p->record.loaded_miss_offset || next!=p->binding.loaded_miss ||
-               !loaded || !target_valid || out->load_attempts!=1 || out->guest_reads!=1 || words[5]!=guest_word)return 11;
-            if(li2_rd_recover_loaded_miss(p,next,r,flags,words,&state) ||
-               recovered(&state,original,original_flags,p->original.decoded.pc,original[4],guest_word,LI2_RD_LOADED_MISS,1))return 12;
-            uint64_t poison[6];memcpy(poison,words,sizeof poison);
-            for(unsigned i=0;i<5;i++)poison[i]^=UINT64_MAX;
-            if(li2_rd_recover_loaded_miss(p,next,r,flags,poison,&state) ||
-               recovered(&state,original,original_flags,p->original.decoded.pc,original[4],guest_word,LI2_RD_LOADED_MISS,1))return 13;
-            /* Changing the post-load guest word cannot affect the receipt. */
-            if(stack_word!=~guest_word)return 14;
-            out->loaded_target=state.target;out->loaded_miss=1;return 0;
+            if(offset!=p->record.miss_offset || next!=p->original.decoded.pc ||
+               loaded || target_valid || out->load_attempts || out->guest_reads)return 10;
+            out->before_miss=1;return 0;
         } else if(op==0x0f) {
             if(k>=n)return 15;unsigned second=b[k++];
             if(second==0x90) {
@@ -150,6 +138,24 @@ int rd_model_run(const struct li2_rd_plan *p,const struct li2_jd_domain_director
                 } else return 28;
             }
             if(op==0xff) {
+                if(offset==p->record.loaded_miss_offset) {
+                    if(rex || !memory || k!=n || modrm!=0x25 || n!=6 ||
+                       at!=p->generated+504 || committed || cell_valid || out->stack_writes ||
+                       memcmp(r,original,sizeof r) || flags!=original_flags)return 9;
+                    next=get(p->image+504,8);
+                    out->target=next;out->final_rsp=r[4];
+                    if(next!=p->binding.loaded_miss || !loaded || !target_valid ||
+                       out->load_attempts!=1 || out->guest_reads!=1 || words[5]!=guest_word)return 11;
+                    if(li2_rd_recover_loaded_miss(p,next,r,flags,words,&state) ||
+                       recovered(&state,original,original_flags,p->original.decoded.pc,original[4],guest_word,LI2_RD_LOADED_MISS,1))return 12;
+                    uint64_t poison[6];memcpy(poison,words,sizeof poison);
+                    for(unsigned i=0;i<5;i++)poison[i]^=UINT64_MAX;
+                    if(li2_rd_recover_loaded_miss(p,next,r,flags,poison,&state) ||
+                       recovered(&state,original,original_flags,p->original.decoded.pc,original[4],guest_word,LI2_RD_LOADED_MISS,1))return 13;
+                    /* Changing the post-load guest word cannot affect the receipt. */
+                    if(stack_word!=~guest_word)return 14;
+                    out->loaded_target=state.target;out->loaded_miss=1;return 0;
+                }
                 if(rex || !memory || k!=n || modrm!=0x25 || !committed ||
                    offset!=p->record.transfer_offset || at!=p->spill+32 ||
                    load(p,directory,window,words,valid,cell_valid,target_valid,at,&value,out))return 29;

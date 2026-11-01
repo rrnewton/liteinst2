@@ -77,11 +77,17 @@ static int pda_direct_exit_value(const struct pda_completion *c) {
     return n==d->decoded.available;
 }
 #endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+static int pda_ret_exit_value(const struct pda_completion *);
+#endif
 static int pda_receipt(const struct pda_completion *c) {
     if(!c || !c->id || c->id>pe.domain.next_id || !c->serial || c->serial>pe.next_serial ||
        c->complete!=1 || !c->count || c->count>LI2_PGD_MEMBERS)return 0;
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER
     if(!pda_direct_exit_value(c))return 0;
+#endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    if(!pda_ret_exit_value(c))return 0;
 #endif
     const struct li2_pg_source_progress *s=&c->source;
     const struct li2_pgd_source_progress *d=&c->domain_source;
@@ -199,6 +205,9 @@ static void pda_claim(unsigned slot) {
     *q=(struct li2_pgd_claim){0};
 }
 static void pda_reset(void) {
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    pe_need(!prr_pending && !prr_busy,PE_STATE,171);
+#endif
     pe_need(!pe_active && !pe_busy && !pe.domain.work.aborting,PE_STATE,82);
     le_zero(&pe.domain.work,sizeof pe.domain.work);
     pe.domain.work.peer=LI2_PTR_SLOTS;pe.domain.work.receipt=LI2_PGD_RECEIPTS;
@@ -354,6 +363,9 @@ static int pda_bind(const ucontext_t *uc) {
     struct pda_work *w=&pe.domain.work;
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
     uint64_t call_stack_effect=0;
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    uint64_t ret_stack_effect=0;
+#endif
 #endif
     if(w->bound || pe.p.phase!=LI2_PG_BOUND || !pe_busy || pe_active || !pe_ready())return PE_STATE;
     w->primary=pe.selected_slot;w->primary_bank=pe.selected_bank;
@@ -419,6 +431,13 @@ static int pda_bind(const ucontext_t *uc) {
             if(c->version!=LI2_CD_VERSION || c->ready!=1 || c->refusal || c->target>=16)return PE_PLAN;
             call_stack_effect|=UINT64_C(1)<<4;
 #endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+        } else if(m->plan->head[j].kind==LI2_PG_RET) {
+            const struct li2_rd_descriptor *r=&m->plan->instruction[j].ret;
+            if(r->version!=LI2_RD_VERSION || r->ready!=1 || r->refusal || r->reserved[0] ||
+               r->reserved[1] || r->reserved[2] || r->reserved[3])return PE_PLAN;
+            ret_stack_effect|=UINT64_C(1)<<4;
+#endif
 #ifdef LI2_ADD_GUARD
         } else if(m->plan->head[j].kind==LI2_PG_ADD) {
             const struct li2_ag_descriptor *a=&m->plan->instruction[j].add;
@@ -436,6 +455,9 @@ static int pda_bind(const ucontext_t *uc) {
     /* All old head kinds passed their unchanged no-RSP-write assertion above.
        Only the separately typed CALL branch contributes this stack effect. */
     pe.gpr_written|=call_stack_effect;
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    pe.gpr_written|=ret_stack_effect;
+#endif
     int error=pda_directory_seal();if(error)return error;
     return pcw_bind(uc);
 #else
@@ -512,6 +534,10 @@ static int pda_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
     pe_busy=1;pe.p.phase=LI2_PG_RECOVERING;pe.recovery_started=1;__asm__ volatile("":::"memory");
     if(le_capture(&pe.after,sig,si,uc))return PE_FRAME;
     const greg_t *g=pe.after.frame.greg;uintptr_t pc=(uintptr_t)g[REG_RIP];
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    int ret=prr_loaded_preentry(sig,si,uc);
+    if(ret)return ret==1?0:ret;
+#endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER
     int exit=pe_exit_index(pc,(uint64_t)g[REG_EFL]);
     if(exit< -1)return PE_PUBLICATION;
@@ -553,6 +579,17 @@ static int pda_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
        initialized-boundary recovery consider that certificate's spill. */
     w->recovery_member=member;const struct li2_pgd_member *m=&w->view.member[member];
     uint64_t raw[16];for(unsigned i=0;i<16;i++)raw[i]=(uint64_t)g[pe_greg[i]];
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    for(unsigned i=0;i<m->plan->heads;i++)if(m->plan->head[i].kind==LI2_PG_RET &&
+        pc>=m->identity.layout.generated[i/64]+(uintptr_t)(i%64)*LI2_PE_SLOT_BYTES &&
+        pc-(m->identity.layout.generated[i/64]+(uintptr_t)(i%64)*LI2_PE_SLOT_BYTES)<LI2_PE_SLOT_BYTES) {
+        prr.run.interior_result=li2_pg_compact_recover_ret(m->plan,i/64,i%64,pc,raw,
+            (uint64_t)g[REG_EFL],(const uint64_t *)m->identity.layout.spill,&prr.run.interior);
+        /* Keep the complete 176-byte target/phase value. A generated fault is
+           terminal here; it cannot fall into the old 168-byte reconstruction. */
+        return PE_EVENT;
+    }
+#endif
     pe.recovery_result=li2_pg_compact_recover(m->plan,pc,raw,(uint64_t)g[REG_EFL],
         (const uint64_t *)m->identity.layout.spill,&pe.recovery_scratch,&pe.recovered);
     if(!pe.recovery_result && pe.recovered.complete) {

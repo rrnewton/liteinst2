@@ -1,6 +1,12 @@
 #ifndef LI2_PERSISTENT_GROUP_PLAN_H
 #define LI2_PERSISTENT_GROUP_PLAN_H
 #include "persistent_plan.h"
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+#if LI2_PERSISTENT_RET_DISPATCH != 1 || !defined(LI2_PERSISTENT_CALL_DISPATCH) || LI2_PERSISTENT_CALL_DISPATCH != 1
+#error "RET group dispatch requires the explicit CALL window profile"
+#endif
+#include "linked_ret_dispatch.h"
+#endif
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
 #include "linked_call_dispatch.h"
 #ifdef LI2_ADD_GUARD
@@ -46,10 +52,17 @@
 #undef LI2_PG_VERSION
 #define LI2_PG_VERSION 6U
 #endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+#undef LI2_PG_VERSION
+#define LI2_PG_VERSION 7U
+#endif
 /* New profile semantics; old group and persistent kinds remain unchanged. */
 enum li2_pg_instruction_kind { LI2_PG_DISPATCH=3
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
     ,LI2_PG_CALL=6
+#endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    ,LI2_PG_RET=7
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER
     ,LI2_PG_DIRECT=5
@@ -61,6 +74,9 @@ enum li2_pg_instruction_kind { LI2_PG_DISPATCH=3
 union li2_pg_instruction { struct li2_mg_store mov;struct li2_jd_descriptor dispatch;
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
     struct li2_cd_descriptor call;
+#endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    struct li2_rd_descriptor ret;
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER
     struct li2_dd_descriptor direct;
@@ -74,6 +90,9 @@ union li2_pg_guard {
     struct li2_jd_plan dispatch;
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
     struct li2_cd_plan call;
+#endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    struct li2_rd_plan ret;
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER
     struct li2_dd_plan direct;
@@ -109,6 +128,9 @@ enum li2_pg_map_kind { LI2_PG_COPIED=1,LI2_PG_BRANCH,LI2_PG_EDGE,LI2_PG_GUARD,LI
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
     ,LI2_PG_CALL_MAP=10
 #endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    ,LI2_PG_RET_MAP=11
+#endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER
     ,LI2_PG_DIRECT_MAP=8
 #endif
@@ -122,7 +144,11 @@ enum li2_pg_map_kind { LI2_PG_COPIED=1,LI2_PG_BRANCH,LI2_PG_EDGE,LI2_PG_GUARD,LI
 #define LI2_PG_COMMITTED_EDGE 4U
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
-struct li2_pg_layout { uintptr_t generated[2],stubs,slots,spill,directory,window; };
+struct li2_pg_layout { uintptr_t generated[2],stubs,slots,spill,directory,window;
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    uintptr_t ret_miss;
+#endif
+};
 #else
 struct li2_pg_layout { uintptr_t generated[2],stubs,slots,spill,directory; };
 #endif
@@ -207,6 +233,12 @@ int li2_pg_dispatch_binding(const uintptr_t[2],const struct li2_pg_layout *,
 int li2_pg_call_binding(const uintptr_t[2],const struct li2_pg_layout *,
     uintptr_t,unsigned,unsigned,struct li2_cd_binding *);
 #endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+/* One distinct NX landing per global head, in this owner's reserved block of
+   the immutable window page. It is separate from the original-before exit. */
+int li2_pg_ret_binding(const uintptr_t[2],const struct li2_pg_layout *,
+    uintptr_t,unsigned,unsigned,struct li2_rd_binding *);
+#endif
 /* Immediate protected-output consistency, never independent source authority.
    Exact selected-root independent decode/refusal contract is retained. */
 int li2_pg_miss_valid(const struct li2_pg_plan *,const struct li2_pg_miss *,int);
@@ -215,7 +247,11 @@ int li2_pg_miss_valid(const struct li2_pg_plan *,const struct li2_pg_miss *,int)
 int li2_pg_placement(uintptr_t,const struct li2_pg_layout *);
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+_Static_assert(sizeof(struct li2_pg_layout)==64,"distinct RET loaded-miss block");
+#else
 _Static_assert(sizeof(struct li2_pg_layout)==56,"separate stable CALL window address");
+#endif
 #else
 _Static_assert(sizeof(struct li2_pg_layout)==48,"three code extents plus sealed domain directory");
 #endif
@@ -227,7 +263,11 @@ _Static_assert(sizeof(struct li2_pg_miss)==32,"separate protected diagnosis");
 _Static_assert(sizeof(struct li2_pg_recovered)==168,"member or committed edge recovery");
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+_Static_assert(sizeof(struct li2_pg_plan)==981336,"exact RET-aware full description");
+#else
 _Static_assert(sizeof(struct li2_pg_plan)==981328,"exact CALL-aware full description");
+#endif
 #else
 _Static_assert(sizeof(struct li2_pg_plan)==981320,"exact domain-aware full description");
 #endif

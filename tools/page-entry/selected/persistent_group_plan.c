@@ -111,6 +111,10 @@ static int layout_valid(const struct li2_pg_layout *l) {
     if(l->window<LI2_REGION_PAGE || (l->window&4095U) || !address(l->window,LI2_CD_WINDOW_PAGE) ||
        overlap(l->window,LI2_CD_WINDOW_PAGE,l->directory,LI2_JD_DOMAIN_BYTES))return 0;
     for(unsigned i=0;i<5;i++)if(overlap(l->window,LI2_CD_WINDOW_PAGE,a[i],n[i]))return 0;
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    if((l->ret_miss&7U) || l->ret_miss<l->window+sizeof(struct li2_rd_window) ||
+       l->ret_miss>l->window+LI2_RD_WINDOW_PAGE-LI2_PG_HEADS*8U)return 0;
+#endif
 #endif
     return 1;
 }
@@ -185,6 +189,30 @@ static int call_describe(struct li2_pg_plan *p,const struct li2_span_decoded *d,
     const unsigned char *bytes,size_t n,struct li2_cd_descriptor *out) {
     p->decoder_result=(unsigned)li2_cd_describe(d->decoded.pc,bytes,n,out);
     if(p->decoder_result || out->version!=LI2_CD_VERSION || out->ready!=1 || out->refusal ||
+       out->available!=n || !equal(&out->decoded,&d->decoded,sizeof d->decoded))return LI2_PG_DECODER;
+    struct li2_span_decoded expected={0};
+    expected.decoded=out->decoded;expected.version=1;expected.refusal=LI2_REGION_UNSUPPORTED;
+    return equal(d,&expected,sizeof expected)?0:LI2_PG_DECODER;
+}
+#endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+int li2_pg_ret_binding(const uintptr_t pages[2],const struct li2_pg_layout *layout,
+    uintptr_t table,unsigned heads,unsigned head,struct li2_rd_binding *out) {
+    if(!storage(pages,2*sizeof *pages) || !storage(layout,sizeof *layout) || !storage(out,sizeof *out) ||
+       (uintptr_t)pages%_Alignof(uintptr_t) || (uintptr_t)layout%_Alignof(struct li2_pg_layout) ||
+       (uintptr_t)out%_Alignof(struct li2_rd_binding) ||
+       overlap((uintptr_t)out,sizeof *out,(uintptr_t)pages,2*sizeof *pages) ||
+       overlap((uintptr_t)out,sizeof *out,(uintptr_t)layout,sizeof *layout))return LI2_PG_ARGUMENT;
+    zero(out,sizeof *out);struct li2_cd_binding common;
+    if(li2_pg_call_binding(pages,layout,table,heads,head,&common))return LI2_PG_ARGUMENT;
+    *out=(struct li2_rd_binding){common.rows,{common.image[0],common.image[1]},heads,head,
+        common.directory,common.window,layout->ret_miss+(uintptr_t)head*8U};
+    return 0;
+}
+static int ret_describe(struct li2_pg_plan *p,const struct li2_span_decoded *d,
+    const unsigned char *bytes,size_t n,struct li2_rd_descriptor *out) {
+    p->decoder_result=(unsigned)li2_rd_describe(d->decoded.pc,bytes,n,out);
+    if(p->decoder_result || out->version!=LI2_RD_VERSION || out->ready!=1 || out->refusal ||
        out->available!=n || !equal(&out->decoded,&d->decoded,sizeof d->decoded))return LI2_PG_DECODER;
     struct li2_span_decoded expected={0};
     expected.decoded=out->decoded;expected.version=1;expected.refusal=LI2_REGION_UNSUPPORTED;
@@ -352,6 +380,9 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
         struct li2_cd_descriptor call={0};
 #endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+        struct li2_rd_descriptor ret={0};
+#endif
 #endif
         int e=describe(p,q[at].pc,bytes,count,&d);if(e) {
             if(e==LI2_PG_BOUNDARY)pgd_source_boundary(&d,count,miss);
@@ -381,6 +412,12 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
         if(!kind && call_form(bytes,count)) {
             if((e=call_describe(p,&d,bytes,count,&call)))return e;
             kind=LI2_PG_CALL;
+        }
+#endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+        if(!kind && count && bytes[0]==0xc3) {
+            if((e=ret_describe(p,&d,bytes,count,&ret)))return e;
+            kind=LI2_PG_RET;
         }
 #endif
         q[at].decoded=1;
@@ -415,6 +452,11 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
             pgd_mark(miss,LI2_PGD_EXIT_LIMIT,LI2_PGD_SOURCE,q[at].pc,p->exits);return LI2_PG_GRAPH;
         }
 #endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+        if(kind==LI2_PG_RET && p->exits==LI2_PG_BOUNDARIES) {
+            pgd_mark(miss,LI2_PGD_EXIT_LIMIT,LI2_PGD_SOURCE,q[at].pc,p->exits);return LI2_PG_GRAPH;
+        }
+#endif
         if(p->heads==LI2_PG_HEADS) {pgd_mark(miss,LI2_PGD_HEAD_LIMIT,LI2_PGD_SOURCE,q[at].pc,p->heads);return LI2_PG_GRAPH;}
         unsigned i=p->heads++;++p->member_heads[i/LI2_PE_HEADS];
         struct li2_pe_head *h=&p->head[i];q[at].token=i;
@@ -430,6 +472,15 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
             p->instruction[i].call=call;++p->stores;
             /* No static callee or return-continuation borrow. The one exit
                is the exact original CALL before any architectural effect. */
+            unsigned x=p->exits++;p->frontier[x]=d;p->exit_pc[x]=q[at].pc;
+            continue;
+        }
+#endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+        if(kind==LI2_PG_RET) {
+            p->instruction[i].ret=ret;
+            /* The ordinary exit is before the load. An already loaded target
+               uses its distinct NX landing and typed recovery, never this PC. */
             unsigned x=p->exits++;p->frontier[x]=d;p->exit_pc[x]=q[at].pc;
             continue;
         }
@@ -485,6 +536,9 @@ static int pgd_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
         if(h->kind==LI2_PG_DISPATCH)continue;
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
         if(h->kind==LI2_PG_CALL)continue;
+#endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+        if(h->kind==LI2_PG_RET)continue;
 #endif
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER
@@ -568,6 +622,28 @@ static int pgd_emit(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
     for(unsigned i=0;i<p->heads;i++) {
         struct li2_pe_head *h=&p->head[i];const struct li2_span_decoded *d=&p->original[i];
         uintptr_t generated=head_generated(p,i);unsigned char *out=head_image(p,i);
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+        if(h->kind==LI2_PG_RET) {
+            struct li2_rd_binding binding;
+            if(h->successor_count || h->successors[0] || h->successors[1] ||
+               li2_pg_ret_binding(p->page,&p->layout,p->table.address,p->heads,i,&binding))return LI2_PG_CORRUPT;
+            unsigned exits=0;
+            for(unsigned j=0;j<p->exits;j++)if(p->exit_pc[j]==d->decoded.pc) {
+                if(!equal(&p->frontier[j],d,sizeof *d))return LI2_PG_CORRUPT;
+                ++exits;
+            }
+            if(exits!=1)return LI2_PG_CORRUPT;
+            unsigned char bytes[15];size_t n=window(p,d->decoded.pc,bytes);
+            struct li2_rd_plan *g=&p->guard[i].ret;
+            p->guard_result=(unsigned)li2_rd_emit(d->decoded.pc,bytes,n,generated,p->layout.spill,&binding,g);
+            if(p->guard_result)return p->guard_result==LI2_RD_RELOCATION?LI2_PG_RELOCATION:LI2_PG_DECODER;
+            if(!equal(&g->original,&p->instruction[i].ret,sizeof g->original) ||
+               !equal(&g->binding,&binding,sizeof binding) || g->record.ready!=1 ||
+               !g->record.image_bytes || g->record.image_bytes>LI2_PE_SLOT_BYTES ||
+               g->generated!=generated || g->spill!=p->layout.spill)return LI2_PG_DECODER;
+            h->generated_length=g->record.image_bytes;copy(out,g->image,LI2_RD_SLOT_BYTES);continue;
+        }
+#endif
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
         if(h->kind==LI2_PG_CALL) {
             struct li2_cd_binding binding;
