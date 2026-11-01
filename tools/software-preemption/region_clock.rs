@@ -50,6 +50,17 @@ fn bytes(address: u64, len: usize) -> Vec<u8> {
 
 impl RegionProgram {
     pub(super) fn new(mode: ClockMode) -> Self {
+        Self::new_with_hook(mode, hook)
+    }
+
+    pub(super) fn controls(&self) -> &[ProbeControl; 2] {
+        &self.controls
+    }
+
+    pub(super) fn new_with_hook(
+        mode: ClockMode,
+        hook: liteinst2::controls::ManagedCallback,
+    ) -> Self {
         single_main();
         // One fresh anonymous owner partitioned without unmapping: native RX,
         // source RX, then a separately transferred clock RW/non-X page.

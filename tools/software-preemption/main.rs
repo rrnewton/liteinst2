@@ -5,6 +5,7 @@ mod corpus;
 mod counter;
 mod inline_clock;
 mod inline_gate;
+mod region_benchmark;
 mod region_clock;
 
 use corpus::{CASES, Case, Site};
@@ -745,6 +746,7 @@ fn main() {
         "qualify" if args.len() == 3 => qualify(&output),
         "bench" if args.len() == 4 => benchmark(Case::parse(&args[2]), &output),
         "inline-gates" if args.len() == 3 => inline_gate::qualify(&output),
+        "region-bench" if args.len() == 4 => region_benchmark::run(&args[2], &output),
         "region-oracle" if args.len() == 3 => {
             inline_gate::qualify_region(&output);
             region_clock::qualify(&output);
