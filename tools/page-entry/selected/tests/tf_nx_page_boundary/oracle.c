@@ -67,4 +67,4 @@ int main(void) {
 }
 __asm__(".text\n.globl _start\n.type _start,@function\n_start:\n"
         "and $-16,%rsp\ncall main\nmov %eax,%edi\nmov $231,%eax\nsyscall\nud2\n"
-        ".size _start,.-_start\n.section .note.GNU-stack,\"\",@progbits\n");
+        ".size _start,.-_start\n.section .note.GNU-stack,\"\",@progbits\n.previous\n");
