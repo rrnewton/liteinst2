@@ -582,7 +582,7 @@ impl EarlyEntryModuleClient {
                         entries,
                         admission: Arc::new(Admission::new()),
                     },
-                    shared: self.shared,
+                    shared: Arc::clone(&self.shared),
                 })
             })
             .unwrap_or(Err(error(Cause::Attachment)))

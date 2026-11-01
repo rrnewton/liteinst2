@@ -1,7 +1,7 @@
 use super::*;
 
 impl FunctionPlanning<'_> {
-    fn append_entry_admission(
+    pub(super) fn append_entry_admission(
         self,
         typed: &[EntryAdmissionAction],
         predecessor: &mut Composition,
