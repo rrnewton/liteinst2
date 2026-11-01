@@ -1045,7 +1045,8 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
             if(pe.miss.reason==LI2_PFD_BACKWARD_UNSUPPORTED)ped_count(&pe.pf_backward_refused);
             else
 #endif
-            ped_count(PGC_MISS_REF(pe.miss.reason));pe_decoding=0;selected_initialized();
+            {ped_count(PGC_MISS_REF(pe.miss.reason));}
+            pe_decoding=0;selected_initialized();
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
             rcc_plan(3);
 #endif
