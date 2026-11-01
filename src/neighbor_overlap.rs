@@ -224,7 +224,7 @@ fn plan_overlapping(
                 selected_target: None,
                 refusal: None,
             };
-            let pair = (|| {
+            let pair: Result<_, Refusal> = (|| {
                 let victim_plan = TrampolinePlan::from_instruction(&scan, victim.address())
                     .map_err(|error| Refusal::Backend(error.to_string()))?;
                 let victim_prepared = request

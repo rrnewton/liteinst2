@@ -749,6 +749,8 @@ mod ordered_trace {
 
     // Explicit artifact envelope proof; old constructors below pass None.
     include!("entry_veneer_artifact_oracle/state.rs");
+    // Separate native-proof authorization; old short/long validators remain exact.
+    include!("overlapping_neighbor_artifact_oracle/state.rs");
 
     impl Mapping {
         /// One checked non-clobbering page attempt for hand-emitted calibration.
@@ -1010,6 +1012,25 @@ mod ordered_trace {
             owned_sigill_heads: &[u64],
             hooks: Option<HookExpectation<'_>>,
         ) {
+            self.assert_validated_trace_with_overlap(
+                trace,
+                entry,
+                validated,
+                owned_sigill_heads,
+                hooks,
+                None,
+            );
+        }
+
+        fn assert_validated_trace_with_overlap(
+            &self,
+            trace: &NativeTrace,
+            entry: u64,
+            validated: ValidatedTrace<'_>,
+            owned_sigill_heads: &[u64],
+            hooks: Option<HookExpectation<'_>>,
+            overlap: Option<&OverlappingPages<'_>>,
+        ) {
             let ValidatedTrace {
                 map,
                 physical,
@@ -1050,11 +1071,29 @@ mod ordered_trace {
                     "patched trace wall deadline exhausted"
                 );
                 let pc = child.registers().rip;
+                if let Some(overlap) = overlap {
+                    overlap.assert_pc(pc, map);
+                }
                 if let Some(target) = relay_target.take() {
                     assert_eq!(
                         pc, target,
                         "source relay did not reach its exact image entry"
                     );
+                    if let Some(overlap) = overlap {
+                        let expected = trace
+                            .baseline
+                            .points
+                            .get(next)
+                            .expect("extra overlapping relay destination");
+                        overlap.assert_child_pages(&child);
+                        assert_state(
+                            expected,
+                            &self.snapshot(&child, expected.logical_pc, self.code.bytes()),
+                        );
+                        if let Some(hooks) = &hooks {
+                            hooks.log.assert_events(&child, &events);
+                        }
+                    }
                 }
                 if let Some(veneer) = veneer {
                     // Check raw E->B before any logical classification. Both
@@ -1107,6 +1146,9 @@ mod ordered_trace {
                     );
                     if let Some(veneer) = veneer {
                         veneer.assert_child_pages(&child);
+                    }
+                    if let Some(overlap) = overlap {
+                        overlap.assert_child_pages(&child);
                     }
                     assert_state(
                         expected,
@@ -1172,6 +1214,9 @@ mod ordered_trace {
                         relay.logical_pc, expected.logical_pc,
                         "unexpected source relay at visit {next}"
                     );
+                    if let Some(overlap) = overlap {
+                        overlap.assert_child_pages(&child);
+                    }
                     assert_state(
                         expected,
                         &self.snapshot(&child, relay.logical_pc, self.code.bytes()),

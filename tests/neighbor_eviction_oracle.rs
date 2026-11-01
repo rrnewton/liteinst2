@@ -1770,3 +1770,6 @@ mod jrcxz_artifact_native;
 // Explicit same-page entry-to-body native evidence; previous cohorts remain exact.
 #[path = "support/entry_veneer_artifact_oracle.rs"]
 mod entry_veneer_artifact_native;
+
+#[path = "support/overlapping_neighbor_artifact_oracle.rs"]
+mod overlapping_artifact_native;
