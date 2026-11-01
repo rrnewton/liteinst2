@@ -106,9 +106,9 @@
       "sha256": "25404fa1b73de3e815e20d904bbef500ec9c06f7093b3f17bbe05c4e7c37edfa"
     },
     "tools/page-entry/selected/persistent_active_domain.inc": {
-      "bytes": 40664,
+      "bytes": 40934,
       "mode": "0644",
-      "sha256": "6d5930093753db154f80e046696cc0178cefafd6df5b6cae3c286b7fcbca6a28"
+      "sha256": "2a3b83ea746f4c9ffb150030bf91e30ab939242a67540b7da69568fad27599b3"
     },
     "tools/page-entry/selected/persistent_call_binding.py": {
       "bytes": 3843,
