@@ -382,3 +382,72 @@ pub(crate) fn index(original: ContentId, files: &BTreeMap<String, Vec<u8>>) -> V
     }
     out.into_bytes()
 }
+
+// The legacy ledger stays literal. Only the new frontend calls this extension;
+// a direct-only plan keeps the exact old ledger, while a wrapper exposes E
+// separately from storage B. Empty padding is represented by equal endpoints.
+pub(crate) fn plans_with_entry_veneers(
+    s: &Selection,
+    accepted: &[(u64, ArtifactPlan)],
+    composition: &Composition,
+    deps: &[FileRange],
+) -> Result<Vec<u8>, Error> {
+    let mut out = plans(s, accepted, composition, deps)?;
+    let mut extension = String::new();
+    let mut image_id = 0;
+    for (site, plan) in accepted {
+        for image in plan.images() {
+            if let Some(layout) = image.entry_veneer() {
+                let storage = layout.storage_address();
+                let entry = layout.entry_address();
+                let body_len = layout.body_len();
+                let bound = layout.size_bound();
+                let offset = entry
+                    .checked_sub(storage)
+                    .and_then(|n| usize::try_from(n).ok())
+                    .ok_or_else(|| Error::new("entry-veneer-ledger", "entry offset"))?;
+                let body_end = storage
+                    .checked_add(body_len as u64)
+                    .ok_or_else(|| Error::new("entry-veneer-ledger", "body end"))?;
+                let end = entry
+                    .checked_add(5)
+                    .ok_or_else(|| Error::new("entry-veneer-ledger", "veneer end"))?;
+                if storage != image.address()
+                    || entry != image.entry_address()
+                    || storage % 4096 != 0
+                    || offset > 4091
+                    || body_len == 0
+                    || body_len > bound
+                    || bound > offset
+                    || image.bytes().len() != offset + 5
+                    || layout.padding_range() != (body_end, entry)
+                    || layout.veneer_range() != (entry, end)
+                    || image.bytes()[body_len..offset]
+                        .iter()
+                        .any(|&byte| byte != 0xcc)
+                    || image.bytes()[offset] != 0xe9
+                {
+                    return Err(Error::new("entry-veneer-ledger", "storage partition"));
+                }
+                let displacement =
+                    i32::from_le_bytes(image.bytes()[offset + 1..offset + 5].try_into().unwrap());
+                if i128::from(end) + i128::from(displacement) != i128::from(storage) {
+                    return Err(Error::new("entry-veneer-ledger", "entry transfer"));
+                }
+                if extension.is_empty() {
+                    extension.push_str("ENTRY-VENEER-EXTENSION\t1\n");
+                }
+                writeln!(
+                    extension,
+                    "entry-veneer\t{image_id}\t{site}\t{storage}\t{entry}\t{body_len}\t{bound}\t{}\t{}\t{body_end}\t{entry}\tcc\t{entry}\t{end}\t{storage}",
+                    image.bytes().len(), hex(&ContentId::of(image.bytes()).0),
+                ).unwrap();
+            } else if image.entry_address() != image.address() {
+                return Err(Error::new("entry-veneer-ledger", "direct image entry"));
+            }
+            image_id += 1;
+        }
+    }
+    out.extend_from_slice(extension.as_bytes());
+    Ok(out)
+}

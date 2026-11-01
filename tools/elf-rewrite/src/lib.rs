@@ -197,6 +197,29 @@ pub fn prepare_disassembly_whole_fitting_mixed_neighbors(
     Ok(product)
 }
 
+/// Explicit short-T3 selected entry veneers within the same owned image page.
+/// Body storage and source entry remain distinct; this grants no execution or
+/// loader qualification. Complete pending ownership and final commit checks
+/// are identical to the fitting whole-program route.
+pub fn prepare_disassembly_whole_entry_veneer_mixed_neighbors(
+    original: &[u8],
+    selected: &disassembly::whole::WholeProgramSelection,
+) -> Result<Product, Error> {
+    let mut product = prepare_selection_with_mode(
+        original,
+        selected.selection.clone(),
+        false,
+        disassembly::NeighborMode::WholeEntryVeneerMixedPending,
+    )?;
+    product.files.remove("bundle-index.tsv");
+    product.files.extend(selected.entry_veneer_mixed_files());
+    product.files.insert(
+        "bundle-index.tsv".into(),
+        ledger::index(selected.selection.original, &product.files),
+    );
+    Ok(product)
+}
+
 fn prepare_mode(original: &[u8], manifest: &[u8], owned_neighbors: bool) -> Result<Product, Error> {
     let selection = selection::parse(manifest)?;
     prepare_selection_mode(original, selection, owned_neighbors, false)
@@ -400,6 +423,7 @@ fn prepare_selection_transaction(
         disassembly::NeighborMode::ShortT3Pending
             | disassembly::NeighborMode::WholeCurrentPlacementMixedPending
             | disassembly::NeighborMode::WholeFittingMixedPending
+            | disassembly::NeighborMode::WholeEntryVeneerMixedPending
     ) {
         s.sites
             .iter()
@@ -415,6 +439,7 @@ fn prepare_selection_transaction(
         disassembly::NeighborMode::ShortT3Pending
             | disassembly::NeighborMode::WholeCurrentPlacementMixedPending
             | disassembly::NeighborMode::WholeFittingMixedPending
+            | disassembly::NeighborMode::WholeEntryVeneerMixedPending
     ) {
         composition
             .require_unclaimed_ranges(&pending.iter().map(|(_, range)| *range).collect::<Vec<_>>())
@@ -546,7 +571,11 @@ fn prepare_selection_transaction(
     let profile = ledger::target(s);
     files.insert("target.tsv".into(), profile.clone());
     files.insert("selection.txt".into(), s.manifest.clone());
-    let mut ledger = ledger::plans(s, &accepted, &composition, &dependencies)?;
+    let mut ledger = if mode == disassembly::NeighborMode::WholeEntryVeneerMixedPending {
+        ledger::plans_with_entry_veneers(s, &accepted, &composition, &dependencies)?
+    } else {
+        ledger::plans(s, &accepted, &composition, &dependencies)?
+    };
     files.insert("plan-ledger.tsv".into(), ledger.clone());
     for (index, image) in accepted.iter().flat_map(|(_, p)| p.images()).enumerate() {
         // Planned bytes remain inspectable even if another site refuses. They
@@ -821,7 +850,15 @@ fn attempt_singleton(
                 max_virtual_span: s.limits.virtual_span,
             },
         };
-        let result = if mode == disassembly::NeighborMode::WholeFittingMixedPending {
+        let result = if mode == disassembly::NeighborMode::WholeEntryVeneerMixedPending {
+            engine::plan_with_emission_after_and_entry_veneer_mixed_t3_pending(
+                &request,
+                composition,
+                &pending_ranges,
+                &site.victim_allocation,
+                policy,
+            )
+        } else if mode == disassembly::NeighborMode::WholeFittingMixedPending {
             engine::plan_with_emission_after_and_fitting_mixed_t3_pending(
                 &request,
                 composition,
@@ -980,6 +1017,7 @@ fn attempt_singleton(
             disassembly::NeighborMode::ShortT3Pending
                 | disassembly::NeighborMode::WholeCurrentPlacementMixedPending
                 | disassembly::NeighborMode::WholeFittingMixedPending
+                | disassembly::NeighborMode::WholeEntryVeneerMixedPending
         ) {
             next.require_unclaimed_ranges(&pending_ranges)
                 .map_err(|e| Error::new("pending-selected", e))?;

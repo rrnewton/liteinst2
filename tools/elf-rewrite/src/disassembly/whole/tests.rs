@@ -1089,3 +1089,352 @@ fn whole_fitting_admits_alternate_tactic_but_retains_full_atomic_refusal() {
         assert_eq!(original, saved);
     }
 }
+
+// A complete original region with one six-byte victim, one four-byte suffix,
+// and the sole selected two-byte branch. The preserved suffix fixes E late in
+// its page; no source/importer shortcut or test-only image constructor is used.
+fn entry_veneer_fixture(victim_offset: u64) -> (Vec<u8>, String, String) {
+    let (mut original, _) = fixture(0, 0);
+    original[0x1100..0x1105].fill(0);
+    let victim = BASE + victim_offset;
+    put(&mut original, 24, 8, victim);
+    let code = [
+        0x2e, 0xb8, 0x37, 0x31, 0x42, 0x53, 0x44, 0x8d, 0x48, 3, 0x75, 0, 0xc3,
+    ];
+    let offset = victim_offset as usize;
+    original[offset..offset + code.len()].copy_from_slice(&code);
+    let mut text = format!(
+        "LI2DISASM 1\noriginal {}\ncontract complete-code no-overlap no-code-as-data private-image\nregion {victim} {victim_offset} {}\n",
+        digest(&original),
+        code.len(),
+    );
+    for (start, end) in [(0, 6), (6, 10), (10, 12), (12, 13)] {
+        writeln!(
+            text,
+            "head {} {}",
+            victim + start as u64,
+            ledger::hex(&code[start..end])
+        )
+        .unwrap();
+    }
+    writeln!(text, "region {HOOK} 73472 1\nhead {HOOK} c3").unwrap();
+    let entry = victim + 10 + 0x0348_8d44;
+    let victim_image = victim + 0x0600_0080;
+    let mut p = policy(&original, &text, 0);
+    writeln!(p, "search 1 T3 0 80 1 {victim} 1 1\nallocation 1 selected {entry} 1 4096 {}:4096\nallocation 1 victim {victim_image} 1 4096 {}:4096", entry & !4095, victim_image & !4095).unwrap();
+    (original, text, p)
+}
+
+#[test]
+fn whole_entry_veneer_keeps_storage_entry_fields_and_carrier_distinct() {
+    use iced_x86::{Decoder, DecoderOptions};
+    use li2core::engine::Tactic;
+    for (offset, entry_offset) in [(0x11f7, 3909), (0x1227, 3957)] {
+        let (original, text, p) = entry_veneer_fixture(offset);
+        let saved = original.clone();
+        let selected = bind(&original, &text, &p).unwrap();
+        let saved_files = selected.files.clone();
+        let victim = BASE + offset;
+        let pc = victim + 10;
+        let entry = victim + 10 + 0x0348_8d44;
+        let storage = entry & !4095;
+        assert_eq!(entry - storage, entry_offset);
+        assert_eq!(selected.selection.sites.len(), 1);
+        assert_eq!(selected.selection.sites[0].pc, pc);
+        assert_eq!(selected.selection.sites[0].length, 2);
+        assert_eq!(selected.selection.sites[0].heads.len(), 4);
+        assert_eq!(selected.selection.sites[0].max_victims, 1);
+        assert_eq!(selected.selection.sites[0].max_pairs, 1);
+        let old =
+            crate::prepare_disassembly_whole_fitting_mixed_neighbors(&original, &selected).unwrap();
+        assert!(!old.candidate_complete());
+        assert_eq!(old.reports().len(), 1);
+        assert_eq!(old.reports()[0].refusal_code, Some(11));
+        assert!(!old.files().contains_key("candidate.elf"));
+        let product =
+            crate::prepare_disassembly_whole_entry_veneer_mixed_neighbors(&original, &selected)
+                .unwrap();
+        assert!(product.candidate_complete());
+        assert!(!product.qualification_complete());
+        assert_eq!(product.reports().len(), 1);
+        let report = &product.reports()[0];
+        assert_eq!((report.id, report.pc, report.length), (1, pc, 2));
+        assert_eq!(report.core_tactic, Some(Tactic::NeighborEviction));
+        assert!(report.refusal.is_none() && report.candidate_emitted);
+        assert_eq!(report.diagnostics.matches("EngineAttempt {").count(), 1);
+        // Metrics and engine evidence print the same rows; inspect the sole
+        // EngineAttempt, retaining both decisions for its one charged pair.
+        let (metrics, attempt) = report.diagnostics.split_once("EngineAttempt {").unwrap();
+        assert_eq!(attempt.matches("NeighborAttempt {").count(), 2);
+        let expected = li2core::engine::CandidateEvidence::Neighbor(vec![
+            li2core::neighbor::NeighborAttempt {
+                victim,
+                stage: li2core::neighbor::NeighborAttemptStage::EntryVeneerCertificate,
+                victim_target: Some(victim + 0x0600_0080),
+                selected_target: None,
+                refusal: Some(li2core::contracts::Refusal::AllocationUnavailable),
+            },
+            li2core::neighbor::NeighborAttempt {
+                victim,
+                stage: li2core::neighbor::NeighborAttemptStage::Composition,
+                victim_target: Some(victim + 0x0600_0080),
+                selected_target: Some(entry),
+                refusal: None,
+            },
+        ]);
+        let actual: String = attempt.split_whitespace().collect();
+        let expected: String = format!("candidates:{expected:#?}")
+            .split_whitespace()
+            .collect();
+        assert_eq!(actual.matches("candidates:Neighbor(").count(), 1);
+        assert!(actual.contains(&expected));
+        let metrics: String = metrics.split_whitespace().collect();
+        assert_eq!(metrics.matches("victims_examined:").count(), 1);
+        assert_eq!(metrics.matches("pairs_examined:").count(), 1);
+        assert!(metrics.contains("victims_examined:1,"));
+        assert!(metrics.contains("pairs_examined:1,"));
+        assert!(report.diagnostics.contains("victims_examined: 1"));
+        assert!(report.diagnostics.contains("pairs_examined: 1"));
+        let ledger = std::str::from_utf8(&product.files()["plan-ledger.tsv"]).unwrap();
+        let rows: Vec<Vec<&str>> = ledger
+            .lines()
+            .map(|line| line.split('\t').collect())
+            .collect();
+        let veneers: Vec<_> = rows.iter().filter(|r| r[0] == "entry-veneer").collect();
+        assert_eq!(veneers.len(), 1);
+        assert_eq!(ledger.matches("ENTRY-VENEER-EXTENSION\t1\n").count(), 1);
+        let v = veneers[0];
+        assert_eq!(v.len(), 15);
+        let number = |i: usize| v[i].parse::<u64>().unwrap();
+        let id = number(1);
+        let body_len = number(5) as usize;
+        let bound = number(6) as usize;
+        let full_len = number(7) as usize;
+        assert_eq!((number(2), number(3), number(4)), (1, storage, entry));
+        assert!(body_len > 0 && body_len <= bound && bound <= entry_offset as usize);
+        assert_eq!(full_len, entry_offset as usize + 5);
+        assert_eq!(
+            (number(9), number(10), v[11]),
+            (storage + body_len as u64, entry, "cc")
+        );
+        assert_eq!(
+            (number(12), number(13), number(14)),
+            (entry, entry + 5, storage)
+        );
+        let bytes = &product.files()[&format!("image-{id:04}.bin")];
+        assert_eq!(bytes.len(), full_len);
+        assert_eq!(digest(bytes), v[8]);
+        assert!(
+            bytes[body_len..entry_offset as usize]
+                .iter()
+                .all(|&b| b == 0xcc)
+        );
+        let mut decoder = Decoder::with_ip(
+            64,
+            &bytes[entry_offset as usize..],
+            entry,
+            DecoderOptions::NONE,
+        );
+        let jump = decoder.decode();
+        assert_eq!(jump.code(), Code::Jmp_rel32_64);
+        assert_eq!(jump.len(), 5);
+        assert_eq!(jump.near_branch_target(), storage);
+        assert!(!decoder.can_decode());
+        let image_row = rows
+            .iter()
+            .find(|r| r[0] == "image" && r[1] == id.to_string())
+            .unwrap();
+        assert_eq!(image_row[3].parse::<u64>().unwrap(), storage);
+        assert_eq!(image_row[4].parse::<usize>().unwrap(), full_len);
+        assert_eq!(image_row[5], v[8]);
+        assert!(ledger.contains(&format!("route\t{id}\t{pc}\t{storage}\n")));
+        let boundaries: Vec<_> = rows
+            .iter()
+            .filter(|r| r[0] == "restored-boundary" && r[1] == id.to_string())
+            .collect();
+        assert_eq!(boundaries.len(), 1);
+        assert_eq!(boundaries[0][2].parse::<u64>().unwrap(), pc);
+        assert!(boundaries[0][3].parse::<u64>().unwrap() < storage + body_len as u64);
+        assert!(ledger.contains(&format!("pc-range\t{id}\t{entry}\t{}\t{pc}\n", entry + 5)));
+        for r in rows
+            .iter()
+            .filter(|r| r[0] == "pc-range" && r[1] == id.to_string())
+        {
+            let start = r[2].parse::<u64>().unwrap();
+            let end = r[3].parse::<u64>().unwrap();
+            assert!(end <= storage + body_len as u64 || start >= entry);
+        }
+        let veneer_fields: Vec<_> = rows
+            .iter()
+            .filter(|r| {
+                r[0] == "field"
+                    && r[1] == id.to_string()
+                    && r[2].parse::<u64>().unwrap() == entry_offset + 1
+            })
+            .collect();
+        assert_eq!(veneer_fields.len(), 1);
+        let f = veneer_fields[0];
+        assert_eq!((f[3], f[4]), ("4", "Relative"));
+        assert_eq!(f[5].parse::<u64>().unwrap(), entry_offset + 5);
+        assert_eq!(f[6].parse::<u64>().unwrap(), storage);
+        assert_eq!(f[7], "1");
+        assert_eq!(
+            f[8],
+            ledger::hex(format!("EntryVeneer {{ original_pc: {pc} }}").as_bytes())
+        );
+        assert_eq!(f[9], ledger::hex(&bytes[entry_offset as usize + 1..]));
+        for code in [1, 2, 3, 4, 7, 8] {
+            assert!(ledger.contains(&format!("unmet-requirement\t{id}\t{code}\t0\n")));
+        }
+        assert!(ledger.contains(&format!("unmet-requirement\t{id}\t5\t1\n")));
+        let allocations: Vec<_> = rows.iter().filter(|r| r[0] == "allocation").collect();
+        assert_eq!(allocations.len(), 2);
+        assert!(allocations.iter().all(|r| {
+            r[5] == "4096" && r[4].parse::<u64>().unwrap() - r[3].parse::<u64>().unwrap() == 4096
+        }));
+        assert_eq!(rows.iter().filter(|r| r[0] == "image").count(), 2);
+        let candidate = &product.files()["candidate.elf"];
+        let elf = Elf64::parse(
+            candidate,
+            ParseLimits {
+                max_program_headers: 64,
+            },
+        )
+        .unwrap();
+        assert_eq!(elf.header().entry, ElfVaddr(victim));
+        assert_eq!(
+            elf.executable_bytes(ElfVaddr(storage), full_len as u64)
+                .unwrap(),
+            bytes
+        );
+        let load: Vec<_> = elf
+            .segments(SegmentType::Load)
+            .filter(|p| p.vaddr == ElfVaddr(storage))
+            .collect();
+        assert_eq!(load.len(), 1);
+        assert!(
+            load[0].flags.readable() && load[0].flags.executable() && !load[0].flags.writable()
+        );
+        assert_eq!(load[0].file_size, full_len as u64);
+        assert_eq!(load[0].memory_size, full_len as u64);
+        assert_eq!(
+            &candidate[offset as usize + 6..offset as usize + 10],
+            &original[offset as usize + 6..offset as usize + 10]
+        );
+        assert_eq!(
+            &candidate[offset as usize + 10..offset as usize + 12],
+            &[0xeb, 0xf9]
+        );
+        let mut relay = Decoder::with_ip(
+            64,
+            &candidate[offset as usize + 5..offset as usize + 10],
+            victim + 5,
+            DecoderOptions::NONE,
+        );
+        let relay_jump = relay.decode();
+        assert_eq!(relay_jump.code(), Code::Jmp_rel32_64);
+        assert_eq!(relay_jump.near_branch_target(), entry);
+        assert!(!relay.can_decode());
+        assert_eq!(candidate[0x11f00], 0xc3);
+        assert_eq!(
+            product.files()["disassembly-inventory.tsv"],
+            saved_files["disassembly-inventory.tsv"]
+        );
+        assert_eq!(product.files()["disassembly-policy.txt"], p.as_bytes());
+        assert!(
+            std::str::from_utf8(&product.files()["planning-profile.tsv"])
+                .unwrap()
+                .contains(ENTRY_VENEER_MIXED_METADATA)
+        );
+        assert_eq!(selected.files, saved_files);
+        assert_eq!(original, saved);
+    }
+}
+
+#[test]
+fn whole_entry_veneer_preserves_direct_plans_and_full_pending_atomic_refusal() {
+    // Direct success remains byte-identical even through the new mode.
+    for long in [false, true] {
+        let (original, text, p) = mixed_pending_fixture(long, false, 2);
+        let selected = bind(&original, &text, &p).unwrap();
+        let old =
+            crate::prepare_disassembly_whole_fitting_mixed_neighbors(&original, &selected).unwrap();
+        let product =
+            crate::prepare_disassembly_whole_entry_veneer_mixed_neighbors(&original, &selected)
+                .unwrap();
+        assert!(old.candidate_complete() && product.candidate_complete());
+        assert_eq!(product.reports().len(), 2);
+        assert_eq!(
+            product.files()["candidate.elf"],
+            old.files()["candidate.elf"]
+        );
+        assert_eq!(
+            product.files()["plan-ledger.tsv"],
+            old.files()["plan-ledger.tsv"]
+        );
+        assert!(
+            !std::str::from_utf8(&product.files()["plan-ledger.tsv"])
+                .unwrap()
+                .contains("ENTRY-VENEER-EXTENSION")
+        );
+        mixed_pending_attempts(
+            &product.reports()[1],
+            Some((PC + if long { 0x0101_01d2 } else { 0x0101_01c2 }, false)),
+        );
+        assert!(
+            std::str::from_utf8(&product.files()["planning-profile.tsv"])
+                .unwrap()
+                .contains(ENTRY_VENEER_MIXED_METADATA)
+        );
+    }
+    // Failed selected originals stay in the complete table; a veneer cannot
+    // grant ownership of either one or reset the shared pair budget.
+    for (all_selected, pairs, count) in [(false, 1, 2), (true, 2, 3)] {
+        let (original, text, p) = mixed_pending_fixture(false, all_selected, pairs);
+        let saved = original.clone();
+        let selected = bind(&original, &text, &p).unwrap();
+        let old =
+            crate::prepare_disassembly_whole_fitting_mixed_neighbors(&original, &selected).unwrap();
+        let product =
+            crate::prepare_disassembly_whole_entry_veneer_mixed_neighbors(&original, &selected)
+                .unwrap();
+        assert_eq!(
+            product.reports().iter().map(|r| r.id).collect::<Vec<_>>(),
+            (1..=count).collect::<Vec<_>>()
+        );
+        assert!(!product.candidate_complete());
+        assert!(!product.qualification_complete());
+        assert!(!product.files().contains_key("candidate.elf"));
+        assert!(!product.files().contains_key("source.li2sparse"));
+        assert!(
+            product
+                .reports()
+                .iter()
+                .all(|r| r.refusal.is_some() && !r.candidate_emitted)
+        );
+        let high = product.reports().last().unwrap();
+        assert_eq!(high.core_tactic, None);
+        assert_eq!(high.refusal_code, Some(12));
+        assert_eq!(high.refusal.as_ref().unwrap().stage, "core");
+        assert_eq!(high.refusal.as_ref().unwrap().detail, "OwnershipConflict");
+        assert_eq!(high.diagnostics, old.reports().last().unwrap().diagnostics);
+        assert_eq!(high.diagnostics.matches("NeighborAttempt {").count(), pairs);
+        mixed_pending_attempts(high, all_selected.then_some((PC + 0x0101_01c2, true)));
+        for low in &product.reports()[..count as usize - 1] {
+            assert_eq!(low.core_tactic, Some(li2core::engine::Tactic::Relocation));
+            assert_eq!(low.refusal_code, Some(10_003));
+            assert_eq!(low.refusal.as_ref().unwrap().stage, "atomic-selection");
+        }
+        assert_eq!(
+            product.files()["disassembly-inventory.tsv"],
+            selected.files["disassembly-inventory.tsv"]
+        );
+        assert_eq!(product.files()["disassembly-policy.txt"], p.as_bytes());
+        assert!(
+            std::str::from_utf8(&product.files()["planning-profile.tsv"])
+                .unwrap()
+                .contains(ENTRY_VENEER_MIXED_METADATA)
+        );
+        assert_eq!(original, saved);
+    }
+}
