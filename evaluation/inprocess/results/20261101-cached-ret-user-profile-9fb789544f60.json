@@ -1,0 +1,374 @@
+{
+  "cleanup_complete": true,
+  "counter_prefix": {
+    "events": 19263,
+    "group": {
+      "cancelled": 5405,
+      "cold_attempts": 8864,
+      "completed": 5444,
+      "entries": 5444,
+      "hits": 1913,
+      "offers": 10850,
+      "permit_claims": 6456,
+      "publications": 3458,
+      "retirements": 3457,
+      "unexpected": 0
+    },
+    "maps": {
+      "acquisitions": 1395,
+      "active": 0,
+      "fresh_calls": 1395,
+      "handler_id": 20021,
+      "invalidations": 148851,
+      "mutation_epoch": 148851,
+      "poisoned": 0,
+      "reserved": 0,
+      "reuses": 557439,
+      "valid": 1
+    },
+    "misses": [
+      0,
+      3001,
+      0,
+      0,
+      0,
+      0,
+      0,
+      281,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      2122
+    ],
+    "native": {
+      "admissions": 493,
+      "attempts": 1324,
+      "blocked": 831,
+      "closed": 493,
+      "low_address_refusals": 0
+    },
+    "signals": [
+      7311,
+      11847,
+      105,
+      0,
+      0
+    ],
+    "view": {
+      "comparisons": 0,
+      "differential": 0,
+      "enabled": 1,
+      "hits": 557439,
+      "invalidations": 148851,
+      "mismatches": 0,
+      "poisoned": 0,
+      "queries": 558833,
+      "refreshes": 1394,
+      "reserved": 0,
+      "stack_probes": 202536,
+      "unexplained": 0,
+      "updates": 147050
+    }
+  },
+  "cpu": 3,
+  "driver": {
+    "bytes": 29159,
+    "sha256": "ae62687f8a42daec331eee7eda0af0d10f6720443b13e81a76526d4c5c220411"
+  },
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 3,
+    "runner_cap_eff": "0000000000000000",
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "leaf_costs": {
+    "bindings": [
+      {
+        "end": 38270,
+        "group": "pe_bytes",
+        "name": "pe_bytes",
+        "start": 38064
+      },
+      {
+        "end": 546766,
+        "group": "planning_decode",
+        "name": "li2_pg_plan_pages",
+        "start": 540816
+      },
+      {
+        "end": 547135,
+        "group": "planning_decode",
+        "name": "li2_pg_plan_validate",
+        "start": 546768
+      },
+      {
+        "end": 539323,
+        "group": "planning_decode",
+        "name": "pgd_graph",
+        "start": 533744
+      },
+      {
+        "end": 627300,
+        "group": "planning_decode",
+        "name": "li2_decoder_decode",
+        "start": 627088
+      },
+      {
+        "end": 632615,
+        "group": "planning_decode",
+        "name": "li2_decoder_span_describe",
+        "start": 632416
+      },
+      {
+        "end": 628518,
+        "group": "planning_decode",
+        "name": "li2_decoder_link_none",
+        "start": 627872
+      },
+      {
+        "end": 630867,
+        "group": "planning_decode",
+        "name": "li2_decoder_mov_store",
+        "start": 628528
+      },
+      {
+        "end": 632916,
+        "group": "planning_decode",
+        "name": "li2_decoder_tf_classify",
+        "start": 632720
+      },
+      {
+        "end": 634408,
+        "group": "planning_decode",
+        "name": "li2_decoder_write_footprint",
+        "start": 632928
+      },
+      {
+        "end": 575046,
+        "group": "planning_decode",
+        "name": "li2_jd_describe",
+        "start": 574976
+      },
+      {
+        "end": 575143,
+        "group": "planning_decode",
+        "name": "li2_jd_emit",
+        "start": 575056
+      },
+      {
+        "end": 570295,
+        "group": "planning_decode",
+        "name": "li2_mg_emit",
+        "start": 570208
+      },
+      {
+        "end": 559311,
+        "group": "project",
+        "name": "project",
+        "start": 557360
+      }
+    ],
+    "rows": [
+      {
+        "group": "pe_bytes",
+        "period": 6010100950,
+        "period_fraction": 0.206884561891516,
+        "sample_fraction": 0.206884561891516,
+        "samples": 595
+      },
+      {
+        "group": "planning_decode",
+        "period": 7040403970,
+        "period_fraction": 0.24235048678720444,
+        "sample_fraction": 0.24235048678720444,
+        "samples": 697
+      },
+      {
+        "group": "project",
+        "period": 5555555500,
+        "period_fraction": 0.19123783031988872,
+        "sample_fraction": 0.19123783031988872,
+        "samples": 550
+      },
+      {
+        "group": "other_unknown",
+        "period": 10444444340,
+        "period_fraction": 0.35952712100139084,
+        "sample_fraction": 0.35952712100139084,
+        "samples": 1034
+      }
+    ],
+    "scope": "Exact sampled user-IP leaf partition, including all unknowns. Planning names are explicit, not an exhaustive cost category. No ancestor substitution, wall-time attribution, throughput, completion or speedup inference.",
+    "total_period": 29050504760,
+    "total_samples": 2876
+  },
+  "origin": {
+    "captures": {
+      "counters": {
+        "bytes": 4096,
+        "file": "subject-ls-counted.counters",
+        "sha256": "ed75df870281c1d2b88bc0dd220d6678f375efcda8f79c52065b6286e0cca8b5"
+      },
+      "stderr": {
+        "bytes": 0,
+        "file": "subject-ls-counted.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 0,
+        "file": "subject-ls-counted.stdout",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "cpu": 3,
+    "duration_ns": 30143017940,
+    "file": "target/evaluation/inprocess/20261101T031953.612618Z-cached-ret-program-9fb789544f60/receipt.json",
+    "receipt": {
+      "bytes": 3448174,
+      "sha256": "61f09fdc2d931299d11fd9b035bcf7212f4c9bc916ee347c04d9f0f102eee1be"
+    },
+    "revision": "9fb789544f604732d94fddccbda57993273bf765",
+    "status": "failed",
+    "target_exit": -9
+  },
+  "performance_credit": false,
+  "phases": {
+    "basis": {
+      "leaf": 1695,
+      "observed_ancestor": 426,
+      "unknown": 755
+    },
+    "scope": "Exact recognized sampled leaf or nearest recognized observed ancestor, with frame index and unknown gaps retained; ambiguous/shared/other samples stay unknown. User CPU sampled-period partition only; intervals include carrier startup. No kernel or wall-time attribution.",
+    "totals": [
+      {
+        "period": 7616161540,
+        "phase": "planning_decode",
+        "samples": 754
+      },
+      {
+        "period": 767676760,
+        "phase": "compact_reconstruction",
+        "samples": 76
+      },
+      {
+        "period": 8767676680,
+        "phase": "publication_retirement",
+        "samples": 868
+      },
+      {
+        "period": 1040404030,
+        "phase": "source_maps",
+        "samples": 103
+      },
+      {
+        "period": 3232323200,
+        "phase": "user_trap_handoff",
+        "samples": 320
+      },
+      {
+        "period": 7626262550,
+        "phase": "other_unknown",
+        "samples": 755
+      }
+    ]
+  },
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 4080110,
+    "sha256": "e58b8fc9f7781114351aaa9c2453009b9543104a5049519c17a2774d72970025"
+  },
+  "reproduce": {
+    "checkout": "9fb789544f604732d94fddccbda57993273bf765",
+    "cpu": 3,
+    "packaging_executed": false,
+    "requires_same_toolchain_and_hardware": true,
+    "script": "evaluation/inprocess/cached_ret_profile/reproduce.py"
+  },
+  "revision": "9fb789544f604732d94fddccbda57993273bf765",
+  "sampling": {
+    "event_counts": {
+      "10": 147569,
+      "3": 3,
+      "4": 1,
+      "68": 5,
+      "69": 1,
+      "73": 1,
+      "74": 1,
+      "78": 4,
+      "82": 1,
+      "9": 2876
+    },
+    "full_exec_exit_envelope": true,
+    "initial_synthetic_records": 117,
+    "kernel_samples": 0,
+    "loss_free": true,
+    "lost_samples": 0,
+    "sampled_period_total": 29050504760,
+    "samples": 2876,
+    "throttle_records": 0,
+    "user_samples": 2876
+  },
+  "schema": 1,
+  "scope": "Historical failed-prefix user profile; no whole-program completion or speedup credit",
+  "source_unchanged": true,
+  "status": "observed_unqualified",
+  "target": {
+    "argv": [
+      "<python3.12>",
+      "-B",
+      "tools/page-entry/carrier.py",
+      "exec-loader",
+      "--counter-fd",
+      "3",
+      "--counter-nonce",
+      "<fresh nonce>",
+      "--library-root",
+      "/usr/lib64",
+      "--namespace",
+      "<fresh private namespace>",
+      "<exact retained ls carrier>",
+      "/usr/bin/ls",
+      "--",
+      "/usr/bin/ls",
+      "-d",
+      "."
+    ],
+    "bounds": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "exit": -9,
+    "output_bytes": {
+      "stderr": 0,
+      "stdout": 0
+    },
+    "process_ns": 30397848868,
+    "usage": {
+      "maxrss_kib": 135696,
+      "system_seconds": 1.126702,
+      "user_seconds": 28.857244,
+      "wait_status": 9
+    }
+  },
+  "target_outcome": "failed_prefix"
+}

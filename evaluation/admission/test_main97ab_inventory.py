@@ -256,7 +256,7 @@ class Main97abInventoryTests(unittest.TestCase):
         # Current placement adds thirteen tests to three existing harnesses.
         # Preserve the entire prior catalog and every earlier control above.
         placement = current.DATA['source_successor_fd4c6']
-        placement_rows = actual['harness_test_counts']['workspace_tests']
+        placement_rows = current.before_b0a30(actual)['harness_test_counts']['workspace_tests']
         placement_before = current.before_fd4c6(actual)
         self.assertEqual(current.digest(placement_before), current.PLACEMENT_PREVIOUS)
         self.assertEqual((len(placement_rows), sum(x['tests'] for x in placement_rows.values()),
@@ -310,6 +310,148 @@ class Main97abInventoryTests(unittest.TestCase):
                 with patch.object(Path, 'read_bytes', changed):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
                         current.require_sources()
+
+        # Entry veneers add 55 methods to four existing harnesses. The
+        # complete prior placement catalog remains an independent boundary.
+        entry = current.DATA['source_successor_b0a30']
+        entry_rows = current.before_b6fea(actual)['harness_test_counts']['workspace_tests']
+        entry_before = current.before_b0a30(actual)
+        self.assertEqual(current.digest(entry_before), current.ENTRY_PREVIOUS)
+        self.assertEqual((len(entry_rows), sum(x['tests'] for x in entry_rows.values()),
+                          sum(x['ignored'] for x in entry_rows.values())), (113, 4380, 39))
+        self.assertEqual((entry['default_method_additions'], entry['default_doctest_additions'],
+                          entry['default_method_removals'], entry['default_harness_changes'],
+                          entry['default_ignore_changes'], entry['recorder_identity_changes']),
+                         (55, 0, 0, 0, 0, 0))
+        self.assertEqual(sum(len(names) * len(entry['default_method_instances'][path])
+                             for path, names in entry['added_default_methods'].items()), 55)
+        self.assertEqual((entry['added_ignored_methods'], entry['doctests']), ({}, {}))
+        for wrong in (entry_before, placement_before, phase_catalog, native_indexed, old):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_b0a30(wrong)
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                inventory.require_current(wrong)
+        for name, change in entry['workspace_changes'].items():
+            self.assertEqual(entry_rows[name], change['current'])
+            self.assertEqual(entry_before['harness_test_counts']['workspace_tests'][name],
+                             change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(entry_rows[name][field]), entry_rows[name][field] + 1):
+                    wrong = copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_b0a30(wrong)
+            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_b0a30(wrong)
+        entry_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
+            for path, names in entry['added_default_methods'].items() for name in names]
+        entry_stimuli += [(path, literal, '')
+            for path, literals in entry['module_chains'].items() for literal in literals]
+        for path, literal, replacement in entry_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('entry declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        for path in entry['source_paths']:
+            target = current.ROOT / path; raw = read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate != target: return read(candidate)
+                    if missing: raise FileNotFoundError(path)
+                    return raw + b'\n'
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                        current.require_sources()
+
+        # The new Linux loader is a real default integration harness. All
+        # earlier complete catalogs and their assertions remain unchanged.
+        rx = current.DATA['source_successor_b6fea']
+        rx_rows = actual['harness_test_counts']['workspace_tests']
+        rx_before = current.before_b6fea(actual)
+        self.assertEqual(current.digest(rx_before), current.RX_PREVIOUS)
+        self.assertEqual((len(rx_rows), sum(x['tests'] for x in rx_rows.values()),
+                          sum(x['ignored'] for x in rx_rows.values())), (114, 4395, 39))
+        self.assertEqual((rx['default_method_additions'], rx['default_doctest_additions'],
+                          rx['default_method_removals'], rx['default_harness_changes'],
+                          rx['default_ignore_changes'], rx['recorder_identity_changes']),
+                         (15, 0, 0, 1, 0, 0))
+        self.assertEqual(sum(len(names) * len(rx['default_method_instances'][path])
+                             for path, names in rx['added_default_methods'].items()), 15)
+        self.assertEqual((rx['added_ignored_methods'], rx['doctests']), ({}, {}))
+        self.assertEqual(rx['default_method_instances']['tools/elf-rewrite/tests/rx_run_loader.rs'],
+                         ['test/rx_run_loader'])
+        for wrong in (rx_before, entry_before, placement_before, phase_catalog, native_indexed, old):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_b6fea(wrong)
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                inventory.require_current(wrong)
+        for name, change in rx['workspace_changes'].items():
+            self.assertEqual(rx_rows[name], change['current'])
+            self.assertEqual(rx_before['harness_test_counts']['workspace_tests'].get(name),
+                             change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(rx_rows[name][field]), rx_rows[name][field] + 1):
+                    wrong = copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_b6fea(wrong)
+            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_b6fea(wrong)
+        rx_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
+            for path, names in rx['added_default_methods'].items() for name in names]
+        rx_stimuli += [(path, literal, '')
+            for path, literals in rx['module_chains'].items() for literal in literals]
+        for path, literal, replacement in rx_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('RX-run declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        for path in rx['source_paths']:
+            target = current.ROOT / path; raw = read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate != target: return read(candidate)
+                    if missing: raise FileNotFoundError(path)
+                    return raw + b'\n'
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                        current.require_sources()
+        loader = 'test/rx_run_loader'
+        loader_header = ('     Running tests/rx_run_loader.rs '
+                         '(target/debug/deps/rx_run_loader-0123456789abcdef)')
+        loader_log = '\n'.join((loader_header, 'running 2 tests', summary(2)))
+        loader_expected = {loader: counts(2)}
+        self.assertEqual(parsing.harness_id(loader_header), loader)
+        self.assertEqual(rx_rows[loader], loader_expected[loader])
+        loader_row = parsing.parse_harnesses(loader_log, loader_expected, 0)[0]
+        self.assertEqual(loader_row['outer'], dict(passed=2, failed=0, ignored=0,
+                                                  measured=0, filtered=0, result='ok'))
+        for bad in (loader_log.replace('running 2 tests', 'running 1 test'),
+                    loader_log.replace('running 2 tests', 'running 3 tests'),
+                    loader_log.replace(summary(2), summary(1, ignored=1)),
+                    loader_log.replace(summary(2), summary(1, filtered=1)),
+                    loader_log.replace(summary(2), ''), loader_log + '\n' + loader_log,
+                    loader_log.replace('rx_run_loader-', 'other-')):
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, loader_expected, 0)
+        failed = loader_log.replace(summary(2), summary(1, failed=1))
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^successful_exit_with_failed_summary$'):
+            parsing.parse_harnesses(failed, loader_expected, 0)
+        loader_row = parsing.parse_harnesses(failed, loader_expected, 1)[0]
+        self.assertEqual((loader_row['outer']['result'], loader_row['outer']['passed'],
+                          loader_row['outer']['failed']), ('FAILED', 1, 1))
 
         # The new Cargo example has one exact source/binary/output-directory
         # identity. Its ten tests cannot be admitted under the generic matcher.

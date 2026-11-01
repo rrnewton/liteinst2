@@ -1,6 +1,17 @@
 #ifndef LI2_PERSISTENT_GROUP_PLAN_H
 #define LI2_PERSISTENT_GROUP_PLAN_H
 #include "persistent_plan.h"
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+#if LI2_PERSISTENT_DIRECT_CALL != 1 || !defined(LI2_PERSISTENT_CALL_DISPATCH) || LI2_PERSISTENT_CALL_DISPATCH != 1 || \
+    !defined(LI2_PERSISTENT_CALL_RETURN_HEADS) || LI2_PERSISTENT_CALL_RETURN_HEADS != 1
+#error "direct E8 CALL requires explicit CALL and held return heads"
+#endif
+#endif
+#ifdef LI2_PERSISTENT_CALL_RETURN_HEADS
+#if LI2_PERSISTENT_CALL_RETURN_HEADS != 1 || !defined(LI2_PERSISTENT_CALL_DISPATCH) || LI2_PERSISTENT_CALL_DISPATCH != 1
+#error "return heads require the explicit register CALL profile"
+#endif
+#endif
 #ifdef LI2_PERSISTENT_RET_DISPATCH
 #if LI2_PERSISTENT_RET_DISPATCH != 1 || !defined(LI2_PERSISTENT_CALL_DISPATCH) || LI2_PERSISTENT_CALL_DISPATCH != 1
 #error "RET group dispatch requires the explicit CALL window profile"
@@ -55,6 +66,14 @@
 #ifdef LI2_PERSISTENT_RET_DISPATCH
 #undef LI2_PG_VERSION
 #define LI2_PG_VERSION 7U
+#endif
+#ifdef LI2_PERSISTENT_CALL_RETURN_HEADS
+#undef LI2_PG_VERSION
+#define LI2_PG_VERSION 8U
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+#undef LI2_PG_VERSION
+#define LI2_PG_VERSION 9U
 #endif
 /* New profile semantics; old group and persistent kinds remain unchanged. */
 enum li2_pg_instruction_kind { LI2_PG_DISPATCH=3
