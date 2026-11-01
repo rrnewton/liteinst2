@@ -15,6 +15,10 @@ const NT_X86_XSTATE: usize = 0x202;
 const CHILD_BUDGET: Duration = Duration::from_secs(15);
 const MAX_STEPS: usize = 20_000;
 const DEBUGGER_FLAGS: u64 = (1 << 8) | (1 << 16);
+mod region;
+pub(super) fn qualify_region(output: &Path) {
+    region::qualify(output);
+}
 struct Snapshot {
     logical_pc: u64,
     registers: libc::user_regs_struct,
