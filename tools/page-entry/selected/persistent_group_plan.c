@@ -656,7 +656,12 @@ static int emit_stubs(struct li2_pg_plan *p) {
     }
     return 0;
 }
+#ifdef LI2_PERSISTENT_LOOP_PLAN
+static int pgd_emit_selected(struct li2_pg_plan *p,struct li2_pg_miss *miss,
+    int (*decode)(struct li2_pg_plan *,uintptr_t,const unsigned char *,size_t,struct li2_span_decoded *)) {
+#else
 static int pgd_emit(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
+#endif
     for(unsigned m=0;m<LI2_PG_MEMBERS;m++)for(unsigned i=0;i<LI2_PE_IMAGE_BYTES;i++)p->image[m][i]=0xcc;
     int stub_result=emit_stubs(p);if(stub_result)return stub_result;
     for(unsigned i=0;i<p->heads;i++) {
@@ -814,7 +819,11 @@ static int pgd_emit(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
         } else if(!jump(p,i,0,destination(p,i,0))) {
             pgd_mark(miss,LI2_PGD_BRANCH_REACH,LI2_PGD_EMIT,d->decoded.pc,destination(p,i,0));return LI2_PG_RELOCATION;
         }
+#ifdef LI2_PERSISTENT_LOOP_PLAN
+        struct li2_span_decoded actual;int e=decode(p,generated,out,15,&actual);if(e)return e;
+#else
         struct li2_span_decoded actual;int e=describe(p,generated,out,15,&actual);if(e)return e;
+#endif
         if(!actual.ready || actual.decoded.length!=length || !same_effects(d,&actual) ||
            (flow!=LI2_REGION_NEXT && actual.target!=destination(p,i,0)))return LI2_PG_DECODER;
         if(flow!=LI2_REGION_JMP) {
@@ -822,12 +831,21 @@ static int pgd_emit(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
             if(!jump(p,i,length,destination(p,i,k))) {
                 pgd_mark(miss,LI2_PGD_FALLTHROUGH_REACH,LI2_PGD_EMIT,d->decoded.pc,destination(p,i,k));return LI2_PG_RELOCATION;
             }
+#ifdef LI2_PERSISTENT_LOOP_PLAN
+            e=decode(p,generated+length,out+length,15,&actual);if(e)return e;
+#else
             e=describe(p,generated+length,out+length,15,&actual);if(e)return e;
+#endif
             if(!synthetic(&actual,destination(p,i,k)))return LI2_PG_DECODER;
         }
     }
     return 0;
 }
+#ifdef LI2_PERSISTENT_LOOP_PLAN
+static int pgd_emit(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
+    return pgd_emit_selected(p,miss,describe);
+}
+#endif
 int li2_pg_plan_pages(const uintptr_t pages[2],const unsigned char source[2][LI2_REGION_PAGE],
     uintptr_t entry,const struct li2_pg_layout *layout,const struct li2_mg_table *table,
     struct li2_pg_plan *out,struct li2_pg_miss *miss) {
@@ -980,4 +998,8 @@ int li2_pg_placement(uintptr_t entry,const struct li2_pg_layout *layout) {
 
 #ifdef LI2_PERSISTENT_FUSED_PLAN
 #include "persistent_fused_plan.inc"
+#endif
+
+#ifdef LI2_PERSISTENT_LOOP_PLAN
+#include "persistent_loop_plan.inc"
 #endif

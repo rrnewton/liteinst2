@@ -1228,4 +1228,9 @@ mod span {
         abi::OK
     }
 
+    // Separate version-2 read-only additions; old descriptor/NONE APIs stay exact.
+    #[cfg(feature = "scalar-read")]
+    mod scalar_read {
+        include!("scalar_read.rs");
+    }
 }
