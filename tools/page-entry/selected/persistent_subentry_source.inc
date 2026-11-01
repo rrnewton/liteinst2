@@ -6,6 +6,9 @@ int li2_pgs_head_lookup(const struct li2_pg_compact *p,uintptr_t pc,struct li2_p
     if(a>UINTPTR_MAX-sizeof *p || b>UINTPTR_MAX-sizeof *out ||
        (a<b+sizeof *out && b<a+sizeof *p))return -1;
     *out=(struct li2_pgs_target){0};
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    if(!li2_lpr_policy(p->version) || p->bytes!=sizeof *p || p->ready!=1 ||
+#else
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
     if(p->version!=LI2_PF_VERSION || p->bytes!=sizeof *p || p->ready!=1 ||
 #else
@@ -13,6 +16,7 @@ int li2_pgs_head_lookup(const struct li2_pg_compact *p,uintptr_t pc,struct li2_p
     if(p->version!=LI2_PB_VERSION || p->bytes!=sizeof *p || p->ready!=1 ||
 #else
     if(p->version!=LI2_PG_COMPACT_VERSION || p->bytes!=sizeof *p || p->ready!=1 ||
+#endif
 #endif
 #endif
        p->result || p->reserved || p->reserved2 || !p->heads || p->heads>LI2_PG_HEADS ||

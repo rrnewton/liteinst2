@@ -1,3 +1,10 @@
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+#define PLR_EXIT li2_lpr_exit
+#define PLR_RECOVER li2_lpr_recover
+#else
+#define PLR_EXIT li2_pf_compact_exit
+#define PLR_RECOVER li2_pf_compact_recover
+#endif
 /* Two immutable images and one stub page share one actual source/rseq lease.
    Link slots are data; code stays sealed across all internal group edges. */
 #if !defined(LI2_PERSISTENT_GROUP) || LI2_PERSISTENT_GROUP != 1 || defined(LI2_PERSISTENT_EPOCH_CAPTURE)
@@ -32,6 +39,11 @@
 #include "resident_source_lease.h"
 #endif
 #include "persistent_group_config.h"
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+#if LI2_PG_LOOP_BINDING_VERSION != 1 || LI2_PG_LOOP_POLICY_VERSION != 12 || LI2_PG_LOOP_FALLBACK_VERSION != 11
+#error "loop runtime requires its own exact mixed-policy source/archive binding"
+#endif
+#endif
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
 #include "persistent_group_observe.h"
 #endif
@@ -51,6 +63,13 @@
 #include "persistent_subentry_observe.h"
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+#ifdef LI2_PERSISTENT_LOOP_CAPTURE
+#ifdef LI2_PERSISTENT_LOOP_LIFECYCLE_CAPTURE
+#include "persistent_loop_lifecycle_observe.h"
+#else
+#include "persistent_loop_observe.h"
+#endif
+#else
 #ifdef LI2_PERSISTENT_FUSED_CAPTURE
 #include "persistent_fused_observe.h"
 #else
@@ -58,6 +77,7 @@
 #include "persistent_block_observe.h"
 #else
 #include "persistent_direct_frontier_observe.h"
+#endif
 #endif
 #endif
 #endif
@@ -115,6 +135,9 @@ struct pe_header {
 #endif
     unsigned char archive[32],policy[32];
     uint64_t reserved[4];
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    uint64_t plan_policy;
+#endif
 };
 #ifdef LI2_PERSISTENT_UNREGISTERED
 static int pe_lifetime_stored(const struct pe_header *h) {
@@ -300,6 +323,9 @@ struct li2_pg_epoch {
     struct li2_mg_range exclusions[LI2_MG_RANGES];
     struct li2_pg_plan cold,rebuild;
     struct li2_pg_compact compact_rebuild;
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    struct plr_state loop;
+#endif
 #ifndef LI2_PERSISTENT_RETAINED_TWO
     struct pe_payload publication;
 #endif
@@ -366,7 +392,12 @@ int li2_pg_epoch_interlock(void) {
 #ifdef LI2_PERSISTENT_RET_DISPATCH
     if(prr_pending || prr_busy)return 1;
 #endif
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    return pe_busy || pe_active || pe.loop.scope || pe_decoding ||
+        (pe.p.phase!=LI2_PG_IDLE && pe.p.phase!=LI2_PG_CLOSED && pe.p.phase!=LI2_PG_CANCELLED);
+#else
     return pe_busy || pe_active || (pe.p.phase!=LI2_PG_IDLE && pe.p.phase!=LI2_PG_CLOSED && pe.p.phase!=LI2_PG_CANCELLED);
+#endif
 }
 const struct li2_pg_progress *li2_pg_epoch_progress(void) {return &pe.p;}
 static int pe_token(const struct li2_pg_token *t) {return li2_pg_owner_phase(t)!=0;}
@@ -652,7 +683,12 @@ static int ped_stored(void) {
     const struct pe_payload *p=pe_payload();
     return equal(&p->header,&PE_SLOT(publication).header,sizeof p->header) &&
         equal(&p->source,&PE_SLOT(publication).source,sizeof p->source) &&
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        li2_lpr_header(p->header.version,p->header.plan_policy,p->plan.version) &&
+        p->header.serial==g->build_serial &&
+#else
         p->header.version==1 && p->header.serial==g->build_serial &&
+#endif
         p->header.generation==g->generation && p->header.registry==(uintptr_t)&pe &&
         p->header.generated==g->generated && p->header.spill==g->spill &&
         pg_layout_equal(&p->header.layout,&g->layout) &&
@@ -661,6 +697,9 @@ static int ped_stored(void) {
         p->header.plan_proof==g->plan_proofs && g->plan_proofs==2 &&
         p->header.none_proof==g->none_proofs && g->none_proofs==1 &&
         equal(p->header.archive,pe_archive,32) && equal(p->header.policy,pe_policy,32) &&
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        li2_lpr_policy(p->plan.version) && p->plan.bytes==sizeof p->plan &&
+#else
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
         p->plan.version==LI2_PF_VERSION && p->plan.bytes==sizeof p->plan &&
 #else
@@ -668,6 +707,7 @@ static int ped_stored(void) {
         p->plan.version==LI2_PB_VERSION && p->plan.bytes==sizeof p->plan &&
 #else
         p->plan.version==LI2_PG_COMPACT_VERSION && p->plan.bytes==sizeof p->plan &&
+#endif
 #endif
 #endif
         p->plan.ready==1 && !p->plan.result && pg_layout_equal(&p->plan.layout,&g->layout) &&
@@ -737,8 +777,24 @@ static void ped_count(uint64_t *v) {
 #define PGC_MISS_VALUE(i) (pe.misses[i])
 static void ped_count(uint64_t *v) {pe_need(*v!=UINT64_MAX,PE_OVERFLOW,0);++*v;}
 #endif
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+#ifdef LI2_PERSISTENT_LOOP_COUNTERS
+#include "persistent_loop_counter_owner.inc"
+#else
+#define PLR_COUNT(n) ped_count(&pe.loop.counts.n)
+#endif
+#include "persistent_loop_owner.inc"
+#endif
 static unsigned ped_bank_for(uintptr_t pc) {return pc<(UINT64_C(1)<<31)?0:1;}
 static int ped_capacity(void) {
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    const struct plr_counts *lc=&pe.loop.counts;
+    if(lc->chooser_attempts==UINT64_MAX || lc->chooser_selected==UINT64_MAX ||
+       lc->chooser_no_envelope==UINT64_MAX || lc->publications12==UINT64_MAX ||
+       lc->hits12==UINT64_MAX || lc->entries_with12==UINT64_MAX ||
+       lc->completed_with12==UINT64_MAX || lc->historical_reconstructions==UINT64_MAX ||
+       lc->actual_entries12==UINT64_MAX)return 0;
+#endif
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
     if(pe.pf_backward_refused==UINT64_MAX || pe.pf_backward_cancelled==UINT64_MAX)return 0;
 #endif
@@ -852,6 +908,11 @@ static void ped_reset_attempt(void) {
     pe.last_terminal=pe.p;
 #ifdef LI2_PERSISTENT_SUBENTRY
     le_zero(&pe.entry,sizeof pe.entry);pe.subentry_selected=0;
+#endif
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    pe_need(!pe.loop.scope && !pe_decoding,PE_REENTRY,240);
+    pe.loop.route=pe.loop.choice_complete=0;
+    le_zero(&pe.loop.choice,sizeof pe.loop.choice);
 #endif
     le_zero(&pe.p,sizeof pe.p);le_zero(&pe.ingress,sizeof pe.ingress);le_zero(&pe.before,sizeof pe.before);
     le_zero(&pe.after,sizeof pe.after);le_zero(&pe.unexpected_frame,sizeof pe.unexpected_frame);
@@ -994,6 +1055,10 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
        RCC_TEST(7,PE_SLOT(publication).header.rseq_address==r->address) &&
        RCC_TEST(8,PE_SLOT(publication).header.rseq_length==r->length) && RCC_TEST(9,PE_SLOT(publication).header.rseq_signature==r->signature)) {
         pe_need(ped_permitted() && !pe_bytes(),PE_PUBLICATION,10);pe.warm=1;
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        pe.loop.route=pe_payload()->plan.version;
+        pe_need(li2_lpr_header(pe_payload()->header.version,pe_payload()->header.plan_policy,pe.loop.route),PE_PLAN,243);
+#endif
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
         rcc_plan(pe.subentry_selected?2U:1U);
 #endif
@@ -1014,6 +1079,11 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         pe_need(!li2_mg_table_build(pe.exclusions,n,pe.p.table,&pe.candidate.plan.table),PE_PLAN,0);
         uintptr_t pages[2]={pe.p.source[0],pe.p.source[1]};
         for(unsigned i=0;i<2;i++)copy(pe.candidate.plan.source[i],s->key.page[i].bytes,PAGE);
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        pe_need(plr_scope_enter(PLR_COLD),PE_REENTRY,243);
+        pe.build_started=1;ped_count(PGC_REF(cold_attempts));
+        pe.build_result=plr_cold(s,pages);
+#else
         pe.build_started=1;pe_decoding=1;ped_count(PGC_REF(cold_attempts));__asm__ volatile("":::"memory");
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
         pe.build_result=li2_pf_plan_pages(pages,pe.candidate.plan.source,s->key.entry,
@@ -1027,8 +1097,14 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
             &pe.p.layout,&pe.candidate.plan.table,&pe.cold,&pe.miss);
 #endif
 #endif
+#endif
         pe.build_returned=1;
         if(pe.build_result) {
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+            pe_need(plr_miss_value() && pe.miss.reason>0 &&
+                (pe.miss.reason<LI2_PGD_REASON_COUNT || pe.miss.reason==LI2_PFD_BACKWARD_UNSUPPORTED),
+                PE_PLAN,pe.build_result);
+#else
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
             pe_need(li2_pfr_miss_valid(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild) &&
                 pe.miss.reason>0 && (pe.miss.reason<LI2_PGD_REASON_COUNT ||
@@ -1042,17 +1118,27 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
                 pe.miss.reason>0 && pe.miss.reason<LI2_PGD_REASON_COUNT,PE_PLAN,pe.build_result);
 #endif
 #endif
+#endif
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
             if(pe.miss.reason==LI2_PFD_BACKWARD_UNSUPPORTED)ped_count(&pe.pf_backward_refused);
             else
 #endif
             {ped_count(PGC_MISS_REF(pe.miss.reason));}
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+            plr_scope_leave(PLR_COLD);
+#else
             pe_decoding=0;selected_initialized();
+#endif
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
             rcc_plan(3);
 #endif
             return 0;
         }
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        pe_need(pe.loop.choice_complete==1 && li2_lpr_policy(pe.loop.route) &&
+            pe.cold.version==pe.loop.route && pe.miss.version==pe.loop.route &&
+            pe.cold.ready==1 && !pe.cold.result &&
+#else
 #ifdef LI2_PERSISTENT_DISPATCH
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
         pe_need(pe.cold.ready==1 && !pe.cold.result && pe.miss.version==LI2_PF_VERSION &&
@@ -1066,8 +1152,19 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
 #else
         pe_need(pe.cold.ready==1 && !pe.cold.result && pe.miss.version==1 &&
 #endif
+#endif
             !pe.miss.status && !pe.miss.reason && !pe.miss.site && !pe.miss.pc && !pe.miss.detail,
             PE_PLAN,pe.build_result);
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        int build=pe.loop.route==LI2_LP_VERSION?
+            li2_lp_compact_build(&pe.cold,&pe.rebuild,&pe.candidate.plan,&pe.loop.check):
+            li2_pf_compact_build(&pe.cold,&pe.rebuild,&pe.candidate.plan);
+        pe_need(!build,PE_PLAN,1);++pe.plan_proofs;
+        int validate=pe.loop.route==LI2_LP_VERSION?
+            li2_lp_compact_validate(&pe.candidate.plan,&pe.rebuild,&pe.compact_rebuild,&pe.loop.check):
+            li2_pf_compact_validate(&pe.candidate.plan,&pe.rebuild,&pe.compact_rebuild);
+        pe_need(!validate,PE_PLAN,2);++pe.plan_proofs;
+#else
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
         pe_need(!li2_pf_compact_build(&pe.cold,&pe.rebuild,&pe.candidate.plan),PE_PLAN,1);++pe.plan_proofs;
 #else
@@ -1086,11 +1183,16 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         pe_need(!li2_pg_compact_validate(&pe.candidate.plan,&pe.rebuild,&pe.compact_rebuild),PE_PLAN,2);++pe.plan_proofs;
 #endif
 #endif
+#endif
         pe_need(!li2_pg_rseq_cold(&pe.token,&pe.cold,uc),PE_RSEQ,1);++pe.none_proofs;
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
         rcc_plan(4);
 #endif
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        plr_scope_leave(PLR_COLD);
+#else
         __asm__ volatile("":::"memory");pe_decoding=0;selected_initialized();
+#endif
     }
     const struct li2_pg_compact *plan=pe.warm?&pe_payload()->plan:&pe.candidate.plan;
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
@@ -1143,6 +1245,9 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
         else ped_count(PGC_REF(hits));
 #else
         pe.p.generation=g->generation;pe.p.publication=1;pe.p.phase=LI2_PG_BOUND;ped_count(PGC_REF(hits));
+#endif
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        if(pe.loop.route==LI2_LP_VERSION)PLR_COUNT(hits12);
 #endif
         return pe_ready()?0:PE_PUBLICATION;
     }
@@ -1202,7 +1307,12 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
 #endif
     PE_SLOT(publication)=pe.candidate;struct pe_header *h=&PE_SLOT(publication).header;
     const struct li2_pg_rseq_progress *r=li2_pg_rseq_progress();
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    if(!li2_lpr_policy(pe.loop.route) || pe.loop.route!=PE_SLOT(publication).plan.version)return PE_PLAN;
+    h->version=LI2_LPR_HEADER_VERSION;h->plan_policy=pe.loop.route;h->layout=g->layout;
+#else
     h->version=1;h->layout=g->layout;
+#endif
     copy(h->member_generation,g->member_generation,sizeof g->member_generation);h->serial=g->build_serial;h->generation=g->generation;h->registry=(uintptr_t)&pe;
     h->generated=g->generated;h->spill=g->spill;h->table=pe.p.table;
     h->plan_proof=g->plan_proofs;h->none_proof=g->none_proofs;
@@ -1230,6 +1340,9 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
         g->proof_verified=i+1;
     }
     g->proof_complete=1;g->complete=1;pe.p.publication=1;ped_count(PGC_REF(publications));
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    if(pe.loop.route==LI2_LP_VERSION)PLR_COUNT(publications12);
+#endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO
     pe.retained[pe.selected_slot].identity.generation=g->generation;
     pe.selection=pe.retained[pe.selected_slot].identity;
@@ -1274,7 +1387,7 @@ int li2_pg_epoch_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,
 static int pe_exit_index(uintptr_t pc,uint64_t flags) {
     if(!pe_ready())return -2;
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
-    return li2_pf_compact_exit(&pe_payload()->plan,pc,flags);
+    return PLR_EXIT(&pe_payload()->plan,pc,flags);
 #else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
     return li2_pb_compact_exit(&pe_payload()->plan,pc,flags);
@@ -1299,7 +1412,11 @@ int li2_pg_epoch_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
 int li2_pg_epoch_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
     /* Runs before old owners, event accounting and every returning RAW. */
     li2_pg_rseq_preentry();
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    if(!pe_active && !pe_busy && !pe.loop.scope && selected_pending_route!=SELECTED_PERSISTENT_EPOCH)return 0;
+#else
     if(!pe_active && !pe_busy && selected_pending_route!=SELECTED_PERSISTENT_EPOCH)return 0;
+#endif
     if(pe_busy || pe_closing || pe_decoding || handling || !pe_active || !pe.redirected || !pg_slots(1) || !pg_refs(1) ||
        pe.p.phase!=LI2_PG_EXECUTING || selected_pending_route!=SELECTED_PERSISTENT_EPOCH ||
        selected_step_pending!=1 || pe.p.first_error || !pe_ready())return PE_REENTRY;
@@ -1324,7 +1441,7 @@ int li2_pg_epoch_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
        Donor recovery reads only initialized dirty spills; no blanket spill
        read or old-plan cast precedes its boundary-state validation. */
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
-    pe.recovery_result=li2_pf_compact_recover(&pe_payload()->plan,pc,raw,(uint64_t)g[REG_EFL],
+    pe.recovery_result=PLR_RECOVER(&pe_payload()->plan,pc,raw,(uint64_t)g[REG_EFL],
         (const uint64_t *)PE_SLOT(generation).spill,&pe.recovery_scratch,&pe.recovered);
 #else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
@@ -1397,6 +1514,9 @@ int li2_pg_epoch_cancel(const struct li2_pg_token *t,int sig,siginfo_t *si,ucont
     enum li2_chain_result *result) {
     if(!pe_token(t) || pe.p.phase!=LI2_PG_HELD || !pe_busy || pe_active || !result ||
        pe.consumed || pe.redirected || pe.p.opened_pages || pe_decoding ||
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+       !pe.build_returned || !plr_cancel_valid() ||
+#else
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
        !pe.build_returned || !li2_pfr_miss_valid(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild) ||
 #else
@@ -1404,6 +1524,7 @@ int li2_pg_epoch_cancel(const struct li2_pg_token *t,int sig,siginfo_t *si,ucont
        !pe.build_returned || !li2_pbr_miss_valid(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild) ||
 #else
        !pe.build_returned || !li2_pg_miss_valid(&pe.cold,&pe.miss,pe.build_result) ||
+#endif
 #endif
 #endif
        !le_unchanged(&pe.before,si,uc) || li2_tf_chain_span_progress()->serial!=pe.p.transfer_serial ||
@@ -1440,7 +1561,7 @@ int li2_pg_epoch_cancel(const struct li2_pg_token *t,int sig,siginfo_t *si,ucont
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
     ptr2o_cancelled(sig,si,uc,*result);
 #endif
-#if defined(LI2_PERSISTENT_FUSED_CAPTURE) || defined(LI2_PERSISTENT_BLOCK_CAPTURE)
+#if defined(LI2_PERSISTENT_LOOP_CAPTURE) || defined(LI2_PERSISTENT_FUSED_CAPTURE) || defined(LI2_PERSISTENT_BLOCK_CAPTURE)
     pbo_cancelled(sig,si,uc,*result);
 #endif
     __asm__ volatile("":::"memory");pe_busy=0;pe.resuming=0;
@@ -1703,7 +1824,7 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
     pgo_miss_held();
 #endif
-#if defined(LI2_PERSISTENT_FUSED_CAPTURE) || defined(LI2_PERSISTENT_BLOCK_CAPTURE)
+#if defined(LI2_PERSISTENT_LOOP_CAPTURE) || defined(LI2_PERSISTENT_FUSED_CAPTURE) || defined(LI2_PERSISTENT_BLOCK_CAPTURE)
     pbo_miss_held();
 #endif
 #ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
@@ -1851,7 +1972,13 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
                   &work->view.member[direct->member].identity,sizeof(struct li2_pgd_ref)),PE_RELEASE,121);
         const struct li2_pg_source_key *source=&completed->member[direct->member].source;
         const uintptr_t pages[2]={source->page[0].identity.address,source->page[1].identity.address};
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        const struct li2_lpr_replay replay={completed->id,completed->serial,
+            completed->member[direct->member].header.plan_policy,direct->member,0};
+        selected_fetch_dispatch(sig,si,uc,&direct->original,&direct->direct,pages,direct->arm,direct->flags,&replay);
+#else
         selected_fetch_dispatch(sig,si,uc,&direct->original,&direct->direct,pages,direct->arm,direct->flags);
+#endif
         return;
     }
     selected_fetch(sig,si,uc);
@@ -1860,6 +1987,23 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 }
 static void selected_persistent_report(unsigned status,unsigned code,long detail) {
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    {
+        struct writer loop={.used=0};text(&loop,"LI2_LOOP_RUNTIME {\"version\":1");
+        field(&loop,",\"status\":",status);field(&loop,",\"failure_code\":",code);
+        field(&loop,",\"route\":",pe.loop.route);field(&loop,",\"scope\":",pe.loop.scope);
+        field(&loop,",\"choice_complete\":",pe.loop.choice_complete);
+#define PLR_FIELD(n) field(&loop,",\"" #n "\":",pe.loop.counts.n)
+        PLR_FIELD(chooser_attempts);PLR_FIELD(chooser_selected);PLR_FIELD(chooser_no_envelope);
+        PLR_FIELD(publications12);PLR_FIELD(hits12);PLR_FIELD(entries_with12);
+        PLR_FIELD(completed_with12);PLR_FIELD(historical_reconstructions);PLR_FIELD(actual_entries12);
+#undef PLR_FIELD
+        text(&loop,"}\n");
+        if(raw(SYS_write,report_fd<0?2:report_fd,(long)loop.bytes,loop.used,0,0,0)!=(long)loop.used) {
+            (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
+        }
+    }
+#endif
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
     {
         struct writer pf={.used=0};text(&pf,"LI2_PF_REFUSALS {\"version\":1");
@@ -1988,6 +2132,13 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #include "persistent_subentry_observe.inc"
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+#ifdef LI2_PERSISTENT_LOOP_CAPTURE
+#ifdef LI2_PERSISTENT_LOOP_LIFECYCLE_CAPTURE
+#include "persistent_loop_lifecycle_observe.inc"
+#else
+#include "persistent_loop_observe.inc"
+#endif
+#else
 #ifdef LI2_PERSISTENT_FUSED_CAPTURE
 #include "persistent_fused_observe.inc"
 #else
@@ -1995,6 +2146,7 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #include "persistent_block_observe.inc"
 #else
 #include "persistent_direct_frontier_observe.inc"
+#endif
 #endif
 #endif
 #endif
@@ -2010,3 +2162,54 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
 #include "persistent_cross_pair_observe.inc"
 #endif
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+unsigned li2_pg_loop_full_policy(const struct li2_pg_token *t,const struct li2_pg_plan *p) {
+    return pe_token(t) && p==&pe.cold && pe.p.phase==LI2_PG_HELD &&
+        pe.loop.scope==PLR_COLD && pe_decoding==1 && pe.loop.choice_complete==1 &&
+        pe.build_returned==1 && !pe.build_result && pe.plan_proofs==2 &&
+        li2_lpr_policy(pe.loop.route) && p->version==pe.loop.route?pe.loop.route:0;
+}
+unsigned li2_pg_loop_compact_policy(const struct li2_pg_token *t,const struct li2_pg_compact *p) {
+    if(!pe_token(t) || !p)return 0;
+    if(p==&pe.candidate.plan) {
+        return pe.p.phase==LI2_PG_HELD && !pe.warm && !pe_decoding && !pe.loop.scope &&
+            pe.loop.choice_complete==1 && pe.build_returned==1 && !pe.build_result &&
+            pe.plan_proofs==2 && pe.none_proofs==1 && li2_lpr_policy(pe.loop.route) &&
+            p->version==pe.loop.route?pe.loop.route:0;
+    }
+    for(unsigned i=0;i<LI2_PTR_SLOTS;i++) {
+        const struct li2_ptr_slot *s=&pe.retained[i];
+        if(!s->generation.installed || p!=&((const struct pe_payload *)s->proof)->plan)continue;
+        if(!ptr_stored(i))return 0;
+        const struct pe_header *h=&s->publication.header;
+        return li2_lpr_header(h->version,h->plan_policy,p->version)?p->version:0;
+    }
+    return 0;
+}
+int li2_pg_loop_replay_valid(const struct li2_lpr_replay *request,
+    const struct li2_span_decoded *original,const struct li2_dd_descriptor *direct,
+    const uintptr_t pages[2],unsigned arm,uint64_t flags,const struct li2_decoded *fresh,
+    uint64_t logical_flags) {
+    const struct pda_work *w=&pe.domain.work;
+    if(!request || !original || !direct || !pages || !fresh || request->reserved ||
+       !li2_lpr_policy((unsigned)request->policy) || request->policy>UINT32_MAX ||
+       pe_active || pe_busy || pe_decoding || pe.loop.scope || pe.p.phase!=LI2_PG_CLOSED ||
+       pe.p.completion_permit!=1 || w->completion!=1 || w->receipt>=LI2_PGD_RECEIPTS ||
+       request->member!=w->exit_member)return 0;
+    const struct pda_completion *c=&pe.domain.completion[w->receipt];
+    if(c->id!=request->id || c->id!=pe.domain.next_id || c->serial!=request->serial ||
+       c->serial!=pe.p.serial || request->member>=c->count || !pda_receipt(c))return 0;
+    const struct pda_direct_exit *e=&c->direct_exit;
+    const struct pda_member_completion *m=&c->member[request->member];
+    if(e->complete!=1 || e->member!=request->member || e->index!=pe.exit_index ||
+       original!=&e->original || direct!=&e->direct || arm!=e->arm || flags!=e->flags ||
+       m->header.plan_policy!=request->policy || pages[0]!=m->source.page[0].identity.address ||
+       pages[1]!=m->source.page[1].identity.address ||
+       !equal(&m->identity,&w->view.member[request->member].identity,sizeof m->identity))return 0;
+    if(request->policy==LI2_PF_VERSION)
+        return li2_pfr_direct_replay_valid(original,direct,pages,arm,flags,fresh,logical_flags);
+    return li2_lpr_replay_value(original,direct,arm,flags,fresh,logical_flags);
+}
+#endif
+#undef PLR_EXIT
+#undef PLR_RECOVER

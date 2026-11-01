@@ -3,7 +3,11 @@
 #include "bridge.h"
 #include "lifecycle_loader.h"
 #ifdef LI2_PERSISTENT_GROUP_COUNTERS
+#ifdef LI2_PERSISTENT_LOOP_COUNTERS
+#include "persistent_loop_counters.h"
+#else
 #include "persistent_group_counters.h"
+#endif
 #if defined(LI2_PERSISTENT_BLOCK_CENSUS)
 #include "persistent_block_census.h"
 #elif defined(LI2_REUSE_CENSUS)
@@ -328,6 +332,13 @@ static void selected_ret_resume_exit(int,siginfo_t *,ucontext_t *);
 #include "persistent_subentry_observe.h"
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+#ifdef LI2_PERSISTENT_LOOP_CAPTURE
+#ifdef LI2_PERSISTENT_LOOP_LIFECYCLE_CAPTURE
+#include "persistent_loop_lifecycle_observe.h"
+#else
+#include "persistent_loop_observe.h"
+#endif
+#else
 #ifdef LI2_PERSISTENT_FUSED_CAPTURE
 #include "persistent_fused_observe.h"
 #else
@@ -335,6 +346,7 @@ static void selected_ret_resume_exit(int,siginfo_t *,ucontext_t *);
 #include "persistent_block_observe.h"
 #else
 #include "persistent_direct_frontier_observe.h"
+#endif
 #endif
 #endif
 #endif
@@ -742,7 +754,11 @@ static void protect(uintptr_t first,size_t bytes) {
     protected[protected_count++]=(struct li2_fork_range){first,first+bytes};
 }
 #ifdef LI2_PERSISTENT_GROUP_COUNTERS
+#ifdef LI2_PERSISTENT_LOOP_COUNTERS
+#include "persistent_loop_counters.inc"
+#else
 #include "persistent_group_counters.inc"
+#endif
 #if defined(LI2_PERSISTENT_BLOCK_CENSUS)
 #include "persistent_block_census_attach.inc"
 #elif defined(LI2_REUSE_CENSUS)

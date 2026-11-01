@@ -499,10 +499,19 @@ static void selected_owned_syscall(ucontext_t *context,uint64_t flags) {
 #endif
 #endif
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+#include "persistent_loop_runtime.h"
+#else
 #include "persistent_fused_runtime.h"
+#endif
 static void selected_fetch_dispatch(int sig,siginfo_t *si,ucontext_t *context,
     const struct li2_span_decoded *direct_original,const struct li2_dd_descriptor *direct_descriptor,
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    const uintptr_t direct_source[2],unsigned direct_arm,uint64_t direct_flags,
+    const struct li2_lpr_replay *direct_replay) {
+#else
     const uintptr_t direct_source[2],unsigned direct_arm,uint64_t direct_flags) {
+#endif
 #else
 static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
 #endif
@@ -520,6 +529,9 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
        Normal fetch keeps its original clipped-first/TRUNCATED-retry policy. */
     checked((direct_original && direct_descriptor && direct_source) ||
         (!direct_original && !direct_descriptor && !direct_source && !direct_arm && !direct_flags),1788,0);
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    checked((direct_original && direct_replay) || (!direct_original && !direct_replay),1788,4);
+#endif
     if(direct_original) {
         checked(!selected_selftesting && direct_original->decoded.pc==pc,1788,1);
         selected_prepare_window(pc,direct_original->decoded.available);
@@ -530,8 +542,13 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
     checked((uintptr_t)si->si_addr>=pc && (uintptr_t)si->si_addr<selected_decoded.next_pc,627,0);
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
     /* Reject a malformed route before any selected-effect helper can run. */
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    if(direct_original)checked(li2_pg_loop_replay_valid(direct_replay,direct_original,direct_descriptor,
+        direct_source,direct_arm,direct_flags,&selected_decoded,flags),1788,3);
+#else
     if(direct_original)checked(li2_pfr_direct_replay_valid(direct_original,direct_descriptor,
         direct_source,direct_arm,direct_flags,&selected_decoded,flags),1788,3);
+#endif
 #endif
     if(!selected_selftesting) {
         if(!first_target_pc)first_target_pc=pc;
@@ -632,7 +649,11 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
 }
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
 static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    selected_fetch_dispatch(sig,si,context,0,0,0,0,0,0);
+#else
     selected_fetch_dispatch(sig,si,context,0,0,0,0,0);
+#endif
 }
 #endif
 static void selected_selftest(void) {

@@ -30,6 +30,21 @@ LODSQ_SOURCE = {
 def fixed_domain_source(name,path):
     """Authenticate the exact current source and its exact historical inverse."""
     original=FIXED_DOMAIN[name]
+    # An inactive scalar-read module must leave the whole old domain exact.
+    # Return the actual successor identity so policy and compiler-M joins still
+    # bind the current source, rather than relabelling it with the old hash.
+    if name=='decoder/src/region.rs':
+        raw=path.read_bytes();actual=(len(raw),H(raw))
+        if actual==original:return original
+        expected=(51778,'eeb0a6185875f8b5d1552fdf58bade31e7dd53465c8eb5921902a96945ddf2df')
+        addition=(b'    // Separate version-2 read-only additions; old descriptor/NONE APIs stay exact.\n'
+                  b'    #[cfg(feature = "scalar-read")]\n'
+                  b'    mod scalar_read {\n        include!("scalar_read.rs");\n    }\n')
+        need(actual==expected,'exact complete scalar-read module source successor')
+        need(raw.count(addition)==1,'one exact inactive scalar-read module inverse')
+        prior=raw.replace(addition,b'',1)
+        need((len(prior),H(prior))==original,'whole original scalar/span/NONE domain inverse')
+        return expected
     if name not in LODSQ_SOURCE:return original
     expected,inverse=LODSQ_SOURCE[name];raw=path.read_bytes()
     need((len(raw),H(raw))==expected,'exact complete LODSQ source successor '+name)

@@ -227,6 +227,10 @@ int li2_pg_source_validate(const struct li2_pg_token *t,const struct li2_pg_comp
     const struct li2_pg_sources *s=&pg_source.p.source;
     if(!pgs_token(t) || pg_source.p.first_error ||
        (pg_source.p.phase!=LI2_PGS_HELD && pg_source.p.phase!=LI2_PGS_RX && pg_source.p.phase!=LI2_PGS_CLOSED) ||
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+       !p || !li2_lpr_policy(p->version) || li2_pg_loop_compact_policy(t,p)!=p->version ||
+       p->bytes!=sizeof *p || p->ready!=1 || p->result ||
+#else
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
        !p || p->version!=LI2_PF_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
 #else
@@ -234,6 +238,7 @@ int li2_pg_source_validate(const struct li2_pg_token *t,const struct li2_pg_comp
        !p || p->version!=LI2_PB_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
 #else
        !p || p->version!=LI2_PG_COMPACT_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
+#endif
 #endif
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY
@@ -428,6 +433,10 @@ static int pgsd_member(const struct li2_pgd_member *m,const struct li2_pg_source
        !r->root || r->root!=m->key->entry || r->root!=p->entry ||
        !pgs_layout(&r->layout) || r->layout.directory!=directory ||
        !equal(&r->layout,&p->layout,sizeof p->layout) ||
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+       !li2_lpr_policy(p->version) || li2_pg_loop_compact_policy(&pg_source.token,p)!=p->version ||
+       p->bytes!=sizeof *p || p->ready!=1 || p->result ||
+#else
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
        p->version!=LI2_PF_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
 #else
@@ -435,6 +444,7 @@ static int pgsd_member(const struct li2_pgd_member *m,const struct li2_pg_source
        p->version!=LI2_PB_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
 #else
        p->version!=LI2_PG_COMPACT_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
+#endif
 #endif
 #endif
        p->reserved || p->reserved2 || !p->heads || p->heads>LI2_PG_HEADS ||

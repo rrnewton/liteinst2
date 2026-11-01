@@ -329,6 +329,10 @@ static int pgr_add_footprint(const struct li2_ag_descriptor *a,const ucontext_t 
 #endif
 int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,const ucontext_t *uc) {
     if(!pgr_token(t) || pg_rseq.first_error || !pg_rseq.seed_complete || !region_rseq_current(uc) ||
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+       !p || !li2_lpr_policy(p->version) || li2_pg_loop_full_policy(t,p)!=p->version ||
+       p->bytes!=sizeof *p || p->ready!=1 || p->result ||
+#else
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
        !p || p->version!=LI2_PF_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
 #else
@@ -336,6 +340,7 @@ int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,co
        !p || p->version!=LI2_PB_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
 #else
        !p || p->version!=LI2_PG_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
+#endif
 #endif
 #endif
        p->reserved || p->reserved2 ||
@@ -371,8 +376,14 @@ int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,co
             window[n]=p->source[page][at-p->page[page]];
         }
         struct li2_span_decoded actual={0};
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        int describe=p->version==LI2_LP_VERSION?li2_lr_describe(d->decoded.pc,window,n,&actual):
+            (int)li2_decoder_span_describe(d->decoded.pc,window,n,&actual);
+        if(describe || !region_rseq_equal(d,&actual,sizeof actual))return pgr_bad(LI2_RSEQ_PLAN,502);
+#else
         if(li2_decoder_span_describe(d->decoded.pc,window,n,&actual) ||
            !region_rseq_equal(d,&actual,sizeof actual))return pgr_bad(LI2_RSEQ_PLAN,502);
+#endif
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
         if(h->kind!=LI2_PE_NONE && h->kind!=LI2_PE_MOV && h->kind!=LI2_PG_DIRECT)return pgr_bad(LI2_RSEQ_PLAN,550);
 #else
@@ -381,12 +392,21 @@ int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,co
 #endif
 #endif
         if(h->kind==LI2_PE_NONE) {
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+            if(p->version==LI2_LP_VERSION) {
+                if(actual.ready!=1 || actual.refusal || li2_lr_none(d->decoded.pc,window,n,&actual))
+                    return pgr_bad(LI2_RSEQ_PLAN,503);
+            } else {
+#endif
             struct li2_write_footprint independent={0};
             if(actual.ready!=1 || actual.refusal || li2_decoder_link_none(d->decoded.pc,window,n,&independent) ||
                independent.abi_version!=1 || independent.policy!=LI2_WRITE_NONE || independent.first || independent.end ||
                independent.pc!=d->decoded.pc || independent.next_pc!=d->decoded.next_pc ||
                independent.code!=d->decoded.code || independent.length!=h->source_length)
                 return pgr_bad(LI2_RSEQ_PLAN,503);
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+            }
+#endif
             int e=decoded_footprint(&actual.decoded,uc,1);if(e)return pgr_bad((unsigned)e,504);
         } else if(h->kind==LI2_PE_MOV) {
             struct li2_mg_store actual_store={0};

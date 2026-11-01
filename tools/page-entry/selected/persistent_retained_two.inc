@@ -91,7 +91,12 @@ static int ptr_stored(unsigned index) {
 #ifdef LI2_PERSISTENT_UNREGISTERED
         pe_lifetime_stored(&p->header) &&
 #endif
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        li2_lpr_header(p->header.version,p->header.plan_policy,p->plan.version) &&
+        p->header.serial==g->build_serial &&
+#else
         p->header.version==1 && p->header.serial==g->build_serial &&
+#endif
         p->header.generation==g->generation && p->header.registry==(uintptr_t)&pe &&
         p->header.generated==g->generated && p->header.spill==g->spill &&
         pg_layout_equal(&p->header.layout,&g->layout) &&
@@ -100,6 +105,9 @@ static int ptr_stored(unsigned index) {
         p->header.plan_proof==g->plan_proofs && g->plan_proofs==2 &&
         p->header.none_proof==g->none_proofs && g->none_proofs==1 &&
         equal(p->header.archive,pe_archive,32) && equal(p->header.policy,pe_policy,32) &&
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        li2_lpr_policy(p->plan.version) && p->plan.bytes==sizeof p->plan &&
+#else
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
         p->plan.version==LI2_PF_VERSION && p->plan.bytes==sizeof p->plan &&
 #else
@@ -107,6 +115,7 @@ static int ptr_stored(unsigned index) {
         p->plan.version==LI2_PB_VERSION && p->plan.bytes==sizeof p->plan &&
 #else
         p->plan.version==LI2_PG_COMPACT_VERSION && p->plan.bytes==sizeof p->plan &&
+#endif
 #endif
 #endif
         p->plan.ready==1 && !p->plan.result && pg_layout_equal(&p->plan.layout,&g->layout) &&

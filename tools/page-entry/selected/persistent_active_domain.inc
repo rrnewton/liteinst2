@@ -33,6 +33,11 @@ static int pda_direct_exit_value(const struct pda_completion *c) {
        !e->heads || e->heads>LI2_PG_HEADS || e->head>=e->heads ||
        !e->exits || e->exits>LI2_PG_BOUNDARIES || e->index>=e->exits || e->arm>1 ||
        (e->flags&(SELECTED_TF|SELECTED_RF))!=SELECTED_RF)return 0;
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    if(c->member[e->member].header.plan_policy==LI2_LP_VERSION)return plr_direct_value(c);
+    if(c->member[e->member].header.plan_policy!=LI2_PF_VERSION ||
+       !plr_fallback_value(&c->member[e->member]))return 0;
+#endif
     const struct li2_pg_source_key *s=&c->member[e->member].source;
     if(s->page[0].identity.address>=s->page[1].identity.address)return 0;
     for(unsigned i=0;i<2;i++)if((s->page[i].identity.address&(PAGE-1)) ||
@@ -110,7 +115,9 @@ static int pda_receipt(const struct pda_completion *c) {
     if(!c || !c->id || c->id>pe.domain.next_id || !c->serial || c->serial>pe.next_serial ||
        c->complete!=1 || !c->count || c->count>LI2_PGD_MEMBERS)return 0;
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER
+#ifndef LI2_PERSISTENT_LOOP_RUNTIME
     if(!pda_direct_exit_value(c))return 0;
+#endif
 #endif
 #ifdef LI2_PERSISTENT_RET_DISPATCH
     if(!pda_ret_exit_value(c))return 0;
@@ -161,7 +168,12 @@ static int pda_receipt(const struct pda_completion *c) {
 #else
            !li2_pgd_source_pair_equal(&s->source.key,&m->source) ||
 #endif
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+           !li2_lpr_header(m->header.version,m->header.plan_policy,(unsigned)m->header.plan_policy) ||
+           m->header.generation!=v->generation || m->header.serial!=g->build_serial ||
+#else
            m->header.version!=1 || m->header.generation!=v->generation || m->header.serial!=g->build_serial ||
+#endif
            m->header.registry!=(uintptr_t)&pe || m->header.generated!=g->generated ||
            m->header.spill!=g->spill || !pg_layout_equal(&m->header.layout,&g->layout) ||
 #ifdef LI2_PERSISTENT_UNREGISTERED
@@ -203,6 +215,9 @@ static int pda_receipt(const struct pda_completion *c) {
         !pda_query(&s->closed[j],&s->layout,j,PROT_READ) ||
         !equal(&s->opened[j],&d->open[0][j],sizeof s->opened[j]) ||
         !equal(&s->closed[j],&d->close[0][j],sizeof s->closed[j]))return 0;
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    if(!pda_direct_exit_value(c))return 0;
+#endif
     return 1;
 }
 static int pda_permitted(unsigned slot) {
@@ -545,8 +560,28 @@ static int pda_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,uc
     pda_select(w->primary,w->primary_bank);
     if(!pe_identity() || !le_quiet(&pe.ref) || !pda_ready(1) ||
        !le_unchanged(&pe.before,si,uc) || sig!=SIGTRAP)return PE_FRAME;
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    /* Count the actual authenticated redirect, not membership of a peer. */
+    unsigned actual_loop_entry=0,entry_members=0;
+    for(unsigned i=0;i<w->view.count;i++) {
+        const struct li2_pgd_member *m=&w->view.member[i];
+        if(m->identity.slot!=w->view.entry.slot || m->identity.bank!=w->view.entry.bank ||
+           m->identity.generation!=w->view.entry.generation)continue;
+        struct li2_pgs_target target;
+        if(li2_pgs_head_lookup(m->plan,w->view.entry.target.pc,&target)!=1 ||
+           !equal(&target,&w->view.entry.target,sizeof target))return PE_FRAME;
+        ++entry_members;actual_loop_entry=m->plan->version==LI2_LP_VERSION;
+    }
+    if(entry_members!=1)return PE_FRAME;
+#endif
     pe.p.phase=LI2_PG_EXECUTING;pe.redirected=1;ped_count(PGC_REF(entries));
     if(w->view.count==2)ped_count(&pe.domain.dual_entries);
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    unsigned loop_entry=0;
+    for(unsigned i=0;i<w->view.count;i++)loop_entry|=w->view.member[i].plan->version==LI2_LP_VERSION;
+    if(loop_entry)PLR_COUNT(entries_with12);
+    if(actual_loop_entry)PLR_COUNT(actual_entries12);
+#endif
     selected_step_pending=1;selected_pending_route=SELECTED_PERSISTENT_EPOCH;pe_active=1;
 #ifdef LI2_PERSISTENT_SUBENTRY
     if(w->view.entry.target.pc!=w->view.entry.target.root)ped_count(&pe.subentry_entries);
@@ -558,7 +593,11 @@ static int pda_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,uc
 }
 static int pda_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
     li2_pg_rseq_preentry();
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    if(!pe_active && !pe_busy && !pe.loop.scope && selected_pending_route!=SELECTED_PERSISTENT_EPOCH)return 0;
+#else
     if(!pe_active && !pe_busy && selected_pending_route!=SELECTED_PERSISTENT_EPOCH)return 0;
+#endif
     if(pe_busy || pe_closing || pe_decoding || handling || !pe_active || !pe.redirected ||
        pe.p.phase!=LI2_PG_EXECUTING || selected_pending_route!=SELECTED_PERSISTENT_EPOCH ||
        selected_step_pending!=1 || pe.p.first_error || !pda_ready(1))return PE_REENTRY;
@@ -576,7 +615,7 @@ static int pda_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
     unsigned member=exit>=0?0:LI2_PGD_MEMBERS;
     for(unsigned i=1;i<w->view.count;i++) {
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
-        int candidate=li2_pf_compact_exit(w->view.member[i].plan,pc,(uint64_t)g[REG_EFL]);
+        int candidate=PLR_EXIT(w->view.member[i].plan,pc,(uint64_t)g[REG_EFL]);
 #else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
         int candidate=li2_pb_compact_exit(w->view.member[i].plan,pc,(uint64_t)g[REG_EFL]);
@@ -631,7 +670,7 @@ static int pda_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
     }
 #endif
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
-    pe.recovery_result=li2_pf_compact_recover(m->plan,pc,raw,(uint64_t)g[REG_EFL],
+    pe.recovery_result=PLR_RECOVER(m->plan,pc,raw,(uint64_t)g[REG_EFL],
         (const uint64_t *)m->identity.layout.spill,&pe.recovery_scratch,&pe.recovered);
 #else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
@@ -707,7 +746,7 @@ static void pda_complete(void) {
     const uintptr_t exit_pc=(uintptr_t)pe.after.frame.greg[REG_RIP];
     const uint64_t exit_flags=(uint64_t)pe.after.frame.greg[REG_EFL];
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
-    pe_need(li2_pf_compact_exit(closed,exit_pc,exit_flags)==(int)pe.exit_index,PE_RELEASE,116);
+    pe_need(PLR_EXIT(closed,exit_pc,exit_flags)==(int)pe.exit_index,PE_RELEASE,116);
 #else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
     pe_need(li2_pb_compact_exit(closed,exit_pc,exit_flags)==(int)pe.exit_index,PE_RELEASE,116);
@@ -738,6 +777,11 @@ static void pda_complete(void) {
     if(w->view.entry.target.pc!=w->view.entry.target.root)ped_count(&pe.subentry_completed);
 #endif
     w->completion=1;ped_count(PGC_REF(completed));pe.p.completion_permit=1;
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    unsigned loop_completed=0;
+    for(unsigned i=0;i<c->count;i++)loop_completed|=c->member[i].header.plan_policy==LI2_LP_VERSION;
+    if(loop_completed)PLR_COUNT(completed_with12);
+#endif
 }
 static _Noreturn void pda_abort(unsigned code,long detail) {
     /* A corrupt directory/index cannot become an out-of-bounds cleanup read.

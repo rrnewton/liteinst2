@@ -1,11 +1,15 @@
 #ifndef LI2_PERSISTENT_GROUP_LIFETIME_H
 #define LI2_PERSISTENT_GROUP_LIFETIME_H
 #include "persistent_group_compact.h"
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+#include "persistent_loop_runtime.h"
+#else
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
 #include "persistent_fused_runtime.h"
 #else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
 #include "persistent_block_runtime.h"
+#endif
 #endif
 #endif
 #include "tf_span_transfer.h"
@@ -14,6 +18,10 @@
 struct li2_pg_epoch;
 struct li2_pg_generation;
 struct li2_pg_token { const struct li2_pg_epoch *owner;uint64_t serial; };
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+unsigned li2_pg_loop_full_policy(const struct li2_pg_token *,const struct li2_pg_plan *);
+unsigned li2_pg_loop_compact_policy(const struct li2_pg_token *,const struct li2_pg_compact *);
+#endif
 struct li2_pg_source_page {
     struct li2_fetch_page identity;
     struct li2_fetch_backing backing;

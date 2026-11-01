@@ -64,6 +64,21 @@ struct pda_work {
     struct li2_private_code_query directory_closed;
     struct li2_jd_domain_directory directory;
 };
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+struct plr_counts {
+    uint64_t chooser_attempts,chooser_selected,chooser_no_envelope;
+    uint64_t publications12,hits12,entries_with12,completed_with12,historical_reconstructions,actual_entries12;
+};
+struct plr_state {
+    volatile sig_atomic_t scope;
+    unsigned route,choice_complete;
+    struct plr_counts counts;
+    struct li2_le_witness choice,check,historical;
+    uintptr_t pages[2];
+    unsigned char source[2][LI2_REGION_PAGE];
+    struct li2_dd_plan direct;
+};
+#endif
 struct pda_state {
     uintptr_t directory;
     unsigned allocated,registered;
