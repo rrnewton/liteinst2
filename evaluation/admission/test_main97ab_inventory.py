@@ -629,7 +629,7 @@ class Main97abInventoryTests(unittest.TestCase):
         # The complete former current catalog remains the sole predecessor.
         comparison = current.DATA['source_successor_c110']
         comparison_before = current.before_c110(actual)
-        comparison_rows = actual['harness_test_counts']['workspace_tests']
+        comparison_rows = current.before_667921(actual)['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(comparison_before), current.ADMISSION_PREVIOUS)
         self.assertEqual(comparison_before['harness_test_counts']['workspace_tests'], clock_rows)
         self.assertEqual((len(comparison_rows), sum(x['tests'] for x in comparison_rows.values()),
@@ -686,6 +686,74 @@ class Main97abInventoryTests(unittest.TestCase):
                     if candidate != target: return read(candidate)
                     if missing: raise FileNotFoundError(path)
                     return raw + b'\n'
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                        current.require_sources()
+
+
+        # Early-control contributes 15 new declarations and two complete
+        # inherited 35-test populations; all earlier catalogues remain exact.
+        early = current.DATA['source_successor_667921']
+        early_before = current.before_667921(actual)
+        early_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(early_before), current.EARLY_PREVIOUS)
+        self.assertEqual(early_before['harness_test_counts']['workspace_tests'], comparison_rows)
+        self.assertEqual((len(early_rows), sum(x['tests'] for x in early_rows.values()),
+                          sum(x['ignored'] for x in early_rows.values())), (118, 4541, 39))
+        self.assertEqual((early['default_method_additions'], early['new_method_declarations'],
+                          early['inherited_test_instances'], early['default_harness_changes'],
+                          early['default_method_removals'], early['default_doctest_additions'],
+                          early['default_ignore_changes'], early['recorder_identity_changes']),
+                         (85, 15, 70, 3, 0, 0, 0, 0))
+        self.assertEqual(sum(len(v) * len(early['default_method_instances'][p])
+                             for p,v in early['added_default_methods'].items()), 15)
+        self.assertEqual(sum(len(v) * len(early['inherited_method_instances'][p])
+                             for p,v in early['inherited_default_methods'].items()), 70)
+        self.assertEqual(early['inherited_support']['tests'], 35)
+        self.assertEqual((len(early['inherited_support']['files']), len(early['inherited_support']['edges'])), (37, 36))
+        self.assertEqual(early['added_ignored_methods'], {})
+        self.assertEqual((actual['recorder_tests'], actual['harness_test_counts']['serial_launch']),
+                         (early_before['recorder_tests'], early_before['harness_test_counts']['serial_launch']))
+        for wrong in (early_before, comparison_before, clock_before, overlap_before, rx_before,
+                      entry_before, placement_before, phase_catalog, native_indexed, old):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_667921(wrong)
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                inventory.require_current(wrong)
+        for name, change in early['workspace_changes'].items():
+            self.assertEqual(early_rows[name], change['current'])
+            self.assertEqual(comparison_rows.get(name), change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(early_rows[name][field]), early_rows[name][field]+1):
+                    wrong = copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_667921(wrong)
+            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_667921(wrong)
+        early_stimuli = [(p, 'fn '+n+'(', 'fn '+n+'_wrong(')
+            for p,names in early['added_default_methods'].items() for n in names]
+        early_stimuli += [(p, literal, replacement) for p,literal,replacement in early['ignore_stimuli']]
+        early_stimuli += [(p, literal, '') for p,literals in early['module_chains'].items() for literal in literals]
+        self.assertEqual(len(early_stimuli), 44)
+        for path, literal, replacement in early_stimuli:
+            target=current.ROOT/path; raw=read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong=raw.replace(literal.encode(), replacement.encode())
+            def changed(candidate): return wrong if candidate==target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path:hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e:b if p!=path else (_ for _ in ()).throw(AssertionError('early declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        for path in early['source_paths']:
+            target=current.ROOT/path; raw=read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate!=target:return read(candidate)
+                    if missing:raise FileNotFoundError(path)
+                    return raw+b'\n'
                 with patch.object(Path, 'read_bytes', changed):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
                         current.require_sources()
@@ -843,6 +911,24 @@ class Main97abInventoryTests(unittest.TestCase):
                 with patch.dict(change, previous=PublishedCopy(change['previous'])):
                     result = current.before_c110(supplied)
             self.assertEqual(result, comparison_before)
+            self.assertEqual(supplied, actual)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+
+        # Preserve private ownership through the newly added outer transition.
+        for source in ('declared', 'metadata'):
+            supplied=copy.deepcopy(actual)
+            change=current.DATA['source_successor_667921']['workspace_changes']['unit/liteinst2/lib']
+            published.clear()
+            if source=='declared':
+                supplied['harness_test_counts']['serial_launch']=PublishedCopy(supplied['harness_test_counts']['serial_launch'])
+                result=current.before_667921(supplied)
+            else:
+                with patch.dict(change, previous=PublishedCopy(change['previous'])):
+                    result=current.before_667921(supplied)
+            self.assertEqual(result, early_before)
             self.assertEqual(supplied, actual)
             self.assertEqual(len(published), 1)
             self.assertFalse(mutable_ids(result) & mutable_ids(supplied))

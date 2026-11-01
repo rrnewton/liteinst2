@@ -39,6 +39,13 @@ supplies independent expected results for every input. This path keeps the
 existing scalar ABI, input bounds, timing gates and caller lifetime obligations;
 the table does not establish permission to execute native code.
 
+For independent managed point observations, `DataFlagSession::point_observation_actions()`
+selects the core's early gate for optional callbacks and preserves after-capture
+dispatch for mandatory callbacks. This can bypass full context capture while
+disabled. The existing registry reservation, generation and eventual-visibility
+contracts remain; this method does not convert entry/return interval hooks.
+See the [finite point qualification](../../evaluation/early-controlled-point/README.md).
+
 ## Entry-to-exit sampling
 
 An armed entry callback reads the original return address from the application

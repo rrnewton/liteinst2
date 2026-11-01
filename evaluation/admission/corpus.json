@@ -6249,6 +6249,18 @@
         "ignored": 0,
         "tests": 3
       },
+      "test/early_control_oracle": {
+        "ignored": 0,
+        "tests": 37
+      },
+      "test/early_control_planning": {
+        "ignored": 0,
+        "tests": 2
+      },
+      "test/early_control_race_oracle": {
+        "ignored": 0,
+        "tests": 36
+      },
       "test/elf_exec_provider_contract": {
         "ignored": 0,
         "tests": 8
@@ -6503,7 +6515,7 @@
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 514
+        "tests": 523
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
@@ -6547,7 +6559,7 @@
       },
       "unit/rapid_profiler/lib": {
         "ignored": 33,
-        "tests": 580
+        "tests": 581
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,

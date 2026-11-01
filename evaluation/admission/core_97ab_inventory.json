@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "1b6fb7c4c5238712fcf8f4ff71429c641ddc739d09b8e51af24622d31e82d290",
+  "current_corpus_sha256": "75071fe60ece8bb380ba8ae5442fb9d6f52d46c4b17b55f33a24bb48efadfc4b",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -348,7 +348,7 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "d36b0532c5a9e6f4ce6c25c40636e39daea9632b2a64e152318cedd80aa7d771",
+      "current_sha256": "df889c819da0cc1dba95c683e913e618d3d6574acc429f6b124112ebf6d731d8",
       "edits": [
         [
           18284,
@@ -356,13 +356,13 @@
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          21912,
-          50094,
+          22223,
+          55530,
           ""
         ],
         [
-          59956,
-          61068,
+          65081,
+          67253,
           ""
         ]
       ],
@@ -705,6 +705,17 @@
       "macro_calls": [],
       "templates": []
     },
+    "src/controls.rs": {
+      "all": [
+        "identity_is_shared_by_clones_and_independent_of_enabled_state",
+        "borrowed_token_has_one_word_layout_and_matches_only_its_live_owner",
+        "managed_clones_refuse_both_setters_and_writer_is_exactly_bound",
+        "early_control_load_descriptor_is_the_exact_retained_atomic_field"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "src/emission/artifact_frame_tests.rs": {
       "all": [
         "opaque_artifact_trace_preserves_exact_image_and_every_requirement",
@@ -1008,11 +1019,52 @@
       "macro_calls": [],
       "templates": []
     },
+    "src/trampoline/early_control/tests.rs": {
+      "all": [
+        "encoded_paths_restore_rcx_rsp_and_leave_the_red_zone_untouched",
+        "final_byte_changes_to_load_restore_and_both_branches_refuse",
+        "owner_label_and_instruction_offset_corruption_refuse",
+        "mixed_actions_preserve_old_output_controls_maps_and_owner_lifetime",
+        "internal_branch_reaches_gate_but_rip_data_keeps_original_address",
+        "invalid_associations_and_unsupported_emission_profiles_refuse",
+        "prepared_gate_population_and_body_associations_are_required",
+        "rounded_two_page_bound_is_exact_and_does_not_restrict_old_profile"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "src/trampoline/fitting/tests.rs": {
       "all": [
         "prepared_bound_matches_ordinary_nop_jrcxz_and_hook_artifact_images",
         "prepared_emission_keeps_field_reach_and_fixed_fragment_refusals",
         "fitting_encoder_accounting_rejects_hidden_bytes_offsets_and_undersized_bound"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/early_control_oracle.rs": {
+      "all": [
+        "early_control_static_oracle_modes",
+        "early_control_static_straight_line"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/early_control_planning.rs": {
+      "all": [
+        "mixed_point_plan_retains_routes_controls_and_smaller_allocation_caps",
+        "point_planning_refuses_bad_geometry_semantics_and_resource_limits"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/early_control_race_oracle.rs": {
+      "all": [
+        "early_control_real_writer_races"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -1069,6 +1121,49 @@
       "macro_calls": [],
       "templates": []
     },
+    "tests/support/boundary_signal.rs": {
+      "all": [
+        "repeated_boundaries_keep_order_and_physical_identity",
+        "rejects_missing_terminal_roundtrip",
+        "rejects_duplicate_roundtrip",
+        "rejects_wrong_logical_pc",
+        "rejects_wrong_physical_pc",
+        "rejects_uncompleted_roundtrip"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/e9_common_planning_profile.rs": {
+      "all": [
+        "exact_caller_profile_and_whole_marker_must_agree"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/e9_common_recording.rs": {
+      "all": [
+        "exact_trailing_profile_preserves_legacy_arguments_and_rejects_aliases",
+        "entire_journal_append_and_unselected_state_are_exact",
+        "journal_owner_header_tail_and_existing_record_mutations_refuse",
+        "clean_call_stack_words_have_independent_offsets_and_full_tail",
+        "exact_clean_template_encodes_logical_argument_call_and_return",
+        "complete_hook_symbol_extent_and_load_bytes_are_exact"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/e9_common_router_contract.rs": {
+      "all": [
+        "exact_legacy_and_invalid_evex_markers",
+        "route_identity_and_explicit_opt_in"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tests/support/entry_veneer_artifact_oracle.rs": {
       "all": [
         "native_entry_veneer_artifact_both_source_orders_preserve_full_state",
@@ -1095,6 +1190,18 @@
       "macro_calls": [],
       "templates": []
     },
+    "tests/support/parked_signal.rs": {
+      "all": [
+        "rejects_frame_mutation",
+        "rejects_old_source_after_publication",
+        "rejects_extra_source_write",
+        "rejects_wrong_receipt_identity",
+        "rejects_failed_publication_status"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tests/support/quiescent_oracle.rs": {
       "all": [
         "campaign_initializer_keeps_default_memory_and_flags_exact",
@@ -1105,6 +1212,20 @@
         "rejects_simd_corruption",
         "rejects_application_memory_corruption",
         "rejects_redzone_corruption"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/word_sync.rs": {
+      "all": [
+        "accepts_exact_child_publication_record",
+        "rejects_wrong_child_process",
+        "rejects_wrong_transition_direction",
+        "rejects_failed_publication_status",
+        "rejects_missing_synchronization",
+        "rejects_wrong_bound_patch_identity",
+        "rejects_trailing_receipt_field"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -1633,6 +1754,15 @@
       "macro_calls": [],
       "templates": []
     },
+    "tools/rapid-profiler/src/data_flag/tests.rs": {
+      "all": [
+        "actual_managed_points_force_close_rearm_k_groups_and_wrong_owner",
+        "early_managed_points_force_close_rearm_k_groups_and_wrong_owner"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": {
       "all": [
         "owned_batch_inputs_enforce_complete_domain_before_any_entry",
@@ -1768,6 +1898,9 @@
     "src/backedge_clock/owned_region.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
     ],
+    "src/controls.rs": [
+      "#[cfg(test)]\nmod tests {"
+    ],
     "src/emission.rs": [
       "pub(crate) mod placement;"
     ],
@@ -1787,7 +1920,8 @@
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod artifact_overlay_tests;",
       "pub mod emission;",
       "pub mod quiescent;",
-      "pub mod backedge_clock;"
+      "pub mod backedge_clock;",
+      "pub mod controls;"
     ],
     "src/neighbor.rs": [
       "#[cfg(test)]\n#[path = \"neighbor_long_ownership_tests.rs\"]\nmod long_ownership_tests;",
@@ -1812,13 +1946,28 @@
       "#[path = \"trampoline/artifact_jrcxz.rs\"]\nmod artifact_jrcxz;",
       "mod fitting;",
       "mod artifact_allocation;",
-      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod clock_region_tests;"
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod clock_region_tests;",
+      "#[cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]\nmod early_control;"
     ],
     "src/trampoline/artifact_allocation.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
     ],
+    "src/trampoline/early_control.rs": [
+      "#[cfg(test)]\nmod tests;"
+    ],
     "src/trampoline/fitting.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
+    ],
+    "tests/early_control_oracle.rs": [
+      "#![cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]",
+      "#[path = \"support/quiescent_oracle.rs\"]\nmod oracle;"
+    ],
+    "tests/early_control_planning.rs": [
+      "#![cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]"
+    ],
+    "tests/early_control_race_oracle.rs": [
+      "#![cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]",
+      "#[path = \"support/quiescent_oracle.rs\"]\nmod oracle;"
     ],
     "tests/neighbor_eviction_oracle.rs": [
       "#[path = \"support/jrcxz_artifact_oracle.rs\"]\nmod jrcxz_artifact_native;",
@@ -1834,7 +1983,9 @@
     "tests/support/quiescent_oracle.rs": [
       "include!(\"jrcxz_state.rs\");",
       "include!(\"entry_veneer_artifact_oracle/state.rs\");",
-      "include!(\"overlapping_neighbor_artifact_oracle/state.rs\");"
+      "include!(\"overlapping_neighbor_artifact_oracle/state.rs\");",
+      "include!(\"early_control_race.rs\");",
+      "include!(\"early_control_static.rs\");"
     ],
     "tools/elf-rewrite/Cargo.toml": [
       "[[example]]\nname = \"indexed_dso_native\"\npath = \"examples/indexed_dso_native.rs\"\ntest = false\nbench = false",
@@ -1926,6 +2077,9 @@
     "tools/rapid-profiler/ordinary-interval/normal/session/phase_totals.rs": [
       "#[cfg(test)]\nmod tests {"
     ],
+    "tools/rapid-profiler/src/data_flag.rs": [
+      "#[cfg(test)]\nmod tests;"
+    ],
     "tools/rapid-profiler/src/frontend_native/always_on.rs": [
       "mod normal;"
     ],
@@ -1955,7 +2109,8 @@
       "#[cfg(test)]\n#[path = \"module_caller_format_tests.rs\"]\nmod format_tests;"
     ],
     "tools/rapid-profiler/src/lib.rs": [
-      "pub mod frontend_native;"
+      "pub mod frontend_native;",
+      "pub mod data_flag;"
     ],
     "tools/software-preemption/inline_gate.rs": [
       "mod region;"
@@ -1998,6 +2153,17 @@
         ]
       ],
       "previous_sha256": "0400cda5659feb04aac0d698560dd17087658c712e3e7d2765243100675160df"
+    },
+    "INTERFACES.md": {
+      "current_sha256": "8b25e5b50512a5db60f38261c48c446fad1b36c46093f5b826729eb65e858d41",
+      "edits": [
+        [
+          4596,
+          5784,
+          ""
+        ]
+      ],
+      "previous_sha256": "8ebedfaa3d670399fad8e31462d478539c8d8bda5d9da22dc71fb1ac3a53a096"
     },
     "evaluation/admission/parsing.py": {
       "current_sha256": "1b1bfe0917e7ae1f6cbaac63991c84b5a1ceffe18ac642ae6bae8b7ec00edc05",
@@ -2420,6 +2586,37 @@
       ],
       "previous_sha256": "ec26d7a993c41b8c0357f84b6994f75cb63d90edd77af3905a52097e9b3dc018"
     },
+    "src/controls.rs": {
+      "current_sha256": "1c5bb2eabd7ae0a80592811fd015b0d9ed1dba2c796993fd5e145002c549d5c9",
+      "edits": [
+        [
+          241,
+          329,
+          "//! or make generated code reclaimable. The observing emitter saves full state\n"
+        ],
+        [
+          1338,
+          2011,
+          ""
+        ],
+        [
+          8759,
+          8960,
+          ""
+        ],
+        [
+          10057,
+          11943,
+          ""
+        ],
+        [
+          15763,
+          16659,
+          ""
+        ]
+      ],
+      "previous_sha256": "16867d6f968ca01c3a35ebc5ff24f6b603fce4f2f69b2a7c83a1ac2460f6a264"
+    },
     "src/emission.rs": {
       "current_sha256": "7eb271d9471d10c99b85d14a5bd33fa9f4787b7d970ad16c26fa6f8289cc7873",
       "edits": [
@@ -2823,7 +3020,7 @@
       "previous_sha256": "bcb91531af069ee6733fddeafa05512dbec3cbafaee26e183bab6cab83792df3"
     },
     "src/quiescent.rs": {
-      "current_sha256": "3283c2bbf3989d8508462a06a737aa72aec9259b87a7aaca61337beaf854a953",
+      "current_sha256": "54d6ebdb148de3660e64713d31a745d92f58141e851a17168ee4bd843ca0198d",
       "edits": [
         [
           1406,
@@ -2831,63 +3028,108 @@
           ""
         ],
         [
-          41060,
-          42879,
+          8065,
+          8380,
+          ""
+        ],
+        [
+          17696,
+          19129,
+          ""
+        ],
+        [
+          28358,
+          28428,
+          ""
+        ],
+        [
+          28777,
+          28828,
+          ""
+        ],
+        [
+          29036,
+          29119,
+          ""
+        ],
+        [
+          29374,
+          29455,
+          ""
+        ],
+        [
+          31100,
+          31249,
+          "        if let CoalescedActions::ControlledProfile(_, _) = actions {\n"
+        ],
+        [
+          43173,
+          44992,
           "    let policy = request.allocation;\n"
         ],
         [
-          43157,
-          43276,
+          45270,
+          45389,
           "    let trampoline = if context.callback_free {\n        TrampolinePlan::from_instruction(scan, physical)\n    } else {\n        request.emission.short(\n            scan,\n            physical,\n            request.semantics == HookSemantics::ReplaceFirst,\n        )\n    }\n    .map_err(|e| Refusal::Backend(e.to_string()))?;\n"
         ],
         [
-          44091,
-          44304,
+          46204,
+          46417,
           "        let image = match request.emission.emit(&trampoline, target) {\n"
         ],
         [
-          53888,
-          54027,
+          56001,
+          56140,
           "// Existing callers retain their same-block/closed-function proofs. The new\n// authority covers only a sealed JMP plus one independently enterable MOV.\n"
         ],
         [
-          54144,
-          54281,
+          56257,
+          56394,
           ""
         ],
         [
-          55271,
-          55428,
+          57384,
+          57541,
           ""
         ],
         [
-          56274,
-          56821,
+          58387,
+          58934,
           ""
         ],
         [
-          58750,
-          58865,
+          60863,
+          60978,
           ""
         ],
         [
-          60571,
-          62117,
+          61263,
+          61400,
+          ""
+        ],
+        [
+          61654,
+          61837,
+          ""
+        ],
+        [
+          63004,
+          64550,
           "    let policy = request.allocation;\n"
         ],
         [
-          63473,
-          63686,
+          65906,
+          66119,
           "        let image = match request.emission.emit(&trampoline, target) {\n"
         ],
         [
-          64100,
-          64219,
+          66533,
+          66652,
           ""
         ],
         [
-          119782,
-          119865,
+          122215,
+          122298,
           ""
         ]
       ],
@@ -2916,161 +3158,296 @@
       "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "src/trampoline.rs": {
-      "current_sha256": "7049c34f351ec3af5fad5fe77a33b2d1076808b844cc0976dfa58401f1c11f7d",
+      "current_sha256": "41c5bfeb00cb5aad4351ab8288cf71187343207b81745214d4ae961374d839b4",
       "edits": [
         [
-          25877,
-          25964,
+          1786,
+          1865,
+          "use crate::controls::{ControlledAction, ProbeControl};\n"
+        ],
+        [
+          25901,
+          26064,
           ""
         ],
         [
-          30601,
-          30676,
+          30701,
+          30776,
           ""
         ],
         [
-          32328,
-          32400,
+          30916,
+          30987,
+          ""
+        ],
+        [
+          32144,
+          32379,
+          ""
+        ],
+        [
+          32734,
+          32806,
           "    /// Exact inline gate boundaries, present only for the finite clock profile.\n"
         ],
         [
-          32505,
-          32783,
+          32911,
+          33189,
           ""
         ],
         [
-          45335,
-          45749,
+          33782,
+          34063,
           ""
         ],
         [
-          46097,
-          46136,
+          46022,
+          46436,
+          ""
+        ],
+        [
+          46784,
+          46823,
           "    clock: Option<Box<crate::backedge_clock::BackedgeClockAction>>,\n"
         ],
         [
-          72694,
-          74402,
+          46891,
+          47166,
+          "    instructions: Vec<Instruction>,\n    source_nops: Vec<Option<Vec<u8>>>,\n"
+        ],
+        [
+          51227,
+          51459,
+          "            source_nops: original_nops::capture(scan, &[*scanned.instruction()])?,\n            instructions: vec![*scanned.instruction()],\n"
+        ],
+        [
+          55053,
+          55240,
+          "            source_nops: original_nops::capture(scan, &instructions)?,\n            instructions,\n"
+        ],
+        [
+          59484,
+          59671,
+          "            source_nops: original_nops::capture(scan, &instructions)?,\n            instructions,\n"
+        ],
+        [
+          62119,
+          62351,
+          "            source_nops: original_nops::capture(scan, &[*scanned.instruction()])?,\n            instructions: vec![*scanned.instruction()],\n"
+        ],
+        [
+          63966,
+          64198,
+          "            source_nops: original_nops::capture(scan, &[*scanned.instruction()])?,\n            instructions: vec![*scanned.instruction()],\n"
+        ],
+        [
+          68441,
+          70708,
+          ""
+        ],
+        [
+          76307,
+          78015,
           "        plan.clock = Some(Box::new(action.clone()));\n"
         ],
         [
-          89868,
-          89916,
+          79073,
+          80236,
           ""
         ],
         [
-          94397,
-          95077,
+          82241,
+          82297,
           ""
         ],
         [
-          95135,
-          95228,
+          83700,
+          83768,
+          ""
+        ],
+        [
+          94768,
+          94816,
+          ""
+        ],
+        [
+          94905,
+          94954,
+          ""
+        ],
+        [
+          96809,
+          96865,
+          ""
+        ],
+        [
+          98032,
+          98087,
+          ""
+        ],
+        [
+          99457,
+          100137,
+          ""
+        ],
+        [
+          100195,
+          100363,
           "        if self.clock.is_some() && (artifact.is_some() || frames.is_some() || self.ptrace_stops) {\n"
         ],
         [
-          95444,
-          95474,
+          100579,
+          100609,
           "                || frames.is_some()\n"
         ],
         [
-          96597,
-          96641,
+          101732,
+          101776,
           ""
         ],
         [
-          98258,
-          98300,
+          103393,
+          103435,
           "        let mut clock_spec = None;\n        let mut clock_observer = None;\n"
         ],
         [
-          98768,
-          99049,
+          103482,
+          103532,
+          ""
+        ],
+        [
+          103953,
+          104234,
           "            let clock_labels = if self.clock.is_some() {\n"
         ],
         [
-          99533,
-          99716,
+          104667,
+          105032,
+          ""
+        ],
+        [
+          105083,
+          105266,
           "            if let Some(clock) = &self.clock {\n"
         ],
         [
-          99778,
-          99829,
+          105328,
+          105379,
           "                clock_spec = Some(backedge_clock::append(\n"
         ],
         [
-          99994,
-          100014,
+          105544,
+          105564,
           "                )?);\n"
         ],
         [
-          100238,
-          100325,
+          105788,
+          105875,
           "                clock_observer = Some(observing_index);\n"
         ],
         [
-          101299,
-          101299,
+          106565,
+          107389,
+          ""
+        ],
+        [
+          107673,
+          107673,
           "                let recording = frames.as_deref().is_some_and(FrameRecorder::recording);\n"
         ],
         [
-          105148,
-          105233,
+          110010,
+          110092,
+          "            body.set_ip(match clock_labels.or(optional_labels) {\n"
+        ],
+        [
+          111539,
+          111624,
           "                    emitted_nops.push((encoded_instructions.len(), bytes));\n"
         ],
         [
-          105251,
-          105794,
+          111642,
+          112185,
           "                original_operands.push((encoded_instructions.len(), *original));\n"
         ],
         [
-          105950,
-          107241,
+          112331,
+          114699,
           ""
         ],
         [
-          108350,
-          108598,
+          115818,
+          116066,
           "        for &(index, bytes) in &emitted_nops {\n            original_nops::verify(&block.encoded, index, bytes)?;\n"
         ],
         [
-          109218,
-          109320,
+          116686,
+          116788,
           "        if let Some(spec) = &clock_spec {\n"
         ],
         [
-          109411,
-          110011,
+          116879,
+          117479,
           ""
         ],
         [
-          110021,
-          110418,
+          117489,
+          117886,
           "        let clock_gate = match clock_observer {\n            Some(observer) => Some(crate::backedge_clock::ClockGateLayout {\n                entry: generated(offset(heads[0].1)?)?,\n                observing_entry: generated(offset(observer)?)?,\n                original_body: generated(offset(heads[0].2)?)?,\n            }),\n            None => None,\n"
         ],
         [
-          115900,
-          116131,
+          118838,
+          119751,
           ""
         ],
         [
-          120230,
-          120425,
+          124281,
+          124512,
           ""
         ],
         [
-          120519,
-          120656,
+          128611,
+          128936,
+          ""
+        ],
+        [
+          129030,
+          129167,
           "            clock: self.clock.as_ref().map(|action| action.clock.clone()),\n"
         ],
         [
-          120680,
-          120712,
+          129191,
+          129223,
           ""
         ],
         [
-          154087,
-          154409,
+          129347,
+          129380,
+          ""
+        ],
+        [
+          162632,
+          162954,
+          ""
+        ],
+        [
+          178602,
+          178834,
+          ""
+        ],
+        [
+          180457,
+          180694,
+          ""
+        ],
+        [
+          184363,
+          184525,
+          ""
+        ],
+        [
+          185575,
+          185736,
           ""
         ]
       ],
@@ -3087,8 +3464,30 @@
       ],
       "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
+    "src/trampoline/early_control.rs": {
+      "current_sha256": "a0d2654210592fe80a8b2ae0982279265dcc178424a44e7444dae9f17fcb2d22",
+      "edits": [
+        [
+          0,
+          8631,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "src/trampoline/early_control/tests.rs": {
+      "current_sha256": "edc38ab31065c28aca1eb4d5da7b55b4e492f6b09625773b893c33ca2ee12254",
+      "edits": [
+        [
+          0,
+          17879,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
     "src/trampoline/fitting.rs": {
-      "current_sha256": "e7d2c63ad4b923302d9cf4eaf67903fa7115f8552d670a5bc25739352d50a5a2",
+      "current_sha256": "bf3b64017fdff8d47d45dfc495de39c86dd45766688726c3a4152b5b0b706df7",
       "edits": [
         [
           749,
@@ -3096,12 +3495,55 @@
           "    pub(super) clock_spec: Option<backedge_clock::GateSpec>,\n    pub(super) clock_observer: Option<usize>,\n"
         ],
         [
-          3569,
-          3612,
+          912,
+          1001,
+          ""
+        ],
+        [
+          3658,
+          3701,
           "    if preparation.clock_spec.is_some()\n        || preparation.clock_observer.is_some()\n"
+        ],
+        [
+          3753,
+          3808,
+          ""
         ]
       ],
       "previous_sha256": "e47368c40eb1cd8db32bba8839445d09139bbd0ad6149dc3ad72c51834ae66e2"
+    },
+    "tests/early_control_oracle.rs": {
+      "current_sha256": "2e097c5d136fb63f5e0e27bf7710f066f62f3e0c00ff4c194552dccba810a601",
+      "edits": [
+        [
+          0,
+          43661,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "tests/early_control_planning.rs": {
+      "current_sha256": "d8bfbfdd8a4077b65e7d475c11f28fb32c9c5e555209fca23da901901f35b2a6",
+      "edits": [
+        [
+          0,
+          6225,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "tests/early_control_race_oracle.rs": {
+      "current_sha256": "d9f00a4f27f48689b357cd017121002c4d8ead5324d54f8d694e6033468bae29",
+      "edits": [
+        [
+          0,
+          387,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "tests/neighbor_eviction_oracle.rs": {
       "current_sha256": "685d5caa3933dd5649b70b4e8fa1e0ce632e1a9b52d51aed3c671288b77c5e64",
@@ -3119,6 +3561,28 @@
       ],
       "previous_sha256": "6e9d19dec269a0ed57a8186e6b9ab364721f53fa34bbedb7d3e9f7fab37a43e5"
     },
+    "tests/support/early_control_race.rs": {
+      "current_sha256": "f2ef2c9b3b3b7cd11123b1fec9a4417cd3c4ce4d4467f3669021694733998763",
+      "edits": [
+        [
+          0,
+          29859,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "tests/support/early_control_static.rs": {
+      "current_sha256": "685f10d1ffd7d792d169eefb1a9e6c30c4cb53bbef2eaa48ccb6610403e4cf13",
+      "edits": [
+        [
+          0,
+          11077,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
     "tests/support/jrcxz_artifact_oracle.rs": {
       "current_sha256": "fc30abfc30dbd1d0a0a23393890eddaeabf6a3679079b59b94231d0e49dfc5b8",
       "edits": [
@@ -3131,81 +3595,86 @@
       "previous_sha256": "f6f6302bcc16f4a405b03a7e8afcf79212f568b93c24253468f183ed93257a83"
     },
     "tests/support/quiescent_oracle.rs": {
-      "current_sha256": "44bce426beaf3644b826e405c660064c63f3a048866738c75c2fc4d6c0f1d68d",
+      "current_sha256": "a12c9370678ba7a03be184d48669b2b852948eb5597ff8d5462e38123d24b221",
       "edits": [
         [
-          28165,
-          28217,
+          22399,
+          22765,
           ""
         ],
         [
-          28223,
-          28501,
+          28531,
+          28583,
           ""
         ],
         [
-          30791,
-          30823,
+          28589,
+          28867,
           ""
         ],
         [
-          35251,
-          35285,
+          31157,
+          31189,
           ""
         ],
         [
-          36442,
-          36476,
+          35617,
+          35651,
           ""
         ],
         [
-          38367,
-          38920,
+          36808,
+          36842,
           ""
         ],
         [
-          39051,
-          39075,
+          38733,
+          39286,
           ""
         ],
         [
-          40184,
-          40271,
+          39417,
+          39441,
           ""
         ],
         [
-          40516,
-          40631,
+          40550,
+          40637,
           ""
         ],
         [
-          40857,
-          43616,
+          40882,
+          40997,
           ""
         ],
         [
-          44097,
-          44364,
+          41223,
+          43982,
           ""
         ],
         [
-          45924,
-          46771,
+          44463,
+          44730,
           ""
         ],
         [
-          47339,
-          47474,
+          46290,
+          47137,
           ""
         ],
         [
-          69412,
-          69801,
+          47705,
+          47840,
           ""
         ],
         [
-          81906,
-          82479,
+          69778,
+          70167,
+          ""
+        ],
+        [
+          82272,
+          82845,
           "                    let images: Vec<_> = map\n                        .generated_ranges\n                        .iter()\n                        .filter(|range| range.start == target)\n                        .collect();\n"
         ]
       ],
@@ -3976,6 +4445,17 @@
       ],
       "previous_sha256": "97d2f87f6c1ab6a517232a0d815211ed1146e0fff3cb814ade3bb536966b2e32"
     },
+    "tools/rapid-profiler/README.md": {
+      "current_sha256": "68b065b9fd33fee89ae3f42a714e9a1a1432f1d2de15f11d2d61328bfe6e8ba3",
+      "edits": [
+        [
+          2217,
+          2712,
+          ""
+        ]
+      ],
+      "previous_sha256": "691f7fa697f7ca713c0538cab01cf39b57e8a817f0b59d6c0ac60869fda6d948"
+    },
     "tools/rapid-profiler/ordinary-interval/normal/csv.rs": {
       "current_sha256": "dec72317a616660dca1dd673f0ee0075361fcb7503537b930902da579a3d8aae",
       "edits": [
@@ -4561,6 +5041,88 @@
         ]
       ],
       "previous_sha256": "5f675202b4517ff6a461e739d1bd6cb884db84c24644132557a0ef48bba3fdcb"
+    },
+    "tools/rapid-profiler/src/data_flag.rs": {
+      "current_sha256": "cb88833871f19cf0878101c9dcdbe122a69e0c1fdfab50cc79188f3f9947564c",
+      "edits": [
+        [
+          323,
+          490,
+          "//! pairing, code writes, interval toggle, early flag gate or reclamation is added.\n"
+        ],
+        [
+          1042,
+          1164,
+          "use liteinst2::controls::{ControlIdentity, ControlWriter, ControlledAction, ProbeControl};\n"
+        ],
+        [
+          6583,
+          7662,
+          ""
+        ]
+      ],
+      "previous_sha256": "7d0a7219e8344cf00c5c4edf862579d5ef26767eb694fce28b06d398131ca02f"
+    },
+    "tools/rapid-profiler/src/data_flag/tests.rs": {
+      "current_sha256": "f5ff511b0dd471522fd3da8db362fed6d29c76e5fff0c43ee1b0b7d95850c9c1",
+      "edits": [
+        [
+          550,
+          738,
+          ""
+        ],
+        [
+          2613,
+          2674,
+          "fn fixture() -> (DataFlagSession, u64, Vec<u8>) {\n"
+        ],
+        [
+          3583,
+          4329,
+          "    let plan =\n"
+        ],
+        [
+          4426,
+          4455,
+          "            .unwrap();\n"
+        ],
+        [
+          6459,
+          6542,
+          "// One native test owns the counters and runs a fixed straight-line fixture.\n"
+        ],
+        [
+          6785,
+          7077,
+          ""
+        ],
+        [
+          7237,
+          7286,
+          "    let (mut c, address, code) = fixture();\n"
+        ],
+        [
+          8832,
+          8881,
+          "    let (mut c, address, code) = fixture();\n"
+        ],
+        [
+          10867,
+          10916,
+          "    let (mut c, address, code) = fixture();\n"
+        ],
+        [
+          13160,
+          13217,
+          "    let (mut old, old_image, old_code) = fixture();\n"
+        ],
+        [
+          13301,
+          13358,
+          "    let (mut new, new_image, new_code) = fixture();\n"
+        ]
+      ],
+      "previous_sha256": "ac7c030946e142ba53ff5160fca6008a03e2417b52cd6763b4e8336497c95ba7"
     },
     "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": {
       "current_sha256": "d14c5ce91a8d57d97ca5c560e28f32cb620c5e2a5c7ab2affe49610552bbc944",
@@ -5195,6 +5757,883 @@
       "evaluation/ordinary-selected-session/coordinate_controls.py"
     ],
     "python_control_identity_changes": 0
+  },
+  "source_successor_667921": {
+    "added_default_methods": {
+      "src/controls.rs": [
+        "early_control_load_descriptor_is_the_exact_retained_atomic_field"
+      ],
+      "src/trampoline/early_control/tests.rs": [
+        "encoded_paths_restore_rcx_rsp_and_leave_the_red_zone_untouched",
+        "final_byte_changes_to_load_restore_and_both_branches_refuse",
+        "owner_label_and_instruction_offset_corruption_refuse",
+        "mixed_actions_preserve_old_output_controls_maps_and_owner_lifetime",
+        "internal_branch_reaches_gate_but_rip_data_keeps_original_address",
+        "invalid_associations_and_unsupported_emission_profiles_refuse",
+        "prepared_gate_population_and_body_associations_are_required",
+        "rounded_two_page_bound_is_exact_and_does_not_restrict_old_profile"
+      ],
+      "tests/early_control_oracle.rs": [
+        "early_control_static_oracle_modes",
+        "early_control_static_straight_line"
+      ],
+      "tests/early_control_planning.rs": [
+        "mixed_point_plan_retains_routes_controls_and_smaller_allocation_caps",
+        "point_planning_refuses_bad_geometry_semantics_and_resource_limits"
+      ],
+      "tests/early_control_race_oracle.rs": [
+        "early_control_real_writer_races"
+      ],
+      "tools/rapid-profiler/src/data_flag/tests.rs": [
+        "early_managed_points_force_close_rearm_k_groups_and_wrong_owner"
+      ]
+    },
+    "added_ignored_methods": {},
+    "base_revision": "c11064dfb2478bbddf1909ba8f99d86d74529465",
+    "current_corpus_sha256": "75071fe60ece8bb380ba8ae5442fb9d6f52d46c4b17b55f33a24bb48efadfc4b",
+    "default_doctest_additions": 0,
+    "default_harness_changes": 3,
+    "default_ignore_changes": 0,
+    "default_method_additions": 85,
+    "default_method_instances": {
+      "src/controls.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "src/trampoline/early_control/tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "tests/early_control_oracle.rs": [
+        "test/early_control_oracle"
+      ],
+      "tests/early_control_planning.rs": [
+        "test/early_control_planning"
+      ],
+      "tests/early_control_race_oracle.rs": [
+        "test/early_control_race_oracle"
+      ],
+      "tools/rapid-profiler/src/data_flag/tests.rs": [
+        "unit/rapid_profiler/lib"
+      ]
+    },
+    "default_method_removals": 0,
+    "excluded_evaluation": {
+      "paths": [
+        "evaluation/early-controlled-point/README.md",
+        "evaluation/early-controlled-point/focused.json",
+        "evaluation/early-controlled-point/receipt.json",
+        "evaluation/early-controlled-point/reproduce.py",
+        "evaluation/early-controlled-point/validation.json"
+      ],
+      "reason": "Standalone fixed-cohort reproduction and historical upstream evidence are outside recorder discovery; the whole Git check source manifest still covers them."
+    },
+    "ignore_stimuli": [
+      [
+        "src/controls.rs",
+        "#[test]\n    fn early_control_load_descriptor_is_the_exact_retained_atomic_field(",
+        "#[test]\n#[ignore]\n    fn early_control_load_descriptor_is_the_exact_retained_atomic_field("
+      ],
+      [
+        "src/trampoline/early_control/tests.rs",
+        "#[test]\nfn encoded_paths_restore_rcx_rsp_and_leave_the_red_zone_untouched(",
+        "#[test]\n#[ignore]\nfn encoded_paths_restore_rcx_rsp_and_leave_the_red_zone_untouched("
+      ],
+      [
+        "src/trampoline/early_control/tests.rs",
+        "#[test]\nfn final_byte_changes_to_load_restore_and_both_branches_refuse(",
+        "#[test]\n#[ignore]\nfn final_byte_changes_to_load_restore_and_both_branches_refuse("
+      ],
+      [
+        "src/trampoline/early_control/tests.rs",
+        "#[test]\nfn owner_label_and_instruction_offset_corruption_refuse(",
+        "#[test]\n#[ignore]\nfn owner_label_and_instruction_offset_corruption_refuse("
+      ],
+      [
+        "src/trampoline/early_control/tests.rs",
+        "#[test]\nfn mixed_actions_preserve_old_output_controls_maps_and_owner_lifetime(",
+        "#[test]\n#[ignore]\nfn mixed_actions_preserve_old_output_controls_maps_and_owner_lifetime("
+      ],
+      [
+        "src/trampoline/early_control/tests.rs",
+        "#[test]\nfn internal_branch_reaches_gate_but_rip_data_keeps_original_address(",
+        "#[test]\n#[ignore]\nfn internal_branch_reaches_gate_but_rip_data_keeps_original_address("
+      ],
+      [
+        "src/trampoline/early_control/tests.rs",
+        "#[test]\nfn invalid_associations_and_unsupported_emission_profiles_refuse(",
+        "#[test]\n#[ignore]\nfn invalid_associations_and_unsupported_emission_profiles_refuse("
+      ],
+      [
+        "src/trampoline/early_control/tests.rs",
+        "#[test]\nfn prepared_gate_population_and_body_associations_are_required(",
+        "#[test]\n#[ignore]\nfn prepared_gate_population_and_body_associations_are_required("
+      ],
+      [
+        "src/trampoline/early_control/tests.rs",
+        "#[test]\nfn rounded_two_page_bound_is_exact_and_does_not_restrict_old_profile(",
+        "#[test]\n#[ignore]\nfn rounded_two_page_bound_is_exact_and_does_not_restrict_old_profile("
+      ],
+      [
+        "tests/early_control_oracle.rs",
+        "#[test]\nfn early_control_static_oracle_modes(",
+        "#[test]\n#[ignore]\nfn early_control_static_oracle_modes("
+      ],
+      [
+        "tests/early_control_oracle.rs",
+        "#[test]\nfn early_control_static_straight_line(",
+        "#[test]\n#[ignore]\nfn early_control_static_straight_line("
+      ],
+      [
+        "tests/early_control_planning.rs",
+        "#[test]\nfn mixed_point_plan_retains_routes_controls_and_smaller_allocation_caps(",
+        "#[test]\n#[ignore]\nfn mixed_point_plan_retains_routes_controls_and_smaller_allocation_caps("
+      ],
+      [
+        "tests/early_control_planning.rs",
+        "#[test]\nfn point_planning_refuses_bad_geometry_semantics_and_resource_limits(",
+        "#[test]\n#[ignore]\nfn point_planning_refuses_bad_geometry_semantics_and_resource_limits("
+      ],
+      [
+        "tests/early_control_race_oracle.rs",
+        "#[test]\nfn early_control_real_writer_races(",
+        "#[test]\n#[ignore]\nfn early_control_real_writer_races("
+      ],
+      [
+        "tools/rapid-profiler/src/data_flag/tests.rs",
+        "#[test]\nfn early_managed_points_force_close_rearm_k_groups_and_wrong_owner(",
+        "#[test]\n#[ignore]\nfn early_managed_points_force_close_rearm_k_groups_and_wrong_owner("
+      ]
+    ],
+    "incoming_main": "667921df553495446e8e4c144e68fa4d8af7846d",
+    "inherited_default_methods": {
+      "tests/support/boundary_signal.rs": [
+        "repeated_boundaries_keep_order_and_physical_identity",
+        "rejects_missing_terminal_roundtrip",
+        "rejects_duplicate_roundtrip",
+        "rejects_wrong_logical_pc",
+        "rejects_wrong_physical_pc",
+        "rejects_uncompleted_roundtrip"
+      ],
+      "tests/support/e9_common_planning_profile.rs": [
+        "exact_caller_profile_and_whole_marker_must_agree"
+      ],
+      "tests/support/e9_common_recording.rs": [
+        "exact_trailing_profile_preserves_legacy_arguments_and_rejects_aliases",
+        "entire_journal_append_and_unselected_state_are_exact",
+        "journal_owner_header_tail_and_existing_record_mutations_refuse",
+        "clean_call_stack_words_have_independent_offsets_and_full_tail",
+        "exact_clean_template_encodes_logical_argument_call_and_return",
+        "complete_hook_symbol_extent_and_load_bytes_are_exact"
+      ],
+      "tests/support/e9_common_router_contract.rs": [
+        "exact_legacy_and_invalid_evex_markers",
+        "route_identity_and_explicit_opt_in"
+      ],
+      "tests/support/parked_signal.rs": [
+        "rejects_frame_mutation",
+        "rejects_old_source_after_publication",
+        "rejects_extra_source_write",
+        "rejects_wrong_receipt_identity",
+        "rejects_failed_publication_status"
+      ],
+      "tests/support/quiescent_oracle.rs": [
+        "campaign_initializer_keeps_default_memory_and_flags_exact",
+        "campaign_initializer_matches_independent_memory_vectors_and_flags",
+        "rejects_fault_address_corruption",
+        "rejects_gpr_corruption",
+        "rejects_defined_flag_corruption",
+        "rejects_simd_corruption",
+        "rejects_application_memory_corruption",
+        "rejects_redzone_corruption"
+      ],
+      "tests/support/word_sync.rs": [
+        "accepts_exact_child_publication_record",
+        "rejects_wrong_child_process",
+        "rejects_wrong_transition_direction",
+        "rejects_failed_publication_status",
+        "rejects_missing_synchronization",
+        "rejects_wrong_bound_patch_identity",
+        "rejects_trailing_receipt_field"
+      ]
+    },
+    "inherited_method_instances": {
+      "tests/support/boundary_signal.rs": [
+        "test/early_control_oracle",
+        "test/early_control_race_oracle"
+      ],
+      "tests/support/e9_common_planning_profile.rs": [
+        "test/early_control_oracle",
+        "test/early_control_race_oracle"
+      ],
+      "tests/support/e9_common_recording.rs": [
+        "test/early_control_oracle",
+        "test/early_control_race_oracle"
+      ],
+      "tests/support/e9_common_router_contract.rs": [
+        "test/early_control_oracle",
+        "test/early_control_race_oracle"
+      ],
+      "tests/support/parked_signal.rs": [
+        "test/early_control_oracle",
+        "test/early_control_race_oracle"
+      ],
+      "tests/support/quiescent_oracle.rs": [
+        "test/early_control_oracle",
+        "test/early_control_race_oracle"
+      ],
+      "tests/support/word_sync.rs": [
+        "test/early_control_oracle",
+        "test/early_control_race_oracle"
+      ]
+    },
+    "inherited_support": {
+      "edges": [
+        [
+          "tests/support/quiescent_oracle.rs",
+          "tests/support/entry_signal.rs"
+        ],
+        [
+          "tests/support/quiescent_oracle.rs",
+          "tests/support/parked_signal.rs"
+        ],
+        [
+          "tests/support/quiescent_oracle.rs",
+          "tests/support/boundary_signal.rs"
+        ],
+        [
+          "tests/support/quiescent_oracle.rs",
+          "tests/support/word_sync.rs"
+        ],
+        [
+          "tests/support/quiescent_oracle.rs",
+          "tests/support/word_trace_method.rs"
+        ],
+        [
+          "tests/support/quiescent_oracle.rs",
+          "tests/support/routed_jmp_native.rs"
+        ],
+        [
+          "tests/support/quiescent_oracle.rs",
+          "tests/support/early_control_race.rs"
+        ],
+        [
+          "tests/support/quiescent_oracle.rs",
+          "tests/support/early_control_static.rs"
+        ],
+        [
+          "tests/support/quiescent_oracle.rs",
+          "tests/support/entry_veneer_artifact_oracle/state.rs"
+        ],
+        [
+          "tests/support/quiescent_oracle.rs",
+          "tests/support/overlapping_neighbor_artifact_oracle/state.rs"
+        ],
+        [
+          "tests/support/quiescent_oracle.rs",
+          "tests/support/adc_state.rs"
+        ],
+        [
+          "tests/support/quiescent_oracle.rs",
+          "tests/support/compiled_selected_state.rs"
+        ],
+        [
+          "tests/support/quiescent_oracle.rs",
+          "tests/support/jrcxz_state.rs"
+        ],
+        [
+          "tests/support/quiescent_oracle.rs",
+          "tests/support/process_text.rs"
+        ],
+        [
+          "tests/support/quiescent_oracle.rs",
+          "tests/support/elf_exec_oracle.rs"
+        ],
+        [
+          "tests/support/quiescent_oracle.rs",
+          "tests/support/neighbor_fixture_arena.rs"
+        ],
+        [
+          "tests/support/elf_exec_oracle.rs",
+          "tests/support/elf_exec_tactics.rs"
+        ],
+        [
+          "tests/support/elf_exec_oracle.rs",
+          "tests/support/e9_common_app.rs"
+        ],
+        [
+          "tests/support/elf_exec_oracle.rs",
+          "tests/support/e9_common_image.rs"
+        ],
+        [
+          "tests/support/elf_exec_oracle.rs",
+          "tests/support/elf_exec_provider.rs"
+        ],
+        [
+          "tests/support/elf_exec_oracle.rs",
+          "tests/support/adjacent_b2_native.rs"
+        ],
+        [
+          "tests/support/adjacent_b2_native.rs",
+          "tests/support/adjacent_b2_fixture.rs"
+        ],
+        [
+          "tests/support/e9_common_image.rs",
+          "tests/support/e9_common_seed.rs"
+        ],
+        [
+          "tests/support/e9_common_image.rs",
+          "tests/support/e9_common_recording.rs"
+        ],
+        [
+          "tests/support/e9_common_image.rs",
+          "tests/support/e9_common_recording_native.rs"
+        ],
+        [
+          "tests/support/e9_common_image.rs",
+          "tests/support/e9_common_core.rs"
+        ],
+        [
+          "tests/support/e9_common_image.rs",
+          "tests/support/e9_common_e9.rs"
+        ],
+        [
+          "tests/support/e9_common_image.rs",
+          "tests/support/e9_common_core_pages.rs"
+        ],
+        [
+          "tests/support/e9_common_core.rs",
+          "tests/support/e9_common_planning_profile.rs"
+        ],
+        [
+          "tests/support/e9_common_core.rs",
+          "tests/support/e9_common_router_contract.rs"
+        ],
+        [
+          "tests/support/e9_common_core.rs",
+          "tests/support/e9_common_router_native.rs"
+        ],
+        [
+          "tests/support/e9_common_core.rs",
+          "tests/support/e9_common_router_controls.rs"
+        ],
+        [
+          "tests/support/e9_common_app.rs",
+          "tests/support/e9_common_app_data.rs"
+        ],
+        [
+          "tests/support/elf_exec_tactics.rs",
+          "tests/support/elf_exec_tactics_contract.rs"
+        ],
+        [
+          "tests/support/routed_jmp_native.rs",
+          "tests/support/routed_jmp_fixture.rs"
+        ],
+        [
+          "tests/support/routed_jmp_native.rs",
+          "tests/support/routed_jmp_artifact.rs"
+        ]
+      ],
+      "files": {
+        "tests/support/adc_state.rs": {
+          "bytes": 1766,
+          "mode": 420,
+          "sha256": "6210f02e2d4d1906fadecf2eadd876b02d0154ceb330c467e15817ed33e54ec0"
+        },
+        "tests/support/adjacent_b2_fixture.rs": {
+          "bytes": 20923,
+          "mode": 420,
+          "sha256": "dcaf2962f81f690785f61770713d13f0104bbef4b9e7beaed6f0d641aff33ca0"
+        },
+        "tests/support/adjacent_b2_native.rs": {
+          "bytes": 32974,
+          "mode": 420,
+          "sha256": "2ea1625733ccf5a1f9b87db1ac480bc00421eca7b54a63f9b6dc19ceec7e1771"
+        },
+        "tests/support/boundary_signal.rs": {
+          "bytes": 11725,
+          "mode": 420,
+          "sha256": "949ccf6ee19949cdc1f16305dfb6d161f313df5536ec509968572afc21727a60"
+        },
+        "tests/support/compiled_selected_state.rs": {
+          "bytes": 4781,
+          "mode": 420,
+          "sha256": "3451cc5f88607a83adc8b4f95aaeab59661ae9a295c70e5482f3db25581d5691"
+        },
+        "tests/support/e9_common_app.rs": {
+          "bytes": 50670,
+          "mode": 420,
+          "sha256": "faec58111347cc1c0d41c0fa47862207ae8938f7b4caddad98b4afc3043699ae"
+        },
+        "tests/support/e9_common_app_data.rs": {
+          "bytes": 7589,
+          "mode": 420,
+          "sha256": "92bca80e47c0d20825a4ec278f0de47a178dd1f11b0062bf01b2bbfa12659bf4"
+        },
+        "tests/support/e9_common_core.rs": {
+          "bytes": 36197,
+          "mode": 420,
+          "sha256": "0feda92bd5c0d5f0ae5cfb151fe39899f1afc3996ba9511fed99ed8526be3c32"
+        },
+        "tests/support/e9_common_core_pages.rs": {
+          "bytes": 3300,
+          "mode": 420,
+          "sha256": "a23d6e230831f5ff54d19b95394ac21c5c0a5cd4dd083a62ad1416f3c44c620e"
+        },
+        "tests/support/e9_common_e9.rs": {
+          "bytes": 51050,
+          "mode": 420,
+          "sha256": "92712fecdfbb2a0f7d77cd86b4ae2b5f451e17eea2c87ac096ad64ed0673eae5"
+        },
+        "tests/support/e9_common_image.rs": {
+          "bytes": 25005,
+          "mode": 420,
+          "sha256": "f112e774d705838c74fe51d7636140c8c4805830f1fb3a78c5007846f8c8e66e"
+        },
+        "tests/support/e9_common_planning_profile.rs": {
+          "bytes": 2956,
+          "mode": 420,
+          "sha256": "873bfbd50f2878e37bbef91193db4726faed18af5dacf395b1726882e637dcf5"
+        },
+        "tests/support/e9_common_recording.rs": {
+          "bytes": 15513,
+          "mode": 420,
+          "sha256": "d0419f184093a5c1ef658028c7a8a2869dea8c849a5da44cd1f191c3b5085bc7"
+        },
+        "tests/support/e9_common_recording_native.rs": {
+          "bytes": 3922,
+          "mode": 420,
+          "sha256": "a3e8d4e326bada12b9c77c4770cfab6d44dbb59a6eb82d4a5517542602d8d129"
+        },
+        "tests/support/e9_common_router_contract.rs": {
+          "bytes": 4315,
+          "mode": 420,
+          "sha256": "117e56b69a8f6020e8a9eadcf0802dbf5ab0fd2a84893be4dbbf3a7d8a582cfb"
+        },
+        "tests/support/e9_common_router_controls.rs": {
+          "bytes": 7522,
+          "mode": 420,
+          "sha256": "4104cce63784b34d4a572799da60f80d824a75aaf50394138596a59185ce1d1d"
+        },
+        "tests/support/e9_common_router_native.rs": {
+          "bytes": 29031,
+          "mode": 420,
+          "sha256": "4e793a2f48588060fb827807a882461e7f23a3dcd81d86d568facec08c5108d8"
+        },
+        "tests/support/e9_common_seed.rs": {
+          "bytes": 43874,
+          "mode": 420,
+          "sha256": "df1678dc0d0a5eede05d76d592048d5065d983fa44ba42c6d5dd7da9d297c2e3"
+        },
+        "tests/support/early_control_race.rs": {
+          "bytes": 29859,
+          "mode": 420,
+          "sha256": "f2ef2c9b3b3b7cd11123b1fec9a4417cd3c4ce4d4467f3669021694733998763"
+        },
+        "tests/support/early_control_static.rs": {
+          "bytes": 11077,
+          "mode": 420,
+          "sha256": "685f10d1ffd7d792d169eefb1a9e6c30c4cb53bbef2eaa48ccb6610403e4cf13"
+        },
+        "tests/support/elf_exec_oracle.rs": {
+          "bytes": 46514,
+          "mode": 420,
+          "sha256": "b595b7d5cd19e72c4754a60f5fe3b4a359772334f9dda6f9526882fbe4358f04"
+        },
+        "tests/support/elf_exec_provider.rs": {
+          "bytes": 3112,
+          "mode": 420,
+          "sha256": "9b5562034fc6bbdc32f889ab64df7f414e96ee5d9a99c06e39bf6728f128e730"
+        },
+        "tests/support/elf_exec_tactics.rs": {
+          "bytes": 67955,
+          "mode": 420,
+          "sha256": "c0910c4d918a5b34e6af1933fe9490b973e767a9ebc5a890cb62484b3a2a5c61"
+        },
+        "tests/support/elf_exec_tactics_contract.rs": {
+          "bytes": 6709,
+          "mode": 420,
+          "sha256": "caca8169432f466dc00967304eacd187c7bc2915b5f73add9f6edce491af768e"
+        },
+        "tests/support/entry_signal.rs": {
+          "bytes": 8702,
+          "mode": 420,
+          "sha256": "44d22039625dcc98dbef1877c3c904c939708e0d0be90e91ae106a80ffdb41b9"
+        },
+        "tests/support/entry_veneer_artifact_oracle/state.rs": {
+          "bytes": 8721,
+          "mode": 420,
+          "sha256": "9c15c2441b430d8ae0a0f75355144233367034ec5fa0170fe2a9817bb66e7a35"
+        },
+        "tests/support/jrcxz_state.rs": {
+          "bytes": 1643,
+          "mode": 420,
+          "sha256": "ea3f380a179470e12264258e5a01bfefebaaebb7b0654b2354b81a9b4f5eb55f"
+        },
+        "tests/support/neighbor_fixture_arena.rs": {
+          "bytes": 11415,
+          "mode": 420,
+          "sha256": "40d3564b0aa99f8aa61c95ed8f52c58b20c06931a98850ed849c886efadf9e2e"
+        },
+        "tests/support/overlapping_neighbor_artifact_oracle/state.rs": {
+          "bytes": 17188,
+          "mode": 420,
+          "sha256": "55f8119dba3d5590fcfb9f5bc1bdfd7787b2b13f699c2980120bb52eb254e978"
+        },
+        "tests/support/parked_signal.rs": {
+          "bytes": 24672,
+          "mode": 420,
+          "sha256": "9554d55be8397a500005f3a5f4f3e73c5bf647900b0d013646fcc7f8b8b2e355"
+        },
+        "tests/support/process_text.rs": {
+          "bytes": 2558,
+          "mode": 420,
+          "sha256": "ab415bb64e48a78700ac3fe6648eedf76644a533c2de3380f592e6ce260644f1"
+        },
+        "tests/support/quiescent_oracle.rs": {
+          "bytes": 114299,
+          "mode": 420,
+          "sha256": "a12c9370678ba7a03be184d48669b2b852948eb5597ff8d5462e38123d24b221"
+        },
+        "tests/support/routed_jmp_artifact.rs": {
+          "bytes": 17614,
+          "mode": 420,
+          "sha256": "f9f37eeb884a3004328478129790a6b98305e5af70c31e2ce267346c7e123735"
+        },
+        "tests/support/routed_jmp_fixture.rs": {
+          "bytes": 12494,
+          "mode": 420,
+          "sha256": "9edb02b399e0d7c330c53eedefbad3d5c0b82876ac758f693f758ccdd5d77241"
+        },
+        "tests/support/routed_jmp_native.rs": {
+          "bytes": 25408,
+          "mode": 420,
+          "sha256": "9c3f8a28175ddbc2bf8bc12e507f90ca0e3b61cbbc5835e03bc8cce9268c680b"
+        },
+        "tests/support/word_sync.rs": {
+          "bytes": 37298,
+          "mode": 420,
+          "sha256": "8d7a590a68378251dfce241481f9549e38332f54e28201e41c7b011284448786"
+        },
+        "tests/support/word_trace_method.rs": {
+          "bytes": 6681,
+          "mode": 420,
+          "sha256": "04d38273f303f5d9211ac42751e96f04cd7a5db7ce9f3ba1bce4416bf66106b0"
+        }
+      },
+      "root": "tests/support/quiescent_oracle.rs",
+      "tests": 35
+    },
+    "inherited_test_instances": 70,
+    "module_chains": {
+      "src/controls.rs": [
+        "#[cfg(test)]\nmod tests {"
+      ],
+      "src/lib.rs": [
+        "pub mod controls;",
+        "pub mod trampoline;"
+      ],
+      "src/trampoline.rs": [
+        "#[cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]\nmod early_control;"
+      ],
+      "src/trampoline/early_control.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tests/early_control_oracle.rs": [
+        "#![cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]",
+        "#[path = \"support/quiescent_oracle.rs\"]\nmod oracle;"
+      ],
+      "tests/early_control_planning.rs": [
+        "#![cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]"
+      ],
+      "tests/early_control_race_oracle.rs": [
+        "#![cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]",
+        "#[path = \"support/quiescent_oracle.rs\"]\nmod oracle;"
+      ],
+      "tests/support/quiescent_oracle.rs": [
+        "include!(\"early_control_race.rs\");",
+        "include!(\"early_control_static.rs\");"
+      ],
+      "tools/rapid-profiler/src/data_flag.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/rapid-profiler/src/lib.rs": [
+        "pub mod data_flag;"
+      ]
+    },
+    "new_method_declarations": 15,
+    "predecessor_inventory_revision": "a2aa4d968b6f8f5e185d39e1231b7da764cd8007",
+    "previous_corpus_sha256": "1b6fb7c4c5238712fcf8f4ff71429c641ddc739d09b8e51af24622d31e82d290",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "INTERFACES.md",
+      "src/controls.rs",
+      "src/quiescent.rs",
+      "src/trampoline.rs",
+      "src/trampoline/early_control.rs",
+      "src/trampoline/early_control/tests.rs",
+      "src/trampoline/fitting.rs",
+      "tests/early_control_oracle.rs",
+      "tests/early_control_planning.rs",
+      "tests/early_control_race_oracle.rs",
+      "tests/support/early_control_race.rs",
+      "tests/support/early_control_static.rs",
+      "tests/support/quiescent_oracle.rs",
+      "tools/rapid-profiler/README.md",
+      "tools/rapid-profiler/src/data_flag.rs",
+      "tools/rapid-profiler/src/data_flag/tests.rs"
+    ],
+    "source_versions": {
+      "INTERFACES.md": {
+        "current": {
+          "bytes": 9018,
+          "mode": 420,
+          "sha256": "8b25e5b50512a5db60f38261c48c446fad1b36c46093f5b826729eb65e858d41"
+        },
+        "existed": true,
+        "previous": {
+          "bytes": 7830,
+          "mode": 420,
+          "sha256": "8ebedfaa3d670399fad8e31462d478539c8d8bda5d9da22dc71fb1ac3a53a096"
+        }
+      },
+      "src/controls.rs": {
+        "current": {
+          "bytes": 16661,
+          "mode": 420,
+          "sha256": "1c5bb2eabd7ae0a80592811fd015b0d9ed1dba2c796993fd5e145002c549d5c9"
+        },
+        "existed": true,
+        "previous": {
+          "bytes": 12996,
+          "mode": 420,
+          "sha256": "16867d6f968ca01c3a35ebc5ff24f6b603fce4f2f69b2a7c83a1ac2460f6a264"
+        }
+      },
+      "src/quiescent.rs": {
+        "current": {
+          "bytes": 122298,
+          "mode": 420,
+          "sha256": "54d6ebdb148de3660e64713d31a745d92f58141e851a17168ee4bd843ca0198d"
+        },
+        "existed": true,
+        "previous": {
+          "bytes": 119865,
+          "mode": 420,
+          "sha256": "3283c2bbf3989d8508462a06a737aa72aec9259b87a7aaca61337beaf854a953"
+        }
+      },
+      "src/trampoline.rs": {
+        "current": {
+          "bytes": 442213,
+          "mode": 420,
+          "sha256": "41c5bfeb00cb5aad4351ab8288cf71187343207b81745214d4ae961374d839b4"
+        },
+        "existed": true,
+        "previous": {
+          "bytes": 432877,
+          "mode": 420,
+          "sha256": "7049c34f351ec3af5fad5fe77a33b2d1076808b844cc0976dfa58401f1c11f7d"
+        }
+      },
+      "src/trampoline/early_control.rs": {
+        "current": {
+          "bytes": 8631,
+          "mode": 420,
+          "sha256": "a0d2654210592fe80a8b2ae0982279265dcc178424a44e7444dae9f17fcb2d22"
+        },
+        "existed": false,
+        "previous": {
+          "bytes": 0,
+          "mode": 420,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "src/trampoline/early_control/tests.rs": {
+        "current": {
+          "bytes": 17879,
+          "mode": 420,
+          "sha256": "edc38ab31065c28aca1eb4d5da7b55b4e492f6b09625773b893c33ca2ee12254"
+        },
+        "existed": false,
+        "previous": {
+          "bytes": 0,
+          "mode": 420,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "src/trampoline/fitting.rs": {
+        "current": {
+          "bytes": 8269,
+          "mode": 420,
+          "sha256": "bf3b64017fdff8d47d45dfc495de39c86dd45766688726c3a4152b5b0b706df7"
+        },
+        "existed": true,
+        "previous": {
+          "bytes": 8125,
+          "mode": 420,
+          "sha256": "e7d2c63ad4b923302d9cf4eaf67903fa7115f8552d670a5bc25739352d50a5a2"
+        }
+      },
+      "tests/early_control_oracle.rs": {
+        "current": {
+          "bytes": 43661,
+          "mode": 420,
+          "sha256": "2e097c5d136fb63f5e0e27bf7710f066f62f3e0c00ff4c194552dccba810a601"
+        },
+        "existed": false,
+        "previous": {
+          "bytes": 0,
+          "mode": 420,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "tests/early_control_planning.rs": {
+        "current": {
+          "bytes": 6225,
+          "mode": 420,
+          "sha256": "d8bfbfdd8a4077b65e7d475c11f28fb32c9c5e555209fca23da901901f35b2a6"
+        },
+        "existed": false,
+        "previous": {
+          "bytes": 0,
+          "mode": 420,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "tests/early_control_race_oracle.rs": {
+        "current": {
+          "bytes": 387,
+          "mode": 420,
+          "sha256": "d9f00a4f27f48689b357cd017121002c4d8ead5324d54f8d694e6033468bae29"
+        },
+        "existed": false,
+        "previous": {
+          "bytes": 0,
+          "mode": 420,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "tests/support/early_control_race.rs": {
+        "current": {
+          "bytes": 29859,
+          "mode": 420,
+          "sha256": "f2ef2c9b3b3b7cd11123b1fec9a4417cd3c4ce4d4467f3669021694733998763"
+        },
+        "existed": false,
+        "previous": {
+          "bytes": 0,
+          "mode": 420,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "tests/support/early_control_static.rs": {
+        "current": {
+          "bytes": 11077,
+          "mode": 420,
+          "sha256": "685f10d1ffd7d792d169eefb1a9e6c30c4cb53bbef2eaa48ccb6610403e4cf13"
+        },
+        "existed": false,
+        "previous": {
+          "bytes": 0,
+          "mode": 420,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "tests/support/quiescent_oracle.rs": {
+        "current": {
+          "bytes": 114299,
+          "mode": 420,
+          "sha256": "a12c9370678ba7a03be184d48669b2b852948eb5597ff8d5462e38123d24b221"
+        },
+        "existed": true,
+        "previous": {
+          "bytes": 113933,
+          "mode": 420,
+          "sha256": "44bce426beaf3644b826e405c660064c63f3a048866738c75c2fc4d6c0f1d68d"
+        }
+      },
+      "tools/rapid-profiler/README.md": {
+        "current": {
+          "bytes": 7507,
+          "mode": 420,
+          "sha256": "68b065b9fd33fee89ae3f42a714e9a1a1432f1d2de15f11d2d61328bfe6e8ba3"
+        },
+        "existed": true,
+        "previous": {
+          "bytes": 7012,
+          "mode": 420,
+          "sha256": "691f7fa697f7ca713c0538cab01cf39b57e8a817f0b59d6c0ac60869fda6d948"
+        }
+      },
+      "tools/rapid-profiler/src/data_flag.rs": {
+        "current": {
+          "bytes": 21174,
+          "mode": 420,
+          "sha256": "cb88833871f19cf0878101c9dcdbe122a69e0c1fdfab50cc79188f3f9947564c"
+        },
+        "existed": true,
+        "previous": {
+          "bytes": 19981,
+          "mode": 420,
+          "sha256": "7d0a7219e8344cf00c5c4edf862579d5ef26767eb694fce28b06d398131ca02f"
+        }
+      },
+      "tools/rapid-profiler/src/data_flag/tests.rs": {
+        "current": {
+          "bytes": 14175,
+          "mode": 420,
+          "sha256": "f5ff511b0dd471522fd3da8db362fed6d29c76e5fff0c43ee1b0b7d95850c9c1"
+        },
+        "existed": true,
+        "previous": {
+          "bytes": 12916,
+          "mode": 420,
+          "sha256": "ac7c030946e142ba53ff5160fca6008a03e2417b52cd6763b4e8336497c95ba7"
+        }
+      }
+    },
+    "workspace_changes": {
+      "test/early_control_oracle": {
+        "current": {
+          "ignored": 0,
+          "tests": 37
+        },
+        "previous": null
+      },
+      "test/early_control_planning": {
+        "current": {
+          "ignored": 0,
+          "tests": 2
+        },
+        "previous": null
+      },
+      "test/early_control_race_oracle": {
+        "current": {
+          "ignored": 0,
+          "tests": 36
+        },
+        "previous": null
+      },
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 523
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 514
+        }
+      },
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 33,
+          "tests": 581
+        },
+        "previous": {
+          "ignored": 33,
+          "tests": 580
+        }
+      }
+    }
   },
   "source_successor_96378": {
     "added_default_methods": {
@@ -6575,6 +8014,7 @@
   "sources": {
     "Cargo.lock": "4aad718e815f59f813573d5f1302ea87c35b178a949bd5159882d5ee1301d89a",
     "Cargo.toml": "f1a018451ab4d6694747f58062ee03c9ad53e475865cf581d5de63c6906bcefb",
+    "INTERFACES.md": "8b25e5b50512a5db60f38261c48c446fad1b36c46093f5b826729eb65e858d41",
     "evaluation/admission/core_813_inventory.py": "99073f490c5d9d0ea96bacb676d437658407d8c63d3f3d7ebb17e7c98d710407",
     "evaluation/admission/core_cc846_inventory.py": "69f5dbcac4a8e0e2a602b23d75fc665e216202b5854222c8044c25d1699153ac",
     "evaluation/admission/core_f353_inventory.py": "869b7cbfe16f7b4f2b54385f13d58857ba6615dd176bae6c2934c1ca21c8e5d1",
@@ -6585,7 +8025,7 @@
     "evaluation/admission/test_main34c47_inventory.py": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "f2874b7589b24a963da1fe3912378fa74cf20e6e0a4eb8ebf736d93ef182039a",
-    "evaluation/admission/test_main97ab_inventory.py": "d36b0532c5a9e6f4ce6c25c40636e39daea9632b2a64e152318cedd80aa7d771",
+    "evaluation/admission/test_main97ab_inventory.py": "df889c819da0cc1dba95c683e913e618d3d6574acc429f6b124112ebf6d731d8",
     "evaluation/admission/test_main981419_inventory.py": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
     "evaluation/admission/test_mainaf81_inventory.py": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
@@ -6614,6 +8054,7 @@
     "src/backedge_clock/owned_region.rs": "08200c9db8b5922f595fe46459b113ab7e2223eb9e45fb6c0f8b7eedd611c432",
     "src/backedge_clock/owned_region/tests.rs": "3cb1cb505378787bf4e1fd665477983f7908901f64449227ef20d915f704864d",
     "src/bundle.rs": "82e36a7edb832b33a18ae25e68e1d81b2c3b6ddb21b4620626f40fd66187b9af",
+    "src/controls.rs": "1c5bb2eabd7ae0a80592811fd015b0d9ed1dba2c796993fd5e145002c549d5c9",
     "src/emission.rs": "7eb271d9471d10c99b85d14a5bd33fa9f4787b7d970ad16c26fa6f8289cc7873",
     "src/emission/artifact_frame_tests.rs": "db27456d9816ae84f1a98c8529e136d0e678659322e34fddabce26ef26a4a324",
     "src/emission/placement.rs": "d5f296afd4e076b50af2db43123b543b8bc41d3257df9e2f88b2cf072256496f",
@@ -6632,28 +8073,66 @@
     "src/neighbor_overlap/tests.rs": "bc5880f3aff72cf5ea13b29592c7d848a879b5f9a71fabae7667888d027065e8",
     "src/neighbor_short.rs": "eb6870d77c53a5e29d911f0c1674281eafed44c63394364e393ed0bbd7d20897",
     "src/neighbor_short/tests.rs": "29c13e229d449458eb66843618c3429901abb2bd424e7099b931dfb612c95087",
-    "src/quiescent.rs": "3283c2bbf3989d8508462a06a737aa72aec9259b87a7aaca61337beaf854a953",
+    "src/quiescent.rs": "54d6ebdb148de3660e64713d31a745d92f58141e851a17168ee4bd843ca0198d",
     "src/quiescent/clock_region.rs": "be8ab2bfa2ba682361a1f647d51fceb9b43c9a600be3de711da2217c04ff1788",
     "src/quiescent/clock_region/tests.rs": "49decb1a58ab56dec5e00ac1e0797b57962758e4ba1a5aa680b79d81a807fb35",
     "src/quiescent/fitting_tests.rs": "c2352d8f207a812572ce74714684941a921a2c2a99b420ed5fca1a71b229cdc5",
-    "src/trampoline.rs": "7049c34f351ec3af5fad5fe77a33b2d1076808b844cc0976dfa58401f1c11f7d",
+    "src/trampoline.rs": "41c5bfeb00cb5aad4351ab8288cf71187343207b81745214d4ae961374d839b4",
     "src/trampoline/artifact_allocation.rs": "ed23100722b011aadaabd7945583d82db0c1c43b00a31b1b14a252b48a580729",
     "src/trampoline/artifact_allocation/tests.rs": "a5ec8b16a83a9b0c51c431161f60490c41f2ad39d29ffe4d8c61e92ab077e0e7",
     "src/trampoline/artifact_jrcxz.rs": "89b78a5c4ff7668ec09b61d7dfcf1bcb5630adfaae57053efa54a710fbc0d713",
     "src/trampoline/clock_region_tests.rs": "76a75d05b1f711dbd4b36d373074309ab6923015b3eec2f9cd7a4db5ed913bb2",
-    "src/trampoline/fitting.rs": "e7d2c63ad4b923302d9cf4eaf67903fa7115f8552d670a5bc25739352d50a5a2",
+    "src/trampoline/early_control.rs": "a0d2654210592fe80a8b2ae0982279265dcc178424a44e7444dae9f17fcb2d22",
+    "src/trampoline/early_control/tests.rs": "edc38ab31065c28aca1eb4d5da7b55b4e492f6b09625773b893c33ca2ee12254",
+    "src/trampoline/fitting.rs": "bf3b64017fdff8d47d45dfc495de39c86dd45766688726c3a4152b5b0b706df7",
     "src/trampoline/fitting/tests.rs": "b947cad0990f0a8a6357562da2c8420678121716ef4b29b83efe839b790ee223",
+    "tests/early_control_oracle.rs": "2e097c5d136fb63f5e0e27bf7710f066f62f3e0c00ff4c194552dccba810a601",
+    "tests/early_control_planning.rs": "d8bfbfdd8a4077b65e7d475c11f28fb32c9c5e555209fca23da901901f35b2a6",
+    "tests/early_control_race_oracle.rs": "d9f00a4f27f48689b357cd017121002c4d8ead5324d54f8d694e6033468bae29",
     "tests/neighbor_eviction_oracle.rs": "685d5caa3933dd5649b70b4e8fa1e0ce632e1a9b52d51aed3c671288b77c5e64",
+    "tests/support/adc_state.rs": "6210f02e2d4d1906fadecf2eadd876b02d0154ceb330c467e15817ed33e54ec0",
+    "tests/support/adjacent_b2_fixture.rs": "dcaf2962f81f690785f61770713d13f0104bbef4b9e7beaed6f0d641aff33ca0",
+    "tests/support/adjacent_b2_native.rs": "2ea1625733ccf5a1f9b87db1ac480bc00421eca7b54a63f9b6dc19ceec7e1771",
+    "tests/support/boundary_signal.rs": "949ccf6ee19949cdc1f16305dfb6d161f313df5536ec509968572afc21727a60",
     "tests/support/bounded_proc_stat.rs": "c7bf20dbf6c1ccb91ae54f7965b1957ef5f9cea7de063a7f8af556fe02559866",
+    "tests/support/compiled_selected_state.rs": "3451cc5f88607a83adc8b4f95aaeab59661ae9a295c70e5482f3db25581d5691",
+    "tests/support/e9_common_app.rs": "faec58111347cc1c0d41c0fa47862207ae8938f7b4caddad98b4afc3043699ae",
+    "tests/support/e9_common_app_data.rs": "92bca80e47c0d20825a4ec278f0de47a178dd1f11b0062bf01b2bbfa12659bf4",
+    "tests/support/e9_common_core.rs": "0feda92bd5c0d5f0ae5cfb151fe39899f1afc3996ba9511fed99ed8526be3c32",
+    "tests/support/e9_common_core_pages.rs": "a23d6e230831f5ff54d19b95394ac21c5c0a5cd4dd083a62ad1416f3c44c620e",
+    "tests/support/e9_common_e9.rs": "92712fecdfbb2a0f7d77cd86b4ae2b5f451e17eea2c87ac096ad64ed0673eae5",
+    "tests/support/e9_common_image.rs": "f112e774d705838c74fe51d7636140c8c4805830f1fb3a78c5007846f8c8e66e",
+    "tests/support/e9_common_planning_profile.rs": "873bfbd50f2878e37bbef91193db4726faed18af5dacf395b1726882e637dcf5",
+    "tests/support/e9_common_recording.rs": "d0419f184093a5c1ef658028c7a8a2869dea8c849a5da44cd1f191c3b5085bc7",
+    "tests/support/e9_common_recording_native.rs": "a3e8d4e326bada12b9c77c4770cfab6d44dbb59a6eb82d4a5517542602d8d129",
+    "tests/support/e9_common_router_contract.rs": "117e56b69a8f6020e8a9eadcf0802dbf5ab0fd2a84893be4dbbf3a7d8a582cfb",
+    "tests/support/e9_common_router_controls.rs": "4104cce63784b34d4a572799da60f80d824a75aaf50394138596a59185ce1d1d",
+    "tests/support/e9_common_router_native.rs": "4e793a2f48588060fb827807a882461e7f23a3dcd81d86d568facec08c5108d8",
+    "tests/support/e9_common_seed.rs": "df1678dc0d0a5eede05d76d592048d5065d983fa44ba42c6d5dd7da9d297c2e3",
+    "tests/support/early_control_race.rs": "f2ef2c9b3b3b7cd11123b1fec9a4417cd3c4ce4d4467f3669021694733998763",
+    "tests/support/early_control_static.rs": "685f10d1ffd7d792d169eefb1a9e6c30c4cb53bbef2eaa48ccb6610403e4cf13",
+    "tests/support/elf_exec_oracle.rs": "b595b7d5cd19e72c4754a60f5fe3b4a359772334f9dda6f9526882fbe4358f04",
+    "tests/support/elf_exec_provider.rs": "9b5562034fc6bbdc32f889ab64df7f414e96ee5d9a99c06e39bf6728f128e730",
+    "tests/support/elf_exec_tactics.rs": "c0910c4d918a5b34e6af1933fe9490b973e767a9ebc5a890cb62484b3a2a5c61",
+    "tests/support/elf_exec_tactics_contract.rs": "caca8169432f466dc00967304eacd187c7bc2915b5f73add9f6edce491af768e",
+    "tests/support/entry_signal.rs": "44d22039625dcc98dbef1877c3c904c939708e0d0be90e91ae106a80ffdb41b9",
     "tests/support/entry_veneer_artifact_oracle.rs": "70e4168d3d6b3ba223a9e48a693434efe03dc76278bd9dbee69e62b335b189de",
     "tests/support/entry_veneer_artifact_oracle/state.rs": "9c15c2441b430d8ae0a0f75355144233367034ec5fa0170fe2a9817bb66e7a35",
     "tests/support/isolated_native_test.rs": "3a3dbcf84ddb0fb276ffb9aa9653b412f53abf7e9ddea5231a669504c9b768b1",
     "tests/support/jrcxz_artifact_oracle.rs": "fc30abfc30dbd1d0a0a23393890eddaeabf6a3679079b59b94231d0e49dfc5b8",
     "tests/support/jrcxz_state.rs": "ea3f380a179470e12264258e5a01bfefebaaebb7b0654b2354b81a9b4f5eb55f",
+    "tests/support/neighbor_fixture_arena.rs": "40d3564b0aa99f8aa61c95ed8f52c58b20c06931a98850ed849c886efadf9e2e",
     "tests/support/overlapping_neighbor_artifact_oracle.rs": "debf65214088e16ff777f68d599fc1a99b903c9d1613fbb7e14b21466d3e3f7d",
     "tests/support/overlapping_neighbor_artifact_oracle/state.rs": "55f8119dba3d5590fcfb9f5bc1bdfd7787b2b13f699c2980120bb52eb254e978",
     "tests/support/owned_group_candidate.rs": "48a8780b1d99cb88b3deb252d1ecbfc8948628bd287d0bc20d06b9f6ca3a5786",
-    "tests/support/quiescent_oracle.rs": "44bce426beaf3644b826e405c660064c63f3a048866738c75c2fc4d6c0f1d68d",
+    "tests/support/parked_signal.rs": "9554d55be8397a500005f3a5f4f3e73c5bf647900b0d013646fcc7f8b8b2e355",
+    "tests/support/process_text.rs": "ab415bb64e48a78700ac3fe6648eedf76644a533c2de3380f592e6ce260644f1",
+    "tests/support/quiescent_oracle.rs": "a12c9370678ba7a03be184d48669b2b852948eb5597ff8d5462e38123d24b221",
+    "tests/support/routed_jmp_artifact.rs": "f9f37eeb884a3004328478129790a6b98305e5af70c31e2ce267346c7e123735",
+    "tests/support/routed_jmp_fixture.rs": "9edb02b399e0d7c330c53eedefbad3d5c0b82876ac758f693f758ccdd5d77241",
+    "tests/support/routed_jmp_native.rs": "9c3f8a28175ddbc2bf8bc12e507f90ca0e3b61cbbc5835e03bc8cce9268c680b",
+    "tests/support/word_sync.rs": "8d7a590a68378251dfce241481f9549e38332f54e28201e41c7b011284448786",
+    "tests/support/word_trace_method.rs": "04d38273f303f5d9211ac42751e96f04cd7a5db7ce9f3ba1bce4416bf66106b0",
     "tools/elf-rewrite/Cargo.toml": "44f89364d57a07c1f21d94467c0a619ca879d22e776368dfa9eda00c97a93e6d",
     "tools/elf-rewrite/e9-sites-controls.py": "f90efe8819b3e0c06749906b2115cc224fd415d3d3662bef72931bb31f71d7be",
     "tools/elf-rewrite/e9-sites.py": "4270f18a2128543fa0eb1b1982ed8368b77c5216c0926a5012371c8a3a9ea893",
@@ -6693,6 +8172,7 @@
     "tools/elf-rewrite/tests/rx_run_loader.rs": "bf155716fcffec9d8008bd96e34eba88f00f689d3c5b28a65ac03c11ba526019",
     "tools/elf-rewrite/tests/support/composition_overlay.rs": "957573fdf12f81f63e302a761f298001a241e728d8251d65e5a85608c1fccf2b",
     "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+    "tools/rapid-profiler/README.md": "68b065b9fd33fee89ae3f42a714e9a1a1432f1d2de15f11d2d61328bfe6e8ba3",
     "tools/rapid-profiler/ordinary-interval/main.rs": "76c776c72b6818743a18a47dff80ad14f4cd03567bd62183ddf05d11eb2527a9",
     "tools/rapid-profiler/ordinary-interval/normal.rs": "0618d34ca349bcd15db6cd3061912cbb2e8f939e1cf38277b49e6b60d20a35a3",
     "tools/rapid-profiler/ordinary-interval/normal/csv.rs": "dec72317a616660dca1dd673f0ee0075361fcb7503537b930902da579a3d8aae",
@@ -6706,6 +8186,8 @@
     "tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs": "9083a2501d1fff1d9702c6dfa46125df625969c3622dc250eb04e8e6d16c0459",
     "tools/rapid-profiler/ordinary-interval/normal/session/phase_totals.rs": "d153c4cb2b476b135ce28382848fe5d0e53e6558bbc048268cc36a2a64eccb24",
     "tools/rapid-profiler/ordinary-interval/normal/session/worker.rs": "1020f86b074c2348d9fd1bb492793bd1d55e17439ea43d82936f00ec91f80cfa",
+    "tools/rapid-profiler/src/data_flag.rs": "cb88833871f19cf0878101c9dcdbe122a69e0c1fdfab50cc79188f3f9947564c",
+    "tools/rapid-profiler/src/data_flag/tests.rs": "f5ff511b0dd471522fd3da8db362fed6d29c76e5fff0c43ee1b0b7d95850c9c1",
     "tools/rapid-profiler/src/frontend_native/always_on.rs": "3f49eaca5cd65646dfda745ac7e75efc2d5466deeeaa4fd646de0e04d2e26423",
     "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": "d14c5ce91a8d57d97ca5c560e28f32cb620c5e2a5c7ab2affe49610552bbc944",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": "32e55a90906a1c023ba7a444fbfc51c7db3fd5f1da7fec545fbdeed818aa2740",

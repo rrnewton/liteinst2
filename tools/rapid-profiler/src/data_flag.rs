@@ -3,7 +3,8 @@
 //! This is ordinary-thread, non-unwinding callback code, not signal-safe code.
 //! Source publication, generated-code lifetime and architectural qualification
 //! remain the caller's existing controlled-emitter obligations. No entry/return
-//! pairing, code writes, interval toggle, early flag gate or reclamation is added.
+//! pairing, code writes, interval toggle or reclamation is added. Optional point
+//! actions may select the separate early flag gate before ordinary context capture.
 //! A separate admission-boundary result uses the registry lock. Shared physical
 //! Visibility remains Eventual: no all-executor Boolean visibility or code
 //! barrier is supplied, and already admitted callbacks can still be running.
@@ -14,7 +15,9 @@ use crate::frontend::{
 use crate::frontend_tls::{self, PointObservation, ThreadRegistration};
 use crate::generation::{Config, DeactivationRequest, FunctionId};
 use liteinst2::contracts::{Epoch, Refusal, ToggleProbe, Visibility};
-use liteinst2::controls::{ControlIdentity, ControlWriter, ControlledAction, ProbeControl};
+use liteinst2::controls::{
+    ControlIdentity, ControlWriter, ControlledAction, PointObservationAction, ProbeControl,
+};
 use liteinst2::trampoline::{HookCallback, HookContext};
 use std::cell::{Cell, RefCell};
 use std::marker::PhantomData;
@@ -166,6 +169,30 @@ impl DataFlagSession {
             .map(|(s, control)| ControlledAction {
                 logical_pc: s.pc,
                 control: control.clone(),
+            })
+            .collect()
+    }
+
+    /// Select early context-capture bypass for optional points only.
+    ///
+    /// Mandatory callbacks retain the existing after-capture dispatcher and
+    /// their permanently enabled managed controls. Optional callbacks still
+    /// perform the same generation/registry reservation after the early hint.
+    /// This does not change eventual visibility, drainage, or code ownership.
+    /// Use with `quiescent::plan_point_observations_detailed`; `actions()` keeps
+    /// the existing emission path. These are independent point observations,
+    /// never the entry and return halves of an interval.
+    pub fn point_observation_actions(&self) -> Vec<PointObservationAction> {
+        self.binding
+            .specs
+            .iter()
+            .zip(self.actions())
+            .map(|(spec, action)| {
+                if spec.function.is_some() {
+                    PointObservationAction::EarlyIfEnabled(action)
+                } else {
+                    PointObservationAction::AfterCapture(action)
+                }
             })
             .collect()
     }

@@ -9,10 +9,11 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '8ace5fd2d234155f5b0185bfc88d3d3c9767ebede45ec9a2d172631c9aa981b8',
+require(hashlib.sha256(RAW).hexdigest() == '60592a429e2dbd018826b96d1e221ac617a17c14eca9bea10c0a0b35fd7c4bb7',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
+EARLY_PREVIOUS = DATA['source_successor_667921']['previous_corpus_sha256']
 ADMISSION_PREVIOUS = DATA['source_successor_c110']['previous_corpus_sha256']
 CLOCK_PREVIOUS = DATA['source_successor_abe7']['previous_corpus_sha256']
 OVERLAP_PREVIOUS = DATA['source_successor_124521']['previous_corpus_sha256']
@@ -110,11 +111,28 @@ def require_sources(error='main97ab_source_inventory_differs'):
         source_before_evaluation(path, raw, error)
 
 
-def before_c110(declared, error='main97ab_inventory_differs'):
-    """Bind the three admission-comparison tests in the existing preempt harness."""
+def before_667921(declared, error='main97ab_inventory_differs'):
+    """Bind all early-control tests, including both complete inherited oracles."""
     require(type(declared) is dict and digest(declared) == CURRENT, error)
     owned = plain_catalog((declared, DATA))
     old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in DATA['source_successor_667921']['workspace_changes'].items():
+        require(digest(rows[name]) == digest(change['current']), error)
+        if change['previous'] is None:
+            del rows[name]
+        else:
+            rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == EARLY_PREVIOUS, error)
+    return old if owned else copy.deepcopy(old)
+
+
+def before_c110(declared, error='main97ab_inventory_differs'):
+    """Bind the three admission-comparison tests in the existing preempt harness."""
+    owned = plain_catalog((declared, DATA))
+    declared = before_667921(declared, error)
+    require(type(declared) is dict and digest(declared) == EARLY_PREVIOUS, error)
+    old = declared if owned else copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in DATA['source_successor_c110']['workspace_changes'].items():
         require(digest(rows[name]) == digest(change['current']), error)
