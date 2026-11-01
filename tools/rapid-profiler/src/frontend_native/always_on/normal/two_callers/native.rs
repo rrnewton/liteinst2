@@ -120,7 +120,7 @@ fn snapshot(state: &NormalState) -> Snapshot {
         totals: state.totals,
         cursor: state.cursor,
         next: state.next,
-        records: state.records,
+        records: *state.records,
         len: state.len,
         journal: state.journal.page.0,
         journal_address: state.journal.address(),

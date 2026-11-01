@@ -61,6 +61,23 @@ pub(super) fn stream_for(binding: &Binding) -> Option<NormalModuleHistoryStream>
     })
 }
 
+pub(super) fn early_stream_for(binding: &Binding) -> Option<NormalModuleHistoryStream> {
+    if !owned::early_entry::early_binding(binding) {
+        return None;
+    }
+    let BindingProfile::Module { site, functions } = &binding.profile else {
+        return None;
+    };
+    Some(NormalModuleHistoryStream {
+        key: Arc::clone(&binding.key),
+        pid: binding.pid,
+        install: binding.install,
+        identity: site.identity(),
+        functions: *functions,
+        entries: [site.functions()[0].entry(), site.functions()[1].entry()],
+    })
+}
+
 /// Contiguous immutable action transfer. A complete stream starts at 1/0/Initial.
 #[derive(Debug, Eq, PartialEq)]
 pub struct NormalModuleHistoryBatch {

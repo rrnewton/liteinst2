@@ -23,13 +23,19 @@ pub use leaf_set::{
     NormalLeafSetHistoryWindow, NormalLeafSetSessionController, NormalLeafSetThread,
     PreparedNormalLeafSetSessionController,
 };
+pub(in crate::frontend_native::always_on) use module::owned::early_entry::{
+    entry_callback as early_entry_callback, exit_callback as early_exit_callback,
+};
 mod two_callers;
 pub use module::{
-    NormalModuleBatch, NormalModuleClient, NormalModuleClose, NormalModuleCloseState,
-    NormalModuleController, NormalModuleHistoryBatch, NormalModuleHistoryStream,
-    NormalModuleHistoryWindow, NormalModuleInputs, NormalModuleRecord,
-    NormalModuleSessionController, NormalModuleThread, OwnedNormalModuleResult,
-    OwnedNormalModuleThread, PreparedNormalModuleController, PreparedNormalModuleSessionController,
+    EarlyEntryModuleClient, EarlyEntryModuleObservations, EarlyEntryModulePhysicalRow,
+    EarlyEntryModuleSessionController, NormalModuleBatch, NormalModuleClient, NormalModuleClose,
+    NormalModuleCloseState, NormalModuleController, NormalModuleHistoryBatch,
+    NormalModuleHistoryStream, NormalModuleHistoryWindow, NormalModuleInputs, NormalModuleRecord,
+    NormalModuleSessionController, NormalModuleThread, OwnedEarlyEntryModuleResult,
+    OwnedEarlyEntryModuleThread, OwnedNormalModuleResult, OwnedNormalModuleThread,
+    PreparedEarlyEntryModuleSessionController, PreparedNormalModuleController,
+    PreparedNormalModuleSessionController,
 };
 pub use two_callers::PreparedTwoCallerNormalController;
 
@@ -46,6 +52,8 @@ pub(super) fn module_session_binding_matches(binding: &Binding) -> bool {
 }
 
 const CALLS: usize = EVENTS / 2;
+mod presence;
+use presence::PresenceSlots;
 
 /// Contract-based return acknowledgement, distinct from an observed physical RET.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -165,6 +173,7 @@ enum TransferProfile {
     Single,
     Pair,
     LeafSet,
+    EarlyModule,
 }
 impl TransferProfile {
     fn from_pair(module: bool) -> Self {
@@ -415,8 +424,8 @@ struct NormalState {
     stack: ReadableStack,
     model: ThreadModel,
     pending: Option<Pending>,
-    records: [Option<NormalRecord>; CALLS],
-    functions: [Option<SelectedFunction>; CALLS],
+    records: PresenceSlots<NormalRecord>,
+    functions: PresenceSlots<SelectedFunction>,
     len: usize,
     next: u64,
     totals: NormalTotals,
@@ -744,8 +753,8 @@ impl NormalState {
             stack,
             model,
             pending: None,
-            records: [None; CALLS],
-            functions: [None; CALLS],
+            records: PresenceSlots::empty(),
+            functions: PresenceSlots::empty(),
             len: 0,
             next: 1,
             totals: NormalTotals::default(),
@@ -793,10 +802,8 @@ impl NormalState {
             || self.model.identity() != self.registration
             || self.model.depth() != usize::from(sampled)
             || self.journal.used() != self.len * 2 + outstanding as usize + returned as usize
-            || self.records[..self.len].iter().any(Option::is_none)
-            || self.records[self.len..].iter().any(Option::is_some)
-            || self.functions[..self.len].iter().any(Option::is_none)
-            || self.functions[self.len..].iter().any(Option::is_some)
+            || !self.records.is_prefix(self.len)
+            || !self.functions.is_prefix(self.len)
         {
             return Err(error(Cause::Invariant));
         }
@@ -859,72 +866,6 @@ impl NormalState {
     ) -> Result<(), BridgeError> {
         self.enter_function(self.selection(0)?, pc, rsp, word, start)
     }
-    fn enter_function(
-        &mut self,
-        selected: SelectedFunction,
-        pc: u64,
-        rsp: u64,
-        word: u64,
-        start: RawTimestamp,
-    ) -> Result<(), BridgeError> {
-        self.selected_geometry(selected, pc, None)?;
-        self.shape()?;
-        if self.pending.is_some() {
-            // identity() already authenticated a new real entry. Never reread the
-            // old stack slot: this new CALL may have overwritten it legitimately.
-            self.confirm(NormalAcknowledgement::NextEntry { ordinal: self.next })?;
-        }
-        reserve_entry(self.len, self.journal.used())?;
-        let next = self.next.checked_add(1).ok_or(error(Cause::Capacity))?;
-        let entered = self
-            .totals
-            .entered
-            .checked_add(1)
-            .ok_or(error(Cause::Capacity))?;
-        if let Some(accuracy) = &mut self.accuracy {
-            accuracy.begin(self.len, selected, self.next)?;
-        }
-        let mut slot = ModelReturnSlot {
-            identity: self.next,
-            word: TOKEN,
-        };
-        let enter = match self.binding.entry_mode {
-            EntryMode::NonBlocking => ThreadModel::enter_interval,
-            EntryMode::Concurrent => ThreadModel::enter_interval_waiting,
-        };
-        let receipt = enter(
-            &mut self.model,
-            self.binding.install,
-            selected.function,
-            start.ticks,
-            &mut slot,
-        )
-        .map_err(|e| error(Cause::Entry(e)))?;
-        // Custody precedes every fallible postcondition, including history packing.
-        self.pending = Some(Pending {
-            selected,
-            ordinal: self.next,
-            rsp,
-            word,
-            entry_pc: pc,
-            start,
-            receipt,
-            slot,
-            summary: None,
-            returned: None,
-        });
-        let p = self.pending.as_mut().ok_or(error(Cause::Invariant))?;
-        let summary = p.receipt.summary().ok_or(error(Cause::Invariant))?;
-        p.summary = Some(summary);
-        let (kind, generation, bits) =
-            history::packed_for_function(&self.binding.session, p.selected.function, summary)?;
-        self.journal
-            .row([kind, p.ordinal, pc, rsp, word, generation, bits]);
-        self.journal.header(self.tid, 1);
-        self.next = next;
-        self.totals.entered = entered;
-        Ok(())
-    }
     #[cfg(test)]
     fn observe(
         &mut self,
@@ -934,55 +875,6 @@ impl NormalState {
         end: RawTimestamp,
     ) -> Result<(), BridgeError> {
         self.observe_function(self.selection(0)?, pc, rsp, word, end)
-    }
-    fn observe_function(
-        &mut self,
-        selected: SelectedFunction,
-        pc: u64,
-        rsp: u64,
-        word: u64,
-        end: RawTimestamp,
-    ) -> Result<(), BridgeError> {
-        self.shape()?;
-        let pending = self.pending.as_ref().ok_or(error(Cause::Return))?;
-        self.selected_geometry(selected, pending.entry_pc, Some(pc))?;
-        let p = self.pending.as_mut().ok_or(error(Cause::Return))?;
-        if p.selected != selected
-            || p.returned.is_some()
-            || p.rsp != rsp
-            || p.word != word
-            || p.slot.identity != p.ordinal
-        {
-            return Err(error(Cause::Return));
-        }
-        let summary = p.summary.ok_or(error(Cause::Invariant))?;
-        let (kind, generation, bits) =
-            history::packed_for_function(&self.binding.session, p.selected.function, summary)?;
-        let observed = self
-            .totals
-            .ret_observed
-            .checked_add(1)
-            .ok_or(error(Cause::Capacity))?;
-        if self.journal.used() >= EVENTS || self.len >= CALLS {
-            return Err(error(Cause::Capacity));
-        }
-        if let Some(accuracy) = &mut self.accuracy {
-            accuracy.end(self.len, selected, p.ordinal)?;
-        }
-        let raw = RawInterval {
-            ordinal: p.ordinal,
-            entry_pc: p.entry_pc,
-            return_pc: pc,
-            owner: timing::owner(summary),
-            start: p.start,
-            end,
-        };
-        self.journal
-            .row([kind + 1, p.ordinal, pc, rsp, word, generation, bits]);
-        p.returned = Some(raw);
-        self.totals.ret_observed = observed;
-        // Receipt, sampled frame and FunctionClosed owner remain untouched.
-        Ok(())
     }
     fn confirmation(
         &self,
@@ -1066,8 +958,8 @@ impl NormalState {
         {
             return Err(error(Cause::Invariant));
         }
-        self.records[self.len] = Some(record);
-        self.functions[self.len] = Some(p.selected);
+        self.records.set(self.len, Some(record));
+        self.functions.set(self.len, Some(p.selected));
         self.len += 1;
         self.totals = totals;
         self.pending = None;
@@ -1212,8 +1104,8 @@ impl NormalState {
         if let Some(accuracy) = &mut self.accuracy {
             accuracy.transferred();
         }
-        self.records = [None; CALLS];
-        self.functions = [None; CALLS];
+        self.records.clear();
+        self.functions.clear();
         self.len = 0;
         for i in 0..512 {
             self.journal.word(i, 0);
@@ -1239,6 +1131,9 @@ impl NormalThread {
         match profile {
             TransferProfile::Single => self.matches_for(s, false),
             TransferProfile::Pair => self.matches_for(s, true),
+            TransferProfile::EarlyModule => {
+                self.matches_identity(s) && early_module_binding_matches(&s.binding)
+            }
             TransferProfile::LeafSet => {
                 self.matches_identity(s) && leaf_set::binding_matches(&s.binding)
             }
@@ -1475,3 +1370,18 @@ pub(super) unsafe extern "C" fn exit_callback(
 
 #[cfg(test)]
 mod tests;
+
+// Separate bank/transfer admission; old ModuleSession never accepts early sites.
+pub(super) fn early_module_profile_matches(
+    profile: &BindingProfile,
+    limits: Limits,
+    config: Config,
+) -> bool {
+    module::owned::early_entry::profile_matches(profile, limits, config)
+}
+pub(super) fn early_module_binding_matches(binding: &Binding) -> bool {
+    module::owned::early_entry::early_binding(binding)
+}
+
+#[cfg(any(test, feature = "frontend-native-qualification"))]
+pub use module::owned::early_entry::qualification as early_entry_qualification;

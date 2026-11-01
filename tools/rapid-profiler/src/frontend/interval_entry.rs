@@ -247,14 +247,11 @@ impl ThreadModel {
             let stamp = stamp(&session, &writer, &registry)?;
             let state = match &registry.current {
                 Some(owner) => {
-                    let handle = AdmissionHandle {
-                        owner: Arc::clone(owner),
-                        thread: self.identity,
-                    };
                     let start_sequence = self.completed_sequence;
                     // Both guards remain live through the unchanged reservation,
                     // preallocated frame push and original continuation write.
-                    match self.enter_inner(&handle, function, value, slot) {
+                    // The registry guard retains owner; successes keep their own Arc.
+                    match self.enter_owner(owner, self.identity, function, value, slot) {
                         Ok(admission) => Entered::Admitted {
                             admission,
                             start_sequence,

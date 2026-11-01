@@ -489,10 +489,11 @@ impl Walk<'_> {
     fn step(&mut self, phase: &str) {
         assert!(
             self.steps < MAX_STEPS,
-            "whole ordinary child 20000-step budget: phase={phase} steps={} rip={:#x} pid={}",
+            "whole ordinary child 20000-step budget: phase={phase} steps={} rip={:#x} pid={} step_anchor={:#x}",
             self.steps,
             self.child.registers().rip,
-            self.child.pid
+            self.child.pid,
+            Self::step as *const () as usize
         );
         assert!(Instant::now() < self.child.deadline);
         self.steps += 1;
@@ -511,7 +512,8 @@ impl Walk<'_> {
 }
 
 // Only the new route checks the carried deadline after each ready-returning
-// step. The old reach_gate and step bodies/predicates remain literal.
+// step. The old reach_gate and step predicates remain literal; step's failure
+// diagnostic additionally carries its code address for PIE attribution.
 impl Walk<'_> {
     fn reach_selected_gate(
         &mut self,

@@ -166,8 +166,8 @@ fn snapshot(s: &NormalState) -> Snapshot {
             actual_summary: p.receipt.summary(),
             returned: p.returned,
         }),
-        records: s.records,
-        functions: s.functions,
+        records: *s.records,
+        functions: *s.functions,
         journal: s.journal.page.0,
         len: s.len,
         next: s.next,
@@ -512,9 +512,11 @@ fn leaf_set_transfer_validates_every_row_and_journal_word() {
         if n > 1 {
             for i in 0..f.state.len {
                 let saved = f.state.functions[i];
-                f.state.functions[i] = Some(f.state.selection((i + 1) % n).unwrap());
+                f.state
+                    .functions
+                    .set(i, Some(f.state.selection((i + 1) % n).unwrap()));
                 f.refused_transfer();
-                f.state.functions[i] = saved;
+                f.state.functions.set(i, saved);
             }
         }
         let batch = f.transfer();

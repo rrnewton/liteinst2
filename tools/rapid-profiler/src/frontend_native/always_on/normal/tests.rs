@@ -2,6 +2,50 @@
 //! No publication, native CALL/RET, actual checkpoint attestation or code drain.
 use super::*;
 
+#[test]
+fn normal_shape_refuses_every_record_or_function_hole_and_stray_tail() {
+    let mut example = Fixture::new(1);
+    example.enter();
+    example.observe();
+    example
+        .state
+        .confirm(NormalAcknowledgement::CallerCheckpoint)
+        .unwrap();
+    let record = example.state.records[0].unwrap();
+    let selected = example.state.functions[0].unwrap();
+    let mut f = Fixture::new(1);
+    for prefix in 0..=CALLS {
+        assert_eq!(f.state.len, prefix);
+        assert_eq!(f.state.shape(), Ok(()));
+        let records = *f.state.records;
+        let functions = *f.state.functions;
+        for (index, (&old_record, &old_function)) in records.iter().zip(&functions).enumerate() {
+            f.state
+                .records
+                .set(index, if index < prefix { None } else { Some(record) });
+            assert_eq!(f.state.shape(), Err(error(Cause::Invariant)));
+            f.state.records.set(index, old_record);
+            f.state
+                .functions
+                .set(index, if index < prefix { None } else { Some(selected) });
+            assert_eq!(f.state.shape(), Err(error(Cause::Invariant)));
+            f.state.functions.set(index, old_function);
+            assert_eq!(*f.state.records, records);
+            assert_eq!(*f.state.functions, functions);
+            assert_eq!(f.state.shape(), Ok(()));
+        }
+        if prefix != CALLS {
+            // Real metadata receipt transitions establish each valid prefix;
+            // this never invokes native code or attests physical return.
+            f.enter();
+            f.observe();
+            f.state
+                .confirm(NormalAcknowledgement::CallerCheckpoint)
+                .unwrap();
+        }
+    }
+}
+
 const ENTRY: u64 = 0x1000;
 const RET: u64 = 0x1020;
 const RSP: u64 = 0x8008;
@@ -445,7 +489,7 @@ fn checkpoint_validates_whole_journal_and_pending_identity_before_finish() {
     f.observe();
     f.enter();
     f.observe();
-    f.state.records[0].as_mut().unwrap().acknowledgement = NormalAcknowledgement::CallerCheckpoint;
+    f.state.records.value_mut(0).unwrap().acknowledgement = NormalAcknowledgement::CallerCheckpoint;
     let (rows, page) = outputs().unwrap();
     assert!(f.state.transfer(rows, page).is_err());
     assert_eq!(f.state.model.completed_sequence(), 1);

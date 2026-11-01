@@ -1169,6 +1169,92 @@ fn main() {
         );
         return;
     }
+    #[cfg(feature = "frontend-native-qualification")]
+    if args.get(1).and_then(|s| s.to_str()) == Some("normal-early-entry-state") {
+        let deadline = oracle::native_ordinary::strnlen::Deadline::start();
+        assert_eq!(
+            args.len(),
+            14,
+            "normal-early-entry-state MODE K CANDIDATE FINAL CSV_VA CSV_LENGTH LENGTH_VA LENGTH_LENGTH CALLER_CANDIDATE CALLER_FINAL CALLER_VA OUTPUT"
+        );
+        let mode = args[2].to_str().unwrap();
+        assert!(matches!(mode, "enabled" | "bypass" | "scheduled"));
+        let arguments = oracle::native_ordinary::normal_caller::module::SessionArguments::parse(
+            args[3].to_str().unwrap(),
+            args[6].to_str().unwrap(),
+            args[7].to_str().unwrap(),
+            args[8].to_str().unwrap(),
+            args[9].to_str().unwrap(),
+        );
+        let subject = PathBuf::from(&args[4]).canonicalize().unwrap();
+        let expected = PathBuf::from(&args[5]).canonicalize().unwrap();
+        let caller = PathBuf::from(&args[10]).canonicalize().unwrap();
+        let caller_expected = PathBuf::from(&args[11]).canonicalize().unwrap();
+        let caller_va = args[12].to_str().unwrap().parse::<u64>().unwrap();
+        assert_eq!(caller_va.to_string(), args[12].to_str().unwrap());
+        let output = PathBuf::from(&args[13]);
+        assert!(output.is_absolute() && !output.exists());
+        std::fs::create_dir(&output).unwrap();
+        assert_eq!(output.canonicalize().unwrap(), output);
+        deadline.check();
+        normal::module::early_entry::run(
+            normal::module::early_entry::Inputs {
+                subject: &subject,
+                expected: &expected,
+                caller_path: &caller,
+                caller_expected: &caller_expected,
+                caller_va,
+            },
+            arguments,
+            mode,
+            &output,
+            deadline,
+        );
+        return;
+    }
+    #[cfg(feature = "frontend-native-qualification")]
+    if args.get(1).and_then(|s| s.to_str()) == Some("normal-early-entry-state-80k") {
+        let deadline = oracle::native_ordinary::strnlen::Deadline::start();
+        assert_eq!(
+            args.len(),
+            14,
+            "normal-early-entry-state-80k MODE K CANDIDATE FINAL CSV_VA CSV_LENGTH LENGTH_VA LENGTH_LENGTH CALLER_CANDIDATE CALLER_FINAL CALLER_VA OUTPUT"
+        );
+        let mode = args[2].to_str().unwrap();
+        assert!(matches!(mode, "enabled" | "bypass" | "scheduled"));
+        let arguments = oracle::native_ordinary::normal_caller::module::SessionArguments::parse(
+            args[3].to_str().unwrap(),
+            args[6].to_str().unwrap(),
+            args[7].to_str().unwrap(),
+            args[8].to_str().unwrap(),
+            args[9].to_str().unwrap(),
+        );
+        let subject = PathBuf::from(&args[4]).canonicalize().unwrap();
+        let expected = PathBuf::from(&args[5]).canonicalize().unwrap();
+        let caller = PathBuf::from(&args[10]).canonicalize().unwrap();
+        let caller_expected = PathBuf::from(&args[11]).canonicalize().unwrap();
+        let caller_va = args[12].to_str().unwrap().parse::<u64>().unwrap();
+        assert_eq!(caller_va.to_string(), args[12].to_str().unwrap());
+        let output = PathBuf::from(&args[13]);
+        assert!(output.is_absolute() && !output.exists());
+        std::fs::create_dir(&output).unwrap();
+        assert_eq!(output.canonicalize().unwrap(), output);
+        deadline.check();
+        normal::module::early_entry::wide::run(
+            normal::module::early_entry::Inputs {
+                subject: &subject,
+                expected: &expected,
+                caller_path: &caller,
+                caller_expected: &caller_expected,
+                caller_va,
+            },
+            arguments,
+            mode,
+            &output,
+            deadline,
+        );
+        return;
+    }
     if args.get(1).and_then(|s| s.to_str()) == Some("normal-module-session-state") {
         let deadline = oracle::native_ordinary::strnlen::Deadline::start();
         assert_eq!(

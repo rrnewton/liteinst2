@@ -21,6 +21,7 @@ use iced_x86::BlockEncoderResult;
 use iced_x86::Code;
 use iced_x86::Decoder;
 use iced_x86::DecoderOptions;
+use iced_x86::FlowControl;
 use iced_x86::Instruction;
 use iced_x86::InstructionBlock;
 use iced_x86::Mnemonic;
@@ -1196,6 +1197,21 @@ impl ClockEmission {
     }
 }
 
+// One indirection keeps the early profile out of every enclosing plan's inline
+// footprint. Point and typed entry-admission routes retain separate contracts.
+#[derive(Clone, Debug)]
+struct EarlyControlProfile {
+    modes: Box<[bool]>,
+    entry_admission_actions: Box<[crate::controls::EntryAdmissionAction]>,
+}
+
+// The previous point-only inline field was Option<Box<[bool]>>. Adding typed
+// roles must not restore its earlier large-enum regression in enclosing plans.
+const _: () = assert!(
+    core::mem::size_of::<Option<Box<EarlyControlProfile>>>()
+        <= core::mem::size_of::<Option<Box<[bool]>>>()
+);
+
 /// Immutable emission plan for logical hooks or callback-free relocation.
 #[derive(Clone, Debug)]
 pub struct TrampolinePlan {
@@ -1207,9 +1223,8 @@ pub struct TrampolinePlan {
     controls: Vec<ControlledAction>,
     clock: Option<Box<ClockEmission>>,
     precontext_actions: Box<[crate::precontext::PreContextAction]>,
-    // Some selects the bounded ordinary point profile, even if all bits are
-    // false (AfterCapture). Bits correspond exactly to controls/actions.
-    point_observations: Option<Box<[bool]>>,
+    // Some retains the bounded profile even when every gate bit is false.
+    early_controls: Option<Box<EarlyControlProfile>>,
     instructions: Box<[Instruction]>,
     source_nops: Box<[Option<Vec<u8>>]>,
     logical_index: usize,
@@ -1307,7 +1322,7 @@ impl TrampolinePlan {
             controls: Vec::new(),
             clock: None,
             precontext_actions: Box::default(),
-            point_observations: None,
+            early_controls: None,
             source_nops: original_nops::capture(scan, &[*scanned.instruction()])?
                 .into_boxed_slice(),
             instructions: vec![*scanned.instruction()].into_boxed_slice(),
@@ -1397,7 +1412,7 @@ impl TrampolinePlan {
             controls: Vec::new(),
             clock: None,
             precontext_actions: Box::default(),
-            point_observations: None,
+            early_controls: None,
             source_nops: original_nops::capture(scan, &instructions)?.into_boxed_slice(),
             instructions: instructions.into_boxed_slice(),
             logical_index: 0,
@@ -1514,7 +1529,7 @@ impl TrampolinePlan {
             controls: Vec::new(),
             clock: None,
             precontext_actions: Box::default(),
-            point_observations: None,
+            early_controls: None,
             source_nops: original_nops::capture(scan, &instructions)?.into_boxed_slice(),
             instructions: instructions.into_boxed_slice(),
             logical_index,
@@ -1581,7 +1596,7 @@ impl TrampolinePlan {
             controls: Vec::new(),
             clock: None,
             precontext_actions: Box::default(),
-            point_observations: None,
+            early_controls: None,
             source_nops: original_nops::capture(scan, &[*scanned.instruction()])?
                 .into_boxed_slice(),
             instructions: vec![*scanned.instruction()].into_boxed_slice(),
@@ -1628,7 +1643,7 @@ impl TrampolinePlan {
             controls: Vec::new(),
             clock: None,
             precontext_actions: Box::default(),
-            point_observations: None,
+            early_controls: None,
             source_nops: original_nops::capture(scan, &[*scanned.instruction()])?
                 .into_boxed_slice(),
             instructions: vec![*scanned.instruction()].into_boxed_slice(),
@@ -1771,12 +1786,71 @@ impl TrampolinePlan {
             .map(|action| action.controlled_action().clone())
             .collect();
         let mut plan = Self::from_controlled_actions(scan, physical, end, &controlled)?;
-        plan.point_observations = Some(
-            actions
+        plan.early_controls = Some(Box::new(EarlyControlProfile {
+            modes: actions
                 .iter()
                 .map(|action| matches!(action, PointObservationAction::EarlyIfEnabled(_)))
                 .collect(),
-        );
+            entry_admission_actions: Box::default(),
+        }));
+        plan.validate_point_observations(false, false)?;
+        Ok(plan)
+    }
+
+    /// Build a separately typed optional-entry/permanent-RET observing window.
+    ///
+    /// The complete original function scan authenticates role heads. Only its
+    /// exact entry may receive the private early-control stencil; every RET in
+    /// this displaced window must retain its permanent managed callback. Other
+    /// RET windows remain a complete-site obligation. Ordered heads, distinct
+    /// controls, Legacy128, live-only emission and the 8192-byte page-rounded
+    /// image ceiling are unchanged. This does not use the point-observer API.
+    ///
+    /// # Safety
+    /// The complete contract of [`crate::controls::EntryAdmissionAction::entry`]
+    /// applies. Authenticate the complete scalar function, every RET plan and
+    /// owned depth-one caller before execution. The callback runtime must
+    /// distinguish no entry from an active or retained returned receipt by exact
+    /// physical call identity, never by rereading the current entry flag. All
+    /// original ISA, source/publication, normal-return, System V/no-CET, writable
+    /// stack and process-lived control/code ownership obligations still apply.
+    pub unsafe fn from_entry_admission_actions(
+        scan: &ScanResult,
+        physical: u64,
+        end: u64,
+        actions: &[crate::controls::EntryAdmissionAction],
+    ) -> Result<Self, TrampolineError> {
+        use crate::controls::EntryAdmissionRole;
+        if !cfg!(all(target_os = "linux", target_arch = "x86_64")) {
+            return Err(TrampolineError::UnsupportedPlatform);
+        }
+        crate::controls::entry_admission::validate(scan, actions)
+            .map_err(|reason| encoding_error(format!("entry-admission role: {reason:?}")))?;
+        let controlled: Vec<_> = actions.iter().map(|a| a.controlled().clone()).collect();
+        let mut plan = Self::from_controlled_actions(scan, physical, end, &controlled)?;
+        for original in plan.instructions.iter() {
+            let required = if original.ip() == actions[0].function_entry() {
+                Some(EntryAdmissionRole::Entry)
+            } else if original.flow_control() == FlowControl::Return {
+                Some(EntryAdmissionRole::Return)
+            } else {
+                None
+            };
+            if required.is_some_and(|role| {
+                !actions
+                    .iter()
+                    .any(|a| a.logical_pc() == original.ip() && a.role() == role)
+            }) {
+                return Err(encoding_error("displaced entry/RET role is missing"));
+            }
+        }
+        plan.early_controls = Some(Box::new(EarlyControlProfile {
+            modes: actions
+                .iter()
+                .map(|a| a.role() == EntryAdmissionRole::Entry)
+                .collect(),
+            entry_admission_actions: actions.to_vec().into_boxed_slice(),
+        }));
         plan.validate_point_observations(false, false)?;
         Ok(plan)
     }
@@ -1969,12 +2043,43 @@ impl TrampolinePlan {
         Ok(())
     }
 
+    fn early_control_modes(&self) -> Option<&[bool]> {
+        self.early_controls
+            .as_ref()
+            .map(|profile| profile.modes.as_ref())
+    }
+
+    fn entry_admission_actions(&self) -> &[crate::controls::EntryAdmissionAction] {
+        self.early_controls
+            .as_ref()
+            .map_or(&[], |profile| profile.entry_admission_actions.as_ref())
+    }
+
     fn validate_point_observations(
         &self,
         artifact: bool,
         frames: bool,
     ) -> Result<(), TrampolineError> {
-        let Some(modes) = &self.point_observations else {
+        let actions = self.entry_admission_actions();
+        if !actions.is_empty()
+            && (self.early_control_modes().is_none_or(|modes| {
+                modes.len() != actions.len()
+                    || !modes.iter().copied().eq(actions
+                        .iter()
+                        .map(|a| a.role() == crate::controls::EntryAdmissionRole::Entry))
+            }) || actions.len() != self.controls.len()
+                || actions
+                    .iter()
+                    .zip(&self.controls)
+                    .any(|(a, c)| a.controlled() != c)
+                || actions.iter().any(|a| {
+                    a.role() == crate::controls::EntryAdmissionRole::Return
+                        && !a.control().is_enabled()
+                }))
+        {
+            return Err(encoding_error("entry-admission role/control/gate mismatch"));
+        }
+        let Some(modes) = self.early_control_modes() else {
             return Ok(());
         };
         if artifact
@@ -2565,8 +2670,7 @@ impl TrampolinePlan {
             };
             let early = action.is_some()
                 && self
-                    .point_observations
-                    .as_ref()
+                    .early_control_modes()
                     .is_some_and(|modes| modes.get(action_index) == Some(&true));
             let early_labels = if early {
                 Some((identity()?, identity()?))
@@ -2733,7 +2837,7 @@ impl TrampolinePlan {
         {
             return Err(encoding_error("clock region lost a required gate"));
         }
-        if let Some(modes) = &self.point_observations {
+        if let Some(modes) = self.early_control_modes() {
             if action_index != modes.len()
                 || !modes
                     .iter()
@@ -2785,7 +2889,7 @@ impl TrampolinePlan {
             precontext_specs,
             early_control_specs,
         } = preparation;
-        let expected_early = self.point_observations.as_deref().unwrap_or(&[]);
+        let expected_early = self.early_control_modes().unwrap_or(&[]);
         if !expected_early
             .iter()
             .enumerate()
@@ -3125,7 +3229,7 @@ impl TrampolinePlan {
                 "accepted artifact exceeds prepared size bound",
             ));
         }
-        if self.point_observations.is_some() {
+        if self.early_controls.is_some() {
             early_control::validate_image_extent(address, bytes.len())?;
         }
         debug_assert_eq!(layout.total_len(), Some(bytes.len()));
@@ -4373,6 +4477,8 @@ fn reserve_arena_slot(next: &AtomicUsize, len: usize) -> Result<usize, Trampolin
 /// newly created controlled code or heap pointers into another process.
 /// Executing an EarlyIfEnabled action requires the caller to establish that
 /// its opaque callback may independently disappear on any logical visit.
+/// The separate entry-admission profile instead requires its complete typed
+/// entry/mandatory-RET and owned-call protocol, even while disabled.
 /// Mapping ownership does not prove callback suitability or publication safety.
 pub struct ExecutableTrampoline {
     address: u64,
@@ -4529,6 +4635,8 @@ impl ExecutableTrampoline {
     /// MAP_FIXED_NOREPLACE. Existing mappings are never replaced.
     /// Execution still requires the caller's original publication/stack/entry
     /// contract and independently optional callbacks for EarlyIfEnabled actions.
+    /// Typed entry-admission images require their separate complete caller/RET
+    /// receipt protocol; allocation cannot authenticate that runtime.
     pub fn allocate_at(plan: &TrampolinePlan, address: u64) -> Result<Self, TrampolineError> {
         #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
         {

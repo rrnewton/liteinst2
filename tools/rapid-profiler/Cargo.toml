@@ -45,3 +45,7 @@ name = "point-throughput"
 path = "point-throughput/main.rs"
 test = true
 bench = false
+
+[features]
+# Explicit native-oracle adapter only; default execution has no pause hooks.
+frontend-native-qualification = []

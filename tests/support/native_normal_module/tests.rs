@@ -363,6 +363,62 @@ fn module_population_requires_all_cases_seeds_returns_and_reaps() {
     refuses(|| {
         Population::default().record(SEEDS[1], case, &pair, &trace);
     });
+    // Additive synthetic controls; the existing calibration test roster stays
+    // identical, and the old strict comparator must still refuse >20,000.
+    early_entry::wide::check_budget_boundaries();
+    let session = Case::new_session(0, 10, 6, 6, 0);
+    for steps in [20_000, 20_001, 80_000] {
+        let (mut pair, trace) = fixture(session);
+        pair.original_steps = steps;
+        pair.candidate_steps = steps;
+        early_entry::wide::validate_pair(session, &pair, &trace);
+        if steps == 20_000 {
+            trace::validate_pair(session, &pair, &trace);
+        } else {
+            refuses(|| trace::validate_pair(session, &pair, &trace));
+        }
+    }
+    for steps in [0, 47, 80_001, usize::MAX] {
+        let (mut pair, trace) = fixture(session);
+        pair.original_steps = steps;
+        refuses(|| early_entry::wide::validate_pair(session, &pair, &trace));
+        pair.original_steps = 48;
+        pair.candidate_steps = steps;
+        refuses(|| early_entry::wide::validate_pair(session, &pair, &trace));
+    }
+    for mutation in 0..7 {
+        let (mut pair, trace) = fixture(session);
+        match mutation {
+            0 => pair.comparisons -= 1,
+            1 => pair.normal_reaps -= 1,
+            2 => pair.target_calls -= 1,
+            3 => pair.target_returns -= 1,
+            4 => pair.outer_returns -= 1,
+            5 => pair.values[0] ^= 1,
+            _ => pair.returns[0] += 1,
+        }
+        refuses(|| early_entry::wide::validate_pair(session, &pair, &trace));
+    }
+    let (pair, trace) = fixture(case);
+    refuses(|| early_entry::wide::validate_pair(case, &pair, &trace));
+    for k in [10, 1000] {
+        let mut population = early_entry::OptionalEntry80kPopulation::default();
+        for seed in SEEDS {
+            for index in 0..16 {
+                let session = Case::new_session(index, k, 6, 6, 0);
+                let (mut pair, trace) = fixture(session);
+                pair.candidate_steps = 80_000;
+                assert_eq!(
+                    population.record(seed, session, &pair, &trace).is_some(),
+                    index == 15
+                );
+            }
+        }
+        assert_eq!(population.finish(), 32 * 48);
+    }
+    refuses(|| {
+        early_entry::OptionalEntry80kPopulation::default().finish();
+    });
 }
 #[test]
 fn module_geometry_has_all_40_heads_and_four_exact_calls() {

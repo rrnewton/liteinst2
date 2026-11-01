@@ -824,6 +824,8 @@ pub struct NormalOracle {
     mode: Mode,
     reference: Option<reference::Cells>,
     module: Option<module::Case>,
+    early_entry: Option<module::early_entry::Scenario>,
+    early_entry_80k: Option<module::early_entry::wide::StepBudget>,
     copied_rust: Option<copied_rust::Profile>,
     leaf_set_copied: Option<leaf_set_copied::Profile>,
     selected_leaf_set: Option<selected_leaf_set::Profile>,
@@ -836,6 +838,7 @@ pub struct NormalContext<'a> {
     control: Option<ControlChild>,
     output: Option<reference::Output>,
     call_pair_output: Option<Fd>,
+    early_entry_control: Option<module::early_entry::Child>,
 }
 impl NormalContext<'_> {
     pub fn input(&self) -> &[u8] {
@@ -1070,6 +1073,8 @@ impl NormalOracle {
             mode,
             reference: None,
             module: None,
+            early_entry: None,
+            early_entry_80k: None,
             copied_rust: None,
             leaf_set_copied: None,
             selected_leaf_set: None,
@@ -1085,7 +1090,11 @@ impl NormalOracle {
     }
     fn step(&self, walk: &mut Walk<'_>, phase: &str) {
         self.deadline.check();
-        walk.step(phase);
+        if let Some(budget) = &self.early_entry_80k {
+            budget.step(walk, phase);
+        } else {
+            walk.step(phase);
+        }
         self.deadline.check();
     }
     fn step_call_pair(
@@ -1586,6 +1595,10 @@ impl NormalOracle {
                 .as_ref()
                 .is_some_and(|p| p.case.scenario.helper()))
         .then(|| (pipe(), pipe()));
+        let early_channels = self
+            .early_entry
+            .filter(|s| s.scheduled())
+            .map(|_| (pipe(), pipe()));
         let mut pids = [0; 2];
         for index in 0..2 {
             let pid = unsafe { libc::fork() };
@@ -1647,6 +1660,25 @@ impl NormalOracle {
                         })
                     }
                 });
+                let early_entry_control = early_channels.as_ref().and_then(|(command, ack)| {
+                    unsafe {
+                        libc::close(command[1].0);
+                        libc::close(ack[0].0);
+                    }
+                    if index == 0 {
+                        unsafe {
+                            libc::close(command[0].0);
+                            libc::close(ack[1].0);
+                        }
+                        None
+                    } else {
+                        Some(module::early_entry::Child::new(
+                            Fd(command[0].0),
+                            Fd(ack[1].0),
+                            self.deadline,
+                        ))
+                    }
+                });
                 let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                     setup(
                         index == 1,
@@ -1656,6 +1688,7 @@ impl NormalOracle {
                             control: child_control,
                             output,
                             call_pair_output,
+                            early_entry_control,
                         },
                     )
                 }));
@@ -1708,47 +1741,67 @@ impl NormalOracle {
             }
         });
         self.deadline.check();
-        let ready = reads.map(|p| {
-            let wire = read_closed(p.0, self.deadline, WIRE_LIMIT);
-            if let Some(expected) = &self.call_pair {
-                WalkReady::CallPair(call_pair::Ready::decode(&wire, expected))
-            } else if let Some(expected) = &self.exact_accuracy {
-                WalkReady::ExactAccuracy(exact_accuracy::Ready::decode(
-                    &wire,
-                    expected.case,
-                    &expected.plan,
-                ))
-            } else if let Some(expected) = &self.selected_leaf_set {
-                WalkReady::SelectedLeafSet(selected_leaf_set::Ready::decode(
-                    &wire,
-                    expected.case,
-                    &expected.plan,
-                ))
-            } else if let Some(expected) = &self.leaf_set_copied {
-                WalkReady::LeafSetCopied(leaf_set_copied::Ready::decode(
-                    &wire,
-                    expected.case,
-                    &expected.plan,
-                ))
-            } else if let Some(expected) = &self.copied_rust {
-                WalkReady::CopiedRust(copied_rust::Ready::decode(
-                    &wire,
-                    expected.case,
-                    &expected.plan,
-                ))
-            } else if let Some(case) = self.module {
-                WalkReady::Module(if case.is_session() {
-                    module::Ready::decode_session(&wire)
-                } else {
-                    module::Ready::decode(&wire)
-                })
-            } else {
-                WalkReady::Single(match &self.reference {
-                    None => NormalReady::decode(&wire),
-                    Some(cells) => reference::ReferenceReady::decode(&wire, cells.address()),
-                })
-            }
+        let mut early_ready = None;
+        let mut early_parent = early_channels.map(|(command, ack)| {
+            let [read, write] = command;
+            drop(read);
+            let [ack_read, ack_write] = ack;
+            drop(ack_write);
+            module::early_entry::Parent::new(write, ack_read)
         });
+        let ready = if let Some(scenario) = self.early_entry {
+            let packets = reads.map(|p| {
+                module::early_entry::Ready::decode(
+                    &read_closed(p.0, self.deadline, WIRE_LIMIT),
+                    self.module.unwrap(),
+                    scenario,
+                )
+            });
+            early_ready = Some(packets.each_ref().map(|p| p.extra.clone()));
+            packets.map(|p| WalkReady::Module(p.module))
+        } else {
+            reads.map(|p| {
+                let wire = read_closed(p.0, self.deadline, WIRE_LIMIT);
+                if let Some(expected) = &self.call_pair {
+                    WalkReady::CallPair(call_pair::Ready::decode(&wire, expected))
+                } else if let Some(expected) = &self.exact_accuracy {
+                    WalkReady::ExactAccuracy(exact_accuracy::Ready::decode(
+                        &wire,
+                        expected.case,
+                        &expected.plan,
+                    ))
+                } else if let Some(expected) = &self.selected_leaf_set {
+                    WalkReady::SelectedLeafSet(selected_leaf_set::Ready::decode(
+                        &wire,
+                        expected.case,
+                        &expected.plan,
+                    ))
+                } else if let Some(expected) = &self.leaf_set_copied {
+                    WalkReady::LeafSetCopied(leaf_set_copied::Ready::decode(
+                        &wire,
+                        expected.case,
+                        &expected.plan,
+                    ))
+                } else if let Some(expected) = &self.copied_rust {
+                    WalkReady::CopiedRust(copied_rust::Ready::decode(
+                        &wire,
+                        expected.case,
+                        &expected.plan,
+                    ))
+                } else if let Some(case) = self.module {
+                    WalkReady::Module(if case.is_session() {
+                        module::Ready::decode_session(&wire)
+                    } else {
+                        module::Ready::decode(&wire)
+                    })
+                } else {
+                    WalkReady::Single(match &self.reference {
+                        None => NormalReady::decode(&wire),
+                        Some(cells) => reference::ReferenceReady::decode(&wire, cells.address()),
+                    })
+                }
+            })
+        };
         for child in &children {
             let status = child.wait();
             self.deadline.check();
@@ -1898,6 +1951,22 @@ impl NormalOracle {
         let mut witnesses = self.reference.as_ref().map(|_| {
             std::array::from_fn::<_, 2, _>(|i| reference::Witness::new(self, ready[i].single()))
         });
+        let mut early_walk = early_ready.as_ref().map(|extra| {
+            extra[0].validate(&ready[0], false, self.early_entry.unwrap());
+            extra[1].validate(&ready[1], true, self.early_entry.unwrap());
+            let start = extra[1].witness;
+            let end = start
+                .checked_add((module::early_entry::WITNESS_WORDS * 8) as u64)
+                .unwrap();
+            for (base, size) in [
+                (self.data.address(), PAGE),
+                (self.stack.address(), STACK_BYTES + PAGE),
+                (ready[1].journal().unwrap().address, PAGE),
+            ] {
+                assert!(end <= base || base.checked_add(size as u64).unwrap() <= start);
+            }
+            module::early_entry::Witness::new(self.early_entry.unwrap(), extra[1].clone())
+        });
         let mut points = Vec::new();
         let mut comparison_indices = Vec::new();
         let mut returns = [Vec::new(), Vec::new()];
@@ -1912,6 +1981,18 @@ impl NormalOracle {
                 .map(|_| call_pair::Phase::new(r.call_pair()));
             loop {
                 let pc = walk.child.registers().rip;
+                if index == 1 {
+                    if let Some(witness) = early_walk.as_mut() {
+                        witness.before(
+                            self,
+                            walk.child,
+                            r,
+                            &returns[index],
+                            &mut early_parent,
+                            walk.steps,
+                        );
+                    }
+                }
                 let caller_pc = if let Some(dispatch) = &copied_dispatch {
                     dispatch[index].is_head(pc)
                 } else {
@@ -1929,6 +2010,11 @@ impl NormalOracle {
                 if let Some(logical) = logical {
                     if let Some(nested) = nested.as_mut() {
                         nested.logical(self, walk.child, r.call_pair(), logical);
+                    }
+                    if index == 1 {
+                        if let Some(witness) = early_walk.as_ref() {
+                            witness.boundary(walk.child, r);
+                        }
                     }
                     let point = self.snapshot(walk.child, r, logical);
                     if let Some(witnesses) = witnesses.as_mut() {
@@ -2039,22 +2125,26 @@ impl NormalOracle {
                     profile.ret_before(&regs, r, n, self.caller_rsp(), self.value(n), word);
                     returns[index].push(logical_ret);
                     if index == 1 {
-                        let j = r.journal().unwrap();
-                        let expected = profile.journal_words(
-                            r,
-                            self.mode,
-                            walk.child.pid as u64,
-                            self.caller_rsp(),
-                            &returns[index],
-                        );
-                        check_journal(&walk.child.memory(j.address, PAGE), &expected);
-                        if let Some(channel) = control.as_mut() {
-                            let stopped = self.snapshot(walk.child, r, logical_ret);
-                            channel.request(n + 1, walk.child, j, self.deadline);
-                            // Main remains at this actual C3; helper cannot mutate application state.
-                            assert_eq!(walk.child.registers().rip, pc);
-                            assert_state(&stopped, &self.snapshot(walk.child, r, logical_ret));
+                        if let Some(witness) = early_walk.as_mut() {
+                            witness.at_return(self, walk.child, r, &returns[index]);
+                        } else {
+                            let j = r.journal().unwrap();
+                            let expected = profile.journal_words(
+                                r,
+                                self.mode,
+                                walk.child.pid as u64,
+                                self.caller_rsp(),
+                                &returns[index],
+                            );
                             check_journal(&walk.child.memory(j.address, PAGE), &expected);
+                            if let Some(channel) = control.as_mut() {
+                                let stopped = self.snapshot(walk.child, r, logical_ret);
+                                channel.request(n + 1, walk.child, j, self.deadline);
+                                // Main remains at this actual C3; helper cannot mutate application state.
+                                assert_eq!(walk.child.registers().rip, pc);
+                                assert_state(&stopped, &self.snapshot(walk.child, r, logical_ret));
+                                check_journal(&walk.child.memory(j.address, PAGE), &expected);
+                            }
                         }
                     }
                 }
@@ -2101,6 +2191,9 @@ impl NormalOracle {
             assert_eq!(compared, points.len());
         }
         assert_eq!(returns[0], returns[1]);
+        if let Some(witness) = early_walk {
+            witness.finish(&mut early_parent, self.deadline);
+        }
         let mut outer_point: Option<Snapshot> = None;
         for index in 0..2 {
             let walk = &mut walks[index];

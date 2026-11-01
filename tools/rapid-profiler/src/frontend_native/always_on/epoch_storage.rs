@@ -47,6 +47,7 @@ fn normal_profile(site: &site::Site, limits: Limits) -> bool {
 enum Profile {
     Normal,
     ModuleSession,
+    EarlyModuleSession,
     LeafSetSession,
     CallPairSession,
 }
@@ -94,6 +95,20 @@ pub(super) fn stage_module(
     controller.stage_prepared_for(bank, Profile::ModuleSession)
 }
 
+pub(super) fn prepare_early_module(
+    prepared: &mut PreparedIntervalController,
+    config: Config,
+) -> Result<Vec<IntervalEpochStorage>, BridgeError> {
+    prepare_for(prepared, config, Profile::EarlyModuleSession)
+}
+#[allow(clippy::result_large_err)] // Preserve the exact bank on refusal.
+pub(super) fn stage_early_module(
+    controller: &mut IntervalController,
+    bank: IntervalEpochStorage,
+) -> Result<IntervalEpoch, (BridgeError, IntervalEpochStorage)> {
+    controller.stage_prepared_for(bank, Profile::EarlyModuleSession)
+}
+
 pub(super) fn prepare(
     prepared: &mut PreparedIntervalController,
     config: Config,
@@ -122,6 +137,13 @@ fn prepare_for(
         }
         Profile::ModuleSession => {
             if !normal::module_session_profile_matches(&prepared.profile, prepared.limits, config)
+                || prepared.session.history_mode() != HistoryMode::Absolute
+            {
+                return Err(error(Cause::Identity));
+            }
+        }
+        Profile::EarlyModuleSession => {
+            if !normal::early_module_profile_matches(&prepared.profile, prepared.limits, config)
                 || prepared.session.history_mode() != HistoryMode::Absolute
             {
                 return Err(error(Cause::Identity));
@@ -205,6 +227,11 @@ impl IntervalController {
             }
             Profile::ModuleSession => {
                 if !normal::module_session_binding_matches(&self.binding) {
+                    return Err((error(Cause::Identity), bank));
+                }
+            }
+            Profile::EarlyModuleSession => {
+                if !normal::early_module_binding_matches(&self.binding) {
                     return Err((error(Cause::Identity), bank));
                 }
             }

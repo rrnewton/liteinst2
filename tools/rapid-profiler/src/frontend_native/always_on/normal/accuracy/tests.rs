@@ -170,8 +170,8 @@ struct Snapshot {
 fn snapshot(s: &NormalState) -> Snapshot {
     Snapshot {
         slots: s.accuracy.as_ref().unwrap().slots,
-        records: s.records,
-        functions: s.functions,
+        records: *s.records,
+        functions: *s.functions,
         journal: s.journal.page.0,
         len: s.len,
         next: s.next,

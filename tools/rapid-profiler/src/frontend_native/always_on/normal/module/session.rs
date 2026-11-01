@@ -1,7 +1,7 @@
 //! Exact streaming two-function profile; one existing normal TLS and receipt path.
 use super::*;
 
-fn fixed(k: usize) -> Option<(Limits, Config)> {
+pub(super) fn fixed(k: usize) -> Option<(Limits, Config)> {
     let a = match k {
         10 => 20,
         1000 => 2000,
@@ -23,7 +23,7 @@ fn fixed(k: usize) -> Option<(Limits, Config)> {
     ))
 }
 pub(super) fn profile_matches(profile: &BindingProfile, limits: Limits, config: Config) -> bool {
-    matches!(profile, BindingProfile::Module { functions, .. } if functions[0] != functions[1])
+    matches!(profile, BindingProfile::Module { site, functions } if !site.is_early_entry() && functions[0] != functions[1])
         && fixed(config.retained_per_function) == Some((limits, config))
 }
 pub(super) fn binding_matches(binding: &Binding) -> bool {
@@ -55,6 +55,9 @@ impl PreparedNormalModuleSessionController {
         functions: [FunctionId; 2],
         k: usize,
     ) -> Result<Self, BridgeError> {
+        if site.site.is_early_entry() {
+            return Err(error(Cause::Identity));
+        }
         if !timing::supported() {
             return Err(error(Cause::ClockProfile));
         }

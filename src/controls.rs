@@ -15,6 +15,9 @@ use std::sync::Arc;
 
 use crate::trampoline::{HookCallback, HookContext};
 
+pub(crate) mod entry_admission;
+pub use entry_admission::{EntryAdmissionAction, EntryAdmissionRole};
+
 /// One stable observing-callback identity, independent of executable storage.
 ///
 /// Clones share the same callback and Boolean. Equality compares that identity,
@@ -297,7 +300,7 @@ impl PointObservationAction {
     }
 }
 
-/// Final verified addresses of one optional ordinary point gate.
+/// Final verified addresses of one early observing-control gate.
 /// These immutable observations confer no entry, mutation or lifetime authority.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct EarlyControlGateLayout {

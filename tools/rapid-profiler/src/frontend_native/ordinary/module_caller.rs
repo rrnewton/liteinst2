@@ -109,6 +109,8 @@ pub struct LoadedNormalModuleCaller {
     _owner: &'static mut Retained,
     entry: u64,
     pid: u32,
+    #[cfg(any(test, feature = "frontend-native-qualification"))]
+    qualification_source: (u64, Box<[u8]>),
 }
 impl LoadedNormalModuleCaller {
     /// Recognize the complete `normal-work/module_caller.c` body and original
@@ -144,6 +146,8 @@ impl LoadedNormalModuleCaller {
             _owner: owner,
             entry,
             pid: std::process::id(),
+            #[cfg(any(test, feature = "frontend-native-qualification"))]
+            qualification_source: (source_start, parsed.source.into_boxed_slice()),
         })
     }
     pub(in crate::frontend_native) fn process_matches(&self) -> bool {
@@ -173,6 +177,32 @@ impl LoadedNormalModuleCaller {
         let call = unsafe { std::mem::transmute::<usize, bytes::Caller>(self.entry as usize) };
         // One genuine compiled application call; there is no per-target SDK call.
         unsafe { call(targets.as_ptr(), requests.as_ptr(), results.as_mut_ptr()) }
+    }
+}
+
+#[cfg(any(test, feature = "frontend-native-qualification"))]
+impl LoadedNormalModuleCaller {
+    /// Diagnostic address of the exact retained caller; not a safe invocation capability.
+    pub fn qualification_entry(&self) -> u64 {
+        self.entry
+    }
+    /// Original full source page authenticated by the same sealed loader.
+    pub fn qualification_source(&self) -> (u64, &[u8]) {
+        (self.qualification_source.0, &self.qualification_source.1)
+    }
+    /// Oracle-only exact arrays. The private caller capability is never exposed.
+    /// # Safety
+    /// All ordinary invoke contracts hold. The three arrays have the exact
+    /// admitted C layouts, and the qualification adapter owns and checks them.
+    pub(in crate::frontend_native) unsafe fn invoke_qualification(
+        &mut self,
+        targets: *const u64,
+        requests: *const u8,
+        results: *mut u64,
+    ) -> u64 {
+        // SAFETY: retained exact caller, checked arrays and continuous contract.
+        let call = unsafe { std::mem::transmute::<usize, bytes::Caller>(self.entry as usize) };
+        unsafe { call(targets.cast(), requests.cast(), results) }
     }
 }
 

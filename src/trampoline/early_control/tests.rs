@@ -447,7 +447,7 @@ fn invalid_associations_and_unsupported_emission_profiles_refuse() {
     .into_boxed_slice();
     assert!(precontext.emit_at(IMAGE).is_err());
     let mut missing = plan;
-    missing.point_observations = Some(vec![true].into_boxed_slice());
+    missing.early_controls.as_mut().unwrap().modes = vec![true].into_boxed_slice();
     assert!(missing.emit_at(IMAGE).is_err());
 }
 

@@ -9,6 +9,8 @@ use rapid_profiler::frontend_native::{
     PreparedNormalModuleController,
 };
 mod check;
+#[cfg(feature = "frontend-native-qualification")]
+pub(crate) mod early_entry;
 mod owner;
 pub(crate) mod session;
 use check::{FUNCTIONS, INSTALL, identity};

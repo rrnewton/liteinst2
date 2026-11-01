@@ -2,6 +2,8 @@
 use super::*;
 use crate::frontend_native::{IntegerLeafCertificate, LoadedNormalModule};
 use liteinst2::controls::ControlIdentity;
+mod early_entry;
+pub use early_entry::{EarlyEntryModuleSitePreparation, InstalledEarlyEntryModuleSite};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NormalModuleFunctionSite {
@@ -57,6 +59,7 @@ pub(in crate::frontend_native::always_on) struct ModuleSite {
     roles: Vec<ModuleRole>,
     // Set only from the actual retained loader during preparation.
     sealed_source: bool,
+    early_entry: bool,
 }
 impl ModuleSite {
     pub(in crate::frontend_native::always_on) fn has_sealed_source(&self) -> bool {
@@ -84,6 +87,25 @@ impl ModuleSite {
         control: ControlIdentity<'_>,
         entry: bool,
     ) -> Option<usize> {
+        if self.early_entry {
+            return None;
+        }
+        self.role_at(pc, entry)
+            .filter(|role| role.control.has_identity(control))
+            .map(|role| role.metadata.function_index)
+    }
+    pub(in crate::frontend_native::always_on) fn is_early_entry(&self) -> bool {
+        self.early_entry
+    }
+    pub(in crate::frontend_native::always_on) fn resolve_early_entry(
+        &self,
+        pc: u64,
+        control: ControlIdentity<'_>,
+        entry: bool,
+    ) -> Option<usize> {
+        if !self.early_entry {
+            return None;
+        }
         self.role_at(pc, entry)
             .filter(|role| role.control.has_identity(control))
             .map(|role| role.metadata.function_index)
@@ -150,6 +172,7 @@ impl ModuleSite {
             functions,
             roles,
             sealed_source: false,
+            early_entry: false,
         })
     }
     pub(in crate::frontend_native::always_on) fn control_for(
@@ -354,6 +377,7 @@ fn prepare_module(
             functions,
             roles,
             sealed_source: false,
+            early_entry: false,
         }),
     ))
 }

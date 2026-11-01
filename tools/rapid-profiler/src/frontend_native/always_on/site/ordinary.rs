@@ -37,8 +37,9 @@ mod whole;
 pub use normal::{InstalledNormalSite, NormalSitePreparation};
 pub(in crate::frontend_native::always_on) use normal_module::ModuleSite;
 pub use normal_module::{
-    InstalledNormalModuleSite, NormalModuleFunctionSite, NormalModulePreparationPolicy,
-    NormalModuleRole, NormalModuleRoleKind, NormalModuleSitePreparation,
+    EarlyEntryModuleSitePreparation, InstalledEarlyEntryModuleSite, InstalledNormalModuleSite,
+    NormalModuleFunctionSite, NormalModulePreparationPolicy, NormalModuleRole,
+    NormalModuleRoleKind, NormalModuleSitePreparation,
 };
 pub use two_callers::{InstalledTwoCallerNormalSite, TwoCallerNormalSitePreparation};
 
