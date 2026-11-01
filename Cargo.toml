@@ -24,6 +24,7 @@ include = [
     "/PATCH_SITE_DECISION_TREE.md",
     "/README.md",
     "/examples/owned_loop_clock.rs",
+    "/examples/owned_region_clock.rs",
     "/examples/preload_consumer.rs",
     "/examples/replace_first.rs",
     "/examples/saved_pkru_probe.rs",
@@ -52,6 +53,13 @@ include = [
 name = "owned_loop_clock"
 path = "examples/owned_loop_clock.rs"
 test = false
+bench = false
+
+# Unit tests are pure; native publication runs only through the example main.
+[[example]]
+name = "owned_region_clock"
+path = "examples/owned_region_clock.rs"
+test = true
 bench = false
 
 [[example]]

@@ -122,6 +122,20 @@ all qualification, warmup and measured rows survive. Use the
 for its reserved CPUs, bounds, statistics and timing limits. The measurements
 include per-call guards and callback/controller checks on the tiny nested loop.
 
+The standalone [owned-region client](../../examples/owned_region_clock.rs) uses
+the actual `PlannedInstall::publish_with` path and retains its installed image,
+two controls, clock and internal-entry routes. Run
+`cargo run --release --example owned_region_clock -- 3 4 2` for outer/inner counts
+and quantum, or omit all three arguments for those defaults. Both counts must
+be in `1..=32`, and the quantum in `1..=32768`; refusal precedes mapping.
+This different 30-byte function computes `outer * inner * (inner + 1) / 2`.
+The default result is 30, with 15 encounters, 11 taken edges and five stops
+covering both sites. See its [fixed correctness cohort](../../evaluation/owned-clock-region-client/README.md)
+for execution status, original/published comparisons and the exact scope.
+The current source profile and per-call guard remain unchanged. This client
+does not establish executable reclamation, full state after callbacks or
+performance.
+
 ## Explicit SPSC handoff experiment
 
 `inline-clock-spsc-v1` selects a separate handoff implementation for the same

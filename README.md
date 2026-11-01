@@ -65,6 +65,8 @@ across two backward branches in a closed scalar region. The
 source limits, lease requirements and native stop/state checks.
 The [release throughput campaign](evaluation/owned-clock-region-throughput/README.md)
 measures native, counting and quantum-64 stop costs across 12 independent processes.
+The [owned-region client](examples/owned_region_clock.rs) uses quiescent publication
+for a bounded nested loop with one clock shared across both backedges.
 
 ## How the crate is organised
 
