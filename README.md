@@ -67,6 +67,8 @@ The [release throughput campaign](evaluation/owned-clock-region-throughput/READM
 measures native, counting and quantum-64 stop costs across 12 independent processes.
 The [owned-region client](examples/owned_region_clock.rs) uses quiescent publication
 for a bounded nested loop with one clock shared across both backedges.
+The separate [bounded batch API](tools/software-preemption/README.md#bounded-batch-admission)
+admits a fixed call population under an explicit interval ownership contract.
 
 ## How the crate is organised
 

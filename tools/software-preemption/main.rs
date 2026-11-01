@@ -747,6 +747,17 @@ fn main() {
         "bench" if args.len() == 4 => benchmark(Case::parse(&args[2]), &output),
         "inline-gates" if args.len() == 3 => inline_gate::qualify(&output),
         "region-bench" if args.len() == 4 => region_benchmark::run(&args[2], &output),
+        "region-batch-oracle" if args.len() == 3 => {
+            std::fs::write(
+                output.join("summary.json"),
+                "{\"status\":\"INCOMPLETE\",\"profile\":\"owned-region-batch-oracle-v1\"}\n",
+            )
+            .unwrap();
+            inline_gate::qualify_region_batch(&output);
+            region_benchmark::qualify_bounded(&output);
+            std::fs::write(output.join("summary.json"),
+                "{\"status\":\"PASS\",\"profile\":\"owned-region-batch-oracle-v1\",\"gate_pairs\":6,\"gate_children\":12,\"full_state_comparisons\":192,\"qualification_rows\":3,\"calls_per_arm\":2048,\"encounters_per_lease\":30720,\"taken_per_instrumented_arm\":22528,\"quantum\":64,\"stops\":352,\"inner_stops\":288,\"outer_stops\":64,\"rejection_children\":2,\"rejection_witnesses\":2,\"fork_entry_children\":1,\"fork_entry_witnesses\":1,\"publisher_validation\":false,\"full_state_after_callback\":false,\"performance_qualification\":false}\n").unwrap();
+        }
         "region-oracle" if args.len() == 3 => {
             inline_gate::qualify_region(&output);
             region_clock::qualify(&output);

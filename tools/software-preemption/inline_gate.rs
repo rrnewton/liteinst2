@@ -19,6 +19,9 @@ mod region;
 pub(super) fn qualify_region(output: &Path) {
     region::qualify(output);
 }
+pub(super) fn qualify_region_batch(output: &Path) {
+    region::qualify_bounded(output);
+}
 struct Snapshot {
     logical_pc: u64,
     registers: libc::user_regs_struct,

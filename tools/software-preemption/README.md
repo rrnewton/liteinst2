@@ -136,6 +136,32 @@ The current source profile and per-call guard remain unchanged. This client
 does not establish executable reclamation, full state after callbacks or
 performance.
 
+## Bounded batch admission
+
+`ClockLease::begin_batch(calls, max_work_per_call)` is a separate unsafe admission
+API for a previously unused lease. It checks the real PID/TID at entry and
+completion and precharges each call against the exact bound retained from
+`acquire`. The ordinary `begin_call` still checks PID/TID on every call.
+Batch admission requires exclusion of fork, foreign and recursive entry for the
+entire interval, including host-loop gaps, signals and callbacks. It does not
+require fixed CPU affinity; the lease must stay on the same thread.
+
+Each batch call holds a mutable token through the exact native return, then
+acknowledges it with `returned()`. After every declared call, `finish()` checks
+completion and ownership before releasing the batch latch. Missing, forgotten,
+unfinished or poisoned tokens retain ownership; Drop is not a drain or recovery
+operation. Ordinary and batch calls cannot share one lease. Source, ABI,
+per-invocation work bounds, entry exclusion and executable lifetimes remain the
+unsafe caller's obligations. The generated gate has no runtime budget trap.
+
+The new `region-batch-oracle NEW_ABSOLUTE_OUTPUT` command uses the same nested
+function, gate bytes, full-state comparator and callback checks. It requires two
+externally reserved CPUs. It plans 192 architectural comparisons, three untimed
+2,048-call arms, 352 exact q64 stops, two actual wrong-reply children and one
+fork-at-entry refusal. The [batch evaluation](../../evaluation/owned-clock-batch/README.md)
+records execution status. No new timing or speedup is claimed; the earlier
+per-call benchmark results remain unchanged.
+
 ## Explicit SPSC handoff experiment
 
 `inline-clock-spsc-v1` selects a separate handoff implementation for the same

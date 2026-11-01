@@ -19,6 +19,12 @@ const WARMUPS: usize = 3;
 const MEASUREMENTS: usize = 64;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Admission {
+    PerCall,
+    BoundedBatch,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Arm {
     Native,
     Counter,
@@ -371,6 +377,7 @@ fn batch(
     worker_cpu: usize,
     timed: bool,
     rejection: Option<(BadReply, OwnedFd)>,
+    admission: Admission,
 ) -> ResultRow {
     single_main();
     assert_eq!(affinity(), [controller_cpu]);
@@ -442,17 +449,42 @@ fn batch(
             (state.pid, tid)
         );
         let start = timed.then(Instant::now);
+        // The separate batch contract covers this entire worker interval,
+        // including host-loop gaps and synchronous callbacks: no fork, foreign
+        // entry or recursive use. The exact 15-encounter bound applies to each
+        // complete invocation across both sites. Admission and finish stay
+        // inside any future batch timing; this qualification is untimed.
+        let mut bounded = if admission == Admission::BoundedBatch {
+            lease.as_ref().map(|lease| {
+                unsafe { lease.begin_batch(CALLS, 15) }.expect("exact finite batch admission")
+            })
+        } else {
+            None
+        };
         for call_index in 0..CALLS {
             state.call_index = call_index;
-            let call = lease
-                .as_ref()
-                .map(|lease| lease.begin_call().expect("per-call admission"));
+            let call = if admission == Admission::PerCall {
+                lease
+                    .as_ref()
+                    .map(|lease| lease.begin_call().expect("per-call admission"))
+            } else {
+                None
+            };
+            let batch_call = bounded
+                .as_mut()
+                .map(|batch| batch.begin_call().expect("precharged batch call"));
             let returned = unsafe { function() };
             if !timed {
                 assert_eq!(returned, 12, "every qualification call returns twelve");
             }
             checksum = checksum.wrapping_add(returned);
+            if let Some(batch_call) = batch_call {
+                batch_call.returned();
+            }
             drop(call);
+        }
+        if let Some(bounded) = bounded {
+            bounded.finish().expect("every exact batch call returned");
         }
         let elapsed_ns = start.map(|start| start.elapsed().as_nanos());
         drop(clear);
@@ -606,7 +638,7 @@ impl Drop for Child {
         }
     }
 }
-fn rejected_resumes(output: &Path, controller: usize, worker: usize) {
+fn rejected_resumes(output: &Path, controller: usize, worker: usize, admission: Admission) {
     let mut csv = String::from("fault,pid,tid,site,count,reply_site,reply_count,exit,result\n");
     for fault in [BadReply::Site, BadReply::Count] {
         single_main();
@@ -632,6 +664,7 @@ fn rejected_resumes(output: &Path, controller: usize, worker: usize) {
                     worker,
                     false,
                     Some((fault, write)),
+                    admission,
                 );
             });
             unsafe { libc::_exit(if result.is_err() { 120 } else { 124 }) }
@@ -693,6 +726,94 @@ fn rejected_resumes(output: &Path, controller: usize, worker: usize) {
     println!(
         "preemption:region-bench-rejections:2-children:2-before-refill-witnesses:2-exit123-echild"
     );
+}
+
+// Fork precedes batch admission. The inherited child runs no generated code;
+// it must refuse both the new batch boundary and the existing ordinary guard.
+// A live-batch fork is forbidden by the batch contract and is not exercised.
+fn rejected_fork_entry(output: &Path) {
+    use liteinst2::backedge_clock::ClockError;
+    single_main();
+    let program = RegionProgram::new(ClockMode::Counter);
+    let lease = unsafe { program.clock.acquire(1, 15) }.unwrap();
+    let before = unsafe { program.clock.snapshot_parked() };
+    let parent = std::process::id();
+    let mut pipe = [-1; 2];
+    assert_eq!(
+        unsafe { libc::pipe2(pipe.as_mut_ptr(), libc::O_CLOEXEC | libc::O_NONBLOCK) },
+        0
+    );
+    let read = unsafe { OwnedFd::from_raw_fd(pipe[0]) };
+    let write = unsafe { OwnedFd::from_raw_fd(pipe[1]) };
+    let pid = unsafe { libc::fork() };
+    assert!(pid >= 0, "one required fork-entry control, no retry");
+    if pid == 0 {
+        drop(read);
+        let batch_refused = matches!(unsafe { lease.begin_batch(1, 15) }, Err(ClockError::Owner));
+        let ordinary_refused = matches!(lease.begin_call(), Err(ClockError::Owner));
+        let unchanged = unsafe { program.clock.snapshot_parked() } == before;
+        let values = [
+            u64::from(std::process::id()),
+            u64::from(parent),
+            u64::from(batch_refused),
+            u64::from(ordinary_refused),
+            u64::from(unchanged),
+        ];
+        let mut witness = [0u8; 48];
+        witness[..8].copy_from_slice(b"LI2BFORK");
+        for (dest, word) in witness[8..].chunks_exact_mut(8).zip(values) {
+            dest.copy_from_slice(&word.to_le_bytes());
+        }
+        let written =
+            unsafe { libc::write(write.as_raw_fd(), witness.as_ptr().cast(), witness.len()) };
+        unsafe {
+            libc::_exit(
+                if batch_refused && ordinary_refused && unchanged && written == 48 {
+                    0
+                } else {
+                    125
+                },
+            )
+        }
+    }
+    let mut child = Child { pid, reaped: false };
+    drop(write);
+    let status = child.wait();
+    assert!(libc::WIFEXITED(status));
+    assert_eq!(libc::WEXITSTATUS(status), 0);
+    let mut witness = [0u8; 49];
+    assert_eq!(
+        unsafe { libc::read(read.as_raw_fd(), witness.as_mut_ptr().cast(), witness.len()) },
+        48
+    );
+    let mut extra = [0u8; 1];
+    assert_eq!(
+        unsafe { libc::read(read.as_raw_fd(), extra.as_mut_ptr().cast(), 1) },
+        0
+    );
+    assert_eq!(&witness[..8], b"LI2BFORK");
+    let values: [u64; 5] = std::array::from_fn(|i| {
+        u64::from_le_bytes(witness[8 + i * 8..16 + i * 8].try_into().unwrap())
+    });
+    assert_eq!(values, [pid as u64, u64::from(parent), 1, 1, 1]);
+    let mut absent = 0;
+    assert_eq!(
+        unsafe { libc::waitpid(pid, &mut absent, libc::WNOHANG) },
+        -1
+    );
+    assert_eq!(
+        std::io::Error::last_os_error().raw_os_error(),
+        Some(libc::ECHILD)
+    );
+    assert_eq!(unsafe { program.clock.snapshot_parked() }, before);
+    drop(lease);
+    drop(unsafe { program.clock.acquire(1, 15) }.unwrap());
+    program.assert_code();
+    single_main();
+    std::fs::write(output.join("fork-entry.bin"), &witness[..48]).unwrap();
+    std::fs::write(output.join("fork-entry.csv"), format!(
+        "pid,parent_pid,batch_owner_refused,ordinary_owner_refused,clock_unchanged,exit,status\n{pid},{parent},true,true,true,0,PASS\n"
+    )).unwrap();
 }
 
 struct Row {
@@ -806,7 +927,7 @@ pub(super) fn run(text: &str, output: &Path) {
         let mut index = 0;
         while index < rows.len() {
             if index == 3 {
-                rejected_resumes(output, cpus[0], cpus[1]);
+                rejected_resumes(output, cpus[0], cpus[1], Admission::PerCall);
             }
             active = Some(index);
             rows[index].status = "DISPATCHED";
@@ -820,6 +941,7 @@ pub(super) fn run(text: &str, output: &Path) {
                 cpus[1],
                 rows[index].phase != "qualification",
                 None,
+                Admission::PerCall,
             );
             rows[index].result = Some(result);
             rows[index].status = "PASS";
@@ -844,6 +966,67 @@ pub(super) fn run(text: &str, output: &Path) {
     std::fs::write(output.join("summary.json"), format!(
         "{{\"status\":\"PASS\",\"profile\":\"owned-two-backedge-throughput-v1\",\"order\":\"{text}\",\"controller_cpu\":{},\"worker_cpu\":{},\"qualification_rows\":3,\"rejection_children\":2,\"rejection_witnesses\":2,\"warmup_rows\":9,\"measured_rows\":192,\"calls_per_batch\":2048,\"encounters_per_lease\":30720,\"quantum\":64,\"stop_handoffs_per_batch\":352,\"publisher_validation\":false,\"full_state_after_callback\":false,\"performance_threshold\":false}}\n", cpus[0],cpus[1])).unwrap();
     println!("preemption:region-bench:3-qualified:9-warmups:192-measured:no-outlier-filter");
+}
+
+/// Untimed native/counter/stop population through the separate batch contract.
+/// The ordinary benchmark above retains its per-call admission and all checks.
+pub(super) fn qualify_bounded(output: &Path) {
+    single_main();
+    let cpus = affinity();
+    assert_eq!(cpus.len(), 2, "exact externally reserved disjoint CPU pair");
+    let mut rows: Vec<_> = [Arm::Native, Arm::Counter, Arm::Stop]
+        .into_iter()
+        .map(|arm| Row {
+            arm,
+            phase: "qualification",
+            index: 0,
+            status: "UNOBSERVED",
+            result: None,
+        })
+        .collect();
+    save_rows(output, &rows);
+    let mut active = None;
+    let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        validate_schedule();
+        let counter = RegionProgram::new_with_hook(ClockMode::Counter, hook);
+        let stop = RegionProgram::new_with_hook(ClockMode::Stop, hook);
+        pin(cpus[0]);
+        let mut index = 0;
+        while index < rows.len() {
+            active = Some(index);
+            rows[index].status = "DISPATCHED";
+            save_rows(output, &rows);
+            let arm = rows[index].arm;
+            let program = if arm == Arm::Stop { &stop } else { &counter };
+            rows[index].result = Some(batch(
+                program,
+                arm,
+                cpus[0],
+                cpus[1],
+                false,
+                None,
+                Admission::BoundedBatch,
+            ));
+            rows[index].status = "PASS";
+            active = None;
+            save_rows(output, &rows);
+            index += 1;
+        }
+        rejected_resumes(output, cpus[0], cpus[1], Admission::BoundedBatch);
+        rejected_fork_entry(output);
+    }));
+    if let Err(error) = outcome {
+        if let Some(index) = active {
+            rows[index].status = "FAILED";
+        }
+        save_rows(output, &rows);
+        std::panic::resume_unwind(error);
+    }
+    assert!(
+        rows.iter()
+            .all(|row| row.status == "PASS" && row.result.as_ref().unwrap().elapsed_ns.is_none())
+    );
+    println!("preemption:region-batch:3-qualified:352-exact-handoffs:no-timing");
 }
 
 #[cfg(test)]
