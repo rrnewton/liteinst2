@@ -1,0 +1,4 @@
+pid,worker_tid,arm,phase,batch,status,calls,expected_encounters,expected_taken,elapsed_ns,checksum,clock_encounters,clock_taken,stops,remaining
+244566,244652,native,qualification,0,PASS,2048,30720,22528,,24576,,,0,
+244566,244654,counter,qualification,0,PASS,2048,30720,22528,,24576,30720,22528,0,64
+244566,244657,stop,qualification,0,PASS,2048,30720,22528,,24576,30720,22528,352,64

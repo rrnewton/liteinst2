@@ -1,0 +1,525 @@
+{
+  "planned": {
+    "revision": "b61a644e465100abdcff718af42aa3e4b92aede5",
+    "source_tree": "2ab14fe9d8c831ecbdf791265bc652b7d1bbf0e6",
+    "attempts": 1,
+    "commands": [
+      {
+        "name": "release-build",
+        "argv": [
+          "{STABLE_TOOLCHAIN}/bin/cargo",
+          "build",
+          "--release",
+          "--locked",
+          "--offline",
+          "-j",
+          "12",
+          "--target-dir",
+          "{CHECKOUT}/target",
+          "--bin",
+          "liteinst-preempt",
+          "--message-format=json-render-diagnostics"
+        ],
+        "wall": 600,
+        "capture": 2097152
+      },
+      {
+        "name": "region-oracle",
+        "argv": [
+          "/usr/bin/taskset",
+          "-c",
+          "6,10",
+          "/usr/bin/prlimit",
+          "--cpu=60",
+          "--fsize=1048576",
+          "--core=0",
+          "--",
+          "{CHECKOUT}/target/release/liteinst-preempt",
+          "region-oracle",
+          "{CHECKOUT}/ignored/a3/owned-clock-batch-native-v1/region-oracle"
+        ],
+        "wall": 90,
+        "capture": 1048576
+      },
+      {
+        "name": "region-batch-oracle",
+        "argv": [
+          "/usr/bin/taskset",
+          "-c",
+          "6,10",
+          "/usr/bin/prlimit",
+          "--cpu=60",
+          "--fsize=1048576",
+          "--core=0",
+          "--",
+          "{CHECKOUT}/target/release/liteinst-preempt",
+          "region-batch-oracle",
+          "{CHECKOUT}/ignored/a3/owned-clock-batch-native-v1/region-batch-oracle"
+        ],
+        "wall": 90,
+        "capture": 1048576
+      }
+    ],
+    "scope": [
+      "src",
+      "tests",
+      "crates",
+      "examples",
+      "tools/software-preemption",
+      "Cargo.toml",
+      "Cargo.lock",
+      "evaluation/owned-clock-batch",
+      "evaluation/admission/processes.py"
+    ],
+    "frozen": {
+      "{CHECKOUT}/evaluation/owned-clock-batch/reproduce.py": "03f50dd6b12e1ac3b236fe4b508d96a861892933b9e918ed6a1f50085b29c9b8",
+      "{CHECKOUT}/evaluation/admission/processes.py": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+      "/usr/bin/python3.9": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+      "{STABLE_TOOLCHAIN}/bin/cargo": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "{STABLE_TOOLCHAIN}/bin/rustc": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+      "{STABLE_TOOLCHAIN}/bin/rustdoc": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+      "/usr/bin/git": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240",
+      "/usr/bin/taskset": "e195f3da0a3c33e2e3d91a6579432e536064869b1cb5585131a8fc6983163741",
+      "/usr/bin/prlimit": "942bcd8596c242d4d33dca657372a83e1f55908afd59b525389362cd6d282933"
+    },
+    "cpus": [
+      6,
+      10,
+      15,
+      16,
+      17,
+      20,
+      43,
+      50,
+      53,
+      54,
+      60,
+      63
+    ],
+    "native_cpus": [
+      6,
+      10
+    ],
+    "load": [
+      34.93,
+      36.33,
+      39.76
+    ],
+    "reservation": {
+      "allocator": "cpuset-alloc",
+      "cores": 12,
+      "caller_reported_tag": "li2core-clock-batch-native-v1",
+      "authority": "External caller reserves CPUs; runner records affinity, not an independent live witness."
+    },
+    "jobs": 12,
+    "test_threads": 12,
+    "cleanup_seconds": 3,
+    "performance_qualification": false,
+    "hardware": {
+      "architecture": "x86_64",
+      "logical_cpus": 316,
+      "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+      "label": "AMD EPYC Zen 5 dev host"
+    },
+    "python": "3.9.25 (main, Aug 13 2026, 00:00:00) \n[GCC 11.5.0 20240719 (Red Hat 11.5.0-14)]",
+    "environment": {
+      "PATH": "{STABLE_TOOLCHAIN}/bin:/usr/bin:/bin",
+      "LANG": "C",
+      "LC_ALL": "C",
+      "CARGO_BUILD_JOBS": "12",
+      "RUST_TEST_THREADS": "12",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "RUSTC": "{STABLE_TOOLCHAIN}/bin/rustc",
+      "RUSTDOC": "{STABLE_TOOLCHAIN}/bin/rustdoc",
+      "CARGO_TARGET_DIR": "{CHECKOUT}/target"
+    },
+    "tool_versions": {
+      "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+      "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "rustdoc": "rustdoc 1.97.1 (8bab26f4f 2026-07-14)"
+    }
+  },
+  "outcomes": [
+    {
+      "name": "release-build",
+      "status": "PASS",
+      "load_before": [
+        34.93,
+        36.33,
+        39.76
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T11:53:23.009619+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 6.919350726995617,
+        "private_log_sha256": "e7b57180f9a9963bd37803744bb3e06423ac81acf50b1fc7cdd9ef669c0bed5c",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        34.54,
+        36.23,
+        39.7
+      ],
+      "compiled_profile": {
+        "opt_level": "3",
+        "debuginfo": 0,
+        "debug_assertions": false,
+        "overflow_checks": false,
+        "test": false
+      },
+      "source_after": true
+    },
+    {
+      "name": "region-oracle",
+      "status": "PASS",
+      "load_before": [
+        34.54,
+        36.23,
+        39.7
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T11:53:30.120262+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.15668536606244743,
+        "private_log_sha256": "69720dd0243890700377f64f2d37f2d9f70e0932059f06674cdf96fd13f397a2",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        34.54,
+        36.23,
+        39.7
+      ],
+      "artifacts": {
+        "summary": {
+          "status": "PASS",
+          "profile": "owned-two-backedge-region-oracle-v1",
+          "gate_pairs": 6,
+          "gate_children": 12,
+          "full_state_comparisons": 192,
+          "stop_quanta": [
+            2,
+            11,
+            12
+          ],
+          "stops": 6,
+          "parked_checks": 6,
+          "rejection_children": 2,
+          "rejection_witnesses": 2,
+          "publisher_validation": false,
+          "full_state_after_callback": false,
+          "performance_qualification": false
+        },
+        "files": {
+          "region-events.csv": {
+            "bytes": 139,
+            "sha256": "2490ec0b7ca6ba6a45dbd9dfa63ebceb5b424da788aa1eea1172599afb36f18b"
+          },
+          "region-gates.csv": {
+            "bytes": 255,
+            "sha256": "443ac3fb7cfcb5de3164cd12d8278f6e1fc9074c21e75eb9383d5d09326a2c12"
+          },
+          "region-rejection-wrong-count.bin": {
+            "bytes": 248,
+            "sha256": "203d7be4e870b3e21d4f0496cb57c64b0f27849cd036cb0b5d6a40e1290091a8"
+          },
+          "region-rejection-wrong-site.bin": {
+            "bytes": 248,
+            "sha256": "14d74dcf4bafdc33c1c850504778a140045cc99f2a6d21269d581f2799b58d7a"
+          },
+          "region-rejections.csv": {
+            "bytes": 149,
+            "sha256": "a80703768fbd4b4cabb09b9d894c3a9c7604d9be401f15e4d03d5408ad0a37b8"
+          },
+          "region-stops.csv": {
+            "bytes": 122,
+            "sha256": "3ba28947e5f3150f764b69a85d3119dd753c49160b7e0d5bb75ec49ddd87f0e5"
+          },
+          "summary.json": {
+            "bytes": 325,
+            "sha256": "3a3af3fd73f9ed40bce6f1d5531b7cafd22d1c367a99510ebb38ba44c8cb54ea"
+          }
+        }
+      },
+      "source_after": true
+    },
+    {
+      "name": "region-batch-oracle",
+      "status": "PASS",
+      "load_before": [
+        34.74,
+        36.24,
+        39.69
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T11:53:30.472936+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.15488227107562125,
+        "private_log_sha256": "b151889275f373990632bfb41c9dbb0976463425beda516e1bd53ded92b29747",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        34.74,
+        36.24,
+        39.69
+      ],
+      "artifacts": {
+        "summary": {
+          "status": "PASS",
+          "profile": "owned-region-batch-oracle-v1",
+          "gate_pairs": 6,
+          "gate_children": 12,
+          "full_state_comparisons": 192,
+          "qualification_rows": 3,
+          "calls_per_arm": 2048,
+          "encounters_per_lease": 30720,
+          "taken_per_instrumented_arm": 22528,
+          "quantum": 64,
+          "stops": 352,
+          "inner_stops": 288,
+          "outer_stops": 64,
+          "rejection_children": 2,
+          "rejection_witnesses": 2,
+          "fork_entry_children": 1,
+          "fork_entry_witnesses": 1,
+          "publisher_validation": false,
+          "full_state_after_callback": false,
+          "performance_qualification": false
+        },
+        "files": {
+          "fork-entry.bin": {
+            "bytes": 48,
+            "sha256": "4a24adcadff92d4dad91468e4eef47d9e64ce6d9ca46fda126ed1ce179924a0d"
+          },
+          "fork-entry.csv": {
+            "bytes": 122,
+            "sha256": "89b6d74d57e8a4a036b41957703daf27efac79e2d91b1b41e4656dee35ce88b2"
+          },
+          "measurements.csv": {
+            "bytes": 382,
+            "sha256": "b8859c1d025e3f34138cfa43da3b7c133d95484c4942c045a12702c1d37b6b99"
+          },
+          "region-gates.csv": {
+            "bytes": 255,
+            "sha256": "443ac3fb7cfcb5de3164cd12d8278f6e1fc9074c21e75eb9383d5d09326a2c12"
+          },
+          "rejection-1.bin": {
+            "bytes": 248,
+            "sha256": "9df4ee5ed76943124b508430175aa6d4a34b81e3d989b0c8bb072d007a35a2c4"
+          },
+          "rejection-2.bin": {
+            "bytes": 248,
+            "sha256": "481a02cb3ca5c07a565a01719bf8595e6f1ee197262f56d215f5acc4a9e57bbd"
+          },
+          "rejections.csv": {
+            "bytes": 134,
+            "sha256": "e71340fa49b3ba7c3f24e6e72a22d5e3c4b8db398efb92ff07bc473d6f4b9225"
+          },
+          "summary.json": {
+            "bytes": 483,
+            "sha256": "af26bc4a9900c02b51c0ab77f6bce1406764109b40e7b2ee3e0abf3924662675"
+          }
+        }
+      },
+      "source_after": true
+    }
+  ],
+  "error": null,
+  "binary_sha256": "c5a10712c3428e74ecfb7ae072b540dc453960708a979d7215aae0cab788c4d4",
+  "status": "PASS",
+  "schema": 1,
+  "scope": "One fixed release correctness cohort; no timing, publication, reclamation or post-callback full-state qualification.",
+  "private_closed": {
+    "bytes": 11183,
+    "sha256": "3d39e5ebcbd13b43f38226509291e1e65ff5b6303717ed66e71b4dabffc47caa"
+  },
+  "binary": {
+    "path": "target/release/liteinst-preempt",
+    "bytes": 2251616,
+    "sha256": "c5a10712c3428e74ecfb7ae072b540dc453960708a979d7215aae0cab788c4d4"
+  },
+  "focused": {
+    "private_closed": {
+      "bytes": 3511,
+      "sha256": "447c5459eaa0ebbb6a93b061d5e9a8808a5ad11545eef82ce84c46c4f3f4e33d"
+    },
+    "planned": {
+      "revision": "b61a644e465100abdcff718af42aa3e4b92aede5",
+      "hardware": {
+        "architecture": "x86_64",
+        "logical_cpus": 316,
+        "cpu_model": "AMD EPYC 9D85 158-Core Processor"
+      },
+      "commands": [
+        [
+          "core-tests",
+          [
+            "cargo",
+            "test",
+            "--locked",
+            "--offline",
+            "-j",
+            "12",
+            "-p",
+            "liteinst2",
+            "--lib",
+            "backedge_clock"
+          ],
+          180
+        ],
+        [
+          "ownership-doctests",
+          [
+            "cargo",
+            "test",
+            "--locked",
+            "--offline",
+            "-j",
+            "12",
+            "-p",
+            "liteinst2",
+            "--doc",
+            "backedge_clock"
+          ],
+          180
+        ],
+        [
+          "core-tool-clippy",
+          [
+            "cargo",
+            "clippy",
+            "--locked",
+            "--offline",
+            "-j",
+            "12",
+            "-p",
+            "liteinst2",
+            "--lib",
+            "--bin",
+            "liteinst-preempt",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          180
+        ]
+      ],
+      "attempts": 1,
+      "cpus": [
+        1,
+        6,
+        23,
+        25,
+        35,
+        37,
+        40,
+        52,
+        77,
+        82,
+        92,
+        98
+      ],
+      "load": [
+        39.11,
+        37.14,
+        40.14
+      ],
+      "jobs": 12,
+      "test_threads": 12,
+      "log_cap": 2097152,
+      "scope": "Core library protocol tests, compile-fail ownership controls and tool/compiler lint; no region oracle command or performance qualification.",
+      "toolchain": {
+        "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+      },
+      "script_sha256": "98db868d6297e261404cec590cf3453c694531652ab8332416b2fe68a241a01d"
+    },
+    "results": [
+      {
+        "name": "core-tests",
+        "result": {
+          "start_utc": "2026-11-01T11:52:47.435687+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 9.618717635981739,
+          "private_log_sha256": "000a2949336df3b88060f8cc0a07f9545b5d42db8e883efe64ad6806e40a63b0",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        "load_after": [
+          37.99,
+          36.97,
+          40.05
+        ]
+      },
+      {
+        "name": "ownership-doctests",
+        "result": {
+          "start_utc": "2026-11-01T11:52:57.073129+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 3.1681921309791505,
+          "private_log_sha256": "77526625b2b72a056f5df787477d9b1099cf11bb3827f47af674ddbf970c8036",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        "load_after": [
+          37.99,
+          36.97,
+          40.05
+        ]
+      },
+      {
+        "name": "core-tool-clippy",
+        "result": {
+          "start_utc": "2026-11-01T11:53:00.259718+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 3.259668903890997,
+          "private_log_sha256": "5b5578b3d9770798a117adc5999847e91a23433e7ee0405da9ffc9a83709ecd0",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        "load_after": [
+          37.11,
+          36.81,
+          39.98
+        ]
+      }
+    ],
+    "error": null,
+    "binary_sha256": null,
+    "status": "PASS",
+    "undispatched": [],
+    "counts": {
+      "library_passed": 33,
+      "compile_fail_passed": 11,
+      "strict_clippy": "PASS"
+    }
+  },
+  "full_validation": {
+    "path": "validation.json",
+    "bytes": 12311,
+    "sha256": "316411caed2f886982688e473e5e47c93d7db1f0c1fbe9a416f603f9d691ed25",
+    "revision": "b61a644e465100abdcff718af42aa3e4b92aede5",
+    "status": "PASS",
+    "workspace_top_level_passed": 4414,
+    "workspace_ignored": 39,
+    "controlled_child_passed_separately": 3,
+    "serial_launch_passed": 1039
+  }
+}
