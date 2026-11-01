@@ -19,6 +19,7 @@ use crate::contracts::{AddressRange, CodeIdentity};
 use crate::controls::{ControlWriter, ProbeControl};
 
 mod owned_loop;
+mod owned_region;
 
 /// Exact additional instrumentation data per instance, independent of code caps.
 pub const CLOCK_PAGE_BYTES: usize = 4096;
@@ -323,6 +324,140 @@ pub struct ClockGateLayout {
     pub observing_entry: u64,
     /// Fast path immediately before the unchanged relocated original branch.
     pub original_body: u64,
+}
+
+/// One original branch's exact gate boundaries in a two-backedge region.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ClockRegionGateLayout {
+    /// Original logical branch head, never a generated body address.
+    pub logical_pc: u64,
+    /// Verified entry, observing and original-body boundaries for this head.
+    pub gate: ClockGateLayout,
+}
+
+/// Two authenticated branch sites sharing one clock and invocation lease.
+///
+/// This is a separate closed scalar profile; it does not change either of the
+/// single-site constructors on [`BackedgeClockAction`].
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BackedgeClockRegion {
+    pub(crate) actions: [BackedgeClockAction; 2],
+}
+
+impl BackedgeClockRegion {
+    /// Copy and check one 5..=80-byte scalar region with exactly two backedges.
+    ///
+    /// The two supplied PCs must name all backward JNZ/JG/JB/JMP instructions,
+    /// each in its unprefixed near encoding. Forward ordinary direct Jcc/JMP
+    /// edges must also target decoded heads inside the region. All heads must
+    /// be reachable from entry and have a structural path to the sole final C3.
+    /// Ordinary instructions use only caller-saved integer registers and
+    /// immediates: memory operands, stack registers, calls, indirect/system
+    /// transfers, legacy prefixes and stacked REX prefixes refuse. A single
+    /// REX prefix is allowed; operand-size overrides are outside this profile.
+    ///
+    /// Input associations may arrive in either order; the retained actions are
+    /// sorted by PC. Both distinct controls must be enabled managed bindings.
+    /// Their exact unique writers are consumed, preventing later disabling.
+    ///
+    /// This safe constructor checks supplied bytes, not live source or external
+    /// entry ownership. It proves neither termination nor an encounter bound.
+    /// Planning/publication must still authenticate the exact source generation,
+    /// complete entries, ABI, quiescence and mapping lifetimes. Invocation uses
+    /// one unsafe clock lease for the whole region, excluding recursive, signal,
+    /// fork and all other external entries before either gate's first spill.
+    /// Callbacks must preserve saved state and authenticate the exact site,
+    /// control, clock, PID/TID and matching resume before refilling. All owners
+    /// remain live through actual execution; no handle drop proves drainage.
+    pub fn new_owned_region(
+        identity: CodeIdentity,
+        base: u64,
+        source: &[u8],
+        mut managed: [(u64, ProbeControl, ControlWriter); 2],
+        clock: BackedgeClock,
+        mode: ClockMode,
+    ) -> Result<Self, ClockError> {
+        managed.sort_by_key(|association| association.0);
+        if managed.iter().any(|(_, control, writer)| {
+            !control.is_managed_bound() || !control.is_enabled() || !writer.matches(control)
+        }) || managed[0].1 == managed[1].1
+        {
+            return Err(ClockError::Source);
+        }
+        let (scan, conditions) = owned_region::admit(source, base, [managed[0].0, managed[1].0])?;
+        let actions: [BackedgeClockAction; 2] = managed
+            .into_iter()
+            .zip(conditions)
+            .map(
+                |((logical_pc, control, _writer), condition)| BackedgeClockAction {
+                    identity,
+                    logical_pc,
+                    control,
+                    clock: clock.clone(),
+                    mode,
+                    source: source.to_vec(),
+                    base,
+                    condition,
+                },
+            )
+            .collect::<Vec<_>>()
+            .try_into()
+            .map_err(|_| ClockError::Source)?;
+        let region = Self { actions };
+        region.validate_scan(&scan)?;
+        Ok(region)
+    }
+
+    /// Exact shared RW clock owner; this does not acquire an invocation lease.
+    pub fn clock(&self) -> &BackedgeClock {
+        &self.actions[0].clock
+    }
+
+    /// Sorted original-PC/control associations, without managed write authority.
+    pub fn controls(&self) -> [(u64, &ProbeControl); 2] {
+        [
+            (self.actions[0].logical_pc, &self.actions[0].control),
+            (self.actions[1].logical_pc, &self.actions[1].control),
+        ]
+    }
+
+    // The planner/emitter can repeat the exact constructor's immutable binding
+    // and CFG checks without exposing a second opcode-admission policy.
+    pub(crate) fn validate_scan(
+        &self,
+        scan: &crate::scanner::ScanResult,
+    ) -> Result<(), ClockError> {
+        let [first, second] = &self.actions;
+        if first.identity.mapping != first.base
+            || first.identity.generation == 0
+            || first.identity != second.identity
+            || first.base != second.base
+            || first.source != second.source
+            || first.clock != second.clock
+            || first.mode != second.mode
+            || first.logical_pc >= second.logical_pc
+            || first.control == second.control
+            || self
+                .actions
+                .iter()
+                .any(|action| !action.control.is_managed_bound() || !action.control.is_enabled())
+            || AddressRange::new(first.base, first.source.len())
+                .map_err(|_| ClockError::Source)?
+                .overlaps(first.clock.range())
+        {
+            return Err(ClockError::Source);
+        }
+        let expected = owned_region::admit_scan(
+            &first.source,
+            first.base,
+            [first.logical_pc, second.logical_pc],
+            scan,
+        )?;
+        if expected != [first.condition, second.condition] {
+            return Err(ClockError::Source);
+        }
+        Ok(())
+    }
 }
 
 /// Exact finite source, site, control and retained mapping supplied before emission.

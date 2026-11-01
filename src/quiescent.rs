@@ -34,6 +34,9 @@ pub use whole_function::{
     plan_whole_function_controlled_detailed_after,
 };
 
+mod clock_region;
+pub use clock_region::{plan_owned_clock_region, plan_owned_clock_region_detailed};
+
 /// Install-once ordering, with explicit modes for forced tactic qualification.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub enum TacticPolicy {
@@ -1397,12 +1400,16 @@ fn plan_at_with_controls(
     )
 }
 
-// Existing callers retain their same-block/closed-function proofs. The new
-// authority covers only a sealed JMP plus one independently enterable MOV.
+// Each opt-in whole-region or routed-suffix mode retains its own proof;
+// ordinary callers still require the existing same-block window.
 #[derive(Clone, Copy)]
 enum RelocationAuthority<'a> {
     Ordinary,
     WholeFunction(&'a whole_function::Verified),
+    OwnedClockRegion {
+        proof: &'a clock_region::Verified,
+        region: &'a crate::backedge_clock::BackedgeClockRegion,
+    },
     RoutedJmp {
         proof: &'a adjacent_routed_jmp::VerifiedRoutedJmpSuffix,
         ordinal: usize,
@@ -1440,6 +1447,10 @@ fn emit_relocation_window(
         RelocationAuthority::WholeFunction(proof) => Some(proof),
         _ => None,
     };
+    let clock_region = match authority {
+        RelocationAuthority::OwnedClockRegion { proof, region } => Some((proof, region)),
+        _ => None,
+    };
     let routed = match authority {
         RelocationAuthority::RoutedJmp {
             proof,
@@ -1464,6 +1475,20 @@ fn emit_relocation_window(
                 request.emission,
                 crate::emission::EmissionContext::Artifact(_)
             )
+        {
+            return Err(Refusal::InvalidPlan);
+        }
+    }
+    if let Some((proof, region)) = clock_region {
+        if controls.is_some()
+            || clock.is_some()
+            || physical != source.start()
+            || end != source.end()
+            || displaced != source
+            || source != request.function
+            || instructions.len() != scan.instructions().len()
+            || !proof.matches_request(request, scan, region)
+            || !matches!(request.emission, crate::emission::EmissionContext::Live(_))
         {
             return Err(Refusal::InvalidPlan);
         }
@@ -1514,6 +1539,8 @@ fn emit_relocation_window(
         .inspect_err(|reason| search_evidence.qualification(scope, reason))?;
     let trampoline = if let Some((proof, _, _)) = routed {
         TrampolinePlan::from_symbolic_routed_jmp(scan, proof)
+    } else if let Some((_, region)) = clock_region {
+        TrampolinePlan::from_owned_clock_region(scan, region)
     } else {
         match (clock, controls) {
             (Some(_), Some(CoalescedActions::ControlledProfile(_, _))) => {
@@ -1552,7 +1579,11 @@ fn emit_relocation_window(
         }
     }
     if request.emission.fitting_placement()
-        && (routed.is_some() || whole_function.is_some() || controls.is_some() || clock.is_some())
+        && (routed.is_some()
+            || whole_function.is_some()
+            || clock_region.is_some()
+            || controls.is_some()
+            || clock.is_some())
     {
         return Err(Refusal::InvalidPlan);
     }
@@ -1575,7 +1606,12 @@ fn emit_relocation_window(
         })?;
         &effective
     } else if request.emission.current_placement() {
-        if routed.is_some() || whole_function.is_some() || controls.is_some() || clock.is_some() {
+        if routed.is_some()
+            || whole_function.is_some()
+            || clock_region.is_some()
+            || controls.is_some()
+            || clock.is_some()
+        {
             return Err(Refusal::InvalidPlan);
         }
         effective = crate::emission::placement::for_relocation(
@@ -1649,6 +1685,9 @@ fn emit_relocation_window(
                 return Err(Refusal::InvalidPlan);
             };
             proof.verify_image(scan, actions, &image)?;
+        }
+        if let Some((proof, region)) = clock_region {
+            proof.verify_image(scan, region, &image)?;
         }
         let page_start = target & !4095;
         let page_end = target
