@@ -536,6 +536,9 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
         checked(!selected_selftesting,631,0);
         selected_owned_syscall(context,flags);return;
     }
+#ifdef LI2_FLAG_STACK
+    if(!selected_selftesting && selected_flag_stack_try(sig,si,context,flags))return;
+#endif
 #ifdef LI2_RSEQ_INACTIVE
     if(!selected_selftesting) {
         int rseq_error=li2_rseq_check_instruction(&selected_decoded,context);

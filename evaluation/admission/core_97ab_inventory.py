@@ -9,10 +9,11 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '7b28d621fa013b3ed9ca57b179c34dc26fac76bb906be5e024f60c28b4366343',
+require(hashlib.sha256(RAW).hexdigest() == 'e5b663ea9a6c9e36e530c1f4d95ce804024b7a71e2b8a0fda57d952007683416',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
+OVERLAP_PREVIOUS = DATA['source_successor_124521']['previous_corpus_sha256']
 RX_PREVIOUS = DATA['source_successor_b6fea']['previous_corpus_sha256']
 ENTRY_PREVIOUS = DATA['source_successor_b0a30']['previous_corpus_sha256']
 PLACEMENT_PREVIOUS = DATA['source_successor_fd4c6']['previous_corpus_sha256']
@@ -104,10 +105,24 @@ def require_sources(error='main97ab_source_inventory_differs'):
         source_before_evaluation(path, raw, error)
 
 
-def before_b6fea(declared, error='main97ab_inventory_differs'):
-    """Bind the packed-RX catalog, including its mandatory Linux loader harness."""
+def before_124521(declared, error='main97ab_inventory_differs'):
+    """Bind every overlapping-relay test while retaining the whole prior catalog."""
     require(type(declared) is dict and digest(declared) == CURRENT, error)
     old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in DATA['source_successor_124521']['workspace_changes'].items():
+        require(digest(rows[name]) == digest(change['current']), error)
+        rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == OVERLAP_PREVIOUS, error)
+    return old
+
+
+def before_b6fea(declared, error='main97ab_inventory_differs'):
+    """Bind the packed-RX catalog, including its mandatory Linux loader harness."""
+    owned = plain_catalog((declared, DATA))
+    declared = before_124521(declared, error)
+    require(type(declared) is dict and digest(declared) == OVERLAP_PREVIOUS, error)
+    old = declared if owned else copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in DATA['source_successor_b6fea']['workspace_changes'].items():
         require(digest(rows[name]) == digest(change['current']), error)

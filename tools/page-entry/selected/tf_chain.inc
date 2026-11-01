@@ -1,6 +1,12 @@
 /* Included by step_owner.c only in LI2_TF_HANDOFF builds. Reuses unchanged
    frame/identity/revoke helpers and the complete existing generic owner. */
 #include "tf_chain.h"
+#ifdef LI2_TF_NX_PAGE_BOUNDARY
+#include "tf_nx_page_boundary.h"
+#endif
+#ifdef LI2_RESIDENT_THREE_CAPTURE
+extern void li2_r3o_trace_closed(const struct li2_tf_chain *,const struct li2_tf_chain_slot *);
+#endif
 #ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
 /* Observation-only callback: no owner or saved application frame edits. */
 extern void li2_pro_trace_closed(const struct li2_tf_chain *,const struct li2_tf_chain_slot *);
@@ -572,6 +578,9 @@ enum li2_chain_result li2_tf_chain_trace(struct li2_tf_chain *c,int sig,siginfo_
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
     li2_pco_trace_closed(c,p);
 #endif
+#ifdef LI2_RESIDENT_THREE_CAPTURE
+    li2_r3o_trace_closed(c,p);
+#endif
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
     li2_pxo_trace_closed(c,p);
 #endif
@@ -598,6 +607,14 @@ enum li2_chain_result li2_tf_chain_trace(struct li2_tf_chain *c,int sig,siginfo_
         if(!a->policy)s->fallback=LI2_CHAIN_NOT_CLASSIFIED;
         else chain_need(c,a->policy==1,LI2_CHAIN_DECODE,5);
     }
+#ifdef LI2_TF_NX_PAGE_BOUNDARY
+    /* Only a genuine closed predecessor reaches this descriptive policy.
+       The unchanged fallback tail releases the successor and preserves UC. */
+    int boundary=li2_tf_nx_page_boundary(&p->owner.step.request,
+                                       p->owner.actual_post_pc,(int)s->fallback);
+    chain_need(c,boundary>=0,LI2_CHAIN_STATE,5);
+    s->fallback=(unsigned)boundary;
+#endif
     if(s->fallback) {
 #ifdef LI2_EVENT_PROFILE
         li2_event_site(&s->fetch.pages[0],s->decoded.pc,s->decoded.code,s->fallback);

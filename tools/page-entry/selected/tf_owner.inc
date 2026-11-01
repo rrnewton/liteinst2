@@ -1,6 +1,9 @@
 /* Append to the unchanged step_owner.c translation unit. Reuses its actual
    identity/frame/revoke/first-error helpers; never changes its old trace. */
 #include "tf_owner.h"
+#ifdef LI2_HELPER_TF
+#include "helper_tf.h"
+#endif
 #include "tf_entry_route.inc"
 
 int li2_tf_arm(struct li2_tf_owner *o,struct li2_step_session *s,
@@ -23,11 +26,23 @@ int li2_tf_arm(struct li2_tf_owner *o,struct li2_step_session *s,
         error=LI2_TF_CLASSIFICATION;
     else {
         int result=(int)li2_decoder_tf_classify(d->pc,d->bytes,d->available,&o->classification);
+#ifdef LI2_HELPER_TF
+        if(!result) {
+            struct li2_tf_classification helper={0};
+            int h=li2_helper_tf_classify(d,&helper);
+            if(!h)o->classification=helper;
+            else if(h!=LI2_HT_FORM)result=h;
+        }
+#endif
         const struct li2_tf_classification *c=&o->classification;
         if(result || c->abi_version!=1 || c->policy!=1 || c->pc!=d->pc ||
            c->next_pc!=d->next_pc || c->code!=d->code || c->length!=d->length ||
            (c->flow!=LI2_TF_FALLTHROUGH && c->flow!=LI2_TF_NEAR_FLOW) ||
+#ifdef LI2_HELPER_TF
+           c->family<LI2_TF_INTEGER || (c->family>LI2_TF_SIMD && c->family!=LI2_HELPER_TF_X87))
+#else
            c->family<LI2_TF_INTEGER || c->family>LI2_TF_SIMD)
+#endif
             error=LI2_TF_CLASSIFICATION;
     }
     if(!error) {

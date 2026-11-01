@@ -12,6 +12,9 @@ static void selected_generic_begin(int sig,siginfo_t *si,ucontext_t *context,uin
     selected_initialized();
 }
 static void selected_generic_trace(int sig,siginfo_t *si,ucontext_t *context) {
+#ifdef LI2_RESIDENT_THREE
+    if(selected_resident_three_trace_try(sig,si,context))return;
+#endif
 #ifdef LI2_PERSISTENT_EPOCH
     if(selected_persistent_trace_try(sig,si,context))return;
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE

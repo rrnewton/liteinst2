@@ -1,11 +1,20 @@
 /* Frozen closed Code inventory, derived from the bound iced 1.21 enum and
    current qualified classifier. No later Code is implicitly plain-entry. */
 #include "tf_entry_route.h"
+#ifdef LI2_HELPER_TF
+#include "helper_tf.h"
+#endif
 enum li2_tf_entry_route li2_tf_entry_route(const struct li2_decoded *d) {
     if(!d || d->abi_version!=1 || d->reserved || d->decode_status!=LI2_VALID ||
        d->kind!=LI2_NONE || !d->length || d->length>15 || d->available<d->length ||
        d->available>15 || d->pc>UINTPTR_MAX-d->length || d->next_pc!=d->pc+d->length)
         return LI2_TF_ENTRY_UNKNOWN;
+#ifdef LI2_HELPER_TF
+    /* Fresh whole decoded/literal join, including shared POP/selector Codes. */
+    int helper=li2_helper_tf_entry(d);
+    if(!helper)return LI2_TF_ENTRY_PLAIN;
+    if(helper!=LI2_HT_FORM)return LI2_TF_ENTRY_UNKNOWN;
+#endif
     /* Guarded byte forms precede the shared-Code plain route. */
     if(d->code==350) /* LODSQ: no REP, ignored REX or other prefix aliases. */
         return d->length==2 && d->bytes[0]==0x48 && d->bytes[1]==0xad

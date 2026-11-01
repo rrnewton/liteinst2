@@ -1,0 +1,15 @@
+kind,name,status,value,unit,scope
+stage,archive,passed,16,commands,actual_closed_cohort
+stage,flags,observed_unqualified,38,commands,actual_closed_cohort
+stage,helper,observed_unqualified,47,commands,actual_closed_cohort
+stage,run,bounded_subjects_completed,22,commands,actual_closed_cohort
+stage,audit,failed,0,commands,actual_closed_cohort
+oracle,nx_page_boundary,policy_observed,57,cases,separate_policy_only
+subject,native,exit_0,0.139353059,seconds,validation_only
+subject,gated,exit_0,3.335662641,seconds,validation_only
+raw_counter,map_queries,observed,145727,count,semantic_audit_failed
+raw_counter,map_refreshes,observed,976,count,semantic_audit_failed
+raw_counter,ingresses,observed,16055,count,semantic_audit_failed
+credit,qualification,false,0,boolean,finite_only
+credit,performance,false,0,boolean,finite_only
+credit,general_program,false,0,boolean,finite_only

@@ -6355,7 +6355,7 @@
       },
       "test/neighbor_eviction_oracle": {
         "ignored": 0,
-        "tests": 104
+        "tests": 106
       },
       "test/oracle": {
         "ignored": 0,
@@ -6495,7 +6495,7 @@
       },
       "unit/disassembly_sites/disassembly_sites": {
         "ignored": 0,
-        "tests": 15
+        "tests": 17
       },
       "unit/full_program_bridge/full_program_bridge": {
         "ignored": 0,
@@ -6503,7 +6503,7 @@
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 475
+        "tests": 488
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
@@ -6531,7 +6531,7 @@
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
-        "tests": 192
+        "tests": 195
       },
       "unit/liteinst_rewrite/main": {
         "ignored": 0,

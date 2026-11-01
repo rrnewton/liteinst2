@@ -372,7 +372,7 @@ class Main97abInventoryTests(unittest.TestCase):
         # The new Linux loader is a real default integration harness. All
         # earlier complete catalogs and their assertions remain unchanged.
         rx = current.DATA['source_successor_b6fea']
-        rx_rows = actual['harness_test_counts']['workspace_tests']
+        rx_rows = current.before_124521(actual)['harness_test_counts']['workspace_tests']
         rx_before = current.before_b6fea(actual)
         self.assertEqual(current.digest(rx_before), current.RX_PREVIOUS)
         self.assertEqual((len(rx_rows), sum(x['tests'] for x in rx_rows.values()),
@@ -452,6 +452,67 @@ class Main97abInventoryTests(unittest.TestCase):
         loader_row = parsing.parse_harnesses(failed, loader_expected, 1)[0]
         self.assertEqual((loader_row['outer']['result'], loader_row['outer']['passed'],
                           loader_row['outer']['failed']), ('FAILED', 1, 1))
+
+
+        # All twenty overlapping-relay methods remain mandatory on the same
+        # four default harnesses, above the complete packed-RX predecessor.
+        overlap = current.DATA['source_successor_124521']
+        overlap_rows = actual['harness_test_counts']['workspace_tests']
+        overlap_before = current.before_124521(actual)
+        self.assertEqual(current.digest(overlap_before), current.OVERLAP_PREVIOUS)
+        self.assertEqual((len(overlap_rows), sum(x['tests'] for x in overlap_rows.values()),
+                          sum(x['ignored'] for x in overlap_rows.values())), (114, 4415, 39))
+        self.assertEqual((overlap['default_method_additions'], overlap['default_doctest_additions'],
+                          overlap['default_method_removals'], overlap['default_harness_changes'],
+                          overlap['default_ignore_changes'], overlap['recorder_identity_changes']),
+                         (20, 0, 0, 0, 0, 0))
+        self.assertEqual(sum(len(names) * len(overlap['default_method_instances'][path])
+                             for path, names in overlap['added_default_methods'].items()), 20)
+        self.assertEqual((overlap['added_ignored_methods'], overlap['doctests']), ({}, {}))
+        self.assertEqual(overlap_before['harness_test_counts']['workspace_tests'], rx_rows)
+        for wrong in (overlap_before, rx_before, entry_before, placement_before,
+                      phase_catalog, native_indexed, old):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_124521(wrong)
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                inventory.require_current(wrong)
+        for name, change in overlap['workspace_changes'].items():
+            self.assertEqual(overlap_rows[name], change['current'])
+            self.assertEqual(overlap_before['harness_test_counts']['workspace_tests'][name],
+                             change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(overlap_rows[name][field]), overlap_rows[name][field] + 1):
+                    wrong = copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_124521(wrong)
+            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_124521(wrong)
+        overlap_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
+            for path, names in overlap['added_default_methods'].items() for name in names]
+        overlap_stimuli += [(path, literal, '')
+            for path, literals in overlap['module_chains'].items() for literal in literals]
+        for path, literal, replacement in overlap_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('overlap declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        for path in overlap['source_paths']:
+            target = current.ROOT / path; raw = read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate != target: return read(candidate)
+                    if missing: raise FileNotFoundError(path)
+                    return raw + b'\n'
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                        current.require_sources()
 
         # The new Cargo example has one exact source/binary/output-directory
         # identity. Its ten tests cannot be admitted under the generic matcher.

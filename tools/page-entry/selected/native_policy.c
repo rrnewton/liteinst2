@@ -41,6 +41,12 @@ static int lock_d1_nontransactional(const unsigned char *p,size_t n,
         p[opcode]==0xd1;
 }
 unsigned li2_native_policy(const unsigned char *bytes,size_t length) {
+#ifdef LI2_RESIDENT_SOURCE_LEASE
+    /* The original native-page scanner has no per-instruction write exclusion.
+       This finite source-lease profile uses checked TF/copied/generated routes;
+       it never admits an unstepped original page as source-lease authority. */
+    (void)bytes;(void)length;return LI2_NATIVE_BLOCK_STATE;
+#endif
     unsigned result=0;
     for(size_t i=0;i<length;i++) {
         result|=core(bytes+i,length-i);

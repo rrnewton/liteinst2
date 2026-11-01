@@ -156,7 +156,29 @@ def pair_controls(stderr,args,workload, *, cache_completed=None, chain_closure=N
     return names
 
 
-def reports(stderr):
+def nx_page_boundary_slot(c,index):
+    """Typed reason7 observation only; no source or execution authority."""
+    s=chain.slot(c,index);p=chain.slot(c,index^1)
+    if not (c['active']==index and c['pending']==c['error']==c['proof_valid']==0 and
+            c['fallbacks']>0 and s['fallback']==7 and s['phase']==6 and s['origin']==2 and
+            s['prepare']==s['prepared']==s['release']==s['released']==1 and
+            0<s['length']<=15 and s['generation']>0 and 0<s['event']<=c['event'] and
+            s['borrow']>0 and s['validations']>0 and
+            all(s[k]==0 for k in ('owner_phase','owner_error','open','opened','revoke','revoked',
+                'trace','post_pc','held','fetch_error','query','queried','query_pc','unexpected')) and
+            p['phase']==5 and p['origin']in(1,2) and p['fallback']==0 and p['owner_phase']==5 and
+            p['trace']==p['query']==p['queried']==p['release']==p['released']==1 and
+            p['owner_error']==p['held']==p['fetch_error']==p['unexpected']==0 and
+            0<p['pc']<=(1<<64)-1-p['length'] and 1<=p['length']<=15 and
+            p['post_pc']==p['query_pc']==s['pc'] and 0<p['borrow']<s['borrow']):return False
+    first=p['pc']//4096;last=(p['pc']+p['length']-1)//4096
+    mask=1 if first==last else 3
+    return (all(p[k]==mask for k in ('open','opened','revoke','revoked')) and
+            s['pc']//4096 not in (first,last))
+
+
+def reports(stderr, *, nx_page_boundary=False):
+    need(type(nx_page_boundary)is bool,'explicit typed NX page-boundary report policy')
     need(type(stderr)is bytes and stderr.endswith(b'\n'),'complete actual stderr')
     lines=stderr[:-1].split(b'\n');parts=[line.partition(b' ')for line in lines]
     names=[p[0]for p in parts];order=['LI2_'+x for x in ORDER]
@@ -228,7 +250,7 @@ def reports(stderr):
          'actual chain route/counters')
     for index in (0, 1):
         slot = chain.slot(c, index)
-        need(slot['phase'] <= 7 and slot['origin'] <= 2 and slot['fallback'] <= 6 and slot['owner_phase'] <= 6 and
+        need(slot['phase'] <= 7 and slot['origin'] <= 2 and (slot['fallback'] <= 6 or (nx_page_boundary and nx_page_boundary_slot(c,index))) and slot['owner_phase'] <= 6 and
              all(slot[k] in (0, 1) for k in ('prepare', 'prepared', 'retry', 'trace', 'held', 'query',
                                            'queried', 'release', 'released', 'unexpected')) and
              all(slot[k] <= 3 for k in ('open', 'opened', 'revoke', 'revoked')) and slot['length'] <= 15,
