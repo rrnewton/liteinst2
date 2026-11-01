@@ -492,8 +492,11 @@ fn child(
             qualification::install_observer(move |kind, snapshot| {
                 sequence += 1;
                 let header = encode(kind, sequence, snapshot);
-                let words = header.iter().chain(snapshot.journal.iter()).copied();
-                for (out, n) in witness.iter_mut().zip(words) {
+                let (header_out, journal_out) = witness.split_at_mut(early::JOURNAL);
+                for (out, n) in header_out.iter_mut().zip(header.iter().copied()) {
+                    std::ptr::write_volatile(out, n);
+                }
+                for (out, n) in journal_out.iter_mut().zip(snapshot.journal.iter().copied()) {
                     std::ptr::write_volatile(out, n);
                 }
                 snapshot_ready();
