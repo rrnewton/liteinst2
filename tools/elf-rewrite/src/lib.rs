@@ -169,6 +169,34 @@ pub fn prepare_disassembly_whole_current_placement_mixed_neighbors(
     Ok(product)
 }
 
+/// Opt-in certified single-candidate placement with complete pending ownership.
+///
+/// B1/B2/T1 and both mixed-T3 roles use conservative artifact capacity bounds
+/// before their one real emission. T2 keeps its legacy placement policy. Every
+/// completed first-four bundle is admitted against inherited composition and
+/// pending instructions before tactic success; refusal consumes that attempt
+/// and advances only to the next declared tactic, while forced stays forced.
+/// All final append, dependency, hook, entry, aggregate and atomic-selection
+/// checks remain required. A capacity certificate is not execution authority.
+pub fn prepare_disassembly_whole_fitting_mixed_neighbors(
+    original: &[u8],
+    selected: &disassembly::whole::WholeProgramSelection,
+) -> Result<Product, Error> {
+    let mut product = prepare_selection_with_mode(
+        original,
+        selected.selection.clone(),
+        false,
+        disassembly::NeighborMode::WholeFittingMixedPending,
+    )?;
+    product.files.remove("bundle-index.tsv");
+    product.files.extend(selected.fitting_mixed_files());
+    product.files.insert(
+        "bundle-index.tsv".into(),
+        ledger::index(selected.selection.original, &product.files),
+    );
+    Ok(product)
+}
+
 fn prepare_mode(original: &[u8], manifest: &[u8], owned_neighbors: bool) -> Result<Product, Error> {
     let selection = selection::parse(manifest)?;
     prepare_selection_mode(original, selection, owned_neighbors, false)
@@ -371,6 +399,7 @@ fn prepare_selection_transaction(
         mode,
         disassembly::NeighborMode::ShortT3Pending
             | disassembly::NeighborMode::WholeCurrentPlacementMixedPending
+            | disassembly::NeighborMode::WholeFittingMixedPending
     ) {
         s.sites
             .iter()
@@ -385,6 +414,7 @@ fn prepare_selection_transaction(
         mode,
         disassembly::NeighborMode::ShortT3Pending
             | disassembly::NeighborMode::WholeCurrentPlacementMixedPending
+            | disassembly::NeighborMode::WholeFittingMixedPending
     ) {
         composition
             .require_unclaimed_ranges(&pending.iter().map(|(_, range)| *range).collect::<Vec<_>>())
@@ -791,7 +821,15 @@ fn attempt_singleton(
                 max_virtual_span: s.limits.virtual_span,
             },
         };
-        let result = if mode == disassembly::NeighborMode::WholeCurrentPlacementMixedPending {
+        let result = if mode == disassembly::NeighborMode::WholeFittingMixedPending {
+            engine::plan_with_emission_after_and_fitting_mixed_t3_pending(
+                &request,
+                composition,
+                &pending_ranges,
+                &site.victim_allocation,
+                policy,
+            )
+        } else if mode == disassembly::NeighborMode::WholeCurrentPlacementMixedPending {
             engine::plan_with_emission_after_and_current_placement_mixed_t3_pending(
                 &request,
                 composition,
@@ -941,6 +979,7 @@ fn attempt_singleton(
             mode,
             disassembly::NeighborMode::ShortT3Pending
                 | disassembly::NeighborMode::WholeCurrentPlacementMixedPending
+                | disassembly::NeighborMode::WholeFittingMixedPending
         ) {
             next.require_unclaimed_ranges(&pending_ranges)
                 .map_err(|e| Error::new("pending-selected", e))?;

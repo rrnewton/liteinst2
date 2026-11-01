@@ -31,6 +31,8 @@ pub(crate) enum NeighborMode {
     WholeCurrentPlacement,
     // Separate mixed T3 family with one complete pending-selection map.
     WholeCurrentPlacementMixedPending,
+    // Certified fit and admission before a complete tactic returns success.
+    WholeFittingMixedPending,
     ShortOnly,
     ShortT3Ownership,
     ShortT3Pending,
@@ -42,6 +44,7 @@ impl NeighborMode {
             Self::WholeLongT3Ownership => whole::PROFILE,
             Self::WholeCurrentPlacement => whole::PROFILE,
             Self::WholeCurrentPlacementMixedPending => whole::PROFILE,
+            Self::WholeFittingMixedPending => whole::PROFILE,
             Self::ShortOnly => SHORT_ONLY_PROFILE,
             Self::ShortT3Ownership => SHORT_T3_OWNERSHIP_PROFILE,
             Self::ShortT3Pending => SHORT_T3_PENDING_PROFILE,
@@ -53,6 +56,7 @@ impl NeighborMode {
             Self::WholeLongT3Ownership => whole::NEIGHBOR_METADATA,
             Self::WholeCurrentPlacement => whole::CURRENT_PLACEMENT_METADATA,
             Self::WholeCurrentPlacementMixedPending => whole::MIXED_PENDING_METADATA,
+            Self::WholeFittingMixedPending => whole::FITTING_MIXED_METADATA,
             Self::ShortOnly => SHORT_FAMILY,
             Self::ShortT3Ownership => SHORT_OWNERSHIP,
             Self::ShortT3Pending => SHORT_PENDING,
@@ -239,7 +243,8 @@ impl Disassembly {
             NeighborMode::LongOnly => (0, "LI2DISASM-POLICY 1"),
             NeighborMode::WholeLongT3Ownership
             | NeighborMode::WholeCurrentPlacement
-            | NeighborMode::WholeCurrentPlacementMixedPending => {
+            | NeighborMode::WholeCurrentPlacementMixedPending
+            | NeighborMode::WholeFittingMixedPending => {
                 return Err(Error::new(
                     "neighbor-mode",
                     "whole mode requires shared importer",
@@ -299,7 +304,8 @@ impl Disassembly {
             NeighborMode::LongOnly => "",
             NeighborMode::WholeLongT3Ownership
             | NeighborMode::WholeCurrentPlacement
-            | NeighborMode::WholeCurrentPlacementMixedPending => {
+            | NeighborMode::WholeCurrentPlacementMixedPending
+            | NeighborMode::WholeFittingMixedPending => {
                 return Err(Error::new(
                     "neighbor-mode",
                     "whole mode requires shared importer",
@@ -378,7 +384,8 @@ impl Disassembly {
             NeighborMode::LongOnly => selection::parse(projection.as_bytes())?,
             NeighborMode::WholeLongT3Ownership
             | NeighborMode::WholeCurrentPlacement
-            | NeighborMode::WholeCurrentPlacementMixedPending => {
+            | NeighborMode::WholeCurrentPlacementMixedPending
+            | NeighborMode::WholeFittingMixedPending => {
                 return Err(Error::new(
                     "neighbor-mode",
                     "whole mode requires shared importer",

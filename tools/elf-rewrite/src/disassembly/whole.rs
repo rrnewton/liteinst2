@@ -11,6 +11,8 @@ pub(super) const NEIGHBOR_METADATA: &str =
 pub const CURRENT_PLACEMENT_METADATA: &str = "artifact_placement\tcurrent-composition-single-candidate-v1\nselected_placement_tactics\tB1,B2,T1\npaired_placement_tactics\tlegacy-T2,T3\npaired_ownership\tinherited-long-T3\n";
 /// Separate mixed-neighbor mode; the original whole/current labels stay literal.
 pub const MIXED_PENDING_METADATA: &str = "neighbor_victims\tmixed-short-and-long\nneighbor_ownership\tinherited-t3\npending_selected\tfull-instruction-ownership\nartifact_placement\tcurrent-composition-single-candidate-v1\nselected_placement_tactics\tB1,B2,T1\npaired_placement_tactics\tlegacy-T2,mixed-T3\npaired_ownership\tinherited-mixed-T3\n";
+/// Separate fitting mode; certification does not grant runtime qualification.
+pub const FITTING_MIXED_METADATA: &str = "neighbor_victims\tmixed-short-and-long\nneighbor_ownership\tinherited-t3\npending_selected\tfull-instruction-ownership\nartifact_placement\tcurrent-composition-certified-fit-v1\nselected_placement_tactics\tB1,B2,T1\npaired_placement_tactics\tlegacy-T2,fitting-mixed-T3\npaired_ownership\tinherited-mixed-T3\nlocal_plan_admission\tinherited-and-pending-before-tactic-success\n";
 pub const MATERIAL_PROFILE: &str = "e9patch-full-sections-null-jumps-4096-v1";
 pub const SITE_LIMIT: usize = 4096;
 pub const HEAD_LIMIT: usize = 16384;
@@ -43,6 +45,19 @@ impl WholeProgramSelection {
             .split_once(NEIGHBOR_METADATA)
             .expect("typed profile has exactly one original neighbor identity");
         *profile = format!("{before}{MIXED_PENDING_METADATA}{after}").into_bytes();
+        files
+    }
+
+    pub(crate) fn fitting_mixed_files(&self) -> BTreeMap<String, Vec<u8>> {
+        let mut files = self.files.clone();
+        let profile = files
+            .get_mut("planning-profile.tsv")
+            .expect("typed whole-program selection retains its profile");
+        let text = std::str::from_utf8(profile).expect("typed profile is ASCII");
+        let (before, after) = text
+            .split_once(NEIGHBOR_METADATA)
+            .expect("typed profile has exactly one original neighbor identity");
+        *profile = format!("{before}{FITTING_MIXED_METADATA}{after}").into_bytes();
         files
     }
 }
