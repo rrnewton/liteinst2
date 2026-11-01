@@ -2715,9 +2715,9 @@
         "sha256": "beb1e811939a6e6a70c9cab3378b09bc62ca361ad898280bdd884ce5364457f5"
       },
       "oneshot_lifecycle.inc": {
-        "bytes": 25211,
+        "bytes": 25516,
         "mode": "0644",
-        "sha256": "e702f0f725639f600fae2ad3948908f079e0b11a75afce9875b05d06fc8c2a87"
+        "sha256": "d16ffa7c4b84d566e56fd6b14102dda04cd74c7709b8ec3cb415b184a691a6b0"
       },
       "oneshot_reusable.h": {
         "bytes": 1650,

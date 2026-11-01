@@ -92,6 +92,12 @@ static int r3_plans(const ucontext_t *uc) {
        !r3_registry() || li2_rsl_resident_bind(&r3.token) ||
        li2_rsl_resident_snapshot(&r3.token,&r3.source,&r3.source_pages) ||
        !r3.source_pages || r3.source_pages>LI2_RSL_PAGES)return R3_SOURCE;
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+    struct li2_rsl_content_ref content={0};
+    if(li2_rsl_resident_content(&r3.token,&content))return R3_SOURCE;
+    if(!r3.publications)r3.content=content;
+    else if(!equal(&r3.content,&content,sizeof content))return R3_SOURCE;
+#endif
     r3.phase=LI2_R3_PLANNING;
     if(!r3.publications) {
         r3.count=1;r3.certificate[0].root=r3.root;
@@ -138,6 +144,9 @@ static int r3_plans(const ucontext_t *uc) {
 static int r3_current(const ucontext_t *uc) {
     if(!r3_registry() || !r3_identity() || !r3_token(&r3.token) ||
        li2_rsl_resident_validate(&r3.token))return R3_SOURCE;
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+    if(li2_rsl_resident_content_live(&r3.token,&r3.content))return R3_SOURCE;
+#endif
     for(unsigned i=0;i<r3.count;i++) {
         le_zero(&r3.live[i],sizeof r3.live[i]);
         if(li2_rsl_resident_plan(&r3.token,i) ||

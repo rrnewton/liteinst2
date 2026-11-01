@@ -147,7 +147,7 @@
     "source_fact": {
       "bytes": 40764,
       "mode": "0644",
-      "sha256": "61c88bd915463ed7105cd2d909e4f12fe6e062b205d29c3bb2265014045c9ae4"
+      "sha256": "49dde028dc710a35aad9057f71abac7fc6cb63be5f5772fb22c3a7cf8d971553"
     }
   },
   "forbidden_headers": [
@@ -287,7 +287,7 @@
     "evaluation/inprocess/call_return_heads/SOURCE.json": {
       "bytes": 160505,
       "mode": "0644",
-      "sha256": "04dde946e13b2ea2013734ecd9ef427970c1322f82262c9765af535f7932820c"
+      "sha256": "90181b4faeb2b82dfb7ec71ff5b504fc0294b807396490abf903d769d2dab8f5"
     },
     "evaluation/inprocess/call_return_heads/components.py": {
       "bytes": 10707,
@@ -322,7 +322,7 @@
     "evaluation/inprocess/direct_call_native/SOURCE.json": {
       "bytes": 40764,
       "mode": "0644",
-      "sha256": "61c88bd915463ed7105cd2d909e4f12fe6e062b205d29c3bb2265014045c9ae4"
+      "sha256": "49dde028dc710a35aad9057f71abac7fc6cb63be5f5772fb22c3a7cf8d971553"
     },
     "evaluation/inprocess/direct_call_native/components.py": {
       "bytes": 11933,
@@ -1935,9 +1935,9 @@
       "sha256": "beb1e811939a6e6a70c9cab3378b09bc62ca361ad898280bdd884ce5364457f5"
     },
     "tools/page-entry/selected/oneshot_lifecycle.inc": {
-      "bytes": 25211,
+      "bytes": 25516,
       "mode": "0644",
-      "sha256": "e702f0f725639f600fae2ad3948908f079e0b11a75afce9875b05d06fc8c2a87"
+      "sha256": "d16ffa7c4b84d566e56fd6b14102dda04cd74c7709b8ec3cb415b184a691a6b0"
     },
     "tools/page-entry/selected/oneshot_reusable.h": {
       "bytes": 1650,
@@ -4699,7 +4699,7 @@
       "SOURCE.json": {
         "bytes": 160505,
         "mode": "0644",
-        "sha256": "04dde946e13b2ea2013734ecd9ef427970c1322f82262c9765af535f7932820c"
+        "sha256": "90181b4faeb2b82dfb7ec71ff5b504fc0294b807396490abf903d769d2dab8f5"
       },
       "components.py": {
         "bytes": 10707,
@@ -4721,7 +4721,7 @@
       "SOURCE.json": {
         "bytes": 40764,
         "mode": "0644",
-        "sha256": "61c88bd915463ed7105cd2d909e4f12fe6e062b205d29c3bb2265014045c9ae4"
+        "sha256": "49dde028dc710a35aad9057f71abac7fc6cb63be5f5772fb22c3a7cf8d971553"
       },
       "components.py": {
         "bytes": 11933,
@@ -5906,9 +5906,9 @@
         "sha256": "beb1e811939a6e6a70c9cab3378b09bc62ca361ad898280bdd884ce5364457f5"
       },
       "oneshot_lifecycle.inc": {
-        "bytes": 25211,
+        "bytes": 25516,
         "mode": "0644",
-        "sha256": "e702f0f725639f600fae2ad3948908f079e0b11a75afce9875b05d06fc8c2a87"
+        "sha256": "d16ffa7c4b84d566e56fd6b14102dda04cd74c7709b8ec3cb415b184a691a6b0"
       },
       "oneshot_reusable.h": {
         "bytes": 1650,

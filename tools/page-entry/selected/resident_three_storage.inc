@@ -86,6 +86,11 @@ static int r3_publish(unsigned index) {
     c->mirror.header=(struct r3_header){.version=LI2_R3_VERSION,.bytes=sizeof c->mirror,
         .generation=generation,.publication_serial=r3.serial,.index=index,
         .source_epoch=r3.source.epoch,.root=c->root,.owner=(uintptr_t)&r3,.layout=c->layout};
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+    if(li2_rsl_resident_content_live(&r3.token,&r3.content) ||
+       r3.source.epoch!=r3.content.publication_epoch)return R3_SOURCE;
+    c->mirror.header.content=r3.content;
+#endif
     for(unsigned i=0;i<32;i++){c->mirror.header.archive[i]=pe_archive[i];c->mirror.header.policy[i]=pe_policy[i];}
     long fd=raw(SYS_memfd_create,(long)"li2-resident-three",MFD_CLOEXEC|MFD_ALLOW_SEALING,0,0,0,0);
     if(fd<0 || fd>INT32_MAX)return R3_PUBLICATION;
