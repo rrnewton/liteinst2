@@ -105,13 +105,13 @@ impl RegionSpawned {
         child.request(libc::PTRACE_SETOPTIONS, 0, libc::PTRACE_O_EXITKILL as usize);
         assert!(ready.image_len > 0 && ready.image_len <= 8192);
         assert_eq!(ready.routes[0], ready.image);
-        for i in 0..HEADS.len() {
+        for (i, &head) in HEADS.iter().enumerate() {
             assert!(ready.image <= ready.routes[i] && ready.routes[i] <= ready.bodies[i]);
             assert!(ready.bodies[i] < ready.image + ready.image_len);
             if i + 1 < HEADS.len() {
                 assert!(ready.bodies[i] < ready.routes[i + 1]);
             }
-            if let Some(site) = SITES.iter().position(|&offset| offset == HEADS[i]) {
+            if let Some(site) = SITES.iter().position(|&offset| offset == head) {
                 assert_eq!(ready.gates[site][0], ready.routes[i]);
                 assert_eq!(ready.gates[site][2], ready.bodies[i]);
                 assert!(
