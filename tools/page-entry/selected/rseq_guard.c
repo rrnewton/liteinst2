@@ -1,5 +1,11 @@
 #define _GNU_SOURCE
 #include "rseq_guard.h"
+#ifdef LI2_HELPER_TF
+#include "helper_tf.h"
+#endif
+#ifdef LI2_RESIDENT_SOURCE_PROBE
+#include "resident_source_probe.h"
+#endif
 #ifdef LI2_NATIVE_PAIR
 #include "native_pair.h"
 #endif
@@ -66,6 +72,16 @@ static int span(uintptr_t first,size_t bytes) {
     if(first>UINTPTR_MAX-bytes)return bad(LI2_RSEQ_OVERFLOW,1);
     state.last_first=first;state.last_end=first+bytes;
     if(count(&state.range_checks))return (int)state.first_error;
+#ifdef LI2_RESIDENT_SOURCE_LEASE
+    /* All ordinary/TRACE writers exclude the actual complete runtime registry,
+       independently of whether the application has registered rseq. */
+    int private_overlap=!private_range || private_range(first,bytes);
+#ifdef LI2_RESIDENT_SOURCE_PROBE
+    li2_rso_range(first,bytes,private_overlap,&state);
+#endif
+    if(private_overlap)return bad(LI2_RSEQ_OVERLAP,180);
+    if(!state.registered)return 0;
+#endif
     if(first<state.address+16 && state.address+8<first+bytes)
         return bad(LI2_RSEQ_OVERLAP,0);
     return 0;
@@ -88,6 +104,14 @@ static int decoded_footprint(const struct li2_decoded *d,const ucontext_t *uc,in
     struct li2_write_footprint *f=&state.last_footprint;
     *f=(struct li2_write_footprint){0};
     uint32_t result=li2_decoder_write_footprint(d->pc,d->bytes,d->available,&regs,f);
+#ifdef LI2_HELPER_TF
+    if(!result && f->policy==LI2_WRITE_UNSUPPORTED) {
+        struct li2_write_footprint helper={0};
+        int h=li2_helper_tf_write(d,&regs,&helper);
+        if(!h)*f=helper;
+        else if(h!=LI2_HT_FORM)result=(uint32_t)h;
+    }
+#endif
     state.last_pc=d->pc;state.last_code=d->code;state.last_policy=f->policy;
     state.last_first=f->first;state.last_end=f->end;
     if(result || f->abi_version!=1 || f->pc!=d->pc || f->next_pc!=d->next_pc ||
@@ -191,10 +215,23 @@ int li2_rseq_dispatch(const long a[6],long *result) {
 }
 int li2_rseq_check_instruction(const struct li2_decoded *d,const ucontext_t *uc) {
     if(ready())return (int)state.first_error;
+#ifndef LI2_RESIDENT_SOURCE_LEASE
     if(!state.registered)return 0;
+#endif
     if(word_zero() || count(&state.instruction_checks))return (int)state.first_error;
     if(!d || !uc)return bad(LI2_RSEQ_ARGUMENT,4);
     const unsigned repeat_width=li2_repeat_width(d);
+#ifdef LI2_RESIDENT_SOURCE_LEASE
+    /* Canonical REP STOSD/STOSQ use ES:RDI with a zero ES base in 64-bit mode.
+       Their exact encodings have no FS/GS dependency. In particular, a TLS
+       observation RAW must not invalidate the retained same-instruction lease.
+       Every other form still observes current FS/GS before its write footprint;
+       an old zero/default TLS cache grants no effective address. */
+    if(!repeat_width && tls_observe())return (int)state.first_error;
+#ifdef LI2_RESIDENT_SOURCE_PROBE
+    li2_rso_instruction(d,uc);
+#endif
+#endif
     if(repeat_width) {
         if(count(&state.repeat_checks))return (int)state.first_error;
         uint64_t n=(uint64_t)uc->uc_mcontext.gregs[REG_RCX];
@@ -217,7 +254,9 @@ int li2_rseq_check_instruction(const struct li2_decoded *d,const ucontext_t *uc)
 }
 int li2_rseq_check_run(const struct li2_run_plan *p,const ucontext_t *uc) {
     if(ready())return (int)state.first_error;
+#ifndef LI2_RESIDENT_SOURCE_LEASE
     if(!state.registered)return 0;
+#endif
     if(word_zero() || count(&state.run_checks))return (int)state.first_error;
     if(!p || !uc || p->policy!=LI2_RUN_POLICY || p->instruction_count<2 ||
        p->instruction_count>LI2_RUN_MAX_INSTRUCTIONS || !p->source_length || p->source_length>15 ||
@@ -530,4 +569,38 @@ int li2_rseq_native_closed(void) {
 #include "persistent_group_rseq.inc"
 #elif defined(LI2_PERSISTENT_EPOCH)
 #include "persistent_rseq.inc"
+#endif
+#ifdef LI2_RESIDENT_THREE
+
+#include "resident_three_rseq.inc"
+#endif
+
+#ifdef LI2_FLAG_STACK
+#include "flag_stack.h"
+/* Separate from the old TF-bound footprint contract. A complete fresh decode
+   must reproduce the descriptor before the unchanged private/rseq range guard
+   sees the hardware instruction's potential write. No operand is pre-read. */
+int li2_rseq_check_flag_stack(const struct li2_fs_descriptor *d,const ucontext_t *uc) {
+    if(ready())return (int)state.first_error;
+    if(!d || !uc || (uintptr_t)uc->uc_mcontext.gregs[REG_RIP]!=d->decoded.pc)
+        return bad(LI2_RSEQ_ARGUMENT,181);
+    if(word_zero() || tls_observe() || count(&state.instruction_checks))return (int)state.first_error;
+    struct li2_fs_descriptor fresh={0};
+    if(li2_fs_describe(d->decoded.pc,d->decoded.bytes,d->decoded.available,&fresh))
+        return bad(LI2_RSEQ_FOOTPRINT,181);
+    const unsigned char *a=(const void *)d,*b=(const void *)&fresh;
+    for(size_t i=0;i<sizeof fresh;i++)if(a[i]!=b[i])return bad(LI2_RSEQ_FOOTPRINT,182);
+    struct li2_write_footprint *f=&state.last_footprint;
+    *f=(struct li2_write_footprint){0};
+    if(li2_fs_write(d,(uint64_t)uc->uc_mcontext.gregs[REG_RSP],f))
+        return bad(LI2_RSEQ_FOOTPRINT,183);
+    state.last_pc=f->pc;state.last_code=f->code;state.last_policy=f->policy;
+    state.last_first=f->first;state.last_end=f->end;
+    if(f->abi_version!=1 || f->pc!=d->decoded.pc || f->next_pc!=d->decoded.next_pc ||
+       f->length!=1 || f->code!=d->decoded.code)return bad(LI2_RSEQ_FOOTPRINT,184);
+    if(f->policy==LI2_WRITE_NONE && !f->first && !f->end && d->operation==LI2_FS_POPFQ)return 0;
+    if(f->policy!=LI2_WRITE_RANGE || f->end<=f->first || f->end-f->first!=8 ||
+       d->operation!=LI2_FS_PUSHFQ)return bad(LI2_RSEQ_UNSUPPORTED,d->decoded.code);
+    return span(f->first,8);
+}
 #endif

@@ -158,3 +158,8 @@ int li2_rseq_native_closed(void);
 #include "rseq_publication.h"
 #endif
 #endif
+
+#ifdef LI2_FLAG_STACK
+struct li2_fs_descriptor;
+int li2_rseq_check_flag_stack(const struct li2_fs_descriptor *,const ucontext_t *);
+#endif

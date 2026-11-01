@@ -3,6 +3,9 @@
 #include "selected/span_fast_bytes.h"
 #endif
 #include "sha256.h"
+#ifdef LI2_RESIDENT_SOURCE_PROBE
+#include "selected/resident_source_probe.h"
+#endif
 #ifdef LI2_EVENT_PROFILE
 #include "selected/event_profile.h"
 #endif
@@ -24,6 +27,9 @@ static struct image bridge_image;
 const char *const *bridge_environment(void) { return initial_environment; }
 const struct image *bridge_runtime_image(void) { return &bridge_image; }
 
+#ifdef LI2_RESIDENT_THREE
+extern void li2_r3_rseq_raw(void);
+#endif
 #if defined(LI2_PERSISTENT_GROUP)
 extern void li2_pg_rseq_raw(void);
 #elif defined(LI2_PERSISTENT_EPOCH)
@@ -31,17 +37,31 @@ extern void li2_pe_rseq_raw(void);
 #endif
 #ifdef LI2_MAPS_PHASE_REUSE
 long raw(long n,long a,long b,long c,long d,long e,long f) {
+#ifdef LI2_RESIDENT_THREE
+    li2_r3_rseq_raw();
+#endif
 #if defined(LI2_PERSISTENT_GROUP)
     li2_pg_rseq_raw();
 #elif defined(LI2_PERSISTENT_EPOCH)
     li2_pe_rseq_raw();
 #endif
+#ifdef LI2_RESIDENT_SOURCE_PROBE
+    li2_rso_raw(n,a,b,c,d,e,f,0,0);
+#endif
 #ifdef LI2_EVENT_PROFILE
     li2_event_raw_enter(n);
     long result=li2_maps_raw(li2_raw6,n,a,b,c,d,e,f);
-    li2_event_raw_return(n,result);return result;
+    li2_event_raw_return(n,result);
+#ifdef LI2_RESIDENT_SOURCE_PROBE
+    li2_rso_raw(n,a,b,c,d,e,f,1,result);
+#endif
+    return result;
 #else
-    return li2_maps_raw(li2_raw6,n,a,b,c,d,e,f);
+    long result=li2_maps_raw(li2_raw6,n,a,b,c,d,e,f);
+#ifdef LI2_RESIDENT_SOURCE_PROBE
+    li2_rso_raw(n,a,b,c,d,e,f,1,result);
+#endif
+    return result;
 #endif
 }
 #else
