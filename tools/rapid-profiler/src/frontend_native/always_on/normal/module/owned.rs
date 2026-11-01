@@ -3,6 +3,12 @@
 use super::*;
 use crate::frontend_native::LoadedNormalModuleCaller;
 use std::sync::atomic::{AtomicU8, Ordering};
+pub(in crate::frontend_native::always_on) mod early_entry;
+pub use early_entry::{
+    EarlyEntryModuleClient, EarlyEntryModuleObservations, EarlyEntryModulePhysicalRow,
+    EarlyEntryModuleSessionController, OwnedEarlyEntryModuleResult, OwnedEarlyEntryModuleThread,
+    PreparedEarlyEntryModuleSessionController,
+};
 
 /// Two immutable byte strings, each 0..=64 bytes. Every byte value, including
 /// zero, and every length in this domain must be covered by `attach_owned`.
@@ -194,7 +200,8 @@ impl NormalModuleClient {
     ) -> Result<OwnedNormalModuleThread, BridgeError> {
         let _scope = ControllerScope::enter()?;
         self.binding.process()?;
-        if !module_runtime_matches(&self.binding)
+        if matches!(&self.binding.profile, BindingProfile::Module { site, .. } if site.is_early_entry())
+            || !module_runtime_matches(&self.binding)
             || !caller.process_matches()
             || registration == 0
             || journal.page.0.iter().any(|&word| word != 0)

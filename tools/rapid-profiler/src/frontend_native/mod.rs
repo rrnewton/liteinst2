@@ -184,3 +184,16 @@ pub use always_on::tree::{
     TreeSourceBatchError, TreeSourceBatchRequest, TreeSourceBatchVerification, TreeThread,
     TreeTotals,
 };
+
+/// Separate optional-entry owned-module profile; all selected RETs remain mandatory.
+pub use always_on::normal::{
+    EarlyEntryModuleClient, EarlyEntryModuleObservations, EarlyEntryModulePhysicalRow,
+    EarlyEntryModuleSessionController, OwnedEarlyEntryModuleResult, OwnedEarlyEntryModuleThread,
+    PreparedEarlyEntryModuleSessionController,
+};
+pub use always_on::site::ordinary::{
+    EarlyEntryModuleSitePreparation, InstalledEarlyEntryModuleSite,
+};
+
+#[cfg(any(test, feature = "frontend-native-qualification"))]
+pub use always_on::normal::early_entry_qualification;

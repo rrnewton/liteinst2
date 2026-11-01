@@ -2,10 +2,12 @@
 //! This finite facade grants neither a gate nor nested/concurrent execution.
 use super::*;
 use liteinst2::contracts::CodeIdentity;
-mod owned;
+pub(in crate::frontend_native::always_on) mod owned;
 pub use owned::{
-    NormalModuleClose, NormalModuleCloseState, NormalModuleInputs, OwnedNormalModuleResult,
-    OwnedNormalModuleThread,
+    EarlyEntryModuleClient, EarlyEntryModuleObservations, EarlyEntryModulePhysicalRow,
+    EarlyEntryModuleSessionController, NormalModuleClose, NormalModuleCloseState,
+    NormalModuleInputs, OwnedEarlyEntryModuleResult, OwnedEarlyEntryModuleThread,
+    OwnedNormalModuleResult, OwnedNormalModuleThread, PreparedEarlyEntryModuleSessionController,
 };
 mod session;
 mod session_history;
@@ -41,8 +43,8 @@ fn config_matches(config: Config) -> bool {
         && config.max_invocations == 32
 }
 pub(super) fn binding_matches(binding: &Binding) -> bool {
-    matches!(&binding.profile, BindingProfile::Module { functions, .. }
-        if functions[0] != functions[1])
+    matches!(&binding.profile, BindingProfile::Module { site, functions }
+        if !site.is_early_entry() && functions[0] != functions[1])
         && binding.limits == LIMITS
         && matches!(binding.entry_mode, EntryMode::NonBlocking)
         && binding.session.history_mode() == HistoryMode::Legacy
@@ -59,7 +61,7 @@ impl PreparedNormalModuleController {
         functions: [FunctionId; 2],
         limits: Limits,
     ) -> Result<Self, BridgeError> {
-        if limits != LIMITS || functions[0] == functions[1] {
+        if site.site.is_early_entry() || limits != LIMITS || functions[0] == functions[1] {
             return Err(error(Cause::Identity));
         }
         if !timing::supported() {
@@ -157,7 +159,8 @@ impl NormalModuleClient {
     ) -> Result<NormalModuleThread, BridgeError> {
         let _scope = ControllerScope::enter()?;
         self.binding.process()?;
-        if !module_runtime_matches(&self.binding)
+        if matches!(&self.binding.profile, BindingProfile::Module { site, .. } if site.is_early_entry())
+            || !module_runtime_matches(&self.binding)
             || registration == 0
             || journal.page.0.iter().any(|&word| word != 0)
         {

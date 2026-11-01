@@ -23,13 +23,19 @@ pub use leaf_set::{
     NormalLeafSetHistoryWindow, NormalLeafSetSessionController, NormalLeafSetThread,
     PreparedNormalLeafSetSessionController,
 };
+pub(in crate::frontend_native::always_on) use module::owned::early_entry::{
+    entry_callback as early_entry_callback, exit_callback as early_exit_callback,
+};
 mod two_callers;
 pub use module::{
-    NormalModuleBatch, NormalModuleClient, NormalModuleClose, NormalModuleCloseState,
-    NormalModuleController, NormalModuleHistoryBatch, NormalModuleHistoryStream,
-    NormalModuleHistoryWindow, NormalModuleInputs, NormalModuleRecord,
-    NormalModuleSessionController, NormalModuleThread, OwnedNormalModuleResult,
-    OwnedNormalModuleThread, PreparedNormalModuleController, PreparedNormalModuleSessionController,
+    EarlyEntryModuleClient, EarlyEntryModuleObservations, EarlyEntryModulePhysicalRow,
+    EarlyEntryModuleSessionController, NormalModuleBatch, NormalModuleClient, NormalModuleClose,
+    NormalModuleCloseState, NormalModuleController, NormalModuleHistoryBatch,
+    NormalModuleHistoryStream, NormalModuleHistoryWindow, NormalModuleInputs, NormalModuleRecord,
+    NormalModuleSessionController, NormalModuleThread, OwnedEarlyEntryModuleResult,
+    OwnedEarlyEntryModuleThread, OwnedNormalModuleResult, OwnedNormalModuleThread,
+    PreparedEarlyEntryModuleSessionController, PreparedNormalModuleController,
+    PreparedNormalModuleSessionController,
 };
 pub use two_callers::PreparedTwoCallerNormalController;
 
@@ -165,6 +171,7 @@ enum TransferProfile {
     Single,
     Pair,
     LeafSet,
+    EarlyModule,
 }
 impl TransferProfile {
     fn from_pair(module: bool) -> Self {
@@ -1239,6 +1246,9 @@ impl NormalThread {
         match profile {
             TransferProfile::Single => self.matches_for(s, false),
             TransferProfile::Pair => self.matches_for(s, true),
+            TransferProfile::EarlyModule => {
+                self.matches_identity(s) && early_module_binding_matches(&s.binding)
+            }
             TransferProfile::LeafSet => {
                 self.matches_identity(s) && leaf_set::binding_matches(&s.binding)
             }
@@ -1475,3 +1485,18 @@ pub(super) unsafe extern "C" fn exit_callback(
 
 #[cfg(test)]
 mod tests;
+
+// Separate bank/transfer admission; old ModuleSession never accepts early sites.
+pub(super) fn early_module_profile_matches(
+    profile: &BindingProfile,
+    limits: Limits,
+    config: Config,
+) -> bool {
+    module::owned::early_entry::profile_matches(profile, limits, config)
+}
+pub(super) fn early_module_binding_matches(binding: &Binding) -> bool {
+    module::owned::early_entry::early_binding(binding)
+}
+
+#[cfg(any(test, feature = "frontend-native-qualification"))]
+pub use module::owned::early_entry::qualification as early_entry_qualification;
