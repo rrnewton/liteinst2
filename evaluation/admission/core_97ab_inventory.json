@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "b089af02f236e2637aed0384d4acdcea5643457c523caf2cb3792f3fe4ce971b",
+  "current_corpus_sha256": "47fb567cd0066378f56fe88a9c6ac2d1595569c110029228a1568a6e020ebb85",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -348,7 +348,7 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "ceb82c5b34e29098e11e6b6f52afa8e59872ba0e6650994029b46e7377a8da8d",
+      "current_sha256": "082f5e2b8a82cc0fbace87c6ec643971516072cb0be2dfc1ab30af42e2aa81f4",
       "edits": [
         [
           18284,
@@ -356,8 +356,8 @@
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          21912,
-          36742,
+          22450,
+          45621,
           ""
         ]
       ],
@@ -608,6 +608,16 @@
   },
   "main_revision": "97ab5f4c085b7b831942a8c1ddae985d86f883eb",
   "methods": {
+    "examples/owned_region_clock.rs": {
+      "all": [
+        "parser_rejects_outside_finite_domain_before_runtime",
+        "literal_default_and_last_taken_stop_states",
+        "scalar_nested_loop_independently_checks_every_taken_state"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "src/artifact_emission_tests.rs": {
       "all": [
         "declared_target_state_checks_shape_but_never_claims_runtime_readiness",
@@ -652,6 +662,39 @@
         "current_placement_uses_authenticated_pun_suffix_and_keeps_negative_window_refusal",
         "current_placement_keeps_successor_and_neighbor_placement_literal",
         "current_placement_generalized_pun_preserves_seed_and_uses_remaining_page_once"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/backedge_clock/batch/tests.rs": {
+      "all": [
+        "batch_precharges_exact_budget_and_finish_does_not_reset_words",
+        "batch_requires_positive_checked_product_within_exact_acquired_bound",
+        "batch_cannot_follow_ordinary_calls_and_old_reentry_still_refuses",
+        "forgotten_batch_token_keeps_persistent_outstanding_state",
+        "dropped_batch_token_poison_cannot_be_completed_or_reused",
+        "incomplete_finish_and_abandoned_completed_batch_leave_lease_held",
+        "unwind_or_completion_called_from_unwind_cannot_release_batch",
+        "finish_during_unwind_cannot_clear_even_completed_batch",
+        "batch_entry_rejects_simulated_foreign_pid_and_tid_without_mutation",
+        "batch_finish_rechecks_simulated_foreign_owner_and_retains_latches"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/backedge_clock/owned_region/tests.rs": {
+      "all": [
+        "owned_region_accepts_two_backedges_and_exact_scalar_forms",
+        "owned_region_size_and_forward_head_boundaries",
+        "owned_region_requires_complete_two_site_roster",
+        "owned_region_rejects_non_scalar_operands_and_hidden_prefixes",
+        "owned_region_requires_all_heads_reachable_and_able_to_return",
+        "owned_region_sorts_exact_managed_associations",
+        "owned_region_rejects_wrong_or_aliased_managed_bindings",
+        "owned_region_revalidation_rejects_binding_and_scan_drift",
+        "owned_region_image_retains_the_shared_clock_owner"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -827,6 +870,18 @@
       "macro_calls": [],
       "templates": []
     },
+    "src/quiescent/clock_region/tests.rs": {
+      "all": [
+        "owned_clock_region_one_transaction_preserves_all_heads_and_two_gates",
+        "owned_clock_region_complete_entries_and_generation_are_not_optional",
+        "owned_clock_region_fixed_ceilings_smaller_caps_and_occupancy_are_enforced",
+        "owned_clock_region_image_verifier_rejects_changed_bodies_and_branch_destinations",
+        "owned_clock_region_image_verifier_rejects_missing_misbound_gates_heads_maps_and_clock"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "src/quiescent/fitting_tests.rs": {
       "all": [
         "fitting_b1_preserves_fitting_seed_and_avoids_known_single_image_capacity_failure",
@@ -934,6 +989,15 @@
     "src/trampoline/artifact_jrcxz.rs": {
       "all": [
         "fixed_jrcxz_bridge_rejects_template_index_and_field_corruption"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/trampoline/clock_region_tests.rs": {
+      "all": [
+        "two_clock_gates_are_keyed_to_exact_source_heads_and_share_one_owner",
+        "region_emission_refuses_malformed_bindings_and_unreachable_clock"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -1640,13 +1704,54 @@
       "ignored": [],
       "macro_calls": [],
       "templates": []
+    },
+    "tools/software-preemption/main.rs": {
+      "all": [
+        "whole_authored_corpus_has_one_exact_near_backward_site",
+        "unsupported_backedge_and_call_are_refused_before_publication",
+        "joined_task_disappearance_accepts_only_main_without_a_pause",
+        "joined_task_disappearance_waits_for_only_its_owned_tid",
+        "joined_task_disappearance_refuses_unknown_missing_or_duplicate_tasks",
+        "joined_task_disappearance_requires_valid_joined_identity_before_reading",
+        "joined_task_disappearance_propagates_snapshot_failure_without_waiting",
+        "joined_task_disappearance_keeps_one_absolute_deadline",
+        "joined_task_disappearance_cannot_accept_a_late_main_only_snapshot"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/software-preemption/region_benchmark.rs": {
+      "all": [
+        "repeated_region_schedule_matches_nested_loop"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
     }
   },
   "module_chains": {
     "Cargo.toml": [
       "\"tools/elf-rewrite\",",
       "\"tools/rapid-profiler\"",
-      "[package]\nname = \"liteinst2\""
+      "[package]\nname = \"liteinst2\"",
+      "[[example]]\nname = \"owned_region_clock\"\npath = \"examples/owned_region_clock.rs\"\ntest = true\nbench = false",
+      "[[bin]]\nname = \"liteinst-preempt\"\npath = \"tools/software-preemption/main.rs\"\ntest = true\nbench = false\ndoc = false"
+    ],
+    "examples/owned_region_clock.rs": [
+      "#[cfg(test)]\nmod tests {",
+      "#[cfg(not(all(target_os = \"linux\", target_arch = \"x86_64\")))]\ncompile_error!(\"owned_region_clock requires Linux x86-64\");"
+    ],
+    "src/backedge_clock.rs": [
+      "mod batch;",
+      "mod owned_region;",
+      "pub use batch::{ClockBatch, ClockBatchCall};"
+    ],
+    "src/backedge_clock/batch.rs": [
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
+    ],
+    "src/backedge_clock/owned_region.rs": [
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
     ],
     "src/emission.rs": [
       "pub(crate) mod placement;"
@@ -1666,7 +1771,8 @@
       "pub mod trampoline;",
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod artifact_overlay_tests;",
       "pub mod emission;",
-      "pub mod quiescent;"
+      "pub mod quiescent;",
+      "pub mod backedge_clock;"
     ],
     "src/neighbor.rs": [
       "#[cfg(test)]\n#[path = \"neighbor_long_ownership_tests.rs\"]\nmod long_ownership_tests;",
@@ -1681,12 +1787,17 @@
       "#[cfg(test)]\n#[path = \"neighbor_short/tests.rs\"]\nmod tests;"
     ],
     "src/quiescent.rs": [
-      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod fitting_tests;"
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod fitting_tests;",
+      "mod clock_region;\npub use clock_region::{plan_owned_clock_region, plan_owned_clock_region_detailed};"
+    ],
+    "src/quiescent/clock_region.rs": [
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
     ],
     "src/trampoline.rs": [
       "#[path = \"trampoline/artifact_jrcxz.rs\"]\nmod artifact_jrcxz;",
       "mod fitting;",
-      "mod artifact_allocation;"
+      "mod artifact_allocation;",
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod clock_region_tests;"
     ],
     "src/trampoline/artifact_allocation.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
@@ -1830,6 +1941,17 @@
     ],
     "tools/rapid-profiler/src/lib.rs": [
       "pub mod frontend_native;"
+    ],
+    "tools/software-preemption/inline_gate.rs": [
+      "mod region;"
+    ],
+    "tools/software-preemption/main.rs": [
+      "mod region_benchmark;",
+      "mod region_clock;",
+      "mod inline_gate;"
+    ],
+    "tools/software-preemption/region_benchmark.rs": [
+      "#[cfg(test)]\nmod tests {"
     ]
   },
   "native_example": {
@@ -1840,32 +1962,48 @@
   },
   "previous_corpus_sha256": "5dd1e8d291c34961d7b4e68a84f0f900c8055477d23fdc7f8445d27104d8fb38",
   "projections": {
+    "Cargo.toml": {
+      "current_sha256": "f1a018451ab4d6694747f58062ee03c9ad53e475865cf581d5de63c6906bcefb",
+      "edits": [
+        [
+          794,
+          833,
+          ""
+        ],
+        [
+          1776,
+          1961,
+          ""
+        ]
+      ],
+      "previous_sha256": "0400cda5659feb04aac0d698560dd17087658c712e3e7d2765243100675160df"
+    },
     "evaluation/admission/parsing.py": {
-      "current_sha256": "082f58deea16c375b527aca2b16dcf36a6bf4f1620d06d520c2083186f9746b5",
+      "current_sha256": "1b1bfe0917e7ae1f6cbaac63991c84b5a1ceffe18ac642ae6bae8b7ec00edc05",
       "edits": [
         [
           3351,
-          3679,
+          4000,
           ""
         ],
         [
-          4943,
-          5092,
+          5264,
+          5560,
           ""
         ],
         [
-          9167,
-          9274,
+          9635,
+          9742,
           "                        == {38: [2, 36], 45: [2, 43], 47: [2, 45]}[current[\"expected_tests\"]]\n"
         ],
         [
-          10640,
-          10765,
+          11108,
+          11233,
           "                            (\"doc/rapid_profiler\", 47, 0, 2)):\n"
         ],
         [
-          11334,
-          11436,
+          11802,
+          11904,
           "                            and count == {38: 36, 45: 43, 47: 45}[current[\"expected_tests\"]],\n"
         ]
       ],
@@ -2112,6 +2250,17 @@
       ],
       "previous_sha256": "dd357db7b22e234e74d655dd75ab157989aa70be8094b728482166b2cf271bd3"
     },
+    "examples/owned_region_clock.rs": {
+      "current_sha256": "beaf0fa630b31de0bd3a9aa63427c78cc9c99e24ee2c2eab51f400f41fb3b004",
+      "edits": [
+        [
+          0,
+          31432,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
     "src/artifact_fixups.rs": {
       "current_sha256": "9fb44c45a3ac4fe8fe5b2544c116dbb356f0171ef5ce74d3355caeda7457770e",
       "edits": [
@@ -2133,6 +2282,101 @@
         ]
       ],
       "previous_sha256": "990ade97df5758b5ea4f5c5689e230afa92a1de96e818a603f9c8a3bb94c571e"
+    },
+    "src/backedge_clock.rs": {
+      "current_sha256": "5242ed3b52ca5a9ea01d8dc785803683dd04e02676edfbc8d58032b6f02e079b",
+      "edits": [
+        [
+          698,
+          709,
+          ""
+        ],
+        [
+          725,
+          789,
+          ""
+        ],
+        [
+          7573,
+          7662,
+          ""
+        ],
+        [
+          10826,
+          10882,
+          ""
+        ],
+        [
+          10916,
+          11030,
+          ""
+        ],
+        [
+          11126,
+          11204,
+          ""
+        ],
+        [
+          11408,
+          11550,
+          ""
+        ],
+        [
+          11648,
+          11697,
+          ""
+        ],
+        [
+          13031,
+          18740,
+          ""
+        ]
+      ],
+      "previous_sha256": "76f7ce4cff8ef29575b0e53a86d67ed64b11699278042c1ba99e1b7b828b6822"
+    },
+    "src/backedge_clock/batch.rs": {
+      "current_sha256": "21fba759a30ce1a88143e9cfaf18c318bf2de2376d4342b36b5e212ca6e331ad",
+      "edits": [
+        [
+          0,
+          9070,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "src/backedge_clock/batch/tests.rs": {
+      "current_sha256": "462b558540076a64bd1973810e46bab62f0ee763a6fe7737c0a9686530eaa86a",
+      "edits": [
+        [
+          0,
+          12771,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "src/backedge_clock/owned_region.rs": {
+      "current_sha256": "08200c9db8b5922f595fe46459b113ab7e2223eb9e45fb6c0f8b7eedd611c432",
+      "edits": [
+        [
+          0,
+          7593,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "src/backedge_clock/owned_region/tests.rs": {
+      "current_sha256": "3cb1cb505378787bf4e1fd665477983f7908901f64449227ef20d915f704864d",
+      "edits": [
+        [
+          0,
+          15196,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "src/bundle.rs": {
       "current_sha256": "82e36a7edb832b33a18ae25e68e1d81b2c3b6ddb21b4620626f40fd66187b9af",
@@ -2558,106 +2802,285 @@
       "previous_sha256": "bcb91531af069ee6733fddeafa05512dbec3cbafaee26e183bab6cab83792df3"
     },
     "src/quiescent.rs": {
-      "current_sha256": "17974e377da6e74f8e89d8ac01bac0ff9e740af5f280a4d3d360aa91ae4d6c1f",
+      "current_sha256": "3283c2bbf3989d8508462a06a737aa72aec9259b87a7aaca61337beaf854a953",
       "edits": [
         [
-          40958,
-          42777,
+          1406,
+          1508,
+          ""
+        ],
+        [
+          41060,
+          42879,
           "    let policy = request.allocation;\n"
         ],
         [
-          43055,
-          43174,
+          43157,
+          43276,
           "    let trampoline = if context.callback_free {\n        TrampolinePlan::from_instruction(scan, physical)\n    } else {\n        request.emission.short(\n            scan,\n            physical,\n            request.semantics == HookSemantics::ReplaceFirst,\n        )\n    }\n    .map_err(|e| Refusal::Backend(e.to_string()))?;\n"
         ],
         [
-          43989,
-          44202,
+          44091,
+          44304,
           "        let image = match request.emission.emit(&trampoline, target) {\n"
         ],
         [
-          59526,
-          60916,
+          53888,
+          54027,
+          "// Existing callers retain their same-block/closed-function proofs. The new\n// authority covers only a sealed JMP plus one independently enterable MOV.\n"
+        ],
+        [
+          54144,
+          54281,
+          ""
+        ],
+        [
+          55271,
+          55428,
+          ""
+        ],
+        [
+          56274,
+          56821,
+          ""
+        ],
+        [
+          58750,
+          58865,
+          ""
+        ],
+        [
+          60571,
+          62117,
           "    let policy = request.allocation;\n"
         ],
         [
-          62272,
-          62485,
+          63473,
+          63686,
           "        let image = match request.emission.emit(&trampoline, target) {\n"
         ],
         [
-          118462,
-          118545,
+          64100,
+          64219,
+          ""
+        ],
+        [
+          119782,
+          119865,
           ""
         ]
       ],
       "previous_sha256": "ca0b4069f5fa45300895c9e9d41d1c987cd3fe0d14f23a84cdfbe08a687fd01d"
     },
-    "src/trampoline.rs": {
-      "current_sha256": "f14e6323870fe2e52d2039a78b1c0ef8782eab26f2ed409cbb7f2474762f2c79",
+    "src/quiescent/clock_region.rs": {
+      "current_sha256": "be8ab2bfa2ba682361a1f647d51fceb9b43c9a600be3de711da2217c04ff1788",
       "edits": [
         [
-          91878,
-          92558,
+          0,
+          18078,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "src/quiescent/clock_region/tests.rs": {
+      "current_sha256": "49decb1a58ab56dec5e00ac1e0797b57962758e4ba1a5aa680b79d81a807fb35",
+      "edits": [
+        [
+          0,
+          17926,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "src/trampoline.rs": {
+      "current_sha256": "7049c34f351ec3af5fad5fe77a33b2d1076808b844cc0976dfa58401f1c11f7d",
+      "edits": [
+        [
+          25877,
+          25964,
           ""
         ],
         [
-          92616,
-          92709,
+          30601,
+          30676,
+          ""
+        ],
+        [
+          32328,
+          32400,
+          "    /// Exact inline gate boundaries, present only for the finite clock profile.\n"
+        ],
+        [
+          32505,
+          32783,
+          ""
+        ],
+        [
+          45335,
+          45749,
+          ""
+        ],
+        [
+          46097,
+          46136,
+          "    clock: Option<Box<crate::backedge_clock::BackedgeClockAction>>,\n"
+        ],
+        [
+          72694,
+          74402,
+          "        plan.clock = Some(Box::new(action.clone()));\n"
+        ],
+        [
+          89868,
+          89916,
+          ""
+        ],
+        [
+          94397,
+          95077,
+          ""
+        ],
+        [
+          95135,
+          95228,
           "        if self.clock.is_some() && (artifact.is_some() || frames.is_some() || self.ptrace_stops) {\n"
         ],
         [
-          92925,
-          92955,
+          95444,
+          95474,
           "                || frames.is_some()\n"
         ],
         [
-          94078,
-          94122,
+          96597,
+          96641,
           ""
         ],
         [
-          98429,
-          98429,
+          98258,
+          98300,
+          "        let mut clock_spec = None;\n        let mut clock_observer = None;\n"
+        ],
+        [
+          98768,
+          99049,
+          "            let clock_labels = if self.clock.is_some() {\n"
+        ],
+        [
+          99533,
+          99716,
+          "            if let Some(clock) = &self.clock {\n"
+        ],
+        [
+          99778,
+          99829,
+          "                clock_spec = Some(backedge_clock::append(\n"
+        ],
+        [
+          99994,
+          100014,
+          "                )?);\n"
+        ],
+        [
+          100238,
+          100325,
+          "                clock_observer = Some(observing_index);\n"
+        ],
+        [
+          101299,
+          101299,
           "                let recording = frames.as_deref().is_some_and(FrameRecorder::recording);\n"
         ],
         [
-          102278,
-          102363,
+          105148,
+          105233,
           "                    emitted_nops.push((encoded_instructions.len(), bytes));\n"
         ],
         [
-          102381,
-          102924,
+          105251,
+          105794,
           "                original_operands.push((encoded_instructions.len(), *original));\n"
         ],
         [
-          103080,
-          104194,
+          105950,
+          107241,
           ""
         ],
         [
-          105303,
-          105551,
+          108350,
+          108598,
           "        for &(index, bytes) in &emitted_nops {\n            original_nops::verify(&block.encoded, index, bytes)?;\n"
         ],
         [
-          112146,
-          112377,
+          109218,
+          109320,
+          "        if let Some(spec) = &clock_spec {\n"
+        ],
+        [
+          109411,
+          110011,
           ""
         ],
         [
-          116466,
-          116661,
+          110021,
+          110418,
+          "        let clock_gate = match clock_observer {\n            Some(observer) => Some(crate::backedge_clock::ClockGateLayout {\n                entry: generated(offset(heads[0].1)?)?,\n                observing_entry: generated(offset(observer)?)?,\n                original_body: generated(offset(heads[0].2)?)?,\n            }),\n            None => None,\n"
+        ],
+        [
+          115900,
+          116131,
           ""
         ],
         [
-          150239,
-          150561,
+          120230,
+          120425,
+          ""
+        ],
+        [
+          120519,
+          120656,
+          "            clock: self.clock.as_ref().map(|action| action.clock.clone()),\n"
+        ],
+        [
+          120680,
+          120712,
+          ""
+        ],
+        [
+          154087,
+          154409,
           ""
         ]
       ],
       "previous_sha256": "fb6ab2f7de7768c60ae04cf0f7c1aef52ad9c5eeca4976ae869c4195df11f48a"
+    },
+    "src/trampoline/clock_region_tests.rs": {
+      "current_sha256": "76a75d05b1f711dbd4b36d373074309ab6923015b3eec2f9cd7a4db5ed913bb2",
+      "edits": [
+        [
+          0,
+          8219,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "src/trampoline/fitting.rs": {
+      "current_sha256": "e7d2c63ad4b923302d9cf4eaf67903fa7115f8552d670a5bc25739352d50a5a2",
+      "edits": [
+        [
+          749,
+          829,
+          "    pub(super) clock_spec: Option<backedge_clock::GateSpec>,\n    pub(super) clock_observer: Option<usize>,\n"
+        ],
+        [
+          3569,
+          3612,
+          "    if preparation.clock_spec.is_some()\n        || preparation.clock_observer.is_some()\n"
+        ]
+      ],
+      "previous_sha256": "e47368c40eb1cd8db32bba8839445d09139bbd0ad6149dc3ad72c51834ae66e2"
     },
     "tests/neighbor_eviction_oracle.rs": {
       "current_sha256": "685d5caa3933dd5649b70b4e8fa1e0ce632e1a9b52d51aed3c671288b77c5e64",
@@ -4302,6 +4725,82 @@
       ],
       "previous_sha256": "fd7af907c87a346589f9fe2af3bbf28df5dedb08e1760b926ee9347223399ad8"
     },
+    "tools/software-preemption/README.md": {
+      "current_sha256": "9b2c9122c88f5aa58928d4c41a73a18202c8b300aa8fabd3528c47a47c9c51dc",
+      "edits": [
+        [
+          40,
+          626,
+          "`liteinst-preempt` installs a real observing trampoline at the one near backward branch in each of four private, authored functions. The corpus is countdown/JNZ, signed/JG, unsigned/JB, and direct/JMP. Each function is call-free, has complete decoded entry heads, and uses no application stack storage beyond its ordinary call/return. Unsupported calls, indirect transfers, short backward encodings, and a missing or second backward site refuse before publication. This is a finite static corpus, not an arbitrary ELF instrumenter or complete progress guarantee.\n"
+        ],
+        [
+          13303,
+          17355,
+          ""
+        ]
+      ],
+      "previous_sha256": "4a148e8473a4f520b3f5b4e7a13fd0d523c0ad351ca36b26744f45f9a075a908"
+    },
+    "tools/software-preemption/inline_gate.rs": {
+      "current_sha256": "55cf2c750d89feb31269225e53d184e8379a4b9948227181f36bb39ac2e9e0df",
+      "edits": [
+        [
+          724,
+          904,
+          ""
+        ]
+      ],
+      "previous_sha256": "1b36ecee6a353636914abbf8c28a1930e57a96b394c2060bed2a8e9faaef0454"
+    },
+    "tools/software-preemption/inline_gate/region.rs": {
+      "current_sha256": "9c02478f57f147aa24dacd25512ac7080b90086263c13f6869cd3e94af064ac3",
+      "edits": [
+        [
+          0,
+          13596,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "tools/software-preemption/main.rs": {
+      "current_sha256": "6c7730930c9be3d1d33fe68d114c6aa8455c794a078afe786c628313e7a55114",
+      "edits": [
+        [
+          193,
+          233,
+          ""
+        ],
+        [
+          28612,
+          30287,
+          ""
+        ]
+      ],
+      "previous_sha256": "9a780de167402524729da5e7c384ba2f7476c4d303b6248ee8723d7d06268a3a"
+    },
+    "tools/software-preemption/region_benchmark.rs": {
+      "current_sha256": "4450c68d0bf2f85dd8236736a9c6a3dbc68161636858c90dd1cacba6c6e58c4e",
+      "edits": [
+        [
+          0,
+          35861,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "tools/software-preemption/region_clock.rs": {
+      "current_sha256": "bb4c7e8291bcb9c17e39eeea20a00e260f9b6573ce1cc871d580243d9e41265f",
+      "edits": [
+        [
+          0,
+          30002,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
     "tools/unwind-oracle/indexed_dso/caller.c": {
       "current_sha256": "4c9ad23c28e98e72faccc09a492142700b56dd6426e6f001ed6ebea5040527cf",
       "edits": [
@@ -5019,6 +5518,372 @@
       }
     }
   },
+  "source_successor_abe7": {
+    "added_default_methods": {
+      "examples/owned_region_clock.rs": [
+        "parser_rejects_outside_finite_domain_before_runtime",
+        "literal_default_and_last_taken_stop_states",
+        "scalar_nested_loop_independently_checks_every_taken_state"
+      ],
+      "src/backedge_clock/batch/tests.rs": [
+        "batch_precharges_exact_budget_and_finish_does_not_reset_words",
+        "batch_requires_positive_checked_product_within_exact_acquired_bound",
+        "batch_cannot_follow_ordinary_calls_and_old_reentry_still_refuses",
+        "forgotten_batch_token_keeps_persistent_outstanding_state",
+        "dropped_batch_token_poison_cannot_be_completed_or_reused",
+        "incomplete_finish_and_abandoned_completed_batch_leave_lease_held",
+        "unwind_or_completion_called_from_unwind_cannot_release_batch",
+        "finish_during_unwind_cannot_clear_even_completed_batch",
+        "batch_entry_rejects_simulated_foreign_pid_and_tid_without_mutation",
+        "batch_finish_rechecks_simulated_foreign_owner_and_retains_latches"
+      ],
+      "src/backedge_clock/owned_region/tests.rs": [
+        "owned_region_accepts_two_backedges_and_exact_scalar_forms",
+        "owned_region_size_and_forward_head_boundaries",
+        "owned_region_requires_complete_two_site_roster",
+        "owned_region_rejects_non_scalar_operands_and_hidden_prefixes",
+        "owned_region_requires_all_heads_reachable_and_able_to_return",
+        "owned_region_sorts_exact_managed_associations",
+        "owned_region_rejects_wrong_or_aliased_managed_bindings",
+        "owned_region_revalidation_rejects_binding_and_scan_drift",
+        "owned_region_image_retains_the_shared_clock_owner"
+      ],
+      "src/quiescent/clock_region/tests.rs": [
+        "owned_clock_region_one_transaction_preserves_all_heads_and_two_gates",
+        "owned_clock_region_complete_entries_and_generation_are_not_optional",
+        "owned_clock_region_fixed_ceilings_smaller_caps_and_occupancy_are_enforced",
+        "owned_clock_region_image_verifier_rejects_changed_bodies_and_branch_destinations",
+        "owned_clock_region_image_verifier_rejects_missing_misbound_gates_heads_maps_and_clock"
+      ],
+      "src/trampoline/clock_region_tests.rs": [
+        "two_clock_gates_are_keyed_to_exact_source_heads_and_share_one_owner",
+        "region_emission_refuses_malformed_bindings_and_unreachable_clock"
+      ],
+      "tools/software-preemption/region_benchmark.rs": [
+        "repeated_region_schedule_matches_nested_loop"
+      ]
+    },
+    "added_ignored_methods": {},
+    "base_revision": "124521a899eacd36887e1a428bfc341fb52c7642",
+    "changed_source_paths": [
+      "Cargo.toml",
+      "examples/owned_region_clock.rs",
+      "src/backedge_clock.rs",
+      "src/backedge_clock/batch.rs",
+      "src/backedge_clock/batch/tests.rs",
+      "src/backedge_clock/owned_region.rs",
+      "src/backedge_clock/owned_region/tests.rs",
+      "src/quiescent.rs",
+      "src/quiescent/clock_region.rs",
+      "src/quiescent/clock_region/tests.rs",
+      "src/trampoline.rs",
+      "src/trampoline/clock_region_tests.rs",
+      "src/trampoline/fitting.rs",
+      "tools/software-preemption/README.md",
+      "tools/software-preemption/inline_gate.rs",
+      "tools/software-preemption/inline_gate/region.rs",
+      "tools/software-preemption/main.rs",
+      "tools/software-preemption/region_benchmark.rs",
+      "tools/software-preemption/region_clock.rs"
+    ],
+    "current_corpus_sha256": "47fb567cd0066378f56fe88a9c6ac2d1595569c110029228a1568a6e020ebb85",
+    "default_doctest_additions": 8,
+    "default_harness_changes": 1,
+    "default_ignore_changes": 0,
+    "default_method_additions": 30,
+    "default_method_instances": {
+      "examples/owned_region_clock.rs": [
+        "unit/owned_region_clock/owned_region_clock"
+      ],
+      "src/backedge_clock/batch/tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "src/backedge_clock/owned_region/tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "src/quiescent/clock_region/tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "src/trampoline/clock_region_tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "tools/software-preemption/region_benchmark.rs": [
+        "unit/liteinst_preempt/main"
+      ]
+    },
+    "default_method_removals": 0,
+    "doctest_sources": {
+      "src/backedge_clock.rs": [
+        "/// ```compile_fail\n/// use liteinst2::backedge_clock::ClockLease;\n/// fn require_send<T: Send>() {}\n/// require_send::<ClockLease>();\n/// ```",
+        "/// ```compile_fail\n/// use liteinst2::backedge_clock::ClockLease;\n/// fn require_clone<T: Clone>() {}\n/// require_clone::<ClockLease>();\n/// ```",
+        "/// ```compile_fail\n/// use liteinst2::backedge_clock::ClockLease;\n/// fn require_shared_unwind<T: std::panic::RefUnwindSafe>() {}\n/// require_shared_unwind::<ClockLease>();\n/// ```"
+      ],
+      "src/backedge_clock/batch.rs": [
+        "/// ```compile_fail\n/// use liteinst2::backedge_clock::ClockBatch;\n/// fn require_send<T: Send>() {}\n/// require_send::<ClockBatch<'static>>();\n/// ```",
+        "/// ```compile_fail\n/// use liteinst2::backedge_clock::ClockBatch;\n/// fn require_sync<T: Sync>() {}\n/// require_sync::<ClockBatch<'static>>();\n/// ```",
+        "/// ```compile_fail\n/// use liteinst2::backedge_clock::ClockBatch;\n/// fn require_clone<T: Clone>() {}\n/// require_clone::<ClockBatch<'static>>();\n/// ```",
+        "    /// ```compile_fail\n    /// use liteinst2::backedge_clock::ClockBatch;\n    /// fn overlapping(batch: &mut ClockBatch<'_>) {\n    ///     let first = batch.begin_call().unwrap();\n    ///     let second = batch.begin_call().unwrap();\n    ///     first.returned();\n    ///     second.returned();\n    /// }\n    /// ```",
+        "/// ```compile_fail\n/// use liteinst2::backedge_clock::ClockBatchCall;\n/// fn require_send<T: Send>() {}\n/// require_send::<ClockBatchCall<'static, 'static>>();\n/// ```",
+        "/// ```compile_fail\n/// use liteinst2::backedge_clock::ClockBatchCall;\n/// fn require_sync<T: Sync>() {}\n/// require_sync::<ClockBatchCall<'static, 'static>>();\n/// ```",
+        "/// ```compile_fail\n/// use liteinst2::backedge_clock::ClockBatchCall;\n/// fn require_clone<T: Clone>() {}\n/// require_clone::<ClockBatchCall<'static, 'static>>();\n/// ```",
+        "/// ```compile_fail\n/// use liteinst2::backedge_clock::{ClockBatchCall, ClockLease};\n/// fn escape<'a>(lease: &'a ClockLease) -> ClockBatchCall<'a, 'a> {\n///     let mut batch = unsafe { lease.begin_batch(1, 1).unwrap() };\n///     batch.begin_call().unwrap()\n/// }\n/// ```"
+      ]
+    },
+    "main_revision": "abe7be195654a423bfc3391d959b8aeeb9dd6be1",
+    "merged_revision": "ba0fae83610c3da4d3680f2866e1ca7fb0adad56",
+    "module_chains": {
+      "Cargo.toml": [
+        "[package]\nname = \"liteinst2\"",
+        "[[example]]\nname = \"owned_region_clock\"\npath = \"examples/owned_region_clock.rs\"\ntest = true\nbench = false",
+        "[[bin]]\nname = \"liteinst-preempt\"\npath = \"tools/software-preemption/main.rs\"\ntest = true\nbench = false\ndoc = false"
+      ],
+      "examples/owned_region_clock.rs": [
+        "#[cfg(test)]\nmod tests {",
+        "#[cfg(not(all(target_os = \"linux\", target_arch = \"x86_64\")))]\ncompile_error!(\"owned_region_clock requires Linux x86-64\");"
+      ],
+      "src/backedge_clock.rs": [
+        "mod batch;",
+        "mod owned_region;",
+        "pub use batch::{ClockBatch, ClockBatchCall};"
+      ],
+      "src/backedge_clock/batch.rs": [
+        "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
+      ],
+      "src/backedge_clock/owned_region.rs": [
+        "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
+      ],
+      "src/lib.rs": [
+        "pub mod backedge_clock;",
+        "pub mod quiescent;",
+        "pub mod trampoline;"
+      ],
+      "src/quiescent.rs": [
+        "mod clock_region;\npub use clock_region::{plan_owned_clock_region, plan_owned_clock_region_detailed};"
+      ],
+      "src/quiescent/clock_region.rs": [
+        "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
+      ],
+      "src/trampoline.rs": [
+        "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod clock_region_tests;"
+      ],
+      "tools/software-preemption/inline_gate.rs": [
+        "mod region;"
+      ],
+      "tools/software-preemption/main.rs": [
+        "mod region_benchmark;",
+        "mod region_clock;",
+        "mod inline_gate;"
+      ],
+      "tools/software-preemption/region_benchmark.rs": [
+        "#[cfg(test)]\nmod tests {"
+      ]
+    },
+    "previous_corpus_sha256": "b089af02f236e2637aed0384d4acdcea5643457c523caf2cb3792f3fe4ce971b",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "Cargo.toml",
+      "examples/owned_region_clock.rs",
+      "src/backedge_clock.rs",
+      "src/backedge_clock/batch.rs",
+      "src/backedge_clock/batch/tests.rs",
+      "src/backedge_clock/owned_region.rs",
+      "src/backedge_clock/owned_region/tests.rs",
+      "src/lib.rs",
+      "src/quiescent.rs",
+      "src/quiescent/clock_region.rs",
+      "src/quiescent/clock_region/tests.rs",
+      "src/trampoline.rs",
+      "src/trampoline/clock_region_tests.rs",
+      "src/trampoline/fitting.rs",
+      "tools/software-preemption/README.md",
+      "tools/software-preemption/inline_gate.rs",
+      "tools/software-preemption/inline_gate/region.rs",
+      "tools/software-preemption/main.rs",
+      "tools/software-preemption/region_benchmark.rs",
+      "tools/software-preemption/region_clock.rs"
+    ],
+    "source_versions": {
+      "Cargo.toml": {
+        "current_bytes": 4550,
+        "current_sha256": "f1a018451ab4d6694747f58062ee03c9ad53e475865cf581d5de63c6906bcefb",
+        "existed": true,
+        "previous_bytes": 4326,
+        "previous_sha256": "0400cda5659feb04aac0d698560dd17087658c712e3e7d2765243100675160df"
+      },
+      "examples/owned_region_clock.rs": {
+        "current_bytes": 31432,
+        "current_sha256": "beaf0fa630b31de0bd3a9aa63427c78cc9c99e24ee2c2eab51f400f41fb3b004",
+        "existed": false,
+        "previous_bytes": 0,
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/backedge_clock.rs": {
+        "current_bytes": 24753,
+        "current_sha256": "5242ed3b52ca5a9ea01d8dc785803683dd04e02676edfbc8d58032b6f02e079b",
+        "existed": true,
+        "previous_bytes": 18441,
+        "previous_sha256": "76f7ce4cff8ef29575b0e53a86d67ed64b11699278042c1ba99e1b7b828b6822"
+      },
+      "src/backedge_clock/batch.rs": {
+        "current_bytes": 9070,
+        "current_sha256": "21fba759a30ce1a88143e9cfaf18c318bf2de2376d4342b36b5e212ca6e331ad",
+        "existed": false,
+        "previous_bytes": 0,
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/backedge_clock/batch/tests.rs": {
+        "current_bytes": 12771,
+        "current_sha256": "462b558540076a64bd1973810e46bab62f0ee763a6fe7737c0a9686530eaa86a",
+        "existed": false,
+        "previous_bytes": 0,
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/backedge_clock/owned_region.rs": {
+        "current_bytes": 7593,
+        "current_sha256": "08200c9db8b5922f595fe46459b113ab7e2223eb9e45fb6c0f8b7eedd611c432",
+        "existed": false,
+        "previous_bytes": 0,
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/backedge_clock/owned_region/tests.rs": {
+        "current_bytes": 15196,
+        "current_sha256": "3cb1cb505378787bf4e1fd665477983f7908901f64449227ef20d915f704864d",
+        "existed": false,
+        "previous_bytes": 0,
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/lib.rs": {
+        "current_bytes": 1215,
+        "current_sha256": "b5dcdfd1d83d711c104b28303722a590ff2ab4a7ee8f580fcdff2e80e324c81a",
+        "existed": true,
+        "previous_bytes": 1215,
+        "previous_sha256": "b5dcdfd1d83d711c104b28303722a590ff2ab4a7ee8f580fcdff2e80e324c81a"
+      },
+      "src/quiescent.rs": {
+        "current_bytes": 119865,
+        "current_sha256": "3283c2bbf3989d8508462a06a737aa72aec9259b87a7aaca61337beaf854a953",
+        "existed": true,
+        "previous_bytes": 118545,
+        "previous_sha256": "17974e377da6e74f8e89d8ac01bac0ff9e740af5f280a4d3d360aa91ae4d6c1f"
+      },
+      "src/quiescent/clock_region.rs": {
+        "current_bytes": 18078,
+        "current_sha256": "be8ab2bfa2ba682361a1f647d51fceb9b43c9a600be3de711da2217c04ff1788",
+        "existed": false,
+        "previous_bytes": 0,
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/quiescent/clock_region/tests.rs": {
+        "current_bytes": 17926,
+        "current_sha256": "49decb1a58ab56dec5e00ac1e0797b57962758e4ba1a5aa680b79d81a807fb35",
+        "existed": false,
+        "previous_bytes": 0,
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/trampoline.rs": {
+        "current_bytes": 432877,
+        "current_sha256": "7049c34f351ec3af5fad5fe77a33b2d1076808b844cc0976dfa58401f1c11f7d",
+        "existed": true,
+        "previous_bytes": 429029,
+        "previous_sha256": "f14e6323870fe2e52d2039a78b1c0ef8782eab26f2ed409cbb7f2474762f2c79"
+      },
+      "src/trampoline/clock_region_tests.rs": {
+        "current_bytes": 8219,
+        "current_sha256": "76a75d05b1f711dbd4b36d373074309ab6923015b3eec2f9cd7a4db5ed913bb2",
+        "existed": false,
+        "previous_bytes": 0,
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/trampoline/fitting.rs": {
+        "current_bytes": 8125,
+        "current_sha256": "e7d2c63ad4b923302d9cf4eaf67903fa7115f8552d670a5bc25739352d50a5a2",
+        "existed": true,
+        "previous_bytes": 8197,
+        "previous_sha256": "e47368c40eb1cd8db32bba8839445d09139bbd0ad6149dc3ad72c51834ae66e2"
+      },
+      "tools/software-preemption/README.md": {
+        "current_bytes": 21639,
+        "current_sha256": "9b2c9122c88f5aa58928d4c41a73a18202c8b300aa8fabd3528c47a47c9c51dc",
+        "existed": true,
+        "previous_bytes": 17564,
+        "previous_sha256": "4a148e8473a4f520b3f5b4e7a13fd0d523c0ad351ca36b26744f45f9a075a908"
+      },
+      "tools/software-preemption/inline_gate.rs": {
+        "current_bytes": 26316,
+        "current_sha256": "55cf2c750d89feb31269225e53d184e8379a4b9948227181f36bb39ac2e9e0df",
+        "existed": true,
+        "previous_bytes": 26136,
+        "previous_sha256": "1b36ecee6a353636914abbf8c28a1930e57a96b394c2060bed2a8e9faaef0454"
+      },
+      "tools/software-preemption/inline_gate/region.rs": {
+        "current_bytes": 13596,
+        "current_sha256": "9c02478f57f147aa24dacd25512ac7080b90086263c13f6869cd3e94af064ac3",
+        "existed": false,
+        "previous_bytes": 0,
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/software-preemption/main.rs": {
+        "current_bytes": 36988,
+        "current_sha256": "6c7730930c9be3d1d33fe68d114c6aa8455c794a078afe786c628313e7a55114",
+        "existed": true,
+        "previous_bytes": 35273,
+        "previous_sha256": "9a780de167402524729da5e7c384ba2f7476c4d303b6248ee8723d7d06268a3a"
+      },
+      "tools/software-preemption/region_benchmark.rs": {
+        "current_bytes": 35861,
+        "current_sha256": "4450c68d0bf2f85dd8236736a9c6a3dbc68161636858c90dd1cacba6c6e58c4e",
+        "existed": false,
+        "previous_bytes": 0,
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/software-preemption/region_clock.rs": {
+        "current_bytes": 30002,
+        "current_sha256": "bb4c7e8291bcb9c17e39eeea20a00e260f9b6573ce1cc871d580243d9e41265f",
+        "existed": false,
+        "previous_bytes": 0,
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "workspace_changes": {
+      "doc/liteinst2": {
+        "current": {
+          "ignored": 0,
+          "tests": 16
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 8
+        }
+      },
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 514
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 488
+        }
+      },
+      "unit/liteinst_preempt/main": {
+        "current": {
+          "ignored": 0,
+          "tests": 33
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 32
+        }
+      },
+      "unit/owned_region_clock/owned_region_clock": {
+        "current": {
+          "ignored": 0,
+          "tests": 3
+        },
+        "previous": null
+      }
+    }
+  },
   "source_successor_b077d": {
     "base_revision": "45e09214bb46e924f88161769ba867a2013a6c28",
     "default_harness_changes": 0,
@@ -5563,18 +6428,18 @@
   },
   "sources": {
     "Cargo.lock": "4aad718e815f59f813573d5f1302ea87c35b178a949bd5159882d5ee1301d89a",
-    "Cargo.toml": "0400cda5659feb04aac0d698560dd17087658c712e3e7d2765243100675160df",
+    "Cargo.toml": "f1a018451ab4d6694747f58062ee03c9ad53e475865cf581d5de63c6906bcefb",
     "evaluation/admission/core_813_inventory.py": "99073f490c5d9d0ea96bacb676d437658407d8c63d3f3d7ebb17e7c98d710407",
     "evaluation/admission/core_cc846_inventory.py": "69f5dbcac4a8e0e2a602b23d75fc665e216202b5854222c8044c25d1699153ac",
     "evaluation/admission/core_f353_inventory.py": "869b7cbfe16f7b4f2b54385f13d58857ba6615dd176bae6c2934c1ca21c8e5d1",
-    "evaluation/admission/parsing.py": "082f58deea16c375b527aca2b16dcf36a6bf4f1620d06d520c2083186f9746b5",
+    "evaluation/admission/parsing.py": "1b1bfe0917e7ae1f6cbaac63991c84b5a1ceffe18ac642ae6bae8b7ec00edc05",
     "evaluation/admission/recorder_parallel.py": "8f1a4b7b176bc9d4f84b2cdb2e94df4f0bf9c579f87b2fe3d9f4a6792c91cda8",
     "evaluation/admission/test_main0fb574_inventory.py": "23dc3397b29d500ec40529f14eb3f9aba466affc14e1c0f9953b5e405582f4fa",
     "evaluation/admission/test_main20cbe_inventory.py": "1f04fe519f0382997dc2c15ce4c0bd9b6f47c4597adb05b0282afdd8650255eb",
     "evaluation/admission/test_main34c47_inventory.py": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "f2874b7589b24a963da1fe3912378fa74cf20e6e0a4eb8ebf736d93ef182039a",
-    "evaluation/admission/test_main97ab_inventory.py": "ceb82c5b34e29098e11e6b6f52afa8e59872ba0e6650994029b46e7377a8da8d",
+    "evaluation/admission/test_main97ab_inventory.py": "082f5e2b8a82cc0fbace87c6ec643971516072cb0be2dfc1ab30af42e2aa81f4",
     "evaluation/admission/test_main981419_inventory.py": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
     "evaluation/admission/test_mainaf81_inventory.py": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
@@ -5593,9 +6458,15 @@
     "evaluation/ordinary-selected-session/coordinate_controls.py": "0f10ef52165b2252b4120f8a19b84558db018df64986036ab7cd12af8857127a",
     "evaluation/ordinary-selected-session/driver_controls.py": "c366723d09e76e1f0670f313df881d6513be8fe4226079fabf7c1d77570dc67e",
     "evaluation/ordinary-selected-session/reproduce.py": "933e1be206412e7021fab10d13af7a8f8e114471e1420fd1fe05383ac546c67d",
+    "examples/owned_region_clock.rs": "beaf0fa630b31de0bd3a9aa63427c78cc9c99e24ee2c2eab51f400f41fb3b004",
     "src/artifact_emission_tests.rs": "3d99c55494ae2816bfbc75f5ff8ffdbf56ef2a4634c283e8e6d8ecb435831ead",
     "src/artifact_fixups.rs": "9fb44c45a3ac4fe8fe5b2544c116dbb356f0171ef5ce74d3355caeda7457770e",
     "src/artifact_overlay_tests.rs": "05b65ce29e2475a90222a5493c8553dfdf51936e7c47f982a9d4fa3cfff71a12",
+    "src/backedge_clock.rs": "5242ed3b52ca5a9ea01d8dc785803683dd04e02676edfbc8d58032b6f02e079b",
+    "src/backedge_clock/batch.rs": "21fba759a30ce1a88143e9cfaf18c318bf2de2376d4342b36b5e212ca6e331ad",
+    "src/backedge_clock/batch/tests.rs": "462b558540076a64bd1973810e46bab62f0ee763a6fe7737c0a9686530eaa86a",
+    "src/backedge_clock/owned_region.rs": "08200c9db8b5922f595fe46459b113ab7e2223eb9e45fb6c0f8b7eedd611c432",
+    "src/backedge_clock/owned_region/tests.rs": "3cb1cb505378787bf4e1fd665477983f7908901f64449227ef20d915f704864d",
     "src/bundle.rs": "82e36a7edb832b33a18ae25e68e1d81b2c3b6ddb21b4620626f40fd66187b9af",
     "src/emission.rs": "7eb271d9471d10c99b85d14a5bd33fa9f4787b7d970ad16c26fa6f8289cc7873",
     "src/emission/artifact_frame_tests.rs": "db27456d9816ae84f1a98c8529e136d0e678659322e34fddabce26ef26a4a324",
@@ -5615,13 +6486,16 @@
     "src/neighbor_overlap/tests.rs": "bc5880f3aff72cf5ea13b29592c7d848a879b5f9a71fabae7667888d027065e8",
     "src/neighbor_short.rs": "eb6870d77c53a5e29d911f0c1674281eafed44c63394364e393ed0bbd7d20897",
     "src/neighbor_short/tests.rs": "29c13e229d449458eb66843618c3429901abb2bd424e7099b931dfb612c95087",
-    "src/quiescent.rs": "17974e377da6e74f8e89d8ac01bac0ff9e740af5f280a4d3d360aa91ae4d6c1f",
+    "src/quiescent.rs": "3283c2bbf3989d8508462a06a737aa72aec9259b87a7aaca61337beaf854a953",
+    "src/quiescent/clock_region.rs": "be8ab2bfa2ba682361a1f647d51fceb9b43c9a600be3de711da2217c04ff1788",
+    "src/quiescent/clock_region/tests.rs": "49decb1a58ab56dec5e00ac1e0797b57962758e4ba1a5aa680b79d81a807fb35",
     "src/quiescent/fitting_tests.rs": "c2352d8f207a812572ce74714684941a921a2c2a99b420ed5fca1a71b229cdc5",
-    "src/trampoline.rs": "f14e6323870fe2e52d2039a78b1c0ef8782eab26f2ed409cbb7f2474762f2c79",
+    "src/trampoline.rs": "7049c34f351ec3af5fad5fe77a33b2d1076808b844cc0976dfa58401f1c11f7d",
     "src/trampoline/artifact_allocation.rs": "ed23100722b011aadaabd7945583d82db0c1c43b00a31b1b14a252b48a580729",
     "src/trampoline/artifact_allocation/tests.rs": "a5ec8b16a83a9b0c51c431161f60490c41f2ad39d29ffe4d8c61e92ab077e0e7",
     "src/trampoline/artifact_jrcxz.rs": "89b78a5c4ff7668ec09b61d7dfcf1bcb5630adfaae57053efa54a710fbc0d713",
-    "src/trampoline/fitting.rs": "e47368c40eb1cd8db32bba8839445d09139bbd0ad6149dc3ad72c51834ae66e2",
+    "src/trampoline/clock_region_tests.rs": "76a75d05b1f711dbd4b36d373074309ab6923015b3eec2f9cd7a4db5ed913bb2",
+    "src/trampoline/fitting.rs": "e7d2c63ad4b923302d9cf4eaf67903fa7115f8552d670a5bc25739352d50a5a2",
     "src/trampoline/fitting/tests.rs": "b947cad0990f0a8a6357562da2c8420678121716ef4b29b83efe839b790ee223",
     "tests/neighbor_eviction_oracle.rs": "685d5caa3933dd5649b70b4e8fa1e0ce632e1a9b52d51aed3c671288b77c5e64",
     "tests/support/bounded_proc_stat.rs": "c7bf20dbf6c1ccb91ae54f7965b1957ef5f9cea7de063a7f8af556fe02559866",
@@ -5703,6 +6577,12 @@
     "tools/rapid-profiler/src/frontend_native/ordinary/sealed_source_tests.rs": "60ac1a2003543e6737a51cd96eb5e2d3d6d879ec5dc45f85cc58b5e7e52687a9",
     "tools/rapid-profiler/src/frontend_native/ordinary/selection.rs": "45f907db6ce481af48165a36b92ba142f34dd16a9e2004f260f922d50ce1d4dc",
     "tools/rapid-profiler/src/lib.rs": "222ed3673f26976330afed905910bc8ca0ff86df962cc0ed6504faeeb8261e01",
+    "tools/software-preemption/README.md": "9b2c9122c88f5aa58928d4c41a73a18202c8b300aa8fabd3528c47a47c9c51dc",
+    "tools/software-preemption/inline_gate.rs": "55cf2c750d89feb31269225e53d184e8379a4b9948227181f36bb39ac2e9e0df",
+    "tools/software-preemption/inline_gate/region.rs": "9c02478f57f147aa24dacd25512ac7080b90086263c13f6869cd3e94af064ac3",
+    "tools/software-preemption/main.rs": "6c7730930c9be3d1d33fe68d114c6aa8455c794a078afe786c628313e7a55114",
+    "tools/software-preemption/region_benchmark.rs": "4450c68d0bf2f85dd8236736a9c6a3dbc68161636858c90dd1cacba6c6e58c4e",
+    "tools/software-preemption/region_clock.rs": "bb4c7e8291bcb9c17e39eeea20a00e260f9b6573ce1cc871d580243d9e41265f",
     "tools/unwind-oracle/indexed_dso/caller.c": "4c9ad23c28e98e72faccc09a492142700b56dd6426e6f001ed6ebea5040527cf",
     "tools/unwind-oracle/indexed_dso/caller.h": "792e1d088f9c063709d753de0b00b7220198400ff7b8eee8d41d73f5856da5cb",
     "tools/unwind-oracle/indexed_dso/native_recipe.py": "0ae50d24d6ae80dfe355cf71528f2c4e1a1970c11d98411af172df6ca1ec1c3a"

@@ -9,10 +9,11 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == 'e5b663ea9a6c9e36e530c1f4d95ce804024b7a71e2b8a0fda57d952007683416',
+require(hashlib.sha256(RAW).hexdigest() == '22f9ddb49324a0e99679de5bd14039386ea30189b1cee63a4084c94aaf51ae78',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
+CLOCK_PREVIOUS = DATA['source_successor_abe7']['previous_corpus_sha256']
 OVERLAP_PREVIOUS = DATA['source_successor_124521']['previous_corpus_sha256']
 RX_PREVIOUS = DATA['source_successor_b6fea']['previous_corpus_sha256']
 ENTRY_PREVIOUS = DATA['source_successor_b0a30']['previous_corpus_sha256']
@@ -98,6 +99,9 @@ def require_sources(error='main97ab_source_inventory_differs'):
         if path in DATA['doctests']:
             require(re.findall(r'(?ms)^/// ```[^\n]*\n.*?^/// ```$', raw.decode())
                     == DATA['doctests'][path], error)
+        if path in DATA['source_successor_abe7']['doctest_sources']:
+            require(re.findall(r'(?ms)^[ \t]*/// ```[^\n]*\n.*?^[ \t]*/// ```$', raw.decode())
+                    == DATA['source_successor_abe7']['doctest_sources'][path], error)
         if path in DATA['module_chains']:
             require(all(raw.decode().count(literal) == 1
                         for literal in DATA['module_chains'][path]), error)
@@ -105,10 +109,27 @@ def require_sources(error='main97ab_source_inventory_differs'):
         source_before_evaluation(path, raw, error)
 
 
-def before_124521(declared, error='main97ab_inventory_differs'):
-    """Bind every overlapping-relay test while retaining the whole prior catalog."""
+def before_abe7(declared, error='main97ab_inventory_differs'):
+    """Bind the exact region/batch methods, compile-fail docs and example target."""
     require(type(declared) is dict and digest(declared) == CURRENT, error)
     old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in DATA['source_successor_abe7']['workspace_changes'].items():
+        require(digest(rows[name]) == digest(change['current']), error)
+        if change['previous'] is None:
+            del rows[name]
+        else:
+            rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == CLOCK_PREVIOUS, error)
+    return old
+
+
+def before_124521(declared, error='main97ab_inventory_differs'):
+    """Bind every overlapping-relay test while retaining the whole prior catalog."""
+    owned = plain_catalog((declared, DATA))
+    declared = before_abe7(declared, error)
+    require(type(declared) is dict and digest(declared) == CLOCK_PREVIOUS, error)
+    old = declared if owned else copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in DATA['source_successor_124521']['workspace_changes'].items():
         require(digest(rows[name]) == digest(change['current']), error)

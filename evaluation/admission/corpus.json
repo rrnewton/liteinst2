@@ -6099,7 +6099,7 @@
     "workspace_tests": {
       "doc/liteinst2": {
         "ignored": 0,
-        "tests": 8
+        "tests": 16
       },
       "doc/liteinst_admission": {
         "ignored": 0,
@@ -6503,7 +6503,7 @@
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 488
+        "tests": 514
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
@@ -6527,7 +6527,7 @@
       },
       "unit/liteinst_preempt/main": {
         "ignored": 0,
-        "tests": 32
+        "tests": 33
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
@@ -6540,6 +6540,10 @@
       "unit/ordinary_interval/main": {
         "ignored": 1,
         "tests": 518
+      },
+      "unit/owned_region_clock/owned_region_clock": {
+        "ignored": 0,
+        "tests": 3
       },
       "unit/rapid_profiler/lib": {
         "ignored": 33,
