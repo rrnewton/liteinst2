@@ -42,6 +42,14 @@ struct li2_pg_ret_record {
 };
 _Static_assert(sizeof(struct li2_pg_ret_record)==1584,"exact reconstructed RET compact record");
 #endif
+#ifdef LI2_PERSISTENT_CALL_RETURN_HEADS
+#undef LI2_PG_COMPACT_VERSION
+#define LI2_PG_COMPACT_VERSION 8U
+#endif
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+#undef LI2_PG_COMPACT_VERSION
+#define LI2_PG_COMPACT_VERSION 9U
+#endif
 union li2_pg_guard_record { struct li2_pe_guard_record mov;struct li2_jd_record dispatch;
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
     struct li2_pg_call_record call;

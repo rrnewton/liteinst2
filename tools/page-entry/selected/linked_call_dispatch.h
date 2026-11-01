@@ -11,6 +11,12 @@
 #define LI2_CD_BOUNDARIES 64U
 #define LI2_CD_STACK_SPAN_BYTES 512U /* Proposed owner-authorized guest span, not metadata size. */
 #define LI2_CD_WINDOW_PAGE 4096U
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+#if LI2_PERSISTENT_DIRECT_CALL != 1 || !defined(LI2_PERSISTENT_CALL_RETURN_HEADS) || LI2_PERSISTENT_CALL_RETURN_HEADS != 1
+#error "direct E8 CALL requires the explicit return-head CALL profile"
+#endif
+#define LI2_CD_DIRECT_TARGET 16U
+#endif
 /* Complete owner-held page, R during the activation; zero unused bytes. Owner
    validates actual version/owner/activation serial and all mapping, ordinary
    RAM, prospective-window, full protected registry/source/rseq disjointness
@@ -55,6 +61,13 @@ struct li2_cd_recovered {
 /* Whole canonical FF D0..D7 / 41 FF D0..D7 only. The sealed decoder's full
    decoded/TF CALL and implicit write-footprint results must agree. */
 int li2_cd_describe(uintptr_t,const unsigned char *,size_t,struct li2_cd_descriptor *);
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+/* Pure whole-descriptor reconstruction for exactly E8 rel32. Returns its
+   checked lower-canonical target; it grants no target-page or directory
+   authority. In COMMITTED recovery this immutable value replaces a GPR read.
+   The owner still authenticates the complete plan, generation and window. */
+int li2_cd_direct_target(const struct li2_cd_descriptor *,uintptr_t *);
+#endif
 int li2_cd_emit(uintptr_t,const unsigned char *,size_t,uintptr_t,uintptr_t,
     const struct li2_cd_binding *,struct li2_cd_plan *);
 int li2_cd_validate(const struct li2_cd_plan *);

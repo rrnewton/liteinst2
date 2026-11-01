@@ -264,11 +264,20 @@ static int materialize_call(const struct li2_pg_compact *p,unsigned i,struct li2
        !r->boundaries || r->boundaries>LI2_CD_BOUNDARIES ||
        d->decoded.available<h->source_length || d->decoded.available>15)return LI2_PG_CORRUPT;
     const unsigned prefix=d->decoded.bytes[0]==0x41?1U:0U;
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+    const unsigned direct=a->target==LI2_CD_DIRECT_TARGET;
+    if(direct) {
+        if(h->source_length!=5 || d->decoded.bytes[0]!=0xe8)return LI2_PG_CORRUPT;
+    } else
+#endif
     if(h->source_length!=prefix+2U || d->decoded.bytes[prefix]!=0xff ||
        d->decoded.bytes[prefix+1]<0xd0 || d->decoded.bytes[prefix+1]>0xd7)return LI2_PG_CORRUPT;
     struct li2_decoded decoded={.pc=d->decoded.pc,.next_pc=d->decoded.pc+h->source_length,
         .abi_version=1,.decode_status=LI2_VALID,.code=759,.kind=LI2_NONE,.destination=16,
         .step_disposition=LI2_STEP_UNSUPPORTED,.available=d->decoded.available,.length=h->source_length};
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+    if(direct)decoded.code=693;
+#endif
     if(!address(decoded.pc,decoded.available))return LI2_PG_CORRUPT;
     for(unsigned k=0;k<decoded.available;k++) {
         unsigned page;uintptr_t at=decoded.pc+k;
@@ -282,6 +291,12 @@ static int materialize_call(const struct li2_pg_compact *p,unsigned i,struct li2
              .code=759,.length=h->source_length,.flow=LI2_TF_NEAR_FLOW,.family=LI2_TF_CALL},
         .version=LI2_CD_VERSION,.ready=1,.available=d->decoded.available,
         .target=(d->decoded.bytes[prefix+1]&7U)+8U*prefix};
+#ifdef LI2_PERSISTENT_DIRECT_CALL
+    if(direct) {
+        uintptr_t target;expected.target=LI2_CD_DIRECT_TARGET;expected.tf.code=693;
+        if(li2_cd_direct_target(&expected,&target))return LI2_PG_CORRUPT;
+    }
+#endif
     if(!equal(a,&expected,sizeof expected))return LI2_PG_CORRUPT;
     struct li2_span_decoded span={.decoded=a->decoded,.version=1,.refusal=LI2_REGION_UNSUPPORTED};
     if(!equal(d,&span,sizeof span))return LI2_PG_CORRUPT;
