@@ -437,7 +437,7 @@ fn owned_clock_region_image_verifier_rejects_missing_misbound_gates_heads_maps_a
     let proof = fixture.proof().unwrap();
     let plan = fixture.plan();
     let image = plan.image();
-    let refused = |view| {
+    let refused = |view: ImageView<'_>| {
         assert_eq!(
             proof.verify_view(&scan, &fixture.region, view),
             Err(Refusal::InvalidPlan)

@@ -1849,7 +1849,7 @@ impl TrampolinePlan {
     ) -> Result<Self, TrampolineError> {
         region
             .validate_scan(scan)
-            .map_err(|error| encoding_error(error.to_string()))?;
+            .map_err(|error| encoding_error(format!("clock region source: {error:?}")))?;
         let first = &region.actions[0];
         for action in &region.actions {
             let item = scan
