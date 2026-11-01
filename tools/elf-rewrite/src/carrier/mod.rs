@@ -5,6 +5,7 @@
 //! inventories dynamic writes and adds RX images in one module-relative domain.
 
 pub mod dynamic;
+mod rx_runs;
 pub mod startup;
 pub mod unwind;
 pub use startup::{
@@ -117,6 +118,7 @@ pub struct CarrierOutput {
     /// Output index of the newly appended read-only PT_LOAD.
     pub carrier_index: usize,
     /// Exact image extents in caller order, with separate dedicated file backing.
+    /// In the explicit packed profile, disjoint extents can share a LOAD header.
     pub images: Vec<ImagePlacement>,
     /// Exact count of newly mapped pages; alias sharing is not claimed.
     pub new_load_pages: u64,
@@ -274,6 +276,37 @@ pub fn append_carrier_with_images(
     append_internal(input, request, edits, policy, true, Placement::Append, None)
 }
 
+/// Explicit Linux ELF64 header-table profile with packed generated RX page runs.
+///
+/// Only adjacent already-owned generated pages share a LOAD. Their file backing
+/// is assigned in virtual-address order; each exact image remains in caller order
+/// with its original storage address, bytes and separate file extent. The R-only
+/// carrier and every original LOAD remain separate. All images/carrier must still
+/// follow the original LOAD span, as in `append_carrier_with_images`.
+///
+/// This profile fixes the target page size at 4096 and limits the complete table
+/// to 65536 bytes (1170 ELF64 headers). It does not qualify native loading, the
+/// ET_DYN reservation span, startup, emitted semantics or any runtime entry.
+pub fn append_carrier_with_linux_rx_runs(
+    input: &Elf64<'_>,
+    request: ImageRequest<'_>,
+    edits: &[DeclaredEdit],
+    policy: ImagePolicy,
+) -> Result<CarrierOutput, Error> {
+    if policy.layout.page_size != 4096 {
+        return Err(Error::InvalidTargetPolicy);
+    }
+    append_internal(
+        input,
+        request,
+        edits,
+        policy,
+        true,
+        Placement::LinuxRxRuns,
+        None,
+    )
+}
+
 /// Explicit ET_EXEC profile for independently backed RX images below or between
 /// original LOADs. The R-only carrier must still follow every original LOAD.
 /// Original headers retain their relative order; new LOAD headers are merged by
@@ -366,6 +399,7 @@ pub fn append_static_exec_with_router_absolute_prerequisites(
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum Placement {
+    LinuxRxRuns,
     Append,
     Images,
     AllLoads,
@@ -380,6 +414,12 @@ fn append_internal(
     placement: Placement,
     startup_request: Option<startup::Request<'_>>,
 ) -> Result<CarrierOutput, Error> {
+    let pack_rx_runs = placement == Placement::LinuxRxRuns;
+    let placement = if pack_rx_runs {
+        Placement::Append
+    } else {
+        placement
+    };
     let interleaved = placement != Placement::Append;
     let startup = startup_request
         .map(|request| startup::prepare(input, request))
@@ -575,9 +615,17 @@ fn append_internal(
         images.len() as u64,
         image_policy.max_images as u64,
     )?;
+    let packed = if pack_rx_runs {
+        Some(rx_runs::Plan::new(images, policy)?)
+    } else {
+        None
+    };
+    let image_headers = packed
+        .as_ref()
+        .map_or(images.len(), rx_runs::Plan::run_count);
     let new_count = old_count
         .checked_add(1 + usize::from(insert_phdr))
-        .and_then(|count| count.checked_add(images.len()))
+        .and_then(|count| count.checked_add(image_headers))
         .and_then(|count| count.checked_add(startup.as_ref().map_or(0, |s| s.extra_headers())))
         .ok_or(Error::Arithmetic {
             operation: "program-header count",
@@ -587,6 +635,9 @@ fn append_internal(
         new_count as u64,
         policy.max_program_headers.min(0xfffe) as u64,
     )?;
+    if packed.is_some() {
+        budget("Linux ELF64 program headers", new_count as u64, 65536 / 56)?;
+    }
     let new_table_len = (new_count as u64)
         .checked_mul(56)
         .ok_or(Error::Arithmetic {
@@ -627,6 +678,10 @@ fn append_internal(
         flags: 4,
         image: None,
     }];
+    let packed_files = packed
+        .as_ref()
+        .map(|plan| plan.file_offsets(output_len, policy.page_size))
+        .transpose()?;
     let mut image_placements = Vec::with_capacity(images.len());
     for (index, image) in images.iter().enumerate() {
         let start = align_down(image.entry.0, policy.page_size);
@@ -657,7 +712,11 @@ fn append_internal(
                 }
             }
         }
-        let offset = align_up(output_len, policy.page_size)?;
+        let offset = if let Some((offsets, _)) = &packed_files {
+            offsets[index]
+        } else {
+            align_up(output_len, policy.page_size)?
+        };
         let file = FileRange::checked(
             FileOffset(add(offset, prefix, "image file entry")?),
             image.bytes.len() as u64,
@@ -676,6 +735,9 @@ fn append_internal(
             flags: 5,
             image: Some(index),
         });
+    }
+    if let Some((_, end)) = packed_files {
+        output_len = end;
     }
     added.sort_by_key(|load| load.vaddr);
     for pair in added.windows(2) {
@@ -704,6 +766,11 @@ fn append_internal(
                 }
             }
         }
+    }
+    // Every individual image has passed the original page and metadata checks.
+    // Coalescing changes only how that same page union is represented/backed.
+    if let Some(plan) = &packed {
+        added = plan.coalesce(added)?;
     }
     budget(
         "new load pages",
@@ -873,6 +940,9 @@ fn append_internal(
                 image_placements[image].program_header = index;
             }
         }
+    }
+    if let Some(plan) = &packed {
+        plan.assign_headers(&mut image_placements)?;
     }
     if let (Some(prepared), Some(layout)) = (&startup, &mut startup_layout) {
         if let Some(old_stack) = prepared.original_stack {
