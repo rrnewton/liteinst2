@@ -386,7 +386,7 @@
     "evaluation/inprocess/call_owner/SOURCE.json": {
       "bytes": 45601,
       "mode": "0644",
-      "sha256": "cd8bb4779f2892e4bc172fd5583e71ab9b66660eb8678157073f20dab87bc2b9"
+      "sha256": "b2ee7d2a7bf4f35dc61e7ff1af3cba9cb996240ff5a6443ddda26dc52fb1d58b"
     },
     "evaluation/inprocess/call_owner/custody.py": {
       "bytes": 9027,
@@ -426,7 +426,7 @@
     "evaluation/inprocess/ret_owner/SOURCE.json": {
       "bytes": 49621,
       "mode": "0644",
-      "sha256": "4df226c376081b91bca320b6c8b5ae530cb4bdb3856e13dcca35b9048c129d75"
+      "sha256": "e241fafe7a75eb6ff57983f0577be4ed8a8673f5019b79ca48da29e109a75cce"
     },
     "evaluation/inprocess/ret_owner/prerequisites.py": {
       "bytes": 29668,
@@ -451,7 +451,7 @@
     "evaluation/inprocess/ret_runtime_compile/SOURCE.json": {
       "bytes": 38132,
       "mode": "0644",
-      "sha256": "6ca5151ddc1f0a68b5a5e23d066daa0eae6b4a216022ae10cd53edbc62c4e79e"
+      "sha256": "1e4d4a9b1c1ad0284313b9eb7acf50c8ffdf07dc9e99ee94534f5d8eb0d27b3a"
     },
     "tools/page-entry/selected/build-persistent-call-return-heads-owner-differential.sh": {
       "bytes": 5374,
@@ -739,9 +739,9 @@
       "sha256": "cfd7c35af340980f0f4e76601082d473caef91da080d62630d148eda5dc0f901"
     },
     "tools/page-entry/selected/tf_span_transfer.inc": {
-      "bytes": 25758,
+      "bytes": 26181,
       "mode": "0644",
-      "sha256": "6f0a6a2639426754c5d25287a7cc91499b65fcfcd64a3d22c85e7dd4152d64ee"
+      "sha256": "14622f12b70548f4f7ea8cd251b364858011b6489e2db3e9f27f074b3be23d7d"
     }
   },
   "macros": {
@@ -1264,9 +1264,9 @@
         "sha256": "072b17b41fc5818543e0cfb8547259fd7ecac24840431439d2293862eddeb056"
       },
       "page_native_pair_reports.py": {
-        "bytes": 40779,
+        "bytes": 42355,
         "mode": "0644",
-        "sha256": "f80dc474cb2f68541aaf6d405ce96602b26a27240f9856a53ae3bd8db0965eb4"
+        "sha256": "f59d98879949e6e1352b106bf5a06a827afd9b0d6d2c7ec9ac60e3b0ce71c908"
       },
       "page_selected.py": {
         "bytes": 29973,
@@ -1569,7 +1569,7 @@
       "SOURCE.json": {
         "bytes": 49621,
         "mode": "0644",
-        "sha256": "4df226c376081b91bca320b6c8b5ae530cb4bdb3856e13dcca35b9048c129d75"
+        "sha256": "e241fafe7a75eb6ff57983f0577be4ed8a8673f5019b79ca48da29e109a75cce"
       }
     },
     "evaluation/inprocess/ret_resume_native": {
@@ -1583,7 +1583,7 @@
       "SOURCE.json": {
         "bytes": 38132,
         "mode": "0644",
-        "sha256": "6ca5151ddc1f0a68b5a5e23d066daa0eae6b4a216022ae10cd53edbc62c4e79e"
+        "sha256": "1e4d4a9b1c1ad0284313b9eb7acf50c8ffdf07dc9e99ee94534f5d8eb0d27b3a"
       }
     },
     "tools/page-entry": {
@@ -3855,9 +3855,9 @@
         "sha256": "f03bac02eeb062cdb9a53a60ec1c8fc126d6a04249a29bd3321b80ec5b05340c"
       },
       "tf_chain.h": {
-        "bytes": 6760,
+        "bytes": 6938,
         "mode": "0644",
-        "sha256": "a09332f96bfa8196a9c2d992ffdcf1040404e9ded3844d285cd21e72d08981d4"
+        "sha256": "47dc40d0761f757272484cd0aaf7608ee6ef3447c3ce80c378232fdbd9cd85e2"
       },
       "tf_chain.inc": {
         "bytes": 35734,
@@ -3910,9 +3910,9 @@
         "sha256": "10cbec4f9db827daf2f54b9f648ae7a31e0ac87c97e4847e39e6b5ef51891584"
       },
       "tf_span_transfer.inc": {
-        "bytes": 25758,
+        "bytes": 26181,
         "mode": "0644",
-        "sha256": "6f0a6a2639426754c5d25287a7cc91499b65fcfcd64a3d22c85e7dd4152d64ee"
+        "sha256": "14622f12b70548f4f7ea8cd251b364858011b6489e2db3e9f27f074b3be23d7d"
       },
       "unrolled_hash.h": {
         "bytes": 6227,

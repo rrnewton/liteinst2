@@ -291,9 +291,9 @@
       "sha256": "cfd7c35af340980f0f4e76601082d473caef91da080d62630d148eda5dc0f901"
     },
     "tools/page-entry/selected/tf_span_transfer.inc": {
-      "bytes": 25758,
+      "bytes": 26181,
       "mode": "0644",
-      "sha256": "6f0a6a2639426754c5d25287a7cc91499b65fcfcd64a3d22c85e7dd4152d64ee"
+      "sha256": "14622f12b70548f4f7ea8cd251b364858011b6489e2db3e9f27f074b3be23d7d"
     }
   },
   "macros": {

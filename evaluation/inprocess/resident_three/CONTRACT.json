@@ -75,6 +75,7 @@
     "tests/helper_tf_native/frame.py"
   ],
   "macros": [
+    "-DLI2_TF_NX_PAGE_BOUNDARY=1",
     "-DLI2_FLAG_STACK=1",
     "-DLI2_HELPER_TF=1",
     "-DLI2_RESIDENT_THREE_CAPTURE=1",
@@ -225,7 +226,9 @@
     "tf_owner.inc",
     "tf_entry_route.inc",
     "rseq_guard.h",
-    "entry.S"
+    "entry.S",
+    "tf_chain.h",
+    "tf_nx_page_boundary.h"
   ],
   "providers": [
     "li2_selected_observe_hardware",

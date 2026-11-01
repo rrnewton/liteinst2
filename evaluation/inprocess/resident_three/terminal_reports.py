@@ -14,6 +14,42 @@ ZERO = 'status failure_code detail_abs detail_negative first_error first_detail_
 PREFIX = b'LI2_FLAG_STACK '
 
 
+def nx_page_boundary_controls():
+    """Supplied typed-slot puzzles only; the full unchanged owner audit is separate."""
+    import copy
+    refused=[]
+    for index in (0,1):
+        c={('s'+str(i)+'_'+k):0 for i in (0,1) for k in prior.old.chain.SLOT}
+        c.update(active=index,pending=0,error=0,proof_valid=0,fallbacks=1,event=2)
+        successor=dict(phase=6,origin=2,fallback=7,generation=2,event=2,pc=0x4000,
+            length=2,prepare=1,prepared=1,borrow=2,validations=1,release=1,released=1)
+        predecessor=dict(phase=5,origin=1,generation=1,event=1,pc=0x2fff,length=2,
+            owner_phase=5,open=3,opened=3,revoke=3,revoked=3,trace=1,post_pc=0x4000,
+            borrow=1,query=1,queried=1,query_pc=0x4000,release=1,released=1)
+        for i,row in ((index,successor),(index^1,predecessor)):
+            c.update({('s'+str(i)+'_'+k):v for k,v in row.items()})
+        need(prior.old.nx_page_boundary_slot(c,index),'complete supplied closed two-page boundary slot')
+        changes=[('pending',1),('proof_valid',1),('active',index^1),('fallbacks',0)]
+        changes += [('s'+str(index)+'_'+k,v) for k,v in
+                    (('fallback',8),('phase',5),('origin',1),('prepared',0),('released',0),
+                     ('held',1),('opened',1),('owner_phase',1),('validations',0),('borrow',1))]
+        changes += [('s'+str(index^1)+'_'+k,v) for k,v in
+                    (('released',0),('revoked',1),('trace',0),('query_pc',0x4001))]
+        for key,value in changes:
+            changed=copy.deepcopy(c);changed[key]=value
+            need(changed!=c and not prior.old.nx_page_boundary_slot(changed,index),
+                 'refuse malformed supplied boundary slot: '+str(index)+'/'+key)
+            refused.append(str(index)+'/'+key)
+        changed=copy.deepcopy(c)
+        for i,key in ((index,'pc'),(index^1,'post_pc'),(index^1,'query_pc')):
+            changed['s'+str(i)+'_'+key]=0x3000
+        need(not prior.old.nx_page_boundary_slot(changed,index),
+             'second genuinely opened page is not a new-page fallback')
+        refused.append(str(index)+'/inside_second_opened_page')
+    need(len(refused)==len(set(refused))==38,'all38 additional boundary-report refusals')
+    return dict(controls=38,refusals=refused,native_operations=0)
+
+
 def check(stderr, *, expected_repeat=None):
     need(type(stderr) is bytes and stderr.endswith(b'\n'), 'complete runtime terminal stream')
     lines = stderr[:-1].split(b'\n')
@@ -48,7 +84,7 @@ def check(stderr, *, expected_repeat=None):
     unrolled, suffix = prior.unrolled.split(suffix)
     current, suffix = prior.current.split_current(suffix)
     view, original = prior.maps_view.split_report(suffix, 'maintained')
-    parsed = prior.old.reports(original)
+    parsed = prior.old.reports(original, nx_page_boundary=True)
     prior.old.extensions(parsed)
     # Keep every old typed parser and its actual startup/counter equations. Do
     # not invoke their other fixtures' full-state/operation-count comparators.
@@ -128,7 +164,7 @@ def controls(stderr):
     need(len(refused) == len(set(refused)) == expected and check(stderr) == original,
          'all distinct causal controls and unchanged original terminal stream')
     return dict(controls=expected, refusals=refused, native_operations=0,
-                stderr_sha256=original['stderr_sha256'])
+                stderr_sha256=original['stderr_sha256'], nx_page_boundary=nx_page_boundary_controls())
 
 
 # The three old handler ledgers begin before the actual startup NOP NX/TRACE.

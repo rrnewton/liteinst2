@@ -17,7 +17,7 @@ LEAVES = tuple({'build-persistent-direct-frontier.sh':'build-resident-three-flag
     'resident_three_owner.h','resident_three_owner.inc','resident_three_storage.inc',
     'resident_three_controller.inc','resident_three_rseq.inc','readonly_query.h','native_policy.c',
     'resident_three_observe.h','resident_three_observe.inc','resident_three_memory.h','resident_three_memory.inc',
-    'maps_view.inc','tf_chain.inc') + ('flag_stack.h', 'flag_stack.c', 'flag_stack_storage.h', 'flag_stack_query.inc', 'flag_stack_owner.inc', 'helper_tf.h', 'helper_tf.c', 'tf_owner.inc', 'tf_entry_route.inc', 'rseq_guard.h', 'entry.S')
+    'maps_view.inc','tf_chain.inc') + ('flag_stack.h', 'flag_stack.c', 'flag_stack_storage.h', 'flag_stack_query.inc', 'flag_stack_owner.inc', 'helper_tf.h', 'helper_tf.c', 'tf_owner.inc', 'tf_entry_route.inc', 'rseq_guard.h', 'entry.S', 'tf_chain.h', 'tf_nx_page_boundary.h')
 
 
 def configuration(data):
@@ -126,7 +126,7 @@ def main():
                'resident_three_config.h': resident}
     record = dict(version=1, profile='resident-three-direct-flags-capture-v1', mode=mode, native_probe=True, parse_memo=True, unregistered=True, subentry=True, cross_pair=True, direct_frontier=True,
                   archive=actual_archive, policy_sha256=policy, original=original, sources=values,
-                  resident_three=True, sealed_storage=True, source_lease=True, flag_stack=True, helper_tf=True, geometry=geometry,
+                  resident_three=True, sealed_storage=True, source_lease=True, flag_stack=True, helper_tf=True, tf_nx_page_boundary=True, geometry=geometry,
                   headers={name: fact(text.encode()) for name, text in headers.items()})
     paths = [output / name for name in headers] + [output / 'resident_three_binding.json']
     need(not any(path.exists() for path in paths), 'fresh exclusive active-domain outputs')

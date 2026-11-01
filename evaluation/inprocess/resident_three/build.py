@@ -53,7 +53,8 @@ def build(private,archive,tools,state,pin,binary,aliases,run,fact):
     for p in output.iterdir():binary(p)
     binding=json.loads((output/'resident_three_binding.json').read_bytes())
     need([x['path']for x in binding['sources']]==contract['policy'] and
-         binding['flag_stack'] is True and binding['helper_tf'] is True,'whole actual source-policy closure')
+         binding['flag_stack'] is True and binding['helper_tf'] is True and
+         binding['tf_nx_page_boundary'] is True,'whole actual source-policy closure')
     for member in binding['sources']:
         need({k:fact(pin(selected/member['path']))[k] for k in ('bytes','sha256')}==
              {k:member[k] for k in ('bytes','sha256')},'actual complete bound policy source')
