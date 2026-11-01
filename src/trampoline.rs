@@ -668,6 +668,8 @@ impl HookContext {
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod backedge_clock;
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod clock_region_tests;
 mod original_nops;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod precontext;
@@ -777,6 +779,7 @@ pub struct TrampolineImage {
     controls: Vec<ProbeControl>,
     clock: Option<crate::backedge_clock::BackedgeClock>,
     clock_gate: Option<crate::backedge_clock::ClockGateLayout>,
+    clock_region_gates: Vec<crate::backedge_clock::ClockRegionGateLayout>,
     precontext_selector: Option<crate::precontext::PreContextSelector>,
     precontext_gates: Vec<crate::precontext::PreContextGateLayout>,
     artifact: Option<ArtifactImageMetadata>,
@@ -824,9 +827,15 @@ impl TrampolineImage {
         &self.controls
     }
 
-    /// Exact inline gate boundaries, present only for the finite clock profile.
+    /// Exact inline gate boundaries for the single-site clock profile.
     pub fn clock_gate(&self) -> Option<crate::backedge_clock::ClockGateLayout> {
         self.clock_gate
+    }
+
+    /// The two source-keyed gates of an owned clock region. Empty for every
+    /// other profile; `clock_gate()` retains its single-site meaning.
+    pub fn clock_region_gates(&self) -> &[crate::backedge_clock::ClockRegionGateLayout] {
+        &self.clock_region_gates
     }
 
     /// Retained separate RW owner for a finite clock image.
@@ -1160,6 +1169,21 @@ enum TrampolineKind {
     Actions,
 }
 
+#[derive(Clone, Debug)]
+enum ClockEmission {
+    Single(crate::backedge_clock::BackedgeClockAction),
+    Region(crate::backedge_clock::BackedgeClockRegion),
+}
+
+impl ClockEmission {
+    fn actions(&self) -> &[crate::backedge_clock::BackedgeClockAction] {
+        match self {
+            Self::Single(action) => core::slice::from_ref(action),
+            Self::Region(region) => &region.actions,
+        }
+    }
+}
+
 /// Immutable emission plan for logical hooks or callback-free relocation.
 #[derive(Clone, Debug)]
 pub struct TrampolinePlan {
@@ -1169,7 +1193,7 @@ pub struct TrampolinePlan {
     hook: Option<HookCallback>,
     actions: Vec<(u64, HookCallback, bool)>,
     controls: Vec<ControlledAction>,
-    clock: Option<Box<crate::backedge_clock::BackedgeClockAction>>,
+    clock: Option<Box<ClockEmission>>,
     precontext_actions: Box<[crate::precontext::PreContextAction]>,
     instructions: Vec<Instruction>,
     source_nops: Vec<Option<Vec<u8>>>,
@@ -1812,7 +1836,43 @@ impl TrampolinePlan {
                 control: action.control.clone(),
             }],
         )?;
-        plan.clock = Some(Box::new(action.clone()));
+        plan.clock = Some(Box::new(ClockEmission::Single(action.clone())));
+        Ok(plan)
+    }
+
+    // Only the separate owned-region planner grants whole-region relocation.
+    // Keep every single-site source/condition check, then bind both gates to
+    // the same original snapshot and one retained clock owner.
+    pub(crate) fn from_owned_clock_region(
+        scan: &ScanResult,
+        region: &crate::backedge_clock::BackedgeClockRegion,
+    ) -> Result<Self, TrampolineError> {
+        region
+            .validate_scan(scan)
+            .map_err(|error| encoding_error(error.to_string()))?;
+        let first = &region.actions[0];
+        for action in &region.actions {
+            let item = scan
+                .site(action.logical_pc)
+                .ok_or(TrampolineError::SiteNotFound {
+                    address: action.logical_pc,
+                })?;
+            let end = action
+                .logical_pc
+                .checked_add(item.instruction_len() as u64)
+                .ok_or_else(|| encoding_error("clock region site overflow"))?;
+            Self::from_backedge_clock(scan, action.logical_pc, end, action)?;
+        }
+        let end = first
+            .base
+            .checked_add(first.source.len() as u64)
+            .ok_or_else(|| encoding_error("clock region source overflow"))?;
+        let controlled = region.actions.each_ref().map(|action| ControlledAction {
+            logical_pc: action.logical_pc,
+            control: action.control.clone(),
+        });
+        let mut plan = Self::from_controlled_actions(scan, first.base, end, &controlled)?;
+        plan.clock = Some(Box::new(ClockEmission::Region(region.clone())));
         Ok(plan)
     }
 
@@ -2157,6 +2217,7 @@ impl TrampolinePlan {
             Ok(TrampolineImage {
                 clock: None,
                 clock_gate: None,
+                clock_region_gates: Vec::new(),
                 precontext_selector: None,
                 precontext_gates: Vec::new(),
                 artifact: None,
@@ -2364,8 +2425,7 @@ impl TrampolinePlan {
         let mut first_hook_lengths = None;
         let mut helper_frames = Vec::new();
         let mut action_index = 0;
-        let mut clock_spec = None;
-        let mut clock_observer = None;
+        let mut clock_specs = Vec::new();
         let mut precontext_specs = Vec::new();
         for (index, original) in self.instructions.iter().enumerate() {
             let entry_index = encoded_instructions.len();
@@ -2375,7 +2435,13 @@ impl TrampolinePlan {
             let action = actions
                 .get(action_index)
                 .filter(|action| action.0 == original.ip());
-            let clock_labels = if self.clock.is_some() {
+            let clock = self.clock.as_ref().and_then(|clock| {
+                clock
+                    .actions()
+                    .iter()
+                    .find(|clock| clock.logical_pc == original.ip())
+            });
+            let clock_labels = if clock.is_some() {
                 Some((identity()?, identity()?))
             } else {
                 None
@@ -2390,20 +2456,23 @@ impl TrampolinePlan {
                 None
             };
             let mut observing_index = entry_index;
-            if let Some(clock) = &self.clock {
+            if let Some(clock) = clock {
+                if action.is_none() {
+                    return Err(encoding_error("clock gate has no observing action"));
+                }
                 let (observer, body) = clock_labels.unwrap();
-                clock_spec = Some(backedge_clock::append(
+                let spec = backedge_clock::append(
                     &mut encoded_instructions,
                     clock,
                     observer,
                     body,
                     &mut identity,
-                )?);
+                )?;
                 observing_index = encoded_instructions.len();
                 let mut marker = Instruction::with(Code::Zero_bytes);
                 marker.set_ip(observer);
                 encoded_instructions.push(marker);
-                clock_observer = Some(observing_index);
+                clock_specs.push((original.ip(), entry_index, observing_index, spec));
             }
             if let Some(optional) = optional {
                 let (observer, body) = optional_labels.unwrap();
@@ -2521,6 +2590,13 @@ impl TrampolinePlan {
             }
             heads.push((original.ip(), entry_index, body_index, replaced));
         }
+        if self
+            .clock
+            .as_ref()
+            .is_some_and(|clock| clock_specs.len() != clock.actions().len())
+        {
+            return Err(encoding_error("clock region lost a required gate"));
+        }
         Ok(OrderedPreparation {
             extended_state,
             fragments,
@@ -2531,8 +2607,7 @@ impl TrampolinePlan {
             heads,
             first_hook_lengths,
             helper_frames,
-            clock_spec,
-            clock_observer,
+            clock_specs,
             precontext_specs,
         })
     }
@@ -2556,8 +2631,7 @@ impl TrampolinePlan {
             heads,
             first_hook_lengths,
             helper_frames,
-            clock_spec,
-            clock_observer,
+            clock_specs,
             precontext_specs,
         } = preparation;
         let block = if self.clock.is_some() {
@@ -2608,16 +2682,28 @@ impl TrampolinePlan {
                 .checked_add(offset as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })
         };
-        if let Some(spec) = &clock_spec {
+        let mut gates = Vec::new();
+        for (logical_pc, entry, observer, spec) in &clock_specs {
             backedge_clock::verify(spec, &encoded_instructions, address, &block.encoded)?;
+            let body = heads
+                .iter()
+                .find(|head| head.0 == *logical_pc)
+                .ok_or_else(|| encoding_error("clock original body missing"))?
+                .2;
+            gates.push(crate::backedge_clock::ClockRegionGateLayout {
+                logical_pc: *logical_pc,
+                gate: crate::backedge_clock::ClockGateLayout {
+                    entry: generated(offset(*entry)?)?,
+                    observing_entry: generated(offset(*observer)?)?,
+                    original_body: generated(offset(body)?)?,
+                },
+            });
         }
-        let clock_gate = match clock_observer {
-            Some(observer) => Some(crate::backedge_clock::ClockGateLayout {
-                entry: generated(offset(heads[0].1)?)?,
-                observing_entry: generated(offset(observer)?)?,
-                original_body: generated(offset(heads[0].2)?)?,
-            }),
-            None => None,
+        let (clock_gate, clock_region_gates) = match self.clock.as_deref() {
+            Some(ClockEmission::Single(_)) if gates.len() == 1 => (Some(gates[0].gate), Vec::new()),
+            Some(ClockEmission::Region(_)) if gates.len() == 2 => (None, gates),
+            None if gates.is_empty() => (None, Vec::new()),
+            _ => return Err(encoding_error("clock gate population differs")),
         };
         let mut precontext_gates = Vec::new();
         for (action, entry, observer, spec) in &precontext_specs {
@@ -2856,8 +2942,12 @@ impl TrampolinePlan {
         }
         debug_assert_eq!(layout.total_len(), Some(bytes.len()));
         Ok(TrampolineImage {
-            clock: self.clock.as_ref().map(|action| action.clock.clone()),
+            clock: self
+                .clock
+                .as_ref()
+                .map(|clock| clock.actions()[0].clock.clone()),
             clock_gate,
+            clock_region_gates,
             precontext_selector: self.precontext_actions.first().map(|a| a.selector.clone()),
             precontext_gates,
             artifact,
