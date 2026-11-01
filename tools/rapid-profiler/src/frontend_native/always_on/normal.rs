@@ -866,72 +866,6 @@ impl NormalState {
     ) -> Result<(), BridgeError> {
         self.enter_function(self.selection(0)?, pc, rsp, word, start)
     }
-    fn enter_function(
-        &mut self,
-        selected: SelectedFunction,
-        pc: u64,
-        rsp: u64,
-        word: u64,
-        start: RawTimestamp,
-    ) -> Result<(), BridgeError> {
-        self.selected_geometry(selected, pc, None)?;
-        self.shape()?;
-        if self.pending.is_some() {
-            // identity() already authenticated a new real entry. Never reread the
-            // old stack slot: this new CALL may have overwritten it legitimately.
-            self.confirm(NormalAcknowledgement::NextEntry { ordinal: self.next })?;
-        }
-        reserve_entry(self.len, self.journal.used())?;
-        let next = self.next.checked_add(1).ok_or(error(Cause::Capacity))?;
-        let entered = self
-            .totals
-            .entered
-            .checked_add(1)
-            .ok_or(error(Cause::Capacity))?;
-        if let Some(accuracy) = &mut self.accuracy {
-            accuracy.begin(self.len, selected, self.next)?;
-        }
-        let mut slot = ModelReturnSlot {
-            identity: self.next,
-            word: TOKEN,
-        };
-        let enter = match self.binding.entry_mode {
-            EntryMode::NonBlocking => ThreadModel::enter_interval,
-            EntryMode::Concurrent => ThreadModel::enter_interval_waiting,
-        };
-        let receipt = enter(
-            &mut self.model,
-            self.binding.install,
-            selected.function,
-            start.ticks,
-            &mut slot,
-        )
-        .map_err(|e| error(Cause::Entry(e)))?;
-        // Custody precedes every fallible postcondition, including history packing.
-        self.pending = Some(Pending {
-            selected,
-            ordinal: self.next,
-            rsp,
-            word,
-            entry_pc: pc,
-            start,
-            receipt,
-            slot,
-            summary: None,
-            returned: None,
-        });
-        let p = self.pending.as_mut().ok_or(error(Cause::Invariant))?;
-        let summary = p.receipt.summary().ok_or(error(Cause::Invariant))?;
-        p.summary = Some(summary);
-        let (kind, generation, bits) =
-            history::packed_for_function(&self.binding.session, p.selected.function, summary)?;
-        self.journal
-            .row([kind, p.ordinal, pc, rsp, word, generation, bits]);
-        self.journal.header(self.tid, 1);
-        self.next = next;
-        self.totals.entered = entered;
-        Ok(())
-    }
     #[cfg(test)]
     fn observe(
         &mut self,
@@ -941,55 +875,6 @@ impl NormalState {
         end: RawTimestamp,
     ) -> Result<(), BridgeError> {
         self.observe_function(self.selection(0)?, pc, rsp, word, end)
-    }
-    fn observe_function(
-        &mut self,
-        selected: SelectedFunction,
-        pc: u64,
-        rsp: u64,
-        word: u64,
-        end: RawTimestamp,
-    ) -> Result<(), BridgeError> {
-        self.shape()?;
-        let pending = self.pending.as_ref().ok_or(error(Cause::Return))?;
-        self.selected_geometry(selected, pending.entry_pc, Some(pc))?;
-        let p = self.pending.as_mut().ok_or(error(Cause::Return))?;
-        if p.selected != selected
-            || p.returned.is_some()
-            || p.rsp != rsp
-            || p.word != word
-            || p.slot.identity != p.ordinal
-        {
-            return Err(error(Cause::Return));
-        }
-        let summary = p.summary.ok_or(error(Cause::Invariant))?;
-        let (kind, generation, bits) =
-            history::packed_for_function(&self.binding.session, p.selected.function, summary)?;
-        let observed = self
-            .totals
-            .ret_observed
-            .checked_add(1)
-            .ok_or(error(Cause::Capacity))?;
-        if self.journal.used() >= EVENTS || self.len >= CALLS {
-            return Err(error(Cause::Capacity));
-        }
-        if let Some(accuracy) = &mut self.accuracy {
-            accuracy.end(self.len, selected, p.ordinal)?;
-        }
-        let raw = RawInterval {
-            ordinal: p.ordinal,
-            entry_pc: p.entry_pc,
-            return_pc: pc,
-            owner: timing::owner(summary),
-            start: p.start,
-            end,
-        };
-        self.journal
-            .row([kind + 1, p.ordinal, pc, rsp, word, generation, bits]);
-        p.returned = Some(raw);
-        self.totals.ret_observed = observed;
-        // Receipt, sampled frame and FunctionClosed owner remain untouched.
-        Ok(())
     }
     fn confirmation(
         &self,

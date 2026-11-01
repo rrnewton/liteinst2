@@ -4,6 +4,7 @@ use super::*;
 use crate::frontend_native::always_on::site::ordinary::InstalledEarlyEntryModuleSite;
 use liteinst2::controls::ControlWriter;
 use std::sync::atomic::AtomicBool;
+mod checked_visit;
 mod controller;
 #[cfg(any(test, feature = "frontend-native-qualification"))]
 pub mod qualification;
@@ -260,72 +261,6 @@ impl PhysicalState {
             _ => return Err(error(Cause::Return)),
         }
         Ok(())
-    }
-    fn visit(&mut self, state: &mut NormalState, visit: Visit) -> Result<(), BridgeError> {
-        let Visit {
-            selected,
-            pc,
-            rsp,
-            word,
-            stamp,
-            entry,
-        } = visit;
-        self.shape(state)?;
-        let b = self.active.as_mut().ok_or(error(Cause::Outstanding))?;
-        let index = b.position;
-        if index >= 4
-            || selected != self.order[index % 2]
-            || word != self.words[index]
-            || b.rsp.is_some_and(|prior| prior != rsp)
-        {
-            return Err(error(Cause::Return));
-        }
-        if entry {
-            if b.seen[index].is_some()
-                || state.pending.as_ref().is_some_and(|p| p.returned.is_none())
-            {
-                return Err(error(Cause::Return));
-            }
-            let ordinal = state.next;
-            state.enter_function(selected, pc, rsp, word, stamp)?;
-            b.rsp = Some(rsp);
-            b.seen[index] = Some(ordinal);
-            b.pending_position = Some(index);
-        } else {
-            let BindingProfile::Module { site, .. } = &state.binding.profile else {
-                return Err(error(Cause::Identity));
-            };
-            state.selected_geometry(
-                selected,
-                site.functions()[selected.index].entry(),
-                Some(pc),
-            )?;
-            if let Some(ordinal) = b.seen[index] {
-                if b.pending_position != Some(index)
-                    || state
-                        .pending
-                        .as_ref()
-                        .is_none_or(|p| p.ordinal != ordinal || p.returned.is_some())
-                {
-                    return Err(error(Cause::Return));
-                }
-                state.observe_function(selected, pc, rsp, word, stamp)?;
-            } else if state.pending.as_ref().is_some_and(|p| p.returned.is_none()) {
-                return Err(error(Cause::Return));
-            }
-            b.rsp = Some(rsp);
-            b.rows[index] = Some(EarlyEntryModulePhysicalRow {
-                batch: b.number,
-                position: index,
-                function: selected.function,
-                observed_ordinal: b.seen[index],
-                return_pc: pc,
-                entry_rsp: rsp,
-                return_word: word,
-            });
-            b.position += 1;
-        }
-        self.shape(state)
     }
     fn returned(
         &self,
