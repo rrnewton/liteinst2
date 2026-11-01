@@ -1,0 +1,6 @@
+phase,profile,revision,sites,heads,emitted,withheld,refusals,B1,B2,T1,T2,T3,candidate_complete,qualification_complete,attempts,exit_code,stdout_bytes,stdout_sha256,stderr_bytes,stderr_sha256,status
+planner,packed-hull512m,2dc600f31e1803043e8d56abda721cc8a32b9d4f,2053,13143,0,2034,19,1815,128,24,22,45,false,false,1,2,,,,,FAILED_ATOMIC_REFUSAL
+planner,packed-overlapping-hull512m,392e4fbf82df434da0e782ff15556ad1a2b66812,2053,13143,2053,0,0,1817,125,24,23,64,true,false,1,0,,,,,COMPLETE_ARTIFACT_UNQUALIFIED
+native_help,original,392e4fbf82df434da0e782ff15556ad1a2b66812,,,,,,,,,,,,false,1,0,947,e1f17fdb62e13949fbb639030812520f9c73d21f8590c7702d959e31a91f6ec3,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,HELP_EXIT_ZERO
+native_help,li2,392e4fbf82df434da0e782ff15556ad1a2b66812,,,,,,,,,,,,false,1,0,947,e1f17fdb62e13949fbb639030812520f9c73d21f8590c7702d959e31a91f6ec3,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,HELP_EXIT_ZERO
+native_help,e9,392e4fbf82df434da0e782ff15556ad1a2b66812,,,,,,,,,,,,false,1,-11,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,FAILED_OUTCOME_RETAINED
