@@ -94,11 +94,33 @@ class Main981419InventoryTests(unittest.TestCase):
             target = current.ROOT / path; raw = read(target)
             changed_raw = raw.replace(before.encode(), after.encode())
             self.assertNotEqual(changed_raw, raw)
+            upstream = copy.deepcopy(native_indexed.DATA['projections'])
+            changed_prior = changed_raw
+            if path in ('tools/rapid-profiler/src/frontend_native/always_on/normal.rs',
+                        'tools/rapid-profiler/src/frontend_native/mod.rs'):
+                prior = native_indexed.source_before(path, raw, 'accuracy_outer_inverse')
+                self.assertEqual(hashlib.sha256(prior).hexdigest(), current.DATA['sources'][path])
+                self.assertEqual((raw.count(before.encode()), prior.count(before.encode())), (1, 1))
+                changed_prior = prior.replace(before.encode(), after.encode())
+                at = raw.index(before.encode()); stop = at + len(before.encode())
+                delta = len(after.encode()) - len(before.encode())
+                row = upstream[path]
+                row.update(current_sha256=hashlib.sha256(changed_raw).hexdigest(),
+                           previous_sha256=hashlib.sha256(changed_prior).hexdigest())
+                for edit in row['edits']:
+                    self.assertTrue(edit[1] <= at or edit[0] >= stop)
+                    if edit[0] >= stop:
+                        edit[0] += delta; edit[1] += delta
             def changed(candidate):
                 return changed_raw if candidate == target else read(candidate)
-            with patch.object(Path, 'read_bytes', changed), \
-                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_raw).hexdigest()}), \
+            with patch.dict(native_indexed.DATA['projections'], upstream), \
+                 patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_prior).hexdigest()}), \
                  patch.object(current, 'source_before', side_effect=lambda p, b, e: b if p != path else (_ for _ in ()).throw(AssertionError('declaration gate omitted'))):
+                if path in ('tools/rapid-profiler/src/frontend_native/always_on/normal.rs',
+                            'tools/rapid-profiler/src/frontend_native/mod.rs'):
+                    self.assertEqual(native_indexed.source_before(path, changed_raw,
+                        'accuracy_outer_inverse'), changed_prior)
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^main981419_source_inventory_differs$'):
                     current.require_sources()
         # These inherited gates used to see current source directly. Carry an

@@ -352,6 +352,9 @@ static int pda_directory_equal(void) {
 }
 static int pda_bind(const ucontext_t *uc) {
     struct pda_work *w=&pe.domain.work;
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+    uint64_t call_stack_effect=0;
+#endif
     if(w->bound || pe.p.phase!=LI2_PG_BOUND || !pe_busy || pe_active || !pe_ready())return PE_STATE;
     w->primary=pe.selected_slot;w->primary_bank=pe.selected_bank;
     w->view.token=pe.token;w->view.directory=pe.domain.directory;w->view.count=1;
@@ -410,6 +413,12 @@ static int pda_bind(const ucontext_t *uc) {
             const struct li2_span_decoded *d=&m->plan->original[j];
             pe.gpr_written|=d->gpr_write;
             pe.flags_written|=d->flags_written|d->flags_set|d->flags_cleared|d->flags_undefined;
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+        } else if(m->plan->head[j].kind==LI2_PG_CALL) {
+            const struct li2_cd_descriptor *c=&m->plan->instruction[j].call;
+            if(c->version!=LI2_CD_VERSION || c->ready!=1 || c->refusal || c->target>=16)return PE_PLAN;
+            call_stack_effect|=UINT64_C(1)<<4;
+#endif
 #ifdef LI2_ADD_GUARD
         } else if(m->plan->head[j].kind==LI2_PG_ADD) {
             const struct li2_ag_descriptor *a=&m->plan->instruction[j].add;
@@ -423,11 +432,22 @@ static int pda_bind(const ucontext_t *uc) {
     pda_select(w->primary,w->primary_bank);
     if((pe.gpr_written&~UINT64_C(0xffff)) || (pe.gpr_written&(UINT64_C(1)<<4)) ||
        (pe.flags_written&~UINT64_C(0x8d5)))return PE_PLAN;
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+    /* All old head kinds passed their unchanged no-RSP-write assertion above.
+       Only the separately typed CALL branch contributes this stack effect. */
+    pe.gpr_written|=call_stack_effect;
+    int error=pda_directory_seal();if(error)return error;
+    return pcw_bind(uc);
+#else
     return pda_directory_seal();
+#endif
 }
 static int pda_ready(unsigned linked) {
     const struct pda_work *w=&pe.domain.work;
     if(linked>1 || !li2_pgd_owner_view(&pe.token) || !pe_ready() || !pda_directory_equal())return 0;
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+    if(!pcw_equal())return 0;
+#endif
     for(unsigned i=0;i<w->view.count;i++) {
         const struct li2_pgd_ref *v=&w->view.member[i].identity;
         const struct li2_pg_generation *g=&pe.retained[v->slot].generation;

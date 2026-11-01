@@ -9,10 +9,12 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '94e5a5d17ffa115e845e35ef08dde98f6af72e8b4edfed6634266cc47480c310',
+require(hashlib.sha256(RAW).hexdigest() == '34106cb9955354221480eb1863d1bbbd3d4e3bd0cf9b6bcd7131e85ed9c0a603',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
+PLACEMENT_PREVIOUS = DATA['source_successor_fd4c6']['previous_corpus_sha256']
+PHASE_CURRENT = DATA['source_successor_96378']['previous_corpus_sha256']
 NATIVE_INDEXED_CURRENT = DATA['source_successor_29859']['previous_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
 PYTHON_CURRENT = DATA['python_current_sha256']
@@ -20,6 +22,27 @@ PYTHON_PREVIOUS = DATA['python_previous_sha256']
 RECORDER_TESTS = 366
 ADDED = 'test_main97ab_inventory.Main97abInventoryTests.test_exact_native_indexed_sources_and_historical_refusals'
 
+
+def plain_catalog(value):
+    """Only builtin object graphs have ordinary, non-publishing deepcopy semantics."""
+    pending = [value]
+    seen = set()
+    while pending:
+        item = pending.pop()
+        kind = type(item)
+        if kind in (str, int, bool, float, type(None)):
+            continue
+        if kind not in (dict, list, tuple):
+            return False
+        if id(item) in seen:
+            continue
+        seen.add(id(item))
+        if kind is dict:
+            pending.extend(item.keys())
+            pending.extend(item.values())
+        else:
+            pending.extend(item)
+    return True
 
 def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'),
@@ -32,11 +55,15 @@ def inverse(path, raw, rows, error):
     row = rows[path]
     require(type(raw) is bytes and hashlib.sha256(raw).hexdigest() == row['current_sha256'], error)
     last = len(raw)
+    pieces = []
     for first, end, old in reversed(row['edits']):
         require(type(first) is int and type(end) is int and type(old) is str
                 and 0 <= first <= end <= last, error)
-        raw = raw[:first] + old.encode() + raw[end:]
+        pieces.append(raw[end:last])
+        pieces.append(old.encode())
         last = first
+    pieces.append(raw[:last])
+    raw = b''.join(reversed(pieces))
     require(hashlib.sha256(raw).hexdigest() == row['previous_sha256'], error)
     return raw
 
@@ -65,6 +92,9 @@ def require_sources(error='main97ab_source_inventory_differs'):
             require(all(raw.decode().count(template) == 1 for template in row['templates']), error)
             for pattern, matches in row['macro_calls']:
                 require([list(x) if isinstance(x, tuple) else x for x in re.findall(pattern, raw.decode())] == matches, error)
+        if path in DATA['doctests']:
+            require(re.findall(r'(?ms)^/// ```[^\n]*\n.*?^/// ```$', raw.decode())
+                    == DATA['doctests'][path], error)
         if path in DATA['module_chains']:
             require(all(raw.decode().count(literal) == 1
                         for literal in DATA['module_chains'][path]), error)
@@ -72,10 +102,41 @@ def require_sources(error='main97ab_source_inventory_differs'):
         source_before_evaluation(path, raw, error)
 
 
-def before_29859(declared, error='main97ab_inventory_differs'):
-    """Project only the exact new catalog; source validation remains mandatory below."""
+def before_fd4c6(declared, error='main97ab_inventory_differs'):
+    """Accept only the complete current catalog, then restore the exact predecessor."""
     require(type(declared) is dict and digest(declared) == CURRENT, error)
     old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in DATA['source_successor_fd4c6']['workspace_changes'].items():
+        require(digest(rows[name]) == digest(change['current']), error)
+        rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == PLACEMENT_PREVIOUS, error)
+    return old
+
+
+def before_96378(declared, error='main97ab_inventory_differs'):
+    """Preserve the complete pre-placement catalog before the older projection."""
+    owned = plain_catalog((declared, DATA))
+    declared = before_fd4c6(declared, error)
+    require(type(declared) is dict and digest(declared) == PLACEMENT_PREVIOUS, error)
+    old = declared if owned else copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in DATA['source_successor_96378']['workspace_changes'].items():
+        require(digest(rows[name]) == digest(change['current']), error)
+        if change['previous'] is None:
+            del rows[name]
+        else:
+            rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == PHASE_CURRENT, error)
+    return old
+
+
+def before_29859(declared, error='main97ab_inventory_differs'):
+    """Project only the exact new catalog; source validation remains mandatory below."""
+    owned = plain_catalog((declared, DATA))
+    declared = before_96378(declared, error)
+    require(type(declared) is dict and digest(declared) == PHASE_CURRENT, error)
+    old = declared if owned else copy.deepcopy(declared)
     change = DATA['source_successor_29859']['workspace_change']
     rows = old['harness_test_counts']['workspace_tests']
     require(digest(rows[change['identity']]) == digest(change['current']), error)
@@ -86,10 +147,11 @@ def before_29859(declared, error='main97ab_inventory_differs'):
 
 def before_current(declared, error='main97ab_inventory_differs',
                    source_error='main97ab_source_inventory_differs'):
+    owned = plain_catalog((declared, DATA))
     declared = before_29859(declared, error)
     require(type(declared) is dict and digest(declared) == NATIVE_INDEXED_CURRENT, error)
     require_sources(source_error)
-    old = copy.deepcopy(declared)
+    old = declared if owned else copy.deepcopy(declared)
     require(type(old['recorder_tests']) is int and old['recorder_tests'] == RECORDER_TESTS, error)
     old['recorder_tests'] = 365
     rows = old['harness_test_counts']['workspace_tests']

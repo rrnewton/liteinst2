@@ -11,6 +11,7 @@ import core_5cda_inventory as main5c
 import core_cc846_inventory as inventory
 import recorder_shards_inventory as shards
 import core_367_inventory as main367
+import core_97ab_inventory as native_indexed
 import precontext_native as protocol
 import parsing
 import run
@@ -3567,8 +3568,11 @@ class Main813InventoryTests(unittest.TestCase):
         artifact_layer = main813.main367.mainc712.main0fb574.mainaf81.maindd75.main981419.main20cbe.mainacc247.main34c47.maind8d85
         artifact_projections = dict(artifact_layer.DATA['projections'])
         del artifact_projections['src/trampoline.rs']
+        native_projections = dict(native_indexed.DATA['projections'])
+        del native_projections['src/trampoline.rs']
         with patch.dict(main813.MAINROUTED, projections=historical_projections), \
-             patch.dict(artifact_layer.DATA, projections=artifact_projections):
+             patch.dict(artifact_layer.DATA, projections=artifact_projections), \
+             patch.dict(native_indexed.DATA, projections=native_projections):
             self.assertIs(main813.source_before_short_pending('src/trampoline.rs', pending_unchanged, 'changed'),
                           pending_unchanged)
         # Bad old tables must fail after a valid pending source/inverse, not before it.
@@ -3832,12 +3836,14 @@ class Main813InventoryTests(unittest.TestCase):
         del routed_without_parser[parser_path]
         native_without_parser = dict(main813.MAINROUTEDNATIVE['sources'])
         del native_without_parser[parser_path]
+        current_without_parser = dict(native_indexed.DATA['sources'])
+        del current_without_parser[parser_path]
         def historical_parser(candidate):
             return frontend_parser if candidate == main813.ROOT / parser_path else adjacent_read(candidate)
-        with patch.dict(main813.MAINFRONTEND, sources=frontend_without_parser), patch.dict(main813.MAINROUTED, sources=routed_without_parser), patch.dict(main813.MAINROUTEDNATIVE, sources=native_without_parser):
+        with patch.dict(main813.MAINFRONTEND, sources=frontend_without_parser), patch.dict(main813.MAINROUTED, sources=routed_without_parser), patch.dict(main813.MAINROUTEDNATIVE, sources=native_without_parser), patch.dict(native_indexed.DATA, sources=current_without_parser):
             with patch.object(Path, 'read_bytes', historical_parser):
                 self.assertIsNone(main813.precheck_current_sources('parser_composition_control'))
-        with patch.dict(adjacent, sources=without_parser), patch.dict(main813.MAINFRONTEND, sources=frontend_without_parser), patch.dict(main813.MAINROUTED, sources=routed_without_parser), patch.dict(main813.MAINROUTEDNATIVE, sources=native_without_parser):
+        with patch.dict(adjacent, sources=without_parser), patch.dict(main813.MAINFRONTEND, sources=frontend_without_parser), patch.dict(main813.MAINROUTED, sources=routed_without_parser), patch.dict(main813.MAINROUTEDNATIVE, sources=native_without_parser), patch.dict(native_indexed.DATA, sources=current_without_parser):
             with patch.object(Path, 'read_bytes', historical_parser):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^parser_composition_control$'):
                     main813.precheck_current_sources('parser_composition_control')

@@ -35,6 +35,11 @@ enum li2_pgu_lifetime { LI2_PGU_REGISTERED=1,LI2_PGU_UNREGISTERED=2 };
    layout is the selected current bank, not a caller-supplied capability.
    cancel_prot returns exact R or RW only while CANCELLING, unconsumed and
    unentered; each of its three extents is independently queried below. */
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+/* Prospective owner window only; the source/registration guards still run and
+   actual metadata must be sealed before execution. Zero means valid. */
+int li2_pg_call_window_check(const struct li2_pg_token *,uintptr_t,const ucontext_t *);
+#endif
 unsigned li2_pg_owner_phase(const struct li2_pg_token *);
 const struct li2_pg_layout *li2_pg_owner_layout(const struct li2_pg_token *);
 int li2_pg_owner_cancel_prot(const struct li2_pg_token *,unsigned);
