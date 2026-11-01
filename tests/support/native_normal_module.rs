@@ -3,6 +3,8 @@
 use super::*;
 #[path = "../../tools/rapid-profiler/normal-work/module_caller_bytes.rs"]
 pub mod bytes;
+#[path = "native_normal_module/early_entry.rs"]
+pub mod early_entry;
 #[path = "native_normal_module/trace.rs"]
 mod trace;
 pub use trace::Trace;
