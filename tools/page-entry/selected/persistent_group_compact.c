@@ -760,3 +760,7 @@ int li2_pg_compact_recover(const struct li2_pg_compact *p,uintptr_t pc,const uin
 #ifdef LI2_PERSISTENT_BLOCK_PLAN
 #include "persistent_block_compact.inc"
 #endif
+
+#ifdef LI2_PERSISTENT_FUSED_PLAN
+#include "persistent_fused_compact.inc"
+#endif

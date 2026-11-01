@@ -977,3 +977,7 @@ int li2_pg_placement(uintptr_t entry,const struct li2_pg_layout *layout) {
 #ifdef LI2_PERSISTENT_BLOCK_PLAN
 #include "persistent_block_plan.inc"
 #endif
+
+#ifdef LI2_PERSISTENT_FUSED_PLAN
+#include "persistent_fused_plan.inc"
+#endif
