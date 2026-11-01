@@ -1,0 +1,6 @@
+revision,hardware,stage,exit_code,elapsed_seconds,wall_limit_seconds,passed,failed,ignored
+a0fe83a84878233ff678d8f5bc9d3db3547ca9b5,AMD EPYC Zen 5 dev host,fmt,0,10.156721499050036,180,,,
+a0fe83a84878233ff678d8f5bc9d3db3547ca9b5,AMD EPYC Zen 5 dev host,clippy,0,32.69853999093175,180,,,
+a0fe83a84878233ff678d8f5bc9d3db3547ca9b5,AMD EPYC Zen 5 dev host,check,0,22.512477854033932,180,,,
+a0fe83a84878233ff678d8f5bc9d3db3547ca9b5,AMD EPYC Zen 5 dev host,workspace,0,756.9494231829885,900,4297,0,39
+a0fe83a84878233ff678d8f5bc9d3db3547ca9b5,AMD EPYC Zen 5 dev host,serial-launch,0,140.41411062399857,180,1039,0,0
