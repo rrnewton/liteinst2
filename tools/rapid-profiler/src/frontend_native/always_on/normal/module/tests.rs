@@ -173,8 +173,8 @@ fn snapshot(s: &NormalState) -> Snapshot {
             actual_summary: p.receipt.summary(),
             returned: p.returned,
         }),
-        records: s.records,
-        functions: s.functions,
+        records: *s.records,
+        functions: *s.functions,
         journal: s.journal.page.0,
         len: s.len,
         next: s.next,
@@ -521,12 +521,14 @@ fn module_transfer_checks_every_word_and_final_function_tag_before_finish() {
         f.state.journal.word(i, word);
     }
     let tag = f.state.functions[0];
-    f.state.functions[0] = Some(f.state.selection(1).unwrap());
+    f.state
+        .functions
+        .set(0, Some(f.state.selection(1).unwrap()));
     f.refused_transfer();
-    f.state.functions[0] = tag;
-    f.state.functions[1] = tag;
+    f.state.functions.set(0, tag);
+    f.state.functions.set(1, tag);
     f.refused_transfer();
-    f.state.functions[1] = None;
+    f.state.functions.set(1, None);
     let pending = f.state.pending.as_ref().unwrap().selected;
     let other = f.state.selection(0).unwrap();
     f.state.pending.as_mut().unwrap().selected = other;

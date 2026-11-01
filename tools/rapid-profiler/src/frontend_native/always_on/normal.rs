@@ -52,6 +52,8 @@ pub(super) fn module_session_binding_matches(binding: &Binding) -> bool {
 }
 
 const CALLS: usize = EVENTS / 2;
+mod presence;
+use presence::PresenceSlots;
 
 /// Contract-based return acknowledgement, distinct from an observed physical RET.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -422,8 +424,8 @@ struct NormalState {
     stack: ReadableStack,
     model: ThreadModel,
     pending: Option<Pending>,
-    records: [Option<NormalRecord>; CALLS],
-    functions: [Option<SelectedFunction>; CALLS],
+    records: PresenceSlots<NormalRecord>,
+    functions: PresenceSlots<SelectedFunction>,
     len: usize,
     next: u64,
     totals: NormalTotals,
@@ -751,8 +753,8 @@ impl NormalState {
             stack,
             model,
             pending: None,
-            records: [None; CALLS],
-            functions: [None; CALLS],
+            records: PresenceSlots::empty(),
+            functions: PresenceSlots::empty(),
             len: 0,
             next: 1,
             totals: NormalTotals::default(),
@@ -800,10 +802,8 @@ impl NormalState {
             || self.model.identity() != self.registration
             || self.model.depth() != usize::from(sampled)
             || self.journal.used() != self.len * 2 + outstanding as usize + returned as usize
-            || self.records[..self.len].iter().any(Option::is_none)
-            || self.records[self.len..].iter().any(Option::is_some)
-            || self.functions[..self.len].iter().any(Option::is_none)
-            || self.functions[self.len..].iter().any(Option::is_some)
+            || !self.records.is_prefix(self.len)
+            || !self.functions.is_prefix(self.len)
         {
             return Err(error(Cause::Invariant));
         }
@@ -1073,8 +1073,8 @@ impl NormalState {
         {
             return Err(error(Cause::Invariant));
         }
-        self.records[self.len] = Some(record);
-        self.functions[self.len] = Some(p.selected);
+        self.records.set(self.len, Some(record));
+        self.functions.set(self.len, Some(p.selected));
         self.len += 1;
         self.totals = totals;
         self.pending = None;
@@ -1219,8 +1219,8 @@ impl NormalState {
         if let Some(accuracy) = &mut self.accuracy {
             accuracy.transferred();
         }
-        self.records = [None; CALLS];
-        self.functions = [None; CALLS];
+        self.records.clear();
+        self.functions.clear();
         self.len = 0;
         for i in 0..512 {
             self.journal.word(i, 0);

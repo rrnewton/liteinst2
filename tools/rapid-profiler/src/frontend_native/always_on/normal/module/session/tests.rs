@@ -165,8 +165,8 @@ fn snapshot(s: &NormalState) -> Snapshot {
             actual_summary: p.receipt.summary(),
             returned: p.returned,
         }),
-        records: s.records,
-        functions: s.functions,
+        records: *s.records,
+        functions: *s.functions,
         journal: s.journal.page.0,
         len: s.len,
         next: s.next,
@@ -754,9 +754,11 @@ fn session_transfer_preserves_function_tags_all_512_words_and_receipt_on_refusal
         f.state.journal.word(i, word);
     }
     let saved = f.state.functions[0];
-    f.state.functions[0] = Some(f.state.selection(1).unwrap());
+    f.state
+        .functions
+        .set(0, Some(f.state.selection(1).unwrap()));
     f.refused_transfer();
-    f.state.functions[0] = saved;
+    f.state.functions.set(0, saved);
     let selected = f.state.pending.as_ref().unwrap().selected;
     f.state.pending.as_mut().unwrap().selected = f.state.selection(0).unwrap();
     f.refused_transfer();
