@@ -25,7 +25,34 @@ ordinary and early point actions; mandatory callbacks keep AfterCapture.
 
 This is correctness evidence for an opt-in point mechanism. It supplies no
 performance result, interval conversion, signal/unwind qualification, topology
-coverage or complete A4 release claim. Qualification results are pending.
+coverage or complete A4 release claim.
+
+The [focused results](focused.json) passed at `0a9d29ed3cd13e0de7ff5112f0844d2bbbaeed69`:
+9 core tests, 2 planner tests, 1,264 static trace comparisons, four real-writer
+race cases (eight candidate traces and 40 restored-state boundaries), and both
+profiler contract paths. The straight-line fixture checks 24 actual post-load
+visits: 12 helper entries and 12 bypasses. The race cases toggle the real control
+after its byte load; they distinguish a bypass from dispatcher suppression.
+The 86 selected top-level harness passes include 70 inherited calibrations;
+eight nested child passes are recorded separately.
+
+The [full gate](validation.json) passed at
+`c905387ff48720a1e0230d4b2e966edea167f8f8`: formatting, strict workspace Clippy,
+all-target checking, 4,502 top-level workspace tests (39 unchanged ignores;
+11 controlled child passes counted separately), and 1,039 serial launch tests.
+All prior allocation, mapping-identity and exec-map regressions passed under
+the 12-thread parallel harness. This revision stores two finalized private
+arrays as boxed slices; all emitter operations and test assertions remain
+unchanged from the focused revision. The full suite executes every new oracle
+on the final source. Command durations in the records are operational wall
+times, not performance measurements.
+
+All earlier outcomes remain visible: a compilation failure before tests ran,
+a straight-line exact-byte failure caused by a redundant MOVZX displacement,
+and the first full gate's enum-size Clippy failure. Fixes changed names/types,
+emitted encoding and private storage respectively. No comparator, exact-byte
+witness, test population, lint or resource bound was weakened. No failed run
+was relabelled as a pass.
 
 From a clean checkout at the recorded source revision, use a direct installed
 stable Rust toolchain in PATH, create `ignored/a4`, then run:
