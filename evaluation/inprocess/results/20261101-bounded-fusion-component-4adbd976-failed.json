@@ -1,0 +1,145 @@
+{
+  "archive": {
+    "bytes": 11961622,
+    "mode": "0644",
+    "sha256": "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d"
+  },
+  "archive_builds": 0,
+  "archive_source_provenance_verified": false,
+  "build": {
+    "bounds": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "duration_ns": 2628649993,
+    "exit": 0,
+    "name": "bounded_fusion_plan-build",
+    "reaped": true,
+    "timed_out": false
+  },
+  "cleanup_complete": true,
+  "collector_summary": {
+    "bytes": 33540,
+    "sha256": "c3bfb8a01e0ec7eee63a5031b698e233f222b8be9ec9624a43f7510dfd7e4f65"
+  },
+  "commands": {
+    "failed": 1,
+    "succeeded": 43,
+    "total": 44
+  },
+  "component": {
+    "bounds": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "duration_ns": 1559785792,
+    "exit": -6,
+    "name": "bounded_fusion_plan-component",
+    "reaped": true,
+    "timed_out": false
+  },
+  "cpu": 20,
+  "failure": {
+    "assertion": "li2_pf_compact_validate(&bad,&scratch,&rebuilt)==LI2_PG_CORRUPT",
+    "line": 201,
+    "observed_case_index": null,
+    "result_counters": null,
+    "source_file": "tools/page-entry/selected/tests/bounded_fusion_plan/oracle.c"
+  },
+  "final_error_count": 0,
+  "generated_execution": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 20,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "native_execution": 0,
+  "original_corruption_assertions_removed": 0,
+  "original_corruption_cases_required": 14,
+  "owner_credit": false,
+  "performance_credit": false,
+  "private_receipt": {
+    "bytes": 228476,
+    "sha256": "ab9f67b2b9e2298e454fa4855a03bb5b60df99aaf1f30b807ffe9878abb49c4e"
+  },
+  "profile": "experimental-bounded-fused-component-v1",
+  "qualification_credit": false,
+  "recipe": {
+    "bytes": 1288,
+    "mode": "0755",
+    "sha256": "052e563facea68ac602557f7e57015c4bca0bbe3dcd3ed37312d67ce10549d94"
+  },
+  "reproduction": {
+    "argv": [
+      "python3",
+      "-B",
+      "evaluation/inprocess/bounded_fusion_component/run.py",
+      "--expect-revision",
+      "4adbd97660ab181e817a4e50e177c10a9adedd35",
+      "--archive",
+      "target/release/libli2_page_selected_decoder.a",
+      "--archive-sha256",
+      "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d",
+      "--cpu",
+      "20",
+      "--output",
+      "target/evaluation/inprocess/bounded-fusion-component-attempt-1"
+    ],
+    "bounds": {
+      "build": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "component": [
+        5,
+        536870912,
+        16777216,
+        15
+      ]
+    },
+    "compiler": {
+      "bytes": 1093144,
+      "mode": "0755",
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "output_must_not_exist": true,
+    "python_binary": {
+      "bytes": 13542408,
+      "mode": "0755",
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "reservation": "one externally reserved CPU",
+    "working_directory": "repository root"
+  },
+  "schema": 1,
+  "source": {
+    "head_sources_match": true,
+    "revision": "4adbd97660ab181e817a4e50e177c10a9adedd35",
+    "source_manifest_sha256": "dc29d674a3051a8cca74c901f9f83dfe1dfbfe8d1d69a960401d9c7f16bfeea8",
+    "tracked_clean": true,
+    "tree": "04663cc495ea288a0fb235bb47c8d5d0894888cd"
+  },
+  "source_unchanged": true,
+  "status": "failed"
+}

@@ -1,6 +1,18 @@
 /* Separate opt-in partition; unchanged BFS helpers and emitter stay above. */
 #include "persistent_fused_plan.h"
 
+/* A canonical tree alone does not bind its ranges to this publication. A
+   shortened source range can still be canonical while admitting a write to
+   the source. Every known source and private extent must be fully excluded.
+   The caller first validates the canonical tree and all address bounds. */
+static int pf_excluded(const struct li2_mg_table *table,uintptr_t first,size_t bytes) {
+    for(unsigned i=0;i<table->count;i++) {
+        const struct li2_mg_node *n=&table->node[i];
+        if(n->first<=first && first<n->end && bytes<=n->end-first)return 1;
+    }
+    return 0;
+}
+
 static int pf_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
     struct node q[LI2_PG_HEADS+LI2_PG_BOUNDARIES]={0};unsigned n=0;
     unsigned char occupied[LI2_PE_SOURCES][LI2_REGION_PAGE]={{0}};
@@ -163,6 +175,8 @@ int li2_pf_plan_pages(const uintptr_t pages[2],const unsigned char source[2][LI2
         for(unsigned j=0;j<i;j++)if(overlap(at[i],bytes[i],at[j],bytes[j]))goto done;
     }
     for(unsigned i=0;i<8;i++)if(overlap(layout->directory,LI2_JD_DOMAIN_BYTES,at[i],bytes[i]))goto done;
+    for(unsigned i=0;i<8;i++)if(!pf_excluded(table,at[i],bytes[i]))goto done;
+    if(!pf_excluded(table,layout->directory,LI2_JD_DOMAIN_BYTES))goto done;
     copy(out->page,pages,sizeof out->page);copy(out->source,source,sizeof out->source);
     out->entry=entry;out->layout=*layout;copy(&out->table,table,sizeof *table);
     unsigned page,offset;if(!location(out,entry,&page,&offset))goto done;
