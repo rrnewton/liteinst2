@@ -421,7 +421,7 @@ def pair(native,gated,owner):
          d['frontier_pc']==page+0x221 and d['frontier_target']==page+0x223,
          'actual peer conditional unknown arm and exact original target')
     cancelled=owner['cancellation']
-    need((cancelled['reason'],cancelled['detail'],cancelled['source_released'],cancelled['generated_entries'],cancelled['publications'],cancelled['completion_permits'],cancelled['ordinary_store_executed'])==(1,5,1,0,0,0,1),'actual unsupported-store miss cancels without publication or completion authority')
+    need((cancelled['reason'],cancelled['detail'],cancelled['source_released'],cancelled['generated_entries'],cancelled['publications'],cancelled['completion_permits'],cancelled['ordinary_store_executed'])==(1,1,1,0,0,0,1),'actual unsupported-store miss cancels without publication or completion authority')
     need(cancelled['ordinal']==d['next_trace_ordinal']and cancelled['next_ordinal']==cancelled['ordinal']+1,'same-handler cancellation precedes its next actual TRACE')
     compare(cancelled['before'],frames[9],'closed',page+0x221)
     compare(cancelled['returned'],frames[9],'original',page+0x221)

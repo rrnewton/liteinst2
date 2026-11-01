@@ -1,0 +1,762 @@
+{
+  "base_command_schedule": [
+    [
+      "tracked-input-list",
+      "metadata"
+    ],
+    [
+      "resolve-cargo",
+      "metadata"
+    ],
+    [
+      "resolve-rustc",
+      "metadata"
+    ],
+    [
+      "resolve-cc1",
+      "metadata"
+    ],
+    [
+      "resolve-collect2",
+      "metadata"
+    ],
+    [
+      "resolve-as",
+      "metadata"
+    ],
+    [
+      "resolve-ld",
+      "metadata"
+    ],
+    [
+      "version-cc",
+      "metadata"
+    ],
+    [
+      "version-cargo",
+      "metadata"
+    ],
+    [
+      "version-rustc",
+      "metadata"
+    ],
+    [
+      "version-python",
+      "metadata"
+    ],
+    [
+      "cargo-metadata",
+      "metadata"
+    ],
+    [
+      "default-headers-0",
+      "metadata"
+    ],
+    [
+      "default-headers-1",
+      "metadata"
+    ],
+    [
+      "selected-build",
+      "build"
+    ],
+    [
+      "archive-text-exports",
+      "inspect"
+    ],
+    [
+      "bridge-undefined",
+      "inspect"
+    ],
+    [
+      "bridge-elf",
+      "inspect"
+    ],
+    [
+      "generic-observer-headers",
+      "metadata"
+    ],
+    [
+      "generic-observer-link",
+      "metadata"
+    ],
+    [
+      "app-interpreter-headers",
+      "metadata"
+    ],
+    [
+      "app-interpreter-link",
+      "release_build"
+    ],
+    [
+      "app-interpreter-undefined",
+      "inspect"
+    ],
+    [
+      "app-interpreter-symbols",
+      "inspect"
+    ],
+    [
+      "app-headers",
+      "metadata"
+    ],
+    [
+      "app-link",
+      "release_build"
+    ],
+    [
+      "app-undefined",
+      "inspect"
+    ],
+    [
+      "app-elf",
+      "inspect"
+    ],
+    [
+      "app-objdump-version",
+      "metadata"
+    ],
+    [
+      "app-symbols",
+      "inspect"
+    ],
+    [
+      "app-body-main",
+      "inspect"
+    ],
+    [
+      "app-body-collect",
+      "inspect"
+    ],
+    [
+      "app-body-copy",
+      "inspect"
+    ],
+    [
+      "app-body-same",
+      "inspect"
+    ],
+    [
+      "app-body-ua_data_pattern",
+      "inspect"
+    ],
+    [
+      "app-body-ua_stack_pattern",
+      "inspect"
+    ],
+    [
+      "app-copy-headers",
+      "finite"
+    ],
+    [
+      "app-pure-preprocess",
+      "finite"
+    ],
+    [
+      "copy-pure-preprocess",
+      "finite"
+    ],
+    [
+      "app-copy-link",
+      "finite"
+    ],
+    [
+      "app-copy-symbols",
+      "finite"
+    ],
+    [
+      "app-copy-body",
+      "finite"
+    ],
+    [
+      "app-copy-libraries",
+      "finite"
+    ],
+    [
+      "app-copy-run",
+      "finite"
+    ],
+    [
+      "policy-headers",
+      "metadata"
+    ],
+    [
+      "policy-link",
+      "release_build"
+    ],
+    [
+      "seed-headers",
+      "metadata"
+    ],
+    [
+      "seed-link",
+      "release_build"
+    ],
+    [
+      "seed-libraries",
+      "inspect"
+    ],
+    [
+      "seed-prerequisite",
+      "seed"
+    ],
+    [
+      "maintained-persistent-group-policy-binding",
+      "metadata"
+    ],
+    [
+      "maintained-cross-pair-capture-binding",
+      "metadata"
+    ],
+    [
+      "maintained-persistent-group-release-headers",
+      "metadata"
+    ],
+    [
+      "maintained-persistent-group-release-link",
+      "release_build"
+    ],
+    [
+      "maintained-persistent-group-release-undefined",
+      "inspect"
+    ],
+    [
+      "maintained-persistent-group-release-symbols",
+      "inspect"
+    ],
+    [
+      "maintained-persistent-group-objdump-version",
+      "metadata"
+    ],
+    [
+      "maintained-persistent-group-release-memset",
+      "inspect"
+    ],
+    [
+      "maintained-persistent-group-gdb-version",
+      "inspect"
+    ],
+    [
+      "maintained-persistent-group-protected-extents",
+      "inspect"
+    ],
+    [
+      "maintained-persistent-retained-two-extents",
+      "inspect"
+    ],
+    [
+      "maintained-persistent-subentry-extents",
+      "inspect"
+    ],
+    [
+      "maintained-persistent-cross-pair-extents",
+      "inspect"
+    ],
+    [
+      "maintained-persistent-direct-frontier-extents",
+      "inspect"
+    ],
+    [
+      "maintained-persistent-fused-capture-extents",
+      "inspect"
+    ],
+    [
+      "maintained-span-bytes-headers-0",
+      "metadata"
+    ],
+    [
+      "maintained-span-bytes-link",
+      "release_build"
+    ],
+    [
+      "maintained-span-bytes-native-libraries",
+      "metadata"
+    ],
+    [
+      "maintained-span-bytes-oracle",
+      "finite"
+    ],
+    [
+      "maintained-capture-raw-symbols",
+      "inspect"
+    ],
+    [
+      "maintained-capture-raw-body",
+      "inspect"
+    ],
+    [
+      "maintained-layout-gdb-version",
+      "metadata"
+    ],
+    [
+      "maintained-owner-layout",
+      "inspect"
+    ],
+    [
+      "maintained-carrier",
+      "program"
+    ],
+    [
+      "differential-persistent-group-policy-binding",
+      "metadata"
+    ],
+    [
+      "differential-cross-pair-capture-binding",
+      "metadata"
+    ],
+    [
+      "differential-persistent-group-release-headers",
+      "metadata"
+    ],
+    [
+      "differential-persistent-group-release-link",
+      "release_build"
+    ],
+    [
+      "differential-persistent-group-release-undefined",
+      "inspect"
+    ],
+    [
+      "differential-persistent-group-release-symbols",
+      "inspect"
+    ],
+    [
+      "differential-persistent-group-objdump-version",
+      "metadata"
+    ],
+    [
+      "differential-persistent-group-release-memset",
+      "inspect"
+    ],
+    [
+      "differential-persistent-group-gdb-version",
+      "inspect"
+    ],
+    [
+      "differential-persistent-group-protected-extents",
+      "inspect"
+    ],
+    [
+      "differential-persistent-retained-two-extents",
+      "inspect"
+    ],
+    [
+      "differential-persistent-subentry-extents",
+      "inspect"
+    ],
+    [
+      "differential-persistent-cross-pair-extents",
+      "inspect"
+    ],
+    [
+      "differential-persistent-direct-frontier-extents",
+      "inspect"
+    ],
+    [
+      "differential-persistent-fused-capture-extents",
+      "inspect"
+    ],
+    [
+      "differential-span-bytes-headers-0",
+      "metadata"
+    ],
+    [
+      "differential-span-bytes-link",
+      "release_build"
+    ],
+    [
+      "differential-span-bytes-native-libraries",
+      "metadata"
+    ],
+    [
+      "differential-span-bytes-oracle",
+      "finite"
+    ],
+    [
+      "differential-capture-raw-symbols",
+      "inspect"
+    ],
+    [
+      "differential-capture-raw-body",
+      "inspect"
+    ],
+    [
+      "differential-layout-gdb-version",
+      "metadata"
+    ],
+    [
+      "differential-owner-layout",
+      "inspect"
+    ],
+    [
+      "differential-carrier",
+      "program"
+    ],
+    [
+      "subject-native-0-0",
+      "program"
+    ],
+    [
+      "subject-maintained-0-0",
+      "program"
+    ],
+    [
+      "subject-differential-0-0",
+      "program"
+    ]
+  ],
+  "helper": {
+    "bytes": 23248,
+    "sha256": "58549e76c773344c60a3a46456231e8fae7ce2fac1c396b992809330fedd7178"
+  },
+  "historical_readers": {
+    "b2_reference/xstate.py": {
+      "bytes": 6702,
+      "sha256": "5be15395bd5312da577231f0d1b9c8b2dba89a2570d19aa5d747c11b1de6995a"
+    },
+    "capture_rle/controls.py": {
+      "bytes": 4605,
+      "sha256": "eebd8c13f52be92956797c82139fe6a0225b003ceb37fbec84374ed8a617d6ec"
+    },
+    "capture_rle/read.py": {
+      "bytes": 4501,
+      "sha256": "6aa4977effd1c6f1ef69f32b9f368b267d579aaeb957bf223030e02eb027b944"
+    },
+    "cpuid_nx/reports.py": {
+      "bytes": 14319,
+      "sha256": "4b0fff13fad91a509c04bf76ba1fa9878a98a02fd8e7f4d9ebd4ed1a47edff33"
+    },
+    "cross_page_handoff/prepare.py": {
+      "bytes": 2693,
+      "sha256": "8c5169337363e971233d0de9cd47646e5919f45245ee1773b85898bf745afba5"
+    },
+    "empty_namespace/prepare.py": {
+      "bytes": 1071,
+      "sha256": "1261e4c5fb5f4b111d3e056c781d54771cfade51c4944a92934a893b099f9f00"
+    },
+    "persistent_active_domain/prepare.py": {
+      "bytes": 4041,
+      "sha256": "d7a2e86f07c2de9aab525130758a2cd6175a7e5bf17999ead8b3704ca8e714a0"
+    },
+    "persistent_block_app/read.py": {
+      "bytes": 38702,
+      "sha256": "421c344ff53a1f4c359ae0c121068ab26936501e2bb8fb3040c612f4d2c2cc15"
+    },
+    "persistent_block_owner/direct_history.py": {
+      "bytes": 7706,
+      "sha256": "e1c02fb04ef18b9cdfe222f6fda8af8f5c553da5a487150c76167f6fadebd3ce"
+    },
+    "persistent_block_owner/layout.py": {
+      "bytes": 6816,
+      "sha256": "b5f99f23b56576db711e832730e1e9d5e0736e22b59218d8a7637e1683b1ac76"
+    },
+    "persistent_block_owner/plan.py": {
+      "bytes": 8848,
+      "sha256": "48ac4a605eca038b4e9f4269eaaa1f90549fb5fcbc05cfe63dfa60de68ce9628"
+    },
+    "persistent_block_owner/read.py": {
+      "bytes": 80496,
+      "sha256": "45bd47c4ea62114e4dc76841c3fbfba4b2f187cbec8f0769cd4b6a7251549d26"
+    },
+    "persistent_block_owner/wire.py": {
+      "bytes": 5032,
+      "sha256": "970b6e7afda3ef0d7fd695dc41fcd7620e3f02c0726bded3347640379c89ddfc"
+    },
+    "persistent_direct_frontier_app/launch.py": {
+      "bytes": 8821,
+      "sha256": "9eaa2a3f84cc35501aef978b35768bf5ead32ededb9fb2432bffe3a4ce9c3089"
+    },
+    "persistent_direct_frontier_app/read.py": {
+      "bytes": 35492,
+      "sha256": "273cd7c05858c889bef229d2f32439ee794e8f3107bf04d8e5d21457f2f12b71"
+    },
+    "persistent_direct_frontier_owner/direct_history.py": {
+      "bytes": 7573,
+      "sha256": "6bcb723d0d914539077ce527da7e2fd14b90c2b831ebb01d01764d21261f5a04"
+    },
+    "persistent_direct_frontier_owner/layout.py": {
+      "bytes": 6836,
+      "sha256": "4c596ebdac5a67c712169ddb5a4d63a4ecb264eb960388b0a0a704a9cf6210bd"
+    },
+    "persistent_direct_frontier_owner/plan.py": {
+      "bytes": 24655,
+      "sha256": "9f451383592a582085679f50a5d0316f5f2ec03c8b71a529201a273d420f4314"
+    },
+    "persistent_direct_frontier_owner/read.py": {
+      "bytes": 155896,
+      "sha256": "b7826a043aaee74c530f2dcdd70152c05937810b12b127a15b395889c68e39ff"
+    },
+    "persistent_direct_frontier_owner/wire.py": {
+      "bytes": 51413,
+      "sha256": "acbf3d0d23b1e35af10bdbe0dd4f5e71b2d99a22d1254fbea8f9bb501340f357"
+    },
+    "persistent_fused_app/read.py": {
+      "bytes": 40754,
+      "sha256": "08aeb3a11199c6f2c2bb4a66d5402fdeddeba273c3371faf2217b772cba58364"
+    },
+    "persistent_fused_owner/direct_history.py": {
+      "bytes": 7856,
+      "sha256": "ff20b83dfd22d323a12239965d60935b18af967ca52d060c08109d8e407483fe"
+    },
+    "persistent_fused_owner/layout.py": {
+      "bytes": 7140,
+      "sha256": "b20678f2af72ae217418ea4201485f01f11a60176a21b24229559eeddd74c010"
+    },
+    "persistent_fused_owner/plan.py": {
+      "bytes": 16232,
+      "sha256": "0abf6fe1c78918154f48c6c3af071b8e9888a7c3c55134f1379643851513696c"
+    },
+    "persistent_fused_owner/read.py": {
+      "bytes": 88297,
+      "sha256": "cb07acd8dea117393a2c9a2b1712f04871acf35a1d1a6bf1437eb5ad06b0963c"
+    },
+    "persistent_fused_owner/wire.py": {
+      "bytes": 6257,
+      "sha256": "2115803cf7808c780f2bb7b8421413d2abe77a22ec27f0a44ec3d1b2f4f06a81"
+    },
+    "persistent_subentry/prepare.py": {
+      "bytes": 4322,
+      "sha256": "f5ee322415e5f4a5f869cf47db371dfa2d9fd24e5ba5a3d50d1811189c5797d2"
+    },
+    "provider_app/seed_probe/read.py": {
+      "bytes": 6519,
+      "sha256": "49e8dcb1cf9c1672fea4579e0a7336c3de5901aa692b4fc442e7b9d24a669e82"
+    },
+    "rseq_native/reports.py": {
+      "bytes": 6089,
+      "sha256": "9fedd6737caa72ee7dd01e3975598377d14a8729494b5cce4f1271bcbec5fe9c"
+    },
+    "rseq_native_boundary/reports.py": {
+      "bytes": 5470,
+      "sha256": "30d8351ccbfb947de3c2d5897f4876c3e45bf0d62584aa189aee56a3ee896b2c"
+    },
+    "unrolled_hash_owner/read.py": {
+      "bytes": 90362,
+      "sha256": "c649ab30308a8f4717dd2ce385e77869f0ebc870d7a2f20da86f92dc6670748c"
+    }
+  },
+  "pair_control_names": [
+    "logical_AF",
+    "logical_CR2",
+    "full_FP",
+    "store_effect",
+    "next_trace_PC",
+    "next_trace_AF",
+    "B_before_RAX",
+    "A_cold_exit_RAX",
+    "primary_generation",
+    "peer_generation",
+    "joint_claim",
+    "joint_extent",
+    "cold_A_store",
+    "cold_B_store",
+    "domain_before_store",
+    "domain_stack",
+    "four_source_pages",
+    "peer_source_byte",
+    "lifetime_mode",
+    "registration_epoch",
+    "registration_calls",
+    "word_observed",
+    "word_available",
+    "tls_complete",
+    "frontier_member",
+    "frontier_arm",
+    "frontier_pc",
+    "frontier_target",
+    "cancel_reason",
+    "cancel_detail",
+    "cancel_source_released",
+    "cancel_generated_entries",
+    "cancel_publications",
+    "cancel_completion_permits",
+    "cancel_next_PC",
+    "cancel_next_FP"
+  ],
+  "pair_expected": {
+    "cold_publications": 2,
+    "dual_entries": 1,
+    "generated_completed": 3,
+    "invocations": 1,
+    "joint_closed_pages": 34,
+    "joint_source_pages": 4,
+    "joint_source_pairs": 2,
+    "lifetime_mode": 2,
+    "measured_interior_signals": 0,
+    "modeled_cross_certificate_transfers": 0,
+    "modeled_final_frontier_instructions": 1,
+    "modeled_joint_retired_instructions": 1417,
+    "native_full_frames": 12,
+    "native_instructions": 2838,
+    "observed_bounded_fused": 1,
+    "ordinary_resumptions": 1,
+    "plan_version": 11,
+    "qualification_credit": false,
+    "registration_calls": 0,
+    "registration_epoch": 0,
+    "retained_generations": 2,
+    "shared_domain_lifetimes": 1,
+    "unsupported_root_cancellations": 1,
+    "warm_entries": 1,
+    "word_available": false,
+    "word_observed": 0
+  },
+  "readers": {
+    "b2_reference/xstate.py": {
+      "bytes": 6702,
+      "mode": 420,
+      "sha256": "5be15395bd5312da577231f0d1b9c8b2dba89a2570d19aa5d747c11b1de6995a"
+    },
+    "capture_rle/controls.py": {
+      "bytes": 4605,
+      "mode": 493,
+      "sha256": "eebd8c13f52be92956797c82139fe6a0225b003ceb37fbec84374ed8a617d6ec"
+    },
+    "capture_rle/read.py": {
+      "bytes": 4501,
+      "mode": 420,
+      "sha256": "6aa4977effd1c6f1ef69f32b9f368b267d579aaeb957bf223030e02eb027b944"
+    },
+    "cpuid_nx/reports.py": {
+      "bytes": 14319,
+      "mode": 420,
+      "sha256": "4b0fff13fad91a509c04bf76ba1fa9878a98a02fd8e7f4d9ebd4ed1a47edff33"
+    },
+    "cross_page_handoff/prepare.py": {
+      "bytes": 2693,
+      "mode": 493,
+      "sha256": "8c5169337363e971233d0de9cd47646e5919f45245ee1773b85898bf745afba5"
+    },
+    "empty_namespace/prepare.py": {
+      "bytes": 1071,
+      "mode": 493,
+      "sha256": "1261e4c5fb5f4b111d3e056c781d54771cfade51c4944a92934a893b099f9f00"
+    },
+    "persistent_active_domain/prepare.py": {
+      "bytes": 4041,
+      "mode": 493,
+      "sha256": "d7a2e86f07c2de9aab525130758a2cd6175a7e5bf17999ead8b3704ca8e714a0"
+    },
+    "persistent_block_app/read.py": {
+      "bytes": 38702,
+      "mode": 420,
+      "sha256": "421c344ff53a1f4c359ae0c121068ab26936501e2bb8fb3040c612f4d2c2cc15"
+    },
+    "persistent_block_owner/direct_history.py": {
+      "bytes": 7706,
+      "mode": 420,
+      "sha256": "e1c02fb04ef18b9cdfe222f6fda8af8f5c553da5a487150c76167f6fadebd3ce"
+    },
+    "persistent_block_owner/layout.py": {
+      "bytes": 6816,
+      "mode": 420,
+      "sha256": "b5f99f23b56576db711e832730e1e9d5e0736e22b59218d8a7637e1683b1ac76"
+    },
+    "persistent_block_owner/plan.py": {
+      "bytes": 8848,
+      "mode": 420,
+      "sha256": "48ac4a605eca038b4e9f4269eaaa1f90549fb5fcbc05cfe63dfa60de68ce9628"
+    },
+    "persistent_block_owner/read.py": {
+      "bytes": 80496,
+      "mode": 420,
+      "sha256": "45bd47c4ea62114e4dc76841c3fbfba4b2f187cbec8f0769cd4b6a7251549d26"
+    },
+    "persistent_block_owner/wire.py": {
+      "bytes": 5032,
+      "mode": 420,
+      "sha256": "970b6e7afda3ef0d7fd695dc41fcd7620e3f02c0726bded3347640379c89ddfc"
+    },
+    "persistent_direct_frontier_app/launch.py": {
+      "bytes": 8821,
+      "mode": 420,
+      "sha256": "9eaa2a3f84cc35501aef978b35768bf5ead32ededb9fb2432bffe3a4ce9c3089"
+    },
+    "persistent_direct_frontier_app/read.py": {
+      "bytes": 35492,
+      "mode": 420,
+      "sha256": "273cd7c05858c889bef229d2f32439ee794e8f3107bf04d8e5d21457f2f12b71"
+    },
+    "persistent_direct_frontier_owner/direct_history.py": {
+      "bytes": 7573,
+      "mode": 420,
+      "sha256": "6bcb723d0d914539077ce527da7e2fd14b90c2b831ebb01d01764d21261f5a04"
+    },
+    "persistent_direct_frontier_owner/layout.py": {
+      "bytes": 6836,
+      "mode": 420,
+      "sha256": "4c596ebdac5a67c712169ddb5a4d63a4ecb264eb960388b0a0a704a9cf6210bd"
+    },
+    "persistent_direct_frontier_owner/plan.py": {
+      "bytes": 24655,
+      "mode": 420,
+      "sha256": "9f451383592a582085679f50a5d0316f5f2ec03c8b71a529201a273d420f4314"
+    },
+    "persistent_direct_frontier_owner/read.py": {
+      "bytes": 155896,
+      "mode": 420,
+      "sha256": "b7826a043aaee74c530f2dcdd70152c05937810b12b127a15b395889c68e39ff"
+    },
+    "persistent_direct_frontier_owner/wire.py": {
+      "bytes": 51413,
+      "mode": 420,
+      "sha256": "acbf3d0d23b1e35af10bdbe0dd4f5e71b2d99a22d1254fbea8f9bb501340f357"
+    },
+    "persistent_fused_app/read.py": {
+      "bytes": 40754,
+      "mode": 420,
+      "sha256": "83fd4c9014f8934c3d4d2eccb1de97bc35325c1b64152ff3550adf0b1385f2bb"
+    },
+    "persistent_fused_owner/direct_history.py": {
+      "bytes": 7856,
+      "mode": 420,
+      "sha256": "ff20b83dfd22d323a12239965d60935b18af967ca52d060c08109d8e407483fe"
+    },
+    "persistent_fused_owner/layout.py": {
+      "bytes": 7140,
+      "mode": 420,
+      "sha256": "b20678f2af72ae217418ea4201485f01f11a60176a21b24229559eeddd74c010"
+    },
+    "persistent_fused_owner/plan.py": {
+      "bytes": 16232,
+      "mode": 420,
+      "sha256": "0abf6fe1c78918154f48c6c3af071b8e9888a7c3c55134f1379643851513696c"
+    },
+    "persistent_fused_owner/read.py": {
+      "bytes": 88454,
+      "mode": 420,
+      "sha256": "59f0c3277f55f3297289033b5c4b8edcde19fe5abdbab8c1719be75f35746073"
+    },
+    "persistent_fused_owner/wire.py": {
+      "bytes": 6257,
+      "mode": 420,
+      "sha256": "2115803cf7808c780f2bb7b8421413d2abe77a22ec27f0a44ec3d1b2f4f06a81"
+    },
+    "persistent_subentry/prepare.py": {
+      "bytes": 4322,
+      "mode": 493,
+      "sha256": "f5ee322415e5f4a5f869cf47db371dfa2d9fd24e5ba5a3d50d1811189c5797d2"
+    },
+    "provider_app/seed_probe/read.py": {
+      "bytes": 6519,
+      "mode": 420,
+      "sha256": "49e8dcb1cf9c1672fea4579e0a7336c3de5901aa692b4fc442e7b9d24a669e82"
+    },
+    "rseq_native/reports.py": {
+      "bytes": 6089,
+      "mode": 420,
+      "sha256": "9fedd6737caa72ee7dd01e3975598377d14a8729494b5cce4f1271bcbec5fe9c"
+    },
+    "rseq_native_boundary/reports.py": {
+      "bytes": 5470,
+      "mode": 420,
+      "sha256": "30d8351ccbfb947de3c2d5897f4876c3e45bf0d62584aa189aee56a3ee896b2c"
+    },
+    "unrolled_hash_owner/read.py": {
+      "bytes": 90362,
+      "mode": 420,
+      "sha256": "c649ab30308a8f4717dd2ce385e77869f0ebc870d7a2f20da86f92dc6670748c"
+    }
+  },
+  "schema": 1
+}

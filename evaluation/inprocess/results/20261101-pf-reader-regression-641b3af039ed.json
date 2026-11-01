@@ -1,0 +1,195 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_count": 1,
+    "cpu_seconds": 900,
+    "file_bytes": 16777216,
+    "wall_seconds": 1200
+  },
+  "child_commands": 0,
+  "cpu": 19,
+  "csv": {
+    "bytes": 313,
+    "file": "20261101-pf-reader-regression-641b3af039ed.csv",
+    "rows": 7,
+    "sha256": "b904c657b3288486ef3bf5571d4e16aae42dc8f0e0b72879d70cec60da00320f"
+  },
+  "driver": {
+    "bytes": 23327,
+    "path": "evaluation/inprocess/pf_reader_refusal_regression/replay.py",
+    "sha256": "c856ed48da3fd4de208caa4ac3fbd6d7d59abef215217e116ca800f6ee3f5604"
+  },
+  "duration_ns": 812136102757,
+  "errors": [],
+  "faults_replayed": false,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 3,
+    "runner_cap_eff": "0000000000000000",
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "hardware_scope": "Recorded subject hardware and CPU3; reader replay ran on reserved CPU19 on the same host.",
+  "historical_receipt": {
+    "bytes": 1796341,
+    "sha256": "a8c62be68aee68ee52ffb21052316dcdb779ab5f22f30cd24558b634ed92db07"
+  },
+  "historical_rejections": {
+    "differential": {
+      "error": "ValueError: exact li2_pg_miss.detail",
+      "status": "reproduced_rejection"
+    },
+    "maintained": {
+      "error": "ValueError: exact li2_pg_miss.detail",
+      "status": "reproduced_rejection"
+    }
+  },
+  "historical_revision": "641b3af039ede26bfe343f8196583a73bb9935e9",
+  "historical_status": "failed",
+  "inputs_unchanged": true,
+  "lanes": {
+    "differential": {
+      "control_counts": {
+        "owner_controls": 204,
+        "pair_controls": 36,
+        "pf_refusal_owner_controls": 28
+      },
+      "historical_owner": {
+        "error": "ValueError: exact li2_pg_miss.detail",
+        "status": "reproduced_rejection"
+      },
+      "historical_pair": {
+        "error": "ValueError: actual unsupported-store miss cancels without publication or completion authority",
+        "status": "reproduced_rejection"
+      },
+      "pair": {
+        "cold_publications": 2,
+        "dual_entries": 1,
+        "generated_completed": 3,
+        "invocations": 1,
+        "joint_closed_pages": 34,
+        "joint_source_pages": 4,
+        "joint_source_pairs": 2,
+        "lifetime_mode": 2,
+        "measured_interior_signals": 0,
+        "modeled_cross_certificate_transfers": 0,
+        "modeled_final_frontier_instructions": 1,
+        "modeled_joint_retired_instructions": 1417,
+        "native_full_frames": 12,
+        "native_instructions": 2838,
+        "observed_bounded_fused": 1,
+        "ordinary_resumptions": 1,
+        "plan_version": 11,
+        "qualification_credit": false,
+        "registration_calls": 0,
+        "registration_epoch": 0,
+        "retained_generations": 2,
+        "shared_domain_lifetimes": 1,
+        "unsupported_root_cancellations": 1,
+        "warm_entries": 1,
+        "word_available": false,
+        "word_observed": 0
+      },
+      "status": "passed"
+    },
+    "maintained": {
+      "control_counts": {
+        "owner_controls": 204,
+        "pair_controls": 36,
+        "pf_refusal_owner_controls": 28
+      },
+      "historical_owner": {
+        "error": "ValueError: exact li2_pg_miss.detail",
+        "status": "reproduced_rejection"
+      },
+      "historical_pair": {
+        "error": "ValueError: actual unsupported-store miss cancels without publication or completion authority",
+        "status": "reproduced_rejection"
+      },
+      "pair": {
+        "cold_publications": 2,
+        "dual_entries": 1,
+        "generated_completed": 3,
+        "invocations": 1,
+        "joint_closed_pages": 34,
+        "joint_source_pages": 4,
+        "joint_source_pairs": 2,
+        "lifetime_mode": 2,
+        "measured_interior_signals": 0,
+        "modeled_cross_certificate_transfers": 0,
+        "modeled_final_frontier_instructions": 1,
+        "modeled_joint_retired_instructions": 1417,
+        "native_full_frames": 12,
+        "native_instructions": 2838,
+        "observed_bounded_fused": 1,
+        "ordinary_resumptions": 1,
+        "plan_version": 11,
+        "qualification_credit": false,
+        "registration_calls": 0,
+        "registration_epoch": 0,
+        "retained_generations": 2,
+        "shared_domain_lifetimes": 1,
+        "unsupported_root_cancellations": 1,
+        "warm_entries": 1,
+        "word_available": false,
+        "word_observed": 0
+      },
+      "status": "passed"
+    },
+    "native": {
+      "control_counts": {
+        "application_controls": 40
+      },
+      "status": "passed"
+    }
+  },
+  "new_subjects": 0,
+  "performance_credit": false,
+  "qualification_credit": false,
+  "readers": {
+    "persistent_fused_app/read.py": {
+      "bytes": 40754,
+      "mode": 420,
+      "sha256": "83fd4c9014f8934c3d4d2eccb1de97bc35325c1b64152ff3550adf0b1385f2bb"
+    },
+    "persistent_fused_owner/read.py": {
+      "bytes": 88454,
+      "mode": 420,
+      "sha256": "59f0c3277f55f3297289033b5c4b8edcde19fe5abdbab8c1719be75f35746073"
+    }
+  },
+  "receipt": {
+    "bytes": 140710,
+    "path": "target/evaluation/inprocess/pf-reader-refusal-regression-attempt-1/receipt.json",
+    "sha256": "779a797f71263db82652a72098eb4381c3abb071047bdecc0b107eb0e7af8bb4"
+  },
+  "reproduce": [
+    "timeout",
+    "--signal=TERM",
+    "--kill-after=5s",
+    "1200s",
+    "python3",
+    "-B",
+    "evaluation/inprocess/pf_reader_refusal_regression/replay.py",
+    "--cpu",
+    "RESERVED_CPU",
+    "--output",
+    "target/evaluation/inprocess/pf-reader-refusal-regression-fresh"
+  ],
+  "reproduce_inputs": "Retained exact failed attempt2 corpus, readers and INPUTS.json; reserve one CPU. The tracked four native drivers recorded in the failure summary reproduce the original experiment.",
+  "retained_subject_cpu": 3,
+  "schema": 1,
+  "scope": "reader_regression_only",
+  "status": "passed",
+  "terminal_reports_replayed": false,
+  "timing_scope": "Offline validation elapsed time only; no guest performance comparison."
+}

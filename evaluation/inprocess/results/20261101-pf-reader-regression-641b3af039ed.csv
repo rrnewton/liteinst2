@@ -1,0 +1,8 @@
+lane,population,refused,status
+differential,owner_controls,204,passed
+differential,pair_controls,36,passed
+differential,pf_refusal_owner_controls,28,passed
+maintained,owner_controls,204,passed
+maintained,pair_controls,36,passed
+maintained,pf_refusal_owner_controls,28,passed
+native,application_controls,40,passed

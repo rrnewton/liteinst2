@@ -643,7 +643,9 @@ class Check(prior.Check):
             for k in('before','observed','after','current_observed','current_after','domain_ref'):zero(self.f(pin,rt,k),'no fabricated registered or domain observation in cancellation '+k)
         need(self.i(self.f(resumed,st,'rseq'),rt,'raw_checks')>self.i(self.f(held,st,'rseq'),rt,'raw_checks')>0,'real completed unregistered cancel queries')
         need(self.f(held,st,'state')==self.f(resumed,st,'state')==self.f(self.f(self.epochs[2],'pdo_epoch','terminal'),st,'state'),'no cold or generated instruction proof during unsupported-root cancellation')
-        miss=self.f(b,t,'miss');self.eq(miss,'li2_pg_miss',version=11,status=1,reason=1,site=1,pc=pc,detail=5)
+        # 66 89 07 is outside both scalar and guarded-store Code domains:
+        # its exact refusal is UNSUPPORTED (1), not the PB fixture's OPERANDS (5).
+        miss=self.f(b,t,'miss');self.eq(miss,'li2_pg_miss',version=11,status=1,reason=1,site=1,pc=pc,detail=1)
         p=self.f(b,t,'plan');ft='li2_pg_plan';full=bytearray(self.r.types[ft]['bytes'])
         for k in('version','bytes','ready','result','heads','exits','stores','source_bytes','source_mask','decoder_result','guard_result','reserved','member_heads','links','reserved2','page','entry','layout','source','table'):
             f=self.r.types[ft]['fields'][k];value=self.f(p,ct,k);need(len(value)==f['bytes'],'whole unready PB field extent');full[f['offset']:f['offset']+f['bytes']]=value
@@ -654,7 +656,7 @@ class Check(prior.Check):
         need(q(self.f(full,ft,'page'))==(self.page,self.page+PAGE)and self.f(full,ft,'layout')==self.f(hp,pt,'layout')and self.f(full,ft,'source')==self.app['source'][:8192],'whole unready PB plan prefix and both source pages')
         need(self.f(full,ft,'table')==plan.table(self.ranges+[(self.page+i*PAGE,self.page+(i+1)*PAGE)for i in range(4)],self.table),'whole cancelled-plan exclusion table')
         for k in('member_heads','image','stub_image','head','original','frontier','instruction','exit_pc','edge','guard'):zero(self.f(full,ft,k),'unready PB miss has no invented authority')
-        return dict(serial=serial,ordinal=h[1],next_ordinal=h[11],before=before,returned=returned,next=nxt,reason=1,detail=5,source_released=1,generated_entries=0,publications=0,completion_permits=0,ordinary_store_executed=1,counts_raw=self.f(resumed,st,'counts'))
+        return dict(serial=serial,ordinal=h[1],next_ordinal=h[11],before=before,returned=returned,next=nxt,reason=1,detail=1,source_released=1,generated_entries=0,publications=0,completion_permits=0,ordinary_store_executed=1,counts_raw=self.f(resumed,st,'counts'))
 
 
 def read(data,layout,image,app,pid,cpu,exit_status):
