@@ -1043,9 +1043,22 @@ fn whole_fitting_admits_alternate_tactic_but_retains_full_atomic_refusal() {
             assert_eq!(low.refusal_code, Some(10_003));
             assert_eq!(low.refusal.as_ref().unwrap().stage, "atomic-selection");
             let evidence = &low.diagnostics;
-            assert!(
-                evidence.find("tactic: GeneralizedPun,").unwrap()
-                    < evidence.find("tactic: Relocation,").unwrap()
+            // Winning leaf metrics precede the ordered engine attempts and also
+            // contain tactic fields. Compare only the two EngineAttempt records.
+            let attempted_tactics = evidence
+                .split("EngineAttempt {")
+                .skip(1)
+                .map(|attempt| {
+                    attempt
+                        .lines()
+                        .map(str::trim)
+                        .find(|line| line.starts_with("tactic: "))
+                        .expect("EngineAttempt retains its tactic field")
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(
+                attempted_tactics,
+                ["tactic: GeneralizedPun,", "tactic: Relocation,"]
             );
             assert_eq!(
                 product
