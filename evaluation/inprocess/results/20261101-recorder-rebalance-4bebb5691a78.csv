@@ -1,0 +1,5 @@
+module,tests,wall_ns,cpu_ns,status
+test_runtime_kernel_inventory,3,12528460795,12406758618,passed
+test_runtime_inventory,3,11774861593,11683167905,passed
+test_source_census_fixtures,5,5824235351,5749919084,passed
+test_main_query_inventory,10,31965249463,31676247677,passed

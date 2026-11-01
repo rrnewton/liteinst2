@@ -1,0 +1,201 @@
+{
+  "bounds": {
+    "cpu_seconds": 180,
+    "output_bytes": 8388608,
+    "wall_seconds": 180
+  },
+  "capture": {
+    "bytes": 20287,
+    "path": "target/evaluation/inprocess/recorder-rebalance-diagnostic-attempt-1/measurement.log",
+    "sha256": "5bd6db09333e80441acf16ede0eca388903ffcc4a8a554921bd9973c4ccad563"
+  },
+  "command": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "5bd6db09333e80441acf16ede0eca388903ffcc4a8a554921bd9973c4ccad563",
+    "reaped_descendants": 0,
+    "seconds": 62.7255288020242,
+    "start_utc": "2026-11-01T18:17:10.635276+00:00",
+    "termination": null
+  },
+  "cpu": 8,
+  "csv": {
+    "bytes": 273,
+    "file": "20261101-recorder-rebalance-4bebb5691a78.csv",
+    "rows": 4,
+    "sha256": "5516d3c9521265f8e0b5906638a40417c6ab4c0b13705aca8d3cd9bc47ed73f4"
+  },
+  "executed_driver": {
+    "bytes": 6301,
+    "path": "target/page-region-next/recorder-rebalance-r1/measure.py",
+    "sha256": "d3b397e989e2a05e7e59baff596f4aa553599fabb6af602ad711b915364533a9"
+  },
+  "full_discovery": {
+    "sha256": "5525a6300b3ced3d92dea20fa89cee9a9b37e3c1af7da20d6e18943bdd9ec67c",
+    "tests": 366,
+    "wall_ns": 515131281,
+    "worker_counts": [
+      63,
+      112,
+      95,
+      96
+    ]
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "matched_adjacent_check": {
+      "matched_fields": [
+        "vendor_id",
+        "cpu family",
+        "model",
+        "model name",
+        "stepping",
+        "microcode",
+        "architecture",
+        "kernel_version",
+        "kernel_release_sha256"
+      ],
+      "probe_cpu": 24,
+      "receipt": {
+        "bytes": 7738,
+        "path": "evaluation/inprocess/results/20261101T180955.636396Z-checks-4bebb5691a78.json",
+        "sha256": "04595e959c06b653fab0abaf38d0e9200b81a3252ba4455bc33f60c7496ea13d"
+      },
+      "recorded_status": "failed"
+    },
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "observation_timing": "Later source-review observation on the same host; the timing driver did not record CPU model or kernel.",
+    "observed_utc": "2026-11-01T18:23:26.293601+00:00",
+    "probe_cpu": 8,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "historical_failed_checks": [
+    {
+      "later_checks": "not_run",
+      "receipt": {
+        "bytes": 7737,
+        "path": "evaluation/inprocess/results/20261101T180505.373300Z-checks-4bebb5691a78.json",
+        "sha256": "4fea0a09e8dbf18e2fd128f33228232a6717364431e43a3271246f44af8b626a"
+      },
+      "recorder_exit": -9,
+      "recorder_seconds": 180.08569742296822,
+      "status": "failed",
+      "termination": "timeout"
+    },
+    {
+      "later_checks": "not_run",
+      "receipt": {
+        "bytes": 7738,
+        "path": "evaluation/inprocess/results/20261101T180955.636396Z-checks-4bebb5691a78.json",
+        "sha256": "04595e959c06b653fab0abaf38d0e9200b81a3252ba4455bc33f60c7496ea13d"
+      },
+      "recorder_exit": -9,
+      "recorder_seconds": 180.06937691103667,
+      "status": "failed",
+      "termination": "timeout"
+    }
+  ],
+  "inputs_unchanged": true,
+  "performance_credit": false,
+  "portable_successor": {
+    "bytes": 6400,
+    "publication_path": "evaluation/inprocess/diagnostics/recorder_module_timing.py",
+    "sha256": "d8787239e0b1aa7ca7f27cb88841579668f7d7326a2cf8ceefd35e240e1e2822"
+  },
+  "portable_successor_executed": false,
+  "profile": "recorder-module-balance-diagnostic-v1",
+  "proposed_move": {
+    "after_counts": [
+      63,
+      104,
+      95,
+      104
+    ],
+    "before_counts": [
+      63,
+      112,
+      95,
+      96
+    ],
+    "from_worker": 1,
+    "measured_isolated_wall_ns": 18352696146,
+    "modules": [
+      "test_runtime_kernel_inventory",
+      "test_source_census_fixtures"
+    ],
+    "scheduling_effect_is_unmeasured": true,
+    "tests": 8,
+    "to_worker": 3
+  },
+  "python": "3.12.15",
+  "python_compiler": "Clang 21.1.0",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 21737,
+    "path": "target/evaluation/inprocess/recorder-rebalance-diagnostic-attempt-1/receipt.json",
+    "sha256": "f5cee3e43a4e6d28efd26707e9dfac2486ab7b5f7a9a171c246437c5fa01cc92"
+  },
+  "reproduce": [
+    "AGENT_UTILS_ENGINE=python",
+    "cpuset-alloc",
+    "run",
+    "--cores",
+    "1",
+    "--",
+    "python3",
+    "-B",
+    "/path/to/recorder_module_timing.py",
+    "--expect-revision",
+    "4bebb5691a786a26eca0e53bdbc8c80611616fd2",
+    "--output",
+    "target/evaluation/inprocess/recorder-module-timing-fresh"
+  ],
+  "reproduce_cwd": "clean checkout of the exact recorded revision; portable script may live outside that checkout",
+  "schema": 1,
+  "scope": "21 selected original test cases; no full-suite pass, native execution, qualification or performance credit",
+  "selected_modules": [
+    {
+      "cpu_ns": 12406758618,
+      "module": "test_runtime_kernel_inventory",
+      "status": "passed",
+      "tests": 3,
+      "wall_ns": 12528460795
+    },
+    {
+      "cpu_ns": 11683167905,
+      "module": "test_runtime_inventory",
+      "status": "passed",
+      "tests": 3,
+      "wall_ns": 11774861593
+    },
+    {
+      "cpu_ns": 5749919084,
+      "module": "test_source_census_fixtures",
+      "status": "passed",
+      "tests": 5,
+      "wall_ns": 5824235351
+    },
+    {
+      "cpu_ns": 31676247677,
+      "module": "test_main_query_inventory",
+      "status": "passed",
+      "tests": 10,
+      "wall_ns": 31965249463
+    }
+  ],
+  "selected_tests": 21,
+  "source": {
+    "revision": "4bebb5691a786a26eca0e53bdbc8c80611616fd2",
+    "tracked_clean": true,
+    "tree": "42029ff8a7bb5a36883f568ded6942e556da082c"
+  },
+  "source_unchanged": true,
+  "status": "measured_unqualified"
+}

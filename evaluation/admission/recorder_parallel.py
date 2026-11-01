@@ -114,7 +114,8 @@ def partition(identities, workers):
         # and every worker's original discovery order.
         moved = {'test_main_query_inventory': 1, 'test_runtime_inventory': 1,
                  'test_runtime_stack_consumer_inventory': 3, 'test_backing_cleanup': 3,
-                 'test_owned_stack': 3, 'test_runtime_kernel_inventory': 1}
+                 'test_owned_stack': 3, 'test_runtime_kernel_inventory': 3,
+                 'test_source_census_fixtures': 3}
         for name in identities:
             module = name.split('.', 1)[0]
             if name not in assigned and module in moved:
