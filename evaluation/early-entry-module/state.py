@@ -38,6 +38,16 @@ PINS = {'evaluation/admission/processes.py': '0dfc4f40943252950e122c9e9fffb83744
 MODULES = {'census': 'tools/rapid-profiler/selected-work/check_output.py', 'whole': 'tools/rapid-profiler/verify_strnlen_interval.py', 'legacy': 'tools/rapid-profiler/reference-work/check_output.py', 'data': 'evaluation/ordinary-module-native/module_native.py'}
 CALIBRATION_SHA = '8e90b2caa345a1e9f85d05a9717a2873626cf00231b5239b0c1373a8133bb442'
 CALIBRATION_NAMES_SHA = '24568d95bcd7810788f853bbd296cec395b06421341c00f94efe00cf0802c4cf'
+# Integration tests implicitly build all package binaries, including src/main.rs.
+# Declare those non-oracle prerequisites separately; keep the final controls
+# command and every per-command limit unchanged.
+PREPARATION_TARGETS = (
+    ('tree-native-baseline', 'native-baseline/main.rs'),
+    ('frontend-native-point', 'native-point/main.rs'),
+    ('ordinary-interval', 'ordinary-interval/main.rs'),
+    ('point-throughput', 'point-throughput/main.rs'),
+    ('rapid-profiler', 'src/main.rs'),
+)
 
 
 
@@ -252,7 +262,10 @@ def main():
                   performance_qualified=False, default_profile_qualified=False, A5_qualified=False)
     save(raw/'plan.json', dict(cases=cases, native_commands=12, static_pairs=256, scheduled_pairs=32, children=576, retries=0,
          pair_wall=15, child_steps=20000, child_cleanup=2, command_cpu=480, command_wall=510, owner_wall=535,
-         file_and_capture=MIB, core=0, cumulative_reserved_data=2048*MIB, cumulative_reserved_metadata=64*MIB))
+         file_and_capture=MIB, core=0, cumulative_reserved_data=2048*MIB, cumulative_reserved_metadata=64*MIB,
+         preparation=dict(targets=PREPARATION_TARGETS, cpu_per_target=120, wall_per_target=180,
+                          owner_wall_per_target=205, file_and_capture_per_target=128*MIB,
+                          added_owner_wall_catalog=1025, retries=0)))
     frozen = {}; safe = True; started = time.monotonic()
     try:
         tools = {n:(a.toolchain/'bin'/n).resolve(strict=True) for n in ('cargo','rustc','rustdoc')}
@@ -346,7 +359,7 @@ def main():
         recipe.python_output(out,err)
         out,err=stage('reader-controls',[tools['python'],'-I','-B',Path(__file__).resolve(),'--reader-controls'])
         assert err==b'' and out==b''.join(('READER_CONTROL '+name+' PASS\n').encode() for name in ('synthetic-static','synthetic-scheduled','missing-row','duplicate-case','wrong-physical-count','wrong-schedule-order'))
-        def artifact(content,target,source,kind,test):
+        def artifact(content,target,source,kind,test,record=None):
             messages=[json.loads(line) for line in content.splitlines()];assert messages[-1]==dict(reason='build-finished',success=True)
             products=[m for m in messages if m.get('reason')=='compiler-artifact' and m['target']['name']==target and m['profile']['test'] is test]
             assert len(products)==1;p=products[0]
@@ -356,10 +369,14 @@ def main():
             binary=Path(p['executable']);assert binary.resolve(strict=True)==binary
             if test:assert binary.parent==root/'target/release/deps' and re.fullmatch(target.replace('-','_')+'-[0-9a-f]+',binary.name)
             else:assert binary==root/'target/release'/target
-            save(raw/(target+'-artifact.json'),dict(product=p,binary=retain(binary)));return binary
+            save(raw/((record or target)+'-artifact.json'),dict(product=p,binary=retain(binary)));return binary
         common=['--locked','--offline','--release','--jobs','1','-p','rapid-profiler','--features',FEATURE,'--message-format=json-render-diagnostics']
         out,_=stage('release-oracle',[tools['cargo'],'build','--bin','frontend-native-oracle',*common],120,180,128*MIB)
         binary=artifact(out,'frontend-native-oracle','native-interval/main.rs','bin',False)
+        for target,source in PREPARATION_TARGETS:
+            name='prepare-'+target
+            out,_=stage(name,[tools['cargo'],'build','--bin',target,*common],120,180,128*MIB)
+            artifact(out,target,source,'bin',False,record=name)
         out,_=stage('release-controls',[tools['cargo'],'test','--test','frontend-native-calibrations','--bin','ordinary-interval','--no-run',*common],120,180,128*MIB)
         calibration=artifact(out,'frontend-native-calibrations','native-interval/calibrations.rs','test',True)
         caller_test=artifact(out,'ordinary-interval','ordinary-interval/main.rs','bin',True)
