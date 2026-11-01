@@ -280,6 +280,22 @@ pub(in super::super) struct Witness {
     command: bool,
     after_branch: Option<u64>,
 }
+impl Drop for Witness {
+    fn drop(&mut self) {
+        if std::thread::panicking() {
+            use std::io::Write;
+            let prior_sequence = self.prior.as_ref().and_then(|words| words.get(2)).copied();
+            // Diagnostic I/O failure must not replace the original assertion.
+            let _ = writeln!(
+                std::io::stderr().lock(),
+                "early-entry witness-drop: loaded={} callbacks={} returns={} prior_sequence={prior_sequence:?}",
+                self.loaded,
+                self.callbacks,
+                self.returns
+            );
+        }
+    }
+}
 impl Witness {
     pub(in super::super) fn new(scenario: Scenario, extra: Extra) -> Self {
         Self {

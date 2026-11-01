@@ -387,11 +387,11 @@ fn run(k: usize, order: [usize; 2]) {
             }
             match (s.active_batch, s.position) {
                 (Some(3), Some(1)) => {
-                    hook_channel.send(Command::ArmA, Some(s));
+                    hook_channel.send(Command::ArmA, Some(s.clone()));
                 }
                 (Some(4), Some(1)) => {
                     *hook_old.borrow_mut() = Some((s.pending.unwrap(), s.journal));
-                    hook_channel.send(Command::DisarmA, Some(s));
+                    hook_channel.send(Command::DisarmA, Some(s.clone()));
                 }
                 (Some(4), Some(2..=4)) => {
                     let saved = hook_old.borrow();

@@ -144,15 +144,17 @@ pub fn qualification_snapshot() -> Result<QualificationSnapshot, BridgeError> {
         })
         .unwrap_or(Err(error(Cause::Attachment)))
 }
-type Observer = Box<dyn FnMut(PauseKind, QualificationSnapshot)>;
+type Observer = Box<dyn FnMut(PauseKind, &QualificationSnapshot)>;
 thread_local! { static OBSERVER: RefCell<Option<Observer>> = const { RefCell::new(None) }; }
 /// # Safety
 /// Qualification only: observer never enters subject/controller/model code on
 /// this worker, unwinds or alters code/control/state. Any wait has the fixed
 /// native-owner deadline and a separate real controller ACK; no model/TLS lock
 /// is held while it runs. Its copied witness is not another thread's TLS access.
+/// The borrowed snapshot is an owned local copy valid only for this call; an
+/// observer that retains or transfers it must make its own owned copy.
 pub unsafe fn install_observer(
-    observer: impl FnMut(PauseKind, QualificationSnapshot) + 'static,
+    observer: impl FnMut(PauseKind, &QualificationSnapshot) + 'static,
 ) -> Result<(), BridgeError> {
     OBSERVER
         .try_with(|cell| {
@@ -176,7 +178,8 @@ pub(super) fn after_published(kind: PauseKind) {
                 .try_borrow_mut()
                 .map_err(|_| error(Cause::Attachment))?;
             if let Some(observer) = observer.as_mut() {
-                observer(kind, qualification_snapshot()?);
+                let snapshot = qualification_snapshot()?;
+                observer(kind, &snapshot);
             }
             Ok(())
         })

@@ -92,7 +92,7 @@ fn owner_words(o: OwnerSnapshot) -> [u64; 8] {
         o.closed_function.map_or(0, |f| f.0),
     ]
 }
-fn encode(kind: PauseKind, sequence: u64, s: &QualificationSnapshot) -> [u64; WITNESS_WORDS] {
+fn encode(kind: PauseKind, sequence: u64, s: &QualificationSnapshot) -> [u64; early::JOURNAL] {
     let mut h = [0; 128];
     h[..15].copy_from_slice(&[
         0x6561_726c_796d_6f64,
@@ -178,7 +178,7 @@ fn encode(kind: PauseKind, sequence: u64, s: &QualificationSnapshot) -> [u64; WI
             ]);
         }
     }
-    early::witness_words(&h, &s.journal)
+    h
 }
 #[inline(never)]
 fn snapshot_ready() {
@@ -491,8 +491,9 @@ fn child(
         unsafe {
             qualification::install_observer(move |kind, snapshot| {
                 sequence += 1;
-                let next = encode(kind, sequence, &snapshot);
-                for (out, n) in witness.iter_mut().zip(next) {
+                let header = encode(kind, sequence, snapshot);
+                let words = header.iter().chain(snapshot.journal.iter()).copied();
+                for (out, n) in witness.iter_mut().zip(words) {
                     std::ptr::write_volatile(out, n);
                 }
                 snapshot_ready();
