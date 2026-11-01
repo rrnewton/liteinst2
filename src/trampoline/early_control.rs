@@ -39,7 +39,7 @@ fn stencil(
         Instruction::with2(
             Code::Movzx_r32_rm8,
             Register::ECX,
-            MemoryOperand::with_base_displ(Register::RCX, 0),
+            MemoryOperand::with_base(Register::RCX),
         )
         .map_err(encoding_error)?,
         Instruction::with_branch(Code::Jrcxz_rel8_64, disabled).map_err(encoding_error)?,
