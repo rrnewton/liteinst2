@@ -9,10 +9,11 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '34106cb9955354221480eb1863d1bbbd3d4e3bd0cf9b6bcd7131e85ed9c0a603',
+require(hashlib.sha256(RAW).hexdigest() == '8f190c45a287c81ba4aeeecb1ae4c7463024e8d7ecf5c40a93c9078e5e8a13b9',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
+ENTRY_PREVIOUS = DATA['source_successor_b0a30']['previous_corpus_sha256']
 PLACEMENT_PREVIOUS = DATA['source_successor_fd4c6']['previous_corpus_sha256']
 PHASE_CURRENT = DATA['source_successor_96378']['previous_corpus_sha256']
 NATIVE_INDEXED_CURRENT = DATA['source_successor_29859']['previous_corpus_sha256']
@@ -102,10 +103,24 @@ def require_sources(error='main97ab_source_inventory_differs'):
         source_before_evaluation(path, raw, error)
 
 
-def before_fd4c6(declared, error='main97ab_inventory_differs'):
-    """Accept only the complete current catalog, then restore the exact predecessor."""
+def before_b0a30(declared, error='main97ab_inventory_differs'):
+    """Bind the complete entry-veneer catalog, preserving its whole predecessor."""
     require(type(declared) is dict and digest(declared) == CURRENT, error)
     old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in DATA['source_successor_b0a30']['workspace_changes'].items():
+        require(digest(rows[name]) == digest(change['current']), error)
+        rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == ENTRY_PREVIOUS, error)
+    return old
+
+
+def before_fd4c6(declared, error='main97ab_inventory_differs'):
+    """Preserve the entire pre-entry-veneer catalog before the placement inverse."""
+    owned = plain_catalog((declared, DATA))
+    declared = before_b0a30(declared, error)
+    require(type(declared) is dict and digest(declared) == ENTRY_PREVIOUS, error)
+    old = declared if owned else copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in DATA['source_successor_fd4c6']['workspace_changes'].items():
         require(digest(rows[name]) == digest(change['current']), error)
