@@ -591,6 +591,11 @@ static int pg_link_data(unsigned step) {
 #ifdef LI2_SEALED_BYTE_CERTIFICATE
 #define pe_bytes pe_bytes_full
 #endif
+#ifdef LI2_PERSISTENT_BLOCK_CENSUS
+_Static_assert(LI2_PG_CANCELLING+1==LI2_RCC_PHASES,"exact actual owner phase census");
+static void rcc_scan(unsigned,unsigned);
+#define pe_bytes pe_bytes_census_full
+#endif
 static int pe_bytes(void) {
     const struct li2_pg_generation *g=&PE_SLOT(generation);
     const struct pe_payload *p=pe_payload();
@@ -604,6 +609,16 @@ static int pe_bytes(void) {
 #ifdef LI2_SEALED_BYTE_CERTIFICATE
 #undef pe_bytes
 #include "sealed_byte_certificate.inc"
+#endif
+#ifdef LI2_PERSISTENT_BLOCK_CENSUS
+#undef pe_bytes
+static int pe_bytes(void) {
+    unsigned phase=pe.p.phase;
+    rcc_scan(phase,0);
+    int result=pe_bytes_census_full();
+    rcc_scan(phase,result?2U:1U);
+    return result;
+}
 #endif
 /* Pure fixed-address generation authentication, before recovery scratch or
    any spill access. Mutable cold scratch alone never grants this authority. */
@@ -659,7 +674,7 @@ static int ped_stored(void) {
 }
 #ifdef LI2_PERSISTENT_SUBENTRY
 static unsigned ped_bank_for(uintptr_t);
-#ifdef LI2_REUSE_CENSUS
+#if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
 static void rcc_select_reset(void);
 static int rcc_select_test(unsigned,int);
 #define RCC_SELECT_RESET() rcc_select_reset()
@@ -782,8 +797,12 @@ static int ped_permitted(void) {
 #ifdef LI2_PERSISTENT_RETAINED_TWO
 #include "persistent_retained_two.inc"
 #endif
-#ifdef LI2_REUSE_CENSUS
+#if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
+#ifdef LI2_PERSISTENT_BLOCK_CENSUS
+#include "persistent_block_census_owner.inc"
+#else
 #include "reuse_census_owner.inc"
+#endif
 #define RCC_TEST(bit,value) rcc_test((bit),!!(value))
 #else
 #define RCC_TEST(bit,value) (value)
@@ -941,7 +960,7 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
 #endif
     pe.candidate_registry_count=protected_count;pe_need(protected_count<=RANGES,PE_STATE,5);
     copy(pe.candidate_registry,protected,protected_count*sizeof *protected);
-#ifdef LI2_REUSE_CENSUS
+#if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
     rcc_source(s,r);
 #endif
     if(RCC_TEST(0,PE_SLOT(generation).installed) && RCC_TEST(1,ped_stored()) && RCC_TEST(2,pe_registry()) &&
@@ -958,7 +977,7 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
        RCC_TEST(7,PE_SLOT(publication).header.rseq_address==r->address) &&
        RCC_TEST(8,PE_SLOT(publication).header.rseq_length==r->length) && RCC_TEST(9,PE_SLOT(publication).header.rseq_signature==r->signature)) {
         pe_need(ped_permitted() && !pe_bytes(),PE_PUBLICATION,10);pe.warm=1;
-#ifdef LI2_REUSE_CENSUS
+#if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
         rcc_plan(pe.subentry_selected?2U:1U);
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY
@@ -996,7 +1015,7 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
                 pe.miss.reason>0 && pe.miss.reason<LI2_PGD_REASON_COUNT,PE_PLAN,pe.build_result);
 #endif
             ped_count(PGC_MISS_REF(pe.miss.reason));pe_decoding=0;selected_initialized();
-#ifdef LI2_REUSE_CENSUS
+#if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
             rcc_plan(3);
 #endif
             return 0;
@@ -1023,7 +1042,7 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         pe_need(!li2_pg_compact_validate(&pe.candidate.plan,&pe.rebuild,&pe.compact_rebuild),PE_PLAN,2);++pe.plan_proofs;
 #endif
         pe_need(!li2_pg_rseq_cold(&pe.token,&pe.cold,uc),PE_RSEQ,1);++pe.none_proofs;
-#ifdef LI2_REUSE_CENSUS
+#if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
         rcc_plan(4);
 #endif
         __asm__ volatile("":::"memory");pe_decoding=0;selected_initialized();
@@ -1351,7 +1370,7 @@ int li2_pg_epoch_cancel(const struct li2_pg_token *t,int sig,siginfo_t *si,ucont
     selected_step_pending=*result==LI2_CHAIN_RUNNING;
     selected_pending_route=selected_step_pending?SELECTED_GENERIC_TF:SELECTED_NO_STEP;
     pe.p.phase=LI2_PG_CANCELLED;pe.ticket=0;selected_initialized();ped_count(PGC_REF(cancelled));
-#ifdef LI2_REUSE_CENSUS
+#if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
     rcc_finish(1);
 #endif
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
@@ -1549,7 +1568,7 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     ped_reset_attempt();pe.selected_bank=bank_index;
 #endif
     pe_closing=1;pe_busy=1;ped_count(PGC_REF(offers));__asm__ volatile("":::"memory");
-#ifdef LI2_REUSE_CENSUS
+#if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
     rcc_begin(pc);
 #endif
     pe_need(!le_capture(&pe.ingress,sig,si,uc),PE_FRAME,0);pe.close_started=1;
@@ -1639,7 +1658,7 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_RESIDENT_SOURCE_PROBE
     li2_rso_bound(&pe.token,(uintptr_t)pe.before.frame.greg[REG_RIP],&pe_payload()->plan.table);
 #endif
-#ifdef LI2_REUSE_CENSUS
+#if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
     rcc_bound();
 #endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
@@ -1701,7 +1720,7 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
         le_quiet(0) && pe_registry(),PE_RELEASE,0);
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
     pda_complete();
-#ifdef LI2_REUSE_CENSUS
+#if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
     rcc_finish(2);
 #endif
 #else

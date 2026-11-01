@@ -4,7 +4,9 @@
 #include "lifecycle_loader.h"
 #ifdef LI2_PERSISTENT_GROUP_COUNTERS
 #include "persistent_group_counters.h"
-#ifdef LI2_REUSE_CENSUS
+#if defined(LI2_PERSISTENT_BLOCK_CENSUS)
+#include "persistent_block_census.h"
+#elif defined(LI2_REUSE_CENSUS)
 #include "reuse_census.h"
 #endif
 #endif
@@ -737,7 +739,9 @@ static void protect(uintptr_t first,size_t bytes) {
 }
 #ifdef LI2_PERSISTENT_GROUP_COUNTERS
 #include "persistent_group_counters.inc"
-#ifdef LI2_REUSE_CENSUS
+#if defined(LI2_PERSISTENT_BLOCK_CENSUS)
+#include "persistent_block_census_attach.inc"
+#elif defined(LI2_REUSE_CENSUS)
 #include "reuse_census_attach.inc"
 #endif
 #endif
@@ -1466,7 +1470,7 @@ static size_t parse_fds(int fds[32]) {
 void runtime_arm(const struct image *main,const struct image *interp,size_t minimum) {
 #ifdef LI2_PERSISTENT_GROUP_COUNTERS
     pgc_attach();
-#ifdef LI2_REUSE_CENSUS
+#if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
     rcc_attach();
 #endif
 #endif
