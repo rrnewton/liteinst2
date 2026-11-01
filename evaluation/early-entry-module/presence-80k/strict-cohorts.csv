@@ -1,0 +1,13 @@
+case,status,attempts,k,mode,order,pairs,children,comparisons,candidate_physical_calls,candidate_observed_entries,candidate_pre_rets,controller_handshakes,coverage_rows
+order01-k10-enabled,FAILED,1,10,enabled,0,,,,,,,,
+order01-k10-bypass,UNOBSERVED,0,10,bypass,0,,,,,,,,
+order01-k10-scheduled,UNOBSERVED,0,10,scheduled,0,,,,,,,,
+order01-k1000-enabled,UNOBSERVED,0,1000,enabled,0,,,,,,,,
+order01-k1000-bypass,UNOBSERVED,0,1000,bypass,0,,,,,,,,
+order01-k1000-scheduled,UNOBSERVED,0,1000,scheduled,0,,,,,,,,
+order10-k10-enabled,UNOBSERVED,0,10,enabled,1,,,,,,,,
+order10-k10-bypass,UNOBSERVED,0,10,bypass,1,,,,,,,,
+order10-k10-scheduled,UNOBSERVED,0,10,scheduled,1,,,,,,,,
+order10-k1000-enabled,UNOBSERVED,0,1000,enabled,1,,,,,,,,
+order10-k1000-bypass,UNOBSERVED,0,1000,bypass,1,,,,,,,,
+order10-k1000-scheduled,UNOBSERVED,0,1000,scheduled,1,,,,,,,,

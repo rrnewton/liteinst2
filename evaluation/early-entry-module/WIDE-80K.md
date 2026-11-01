@@ -23,6 +23,10 @@ cohort retained. Run assertions-enabled Python with `-I -B`, using the same
 and preserve the existing cumulative capacity budget. Builds use the release
 profile; timing measurements are not part of this qualification.
 
-No 80k execution result is recorded by this source addition. The existing
-[strict results](README.md) remain FAILED. Reducing callback cost, including
-the repeated presence scans, is separate work toward passing the strict gate.
+The [results at `b9995b86`](presence-80k/README.md) record all 288 pairs,
+576 children and 139,872 state comparisons passing under this named profile.
+The same revision replaces repeated presence scans with exact occupancy masks.
+The strict 20,000-step campaign remains FAILED, and the full workspace gate
+timed out at its unchanged limit. This is a review checkpoint, with no timing
+or complete A4/A5 qualification. The [earlier strict results](README.md) remain
+available unchanged.

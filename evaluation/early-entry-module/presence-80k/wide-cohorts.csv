@@ -1,0 +1,13 @@
+case,status,attempts,k,mode,order,pairs,children,comparisons,candidate_physical_calls,candidate_observed_entries,candidate_pre_rets,controller_handshakes,coverage_rows
+order01-k10-enabled,PASS,1,10,enabled,0,32,64,12284,128,128,128,0,2
+order01-k10-bypass,PASS,1,10,bypass,0,32,64,12284,128,0,128,0,2
+order01-k10-scheduled,PASS,1,10,scheduled,0,8,16,10400,32,16,32,8,0
+order01-k1000-enabled,PASS,1,1000,enabled,0,32,64,12284,128,128,128,0,2
+order01-k1000-bypass,PASS,1,1000,bypass,0,32,64,12284,128,0,128,0,2
+order01-k1000-scheduled,PASS,1,1000,scheduled,0,8,16,10400,32,16,32,8,0
+order10-k10-enabled,PASS,1,10,enabled,1,32,64,12284,128,128,128,0,2
+order10-k10-bypass,PASS,1,10,bypass,1,32,64,12284,128,0,128,0,2
+order10-k10-scheduled,PASS,1,10,scheduled,1,8,16,10400,32,16,32,8,0
+order10-k1000-enabled,PASS,1,1000,enabled,1,32,64,12284,128,128,128,0,2
+order10-k1000-bypass,PASS,1,1000,bypass,1,32,64,12284,128,0,128,0,2
+order10-k1000-scheduled,PASS,1,1000,scheduled,1,8,16,10400,32,16,32,8,0
