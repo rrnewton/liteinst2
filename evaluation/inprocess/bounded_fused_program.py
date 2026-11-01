@@ -22,14 +22,14 @@ from page_selected import ENV, fact, need, save
 from page_selected_generic_build import Build
 from page_selected_process import invoke
 from page_selected_oneshot_build import before_default
-from persistent_dynamic import BOUNDS, digest, imported_sources
+from persistent_dynamic import BOUNDS, H, digest, imported_sources
 from persistent_epoch_build import FEATURES
 from persistent_fused_build import build_bridge
 from bounded_block_prerequisite import block_prerequisite
 from bounded_fused_prerequisite import fused_prerequisite
 from page_native_pair_performance import PROGRAM_ENV, prepare_workload, program_invoke
 from startup_counter import protocol
-from startup_counter_terminal import completed_terminal, counters
+from persistent_fused_counter_terminal import completed_terminal, counters, optional_pf
 import persistent_group_counter_process as counter_process
 from direct_frontier_program import direct_prerequisite, final_prefix
 import namespace
@@ -67,6 +67,7 @@ def cohort(builder, products, private, pin, binary, aliases, run, r):
                 shared_boundaries=8, active_members_max=2, call_ret=False) and
              rb['persistent_binding']['mode'] == 'counters' and
              rb['persistent_binding']['profile'] == 'persistent-fused-counters-v1' and
+             rb['pf_refusals'] == rb['persistent_binding']['pf_refusals'] == dict(version=1,reason=256,shared_reasons=18,abi2=False) and
              rb['persistent_binding']['bounded_fused'] is True and rb['persistent_binding']['policy_version'] == 11 and
              all(rb['active_domain'][k] is True and rb['persistent_binding'][k] is True for k in
                  ('unregistered', 'subentry', 'cross_pair', 'direct_frontier', 'native_probe', 'parse_memo')),
@@ -99,6 +100,18 @@ def cohort(builder, products, private, pin, binary, aliases, run, r):
                     if lane == 'counted' and row.get('reaped'):
                         # Prefix validation has no completed-transaction arithmetic.
                         case['counts'] = final_prefix(row, private, binary)
+                        case['pf_refusal_terminal'] = None
+                        captured = row.get('captures', {}).get('stderr')
+                        if captured is not None:
+                            need(captured['file'] == row['name']+'.stderr', 'this actual child stderr capture')
+                            current_path = private/captured['file']
+                            need(current_path.resolve(strict=True) == current_path and not current_path.is_symlink(),
+                                 'actual current child stderr is a retained regular path')
+                            current_stderr = binary(current_path).read_bytes()
+                            need(dict(bytes=len(current_stderr), sha256=H(current_stderr)) ==
+                                 {k: captured[k] for k in ('bytes', 'sha256')},
+                                 'whole actual current child stderr bytes before optional PF parsing')
+                            case['pf_refusal_terminal'] = optional_pf(current_stderr)
                         case['counter_collection'] = 'closed_usable_prefix'
                         counter_process.namespace_join(state, ns, binary, r, namespace, row['counter_input'])
                         case['namespace_complete'] = True
@@ -115,6 +128,9 @@ def cohort(builder, products, private, pin, binary, aliases, run, r):
                      'complete counted stdout and exit equal the exact successful native reference')
                 terminal = completed_terminal(stderr, case['counts'])
                 actual = counters(stderr)
+                need(case['pf_refusal_terminal'] is not None and
+                     actual['LI2_PF_REFUSALS'] == case['pf_refusal_terminal'],
+                     'successful PF terminal equals this child retained stderr row')
                 case.update(status='completed_unqualified', stdout_equal=True, terminal=terminal,
                     terminal_counters={k: actual[k] for k in ('LI2_CHAIN', 'LI2_LINKED_NATIVE_PROBE', 'LI2_NATIVE_PAIR')})
         except Exception as exc:
@@ -158,7 +174,7 @@ def main():
         counter_scope='Post-reap per-cell prefix. Events/signals count linked ingress, not all kernel traps; direct hits and stage timings unavailable.')
     for kind, lane in ORDER:
         r['cases'].append(dict(label='subject-'+kind+'-'+lane, program=kind, lane=lane, expected_exit=0,
-            status='unexecuted', launched=False, stdout_equal=False, counts=None, terminal=None, terminal_counters=None,
+            status='unexecuted', launched=False, stdout_equal=False, counts=None, terminal=None, terminal_counters=None, pf_refusal_terminal=None,
             namespace_complete=None if lane == 'native' else False, counter_collection='not_applicable' if lane == 'native' else 'unavailable'))
     pins, artifacts, aliases, presence = {}, {}, {}, {}
 
@@ -290,7 +306,7 @@ def main():
                 policy_sha256=binding.get('policy_sha256') if binding else None)
         summary['cases'] = [{k: c[k] for k in ('program', 'lane', 'status', 'expected_exit', 'exit', 'process_ns',
             'wrapper_interval_ns', 'timed_out', 'launched', 'captures', 'stdout_equal', 'namespace_complete',
-            'counter_collection', 'counts', 'terminal', 'terminal_counters') if k in c} |
+            'counter_collection', 'counts', 'terminal', 'terminal_counters', 'pf_refusal_terminal') if k in c} |
             dict(error_type=c['error'].split(':', 1)[0] if c.get('error') else None) for c in r['cases']]
         payload = (json.dumps(summary, sort_keys=True, separators=(',', ':'), allow_nan=False)+'\n').encode()
         table = io.StringIO(); writer = csv.writer(table, lineterminator='\n')

@@ -3,7 +3,7 @@
 #include "persistent_direct_frontier_observe_memory.h"
 #include "persistent_fused_capture_config.h"
 #include "capture_rle.h"
-#if LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE != 1 || LI2_PERSISTENT_CROSS_PAIR != 1 || LI2_PDD_CAPTURE_VERSION != 12
+#if LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE != 1 || LI2_PERSISTENT_CROSS_PAIR != 1 || LI2_PDD_CAPTURE_VERSION != 13
 #error "distinct direct-frontier capture profile"
 #endif
 #define PDO_MAGIC UINT64_C(0x414f50445049324c)
@@ -20,6 +20,7 @@ struct pdo_counts {
     uint64_t cancelled,retirements,permit_claims,entries,completed,unexpected;
     uint64_t misses[LI2_PGD_REASON_COUNT];
     uint64_t subentry_selections,subentry_hits,subentry_entries,subentry_completed;
+    uint64_t pf_backward_refused,pf_backward_cancelled;
 };
 /* Complete bounded comparison evidence against one literal certificate. */
 struct pdo_scan {
@@ -186,8 +187,11 @@ static unsigned pdo_frozen;
 static unsigned pdo_ready,pdo_finished,pdo_capturing,pdo_kind,pdo_index,pdo_epochs;
 static const uint64_t pdo_step_frame_fp_alignment __attribute__((used))=__alignof__(((struct li2_step_frame *)0)->fp);
 _Static_assert(sizeof pdo_encoded==4U*1024U*1024U,"unchanged encoded record cap");
-_Static_assert(offsetof(struct pdo_wire,cancellation)==4549248 && sizeof(struct pdo_epoch)==1060288 &&
-    sizeof(struct pdo_certificate)==434240 && sizeof(struct pdo_stage)==124176 &&
+_Static_assert(LI2_PF_REFUSAL_VERSION==1 && LI2_PFD_BACKWARD_UNSUPPORTED==256 &&
+    LI2_PGD_REASON_COUNT==18 && sizeof(struct pdo_counts)==288 &&
+    sizeof(struct pbo_cancel)==872192 && sizeof(struct pdo_wire)==5421440 &&
+    offsetof(struct pdo_wire,cancellation)==4549248 && sizeof(struct pdo_epoch)==1060288 &&
+    sizeof(struct pdo_certificate)==434240 && sizeof(struct pdo_stage)==124192 &&
     sizeof(struct pdo_domain_checkpoint)==11792 && sizeof(struct pda_state)==225832 &&
     sizeof(struct pda_completion)==71368 && sizeof(struct pda_work)==11312 &&
     sizeof(struct pdo_next)==267968 && sizeof(struct pdo_epoch_info)==15176,
@@ -210,6 +214,7 @@ static void pdo_counts(struct pdo_counts *o) {
     C(next_serial);C(next_generation);C(offers);C(publications);C(hits);C(cold_attempts);
     C(cancelled);C(retirements);C(permit_claims);C(entries);C(completed);C(unexpected);
     C(subentry_selections);C(subentry_hits);C(subentry_entries);C(subentry_completed);
+    C(pf_backward_refused);C(pf_backward_cancelled);
 #undef C
     pdo_copy(o->misses,pe.misses,sizeof o->misses);
 }
@@ -366,7 +371,7 @@ static void pdo_initialize(void) {
     __asm__ volatile(""::"r"(&pdo_step_frame_fp_alignment):"memory");
     pe_need(!pdo_ready && !pdo_finished && !pe.p.serial,PE_STATE,102);
     uint64_t *h=pdo_wire.h;
-    h[0]=PDO_MAGIC;h[1]=12;h[2]=sizeof pdo_wire;h[3]=sizeof pe;
+    h[0]=PDO_MAGIC;h[1]=13;h[2]=sizeof pdo_wire;h[3]=sizeof pe;
     h[4]=sizeof(struct pe_payload);h[5]=PE_PROOF_BYTES;h[6]=PE_CODE_BYTES;
     h[7]=sizeof(ucontext_t);h[8]=sizeof(siginfo_t);h[9]=(uintptr_t)li2_raw6;
     h[10]=(uintptr_t)li2_gateway_start;h[11]=(uintptr_t)li2_gateway_end;
@@ -447,7 +452,7 @@ static void pdo_entered(int sig,siginfo_t *si,ucontext_t *uc) {
     /* Explicit not-attempted word observation: the typed progress proves absence. */
     o->h[7]=0;o->h[8]=0;pdo_capturing=0;
 }
-/* Version12 PF-only failure observation. An abort closes every installed
+/* Version13 PF-only failure observation. An abort closes every installed
    generated extent but retains its live references/source anchor. It is NOT
    a completion, release, or resumable state. Every read below follows actual
    identity and cleanup queries; no successful completion is fabricated. */
@@ -546,9 +551,9 @@ static void pdo_finish(unsigned status,unsigned code,long detail) {
        returns only a body over disjoint protected storage and a real footer. */
     pdo_wire.h[56]=1;pdo_frozen=1;__asm__ volatile("":::"memory");
     size_t body_bytes=0;
-    if(li2_capture_rle_prepare(&pdo_wire,sizeof pdo_wire,12,pdo_encoded,
+    if(li2_capture_rle_prepare(&pdo_wire,sizeof pdo_wire,13,pdo_encoded,
         sizeof pdo_encoded,&body_bytes))return;
-    (void)li2_capture_rle_write(pdo_encoded,body_bytes,sizeof pdo_wire,12,
+    (void)li2_capture_rle_write(pdo_encoded,body_bytes,sizeof pdo_wire,13,
         status,code,pdo_write,0);
 }
 static void pbo_miss_plan(struct pbo_miss_plan *out,const struct li2_pg_plan *p) {

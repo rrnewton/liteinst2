@@ -1,10 +1,12 @@
-"""PB capture schema: old full fields plus one literal actual cancellation."""
+"""PF schema13: whole prior fields, cancellation and two literal refusal counters."""
 import importlib.util
 from pathlib import Path
 _spec=importlib.util.spec_from_file_location('pb_donor_wire',Path(__file__).resolve().parents[1]/'persistent_direct_frontier_owner/wire.py')
 old=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(old)
 need,zero,q=old.need,old.zero,old.q
 GROUPS=dict(old.GROUPS)
+_fields,_alignment=GROUPS['pdo_counts']
+GROUPS['pdo_counts']=(_fields+(('pf_backward_refused pf_backward_cancelled',8,8),),_alignment)
 REGISTERED=dict(old.REGISTERED)
 for _name in ('pdo_wire','pdo_encoded'):
     _origin,_type=REGISTERED[_name];REGISTERED[_name]=('persistent_fused_observe.inc',_type)
@@ -39,7 +41,18 @@ class Reader(old.Reader):
     def __init__(self,data,layout):
         self.data,self.layout,self.types=data,layout,dict(layout['types']);self.padding={}
         self.registered,self.lifetime=REGISTERED,LIFETIME
-        need(set(layout)=={'record','types','edges','member_witnesses','symbols','registrations','retained_storage','uc_bytes','uc','si'}and layout['record']=='pdo_wire','distinct retained-two wire layout')
+        need(set(layout)=={'record','types','edges','member_witnesses','symbols','registrations','retained_storage','pf_refusals','uc_bytes','uc','si'}and layout['record']=='pdo_wire','distinct retained-two wire layout')
+        pf=layout['pf_refusals'];fields=pf['fields'];last=pf['previous_last']
+        need(set(pf)=={'version','reason','fields','previous_last'} and pf['version']==1 and pf['reason']==256 and
+             set(fields)=={'pf_backward_refused','pf_backward_cancelled'} and set(last)=={'offset','bytes'} and
+             all(type(v)is int and v>0 for v in last.values())and last==layout['retained_storage']['domain']and
+             last['bytes']==self.types['pda_state']['bytes']==225832,'actual PF-only appended owner field witnesses')
+        first=(last['offset']+last['bytes']+7)&-8
+        for index,key in enumerate(('pf_backward_refused','pf_backward_cancelled')):
+            need(fields[key]==dict(offset=first+8*index,bytes=8),'literal appended protected PF counter '+key)
+        owner=layout['registrations']['pe'];alignment=owner['alignment']
+        need(type(alignment)is int and alignment>=8 and alignment&(alignment-1)==0 and
+             owner['bytes']==(first+16+alignment-1)&-alignment,'whole actual protected owner extent with appended PF counters')
         need(layout['member_witnesses']=={'li2_step_frame.fp':dict(symbol='pdo_step_frame_fp_alignment',bytes=8,alignment=64)},'actual aligned FP witness')
         need(layout['uc_bytes']==968 and layout['uc']==dict(offsets=dict(flags=0,link=8,greg=40,fp_pointer=224,mask=296,stack_sp=16,stack_flags=24,stack_size=32),widths=dict(flags=8,link=8,greg=184,fp_pointer=8,mask=128,stack_sp=8,stack_flags=4,stack_size=8)),'whole actual Linux UC ABI')
         need(layout['si']==dict(bytes=128,offsets=dict(signo=0,errno=4,code=8,addr=16,pid=16,uid=20),widths=dict(signo=4,errno=4,code=4,addr=8,pid=4,uid=4)),'whole actual SI ABI')
@@ -55,7 +68,7 @@ class Reader(old.Reader):
                     if child:edges[k]=child
             self.union_shape(t,fields,alignment)if t in UNIONS else self.shape(t,fields,alignment);expected[t]=edges
         need(layout['edges']==expected,'every exact embedded object and array')
-        need(type(data)is memoryview and data.readonly and data.c_contiguous and len(data)==self.types['pdo_wire']['bytes']==5421376,'whole losslessly decoded cross-pair raw schema')
+        need(type(data)is memoryview and data.readonly and data.c_contiguous and len(data)==self.types['pdo_wire']['bytes']==5421440,'whole losslessly decoded cross-pair raw schema')
         self.walk(data,'pdo_wire')
         self.types['uh_frame']=self.types['le_frame'];self.padding['uh_frame']=self.padding['le_frame']
 

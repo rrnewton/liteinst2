@@ -7,6 +7,7 @@ from persistent_dynamic import BOUNDS, digest, named
 from direct_frontier_program import decode
 import bounded_fused_owner_helpers as fused
 import bounded_fused_fault as fault
+import persistent_fused_refusal_reports as pf_reports
 from bounded_fused_component_prerequisite import fused_component_prerequisite
 from persistent_active_domain import COPY_COUNTS, COPY_STDOUT
 
@@ -93,12 +94,15 @@ def fused_prerequisite(path, expected_sha256, r, pin, binary, archive):
             continue
         for key, count, stream, hash_key in (
             ('owner_reader_controls', 204, 'record', 'original_sha256'),
+            ('pf_refusal_owner_controls', 28, 'record', 'original_sha256'),
+            ('pf_refusal_terminal_controls', 22, 'stderr', 'original_stderr_sha256'),
             ('terminal_controls', 73, 'stderr', 'original_stderr_sha256'),
             ('repeat_tls_controls', 33, 'stderr', 'original_stderr_sha256'),
             ('native_probe_controls', 22, 'stderr', 'original_stderr_sha256'),
             ('subentry_controls', 19, 'stderr', 'original_stderr_sha256'),
             ('effect_controls', 12, 'stderr', 'original_stderr_sha256')):
             named(case[key], count, row['captures'][stream]['sha256'], hash_key=hash_key)
+        pf_join(case,row,directory,0,0)
         need(case['pair'] == fused.PAIR_EXPECTED, 'whole PF native2838 and generated full-frame result')
         controls = case['pair_controls']; refusals = controls['refusals']
         need(type(refusals) is list and len(refusals) == len(set(refusals)) == 36 and
@@ -112,12 +116,13 @@ def fused_prerequisite(path, expected_sha256, r, pin, binary, archive):
              all(rb['active_domain'][k] is True and binding[k] is True for k in
                  ('unregistered', 'subentry', 'cross_pair', 'direct_frontier', 'native_probe', 'parse_memo')) and
              binding['bounded_fused'] is True and binding['policy_version'] == 11 and
+             rb['pf_refusals'] == binding['pf_refusals'] == dict(version=1,reason=256,shared_reasons=18,abi2=False) and
              rb['bounded_fused'] == dict(version=1, policy_version=11, heads_max=128, shared_boundaries=8,
                                          active_members_max=2, call_ret=False) and
              rb['direct_frontier'] == dict(version=1, policy_version=11, partition='direction-fused',
                  all_arms_directory=False, conditions=16, shared_boundaries=8, typed_external_arms=True,
                  unknown_target='original branch-before full drain') and
-             rb['capture_extents']['wire'] == 5421376 and rb['capture_extents']['schema_version'] == 12 and
+             rb['capture_extents']['wire'] == 5421440 and rb['capture_extents']['schema_version'] == 13 and
              rb['capture_extents']['record_limit'] == rb['capture_extents']['stream_strictly_below'] == 4 << 20 and
              128 < row['captures']['record']['bytes'] < 4 << 20,
              'both actual finite PF builds, full protected transcripts and unchanged strict encoded cap')
@@ -138,7 +143,8 @@ def fused_prerequisite(path, expected_sha256, r, pin, binary, archive):
          'separate complete independent native PF seed')
     return dict(file=str(path.relative_to(ROOT)), **fact(path), status=actual['status'],
         profile=actual['profile'], archive=fact(archive), commands=len(commands), commands_sha256=digest(commands),
-        controls=dict(app=40, owner=204, pair=36, terminal=73, tls=33, probe=22, subentry=19, effects=12),
+        controls=dict(app=40, owner=204, pair=36, terminal=73, tls=33, probe=22, subentry=19, effects=12,
+                      pf_refusal_owner=28,pf_refusal_terminal=22),
         fault_controls=negative, fused_component_prerequisite=component,
         whole_profile_qualified=False)
 
@@ -182,8 +188,11 @@ def fault_cases(actual, rows, directory):
              'complete original native reference precedes the strict-cap failed-owner record')
         for key, count, stream, hash_key in (
             ('owner_reader_controls', 28, 'record', 'original_sha256'),
+            ('pf_refusal_owner_controls', 12, 'record', 'original_sha256'),
+            ('pf_refusal_terminal_controls', 22, 'stderr', 'original_stderr_sha256'),
             ('terminal_controls', 92, 'stderr', 'original_stderr_sha256')):
             named(case[key], count, row['captures'][stream]['sha256'], hash_key=hash_key)
+        pf_join(case,row,directory,125,3304)
         signal, phase = (11, 1) if mode == 1 else (4, 3)
         owner = case['owner_summary']; closed = owner['cleanup_closed_pages']
         need(type(closed) is int and closed in (17, 34) and owner == dict(mode=mode, status=125,
@@ -203,9 +212,35 @@ def fault_cases(actual, rows, directory):
              code=3304, signal=signal).items()) and terminal['whole_profile_qualified'] is False,
              'typed failed terminal prefix remains a failed subject with no completion credit')
     for key, total in (('application_controls', 32), ('owner_reader_controls', 56),
-                       ('pair_controls', 24), ('terminal_controls', 184)):
+                       ('pair_controls', 24), ('terminal_controls', 184),
+                       ('pf_refusal_owner_controls',24),('pf_refusal_terminal_controls',44)):
         need(sum(len(c.get(key, {}).get('refusals', [])) for c in actual['fault_cases']) == total,
              'all additive negative controls are retained: '+key)
     return dict(cases=4, native_references=2, expected_failed_subjects=2,
-        app=32, owner=56, pair=24, terminal=184,
+        app=32, owner=56, pair=24, terminal=184,pf_refusal_owner=24,pf_refusal_terminal=44,
         qualification_credit=False, performance_credit=False)
+
+
+def pf_join(case,row,directory,status,code):
+    observed,_=pf_reports.split((directory/row['captures']['stderr']['file']).read_bytes())
+    need(observed==case['pf_refusals'] and observed['status']==status and observed['failure_code']==code and
+         observed['refused']==observed['cancelled'] and
+         case['terminal']['pf_refusals']==dict(version=1,policy_version=11,reason=256,protected_fields=7,complete=True),
+         'literal whole PF terminal and captured-final join with exact actual outcome')
+    stages=case['pf_refusal_stages']
+    names=['epoch'+str(index)+'_'+name for index in range(3 if status==0 else 1)for name in ('prior','entered','terminal')]
+    if status==0:names+=['cancel_held','cancel_resumed']
+    names+=['final']
+    need(type(stages)is list and len(stages)==len(names)and all(type(x)is dict and set(x)=={'stage','refused','cancelled'}and
+         x['stage']==name and type(x['refused'])is int and type(x['cancelled'])is int and
+         0<=x['refused']==x['cancelled']<1<<64 for x,name in zip(stages,names,strict=True))and
+         all(stages[i]['refused']<=stages[i+1]['refused']for i in range(len(stages)-1))and
+         (stages[-1]['refused'],stages[-1]['cancelled'])==(observed['refused'],observed['cancelled']),
+         'all named literal PF snapshots and final terminal source counters')
+    for index in range(3 if status==0 else 1):
+        need(stages[3*index]['refused']==stages[3*index+1]['refused']==stages[3*index+2]['refused'],
+             'focal entry and terminal do not invent a PF refusal or cancellation')
+    if status==0:need(stages[8]['refused']==stages[9]['refused']==stages[10]['refused'],'old reason1 cancellation retains separate PF counts')
+    need(fused.PF_REFUSAL_OWNER_CONTROLS==28 and fault.PF_REFUSAL_OWNER_CONTROLS==12 and
+         fused.PF_REFUSAL_TERMINAL_CONTROLS==fault.PF_REFUSAL_TERMINAL_CONTROLS==pf_reports.CONTROL_COUNT==22,
+         'explicit additive PF counter/terminal control populations')

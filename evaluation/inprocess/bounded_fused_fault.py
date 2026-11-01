@@ -4,6 +4,7 @@ from page_selected import need,fact
 from persistent_dynamic import load,H,digest,named,image_inventory,imported_sources
 from direct_frontier_loop_helpers import preparation
 import bounded_fused_fault_reports as reports
+import persistent_fused_refusal_reports as pf_reports
 ROOT=Path(__file__).resolve().parents[2]
 FIXTURE=ROOT/'tools/page-entry/selected/tests/persistent_fused_app'
 OWNER=ROOT/'tools/page-entry/selected/tests/persistent_fused_owner'
@@ -13,6 +14,8 @@ APP_CONTROL_COUNT=16
 OWNER_CONTROL_COUNT=28
 PAIR_CONTROL_COUNT=12
 TERMINAL_CONTROL_COUNT=92
+PF_REFUSAL_OWNER_CONTROLS=12
+PF_REFUSAL_TERMINAL_CONTROLS=22
 EXPECTED_STATUS={('native',1):'observed_native_write_fault',('maintained',1):'observed_pf_store_fault',
                  ('native',2):'observed_native_write_fault',('maintained',2):'observed_pf_guard_rejection'}
 
@@ -68,7 +71,7 @@ def cohort(builder,private,pin,binary,run,r,original,context):
                     completed_application=False,observer_exit=0)
             else:
                 capture=row['captures']['record'];record_path=binary(private/capture['file'])
-                need(128<capture['bytes']<4<<20 and layout['types']['pdo_wire']['bytes']==5421376 and
+                need(128<capture['bytes']<4<<20 and layout['types']['pdo_wire']['bytes']==5421440 and
                      fact(record_path)=={k:capture[k]for k in('bytes','sha256')},
                      'whole real failed-owner record retains original strict4MiB transport bound')
                 record=record_path.read_bytes();image=image_inventory(original,interp,carrier,objects,manifest)
@@ -79,6 +82,10 @@ def cohort(builder,private,pin,binary,run,r,original,context):
                 terminal_args=(row['pid'],row['exit'],row['stdout_provenance_before'],images,raws,
                     fact(carrier),carrier_bytes,actual_owner,owner_reader,mode,parsed,app_layout)
                 terminal,c['terminal']=reports.check(stderr,*terminal_args);r['terminal_reports'][label]=terminal
+                c['pf_refusals']=actual_owner['pf_refusals']
+                c['pf_refusal_stages']=actual_owner['pf_refusal_stages']
+                c['pf_refusal_terminal_controls']=pf_reports.controls(stderr,actual_owner,owner_reader)
+                named(c['pf_refusal_terminal_controls'],PF_REFUSAL_TERMINAL_CONTROLS,H(stderr),hash_key='original_stderr_sha256')
                 c['terminal_controls']=reports.controls(stderr,*terminal_args)
                 named(c['terminal_controls'],TERMINAL_CONTROL_COUNT,H(stderr),hash_key='original_stderr_sha256')
                 c['owner_summary']={k:actual_owner[k]for k in('mode','status','code','detail','cold_publications',
@@ -95,6 +102,8 @@ def cohort(builder,private,pin,binary,run,r,original,context):
                      'all12 separate negative full-state pair controls')
                 c['owner_reader_controls']=owner_reader.controls(*owner_args)
                 named(c['owner_reader_controls'],OWNER_CONTROL_COUNT,H(record))
+                c['pf_refusal_owner_controls']=owner_reader.pf_refusal_controls(*owner_args)
+                named(c['pf_refusal_owner_controls'],PF_REFUSAL_OWNER_CONTROLS,H(record))
             c['status']=EXPECTED_STATUS[lane,mode]
         except Exception as error:
             c.update(status='failed',error_type=type(error).__name__,error=type(error).__name__+': '+str(error))
@@ -108,3 +117,8 @@ def cohort(builder,private,pin,binary,run,r,original,context):
     for key,total in(('application_controls',32),('owner_reader_controls',56),('pair_controls',24),('terminal_controls',184)):
         need(sum(len(c.get(key,{}).get('refusals',[]))for c in r['fault_cases'])==total,
              'complete separate PF negative control census '+key)
+
+    need(owner_reader.PF_REFUSAL_CONTROL_COUNT==PF_REFUSAL_OWNER_CONTROLS and pf_reports.CONTROL_COUNT==PF_REFUSAL_TERMINAL_CONTROLS and
+         sum(len(c.get('pf_refusal_owner_controls',{}).get('refusals',[]))for c in r['fault_cases'])==24 and
+         sum(len(c.get('pf_refusal_terminal_controls',{}).get('refusals',[]))for c in r['fault_cases'])==44,
+         'both negative literal PF counter and terminal control populations')

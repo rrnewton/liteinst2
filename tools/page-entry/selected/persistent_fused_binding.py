@@ -51,7 +51,7 @@ def main():
                   '#define LI2_PG_ARCHIVE_SHA256 ' + literal(actual_archive['sha256']) + '\n'
                   '#define LI2_PG_POLICY_SHA256 ' + literal(policy) + '\n#endif\n')
     headers = {'linked_epoch_config.h': linked, 'persistent_group_config.h': persistent}
-    record = dict(version=1, profile='persistent-fused-' + mode + '-v1', mode=mode, native_probe=True, parse_memo=True, unregistered=True, subentry=True, cross_pair=True, direct_frontier=True, bounded_fused=True, policy_version=11,
+    record = dict(version=1, profile='persistent-fused-' + mode + '-v1', mode=mode, native_probe=True, parse_memo=True, unregistered=True, subentry=True, cross_pair=True, direct_frontier=True, bounded_fused=True, policy_version=11, pf_refusals=dict(version=1,reason=256,shared_reasons=18,abi2=False),
                   archive=actual_archive, policy_sha256=policy, original=original, sources=values,
                   headers={name: fact(text.encode()) for name, text in headers.items()})
     paths = [output / name for name in headers] + [output / 'persistent_fused_binding.json']

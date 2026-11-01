@@ -8,20 +8,23 @@ from persistent_dynamic import (MASK,load,H,digest,named,counts,control_table,se
 from persistent_fused_build import build_bridge
 import namespace
 import persistent_active_domain as component
-import persistent_direct_frontier_reports as reports
+import persistent_fused_reports as reports
+import persistent_fused_refusal_reports as pf_reports
 ROOT=Path(__file__).resolve().parents[2]
 SELECTED=ROOT/'tools/page-entry/selected'
 FIXTURE=SELECTED/'tests/persistent_fused_app'
 OWNER=SELECTED/'tests/persistent_fused_owner'
 APP_COUNTS={0:40};PAIR_COUNTS={0:36};TERMINAL_COUNTS={(0,0):73}
 OWNER_COUNTS={0:204}
+PF_REFUSAL_OWNER_CONTROLS=28
+PF_REFUSAL_TERMINAL_CONTROLS=22
 PAIR_EXPECTED=dict(observed_bounded_fused=1,plan_version=11,unsupported_root_cancellations=1,ordinary_resumptions=1,invocations=1,generated_completed=3,cold_publications=2,
     warm_entries=1,dual_entries=1,retained_generations=2,shared_domain_lifetimes=1,joint_source_pairs=2,
     joint_source_pages=4,joint_closed_pages=34,modeled_joint_retired_instructions=1417,
     modeled_final_frontier_instructions=1,modeled_cross_certificate_transfers=0,measured_interior_signals=0,
     native_instructions=2838,native_full_frames=12,lifetime_mode=2,registration_epoch=0,
     registration_calls=0,word_observed=0,word_available=False,qualification_credit=False)
-RETAINED_WIRE_BYTES=5421376
+RETAINED_WIRE_BYTES=5421440
 EXPECTED_STATUS={('native',0):'observed_native_bounded_fused',
     ('maintained',0):'observed_generated_bounded_fused_maintained',
     ('differential',0):'observed_generated_bounded_fused_differential'}
@@ -162,7 +165,7 @@ def observed_layout(builder,bridge,private,pin,binary,run,r):
         layout['types']['pdo_wire']['bytes']==r['release_build']['capture_extents']['wire']==RETAINED_WIRE_BYTES and
         r['release_build']['capture_extents']['encoded']==r['release_build']['capture_extents']['record_limit']==4<<20 and
         r['release_build']['capture_extents']['stream_strictly_below']==4<<20 and
-        r['release_build']['capture_extents']['schema_version']==12,
+        r['release_build']['capture_extents']['schema_version']==13,
         'actual full raw DWARF transcript with unchanged strict encoded4MiB record limit')
     path=private/'owner-dwarf-layout.json'
     with path.open('xb')as f:f.write(out)
@@ -204,6 +207,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,original):
              holder['release_build']['persistent_binding']['direct_frontier']is True and
              holder['release_build']['persistent_binding']['bounded_fused']is True and
              holder['release_build']['persistent_binding']['policy_version']==11 and
+             holder['release_build']['pf_refusals']==holder['release_build']['persistent_binding']['pf_refusals']==dict(version=1,reason=256,shared_reasons=18,abi2=False) and
              holder['release_build']['bounded_fused']==dict(version=1,policy_version=11,heads_max=128,shared_boundaries=8,active_members_max=2,call_ret=False) and
              holder['release_build']['direct_frontier']['policy_version']==11 and
              holder['release_build']['direct_frontier']['partition']=='direction-fused' and
@@ -253,6 +257,10 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,original):
                 actual_owner=owner_reader.read(*owner_args)
                 terminal_args=(row['pid'],row['exit'],row['stdout_provenance_before'],images,raws,fact(carrier),carrier_bytes,actual_owner,owner_reader,mode)
                 terminal,c['terminal']=reports.check(stderr,*terminal_args,lane=lane,application=parsed);r['terminal_reports'][label]=terminal
+                c['pf_refusals']=actual_owner['pf_refusals']
+                c['pf_refusal_stages']=actual_owner['pf_refusal_stages']
+                c['pf_refusal_terminal_controls']=pf_reports.controls(stderr,actual_owner,owner_reader)
+                named(c['pf_refusal_terminal_controls'],PF_REFUSAL_TERMINAL_CONTROLS,H(stderr),hash_key='original_stderr_sha256')
                 repeat_setup_completed(stderr,app_layout,c['terminal']['repeat_lease'],parsed,
                     tuple((x['before']['fs'],x['before']['gs'])for x in actual_owner['attempts']))
                 c['repeat_tls_controls']=reports.repeat_tls_controls(stderr,terminal,row['pid'],images,raws,
@@ -281,6 +289,8 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,original):
                     type(names['native_operations'])is int and names['native_operations']==0,'all exact cross-lane full-state controls')
                 c['owner_reader_controls']=owner_reader.controls(*owner_args)
                 named(c['owner_reader_controls'],OWNER_COUNTS[mode],H(record))
+                c['pf_refusal_owner_controls']=owner_reader.pf_refusal_controls(*owner_args)
+                named(c['pf_refusal_owner_controls'],PF_REFUSAL_OWNER_CONTROLS,H(record))
             c['status']=EXPECTED_STATUS[lane,mode]
         except Exception as error:
             c.update(status='failed',error_type=type(error).__name__,error=type(error).__name__+': '+str(error))
@@ -303,4 +313,8 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,original):
          reports.SUBENTRY_CONTROL_COUNT==19,'both separate exact actual-entry terminal reader populations')
     need(sum(len(c.get('effect_controls',{}).get('refusals',[]))for c in r['cases'])==24 and
          reports.EFFECT_CONTROL_COUNT==12,'both separate exact tiny-fixture effect populations')
+    need(owner_reader.PF_REFUSAL_CONTROL_COUNT==PF_REFUSAL_OWNER_CONTROLS and pf_reports.CONTROL_COUNT==PF_REFUSAL_TERMINAL_CONTROLS and
+         sum(len(c.get('pf_refusal_owner_controls',{}).get('refusals',[]))for c in r['cases'])==56 and
+         sum(len(c.get('pf_refusal_terminal_controls',{}).get('refusals',[]))for c in r['cases'])==44,
+         'both literal PF counter snapshot and whole terminal control populations')
     return app_layout,seed_reference,subjects

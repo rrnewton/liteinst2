@@ -90,7 +90,7 @@ def configuration(data):
               ('FINAL',found[b'region_app_a_final'][0]),('HIGH',high)]
     return ('#ifndef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE_CONFIG_H\n'
             '#define LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE_CONFIG_H\n'
-            '#define LI2_PDD_CAPTURE_VERSION 12\n'+
+            '#define LI2_PDD_CAPTURE_VERSION 13\n'+
             ''.join('#define LI2_PDD_'+key+'_RVA 0x%xULL\n' % value for key, value in values)+
             '#endif\n').encode()
 

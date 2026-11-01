@@ -39,6 +39,37 @@ def elf_symbols(data):
     return h,ph,symbols
 
 class Check(prior.Check):
+    def counts(self,b):
+        values=super().counts(b)
+        for key in ('pf_backward_refused','pf_backward_cancelled'):
+            value=self.i(b,'pdo_counts',key)
+            need(type(value)is int and 0<=value<U64,'literal protected PF counter '+key)
+            values[key]=value
+        need(values['pf_backward_cancelled']<=values['pf_backward_refused'],'PF cancellation never precedes refusal')
+        return values
+
+    def pf_partition(self,b,pending_old=0):
+        values=self.counts(b)
+        need(pending_old in (0,1) and values['pf_backward_refused']==values['pf_backward_cancelled'] and
+             sum(values['misses'])+values['pf_backward_cancelled']==values['cancelled']+pending_old,
+             'literal PF cancellation plus all18 old reasons exactly partition this captured stage')
+        return values
+
+    def pf_stages(self,epochs,cancellation):
+        rows=[]
+        def take(name,b):
+            c=self.counts(b);rows.append(dict(stage=name,refused=c['pf_backward_refused'],cancelled=c['pf_backward_cancelled']))
+        for index,e in enumerate(self.r.items(self.b,'pdo_wire','epochs','pdo_epoch')[:epochs]):
+            take('epoch'+str(index)+'_prior',self.f(e,'pdo_epoch','prior_counts'))
+            for name in ('entered','terminal'):
+                take('epoch'+str(index)+'_'+name,self.f(self.f(e,'pdo_epoch',name),'pdo_stage','counts'))
+        if cancellation:
+            c=self.f(self.b,'pdo_wire','cancellation')
+            for name in ('held','resumed'):take('cancel_'+name,self.f(self.f(c,'pbo_cancel',name),'pdo_stage','counts'))
+        take('final',self.f(self.b,'pdo_wire','final_counts'))
+        need(len(rows)==(12 if cancellation else 4),'all literal PF refusal snapshot stages')
+        return rows
+
     def frame(self,b,tls=True):
         f=super().frame(b,tls)
         need(f['uc'][304:432]==f['si'],'whole actual adjacent kernel siginfo in copied context')
@@ -90,7 +121,7 @@ class Check(prior.Check):
         payload=self.f(c,t,'payload');ph=self.f(payload,'pe_payload','header')
         self.eq(ph,'pe_header',lifetime_version=1,lifetime_mode=2,version=1,serial=serial,generation=gen,registry=self.symbol('pe'),generated=self.generated,spill=self.spill,table=self.table,plan_proof=2,none_proof=1,source_validations=1,registered_epoch=0,rseq_address=0,rseq_length=0,rseq_signature=0)
         need(self.layout(self.f(ph,'pe_header','layout'))==self.geometry and q(self.f(ph,'pe_header','member_generation'))==(2*gen,2*gen+1),'immutable actual retained member identities/layout');zero(self.f(ph,'pe_header','reserved'),'whole header reserved')
-        binding=self.image['persistent_binding'];need(binding['version']==1 and binding['unregistered']is True and binding['subentry']is True and binding['cross_pair']is True and binding['direct_frontier']is True and binding['profile']=='persistent-fused-'+binding['mode']+'-v1'and binding['bounded_fused']is True and binding['policy_version']==11,'explicit retained-two source binding')
+        binding=self.image['persistent_binding'];need(binding['version']==1 and binding['unregistered']is True and binding['subentry']is True and binding['cross_pair']is True and binding['direct_frontier']is True and binding['profile']=='persistent-fused-'+binding['mode']+'-v1'and binding['bounded_fused']is True and binding['policy_version']==11 and binding['pf_refusals']==dict(version=1,reason=256,shared_reasons=18,abi2=False),'explicit retained-two source binding')
         need(self.f(ph,'pe_header','archive')==bytes.fromhex(binding['archive']['sha256'])and self.f(ph,'pe_header','policy')==bytes.fromhex(binding['policy_sha256']),'whole actual retained archive/policy authority')
         key=self.f(payload,'pe_payload','source');self.source_key(key,entry);expected=self.compact(payload,entry)
         need(self.f(c,t,'code')==expected['image']+expected['stub_image'],'all17 actual code pages in shared literal certificate')
@@ -166,7 +197,7 @@ class Check(prior.Check):
         row=r.items(key,'li2_pg_source_key','page','li2_pg_source_page')[0]
         self.main_backing=self.f(row,'li2_pg_source_page','backing');self.source_offset=self.i(self.f(row,'li2_pg_source_page','identity'),'li2_fetch_page','offset')
         self.main_vma_identity=self.v(self.f(row,'li2_pg_source_page','identity'),'li2_fetch_page','vma_major vma_minor vma_inode')
-        binding=image['persistent_binding'];need(binding['version']==1 and binding['unregistered']is True and binding['subentry']is True and binding['cross_pair']is True and binding['direct_frontier']is True and binding['mode']in('capture','differential')and binding['profile']=='persistent-fused-'+binding['mode']+'-v1'and binding['bounded_fused']is True and binding['policy_version']==11,'actual distinct active-domain build mode')
+        binding=image['persistent_binding'];need(binding['version']==1 and binding['unregistered']is True and binding['subentry']is True and binding['cross_pair']is True and binding['direct_frontier']is True and binding['mode']in('capture','differential')and binding['profile']=='persistent-fused-'+binding['mode']+'-v1'and binding['bounded_fused']is True and binding['policy_version']==11 and binding['pf_refusals']==dict(version=1,reason=256,shared_reasons=18,abi2=False),'actual distinct active-domain build mode')
         self.differential=binding['mode']=='differential';self.geometry=self.layout(self.f(self.f(payload,'pe_payload','header'),'pe_header','layout'))
 
     def decoded(self,b,pc,kind=None):
@@ -296,7 +327,7 @@ class Check(prior.Check):
         h=q(self.f(b,t,'h'));need(h[:3]==(1,index,entry)and h[3]>0 and h[4:11]==(1,1,h[3],0,0,1,0)and h[11]==h[3]+1 and h[12:15]==(0,0,1)and h[24]in(0,1)and not any(h[25:]),'actual accepted domain entry/exit with zero interior signal')
         need(h[15]in(0,1)and h[16]==self.symbol('selected_session')and h[17]>0 and h[18]<U64 and h[19:24]==(h[15],1,0,0,1),'actual selected preclose domain predecessor')
         initial=self.f(b,t,'initial_registry');need(initial==self.f(b,t,'terminal_registry'),'whole domain registry unchanged during epoch');self.ranges,_=self.registry_prefix(self.f(self.b,'pdo_wire','startup_registry'),initial)
-        prior=self.f(b,t,'prior_counts');pc=self.counts(prior);prior_slots=self.f(b,t,'prior');prior_domain=self.domain_checkpoint(self.f(b,t,'prior_domain'),baseline)
+        prior=self.f(b,t,'prior_counts');pc=self.pf_partition(prior);prior_slots=self.f(b,t,'prior');prior_domain=self.domain_checkpoint(self.f(b,t,'prior_domain'),baseline)
         need(prior_domain==baseline,'complete prior domain unchanged between focal activations');self.domain_state(prior_domain,pc['next_serial'])
         need(pc['entries']==pc['completed']and pc['publications']==pc['next_generation']and pc['unexpected']==0,'all preceding domain epochs completed before focal entry')
         prior_rows,_=self.storage(prior_slots,pc,set(range(min(index,2))),prior_domain);chosen=self.choose(prior_rows,entry,prior_domain);need(chosen==h[24],'actual root/empty/oldest-completed selection')
@@ -307,6 +338,7 @@ class Check(prior.Check):
         if warm:inc.update(hits=1)
         else:inc.update(next_generation=1,publications=1,cold_attempts=1,retirements=installed)
         self.delta(prior,self.f(entered,st,'counts'),**inc);self.delta(self.f(entered,st,'counts'),self.f(end,st,'counts'),completed=1)
+        self.pf_partition(self.f(entered,st,'counts'));self.pf_partition(self.f(end,st,'counts'))
         ed=self.domain_checkpoint(self.f(entered,st,'domain'),baseline);zd=self.f(b,t,'terminal_domain');need(self.domain_checkpoint(self.f(end,st,'domain'),zd)==zd,'whole terminal domain checkpoint and literal state equality')
         self.domain_state(ed,serial);self.domain_state(zd,serial)
         self.r.change(prior_domain,ed,'pda_state',values=dict(dual_entries=self.i(prior_domain,'pda_state','dual_entries')+int(warm)),observed=('work','claimed'))
@@ -445,7 +477,7 @@ class Check(prior.Check):
     def finish(self,status):
         h=self.h;t='pdo_wire';r=self.r
         need(type(status)is int and status==0 and self.app['mode']==0,'actual successful loop-only process and mode')
-        need(h[:9]==(0x414f50445049324c,12,5421376,r.layout['registrations']['pe']['bytes'],362656,364544,69632,968,128),'actual distinct group record version and complete extents')
+        need(h[:9]==(0x414f50445049324c,13,5421440,r.layout['registrations']['pe']['bytes'],362656,364544,69632,968,128),'actual distinct group record version and complete extents')
         need(canonical(self.bias)and self.bias%PAGE==0 and h[9:12]==tuple(self.symbol(n)for n in('li2_raw6','li2_gateway_start','li2_gateway_end'))and h[10]<=h[9]<h[11],'actual emitted gateway identity')
         need(h[12]%PAGE==0 and h[13]==524288 and h[14:16]==(1,0)and h[16]&(3|0x400|0x800)==1 and h[17:20]==(0,1,0),'actual altstack and FD3/profile')
         need(h[20:26]==tuple(self.symbol(n)for n in('pe','pdo_wire','pg_source','pg_rseq','selected_chain','span_progress')),'actual protected group addresses')
@@ -485,7 +517,7 @@ class Check(prior.Check):
         need((warm['slot'],warm['generation'],warm['build_serial'])==(a['slot'],a['generation'],a['build_serial'])and warm['members']==[a['members'][0],b['members'][0]],'joint A entry retains both exact cold generations')
         need(b['begin']==a['terminal_ordinal']+1 and warm['begin']==b['terminal_ordinal']+1,'complete focal raw-event chronology')
         self.next_trace(self.f(self.b,t,'next'),warm,epochs[2]);cancellation=self.cancellation(self.f(self.b,t,'cancellation'),warm);need(raw[0]>=cancellation['next_ordinal'],'whole chronological active-domain ingress ordinals')
-        final=self.counts(self.f(self.b,t,'final_counts'));last=self.counts(cancellation['counts_raw'])
+        final=self.pf_partition(self.f(self.b,t,'final_counts'));last=self.counts(cancellation['counts_raw'])
         need(all(final[k]>=last[k]for k in final if k!='misses')and all(a>=b for a,b in zip(final['misses'],last['misses'],strict=True)),'final counters retain every focal event without attributing later work')
         names='version status failure_code detail_abs detail_negative phase serial generation build_serial offers cold_attempts publications hits cancelled retirements permit_claims entries completed unexpected permit opened_pages closed_pages anchor_released registration_rechecked guest_data_fault recovery_complete first_error active busy selected_slot slot0_generation slot1_generation slot0_permit slot1_permit slot0_completed_serial slot1_completed_serial domain_members dual_entries dual_completed'.split()
         values=q(self.f(self.b,t,'final_row'));need(len(values)==len(names),'whole exact retained terminal schema');row=dict(zip(names,values,strict=True));row['misses']=list(final['misses'])
@@ -496,7 +528,7 @@ class Check(prior.Check):
         need(row['selected_slot']in(0,1)and 0<row['build_serial']<=row['serial'],'actual final selected slot/build serial')
         gs=(row['slot0_generation'],row['slot1_generation']);ps=(row['slot0_permit'],row['slot1_permit']);cs=(row['slot0_completed_serial'],row['slot1_completed_serial'])
         need(all(0<g<=final['next_generation']for g in gs)and gs[0]!=gs[1]and ps==(1,1)and all(0<c<=final['next_serial']for c in cs)and row['generation']==gs[row['selected_slot']]and row['permit']==ps[row['selected_slot']],'actual final two retained identities and completed permits')
-        need(final['offers']==final['entries']+final['cancelled']and final['entries']==final['publications']+final['hits']+final['subentry_hits']and final['cold_attempts']==final['publications']+final['cancelled']and sum(final['misses'])==final['cancelled']and final['next_serial']==final['offers']and final['next_generation']==final['publications'],'whole completed/cancelled retained partition')
+        need(final['offers']==final['entries']+final['cancelled']and final['entries']==final['publications']+final['hits']+final['subentry_hits']and final['cold_attempts']==final['publications']+final['cancelled']and sum(final['misses'])+final['pf_backward_cancelled']==final['cancelled']and final['pf_backward_refused']==final['pf_backward_cancelled']and final['next_serial']==final['offers']and final['next_generation']==final['publications'],'whole completed/cancelled retained partition')
         need(final['entries']==final['completed']and final['unexpected']==0 and final['retirements']==final['publications']-2 and final['permit_claims']==final['retirements']+final['hits']+final['subentry_hits']+row['dual_entries'],'whole two-resident permit/publication accounting')
         need(row['phase']in(13,14)and row['active']==row['busy']==row['first_error']==row['guest_data_fault']==0 and row['anchor_released']==row['registration_rechecked']==1,'actual final closed retained epoch or completed cancellation')
         need((row['opened_pages'],row['closed_pages'],row['recovery_complete'])==((17*row['domain_members'],17*row['domain_members'],1)if row['phase']==13 else(0,0,0)),'exact final retained extent and recovery for its terminal phase')
@@ -509,7 +541,7 @@ class Check(prior.Check):
         else:need(not any(subvalues[7:]),'last cancelled attempt has no invented entry receipt')
         replacements=a['prior_generation_installed']+b['prior_generation_installed']
         mapping=[]
-        return dict(cancellation=cancellation,plan_version=11,rseq_mapping=mapping,terminal=row,subentry_terminal=sub,subentry_entries=0,mode=0,attempts=[a,b,warm],cold_publications=2,warm_entries=1,dual_entries=1,replacements=replacements,permit_claims=replacements+2,interior_signals=0,source=self.app['source'],lifetime_mode=2,registration_epoch=0,registration_calls=0,word_observed=0,word_available=False,tls_complete=1,status=0,code=0,detail=0,qualification_credit=False)
+        return dict(pf_refusal_stages=self.pf_stages(3,True),pf_refusals=pf_row(final,0,0),cancellation=cancellation,plan_version=11,rseq_mapping=mapping,terminal=row,subentry_terminal=sub,subentry_entries=0,mode=0,attempts=[a,b,warm],cold_publications=2,warm_entries=1,dual_entries=1,replacements=replacements,permit_claims=replacements+2,interior_signals=0,source=self.app['source'],lifetime_mode=2,registration_epoch=0,registration_calls=0,word_observed=0,word_available=False,tls_complete=1,status=0,code=0,detail=0,qualification_credit=False)
 
     def entry_value(self,e,key,actual,layout,root=None):
         t='li2_pgs_entry';v=self.f(e,t,'target');vt='li2_pgs_target';row=self.f(e,t,'row');d=self.f(self.f(e,t,'original'),'li2_span_decoded','decoded')
@@ -538,6 +570,8 @@ class Check(prior.Check):
 
     def cancellation(self,b,last):
         t='pbo_cancel';st='pdo_stage';pt='li2_pg_progress';ct='pbo_miss_plan';rt='li2_pg_rseq_progress'
+        self.pf_partition(self.f(self.f(b,t,'held'),st,'counts'),1)
+        self.pf_partition(self.f(self.f(b,t,'resumed'),st,'counts'))
         h=q(self.f(b,t,'h'));pc=self.page+0x223
         need(h[0]==h[4]==h[5]==h[9]==h[10]==1 and h[1]==h[6]==last['next_trace_ordinal'] and h[11]==h[1]+1 and h[7]==1 and h[3]in(0,1)and h[8]==1-h[3]and h[12:]==(0,0,0,0),'one actual held miss, RUNNING cancellation and immediate next hardware event')
         before=self.frame(self.f(b,t,'before'));returned=self.frame(self.f(b,t,'returned'));nxt=self.normalized(self.f(b,t,'next'),before)
@@ -625,10 +659,23 @@ class Check(prior.Check):
 
 def read(data,layout,image,app,pid,cpu,exit_status):
     need(type(pid)is int and 0<pid<1<<31 and type(cpu)is int and cpu>=0,'actual process and reserved CPU')
-    raw,transport=codec.decode(data,raw_bytes=5421376,schema_version=12)
+    raw,transport=codec.decode(data,raw_bytes=5421440,schema_version=13)
     r=wire.Reader(raw,layout);r.transport=transport
     result=Check(r,image,app,pid,cpu).finish(exit_status);result['transport']=transport
     return result
+
+PF_KEYS=('version','policy_version','reason','status','failure_code','refused','cancelled')
+PF_COUNTERS=('pf_backward_refused','pf_backward_cancelled')
+
+def pf_row(counts,status,code):
+    return dict(version=1,policy_version=11,reason=256,status=status,failure_code=code,
+                refused=counts['pf_backward_refused'],cancelled=counts['pf_backward_cancelled'])
+
+def pf_terminal(parsed,owner):
+    need(type(parsed)is dict and tuple(parsed)==PF_KEYS and
+         all(type(v)is int and 0<=v<U64 for v in parsed.values())and parsed==owner['pf_refusals'],
+         'whole actual protected PF refusal terminal row')
+    return dict(version=1,policy_version=11,reason=256,protected_fields=7,complete=True)
 
 def terminal(parsed,owner):
     expected=owner['terminal'];need(type(parsed)is dict and set(parsed)==set(expected)and all(type(v)is int for k,v in parsed.items()if k!='misses')and type(parsed['misses'])is list and all(type(v)is int for v in parsed['misses'])and parsed==expected,'whole actual protected direct-frontier terminal row')
@@ -644,7 +691,7 @@ CONTROL_COUNTS={0:204}
 def controls(data,layout,image,app,pid,cpu,exit_status):
     """PB-specific supplied corruption controls. Old native41/404 is separate."""
     read(data,layout,image,app,pid,cpu,exit_status)
-    raw,_=codec.decode(data,raw_bytes=5421376,schema_version=12);types=layout['types'];tests=[]
+    raw,_=codec.decode(data,raw_bytes=5421440,schema_version=13);types=layout['types'];tests=[]
     def at(t,k,base=0,index=0,child=None):
         return base+types[t]['fields'][k]['offset']+(index*types[child]['bytes']if child else index)
     def add(name,t,k,base=0,index=0,child=None):tests.append((name,at(t,k,base,index,child)))
@@ -687,7 +734,50 @@ def controls(data,layout,image,app,pid,cpu,exit_status):
     refused=[]
     for name,offset in tests:
         need(0<=offset<len(raw),'whole actual supplied mutation offset');mutant=bytearray(raw);mutant[offset]^=1
-        try:read(codec.encode_for_control(bytes(mutant),schema_version=12),layout,image,app,pid,cpu,exit_status)
+        try:read(codec.encode_for_control(bytes(mutant),schema_version=13),layout,image,app,pid,cpu,exit_status)
         except ValueError:refused.append(name)
         else:raise ValueError('accepted supplied PB owner corruption '+name)
     return dict(original_sha256=hashlib.sha256(data).hexdigest(),refusals=refused,native_operations=0,mode=0)
+
+
+PF_REFUSAL_CONTROL_COUNT=28
+
+def pf_refusal_controls(data,layout,image,app,pid,cpu,exit_status):
+    read(data,layout,image,app,pid,cpu,exit_status)
+    raw,_=codec.decode(data,raw_bytes=5421440,schema_version=13)
+    return pf_controls(data,raw,layout,(image,app,pid,cpu,exit_status),read,
+        lambda b:codec.encode_for_control(b,schema_version=13),epochs=3,cancellation=True)
+
+def pf_controls(data,raw,layout,args,reader,encode,*,epochs,cancellation):
+    import copy
+    types=layout['types'];tests=[]
+    def at(t,k,base=0):return base+types[t]['fields'][k]['offset']
+    for index in range(epochs):
+        e=at('pdo_wire','epochs')+index*types['pdo_epoch']['bytes']
+        tests.append(('epoch'+str(index)+'_prior',at('pdo_epoch','prior_counts',e)))
+        for stage in ('entered','terminal'):
+            tests.append(('epoch'+str(index)+'_'+stage,at('pdo_stage','counts',at('pdo_epoch',stage,e))))
+    if cancellation:
+        c=at('pdo_wire','cancellation')
+        for stage in ('held','resumed'):
+            tests.append(('cancel_'+stage,at('pdo_stage','counts',at('pbo_cancel',stage,c))))
+    tests.append(('final',at('pdo_wire','final_counts')))
+    refused=[]
+    for name,base in tests:
+        for key in PF_COUNTERS:
+            changed=bytearray(raw);changed[at('pdo_counts',key,base)]^=1
+            try:reader(encode(bytes(changed)),layout,*args)
+            except ValueError:refused.append(name+'_'+key)
+            else:raise ValueError('accepted literal protected PF count mutation '+name+'_'+key)
+    for name in ('previous_last','refused_offset','cancelled_width','owner_extent'):
+        changed=copy.deepcopy(layout);pf=changed['pf_refusals']
+        if name=='previous_last':pf['previous_last']['bytes']+=8
+        elif name=='refused_offset':pf['fields']['pf_backward_refused']['offset']+=8
+        elif name=='cancelled_width':pf['fields']['pf_backward_cancelled']['bytes']=4
+        else:changed['registrations']['pe']['bytes']+=64
+        try:reader(data,changed,*args)
+        except ValueError:refused.append('layout_'+name)
+        else:raise ValueError('accepted changed actual PF field witness '+name)
+    expected=28 if cancellation else 12
+    need(len(refused)==len(set(refused))==expected,'all literal PF snapshot and field-witness controls')
+    return dict(refusals=refused,original_sha256=hashlib.sha256(data).hexdigest(),native_operations=0)

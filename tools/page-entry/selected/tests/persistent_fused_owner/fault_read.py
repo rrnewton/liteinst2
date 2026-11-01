@@ -1,4 +1,4 @@
-"""PF12 terminal MOV recovery observations, never successful owner completions.
+"""PF13 terminal MOV recovery observations, never successful owner completions.
 
 The old mode0 reader and its204 controls stay separate. These two profiles
 require actual PE_EVENT125, held source/references, literal recovery and complete
@@ -110,7 +110,7 @@ class Check(base.Check):
         h=q(self.f(b,t,'h'));need(h[:3]==(1,index,entry)and h[3]>0 and h[4:11]==(1,1,h[3],0,0,1,1)and h[11]==h[3]+1 and h[12:15]==(0,0,1)and h[24]in(0,1)and not any(h[25:]),'actual entry then one terminal fault/rejection signal, no hidden interior signal')
         need(h[15]in(0,1)and h[16]==self.symbol('selected_session')and h[17]>0 and h[18]<U64 and h[19:24]==(h[15],1,0,0,1),'actual selected preclose domain predecessor')
         initial=self.f(b,t,'initial_registry');need(initial==self.f(b,t,'terminal_registry'),'whole domain registry unchanged during epoch');self.ranges,_=self.registry_prefix(self.f(self.b,'pdo_wire','startup_registry'),initial)
-        prior=self.f(b,t,'prior_counts');pc=self.counts(prior);prior_slots=self.f(b,t,'prior');prior_domain=self.domain_checkpoint(self.f(b,t,'prior_domain'),baseline)
+        prior=self.f(b,t,'prior_counts');pc=self.pf_partition(prior);prior_slots=self.f(b,t,'prior');prior_domain=self.domain_checkpoint(self.f(b,t,'prior_domain'),baseline)
         need(prior_domain==baseline,'complete prior domain unchanged between focal activations');self.domain_state(prior_domain,pc['next_serial'])
         need(pc['entries']==pc['completed']and pc['publications']==pc['next_generation']and pc['unexpected']==0,'all preceding domain epochs completed before focal entry')
         prior_rows,_=self.storage(prior_slots,pc,set(range(min(index,2))),prior_domain);chosen=self.choose(prior_rows,entry,prior_domain);need(chosen==h[24],'actual root/empty/oldest-completed selection')
@@ -121,6 +121,7 @@ class Check(base.Check):
         if warm:inc.update(hits=1)
         else:inc.update(next_generation=1,publications=1,cold_attempts=1,retirements=installed)
         self.delta(prior,self.f(entered,st,'counts'),**inc);self.delta(self.f(entered,st,'counts'),self.f(end,st,'counts'),unexpected=1)
+        self.pf_partition(self.f(entered,st,'counts'));self.pf_partition(self.f(end,st,'counts'))
         ed=self.domain_checkpoint(self.f(entered,st,'domain'),baseline);zd=self.f(b,t,'terminal_domain');need(self.domain_checkpoint(self.f(end,st,'domain'),ed)==zd,'whole terminal domain checkpoint and literal state equality')
         self.domain_state(ed,serial);self.domain_state(zd,serial)
         self.r.change(prior_domain,ed,'pda_state',values=dict(dual_entries=self.i(prior_domain,'pda_state','dual_entries')+int(warm)),observed=('work','claimed'))
@@ -226,7 +227,7 @@ class Check(base.Check):
         h=self.h;t='pdo_wire';r=self.r
         need(type(status)is int and status==125 and self.app['mode']in(1,2),'actual explicit PF terminal negative')
         self.signal=11 if self.app['mode']==1 else 4
-        need(h[:9]==(0x414f50445049324c,12,5421376,r.layout['registrations']['pe']['bytes'],362656,364544,69632,968,128),'actual distinct group record version and complete extents')
+        need(h[:9]==(0x414f50445049324c,13,5421440,r.layout['registrations']['pe']['bytes'],362656,364544,69632,968,128),'actual distinct group record version and complete extents')
         need(canonical(self.bias)and self.bias%PAGE==0 and h[9:12]==tuple(self.symbol(n)for n in('li2_raw6','li2_gateway_start','li2_gateway_end'))and h[10]<=h[9]<h[11],'actual emitted gateway identity')
         need(h[12]%PAGE==0 and h[13]==524288 and h[14:16]==(1,0)and h[16]&(3|0x400|0x800)==1 and h[17:20]==(0,1,self.app['mode']),'actual altstack and FD3/profile')
         need(h[20:26]==tuple(self.symbol(n)for n in('pe','pdo_wire','pg_source','pg_rseq','selected_chain','span_progress')),'actual protected group addresses')
@@ -279,20 +280,21 @@ class Check(base.Check):
         sub=dict(zip(subnames,q(self.f(self.b,t,'final_subentry')),strict=True));entry=a['entry'];target=self.f(entry,'li2_pgs_entry','target')
         want=dict(version=1,status=125,failure_code=3304,selections=counts['subentry_selections'],hits=counts['subentry_hits'],entries=counts['subentry_entries'],completed=counts['subentry_completed'],serial=a['serial'],generation=a['generation'],root=self.head,pc=self.head,head=0,slot=a['slot'],bank=self.i(entry,'li2_pgs_entry','bank'),complete=1)
         need(sub==want,'whole actual failed-subentry row is an entry receipt, never completion authority')
-        return dict(mode=self.app['mode'],status=125,code=3304,detail=self.signal,terminal=row,subentry_terminal=sub,attempt=a,source=self.app['source'],cold_publications=1,generated_entries=1,generated_completed=0,completion_permits=0,anchor_released=0,cleanup_closed_pages=a['closed_pages'],interior_signals=0,native_fault_signal=11,actual_signal=self.signal,recovery_phase=1 if self.signal==11 else 3,qualification_credit=False)
+        return dict(pf_refusal_stages=self.pf_stages(1,False),pf_refusals=base.pf_row(counts,125,3304),mode=self.app['mode'],status=125,code=3304,detail=self.signal,terminal=row,subentry_terminal=sub,attempt=a,source=self.app['source'],cold_publications=1,generated_entries=1,generated_completed=0,completion_permits=0,anchor_released=0,cleanup_closed_pages=a['closed_pages'],interior_signals=0,native_fault_signal=11,actual_signal=self.signal,recovery_phase=1 if self.signal==11 else 3,qualification_credit=False)
 
 def read(data,layout,image,app,pid,cpu,exit_status):
     need(type(pid)is int and 0<pid<1<<31 and type(cpu)is int and cpu>=0,'actual process and reserved CPU')
-    raw,transport=decode_failure(data,raw_bytes=5421376,schema_version=12)
+    raw,transport=decode_failure(data,raw_bytes=5421440,schema_version=13)
     r=base.wire.Reader(raw,layout);r.transport=transport
     result=Check(r,image,app,pid,cpu).finish(exit_status);result['transport']=transport;return result
 
+pf_terminal=base.pf_terminal
 terminal=base.terminal
 subentry_terminal=base.subentry_terminal
 CONTROL_COUNT=28
 def controls(data,layout,image,app,pid,cpu,exit_status):
     read(data,layout,image,app,pid,cpu,exit_status)
-    raw,_=decode_failure(data,raw_bytes=5421376,schema_version=12);types=layout['types']
+    raw,_=decode_failure(data,raw_bytes=5421440,schema_version=13);types=layout['types']
     def at(t,k,base=0):return base+types[t]['fields'][k]['offset']
     e=at('pdo_wire','epochs');entered=at('pdo_epoch','entered',e);end=at('pdo_epoch','terminal',e);info=at('pdo_epoch','info',e)
     after=at('pdo_epoch','after',e);f=at('le_frame','frame',after);p=at('pdo_stage','progress',end);work=at('pda_state','work',at('pdo_epoch','terminal_domain',e))
@@ -301,7 +303,7 @@ def controls(data,layout,image,app,pid,cpu,exit_status):
     refused=[]
     for name,offset in tests:
         changed=bytearray(raw);changed[offset]^=1
-        encoded=encode_failed_control(bytes(changed),schema_version=12)
+        encoded=encode_failed_control(bytes(changed),schema_version=13)
         try:read(encoded,layout,image,app,pid,cpu,exit_status)
         except ValueError:refused.append(name)
         else:raise ValueError('accepted changed PF terminal negative '+name)
@@ -360,3 +362,12 @@ def pair_controls(native,gated,owner):
         else:raise ValueError('accepted changed PF terminal pair '+name)
     need(len(refused)==len(set(refused))==PAIR_CONTROL_COUNT,'all separate terminal native/generated pair controls')
     return dict(refusals=refused,native_operations=0)
+
+
+PF_REFUSAL_CONTROL_COUNT=12
+
+def pf_refusal_controls(data,layout,image,app,pid,cpu,exit_status):
+    read(data,layout,image,app,pid,cpu,exit_status)
+    raw,_=decode_failure(data,raw_bytes=5421440,schema_version=13)
+    return base.pf_controls(data,raw,layout,(image,app,pid,cpu,exit_status),read,
+        lambda b:encode_failed_control(b,schema_version=13),epochs=1,cancellation=False)

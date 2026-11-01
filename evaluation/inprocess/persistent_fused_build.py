@@ -79,7 +79,7 @@ def binding_config(builder, archive, image, output, pin, binary, run, *, mode):
         path = pin(binary(output / name))
         need(path.read_bytes() == data, 'whole independent archive/policy/image header')
         header_facts[name] = dict(path=str(path), **fact(path))
-    record = dict(version=1, profile='persistent-fused-'+mode+'-v1', mode=mode, native_probe=True, parse_memo=True, unregistered=True, subentry=True, cross_pair=True, direct_frontier=True, bounded_fused=True, policy_version=11, archive=archive_fact, policy_sha256=policy, original=original, sources=values, headers={name: dict(bytes=len(data), sha256=H(data)) for name, data in expected.items()})
+    record = dict(version=1, profile='persistent-fused-'+mode+'-v1', mode=mode, native_probe=True, parse_memo=True, unregistered=True, subentry=True, cross_pair=True, direct_frontier=True, bounded_fused=True, policy_version=11, pf_refusals=dict(version=1,reason=256,shared_reasons=18,abi2=False), archive=archive_fact, policy_sha256=policy, original=original, sources=values, headers={name: dict(bytes=len(data), sha256=H(data)) for name, data in expected.items()})
     manifest = pin(binary(manifest))
     need(manifest.read_bytes() == (json.dumps(record, sort_keys=True) + '\n').encode(), 'complete typed persistent binding manifest')
     return dict(**record, header_paths=header_facts, manifest=dict(path=str(manifest), **fact(manifest)))
@@ -121,6 +121,7 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     state['active_domain'] = dict(version=1, unregistered=True, subentry=True, cross_pair=True, direct_frontier=True, slots=2, same_source_pair=False, source_pairs_max=2, joint_receipts=3, directory_heads=256,
         maintained_rseq=True,differential=differential,native_probe=True,parse_memo=True,immutable_reconstruction='two-whole-certificates-with-frozen-lossless-transcript' if capture else None)
     state['dispatch'] = dict(version=3, heads_min=1, heads_max=128, header_abi=1, shared_boundaries=8, code_pages=17, emitter_slot_bytes=512, emitter_boundaries=64)
+    state['pf_refusals'] = dict(version=1,reason=256,shared_reasons=18,abi2=False)
     state['bounded_fused'] = dict(version=1,policy_version=11,heads_max=128,shared_boundaries=8,active_members_max=2,call_ret=False)
     state['direct_frontier'] = dict(version=1,policy_version=11,partition='direction-fused',all_arms_directory=False,conditions=16,shared_boundaries=8,
         typed_external_arms=True,unknown_target='original branch-before full drain')
@@ -268,7 +269,7 @@ def capture_config(builder, image, output, pin, binary, run):
     values = {'A':base+0x206, 'B':base+0x2400, 'NEXT':base+0x223, 'FINAL':base+0x221, 'HIGH':high}
     header = ('#ifndef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE_CONFIG_H\n'
               '#define LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE_CONFIG_H\n'
-              '#define LI2_PDD_CAPTURE_VERSION 12\n'+
+              '#define LI2_PDD_CAPTURE_VERSION 13\n'+
               ''.join('#define LI2_PDD_'+k+'_RVA 0x%xULL\n'%v for k,v in values.items())+
               '#endif\n').encode()
     script = pin(SELECTED/'persistent_fused_capture_binding.py')
@@ -277,7 +278,7 @@ def capture_config(builder, image, output, pin, binary, run):
     need(out == err == b'', 'observation-only binder diagnostics empty')
     destination = pin(binary(output/'persistent_fused_capture_config.h'))
     need(destination.read_bytes() == header, 'complete independently derived observation header')
-    return dict(version=12,original=original,symbols=values,source_pages=[base+i*4096 for i in range(4)],
+    return dict(version=13,original=original,symbols=values,source_pages=[base+i*4096 for i in range(4)],
         source_pairs=[dict(bytes=8192,sha256=H(source[i:i+8192]))for i in (0,8192)],
         source=dict(bytes=len(source),sha256=H(source)),
         script=dict(path=str(script),**fact(script)),header=dict(path=str(destination),**fact(destination)))
@@ -300,7 +301,7 @@ def capture_extents(builder, bridge, symbols, pin, run, state):
     match=re.fullmatch(b'LI2_PDO_EXTENTS '+b' '.join([rb'([0-9]+)']*len(expressions))+b'\n',out)
     need(not err and match is not None,'exact complete actual cross-pair capture DWARF result')
     sizes=tuple(map(int,match.groups()))
-    need(sizes==(5421376,4194304,434240,1060288,267968,124176,71432,15176,11792,9032),
+    need(sizes==(5421440,4194304,434240,1060288,267968,124192,71432,15176,11792,9032),
          'exact full raw transcript and protected codec buffer; no omitted source or frame bytes')
     _,_,segments=elf(bridge);storage={}
     for name,extent in (('pdo_wire',sizes[0]),('pdo_encoded',sizes[1])):
@@ -318,5 +319,5 @@ def capture_extents(builder, bridge, symbols, pin, run, state):
     state['capture_extents']=dict(zip(('wire','encoded','certificate','epoch','next','stage',
         'slots','epoch_info','domain_checkpoint','memory'),sizes))
     state['capture_extents'].update(footer=64,header=64,record_limit=4194304,
-        stream_strictly_below=4194304,codec_version=1,schema_version=12,storage=storage,
+        stream_strictly_below=4194304,codec_version=1,schema_version=13,storage=storage,
         representation='two whole immutable certificates and complete three-epoch raw transcript; lossless canonical transport')

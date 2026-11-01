@@ -4,6 +4,7 @@ The mode0 report reader and every old control remain untouched. The prior REP,
 native-probe and returning effects remain complete; only the focal generated
 MOV ends in the separately authenticated 125/PE_EVENT outcome.
 """
+import persistent_fused_refusal_reports as pf_refusals
 import copy,json
 from page_selected import need
 import persistent_direct_frontier_reports as prior
@@ -174,6 +175,7 @@ def repeat_prefix(p,pid,images,image_bytes,carrier,carrier_bytes,owner,applicati
 
 
 def parse(stderr):
+    pf,stderr=pf_refusals.split(stderr)
     subentry,without=prior.subentry_split(stderr)
     native_probe,original_stream=prior.probe_row_split(without)
     group,suffix=prior.split(original_stream);linked,linked_reuse,suffix=prior.prior.split(suffix)
@@ -182,6 +184,7 @@ def parse(stderr):
     parsed=prior.old.reports(original);prior.old.extensions(parsed)
     parsed.update(group=group,linked=linked,linked_reuse=linked_reuse,scalar_region=scalar,
         scalar_reuse=scalar_reuse,unrolled=u,current_tf=cur,subentry=subentry,native_probe=native_probe)
+    parsed['pf_refusals']=pf
     return parsed,view
 
 
@@ -201,7 +204,7 @@ def validate(p,view,pid,exit_status,parent,images,image_bytes,carrier,carrier_by
     effect_terminal(p)
     return dict(required_terminal_negative=1,application_completed=0,generated_completed=0,
         mode=mode,status=125,code=3304,signal=signal,terminal_join=terminal,subentry=subentry,
-        gate=gate,maps_view=view,
+        gate=gate,maps_view=view,pf_refusals=owner_reader.pf_terminal(p['pf_refusals'],owner),
         native_probe=probe_prefix(p['native_probe'],p['linked'],p['native'],p['group'],p['chain'],p['native_pair'],signal),
         repeat_lease=repeat_prefix(p,pid,images,image_bytes,carrier,carrier_bytes,owner,application,image),
         input_authentication=prior.prior.cost._retained_inputs(images,image_bytes,carrier,carrier_bytes),

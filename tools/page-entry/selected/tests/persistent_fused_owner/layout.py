@@ -77,7 +77,7 @@ if record.type.strip_typedefs().tag != 'pdo_wire' or shape(record.type) != 'pdo_
 shape(gdb.lookup_type('struct li2_pg_plan'))
 shape(gdb.lookup_type('struct li2_tf_chain'))
 shape(gdb.lookup_type('struct li2_ptr_slot'))
-if int(record.type.sizeof) != 5421376:
+if int(record.type.sizeof) != 5421440:
     raise ValueError('whole independently specified cross-pair raw schema')
 if int(symbol('pdo_encoded').type.sizeof) != 4 << 20:
     raise ValueError('unchanged encoded output capacity')
@@ -110,6 +110,6 @@ symbols={name:offset(name)for name in tuple(REGISTERED)+('selected_chain','span_
 symbols['span_progress']=offset('span_transfer.progress')
 symbols['pg_domain_source']=offset('pg_source.domain')
 print(json.dumps(dict(record='pdo_wire',types=types,edges=edges,member_witnesses=witnesses,
-    symbols=symbols,retained_storage={k:dict(offset=offset('((struct li2_pg_epoch*)0)->'+k),bytes=width('((struct li2_pg_epoch*)0)->'+k))for k in ('retained','selected_slot','selection','previous_selection','domain')},registrations={name:registration(name)for name in REGISTERED},uc_bytes=int(gdb.lookup_type('ucontext_t').sizeof),
+    symbols=symbols,pf_refusals=dict(version=1,reason=256,previous_last=dict(offset=offset('((struct li2_pg_epoch*)0)->domain'),bytes=width('((struct li2_pg_epoch*)0)->domain')),fields={k:dict(offset=offset('((struct li2_pg_epoch*)0)->'+k),bytes=width('((struct li2_pg_epoch*)0)->'+k))for k in ('pf_backward_refused','pf_backward_cancelled')}),retained_storage={k:dict(offset=offset('((struct li2_pg_epoch*)0)->'+k),bytes=width('((struct li2_pg_epoch*)0)->'+k))for k in ('retained','selected_slot','selection','previous_selection','domain')},registrations={name:registration(name)for name in REGISTERED},uc_bytes=int(gdb.lookup_type('ucontext_t').sizeof),
     uc=dict(offsets={k:offset(v)for k,v in uc.items()},widths={k:width(v)for k,v in uc.items()}),
     si=dict(bytes=int(gdb.lookup_type('siginfo_t').sizeof),offsets={k:offset(v)for k,v in si.items()},widths={k:width(v)for k,v in si.items()})),sort_keys=True,separators=(',',':')))
