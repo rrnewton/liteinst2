@@ -1,5 +1,6 @@
 // Included inside ordered_trace; captures and the full comparator stay private.
 // This is a separate opt-in witness, never an alternate range for the old oracle.
+const _: () = assert!(PAGE.is_power_of_two());
 #[derive(Clone, Copy)]
 pub struct EntryVeneerSpec {
     pub logical_pc: u64,
@@ -14,7 +15,7 @@ impl EntryVeneerSpec {
     pub fn validate_image(&self, bytes: &[u8], map: &TraceMap) -> Result<(), &'static str> {
         let page_end = self.storage.checked_add(PAGE as u64).ok_or("veneer page wraps")?;
         let offset = self.entry.checked_sub(self.storage).ok_or("veneer entry precedes storage")?;
-        if !self.storage.is_multiple_of(PAGE as u64) || offset > (PAGE - 5) as u64
+        if self.storage & (PAGE as u64 - 1) != 0 || offset > (PAGE - 5) as u64
             || self.size_bound == 0 || self.size_bound > PAGE - 5
             || self.body_len == 0 || self.body_len > self.size_bound
             || self.size_bound as u64 > offset
