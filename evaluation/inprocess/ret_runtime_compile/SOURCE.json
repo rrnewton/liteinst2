@@ -27,7 +27,7 @@
     "evaluation/inprocess/call_dispatch_native/SOURCE.json": {
       "bytes": 10345,
       "mode": "0644",
-      "sha256": "1c32ba34d609f82aa77c678062d02c625ea745c5a125564cc42615b90a56679f"
+      "sha256": "e4c41f55614a9a89f919dfe25242bbf804c3b3801f41eb42ca34397b43e0cd85"
     },
     "evaluation/inprocess/call_dispatch_native/run.py": {
       "bytes": 33191,
@@ -62,7 +62,7 @@
     "evaluation/inprocess/ret_dispatch/SOURCE.json": {
       "bytes": 11718,
       "mode": "0644",
-      "sha256": "81e8f13094c4b3f171a2ab8d7dd049b2d939a332f12bd572838d0d8cae87259a"
+      "sha256": "077138bf34df77d57ec03a4e400c2060edf80ac431ec16a6f22a7b686d2bffd8"
     },
     "evaluation/inprocess/ret_dispatch/run.py": {
       "bytes": 44152,
@@ -82,7 +82,7 @@
     "evaluation/inprocess/ret_resume_native/SOURCE.json": {
       "bytes": 7901,
       "mode": "0644",
-      "sha256": "5f3cf26ac8960c58b439fdca6b44bb07b7c11b8a693ea6600cc51c1135cf1922"
+      "sha256": "7497a765c4901ae13133301921426111e060b14b400bec0d27b178bbd79a7af2"
     },
     "evaluation/inprocess/ret_resume_native/run.py": {
       "bytes": 29916,
@@ -135,9 +135,9 @@
       "sha256": "26c489649013f9d0bc564d4283f6bfe5235ab964b34057e7de9ddecee3c35d25"
     },
     "tools/page-entry/selected/persistent_group_compact.c": {
-      "bytes": 47112,
+      "bytes": 47193,
       "mode": "0644",
-      "sha256": "e3e25d7cf03ca0af6e8a7d1a7db9867d853d9ea661da796c8b02b2e1a19be9be"
+      "sha256": "78941dbfdf3428ab46febed51acd1e08ca625e54ee81ba4a67107e24a91bf401"
     },
     "tools/page-entry/selected/persistent_group_compact.h": {
       "bytes": 7608,
@@ -150,9 +150,9 @@
       "sha256": "ecbfbb2cc73d977aab6860d296007f04c5b8c44386893839cc3ab0ec747f5019"
     },
     "tools/page-entry/selected/persistent_group_plan.c": {
-      "bytes": 58283,
+      "bytes": 58361,
       "mode": "0644",
-      "sha256": "f345776cf456b627b56e5a2643b724526a72be988ff42f015354ed239a05542c"
+      "sha256": "383a6c9f3a0b05d60fa740b14090148eaa337efb22bcf44055792e2970e56f51"
     },
     "tools/page-entry/selected/persistent_group_plan.h": {
       "bytes": 12813,

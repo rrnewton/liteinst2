@@ -152,9 +152,9 @@
       "sha256": "e519f01f3d4381df125a3410d7af41fa93ed05716ad847d147256ca93df07582"
     },
     "tools/page-entry/selected/persistent_group_compact.c": {
-      "bytes": 47112,
+      "bytes": 47193,
       "mode": "0644",
-      "sha256": "e3e25d7cf03ca0af6e8a7d1a7db9867d853d9ea661da796c8b02b2e1a19be9be"
+      "sha256": "78941dbfdf3428ab46febed51acd1e08ca625e54ee81ba4a67107e24a91bf401"
     },
     "tools/page-entry/selected/persistent_group_compact.h": {
       "bytes": 7608,
@@ -162,9 +162,9 @@
       "sha256": "69586fc20db5ff1496b196ac006f54f7a9c0ce66eb7983791f6ecd84111ee96c"
     },
     "tools/page-entry/selected/persistent_group_plan.c": {
-      "bytes": 58283,
+      "bytes": 58361,
       "mode": "0644",
-      "sha256": "f345776cf456b627b56e5a2643b724526a72be988ff42f015354ed239a05542c"
+      "sha256": "383a6c9f3a0b05d60fa740b14090148eaa337efb22bcf44055792e2970e56f51"
     },
     "tools/page-entry/selected/persistent_group_plan.h": {
       "bytes": 12813,

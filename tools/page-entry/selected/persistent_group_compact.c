@@ -756,3 +756,7 @@ int li2_pg_compact_recover(const struct li2_pg_compact *p,uintptr_t pc,const uin
     } else return LI2_PG_CORRUPT;
     out->complete=1;return 0;
 }
+
+#ifdef LI2_PERSISTENT_BLOCK_PLAN
+#include "persistent_block_compact.inc"
+#endif
