@@ -1,0 +1,9 @@
+profile,scenario,k,seed,case,csv_index,status,children,comparisons,original_steps,candidate_steps,candidate_physical_calls,candidate_observed_entries,candidate_pre_rets,controller_handshakes,value0,value1,value2,value3,sum
+qualification-feature-optional-entry-80k-v1,loaded-true-disarm,10,1311768467139281696,16,1,PASS,2,1300,2732,24826,4,0,4,1,3,64,3,64,134
+qualification-feature-optional-entry-80k-v1,loaded-false-arm,10,1311768467139281696,16,1,PASS,2,1300,2888,49504,4,3,4,1,3,64,3,64,134
+qualification-feature-optional-entry-80k-v1,admitted-rearm,10,1311768467139281696,16,1,PASS,2,1300,2894,58209,4,4,4,1,3,64,3,64,134
+qualification-feature-optional-entry-80k-v1,returned-disarm,10,1311768467139281696,16,1,PASS,2,1300,2888,31950,4,1,4,1,3,64,3,64,134
+qualification-feature-optional-entry-80k-v1,loaded-true-disarm,10,18364758542526924135,16,1,PASS,2,1300,2942,24584,4,0,4,1,3,64,3,64,134
+qualification-feature-optional-entry-80k-v1,loaded-false-arm,10,18364758542526924135,16,1,PASS,2,1300,2876,49547,4,3,4,1,3,64,3,64,134
+qualification-feature-optional-entry-80k-v1,admitted-rearm,10,18364758542526924135,16,1,PASS,2,1300,2876,58174,4,4,4,1,3,64,3,64,134
+qualification-feature-optional-entry-80k-v1,returned-disarm,10,18364758542526924135,16,1,PASS,2,1300,2899,32010,4,1,4,1,3,64,3,64,134
