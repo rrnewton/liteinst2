@@ -1,0 +1,225 @@
+{
+  "schema": 1,
+  "revision": "10a778d6415e51c66dfdc122d1e019e5c8c94c3c",
+  "measured_first_generation_revision": "438954e0e1372fdb428b3446d69aca804ccd29ea",
+  "measured_li2_source": "392e4fbf82df434da0e782ff15556ad1a2b66812",
+  "roles": [
+    "original",
+    "li2",
+    "e9"
+  ],
+  "products": {
+    "original": {
+      "e9tool": {
+        "path": "ignored/a3/functional-corpus-remaining-v1/0-e9tool/original/a.out",
+        "bytes": 8922214,
+        "sha256": "2ba7d548af42e3c1173f04ecb4f518da0ab23f38710176193a85ad4dcde90c98"
+      },
+      "e9patch": {
+        "path": "ignored/a3/overlapping-neighbor-functional-compare-v1/original/a.out",
+        "bytes": 2329308,
+        "sha256": "08ebd5775f587ef9dc3facfc08f80629bcfe7c4c03fc7da29b421336e9262bc2"
+      }
+    },
+    "li2": {
+      "e9tool": {
+        "path": "ignored/a3/functional-corpus-remaining-v1/0-e9tool/li2/a.out",
+        "bytes": 8922214,
+        "sha256": "2ba7d548af42e3c1173f04ecb4f518da0ab23f38710176193a85ad4dcde90c98"
+      },
+      "e9patch": {
+        "path": "ignored/a3/overlapping-neighbor-functional-compare-v1/li2/a.out",
+        "bytes": 2329308,
+        "sha256": "08ebd5775f587ef9dc3facfc08f80629bcfe7c4c03fc7da29b421336e9262bc2"
+      }
+    },
+    "e9": {
+      "e9tool": {
+        "path": "ignored/a3/functional-corpus-remaining-v1/0-e9tool/e9/a.out",
+        "bytes": 8922214,
+        "sha256": "2ba7d548af42e3c1173f04ecb4f518da0ab23f38710176193a85ad4dcde90c98"
+      },
+      "e9patch": {
+        "path": "ignored/a3/overlapping-neighbor-functional-compare-v1/e9/a.out",
+        "bytes": 2329308,
+        "sha256": "08ebd5775f587ef9dc3facfc08f80629bcfe7c4c03fc7da29b421336e9262bc2"
+      }
+    }
+  },
+  "requests": {
+    "e9tool": {
+      "path": "ignored/a3/functional-corpus-remaining-v1/0-e9tool/generate/request.jsonl",
+      "bytes": 9418169,
+      "sha256": "def9511882fb6894c5eeb46e807810d355e7a7870209fb99daa3ff2f2ccceecd"
+    },
+    "e9patch": {
+      "path": "ignored/a3/overlapping-neighbor-functional-prepare-v1/cwd/request.jsonl",
+      "bytes": 2586720,
+      "sha256": "bb4146fe44138559a769376c215ccc40c32c203dd157aa7dfe32863bd8bd104e"
+    }
+  },
+  "expected_outcomes": {
+    "e9tool": {
+      "strict_full": false,
+      "successful": 46248,
+      "requested": 46325,
+      "failed": 77,
+      "tactics": {
+        "B1": 20901,
+        "B2": 25184,
+        "T1": 150,
+        "T2": 0,
+        "T3": 13
+      },
+      "complete_ordered_outcomes_sha256": "65971b790991c7010304eb10cf099b6fa47cdad70c7a9b54460aa96267b634c8"
+    },
+    "e9patch": {
+      "successful": 12919,
+      "requested": 12924,
+      "tactics": {
+        "B1": 4901,
+        "B2": 8018,
+        "T1": 0,
+        "T2": 0,
+        "T3": 0
+      },
+      "complete_ordered_outcomes_sha256": "055085f8a4663f1c00fae9945453b6d81886a41485cc260f86418144014b5343",
+      "strict_full": false,
+      "failed": 5
+    }
+  },
+  "authorities": {
+    "ignored/a3/functional-corpus-remaining-owner-v1/root-closed.json": {
+      "bytes": 1409,
+      "sha256": "b6deb0100b59ed044c1a120d191ed6a9453fef7f550d50d019e6b850381691ff"
+    },
+    "ignored/a3/functional-corpus-remaining-v1/receipt.json": {
+      "bytes": 278928,
+      "sha256": "9346d58548476c75daea2e46f4abdabaac9eff9eac4ae1cf0143666d1aa4eceb"
+    },
+    "ignored/a3/overlapping-neighbor-functional-compare-owner-v1/root-closed.json": {
+      "bytes": 4307,
+      "sha256": "a42a64bc0344465ae1afa3506c3c8d57e13cd515baadfd5f037843c73538a1c4"
+    },
+    "ignored/a3/overlapping-neighbor-functional-compare-v1/receipt.json": {
+      "bytes": 24742,
+      "sha256": "b60232f9ebd523e9d0ee5c1ce3d9ce4de1b38a63f4dfd0e8db68a6e710391767"
+    },
+    "evaluation/functional-corpus/first-case.json": {
+      "bytes": 7639,
+      "sha256": "1fd8e3cfe208becf992f8edbc990a0e6acdca45fef3a26c3a49cfc6e06652c0d"
+    },
+    "ignored/a3/functional-corpus-analysis-v1/closed.json": {
+      "bytes": 651,
+      "sha256": "96ab30974646117651f27247ce70b517a10d80c3a4b8bacd90fe12dfef9f8cc4"
+    },
+    "ignored/a3/functional-corpus-analysis-v1/report.json": {
+      "bytes": 33811,
+      "sha256": "ec4daac7c06e3b0a8f4f335618a0e8799830639ce0778449a8955c97a7e8d41e"
+    },
+    "ignored/a3/functional-selfhost-proposal-v1/normalization.json": {
+      "bytes": 2361,
+      "sha256": "6063143b91aae3312525b1a927766b95dd0744c4c20485b5dc04074ec0caf1c9"
+    },
+    "ignored/a3/functional-selfhost-proposal-v1/normalization-closed.json": {
+      "bytes": 1062,
+      "sha256": "07693dbeb23c2cea778776167423ece6004cbf3b788ad8a6d5625b128e156492"
+    }
+  },
+  "sources": {
+    "evaluation/functional-corpus/run.py": {
+      "bytes": 26979,
+      "sha256": "69c7d87ecf8d249a0a7b325db78f05d770fad993994eba97a40bb8338c0c4f6a"
+    },
+    "evaluation/functional-corpus/definitions.json": {
+      "bytes": 3397,
+      "sha256": "3a9840b193779ec590cc5b189f3dac4b9671ffc55689b5caf18095de63a20d78"
+    },
+    "evaluation/admission/processes.py": {
+      "bytes": 15760,
+      "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+    },
+    "ignored/a3/upstream/e9patch-pldi2020/e9test.sh": {
+      "bytes": 1592,
+      "sha256": "99456c781101671a7722003ee0f0970ccd24f4d03320734b44ddc080764a6dc5"
+    },
+    "ignored/a3/upstream/e9patch-pldi2020/e9tool.cpp": {
+      "bytes": 53284,
+      "sha256": "a99609cad1f30f4413371faa9029090ecde4bad0483b906caccf182495d0e80c"
+    },
+    "ignored/a3/upstream/e9patch-pldi2020/e9frontend.cpp": {
+      "bytes": 47704,
+      "sha256": "be45bc37592eff33306105cefc1a0b7eb4fd3ea24892aa1168269ee2fe4b6e5c"
+    },
+    "ignored/a3/upstream/e9patch-pldi2020/e9loader.cpp": {
+      "bytes": 10568,
+      "sha256": "de94965d6d7b142d932928c990d9a8841a1e4cbfae7c922d206631656d977de5"
+    },
+    "ignored/a3/upstream/e9patch-pldi2020/e9api.cpp": {
+      "bytes": 23218,
+      "sha256": "6bcf14040ed707c850fa3978995f240b365d032ccb821dca0adb4e7cec6e6a31"
+    },
+    "ignored/a3/upstream/e9patch-pldi2020/e9emit.cpp": {
+      "bytes": 8212,
+      "sha256": "92a6541032c088f16fa3e4db80be330e4da97f990dc776a31f9029f346c1d29d"
+    },
+    "ignored/a3/upstream/e9patch-pldi2020/Makefile": {
+      "bytes": 1187,
+      "sha256": "20419f934e0641fa33e75f6586d732a4be4d13ff4be92e3f52ef15cf43fbeb26"
+    }
+  },
+  "runtime_dependencies": {
+    "/lib64/ld-linux-x86-64.so.2": {
+      "resolved": "/usr/lib64/ld-linux-x86-64.so.2",
+      "bytes": 939216,
+      "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9"
+    },
+    "/lib64/libstdc++.so.6": {
+      "resolved": "/usr/lib64/libstdc++.so.6.0.29",
+      "bytes": 2314472,
+      "sha256": "cc5f795fb4c6cc06fd5e1c14e9105dc8db7b663b7fe41d4b4fb35a8f133aec83"
+    },
+    "/lib64/libm.so.6": {
+      "resolved": "/usr/lib64/libm.so.6",
+      "bytes": 912984,
+      "sha256": "aabb41f107632430e94ff2186082a5df8488e458894eebb7fe285825da582d01"
+    },
+    "/lib64/libgcc_s.so.1": {
+      "resolved": "/usr/lib64/libgcc_s-11-20240719.so.1",
+      "bytes": 116408,
+      "sha256": "3d144b557008c93e4e67567d5dc98cb81cf55187a698d1b4872ce84ba8a26bed"
+    },
+    "/lib64/libc.so.6": {
+      "resolved": "/usr/lib64/libc.so.6",
+      "bytes": 2553784,
+      "sha256": "4fe244b698006f2a5cc7d1e6008c195dfb3ac4038ea79a6500bdde4205efb523"
+    },
+    "/etc/ld.so.cache": {
+      "resolved": "/etc/ld.so.cache",
+      "bytes": 29499,
+      "sha256": "e84f89705a0c808ca0c840a74c521ee96a2ddd86936465b256b794ea9bc6b4ad"
+    }
+  },
+  "metadata_only_generated_elf": {
+    "e9tool": {
+      "phdr": 13,
+      "loads": 5,
+      "type": 3,
+      "entry": 8857174016,
+      "rounded_load_hull": 8857358336
+    },
+    "e9patch": {
+      "phdr": 13,
+      "loads": 5,
+      "type": 3,
+      "entry": 8857174016,
+      "rounded_load_hull": 8857235456
+    }
+  },
+  "status": "SOURCE_ONLY_UNRUN",
+  "outcome_encoding": {
+    "e9patch_historical_four_field_sha256": "81f80e7b4d8271b87b758e174acf2f2facd57325d0c0d24a06de64f5009e7e33",
+    "current_helper_three_field_sha256": "055085f8a4663f1c00fae9945453b6d81886a41485cc260f86418144014b5343",
+    "join": "Both derived from the same authenticated CLOSED12924-head log/request; historical hash and failures unchanged."
+  }
+}
