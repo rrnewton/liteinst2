@@ -18,6 +18,26 @@ from test_parsing import counts, summary
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # The merged benchmark contributes three real tests in one new harness.
+        # Preserve the whole earlier catalog as a distinct, refused predecessor.
+        point_prior = current.before_e5ab521(actual)
+        point_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(point_prior), current.POINT_PREVIOUS)
+        self.assertEqual((len(point_rows), sum(x['tests'] for x in point_rows.values()),
+                          sum(x['ignored'] for x in point_rows.values())), (119, 4544, 39))
+        self.assertEqual(point_rows['unit/point_throughput/main'], dict(tests=3, ignored=0))
+        self.assertEqual(point_prior['harness_test_counts']['serial_launch'],
+                         actual['harness_test_counts']['serial_launch'])
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_e5ab521(point_prior)
+        for field in ('tests', 'ignored'):
+            for value in (None, True, float(point_rows['unit/point_throughput/main'][field]),
+                          point_rows['unit/point_throughput/main'][field] + 1):
+                wrong = copy.deepcopy(actual)
+                wrong['harness_test_counts']['workspace_tests']['unit/point_throughput/main'][field] = value
+                self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                    current.before_e5ab521(wrong)
         native_indexed = current.before_29859(actual)
         rows = native_indexed['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
@@ -699,7 +719,7 @@ class Main97abInventoryTests(unittest.TestCase):
         # inherited 35-test populations; all earlier catalogues remain exact.
         early = current.DATA['source_successor_667921']
         early_before = current.before_667921(actual)
-        early_rows = actual['harness_test_counts']['workspace_tests']
+        early_rows = point_prior['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(early_before), current.EARLY_PREVIOUS)
         self.assertEqual(early_before['harness_test_counts']['workspace_tests'], comparison_rows)
         self.assertEqual((len(early_rows), sum(x['tests'] for x in early_rows.values()),
@@ -938,6 +958,19 @@ class Main97abInventoryTests(unittest.TestCase):
             self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
             self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
             self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+
+        for path, literal in (("tools/rapid-profiler/point-throughput/main.rs", "#[cfg(test)]\nmod tests;"),
+                              *(("tools/rapid-profiler/point-throughput/tests.rs", name)
+                                for name in current.DATA['source_successor_e5ab521']['methods'])):
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            altered = literal[:-1] + ('x' if literal[-1] != 'x' else 'y')
+            wrong = raw.replace(literal.encode(), altered.encode())
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
 
         # Sparse inverses retain exact edit ordering, including equal-position
         # insertions, and both whole-byte identity gates.

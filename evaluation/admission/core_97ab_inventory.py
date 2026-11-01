@@ -9,10 +9,11 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == 'b36618b96fde9b3269b7058852e6120f0760797a1a8f5189de155fa551d95af9',
+require(hashlib.sha256(RAW).hexdigest() == '1520a7b98625ab86e391e5ac9bc1cd67c85e3b4f0dd777fe5d6dc06c0b1e131f',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
+POINT_PREVIOUS = DATA['source_successor_e5ab521']['previous_corpus_sha256']
 EARLY_PREVIOUS = DATA['source_successor_667921']['previous_corpus_sha256']
 ADMISSION_PREVIOUS = DATA['source_successor_c110']['previous_corpus_sha256']
 CLOCK_PREVIOUS = DATA['source_successor_abe7']['previous_corpus_sha256']
@@ -111,11 +112,24 @@ def require_sources(error='main97ab_source_inventory_differs'):
         source_before_evaluation(path, raw, error)
 
 
-def before_667921(declared, error='main97ab_inventory_differs'):
-    """Bind all early-control tests, including both complete inherited oracles."""
+def before_e5ab521(declared, error='main97ab_inventory_differs'):
+    """Remove only the exact three-test point-throughput harness."""
     require(type(declared) is dict and digest(declared) == CURRENT, error)
     owned = plain_catalog((declared, DATA))
     old = copy.deepcopy(declared)
+    added = DATA['source_successor_e5ab521']
+    rows = old['harness_test_counts']['workspace_tests']
+    require(digest(rows.pop(added['harness'])) == digest(added['counts']), error)
+    require(digest(old) == POINT_PREVIOUS, error)
+    return old if owned else copy.deepcopy(old)
+
+
+def before_667921(declared, error='main97ab_inventory_differs'):
+    """Bind all early-control tests, including both complete inherited oracles."""
+    owned = plain_catalog((declared, DATA))
+    declared = before_e5ab521(declared, error)
+    require(type(declared) is dict and digest(declared) == POINT_PREVIOUS, error)
+    old = declared if owned else copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in DATA['source_successor_667921']['workspace_changes'].items():
         require(digest(rows[name]) == digest(change['current']), error)

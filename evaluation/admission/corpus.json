@@ -6557,6 +6557,10 @@
         "ignored": 0,
         "tests": 3
       },
+      "unit/point_throughput/main": {
+        "ignored": 0,
+        "tests": 3
+      },
       "unit/rapid_profiler/lib": {
         "ignored": 33,
         "tests": 581

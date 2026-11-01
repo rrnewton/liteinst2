@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "75071fe60ece8bb380ba8ae5442fb9d6f52d46c4b17b55f33a24bb48efadfc4b",
+  "current_corpus_sha256": "cd39bc3515d19929928dbd291cc58436639e6fdcf72c8060c7c38e5e29401ff3",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -348,41 +348,46 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "b01bd9a035c9665737c338b8d0dcf5ad715e88ec5d03f8c45c97ea1f84c40d17",
+      "current_sha256": "6da3b364fe8d2d3f5883ce87dfa96d547047f92b08f6eabb3b83f2f6abbb549d",
       "edits": [
         [
-          15162,
-          15332,
+          642,
+          2178,
           ""
         ],
         [
-          15379,
-          15473,
+          16698,
+          16868,
+          ""
+        ],
+        [
+          16915,
+          17009,
           "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n"
         ],
         [
-          15612,
-          15699,
+          17148,
+          17235,
           ""
         ],
         [
-          15958,
-          16037,
+          17494,
+          17573,
           ""
         ],
         [
-          18612,
-          18708,
+          20148,
+          20244,
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          22551,
-          55858,
+          24087,
+          57399,
           ""
         ],
         [
-          65409,
-          67581,
+          66950,
+          70091,
           ""
         ]
       ],
@@ -1774,6 +1779,16 @@
       "macro_calls": [],
       "templates": []
     },
+    "tools/rapid-profiler/point-throughput/tests.rs": {
+      "all": [
+        "literal_add_fixture_and_complete_argument_sum_agree",
+        "every_distinct_order_keeps_enabled_controls_and_full_timed_denominator",
+        "csv_preserves_failed_and_dispatched_rows_without_invented_measurements"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tools/rapid-profiler/src/data_flag/tests.rs": {
       "all": [
         "actual_managed_points_force_close_rearm_k_groups_and_wrong_owner",
@@ -2072,7 +2087,8 @@
       "#[path = \"../../../tests/support/isolated_native_test.rs\"]\nmod isolated_native_test;"
     ],
     "tools/rapid-profiler/Cargo.toml": [
-      "[[bin]]\nname = \"ordinary-interval\"\npath = \"ordinary-interval/main.rs\"\ntest = true\nbench = false"
+      "[[bin]]\nname = \"ordinary-interval\"\npath = \"ordinary-interval/main.rs\"\ntest = true\nbench = false",
+      "[[bin]]\nname = \"point-throughput\"\npath = \"point-throughput/main.rs\"\ntest = true\nbench = false"
     ],
     "tools/rapid-profiler/ordinary-interval/main.rs": [
       "mod normal;"
@@ -2096,6 +2112,9 @@
     ],
     "tools/rapid-profiler/ordinary-interval/normal/session/phase_totals.rs": [
       "#[cfg(test)]\nmod tests {"
+    ],
+    "tools/rapid-profiler/point-throughput/main.rs": [
+      "#[cfg(test)]\nmod tests;"
     ],
     "tools/rapid-profiler/src/data_flag.rs": [
       "#[cfg(test)]\nmod tests;"
@@ -4464,6 +4483,17 @@
         ]
       ],
       "previous_sha256": "97d2f87f6c1ab6a517232a0d815211ed1146e0fff3cb814ade3bb536966b2e32"
+    },
+    "tools/rapid-profiler/Cargo.toml": {
+      "current_sha256": "ddd9e965854e3dbe5ebbeb672b802480839232bddc27e22be705b66fe1ad1de8",
+      "edits": [
+        [
+          887,
+          982,
+          ""
+        ]
+      ],
+      "previous_sha256": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a"
     },
     "tools/rapid-profiler/README.md": {
       "current_sha256": "68b065b9fd33fee89ae3f42a714e9a1a1432f1d2de15f11d2d61328bfe6e8ba3",
@@ -7908,6 +7938,27 @@
       }
     }
   },
+  "source_successor_e5ab521": {
+    "counts": {
+      "ignored": 0,
+      "tests": 3
+    },
+    "current_corpus_sha256": "cd39bc3515d19929928dbd291cc58436639e6fdcf72c8060c7c38e5e29401ff3",
+    "harness": "unit/point_throughput/main",
+    "incoming_main": "e5ab521ffa08a1a50485e7eb8d05af0e52118c1a",
+    "methods": [
+      "literal_add_fixture_and_complete_argument_sum_agree",
+      "every_distinct_order_keeps_enabled_controls_and_full_timed_denominator",
+      "csv_preserves_failed_and_dispatched_rows_without_invented_measurements"
+    ],
+    "previous_corpus_sha256": "75071fe60ece8bb380ba8ae5442fb9d6f52d46c4b17b55f33a24bb48efadfc4b",
+    "recorder_identity_changes": 0,
+    "sources": {
+      "tools/rapid-profiler/Cargo.toml": "ddd9e965854e3dbe5ebbeb672b802480839232bddc27e22be705b66fe1ad1de8",
+      "tools/rapid-profiler/point-throughput/main.rs": "f56b6a5a322cb4cb1fe7f6922dcc5b3f4146745dfa196d7ed4b0b511bd659ffb",
+      "tools/rapid-profiler/point-throughput/tests.rs": "c0d58b797b1e55f9b73611b3cacd98533d4a74783526d0b2fb9a838ea9e79dcc"
+    }
+  },
   "source_successor_fd4c6": {
     "added_default_methods": {
       "src/artifact_overlay_tests.rs": [
@@ -8045,7 +8096,7 @@
     "evaluation/admission/test_main34c47_inventory.py": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "f2874b7589b24a963da1fe3912378fa74cf20e6e0a4eb8ebf736d93ef182039a",
-    "evaluation/admission/test_main97ab_inventory.py": "b01bd9a035c9665737c338b8d0dcf5ad715e88ec5d03f8c45c97ea1f84c40d17",
+    "evaluation/admission/test_main97ab_inventory.py": "6da3b364fe8d2d3f5883ce87dfa96d547047f92b08f6eabb3b83f2f6abbb549d",
     "evaluation/admission/test_main981419_inventory.py": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
     "evaluation/admission/test_mainaf81_inventory.py": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
@@ -8191,7 +8242,7 @@
     "tools/elf-rewrite/tests/indexed_dso_source.rs": "90589c35c4239473ab84bb3c11a65f017c83b78080a957544f64c08a88038dcf",
     "tools/elf-rewrite/tests/rx_run_loader.rs": "bf155716fcffec9d8008bd96e34eba88f00f689d3c5b28a65ac03c11ba526019",
     "tools/elf-rewrite/tests/support/composition_overlay.rs": "957573fdf12f81f63e302a761f298001a241e728d8251d65e5a85608c1fccf2b",
-    "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+    "tools/rapid-profiler/Cargo.toml": "ddd9e965854e3dbe5ebbeb672b802480839232bddc27e22be705b66fe1ad1de8",
     "tools/rapid-profiler/README.md": "68b065b9fd33fee89ae3f42a714e9a1a1432f1d2de15f11d2d61328bfe6e8ba3",
     "tools/rapid-profiler/ordinary-interval/main.rs": "76c776c72b6818743a18a47dff80ad14f4cd03567bd62183ddf05d11eb2527a9",
     "tools/rapid-profiler/ordinary-interval/normal.rs": "0618d34ca349bcd15db6cd3061912cbb2e8f939e1cf38277b49e6b60d20a35a3",
@@ -8206,6 +8257,8 @@
     "tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs": "9083a2501d1fff1d9702c6dfa46125df625969c3622dc250eb04e8e6d16c0459",
     "tools/rapid-profiler/ordinary-interval/normal/session/phase_totals.rs": "d153c4cb2b476b135ce28382848fe5d0e53e6558bbc048268cc36a2a64eccb24",
     "tools/rapid-profiler/ordinary-interval/normal/session/worker.rs": "1020f86b074c2348d9fd1bb492793bd1d55e17439ea43d82936f00ec91f80cfa",
+    "tools/rapid-profiler/point-throughput/main.rs": "f56b6a5a322cb4cb1fe7f6922dcc5b3f4146745dfa196d7ed4b0b511bd659ffb",
+    "tools/rapid-profiler/point-throughput/tests.rs": "c0d58b797b1e55f9b73611b3cacd98533d4a74783526d0b2fb9a838ea9e79dcc",
     "tools/rapid-profiler/src/data_flag.rs": "cb88833871f19cf0878101c9dcdbe122a69e0c1fdfab50cc79188f3f9947564c",
     "tools/rapid-profiler/src/data_flag/tests.rs": "f5ff511b0dd471522fd3da8db362fed6d29c76e5fff0c43ee1b0b7d95850c9c1",
     "tools/rapid-profiler/src/frontend_native/always_on.rs": "3f49eaca5cd65646dfda745ac7e75efc2d5466deeeaa4fd646de0e04d2e26423",
