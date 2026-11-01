@@ -39,3 +39,9 @@ name = "tree-native-baseline"
 path = "native-baseline/main.rs"
 test = false
 bench = false
+
+[[bin]]
+name = "point-throughput"
+path = "point-throughput/main.rs"
+test = true
+bench = false
