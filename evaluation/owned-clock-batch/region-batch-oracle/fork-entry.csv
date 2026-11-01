@@ -1,0 +1,2 @@
+pid,parent_pid,batch_owner_refused,ordinary_owner_refused,clock_unchanged,exit,status
+244668,244566,true,true,true,0,PASS

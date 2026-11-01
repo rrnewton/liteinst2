@@ -1,0 +1,99 @@
+{
+  "status": "PASS_COMPLETE_COHORT",
+  "processes": 12,
+  "degrees_of_freedom": 11,
+  "t_critical": 2.20098516,
+  "process_means_ns_per_call": [
+    {
+      "native": 5.65985107421875,
+      "counter": 186.10236358642578,
+      "stop": 3184.2502822875977
+    },
+    {
+      "native": 6.66021728515625,
+      "counter": 193.81973266601562,
+      "stop": 3321.4935913085938
+    },
+    {
+      "native": 5.771659851074219,
+      "counter": 212.9294891357422,
+      "stop": 3289.412269592285
+    },
+    {
+      "native": 6.512939453125,
+      "counter": 190.77034759521484,
+      "stop": 3250.024200439453
+    },
+    {
+      "native": 8.803153991699219,
+      "counter": 183.47455596923828,
+      "stop": 2977.2006759643555
+    },
+    {
+      "native": 6.492179870605469,
+      "counter": 186.77658081054688,
+      "stop": 3301.4476928710938
+    },
+    {
+      "native": 5.68719482421875,
+      "counter": 196.1193084716797,
+      "stop": 3287.2669219970703
+    },
+    {
+      "native": 5.762611389160156,
+      "counter": 185.28812408447266,
+      "stop": 3570.667549133301
+    },
+    {
+      "native": 6.614082336425781,
+      "counter": 212.14417266845703,
+      "stop": 3199.6540145874023
+    },
+    {
+      "native": 8.476028442382812,
+      "counter": 185.5995635986328,
+      "stop": 3334.8498458862305
+    },
+    {
+      "native": 6.043632507324219,
+      "counter": 187.33373260498047,
+      "stop": 3053.7128524780273
+    },
+    {
+      "native": 7.39337158203125,
+      "counter": 192.92517852783203,
+      "stop": 3125.0996322631836
+    }
+  ],
+  "absolute": {
+    "native": {
+      "estimate": 6.656410217285156,
+      "lower95": 5.981773431511718,
+      "upper95": 7.331047003058594
+    },
+    "counter": {
+      "estimate": 192.77359580993652,
+      "lower95": 186.41459792856185,
+      "upper95": 199.1325936913112
+    },
+    "stop": {
+      "estimate": 3241.2566274007163,
+      "lower95": 3144.476942392424,
+      "upper95": 3338.0363124090086
+    }
+  },
+  "paired_geometric_ratios": {
+    "counter/native": {
+      "estimate": 29.239591906243778,
+      "lower95": 26.20338904497324,
+      "upper95": 32.62760146698229
+    },
+    "stop/native": {
+      "estimate": 491.7180459061076,
+      "lower95": 440.1283868803776,
+      "upper95": 549.3547880051556
+    }
+  },
+  "closed_sha256": "b225f19c803b51093f84e30f1dca450b94b7486b4b5ef84f7cc9025f40229160",
+  "scope": "Includes per-call guards and real handoff/check/scheduling cost; not isolated gate cost, a performance threshold, or publisher qualification. No outliers removed."
+}

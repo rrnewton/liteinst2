@@ -1,0 +1,326 @@
+{
+  "schema": 1,
+  "status": "PASS",
+  "scope": "Exact-source correctness validation. Durations are operational wall times, not performance measurements.",
+  "tested_revision": "3759e96b8c24d40a35da25e3eb5e4dbd0a2bdc92",
+  "source_tree": "e25e463a7d915959e517ca62618883edac93b335",
+  "hardware": {
+    "label": "AMD EPYC Zen 5 dev host",
+    "architecture": "x86_64",
+    "logical_cpus": 316,
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor"
+  },
+  "closed": {
+    "bytes": 5345,
+    "sha256": "4a6d77d7fc1df332228683406b788131cecad911399b2df7082364584cc0fe33"
+  },
+  "driver": {
+    "path": "evaluation/short-neighbor-parallel/validate.py",
+    "bytes": 3757,
+    "sha256": "968956df64edd3f5754a0adbd4b900ac68535d188be01af0628eff94d2ed6d10",
+    "helper": {
+      "path": "evaluation/admission/processes.py",
+      "bytes": 15760,
+      "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+    },
+    "environment": {
+      "HOME": "{EXISTING_HOME}",
+      "PATH": "{STABLE_TOOLCHAIN}/bin:/usr/bin:/bin",
+      "LANG": "C",
+      "LC_ALL": "C",
+      "CARGO_BUILD_JOBS": "12",
+      "RUST_TEST_THREADS": "12",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "{CHECKOUT}/target"
+    },
+    "argv": [
+      "/usr/bin/python3.9",
+      "-I",
+      "-B",
+      "evaluation/short-neighbor-parallel/validate.py",
+      "--revision",
+      "3759e96b8c24d40a35da25e3eb5e4dbd0a2bdc92",
+      "--output",
+      "ignored/a3/owned-clock-region-client-validation-v1"
+    ],
+    "reservation": [
+      "cpuset-alloc",
+      "run",
+      "--cores",
+      "12",
+      "--tag",
+      "li2core-region-client-validation-v1",
+      "--"
+    ],
+    "launch_authority": "Root-reported env-i/direct stable toolchain launch and allocator reservation; validator independently records actual affinity, jobs, threads, commands and load. No standalone live allocator witness was collected."
+  },
+  "cpu_affinity": [
+    23,
+    37,
+    53,
+    55,
+    72,
+    95,
+    120,
+    128,
+    211,
+    216,
+    256,
+    261
+  ],
+  "build_jobs": 12,
+  "test_threads": 12,
+  "serial_test_threads": 1,
+  "capture_cap_bytes_per_command": 8388608,
+  "cleanup_budget_seconds": 3,
+  "total_command_seconds": 944.6934017196763,
+  "results": [
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "result": {
+        "start_utc": "2026-11-01T11:20:50.852305+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 10.3623139730189,
+        "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        "49.08",
+        "57.75",
+        "76.64"
+      ],
+      "load_after": [
+        "47.51",
+        "57.13",
+        "76.23"
+      ]
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "result": {
+        "start_utc": "2026-11-01T11:21:01.215376+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 35.52100078202784,
+        "private_log_sha256": "ef80a9181be3d13b6ff96a085b192ba2ee7ef8f5b3efc6d3f5334bf08f82c6b6",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        "47.51",
+        "57.13",
+        "76.23"
+      ],
+      "load_after": [
+        "51.75",
+        "57.12",
+        "75.52"
+      ]
+    },
+    {
+      "name": "check",
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "result": {
+        "start_utc": "2026-11-01T11:21:36.737239+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 26.113209332805127,
+        "private_log_sha256": "d9ed179f6ac14f5e5af2059f65a1e59d33e117d8696d490e6464968486eecbdf",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        "51.75",
+        "57.12",
+        "75.52"
+      ],
+      "load_after": [
+        "55.14",
+        "57.53",
+        "75.17"
+      ]
+    },
+    {
+      "name": "workspace",
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "12",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "result": {
+        "start_utc": "2026-11-01T11:22:02.851185+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 747.6347639278974,
+        "private_log_sha256": "673c5bb59bcf1d158fa2e64a289ec9d5105bd7b8c72a0c5321ef7bafd597171e",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        "55.14",
+        "57.53",
+        "75.17"
+      ],
+      "load_after": [
+        "26.95",
+        "39.94",
+        "56.83"
+      ]
+    },
+    {
+      "name": "serial-launch",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "result": {
+        "start_utc": "2026-11-01T11:34:30.490193+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 125.06211370392703,
+        "private_log_sha256": "47ab23755f31b323526171bd739a3a9e4671cd40c19337b909baf59a3fed60fc",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        "26.95",
+        "39.94",
+        "56.83"
+      ],
+      "load_after": [
+        "28.07",
+        "35.85",
+        "53.18"
+      ]
+    }
+  ],
+  "wall_limits_seconds": {
+    "fmt": 180,
+    "clippy": 180,
+    "check": 180,
+    "workspace": 900,
+    "serial-launch": 180
+  },
+  "census": {
+    "workspace": {
+      "all_summary_lines": 119,
+      "all_counts": {
+        "passed": 4399,
+        "failed": 0,
+        "ignored": 39,
+        "measured": 0,
+        "filtered_out": 105
+      },
+      "nested_summaries": 3,
+      "nested_counts": {
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 105
+      },
+      "top_level_summary_lines": 116,
+      "top_level_counts": {
+        "passed": 4396,
+        "failed": 0,
+        "ignored": 39,
+        "measured": 0,
+        "filtered_out": 0
+      }
+    },
+    "serial-launch": {
+      "all_summary_lines": 27,
+      "all_counts": {
+        "passed": 1039,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "nested_summaries": 0,
+      "nested_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      },
+      "top_level_summary_lines": 27,
+      "top_level_counts": {
+        "passed": 1039,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered_out": 0
+      }
+    }
+  },
+  "nested_accounting": "Exactly three emitter/single/grouped runtime_control_oracle_modes children, each with one pass and 35 filtered tests, within the controlled_oracle context. The parent 36-test summary remains counted; no other exclusion.",
+  "short_neighbor": {
+    "count": 21,
+    "source": {
+      "bytes": 55244,
+      "sha256": "89b55d484d6b440a658bbce64bb09bd561ce29e9eebf2b0753c5964fab3ff5c1",
+      "path": "tests/support/neighbor_short_eviction_oracle.rs"
+    },
+    "exact_source_and_pass_sets_equal": true,
+    "names_sha256": "d254f447cacb424a9da706d870854a5aa79303fd53b08dfba61b5b1c9bc905ad"
+  },
+  "critical_regressions": {
+    "rapid::tests::live::install_rejects_each_mutated_window_byte": "workspace_PASS",
+    "trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners": "workspace_PASS",
+    "native_state_covers_every_prefixed_pun_and_original_successor": "workspace_PASS",
+    "overlapping_artifact_native::native_overlapping_artifact_selected_before_preserves_full_state": "workspace_PASS",
+    "overlapping_artifact_native::native_overlapping_artifact_selected_after_preserves_full_state": "workspace_PASS",
+    "region_benchmark::tests::repeated_region_schedule_matches_nested_loop": "workspace_PASS",
+    "linux::remote::dynamic::owner::admission::exec::tests::native::admitted_exec_native_first_user_and_retired_history_are_exact": "workspace_and_serial_PASS",
+    "linux::remote::dynamic::owner::admission::exec::tests::native::admitted_exec_native_source_reply_refusal_keeps_new_mm_held": "workspace_and_serial_PASS",
+    "linux::remote::dynamic::owner::admission::exec::tests::native::failures::admitted_exec_native_source_profile_bound_refuses_after_exec": "workspace_and_serial_PASS",
+    "stale_exec_source_reply_preserves_actual_replacement_without_commit": "workspace_and_serial_PASS",
+    "original_exec_replacement_matches_raw_replay_and_native_full_state": "workspace_and_serial_PASS",
+    "tests::parser_rejects_outside_finite_domain_before_runtime": "workspace_PASS",
+    "tests::literal_default_and_last_taken_stop_states": "workspace_PASS",
+    "tests::scalar_nested_loop_independently_checks_every_taken_state": "workspace_PASS"
+  },
+  "verification": "CLOSED capture hashes and normal exits checked; exact critical case pass lines required. Independent read-only census separately verifies the three nested children and unchanged short-neighbor source/pass set. No reruns or discarded attempts."
+}

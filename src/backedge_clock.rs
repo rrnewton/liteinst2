@@ -18,8 +18,11 @@ use std::sync::{
 use crate::contracts::{AddressRange, CodeIdentity};
 use crate::controls::{ControlWriter, ProbeControl};
 
+mod batch;
 mod owned_loop;
 mod owned_region;
+
+pub use batch::{ClockBatch, ClockBatchCall};
 
 /// Exact additional instrumentation data per instance, independent of code caps.
 pub const CLOCK_PAGE_BYTES: usize = 4096;
@@ -181,6 +184,8 @@ impl BackedgeClock {
             clock: self.clone(),
             tid: thread_id(),
             in_call: Cell::new(false),
+            admitted_work: max_work,
+            admission: Cell::new(Admission::Fresh),
             _thread: PhantomData,
         };
         // SAFETY: idle-to-active ownership precedes any callable entry.
@@ -272,17 +277,31 @@ pub struct ClockLease {
     clock: BackedgeClock,
     tid: i64,
     in_call: Cell<bool>,
+    admitted_work: u64,
+    admission: Cell<Admission>,
     _thread: PhantomData<Rc<()>>,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Admission {
+    Fresh,
+    Ordinary,
+    Batch,
+    Finished,
 }
 impl ClockLease {
     /// Check and mark private invocation before the first generated spill.
+    /// A lease used for a bounded batch cannot return to ordinary admission.
     pub fn begin_call(&self) -> Result<ClockCall<'_>, ClockError> {
         if self.clock.inner.pid != std::process::id() || self.tid != thread_id() {
             return Err(ClockError::Owner);
         }
+        if matches!(self.admission.get(), Admission::Batch | Admission::Finished) {
+            return Err(ClockError::Invocation);
+        }
         if self.in_call.replace(true) {
             return Err(ClockError::Invocation);
         }
+        self.admission.set(Admission::Ordinary);
         Ok(ClockCall { lease: self })
     }
 }

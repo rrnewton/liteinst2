@@ -1,0 +1,852 @@
+{
+  "schema": 1,
+  "profile": "owned-region-publisher-v1",
+  "status": "PASS",
+  "revision": "3759e96b8c24d40a35da25e3eb5e4dbd0a2bdc92",
+  "source_tree": "e25e463a7d915959e517ca62618883edac93b335",
+  "hardware": {
+    "label": "AMD EPYC Zen 5 dev host",
+    "architecture": "x86_64",
+    "logical_cpus": 316,
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor"
+  },
+  "scope": "Finite positive publication/client integration and input refusal; no performance, retirement, or full-state-after-callback claim.",
+  "attempts": 1,
+  "private_closed": {
+    "bytes": 22603,
+    "sha256": "165cb3c1c557b8341059e18a1b70e699364f1bb47ce52b21665d0da2cdab6757"
+  },
+  "binary": {
+    "path": "target/release/examples/owned_region_clock",
+    "bytes": 1821840,
+    "sha256": "50c3ba46b5eeb04f0dc15f8ed0fe9077aca0513d3f74ea3e81e8ae590d519c4a"
+  },
+  "recipe": {
+    "path": "evaluation/owned-clock-region-client/reproduce.py",
+    "sha256": "b1a344b2d2bba644b10321f053f724c999d35bc15de166daec5352ddc912dbcb",
+    "helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+    "argv": [
+      "python3.9",
+      "-I",
+      "-B",
+      "evaluation/owned-clock-region-client/reproduce.py",
+      "3759e96b8c24d40a35da25e3eb5e4dbd0a2bdc92",
+      "ignored/a3/owned-clock-region-client-native-v1"
+    ]
+  },
+  "launch": {
+    "authority": "Root-reported cpuset-alloc command and stdout; runner-observed CPU affinity. No separate independent live allocator witness.",
+    "reservation": [
+      "cpuset-alloc",
+      "run",
+      "--cores",
+      "12",
+      "--tag",
+      "li2core-region-client-native-v1",
+      "--"
+    ],
+    "engine": "python",
+    "affinity": [
+      19,
+      20,
+      33,
+      34,
+      40,
+      43,
+      62,
+      65,
+      67,
+      82,
+      85,
+      101
+    ],
+    "outer_environment": {
+      "HOME": "{USER_HOME}",
+      "PATH": "{TOOLCHAIN}/bin:/usr/bin:/bin",
+      "LANG": "C",
+      "LC_ALL": "C"
+    },
+    "inner_environment": {
+      "PATH": "{TOOLCHAIN}/bin:/usr/bin:/bin",
+      "LANG": "C",
+      "LC_ALL": "C",
+      "CARGO_BUILD_JOBS": "12",
+      "RUST_TEST_THREADS": "12",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "RUSTC": "{TOOLCHAIN}/bin/rustc",
+      "RUSTDOC": "{TOOLCHAIN}/bin/rustdoc"
+    },
+    "jobs": 12,
+    "test_threads": 12
+  },
+  "tools": {
+    "versions": {
+      "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+      "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "rustdoc": "rustdoc 1.97.1 (8bab26f4f 2026-07-14)"
+    },
+    "sha256": {
+      "cargo": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "rustc": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+      "rustdoc": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+    },
+    "python": "3.9.25 (main, Aug 13 2026, 00:00:00) \n[GCC 11.5.0 20240719 (Red Hat 11.5.0-14)]",
+    "python_sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+  },
+  "limits": {
+    "build_capture_bytes": 2097152,
+    "native_capture_bytes": 65536,
+    "cleanup_seconds": 3
+  },
+  "load_before": [
+    44.61,
+    59.17,
+    78.23
+  ],
+  "load_after": [
+    45.4,
+    58.87,
+    77.93
+  ],
+  "results": [
+    {
+      "name": "release-build",
+      "kind": "build",
+      "command": [
+        "{TOOLCHAIN}/bin/cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-j",
+        "12",
+        "--target-dir",
+        "{CHECKOUT}/target",
+        "--example",
+        "owned_region_clock",
+        "--message-format=json-render-diagnostics"
+      ],
+      "wall_bound_seconds": 600,
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T11:19:59.020084+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 6.058115523075685,
+        "private_log_sha256": "43c8fcfa0f5e810797bd4023c6071d56cac657aa489b34f880987e02fc329849",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        44.61,
+        59.17,
+        78.23
+      ],
+      "load_after": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "compiled_profile": {
+        "opt_level": "3",
+        "debuginfo": 0,
+        "debug_assertions": false,
+        "overflow_checks": false,
+        "test": false
+      }
+    },
+    {
+      "name": "positive-00",
+      "kind": "positive",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=10",
+        "--fsize=65536",
+        "--core=0",
+        "--",
+        "{CHECKOUT}/target/release/examples/owned_region_clock",
+        "1",
+        "1",
+        "1"
+      ],
+      "wall_bound_seconds": 20,
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T11:20:05.258246+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.004650602117180824,
+        "private_log_sha256": "acace849f2670862b290a123edf1a90b15963fc6df804a8862c260fd9ea89dbe",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "load_after": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "result_file": {
+        "path": "positive-00.json",
+        "bytes": 239,
+        "sha256": "acace849f2670862b290a123edf1a90b15963fc6df804a8862c260fd9ea89dbe"
+      }
+    },
+    {
+      "name": "positive-01",
+      "kind": "positive",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=10",
+        "--fsize=65536",
+        "--core=0",
+        "--",
+        "{CHECKOUT}/target/release/examples/owned_region_clock",
+        "1",
+        "4",
+        "2"
+      ],
+      "wall_bound_seconds": 20,
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T11:20:05.438823+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.00579914590343833,
+        "private_log_sha256": "1a818ba40c4797177e97097d88000429a065e5187ab063582d3b3ed7040fc6bd",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "load_after": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "result_file": {
+        "path": "positive-01.json",
+        "bytes": 240,
+        "sha256": "1a818ba40c4797177e97097d88000429a065e5187ab063582d3b3ed7040fc6bd"
+      }
+    },
+    {
+      "name": "positive-02",
+      "kind": "positive",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=10",
+        "--fsize=65536",
+        "--core=0",
+        "--",
+        "{CHECKOUT}/target/release/examples/owned_region_clock",
+        "3",
+        "1",
+        "1"
+      ],
+      "wall_bound_seconds": 20,
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T11:20:05.624570+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.00812349421903491,
+        "private_log_sha256": "a9ab1790071dc9ba5f37f1bcf1264d68fae1775124dcab5ef6e16572ae70ca52",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "load_after": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "result_file": {
+        "path": "positive-02.json",
+        "bytes": 239,
+        "sha256": "a9ab1790071dc9ba5f37f1bcf1264d68fae1775124dcab5ef6e16572ae70ca52"
+      }
+    },
+    {
+      "name": "positive-03",
+      "kind": "positive",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=10",
+        "--fsize=65536",
+        "--core=0",
+        "--",
+        "{CHECKOUT}/target/release/examples/owned_region_clock",
+        "3",
+        "4",
+        "2"
+      ],
+      "wall_bound_seconds": 20,
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T11:20:05.809286+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.009811178082600236,
+        "private_log_sha256": "7b11a1aa4f0f1a9fc69552020d7dcc1462592732b4791c6b62ad961652c80aa1",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "load_after": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "result_file": {
+        "path": "positive-03.json",
+        "bytes": 242,
+        "sha256": "7b11a1aa4f0f1a9fc69552020d7dcc1462592732b4791c6b62ad961652c80aa1"
+      }
+    },
+    {
+      "name": "positive-04",
+      "kind": "positive",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=10",
+        "--fsize=65536",
+        "--core=0",
+        "--",
+        "{CHECKOUT}/target/release/examples/owned_region_clock",
+        "4",
+        "3",
+        "11"
+      ],
+      "wall_bound_seconds": 20,
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T11:20:05.996424+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.005501108011230826,
+        "private_log_sha256": "7fdaec15d65811d8e83afa08ce00e0d07b7095f80f150655fe0c79e8f7b34855",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "load_after": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "result_file": {
+        "path": "positive-04.json",
+        "bytes": 243,
+        "sha256": "7fdaec15d65811d8e83afa08ce00e0d07b7095f80f150655fe0c79e8f7b34855"
+      }
+    },
+    {
+      "name": "positive-05",
+      "kind": "positive",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=10",
+        "--fsize=65536",
+        "--core=0",
+        "--",
+        "{CHECKOUT}/target/release/examples/owned_region_clock",
+        "32",
+        "32",
+        "1023"
+      ],
+      "wall_bound_seconds": 20,
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T11:20:06.181389+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.005752405850216746,
+        "private_log_sha256": "92e7617dcf723ca239dca640575b5d9b52b58349621ff3ea05d12b954507e6c7",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "load_after": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "result_file": {
+        "path": "positive-05.json",
+        "bytes": 254,
+        "sha256": "92e7617dcf723ca239dca640575b5d9b52b58349621ff3ea05d12b954507e6c7"
+      }
+    },
+    {
+      "name": "negative-00",
+      "kind": "negative",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=2",
+        "--fsize=65536",
+        "--core=0",
+        "--",
+        "{CHECKOUT}/target/release/examples/owned_region_clock",
+        "0",
+        "4",
+        "2"
+      ],
+      "wall_bound_seconds": 5,
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T11:20:06.363987+00:00",
+        "exit_code": 2,
+        "termination": null,
+        "seconds": 0.002964239101856947,
+        "private_log_sha256": "fb572e5c5bcc3d6e9d0454de1c00751f0995bbc8826c399074eb61f888d19a2b",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "load_after": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "expected_exit": 2,
+      "observed": {
+        "exit_code": 2,
+        "refusal": "argument admission before publication"
+      }
+    },
+    {
+      "name": "negative-01",
+      "kind": "negative",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=2",
+        "--fsize=65536",
+        "--core=0",
+        "--",
+        "{CHECKOUT}/target/release/examples/owned_region_clock",
+        "3",
+        "0",
+        "2"
+      ],
+      "wall_bound_seconds": 5,
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T11:20:06.542889+00:00",
+        "exit_code": 2,
+        "termination": null,
+        "seconds": 0.00312441005371511,
+        "private_log_sha256": "fb572e5c5bcc3d6e9d0454de1c00751f0995bbc8826c399074eb61f888d19a2b",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "load_after": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "expected_exit": 2,
+      "observed": {
+        "exit_code": 2,
+        "refusal": "argument admission before publication"
+      }
+    },
+    {
+      "name": "negative-02",
+      "kind": "negative",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=2",
+        "--fsize=65536",
+        "--core=0",
+        "--",
+        "{CHECKOUT}/target/release/examples/owned_region_clock",
+        "33",
+        "4",
+        "2"
+      ],
+      "wall_bound_seconds": 5,
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T11:20:06.721367+00:00",
+        "exit_code": 2,
+        "termination": null,
+        "seconds": 0.0027029479388147593,
+        "private_log_sha256": "fb572e5c5bcc3d6e9d0454de1c00751f0995bbc8826c399074eb61f888d19a2b",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "load_after": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "expected_exit": 2,
+      "observed": {
+        "exit_code": 2,
+        "refusal": "argument admission before publication"
+      }
+    },
+    {
+      "name": "negative-03",
+      "kind": "negative",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=2",
+        "--fsize=65536",
+        "--core=0",
+        "--",
+        "{CHECKOUT}/target/release/examples/owned_region_clock",
+        "3",
+        "33",
+        "2"
+      ],
+      "wall_bound_seconds": 5,
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T11:20:06.903264+00:00",
+        "exit_code": 2,
+        "termination": null,
+        "seconds": 0.0030632978305220604,
+        "private_log_sha256": "fb572e5c5bcc3d6e9d0454de1c00751f0995bbc8826c399074eb61f888d19a2b",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "load_after": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "expected_exit": 2,
+      "observed": {
+        "exit_code": 2,
+        "refusal": "argument admission before publication"
+      }
+    },
+    {
+      "name": "negative-04",
+      "kind": "negative",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=2",
+        "--fsize=65536",
+        "--core=0",
+        "--",
+        "{CHECKOUT}/target/release/examples/owned_region_clock",
+        "3",
+        "4",
+        "0"
+      ],
+      "wall_bound_seconds": 5,
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T11:20:07.082944+00:00",
+        "exit_code": 2,
+        "termination": null,
+        "seconds": 0.003029668005183339,
+        "private_log_sha256": "fb572e5c5bcc3d6e9d0454de1c00751f0995bbc8826c399074eb61f888d19a2b",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "load_after": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "expected_exit": 2,
+      "observed": {
+        "exit_code": 2,
+        "refusal": "argument admission before publication"
+      }
+    },
+    {
+      "name": "negative-05",
+      "kind": "negative",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=2",
+        "--fsize=65536",
+        "--core=0",
+        "--",
+        "{CHECKOUT}/target/release/examples/owned_region_clock",
+        "3",
+        "4",
+        "32769"
+      ],
+      "wall_bound_seconds": 5,
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T11:20:07.260439+00:00",
+        "exit_code": 2,
+        "termination": null,
+        "seconds": 0.002704991027712822,
+        "private_log_sha256": "fb572e5c5bcc3d6e9d0454de1c00751f0995bbc8826c399074eb61f888d19a2b",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "load_after": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "expected_exit": 2,
+      "observed": {
+        "exit_code": 2,
+        "refusal": "argument admission before publication"
+      }
+    },
+    {
+      "name": "negative-06",
+      "kind": "negative",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=2",
+        "--fsize=65536",
+        "--core=0",
+        "--",
+        "{CHECKOUT}/target/release/examples/owned_region_clock",
+        "x",
+        "4",
+        "2"
+      ],
+      "wall_bound_seconds": 5,
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T11:20:07.445394+00:00",
+        "exit_code": 2,
+        "termination": null,
+        "seconds": 0.0048187230713665485,
+        "private_log_sha256": "fb572e5c5bcc3d6e9d0454de1c00751f0995bbc8826c399074eb61f888d19a2b",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "load_after": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "expected_exit": 2,
+      "observed": {
+        "exit_code": 2,
+        "refusal": "argument admission before publication"
+      }
+    },
+    {
+      "name": "negative-07",
+      "kind": "negative",
+      "command": [
+        "/usr/bin/prlimit",
+        "--cpu=2",
+        "--fsize=65536",
+        "--core=0",
+        "--",
+        "{CHECKOUT}/target/release/examples/owned_region_clock",
+        "3",
+        "4"
+      ],
+      "wall_bound_seconds": 5,
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T11:20:07.646272+00:00",
+        "exit_code": 2,
+        "termination": null,
+        "seconds": 0.004583240021020174,
+        "private_log_sha256": "fb572e5c5bcc3d6e9d0454de1c00751f0995bbc8826c399074eb61f888d19a2b",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_before": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "load_after": [
+        45.4,
+        58.87,
+        77.93
+      ],
+      "expected_exit": 2,
+      "observed": {
+        "exit_code": 2,
+        "refusal": "argument admission before publication"
+      }
+    }
+  ],
+  "totals": {
+    "positive_clients": 6,
+    "negative_argument_clients": 8,
+    "stops": 10,
+    "inner_stops": 6,
+    "outer_stops": 4,
+    "parked_checks": 10,
+    "encounters": 1100,
+    "taken": 1050
+  },
+  "focused_validation": {
+    "revision": "3759e96b8c24d40a35da25e3eb5e4dbd0a2bdc92",
+    "private_closed": {
+      "bytes": 2620,
+      "sha256": "2c242fd6715debebe622eef78b6a5fe4d19ad33e56a2a9c6370093670bb8b9da"
+    },
+    "status": "PASS",
+    "pure_tests": 3,
+    "commands": [
+      [
+        "client-pure-tests",
+        [
+          "cargo",
+          "test",
+          "--locked",
+          "--offline",
+          "-j",
+          "12",
+          "--example",
+          "owned_region_clock"
+        ],
+        180
+      ],
+      [
+        "client-clippy",
+        [
+          "cargo",
+          "clippy",
+          "--locked",
+          "--offline",
+          "-j",
+          "12",
+          "--example",
+          "owned_region_clock",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        180
+      ]
+    ],
+    "results": [
+      {
+        "name": "client-pure-tests",
+        "result": {
+          "start_utc": "2026-11-01T11:19:45.413554+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 3.3757967518176883,
+          "private_log_sha256": "dab7c8e325f1346d883cd250b58b037a7b12a5c77ae002b800e70b09cc0517de",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        "load_after": [
+          45.33,
+          59.81,
+          78.64
+        ]
+      },
+      {
+        "name": "client-clippy",
+        "result": {
+          "start_utc": "2026-11-01T11:19:48.812269+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 2.7980992710217834,
+          "private_log_sha256": "f0a01db7524c21a11694fadf1e31f8e24fc5b016229bff548afeb10f9d0eaf9e",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        "load_after": [
+          44.66,
+          59.43,
+          78.42
+        ]
+      }
+    ]
+  },
+  "interpretation": "Durations are operational command wall times. This cohort adds no performance, deadline, full-state-after-callback, reclamation or universal publisher-failure qualification.",
+  "full_validation": {
+    "path": "validation.json",
+    "bytes": 9937,
+    "sha256": "e6186a1d2208cf4cfe86b21e3ff404d2f2a02c6f48c4ebfd9f661ece1a34009c",
+    "revision": "3759e96b8c24d40a35da25e3eb5e4dbd0a2bdc92",
+    "status": "PASS",
+    "workspace_top_level_passed": 4396,
+    "workspace_ignored": 39,
+    "controlled_child_passed_separately": 3,
+    "serial_launch_passed": 1039
+  }
+}

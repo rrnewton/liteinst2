@@ -22,7 +22,7 @@ struct RegionSpawned {
 }
 
 impl Tracee {
-    fn spawn_region(mode: ClockMode, quantum: u64) -> RegionSpawned {
+    fn spawn_region(mode: ClockMode, quantum: u64, bounded_batch: bool) -> RegionSpawned {
         let mut pipe = [-1; 2];
         assert_eq!(
             unsafe { libc::pipe2(pipe.as_mut_ptr(), libc::O_CLOEXEC) },
@@ -40,7 +40,14 @@ impl Tracee {
             let _ = std::panic::catch_unwind(|| {
                 let program = RegionProgram::new(mode);
                 let lease = unsafe { program.clock.acquire(quantum, 15) }.unwrap();
-                let call = lease.begin_call().unwrap();
+                // The child forks before acquiring any lease and never forks
+                // or exposes callable entry afterward. The tracer executes at
+                // most this one finite invocation. It kills/reaps the child;
+                // this oracle does not claim a completed batch or reclamation.
+                let mut bounded =
+                    bounded_batch.then(|| unsafe { lease.begin_batch(1, 15) }.unwrap());
+                let call = (!bounded_batch).then(|| lease.begin_call().unwrap());
+                let batch_call = bounded.as_mut().map(|batch| batch.begin_call().unwrap());
                 let ready = RegionReady {
                     native: program.native,
                     source: program.source,
@@ -69,7 +76,7 @@ impl Tracee {
                         libc::_exit(120);
                     }
                     libc::kill(libc::getpid(), libc::SIGSTOP);
-                    std::hint::black_box((&program, &lease, &call));
+                    std::hint::black_box((&program, &lease, &call, &batch_call));
                     libc::_exit(121);
                 }
             });
@@ -157,11 +164,11 @@ fn visits() -> Vec<u64> {
     result
 }
 
-fn pair(mode: ClockMode, quantum: u64, seed: u64) -> usize {
+fn pair(mode: ClockMode, quantum: u64, seed: u64, bounded_batch: bool) -> usize {
     single_main();
     let arena = Arena::new(seed);
-    let original = Tracee::spawn_region(mode, quantum);
-    let candidate = Tracee::spawn_region(mode, quantum);
+    let original = Tracee::spawn_region(mode, quantum, bounded_batch);
+    let candidate = Tracee::spawn_region(mode, quantum, bounded_batch);
     let (original, first) = original.ready();
     let (candidate, second) = candidate.ready();
     assert_eq!(first, second, "exact pristine sibling address geometry");
@@ -308,6 +315,14 @@ fn pair(mode: ClockMode, quantum: u64, seed: u64) -> usize {
 }
 
 pub(super) fn qualify(output: &Path) {
+    qualify_admission(output, false);
+}
+
+pub(super) fn qualify_bounded(output: &Path) {
+    qualify_admission(output, true);
+}
+
+fn qualify_admission(output: &Path, bounded_batch: bool) {
     let mut rows = String::from("mode,quantum,seed,full_state_comparisons,status\n");
     let mut comparisons = 0;
     let mut pairs = 0;
@@ -317,7 +332,7 @@ pub(super) fn qualify(output: &Path) {
             (ClockMode::Stop, 2, "inner-zero-before-save"),
             (ClockMode::Stop, 4, "outer-zero-before-save"),
         ] {
-            let count = pair(mode, quantum, seed);
+            let count = pair(mode, quantum, seed, bounded_batch);
             comparisons += count;
             pairs += 1;
             rows.push_str(&format!("{label},{quantum},{seed},{count},PASS\n"));

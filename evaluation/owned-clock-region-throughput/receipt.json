@@ -1,0 +1,973 @@
+{
+  "status": "PASS",
+  "closed": {
+    "bytes": 32706,
+    "sha256": "b225f19c803b51093f84e30f1dca450b94b7486b4b5ef84f7cc9025f40229160"
+  },
+  "revision": "2f1637bcbffcb5886d5ccb27807972374def65d0",
+  "source_tree": "d8cd0a4cd9a29facb6b1e548f041350f4e4442b1",
+  "binary_sha256": "fa4e453ffa04921f98696146aeb3b46ceb32b806434ca99d2bc3c63bb67ecb89",
+  "source_unchanged": true,
+  "error": null,
+  "hardware": {
+    "label": "AMD EPYC Zen 5 dev host",
+    "architecture": "x86_64",
+    "logical_cpus": 316,
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor"
+  },
+  "toolchain": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "rustdoc": "rustdoc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "python": "3.9.25 (main, Aug 13 2026, 00:00:00) \n[GCC 11.5.0 20240719 (Red Hat 11.5.0-14)]",
+  "reserved_cpus": [
+    136,
+    173,
+    226
+  ],
+  "producer_cpu": 136,
+  "environment": {
+    "CARGO_BUILD_JOBS": "3",
+    "RUST_TEST_THREADS": "3",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "RUSTC": "{TOOLCHAIN}/bin/rustc",
+    "RUSTDOC": "{TOOLCHAIN}/bin/rustdoc"
+  },
+  "load_before": [
+    90.41,
+    75.81,
+    68.78
+  ],
+  "load_after": [
+    97.84,
+    78.15,
+    69.66
+  ],
+  "seed": 20261101,
+  "retries": 0,
+  "process_count": 12,
+  "closed_owner_records": 12,
+  "bounds": {
+    "build_wall_seconds": 600,
+    "child_wall_seconds": 90,
+    "child_cpu_seconds": 60,
+    "child_file_bytes": 1048576,
+    "log_cap_bytes": 1048576,
+    "jobs": 3
+  },
+  "core_bytes": 0,
+  "owner_cleanup_seconds": 3,
+  "build": {
+    "status": "PASS",
+    "argv": [
+      "{TOOLCHAIN}/bin/cargo",
+      "build",
+      "--release",
+      "--locked",
+      "--offline",
+      "-j",
+      "3",
+      "--target-dir",
+      "{CHECKOUT}/target",
+      "--bin",
+      "liteinst-preempt",
+      "--message-format=json-render-diagnostics"
+    ],
+    "owner": {
+      "start_utc": "2026-11-01T10:04:29.430502+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "seconds": 0.07227378990501165,
+      "private_log_sha256": "57d63f2121cda628443e9c66a82ae29b0c67292d5eac31839eb45388e085225a",
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+    },
+    "binary_sha256": "fa4e453ffa04921f98696146aeb3b46ceb32b806434ca99d2bc3c63bb67ecb89",
+    "load_after": [
+      90.41,
+      75.81,
+      68.78
+    ]
+  },
+  "cohort_command_template": [
+    "/usr/bin/prlimit",
+    "--cpu=60",
+    "--fsize=1048576",
+    "--core=0",
+    "--",
+    "/usr/bin/taskset",
+    "--cpu-list",
+    "173,226",
+    "{CHECKOUT}/target/release/liteinst-preempt",
+    "region-bench",
+    "{ORDER}",
+    "{OUTPUT}/{COHORT}"
+  ],
+  "prerequisite": {
+    "closed": {
+      "bytes": 2836,
+      "sha256": "9d85b5df037b505b9fb8052280bfab329334c321f88df4c634590c97f714a952"
+    },
+    "revision": "2f1637bcbffcb5886d5ccb27807972374def65d0",
+    "binary_sha256": "fa4e453ffa04921f98696146aeb3b46ceb32b806434ca99d2bc3c63bb67ecb89",
+    "status": "PASS",
+    "results": [
+      {
+        "name": "release-build",
+        "result": {
+          "start_utc": "2026-11-01T10:04:04.257501+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 7.828631015960127,
+          "private_log_sha256": "d3e14b38dbd2a53d52b892eafe9a5d50ea4f249721e5e81664b82439f620ba3b",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        "load_after": [
+          69.16,
+          71.05,
+          67.13
+        ]
+      },
+      {
+        "name": "native-oracle",
+        "result": {
+          "start_utc": "2026-11-01T10:04:12.169331+00:00",
+          "exit_code": 0,
+          "termination": null,
+          "seconds": 0.21323149604722857,
+          "private_log_sha256": "69720dd0243890700377f64f2d37f2d9f70e0932059f06674cdf96fd13f397a2",
+          "cleanup_complete": true,
+          "reaped_descendants": 0,
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+        },
+        "load_after": [
+          69.16,
+          71.05,
+          67.13
+        ]
+      }
+    ],
+    "summary": {
+      "bytes": 325,
+      "sha256": "3a3af3fd73f9ed40bce6f1d5531b7cafd22d1c367a99510ebb38ba44c8cb54ea"
+    },
+    "full_state_comparisons": 192,
+    "parked_stops": 6,
+    "actual_rejection_children": 2
+  },
+  "tool_and_script_sha256": {
+    "{CHECKOUT}/evaluation/owned-clock-region-throughput/run.py": "4548d9d61bd4a3af64231de1d5cf3b8ccfd5be1b6d9dba07d8abeccc8c31a9f4",
+    "{CHECKOUT}/evaluation/admission/processes.py": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+    "{CHECKOUT}/evaluation/owned-clock-region-throughput/summarize.py": "45c89e7f3640f1c469e71a4730cd6c0776d6238a3179964af3c8bc54483dd5d3",
+    "/usr/bin/python3.9": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+    "{TOOLCHAIN}/bin/cargo": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+    "{TOOLCHAIN}/bin/rustc": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+    "{TOOLCHAIN}/bin/rustdoc": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+    "/usr/bin/git": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240",
+    "/usr/bin/taskset": "e195f3da0a3c33e2e3d91a6579432e536064869b1cb5585131a8fc6983163741",
+    "/usr/bin/prlimit": "942bcd8596c242d4d33dca657372a83e1f55908afd59b525389362cd6d282933",
+    "{CHECKOUT}/evaluation/owned-clock-region/reproduce.py": "04460d748b718978feb853b7bcf77d98a5373a1c2608e9930aec36d3bd810627"
+  },
+  "cohorts": [
+    {
+      "index": 0,
+      "order": "stop,native,counter",
+      "directory": "cohort-00",
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T10:04:30.214268+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 1.0291095259599388,
+        "private_log_sha256": "40f49bcc266ad5104c40e4ec31f553be1ab8c28ccfb04eb6bddd8be66451cb9a",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "source_after": true,
+      "load_before": [
+        90.41,
+        75.81,
+        68.78
+      ],
+      "load_after": [
+        90.41,
+        75.81,
+        68.78
+      ],
+      "public_files": {
+        "measurements.csv": {
+          "bytes": 17084,
+          "sha256": "b56859e67de37d53020acb64d2b64da3387f0e16ac7b5960b533065f68905eac"
+        },
+        "summary.json": {
+          "bytes": 425,
+          "sha256": "bee8a53baa9c2d58e53d68da97cd1ae75629aec44443cc11ee5c11adaf932ad7"
+        },
+        "rejections.csv": {
+          "bytes": 138,
+          "sha256": "763067e3bf9e28fdf56428938b4a075ec7b60505e5cb7078f73ab9673cd8ab0b"
+        }
+      },
+      "private_witnesses": {
+        "rejection-1.bin": {
+          "bytes": 248,
+          "sha256": "d7c231499c49448da55d76f65b25aa293f8592f62007678abacbcb5e71316dde"
+        },
+        "rejection-2.bin": {
+          "bytes": 248,
+          "sha256": "bb6edec60396587f1069690800da019e52c61f4336d579d96b1dbd97059e60fb"
+        }
+      }
+    },
+    {
+      "index": 1,
+      "order": "counter,native,stop",
+      "directory": "cohort-01",
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T10:04:31.723030+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 1.1440404909662902,
+        "private_log_sha256": "40f49bcc266ad5104c40e4ec31f553be1ab8c28ccfb04eb6bddd8be66451cb9a",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "source_after": true,
+      "load_before": [
+        90.41,
+        75.81,
+        68.78
+      ],
+      "load_after": [
+        90.41,
+        75.81,
+        68.78
+      ],
+      "public_files": {
+        "measurements.csv": {
+          "bytes": 17075,
+          "sha256": "d903e9e9b009bfed66e90225316f1cabd210386476cf1904e49be6717cb39a82"
+        },
+        "summary.json": {
+          "bytes": 425,
+          "sha256": "b9910bafd22dcf267f4e4f2678142ea00d378fa2d545d4c25af00e7b031eb7f2"
+        },
+        "rejections.csv": {
+          "bytes": 138,
+          "sha256": "15dc11fdd67c9101d92f771ac24ff3cced846ab2e4e4aaa01d4c1d7509ede746"
+        }
+      },
+      "private_witnesses": {
+        "rejection-1.bin": {
+          "bytes": 248,
+          "sha256": "aa9f0be43514b46bf6dc46d4bfc634eb582cf3fa22ead1e918ae2be1319061d4"
+        },
+        "rejection-2.bin": {
+          "bytes": 248,
+          "sha256": "1a3b90ff18df2363ea482e486c5acae5dd804ef7a55932dd0dc0e1c9cfe2bdd2"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "order": "counter,stop,native",
+      "directory": "cohort-02",
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T10:04:33.330112+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 1.0125756359193474,
+        "private_log_sha256": "40f49bcc266ad5104c40e4ec31f553be1ab8c28ccfb04eb6bddd8be66451cb9a",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "source_after": true,
+      "load_before": [
+        90.41,
+        75.81,
+        68.78
+      ],
+      "load_after": [
+        92.78,
+        76.54,
+        69.05
+      ],
+      "public_files": {
+        "measurements.csv": {
+          "bytes": 17085,
+          "sha256": "7933e72f4650283f76ac5f0d86019dd6d309c35a8c7c632818186b4505501f9d"
+        },
+        "summary.json": {
+          "bytes": 425,
+          "sha256": "dc956f44527c3447c65977376ba664595d6ae6ddf94fc1993ea9f3d94111b0b1"
+        },
+        "rejections.csv": {
+          "bytes": 138,
+          "sha256": "f8e5ff8a4c932db53d634f34b2aa030ea10243bcd7ce3e6c835186625e54828f"
+        }
+      },
+      "private_witnesses": {
+        "rejection-1.bin": {
+          "bytes": 248,
+          "sha256": "a08d090758c0a232b830ea6a12e542aa689676f50b1a59a2629a11c19c23266d"
+        },
+        "rejection-2.bin": {
+          "bytes": 248,
+          "sha256": "3fc289bc24de378d2351cd85dfa1937efbdd8fa5e099a5eddf650af34da4be52"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "order": "counter,stop,native",
+      "directory": "cohort-03",
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T10:04:34.688492+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 1.0714936258736998,
+        "private_log_sha256": "40f49bcc266ad5104c40e4ec31f553be1ab8c28ccfb04eb6bddd8be66451cb9a",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "source_after": true,
+      "load_before": [
+        92.78,
+        76.54,
+        69.05
+      ],
+      "load_after": [
+        92.78,
+        76.54,
+        69.05
+      ],
+      "public_files": {
+        "measurements.csv": {
+          "bytes": 17078,
+          "sha256": "bc72e1fbd6de10d4f283dae8ba9517bcadee85abc954b8b2352393d34abc9d14"
+        },
+        "summary.json": {
+          "bytes": 425,
+          "sha256": "dc956f44527c3447c65977376ba664595d6ae6ddf94fc1993ea9f3d94111b0b1"
+        },
+        "rejections.csv": {
+          "bytes": 138,
+          "sha256": "98c4ab1e8a1ce36578b99c35e018041e5b414f698069ac0ebd24a7ae6ec1c8d4"
+        }
+      },
+      "private_witnesses": {
+        "rejection-1.bin": {
+          "bytes": 248,
+          "sha256": "57ad533a7ec4fde14e5e94a86abe613346aca776de4bd5a35ac2a2bfcc695f5c"
+        },
+        "rejection-2.bin": {
+          "bytes": 248,
+          "sha256": "30bf56cbd812818e51872725fa4af9e521c8584ad6435b65c4f1d33b5c90fd35"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "order": "counter,native,stop",
+      "directory": "cohort-04",
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T10:04:36.325743+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.9431007241364568,
+        "private_log_sha256": "40f49bcc266ad5104c40e4ec31f553be1ab8c28ccfb04eb6bddd8be66451cb9a",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "source_after": true,
+      "load_before": [
+        92.78,
+        76.54,
+        69.05
+      ],
+      "load_after": [
+        92.78,
+        76.54,
+        69.05
+      ],
+      "public_files": {
+        "measurements.csv": {
+          "bytes": 17082,
+          "sha256": "0f25e6b74123f312c1e4a3aaa98122f495b4229a594b8fcd318b557fd596aec8"
+        },
+        "summary.json": {
+          "bytes": 425,
+          "sha256": "b9910bafd22dcf267f4e4f2678142ea00d378fa2d545d4c25af00e7b031eb7f2"
+        },
+        "rejections.csv": {
+          "bytes": 138,
+          "sha256": "908919ca1517d2f5e59d02f6a9661cebeb8667ba93742367b610091d2d0dcb39"
+        }
+      },
+      "private_witnesses": {
+        "rejection-1.bin": {
+          "bytes": 248,
+          "sha256": "f3e72c93572ef952cd48409c864b853eadb36f0502d135841da26c578bd42578"
+        },
+        "rejection-2.bin": {
+          "bytes": 248,
+          "sha256": "2939f25a62f84cdbfb5c9a80f256b0100829f8ab691cf22efb3d2052eec844ab"
+        }
+      }
+    },
+    {
+      "index": 5,
+      "order": "native,stop,counter",
+      "directory": "cohort-05",
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T10:04:37.680089+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 1.1601356698665768,
+        "private_log_sha256": "40f49bcc266ad5104c40e4ec31f553be1ab8c28ccfb04eb6bddd8be66451cb9a",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "source_after": true,
+      "load_before": [
+        92.78,
+        76.54,
+        69.05
+      ],
+      "load_after": [
+        92.78,
+        76.54,
+        69.05
+      ],
+      "public_files": {
+        "measurements.csv": {
+          "bytes": 17083,
+          "sha256": "d2ddd0584fcd85edab73abeb1a97d0e67b26bfa77c64e5f28d1f45f4e6cc8835"
+        },
+        "summary.json": {
+          "bytes": 425,
+          "sha256": "4438d1429e6a85cf1c973aa9e8cf9fb5ba716d9ee13afcaeca82ebdf7a57e2cd"
+        },
+        "rejections.csv": {
+          "bytes": 138,
+          "sha256": "c5ab9f95378de092984bba51e4e9c5723f3996c77392f37cb0f9aa60a7a1c16e"
+        }
+      },
+      "private_witnesses": {
+        "rejection-1.bin": {
+          "bytes": 248,
+          "sha256": "39e0e19325f8a74ed8970ab36b5d7bc67b4fdc6c22748a503c97a83a9031c9ec"
+        },
+        "rejection-2.bin": {
+          "bytes": 248,
+          "sha256": "8bb50dafe5b1fbfa81ea9c3764dfeb6e6230402992921bee7a8698873012a01b"
+        }
+      }
+    },
+    {
+      "index": 6,
+      "order": "stop,counter,native",
+      "directory": "cohort-06",
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T10:04:39.199010+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.9999705778900534,
+        "private_log_sha256": "40f49bcc266ad5104c40e4ec31f553be1ab8c28ccfb04eb6bddd8be66451cb9a",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "source_after": true,
+      "load_before": [
+        94.96,
+        77.26,
+        69.33
+      ],
+      "load_after": [
+        94.96,
+        77.26,
+        69.33
+      ],
+      "public_files": {
+        "measurements.csv": {
+          "bytes": 17067,
+          "sha256": "6e222926cb98a750eeacb014982c6d9792e6eb350385e852f55a5be14266f352"
+        },
+        "summary.json": {
+          "bytes": 425,
+          "sha256": "e924b98c01a05d2eea28d9fe2a26ccf04d7f475670675dec772122930d7386a9"
+        },
+        "rejections.csv": {
+          "bytes": 138,
+          "sha256": "70138f3abf6addb41ef298ca743e9bb221706f0315f0b0dc674cfc60a1d9fa67"
+        }
+      },
+      "private_witnesses": {
+        "rejection-1.bin": {
+          "bytes": 248,
+          "sha256": "c299675eec876481f874e78b1861501bd683f11b9d0af0334fc552e6654044cc"
+        },
+        "rejection-2.bin": {
+          "bytes": 248,
+          "sha256": "f69092a9e8c93b436de22d873703a54c8a54ad006ac1a5a26ba507f697361822"
+        }
+      }
+    },
+    {
+      "index": 7,
+      "order": "native,counter,stop",
+      "directory": "cohort-07",
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T10:04:40.539495+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 1.1136213149875402,
+        "private_log_sha256": "40f49bcc266ad5104c40e4ec31f553be1ab8c28ccfb04eb6bddd8be66451cb9a",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "source_after": true,
+      "load_before": [
+        94.96,
+        77.26,
+        69.33
+      ],
+      "load_after": [
+        94.96,
+        77.26,
+        69.33
+      ],
+      "public_files": {
+        "measurements.csv": {
+          "bytes": 17070,
+          "sha256": "80c54d90785f17942f24b1155ff18c3b4f9e90c71e5de5260e7b81331934fb5a"
+        },
+        "summary.json": {
+          "bytes": 425,
+          "sha256": "936262c3ee73f1d2210a976a7b6d2f818b48eda6de575ec78437675226775383"
+        },
+        "rejections.csv": {
+          "bytes": 138,
+          "sha256": "dd34972feef9c4a54dc93f2072ed65712828755d6b3d0ec69430fe124325761a"
+        }
+      },
+      "private_witnesses": {
+        "rejection-1.bin": {
+          "bytes": 248,
+          "sha256": "fdbe79f03986a39809d311ac5ec3103bcd6ec30828a28db5808d8875673cdf1a"
+        },
+        "rejection-2.bin": {
+          "bytes": 248,
+          "sha256": "f94d357d7fd8274c29392f624fa66a59ce1834a6ecf2d4786d6ac64afed21720"
+        }
+      }
+    },
+    {
+      "index": 8,
+      "order": "native,counter,stop",
+      "directory": "cohort-08",
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T10:04:42.079056+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 1.0267290591727942,
+        "private_log_sha256": "40f49bcc266ad5104c40e4ec31f553be1ab8c28ccfb04eb6bddd8be66451cb9a",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "source_after": true,
+      "load_before": [
+        94.96,
+        77.26,
+        69.33
+      ],
+      "load_after": [
+        94.96,
+        77.26,
+        69.33
+      ],
+      "public_files": {
+        "measurements.csv": {
+          "bytes": 17085,
+          "sha256": "c9627b3c00404f93cf52cb346683ab6f1f09dfa042df31086db00d0597697bfb"
+        },
+        "summary.json": {
+          "bytes": 425,
+          "sha256": "936262c3ee73f1d2210a976a7b6d2f818b48eda6de575ec78437675226775383"
+        },
+        "rejections.csv": {
+          "bytes": 138,
+          "sha256": "6f0b4067a5a370da824d482f486d0187777f09e7e45e3cfa8aecfe9156247d0b"
+        }
+      },
+      "private_witnesses": {
+        "rejection-1.bin": {
+          "bytes": 248,
+          "sha256": "517a95ee1b638d2824fd29b0d08948bd8aa89a4c177465be0e9ca8487ef8af9c"
+        },
+        "rejection-2.bin": {
+          "bytes": 248,
+          "sha256": "f328f49f0d7089da5bfbb481dce1fd36c618dee5d48c776fb5a2ec43b19d5970"
+        }
+      }
+    },
+    {
+      "index": 9,
+      "order": "stop,native,counter",
+      "directory": "cohort-09",
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T10:04:43.644139+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 1.0594974630512297,
+        "private_log_sha256": "40f49bcc266ad5104c40e4ec31f553be1ab8c28ccfb04eb6bddd8be66451cb9a",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "source_after": true,
+      "load_before": [
+        94.96,
+        77.26,
+        69.33
+      ],
+      "load_after": [
+        97.84,
+        78.15,
+        69.66
+      ],
+      "public_files": {
+        "measurements.csv": {
+          "bytes": 17069,
+          "sha256": "aee6038a0d318db8253d6415fccfb19111d4fcd507ca8cccebf44bf159e7c7d7"
+        },
+        "summary.json": {
+          "bytes": 425,
+          "sha256": "bee8a53baa9c2d58e53d68da97cd1ae75629aec44443cc11ee5c11adaf932ad7"
+        },
+        "rejections.csv": {
+          "bytes": 138,
+          "sha256": "5bf0eb1418d26c8847df512ec71eb8ad73da2e12cae3dbc9b5ed035fdd088c93"
+        }
+      },
+      "private_witnesses": {
+        "rejection-1.bin": {
+          "bytes": 248,
+          "sha256": "748c523d76263e876e2db5679900e41b6914deb314626b414b6509f2e4188f26"
+        },
+        "rejection-2.bin": {
+          "bytes": 248,
+          "sha256": "0cc59db2d66e895b907e854d0cad3cfbe191e4b471d11b82bcb3de742fe6bb74"
+        }
+      }
+    },
+    {
+      "index": 10,
+      "order": "native,stop,counter",
+      "directory": "cohort-10",
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T10:04:45.168554+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.8801975490059704,
+        "private_log_sha256": "40f49bcc266ad5104c40e4ec31f553be1ab8c28ccfb04eb6bddd8be66451cb9a",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "source_after": true,
+      "load_before": [
+        97.84,
+        78.15,
+        69.66
+      ],
+      "load_after": [
+        97.84,
+        78.15,
+        69.66
+      ],
+      "public_files": {
+        "measurements.csv": {
+          "bytes": 17084,
+          "sha256": "d8e4fcadef9f4aabe7689405a0754792332a13629b5fa7e2a56ed84d94b0dca2"
+        },
+        "summary.json": {
+          "bytes": 425,
+          "sha256": "4438d1429e6a85cf1c973aa9e8cf9fb5ba716d9ee13afcaeca82ebdf7a57e2cd"
+        },
+        "rejections.csv": {
+          "bytes": 138,
+          "sha256": "c8d88be1b396693a3be87aab5a82f86772b2b1907f0867162c1ae1385d70b0e6"
+        }
+      },
+      "private_witnesses": {
+        "rejection-1.bin": {
+          "bytes": 248,
+          "sha256": "fecb6fd28c56e0e3c155c3eec889cffad142df16e4a9a50c1d392c68babae1eb"
+        },
+        "rejection-2.bin": {
+          "bytes": 248,
+          "sha256": "c93e89b2db299ef1561575f25b9e04aba024fd18847d4a2b09878780bbc5d822"
+        }
+      }
+    },
+    {
+      "index": 11,
+      "order": "stop,counter,native",
+      "directory": "cohort-11",
+      "status": "PASS",
+      "owner": {
+        "start_utc": "2026-11-01T10:04:46.425068+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 1.0037655071355402,
+        "private_log_sha256": "40f49bcc266ad5104c40e4ec31f553be1ab8c28ccfb04eb6bddd8be66451cb9a",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "source_after": true,
+      "load_before": [
+        97.84,
+        78.15,
+        69.66
+      ],
+      "load_after": [
+        97.84,
+        78.15,
+        69.66
+      ],
+      "public_files": {
+        "measurements.csv": {
+          "bytes": 17076,
+          "sha256": "2f7f517f3cc07322af119e155d75a9a7e8d54e97d0df5cb8c1b102bfe8689300"
+        },
+        "summary.json": {
+          "bytes": 425,
+          "sha256": "e924b98c01a05d2eea28d9fe2a26ccf04d7f475670675dec772122930d7386a9"
+        },
+        "rejections.csv": {
+          "bytes": 138,
+          "sha256": "2579d3ad7e4f3f1cd2511f81c6f671740a1ae89f08cf12f42225c1b70867526c"
+        }
+      },
+      "private_witnesses": {
+        "rejection-1.bin": {
+          "bytes": 248,
+          "sha256": "2716145d468f9d71ba9388666b7f1db9001a6f3e2c1e4a26a87244f6a3267e87"
+        },
+        "rejection-2.bin": {
+          "bytes": 248,
+          "sha256": "dc646d92b93883981c156f4fab0dbc727dbee47eb77a593dae358aa11458d1ca"
+        }
+      }
+    }
+  ],
+  "public_files": {
+    "cohort-00/measurements.csv": {
+      "bytes": 17084,
+      "sha256": "b56859e67de37d53020acb64d2b64da3387f0e16ac7b5960b533065f68905eac"
+    },
+    "cohort-00/summary.json": {
+      "bytes": 425,
+      "sha256": "bee8a53baa9c2d58e53d68da97cd1ae75629aec44443cc11ee5c11adaf932ad7"
+    },
+    "cohort-00/rejections.csv": {
+      "bytes": 138,
+      "sha256": "763067e3bf9e28fdf56428938b4a075ec7b60505e5cb7078f73ab9673cd8ab0b"
+    },
+    "cohort-01/measurements.csv": {
+      "bytes": 17075,
+      "sha256": "d903e9e9b009bfed66e90225316f1cabd210386476cf1904e49be6717cb39a82"
+    },
+    "cohort-01/summary.json": {
+      "bytes": 425,
+      "sha256": "b9910bafd22dcf267f4e4f2678142ea00d378fa2d545d4c25af00e7b031eb7f2"
+    },
+    "cohort-01/rejections.csv": {
+      "bytes": 138,
+      "sha256": "15dc11fdd67c9101d92f771ac24ff3cced846ab2e4e4aaa01d4c1d7509ede746"
+    },
+    "cohort-02/measurements.csv": {
+      "bytes": 17085,
+      "sha256": "7933e72f4650283f76ac5f0d86019dd6d309c35a8c7c632818186b4505501f9d"
+    },
+    "cohort-02/summary.json": {
+      "bytes": 425,
+      "sha256": "dc956f44527c3447c65977376ba664595d6ae6ddf94fc1993ea9f3d94111b0b1"
+    },
+    "cohort-02/rejections.csv": {
+      "bytes": 138,
+      "sha256": "f8e5ff8a4c932db53d634f34b2aa030ea10243bcd7ce3e6c835186625e54828f"
+    },
+    "cohort-03/measurements.csv": {
+      "bytes": 17078,
+      "sha256": "bc72e1fbd6de10d4f283dae8ba9517bcadee85abc954b8b2352393d34abc9d14"
+    },
+    "cohort-03/summary.json": {
+      "bytes": 425,
+      "sha256": "dc956f44527c3447c65977376ba664595d6ae6ddf94fc1993ea9f3d94111b0b1"
+    },
+    "cohort-03/rejections.csv": {
+      "bytes": 138,
+      "sha256": "98c4ab1e8a1ce36578b99c35e018041e5b414f698069ac0ebd24a7ae6ec1c8d4"
+    },
+    "cohort-04/measurements.csv": {
+      "bytes": 17082,
+      "sha256": "0f25e6b74123f312c1e4a3aaa98122f495b4229a594b8fcd318b557fd596aec8"
+    },
+    "cohort-04/summary.json": {
+      "bytes": 425,
+      "sha256": "b9910bafd22dcf267f4e4f2678142ea00d378fa2d545d4c25af00e7b031eb7f2"
+    },
+    "cohort-04/rejections.csv": {
+      "bytes": 138,
+      "sha256": "908919ca1517d2f5e59d02f6a9661cebeb8667ba93742367b610091d2d0dcb39"
+    },
+    "cohort-05/measurements.csv": {
+      "bytes": 17083,
+      "sha256": "d2ddd0584fcd85edab73abeb1a97d0e67b26bfa77c64e5f28d1f45f4e6cc8835"
+    },
+    "cohort-05/summary.json": {
+      "bytes": 425,
+      "sha256": "4438d1429e6a85cf1c973aa9e8cf9fb5ba716d9ee13afcaeca82ebdf7a57e2cd"
+    },
+    "cohort-05/rejections.csv": {
+      "bytes": 138,
+      "sha256": "c5ab9f95378de092984bba51e4e9c5723f3996c77392f37cb0f9aa60a7a1c16e"
+    },
+    "cohort-06/measurements.csv": {
+      "bytes": 17067,
+      "sha256": "6e222926cb98a750eeacb014982c6d9792e6eb350385e852f55a5be14266f352"
+    },
+    "cohort-06/summary.json": {
+      "bytes": 425,
+      "sha256": "e924b98c01a05d2eea28d9fe2a26ccf04d7f475670675dec772122930d7386a9"
+    },
+    "cohort-06/rejections.csv": {
+      "bytes": 138,
+      "sha256": "70138f3abf6addb41ef298ca743e9bb221706f0315f0b0dc674cfc60a1d9fa67"
+    },
+    "cohort-07/measurements.csv": {
+      "bytes": 17070,
+      "sha256": "80c54d90785f17942f24b1155ff18c3b4f9e90c71e5de5260e7b81331934fb5a"
+    },
+    "cohort-07/summary.json": {
+      "bytes": 425,
+      "sha256": "936262c3ee73f1d2210a976a7b6d2f818b48eda6de575ec78437675226775383"
+    },
+    "cohort-07/rejections.csv": {
+      "bytes": 138,
+      "sha256": "dd34972feef9c4a54dc93f2072ed65712828755d6b3d0ec69430fe124325761a"
+    },
+    "cohort-08/measurements.csv": {
+      "bytes": 17085,
+      "sha256": "c9627b3c00404f93cf52cb346683ab6f1f09dfa042df31086db00d0597697bfb"
+    },
+    "cohort-08/summary.json": {
+      "bytes": 425,
+      "sha256": "936262c3ee73f1d2210a976a7b6d2f818b48eda6de575ec78437675226775383"
+    },
+    "cohort-08/rejections.csv": {
+      "bytes": 138,
+      "sha256": "6f0b4067a5a370da824d482f486d0187777f09e7e45e3cfa8aecfe9156247d0b"
+    },
+    "cohort-09/measurements.csv": {
+      "bytes": 17069,
+      "sha256": "aee6038a0d318db8253d6415fccfb19111d4fcd507ca8cccebf44bf159e7c7d7"
+    },
+    "cohort-09/summary.json": {
+      "bytes": 425,
+      "sha256": "bee8a53baa9c2d58e53d68da97cd1ae75629aec44443cc11ee5c11adaf932ad7"
+    },
+    "cohort-09/rejections.csv": {
+      "bytes": 138,
+      "sha256": "5bf0eb1418d26c8847df512ec71eb8ad73da2e12cae3dbc9b5ed035fdd088c93"
+    },
+    "cohort-10/measurements.csv": {
+      "bytes": 17084,
+      "sha256": "d8e4fcadef9f4aabe7689405a0754792332a13629b5fa7e2a56ed84d94b0dca2"
+    },
+    "cohort-10/summary.json": {
+      "bytes": 425,
+      "sha256": "4438d1429e6a85cf1c973aa9e8cf9fb5ba716d9ee13afcaeca82ebdf7a57e2cd"
+    },
+    "cohort-10/rejections.csv": {
+      "bytes": 138,
+      "sha256": "c8d88be1b396693a3be87aab5a82f86772b2b1907f0867162c1ae1385d70b0e6"
+    },
+    "cohort-11/measurements.csv": {
+      "bytes": 17076,
+      "sha256": "2f7f517f3cc07322af119e155d75a9a7e8d54e97d0df5cb8c1b102bfe8689300"
+    },
+    "cohort-11/summary.json": {
+      "bytes": 425,
+      "sha256": "e924b98c01a05d2eea28d9fe2a26ccf04d7f475670675dec772122930d7386a9"
+    },
+    "cohort-11/rejections.csv": {
+      "bytes": 138,
+      "sha256": "2579d3ad7e4f3f1cd2511f81c6f671740a1ae89f08cf12f42225c1b70867526c"
+    },
+    "statistics.json": {
+      "bytes": 2545,
+      "sha256": "a52824ade52ef861c171a37577779f0386155df9c02ba8c9e4126389e52124b2"
+    }
+  },
+  "statistics_present": true,
+  "statistics_failure": null,
+  "scope": "All raw cohort rows retained. Timings include call guards, checksum and real handoff/check/scheduling; no outlier filtering, publisher qualification, isolated-gate claim or performance threshold.",
+  "profile": "owned-two-backedge-throughput-v1",
+  "reservation": {
+    "method": "cpuset-alloc run --cores 3",
+    "tag": "li2core-region-throughput-campaign-v1",
+    "engine": "python",
+    "producer_cpu": 136,
+    "controller_cpu": 173,
+    "worker_cpu": 226
+  },
+  "recipe": {
+    "path": "evaluation/owned-clock-region-throughput/run.py",
+    "argv": [
+      "python3.9",
+      "-I",
+      "-B",
+      "evaluation/owned-clock-region-throughput/run.py",
+      "2f1637bcbffcb5886d5ccb27807972374def65d0",
+      "{OUTPUT}",
+      "{ORACLE_OUTPUT}/closed.json",
+      "9d85b5df037b505b9fb8052280bfab329334c321f88df4c634590c97f714a952"
+    ],
+    "environment_note": "env -i forwarded existing HOME, selected direct stable toolchain bin then /usr/bin:/bin, and set LANG=C and LC_ALL=C; the runner set the recorded Cargo/Rust variables."
+  },
+  "full_validation": {
+    "status": "PASS",
+    "revision": "7cb04528f15bffcfce51d19a97b29cdd96b47493",
+    "receipt": "validation.json"
+  }
+}

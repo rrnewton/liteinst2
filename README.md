@@ -63,6 +63,12 @@ Run `cargo run --example owned_loop_clock` without arguments.
 across two backward branches in a closed scalar region. The
 [two-backedge profile](evaluation/owned-clock-region/README.md) describes its
 source limits, lease requirements and native stop/state checks.
+The [release throughput campaign](evaluation/owned-clock-region-throughput/README.md)
+measures native, counting and quantum-64 stop costs across 12 independent processes.
+The [owned-region client](examples/owned_region_clock.rs) uses quiescent publication
+for a bounded nested loop with one clock shared across both backedges.
+The separate [bounded batch API](tools/software-preemption/README.md#bounded-batch-admission)
+admits a fixed call population under an explicit interval ownership contract.
 
 ## How the crate is organised
 

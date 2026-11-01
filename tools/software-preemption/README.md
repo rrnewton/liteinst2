@@ -111,9 +111,56 @@ The release `region-oracle NEW_ABSOLUTE_OUTPUT` command compares a fixed nested
 3×4 loop against native execution, checks exact stops across both sites, and
 rejects actual wrong-site/count resumes before refill. See the
 [reproducer and measured correctness results](../../evaluation/owned-clock-region/README.md).
-It uses an owned fixture installation; this profile has no production-publication
-or throughput qualification yet. The existing commands and results retain their
-original scopes.
+It uses an owned fixture installation; production-publication qualification
+remains outside this profile.
+
+The release `region-bench ORDER NEW_ABSOLUTE_OUTPUT` command measures native,
+counter and quantum-64 stop arms. `ORDER` is a permutation of
+`native,counter,stop`. Each batch retains exact clock/checksum and handoff checks;
+all qualification, warmup and measured rows survive. Use the
+[fixed 12-process campaign and results](../../evaluation/owned-clock-region-throughput/README.md)
+for its reserved CPUs, bounds, statistics and timing limits. The measurements
+include per-call guards and callback/controller checks on the tiny nested loop.
+
+The standalone [owned-region client](../../examples/owned_region_clock.rs) uses
+the actual `PlannedInstall::publish_with` path and retains its installed image,
+two controls, clock and internal-entry routes. Run
+`cargo run --release --example owned_region_clock -- 3 4 2` for outer/inner counts
+and quantum, or omit all three arguments for those defaults. Both counts must
+be in `1..=32`, and the quantum in `1..=32768`; refusal precedes mapping.
+This different 30-byte function computes `outer * inner * (inner + 1) / 2`.
+The default result is 30, with 15 encounters, 11 taken edges and five stops
+covering both sites. See its [fixed correctness cohort](../../evaluation/owned-clock-region-client/README.md)
+for execution status, original/published comparisons and the exact scope.
+The current source profile and per-call guard remain unchanged. This client
+does not establish executable reclamation, full state after callbacks or
+performance.
+
+## Bounded batch admission
+
+`ClockLease::begin_batch(calls, max_work_per_call)` is a separate unsafe admission
+API for a previously unused lease. It checks the real PID/TID at entry and
+completion and precharges each call against the exact bound retained from
+`acquire`. The ordinary `begin_call` still checks PID/TID on every call.
+Batch admission requires exclusion of fork, foreign and recursive entry for the
+entire interval, including host-loop gaps, signals and callbacks. It does not
+require fixed CPU affinity; the lease must stay on the same thread.
+
+Each batch call holds a mutable token through the exact native return, then
+acknowledges it with `returned()`. After every declared call, `finish()` checks
+completion and ownership before releasing the batch latch. Missing, forgotten,
+unfinished or poisoned tokens retain ownership; Drop is not a drain or recovery
+operation. Ordinary and batch calls cannot share one lease. Source, ABI,
+per-invocation work bounds, entry exclusion and executable lifetimes remain the
+unsafe caller's obligations. The generated gate has no runtime budget trap.
+
+The new `region-batch-oracle NEW_ABSOLUTE_OUTPUT` command uses the same nested
+function, gate bytes, full-state comparator and callback checks. It requires two
+externally reserved CPUs. It plans 192 architectural comparisons, three untimed
+2,048-call arms, 352 exact q64 stops, two actual wrong-reply children and one
+fork-at-entry refusal. The [batch evaluation](../../evaluation/owned-clock-batch/README.md)
+records execution status. No new timing or speedup is claimed; the earlier
+per-call benchmark results remain unchanged.
 
 ## Explicit SPSC handoff experiment
 
