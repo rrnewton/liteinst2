@@ -82,11 +82,11 @@ fn encoded_paths_restore_rcx_rsp_and_leave_the_red_zone_untouched() {
     for padding in [0, 512] {
         let program = program(padding);
         let layout = program.verify().unwrap();
-        for original_rcx in [0, 0xfeed_7654_dead_ffff] {
+        for original_rcx in [0_u64, 0xfeed_7654_dead_ffff] {
             for enabled in [0_u8, 1] {
                 let mut stack = [0xa5_u8; 256];
-                let mut rcx = original_rcx;
-                let mut rsp = RSP;
+                let mut simulated_rcx = original_rcx;
+                let mut simulated_rsp = RSP;
                 let mut pc = layout.entry;
                 let mut finished = false;
                 // Independent semantics of the final decoded eleven-instruction
@@ -117,28 +117,34 @@ fn encoded_paths_restore_rcx_rsp_and_leave_the_red_zone_untouched() {
                         Code::Lea_r64_m => {
                             assert_eq!(instruction.op0_register(), Register::RSP);
                             assert_eq!(instruction.memory_base(), Register::RSP);
-                            rsp = rsp.wrapping_add(instruction.memory_displacement64());
+                            simulated_rsp =
+                                simulated_rsp.wrapping_add(instruction.memory_displacement64());
                         }
                         Code::Push_r64 => {
                             assert_eq!(instruction.op0_register(), Register::RCX);
-                            rsp -= 8;
-                            assert_eq!(rsp, RSP - 136);
-                            stack[120..128].copy_from_slice(&rcx.to_le_bytes());
+                            simulated_rsp -= 8;
+                            assert_eq!(simulated_rsp, RSP - 136);
+                            stack[120..128].copy_from_slice(&simulated_rcx.to_le_bytes());
                         }
                         Code::Pop_r64 => {
                             assert_eq!(instruction.op0_register(), Register::RCX);
-                            assert_eq!(rsp, RSP - 136);
-                            rcx = u64::from_le_bytes(stack[120..128].try_into().unwrap());
-                            rsp += 8;
+                            assert_eq!(simulated_rsp, RSP - 136);
+                            simulated_rcx = u64::from_le_bytes(stack[120..128].try_into().unwrap());
+                            simulated_rsp += 8;
                         }
-                        Code::Mov_r64_imm64 => rcx = instruction.immediate64(),
+                        Code::Mov_r64_imm64 => simulated_rcx = instruction.immediate64(),
                         Code::Movzx_r32_rm8 => {
                             assert_eq!(instruction.op0_register(), Register::ECX);
                             assert_eq!(instruction.memory_base(), Register::RCX);
-                            assert_eq!(rcx, program.action.control.enabled_load().address());
-                            rcx = u64::from(enabled);
+                            assert_eq!(
+                                simulated_rcx,
+                                program.action.control.enabled_load().address()
+                            );
+                            simulated_rcx = u64::from(enabled);
                         }
-                        Code::Jrcxz_rel8_64 if rcx == 0 => next = instruction.near_branch_target(),
+                        Code::Jrcxz_rel8_64 if simulated_rcx == 0 => {
+                            next = instruction.near_branch_target()
+                        }
                         Code::Jrcxz_rel8_64 => {}
                         Code::Jmp_rel8_64 | Code::Jmp_rel32_64 => {
                             next = instruction.near_branch_target()
@@ -148,7 +154,7 @@ fn encoded_paths_restore_rcx_rsp_and_leave_the_red_zone_untouched() {
                     pc = next;
                 }
                 assert!(finished);
-                assert_eq!((rsp, rcx), (RSP, original_rcx));
+                assert_eq!((simulated_rsp, simulated_rcx), (RSP, original_rcx));
                 assert!(stack[..120].iter().all(|byte| *byte == 0xa5));
                 assert!(stack[128..].iter().all(|byte| *byte == 0xa5));
             }
