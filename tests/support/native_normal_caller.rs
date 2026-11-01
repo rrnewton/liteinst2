@@ -825,6 +825,7 @@ pub struct NormalOracle {
     reference: Option<reference::Cells>,
     module: Option<module::Case>,
     early_entry: Option<module::early_entry::Scenario>,
+    early_entry_80k: Option<module::early_entry::wide::StepBudget>,
     copied_rust: Option<copied_rust::Profile>,
     leaf_set_copied: Option<leaf_set_copied::Profile>,
     selected_leaf_set: Option<selected_leaf_set::Profile>,
@@ -1073,6 +1074,7 @@ impl NormalOracle {
             reference: None,
             module: None,
             early_entry: None,
+            early_entry_80k: None,
             copied_rust: None,
             leaf_set_copied: None,
             selected_leaf_set: None,
@@ -1088,7 +1090,11 @@ impl NormalOracle {
     }
     fn step(&self, walk: &mut Walk<'_>, phase: &str) {
         self.deadline.check();
-        walk.step(phase);
+        if let Some(budget) = &self.early_entry_80k {
+            budget.step(walk, phase);
+        } else {
+            walk.step(phase);
+        }
         self.deadline.check();
     }
     fn step_call_pair(

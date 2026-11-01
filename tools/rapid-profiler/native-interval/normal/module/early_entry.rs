@@ -1,6 +1,7 @@
 //! Qualification-feature only. Same production begin/returned/checkpoint/finish,
 //! oracle-owned arrays/stack; default safe-wrapper integration is a separate gate.
 use super::*;
+pub(crate) mod wide;
 use native_module::early_entry::{self as early, Extra, Scenario, WITNESS_WORDS};
 use rapid_profiler::frontend::HistoryBinding;
 use rapid_profiler::frontend_native::{
