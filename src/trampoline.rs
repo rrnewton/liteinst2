@@ -3710,6 +3710,8 @@ mod fitting;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use fitting::OrderedPreparation;
 pub(crate) use fitting::PreparedArtifact;
+mod artifact_allocation;
+pub(crate) use artifact_allocation::{ArtifactTrampolineAllocation, EntryVeneerPlacement};
 
 fn append_artifact_original_fields(
     fields: &mut Vec<Fixup>,

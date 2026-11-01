@@ -473,7 +473,42 @@ pub(crate) fn instruction_member_core(
     patch: Vec<u8>,
     candidate: usize,
 ) -> Result<PlannedInstall, Refusal> {
-    let plan = PatchPlan::checked(PlanParts {
+    let plan = instruction_member_plan(
+        request,
+        source,
+        displaced,
+        GeneratedCode {
+            address: image.address(),
+            bytes: image.bytes().to_vec(),
+            program_counters: image.program_counter_mappings().to_vec(),
+        },
+        allocation,
+        patch,
+    )?;
+    Ok(PlannedInstall {
+        plan,
+        image,
+        metrics: PlanMetrics {
+            search: SearchEvidence::default(),
+            upstream_bytes: 0,
+            displaced_bytes: displaced.len() as usize,
+            prefix_instructions: 0,
+            allocation_attempts: candidate + 1,
+            attempts: vec![],
+        },
+    })
+}
+
+// The same checked structural contract, shared without a live image handle.
+fn instruction_member_plan(
+    request: &PlanningRequest<'_>,
+    source: AddressRange,
+    displaced: AddressRange,
+    generated: GeneratedCode,
+    allocation: AddressRange,
+    patch: Vec<u8>,
+) -> Result<PatchPlan, Refusal> {
+    PatchPlan::checked(PlanParts {
         identity: request.identity,
         profile: ApplicationProfile::InstallOnce,
         kind: PlanKind::Relocation,
@@ -495,27 +530,29 @@ pub(crate) fn instruction_member_core(
             range: allocation,
             alignment: 4096,
         }],
-        generated: vec![GeneratedCode {
-            address: image.address(),
-            bytes: image.bytes().to_vec(),
-            program_counters: image.program_counter_mappings().to_vec(),
-        }],
+        generated: vec![generated],
         requirements: PublicationRequirements {
             quiescent: true,
             sync_core: true,
             sigill_router: false,
         },
-    })?;
-    Ok(PlannedInstall {
-        plan,
-        image,
-        metrics: PlanMetrics {
-            search: SearchEvidence::default(),
-            upstream_bytes: 0,
-            displaced_bytes: displaced.len() as usize,
-            prefix_instructions: 0,
-            allocation_attempts: candidate + 1,
-            attempts: vec![],
-        },
     })
+}
+
+pub(crate) fn artifact_instruction_member_core(
+    request: &PlanningRequest<'_>,
+    source: AddressRange,
+    displaced: AddressRange,
+    image: crate::emission::ArtifactStoredImage,
+    allocation: AddressRange,
+    patch: Vec<u8>,
+) -> Result<crate::emission::ArtifactMember, Refusal> {
+    let view = image.view();
+    let generated = GeneratedCode {
+        address: view.address(),
+        bytes: view.bytes().to_vec(),
+        program_counters: view.program_counter_mappings().to_vec(),
+    };
+    let plan = instruction_member_plan(request, source, displaced, generated, allocation, patch)?;
+    crate::emission::ArtifactMember::checked(plan, image)
 }

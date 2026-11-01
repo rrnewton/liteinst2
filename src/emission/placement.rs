@@ -310,3 +310,72 @@ mod tests;
 
 #[cfg(test)]
 mod fitting_tests;
+
+/// One short-T3 selected-entry envelope, computed before any body encode.
+/// The caller first preserves an available direct fitting result, and supplies
+/// the actual victim mapping among `occupied`. No policy bound is modified.
+/// Refusal means this finite certificate failed, not universal impossibility.
+pub(crate) fn entry_veneer_for_pun(
+    policy: &AllocationPolicy,
+    window: AddressRange,
+    occupied: &[AddressRange],
+    source: AddressRange,
+    bound: usize,
+) -> Result<crate::trampoline::EntryVeneerPlacement, Refusal> {
+    use crate::trampoline::EntryVeneerPlacement;
+    if bound == 0 || bound > PAGE as usize - 5 {
+        return Err(Refusal::AllocationUnavailable);
+    }
+    let free = free_pages(policy, occupied, source)?;
+    let layout = |entry: u64| EntryVeneerPlacement::new(entry & !(PAGE - 1), entry, bound);
+    if let Some(seed) = policy.preferred_address {
+        if window.contains(seed) && available(seed, &free) {
+            if let Ok(placement) = layout(seed) {
+                return Ok(placement);
+            }
+        }
+    }
+    let mut best: Option<u64> = None;
+    for range in &free {
+        let low = range.start().max(window.start());
+        let high = range.end().min(window.end());
+        if low >= high {
+            continue;
+        }
+        let first = low & !(PAGE - 1);
+        let last = (high - 1) & !(PAGE - 1);
+        let mut consider = |page: u64| -> Result<(), Refusal> {
+            // free pages are whole intervals; only the window clips this page.
+            let entry = low.max(
+                page.checked_add(bound as u64)
+                    .ok_or(Refusal::InvalidRange)?,
+            );
+            let final_entry = page.checked_add(PAGE - 5).ok_or(Refusal::InvalidRange)?;
+            if entry < high
+                && entry <= final_entry
+                && best.is_none_or(|old| (entry % PAGE, entry) < (old % PAGE, old))
+            {
+                best = Some(entry);
+            }
+            Ok(())
+        };
+        consider(first)?;
+        if last != first {
+            // The earliest complete page, when there is one, attains offset U.
+            // Later complete pages cannot improve its (offset,address) pair.
+            let next = first.checked_add(PAGE).ok_or(Refusal::InvalidRange)?;
+            if next < last {
+                consider(next)?;
+            }
+            consider(last)?;
+        }
+    }
+    let entry = best.ok_or(Refusal::AllocationUnavailable)?;
+    if !window.contains(entry) || !available(entry, &free) {
+        return Err(Refusal::InvalidPlan);
+    }
+    layout(entry)
+}
+
+#[cfg(test)]
+mod entry_veneer_tests;

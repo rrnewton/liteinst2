@@ -212,23 +212,13 @@ impl PlannedBundle {
         let backing_bytes = grouping
             .as_ref()
             .map_or(virtual_bytes, |group| group.memory().backing_bytes);
-        let memory = BundleMemory {
-            mappings: allocations.len(),
-            virtual_pages: usize::try_from(virtual_bytes / 4096)
-                .map_err(|_| Refusal::InvalidRange)?,
-            backing_pages: usize::try_from(backing_bytes / 4096)
-                .map_err(|_| Refusal::InvalidRange)?,
+        let memory = checked_bundle_memory(
+            allocations.len(),
             virtual_bytes,
             backing_bytes,
-            virtual_span: high - low,
-        };
-        if memory.mappings > budget.max_mappings
-            || memory.virtual_bytes > budget.max_virtual_bytes
-            || memory.backing_bytes > budget.max_backing_bytes
-            || memory.virtual_span > budget.max_virtual_span
-        {
-            return Err(Refusal::AllocationUnavailable);
-        }
+            high - low,
+            budget,
+        )?;
         Ok(Self {
             plan: BundlePlan {
                 identity,
@@ -639,4 +629,102 @@ fn source_stores(
         }
     }
     Ok(stores)
+}
+
+// Shared exact accounting; grouped/live callers still establish backing aliases
+// before this boundary, while artifact pairs always charge distinct full pages.
+fn checked_bundle_memory(
+    mappings: usize,
+    virtual_bytes: u64,
+    backing_bytes: u64,
+    virtual_span: u64,
+    budget: BundleBudget,
+) -> Result<BundleMemory, Refusal> {
+    let memory = BundleMemory {
+        mappings,
+        virtual_pages: usize::try_from(virtual_bytes / 4096).map_err(|_| Refusal::InvalidRange)?,
+        backing_pages: usize::try_from(backing_bytes / 4096).map_err(|_| Refusal::InvalidRange)?,
+        virtual_bytes,
+        backing_bytes,
+        virtual_span,
+    };
+    if memory.mappings > budget.max_mappings
+        || memory.virtual_bytes > budget.max_virtual_bytes
+        || memory.backing_bytes > budget.max_backing_bytes
+        || memory.virtual_span > budget.max_virtual_span
+    {
+        return Err(Refusal::AllocationUnavailable);
+    }
+    Ok(memory)
+}
+
+/// Pure artifact transaction, with no live bundle/member conversion.
+#[derive(Clone, Debug)]
+pub(crate) struct CheckedArtifactPair {
+    pub(crate) plan: BundlePlan,
+    pub(crate) images: Vec<crate::emission::ArtifactStoredImage>,
+}
+
+pub(crate) fn compose_artifact_pair(
+    originals: Vec<ExpectedBytes>,
+    members: Vec<crate::emission::ArtifactMember>,
+    budget: BundleBudget,
+) -> Result<CheckedArtifactPair, Refusal> {
+    let identity = members
+        .first()
+        .ok_or(Refusal::InvalidPlan)?
+        .plan
+        .parts()
+        .identity;
+    if members.len() != 2 {
+        return Err(Refusal::InvalidPlan);
+    }
+    if members.len() > budget.max_steps {
+        return Err(Refusal::AllocationUnavailable);
+    }
+    let mut composition = Composition::new(identity, originals)?;
+    for member in &members {
+        member.validate()?;
+        if member.plan.parts().profile != ApplicationProfile::InstallOnce {
+            return Err(Refusal::InvalidPlan);
+        }
+        composition.append(&member.plan)?;
+    }
+    let allocations: Vec<_> = members
+        .iter()
+        .flat_map(|member| &member.plan.parts().allocations)
+        .collect();
+    let virtual_bytes = allocations
+        .iter()
+        .try_fold(0_u64, |sum, a| sum.checked_add(a.range.len()))
+        .ok_or(Refusal::InvalidRange)?;
+    let low = allocations
+        .iter()
+        .map(|a| a.range.start())
+        .min()
+        .ok_or(Refusal::InvalidPlan)?;
+    let high = allocations
+        .iter()
+        .map(|a| a.range.end())
+        .max()
+        .ok_or(Refusal::InvalidPlan)?;
+    let memory = checked_bundle_memory(
+        allocations.len(),
+        virtual_bytes,
+        virtual_bytes,
+        high - low,
+        budget,
+    )?;
+    let plan = BundlePlan {
+        identity,
+        originals: composition.originals().to_vec(),
+        final_bytes: composition.final_bytes().to_vec(),
+        locks: composition.locks().to_vec(),
+        steps: members.iter().map(|member| member.plan.clone()).collect(),
+        memory,
+    };
+    Ok(CheckedArtifactPair {
+        plan,
+        images: members.into_iter().map(|member| member.image).collect(),
+    })
 }

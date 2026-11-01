@@ -413,7 +413,7 @@ impl ArtifactImageMetadata {
 
 /// Read-only artifact bytes/maps. It cannot be converted to a live image handle.
 pub struct ArtifactImageView<'a> {
-    image: &'a TrampolineImage,
+    image: ArtifactImageRef<'a>,
 }
 
 /// Independent refusal of optional artifact frame metadata.
@@ -470,7 +470,7 @@ impl ArtifactFrameTrace {
     /// Read-only final image; no live image ownership can be extracted.
     pub fn image(&self) -> ArtifactImageView<'_> {
         ArtifactImageView {
-            image: self.exact_image(),
+            image: ArtifactImageRef::Direct(self.exact_image()),
         }
     }
     pub(crate) const fn exact_image(&self) -> &TrampolineImage {
@@ -478,6 +478,15 @@ impl ArtifactFrameTrace {
     }
 }
 impl ArtifactImageView<'_> {
+    /// Canonical external entry; for an ordinary direct image this is address().
+    pub fn entry_address(&self) -> u64 {
+        self.image.entry_address()
+    }
+    /// Explicit same-page envelope layout, absent for all old direct images.
+    pub fn entry_veneer(&self) -> Option<ArtifactEntryVeneerLayout> {
+        self.image.entry_veneer()
+    }
+
     /// Planning coordinate of the first image byte.
     pub fn address(&self) -> u64 {
         self.image.address()
@@ -510,7 +519,7 @@ impl ArtifactImageView<'_> {
 #[derive(Clone, Debug)]
 pub struct ArtifactPlan {
     steps: Vec<PatchPlan>,
-    images: Vec<TrampolineImage>,
+    images: Vec<ArtifactStoredImage>,
     metrics: ArtifactMetrics,
 }
 
@@ -552,7 +561,9 @@ impl ArtifactPlan {
         use crate::trampoline::ObservationStackProfile;
         use ArtifactFrameTraceRefusal as Failure;
 
-        let ([step], [image]) = (self.steps.as_slice(), self.images.as_slice()) else {
+        let ([step], [ArtifactStoredImage::Direct(image)]) =
+            (self.steps.as_slice(), self.images.as_slice())
+        else {
             return Err(Failure::UnsupportedPlan);
         };
         let parts = step.parts();
@@ -622,7 +633,7 @@ impl ArtifactPlan {
     pub(crate) fn single(member: PlannedInstall) -> Self {
         let mut result = Self {
             steps: vec![member.plan],
-            images: vec![member.image],
+            images: vec![ArtifactStoredImage::Direct(member.image)],
             metrics: ArtifactMetrics::Single(member.metrics),
         };
         result.record_router_requirement();
@@ -631,7 +642,24 @@ impl ArtifactPlan {
     pub(crate) fn bundle(bundle: &crate::bundle::PlannedBundle, metrics: ArtifactMetrics) -> Self {
         let mut result = Self {
             steps: bundle.plan().steps().to_vec(),
-            images: bundle.images().to_vec(),
+            images: bundle
+                .images()
+                .iter()
+                .cloned()
+                .map(ArtifactStoredImage::Direct)
+                .collect(),
+            metrics,
+        };
+        result.record_router_requirement();
+        result
+    }
+    pub(crate) fn checked_pair(
+        pair: crate::bundle::CheckedArtifactPair,
+        metrics: ArtifactMetrics,
+    ) -> Self {
+        let mut result = Self {
+            steps: pair.plan.steps().to_vec(),
+            images: pair.images,
             metrics,
         };
         result.record_router_requirement();
@@ -660,7 +688,7 @@ impl ArtifactPlan {
     }
     /// Read-only artifact image views, with no live allocator capability.
     pub fn images(&self) -> impl Iterator<Item = ArtifactImageView<'_>> {
-        self.images.iter().map(|image| ArtifactImageView { image })
+        self.images.iter().map(ArtifactStoredImage::view)
     }
     /// Exact preserved planning outcomes.
     pub const fn metrics(&self) -> &ArtifactMetrics {
@@ -674,3 +702,194 @@ impl ArtifactPlan {
 
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 pub(crate) mod artifact_frame_tests;
+
+/// Read-only layout of one artifact entry veneer. This is not allocation,
+/// executable-entry, frame-trace, CPU/ABI or publication authority.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ArtifactEntryVeneerLayout {
+    storage: u64,
+    entry: u64,
+    body_len: usize,
+    size_bound: usize,
+}
+impl ArtifactEntryVeneerLayout {
+    /// First stored byte (the body base), unchanged image-address semantics.
+    pub const fn storage_address(self) -> u64 {
+        self.storage
+    }
+    /// Separately checked external E9 entry to the body.
+    pub const fn entry_address(self) -> u64 {
+        self.entry
+    }
+    /// Exact body bytes, excluding owned padding and entry veneer.
+    pub const fn body_len(self) -> usize {
+        self.body_len
+    }
+    /// Conservative certificate of the single encoded body.
+    pub const fn size_bound(self) -> usize {
+        self.size_bound
+    }
+    /// Half-open padding range. Empty padding is represented by equal endpoints.
+    pub const fn padding_range(self) -> (u64, u64) {
+        (self.storage + self.body_len as u64, self.entry)
+    }
+    /// Half-open five-byte entry veneer range.
+    pub const fn veneer_range(self) -> (u64, u64) {
+        (self.entry, self.entry + 5)
+    }
+}
+
+#[derive(Clone, Copy)]
+enum ArtifactImageRef<'a> {
+    Direct(&'a TrampolineImage),
+    EntryVeneer(&'a crate::trampoline::ArtifactTrampolineAllocation),
+}
+impl ArtifactImageRef<'_> {
+    fn address(self) -> u64 {
+        match self {
+            Self::Direct(i) => i.address(),
+            Self::EntryVeneer(i) => i.storage_address(),
+        }
+    }
+    fn entry_address(self) -> u64 {
+        match self {
+            Self::Direct(i) => i.address(),
+            Self::EntryVeneer(i) => i.entry_transfer().0,
+        }
+    }
+    fn entry_veneer(self) -> Option<ArtifactEntryVeneerLayout> {
+        match self {
+            Self::Direct(_) => None,
+            Self::EntryVeneer(i) => Some(ArtifactEntryVeneerLayout {
+                storage: i.storage_address(),
+                entry: i.entry_address(),
+                body_len: i.body_len(),
+                size_bound: i.placement().size_bound(),
+            }),
+        }
+    }
+    fn bytes(&self) -> &[u8] {
+        match self {
+            Self::Direct(i) => i.bytes(),
+            Self::EntryVeneer(i) => i.bytes(),
+        }
+    }
+    fn entry_routes(&self) -> &[(u64, u64)] {
+        match self {
+            Self::Direct(i) => i.entry_routes(),
+            Self::EntryVeneer(i) => i.entry_routes(),
+        }
+    }
+    fn instruction_boundaries(&self) -> &[(u64, u64)] {
+        match self {
+            Self::Direct(i) => i.instruction_boundaries(),
+            Self::EntryVeneer(i) => i.instruction_boundaries(),
+        }
+    }
+    fn program_counter_mappings(&self) -> &[crate::trampoline::ProgramCounterMapping] {
+        match self {
+            Self::Direct(i) => i.program_counter_mappings(),
+            Self::EntryVeneer(i) => i.program_counter_mappings(),
+        }
+    }
+    fn artifact_metadata(&self) -> Option<&ArtifactImageMetadata> {
+        match self {
+            Self::Direct(i) => i.artifact_metadata(),
+            Self::EntryVeneer(i) => Some(i.artifact_metadata()),
+        }
+    }
+}
+
+#[derive(Clone, Eq, PartialEq)]
+pub(crate) enum ArtifactStoredImage {
+    Direct(TrampolineImage),
+    EntryVeneer(crate::trampoline::ArtifactTrampolineAllocation),
+}
+// Preserve ordinary ArtifactPlan debug output despite its private storage adapter.
+impl std::fmt::Debug for ArtifactStoredImage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Direct(image) => std::fmt::Debug::fmt(image, f),
+            Self::EntryVeneer(image) => f.debug_tuple("EntryVeneer").field(image).finish(),
+        }
+    }
+}
+impl ArtifactStoredImage {
+    pub(crate) fn view(&self) -> ArtifactImageView<'_> {
+        ArtifactImageView {
+            image: match self {
+                Self::Direct(i) => ArtifactImageRef::Direct(i),
+                Self::EntryVeneer(i) => ArtifactImageRef::EntryVeneer(i),
+            },
+        }
+    }
+    pub(crate) fn require_artifact_router(&mut self) {
+        match self {
+            Self::Direct(i) => i.require_artifact_router(),
+            Self::EntryVeneer(i) => i.require_artifact_router(),
+        }
+    }
+    pub(crate) fn into_direct(self) -> Result<TrampolineImage, Refusal> {
+        match self {
+            Self::Direct(i) => Ok(i),
+            Self::EntryVeneer(_) => Err(Refusal::InvalidPlan),
+        }
+    }
+}
+
+/// Private checked structural member; never a live PlannedInstall.
+#[derive(Clone, Debug)]
+pub(crate) struct ArtifactMember {
+    pub(crate) plan: PatchPlan,
+    pub(crate) image: ArtifactStoredImage,
+}
+impl ArtifactMember {
+    pub(crate) fn checked(plan: PatchPlan, image: ArtifactStoredImage) -> Result<Self, Refusal> {
+        let member = Self { plan, image };
+        member.validate()?;
+        Ok(member)
+    }
+    pub(crate) fn validate(&self) -> Result<(), Refusal> {
+        if let ArtifactStoredImage::EntryVeneer(image) = &self.image {
+            image
+                .validate()
+                .map_err(|error| Refusal::Backend(error.to_string()))?;
+            let parts = self.plan.parts();
+            if image.body_layout().total_len() != Some(image.body_len())
+                || parts.kind != crate::contracts::PlanKind::Relocation
+                || parts.physical_pc != parts.logical_pc
+                || image.entry_routes() != [(parts.logical_pc, image.storage_address())]
+                || !image.artifact_metadata().fields().iter().any(|field| {
+                    field.role == "Return" && field.target == i128::from(parts.displaced.end())
+                })
+            {
+                return Err(Refusal::InvalidPlan);
+            }
+        }
+        let view = self.image.view();
+        let parts = self.plan.parts();
+        let ([generated], [allocation]) =
+            (parts.generated.as_slice(), parts.allocations.as_slice())
+        else {
+            return Err(Refusal::InvalidPlan);
+        };
+        let start = view.address() & !4095;
+        let end = view
+            .address()
+            .checked_add(view.bytes().len() as u64)
+            .and_then(|end| end.checked_add(4095))
+            .map(|end| end & !4095)
+            .ok_or(Refusal::InvalidRange)?;
+        let range = AddressRange::new(start, (end - start) as usize)?;
+        if view.image.artifact_metadata().is_none()
+            || generated.address != view.address()
+            || generated.bytes != view.bytes()
+            || generated.program_counters != view.program_counter_mappings()
+            || allocation.range != range
+            || allocation.alignment != 4096
+        {
+            return Err(Refusal::InvalidPlan);
+        }
+        Ok(())
+    }
+}

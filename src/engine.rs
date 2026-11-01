@@ -976,3 +976,123 @@ fn plan_core_family_with_fitting(
     }
     Err(EngineFailure { reason, attempts })
 }
+
+/// Explicit artifact-only fitting engine with a same-page entry veneer for a
+/// short-T3 selected image whose direct fit cannot be certified. Original and
+/// current bytes, both one-candidate/page policies and complete pending ranges
+/// have the unchanged fitting preflight. First-four tactics are the unchanged
+/// fitting dispatcher invoked once each in its original order; T2 stays direct.
+/// Mixed T3 retains one shared search, full source/entry/suffix and inherited
+/// pair checks. Only pre-encode direct AllocationUnavailable permits one finite
+/// veneer certificate; no failed encoding or admitted pair is retried. Padding
+/// is fully owned/charged, and all artifact execution/ABI/loader obligations stay.
+/// The caller must still append every step and enforce complete dependencies,
+/// resources, hooks, pending ownership and final transaction admission.
+pub fn plan_with_emission_after_and_entry_veneer_mixed_t3_pending(
+    request: &ArtifactRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+) -> Result<ArtifactPlan, EngineFailure> {
+    let preflight: Result<_, Refusal> = (|| {
+        let current = predecessor.planning_overlay(
+            request.site.identity,
+            request.site.base_address,
+            request.site.code,
+        )?;
+        predecessor.require_unclaimed_ranges(pending)?;
+        crate::emission::placement::validate(request.site.allocation)?;
+        crate::emission::placement::validate(victim_allocation)?;
+        Ok(current)
+    })();
+    let current = preflight.map_err(|reason| EngineFailure {
+        reason,
+        attempts: Vec::new(),
+    })?;
+    let original = PlanningRequest::artifact(request);
+    let request = original.with_code(&current);
+    const ORDER: [Tactic; 5] = [
+        Tactic::GeneralizedPun,
+        Tactic::Relocation,
+        Tactic::PrefixedPun,
+        Tactic::SuccessorEviction,
+        Tactic::NeighborEviction,
+    ];
+    let forced = [policy.forced.unwrap_or(Tactic::GeneralizedPun)];
+    let tactics = if policy.forced.is_some() {
+        forced.as_slice()
+    } else {
+        ORDER.as_slice()
+    };
+    let mut attempts = Vec::new();
+    let mut reason = Refusal::NoPatchWindow;
+    for &tactic in tactics {
+        if tactic != Tactic::NeighborEviction {
+            let one = EnginePolicy {
+                forced: Some(tactic),
+                ..policy
+            };
+            match plan_core_family_with_fitting(
+                &request,
+                victim_allocation,
+                one,
+                neighbor::VictimFamily::Mixed,
+                Some(predecessor),
+                Some(pending),
+                PlacementMode::Fitting,
+            ) {
+                Ok(plan) => {
+                    attempts.extend_from_slice(plan.attempts());
+                    return Ok(ArtifactPlan::bundle(
+                        plan.bundle(),
+                        ArtifactMetrics::Engine(plan.tactic(), plan.metrics().clone(), attempts),
+                    ));
+                }
+                Err(failure) => {
+                    reason = failure.reason;
+                    attempts.extend(failure.attempts);
+                }
+            }
+            continue;
+        }
+        let placed = request.with_fitting_placement();
+        match neighbor::plan_neighbor_entry_veneer_pending_core(
+            &placed,
+            predecessor,
+            pending,
+            victim_allocation,
+            policy.neighbor,
+            policy.bundle,
+        ) {
+            Ok(plan) => {
+                let ArtifactMetrics::Neighbor(geometry, metrics) = plan.metrics() else {
+                    return Err(EngineFailure {
+                        reason: Refusal::InvalidPlan,
+                        attempts,
+                    });
+                };
+                attempts.push(EngineAttempt {
+                    outer_refusal: None,
+                    search: metrics.search.clone(),
+                    tactic,
+                    refusal: None,
+                    candidates: CandidateEvidence::Neighbor(metrics.attempts.clone()),
+                });
+                let metrics = SelectedMetrics::Neighbor(*geometry, metrics.clone());
+                return Ok(plan.with_metrics(ArtifactMetrics::Engine(tactic, metrics, attempts)));
+            }
+            Err(failure) => {
+                reason = failure.reason;
+                attempts.push(EngineAttempt {
+                    outer_refusal: None,
+                    search: failure.search,
+                    tactic,
+                    refusal: Some(reason.clone()),
+                    candidates: CandidateEvidence::Neighbor(failure.attempts),
+                });
+            }
+        }
+    }
+    Err(EngineFailure { reason, attempts })
+}
