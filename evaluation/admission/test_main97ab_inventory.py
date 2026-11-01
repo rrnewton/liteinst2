@@ -12,6 +12,7 @@ import core_f353_inventory as previous
 import core_5cda_inventory as historical
 import core_cc846_inventory as inventory
 import parsing
+from test_parsing import counts, summary
 
 
 class Main97abInventoryTests(unittest.TestCase):
@@ -251,3 +252,92 @@ class Main97abInventoryTests(unittest.TestCase):
                 with patch.object(Path, 'read_bytes', changed):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
                         current.require_sources()
+
+        # The new Cargo example has one exact source/binary/output-directory
+        # identity. Its ten tests cannot be admitted under the generic matcher.
+        example = 'unit/full_program_bridge/full_program_bridge'
+        example_header = ('     Running unittests examples/full_program_bridge.rs '
+                          '(target/debug/examples/full_program_bridge-0123456789abcdef)')
+        example_log = '\n'.join((example_header, 'running 10 tests', summary(10)))
+        expected = {example: counts(10)}
+        self.assertEqual(live_rows[example], expected[example])
+        self.assertEqual(parsing.harness_id(example_header), example)
+        row = parsing.parse_harnesses(example_log, expected, 0)[0]
+        self.assertEqual(row['outer'], dict(passed=10, failed=0, ignored=0,
+                                           measured=0, filtered=0, result='ok'))
+        self.assertEqual((row['declared_outer_tests'], row['nested_starts'],
+                          row['unmatched_nested_starts']), (10, 0, 0))
+        for malformed in (
+                example_header.replace('target/debug/examples/', 'target/debug/deps/'),
+                example_header.replace('unittests examples/full_program_bridge.rs',
+                                       'unittests src/lib.rs').replace('target/debug/examples/', 'target/debug/deps/'),
+                example_header.replace('target/debug/examples/full_program_bridge-', 'target/debug/deps/other-'),
+                example_header.replace('target/debug/examples/full_program_bridge-', 'target/debug/examples/other-'),
+                example_header.replace('examples/full_program_bridge.rs', 'examples/other.rs'),
+                example_header.replace('full_program_bridge', 'full_program_bridge_extra'),
+                example_header.replace('target/debug/examples/', '/PRIVATE_SENTINEL/'),
+                example_header.replace('target/debug/examples/', 'target/debug/examples/../examples/'),
+                example_header.replace('-0123456789abcdef)', '-nothex)')):
+            with self.subTest(full_program_header=malformed), self.assertRaises(parsing.InvalidEvidence):
+                parsing.harness_id(malformed)
+        for bad in (example_log.replace('running 10 tests', 'running 9 tests'),
+                    example_log.replace('running 10 tests', 'running 11 tests'),
+                    example_log.replace(summary(10), summary(9, filtered=1)),
+                    example_log.replace(summary(10), summary(9, ignored=1)),
+                    example_log.replace(summary(10), summary(9, measured=1)),
+                    example_log.replace('running 10 tests', 'running 10 tests\nrunning 1 test'),
+                    example_log.replace(summary(10), ''),
+                    example_log + '\n' + summary(10), example_log + '\n' + example_log):
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, expected, 0)
+        failed = example_log.replace(summary(10), summary(9, failed=1))
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^successful_exit_with_failed_summary$'):
+            parsing.parse_harnesses(failed, expected, 0)
+        row = parsing.parse_harnesses(failed, expected, 1)[0]
+        self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']),
+                         ('FAILED', 9, 1))
+
+        # Two source-bound compile-fail doctests extend the old 2+45 partition
+        # to exactly 2+47. Both declarations, summaries and terminal are required.
+        doc = '\n'.join(('   Doc-tests rapid_profiler', 'running 2 tests', summary(2),
+                         'running 47 tests', summary(47),
+                         'all doctests ran in 0.51s; merged doctests compilation took 0.21s'))
+        expected = {'doc/rapid_profiler': counts(49)}
+        self.assertEqual(live_rows['doc/rapid_profiler'], expected['doc/rapid_profiler'])
+        row = parsing.parse_harnesses(doc, expected, 0)[0]
+        self.assertEqual(row['outer'], dict(passed=49, failed=0, ignored=0,
+                                           measured=0, filtered=0, result='ok'))
+        self.assertEqual(row['declared_outer_tests'], 2)
+        self.assertEqual([part['declared_tests'] for part in row['partitions']], [2, 47])
+        self.assertEqual([part['summary']['passed'] for part in row['partitions']], [2, 47])
+        self.assertEqual((row['nested_starts'], row['unmatched_nested_starts']), (0, 0))
+        reordered = '\n'.join(('   Doc-tests rapid_profiler', 'running 47 tests', summary(47),
+                               'running 2 tests', summary(2), doc.splitlines()[-1]))
+        for bad in (doc.replace('rapid_profiler', 'example'), reordered,
+                    doc.replace('running 2 tests', 'running 3 tests'),
+                    doc.replace('running 47 tests', 'running 46 tests'),
+                    doc.replace('running 47 tests', 'running 48 tests'),
+                    doc.replace(summary(2), summary(1)),
+                    doc.replace(summary(47), summary(46)),
+                    doc.replace(summary(2), summary(2, filtered=1)),
+                    doc.replace(summary(47), summary(47, filtered=1)),
+                    doc.replace(summary(47), summary(46, ignored=1)),
+                    doc.replace(summary(47), summary(46, measured=1)),
+                    doc.replace(summary(47), summary(46, failed=1)),
+                    doc.replace(summary(47), summary(47, result='FAILED')),
+                    doc.replace('running 47 tests', 'running 47 tests\nrunning 47 tests'),
+                    doc.replace(summary(2), summary(2) + '\n' + summary(2)),
+                    doc.replace(summary(2), ''), doc.replace(summary(47), ''),
+                    '\n'.join(doc.splitlines()[:-1]), doc + '\n' + doc.splitlines()[-1],
+                    doc + '\nrunning 1 test\n' + summary(1),
+                    doc.replace('all doctests ran in 0.51s;', 'all doctests ran in NaNs;')):
+            with self.subTest(incoming_doc_partition=bad), self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, expected, 0)
+        for total, ignored in ((48, 0), (50, 0), (49, 1)):
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(doc, {'doc/rapid_profiler': counts(total, ignored)}, 0)
+        failed = doc.replace(summary(47), summary(46, failed=1))
+        row = parsing.parse_harnesses(failed, expected, 1)[0]
+        self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']),
+                         ('FAILED', 48, 1))
+        self.assertEqual(row['partitions'][1]['summary']['failed'], 1)

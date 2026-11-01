@@ -73,6 +73,12 @@ def harness_id(line):
         r"\(target/debug/examples/adjacent_routed_jmp_disassembly_sites-[a-f0-9]+\)", line)
     if example:
         return "unit/adjacent_routed_jmp_disassembly_sites/adjacent_routed_jmp_disassembly_sites"
+    # Exact complete-region bridge declared test=true; keep its full Cargo tuple.
+    example = re.fullmatch(
+        r"\s*Running unittests examples/full_program_bridge\.rs "
+        r"\(target/debug/examples/full_program_bridge-[a-f0-9]+\)", line)
+    if example:
+        return "unit/full_program_bridge/full_program_bridge"
     match = re.fullmatch(r"\s*Running (unittests [^()]+|tests/[^()]+|native-interval/calibrations\.rs) \(([^()]+)\)", line)
     if not match:
         return None
@@ -91,6 +97,8 @@ def harness_id(line):
             and binary[1] != "adjacent_b2_disassembly_sites", "invalid_harness_source_label")
     require(label != "unittests examples/adjacent_routed_jmp_disassembly_sites.rs"
             and binary[1] != "adjacent_routed_jmp_disassembly_sites", "invalid_harness_source_label")
+    require(label != "unittests examples/full_program_bridge.rs"
+            and binary[1] != "full_program_bridge", "invalid_harness_source_label")
     if label == "unittests ordinary-interval/main.rs" or binary[1] == "ordinary_interval":
         require(label == "unittests ordinary-interval/main.rs" and binary[1] == "ordinary_interval",
                 "invalid_harness_source_label")
@@ -171,7 +179,7 @@ def parse_harnesses(output, expected, exit_code):
                                      r"merged doctests compilation took \d+(?:\.\d+)?s", line)
                         and current["outer"] is None and not stack
                         and [p["declared_tests"] for p in current["partitions"]]
-                        == {38: [2, 36], 45: [2, 43], 47: [2, 45]}[current["expected_tests"]]
+                        == {38: [2, 36], 45: [2, 43], 47: [2, 45], 49: [2, 47]}[current["expected_tests"]]
                         and all(p["summary"] is not None for p in current["partitions"]),
                         "incomplete_doc_partitions")
                 summaries = [p["summary"] for p in current["partitions"]]
@@ -193,7 +201,8 @@ def parse_harnesses(output, expected, exit_code):
                     if (current["id"], current["expected_tests"], current["expected_ignored"], count) in (
                             ("doc/rapid_profiler", 38, 0, 2),
                             ("doc/rapid_profiler", 45, 0, 2),
-                            ("doc/rapid_profiler", 47, 0, 2)):
+                            ("doc/rapid_profiler", 47, 0, 2),
+                            ("doc/rapid_profiler", 49, 0, 2)):
                         # Retain actual declarations/summaries; the outer counts
                         # are aggregated only after both and rustdoc's terminal.
                         current["partitions"] = [{"declared_tests": 2, "summary": None}]
@@ -202,7 +211,7 @@ def parse_harnesses(output, expected, exit_code):
                 elif "partitions" in current:
                     require(not stack and len(current["partitions"]) == 1
                             and current["partitions"][0]["summary"] is not None
-                            and count == {38: 36, 45: 43, 47: 45}[current["expected_tests"]],
+                            and count == {38: 36, 45: 43, 47: 45, 49: 47}[current["expected_tests"]],
                             "changed_doc_partition")
                     current["partitions"].append({"declared_tests": count, "summary": None})
                 else:

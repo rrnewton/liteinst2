@@ -3836,12 +3836,14 @@ class Main813InventoryTests(unittest.TestCase):
         del routed_without_parser[parser_path]
         native_without_parser = dict(main813.MAINROUTEDNATIVE['sources'])
         del native_without_parser[parser_path]
+        current_without_parser = dict(native_indexed.DATA['sources'])
+        del current_without_parser[parser_path]
         def historical_parser(candidate):
             return frontend_parser if candidate == main813.ROOT / parser_path else adjacent_read(candidate)
-        with patch.dict(main813.MAINFRONTEND, sources=frontend_without_parser), patch.dict(main813.MAINROUTED, sources=routed_without_parser), patch.dict(main813.MAINROUTEDNATIVE, sources=native_without_parser):
+        with patch.dict(main813.MAINFRONTEND, sources=frontend_without_parser), patch.dict(main813.MAINROUTED, sources=routed_without_parser), patch.dict(main813.MAINROUTEDNATIVE, sources=native_without_parser), patch.dict(native_indexed.DATA, sources=current_without_parser):
             with patch.object(Path, 'read_bytes', historical_parser):
                 self.assertIsNone(main813.precheck_current_sources('parser_composition_control'))
-        with patch.dict(adjacent, sources=without_parser), patch.dict(main813.MAINFRONTEND, sources=frontend_without_parser), patch.dict(main813.MAINROUTED, sources=routed_without_parser), patch.dict(main813.MAINROUTEDNATIVE, sources=native_without_parser):
+        with patch.dict(adjacent, sources=without_parser), patch.dict(main813.MAINFRONTEND, sources=frontend_without_parser), patch.dict(main813.MAINROUTED, sources=routed_without_parser), patch.dict(main813.MAINROUTEDNATIVE, sources=native_without_parser), patch.dict(native_indexed.DATA, sources=current_without_parser):
             with patch.object(Path, 'read_bytes', historical_parser):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^parser_composition_control$'):
                     main813.precheck_current_sources('parser_composition_control')
