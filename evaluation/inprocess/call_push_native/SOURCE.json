@@ -95,6 +95,21 @@
   "executed_private_manifest_sha256": "917f0476f027a4dcb86d241debfa80d5ee22da06bc4880a8fb0acb00f1befadc",
   "executed_probe_manifest_sha256": "24a147807ec65222b3d88f8e12bf8a803b588f52da10ee9e125c4de29194ee20",
   "fixture": "evaluation/inprocess/call_push_native",
+  "input_successors": {
+    "tools/page-entry/selected/runtime_loader.c": {
+      "change_commit": "c2c81fa865d192fec8e5bb29b44ec84527b83099",
+      "disabled_projection_sha256": "56f7235df90ff854951aabb9db5c1ba945804fe378dba301834917b91a535665",
+      "guard": "LI2_PERSISTENT_CALL_OWNER_CAPTURE",
+      "insertions": 4,
+      "previous": {
+        "bytes": 60612,
+        "mode": "0644",
+        "sha256": "56f7235df90ff854951aabb9db5c1ba945804fe378dba301834917b91a535665"
+      },
+      "previous_revision": "96378d9f7784b59df43b31baeec2c440c578e6a4",
+      "scope": "Only four capture hooks added; whole default-disabled source and CET prerequisite are byte-identical to predecessor."
+    }
+  },
   "inputs": {
     "evaluation/admission/processes.py": {
       "bytes": 15760,
@@ -127,9 +142,9 @@
       "sha256": "3e239969f1d043c9a4261ccfe8a464f18eecbf6a5ef9a4dd6139e2023c1f3bd2"
     },
     "tools/page-entry/selected/runtime_loader.c": {
-      "bytes": 60612,
+      "bytes": 60937,
       "mode": "0644",
-      "sha256": "56f7235df90ff854951aabb9db5c1ba945804fe378dba301834917b91a535665"
+      "sha256": "2b9122b32b06abcd204e424131f6c0f12da5848f409580add2b8ce7a36f4235e"
     },
     "tools/page-entry/selected/tests/generic/fixture.S": {
       "bytes": 3971,

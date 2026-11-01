@@ -1,0 +1,13 @@
+# RET adapter: finite execution checkpoint
+
+The emitted RET adapter passed its fixed 16 cases / 24 lanes on CPU 3 at `6bae78dc85d2a90c085e85fee89a0b21f2cfab49`. This is a standalone experiment with supplied directory/window inputs. It does not enable a production RET owner or resume a loaded unknown target, and it supplies no performance or whole-profile qualification.
+
+Six native/generated directory-hit pairs and two native/generated load-fault pairs matched the retained full-state and stack checks. Four generated-only misses retained the already loaded target and stopped before any original RET replay. Two additional cases refused before loading. In two generated-only traced paths, the diagnostic handler changed the original stack word after the adapter's load; the adapter used its saved original target on those measured paths. This is evidence for those paths, not a general concurrent-memory equivalence claim.
+
+The mutation traces observed 45 and 35 events, covering 38 and 35 distinct boundary PCs (union 38). Initial NX entry is separate. The complete 53-row byte/recovery model is a separate passing component, not native coverage of every row. Each lane has full before/after GREG, FP, context, TLS and stack records; mutation lanes also have one full mutation checkpoint. Intermediate traces retain the integer/flags/spill/recovery state.
+
+The original 32 unstepped C3 observations remain separate: canonical RX and NX targets committed RSP+8, while the tested noncanonical targets, unreadable operands and noncanonical stack pointers retained the original RSP on their observed faults. Those finite observations do not authorize a generic MOV/JMP substitute. The complete 671-model component also remains a separate prerequisite.
+
+All 39 native-collector commands exited zero under the original limits, with source, input and cleanup closure. The raw native chunk is 8,845,632 bytes and remains private; [the exact per-case summary](2026-10-31-ret-dispatch-observations.json) retains its digest, each lane's raw digest, command/capture facts, hardware and the historical revisions. Full per-case outputs are projected without host paths or raw memory dumps. The native receipt is `cd5f226965dfe2b9ec09ce76ada8a49b9bbbf06215692dccf78fdf4df5eb6290`.
+
+[Public reproduction](../ret_dispatch/README.md) first regenerates the public CALL217 prerequisite, then runs RET32, RET671 and RET16/24 as distinct results under one reserved CPU. The portable runner is source reviewed separately from the executed private collectors; it has not itself been run. All code remains disconnected from production by default. Original 392/522 qualification, production loaded-miss continuation and real-program completion/performance remain pending.

@@ -469,6 +469,30 @@ int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,co
                emitter and retained protected range, never called guest NONE. */
             int e=decoded_footprint(&actual.decoded,uc,1);if(e)return pgr_bad((unsigned)e,529);
 #endif
+#ifdef LI2_PERSISTENT_CALL_DISPATCH
+        } else if(h->kind==LI2_PG_CALL) {
+            struct li2_cd_descriptor descriptor={0};struct li2_cd_binding binding;
+            const struct li2_cd_plan *guard=&p->guard[i].call;
+            struct li2_span_decoded expected={.decoded=d->decoded,.version=1,.refusal=LI2_REGION_UNSUPPORTED};
+            if(!region_rseq_equal(&actual,&expected,sizeof expected) ||
+               h->successor_count || h->successors[0] || h->successors[1] ||
+               li2_cd_describe(d->decoded.pc,window,n,&descriptor) ||
+               !region_rseq_equal(&descriptor.decoded,&actual.decoded,sizeof actual.decoded) ||
+               !region_rseq_equal(&descriptor,&p->instruction[i].call,sizeof descriptor) ||
+               !region_rseq_equal(&descriptor,&guard->original,sizeof descriptor) ||
+               li2_pg_call_binding(p->page,&p->layout,p->table.address,p->heads,i,&binding) ||
+               !region_rseq_equal(&binding,&guard->binding,sizeof binding) ||
+               guard->generated!=p->layout.generated[i/64]+(uintptr_t)(i%64)*LI2_PE_SLOT_BYTES ||
+               guard->spill!=p->layout.spill || guard->record.image_bytes!=h->generated_length ||
+               !region_rseq_equal(guard->image,&p->image[i/64][(i%64)*LI2_PE_SLOT_BYTES],LI2_CD_SLOT_BYTES) ||
+               li2_cd_validate(guard))return pgr_bad(LI2_RSEQ_PLAN,536);
+            /* The actual owner proves the entire prospective stack envelope
+               disjoint from current rseq and all protected/source storage.
+               This is not a fake NONE footprint or an entry-RSP prediction. */
+            int e=li2_pg_call_window_check(t,p->layout.window,uc);
+            if(e)return pgr_bad((unsigned)e,537);
+            ++stores;
+#endif
         } else return pgr_bad(LI2_RSEQ_PLAN,506);
         bytes+=h->source_length;
     }

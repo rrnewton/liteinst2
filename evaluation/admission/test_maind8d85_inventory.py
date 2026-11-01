@@ -83,21 +83,37 @@ class MainD8d85InventoryTests(unittest.TestCase):
             wrong = raw.replace(before.encode(), after.encode())
             # Retain the exact original rename/removal stimulus through the
             # newly inserted outer inverse, including its length change.
+            native_prior = native_indexed.source_before(path, raw, 'artifact_native_outer_inverse')
+            native_wrong = native_prior.replace(before.encode(), after.encode())
+            native_outer = copy.deepcopy(native_indexed.DATA['projections'])
+            if path in native_outer:
+                at = raw.index(before.encode()); stop = at + len(before.encode())
+                delta = len(after.encode()) - len(before.encode())
+                row = native_outer[path]
+                row.update(current_sha256=hashlib.sha256(wrong).hexdigest(),
+                           previous_sha256=hashlib.sha256(native_wrong).hexdigest())
+                for edit in row['edits']:
+                    self.assertTrue(edit[1] <= at or edit[0] >= stop)
+                    if edit[0] >= stop:
+                        edit[0] += delta; edit[1] += delta
             upstream = copy.deepcopy(indexed.DATA['projections'])
             prior = indexed.source_before(path, raw, 'artifact_outer_inverse')
             wrong_prior = prior.replace(before.encode(), after.encode())
             if path in upstream:
-                at = raw.index(before.encode()); stop = at + len(before.encode())
+                at = native_prior.index(before.encode()); stop = at + len(before.encode())
                 delta = len(after.encode()) - len(before.encode())
                 rebased = []
                 for first, end, donor in upstream[path]['edits']:
                     self.assertTrue(end <= at or first >= stop)
                     shift = delta if first >= stop else 0
                     rebased.append([first + shift, end + shift, donor])
-                upstream[path].update(current_sha256=hashlib.sha256(wrong).hexdigest(),
+                upstream[path].update(current_sha256=hashlib.sha256(native_wrong).hexdigest(),
                     previous_sha256=hashlib.sha256(wrong_prior).hexdigest(), edits=rebased)
             def changed(candidate): return wrong if candidate == target else read(candidate)
-            with patch.dict(indexed.DATA['projections'], upstream):
+            with patch.dict(native_indexed.DATA['projections'], native_outer), \
+                 patch.dict(indexed.DATA['projections'], upstream):
+                self.assertEqual(native_indexed.source_before(path, wrong,
+                    'artifact_native_outer_inverse'), native_wrong)
                 self.assertEqual(indexed.source_before(path, wrong, 'artifact_outer_inverse'), wrong_prior)
                 with patch.object(Path, 'read_bytes', changed), \
                      patch.dict(current.DATA['sources'], {path:hashlib.sha256(wrong_prior).hexdigest()}), \

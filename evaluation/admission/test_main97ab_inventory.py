@@ -2,6 +2,7 @@
 import copy
 import hashlib
 import json
+import re
 from pathlib import Path
 import unittest
 from unittest.mock import patch
@@ -11,6 +12,7 @@ import core_f353_inventory as previous
 import core_5cda_inventory as historical
 import core_cc846_inventory as inventory
 import parsing
+from test_parsing import counts, summary
 
 
 class Main97abInventoryTests(unittest.TestCase):
@@ -21,7 +23,8 @@ class Main97abInventoryTests(unittest.TestCase):
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                           sum(x['ignored'] for x in rows.values())), (112, 4255, 37))
         self.assertEqual(current.digest(native_indexed), current.NATIVE_INDEXED_CURRENT)
-        rows = actual['harness_test_counts']['workspace_tests']
+        phase_catalog = current.before_96378(actual)
+        rows = phase_catalog['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                           sum(x['ignored'] for x in rows.values())), (112, 4266, 37))
         self.assertEqual(current.DATA['default_test_additions'], 58)
@@ -183,3 +186,290 @@ class Main97abInventoryTests(unittest.TestCase):
                 with patch.object(Path, 'read_bytes', changed):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
                         current.require_sources()
+
+        # This exact catalog is a new boundary. Neither historical complete
+        # catalog, missing harness, changed count/type nor old ignore census
+        # may substitute for the actual current workspace.
+        incoming = current.DATA['source_successor_96378']
+        live_rows = current.before_fd4c6(actual)['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(live_rows), sum(x['tests'] for x in live_rows.values()),
+                          sum(x['ignored'] for x in live_rows.values())), (113, 4312, 39))
+        self.assertEqual(current.digest(phase_catalog), current.PHASE_CURRENT)
+        self.assertEqual((incoming['default_method_additions'], incoming['default_doctest_additions'],
+                          incoming['default_method_removals'], incoming['default_harness_changes'],
+                          incoming['default_ignore_changes'], incoming['recorder_identity_changes']),
+                         (44, 2, 0, 1, 2, 0))
+        self.assertEqual(sum(len(names) * len(incoming['default_method_instances'][path])
+                             for path, names in incoming['added_default_methods'].items()), 44)
+        self.assertEqual(sum(len(names) for names in incoming['added_ignored_methods'].values()), 2)
+        self.assertEqual(sum(len(rows) for rows in incoming['doctests'].values()), 2)
+        self.assertEqual(incoming['excluded_standalone'], dict(
+            path='evaluation/custody-file-read-probe/probe.rs', default_test_harness=False,
+            reason='No Cargo target or module includes this standalone diagnostic.'))
+        for wrong in (phase_catalog, native_indexed, old):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_96378(wrong)
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                inventory.require_current(wrong)
+        for name, change in incoming['workspace_changes'].items():
+            self.assertEqual(live_rows[name], change['current'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):
+                    wrong = copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_96378(wrong)
+            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_96378(wrong)
+        incoming_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
+            for path, names in incoming['added_default_methods'].items() for name in names]
+        incoming_stimuli += [(path, literal, '')
+            for path, literals in incoming['module_chains'].items() for literal in literals]
+        incoming_stimuli += [(path, block, replacement)
+            for path, blocks in incoming['doctests'].items() for block in blocks
+            for replacement in ('', block + '\n' + block, block.replace('compile_fail,E0277', 'ignore'))]
+        incoming_stimuli += [(path, literal, literal.replace('#[ignore', '#[cfg'))
+            for path in incoming['added_ignored_methods']
+            for literal in re.findall(r'#\[ignore[^\n]*', (current.ROOT / path).read_text())]
+        for path, literal, replacement in incoming_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('incoming declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        for path in incoming['source_paths']:
+            target = current.ROOT / path; raw = read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate != target: return read(candidate)
+                    if missing: raise FileNotFoundError(path)
+                    return raw + b'\n'
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                        current.require_sources()
+
+        # Current placement adds thirteen tests to three existing harnesses.
+        # Preserve the entire prior catalog and every earlier control above.
+        placement = current.DATA['source_successor_fd4c6']
+        placement_rows = actual['harness_test_counts']['workspace_tests']
+        placement_before = current.before_fd4c6(actual)
+        self.assertEqual(current.digest(placement_before), current.PLACEMENT_PREVIOUS)
+        self.assertEqual((len(placement_rows), sum(x['tests'] for x in placement_rows.values()),
+                          sum(x['ignored'] for x in placement_rows.values())), (113, 4325, 39))
+        self.assertEqual((placement['default_method_additions'], placement['default_doctest_additions'],
+                          placement['default_method_removals'], placement['default_harness_changes'],
+                          placement['default_ignore_changes'], placement['recorder_identity_changes']),
+                         (13, 0, 0, 0, 0, 0))
+        self.assertEqual(sum(len(names) * len(placement['default_method_instances'][path])
+                             for path, names in placement['added_default_methods'].items()), 13)
+        self.assertEqual((placement['added_ignored_methods'], placement['doctests']), ({}, {}))
+        for wrong in (placement_before, phase_catalog, native_indexed, old):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_fd4c6(wrong)
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                inventory.require_current(wrong)
+        for name, change in placement['workspace_changes'].items():
+            self.assertEqual(placement_rows[name], change['current'])
+            self.assertEqual(placement_before['harness_test_counts']['workspace_tests'][name],
+                             change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(placement_rows[name][field]), placement_rows[name][field] + 1):
+                    wrong = copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_fd4c6(wrong)
+            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_fd4c6(wrong)
+        placement_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
+            for path, names in placement['added_default_methods'].items() for name in names]
+        placement_stimuli += [(path, literal, '')
+            for path, literals in placement['module_chains'].items() for literal in literals]
+        for path, literal, replacement in placement_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('placement declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        for path in placement['source_paths']:
+            target = current.ROOT / path; raw = read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate != target: return read(candidate)
+                    if missing: raise FileNotFoundError(path)
+                    return raw + b'\n'
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                        current.require_sources()
+
+        # The new Cargo example has one exact source/binary/output-directory
+        # identity. Its ten tests cannot be admitted under the generic matcher.
+        example = 'unit/full_program_bridge/full_program_bridge'
+        example_header = ('     Running unittests examples/full_program_bridge.rs '
+                          '(target/debug/examples/full_program_bridge-0123456789abcdef)')
+        example_log = '\n'.join((example_header, 'running 10 tests', summary(10)))
+        expected = {example: counts(10)}
+        self.assertEqual(live_rows[example], expected[example])
+        self.assertEqual(parsing.harness_id(example_header), example)
+        row = parsing.parse_harnesses(example_log, expected, 0)[0]
+        self.assertEqual(row['outer'], dict(passed=10, failed=0, ignored=0,
+                                           measured=0, filtered=0, result='ok'))
+        self.assertEqual((row['declared_outer_tests'], row['nested_starts'],
+                          row['unmatched_nested_starts']), (10, 0, 0))
+        for malformed in (
+                example_header.replace('target/debug/examples/', 'target/debug/deps/'),
+                example_header.replace('unittests examples/full_program_bridge.rs',
+                                       'unittests src/lib.rs').replace('target/debug/examples/', 'target/debug/deps/'),
+                example_header.replace('target/debug/examples/full_program_bridge-', 'target/debug/deps/other-'),
+                example_header.replace('target/debug/examples/full_program_bridge-', 'target/debug/examples/other-'),
+                example_header.replace('examples/full_program_bridge.rs', 'examples/other.rs'),
+                example_header.replace('full_program_bridge', 'full_program_bridge_extra'),
+                example_header.replace('target/debug/examples/', '/PRIVATE_SENTINEL/'),
+                example_header.replace('target/debug/examples/', 'target/debug/examples/../examples/'),
+                example_header.replace('-0123456789abcdef)', '-nothex)')):
+            with self.subTest(full_program_header=malformed), self.assertRaises(parsing.InvalidEvidence):
+                parsing.harness_id(malformed)
+        for bad in (example_log.replace('running 10 tests', 'running 9 tests'),
+                    example_log.replace('running 10 tests', 'running 11 tests'),
+                    example_log.replace(summary(10), summary(9, filtered=1)),
+                    example_log.replace(summary(10), summary(9, ignored=1)),
+                    example_log.replace(summary(10), summary(9, measured=1)),
+                    example_log.replace('running 10 tests', 'running 10 tests\nrunning 1 test'),
+                    example_log.replace(summary(10), ''),
+                    example_log + '\n' + summary(10), example_log + '\n' + example_log):
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, expected, 0)
+        failed = example_log.replace(summary(10), summary(9, failed=1))
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^successful_exit_with_failed_summary$'):
+            parsing.parse_harnesses(failed, expected, 0)
+        row = parsing.parse_harnesses(failed, expected, 1)[0]
+        self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']),
+                         ('FAILED', 9, 1))
+
+        # Two source-bound compile-fail doctests extend the old 2+45 partition
+        # to exactly 2+47. Both declarations, summaries and terminal are required.
+        doc = '\n'.join(('   Doc-tests rapid_profiler', 'running 2 tests', summary(2),
+                         'running 47 tests', summary(47),
+                         'all doctests ran in 0.51s; merged doctests compilation took 0.21s'))
+        expected = {'doc/rapid_profiler': counts(49)}
+        self.assertEqual(live_rows['doc/rapid_profiler'], expected['doc/rapid_profiler'])
+        row = parsing.parse_harnesses(doc, expected, 0)[0]
+        self.assertEqual(row['outer'], dict(passed=49, failed=0, ignored=0,
+                                           measured=0, filtered=0, result='ok'))
+        self.assertEqual(row['declared_outer_tests'], 2)
+        self.assertEqual([part['declared_tests'] for part in row['partitions']], [2, 47])
+        self.assertEqual([part['summary']['passed'] for part in row['partitions']], [2, 47])
+        self.assertEqual((row['nested_starts'], row['unmatched_nested_starts']), (0, 0))
+        reordered = '\n'.join(('   Doc-tests rapid_profiler', 'running 47 tests', summary(47),
+                               'running 2 tests', summary(2), doc.splitlines()[-1]))
+        for bad in (doc.replace('rapid_profiler', 'example'), reordered,
+                    doc.replace('running 2 tests', 'running 3 tests'),
+                    doc.replace('running 47 tests', 'running 46 tests'),
+                    doc.replace('running 47 tests', 'running 48 tests'),
+                    doc.replace(summary(2), summary(1)),
+                    doc.replace(summary(47), summary(46)),
+                    doc.replace(summary(2), summary(2, filtered=1)),
+                    doc.replace(summary(47), summary(47, filtered=1)),
+                    doc.replace(summary(47), summary(46, ignored=1)),
+                    doc.replace(summary(47), summary(46, measured=1)),
+                    doc.replace(summary(47), summary(46, failed=1)),
+                    doc.replace(summary(47), summary(47, result='FAILED')),
+                    doc.replace('running 47 tests', 'running 47 tests\nrunning 47 tests'),
+                    doc.replace(summary(2), summary(2) + '\n' + summary(2)),
+                    doc.replace(summary(2), ''), doc.replace(summary(47), ''),
+                    '\n'.join(doc.splitlines()[:-1]), doc + '\n' + doc.splitlines()[-1],
+                    doc + '\nrunning 1 test\n' + summary(1),
+                    doc.replace('all doctests ran in 0.51s;', 'all doctests ran in NaNs;')):
+            with self.subTest(incoming_doc_partition=bad), self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, expected, 0)
+        for total, ignored in ((48, 0), (50, 0), (49, 1)):
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(doc, {'doc/rapid_profiler': counts(total, ignored)}, 0)
+        failed = doc.replace(summary(47), summary(46, failed=1))
+        row = parsing.parse_harnesses(failed, expected, 1)[0]
+        self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']),
+                         ('FAILED', 48, 1))
+        self.assertEqual(row['partitions'][1]['summary']['failed'], 1)
+
+
+        # Exact projections return private graphs even when custom deepcopy
+        # publishes a plain container. DATA patching must retain this behavior.
+        def mutable_ids(value):
+            pending = [value]; seen = set(); mutable = set()
+            while pending:
+                item = pending.pop()
+                if not isinstance(item, (dict, list, tuple)) or id(item) in seen:
+                    continue
+                seen.add(id(item))
+                if isinstance(item, (dict, list)):
+                    mutable.add(id(item))
+                pending.extend(item.keys() if isinstance(item, dict) else ())
+                pending.extend(item.values() if isinstance(item, dict) else item)
+            return mutable
+
+        published = []
+        class PublishedCopy(dict):
+            def __deepcopy__(self, memo):
+                result = {}; memo[id(self)] = result
+                result.update((copy.deepcopy(k, memo), copy.deepcopy(v, memo))
+                              for k, v in self.items())
+                published.append(result)
+                return result
+
+        projections = ((current.before_96378, phase_catalog),
+                       (current.before_29859, native_indexed),
+                       (current.before_current, old))
+        for function, expected_projection in projections:
+            supplied = copy.deepcopy(actual)
+            supplied['harness_test_counts']['serial_launch'] = PublishedCopy(
+                supplied['harness_test_counts']['serial_launch'])
+            published.clear()
+            result = function(supplied)
+            self.assertEqual(result, expected_projection)
+            self.assertEqual(supplied, actual)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+        change = current.DATA['source_successor_96378']['workspace_changes']['doc/rapid_profiler']
+        for function, expected_projection in projections[1:]:
+            published.clear()
+            with patch.dict(change, previous=PublishedCopy(change['previous'])):
+                result = function(actual)
+                self.assertEqual(result, expected_projection)
+                self.assertEqual(len(published), 1)
+                self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+                self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+            self.assertEqual(actual['recorder_tests'], 366)
+
+        # Sparse inverses retain exact edit ordering, including equal-position
+        # insertions, and both whole-byte identity gates.
+        raw = b'abcdef'
+        for edits, expected_raw in (([], b'abcdef'),
+                ([[1, 3, 'X'], [3, 5, 'Y']], b'aXYf'),
+                ([[2, 2, 'X'], [2, 2, 'Y']], b'abXYcdef'),
+                ([[0, 1, ''], [5, 6, '']], b'bcde')):
+            inverse_row = dict(current_sha256=hashlib.sha256(raw).hexdigest(),
+                previous_sha256=hashlib.sha256(expected_raw).hexdigest(), edits=edits)
+            result = current.inverse('probe', raw, {'probe': inverse_row}, 'sparse_control')
+            self.assertIs(type(result), bytes)
+            self.assertEqual(result, expected_raw)
+            for field in ('current_sha256', 'previous_sha256'):
+                malformed = copy.deepcopy(inverse_row); malformed[field] = '0' * 64
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^sparse_control$'):
+                    current.inverse('probe', raw, {'probe': malformed}, 'sparse_control')
+        for edits in ([[3, 5, 'Y'], [1, 3, 'X']], [[1, 4, 'X'], [3, 5, 'Y']],
+                      [[False, 1, 'X']], [[0, 7, 'X']], [[0, 1, b'X']]):
+            malformed = dict(current_sha256=hashlib.sha256(raw).hexdigest(),
+                previous_sha256=hashlib.sha256(raw).hexdigest(), edits=edits)
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^sparse_control$'):
+                current.inverse('probe', raw, {'probe': malformed}, 'sparse_control')
