@@ -181,37 +181,6 @@
       ],
       "previous_sha256": "9a3ea0d5eac1e23d005b86eac0d95d96c944d97294cce067a9717067a165da12"
     },
-    "evaluation/admission/parsing.py": {
-      "current_sha256": "082f58deea16c375b527aca2b16dcf36a6bf4f1620d06d520c2083186f9746b5",
-      "edits": [
-        [
-          3351,
-          3679,
-          ""
-        ],
-        [
-          4943,
-          5092,
-          ""
-        ],
-        [
-          9167,
-          9274,
-          "                        == {38: [2, 36], 45: [2, 43], 47: [2, 45]}[current[\"expected_tests\"]]\n"
-        ],
-        [
-          10640,
-          10765,
-          "                            (\"doc/rapid_profiler\", 47, 0, 2)):\n"
-        ],
-        [
-          11334,
-          11436,
-          "                            and count == {38: 36, 45: 43, 47: 45}[current[\"expected_tests\"]],\n"
-        ]
-      ],
-      "previous_sha256": "57c941ff7f09f139a5fc0c973f9d1ec072d89c12d934e5868ce2333d2e6fd8db"
-    },
     "evaluation/admission/recorder_parallel.py": {
       "current_sha256": "8f1a4b7b176bc9d4f84b2cdb2e94df4f0bf9c579f87b2fe3d9f4a6792c91cda8",
       "edits": [
@@ -1531,6 +1500,37 @@
   },
   "previous_corpus_sha256": "5dd1e8d291c34961d7b4e68a84f0f900c8055477d23fdc7f8445d27104d8fb38",
   "projections": {
+    "evaluation/admission/parsing.py": {
+      "current_sha256": "082f58deea16c375b527aca2b16dcf36a6bf4f1620d06d520c2083186f9746b5",
+      "edits": [
+        [
+          3351,
+          3679,
+          ""
+        ],
+        [
+          4943,
+          5092,
+          ""
+        ],
+        [
+          9167,
+          9274,
+          "                        == {38: [2, 36], 45: [2, 43], 47: [2, 45]}[current[\"expected_tests\"]]\n"
+        ],
+        [
+          10640,
+          10765,
+          "                            (\"doc/rapid_profiler\", 47, 0, 2)):\n"
+        ],
+        [
+          11334,
+          11436,
+          "                            and count == {38: 36, 45: 43, 47: 45}[current[\"expected_tests\"]],\n"
+        ]
+      ],
+      "previous_sha256": "57c941ff7f09f139a5fc0c973f9d1ec072d89c12d934e5868ce2333d2e6fd8db"
+    },
     "evaluation/ordinary-call-pair-session/freeze.py": {
       "current_sha256": "8c2c36d3f921e75ee5735133e44a1828ff0a5ba6c1d3d1483d09aca469412b89",
       "edits": [
