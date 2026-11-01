@@ -1,0 +1,7 @@
+mode,quantum,seed,full_state_comparisons,status
+counter-whole-trace,2,7,63,PASS
+inner-zero-before-save,2,7,11,PASS
+outer-zero-before-save,4,7,22,PASS
+counter-whole-trace,2,42,63,PASS
+inner-zero-before-save,2,42,11,PASS
+outer-zero-before-save,4,42,22,PASS

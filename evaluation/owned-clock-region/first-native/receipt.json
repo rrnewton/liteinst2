@@ -1,0 +1,14 @@
+{
+  "status": "PASS_FOCUSED_CORE_AND_NATIVE_CORRECTNESS",
+  "native_revision": "9254c78b1c6ea430baa5f822b9b76e01a1acc8ba",
+  "native_tree": "98242270f7fb6fa282fbcd0d2d08fc7db67ffb87",
+  "native_toolchain": {"cargo":"cargo 1.97.1 (c980f4866 2026-06-30)","rustc":"rustc 1.97.1 (8bab26f4f 2026-07-14)"},
+  "reservation": {"method":"cpuset-alloc run --cores 12","native_affinity":[55,67,83,90,92,103,105,108,115,118,125,141],"jobs":12,"test_threads":12},
+  "native_load_before": [62.31,45.73,43.11],
+  "native_commands": [{"name":"release-build","argv":["cargo","build","--release","--locked","--offline","-j","12","--target-dir","{CHECKOUT}/target","--bin","liteinst-preempt","--message-format=json-render-diagnostics"],"wall_limit_seconds":600,"attempts":1,"start_utc":"2026-11-01T09:14:22.092464+00:00","exit_code":0,"termination":null,"seconds":16.453925726003945,"private_log_sha256":"eb9983e3a5daa7726c21daef478c9de46358a4f6d699ce685a424a2586b7eac3","cleanup_complete":true,"reaped_descendants":0,"child_discovery_strategy":"pidfd_authenticated_proc_candidates","load_after":[64.06,47.27,43.68]},{"name":"native-oracle","argv":["{CHECKOUT}/target/release/liteinst-preempt","region-oracle","{OUTPUT}/oracle"],"wall_limit_seconds":180,"attempts":1,"start_utc":"2026-11-01T09:14:38.573692+00:00","exit_code":0,"termination":null,"seconds":0.15505521302111447,"private_log_sha256":"69720dd0243890700377f64f2d37f2d9f70e0932059f06674cdf96fd13f397a2","cleanup_complete":true,"reaped_descendants":0,"child_discovery_strategy":"pidfd_authenticated_proc_candidates","load_after":[64.06,47.27,43.68]}],
+  "binary": {"path":"target/release/liteinst-preempt","sha256":"696ac792320d3fb5b167ced886a77cb1b41f179e2c1eb21e474a869dd1551eb0","identity_check":"one Cargo compiler-artifact executable; hash before and after native command"},
+  "private_binary_witnesses": {"region-rejection-wrong-site.bin":{"bytes":248,"sha256":"534fe1a39552c9b7f54c986da6105eb58a9875e4aa4ace3c4ace16de9ea2cf90"},"region-rejection-wrong-count.bin":{"bytes":248,"sha256":"c391518808d89e83cc65767de9216d494d02ad7fae86a88b3060131a696d27cb"}},
+  "closed_authority": {"bytes":2824,"sha256":"bbd2393687ed2e23cd54342bdcf81d09c808b417074dd1693e8cfe0b0f70ff28"},
+  "cohort": "192 full-state comparisons, 6 stops/park checks, 2 actual wrong-reply children; literal results in this directory",
+  "performance_qualification": false
+}

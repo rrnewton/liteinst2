@@ -5,6 +5,7 @@ mod corpus;
 mod counter;
 mod inline_clock;
 mod inline_gate;
+mod region_clock;
 
 use corpus::{CASES, Case, Site};
 use counter::{Mode, ResultRow, Run};
@@ -744,6 +745,12 @@ fn main() {
         "qualify" if args.len() == 3 => qualify(&output),
         "bench" if args.len() == 4 => benchmark(Case::parse(&args[2]), &output),
         "inline-gates" if args.len() == 3 => inline_gate::qualify(&output),
+        "region-oracle" if args.len() == 3 => {
+            inline_gate::qualify_region(&output);
+            region_clock::qualify(&output);
+            std::fs::write(output.join("summary.json"),
+                "{\"status\":\"PASS\",\"profile\":\"owned-two-backedge-region-oracle-v1\",\"gate_pairs\":6,\"gate_children\":12,\"full_state_comparisons\":192,\"stop_quanta\":[2,11,12],\"stops\":6,\"parked_checks\":6,\"rejection_children\":2,\"rejection_witnesses\":2,\"publisher_validation\":false,\"full_state_after_callback\":false,\"performance_qualification\":false}\n").unwrap();
+        }
         "inline-qualify" if args.len() == 3 => {
             inline_qualify(&output, inline_clock::Transport::Channels)
         }

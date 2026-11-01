@@ -1,0 +1,4 @@
+quantum,encounters,taken,stops,parked_checks,remaining,result
+2,15,11,5,5,1,PASS
+11,15,11,1,1,11,PASS
+12,15,11,0,0,1,PASS

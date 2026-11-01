@@ -12,8 +12,7 @@ pub(super) struct OrderedPreparation {
     pub(super) heads: Vec<(u64, usize, usize, bool)>,
     pub(super) first_hook_lengths: Option<(usize, usize, usize)>,
     pub(super) helper_frames: Vec<(usize, u64, usize, usize, HelperFrames, HelperFrames)>,
-    pub(super) clock_spec: Option<backedge_clock::GateSpec>,
-    pub(super) clock_observer: Option<usize>,
+    pub(super) clock_specs: Vec<(u64, usize, usize, backedge_clock::GateSpec)>,
     pub(super) precontext_specs: Vec<(usize, usize, usize, precontext::GateSpec)>,
 }
 
@@ -91,8 +90,7 @@ impl PreparedArtifact {
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 fn prepared_bound(preparation: &OrderedPreparation) -> Result<usize, TrampolineError> {
-    if preparation.clock_spec.is_some()
-        || preparation.clock_observer.is_some()
+    if !preparation.clock_specs.is_empty()
         || !preparation.precontext_specs.is_empty()
         || !preparation.helper_frames.is_empty()
     {
