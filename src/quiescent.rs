@@ -28,10 +28,14 @@ pub use adjacent_routed_jmp::{
     RoutedJmpStage, RoutedJmpStop, plan_adjacent_routed_jmp_with_emission_after,
 };
 
+mod entry_admission;
+pub use entry_admission::{plan_entry_admission_detailed, plan_entry_admission_detailed_after};
+
 mod whole_function;
 pub use whole_function::{
     WholeFunctionRequest, plan_whole_function_controlled_detailed,
-    plan_whole_function_controlled_detailed_after,
+    plan_whole_function_controlled_detailed_after, plan_whole_function_entry_admission_detailed,
+    plan_whole_function_entry_admission_detailed_after,
 };
 
 mod clock_region;
@@ -667,12 +671,13 @@ pub unsafe fn plan_precontext_coalesced_detailed_after(
     )
 }
 
-// The PreContext variant is constructed only by the unsafe typed wrappers.
+// The PreContext and EntryAdmission variants come only from unsafe typed wrappers.
 // These borrowed views support geometry/identity checks, never metadata erasure.
 #[derive(Clone, Copy)]
 enum CoalescedActions<'a> {
     Controlled(&'a [crate::controls::ControlledAction]),
     PointObservations(&'a [crate::controls::PointObservationAction]),
+    EntryAdmission(&'a [crate::controls::EntryAdmissionAction]),
     ControlledProfile(
         &'a [crate::controls::ControlledAction],
         crate::trampoline::ObservationStackProfile,
@@ -684,6 +689,7 @@ impl<'a> CoalescedActions<'a> {
         match self {
             Self::Controlled(a) | Self::ControlledProfile(a, _) => a.len(),
             Self::PointObservations(a) => a.len(),
+            Self::EntryAdmission(a) => a.len(),
             Self::PreContext(a) => a.len(),
         }
     }
@@ -691,6 +697,7 @@ impl<'a> CoalescedActions<'a> {
         match self {
             Self::Controlled(a) | Self::ControlledProfile(a, _) => a[index].logical_pc,
             Self::PointObservations(a) => a[index].controlled_action().logical_pc,
+            Self::EntryAdmission(a) => a[index].logical_pc(),
             Self::PreContext(a) => a[index].logical_pc(),
         }
     }
@@ -698,6 +705,7 @@ impl<'a> CoalescedActions<'a> {
         match self {
             Self::Controlled(a) | Self::ControlledProfile(a, _) => &a[index].control,
             Self::PointObservations(a) => &a[index].controlled_action().control,
+            Self::EntryAdmission(a) => a[index].control(),
             Self::PreContext(a) => a[index].control(),
         }
     }
@@ -767,6 +775,16 @@ fn plan_coalesced_flavor(
                 search_evidence.qualification(SearchScope::default(), reason)
             })?;
         }
+        if let CoalescedActions::EntryAdmission(_) = actions {
+            let qualified = if clock.is_some() {
+                Err(Refusal::InvalidPlan)
+            } else {
+                entry_admission::qualify(request)
+            };
+            qualified.inspect_err(|reason| {
+                search_evidence.qualification(SearchScope::default(), reason)
+            })?;
+        }
         if let CoalescedActions::PreContext(_) = actions {
             let qualified = if clock.is_some() {
                 Err(Refusal::InvalidPlan)
@@ -792,6 +810,11 @@ fn plan_coalesced_flavor(
         }
         let (source, scan) = validated_source_core(request)
             .inspect_err(|reason| search_evidence.qualification(SearchScope::default(), reason))?;
+        if let CoalescedActions::EntryAdmission(roles) = actions {
+            crate::controls::entry_admission::validate(&scan, roles).inspect_err(|reason| {
+                search_evidence.qualification(SearchScope::default(), reason)
+            })?;
+        }
         for index in 0..actions.len() {
             if !request.block.contains(actions.pc(index)) {
                 return Err(Refusal::InvalidRange);
@@ -1586,12 +1609,23 @@ fn emit_relocation_window(
             (Some(_), Some(CoalescedActions::PointObservations(_))) => {
                 return Err(Refusal::InvalidPlan);
             }
+            (Some(_), Some(CoalescedActions::EntryAdmission(_))) => {
+                return Err(Refusal::InvalidPlan);
+            }
             (Some(action), _) => TrampolinePlan::from_backedge_clock(scan, physical, end, action),
             (None, Some(CoalescedActions::Controlled(actions))) => {
                 TrampolinePlan::from_controlled_actions(scan, physical, end, actions)
             }
             (None, Some(CoalescedActions::PointObservations(actions))) => {
                 TrampolinePlan::from_point_observation_actions(scan, physical, end, actions)
+            }
+            (None, Some(CoalescedActions::EntryAdmission(actions))) => {
+                // SAFETY: only the unsafe typed wrappers create this variant.
+                // Complete original decoding/current reads and per-window
+                // source authentication remain unchanged above.
+                unsafe {
+                    TrampolinePlan::from_entry_admission_actions(scan, physical, end, actions)
+                }
             }
             (None, Some(CoalescedActions::ControlledProfile(actions, profile))) => {
                 TrampolinePlan::from_controlled_actions_with_stack_profile(
@@ -1723,10 +1757,15 @@ fn emit_relocation_window(
             }
         };
         if let Some(proof) = whole_function {
-            let Some(CoalescedActions::Controlled(actions)) = controls else {
-                return Err(Refusal::InvalidPlan);
-            };
-            proof.verify_image(scan, actions, &image)?;
+            match controls {
+                Some(CoalescedActions::Controlled(actions)) => {
+                    proof.verify_image(scan, actions, &image)?;
+                }
+                Some(CoalescedActions::EntryAdmission(actions)) => {
+                    proof.verify_entry_admission_image(scan, actions, &image)?;
+                }
+                _ => return Err(Refusal::InvalidPlan),
+            }
         }
         if let Some((proof, region)) = clock_region {
             proof.verify_image(scan, region, &image)?;

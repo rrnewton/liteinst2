@@ -1,7 +1,7 @@
 //! Opt-in closed scalar region; this never changes basic-block admission.
 
 use super::*;
-use crate::controls::{ControlledAction, ProbeControl};
+use crate::controls::{ControlledAction, EntryAdmissionAction, EntryAdmissionRole, ProbeControl};
 use crate::emission::{EmissionContext, PlanningSite};
 use crate::trampoline::{ObservationStackProfile, ProgramCounterMapping, TrampolineLayout};
 use iced_x86::{Decoder, DecoderOptions, Instruction, OpKind, Register};
@@ -57,7 +57,7 @@ pub unsafe fn plan_whole_function_controlled_detailed(
     request: &WholeFunctionRequest<'_>,
     actions: &[ControlledAction],
 ) -> Result<PlannedInstall, PlanningFailure> {
-    plan(request, actions, request.code)
+    plan(request, actions, request.code, None)
 }
 
 /// As above, authenticating original bytes and the exact predecessor overlay.
@@ -77,7 +77,68 @@ pub unsafe fn plan_whole_function_controlled_detailed_after(
     let current = predecessor
         .planning_overlay(request.identity, request.base_address, request.code)
         .map_err(failure)?;
-    plan(request, actions, &current)
+    plan(request, actions, &current, None)
+}
+
+/// Relocate the complete closed scalar function with optional entry admission.
+///
+/// The exact entry is the only early gate; every reachable C3 retains a distinct
+/// permanently enabled return callback. The existing whole-function CFG,
+/// entry/resume, complete-role and final-image checks all apply unchanged.
+/// Smaller caller caps still win over the 256-candidate, one-image, 8192-byte
+/// ceilings. No mandatory/point policy fallback is attempted.
+///
+/// # Safety
+/// Both [`plan_whole_function_controlled_detailed`] and
+/// [`EntryAdmissionAction::entry`] contracts apply. In particular the certified
+/// depth-one caller/runtime must account for all physical calls independently
+/// of sparse observed intervals, preserve live/returned owners across bypass
+/// and rearm, and keep all RETs mandatory. Decoding does not prove that runtime.
+pub unsafe fn plan_whole_function_entry_admission_detailed(
+    request: &WholeFunctionRequest<'_>,
+    actions: &[EntryAdmissionAction],
+) -> Result<PlannedInstall, PlanningFailure> {
+    plan_entry_admission(request, actions, request.code)
+}
+
+/// Authenticate a predecessor overlay before optional-entry whole-function planning.
+/// Earlier edits anywhere in this complete displaced function still refuse.
+///
+/// # Safety
+/// All requirements of [`plan_whole_function_entry_admission_detailed`] apply,
+/// with the unchanged complete composition/publication ownership contract.
+pub unsafe fn plan_whole_function_entry_admission_detailed_after(
+    request: &WholeFunctionRequest<'_>,
+    actions: &[EntryAdmissionAction],
+    predecessor: &crate::composition::Composition,
+) -> Result<PlannedInstall, PlanningFailure> {
+    let current = predecessor
+        .planning_overlay(request.identity, request.base_address, request.code)
+        .map_err(failure)?;
+    plan_entry_admission(request, actions, &current)
+}
+
+fn plan_entry_admission(
+    input: &WholeFunctionRequest<'_>,
+    actions: &[EntryAdmissionAction],
+    current: &[u8],
+) -> Result<PlannedInstall, PlanningFailure> {
+    if !(2..=5).contains(&actions.len()) {
+        return Err(failure(Refusal::InvalidPlan));
+    }
+    let controlled: Vec<_> = actions.iter().map(|a| a.controlled().clone()).collect();
+    let mut allocation = input.allocation.clone();
+    allocation.max_candidates = allocation.max_candidates.min(256);
+    allocation.max_mappings = allocation.max_mappings.min(1);
+    allocation.max_mapped_bytes = allocation.max_mapped_bytes.min(8192);
+    let request = WholeFunctionRequest {
+        identity: input.identity,
+        code: input.code,
+        base_address: input.base_address,
+        entries: input.entries,
+        allocation: &allocation,
+    };
+    plan(&request, &controlled, current, Some(actions))
 }
 
 fn failure(reason: Refusal) -> PlanningFailure {
@@ -94,6 +155,7 @@ fn plan(
     input: &WholeFunctionRequest<'_>,
     actions: &[ControlledAction],
     current: &[u8],
+    entry_admission: Option<&[EntryAdmissionAction]>,
 ) -> Result<PlannedInstall, PlanningFailure> {
     let mut search = SearchEvidence::default();
     let mut attempts = Vec::new();
@@ -106,6 +168,9 @@ fn plan(
         let scan = InstructionScanner::default()
             .scan(input.code, input.base_address)
             .map_err(|e| Refusal::Backend(e.to_string()))?;
+        if let Some(roles) = entry_admission {
+            crate::controls::entry_admission::validate(&scan, roles)?;
+        }
         let proof = Verified::new(input, &scan, actions)?;
         // Only this verified mode uses a multi-block region in the shared
         // emission site. It never enters the legacy block-window selector.
@@ -147,7 +212,13 @@ fn plan(
             &scan,
             range,
             &occupied,
-            (Some(CoalescedActions::Controlled(actions)), None),
+            (
+                Some(entry_admission.map_or(
+                    CoalescedActions::Controlled(actions),
+                    CoalescedActions::EntryAdmission,
+                )),
+                None,
+            ),
             RelocationWindow {
                 physical: range.start(),
                 end: range.end(),
@@ -454,6 +525,29 @@ impl Verified {
         image: &TrampolineImage,
     ) -> Result<(), Refusal> {
         self.verify_view(scan, actions, ImageView::from(image))
+    }
+
+    pub(super) fn verify_entry_admission_image(
+        &self,
+        scan: &ScanResult,
+        actions: &[EntryAdmissionAction],
+        image: &TrampolineImage,
+    ) -> Result<(), Refusal> {
+        crate::controls::entry_admission::validate(scan, actions)?;
+        let controlled: Vec<_> = actions.iter().map(|a| a.controlled().clone()).collect();
+        self.verify_image(scan, &controlled, image)?;
+        let [gate] = image.early_control_gates() else {
+            return Err(Refusal::InvalidPlan);
+        };
+        if actions[0].role() != EntryAdmissionRole::Entry
+            || gate.logical_pc != actions[0].function_entry()
+            || image.entry_routes().first() != Some(&(gate.logical_pc, gate.entry))
+            || image.instruction_boundaries().first()
+                != Some(&(gate.logical_pc, gate.original_body))
+        {
+            return Err(Refusal::InvalidPlan);
+        }
+        Ok(())
     }
 
     fn verify_view(
