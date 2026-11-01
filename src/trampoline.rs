@@ -1825,7 +1825,7 @@ impl TrampolinePlan {
             return Err(TrampolineError::UnsupportedPlatform);
         }
         crate::controls::entry_admission::validate(scan, actions)
-            .map_err(|reason| encoding_error(&format!("entry-admission role: {reason:?}")))?;
+            .map_err(|reason| encoding_error(format!("entry-admission role: {reason:?}")))?;
         let controlled: Vec<_> = actions.iter().map(|a| a.controlled().clone()).collect();
         let mut plan = Self::from_controlled_actions(scan, physical, end, &controlled)?;
         for original in plan.instructions.iter() {
