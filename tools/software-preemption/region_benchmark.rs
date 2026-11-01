@@ -375,7 +375,7 @@ fn batch(
     single_main();
     assert_eq!(affinity(), [controller_cpu]);
     program.assert_code();
-    assert!(ENCOUNTERS <= liteinst2::backedge_clock::MAX_WORK);
+    const { assert!(ENCOUNTERS <= liteinst2::backedge_clock::MAX_WORK) };
     let before_clock = unsafe { program.clock.snapshot_parked() };
     let (tx, rx) = mpsc::sync_channel(1);
     let (resume_tx, resume_rx) = mpsc::sync_channel(1);
