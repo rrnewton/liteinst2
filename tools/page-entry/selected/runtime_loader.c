@@ -326,7 +326,11 @@ static void selected_ret_resume_exit(int,siginfo_t *,ucontext_t *);
 #include "persistent_subentry_observe.h"
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+#ifdef LI2_PERSISTENT_BLOCK_CAPTURE
+#include "persistent_block_observe.h"
+#else
 #include "persistent_direct_frontier_observe.h"
+#endif
 #endif
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
 #include "persistent_call_owner_observe.h"
@@ -1035,6 +1039,22 @@ static void dispatch_operation(long n,ucontext_t *context) {
     if(effect_native)++forwarded;
 #else
     ++forwarded;
+#endif
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+    /* The only preserving return seam: actual native RAW, exact original
+       number/arguments and its retained result. Scripted/replaced outcomes
+       cannot renew a content certificate. All original postguards ran. */
+    int content_error;
+#ifdef LI2_EFFECT_PROVIDER
+    if(effect_native && selected_effect_raw.entered==1 &&
+       selected_effect_raw.returned==1 && selected_effect_raw.number==n &&
+       selected_effect_raw.result==result)
+        content_error=li2_rsl_generation_after_effect(n,a,result);
+    else content_error=li2_rsl_generation_not_native();
+#else
+#error "stable generation requires the actual native effect-owner return record"
+#endif
+    checked(!content_error,(unsigned)content_error,n);
 #endif
     if(n==SYS_arch_prctl && !result && (a[0]==ARCH_SET_FS || a[0]==ARCH_SET_GS)) ++tls_changes;
     if(n==SYS_set_tid_address && result>=0) ++tid_sets;

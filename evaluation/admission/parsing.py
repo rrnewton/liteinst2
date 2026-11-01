@@ -79,6 +79,12 @@ def harness_id(line):
         r"\(target/debug/examples/full_program_bridge-[a-f0-9]+\)", line)
     if example:
         return "unit/full_program_bridge/full_program_bridge"
+    # Exact owned-region client declared test=true; retain its complete tuple.
+    example = re.fullmatch(
+        r"\s*Running unittests examples/owned_region_clock\.rs "
+        r"\(target/debug/examples/owned_region_clock-[a-f0-9]+\)", line)
+    if example:
+        return "unit/owned_region_clock/owned_region_clock"
     match = re.fullmatch(r"\s*Running (unittests [^()]+|tests/[^()]+|native-interval/calibrations\.rs) \(([^()]+)\)", line)
     if not match:
         return None
@@ -99,6 +105,8 @@ def harness_id(line):
             and binary[1] != "adjacent_routed_jmp_disassembly_sites", "invalid_harness_source_label")
     require(label != "unittests examples/full_program_bridge.rs"
             and binary[1] != "full_program_bridge", "invalid_harness_source_label")
+    require(label != "unittests examples/owned_region_clock.rs"
+            and binary[1] != "owned_region_clock", "invalid_harness_source_label")
     if label == "unittests ordinary-interval/main.rs" or binary[1] == "ordinary_interval":
         require(label == "unittests ordinary-interval/main.rs" and binary[1] == "ordinary_interval",
                 "invalid_harness_source_label")

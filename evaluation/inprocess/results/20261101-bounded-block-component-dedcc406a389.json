@@ -1,0 +1,231 @@
+{
+  "archive": {
+    "bytes": 11961622,
+    "mode": "0644",
+    "sha256": "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d"
+  },
+  "binary": {
+    "bytes": 2849984,
+    "mode": "0755",
+    "sha256": "08cb9c605f1f580f327b4fe6b3b8728c6336c9a4374061b2da911dff42f88f59"
+  },
+  "bounds": {
+    "build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "component": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "claims": [
+    4
+  ],
+  "closure": {
+    "archive": {
+      "aliases": 752,
+      "artifacts": 40,
+      "cleanup_complete": true,
+      "commands": 16,
+      "inputs": 750,
+      "inputs_unchanged": true,
+      "reaped": 16,
+      "source_unchanged": true
+    },
+    "component": {
+      "aliases": 289,
+      "artifacts": 166,
+      "cleanup_complete": true,
+      "commands": 44,
+      "inputs": 281,
+      "inputs_unchanged": true,
+      "reaped": 44,
+      "source_unchanged": true
+    }
+  },
+  "commands": [
+    {
+      "argv": [
+        "python3",
+        "-B",
+        "evaluation/inprocess/call_owner/prepare_archive.py",
+        "--expect-revision",
+        "dedcc406a389e8e7d1698c3f1d2167dcdea6c37b",
+        "--cpu",
+        "3",
+        "--output",
+        "target/evaluation/inprocess/bounded-block-component-attempt-1-archive"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 319,
+          "sha256": "7bb77671bcd22c9ea7fd591136000dfbaaa9755475cf4c6e90089737db648bb4"
+        }
+      },
+      "duration_ns": 8216959270,
+      "exit": 0,
+      "name": "archive"
+    },
+    {
+      "argv": [
+        "python3",
+        "-B",
+        "evaluation/inprocess/bounded_block_component/run.py",
+        "--expect-revision",
+        "dedcc406a389e8e7d1698c3f1d2167dcdea6c37b",
+        "--cpu",
+        "3",
+        "--archive",
+        "target/evaluation/inprocess/bounded-block-component-attempt-1-archive/artifacts/decoder.a",
+        "--archive-sha256",
+        "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d",
+        "--output",
+        "target/evaluation/inprocess/bounded-block-component-attempt-1"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 460,
+          "sha256": "421b13b2d722923761b2949dabcf5eec47fdfb4655634e33d55fb05fb82065f7"
+        }
+      },
+      "duration_ns": 23740948272,
+      "exit": 0,
+      "name": "component"
+    }
+  ],
+  "component_command": {
+    "argv": [
+      "target/evaluation/inprocess/bounded-block-component-attempt-1/bounded_block_plan/component"
+    ],
+    "duration_ns": 2419708088,
+    "exit": 0,
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stdout": {
+      "bytes": 242,
+      "sha256": "6b0e1a3eb6e5b6815232294a4bf8b4334f29d774badd3db873ee13234998a84a"
+    }
+  },
+  "component_runner_archive_source_provenance_verified": false,
+  "cpu": 3,
+  "fresh_same_source_archive_verified_by_outer_join": true,
+  "generated_execution": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 3,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "native_execution": 0,
+  "owner_credit": false,
+  "performance_credit": false,
+  "profile": "experimental-bounded-block-component-v1",
+  "python": {
+    "argv_normalization": "python3 names this exact executable; repository prefix removed from path arguments only.",
+    "executable": {
+      "bytes": 13542408,
+      "mode": "0755",
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    }
+  },
+  "qualification_credit": false,
+  "receipts": {
+    "archive": {
+      "bytes": 415337,
+      "sha256": "a0160ee438cbbc64e16204832e3b0c42cc92e58981a0a633312a71ed6932c1e0"
+    },
+    "component": {
+      "bytes": 221719,
+      "sha256": "aebb45acfc02cb086ddda6b05b19a96b894960fbf2d2a5b033807ac269c7ea2b"
+    },
+    "outer": {
+      "bytes": 2499,
+      "sha256": "e3f4629fa60afe37dc94765f5862288530cb34ef3d2f64f8477a2a3d116f313b"
+    }
+  },
+  "recipe": {
+    "bytes": 1240,
+    "mode": "0755",
+    "sha256": "1d4f2c1c3458d355766b7831ac635d91f119175049ef7d21292fd9bb5e9c50eb"
+  },
+  "reproducer": "evaluation/inprocess/bounded_block_component/README.md",
+  "result": {
+    "capacity_links": 2,
+    "copied_boundaries": 580,
+    "corruptions": 21,
+    "emitted_execution": 0,
+    "interiors": 19848,
+    "misses": 11,
+    "models": 8064,
+    "old_checks": 6,
+    "owner_credit": 0,
+    "plans": 45,
+    "selectors": 8064,
+    "steps": 221856,
+    "typed_recoveries": 443712,
+    "version": 10
+  },
+  "revision": "dedcc406a389e8e7d1698c3f1d2167dcdea6c37b",
+  "schema": 1,
+  "scope": "Planner and independent emitted-byte model only; no emitted native code, owner admission, whole-program completion, or speedup claim.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "dedcc406a389e8e7d1698c3f1d2167dcdea6c37b",
+    "source_manifest_sha256": "0e97b41b271875f4f8414783c7461be439e0c756736034390ca0a69afed5885e",
+    "tracked_clean": true,
+    "tree": "da2b4f3871e49a71daec615b7721749af2961905"
+  },
+  "status": "components_passed",
+  "timing_scope": "Validation command durations only; not benchmark measurements.",
+  "tool_versions": {
+    "cargo": [
+      1,
+      97,
+      1
+    ],
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rustc": [
+      1,
+      97,
+      1
+    ]
+  },
+  "within_10x_dynamorio_established": false
+}

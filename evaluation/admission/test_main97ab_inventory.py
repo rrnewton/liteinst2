@@ -457,7 +457,7 @@ class Main97abInventoryTests(unittest.TestCase):
         # All twenty overlapping-relay methods remain mandatory on the same
         # four default harnesses, above the complete packed-RX predecessor.
         overlap = current.DATA['source_successor_124521']
-        overlap_rows = actual['harness_test_counts']['workspace_tests']
+        overlap_rows = current.before_abe7(actual)['harness_test_counts']['workspace_tests']
         overlap_before = current.before_124521(actual)
         self.assertEqual(current.digest(overlap_before), current.OVERLAP_PREVIOUS)
         self.assertEqual((len(overlap_rows), sum(x['tests'] for x in overlap_rows.values()),
@@ -513,6 +513,116 @@ class Main97abInventoryTests(unittest.TestCase):
                 with patch.object(Path, 'read_bytes', changed):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
                         current.require_sources()
+
+
+        # Incoming finite-region/batch source adds 30 methods and eight docs.
+        # Every old catalog remains exact behind the new whole inverse.
+        clock = current.DATA['source_successor_abe7']
+        clock_rows = actual['harness_test_counts']['workspace_tests']
+        clock_before = current.before_abe7(actual)
+        self.assertEqual(current.digest(clock_before), current.CLOCK_PREVIOUS)
+        self.assertEqual((len(clock_rows), sum(x['tests'] for x in clock_rows.values()),
+                          sum(x['ignored'] for x in clock_rows.values())), (115, 4453, 39))
+        self.assertEqual(clock_before['harness_test_counts']['workspace_tests'], overlap_rows)
+        self.assertEqual((clock['default_method_additions'], clock['default_doctest_additions'],
+                          clock['default_method_removals'], clock['default_harness_changes'],
+                          clock['default_ignore_changes'], clock['recorder_identity_changes']),
+                         (30, 8, 0, 1, 0, 0))
+        self.assertEqual(sum(len(names) * len(clock['default_method_instances'][path])
+                             for path, names in clock['added_default_methods'].items()), 30)
+        self.assertEqual(clock['added_ignored_methods'], {})
+        self.assertEqual({path: len(blocks) for path, blocks in clock['doctest_sources'].items()},
+                         {'src/backedge_clock.rs': 3, 'src/backedge_clock/batch.rs': 8})
+        self.assertEqual(sum(block.startswith('    ///') for block in
+                             clock['doctest_sources']['src/backedge_clock/batch.rs']), 1)
+        self.assertEqual((actual['recorder_tests'], actual['harness_test_counts']['serial_launch']),
+                         (clock_before['recorder_tests'], clock_before['harness_test_counts']['serial_launch']))
+        for wrong in (clock_before, overlap_before, rx_before, entry_before, placement_before,
+                      phase_catalog, native_indexed, old):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_abe7(wrong)
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                inventory.require_current(wrong)
+        for name, change in clock['workspace_changes'].items():
+            self.assertEqual(clock_rows[name], change['current'])
+            self.assertEqual(clock_before['harness_test_counts']['workspace_tests'].get(name), change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(clock_rows[name][field]), clock_rows[name][field] + 1):
+                    wrong = copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_abe7(wrong)
+            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_abe7(wrong)
+        clock_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
+            for path, names in clock['added_default_methods'].items() for name in names]
+        clock_stimuli += [(path, literal, '')
+            for path, literals in clock['module_chains'].items() for literal in literals]
+        clock_stimuli += [(path, block, block.replace('```compile_fail', '```'))
+            for path, blocks in clock['doctest_sources'].items() for block in blocks]
+        for path, literal, replacement in clock_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('clock declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        for path in clock['source_paths']:
+            target = current.ROOT / path; raw = read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate != target: return read(candidate)
+                    if missing: raise FileNotFoundError(path)
+                    return raw + b'\n'
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                        current.require_sources()
+
+        clock_id = 'unit/owned_region_clock/owned_region_clock'
+        clock_header = ('     Running unittests examples/owned_region_clock.rs '
+                        '(target/debug/examples/owned_region_clock-0123456789abcdef)')
+        clock_log = '\n'.join((clock_header, 'running 3 tests', summary(3)))
+        clock_expected = {clock_id: counts(3)}
+        self.assertEqual(clock_rows[clock_id], clock_expected[clock_id])
+        self.assertEqual(parsing.harness_id(clock_header), clock_id)
+        clock_row = parsing.parse_harnesses(clock_log, clock_expected, 0)[0]
+        self.assertEqual(clock_row['outer'], dict(passed=3, failed=0, ignored=0,
+                                                 measured=0, filtered=0, result='ok'))
+        self.assertEqual((clock_row['declared_outer_tests'], clock_row['nested_starts'],
+                          clock_row['unmatched_nested_starts']), (3, 0, 0))
+        for malformed in (
+                clock_header.replace('target/debug/examples/', 'target/debug/deps/'),
+                clock_header.replace('unittests examples/owned_region_clock.rs',
+                                     'unittests src/lib.rs').replace('target/debug/examples/', 'target/debug/deps/'),
+                clock_header.replace('target/debug/examples/owned_region_clock-', 'target/debug/deps/other-'),
+                clock_header.replace('target/debug/examples/owned_region_clock-', 'target/debug/examples/other-'),
+                clock_header.replace('examples/owned_region_clock.rs', 'examples/other.rs'),
+                clock_header.replace('owned_region_clock', 'owned_region_clock_extra'),
+                clock_header.replace('target/debug/examples/', '/PRIVATE_SENTINEL/'),
+                clock_header.replace('target/debug/examples/', 'target/debug/examples/../examples/'),
+                clock_header.replace('-0123456789abcdef)', '-nothex)')):
+            with self.subTest(clock_header=malformed), self.assertRaises(parsing.InvalidEvidence):
+                parsing.harness_id(malformed)
+        for bad in (clock_log.replace('running 3 tests', 'running 2 tests'),
+                    clock_log.replace('running 3 tests', 'running 4 tests'),
+                    clock_log.replace(summary(3), summary(2, filtered=1)),
+                    clock_log.replace(summary(3), summary(2, ignored=1)),
+                    clock_log.replace(summary(3), summary(2, measured=1)),
+                    clock_log.replace('running 3 tests', 'running 3 tests\nrunning 1 test'),
+                    clock_log.replace(summary(3), ''), clock_log + '\n' + summary(3),
+                    clock_log + '\n' + clock_log):
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, clock_expected, 0)
+        failed = clock_log.replace(summary(3), summary(2, failed=1))
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^successful_exit_with_failed_summary$'):
+            parsing.parse_harnesses(failed, clock_expected, 0)
+        failed_row = parsing.parse_harnesses(failed, clock_expected, 1)[0]
+        self.assertEqual((failed_row['outer']['result'], failed_row['outer']['passed'],
+                          failed_row['outer']['failed']), ('FAILED', 2, 1))
 
         # The new Cargo example has one exact source/binary/output-directory
         # identity. Its ten tests cannot be admitted under the generic matcher.

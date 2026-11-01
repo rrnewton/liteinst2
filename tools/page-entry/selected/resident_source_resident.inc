@@ -79,6 +79,10 @@ static int rsl_resident_record(unsigned operation,unsigned authentications) {
     return rsl_finish(rsl_resident_add(operation,authentications,1));
 }
 int li2_rsl_resident_bind(const struct li2_r3_token *t) {
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+    if(rsl.owner.content.state==LI2_RSG_SUSPENDED ||
+       rsl.owner.content.state==LI2_RSG_DIRTY)return LI2_FETCH_STALE;
+#endif
     struct li2_r3_seed seed={0};
     if(!t || li2_r3_owner_phase(t)!=LI2_R3_HELD || rsl_resident_seed(t,&seed) ||
        rsl.owner.p.initialized!=1 || rsl.owner.p.bindings==UINT64_MAX ||
@@ -97,6 +101,10 @@ int li2_rsl_resident_bind(const struct li2_r3_token *t) {
         rsl.owner.resident.bound=*t;rsl.owner.resident.seed=seed;
         rsl.owner.resident.epoch=rsl.owner.p.epoch;rsl.owner.resident.last_serial=t->serial;
         rsl.owner.p.valid=1;++rsl.owner.p.bindings;
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+        error=rsl_generation_bound(t);
+        if(error)rsl.owner.p.valid=0;
+#endif
     }
     return rsl_finish(error);
 }

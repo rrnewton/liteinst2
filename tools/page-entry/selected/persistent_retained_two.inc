@@ -100,7 +100,11 @@ static int ptr_stored(unsigned index) {
         p->header.plan_proof==g->plan_proofs && g->plan_proofs==2 &&
         p->header.none_proof==g->none_proofs && g->none_proofs==1 &&
         equal(p->header.archive,pe_archive,32) && equal(p->header.policy,pe_policy,32) &&
+#ifdef LI2_PERSISTENT_BLOCK_RUNTIME
+        p->plan.version==LI2_PB_VERSION && p->plan.bytes==sizeof p->plan &&
+#else
         p->plan.version==LI2_PG_COMPACT_VERSION && p->plan.bytes==sizeof p->plan &&
+#endif
         p->plan.ready==1 && !p->plan.result && pg_layout_equal(&p->plan.layout,&g->layout) &&
         p->plan.table.address==p->header.table && p->plan.entry==p->source.entry &&
 #ifdef LI2_PERSISTENT_DISPATCH

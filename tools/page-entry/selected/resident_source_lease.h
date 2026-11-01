@@ -74,5 +74,8 @@ int li2_rsl_resident_validate(const struct li2_r3_token *);
    bind records use its existing interval. These observation_seals are separate
    from original/generated source permissions. */
 const struct li2_rsl_resident_progress *li2_rsl_resident_progress(void);
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+#include "resident_source_generation.h"
+#endif
 #endif
 #endif

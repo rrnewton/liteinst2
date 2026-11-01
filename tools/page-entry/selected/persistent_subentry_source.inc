@@ -6,7 +6,11 @@ int li2_pgs_head_lookup(const struct li2_pg_compact *p,uintptr_t pc,struct li2_p
     if(a>UINTPTR_MAX-sizeof *p || b>UINTPTR_MAX-sizeof *out ||
        (a<b+sizeof *out && b<a+sizeof *p))return -1;
     *out=(struct li2_pgs_target){0};
+#ifdef LI2_PERSISTENT_BLOCK_RUNTIME
+    if(p->version!=LI2_PB_VERSION || p->bytes!=sizeof *p || p->ready!=1 ||
+#else
     if(p->version!=LI2_PG_COMPACT_VERSION || p->bytes!=sizeof *p || p->ready!=1 ||
+#endif
        p->result || p->reserved || p->reserved2 || !p->heads || p->heads>LI2_PG_HEADS ||
        p->member_heads[0]!=(p->heads<64?p->heads:64) ||
        p->member_heads[1]!=(p->heads>64?p->heads-64:0) ||
@@ -69,6 +73,9 @@ int li2_pgs_entry_source(const struct li2_pgs_entry *e,uintptr_t root,
         && h->kind!=LI2_PG_ADD
 #endif
        ))return 0;
+#ifdef LI2_PERSISTENT_BLOCK_RUNTIME
+    if(h->kind!=LI2_PE_NONE && h->kind!=LI2_PG_DIRECT)return 0;
+#endif
     for(unsigned i=0;i<2;i++)if(t->page[i]!=actual->key.page[i].identity.address)return 0;
     return equal(d->bytes,actual->key.page[t->source_page].bytes+h->source_offset,15);
 }

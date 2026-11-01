@@ -17,7 +17,11 @@
 /* These three publications are not li2_pgd_member objects. Neither the old
    two-member view nor the old two-slot backing owner is widened or cast. */
 #define LI2_R3_CERTIFICATES 3U
+#ifdef LI2_RESIDENT_STABLE_GENERATION
+#define LI2_R3_VERSION 2U
+#else
 #define LI2_R3_VERSION 1U
+#endif
 enum li2_r3_phase {
     LI2_R3_IDLE,LI2_R3_CLOSING_TRACE,LI2_R3_HELD,LI2_R3_PLANNING,
     LI2_R3_PUBLISHING,LI2_R3_BOUND,LI2_R3_OPENING,LI2_R3_ACTIVE,

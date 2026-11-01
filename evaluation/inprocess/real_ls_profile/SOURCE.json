@@ -138,8 +138,8 @@
       "sha256": "be16d77e039ba1c28587a6e12437ce7b097bf0c6bc6d46bb02f98d3f34b60103"
     },
     "tools/page-entry/selected/persistent_group_compact.c": {
-      "bytes": 47112,
-      "sha256": "e3e25d7cf03ca0af6e8a7d1a7db9867d853d9ea661da796c8b02b2e1a19be9be"
+      "bytes": 47193,
+      "sha256": "78941dbfdf3428ab46febed51acd1e08ca625e54ee81ba4a67107e24a91bf401"
     },
     "tools/page-entry/selected/persistent_group_controller.inc": {
       "bytes": 88104,
