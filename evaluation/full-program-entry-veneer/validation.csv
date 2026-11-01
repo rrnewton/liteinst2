@@ -1,0 +1,6 @@
+stage,exit_code,wall_seconds,wall_limit_seconds,log_cap_bytes,argv_json,load_before_1_5_15,load_after_1_5_15,log_sha256
+fmt,0,11.563672354910523,180,8388608,"[""cargo"",""fmt"",""--check""]",87.89 58.57 47.65,95.61 61.20 48.62,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+clippy,0,0.1921451799571514,180,8388608,"[""cargo"",""clippy"",""--workspace"",""--all-targets"",""--all-features"",""--"",""-D"",""warnings""]",95.61 61.20 48.62,95.61 61.20 48.62,63bd8a3ac13f8b1c160887cdaf9b30715b07e638d60df463cb8815f661518191
+check,0,9.992371901171282,180,8388608,"[""cargo"",""check"",""--workspace"",""--all-features"",""--all-targets""]",95.61 61.20 48.62,101.87 63.68 49.57,fdce96774871aa05f1b8483e38b36d763c3881a383c36cfa854c7b66b92faec0
+workspace,0,758.4953890661709,900,8388608,"[""cargo"",""test"",""-j"",""12"",""--workspace"",""--no-fail-fast""]",101.87 63.68 49.57,49.41 67.79 62.71,0c6847361257a750453447f0015ac49280980efe8f81327c2f5726373a40ec76
+serial-launch,0,127.7588362628594,180,8388608,"[""cargo"",""test"",""-p"",""liteinst-launch"",""--tests"",""--"",""--test-threads=1"",""--nocapture""]",49.41 67.79 62.71,36.30 56.44 59.16,e940d36f25b8c998e1df26bf421191b1bc12835529a2556025cd2d2927658038
