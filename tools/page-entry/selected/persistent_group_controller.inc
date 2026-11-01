@@ -4,6 +4,14 @@
 #error "group release owner has its own future capture contract"
 #endif
 #include "persistent_group_plan.h"
+#if defined(LI2_SEALED_BYTE_CERTIFICATE_DIFFERENTIAL) && !defined(LI2_SEALED_BYTE_CERTIFICATE)
+#error "byte differential requires the explicit byte certificate profile"
+#endif
+#ifdef LI2_SEALED_BYTE_CERTIFICATE
+#if !defined(LI2_PERSISTENT_SEALED_GENERATION) || LI2_PERSISTENT_SEALED_GENERATION != 1
+#error "byte certificates require actual sealed backing"
+#endif
+#endif
 #ifdef LI2_PERSISTENT_RET_DISPATCH
 #if LI2_PERSISTENT_RET_DISPATCH != 1 || !defined(LI2_PERSISTENT_CALL_DISPATCH) || LI2_PERSISTENT_CALL_DISPATCH != 1
 #error "saved RET continuation requires the explicit CALL/RET owner composition"
@@ -576,6 +584,9 @@ static int pg_link_data(unsigned step) {
     if(!pg_refs(linked))return PE_STATE;
     t->complete=1;return 0;
 }
+#ifdef LI2_SEALED_BYTE_CERTIFICATE
+#define pe_bytes pe_bytes_full
+#endif
 static int pe_bytes(void) {
     const struct li2_pg_generation *g=&PE_SLOT(generation);
     const struct pe_payload *p=pe_payload();
@@ -586,6 +597,10 @@ static int pe_bytes(void) {
         if(proof[i]!=(i<sizeof PE_SLOT(publication)?expected[i]:0))return PE_PUBLICATION;
     return 0;
 }
+#ifdef LI2_SEALED_BYTE_CERTIFICATE
+#undef pe_bytes
+#include "sealed_byte_certificate.inc"
+#endif
 /* Pure fixed-address generation authentication, before recovery scratch or
    any spill access. Mutable cold scratch alone never grants this authority. */
 static int ped_stored(void) {
@@ -771,10 +786,16 @@ static void ped_claim(void) {
         !pg_proof_query(PE_SLOT(generation).proof,PROT_READ,&pe.claim_proof) &&
         !pe_query(PE_SLOT(generation).spill,PAGE,PROT_READ|PROT_WRITE,&pe.claim_spill) &&
         !pe_query(PE_SLOT(generation).layout.slots,PAGE,PROT_READ,&pe.claim_slots),PE_RELEASE,11);
+#ifdef LI2_SEALED_BYTE_CERTIFICATE_OBSERVE
+    pe_need(!sbco_claim(),PE_STATE,196);
+#endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
     pda_claim(pe.selected_slot);ped_count(PGC_REF(permit_claims));__asm__ volatile("":::"memory");
 #else
     PE_SLOT(permit).valid=0;ped_count(PGC_REF(permit_claims));__asm__ volatile("":::"memory");
+#endif
+#ifdef LI2_SEALED_BYTE_CERTIFICATE
+    if(!pe.warm)pe_need(!sbc_replace_begin(),PE_PUBLICATION,190);
 #endif
 }
 static void ped_reset_attempt(void) {
@@ -1045,6 +1066,9 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
 #else
     } else if(pe.next_generation || PE_SLOT(permit).valid)return PE_STATE;
 #endif
+#ifdef LI2_SEALED_BYTE_CERTIFICATE
+    if(!g->installed && sbc_replace_begin())return PE_PUBLICATION;
+#endif
     const struct ped_bank *b=&PE_SLOT(banks)[pe.selected_bank];
     if((b->virgin?b->prot!=(PROT_READ|PROT_WRITE):b->prot!=PROT_READ) ||
        pg_queries(&b->layout,b->prot,pe.bank_before))return PE_PUBLICATION;
@@ -1076,6 +1100,12 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
     pe.p.generation=g->generation;pe.p.phase=LI2_PG_PUBLISHING;
     PE_SLOT(registry_count)=pe.candidate_registry_count;copy(PE_SLOT(registry),pe.candidate_registry,PE_SLOT(registry_count)*sizeof *PE_SLOT(registry));
     if(!pe_registry())return PE_PUBLICATION;
+#ifdef LI2_SEALED_BYTE_CERTIFICATE
+    if(!sbc_unpublished())return PE_PUBLICATION;
+#endif
+#ifdef LI2_SEALED_BYTE_CERTIFICATE_OBSERVE
+    if(sbco_mirror_write())return PE_STATE;
+#endif
     PE_SLOT(publication)=pe.candidate;struct pe_header *h=&PE_SLOT(publication).header;
     const struct li2_pg_rseq_progress *r=li2_pg_rseq_progress();
     h->version=1;h->layout=g->layout;
@@ -1109,6 +1139,9 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
 #ifdef LI2_PERSISTENT_RETAINED_TWO
     pe.retained[pe.selected_slot].identity.generation=g->generation;
     pe.selection=pe.retained[pe.selected_slot].identity;
+#endif
+#ifdef LI2_SEALED_BYTE_CERTIFICATE
+    if((e=sbc_issue()))return e;
 #endif
     __asm__ volatile("":::"memory");g->ready_generation=g->generation;pe.p.phase=LI2_PG_BOUND;
     if((e=pg_link_data(0)))return e;
@@ -1292,6 +1325,9 @@ int li2_pg_epoch_cancel(const struct li2_pg_token *t,int sig,siginfo_t *si,ucont
     return 0;
 }
 static _Noreturn void selected_persistent_abort(unsigned code,long detail) {
+#ifdef LI2_SEALED_BYTE_CERTIFICATE
+    sbc_abort();
+#endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
     pda_abort(code,detail);
 #endif
@@ -1670,6 +1706,9 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
     __asm__ volatile("":::"memory");pe_busy=0;selected_fetch(sig,si,uc);
 }
 static void selected_persistent_report(unsigned status,unsigned code,long detail) {
+#ifdef LI2_SEALED_BYTE_CERTIFICATE
+    sbc_report(status,code);
+#endif
 #ifdef LI2_PERSISTENT_SUBENTRY
     {
         struct writer sub={.used=0};text(&sub,"LI2_PERSISTENT_SUBENTRY {\"version\":1");

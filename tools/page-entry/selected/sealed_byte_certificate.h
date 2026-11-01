@@ -1,0 +1,45 @@
+#ifndef LI2_SEALED_BYTE_CERTIFICATE_H
+#define LI2_SEALED_BYTE_CERTIFICATE_H
+/* Private controller include. This value proves byte equality only; it is
+   never a source, entry, mapping, rseq, or completion capability. */
+#if !defined(LI2_SEALED_BYTE_CERTIFICATE) || LI2_SEALED_BYTE_CERTIFICATE != 1 || \
+    !defined(LI2_PERSISTENT_SEALED_GENERATION) || LI2_PERSISTENT_SEALED_GENERATION != 1 || \
+    !defined(LI2_RESIDENT_SOURCE_LEASE) || LI2_RESIDENT_SOURCE_LEASE != 1
+#error "byte certificates require sealed storage and the complete writer-exclusion profile"
+#endif
+#if defined(LI2_SEALED_BYTE_CERTIFICATE_DIFFERENTIAL) && LI2_SEALED_BYTE_CERTIFICATE_DIFFERENTIAL != 1
+#error "the distinct qualification mode runs the original full scan at every decision"
+#endif
+#include "resident_source_lease.h"
+struct sbc_certificate {
+    unsigned valid,slot,bank,reserved;
+    uint64_t serial,mirror_epoch,generation,build_serial;
+    const struct li2_pg_epoch *owner;
+    uintptr_t mirror;
+    size_t mirror_bytes;
+    struct li2_step_session session;
+    struct li2_sealed_identity backing;
+};
+struct sbc_owner {
+    uint64_t next_serial,mirror_epoch[LI2_PTR_SLOTS],writer[LI2_PTR_SLOTS];
+    unsigned poisoned,reserved;
+    struct sbc_certificate certificate[LI2_PTR_SLOTS];
+};
+/* These protected observations are not consulted as equality authority. */
+struct sbc_counts {
+    uint64_t decisions,hits,misses,full_scans,full_scan_errors,disagreements;
+    uint64_t full_scan_bytes,issues,invalidations,abort_invalidations;
+    uint64_t live_queries,live_query_errors,postseal_bytes;
+    unsigned initialized,last_failure;
+    int last_full_result,reserved;
+};
+_Static_assert(sizeof(struct sbc_certificate)==200 && sizeof(struct sbc_owner)==448 &&
+    sizeof(struct sbc_counts)==120,"literal x86-64 byte-certificate metadata");
+enum sbc_failure { SBC_NONE=0,SBC_FULL_SCAN_ERROR=1,SBC_DISAGREEMENT=2,SBC_LIVE_QUERY_ERROR=3 };
+static int sbc_initialize(void);
+static int sbc_replace_begin(void);
+static int sbc_unpublished(void);
+static int sbc_issue(void);
+static void sbc_abort(void);
+static void sbc_report(unsigned,unsigned);
+#endif

@@ -1,6 +1,9 @@
 /* Storage-only backend. Included after the existing owner types/identity
    helpers. It changes no emitter, byte comparator, source or lifetime gate. */
 #include "sealed_generation.h"
+#ifdef LI2_SEALED_BYTE_CERTIFICATE
+#include "sealed_byte_certificate.h"
+#endif
 #include <fcntl.h>
 #include <linux/memfd.h>
 #include <sys/mman.h>
@@ -28,6 +31,9 @@ _Static_assert(LI2_SEALED_REQUIRED_SEALS==
 struct sg_owner_state {
     unsigned initialized,reserved;
     struct li2_sealed_identity bank[LI2_PTR_SLOTS][2];
+#ifdef LI2_SEALED_BYTE_CERTIFICATE
+    struct sbc_owner bytes;
+#endif
 };
 static union {
     struct sg_owner_state state;
@@ -48,6 +54,9 @@ static int sg_initialize(void) {
     for(unsigned i=0;i<LI2_PTR_SLOTS;i++)for(unsigned j=0;j<2;j++)
         sg_owner.state.bank[i][j].fd=-1;
     sg_owner.state.initialized=1;
+#ifdef LI2_SEALED_BYTE_CERTIFICATE
+    int error=sbc_initialize();if(error)return error;
+#endif
     return sg_permission(PROT_READ);
 }
 static int sg_interval(uintptr_t first,size_t bytes,uintptr_t at,size_t length) {
@@ -129,6 +138,9 @@ static int sg_closed(void) {
         !g->member_refs[1] && !g->incoming[0] && !g->incoming[1] && !g->domain_refs;
 }
 static int sg_reopen(uintptr_t code,uintptr_t proof) {
+#ifdef LI2_SEALED_BYTE_CERTIFICATE
+    if(!sbc_unpublished())return PE_STATE;
+#endif
     if(!sg_closed() || code!=PE_SLOT(banks)[pe.selected_bank].generated || proof!=PE_SLOT(generation).proof)
         return PE_STATE;
     /* Every live alias is still R/NX, and the old permission/claim checks have
@@ -171,6 +183,9 @@ static int sg_write(long fd,const unsigned char *bytes,size_t count,size_t offse
     return 0;
 }
 static int sg_publish(const struct li2_pg_generation *g) {
+#ifdef LI2_SEALED_BYTE_CERTIFICATE
+    if(!sbc_unpublished())return PE_STATE;
+#endif
     if(!sg_owner.state.initialized || !g || pe.selected_slot>=LI2_PTR_SLOTS || pe.selected_bank>1 ||
        g!=&PE_SLOT(generation) || !pe_busy || pe_active ||
        pe.p.phase!=LI2_PG_PUBLISHING || !g->installed || g->complete || g->proof_complete ||
