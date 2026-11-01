@@ -51,10 +51,14 @@
 #include "persistent_subentry_observe.h"
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+#ifdef LI2_PERSISTENT_FUSED_CAPTURE
+#include "persistent_fused_observe.h"
+#else
 #ifdef LI2_PERSISTENT_BLOCK_CAPTURE
 #include "persistent_block_observe.h"
 #else
 #include "persistent_direct_frontier_observe.h"
+#endif
 #endif
 #endif
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
@@ -652,10 +656,14 @@ static int ped_stored(void) {
         p->header.plan_proof==g->plan_proofs && g->plan_proofs==2 &&
         p->header.none_proof==g->none_proofs && g->none_proofs==1 &&
         equal(p->header.archive,pe_archive,32) && equal(p->header.policy,pe_policy,32) &&
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+        p->plan.version==LI2_PF_VERSION && p->plan.bytes==sizeof p->plan &&
+#else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
         p->plan.version==LI2_PB_VERSION && p->plan.bytes==sizeof p->plan &&
 #else
         p->plan.version==LI2_PG_COMPACT_VERSION && p->plan.bytes==sizeof p->plan &&
+#endif
 #endif
         p->plan.ready==1 && !p->plan.result && pg_layout_equal(&p->plan.layout,&g->layout) &&
         p->plan.table.address==p->header.table && p->plan.entry==p->source.entry &&
@@ -999,6 +1007,10 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         uintptr_t pages[2]={pe.p.source[0],pe.p.source[1]};
         for(unsigned i=0;i<2;i++)copy(pe.candidate.plan.source[i],s->key.page[i].bytes,PAGE);
         pe.build_started=1;pe_decoding=1;ped_count(PGC_REF(cold_attempts));__asm__ volatile("":::"memory");
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+        pe.build_result=li2_pf_plan_pages(pages,pe.candidate.plan.source,s->key.entry,
+            &pe.p.layout,&pe.candidate.plan.table,&pe.cold,&pe.miss);
+#else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
         pe.build_result=li2_pb_plan_pages(pages,pe.candidate.plan.source,s->key.entry,
             &pe.p.layout,&pe.candidate.plan.table,&pe.cold,&pe.miss);
@@ -1006,14 +1018,20 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         pe.build_result=li2_pg_plan_pages(pages,pe.candidate.plan.source,s->key.entry,
             &pe.p.layout,&pe.candidate.plan.table,&pe.cold,&pe.miss);
 #endif
+#endif
         pe.build_returned=1;
         if(pe.build_result) {
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+            pe_need(li2_pfr_miss_valid(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild) &&
+                pe.miss.reason>0 && pe.miss.reason<LI2_PGD_REASON_COUNT,PE_PLAN,pe.build_result);
+#else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
             pe_need(li2_pbr_miss_valid(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild) &&
                 pe.miss.reason>0 && pe.miss.reason<LI2_PGD_REASON_COUNT,PE_PLAN,pe.build_result);
 #else
             pe_need(li2_pg_miss_valid(&pe.cold,&pe.miss,pe.build_result) &&
                 pe.miss.reason>0 && pe.miss.reason<LI2_PGD_REASON_COUNT,PE_PLAN,pe.build_result);
+#endif
 #endif
             ped_count(PGC_MISS_REF(pe.miss.reason));pe_decoding=0;selected_initialized();
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
@@ -1022,25 +1040,37 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
             return 0;
         }
 #ifdef LI2_PERSISTENT_DISPATCH
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+        pe_need(pe.cold.ready==1 && !pe.cold.result && pe.miss.version==LI2_PF_VERSION &&
+#else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
         pe_need(pe.cold.ready==1 && !pe.cold.result && pe.miss.version==LI2_PB_VERSION &&
 #else
         pe_need(pe.cold.ready==1 && !pe.cold.result && pe.miss.version==LI2_PG_VERSION &&
+#endif
 #endif
 #else
         pe_need(pe.cold.ready==1 && !pe.cold.result && pe.miss.version==1 &&
 #endif
             !pe.miss.status && !pe.miss.reason && !pe.miss.site && !pe.miss.pc && !pe.miss.detail,
             PE_PLAN,pe.build_result);
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+        pe_need(!li2_pf_compact_build(&pe.cold,&pe.rebuild,&pe.candidate.plan),PE_PLAN,1);++pe.plan_proofs;
+#else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
         pe_need(!li2_pb_compact_build(&pe.cold,&pe.rebuild,&pe.candidate.plan),PE_PLAN,1);++pe.plan_proofs;
 #else
         pe_need(!li2_pg_compact_build(&pe.cold,&pe.rebuild,&pe.candidate.plan),PE_PLAN,1);++pe.plan_proofs;
 #endif
+#endif
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+        pe_need(!li2_pf_compact_validate(&pe.candidate.plan,&pe.rebuild,&pe.compact_rebuild),PE_PLAN,2);++pe.plan_proofs;
+#else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
         pe_need(!li2_pb_compact_validate(&pe.candidate.plan,&pe.rebuild,&pe.compact_rebuild),PE_PLAN,2);++pe.plan_proofs;
 #else
         pe_need(!li2_pg_compact_validate(&pe.candidate.plan,&pe.rebuild,&pe.compact_rebuild),PE_PLAN,2);++pe.plan_proofs;
+#endif
 #endif
         pe_need(!li2_pg_rseq_cold(&pe.token,&pe.cold,uc),PE_RSEQ,1);++pe.none_proofs;
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
@@ -1229,10 +1259,14 @@ int li2_pg_epoch_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER
 static int pe_exit_index(uintptr_t pc,uint64_t flags) {
     if(!pe_ready())return -2;
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+    return li2_pf_compact_exit(&pe_payload()->plan,pc,flags);
+#else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
     return li2_pb_compact_exit(&pe_payload()->plan,pc,flags);
 #else
     return li2_pg_compact_exit(&pe_payload()->plan,pc,flags);
+#endif
 #endif
 }
 #else
@@ -1275,12 +1309,17 @@ int li2_pg_epoch_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
     /* Recovery owns this exact protected scratch before materialization.
        Donor recovery reads only initialized dirty spills; no blanket spill
        read or old-plan cast precedes its boundary-state validation. */
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+    pe.recovery_result=li2_pf_compact_recover(&pe_payload()->plan,pc,raw,(uint64_t)g[REG_EFL],
+        (const uint64_t *)PE_SLOT(generation).spill,&pe.recovery_scratch,&pe.recovered);
+#else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
     pe.recovery_result=li2_pb_compact_recover(&pe_payload()->plan,pc,raw,(uint64_t)g[REG_EFL],
         (const uint64_t *)PE_SLOT(generation).spill,&pe.recovery_scratch.direct,&pe.recovered);
 #else
     pe.recovery_result=li2_pg_compact_recover(&pe_payload()->plan,pc,raw,(uint64_t)g[REG_EFL],
         (const uint64_t *)PE_SLOT(generation).spill,&pe.recovery_scratch,&pe.recovered);
+#endif
 #endif
     if(!pe.recovery_result && pe.recovered.complete) {
         pe.recovery_complete=1;
@@ -1344,10 +1383,14 @@ int li2_pg_epoch_cancel(const struct li2_pg_token *t,int sig,siginfo_t *si,ucont
     enum li2_chain_result *result) {
     if(!pe_token(t) || pe.p.phase!=LI2_PG_HELD || !pe_busy || pe_active || !result ||
        pe.consumed || pe.redirected || pe.p.opened_pages || pe_decoding ||
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+       !pe.build_returned || !li2_pfr_miss_valid(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild) ||
+#else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
        !pe.build_returned || !li2_pbr_miss_valid(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild) ||
 #else
        !pe.build_returned || !li2_pg_miss_valid(&pe.cold,&pe.miss,pe.build_result) ||
+#endif
 #endif
        !le_unchanged(&pe.before,si,uc) || li2_tf_chain_span_progress()->serial!=pe.p.transfer_serial ||
        li2_tf_chain_span_quiet(pe.ticket))return PE_STATE;
@@ -1380,7 +1423,7 @@ int li2_pg_epoch_cancel(const struct li2_pg_token *t,int sig,siginfo_t *si,ucont
 #ifdef LI2_PERSISTENT_RETAINED_TWO_CAPTURE
     ptr2o_cancelled(sig,si,uc,*result);
 #endif
-#ifdef LI2_PERSISTENT_BLOCK_CAPTURE
+#if defined(LI2_PERSISTENT_FUSED_CAPTURE) || defined(LI2_PERSISTENT_BLOCK_CAPTURE)
     pbo_cancelled(sig,si,uc,*result);
 #endif
     __asm__ volatile("":::"memory");pe_busy=0;pe.resuming=0;
@@ -1643,7 +1686,7 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
     pgo_miss_held();
 #endif
-#ifdef LI2_PERSISTENT_BLOCK_CAPTURE
+#if defined(LI2_PERSISTENT_FUSED_CAPTURE) || defined(LI2_PERSISTENT_BLOCK_CAPTURE)
     pbo_miss_held();
 #endif
 #ifdef LI2_PERSISTENT_RESIDENT_CAPTURE
@@ -1892,10 +1935,14 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #include "persistent_subentry_observe.inc"
 #endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
+#ifdef LI2_PERSISTENT_FUSED_CAPTURE
+#include "persistent_fused_observe.inc"
+#else
 #ifdef LI2_PERSISTENT_BLOCK_CAPTURE
 #include "persistent_block_observe.inc"
 #else
 #include "persistent_direct_frontier_observe.inc"
+#endif
 #endif
 #endif
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE

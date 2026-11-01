@@ -1,0 +1,185 @@
+{
+  "archive": {
+    "bytes": 11961622,
+    "mode": "0644",
+    "sha256": "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d"
+  },
+  "archive_builds": 0,
+  "archive_source_provenance_verified": false,
+  "binary": {
+    "bytes": 2932600,
+    "mode": "0755",
+    "sha256": "cf3e65621e323ce55cfc836b033b1e45d555020587a31e9ba3d5744e7792e79e"
+  },
+  "build": {
+    "bounds": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "duration_ns": 3052831990,
+    "exit": 0,
+    "name": "bounded_fusion_plan-build",
+    "reaped": true,
+    "timed_out": false
+  },
+  "cleanup_complete": true,
+  "collector_summary": {
+    "bytes": 33891,
+    "sha256": "80ff66b35cf6b8c10b628780c3f15e29d8424f224cae1f0cabda09c461f4731e"
+  },
+  "commands": {
+    "failed": 0,
+    "succeeded": 44,
+    "total": 44
+  },
+  "component": {
+    "bounds": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "duration_ns": 1244579206,
+    "exit": 0,
+    "name": "bounded_fusion_plan-component",
+    "reaped": true,
+    "timed_out": false
+  },
+  "cpu": 8,
+  "custody_counts": {
+    "actual_link_inputs": 27,
+    "aliases": 298,
+    "artifacts": 170,
+    "captures": 88,
+    "compiler_m_dependencies": 105,
+    "inputs": 288,
+    "saved_compiler_intermediates": 36,
+    "translation_units": 9
+  },
+  "final_error_count": 0,
+  "generated_execution": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 8,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "native_execution": 0,
+  "original_corruption_assertions_removed": 0,
+  "original_corruption_cases_required": 14,
+  "owner_credit": false,
+  "performance_credit": false,
+  "prior_attempt": {
+    "private_receipt": {
+      "bytes": 228476,
+      "sha256": "ab9f67b2b9e2298e454fa4855a03bb5b60df99aaf1f30b807ffe9878abb49c4e"
+    },
+    "published_result": "evaluation/inprocess/results/20261101-bounded-fusion-component-4adbd976-failed.json",
+    "published_result_fact": {
+      "bytes": 3951,
+      "sha256": "36835aa415c4f1cec71534a54ee33482c6011764cb3a8cbcb0f077b2ef1b30f3"
+    },
+    "source_revision": "4adbd97660ab181e817a4e50e177c10a9adedd35",
+    "status": "failed"
+  },
+  "private_receipt": {
+    "bytes": 228789,
+    "sha256": "124360253af6f677bba42544e593ab072d3fe622d9cf9b266ce400113714fb94"
+  },
+  "profile": "experimental-bounded-fused-component-v1",
+  "qualification_credit": false,
+  "recipe": {
+    "bytes": 1288,
+    "mode": "0755",
+    "sha256": "052e563facea68ac602557f7e57015c4bca0bbe3dcd3ed37312d67ce10549d94"
+  },
+  "reproduction": {
+    "argv": [
+      "python3",
+      "-B",
+      "evaluation/inprocess/bounded_fusion_component/run.py",
+      "--expect-revision",
+      "b059a9b3abdcbe8cd6730420e592fbdabde749e1",
+      "--archive",
+      "target/release/libli2_page_selected_decoder.a",
+      "--archive-sha256",
+      "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d",
+      "--cpu",
+      "8",
+      "--output",
+      "target/evaluation/inprocess/bounded-fusion-component-attempt-2"
+    ],
+    "bounds": {
+      "build": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "component": [
+        5,
+        536870912,
+        16777216,
+        15
+      ]
+    },
+    "compiler": {
+      "bytes": 1093144,
+      "mode": "0755",
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "output_must_not_exist": true,
+    "python_binary": {
+      "bytes": 13542408,
+      "mode": "0755",
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "reservation": "one externally reserved CPU",
+    "working_directory": "repository root"
+  },
+  "result": {
+    "copied_boundaries": 56,
+    "corruptions": 14,
+    "direct_models": 1536,
+    "emitted_execution": 0,
+    "interiors": 19964,
+    "misses": 10,
+    "mov_models": 1280,
+    "old_version_refusals": 60,
+    "owner_credit": 0,
+    "plans": 14,
+    "typed_direct": 41984,
+    "typed_mov": 83456,
+    "version": 11
+  },
+  "result_stdout": {
+    "bytes": 239,
+    "sha256": "297e69e827b9a2a412097da082d25a53b1dfe28cf4f5114ebf4ea62c107526df"
+  },
+  "schema": 1,
+  "source": {
+    "head_sources_match": true,
+    "revision": "b059a9b3abdcbe8cd6730420e592fbdabde749e1",
+    "source_manifest_sha256": "1e1059fef168d837befa1da69257dca0084b4677704fb64052dacc29a8a4d36a",
+    "tracked_clean": true,
+    "tree": "afcabec5a9831183cf7bb0e5aba9c31719fad667"
+  },
+  "source_unchanged": true,
+  "status": "components_passed"
+}

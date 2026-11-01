@@ -329,10 +329,14 @@ static int pgr_add_footprint(const struct li2_ag_descriptor *a,const ucontext_t 
 #endif
 int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,const ucontext_t *uc) {
     if(!pgr_token(t) || pg_rseq.first_error || !pg_rseq.seed_complete || !region_rseq_current(uc) ||
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+       !p || p->version!=LI2_PF_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
+#else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
        !p || p->version!=LI2_PB_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
 #else
        !p || p->version!=LI2_PG_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
+#endif
 #endif
        p->reserved || p->reserved2 ||
 #ifdef LI2_PERSISTENT_DISPATCH
@@ -369,8 +373,12 @@ int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,co
         struct li2_span_decoded actual={0};
         if(li2_decoder_span_describe(d->decoded.pc,window,n,&actual) ||
            !region_rseq_equal(d,&actual,sizeof actual))return pgr_bad(LI2_RSEQ_PLAN,502);
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+        if(h->kind!=LI2_PE_NONE && h->kind!=LI2_PE_MOV && h->kind!=LI2_PG_DIRECT)return pgr_bad(LI2_RSEQ_PLAN,550);
+#else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
         if(h->kind!=LI2_PE_NONE && h->kind!=LI2_PG_DIRECT)return pgr_bad(LI2_RSEQ_PLAN,550);
+#endif
 #endif
         if(h->kind==LI2_PE_NONE) {
             struct li2_write_footprint independent={0};

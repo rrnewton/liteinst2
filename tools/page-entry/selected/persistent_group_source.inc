@@ -227,10 +227,14 @@ int li2_pg_source_validate(const struct li2_pg_token *t,const struct li2_pg_comp
     const struct li2_pg_sources *s=&pg_source.p.source;
     if(!pgs_token(t) || pg_source.p.first_error ||
        (pg_source.p.phase!=LI2_PGS_HELD && pg_source.p.phase!=LI2_PGS_RX && pg_source.p.phase!=LI2_PGS_CLOSED) ||
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+       !p || p->version!=LI2_PF_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
+#else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
        !p || p->version!=LI2_PB_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
 #else
        !p || p->version!=LI2_PG_COMPACT_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
+#endif
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY
        p->reserved || p->reserved2 || (p->entry!=s->key.entry && !pgs_subentry_plan(t,p)) ||
@@ -424,10 +428,14 @@ static int pgsd_member(const struct li2_pgd_member *m,const struct li2_pg_source
        !r->root || r->root!=m->key->entry || r->root!=p->entry ||
        !pgs_layout(&r->layout) || r->layout.directory!=directory ||
        !equal(&r->layout,&p->layout,sizeof p->layout) ||
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+       p->version!=LI2_PF_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
+#else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
        p->version!=LI2_PB_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
 #else
        p->version!=LI2_PG_COMPACT_VERSION || p->bytes!=sizeof *p || p->ready!=1 || p->result ||
+#endif
 #endif
        p->reserved || p->reserved2 || !p->heads || p->heads>LI2_PG_HEADS ||
        p->member_heads[0]!=(p->heads<64?p->heads:64) ||
