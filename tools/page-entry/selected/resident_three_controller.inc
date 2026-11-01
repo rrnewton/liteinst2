@@ -243,6 +243,7 @@ static int selected_resident_three_trace_try(int sig,siginfo_t *si,ucontext_t *u
     r3.busy=1;r3.phase=LI2_R3_CLOSING_TRACE;++r3.serial;
     r3.token=(struct li2_r3_token){&r3,r3.serial};r3.consumed=0;r3.released=0;r3.exit_seen=0;
     le_zero(&r3.before,sizeof r3.before);le_zero(&r3.after,sizeof r3.after);
+    le_zero(&r3.fetch,sizeof r3.fetch);
     int e=route==2?li2_tf_chain_span_close_direct(&selected_chain,sig,si,uc,&r3.ticket):
         route==1?li2_tf_chain_span_close_cross_page(&selected_chain,sig,si,uc,&r3.ticket):
         li2_tf_chain_span_close(&selected_chain,sig,si,uc,&r3.ticket);
