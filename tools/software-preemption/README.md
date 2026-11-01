@@ -162,6 +162,43 @@ fork-at-entry refusal. The [batch evaluation](../../evaluation/owned-clock-batch
 records execution status. No new timing or speedup is claimed; the earlier
 per-call benchmark results remain unchanged.
 
+## Counter admission comparison
+
+`region-admission-bench ORDER NEW_ABSOLUTE_OUTPUT` is a separate release
+comparison of `native`, `counter-per-call`, and `counter-batch`. `ORDER` must be
+an exact permutation of those three labels. Both Counter arms use the same
+generated image for the unchanged 36-byte nested loop. Native uses its original
+body. Each batch makes 2,048 calls and returns checksum 24,576. Both Counter
+arms check 30,720 encounters, 22,528 taken edges, remaining quantum 64 and the
+complete clock canary; native checks that the complete clock is unchanged.
+There are no Stop measurements or callbacks in this comparison.
+
+The ordinary arm retains a guard and real PID/TID check on every call. The
+batch arm uses one `begin_batch(2048, 15)`, one precharged token acknowledged
+after each exact return, and explicit `finish`. Its stronger unsafe exclusion
+and no-fork obligations span host-loop gaps as well as calls. This compares
+admitted strategies; it does not provide equivalent dynamic enforcement or
+isolate syscall cost.
+
+After the same bounded Ready/Go exchange, timing includes calls, bookkeeping
+and ordinary guards or batch admission, tokens and finish. Mapping, spawn,
+affinity/TLS setup, lease acquire/reset, final checks and join stay outside.
+The existing two-second handoff deadline and finite work bound remain. Each
+process writes all 204 CSV rows: three untimed full qualifications, nine
+warmups and 192 measurements (64 per arm). Every untimed call must return 12.
+A caught panic marks the active row FAILED and leaves successors UNOBSERVED.
+An abrupt exit can retain a DISPATCHED row and INCOMPLETE summary; the owner
+retains either outcome as failure.
+
+Run the complete same-binary `region-oracle` and `region-batch-oracle` first.
+The new command requires a reserved controller/worker CPU pair, and a bounded
+owner with 60 CPU seconds, 90 wall seconds, 1 MiB file/capture caps and core0.
+Process replication, the fixed 12-process balanced order and process-level
+confidence intervals belong to its separate owner. The two output files are
+`measurements.csv` and `summary.json`; no performance result or speedup is
+established by the command's existence. The old native/counter/Stop command,
+its actual rejection controls and its historical results remain unchanged.
+
 ## Explicit SPSC handoff experiment
 
 `inline-clock-spsc-v1` selects a separate handoff implementation for the same
