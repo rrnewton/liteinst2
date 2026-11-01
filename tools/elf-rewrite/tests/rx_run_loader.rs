@@ -455,11 +455,12 @@ fn arm(root: &Path, name: &str, bytes: &[u8]) -> Outcome {
             libc::alarm(10);
             let argv = [c"rx-run-fixture".as_ptr(), std::ptr::null()];
             let envp = [c"LC_ALL=C".as_ptr(), std::ptr::null()];
+            // libc declares char** here; Linux only reads these arrays and strings.
             libc::execveat(
                 executable.as_raw_fd(),
                 c"".as_ptr(),
-                argv.as_ptr(),
-                envp.as_ptr(),
+                argv.as_ptr().cast(),
+                envp.as_ptr().cast(),
                 libc::AT_EMPTY_PATH,
             );
             Err(std::io::Error::last_os_error())
