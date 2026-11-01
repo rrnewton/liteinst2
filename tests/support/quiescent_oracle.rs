@@ -590,6 +590,17 @@ mod ordered_trace {
         include!("routed_jmp_native.rs");
     }
 
+    // Additive early point-gate adapters reuse the exact state comparator and
+    // ptrace primitives. Existing trace/fork/event-expectation methods stay exact.
+    #[cfg(test)]
+    pub mod early_control_race {
+        include!("early_control_race.rs");
+    }
+    #[cfg(test)]
+    pub mod early_control_static {
+        include!("early_control_static.rs");
+    }
+
     const EVENT_CAPACITY: usize = 128;
     thread_local! {
         static ACTIVE_LOG: Cell<(*mut u64, usize)> = const { Cell::new((core::ptr::null_mut(), 0)) };

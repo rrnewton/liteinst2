@@ -204,6 +204,10 @@ impl PlannedInstall {
     /// below the red zone for the callback and extended-state image.
     /// A pun requires executable fetch permissions for its entire `consumed`
     /// range (five bytes, or 5+P with T1 prefixes), including unchanged successors.
+    /// For an early point-observation image, each optional callback invocation
+    /// must be independently dispensable; hidden interval/clock obligations in
+    /// opaque callbacks are not checked by the planner or publisher. Keep the
+    /// ordinary full callback/save-stack extent valid even while disabled.
     pub unsafe fn publish(
         &self,
         writable_base: *mut u8,
@@ -442,6 +446,31 @@ pub fn plan_coalesced_detailed(
     plan_coalesced_core(&PlanningRequest::live(request), actions)
 }
 
+/// Plan ordinary point observers with an optional gate before context capture.
+///
+/// Requires live Observe/RelocationOnly and the ordinary Legacy128 stack
+/// profile. Each `EarlyIfEnabled` action must describe an optional point whose
+/// invocation may independently disappear; an opaque callback cannot be checked
+/// for hidden interval, clock or entry/return obligations. `AfterCapture` keeps
+/// the existing controlled dispatcher. Both paths retain its acquire check,
+/// control ownership and eventual visibility: disable does not drain execution.
+///
+/// Existing source, entry, stack, callback and publication obligations apply.
+/// The image uses at most one mapping and 8,192 page-rounded bytes, subject to
+/// every smaller caller allocation limit. No artifact, frame-trace, ptrace-stack
+/// or interval profile is selected by this API. `request.hook` is unused.
+pub fn plan_point_observations_detailed(
+    request: &InstallRequest<'_>,
+    actions: &[crate::controls::PointObservationAction],
+) -> Result<PlannedInstall, PlanningFailure> {
+    let mut allocation = request.allocation.clone();
+    allocation.max_mappings = allocation.max_mappings.min(1);
+    allocation.max_mapped_bytes = allocation.max_mapped_bytes.min(8192);
+    let mut request = PlanningRequest::live(request);
+    request.site.allocation = &allocation;
+    plan_coalesced_flavor(&request, CoalescedActions::PointObservations(actions), None)
+}
+
 /// Controlled observation with an explicit immutable storage profile.
 ///
 /// Requires Observe/RelocationOnly before image search. Existing complete entry,
@@ -643,6 +672,7 @@ pub unsafe fn plan_precontext_coalesced_detailed_after(
 #[derive(Clone, Copy)]
 enum CoalescedActions<'a> {
     Controlled(&'a [crate::controls::ControlledAction]),
+    PointObservations(&'a [crate::controls::PointObservationAction]),
     ControlledProfile(
         &'a [crate::controls::ControlledAction],
         crate::trampoline::ObservationStackProfile,
@@ -653,18 +683,21 @@ impl<'a> CoalescedActions<'a> {
     fn len(self) -> usize {
         match self {
             Self::Controlled(a) | Self::ControlledProfile(a, _) => a.len(),
+            Self::PointObservations(a) => a.len(),
             Self::PreContext(a) => a.len(),
         }
     }
     fn pc(self, index: usize) -> u64 {
         match self {
             Self::Controlled(a) | Self::ControlledProfile(a, _) => a[index].logical_pc,
+            Self::PointObservations(a) => a[index].controlled_action().logical_pc,
             Self::PreContext(a) => a[index].logical_pc(),
         }
     }
     fn control(self, index: usize) -> &'a crate::controls::ProbeControl {
         match self {
             Self::Controlled(a) | Self::ControlledProfile(a, _) => &a[index].control,
+            Self::PointObservations(a) => &a[index].controlled_action().control,
             Self::PreContext(a) => a[index].control(),
         }
     }
@@ -715,7 +748,10 @@ fn plan_coalesced_flavor(
     let mut attempts = Vec::new();
     let mut search_evidence = SearchEvidence::default();
     let result = (|| {
-        if let CoalescedActions::ControlledProfile(_, _) = actions {
+        if matches!(
+            actions,
+            CoalescedActions::ControlledProfile(_, _) | CoalescedActions::PointObservations(_)
+        ) {
             let qualified = if clock.is_some() {
                 Err(Refusal::InvalidPlan)
             } else if request.semantics != HookSemantics::Observe
@@ -1547,9 +1583,15 @@ fn emit_relocation_window(
                 return Err(Refusal::InvalidPlan);
             }
             (Some(_), Some(CoalescedActions::PreContext(_))) => return Err(Refusal::InvalidPlan),
+            (Some(_), Some(CoalescedActions::PointObservations(_))) => {
+                return Err(Refusal::InvalidPlan);
+            }
             (Some(action), _) => TrampolinePlan::from_backedge_clock(scan, physical, end, action),
             (None, Some(CoalescedActions::Controlled(actions))) => {
                 TrampolinePlan::from_controlled_actions(scan, physical, end, actions)
+            }
+            (None, Some(CoalescedActions::PointObservations(actions))) => {
+                TrampolinePlan::from_point_observation_actions(scan, physical, end, actions)
             }
             (None, Some(CoalescedActions::ControlledProfile(actions, profile))) => {
                 TrampolinePlan::from_controlled_actions_with_stack_profile(

@@ -2,7 +2,7 @@
 //!
 //! Control changes request whether a future dispatch calls its callback. They
 //! do not drain a callback that already observed `true`, establish quiescence,
-//! or make generated code reclaimable. The observing emitter saves full state
+//! or make generated code reclaimable. The original observing emitter saves full state
 //! before testing the control, so a disabled callback still pays that cost.
 //! Controls are process-local heap objects. A fork inherits a snapshot, not
 //! shared enable state; new controlled images must not be published into another
@@ -30,6 +30,23 @@ pub(crate) struct ControlBlock {
     enabled: AtomicBool,
     managed: bool,
     bound_callback: Option<ManagedCallback>,
+}
+
+/// A borrowed load operand, derived from the actual field rather than an ABI
+/// offset into the non-repr(C) control block. The emitting plan/image still
+/// retain the complete control owner for the executable lifetime.
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(crate) struct EnabledLoad<'a> {
+    enabled: &'a AtomicBool,
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+impl EnabledLoad<'_> {
+    pub(crate) fn address(&self) -> u64 {
+        const { assert!(core::mem::size_of::<AtomicBool>() == 1) };
+        const { assert!(core::mem::align_of::<AtomicBool>() == 1) };
+        self.enabled as *const AtomicBool as usize as u64
+    }
 }
 
 /// Opaque identity borrowed only for the active managed callback. The dispatch
@@ -211,6 +228,13 @@ impl ProbeControl {
         Arc::as_ptr(&self.inner) as usize as u64
     }
 
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(crate) fn enabled_load(&self) -> EnabledLoad<'_> {
+        EnabledLoad {
+            enabled: &self.inner.enabled,
+        }
+    }
+
     #[cfg(test)]
     pub(crate) fn downgrade(&self) -> std::sync::Weak<ControlBlock> {
         Arc::downgrade(&self.inner)
@@ -245,6 +269,48 @@ pub struct ControlledAction {
     pub logical_pc: u64,
     /// Independently owned callback control for this head.
     pub control: ProbeControl,
+}
+
+/// Explicit ordinary point-observer policy; every original instruction runs.
+///
+/// The caller must use EarlyIfEnabled only for an optional point observation
+/// whose invocation may independently disappear. An opaque callback cannot be
+/// inspected for hidden entry/return pairing or other mandatory obligations.
+/// This does not convert interval/clock actions or grant publication safety.
+/// Both variants retain the existing eventual control and callback contracts:
+/// disabling is neither drainage nor executable reclamation.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum PointObservationAction {
+    /// Keep the original full-capture-then-controlled-dispatch path.
+    AfterCapture(ControlledAction),
+    /// Permit an early false load to bypass this action's own helper. A true
+    /// load still reaches the unchanged full capture and dispatcher recheck.
+    EarlyIfEnabled(ControlledAction),
+}
+
+impl PointObservationAction {
+    /// Exact original head and retained control used by either policy.
+    pub fn controlled_action(&self) -> &ControlledAction {
+        match self {
+            Self::AfterCapture(action) | Self::EarlyIfEnabled(action) => action,
+        }
+    }
+}
+
+/// Final verified addresses of one optional ordinary point gate.
+/// These immutable observations confer no entry, mutation or lifetime authority.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct EarlyControlGateLayout {
+    /// Original instruction head associated with this control.
+    pub logical_pc: u64,
+    /// Generated entry before the scratch save and early load.
+    pub entry: u64,
+    /// Exact JRCXZ address immediately after MOVZX loaded the Boolean into RCX.
+    pub post_load: u64,
+    /// Unchanged full capture/dispatch/restore helper entry.
+    pub observing_entry: u64,
+    /// Restored original instruction, reached by both paths.
+    pub original_body: u64,
 }
 
 /// Called only by a generated observing frame after complete state capture.
@@ -339,5 +405,25 @@ mod tests {
             first.is_enabled(),
             "dropping authority does not grant it to readers"
         );
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn early_control_load_descriptor_is_the_exact_retained_atomic_field() {
+        let (control, mut writer) = ProbeControl::new_managed(callback, false);
+        let clone = control.clone();
+        let load = control.enabled_load();
+        assert_eq!(
+            load.address(),
+            (&control.inner.enabled as *const AtomicBool) as usize as u64
+        );
+        assert_eq!(load.address(), clone.enabled_load().address());
+        assert!(!load.enabled.load(Ordering::Acquire));
+        writer.set_enabled(true);
+        assert!(load.enabled.load(Ordering::Acquire));
+        assert!(clone.try_set_enabled(false).is_err());
+        assert!(load.enabled.load(Ordering::Acquire));
+        let other = ProbeControl::new(callback, true);
+        assert_ne!(load.address(), other.enabled_load().address());
     }
 }
