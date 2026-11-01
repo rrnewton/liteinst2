@@ -13,6 +13,20 @@ static int pf_excluded(const struct li2_mg_table *table,uintptr_t first,size_t b
     return 0;
 }
 
+/* This is a known refused graph, not an admitted external backward edge.
+   Only an already resolved exact unsupported frontier receives a diagnosis.
+   A hole, invalid token, forward/outside target or ready frontier stays fatal. */
+static void pf_backward_refusal(const struct li2_pg_plan *p,
+    const struct li2_span_decoded *d,unsigned token,struct li2_pg_miss *miss) {
+    if(!d->ready || (d->flow!=LI2_REGION_JCC && d->flow!=LI2_REGION_JMP) ||
+       d->target>d->decoded.pc || !li2_pf_in_pair(p->page,d->target) ||
+       p->exits>LI2_PG_BOUNDARIES || token<LI2_PG_HEADS || token-LI2_PG_HEADS>=p->exits)return;
+    const unsigned x=token-LI2_PG_HEADS;
+    if(p->exit_pc[x]!=d->target || p->frontier[x].decoded.pc!=d->target ||
+       p->frontier[x].ready || !p->frontier[x].refusal)return;
+    pgd_mark(miss,LI2_PFD_BACKWARD_UNSUPPORTED,LI2_PGD_SOURCE,d->decoded.pc,d->target);
+}
+
 static int pf_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
     struct node q[LI2_PG_HEADS+LI2_PG_BOUNDARIES]={0};unsigned n=0;
     unsigned char occupied[LI2_PE_SOURCES][LI2_REGION_PAGE]={{0}};
@@ -118,10 +132,10 @@ static int pf_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
                        !equal(&p->frontier[k-LI2_PG_HEADS],d,sizeof *d))return LI2_PG_GRAPH;
                 } else {
                     if(!resolve(q,n,a->target[arm],&h->successors[arm]))return LI2_PG_GRAPH;
-                    /* Backward closure requires a generated exact head, not an
-                       unsupported frontier. Unclassified failure is terminal;
-                       a caller must not invent a cancel diagnosis for it. */
-                    if(arm==0 && h->successors[arm]>=p->heads)return LI2_PG_GRAPH;
+                    /* The plan still refuses: no generated backward head. */
+                    if(arm==0 && h->successors[arm]>=p->heads) {
+                        pf_backward_refusal(p,d,h->successors[arm],miss);return LI2_PG_GRAPH;
+                    }
                 }
             }
             continue;
@@ -130,7 +144,9 @@ static int pf_graph(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
         h->successor_count=flow==LI2_REGION_JCC?2:1;
         if(!resolve(q,n,flow==LI2_REGION_NEXT?d->decoded.next_pc:d->target,&h->successors[0]) ||
            (h->successor_count==2 && !resolve(q,n,d->decoded.next_pc,&h->successors[1])))return LI2_PG_GRAPH;
-        if(flow==LI2_REGION_JMP && h->successors[0]>=p->heads)return LI2_PG_GRAPH;
+        if(flow==LI2_REGION_JMP && h->successors[0]>=p->heads) {
+            pf_backward_refusal(p,d,h->successors[0],miss);return LI2_PG_GRAPH;
+        }
     }
     for(unsigned i=0;i<p->heads;i++)for(unsigned j=0;j<p->head[i].successor_count;j++) {
         unsigned k=p->head[i].successors[j];

@@ -311,6 +311,10 @@ struct li2_pg_epoch {
 #else
     struct li2_mg_plan recovery_scratch;
 #endif
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+    /* Separate protected PF accounting; never an old reason or ABI2 cell. */
+    uint64_t pf_backward_refused,pf_backward_cancelled;
+#endif
 };
 static struct li2_pg_epoch pe;
 #ifdef LI2_PERSISTENT_RET_DISPATCH
@@ -734,6 +738,9 @@ static void ped_count(uint64_t *v) {pe_need(*v!=UINT64_MAX,PE_OVERFLOW,0);++*v;}
 #endif
 static unsigned ped_bank_for(uintptr_t pc) {return pc<(UINT64_C(1)<<31)?0:1;}
 static int ped_capacity(void) {
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+    if(pe.pf_backward_refused==UINT64_MAX || pe.pf_backward_cancelled==UINT64_MAX)return 0;
+#endif
 #ifdef LI2_PERSISTENT_SUBENTRY
     if(pe.subentry_selections==UINT64_MAX || pe.subentry_hits==UINT64_MAX ||
        pe.subentry_entries==UINT64_MAX || pe.subentry_completed==UINT64_MAX)return 0;
@@ -1023,7 +1030,8 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         if(pe.build_result) {
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
             pe_need(li2_pfr_miss_valid(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild) &&
-                pe.miss.reason>0 && pe.miss.reason<LI2_PGD_REASON_COUNT,PE_PLAN,pe.build_result);
+                pe.miss.reason>0 && (pe.miss.reason<LI2_PGD_REASON_COUNT ||
+                pe.miss.reason==LI2_PFD_BACKWARD_UNSUPPORTED),PE_PLAN,pe.build_result);
 #else
 #ifdef LI2_PERSISTENT_BLOCK_RUNTIME
             pe_need(li2_pbr_miss_valid(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild) &&
@@ -1032,6 +1040,10 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
             pe_need(li2_pg_miss_valid(&pe.cold,&pe.miss,pe.build_result) &&
                 pe.miss.reason>0 && pe.miss.reason<LI2_PGD_REASON_COUNT,PE_PLAN,pe.build_result);
 #endif
+#endif
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+            if(pe.miss.reason==LI2_PFD_BACKWARD_UNSUPPORTED)ped_count(&pe.pf_backward_refused);
+            else
 #endif
             ped_count(PGC_MISS_REF(pe.miss.reason));pe_decoding=0;selected_initialized();
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
@@ -1414,6 +1426,9 @@ int li2_pg_epoch_cancel(const struct li2_pg_token *t,int sig,siginfo_t *si,ucont
     selected_step_pending=*result==LI2_CHAIN_RUNNING;
     selected_pending_route=selected_step_pending?SELECTED_GENERIC_TF:SELECTED_NO_STEP;
     pe.p.phase=LI2_PG_CANCELLED;pe.ticket=0;selected_initialized();ped_count(PGC_REF(cancelled));
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+    if(pe.miss.reason==LI2_PFD_BACKWARD_UNSUPPORTED)ped_count(&pe.pf_backward_cancelled);
+#endif
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
     rcc_finish(1);
 #endif
@@ -1818,6 +1833,17 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
     __asm__ volatile("":::"memory");pe_busy=0;selected_fetch(sig,si,uc);
 }
 static void selected_persistent_report(unsigned status,unsigned code,long detail) {
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+    {
+        struct writer pf={.used=0};text(&pf,"LI2_PF_REFUSALS {\"version\":1");
+        field(&pf,",\"policy_version\":",LI2_PF_VERSION);
+        field(&pf,",\"reason\":",LI2_PFD_BACKWARD_UNSUPPORTED);
+        field(&pf,",\"status\":",status);field(&pf,",\"failure_code\":",code);
+        field(&pf,",\"refused\":",pe.pf_backward_refused);
+        field(&pf,",\"cancelled\":",pe.pf_backward_cancelled);
+        text(&pf,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)pf.bytes,pf.used,0,0,0);
+    }
+#endif
 #ifdef LI2_SEALED_BYTE_CERTIFICATE
     sbc_report(status,code);
 #endif

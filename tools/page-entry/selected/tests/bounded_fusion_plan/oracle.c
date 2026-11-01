@@ -125,6 +125,70 @@ static void refuse(uintptr_t entry,int result,unsigned reason) {
         }
         assert(!li2_pfr_miss_valid(&full,&miss,LI2_PG_MISS,&scratch) &&
             !li2_pfr_miss_valid(&full,&miss,0,&scratch));
+    } else if(reason==LI2_PFD_BACKWARD_UNSUPPORTED) {
+        /* Same source and GRAPH/unready outcome as the existing backedge
+           puzzle. Only this exact refused shape gets the new diagnosis. */
+        assert(result==LI2_PG_GRAPH && full.heads==1 && full.exits==2 && !full.stores &&
+            !full.links && full.source_bytes==6 && miss.site==LI2_PGD_SOURCE &&
+            miss.pc==entry && miss.detail==pages[0]+0xf0 && full.head[0].successors[0]==LI2_PG_HEADS+1 &&
+            full.exit_pc[1]==miss.detail && full.frontier[1].decoded.pc==miss.detail &&
+            !full.frontier[1].ready && li2_pfr_miss_valid(&full,&miss,result,&scratch));
+        assert(!full.ready && li2_pf_plan_validate(&full,&scratch)==LI2_PG_CORRUPT &&
+            li2_pf_compact_build(&full,&scratch,&compact)==LI2_PG_CORRUPT);
+        for(unsigned i=0;i<6;i++) {
+            struct li2_pg_miss altered=miss;
+            if(i==0)altered.version^=1;
+            if(i==1)altered.status^=1;
+            if(i==2)altered.reason^=1;
+            if(i==3)altered.site^=1;
+            if(i==4)altered.pc^=1;
+            if(i==5)altered.detail^=1;
+            assert(!li2_pfr_miss_valid(&full,&altered,result,&scratch));
+        }
+        for(unsigned i=0;i<13;i++) {
+            old=full;
+            if(i==0)old.ready=1;
+            if(i==1)old.result^=1;
+            if(i==2)--old.exits;
+            if(i==3)old.source[0][0x100]^=1;
+            if(i==4)--old.heads;
+            if(i==5)old.decoder_result=1;
+            if(i==6)old.table.node[0].first^=1;
+            if(i==7)old.head[0].successors[0]^=1;
+            if(i==8)old.exit_pc[1]^=1;
+            if(i==9)old.frontier[1].decoded.pc^=1;
+            if(i==10)old.frontier[1].ready=1;
+            if(i==11)old.original[0].target^=1;
+            if(i==12)old.source[0][0xf0]^=1;
+            assert(!li2_pfr_miss_valid(&old,&miss,result,&scratch));
+        }
+        /* Exercise the separate internal-JMP marking site with a genuine
+           planner invocation. It adds no counted puzzle or accepted graph. */
+        unsigned char saved[6];memcpy(saved,source[0]+0x100,sizeof saved);
+        branch(0x100,16,pages[0]+0xf0);
+        struct li2_pg_miss jump_miss;
+        assert(li2_pf_plan_pages(pages,source,entry,&layout,&table,&old,&jump_miss)==LI2_PG_GRAPH &&
+            old.version==LI2_PF_VERSION && old.result==LI2_PG_GRAPH && !old.ready &&
+            old.heads==1 && old.exits==1 && !old.stores && !old.links && old.source_bytes==5 &&
+            old.original[0].flow==LI2_REGION_JMP && old.head[0].kind==LI2_PE_NONE &&
+            old.head[0].successors[0]==LI2_PG_HEADS && old.exit_pc[0]==pages[0]+0xf0 &&
+            old.frontier[0].decoded.pc==old.exit_pc[0] && !old.frontier[0].ready &&
+            jump_miss.version==LI2_PF_VERSION && jump_miss.status==LI2_PG_GRAPH &&
+            jump_miss.reason==LI2_PFD_BACKWARD_UNSUPPORTED && jump_miss.site==LI2_PGD_SOURCE &&
+            jump_miss.pc==entry && jump_miss.detail==pages[0]+0xf0);
+        assert(!li2_pf_miss_validate(&old,&jump_miss,LI2_PG_GRAPH,&scratch) &&
+            li2_pfr_miss_valid(&old,&jump_miss,LI2_PG_GRAPH,&scratch));
+        assert(li2_pf_plan_validate(&old,&scratch)==LI2_PG_CORRUPT &&
+            li2_pf_compact_build(&old,&scratch,&compact)==LI2_PG_CORRUPT);
+        memcpy(source[0]+0x100,saved,sizeof saved);
+        assert(!memcmp(source,full.source,sizeof source));
+        struct li2_pg_miss unclassified=miss;
+        unclassified.reason=LI2_PGD_NONE;unclassified.site=0;unclassified.pc=0;unclassified.detail=0;
+        assert(!li2_pfr_miss_valid(&full,&unclassified,result,&scratch));
+        unclassified=miss;unclassified.reason=LI2_PGD_ROOT_UNSUPPORTED;
+        assert(!li2_pfr_miss_valid(&full,&unclassified,result,&scratch));
+        assert(!li2_pfr_miss_valid(&full,&miss,LI2_PG_MISS,&scratch) &&
+            !li2_pfr_miss_valid(&full,&miss,0,&scratch));
     } else if(reason==LI2_PGD_NONE || reason==LI2_PGD_NO_EXIT) {
         /* Unclassified backward closure and a no-exit cycle remain fatal. */
         assert(!li2_pfr_miss_valid(&full,&miss,result,&scratch));
@@ -213,7 +277,7 @@ static void puzzles(void) {
     reset();branch(0x100,16,pages[0]+0x200);accept(pages[0]+0x100,1,1,0,0);
     reset();at(0x100,mov,sizeof mov);branch(0x103,16,pages[0]+0x100);refuse(pages[0]+0x100,LI2_PG_GRAPH,LI2_PGD_NO_EXIT);
     reset();at(0x100,mov,sizeof mov);branch(0x103,4,pages[0]+0x101);refuse(pages[0]+0x100,LI2_PG_GRAPH,LI2_PGD_SOURCE_OVERLAP);
-    reset();branch(0x100,4,pages[0]+0xf0);refuse(pages[0]+0x100,LI2_PG_GRAPH,LI2_PGD_NONE); /* unsupported backedge is terminal */
+    reset();branch(0x100,4,pages[0]+0xf0);refuse(pages[0]+0x100,LI2_PG_GRAPH,LI2_PFD_BACKWARD_UNSUPPORTED); /* refused graph, exact PF diagnosis */
     reset();for(unsigned i=0;i<129;i++)at(0x200+3*i,mov,sizeof mov);refuse(pages[0]+0x200,LI2_PG_GRAPH,LI2_PGD_HEAD_LIMIT);
     reset();for(unsigned i=0;i<9;i++)branch(0x200+6*i,4,pages[0]+0x900);refuse(pages[0]+0x200,LI2_PG_GRAPH,LI2_PGD_EXIT_LIMIT);
     reset();for(unsigned i=0;i<65;i++)at(0x200+3*i,mov,sizeof mov);branch(0x200+65*3,4,pages[0]+0x200);

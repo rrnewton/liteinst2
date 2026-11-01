@@ -15,6 +15,10 @@
 #error "version 11 admits only existing NONE, guarded MOV, and direct branches"
 #endif
 #define LI2_PF_VERSION 11U
+/* PF-only diagnosis namespace: the shared PG reasons and ABI2 stay at 18. */
+#define LI2_PF_REFUSAL_VERSION 1U
+enum li2_pf_reason { LI2_PFD_BACKWARD_UNSUPPORTED=0x100U };
+_Static_assert((unsigned)LI2_PFD_BACKWARD_UNSUPPORTED>(unsigned)LI2_PGD_REASON_COUNT,"distinct PF refusal namespace");
 _Static_assert(LI2_PF_VERSION!=LI2_PG_VERSION && LI2_PF_VERSION!=LI2_PG_COMPACT_VERSION &&
     LI2_PF_VERSION!=10U,"separate fused policy never aliases BFS or PB10");
 /* Descriptive partition only; no source/execution or directory authority.
@@ -24,8 +28,9 @@ _Static_assert(LI2_PF_VERSION!=LI2_PG_VERSION && LI2_PF_VERSION!=LI2_PG_COMPACT_
    cuts. Initial head is exactly entry: backward closure does not move entry.
    Every cut retains the original branch-before state and full typed arm.
    Unknown non-root instructions stop before effect; unknown roots refuse.
-   A backward arm that cannot close onto a generated head refuses with an
-   unclassified GRAPH result; it grants no owner cancellation capability.
+   A backward arm resolved to an exact unsupported frontier refuses GRAPH
+   with a PF-only diagnosis; unresolved or malformed closure stays unclassified.
+   A diagnosis alone grants no owner cancellation or publication capability.
    All 128-head/8-boundary/2-source-page limits remain refusal limits, never
    implicit truncation. MOV uses the unchanged decoder/table/guard primitive.
    CALL/RET/indirect JMP/other writers are never admitted as generated heads. */
