@@ -243,6 +243,39 @@ fn prepare_selection_mode(
     )
 }
 
+/// Opt-in Linux PHDR-count-bounded serialization of the existing entry-veneer
+/// whole-program plan. Only adjacent already-owned generated RX pages share a
+/// LOAD header; addresses, bytes, planning limits and qualification are unchanged.
+pub fn prepare_disassembly_whole_packed_entry_veneer_mixed_neighbors(
+    original: &[u8],
+    selected: &disassembly::whole::WholeProgramSelection,
+) -> Result<Product, Error> {
+    let mut product = prepare_selection_with_carrier_layout(
+        original,
+        selected.selection.clone(),
+        false,
+        disassembly::NeighborMode::WholeEntryVeneerMixedPending,
+        None,
+        adjacent_b2_frontend::PairProfile::ForwardJcc,
+        CarrierTransaction {
+            hooks: TransactionHooks {
+                addon: None,
+                gate: |_| Ok(()),
+            },
+            packed_rx_runs: true,
+        },
+    )?;
+    product.files.remove("bundle-index.tsv");
+    product
+        .files
+        .extend(selected.packed_entry_veneer_mixed_files());
+    product.files.insert(
+        "bundle-index.tsv".into(),
+        ledger::index(selected.selection.original, &product.files),
+    );
+    Ok(product)
+}
+
 fn prepare_selection_with_mode(
     original: &[u8],
     selection: Selection,
@@ -344,7 +377,52 @@ fn prepare_selection_transaction(
     pair_profile: adjacent_b2_frontend::PairProfile,
     hooks: TransactionHooks<'_, impl FnMut(&'static str) -> Result<(), Error>>,
 ) -> Result<Product, Error> {
+    prepare_selection_with_carrier_layout(
+        original,
+        selection,
+        owned_neighbors,
+        mode,
+        adjacent,
+        pair_profile,
+        CarrierTransaction {
+            hooks,
+            packed_rx_runs: false,
+        },
+    )
+}
+
+// The planner mode is deliberately unchanged. Only this final serialization
+// choice differs; every legacy caller takes the original carrier branch.
+struct CarrierTransaction<'a, F> {
+    hooks: TransactionHooks<'a, F>,
+    packed_rx_runs: bool,
+}
+
+fn prepare_selection_with_carrier_layout(
+    original: &[u8],
+    selection: Selection,
+    owned_neighbors: bool,
+    mode: disassembly::NeighborMode,
+    adjacent: Option<disassembly::adjacent_b2::AdjacentB2Limits>,
+    pair_profile: adjacent_b2_frontend::PairProfile,
+    transaction: CarrierTransaction<'_, impl FnMut(&'static str) -> Result<(), Error>>,
+) -> Result<Product, Error> {
+    let CarrierTransaction {
+        hooks,
+        packed_rx_runs,
+    } = transaction;
     let TransactionHooks { addon, mut gate } = hooks;
+    if packed_rx_runs
+        && (owned_neighbors
+            || adjacent.is_some()
+            || addon.is_some()
+            || mode != disassembly::NeighborMode::WholeEntryVeneerMixedPending)
+    {
+        return Err(Error::new(
+            "carrier-layout",
+            "packed RX runs require the whole entry-veneer route",
+        ));
+    }
     if owned_neighbors && mode != disassembly::NeighborMode::LongOnly {
         return Err(Error::new(
             "neighbor-mode",
@@ -600,7 +678,9 @@ fn prepare_selection_transaction(
                 bytes: i.bytes().to_vec(),
             })
             .collect();
-        let write_carrier = if (owned_neighbors || adjacent.is_some())
+        let write_carrier = if packed_rx_runs {
+            carrier::append_carrier_with_linux_rx_runs
+        } else if (owned_neighbors || adjacent.is_some())
             && elf.header().object_type == carrier::elf64::ObjectType::Executable
         {
             if pair_profile == adjacent_b2_frontend::PairProfile::RoutedJmpUnion {
@@ -668,6 +748,9 @@ fn prepare_selection_transaction(
                     .map_err(|e| Error::new("sparse-wire", e))?,
                 );
                 ledger::carrier(&mut ledger, &output);
+                if packed_rx_runs {
+                    ledger::packed_rx_runs(&mut ledger, &output)?;
+                }
                 candidate = Some(output.bytes().to_vec());
                 for report in &mut reports {
                     report.candidate_emitted = true;

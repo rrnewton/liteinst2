@@ -337,6 +337,78 @@ pub(crate) fn carrier(ledger: &mut Vec<u8>, output: &carrier::CarrierOutput) {
     }
     ledger.extend_from_slice(out.as_bytes());
 }
+// Additive serialization records. Existing image/elf-image rows retain caller
+// order and identity; only a generated RX header may be shared by its members.
+pub(crate) fn packed_rx_runs(
+    ledger: &mut Vec<u8>,
+    output: &carrier::CarrierOutput,
+) -> Result<(), Error> {
+    use carrier::elf64::{Elf64, ParseLimits, SegmentType};
+    let elf = Elf64::parse(
+        output.bytes(),
+        ParseLimits {
+            max_program_headers: 1170,
+        },
+    )
+    .map_err(|e| Error::new("rx-run-ledger", e))?;
+    let mut groups = BTreeMap::<usize, Vec<usize>>::new();
+    for (id, image) in output.images.iter().enumerate() {
+        groups.entry(image.program_header).or_default().push(id);
+    }
+    let mut out = format!(
+        "RX-RUN-EXTENSION\t1\ncarrier_layout\tlinux-adjacent-generated-rx-runs-v1\nrx_run_count\t{}\nrx_run_image_count\t{}\n",
+        groups.len(),
+        output.images.len(),
+    );
+    for (run, (header, members)) in groups.iter().enumerate() {
+        let ph = elf
+            .program_headers()
+            .get(*header)
+            .ok_or_else(|| Error::new("rx-run-ledger", "missing generated header"))?;
+        if output.original_to_output_header.contains(header)
+            || *header == output.carrier_index
+            || ph.kind != SegmentType::Load
+            || ph.flags.0 != 5
+            || ph.alignment != 4096
+            || ph.vaddr.0 & 4095 != 0
+            || ph.offset.0 & 4095 != 0
+            || ph.file_size != ph.memory_size
+        {
+            return Err(Error::new("rx-run-ledger", "not a generated RX run"));
+        }
+        writeln!(
+            &mut out,
+            "rx-run\t{run}\t{header}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            ph.offset.0,
+            ph.file_size,
+            ph.vaddr.0,
+            ph.memory_size,
+            ph.flags.0,
+            ph.alignment,
+            members.len()
+        )
+        .unwrap();
+        for &id in members {
+            let image = &output.images[id];
+            let mapping = elf
+                .file_to_virtual(image.file.start(), image.file.len())
+                .map_err(|e| Error::new("rx-run-ledger", e))?;
+            if mapping.program_header != *header || mapping.virtual_range.start() != image.entry {
+                return Err(Error::new("rx-run-ledger", "image/header mapping mismatch"));
+            }
+            writeln!(
+                &mut out,
+                "rx-run-member\t{id}\t{run}\t{header}\t{}\t{}\t{}",
+                image.entry.0,
+                image.file.start().0,
+                image.file.len()
+            )
+            .unwrap();
+        }
+    }
+    ledger.extend_from_slice(out.as_bytes());
+    Ok(())
+}
 pub(crate) fn report(s: &Selection, reports: &[SiteReport], complete: bool) -> Vec<u8> {
     let mut out = format!(
         "LI2REPORT\t1\noriginal_sha256\t{}\nselection_sha256\t{}\ncandidate_complete\t{complete}\nqualification_complete\tfalse\nsite\tpc\tfile_offset\tlength\tcore_tactic\tcandidate_emitted\trefusal_code\tstage\tdetail_hex\n",
