@@ -518,7 +518,7 @@ class Main97abInventoryTests(unittest.TestCase):
         # Incoming finite-region/batch source adds 30 methods and eight docs.
         # Every old catalog remains exact behind the new whole inverse.
         clock = current.DATA['source_successor_abe7']
-        clock_rows = actual['harness_test_counts']['workspace_tests']
+        clock_rows = current.before_c110(actual)['harness_test_counts']['workspace_tests']
         clock_before = current.before_abe7(actual)
         self.assertEqual(current.digest(clock_before), current.CLOCK_PREVIOUS)
         self.assertEqual((len(clock_rows), sum(x['tests'] for x in clock_rows.values()),
@@ -623,6 +623,72 @@ class Main97abInventoryTests(unittest.TestCase):
         failed_row = parsing.parse_harnesses(failed, clock_expected, 1)[0]
         self.assertEqual((failed_row['outer']['result'], failed_row['outer']['passed'],
                           failed_row['outer']['failed']), ('FAILED', 2, 1))
+
+
+        # Incoming admission comparison adds three exact tests, no new harness.
+        # The complete former current catalog remains the sole predecessor.
+        comparison = current.DATA['source_successor_c110']
+        comparison_before = current.before_c110(actual)
+        comparison_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(comparison_before), current.ADMISSION_PREVIOUS)
+        self.assertEqual(comparison_before['harness_test_counts']['workspace_tests'], clock_rows)
+        self.assertEqual((len(comparison_rows), sum(x['tests'] for x in comparison_rows.values()),
+                          sum(x['ignored'] for x in comparison_rows.values())), (115, 4456, 39))
+        self.assertEqual((comparison['default_method_additions'], comparison['default_doctest_additions'],
+                          comparison['default_method_removals'], comparison['default_harness_changes'],
+                          comparison['default_ignore_changes'], comparison['recorder_identity_changes']),
+                         (3, 0, 0, 0, 0, 0))
+        self.assertEqual(sum(len(names) * len(comparison['default_method_instances'][path])
+                             for path, names in comparison['added_default_methods'].items()), 3)
+        self.assertEqual(comparison['added_ignored_methods'], {})
+        self.assertEqual((actual['recorder_tests'], actual['harness_test_counts']['serial_launch']),
+                         (comparison_before['recorder_tests'], comparison_before['harness_test_counts']['serial_launch']))
+        for wrong in (comparison_before, clock_before, overlap_before, rx_before, entry_before,
+                      placement_before, phase_catalog, native_indexed, old):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_c110(wrong)
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                inventory.require_current(wrong)
+        for name, change in comparison['workspace_changes'].items():
+            self.assertEqual(comparison_rows[name], change['current'])
+            self.assertEqual(clock_rows[name], change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(comparison_rows[name][field]), comparison_rows[name][field] + 1):
+                    wrong = copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_c110(wrong)
+            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_c110(wrong)
+        comparison_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
+            for path, names in comparison['added_default_methods'].items() for name in names]
+        comparison_stimuli += [(path, '#[test]\n    fn ' + name + '(',
+                                '#[test]\n    #[ignore]\n    fn ' + name + '(')
+            for path, names in comparison['added_default_methods'].items() for name in names]
+        comparison_stimuli += [(path, literal, '')
+            for path, literals in comparison['module_chains'].items() for literal in literals]
+        self.assertEqual(len(comparison_stimuli), 10)
+        for path, literal, replacement in comparison_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('comparison declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        for path in comparison['source_paths']:
+            target = current.ROOT / path; raw = read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate != target: return read(candidate)
+                    if missing: raise FileNotFoundError(path)
+                    return raw + b'\n'
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                        current.require_sources()
 
         # The new Cargo example has one exact source/binary/output-directory
         # identity. Its ten tests cannot be admitted under the generic matcher.
@@ -763,6 +829,25 @@ class Main97abInventoryTests(unittest.TestCase):
                 self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
                 self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
             self.assertEqual(actual['recorder_tests'], 366)
+
+        # The new outer projection also returns a private graph under publishing deepcopy.
+        for source in ('declared', 'metadata'):
+            supplied = copy.deepcopy(actual)
+            change = current.DATA['source_successor_c110']['workspace_changes']['unit/liteinst_preempt/main']
+            published.clear()
+            if source == 'declared':
+                supplied['harness_test_counts']['serial_launch'] = PublishedCopy(
+                    supplied['harness_test_counts']['serial_launch'])
+                result = current.before_c110(supplied)
+            else:
+                with patch.dict(change, previous=PublishedCopy(change['previous'])):
+                    result = current.before_c110(supplied)
+            self.assertEqual(result, comparison_before)
+            self.assertEqual(supplied, actual)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
 
         # Sparse inverses retain exact edit ordering, including equal-position
         # insertions, and both whole-byte identity gates.

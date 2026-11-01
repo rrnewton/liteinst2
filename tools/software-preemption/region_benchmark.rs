@@ -1,4 +1,10 @@
 //! One ordered cohort; process replication/randomization belongs to its owner.
+mod admission_comparison;
+
+pub(super) fn compare_admission(text: &str, output: &std::path::Path) {
+    admission_comparison::run(text, output);
+}
+
 use super::{counter, joined_worker_retired, region_clock::RegionProgram, single_main};
 use liteinst2::backedge_clock::{BackedgeClock, CLOCK_CANARY, ClockMode, ClockWords};
 use liteinst2::controls::{ControlIdentity, ProbeControl};

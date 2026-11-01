@@ -1,0 +1,179 @@
+{
+  "status": "PASS",
+  "revision": "77f83b73e308031a3fd6027d0708e2d3f1f15fc2",
+  "closed_record": {
+    "bytes": 3600,
+    "sha256": "7c54f38b98399f6e18d72bdedc5aadfa7b6dc82a5004937dd77fd909861b2dfc"
+  },
+  "scope": "Pure schema and Rust label/roster controls and strict compiler lint; no native command or performance qualification.",
+  "hardware": {
+    "host": "AMD EPYC Zen 5 dev host",
+    "architecture": "x86_64",
+    "logical_cpus": 316,
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor"
+  },
+  "cpus": [
+    3,
+    15,
+    25,
+    27,
+    37,
+    50,
+    65,
+    79,
+    90,
+    98,
+    100,
+    102
+  ],
+  "load_before": [
+    88.61,
+    54.13,
+    41.6
+  ],
+  "attempts_per_command": 1,
+  "jobs": 12,
+  "test_threads": 12,
+  "capture_bytes": 2097152,
+  "toolchain": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "recipe_sha256": "b2d62b64c7afe409ed73083f41b4356b4b7c335ded9723af5744e21f963a362b",
+  "schema_controls": {
+    "passed": 3,
+    "names": [
+      "test_changed_labels_work_and_timing_refuse",
+      "test_fixed_schedule_and_exact_means",
+      "test_missing_duplicate_and_wrong_profile_refuse"
+    ],
+    "census_limit": "Names derive from source; the retained nonverbose log reports Ran 3 / OK."
+  },
+  "rust_controls": {
+    "passed": 4,
+    "filtered": 32,
+    "names": [
+      "region_benchmark::admission_comparison::tests::csv_retains_exact_labels_clocks_and_incomplete_rows",
+      "region_benchmark::admission_comparison::tests::every_order_retains_complete_qualification_and_timing_denominator",
+      "region_benchmark::admission_comparison::tests::labels_bind_distinct_admission_to_one_counter_mode",
+      "region_benchmark::tests::repeated_region_schedule_matches_nested_loop"
+    ]
+  },
+  "commands": [
+    [
+      "schema-controls",
+      [
+        "/usr/bin/prlimit",
+        "--cpu=30",
+        "--as=268435456",
+        "--fsize=2097152",
+        "--core=0",
+        "--",
+        "/usr/bin/python3.9",
+        "-I",
+        "-B",
+        "evaluation/owned-clock-admission-throughput/test_summarize.py"
+      ],
+      60
+    ],
+    [
+      "tool-tests",
+      [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-j",
+        "12",
+        "-p",
+        "liteinst2",
+        "--bin",
+        "liteinst-preempt",
+        "region_benchmark"
+      ],
+      180
+    ],
+    [
+      "core-tool-clippy",
+      [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-j",
+        "12",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "--bin",
+        "liteinst-preempt",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      180
+    ]
+  ],
+  "outcomes": [
+    {
+      "name": "schema-controls",
+      "result": {
+        "start_utc": "2026-11-01T12:22:12.234574+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.09130864683538675,
+        "private_log_sha256": "bbd21010222fc9a70194dfbd9a19751537c8d29023915259f33a678eb9ef6173",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        88.61,
+        54.13,
+        41.6
+      ]
+    },
+    {
+      "name": "tool-tests",
+      "result": {
+        "start_utc": "2026-11-01T12:22:12.345881+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.7830940810963511,
+        "private_log_sha256": "9552a012d64184de4fd1101c16806797f8917cb91f45563c7723da6d8105c3c6",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        88.61,
+        54.13,
+        41.6
+      ]
+    },
+    {
+      "name": "core-tool-clippy",
+      "result": {
+        "start_utc": "2026-11-01T12:22:13.151231+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.782166238874197,
+        "private_log_sha256": "bb08f67eea513b7b89f9e4510ea670e33211191c5891c6ea08ae6419eca6a471",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        88.61,
+        54.13,
+        41.6
+      ]
+    }
+  ],
+  "undispatched": [],
+  "independent_review": {
+    "bytes": 6886,
+    "sha256": "ef9a849dd949cd565cfe8b458d0705adf1c7a624b067998edfb50749801e9c29"
+  },
+  "limits": "CPU reservation and process cleanup are recorded; no independent live allocator witness is claimed. Focused timing is operational, not a throughput measurement."
+}

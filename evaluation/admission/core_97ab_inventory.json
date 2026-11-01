@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "47fb567cd0066378f56fe88a9c6ac2d1595569c110029228a1568a6e020ebb85",
+  "current_corpus_sha256": "1b6fb7c4c5238712fcf8f4ff71429c641ddc739d09b8e51af24622d31e82d290",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -348,7 +348,7 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "082f5e2b8a82cc0fbace87c6ec643971516072cb0be2dfc1ab30af42e2aa81f4",
+      "current_sha256": "d36b0532c5a9e6f4ce6c25c40636e39daea9632b2a64e152318cedd80aa7d771",
       "edits": [
         [
           18284,
@@ -356,8 +356,13 @@
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          22450,
-          45621,
+          21912,
+          50094,
+          ""
+        ],
+        [
+          59956,
+          61068,
           ""
         ]
       ],
@@ -1728,6 +1733,16 @@
       "ignored": [],
       "macro_calls": [],
       "templates": []
+    },
+    "tools/software-preemption/region_benchmark/admission_comparison.rs": {
+      "all": [
+        "labels_bind_distinct_admission_to_one_counter_mode",
+        "every_order_retains_complete_qualification_and_timing_denominator",
+        "csv_retains_exact_labels_clocks_and_incomplete_rows"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
     }
   },
   "module_chains": {
@@ -1948,9 +1963,15 @@
     "tools/software-preemption/main.rs": [
       "mod region_benchmark;",
       "mod region_clock;",
-      "mod inline_gate;"
+      "mod inline_gate;",
+      "\"region-admission-bench\" if args.len() == 4 => {\n            region_benchmark::compare_admission(&args[2], &output)\n        }"
     ],
     "tools/software-preemption/region_benchmark.rs": [
+      "#[cfg(test)]\nmod tests {",
+      "mod admission_comparison;",
+      "pub(super) fn compare_admission(text: &str, output: &std::path::Path) {\n    admission_comparison::run(text, output);\n}"
+    ],
+    "tools/software-preemption/region_benchmark/admission_comparison.rs": [
       "#[cfg(test)]\nmod tests {"
     ]
   },
@@ -4726,7 +4747,7 @@
       "previous_sha256": "fd7af907c87a346589f9fe2af3bbf28df5dedb08e1760b926ee9347223399ad8"
     },
     "tools/software-preemption/README.md": {
-      "current_sha256": "9b2c9122c88f5aa58928d4c41a73a18202c8b300aa8fabd3528c47a47c9c51dc",
+      "current_sha256": "0a83e80d4403c3431b617b675d7a51f81154c4dc0c6643101f708507de00bd2a",
       "edits": [
         [
           40,
@@ -4735,7 +4756,7 @@
         ],
         [
           13303,
-          17355,
+          19658,
           ""
         ]
       ],
@@ -4764,7 +4785,7 @@
       "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "tools/software-preemption/main.rs": {
-      "current_sha256": "6c7730930c9be3d1d33fe68d114c6aa8455c794a078afe786c628313e7a55114",
+      "current_sha256": "3c7bbb2c01354147d28441ba809ed823b2004123887fd6075159d7a695b0565d",
       "edits": [
         [
           193,
@@ -4773,18 +4794,29 @@
         ],
         [
           28612,
-          30287,
+          30421,
           ""
         ]
       ],
       "previous_sha256": "9a780de167402524729da5e7c384ba2f7476c4d303b6248ee8723d7d06268a3a"
     },
     "tools/software-preemption/region_benchmark.rs": {
-      "current_sha256": "4450c68d0bf2f85dd8236736a9c6a3dbc68161636858c90dd1cacba6c6e58c4e",
+      "current_sha256": "c1c588a1744c8c18a416ee146fb231fa4bae4e2597fbe3a053509182cd1e240e",
       "edits": [
         [
           0,
-          35861,
+          36008,
+          ""
+        ]
+      ],
+      "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "tools/software-preemption/region_benchmark/admission_comparison.rs": {
+      "current_sha256": "4c2bbe4245f25919ca6662f3c0191763e94a0d4908154522c0ed6bc6f860c97c",
+      "edits": [
+        [
+          0,
+          12632,
           ""
         ]
       ],
@@ -6303,6 +6335,120 @@
       }
     }
   },
+  "source_successor_c110": {
+    "added_default_methods": {
+      "tools/software-preemption/region_benchmark/admission_comparison.rs": [
+        "labels_bind_distinct_admission_to_one_counter_mode",
+        "every_order_retains_complete_qualification_and_timing_denominator",
+        "csv_retains_exact_labels_clocks_and_incomplete_rows"
+      ]
+    },
+    "added_ignored_methods": {},
+    "base_revision": "3d4c06a3e742a6687ccac019134c0e4451884450",
+    "current_corpus_sha256": "1b6fb7c4c5238712fcf8f4ff71429c641ddc739d09b8e51af24622d31e82d290",
+    "default_doctest_additions": 0,
+    "default_harness_changes": 0,
+    "default_ignore_changes": 0,
+    "default_method_additions": 3,
+    "default_method_instances": {
+      "tools/software-preemption/region_benchmark/admission_comparison.rs": [
+        "unit/liteinst_preempt/main"
+      ]
+    },
+    "default_method_removals": 0,
+    "excluded_python": {
+      "path": "evaluation/owned-clock-admission-throughput/test_summarize.py",
+      "reason": "Recorder discovery remains rooted at evaluation/admission with pattern test_*.py; this standalone campaign test is outside that tree."
+    },
+    "incoming_main": "c11064dfb2478bbddf1909ba8f99d86d74529465",
+    "module_chains": {
+      "tools/software-preemption/main.rs": [
+        "\"region-admission-bench\" if args.len() == 4 => {\n            region_benchmark::compare_admission(&args[2], &output)\n        }"
+      ],
+      "tools/software-preemption/region_benchmark.rs": [
+        "mod admission_comparison;",
+        "pub(super) fn compare_admission(text: &str, output: &std::path::Path) {\n    admission_comparison::run(text, output);\n}"
+      ],
+      "tools/software-preemption/region_benchmark/admission_comparison.rs": [
+        "#[cfg(test)]\nmod tests {"
+      ]
+    },
+    "predecessor_inventory_revision": "b70c4fd8d237e80e0f7381ca30f5e8870def9bc3",
+    "previous_corpus_sha256": "47fb567cd0066378f56fe88a9c6ac2d1595569c110029228a1568a6e020ebb85",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "tools/software-preemption/README.md",
+      "tools/software-preemption/main.rs",
+      "tools/software-preemption/region_benchmark.rs",
+      "tools/software-preemption/region_benchmark/admission_comparison.rs"
+    ],
+    "source_versions": {
+      "tools/software-preemption/README.md": {
+        "current": {
+          "bytes": 23942,
+          "mode": 420,
+          "sha256": "0a83e80d4403c3431b617b675d7a51f81154c4dc0c6643101f708507de00bd2a"
+        },
+        "existed": true,
+        "previous": {
+          "bytes": 21639,
+          "mode": 420,
+          "sha256": "9b2c9122c88f5aa58928d4c41a73a18202c8b300aa8fabd3528c47a47c9c51dc"
+        }
+      },
+      "tools/software-preemption/main.rs": {
+        "current": {
+          "bytes": 37122,
+          "mode": 420,
+          "sha256": "3c7bbb2c01354147d28441ba809ed823b2004123887fd6075159d7a695b0565d"
+        },
+        "existed": true,
+        "previous": {
+          "bytes": 36988,
+          "mode": 420,
+          "sha256": "6c7730930c9be3d1d33fe68d114c6aa8455c794a078afe786c628313e7a55114"
+        }
+      },
+      "tools/software-preemption/region_benchmark.rs": {
+        "current": {
+          "bytes": 36008,
+          "mode": 420,
+          "sha256": "c1c588a1744c8c18a416ee146fb231fa4bae4e2597fbe3a053509182cd1e240e"
+        },
+        "existed": true,
+        "previous": {
+          "bytes": 35861,
+          "mode": 420,
+          "sha256": "4450c68d0bf2f85dd8236736a9c6a3dbc68161636858c90dd1cacba6c6e58c4e"
+        }
+      },
+      "tools/software-preemption/region_benchmark/admission_comparison.rs": {
+        "current": {
+          "bytes": 12632,
+          "mode": 420,
+          "sha256": "4c2bbe4245f25919ca6662f3c0191763e94a0d4908154522c0ed6bc6f860c97c"
+        },
+        "existed": false,
+        "previous": {
+          "bytes": 0,
+          "mode": 420,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    "workspace_changes": {
+      "unit/liteinst_preempt/main": {
+        "current": {
+          "ignored": 0,
+          "tests": 36
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 33
+        }
+      }
+    }
+  },
   "source_successor_fd4c6": {
     "added_default_methods": {
       "src/artifact_overlay_tests.rs": [
@@ -6439,7 +6585,7 @@
     "evaluation/admission/test_main34c47_inventory.py": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "f2874b7589b24a963da1fe3912378fa74cf20e6e0a4eb8ebf736d93ef182039a",
-    "evaluation/admission/test_main97ab_inventory.py": "082f5e2b8a82cc0fbace87c6ec643971516072cb0be2dfc1ab30af42e2aa81f4",
+    "evaluation/admission/test_main97ab_inventory.py": "d36b0532c5a9e6f4ce6c25c40636e39daea9632b2a64e152318cedd80aa7d771",
     "evaluation/admission/test_main981419_inventory.py": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
     "evaluation/admission/test_mainaf81_inventory.py": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
@@ -6577,11 +6723,12 @@
     "tools/rapid-profiler/src/frontend_native/ordinary/sealed_source_tests.rs": "60ac1a2003543e6737a51cd96eb5e2d3d6d879ec5dc45f85cc58b5e7e52687a9",
     "tools/rapid-profiler/src/frontend_native/ordinary/selection.rs": "45f907db6ce481af48165a36b92ba142f34dd16a9e2004f260f922d50ce1d4dc",
     "tools/rapid-profiler/src/lib.rs": "222ed3673f26976330afed905910bc8ca0ff86df962cc0ed6504faeeb8261e01",
-    "tools/software-preemption/README.md": "9b2c9122c88f5aa58928d4c41a73a18202c8b300aa8fabd3528c47a47c9c51dc",
+    "tools/software-preemption/README.md": "0a83e80d4403c3431b617b675d7a51f81154c4dc0c6643101f708507de00bd2a",
     "tools/software-preemption/inline_gate.rs": "55cf2c750d89feb31269225e53d184e8379a4b9948227181f36bb39ac2e9e0df",
     "tools/software-preemption/inline_gate/region.rs": "9c02478f57f147aa24dacd25512ac7080b90086263c13f6869cd3e94af064ac3",
-    "tools/software-preemption/main.rs": "6c7730930c9be3d1d33fe68d114c6aa8455c794a078afe786c628313e7a55114",
-    "tools/software-preemption/region_benchmark.rs": "4450c68d0bf2f85dd8236736a9c6a3dbc68161636858c90dd1cacba6c6e58c4e",
+    "tools/software-preemption/main.rs": "3c7bbb2c01354147d28441ba809ed823b2004123887fd6075159d7a695b0565d",
+    "tools/software-preemption/region_benchmark.rs": "c1c588a1744c8c18a416ee146fb231fa4bae4e2597fbe3a053509182cd1e240e",
+    "tools/software-preemption/region_benchmark/admission_comparison.rs": "4c2bbe4245f25919ca6662f3c0191763e94a0d4908154522c0ed6bc6f860c97c",
     "tools/software-preemption/region_clock.rs": "bb4c7e8291bcb9c17e39eeea20a00e260f9b6573ce1cc871d580243d9e41265f",
     "tools/unwind-oracle/indexed_dso/caller.c": "4c9ad23c28e98e72faccc09a492142700b56dd6426e6f001ed6ebea5040527cf",
     "tools/unwind-oracle/indexed_dso/caller.h": "792e1d088f9c063709d753de0b00b7220198400ff7b8eee8d41d73f5856da5cb",

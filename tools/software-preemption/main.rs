@@ -747,6 +747,9 @@ fn main() {
         "bench" if args.len() == 4 => benchmark(Case::parse(&args[2]), &output),
         "inline-gates" if args.len() == 3 => inline_gate::qualify(&output),
         "region-bench" if args.len() == 4 => region_benchmark::run(&args[2], &output),
+        "region-admission-bench" if args.len() == 4 => {
+            region_benchmark::compare_admission(&args[2], &output)
+        }
         "region-batch-oracle" if args.len() == 3 => {
             std::fs::write(
                 output.join("summary.json"),
