@@ -399,3 +399,77 @@ class Main97abInventoryTests(unittest.TestCase):
         self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']),
                          ('FAILED', 48, 1))
         self.assertEqual(row['partitions'][1]['summary']['failed'], 1)
+
+
+        # Exact projections return private graphs even when custom deepcopy
+        # publishes a plain container. DATA patching must retain this behavior.
+        def mutable_ids(value):
+            pending = [value]; seen = set(); mutable = set()
+            while pending:
+                item = pending.pop()
+                if not isinstance(item, (dict, list, tuple)) or id(item) in seen:
+                    continue
+                seen.add(id(item))
+                if isinstance(item, (dict, list)):
+                    mutable.add(id(item))
+                pending.extend(item.keys() if isinstance(item, dict) else ())
+                pending.extend(item.values() if isinstance(item, dict) else item)
+            return mutable
+
+        published = []
+        class PublishedCopy(dict):
+            def __deepcopy__(self, memo):
+                result = {}; memo[id(self)] = result
+                result.update((copy.deepcopy(k, memo), copy.deepcopy(v, memo))
+                              for k, v in self.items())
+                published.append(result)
+                return result
+
+        projections = ((current.before_96378, phase_catalog),
+                       (current.before_29859, native_indexed),
+                       (current.before_current, old))
+        for function, expected_projection in projections:
+            supplied = copy.deepcopy(actual)
+            supplied['harness_test_counts']['serial_launch'] = PublishedCopy(
+                supplied['harness_test_counts']['serial_launch'])
+            published.clear()
+            result = function(supplied)
+            self.assertEqual(result, expected_projection)
+            self.assertEqual(supplied, actual)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+        change = current.DATA['source_successor_96378']['workspace_changes']['doc/rapid_profiler']
+        for function, expected_projection in projections[1:]:
+            published.clear()
+            with patch.dict(change, previous=PublishedCopy(change['previous'])):
+                result = function(actual)
+                self.assertEqual(result, expected_projection)
+                self.assertEqual(len(published), 1)
+                self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+                self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+            self.assertEqual(actual['recorder_tests'], 366)
+
+        # Sparse inverses retain exact edit ordering, including equal-position
+        # insertions, and both whole-byte identity gates.
+        raw = b'abcdef'
+        for edits, expected_raw in (([], b'abcdef'),
+                ([[1, 3, 'X'], [3, 5, 'Y']], b'aXYf'),
+                ([[2, 2, 'X'], [2, 2, 'Y']], b'abXYcdef'),
+                ([[0, 1, ''], [5, 6, '']], b'bcde')):
+            inverse_row = dict(current_sha256=hashlib.sha256(raw).hexdigest(),
+                previous_sha256=hashlib.sha256(expected_raw).hexdigest(), edits=edits)
+            result = current.inverse('probe', raw, {'probe': inverse_row}, 'sparse_control')
+            self.assertIs(type(result), bytes)
+            self.assertEqual(result, expected_raw)
+            for field in ('current_sha256', 'previous_sha256'):
+                malformed = copy.deepcopy(inverse_row); malformed[field] = '0' * 64
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^sparse_control$'):
+                    current.inverse('probe', raw, {'probe': malformed}, 'sparse_control')
+        for edits in ([[3, 5, 'Y'], [1, 3, 'X']], [[1, 4, 'X'], [3, 5, 'Y']],
+                      [[False, 1, 'X']], [[0, 7, 'X']], [[0, 1, b'X']]):
+            malformed = dict(current_sha256=hashlib.sha256(raw).hexdigest(),
+                previous_sha256=hashlib.sha256(raw).hexdigest(), edits=edits)
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^sparse_control$'):
+                current.inverse('probe', raw, {'probe': malformed}, 'sparse_control')
