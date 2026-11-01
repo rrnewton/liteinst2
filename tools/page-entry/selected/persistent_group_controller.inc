@@ -352,6 +352,7 @@ static int pda_enter(const struct li2_pg_token *,int,const siginfo_t *,ucontext_
 static int pda_preentry(int,const siginfo_t *,const ucontext_t *);
 static int pda_drain(const struct li2_pg_token *);
 static void pda_complete(void);
+static int pda_receipt(const struct pda_completion *);
 static _Noreturn void pda_abort(unsigned,long);
 #endif
 unsigned li2_pg_owner_phase(const struct li2_pg_token *t) {
@@ -1831,7 +1832,32 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
     selected_logical_flags=(uint64_t)pe.after.frame.greg[REG_EFL]&~SELECTED_RF;selected_flags_known=1;
     pe_active=0;selected_step_pending=0;selected_pending_route=SELECTED_NO_STEP;
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+    __asm__ volatile("":::"memory");pe_busy=0;
+    /* Select only the actual just-completed, fully drained receipt. This
+       request does not reuse its released fetch/source/entry authority. */
+    const struct pda_work *work=&pe.domain.work;
+    pe_need(work->completion==1 && work->receipt<LI2_PGD_RECEIPTS &&
+        pe.p.phase==LI2_PG_CLOSED && pe.p.completion_permit==1,PE_RELEASE,119);
+    const struct pda_completion *completed=&pe.domain.completion[work->receipt];
+    pe_need(completed->id==pe.domain.next_id && completed->serial==pe.p.serial &&
+        completed->count==work->view.count && pda_receipt(completed),PE_RELEASE,120);
+    const struct pda_direct_exit *direct=&completed->direct_exit;
+    if(direct->complete) {
+        pe_need(direct->member==work->exit_member && direct->index==pe.exit_index &&
+            direct->original.decoded.pc==(uintptr_t)pe.after.frame.greg[REG_RIP] &&
+            direct->flags==(uint64_t)pe.after.frame.greg[REG_EFL] &&
+            equal(&completed->member[direct->member].identity,
+                  &work->view.member[direct->member].identity,sizeof(struct li2_pgd_ref)),PE_RELEASE,121);
+        const struct li2_pg_source_key *source=&completed->member[direct->member].source;
+        const uintptr_t pages[2]={source->page[0].identity.address,source->page[1].identity.address};
+        selected_fetch_dispatch(sig,si,uc,&direct->original,&direct->direct,pages,direct->arm,direct->flags);
+        return;
+    }
+    selected_fetch(sig,si,uc);
+#else
     __asm__ volatile("":::"memory");pe_busy=0;selected_fetch(sig,si,uc);
+#endif
 }
 static void selected_persistent_report(unsigned status,unsigned code,long detail) {
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME

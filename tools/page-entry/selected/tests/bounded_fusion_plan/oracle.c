@@ -79,6 +79,68 @@ static uint64_t flags_for(unsigned v) {
     const unsigned bits[6]={0,2,4,6,7,11};uint64_t f=0x602;
     for(unsigned i=0;i<6;i++)f|=(uint64_t)((v>>i)&1)<<bits[i];return f;
 }
+/* The real dispatch predicate is descriptive: these tests create no
+   completion cell, source lease, TF execution or cancellation authority. */
+static void replay_controls(void) {
+    /* A valid branch can end at the page edge while its retained descriptor
+       includes the next page. The fetch route must reacquire the same whole
+       window; shrinking available/trailing bytes is not an equality proof. */
+    const unsigned char edge[2][15]={
+        {0x75,0xfc,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90},
+        {0x0f,0x85,0xfa,0xff,0xff,0xff,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90,0x90}};
+    const unsigned offset[2]={4094,4093};
+    for(unsigned i=0;i<2;i++) {
+        struct li2_span_decoded span;struct li2_dd_descriptor description;
+        struct li2_decoded window,clipped;
+        assert(!li2_decoder_span_describe(pages[0]+offset[i],edge[i],15,&span) &&
+            !li2_dd_span(&span,2,&description) &&
+            !li2_decoder_decode(span.decoded.pc,edge[i],15,&window) &&
+            !li2_decoder_decode(span.decoded.pc,edge[i],4096-offset[i],&clipped));
+        assert(li2_pfr_direct_replay_valid(&span,&description,pages,1,UINT64_C(0x10242),&window,0x242) &&
+            !li2_pfr_direct_replay_valid(&span,&description,pages,1,UINT64_C(0x10242),&clipped,0x242));
+    }
+    for(unsigned i=0;i<compact.heads;i++) {
+        const struct li2_span_decoded *original=&compact.original[i];
+        struct li2_decoded fresh;
+        assert(!li2_decoder_decode(original->decoded.pc,original->decoded.bytes,
+                                   original->decoded.available,&fresh));
+        if(compact.head[i].kind!=LI2_PG_DIRECT) {
+            struct li2_dd_descriptor absent={0};
+            assert(!li2_pfr_direct_replay_valid(original,&absent,pages,0,UINT64_C(0x10202),&fresh,0x202));
+            continue;
+        }
+        const struct li2_dd_descriptor *d=&compact.instruction[i].direct;
+        for(unsigned f=0;f<64;f++) {
+            uint64_t flags=flags_for(f);unsigned arm=dd_model_taken(d->condition,flags)?0:1;
+            if(d->flow==LI2_REGION_JMP)arm=0;
+            int external=(d->external_mask&(1U<<arm))!=0;
+            assert(!!li2_pfr_direct_replay_valid(original,d,pages,arm,flags|UINT64_C(0x10000),&fresh,flags)==external);
+            if(!external)continue;
+            assert(!li2_pfr_direct_replay_valid(original,d,0,arm,flags|UINT64_C(0x10000),&fresh,flags) &&
+                !li2_pfr_direct_replay_valid(0,d,pages,arm,flags|UINT64_C(0x10000),&fresh,flags) &&
+                !li2_pfr_direct_replay_valid(original,0,pages,arm,flags|UINT64_C(0x10000),&fresh,flags) &&
+                !li2_pfr_direct_replay_valid(original,d,pages,arm,flags|UINT64_C(0x10000),0,flags) &&
+                !li2_pfr_direct_replay_valid(original,d,pages,2,flags|UINT64_C(0x10000),&fresh,flags) &&
+                !li2_pfr_direct_replay_valid(original,d,pages,arm,flags,&fresh,flags) &&
+                !li2_pfr_direct_replay_valid(original,d,pages,arm,flags|UINT64_C(0x10100),&fresh,flags) &&
+                !li2_pfr_direct_replay_valid(original,d,pages,arm,flags|UINT64_C(0x10000),&fresh,flags^1) &&
+                !li2_pfr_direct_replay_valid(original,d,pages,arm,flags|UINT64_C(0x10000),&fresh,flags|0x100) &&
+                !li2_pfr_direct_replay_valid(original,d,pages,arm,flags|UINT64_C(0x10000),&fresh,flags|0x10000));
+            for(size_t j=0;j<sizeof fresh;j++) {
+                struct li2_decoded bad=fresh;((unsigned char *)&bad)[j]^=1;
+                assert(!li2_pfr_direct_replay_valid(original,d,pages,arm,flags|UINT64_C(0x10000),&bad,flags));
+            }
+            for(size_t j=0;j<sizeof *original;j++) {
+                struct li2_span_decoded bad=*original;((unsigned char *)&bad)[j]^=1;
+                assert(!li2_pfr_direct_replay_valid(&bad,d,pages,arm,flags|UINT64_C(0x10000),&fresh,flags));
+            }
+            for(size_t j=0;j<sizeof *d;j++) {
+                struct li2_dd_descriptor bad=*d;((unsigned char *)&bad)[j]^=1;
+                assert(!li2_pfr_direct_replay_valid(original,&bad,pages,arm,flags|UINT64_C(0x10000),&fresh,flags));
+            }
+        }
+    }
+}
 static void accept(uintptr_t entry,unsigned heads,unsigned exits,unsigned stores,unsigned links) {
     struct li2_pg_miss miss,empty={.version=11};
     assert(!li2_pf_plan_pages(pages,source,entry,&layout,&table,&full,&miss));
@@ -90,6 +152,7 @@ static void accept(uintptr_t entry,unsigned heads,unsigned exits,unsigned stores
     assert(li2_pg_plan_validate(&full,&scratch)==LI2_PG_CORRUPT && li2_pb_plan_validate(&full,&scratch)==LI2_PG_CORRUPT &&
         li2_pg_compact_validate(&compact,&scratch,&rebuilt)==LI2_PG_CORRUPT &&
         li2_pb_compact_validate(&compact,&scratch,&rebuilt)==LI2_PG_CORRUPT);old_checks+=4;++plans;
+    replay_controls();
 }
 static void refuse(uintptr_t entry,int result,unsigned reason) {
     struct li2_pg_miss miss;

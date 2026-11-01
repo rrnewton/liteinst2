@@ -258,8 +258,13 @@ static void selected_initialize(void) {
     selected_run_initialize();
 #endif
 }
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+static void selected_prepare_window(uintptr_t pc,size_t bytes) {
+    checked(bytes && bytes<=15,1788,2);
+#else
 static void selected_prepare(uintptr_t pc) {
     size_t bytes=PAGE-(pc&(PAGE-1));if(bytes>15)bytes=15;
+#endif
     checked(!li2_lifecycle_fetch_prepare(pc,bytes,&selected_borrow),612,0);
     checked(!li2_lifecycle_fetch_view(&selected_borrow,&selected_view),613,0);
     checked(!li2_decoder_decode(pc,selected_view.bytes,selected_view.length,&selected_decoded),614,0);
@@ -273,6 +278,12 @@ static void selected_prepare(uintptr_t pc) {
             selected_decoded.length<=selected_view.length,619,selected_decoded.decode_status);
     selected_initialized();
 }
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+static void selected_prepare(uintptr_t pc) {
+    size_t bytes=PAGE-(pc&(PAGE-1));if(bytes>15)bytes=15;
+    selected_prepare_window(pc,bytes);
+}
+#endif
 static void selected_release(void) {
     checked(!li2_lifecycle_fetch_release(&selected_borrow),620,0);
 }
@@ -487,7 +498,14 @@ static void selected_owned_syscall(ucontext_t *context,uint64_t flags) {
 #include "selected_oneshot.inc"
 #endif
 #endif
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+#include "persistent_fused_runtime.h"
+static void selected_fetch_dispatch(int sig,siginfo_t *si,ucontext_t *context,
+    const struct li2_span_decoded *direct_original,const struct li2_dd_descriptor *direct_descriptor,
+    const uintptr_t direct_source[2],unsigned direct_arm,uint64_t direct_flags) {
+#else
 static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
+#endif
     greg_t *g=context->uc_mcontext.gregs;uintptr_t pc=(uintptr_t)g[REG_RIP];
     checked(!selected_step_pending && !li2_lifecycle_fetch_interlock() && selected_flags_known &&
             sig==SIGSEGV && si->si_signo==SIGSEGV && si->si_code==SEGV_ACCERR && !si->si_errno &&
@@ -496,8 +514,25 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
     uint64_t flags=selected_selftesting?selected_selftest_flags:selected_logical_flags;
     checked((uint64_t)g[REG_EFL]==(flags|SELECTED_RF),625,g[REG_EFL]);
     uint64_t mask=0;copy(&mask,&context->uc_sigmask,8);checked(mask==SELECTED_MASK,626,0);
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+    /* The same real fetch owner authenticates the saved descriptor's whole
+       window, including an adjacent source page when it straddles an edge.
+       Normal fetch keeps its original clipped-first/TRUNCATED-retry policy. */
+    checked((direct_original && direct_descriptor && direct_source) ||
+        (!direct_original && !direct_descriptor && !direct_source && !direct_arm && !direct_flags),1788,0);
+    if(direct_original) {
+        checked(!selected_selftesting && direct_original->decoded.pc==pc,1788,1);
+        selected_prepare_window(pc,direct_original->decoded.available);
+    } else selected_prepare(pc);
+#else
     selected_prepare(pc);
+#endif
     checked((uintptr_t)si->si_addr>=pc && (uintptr_t)si->si_addr<selected_decoded.next_pc,627,0);
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+    /* Reject a malformed route before any selected-effect helper can run. */
+    if(direct_original)checked(li2_pfr_direct_replay_valid(direct_original,direct_descriptor,
+        direct_source,direct_arm,direct_flags,&selected_decoded,flags),1788,3);
+#endif
     if(!selected_selftesting) {
         if(!first_target_pc)first_target_pc=pc;
         ++faults;if(pc==original_interpreter.entry)++first_interpreter;
@@ -545,6 +580,12 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
         checked(!rseq_error,(unsigned)rseq_error,li2_rseq_snapshot()->first_detail);
     }
 #endif
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+    /* A completed PF DIRECT miss is still branch-before. After the same
+       selected-effect and rseq gates, execute that one original branch via
+       the ordinary TF owner before offering its real successor elsewhere. */
+    if(direct_original) {selected_generic_begin(sig,si,context,flags);return;}
+#endif
     if(!selected_selftesting && li2_repeat_candidate(&selected_decoded)) {
 #ifdef LI2_REPEAT_RX_LEASE
         if(selected_repeat_lease_try(sig,si,context,flags))return;
@@ -589,6 +630,11 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
     if(error)li2_step_abort(&selected_step,(unsigned)error,0);
     li2_step_begin(&selected_step,sig,si,context);
 }
+#ifdef LI2_PERSISTENT_FUSED_RUNTIME
+static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
+    selected_fetch_dispatch(sig,si,context,0,0,0,0,0);
+}
+#endif
 static void selected_selftest(void) {
     uint64_t mask=SELECTED_MASK;
     checked(!raw(SYS_rt_sigprocmask,SIG_SETMASK,(long)&mask,0,8,0,0),634,0);
