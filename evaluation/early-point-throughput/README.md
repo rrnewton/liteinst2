@@ -1,7 +1,8 @@
 # Disabled optional point throughput
 
-This prospective profile compares `native`, `ordinary-disabled` and
-`early-disabled` in one release binary. No throughput results have been run.
+At `4481064e040959a57df69ba1f756fde5164cbb7b`, the twelve-process means were 2.280 ns/call native, 228.618 ns/call ordinary disabled and 3.188 ns/call early disabled. The paired early/ordinary ratio was 0.013712 (95% CI 0.012456–0.015094). All 2,472 rows, including every warmup and outlier, are retained.
+
+[statistics.json](statistics.json) and [receipt.json](receipt.json) give the exact data and attribution; [owners.csv](owners.csv) retains command outcomes and captures' hashes. Full validation command outcomes remain separately attributed in the receipt. This is the point-specific profile; it makes no current generic admission-catalog or B-qualification claim.
 All arms execute the same seven bytes, `48 89 f8 48 01 f0 c3`, through an
 indirect two-argument call. A batch makes 2,048 calls with inputs `(i+1, 2*i+3)`
 and requires checksum 6,296,576. Both generated images retain one real
@@ -39,13 +40,14 @@ log intervals. The primary ratio is early-disabled/ordinary-disabled. There
 are no replacement runs, timing thresholds or outlier exclusions. An incomplete
 or failed campaign receives no statistics.
 
-After integration, use a clean checkout at the exact reviewed source commit.
-Set `POINT_REV` to that full commit and select a direct installed Rust toolchain
+Use a clean checkout at `4481064e040959a57df69ba1f756fde5164cbb7b`.
+The recipe sets `POINT_REV` to that full commit and select a direct installed Rust toolchain
 with offline dependencies using `LI2_TOOLCHAIN`. All three named outputs and their
 matching `target/evaluation/` directories must be absent. The commands below
 are a source-authored recipe, not evidence of execution:
 
 ```sh
+POINT_REV=4481064e040959a57df69ba1f756fde5164cbb7b
 git switch --detach "$POINT_REV"
 mkdir -p "$PWD/ignored"
 cpuset-alloc run --cores 12 --tag point-correctness -- \

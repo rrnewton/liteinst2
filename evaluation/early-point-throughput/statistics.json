@@ -1,0 +1,110 @@
+{
+  "status": "PASS_COMPLETE_COHORT",
+  "processes": 12,
+  "degrees_of_freedom": 11,
+  "t_critical": 2.20098516,
+  "total_rows": 2472,
+  "enabled_controls": 24,
+  "qualifications": 36,
+  "warmups": 108,
+  "measured_batches": 2304,
+  "process_means_ns_per_call": [
+    {
+      "native": 2.6028060913085938,
+      "ordinary-disabled": 243.911376953125,
+      "early-disabled": 3.7699127197265625
+    },
+    {
+      "native": 2.693206787109375,
+      "ordinary-disabled": 244.39569854736328,
+      "early-disabled": 3.8238677978515625
+    },
+    {
+      "native": 2.6409912109375,
+      "ordinary-disabled": 246.29271697998047,
+      "early-disabled": 3.980224609375
+    },
+    {
+      "native": 2.6925888061523438,
+      "ordinary-disabled": 245.0221176147461,
+      "early-disabled": 3.8746719360351562
+    },
+    {
+      "native": 2.621429443359375,
+      "ordinary-disabled": 245.51861572265625,
+      "early-disabled": 3.8580474853515625
+    },
+    {
+      "native": 1.7441940307617188,
+      "ordinary-disabled": 215.10115814208984,
+      "early-disabled": 3.0648117065429688
+    },
+    {
+      "native": 2.3761672973632812,
+      "ordinary-disabled": 216.51414489746094,
+      "early-disabled": 2.6733016967773438
+    },
+    {
+      "native": 1.6991958618164062,
+      "ordinary-disabled": 226.0641632080078,
+      "early-disabled": 2.5240936279296875
+    },
+    {
+      "native": 1.70855712890625,
+      "ordinary-disabled": 215.24705505371094,
+      "early-disabled": 2.7065811157226562
+    },
+    {
+      "native": 2.3764877319335938,
+      "ordinary-disabled": 214.56585693359375,
+      "early-disabled": 2.3633880615234375
+    },
+    {
+      "native": 1.7145462036132812,
+      "ordinary-disabled": 215.31834411621094,
+      "early-disabled": 3.18731689453125
+    },
+    {
+      "native": 2.486602783203125,
+      "ordinary-disabled": 215.46451568603516,
+      "early-disabled": 2.433258056640625
+    }
+  ],
+  "absolute": {
+    "native": {
+      "estimate": 2.279731114705404,
+      "lower95": 2.0071871971777595,
+      "upper95": 2.552275032233048
+    },
+    "ordinary-disabled": {
+      "estimate": 228.61798032124838,
+      "lower95": 219.20987565575692,
+      "upper95": 238.02608498673985
+    },
+    "early-disabled": {
+      "estimate": 3.1882896423339844,
+      "lower95": 2.7822085895818383,
+      "upper95": 3.5943706950861305
+    }
+  },
+  "paired_geometric_ratios": {
+    "ordinary-disabled/native": {
+      "estimate": 101.8818065506924,
+      "lower95": 91.76770614496618,
+      "upper95": 113.11062401010103
+    },
+    "early-disabled/native": {
+      "estimate": 1.3969709126509355,
+      "lower95": 1.227830278940498,
+      "upper95": 1.5894116347063636
+    },
+    "early-disabled/ordinary-disabled": {
+      "estimate": 0.01371168180018341,
+      "lower95": 0.012456068479831354,
+      "upper95": 0.01509386513841858
+    }
+  },
+  "primary_ratio": "early-disabled/ordinary-disabled",
+  "closed_sha256": "2ada3b0b0c3f68db378fcc887ce1b7c9ecdd2a3fca241d7ec68f090982730ff6",
+  "scope": "One stable disabled managed point and identical tiny add work; includes indirect calls and bookkeeping. No isolated load cost, enabled throughput, visibility/drainage, application or publication claim. No outliers removed."
+}
