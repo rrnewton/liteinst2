@@ -4,6 +4,21 @@
 #error "group release owner has its own future capture contract"
 #endif
 #include "persistent_group_plan.h"
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+#if LI2_PERSISTENT_RET_DISPATCH != 1 || !defined(LI2_PERSISTENT_CALL_DISPATCH) || LI2_PERSISTENT_CALL_DISPATCH != 1
+#error "saved RET continuation requires the explicit CALL/RET owner composition"
+#endif
+#if defined(LI2_PERSISTENT_GROUP_CAPTURE) || defined(LI2_PERSISTENT_RESIDENT_CAPTURE) || \
+    defined(LI2_PERSISTENT_RETAINED_TWO_CAPTURE) || defined(LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE) || \
+    defined(LI2_PERSISTENT_STARTUP_CAPTURE) || defined(LI2_PERSISTENT_SUBENTRY_CAPTURE) || \
+    defined(LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE) || defined(LI2_PERSISTENT_CALL_OWNER_CAPTURE) || \
+    defined(LI2_PERSISTENT_COLD_ADMISSION_CAPTURE) || defined(LI2_PERSISTENT_CROSS_PAIR_CAPTURE) || \
+    defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_RETAINED_EIGHT)
+#error "saved RET continuation has no old capture or census representation"
+#endif
+#include "linked_ret_dispatch.h"
+#include "maps_call_stack.h"
+#endif
 #include "persistent_group_runtime.h"
 #include "persistent_group_config.h"
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
@@ -29,6 +44,9 @@
 #endif
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
 #include "persistent_call_owner_observe.h"
+#endif
+#ifdef LI2_PERSISTENT_RET_OWNER_CAPTURE
+#include "persistent_ret_owner_observe.h"
 #endif
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
 #include "persistent_cold_admission_observe.h"
@@ -276,6 +294,9 @@ struct li2_pg_epoch {
 #endif
 };
 static struct li2_pg_epoch pe;
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+#include "persistent_ret_resume.h"
+#endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO
 #define PE_SLOT(field) (pe.retained[pe.selected_slot].field)
 static int ptr_storage(void);
@@ -318,6 +339,9 @@ unsigned li2_pg_owner_phase(const struct li2_pg_token *t) {
         pe.initialized && pe.registered?pe.p.phase:0;
 }
 int li2_pg_epoch_interlock(void) {
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    if(prr_pending || prr_busy)return 1;
+#endif
     return pe_busy || pe_active || (pe.p.phase!=LI2_PG_IDLE && pe.p.phase!=LI2_PG_CLOSED && pe.p.phase!=LI2_PG_CANCELLED);
 }
 const struct li2_pg_progress *li2_pg_epoch_progress(void) {return &pe.p;}
@@ -389,6 +413,9 @@ static struct li2_pg_layout pg_layout(uintptr_t base) {
         .spill=base+PE_CODE_BYTES+PAGE,.directory=pe.domain.directory
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
         ,.window=pcw_address()
+#endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+        ,.ret_miss=pcw_ret_miss(base)
 #endif
     };
 }
@@ -731,6 +758,9 @@ static void ped_claim(void) {
 #endif
 }
 static void ped_reset_attempt(void) {
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    prr_reset();
+#endif
     pe_need(!pe_busy && !pe_active && !pe.resuming &&
         (pe.p.phase==LI2_PG_IDLE || pe.p.phase==LI2_PG_CLOSED || pe.p.phase==LI2_PG_CANCELLED) &&
         !pe.p.first_error && (!PE_SLOT(generation).installed || ped_permitted()),PE_STATE,30);
@@ -776,6 +806,9 @@ static void selected_persistent_initialize(void) {
 #endif
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
     pcw_initialize();
+#endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    prr_initialize();
 #endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO
     pe_need(protected_count<=RANGES-3U*LI2_PTR_SLOTS,PE_STATE,40);
@@ -1381,6 +1414,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
     pclo_begin(sig,si,uc,slot_index);
 #endif
+#ifdef LI2_PERSISTENT_RET_OWNER_CAPTURE
+    prto_begin(sig,si,uc,slot_index);
+#endif
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
     pco_begin(sig,si,uc,slot_index);
 #endif
@@ -1467,6 +1503,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
         pclo_miss();
 #endif
+#ifdef LI2_PERSISTENT_RET_OWNER_CAPTURE
+        prto_miss();
+#endif
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
     pgo_miss_held();
 #endif
@@ -1508,6 +1547,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
     pclo_entered();
 #endif
+#ifdef LI2_PERSISTENT_RET_OWNER_CAPTURE
+    prto_entered();
+#endif
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
     pco_entered(sig,si,uc);
 #endif
@@ -1526,6 +1568,9 @@ static void selected_persistent_preentry(int sig,siginfo_t *si,ucontext_t *uc) {
     }
 }
 static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    if(prr.run.loaded.complete) {prr_loaded_exit(sig,si,uc);return;}
+#endif
     pe_need(pe_active && pe_busy && pe.exit_seen && pe.p.phase==LI2_PG_RECOVERING &&
         selected_pending_route==SELECTED_PERSISTENT_EPOCH && selected_step_pending==1 &&
         pe.after.sig==sig && le_unchanged(&pe.after,si,uc),PE_STATE,7);
@@ -1575,6 +1620,9 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
     pclo_terminal();
+#endif
+#ifdef LI2_PERSISTENT_RET_OWNER_CAPTURE
+    prto_terminal();
 #endif
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
     pco_terminal(0);
@@ -1684,6 +1732,9 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
 #include "persistent_active_domain.inc"
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+#include "persistent_ret_resume.inc"
+#endif
 #endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN_CAPTURE
 #include "persistent_active_domain_observe.inc"
@@ -1699,6 +1750,9 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #endif
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
 #include "persistent_call_owner_observe.inc"
+#endif
+#ifdef LI2_PERSISTENT_RET_OWNER_CAPTURE
+#include "persistent_ret_owner_observe.inc"
 #endif
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
 #include "persistent_cold_admission_observe.inc"

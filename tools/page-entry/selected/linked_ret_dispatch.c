@@ -159,9 +159,10 @@ static int build(uintptr_t pc,const unsigned char *bytes,size_t n,uintptr_t gene
     immediate(&w,A,0,32);rr(&w,0x3b,A,E);unsigned again=branch(&w,2);
     unsigned loaded_rejected=p->record.image_bytes;restore(&w);
     p->record.loaded_miss_offset=p->record.image_bytes;
-    unsigned loaded_jump=branch(&w,16);uint32_t d;
-    if(!disp(generated+loaded_jump+5,b->loaded_miss,&d))return LI2_RD_RELOCATION;
-    put32(p->image+loaded_jump+1,d);
+    put64(p->image+LI2_RD_LITERAL_OFFSET,b->loaded_miss);
+    uint32_t d;unsigned char loaded_jump[6]={0xff,0x25,0,0,0,0};
+    if(!disp(generated+p->record.image_bytes+6,generated+LI2_RD_LITERAL_OFFSET,&d))return LI2_RD_RELOCATION;
+    put32(loaded_jump+2,d);emit(&w,loaded_jump,6);
     unsigned before_rejected=p->record.image_bytes;
     w.valid=15;w.dirty=7;w.flags=LI2_MG_AH_AL;w.phase=LI2_RD_BEFORE;
     restore(&w);p->record.miss_offset=p->record.image_bytes;
@@ -180,6 +181,7 @@ static int build(uintptr_t pc,const unsigned char *bytes,size_t n,uintptr_t gene
     patch(&w,below,before_rejected);patch(&w,above,before_rejected);
     patch(&w,empty,loaded_rejected);patch(&w,excess,loaded_rejected);patch(&w,found,hit);patch(&w,again,loop);
     if(w.error)return w.error;
+    if(p->record.image_bytes>LI2_RD_LITERAL_OFFSET)return LI2_RD_CAPACITY;
     for(unsigned i=0;i<p->record.boundaries;i++) {
         const struct li2_mg_boundary *m=&p->record.boundary[i];size_t available=p->record.image_bytes-m->offset;
         if(available>15)available=15;
@@ -250,18 +252,21 @@ static int recover_arguments(const struct li2_rd_plan *p,const uint64_t *raw,con
 }
 int li2_rd_recover(const struct li2_rd_plan *p,uintptr_t pc,const uint64_t raw[16],uint64_t flags,
                    const uint64_t words[6],struct li2_rd_recovered *out) {
-    if(!out)return LI2_RD_ARGUMENT;zero(out,sizeof *out);
+    if(!out)return LI2_RD_ARGUMENT;
+    zero(out,sizeof *out);
     if(!recover_arguments(p,raw,words) || pc<p->generated)return LI2_RD_ARGUMENT;
     const struct li2_mg_boundary *m=0;
     for(unsigned i=0;i<p->record.boundaries;i++)if(pc-p->generated==p->record.boundary[i].offset) {
-        if(m)return LI2_RD_CORRUPT;m=&p->record.boundary[i];
+        if(m)return LI2_RD_CORRUPT;
+        m=&p->record.boundary[i];
     }
     if(!m || m->phase>LI2_RD_COMMITTED)return LI2_RD_CORRUPT;
     return recover(p,m,raw,flags,words,out);
 }
 int li2_rd_recover_loaded_miss(const struct li2_rd_plan *p,uintptr_t pc,const uint64_t raw[16],uint64_t flags,
                                const uint64_t words[6],struct li2_rd_recovered *out) {
-    if(!out)return LI2_RD_ARGUMENT;zero(out,sizeof *out);
+    if(!out)return LI2_RD_ARGUMENT;
+    zero(out,sizeof *out);
     if(!recover_arguments(p,raw,words))return LI2_RD_ARGUMENT;
     if(pc!=p->binding.loaded_miss)return LI2_RD_CORRUPT;
     const struct li2_mg_boundary m={0,0,15,0,LI2_MG_PHYSICAL,LI2_RD_LOADED_MISS};

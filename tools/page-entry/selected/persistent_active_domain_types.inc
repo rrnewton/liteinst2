@@ -20,6 +20,20 @@ struct pda_direct_exit {
 };
 _Static_assert(sizeof(struct pda_direct_exit)==528,"by-value direct exit custody");
 #endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+/* A completed guest load is not an ordinary original-PC exit. This value
+   survives replacement of either retained generation without dereferencing it. */
+struct pda_ret_exit {
+    unsigned complete,member,heads,head;
+    uintptr_t landing;
+    struct li2_pe_head row;
+    struct li2_span_decoded original;
+    struct li2_rd_plan plan;
+    struct li2_rd_recovered recovered;
+    struct li2_rd_window window;
+    struct li2_maps_call_stack stack;
+};
+#endif
 struct pda_completion {
     uint64_t id,serial;
     unsigned count,complete;
@@ -29,6 +43,9 @@ struct pda_completion {
     struct li2_pg_rseq_progress rseq;
     struct li2_fetch_progress fetch;
     struct li2_private_code_query directory_closed;
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    struct pda_ret_exit ret_exit;
+#endif
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER
     struct pda_direct_exit direct_exit;
 #endif

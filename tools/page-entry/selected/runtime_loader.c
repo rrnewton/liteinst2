@@ -269,6 +269,11 @@ static void selected_persistent_preentry(int,siginfo_t *,ucontext_t *);
 static void selected_persistent_exit(int,siginfo_t *,ucontext_t *);
 static _Noreturn void selected_persistent_abort(unsigned,long);
 static void selected_persistent_report(unsigned,unsigned,long);
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+static volatile sig_atomic_t prr_pending,prr_busy;
+static void selected_ret_resume_preentry(int,siginfo_t *,ucontext_t *);
+static void selected_ret_resume_exit(int,siginfo_t *,ucontext_t *);
+#endif
 #ifdef LI2_PERSISTENT_EPOCH_CAPTURE
 #include "persistent_epoch_observe.h"
 #endif
@@ -298,6 +303,9 @@ static void selected_persistent_report(unsigned,unsigned,long);
 #endif
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
 #include "persistent_call_owner_observe.h"
+#endif
+#ifdef LI2_PERSISTENT_RET_OWNER_CAPTURE
+#include "persistent_ret_owner_observe.h"
 #endif
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
 #include "persistent_cold_admission_observe.h"
@@ -589,6 +597,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
     pclo_finish(status,code,detail);
 #endif
+#ifdef LI2_PERSISTENT_RET_OWNER_CAPTURE
+    prto_finish(status,code,detail);
+#endif
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
     pco_finish(status,code,detail);
 #endif
@@ -609,6 +620,10 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 }
 static void fail(unsigned code,long detail) {
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    if(prr_pending || prr_busy || selected_pending_route==SELECTED_RET_RESUME)
+        selected_persistent_abort(code,detail);
+#endif
 #ifdef LI2_PERSISTENT_EPOCH
     if(pe_busy || pe_active || selected_pending_route==SELECTED_PERSISTENT_EPOCH)
         selected_persistent_abort(code,detail);
@@ -1036,6 +1051,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
     pclo_ingress(sig,si,ptr);
 #endif
+#ifdef LI2_PERSISTENT_RET_OWNER_CAPTURE
+    prto_ingress(sig,si,ptr);
+#endif
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
     pco_ingress(sig,si,ptr);
 #endif
@@ -1066,6 +1084,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_LINKED_NATIVE_HINT
     lpef_hint_ingress(sig,si,ptr);
 #endif
+#endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    selected_ret_resume_preentry(sig,si,ptr);
 #endif
 #ifdef LI2_PERSISTENT_EPOCH
     selected_persistent_preentry(sig,si,ptr);
@@ -1182,6 +1203,11 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
 #ifdef LI2_CURRENT_TF_CAPTURE
     cto_begin(sig,si,ptr);
+#endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    if(selected_pending_route==SELECTED_RET_RESUME) {
+        selected_ret_resume_exit(sig,si,ptr);
+    } else
 #endif
 #ifdef LI2_PERSISTENT_EPOCH
     if(selected_pending_route==SELECTED_PERSISTENT_EPOCH) {
@@ -1448,6 +1474,9 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #endif
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
     pclo_initialize();
+#endif
+#ifdef LI2_PERSISTENT_RET_OWNER_CAPTURE
+    prto_initialize();
 #endif
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
     pco_initialize();

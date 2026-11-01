@@ -52,15 +52,27 @@ static void pcw_initialize(void) {
         selected_run_protect_contains(0,(uintptr_t)&pcw,sizeof pcw)==1 &&
         protected_count<=RANGES-3U*LI2_PTR_SLOTS-2U,PE_STATE,130);
     pe_need(!selected_run_protect_add(0,(uintptr_t)&pcw,sizeof pcw),PE_STATE,133);
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    /* The bounded low-bank RET profile still requires exact emitter rel32
+       reachability. Far high-bank RET plans decline with RELOCATION. */
+    long address=raw(SYS_mmap,0,PAGE,PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT,-1,0);
+#else
     long address=raw(SYS_mmap,0,PAGE,PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);
+#endif
     pe_need(address>0 && !((uintptr_t)address&(PAGE-1)) &&
         (uintptr_t)address<(UINT64_C(1)<<47)-PAGE,PE_PUBLICATION,address);
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    pe_need((uintptr_t)address<(UINT64_C(1)<<31)-PAGE,PE_PUBLICATION,177);
+#endif
     pcw.address=(uintptr_t)address;pcw.allocated=1;
     pe_need(!selected_run_protect_add(0,pcw.address,PAGE),PE_STATE,131);pcw.registered=1;
     pe_need(!pe_query(pcw.address,PAGE,PROT_READ|PROT_WRITE,&pcw.initial) &&
         !pe_permission(pcw.address,PAGE,PROT_READ,&pcw.initial_seal),PE_PUBLICATION,130);
 }
 static void pcw_reset(void) {
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+    pe_need(!prr_pending && !prr_busy,PE_STATE,170);
+#endif
     pe_need(!pe_active && !pe.resuming && pcw.allocated==1 && pcw.registered==1,PE_STATE,132);
     pcw.prepared=pcw.bound=0;
     le_zero(&pcw.seed,sizeof pcw.seed);le_zero(&pcw.expected,sizeof pcw.expected);
@@ -143,3 +155,13 @@ static int pcw_bind(const ucontext_t *uc) {
     error=pe_permission(pcw.address,PAGE,PROT_READ,&pcw.seal);if(error)return error;
     pcw.bound=1;return pcw_equal()?0:PE_PUBLICATION;
 }
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+static uintptr_t pcw_ret_miss(uintptr_t generated) {
+    unsigned found=0,slot=LI2_PTR_SLOTS;
+    for(unsigned i=0;i<LI2_PTR_SLOTS;i++)for(unsigned j=0;j<2;j++)
+        if(generated && pe.retained[i].banks[j].generated==generated) {++found;slot=i;}
+    pe_need(found==1 && slot<LI2_PTR_SLOTS && pcw.address &&
+        64U+8U*LI2_PTR_SLOTS*LI2_PG_HEADS<=PAGE,PE_PUBLICATION,170);
+    return pcw.address+64U+8U*slot*LI2_PG_HEADS;
+}
+#endif

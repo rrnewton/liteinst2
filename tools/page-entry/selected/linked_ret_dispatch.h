@@ -8,6 +8,7 @@
 #endif
 #define LI2_RD_VERSION 1U
 #define LI2_RD_SLOT_BYTES 512U
+#define LI2_RD_LITERAL_OFFSET (LI2_RD_SLOT_BYTES-8U)
 #define LI2_RD_BOUNDARIES 64U
 #define LI2_RD_WINDOW_PAGE 4096U
 /* Supplied authority, not a numeric permission oracle. Before the first private
@@ -29,6 +30,8 @@ enum li2_rd_status { LI2_RD_OK=0,LI2_RD_ARGUMENT=4701,LI2_RD_DECODER=4702,
    guest read. LOADED has target in scratch3; SAVED and later have it at spill+40.
    COMMIT precedes flags-neutral RSP+8; COMMITTED follows it exactly once.
    LOADED_MISS is a distinct actual NX landing, never original-C3 replay. */
+/* The final eight bytes of the sealed slot hold the exact loaded-miss landing.
+   They are data, never a recovery boundary or another guest operand read. */
 enum li2_rd_phase { LI2_RD_BEFORE=0,LI2_RD_LOAD=1,LI2_RD_LOADED=2,
     LI2_RD_SAVED=3,LI2_RD_CELL_READY=4,LI2_RD_COMMIT=5,
     LI2_RD_COMMITTED=6,LI2_RD_LOADED_MISS=7 };

@@ -62,6 +62,9 @@ int li2_pgs_entry_source(const struct li2_pgs_entry *e,uintptr_t root,
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
         && h->kind!=LI2_PG_CALL
 #endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+        && h->kind!=LI2_PG_RET
+#endif
 #ifdef LI2_ADD_GUARD
         && h->kind!=LI2_PG_ADD
 #endif

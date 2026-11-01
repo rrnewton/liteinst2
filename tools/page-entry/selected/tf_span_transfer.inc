@@ -297,6 +297,9 @@ int li2_tf_chain_span_close(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontex
 #ifdef LI2_PERSISTENT_CALL_OWNER_CAPTURE
     li2_pclo_trace_closed(c,p);
 #endif
+#ifdef LI2_PERSISTENT_RET_OWNER_CAPTURE
+    li2_prto_trace_closed(c,p);
+#endif
 #ifdef LI2_PERSISTENT_COLD_ADMISSION_CAPTURE
     li2_pco_trace_closed(c,p);
 #endif

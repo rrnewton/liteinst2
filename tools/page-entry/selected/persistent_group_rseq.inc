@@ -493,6 +493,29 @@ int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,co
             if(e)return pgr_bad((unsigned)e,537);
             ++stores;
 #endif
+#ifdef LI2_PERSISTENT_RET_DISPATCH
+        } else if(h->kind==LI2_PG_RET) {
+            struct li2_rd_descriptor descriptor={0};struct li2_rd_binding binding;
+            const struct li2_rd_plan *guard=&p->guard[i].ret;
+            struct li2_span_decoded expected={.decoded=d->decoded,.version=1,.refusal=LI2_REGION_UNSUPPORTED};
+            if(!region_rseq_equal(&actual,&expected,sizeof expected) ||
+               h->successor_count || h->successors[0] || h->successors[1] ||
+               li2_rd_describe(d->decoded.pc,window,n,&descriptor) ||
+               !region_rseq_equal(&descriptor.decoded,&actual.decoded,sizeof actual.decoded) ||
+               !region_rseq_equal(&descriptor,&p->instruction[i].ret,sizeof descriptor) ||
+               !region_rseq_equal(&descriptor,&guard->original,sizeof descriptor) ||
+               li2_pg_ret_binding(p->page,&p->layout,p->table.address,p->heads,i,&binding) ||
+               !region_rseq_equal(&binding,&guard->binding,sizeof binding) ||
+               guard->generated!=p->layout.generated[i/64]+(uintptr_t)(i%64)*LI2_PE_SLOT_BYTES ||
+               guard->spill!=p->layout.spill || guard->record.image_bytes!=h->generated_length ||
+               !region_rseq_equal(guard->image,&p->image[i/64][(i%64)*LI2_PE_SLOT_BYTES],LI2_RD_SLOT_BYTES) ||
+               li2_rd_validate(guard))return pgr_bad(LI2_RSEQ_PLAN,538);
+            /* The existing real original-stack provider excludes protected,
+               source and current-rseq storage across the full 520-byte envelope.
+               It authorizes ordinary memory provenance, never a stable value. */
+            int e=li2_pg_call_window_check(t,p->layout.window,uc);
+            if(e)return pgr_bad((unsigned)e,539);
+#endif
         } else return pgr_bad(LI2_RSEQ_PLAN,506);
         bytes+=h->source_length;
     }

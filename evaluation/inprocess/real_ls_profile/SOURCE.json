@@ -138,12 +138,12 @@
       "sha256": "be16d77e039ba1c28587a6e12437ce7b097bf0c6bc6d46bb02f98d3f34b60103"
     },
     "tools/page-entry/selected/persistent_group_compact.c": {
-      "bytes": 32854,
-      "sha256": "b28191d927cdd6431eafa2f1d463b22e7bfe3ac2ac5322f6da0445a0aab20d63"
+      "bytes": 46606,
+      "sha256": "9d1d51fd4a0ba49c18a208eb0b0b1ba03135d7826e1d774a274bc2db2ec9be3b"
     },
     "tools/page-entry/selected/persistent_group_controller.inc": {
-      "bytes": 85062,
-      "sha256": "2c65ab18f31688ee7aaee5fa52d6022d4064ba85fc1c8126a097dbbf518b7c93"
+      "bytes": 88104,
+      "sha256": "ecbfbb2cc73d977aab6860d296007f04c5b8c44386893839cc3ab0ec747f5019"
     }
   },
   "interface": {
