@@ -276,6 +276,39 @@ pub fn prepare_disassembly_whole_packed_entry_veneer_mixed_neighbors(
     Ok(product)
 }
 
+/// Explicit artifact-only overlapping-neighbor route with packed generated RX runs.
+/// T3 uses two E9 entries at V/V+1 inside one original 6..=15-byte victim,
+/// with one jointly certified candidate per image and direct body entries.
+/// B1/B2/T1/T2, complete pending ownership, final atomic admission, all budgets
+/// and carrier readback remain mandatory. This is no runtime qualification.
+pub fn prepare_disassembly_whole_packed_overlapping_neighbors(
+    original: &[u8],
+    selected: &disassembly::whole::WholeProgramSelection,
+) -> Result<Product, Error> {
+    let mut product = prepare_selection_with_carrier_layout(
+        original,
+        selected.selection.clone(),
+        false,
+        disassembly::NeighborMode::WholeOverlappingPending,
+        None,
+        adjacent_b2_frontend::PairProfile::ForwardJcc,
+        CarrierTransaction {
+            hooks: TransactionHooks {
+                addon: None,
+                gate: |_| Ok(()),
+            },
+            packed_rx_runs: true,
+        },
+    )?;
+    product.files.remove("bundle-index.tsv");
+    product.files.extend(selected.packed_overlapping_files());
+    product.files.insert(
+        "bundle-index.tsv".into(),
+        ledger::index(selected.selection.original, &product.files),
+    );
+    Ok(product)
+}
+
 fn prepare_selection_with_mode(
     original: &[u8],
     selection: Selection,
@@ -416,7 +449,8 @@ fn prepare_selection_with_carrier_layout(
         && (owned_neighbors
             || adjacent.is_some()
             || addon.is_some()
-            || mode != disassembly::NeighborMode::WholeEntryVeneerMixedPending)
+            || (mode != disassembly::NeighborMode::WholeEntryVeneerMixedPending
+                && mode != disassembly::NeighborMode::WholeOverlappingPending))
     {
         return Err(Error::new(
             "carrier-layout",
@@ -502,6 +536,7 @@ fn prepare_selection_with_carrier_layout(
             | disassembly::NeighborMode::WholeCurrentPlacementMixedPending
             | disassembly::NeighborMode::WholeFittingMixedPending
             | disassembly::NeighborMode::WholeEntryVeneerMixedPending
+            | disassembly::NeighborMode::WholeOverlappingPending
     ) {
         s.sites
             .iter()
@@ -518,6 +553,7 @@ fn prepare_selection_with_carrier_layout(
             | disassembly::NeighborMode::WholeCurrentPlacementMixedPending
             | disassembly::NeighborMode::WholeFittingMixedPending
             | disassembly::NeighborMode::WholeEntryVeneerMixedPending
+            | disassembly::NeighborMode::WholeOverlappingPending
     ) {
         composition
             .require_unclaimed_ranges(&pending.iter().map(|(_, range)| *range).collect::<Vec<_>>())
@@ -649,7 +685,9 @@ fn prepare_selection_with_carrier_layout(
     let profile = ledger::target(s);
     files.insert("target.tsv".into(), profile.clone());
     files.insert("selection.txt".into(), s.manifest.clone());
-    let mut ledger = if mode == disassembly::NeighborMode::WholeEntryVeneerMixedPending {
+    let mut ledger = if mode == disassembly::NeighborMode::WholeEntryVeneerMixedPending
+        || mode == disassembly::NeighborMode::WholeOverlappingPending
+    {
         ledger::plans_with_entry_veneers(s, &accepted, &composition, &dependencies)?
     } else {
         ledger::plans(s, &accepted, &composition, &dependencies)?
@@ -933,7 +971,15 @@ fn attempt_singleton(
                 max_virtual_span: s.limits.virtual_span,
             },
         };
-        let result = if mode == disassembly::NeighborMode::WholeEntryVeneerMixedPending {
+        let result = if mode == disassembly::NeighborMode::WholeOverlappingPending {
+            engine::plan_with_emission_after_and_overlapping_t3_pending(
+                &request,
+                composition,
+                &pending_ranges,
+                &site.victim_allocation,
+                policy,
+            )
+        } else if mode == disassembly::NeighborMode::WholeEntryVeneerMixedPending {
             engine::plan_with_emission_after_and_entry_veneer_mixed_t3_pending(
                 &request,
                 composition,
@@ -1101,6 +1147,7 @@ fn attempt_singleton(
                 | disassembly::NeighborMode::WholeCurrentPlacementMixedPending
                 | disassembly::NeighborMode::WholeFittingMixedPending
                 | disassembly::NeighborMode::WholeEntryVeneerMixedPending
+                | disassembly::NeighborMode::WholeOverlappingPending
         ) {
             next.require_unclaimed_ranges(&pending_ranges)
                 .map_err(|e| Error::new("pending-selected", e))?;

@@ -51,9 +51,9 @@ pub struct NeighborGeometry {
     pub selected_len: usize,
     /// Original victim instruction head.
     pub victim: u64,
-    /// Whole original victim length: 10..=15, or 6..=9 via an explicit short family.
+    /// Whole original victim length, as qualified by the explicit relay family.
     pub victim_len: usize,
-    /// Exact second E9 address, victim + 5.
+    /// Exact second E9 address: V+5, or V+1 in the overlapping artifact family.
     pub relay: u64,
     /// EB displacement from selected + 2 to the relay.
     pub rel8: i8,
@@ -1131,6 +1131,12 @@ mod short;
 pub use short::{
     plan_neighbor_short, plan_neighbor_short_detailed, plan_neighbor_short_with_emission,
 };
+
+// Separate six-byte artifact geometry; no change to the existing ten-byte relay.
+#[path = "neighbor_overlap.rs"]
+mod overlap;
+pub(crate) use overlap::plan_neighbor_overlapping_pending_core;
+pub use overlap::plan_neighbor_overlapping_with_emission;
 
 // Explicit second-function artifact authority; existing same-function paths stay separate.
 #[path = "neighbor_cross_function.rs"]

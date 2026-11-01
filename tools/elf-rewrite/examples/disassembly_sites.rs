@@ -74,6 +74,7 @@ enum Mode {
     WholeFittingMixedPending4096,
     WholeEntryVeneerMixedPending4096,
     WholePackedEntryVeneerMixedPending4096,
+    WholePackedOverlapping4096,
 }
 
 fn arguments_with_ownership(args: &[String]) -> Result<(&[String], Mode), String> {
@@ -254,8 +255,38 @@ fn arguments_with_packed_entry_veneer(args: &[String]) -> Result<(&[String], Mod
     }
 }
 
+fn arguments_with_packed_overlapping(args: &[String]) -> Result<(&[String], Mode), String> {
+    if args.len() == 8 && args[1] == "--whole-program-packed-overlapping-neighbors-4096" {
+        if args[2..].iter().any(|s| {
+            matches!(
+                s.as_str(),
+                "--whole-program-packed-overlapping-neighbors-4096"
+                    | "--whole-program-packed-entry-veneer-mixed-neighbors-4096"
+                    | "--whole-program-entry-veneer-mixed-neighbors-4096"
+                    | "--whole-program-fitting-mixed-neighbors-4096"
+                    | "--whole-program-current-placement-mixed-neighbors-4096"
+                    | "--whole-program-current-placement-4096"
+                    | "--whole-program-4096"
+                    | "--short-neighbors-only"
+                    | "--short-neighbors-owned"
+                    | "--short-neighbors-pending"
+            )
+        }) {
+            return Err("disassembly_sites --whole-program-packed-overlapping-neighbors-4096 ORIGINAL LEDGER LEDGER_SHA256 POLICY POLICY_SHA256 NEW_DIRECTORY".into());
+        }
+        Ok((&args[2..], Mode::WholePackedOverlapping4096))
+    } else {
+        arguments_with_packed_entry_veneer(args)
+    }
+}
+
 fn labels_with_ownership(mode: Mode) -> (&'static str, &'static str, &'static str) {
     match mode {
+        Mode::WholePackedOverlapping4096 => (
+            disassembly::whole::PROFILE,
+            disassembly::whole::PACKED_OVERLAPPING_METADATA,
+            " neighbor_victims=original-6-to-15 neighbor_ownership=inherited-t3 pending_selected=full-instruction-ownership artifact_placement=current-composition-certified-fit-v1 selected_placement_tactics=B1,B2,T1 paired_placement_tactics=legacy-T2,joint-overlapping-T3 paired_ownership=inherited-overlapping-T3 local_plan_admission=inherited-and-pending-before-tactic-success neighbor_relay=overlapping-e9-v-v+1-six-bytes-v1 artifact_entry_layout=direct-body-entry carrier_layout=linux-adjacent-generated-rx-runs-v1 carrier_page_bytes=4096 carrier_program_header_limit=1170",
+        ),
         Mode::WholePackedEntryVeneerMixedPending4096 => (
             disassembly::whole::PROFILE,
             disassembly::whole::PACKED_ENTRY_VENEER_MIXED_METADATA,
@@ -317,6 +348,7 @@ fn prepare_inputs(
             Mode::WholeCurrentPlacementMixedPending4096 => imported.inventory_whole_program(),
             Mode::WholeFittingMixedPending4096 => imported.inventory_whole_program(),
             Mode::WholePackedEntryVeneerMixedPending4096 => imported.inventory_whole_program(),
+            Mode::WholePackedOverlapping4096 => imported.inventory_whole_program(),
             Mode::WholeEntryVeneerMixedPending4096 => imported.inventory_whole_program(),
             Mode::LongOnly => imported.inventory(),
             Mode::ShortOnly => imported.inventory_short_neighbors(),
@@ -325,6 +357,14 @@ fn prepare_inputs(
         },
     );
     let selected = match mode {
+        Mode::WholePackedOverlapping4096 => {
+            let selected = imported.bind_whole_program(policy, expected_policy)?;
+            assert_eq!(selected.profile(), profile);
+            files.insert("selection.txt".into(), selected.manifest().to_vec());
+            return liteinst_rewrite::prepare_disassembly_whole_packed_overlapping_neighbors(
+                original, &selected,
+            );
+        }
         Mode::WholePackedEntryVeneerMixedPending4096 => {
             let selected = imported.bind_whole_program(policy, expected_policy)?;
             assert_eq!(selected.profile(), profile);
@@ -383,7 +423,7 @@ fn prepare_inputs(
 
 fn run() -> Result<bool, String> {
     let raw_args: Vec<_> = std::env::args().collect();
-    let (args, mode) = arguments_with_packed_entry_veneer(&raw_args)?;
+    let (args, mode) = arguments_with_packed_overlapping(&raw_args)?;
     let (profile, family, stdout_family) = labels_with_ownership(mode);
     let expected_ledger = selection::id(&args[2]).map_err(|e| e.to_string())?;
     let expected_policy = selection::id(&args[4]).map_err(|e| e.to_string())?;

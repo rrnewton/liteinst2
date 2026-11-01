@@ -934,3 +934,149 @@ fn whole_packed_rx_runs_cli_retains_mode_and_denominator_on_refusal() {
         disassembly::whole::PACKED_ENTRY_VENEER_MIXED_METADATA
     );
 }
+
+#[test]
+fn whole_packed_overlapping_cli_is_explicit_and_preserves_every_legacy_form() {
+    let base = args();
+    let flag = "--whole-program-packed-overlapping-neighbors-4096";
+    for position in 1..base.len() {
+        let mut positional = base.clone();
+        positional[position] = flag.into();
+        assert_eq!(
+            arguments_with_packed_overlapping(&positional),
+            arguments_with_packed_entry_veneer(&positional)
+        );
+    }
+    for old in [
+        "--short-neighbors-only",
+        "--short-neighbors-owned",
+        "--short-neighbors-pending",
+        "--whole-program-4096",
+        "--whole-program-current-placement-4096",
+        "--whole-program-current-placement-mixed-neighbors-4096",
+        "--whole-program-fitting-mixed-neighbors-4096",
+        "--whole-program-entry-veneer-mixed-neighbors-4096",
+        "--whole-program-packed-entry-veneer-mixed-neighbors-4096",
+    ] {
+        let mut input = base.clone();
+        input.insert(1, old.into());
+        assert_eq!(
+            arguments_with_packed_overlapping(&input),
+            arguments_with_packed_entry_veneer(&input)
+        );
+        for position in 2..input.len() {
+            let mut positional = input.clone();
+            positional[position] = flag.into();
+            assert_eq!(
+                arguments_with_packed_overlapping(&positional),
+                arguments_with_packed_entry_veneer(&positional)
+            );
+        }
+    }
+    let mut new = base.clone();
+    new.insert(1, flag.into());
+    assert_eq!(
+        arguments_with_packed_overlapping(&new).unwrap(),
+        (&base[1..], Mode::WholePackedOverlapping4096)
+    );
+    let (profile, family, stdout) = labels_with_ownership(Mode::WholePackedOverlapping4096);
+    assert_eq!(profile, disassembly::whole::PROFILE);
+    assert_eq!(family, disassembly::whole::PACKED_OVERLAPPING_METADATA);
+    assert!(stdout.contains("neighbor_victims=original-6-to-15"));
+    assert!(stdout.contains("pending_selected=full-instruction-ownership"));
+    assert!(stdout.contains("selected_placement_tactics=B1,B2,T1"));
+    assert!(stdout.contains("paired_placement_tactics=legacy-T2,joint-overlapping-T3"));
+    assert!(stdout.contains("artifact_entry_layout=direct-body-entry"));
+    assert!(stdout.contains("neighbor_relay=overlapping-e9-v-v+1-six-bytes-v1"));
+    assert!(stdout.contains("carrier_layout=linux-adjacent-generated-rx-runs-v1"));
+    assert!(stdout.contains("carrier_page_bytes=4096"));
+    assert!(stdout.contains("carrier_program_header_limit=1170"));
+    assert!(stdout.contains("paired_ownership=inherited-overlapping-T3"));
+    assert!(stdout.contains("artifact_placement=current-composition-certified-fit-v1"));
+    assert!(stdout.contains("local_plan_admission=inherited-and-pending-before-tactic-success"));
+    for mixed in [
+        flag,
+        "--whole-program-current-placement-4096",
+        "--whole-program-current-placement-mixed-neighbors-4096",
+        "--whole-program-fitting-mixed-neighbors-4096",
+        "--whole-program-entry-veneer-mixed-neighbors-4096",
+        "--whole-program-packed-entry-veneer-mixed-neighbors-4096",
+        "--whole-program-4096",
+        "--short-neighbors-only",
+        "--short-neighbors-owned",
+        "--short-neighbors-pending",
+    ] {
+        for position in 2..new.len() {
+            let mut bad = new.clone();
+            bad[position] = mixed.into();
+            assert!(arguments_with_packed_overlapping(&bad).is_err());
+        }
+    }
+    assert_eq!(
+        arguments_with_packed_overlapping(&new[..7]),
+        arguments_with_packed_entry_veneer(&new[..7])
+    );
+    let mut extra = new.clone();
+    extra.push("extra".into());
+    assert!(arguments_with_packed_overlapping(&extra).is_err());
+    new.swap(1, 2);
+    assert!(arguments_with_packed_overlapping(&new).is_err());
+}
+
+#[test]
+fn whole_packed_overlapping_cli_retains_mode_and_denominator_on_refusal() {
+    let (original, ledger, policy) = fixture();
+    let inventory = disassembly::import(&original, &ledger, ContentId::of(&ledger))
+        .unwrap()
+        .inventory_whole_program();
+    let mut files = BTreeMap::new();
+    // This input asks for 256 candidates/8192 bytes: the new mode must refuse
+    // the incompatible request, retaining both rows and the exact old policy.
+    let product = prepare_inputs(
+        &original,
+        &ledger,
+        ContentId::of(&ledger),
+        &policy,
+        ContentId::of(&policy),
+        Mode::WholePackedOverlapping4096,
+        &mut files,
+    )
+    .unwrap();
+    assert_eq!(
+        product.reports().iter().map(|r| r.id).collect::<Vec<_>>(),
+        [1, 2]
+    );
+    assert!(
+        product
+            .reports()
+            .iter()
+            .all(|r| r.refusal_code == Some(1) && !r.candidate_emitted)
+    );
+    assert!(!product.candidate_complete());
+    assert!(!product.qualification_complete());
+    assert!(!product.files().contains_key("candidate.elf"));
+    assert!(!product.files().keys().any(|n| n.starts_with("image-")));
+    assert_eq!(files["disassembly-inventory.tsv"], inventory);
+    assert_eq!(product.files()["disassembly-inventory.tsv"], inventory);
+    assert_eq!(product.files()["disassembly-policy.txt"], policy);
+    let profile = std::str::from_utf8(&product.files()["planning-profile.tsv"]).unwrap();
+    assert!(profile.contains(disassembly::whole::PACKED_OVERLAPPING_METADATA));
+    assert!(!profile.contains("neighbor_victims\tlong-only\n"));
+    let mut failed = BTreeMap::new();
+    assert!(
+        prepare_inputs(
+            &original,
+            &ledger,
+            ContentId::of(&ledger),
+            &policy,
+            ContentId([0; 32]),
+            Mode::WholePackedOverlapping4096,
+            &mut failed,
+        )
+        .is_err()
+    );
+    assert_eq!(failed.len(), 1);
+    assert_eq!(failed["disassembly-inventory.tsv"], inventory);
+    let (_, family, _) = labels_with_ownership(Mode::WholePackedOverlapping4096);
+    assert_eq!(family, disassembly::whole::PACKED_OVERLAPPING_METADATA);
+}

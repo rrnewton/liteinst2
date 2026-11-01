@@ -18,6 +18,8 @@ pub const ENTRY_VENEER_MIXED_METADATA: &str = "neighbor_victims\tmixed-short-and
 /// Serialization identity only; the entry-veneer planner and all its caps remain unchanged.
 pub const PACKED_RX_RUNS_METADATA: &str = "carrier_layout\tlinux-adjacent-generated-rx-runs-v1\ncarrier_page_bytes\t4096\ncarrier_program_header_limit\t1170\n";
 pub const PACKED_ENTRY_VENEER_MIXED_METADATA: &str = "neighbor_victims\tmixed-short-and-long\nneighbor_ownership\tinherited-t3\npending_selected\tfull-instruction-ownership\nartifact_placement\tcurrent-composition-certified-fit-v1\nselected_placement_tactics\tB1,B2,T1\npaired_placement_tactics\tlegacy-T2,fitting-mixed-T3-short-selected-entry-veneer\npaired_ownership\tinherited-mixed-T3\nlocal_plan_admission\tinherited-and-pending-before-tactic-success\nartifact_entry_layout\tshort-T3-selected-same-page-e9-v1\ncarrier_layout\tlinux-adjacent-generated-rx-runs-v1\ncarrier_page_bytes\t4096\ncarrier_program_header_limit\t1170\n";
+/// Separate six-byte overlapping relay; no old T3 family or carrier limit changes.
+pub const PACKED_OVERLAPPING_METADATA: &str = "neighbor_victims\toriginal-6-to-15\nneighbor_ownership\tinherited-t3\npending_selected\tfull-instruction-ownership\nartifact_placement\tcurrent-composition-certified-fit-v1\nselected_placement_tactics\tB1,B2,T1\npaired_placement_tactics\tlegacy-T2,joint-overlapping-T3\npaired_ownership\tinherited-overlapping-T3\nlocal_plan_admission\tinherited-and-pending-before-tactic-success\nneighbor_relay\toverlapping-e9-v-v+1-six-bytes-v1\nartifact_entry_layout\tdirect-body-entry\ncarrier_layout\tlinux-adjacent-generated-rx-runs-v1\ncarrier_page_bytes\t4096\ncarrier_program_header_limit\t1170\n";
 pub const MATERIAL_PROFILE: &str = "e9patch-full-sections-null-jumps-4096-v1";
 pub const SITE_LIMIT: usize = 4096;
 pub const HEAD_LIMIT: usize = 16384;
@@ -76,6 +78,19 @@ impl WholeProgramSelection {
             .split_once(ENTRY_VENEER_MIXED_METADATA)
             .expect("typed profile retains the original entry-veneer identity");
         *profile = format!("{before}{PACKED_ENTRY_VENEER_MIXED_METADATA}{after}").into_bytes();
+        files
+    }
+
+    pub(crate) fn packed_overlapping_files(&self) -> BTreeMap<String, Vec<u8>> {
+        let mut files = self.files.clone();
+        let profile = files
+            .get_mut("planning-profile.tsv")
+            .expect("typed whole-program selection retains its profile");
+        let text = std::str::from_utf8(profile).expect("typed profile is ASCII");
+        let (before, after) = text
+            .split_once(NEIGHBOR_METADATA)
+            .expect("typed profile has exactly one original neighbor identity");
+        *profile = format!("{before}{PACKED_OVERLAPPING_METADATA}{after}").into_bytes();
         files
     }
 

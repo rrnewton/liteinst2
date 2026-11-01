@@ -379,3 +379,7 @@ pub(crate) fn entry_veneer_for_pun(
 
 #[cfg(test)]
 mod entry_veneer_tests;
+
+// Explicit overlapping source relays; existing placement modes stay unchanged.
+mod overlap;
+pub(crate) use overlap::joint_overlapping_targets;

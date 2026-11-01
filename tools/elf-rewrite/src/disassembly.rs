@@ -35,6 +35,8 @@ pub(crate) enum NeighborMode {
     WholeFittingMixedPending,
     // Explicit short-selected entry veneer; storage remains a whole-page owner.
     WholeEntryVeneerMixedPending,
+    // Opt-in six-byte V/V+1 relay with complete inherited/pending admission.
+    WholeOverlappingPending,
     ShortOnly,
     ShortT3Ownership,
     ShortT3Pending,
@@ -48,6 +50,7 @@ impl NeighborMode {
             Self::WholeCurrentPlacementMixedPending => whole::PROFILE,
             Self::WholeFittingMixedPending => whole::PROFILE,
             Self::WholeEntryVeneerMixedPending => whole::PROFILE,
+            Self::WholeOverlappingPending => whole::PROFILE,
             Self::ShortOnly => SHORT_ONLY_PROFILE,
             Self::ShortT3Ownership => SHORT_T3_OWNERSHIP_PROFILE,
             Self::ShortT3Pending => SHORT_T3_PENDING_PROFILE,
@@ -61,6 +64,7 @@ impl NeighborMode {
             Self::WholeCurrentPlacementMixedPending => whole::MIXED_PENDING_METADATA,
             Self::WholeFittingMixedPending => whole::FITTING_MIXED_METADATA,
             Self::WholeEntryVeneerMixedPending => whole::ENTRY_VENEER_MIXED_METADATA,
+            Self::WholeOverlappingPending => whole::PACKED_OVERLAPPING_METADATA,
             Self::ShortOnly => SHORT_FAMILY,
             Self::ShortT3Ownership => SHORT_OWNERSHIP,
             Self::ShortT3Pending => SHORT_PENDING,
@@ -249,7 +253,8 @@ impl Disassembly {
             | NeighborMode::WholeCurrentPlacement
             | NeighborMode::WholeCurrentPlacementMixedPending
             | NeighborMode::WholeFittingMixedPending
-            | NeighborMode::WholeEntryVeneerMixedPending => {
+            | NeighborMode::WholeEntryVeneerMixedPending
+            | NeighborMode::WholeOverlappingPending => {
                 return Err(Error::new(
                     "neighbor-mode",
                     "whole mode requires shared importer",
@@ -311,7 +316,8 @@ impl Disassembly {
             | NeighborMode::WholeCurrentPlacement
             | NeighborMode::WholeCurrentPlacementMixedPending
             | NeighborMode::WholeFittingMixedPending
-            | NeighborMode::WholeEntryVeneerMixedPending => {
+            | NeighborMode::WholeEntryVeneerMixedPending
+            | NeighborMode::WholeOverlappingPending => {
                 return Err(Error::new(
                     "neighbor-mode",
                     "whole mode requires shared importer",
@@ -392,7 +398,8 @@ impl Disassembly {
             | NeighborMode::WholeCurrentPlacement
             | NeighborMode::WholeCurrentPlacementMixedPending
             | NeighborMode::WholeFittingMixedPending
-            | NeighborMode::WholeEntryVeneerMixedPending => {
+            | NeighborMode::WholeEntryVeneerMixedPending
+            | NeighborMode::WholeOverlappingPending => {
                 return Err(Error::new(
                     "neighbor-mode",
                     "whole mode requires shared importer",

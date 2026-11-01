@@ -995,6 +995,54 @@ pub fn plan_with_emission_after_and_entry_veneer_mixed_t3_pending(
     victim_allocation: &AllocationPolicy,
     policy: EnginePolicy,
 ) -> Result<ArtifactPlan, EngineFailure> {
+    plan_with_emission_after_and_pending_t3_layout(
+        request,
+        predecessor,
+        pending,
+        victim_allocation,
+        policy,
+        PendingNeighborLayout::EntryVeneer,
+    )
+}
+
+/// Explicit artifact engine using the six-byte overlapping T3 source relay.
+///
+/// B1/B2/T1/T2 retain the fitting engine's order and checks. T3 instead uses
+/// V/V+1 overlapping E9s wholly inside one qualified original 6..=15-byte
+/// victim. One finite joint target certificate precedes one encode per image;
+/// both actual mappings and the complete inherited/pending transaction are
+/// still checked. No existing engine mode changes its source geometry.
+pub fn plan_with_emission_after_and_overlapping_t3_pending(
+    request: &ArtifactRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+) -> Result<ArtifactPlan, EngineFailure> {
+    plan_with_emission_after_and_pending_t3_layout(
+        request,
+        predecessor,
+        pending,
+        victim_allocation,
+        policy,
+        PendingNeighborLayout::Overlapping,
+    )
+}
+
+#[derive(Clone, Copy)]
+enum PendingNeighborLayout {
+    EntryVeneer,
+    Overlapping,
+}
+
+fn plan_with_emission_after_and_pending_t3_layout(
+    request: &ArtifactRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+    layout: PendingNeighborLayout,
+) -> Result<ArtifactPlan, EngineFailure> {
     let preflight: Result<_, Refusal> = (|| {
         let current = predecessor.planning_overlay(
             request.site.identity,
@@ -1057,14 +1105,27 @@ pub fn plan_with_emission_after_and_entry_veneer_mixed_t3_pending(
             continue;
         }
         let placed = request.with_fitting_placement();
-        match neighbor::plan_neighbor_entry_veneer_pending_core(
-            &placed,
-            predecessor,
-            pending,
-            victim_allocation,
-            policy.neighbor,
-            policy.bundle,
-        ) {
+        let result = match layout {
+            PendingNeighborLayout::EntryVeneer => {
+                neighbor::plan_neighbor_entry_veneer_pending_core(
+                    &placed,
+                    predecessor,
+                    pending,
+                    victim_allocation,
+                    policy.neighbor,
+                    policy.bundle,
+                )
+            }
+            PendingNeighborLayout::Overlapping => neighbor::plan_neighbor_overlapping_pending_core(
+                &placed,
+                predecessor,
+                pending,
+                victim_allocation,
+                policy.neighbor,
+                policy.bundle,
+            ),
+        };
+        match result {
             Ok(plan) => {
                 let ArtifactMetrics::Neighbor(geometry, metrics) = plan.metrics() else {
                     return Err(EngineFailure {
