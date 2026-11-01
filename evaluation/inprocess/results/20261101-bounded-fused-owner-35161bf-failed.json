@@ -1,0 +1,380 @@
+{
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "finite": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "program": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "release_build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "seed": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "cleanup_complete": true,
+  "commands": {
+    "exit_counts": {
+      "0": 99,
+      "125": 2
+    },
+    "planned": 105,
+    "reaped": 101,
+    "recorded": 101,
+    "timed_out": 0
+  },
+  "cpu": 8,
+  "error": "ValueError: all three actual loop outcomes required without skipped or relabelled failures",
+  "failure_scope": "Both protected positive subjects failed before focal collection. Recorded startup publications are not focal loop completion. Exact failed planner root and miss reason were not retained; code3310/detail2803 alone identify the planner failure, not its source diagnosis.",
+  "fault_cases": [
+    {
+      "control": 0,
+      "expected_exit": 0,
+      "label": "subject-native-1-0",
+      "lane": "native",
+      "launched": false,
+      "mode": 1,
+      "status": "unexecuted"
+    },
+    {
+      "control": 0,
+      "expected_exit": 125,
+      "label": "subject-maintained-1-0",
+      "lane": "maintained",
+      "launched": false,
+      "mode": 1,
+      "status": "unexecuted"
+    },
+    {
+      "control": 0,
+      "expected_exit": 0,
+      "label": "subject-native-2-0",
+      "lane": "native",
+      "launched": false,
+      "mode": 2,
+      "status": "unexecuted"
+    },
+    {
+      "control": 0,
+      "expected_exit": 125,
+      "label": "subject-maintained-2-0",
+      "lane": "maintained",
+      "launched": false,
+      "mode": 2,
+      "status": "unexecuted"
+    }
+  ],
+  "final_errors": [],
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 8,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "outer_receipt": {
+    "bytes": 27519,
+    "sha256": "ff671cbc930cf208f40e5ecc3132076f6316dd82f99c37aec366321729355f04"
+  },
+  "performance_credit": false,
+  "prerequisites": {
+    "block_prerequisite": {
+      "archive": {
+        "bytes": 11961622,
+        "sha256": "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d"
+      },
+      "bytes": 1511761,
+      "commands": 101,
+      "commands_sha256": "46eff5f0004301a7240b4ba43aff64ac909cd44877372496a2a9626b28d9cc3e",
+      "controls": {
+        "app": 40,
+        "effects": 12,
+        "owner": 204,
+        "pair": 36,
+        "probe": 22,
+        "subentry": 19,
+        "terminal": 73,
+        "tls": 33
+      },
+      "file": "target/evaluation/inprocess/bounded-fused-prerequisite-pb-attempt-1/receipt.json",
+      "profile": "bounded-block-owner-v1",
+      "sha256": "9fddeb65d78121e50582b347df36ec2caa5d682a4b4ca550c036da3bb72f3b22",
+      "status": "observed_unqualified",
+      "whole_profile_qualified": false
+    },
+    "direct_prerequisite": {
+      "archive": {
+        "bytes": 11961622,
+        "sha256": "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d"
+      },
+      "bytes": 11467,
+      "commands": 139,
+      "commands_sha256": "7e347a1db7da138ce99c3a29909fbbf1cf8b1560187e6823297600954539e2a3",
+      "controls": {
+        "app": 40,
+        "effects": 12,
+        "owner": 404,
+        "pair": 28,
+        "probe": 22,
+        "subentry": 19,
+        "terminal": 73,
+        "tls": 33
+      },
+      "file": "evaluation/inprocess/results/20261101T162250.874294Z-direct-frontier-loop-35161bfa3ce2.json",
+      "profile": "persistent-direct-frontier-finite-v1",
+      "receipt": {
+        "bytes": 1557206,
+        "sha256": "2a63532e03f951ef0fd029e7e2578d560c2223537559abc11533e764bbd53cfb"
+      },
+      "sha256": "b37d6b7872a01fc0ee253bd8c6fe9a4e7affcddb415810dc365559bcefcfe1cf",
+      "status": "passed",
+      "whole_profile_qualified": false
+    },
+    "fused_component_prerequisite": {
+      "archive": {
+        "bytes": 11961622,
+        "sha256": "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d"
+      },
+      "bytes": 230265,
+      "commands": 44,
+      "commands_sha256": "3eb93d10b49c99a3ce25d760055596b23e20f0085f5efb6aeaee44af68e69d8c",
+      "emitted_execution": 0,
+      "file": "target/evaluation/inprocess/bounded-fused-cohort-component-attempt-1/receipt.json",
+      "fresh_owner_archive_bytes_joined": true,
+      "owner_credit": false,
+      "performance_credit": false,
+      "profile": "experimental-bounded-fused-component-v1",
+      "qualification_credit": false,
+      "result": {
+        "copied_boundaries": 56,
+        "corruptions": 14,
+        "direct_models": 1536,
+        "emitted_execution": 0,
+        "interiors": 19964,
+        "misses": 10,
+        "mov_models": 1280,
+        "old_version_refusals": 60,
+        "owner_credit": 0,
+        "plans": 14,
+        "typed_direct": 41984,
+        "typed_mov": 83456,
+        "version": 11
+      },
+      "sha256": "afa00517928988eaf538cb657c999c0d0fec5112e82da7edc813eb7a54d92898",
+      "status": "components_passed",
+      "supplied_archive_provenance": false
+    }
+  },
+  "private_receipt": {
+    "bytes": 1792962,
+    "sha256": "26363dde3f1ec231ce1328ed40f69739ea8435eb683792462d0f7cee78efe8ce"
+  },
+  "profile": "bounded-fused-owner-first-failure",
+  "programs_launched": 0,
+  "qualification_credit": false,
+  "reproduction": {
+    "commands": [
+      "python3 -B evaluation/inprocess/direct_frontier_loop.py --expect-revision 35161bfa3ce2554ad58bb3fa988fe27441a99693",
+      "python3 -B evaluation/inprocess/bounded_block_owner.py --expect-revision 35161bfa3ce2554ad58bb3fa988fe27441a99693 --cpu 8 --direct-receipt <FRESH_NATIVE41_PUBLIC> --direct-receipt-sha256 <SHA256> --output target/evaluation/inprocess/<FRESH_PB>",
+      "python3 -B evaluation/inprocess/bounded_fusion_component/run.py --expect-revision 35161bfa3ce2554ad58bb3fa988fe27441a99693 --cpu 8 --archive <FRESH_NATIVE41_ARCHIVE> --archive-sha256 <SHA256> --output target/evaluation/inprocess/<FRESH_COMPONENT>",
+      "python3 -B evaluation/inprocess/bounded_fused_owner.py --expect-revision 35161bfa3ce2554ad58bb3fa988fe27441a99693 --cpu 8 --direct-receipt <FRESH_NATIVE41_PUBLIC> --direct-receipt-sha256 <SHA256> --block-receipt <FRESH_PB_RECEIPT> --block-receipt-sha256 <SHA256> --fused-component-receipt <FRESH_COMPONENT_RECEIPT> --fused-component-receipt-sha256 <SHA256> --output target/evaluation/inprocess/<FRESH_PF>"
+    ],
+    "reservation": "one externally reserved CPU with singleton affinity",
+    "revision": "35161bfa3ce2554ad58bb3fa988fe27441a99693"
+  },
+  "revision": "35161bfa3ce2554ad58bb3fa988fe27441a99693",
+  "schema": 1,
+  "source": {
+    "head_sources_match": true,
+    "revision": "35161bfa3ce2554ad58bb3fa988fe27441a99693",
+    "source_manifest_sha256": "c808deca9898374e079c8f2f680ab8e98f28db59cd3d355d674b275d854ff4f1",
+    "tracked_clean": true,
+    "tree": "61a83d3699853fd79184463d826057d52ab2ed8b"
+  },
+  "source_unchanged": true,
+  "status": "failed",
+  "subjects": [
+    {
+      "application_control_count": 40,
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 858480,
+          "sha256": "a6ac141821074ad1cd2ed86f8458f7c6addcbce71e4f59d6e3e439a918c29a5c"
+        }
+      },
+      "error": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "full_protected_state_accepted": false,
+      "lane": "native",
+      "launched": true,
+      "mode": 0,
+      "status": "observed_native_bounded_fused",
+      "timed_out": false,
+      "whole_process_ns": 148814678
+    },
+    {
+      "application_control_count": 0,
+      "captures": {
+        "record": {
+          "bytes": 2764,
+          "sha256": "42ca9e22b02eb75c15a1ba5f6d1c88ca1caca06cf64a13c108140228ff84a78d"
+        },
+        "stderr": {
+          "bytes": 14576,
+          "sha256": "5448810950ea6b3243540c27e5ed873e6bcea79123f0a4625384b6f83e436b26"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "error": "ValueError: actual command exit: subject-maintained-0-0",
+      "exit": 125,
+      "expected_exit": 0,
+      "full_protected_state_accepted": false,
+      "lane": "maintained",
+      "launched": true,
+      "maps_view": {
+        "comparisons": 0,
+        "differential": 0,
+        "enabled": 1,
+        "hits": 2059,
+        "invalidations": 526,
+        "mismatches": 0,
+        "poisoned": 0,
+        "queries": 2139,
+        "refreshes": 80,
+        "reserved": 0,
+        "stack_probes": 1040,
+        "unexplained": 0,
+        "updates": 459,
+        "version": 1
+      },
+      "mode": 0,
+      "status": "failed",
+      "terminal": {
+        "cancelled": 7,
+        "cold_attempts": 20,
+        "completed": 12,
+        "detail_abs": 2803,
+        "detail_negative": 0,
+        "entries": 12,
+        "failure_code": 3310,
+        "first_error": 3310,
+        "offers": 20,
+        "publications": 12,
+        "status": 125
+      },
+      "timed_out": false,
+      "whole_process_ns": 264706819
+    },
+    {
+      "application_control_count": 0,
+      "captures": {
+        "record": {
+          "bytes": 2768,
+          "sha256": "9b33532f714d85fb9adfb175a5b352ae03ff42e6e5663431f79c67b4f4554660"
+        },
+        "stderr": {
+          "bytes": 14579,
+          "sha256": "8b41c303fc002f0ebb649dc16172c078f2b62a604e19a69812301d3daae62c4b"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "error": "ValueError: actual command exit: subject-differential-0-0",
+      "exit": 125,
+      "expected_exit": 0,
+      "full_protected_state_accepted": false,
+      "lane": "differential",
+      "launched": true,
+      "maps_view": {
+        "comparisons": 2059,
+        "differential": 1,
+        "enabled": 1,
+        "hits": 2059,
+        "invalidations": 526,
+        "mismatches": 0,
+        "poisoned": 0,
+        "queries": 2139,
+        "refreshes": 80,
+        "reserved": 0,
+        "stack_probes": 1040,
+        "unexplained": 0,
+        "updates": 459,
+        "version": 1
+      },
+      "mode": 0,
+      "status": "failed",
+      "terminal": {
+        "cancelled": 7,
+        "cold_attempts": 20,
+        "completed": 12,
+        "detail_abs": 2803,
+        "detail_negative": 0,
+        "entries": 12,
+        "failure_code": 3310,
+        "first_error": 3310,
+        "offers": 20,
+        "publications": 12,
+        "status": 125
+      },
+      "timed_out": false,
+      "whole_process_ns": 347122353
+    }
+  ],
+  "timing_scope": "Validation wrapper intervals only; no completed-program performance result.",
+  "whole_profile_qualified": false,
+  "within_10x_dynamorio_established": false
+}

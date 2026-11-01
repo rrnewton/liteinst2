@@ -34,7 +34,7 @@ static inline int li2_pfr_miss_valid(const struct li2_pg_plan *plan,
         if(result!=LI2_PG_BOUNDARY || miss->site!=LI2_PGD_SOURCE)return 0;
         break;
     case LI2_PGD_SOURCE_OVERLAP:case LI2_PGD_OUTSIDE_PAIR:
-    case LI2_PGD_HEAD_LIMIT:case LI2_PGD_LINK_LIMIT:
+    case LI2_PGD_HEAD_LIMIT:case LI2_PGD_EXIT_LIMIT:case LI2_PGD_LINK_LIMIT:
         if(result!=LI2_PG_GRAPH || miss->site!=LI2_PGD_SOURCE)return 0;
         break;
     case LI2_PGD_RIP_REACH:case LI2_PGD_BRANCH_REACH:case LI2_PGD_FALLTHROUGH_REACH:

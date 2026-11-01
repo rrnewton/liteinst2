@@ -2,6 +2,17 @@
    models. No generated/native execution, source lease, or owner credit. */
 #include "persistent_fused_plan.h"
 #include "persistent_block_plan.h"
+/* Select the real pure runtime miss classifier in this component TU only.
+   These prerequisites instantiate no owner and grant no cancellation token. */
+#define LI2_PERSISTENT_FUSED_RUNTIME 1
+#define LI2_PERSISTENT_RETAINED_TWO 1
+#define LI2_PERSISTENT_SUBENTRY 1
+#define LI2_PERSISTENT_UNREGISTERED 1
+#include "persistent_fused_runtime.h"
+#undef LI2_PERSISTENT_UNREGISTERED
+#undef LI2_PERSISTENT_SUBENTRY
+#undef LI2_PERSISTENT_RETAINED_TWO
+#undef LI2_PERSISTENT_FUSED_RUNTIME
 #include "tests/persistent_direct_frontier/model.h"
 #include "tests/linked_mov_guard/model.h"
 #include <assert.h>
@@ -84,6 +95,40 @@ static void refuse(uintptr_t entry,int result,unsigned reason) {
     struct li2_pg_miss miss;
     assert(li2_pf_plan_pages(pages,source,entry,&layout,&table,&full,&miss)==result && miss.reason==reason && !full.ready);
     assert(!li2_pf_miss_validate(&full,&miss,result,&scratch));
+    if(reason==LI2_PGD_EXIT_LIMIT) {
+        /* The existing nine-Jcc puzzle stays a refused plan. It may only
+           authorize the caller's separate genuine HELD cancellation. */
+        assert(result==LI2_PG_GRAPH && full.exits==8 && miss.detail==8 &&
+            li2_pfr_miss_valid(&full,&miss,result,&scratch));
+        assert(!full.ready && li2_pf_plan_validate(&full,&scratch)==LI2_PG_CORRUPT &&
+            li2_pf_compact_build(&full,&scratch,&compact)==LI2_PG_CORRUPT);
+        for(unsigned i=0;i<6;i++) {
+            struct li2_pg_miss altered=miss;
+            if(i==0)altered.version^=1;
+            if(i==1)altered.status^=1;
+            if(i==2)altered.reason^=1;
+            if(i==3)altered.site^=1;
+            if(i==4)altered.pc^=1;
+            if(i==5)altered.detail^=1;
+            assert(!li2_pfr_miss_valid(&full,&altered,result,&scratch));
+        }
+        for(unsigned i=0;i<7;i++) {
+            old=full;
+            if(i==0)old.ready=1;
+            if(i==1)old.result^=1;
+            if(i==2)--old.exits;
+            if(i==3)old.source[0][0x200]^=1;
+            if(i==4)--old.heads;
+            if(i==5)old.decoder_result=1;
+            if(i==6)old.table.node[0].first^=1;
+            assert(!li2_pfr_miss_valid(&old,&miss,result,&scratch));
+        }
+        assert(!li2_pfr_miss_valid(&full,&miss,LI2_PG_MISS,&scratch) &&
+            !li2_pfr_miss_valid(&full,&miss,0,&scratch));
+    } else if(reason==LI2_PGD_NONE || reason==LI2_PGD_NO_EXIT) {
+        /* Unclassified backward closure and a no-exit cycle remain fatal. */
+        assert(!li2_pfr_miss_valid(&full,&miss,result,&scratch));
+    }
     miss.detail^=1;assert(li2_pf_miss_validate(&full,&miss,result,&scratch)==LI2_PG_CORRUPT);++misses;
 }
 static void loop(unsigned entry) {
