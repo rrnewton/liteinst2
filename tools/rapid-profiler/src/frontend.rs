@@ -1129,18 +1129,29 @@ impl ThreadModel {
         value: u64,
         slot: &mut ModelReturnSlot,
     ) -> Result<Admission, EntryError> {
-        if handle.thread != self.identity || !Arc::ptr_eq(&handle.owner.spec, &self.session.spec) {
+        self.enter_owner(&handle.owner, handle.thread, function, value, slot)
+    }
+    // Borrowing avoids a temporary owner while the caller retains its handle or
+    // registry guard. The admitted frame still acquires its own exact owner.
+    fn enter_owner(
+        &mut self,
+        owner: &Arc<FrontendEpoch>,
+        thread: u64,
+        function: FunctionId,
+        value: u64,
+        slot: &mut ModelReturnSlot,
+    ) -> Result<Admission, EntryError> {
+        if thread != self.identity || !Arc::ptr_eq(&owner.spec, &self.session.spec) {
             return Err(EntryError::ForeignHandle);
         }
-        let ticket = handle
-            .owner
+        let ticket = owner
             .epoch
             .enter_owned(function, value)
             .map_err(EntryError::Generation)?;
         let admission = ticket.admission();
         self.frames.push(Frame {
             ticket: Some(ticket),
-            owner: Arc::clone(&handle.owner),
+            owner: Arc::clone(owner),
             thread: self.identity,
             start_sequence: self.completed_sequence,
             slot: *slot,
