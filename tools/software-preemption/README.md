@@ -1,6 +1,6 @@
 # Finite software-preemption prototype
 
-`liteinst-preempt` installs a real observing trampoline at the one near backward branch in each of four private, authored functions. The corpus is countdown/JNZ, signed/JG, unsigned/JB, and direct/JMP. Each function is call-free, has complete decoded entry heads, and uses no application stack storage beyond its ordinary call/return. Unsupported calls, indirect transfers, short backward encodings, and a missing or second backward site refuse before publication. This is a finite static corpus, not an arbitrary ELF instrumenter or complete progress guarantee.
+The default `qualify` and `bench` commands install a real observing trampoline at the one near backward branch in each of four private, authored functions. The corpus is countdown/JNZ, signed/JG, unsigned/JB, and direct/JMP. Each function is call-free, has complete decoded entry heads, and uses no application stack storage beyond its ordinary call/return. Unsupported calls, indirect transfers, short backward encodings, and a missing or second backward site refuse before publication. This is a finite static corpus, not an arbitrary ELF instrumenter or complete progress guarantee.
 
 The software clock counts **taken backward branch decisions BEFORE the branch executes**. It evaluates the original Jcc condition using saved RFLAGS; an unconditional backward JMP is always taken. Untaken conditional branches are encounters but consume no clock quantum. At a positive quantum boundary the actual callback sends `(logical site offset, taken-edge count, branch encounters, saved state)` to its controller and blocks until the controller returns the exact matching resume. The original branch executes only after that return. Neither a timeout nor ptrace triggers preemption, and no callback edits RIP/RSP or unwinds through generated code. Calls/indirect branches, multiple sites, external application concurrency, asynchronous cancellation, and mid-instruction stops are outside this increment.
 
@@ -97,6 +97,23 @@ process-lived. This adds no performance, full-XSAVE/whole-stack,
 arbitrary-ELF/general-ABI, asynchronous-cancellation or retirement claim.
 The four-literal profile and evidence remain unchanged.
 
+
+## Owned two-backedge region
+
+`BackedgeClockRegion::new_owned_region` admits a separate 5–80-byte, register-only
+scalar profile with exactly two supported near backedges. The public unsafe
+`plan_owned_clock_region_detailed` relocates the complete region into one image
+with two gates sharing one clock and invocation lease. The caller supplies
+complete internal leaders, excludes external interior entry, and establishes a
+finite aggregate work bound; a structural path to RET does not prove termination.
+
+The release `region-oracle NEW_ABSOLUTE_OUTPUT` command compares a fixed nested
+3×4 loop against native execution, checks exact stops across both sites, and
+rejects actual wrong-site/count resumes before refill. See the
+[reproducer and measured correctness results](../../evaluation/owned-clock-region/README.md).
+It uses an owned fixture installation; this profile has no production-publication
+or throughput qualification yet. The existing commands and results retain their
+original scopes.
 
 ## Explicit SPSC handoff experiment
 

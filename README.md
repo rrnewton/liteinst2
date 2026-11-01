@@ -59,6 +59,11 @@ For a standalone stop/resume client with an owned buffer, see
 [`owned_loop_clock`](tools/software-preemption/README.md#owned-loop-client).
 Run `cargo run --example owned_loop_clock` without arguments.
 
+`BackedgeClockRegion` and `plan_owned_clock_region_detailed` share one clock
+across two backward branches in a closed scalar region. The
+[two-backedge profile](evaluation/owned-clock-region/README.md) describes its
+source limits, lease requirements and native stop/state checks.
+
 ## How the crate is organised
 
 Each module owns one correctness boundary:
