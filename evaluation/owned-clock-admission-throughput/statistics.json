@@ -1,0 +1,105 @@
+{
+  "status": "PASS_COMPLETE_COHORT",
+  "processes": 12,
+  "degrees_of_freedom": 11,
+  "t_critical": 2.20098516,
+  "process_means_ns_per_call": [
+    {
+      "native": 5.576835632324219,
+      "counter-per-call": 184.391357421875,
+      "counter-batch": 24.409011840820312
+    },
+    {
+      "native": 6.206947326660156,
+      "counter-per-call": 184.86991119384766,
+      "counter-batch": 27.52368927001953
+    },
+    {
+      "native": 6.331214904785156,
+      "counter-per-call": 188.9968032836914,
+      "counter-batch": 25.89403533935547
+    },
+    {
+      "native": 6.13226318359375,
+      "counter-per-call": 190.6842269897461,
+      "counter-batch": 25.76512908935547
+    },
+    {
+      "native": 7.6995391845703125,
+      "counter-per-call": 189.1022186279297,
+      "counter-batch": 26.304977416992188
+    },
+    {
+      "native": 6.35546875,
+      "counter-per-call": 186.92830657958984,
+      "counter-batch": 25.165359497070312
+    },
+    {
+      "native": 6.5684661865234375,
+      "counter-per-call": 183.41939544677734,
+      "counter-batch": 24.992706298828125
+    },
+    {
+      "native": 5.988700866699219,
+      "counter-per-call": 184.20636749267578,
+      "counter-batch": 25.45110321044922
+    },
+    {
+      "native": 6.227325439453125,
+      "counter-per-call": 183.8789825439453,
+      "counter-batch": 25.27685546875
+    },
+    {
+      "native": 6.999626159667969,
+      "counter-per-call": 183.100341796875,
+      "counter-batch": 25.728561401367188
+    },
+    {
+      "native": 9.531303405761719,
+      "counter-per-call": 211.6657257080078,
+      "counter-batch": 30.483192443847656
+    },
+    {
+      "native": 11.404594421386719,
+      "counter-per-call": 207.66944885253906,
+      "counter-batch": 30.987998962402344
+    }
+  ],
+  "absolute": {
+    "native": {
+      "estimate": 7.085190455118815,
+      "lower95": 5.99666528766056,
+      "upper95": 8.17371562257707
+    },
+    "counter-per-call": {
+      "estimate": 189.909423828125,
+      "lower95": 183.81231848008824,
+      "upper95": 196.00652917616176
+    },
+    "counter-batch": {
+      "estimate": 26.498551686604817,
+      "lower95": 25.14912419596989,
+      "upper95": 27.847979177239743
+    }
+  },
+  "paired_geometric_ratios": {
+    "counter-per-call/native": {
+      "estimate": 27.37553197721639,
+      "lower95": 24.584068750332033,
+      "upper95": 30.483959292762528
+    },
+    "counter-batch/native": {
+      "estimate": 3.8134752600569186,
+      "lower95": 3.477085155556046,
+      "upper95": 4.182409376954293
+    },
+    "counter-batch/counter-per-call": {
+      "estimate": 0.13930232527465505,
+      "lower95": 0.13596332095383645,
+      "upper95": 0.14272332928315584
+    }
+  },
+  "primary_ratio": "counter-batch/counter-per-call",
+  "closed_sha256": "5e29134df4bcd0566e4d0e5d9f1dbe166a4928446587c24b15f94b243cf33b56",
+  "scope": "Identical tiny work with different admission contracts; includes calls, admission, tokens, bookkeeping and batch finish. No isolated gate cost, application throughput, Stop transport, deadline or publisher claim. No outliers removed."
+}

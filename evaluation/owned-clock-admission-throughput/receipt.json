@@ -1,0 +1,632 @@
+{
+  "status": "PASS_COMPLETE_COHORT",
+  "revision": "77f83b73e308031a3fd6027d0708e2d3f1f15fc2",
+  "source_tree": "8f4480349f5f027b24562d6232891ccffb5df30e",
+  "binary": {
+    "bytes": 2258360,
+    "sha256": "80eae3100b18adc7e261b5db991796d33bb723929fbda6194fdbad20ac9cb778"
+  },
+  "closed_record": {
+    "bytes": 30092,
+    "sha256": "5e29134df4bcd0566e4d0e5d9f1dbe166a4928446587c24b15f94b243cf33b56"
+  },
+  "statistics": {
+    "bytes": 3072,
+    "sha256": "eeea236bf152998a65f1179b2a7ce3f33dd639a71dd5058f1320eb8553af7836"
+  },
+  "native_prerequisite_closed": {
+    "bytes": 11204,
+    "sha256": "40f7a5bc600aede1c6644df05386829ec4b9b6e16293266eb08a236fc62b2be6"
+  },
+  "focused_closed": {
+    "bytes": 3600,
+    "sha256": "7c54f38b98399f6e18d72bdedc5aadfa7b6dc82a5004937dd77fd909861b2dfc"
+  },
+  "full_validation": {
+    "path": "validation.json",
+    "bytes": 13812,
+    "sha256": "5c7d39db8da856207332222404abaf660763a721aad1c674266673918b32012e",
+    "revision": "77f83b73e308031a3fd6027d0708e2d3f1f15fc2",
+    "status": "PASS",
+    "workspace_top_level_passed": 4417,
+    "workspace_ignored": 39,
+    "controlled_child_passed_separately": 3,
+    "serial_launch_passed": 1039
+  },
+  "path_symbols": {
+    "$CHECKOUT": "exact source checkout",
+    "$TOOLCHAIN": "direct pinned Rust toolchain directory",
+    "$CAMPAIGN_OUT": "fresh private campaign output",
+    "$ORDER": "each cohort order below",
+    "$COHORT": "each cohort directory below"
+  },
+  "hardware": {
+    "host": "AMD EPYC Zen 5 dev host",
+    "architecture": "x86_64",
+    "logical_cpus": 316,
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor"
+  },
+  "reserved_cpus": [
+    10,
+    27,
+    34
+  ],
+  "producer_cpu": 10,
+  "controller_cpu": 27,
+  "worker_cpu": 34,
+  "reservation_authority": "External caller reserves CPUs; runner records affinity, not an independent live witness.",
+  "load_before": [
+    87.26,
+    57.3,
+    43.11
+  ],
+  "load_after": [
+    86.36,
+    57.61,
+    43.28
+  ],
+  "python": "3.9.25 (main, Aug 13 2026, 00:00:00) \n[GCC 11.5.0 20240719 (Red Hat 11.5.0-14)]",
+  "toolchain": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "rustdoc": "rustdoc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "environment": {
+    "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+    "LANG": "C",
+    "LC_ALL": "C",
+    "CARGO_BUILD_JOBS": "3",
+    "RUST_TEST_THREADS": "3",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "RUSTC": "$TOOLCHAIN/bin/rustc",
+    "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+    "CARGO_TARGET_DIR": "$CHECKOUT/target"
+  },
+  "frozen_tools_and_scripts": {
+    "$CHECKOUT/evaluation/owned-clock-admission-throughput/run.py": "425ece1b2deb8e579a31bbd9d0bd3873024ce962af84407ff7e076672527be75",
+    "$CHECKOUT/evaluation/admission/processes.py": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+    "$CHECKOUT/evaluation/owned-clock-admission-throughput/summarize.py": "59b4e30a421672cdf46a4b3c7294f86949e3048218b191ddf2c8b8fd8717a193",
+    "/usr/bin/python3.9": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+    "$TOOLCHAIN/bin/cargo": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+    "$TOOLCHAIN/bin/rustc": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+    "$TOOLCHAIN/bin/rustdoc": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+    "/usr/bin/git": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240",
+    "/usr/bin/taskset": "e195f3da0a3c33e2e3d91a6579432e536064869b1cb5585131a8fc6983163741",
+    "/usr/bin/prlimit": "942bcd8596c242d4d33dca657372a83e1f55908afd59b525389362cd6d282933",
+    "$CHECKOUT/evaluation/owned-clock-region-throughput/summarize.py": "45c89e7f3640f1c469e71a4730cd6c0776d6238a3179964af3c8bc54483dd5d3",
+    "$CHECKOUT/evaluation/owned-clock-batch/reproduce.py": "03f50dd6b12e1ac3b236fe4b508d96a861892933b9e918ed6a1f50085b29c9b8"
+  },
+  "source_unchanged": true,
+  "seed": 20261101,
+  "processes": 12,
+  "retries": 0,
+  "census": {
+    "rows": 2448,
+    "qualification_rows": 36,
+    "warmup_rows": 108,
+    "measured_rows": 2304,
+    "calls_per_batch": 2048,
+    "expected_encounters": 30720,
+    "expected_taken": 22528,
+    "checksum": 24576,
+    "counter_remaining": 64,
+    "stops": 0
+  },
+  "bounds": {
+    "build_wall_seconds": 600,
+    "child_wall_seconds": 90,
+    "child_cpu_seconds": 60,
+    "child_file_bytes": 1048576,
+    "log_cap_bytes": 1048576,
+    "jobs": 3
+  },
+  "cleanup_seconds": 3,
+  "build": {
+    "status": "PASS",
+    "argv": [
+      "$TOOLCHAIN/bin/cargo",
+      "build",
+      "--release",
+      "--locked",
+      "--offline",
+      "-j",
+      "3",
+      "--target-dir",
+      "$CHECKOUT/target",
+      "--bin",
+      "liteinst-preempt",
+      "--message-format=json-render-diagnostics"
+    ],
+    "owner": {
+      "start_utc": "2026-11-01T12:22:47.194092+00:00",
+      "exit_code": 0,
+      "termination": null,
+      "seconds": 0.026573666837066412,
+      "private_log_sha256": "2014ee07d9f6afc1613b45ae98a074647618d7c2814f2accc600be63cda88ecb",
+      "cleanup_complete": true,
+      "reaped_descendants": 0,
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+    },
+    "compiled_profile": {
+      "opt_level": "3",
+      "debuginfo": 0,
+      "debug_assertions": false,
+      "overflow_checks": false,
+      "test": false
+    },
+    "binary_sha256": "80eae3100b18adc7e261b5db991796d33bb723929fbda6194fdbad20ac9cb778",
+    "load_after": [
+      87.26,
+      57.3,
+      43.11
+    ]
+  },
+  "cohort_command_template": [
+    "/usr/bin/prlimit",
+    "--cpu=60",
+    "--fsize=1048576",
+    "--core=0",
+    "--",
+    "/usr/bin/taskset",
+    "--cpu-list",
+    "27,34",
+    "$CHECKOUT/target/release/liteinst-preempt",
+    "region-admission-bench",
+    "$ORDER",
+    "$CAMPAIGN_OUT/$COHORT"
+  ],
+  "cohorts": [
+    {
+      "index": 0,
+      "order": "counter-batch,native,counter-per-call",
+      "directory": "cohort-00",
+      "status": "PASS",
+      "load_before": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T12:22:47.523913+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.14052206906490028,
+        "private_log_sha256": "c002f97106e280977b4d426019681aa5d821cc98dc330dda7708b7a9f15a0281",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "source_after": true,
+      "artifacts": {
+        "measurements.csv": {
+          "bytes": 18035,
+          "sha256": "df4e08407406fa34a09d5a8ca0dc98026e1753f556aa1a790232bb77166c07b6"
+        },
+        "summary.json": {
+          "bytes": 395,
+          "sha256": "0e89c219cdd60f9e741b391fa392915d326b4409ae8f3b7a1f81b20c4afcb67b"
+        }
+      }
+    },
+    {
+      "index": 1,
+      "order": "counter-per-call,native,counter-batch",
+      "directory": "cohort-01",
+      "status": "PASS",
+      "load_before": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T12:22:47.863960+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.18991403887048364,
+        "private_log_sha256": "c002f97106e280977b4d426019681aa5d821cc98dc330dda7708b7a9f15a0281",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "source_after": true,
+      "artifacts": {
+        "measurements.csv": {
+          "bytes": 18036,
+          "sha256": "addfb30fe96737a9dcd144f38e149d144b256c7f90b58348a2fe517a389289aa"
+        },
+        "summary.json": {
+          "bytes": 395,
+          "sha256": "db0c81ec5eff1cb981aa595d09197c749c485124770de4ee77ef0f84f73b0a24"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "order": "counter-per-call,counter-batch,native",
+      "directory": "cohort-02",
+      "status": "PASS",
+      "load_before": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T12:22:48.260344+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.2009657600428909,
+        "private_log_sha256": "c002f97106e280977b4d426019681aa5d821cc98dc330dda7708b7a9f15a0281",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "source_after": true,
+      "artifacts": {
+        "measurements.csv": {
+          "bytes": 18035,
+          "sha256": "f7ebc88c5dddca47b7dc018822d1db9504d48c07a7c31a46597fc09142781830"
+        },
+        "summary.json": {
+          "bytes": 395,
+          "sha256": "f20aca34aa44a767e50070b27fbd470bbc80a7524ce990127728114525e5dcae"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "order": "counter-per-call,counter-batch,native",
+      "directory": "cohort-03",
+      "status": "PASS",
+      "load_before": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T12:22:48.661449+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.18519113399088383,
+        "private_log_sha256": "c002f97106e280977b4d426019681aa5d821cc98dc330dda7708b7a9f15a0281",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "source_after": true,
+      "artifacts": {
+        "measurements.csv": {
+          "bytes": 18035,
+          "sha256": "4a778d4d340eea3f8017a4e6aab55f46276d6b623479bb37b43a31b624432e12"
+        },
+        "summary.json": {
+          "bytes": 395,
+          "sha256": "f20aca34aa44a767e50070b27fbd470bbc80a7524ce990127728114525e5dcae"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "order": "counter-per-call,native,counter-batch",
+      "directory": "cohort-04",
+      "status": "PASS",
+      "load_before": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T12:22:49.050552+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.17175576789304614,
+        "private_log_sha256": "c002f97106e280977b4d426019681aa5d821cc98dc330dda7708b7a9f15a0281",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "source_after": true,
+      "artifacts": {
+        "measurements.csv": {
+          "bytes": 18035,
+          "sha256": "22d0b9b90ab8878046620f62d3474a2327b085ae8bc6d758ada48925d1183acf"
+        },
+        "summary.json": {
+          "bytes": 395,
+          "sha256": "db0c81ec5eff1cb981aa595d09197c749c485124770de4ee77ef0f84f73b0a24"
+        }
+      }
+    },
+    {
+      "index": 5,
+      "order": "native,counter-batch,counter-per-call",
+      "directory": "cohort-05",
+      "status": "PASS",
+      "load_before": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T12:22:49.451782+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.161308754933998,
+        "private_log_sha256": "c002f97106e280977b4d426019681aa5d821cc98dc330dda7708b7a9f15a0281",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "source_after": true,
+      "artifacts": {
+        "measurements.csv": {
+          "bytes": 18035,
+          "sha256": "cd6db67c14b27d89cbc33c39387a2d6c220d84986f391f38f441b616fcbb3002"
+        },
+        "summary.json": {
+          "bytes": 395,
+          "sha256": "8b04b5146c749e4b928308b2d29b09516ac1fa2c4feaeae51f721ac6d0f8c0d6"
+        }
+      }
+    },
+    {
+      "index": 6,
+      "order": "counter-batch,counter-per-call,native",
+      "directory": "cohort-06",
+      "status": "PASS",
+      "load_before": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T12:22:49.820205+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.21859855391085148,
+        "private_log_sha256": "c002f97106e280977b4d426019681aa5d821cc98dc330dda7708b7a9f15a0281",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "source_after": true,
+      "artifacts": {
+        "measurements.csv": {
+          "bytes": 18035,
+          "sha256": "3577d804ad22b90b418f53792b0ce745a6e1d4c834cbe61fc135175e298788d4"
+        },
+        "summary.json": {
+          "bytes": 395,
+          "sha256": "fcadfa82bc2705718f665539ad58bb5968c23cd19fc28d6eed117e213c89d7f7"
+        }
+      }
+    },
+    {
+      "index": 7,
+      "order": "native,counter-per-call,counter-batch",
+      "directory": "cohort-07",
+      "status": "PASS",
+      "load_before": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T12:22:50.233022+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.13002844504080713,
+        "private_log_sha256": "c002f97106e280977b4d426019681aa5d821cc98dc330dda7708b7a9f15a0281",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "source_after": true,
+      "artifacts": {
+        "measurements.csv": {
+          "bytes": 18035,
+          "sha256": "63dc08c6c5d2116d57ff4b17f1d0e537cddadb2bdda38f2c7fad42d519146fa3"
+        },
+        "summary.json": {
+          "bytes": 395,
+          "sha256": "9d073c544ca8ae2e3a86dec1ef13c6e0e82a84a560e189ad9cac77fa2a71ea2e"
+        }
+      }
+    },
+    {
+      "index": 8,
+      "order": "native,counter-per-call,counter-batch",
+      "directory": "cohort-08",
+      "status": "PASS",
+      "load_before": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T12:22:50.566514+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.1772166599985212,
+        "private_log_sha256": "c002f97106e280977b4d426019681aa5d821cc98dc330dda7708b7a9f15a0281",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        87.26,
+        57.3,
+        43.11
+      ],
+      "source_after": true,
+      "artifacts": {
+        "measurements.csv": {
+          "bytes": 18035,
+          "sha256": "7b59131b4790e0bd8034fd29af028bb60955e071e8dea92f6e7c27b62bdf5e9d"
+        },
+        "summary.json": {
+          "bytes": 395,
+          "sha256": "9d073c544ca8ae2e3a86dec1ef13c6e0e82a84a560e189ad9cac77fa2a71ea2e"
+        }
+      }
+    },
+    {
+      "index": 9,
+      "order": "counter-batch,native,counter-per-call",
+      "directory": "cohort-09",
+      "status": "PASS",
+      "load_before": [
+        86.36,
+        57.61,
+        43.28
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T12:22:50.972774+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.1345073450356722,
+        "private_log_sha256": "c002f97106e280977b4d426019681aa5d821cc98dc330dda7708b7a9f15a0281",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        86.36,
+        57.61,
+        43.28
+      ],
+      "source_after": true,
+      "artifacts": {
+        "measurements.csv": {
+          "bytes": 18035,
+          "sha256": "5cdcfd09c5f518f0e21a510e0df259c079a95e7b11a91f9bee208af5121ac37e"
+        },
+        "summary.json": {
+          "bytes": 395,
+          "sha256": "0e89c219cdd60f9e741b391fa392915d326b4409ae8f3b7a1f81b20c4afcb67b"
+        }
+      }
+    },
+    {
+      "index": 10,
+      "order": "native,counter-batch,counter-per-call",
+      "directory": "cohort-10",
+      "status": "PASS",
+      "load_before": [
+        86.36,
+        57.61,
+        43.28
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T12:22:51.318359+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.17289417516440153,
+        "private_log_sha256": "c002f97106e280977b4d426019681aa5d821cc98dc330dda7708b7a9f15a0281",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        86.36,
+        57.61,
+        43.28
+      ],
+      "source_after": true,
+      "artifacts": {
+        "measurements.csv": {
+          "bytes": 18035,
+          "sha256": "31d186593c9a1b539f478228f2d7e409379343f60c936c89ed5478f08ec11198"
+        },
+        "summary.json": {
+          "bytes": 395,
+          "sha256": "8b04b5146c749e4b928308b2d29b09516ac1fa2c4feaeae51f721ac6d0f8c0d6"
+        }
+      }
+    },
+    {
+      "index": 11,
+      "order": "counter-batch,counter-per-call,native",
+      "directory": "cohort-11",
+      "status": "PASS",
+      "load_before": [
+        86.36,
+        57.61,
+        43.28
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T12:22:51.701399+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.23645517299883068,
+        "private_log_sha256": "c002f97106e280977b4d426019681aa5d821cc98dc330dda7708b7a9f15a0281",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        86.36,
+        57.61,
+        43.28
+      ],
+      "source_after": true,
+      "artifacts": {
+        "measurements.csv": {
+          "bytes": 18036,
+          "sha256": "da45ed4aec976e5702984d731890ab8f8e85a99666ae42e33c1002c4fa388cbe"
+        },
+        "summary.json": {
+          "bytes": 395,
+          "sha256": "fcadfa82bc2705718f665539ad58bb5968c23cd19fc28d6eed117e213c89d7f7"
+        }
+      }
+    }
+  ],
+  "independent_statistics_review": {
+    "bytes": 10742,
+    "sha256": "33d8439d5708f544b22175c7ac86d654fae147f7186744b75857868725ff3ce3"
+  },
+  "scope": "Different explicit admission contracts on identical 36-byte work. No outlier filtering; cohorts 10 and 11 retained. No application, isolated syscall/gate, Stop transport, publisher, deadline or full-state-after-callback claim. Owner durations are operational; statistical timing is the worker CSV elapsed_ns."
+}

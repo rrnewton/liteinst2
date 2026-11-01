@@ -1,0 +1,338 @@
+{
+  "status": "PASS",
+  "revision": "77f83b73e308031a3fd6027d0708e2d3f1f15fc2",
+  "source_tree": "8f4480349f5f027b24562d6232891ccffb5df30e",
+  "binary": {
+    "bytes": 2258360,
+    "sha256": "80eae3100b18adc7e261b5db991796d33bb723929fbda6194fdbad20ac9cb778"
+  },
+  "closed_record": {
+    "bytes": 11204,
+    "sha256": "40f7a5bc600aede1c6644df05386829ec4b9b6e16293266eb08a236fc62b2be6"
+  },
+  "path_symbols": {
+    "$CHECKOUT": "exact source checkout",
+    "$TOOLCHAIN": "direct pinned Rust toolchain directory",
+    "$ORACLE_OUT": "fresh private prerequisite output"
+  },
+  "hardware": {
+    "host": "AMD EPYC Zen 5 dev host",
+    "architecture": "x86_64",
+    "logical_cpus": 316,
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor"
+  },
+  "reserved_cpus": [
+    20,
+    27,
+    30,
+    53,
+    54,
+    67,
+    82,
+    90,
+    91,
+    112,
+    120,
+    123
+  ],
+  "native_cpus": [
+    20,
+    27
+  ],
+  "reservation_authority": "External caller reserves CPUs; runner records affinity, not an independent live witness.",
+  "load_before": [
+    84.31,
+    54.85,
+    42.03
+  ],
+  "tool_versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "rustdoc": "rustdoc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "python": "3.9.25 (main, Aug 13 2026, 00:00:00) \n[GCC 11.5.0 20240719 (Red Hat 11.5.0-14)]",
+  "environment": {
+    "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+    "LANG": "C",
+    "LC_ALL": "C",
+    "CARGO_BUILD_JOBS": "12",
+    "RUST_TEST_THREADS": "12",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "RUSTC": "$TOOLCHAIN/bin/rustc",
+    "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+    "CARGO_TARGET_DIR": "$CHECKOUT/target"
+  },
+  "frozen_tools_and_recipe": {
+    "$CHECKOUT/evaluation/owned-clock-batch/reproduce.py": "03f50dd6b12e1ac3b236fe4b508d96a861892933b9e918ed6a1f50085b29c9b8",
+    "$CHECKOUT/evaluation/admission/processes.py": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+    "/usr/bin/python3.9": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+    "$TOOLCHAIN/bin/cargo": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+    "$TOOLCHAIN/bin/rustc": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+    "$TOOLCHAIN/bin/rustdoc": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+    "/usr/bin/git": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240",
+    "/usr/bin/taskset": "e195f3da0a3c33e2e3d91a6579432e536064869b1cb5585131a8fc6983163741",
+    "/usr/bin/prlimit": "942bcd8596c242d4d33dca657372a83e1f55908afd59b525389362cd6d282933"
+  },
+  "attempts_per_command": 1,
+  "jobs": 12,
+  "cleanup_seconds": 3,
+  "commands": [
+    {
+      "name": "release-build",
+      "argv": [
+        "$TOOLCHAIN/bin/cargo",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-j",
+        "12",
+        "--target-dir",
+        "$CHECKOUT/target",
+        "--bin",
+        "liteinst-preempt",
+        "--message-format=json-render-diagnostics"
+      ],
+      "wall": 600,
+      "capture": 2097152
+    },
+    {
+      "name": "region-oracle",
+      "argv": [
+        "/usr/bin/taskset",
+        "-c",
+        "20,27",
+        "/usr/bin/prlimit",
+        "--cpu=60",
+        "--fsize=1048576",
+        "--core=0",
+        "--",
+        "$CHECKOUT/target/release/liteinst-preempt",
+        "region-oracle",
+        "$ORACLE_OUT/region-oracle"
+      ],
+      "wall": 90,
+      "capture": 1048576
+    },
+    {
+      "name": "region-batch-oracle",
+      "argv": [
+        "/usr/bin/taskset",
+        "-c",
+        "20,27",
+        "/usr/bin/prlimit",
+        "--cpu=60",
+        "--fsize=1048576",
+        "--core=0",
+        "--",
+        "$CHECKOUT/target/release/liteinst-preempt",
+        "region-batch-oracle",
+        "$ORACLE_OUT/region-batch-oracle"
+      ],
+      "wall": 90,
+      "capture": 1048576
+    }
+  ],
+  "outcomes": [
+    {
+      "name": "release-build",
+      "status": "PASS",
+      "load_before": [
+        84.31,
+        54.85,
+        42.03
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T12:22:30.659165+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 2.368304650997743,
+        "private_log_sha256": "ce9463f0143fccf4f6f5c7da4781277a1f9ff5ce00ed71beb5dc37d91dc35388",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        81.48,
+        54.75,
+        42.07
+      ],
+      "compiled_profile": {
+        "opt_level": "3",
+        "debuginfo": 0,
+        "debug_assertions": false,
+        "overflow_checks": false,
+        "test": false
+      },
+      "source_after": true
+    },
+    {
+      "name": "region-oracle",
+      "status": "PASS",
+      "load_before": [
+        81.48,
+        54.75,
+        42.07
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T12:22:33.256482+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.1593805809970945,
+        "private_log_sha256": "69720dd0243890700377f64f2d37f2d9f70e0932059f06674cdf96fd13f397a2",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        81.48,
+        54.75,
+        42.07
+      ],
+      "artifacts": {
+        "summary": {
+          "status": "PASS",
+          "profile": "owned-two-backedge-region-oracle-v1",
+          "gate_pairs": 6,
+          "gate_children": 12,
+          "full_state_comparisons": 192,
+          "stop_quanta": [
+            2,
+            11,
+            12
+          ],
+          "stops": 6,
+          "parked_checks": 6,
+          "rejection_children": 2,
+          "rejection_witnesses": 2,
+          "publisher_validation": false,
+          "full_state_after_callback": false,
+          "performance_qualification": false
+        },
+        "files": {
+          "region-events.csv": {
+            "bytes": 139,
+            "sha256": "2490ec0b7ca6ba6a45dbd9dfa63ebceb5b424da788aa1eea1172599afb36f18b"
+          },
+          "region-gates.csv": {
+            "bytes": 255,
+            "sha256": "443ac3fb7cfcb5de3164cd12d8278f6e1fc9074c21e75eb9383d5d09326a2c12"
+          },
+          "region-rejection-wrong-count.bin": {
+            "bytes": 248,
+            "sha256": "a97dd66768e693df5910d58f4b380d796b35d4f1e829a6f7b6febe8d9d1b1368"
+          },
+          "region-rejection-wrong-site.bin": {
+            "bytes": 248,
+            "sha256": "6f2d4de961d6e40b17d0f8d16d8ee99337efcf941b540f39dd4ca3603749e2de"
+          },
+          "region-rejections.csv": {
+            "bytes": 153,
+            "sha256": "b457d75a29726e48deaafe05cc0ba115e5dc450d60798d5c451c03062c6c0099"
+          },
+          "region-stops.csv": {
+            "bytes": 122,
+            "sha256": "3ba28947e5f3150f764b69a85d3119dd753c49160b7e0d5bb75ec49ddd87f0e5"
+          },
+          "summary.json": {
+            "bytes": 325,
+            "sha256": "3a3af3fd73f9ed40bce6f1d5531b7cafd22d1c367a99510ebb38ba44c8cb54ea"
+          }
+        }
+      },
+      "source_after": true
+    },
+    {
+      "name": "region-batch-oracle",
+      "status": "PASS",
+      "load_before": [
+        81.48,
+        54.75,
+        42.07
+      ],
+      "owner": {
+        "start_utc": "2026-11-01T12:22:33.639327+00:00",
+        "exit_code": 0,
+        "termination": null,
+        "seconds": 0.19919518381357193,
+        "private_log_sha256": "b151889275f373990632bfb41c9dbb0976463425beda516e1bd53ded92b29747",
+        "cleanup_complete": true,
+        "reaped_descendants": 0,
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates"
+      },
+      "load_after": [
+        81.48,
+        54.75,
+        42.07
+      ],
+      "artifacts": {
+        "summary": {
+          "status": "PASS",
+          "profile": "owned-region-batch-oracle-v1",
+          "gate_pairs": 6,
+          "gate_children": 12,
+          "full_state_comparisons": 192,
+          "qualification_rows": 3,
+          "calls_per_arm": 2048,
+          "encounters_per_lease": 30720,
+          "taken_per_instrumented_arm": 22528,
+          "quantum": 64,
+          "stops": 352,
+          "inner_stops": 288,
+          "outer_stops": 64,
+          "rejection_children": 2,
+          "rejection_witnesses": 2,
+          "fork_entry_children": 1,
+          "fork_entry_witnesses": 1,
+          "publisher_validation": false,
+          "full_state_after_callback": false,
+          "performance_qualification": false
+        },
+        "files": {
+          "fork-entry.bin": {
+            "bytes": 48,
+            "sha256": "4d0ef6e49e3c84d02add894b66b26a85a01cc5d399be9afcf7a24bc24594ba84"
+          },
+          "fork-entry.csv": {
+            "bytes": 124,
+            "sha256": "1db8b31742ad75499a060540798b05d1953d4e193556dee24951c003e08fd2f9"
+          },
+          "measurements.csv": {
+            "bytes": 388,
+            "sha256": "98c484a56d3a9a6be9a55873d6dccb28e7d690674edd115d9c1dddd61f68eab8"
+          },
+          "region-gates.csv": {
+            "bytes": 255,
+            "sha256": "443ac3fb7cfcb5de3164cd12d8278f6e1fc9074c21e75eb9383d5d09326a2c12"
+          },
+          "rejection-1.bin": {
+            "bytes": 248,
+            "sha256": "6ebd1f178005b1d7354197db11a0467be9a559b9516124406b730ebe2af36ece"
+          },
+          "rejection-2.bin": {
+            "bytes": 248,
+            "sha256": "4ae66ea14a10aa5ccbf586a712365b7d2ae8bfbbe7f759bfaa987d8f77bcab00"
+          },
+          "rejections.csv": {
+            "bytes": 138,
+            "sha256": "f8ddcedc30e3b16d1acff8484352c11e6cfe9834410ac154ea0e84e0041a513e"
+          },
+          "summary.json": {
+            "bytes": 483,
+            "sha256": "af26bc4a9900c02b51c0ab77f6bce1406764109b40e7b2ee3e0abf3924662675"
+          }
+        }
+      },
+      "source_after": true
+    }
+  ],
+  "published_data": "prerequisite/ contains ten literal CSV/JSON artifacts. Raw captures and five binary witnesses remain private; their exact hashes are retained here.",
+  "independent_review": {
+    "bytes": 6886,
+    "sha256": "ef9a849dd949cd565cfe8b458d0705adf1c7a624b067998edfb50749801e9c29"
+  },
+  "scope": "Both oracles used this same release binary. Each passed 192 architectural comparisons and two actual bad-reply controls; ordinary six parked stops, batch 352 exact handoffs and one fork-at-entry refusal. No publisher or complete state-after-callback qualification."
+}
