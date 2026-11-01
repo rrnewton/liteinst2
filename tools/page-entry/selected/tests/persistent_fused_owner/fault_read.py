@@ -333,7 +333,7 @@ def pair(native,gated,owner):
         need(actual['fp']==ref['fp']and actual['fp_bytes']==ref['header'][9]and actual['mask']==MASK and(actual['fs'],actual['gs'])==native['machine'][1:3],'whole65536 FP storage/mask/TLS equality on the real boundary')
         uc=actual['uc'];nuc=ref['uc'];h=ref['header'];alt,cap=actual['altstack'];fp=actual['fp_address']
         need(len(uc)==968 and len(nuc)==1024 and nuc[968:]==bytes(56)and cap==h[11]==524288 and alt%PAGE==0 and fp%16==0 and alt<=fp<=alt+cap-actual['fp_bytes']and h[10]<=h[8]<=h[10]+h[11]-h[9]and fp-alt==h[8]-h[10],'whole independently bounded native/generated altstack and FP geometry')
-        need(q(uc,16)[0]==alt and q(uc,32)[0]==cap and q(uc,224)[0]==fp and q(nuc,16)[0]==h[10]and q(nuc,32)[0]==h[11]and q(nuc,224)[0]==h[8],'actual context aliases in both lanes')
+        need(struct.unpack_from('<Q',uc,16)[0]==alt and struct.unpack_from('<Q',uc,32)[0]==cap and struct.unpack_from('<Q',uc,224)[0]==fp and struct.unpack_from('<Q',nuc,16)[0]==h[10]and struct.unpack_from('<Q',nuc,32)[0]==h[11]and struct.unpack_from('<Q',nuc,224)[0]==h[8],'actual context aliases in both lanes')
         expected=bytearray(nuc[:968]);struct.pack_into('<Q',expected,16,alt);struct.pack_into('<Q',expected,224,fp);struct.pack_into('<23Q',expected,40,*want);expected[304:432]=si
         need(uc==bytes(expected),'all968 native/protected UC bytes, no tail masking')
     context(a['ingress'],frames[1],'original');context(a['before'],frames[1],'closed')

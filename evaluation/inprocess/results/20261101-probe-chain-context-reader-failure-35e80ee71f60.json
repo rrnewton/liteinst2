@@ -1,0 +1,325 @@
+{
+  "bound_order": [
+    "cpu_seconds",
+    "address_space_bytes",
+    "file_bytes",
+    "wall_seconds"
+  ],
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "finite": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "program": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "release_build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "seed": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "cleanup_complete": true,
+  "command_exits": {
+    "0": 76,
+    "125": 2
+  },
+  "commands_completed": 78,
+  "controls_completed": {
+    "application_controls": 32,
+    "owner_reader_controls": 0,
+    "pair_controls": 0,
+    "pf_refusal_owner_controls": 0,
+    "pf_refusal_terminal_controls": 44,
+    "terminal_controls": 184
+  },
+  "cpu": 25,
+  "diagnosis": {
+    "fault_pair_completed": false,
+    "native_probe_admissions_by_fault_mode": {
+      "1": 1,
+      "2": 1
+    },
+    "observed_reader_error": "TypeError: q() takes 1 positional argument but 2 were given",
+    "phase": "owner/native pair construction, after terminal controls and before pair/owner controls"
+  },
+  "differential_cohort_completed": false,
+  "error": "ValueError: all four actual fault/reject observations required without skips or failure relabeling",
+  "fault_subjects_launched": 4,
+  "final_errors": [],
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 25,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "performance_credit": false,
+  "positive_cohort_completed": false,
+  "private_receipt": {
+    "bytes": 1952216,
+    "sha256": "5d567718f5c675cf1408b2054c8f4998a446997a640048f60206044dd817c624"
+  },
+  "profile": "bounded-fused-fault-smoke-v1",
+  "qualification_credit": false,
+  "reproduction": {
+    "argv": [
+      "python3",
+      "-B",
+      "evaluation/inprocess/bounded_fused_fault_smoke.py",
+      "--expect-revision",
+      "35e80ee71f6007305b44e5b843e0a7659f3f2138",
+      "--expect-decoder-sha256",
+      "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d",
+      "--cpu",
+      "25",
+      "--output",
+      "target/evaluation/inprocess/<FRESH_FAULT_DIAGNOSTIC>"
+    ],
+    "reservation": "one externally reserved CPU",
+    "working_directory": "repository root"
+  },
+  "revision": "35e80ee71f6007305b44e5b843e0a7659f3f2138",
+  "schema": 1,
+  "source": {
+    "head_sources_match": true,
+    "revision": "35e80ee71f6007305b44e5b843e0a7659f3f2138",
+    "source_manifest_sha256": "7c37e6bac1bde51e0964e7b91bb3653db619d4bb683ce6160e9f57cd6308f0c8",
+    "tracked_clean": true,
+    "tree": "33be5f626b003e5c48fddd6b49eb88b01d9ac35d"
+  },
+  "source_unchanged": true,
+  "status": "failed",
+  "subjects": [
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 858480,
+          "sha256": "e0748c60ee3b1b4dfbab585ff618b9ca054e2da5444e964c74e07cffa7681baa"
+        }
+      },
+      "completed_control_counts": {
+        "application_controls": 16,
+        "owner_reader_controls": 0,
+        "pair_controls": 0,
+        "pf_refusal_owner_controls": 0,
+        "pf_refusal_terminal_controls": 0,
+        "terminal_controls": 0
+      },
+      "duration_ns_validation_only": 141589994,
+      "exit": 0,
+      "expected_exit": 0,
+      "label": "subject-native-1-0",
+      "lane": "native",
+      "mode": 1,
+      "native_observation": {
+        "completed_application": false,
+        "full_frames": 3,
+        "guest_effects": 0,
+        "observer_exit": 0,
+        "signal": 11,
+        "steps": 6
+      },
+      "status": "observed_native_write_fault"
+    },
+    {
+      "captures": {
+        "record": {
+          "bytes": 237030,
+          "sha256": "22222f6d9d1ec3f848e379a2b00927fb3140335c1c5d0d119b8dc1f4ac0aeb80"
+        },
+        "stderr": {
+          "bytes": 15142,
+          "sha256": "d7371c6a99bb06278a39acfdb74fb448be03f1f1895f80ba3c5e24967fb7c88d"
+        },
+        "stdout": {
+          "bytes": 27080,
+          "sha256": "135c20ef7e800e42a9178887ec9e22ff7112630adc780799ae1f070a9b63e6b9"
+        }
+      },
+      "completed_control_counts": {
+        "application_controls": 0,
+        "owner_reader_controls": 0,
+        "pair_controls": 0,
+        "pf_refusal_owner_controls": 0,
+        "pf_refusal_terminal_controls": 22,
+        "terminal_controls": 92
+      },
+      "duration_ns_validation_only": 2558165036,
+      "error": "TypeError: q() takes 1 positional argument but 2 were given",
+      "exit": 125,
+      "expected_exit": 125,
+      "label": "subject-maintained-1-0",
+      "lane": "maintained",
+      "mode": 1,
+      "native_probe": {
+        "admitted": 1,
+        "chosen": 1,
+        "errors": 0,
+        "refaults": 1,
+        "refused": 0
+      },
+      "owner_observation": {
+        "actual_signal": 11,
+        "anchor_released": 0,
+        "cleanup_closed_pages": 34,
+        "code": 3304,
+        "cold_publications": 1,
+        "completion_permits": 0,
+        "detail": 11,
+        "generated_completed": 0,
+        "generated_entries": 1,
+        "interior_signals": 0,
+        "mode": 1,
+        "native_fault_signal": 11,
+        "recovery_phase": 1,
+        "status": 125
+      },
+      "pair_completed": false,
+      "status": "failed"
+    },
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 858480,
+          "sha256": "c78e4159ab3ca931272ae92a7dfcf3beaca7bdd7e98a6c6c0a44cdd6978e02b2"
+        }
+      },
+      "completed_control_counts": {
+        "application_controls": 16,
+        "owner_reader_controls": 0,
+        "pair_controls": 0,
+        "pf_refusal_owner_controls": 0,
+        "pf_refusal_terminal_controls": 0,
+        "terminal_controls": 0
+      },
+      "duration_ns_validation_only": 151214619,
+      "exit": 0,
+      "expected_exit": 0,
+      "label": "subject-native-2-0",
+      "lane": "native",
+      "mode": 2,
+      "native_observation": {
+        "completed_application": false,
+        "full_frames": 3,
+        "guest_effects": 0,
+        "observer_exit": 0,
+        "signal": 11,
+        "steps": 6
+      },
+      "status": "observed_native_write_fault"
+    },
+    {
+      "captures": {
+        "record": {
+          "bytes": 237075,
+          "sha256": "b875b9c8cbc00d85707e57ab1fffb1dbe4b5b435b752295a068a16cad3e5ab36"
+        },
+        "stderr": {
+          "bytes": 15122,
+          "sha256": "045dbefe90d18bd1beaca577476520d4b4bba41d30b3bd2b173bcd948e10c603"
+        },
+        "stdout": {
+          "bytes": 27080,
+          "sha256": "23253b8802f9b17c6fcb015330ef89a9660e9360dad04ce3b8b69156adc322e2"
+        }
+      },
+      "completed_control_counts": {
+        "application_controls": 0,
+        "owner_reader_controls": 0,
+        "pair_controls": 0,
+        "pf_refusal_owner_controls": 0,
+        "pf_refusal_terminal_controls": 22,
+        "terminal_controls": 92
+      },
+      "duration_ns_validation_only": 2569994360,
+      "error": "TypeError: q() takes 1 positional argument but 2 were given",
+      "exit": 125,
+      "expected_exit": 125,
+      "label": "subject-maintained-2-0",
+      "lane": "maintained",
+      "mode": 2,
+      "native_probe": {
+        "admitted": 1,
+        "chosen": 1,
+        "errors": 0,
+        "refaults": 1,
+        "refused": 0
+      },
+      "owner_observation": {
+        "actual_signal": 4,
+        "anchor_released": 0,
+        "cleanup_closed_pages": 34,
+        "code": 3304,
+        "cold_publications": 1,
+        "completion_permits": 0,
+        "detail": 4,
+        "generated_completed": 0,
+        "generated_entries": 1,
+        "interior_signals": 0,
+        "mode": 2,
+        "native_fault_signal": 11,
+        "recovery_phase": 3,
+        "status": 125
+      },
+      "pair_completed": false,
+      "status": "failed"
+    }
+  ],
+  "whole_captures": {
+    "bytes": 3381526,
+    "count": 158,
+    "ledger_encoding": "ordered command/stream/bytes/sha256 rows; JSON sorted keys and compact separators",
+    "ledger_sha256": "041822304931040c0d12968d076932da1851d406045b6ad4dd1775a4eb505feb"
+  },
+  "whole_profile_qualified": false
+}
