@@ -1,0 +1,31 @@
+{
+  "status": "FIVE_PARSER_CONTROLS_PASS",
+  "runner_sha256": "69c7d87ecf8d249a0a7b325db78f05d770fad993994eba97a40bb8338c0c4f6a",
+  "checks": [
+    "complete_original_request_accepted",
+    "partial_original_log_retains_strict_failure",
+    "extra_interior_head_refused",
+    "changed_combined_event_order_refused",
+    "synthetic_rounded_partial_stays_failed_and_full_tilde_refused"
+  ],
+  "cpus": [
+    1
+  ],
+  "seconds": 0.9502633698284626,
+  "frontend_attempts": 0,
+  "backend_attempts": 0,
+  "generated_output_executions": 0,
+  "historical_strict_status": "FAILED_OUTCOME_RETAINED",
+  "independent_live_witness": false,
+  "synthetic_inputs": {
+    "synthetic-rounded-partial.log": {
+      "bytes": 1720471,
+      "sha256": "00d6e5160e40ec7c3cacfb9aa52272b814362dad556fb2a8e9f2304c35395672"
+    },
+    "synthetic-full-tilde.log": {
+      "bytes": 1720499,
+      "sha256": "c84fc2ea4066ffe461de68eb446244fb5b90fea5e9f4f3f8a1bb008e84adb093"
+    }
+  },
+  "script_sha256": "af97e343882a29cea3098187004b9c712c84144ac0e457592b8352ffa5222e95"
+}
