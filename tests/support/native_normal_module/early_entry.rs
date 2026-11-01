@@ -283,9 +283,101 @@ struct RepeatedPc {
     bytes: [u8; 16],
     bytes_read: isize,
 }
+#[derive(Clone, Copy)]
+struct CodePage {
+    base: u64,
+    completed_steps: usize,
+    first_completed_step: usize,
+    last_completed_step: usize,
+}
+struct CodePages {
+    entries: [Option<CodePage>; 128],
+    used: usize,
+    completed_steps: usize,
+    dropped_steps: usize,
+    unpaired_observations: usize,
+    first_observed_step: Option<usize>,
+}
+impl Default for CodePages {
+    fn default() -> Self {
+        Self {
+            entries: [None; 128],
+            used: 0,
+            completed_steps: 0,
+            dropped_steps: 0,
+            unpaired_observations: 0,
+            first_observed_step: None,
+        }
+    }
+}
+impl CodePages {
+    fn transition(&mut self, prior: Option<(u64, usize)>, step: usize) {
+        self.first_observed_step.get_or_insert(step);
+        let Some((pc, prior_step)) = prior else {
+            return;
+        };
+        // Charge only the previously observed PC after its single step has
+        // completed. The next instruction refused by the step cap is excluded.
+        if prior_step.checked_add(1) != Some(step) {
+            self.unpaired_observations = self.unpaired_observations.saturating_add(1);
+            return;
+        }
+        self.completed_steps = self.completed_steps.saturating_add(1);
+        let base = pc & !0xfff;
+        if let Some(page) = self.entries.iter_mut().flatten().find(|p| p.base == base) {
+            page.completed_steps = page.completed_steps.saturating_add(1);
+            page.last_completed_step = step;
+        } else if let Some(slot) = self.entries.get_mut(self.used) {
+            *slot = Some(CodePage {
+                base,
+                completed_steps: 1,
+                first_completed_step: step,
+                last_completed_step: step,
+            });
+            self.used += 1;
+        } else {
+            // Count every completed transition on an unretained page, not an
+            // estimated number of distinct pages; retained pages still accrue.
+            self.dropped_steps = self.dropped_steps.saturating_add(1);
+        }
+    }
+    fn write_failure(&self, stderr: &mut impl std::io::Write) {
+        let recorded_steps = self.entries.iter().flatten().fold(0_usize, |sum, page| {
+            sum.saturating_add(page.completed_steps)
+        });
+        let _ = writeln!(
+            stderr,
+            "early-entry code-pages: page_bytes=4096 first_observed_step={:?} completed_single_steps={} recorded_completed_steps={} dropped_completed_steps={} unpaired_observations={} records={}",
+            self.first_observed_step,
+            self.completed_steps,
+            recorded_steps,
+            self.dropped_steps,
+            self.unpaired_observations,
+            self.used
+        );
+        // Sort a fixed local array only during failure reporting. This does not
+        // allocate, read the child, or change the live diagnostic records.
+        let mut pages = self.entries;
+        pages.sort_unstable_by_key(|page| {
+            page.map(|page| (std::cmp::Reverse(page.completed_steps), page.base))
+                .unwrap_or((std::cmp::Reverse(0), u64::MAX))
+        });
+        for page in pages.iter().flatten() {
+            let _ = writeln!(
+                stderr,
+                "early-entry code-page: page={:#x} completed_single_steps={} first_completed_step={} last_completed_step={}",
+                page.base,
+                page.completed_steps,
+                page.first_completed_step,
+                page.last_completed_step
+            );
+        }
+    }
+}
 #[derive(Default)]
 struct StepDiagnostics {
     visits: usize,
+    pages: CodePages,
     last: Option<(u64, usize)>,
     returns_seen: usize,
     boundaries: [Option<StepBoundary>; 16],
@@ -314,6 +406,7 @@ impl StepDiagnostics {
     }
     fn visit(&mut self, child: &Tracee, pc: u64, step: usize, returns: usize) {
         self.visits = self.visits.saturating_add(1);
+        self.pages.transition(self.last, step);
         // at_return() and the existing return postflight completed on the
         // preceding iteration; this sample is after the actual C3 step.
         if returns != self.returns_seen {
@@ -411,6 +504,7 @@ impl StepDiagnostics {
                 run.bytes
             );
         }
+        self.pages.write_failure(&mut stderr);
     }
 }
 pub(in super::super) struct Witness {
