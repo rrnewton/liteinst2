@@ -744,7 +744,11 @@ mod ordered_trace {
         physical: BTreeMap<u64, u64>,
         relay_map: BTreeMap<u64, usize>,
         relays: Vec<RelayCoordinates>,
+        veneer: Option<&'a EntryVeneerWitness<'a>>,
     }
+
+    // Explicit artifact envelope proof; old constructors below pass None.
+    include!("entry_veneer_artifact_oracle/state.rs");
 
     impl Mapping {
         /// One checked non-clobbering page attempt for hand-emitted calibration.
@@ -919,6 +923,7 @@ mod ordered_trace {
                     physical,
                     relay_map,
                     relays: coordinates,
+                    veneer: None,
                 },
                 owned_sigill_heads,
                 hooks,
@@ -953,6 +958,7 @@ mod ordered_trace {
                     physical,
                     relay_map,
                     relays: coordinates,
+                    veneer: None,
                 },
                 owned_sigill_heads,
                 hooks,
@@ -1009,6 +1015,7 @@ mod ordered_trace {
                 physical,
                 relay_map,
                 relays,
+                veneer,
             } = validated;
             let relays = &relays;
             if let Some(hooks) = &hooks {
@@ -1035,6 +1042,8 @@ mod ordered_trace {
             let mut events = Vec::new();
             let mut relay_visits = BTreeMap::<u64, usize>::new();
             let mut relay_target = None;
+            let mut veneer_target = None;
+            let mut veneer_visits = 0_usize;
             for step in 0..=MAX_STEPS {
                 assert!(
                     Instant::now() < child.deadline,
@@ -1047,6 +1056,45 @@ mod ordered_trace {
                         "source relay did not reach its exact image entry"
                     );
                 }
+                if let Some(veneer) = veneer {
+                    // Check raw E->B before any logical classification. Both
+                    // stops preserve full state and consume no original visit.
+                    veneer.assert_pc(pc);
+                    if let Some(target) = veneer_target.take() {
+                        assert_eq!(pc, target, "veneer did not reach its exact body start");
+                        let expected = trace
+                            .baseline
+                            .points
+                            .get(next)
+                            .expect("extra veneer body arrival");
+                        assert_eq!(expected.logical_pc, veneer.spec.logical_pc);
+                        veneer.assert_child_pages(&child);
+                        assert_state(
+                            expected,
+                            &self.snapshot(&child, veneer.spec.logical_pc, self.code.bytes()),
+                        );
+                        if let Some(hooks) = &hooks {
+                            hooks.log.assert_events(&child, &events);
+                        }
+                    }
+                    if pc == veneer.spec.entry {
+                        let expected = trace.baseline.points.get(next).expect("extra veneer entry");
+                        assert_eq!(
+                            expected.logical_pc, veneer.spec.logical_pc,
+                            "unexpected veneer logical visit"
+                        );
+                        veneer.assert_child_pages(&child);
+                        assert_state(
+                            expected,
+                            &self.snapshot(&child, veneer.spec.logical_pc, self.code.bytes()),
+                        );
+                        if let Some(hooks) = &hooks {
+                            hooks.log.assert_events(&child, &events);
+                        }
+                        veneer_visits += 1;
+                        veneer_target = Some(veneer.spec.storage);
+                    }
+                }
                 if let Some(&original) = physical.get(&pc) {
                     let expected = trace
                         .baseline
@@ -1057,6 +1105,9 @@ mod ordered_trace {
                         original, expected.logical_pc,
                         "unexpected restored boundary at visit {next}"
                     );
+                    if let Some(veneer) = veneer {
+                        veneer.assert_child_pages(&child);
+                    }
                     assert_state(
                         expected,
                         &self.snapshot(&child, original, self.code.bytes()),
@@ -1090,6 +1141,23 @@ mod ordered_trace {
                                 required,
                                 "missing or duplicate source relay visits"
                             );
+                        }
+                        if let Some(veneer) = veneer {
+                            let required = trace
+                                .baseline
+                                .points
+                                .iter()
+                                .filter(|point| point.logical_pc == veneer.spec.logical_pc)
+                                .count();
+                            assert_eq!(
+                                veneer_visits, required,
+                                "missing or duplicate veneer entry visits"
+                            );
+                            assert!(
+                                veneer_target.is_none(),
+                                "terminal before veneer body arrival"
+                            );
+                            veneer.assert_child_pages(&child);
                         }
                         return;
                     }
@@ -1620,6 +1688,17 @@ mod ordered_trace {
             physical: &BTreeMap<u64, u64>,
             relays: &[ShortSourceRelay<'_>],
         ) -> BTreeMap<u64, usize> {
+            self.validate_short_relays_inner(trace, map, physical, relays, None)
+        }
+
+        fn validate_short_relays_inner(
+            &self,
+            trace: &NativeTrace,
+            map: &TraceMap,
+            physical: &BTreeMap<u64, u64>,
+            relays: &[ShortSourceRelay<'_>],
+            veneer: Option<&EntryVeneerWitness<'_>>,
+        ) -> BTreeMap<u64, usize> {
             let source_start = self.code.address();
             let source_end = source_start.checked_add(PAGE as u64).unwrap();
             let source_range = source_start..source_end;
@@ -1879,11 +1958,18 @@ mod ordered_trace {
                 let mut owned_images = Vec::<Range<u64>>::new();
                 for (target, logical) in [(victim_target, victim), (relay.target, relay.logical_pc)]
                 {
-                    let images: Vec<_> = map
-                        .generated_ranges
-                        .iter()
-                        .filter(|range| range.start == target)
-                        .collect();
+                    let images: Vec<_> = if let Some(veneer) = veneer {
+                        let storage = veneer.image_base(target, logical);
+                        map.generated_ranges
+                            .iter()
+                            .filter(|range| range.start == storage)
+                            .collect()
+                    } else {
+                        map.generated_ranges
+                            .iter()
+                            .filter(|range| range.start == target)
+                            .collect()
+                    };
                     assert_eq!(images.len(), 1, "relay target is not one exact image entry");
                     let image = images[0];
                     assert!(image.start < image.end, "malformed relay image range");

@@ -1764,3 +1764,7 @@ mod short_neighbor;
 // Finite artifact-only JRCXZ native state population; prior cohorts stay exact.
 #[path = "support/jrcxz_artifact_oracle.rs"]
 mod jrcxz_artifact_native;
+
+// Explicit same-page entry-to-body native evidence; previous cohorts remain exact.
+#[path = "support/entry_veneer_artifact_oracle.rs"]
+mod entry_veneer_artifact_native;
