@@ -3,7 +3,8 @@
 use super::*;
 #[path = "early_entry/wide.rs"]
 pub(in super::super) mod wide;
-pub use wide::{OptionalEntry80kOracle, OptionalEntry80kPopulation};
+pub type OptionalEntry80kOracle = wide::OptionalEntry80kOracle;
+pub type OptionalEntry80kPopulation = wide::OptionalEntry80kPopulation;
 
 const MAGIC: u64 = 0x6561_726c_796d_6f64;
 const ACK: u64 = 0x6561_726c_7961_636b;
