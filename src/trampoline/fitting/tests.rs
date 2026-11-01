@@ -1,5 +1,5 @@
 use super::*;
-use crate::emission::{SymbolicHook, TargetProfile};
+use crate::emission::{ArtifactRefusalKind, SymbolicHook, TargetProfile};
 use crate::scanner::InstructionScanner;
 
 fn target(hook: Option<u64>) -> ArtifactEmission {
@@ -19,8 +19,24 @@ fn target(hook: Option<u64>) -> ArtifactEmission {
 
 fn make_plan(bytes: &[u8], observe: bool) -> TrampolinePlan {
     let scan = InstructionScanner::default().scan(bytes, 0x400000).unwrap();
-    if observe {
+    assert_eq!(scan.instructions().len(), 1);
+    if observe && bytes.len() <= 4 {
         TrampolinePlan::from_symbolic_short_instruction(&scan, 0x400000, false).unwrap()
+    } else if observe {
+        // The short constructor must still reject these unchanged 5/7-byte cases.
+        assert!(matches!(
+            TrampolinePlan::from_symbolic_short_instruction(&scan, 0x400000, false),
+            Err(TrampolineError::Encoding { message })
+                if message == "short instruction trampoline requires exactly one 1..=4-byte instruction"
+        ));
+        TrampolinePlan::from_symbolic_window(
+            &scan,
+            0x400000,
+            0x400000,
+            0x400000 + bytes.len() as u64,
+            false,
+        )
+        .unwrap()
     } else {
         TrampolinePlan::from_instruction(&scan, 0x400000).unwrap()
     }
@@ -62,7 +78,59 @@ fn prepared_bound_matches_ordinary_nop_jrcxz_and_hook_artifact_images() {
 #[test]
 fn prepared_emission_keeps_field_reach_and_fixed_fragment_refusals() {
     let plan = make_plan(&[0xff, 0xc0], true);
-    assert!(PreparedArtifact::new(&plan, &target(None)).is_err());
+    // Preparation retains an unresolved field; only final binding can refuse it.
+    // Neither the prepared nor the ordinary emitter may invent a hook address.
+    let unbound_input = target(None);
+    let unbound = PreparedArtifact::new(&plan, &unbound_input).unwrap();
+    let hook_fields: Vec<_> = unbound
+        .preparation
+        .fragments
+        .iter()
+        .flat_map(|(_, fragment)| fragment.fields.iter().map(move |field| (fragment, field)))
+        .filter(|(_, field)| field.role == Role::HookCall)
+        .collect();
+    assert_eq!(hook_fields.len(), 1);
+    let (fragment, field) = hook_fields[0];
+    assert_eq!(field.target, Target::UnresolvedSymbol(11));
+    assert_eq!(
+        field.encoding,
+        Encoding::PcRelative32 {
+            next: field.offset + 4
+        }
+    );
+    assert_eq!(field.expected.as_slice(), &[0; 4]);
+    let offset = usize::try_from(field.offset).unwrap();
+    assert_eq!(fragment.bytes[offset - 1], 0xe8);
+    assert_eq!(&fragment.bytes[offset..offset + 4], &[0; 4]);
+    assert!(matches!(
+        unbound.emit_at(0x500000),
+        Err(TrampolineError::Artifact { reason: ArtifactRefusalKind::TargetBinding, message })
+            if message == "UnresolvedSymbol(11)"
+    ));
+    assert!(matches!(
+        plan.emit_artifact_at(0x500000, &unbound_input),
+        Err(TrampolineError::Artifact { reason: ArtifactRefusalKind::TargetBinding, message })
+            if message == "UnresolvedSymbol(11)"
+    ));
+    // A real tracer-owned constructor is outside the artifact profile at prepare.
+    // This function pointer is retained by the plan; the control never calls it.
+    unsafe extern "C" fn uncalled_hook(_: *mut HookContext) {}
+    let scan = InstructionScanner::default()
+        .scan(&[0xb8, 42, 0, 0, 0], 0x400000)
+        .unwrap();
+    let unsupported =
+        TrampolinePlan::from_scan_replacing_first_with_ptrace_stops(&scan, 0x400000, uncalled_hook)
+            .unwrap();
+    assert!(matches!(
+        PreparedArtifact::new(&unsupported, &target(Some(0x401000))),
+        Err(TrampolineError::Artifact { reason: ArtifactRefusalKind::UnmodelledEncoding, message })
+            if message == "artifact profile does not implement ptrace, controlled or multi-action binding"
+    ));
+    assert!(matches!(
+        unsupported.emit_artifact_at(0x500000, &target(Some(0x401000))),
+        Err(TrampolineError::Artifact { reason: ArtifactRefusalKind::UnmodelledEncoding, message })
+            if message == "artifact profile does not implement ptrace, controlled or multi-action binding"
+    ));
     let prepared = PreparedArtifact::new(&plan, &target(Some(0x401000))).unwrap();
     assert!(prepared.emit_at(u64::MAX - 100).is_err());
     let mut prepared = PreparedArtifact::new(&plan, &target(Some(0x401000))).unwrap();
