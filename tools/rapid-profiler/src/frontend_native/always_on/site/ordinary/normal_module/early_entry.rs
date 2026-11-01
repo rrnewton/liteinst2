@@ -150,20 +150,19 @@ impl InstalledEarlyEntryModuleSite {
     }
 }
 
+type PreparedEarlyFunctions = (
+    PlannedBundle,
+    Vec<NormalModuleFunctionSite>,
+    Vec<ModuleRole>,
+    [ControlWriter; 2],
+);
+
 fn prepare_early_functions(
     functions: &[ModuleFunctionSource<'_>],
     originals: &[ExpectedBytes],
     identity: CodeIdentity,
     policies: &[PreparationPolicy],
-) -> Result<
-    (
-        PlannedBundle,
-        Vec<NormalModuleFunctionSite>,
-        Vec<ModuleRole>,
-        [ControlWriter; 2],
-    ),
-    SiteError,
-> {
+) -> Result<PreparedEarlyFunctions, SiteError> {
     if functions.len() != 2 || policies.len() != functions.len() {
         return Err(SiteError::Correspondence);
     }
