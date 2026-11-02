@@ -3,7 +3,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::time::{Duration, Instant};
 
-use iced_x86::{Decoder, DecoderOptions, Instruction, Mnemonic};
+use liteinst2::x86::{self, Instruction, SelectedClass};
 
 use crate::entries::{Completeness, LegalEntrySet};
 use crate::{AddressRange, Generation, MappingId};
@@ -211,23 +211,22 @@ pub trait AdmissionOracle {
 pub struct RuntimeScan;
 
 fn selected_class(instruction: &Instruction) -> Option<SiteClass> {
-    Some(match instruction.mnemonic() {
-        Mnemonic::Cpuid => SiteClass::Cpuid,
-        Mnemonic::Rdrand => SiteClass::Rdrand,
-        Mnemonic::Rdseed => SiteClass::Rdseed,
-        Mnemonic::Rdpid => SiteClass::Rdpid,
-        Mnemonic::Rdtsc => SiteClass::Rdtsc,
-        Mnemonic::Rdtscp => SiteClass::Rdtscp,
-        Mnemonic::Syscall => SiteClass::Syscall,
-        Mnemonic::Sysenter => SiteClass::Sysenter,
-        Mnemonic::Int if instruction.immediate8() == 0x80 => SiteClass::Int80,
-        _ => return None,
+    Some(match x86::selected_mnemonic(instruction)? {
+        SelectedClass::Cpuid => SiteClass::Cpuid,
+        SelectedClass::Rdrand => SiteClass::Rdrand,
+        SelectedClass::Rdseed => SiteClass::Rdseed,
+        SelectedClass::Rdpid => SiteClass::Rdpid,
+        SelectedClass::Rdtsc => SiteClass::Rdtsc,
+        SelectedClass::Rdtscp => SiteClass::Rdtscp,
+        SelectedClass::Syscall => SiteClass::Syscall,
+        SelectedClass::Sysenter => SiteClass::Sysenter,
+        SelectedClass::Int80 => SiteClass::Int80,
     })
 }
 
 fn decode(snapshot: &Snapshot, address: u64) -> Instruction {
     let offset = (address - snapshot.range.start()) as usize;
-    Decoder::with_ip(64, &snapshot.bytes[offset..], address, DecoderOptions::NONE).decode()
+    x86::decode64(address, &snapshot.bytes[offset..]).instruction
 }
 
 impl AdmissionOracle for RuntimeScan {

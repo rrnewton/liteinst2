@@ -1,0 +1,8 @@
+stage,status,passed,failed,ignored,wall_seconds,elapsed_seconds,exit_code,termination,cleanup_complete,reaped_descendants
+fmt,PASS,,,,180,15.453835251,0,,true,0
+clippy,PASS,,,,180,55.539170106,0,,true,0
+check,PASS,,,,180,42.118176221,0,,true,0
+core,PASS,66,0,0,180,18.424132083,0,,true,0
+offline-permits,PASS,25,0,0,180,11.709604248,0,,true,0
+workspace,PASS,4595,0,43,1800,935.927981508,0,,true,0
+serial-launch,PASS,1039,0,0,360,144.567117991,0,,true,0

@@ -2,8 +2,8 @@
 //! Linear decoding checks the supplied declarations; it cannot discover entries.
 use super::*;
 use iced_x86::{Code, FlowControl, OpKind};
+use li2core::control_flow::{self, Coverage};
 use li2core::scanner::ScanResult;
-use std::collections::BTreeSet;
 
 /// Owns the entry declaration so a borrowed PlanningSite cannot outlive it.
 pub(crate) struct OwnedNeighbor<'a> {
@@ -144,23 +144,11 @@ pub(crate) fn collect<'a>(
 }
 
 fn derive_blocks(function: AddressRange, scan: &ScanResult) -> Result<Vec<AddressRange>, Error> {
-    let heads: BTreeSet<_> = scan.instructions().iter().map(|i| i.address()).collect();
-    let mut boundaries = BTreeSet::from([function.start(), function.end()]);
-    for item in scan.instructions() {
+    let graph = control_flow::build(scan, |_, item, row| {
         let instruction = item.instruction();
-        let next = instruction.next_ip();
-        let flow = instruction.flow_control();
-        if flow != FlowControl::Next && next < function.end() {
-            boundaries.insert(next);
-        }
-        let mut successors = Vec::new();
-        match flow {
-            FlowControl::Next => successors.push(next),
-            FlowControl::Call if instruction.code() == Code::Call_rel32_64 => {
-                // The unchanged call target is not an inferred victim owner.
-                // Only its local continuation contributes to this partition.
-                successors.push(next);
-            }
+        match instruction.flow_control() {
+            FlowControl::Next => {}
+            FlowControl::Call if instruction.code() == Code::Call_rel32_64 => {}
             FlowControl::Return if instruction.code() == Code::Retnq => {}
             FlowControl::ConditionalBranch | FlowControl::UnconditionalBranch => {
                 if !matches!(
@@ -169,23 +157,26 @@ fn derive_blocks(function: AddressRange, scan: &ScanResult) -> Result<Vec<Addres
                 ) {
                     return Err(Error::new("neighbor-non-near-branch", item.address()));
                 }
-                let target = instruction.near_branch_target();
-                boundaries.insert(target);
-                successors.push(target);
-                if flow == FlowControl::ConditionalBranch {
-                    successors.push(next);
-                }
             }
             _ => return Err(Error::new("neighbor-control-flow", item.address())),
         }
-        if successors.iter().any(|pc| !heads.contains(pc)) {
+        if row
+            .successors()
+            .iter()
+            .any(|target| target.head().is_none())
+        {
             return Err(Error::new("neighbor-target-not-head", item.address()));
         }
-    }
-    let boundaries: Vec<_> = boundaries.into_iter().collect();
-    boundaries
-        .windows(2)
-        .map(|pair| addr(pair[0], pair[1] - pair[0]))
+        Ok(())
+    })?;
+    let indexed = graph
+        .indexed()
+        .map_err(|e| Error::new("neighbor-control-flow", e))?;
+    indexed
+        .blocks(Coverage::AllDecoded(function))
+        .map_err(|e| Error::new("neighbor-control-flow", e))?
+        .into_iter()
+        .map(|(start, end)| addr(start, end - start))
         .collect()
 }
 
@@ -237,3 +228,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "neighbor_catalogue_cfg_tests.rs"]
+mod cfg_tests;

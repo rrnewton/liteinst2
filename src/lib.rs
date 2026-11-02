@@ -21,6 +21,7 @@ pub mod bundle;
 pub mod cache_line;
 pub mod composition;
 pub mod contracts;
+pub mod control_flow;
 pub mod controls;
 pub mod emission;
 pub mod engine;
@@ -45,6 +46,8 @@ pub mod probe;
 pub mod quiescent;
 pub mod rapid;
 pub mod scanner;
+/// Shared descriptive decoder, selected-opcode and full-GPR facts.
+pub use liteinst_x86 as x86;
 pub mod search;
 pub mod sync_core;
 pub mod trampoline;

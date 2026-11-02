@@ -30,4 +30,12 @@ name = "li2-page-selected-decoder"
 version = "0.0.0"
 dependencies = [
  "iced-x86",
+ "liteinst-x86",
+]
+
+[[package]]
+name = "liteinst-x86"
+version = "0.1.0"
+dependencies = [
+ "iced-x86",
 ]

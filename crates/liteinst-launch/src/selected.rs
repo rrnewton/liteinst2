@@ -10,8 +10,9 @@
 
 use std::collections::{BTreeMap, VecDeque};
 
-use iced_x86::{Code, Decoder, DecoderOptions, Register};
+use iced_x86::Register;
 use liteinst_admission::scan::SiteClass;
+use liteinst2::x86::{self, SelectedClass};
 
 use crate::RegisterSnapshot;
 
@@ -379,8 +380,7 @@ pub fn decode(
     bytes: &[u8],
     aliases: &SyscallAliases,
 ) -> Result<DecodedSelected, SemanticsError> {
-    let mut decoder = Decoder::with_ip(64, bytes, address, DecoderOptions::NONE);
-    let instruction = decoder.decode();
+    let instruction = x86::decode64(address, bytes).instruction;
     if instruction.is_invalid() || instruction.len() > bytes.len() {
         return Err(SemanticsError::InvalidEncoding);
     }
@@ -388,42 +388,42 @@ pub fn decode(
         .checked_add(instruction.len() as u64)
         .ok_or(SemanticsError::AddressOverflow)?;
     let declaration = aliases.get(address);
+    let class = x86::selected_code(&instruction);
     if declaration.is_some()
-        && instruction.code() != Code::Sysenter
-        && !(instruction.code() == Code::Int_imm8 && instruction.immediate8() == 0x80)
+        && !matches!(class, Some(SelectedClass::Sysenter | SelectedClass::Int80))
     {
         return Err(SemanticsError::AliasClassMismatch);
     }
-    let operation = match instruction.code() {
-        Code::Cpuid => Operation::Cpuid,
-        Code::Rdtsc => Operation::Rdtsc,
-        Code::Rdtscp => Operation::Rdtscp,
-        Code::Rdrand_r16 | Code::Rdrand_r32 | Code::Rdrand_r64 => {
+    let operation = match class {
+        Some(SelectedClass::Cpuid) => Operation::Cpuid,
+        Some(SelectedClass::Rdtsc) => Operation::Rdtsc,
+        Some(SelectedClass::Rdtscp) => Operation::Rdtscp,
+        Some(SelectedClass::Rdrand) => {
             let (destination, width) = register_operand(instruction.op0_register())?;
             Operation::Rdrand { destination, width }
         }
-        Code::Rdseed_r16 | Code::Rdseed_r32 | Code::Rdseed_r64 => {
+        Some(SelectedClass::Rdseed) => {
             let (destination, width) = register_operand(instruction.op0_register())?;
             Operation::Rdseed { destination, width }
         }
-        Code::Rdpid_r64 => {
+        Some(SelectedClass::Rdpid) => {
             let (destination, width) = register_operand(instruction.op0_register())?;
             if width != OperandWidth::Bits64 {
                 return Err(SemanticsError::InvalidEncoding);
             }
             Operation::Rdpid { destination }
         }
-        Code::Syscall => Operation::Syscall {
+        Some(SelectedClass::Syscall) => Operation::Syscall {
             abi: SyscallAbi::LinuxX64,
         },
-        Code::Int_imm8 if instruction.immediate8() == 0x80 => match declaration {
+        Some(SelectedClass::Int80) => match declaration {
             Some(SyscallAbi::LinuxI386Int80) => Operation::Syscall {
                 abi: SyscallAbi::LinuxI386Int80,
             },
             None => return Err(SemanticsError::UndeclaredAlias),
             _ => return Err(SemanticsError::AliasClassMismatch),
         },
-        Code::Sysenter => match declaration {
+        Some(SelectedClass::Sysenter) => match declaration {
             Some(abi @ SyscallAbi::DeclaredSysenter(_)) => Operation::Syscall { abi },
             None => return Err(SemanticsError::UndeclaredAlias),
             _ => return Err(SemanticsError::AliasClassMismatch),
@@ -904,20 +904,29 @@ fn counter_from(registers: &RegisterSnapshot) -> u64 {
 }
 
 fn register_operand(register: Register) -> Result<(Gpr, OperandWidth), SemanticsError> {
-    macro_rules! registers {
-        ($($gpr:ident => ($r16:ident, $r32:ident, $r64:ident)),+ $(,)?) => {
-            match register {
-                $(Register::$r16 => Ok((Gpr::$gpr, OperandWidth::Bits16)),
-                  Register::$r32 => Ok((Gpr::$gpr, OperandWidth::Bits32)),
-                  Register::$r64 => Ok((Gpr::$gpr, OperandWidth::Bits64)),)+
-                _ => Err(SemanticsError::InvalidEncoding),
-            }
-        };
-    }
-    registers! {
-        Rax => (AX, EAX, RAX), Rcx => (CX, ECX, RCX), Rdx => (DX, EDX, RDX), Rbx => (BX, EBX, RBX),
-        Rsp => (SP, ESP, RSP), Rbp => (BP, EBP, RBP), Rsi => (SI, ESI, RSI), Rdi => (DI, EDI, RDI),
-        R8 => (R8W, R8D, R8), R9 => (R9W, R9D, R9), R10 => (R10W, R10D, R10), R11 => (R11W, R11D, R11),
-        R12 => (R12W, R12D, R12), R13 => (R13W, R13D, R13), R14 => (R14W, R14D, R14), R15 => (R15W, R15D, R15),
-    }
+    let operand = x86::gpr(register).ok_or(SemanticsError::InvalidEncoding)?;
+    let destination = match operand.register {
+        x86::Gpr::Rax => Gpr::Rax,
+        x86::Gpr::Rcx => Gpr::Rcx,
+        x86::Gpr::Rdx => Gpr::Rdx,
+        x86::Gpr::Rbx => Gpr::Rbx,
+        x86::Gpr::Rsp => Gpr::Rsp,
+        x86::Gpr::Rbp => Gpr::Rbp,
+        x86::Gpr::Rsi => Gpr::Rsi,
+        x86::Gpr::Rdi => Gpr::Rdi,
+        x86::Gpr::R8 => Gpr::R8,
+        x86::Gpr::R9 => Gpr::R9,
+        x86::Gpr::R10 => Gpr::R10,
+        x86::Gpr::R11 => Gpr::R11,
+        x86::Gpr::R12 => Gpr::R12,
+        x86::Gpr::R13 => Gpr::R13,
+        x86::Gpr::R14 => Gpr::R14,
+        x86::Gpr::R15 => Gpr::R15,
+    };
+    let width = match operand.width {
+        x86::Width::Bits16 => OperandWidth::Bits16,
+        x86::Width::Bits32 => OperandWidth::Bits32,
+        x86::Width::Bits64 => OperandWidth::Bits64,
+    };
+    Ok((destination, width))
 }

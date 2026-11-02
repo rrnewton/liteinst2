@@ -136,12 +136,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "liteinst-x86"
+version = "0.1.0"
+dependencies = [
+ "iced-x86",
+]
+
+[[package]]
 name = "liteinst2"
 version = "0.1.0"
 dependencies = [
  "iced-x86",
  "libc",
  "liteinst-artifact",
+ "liteinst-x86",
  "memmap2",
  "nix",
 ]

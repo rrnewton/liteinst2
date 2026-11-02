@@ -15,6 +15,9 @@ use crate::scanner::{InstructionScanner, ScanResult};
 use crate::search::{RefusalClass, SearchDomain, SearchEvidence, SearchScope};
 use crate::trampoline::{ExecutableTrampoline, HookCallback, TrampolineImage, TrampolinePlan};
 
+pub mod feasibility;
+use feasibility::ENTRY_BYTES as ILLEGAL;
+
 mod adjacent_b2;
 pub use adjacent_b2::{
     AdjacentB2ArtifactPlan, AdjacentB2Budget, AdjacentB2Failure, PairCounts, PairEligibility,
@@ -1038,18 +1041,21 @@ fn plan_pun_with_context_core(
         .find(|item| item.address() == physical)
         .ok_or(Refusal::NotInstructionHead)?;
     let len = instruction.len();
-    let displaced = AddressRange::new(physical, len)?;
-    let consumed = AddressRange::new(physical, 5 + prefixes)?;
-    if !(1..=4).contains(&len)
-        || prefixes >= len
-        || len > request.search.max_displaced_bytes
-        || !request.block.covers(displaced)
-        || !source.covers(consumed)
-        || physical / 64 != (displaced.end() - 1) / 64
-    {
-        search_evidence.qualification(scope, &Refusal::NoPatchWindow);
-        return Err(Refusal::NoPatchWindow);
-    }
+    let head = feasibility::pun_head(
+        physical,
+        len,
+        prefixes,
+        source,
+        request.block,
+        request.search.max_displaced_bytes,
+    )
+    .inspect_err(|reason| {
+        if *reason == Refusal::NoPatchWindow {
+            search_evidence.qualification(scope, reason);
+        }
+    })?;
+    let displaced = head.displaced();
+    let consumed = head.consumed();
     if context.callback_free || request.semantics != HookSemantics::ReplaceFirst {
         qualify_instruction(instruction.instruction())
             .inspect_err(|reason| search_evidence.qualification(scope, reason))?;
@@ -1077,28 +1083,24 @@ fn plan_pun_with_context_core(
     }) {
         return Err(Refusal::NotInstructionHead);
     }
-    let store_len = len.next_power_of_two();
-    // x86 has no three-byte MOV. Keep a four-byte store in this cache line by
-    // preserving the successor byte, or the preceding byte at offset 61.
-    let store_address = physical.min((physical | 63) - (store_len as u64 - 1));
-    let store_range = AddressRange::new(store_address, store_len)?;
-    if !source.covers(store_range) {
-        search_evidence.qualification(scope, &Refusal::NoPatchWindow);
-        return Err(Refusal::NoPatchWindow);
-    }
+    let store_range = head.store_range().inspect_err(|reason| {
+        if *reason == Refusal::NoPatchWindow {
+            search_evidence.qualification(scope, reason);
+        }
+    })?;
+    let store_len = store_range.len() as usize;
+    let store_address = store_range.start();
     // Preserve prior hooks even for ReplaceFirst. Consumed successor and store
     // padding bytes deliberately remain current-view inputs, not this guard.
     request
         .require_original(displaced)
         .inspect_err(|reason| search_evidence.qualification(scope, reason))?;
-    let offset = (physical - source.start()) as usize;
-    let mut fixed = [0_u8; 4];
-    let free = len - prefixes - 1;
-    fixed[free..].copy_from_slice(&request.code[offset + len..offset + 5 + prefixes]);
-    let next = i128::from(physical) + 5 + prefixes as i128;
-    let low = u64::try_from(next + i128::from(i32::from_le_bytes(fixed)))
-        .map_err(|_| Refusal::AllocationUnavailable)?;
-    let window = AddressRange::new(low, 1_usize << (8 * free))?;
+    let targets = head.targets(request.code)?;
+    let offset = targets.offset();
+    let fixed = targets.raw_displacement();
+    let free = targets.free_bytes();
+    let next = i128::from(targets.next());
+    let window = targets.window();
     let make_trampoline = || {
         if context.callback_free {
             TrampolinePlan::from_instruction(scan, physical)
@@ -1908,11 +1910,6 @@ fn emit_relocation_window(
     Err(last_error)
 }
 
-// These single-byte opcodes are architecturally invalid in 64-bit mode. Do not
-// add D4/D5: newer ISAs may assign prefixes to historically illegal opcodes.
-const ILLEGAL: [u8; 14] = [
-    0x06, 0x07, 0x0e, 0x16, 0x17, 0x1e, 0x1f, 0x27, 0x2f, 0x37, 0x3f, 0x60, 0x61, 0xce,
-];
 pub(crate) fn candidate_target(
     physical: u64,
     mask: [bool; 4],

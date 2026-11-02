@@ -10,6 +10,7 @@ publish = false
 crate-type = ["staticlib"]
 
 [dependencies]
+liteinst-x86 = { path = "../../../../crates/liteinst-x86", default-features = false }
 iced-x86 = { version = "=1.21.0", default-features = false, features = ["no_std", "decoder"] }
 
 [features]

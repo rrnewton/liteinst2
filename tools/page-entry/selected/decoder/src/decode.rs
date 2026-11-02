@@ -4,6 +4,7 @@ use crate::abi::*;
 use iced_x86::{
     Code, Decoder, DecoderError, DecoderOptions, Instruction, Mnemonic, OpKind, Register,
 };
+use liteinst_x86::{self as x86, SelectedClass};
 
 pub(crate) fn warm_tables() {
     // Decoder construction initializes every enabled legacy/VEX/EVEX/XOP table
@@ -31,14 +32,14 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Decoded, u32> {
         ..Decoded::default()
     };
     row.bytes[..source.len()].copy_from_slice(source);
-    let mut decoder = Decoder::with_ip(64, source, pc, DecoderOptions::NONE);
-    let instruction = decoder.decode();
+    let decoded = x86::decode64(pc, source);
+    let instruction = decoded.instruction;
     row.code = instruction.code() as u32;
     row.length = instruction.len() as u32;
     row.next_pc = pc
         .checked_add(instruction.len() as u64)
         .ok_or(ADDRESS_OVERFLOW)?;
-    row.decode_status = match decoder.last_error() {
+    row.decode_status = match decoded.error {
         DecoderError::None => VALID,
         DecoderError::NoMoreBytes => TRUNCATED,
         _ => INVALID,
@@ -46,17 +47,17 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Decoded, u32> {
     if instruction.is_invalid() || row.decode_status != VALID {
         return Ok(row);
     }
-    let (kind, operand) = match instruction.code() {
-        Code::Cpuid => (CPUID, false),
-        Code::Rdrand_r16 | Code::Rdrand_r32 | Code::Rdrand_r64 => (RDRAND, true),
-        Code::Rdseed_r16 | Code::Rdseed_r32 | Code::Rdseed_r64 => (RDSEED, true),
-        Code::Rdpid_r64 => (RDPID, true),
-        Code::Rdtsc => (RDTSC, false),
-        Code::Rdtscp => (RDTSCP, false),
-        Code::Syscall => (SYSCALL, false),
-        Code::Sysenter => (SYSENTER, false),
-        Code::Int_imm8 if instruction.immediate8() == 0x80 => (INT80, false),
-        _ => (NONE, false),
+    let (kind, operand) = match x86::selected_code(&instruction) {
+        Some(SelectedClass::Cpuid) => (CPUID, false),
+        Some(SelectedClass::Rdrand) => (RDRAND, true),
+        Some(SelectedClass::Rdseed) => (RDSEED, true),
+        Some(SelectedClass::Rdpid) => (RDPID, true),
+        Some(SelectedClass::Rdtsc) => (RDTSC, false),
+        Some(SelectedClass::Rdtscp) => (RDTSCP, false),
+        Some(SelectedClass::Syscall) => (SYSCALL, false),
+        Some(SelectedClass::Sysenter) => (SYSENTER, false),
+        Some(SelectedClass::Int80) => (INT80, false),
+        None => (NONE, false),
     };
     row.kind = kind;
     if operand {
@@ -70,24 +71,7 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Decoded, u32> {
 }
 
 fn register(register: Register) -> Option<(u32, u32)> {
-    macro_rules! regs {
-        ($($index:literal => ($small:ident, $medium:ident, $large:ident)),+ $(,)?) => {
-            match register {
-                $(Register::$small => Some(($index, 16)),
-                  Register::$medium => Some(($index, 32)),
-                  Register::$large => Some(($index, 64)),)+
-                _ => None,
-            }
-        };
-    }
-    regs! {
-        0 => (AX, EAX, RAX), 1 => (CX, ECX, RCX), 2 => (DX, EDX, RDX),
-        3 => (BX, EBX, RBX), 4 => (SP, ESP, RSP), 5 => (BP, EBP, RBP),
-        6 => (SI, ESI, RSI), 7 => (DI, EDI, RDI), 8 => (R8W, R8D, R8),
-        9 => (R9W, R9D, R9), 10 => (R10W, R10D, R10), 11 => (R11W, R11D, R11),
-        12 => (R12W, R12D, R12), 13 => (R13W, R13D, R13),
-        14 => (R14W, R14D, R14), 15 => (R15W, R15D, R15),
-    }
+    x86::gpr(register).map(|operand| (operand.register as u32, operand.width as u32))
 }
 
 // Only the complete canonical register forms enter this new inventory. The

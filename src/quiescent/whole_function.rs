@@ -1,11 +1,11 @@
 //! Opt-in closed scalar region; this never changes basic-block admission.
 
 use super::*;
+use crate::control_flow::{self, Coverage};
 use crate::controls::{ControlledAction, EntryAdmissionAction, EntryAdmissionRole, ProbeControl};
 use crate::emission::{EmissionContext, PlanningSite};
 use crate::trampoline::{ObservationStackProfile, ProgramCounterMapping, TrampolineLayout};
 use iced_x86::{Decoder, DecoderOptions, Instruction, OpKind, Register};
-use std::collections::BTreeSet;
 
 /// Exact original function and caller-certified external-entry ownership.
 ///
@@ -373,9 +373,7 @@ impl Verified {
         {
             return Err(Refusal::InvalidRange);
         }
-        let mut successors = vec![Vec::new(); items.len()];
-        let mut leaders = BTreeSet::from([0]);
-        for (n, item) in items.iter().enumerate() {
+        let graph = control_flow::build(scan, |n, item, row| {
             let i = item.instruction();
             let raw = &bytes[item.offset()..item.offset() + item.len()];
             if i.has_lock_prefix()
@@ -392,7 +390,6 @@ impl Verified {
                     if !scalar(i) || n + 1 == items.len() {
                         return Err(unsupported());
                     }
-                    successors[n].push(n + 1);
                 }
                 FlowControl::Return if raw == [0xc3] => {}
                 FlowControl::ConditionalBranch | FlowControl::UnconditionalBranch => {
@@ -407,35 +404,23 @@ impl Verified {
                     {
                         return Err(unsupported());
                     }
-                    let target = i.near_branch_target();
-                    let destination = items
-                        .iter()
-                        .position(|x| x.address() == target)
+                    let destination = row
+                        .branch_target()
+                        .and_then(|target| target.head())
                         .ok_or_else(unsupported)?;
                     if destination == 0 || destination == n {
                         return Err(unsupported());
                     }
-                    successors[n].push(destination);
-                    leaders.insert(destination);
-                    if i.flow_control() == FlowControl::ConditionalBranch {
-                        if n + 1 == items.len() {
-                            return Err(unsupported());
-                        }
-                        successors[n].push(n + 1);
-                        leaders.insert(n + 1);
+                    if i.flow_control() == FlowControl::ConditionalBranch && n + 1 == items.len() {
+                        return Err(unsupported());
                     }
                 }
                 _ => return Err(unsupported()),
             }
-        }
-        let mut reached = vec![false; items.len()];
-        let mut pending = vec![0];
-        while let Some(n) = pending.pop() {
-            if !reached[n] {
-                reached[n] = true;
-                pending.extend(successors[n].iter().copied());
-            }
-        }
+            Ok(())
+        })?;
+        let indexed = graph.indexed().map_err(|_| unsupported())?;
+        let reached = indexed.reachable_from(0).map_err(|_| unsupported())?;
         if items
             .iter()
             .enumerate()
@@ -452,16 +437,15 @@ impl Verified {
         if !(1..=4).contains(&returns.len()) {
             return Err(unsupported());
         }
-        let mut can_return: Vec<_> = items
+        let return_indices: Vec<_> = items
             .iter()
-            .map(|i| returns.contains(&i.address()))
+            .enumerate()
+            .filter(|(_, item)| returns.contains(&item.address()))
+            .map(|(index, _)| index)
             .collect();
-        for _ in 0..items.len() {
-            for (n, next) in successors.iter().enumerate() {
-                let reaches = next.iter().any(|&to| can_return[to]);
-                can_return[n] |= reaches;
-            }
-        }
+        let can_return = indexed
+            .can_reach_any(&return_indices)
+            .map_err(|_| unsupported())?;
         if reached
             .iter()
             .zip(&can_return)
@@ -469,30 +453,16 @@ impl Verified {
         {
             return Err(unsupported());
         }
-        let mut blocks = 0;
-        let mut n = 0;
-        while n < items.len() {
-            if !reached[n] {
-                n += 1;
-                continue;
-            }
-            blocks += 1;
-            loop {
-                let terminal = items[n].instruction().flow_control() != FlowControl::Next
-                    || n + 1 == items.len()
-                    || !reached[n + 1]
-                    || leaders.contains(&(n + 1));
-                n += 1;
-                if terminal {
-                    break;
-                }
-            }
-        }
-        if blocks > 32 {
+        let blocks = indexed
+            .blocks(Coverage::Reachable(&reached))
+            .map_err(|_| unsupported())?;
+        if blocks.len() > 32 {
             return Err(unsupported());
         }
-        let expected: Vec<_> = leaders
-            .into_iter()
+        let expected: Vec<_> = graph
+            .branch_entries()
+            .iter()
+            .copied()
             .filter(|&n| reached[n])
             .map(|n| items[n].address())
             .collect();

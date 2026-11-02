@@ -1,0 +1,16 @@
+case,status,expected_exit,actual_exit,elapsed_seconds,wall_limit_seconds,termination,observed_passed,unobserved
+fmt,PASS,0,0,12.966574737802148,180,,,
+clippy,PASS,0,0,41.08745114994235,180,,,
+check,PASS,0,0,28.379256054991856,180,,,
+decoder-default,PASS,0,0,9.01953486702405,150,,,
+decoder-extended,PASS,0,0,11.129196447087452,150,,,
+workspace,PASS,0,0,971.1215170768555,1800,,4586,
+serial-launch,FAILED,0,-9,180.19087367411703,180,timeout,817,222
+decoder-default/forms,PASS,0,0,,10,,,
+decoder-default/tiny-arena,PASS,125,125,,10,,,
+decoder-default/personality,PASS,125,125,,10,,,
+decoder-default/freestanding,PASS,0,0,,10,,,
+decoder-extended/forms,PASS,0,0,,10,,,
+decoder-extended/tiny-arena,PASS,125,125,,10,,,
+decoder-extended/personality,PASS,125,125,,10,,,
+decoder-extended/freestanding,PASS,0,0,,10,,,
