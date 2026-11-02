@@ -1,0 +1,231 @@
+{
+  "attribution": {
+    "period": 22797979570,
+    "samples": 2257,
+    "scope": "Period-weighted sampled user CPU only, with unknowns in the denominator. Bridge function intervals use exact recorded mappings and pinned ELF bytes. Raw return addresses are not adjusted. Each displayed path is one bounded libdw observation, never an assertion of stack completeness; a truncated or mismatching path remains visible. No kernel, wall-time, whole-program or speedup attribution.",
+    "unknown_leaf_period": 30303030,
+    "unknown_leaf_samples": 3,
+    "unwind_complete": false,
+    "unwind_states": {
+      "bounded_observed_frames": 1566,
+      "empty": 3,
+      "leaf_only": 688
+    }
+  },
+  "bridge": {
+    "bytes": 5525448,
+    "sha256": "6733351351be65faf24dde4f2dc548b74f3320a2d035c36a5570e4c762961a3d"
+  },
+  "carrier": {
+    "bytes": 141864,
+    "sha256": "212a717b4048695700a7ff146345d0db93ea1ac38e3d210ab45b3460ce6501f9"
+  },
+  "cleanup_complete": true,
+  "compiled_inputs_equal_current": true,
+  "compiled_source": {
+    "head_sources_match": true,
+    "revision": "3d989f16d3f62e6eb504e3cb7a231c624002be3d",
+    "source_manifest_sha256": "db7b2a36b4587ad5868f52bf7023111344333644d36eb1d556f3679d104bac84",
+    "tracked_clean": true,
+    "tree": "9efaa614d71bef37cf0d0367f442c82e0cf62731"
+  },
+  "cpu": 309,
+  "error": null,
+  "final_errors": [],
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 309,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "observer_bounds": [
+    30,
+    1073741824,
+    134217728,
+    80
+  ],
+  "original_diagnostic_reclassified": false,
+  "original_receipt": {
+    "bytes": 1918508,
+    "sha256": "52f59f70b7ca68d0cc8d45d24c98e4742971a31138a865eef17a94b694ab6292"
+  },
+  "performance_credit": false,
+  "profile": "loop-ro-program-user-dwarf-diagnostic-v1",
+  "profile_command": [
+    "/usr/bin/perf",
+    "record",
+    "--call-graph",
+    "dwarf,4096",
+    "--user-callchains",
+    "--no-buildid",
+    "--no-buildid-cache",
+    "-e",
+    "cpu-clock:u",
+    "-F",
+    "99",
+    "--strict-freq",
+    "--mmap-pages=64",
+    "--timestamp",
+    "--sample-cpu",
+    "--period",
+    "--clockid=mono",
+    "--delay=-1",
+    "--control=fd:7,10",
+    "--pid",
+    "3931755",
+    "--output",
+    "${REPO}/target/evaluation/inprocess/loop-ro-program-profile-attempt-1/capture/perf.data"
+  ],
+  "profile_command_scope": "Complete captured perf argv; ${REPO} substitutes the checkout root. PID and control FDs identify this execution and are allocated freshly by the tracked reproducer.",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 2096300,
+    "sha256": "688de9055e941b5f02de538cf80f83732a5ad69932d62e0e94f55ac01d581348"
+  },
+  "reproduce": [
+    "python3.12",
+    "-B",
+    "evaluation/inprocess/loop_ro_program_profile.py",
+    "--expect-revision",
+    "665a4b8b63968cdf6d9a38a9bce38893f1c8436a",
+    "--diagnostic-receipt",
+    "target/evaluation/inprocess/loop-ro-program-release-attempt-1/receipt.json",
+    "--diagnostic-sha256",
+    "52f59f70b7ca68d0cc8d45d24c98e4742971a31138a865eef17a94b694ab6292",
+    "--output",
+    "target/evaluation/inprocess/loop-ro-program-profile-NEW"
+  ],
+  "reservation": "Original reserved CPU309; retained release inputs equal observer source. Fresh release reproduction uses loop_ro_program_release.py and supplies its new receipt/hash to this profiler.",
+  "sampling": {
+    "authenticated_bridge_samples": 2254,
+    "full_exec_exit_envelope": true,
+    "kernel_samples": 0,
+    "loss_free": true,
+    "lost_samples": 0,
+    "sampled_period_total": 22797979570,
+    "samples": 2257,
+    "target_samples": 2257,
+    "throttle_records": 0,
+    "user_samples": 2257
+  },
+  "schema": 1,
+  "scope": "One separately observed LS execution from the retained failed case and RO bridge. User-only 99Hz samples and actual wait4 usage; no terminal counts invented. No kernel stack, complete unwind, kill-cause, timing or qualification inference.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "665a4b8b63968cdf6d9a38a9bce38893f1c8436a",
+    "source_manifest_sha256": "aa9a830bba9749eefceed5610e73c46d66ab9e25b5152cc1f7b0f572c2692551",
+    "tracked_clean": true,
+    "tree": "4ea1989b5ab106f7c9f4a274bf856908008b2aac"
+  },
+  "source_unchanged": true,
+  "status": "observed_user_dwarf_diagnostic_only",
+  "subject_bounds": [
+    30,
+    536870912,
+    16777216,
+    60
+  ],
+  "successful_target_credit": false,
+  "target": {
+    "bounds": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "cleanup_errors": [],
+    "error": null,
+    "exit": -9,
+    "expected_exit": 0,
+    "process_ns": 30817863828,
+    "reaped": true,
+    "timed_out": false,
+    "usage": {
+      "maxrss_kib": 79040,
+      "system_seconds": 7.42756,
+      "user_seconds": 22.576065,
+      "wait_status": 9
+    }
+  },
+  "target_outcome": "failed_prefix",
+  "top_functions": [
+    {
+      "key": "bridge:0x97990-0x97e6f:lpf_project",
+      "period": 6242424180,
+      "samples": 618
+    },
+    {
+      "key": "bridge:0x34ad0-0x367f6:li2_pg_epoch_bind",
+      "period": 2737373710,
+      "samples": 271
+    },
+    {
+      "key": "bridge:0x2b590-0x2c56f:pda_receipt",
+      "period": 1141414130,
+      "samples": 113
+    },
+    {
+      "key": "bridge:0x68b0-0x693e:equal",
+      "period": 1101010090,
+      "samples": 109
+    },
+    {
+      "key": "bridge:0x46000-0x460b8:current",
+      "period": 979797970,
+      "samples": 97
+    },
+    {
+      "key": "bridge:0x3fec0-0x4303b:handler",
+      "period": 585858580,
+      "samples": 58
+    },
+    {
+      "key": "bridge:0x9acb0-0x9ae59:li2_lpf_compact_validate",
+      "period": 585858580,
+      "samples": 58
+    },
+    {
+      "key": "bridge:0x929c0-0x92c79:li2_lpe_miss_validate",
+      "period": 555555550,
+      "samples": 55
+    },
+    {
+      "key": "bridge:0x909a0-0x90c39:li2_lpf_miss_validate",
+      "period": 505050500,
+      "samples": 50
+    },
+    {
+      "key": "bridge:0x91970-0x91c29:li2_lp_miss_validate",
+      "period": 505050500,
+      "samples": 50
+    },
+    {
+      "key": "bridge:0x90760-0x90996:li2_lpf_plan_validate",
+      "period": 424242420,
+      "samples": 42
+    },
+    {
+      "key": "bridge:0x97e70-0x9834f:lp_project",
+      "period": 424242420,
+      "samples": 42
+    }
+  ],
+  "unwinder_bounds": [
+    30,
+    1073741824,
+    134217728,
+    80
+  ]
+}

@@ -1,0 +1,790 @@
+{
+  "application_executed": false,
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "finite": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "program": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "release_build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "seed": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "builds": {
+    "projected": {
+      "archive": {
+        "bytes": 12045418,
+        "sha256": "bf81e0fbfebbda83a30dcc82b2ddded487e725d3df2052193e00ab79dcc9dd40"
+      },
+      "executable": {
+        "bytes": 2054760,
+        "sha256": "8c1381d2a96cabf563cfa4fb50287f2bfc8a60ae0e49ab9ad318bb820349b224"
+      },
+      "generated": {
+        "bytes": 790,
+        "sha256": "19779c4d6336e2055102f484ad5ab5a6d75ef81fb8cf40b750eecac78a72cadd"
+      },
+      "generator": {
+        "bytes": 973,
+        "sha256": "be2edcf912aeb4da29473c800a254d61a877634272f49febc9486de80f9c2f0c"
+      },
+      "recipe": {
+        "bytes": 1079,
+        "sha256": "f90ce64ee70c7bffa0839dfa467346f16f67fd69a4b87584c266820726a9bb42"
+      },
+      "runtime_inputs": {
+        "dependencies": [
+          {
+            "bytes": 912984,
+            "names": [
+              "libm.so.6"
+            ],
+            "sha256": "aabb41f107632430e94ff2186082a5df8488e458894eebb7fe285825da582d01"
+          },
+          {
+            "bytes": 116408,
+            "names": [
+              "libgcc_s.so.1"
+            ],
+            "sha256": "3d144b557008c93e4e67567d5dc98cb81cf55187a698d1b4872ce84ba8a26bed"
+          },
+          {
+            "bytes": 2553784,
+            "names": [
+              "libc.so.6"
+            ],
+            "sha256": "4fe244b698006f2a5cc7d1e6008c195dfb3ac4038ea79a6500bdde4205efb523"
+          },
+          {
+            "bytes": 939216,
+            "names": [
+              "ld-linux-x86-64.so.2"
+            ],
+            "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9"
+          }
+        ],
+        "interpreter": {
+          "bytes": 939216,
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9"
+        }
+      }
+    },
+    "verified": {
+      "archive": {
+        "bytes": 12045418,
+        "sha256": "bf81e0fbfebbda83a30dcc82b2ddded487e725d3df2052193e00ab79dcc9dd40"
+      },
+      "executable": {
+        "bytes": 2061024,
+        "sha256": "836f8db9691829e530e9069c9f7ea93fb5cc3c6debd5c3c75055b542ce90ab37"
+      },
+      "generated": {
+        "bytes": 790,
+        "sha256": "19779c4d6336e2055102f484ad5ab5a6d75ef81fb8cf40b750eecac78a72cadd"
+      },
+      "generator": {
+        "bytes": 973,
+        "sha256": "be2edcf912aeb4da29473c800a254d61a877634272f49febc9486de80f9c2f0c"
+      },
+      "recipe": {
+        "bytes": 1079,
+        "sha256": "f90ce64ee70c7bffa0839dfa467346f16f67fd69a4b87584c266820726a9bb42"
+      },
+      "runtime_inputs": {
+        "dependencies": [
+          {
+            "bytes": 912984,
+            "names": [
+              "libm.so.6"
+            ],
+            "sha256": "aabb41f107632430e94ff2186082a5df8488e458894eebb7fe285825da582d01"
+          },
+          {
+            "bytes": 116408,
+            "names": [
+              "libgcc_s.so.1"
+            ],
+            "sha256": "3d144b557008c93e4e67567d5dc98cb81cf55187a698d1b4872ce84ba8a26bed"
+          },
+          {
+            "bytes": 2553784,
+            "names": [
+              "libc.so.6"
+            ],
+            "sha256": "4fe244b698006f2a5cc7d1e6008c195dfb3ac4038ea79a6500bdde4205efb523"
+          },
+          {
+            "bytes": 939216,
+            "names": [
+              "ld-linux-x86-64.so.2"
+            ],
+            "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9"
+          }
+        ],
+        "interpreter": {
+          "bytes": 939216,
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9"
+        }
+      }
+    }
+  },
+  "cases": [
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 257,
+          "sha256": "f45fa426449f839074c4a6ca3be2e8dab8940a87b1460d8e266fa3ca3f27156c"
+        }
+      },
+      "case": 0,
+      "duration_ns_validation_only": 15660076,
+      "exit": 0,
+      "label": "projected-case-0",
+      "launched": true,
+      "mode": "projected",
+      "result": {
+        "argument_refusals": 2,
+        "cleanup": [
+          2,
+          2,
+          1
+        ],
+        "compared": 3,
+        "component_only": 1,
+        "differential": 0,
+        "generation_changes": 0,
+        "identity_refusals": 9,
+        "io": [
+          7,
+          7,
+          7
+        ],
+        "mapping_refusals": 0,
+        "maps_unchanged_data": 1,
+        "mode": 0,
+        "no_io_refusals": 0,
+        "physical_fallbacks": 0,
+        "version": 1
+      },
+      "status": "observed_mapping_component",
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 257,
+          "sha256": "701925e2084754a5765dcac0f86efbdce42f8459238ee3a9be6a70a51ac6574d"
+        }
+      },
+      "case": 1,
+      "duration_ns_validation_only": 47853718,
+      "exit": 0,
+      "label": "projected-case-1",
+      "launched": true,
+      "mode": "projected",
+      "result": {
+        "argument_refusals": 0,
+        "cleanup": [
+          2,
+          2,
+          1
+        ],
+        "compared": 2,
+        "component_only": 1,
+        "differential": 0,
+        "generation_changes": 1,
+        "identity_refusals": 0,
+        "io": [
+          9,
+          9,
+          9
+        ],
+        "mapping_refusals": 1,
+        "maps_unchanged_data": 1,
+        "mode": 1,
+        "no_io_refusals": 0,
+        "physical_fallbacks": 0,
+        "version": 1
+      },
+      "status": "observed_mapping_component",
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 257,
+          "sha256": "70431b65434d0fd7b4990ae90f974ed3a99064e0810069d05a0d63ddbf71e923"
+        }
+      },
+      "case": 2,
+      "duration_ns_validation_only": 10248496,
+      "exit": 0,
+      "label": "projected-case-2",
+      "launched": true,
+      "mode": "projected",
+      "result": {
+        "argument_refusals": 0,
+        "cleanup": [
+          2,
+          2,
+          1
+        ],
+        "compared": 1,
+        "component_only": 1,
+        "differential": 0,
+        "generation_changes": 0,
+        "identity_refusals": 0,
+        "io": [
+          8,
+          8,
+          8
+        ],
+        "mapping_refusals": 0,
+        "maps_unchanged_data": 1,
+        "mode": 2,
+        "no_io_refusals": 0,
+        "physical_fallbacks": 1,
+        "version": 1
+      },
+      "status": "observed_mapping_component",
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 257,
+          "sha256": "2ebd7cc6cf25ee084de8f7a7513975211e84eeb93f98d5760a25cea18aeff118"
+        }
+      },
+      "case": 3,
+      "duration_ns_validation_only": 22235903,
+      "exit": 0,
+      "label": "projected-case-3",
+      "launched": true,
+      "mode": "projected",
+      "result": {
+        "argument_refusals": 0,
+        "cleanup": [
+          2,
+          2,
+          1
+        ],
+        "compared": 0,
+        "component_only": 1,
+        "differential": 0,
+        "generation_changes": 0,
+        "identity_refusals": 0,
+        "io": [
+          7,
+          7,
+          7
+        ],
+        "mapping_refusals": 0,
+        "maps_unchanged_data": 1,
+        "mode": 3,
+        "no_io_refusals": 1,
+        "physical_fallbacks": 0,
+        "version": 1
+      },
+      "status": "observed_mapping_component",
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 257,
+          "sha256": "ee5b407c46f0a16cabfc55a3339d5950abf1b79ecdce5cdc5eabfea237413210"
+        }
+      },
+      "case": 4,
+      "duration_ns_validation_only": 15620005,
+      "exit": 0,
+      "label": "projected-case-4",
+      "launched": true,
+      "mode": "projected",
+      "result": {
+        "argument_refusals": 0,
+        "cleanup": [
+          2,
+          2,
+          1
+        ],
+        "compared": 0,
+        "component_only": 1,
+        "differential": 0,
+        "generation_changes": 0,
+        "identity_refusals": 0,
+        "io": [
+          7,
+          7,
+          7
+        ],
+        "mapping_refusals": 0,
+        "maps_unchanged_data": 1,
+        "mode": 4,
+        "no_io_refusals": 1,
+        "physical_fallbacks": 0,
+        "version": 1
+      },
+      "status": "observed_mapping_component",
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 260,
+          "sha256": "a8928cb24c20554f36a79a80a21571312aae9b7b4c3ae79c318175a9678eee7a"
+        }
+      },
+      "case": 0,
+      "duration_ns_validation_only": 13464537,
+      "exit": 0,
+      "label": "verified-case-0",
+      "launched": true,
+      "mode": "verified",
+      "result": {
+        "argument_refusals": 2,
+        "cleanup": [
+          2,
+          2,
+          1
+        ],
+        "compared": 3,
+        "component_only": 1,
+        "differential": 1,
+        "generation_changes": 0,
+        "identity_refusals": 9,
+        "io": [
+          12,
+          12,
+          12
+        ],
+        "mapping_refusals": 0,
+        "maps_unchanged_data": 1,
+        "mode": 0,
+        "no_io_refusals": 0,
+        "physical_fallbacks": 0,
+        "version": 1
+      },
+      "status": "observed_mapping_component",
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 260,
+          "sha256": "994f56dd494382052676bc5bf39e8d8c6fa384d2d1a4dc9f183d92f30a65bd16"
+        }
+      },
+      "case": 1,
+      "duration_ns_validation_only": 16458665,
+      "exit": 0,
+      "label": "verified-case-1",
+      "launched": true,
+      "mode": "verified",
+      "result": {
+        "argument_refusals": 0,
+        "cleanup": [
+          2,
+          2,
+          1
+        ],
+        "compared": 2,
+        "component_only": 1,
+        "differential": 1,
+        "generation_changes": 1,
+        "identity_refusals": 0,
+        "io": [
+          17,
+          17,
+          17
+        ],
+        "mapping_refusals": 1,
+        "maps_unchanged_data": 1,
+        "mode": 1,
+        "no_io_refusals": 0,
+        "physical_fallbacks": 0,
+        "version": 1
+      },
+      "status": "observed_mapping_component",
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 260,
+          "sha256": "fde2a6d2fe2e034e9818a963b4ecf0dad57e5021925184c56a56ff2730d50d0e"
+        }
+      },
+      "case": 2,
+      "duration_ns_validation_only": 14553553,
+      "exit": 0,
+      "label": "verified-case-2",
+      "launched": true,
+      "mode": "verified",
+      "result": {
+        "argument_refusals": 0,
+        "cleanup": [
+          2,
+          2,
+          1
+        ],
+        "compared": 1,
+        "component_only": 1,
+        "differential": 1,
+        "generation_changes": 0,
+        "identity_refusals": 0,
+        "io": [
+          10,
+          10,
+          10
+        ],
+        "mapping_refusals": 0,
+        "maps_unchanged_data": 1,
+        "mode": 2,
+        "no_io_refusals": 0,
+        "physical_fallbacks": 1,
+        "version": 1
+      },
+      "status": "observed_mapping_component",
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 257,
+          "sha256": "800755f8186b4cfb8e040520bc4d0a431206f5f74f2681749b9b587e60e4c90a"
+        }
+      },
+      "case": 3,
+      "duration_ns_validation_only": 7327738,
+      "exit": 0,
+      "label": "verified-case-3",
+      "launched": true,
+      "mode": "verified",
+      "result": {
+        "argument_refusals": 0,
+        "cleanup": [
+          2,
+          2,
+          1
+        ],
+        "compared": 0,
+        "component_only": 1,
+        "differential": 1,
+        "generation_changes": 0,
+        "identity_refusals": 0,
+        "io": [
+          9,
+          9,
+          9
+        ],
+        "mapping_refusals": 0,
+        "maps_unchanged_data": 1,
+        "mode": 3,
+        "no_io_refusals": 1,
+        "physical_fallbacks": 0,
+        "version": 1
+      },
+      "status": "observed_mapping_component",
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 257,
+          "sha256": "f40b99b2fbd71e909f114495c85dcbe87102e1bfe86635489646f9fce1246989"
+        }
+      },
+      "case": 4,
+      "duration_ns_validation_only": 110250742,
+      "exit": 0,
+      "label": "verified-case-4",
+      "launched": true,
+      "mode": "verified",
+      "result": {
+        "argument_refusals": 0,
+        "cleanup": [
+          2,
+          2,
+          1
+        ],
+        "compared": 0,
+        "component_only": 1,
+        "differential": 1,
+        "generation_changes": 0,
+        "identity_refusals": 0,
+        "io": [
+          9,
+          9,
+          9
+        ],
+        "mapping_refusals": 0,
+        "maps_unchanged_data": 1,
+        "mode": 4,
+        "no_io_refusals": 1,
+        "physical_fallbacks": 0,
+        "version": 1
+      },
+      "status": "observed_mapping_component",
+      "timed_out": false
+    }
+  ],
+  "cleanup_complete": true,
+  "commands": [
+    {
+      "duration_ns": 53456494,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "historical-decoder-recipe",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 2017317808,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "projected-build",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 38147266,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "projected-headers",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 15799575,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "projected-libraries",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 1967745078,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "verified-build",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 48179808,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "verified-headers",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 37529588,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "verified-libraries",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 15660076,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "projected-case-0",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 47853718,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "projected-case-1",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 10248496,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "projected-case-2",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 22235903,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "projected-case-3",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 15620005,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "projected-case-4",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 13464537,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "verified-case-0",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 16458665,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "verified-case-1",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 14553553,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "verified-case-2",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 7327738,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "verified-case-3",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 110250742,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "verified-case-4",
+      "timed_out": false
+    }
+  ],
+  "cpu": 148,
+  "error": null,
+  "final_errors": [],
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 148,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "native_pair_owner_credit": false,
+  "original_custody14_suite": "unchanged_separate_requirement_not_run_here",
+  "performance_credit": false,
+  "profile": "native-pair-current-rseq-component-v1",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 445047,
+    "sha256": "09e42d52837d533a11ee636041ca2e284fb636cd52783c9e52e4d430b388a13e"
+  },
+  "reproduce": [
+    "python3.12",
+    "-B",
+    "evaluation/inprocess/native_pair_current_rseq.py",
+    "--expect-revision",
+    "3d5d6a9134becdde57546243f745cf393752a357",
+    "--native-receipt",
+    "target/evaluation/inprocess/tunables-effects-full19-r3-loop-native/receipt.json",
+    "--native-receipt-sha256",
+    "784fe75f566ea134a65464010823430d2b6dcadf2036bc99c47629418d39f983",
+    "--output",
+    "target/evaluation/inprocess/native-pair-current-rseq-NEW"
+  ],
+  "reservation": "Run within a genuine reserved CPU148 cpuset, matching the retained native setup receipt. Timing here is validation duration only.",
+  "revision": "3d5d6a9134becdde57546243f745cf393752a357",
+  "rseq_registration_executed": false,
+  "schema": 1,
+  "script": {
+    "bytes": 15567,
+    "path": "evaluation/inprocess/native_pair_current_rseq.py",
+    "sha256": "10d55e5138f9f7c61e0fca8342a3b1995c285fccd1f143ed9b7488a19d8bbaff"
+  },
+  "source": {
+    "head_sources_match": true,
+    "revision": "3d5d6a9134becdde57546243f745cf393752a357",
+    "source_manifest_sha256": "2da1266e9227eab0df798e1f4fc577b0c568c5cdcfc223d8f7cddc2473794ea9",
+    "tracked_clean": true,
+    "tree": "50cfc0e82c42925c5f1e3b52a03b81cfaf3aa139"
+  },
+  "source_unchanged": true,
+  "status": "observed_mapping_components"
+}

@@ -1,0 +1,11 @@
+mode,case,status,exit,duration_ns_validation_only,compared,identity_refusals,argument_refusals,mapping_refusals,generation_changes,physical_fallbacks,no_io_refusals,opens,closes,eofs
+projected,0,observed_mapping_component,0,15660076,3,9,2,0,0,0,0,7,7,7
+projected,1,observed_mapping_component,0,47853718,2,0,0,1,1,0,0,9,9,9
+projected,2,observed_mapping_component,0,10248496,1,0,0,0,0,1,0,8,8,8
+projected,3,observed_mapping_component,0,22235903,0,0,0,0,0,0,1,7,7,7
+projected,4,observed_mapping_component,0,15620005,0,0,0,0,0,0,1,7,7,7
+verified,0,observed_mapping_component,0,13464537,3,9,2,0,0,0,0,12,12,12
+verified,1,observed_mapping_component,0,16458665,2,0,0,1,1,0,0,17,17,17
+verified,2,observed_mapping_component,0,14553553,1,0,0,0,0,1,0,10,10,10
+verified,3,observed_mapping_component,0,7327738,0,0,0,0,0,0,1,9,9,9
+verified,4,observed_mapping_component,0,110250742,0,0,0,0,0,0,1,9,9,9
