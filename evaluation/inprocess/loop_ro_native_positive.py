@@ -158,7 +158,7 @@ def retained_support(path, expected_sha, r, pin, binary, aliases, complete, run,
             expected_sources[relative] = n['inputs'][str(ROOT/relative)]
         need(all(n['inputs'][str(ROOT/name)] == value for name,value in expected_sources.items()),
              'all historical Rust/config/recipe facts belong to the original producer')
-        _, raw, error = run('historical-decoder-recipe', [tools['git'], '-c', 'index.threads=1',
+        _, raw, error = run('historical-decoder-recipe', [tools['git'], '-C', ROOT, '-c', 'index.threads=1',
             '-c', 'core.preloadIndex=false', 'archive', '--format=tar', n['revision'], '--', *sorted(expected_sources)])
         need(not error, 'bounded historical source archive command')
         historical_sources(raw, expected_sources)
