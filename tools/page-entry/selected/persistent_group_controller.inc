@@ -2219,7 +2219,11 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #ifdef LI2_PERSISTENT_LOOP_LIFECYCLE_CAPTURE
 #include "persistent_loop_lifecycle_observe.inc"
 #else
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS_CAPTURE
+#include "persistent_loop_effects_observe.inc"
+#else
 #include "persistent_loop_observe.inc"
+#endif
 #endif
 #else
 #ifdef LI2_PERSISTENT_FUSED_CAPTURE

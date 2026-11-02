@@ -341,7 +341,11 @@ static void selected_ret_resume_exit(int,siginfo_t *,ucontext_t *);
 #ifdef LI2_PERSISTENT_LOOP_LIFECYCLE_CAPTURE
 #include "persistent_loop_lifecycle_observe.h"
 #else
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS_CAPTURE
+#include "persistent_loop_effects_observe.h"
+#else
 #include "persistent_loop_observe.h"
+#endif
 #endif
 #else
 #ifdef LI2_PERSISTENT_FUSED_CAPTURE
