@@ -12,6 +12,7 @@ import core_5cda_inventory as historical
 import core_cc846_inventory as inventory
 import parsing
 import core_97ab_inventory as native_indexed
+from test_main97ab_inventory import outer_declaration_mutation
 
 
 class MainF353InventoryTests(unittest.TestCase):
@@ -80,23 +81,29 @@ class MainF353InventoryTests(unittest.TestCase):
             target = current.ROOT/path; raw = read(target)
             self.assertEqual(raw.count(before.encode()), 1)
             wrong = raw.replace(before.encode(), after.encode())
+            outer = outer_declaration_mutation(self, path, raw, before, after)
+            wrong = outer['observed']
             # Carry the original length-changing stimulus through the new
             # outer source inverse; every inverse donor byte remains exact.
             upstream = copy.deepcopy(native_indexed.DATA['projections'])
             prior = native_indexed.source_before(path, raw, 'indexed_outer_inverse')
             wrong_prior = prior.replace(before.encode(), after.encode())
             if path in upstream:
-                at = raw.index(before.encode()); stop = at + len(before.encode())
+                at = outer['baseline'].index(before.encode()); stop = at + len(before.encode())
                 delta = len(after.encode()) - len(before.encode())
                 rebased = []
                 for first, end, donor in upstream[path]['edits']:
                     self.assertTrue(end <= at or first >= stop)
                     shift = delta if first >= stop else 0
                     rebased.append([first + shift, end + shift, donor])
-                upstream[path].update(current_sha256=hashlib.sha256(wrong).hexdigest(),
+                upstream[path].update(current_sha256=hashlib.sha256(outer['changed']).hexdigest(),
                     previous_sha256=hashlib.sha256(wrong_prior).hexdigest(), edits=rebased)
             def changed(candidate): return wrong if candidate == target else read(candidate)
-            with patch.dict(native_indexed.DATA['projections'], upstream):
+            if 'native_row' in outer:
+                upstream[path] = outer['native_row']
+            with patch.dict(native_indexed.DATA['source_successor_79a4b8b']['source_projections'], outer['rows']['79a4b8b']), \
+                 patch.dict(native_indexed.DATA['source_successor_3217b8ed']['source_projections'], outer['rows']['3217b8ed']), \
+                 patch.dict(native_indexed.DATA['projections'], upstream):
                 self.assertEqual(native_indexed.source_before(path, wrong, 'indexed_outer_inverse'), wrong_prior)
                 with patch.object(Path, 'read_bytes', changed), \
                      patch.dict(current.DATA['sources'], {path:hashlib.sha256(wrong_prior).hexdigest()}), \

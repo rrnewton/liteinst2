@@ -12,6 +12,7 @@ import core_5cda_inventory as historical
 import core_cc846_inventory as inventory
 import parsing
 import core_97ab_inventory as native_indexed
+from test_main97ab_inventory import cargo_mutation
 import core_f353_inventory as indexed
 import core_d8d85_inventory as artifact
 import core_34c47_inventory as prepared
@@ -73,11 +74,21 @@ class MainDd75InventoryTests(unittest.TestCase):
         stimuli += [(p, literals[0], '') for p, literals in current.DATA['module_chains'].items()]
         for path, before, after in stimuli:
             target = current.ROOT / path; raw = read(target); changed_raw = raw.replace(before.encode(), after.encode())
+            cargo = cargo_mutation(self, raw, before, after) if path == 'Cargo.toml' else None
+            if cargo:
+                changed_raw = cargo['observed']
+            changed_prior = cargo['native'] if cargo else changed_raw
             self.assertNotEqual(changed_raw, raw)
             def changed(candidate):
                 return changed_raw if candidate == target else read(candidate)
-            with patch.object(Path, 'read_bytes', changed), \
-                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_raw).hexdigest()}), \
+            with patch.dict(native_indexed.DATA['source_successor_3217b8ed']['source_projections'],
+                            {path: cargo['shared_row']} if cargo else {}), \
+                 patch.dict(native_indexed.DATA['projections'], {path: cargo['native_row']} if cargo else {}), \
+                 patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_prior).hexdigest()}), \
                  patch.object(current, 'source_before', side_effect=lambda p, b, e: b if p != path else (_ for _ in ()).throw(AssertionError('declaration gate omitted'))):
+                if cargo:
+                    self.assertEqual(native_indexed.source_before(path, changed_raw,
+                        'selected_sdk_cargo_declaration_inverse'), changed_prior)
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^maindd75_source_inventory_differs$'):
                     current.require_sources()

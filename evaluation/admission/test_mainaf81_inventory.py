@@ -12,6 +12,7 @@ import core_5cda_inventory as historical
 import core_cc846_inventory as inventory
 import parsing
 import core_97ab_inventory as native_indexed
+from test_main97ab_inventory import outer_declaration_mutation
 import core_f353_inventory as indexed
 import core_d8d85_inventory as artifact
 import core_34c47_inventory as prepared
@@ -119,6 +120,8 @@ class MainAf81InventoryTests(unittest.TestCase):
         for path, old_text, new_text in stimuli:
             target = current.ROOT / path; raw = read(target)
             changed_raw = raw.replace(old_text.encode(), new_text.encode())
+            outer = outer_declaration_mutation(self, path, raw, old_text, new_text)
+            changed_raw = outer['observed']
             self.assertNotEqual(changed_raw, raw)
             def changed(candidate):
                 return changed_raw if candidate == target else read(candidate)
@@ -126,7 +129,7 @@ class MainAf81InventoryTests(unittest.TestCase):
             # projection. Transport this original declaration mutation through
             # it, so the historical declaration gate still rejects it first.
             upstream = copy.deepcopy(native_indexed.DATA['projections'])
-            changed_prior = changed_raw
+            changed_prior = outer['changed']
             if path in ('tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs',
                         'src/quiescent.rs',
                         'tests/support/quiescent_oracle.rs',
@@ -136,16 +139,21 @@ class MainAf81InventoryTests(unittest.TestCase):
                 self.assertEqual(hashlib.sha256(prior).hexdigest(), current.DATA['sources'][path])
                 self.assertEqual((raw.count(old_text.encode()), prior.count(old_text.encode())), (1, 1))
                 changed_prior = prior.replace(old_text.encode(), new_text.encode())
-                first = raw.index(old_text.encode()); end = first + len(old_text.encode())
+                first = outer['baseline'].index(old_text.encode()); end = first + len(old_text.encode())
                 delta = len(new_text.encode()) - len(old_text.encode())
                 row = upstream[path]
-                row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()
+                row['current_sha256'] = hashlib.sha256(outer['changed']).hexdigest()
                 row['previous_sha256'] = hashlib.sha256(changed_prior).hexdigest()
                 for edit in row['edits']:
                     self.assertTrue(edit[1] <= first or edit[0] >= end)
                     if edit[0] >= end:
                         edit[0] += delta; edit[1] += delta
-            with patch.dict(native_indexed.DATA['projections'], upstream), \
+            if 'native_row' in outer:
+                upstream[path] = outer['native_row']
+                changed_prior = outer['native']
+            with patch.dict(native_indexed.DATA['source_successor_79a4b8b']['source_projections'], outer['rows']['79a4b8b']), \
+                 patch.dict(native_indexed.DATA['source_successor_3217b8ed']['source_projections'], outer['rows']['3217b8ed']), \
+                 patch.dict(native_indexed.DATA['projections'], upstream), \
                  patch.object(Path, 'read_bytes', changed), \
                  patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_prior).hexdigest()}), \
                  patch.object(current, 'source_before', side_effect=lambda p, b, e: b if p != path else (_ for _ in ()).throw(AssertionError('declaration gate omitted'))):
@@ -156,5 +164,7 @@ class MainAf81InventoryTests(unittest.TestCase):
                         'tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs'):
                     self.assertEqual(native_indexed.source_before(path, changed_raw,
                         'adc_outer_inverse_control'), changed_prior)
+                self.assertEqual(native_indexed.source_before(path, changed_raw,
+                    'adc_all_outer_inverse_control'), changed_prior)
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainaf81_source_inventory_differs$'):
                     current.require_sources()

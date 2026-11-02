@@ -65,6 +65,46 @@ def cargo_mutation(test, observed, before, after):
                 shared_row=shared_row, native_row=native_row)
 
 
+def outer_declaration_mutation(test, path, observed, before, after):
+    """Carry the same old stimulus through the two new, exact outer joins."""
+    names = ('79a4b8b', '3217b8ed')
+    rows = {name: {} for name in names}
+    baseline = current.source_before_65ee8ea(path, observed, 'declaration_outer_baseline')
+    if path == 'Cargo.toml':
+        cargo = cargo_mutation(test, observed, before, after)
+        test.assertEqual(baseline.replace(before.encode(), after.encode()), cargo['shared'])
+        rows['3217b8ed'][path] = cargo['shared_row']
+        return dict(observed=cargo['observed'], baseline=baseline, changed=cargo['shared'],
+                    rows=rows, native_row=cargo['native_row'], native=cargo['native'])
+    changed_observed = observed.replace(before.encode(), after.encode())
+    source = observed
+    for name in names:
+        table = current.DATA['source_successor_' + name]['source_projections']
+        if path not in table:
+            continue
+        prior = current.inverse(path, source, table, 'declaration_outer_baseline')
+        test.assertEqual((source.count(before.encode()), prior.count(before.encode())), (1, 1))
+        at = source.index(before.encode()); stop = at + len(before.encode())
+        delta = len(after.encode()) - len(before.encode())
+        row = copy.deepcopy(table[path])
+        for edit in row['edits']:
+            test.assertTrue(edit[1] <= at or edit[0] >= stop)
+            if edit[0] >= stop:
+                edit[0] += delta; edit[1] += delta
+        changed = source.replace(before.encode(), after.encode())
+        changed_prior = prior.replace(before.encode(), after.encode())
+        row.update(current_sha256=hashlib.sha256(changed).hexdigest(),
+                   previous_sha256=hashlib.sha256(changed_prior).hexdigest())
+        test.assertEqual(current.inverse(path, changed, {path: row},
+                         'declaration_outer_mutated_inverse'), changed_prior)
+        rows[name][path] = row
+        source = prior
+    # No unmodelled intermediate projection may be bypassed.
+    test.assertEqual(source, baseline)
+    return dict(observed=changed_observed, baseline=baseline,
+                changed=source.replace(before.encode(), after.encode()), rows=rows)
+
+
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
