@@ -6,6 +6,8 @@ import importlib.util
 import json
 import math
 from pathlib import Path
+import resource
+import subprocess
 import sys
 from types import SimpleNamespace
 import unittest
@@ -15,6 +17,10 @@ import inventory_json as fast
 import core_813_inventory as owner
 
 DUMPS = json.dumps
+_SLOT_CHILD = None
+if len(sys.argv) > 2 and sys.argv[1] == '--native-slot-child':
+    _SLOT_CHILD = sys.argv[2]
+    del sys.argv[1:3]
 
 
 def original(value, dumps=DUMPS):
@@ -40,6 +46,29 @@ class CanonicalControls(unittest.TestCase):
         fast._CACHE.clear()
         fast._CACHE_BYTES = 0
         self.assertTrue(fast._eligible(DUMPS), 'this bounded control requires its pinned known stdlib')
+
+    def _native_slot_child(self):
+        # The test below must prove the real post-restoration bug before exit.
+        # CPython provides no supported restoration of that hidden native slot;
+        # a bounded child keeps the other unchanged controls independent.
+        name = self._testMethodName
+        if _SLOT_CHILD is not None:
+            self.assertEqual(_SLOT_CHILD, name)
+            return False
+        def bounds():
+            resource.setrlimit(resource.RLIMIT_CPU, (5, 5))
+        child = subprocess.run([sys.executable, '-B', __file__, '--native-slot-child', name,
+                                'CanonicalControls.'+name, '-v'],
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               timeout=15, check=False, preexec_fn=bounds)
+        self.assertEqual(child.returncode, 0, child.stderr.decode(errors='replace'))
+        self.assertEqual(child.stdout, b'')
+        lines = child.stderr.decode().splitlines()
+        self.assertEqual(len(lines), 6)
+        self.assertEqual(lines[:3], [name+' (__main__.CanonicalControls.'+name+') ... ok', '', '-'*70])
+        self.assertRegex(lines[3], r'^Ran 1 test in [0-9]+\.[0-9]+s$')
+        self.assertEqual(lines[4:], ['', 'OK'])
+        return True
 
     def test_exact_types_aliases_and_whole_values(self):
         for a, b in ((True, 1), (1, 1.0), ((1, 2), [1, 2]), (0.0, -0.0),
@@ -165,8 +194,19 @@ class CanonicalControls(unittest.TestCase):
                         self.assertEqual(outcome(lambda: candidate.canonical_bytes(value, DUMPS)), expected)
 
     def test_mutable_native_encoder_type_is_not_blessed(self):
+        if self._native_slot_child():
+            return
+        value = {'warm': 1}
+        expected = original(value)
+        self.assertEqual(fast.canonical_bytes(value, DUMPS), expected)
+        key = fast._key(value)
+        self.assertEqual(fast._CACHE[key], expected)
+        self.assertTrue(fast._constructor_healthy())
+        constructor_events = []
         def changed_call(self, value, level): return ['"native-call-changed"']
-        def changed_new(*args, **kwargs): raise LookupError('native constructor changed')
+        def changed_new(*args, **kwargs):
+            constructor_events.append('actual changed constructor')
+            raise LookupError('native constructor changed')
         maker = fast._json.make_encoder
         for name, replacement in (('__call__', changed_call), ('__new__', changed_new)):
             for before in (False, True):
@@ -176,6 +216,22 @@ class CanonicalControls(unittest.TestCase):
                     expected = outcome(lambda: original({'x': 1}))
                     with patch.object(module, '_key', side_effect=AssertionError('changed C type keyed')):
                         self.assertEqual(outcome(lambda: module.canonical_bytes({'x': 1}, DUMPS)), expected)
+                    if name == '__new__':
+                        constructor_events.clear()
+                        self.assertFalse(fast._constructor_healthy())
+                        self.assertEqual(constructor_events, [], 'native probe must not dispatch Python __new__')
+        # The field identity is restored, but the native slot is genuinely bad.
+        self.assertIs(vars(maker)['__new__'], dict(fast._AUTHORITY[5])['__new__'])
+        expected_error = ('error', TypeError,
+                          '_json.Encoder.__new__(_json.Encoder) is not safe, use object.__new__()')
+        self.assertEqual(outcome(lambda: original(value)), expected_error)
+        self.assertFalse(fast._constructor_healthy())
+        self.assertFalse(fast._eligible(DUMPS))
+        for module in (fast, fresh()):
+            self.assertFalse(module._eligible(DUMPS))
+            with patch.object(module, '_key', side_effect=AssertionError('poisoned slot keyed')):
+                self.assertEqual(outcome(lambda: module.canonical_bytes(value, DUMPS)), expected_error)
+        self.assertEqual(fast._CACHE[key], b'{"warm":1}', 'warm entry remains, but is never accepted')
 
     def test_key_and_code_authority_providers_before_and_after_import(self):
         events = []
@@ -292,10 +348,15 @@ class CanonicalControls(unittest.TestCase):
         def changed(self, value): return '"in-place-code"'
         fn = json.JSONEncoder.encode
         for before in (False, True):
-            with patch.object(fn, '__code__', changed.__code__):
+            old_code = fn.__code__
+            try:
+                fn.__code__ = changed.__code__
                 candidate = fresh() if before else fast
                 self.assertFalse(candidate._eligible(DUMPS))
                 self.assertEqual(candidate.canonical_bytes({'x': 1}, DUMPS), b'"in-place-code"')
+            finally:
+                fn.__code__ = old_code
+            self.assertIs(fn.__code__, old_code)
         for fn, name, value in ((DUMPS, 'ensure_ascii', False),
                                 (json.JSONEncoder.__init__, 'skipkeys', 0)):
             old = fn.__kwdefaults__[name]
@@ -313,6 +374,29 @@ class CanonicalControls(unittest.TestCase):
             self.assertEqual(fast.canonical_bytes({'x': 1}, DUMPS), original({'x': 1}))
 
     def test_global_dependencies_and_integer_conversion_limit(self):
+        # The native-health probe deliberately raises TypeError even for a
+        # healthy constructor. A replaced Exception must not escape that guard
+        # or suppress an otherwise successful original JSON operation.
+        value = {'exception_guard': 1}
+        expected = original(value)
+        self.assertEqual(fast.canonical_bytes(value, DUMPS), expected)
+        key = fast._key(value)
+        self.assertEqual(fast._CACHE[key], expected)
+        for before in (False, True):
+            with self.subTest(exception_before_import=before), patch.object(builtins, 'Exception', LookupError):
+                candidate = fresh() if before else fast
+                self.assertFalse(candidate._eligible(DUMPS))
+                if before:
+                    self.assertIsNone(candidate._AUTHORITY)
+                else:
+                    # Captured authenticated base also survives replacement
+                    # between the live guard and the deliberate native probe.
+                    self.assertTrue(candidate._constructor_healthy())
+                with patch.object(candidate, '_key', side_effect=AssertionError('changed exception base keyed')):
+                    self.assertEqual(candidate.canonical_bytes(value, DUMPS), expected)
+                    self.assertEqual(original(value), expected)
+        self.assertTrue(fast._eligible(DUMPS))
+        self.assertEqual(fast._CACHE[key], expected)
         def deny(*args): raise LookupError('live encoder builtin')
         with patch.dict(vars(json.encoder), {'isinstance': deny}):
             self.assertFalse(fast._eligible(DUMPS))
@@ -538,12 +622,11 @@ class CanonicalControls(unittest.TestCase):
         self.assertEqual(fast.canonical_bytes(value, DUMPS), expected)
 
     def test_reference_survives_late_constructor_and_digit_limit_changes(self):
+        if self._native_slot_child():
+            return
         old_new = vars(fast._json.make_encoder)['__new__']
         def changed_new(*args):
             raise AssertionError('reference used mutable constructor')
-        with patch.object(fast._json.make_encoder, '__new__', changed_new):
-            self.assertEqual(fast._reference_bytes({'x': 1}), b'{"x":1}')
-        self.assertIs(vars(fast._json.make_encoder)['__new__'], old_new)
         old_limit = sys.get_int_max_str_digits()
         try:
             sys.set_int_max_str_digits(640)
@@ -555,6 +638,19 @@ class CanonicalControls(unittest.TestCase):
             self.assertIsNone(fast._reference_bytes(10 ** 1000))
         finally:
             sys.set_int_max_str_digits(old_limit)
+        value = {'x': 1}
+        self.assertEqual(fast.canonical_bytes(value, DUMPS), b'{"x":1}')
+        key = fast._key(value)
+        with patch.object(fast._json.make_encoder, '__new__', changed_new):
+            self.assertEqual(fast._reference_bytes({'x': 1}), b'{"x":1}')
+            self.assertFalse(fast._constructor_healthy())
+        self.assertIs(vars(fast._json.make_encoder)['__new__'], old_new)
+        self.assertFalse(fast._eligible(DUMPS))
+        expected = outcome(lambda: original(value))
+        self.assertEqual(expected, ('error', TypeError,
+                         '_json.Encoder.__new__(_json.Encoder) is not safe, use object.__new__()'))
+        self.assertEqual(outcome(lambda: fast.canonical_bytes(value, DUMPS)), expected)
+        self.assertEqual(fast._CACHE[key], b'{"x":1}')
 
     def test_bounds_and_deterministic_eviction(self):
         oversized = 'x' * (fast._LIMIT + 1)

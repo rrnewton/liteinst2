@@ -48,7 +48,7 @@ _OPTIONS = {'skipkeys': False, 'ensure_ascii': True, 'check_circular': True,
             'allow_nan': True, 'sort_keys': False, 'indent': None,
             'separators': None, 'default': None}
 _BUILTINS = {name: _VARS(builtins)[name] for name in
-             ('isinstance', 'str', 'list', 'tuple', 'float', 'TypeError', 'ValueError', 'repr')}
+             ('isinstance', 'str', 'list', 'tuple', 'float', 'TypeError', 'ValueError', 'Exception', 'repr')}
 _CLASS_KEYS = {'__module__', '__doc__', '__init__', 'default', 'encode',
                'iterencode', '__dict__', '__weakref__', 'item_separator', 'key_separator'}
 
@@ -212,6 +212,27 @@ _LITERAL_TYPES = (_TYPE(None), _TYPE(False), _TYPE(0), _TYPE(0.0),
                   _TYPE(''), _TYPE([]), _TYPE(()), _TYPE({}))
 
 
+def _constructor_healthy():
+    # Restoring the __new__ dictionary entry can leave CPython's hidden tp_new
+    # slot generic. Probe the captured builtin wrapper with no constructor args.
+    # The generic slot is refused by its native static-base safety check BEFORE
+    # Python lookup/dispatch; native encoder_new reports missing markers BEFORE
+    # allocating an encoder or accessing a supplied value/callback.
+    if _AUTHORITY is None:
+        return False
+    maker = _AUTHORITY[4]
+    constructor = dict(_AUTHORITY[5])['__new__']
+    try:
+        constructor(maker)
+    except _BUILTINS['Exception'] as error:
+        if _TYPE(error) is not _BUILTINS['TypeError']:
+            return False
+        args = error.args
+        return (_TYPE(args) is tuple and len(args) == 1 and _TYPE(args[0]) is str
+                and args[0] == "make_encoder() missing required argument 'markers' (pos 1)")
+    return False
+
+
 def _eligible(dumps):
     if (_AUTHORITY is None or _VARS(_pickle).get('Pickler') is not _PICKLER
             or _VARS(_pickle).get('Unpickler') is not _UNPICKLER
@@ -253,7 +274,8 @@ def _eligible(dumps):
             and _VARS(sys).get('get_int_max_str_digits') is _GET_DIGITS and _GET_DIGITS() == digits
             and _VARS(sys).get('getrecursionlimit') is _GET_RECURSION and _GET_RECURSION() == recursion
             and _VARS(_codecs).get('lookup_error') is _LOOKUP_ERROR
-            and _LOOKUP_ERROR('surrogatepass') is surrogatepass)
+            and _LOOKUP_ERROR('surrogatepass') is surrogatepass
+            and _constructor_healthy())
 
 
 class _NotKey(Exception):
