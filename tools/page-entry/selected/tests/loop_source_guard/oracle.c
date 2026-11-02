@@ -32,7 +32,7 @@ static struct li2_fetch_page lg_page(unsigned i) {
         .vma_first=r->first,.vma_end=r->end,.vma_major=r->major,.vma_minor=r->minor,
         .vma_inode=r->inode,.vma_offset=r->offset};
 }
-static void lg_setup(unsigned kind) {
+static __attribute__((noinline)) void lg_setup(unsigned kind) {
     memset(records,0,3*sizeof *records);memset(rows,0,3*sizeof *rows);
     memset(objects,0,sizeof *objects);memset(&fetch,0,sizeof fetch);
     memset(&pg_source,0,sizeof pg_source);memset(&tx,0,sizeof tx);
@@ -52,7 +52,7 @@ static void lg_setup(unsigned kind) {
     fetch.original[0]=records[0];fetch.pages[0]=lg_page(0);
     hooks.raw=lg_no_raw;hooks.fail=lg_die;
 }
-static void lg_classes(void) {
+static __attribute__((noinline)) void lg_classes(void) {
     for(unsigned kind=SEALED;kind<=ANONYMOUS;kind++) {
         lg_setup(kind);struct owned_page p=records[0];struct li2_fetch_page q=lg_page(0);
         LG_CHECK(pgs_loop_owned_class(&p)==kind);LG_CHECK(pgs_loop_page_class(&q)==kind);
@@ -79,7 +79,7 @@ static void lg_classes(void) {
     lg_setup(SEALED);records[0].object=1;fetch.pages[0].object=1;
     LG_CHECK(!pgs_loop_owned_class(&records[0]));LG_CHECK(!pgs_loop_page_class(&fetch.pages[0]));
 }
-static void lg_backing(void) {
+static __attribute__((noinline)) void lg_backing(void) {
     lg_setup(ANONYMOUS);struct li2_fetch_page p=lg_page(0),q=lg_page(1);
     struct li2_fetch_backing a,b;
     memset(&a,0xa5,sizeof a);memset(&b,0xa5,sizeof b);
@@ -117,7 +117,7 @@ static void lg_backing(void) {
     LG_CHECK(!pgs_loop_backing_equal(&p,&a,&q,&b));
     p=q;LG_CHECK(!pgs_loop_backing_equal(&p,&a,&q,&b));
 }
-static void lg_maps(void) {
+static __attribute__((noinline)) void lg_maps(void) {
     for(unsigned kind=SEALED;kind<=ANONYMOUS;kind++) {
         lg_setup(kind);struct check_error e={0};
         LG_CHECK(pgs_loop_page_check(&records[0],&rows[0],&e)==0 && !e.code);
@@ -151,7 +151,7 @@ static void lg_maps(void) {
     LG_CHECK(pgs_loop_page_check(&records[0],&rows[0],&e)==0);
     LG_CHECK(pgs_page(0,LG_PAGE)==0);
 }
-static void lg_geometry(void) {
+static __attribute__((noinline)) void lg_geometry(void) {
     for(unsigned kind=SEALED;kind<=ANONYMOUS;kind++) {
         lg_setup(kind);LG_CHECK(pgs_loop_geometry());
         fetch.pc=LG_PAGE+PAGE-15;LG_CHECK(pgs_loop_geometry());
@@ -189,7 +189,7 @@ static void lg_geometry(void) {
     lg_setup(ANONYMOUS);fetch.original[0].offset=7*PAGE;fetch.pages[0].offset=7*PAGE;
     LG_CHECK(pgs_loop_geometry()); /* real offset is not restricted to fixture offset zero */
 }
-static void lg_advisories(void) {
+static __attribute__((noinline)) void lg_advisories(void) {
     const uintptr_t pages[2]={LG_PAGE,LG_PAGE+PAGE};
     for(unsigned kind=SEALED;kind<=ANONYMOUS;kind++) {
         lg_setup(kind);LG_CHECK(li2_pg_source_pair_advisory(LG_PAGE+512)==1);
@@ -237,7 +237,7 @@ static void lg_advisories(void) {
         LG_CHECK(!li2_pgs_source_pair_advisory(LG_PAGE+512,bad));
     }
 }
-static void lg_full_page(void) {
+static __attribute__((noinline)) void lg_full_page(void) {
     for(unsigned j=0;j<2;j++) {
         lg_setup(ANONYMOUS);LG_CHECK(pgs_page(j,records[j].address)==0);
         LG_CHECK(!memcmp(&pg_source.original[j],&records[j],sizeof records[j]));
