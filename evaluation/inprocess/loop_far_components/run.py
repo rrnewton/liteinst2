@@ -11,12 +11,16 @@ from loop_components import run as component
 
 # The original ordered five descriptors are reused without mutating their
 # dictionary or fields. The sole added recipe still compiles all eleven TUs.
+component.need(component.CASES['loop_plan']['headers'].count(
+    'tests/persistent_direct_frontier/model.c') == 1, 'one exact original model source dependency')
 CASES = {**component.CASES, 'loop_direct_far': dict(
     recipe_sha256='c7782525316dc59b403d0cb7c9180ae4fc9229e01a76e959709f5aa3626dd38d',
     units=['tests/loop_direct_far/oracle.c', 'tests/loop_direct_far/direct_model.c',
            'tests/loop_direct_far/mov_model.c', *component.CASES['loop_plan']['units'][3:]],
-    headers=[*component.CASES['loop_plan']['headers'], 'tests/loop_plan/oracle.c',
-             'linked_loop_direct.h', 'linked_loop_direct.inc'])}
+    headers=[*('tests/loop_direct_far/direct_model.c'
+               if h == 'tests/persistent_direct_frontier/model.c' else h
+               for h in component.CASES['loop_plan']['headers']),
+             'tests/loop_plan/oracle.c', 'linked_loop_direct.h', 'linked_loop_direct.inc'])}
 
 
 def result(name, stdout, stderr):
