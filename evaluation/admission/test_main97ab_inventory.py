@@ -18,11 +18,105 @@ from test_parsing import counts, summary
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # Physical slots and retained geometry add seven default library tests.
+        # The complete e691 catalog and every earlier source target remain exact.
+        physical = current.DATA['source_successor_e5462b7']
+        physical_prior = current.before_e5462b7(actual)
+        physical_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(physical_prior), current.PHYSICAL_PREVIOUS)
+        self.assertEqual((len(physical_rows), sum(x['tests'] for x in physical_rows.values()),
+                          sum(x['ignored'] for x in physical_rows.values())), (120, 4600, 43))
+        self.assertEqual(physical_rows['unit/rapid_profiler/lib'], counts(623, 37))
+        self.assertEqual(physical_prior['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'],
+                         counts(616, 37))
+        self.assertEqual(physical_rows['test/frontend_native_calibrations'], counts(236, 1))
+        self.assertEqual((physical['default_method_additions'], physical['default_method_removals'],
+                          physical['default_harness_changes'], physical['default_ignore_changes'],
+                          physical['default_doctest_additions'], physical['recorder_identity_changes'],
+                          physical['feature_method_additions'], physical['feature_method_removals']),
+                         (7, 0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(physical['added_default_methods'], {
+            'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs': [
+                'physical_occupancy_matches_original_for_all_6480_metadata_patterns',
+                'physical_occupancy_matches_original_live_prefixes_and_rearm',
+                'geometry_facts_match_original_across_masks_rearm_and_reset',
+                'geometry_facts_require_exact_owner_and_key_and_invalidate_on_replacement',
+                'geometry_facts_preserve_original_geometry_error_precedence'],
+            'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/physical_slots.rs': [
+                'all_occupancies_and_replacements_match_original_array_queries',
+                'out_of_range_replacements_preserve_all_values_masks_and_counts']})
+        self.assertEqual(physical['default_method_instances'], {
+            'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs':
+                ['unit/rapid_profiler/lib'],
+            'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/physical_slots.rs':
+                ['unit/rapid_profiler/lib']})
+        self.assertEqual(sum(len(names) * len(physical['default_method_instances'][path])
+                             for path, names in physical['added_default_methods'].items()), 7)
+        self.assertEqual(physical['added_ignored_methods'], {})
+        self.assertEqual((len(physical['source_paths']), len(physical['source_projections'])), (7, 6))
+        self.assertEqual([path for path, value in physical['source_preimages'].items() if value is None],
+                         ['tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/physical_slots.rs'])
+        self.assertEqual(physical_prior['harness_test_counts']['serial_launch'],
+                         actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((actual['recorder_tests'], physical_prior['recorder_tests']), (366, 366))
+        for path, row in physical['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_e5462b7(path, raw, 'physical_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (physical['source_preimages'][path]['bytes'], row['previous_sha256']))
+            for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^physical_source_inverse$'):
+                    current.source_before_e5462b7(path, wrong, 'physical_source_inverse')
+            for field in ('edits', 'current_sha256', 'previous_sha256'):
+                malformed = copy.deepcopy(row)
+                if field == 'edits': malformed['edits'][0][2] += '\n'
+                else: malformed[field] = '0' * 64
+                with patch.dict(physical['source_projections'], {path: malformed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^physical_source_inverse$'):
+                        current.source_before_e5462b7(path, raw, 'physical_source_inverse')
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_e5462b7(physical_prior)
+        for field in ('tests', 'ignored'):
+            for value in (None, True, float(physical_rows['unit/rapid_profiler/lib'][field]),
+                          physical_rows['unit/rapid_profiler/lib'][field] + 1):
+                wrong = copy.deepcopy(actual)
+                wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field] = value
+                self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                    current.before_e5462b7(wrong)
+        wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_e5462b7(wrong)
+        read = Path.read_bytes
+        physical_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
+            for path, names in physical['added_default_methods'].items() for name in names]
+        physical_stimuli += [(path, literal, '')
+            for path, literals in physical['module_chains'].items() for literal in literals]
+        for path, literal, replacement in physical_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        for path in physical['source_paths']:
+            target = current.ROOT / path; raw = read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate != target: return read(candidate)
+                    if missing: raise FileNotFoundError(path)
+                    return raw + b'\n'
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                        current.require_sources()
         # The entry post-shape proof adds exactly two default library tests.
         # Changed feature-only publisher code contributes no new test methods.
         entry_normal = current.DATA['source_successor_e691b0d']
         entry_normal_prior = current.before_e691b0d(actual)
-        entry_normal_rows = actual['harness_test_counts']['workspace_tests']
+        entry_normal_rows = physical_prior['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(entry_normal_prior), current.ENTRY_PROOF_PREVIOUS)
         self.assertEqual((len(entry_normal_rows), sum(x['tests'] for x in entry_normal_rows.values()),
                           sum(x['ignored'] for x in entry_normal_rows.values())), (120, 4593, 43))
@@ -1258,7 +1352,7 @@ class Main97abInventoryTests(unittest.TestCase):
         projections = ((current.before_96378, phase_catalog),
                        (current.before_29859, native_indexed),
                        (current.before_current, old))
-        for function, expected_projection in projections:
+        for function, expected_projection in ((current.before_e5462b7, physical_prior), *projections):
             supplied = copy.deepcopy(actual)
             supplied['harness_test_counts']['serial_launch'] = PublishedCopy(
                 supplied['harness_test_counts']['serial_launch'])
@@ -1330,6 +1424,16 @@ class Main97abInventoryTests(unittest.TestCase):
                  patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
                     current.require_sources()
+
+        # The latest metadata row may publish a copy too; the result stays private.
+        published.clear()
+        change = physical['workspace_changes']['unit/rapid_profiler/lib']
+        with patch.dict(change, previous=PublishedCopy(change['previous'])):
+            result = current.before_e5462b7(actual)
+            self.assertEqual(result, physical_prior)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
 
         # Sparse inverses retain exact edit ordering, including equal-position
         # insertions, and both whole-byte identity gates.

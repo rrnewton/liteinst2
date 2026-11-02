@@ -6567,7 +6567,7 @@
       },
       "unit/rapid_profiler/lib": {
         "ignored": 37,
-        "tests": 616
+        "tests": 623
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,

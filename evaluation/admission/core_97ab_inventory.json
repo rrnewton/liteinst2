@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "98a1d08f4d169599ed21347949618a3f21cbb6d09b7c5968765c18f57d7fdbb9",
+  "current_corpus_sha256": "815e6efeb4de9dd439dd5bc18989597d96e37b7dcd1436c9a7dfa9061077c472",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -412,61 +412,66 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "5e875c83f74f792d2667bc2b58d2a1d3a456e2f5fa486620826f3ced06a70d97",
+      "current_sha256": "ff13d4dfc080a6d22514f15921d26387de96abd7d8ee27103d880fca443d9892",
       "edits": [
         [
           642,
-          25362,
+          32715,
           ""
         ],
         [
-          34733,
-          34844,
+          42086,
+          42197,
           "        self.assertEqual(actual['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],\n"
         ],
         [
-          39887,
-          40057,
+          47240,
+          47410,
           ""
         ],
         [
-          40104,
-          40198,
+          47457,
+          47551,
           "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n"
         ],
         [
-          40337,
-          40424,
+          47690,
+          47777,
           ""
         ],
         [
-          40683,
-          40762,
+          48036,
+          48115,
           ""
         ],
         [
-          41818,
-          42368,
+          49171,
+          49721,
           ""
         ],
         [
-          43887,
-          43983,
+          51240,
+          51336,
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          47826,
-          81138,
+          55179,
+          88491,
           ""
         ],
         [
-          88056,
-          91627,
+          95409,
+          98980,
           ""
         ],
         [
-          94260,
-          97401,
+          100260,
+          100363,
+          "        for function, expected_projection in projections:\n"
+        ],
+        [
+          101657,
+          105369,
           ""
         ]
       ],
@@ -2125,7 +2130,12 @@
         "ret_normal_proof_matches_full_postshape_for_changed_fields",
         "ret_normal_proof_keeps_combined_late_failure_order_and_committed_state",
         "entry_normal_proof_matches_full_postshape_across_receipts_and_rearm",
-        "entry_normal_proof_keeps_changed_fields_depth_and_late_error_order"
+        "entry_normal_proof_keeps_changed_fields_depth_and_late_error_order",
+        "physical_occupancy_matches_original_for_all_6480_metadata_patterns",
+        "physical_occupancy_matches_original_live_prefixes_and_rearm",
+        "geometry_facts_match_original_across_masks_rearm_and_reset",
+        "geometry_facts_require_exact_owner_and_key_and_invalidate_on_replacement",
+        "geometry_facts_preserve_original_geometry_error_precedence"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -2164,6 +2174,15 @@
         "early_entry_owned_module_k1000_order01",
         "early_entry_owned_module_k1000_order10"
       ],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/physical_slots.rs": {
+      "all": [
+        "all_occupancies_and_replacements_match_original_array_queries",
+        "out_of_range_replacements_preserve_all_values_masks_and_counts"
+      ],
+      "ignored": [],
       "macro_calls": [],
       "templates": []
     },
@@ -2649,13 +2668,17 @@
       "mod checked_visit;",
       "mod controller;",
       "#[cfg(any(test, feature = \"frontend-native-qualification\"))]\npub mod qualification;",
-      "#[cfg(test)]\nmod native;"
+      "#[cfg(test)]\nmod native;",
+      "mod physical_slots;"
     ],
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": [
       "#[cfg(test)]\nmod tests;"
     ],
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs": [
       "#[cfg(test)]\nmod tests;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/physical_slots.rs": [
+      "#[cfg(test)]\nmod tests {"
     ],
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs": [
       "#[cfg(test)]\nmod tests;"
@@ -10595,6 +10618,343 @@
       }
     }
   },
+  "source_successor_e5462b7": {
+    "added_default_methods": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": [
+        "physical_occupancy_matches_original_for_all_6480_metadata_patterns",
+        "physical_occupancy_matches_original_live_prefixes_and_rearm",
+        "geometry_facts_match_original_across_masks_rearm_and_reset",
+        "geometry_facts_require_exact_owner_and_key_and_invalidate_on_replacement",
+        "geometry_facts_preserve_original_geometry_error_precedence"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/physical_slots.rs": [
+        "all_occupancies_and_replacements_match_original_array_queries",
+        "out_of_range_replacements_preserve_all_values_masks_and_counts"
+      ]
+    },
+    "added_ignored_methods": {},
+    "base_revision": "e691b0d4b63d8d1a1b8021ee7bef67f9980f7221",
+    "current_corpus_sha256": "815e6efeb4de9dd439dd5bc18989597d96e37b7dcd1436c9a7dfa9061077c472",
+    "default_doctest_additions": 0,
+    "default_harness_changes": 0,
+    "default_ignore_changes": 0,
+    "default_method_additions": 7,
+    "default_method_instances": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": [
+        "unit/rapid_profiler/lib"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/physical_slots.rs": [
+        "unit/rapid_profiler/lib"
+      ]
+    },
+    "default_method_removals": 0,
+    "feature_method_additions": 0,
+    "feature_method_removals": 0,
+    "incoming_main": "e5462b7f5291954fcf94824a04683ce3c4962142",
+    "module_chains": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": [
+        "mod physical_slots;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/physical_slots.rs": [
+        "#[cfg(test)]\nmod tests {"
+      ]
+    },
+    "previous_corpus_sha256": "98a1d08f4d169599ed21347949618a3f21cbb6d09b7c5968765c18f57d7fdbb9",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/physical_slots.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification/tests.rs"
+    ],
+    "source_preimages": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": {
+        "bytes": 24038,
+        "sha256": "2231e4f4d42f64f3aeafb84e9030587a097fb1f86b62d5ae75879a34afd07efb"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": {
+        "bytes": 20101,
+        "sha256": "b331c6ded492d1b6d37a5ac9aa8cc6a4cc7b535deaa3cb30c3ac318216d31169"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": {
+        "bytes": 97089,
+        "sha256": "4c65ca498d1a625015c617f6094c539d649635ef069e4ae3ae05f855a7c7e6f5"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs": {
+        "bytes": 13429,
+        "sha256": "1c4ab8b18a89e1589de160162c0457f640c1c0d932600b9a43c0d15f545bb96e"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/physical_slots.rs": null,
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs": {
+        "bytes": 11330,
+        "sha256": "3973953d54f76909043a7b6e39581a476709968dabc9a3879395419872d8d855"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification/tests.rs": {
+        "bytes": 14539,
+        "sha256": "e2ef560f6229ba42821d4b3b61b2a91ff7c190b6d34a1cb9445c042f1e5988b4"
+      }
+    },
+    "source_projections": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": {
+        "current_sha256": "496a3dc1b09b0adfc0d07b67668b717d6f1f3ccdb1bb8e3879df4ea716634a71",
+        "edits": [
+          [
+            349,
+            412,
+            ""
+          ],
+          [
+            3864,
+            3905,
+            "    seen: [Option<u64>; 4],\n    rows: [Option<EarlyEntryModulePhysicalRow>; 4],\n"
+          ],
+          [
+            4100,
+            4100,
+            "    shared: Arc<Shared>,\n"
+          ],
+          [
+            4224,
+            4328,
+            ""
+          ],
+          [
+            5401,
+            5507,
+            "            seen: [None; 4],\n            rows: [None; 4],\n"
+          ],
+          [
+            5931,
+            6050,
+            "            || b.rows[..b.position].iter().any(Option::is_none)\n            || b.rows[b.position..].iter().any(Option::is_some)\n            || b.seen[b.position.saturating_add(1).min(4)..]\n                .iter()\n                .any(Option::is_some)\n"
+          ],
+          [
+            6181,
+            6228,
+            "                != Some(b.seen.iter().flatten().count() as u64)\n"
+          ],
+          [
+            6369,
+            6425,
+            "                != Some(\n                    b.rows\n                        .iter()\n                        .flatten()\n                        .filter(|r| r.observed_ordinal.is_some())\n                        .count() as u64,\n                )\n"
+          ],
+          [
+            7475,
+            8007,
+            "                state.selected_geometry(\n                    self.order[index % 2],\n                    site.functions()[self.order[index % 2].index].entry(),\n                    Some(row.return_pc),\n                )?;\n"
+          ],
+          [
+            10276,
+            10350,
+            "        Ok(b.rows.map(|row| row.expect(\"checked four physical rows\")))\n"
+          ],
+          [
+            10769,
+            10810,
+            "            || b.rows != rows.map(Some)\n"
+          ]
+        ],
+        "previous_sha256": "2231e4f4d42f64f3aeafb84e9030587a097fb1f86b62d5ae75879a34afd07efb"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": {
+        "current_sha256": "4ccf0120e1a8f74a7160143fb818e9e1b469880a91413964ead19489cb205059",
+        "edits": [
+          [
+            1161,
+            1428,
+            "    fn return_geometry(&self, selected: SelectedFunction, pc: u64) -> Result<(), BridgeError> {\n        let BindingProfile::Module { site, .. } = &self.state.binding.profile else {\n            return Err(error(Cause::Identity));\n        };\n        self.state\n            .selected_geometry(selected, site.functions()[selected.index].entry(), Some(pc))\n"
+          ],
+          [
+            4272,
+            4348,
+            "        checked.return_geometry(selected, pc)?;\n"
+          ],
+          [
+            5337,
+            5371,
+            "        b.rows[index] = Some(row);\n"
+          ],
+          [
+            9598,
+            9640,
+            "        b.seen[index] = Some(ordinal);\n"
+          ]
+        ],
+        "previous_sha256": "b331c6ded492d1b6d37a5ac9aa8cc6a4cc7b535deaa3cb30c3ac318216d31169"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": {
+        "current_sha256": "a2c88229d0a3fa6b3731ee1fb04e9bb3507752fd0e81d8bf6df809eb841d443c",
+        "edits": [
+          [
+            4002,
+            4222,
+            "// Literal pre-optimization visit body, renamed only. Both normal transitions use\n// their original full-shape wrappers; this reference shares the unchanged tails.\n"
+          ],
+          [
+            4533,
+            4578,
+            "        self.shape(state)?;\n"
+          ],
+          [
+            5267,
+            5313,
+            "            b.seen[index] = Some(ordinal);\n"
+          ],
+          [
+            6319,
+            6738,
+            "            b.rows[index] = Some(EarlyEntryModulePhysicalRow {\n                batch: b.number,\n                position: index,\n                function: selected.function,\n                observed_ordinal: b.seen[index],\n                return_pc: pc,\n                entry_rsp: rsp,\n                return_word: word,\n            });\n"
+          ],
+          [
+            6777,
+            6820,
+            "        self.shape(state)\n"
+          ],
+          [
+            9636,
+            9690,
+            "            seen: b.seen,\n            rows: b.rows,\n"
+          ],
+          [
+            33344,
+            33427,
+            "                            f.physical.active.as_mut().unwrap().rows[0] = None;\n"
+          ],
+          [
+            33602,
+            33656,
+            "                            b.rows[3] = b.rows[0];\n"
+          ],
+          [
+            33758,
+            34020,
+            "                            f.physical.active.as_mut().unwrap().seen[3] = Some(f.state.next);\n"
+          ],
+          [
+            34195,
+            34268,
+            "                            b.seen[0] = Some(b.seen[0].unwrap() + 1);\n"
+          ],
+          [
+            34370,
+            34616,
+            "                            f.physical.active.as_mut().unwrap().rows[0]\n                                .as_mut()\n                                .unwrap()\n                                .return_pc += 1;\n"
+          ],
+          [
+            45632,
+            45711,
+            "                        f.physical.active.as_mut().unwrap().rows[0] = None;\n"
+          ],
+          [
+            45870,
+            45920,
+            "                        b.rows[3] = b.rows[0];\n"
+          ],
+          [
+            46010,
+            46248,
+            "                        f.physical.active.as_mut().unwrap().seen[3] = Some(f.state.next);\n"
+          ],
+          [
+            46407,
+            46476,
+            "                        b.seen[0] = Some(b.seen[0].unwrap() + 1);\n"
+          ],
+          [
+            46566,
+            46796,
+            "                        f.physical.active.as_mut().unwrap().rows[0]\n                            .as_mut()\n                            .unwrap()\n                            .return_pc += 1;\n"
+          ],
+          [
+            47501,
+            47733,
+            "                        f.physical.active.as_mut().unwrap().rows[1]\n                            .as_mut()\n                            .unwrap()\n                            .return_word += 8;\n"
+          ],
+          [
+            49535,
+            49733,
+            "                f.physical.active.as_mut().unwrap().rows[0]\n                    .as_mut()\n                    .unwrap()\n                    .return_pc += 8;\n"
+          ],
+          [
+            50603,
+            50840,
+            "                f.physical.active.as_mut().unwrap().rows[0]\n                    .as_mut()\n                    .unwrap()\n                    .return_pc = f.state.records[0].unwrap().raw.return_pc;\n"
+          ],
+          [
+            97805,
+            135196,
+            ""
+          ]
+        ],
+        "previous_sha256": "4c65ca498d1a625015c617f6094c539d649635ef069e4ae3ae05f855a7c7e6f5"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs": {
+        "current_sha256": "23944bb96f6d8112259691cf9b2f36aebeaa893aacd570647a4cdccf633f1e22",
+        "edits": [
+          [
+            10195,
+            10261,
+            "    f.physical.active.as_mut().unwrap().rows[0] = Some(first);\n"
+          ],
+          [
+            10751,
+            10818,
+            "            f.physical.active.as_mut().unwrap().seen[0] = None;\n"
+          ]
+        ],
+        "previous_sha256": "1c4ab8b18a89e1589de160162c0457f640c1c0d932600b9a43c0d15f545bb96e"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs": {
+        "current_sha256": "7d73dca5f557264a33558c52f808eb6d33b3e4703a2007f0d8a44449d64939d1",
+        "edits": [
+          [
+            5508,
+            5646,
+            "                        entry_seen: b.map_or([None; 4], |b| b.seen),\n                        pre_rets: b.map_or([None; 4], |b| b.rows),\n"
+          ]
+        ],
+        "previous_sha256": "3973953d54f76909043a7b6e39581a476709968dabc9a3879395419872d8d855"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification/tests.rs": {
+        "current_sha256": "19791cfecc8dbaf9876e786d0f484ab3e08f29b5cb34eaf133ab1c13ccfcd607",
+        "edits": [
+          [
+            7112,
+            7250,
+            "                        entry_seen: b.map_or([None; 4], |b| b.seen),\n                        pre_rets: b.map_or([None; 4], |b| b.rows),\n"
+          ]
+        ],
+        "previous_sha256": "e2ef560f6229ba42821d4b3b61b2a91ff7c190b6d34a1cb9445c042f1e5988b4"
+      }
+    },
+    "sources": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": "496a3dc1b09b0adfc0d07b67668b717d6f1f3ccdb1bb8e3879df4ea716634a71",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": "4ccf0120e1a8f74a7160143fb818e9e1b469880a91413964ead19489cb205059",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": "a2c88229d0a3fa6b3731ee1fb04e9bb3507752fd0e81d8bf6df809eb841d443c",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs": "23944bb96f6d8112259691cf9b2f36aebeaa893aacd570647a4cdccf633f1e22",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/physical_slots.rs": "4b88bc5fbe7c1fddcfc9576ca57ffb0faf701709f0672e41e197e770d4477e5b",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs": "7d73dca5f557264a33558c52f808eb6d33b3e4703a2007f0d8a44449d64939d1",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification/tests.rs": "19791cfecc8dbaf9876e786d0f484ab3e08f29b5cb34eaf133ab1c13ccfcd607"
+    },
+    "workspace_changes": {
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 37,
+          "tests": 623
+        },
+        "previous": {
+          "ignored": 37,
+          "tests": 616
+        }
+      }
+    }
+  },
   "source_successor_e5ab521": {
     "counts": {
       "ignored": 0,
@@ -10906,7 +11266,7 @@
     "evaluation/admission/test_main34c47_inventory.py": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "7823badbd86e65b1597d70cecc64300f44b8880de28666a2dba8ba1554560396",
-    "evaluation/admission/test_main97ab_inventory.py": "5e875c83f74f792d2667bc2b58d2a1d3a456e2f5fa486620826f3ced06a70d97",
+    "evaluation/admission/test_main97ab_inventory.py": "ff13d4dfc080a6d22514f15921d26387de96abd7d8ee27103d880fca443d9892",
     "evaluation/admission/test_main981419_inventory.py": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
     "evaluation/admission/test_mainaf81_inventory.py": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
@@ -11096,14 +11456,15 @@
     "tools/rapid-profiler/src/frontend_native/always_on/normal/leaf_set/tests.rs": "d894f517efe2f4ce2be2e0d17a74db65217f6e652ebc59be2c61c34f64e4f92e",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": "acc5e2c29ca05cf0a6a4642ced490776628ef42e005b863146c9935a99f669bf",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": "317a108ccc431a1e47f5e0fba179d4979f75d45f360518f8f95432b34be7a458",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": "2231e4f4d42f64f3aeafb84e9030587a097fb1f86b62d5ae75879a34afd07efb",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": "b331c6ded492d1b6d37a5ac9aa8cc6a4cc7b535deaa3cb30c3ac318216d31169",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": "4c65ca498d1a625015c617f6094c539d649635ef069e4ae3ae05f855a7c7e6f5",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": "496a3dc1b09b0adfc0d07b67668b717d6f1f3ccdb1bb8e3879df4ea716634a71",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": "4ccf0120e1a8f74a7160143fb818e9e1b469880a91413964ead19489cb205059",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": "a2c88229d0a3fa6b3731ee1fb04e9bb3507752fd0e81d8bf6df809eb841d443c",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs": "0c34d399ffa48e2e1395b5bcaee728bb85532a199ca81747f558a235da581f0a",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs": "1c4ab8b18a89e1589de160162c0457f640c1c0d932600b9a43c0d15f545bb96e",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs": "23944bb96f6d8112259691cf9b2f36aebeaa893aacd570647a4cdccf633f1e22",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs": "dbf8cc5fb8104eeb01cc5377a33c0c405d50d92b01f46cf03ee2644307986456",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs": "3973953d54f76909043a7b6e39581a476709968dabc9a3879395419872d8d855",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification/tests.rs": "e2ef560f6229ba42821d4b3b61b2a91ff7c190b6d34a1cb9445c042f1e5988b4",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/physical_slots.rs": "4b88bc5fbe7c1fddcfc9576ca57ffb0faf701709f0672e41e197e770d4477e5b",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs": "7d73dca5f557264a33558c52f808eb6d33b3e4703a2007f0d8a44449d64939d1",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification/tests.rs": "19791cfecc8dbaf9876e786d0f484ab3e08f29b5cb34eaf133ab1c13ccfcd607",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/native.rs": "1a314f3aed3aa6932876390c734336237a0ec28ffe1130bfbc73fc942c33f85b",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/performance.rs": "ba8215d7d38b2a70def2e7899d17437f159af915552e244d97b43ff88c1e5a01",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session.rs": "c97808ea66cb1566d372bd5ed497aa84ac256fd9b061a969fa40ea3528dc2fd3",
