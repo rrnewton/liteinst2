@@ -6,20 +6,13 @@ use super::*;
 // exposes neither NormalState nor the interior-mutable Session through a view.
 struct CheckedVisit<'a> {
     state: &'a mut NormalState,
-    journal_used: usize,
 }
 impl<'a> CheckedVisit<'a> {
     fn new(physical: &PhysicalState, state: &'a mut NormalState) -> Result<Self, BridgeError> {
         // Includes matches(), the full normal shape and the full physical shape.
         // matches() also excludes accuracy/call-pair state from this proof.
         physical.shape(state)?;
-        let journal_used = state.len * 2
-            + usize::from(state.pending.is_some())
-            + usize::from(state.pending.as_ref().is_some_and(|p| p.returned.is_some()));
-        Ok(Self {
-            state,
-            journal_used,
-        })
+        Ok(Self { state })
     }
     fn has_unreturned_pending(&self) -> bool {
         self.state
@@ -46,7 +39,17 @@ impl<'a> CheckedVisit<'a> {
     fn journal_shape(&self) -> Result<(), BridgeError> {
         // All other normal-shape predicates are local immutable metadata since
         // new(); used() is volatile and remains fresh at its old inner position.
-        if self.state.journal.used() != self.journal_used {
+        // Bypasses never need this inner check. The exclusive proof still owns
+        // the same unmodified metadata when an observed transition reaches it.
+        let journal_used = self.state.len * 2
+            + usize::from(self.state.pending.is_some())
+            + usize::from(
+                self.state
+                    .pending
+                    .as_ref()
+                    .is_some_and(|p| p.returned.is_some()),
+            );
+        if self.state.journal.used() != journal_used {
             return Err(error(Cause::Invariant));
         }
         Ok(())
