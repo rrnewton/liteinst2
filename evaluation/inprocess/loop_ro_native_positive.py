@@ -166,7 +166,23 @@ def build_ro(builder, archive, original, directory, pin, binary, aliases, run, s
     """Execute the real source-owned recipe, then bind its exact compiler closure."""
     output = directory/'build'; output.mkdir()
     script = pin(SELECTED/'build-persistent-loop-ro-certificate.sh')
-    binder = load('finite_ro_binding', SELECTED/'persistent_loop_ro_certificate_binding.py', pin)
+    dependencies = ('persistent_epoch_binding', 'persistent_group_binding',
+        'persistent_retained_two_binding', 'persistent_active_domain_binding',
+        'persistent_startup_binding', 'persistent_loop_binding')
+    selected = SELECTED.resolve(strict=True)
+    paths = {name: pin(selected/(name+'.py')) for name in dependencies}
+    for name, path in paths.items():
+        need(name not in sys.modules or Path(sys.modules[name].__file__).resolve(strict=True) == path,
+             'preexisting binding dependency has its canonical selected source')
+    previous_path = list(sys.path)
+    try:
+        sys.path.insert(0, str(selected))
+        binder = load('finite_ro_binding', selected/'persistent_loop_ro_certificate_binding.py', pin)
+    finally:
+        sys.path[:] = previous_path
+    need(all(name in sys.modules and Path(sys.modules[name].__file__).resolve(strict=True) == path
+             for name, path in paths.items()), 'all six actual canonical binding dependencies loaded')
+    imported_sources(pin)
     values = [dict(path=name, **fact(pin(SELECTED/name))) for name in binder.LEAVES]
     need(len(values) == len({v['path'] for v in values}), 'distinct complete RO source binding')
     for value in values:
