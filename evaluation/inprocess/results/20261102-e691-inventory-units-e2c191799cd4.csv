@@ -1,0 +1,3 @@
+revision,source_clean,cpu,module,status,tests_completed,exit,duration_ns,unittest_reported_seconds
+e2c191799cd475988a011e67d36a810088a50867,false,17,test_main97ab_inventory,passed,1,0,35333514379,35.147
+e2c191799cd475988a011e67d36a810088a50867,false,17,test_main20cbe_inventory,passed,1,0,870697388,0.711

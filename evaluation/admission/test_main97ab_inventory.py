@@ -18,11 +18,102 @@ from test_parsing import counts, summary
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # The entry post-shape proof adds exactly two default library tests.
+        # Changed feature-only publisher code contributes no new test methods.
+        entry_normal = current.DATA['source_successor_e691b0d']
+        entry_normal_prior = current.before_e691b0d(actual)
+        entry_normal_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(entry_normal_prior), current.ENTRY_PROOF_PREVIOUS)
+        self.assertEqual((len(entry_normal_rows), sum(x['tests'] for x in entry_normal_rows.values()),
+                          sum(x['ignored'] for x in entry_normal_rows.values())), (120, 4593, 43))
+        self.assertEqual(entry_normal_rows['unit/rapid_profiler/lib'], counts(616, 37))
+        self.assertEqual(entry_normal_prior['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'],
+                         counts(614, 37))
+        self.assertEqual(entry_normal_rows['test/frontend_native_calibrations'], counts(236, 1))
+        self.assertEqual((entry_normal['default_method_additions'], entry_normal['default_method_removals'],
+                          entry_normal['default_harness_changes'], entry_normal['default_ignore_changes'],
+                          entry_normal['default_doctest_additions'], entry_normal['recorder_identity_changes'],
+                          entry_normal['feature_method_additions'], entry_normal['feature_method_removals']),
+                         (2, 0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(entry_normal['added_default_methods'], {
+            'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs': [
+                'entry_normal_proof_matches_full_postshape_across_receipts_and_rearm',
+                'entry_normal_proof_keeps_changed_fields_depth_and_late_error_order']})
+        self.assertEqual(sum(len(names) * len(entry_normal['default_method_instances'][path])
+                             for path, names in entry_normal['added_default_methods'].items()), 2)
+        self.assertEqual(entry_normal['default_method_instances'], {
+            'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs':
+                ['unit/rapid_profiler/lib']})
+        self.assertEqual(entry_normal['unchanged_feature_only_methods'],
+                         current.DATA['source_successor_65ee8ea']['feature_only_methods'])
+        self.assertEqual(sum(map(len, entry_normal['unchanged_feature_only_methods'].values())), 3)
+        self.assertEqual(entry_normal['added_ignored_methods'], {})
+        self.assertEqual((len(entry_normal['source_paths']), len(entry_normal['source_projections'])), (4, 4))
+        self.assertEqual(entry_normal_prior['harness_test_counts']['serial_launch'],
+                         actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((actual['recorder_tests'], entry_normal_prior['recorder_tests']), (366, 366))
+        for path, row in entry_normal['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_e691b0d(path, raw, 'entry_normal_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (entry_normal['source_preimages'][path]['bytes'], row['previous_sha256']))
+            self.assertEqual(row['previous_sha256'], current.DATA['source_successor_65ee8ea']['sources'][path])
+            for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^entry_normal_source_inverse$'):
+                    current.source_before_e691b0d(path, wrong, 'entry_normal_source_inverse')
+            malformed = copy.deepcopy(row)
+            malformed['edits'][0][2] += '\n'
+            with patch.dict(entry_normal['source_projections'], {path: malformed}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^entry_normal_source_inverse$'):
+                    current.source_before_e691b0d(path, raw, 'entry_normal_source_inverse')
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_e691b0d(entry_normal_prior)
+        for field in ('tests', 'ignored'):
+            for value in (None, True, float(entry_normal_rows['unit/rapid_profiler/lib'][field]),
+                          entry_normal_rows['unit/rapid_profiler/lib'][field] + 1):
+                wrong = copy.deepcopy(actual)
+                wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field] = value
+                self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                    current.before_e691b0d(wrong)
+        wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_e691b0d(wrong)
+        wrong = copy.deepcopy(actual)
+        wrong['harness_test_counts']['workspace_tests']['test/frontend_native_calibrations'] = counts(239, 1)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_e691b0d(wrong)
+        read = Path.read_bytes
+        entry_normal_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
+            for group in ('added_default_methods', 'unchanged_feature_only_methods')
+            for path, names in entry_normal[group].items() for name in names]
+        entry_normal_stimuli += [(path, literal, '')
+            for path, literals in entry_normal['module_chains'].items() for literal in literals]
+        for path, literal, replacement in entry_normal_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        for path in entry_normal['source_paths']:
+            target = current.ROOT / path; raw = read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate != target: return read(candidate)
+                    if missing: raise FileNotFoundError(path)
+                    return raw + b'\n'
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                        current.require_sources()
         # Current RET proofs add ten default tests; the publisher's three tests
         # remain feature-only and cannot increase the default calibration row.
         ret = current.DATA['source_successor_65ee8ea']
         ret_prior = current.before_65ee8ea(actual)
-        ret_rows = actual['harness_test_counts']['workspace_tests']
+        ret_rows = entry_normal_prior['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(ret_prior), current.RET_PROOF_PREVIOUS)
         self.assertEqual((len(ret_rows), sum(x['tests'] for x in ret_rows.values()),
                           sum(x['ignored'] for x in ret_rows.values())), (120, 4591, 43))

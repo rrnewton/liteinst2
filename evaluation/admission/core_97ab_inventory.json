@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "45a88de6ae1bde9b0c68ffbef75b786d1c95aee06148430d8f5949b4df9cb1b2",
+  "current_corpus_sha256": "98a1d08f4d169599ed21347949618a3f21cbb6d09b7c5968765c18f57d7fdbb9",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -412,61 +412,61 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "e287f13cf1e93ba73bbe73602184c9992cbc4b7b03b45e818220c0cc6b5a7eac",
+      "current_sha256": "5e875c83f74f792d2667bc2b58d2a1d3a456e2f5fa486620826f3ced06a70d97",
       "edits": [
         [
           642,
-          18189,
+          25362,
           ""
         ],
         [
-          27560,
-          27671,
+          34733,
+          34844,
           "        self.assertEqual(actual['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],\n"
         ],
         [
-          32714,
-          32884,
+          39887,
+          40057,
           ""
         ],
         [
-          32931,
-          33025,
+          40104,
+          40198,
           "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n"
         ],
         [
-          33164,
-          33251,
+          40337,
+          40424,
           ""
         ],
         [
-          33510,
-          33589,
+          40683,
+          40762,
           ""
         ],
         [
-          34645,
-          35195,
+          41818,
+          42368,
           ""
         ],
         [
-          36714,
-          36810,
+          43887,
+          43983,
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          40653,
-          73965,
+          47826,
+          81138,
           ""
         ],
         [
-          80883,
-          84454,
+          88056,
+          91627,
           ""
         ],
         [
-          87087,
-          90228,
+          94260,
+          97401,
           ""
         ]
       ],
@@ -2123,7 +2123,9 @@
         "entry_proof_partial_confirmation_failure_preserves_consumed_owner",
         "entry_proof_matches_reference_across_receipt_kinds_and_bypasses",
         "ret_normal_proof_matches_full_postshape_for_changed_fields",
-        "ret_normal_proof_keeps_combined_late_failure_order_and_committed_state"
+        "ret_normal_proof_keeps_combined_late_failure_order_and_committed_state",
+        "entry_normal_proof_matches_full_postshape_across_receipts_and_rearm",
+        "entry_normal_proof_keeps_changed_fields_depth_and_late_error_order"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -10614,6 +10616,159 @@
       "tools/rapid-profiler/point-throughput/tests.rs": "c0d58b797b1e55f9b73611b3cacd98533d4a74783526d0b2fb9a838ea9e79dcc"
     }
   },
+  "source_successor_e691b0d": {
+    "added_default_methods": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": [
+        "entry_normal_proof_matches_full_postshape_across_receipts_and_rearm",
+        "entry_normal_proof_keeps_changed_fields_depth_and_late_error_order"
+      ]
+    },
+    "added_ignored_methods": {},
+    "base_revision": "65ee8eaa2475d57d43a0af2d20aa17290b2bb285",
+    "current_corpus_sha256": "98a1d08f4d169599ed21347949618a3f21cbb6d09b7c5968765c18f57d7fdbb9",
+    "default_doctest_additions": 0,
+    "default_harness_changes": 0,
+    "default_ignore_changes": 0,
+    "default_method_additions": 2,
+    "default_method_instances": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": [
+        "unit/rapid_profiler/lib"
+      ]
+    },
+    "default_method_removals": 0,
+    "feature_method_additions": 0,
+    "feature_method_instances": {
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": [
+        "test/frontend_native_calibrations [frontend-native-qualification]"
+      ]
+    },
+    "feature_method_removals": 0,
+    "feature_scope": "frontend-native-qualification only; its publisher module is absent from the default calibration harness. The native-oracle binary has test=false. Default workspace_tests remains cargo test --workspace.",
+    "incoming_main": "e691b0d4b63d8d1a1b8021ee7bef67f9980f7221",
+    "module_chains": {
+      "tools/rapid-profiler/native-interval/calibrations.rs": [
+        "#[cfg(feature = \"frontend-native-qualification\")]\n#[path = \"normal/module/early_entry/publisher.rs\"]\nmod early_entry_publisher;"
+      ],
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": [
+        "mod publisher;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ]
+    },
+    "previous_corpus_sha256": "45a88de6ae1bde9b0c68ffbef75b786d1c95aee06148430d8f5949b4df9cb1b2",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs",
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs"
+    ],
+    "source_preimages": {
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": {
+        "bytes": 33354,
+        "sha256": "54102d77b114a056de6f15a35218a8b8031d4e1b876a522b4a41c2c0a8bae2a0"
+      },
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": {
+        "bytes": 9047,
+        "sha256": "f053dc48a2d564e78f34d7589572fa9c275f13c21f378045360d2f4acb5dcef9"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": {
+        "bytes": 18810,
+        "sha256": "8a8efa79d05232da3bdf713e59d68e504543d39b7b20e7c88f93c843e6d18968"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": {
+        "bytes": 81154,
+        "sha256": "93aa686b66d6656ab235de1196127da50218966971b91c0aaefcfbf1ca66e3a0"
+      }
+    },
+    "source_projections": {
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": {
+        "current_sha256": "d4ca7a67f30a26cab24555f6bfcfd3c89909e9b4f40e860f4a49980e94a3205a",
+        "edits": [
+          [
+            3435,
+            3576,
+            "fn encode(kind: PauseKind, sequence: u64, s: &QualificationSnapshot) -> [u64; early::JOURNAL] {\n    let mut h = [0; 128];\n"
+          ],
+          [
+            6160,
+            6160,
+            "    h\n"
+          ],
+          [
+            19296,
+            19407,
+            "                let header = encode(kind, sequence, snapshot);\n"
+          ]
+        ],
+        "previous_sha256": "54102d77b114a056de6f15a35218a8b8031d4e1b876a522b4a41c2c0a8bae2a0"
+      },
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": {
+        "current_sha256": "68c939b30d4abae965b3c938438e1a4d659bf4fbd03337d80a5c347741acc79f",
+        "edits": [
+          [
+            547,
+            777,
+            "    // ranges. N is positive and divisible by eight; offsets 0,64,...,N*8-64\n    // make every 16-byte load/store in bounds. MOVDQU needs no 16-byte alignment,\n"
+          ],
+          [
+            1538,
+            3257,
+            "            \"add {offset}, 64\",\n"
+          ]
+        ],
+        "previous_sha256": "f053dc48a2d564e78f34d7589572fa9c275f13c21f378045360d2f4acb5dcef9"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": {
+        "current_sha256": "b331c6ded492d1b6d37a5ac9aa8cc6a4cc7b535deaa3cb30c3ac318216d31169",
+        "edits": [
+          [
+            10246,
+            11561,
+            "        state.shape()?;\n"
+          ]
+        ],
+        "previous_sha256": "8a8efa79d05232da3bdf713e59d68e504543d39b7b20e7c88f93c843e6d18968"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": {
+        "current_sha256": "4c65ca498d1a625015c617f6094c539d649635ef069e4ae3ae05f855a7c7e6f5",
+        "edits": [
+          [
+            81154,
+            97089,
+            ""
+          ]
+        ],
+        "previous_sha256": "93aa686b66d6656ab235de1196127da50218966971b91c0aaefcfbf1ca66e3a0"
+      }
+    },
+    "sources": {
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": "d4ca7a67f30a26cab24555f6bfcfd3c89909e9b4f40e860f4a49980e94a3205a",
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": "68c939b30d4abae965b3c938438e1a4d659bf4fbd03337d80a5c347741acc79f",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": "b331c6ded492d1b6d37a5ac9aa8cc6a4cc7b535deaa3cb30c3ac318216d31169",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": "4c65ca498d1a625015c617f6094c539d649635ef069e4ae3ae05f855a7c7e6f5"
+    },
+    "unchanged_feature_only_methods": {
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": [
+        "full_value_publisher_covers_all640_and_preserves_partition_and_bounds",
+        "full_value_publisher_propagates_every_single_cell_change_and_zero_reset",
+        "full_value_publisher_handles_eight_and_sixteen_byte_alignment_with_canaries"
+      ]
+    },
+    "workspace_changes": {
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 37,
+          "tests": 616
+        },
+        "previous": {
+          "ignored": 37,
+          "tests": 614
+        }
+      }
+    }
+  },
   "source_successor_fd4c6": {
     "added_default_methods": {
       "src/artifact_overlay_tests.rs": [
@@ -10751,7 +10906,7 @@
     "evaluation/admission/test_main34c47_inventory.py": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "7823badbd86e65b1597d70cecc64300f44b8880de28666a2dba8ba1554560396",
-    "evaluation/admission/test_main97ab_inventory.py": "e287f13cf1e93ba73bbe73602184c9992cbc4b7b03b45e818220c0cc6b5a7eac",
+    "evaluation/admission/test_main97ab_inventory.py": "5e875c83f74f792d2667bc2b58d2a1d3a456e2f5fa486620826f3ced06a70d97",
     "evaluation/admission/test_main981419_inventory.py": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
     "evaluation/admission/test_mainaf81_inventory.py": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
@@ -10912,8 +11067,8 @@
     "tools/rapid-profiler/native-interval/calibrations.rs": "c694791b56c655b30b22476aa68cde0426d5f163ef166ffd860e51d8405d0987",
     "tools/rapid-profiler/native-interval/main.rs": "e54f1b84dd6fc8591263bb399a0acb2dafb0a225bead6b34c2ab6bbcefa12ece",
     "tools/rapid-profiler/native-interval/normal/module.rs": "9a1179917963db7821f49067bc08f6ad91ff8d1502dcd152b16ac88f86d21b61",
-    "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": "54102d77b114a056de6f15a35218a8b8031d4e1b876a522b4a41c2c0a8bae2a0",
-    "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": "f053dc48a2d564e78f34d7589572fa9c275f13c21f378045360d2f4acb5dcef9",
+    "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": "d4ca7a67f30a26cab24555f6bfcfd3c89909e9b4f40e860f4a49980e94a3205a",
+    "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": "68c939b30d4abae965b3c938438e1a4d659bf4fbd03337d80a5c347741acc79f",
     "tools/rapid-profiler/native-interval/normal/module/early_entry/wide.rs": "7348189734fc40d152290f3eee3fd2df92d50f47c5644496311daa39cacee62e",
     "tools/rapid-profiler/ordinary-interval/main.rs": "76c776c72b6818743a18a47dff80ad14f4cd03567bd62183ddf05d11eb2527a9",
     "tools/rapid-profiler/ordinary-interval/normal.rs": "0618d34ca349bcd15db6cd3061912cbb2e8f939e1cf38277b49e6b60d20a35a3",
@@ -10942,8 +11097,8 @@
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": "acc5e2c29ca05cf0a6a4642ced490776628ef42e005b863146c9935a99f669bf",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": "317a108ccc431a1e47f5e0fba179d4979f75d45f360518f8f95432b34be7a458",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": "2231e4f4d42f64f3aeafb84e9030587a097fb1f86b62d5ae75879a34afd07efb",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": "8a8efa79d05232da3bdf713e59d68e504543d39b7b20e7c88f93c843e6d18968",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": "93aa686b66d6656ab235de1196127da50218966971b91c0aaefcfbf1ca66e3a0",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": "b331c6ded492d1b6d37a5ac9aa8cc6a4cc7b535deaa3cb30c3ac318216d31169",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": "4c65ca498d1a625015c617f6094c539d649635ef069e4ae3ae05f855a7c7e6f5",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs": "0c34d399ffa48e2e1395b5bcaee728bb85532a199ca81747f558a235da581f0a",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs": "1c4ab8b18a89e1589de160162c0457f640c1c0d932600b9a43c0d15f545bb96e",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs": "dbf8cc5fb8104eeb01cc5377a33c0c405d50d92b01f46cf03ee2644307986456",
