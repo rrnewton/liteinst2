@@ -17,6 +17,7 @@ import core_f353_inventory as indexed
 import core_d8d85_inventory as artifact
 import core_34c47_inventory as prepared
 import core_acc247_inventory as incoming
+from test_main97ab_inventory import cargo_mutation
 
 
 class Main20cbeInventoryTests(unittest.TestCase):
@@ -93,12 +94,22 @@ class Main20cbeInventoryTests(unittest.TestCase):
         for path, before, after in stimuli:
             target = current.ROOT / path; raw = read(target)
             changed_raw = raw.replace(before.encode(), after.encode())
+            cargo = cargo_mutation(self, raw, before, after) if path == 'Cargo.toml' else None
+            if cargo:
+                changed_raw = cargo['observed']
+            changed_prior = cargo['native'] if cargo else changed_raw
             self.assertNotEqual(changed_raw, raw)
             def changed(candidate):
                 return changed_raw if candidate == target else read(candidate)
-            with patch.object(Path, 'read_bytes', changed), \
-                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_raw).hexdigest()}), \
+            with patch.dict(native_indexed.DATA['source_successor_3217b8ed']['source_projections'],
+                            {path: cargo['shared_row']} if cargo else {}), \
+                 patch.dict(native_indexed.DATA['projections'], {path: cargo['native_row']} if cargo else {}), \
+                 patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_prior).hexdigest()}), \
                  patch.object(current, 'source_before', side_effect=lambda p, b, e: b if p != path else (_ for _ in ()).throw(AssertionError('declaration gate omitted'))):
+                if cargo:
+                    self.assertEqual(native_indexed.source_before(path, changed_raw,
+                        'exact37_cargo_declaration_inverse'), changed_prior)
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^main20cbe_source_inventory_differs$'):
                     current.require_sources()
         self.assertEqual({path: len(names) for path, names in current.DATA['added_default_methods'].items()}, {

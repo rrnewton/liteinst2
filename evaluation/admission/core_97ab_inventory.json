@@ -416,7 +416,7 @@
       "previous_sha256": "aadd1ba2d9329dcd05812369960669fd416f59871793f3f446f88cdbb898a207"
     },
     "evaluation/admission/test_main20cbe_inventory.py": {
-      "current_sha256": "923a043c56391ca900e490231446c7286b649f2e9976b5f8eaab85bc4aa31cf3",
+      "current_sha256": "cef985fb3e1eb1b4204cf9ad6cfa83219fe999d8403b25bb4a8cf4bdce3fc03c",
       "edits": [
         [
           413,
@@ -424,50 +424,70 @@
           ""
         ],
         [
-          743,
-          955,
+          617,
+          668,
+          ""
+        ],
+        [
+          794,
+          1006,
           "        actual = incoming.before_current(prepared.before_current(artifact.before_current(indexed.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes())))))\n"
         ],
         [
-          3301,
-          3499,
+          3352,
+          3550,
           "        identities = incoming.before_python(prepared.before_python(artifact.before_python(indexed.before_python(historical.python_identities(Path(__file__).parent)))))\n"
         ],
         [
-          8366,
-          8708,
+          6333,
+          6568,
           ""
         ],
         [
-          8991,
-          9121,
+          6733,
+          7192,
+          "            with patch.object(Path, 'read_bytes', changed), \\\n                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_raw).hexdigest()}), \\\n"
+        ],
+        [
+          7364,
+          7552,
           ""
         ],
         [
-          9269,
-          9433,
+          9132,
+          9474,
           ""
         ],
         [
-          9561,
-          10562,
+          9757,
+          9887,
           ""
         ],
         [
-          10629,
-          10707,
+          10035,
+          10199,
+          ""
+        ],
+        [
+          10327,
+          11328,
+          ""
+        ],
+        [
+          11395,
+          11473,
           "            row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()\n"
         ],
         [
-          10901,
-          11419,
+          11667,
+          12185,
           "            with patch.dict(current.DATA['projections'], {path: row}):\n"
         ]
       ],
       "previous_sha256": "53344157915fff59ba73a03eedb8b07af4d6dfdc608ce4a42445c8789942e420"
     },
     "evaluation/admission/test_main34c47_inventory.py": {
-      "current_sha256": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
+      "current_sha256": "fa2bb240bd7a9fdb6e79f18635ffe959fcd38facf479b882340aab5dca4461a0",
       "edits": [
         [
           393,
@@ -475,33 +495,38 @@
           ""
         ],
         [
-          649,
-          811,
-          "        actual = artifact.before_current(indexed.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes())))\n"
-        ],
-        [
-          3157,
-          3307,
-          "        identities = artifact.before_python(indexed.before_python(historical.python_identities(Path(__file__).parent)))\n"
-        ],
-        [
-          5958,
-          6206,
-          "            target = current.ROOT / path; raw = read(target)\n"
-        ],
-        [
-          6327,
-          7646,
+          516,
+          567,
           ""
         ],
         [
-          8532,
-          8772,
+          700,
+          862,
+          "        actual = artifact.before_current(indexed.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes())))\n"
+        ],
+        [
+          3208,
+          3358,
+          "        identities = artifact.before_python(indexed.before_python(historical.python_identities(Path(__file__).parent)))\n"
+        ],
+        [
+          6009,
+          6432,
+          "            target = current.ROOT / path; raw = read(target)\n"
+        ],
+        [
+          6553,
+          8121,
+          ""
+        ],
+        [
+          9007,
+          9424,
           "                return changed_raw if candidate == target else read(candidate)\n            with patch.dict(current.DATA['source_projections_23d6'], upstream), \\\n"
         ],
         [
-          13667,
-          13935,
+          14319,
+          14587,
           "            target = current.ROOT / path; raw = read(target)\n"
         ]
       ],
@@ -570,73 +595,78 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "625c057e145249c22266ce8d8e3a81d5d0ce151f51c8a04249fcb0e6448b9b61",
+      "current_sha256": "f3a37752d928a08c99c5f67a5865d2d3f38414ae67cd24984fda3a33cfedb4e5",
       "edits": [
         [
-          642,
-          70885,
+          438,
+          3522,
           ""
         ],
         [
-          80256,
-          80367,
+          3726,
+          73969,
+          ""
+        ],
+        [
+          83340,
+          83451,
           "        self.assertEqual(actual['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],\n"
         ],
         [
-          85410,
-          85580,
+          88494,
+          88664,
           ""
         ],
         [
-          85627,
-          85721,
+          88711,
+          88805,
           "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n"
         ],
         [
-          85860,
-          85947,
+          88944,
+          89031,
           ""
         ],
         [
-          86206,
-          86285,
+          89290,
+          89369,
           ""
         ],
         [
-          87341,
-          87891,
+          90425,
+          90975,
           ""
         ],
         [
-          89410,
-          89506,
+          92494,
+          92590,
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          93349,
-          126733,
+          96433,
+          129817,
           ""
         ],
         [
-          133651,
-          137222,
+          136735,
+          140306,
           ""
         ],
         [
-          138502,
-          138774,
+          141586,
+          141858,
           "        for function, expected_projection in projections:\n"
         ],
         [
-          140068,
-          147101,
+          143152,
+          150185,
           ""
         ]
       ],
       "previous_sha256": "d530641dc48cb248070fcf755d8b5daf14f1695e18f0b7aa6d1d65e75bf7fec8"
     },
     "evaluation/admission/test_main981419_inventory.py": {
-      "current_sha256": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
+      "current_sha256": "a75ae36eed8dc312b702821d50c991e126430a4f3e294342d2b43e29cd1ff034",
       "edits": [
         [
           373,
@@ -644,43 +674,53 @@
           ""
         ],
         [
-          739,
-          974,
+          615,
+          666,
+          ""
+        ],
+        [
+          790,
+          1025,
           "        actual = newest.before_current(incoming.before_current(prepared.before_current(artifact.before_current(indexed.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))))))\n"
         ],
         [
-          3320,
-          3540,
+          3371,
+          3591,
           "        identities = newest.before_python(incoming.before_python(prepared.before_python(artifact.before_python(indexed.before_python(historical.python_identities(Path(__file__).parent))))))\n"
         ],
         [
-          6373,
-          7585,
+          6374,
+          6539,
           ""
         ],
         [
-          7700,
-          7946,
+          6589,
+          7924,
+          ""
+        ],
+        [
+          8039,
+          8462,
           "            with patch.object(Path, 'read_bytes', changed), \\\n                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_raw).hexdigest()}), \\\n"
         ],
         [
-          8118,
-          8441,
+          8634,
+          9146,
           ""
         ],
         [
-          11542,
-          12371,
+          12247,
+          13076,
           ""
         ],
         [
-          12699,
-          12782,
+          13404,
+          13487,
           "                row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()\n"
         ],
         [
-          14313,
-          14469,
+          15018,
+          15174,
           "            with patch.dict(prepared.DATA['projections'], newest_outer), \\\n"
         ]
       ],
@@ -775,7 +815,7 @@
       "previous_sha256": "b3b0c8d33e580affbd078b283fd13c3cdbf44d4855397aac694f4385880bdd1c"
     },
     "evaluation/admission/test_maind8d85_inventory.py": {
-      "current_sha256": "c8ac5fce31e6f3be8cd6a759d4ea24551dea6f4cb7a4b51cd55b487efcc88a97",
+      "current_sha256": "cf6f180fa0c17a6a149537f8627d017899781bbdb03a779daaa582dbaf0cfb50",
       "edits": [
         [
           383,
@@ -783,33 +823,43 @@
           ""
         ],
         [
-          585,
-          722,
-          "        actual = indexed.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))\n"
-        ],
-        [
-          3035,
-          3161,
-          "        identities = indexed.before_python(historical.python_identities(Path(__file__).parent))\n"
-        ],
-        [
-          5620,
-          6478,
+          466,
+          517,
           ""
         ],
         [
-          6729,
-          6820,
+          636,
+          773,
+          "        actual = indexed.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))\n"
+        ],
+        [
+          3086,
+          3212,
+          "        identities = indexed.before_python(historical.python_identities(Path(__file__).parent))\n"
+        ],
+        [
+          5522,
+          5681,
+          ""
+        ],
+        [
+          5830,
+          6767,
+          ""
+        ],
+        [
+          7018,
+          7109,
           "                at = raw.index(before.encode()); stop = at + len(before.encode())\n"
         ],
         [
-          7176,
-          7271,
+          7465,
+          7560,
           "                upstream[path].update(current_sha256=hashlib.sha256(wrong).hexdigest(),\n"
         ],
         [
-          7456,
-          7748,
+          7745,
+          8214,
           "            with patch.dict(indexed.DATA['projections'], upstream):\n"
         ]
       ],
@@ -13438,16 +13488,16 @@
     "evaluation/admission/parsing.py": "c51d69252cba8db3d286f9c2dc6e0c91709873d825f77cef9ff5f982a8dda86b",
     "evaluation/admission/recorder_parallel.py": "a30f938577e1e4038d314295d58e118dc39618d50ee0863ed510412f03635861",
     "evaluation/admission/test_main0fb574_inventory.py": "23dc3397b29d500ec40529f14eb3f9aba466affc14e1c0f9953b5e405582f4fa",
-    "evaluation/admission/test_main20cbe_inventory.py": "923a043c56391ca900e490231446c7286b649f2e9976b5f8eaab85bc4aa31cf3",
-    "evaluation/admission/test_main34c47_inventory.py": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
+    "evaluation/admission/test_main20cbe_inventory.py": "cef985fb3e1eb1b4204cf9ad6cfa83219fe999d8403b25bb4a8cf4bdce3fc03c",
+    "evaluation/admission/test_main34c47_inventory.py": "fa2bb240bd7a9fdb6e79f18635ffe959fcd38facf479b882340aab5dca4461a0",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "7823badbd86e65b1597d70cecc64300f44b8880de28666a2dba8ba1554560396",
-    "evaluation/admission/test_main97ab_inventory.py": "625c057e145249c22266ce8d8e3a81d5d0ce151f51c8a04249fcb0e6448b9b61",
-    "evaluation/admission/test_main981419_inventory.py": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
+    "evaluation/admission/test_main97ab_inventory.py": "f3a37752d928a08c99c5f67a5865d2d3f38414ae67cd24984fda3a33cfedb4e5",
+    "evaluation/admission/test_main981419_inventory.py": "a75ae36eed8dc312b702821d50c991e126430a4f3e294342d2b43e29cd1ff034",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
     "evaluation/admission/test_mainaf81_inventory.py": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
     "evaluation/admission/test_mainc712_inventory.py": "f83655db9a2f51f91a3f245e7d04cd52a5bd749bdcf2d52c14d1d4e8c35c0825",
-    "evaluation/admission/test_maind8d85_inventory.py": "c8ac5fce31e6f3be8cd6a759d4ea24551dea6f4cb7a4b51cd55b487efcc88a97",
+    "evaluation/admission/test_maind8d85_inventory.py": "cf6f180fa0c17a6a149537f8627d017899781bbdb03a779daaa582dbaf0cfb50",
     "evaluation/admission/test_maindd75_inventory.py": "852a822559e51563e9c1dab2f231c7025adf443a572f4943417f9edd391adc06",
     "evaluation/admission/test_mainf353_inventory.py": "b69dbba9015db200385f8f1e178cce1d3d34df86a0530feb5d9b3a6c79b68c86",
     "evaluation/ordinary-call-pair-session/freeze.py": "8c2c36d3f921e75ee5735133e44a1828ff0a5ba6c1d3d1483d09aca469412b89",

@@ -15,6 +15,56 @@ import parsing
 from test_parsing import counts, summary
 
 
+def cargo_mutation(test, observed, before, after):
+    """Carry an existing Cargo declaration deletion through both exact new joins."""
+    path = 'Cargo.toml'
+    test.assertEqual(after, '')
+    shared = current.source_before_3217b8ed(path, observed, 'cargo_mutation_baseline')
+    native = current.source_before(path, observed, 'cargo_mutation_baseline')
+    literal = before
+    if before.startswith('[workspace]\nmembers = '):
+        test.assertTrue(before.endswith('"crates/liteinst-inprocess"]'))
+        literal = before[:-1] + ', "crates/liteinst-x86"]'
+    test.assertEqual((observed.count(literal.encode()), shared.count(before.encode()),
+                      native.count(before.encode())), (1, 1, 1))
+
+    def transport(source, prior, source_literal, prior_literal, original):
+        test.assertEqual(hashlib.sha256(source).hexdigest(), original['current_sha256'])
+        test.assertEqual(hashlib.sha256(prior).hexdigest(), original['previous_sha256'])
+        at = source.index(source_literal.encode()); stop = at + len(source_literal.encode())
+        prior_at = prior.index(prior_literal.encode()); prior_stop = prior_at + len(prior_literal.encode())
+        changed = source[:at] + source[stop:]
+        changed_prior = prior[:prior_at] + prior[prior_stop:]
+        test.assertNotEqual(changed, source)
+        test.assertNotEqual(changed_prior, prior)
+        def shifted(offset):
+            return offset if offset <= at else offset - (stop-at) if offset >= stop else at
+        edits = []; shift = 0
+        for first, end, donor in original['edits']:
+            data = donor.encode(); donor_at = first + shift
+            begin = max(0, prior_at-donor_at); finish = min(len(data), prior_stop-donor_at)
+            if begin < finish:
+                data = data[:begin] + data[finish:]
+            edits.append([shifted(first), shifted(end), data.decode()])
+            shift += len(donor.encode()) - (end-first)
+        row = copy.deepcopy(original)
+        row.update(current_sha256=hashlib.sha256(changed).hexdigest(),
+                   previous_sha256=hashlib.sha256(changed_prior).hexdigest(), edits=edits)
+        test.assertEqual(current.inverse(path, changed, {path: row}, 'cargo_mutation_inverse'), changed_prior)
+        return changed, changed_prior, row
+
+    observed_wrong, shared_wrong, shared_row = transport(observed, shared, literal, before,
+        current.DATA['source_successor_3217b8ed']['source_projections'][path])
+    native_input, native_wrong, native_row = transport(shared, native, before, before,
+        current.DATA['projections'][path])
+    test.assertEqual(native_input, shared_wrong)
+    with patch.dict(current.DATA['source_successor_3217b8ed']['source_projections'], {path: shared_row}), \
+         patch.dict(current.DATA['projections'], {path: native_row}):
+        test.assertEqual(current.source_before(path, observed_wrong, 'cargo_mutation_complete_join'), native_wrong)
+    return dict(observed=observed_wrong, shared=shared_wrong, native=native_wrong,
+                shared_row=shared_row, native_row=native_row)
+
+
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())

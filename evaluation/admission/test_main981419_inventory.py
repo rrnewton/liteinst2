@@ -17,6 +17,7 @@ import core_d8d85_inventory as artifact
 import core_34c47_inventory as prepared
 import core_acc247_inventory as incoming
 import core_20cbe_inventory as newest
+from test_main97ab_inventory import cargo_mutation
 
 
 class Main981419InventoryTests(unittest.TestCase):
@@ -93,6 +94,9 @@ class Main981419InventoryTests(unittest.TestCase):
         for path, before, after in stimuli:
             target = current.ROOT / path; raw = read(target)
             changed_raw = raw.replace(before.encode(), after.encode())
+            cargo = cargo_mutation(self, raw, before, after) if path == 'Cargo.toml' else None
+            if cargo:
+                changed_raw = cargo['observed']
             self.assertNotEqual(changed_raw, raw)
             upstream = copy.deepcopy(native_indexed.DATA['projections'])
             changed_prior = changed_raw
@@ -111,12 +115,20 @@ class Main981419InventoryTests(unittest.TestCase):
                     self.assertTrue(edit[1] <= at or edit[0] >= stop)
                     if edit[0] >= stop:
                         edit[0] += delta; edit[1] += delta
+            if cargo:
+                changed_prior = cargo['native']
+                upstream[path] = cargo['native_row']
             def changed(candidate):
                 return changed_raw if candidate == target else read(candidate)
-            with patch.dict(native_indexed.DATA['projections'], upstream), \
+            with patch.dict(native_indexed.DATA['source_successor_3217b8ed']['source_projections'],
+                            {path: cargo['shared_row']} if cargo else {}), \
+                 patch.dict(native_indexed.DATA['projections'], upstream), \
                  patch.object(Path, 'read_bytes', changed), \
                  patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_prior).hexdigest()}), \
                  patch.object(current, 'source_before', side_effect=lambda p, b, e: b if p != path else (_ for _ in ()).throw(AssertionError('declaration gate omitted'))):
+                if cargo:
+                    self.assertEqual(native_indexed.source_before(path, changed_raw,
+                        'accuracy_cargo_declaration_inverse'), changed_prior)
                 if path in ('tools/rapid-profiler/src/frontend_native/always_on/normal.rs',
                             'tools/rapid-profiler/src/frontend_native/mod.rs'):
                     self.assertEqual(native_indexed.source_before(path, changed_raw,

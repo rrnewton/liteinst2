@@ -13,6 +13,7 @@ import core_cc846_inventory as inventory
 import parsing
 import core_97ab_inventory as native_indexed
 import core_f353_inventory as indexed
+from test_main97ab_inventory import cargo_mutation
 
 
 class MainD8d85InventoryTests(unittest.TestCase):
@@ -81,6 +82,9 @@ class MainD8d85InventoryTests(unittest.TestCase):
             target = current.ROOT/path; raw = read(target)
             self.assertEqual(raw.count(before.encode()), 1)
             wrong = raw.replace(before.encode(), after.encode())
+            cargo = cargo_mutation(self, raw, before, after) if path == 'Cargo.toml' else None
+            if cargo:
+                wrong = cargo['observed']
             # Retain the exact original rename/removal stimulus through the
             # newly inserted outer inverse, including its length change.
             native_prior = native_indexed.source_before(path, raw, 'artifact_native_outer_inverse')
@@ -96,6 +100,8 @@ class MainD8d85InventoryTests(unittest.TestCase):
                     self.assertTrue(edit[1] <= at or edit[0] >= stop)
                     if edit[0] >= stop:
                         edit[0] += delta; edit[1] += delta
+            if cargo:
+                native_outer[path] = cargo['native_row']
             upstream = copy.deepcopy(indexed.DATA['projections'])
             prior = indexed.source_before(path, raw, 'artifact_outer_inverse')
             wrong_prior = prior.replace(before.encode(), after.encode())
@@ -110,7 +116,9 @@ class MainD8d85InventoryTests(unittest.TestCase):
                 upstream[path].update(current_sha256=hashlib.sha256(native_wrong).hexdigest(),
                     previous_sha256=hashlib.sha256(wrong_prior).hexdigest(), edits=rebased)
             def changed(candidate): return wrong if candidate == target else read(candidate)
-            with patch.dict(native_indexed.DATA['projections'], native_outer), \
+            with patch.dict(native_indexed.DATA['source_successor_3217b8ed']['source_projections'],
+                            {path: cargo['shared_row']} if cargo else {}), \
+                 patch.dict(native_indexed.DATA['projections'], native_outer), \
                  patch.dict(indexed.DATA['projections'], upstream):
                 self.assertEqual(native_indexed.source_before(path, wrong,
                     'artifact_native_outer_inverse'), native_wrong)

@@ -14,6 +14,7 @@ import parsing
 import core_97ab_inventory as native_indexed
 import core_f353_inventory as indexed
 import core_d8d85_inventory as artifact
+from test_main97ab_inventory import cargo_mutation
 
 
 class Main34c47InventoryTests(unittest.TestCase):
@@ -91,6 +92,9 @@ class Main34c47InventoryTests(unittest.TestCase):
             target = current.ROOT / path; observed = read(target)
             raw = native_indexed.source_before(path, observed, 'snapshot_outer_declaration_inverse')
             changed_observed = observed.replace(before.encode(), after.encode())
+            cargo = cargo_mutation(self, observed, before, after) if path == 'Cargo.toml' else None
+            if cargo:
+                changed_observed = cargo['observed']
             changed_raw = raw.replace(before.encode(), after.encode())
             self.assertNotEqual(changed_raw, raw)
             # Transport the identical declaration mutation through the outer
@@ -109,7 +113,11 @@ class Main34c47InventoryTests(unittest.TestCase):
                      old.replace(before, after)]
                     for first, end, old in outer_row['edits']]
                 outer[path] = outer_row
-            with patch.dict(native_indexed.DATA['projections'], outer):
+            if cargo:
+                outer[path] = cargo['native_row']
+            with patch.dict(native_indexed.DATA['source_successor_3217b8ed']['source_projections'],
+                            {path: cargo['shared_row']} if cargo else {}), \
+                 patch.dict(native_indexed.DATA['projections'], outer):
                 self.assertEqual(native_indexed.source_before(path, changed_observed,
                     'snapshot_outer_declaration_inverse'), changed_raw)
             # Preserve the same declaration stimulus through the new exact
@@ -125,7 +133,9 @@ class Main34c47InventoryTests(unittest.TestCase):
                     'snapshot_declaration_inverse'), changed_prior)
             def changed(candidate):
                 return changed_observed if candidate == target else read(candidate)
-            with patch.dict(native_indexed.DATA['projections'], outer), \
+            with patch.dict(native_indexed.DATA['source_successor_3217b8ed']['source_projections'],
+                            {path: cargo['shared_row']} if cargo else {}), \
+                 patch.dict(native_indexed.DATA['projections'], outer), \
                  patch.dict(current.DATA['source_projections_23d6'], upstream), \
                  patch.object(Path, 'read_bytes', changed), \
                  patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_raw).hexdigest()}), \
