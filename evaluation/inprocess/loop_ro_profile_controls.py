@@ -54,6 +54,7 @@ ERRORS = {
     'pf_forbidden': ('persistent_fused_runtime.h', 'PF NONE/MOV/direct runtime does not borrow another instruction or resident policy'),
     'fused': ('persistent_fused_plan.h', 'fused policy requires its explicit direct-directory and MOV-guard profile'),
     'direct': ('linked_direct_dispatch.h', 'direct frontiers require their distinct two-active cross-pair profile'),
+    'directory': ('linked_jmp_domain.h', 'distinct active-domain cold code and directory required'),
     'capture_pair': ('persistent_loop_runtime.h', 'loop capture requires both its own selector and the original callback lifecycle'),
     'capture': ('persistent_loop_runtime.h', 'exact separate policy14 capture selection'),
 }
@@ -76,7 +77,9 @@ def roster():
             if macro == 'LI2_LOOP_RO_CERTIFICATE' and value is None: errors = ['implicit']
             if macro == 'LI2_PERSISTENT_LOOP_RUNTIME': errors += ['loop']
             if macro == 'LI2_PERSISTENT_RETAINED_TWO': errors += ['pf']
-            if macro == 'LI2_PERSISTENT_ACTIVE_DOMAIN': errors += ['direct', 'fused', 'pf']
+            if macro == 'LI2_PERSISTENT_ACTIVE_DOMAIN':
+                errors += ['direct', 'fused', 'pf']
+                if value is not None: errors += ['directory']
             if macro == 'LI2_PERSISTENT_LOOP_EFFECTS' and value is not None:
                 errors += ['effects', 'effects_plan']
             rows.append(dict(name=macro.lower()+'-'+('absent' if value is None else str(value)),

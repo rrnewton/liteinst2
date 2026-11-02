@@ -1,0 +1,84 @@
+{
+  "archive_rebuilt": false,
+  "bounds": [
+    5,
+    536870912,
+    16777216,
+    15
+  ],
+  "build_receipt": {
+    "bytes": 760845,
+    "sha256": "0788163bd2bd3da0231f585b152bec3e959386aff772e26b4129025034016984"
+  },
+  "build_revision": "14300035c14ceec5f7067c9e6f9bae945c60f200",
+  "cleanup_complete": true,
+  "command_records_sha256": "1f84edf5d7fdcbc10a620f152b314a1ad1cb8bdfb20009a2ce47ca9b777409b3",
+  "commands": 53,
+  "cpu": 13,
+  "driver": {
+    "bytes": 25768,
+    "sha256": "2cef6a84d689ec5db9ca3875d4103cf3500c009d2c10cd8a3948220cb67ce9e0"
+  },
+  "failed_cases": [
+    "li2_persistent_active_domain-0",
+    "li2_persistent_active_domain-2"
+  ],
+  "failure_reason": "51 of 53 passed; two ACTIVE_DOMAIN mutations emitted an additional intended source-located guard omitted by the observer. Whole run remains failed.",
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 13,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_sha256": "6728fa269cb88d4290cf90ae688d4f42385bdc3a6e4fa5ff4b785f81df19e2e6",
+  "inputs_unchanged": true,
+  "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+  "native_subjects": 0,
+  "negative_passed": 48,
+  "outcomes": {
+    "bytes": 8661,
+    "sha256": "f7e98c238211ece5e6525237292335abdf6b6a975a05b88dbff96d1e53ad82c9"
+  },
+  "owner_validated": false,
+  "performance_credit": false,
+  "positive_passed": 3,
+  "profile": "loop-ro-profile-controls-v1",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 799404,
+    "sha256": "d66943b828305932f7e34ff1600ebe2f72c067233297fa549ebc4ed7297c756b"
+  },
+  "reproduction_argv": [
+    "python3.12",
+    "-B",
+    "evaluation/inprocess/loop_ro_profile_controls.py",
+    "--expect-revision",
+    "84d53dbbdf70483a97c38360437d41115d04fff6",
+    "--build-receipt",
+    "CLOSED_BUILD/receipt.json",
+    "--build-receipt-sha256",
+    "0788163bd2bd3da0231f585b152bec3e959386aff772e26b4129025034016984",
+    "--output",
+    "FRESH_TARGET_OUTPUT"
+  ],
+  "retained_producer_status": "observed_positive_application_pairs",
+  "revision": "84d53dbbdf70483a97c38360437d41115d04fff6",
+  "schema": 1,
+  "source": {
+    "head_sources_match": true,
+    "revision": "84d53dbbdf70483a97c38360437d41115d04fff6",
+    "source_manifest_sha256": "425a118628ff50a15f9456c61b2a39e08ddcb9abc8f7e79fc12dfbe8704ab838",
+    "tracked_clean": true,
+    "tree": "51cdde02127f6f76ee2ae945bd5680f7b8e7d8f2"
+  },
+  "source_unchanged": true,
+  "status": "failed",
+  "unlaunched_cases": []
+}

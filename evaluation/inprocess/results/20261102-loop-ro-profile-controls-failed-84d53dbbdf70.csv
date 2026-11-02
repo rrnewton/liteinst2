@@ -1,0 +1,54 @@
+case,mode,expected_exit,actual_exit,status,duration_ns,expected_guard_messages
+ro-release,release,0,0,passed,15093309,
+ro-differential,differential,0,0,passed,14981221,
+old-loop13,release,0,0,passed,14534150,
+li2_loop_ro_certificate-absent,release,1,1,passed,14178917,loop runtime has a distinct capture and no implicit certificate/generation composition
+li2_loop_ro_certificate-0,release,1,1,passed,18242449,LOOP RO byte certificates require the exact serialized two-member owner
+li2_loop_ro_certificate-2,release,1,1,passed,14672537,LOOP RO byte certificates require the exact serialized two-member owner
+li2_sealed_byte_certificate-absent,release,1,1,passed,14438887,LOOP RO byte certificates require the exact serialized two-member owner
+li2_sealed_byte_certificate-0,release,1,1,passed,17441367,LOOP RO byte certificates require the exact serialized two-member owner
+li2_sealed_byte_certificate-2,release,1,1,passed,19379006,LOOP RO byte certificates require the exact serialized two-member owner
+li2_persistent_sealed_generation-absent,release,1,1,passed,14704065,LOOP RO byte certificates require the exact serialized two-member owner
+li2_persistent_sealed_generation-0,release,1,1,passed,18692044,LOOP RO byte certificates require the exact serialized two-member owner
+li2_persistent_sealed_generation-2,release,1,1,passed,18559025,LOOP RO byte certificates require the exact serialized two-member owner
+li2_persistent_loop_effects-absent,release,1,1,passed,14633088,LOOP RO byte certificates require the exact serialized two-member owner
+li2_persistent_loop_effects-0,release,1,1,passed,14342672,LOOP RO byte certificates require the exact serialized two-member owner|explicit byte-store/register-multiply LOOP composition|policy13 and its separate decoder/byte-guard APIs must be explicitly selected
+li2_persistent_loop_effects-2,release,1,1,passed,15032999,LOOP RO byte certificates require the exact serialized two-member owner|explicit byte-store/register-multiply LOOP composition|policy13 and its separate decoder/byte-guard APIs must be explicitly selected
+li2_persistent_loop_runtime-absent,release,1,1,passed,14757295,LOOP RO byte certificates require the exact serialized two-member owner|loop runtime explicitly composes policy12 with exact policy11 fallback
+li2_persistent_loop_runtime-0,release,1,1,passed,18364594,LOOP RO byte certificates require the exact serialized two-member owner|loop runtime explicitly composes policy12 with exact policy11 fallback
+li2_persistent_loop_runtime-2,release,1,1,passed,15635805,LOOP RO byte certificates require the exact serialized two-member owner|loop runtime explicitly composes policy12 with exact policy11 fallback
+li2_persistent_retained_two-absent,release,1,1,passed,15251186,LOOP RO byte certificates require the exact serialized two-member owner|PF runtime selects one exact version11 observed-root two-active owner
+li2_persistent_retained_two-0,release,1,1,passed,15050015,LOOP RO byte certificates require the exact serialized two-member owner|PF runtime selects one exact version11 observed-root two-active owner
+li2_persistent_retained_two-2,release,1,1,passed,14526408,LOOP RO byte certificates require the exact serialized two-member owner|PF runtime selects one exact version11 observed-root two-active owner
+li2_persistent_active_domain-absent,release,1,1,passed,15927913,LOOP RO byte certificates require the exact serialized two-member owner|direct frontiers require their distinct two-active cross-pair profile|fused policy requires its explicit direct-directory and MOV-guard profile|PF runtime selects one exact version11 observed-root two-active owner
+li2_persistent_active_domain-0,release,1,1,failed,16331580,LOOP RO byte certificates require the exact serialized two-member owner|direct frontiers require their distinct two-active cross-pair profile|fused policy requires its explicit direct-directory and MOV-guard profile|PF runtime selects one exact version11 observed-root two-active owner
+li2_persistent_active_domain-2,release,1,1,failed,14480129,LOOP RO byte certificates require the exact serialized two-member owner|direct frontiers require their distinct two-active cross-pair profile|fused policy requires its explicit direct-directory and MOV-guard profile|PF runtime selects one exact version11 observed-root two-active owner
+li2_initial_code_protection-absent,release,1,1,passed,14908402,LOOP RO byte certificates require the exact serialized two-member owner
+li2_initial_code_protection-0,release,1,1,passed,14364174,LOOP RO byte certificates require the exact serialized two-member owner
+li2_initial_code_protection-2,release,1,1,passed,14261861,LOOP RO byte certificates require the exact serialized two-member owner
+li2_rseq_inactive-absent,release,1,1,passed,14693940,LOOP RO byte certificates require the exact serialized two-member owner
+li2_rseq_inactive-0,release,1,1,passed,15139990,LOOP RO byte certificates require the exact serialized two-member owner
+li2_rseq_inactive-2,release,1,1,passed,14704967,LOOP RO byte certificates require the exact serialized two-member owner
+li2_pg_loop_ro_binding_version-absent,release,1,1,passed,16427694,LOOP RO certificate requires its separately bound complete source policy
+li2_pg_loop_ro_binding_version-0,release,1,1,passed,14665336,LOOP RO certificate requires its separately bound complete source policy
+li2_pg_loop_ro_binding_version-2,release,1,1,passed,14603083,LOOP RO certificate requires its separately bound complete source policy
+li2_resident_source_lease-0,release,1,1,passed,14444264,separate RO mirror layout: no old source-lease or capture-schema cast
+li2_resident_source_lease-1,release,1,1,passed,14346768,separate RO mirror layout: no old source-lease or capture-schema cast
+li2_resident_three-0,release,1,1,passed,15164748,separate RO mirror layout: no old source-lease or capture-schema cast|PF NONE/MOV/direct runtime does not borrow another instruction or resident policy
+li2_resident_three-1,release,1,1,passed,14113698,separate RO mirror layout: no old source-lease or capture-schema cast|PF NONE/MOV/direct runtime does not borrow another instruction or resident policy
+li2_sealed_byte_certificate_observe-0,release,1,1,passed,14134149,separate RO mirror layout: no old source-lease or capture-schema cast
+li2_sealed_byte_certificate_observe-1,release,1,1,passed,14989584,separate RO mirror layout: no old source-lease or capture-schema cast
+li2_persistent_loop_capture-0,release,1,1,passed,15105418,separate RO mirror layout: no old source-lease or capture-schema cast|loop capture requires both its own selector and the original callback lifecycle|exact separate policy14 capture selection
+li2_persistent_loop_capture-1,release,1,1,passed,14455051,separate RO mirror layout: no old source-lease or capture-schema cast|loop capture requires both its own selector and the original callback lifecycle|exact separate policy14 capture selection
+li2_persistent_loop_effects_capture-0,release,1,1,passed,14543925,separate RO mirror layout: no old source-lease or capture-schema cast
+li2_persistent_loop_effects_capture-1,release,1,1,passed,14494651,separate RO mirror layout: no old source-lease or capture-schema cast
+li2_persistent_loop_lifecycle_capture-0,release,1,1,passed,14631937,separate RO mirror layout: no old source-lease or capture-schema cast
+li2_persistent_loop_lifecycle_capture-1,release,1,1,passed,14896424,separate RO mirror layout: no old source-lease or capture-schema cast
+li2_persistent_loop_effects_lifecycle_capture-0,release,1,1,passed,15122734,separate RO mirror layout: no old source-lease or capture-schema cast
+li2_persistent_loop_effects_lifecycle_capture-1,release,1,1,passed,14897796,separate RO mirror layout: no old source-lease or capture-schema cast
+li2_persistent_fused_capture-0,release,1,1,passed,15362174,loop runtime has a distinct capture and no implicit certificate/generation composition
+li2_persistent_fused_capture-1,release,1,1,passed,16402315,loop runtime has a distinct capture and no implicit certificate/generation composition
+li2_resident_stable_generation-0,release,1,1,passed,16573493,loop runtime has a distinct capture and no implicit certificate/generation composition
+li2_resident_stable_generation-1,release,1,1,passed,14798337,loop runtime has a distinct capture and no implicit certificate/generation composition
+implicit-sbc-0,release,1,1,passed,14906589,loop runtime has a distinct capture and no implicit certificate/generation composition
+implicit-sbc-1,release,1,1,passed,14617584,loop runtime has a distinct capture and no implicit certificate/generation composition
