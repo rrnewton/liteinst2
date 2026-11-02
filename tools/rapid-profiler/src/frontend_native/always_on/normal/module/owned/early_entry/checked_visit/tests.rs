@@ -2021,3 +2021,384 @@ fn ret_normal_proof_keeps_combined_late_failure_order_and_committed_state() {
         }
     }
 }
+
+#[test]
+fn entry_normal_proof_matches_full_postshape_across_receipts_and_rearm() {
+    for order in [[0, 1], [1, 0]] {
+        for mode in 0..4 {
+            // No Pending, an older Returned, or that owner across rearm.
+            for prior in 0..3 {
+                let mut f = Fixture::new(10, order);
+                if mode != 0 {
+                    f.controller.arm(&f.epoch).unwrap();
+                }
+                if mode == 1 {
+                    f.controller.disarm(&f.epoch).unwrap();
+                }
+                if mode == 3 {
+                    // Actual fixed-bank exhaustion, not a forged closed receipt.
+                    for _ in 0..5 {
+                        f.physical.begin(&f.state).unwrap();
+                        for _ in 0..4 {
+                            f.call(true);
+                        }
+                        assert_eq!(f.finish().0.unwrap().records().len(), 4);
+                    }
+                }
+                f.physical.begin(&f.state).unwrap();
+                let older = if prior != 0 {
+                    f.call(true);
+                    let raw = f.state.pending.as_ref().unwrap().returned.unwrap();
+                    let held = normal_image(&f.state);
+                    for _ in 0..2 {
+                        f.call(false);
+                        assert_eq!(normal_image(&f.state), held);
+                        assert_eq!(
+                            f.physical.active.as_ref().unwrap().pending_position,
+                            Some(0)
+                        );
+                    }
+                    Some(raw)
+                } else {
+                    None
+                };
+                let next = if prior == 2 {
+                    if mode >= 2 {
+                        f.controller.disarm(&f.epoch).unwrap();
+                    }
+                    let next = f.controller.stage_prepared(f.banks.pop().unwrap()).unwrap();
+                    f.controller.arm(&next).unwrap();
+                    Some(next)
+                } else {
+                    None
+                };
+                let owners = identities(&f.state, &f.physical);
+                let Visit {
+                    selected,
+                    pc,
+                    rsp,
+                    word,
+                    stamp,
+                    ..
+                } = f.input(true);
+                let committed = CheckedEntry::new(&mut f.physical, &mut f.state)
+                    .unwrap()
+                    .commit(selected, pc, rsp, word, stamp)
+                    .unwrap();
+                let pending = committed.checked.state.pending.as_ref().unwrap();
+                let summary = pending.summary.unwrap();
+                assert_eq!(pending.receipt.summary(), Some(summary));
+                match if prior == 2 { 2 } else { mode } {
+                    0 => assert!(matches!(
+                        summary,
+                        IntervalEntrySummary::Unsampled {
+                            reason: UnsampledSummary::InitialDisarmed,
+                            ..
+                        }
+                    )),
+                    1 => assert!(
+                        matches!(summary, IntervalEntrySummary::Unsampled { reason: UnsampledSummary::Removed { generation }, .. } if generation == f.epoch.generation())
+                    ),
+                    2 => assert!(
+                        matches!(summary, IntervalEntrySummary::Admitted { generation, .. } if generation == next.as_ref().unwrap_or(&f.epoch).generation())
+                    ),
+                    3 => assert!(
+                        matches!(summary, IntervalEntrySummary::Unsampled { reason: UnsampledSummary::FunctionClosed { generation, function }, .. } if generation == f.epoch.generation() && function == selected.function)
+                    ),
+                    _ => unreachable!(),
+                }
+                assert!(pending.returned.is_none());
+                assert_eq!(committed.checked.state.len, usize::from(prior != 0));
+                if let Some(raw) = older {
+                    assert_eq!(committed.checked.state.records[0].unwrap().raw, raw);
+                }
+                let at_postcheck = (
+                    normal_image(committed.checked.state),
+                    physical_image(committed.checked.physical),
+                );
+                assert_eq!(
+                    committed.checked.physical.shape(committed.checked.state),
+                    Ok(())
+                );
+                assert_eq!(committed.finish(), Ok(()));
+                assert_eq!(
+                    (normal_image(&f.state), physical_image(&f.physical)),
+                    at_postcheck
+                );
+                assert_eq!(identities(&f.state, &f.physical), owners);
+                f.visit(false).unwrap();
+                let raw = f.state.pending.as_ref().unwrap().returned.unwrap();
+                assert_eq!(raw.owner, timing::owner(summary));
+                if prior == 0 {
+                    for _ in 0..3 {
+                        f.call(false);
+                    }
+                }
+                let batch = f.finish().0.unwrap();
+                assert_eq!(batch.records().len(), 1 + usize::from(prior != 0));
+                if let Some(raw) = older {
+                    assert_eq!(batch.records()[0].record.raw, raw);
+                }
+                assert_eq!(batch.records().last().unwrap().record.raw, raw);
+                assert!(f.state.pending.is_none());
+                assert_eq!(f.state.model.depth(), 0);
+                assert_eq!(f.state.model.completed_sequence(), f.state.totals.completed);
+                if let Some(next) = next {
+                    f.controller.disarm(&next).unwrap();
+                    assert_eq!(
+                        f.controller
+                            .report(&next)
+                            .unwrap()
+                            .unwrap()
+                            .records()
+                            .count(),
+                        1
+                    );
+                } else if mode >= 2 {
+                    f.controller.disarm(&f.epoch).unwrap();
+                }
+                if mode == 2 {
+                    let count = if prior == 2 {
+                        1
+                    } else {
+                        1 + usize::from(prior != 0)
+                    };
+                    assert_eq!(
+                        f.controller
+                            .report(&f.epoch)
+                            .unwrap()
+                            .unwrap()
+                            .records()
+                            .count(),
+                        count
+                    );
+                } else if mode == 3 {
+                    assert_eq!(
+                        f.controller
+                            .report(&f.epoch)
+                            .unwrap()
+                            .unwrap()
+                            .records()
+                            .count(),
+                        20
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn entry_normal_proof_keeps_changed_fields_depth_and_late_error_order() {
+    const ENTERED: u16 = 1;
+    const RET_COUNT: u16 = 2;
+    const NEXT: u16 = 4;
+    const RETURNED: u16 = 8;
+    const DEPTH: u16 = 16;
+    const USED: u16 = 32;
+    const WORD: u16 = 64;
+    const SHARED: u16 = 128;
+    const CONFIRMED: u16 = 256;
+    const COMBINED: u16 = ENTERED | NEXT | RETURNED | DEPTH | USED | WORD;
+    for order in [[0, 1], [1, 0]] {
+        for prior in [false, true] {
+            for fault in [
+                0,
+                ENTERED,
+                RET_COUNT,
+                NEXT,
+                RETURNED,
+                DEPTH,
+                USED,
+                WORD,
+                SHARED,
+                CONFIRMED,
+                COMBINED,
+                COMBINED | SHARED,
+                USED | WORD,
+                DEPTH | WORD,
+                RET_COUNT | WORD,
+                SHARED | WORD,
+            ] {
+                let mut f = Fixture::new(10, order);
+                f.controller.arm(&f.epoch).unwrap();
+                f.physical.begin(&f.state).unwrap();
+                let (next, older) = if prior {
+                    f.call(true);
+                    let older = f.state.pending.as_ref().unwrap().returned.unwrap();
+                    for _ in 0..2 {
+                        f.call(false);
+                    }
+                    f.controller.disarm(&f.epoch).unwrap();
+                    let next = f.controller.stage_prepared(f.banks.pop().unwrap()).unwrap();
+                    f.controller.arm(&next).unwrap();
+                    (Some(next), Some(older))
+                } else {
+                    (None, None)
+                };
+                let owners = identities(&f.state, &f.physical);
+                let Visit {
+                    selected,
+                    pc,
+                    rsp,
+                    word,
+                    stamp,
+                    ..
+                } = f.input(true);
+                let committed = CheckedEntry::new(&mut f.physical, &mut f.state)
+                    .unwrap()
+                    .commit(selected, pc, rsp, word, stamp)
+                    .unwrap();
+                committed
+                    .checked
+                    .physical
+                    .shape(committed.checked.state)
+                    .unwrap();
+                let totals = committed.checked.state.totals;
+                let next_ordinal = committed.checked.state.next;
+                let used = committed.checked.state.journal.used();
+                let sequence = committed.checked.state.model.completed_sequence();
+                let has = |bit| fault & bit != 0;
+                if has(ENTERED) {
+                    committed.checked.state.totals.entered += 1;
+                }
+                if has(RET_COUNT) {
+                    committed.checked.state.totals.ret_observed += 1;
+                }
+                if has(CONFIRMED) {
+                    committed.checked.state.totals.confirmed += 1;
+                }
+                if has(NEXT) {
+                    committed.checked.state.next += 1;
+                }
+                if has(RETURNED) {
+                    let p = committed.checked.state.pending.as_mut().unwrap();
+                    p.returned = Some(RawInterval {
+                        ordinal: p.ordinal,
+                        entry_pc: p.entry_pc,
+                        return_pc: pc + 16,
+                        owner: timing::owner(p.summary.unwrap()),
+                        start: p.start,
+                        end: stamp,
+                    });
+                }
+                if has(WORD) {
+                    committed.checked.state.pending.as_mut().unwrap().word += 8;
+                }
+                // A real cancellation changes depth without forging a model
+                // frame or owner, and does not advance completed_sequence.
+                let cancelled = if has(DEPTH) {
+                    let state = &mut *committed.checked.state;
+                    let p = state.pending.as_mut().unwrap();
+                    let payload = state.model.cancel(&mut p.slot).unwrap();
+                    assert_eq!(
+                        payload.outcome,
+                        crate::frontend::PayloadOutcome::Cancelled(
+                            crate::generation::CancelReason::Explicit
+                        )
+                    );
+                    assert_eq!(state.model.completed_sequence(), sequence);
+                    assert_eq!(state.model.depth(), 0);
+                    Some(payload)
+                } else {
+                    None
+                };
+                if has(USED) {
+                    committed.checked.state.journal.word(0, used as u64 + 1);
+                }
+                if has(SHARED) {
+                    committed
+                        .checked
+                        .physical
+                        .shared
+                        .failed
+                        .store(true, Ordering::Release);
+                }
+                let at_postcheck = (
+                    normal_image(committed.checked.state),
+                    physical_image(committed.checked.physical),
+                );
+                let expected = if has(SHARED) {
+                    Err(error(Cause::Identity))
+                } else if fault & (ENTERED | RET_COUNT | NEXT | RETURNED | DEPTH | USED | CONFIRMED)
+                    != 0
+                {
+                    Err(error(Cause::Invariant))
+                } else if has(WORD) {
+                    Err(error(Cause::Return))
+                } else {
+                    Ok(())
+                };
+                assert_eq!(
+                    committed.checked.physical.shape(committed.checked.state),
+                    expected
+                );
+                assert_eq!(committed.finish(), expected);
+                assert_eq!(
+                    (normal_image(&f.state), physical_image(&f.physical)),
+                    at_postcheck
+                );
+                assert_eq!(identities(&f.state, &f.physical), owners);
+                // Repair only diagnostic faults. A real cancellation is never
+                // rolled back, retried as completion, or replaced by a new owner.
+                f.physical.shared.failed.store(false, Ordering::Release);
+                f.state.totals = totals;
+                f.state.next = next_ordinal;
+                f.state.journal.word(0, used as u64);
+                let p = f.state.pending.as_mut().unwrap();
+                p.returned = None;
+                p.word = word;
+                if let Some(payload) = cancelled {
+                    assert!(p.receipt.summary().is_some());
+                    assert_eq!(p.slot.word, TOKEN);
+                    assert_eq!(f.state.shape(), Err(error(Cause::Invariant)));
+                    let current = next.as_ref().unwrap_or(&f.epoch);
+                    f.controller.disarm(current).unwrap();
+                    let report = f.controller.report(current).unwrap().unwrap();
+                    let records: Vec<_> = report.records().collect();
+                    assert_eq!(records.len(), 1);
+                    assert_eq!(records[0].payload, Some(payload));
+                    assert_eq!(records[0].record.admission, payload.admission);
+                } else {
+                    f.physical.shape(&f.state).unwrap();
+                    f.visit(false).unwrap();
+                    if !prior {
+                        for _ in 0..3 {
+                            f.call(false);
+                        }
+                    }
+                    assert_eq!(
+                        f.finish().0.unwrap().records().len(),
+                        1 + usize::from(prior)
+                    );
+                    let current = next.as_ref().unwrap_or(&f.epoch);
+                    f.controller.disarm(current).unwrap();
+                    assert_eq!(
+                        f.controller
+                            .report(current)
+                            .unwrap()
+                            .unwrap()
+                            .records()
+                            .count(),
+                        1
+                    );
+                }
+                if prior {
+                    assert_eq!(
+                        f.controller
+                            .report(&f.epoch)
+                            .unwrap()
+                            .unwrap()
+                            .records()
+                            .count(),
+                        1
+                    );
+                    assert_eq!(
+                        f.state.records[0].map(|r| r.raw),
+                        if has(DEPTH) { older } else { None }
+                    );
+                }
+            }
+        }
+    }
+}

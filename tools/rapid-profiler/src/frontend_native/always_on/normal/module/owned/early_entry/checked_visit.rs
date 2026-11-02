@@ -276,7 +276,27 @@ impl CommittedEntry<'_> {
         } = self;
         let CheckedEntry { physical, state } = checked;
         physical.matches(state)?;
-        state.shape()?;
+        // Full pre-shape and this successful exclusive transition establish the
+        // unchanged normal facts. Optional confirmation checks balanced totals
+        // and actual completed_sequence, then appends both exact prefixes; entry
+        // preserves those facts and identity/cursor. reserve_entry proved len.
+        // Keep changed counts and actual admitted depth before the fresh used()
+        // read, in their old order. Partial confirmation/entry never reaches here.
+        let outstanding = u64::from(state.pending.is_some());
+        let returned = u64::from(state.pending.as_ref().is_some_and(|p| p.returned.is_some()));
+        let sampled = state
+            .pending
+            .as_ref()
+            .and_then(|p| p.summary)
+            .is_some_and(|s| matches!(s, IntervalEntrySummary::Admitted { .. }));
+        if state.totals.confirmed.checked_add(outstanding) != Some(state.totals.entered)
+            || state.totals.confirmed.checked_add(returned) != Some(state.totals.ret_observed)
+            || state.totals.entered.checked_add(1) != Some(state.next)
+            || state.model.depth() != usize::from(sampled)
+            || state.journal.used() != state.len * 2 + outstanding as usize + returned as usize
+        {
+            return Err(error(Cause::Invariant));
+        }
         let b = physical.active.as_ref().ok_or(error(Cause::Outstanding))?;
         // Pre-shape established the complete old prefix and counts. Entry does
         // not change position/rows/cursor or ret_observed; entered and seen grow

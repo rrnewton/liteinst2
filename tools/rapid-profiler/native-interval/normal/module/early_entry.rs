@@ -94,8 +94,13 @@ fn owner_words(o: OwnerSnapshot) -> [u64; 8] {
         o.closed_function.map_or(0, |f| f.0),
     ]
 }
-fn encode(kind: PauseKind, sequence: u64, s: &QualificationSnapshot) -> [u64; early::JOURNAL] {
-    let mut h = [0; 128];
+fn encode_into(
+    kind: PauseKind,
+    sequence: u64,
+    s: &QualificationSnapshot,
+    h: &mut [u64; early::JOURNAL],
+) {
+    h.fill(0);
     h[..15].copy_from_slice(&[
         0x6561_726c_796d_6f64,
         match kind {
@@ -180,7 +185,6 @@ fn encode(kind: PauseKind, sequence: u64, s: &QualificationSnapshot) -> [u64; ea
             ]);
         }
     }
-    h
 }
 #[inline(never)]
 fn snapshot_ready() {
@@ -493,7 +497,8 @@ fn child(
         unsafe {
             qualification::install_observer(move |kind, snapshot| {
                 sequence += 1;
-                let header = encode(kind, sequence, snapshot);
+                let mut header = [0; 128];
+                encode_into(kind, sequence, snapshot, &mut header);
                 let (header_out, journal_out) = witness.split_at_mut(early::JOURNAL);
                 publisher::publish_words(header_out.try_into().unwrap(), &header);
                 publisher::publish_words(journal_out.try_into().unwrap(), &snapshot.journal);

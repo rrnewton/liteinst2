@@ -8,8 +8,9 @@ const _: () = assert!(JOURNAL == 128 && WITNESS_WORDS == 640);
 pub(super) fn publish_words<const N: usize>(destination: &mut [u64; N], source: &[u64; N]) {
     const { assert!(N == 128 || N == 512) };
     // SAFETY: these valid array references cover disjoint source/destination
-    // ranges. N is positive and divisible by eight; offsets 0,64,...,N*8-64
-    // make every 16-byte load/store in bounds. MOVDQU needs no 16-byte alignment,
+    // ranges. N is 128 or 512, so N*8 is divisible by 256. At each offset
+    // 0,256,...,N*8-256, the four ordered 64-byte groups access 16 bytes at
+    // offset+0,16,...,240, all in bounds. MOVDQU needs no 16-byte alignment,
     // and SSE2 is baseline on this x86-64 oracle. All memory and flags effects
     // remain compiler-visible; every modified register is an explicit output.
     unsafe {
@@ -23,7 +24,31 @@ pub(super) fn publish_words<const N: usize>(destination: &mut [u64; N], source: 
             "movdqu xmmword ptr [{destination} + {offset} + 16], xmm1",
             "movdqu xmmword ptr [{destination} + {offset} + 32], xmm2",
             "movdqu xmmword ptr [{destination} + {offset} + 48], xmm3",
-            "add {offset}, 64",
+            "movdqu xmm0, xmmword ptr [{source} + {offset} + 64]",
+            "movdqu xmm1, xmmword ptr [{source} + {offset} + 80]",
+            "movdqu xmm2, xmmword ptr [{source} + {offset} + 96]",
+            "movdqu xmm3, xmmword ptr [{source} + {offset} + 112]",
+            "movdqu xmmword ptr [{destination} + {offset} + 64], xmm0",
+            "movdqu xmmword ptr [{destination} + {offset} + 80], xmm1",
+            "movdqu xmmword ptr [{destination} + {offset} + 96], xmm2",
+            "movdqu xmmword ptr [{destination} + {offset} + 112], xmm3",
+            "movdqu xmm0, xmmword ptr [{source} + {offset} + 128]",
+            "movdqu xmm1, xmmword ptr [{source} + {offset} + 144]",
+            "movdqu xmm2, xmmword ptr [{source} + {offset} + 160]",
+            "movdqu xmm3, xmmword ptr [{source} + {offset} + 176]",
+            "movdqu xmmword ptr [{destination} + {offset} + 128], xmm0",
+            "movdqu xmmword ptr [{destination} + {offset} + 144], xmm1",
+            "movdqu xmmword ptr [{destination} + {offset} + 160], xmm2",
+            "movdqu xmmword ptr [{destination} + {offset} + 176], xmm3",
+            "movdqu xmm0, xmmword ptr [{source} + {offset} + 192]",
+            "movdqu xmm1, xmmword ptr [{source} + {offset} + 208]",
+            "movdqu xmm2, xmmword ptr [{source} + {offset} + 224]",
+            "movdqu xmm3, xmmword ptr [{source} + {offset} + 240]",
+            "movdqu xmmword ptr [{destination} + {offset} + 192], xmm0",
+            "movdqu xmmword ptr [{destination} + {offset} + 208], xmm1",
+            "movdqu xmmword ptr [{destination} + {offset} + 224], xmm2",
+            "movdqu xmmword ptr [{destination} + {offset} + 240], xmm3",
+            "add {offset}, 256",
             "cmp {offset}, {bytes}",
             "jne 2b",
             source = in(reg) source.as_ptr(),
