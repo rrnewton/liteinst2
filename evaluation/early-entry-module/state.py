@@ -36,8 +36,8 @@ COVERAGE_HEADER = 'profile,k,seed,csv_cases,length_cases,csv_observed_heads,csv_
 SOURCE_FILES = ('Cargo.lock', 'Cargo.toml', 'evaluation/early-entry-module/state.py', 'src/controls.rs', 'src/controls/entry_admission.rs', 'src/quiescent.rs', 'src/quiescent/entry_admission.rs', 'src/quiescent/whole_function.rs', 'src/trampoline.rs', 'src/trampoline/early_control/tests.rs', 'tests/entry_admission_planning.rs', 'tests/support/native_normal_caller.rs', 'tests/support/native_normal_module.rs', 'tests/support/native_normal_module/early_entry.rs', 'tests/support/native_normal_module/trace.rs', 'tests/support/native_normal_module/witness.rs', 'tests/support/quiescent_oracle.rs', 'tools/rapid-profiler/Cargo.toml', 'tools/rapid-profiler/native-interval/main.rs', 'tools/rapid-profiler/native-interval/normal/module.rs', 'tools/rapid-profiler/native-interval/normal/module/early_entry.rs', 'tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs', 'tools/rapid-profiler/normal-work/csv_fields.c', 'tools/rapid-profiler/normal-work/module_caller.c', 'tools/rapid-profiler/normal-work/module_caller_bytes.rs', 'tools/rapid-profiler/src/frontend_native/always_on/epoch_storage.rs', 'tools/rapid-profiler/src/frontend_native/always_on/normal.rs', 'tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs', 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs', 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs', 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs', 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs', 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs', 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs', 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/native.rs', 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/performance.rs', 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/session.rs', 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/session_history.rs', 'tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs', 'tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs', 'tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/early_entry.rs', 'tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/early_entry/append.rs', 'tools/rapid-profiler/src/frontend_native/mod.rs', 'tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs', 'tools/rapid-profiler/strnlen-work/localize.map', 'tools/rapid-profiler/strnlen-work/strnlen.c')
 PINS = {'evaluation/admission/processes.py': '0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f', 'tools/unwind-oracle/bounded_command.py': 'c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44', 'evaluation/ordinary-module-native/reproduce.py': '5cce60e76d7ec2011c8facb0a5c1101e0100e13aac8ed9b6317846de35fd3146', 'tools/rapid-profiler/verify_normal_interval.py': '7a1e480c8fb815bb62165773650a0f8590c5bdc6ba39fc1189c63bceb1e085a7', 'tools/rapid-profiler/selected-work/check_output.py': '5855c42be2b9a42e85b121f9d8b763e51747f842c8cf85e05dc1736a4f10e4a9', 'tools/rapid-profiler/verify_strnlen_interval.py': '9a37fa20311984d5ba755458e7858578165e0d7a2df583599a1b2057e50e6126', 'tools/rapid-profiler/reference-work/check_output.py': 'a5e0683ade47a94913afb53a15123a53b316172d8d9936f3a925b8a2b64b7189', 'evaluation/ordinary-module-native/module_native.py': '17e90fa9e26f9174f715056af39e700ad1158c8d27abec43c9259205edac3697'}
 MODULES = {'census': 'tools/rapid-profiler/selected-work/check_output.py', 'whole': 'tools/rapid-profiler/verify_strnlen_interval.py', 'legacy': 'tools/rapid-profiler/reference-work/check_output.py', 'data': 'evaluation/ordinary-module-native/module_native.py'}
-CALIBRATION_SHA = '8ca98002b8f645c2ac0bdeab7dc63a9ba8b2ea9d346af3c736618172bb1057c2'
-CALIBRATION_NAMES_SHA = '4737cce2c358422fe891733fa442601883785eade20a53b2d29db85e924291fe'
+CALIBRATION_SHA = '7562a97ba40ceb5ccc52947f73b265cd2fb0eb66ab26d50145c71a7877605c64'
+CALIBRATION_NAMES_SHA = '939590fbcf27d145fc57bc1cec66fd7eb8df612c0e37b5d0b1d5e707ae250ab1'
 # Integration tests implicitly build all package binaries, including src/main.rs.
 # Declare those non-oracle prerequisites separately; keep the final controls
 # command and every per-command limit unchanged.
@@ -127,20 +127,20 @@ def check_output(mode, k, order, content, stdout, stderr, geometry, data):
 
 def calibration_output(stdout, stderr, required, ignored, reason):
     assert stderr == b''
-    lines = stdout.decode('ascii').splitlines(); assert lines[:2] == ['', 'running 239 tests']
-    assert len(lines) == 244 and lines[-1] == lines[-3] == ''
+    lines = stdout.decode('ascii').splitlines(); assert lines[:2] == ['', 'running 241 tests']
+    assert len(lines) == 246 and lines[-1] == lines[-3] == ''
     passed = {}; ignored_rows = {}
-    for line in lines[2:241]:
+    for line in lines[2:243]:
         match = re.fullmatch(r'test ([A-Za-z_0-9:]+)( - should panic)? \.\.\. ok', line)
         if match:
             assert match[1] not in passed; passed[match[1]] = match[2] is not None
         else:
             assert line == f'test {ignored} ... ignored, {reason}' and not ignored_rows
             ignored_rows[ignored] = reason
-    assert len(passed) == 238 and ignored_rows == {ignored: reason}
+    assert len(passed) == 240 and ignored_rows == {ignored: reason}
     assert all(passed.get(name) is panic for name, panic in required.items())
     assert hashlib.sha256(canonical(dict(passed=passed, ignored=ignored_rows))).hexdigest() == CALIBRATION_SHA
-    assert re.fullmatch(r'test result: ok\. 238 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in [0-9]+\.[0-9]+s', lines[-2])
+    assert re.fullmatch(r'test result: ok\. 240 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in [0-9]+\.[0-9]+s', lines[-2])
 
 
 def reader_controls():

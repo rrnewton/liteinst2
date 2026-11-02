@@ -14,7 +14,7 @@ First generate the four fixtures and CLOSED failed request with [state.py](../st
 FIXTURE_REV=3581ddb9309e98d1030d040d7a22586ae6c91df9
 REV=8d65de7fc0c72ea1542ba46ecc37693ad398df8b
 git -C "$ROOT" switch --detach "$FIXTURE_REV"
-/usr/bin/python3.9 -I -B "$PUB/evaluation/early-entry-module/state.py" --root "$ROOT" --revision "$FIXTURE_REV" --toolchain "$TOOLCHAIN" --user-home "$USER_HOME" --cargo-home "$CARGO_HOME" --output "$FIXTURES"
+/usr/bin/python3.9 -I -B "$ROOT/evaluation/early-entry-module/state.py" --root "$ROOT" --revision "$FIXTURE_REV" --toolchain "$TOOLCHAIN" --user-home "$USER_HOME" --cargo-home "$CARGO_HOME" --output "$FIXTURES"
 ```
 
 The strict recipe is expected to exit nonzero. Before continuing, authenticate its CLOSED result, cleanup and first `native-order01-k10-enabled` owner/request; an earlier preparation failure is not a usable fixture. Keep all outputs. Set `FIXTURE_REQUEST` to `FIXTURES/native-order01-k10-enabled/request.json`.
