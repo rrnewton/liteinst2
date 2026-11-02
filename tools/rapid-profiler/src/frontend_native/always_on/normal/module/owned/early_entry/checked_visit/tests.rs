@@ -1157,3 +1157,588 @@ fn ret_proof_preserves_all_receipt_kinds_across_bypass_and_rearm() {
         }
     }
 }
+
+fn compare_entry_refusal(
+    checked: &mut Fixture,
+    original: &mut Fixture,
+    generations: &Generations,
+    cause: Cause,
+) {
+    let a = identities(&checked.state, &checked.physical);
+    let b = identities(&original.state, &original.physical);
+    assert_eq!(checked.visit(true), Err(error(cause)));
+    assert_eq!(original.visit_original(true), Err(error(cause)));
+    assert_eq!(
+        Some(normal_image(&checked.state)),
+        generations.image(normal_image(&original.state))
+    );
+    assert_eq!(
+        physical_image(&checked.physical),
+        physical_image(&original.physical)
+    );
+    assert_eq!(identities(&checked.state, &checked.physical), a);
+    assert_eq!(identities(&original.state, &original.physical), b);
+}
+
+#[test]
+fn entry_proof_hostile_prefix_refuses_before_entry_mutation() {
+    for order in [[0, 1], [1, 0]] {
+        for bad_geometry in [false, true] {
+            for corruption in 0..10 {
+                let mut f = Fixture::new(10, order);
+                f.controller.arm(&f.epoch).unwrap();
+                f.physical.begin(&f.state).unwrap();
+                f.call(true);
+                f.call(false);
+                f.physical.shape(&f.state).unwrap();
+                let mut candidate = f.input(true);
+                let mut reference = f.input(true);
+                candidate.pc += u64::from(bad_geometry);
+                reference.pc += u64::from(bad_geometry);
+                let cause = match corruption {
+                    0 => {
+                        f.physical.active.as_mut().unwrap().rows[0] = None;
+                        Cause::Invariant
+                    }
+                    1 => {
+                        let b = f.physical.active.as_mut().unwrap();
+                        b.rows[3] = b.rows[0];
+                        Cause::Invariant
+                    }
+                    2 => {
+                        f.physical.active.as_mut().unwrap().seen[3] = Some(f.state.next);
+                        Cause::Invariant
+                    }
+                    3 => {
+                        let b = f.physical.active.as_mut().unwrap();
+                        b.seen[0] = Some(b.seen[0].unwrap() + 1);
+                        Cause::Invariant
+                    }
+                    4 => {
+                        f.physical.active.as_mut().unwrap().rows[0]
+                            .as_mut()
+                            .unwrap()
+                            .return_pc += 1;
+                        Cause::Identity
+                    }
+                    5 => {
+                        f.physical.active.as_mut().unwrap().pending_position = Some(1);
+                        Cause::Invariant
+                    }
+                    6 => {
+                        f.physical.batches = u64::MAX;
+                        Cause::Capacity
+                    }
+                    7 => {
+                        f.physical.active = None;
+                        Cause::Outstanding
+                    }
+                    8 => {
+                        f.state.cursor.totals.confirmed += 1;
+                        Cause::Invariant
+                    }
+                    9 => {
+                        f.physical.active.as_mut().unwrap().rows[1]
+                            .as_mut()
+                            .unwrap()
+                            .return_word += 8;
+                        Cause::Invariant
+                    }
+                    _ => unreachable!(),
+                };
+                let before = (normal_image(&f.state), physical_image(&f.physical));
+                let owners = identities(&f.state, &f.physical);
+                assert_eq!(f.physical.visit(&mut f.state, candidate), Err(error(cause)));
+                assert_eq!(
+                    (normal_image(&f.state), physical_image(&f.physical)),
+                    before
+                );
+                assert_eq!(identities(&f.state, &f.physical), owners);
+                assert_eq!(
+                    f.physical.visit_with_full_shapes(&mut f.state, reference),
+                    Err(error(cause))
+                );
+                assert_eq!(
+                    (normal_image(&f.state), physical_image(&f.physical)),
+                    before
+                );
+                assert_eq!(identities(&f.state, &f.physical), owners);
+            }
+        }
+    }
+}
+
+#[test]
+fn entry_proof_new_confirmation_keeps_full_older_row_join() {
+    for order in [[0, 1], [1, 0]] {
+        for bypasses in 0..3 {
+            let mut checked = Fixture::new(10, order);
+            let mut original = Fixture::new(10, order);
+            let generations =
+                Generations::new(checked.epoch.generation(), original.epoch.generation());
+            for f in [&mut checked, &mut original] {
+                f.controller.arm(&f.epoch).unwrap();
+                f.physical.begin(&f.state).unwrap();
+                f.call(true);
+                for _ in 0..bypasses {
+                    f.call(false);
+                }
+                // A different legal RET passes the old pending-row geometry
+                // check but must fail the newly confirmed record relation.
+                f.physical.active.as_mut().unwrap().rows[0]
+                    .as_mut()
+                    .unwrap()
+                    .return_pc += 8;
+                f.physical.shape(&f.state).unwrap();
+            }
+            let old_raw = checked.state.pending.as_ref().unwrap().returned.unwrap();
+            compare_entry_refusal(&mut checked, &mut original, &generations, Cause::Invariant);
+            assert_eq!(checked.state.len, 1);
+            assert_eq!(checked.state.model.completed_sequence(), 1);
+            assert_eq!(checked.state.records[0].unwrap().raw, old_raw);
+            assert_eq!(checked.state.pending.as_ref().unwrap().ordinal, 2);
+            assert_eq!(
+                checked.physical.active.as_ref().unwrap().pending_position,
+                Some(1 + bypasses)
+            );
+            // Repair only the deliberately inconsistent old row. Both actual
+            // receipts remain correctly owned; no refusal rolled back entry.
+            for f in [&mut checked, &mut original] {
+                f.physical.active.as_mut().unwrap().rows[0]
+                    .as_mut()
+                    .unwrap()
+                    .return_pc = f.state.records[0].unwrap().raw.return_pc;
+                f.physical.shape(&f.state).unwrap();
+            }
+            compare_visit(&mut checked, &mut original, &generations, false);
+            for _ in 0..2 - bypasses {
+                compare_visit(&mut checked, &mut original, &generations, false);
+            }
+            compare_finish(&mut checked, &mut original, &generations);
+        }
+        for field in 0..5 {
+            let mut f = Fixture::new(10, order);
+            f.controller.arm(&f.epoch).unwrap();
+            f.physical.begin(&f.state).unwrap();
+            f.call(true);
+            f.call(false);
+            f.call(false);
+            let Visit {
+                selected,
+                pc,
+                rsp,
+                word,
+                stamp,
+                ..
+            } = f.input(true);
+            let committed = CheckedEntry::new(&mut f.physical, &mut f.state)
+                .unwrap()
+                .commit(selected, pc, rsp, word, stamp)
+                .unwrap();
+            let record = committed.checked.state.records[0];
+            let function = committed.checked.state.functions[0];
+            // Test-child access targets each complete new-record predicate.
+            // It adds no unchecked path or mutation capability to production.
+            match field {
+                0 => committed
+                    .checked
+                    .state
+                    .functions
+                    .set(0, Some(committed.checked.physical.order[1])),
+                1 => {
+                    committed
+                        .checked
+                        .state
+                        .records
+                        .value_mut(0)
+                        .unwrap()
+                        .raw
+                        .ordinal += 1
+                }
+                2 => {
+                    committed
+                        .checked
+                        .state
+                        .records
+                        .value_mut(0)
+                        .unwrap()
+                        .raw
+                        .return_pc += 8
+                }
+                3 => {
+                    committed
+                        .checked
+                        .state
+                        .records
+                        .value_mut(0)
+                        .unwrap()
+                        .entry_rsp += 16
+                }
+                4 => {
+                    committed
+                        .checked
+                        .state
+                        .records
+                        .value_mut(0)
+                        .unwrap()
+                        .return_word += 8
+                }
+                _ => unreachable!(),
+            }
+            committed.checked.state.shape().unwrap();
+            let before = (
+                normal_image(committed.checked.state),
+                physical_image(committed.checked.physical),
+            );
+            assert_eq!(
+                committed.checked.physical.shape(committed.checked.state),
+                Err(error(Cause::Invariant))
+            );
+            assert_eq!(committed.finish(), Err(error(Cause::Invariant)));
+            assert_eq!(
+                (normal_image(&f.state), physical_image(&f.physical)),
+                before
+            );
+            f.state.records.set(0, record);
+            f.state.functions.set(0, function);
+            f.physical.shape(&f.state).unwrap();
+            f.visit(false).unwrap();
+            assert_eq!(f.finish().0.unwrap().records().len(), 2);
+        }
+    }
+}
+
+#[test]
+fn entry_proof_late_shared_and_journal_failures_keep_committed_entry() {
+    for order in [[0, 1], [1, 0]] {
+        for prior in [false, true] {
+            for (bad_shared, bad_used) in
+                [(false, false), (true, false), (false, true), (true, true)]
+            {
+                let mut f = Fixture::new(10, order);
+                f.controller.arm(&f.epoch).unwrap();
+                f.physical.begin(&f.state).unwrap();
+                if prior {
+                    f.call(true);
+                    f.call(false);
+                    f.call(false);
+                }
+                let owners = identities(&f.state, &f.physical);
+                let Visit {
+                    selected,
+                    pc,
+                    rsp,
+                    word,
+                    stamp,
+                    ..
+                } = f.input(true);
+                let committed = CheckedEntry::new(&mut f.physical, &mut f.state)
+                    .unwrap()
+                    .commit(selected, pc, rsp, word, stamp)
+                    .unwrap();
+                committed
+                    .checked
+                    .physical
+                    .shape(committed.checked.state)
+                    .unwrap();
+                let used = committed.checked.state.journal.used();
+                if bad_shared {
+                    committed
+                        .checked
+                        .physical
+                        .shared
+                        .failed
+                        .store(true, Ordering::Release);
+                }
+                if bad_used {
+                    committed.checked.state.journal.word(0, used as u64 + 1);
+                }
+                let at_postcheck = (
+                    normal_image(committed.checked.state),
+                    physical_image(committed.checked.physical),
+                );
+                assert_eq!(at_postcheck.0.len, usize::from(prior));
+                assert_eq!(at_postcheck.0.depth, 1);
+                assert_eq!(at_postcheck.0.sequence, u64::from(prior));
+                let expected = if bad_shared {
+                    Err(error(Cause::Identity))
+                } else if bad_used {
+                    Err(error(Cause::Invariant))
+                } else {
+                    Ok(())
+                };
+                assert_eq!(
+                    committed.checked.physical.shape(committed.checked.state),
+                    expected
+                );
+                assert_eq!(committed.finish(), expected);
+                assert_eq!(
+                    (normal_image(&f.state), physical_image(&f.physical)),
+                    at_postcheck
+                );
+                assert_eq!(identities(&f.state, &f.physical), owners);
+                f.physical.shared.failed.store(false, Ordering::Release);
+                f.state.journal.word(0, used as u64);
+                f.physical.shape(&f.state).unwrap();
+                f.visit(false).unwrap();
+                if !prior {
+                    for _ in 0..3 {
+                        f.call(false);
+                    }
+                }
+                assert_eq!(
+                    f.finish().0.unwrap().records().len(),
+                    1 + usize::from(prior)
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn entry_proof_partial_confirmation_failure_preserves_consumed_owner() {
+    for order in [[0, 1], [1, 0]] {
+        for bypasses in [0, 2] {
+            for consume_before_error in [false, true] {
+                let mut checked = Fixture::new(10, order);
+                let mut original = Fixture::new(10, order);
+                let generations =
+                    Generations::new(checked.epoch.generation(), original.epoch.generation());
+                for f in [&mut checked, &mut original] {
+                    f.controller.arm(&f.epoch).unwrap();
+                    f.physical.begin(&f.state).unwrap();
+                    f.call(true);
+                    for _ in 0..bypasses {
+                        f.call(false);
+                    }
+                    if consume_before_error {
+                        // Forge only diagnostic invocation metadata and its
+                        // exact journal encoding. Confirmation preparation can
+                        // succeed, but actual receipt completion must disagree.
+                        let p = f.state.pending.as_mut().unwrap();
+                        let IntervalEntrySummary::Admitted {
+                            generation,
+                            invocation,
+                            history_len,
+                            binding,
+                        } = p.summary.unwrap()
+                        else {
+                            panic!()
+                        };
+                        let forged = IntervalEntrySummary::Admitted {
+                            generation,
+                            invocation: invocation + 1,
+                            history_len,
+                            binding,
+                        };
+                        p.summary = Some(forged);
+                        p.returned.as_mut().unwrap().owner = timing::owner(forged);
+                        let (_, _, bits) = history::packed_for_function(
+                            &f.state.binding.session,
+                            p.selected.function,
+                            forged,
+                        )
+                        .unwrap();
+                        f.state.journal.word(10, bits);
+                        f.state.journal.word(17, bits);
+                        assert!(
+                            f.state
+                                .confirmation(NormalAcknowledgement::NextEntry {
+                                    ordinal: f.state.next
+                                })
+                                .is_ok()
+                        );
+                    } else {
+                        f.state.journal.word(6, f.state.journal.page.0[6] + 1);
+                    }
+                    f.physical.shape(&f.state).unwrap();
+                }
+                let before = (
+                    normal_image(&checked.state),
+                    physical_image(&checked.physical),
+                );
+                compare_entry_refusal(&mut checked, &mut original, &generations, Cause::Invariant);
+                assert_eq!(physical_image(&checked.physical), before.1);
+                if consume_before_error {
+                    for f in [&mut checked, &mut original] {
+                        assert_eq!(f.state.model.completed_sequence(), 1);
+                        assert_eq!(f.state.model.depth(), 0);
+                        assert_eq!(f.state.len, 0);
+                        assert_eq!(f.state.totals.confirmed, 0);
+                        assert_eq!(f.state.totals.completed, 0);
+                        let p = f.state.pending.as_mut().unwrap();
+                        assert!(p.receipt.summary().is_none());
+                        assert_eq!(p.slot.word, TOKEN);
+                        assert_eq!(
+                            f.state.model.finish_interval(
+                                &mut p.receipt,
+                                &mut p.slot,
+                                p.returned.unwrap().observation()
+                            ),
+                            Err(IntervalExitError::Consumed)
+                        );
+                    }
+                    // An attempted visit now fails at its unchanged pre-shape;
+                    // it cannot replay the consumed receipt or admit a new one.
+                    let failed = (
+                        normal_image(&checked.state),
+                        physical_image(&checked.physical),
+                    );
+                    compare_entry_refusal(
+                        &mut checked,
+                        &mut original,
+                        &generations,
+                        Cause::Invariant,
+                    );
+                    assert_eq!(
+                        (
+                            normal_image(&checked.state),
+                            physical_image(&checked.physical)
+                        ),
+                        failed
+                    );
+                    for f in [&mut checked, &mut original] {
+                        f.controller.disarm(&f.epoch).unwrap();
+                        assert_eq!(
+                            f.controller
+                                .report(&f.epoch)
+                                .unwrap()
+                                .unwrap()
+                                .records()
+                                .count(),
+                            1
+                        );
+                    }
+                } else {
+                    assert_eq!(normal_image(&checked.state), before.0);
+                    assert!(
+                        checked
+                            .state
+                            .pending
+                            .as_ref()
+                            .unwrap()
+                            .receipt
+                            .summary()
+                            .is_some()
+                    );
+                    assert_eq!(checked.state.model.completed_sequence(), 0);
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn entry_proof_matches_reference_across_receipt_kinds_and_bypasses() {
+    for k in [10, 1000] {
+        for order in [[0, 1], [1, 0]] {
+            for mode in 0..4 {
+                for bypasses in 0..3 {
+                    let mut checked = Fixture::new(k, order);
+                    let mut original = Fixture::new(k, order);
+                    let mut generations =
+                        Generations::new(checked.epoch.generation(), original.epoch.generation());
+                    if mode != 0 {
+                        checked.controller.arm(&checked.epoch).unwrap();
+                        original.controller.arm(&original.epoch).unwrap();
+                    }
+                    if mode == 1 {
+                        checked.controller.disarm(&checked.epoch).unwrap();
+                        original.controller.disarm(&original.epoch).unwrap();
+                    }
+                    if mode == 3 {
+                        // Two invocations per function/batch exhaust each real
+                        // fixed bank; no synthetic closed receipt is invented.
+                        for _ in 0..k / 2 {
+                            checked.physical.begin(&checked.state).unwrap();
+                            original.physical.begin(&original.state).unwrap();
+                            for _ in 0..4 {
+                                compare_visit(&mut checked, &mut original, &generations, true);
+                                compare_visit(&mut checked, &mut original, &generations, false);
+                            }
+                            compare_finish(&mut checked, &mut original, &generations);
+                        }
+                    }
+                    checked.physical.begin(&checked.state).unwrap();
+                    original.physical.begin(&original.state).unwrap();
+                    compare_visit(&mut checked, &mut original, &generations, true);
+                    compare_visit(&mut checked, &mut original, &generations, false);
+                    let raw = checked.state.pending.as_ref().unwrap().returned.unwrap();
+                    match mode {
+                        0 => assert!(matches!(raw.owner, RawIntervalOwner::InitialDisarmed)),
+                        1 => assert!(
+                            matches!(raw.owner, RawIntervalOwner::Removed { generation } if generation == checked.epoch.generation().get())
+                        ),
+                        2 => assert!(
+                            matches!(raw.owner, RawIntervalOwner::Sampled { generation, .. } if generation == checked.epoch.generation().get())
+                        ),
+                        3 => assert!(
+                            matches!(raw.owner, RawIntervalOwner::FunctionClosed { generation } if generation == checked.epoch.generation().get())
+                        ),
+                        _ => unreachable!(),
+                    }
+                    if mode >= 2 {
+                        checked.controller.disarm(&checked.epoch).unwrap();
+                        original.controller.disarm(&original.epoch).unwrap();
+                    }
+                    let a = checked
+                        .controller
+                        .stage_prepared(checked.banks.pop().unwrap())
+                        .unwrap();
+                    let b = original
+                        .controller
+                        .stage_prepared(original.banks.pop().unwrap())
+                        .unwrap();
+                    generations.bind(1, a.generation(), b.generation());
+                    checked.controller.arm(&a).unwrap();
+                    original.controller.arm(&b).unwrap();
+                    let held = normal_image(&checked.state);
+                    for _ in 0..bypasses {
+                        compare_visit(&mut checked, &mut original, &generations, false);
+                        assert_eq!(normal_image(&checked.state), held);
+                        assert_eq!(
+                            checked.physical.active.as_ref().unwrap().pending_position,
+                            Some(0)
+                        );
+                    }
+                    compare_visit(&mut checked, &mut original, &generations, true);
+                    assert_eq!(checked.state.records[0].unwrap().raw, raw);
+                    assert_eq!(checked.state.len, 1);
+                    assert_eq!(
+                        checked.physical.active.as_ref().unwrap().pending_position,
+                        Some(1 + bypasses)
+                    );
+                    assert!(matches!(checked.state.pending.as_ref().unwrap().summary,
+                        Some(IntervalEntrySummary::Admitted { generation, .. }) if generation == a.generation()));
+                    compare_visit(&mut checked, &mut original, &generations, false);
+                    for _ in 0..2 - bypasses {
+                        compare_visit(&mut checked, &mut original, &generations, false);
+                    }
+                    compare_finish(&mut checked, &mut original, &generations);
+                    checked.controller.disarm(&a).unwrap();
+                    original.controller.disarm(&b).unwrap();
+                    assert_eq!(
+                        checked
+                            .controller
+                            .report(&a)
+                            .unwrap()
+                            .unwrap()
+                            .records()
+                            .count(),
+                        1
+                    );
+                    assert_eq!(
+                        original
+                            .controller
+                            .report(&b)
+                            .unwrap()
+                            .unwrap()
+                            .records()
+                            .count(),
+                        1
+                    );
+                }
+            }
+        }
+    }
+}

@@ -182,70 +182,164 @@ impl CommittedRet<'_> {
     }
 }
 
+// Entry may confirm one earlier Returned owner before admitting the new call.
+// The proof owns both states across those unchanged transitions; no old physical
+// row or existing record can change, and no Session/state view escapes.
+struct CheckedEntry<'a> {
+    physical: &'a mut PhysicalState,
+    state: &'a mut NormalState,
+}
+struct CommittedEntry<'a> {
+    checked: CheckedEntry<'a>,
+    index: usize,
+    ordinal: u64,
+    prior_pending: Option<usize>,
+    records_before: usize,
+}
+impl<'a> CheckedEntry<'a> {
+    fn new(
+        physical: &'a mut PhysicalState,
+        state: &'a mut NormalState,
+    ) -> Result<Self, BridgeError> {
+        let checked = CheckedVisit::new(physical, state)?;
+        Ok(Self {
+            physical,
+            state: checked.state,
+        })
+    }
+    #[inline(always)]
+    fn commit(
+        self,
+        selected: SelectedFunction,
+        pc: u64,
+        rsp: u64,
+        word: u64,
+        stamp: RawTimestamp,
+    ) -> Result<CommittedEntry<'a>, BridgeError> {
+        let checked = CheckedVisit {
+            state: &mut *self.state,
+        };
+        let b = self
+            .physical
+            .active
+            .as_mut()
+            .ok_or(error(Cause::Outstanding))?;
+        let index = b.position;
+        if index >= 4
+            || selected != self.physical.order[index % 2]
+            || word != self.physical.words[index]
+            || b.rsp.is_some_and(|prior| prior != rsp)
+        {
+            return Err(error(Cause::Return));
+        }
+        if b.seen[index].is_some() || checked.has_unreturned_pending() {
+            return Err(error(Cause::Return));
+        }
+        let ordinal = checked.next_ordinal();
+        let prior_pending = b.pending_position;
+        let records_before = checked.state.len;
+        // Geometry, fresh used(), confirmation, model entry and all error exits
+        // remain in their original order. An error here gets no new postcheck:
+        // a consumed receipt or partially installed Pending is never retried.
+        checked.enter(selected, pc, rsp, word, stamp)?;
+        b.rsp = Some(rsp);
+        b.seen[index] = Some(ordinal);
+        b.pending_position = Some(index);
+        Ok(CommittedEntry {
+            checked: self,
+            index,
+            ordinal,
+            prior_pending,
+            records_before,
+        })
+    }
+}
+impl CommittedEntry<'_> {
+    #[inline(always)]
+    fn finish(self) -> Result<(), BridgeError> {
+        let Self {
+            checked,
+            index,
+            ordinal,
+            prior_pending,
+            records_before,
+        } = self;
+        let CheckedEntry { physical, state } = checked;
+        physical.matches(state)?;
+        state.shape()?;
+        let b = physical.active.as_ref().ok_or(error(Cause::Outstanding))?;
+        // Pre-shape established the complete old prefix and counts. Entry does
+        // not change position/rows/cursor or ret_observed; entered and seen grow
+        // once. Existing row RSPs stay equal because commit kept the RSP guard.
+        if b.position != index || b.seen[index].is_none() || state.totals.entered != ordinal {
+            return Err(error(Cause::Invariant));
+        }
+        if let Some(previous) = prior_pending {
+            // Pre-shape deliberately skipped this row's record join while it
+            // was pending. Confirmation makes it a newly checked record now.
+            // The owner may span bypasses: previous is not necessarily index-1.
+            // All earlier record joins and every old row geometry are unchanged.
+            let row = b.rows[previous].ok_or(error(Cause::Invariant))?;
+            let r = state
+                .records
+                .get(records_before)
+                .and_then(|r| *r)
+                .ok_or(error(Cause::Invariant))?;
+            if state.functions[records_before] != Some(physical.order[previous % 2])
+                || Some(r.raw.ordinal) != row.observed_ordinal
+                || r.raw.return_pc != row.return_pc
+                || r.entry_rsp != row.entry_rsp
+                || r.return_word != row.return_word
+            {
+                return Err(error(Cause::Invariant));
+            }
+        }
+        // This is the current seen slot's original ordinal/overflow position,
+        // after the earlier newly confirmed row, then the final next/len check.
+        if b.seen[index] != Some(ordinal) {
+            return Err(error(Cause::Invariant));
+        }
+        let next = ordinal.checked_add(1).ok_or(error(Cause::Capacity))?;
+        if state.next != next || state.len != records_before + usize::from(prior_pending.is_some())
+        {
+            return Err(error(Cause::Invariant));
+        }
+        // Keep the original final Pending predicates and Return classification.
+        match (b.pending_position, &state.pending) {
+            (None, None) if b.position == 4 || b.seen[b.position].is_none() => {}
+            (Some(index), Some(p)) if index < 4 => {
+                if b.seen[index] != Some(p.ordinal)
+                    || p.selected != physical.order[index % 2]
+                    || p.word != physical.words[index]
+                    || Some(p.rsp) != b.rsp
+                    || (p.returned.is_some() && (index >= b.position || b.rows[index].is_none()))
+                    || (p.returned.is_none() && (index != b.position || b.rows[index].is_some()))
+                    || (b.position < 4 && index != b.position && b.seen[b.position].is_some())
+                {
+                    return Err(error(Cause::Return));
+                }
+            }
+            _ => return Err(error(Cause::Return)),
+        }
+        Ok(())
+    }
+}
+
 impl PhysicalState {
     pub(super) fn visit(
         &mut self,
         state: &mut NormalState,
         visit: Visit,
     ) -> Result<(), BridgeError> {
-        if !visit.entry {
-            return CheckedRet::new(self, state)?
+        if visit.entry {
+            CheckedEntry::new(self, state)?
                 .commit(visit.selected, visit.pc, visit.rsp, visit.word, visit.stamp)?
-                .finish();
-        }
-        let Visit {
-            selected,
-            pc,
-            rsp,
-            word,
-            stamp,
-            entry,
-        } = visit;
-        let checked = CheckedVisit::new(self, state)?;
-        let b = self.active.as_mut().ok_or(error(Cause::Outstanding))?;
-        let index = b.position;
-        if index >= 4
-            || selected != self.order[index % 2]
-            || word != self.words[index]
-            || b.rsp.is_some_and(|prior| prior != rsp)
-        {
-            return Err(error(Cause::Return));
-        }
-        if entry {
-            if b.seen[index].is_some() || checked.has_unreturned_pending() {
-                return Err(error(Cause::Return));
-            }
-            let ordinal = checked.next_ordinal();
-            checked.enter(selected, pc, rsp, word, stamp)?;
-            b.rsp = Some(rsp);
-            b.seen[index] = Some(ordinal);
-            b.pending_position = Some(index);
+                .finish()
         } else {
-            checked.return_geometry(selected, pc)?;
-            if let Some(ordinal) = b.seen[index] {
-                if b.pending_position != Some(index) || checked.pending_return_mismatch(ordinal) {
-                    return Err(error(Cause::Return));
-                }
-                checked.observe(selected, pc, rsp, word, stamp)?;
-            } else {
-                if checked.has_unreturned_pending() {
-                    return Err(error(Cause::Return));
-                }
-                checked.bypass();
-            }
-            b.rsp = Some(rsp);
-            b.rows[index] = Some(EarlyEntryModulePhysicalRow {
-                batch: b.number,
-                position: index,
-                function: selected.function,
-                observed_ordinal: b.seen[index],
-                return_pc: pc,
-                entry_rsp: rsp,
-                return_word: word,
-            });
-            b.position += 1;
+            CheckedRet::new(self, state)?
+                .commit(visit.selected, visit.pc, visit.rsp, visit.word, visit.stamp)?
+                .finish()
         }
-        self.shape(state)
     }
 }
 
