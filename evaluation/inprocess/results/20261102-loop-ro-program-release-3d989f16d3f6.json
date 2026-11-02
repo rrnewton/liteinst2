@@ -1,0 +1,515 @@
+{
+  "archive": {
+    "bytes": 12045418,
+    "sha256": "bf81e0fbfebbda83a30dcc82b2ddded487e725d3df2052193e00ab79dcc9dd40"
+  },
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "finite": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "program": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "release_build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "seed": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "builds": {
+    "ls": {
+      "bridge": {
+        "bytes": 5525448,
+        "sha256": "6733351351be65faf24dde4f2dc548b74f3320a2d035c36a5570e4c762961a3d"
+      },
+      "byte_certificate": {
+        "every_hit_full_scan": false,
+        "full_scan_fallback": true,
+        "mirror": "isolated-anonymous-RO",
+        "mirror_pages": 89,
+        "old_capture_compatible": false,
+        "qualification_credit": false,
+        "root": "isolated-anonymous-RO",
+        "sealed_generation": true,
+        "slots": 2,
+        "source_lease": false,
+        "version": 1
+      },
+      "history_certificate": {
+        "cells": 3,
+        "complete_live_predicates": true,
+        "every_hit_reconstruction": false,
+        "qualification_credit": false,
+        "saved_completion": "isolated-anonymous-RO",
+        "version": 1,
+        "witnesses": "isolated-anonymous-RO"
+      },
+      "mode": "release",
+      "original": {
+        "elf_type": 3,
+        "entry": 27248,
+        "image": {
+          "bytes": 140752,
+          "sha256": "eec29318f59647c9a13b619e2738575164e3c43c7a1ee2b8509f36cb09019315"
+        },
+        "load_count": 4,
+        "program_headers": {
+          "bytes": 728,
+          "sha256": "1cfaacd9d117e1fab9e8039d6f81cd9fd95843339b14ab87709fdaa2ef37c8aa"
+        }
+      },
+      "profile": "persistent-loop-ro-certificate-release-v1",
+      "recipe": {
+        "bytes": 7362,
+        "sha256": "fd9d1091c9f8477d2d5ffaf97658d15467359117470e3157c6d54eec388d96df"
+      }
+    },
+    "true": {
+      "bridge": {
+        "bytes": 5525448,
+        "sha256": "381723c5e44a0866304d371cc9de6d5717ea2a7a89caf512299cfaae128b7fe1"
+      },
+      "byte_certificate": {
+        "every_hit_full_scan": false,
+        "full_scan_fallback": true,
+        "mirror": "isolated-anonymous-RO",
+        "mirror_pages": 89,
+        "old_capture_compatible": false,
+        "qualification_credit": false,
+        "root": "isolated-anonymous-RO",
+        "sealed_generation": true,
+        "slots": 2,
+        "source_lease": false,
+        "version": 1
+      },
+      "history_certificate": {
+        "cells": 3,
+        "complete_live_predicates": true,
+        "every_hit_reconstruction": false,
+        "qualification_credit": false,
+        "saved_completion": "isolated-anonymous-RO",
+        "version": 1,
+        "witnesses": "isolated-anonymous-RO"
+      },
+      "mode": "release",
+      "original": {
+        "elf_type": 3,
+        "entry": 6336,
+        "image": {
+          "bytes": 27936,
+          "sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171"
+        },
+        "load_count": 4,
+        "program_headers": {
+          "bytes": 728,
+          "sha256": "2446fda6d8ab33df9422ebc49396c84ebf9f751e98c7f614118b73ec2586473e"
+        }
+      },
+      "profile": "persistent-loop-ro-certificate-release-v1",
+      "recipe": {
+        "bytes": 7362,
+        "sha256": "fd9d1091c9f8477d2d5ffaf97658d15467359117470e3157c6d54eec388d96df"
+      }
+    }
+  },
+  "cases": [
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "completed_program_measurement": false,
+      "error": "ValueError: actual command outcome ls-release",
+      "exit": -9,
+      "expected_exit": 0,
+      "involuntary_switches": 99,
+      "lane": "release",
+      "major_faults": 0,
+      "minor_faults": 428087,
+      "ordinal": 0,
+      "process_ns": 30274659709,
+      "reaped": true,
+      "status": "failed",
+      "system_cpu_ns": 6973953000,
+      "timed_out": false,
+      "user_cpu_ns": 23028322000,
+      "voluntary_switches": 4,
+      "workload": "ls"
+    },
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "completed_program_measurement": false,
+      "error": "ValueError: actual command outcome true-release",
+      "exit": -9,
+      "expected_exit": 0,
+      "involuntary_switches": 115,
+      "lane": "release",
+      "major_faults": 0,
+      "minor_faults": 454583,
+      "ordinal": 1,
+      "process_ns": 30240902666,
+      "reaped": true,
+      "status": "failed",
+      "system_cpu_ns": 4953969000,
+      "timed_out": false,
+      "user_cpu_ns": 25052277000,
+      "voluntary_switches": 3,
+      "workload": "true"
+    }
+  ],
+  "cleanup_complete": true,
+  "commands": [
+    {
+      "duration_ns": 628146254,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "tracked-input-list",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 25144094,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-cargo",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 26423576,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-rustc",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 18669116,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-cc1",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 12824646,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-collect2",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 7743642,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-as",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 16108210,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-ld",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 2208465304,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-cc",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 40812903,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-cargo",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 46389580,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-rustc",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 22842676,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-python",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 87605679,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "cargo-metadata",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 226473768,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "default-headers-0",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 33970994,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "default-headers-1",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 6147912287,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "selected-build",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 173086141,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "archive-text-exports",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 38034814,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "bridge-undefined",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 36241057,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "bridge-elf",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 74169682,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "generic-observer-headers",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 336367600,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "generic-observer-link",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 32739632992,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "ls-build",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 696288555,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "ls-headers",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 28149323,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "ls-undefined",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 139465349,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "ls-symbols",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 11560759,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "ls-native-libraries",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 933578008,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "ls-carrier",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 31259277627,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "true-build",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 602430073,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "true-headers",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 34204087,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "true-undefined",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 1226715570,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "true-symbols",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 7628837,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "true-native-libraries",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 148218525,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "true-carrier",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 30275892863,
+      "exit": -9,
+      "expected_exit": 0,
+      "name": "ls-release",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 30888680202,
+      "exit": -9,
+      "expected_exit": 0,
+      "name": "true-release",
+      "timed_out": false
+    }
+  ],
+  "count_scope": "Actual fully checked terminal rows. Linked ingress is not every kernel trap; policy redirects are not internal iterations. No counter bank or invented absent events.",
+  "cpu": 309,
+  "error": "ValueError: actual command outcome ls-release",
+  "final_errors": [],
+  "full_state_credit": false,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 309,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "performance_credit": false,
+  "profile": "loop-ro-program-release-v1",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 1918508,
+    "sha256": "52f59f70b7ca68d0cc8d45d24c98e4742971a31138a865eef17a94b694ab6292"
+  },
+  "reproduce": [
+    "cpuset-alloc",
+    "run",
+    "--cores",
+    "1",
+    "--",
+    "python3.12",
+    "-B",
+    "evaluation/inprocess/loop_ro_program_release.py",
+    "--expect-revision",
+    "3d989f16d3f62e6eb504e3cb7a231c624002be3d",
+    "--output",
+    "target/evaluation/inprocess/loop-ro-program-release-NEW"
+  ],
+  "reproduce_environment": {
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_INCREMENTAL": "0"
+  },
+  "revision": "3d989f16d3f62e6eb504e3cb7a231c624002be3d",
+  "schema": 1,
+  "scope": "Two RO release programs only, with original complete application/namespace/terminal readers plus167 certificate controls each. No fresh native comparison, full machine-state or qualification prerequisite credit. Full19 and lifecycle remain required.",
+  "script": {
+    "bytes": 19825,
+    "path": "evaluation/inprocess/loop_ro_program_release.py",
+    "sha256": "242bf2b13697d7bf852b4dd5ea550d814caba7658d92f126d154fb4c533964ed"
+  },
+  "source": {
+    "head_sources_match": true,
+    "revision": "3d989f16d3f62e6eb504e3cb7a231c624002be3d",
+    "source_manifest_sha256": "db7b2a36b4587ad5868f52bf7023111344333644d36eb1d556f3679d104bac84",
+    "tracked_clean": true,
+    "tree": "9efaa614d71bef37cf0d0367f442c82e0cf62731"
+  },
+  "source_unchanged": true,
+  "status": "failed",
+  "terminal_counts": "Unavailable: both original-limit subjects exited -9 with empty stdout/stderr. No completed event counts or successful wall time are inferred.",
+  "timing_scope": "Single whole-process observations including carrier/namespace/terminal output. Failed elapsed values describe failure cost only. No median, IQR, speedup, DR parity or first-touch/steady claim.",
+  "whole_profile_qualified": false
+}
