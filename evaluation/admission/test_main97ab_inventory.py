@@ -18,10 +18,80 @@ from test_parsing import counts, summary
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # Twelve incoming top-level tests; nested child summaries are not new tests.
+        shared = current.DATA['source_successor_3217b8ed']
+        shared_prior = current.before_3217b8ed(actual)
+        shared_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(shared_prior), current.SHARED_PREVIOUS)
+        self.assertEqual((len(shared_rows), sum(x['tests'] for x in shared_rows.values()),
+                          sum(x['ignored'] for x in shared_rows.values())), (122, 4627, 43))
+        self.assertEqual((shared['default_method_additions'], shared['new_method_declarations'],
+                          shared['default_method_removals'], shared['default_harness_changes'],
+                          shared['default_ignore_changes'], shared['default_doctest_additions'],
+                          shared['recorder_identity_changes'], shared['feature_method_additions'],
+                          shared['feature_method_removals']), (12, 12, 0, 2, 0, 0, 0, 0, 0))
+        self.assertEqual(shared['added_default_methods'], {'crates/liteinst-x86/src/tests.rs': ['selected_register_facts_preserve_every_width_and_rsp', 'decode_preserves_status_and_leaves_adapter_policy_unapplied', 'exact_form_and_mnemonic_views_remain_distinct'], 'src/control_flow/tests.rs': ['local_edges_keep_callees_multiplicity_and_padding_partitions_distinct', 'unresolved_rows_and_public_dimensions_refuse_without_reordering_callbacks'], 'src/quiescent/feasibility/tests.rs': ['staged_geometry_matches_predecessor_and_refuses_malformed_public_inputs', 'rel32_constraints_preserve_ordered_alphabet_and_all_mask_conflicts', 'actual_core_keeps_first_refusal_and_exact_qualification_evidence'], 'src/quiescent/whole_function/cfg_tests.rs': ['shared_whole_graph_preserves_profile_and_combined_fault_precedence'], 'tools/elf-rewrite/examples/common_sites.rs': ['shared_patterns_match_complete_predecessor_inventory_and_padding_cases'], 'tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs': ['shared_neighbor_graph_preserves_broad_transfer_forms_and_first_errors'], 'tools/rapid-profiler/src/frontend_native/ordinary/cfg_shared_tests.rs': ['shared_cfg_preserves_complete_certificates_and_hostile_refusals']})
+        self.assertEqual(shared['default_method_instances'], {'crates/liteinst-x86/src/tests.rs': ['unit/liteinst_x86/lib'], 'src/control_flow/tests.rs': ['unit/liteinst2/lib'], 'src/quiescent/feasibility/tests.rs': ['unit/liteinst2/lib'], 'src/quiescent/whole_function/cfg_tests.rs': ['unit/liteinst2/lib'], 'tools/elf-rewrite/examples/common_sites.rs': ['unit/common_sites/common_sites'], 'tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs': ['unit/liteinst_rewrite/lib'], 'tools/rapid-profiler/src/frontend_native/ordinary/cfg_shared_tests.rs': ['unit/rapid_profiler/lib']})
+        self.assertEqual((shared['added_feature_methods'], shared['added_ignored_methods']), ({}, {}))
+        self.assertEqual((len(shared['source_paths']), len(shared['source_projections'])), (26, 26))
+        self.assertEqual(shared['new_sources'], ['crates/liteinst-x86/Cargo.toml', 'crates/liteinst-x86/src/lib.rs', 'crates/liteinst-x86/src/tests.rs', 'src/control_flow.rs', 'src/control_flow/tests.rs', 'src/quiescent/feasibility.rs', 'src/quiescent/feasibility/tests.rs', 'src/quiescent/whole_function/cfg_tests.rs', 'tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs', 'tools/rapid-profiler/src/frontend_native/ordinary/cfg_shared_tests.rs'])
+        self.assertEqual(current.DATA['doctests']['crates/liteinst-x86/src/lib.rs'], [])
+        self.assertEqual(shared_rows['unit/liteinst_x86/lib'], counts(3))
+        self.assertEqual(shared_rows['doc/liteinst_x86'], counts(0))
+        self.assertNotIn('unit/liteinst_x86/lib', shared_prior['harness_test_counts']['workspace_tests'])
+        self.assertNotIn('doc/liteinst_x86', shared_prior['harness_test_counts']['workspace_tests'])
+        self.assertEqual(shared_prior['harness_test_counts']['serial_launch'], actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((actual['recorder_tests'], shared_prior['recorder_tests']), (366, 366))
+        for name, change in shared['workspace_changes'].items():
+            self.assertEqual(shared_rows[name], change['current'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(shared_rows[name][field]), shared_rows[name][field] + 1):
+                    wrong = copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_3217b8ed(wrong)
+            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_3217b8ed(wrong)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_3217b8ed(shared_prior)
+        for path, row in shared['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_3217b8ed(path, raw, 'shared_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (shared['source_preimages'][path]['bytes'], row['previous_sha256']))
+            if path in shared['new_sources']:
+                self.assertEqual(prior, b'')
+            for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^shared_source_inverse$'):
+                    current.source_before_3217b8ed(path, wrong, 'shared_source_inverse')
+            for field in ('edits', 'current_sha256', 'previous_sha256'):
+                malformed = copy.deepcopy(row)
+                if field == 'edits': malformed['edits'][0][2] += '\n'
+                else: malformed[field] = '0' * 64
+                with patch.dict(shared['source_projections'], {path: malformed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^shared_source_inverse$'):
+                        current.source_before_3217b8ed(path, raw, 'shared_source_inverse')
+        read = Path.read_bytes
+        shared_stimuli = [(p, 'fn ' + n + '(') for p, names in shared['added_default_methods'].items() for n in names]
+        shared_stimuli += [(p, literal) for p, literals in shared['module_chains'].items() for literal in literals]
+        for path, literal in shared_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            replacement = literal.replace('(', '_wrong(', 1) if literal.startswith('fn ') else literal[:-1] + ('x' if literal[-1] != 'x' else 'y')
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('shared declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
         # Five incoming default tests preserve every older catalog and test gate.
         flat = current.DATA['source_successor_03ed2c31']
         flat_prior = current.before_03ed2c31(actual)
-        flat_rows = actual['harness_test_counts']['workspace_tests']
+        flat_rows = shared_prior['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(flat_prior), current.FLAT_PREVIOUS)
         self.assertEqual((len(flat_rows), sum(x['tests'] for x in flat_rows.values()),
                           sum(x['ignored'] for x in flat_rows.values())), (120, 4615, 43))
@@ -64,8 +134,8 @@ class Main97abInventoryTests(unittest.TestCase):
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
             current.before_03ed2c31(flat_prior)
         for field in ('tests', 'ignored'):
-            for value in (None, True, float(flat_rows['unit/rapid_profiler/lib'][field]),
-                          flat_rows['unit/rapid_profiler/lib'][field] + 1):
+            for value in (None, True, float(actual['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field]),
+                          actual['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field] + 1):
                 wrong = copy.deepcopy(actual)
                 wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field] = value
                 self.assertNotEqual(current.digest(wrong), current.digest(actual))
@@ -1272,7 +1342,7 @@ class Main97abInventoryTests(unittest.TestCase):
             self.assertEqual(overlap_before['harness_test_counts']['workspace_tests'][name],
                              change['previous'])
             for field in ('tests', 'ignored'):
-                for value in (None, True, float(overlap_rows[name][field]), overlap_rows[name][field] + 1):
+                for value in (None, True, float(actual['harness_test_counts']['workspace_tests'][name][field]), actual['harness_test_counts']['workspace_tests'][name][field] + 1):
                     wrong = copy.deepcopy(actual)
                     wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
@@ -1832,6 +1902,24 @@ class Main97abInventoryTests(unittest.TestCase):
             result = current.before_03ed2c31(actual)
             self.assertEqual(result, flat_prior)
             self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+
+        # The newest transition preserves private ownership for both input sources.
+        for source in ('declared', 'metadata'):
+            supplied = copy.deepcopy(actual)
+            change = shared['workspace_changes']['unit/liteinst2/lib']
+            published.clear()
+            if source == 'declared':
+                supplied['harness_test_counts']['serial_launch'] = PublishedCopy(supplied['harness_test_counts']['serial_launch'])
+                result = current.before_3217b8ed(supplied)
+            else:
+                with patch.dict(change, previous=PublishedCopy(change['previous'])):
+                    result = current.before_3217b8ed(supplied)
+            self.assertEqual(result, shared_prior)
+            self.assertEqual(supplied, actual)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
             self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
             self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
 

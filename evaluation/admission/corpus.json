@@ -6121,6 +6121,10 @@
         "ignored": 0,
         "tests": 0
       },
+      "doc/liteinst_x86": {
+        "ignored": 0,
+        "tests": 0
+      },
       "doc/rapid_profiler": {
         "ignored": 0,
         "tests": 50
@@ -6507,7 +6511,7 @@
       },
       "unit/common_sites/common_sites": {
         "ignored": 0,
-        "tests": 24
+        "tests": 25
       },
       "unit/disassembly_sites/disassembly_sites": {
         "ignored": 0,
@@ -6519,7 +6523,7 @@
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 523
+        "tests": 529
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
@@ -6547,11 +6551,15 @@
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
-        "tests": 195
+        "tests": 196
       },
       "unit/liteinst_rewrite/main": {
         "ignored": 0,
         "tests": 0
+      },
+      "unit/liteinst_x86/lib": {
+        "ignored": 0,
+        "tests": 3
       },
       "unit/ordinary_interval/main": {
         "ignored": 1,
@@ -6567,7 +6575,7 @@
       },
       "unit/rapid_profiler/lib": {
         "ignored": 37,
-        "tests": 634
+        "tests": 635
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,

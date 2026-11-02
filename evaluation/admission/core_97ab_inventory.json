@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "10c564c03c3740654105849f43910f67eb0644eb58429a4eed67a65343ce13c0",
+  "current_corpus_sha256": "e8f288b0a32f1c30c6eedfdeb99b5818774c0b610ea4525facc79e054dbe9e63",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -97,6 +97,7 @@
   },
   "default_test_additions": 58,
   "doctests": {
+    "crates/liteinst-x86/src/lib.rs": [],
     "src/controls.rs": [
       "/// ```compile_fail\n/// use liteinst2::controls::ControlIdentity;\n/// fn escape<'dispatch>(token: ControlIdentity<'dispatch>) -> ControlIdentity<'static> {\n///     token\n/// }\n/// ```",
       "/// ```compile_fail\n/// use std::cell::Cell;\n/// use liteinst2::controls::{ControlIdentity, ProbeControl};\n/// use liteinst2::trampoline::HookContext;\n/// thread_local! { static SAVED: Cell<Option<ControlIdentity<'static>>> = const { Cell::new(None) }; }\n/// unsafe extern \"C\" fn retain<'dispatch>(_: *mut HookContext, token: ControlIdentity<'dispatch>) {\n///     SAVED.with(|slot| slot.set(Some(token)));\n/// }\n/// let _ = ProbeControl::new_managed_bound(retain, false);\n/// ```",
@@ -569,66 +570,66 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "3bf58b6fbfc41028055bc28a550706c67cdc48fc20706b2c198481d9b63f01b3",
+      "current_sha256": "625c057e145249c22266ce8d8e3a81d5d0ce151f51c8a04249fcb0e6448b9b61",
       "edits": [
         [
           642,
-          63071,
+          70885,
           ""
         ],
         [
-          72442,
-          72553,
+          80256,
+          80367,
           "        self.assertEqual(actual['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],\n"
         ],
         [
-          77596,
-          77766,
+          85410,
+          85580,
           ""
         ],
         [
-          77813,
-          77907,
+          85627,
+          85721,
           "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n"
         ],
         [
-          78046,
-          78133,
+          85860,
+          85947,
           ""
         ],
         [
-          78392,
-          78471,
+          86206,
+          86285,
           ""
         ],
         [
-          79527,
-          80077,
+          87341,
+          87891,
           ""
         ],
         [
-          81596,
-          81692,
+          89410,
+          89506,
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          85535,
-          118847,
+          93349,
+          126733,
           ""
         ],
         [
-          125765,
-          129336,
+          133651,
+          137222,
           ""
         ],
         [
-          130616,
-          130888,
+          138502,
+          138774,
           "        for function, expected_projection in projections:\n"
         ],
         [
-          132182,
-          138167,
+          140068,
+          147101,
           ""
         ]
       ],
@@ -879,6 +880,16 @@
   },
   "main_revision": "97ab5f4c085b7b831942a8c1ddae985d86f883eb",
   "methods": {
+    "crates/liteinst-x86/src/tests.rs": {
+      "all": [
+        "selected_register_facts_preserve_every_width_and_rsp",
+        "decode_preserves_status_and_leaves_adapter_policy_unapplied",
+        "exact_form_and_mnemonic_views_remain_distinct"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "examples/owned_region_clock.rs": {
       "all": [
         "parser_rejects_outside_finite_domain_before_runtime",
@@ -966,6 +977,15 @@
         "owned_region_rejects_wrong_or_aliased_managed_bindings",
         "owned_region_revalidation_rejects_binding_and_scan_drift",
         "owned_region_image_retains_the_shared_clock_owner"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/control_flow/tests.rs": {
+      "all": [
+        "local_edges_keep_callees_multiplicity_and_padding_partitions_distinct",
+        "unresolved_rows_and_public_dimensions_refuse_without_reordering_callbacks"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -1176,6 +1196,16 @@
       "macro_calls": [],
       "templates": []
     },
+    "src/quiescent/feasibility/tests.rs": {
+      "all": [
+        "staged_geometry_matches_predecessor_and_refuses_malformed_public_inputs",
+        "rel32_constraints_preserve_ordered_alphabet_and_all_mask_conflicts",
+        "actual_core_keeps_first_refusal_and_exact_qualification_evidence"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "src/quiescent/fitting_tests.rs": {
       "all": [
         "fitting_b1_preserves_fitting_seed_and_avoids_known_single_image_capacity_failure",
@@ -1188,6 +1218,43 @@
     },
     "src/quiescent/whole_function.rs": {
       "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/quiescent/whole_function/cfg_tests.rs": {
+      "all": [
+        "shared_whole_graph_preserves_profile_and_combined_fault_precedence"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/quiescent/whole_function/tests.rs": {
+      "all": [
+        "whole_two_short_returns_keep_nops_controls_and_composition",
+        "whole_final_branch_after_last_action_forces_full_end",
+        "whole_first_five_head_routes_and_legacy_short_ret_refusal",
+        "whole_cfg_refuses_escape_falloff_entry_reentry_and_non_scalar_shapes",
+        "whole_entry_roles_and_finite_bounds_are_exact",
+        "whole_overlay_authentication_precedes_image_search",
+        "whole_actual_image_validator_refuses_branch_ret_maps_and_control_mutations"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/scanner.rs": {
+      "all": [
+        "known_instruction_fixture_finds_both_crossers",
+        "instruction_ending_at_boundary_is_single_line",
+        "nonzero_base_address_controls_alignment",
+        "invalid_tail_fails_without_a_partial_result",
+        "overflowing_region_is_rejected_before_decoding",
+        "prefix_scan_stops_on_the_first_boundary_after_the_minimum",
+        "geometry_spanning_more_than_two_lines_is_rejected",
+        "empty_region_has_no_instructions_or_sites"
+      ],
       "ignored": [],
       "macro_calls": [],
       "templates": []
@@ -1604,6 +1671,38 @@
       "macro_calls": [],
       "templates": []
     },
+    "tools/elf-rewrite/examples/common_sites.rs": {
+      "all": [
+        "explicit_v2_grammar_keeps_exact_caps_and_v1_separate",
+        "signed_digit_successor_retains_negative_edges_and_entry_bytes",
+        "digit_minimum_matches_bounded_independent_byte_enumeration",
+        "heap_store_uses_complete_ret_entry_and_unaligned_preferred_pc",
+        "upstream_windows_use_original_head_budget_before_qualification",
+        "complete_jump_cell_keeps_unplaceable_id15_as_neutral_permit",
+        "full_page_slot_ownership_and_exhaustion_are_not_byte_only",
+        "derived_domain_must_own_loads_carrier_and_all_permits",
+        "unchanged_core_accepts_heap_b1_but_retains_old_arena_and_id15_refusals",
+        "carrier_low_canonical_endpoint_is_admitted_but_crossing_refuses",
+        "original_load_low_canonical_endpoint_is_admitted_but_crossing_refuses",
+        "strict_policy_keeps_three_ranges_and_all_bounds",
+        "selection_roundtrip_retains_every_head_and_exact_static_sites",
+        "rsp_red_zone_and_frame_bounds_are_checked_without_pointer_masks",
+        "jump_policy_retains_jumps_but_not_call_ret_or_loop",
+        "complete_heads_and_single_store_are_not_visit_filtered",
+        "complete_jump_table_includes_unconditional_and_conditional",
+        "explicit_and_implicit_rsp_writes_are_owned",
+        "unknown_writers_stay_visible_and_refuse_full_selection",
+        "return_slot_and_unproven_stack_adjustments_refuse",
+        "inconsistent_join_depth_refuses",
+        "foreign_middle_indirect_and_recursive_transfers_refuse_without_site_filtering",
+        "changed_store_displacement_or_width_never_gets_heap_credit",
+        "scanner_rejects_invalid_and_truncated_tail",
+        "shared_patterns_match_complete_predecessor_inventory_and_padding_cases"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tools/elf-rewrite/examples/disassembly_sites.rs": {
       "all": [
         "short_profile_cli_labels_mode_before_policy_binding",
@@ -1979,6 +2078,14 @@
         "conditional_targets_and_fallthrough_bound_the_actual_blocks",
         "foreign_interior_and_unowned_successors_are_refused",
         "direct_calls_split_blocks_without_granting_callee_ownership"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs": {
+      "all": [
+        "shared_neighbor_graph_preserves_broad_transfer_forms_and_first_errors"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -2568,6 +2675,14 @@
       "macro_calls": [],
       "templates": []
     },
+    "tools/rapid-profiler/src/frontend_native/ordinary/cfg_shared_tests.rs": {
+      "all": [
+        "shared_cfg_preserves_complete_certificates_and_hostile_refusals"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs": {
       "all": [
         "owned_caller_preserves_complete_native_oracle_and_refuses_every_byte_mutation"
@@ -2639,7 +2754,16 @@
       "\"tools/rapid-profiler\"",
       "[package]\nname = \"liteinst2\"",
       "[[example]]\nname = \"owned_region_clock\"\npath = \"examples/owned_region_clock.rs\"\ntest = true\nbench = false",
-      "[[bin]]\nname = \"liteinst-preempt\"\npath = \"tools/software-preemption/main.rs\"\ntest = true\nbench = false\ndoc = false"
+      "[[bin]]\nname = \"liteinst-preempt\"\npath = \"tools/software-preemption/main.rs\"\ntest = true\nbench = false\ndoc = false",
+      "\"crates/liteinst-x86\"]",
+      "liteinst-x86 = { version = \"0.1.0\", path = \"crates/liteinst-x86\" }"
+    ],
+    "crates/liteinst-x86/Cargo.toml": [
+      "[package]\nname = \"liteinst-x86\"",
+      "[features]\ndefault = [\"std\"]"
+    ],
+    "crates/liteinst-x86/src/lib.rs": [
+      "#[cfg(test)]\nmod tests;"
     ],
     "examples/owned_region_clock.rs": [
       "#[cfg(test)]\nmod tests {",
@@ -2655,6 +2779,9 @@
     ],
     "src/backedge_clock/owned_region.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
+    ],
+    "src/control_flow.rs": [
+      "#[cfg(test)]\nmod tests;"
     ],
     "src/controls.rs": [
       "#[cfg(test)]\nmod tests {",
@@ -2680,7 +2807,8 @@
       "pub mod emission;",
       "pub mod quiescent;",
       "pub mod backedge_clock;",
-      "pub mod controls;"
+      "pub mod controls;",
+      "pub mod control_flow;"
     ],
     "src/neighbor.rs": [
       "#[cfg(test)]\n#[path = \"neighbor_long_ownership_tests.rs\"]\nmod long_ownership_tests;",
@@ -2697,10 +2825,20 @@
     "src/quiescent.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod fitting_tests;",
       "mod clock_region;\npub use clock_region::{plan_owned_clock_region, plan_owned_clock_region_detailed};",
-      "mod entry_admission;"
+      "mod entry_admission;",
+      "pub mod feasibility;"
     ],
     "src/quiescent/clock_region.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
+    ],
+    "src/quiescent/feasibility.rs": [
+      "#[cfg(test)]\nmod tests;"
+    ],
+    "src/quiescent/whole_function.rs": [
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
+    ],
+    "src/quiescent/whole_function/tests.rs": [
+      "#[path = \"cfg_tests.rs\"]\nmod cfg_tests;"
     ],
     "src/trampoline.rs": [
       "#[path = \"trampoline/artifact_jrcxz.rs\"]\nmod artifact_jrcxz;",
@@ -2769,7 +2907,11 @@
       "[package]\nname = \"liteinst-rewrite\"",
       "[lib]\nname = \"liteinst_rewrite\"\npath = \"src/lib.rs\"",
       "[[example]]\nname = \"full_program_bridge\"\npath = \"examples/full_program_bridge.rs\"\ntest = true\nbench = false",
-      "[[example]]\nname = \"disassembly_sites\"\npath = \"examples/disassembly_sites.rs\"\ntest = true"
+      "[[example]]\nname = \"disassembly_sites\"\npath = \"examples/disassembly_sites.rs\"\ntest = true",
+      "[[example]]\nname = \"common_sites\"\npath = \"examples/common_sites.rs\"\ntest = true"
+    ],
+    "tools/elf-rewrite/examples/common_sites.rs": [
+      "#[cfg(test)]\nmod tests {"
     ],
     "tools/elf-rewrite/examples/disassembly_sites.rs": [
       "#[cfg(test)]\n#[path = \"disassembly_sites/whole_tests.rs\"]\nmod whole_tests;"
@@ -2813,7 +2955,11 @@
     ],
     "tools/elf-rewrite/src/lib.rs": [
       "pub mod carrier;",
-      "pub mod disassembly;"
+      "pub mod disassembly;",
+      "mod neighbor_catalogue;"
+    ],
+    "tools/elf-rewrite/src/neighbor_catalogue.rs": [
+      "#[cfg(test)]\n#[path = \"neighbor_catalogue_cfg_tests.rs\"]\nmod cfg_tests;"
     ],
     "tools/elf-rewrite/tests/indexed_dso_source.rs": [
       "#![cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]",
@@ -2936,9 +3082,13 @@
       "mod always_on;",
       "OwnedNormalModuleResult, OwnedNormalModuleThread, PreparedNormalController,"
     ],
+    "tools/rapid-profiler/src/frontend_native/ordinary/cfg.rs": [
+      "#[cfg(test)]\n#[path = \"cfg_shared_tests.rs\"]\nmod shared_tests;"
+    ],
     "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": [
       "mod module_caller;",
-      "#[cfg(test)]\nmod sealed_source_tests;"
+      "#[cfg(test)]\nmod sealed_source_tests;",
+      "mod cfg;"
     ],
     "tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs": [
       "#[cfg(test)]\n#[path = \"module_caller_format_tests.rs\"]\nmod format_tests;"
@@ -7398,6 +7548,1009 @@
       "previous": {
         "ignored": 1,
         "tests": 507
+      }
+    }
+  },
+  "source_successor_3217b8ed": {
+    "added_default_methods": {
+      "crates/liteinst-x86/src/tests.rs": [
+        "selected_register_facts_preserve_every_width_and_rsp",
+        "decode_preserves_status_and_leaves_adapter_policy_unapplied",
+        "exact_form_and_mnemonic_views_remain_distinct"
+      ],
+      "src/control_flow/tests.rs": [
+        "local_edges_keep_callees_multiplicity_and_padding_partitions_distinct",
+        "unresolved_rows_and_public_dimensions_refuse_without_reordering_callbacks"
+      ],
+      "src/quiescent/feasibility/tests.rs": [
+        "staged_geometry_matches_predecessor_and_refuses_malformed_public_inputs",
+        "rel32_constraints_preserve_ordered_alphabet_and_all_mask_conflicts",
+        "actual_core_keeps_first_refusal_and_exact_qualification_evidence"
+      ],
+      "src/quiescent/whole_function/cfg_tests.rs": [
+        "shared_whole_graph_preserves_profile_and_combined_fault_precedence"
+      ],
+      "tools/elf-rewrite/examples/common_sites.rs": [
+        "shared_patterns_match_complete_predecessor_inventory_and_padding_cases"
+      ],
+      "tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs": [
+        "shared_neighbor_graph_preserves_broad_transfer_forms_and_first_errors"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/cfg_shared_tests.rs": [
+        "shared_cfg_preserves_complete_certificates_and_hostile_refusals"
+      ]
+    },
+    "added_feature_methods": {},
+    "added_ignored_methods": {},
+    "base_revision": "75e959783e5e5cf91cc49882ab59bf3d05b3ff3f",
+    "current_corpus_sha256": "e8f288b0a32f1c30c6eedfdeb99b5818774c0b610ea4525facc79e054dbe9e63",
+    "default_doctest_additions": 0,
+    "default_harness_changes": 2,
+    "default_ignore_changes": 0,
+    "default_method_additions": 12,
+    "default_method_instances": {
+      "crates/liteinst-x86/src/tests.rs": [
+        "unit/liteinst_x86/lib"
+      ],
+      "src/control_flow/tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "src/quiescent/feasibility/tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "src/quiescent/whole_function/cfg_tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "tools/elf-rewrite/examples/common_sites.rs": [
+        "unit/common_sites/common_sites"
+      ],
+      "tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs": [
+        "unit/liteinst_rewrite/lib"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/cfg_shared_tests.rs": [
+        "unit/rapid_profiler/lib"
+      ]
+    },
+    "default_method_removals": 0,
+    "feature_method_additions": 0,
+    "feature_method_removals": 0,
+    "incoming_main": "3217b8ed5a865beacf9a8feed8b5a7656b5a4158",
+    "module_chains": {
+      "Cargo.toml": [
+        "\"crates/liteinst-x86\"]",
+        "liteinst-x86 = { version = \"0.1.0\", path = \"crates/liteinst-x86\" }"
+      ],
+      "crates/liteinst-x86/Cargo.toml": [
+        "[package]\nname = \"liteinst-x86\"",
+        "[features]\ndefault = [\"std\"]"
+      ],
+      "crates/liteinst-x86/src/lib.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "src/control_flow.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "src/lib.rs": [
+        "pub mod control_flow;"
+      ],
+      "src/quiescent.rs": [
+        "pub mod feasibility;"
+      ],
+      "src/quiescent/feasibility.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "src/quiescent/whole_function.rs": [
+        "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
+      ],
+      "src/quiescent/whole_function/tests.rs": [
+        "#[path = \"cfg_tests.rs\"]\nmod cfg_tests;"
+      ],
+      "tools/elf-rewrite/Cargo.toml": [
+        "[[example]]\nname = \"common_sites\"\npath = \"examples/common_sites.rs\"\ntest = true"
+      ],
+      "tools/elf-rewrite/examples/common_sites.rs": [
+        "#[cfg(test)]\nmod tests {"
+      ],
+      "tools/elf-rewrite/src/lib.rs": [
+        "mod neighbor_catalogue;"
+      ],
+      "tools/elf-rewrite/src/neighbor_catalogue.rs": [
+        "#[cfg(test)]\n#[path = \"neighbor_catalogue_cfg_tests.rs\"]\nmod cfg_tests;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/cfg.rs": [
+        "#[cfg(test)]\n#[path = \"cfg_shared_tests.rs\"]\nmod shared_tests;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": [
+        "mod cfg;"
+      ]
+    },
+    "new_method_declarations": 12,
+    "new_sources": [
+      "crates/liteinst-x86/Cargo.toml",
+      "crates/liteinst-x86/src/lib.rs",
+      "crates/liteinst-x86/src/tests.rs",
+      "src/control_flow.rs",
+      "src/control_flow/tests.rs",
+      "src/quiescent/feasibility.rs",
+      "src/quiescent/feasibility/tests.rs",
+      "src/quiescent/whole_function/cfg_tests.rs",
+      "tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs",
+      "tools/rapid-profiler/src/frontend_native/ordinary/cfg_shared_tests.rs"
+    ],
+    "newly_bound_sources": [
+      "crates/liteinst-admission/src/scan.rs",
+      "crates/liteinst-inprocess/src/selected/encoding.rs",
+      "crates/liteinst-launch/src/selected.rs",
+      "crates/liteinst-x86/Cargo.toml",
+      "crates/liteinst-x86/src/lib.rs",
+      "crates/liteinst-x86/src/tests.rs",
+      "src/control_flow.rs",
+      "src/control_flow/tests.rs",
+      "src/quiescent/feasibility.rs",
+      "src/quiescent/feasibility/tests.rs",
+      "src/quiescent/whole_function/cfg_tests.rs",
+      "src/quiescent/whole_function/tests.rs",
+      "src/scanner.rs",
+      "tools/elf-rewrite/examples/common_sites.rs",
+      "tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs",
+      "tools/page-entry/selected/decoder/Cargo.lock",
+      "tools/page-entry/selected/decoder/Cargo.toml",
+      "tools/page-entry/selected/decoder/src/decode.rs",
+      "tools/rapid-profiler/src/frontend_native/ordinary/cfg.rs",
+      "tools/rapid-profiler/src/frontend_native/ordinary/cfg_shared_tests.rs"
+    ],
+    "previous_corpus_sha256": "10c564c03c3740654105849f43910f67eb0644eb58429a4eed67a65343ce13c0",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "Cargo.lock",
+      "Cargo.toml",
+      "crates/liteinst-admission/src/scan.rs",
+      "crates/liteinst-inprocess/src/selected/encoding.rs",
+      "crates/liteinst-launch/src/selected.rs",
+      "crates/liteinst-x86/Cargo.toml",
+      "crates/liteinst-x86/src/lib.rs",
+      "crates/liteinst-x86/src/tests.rs",
+      "src/control_flow.rs",
+      "src/control_flow/tests.rs",
+      "src/lib.rs",
+      "src/quiescent.rs",
+      "src/quiescent/feasibility.rs",
+      "src/quiescent/feasibility/tests.rs",
+      "src/quiescent/whole_function.rs",
+      "src/quiescent/whole_function/cfg_tests.rs",
+      "src/quiescent/whole_function/tests.rs",
+      "src/scanner.rs",
+      "tools/elf-rewrite/examples/common_sites.rs",
+      "tools/elf-rewrite/src/neighbor_catalogue.rs",
+      "tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs",
+      "tools/page-entry/selected/decoder/Cargo.lock",
+      "tools/page-entry/selected/decoder/Cargo.toml",
+      "tools/page-entry/selected/decoder/src/decode.rs",
+      "tools/rapid-profiler/src/frontend_native/ordinary/cfg.rs",
+      "tools/rapid-profiler/src/frontend_native/ordinary/cfg_shared_tests.rs"
+    ],
+    "source_preimages": {
+      "Cargo.lock": {
+        "bytes": 5245,
+        "sha256": "4aad718e815f59f813573d5f1302ea87c35b178a949bd5159882d5ee1301d89a"
+      },
+      "Cargo.toml": {
+        "bytes": 4550,
+        "sha256": "f1a018451ab4d6694747f58062ee03c9ad53e475865cf581d5de63c6906bcefb"
+      },
+      "crates/liteinst-admission/src/scan.rs": {
+        "bytes": 10863,
+        "sha256": "effb0343fc535810318e95b87d66c3e1fd4ab104dd345dcbeab83fcc5615e948"
+      },
+      "crates/liteinst-inprocess/src/selected/encoding.rs": {
+        "bytes": 6136,
+        "sha256": "ace542e22a30841d7b018b92df87f17522831eb8be87a322683737e8dbbbdcc0"
+      },
+      "crates/liteinst-launch/src/selected.rs": {
+        "bytes": 34181,
+        "sha256": "e976a0b6ef61dcf9c36f290c1b5ef0321689cf210ed30f39f513690278715f97"
+      },
+      "crates/liteinst-x86/Cargo.toml": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "crates/liteinst-x86/src/lib.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "crates/liteinst-x86/src/tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/control_flow.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/control_flow/tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/lib.rs": {
+        "bytes": 1215,
+        "sha256": "b5dcdfd1d83d711c104b28303722a590ff2ab4a7ee8f580fcdff2e80e324c81a"
+      },
+      "src/quiescent.rs": {
+        "bytes": 124204,
+        "sha256": "bf870f4253f9c8abf90acba6660189ee9271ca1405847d50af755d7d3665b08b"
+      },
+      "src/quiescent/feasibility.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/quiescent/feasibility/tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/quiescent/whole_function.rs": {
+        "bytes": 26556,
+        "sha256": "9ca1c0e169372d3225b24cee7b2007e3455cf02a8b8bc005cf388268eb3aee4d"
+      },
+      "src/quiescent/whole_function/cfg_tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/quiescent/whole_function/tests.rs": {
+        "bytes": 16958,
+        "sha256": "6b430cfe89223e875c11993332370e6326763525d655469a4f7972777f874c6f"
+      },
+      "src/scanner.rs": {
+        "bytes": 19590,
+        "sha256": "1c4526c092d8f2093c3ae0dac8788bd86b519e03ed39b5ce23dce74fa3f42330"
+      },
+      "tools/elf-rewrite/examples/common_sites.rs": {
+        "bytes": 83400,
+        "sha256": "3dd3074b35f037109af696904dbed8ae13168c11f009bf65924ecd9f7c7289b5"
+      },
+      "tools/elf-rewrite/src/neighbor_catalogue.rs": {
+        "bytes": 9148,
+        "sha256": "98547f49cbd1571cbe7e3e79b7fcb3b873e8c8f2c3eba28326614fce78a5abf2"
+      },
+      "tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/page-entry/selected/decoder/Cargo.lock": {
+        "bytes": 799,
+        "sha256": "1006555168c3320ddeed45455bf5171086bf3683b78633f839df63819ff8e41e"
+      },
+      "tools/page-entry/selected/decoder/Cargo.toml": {
+        "bytes": 633,
+        "sha256": "31e24fa3391acefb5d4298ae2898d9f478c2e9aabb69ed8f07457da0ba68228c"
+      },
+      "tools/page-entry/selected/decoder/src/decode.rs": {
+        "bytes": 8805,
+        "sha256": "b7948615ebfb766620e9b082e3cda8b8a480326427d9742c23f4076f7f493160"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/cfg.rs": {
+        "bytes": 7978,
+        "sha256": "445304f174d5f228bff0f418a0ec4f277ad3571d68632af6f13e4589be2b263c"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/cfg_shared_tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "source_projections": {
+      "Cargo.lock": {
+        "current_sha256": "cd3bad97380d53a02b1ff5b17985e5c48af95daff3c7fd96a99aa42d4d2a0f00",
+        "edits": [
+          [
+            3105,
+            3190,
+            ""
+          ],
+          [
+            3288,
+            3305,
+            ""
+          ]
+        ],
+        "previous_sha256": "4aad718e815f59f813573d5f1302ea87c35b178a949bd5159882d5ee1301d89a"
+      },
+      "Cargo.toml": {
+        "current_sha256": "2eb81af6c8c354b58a9e54cc4a83a9369af20f276b40072633a1b76b2fca33df",
+        "edits": [
+          [
+            2233,
+            2450,
+            "members = [\"tools/rapid-profiler\", \"tools/exception-oracle\", \"crates/liteinst-admission\", \"crates/liteinst-launch\", \"crates/liteinst-artifact\", \"tools/elf-rewrite\", \"crates/liteinst-inprocess\"]\n"
+          ],
+          [
+            2466,
+            2533,
+            ""
+          ]
+        ],
+        "previous_sha256": "f1a018451ab4d6694747f58062ee03c9ad53e475865cf581d5de63c6906bcefb"
+      },
+      "crates/liteinst-admission/src/scan.rs": {
+        "current_sha256": "338ac7b9c634af434e87813d571dbc9a8df99515ccd761f452d2bb7b9e45bfdd",
+        "edits": [
+          [
+            245,
+            301,
+            "use iced_x86::{Decoder, DecoderOptions, Instruction, Mnemonic};\n"
+          ],
+          [
+            5211,
+            5731,
+            "    Some(match instruction.mnemonic() {\n        Mnemonic::Cpuid => SiteClass::Cpuid,\n        Mnemonic::Rdrand => SiteClass::Rdrand,\n        Mnemonic::Rdseed => SiteClass::Rdseed,\n        Mnemonic::Rdpid => SiteClass::Rdpid,\n        Mnemonic::Rdtsc => SiteClass::Rdtsc,\n        Mnemonic::Rdtscp => SiteClass::Rdtscp,\n        Mnemonic::Syscall => SiteClass::Syscall,\n        Mnemonic::Sysenter => SiteClass::Sysenter,\n        Mnemonic::Int if instruction.immediate8() == 0x80 => SiteClass::Int80,\n        _ => return None,\n"
+          ],
+          [
+            5865,
+            5931,
+            "    Decoder::with_ip(64, &snapshot.bytes[offset..], address, DecoderOptions::NONE).decode()\n"
+          ]
+        ],
+        "previous_sha256": "effb0343fc535810318e95b87d66c3e1fd4ab104dd345dcbeab83fcc5615e948"
+      },
+      "crates/liteinst-inprocess/src/selected/encoding.rs": {
+        "current_sha256": "fd5c335dc318ea90aa6d1a8f48812d448f435667d1525f66c7107c913c7736c8",
+        "edits": [
+          [
+            80,
+            104,
+            "use iced_x86::{Code, Decoder, DecoderOptions, Register};\n"
+          ],
+          [
+            139,
+            182,
+            ""
+          ],
+          [
+            2723,
+            2783,
+            "    let mut decoder = Decoder::with_ip(64, bytes, pc, DecoderOptions::NONE);\n    let instruction = decoder.decode();\n"
+          ],
+          [
+            3063,
+            3447,
+            "    let (actual, operand) = match instruction.code() {\n        Code::Cpuid => (SelectedKind::Cpuid, None),\n        Code::Rdtsc => (SelectedKind::Rdtsc, None),\n        Code::Syscall => (SelectedKind::Syscall, None),\n        Code::Rdtscp => (SelectedKind::Rdtscp, None),\n        Code::Rdrand_r16 | Code::Rdrand_r32 | Code::Rdrand_r64 => (\n"
+          ],
+          [
+            3549,
+            3590,
+            "        Code::Rdseed_r16 | Code::Rdseed_r32 | Code::Rdseed_r64 => (\n"
+          ],
+          [
+            3692,
+            3732,
+            "        Code::Rdpid_r64 => (\n"
+          ],
+          [
+            5132,
+            6350,
+            "    macro_rules! registers {\n        ($($name:ident => ($r16:ident, $r32:ident, $r64:ident)),+ $(,)?) => {\n            match register {\n                $(Register::$r16 => Ok((SelectedDestination::$name, SelectedWidth::Bits16)),\n                  Register::$r32 => Ok((SelectedDestination::$name, SelectedWidth::Bits32)),\n                  Register::$r64 => Ok((SelectedDestination::$name, SelectedWidth::Bits64)),)+\n                _ => Err(refused(\"selected operand is not an architectural GPR\")),\n            }\n        };\n    }\n    registers! {\n        Rax => (AX, EAX, RAX), Rcx => (CX, ECX, RCX), Rdx => (DX, EDX, RDX),\n        Rbx => (BX, EBX, RBX), Rsp => (SP, ESP, RSP), Rbp => (BP, EBP, RBP),\n        Rsi => (SI, ESI, RSI), Rdi => (DI, EDI, RDI), R8 => (R8W, R8D, R8),\n        R9 => (R9W, R9D, R9), R10 => (R10W, R10D, R10), R11 => (R11W, R11D, R11),\n        R12 => (R12W, R12D, R12), R13 => (R13W, R13D, R13),\n        R14 => (R14W, R14D, R14), R15 => (R15W, R15D, R15),\n    }\n"
+          ]
+        ],
+        "previous_sha256": "ace542e22a30841d7b018b92df87f17522831eb8be87a322683737e8dbbbdcc0"
+      },
+      "crates/liteinst-launch/src/selected.rs": {
+        "current_sha256": "32d24043be7d59ab0e7e47502bdd13b4e88b54484dba4cf59e90e631b8f7d75a",
+        "edits": [
+          [
+            629,
+            653,
+            "use iced_x86::{Code, Decoder, DecoderOptions, Register};\n"
+          ],
+          [
+            694,
+            737,
+            ""
+          ],
+          [
+            12417,
+            12482,
+            "    let mut decoder = Decoder::with_ip(64, bytes, address, DecoderOptions::NONE);\n    let instruction = decoder.decode();\n"
+          ],
+          [
+            12777,
+            12827,
+            ""
+          ],
+          [
+            12856,
+            12938,
+            "        && instruction.code() != Code::Sysenter\n        && !(instruction.code() == Code::Int_imm8 && instruction.immediate8() == 0x80)\n"
+          ],
+          [
+            13006,
+            13251,
+            "    let operation = match instruction.code() {\n        Code::Cpuid => Operation::Cpuid,\n        Code::Rdtsc => Operation::Rdtsc,\n        Code::Rdtscp => Operation::Rdtscp,\n        Code::Rdrand_r16 | Code::Rdrand_r32 | Code::Rdrand_r64 => {\n"
+          ],
+          [
+            13400,
+            13441,
+            "        Code::Rdseed_r16 | Code::Rdseed_r32 | Code::Rdseed_r64 => {\n"
+          ],
+          [
+            13590,
+            13630,
+            "        Code::Rdpid_r64 => {\n"
+          ],
+          [
+            13893,
+            13954,
+            "        Code::Syscall => Operation::Syscall {\n"
+          ],
+          [
+            14004,
+            14062,
+            "        Code::Int_imm8 if instruction.immediate8() == 0x80 => match declaration {\n"
+          ],
+          [
+            14336,
+            14397,
+            "        Code::Sysenter => match declaration {\n"
+          ],
+          [
+            33233,
+            34151,
+            "    macro_rules! registers {\n        ($($gpr:ident => ($r16:ident, $r32:ident, $r64:ident)),+ $(,)?) => {\n            match register {\n                $(Register::$r16 => Ok((Gpr::$gpr, OperandWidth::Bits16)),\n                  Register::$r32 => Ok((Gpr::$gpr, OperandWidth::Bits32)),\n                  Register::$r64 => Ok((Gpr::$gpr, OperandWidth::Bits64)),)+\n                _ => Err(SemanticsError::InvalidEncoding),\n            }\n        };\n    }\n    registers! {\n        Rax => (AX, EAX, RAX), Rcx => (CX, ECX, RCX), Rdx => (DX, EDX, RDX), Rbx => (BX, EBX, RBX),\n        Rsp => (SP, ESP, RSP), Rbp => (BP, EBP, RBP), Rsi => (SI, ESI, RSI), Rdi => (DI, EDI, RDI),\n        R8 => (R8W, R8D, R8), R9 => (R9W, R9D, R9), R10 => (R10W, R10D, R10), R11 => (R11W, R11D, R11),\n        R12 => (R12W, R12D, R12), R13 => (R13W, R13D, R13), R14 => (R14W, R14D, R14), R15 => (R15W, R15D, R15),\n    }\n"
+          ]
+        ],
+        "previous_sha256": "e976a0b6ef61dcf9c36f290c1b5ef0321689cf210ed30f39f513690278715f97"
+      },
+      "crates/liteinst-x86/Cargo.toml": {
+        "current_sha256": "922c8ce309c197c0cdd889aabd8ef6bbfa35899205a1fbdb5f92911b1dfbada2",
+        "edits": [
+          [
+            0,
+            562,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "crates/liteinst-x86/src/lib.rs": {
+        "current_sha256": "60a7d97cb4d4ec21bdf6752135cb79922238982a2b4915a1422a20614e6712a4",
+        "edits": [
+          [
+            0,
+            6277,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "crates/liteinst-x86/src/tests.rs": {
+        "current_sha256": "cb9d1a732a372c9a1bc30bfb03659ed292b262d00962b707c83f6ce8d68668c8",
+        "edits": [
+          [
+            0,
+            4603,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/control_flow.rs": {
+        "current_sha256": "a799fc7a153518058e63253cdfdfe5b5e8ad68022d374e1699f06111ee7ac326",
+        "edits": [
+          [
+            0,
+            11795,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/control_flow/tests.rs": {
+        "current_sha256": "e068722fc49af99d32bde17a431bac578a8244acd8be4c869edf19a1a134ab45",
+        "edits": [
+          [
+            0,
+            4596,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/lib.rs": {
+        "current_sha256": "60d737accd690fb1e65ecd70b34b1d0489ec60eaac7d9dc8065eef6391c76737",
+        "edits": [
+          [
+            634,
+            656,
+            ""
+          ],
+          [
+            1172,
+            1269,
+            ""
+          ]
+        ],
+        "previous_sha256": "b5dcdfd1d83d711c104b28303722a590ff2ab4a7ee8f580fcdff2e80e324c81a"
+      },
+      "src/quiescent.rs": {
+        "current_sha256": "b52c1cc3e03885051333f60f06d06c510b604e14d571cf1838df4e20dde9732c",
+        "edits": [
+          [
+            732,
+            795,
+            ""
+          ],
+          [
+            41517,
+            41919,
+            "    let displaced = AddressRange::new(physical, len)?;\n    let consumed = AddressRange::new(physical, 5 + prefixes)?;\n    if !(1..=4).contains(&len)\n        || prefixes >= len\n        || len > request.search.max_displaced_bytes\n        || !request.block.covers(displaced)\n        || !source.covers(consumed)\n        || physical / 64 != (displaced.end() - 1) / 64\n    {\n        search_evidence.qualification(scope, &Refusal::NoPatchWindow);\n        return Err(Refusal::NoPatchWindow);\n    }\n"
+          ],
+          [
+            43012,
+            43293,
+            "    let store_len = len.next_power_of_two();\n    // x86 has no three-byte MOV. Keep a four-byte store in this cache line by\n    // preserving the successor byte, or the preceding byte at offset 61.\n    let store_address = physical.min((physical | 63) - (store_len as u64 - 1));\n    let store_range = AddressRange::new(store_address, store_len)?;\n    if !source.covers(store_range) {\n        search_evidence.qualification(scope, &Refusal::NoPatchWindow);\n        return Err(Refusal::NoPatchWindow);\n    }\n"
+          ],
+          [
+            43578,
+            43819,
+            "    let offset = (physical - source.start()) as usize;\n    let mut fixed = [0_u8; 4];\n    let free = len - prefixes - 1;\n    fixed[free..].copy_from_slice(&request.code[offset + len..offset + 5 + prefixes]);\n    let next = i128::from(physical) + 5 + prefixes as i128;\n    let low = u64::try_from(next + i128::from(i32::from_le_bytes(fixed)))\n        .map_err(|_| Refusal::AllocationUnavailable)?;\n    let window = AddressRange::new(low, 1_usize << (8 * free))?;\n"
+          ],
+          [
+            73715,
+            73715,
+            "// These single-byte opcodes are architecturally invalid in 64-bit mode. Do not\n// add D4/D5: newer ISAs may assign prefixes to historically illegal opcodes.\nconst ILLEGAL: [u8; 14] = [\n    0x06, 0x07, 0x0e, 0x16, 0x17, 0x1e, 0x1f, 0x27, 0x2f, 0x37, 0x3f, 0x60, 0x61, 0xce,\n];\n"
+          ]
+        ],
+        "previous_sha256": "bf870f4253f9c8abf90acba6660189ee9271ca1405847d50af755d7d3665b08b"
+      },
+      "src/quiescent/feasibility.rs": {
+        "current_sha256": "904517390245a38482b3a0f20bbece88984e4cd2b8fac391b65a77fc387a9ef1",
+        "edits": [
+          [
+            0,
+            6437,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/quiescent/feasibility/tests.rs": {
+        "current_sha256": "2aa1b819101cbe3732b83dc97d09e7203eb179b6e3fac95eed6ae8e726f1c01a",
+        "edits": [
+          [
+            0,
+            16686,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/quiescent/whole_function.rs": {
+        "current_sha256": "1559644411d7160b9fbaa8630035781c71045e17d0082777545c85625010936e",
+        "edits": [
+          [
+            90,
+            133,
+            ""
+          ],
+          [
+            447,
+            447,
+            "use std::collections::BTreeSet;\n"
+          ],
+          [
+            15140,
+            15203,
+            "        let mut successors = vec![Vec::new(); items.len()];\n        let mut leaders = BTreeSet::from([0]);\n        for (n, item) in items.iter().enumerate() {\n"
+          ],
+          [
+            15839,
+            15839,
+            "                    successors[n].push(n + 1);\n"
+          ],
+          [
+            16460,
+            16601,
+            "                    let target = i.near_branch_target();\n                    let destination = items\n                        .iter()\n                        .position(|x| x.address() == target)\n"
+          ],
+          [
+            16787,
+            16938,
+            "                    successors[n].push(destination);\n                    leaders.insert(destination);\n                    if i.flow_control() == FlowControl::ConditionalBranch {\n                        if n + 1 == items.len() {\n                            return Err(unsupported());\n                        }\n                        successors[n].push(n + 1);\n                        leaders.insert(n + 1);\n"
+          ],
+          [
+            17040,
+            17216,
+            "        }\n        let mut reached = vec![false; items.len()];\n        let mut pending = vec![0];\n        while let Some(n) = pending.pop() {\n            if !reached[n] {\n                reached[n] = true;\n                pending.extend(successors[n].iter().copied());\n            }\n        }\n"
+          ],
+          [
+            17762,
+            17805,
+            "        let mut can_return: Vec<_> = items\n"
+          ],
+          [
+            17825,
+            17954,
+            "            .map(|i| returns.contains(&i.address()))\n"
+          ],
+          [
+            17978,
+            18097,
+            "        for _ in 0..items.len() {\n            for (n, next) in successors.iter().enumerate() {\n                let reaches = next.iter().any(|&to| can_return[to]);\n                can_return[n] |= reaches;\n            }\n        }\n"
+          ],
+          [
+            18268,
+            18421,
+            "        let mut blocks = 0;\n        let mut n = 0;\n        while n < items.len() {\n            if !reached[n] {\n                n += 1;\n                continue;\n            }\n            blocks += 1;\n            loop {\n                let terminal = items[n].instruction().flow_control() != FlowControl::Next\n                    || n + 1 == items.len()\n                    || !reached[n + 1]\n                    || leaders.contains(&(n + 1));\n                n += 1;\n                if terminal {\n                    break;\n                }\n            }\n        }\n        if blocks > 32 {\n"
+          ],
+          [
+            18470,
+            18579,
+            "        let expected: Vec<_> = leaders\n            .into_iter()\n"
+          ]
+        ],
+        "previous_sha256": "9ca1c0e169372d3225b24cee7b2007e3455cf02a8b8bc005cf388268eb3aee4d"
+      },
+      "src/quiescent/whole_function/cfg_tests.rs": {
+        "current_sha256": "ff9813db6f94cb897434edfdd309d3cb7280ab3ae1c5dec8c64ecc430284b566",
+        "edits": [
+          [
+            0,
+            9959,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/quiescent/whole_function/tests.rs": {
+        "current_sha256": "b01841775ab5787eee3784ec28b1715583b6af6c10b17032d0e43c2c1c38cfb1",
+        "edits": [
+          [
+            16958,
+            16999,
+            ""
+          ]
+        ],
+        "previous_sha256": "6b430cfe89223e875c11993332370e6326763525d655469a4f7972777f874c6f"
+      },
+      "src/scanner.rs": {
+        "current_sha256": "d01553acf8633268eb897c5af1687b40d4d7f4aa82ae080ff117db5a5d8e48c6",
+        "edits": [
+          [
+            300,
+            342,
+            "use iced_x86::{Decoder, DecoderOptions, Instruction};\n"
+          ],
+          [
+            10807,
+            10864,
+            "        let mut decoder = Decoder::with_ip(64, code, base_address, DecoderOptions::NONE);\n"
+          ],
+          [
+            14307,
+            14364,
+            "        let mut decoder = Decoder::with_ip(64, code, base_address, DecoderOptions::NONE);\n"
+          ]
+        ],
+        "previous_sha256": "1c4526c092d8f2093c3ae0dac8788bd86b519e03ed39b5ce23dce74fa3f42330"
+      },
+      "tools/elf-rewrite/examples/common_sites.rs": {
+        "current_sha256": "34d1b043e55b91490696d2e4042168a613ca90ddf43ad54017c04f15534d5607",
+        "edits": [
+          [
+            338,
+            460,
+            ""
+          ],
+          [
+            28936,
+            28936,
+            "// These are the unchanged B1 forbidden-entry opcode bytes, not an emission\n// oracle. The core still qualifies instructions, emits images and checks fit.\nconst ENTRY_BYTES: [u8; 14] = [\n    0x06, 0x07, 0x0e, 0x16, 0x17, 0x1e, 0x1f, 0x27, 0x2f, 0x37, 0x3f, 0x60, 0x61, 0xce,\n];\n#[derive(Clone, Copy, Debug)]\nstruct TargetPattern {\n    next: u64,\n    fixed: [Option<u8>; 4],\n    entries: [bool; 4],\n}\nimpl TargetPattern {\n    fn plain(next: u64) -> Self {\n        Self {\n            next,\n            fixed: [None; 4],\n            entries: [false; 4],\n        }\n    }\n    fn allows(self, digit: usize, byte: u8) -> bool {\n        self.fixed[digit].is_none_or(|b| b == byte)\n            && (!self.entries[digit] || ENTRY_BYTES.contains(&byte))\n    }\n}\n\n"
+          ],
+          [
+            29236,
+            29316,
+            "    if (0..4).any(|n| !(0..=255).any(|b| pattern.allows(n, b))) {\n"
+          ],
+          [
+            29635,
+            29699,
+            "            if !p.allows(n as usize, byte as u8) {\n"
+          ],
+          [
+            30971,
+            31478,
+            "    let pc = s.instruction.ip();\n    let len = s.instruction.len();\n    let displaced_end = pc.checked_add(len as u64)?;\n    let consumed_end = pc.checked_add(5 + prefixes as u64)?;\n    if !(1..=4).contains(&len)\n        || prefixes >= len\n        || len as u64 > p.search[1]\n        || pc < s.block.0\n        || displaced_end > s.block.1\n        || consumed_end > end(f.owner.pc, f.owner.length).ok()?\n        || pc / 64 != (displaced_end - 1) / 64\n    {\n        return None;\n    }\n    let store_len = len.next_power_of_two() as u64;\n    let store_pc = pc.min((pc | 63).checked_sub(store_len - 1)?);\n    if store_pc < f.owner.pc\n        || store_pc.checked_add(store_len)? > end(f.owner.pc, f.owner.length).ok()?\n    {\n        return None;\n    }\n    let offset = usize::try_from(pc - f.owner.pc).ok()?;\n    let free = len - prefixes - 1;\n    let suffix = f.bytes.get(offset + len..offset + 5 + prefixes)?;\n    let mut raw = [0; 4];\n    raw[free..].copy_from_slice(suffix);\n    // Match the core's checked lower-bound conversion BEFORE intersection.\n    let low = u64::try_from(i128::from(consumed_end) + i128::from(i32::from_le_bytes(raw))).ok()?;\n    low.checked_add(1_u64 << (8 * free))?;\n    let mut result = TargetPattern::plain(consumed_end);\n    for (slot, byte) in result.fixed.iter_mut().zip(raw).skip(free) {\n        *slot = Some(byte);\n    }\n    Some(result)\n"
+          ],
+          [
+            81933,
+            89930,
+            ""
+          ]
+        ],
+        "previous_sha256": "3dd3074b35f037109af696904dbed8ae13168c11f009bf65924ecd9f7c7289b5"
+      },
+      "tools/elf-rewrite/src/neighbor_catalogue.rs": {
+        "current_sha256": "546c257b0be1f6fd48128b3fed5ab5f2d32fe3f85cb8fb611747d00d4b7aac9a",
+        "edits": [
+          [
+            219,
+            264,
+            ""
+          ],
+          [
+            298,
+            298,
+            "use std::collections::BTreeSet;\n"
+          ],
+          [
+            5641,
+            5700,
+            "    let heads: BTreeSet<_> = scan.instructions().iter().map(|i| i.address()).collect();\n    let mut boundaries = BTreeSet::from([function.start(), function.end()]);\n    for item in scan.instructions() {\n"
+          ],
+          [
+            5746,
+            5906,
+            "        let next = instruction.next_ip();\n        let flow = instruction.flow_control();\n        if flow != FlowControl::Next && next < function.end() {\n            boundaries.insert(next);\n        }\n        let mut successors = Vec::new();\n        match flow {\n            FlowControl::Next => successors.push(next),\n            FlowControl::Call if instruction.code() == Code::Call_rel32_64 => {\n                // The unchanged call target is not an inferred victim owner.\n                // Only its local continuation contributes to this partition.\n                successors.push(next);\n            }\n"
+          ],
+          [
+            6351,
+            6351,
+            "                let target = instruction.near_branch_target();\n                boundaries.insert(target);\n                successors.push(target);\n                if flow == FlowControl::ConditionalBranch {\n                    successors.push(next);\n                }\n"
+          ],
+          [
+            6457,
+            6579,
+            "        if successors.iter().any(|pc| !heads.contains(pc)) {\n"
+          ],
+          [
+            6669,
+            6996,
+            "    }\n    let boundaries: Vec<_> = boundaries.into_iter().collect();\n    boundaries\n        .windows(2)\n        .map(|pair| addr(pair[0], pair[1] - pair[0]))\n"
+          ],
+          [
+            8532,
+            8605,
+            ""
+          ]
+        ],
+        "previous_sha256": "98547f49cbd1571cbe7e3e79b7fcb3b873e8c8f2c3eba28326614fce78a5abf2"
+      },
+      "tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs": {
+        "current_sha256": "e3977076515f83ee1171a61d009aff724e791640fca2d9b953fbb24cf5e9854d",
+        "edits": [
+          [
+            0,
+            4365,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/page-entry/selected/decoder/Cargo.lock": {
+        "current_sha256": "a524c89558852746d82ef9806a48741dc4390e192f4085d64510f59bd08f707d",
+        "edits": [
+          [
+            797,
+            814,
+            ""
+          ],
+          [
+            816,
+            901,
+            ""
+          ]
+        ],
+        "previous_sha256": "1006555168c3320ddeed45455bf5171086bf3683b78633f839df63819ff8e41e"
+      },
+      "tools/page-entry/selected/decoder/Cargo.toml": {
+        "current_sha256": "811b2a6254a6a940bd8eaf5112f5ce15c01af773c5ac78a8737fe553dff66314",
+        "edits": [
+          [
+            159,
+            245,
+            ""
+          ]
+        ],
+        "previous_sha256": "31e24fa3391acefb5d4298ae2898d9f478c2e9aabb69ed8f07457da0ba68228c"
+      },
+      "tools/page-entry/selected/decoder/src/decode.rs": {
+        "current_sha256": "6bd16a06a90e3ed4d90d6e50b8ddf92586496bd586f5842c23a4fcfae15119c1",
+        "edits": [
+          [
+            205,
+            253,
+            ""
+          ],
+          [
+            1266,
+            1354,
+            "    let mut decoder = Decoder::with_ip(64, source, pc, DecoderOptions::NONE);\n    let instruction = decoder.decode();\n"
+          ],
+          [
+            1542,
+            1588,
+            "    row.decode_status = match decoder.last_error() {\n"
+          ],
+          [
+            1796,
+            2393,
+            "    let (kind, operand) = match instruction.code() {\n        Code::Cpuid => (CPUID, false),\n        Code::Rdrand_r16 | Code::Rdrand_r32 | Code::Rdrand_r64 => (RDRAND, true),\n        Code::Rdseed_r16 | Code::Rdseed_r32 | Code::Rdseed_r64 => (RDSEED, true),\n        Code::Rdpid_r64 => (RDPID, true),\n        Code::Rdtsc => (RDTSC, false),\n        Code::Rdtscp => (RDTSCP, false),\n        Code::Syscall => (SYSCALL, false),\n        Code::Sysenter => (SYSENTER, false),\n        Code::Int_imm8 if instruction.immediate8() == 0x80 => (INT80, false),\n        _ => (NONE, false),\n"
+          ],
+          [
+            2843,
+            2929,
+            "    macro_rules! regs {\n        ($($index:literal => ($small:ident, $medium:ident, $large:ident)),+ $(,)?) => {\n            match register {\n                $(Register::$small => Some(($index, 16)),\n                  Register::$medium => Some(($index, 32)),\n                  Register::$large => Some(($index, 64)),)+\n                _ => None,\n            }\n        };\n    }\n    regs! {\n        0 => (AX, EAX, RAX), 1 => (CX, ECX, RCX), 2 => (DX, EDX, RDX),\n        3 => (BX, EBX, RBX), 4 => (SP, ESP, RSP), 5 => (BP, EBP, RBP),\n        6 => (SI, ESI, RSI), 7 => (DI, EDI, RDI), 8 => (R8W, R8D, R8),\n        9 => (R9W, R9D, R9), 10 => (R10W, R10D, R10), 11 => (R11W, R11D, R11),\n        12 => (R12W, R12D, R12), 13 => (R13W, R13D, R13),\n        14 => (R14W, R14D, R14), 15 => (R15W, R15D, R15),\n    }\n"
+          ]
+        ],
+        "previous_sha256": "b7948615ebfb766620e9b082e3cda8b8a480326427d9742c23f4076f7f493160"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/cfg.rs": {
+        "current_sha256": "4ee890f4826dce63863c84c0ee14ebbfe4f6e7951f07b49eaad8aebfd8df9cb0",
+        "edits": [
+          [
+            255,
+            302,
+            ""
+          ],
+          [
+            346,
+            346,
+            "use std::collections::BTreeSet;\n"
+          ],
+          [
+            2943,
+            3003,
+            "    let mut successors = vec![Vec::new(); items.len()];\n    let mut leaders = BTreeSet::from([0]);\n    for (n, item) in items.iter().enumerate() {\n"
+          ],
+          [
+            3532,
+            3532,
+            "                successors[n].push(n + 1);\n"
+          ],
+          [
+            4144,
+            4234,
+            "                let destination = items\n                    .iter()\n                    .position(|x| x.address() == target)\n"
+          ],
+          [
+            4377,
+            4514,
+            "                successors[n].push(destination);\n                leaders.insert(destination);\n                if i.flow_control() == FlowControl::ConditionalBranch {\n                    if n + 1 == items.len() {\n                        return Err(refusal);\n                    }\n                    successors[n].push(n + 1);\n                    leaders.insert(n + 1);\n"
+          ],
+          [
+            4594,
+            4742,
+            "    }\n    let mut reached = vec![false; items.len()];\n    let mut pending = vec![0];\n    while let Some(n) = pending.pop() {\n        if !reached[n] {\n            reached[n] = true;\n            pending.extend(successors[n].iter().copied());\n        }\n    }\n"
+          ],
+          [
+            5528,
+            5567,
+            "    let mut can_return: Vec<_> = items\n"
+          ],
+          [
+            5583,
+            5700,
+            "        .map(|x| returns.contains(&x.address()))\n"
+          ],
+          [
+            5720,
+            5821,
+            "    for _ in 0..items.len() {\n        for (n, next) in successors.iter().enumerate() {\n            let reaches = next.iter().any(|&target| can_return[target]);\n            can_return[n] |= reaches;\n        }\n    }\n"
+          ],
+          [
+            5958,
+            6062,
+            "    let mut blocks = Vec::new();\n    let mut n = 0;\n    while n < items.len() {\n        if !reached[n] {\n            n += 1;\n            continue;\n        }\n        let first = n;\n        loop {\n            let terminal = items[n].instruction().flow_control() != FlowControl::Next\n                || n + 1 == items.len()\n                || !reached[n + 1]\n                || leaders.contains(&(n + 1));\n            n += 1;\n            if terminal {\n                break;\n            }\n        }\n        blocks.push((items[first].address(), items[n - 1].instruction().next_ip()));\n    }\n"
+          ],
+          [
+            6156,
+            6219,
+            "    for (n, next) in successors.iter().enumerate() {\n"
+          ],
+          [
+            6529,
+            6624,
+            "        entries: leaders\n            .into_iter()\n"
+          ],
+          [
+            7015,
+            7079,
+            ""
+          ]
+        ],
+        "previous_sha256": "445304f174d5f228bff0f418a0ec4f277ad3571d68632af6f13e4589be2b263c"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/cfg_shared_tests.rs": {
+        "current_sha256": "808c5f720dc6d751f9529c4c2cd0361f79b4ae908e5965b5bec8fea6d84cb8c0",
+        "edits": [
+          [
+            0,
+            8277,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "source_revision": "a1d658860eff72b3f187e7f983ab3c85e58cc8a7",
+    "sources": {
+      "Cargo.lock": "cd3bad97380d53a02b1ff5b17985e5c48af95daff3c7fd96a99aa42d4d2a0f00",
+      "Cargo.toml": "2eb81af6c8c354b58a9e54cc4a83a9369af20f276b40072633a1b76b2fca33df",
+      "crates/liteinst-admission/src/scan.rs": "338ac7b9c634af434e87813d571dbc9a8df99515ccd761f452d2bb7b9e45bfdd",
+      "crates/liteinst-inprocess/src/selected/encoding.rs": "fd5c335dc318ea90aa6d1a8f48812d448f435667d1525f66c7107c913c7736c8",
+      "crates/liteinst-launch/src/selected.rs": "32d24043be7d59ab0e7e47502bdd13b4e88b54484dba4cf59e90e631b8f7d75a",
+      "crates/liteinst-x86/Cargo.toml": "922c8ce309c197c0cdd889aabd8ef6bbfa35899205a1fbdb5f92911b1dfbada2",
+      "crates/liteinst-x86/src/lib.rs": "60a7d97cb4d4ec21bdf6752135cb79922238982a2b4915a1422a20614e6712a4",
+      "crates/liteinst-x86/src/tests.rs": "cb9d1a732a372c9a1bc30bfb03659ed292b262d00962b707c83f6ce8d68668c8",
+      "src/control_flow.rs": "a799fc7a153518058e63253cdfdfe5b5e8ad68022d374e1699f06111ee7ac326",
+      "src/control_flow/tests.rs": "e068722fc49af99d32bde17a431bac578a8244acd8be4c869edf19a1a134ab45",
+      "src/lib.rs": "60d737accd690fb1e65ecd70b34b1d0489ec60eaac7d9dc8065eef6391c76737",
+      "src/quiescent.rs": "b52c1cc3e03885051333f60f06d06c510b604e14d571cf1838df4e20dde9732c",
+      "src/quiescent/feasibility.rs": "904517390245a38482b3a0f20bbece88984e4cd2b8fac391b65a77fc387a9ef1",
+      "src/quiescent/feasibility/tests.rs": "2aa1b819101cbe3732b83dc97d09e7203eb179b6e3fac95eed6ae8e726f1c01a",
+      "src/quiescent/whole_function.rs": "1559644411d7160b9fbaa8630035781c71045e17d0082777545c85625010936e",
+      "src/quiescent/whole_function/cfg_tests.rs": "ff9813db6f94cb897434edfdd309d3cb7280ab3ae1c5dec8c64ecc430284b566",
+      "src/quiescent/whole_function/tests.rs": "b01841775ab5787eee3784ec28b1715583b6af6c10b17032d0e43c2c1c38cfb1",
+      "src/scanner.rs": "d01553acf8633268eb897c5af1687b40d4d7f4aa82ae080ff117db5a5d8e48c6",
+      "tools/elf-rewrite/examples/common_sites.rs": "34d1b043e55b91490696d2e4042168a613ca90ddf43ad54017c04f15534d5607",
+      "tools/elf-rewrite/src/neighbor_catalogue.rs": "546c257b0be1f6fd48128b3fed5ab5f2d32fe3f85cb8fb611747d00d4b7aac9a",
+      "tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs": "e3977076515f83ee1171a61d009aff724e791640fca2d9b953fbb24cf5e9854d",
+      "tools/page-entry/selected/decoder/Cargo.lock": "a524c89558852746d82ef9806a48741dc4390e192f4085d64510f59bd08f707d",
+      "tools/page-entry/selected/decoder/Cargo.toml": "811b2a6254a6a940bd8eaf5112f5ce15c01af773c5ac78a8737fe553dff66314",
+      "tools/page-entry/selected/decoder/src/decode.rs": "6bd16a06a90e3ed4d90d6e50b8ddf92586496bd586f5842c23a4fcfae15119c1",
+      "tools/rapid-profiler/src/frontend_native/ordinary/cfg.rs": "4ee890f4826dce63863c84c0ee14ebbfe4f6e7951f07b49eaad8aebfd8df9cb0",
+      "tools/rapid-profiler/src/frontend_native/ordinary/cfg_shared_tests.rs": "808c5f720dc6d751f9529c4c2cd0361f79b4ae908e5965b5bec8fea6d84cb8c0"
+    },
+    "workspace_changes": {
+      "doc/liteinst_x86": {
+        "current": {
+          "ignored": 0,
+          "tests": 0
+        },
+        "previous": null
+      },
+      "unit/common_sites/common_sites": {
+        "current": {
+          "ignored": 0,
+          "tests": 25
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 24
+        }
+      },
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 529
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 523
+        }
+      },
+      "unit/liteinst_rewrite/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 196
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 195
+        }
+      },
+      "unit/liteinst_x86/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 3
+        },
+        "previous": null
+      },
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 37,
+          "tests": 635
+        },
+        "previous": {
+          "ignored": 37,
+          "tests": 634
+        }
       }
     }
   },
@@ -12263,9 +13416,15 @@
     "workspace_changes": {}
   },
   "sources": {
-    "Cargo.lock": "4aad718e815f59f813573d5f1302ea87c35b178a949bd5159882d5ee1301d89a",
-    "Cargo.toml": "f1a018451ab4d6694747f58062ee03c9ad53e475865cf581d5de63c6906bcefb",
+    "Cargo.lock": "cd3bad97380d53a02b1ff5b17985e5c48af95daff3c7fd96a99aa42d4d2a0f00",
+    "Cargo.toml": "2eb81af6c8c354b58a9e54cc4a83a9369af20f276b40072633a1b76b2fca33df",
     "INTERFACES.md": "8b25e5b50512a5db60f38261c48c446fad1b36c46093f5b826729eb65e858d41",
+    "crates/liteinst-admission/src/scan.rs": "338ac7b9c634af434e87813d571dbc9a8df99515ccd761f452d2bb7b9e45bfdd",
+    "crates/liteinst-inprocess/src/selected/encoding.rs": "fd5c335dc318ea90aa6d1a8f48812d448f435667d1525f66c7107c913c7736c8",
+    "crates/liteinst-launch/src/selected.rs": "32d24043be7d59ab0e7e47502bdd13b4e88b54484dba4cf59e90e631b8f7d75a",
+    "crates/liteinst-x86/Cargo.toml": "922c8ce309c197c0cdd889aabd8ef6bbfa35899205a1fbdb5f92911b1dfbada2",
+    "crates/liteinst-x86/src/lib.rs": "60a7d97cb4d4ec21bdf6752135cb79922238982a2b4915a1422a20614e6712a4",
+    "crates/liteinst-x86/src/tests.rs": "cb9d1a732a372c9a1bc30bfb03659ed292b262d00962b707c83f6ce8d68668c8",
     "evaluation/admission/core_20cbe_inventory.py": "2604731941c321438f9acbd96542095b145e014da20ac88b8fb64fc8387ccb38",
     "evaluation/admission/core_34c47_inventory.py": "19cc2d3d54fb122f06ba0719df7d9ccc6562708a3735147043201f825cbc9380",
     "evaluation/admission/core_813_inventory.py": "39e192c6322471994bad328993e8c5d2a720c8788e3b2d71b4a552c42510b2f6",
@@ -12283,7 +13442,7 @@
     "evaluation/admission/test_main34c47_inventory.py": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "7823badbd86e65b1597d70cecc64300f44b8880de28666a2dba8ba1554560396",
-    "evaluation/admission/test_main97ab_inventory.py": "3bf58b6fbfc41028055bc28a550706c67cdc48fc20706b2c198481d9b63f01b3",
+    "evaluation/admission/test_main97ab_inventory.py": "625c057e145249c22266ce8d8e3a81d5d0ce151f51c8a04249fcb0e6448b9b61",
     "evaluation/admission/test_main981419_inventory.py": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
     "evaluation/admission/test_mainaf81_inventory.py": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
@@ -12312,6 +13471,8 @@
     "src/backedge_clock/owned_region.rs": "08200c9db8b5922f595fe46459b113ab7e2223eb9e45fb6c0f8b7eedd611c432",
     "src/backedge_clock/owned_region/tests.rs": "3cb1cb505378787bf4e1fd665477983f7908901f64449227ef20d915f704864d",
     "src/bundle.rs": "82e36a7edb832b33a18ae25e68e1d81b2c3b6ddb21b4620626f40fd66187b9af",
+    "src/control_flow.rs": "a799fc7a153518058e63253cdfdfe5b5e8ad68022d374e1699f06111ee7ac326",
+    "src/control_flow/tests.rs": "e068722fc49af99d32bde17a431bac578a8244acd8be4c869edf19a1a134ab45",
     "src/controls.rs": "13f21abc2980b52aa5bcd8f64be07f4d5433e89bcdea3e1bdadd731ba904eb4a",
     "src/controls/entry_admission.rs": "b30e3fa18423b57be5dea11edd568c3930944e5879784f5625bdc9404e14b1e7",
     "src/emission.rs": "7eb271d9471d10c99b85d14a5bd33fa9f4787b7d970ad16c26fa6f8289cc7873",
@@ -12324,7 +13485,7 @@
     "src/emission/placement/tests.rs": "2cc0dd6c0a26c88d4682365b375d94fd3cdab7783e0dec7770f4a7cb77f79def",
     "src/engine.rs": "711335309a192d15a35436aa8ac51fc1541abb939360d23a6cad5253ac7195c6",
     "src/eviction.rs": "1b963fcdb07cc8886d852bb0195603290ef105b35a6ca9268b0e187c051ae1e4",
-    "src/lib.rs": "b5dcdfd1d83d711c104b28303722a590ff2ab4a7ee8f580fcdff2e80e324c81a",
+    "src/lib.rs": "60d737accd690fb1e65ecd70b34b1d0489ec60eaac7d9dc8065eef6391c76737",
     "src/neighbor.rs": "f9f7c7eb8b2069169fbb20c71bf69105833154a19dc4df75e3f13ef59284ce33",
     "src/neighbor_entry_veneer_tests.rs": "cabe24428bbcb9def816d81eb26764fb2e41dbe8c9dcdd579a3855f0e6ccaada",
     "src/neighbor_long_ownership_tests.rs": "992e8a3ea1d7cca8ed93641e189ed9600583667b909e67e9baee7f161f868fcd",
@@ -12332,12 +13493,17 @@
     "src/neighbor_overlap/tests.rs": "bc5880f3aff72cf5ea13b29592c7d848a879b5f9a71fabae7667888d027065e8",
     "src/neighbor_short.rs": "eb6870d77c53a5e29d911f0c1674281eafed44c63394364e393ed0bbd7d20897",
     "src/neighbor_short/tests.rs": "29c13e229d449458eb66843618c3429901abb2bd424e7099b931dfb612c95087",
-    "src/quiescent.rs": "bf870f4253f9c8abf90acba6660189ee9271ca1405847d50af755d7d3665b08b",
+    "src/quiescent.rs": "b52c1cc3e03885051333f60f06d06c510b604e14d571cf1838df4e20dde9732c",
     "src/quiescent/clock_region.rs": "be8ab2bfa2ba682361a1f647d51fceb9b43c9a600be3de711da2217c04ff1788",
     "src/quiescent/clock_region/tests.rs": "49decb1a58ab56dec5e00ac1e0797b57962758e4ba1a5aa680b79d81a807fb35",
     "src/quiescent/entry_admission.rs": "c8d4a3f32313f8cd564887a9686a59513ad066304930683362f4886d8adf3745",
+    "src/quiescent/feasibility.rs": "904517390245a38482b3a0f20bbece88984e4cd2b8fac391b65a77fc387a9ef1",
+    "src/quiescent/feasibility/tests.rs": "2aa1b819101cbe3732b83dc97d09e7203eb179b6e3fac95eed6ae8e726f1c01a",
     "src/quiescent/fitting_tests.rs": "c2352d8f207a812572ce74714684941a921a2c2a99b420ed5fca1a71b229cdc5",
-    "src/quiescent/whole_function.rs": "9ca1c0e169372d3225b24cee7b2007e3455cf02a8b8bc005cf388268eb3aee4d",
+    "src/quiescent/whole_function.rs": "1559644411d7160b9fbaa8630035781c71045e17d0082777545c85625010936e",
+    "src/quiescent/whole_function/cfg_tests.rs": "ff9813db6f94cb897434edfdd309d3cb7280ab3ae1c5dec8c64ecc430284b566",
+    "src/quiescent/whole_function/tests.rs": "b01841775ab5787eee3784ec28b1715583b6af6c10b17032d0e43c2c1c38cfb1",
+    "src/scanner.rs": "d01553acf8633268eb897c5af1687b40d4d7f4aa82ae080ff117db5a5d8e48c6",
     "src/trampoline.rs": "32dc3b2f9aab5bf9e75c5c7124cadf5bec3ca1692f3ce8c771d3fe429a7e55bd",
     "src/trampoline/artifact_allocation.rs": "ed23100722b011aadaabd7945583d82db0c1c43b00a31b1b14a252b48a580729",
     "src/trampoline/artifact_allocation/tests.rs": "a5ec8b16a83a9b0c51c431161f60490c41f2ad39d29ffe4d8c61e92ab077e0e7",
@@ -12405,6 +13571,7 @@
     "tools/elf-rewrite/Cargo.toml": "44f89364d57a07c1f21d94467c0a619ca879d22e776368dfa9eda00c97a93e6d",
     "tools/elf-rewrite/e9-sites-controls.py": "f90efe8819b3e0c06749906b2115cc224fd415d3d3662bef72931bb31f71d7be",
     "tools/elf-rewrite/e9-sites.py": "4270f18a2128543fa0eb1b1982ed8368b77c5216c0926a5012371c8a3a9ea893",
+    "tools/elf-rewrite/examples/common_sites.rs": "34d1b043e55b91490696d2e4042168a613ca90ddf43ad54017c04f15534d5607",
     "tools/elf-rewrite/examples/disassembly_sites.rs": "aec5ebbd5a61f284114cebbecabd9a515f7eac7aa2883bafd7242930b6eb8ea8",
     "tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs": "5a1d5ac99bd5c06d569e9e2abeaf81d88731db35713adbd1a369f858cdf27a29",
     "tools/elf-rewrite/examples/full_program_bridge.rs": "21686fccf07c625a6220c30d7c6664e7608546e5e4d3b18d3da127911810773f",
@@ -12435,11 +13602,15 @@
     "tools/elf-rewrite/src/ledger.rs": "79b90df021fbed429da1961a4d02edb1b6f09c6dfd606a9f53f592a193a483ee",
     "tools/elf-rewrite/src/lib.rs": "2908dd64967a6a894043a0cea3d2c563b3d0d6641ed77ca75a0f72dcbca71db3",
     "tools/elf-rewrite/src/model.rs": "25ce95f799669f062b774b344afdd0705299665fadd3ba666595a2efb10b191e",
-    "tools/elf-rewrite/src/neighbor_catalogue.rs": "98547f49cbd1571cbe7e3e79b7fcb3b873e8c8f2c3eba28326614fce78a5abf2",
+    "tools/elf-rewrite/src/neighbor_catalogue.rs": "546c257b0be1f6fd48128b3fed5ab5f2d32fe3f85cb8fb611747d00d4b7aac9a",
+    "tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs": "e3977076515f83ee1171a61d009aff724e791640fca2d9b953fbb24cf5e9854d",
     "tools/elf-rewrite/src/selection.rs": "00fe05a29ad200761b45dbc73de567e0730b20bd4ad19dd08b89b6113688a191",
     "tools/elf-rewrite/tests/indexed_dso_source.rs": "90589c35c4239473ab84bb3c11a65f017c83b78080a957544f64c08a88038dcf",
     "tools/elf-rewrite/tests/rx_run_loader.rs": "bf155716fcffec9d8008bd96e34eba88f00f689d3c5b28a65ac03c11ba526019",
     "tools/elf-rewrite/tests/support/composition_overlay.rs": "957573fdf12f81f63e302a761f298001a241e728d8251d65e5a85608c1fccf2b",
+    "tools/page-entry/selected/decoder/Cargo.lock": "a524c89558852746d82ef9806a48741dc4390e192f4085d64510f59bd08f707d",
+    "tools/page-entry/selected/decoder/Cargo.toml": "811b2a6254a6a940bd8eaf5112f5ce15c01af773c5ac78a8737fe553dff66314",
+    "tools/page-entry/selected/decoder/src/decode.rs": "6bd16a06a90e3ed4d90d6e50b8ddf92586496bd586f5842c23a4fcfae15119c1",
     "tools/rapid-profiler/Cargo.toml": "b533118e8ceaba2f14126ca48c0fc9756aff5e56a20d1f8dacc512a35698dc0d",
     "tools/rapid-profiler/README.md": "68b065b9fd33fee89ae3f42a714e9a1a1432f1d2de15f11d2d61328bfe6e8ba3",
     "tools/rapid-profiler/native-interval/calibrations.rs": "c694791b56c655b30b22476aa68cde0426d5f163ef166ffd860e51d8405d0987",
@@ -12500,6 +13671,8 @@
     "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/early_entry.rs": "3df9449bee19c00b114d0ec763aa0940357d261c9bc83ffd5d727fa4424b5c3e",
     "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/early_entry/append.rs": "fbb3c4d3e7999f05fd8e01ff8ec85fe5ec8bf9d70bda63de0eea11192203b09b",
     "tools/rapid-profiler/src/frontend_native/mod.rs": "6e554f1de5f5b2def5e857fec0e1f13b847033386690a5dcfc1f25f519389ddb",
+    "tools/rapid-profiler/src/frontend_native/ordinary/cfg.rs": "4ee890f4826dce63863c84c0ee14ebbfe4f6e7951f07b49eaad8aebfd8df9cb0",
+    "tools/rapid-profiler/src/frontend_native/ordinary/cfg_shared_tests.rs": "808c5f720dc6d751f9529c4c2cd0361f79b4ae908e5965b5bec8fea6d84cb8c0",
     "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": "14931190161ed220a35d62b5ebde0161f3ffcef0f5e7ba0b5987a0572af6e387",
     "tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs": "e279bdb36bfac8480f3ef75bb2e929bac89bdc3f202e44e4a03e93e5773e61b0",
     "tools/rapid-profiler/src/frontend_native/ordinary/module_caller_format_tests.rs": "dc81d94fba2f45b64b6ef3d6b4bb6b5cf195ab98a8abaa90d4dffb084fe05cbc",
