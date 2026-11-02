@@ -9,10 +9,11 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == 'e58748ea6bd10a18d81c20f4640937d0bdb739355742a5a3c366c649e5e2f2d8',
+require(hashlib.sha256(RAW).hexdigest() == '5247b1091366b7131f858ccc17c28d651399fc9c3c0a369dce32ad8b69115390',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
+CURRENT_RET_PREVIOUS = DATA['source_successor_bad32a8']['previous_corpus_sha256']
 PHYSICAL_PREVIOUS = DATA['source_successor_e5462b7']['previous_corpus_sha256']
 ENTRY_PROOF_PREVIOUS = DATA['source_successor_e691b0d']['previous_corpus_sha256']
 RET_PROOF_PREVIOUS = DATA['source_successor_65ee8ea']['previous_corpus_sha256']
@@ -110,7 +111,12 @@ def source_before_e691b0d(path, raw, error):
 
 
 def source_before_e5462b7(path, raw, error):
+    raw = source_before_bad32a8(path, raw, error)
     return inverse(path, raw, DATA['source_successor_e5462b7']['source_projections'], error)
+
+
+def source_before_bad32a8(path, raw, error):
+    return inverse(path, raw, DATA['source_successor_bad32a8']['source_projections'], error)
 
 
 def require_sources(error='main97ab_source_inventory_differs'):
@@ -144,11 +150,25 @@ def require_sources(error='main97ab_source_inventory_differs'):
         source_before_evaluation(path, raw, error)
 
 
-def before_e5462b7(declared, error='main97ab_inventory_differs'):
-    """Bind all seven physical-slot/geometry tests and preserve the complete prior catalog."""
+def before_bad32a8(declared, error='main97ab_inventory_differs'):
+    """Bind both current-RET tests and preserve the complete e546 catalog."""
     require(type(declared) is dict and digest(declared) == CURRENT, error)
     owned = plain_catalog((declared, DATA))
     old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in DATA['source_successor_bad32a8']['workspace_changes'].items():
+        require(digest(rows[name]) == digest(change['current']), error)
+        rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == CURRENT_RET_PREVIOUS, error)
+    return old if owned else copy.deepcopy(old)
+
+
+def before_e5462b7(declared, error='main97ab_inventory_differs'):
+    """Bind all seven physical-slot/geometry tests and preserve the complete prior catalog."""
+    owned = plain_catalog((declared, DATA))
+    declared = before_bad32a8(declared, error)
+    require(type(declared) is dict and digest(declared) == CURRENT_RET_PREVIOUS, error)
+    old = declared if owned else copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in DATA['source_successor_e5462b7']['workspace_changes'].items():
         require(digest(rows[name]) == digest(change['current']), error)

@@ -18,11 +18,88 @@ from test_parsing import counts, summary
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # Current-RET geometry adds two default tests; the complete physical
+        # predecessor and every earlier historical target stay exact.
+        current_ret = current.DATA['source_successor_bad32a8']
+        current_ret_prior = current.before_bad32a8(actual)
+        current_ret_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(current_ret_prior), current.CURRENT_RET_PREVIOUS)
+        self.assertEqual((len(current_ret_rows), sum(x['tests'] for x in current_ret_rows.values()),
+                          sum(x['ignored'] for x in current_ret_rows.values())), (120, 4602, 43))
+        self.assertEqual(current_ret_rows['unit/rapid_profiler/lib'], counts(625, 37))
+        self.assertEqual(current_ret_prior['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'],
+                         counts(623, 37))
+        self.assertEqual(current_ret_rows['test/frontend_native_calibrations'], counts(236, 1))
+        self.assertEqual((current_ret['default_method_additions'], current_ret['default_method_removals'],
+                          current_ret['default_harness_changes'], current_ret['default_ignore_changes'],
+                          current_ret['default_doctest_additions'], current_ret['recorder_identity_changes'],
+                          current_ret['feature_method_additions'], current_ret['feature_method_removals']),
+                         (2, 0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(current_ret['added_default_methods'], {
+            'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs': [
+                'current_ret_geometry_preserves_paired_late_refusals_and_receipts',
+                'current_ret_geometry_uses_actual_validation_with_foreign_rows_and_rearm']})
+        self.assertEqual(current_ret['default_method_instances'], {
+            'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs':
+                ['unit/rapid_profiler/lib']})
+        self.assertEqual(sum(len(names) * len(current_ret['default_method_instances'][path])
+                             for path, names in current_ret['added_default_methods'].items()), 2)
+        self.assertEqual(current_ret['added_ignored_methods'], {})
+        self.assertEqual((len(current_ret['source_paths']), len(current_ret['source_projections'])), (3, 3))
+        self.assertTrue(all(value is not None for value in current_ret['source_preimages'].values()))
+        self.assertEqual(current_ret_prior['harness_test_counts']['serial_launch'],
+                         actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((actual['recorder_tests'], current_ret_prior['recorder_tests']), (366, 366))
+        for path, row in current_ret['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_bad32a8(path, raw, 'current_ret_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (current_ret['source_preimages'][path]['bytes'], row['previous_sha256']))
+            self.assertEqual(row['previous_sha256'], current.DATA['source_successor_e5462b7']['sources'][path])
+            for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^current_ret_source_inverse$'):
+                    current.source_before_bad32a8(path, wrong, 'current_ret_source_inverse')
+            for field in ('edits', 'current_sha256', 'previous_sha256'):
+                malformed = copy.deepcopy(row)
+                if field == 'edits': malformed['edits'][0][2] += '\n'
+                else: malformed[field] = '0' * 64
+                with patch.dict(current_ret['source_projections'], {path: malformed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^current_ret_source_inverse$'):
+                        current.source_before_bad32a8(path, raw, 'current_ret_source_inverse')
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_bad32a8(current_ret_prior)
+        for field in ('tests', 'ignored'):
+            for value in (None, True, float(current_ret_rows['unit/rapid_profiler/lib'][field]),
+                          current_ret_rows['unit/rapid_profiler/lib'][field] + 1):
+                wrong = copy.deepcopy(actual)
+                wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field] = value
+                self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                    current.before_bad32a8(wrong)
+        wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_bad32a8(wrong)
+        read = Path.read_bytes
+        current_ret_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
+            for path, names in current_ret['added_default_methods'].items() for name in names]
+        current_ret_stimuli += [(path, literal, '')
+            for path, literals in current_ret['module_chains'].items() for literal in literals]
+        for path, literal, replacement in current_ret_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('current-RET declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
         # Physical slots and retained geometry add seven default library tests.
         # The complete e691 catalog and every earlier source target remain exact.
         physical = current.DATA['source_successor_e5462b7']
         physical_prior = current.before_e5462b7(actual)
-        physical_rows = actual['harness_test_counts']['workspace_tests']
+        physical_rows = current_ret_prior['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(physical_prior), current.PHYSICAL_PREVIOUS)
         self.assertEqual((len(physical_rows), sum(x['tests'] for x in physical_rows.values()),
                           sum(x['ignored'] for x in physical_rows.values())), (120, 4600, 43))
@@ -1352,7 +1429,7 @@ class Main97abInventoryTests(unittest.TestCase):
         projections = ((current.before_96378, phase_catalog),
                        (current.before_29859, native_indexed),
                        (current.before_current, old))
-        for function, expected_projection in ((current.before_e5462b7, physical_prior), *projections):
+        for function, expected_projection in ((current.before_bad32a8, current_ret_prior), (current.before_e5462b7, physical_prior), *projections):
             supplied = copy.deepcopy(actual)
             supplied['harness_test_counts']['serial_launch'] = PublishedCopy(
                 supplied['harness_test_counts']['serial_launch'])
@@ -1431,6 +1508,16 @@ class Main97abInventoryTests(unittest.TestCase):
         with patch.dict(change, previous=PublishedCopy(change['previous'])):
             result = current.before_e5462b7(actual)
             self.assertEqual(result, physical_prior)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+
+        # The new current-RET metadata transition also cannot publish its output.
+        published.clear()
+        change = current_ret['workspace_changes']['unit/rapid_profiler/lib']
+        with patch.dict(change, previous=PublishedCopy(change['previous'])):
+            result = current.before_bad32a8(actual)
+            self.assertEqual(result, current_ret_prior)
             self.assertEqual(len(published), 1)
             self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
             self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
