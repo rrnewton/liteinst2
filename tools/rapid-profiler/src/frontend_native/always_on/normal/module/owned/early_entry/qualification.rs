@@ -158,7 +158,246 @@ fn qualification_snapshot_into(
         })
         .unwrap_or(Err(error(Cause::Attachment)))
 }
-type Observer = Box<dyn FnMut(PauseKind, &QualificationSnapshot)>;
+// Private owned scratch. Every successful capture overwrites all 640 words;
+// none of these prior values or the presence bit is a validation cache.
+struct FlatSnapshot {
+    header: [u64; 128],
+    journal: [u64; 512],
+    active: bool,
+}
+struct FlatObserverState {
+    snapshot: FlatSnapshot,
+    sequence: u64,
+}
+impl FlatObserverState {
+    fn new() -> Self {
+        Self {
+            snapshot: FlatSnapshot {
+                header: [0; 128],
+                journal: [0; 512],
+                active: false,
+            },
+            sequence: 0,
+        }
+    }
+    fn prepare(&mut self, kind: PauseKind) -> Result<(), BridgeError> {
+        qualification_words_into(&mut self.snapshot)?;
+        // Preserve the old child order: successful owned capture, both TLS
+        // borrows released, sequence increment, then active-snapshot unwrap.
+        self.sequence += 1;
+        self.snapshot.active.then_some(()).unwrap();
+        self.snapshot.header[0] = 0x6561_726c_796d_6f64;
+        self.snapshot.header[1] = match kind {
+            PauseKind::AfterEntryPublished => 1,
+            PauseKind::AfterPreRetPublished => 2,
+        };
+        self.snapshot.header[2] = self.sequence;
+        Ok(())
+    }
+}
+
+// Shared by the real boxed adapter and private failure-order controls. No
+// externally supplied callback runs before complete capture and header finish.
+struct EncodedObserver<F> {
+    state: FlatObserverState,
+    observer: F,
+}
+impl<F: FnMut(&[u64; 128], &[u64; 512])> EncodedObserver<F> {
+    fn call(&mut self, kind: PauseKind) -> Result<(), BridgeError> {
+        self.state.prepare(kind)?;
+        (self.observer)(&self.state.snapshot.header, &self.state.snapshot.journal);
+        Ok(())
+    }
+}
+
+// Serialize the actual summary once, without an intermediate OwnerSnapshot.
+fn flat_summary(destination: &mut [u64; 8], summary: IntervalEntrySummary) {
+    let (kind, generation, invocation, history_len, binding, closed_function) = match summary {
+        IntervalEntrySummary::Admitted {
+            generation,
+            invocation,
+            history_len,
+            binding,
+        } => (
+            1,
+            generation.get(),
+            invocation as u64,
+            history_len,
+            binding,
+            0,
+        ),
+        IntervalEntrySummary::Unsampled {
+            reason,
+            history_len,
+            binding,
+        } => {
+            let (kind, generation, closed_function) = match reason {
+                UnsampledSummary::InitialDisarmed => (2, 0, 0),
+                UnsampledSummary::Removed { generation } => (3, generation.get(), 0),
+                UnsampledSummary::FunctionClosed {
+                    generation,
+                    function,
+                } => (4, generation.get(), function.0),
+            };
+            (kind, generation, 0, history_len, binding, closed_function)
+        }
+    };
+    let (binding, index, bound_generation) = match binding {
+        BindingChange::Initial => (0, 0, 0),
+        BindingChange::Published {
+            action_index,
+            generation,
+        } => (1, action_index as u64, generation.get()),
+        BindingChange::Removed {
+            action_index,
+            generation,
+        } => (2, action_index as u64, generation.get()),
+    };
+    destination[0] = kind;
+    destination[1] = generation;
+    destination[2] = invocation;
+    destination[3] = history_len as u64;
+    destination[4] = binding;
+    destination[5] = index;
+    destination[6] = bound_generation;
+    destination[7] = closed_function;
+}
+
+// This independent TLS reborrow retains the typed helper's complete ordered
+// checks. Only after its last possible BridgeError do any destination writes
+// occur. The journal is still an ordinary complete owned copy under the borrows.
+#[inline(never)]
+fn qualification_words_into(destination: &mut FlatSnapshot) -> Result<(), BridgeError> {
+    NORMAL
+        .try_with(|normal| {
+            let storage = normal.try_borrow().map_err(|_| error(Cause::Attachment))?;
+            let s = storage.0.as_ref().ok_or(error(Cause::Attachment))?;
+            s.health()?;
+            if s.actual_thread != thread::current().id() || s.tid != tid() {
+                return Err(error(Cause::Identity));
+            }
+            PHYSICAL
+                .try_with(|physical| {
+                    let p = physical
+                        .try_borrow()
+                        .map_err(|_| error(Cause::Attachment))?;
+                    let p = p.as_ref().ok_or(error(Cause::Attachment))?;
+                    p.matches(s)?;
+                    if p.active.is_some() {
+                        p.shape(s)?;
+                    } else {
+                        drained(s)?;
+                    }
+                    let b = p.active.as_ref();
+                    let pending = match (&s.pending, b.and_then(|b| b.pending_position)) {
+                        (None, None) => None,
+                        (Some(v), Some(position)) => Some((v, position)),
+                        _ => return Err(error(Cause::Invariant)),
+                    };
+                    let h = &mut destination.header;
+                    h.fill(0);
+                    if let Some((v, position)) = pending {
+                        h[57] = 1;
+                        h[58] = b.unwrap().number;
+                        h[59] = position as u64;
+                        h[60] = v.selected.function.0;
+                        h[61] = v.ordinal;
+                        h[62] = v.entry_pc;
+                        h[63] = v.rsp;
+                        h[64] = v.word;
+                        h[65] = v.start.ticks;
+                        h[66] = u64::from(v.start.aux);
+                        if let Some(summary) = v.summary {
+                            h[75] = 1;
+                            flat_summary((&mut h[76..84]).try_into().unwrap(), summary);
+                        }
+                        // Read the actual receipt independently and before the
+                        // later model scalars/journal, just as the typed capture.
+                        if let Some(summary) = v.receipt.summary() {
+                            h[84] = 1;
+                            flat_summary((&mut h[85..93]).try_into().unwrap(), summary);
+                            h[71] = h[86];
+                            h[72] = h[87];
+                        }
+                        if let Some(r) = v.returned {
+                            h[67] = 1;
+                            h[68] = r.return_pc;
+                            h[69] = r.end.ticks;
+                            h[70] = u64::from(r.end.aux);
+                            let (kind, generation, invocation) = match r.owner {
+                                RawIntervalOwner::Sampled {
+                                    generation,
+                                    invocation,
+                                } => (1, generation, invocation as u64),
+                                RawIntervalOwner::InitialDisarmed => (2, 0, 0),
+                                RawIntervalOwner::Removed { generation } => (3, generation, 0),
+                                RawIntervalOwner::FunctionClosed { generation } => {
+                                    (4, generation, 0)
+                                }
+                            };
+                            h[93] = r.ordinal;
+                            h[94] = r.entry_pc;
+                            h[95] = r.return_pc;
+                            h[96] = kind;
+                            h[97] = generation;
+                            h[98] = invocation;
+                            h[99] = r.start.ticks;
+                            h[100] = u64::from(r.start.aux);
+                            h[101] = r.end.ticks;
+                            h[102] = u64::from(r.end.aux);
+                        }
+                        h[73] = v.slot.identity;
+                        h[74] = v.slot.word;
+                    }
+                    h[3] = Arc::as_ptr(&s.binding.key) as usize as u64;
+                    h[4] = u64::from(s.binding.pid);
+                    h[5] = s.tid;
+                    h[6] = s.registration;
+                    h[7] = p.batches;
+                    h[8] = p.calls;
+                    destination.active = b.is_some();
+                    if let Some(b) = b {
+                        h[9] = b.number;
+                        h[10] = b.position as u64;
+                        for (i, seen) in b.seen.iter().enumerate() {
+                            h[25 + i] = seen.unwrap_or(0);
+                        }
+                        for (i, row) in b.rows.iter().enumerate() {
+                            if let Some(r) = row {
+                                let at = 29 + i * 7;
+                                h[at] = r.batch;
+                                h[at + 1] = r.position as u64;
+                                h[at + 2] = r.function.0;
+                                h[at + 3] = r.observed_ordinal.unwrap_or(0);
+                                h[at + 4] = r.return_pc;
+                                h[at + 5] = r.entry_rsp;
+                                h[at + 6] = r.return_word;
+                            }
+                        }
+                    }
+                    h[11] = s.next;
+                    h[15] = s.totals.entered;
+                    h[16] = s.totals.ret_observed;
+                    h[17] = s.totals.confirmed;
+                    h[18] = s.totals.completed;
+                    h[19] = s.totals.unsampled;
+                    h[14] = s.cursor.number;
+                    h[20] = s.cursor.totals.entered;
+                    h[21] = s.cursor.totals.ret_observed;
+                    h[22] = s.cursor.totals.confirmed;
+                    h[23] = s.cursor.totals.completed;
+                    h[24] = s.cursor.totals.unsampled;
+                    h[12] = s.model.depth() as u64;
+                    h[13] = s.model.completed_sequence();
+                    destination.journal.copy_from_slice(&s.journal.page.0);
+                    Ok(())
+                })
+                .unwrap_or(Err(error(Cause::Attachment)))
+        })
+        .unwrap_or(Err(error(Cause::Attachment)))
+}
+
+type Observer = Box<dyn FnMut(PauseKind) -> Result<(), BridgeError>>;
 thread_local! { static OBSERVER: RefCell<Option<Observer>> = const { RefCell::new(None) }; }
 /// # Safety
 /// Qualification only: observer never enters subject/controller/model code on
@@ -168,8 +407,47 @@ thread_local! { static OBSERVER: RefCell<Option<Observer>> = const { RefCell::ne
 /// The borrowed snapshot is an owned local copy valid only for this call; an
 /// observer that retains or transfers it must make its own owned copy.
 pub unsafe fn install_observer(
-    observer: impl FnMut(PauseKind, &QualificationSnapshot) + 'static,
+    mut observer: impl FnMut(PauseKind, &QualificationSnapshot) + 'static,
 ) -> Result<(), BridgeError> {
+    install_preparing_observer(|| -> Observer {
+        Box::new(move |kind| {
+            let mut snapshot = std::mem::MaybeUninit::uninit();
+            qualification_snapshot_into(&mut snapshot)?;
+            // SAFETY: unchanged typed helper initialized every field and
+            // released both TLS borrows before this existing typed callback.
+            observer(kind, unsafe { snapshot.assume_init_ref() });
+            Ok(())
+        })
+    })
+}
+
+/// Install the qualification-only complete 128-word header / 512-word journal
+/// observer. Its single observer allocation owns reusable ordinary scratch;
+/// every successful capture overwrites all words before this callback runs.
+/// The header includes the pause kind and a sequence starting at one.
+///
+/// # Safety
+/// The full no-reentry/no-unwind/state-preservation and bounded-wait contract of
+/// `install_observer` applies unchanged. Both TLS borrows end before the callback.
+/// Arrays are disjoint owned copies, borrowed only for this call. Retaining or
+/// transferring their values requires another owned copy, never their addresses.
+/// This observer requires the same active-batch publication points as the native
+/// witness encoder; an inactive snapshot panics after capture/sequence advance.
+pub unsafe fn install_encoded_observer(
+    observer: impl FnMut(&[u64; 128], &[u64; 512]) + 'static,
+) -> Result<(), BridgeError> {
+    install_preparing_observer(|| -> Observer {
+        let mut adapter = EncodedObserver {
+            state: FlatObserverState::new(),
+            observer,
+        };
+        Box::new(move |kind| adapter.call(kind))
+    })
+}
+
+// The factory is invoked only after the original attachment/empty-slot checks.
+// It enlarges the one observer allocation; callbacks do not allocate scratch.
+fn install_preparing_observer(make: impl FnOnce() -> Observer) -> Result<(), BridgeError> {
     OBSERVER
         .try_with(|cell| {
             let mut slot = cell
@@ -178,7 +456,7 @@ pub unsafe fn install_observer(
             if slot.is_some() {
                 return Err(error(Cause::Attachment));
             }
-            *slot = Some(Box::new(observer));
+            *slot = Some(make());
             Ok(())
         })
         .unwrap_or(Err(error(Cause::Attachment)))
@@ -192,12 +470,7 @@ pub(super) fn after_published(kind: PauseKind) {
                 .try_borrow_mut()
                 .map_err(|_| error(Cause::Attachment))?;
             if let Some(observer) = observer.as_mut() {
-                let mut snapshot = std::mem::MaybeUninit::uninit();
-                qualification_snapshot_into(&mut snapshot)?;
-                // SAFETY: the helper returned success after initializing every
-                // field and releasing both TLS borrows. The reference cannot
-                // escape this observer call under its existing unsafe contract.
-                observer(kind, unsafe { snapshot.assume_init_ref() });
+                observer(kind)?;
             }
             Ok(())
         })
