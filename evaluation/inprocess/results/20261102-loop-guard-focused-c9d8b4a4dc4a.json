@@ -1,0 +1,373 @@
+{
+ "allocator_prelaunch": {
+  "child_launched": false,
+  "exit": 3,
+  "parent_affinity_requested": [
+   1
+  ],
+  "profile": "loop-guard-smoke-allocator-launch-v1",
+  "provenance": "Direct command-tool observation; no separate stdout/stderr files.",
+  "record": {
+   "bytes": 2031,
+   "file": "target/page-region-next/loop-guard-cancel-r1/smoke-launch-failure-1.json",
+   "sha256": "0208aec07d99cc02641f635d94915a57dadedcebbb680176d8694a74cdde3f18"
+  },
+  "refusal_reason": "no core outside the reserved set",
+  "requested_reserved_cpus": 1,
+  "smoke_output_absent_after_failure": true,
+  "status": "failed_before_child",
+  "subject_count": 0,
+  "tool_elapsed_seconds": 0.522213955
+ },
+ "bounds_order": [
+  "cpu_seconds",
+  "address_space_bytes",
+  "file_bytes",
+  "wall_seconds"
+ ],
+ "capture_limit_bytes": 16777216,
+ "command_columns": [
+  "name",
+  "exit",
+  "expected_exit",
+  "duration_ns",
+  "timed_out"
+ ],
+ "component": {
+  "qualification_credit": false,
+  "performance_credit": false,
+  "bounds": {
+   "build": [
+    30,
+    536870912,
+    16777216,
+    60
+   ],
+   "component": [
+    5,
+    536870912,
+    16777216,
+    15
+   ]
+  },
+  "capture_bytes": 305583,
+  "capture_count": 136,
+  "cleanup_complete": true,
+  "command_count": 68,
+  "commands": [
+   ["tool-cc-dependencies",0,0,4259265,false],
+   ["tool-nm-dependencies",0,0,3950983,false],
+   ["tool-python-dependencies",0,0,4105294,false],
+   ["tool-git-dependencies",0,0,4236922,false],
+   ["resolve-cc1",0,0,4719797,false],
+   ["tool-cc1-dependencies",0,0,5739668,false],
+   ["resolve-collect2",0,0,5970825,false],
+   ["tool-collect2-dependencies",0,0,5232726,false],
+   ["resolve-as",0,0,6095803,false],
+   ["tool-as-dependencies",0,0,5470003,false],
+   ["resolve-ld",0,0,5795472,false],
+   ["tool-ld-dependencies",0,0,5472557,false],
+   ["version-cc",0,0,5845377,false],
+   ["version-as",0,0,6578347,false],
+   ["version-ld",0,0,4275570,false],
+   ["version-nm",0,0,4116882,false],
+   ["version-python",0,0,4319235,false],
+   ["version-git",0,0,4619446,false],
+   ["link-crt1.o",0,0,4269651,false],
+   ["link-Scrt1.o",0,0,4197833,false],
+   ["link-crti.o",0,0,4368549,false],
+   ["link-crtn.o",0,0,4174608,false],
+   ["link-crtbegin.o",0,0,4181979,false],
+   ["link-crtbeginS.o",0,0,4105905,false],
+   ["link-crtend.o",0,0,3913837,false],
+   ["link-crtendS.o",0,0,3881548,false],
+   ["link-libgcc.a",0,0,3943451,false],
+   ["link-libgcc_eh.a",0,0,3946556,false],
+   ["link-libgcc_s.so",0,0,4034128,false],
+   ["link-libgcc_s.so.1",0,0,3895908,false],
+   ["link-libc.so",0,0,4172704,false],
+   ["link-libc_nonshared.a",0,0,4180735,false],
+   ["link-libc.so.6",0,0,4541226,false],
+   ["link-libdl.a",0,0,4183250,false],
+   ["link-libpthread.a",0,0,4320385,false],
+   ["link-libm.so",0,0,4347656,false],
+   ["link-libm.so.6",0,0,4149489,false],
+   ["link-libmvec.so.1",0,0,4250271,false],
+   ["compiler-specs",0,0,4379474,false],
+   ["archive-exports",0,0,59374415,false],
+   ["scalar_span_metadata-headers",0,0,27131817,false],
+   ["scalar_span_metadata-build",0,0,619192417,false],
+   ["scalar_span_metadata-dependencies",0,0,3768346,false],
+   ["scalar_span_metadata-component",0,0,11268826,false],
+   ["scalar_read-headers",0,0,17422493,false],
+   ["scalar_read-build",0,0,233974620,false],
+   ["scalar_read-dependencies",0,0,3827776,false],
+   ["scalar_read-component",0,0,9551467,false],
+   ["loop_envelope-headers",0,0,23107136,false],
+   ["loop_envelope-build",0,0,411717464,false],
+   ["loop_envelope-dependencies",0,0,3917371,false],
+   ["loop_envelope-component",0,0,56260570,false],
+   ["bounded_fusion_plan-headers",0,0,71042900,false],
+   ["bounded_fusion_plan-build",0,0,2742574189,false],
+   ["bounded_fusion_plan-dependencies",0,0,4051632,false],
+   ["bounded_fusion_plan-component",0,0,1272632433,false],
+   ["loop_plan-headers",0,0,82447499,false],
+   ["loop_plan-build",0,0,3579826267,false],
+   ["loop_plan-dependencies",0,0,3776989,false],
+   ["loop_plan-component",0,0,1922677902,false],
+   ["loop_direct_far-headers",0,0,79215098,false],
+   ["loop_direct_far-build",0,0,3760831408,false],
+   ["loop_direct_far-dependencies",0,0,3985252,false],
+   ["loop_direct_far-component",0,0,2373223990,false],
+   ["loop_fused_far-headers",0,0,85564628,false],
+   ["loop_fused_far-build",0,0,4521989414,false],
+   ["loop_fused_far-dependencies",0,0,4053094,false],
+   ["loop_fused_far-component",0,0,4220858938,false]
+  ],
+  "components": {
+   "scalar_span_metadata": {"result":{"accepted":1283,"code_forms":131,"max_register_rows":4,"none_checks":1283,"old_accepts":53,"plan_controls":49,"postseal_equal":1,"refusals":26,"schema":1},"status":"passed"},
+   "scalar_read": {"result":{"accepted":766,"descriptor_version":2,"instruction_execution":false,"model_cases":269,"new_codes":5,"old_rows":5,"owner_execution":false,"postseal_equal":true,"refusals":63,"schema":1},"status":"passed"},
+   "loop_envelope": {"result":{"boundaries_max":8,"corruptions":16,"emitted":0,"heads_max":128,"members":2,"owner_entries":0,"positive":122,"profile":"loop-envelope-component-v1","refused":9,"version":12},"status":"passed"},
+   "bounded_fusion_plan": {"result":{"copied_boundaries":56,"corruptions":14,"direct_models":1536,"emitted_execution":0,"interiors":19964,"misses":10,"mov_models":1280,"old_version_refusals":60,"owner_credit":0,"plans":14,"typed_direct":41984,"typed_mov":83456,"version":11},"status":"passed"},
+   "loop_plan": {"result":{"bridge_controls":53,"copied_boundaries":314,"corruptions":16,"direct_models":1152,"emitted_execution":0,"interiors":83383,"misses":8,"mov_models":320,"old_version_refusals":210,"owner_credit":0,"plans":35,"profile":"loop-plan-component-v1","typed_direct":31488,"typed_mov":20864,"version":12},"status":"passed"},
+   "loop_direct_far": {"result":{"far_direct":{"adapters":70,"direct_corruptions":870,"emitted_execution":0,"far":58,"literal_refusals":464,"models":13440,"near":12,"owner_credit":0,"plan_corruptions":128,"plans":4,"profile":"loop-far-direct-component-v1","relocation_controls":102,"relocations":6,"steps":264832},"original_loop":{"bridge_controls":53,"copied_boundaries":314,"corruptions":16,"direct_models":1152,"emitted_execution":0,"interiors":83383,"misses":8,"mov_models":320,"old_version_refusals":210,"owner_credit":0,"plans":35,"profile":"loop-plan-component-v1","typed_direct":31488,"typed_mov":20864,"version":12}},"status":"passed"},
+   "loop_fused_far": {"result":{"loop_fused_far":{"copied_boundaries":556,"corruptions":300,"direct_models":4608,"direct_steps":89984,"emitted_execution":0,"far":12,"graph_controls":8,"histories":24,"interiors":156068,"links":8,"literal_refusals":96,"mov_models":1280,"mov_recoveries":41984,"near":12,"old_sentinels":12,"owner_credit":0,"partial":4,"partial_controls":24,"profile":"loop-fused-far-component-v1","refusals":12},"loop_guard_relocation":{"argument_controls":16,"copied_refusals":2,"emitted_execution":0,"follow_refusals":2,"miss_controls":24,"owner_credit":0,"partial":2,"plan_controls":216,"positive":4,"prefix_controls":4,"profile":"loop-guard-relocation-component-v1","reason_controls":80,"result_controls":32,"root":2,"spill_forged_refusals":2,"spill_refusals":2,"status_controls":24,"success_refusals":4},"original_fused":{"copied_boundaries":56,"corruptions":14,"direct_models":1536,"emitted_execution":0,"interiors":19964,"misses":10,"mov_models":1280,"old_version_refusals":60,"owner_credit":0,"plans":14,"typed_direct":41984,"typed_mov":83456,"version":11}},"status":"passed"}
+  },
+  "cpu": 1,
+  "error": null,
+  "final_errors": [],
+  "generated_execution": 0,
+  "inputs_unchanged": true,
+  "native_execution": 0,
+  "owner_credit": false,
+  "profile": "experimental-loop-fused-far-components-v1",
+  "receipt": {
+   "bytes": 452505,
+   "file": "target/evaluation/inprocess/loop-guard-components-attempt-1/receipt.json",
+   "sha256": "ab136d0a443d3e29383127a31aafbde1222967994b07c47f4ec1010ddbad3970"
+  },
+  "reproduction_argv": [
+   "python3.12",
+   "-B",
+   "evaluation/inprocess/loop_fused_far_components/run.py",
+   "--expect-revision",
+   "c9d8b4a4dc4a72761005d048aa5ad868125e382a",
+   "--cpu",
+   "1",
+   "--archive",
+   "<retained-decoder.a>",
+   "--archive-sha256",
+   "d5ae6933ce1e905be557a9dac3ffd2341c7649c42f58f9594bba2365ea8ba399",
+   "--archive-native-receipt",
+   "<retained-native-receipt.json>",
+   "--archive-native-receipt-sha256",
+   "7335cedcff807ddb2411ffeaecebd1ddb9ff69cd910e117a46b386b1a1561877",
+   "--output",
+   "target/evaluation/inprocess/<fresh-component-output>"
+  ],
+  "reproduction_argv_reconstructed": true,
+  "source_unchanged": true,
+  "status": "components_passed"
+ },
+ "duration_scope": "Observed child wall nanoseconds; diagnostic validation only, not application performance.",
+ "hardware": {
+  "affinity_cpu_count": 1,
+  "architecture": "x86_64",
+  "cpu family": "26",
+  "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+  "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+  "kernel_version": "7.1.3",
+  "microcode": "0xb101066",
+  "model": "17",
+  "model name": "AMD EPYC 9D85 158-Core Processor",
+  "stepping": "0",
+  "vendor_id": "AuthenticAMD"
+ },
+ "hardware_provenance": "Both collectors independently observed identical hardware at reserved CPU 1.",
+ "limitations": [
+  "Seven component oracles passed. They execute no generated guest code and confer no current native/owner qualification.",
+  "Maintained smoke exited 0 with typed terminal zero fields; no full-state reader, pair, corruption controls or cancellation proof ran in this diagnostic.",
+  "Differential smoke failed without a terminal. Overall smoke and this checkpoint remain failed; prior exit-125 failure and allocator refusal remain failed.",
+  "Original 56-owner-case/lifecycle, 392/522 qualification and performance requirements remain mandatory. No speedup or SIGKILL-cause claim."
+ ],
+ "native_qualification_credit": false,
+ "owner_qualification_credit": false,
+ "performance_credit": false,
+ "profile": "loop-guard-focused-checkpoint-v1",
+ "qualification_credit": false,
+ "reproduction_notes": [
+  "Use the recorded clean c9d8 checkout and a reserved singleton CPU matching component --cpu.",
+  "An additional parent CPU may be needed for allocator pin verification. The refused parent-only-CPU 1 launch ran no diagnostic command.",
+  "Supply exact retained native receipt from 1e3 receipt/archive/application assets and prior failed command. Drivers authenticate whole inputs. Use fresh outputs and original per-child limits; no added outer CPU/wall limit."
+ ],
+ "reused_inputs": {
+  "archive": {
+   "bytes": 12007764,
+   "sha256": "d5ae6933ce1e905be557a9dac3ffd2341c7649c42f58f9594bba2365ea8ba399"
+  },
+  "component_native_inputs_revalidated": false,
+  "interpreter": {
+   "bytes": 13240,
+   "sha256": "3e26e0ffb56a0abcb744e0175ecada834b32b39910b99878f3e611d4c754ade0"
+  },
+  "native_cpu": 1,
+  "native_receipt": {
+   "bytes": 2440227,
+   "file": "target/evaluation/inprocess/tunables-lpf-far-r2-loop-native/receipt.json",
+   "sha256": "7335cedcff807ddb2411ffeaecebd1ddb9ff69cd910e117a46b386b1a1561877"
+  },
+  "native_revision": "1e3ad6faaaa476ea131ade0dab9603687665027a",
+  "native_status": "observed_native_references",
+  "original": {
+   "bytes": 115152,
+   "sha256": "5a8bee54a7cf03db58c3ce70f1a7927fa82d954747e3e1e786dee2eae3ec58dd"
+  },
+  "prior_exit": 125,
+  "prior_expected_exit": 0,
+  "prior_failed_command": {
+   "bytes": 3935,
+   "file": "target/evaluation/inprocess/tunables-lpf-far-r2-loop-owner/subject-maintained-0-0.json",
+   "sha256": "d39e3327fbc580ba62c958e65def17f4f12b0f46ff07b009f8b2e9cd14284738"
+  },
+  "same_head_native_credit": false,
+  "smoke_current_decoder_source_files_equal": 11
+ },
+ "schema": 1,
+ "smoke": {
+  "qualification_credit": false,
+  "performance_credit": false,
+  "owner_credit": false,
+  "bounds": [
+   30,
+   536870912,
+   16777216,
+   60
+  ],
+  "capture_bytes": 8914204,
+  "capture_count": 14,
+  "cleanup_complete": true,
+  "command_count": 6,
+  "commands": [
+   ["maintained-build",0,0,17036082200,false],
+   ["maintained-carrier",0,0,47951351,false],
+   ["subject-maintained-0-0",0,0,12150261304,false],
+   ["differential-build",0,0,16942873183,false],
+   ["differential-carrier",0,0,45563686,false],
+   ["subject-differential-0-0",-9,0,30153571368,false]
+  ],
+  "cpu": 1,
+  "differential_termination": "Signal9 (exit -9), timed_out=false; cause unknown. Elapsed time does not identify the cause.",
+  "error": "ValueError: entire six-command diagnostic",
+  "final_errors": [],
+  "inputs_unchanged": true,
+  "profile": "loop-guard-cancel-smoke-v1",
+  "receipt": {
+   "bytes": 1427150,
+   "file": "target/evaluation/inprocess/loop-guard-smoke-attempt-1/receipt.json",
+   "sha256": "cf9062450ae70c2bfbda05652e22f494181540b78e72f7040b0cc8aec75d4c90"
+  },
+  "reproduction_argv": [
+   "python3.12",
+   "-B",
+   "evaluation/inprocess/loop_guard_cancel_smoke.py",
+   "--expect-revision",
+   "c9d8b4a4dc4a72761005d048aa5ad868125e382a",
+   "--output",
+   "target/evaluation/inprocess/<fresh-smoke-output>",
+   "--native-receipt",
+   "<retained-native-receipt.json>",
+   "--native-receipt-sha256",
+   "7335cedcff807ddb2411ffeaecebd1ddb9ff69cd910e117a46b386b1a1561877",
+   "--prior-command",
+   "<retained-prior-command.json>",
+   "--prior-command-sha256",
+   "d39e3327fbc580ba62c958e65def17f4f12b0f46ff07b009f8b2e9cd14284738"
+  ],
+  "reproduction_argv_scope": "Actual argv with portable Python and input/output path placeholders.",
+  "source_unchanged": true,
+  "status": "failed",
+  "subjects": [
+   {
+    "captures": {
+     "record": {
+      "bytes": 290275,
+      "sha256": "18bfac58db0198ff7b815e51faf8ddc64cffc7bbcddab9d45598824a4a4a4278"
+     },
+     "stderr": {
+      "bytes": 15143,
+      "sha256": "c2dc4bc476e5ae84c1eca02bc4263f089982049c4e503984708f773cb1473262"
+     },
+     "stdout": {
+      "bytes": 8588824,
+      "sha256": "d4c9998e9e587fab70f4b15d9dc91a493746d82044a40d5ba0722e3599cb9b6e"
+     }
+    },
+    "case": 0,
+    "duration_ns": 12150261304,
+    "error": null,
+    "exit": 0,
+    "expected_exit": 0,
+    "lane": "maintained",
+    "placement": 0,
+    "status": "exit_zero_diagnostic_only",
+    "terminal": {
+     "loop": {
+      "choice_complete": 1,
+      "failure_code": 0,
+      "route": 11,
+      "scope": 0,
+      "status": 0
+     },
+     "owner": {
+      "busy": 0,
+      "detail_abs": 0,
+      "detail_negative": 0,
+      "failure_code": 0,
+      "phase": 14,
+      "status": 0
+     }
+    },
+    "timed_out": false
+   },
+   {
+    "captures": {
+     "record": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+     },
+     "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+     },
+     "stdout": {
+      "bytes": 18944,
+      "sha256": "0107ed35015bb1b227fcd8e1554941e2bf7d1166b950a7a3f38365644df313e0"
+     }
+    },
+    "case": 0,
+    "duration_ns": 30153571368,
+    "error": "ValueError: complete LOOP terminal stream",
+    "exit": -9,
+    "expected_exit": 0,
+    "lane": "differential",
+    "placement": 0,
+    "status": "failed",
+    "terminal": null,
+    "timed_out": false
+   }
+  ],
+  "summary": {
+   "bytes": 4160,
+   "file": "target/evaluation/inprocess/loop-guard-smoke-attempt-1/summary.json",
+   "sha256": "3c7e2e0b29ec8304f9fdf06b80c7171c34d3d6f8bc4bb8e7805ad9ef8e76f297"
+  }
+ },
+ "source": {
+  "head_sources_match": true,
+  "revision": "c9d8b4a4dc4a72761005d048aa5ad868125e382a",
+  "source_manifest_sha256": "d7ae856d38fbc6e9815abde00a86c699b3c75c8db7a3f7cc16efa329ff3ec078",
+  "tracked_clean": true,
+  "tree": "6351ab3e11d0b990d66fc623227055a944e75fd8"
+ },
+ "status": "failed"
+}
