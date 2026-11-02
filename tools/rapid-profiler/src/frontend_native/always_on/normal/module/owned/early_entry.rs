@@ -126,12 +126,13 @@ struct Visit {
     entry: bool,
 }
 struct PhysicalState {
-    shared: Arc<Shared>,
     order: [SelectedFunction; 2],
     words: [u64; 4],
     batches: u64,
     calls: u64,
     active: Option<PhysicalBatch>,
+    // Drop an active batch's fact owner before the existing attachment owner.
+    shared: Arc<Shared>,
 }
 thread_local! { static PHYSICAL: RefCell<Option<PhysicalState>> = const { RefCell::new(None) }; }
 
@@ -162,7 +163,7 @@ impl PhysicalState {
             position: 0,
             rsp: None,
             seen: SeenSlots::empty(),
-            rows: RowSlots::empty(),
+            rows: RowSlots::with_owner(Arc::clone(&state.binding)),
             pending_position: None,
         });
         Ok(())
@@ -211,11 +212,16 @@ impl PhysicalState {
                 let BindingProfile::Module { site, .. } = &state.binding.profile else {
                     return Err(error(Cause::Identity));
                 };
-                state.selected_geometry(
-                    self.order[index % 2],
-                    site.functions()[self.order[index % 2].index].entry(),
-                    Some(row.return_pc),
-                )?;
+                // Preserve canonical-entry indexing (including its original
+                // panic) before consulting the exact immutable geometry fact.
+                let selected = self.order[index % 2];
+                let entry = site.functions()[selected.index].entry();
+                if !b
+                    .rows
+                    .geometry_matches(index, state, selected, entry, row.return_pc)
+                {
+                    state.selected_geometry(selected, entry, Some(row.return_pc))?;
+                }
                 if row.observed_ordinal.is_some() && b.pending_position != Some(index) {
                     let r = state
                         .records

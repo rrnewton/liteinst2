@@ -1,7 +1,10 @@
-//! Exact occupancy of four physical slots; no cached validation of row contents.
+//! Exact occupancy and owner-bound immutable geometry; raw row checks stay fresh.
 #![forbid(unsafe_code)]
 
-use super::EarlyEntryModulePhysicalRow;
+use super::{
+    Arc, Binding, BindingProfile, BridgeError, Cause, EarlyEntryModulePhysicalRow, NormalState,
+    SelectedFunction, error,
+};
 use std::ops::Deref;
 
 // Fields stay private to this module. There is no mutable Option, array or row
@@ -53,10 +56,38 @@ impl Deref for SeenSlots {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct GeometryKey {
+    selected: SelectedFunction,
+    entry: u64,
+    return_pc: u64,
+}
+
+// The batch retains one immutable binding for every fact, never one per row.
+// Production keeps this owner inside the active PhysicalState batch.
+// Raw rows and facts share the same private mutation boundary.
+#[cfg_attr(test, derive(Clone))]
 pub(super) struct RowSlots {
     values: [Option<EarlyEntryModulePhysicalRow>; 4],
     present: u8,
     observed: u8,
+    facts: [Option<GeometryKey>; 4],
+    owner: Option<Arc<Binding>>,
+}
+
+// This non-Clone token owns the slot borrow until the unchanged RET transition
+// succeeds. It exposes no NormalState/Session or mutable row/Option view.
+pub(super) struct CheckedRow<'a> {
+    slots: &'a mut RowSlots,
+    fact: Option<GeometryKey>,
+}
+impl CheckedRow<'_> {
+    #[inline(always)]
+    pub(super) fn set(self, index: usize, row: EarlyEntryModulePhysicalRow) {
+        // The original bounds-checked raw write runs first. A failed transition
+        // drops this token without changing any row, fact, count or owner.
+        self.slots.set(index, Some(row));
+        self.slots.facts[index] = self.fact;
+    }
 }
 impl RowSlots {
     pub(super) const fn empty() -> Self {
@@ -64,7 +95,62 @@ impl RowSlots {
             values: [None; 4],
             present: 0,
             observed: 0,
+            facts: [None; 4],
+            owner: None,
         }
+    }
+
+    pub(super) fn with_owner(owner: Arc<Binding>) -> Self {
+        Self {
+            owner: Some(owner),
+            ..Self::empty()
+        }
+    }
+
+    #[inline(always)]
+    pub(super) fn checked_return(
+        &mut self,
+        state: &NormalState,
+        selected: SelectedFunction,
+        pc: u64,
+    ) -> Result<CheckedRow<'_>, BridgeError> {
+        // These are the original Module extraction, unchecked site indexing
+        // and geometry call, at the old RET validation position.
+        let BindingProfile::Module { site, .. } = &state.binding.profile else {
+            return Err(error(Cause::Identity));
+        };
+        let entry = site.functions()[selected.index].entry();
+        state.selected_geometry(selected, entry, Some(pc))?;
+        let fact = self
+            .owner
+            .as_ref()
+            .filter(|owner| Arc::ptr_eq(owner, &state.binding))
+            .map(|_| GeometryKey {
+                selected,
+                entry,
+                return_pc: pc,
+            });
+        Ok(CheckedRow { slots: self, fact })
+    }
+
+    #[inline(always)]
+    pub(super) fn geometry_matches(
+        &self,
+        index: usize,
+        state: &NormalState,
+        selected: SelectedFunction,
+        entry: u64,
+        return_pc: u64,
+    ) -> bool {
+        self.owner
+            .as_ref()
+            .is_some_and(|owner| Arc::ptr_eq(owner, &state.binding))
+            && self.facts[index]
+                == Some(GeometryKey {
+                    selected,
+                    entry,
+                    return_pc,
+                })
     }
 
     #[inline(always)]
@@ -86,6 +172,9 @@ impl RowSlots {
         *slot = value;
         self.present = present;
         self.observed = observed;
+        // Even identical replacement/clear invalidates the old proof. The
+        // checked token is the only path that can install a fresh fact.
+        self.facts[index] = None;
     }
 
     pub(super) fn is_prefix(&self, len: usize) -> bool {
@@ -102,6 +191,33 @@ impl Deref for RowSlots {
         &self.values
     }
 }
+
+// Preserve complete capsule equality in the existing test snapshots. Binding
+// identity, every raw value, mask/count and fact are compared; not just occupancy.
+#[cfg(test)]
+impl std::fmt::Debug for RowSlots {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RowSlots")
+            .field("values", &self.values)
+            .field("present", &self.present)
+            .field("observed", &self.observed)
+            .field("facts", &self.facts)
+            .field("owner", &self.owner.as_ref().map(Arc::as_ptr))
+            .finish()
+    }
+}
+#[cfg(test)]
+impl PartialEq for RowSlots {
+    fn eq(&self, other: &Self) -> bool {
+        self.values == other.values
+            && self.present == other.present
+            && self.observed == other.observed
+            && self.facts == other.facts
+            && self.owner.as_ref().map(Arc::as_ptr) == other.owner.as_ref().map(Arc::as_ptr)
+    }
+}
+#[cfg(test)]
+impl Eq for RowSlots {}
 
 #[cfg(test)]
 mod tests {
@@ -228,7 +344,7 @@ mod tests {
                 original_seen(&seen, *before);
             }
             for value in [None, Some(row(1, false)), Some(row(1, true))] {
-                let before = rows;
+                let before = rows.clone();
                 assert!(
                     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                         rows.set(index, value);
