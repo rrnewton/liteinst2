@@ -17,8 +17,19 @@ static int pe_sub_choose(uintptr_t pc,struct pe_sub_choice *out) {
     unsigned slot=ptr_choose(pc);uintptr_t page=pc&~(PAGE-1);
     const struct li2_ptr_slot *chosen=&pe.retained[slot];
     if(chosen->generation.installed && chosen->publication.source.entry==pc) {
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+        /* ptr_choose authenticated this whole immutable publication and its
+           completed permit. Keep its actual pair, including a second-page
+           root; current ownership is still only advisory until preparation. */
+        if(page>(UINT64_C(1)<<47)-2*PAGE)return 0;
+        const uintptr_t pages[2]={chosen->publication.source.page[0].identity.address,
+            chosen->publication.source.page[1].identity.address};
+        if(!RCC_SELECT_TEST(0,li2_pgs_source_pair_advisory(pc,pages)))return 0;
+        *out=(struct pe_sub_choice){slot,ped_bank_for(pc),0,{pages[0],pages[1]}};return 1;
+#else
         if(!RCC_SELECT_TEST(0,li2_pg_source_pair_advisory(pc)))return 0;
         *out=(struct pe_sub_choice){slot,ped_bank_for(pc),0,{page,page+PAGE}};return 1;
+#endif
     }
     for(unsigned i=0;i<LI2_PTR_SLOTS;i++) {
         const struct li2_ptr_slot *s=&pe.retained[i];if(!s->generation.installed)continue;
@@ -34,7 +45,18 @@ static int pe_sub_choose(uintptr_t pc,struct pe_sub_choice *out) {
         pe_need(bank<2 && target.root==p->source.entry && target.pc!=target.root,PE_STATE,111);
         *out=(struct pe_sub_choice){i,bank,1,{target.page[0],target.page[1]}};return 1;
     }
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+    if(!RCC_SELECT_TEST(3,li2_pg_source_pair_advisory(pc))) {
+        /* Preserve the old forward pair first. A final executable page can
+           instead use its real predecessor; no page is invented or opened. */
+        if(page<2*PAGE || page>(UINT64_C(1)<<47)-2*PAGE)return 0;
+        const uintptr_t pages[2]={page-PAGE,page};
+        if(!li2_pgs_source_pair_advisory(pc,pages))return 0;
+        *out=(struct pe_sub_choice){slot,ped_bank_for(pc),0,{pages[0],pages[1]}};return 1;
+    }
+#else
     if(!RCC_SELECT_TEST(3,li2_pg_source_pair_advisory(pc)))return 0;
+#endif
     *out=(struct pe_sub_choice){slot,ped_bank_for(pc),0,{page,page+PAGE}};return 1;
 }
 static int pe_sub_candidate(const struct li2_pg_sources *s,const struct pe_payload *p) {
