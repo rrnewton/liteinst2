@@ -106,3 +106,9 @@ pub unsafe extern "C" fn li2_decoder_mov_store(pc:u64, bytes:*const u8, length:u
     let source=unsafe{core::slice::from_raw_parts(bytes,length)};
     match one(pc,source){Ok(x)=>{unsafe{out.write(x);}abi::OK},Err(e)=>e}
 }
+
+// Distinct byte-only descriptor; the four-Code API above stays unchanged.
+#[cfg(feature = "loop-effects")]
+mod byte_mov {
+    include!("byte_mov_guard.rs");
+}

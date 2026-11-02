@@ -19,6 +19,7 @@ scalar-span = ["scalar-region"]
 linked-epoch = ["scalar-span"]
 scalar-read = ["linked-epoch"]
 mov-guard = []
+loop-effects = ["scalar-read", "mov-guard"]
 add-guard = ["scalar-region"]
 
 [profile.release]

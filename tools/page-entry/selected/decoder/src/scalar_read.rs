@@ -241,3 +241,9 @@ pub unsafe extern "C" fn li2_decoder_scalar_read_none(pc: u64, bytes: *const u8,
     unsafe { out.write(result); }
     abi::OK
 }
+
+// Distinct version3 API; all scalar-read2 bodies stay unchanged.
+#[cfg(feature = "loop-effects")]
+mod loop_scalar {
+    include!("loop_scalar.rs");
+}

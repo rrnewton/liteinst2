@@ -4,6 +4,9 @@
 #ifdef LI2_PERSISTENT_LOOP_PLAN
 #include "persistent_loop_plan.h"
 #endif
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+#include "persistent_loop_effects_plan.h"
+#endif
 #ifdef LI2_SPAN_FAST_BYTES
 #include "span_fast_bytes.h"
 #endif
@@ -675,7 +678,16 @@ static int emit_stubs(struct li2_pg_plan *p) {
     }
     return 0;
 }
-#ifdef LI2_PERSISTENT_LOOP_PLAN
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+/* Explicit policy13 callback. The old public planners still call the wrapper
+   below, which selects the unchanged old MOV emitter for every old row. */
+static int pgd_emit_with_effects(struct li2_pg_plan *p,struct li2_pg_miss *miss,
+    int (*decode)(struct li2_pg_plan *,uintptr_t,const unsigned char *,size_t,struct li2_span_decoded *),
+    int (*direct_emit)(uintptr_t,const unsigned char *,size_t,unsigned,uintptr_t,uintptr_t,
+        const struct li2_jd_binding *,const uintptr_t[2],struct li2_dd_plan *),
+    int (*mov_emit)(unsigned,uintptr_t,const unsigned char *,size_t,uintptr_t,uintptr_t,
+        uintptr_t,const struct li2_mg_table *,struct li2_mg_plan *)) {
+#elif defined(LI2_PERSISTENT_LOOP_PLAN)
 static int pgd_emit_with_direct(struct li2_pg_plan *p,struct li2_pg_miss *miss,
     int (*decode)(struct li2_pg_plan *,uintptr_t,const unsigned char *,size_t,struct li2_span_decoded *),
     int (*direct_emit)(uintptr_t,const unsigned char *,size_t,unsigned,uintptr_t,uintptr_t,
@@ -800,7 +812,10 @@ static int pgd_emit(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
 #endif
         if(h->kind==LI2_PE_MOV) {
             unsigned char bytes[15];size_t n=window(p,d->decoded.pc,bytes);
-#if defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+            p->guard_result=(unsigned)mov_emit(p->instruction[i].mov.version,d->decoded.pc,bytes,n,
+                generated,p->layout.spill,destination(p,i,0),&p->table,&p->guard[i].mov);
+#elif defined(LI2_PERSISTENT_DISPATCH) && LI2_PERSISTENT_DISPATCH == 1
             p->guard_result=(unsigned)li2_mg_emit(d->decoded.pc,bytes,n,generated,p->layout.spill,
                 destination(p,i,0),&p->table,&p->guard[i].mov);
 #else
@@ -867,6 +882,19 @@ static int pgd_emit(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
     }
     return 0;
 }
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+static int pgd_old_mov_emit(unsigned version,uintptr_t pc,const unsigned char *b,size_t n,
+    uintptr_t generated,uintptr_t spill,uintptr_t successor,const struct li2_mg_table *table,
+    struct li2_mg_plan *out) {
+    (void)version;return li2_mg_emit(pc,b,n,generated,spill,successor,table,out);
+}
+static int pgd_emit_with_direct(struct li2_pg_plan *p,struct li2_pg_miss *miss,
+    int (*decode)(struct li2_pg_plan *,uintptr_t,const unsigned char *,size_t,struct li2_span_decoded *),
+    int (*direct_emit)(uintptr_t,const unsigned char *,size_t,unsigned,uintptr_t,uintptr_t,
+        const struct li2_jd_binding *,const uintptr_t[2],struct li2_dd_plan *)) {
+    return pgd_emit_with_effects(p,miss,decode,direct_emit,pgd_old_mov_emit);
+}
+#endif
 #ifdef LI2_PERSISTENT_LOOP_PLAN
 static int pgd_emit_selected(struct li2_pg_plan *p,struct li2_pg_miss *miss,
     int (*decode)(struct li2_pg_plan *,uintptr_t,const unsigned char *,size_t,struct li2_span_decoded *)) {
@@ -1035,4 +1063,8 @@ int li2_pg_placement(uintptr_t entry,const struct li2_pg_layout *layout) {
 #include "persistent_loop_fused_plan.inc"
 #endif
 #include "persistent_loop_plan.inc"
+#endif
+
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+#include "persistent_loop_effects_plan.inc"
 #endif

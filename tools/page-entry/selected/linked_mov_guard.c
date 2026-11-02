@@ -185,3 +185,10 @@ int li2_mg_recover(const struct li2_mg_plan *p,uintptr_t pc,const uint64_t raw[1
     out->phase=m->phase;out->original_pc=m->phase==LI2_MG_AFTER?p->original.tf.next_pc:p->original.tf.pc;
     out->complete=1;return 0;
 }
+
+#ifdef LI2_LOOP_EFFECTS
+#if LI2_LOOP_EFFECTS != 1
+#error "exact separate loop-effects profile"
+#endif
+#include "linked_byte_mov_guard.inc"
+#endif
