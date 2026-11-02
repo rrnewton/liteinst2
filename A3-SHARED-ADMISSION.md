@@ -31,11 +31,16 @@ The first implementation, `7be445a56a42ef0544a8f0f59021fa39b39267e6`, moves
 decoder setup, selected classes and GPR/width facts into `crates/liteinst-x86`.
 Its workspace and freestanding regressions pass; its serial launch validation
 times out and remains failed in [the receipt](evaluation/shared-x86/README.md).
-The next source change moves head indexing, transfer facts, successors,
+The CFG implementation moves head indexing, transfer facts, successors,
 reachability and block partitioning into `src/control_flow.rs`. Offline neighbor
 construction and the runtime ordinary/whole-function validators consume it,
 retaining their separate admission checks. Test-only predecessor references
-check behavior parity; they do not participate in production.
+check behavior parity; they do not participate in production. The corrected
+campaign passes all 77 focused tests and the complete parallel workspace,
+but retains its failed 180-second serial run. A separately declared
+360-second functional-completion observation passes all 1,039 serial tests;
+it does not replace either original 180-second failure. Exact results and
+reproduction commands are in [the CFG receipt](evaluation/shared-cfg/README.md).
 
 The disassembly ledger importer, common-sites example graph, back-edge clock,
 frontend feasibility copies and legacy encoder orchestration still need
