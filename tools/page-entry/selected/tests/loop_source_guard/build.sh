@@ -13,6 +13,7 @@ set -- -std=gnu11 -O2 -g -fno-stack-protector -fno-builtin \
   -fno-tree-loop-distribute-patterns -fno-tree-vectorize -mgeneral-regs-only \
   -fno-asynchronous-unwind-tables -ffunction-sections -fdata-sections \
   -Wall -Wextra -Werror \
+  -DLI2_PG_LOOP_ENCODING_VERSION=2 \
   -DLI2_PERSISTENT_LOOP_PLAN=1 -DLI2_PERSISTENT_LOOP_RUNTIME=1 -DLI2_PERSISTENT_FUSED_PLAN=1 \
   -DLI2_PERSISTENT_FUSED_RUNTIME=1 -DLI2_PERSISTENT_DIRECT_FRONTIER=1 -DLI2_PERSISTENT_CROSS_PAIR=1 \
   -DLI2_PERSISTENT_SUBENTRY=1 -DLI2_PERSISTENT_UNREGISTERED=1 -DLI2_MAPS_PARSE_MEMO=1 \
