@@ -55,11 +55,7 @@ impl Fixture {
         state.journal.header(state.tid, 0);
         let physical = PhysicalState {
             shared: client.shared,
-            order: order.map(|i| state.selection(i).unwrap()),
-            words: WORDS,
-            batches: 0,
-            calls: 0,
-            active: None,
+            local: LocalState::new(order.map(|i| state.selection(i).unwrap()), WORDS),
         };
         NORMAL.with(|c| c.borrow_mut().0 = Some(Box::new(state)));
         PHYSICAL.with(|c| *c.borrow_mut() = Some(physical));
