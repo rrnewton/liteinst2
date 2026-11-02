@@ -25,6 +25,26 @@ def need(value,message):
     if not value:raise ValueError(message)
 
 
+def unsupported_frontier(rebuilt,head,ordinal):
+    """Map only a source-proved ordinary Jcc fallthrough to its original PC."""
+    heads,exits=rebuilt['heads'],rebuilt['exits']
+    need(0<=head<len(heads),'ordinary frontier belongs to a reconstructed head')
+    h=heads[head]
+    need(h['kind']==5 and h['flow']==1 and ordinal==1 and
+         len(h['successors'])==2 and h['external']==1,
+         'only the nondirectional conditional fallthrough may name an unsupported frontier')
+    k=h['successors'][ordinal]
+    need(128<=k<128+len(exits),'ordinary frontier has an exact bounded exit token')
+    f=exits[k-128];target=h['targets'][ordinal]
+    need(target==struct.unpack_from('<Q',h['original'],8)[0]and
+         f['pc']==target and f['head']is None and f['arm']is None and
+         struct.unpack_from('<Q',f['original'])[0]==target and
+         struct.unpack_from('<I',f['original'],260)[0]==0 and
+         struct.unpack_from('<I',f['original'],264)[0]!=0,
+         'complete reconstructed unsupported frontier equals the original fallthrough PC')
+    return target
+
+
 def local_history(check,c):
     """Return normalized facts after validating all 528 saved exit bytes.
 
@@ -109,6 +129,14 @@ def local_history(check,c):
     for ordinal,k in enumerate(tokens[:arms]):
         need(k<heads or 128<=k<128+exits,'bounded historical direct successor token')
         if external&(1<<ordinal):need(k>=128,'historical external arm has an exit token')
+        elif k>=128:
+            rebuilt=graph(pages,b''.join(data),entry);h=rebuilt['heads'][head]if head<len(rebuilt['heads'])else None
+            need(len(rebuilt['heads'])==heads and len(rebuilt['exits'])==exits and
+                 h is not None and h['kind']==5 and h['pc']==pc and h['flow']==flow and
+                 h['external']==external and tuple(h['successors'])==tokens[:arms],
+                 'ordinary frontier retains exact full graph dimensions and saved direct head')
+            need(unsupported_frontier(rebuilt,head,ordinal)==targets[ordinal],
+                 'saved nondirectional frontier is the independently reconstructed branch target')
         else:need(k<heads,'historical internal arm names a generated head')
     need(tokens[arm]==128+index,'historical chosen arm matches exact exit index')
     if external==3:
@@ -276,6 +304,8 @@ def direct_history(check,completion):
     internal=[0,0]
     for ordinal,k in enumerate(h['successors']):
         if h['external']&(1<<ordinal):continue
+        if k>=128:
+            internal[ordinal]=unsupported_frontier(rebuilt,head,ordinal);continue
         need(k<len(heads),'historical internal arm has a real generated head')
         if k//64==head//64:internal[ordinal]=(a,b)[k//64]+512*(k%64)
         else:

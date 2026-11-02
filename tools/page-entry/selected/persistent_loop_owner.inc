@@ -132,6 +132,44 @@ static size_t plr_window(uintptr_t pc,unsigned char b[15]) {
     }
     return n;
 }
+/* Reconstruct one non-directional arm of the already source-validated PF
+   graph. An unsupported conditional fallthrough exits at its original PC;
+   it is not a generated head and does not become a directory cut. */
+static int plr_fallback_destination(const struct li2_pg_plan *g,unsigned head,
+    unsigned arm,uintptr_t *out) {
+    if(!g || !out || g->version!=LI2_PF_VERSION || !g->heads || g->heads>LI2_PG_HEADS ||
+       !g->exits || g->exits>LI2_PG_BOUNDARIES || g->links>LI2_PG_BOUNDARIES ||
+       g->links+g->exits>LI2_PG_BOUNDARIES ||
+       head>=g->heads)return 0;
+    *out=0;
+    const struct li2_pe_head *h=&g->head[head];
+    const struct li2_span_decoded *d=&g->original[head];
+    const struct li2_dd_descriptor *a=&g->instruction[head].direct;
+    if(h->kind!=LI2_PG_DIRECT || !h->successor_count || h->successor_count>2 ||
+       arm>=h->successor_count || (a->external_mask&(1U<<arm)))return 0;
+    unsigned k=h->successors[arm];
+    /* Ordinary unsupported fallthrough frontier: exact source identity. */
+    if(k>=LI2_PG_HEADS) {
+        unsigned x=k-LI2_PG_HEADS;
+        if(arm!=1 || h->successor_count!=2 || d->flow!=LI2_REGION_JCC || x>=g->exits ||
+           a->target[1]!=d->decoded.next_pc || g->exit_pc[x]!=a->target[1] ||
+           g->frontier[x].ready || !g->frontier[x].refusal ||
+           g->frontier[x].decoded.pc!=a->target[1])return 0;
+        *out=g->exit_pc[x];return *out!=0;
+    }
+    /* Existing generated-head and capacity-link destinations stay exact. */
+    if(k>=g->heads)return 0;
+    if(k/64==head/64)*out=g->layout.generated[k/64]+(uintptr_t)(k%64)*LI2_PE_SLOT_BYTES;
+    else {
+        unsigned matches=0;
+        for(unsigned j=0;j<g->links;j++)if(g->edge[j].kind==LI2_PG_CAPACITY_LINK &&
+            g->edge[j].source_head==head && g->edge[j].successor==arm && g->edge[j].target_head==k) {
+            ++matches;*out=g->layout.stubs+6U*j;
+        }
+        if(matches!=1)return 0;
+    }
+    return *out!=0;
+}
 /* LOOP-domain policy11 keeps the original PF source graph. Reconstruct the
    complete NO_ENVELOPE, graph, cut ordinal and adapter from saved values;
    no live slot or fabricated exclusion table supplies historical authority.
@@ -170,16 +208,7 @@ static int plr_fallback_value(const struct pda_completion *c) {
     struct li2_jd_binding binding;uintptr_t internal[2]={0};
     if(li2_pg_dispatch_binding(pe.loop.pages,&m->header.layout,m->header.table,g->heads,e->head,&binding))goto done;
     for(unsigned arm=0;arm<h->successor_count;arm++)if(!(direct->external_mask&(1U<<arm))) {
-        unsigned k=h->successors[arm];if(k>=g->heads)goto done;
-        if(k/64==e->head/64)internal[arm]=m->header.layout.generated[k/64]+(uintptr_t)(k%64)*LI2_PE_SLOT_BYTES;
-        else {
-            unsigned matches=0;
-            for(unsigned j=0;j<g->links;j++)if(g->edge[j].kind==LI2_PG_CAPACITY_LINK &&
-                g->edge[j].source_head==e->head && g->edge[j].successor==arm && g->edge[j].target_head==k) {
-                ++matches;internal[arm]=m->header.layout.stubs+6U*j;
-            }
-            if(matches!=1)goto done;
-        }
+        if(!plr_fallback_destination(g,e->head,arm,&internal[arm]))goto done;
     }
     unsigned char bytes[15]={0};size_t n=plr_window(original->decoded.pc,bytes);
     uintptr_t generated=m->header.layout.generated[e->head/64]+(uintptr_t)(e->head%64)*LI2_PE_SLOT_BYTES;
