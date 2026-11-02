@@ -3283,3 +3283,350 @@ fn geometry_fact_owner_is_retained_until_the_batch_drops() {
     assert!(target.finish().0.is_none());
     assert!(owner.upgrade().is_none());
 }
+
+// Literal original transition, renamed only. The paired candidate uses the real
+// private current-RET capability; this reference still performs full geometry.
+impl NormalState {
+    fn observe_transition_before_current_ret(
+        &mut self,
+        selected: SelectedFunction,
+        pc: u64,
+        rsp: u64,
+        word: u64,
+        end: RawTimestamp,
+    ) -> Result<(), BridgeError> {
+        let pending = self.pending.as_ref().ok_or(error(Cause::Return))?;
+        self.selected_geometry(selected, pending.entry_pc, Some(pc))?;
+        let p = self.pending.as_mut().ok_or(error(Cause::Return))?;
+        if p.selected != selected
+            || p.returned.is_some()
+            || p.rsp != rsp
+            || p.word != word
+            || p.slot.identity != p.ordinal
+        {
+            return Err(error(Cause::Return));
+        }
+        let summary = p.summary.ok_or(error(Cause::Invariant))?;
+        let (kind, generation, bits) =
+            history::packed_for_function(&self.binding.session, p.selected.function, summary)?;
+        let observed = self
+            .totals
+            .ret_observed
+            .checked_add(1)
+            .ok_or(error(Cause::Capacity))?;
+        if self.journal.used() >= EVENTS || self.len >= CALLS {
+            return Err(error(Cause::Capacity));
+        }
+        if let Some(accuracy) = &mut self.accuracy {
+            accuracy.end(self.len, selected, p.ordinal)?;
+        }
+        let raw = RawInterval {
+            ordinal: p.ordinal,
+            entry_pc: p.entry_pc,
+            return_pc: pc,
+            owner: timing::owner(summary),
+            start: p.start,
+            end,
+        };
+        self.journal
+            .row([kind + 1, p.ordinal, pc, rsp, word, generation, bits]);
+        p.returned = Some(raw);
+        self.totals.ret_observed = observed;
+        // Receipt, sampled frame and FunctionClosed owner remain untouched.
+        Ok(())
+    }
+}
+
+// Inject after the real full precheck/current geometry, while the test child
+// holds the production token. Production exposes no mutable-state capability.
+fn current_ret_fault(state: &mut NormalState, fault: usize) -> Option<Pending> {
+    if matches!(fault, 0 | 1 | 2 | 3 | 4 | 12 | 15) {
+        state.pending.as_mut().unwrap().entry_pc += 1;
+    }
+    if matches!(fault, 2 | 5 | 6 | 16) {
+        state.pending.as_mut().unwrap().word += 8;
+    }
+    match fault {
+        1 | 5 => state.journal.word(0, state.journal.used() as u64 + 1),
+        3 | 7 => state.pending.as_mut().unwrap().summary = None,
+        4 | 8 => state.totals.ret_observed = u64::MAX,
+        9 | 10 => {
+            let removed = state.pending.take();
+            state
+                .journal
+                .word(0, (state.len * 2 + usize::from(fault == 10)) as u64);
+            return removed;
+        }
+        11 | 12 => {
+            state.len = CALLS;
+            state.journal.word(0, (CALLS * 2 + 1) as u64);
+        }
+        13 => state.pending.as_mut().unwrap().selected.function = FunctionId(u64::MAX),
+        _ => {}
+    }
+    if matches!(fault, 14..=16) {
+        match state.pending.as_mut().unwrap().summary.as_mut().unwrap() {
+            IntervalEntrySummary::Admitted { history_len, .. }
+            | IntervalEntrySummary::Unsampled { history_len, .. } => *history_len = usize::MAX,
+        }
+    }
+    None
+}
+
+fn current_ret_expected(fault: usize) -> Cause {
+    match fault {
+        0 | 2 | 3 | 4 | 12 | 15 => Cause::Identity,
+        1 | 5 | 7 | 10 => Cause::Invariant,
+        6 | 9 | 13 | 16 => Cause::Return,
+        8 | 11 | 14 => Cause::Capacity,
+        _ => unreachable!(),
+    }
+}
+
+fn current_ret_refusal(f: &mut Fixture, fault: usize, original: bool) {
+    let Visit {
+        selected,
+        pc,
+        rsp,
+        word,
+        stamp,
+        ..
+    } = f.input(false);
+    let before = normal_image(&f.state);
+    let physical = physical_image(&f.physical);
+    let owners = identities(&f.state, &f.physical);
+    let rows = f.physical.active.as_ref().unwrap().rows.clone();
+    let checked = CheckedVisit::new(&f.physical, &mut f.state).unwrap();
+    let proof = checked
+        .return_geometry(&mut f.physical.active.as_mut().unwrap().rows, selected, pc)
+        .unwrap();
+    let removed = current_ret_fault(proof.checked.state, fault);
+    let damaged = normal_image(proof.checked.state);
+    let result = if original {
+        let CheckedCurrentReturn {
+            checked,
+            row: _row,
+            selected,
+            pc,
+        } = proof;
+        checked.journal_shape().and_then(|()| {
+            checked
+                .state
+                .observe_transition_before_current_ret(selected, pc, rsp, word, stamp)
+        })
+    } else {
+        proof.observe(rsp, word, stamp).map(|_| ())
+    };
+    assert_eq!(result, Err(error(current_ret_expected(fault))));
+    assert_eq!(normal_image(&f.state), damaged);
+    assert_eq!(physical_image(&f.physical), physical);
+    assert_eq!(identities(&f.state, &f.physical), owners);
+    assert_eq!(f.physical.active.as_ref().unwrap().rows, rows);
+    assert!(!geometry_hit(
+        f,
+        f.physical.active.as_ref().unwrap().position,
+        pc
+    ));
+    // Restore only the injected values after comparing every damaged image.
+    // In particular an absent Pending keeps and restores the actual receipt.
+    if let Some(pending) = removed {
+        assert!(f.state.pending.is_none());
+        f.state.pending = Some(pending);
+    }
+    let prior = before.pending.as_ref().unwrap();
+    let pending = f.state.pending.as_mut().unwrap();
+    pending.entry_pc = prior.entry_pc;
+    pending.word = prior.word;
+    pending.summary = prior.summary;
+    pending.selected = prior.selected;
+    f.state.len = before.len;
+    f.state.totals.ret_observed = before.totals.ret_observed;
+    f.state.journal.word(0, before.journal[0]);
+    assert_eq!(normal_image(&f.state), before);
+    assert_eq!(f.state.shape(), Ok(()));
+}
+
+#[test]
+fn current_ret_geometry_preserves_paired_late_refusals_and_receipts() {
+    let mut cases = 0;
+    for k in [10, 1000] {
+        for order in [[0, 1], [1, 0]] {
+            for armed in [false, true] {
+                for fault in 0..17 {
+                    let mut checked = Fixture::new(k, order);
+                    let mut original = Fixture::new(k, order);
+                    let generations =
+                        Generations::new(checked.epoch.generation(), original.epoch.generation());
+                    for f in [&mut checked, &mut original] {
+                        if armed {
+                            f.controller.arm(&f.epoch).unwrap();
+                        }
+                        f.physical.begin(&f.state).unwrap();
+                    }
+                    compare_visit(&mut checked, &mut original, &generations, true);
+                    current_ret_refusal(&mut checked, fault, false);
+                    current_ret_refusal(&mut original, fault, true);
+                    assert_eq!(
+                        Some(normal_image(&checked.state)),
+                        generations.image(normal_image(&original.state))
+                    );
+                    assert_eq!(
+                        physical_image(&checked.physical),
+                        physical_image(&original.physical)
+                    );
+                    // The exact original receipt still completes through the
+                    // actual callback commit/postcheck and full old reference.
+                    compare_visit(&mut checked, &mut original, &generations, false);
+                    for _ in 0..3 {
+                        compare_visit(&mut checked, &mut original, &generations, false);
+                    }
+                    compare_finish(&mut checked, &mut original, &generations);
+                    for f in [&mut checked, &mut original] {
+                        // Close an initially unpublished prepared epoch only
+                        // after all old InitialDisarmed receipts are consumed.
+                        if !armed {
+                            f.controller.arm(&f.epoch).unwrap();
+                        }
+                        f.controller.disarm(&f.epoch).unwrap();
+                        assert_eq!(
+                            f.controller
+                                .report(&f.epoch)
+                                .unwrap()
+                                .unwrap()
+                                .records()
+                                .count(),
+                            usize::from(armed)
+                        );
+                    }
+                    cases += 1;
+                }
+            }
+        }
+    }
+    assert_eq!(cases, 136);
+}
+
+#[test]
+fn current_ret_geometry_uses_actual_validation_with_foreign_rows_and_rearm() {
+    // Existing unchanged controls cover all16 masks at both K values and all
+    // old prefix/error paths. Here a foreign equal-numeric row owner forces
+    // fact=None while actual current validation must still certify the RET.
+    let mut batches = 0;
+    for (k, mode) in [(10, 0), (10, 1), (10, 2), (1000, 0), (1000, 1)] {
+        for order in [[0, 1], [1, 0]] {
+            let mut checked = Fixture::new(k, order);
+            let mut original = Fixture::new(k, order);
+            let mut generations =
+                Generations::new(checked.epoch.generation(), original.epoch.generation());
+            if mode != 0 {
+                checked.controller.arm(&checked.epoch).unwrap();
+                original.controller.arm(&original.epoch).unwrap();
+            }
+            if mode == 2 {
+                for _ in 0..5 {
+                    checked.physical.begin(&checked.state).unwrap();
+                    original.physical.begin(&original.state).unwrap();
+                    for _ in 0..4 {
+                        compare_visit(&mut checked, &mut original, &generations, true);
+                        compare_visit(&mut checked, &mut original, &generations, false);
+                    }
+                    compare_finish(&mut checked, &mut original, &generations);
+                }
+            }
+            checked.physical.begin(&checked.state).unwrap();
+            original.physical.begin(&original.state).unwrap();
+            assert!(!Arc::ptr_eq(
+                &checked.state.binding,
+                &original.state.binding
+            ));
+            std::mem::swap(
+                &mut checked.physical.active.as_mut().unwrap().rows,
+                &mut original.physical.active.as_mut().unwrap().rows,
+            );
+            compare_visit(&mut checked, &mut original, &generations, true);
+            let summary = checked.state.pending.as_ref().unwrap().summary.unwrap();
+            match mode {
+                0 => assert!(matches!(
+                    summary,
+                    IntervalEntrySummary::Unsampled {
+                        reason: UnsampledSummary::InitialDisarmed,
+                        ..
+                    }
+                )),
+                1 => assert!(matches!(summary, IntervalEntrySummary::Admitted { .. })),
+                2 => assert!(matches!(
+                    summary,
+                    IntervalEntrySummary::Unsampled {
+                        reason: UnsampledSummary::FunctionClosed { .. },
+                        ..
+                    }
+                )),
+                _ => unreachable!(),
+            }
+            let pc = checked.input(false).pc;
+            compare_visit(&mut checked, &mut original, &generations, false);
+            assert!(!geometry_hit(&checked, 0, pc));
+            assert!(!geometry_hit(&original, 0, pc));
+            let older_pending = normal_image(&checked.state).pending;
+            if mode != 0 {
+                checked.controller.disarm(&checked.epoch).unwrap();
+                original.controller.disarm(&original.epoch).unwrap();
+            }
+            let a = checked
+                .controller
+                .stage_prepared(checked.banks.pop().unwrap())
+                .unwrap();
+            let b = original
+                .controller
+                .stage_prepared(original.banks.pop().unwrap())
+                .unwrap();
+            generations.bind(1, a.generation(), b.generation());
+            checked.controller.arm(&a).unwrap();
+            original.controller.arm(&b).unwrap();
+            assert_eq!(normal_image(&checked.state).pending, older_pending);
+            let older = normal_image(&checked.state);
+            compare_visit(&mut checked, &mut original, &generations, false);
+            assert_eq!(normal_image(&checked.state), older);
+            assert_eq!(
+                checked.physical.active.as_ref().unwrap().pending_position,
+                Some(0)
+            );
+            compare_visit(&mut checked, &mut original, &generations, true);
+            compare_visit(&mut checked, &mut original, &generations, false);
+            compare_visit(&mut checked, &mut original, &generations, false);
+            compare_finish(&mut checked, &mut original, &generations);
+            for (f, second) in [(&mut checked, &a), (&mut original, &b)] {
+                f.controller.disarm(second).unwrap();
+                assert_eq!(
+                    f.controller
+                        .report(second)
+                        .unwrap()
+                        .unwrap()
+                        .records()
+                        .count(),
+                    1
+                );
+                if mode == 0 {
+                    f.controller.arm(&f.epoch).unwrap();
+                    f.controller.disarm(&f.epoch).unwrap();
+                }
+                assert_eq!(
+                    f.controller
+                        .report(&f.epoch)
+                        .unwrap()
+                        .unwrap()
+                        .records()
+                        .count(),
+                    match mode {
+                        0 => 0,
+                        1 => 1,
+                        2 => 20,
+                        _ => unreachable!(),
+                    }
+                );
+            }
+            batches += 1;
+        }
+    }
+    assert_eq!(batches, 10);
+}

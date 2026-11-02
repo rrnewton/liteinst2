@@ -79,8 +79,12 @@ pub(super) struct RowSlots {
 pub(super) struct CheckedRow<'a> {
     slots: &'a mut RowSlots,
     fact: Option<GeometryKey>,
+    canonical_entry: u64,
 }
 impl CheckedRow<'_> {
+    pub(super) fn canonical_entry(&self) -> u64 {
+        self.canonical_entry
+    }
     #[inline(always)]
     pub(super) fn set(self, index: usize, row: EarlyEntryModulePhysicalRow) {
         // The original bounds-checked raw write runs first. A failed transition
@@ -130,7 +134,11 @@ impl RowSlots {
                 entry,
                 return_pc: pc,
             });
-        Ok(CheckedRow { slots: self, fact })
+        Ok(CheckedRow {
+            slots: self,
+            fact,
+            canonical_entry: entry,
+        })
     }
 
     #[inline(always)]

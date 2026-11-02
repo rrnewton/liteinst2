@@ -31,12 +31,18 @@ impl<'a> CheckedVisit<'a> {
     }
     #[inline(always)]
     fn return_geometry<'r>(
-        &self,
+        self,
         rows: &'r mut RowSlots,
         selected: SelectedFunction,
         pc: u64,
-    ) -> Result<physical_slots::CheckedRow<'r>, BridgeError> {
-        rows.checked_return(self.state, selected, pc)
+    ) -> Result<CheckedCurrentReturn<'a, 'r>, BridgeError> {
+        let row = rows.checked_return(self.state, selected, pc)?;
+        Ok(CheckedCurrentReturn {
+            checked: self,
+            row,
+            selected,
+            pc,
+        })
     }
     fn journal_shape(&self) -> Result<(), BridgeError> {
         // All other normal-shape predicates are local immutable metadata since
@@ -68,6 +74,8 @@ impl<'a> CheckedVisit<'a> {
         self.journal_shape()?;
         self.state.enter_transition(selected, pc, rsp, word, start)
     }
+    // Retained independent old inner path for the existing test controls.
+    #[cfg(test)]
     fn observe(
         self,
         selected: SelectedFunction,
@@ -80,6 +88,54 @@ impl<'a> CheckedVisit<'a> {
         self.state.observe_transition(selected, pc, rsp, word, end)
     }
     fn bypass(self) {}
+}
+
+// Only successful current-RET validation constructs this consuming capability.
+// It holds the same exclusive normal and row-slot borrows, without exposing a
+// mutable view or caching any Session observation. Stored row facts cannot mint it.
+struct CheckedCurrentReturn<'a, 'r> {
+    checked: CheckedVisit<'a>,
+    row: physical_slots::CheckedRow<'r>,
+    selected: SelectedFunction,
+    pc: u64,
+}
+impl<'r> CheckedCurrentReturn<'_, 'r> {
+    fn pending_return_mismatch(&self, ordinal: u64) -> bool {
+        self.checked.pending_return_mismatch(ordinal)
+    }
+    fn has_unreturned_pending(&self) -> bool {
+        self.checked.has_unreturned_pending()
+    }
+    #[inline(always)]
+    fn observe(
+        self,
+        rsp: u64,
+        word: u64,
+        end: RawTimestamp,
+    ) -> Result<physical_slots::CheckedRow<'r>, BridgeError> {
+        self.checked.journal_shape()?;
+        let pending = self
+            .checked
+            .state
+            .pending
+            .as_ref()
+            .ok_or(error(Cause::Return))?;
+        // The first full geometry check used the canonical site entry. The
+        // pending entry is a separate value and must still match here, after
+        // fresh used()/pending presence and before every later Return check.
+        if pending.entry_pc != self.row.canonical_entry() {
+            return Err(error(Cause::Identity));
+        }
+        self.checked
+            .state
+            .observe_after_geometry(self.selected, self.pc, rsp, word, end)?;
+        Ok(self.row)
+    }
+    #[inline(always)]
+    fn bypass(self) -> physical_slots::CheckedRow<'r> {
+        self.checked.bypass();
+        self.row
+    }
 }
 
 // A RET certificate owns both exclusive borrows until its postcondition is
@@ -127,20 +183,20 @@ impl<'a> CheckedRet<'a> {
             return Err(error(Cause::Return));
         }
         let geometry = checked.return_geometry(&mut b.rows, selected, pc)?;
-        if let Some(ordinal) = b.seen[index] {
-            if b.pending_position != Some(index) || checked.pending_return_mismatch(ordinal) {
+        let geometry = if let Some(ordinal) = b.seen[index] {
+            if b.pending_position != Some(index) || geometry.pending_return_mismatch(ordinal) {
                 return Err(error(Cause::Return));
             }
             // With accuracy excluded by the precheck, this changes only the
             // journal, pending.returned and ret_observed. No confirmation or
             // receipt/owner/record/prefix mutation occurs on this transition.
-            checked.observe(selected, pc, rsp, word, stamp)?;
+            geometry.observe(rsp, word, stamp)?
         } else {
-            if checked.has_unreturned_pending() {
+            if geometry.has_unreturned_pending() {
                 return Err(error(Cause::Return));
             }
-            checked.bypass();
-        }
+            geometry.bypass()
+        };
         let row = EarlyEntryModulePhysicalRow {
             batch: b.number,
             position: index,
@@ -476,6 +532,16 @@ impl NormalState {
     ) -> Result<(), BridgeError> {
         let pending = self.pending.as_ref().ok_or(error(Cause::Return))?;
         self.selected_geometry(selected, pending.entry_pc, Some(pc))?;
+        self.observe_after_geometry(selected, pc, rsp, word, end)
+    }
+    fn observe_after_geometry(
+        &mut self,
+        selected: SelectedFunction,
+        pc: u64,
+        rsp: u64,
+        word: u64,
+        end: RawTimestamp,
+    ) -> Result<(), BridgeError> {
         let p = self.pending.as_mut().ok_or(error(Cause::Return))?;
         if p.selected != selected
             || p.returned.is_some()
