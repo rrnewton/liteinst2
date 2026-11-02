@@ -39,6 +39,9 @@
 #include "resident_source_lease.h"
 #endif
 #include "persistent_group_config.h"
+#ifdef LI2_LOOP_RO_CERTIFICATE
+#include "loop_ro_certificate.h"
+#endif
 #ifdef LI2_PERSISTENT_LOOP_EFFECTS
 #if LI2_PG_LOOP_EFFECTS_BINDING_VERSION != 1 || LI2_PG_LOOP_EFFECTS_POLICY_VERSION != 13 || \
     LI2_PG_LOOP_EFFECTS_SCALAR_VERSION != 3 || LI2_PG_LOOP_EFFECTS_MOV_VERSION != 2
@@ -267,7 +270,15 @@ struct li2_ptr_slot {
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
     struct li2_pgd_claim claim;
 #endif
+#ifdef LI2_LOOP_RO_CERTIFICATE
+    /* Isolated backing only in the separately bound RO-mirror profile. */
+    union {
+        struct pe_payload publication;
+        unsigned char publication_pages[PE_PROOF_BYTES];
+    } __attribute__((aligned(PAGE)));
+#else
     struct pe_payload publication;
+#endif
     size_t registry_count;
     struct li2_fork_range registry[RANGES];
     uint64_t last_completed;
@@ -1355,6 +1366,9 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
 #ifdef LI2_SEALED_BYTE_CERTIFICATE_OBSERVE
     if(sbco_mirror_write())return PE_STATE;
 #endif
+#ifdef LI2_LOOP_RO_CERTIFICATE
+    if(lrc_mirror_begin())return PE_PUBLICATION;
+#endif
     PE_SLOT(publication)=pe.candidate;struct pe_header *h=&PE_SLOT(publication).header;
     const struct li2_pg_rseq_progress *r=li2_pg_rseq_progress();
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
@@ -1373,6 +1387,9 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
     h->lifetime_version=1;h->lifetime_mode=r->lifetime_mode;
 #endif
     copy(h->archive,pe_archive,32);copy(h->policy,pe_policy,32);PE_SLOT(publication).source=li2_pg_source_view(t)->key;
+#ifdef LI2_LOOP_RO_CERTIFICATE
+    if(lrc_mirror_end())return PE_PUBLICATION;
+#endif
     volatile unsigned char *code=(void *)g->generated,*proof_bytes=(void *)g->proof;
     for(size_t i=0;i<PE_CODE_BYTES;i++){code[i]=pg_code_byte(&PE_SLOT(publication).plan,i);g->code_copied=i+1;}
     for(size_t i=0;i<PE_PROOF_BYTES;i++){proof_bytes[i]=0;g->proof_zeroed=i+1;}

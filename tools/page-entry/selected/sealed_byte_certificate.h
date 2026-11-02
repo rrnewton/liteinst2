@@ -3,14 +3,20 @@
 /* Private controller include. This value proves byte equality only; it is
    never a source, entry, mapping, rseq, or completion capability. */
 #if !defined(LI2_SEALED_BYTE_CERTIFICATE) || LI2_SEALED_BYTE_CERTIFICATE != 1 || \
-    !defined(LI2_PERSISTENT_SEALED_GENERATION) || LI2_PERSISTENT_SEALED_GENERATION != 1 || \
-    !defined(LI2_RESIDENT_SOURCE_LEASE) || LI2_RESIDENT_SOURCE_LEASE != 1
+    !defined(LI2_PERSISTENT_SEALED_GENERATION) || LI2_PERSISTENT_SEALED_GENERATION != 1
 #error "byte certificates require sealed storage and the complete writer-exclusion profile"
 #endif
 #if defined(LI2_SEALED_BYTE_CERTIFICATE_DIFFERENTIAL) && LI2_SEALED_BYTE_CERTIFICATE_DIFFERENTIAL != 1
 #error "the distinct qualification mode runs the original full scan at every decision"
 #endif
+#ifdef LI2_LOOP_RO_CERTIFICATE
+#include "loop_ro_certificate.h"
+#else
+#if !defined(LI2_RESIDENT_SOURCE_LEASE) || LI2_RESIDENT_SOURCE_LEASE != 1
+#error "the original certificate still requires its complete source-lease profile"
+#endif
 #include "resident_source_lease.h"
+#endif
 struct sbc_certificate {
     unsigned valid,slot,bank,reserved;
     uint64_t serial,mirror_epoch,generation,build_serial;

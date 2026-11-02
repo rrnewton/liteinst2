@@ -30,6 +30,9 @@ _Static_assert(LI2_SEALED_REQUIRED_SEALS==
     (F_SEAL_WRITE|F_SEAL_GROW|F_SEAL_SHRINK|F_SEAL_SEAL),"all file seals");
 struct sg_owner_state {
     unsigned initialized,reserved;
+#ifdef LI2_LOOP_RO_CERTIFICATE
+    unsigned ro_initialized,ro_writable_mask;
+#endif
     struct li2_sealed_identity bank[LI2_PTR_SLOTS][2];
 #ifdef LI2_SEALED_BYTE_CERTIFICATE
     struct sbc_owner bytes;
@@ -47,6 +50,11 @@ static int sg_permission(int prot) {
 static int sg_initialize(void) {
     if(sg_owner.state.initialized || ((uintptr_t)&sg_owner&(PAGE-1)) ||
        protected_count>=RANGES || selected_run_protect_add(0,(uintptr_t)&sg_owner,PAGE))return PE_STATE;
+#ifdef LI2_LOOP_RO_CERTIFICATE
+    /* Fixed isolated root: ordinary syscall outputs must obey its R mapping. */
+    if((uintptr_t)raw(SYS_mmap,(long)&sg_owner,PAGE,PROT_READ|PROT_WRITE,
+        MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED,-1,0)!=(uintptr_t)&sg_owner)return PE_PUBLICATION;
+#endif
     /* The page is not writable during guest execution or forwarded syscalls.
        Same-uid external ptrace/proc-memory access must also be unavailable. */
     if(raw(SYS_prctl,PR_SET_DUMPABLE,0,0,0,0,0) ||

@@ -3,6 +3,9 @@
 #ifdef LI2_SEALED_BYTE_CERTIFICATE_OBSERVE
 #include "sealed_byte_certificate_observe.h"
 #endif
+#ifdef LI2_LOOP_RO_CERTIFICATE
+#include "loop_ro_certificate.inc"
+#endif
 static struct sbc_counts sbc_observed;
 static int sbc_add(uint64_t *value,uint64_t amount) {
     if(*value>UINT64_MAX-amount)return PE_OVERFLOW;
@@ -14,6 +17,9 @@ static int sbc_initialize(void) {
        selected_run_protect_add(0,(uintptr_t)&sbc_observed,sizeof sbc_observed))return PE_STATE;
 #ifdef LI2_SEALED_BYTE_CERTIFICATE_OBSERVE
     int error=sbco_initialize();if(error)return error;
+#endif
+#ifdef LI2_LOOP_RO_CERTIFICATE
+    int mirror_error=lrc_initialize();if(mirror_error)return mirror_error;
 #endif
     sbc_observed.initialized=1;return 0;
 }
@@ -29,8 +35,12 @@ static int sbc_live(void) {
     case LI2_PG_BOUND:case LI2_PG_OPENING:case LI2_PG_CLOSING:break;
     default:return 0;
     }
+#ifdef LI2_LOOP_RO_CERTIFICATE
+    if(!lrc_state())return 0;
+#else
     struct li2_rsl_ref ref={0};
     if(li2_rsl_current(&pe.token,&ref) || !li2_rsl_ref_live(&ref))return 0;
+#endif
     const struct li2_pg_source_progress *s=li2_pg_source_progress();
     const struct li2_pg_rseq_progress *r=li2_pg_rseq_progress();
     const struct li2_fetch_progress *f=li2_lifecycle_fetch_progress();
@@ -57,6 +67,9 @@ static int sbc_replace_begin(void) {
     if(g->active_refs || g->member_refs[0] || g->member_refs[1] || g->incoming[0] ||
        g->incoming[1] || g->domain_refs || sg_owner.state.bytes.mirror_epoch[pe.selected_slot]==UINT64_MAX ||
        sbc_observed.invalidations==UINT64_MAX)return PE_STATE;
+#ifdef LI2_LOOP_RO_CERTIFICATE
+    if(!lrc_live())return PE_PUBLICATION;
+#endif
     if(sg_permission(PROT_READ|PROT_WRITE))return PE_PUBLICATION;
     struct sbc_owner *o=&sg_owner.state.bytes;
     o->certificate[pe.selected_slot].valid=0;
@@ -82,6 +95,9 @@ static int sbc_queries(const struct li2_pg_generation *g,const struct li2_sealed
     /* Always fresh: actual maps, permissions, seals, fstat and complete alias
        census. The existing caller's retained query/transition records remain
        unchanged too. No successful old query is reused as current evidence. */
+#ifdef LI2_LOOP_RO_CERTIFICATE
+    if(!lrc_live())return PE_PUBLICATION;
+#endif
     int prot=PE_SLOT(banks)[pe.selected_bank].prot;
     if(prot!=PROT_READ && prot!=(PROT_READ|PROT_EXEC))return PE_PUBLICATION;
     for(unsigned extent=0;extent<2;extent++) {
@@ -133,11 +149,21 @@ static int sbc_issue(void) {
     if(sg_permission(PROT_READ|PROT_WRITE))return PE_PUBLICATION;
     struct sbc_owner *o=&sg_owner.state.bytes;
     o->certificate[pe.selected_slot]=(struct sbc_certificate){
-        .valid=1,.slot=pe.selected_slot,.bank=pe.selected_bank,.serial=++o->next_serial,
+#ifdef LI2_LOOP_RO_CERTIFICATE
+        .valid=0,
+#else
+        .valid=1,
+#endif
+        .slot=pe.selected_slot,.bank=pe.selected_bank,.serial=++o->next_serial,
         .mirror_epoch=o->mirror_epoch[pe.selected_slot],.generation=g->generation,
         .build_serial=g->build_serial,.owner=&pe,.mirror=(uintptr_t)&PE_SLOT(publication),
         .mirror_bytes=sizeof PE_SLOT(publication),.session=pe.session,.backing=*id};
     o->writer[pe.selected_slot]=0;__asm__ volatile("":::"memory");
+#ifdef LI2_LOOP_RO_CERTIFICATE
+    /* All identity fields and the R mirror precede validity. The R root is
+       the publication boundary; no candidate may hit while it is writable. */
+    o->certificate[pe.selected_slot].valid=1;__asm__ volatile("":::"memory");
+#endif
     error=sg_permission(PROT_READ);if(error)return error;
 #ifdef LI2_SEALED_BYTE_CERTIFICATE_OBSERVE
     ++sbc_observed.issues;sbc_observed.postseal_bytes+=PE_CODE_BYTES+PE_PROOF_BYTES;
@@ -175,6 +201,9 @@ static int pe_bytes(void) {
     int candidate=sbc_match(),query=0;
     if(candidate)query=sbc_queries(&PE_SLOT(generation),
         &sg_owner.state.bank[pe.selected_slot][pe.selected_bank]);
+#ifdef LI2_LOOP_RO_CERTIFICATE
+    else if(!lrc_live())query=PE_PUBLICATION;
+#endif
     int hit=candidate && !query;
     error=sbc_add(hit?&sbc_observed.hits:&sbc_observed.misses,1);if(error)return error;
     int scan=!hit;
@@ -216,6 +245,9 @@ static void sbc_abort(void) {
     }
     __asm__ volatile("":::"memory");
     (void)sg_permission(PROT_READ);
+#ifdef LI2_LOOP_RO_CERTIFICATE
+    lrc_abort();
+#endif
     if(sbc_observed.abort_invalidations!=UINT64_MAX)++sbc_observed.abort_invalidations;
 }
 static void sbc_report(unsigned status,unsigned code) {
@@ -242,5 +274,8 @@ static void sbc_report(unsigned status,unsigned code) {
     text(&w,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
 #ifdef LI2_SEALED_BYTE_CERTIFICATE_OBSERVE
     sbco_report(status,code);
+#endif
+#ifdef LI2_LOOP_RO_CERTIFICATE
+    lrc_report(status,code);
 #endif
 }

@@ -34,7 +34,11 @@ struct pda_ret_exit {
     struct li2_maps_call_stack stack;
 };
 #endif
+#ifdef LI2_LOOP_RO_CERTIFICATE
+struct __attribute__((aligned(PAGE))) pda_completion {
+#else
 struct pda_completion {
+#endif
     uint64_t id,serial;
     unsigned count,complete;
     struct pda_member_completion member[LI2_PGD_MEMBERS];

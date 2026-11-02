@@ -219,10 +219,17 @@ static int pda_receipt(const struct pda_completion *c) {
         !equal(&s->opened[j],&d->open[0][j],sizeof s->opened[j]) ||
         !equal(&s->closed[j],&d->close[0][j],sizeof s->closed[j]))return 0;
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
+#ifdef LI2_LOOP_RO_CERTIFICATE
+    if(!lhc_direct_value(c))return 0;
+#else
     if(!pda_direct_exit_value(c))return 0;
+#endif
 #endif
     return 1;
 }
+#ifdef LI2_LOOP_RO_CERTIFICATE
+#include "loop_history_certificate.inc"
+#endif
 static int pda_permitted(unsigned slot) {
     if(slot>=LI2_PTR_SLOTS || !ptr_storage())return 0;
     const struct li2_ptr_slot *s=&pe.retained[slot];const struct li2_pgd_claim *q=&s->claim;
@@ -746,6 +753,9 @@ static void pda_complete(void) {
     struct pda_completion *c=&pe.domain.completion[w->receipt];
     pe_need((pda_zero(c,sizeof *c) && !pe.domain.claimed[w->receipt]) ||
         (pda_receipt(c) && pe.domain.claimed[w->receipt]==(1U<<c->count)-1U),PE_RELEASE,86);
+#ifdef LI2_LOOP_RO_CERTIFICATE
+    pe_need(!lhc_begin(c),PE_RELEASE,122);
+#endif
     le_zero(c,sizeof *c);c->id=++pe.domain.next_id;c->serial=pe.p.serial;c->count=w->view.count;
     c->source=*li2_pg_source_progress();c->domain_source=*li2_pgd_source_progress();
     c->rseq=*li2_pg_rseq_progress();c->fetch=pe.final_fetch;c->directory_closed=w->directory_closed;
@@ -781,6 +791,9 @@ static void pda_complete(void) {
 #endif
     c->complete=1;pe.domain.claimed[w->receipt]=0;
     pe_need(pda_receipt(c),PE_RELEASE,88);
+#ifdef LI2_LOOP_RO_CERTIFICATE
+    pe_need(!lhc_issue(c),PE_RELEASE,123);
+#endif
     for(unsigned i=0;i<c->count;i++) {
         struct li2_ptr_slot *s=&pe.retained[c->member[i].identity.slot];
         s->claim=(struct li2_pgd_claim){.id=c->id,.cell=w->receipt,.member=i,.valid=1};
