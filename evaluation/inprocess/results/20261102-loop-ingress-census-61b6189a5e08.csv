@@ -1,0 +1,18 @@
+partition,role,address_kind,address,signal,si_code,description,events,denominator_events
+producer,unknown,,,,,unknown producer,27413,57226
+producer,original,ELF_virtual_address,0x4014e0,,,"movb   $0xcc,(%rax)",8192,57226
+producer,original,ELF_virtual_address,0x403596,,,"imul   %rsi,%rax",8192,57226
+producer,original,ELF_virtual_address,0x4035a5,,,"mov    %al,-0x1(%rcx)",8192,57226
+producer,remainder,,,,,all other exact buckets,5237,57226
+ingress,original,ELF_virtual_address,0x4014e3,5,2,"add    $0x1,%rax",8192,57226
+ingress,original,ELF_virtual_address,0x40359a,5,2,"shr    $0x27,%rax",8192,57226
+ingress,original,ELF_virtual_address,0x4035a5,11,2,"mov    %al,-0x1(%rcx)",8192,57226
+ingress,original,ELF_virtual_address,0x4035a8,5,2,"cmp    $0x22000,%edx",8192,57226
+ingress,original,ELF_virtual_address,0x403596,11,2,"imul   %rsi,%rax",8191,57226
+ingress,original,ELF_virtual_address,0x4014e0,11,2,"movb   $0xcc,(%rax)",8190,57226
+ingress,remainder,,,,,all other exact buckets,8077,57226
+signal,,,,11,,SIGSEGV,27410,57226
+signal,,,,5,,SIGTRAP,29815,57226
+signal,,,,4,,SIGILL,1,57226
+signal,,,,31,,SIGSYS,0,57226
+signal,,,,0,,other,0,57226
