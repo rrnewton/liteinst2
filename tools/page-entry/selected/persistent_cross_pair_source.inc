@@ -66,7 +66,12 @@ int li2_pgx_source_value(const struct li2_pgx_source *x,const struct li2_pg_sour
         if(c->started!=1 || c->complete!=1 || c->pages!=2 || !pgx_maps(&c->maps))return 0;
         for(unsigned i=0;i<2;i++)if(c->bytes[i]!=PAGE ||
             !span_source_page_equal(&c->page[i],&key->page[i].identity) ||
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+            !pgs_loop_backing_equal(&c->page[i],&c->backing[i],
+                &key->page[i].identity,&key->page[i].backing))return 0;
+#else
             !span_source_backing_equal(&c->backing[i],&key->page[i].backing))return 0;
+#endif
     }
     return 1;
 }
@@ -103,15 +108,23 @@ static int pgx_check(const struct li2_pg_token *t,struct li2_pgx_source *x,
         uintptr_t address=expected->page[i].identity.address;
         const struct owned_page *p=current(address);const struct map_row *r=mapping(address);
         if(!p || !p->live || !p->allocation || !p->generation || p->admitted ||
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+           !pgs_loop_owned_class(p) ||
+#else
            p->backing!=SEALED || p->object>=object_count ||
+#endif
            p->logical!=(PROT_READ|PROT_EXEC) || p->actual!=PROT_READ) {
             if(!stage)return pgx_decline(x,1+i);
             return pgx_error(x,LI2_FETCH_STALE,113+i);
         }
         if(stage && !fetch_owned_equal(p,&pg_source.peer_original[i]))
             return pgx_error(x,LI2_FETCH_STALE,115+i);
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        if(pgs_loop_page_check(p,r,&check))return pgx_error(x,check.code,check.detail);
+#else
         if(verify_page_checked(p,r,&check) || alias_check_checked(p->object,p->offset,PAGE,p->logical,
             p->address,p->address+PAGE,&check))return pgx_error(x,check.code,check.detail);
+#endif
         if(!r || !r->private || r->prot!=PROT_READ || address<r->first ||
            address>=r->end || r->end-address<PAGE)return pgx_error(x,LI2_FETCH_PAGE,117+i);
         c->page[i]=(struct li2_fetch_page){.address=p->address,.allocation=p->allocation,
@@ -127,7 +140,12 @@ static int pgx_check(const struct li2_pg_token *t,struct li2_pgx_source *x,
         }
         if((e=fetch_backing_check(p,&c->backing[i])))return pgx_error(x,(unsigned)e,121+i);
         if(!stage)x->key.page[i].backing=c->backing[i];
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        if(!pgs_loop_backing_equal(&c->page[i],&c->backing[i],
+            &expected->page[i].identity,&expected->page[i].backing)) {
+#else
         if(!span_source_backing_equal(&c->backing[i],&expected->page[i].backing)) {
+#endif
             if(!stage)return pgx_decline(x,5+i);
             return pgx_error(x,LI2_FETCH_BACKING,123+i);
         }

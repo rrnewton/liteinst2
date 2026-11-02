@@ -108,8 +108,13 @@ int li2_pgs_source_pair_advisory(uintptr_t pc,const uintptr_t pages[2]) {
         for(size_t i=used;i;i--)if(records[i-1].live && records[i-1].address==pages[j]) {
             p=&records[i-1];break;
         }
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        if(!p || !p->allocation || !p->generation || p->admitted || !pgs_loop_owned_class(p) ||
+           p->logical!=(PROT_READ|PROT_EXEC) || p->actual!=PROT_READ)return 0;
+#else
         if(!p || !p->allocation || !p->generation || p->admitted || p->backing!=SEALED ||
            p->object>=object_count || p->logical!=(PROT_READ|PROT_EXEC) || p->actual!=PROT_READ)return 0;
+#endif
     }
     return found==1;
 }

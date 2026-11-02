@@ -26,6 +26,66 @@ static int pgsd_reset(const struct li2_pg_token *,const struct li2_pg_rseq_progr
 static int pgsd_primary(const struct li2_pg_token *,unsigned);
 #endif
 
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+/* Only standalone managed anonymous mappings join the existing sealed source
+   class. Loader MAP_FIXED anonymous replacements retain a file object and
+   remain outside this profile. Allocation, generation and offset stay actual. */
+static unsigned pgs_loop_owned_class(const struct owned_page *p) {
+    if(!p || object_count>OBJECTS)return 0;
+    if(p->backing==SEALED)return p->object<object_count?SEALED:0;
+    if(p->backing==ANONYMOUS && p->object==OBJECTS && !p->initial_extent)return ANONYMOUS;
+    return 0;
+}
+static unsigned pgs_loop_page_class(const struct li2_fetch_page *p) {
+    if(!p || object_count>OBJECTS)return 0;
+    if(p->backing==SEALED)return p->object<object_count?SEALED:0;
+    if(p->backing==ANONYMOUS && p->object==OBJECTS && !p->initial_extent &&
+       !p->vma_major && !p->vma_minor && !p->vma_inode)return ANONYMOUS;
+    return 0;
+}
+static int pgs_loop_anonymous_backing(const struct li2_fetch_backing *b) {
+    if(!b || b->retained_fd!=-1)return 0;
+    /* The first member is the sole nonzero field in fetch_backing_check's
+       anonymous record. Include all padding, stat bytes and observed flags. */
+    const unsigned char *raw=(const void *)b;
+    for(size_t i=sizeof b->retained_fd;i<sizeof *b;i++)if(raw[i])return 0;
+    return 1;
+}
+static int pgs_loop_backing_equal(const struct li2_fetch_page *a,
+    const struct li2_fetch_backing *ab,const struct li2_fetch_page *b,
+    const struct li2_fetch_backing *bb) {
+    unsigned kind=pgs_loop_page_class(a);
+    if(!kind || kind!=pgs_loop_page_class(b) || !ab || !bb)return 0;
+    if(kind==SEALED)return span_source_backing_equal(ab,bb);
+    return pgs_loop_anonymous_backing(ab) && pgs_loop_anonymous_backing(bb);
+}
+static int pgs_loop_geometry(void) {
+    const struct owned_page *o=&fetch.original[0];
+    const struct li2_fetch_page *p=&fetch.pages[0];
+    if(o->backing==SEALED)return span_source_geometry();
+    return fetch.page_count==1 && fetch.requested==15 &&
+        pgs_loop_owned_class(o)==ANONYMOUS && pgs_loop_page_class(p)==ANONYMOUS &&
+        o->live && o->allocation && o->generation && !o->admitted &&
+        p->address==o->address && p->allocation==o->allocation && p->generation==o->generation &&
+        p->offset==o->offset && p->initial_extent==o->initial_extent && p->object==o->object &&
+        p->logical==o->logical && p->closed_prot==o->actual &&
+        p->logical==(PROT_READ|PROT_EXEC) && p->closed_prot==PROT_READ &&
+        !(p->address&(PAGE-1)) && p->address<=(UINT64_C(1)<<47)-PAGE &&
+        fetch.pc>=p->address && fetch.pc-p->address<=PAGE-15;
+}
+static int pgs_loop_page_check(const struct owned_page *p,const struct map_row *r,
+    struct check_error *error) {
+    unsigned kind=pgs_loop_owned_class(p);
+    if(!kind)return check_error(error,LI2_FETCH_BACKING,0);
+    int result=verify_page_checked(p,r,error);if(result)return result;
+    /* Private anonymous identity has no retained file whose aliases can be
+       queried. Its real maps/W^X/lifetime checks still run. Never index the
+       sealed object array with the standalone anonymous OBJECTS sentinel. */
+    if(kind==SEALED)return alias_check_checked(p->object,p->offset,PAGE,p->logical,
+        p->address,p->address+PAGE,error);
+    return 0;
+}
+#endif
 static uintptr_t pgs_address(const struct li2_pg_layout *l,unsigned i) {
     return i<2?l->generated[i]:l->stubs;
 }
@@ -135,11 +195,19 @@ int li2_pg_source_begin(const struct li2_pg_token *t,const struct li2_pg_layout 
 static int pgs_page(unsigned i,uintptr_t address) {
     const struct owned_page *p=current(address);const struct map_row *r=mapping(address);
     if(!p || !p->live || !p->allocation || !p->generation || p->admitted ||
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+       !pgs_loop_owned_class(p) || p->logical!=(PROT_READ|PROT_EXEC) ||
+#else
        p->backing!=SEALED || p->object>=object_count || p->logical!=(PROT_READ|PROT_EXEC) ||
+#endif
        p->actual!=PROT_READ)return pgs_bad(LI2_FETCH_PAGE,i);
     struct check_error e={0};
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    if(pgs_loop_page_check(p,r,&e))return pgs_bad(e.code,e.detail);
+#else
     if(verify_page_checked(p,r,&e) || alias_check_checked(p->object,p->offset,PAGE,p->logical,
             p->address,p->address+PAGE,&e))return pgs_bad(e.code,e.detail);
+#endif
     if(!r || !r->private || r->prot!=PROT_READ || address<r->first ||
        address>=r->end || r->end-address<PAGE)return pgs_bad(LI2_FETCH_PAGE,2+i);
     /* Actual retained identity is installed before the next descriptor RAW. */
@@ -156,7 +224,11 @@ static int pgs_page(unsigned i,uintptr_t address) {
 }
 int li2_pg_source_prepare(const struct li2_pg_token *t,const struct li2_fetch_ref *ref,const uintptr_t pages[2]) {
     if(!pgs_token(t) || li2_pg_owner_phase(t)!=LI2_PG_PREPARING || pg_source.p.phase!=LI2_PGS_SEEDING ||
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+       pg_source.p.first_error || !pages || !ref || fetch_ref(ref) || !pgs_loop_geometry() ||
+#else
        pg_source.p.first_error || !pages || !ref || fetch_ref(ref) || !span_source_geometry() ||
+#endif
        pages[0]>=pages[1] || (pages[0]&(PAGE-1)) || (pages[1]&(PAGE-1)) ||
        pages[1]>(UINT64_C(1)<<47)-PAGE ||
        (fetch.pages[0].address!=pages[0] && fetch.pages[0].address!=pages[1]))return LI2_FETCH_ARGUMENT;
@@ -177,7 +249,11 @@ int li2_pg_source_prepare(const struct li2_pg_token *t,const struct li2_fetch_re
     unsigned entry_page=fetch.pages[0].address==pages[0]?0:1;
     const struct li2_pg_source_page *p=&s->key.page[entry_page];
     if(!span_source_page_equal(&p->identity,&fetch.pages[0]) ||
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+       !pgs_loop_backing_equal(&p->identity,&p->backing,&fetch.pages[0],&fetch.backing[0]) ||
+#else
        !span_source_backing_equal(&p->backing,&fetch.backing[0]) ||
+#endif
        !equal(p->bytes+(fetch.pc-p->identity.address),fetch.bytes,15))return pgs_bad(LI2_FETCH_SOURCE,12);
     s->complete=1;pg_source.p.phase=LI2_PGS_HELD;return 0;
 }
@@ -202,10 +278,19 @@ static int pgs_live(const struct li2_pg_token *t) {
            r->major!=saved->identity.vma_major || r->minor!=saved->identity.vma_minor ||
            r->inode!=saved->identity.vma_inode || r->offset!=saved->identity.vma_offset)
             return pgs_bad(LI2_FETCH_STALE,23+i);
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        if(pgs_loop_page_check(p,r,&check))return pgs_bad(check.code,check.detail);
+#else
         if(verify_page_checked(p,r,&check) || alias_check_checked(p->object,p->offset,PAGE,p->logical,
                 p->address,p->address+PAGE,&check))return pgs_bad(check.code,check.detail);
+#endif
         if((e=fetch_backing_check(p,&pg_source.p.last_backing[i])))return pgs_bad((unsigned)e,25+i);
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        if(!pgs_loop_backing_equal(&saved->identity,&saved->backing,
+            &saved->identity,&pg_source.p.last_backing[i]))return pgs_bad(LI2_FETCH_BACKING,27+i);
+#else
         if(!span_source_backing_equal(&saved->backing,&pg_source.p.last_backing[i]))return pgs_bad(LI2_FETCH_BACKING,27+i);
+#endif
     }
     for(unsigned i=0;i<2;i++) {
         const volatile unsigned char *b=(const void *)s->key.page[i].identity.address;
@@ -339,7 +424,12 @@ int li2_pg_source_key_equal(const struct li2_pg_source_key *a,const struct li2_p
     if(!a || !b || a->entry!=b->entry)return 0;
     for(unsigned i=0;i<LI2_PE_SOURCES;i++)
         if(!span_source_page_equal(&a->page[i].identity,&b->page[i].identity) ||
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+           !pgs_loop_backing_equal(&a->page[i].identity,&a->page[i].backing,
+               &b->page[i].identity,&b->page[i].backing) ||
+#else
            !span_source_backing_equal(&a->page[i].backing,&b->page[i].backing) ||
+#endif
            !equal(a->page[i].bytes,b->page[i].bytes,LI2_REGION_PAGE))return 0;
     return 1;
 }
@@ -355,7 +445,11 @@ int li2_pg_source_pair_advisory(uintptr_t pc) {
             p=&records[i-1];break;
         }
         if(!p || !p->allocation || !p->generation || p->admitted ||
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+           !pgs_loop_owned_class(p) ||
+#else
            p->backing!=SEALED || p->object>=object_count ||
+#endif
            p->logical!=(PROT_READ|PROT_EXEC) || p->actual!=PROT_READ)return 0;
     }
     return 1;
@@ -415,7 +509,12 @@ int li2_pgd_source_pair_equal(const struct li2_pg_source_key *a,const struct li2
     if(!a || !b)return 0;
     for(unsigned i=0;i<LI2_PE_SOURCES;i++)
         if(!span_source_page_equal(&a->page[i].identity,&b->page[i].identity) ||
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+           !pgs_loop_backing_equal(&a->page[i].identity,&a->page[i].backing,
+               &b->page[i].identity,&b->page[i].backing) ||
+#else
            !span_source_backing_equal(&a->page[i].backing,&b->page[i].backing) ||
+#endif
            !equal(a->page[i].bytes,b->page[i].bytes,LI2_REGION_PAGE))return 0;
     return 1;
 }
