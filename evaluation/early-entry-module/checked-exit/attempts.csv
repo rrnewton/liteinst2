@@ -1,0 +1,66 @@
+id,revision,kind,profile,status,exit,termination,wall_limit,elapsed,cleanup_complete,rescues,reason,receipt_detail
+focused/fmt,2bdad58364327ea832cc599de55838def35e38b2,focused,,PASS,0,,205,11.069178892066702,True,0,,focused
+focused/library-tests,2bdad58364327ea832cc599de55838def35e38b2,focused,,PASS,0,,205,19.909615262877196,True,0,,focused
+focused/calibration-tests,2bdad58364327ea832cc599de55838def35e38b2,focused,,PASS,0,,205,27.72166715702042,True,0,,focused
+focused/clippy,2bdad58364327ea832cc599de55838def35e38b2,focused,,PASS,0,,205,15.277669901028275,True,0,,focused
+unhinted-focused/fmt,b2fc5575485b80f8809a86bcd3240b440141fd30,focused,,PASS,0,,205,11.528381519019604,True,0,,history.unhinted
+unhinted-focused/library-tests,b2fc5575485b80f8809a86bcd3240b440141fd30,focused,,PASS,0,,205,21.692151137860492,True,0,,history.unhinted
+unhinted-focused/calibration-tests,b2fc5575485b80f8809a86bcd3240b440141fd30,focused,,PASS,0,,205,31.80982029088773,True,0,,history.unhinted
+unhinted-focused/clippy,b2fc5575485b80f8809a86bcd3240b440141fd30,focused,,PASS,0,,205,16.54971841000952,True,0,,history.unhinted
+build,2bdad58364327ea832cc599de55838def35e38b2,build,,PASS,0,,205,0.35585624095983803,True,0,,
+unhinted-build,b2fc5575485b80f8809a86bcd3240b440141fd30,build,,PASS,0,,205,0.37150983116589487,True,0,,
+unhinted_first,b2fc5575485b80f8809a86bcd3240b440141fd30,static,,FAILED,1,,330,0.5883965529501438,True,0,Selected generic-finish ticket alias yielded255-byte headers-only output; exact-label guard refused. First4 bodies complete; ticket body absent/frame_drop UNOBSERVED in that attempt.,
+unhinted_corrected,b2fc5575485b80f8809a86bcd3240b440141fd30,static,,PASS,0,,330,0.4415432650130242,True,0,,
+static,2bdad58364327ea832cc599de55838def35e38b2,static,,PASS,0,,330,1.3332743919454515,True,0,,
+native/k10_order01,2bdad58364327ea832cc599de55838def35e38b2,native,default-feature,PASS,0,,55,0.34149312204681337,True,0,,campaigns.native
+native/k10_order10,2bdad58364327ea832cc599de55838def35e38b2,native,default-feature,PASS,0,,55,0.3394027359317988,True,0,,campaigns.native
+native/k1000_order01,2bdad58364327ea832cc599de55838def35e38b2,native,default-feature,PASS,0,,55,0.23860381008125842,True,0,,campaigns.native
+native/k1000_order10,2bdad58364327ea832cc599de55838def35e38b2,native,default-feature,PASS,0,,55,0.23827229207381606,True,0,,campaigns.native
+native,2bdad58364327ea832cc599de55838def35e38b2,campaign,default-feature,PASS,0,,1800,6.276149942073971,True,0,,campaigns.native
+strict/order01-k10-enabled,2bdad58364327ea832cc599de55838def35e38b2,strict,qualification-feature-v1,FAILED,101,,535,2.726070110918954,True,0,,campaigns.strict
+strict/order01-k10-bypass,2bdad58364327ea832cc599de55838def35e38b2,strict,qualification-feature-v1,UNOBSERVED,,,535,,,,,campaigns.strict
+strict/order01-k10-scheduled,2bdad58364327ea832cc599de55838def35e38b2,strict,qualification-feature-v1,UNOBSERVED,,,535,,,,,campaigns.strict
+strict/order01-k1000-enabled,2bdad58364327ea832cc599de55838def35e38b2,strict,qualification-feature-v1,UNOBSERVED,,,535,,,,,campaigns.strict
+strict/order01-k1000-bypass,2bdad58364327ea832cc599de55838def35e38b2,strict,qualification-feature-v1,UNOBSERVED,,,535,,,,,campaigns.strict
+strict/order01-k1000-scheduled,2bdad58364327ea832cc599de55838def35e38b2,strict,qualification-feature-v1,UNOBSERVED,,,535,,,,,campaigns.strict
+strict/order10-k10-enabled,2bdad58364327ea832cc599de55838def35e38b2,strict,qualification-feature-v1,UNOBSERVED,,,535,,,,,campaigns.strict
+strict/order10-k10-bypass,2bdad58364327ea832cc599de55838def35e38b2,strict,qualification-feature-v1,UNOBSERVED,,,535,,,,,campaigns.strict
+strict/order10-k10-scheduled,2bdad58364327ea832cc599de55838def35e38b2,strict,qualification-feature-v1,UNOBSERVED,,,535,,,,,campaigns.strict
+strict/order10-k1000-enabled,2bdad58364327ea832cc599de55838def35e38b2,strict,qualification-feature-v1,UNOBSERVED,,,535,,,,,campaigns.strict
+strict/order10-k1000-bypass,2bdad58364327ea832cc599de55838def35e38b2,strict,qualification-feature-v1,UNOBSERVED,,,535,,,,,campaigns.strict
+strict/order10-k1000-scheduled,2bdad58364327ea832cc599de55838def35e38b2,strict,qualification-feature-v1,UNOBSERVED,,,535,,,,,campaigns.strict
+strict,2bdad58364327ea832cc599de55838def35e38b2,campaign,qualification-feature-v1,FAILED,1,,11000,117.54399955505505,True,0,AssertionError: ,campaigns.strict
+wide/order01-k10-enabled,2bdad58364327ea832cc599de55838def35e38b2,wide,qualification-feature-optional-entry-80k-v1,PASS,0,,535,147.61816028808244,True,0,,campaigns.wide
+wide/order01-k10-bypass,2bdad58364327ea832cc599de55838def35e38b2,wide,qualification-feature-optional-entry-80k-v1,PASS,0,,535,59.41139895003289,True,0,,campaigns.wide
+wide/order01-k10-scheduled,2bdad58364327ea832cc599de55838def35e38b2,wide,qualification-feature-optional-entry-80k-v1,PASS,0,,535,27.143181825056672,True,0,,campaigns.wide
+wide/order01-k1000-enabled,2bdad58364327ea832cc599de55838def35e38b2,wide,qualification-feature-optional-entry-80k-v1,PASS,0,,535,139.3494752899278,True,0,,campaigns.wide
+wide/order01-k1000-bypass,2bdad58364327ea832cc599de55838def35e38b2,wide,qualification-feature-optional-entry-80k-v1,PASS,0,,535,54.511082323035225,True,0,,campaigns.wide
+wide/order01-k1000-scheduled,2bdad58364327ea832cc599de55838def35e38b2,wide,qualification-feature-optional-entry-80k-v1,PASS,0,,535,23.75010382104665,True,0,,campaigns.wide
+wide/order10-k10-enabled,2bdad58364327ea832cc599de55838def35e38b2,wide,qualification-feature-optional-entry-80k-v1,PASS,0,,535,132.29720554198138,True,0,,campaigns.wide
+wide/order10-k10-bypass,2bdad58364327ea832cc599de55838def35e38b2,wide,qualification-feature-optional-entry-80k-v1,PASS,0,,535,53.29907532711513,True,0,,campaigns.wide
+wide/order10-k10-scheduled,2bdad58364327ea832cc599de55838def35e38b2,wide,qualification-feature-optional-entry-80k-v1,PASS,0,,535,24.105791882844642,True,0,,campaigns.wide
+wide/order10-k1000-enabled,2bdad58364327ea832cc599de55838def35e38b2,wide,qualification-feature-optional-entry-80k-v1,PASS,0,,535,126.29881123197265,True,0,,campaigns.wide
+wide/order10-k1000-bypass,2bdad58364327ea832cc599de55838def35e38b2,wide,qualification-feature-optional-entry-80k-v1,PASS,0,,535,49.951929660048336,True,0,,campaigns.wide
+wide/order10-k1000-scheduled,2bdad58364327ea832cc599de55838def35e38b2,wide,qualification-feature-optional-entry-80k-v1,PASS,0,,535,22.89052040805109,True,0,,campaigns.wide
+wide,2bdad58364327ea832cc599de55838def35e38b2,campaign,qualification-feature-optional-entry-80k-v1,PASS,0,,11000,923.8768239389174,True,0,,campaigns.wide
+unhinted-native,b2fc5575485b80f8809a86bcd3240b440141fd30,native,,UNRUN,,,,,,,Static optimization candidate rejected before runtime qualification.,history.unhinted
+unhinted-strict,b2fc5575485b80f8809a86bcd3240b440141fd30,strict,,UNRUN,,,,,,,Static optimization candidate rejected before runtime qualification.,history.unhinted
+unhinted-wide,b2fc5575485b80f8809a86bcd3240b440141fd30,wide,,UNRUN,,,,,,,Static optimization candidate rejected before runtime qualification.,history.unhinted
+unhinted-full,b2fc5575485b80f8809a86bcd3240b440141fd30,full,,UNRUN,,,,,,,Static optimization candidate rejected before runtime qualification.,history.unhinted
+full/fmt,2bdad58364327ea832cc599de55838def35e38b2,full,,PASS,0,,180,13.030623066937551,True,0,,full
+full/clippy,2bdad58364327ea832cc599de55838def35e38b2,full,,PASS,0,,180,19.110093208029866,True,0,,full
+full/check,2bdad58364327ea832cc599de55838def35e38b2,full,,PASS,0,,180,14.254586948081851,True,0,,full
+full/workspace,2bdad58364327ea832cc599de55838def35e38b2,full,,PASS,0,,1800,913.7084397650324,True,0,,full
+full/serial-launch,2bdad58364327ea832cc599de55838def35e38b2,full,,PASS,0,,180,137.09970325883478,True,0,,full
+baseline-900/fmt,5c580fdbe4ba37bac33432127abc1af5584d0a2f,full,,PASS,0,,180,13.88829570217058,True,0,,history.full_first
+baseline-900/clippy,5c580fdbe4ba37bac33432127abc1af5584d0a2f,full,,PASS,0,,180,26.469658171059564,True,0,,history.full_first
+baseline-900/check,5c580fdbe4ba37bac33432127abc1af5584d0a2f,full,,PASS,0,,180,20.9406766211614,True,0,,history.full_first
+baseline-900/workspace,5c580fdbe4ba37bac33432127abc1af5584d0a2f,full,,FAILED,-9,timeout,900,900.3497010641731,True,3,,history.full_first
+baseline-900/serial-launch,5c580fdbe4ba37bac33432127abc1af5584d0a2f,full,,UNOBSERVED,,,180,,,,,history.full_first
+baseline-1800/fmt,5c580fdbe4ba37bac33432127abc1af5584d0a2f,full,,PASS,0,,180,11.703576161060482,True,0,,history.full
+baseline-1800/clippy,5c580fdbe4ba37bac33432127abc1af5584d0a2f,full,,PASS,0,,180,0.23641496384516358,True,0,,history.full
+baseline-1800/check,5c580fdbe4ba37bac33432127abc1af5584d0a2f,full,,PASS,0,,180,0.32807939988560975,True,0,,history.full
+baseline-1800/workspace,5c580fdbe4ba37bac33432127abc1af5584d0a2f,full,,PASS,0,,1800,870.4283957669977,True,0,,history.full
+baseline-1800/serial-launch,5c580fdbe4ba37bac33432127abc1af5584d0a2f,full,,PASS,0,,180,132.248592736898,True,0,,history.full
+baseline-focused-first,5c580fdbe4ba37bac33432127abc1af5584d0a2f,focused,,FAILED,,,,,,,Historical one-CPU timeout then separately authorized 12-CPU continuation; no current credit.,history.focused
+baseline-focused-remaining,5c580fdbe4ba37bac33432127abc1af5584d0a2f,focused,,PASS,,,,,,,Historical one-CPU timeout then separately authorized 12-CPU continuation; no current credit.,history.focused
