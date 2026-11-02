@@ -1,0 +1,456 @@
+{
+  "actual_owner_completions": 0,
+  "component": {
+    "argv": [
+      "python3.12",
+      "-B",
+      "evaluation/inprocess/loop_fused_far_components/run.py",
+      "--expect-revision",
+      "0fd76a52b4d733cfff24bd5d349dce1a0405543d",
+      "--cpu",
+      "6",
+      "--archive",
+      "target/evaluation/inprocess/loop-diagnostic-r4-native/artifacts/decoder.a",
+      "--archive-sha256",
+      "d5ae6933ce1e905be557a9dac3ffd2341c7649c42f58f9594bba2365ea8ba399",
+      "--archive-native-receipt",
+      "target/evaluation/inprocess/loop-diagnostic-r4-native/receipt.json",
+      "--archive-native-receipt-sha256",
+      "eb24445ff4f7a214fee6545e1e9ed58c51933ebc5eaac40779e6b076ed7ac8b2",
+      "--output",
+      "FRESH_OUTPUT"
+    ],
+    "argv_normalized_from_recorded_outer": true,
+    "bounds": {
+      "build": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "component": [
+        5,
+        536870912,
+        16777216,
+        15
+      ]
+    },
+    "capture_limit_bytes": 16777216,
+    "captures": 136,
+    "cleanup_complete": true,
+    "commands": 68,
+    "components": {
+      "bounded_fusion_plan": {
+        "exit": 0,
+        "result": {
+          "copied_boundaries": 56,
+          "corruptions": 14,
+          "direct_models": 1536,
+          "emitted_execution": 0,
+          "interiors": 19964,
+          "misses": 10,
+          "mov_models": 1280,
+          "old_version_refusals": 60,
+          "owner_credit": 0,
+          "plans": 14,
+          "typed_direct": 41984,
+          "typed_mov": 83456,
+          "version": 11
+        },
+        "result_sha256": "686385e136611d01438913fe6319487f7463ee579fc989ce1c8b5f4bd2ffccb6",
+        "status": "passed",
+        "validation_duration_ns": 1267769055
+      },
+      "loop_direct_far": {
+        "exit": 0,
+        "result": {
+          "far_direct": {
+            "adapters": 70,
+            "direct_corruptions": 870,
+            "emitted_execution": 0,
+            "far": 58,
+            "literal_refusals": 464,
+            "models": 13440,
+            "near": 12,
+            "owner_credit": 0,
+            "plan_corruptions": 128,
+            "plans": 4,
+            "profile": "loop-far-direct-component-v1",
+            "relocation_controls": 102,
+            "relocations": 6,
+            "steps": 264832
+          },
+          "original_loop": {
+            "bridge_controls": 53,
+            "copied_boundaries": 314,
+            "corruptions": 16,
+            "direct_models": 1152,
+            "emitted_execution": 0,
+            "interiors": 83383,
+            "misses": 8,
+            "mov_models": 320,
+            "old_version_refusals": 210,
+            "owner_credit": 0,
+            "plans": 35,
+            "profile": "loop-plan-component-v1",
+            "typed_direct": 31488,
+            "typed_mov": 20864,
+            "version": 12
+          }
+        },
+        "result_sha256": "5c1475c09f6d1277a505a06e7281e2ebead01d83ed3968f3c4c85752ac260e68",
+        "status": "passed",
+        "validation_duration_ns": 2363438010
+      },
+      "loop_envelope": {
+        "exit": 0,
+        "result": {
+          "boundaries_max": 8,
+          "corruptions": 16,
+          "emitted": 0,
+          "heads_max": 128,
+          "members": 2,
+          "owner_entries": 0,
+          "positive": 122,
+          "profile": "loop-envelope-component-v1",
+          "refused": 9,
+          "version": 12
+        },
+        "result_sha256": "f014fc2d9509c7969ef46c62f52c7426fa076870bd8cf475419befa55d786650",
+        "status": "passed",
+        "validation_duration_ns": 55640179
+      },
+      "loop_fused_far": {
+        "exit": 0,
+        "result": {
+          "loop_fused_far": {
+            "copied_boundaries": 556,
+            "corruptions": 300,
+            "direct_models": 4608,
+            "direct_steps": 89984,
+            "emitted_execution": 0,
+            "far": 12,
+            "graph_controls": 8,
+            "histories": 24,
+            "interiors": 156068,
+            "links": 8,
+            "literal_refusals": 96,
+            "mov_models": 1280,
+            "mov_recoveries": 41984,
+            "near": 12,
+            "old_sentinels": 12,
+            "owner_credit": 0,
+            "partial": 4,
+            "partial_controls": 24,
+            "profile": "loop-fused-far-component-v1",
+            "refusals": 12
+          },
+          "original_fused": {
+            "copied_boundaries": 56,
+            "corruptions": 14,
+            "direct_models": 1536,
+            "emitted_execution": 0,
+            "interiors": 19964,
+            "misses": 10,
+            "mov_models": 1280,
+            "old_version_refusals": 60,
+            "owner_credit": 0,
+            "plans": 14,
+            "typed_direct": 41984,
+            "typed_mov": 83456,
+            "version": 11
+          }
+        },
+        "result_sha256": "377d1cb7c26471b23af268a7fd75ace8461884ef4909d23abc0f2038761a4805",
+        "status": "passed",
+        "validation_duration_ns": 3989367401
+      },
+      "loop_plan": {
+        "exit": 0,
+        "result": {
+          "bridge_controls": 53,
+          "copied_boundaries": 314,
+          "corruptions": 16,
+          "direct_models": 1152,
+          "emitted_execution": 0,
+          "interiors": 83383,
+          "misses": 8,
+          "mov_models": 320,
+          "old_version_refusals": 210,
+          "owner_credit": 0,
+          "plans": 35,
+          "profile": "loop-plan-component-v1",
+          "typed_direct": 31488,
+          "typed_mov": 20864,
+          "version": 12
+        },
+        "result_sha256": "249c2232b5b8fcf5dccc11c908d54e97268c6a52d5583d03bc8967a46e9741f2",
+        "status": "passed",
+        "validation_duration_ns": 1933784721
+      },
+      "scalar_read": {
+        "exit": 0,
+        "result": {
+          "accepted": 766,
+          "descriptor_version": 2,
+          "instruction_execution": false,
+          "model_cases": 269,
+          "new_codes": 5,
+          "old_rows": 5,
+          "owner_execution": false,
+          "postseal_equal": true,
+          "refusals": 63,
+          "schema": 1
+        },
+        "result_sha256": "c31c1398904180bc168d9014c7dd243e0defd2001ee4794e6e60260783c06b02",
+        "status": "passed",
+        "validation_duration_ns": 8722166
+      },
+      "scalar_span_metadata": {
+        "exit": 0,
+        "result": {
+          "accepted": 1283,
+          "code_forms": 131,
+          "max_register_rows": 4,
+          "none_checks": 1283,
+          "old_accepts": 53,
+          "plan_controls": 49,
+          "postseal_equal": 1,
+          "refusals": 26,
+          "schema": 1
+        },
+        "result_sha256": "ce173996a7063487c6955c9522a5dbf195de347de1b2b48ca91bf4004a41befe",
+        "status": "passed",
+        "validation_duration_ns": 10741257
+      }
+    },
+    "cpu": 6,
+    "error": null,
+    "expected_commands": 68,
+    "final_error_count": 0,
+    "inputs_unchanged": true,
+    "lpf_output": {
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 616,
+        "sha256": "b8b9a070947da6cd38f0ef5daba8ac8844d2936fcfb6b7c6f7f66e82c49a8049"
+      }
+    },
+    "original_bound_order": [
+      "cpu_seconds",
+      "address_space_bytes",
+      "file_bytes",
+      "wall_seconds"
+    ],
+    "outer_cpu_limit": null,
+    "outer_duration_ns_validation_only": 54969286688,
+    "outer_envelope": "original60-component collector has only per-child invoke limits",
+    "outer_exit": 0,
+    "outer_receipt": {
+      "bytes": 2362,
+      "sha256": "550902a1024ea02c006daeeb79505d4a0df6f8bcd7aca8f8350283a7c9bf0cb9"
+    },
+    "outer_wall_limit": null,
+    "profile": "experimental-loop-fused-far-components-v1",
+    "receipt": {
+      "bytes": 453165,
+      "sha256": "9db7d606769f62c17401823cb7232376b03bf1c8d357bc41ee66e9d48497586e"
+    },
+    "reused_decoder_archive": {
+      "archive": {
+        "bytes": 12007764,
+        "mode": "0644",
+        "sha256": "d5ae6933ce1e905be557a9dac3ffd2341c7649c42f58f9594bba2365ea8ba399"
+      },
+      "cpu": 23,
+      "native_inputs_revalidated": false,
+      "original_receipt_metadata_joined": true,
+      "receipt": {
+        "bytes": 2426560,
+        "mode": "0644",
+        "sha256": "eb24445ff4f7a214fee6545e1e9ed58c51933ebc5eaac40779e6b076ed7ac8b2"
+      },
+      "same_head_native_credit": false,
+      "source": {
+        "head_sources_match": true,
+        "revision": "4f3e28e7e1d434bc6d51c95bab828557a6d37442",
+        "source_manifest_sha256": "1b1f1ea2eee11f4ea870c3ba9c2daf81095dc707691b582b826ddae3a07befa6",
+        "tracked_clean": true,
+        "tree": "43bb3cefdee0095c8ce5837715b6c8761839b1b9"
+      },
+      "status": "observed_native_references"
+    },
+    "source": {
+      "head_sources_match": true,
+      "revision": "0fd76a52b4d733cfff24bd5d349dce1a0405543d",
+      "source_manifest_sha256": "5a9765f0e5b2822fa427b69339d22a70216f1368c1a7c60039763cc258d61c53",
+      "tracked_clean": true,
+      "tree": "16c9c8f04267b0c22f8bf477a69515c5138c160a"
+    },
+    "source_unchanged": true,
+    "status": "components_passed",
+    "summary": {
+      "bytes": 59132,
+      "sha256": "312e059387a01e2f4ce2ce5402a6208084b7bb7264ad5fe15467ca0ea84f3abb"
+    },
+    "tracked_drivers": {
+      "evaluation/inprocess/loop_components/run.py": {
+        "bytes": 33294,
+        "mode": "0644",
+        "sha256": "497583587d7e22baa3ddf248d9ed4f625ce3ffc234da01bfa8d51ee58643336d"
+      },
+      "evaluation/inprocess/loop_far_components/run.py": {
+        "bytes": 3152,
+        "mode": "0755",
+        "sha256": "6e40248fef8253fe01db224e2453948ee88320502a69607ab0bc5d1dd286c43f"
+      },
+      "evaluation/inprocess/loop_fused_far_components/run.py": {
+        "bytes": 4053,
+        "mode": "0755",
+        "sha256": "938dc5ead488b9c2ac418a48311e9a4ef65bdb1f2e222c3b9544e9937bbf5af4"
+      }
+    },
+    "zero_exits": 68
+  },
+  "generated_execution": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "hardware_provenance": "Each original driver observed the same hardware fields at its own recorded singleton CPU. ISA flags digest comes from the C component receipt.",
+  "limitations": [
+    "C component interpreters validate generated descriptions and typed recovery; no generated guest code was executed.",
+    "The C history count and Python saved-history dictionaries are component/model evidence, not observations of real owner completions.",
+    "Rseq graph regressions use near banks; the separate saved-PF model cases include four near and four far layouts.",
+    "The supplied archive was reused from clean4f native evidence, not a current-revision native qualification.",
+    "All full native/owner/lifecycle, original392-case/522-pair qualification and release performance work remain mandatory.",
+    "All durations are validation-only; no speedup or application-performance claim."
+  ],
+  "model_attempts": [
+    {
+      "attempt": 1,
+      "bounds": {
+        "address_space_bytes": 536870912,
+        "cpu_seconds": 30,
+        "output_bytes": 16777216,
+        "wall_seconds": 60
+      },
+      "cpu": 17,
+      "driver": {
+        "bytes": 7153,
+        "sha256": "b50a1afe87884ddc10ce81909c376c3fa26e4bbc97da934f240b8544ef8757a7"
+      },
+      "error": "ValueError: nonidentity descriptive negative",
+      "expected_revision": "0fd76a52b4d733cfff24bd5d349dce1a0405543d",
+      "explanation": "The strict validator was not reached for the bool/int domain mutation because Python dictionary equality considered True equal to1 in the stimulus nonidentity precheck. Rseq completed; no completed history/control population was recorded. Literal closure flags remain false because final closure was not reached.",
+      "fused_history": null,
+      "input_count": 11,
+      "inputs_unchanged": false,
+      "profile": "loop-fused-models-v1",
+      "python_version": "3.12.15+meta",
+      "reproduction_argv": [
+        "python3.12",
+        "-B",
+        "evaluation/inprocess/loop_fused_models.py",
+        "--expect-revision",
+        "0fd76a52b4d733cfff24bd5d349dce1a0405543d",
+        "--output",
+        "FRESH_TARGET_OUTPUT"
+      ],
+      "reproduction_argv_reconstructed": true,
+      "result_file": {
+        "bytes": 8986,
+        "sha256": "6f2ccefa5f8e1a4713b46130b2b5a3590a57349d61debb0a4324a46827079328"
+      },
+      "revision": "0fd76a52b4d733cfff24bd5d349dce1a0405543d",
+      "rseq": {
+        "bfs_orders_sha256": "a6d22c887f78489b0968223d7e74e753b0095048d32c1888efc0ee33fffd0489",
+        "bfs_roots": 28,
+        "focal_graphs": 28,
+        "lifecycle_graphs": 6,
+        "whole_decoded_descriptors": 806
+      },
+      "rseq_full_result_sha256": "9e7d3bbf65baee2308fa7727f296f215a69a0d795effd125ff136923235d70a6",
+      "source_unchanged": false,
+      "status": "failed",
+      "tracked_clean": true,
+      "validation_duration_ns": 152131907
+    },
+    {
+      "attempt": 2,
+      "bounds": {
+        "address_space_bytes": 536870912,
+        "cpu_seconds": 30,
+        "output_bytes": 16777216,
+        "wall_seconds": 60
+      },
+      "cpu": 1,
+      "driver": {
+        "bytes": 7153,
+        "sha256": "b50a1afe87884ddc10ce81909c376c3fa26e4bbc97da934f240b8544ef8757a7"
+      },
+      "error": null,
+      "expected_revision": "1a662abfdfc78591f2f113f974261c1bc2aec5c8",
+      "explanation": "One stimulus precheck now compares the whole image dictionary using key-ordered JSON, preserving bool/int distinctions. The actual validator and all8 positive/136 negative controls are unchanged.",
+      "fused_history": {
+        "actual_completions": 0,
+        "far": 4,
+        "near": 4,
+        "negative_controls": 136,
+        "positives": 8,
+        "qualification_credit": false,
+        "schema": 1,
+        "scope": "descriptive-model-only",
+        "subjects": 0
+      },
+      "input_count": 11,
+      "inputs_unchanged": true,
+      "profile": "loop-fused-models-v1",
+      "python_version": "3.12.15+meta",
+      "reproduction_argv": [
+        "python3.12",
+        "-B",
+        "evaluation/inprocess/loop_fused_models.py",
+        "--expect-revision",
+        "1a662abfdfc78591f2f113f974261c1bc2aec5c8",
+        "--output",
+        "FRESH_TARGET_OUTPUT"
+      ],
+      "reproduction_argv_reconstructed": true,
+      "result_file": {
+        "bytes": 9201,
+        "sha256": "1fcbdbb590e2e4f2ce0ab7f308ae4e875395b2ff8668db94ec0938af27a6ce84"
+      },
+      "revision": "1a662abfdfc78591f2f113f974261c1bc2aec5c8",
+      "rseq": {
+        "bfs_orders_sha256": "a6d22c887f78489b0968223d7e74e753b0095048d32c1888efc0ee33fffd0489",
+        "bfs_roots": 28,
+        "focal_graphs": 28,
+        "lifecycle_graphs": 6,
+        "whole_decoded_descriptors": 806
+      },
+      "rseq_full_result_sha256": "9e7d3bbf65baee2308fa7727f296f215a69a0d795effd125ff136923235d70a6",
+      "source_unchanged": true,
+      "status": "model_regressions_passed",
+      "tracked_clean": true,
+      "validation_duration_ns": 222841811
+    }
+  ],
+  "native_subjects_run_here": 0,
+  "performance_credit": false,
+  "profile": "loop-fused-far-component-checkpoint-v1",
+  "qualification_credit": false,
+  "schema": 1,
+  "scope": "Additive LPF C component and descriptive saved-history models; failed model attempt retained."
+}

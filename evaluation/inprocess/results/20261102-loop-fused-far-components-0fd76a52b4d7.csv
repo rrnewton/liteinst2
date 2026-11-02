@@ -1,0 +1,10 @@
+kind,attempt,revision,cpu,status,name,exit,validation_duration_ns,result_sha256,bfs_roots,focal_graphs,lifecycle_graphs,whole_decoded_descriptors,history_positives,history_near,history_far,history_negative_controls,qualification_credit,performance_credit
+C_component,1,0fd76a52b4d733cfff24bd5d349dce1a0405543d,6,passed,scalar_span_metadata,0,10741257,ce173996a7063487c6955c9522a5dbf195de347de1b2b48ca91bf4004a41befe,,,,,,,,,False,False
+C_component,1,0fd76a52b4d733cfff24bd5d349dce1a0405543d,6,passed,scalar_read,0,8722166,c31c1398904180bc168d9014c7dd243e0defd2001ee4794e6e60260783c06b02,,,,,,,,,False,False
+C_component,1,0fd76a52b4d733cfff24bd5d349dce1a0405543d,6,passed,loop_envelope,0,55640179,f014fc2d9509c7969ef46c62f52c7426fa076870bd8cf475419befa55d786650,,,,,,,,,False,False
+C_component,1,0fd76a52b4d733cfff24bd5d349dce1a0405543d,6,passed,bounded_fusion_plan,0,1267769055,686385e136611d01438913fe6319487f7463ee579fc989ce1c8b5f4bd2ffccb6,,,,,,,,,False,False
+C_component,1,0fd76a52b4d733cfff24bd5d349dce1a0405543d,6,passed,loop_plan,0,1933784721,249c2232b5b8fcf5dccc11c908d54e97268c6a52d5583d03bc8967a46e9741f2,,,,,,,,,False,False
+C_component,1,0fd76a52b4d733cfff24bd5d349dce1a0405543d,6,passed,loop_direct_far,0,2363438010,5c1475c09f6d1277a505a06e7281e2ebead01d83ed3968f3c4c85752ac260e68,,,,,,,,,False,False
+C_component,1,0fd76a52b4d733cfff24bd5d349dce1a0405543d,6,passed,loop_fused_far,0,3989367401,377d1cb7c26471b23af268a7fd75ace8461884ef4909d23abc0f2038761a4805,,,,,,,,,False,False
+Python_model,1,0fd76a52b4d733cfff24bd5d349dce1a0405543d,17,failed,rseq_and_saved_pf_history,,152131907,95b8e4e8f1fd977bf3ee0b42cc603c8325d33caf8023404e397fc58e70988b91,28,28,6,806,,,,,False,False
+Python_model,2,1a662abfdfc78591f2f113f974261c1bc2aec5c8,1,model_regressions_passed,rseq_and_saved_pf_history,,222841811,67f5e6104e239bc4a43faee950edff6822fc910d99ee375d7bc82a700b541801,28,28,6,806,8,4,4,136,False,False
