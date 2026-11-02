@@ -232,13 +232,17 @@ def component_result(name, stdout, stderr):
     return value
 
 
-def main():
+def main(*, cases=CASES, profile='experimental-loop-components-v1',
+         result=component_result, reused_archive=False):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--expect-revision', required=True)
     ap.add_argument('--archive', required=True, type=Path)
     ap.add_argument('--archive-sha256', required=True)
     ap.add_argument('--cpu', required=True, type=int)
     ap.add_argument('--output', required=True, type=Path)
+    if reused_archive:
+        ap.add_argument('--archive-native-receipt', required=True, type=Path)
+        ap.add_argument('--archive-native-receipt-sha256', required=True)
     args = ap.parse_args()
     need(sys.version_info >= (3, 11) and not sys.flags.optimize, 'Python3.11+ with assertions enabled')
     need(sorted(os.sched_getaffinity(0)) == [args.cpu], 'one externally reserved CPU matching --cpu')
@@ -256,7 +260,7 @@ def main():
     private.mkdir()
     receipt = private/'receipt.json'
     pins, aliases, artifacts, presence = {}, {}, {}, {}
-    r = dict(schema=1, profile='experimental-loop-components-v1', status='failed',
+    r = dict(schema=1, profile=profile, status='failed',
              revision=args.expect_revision, source=None, cpu=args.cpu, hardware=hardware(args.cpu), bounds=BOUNDS,
              commands=[], components={}, source_unchanged=False, inputs_unchanged=False,
              cleanup_complete=False, archive_builds=0, archive_source_provenance_verified=False,
@@ -360,6 +364,33 @@ def main():
         need(fact(archive)['sha256'] == args.archive_sha256 and archive.read_bytes().startswith(b'!<arch>\n'),
              'explicit supplied static archive identity')
         r['archive'] = fact(archive)
+        if reused_archive:
+            prior = pin(args.archive_native_receipt)
+            need(prior.name == 'receipt.json' and
+                 prior.parent.parent == ROOT/'target/evaluation/inprocess' and
+                 re.fullmatch('[0-9a-f]{64}', args.archive_native_receipt_sha256) and
+                 fact(prior)['sha256'] == args.archive_native_receipt_sha256,
+                 'explicit whole retained native receipt for reused archive')
+            native = json.loads(prior.read_bytes())
+            need(native['schema'] == 1 and native['profile'] == 'persistent-loop-native-v2' and
+                 native['status'] == 'observed_native_references' and
+                 native['source']['revision'] == native['revision'] and
+                 re.fullmatch('[0-9a-f]{40}', native['revision']) and
+                 native['source']['tracked_clean'] is True and native['source']['head_sources_match'] is True and
+                 all(native[k] is True for k in ('source_unchanged', 'inputs_unchanged', 'cleanup_complete')) and
+                 native['error'] is None and native['final_errors'] == [],
+                 'retained native outcome and original clean source, without current-head credit')
+            record = native['build']['artifacts']['decoder.a']
+            prior_archive = pin(prior.parent/'artifacts/decoder.a')
+            actual = dict(bytes=r['archive']['bytes'], sha256=r['archive']['sha256'],
+                          mode=int(r['archive']['mode'], 8))
+            need(prior_archive == archive and record == dict(path=str(archive), **actual) and
+                 native['artifacts'][str(archive)] == actual,
+                 'reused archive path and whole bytes/mode join both retained native inventories')
+            r['reused_archive'] = dict(receipt=dict(file=str(prior.relative_to(ROOT)), **fact(prior)),
+                archive_file=str(archive.relative_to(ROOT)), archive=r['archive'], source=native['source'],
+                cpu=native['cpu'], status=native['status'], original_receipt_metadata_joined=True,
+                native_inputs_revalidated=False, same_head_native_credit=False)
         tools = {name: pin(shutil.which(name, path=ENV['PATH'])) for name in ('cc', 'nm')}
         tools['python'] = pin(sys.executable)
         tools['git'] = pin('/usr/bin/git')
@@ -399,7 +430,7 @@ def main():
                  if (m := re.fullmatch(r'[0-9a-fA-F]+ T (\S+)', line))]
         need(all(names.count(name) == 1 for name in required), 'all exact decoder component providers')
 
-        for name, case in CASES.items():
+        for name, case in cases.items():
             fixture = SELECTED/'tests'/case.get('recipe_fixture', name); recipe = pin(fixture/'build.sh')
             need(fact(recipe)['sha256'] == case['recipe_sha256'], 'unchanged complete component recipe')
             output_dir = private/name; output_dir.mkdir(); output = output_dir/case.get('output_leaf', 'component')
@@ -444,14 +475,14 @@ def main():
                 diagnostic_only_additions=additions, headers=sorted(headers), link_inputs=sorted(linked),
                 runtime_objects=dynamic, elf=image, binary=binary, result=None)
             out, err = run(name+'-component', [output], 'component')
-            r['components'][name].update(status='passed', result=component_result(name, out, err))
-        need(list(r['components']) == list(CASES) and all(v['status'] == 'passed' for v in r['components'].values()),
+            r['components'][name].update(status='passed', result=result(name, out, err))
+        need(list(r['components']) == list(cases) and all(v['status'] == 'passed' for v in r['components'].values()),
              'all five old/additive component populations passed')
         r['status'] = 'components_passed'
     except BaseException as error:
         r['error'] = type(error).__name__+': '+str(error)
     finally:
-        for name in CASES:
+        for name in cases:
             directory = private/name
             if directory.is_dir():
                 for p in directory.iterdir():
@@ -495,6 +526,8 @@ def main():
             reaped=c.get('reaped', False), timed_out=c.get('timed_out', False), cleanup_errors=len(c.get('cleanup_errors', [])),
             argv_sha256=digest(canonical(c['argv'])), captures={n: {k: v[k] for k in ('bytes', 'sha256')}
                 for n, v in c.get('captures', {}).items()}) for c in r['commands']])
+    if reused_archive:
+        summary['reused_archive'] = r.get('reused_archive')
     payload = json.dumps(summary, indent=2, sort_keys=True)+'\n'
     need(str(ROOT) not in payload and str(private) not in payload and '/home/' not in payload, 'public projection excludes private paths')
     (private/'summary.json').write_text(payload)
