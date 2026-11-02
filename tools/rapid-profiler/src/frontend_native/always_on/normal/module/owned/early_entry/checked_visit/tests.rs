@@ -3364,7 +3364,7 @@ fn current_ret_fault(state: &mut NormalState, fault: usize) -> Option<Pending> {
         13 => state.pending.as_mut().unwrap().selected.function = FunctionId(u64::MAX),
         _ => {}
     }
-    if matches!(fault, 14 | 15 | 16) {
+    if matches!(fault, 14..=16) {
         match state.pending.as_mut().unwrap().summary.as_mut().unwrap() {
             IntervalEntrySummary::Admitted { history_len, .. }
             | IntervalEntrySummary::Unsampled { history_len, .. } => *history_len = usize::MAX,
