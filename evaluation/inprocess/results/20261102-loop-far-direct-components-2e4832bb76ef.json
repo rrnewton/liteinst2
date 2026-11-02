@@ -1,0 +1,545 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "build_cpu_seconds": 30,
+    "build_wall_seconds": 60,
+    "component_cpu_seconds": 5,
+    "component_wall_seconds": 15,
+    "file_and_capture_limit_bytes": 16777216,
+    "outer_cpu_limit": null,
+    "outer_envelope": "The original 60-command component collector has only per-child invoke limits; the additive fixed 64-command run retains that envelope.",
+    "outer_wall_limit": null
+  },
+  "component_attempts": [
+    {
+      "argv": [
+        "python3.12",
+        "-B",
+        "evaluation/inprocess/loop_far_components/run.py",
+        "--expect-revision",
+        "0ff8637d9597044b21989dbdd63d8624fe563ecd",
+        "--cpu",
+        "23",
+        "--archive",
+        "target/evaluation/inprocess/loop-diagnostic-r4-native/artifacts/decoder.a",
+        "--archive-sha256",
+        "d5ae6933ce1e905be557a9dac3ffd2341c7649c42f58f9594bba2365ea8ba399",
+        "--archive-native-receipt",
+        "target/evaluation/inprocess/loop-diagnostic-r4-native/receipt.json",
+        "--archive-native-receipt-sha256",
+        "eb24445ff4f7a214fee6545e1e9ed58c51933ebc5eaac40779e6b076ed7ac8b2",
+        "--output",
+        "FRESH_OUTPUT"
+      ],
+      "argv_normalized_from_recorded_outer": true,
+      "attempt": 1,
+      "capture_count": 122,
+      "cleanup_complete": true,
+      "command_count": 61,
+      "cpu": 23,
+      "error": "ValueError: complete typed component header closure",
+      "expected_command_count": 64,
+      "explanation": "Failed before the far build: its required dependency incorrectly named old model.c instead of the actual independent far direct_model.c. Original five components passed; far oracle did not launch.",
+      "failed_stage": "loop_direct_far-headers",
+      "far": {
+        "collector_status": null,
+        "command_launched": false,
+        "duration_ns": null,
+        "exit": null,
+        "name": "loop_direct_far",
+        "observed_outcome": "unexecuted",
+        "result_sha256": null
+      },
+      "final_error_count": 0,
+      "inputs_unchanged": true,
+      "nonzero_exits": 0,
+      "old_five_validation_duration_ns": {
+        "bounded_fusion_plan": 1260202285,
+        "loop_envelope": 54066147,
+        "loop_plan": 1603498137,
+        "scalar_read": 9184166,
+        "scalar_span_metadata": 11183898
+      },
+      "outer_duration_ns_validation_only": 37165806810,
+      "outer_exit": 1,
+      "outer_receipt": {
+        "bytes": 2355,
+        "sha256": "0eddde4c9e1048352124b55e968ed9fe67ea9920061501f98cbd8da4ad0bd3d0"
+      },
+      "profile": "experimental-loop-far-components-v1",
+      "receipt": {
+        "bytes": 365430,
+        "sha256": "08a7a97f56c8d762cb3fa719eeae2de93b00a271dc3d28845c7cf43b3ba035ab"
+      },
+      "source": {
+        "head_sources_match": true,
+        "revision": "0ff8637d9597044b21989dbdd63d8624fe563ecd",
+        "source_manifest_sha256": "deca46dda7702123dd7f19dac117667cf19fbe07380c8b15049790054e23077b",
+        "tracked_clean": true,
+        "tree": "dd4dc6a38bc39906de60252f431c535c61f67b55"
+      },
+      "source_unchanged": true,
+      "status": "failed",
+      "summary": {
+        "bytes": 50793,
+        "sha256": "eeaa9e332681f438ab749f080a0a7211371c408d5916ff70f2b6c1bd86d3a48d"
+      },
+      "tracked_drivers": {
+        "evaluation/inprocess/loop_components/run.py": {
+          "bytes": 33294,
+          "mode": "0644",
+          "sha256": "497583587d7e22baa3ddf248d9ed4f625ce3ffc234da01bfa8d51ee58643336d"
+        },
+        "evaluation/inprocess/loop_far_components/run.py": {
+          "bytes": 2852,
+          "mode": "0755",
+          "sha256": "f25beefeda4e8d632b867b758b26c34a998f5cbc352514074ef91999957a0ea2"
+        }
+      },
+      "zero_exits": 61
+    },
+    {
+      "argv": [
+        "python3.12",
+        "-B",
+        "evaluation/inprocess/loop_far_components/run.py",
+        "--expect-revision",
+        "7e64915e4f878096f0f5e1327b14d85d80ed9216",
+        "--cpu",
+        "1",
+        "--archive",
+        "target/evaluation/inprocess/loop-diagnostic-r4-native/artifacts/decoder.a",
+        "--archive-sha256",
+        "d5ae6933ce1e905be557a9dac3ffd2341c7649c42f58f9594bba2365ea8ba399",
+        "--archive-native-receipt",
+        "target/evaluation/inprocess/loop-diagnostic-r4-native/receipt.json",
+        "--archive-native-receipt-sha256",
+        "eb24445ff4f7a214fee6545e1e9ed58c51933ebc5eaac40779e6b076ed7ac8b2",
+        "--output",
+        "FRESH_OUTPUT"
+      ],
+      "argv_normalized_from_recorded_outer": true,
+      "attempt": 2,
+      "capture_count": 128,
+      "cleanup_complete": true,
+      "command_count": 64,
+      "cpu": 1,
+      "error": "ValueError: exact successful command: loop_direct_far-component",
+      "expected_command_count": 64,
+      "explanation": "Far oracle launched and aborted at its first far adapter. The unchanged old emitter's failed E9 placeholder is E9 90 00 00 00; two new selectors incorrectly expected a zero second byte. The receipt's literal component status is not_run because invocation raised before the result update.",
+      "failed_stage": "loop_direct_far-component",
+      "far": {
+        "captures": {
+          "stderr": {
+            "bytes": 241,
+            "sha256": "202d45a0b0c2d09da377dbbca9fa990bf9cb313945553ef3f365ac0a299a3f3f"
+          },
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "collector_status": "not_run",
+        "command_launched": true,
+        "duration_ns": 2348155877,
+        "exit": -6,
+        "name": "loop_direct_far",
+        "observed_outcome": "aborted_SIGABRT",
+        "result_sha256": null
+      },
+      "far_failure_location": "tools/page-entry/selected/tests/loop_direct_far/oracle.c:41",
+      "final_error_count": 0,
+      "inputs_unchanged": true,
+      "nonzero_exits": 1,
+      "old_five_validation_duration_ns": {
+        "bounded_fusion_plan": 1271132298,
+        "loop_envelope": 54947796,
+        "loop_plan": 1598581097,
+        "scalar_read": 9703295,
+        "scalar_span_metadata": 12063357
+      },
+      "outer_duration_ns_validation_only": 45444689851,
+      "outer_exit": 1,
+      "outer_receipt": {
+        "bytes": 2353,
+        "sha256": "09c2177257976af90e26239cd610adf6c7f3d057dd36977212302fee0c6a268d"
+      },
+      "profile": "experimental-loop-far-components-v1",
+      "receipt": {
+        "bytes": 404165,
+        "sha256": "daf491e178684822e253886c09e298883ffb6a2d2e443b15362e90b1236b5ce1"
+      },
+      "source": {
+        "head_sources_match": true,
+        "revision": "7e64915e4f878096f0f5e1327b14d85d80ed9216",
+        "source_manifest_sha256": "a6738fffe23c83d92aab22eb6b3728af6228fc42edf4c7be6be1fa3743fb6df0",
+        "tracked_clean": true,
+        "tree": "1f17d22e61433b7d167309ec5c0df57554a4154c"
+      },
+      "source_unchanged": true,
+      "status": "failed",
+      "summary": {
+        "bytes": 53603,
+        "sha256": "d13ebfec6279e59754d072dac825861ad9ccc39024a8654baf6fb43b8bf90bc3"
+      },
+      "tracked_drivers": {
+        "evaluation/inprocess/loop_components/run.py": {
+          "bytes": 33294,
+          "mode": "0644",
+          "sha256": "497583587d7e22baa3ddf248d9ed4f625ce3ffc234da01bfa8d51ee58643336d"
+        },
+        "evaluation/inprocess/loop_far_components/run.py": {
+          "bytes": 3152,
+          "mode": "0755",
+          "sha256": "6e40248fef8253fe01db224e2453948ee88320502a69607ab0bc5d1dd286c43f"
+        }
+      },
+      "zero_exits": 63
+    },
+    {
+      "argv": [
+        "python3.12",
+        "-B",
+        "evaluation/inprocess/loop_far_components/run.py",
+        "--expect-revision",
+        "2e4832bb76ef4ce782ba2314dd99989fd8968dab",
+        "--cpu",
+        "6",
+        "--archive",
+        "target/evaluation/inprocess/loop-diagnostic-r4-native/artifacts/decoder.a",
+        "--archive-sha256",
+        "d5ae6933ce1e905be557a9dac3ffd2341c7649c42f58f9594bba2365ea8ba399",
+        "--archive-native-receipt",
+        "target/evaluation/inprocess/loop-diagnostic-r4-native/receipt.json",
+        "--archive-native-receipt-sha256",
+        "eb24445ff4f7a214fee6545e1e9ed58c51933ebc5eaac40779e6b076ed7ac8b2",
+        "--output",
+        "FRESH_OUTPUT"
+      ],
+      "argv_normalized_from_recorded_outer": true,
+      "attempt": 3,
+      "capture_count": 128,
+      "cleanup_complete": true,
+      "command_count": 64,
+      "cpu": 6,
+      "error": null,
+      "expected_command_count": 64,
+      "explanation": "Exact dependency substitution and exact E9 90 00 00 00 selector correction were committed before this clean run. All original five components and the additive far component passed.",
+      "failed_stage": null,
+      "far": {
+        "captures": {
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stdout": {
+            "bytes": 563,
+            "sha256": "f0797f588c8f6eed9ea40051a3b5b9034be248dc98907c77004c0ed8e9fbc242"
+          }
+        },
+        "collector_status": "passed",
+        "command_launched": true,
+        "duration_ns": 2772358913,
+        "exit": 0,
+        "name": "loop_direct_far",
+        "observed_outcome": "passed",
+        "result_sha256": "5c1475c09f6d1277a505a06e7281e2ebead01d83ed3968f3c4c85752ac260e68"
+      },
+      "final_error_count": 0,
+      "inputs_unchanged": true,
+      "nonzero_exits": 0,
+      "old_five_validation_duration_ns": {
+        "bounded_fusion_plan": 1269398938,
+        "loop_envelope": 55376290,
+        "loop_plan": 1589758349,
+        "scalar_read": 9786841,
+        "scalar_span_metadata": 11506952
+      },
+      "outer_duration_ns_validation_only": 45408070783,
+      "outer_exit": 0,
+      "outer_receipt": {
+        "bytes": 2353,
+        "sha256": "6e7d11b0d285ff71ba4d31697be50435ba0828e688ec27b0d772bfbc0ff57fe1"
+      },
+      "profile": "experimental-loop-far-components-v1",
+      "receipt": {
+        "bytes": 405095,
+        "sha256": "120e03ff7fdab84dc032b04d2e6d5dc647f4bdb4c3cd35f6b5bb1545863ecb99"
+      },
+      "source": {
+        "head_sources_match": true,
+        "revision": "2e4832bb76ef4ce782ba2314dd99989fd8968dab",
+        "source_manifest_sha256": "1401518aa613b0591f20b5dc68dbff47123a07a3b91e5ddc219811aefe3f4250",
+        "tracked_clean": true,
+        "tree": "1479e9dac546b2d09a823643e1e08925d677ed89"
+      },
+      "source_unchanged": true,
+      "status": "components_passed",
+      "summary": {
+        "bytes": 54571,
+        "sha256": "3632f92d1f58a4d35c6e2899925b6c218e2c37bd43d9d9e7c267559d878b3637"
+      },
+      "tracked_drivers": {
+        "evaluation/inprocess/loop_components/run.py": {
+          "bytes": 33294,
+          "mode": "0644",
+          "sha256": "497583587d7e22baa3ddf248d9ed4f625ce3ffc234da01bfa8d51ee58643336d"
+        },
+        "evaluation/inprocess/loop_far_components/run.py": {
+          "bytes": 3152,
+          "mode": "0755",
+          "sha256": "6e40248fef8253fe01db224e2453948ee88320502a69607ab0bc5d1dd286c43f"
+        }
+      },
+      "zero_exits": 64
+    }
+  ],
+  "generated_execution": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "hardware_provenance": "Observed by each original driver at its recorded singleton CPU; identical fields across these five attempts. ISA digest is available only in the C receipts.",
+  "limitations": [
+    "Validation durations are not application performance measurements.",
+    "C interpreters exercise emitted descriptions and exact recovery, but do not execute generated code or establish owner lifecycle/fault behavior.",
+    "The Python regression uses near generated banks even for high source placements; it does not validate far-bank execution.",
+    "The reused native receipt is from clean4f3e28e7 on CPU23; native inputs were not revalidated at these later revisions.",
+    "Original full native/component/lifecycle/392-case/522-pair and release performance qualification remain mandatory."
+  ],
+  "model_attempts": [
+    {
+      "attempt": 1,
+      "bounds": {
+        "address_space_bytes": 536870912,
+        "cpu_seconds": 30,
+        "output_bytes": 16777216,
+        "wall_seconds": 60
+      },
+      "cpu": 1,
+      "driver": {
+        "bytes": 12490,
+        "sha256": "6b7ce6acff1085aae3b780d227ec2030b5fadd3c40da46344b9420bdaf882a72"
+      },
+      "error": "ValueError: actual expected revision",
+      "expected_revision": "1970d82545a2d21da42dbd336fa0c111a923cc5d",
+      "input_count": 0,
+      "inputs_unchanged": false,
+      "models_executed": false,
+      "profile": "loop-rseq-model-v1",
+      "python_version": "3.12.15+meta",
+      "reproduction_argv": [
+        "python3.12",
+        "-B",
+        "evaluation/inprocess/loop_rseq_model.py",
+        "--expect-revision",
+        "1970d82545a2d21da42dbd336fa0c111a923cc5d",
+        "--output",
+        "FRESH_OUTPUT"
+      ],
+      "reproduction_argv_reconstructed": true,
+      "result_file": {
+        "bytes": 1395,
+        "sha256": "d27ec0ce303ffd7d76dcd3454816fa8f554d657dc99b0bef41373ad5d1b07ab5"
+      },
+      "result_sha256": null,
+      "revision": "1970d82785b6ad34417465fde12937bee192b038",
+      "source_unchanged": false,
+      "status": "failed",
+      "tracked_clean": null,
+      "validation_duration_ns": 2445510
+    },
+    {
+      "attempt": 2,
+      "bounds": {
+        "address_space_bytes": 536870912,
+        "cpu_seconds": 30,
+        "output_bytes": 16777216,
+        "wall_seconds": 60
+      },
+      "cpu": 3,
+      "driver": {
+        "bytes": 12490,
+        "sha256": "6b7ce6acff1085aae3b780d227ec2030b5fadd3c40da46344b9420bdaf882a72"
+      },
+      "error": null,
+      "expected_revision": "1970d82785b6ad34417465fde12937bee192b038",
+      "input_count": 6,
+      "inputs_unchanged": true,
+      "models_executed": true,
+      "profile": "loop-rseq-model-v1",
+      "python_version": "3.12.15+meta",
+      "reproduction_argv": [
+        "python3.12",
+        "-B",
+        "evaluation/inprocess/loop_rseq_model.py",
+        "--expect-revision",
+        "1970d82785b6ad34417465fde12937bee192b038",
+        "--output",
+        "FRESH_OUTPUT"
+      ],
+      "reproduction_argv_reconstructed": true,
+      "result": {
+        "bfs_orders_sha256": "a6d22c887f78489b0968223d7e74e753b0095048d32c1888efc0ee33fffd0489",
+        "bfs_roots": 28,
+        "focal_graphs": 28,
+        "lifecycle_graphs": 6,
+        "whole_decoded_descriptors": 806
+      },
+      "result_file": {
+        "bytes": 7986,
+        "sha256": "4abdd29e0dc9f239c06edb7415ffb445e876fb5dd0f54164e8e2a46633d0b2ba"
+      },
+      "result_sha256": "9e7d3bbf65baee2308fa7727f296f215a69a0d795effd125ff136923235d70a6",
+      "revision": "1970d82785b6ad34417465fde12937bee192b038",
+      "source_unchanged": true,
+      "status": "model_regression_passed",
+      "tracked_clean": true,
+      "validation_duration_ns": 135511326
+    }
+  ],
+  "native_subjects_run_here": 0,
+  "observed_component_results": {
+    "bounded_fusion_plan": {
+      "copied_boundaries": 56,
+      "corruptions": 14,
+      "direct_models": 1536,
+      "emitted_execution": 0,
+      "interiors": 19964,
+      "misses": 10,
+      "mov_models": 1280,
+      "old_version_refusals": 60,
+      "owner_credit": 0,
+      "plans": 14,
+      "typed_direct": 41984,
+      "typed_mov": 83456,
+      "version": 11
+    },
+    "loop_direct_far": {
+      "far_direct": {
+        "adapters": 70,
+        "direct_corruptions": 870,
+        "emitted_execution": 0,
+        "far": 58,
+        "literal_refusals": 464,
+        "models": 13440,
+        "near": 12,
+        "owner_credit": 0,
+        "plan_corruptions": 128,
+        "plans": 4,
+        "profile": "loop-far-direct-component-v1",
+        "relocation_controls": 102,
+        "relocations": 6,
+        "steps": 264832
+      },
+      "original_loop": {
+        "bridge_controls": 53,
+        "copied_boundaries": 314,
+        "corruptions": 16,
+        "direct_models": 1152,
+        "emitted_execution": 0,
+        "interiors": 83383,
+        "misses": 8,
+        "mov_models": 320,
+        "old_version_refusals": 210,
+        "owner_credit": 0,
+        "plans": 35,
+        "profile": "loop-plan-component-v1",
+        "typed_direct": 31488,
+        "typed_mov": 20864,
+        "version": 12
+      }
+    },
+    "loop_envelope": {
+      "boundaries_max": 8,
+      "corruptions": 16,
+      "emitted": 0,
+      "heads_max": 128,
+      "members": 2,
+      "owner_entries": 0,
+      "positive": 122,
+      "profile": "loop-envelope-component-v1",
+      "refused": 9,
+      "version": 12
+    },
+    "loop_plan": {
+      "bridge_controls": 53,
+      "copied_boundaries": 314,
+      "corruptions": 16,
+      "direct_models": 1152,
+      "emitted_execution": 0,
+      "interiors": 83383,
+      "misses": 8,
+      "mov_models": 320,
+      "old_version_refusals": 210,
+      "owner_credit": 0,
+      "plans": 35,
+      "profile": "loop-plan-component-v1",
+      "typed_direct": 31488,
+      "typed_mov": 20864,
+      "version": 12
+    },
+    "scalar_read": {
+      "accepted": 766,
+      "descriptor_version": 2,
+      "instruction_execution": false,
+      "model_cases": 269,
+      "new_codes": 5,
+      "old_rows": 5,
+      "owner_execution": false,
+      "postseal_equal": true,
+      "refusals": 63,
+      "schema": 1
+    },
+    "scalar_span_metadata": {
+      "accepted": 1283,
+      "code_forms": 131,
+      "max_register_rows": 4,
+      "none_checks": 1283,
+      "old_accepts": 53,
+      "plan_controls": 49,
+      "postseal_equal": 1,
+      "refusals": 26,
+      "schema": 1
+    }
+  },
+  "original_five_results_identical_across_all_three_attempts": true,
+  "owner_credit": false,
+  "performance_credit": false,
+  "profile": "loop-far-direct-component-checkpoint-v1",
+  "qualification_credit": false,
+  "reused_decoder_archive": {
+    "archive": {
+      "bytes": 12007764,
+      "mode": "0644",
+      "sha256": "d5ae6933ce1e905be557a9dac3ffd2341c7649c42f58f9594bba2365ea8ba399"
+    },
+    "cpu": 23,
+    "native_inputs_revalidated": false,
+    "original_receipt_metadata_joined": true,
+    "receipt": {
+      "bytes": 2426560,
+      "mode": "0644",
+      "sha256": "eb24445ff4f7a214fee6545e1e9ed58c51933ebc5eaac40779e6b076ed7ac8b2"
+    },
+    "same_head_native_credit": false,
+    "source": {
+      "head_sources_match": true,
+      "revision": "4f3e28e7e1d434bc6d51c95bab828557a6d37442",
+      "source_manifest_sha256": "1b1f1ea2eee11f4ea870c3ba9c2daf81095dc707691b582b826ddae3a07befa6",
+      "tracked_clean": true,
+      "tree": "43bb3cefdee0095c8ce5837715b6c8761839b1b9"
+    },
+    "status": "observed_native_references"
+  },
+  "schema": 1,
+  "scope": "Additive C component and near-bank Python graph-model evidence; original failed attempts retained."
+}
