@@ -205,6 +205,9 @@ static int lhc_direct_value(const struct pda_completion *c) {
         return lhc_full(c);
     }
     if(!lhc_match(c,i)) { (void)lhc_add(&lhc.counts.errors,1);return 0; }
+#ifdef LI2_LOOP_RO_TEST
+    lro_history_hook(c,i);
+#endif
     if(!lhc.root.value.cell[i].mask) {
         if(lhc_add(&lhc.counts.misses,1))return 0;
         return lhc_full(c); /* the original whole-zero direct-exit predicate */

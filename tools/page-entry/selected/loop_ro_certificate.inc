@@ -58,6 +58,9 @@ static int lrc_initialize(void) {
         if((uintptr_t)result!=at || lrc_readonly(at,PE_PROOF_BYTES))return PE_PUBLICATION;
     }
     int error=lhc_initialize();if(error)return error;
+#ifdef LI2_LOOP_RO_TEST
+    error=lro_initialize();if(error)return error;
+#endif
     sg_owner.state.ro_initialized=1;
     return 0; /* sg_initialize seals the complete root before returning. */
 }
@@ -125,4 +128,7 @@ static void lrc_report(unsigned status,unsigned code) {
         (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
     }
     lhc_report(status,code);
+#ifdef LI2_LOOP_RO_TEST
+    lro_report(status,code);
+#endif
 }

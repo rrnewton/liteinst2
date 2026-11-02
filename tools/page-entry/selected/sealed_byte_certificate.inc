@@ -196,6 +196,9 @@ static int sbc_match(void) {
 #define pe_bytes sbc_decision
 #endif
 static int pe_bytes(void) {
+#ifdef LI2_LOOP_RO_TEST
+    lro_byte_hook();
+#endif
     int error=sbc_add(&sbc_observed.decisions,1);if(error)return error;
     sbc_observed.last_failure=SBC_NONE;sbc_observed.last_full_result=0;
     int candidate=sbc_match(),query=0;

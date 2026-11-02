@@ -2225,6 +2225,9 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
 #include "persistent_active_domain.inc"
+#ifdef LI2_LOOP_RO_TEST
+#include "loop_ro_oracle.inc"
+#endif
 #ifdef LI2_RESIDENT_SOURCE_LEASE
 #include "resident_source_owner.inc"
 #endif

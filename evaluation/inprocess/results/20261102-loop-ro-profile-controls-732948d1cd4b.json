@@ -1,0 +1,80 @@
+{
+  "archive_rebuilt": false,
+  "bounds": [
+    5,
+    536870912,
+    16777216,
+    15
+  ],
+  "build_receipt": {
+    "bytes": 760845,
+    "sha256": "0788163bd2bd3da0231f585b152bec3e959386aff772e26b4129025034016984"
+  },
+  "build_revision": "14300035c14ceec5f7067c9e6f9bae945c60f200",
+  "cleanup_complete": true,
+  "command_records_sha256": "ed68b1188643e8d3b83f9cca9de331abb145c3d0932c78a16f4221c2caefd842",
+  "commands": 53,
+  "cpu": 35,
+  "driver": {
+    "bytes": 25947,
+    "sha256": "bfce708684b5faf25e60c0479cdb046500049176d05b8528d034374f0c211602"
+  },
+  "failed_cases": [],
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 35,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_sha256": "570ddf82b34ed6dfb1b6d8235884db12d558d326259caf2ca3e8abc9d08a055b",
+  "inputs_unchanged": true,
+  "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+  "native_subjects": 0,
+  "negative_passed": 50,
+  "outcomes": {
+    "bytes": 8773,
+    "sha256": "ae0fd6577d2dd46cdf92e9f9300ada0cbba39c45e103799bfe59e34aaf6f5755"
+  },
+  "owner_validated": false,
+  "performance_credit": false,
+  "positive_passed": 3,
+  "profile": "loop-ro-profile-controls-v1",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 801629,
+    "sha256": "8968a910ec917788c51baa7dc024708d1a04d318182491e0c0f8465ea649adac"
+  },
+  "reproduction_argv": [
+    "python3.12",
+    "-B",
+    "evaluation/inprocess/loop_ro_profile_controls.py",
+    "--expect-revision",
+    "732948d1cd4b11376267b7b3c3299d399fd8560a",
+    "--build-receipt",
+    "CLOSED_BUILD/receipt.json",
+    "--build-receipt-sha256",
+    "0788163bd2bd3da0231f585b152bec3e959386aff772e26b4129025034016984",
+    "--output",
+    "FRESH_TARGET_OUTPUT"
+  ],
+  "retained_producer_status": "observed_positive_application_pairs",
+  "revision": "732948d1cd4b11376267b7b3c3299d399fd8560a",
+  "schema": 1,
+  "source": {
+    "head_sources_match": true,
+    "revision": "732948d1cd4b11376267b7b3c3299d399fd8560a",
+    "source_manifest_sha256": "adcf3915f8a29afec6bdf3b550efd4ea948ee39a035cc16cb2a190730edae9f9",
+    "tracked_clean": true,
+    "tree": "11061648b921fe6a7591e57c10c3153229992142"
+  },
+  "source_unchanged": true,
+  "status": "observed_compile_contract_controls",
+  "unlaunched_cases": []
+}
