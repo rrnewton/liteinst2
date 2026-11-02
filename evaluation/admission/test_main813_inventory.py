@@ -1087,7 +1087,14 @@ class Main813InventoryTests(unittest.TestCase):
         precheck_path = 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/session/tests.rs'
         precheck_target = main813.ROOT / precheck_path
         precheck_read = Path.read_bytes
-        with patch.dict(main813.MAIN2754['sources'], {precheck_path: '0' * 64}):
+        # The newest source layer now owns this path and overrides MAIN2754 in
+        # the current-blob precheck. Corrupt both expectations so the original
+        # historical-target control still exercises that early rejection.
+        self.assertEqual(native_indexed.DATA['sources'][precheck_path],
+                         hashlib.sha256(precheck_read(precheck_target)).hexdigest())
+        self.assertNotEqual(native_indexed.DATA['sources'][precheck_path], '0' * 64)
+        with patch.dict(main813.MAIN2754['sources'], {precheck_path: '0' * 64}), \
+             patch.dict(native_indexed.DATA['sources'], {precheck_path: '0' * 64}):
             with patch.object(inventory, 'before_cc846') as history:
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
                     inventory.require_historical350(declared)
