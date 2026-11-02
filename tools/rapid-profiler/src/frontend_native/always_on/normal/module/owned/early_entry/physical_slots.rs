@@ -67,6 +67,7 @@ impl RowSlots {
         }
     }
 
+    #[inline(always)]
     pub(super) fn set(&mut self, index: usize, value: Option<EarlyEntryModulePhysicalRow>) {
         let slot = &mut self.values[index];
         let bit = 1u8 << index;
