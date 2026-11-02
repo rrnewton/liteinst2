@@ -1,0 +1,2 @@
+revision,status,cpu,exit,duration_ns,profile_argv,recipe_refusals,source_endpoints,inverse_refusals,builds,subjects
+b62f0bb45aff70cff20a0d68e6990114c7e6c268,observed_pure_comparisons,83,0,868306283,12,60,32,112,0,0
