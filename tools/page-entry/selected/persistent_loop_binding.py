@@ -15,7 +15,7 @@ LEAVES = tuple({'build-persistent-startup.sh':'build-persistent-loop.sh',
                                          'persistent_cross_pair_source.inc','linked_direct_dispatch.h','linked_direct_dispatch.c')
 LEAVES += ('persistent_fused_plan.h','persistent_fused_plan.inc','persistent_fused_compact.inc','persistent_fused_runtime.h')
 CAPTURE_INPUTS = ('persistent_loop_observe.h', 'persistent_loop_observe.inc', 'persistent_loop_observe_memory.h', 'persistent_loop_observe_memory.inc', 'persistent_loop_capture_binding.py', 'capture_rle.h', 'capture_rle.c')
-LEAVES += ('decoder/src/scalar_read.rs', 'scalar_read_decode.h', 'loop_envelope.h', 'loop_envelope.c', 'loop_read_bridge.h', 'loop_read_bridge.c', 'persistent_loop_plan.h', 'persistent_loop_plan.inc', 'persistent_loop_compact.inc', 'persistent_loop_runtime.h', 'persistent_loop_owner.inc', 'persistent_loop_negative_hint.h', 'persistent_loop_negative_hint.inc', 'build-loop-decoder.sh')
+LEAVES += ('decoder/src/scalar_read.rs', 'scalar_read_decode.h', 'loop_envelope.h', 'loop_envelope.c', 'loop_read_bridge.h', 'loop_read_bridge.c', 'persistent_loop_plan.h', 'persistent_loop_plan.inc', 'persistent_loop_compact.inc', 'persistent_loop_runtime.h', 'persistent_loop_owner.inc', 'persistent_loop_negative_hint.h', 'persistent_loop_negative_hint.inc', 'linked_loop_direct.h', 'linked_loop_direct.inc', 'build-loop-decoder.sh')
 MODES = ('release', 'counters', 'capture', 'differential')
 
 

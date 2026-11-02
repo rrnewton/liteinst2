@@ -270,3 +270,7 @@ int li2_dd_recover(const struct li2_dd_plan *p,uintptr_t pc,const uint64_t raw[1
     for(unsigned i=0;i<4;i++)if(m->dirty&(1U<<i))out->gpr[p->record.scratch_regs[i]]=spill_words[i];
     out->phase=LI2_DD_BEFORE;out->original_pc=p->original.decoded.pc;out->complete=1;return 0;
 }
+
+#ifdef LI2_PERSISTENT_LOOP_PLAN
+#include "linked_loop_direct.inc"
+#endif

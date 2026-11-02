@@ -2,6 +2,9 @@
    primitive deliberately requires actual registered ACTIVE state. It does
    not broaden the old NONE domain or the old unregistered/default paths. */
 #include "persistent_group_runtime.h"
+#ifdef LI2_PERSISTENT_LOOP_PLAN
+#include "persistent_loop_plan.h"
+#endif
 static struct li2_pg_rseq_progress pg_rseq;
 static struct li2_pg_rseq_progress pg_rseq_previous;
 const struct li2_pg_rseq_progress *li2_pg_rseq_progress(void) {return &pg_rseq;}
@@ -456,7 +459,11 @@ int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,co
                !region_rseq_equal(&binding,&guard->binding,sizeof binding) ||
                guard->generated!=p->layout.generated[i/64]+(uintptr_t)(i%64)*LI2_PE_SLOT_BYTES ||
                guard->spill!=p->layout.spill || guard->record.image_bytes!=h->generated_length ||
+#ifdef LI2_PERSISTENT_LOOP_PLAN
+               (p->version==LI2_LP_VERSION?li2_ld_validate(guard):li2_dd_validate(guard)))return pgr_bad(LI2_RSEQ_PLAN,531);
+#else
                li2_dd_validate(guard))return pgr_bad(LI2_RSEQ_PLAN,531);
+#endif
             if(h->successor_count!=(a->flow==LI2_REGION_JCC?2U:1U) ||
                (h->successor_count==1 && h->successors[1]))return pgr_bad(LI2_RSEQ_PLAN,533);
             for(unsigned arm=0;arm<2;arm++) {

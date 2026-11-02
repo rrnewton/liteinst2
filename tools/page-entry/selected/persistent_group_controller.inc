@@ -1100,9 +1100,11 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
 #endif
         pe.build_returned=1;
         if(pe.build_result) {
+            unsigned classified_reason=pe.miss.reason;
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
-            pe_need(plr_miss_value() && pe.miss.reason>0 &&
-                (pe.miss.reason<LI2_PGD_REASON_COUNT || pe.miss.reason==LI2_PFD_BACKWARD_UNSUPPORTED),
+            classified_reason=plr_miss_reason();
+            pe_need(classified_reason>0 &&
+                (classified_reason<LI2_PGD_REASON_COUNT || classified_reason==LI2_PFD_BACKWARD_UNSUPPORTED),
                 PE_PLAN,pe.build_result);
 #else
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
@@ -1120,10 +1122,10 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
 #endif
 #endif
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME
-            if(pe.miss.reason==LI2_PFD_BACKWARD_UNSUPPORTED)ped_count(&pe.pf_backward_refused);
+            if(classified_reason==LI2_PFD_BACKWARD_UNSUPPORTED)ped_count(&pe.pf_backward_refused);
             else
 #endif
-            {ped_count(PGC_MISS_REF(pe.miss.reason));}
+            {ped_count(PGC_MISS_REF(classified_reason));}
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
             plr_scope_leave(PLR_COLD);
 #else
@@ -1698,7 +1700,11 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     const unsigned bank_index=ped_bank_for(pc);
     const struct ped_bank *bank=&PE_SLOT(banks)[bank_index];
 #endif
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    const int placement=li2_lp_placement(pc,&bank->layout);
+#else
     const int placement=li2_pg_placement(pc,&bank->layout);
+#endif
     pe_need(placement>=0 && bank->allocated==1 && bank->registered==1 &&
         bank->generated<(UINT64_C(1)<<47)-PE_ALLOC_BYTES &&
         bank->spill==bank->generated+PE_CODE_BYTES+PAGE && protected_count<=RANGES &&

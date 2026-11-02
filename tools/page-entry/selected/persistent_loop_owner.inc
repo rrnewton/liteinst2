@@ -77,17 +77,31 @@ static int plr_cold(const struct li2_pg_sources *s,const uintptr_t pages[2]) {
         pe_need(pe.loop.choice.ready==1 && !pe.loop.choice.result,PE_PLAN,242);
         plr_source(&s->key);
         pe.loop.choice_complete=1;PLR_COUNT(chooser_selected);
+    } else if(li2_lp_relocation_reason(&pe.cold,&pe.miss,e,&pe.rebuild,&pe.loop.check)) {
+        pe_need(equal(&pe.loop.choice,&pe.loop.check,sizeof pe.loop.choice) &&
+            pe.loop.choice.ready==1 && !pe.loop.choice.result,PE_PLAN,244);
+        /* Cancellation reconstructs the same authenticated selected source. */
+        plr_source(&s->key);
+        pe.loop.choice_complete=1;PLR_COUNT(chooser_selected);
     }
     return e;
 }
-static int plr_miss_value(void) {
+static unsigned plr_miss_reason(void) {
     const struct li2_pg_sources *s=li2_pg_source_view(&pe.token);
-    if(pe.loop.route!=LI2_PF_VERSION || pe.loop.choice_complete!=1 || !s ||
-       s->complete!=1 || pe.cold.entry!=s->key.entry || !plr_no_envelope(&s->key))return 0;
+    if(pe.loop.choice_complete!=1 || !s || s->complete!=1 || pe.cold.entry!=s->key.entry)return 0;
     for(unsigned i=0;i<2;i++)if(pe.cold.page[i]!=s->key.page[i].identity.address ||
         !equal(pe.cold.source[i],s->key.page[i].bytes,LI2_REGION_PAGE))return 0;
-    return li2_pfr_miss_valid(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild);
+    if(pe.loop.route==LI2_PF_VERSION) {
+        if(!plr_no_envelope(&s->key))return 0;
+        if(li2_pfr_miss_valid(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild))return pe.miss.reason;
+        return li2_lp_fallback_relocation_reason(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild);
+    }
+    if(pe.loop.route!=LI2_LP_VERSION || pe.loop.choice.ready!=1 || pe.loop.choice.result)return 0;
+    unsigned reason=li2_lp_relocation_reason(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild,&pe.loop.check);
+    return reason && equal(&pe.loop.choice,&pe.loop.check,sizeof pe.loop.choice)?reason:0;
 }
+static int plr_miss_value(void) { return plr_miss_reason()!=0; }
+
 static int plr_cancel_valid(void) {
     if(!plr_scope_enter(PLR_CANCEL))return 0;
     int valid=plr_miss_value();plr_scope_leave(PLR_CANCEL);return valid;
@@ -162,7 +176,7 @@ static int plr_direct_value(const struct pda_completion *c) {
         }
     }
     uintptr_t generated=m->header.layout.generated[e->head/64]+(uintptr_t)(e->head%64)*LI2_PE_SLOT_BYTES;
-    if(li2_dd_emit(h->pc,bytes,n,h->external_mask,generated,m->header.spill,&binding,
+    if(li2_ld_emit(h->pc,bytes,n,h->external_mask,generated,m->header.spill,&binding,
         internal,&pe.loop.direct) || !equal(&pe.loop.direct.original,&direct,sizeof direct))goto done;
     struct li2_pe_head expected={0};unsigned page=2;
     for(unsigned i=0;i<2;i++)if(h->pc>=pe.loop.pages[i] && h->pc-pe.loop.pages[i]<LI2_REGION_PAGE)page=i;

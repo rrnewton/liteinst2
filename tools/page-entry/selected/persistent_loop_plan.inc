@@ -137,3 +137,70 @@ int li2_lp_miss_validate(const struct li2_pg_plan *p,const struct li2_pg_miss *m
     int e=li2_lp_plan_pages(p->page,p->source,p->entry,&p->layout,&p->table,scratch,&actual,w);
     return e!=result || !equal(p,scratch,sizeof *p) || !equal(m,&actual,sizeof actual)?LI2_PG_CORRUPT:0;
 }
+
+/* Keep all old canonical/entry/layout checks. Source-to-image reach is no
+   longer necessary for the new DIRECT miss transfer; individual copied RIP
+   operands still require their exact displacement and cannot publish on miss. */
+int li2_lp_placement(uintptr_t entry,const struct li2_pg_layout *layout) {
+    int old=li2_pg_placement(entry,layout);return old<0?old:1;
+}
+
+unsigned li2_lp_relocation_reason(const struct li2_pg_plan *p,const struct li2_pg_miss *m,int result,
+    struct li2_pg_plan *scratch,struct li2_le_witness *w) {
+    if(!p || !m || result!=LI2_PG_RELOCATION || p->version!=LI2_LP_VERSION || p->decoder_result ||
+       m->version!=LI2_LP_VERSION || m->site!=LI2_PGD_EMIT ||
+       (m->reason!=LI2_PGD_RIP_REACH && m->reason!=LI2_PGD_GUARD_RIP_REACH) ||
+       li2_lp_miss_validate(p,m,result,scratch,w) || w->ready!=1 || w->result)return 0;
+    unsigned found=LI2_PG_HEADS;
+    for(unsigned i=0;i<p->heads;i++)if(p->original[i].decoded.pc==m->pc) {
+        if(found!=LI2_PG_HEADS)return 0;found=i;
+    }
+    if(found==LI2_PG_HEADS)return 0;
+    const struct li2_pe_head *h=&p->head[found];const struct li2_span_decoded *d=&p->original[found];
+    if(h->source_length!=d->decoded.length || d->decoded.next_pc!=m->pc+h->source_length ||
+       h->successor_count!=1 || !token_valid(p,h->successors[0]))return 0;
+    if(m->reason==LI2_PGD_RIP_REACH) {
+        uint32_t delta;
+        return h->kind==LI2_PE_NONE && !p->guard_result && d->flow==LI2_REGION_NEXT &&
+            d->relocation==LI2_SPAN_RIP_DISP32 && d->displacement_bytes==4 &&
+            d->displacement_offset<=h->source_length && h->source_length-d->displacement_offset>=4 &&
+            m->detail==d->rip_target && !displacement(head_generated(p,found)+h->source_length,d->rip_target,&delta)
+            ?LI2_PGD_RIP_REACH:0;
+    }
+    struct li2_pg_miss expected={.version=LI2_LP_VERSION,.status=LI2_PG_RELOCATION};
+    return h->kind==LI2_PE_MOV && p->guard_result==LI2_MG_RELOCATION &&
+        p->instruction[found].mov.rip_relative==1 && pgd_guard_reach(p,found,&expected) &&
+        expected.reason==LI2_PGD_GUARD_RIP_REACH && equal(m,&expected,sizeof expected)
+        ?LI2_PGD_GUARD_RIP_REACH:0;
+}
+
+/* The old PF planner/record stay byte-exact, including raw miss.reason0.
+   Only after its complete reconstruction may the LOOP owner classify this
+   precise failed original-PC E9 as a branch-reach cancellation. This never
+   validates an unclassified decoder, spill, internal-edge or argument error. */
+unsigned li2_lp_fallback_relocation_reason(const struct li2_pg_plan *p,const struct li2_pg_miss *m,int result,
+    struct li2_pg_plan *scratch) {
+    const struct li2_pg_miss empty={.version=LI2_PF_VERSION,.status=LI2_PG_RELOCATION};
+    if(!p || !m || result!=LI2_PG_RELOCATION || p->version!=LI2_PF_VERSION ||
+       p->decoder_result || p->guard_result!=LI2_DD_RELOCATION || !equal(m,&empty,sizeof empty) ||
+       li2_pg_placement(p->entry,&p->layout)!=0 || li2_pf_miss_validate(p,m,result,scratch))return 0;
+    unsigned found=LI2_PG_HEADS;
+    for(unsigned i=0;i<p->heads;i++)if(p->head[i].kind==LI2_PG_DIRECT &&
+        p->guard[i].direct.record.result==LI2_DD_RELOCATION) {
+        if(found!=LI2_PG_HEADS)return 0;found=i;
+    }
+    if(found==LI2_PG_HEADS)return 0;
+    const struct li2_dd_plan *g=&p->guard[found].direct;
+    const struct li2_dd_record *r=&g->record;
+    if(r->version!=LI2_DD_VERSION || r->ready || r->reserved || !r->miss_offset ||
+       !r->boundaries || r->boundaries>LI2_DD_BOUNDARIES || r->miss_offset>LI2_DD_SLOT_BYTES-5 ||
+       r->image_bytes!=r->miss_offset+5 || g->generated!=head_generated(p,found) ||
+       g->spill!=p->layout.spill || !equal(&g->original,&p->instruction[found].direct,sizeof g->original))return 0;
+    const struct li2_mg_boundary *last=&r->boundary[r->boundaries-1];
+    const unsigned char *jump=g->image+r->miss_offset;uint32_t delta;
+    if(last->offset!=r->miss_offset || last->length!=5 || last->spill_valid!=15 ||
+       last->dirty || last->flags!=LI2_MG_PHYSICAL || last->phase!=LI2_DD_BEFORE ||
+       jump[0]!=0xe9 || jump[1] || jump[2] || jump[3] || jump[4] ||
+       displacement(g->generated+r->miss_offset+5,g->original.decoded.pc,&delta))return 0;
+    return LI2_PGD_BRANCH_REACH;
+}

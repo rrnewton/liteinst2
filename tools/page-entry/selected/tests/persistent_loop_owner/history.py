@@ -68,7 +68,20 @@ def direct_history(check,completion):
     need(arm==chosen_arm,'actual saved flags independently select historical external arm')
     page=next((i for i,p in enumerate(chosen['pages'])if p<=pc<p+4096),None)
     need(page is not None,'saved branch belongs to the actual source pair')
-    generated_length=206 if flow==2 else 227 if mask==3 else 217
+    # Saved layout is immutable member identity already checked by the
+    # enclosing completion validator. Source and exact generated PC determine
+    # one canonical adapter; a captured length/version cannot choose it.
+    header=check.f(members[member],'pda_member_completion','header')
+    raw_layout=check.f(header,'pe_header','layout')
+    need(len(raw_layout)==48,'whole historical generated layout')
+    layout=struct.unpack('<6Q',raw_layout)
+    need(all(4096<=x<(1<<47)and x%4096==0 for x in layout),
+         'canonical aligned historical generated layout addresses')
+    generated=layout[head//64]+512*(head%64)
+    prefix=0 if flow==2 else 21 if mask==3 else 11
+    delta=pc-(generated+153+prefix+5)
+    far=not -(1<<31)<=delta<(1<<31)
+    generated_length=206+prefix+9*far
     row=struct.pack('<8I',5,page,pc-chosen['pages'][page],d['length'],successors,k0,k1,generated_length)
     available=struct.unpack_from('<I',original,44)[0]
     targets=(target,next_pc if flow==1 else 0)

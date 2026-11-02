@@ -1,6 +1,9 @@
 #include "persistent_group_plan.h"
 #include "linked_rseq.h"
 #include "tf_owner.h"
+#ifdef LI2_PERSISTENT_LOOP_PLAN
+#include "persistent_loop_plan.h"
+#endif
 #ifdef LI2_SPAN_FAST_BYTES
 #include "span_fast_bytes.h"
 #endif
@@ -739,8 +742,13 @@ static int pgd_emit(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
             }
             unsigned char bytes[15];size_t n=window(p,d->decoded.pc,bytes);
             struct li2_dd_plan *g=&p->guard[i].direct;
+#ifdef LI2_PERSISTENT_LOOP_PLAN
+            p->guard_result=(unsigned)(p->version==LI2_LP_VERSION?li2_ld_emit:li2_dd_emit)(
+                d->decoded.pc,bytes,n,a->external_mask,generated,p->layout.spill,&binding,internal,g);
+#else
             p->guard_result=(unsigned)li2_dd_emit(d->decoded.pc,bytes,n,a->external_mask,
                 generated,p->layout.spill,&binding,internal,g);
+#endif
             if(p->guard_result)return p->guard_result==LI2_DD_RELOCATION?LI2_PG_RELOCATION:LI2_PG_DECODER;
             if(!equal(&g->original,a,sizeof *a) || !equal(&g->binding,&binding,sizeof binding) ||
                !equal(g->internal,internal,sizeof internal) || g->record.ready!=1 ||

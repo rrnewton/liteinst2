@@ -2,6 +2,7 @@
 #define LI2_PERSISTENT_LOOP_PLAN_H
 #include "persistent_fused_plan.h"
 #include "loop_read_bridge.h"
+#include "linked_loop_direct.h"
 #if !defined(LI2_PERSISTENT_LOOP_PLAN) || LI2_PERSISTENT_LOOP_PLAN != 1
 #error "separate loop-envelope component must be explicitly selected"
 #endif
@@ -25,6 +26,16 @@ _Static_assert(LI2_LE_HEADS==LI2_PG_HEADS && LI2_LE_BOUNDARIES==LI2_PG_BOUNDARIE
    scratch is separate protected storage in any future owner, not a stack or
    source-authority object. Decoder calls require the existing sealed serialized
    arena. Entire plan/compact reconstruction precedes boundary-only recovery. */
+/* Geometry-only offer predicate. A far source can attempt policy12; it still
+   needs full held-source planning or an exactly reconstructed cancellation. */
+int li2_lp_placement(uintptr_t,const struct li2_pg_layout *);
+/* Return the exact existing reach category, or0. Neither function changes any
+   input plan/miss or grants source/entry authority. The fallback classifier
+   requires a separately authenticated complete NO_ENVELOPE at its caller. */
+unsigned li2_lp_relocation_reason(const struct li2_pg_plan *,const struct li2_pg_miss *,int,
+    struct li2_pg_plan *,struct li2_le_witness *);
+unsigned li2_lp_fallback_relocation_reason(const struct li2_pg_plan *,const struct li2_pg_miss *,int,
+    struct li2_pg_plan *);
 int li2_lp_plan_pages(const uintptr_t[2],const unsigned char[2][LI2_REGION_PAGE],
     uintptr_t,const struct li2_pg_layout *,const struct li2_mg_table *,
     struct li2_pg_plan *,struct li2_pg_miss *,struct li2_le_witness *);

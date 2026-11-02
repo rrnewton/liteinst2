@@ -92,9 +92,35 @@ static int lp_direct_shape(const struct li2_pg_compact *p,unsigned i,uintptr_t i
        h->successor_count!=(d->flow==LI2_REGION_JCC?2U:1U) ||
        (h->successor_count==1 && h->successors[1]) ||
        !h->generated_length || h->generated_length>LI2_PE_SLOT_BYTES || g->image_bytes!=h->generated_length ||
-       g->version!=LI2_DD_VERSION || g->ready!=1 || g->result || g->reserved ||
+       (g->version!=LI2_DD_VERSION && g->version!=LI2_LD_VERSION) || g->ready!=1 || g->result || g->reserved ||
        !g->boundaries || g->boundaries>LI2_DD_BOUNDARIES ||
        g->hit_offset>=g->image_bytes || g->miss_offset>=g->image_bytes)return 0;
+    /* The original-PC displacement selects exactly one version. The eight
+       far-target bytes are immutable image data and never recovery rows. */
+    unsigned prefix=d->flow==LI2_REGION_JCC?(a->external_mask==3?21U:11U):0U;
+    unsigned old_miss=153U+prefix,old_length=206U+prefix;
+    uintptr_t generated=head_generated(p,i),next=generated+old_miss+5;
+    unsigned far=d->decoded.pc>=next?d->decoded.pc-next>UINT32_C(0x7fffffff):
+        next-d->decoded.pc>UINT32_C(0x80000000);
+    if(g->version!=(far?LI2_LD_VERSION:LI2_DD_VERSION) || g->miss_offset!=old_miss ||
+       g->image_bytes!=old_length+9U*far || g->hit_offset!=old_length-6U+9U*far ||
+       g->boundaries!=37U+(d->flow==LI2_REGION_JCC?(a->external_mask==3?3U:2U):0U))return 0;
+    if(far) {
+        const unsigned char *code=head_image(p,i);unsigned miss_rows=0;
+        if((generated&4095U)+old_miss+14U>4096U || code[old_miss]!=0xff || code[old_miss+1]!=0x25 ||
+           code[old_miss+2] || code[old_miss+3] || code[old_miss+4] || code[old_miss+5])return 0;
+        for(unsigned k=0;k<8;k++)if(code[old_miss+6+k]!=(unsigned char)(d->decoded.pc>>(8*k)))return 0;
+        for(unsigned k=0;k<g->boundaries;k++) {
+            const struct li2_mg_boundary *m=&g->boundary[k];
+            if(m->offset>=old_miss+6 && m->offset<old_miss+14)return 0;
+            if(m->offset==old_miss) {
+                if(m->length!=6 || m->spill_valid!=15 || m->dirty || m->flags!=LI2_MG_PHYSICAL ||
+                   m->phase!=LI2_DD_BEFORE)return 0;
+                ++miss_rows;
+            }
+        }
+        if(miss_rows!=1)return 0;
+    }
     internal[0]=internal[1]=0;unsigned external=0,exits=0;
     if(!lp_cut_mask(p,d,&external) || !external)return 0;
     for(unsigned arm=0;arm<h->successor_count;arm++) {
@@ -272,7 +298,7 @@ int li2_lp_compact_recover(const struct li2_pg_compact *p,uintptr_t pc,const uin
         for(unsigned j=0;j<g->record.boundaries;j++)if(g->record.boundary[j].offset==offset)++found;
         if(!found)return LI2_PG_MISS;
         if(found!=1)return LI2_PG_CORRUPT;
-        int e=li2_dd_recover(g,pc,raw,flags,spill,&value);
+        int e=li2_ld_recover(g,pc,raw,flags,spill,&value);
         if(e || value.complete!=1 || value.phase!=LI2_DD_BEFORE || value.original_pc!=d->decoded.pc)return LI2_PG_CORRUPT;
         copy(out->gpr,value.gpr,sizeof out->gpr);out->flags=value.flags;out->original_pc=value.original_pc;
         out->member=member;out->head=local;out->link=UINT32_MAX;
