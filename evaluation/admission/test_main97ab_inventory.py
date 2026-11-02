@@ -68,10 +68,77 @@ def cargo_mutation(test, observed, before, after):
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # Nine direct-input/CFG methods extend three existing default harnesses.
+        direct = current.DATA['source_successor_79a4b8b']
+        direct_prior = current.before_79a4b8b(actual)
+        direct_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(direct_prior), current.DIRECT_PREVIOUS)
+        self.assertEqual((len(direct_rows), sum(x['tests'] for x in direct_rows.values()),
+                          sum(x['ignored'] for x in direct_rows.values())), (122, 4636, 43))
+        self.assertEqual((direct['default_method_additions'], direct['new_method_declarations'],
+                          direct['default_method_removals'], direct['default_harness_changes'],
+                          direct['default_ignore_changes'], direct['default_doctest_additions'],
+                          direct['recorder_identity_changes'], direct['feature_method_additions'],
+                          direct['feature_method_removals']), (9, 9, 0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(direct['added_default_methods'], {'tools/elf-rewrite/examples/common_sites.rs': ['shared_graph_matches_complete_predecessor_corpus_and_invalid_functions', 'shared_graph_preserves_aggregate_errors_call_policy_and_unreachable_blocks', 'non64_branch_policy_keeps_fallthrough_but_does_not_add_a_target_cut'], 'tools/elf-rewrite/examples/full_program_bridge/input_tests.rs': ['explicit_input_preserves_legacy_selectors_and_rejects_mixed_or_unpinned_profiles', 'explicit_et_exec_keeps_independent_import_and_pin_before_elf_refusal', 'explicit_material_and_policy_cli_retain_complete_success_and_refusal_outputs'], 'tools/elf-rewrite/src/disassembly/policy_tests.rs': ['direct_policy_joins_actual_loads_complete_heads_target_and_ordered_permits', 'direct_policy_refuses_incomplete_or_widened_inputs_without_filtering_sites', 'direct_policy_original_c3_candidate_and_shared_reservation_keep_old_checks']})
+        self.assertEqual(direct['default_method_instances'], {'tools/elf-rewrite/examples/common_sites.rs': ['unit/common_sites/common_sites'], 'tools/elf-rewrite/examples/full_program_bridge/input_tests.rs': ['unit/full_program_bridge/full_program_bridge'], 'tools/elf-rewrite/src/disassembly/policy_tests.rs': ['unit/liteinst_rewrite/lib']})
+        self.assertEqual((direct['added_feature_methods'], direct['added_ignored_methods']), ({}, {}))
+        self.assertEqual((len(direct['source_paths']), len(direct['source_projections'])), (12, 12))
+        self.assertEqual(direct['new_sources'], ['tools/elf-rewrite/examples/full_program_bridge/input.rs', 'tools/elf-rewrite/examples/full_program_bridge/input_tests.rs', 'tools/elf-rewrite/examples/full_program_bridge/policy_cli.rs', 'tools/elf-rewrite/src/disassembly/policy_tests.rs', 'tools/elf-rewrite/src/disassembly/whole/policy.rs'])
+        self.assertEqual(direct['newly_bound_sources'], direct['new_sources'])
+        self.assertEqual(direct_prior['harness_test_counts']['serial_launch'], actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((actual['recorder_tests'], direct_prior['recorder_tests']), (366, 366))
+        for name, change in direct['workspace_changes'].items():
+            self.assertEqual(direct_rows[name], change['current'])
+            self.assertEqual(direct_prior['harness_test_counts']['workspace_tests'][name], change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(direct_rows[name][field]), direct_rows[name][field] + 1):
+                    wrong = copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_79a4b8b(wrong)
+            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_79a4b8b(wrong)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_79a4b8b(direct_prior)
+        for path, row in direct['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_79a4b8b(path, raw, 'direct_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (direct['source_preimages'][path]['bytes'], row['previous_sha256']))
+            if path in direct['new_sources']:
+                self.assertEqual(prior, b'')
+            for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^direct_source_inverse$'):
+                    current.source_before_79a4b8b(path, wrong, 'direct_source_inverse')
+            for field in ('edits', 'current_sha256', 'previous_sha256'):
+                malformed = copy.deepcopy(row)
+                if field == 'edits': malformed['edits'][0][2] += '\n'
+                else: malformed[field] = '0' * 64
+                with patch.dict(direct['source_projections'], {path: malformed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^direct_source_inverse$'):
+                        current.source_before_79a4b8b(path, raw, 'direct_source_inverse')
+        read = Path.read_bytes
+        direct_stimuli = [(p, 'fn ' + n + '(') for p, names in direct['added_default_methods'].items() for n in names]
+        direct_stimuli += [(p, literal) for p, literals in direct['module_chains'].items() for literal in literals]
+        for path, literal in direct_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            replacement = literal.replace('(', '_wrong(', 1) if literal.startswith('fn ') else literal[:-1] + ('x' if literal[-1] != 'x' else 'y')
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('direct declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
         # Twelve incoming top-level tests; nested child summaries are not new tests.
         shared = current.DATA['source_successor_3217b8ed']
         shared_prior = current.before_3217b8ed(actual)
-        shared_rows = actual['harness_test_counts']['workspace_tests']
+        shared_rows = direct_prior['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(shared_prior), current.SHARED_PREVIOUS)
         self.assertEqual((len(shared_rows), sum(x['tests'] for x in shared_rows.values()),
                           sum(x['ignored'] for x in shared_rows.values())), (122, 4627, 43))
@@ -1967,6 +2034,24 @@ class Main97abInventoryTests(unittest.TestCase):
                 with patch.dict(change, previous=PublishedCopy(change['previous'])):
                     result = current.before_3217b8ed(supplied)
             self.assertEqual(result, shared_prior)
+            self.assertEqual(supplied, actual)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+
+        # The latest transition preserves private ownership for both sources.
+        for source in ('declared', 'metadata'):
+            supplied = copy.deepcopy(actual)
+            change = direct['workspace_changes']['unit/liteinst_rewrite/lib']
+            published.clear()
+            if source == 'declared':
+                supplied['harness_test_counts']['serial_launch'] = PublishedCopy(supplied['harness_test_counts']['serial_launch'])
+                result = current.before_79a4b8b(supplied)
+            else:
+                with patch.dict(change, previous=PublishedCopy(change['previous'])):
+                    result = current.before_79a4b8b(supplied)
+            self.assertEqual(result, direct_prior)
             self.assertEqual(supplied, actual)
             self.assertEqual(len(published), 1)
             self.assertFalse(mutable_ids(result) & mutable_ids(supplied))

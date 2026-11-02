@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "e8f288b0a32f1c30c6eedfdeb99b5818774c0b610ea4525facc79e054dbe9e63",
+  "current_corpus_sha256": "63a316f953d11bed9775ca16c06b4926d8f255e3688431c027ede1452596a399",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -98,11 +98,23 @@
   "default_test_additions": 58,
   "doctests": {
     "crates/liteinst-x86/src/lib.rs": [],
+    "src/control_flow.rs": [],
     "src/controls.rs": [
       "/// ```compile_fail\n/// use liteinst2::controls::ControlIdentity;\n/// fn escape<'dispatch>(token: ControlIdentity<'dispatch>) -> ControlIdentity<'static> {\n///     token\n/// }\n/// ```",
       "/// ```compile_fail\n/// use std::cell::Cell;\n/// use liteinst2::controls::{ControlIdentity, ProbeControl};\n/// use liteinst2::trampoline::HookContext;\n/// thread_local! { static SAVED: Cell<Option<ControlIdentity<'static>>> = const { Cell::new(None) }; }\n/// unsafe extern \"C\" fn retain<'dispatch>(_: *mut HookContext, token: ControlIdentity<'dispatch>) {\n///     SAVED.with(|slot| slot.set(Some(token)));\n/// }\n/// let _ = ProbeControl::new_managed_bound(retain, false);\n/// ```",
       "/// ```compile_fail,E0277\n/// use liteinst2::controls::ControlWriter;\n/// fn needs_clone<T: Clone>() {}\n/// fn duplicate() { needs_clone::<ControlWriter>(); }\n/// ```"
     ],
+    "tools/elf-rewrite/examples/common_sites.rs": [],
+    "tools/elf-rewrite/examples/full_program_bridge.rs": [],
+    "tools/elf-rewrite/examples/full_program_bridge/input.rs": [],
+    "tools/elf-rewrite/examples/full_program_bridge/input_tests.rs": [],
+    "tools/elf-rewrite/examples/full_program_bridge/policy_cli.rs": [],
+    "tools/elf-rewrite/examples/full_program_bridge/tests.rs": [],
+    "tools/elf-rewrite/src/disassembly/policy_tests.rs": [],
+    "tools/elf-rewrite/src/disassembly/tests.rs": [],
+    "tools/elf-rewrite/src/disassembly/whole.rs": [],
+    "tools/elf-rewrite/src/disassembly/whole/policy.rs": [],
+    "tools/elf-rewrite/src/lib.rs": [],
     "tools/rapid-profiler/src/frontend.rs": [
       "/// ```compile_fail,E0616\n/// use rapid_profiler::frontend::EpochHandle;\n/// fn escape(handle: EpochHandle) { let epoch = handle.owner.epoch; }\n/// ```",
       "/// ```compile_fail,E0616\n/// use rapid_profiler::frontend::Report;\n/// fn escape(report: Report) { let epoch = report.owner.epoch; }\n/// ```",
@@ -755,7 +767,7 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "f3a37752d928a08c99c5f67a5865d2d3f38414ae67cd24984fda3a33cfedb4e5",
+      "current_sha256": "64c1be2a31b210993feae989fab7d112b6b3a413e2d489d5f6054c4156403a90",
       "edits": [
         [
           438,
@@ -764,62 +776,62 @@
         ],
         [
           3726,
-          73969,
+          80807,
           ""
         ],
         [
-          83340,
-          83451,
+          90178,
+          90289,
           "        self.assertEqual(actual['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],\n"
         ],
         [
-          88494,
-          88664,
+          95332,
+          95502,
           ""
         ],
         [
-          88711,
-          88805,
+          95549,
+          95643,
           "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n"
         ],
         [
-          88944,
-          89031,
+          95782,
+          95869,
           ""
         ],
         [
-          89290,
-          89369,
+          96128,
+          96207,
           ""
         ],
         [
-          90425,
-          90975,
+          97263,
+          97813,
           ""
         ],
         [
-          92494,
-          92590,
+          99332,
+          99428,
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          96433,
-          129817,
+          103271,
+          136655,
           ""
         ],
         [
-          136735,
-          140306,
+          143573,
+          147144,
           ""
         ],
         [
-          141586,
-          141858,
+          148424,
+          148696,
           "        for function, expected_projection in projections:\n"
         ],
         [
-          143152,
-          150185,
+          149990,
+          158070,
           ""
         ]
       ],
@@ -1907,7 +1919,10 @@
         "foreign_middle_indirect_and_recursive_transfers_refuse_without_site_filtering",
         "changed_store_displacement_or_width_never_gets_heap_credit",
         "scanner_rejects_invalid_and_truncated_tail",
-        "shared_patterns_match_complete_predecessor_inventory_and_padding_cases"
+        "shared_patterns_match_complete_predecessor_inventory_and_padding_cases",
+        "shared_graph_matches_complete_predecessor_corpus_and_invalid_functions",
+        "shared_graph_preserves_aggregate_errors_call_policy_and_unreachable_blocks",
+        "non64_branch_policy_keeps_fallthrough_but_does_not_add_a_target_cut"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -1939,6 +1954,16 @@
         "whole_packed_rx_runs_cli_retains_mode_and_denominator_on_refusal",
         "whole_packed_overlapping_cli_is_explicit_and_preserves_every_legacy_form",
         "whole_packed_overlapping_cli_retains_mode_and_denominator_on_refusal"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/elf-rewrite/examples/full_program_bridge/input_tests.rs": {
+      "all": [
+        "explicit_input_preserves_legacy_selectors_and_rejects_mixed_or_unpinned_profiles",
+        "explicit_et_exec_keeps_independent_import_and_pin_before_elf_refusal",
+        "explicit_material_and_policy_cli_retain_complete_success_and_refusal_outputs"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -2222,6 +2247,16 @@
         "rx_runs_retain_source_byte_and_dependency_refusals",
         "rx_runs_linux_header_boundary_is_opt_in_and_exact",
         "rx_runs_pack_more_than_kernel_header_count_without_losing_images"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/elf-rewrite/src/disassembly/policy_tests.rs": {
+      "all": [
+        "direct_policy_joins_actual_loads_complete_heads_target_and_ordered_permits",
+        "direct_policy_refuses_incomplete_or_widened_inputs_without_filtering_sites",
+        "direct_policy_original_c3_candidate_and_shared_reservation_keep_old_checks"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -3127,7 +3162,12 @@
       "#[cfg(test)]\n#[path = \"disassembly_sites/whole_tests.rs\"]\nmod whole_tests;"
     ],
     "tools/elf-rewrite/examples/full_program_bridge.rs": [
-      "#[cfg(test)]\n#[path = \"full_program_bridge/tests.rs\"]\nmod tests;"
+      "#[cfg(test)]\n#[path = \"full_program_bridge/tests.rs\"]\nmod tests;",
+      "#[path = \"full_program_bridge/input.rs\"]\nmod input;",
+      "#[path = \"full_program_bridge/policy_cli.rs\"]\nmod policy_cli;"
+    ],
+    "tools/elf-rewrite/examples/full_program_bridge/tests.rs": [
+      "#[path = \"input_tests.rs\"]\nmod input_tests;"
     ],
     "tools/elf-rewrite/examples/indexed_dso_support/caller_dataflow.rs": [
       "#[cfg(test)]\nmod tests {"
@@ -3158,10 +3198,15 @@
       "mod rx_runs;"
     ],
     "tools/elf-rewrite/src/disassembly.rs": [
-      "pub mod whole;"
+      "pub mod whole;",
+      "#[cfg(test)]\nmod tests;"
+    ],
+    "tools/elf-rewrite/src/disassembly/tests.rs": [
+      "#[path = \"policy_tests.rs\"]\nmod policy_tests;"
     ],
     "tools/elf-rewrite/src/disassembly/whole.rs": [
-      "#[cfg(test)]\nmod tests;"
+      "#[cfg(test)]\nmod tests;",
+      "pub mod policy;"
     ],
     "tools/elf-rewrite/src/lib.rs": [
       "pub mod carrier;",
@@ -9923,6 +9968,440 @@
       }
     }
   },
+  "source_successor_79a4b8b": {
+    "added_default_methods": {
+      "tools/elf-rewrite/examples/common_sites.rs": [
+        "shared_graph_matches_complete_predecessor_corpus_and_invalid_functions",
+        "shared_graph_preserves_aggregate_errors_call_policy_and_unreachable_blocks",
+        "non64_branch_policy_keeps_fallthrough_but_does_not_add_a_target_cut"
+      ],
+      "tools/elf-rewrite/examples/full_program_bridge/input_tests.rs": [
+        "explicit_input_preserves_legacy_selectors_and_rejects_mixed_or_unpinned_profiles",
+        "explicit_et_exec_keeps_independent_import_and_pin_before_elf_refusal",
+        "explicit_material_and_policy_cli_retain_complete_success_and_refusal_outputs"
+      ],
+      "tools/elf-rewrite/src/disassembly/policy_tests.rs": [
+        "direct_policy_joins_actual_loads_complete_heads_target_and_ordered_permits",
+        "direct_policy_refuses_incomplete_or_widened_inputs_without_filtering_sites",
+        "direct_policy_original_c3_candidate_and_shared_reservation_keep_old_checks"
+      ]
+    },
+    "added_feature_methods": {},
+    "added_ignored_methods": {},
+    "base_revision": "dcf8876c25314b0acd6a746fca4d2fa35d7f79df",
+    "current_corpus_sha256": "63a316f953d11bed9775ca16c06b4926d8f255e3688431c027ede1452596a399",
+    "default_doctest_additions": 0,
+    "default_harness_changes": 0,
+    "default_ignore_changes": 0,
+    "default_method_additions": 9,
+    "default_method_instances": {
+      "tools/elf-rewrite/examples/common_sites.rs": [
+        "unit/common_sites/common_sites"
+      ],
+      "tools/elf-rewrite/examples/full_program_bridge/input_tests.rs": [
+        "unit/full_program_bridge/full_program_bridge"
+      ],
+      "tools/elf-rewrite/src/disassembly/policy_tests.rs": [
+        "unit/liteinst_rewrite/lib"
+      ]
+    },
+    "default_method_removals": 0,
+    "feature_method_additions": 0,
+    "feature_method_removals": 0,
+    "incoming_main": "79a4b8b65b99d3365d7e4d60963f28dd4907dffa",
+    "module_chains": {
+      "tools/elf-rewrite/Cargo.toml": [
+        "[[example]]\nname = \"common_sites\"\npath = \"examples/common_sites.rs\"\ntest = true",
+        "[[example]]\nname = \"full_program_bridge\"\npath = \"examples/full_program_bridge.rs\"\ntest = true\nbench = false"
+      ],
+      "tools/elf-rewrite/examples/common_sites.rs": [
+        "#[cfg(test)]\nmod tests {"
+      ],
+      "tools/elf-rewrite/examples/full_program_bridge.rs": [
+        "#[cfg(test)]\n#[path = \"full_program_bridge/tests.rs\"]\nmod tests;",
+        "#[path = \"full_program_bridge/input.rs\"]\nmod input;",
+        "#[path = \"full_program_bridge/policy_cli.rs\"]\nmod policy_cli;"
+      ],
+      "tools/elf-rewrite/examples/full_program_bridge/tests.rs": [
+        "#[path = \"input_tests.rs\"]\nmod input_tests;"
+      ],
+      "tools/elf-rewrite/src/disassembly.rs": [
+        "#[cfg(test)]\nmod tests;",
+        "pub mod whole;"
+      ],
+      "tools/elf-rewrite/src/disassembly/tests.rs": [
+        "#[path = \"policy_tests.rs\"]\nmod policy_tests;"
+      ],
+      "tools/elf-rewrite/src/disassembly/whole.rs": [
+        "pub mod policy;"
+      ],
+      "tools/elf-rewrite/src/lib.rs": [
+        "pub mod disassembly;"
+      ]
+    },
+    "new_method_declarations": 9,
+    "new_sources": [
+      "tools/elf-rewrite/examples/full_program_bridge/input.rs",
+      "tools/elf-rewrite/examples/full_program_bridge/input_tests.rs",
+      "tools/elf-rewrite/examples/full_program_bridge/policy_cli.rs",
+      "tools/elf-rewrite/src/disassembly/policy_tests.rs",
+      "tools/elf-rewrite/src/disassembly/whole/policy.rs"
+    ],
+    "newly_bound_sources": [
+      "tools/elf-rewrite/examples/full_program_bridge/input.rs",
+      "tools/elf-rewrite/examples/full_program_bridge/input_tests.rs",
+      "tools/elf-rewrite/examples/full_program_bridge/policy_cli.rs",
+      "tools/elf-rewrite/src/disassembly/policy_tests.rs",
+      "tools/elf-rewrite/src/disassembly/whole/policy.rs"
+    ],
+    "previous_corpus_sha256": "e8f288b0a32f1c30c6eedfdeb99b5818774c0b610ea4525facc79e054dbe9e63",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "src/control_flow.rs",
+      "tools/elf-rewrite/examples/common_sites.rs",
+      "tools/elf-rewrite/examples/full_program_bridge.rs",
+      "tools/elf-rewrite/examples/full_program_bridge/input.rs",
+      "tools/elf-rewrite/examples/full_program_bridge/input_tests.rs",
+      "tools/elf-rewrite/examples/full_program_bridge/policy_cli.rs",
+      "tools/elf-rewrite/examples/full_program_bridge/tests.rs",
+      "tools/elf-rewrite/src/disassembly/policy_tests.rs",
+      "tools/elf-rewrite/src/disassembly/tests.rs",
+      "tools/elf-rewrite/src/disassembly/whole.rs",
+      "tools/elf-rewrite/src/disassembly/whole/policy.rs",
+      "tools/elf-rewrite/src/lib.rs"
+    ],
+    "source_preimages": {
+      "src/control_flow.rs": {
+        "bytes": 11795,
+        "sha256": "a799fc7a153518058e63253cdfdfe5b5e8ad68022d374e1699f06111ee7ac326"
+      },
+      "tools/elf-rewrite/examples/common_sites.rs": {
+        "bytes": 89932,
+        "sha256": "34d1b043e55b91490696d2e4042168a613ca90ddf43ad54017c04f15534d5607"
+      },
+      "tools/elf-rewrite/examples/full_program_bridge.rs": {
+        "bytes": 23308,
+        "sha256": "21686fccf07c625a6220c30d7c6664e7608546e5e4d3b18d3da127911810773f"
+      },
+      "tools/elf-rewrite/examples/full_program_bridge/input.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/examples/full_program_bridge/input_tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/examples/full_program_bridge/policy_cli.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/examples/full_program_bridge/tests.rs": {
+        "bytes": 17877,
+        "sha256": "e5dc04d32b521685b08550d1e2eb55c5665be73153b948ae7c35ba6214023268"
+      },
+      "tools/elf-rewrite/src/disassembly/policy_tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/disassembly/tests.rs": {
+        "bytes": 81331,
+        "sha256": "6774aa69aec5c0081a83ce9e24eea21e4819f1f1832dfeb10d53caa810847f40"
+      },
+      "tools/elf-rewrite/src/disassembly/whole.rs": {
+        "bytes": 14993,
+        "sha256": "d077992fa0c9758fafb182b738d74792370b909736488cf33914fdd7343ddd24"
+      },
+      "tools/elf-rewrite/src/disassembly/whole/policy.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "bytes": 49890,
+        "sha256": "2908dd64967a6a894043a0cea3d2c563b3d0d6641ed77ca75a0f72dcbca71db3"
+      }
+    },
+    "source_projections": {
+      "src/control_flow.rs": {
+        "current_sha256": "7e29c562aeb4203b020e012dfdc506f0aaa0340f1ee43e51a679db241b6e52c5",
+        "edits": [
+          [
+            7142,
+            8390,
+            ""
+          ],
+          [
+            11262,
+            11359,
+            "                let mut cuts = BTreeSet::from([owner.start(), owner.end()]);\n                for (item, row) in items.iter().zip(&self.facts.rows) {\n                    let instruction = item.instruction();\n                    if instruction.flow_control() != FlowControl::Next\n                        && instruction.next_ip() < owner.end()\n                    {\n                        cuts.insert(instruction.next_ip());\n                    }\n                    if let Some(Target::Head(target)) = row.branch_target {\n                        cuts.insert(items[target].address());\n                    }\n                }\n                let cuts: Vec<_> = cuts.into_iter().collect();\n"
+          ]
+        ],
+        "previous_sha256": "a799fc7a153518058e63253cdfdfe5b5e8ad68022d374e1699f06111ee7ac326"
+      },
+      "tools/elf-rewrite/examples/common_sites.rs": {
+        "current_sha256": "cb35ceb5c066c609c49e5aa21761e773e8b9528580bfe2c3f346f0b227705af5",
+        "edits": [
+          [
+            376,
+            429,
+            ""
+          ],
+          [
+            513,
+            569,
+            "use li2core::scanner::InstructionScanner;\n"
+          ],
+          [
+            11265,
+            11287,
+            ""
+          ],
+          [
+            11289,
+            11351,
+            "fn decode(bytes: &[u8], pc: u64) -> Result<Vec<Instruction>> {\n"
+          ],
+          [
+            11602,
+            11711,
+            "    Ok(scan\n"
+          ],
+          [
+            12503,
+            12553,
+            ""
+          ],
+          [
+            12681,
+            12857,
+            "            instructions: decode(bytes, owner.pc)?,\n"
+          ],
+          [
+            17660,
+            19357,
+            ""
+          ],
+          [
+            19416,
+            19455,
+            "    let heads: BTreeSet<_> = f.instructions.iter().map(Instruction::ip).collect();\n    let stop = f.owner.pc + f.owner.length;\n    let mut boundaries = BTreeSet::from([f.owner.pc, stop]);\n"
+          ],
+          [
+            19567,
+            20120,
+            "    for i in &f.instructions {\n        let mut successors = Vec::new();\n        let next = i.next_ip();\n        if i.flow_control() != FlowControl::Next && next < stop {\n            boundaries.insert(next);\n        }\n        match i.flow_control() {\n            FlowControl::Next => successors.push(next),\n            FlowControl::Call if i.code() == Code::Call_rel32_64 => {\n                let target = i.near_branch_target();\n                if !entries.contains(&target) {\n                    errors.insert(format!(\"0x{:x}:external-call\", i.ip()));\n"
+          ],
+          [
+            20138,
+            20177,
+            "                calls.insert(target);\n                successors.push(next);\n            }\n            FlowControl::Return if i.code() == Code::Retnq => {}\n            FlowControl::ConditionalBranch | FlowControl::UnconditionalBranch => {\n                if let Some(target) = direct(i) {\n                    successors.push(target);\n                    boundaries.insert(target);\n                } else {\n                    errors.insert(format!(\"0x{:x}:non-near-branch\", i.ip()));\n                }\n                if i.flow_control() == FlowControl::ConditionalBranch {\n                    successors.push(next);\n                }\n            }\n            _ => {\n                errors.insert(format!(\"0x{:x}:unsupported-control-flow\", i.ip()));\n            }\n        }\n        for target in &successors {\n            if !heads.contains(target) {\n                errors.insert(format!(\n                    \"0x{:x}:target-not-function-head:0x{target:x}\",\n                    i.ip()\n                ));\n            }\n        }\n"
+          ],
+          [
+            20219,
+            21029,
+            "    }\n    // Foreign branch coordinates remain explicit errors; never expand the\n    // function/block owner to accommodate them.\n    boundaries.retain(|p| *p == stop || heads.contains(p));\n    let bounds: Vec<_> = boundaries.into_iter().collect();\n    let blocks = bounds.windows(2).map(|p| (p[0], p[1])).collect();\n"
+          ],
+          [
+            49699,
+            49751,
+            ""
+          ],
+          [
+            50016,
+            50192,
+            "            instructions: decode(bytes, pc).unwrap(),\n"
+          ],
+          [
+            91513,
+            100735,
+            ""
+          ]
+        ],
+        "previous_sha256": "34d1b043e55b91490696d2e4042168a613ca90ddf43ad54017c04f15534d5607"
+      },
+      "tools/elf-rewrite/examples/full_program_bridge.rs": {
+        "current_sha256": "2d30be871c76295791bca1d93e92cc4c14fa8c5181ee1357cffce3a953d94742",
+        "edits": [
+          [
+            1650,
+            1765,
+            ""
+          ],
+          [
+            19720,
+            20023,
+            "    let (args, profile) = arguments(args)?;\n"
+          ],
+          [
+            20387,
+            20598,
+            "    need(\n        sha(&original.0) == ORIGINAL_SHA,\n        \"not the pinned original e9patch\",\n    )?;\n"
+          ],
+          [
+            22514,
+            22628,
+            "        profile.name(),\n"
+          ],
+          [
+            22737,
+            22854,
+            "        ORIGINAL_SHA,\n"
+          ]
+        ],
+        "previous_sha256": "21686fccf07c625a6220c30d7c6664e7608546e5e4d3b18d3da127911810773f"
+      },
+      "tools/elf-rewrite/examples/full_program_bridge/input.rs": {
+        "current_sha256": "e019de40ee87d24915b4071aefb0c03d71126b65da163717e10502efeb7411b6",
+        "edits": [
+          [
+            0,
+            1977,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/examples/full_program_bridge/input_tests.rs": {
+        "current_sha256": "16fa5d2a20ddd58970e2c10448d863fcb283a190d24776a8c3fd2822d5906f1c",
+        "edits": [
+          [
+            0,
+            8400,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/examples/full_program_bridge/policy_cli.rs": {
+        "current_sha256": "226e196cc3e92bc8057e5597fbe43eb94115ba94b9edbde2ee9ca1d666bf91c2",
+        "edits": [
+          [
+            0,
+            5235,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/examples/full_program_bridge/tests.rs": {
+        "current_sha256": "1eb605a5652a49fc40014ebacadcbe11282190b0ed7a1da12ca750e78cd49023",
+        "edits": [
+          [
+            17877,
+            17922,
+            ""
+          ]
+        ],
+        "previous_sha256": "e5dc04d32b521685b08550d1e2eb55c5665be73153b948ae7c35ba6214023268"
+      },
+      "tools/elf-rewrite/src/disassembly/policy_tests.rs": {
+        "current_sha256": "727d2b4259e3aa9c87a82d847dfc34437ea96805a16438f2e3be4a4d5537db49",
+        "edits": [
+          [
+            0,
+            9552,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/disassembly/tests.rs": {
+        "current_sha256": "8a90fbc676ba9a75cfa698a865effa2cf60077006f9267768cd736d1d78d0786",
+        "edits": [
+          [
+            81331,
+            81378,
+            ""
+          ]
+        ],
+        "previous_sha256": "6774aa69aec5c0081a83ce9e24eea21e4819f1f1832dfeb10d53caa810847f40"
+      },
+      "tools/elf-rewrite/src/disassembly/whole.rs": {
+        "current_sha256": "33c59f4baded05e529e1fe4117eef9ceee72b1de7b53fd24568c7cb3ea5c6d5f",
+        "edits": [
+          [
+            226,
+            320,
+            ""
+          ]
+        ],
+        "previous_sha256": "d077992fa0c9758fafb182b738d74792370b909736488cf33914fdd7343ddd24"
+      },
+      "tools/elf-rewrite/src/disassembly/whole/policy.rs": {
+        "current_sha256": "74473dc524db7adde852b27a9afdcfc877626f8ca3ac94b4bf30e432af6e9d61",
+        "edits": [
+          [
+            0,
+            11581,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "current_sha256": "088b5f8cc6b856eedd43d9b2365d93a2b5b3d4ec204088e3df09befafb28c4a0",
+        "edits": [
+          [
+            18377,
+            18457,
+            "    let carrier_reserve = round_page(\n        (s.limits.program_headers as u64)\n            .checked_mul(56)\n            .and_then(|v| v.checked_add(128))\n            .ok_or_else(|| Error::new(\"carrier-reservation\", \"overflow\"))?,\n    )?;\n"
+          ],
+          [
+            49731,
+            50173,
+            ""
+          ]
+        ],
+        "previous_sha256": "2908dd64967a6a894043a0cea3d2c563b3d0d6641ed77ca75a0f72dcbca71db3"
+      }
+    },
+    "source_revision": "187ecd54298c82351b4d2fc9f8063b462bb2c90f",
+    "sources": {
+      "src/control_flow.rs": "7e29c562aeb4203b020e012dfdc506f0aaa0340f1ee43e51a679db241b6e52c5",
+      "tools/elf-rewrite/examples/common_sites.rs": "cb35ceb5c066c609c49e5aa21761e773e8b9528580bfe2c3f346f0b227705af5",
+      "tools/elf-rewrite/examples/full_program_bridge.rs": "2d30be871c76295791bca1d93e92cc4c14fa8c5181ee1357cffce3a953d94742",
+      "tools/elf-rewrite/examples/full_program_bridge/input.rs": "e019de40ee87d24915b4071aefb0c03d71126b65da163717e10502efeb7411b6",
+      "tools/elf-rewrite/examples/full_program_bridge/input_tests.rs": "16fa5d2a20ddd58970e2c10448d863fcb283a190d24776a8c3fd2822d5906f1c",
+      "tools/elf-rewrite/examples/full_program_bridge/policy_cli.rs": "226e196cc3e92bc8057e5597fbe43eb94115ba94b9edbde2ee9ca1d666bf91c2",
+      "tools/elf-rewrite/examples/full_program_bridge/tests.rs": "1eb605a5652a49fc40014ebacadcbe11282190b0ed7a1da12ca750e78cd49023",
+      "tools/elf-rewrite/src/disassembly/policy_tests.rs": "727d2b4259e3aa9c87a82d847dfc34437ea96805a16438f2e3be4a4d5537db49",
+      "tools/elf-rewrite/src/disassembly/tests.rs": "8a90fbc676ba9a75cfa698a865effa2cf60077006f9267768cd736d1d78d0786",
+      "tools/elf-rewrite/src/disassembly/whole.rs": "33c59f4baded05e529e1fe4117eef9ceee72b1de7b53fd24568c7cb3ea5c6d5f",
+      "tools/elf-rewrite/src/disassembly/whole/policy.rs": "74473dc524db7adde852b27a9afdcfc877626f8ca3ac94b4bf30e432af6e9d61",
+      "tools/elf-rewrite/src/lib.rs": "088b5f8cc6b856eedd43d9b2365d93a2b5b3d4ec204088e3df09befafb28c4a0"
+    },
+    "workspace_changes": {
+      "unit/common_sites/common_sites": {
+        "current": {
+          "ignored": 0,
+          "tests": 28
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 25
+        }
+      },
+      "unit/full_program_bridge/full_program_bridge": {
+        "current": {
+          "ignored": 0,
+          "tests": 13
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 10
+        }
+      },
+      "unit/liteinst_rewrite/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 199
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 196
+        }
+      }
+    }
+  },
   "source_successor_79b34bc": {
     "added_default_methods": {
       "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification/tests.rs": [
@@ -13657,7 +14136,7 @@
     "evaluation/admission/test_main34c47_inventory.py": "fa2bb240bd7a9fdb6e79f18635ffe959fcd38facf479b882340aab5dca4461a0",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "7823badbd86e65b1597d70cecc64300f44b8880de28666a2dba8ba1554560396",
-    "evaluation/admission/test_main97ab_inventory.py": "f3a37752d928a08c99c5f67a5865d2d3f38414ae67cd24984fda3a33cfedb4e5",
+    "evaluation/admission/test_main97ab_inventory.py": "64c1be2a31b210993feae989fab7d112b6b3a413e2d489d5f6054c4156403a90",
     "evaluation/admission/test_main981419_inventory.py": "a75ae36eed8dc312b702821d50c991e126430a4f3e294342d2b43e29cd1ff034",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
     "evaluation/admission/test_mainaf81_inventory.py": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
@@ -13686,7 +14165,7 @@
     "src/backedge_clock/owned_region.rs": "08200c9db8b5922f595fe46459b113ab7e2223eb9e45fb6c0f8b7eedd611c432",
     "src/backedge_clock/owned_region/tests.rs": "3cb1cb505378787bf4e1fd665477983f7908901f64449227ef20d915f704864d",
     "src/bundle.rs": "82e36a7edb832b33a18ae25e68e1d81b2c3b6ddb21b4620626f40fd66187b9af",
-    "src/control_flow.rs": "a799fc7a153518058e63253cdfdfe5b5e8ad68022d374e1699f06111ee7ac326",
+    "src/control_flow.rs": "7e29c562aeb4203b020e012dfdc506f0aaa0340f1ee43e51a679db241b6e52c5",
     "src/control_flow/tests.rs": "e068722fc49af99d32bde17a431bac578a8244acd8be4c869edf19a1a134ab45",
     "src/controls.rs": "13f21abc2980b52aa5bcd8f64be07f4d5433e89bcdea3e1bdadd731ba904eb4a",
     "src/controls/entry_admission.rs": "b30e3fa18423b57be5dea11edd568c3930944e5879784f5625bdc9404e14b1e7",
@@ -13786,11 +14265,14 @@
     "tools/elf-rewrite/Cargo.toml": "44f89364d57a07c1f21d94467c0a619ca879d22e776368dfa9eda00c97a93e6d",
     "tools/elf-rewrite/e9-sites-controls.py": "f90efe8819b3e0c06749906b2115cc224fd415d3d3662bef72931bb31f71d7be",
     "tools/elf-rewrite/e9-sites.py": "4270f18a2128543fa0eb1b1982ed8368b77c5216c0926a5012371c8a3a9ea893",
-    "tools/elf-rewrite/examples/common_sites.rs": "34d1b043e55b91490696d2e4042168a613ca90ddf43ad54017c04f15534d5607",
+    "tools/elf-rewrite/examples/common_sites.rs": "cb35ceb5c066c609c49e5aa21761e773e8b9528580bfe2c3f346f0b227705af5",
     "tools/elf-rewrite/examples/disassembly_sites.rs": "aec5ebbd5a61f284114cebbecabd9a515f7eac7aa2883bafd7242930b6eb8ea8",
     "tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs": "5a1d5ac99bd5c06d569e9e2abeaf81d88731db35713adbd1a369f858cdf27a29",
-    "tools/elf-rewrite/examples/full_program_bridge.rs": "21686fccf07c625a6220c30d7c6664e7608546e5e4d3b18d3da127911810773f",
-    "tools/elf-rewrite/examples/full_program_bridge/tests.rs": "e5dc04d32b521685b08550d1e2eb55c5665be73153b948ae7c35ba6214023268",
+    "tools/elf-rewrite/examples/full_program_bridge.rs": "2d30be871c76295791bca1d93e92cc4c14fa8c5181ee1357cffce3a953d94742",
+    "tools/elf-rewrite/examples/full_program_bridge/input.rs": "e019de40ee87d24915b4071aefb0c03d71126b65da163717e10502efeb7411b6",
+    "tools/elf-rewrite/examples/full_program_bridge/input_tests.rs": "16fa5d2a20ddd58970e2c10448d863fcb283a190d24776a8c3fd2822d5906f1c",
+    "tools/elf-rewrite/examples/full_program_bridge/policy_cli.rs": "226e196cc3e92bc8057e5597fbe43eb94115ba94b9edbde2ee9ca1d666bf91c2",
+    "tools/elf-rewrite/examples/full_program_bridge/tests.rs": "1eb605a5652a49fc40014ebacadcbe11282190b0ed7a1da12ca750e78cd49023",
     "tools/elf-rewrite/examples/indexed_dso_native.rs": "8fde58161eb6117c9ac2fc19caf2564da503494489da967fbb7174d48d9d2e7f",
     "tools/elf-rewrite/examples/indexed_dso_support/caller_dataflow.rs": "bd99e6d4c8d76d6d5c4757d481eb475b3e692b04813e24d797196548a87176df",
     "tools/elf-rewrite/examples/indexed_dso_support/caller_image.rs": "bc4008fa7ac9fd9e8f617004ea3278a9b00910815a897fb92345c6d6af264291",
@@ -13811,11 +14293,13 @@
     "tools/elf-rewrite/src/carrier/rx_run_fixtures.rs": "5aaa7e606769219d3093e033325c9632b3f15cc11ce6aec003d2d442741731cd",
     "tools/elf-rewrite/src/carrier/rx_runs.rs": "4b54d2396e5555ab13465a5f46266c7a990013146deea58fa8e2dbb1316f43b2",
     "tools/elf-rewrite/src/disassembly.rs": "c4591382e90efd3cc2cc077029b32ebf096d422859fd79198d09af054b5acda0",
-    "tools/elf-rewrite/src/disassembly/tests.rs": "6774aa69aec5c0081a83ce9e24eea21e4819f1f1832dfeb10d53caa810847f40",
-    "tools/elf-rewrite/src/disassembly/whole.rs": "d077992fa0c9758fafb182b738d74792370b909736488cf33914fdd7343ddd24",
+    "tools/elf-rewrite/src/disassembly/policy_tests.rs": "727d2b4259e3aa9c87a82d847dfc34437ea96805a16438f2e3be4a4d5537db49",
+    "tools/elf-rewrite/src/disassembly/tests.rs": "8a90fbc676ba9a75cfa698a865effa2cf60077006f9267768cd736d1d78d0786",
+    "tools/elf-rewrite/src/disassembly/whole.rs": "33c59f4baded05e529e1fe4117eef9ceee72b1de7b53fd24568c7cb3ea5c6d5f",
+    "tools/elf-rewrite/src/disassembly/whole/policy.rs": "74473dc524db7adde852b27a9afdcfc877626f8ca3ac94b4bf30e432af6e9d61",
     "tools/elf-rewrite/src/disassembly/whole/tests.rs": "33d309f2eab6d63e4c672c42951b3aa63cf55f63418a23cebf5a5221bc5d59ed",
     "tools/elf-rewrite/src/ledger.rs": "79b90df021fbed429da1961a4d02edb1b6f09c6dfd606a9f53f592a193a483ee",
-    "tools/elf-rewrite/src/lib.rs": "2908dd64967a6a894043a0cea3d2c563b3d0d6641ed77ca75a0f72dcbca71db3",
+    "tools/elf-rewrite/src/lib.rs": "088b5f8cc6b856eedd43d9b2365d93a2b5b3d4ec204088e3df09befafb28c4a0",
     "tools/elf-rewrite/src/model.rs": "25ce95f799669f062b774b344afdd0705299665fadd3ba666595a2efb10b191e",
     "tools/elf-rewrite/src/neighbor_catalogue.rs": "546c257b0be1f6fd48128b3fed5ab5f2d32fe3f85cb8fb611747d00d4b7aac9a",
     "tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs": "e3977076515f83ee1171a61d009aff724e791640fca2d9b953fbb24cf5e9854d",

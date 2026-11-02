@@ -6511,7 +6511,7 @@
       },
       "unit/common_sites/common_sites": {
         "ignored": 0,
-        "tests": 25
+        "tests": 28
       },
       "unit/disassembly_sites/disassembly_sites": {
         "ignored": 0,
@@ -6519,7 +6519,7 @@
       },
       "unit/full_program_bridge/full_program_bridge": {
         "ignored": 0,
-        "tests": 10
+        "tests": 13
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
@@ -6551,7 +6551,7 @@
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
-        "tests": 196
+        "tests": 199
       },
       "unit/liteinst_rewrite/main": {
         "ignored": 0,
