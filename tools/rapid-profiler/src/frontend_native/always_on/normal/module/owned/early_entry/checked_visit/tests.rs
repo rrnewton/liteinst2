@@ -3630,3 +3630,392 @@ fn current_ret_geometry_uses_actual_validation_with_foreign_rows_and_rearm() {
     }
     assert_eq!(batches, 10);
 }
+
+// Literal complete490c validator; only this method name differs.
+impl PhysicalState {
+    fn shape_before_row_prefix(&self, state: &NormalState) -> Result<(), BridgeError> {
+        self.matches(state)?;
+        state.shape()?;
+        let b = self.active.as_ref().ok_or(error(Cause::Outstanding))?;
+        if b.number != self.batches.checked_add(1).ok_or(error(Cause::Capacity))?
+            || b.position > 4
+            || state.cursor != b.before.cursor
+            || !b.rows.is_prefix(b.position)
+            || !b.seen.tail_is_empty(b.position.saturating_add(1).min(4))
+            || state
+                .totals
+                .entered
+                .checked_sub(b.before.cursor.totals.entered)
+                != Some(b.seen.count() as u64)
+            || state
+                .totals
+                .ret_observed
+                .checked_sub(b.before.cursor.totals.ret_observed)
+                != Some(b.rows.observed_count() as u64)
+        {
+            return Err(error(Cause::Invariant));
+        }
+        let mut ordinal = b.before.next;
+        let mut confirmed = 0;
+        for index in 0..4 {
+            if let Some(n) = b.seen[index] {
+                if n != ordinal {
+                    return Err(error(Cause::Invariant));
+                }
+                ordinal = ordinal.checked_add(1).ok_or(error(Cause::Capacity))?;
+            }
+            if let Some(row) = b.rows[index] {
+                if row.batch != b.number
+                    || row.position != index
+                    || row.function != self.order[index % 2].function
+                    || row.observed_ordinal != b.seen[index]
+                    || row.return_word != self.words[index]
+                    || Some(row.entry_rsp) != b.rsp
+                {
+                    return Err(error(Cause::Invariant));
+                }
+                let BindingProfile::Module { site, .. } = &state.binding.profile else {
+                    return Err(error(Cause::Identity));
+                };
+                // Preserve canonical-entry indexing (including its original
+                // panic) before consulting the exact immutable geometry fact.
+                let selected = self.order[index % 2];
+                let entry = site.functions()[selected.index].entry();
+                if !b
+                    .rows
+                    .geometry_matches(index, state, selected, entry, row.return_pc)
+                {
+                    state.selected_geometry(selected, entry, Some(row.return_pc))?;
+                }
+                if row.observed_ordinal.is_some() && b.pending_position != Some(index) {
+                    let r = state
+                        .records
+                        .get(confirmed)
+                        .and_then(|r| *r)
+                        .ok_or(error(Cause::Invariant))?;
+                    if state.functions[confirmed] != Some(self.order[index % 2])
+                        || Some(r.raw.ordinal) != row.observed_ordinal
+                        || r.raw.return_pc != row.return_pc
+                        || r.entry_rsp != row.entry_rsp
+                        || r.return_word != row.return_word
+                    {
+                        return Err(error(Cause::Invariant));
+                    }
+                    confirmed += 1;
+                }
+            }
+        }
+        if state.next != ordinal || state.len != confirmed {
+            return Err(error(Cause::Invariant));
+        }
+        match (b.pending_position, &state.pending) {
+            (None, None) if b.position == 4 || b.seen[b.position].is_none() => {}
+            (Some(index), Some(p)) if index < 4 => {
+                if b.seen[index] != Some(p.ordinal)
+                    || p.selected != self.order[index % 2]
+                    || p.word != self.words[index]
+                    || Some(p.rsp) != b.rsp
+                    || (p.returned.is_some() && (index >= b.position || b.rows[index].is_none()))
+                    || (p.returned.is_none() && (index != b.position || b.rows[index].is_some()))
+                    || (b.position < 4 && index != b.position && b.seen[b.position].is_some())
+                {
+                    return Err(error(Cause::Return));
+                }
+            }
+            _ => return Err(error(Cause::Return)),
+        }
+        Ok(())
+    }
+}
+
+// Compare both read-only validators on the same live receipt and immutable
+// geometry owner. The complete slot images also include masks, counts and facts.
+fn row_prefix_shape_unchanged(f: &Fixture, expected: Result<(), BridgeError>) {
+    let before = (
+        normal_image(&f.state),
+        physical_image(&f.physical),
+        identities(&f.state, &f.physical),
+    );
+    let slots = f.physical.active.as_ref().map(|b| (b.seen, b.rows.clone()));
+    for shape in [PhysicalState::shape_before_row_prefix, PhysicalState::shape] {
+        assert_eq!(shape(&f.physical, &f.state), expected);
+        assert_eq!(
+            (
+                normal_image(&f.state),
+                physical_image(&f.physical),
+                identities(&f.state, &f.physical),
+            ),
+            before
+        );
+        assert_eq!(
+            f.physical.active.as_ref().map(|b| (b.seen, b.rows.clone())),
+            slots
+        );
+    }
+}
+
+#[test]
+fn row_prefix_matches_full_shape_at_each_position_and_receipt_kind() {
+    let mut cases = 0;
+    // FunctionClosed uses the actual twenty-record fixed bank. The other modes
+    // cover both supported K values without manufacturing any receipt owner.
+    for (k, mode) in [
+        (10, 0),
+        (10, 1),
+        (10, 2),
+        (10, 3),
+        (10, 4),
+        (1000, 0),
+        (1000, 1),
+        (1000, 2),
+        (1000, 4),
+    ] {
+        for order in [[0, 1], [1, 0]] {
+            for mask in [0b0101u8, 0b1111] {
+                let mut f = Fixture::new(k, order);
+                if mode != 0 {
+                    f.controller.arm(&f.epoch).unwrap();
+                }
+                if mode == 1 {
+                    f.controller.disarm(&f.epoch).unwrap();
+                }
+                if mode == 3 {
+                    for _ in 0..5 {
+                        f.physical.begin(&f.state).unwrap();
+                        for _ in 0..4 {
+                            f.call(true);
+                        }
+                        assert_eq!(f.finish().0.unwrap().records().len(), 4);
+                    }
+                }
+                row_prefix_shape_unchanged(&f, Err(error(Cause::Outstanding)));
+                f.physical.begin(&f.state).unwrap();
+                let mut second = None;
+                for position in 0..4 {
+                    assert_eq!(f.physical.active.as_ref().unwrap().position, position);
+                    assert!(f.physical.active.as_ref().unwrap().seen[position].is_none());
+                    row_prefix_shape_unchanged(&f, Ok(()));
+                    let observed = mask & (1 << position) != 0;
+                    if observed {
+                        f.visit(true).unwrap();
+                        let p = f.state.pending.as_ref().unwrap();
+                        let summary = p.summary.unwrap();
+                        assert_eq!(p.receipt.summary(), Some(summary));
+                        match mode {
+                            0 => assert!(matches!(
+                                summary,
+                                IntervalEntrySummary::Unsampled {
+                                    reason: UnsampledSummary::InitialDisarmed,
+                                    ..
+                                }
+                            )),
+                            1 => assert!(matches!(summary, IntervalEntrySummary::Unsampled {
+                                reason: UnsampledSummary::Removed { generation }, ..
+                            } if generation == f.epoch.generation())),
+                            2 | 4 => assert!(matches!(summary, IntervalEntrySummary::Admitted {
+                                generation, ..
+                            } if generation == second.as_ref().unwrap_or(&f.epoch).generation())),
+                            3 => assert!(matches!(summary, IntervalEntrySummary::Unsampled {
+                                reason: UnsampledSummary::FunctionClosed { generation, function }, ..
+                            } if generation == f.epoch.generation() && function == p.selected.function)),
+                            _ => unreachable!(),
+                        }
+                        assert_eq!(
+                            f.physical.active.as_ref().unwrap().seen[position],
+                            Some(p.ordinal)
+                        );
+                        row_prefix_shape_unchanged(&f, Ok(()));
+                    }
+                    let before_return = normal_image(&f.state);
+                    f.visit(false).unwrap();
+                    if !observed {
+                        assert_eq!(normal_image(&f.state), before_return);
+                        assert_eq!(
+                            f.physical.active.as_ref().unwrap().pending_position,
+                            Some(position - 1)
+                        );
+                    }
+                    row_prefix_shape_unchanged(&f, Ok(()));
+                    if mode == 4 && position == 0 {
+                        let pending = normal_image(&f.state).pending;
+                        f.controller.disarm(&f.epoch).unwrap();
+                        let next = f.controller.stage_prepared(f.banks.pop().unwrap()).unwrap();
+                        f.controller.arm(&next).unwrap();
+                        assert_eq!(normal_image(&f.state).pending, pending);
+                        row_prefix_shape_unchanged(&f, Ok(()));
+                        second = Some(next);
+                    }
+                }
+                assert_eq!(f.physical.active.as_ref().unwrap().position, 4);
+                // This succeeds without ever indexing seen[4].
+                row_prefix_shape_unchanged(&f, Ok(()));
+                let count = mask.count_ones() as usize;
+                let (batch, rows) = f.finish();
+                assert_eq!(batch.unwrap().records().len(), count);
+                assert_eq!(
+                    rows.iter().filter(|r| r.observed_ordinal.is_some()).count(),
+                    count
+                );
+                assert!(f.state.pending.is_none());
+                assert_eq!(f.state.model.depth(), 0);
+                row_prefix_shape_unchanged(&f, Err(error(Cause::Outstanding)));
+                if let Some(next) = second {
+                    f.controller.disarm(&next).unwrap();
+                    assert_eq!(
+                        f.controller
+                            .report(&next)
+                            .unwrap()
+                            .unwrap()
+                            .records()
+                            .count(),
+                        count - 1
+                    );
+                } else if mode >= 2 {
+                    f.controller.disarm(&f.epoch).unwrap();
+                }
+                if mode == 0 {
+                    f.controller.arm(&f.epoch).unwrap();
+                    f.controller.disarm(&f.epoch).unwrap();
+                }
+                assert_eq!(
+                    f.controller
+                        .report(&f.epoch)
+                        .unwrap()
+                        .unwrap()
+                        .records()
+                        .count(),
+                    match mode {
+                        0 | 1 => 0,
+                        2 => count,
+                        3 => 20,
+                        4 => 1,
+                        _ => unreachable!(),
+                    }
+                );
+                cases += 1;
+            }
+        }
+    }
+    assert_eq!(cases, 36);
+}
+
+#[test]
+fn row_prefix_preserves_current_overflow_and_earlier_row_error_order() {
+    for order in [[0, 1], [1, 0]] {
+        for position in 0..4 {
+            let mut f = Fixture::new(10, order);
+            f.controller.arm(&f.epoch).unwrap();
+            f.physical.begin(&f.state).unwrap();
+            if position != 0 {
+                f.call(true);
+                for _ in 1..position {
+                    f.call(false);
+                }
+            }
+            f.visit(true).unwrap();
+            assert_eq!(f.physical.active.as_ref().unwrap().position, position);
+            assert_eq!(f.state.len, usize::from(position != 0));
+            row_prefix_shape_unchanged(&f, Ok(()));
+            let original_seen = f.physical.active.as_ref().unwrap().seen;
+            let original_rows = f.physical.active.as_ref().unwrap().rows.clone();
+            let original_next = f.physical.active.as_ref().unwrap().before.next;
+            let original_record = f.state.records[0];
+            let original_word = f.state.pending.as_ref().unwrap().word;
+            f.state.pending.as_mut().unwrap().word += 8;
+            assert_eq!(f.state.shape(), Ok(()));
+            row_prefix_shape_unchanged(&f, Err(error(Cause::Return)));
+            // Current ordinal mismatch precedes the final Pending refusal.
+            f.physical
+                .active
+                .as_mut()
+                .unwrap()
+                .seen
+                .set(position, Some(0));
+            row_prefix_shape_unchanged(&f, Err(error(Cause::Invariant)));
+            let b = f.physical.active.as_mut().unwrap();
+            b.before.next = u64::MAX - u64::from(position != 0);
+            b.seen.set(position, Some(u64::MAX));
+            if position != 0 {
+                b.seen.set(0, Some(u64::MAX - 1));
+                let mut row = b.rows[0].unwrap();
+                row.observed_ordinal = Some(u64::MAX - 1);
+                b.rows.set(0, Some(row));
+                let mut record = original_record.unwrap();
+                record.raw.ordinal = u64::MAX - 1;
+                f.state.records.set(0, Some(record));
+            }
+            // NormalState does not inspect these raw ordinal/content values;
+            // the physical count/prefix guards also succeed in this fixture.
+            assert_eq!(f.state.shape(), Ok(()));
+            row_prefix_shape_unchanged(&f, Err(error(Cause::Capacity)));
+            if position != 0 {
+                let row = f.physical.active.as_ref().unwrap().rows[0].unwrap();
+                let record = f.state.records[0].unwrap();
+                let mut bad_record = record;
+                bad_record.raw.return_pc += 1;
+                f.state.records.set(0, Some(bad_record));
+                assert_eq!(f.state.shape(), Ok(()));
+                row_prefix_shape_unchanged(&f, Err(error(Cause::Invariant)));
+                let mut bad_row = row;
+                bad_row.return_pc += 1;
+                f.physical
+                    .active
+                    .as_mut()
+                    .unwrap()
+                    .rows
+                    .set(0, Some(bad_row));
+                // Earlier geometry precedes both the earlier record join and
+                // the current-position overflow, even with bad Pending too.
+                row_prefix_shape_unchanged(&f, Err(error(Cause::Identity)));
+                f.physical.active.as_mut().unwrap().rows.set(0, None);
+                row_prefix_shape_unchanged(&f, Err(error(Cause::Invariant)));
+                f.physical.active.as_mut().unwrap().rows.set(0, Some(row));
+                f.state.records.set(0, Some(record));
+                row_prefix_shape_unchanged(&f, Err(error(Cause::Capacity)));
+            }
+            if position < 3 {
+                f.physical
+                    .active
+                    .as_mut()
+                    .unwrap()
+                    .seen
+                    .set(position + 1, Some(9));
+                row_prefix_shape_unchanged(&f, Err(error(Cause::Invariant)));
+                f.physical
+                    .active
+                    .as_mut()
+                    .unwrap()
+                    .seen
+                    .set(position + 1, None);
+                row_prefix_shape_unchanged(&f, Err(error(Cause::Capacity)));
+            }
+            // Repair only the deliberate faults, then consume the same actual
+            // receipt through RET, confirmation, transfer and epoch report.
+            let b = f.physical.active.as_mut().unwrap();
+            b.seen = original_seen;
+            b.rows = original_rows;
+            b.before.next = original_next;
+            f.state.records.set(0, original_record);
+            row_prefix_shape_unchanged(&f, Err(error(Cause::Return)));
+            f.state.pending.as_mut().unwrap().word = original_word;
+            row_prefix_shape_unchanged(&f, Ok(()));
+            f.visit(false).unwrap();
+            for _ in position + 1..4 {
+                f.call(false);
+            }
+            row_prefix_shape_unchanged(&f, Ok(()));
+            let count = 1 + usize::from(position != 0);
+            assert_eq!(f.finish().0.unwrap().records().len(), count);
+            f.controller.disarm(&f.epoch).unwrap();
+            assert_eq!(
+                f.controller
+                    .report(&f.epoch)
+                    .unwrap()
+                    .unwrap()
+                    .records()
+                    .count(),
+                count
+            );
+        }
+    }
+}
