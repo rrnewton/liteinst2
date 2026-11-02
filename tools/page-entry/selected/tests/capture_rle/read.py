@@ -6,6 +6,7 @@ or normalized. The returned receipt concerns real encoded body writes only.
 The raw return is a read-only memoryview over one owned bytearray, not a second
 whole-raw bytes copy. Callers must preserve that owner and use bounded views.
 """
+import re
 import struct
 
 LIMIT=4<<20
@@ -15,12 +16,24 @@ END=0x314638454c52324c
 VERSION=1
 LITERAL=65536
 RUN=8
+# A fixed one-byte class searches the existing buffer; no raw-sized temporary
+# or repetition/backtracking stack is needed. Hex escapes cover all 256 bytes.
+_DIFFERENT=tuple(re.compile(rb'[^\x%02x]'%value)for value in range(256))
 
 def need(value,message):
     if not value:raise ValueError(message)
 
 def _run(raw,at):
     end=at+1
+    if type(at)is int and (type(raw)is bytes or type(raw)is bytearray or
+        (type(raw)is memoryview and raw.ndim==1 and raw.itemsize==1 and
+         raw.format=='B'and raw.c_contiguous)):
+        size=len(raw)
+        if 0<=at<size:
+            if end==size or raw[end]!=raw[at]:return 1
+            match=_DIFFERENT[raw[at]].search(raw,end,size)
+            return (size if match is None else match.start())-at
+    # Preserve scalar behavior for other sequences, views and unusual offsets.
     while end<len(raw)and raw[end]==raw[at]:end+=1
     return end-at
 
