@@ -93,7 +93,7 @@ def main():
                     tests.append(('domain_'+key,domain))
                 for name,change in tests:
                     k=copy.deepcopy(check);v=copy.deepcopy(c);change(k,v)
-                    need(v!=c or k.image!=check.image,'nonidentity descriptive negative')
+                    need(v!=c or json.dumps(k.image,sort_keys=True)!=json.dumps(check.image,sort_keys=True),'nonidentity descriptive negative')
                     try:history.direct_history(k,v)
                     except ValueError:refused.append((page,bank,mixed,name))
                     else:raise ValueError('accepted descriptive PF history corruption '+name)
