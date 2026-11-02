@@ -17,6 +17,22 @@ need,p,U64,CoverageError=old.need,old.p,old.U64,old.CoverageError
 def special(pc,window):
     need(type(pc)is int and 4096<=pc<(1<<47)and type(window)is bytes and
          0<len(window)<=15 and pc+len(window)<(1<<47),'bounded source-only effects window')
+    if window[0]==0x9c:
+        # Canonical unprefixed PUSHFQ is a descriptive stop, never NONE or MOV.
+        # iced Code317 and old STEP_FLAGS_OBSERVED=2 retain the full refusal;
+        # both TF/MOV APIs have policy/flow/family0 and refusal1 for this Code.
+        row=p.ins(window[:1],317,step=2)
+        oldrow=p.descriptor(row,pc,window,0,1);results=[]
+        for scalar_version,mov_version in ((2,1),(3,2)):
+            scalar=bytearray(oldrow);struct.pack_into('<I',scalar,256,scalar_version)
+            mov=bytearray(144)
+            struct.pack_into('<2Q6I',mov,0,pc,pc+1,1,0,317,1,0,0)
+            mov[40:56]=window+bytes(16-len(window))
+            struct.pack_into('<4I',mov,80,mov_version,0,1,len(window))
+            results.append(dict(pc=pc,next_pc=pc+1,length=1,code=317,flow=0,target=0,
+                kind=0,stop=1,row=row,old=oldrow,scalar=bytes(scalar),mov=bytes(mov),
+                bridge=oldrow,whole=bytes(scalar)+bytes(mov)+struct.pack('<2I',0,1)))
+        return tuple(results)
     at=int(0x40<=window[0]<=0x4f);rex=window[0]if at else 0
     if len(window)<=at:return None
     opcode=window[at]
