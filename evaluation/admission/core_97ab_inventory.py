@@ -9,10 +9,11 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == 'a483eac70ab57da5ad2f5d14fcf2b1dde09c5f0e198dc6d25c8e5aca524812a7',
+require(hashlib.sha256(RAW).hexdigest() == '5f014a40c9a84f7d5e0918189d2a36a862179416a2202af0f8a85879e99f3d77',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
+ENTRY_ADMISSION_PREVIOUS = DATA['source_successor_a8acec5']['previous_corpus_sha256']
 POINT_PREVIOUS = DATA['source_successor_e5ab521']['previous_corpus_sha256']
 EARLY_PREVIOUS = DATA['source_successor_667921']['previous_corpus_sha256']
 ADMISSION_PREVIOUS = DATA['source_successor_c110']['previous_corpus_sha256']
@@ -83,6 +84,10 @@ def source_before_evaluation(path, raw, error):
     return inverse(path, raw, DATA['evaluation_projections'], error)
 
 
+def source_before_a8acec5(path, raw, error):
+    return inverse(path, raw, DATA['source_successor_a8acec5']['source_projections'], error)
+
+
 def require_sources(error='main97ab_source_inventory_differs'):
     for path, expected in DATA['sources'].items():
         try:
@@ -109,14 +114,32 @@ def require_sources(error='main97ab_source_inventory_differs'):
             require(all(raw.decode().count(literal) == 1
                         for literal in DATA['module_chains'][path]), error)
         source_before(path, raw, error)
+        source_before_a8acec5(path, raw, error)
         source_before_evaluation(path, raw, error)
+
+
+def before_a8acec5(declared, error='main97ab_inventory_differs'):
+    """Bind all default entry-admission tests and retain the complete old catalog."""
+    require(type(declared) is dict and digest(declared) == CURRENT, error)
+    owned = plain_catalog((declared, DATA))
+    old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in DATA['source_successor_a8acec5']['workspace_changes'].items():
+        require(digest(rows[name]) == digest(change['current']), error)
+        if change['previous'] is None:
+            del rows[name]
+        else:
+            rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == ENTRY_ADMISSION_PREVIOUS, error)
+    return old if owned else copy.deepcopy(old)
 
 
 def before_e5ab521(declared, error='main97ab_inventory_differs'):
     """Remove only the exact three-test point-throughput harness."""
-    require(type(declared) is dict and digest(declared) == CURRENT, error)
     owned = plain_catalog((declared, DATA))
-    old = copy.deepcopy(declared)
+    declared = before_a8acec5(declared, error)
+    require(type(declared) is dict and digest(declared) == ENTRY_ADMISSION_PREVIOUS, error)
+    old = declared if owned else copy.deepcopy(declared)
     added = DATA['source_successor_e5ab521']
     rows = old['harness_test_counts']['workspace_tests']
     require(digest(rows.pop(added['harness'])) == digest(added['counts']), error)

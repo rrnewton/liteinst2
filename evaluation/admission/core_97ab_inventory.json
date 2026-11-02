@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "cd39bc3515d19929928dbd291cc58436639e6fdcf72c8060c7c38e5e29401ff3",
+  "current_corpus_sha256": "9d3e1ca9bb877d7765e53e9854f40667d7973a557867aa13d76396cc1c5ad069",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -97,9 +97,33 @@
   },
   "default_test_additions": 58,
   "doctests": {
+    "src/controls.rs": [
+      "/// ```compile_fail\n/// use liteinst2::controls::ControlIdentity;\n/// fn escape<'dispatch>(token: ControlIdentity<'dispatch>) -> ControlIdentity<'static> {\n///     token\n/// }\n/// ```",
+      "/// ```compile_fail\n/// use std::cell::Cell;\n/// use liteinst2::controls::{ControlIdentity, ProbeControl};\n/// use liteinst2::trampoline::HookContext;\n/// thread_local! { static SAVED: Cell<Option<ControlIdentity<'static>>> = const { Cell::new(None) }; }\n/// unsafe extern \"C\" fn retain<'dispatch>(_: *mut HookContext, token: ControlIdentity<'dispatch>) {\n///     SAVED.with(|slot| slot.set(Some(token)));\n/// }\n/// let _ = ProbeControl::new_managed_bound(retain, false);\n/// ```",
+      "/// ```compile_fail,E0277\n/// use liteinst2::controls::ControlWriter;\n/// fn needs_clone<T: Clone>() {}\n/// fn duplicate() { needs_clone::<ControlWriter>(); }\n/// ```"
+    ],
+    "tools/rapid-profiler/src/frontend.rs": [
+      "/// ```compile_fail,E0616\n/// use rapid_profiler::frontend::EpochHandle;\n/// fn escape(handle: EpochHandle) { let epoch = handle.owner.epoch; }\n/// ```",
+      "/// ```compile_fail,E0616\n/// use rapid_profiler::frontend::Report;\n/// fn escape(report: Report) { let epoch = report.owner.epoch; }\n/// ```",
+      "/// ```compile_fail,E0616\n/// use rapid_profiler::frontend::AdmissionHandle;\n/// fn escape(handle: AdmissionHandle) { let epoch = handle.owner.epoch; }\n/// ```",
+      "/// ```compile_fail,E0616\n/// use rapid_profiler::frontend::ThreadModel;\n/// fn escape(mut thread: ThreadModel) { let ticket = thread.frames.pop().unwrap().ticket; }\n/// ```"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": [
+      "/// ```compile_fail,E0277\n/// use rapid_profiler::frontend_native::NormalThread;\n/// fn send<T: Send>() {}\n/// send::<NormalThread>();\n/// ```",
+      "/// ```compile_fail,E0277\n/// use rapid_profiler::frontend_native::NormalThread;\n/// fn sync<T: Sync>() {}\n/// sync::<NormalThread>();\n/// ```"
+    ],
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": [
       "/// ```compile_fail,E0277\n/// use rapid_profiler::frontend_native::OwnedNormalModuleThread;\n/// fn send<T: Send>() {}\n/// send::<OwnedNormalModuleThread>();\n/// ```",
       "/// ```compile_fail,E0277\n/// use rapid_profiler::frontend_native::OwnedNormalModuleThread;\n/// fn sync<T: Sync>() {}\n/// sync::<OwnedNormalModuleThread>();\n/// ```"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": [
+      "/// ```compile_fail,E0277\n/// use rapid_profiler::frontend_native::OwnedEarlyEntryModuleThread;\n/// fn send<T: Send>() {} send::<OwnedEarlyEntryModuleThread>();\n/// ```"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": [
+      "/// ```compile_fail,E0502\n/// use rapid_profiler::frontend_native::OrdinarySitePreparation;\n/// fn inspect(prep: &mut OrdinarySitePreparation) {\n///     let call = unsafe { prep.prepare_original_call() }.unwrap();\n///     let _ = prep.plan();\n///     drop(call);\n/// }\n/// ```",
+      "/// ```compile_fail,E0382\n/// use rapid_profiler::frontend_native::{PreparedOriginalCall, ReadableStack};\n/// unsafe fn twice(call: PreparedOriginalCall<'_>, bytes: &[u8], stack: &ReadableStack) {\n///     let _ = unsafe { call.invoke(bytes.as_ptr(), bytes.len(), stack) };\n///     let _ = unsafe { call.invoke(bytes.as_ptr(), bytes.len(), stack) };\n/// }\n/// ```",
+      "/// ```compile_fail,E0277\n/// use rapid_profiler::frontend_native::PreparedOriginalCall;\n/// fn need_send<T: Send>() {}\n/// need_send::<PreparedOriginalCall<'static>>();\n/// ```",
+      "/// ```compile_fail,E0277\n/// use rapid_profiler::frontend_native::PreparedOriginalCall;\n/// fn need_sync<T: Sync>() {}\n/// need_sync::<PreparedOriginalCall<'static>>();\n/// ```"
     ]
   },
   "evaluation_projections": {
@@ -348,46 +372,51 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "6da3b364fe8d2d3f5883ce87dfa96d547047f92b08f6eabb3b83f2f6abbb549d",
+      "current_sha256": "ea9e351176ad79d0013a60bfbeaf5990e649d5857e629d97024efb2f6aa7d7d5",
       "edits": [
         [
           642,
-          2178,
+          7499,
           ""
         ],
         [
-          16698,
-          16868,
+          22019,
+          22189,
           ""
         ],
         [
-          16915,
-          17009,
+          22236,
+          22330,
           "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n"
         ],
         [
-          17148,
-          17235,
+          22469,
+          22556,
           ""
         ],
         [
-          17494,
-          17573,
+          22815,
+          22894,
           ""
         ],
         [
-          20148,
-          20244,
+          23950,
+          24500,
+          ""
+        ],
+        [
+          26019,
+          26115,
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          24087,
-          57399,
+          29958,
+          63270,
           ""
         ],
         [
-          66950,
-          70091,
+          72821,
+          75962,
           ""
         ]
       ],
@@ -741,6 +770,12 @@
       "macro_calls": [],
       "templates": []
     },
+    "src/controls/entry_admission.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "src/emission/artifact_frame_tests.rs": {
       "all": [
         "opaque_artifact_trace_preserves_exact_image_and_every_requirement",
@@ -923,12 +958,24 @@
       "macro_calls": [],
       "templates": []
     },
+    "src/quiescent/entry_admission.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "src/quiescent/fitting_tests.rs": {
       "all": [
         "fitting_b1_preserves_fitting_seed_and_avoids_known_single_image_capacity_failure",
         "fitting_b2_emits_once_at_certified_window_target_and_keeps_source_padding",
         "fitting_t1_keeps_exact_singleton_and_refuses_uncertified_singleton"
       ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/quiescent/whole_function.rs": {
+      "all": [],
       "ignored": [],
       "macro_calls": [],
       "templates": []
@@ -1095,6 +1142,20 @@
       "macro_calls": [],
       "templates": []
     },
+    "tests/entry_admission_planning.rs": {
+      "all": [
+        "entry_writer_cannot_change_the_permanent_return_or_escape_through_a_clone",
+        "certified_block_keeps_all_roles_heads_originals_and_one_entry_gate",
+        "return_only_successor_group_keeps_complete_current_overlay_without_a_gate",
+        "whole_function_preserves_closed_cfg_all_returns_and_every_original_head",
+        "incorrect_function_head_role_order_and_missing_return_refuse",
+        "semantic_entry_resume_and_small_resource_caps_fail_before_any_fallback",
+        "entry_admission_refuses_call_pair_indirect_entry_backedge_and_nonliteral_returns"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tests/neighbor_eviction_oracle.rs": {
       "all": [
         "native_neighbor_endpoint_inventory_is_the_complete_frozen_cohort",
@@ -1201,6 +1262,72 @@
     "tests/support/jrcxz_artifact_oracle.rs": {
       "all": [
         "native_jrcxz_artifact_preserves_integer_flags_and_stack"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/native_normal_caller.rs": {
+      "all": [
+        "normal_ready_refuses_wrong_caller_maps_and_extents",
+        "normal_wire_refuses_truncation_tail_and_journal_profile",
+        "normal_transfers_refuse_wrong_target_word_rsp_and_order",
+        "normal_epilogue_data_and_pending_journal_refuse",
+        "normal_original_caller_transition_effects_refuse",
+        "normal_control_ack_refuses_wrong_stage_identity_owner_and_tail",
+        "normal_population_refuses_missing_second_body_order_and_coverage",
+        "normal_mode_and_completion_counts_preserve_fixed_bounds",
+        "exact_normal_closed_cases_input_and_counts",
+        "exact_normal_pair_rejects_count_step_return_value_or_reap_drift"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/native_normal_module.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/native_normal_module/early_entry.rs": {
+      "all": [
+        "nested_session_frame_roundtrips_multiple_immutable_blobs",
+        "nested_session_frame_rejects_truncation_and_bad_lengths",
+        "nested_session_frame_preserves_individual_blob_limit"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/native_normal_module/early_entry/wide.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/native_normal_module/tests.rs": {
+      "all": [
+        "module_case_domain_preserves_all_inputs_and_mixed_extents",
+        "module_ready_requires_complete_shared_union_and_unique_maps",
+        "module_wire_refuses_extra_missing_and_oversized_fields",
+        "module_four_transfers_require_order_target_rsp_and_real_words",
+        "module_helper_effects_keep_full_state_and_four_store_slots",
+        "module_data_and_journal_cover_both_inputs_targets_and_closed_owners",
+        "module_population_requires_all_cases_seeds_returns_and_reaps",
+        "module_geometry_has_all_40_heads_and_four_exact_calls"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tests/support/native_ordinary.rs": {
+      "all": [
+        "ordinary_harness_resume_only_removes_debugger_tf",
+        "ordinary_map_missing_and_duplicate_ret_refuse",
+        "ordinary_gate_and_ready_identity_refuse",
+        "ordinary_actual_frame_data_and_tls_mismatch_refuse",
+        "ordinary_full_data_and_redzone_comparator_refuses"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -1663,6 +1790,30 @@
       "macro_calls": [],
       "templates": []
     },
+    "tools/rapid-profiler/native-interval/main.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/native-interval/normal/module.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/native-interval/normal/module/early_entry/wide.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tools/rapid-profiler/ordinary-interval/normal/csv.rs": {
       "all": [],
       "ignored": [],
@@ -1798,12 +1949,148 @@
       "macro_calls": [],
       "templates": []
     },
+    "tools/rapid-profiler/src/frontend.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend/interval_entry.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/epoch_storage.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/accuracy/tests.rs": {
+      "all": [
+        "accuracy_attributes_are_exact_current_thread_pinned_non_inherited_instructions",
+        "accuracy_open_failure_retains_both_attr_images_and_errno_without_ioctl_or_read",
+        "accuracy_each_partial_read_and_error_retains_exact_raw_buffer_and_result",
+        "accuracy_id_enable_and_read_identity_failures_never_discard_words",
+        "accuracy_pid_or_tid_mismatch_cannot_read_disable_or_close_foreign_owner",
+        "accuracy_disable_and_close_failures_are_retained_and_close_is_never_retried",
+        "accuracy_drop_has_one_owned_close_even_during_unwind",
+        "accuracy_32_real_normal_calls_keep_sampled_unsampled_and_exact_acknowledgments",
+        "accuracy_all_pmu_open_failures_preserve_all_normal_work_and_missing_endpoints",
+        "accuracy_short_or_error_endpoints_survive_real_normal_checkpoint",
+        "accuracy_pre_ret_endpoint_does_not_acknowledge_receipt_and_missing_ret_refuses",
+        "accuracy_legacy_export_and_allocation_refusals_cannot_drop_or_ack_sidecars",
+        "accuracy_33rd_call_refuses_capacity_without_an_extra_endpoint_or_reset",
+        "accuracy_sidecar_key_end_presence_and_owner_drift_refuse_without_consumption",
+        "accuracy_facade_checkpoint_and_empty_detach_return_all_counter_custody",
+        "accuracy_dropped_or_forgotten_handle_keeps_normal_receipt_and_counter_owner",
+        "accuracy_state_owner_drift_refuses_export_without_consumption"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/leaf_set/tests.rs": {
+      "all": [
+        "leaf_set_profile_requires_exact_count_k_history_and_mode",
+        "leaf_set_banks_prepare_once_and_preserve_refused_identity",
+        "leaf_set_runtime_keeps_saved_function_and_closed_receipt",
+        "leaf_set_transfer_validates_every_row_and_journal_word",
+        "leaf_set_transfer_refusals_leave_receipt_and_cursors_unchanged",
+        "leaf_set_output_captures_complete_identity_before_consumption",
+        "leaf_set_reclaim_preserves_shared_owners_and_fresh_generation",
+        "leaf_set_handles_refuse_all_old_profiles"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": {
       "all": [
         "owned_batch_inputs_enforce_complete_domain_before_any_entry",
         "owned_transfer_allocation_refusal_retains_pending_receipt_and_poisons_lease",
         "owned_close_linearizes_against_active_batch_and_never_acks_from_drop"
       ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": {
+      "all": [
+        "checked_visit_initial_corruption_refuses_before_mutation",
+        "checked_visit_fresh_used_keeps_entry_and_return_error_order",
+        "checked_visit_revalidates_after_return_and_preserves_old_owner_across_rearm",
+        "checked_visit_matches_full_shapes_for_every_mask_and_rearm",
+        "checked_visit_function_closed_retains_full_receipt_on_refusal",
+        "checked_visit_correspondence_rejects_swapped_and_unknown_generation_fields"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs": {
+      "all": [
+        "early_entry_consecutive_all_bypass_then_partial_preserves_both_cursors",
+        "early_entry_returned_old_owner_survives_bypass_slot_reuse_and_rearm",
+        "early_entry_function_closed_receipt_is_not_fast_bypass",
+        "early_entry_refuses_duplicate_missing_and_stale_physical_positions",
+        "early_entry_active_seen_converse_and_poison_never_become_bypass",
+        "early_entry_alloc_refusal_preserves_receipt_and_outer_abandonment_poison",
+        "early_entry_profile_banks_and_controls_cannot_enter_mandatory_facades"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs": {
+      "all": [
+        "early_entry_owned_module_k10_order01",
+        "early_entry_owned_module_k10_order10",
+        "early_entry_owned_module_k1000_order01",
+        "early_entry_owned_module_k1000_order10"
+      ],
+      "ignored": [
+        "early_entry_owned_module_k10_order01",
+        "early_entry_owned_module_k10_order10",
+        "early_entry_owned_module_k1000_order01",
+        "early_entry_owned_module_k1000_order10"
+      ],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs": {
+      "all": [],
       "ignored": [],
       "macro_calls": [],
       "templates": []
@@ -1828,6 +2115,35 @@
       "macro_calls": [],
       "templates": []
     },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session/tests.rs": {
+      "all": [
+        "session_profile_is_exact_and_finite_single_t2_paths_stay_separate",
+        "session_banks_prepare_once_and_activation_requires_preparation",
+        "session_bank_allocation_refusal_preserves_pristine_preparation",
+        "session_stage_refusals_return_same_bank",
+        "session_reclaim_refusals_return_same_epoch",
+        "session_function_closed_owner_survives_rearm_until_other_function_entry",
+        "session_bank_reuse_preserves_global_coordinates_and_empty_reports",
+        "session_transfer_preserves_function_tags_all_512_words_and_receipt_on_refusal",
+        "session_output_allocation_refusal_preserves_pending_and_history",
+        "module_batch_history_is_some_only_for_exact_session_profile"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session_history.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs": {
       "all": [
         "module_profile_and_config_keep_old_profiles_separate",
@@ -1841,6 +2157,84 @@
         "owned_batch_census_requires_four_real_observations_in_semantic_order",
         "owned_batch_rejects_missing_return_extra_call_and_nonempty_drain_without_consuming"
       ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/presence.rs": {
+      "all": [
+        "every_prefix_hole_tail_replacement_and_clear_matches_original_conditions",
+        "out_of_range_set_preserves_complete_array_and_presence"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/tests.rs": {
+      "all": [
+        "normal_shape_refuses_every_record_or_function_hole_and_stray_tail",
+        "pending_ret_is_not_completion_and_k1_next_entry_finishes_before_admission",
+        "pending_function_closed_retains_epoch_permit_after_report_retirement",
+        "old_a_and_b_pending_receipts_keep_original_owner_across_rearm_c",
+        "geometry_duplicate_ret_recursion_and_wrong_ack_refuse_before_consumption",
+        "thirty_two_call_bound_preserves_last_return_and_rejects_next_admission",
+        "checkpoint_validates_whole_journal_and_pending_identity_before_finish",
+        "allocation_refusal_and_caught_busy_unwind_keep_pending_first_error",
+        "transfer_reuses_buffers_without_resetting_absolute_identity_or_model_sequence",
+        "gated_site_cannot_be_relabelled_into_normal_preparation",
+        "streaming_normal_pending_owner_survives_600_actions_without_return_acknowledgement",
+        "streaming_normal_closed_and_removed_records_join_after_repeated_idle_drains",
+        "streaming_normal_upper_prefix_corruption_refuses_before_consuming_pending_owner"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers/native.rs": {
+      "all": [
+        "two_caller_native_k1_first_worker_zero",
+        "two_caller_native_k1_first_worker_one",
+        "two_caller_native_closed_owners_fill_e4_until_local_confirmation"
+      ],
+      "ignored": [
+        "two_caller_native_k1_first_worker_zero",
+        "two_caller_native_k1_first_worker_one",
+        "two_caller_native_closed_owners_fill_e4_until_local_confirmation"
+      ],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": {
+      "all": [
+        "every_ret_is_grouped_and_same_block_entry_ret_is_coalesced",
+        "short_or_missing_ret_block_refuses_without_padding_or_omission",
+        "internal_entry_backedge_and_overlapping_blocks_refuse",
+        "source_and_prior_mapping_exclusion_preserves_every_other_byte"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/early_entry.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/early_entry/append.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend_native/mod.rs": {
+      "all": [],
       "ignored": [],
       "macro_calls": [],
       "templates": []
@@ -1934,7 +2328,8 @@
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
     ],
     "src/controls.rs": [
-      "#[cfg(test)]\nmod tests {"
+      "#[cfg(test)]\nmod tests {",
+      "pub(crate) mod entry_admission;"
     ],
     "src/emission.rs": [
       "pub(crate) mod placement;"
@@ -1972,7 +2367,8 @@
     ],
     "src/quiescent.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod fitting_tests;",
-      "mod clock_region;\npub use clock_region::{plan_owned_clock_region, plan_owned_clock_region_detailed};"
+      "mod clock_region;\npub use clock_region::{plan_owned_clock_region, plan_owned_clock_region_detailed};",
+      "mod entry_admission;"
     ],
     "src/quiescent/clock_region.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
@@ -2014,6 +2410,13 @@
     "tests/support/isolated_native_test.rs": [
       "#[path = \"bounded_proc_stat.rs\"]\nmod bounded_proc_stat;",
       "#[path = \"owned_group_candidate.rs\"]\nmod owned_group_candidate;"
+    ],
+    "tests/support/native_normal_module.rs": [
+      "#[path = \"native_normal_module/early_entry.rs\"]\npub mod early_entry;"
+    ],
+    "tests/support/native_normal_module/early_entry.rs": [
+      "#[path = \"early_entry/wide.rs\"]\npub(in super::super) mod wide;",
+      "#[cfg(test)]\nmod tests {"
     ],
     "tests/support/quiescent_oracle.rs": [
       "include!(\"jrcxz_state.rs\");",
@@ -2088,7 +2491,14 @@
     ],
     "tools/rapid-profiler/Cargo.toml": [
       "[[bin]]\nname = \"ordinary-interval\"\npath = \"ordinary-interval/main.rs\"\ntest = true\nbench = false",
-      "[[bin]]\nname = \"point-throughput\"\npath = \"point-throughput/main.rs\"\ntest = true\nbench = false"
+      "[[bin]]\nname = \"point-throughput\"\npath = \"point-throughput/main.rs\"\ntest = true\nbench = false",
+      "[features]\n# Explicit native-oracle adapter only; default execution has no pause hooks.\nfrontend-native-qualification = []"
+    ],
+    "tools/rapid-profiler/native-interval/normal/module.rs": [
+      "#[cfg(feature = \"frontend-native-qualification\")]\npub(crate) mod early_entry;"
+    ],
+    "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": [
+      "pub(crate) mod wide;"
     ],
     "tools/rapid-profiler/ordinary-interval/main.rs": [
       "mod normal;"
@@ -2124,17 +2534,41 @@
     ],
     "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": [
       "mod module;",
-      "OwnedNormalModuleThread, PreparedNormalModuleController, PreparedNormalModuleSessionController,"
+      "pub use module::{\n    EarlyEntryModuleClient, EarlyEntryModuleObservations, EarlyEntryModulePhysicalRow,\n    EarlyEntryModuleSessionController, NormalModuleBatch, NormalModuleClient, NormalModuleClose,\n    NormalModuleCloseState, NormalModuleController, NormalModuleHistoryBatch,\n    NormalModuleHistoryStream, NormalModuleHistoryWindow, NormalModuleInputs, NormalModuleRecord,\n    NormalModuleSessionController, NormalModuleThread, OwnedEarlyEntryModuleResult,\n    OwnedEarlyEntryModuleThread, OwnedNormalModuleResult, OwnedNormalModuleThread,\n    PreparedEarlyEntryModuleSessionController, PreparedNormalModuleController,\n    PreparedNormalModuleSessionController,\n};",
+      "mod presence;"
     ],
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": [
       "mod owned;",
-      "pub use owned::{\n    NormalModuleClose, NormalModuleCloseState, NormalModuleInputs, OwnedNormalModuleResult,\n    OwnedNormalModuleThread,\n};"
+      "pub use owned::{\n    EarlyEntryModuleClient, EarlyEntryModuleObservations, EarlyEntryModulePhysicalRow,\n    EarlyEntryModuleSessionController, NormalModuleClose, NormalModuleCloseState,\n    NormalModuleInputs, OwnedEarlyEntryModuleResult, OwnedEarlyEntryModuleThread,\n    OwnedNormalModuleResult, OwnedNormalModuleThread, PreparedEarlyEntryModuleSessionController,\n};",
+      "pub(in crate::frontend_native::always_on) mod owned;"
     ],
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": [
+      "#[cfg(test)]\nmod native;",
+      "pub(in crate::frontend_native::always_on) mod early_entry;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": [
+      "mod checked_visit;",
+      "mod controller;",
+      "#[cfg(any(test, feature = \"frontend-native-qualification\"))]\npub mod qualification;",
       "#[cfg(test)]\nmod native;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": [
+      "#[cfg(test)]\nmod tests;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs": [
+      "#[cfg(test)]\nmod tests;"
     ],
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/native.rs": [
       "#[path = \"performance.rs\"]\nmod performance;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/presence.rs": [
+      "#[cfg(test)]\nmod tests {"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs": [
+      "mod early_entry;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/early_entry.rs": [
+      "mod append;"
     ],
     "tools/rapid-profiler/src/frontend_native/mod.rs": [
       "mod always_on;",
@@ -2626,7 +3060,7 @@
       "previous_sha256": "ec26d7a993c41b8c0357f84b6994f75cb63d90edd77af3905a52097e9b3dc018"
     },
     "src/controls.rs": {
-      "current_sha256": "1c5bb2eabd7ae0a80592811fd015b0d9ed1dba2c796993fd5e145002c549d5c9",
+      "current_sha256": "13f21abc2980b52aa5bcd8f64be07f4d5433e89bcdea3e1bdadd731ba904eb4a",
       "edits": [
         [
           241,
@@ -2634,23 +3068,28 @@
           "//! or make generated code reclaimable. The observing emitter saves full state\n"
         ],
         [
-          1338,
-          2011,
+          815,
+          917,
           ""
         ],
         [
-          8759,
-          8960,
+          1440,
+          2113,
           ""
         ],
         [
-          10057,
-          11943,
+          8861,
+          9062,
           ""
         ],
         [
-          15763,
-          16659,
+          10159,
+          12045,
+          ""
+        ],
+        [
+          15865,
+          16761,
           ""
         ]
       ],
@@ -3059,116 +3498,141 @@
       "previous_sha256": "bcb91531af069ee6733fddeafa05512dbec3cbafaee26e183bab6cab83792df3"
     },
     "src/quiescent.rs": {
-      "current_sha256": "54d6ebdb148de3660e64713d31a745d92f58141e851a17168ee4bd843ca0198d",
+      "current_sha256": "bf870f4253f9c8abf90acba6660189ee9271ca1405847d50af755d7d3665b08b",
       "edits": [
         [
-          1406,
-          1508,
+          1239,
+          1356,
           ""
         ],
         [
-          8065,
-          8380,
+          1469,
+          1622,
+          "    plan_whole_function_controlled_detailed_after,\n"
+        ],
+        [
+          1625,
+          1727,
           ""
         ],
         [
-          17696,
-          19129,
+          8284,
+          8599,
           ""
         ],
         [
-          28358,
-          28428,
+          17915,
+          19348,
           ""
         ],
         [
-          28777,
-          28828,
+          28311,
+          28395,
+          "// The PreContext variant is constructed only by the unsafe typed wrappers.\n"
+        ],
+        [
+          28585,
+          28720,
           ""
         ],
         [
-          29036,
-          29119,
+          29069,
+          29168,
           ""
         ],
         [
-          29374,
-          29455,
+          29376,
+          29521,
           ""
         ],
         [
-          31100,
-          31249,
+          29776,
+          29916,
+          ""
+        ],
+        [
+          31561,
+          31710,
           "        if let CoalescedActions::ControlledProfile(_, _) = actions {\n"
         ],
         [
-          43173,
-          44992,
+          32152,
+          32542,
+          ""
+        ],
+        [
+          33852,
+          34116,
+          ""
+        ],
+        [
+          44288,
+          46107,
           "    let policy = request.allocation;\n"
         ],
         [
-          45270,
-          45389,
+          46385,
+          46504,
           "    let trampoline = if context.callback_free {\n        TrampolinePlan::from_instruction(scan, physical)\n    } else {\n        request.emission.short(\n            scan,\n            physical,\n            request.semantics == HookSemantics::ReplaceFirst,\n        )\n    }\n    .map_err(|e| Refusal::Backend(e.to_string()))?;\n"
         ],
         [
-          46204,
-          46417,
+          47319,
+          47532,
           "        let image = match request.emission.emit(&trampoline, target) {\n"
         ],
         [
-          56001,
-          56140,
+          57116,
+          57255,
           "// Existing callers retain their same-block/closed-function proofs. The new\n// authority covers only a sealed JMP plus one independently enterable MOV.\n"
         ],
         [
-          56257,
-          56394,
+          57372,
+          57509,
           ""
         ],
         [
-          57384,
-          57541,
+          58499,
+          58656,
           ""
         ],
         [
-          58387,
-          58934,
+          59502,
+          60049,
           ""
         ],
         [
-          60863,
-          60978,
+          61978,
+          62093,
           ""
         ],
         [
-          61263,
-          61400,
+          62378,
+          62649,
           ""
         ],
         [
-          61654,
-          61837,
+          62903,
+          63530,
           ""
         ],
         [
-          63004,
-          64550,
+          64697,
+          66243,
           "    let policy = request.allocation;\n"
         ],
         [
-          65906,
-          66119,
+          67599,
+          67812,
           "        let image = match request.emission.emit(&trampoline, target) {\n"
         ],
         [
-          66533,
-          66652,
-          ""
+          68027,
+          68558,
+          "            let Some(CoalescedActions::Controlled(actions)) = controls else {\n                return Err(Refusal::InvalidPlan);\n            };\n            proof.verify_image(scan, actions, &image)?;\n"
         ],
         [
-          122215,
-          122298,
+          124121,
+          124204,
           ""
         ]
       ],
@@ -3196,297 +3660,343 @@
       ],
       "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
-    "src/trampoline.rs": {
-      "current_sha256": "41c5bfeb00cb5aad4351ab8288cf71187343207b81745214d4ae961374d839b4",
+    "src/quiescent/whole_function.rs": {
+      "current_sha256": "9ca1c0e169372d3225b24cee7b2007e3455cf02a8b8bc005cf388268eb3aee4d",
       "edits": [
         [
-          1786,
-          1865,
+          90,
+          187,
           "use crate::controls::{ControlledAction, ProbeControl};\n"
         ],
         [
-          25901,
-          26064,
+          3456,
+          3503,
+          "    plan(request, actions, request.code)\n"
+        ],
+        [
+          4368,
+          7163,
+          "    plan(request, actions, &current)\n"
+        ],
+        [
+          7516,
+          7570,
           ""
         ],
         [
-          30701,
-          30776,
+          8177,
+          8305,
           ""
         ],
         [
-          30916,
-          30987,
+          9938,
+          10167,
+          "            (Some(CoalescedActions::Controlled(actions)), None),\n"
+        ],
+        [
+          20586,
+          21518,
+          ""
+        ]
+      ],
+      "previous_sha256": "ccf5d4f17bb3ce47d7721ccefb029c81d8f4d018b140c4e84b179ee2fd6744c9"
+    },
+    "src/trampoline.rs": {
+      "current_sha256": "32dc3b2f9aab5bf9e75c5c7124cadf5bec3ca1692f3ce8c771d3fe429a7e55bd",
+      "edits": [
+        [
+          888,
+          915,
           ""
         ],
         [
-          32144,
-          32379,
+          1813,
+          1892,
+          "use crate::controls::{ControlledAction, ProbeControl};\n"
+        ],
+        [
+          25928,
+          26091,
           ""
         ],
         [
-          32734,
-          32806,
+          30728,
+          30803,
+          ""
+        ],
+        [
+          30943,
+          31014,
+          ""
+        ],
+        [
+          32171,
+          32406,
+          ""
+        ],
+        [
+          32761,
+          32833,
           "    /// Exact inline gate boundaries, present only for the finite clock profile.\n"
         ],
         [
-          32911,
-          33189,
+          32938,
+          33216,
           ""
         ],
         [
-          33782,
-          34063,
+          33809,
+          34090,
           ""
         ],
         [
-          46022,
-          46436,
+          46049,
+          47079,
           ""
         ],
         [
-          46784,
-          46823,
+          47427,
+          47466,
           "    clock: Option<Box<crate::backedge_clock::BackedgeClockAction>>,\n"
         ],
         [
-          46891,
-          47166,
+          47534,
+          47742,
           "    instructions: Vec<Instruction>,\n    source_nops: Vec<Option<Vec<u8>>>,\n"
         ],
         [
-          51227,
-          51459,
+          51803,
+          52031,
           "            source_nops: original_nops::capture(scan, &[*scanned.instruction()])?,\n            instructions: vec![*scanned.instruction()],\n"
         ],
         [
-          55053,
-          55240,
+          55625,
+          55808,
           "            source_nops: original_nops::capture(scan, &instructions)?,\n            instructions,\n"
         ],
         [
-          59484,
-          59671,
+          60052,
+          60235,
           "            source_nops: original_nops::capture(scan, &instructions)?,\n            instructions,\n"
         ],
         [
-          62119,
-          62351,
+          62683,
+          62911,
           "            source_nops: original_nops::capture(scan, &[*scanned.instruction()])?,\n            instructions: vec![*scanned.instruction()],\n"
         ],
         [
-          63966,
-          64198,
+          64526,
+          64754,
           "            source_nops: original_nops::capture(scan, &[*scanned.instruction()])?,\n            instructions: vec![*scanned.instruction()],\n"
         ],
         [
-          68441,
-          70708,
+          68997,
+          74280,
           ""
         ],
         [
-          76307,
-          78015,
+          79879,
+          81587,
           "        plan.clock = Some(Box::new(action.clone()));\n"
         ],
         [
-          79073,
-          80236,
+          82645,
+          85069,
           ""
         ],
         [
-          82241,
-          82297,
+          87074,
+          87130,
           ""
         ],
         [
-          83700,
-          83768,
+          88533,
+          88601,
           ""
         ],
         [
-          94768,
-          94816,
+          99601,
+          99649,
           ""
         ],
         [
-          94905,
-          94954,
+          99738,
+          99787,
           ""
         ],
         [
-          96809,
-          96865,
+          101642,
+          101698,
           ""
         ],
         [
-          98032,
-          98087,
+          102865,
+          102920,
           ""
         ],
         [
-          99457,
-          100137,
+          104290,
+          104970,
           ""
         ],
         [
-          100195,
-          100363,
+          105028,
+          105196,
           "        if self.clock.is_some() && (artifact.is_some() || frames.is_some() || self.ptrace_stops) {\n"
         ],
         [
-          100579,
-          100609,
+          105412,
+          105442,
           "                || frames.is_some()\n"
         ],
         [
-          101732,
-          101776,
+          106565,
+          106609,
           ""
         ],
         [
-          103393,
-          103435,
+          108226,
+          108268,
           "        let mut clock_spec = None;\n        let mut clock_observer = None;\n"
         ],
         [
-          103482,
-          103532,
+          108315,
+          108365,
           ""
         ],
         [
-          103953,
-          104234,
+          108786,
+          109067,
           "            let clock_labels = if self.clock.is_some() {\n"
         ],
         [
-          104667,
-          105032,
+          109500,
+          109838,
           ""
         ],
         [
-          105083,
-          105266,
+          109889,
+          110072,
           "            if let Some(clock) = &self.clock {\n"
         ],
         [
-          105328,
-          105379,
+          110134,
+          110185,
           "                clock_spec = Some(backedge_clock::append(\n"
         ],
         [
-          105544,
-          105564,
+          110350,
+          110370,
           "                )?);\n"
         ],
         [
-          105788,
-          105875,
+          110594,
+          110681,
           "                clock_observer = Some(observing_index);\n"
         ],
         [
-          106565,
-          107389,
+          111371,
+          112195,
           ""
         ],
         [
-          107673,
-          107673,
+          112479,
+          112479,
           "                let recording = frames.as_deref().is_some_and(FrameRecorder::recording);\n"
         ],
         [
-          110010,
-          110092,
+          114816,
+          114898,
           "            body.set_ip(match clock_labels.or(optional_labels) {\n"
         ],
         [
-          111539,
-          111624,
+          116345,
+          116430,
           "                    emitted_nops.push((encoded_instructions.len(), bytes));\n"
         ],
         [
-          111642,
-          112185,
+          116448,
+          116991,
           "                original_operands.push((encoded_instructions.len(), *original));\n"
         ],
         [
-          112331,
-          114699,
+          117137,
+          119499,
           ""
         ],
         [
-          115818,
-          116066,
+          120618,
+          120866,
           "        for &(index, bytes) in &emitted_nops {\n            original_nops::verify(&block.encoded, index, bytes)?;\n"
         ],
         [
-          116686,
-          116788,
+          121486,
+          121588,
           "        if let Some(spec) = &clock_spec {\n"
         ],
         [
-          116879,
-          117479,
+          121679,
+          122279,
           ""
         ],
         [
-          117489,
-          117886,
+          122289,
+          122686,
           "        let clock_gate = match clock_observer {\n            Some(observer) => Some(crate::backedge_clock::ClockGateLayout {\n                entry: generated(offset(heads[0].1)?)?,\n                observing_entry: generated(offset(observer)?)?,\n                original_body: generated(offset(heads[0].2)?)?,\n            }),\n            None => None,\n"
         ],
         [
-          118838,
-          119751,
+          123638,
+          124551,
           ""
         ],
         [
-          124281,
-          124512,
+          129081,
+          129312,
           ""
         ],
         [
-          128611,
-          128936,
+          133411,
+          133732,
           ""
         ],
         [
-          129030,
-          129167,
+          133826,
+          133963,
           "            clock: self.clock.as_ref().map(|action| action.clock.clone()),\n"
         ],
         [
-          129191,
-          129223,
+          133987,
+          134019,
           ""
         ],
         [
-          129347,
-          129380,
+          134143,
+          134176,
           ""
         ],
         [
-          162632,
-          162954,
+          167428,
+          167750,
           ""
         ],
         [
-          178602,
-          178834,
+          183398,
+          183777,
           ""
         ],
         [
-          180457,
-          180694,
+          185400,
+          185637,
           ""
         ],
         [
-          184363,
-          184525,
+          189306,
+          189468,
           ""
         ],
         [
-          185575,
-          185736,
+          190518,
+          190830,
           ""
         ]
       ],
@@ -3515,11 +4025,11 @@
       "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "src/trampoline/early_control/tests.rs": {
-      "current_sha256": "edc38ab31065c28aca1eb4d5da7b55b4e492f6b09625773b893c33ca2ee12254",
+      "current_sha256": "36aa14146a0a2f65e673926b4fe4416edb7471c2f960a8d1b3cb864ac55fbd57",
       "edits": [
         [
           0,
-          17879,
+          17893,
           ""
         ]
       ],
@@ -3632,6 +4142,130 @@
         ]
       ],
       "previous_sha256": "f6f6302bcc16f4a405b03a7e8afcf79212f568b93c24253468f183ed93257a83"
+    },
+    "tests/support/native_normal_caller.rs": {
+      "current_sha256": "d06f528e7987dd5e4a4482e1013ca6a65d0ccc54e02016730e0dc5082e925358",
+      "edits": [
+        [
+          28769,
+          28893,
+          ""
+        ],
+        [
+          29336,
+          29397,
+          ""
+        ],
+        [
+          38298,
+          38364,
+          ""
+        ],
+        [
+          38814,
+          38963,
+          "        walk.step(phase);\n"
+        ],
+        [
+          55798,
+          55936,
+          ""
+        ],
+        [
+          58277,
+          59041,
+          ""
+        ],
+        [
+          59466,
+          59515,
+          ""
+        ],
+        [
+          61185,
+          61491,
+          "        let ready = reads.map(|p| {\n            let wire = read_closed(p.0, self.deadline, WIRE_LIMIT);\n            if let Some(expected) = &self.call_pair {\n                WalkReady::CallPair(call_pair::Ready::decode(&wire, expected))\n            } else if let Some(expected) = &self.exact_accuracy {\n                WalkReady::ExactAccuracy(exact_accuracy::Ready::decode(\n                    &wire,\n                    expected.case,\n                    &expected.plan,\n                ))\n            } else if let Some(expected) = &self.selected_leaf_set {\n                WalkReady::SelectedLeafSet(selected_leaf_set::Ready::decode(\n                    &wire,\n                    expected.case,\n                    &expected.plan,\n                ))\n            } else if let Some(expected) = &self.leaf_set_copied {\n                WalkReady::LeafSetCopied(leaf_set_copied::Ready::decode(\n                    &wire,\n                    expected.case,\n                    &expected.plan,\n                ))\n            } else if let Some(expected) = &self.copied_rust {\n                WalkReady::CopiedRust(copied_rust::Ready::decode(\n                    &wire,\n                    expected.case,\n                    &expected.plan,\n                ))\n            } else if let Some(case) = self.module {\n                WalkReady::Module(if case.is_session() {\n                    module::Ready::decode_session(&wire)\n                } else {\n                    module::Ready::decode(&wire)\n                })\n            } else {\n                WalkReady::Single(match &self.reference {\n                    None => NormalReady::decode(&wire),\n                    Some(cells) => reference::ReferenceReady::decode(&wire, cells.address()),\n                })\n            }\n"
+        ],
+        [
+          61503,
+          63937,
+          ""
+        ],
+        [
+          69790,
+          70602,
+          ""
+        ],
+        [
+          71130,
+          71571,
+          ""
+        ],
+        [
+          72302,
+          72516,
+          ""
+        ],
+        [
+          77956,
+          78531,
+          "                        let j = r.journal().unwrap();\n                        let expected = profile.journal_words(\n                            r,\n                            self.mode,\n                            walk.child.pid as u64,\n                            self.caller_rsp(),\n                            &returns[index],\n                        );\n                        check_journal(&walk.child.memory(j.address, PAGE), &expected);\n                        if let Some(channel) = control.as_mut() {\n                            let stopped = self.snapshot(walk.child, r, logical_ret);\n                            channel.request(n + 1, walk.child, j, self.deadline);\n                            // Main remains at this actual C3; helper cannot mutate application state.\n                            assert_eq!(walk.child.registers().rip, pc);\n                            assert_state(&stopped, &self.snapshot(walk.child, r, logical_ret));\n"
+        ],
+        [
+          78622,
+          79275,
+          ""
+        ],
+        [
+          81308,
+          81424,
+          ""
+        ]
+      ],
+      "previous_sha256": "327eaf21cc8b621c5ba9ac17bb079e5e5450fb7e4cfa6782c5fdb8627d6289ff"
+    },
+    "tests/support/native_normal_module.rs": {
+      "current_sha256": "d43543eda95b81f822fb11112bb5bcb8a7d46e6d442d639e180c0af301a49d0b",
+      "edits": [
+        [
+          258,
+          327,
+          ""
+        ]
+      ],
+      "previous_sha256": "26839ba9cabc3984026b6adf8f39de275020caafeaab6265beca54e32abdfbe5"
+    },
+    "tests/support/native_normal_module/tests.rs": {
+      "current_sha256": "87bf281f1654d4b3c9ce49d34c0d9d59aa931c3c058c2ac6649edeeb1ee3cb5e",
+      "edits": [
+        [
+          12307,
+          14620,
+          ""
+        ]
+      ],
+      "previous_sha256": "25bbf0cb854c2089622849e77a26dc03a385b5877a242893726159b02ae5cc8f"
+    },
+    "tests/support/native_ordinary.rs": {
+      "current_sha256": "33e0cbfa2d195b5d7f7b8e777725bfa49f0df0e9f91a49630a8fdd7419337ee5",
+      "edits": [
+        [
+          16559,
+          16672,
+          "            \"whole ordinary child 20000-step budget: phase={phase} steps={} rip={:#x} pid={}\",\n"
+        ],
+        [
+          16736,
+          16809,
+          "            self.child.pid\n"
+        ],
+        [
+          17358,
+          17510,
+          "// step. The old reach_gate and step bodies/predicates remain literal.\n"
+        ]
+      ],
+      "previous_sha256": "dea6b6c34c2c9e8a296da6a3dda7a5b5e30044682d5481ec19a8c2f8a1e18571"
     },
     "tests/support/quiescent_oracle.rs": {
       "current_sha256": "a12c9370678ba7a03be184d48669b2b852948eb5597ff8d5462e38123d24b221",
@@ -4485,11 +5119,11 @@
       "previous_sha256": "97d2f87f6c1ab6a517232a0d815211ed1146e0fff3cb814ade3bb536966b2e32"
     },
     "tools/rapid-profiler/Cargo.toml": {
-      "current_sha256": "ddd9e965854e3dbe5ebbeb672b802480839232bddc27e22be705b66fe1ad1de8",
+      "current_sha256": "b533118e8ceaba2f14126ca48c0fc9756aff5e56a20d1f8dacc512a35698dc0d",
       "edits": [
         [
           887,
-          982,
+          1106,
           ""
         ]
       ],
@@ -4505,6 +5139,28 @@
         ]
       ],
       "previous_sha256": "691f7fa697f7ca713c0538cab01cf39b57e8a817f0b59d6c0ac60869fda6d948"
+    },
+    "tools/rapid-profiler/native-interval/main.rs": {
+      "current_sha256": "e54f1b84dd6fc8591263bb399a0acb2dafb0a225bead6b34c2ab6bbcefa12ece",
+      "edits": [
+        [
+          46982,
+          50884,
+          ""
+        ]
+      ],
+      "previous_sha256": "7b12ba40876ed9aa5bbd7a4e1461bd357945516ef0fea93ea1c79c94e2c44b61"
+    },
+    "tools/rapid-profiler/native-interval/normal/module.rs": {
+      "current_sha256": "9a1179917963db7821f49067bc08f6ad91ff8d1502dcd152b16ac88f86d21b61",
+      "edits": [
+        [
+          457,
+          535,
+          ""
+        ]
+      ],
+      "previous_sha256": "ec6afe224c3a45b9f89b826bfff834640eaaa03dee55b050de48a66e69644eeb"
     },
     "tools/rapid-profiler/ordinary-interval/normal/csv.rs": {
       "current_sha256": "dec72317a616660dca1dd673f0ee0075361fcb7503537b930902da579a3d8aae",
@@ -5174,77 +5830,384 @@
       ],
       "previous_sha256": "ac7c030946e142ba53ff5160fca6008a03e2417b52cd6763b4e8336497c95ba7"
     },
-    "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": {
-      "current_sha256": "d14c5ce91a8d57d97ca5c560e28f32cb620c5e2a5c7ab2affe49610552bbc944",
+    "tools/rapid-profiler/src/frontend.rs": {
+      "current_sha256": "351ddce6eba14085e654ad6e56a1f9afe5bfc98a8b6526d7bc5cdf35ae149430",
       "edits": [
         [
-          1334,
-          1752,
-          "    NormalModuleBatch, NormalModuleClient, NormalModuleController, NormalModuleHistoryBatch,\n    NormalModuleHistoryStream, NormalModuleHistoryWindow, NormalModuleRecord,\n    NormalModuleSessionController, NormalModuleThread, PreparedNormalModuleController,\n    PreparedNormalModuleSessionController,\n"
+          39105,
+          39657,
+          "        if handle.thread != self.identity || !Arc::ptr_eq(&handle.owner.spec, &self.session.spec) {\n"
+        ],
+        [
+          39718,
+          39745,
+          "        let ticket = handle\n            .owner\n"
+        ],
+        [
+          39964,
+          40002,
+          "            owner: Arc::clone(&handle.owner),\n"
+        ]
+      ],
+      "previous_sha256": "6f5ee8e11f0c7f47e2f9103d6b3fa2c329fddbef3040271d5c3699e6fe837e38"
+    },
+    "tools/rapid-profiler/src/frontend/interval_entry.rs": {
+      "current_sha256": "e25ae2104b3f168ed562671a9daa93bd20edf4117846ba5bd54be5963b2f19ff",
+      "edits": [
+        [
+          8462,
+          8462,
+          "                    let handle = AdmissionHandle {\n                        owner: Arc::clone(owner),\n                        thread: self.identity,\n                    };\n"
+        ],
+        [
+          8690,
+          8867,
+          "                    match self.enter_inner(&handle, function, value, slot) {\n"
+        ]
+      ],
+      "previous_sha256": "9d74d099755e6e8cff524898afaed33655d3470d035994e33d799e538d48d631"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/epoch_storage.rs": {
+      "current_sha256": "f302191dc1e12ff1fea709030e62a69cc4ad352d6abd59b0ed717eeec041cf4c",
+      "edits": [
+        [
+          1749,
+          1773,
+          ""
+        ],
+        [
+          3433,
+          3974,
+          ""
+        ],
+        [
+          5014,
+          5318,
+          ""
+        ],
+        [
+          8721,
+          8936,
+          ""
+        ]
+      ],
+      "previous_sha256": "cdf27b420325c2ec2bdcc43c078d68282d432624f78a204f8648bb1b1d9ce3f0"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": {
+      "current_sha256": "a33e16427b427882b013669292d58a2e0d390b0d500df26c3b8bd5951231490f",
+      "edits": [
+        [
+          1299,
+          1460,
+          ""
+        ],
+        [
+          1495,
+          2101,
+          "    NormalModuleBatch, NormalModuleClient, NormalModuleController, NormalModuleHistoryBatch,\n    NormalModuleHistoryStream, NormalModuleHistoryWindow, NormalModuleRecord,\n    NormalModuleSessionController, NormalModuleThread, PreparedNormalModuleController,\n"
+        ],
+        [
+          2623,
+          2666,
+          ""
+        ],
+        [
+          6221,
+          6238,
+          ""
+        ],
+        [
+          14761,
+          14851,
+          "    records: [Option<NormalRecord>; CALLS],\n    functions: [Option<SelectedFunction>; CALLS],\n"
+        ],
+        [
+          26396,
+          26488,
+          "            records: [None; CALLS],\n            functions: [None; CALLS],\n"
+        ],
+        [
+          28444,
+          28544,
+          "            || self.records[..self.len].iter().any(Option::is_none)\n            || self.records[self.len..].iter().any(Option::is_some)\n            || self.functions[..self.len].iter().any(Option::is_none)\n            || self.functions[self.len..].iter().any(Option::is_some)\n"
+        ],
+        [
+          30877,
+          30877,
+          "    fn enter_function(\n        &mut self,\n        selected: SelectedFunction,\n        pc: u64,\n        rsp: u64,\n        word: u64,\n        start: RawTimestamp,\n    ) -> Result<(), BridgeError> {\n        self.selected_geometry(selected, pc, None)?;\n        self.shape()?;\n        if self.pending.is_some() {\n            // identity() already authenticated a new real entry. Never reread the\n            // old stack slot: this new CALL may have overwritten it legitimately.\n            self.confirm(NormalAcknowledgement::NextEntry { ordinal: self.next })?;\n        }\n        reserve_entry(self.len, self.journal.used())?;\n        let next = self.next.checked_add(1).ok_or(error(Cause::Capacity))?;\n        let entered = self\n            .totals\n            .entered\n            .checked_add(1)\n            .ok_or(error(Cause::Capacity))?;\n        if let Some(accuracy) = &mut self.accuracy {\n            accuracy.begin(self.len, selected, self.next)?;\n        }\n        let mut slot = ModelReturnSlot {\n            identity: self.next,\n            word: TOKEN,\n        };\n        let enter = match self.binding.entry_mode {\n            EntryMode::NonBlocking => ThreadModel::enter_interval,\n            EntryMode::Concurrent => ThreadModel::enter_interval_waiting,\n        };\n        let receipt = enter(\n            &mut self.model,\n            self.binding.install,\n            selected.function,\n            start.ticks,\n            &mut slot,\n        )\n        .map_err(|e| error(Cause::Entry(e)))?;\n        // Custody precedes every fallible postcondition, including history packing.\n        self.pending = Some(Pending {\n            selected,\n            ordinal: self.next,\n            rsp,\n            word,\n            entry_pc: pc,\n            start,\n            receipt,\n            slot,\n            summary: None,\n            returned: None,\n        });\n        let p = self.pending.as_mut().ok_or(error(Cause::Invariant))?;\n        let summary = p.receipt.summary().ok_or(error(Cause::Invariant))?;\n        p.summary = Some(summary);\n        let (kind, generation, bits) =\n            history::packed_for_function(&self.binding.session, p.selected.function, summary)?;\n        self.journal\n            .row([kind, p.ordinal, pc, rsp, word, generation, bits]);\n        self.journal.header(self.tid, 1);\n        self.next = next;\n        self.totals.entered = entered;\n        Ok(())\n    }\n"
+        ],
+        [
+          31115,
+          31115,
+          "    }\n    fn observe_function(\n        &mut self,\n        selected: SelectedFunction,\n        pc: u64,\n        rsp: u64,\n        word: u64,\n        end: RawTimestamp,\n    ) -> Result<(), BridgeError> {\n        self.shape()?;\n        let pending = self.pending.as_ref().ok_or(error(Cause::Return))?;\n        self.selected_geometry(selected, pending.entry_pc, Some(pc))?;\n        let p = self.pending.as_mut().ok_or(error(Cause::Return))?;\n        if p.selected != selected\n            || p.returned.is_some()\n            || p.rsp != rsp\n            || p.word != word\n            || p.slot.identity != p.ordinal\n        {\n            return Err(error(Cause::Return));\n        }\n        let summary = p.summary.ok_or(error(Cause::Invariant))?;\n        let (kind, generation, bits) =\n            history::packed_for_function(&self.binding.session, p.selected.function, summary)?;\n        let observed = self\n            .totals\n            .ret_observed\n            .checked_add(1)\n            .ok_or(error(Cause::Capacity))?;\n        if self.journal.used() >= EVENTS || self.len >= CALLS {\n            return Err(error(Cause::Capacity));\n        }\n        if let Some(accuracy) = &mut self.accuracy {\n            accuracy.end(self.len, selected, p.ordinal)?;\n        }\n        let raw = RawInterval {\n            ordinal: p.ordinal,\n            entry_pc: p.entry_pc,\n            return_pc: pc,\n            owner: timing::owner(summary),\n            start: p.start,\n            end,\n        };\n        self.journal\n            .row([kind + 1, p.ordinal, pc, rsp, word, generation, bits]);\n        p.returned = Some(raw);\n        self.totals.ret_observed = observed;\n        // Receipt, sampled frame and FunctionClosed owner remain untouched.\n        Ok(())\n"
+        ],
+        [
+          34529,
+          34635,
+          "        self.records[self.len] = Some(record);\n        self.functions[self.len] = Some(p.selected);\n"
+        ],
+        [
+          40077,
+          40139,
+          "        self.records = [None; CALLS];\n        self.functions = [None; CALLS];\n"
+        ],
+        [
+          40988,
+          41133,
+          ""
+        ],
+        [
+          50355,
+          50910,
+          ""
         ]
       ],
       "previous_sha256": "b236181608ea5b965bbd7c7a9f37c00422505e55513161bdba6ff3f3ba979b17"
     },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/accuracy/tests.rs": {
+      "current_sha256": "7f2cec42c53ed9267604d9867185be763f56224a8e3ddc8b561cb24669c1057e",
+      "edits": [
+        [
+          4855,
+          4917,
+          "        records: s.records,\n        functions: s.functions,\n"
+        ]
+      ],
+      "previous_sha256": "569af747cf449b5ea345d7fa7cafb53c3cdd2e73f127d266c9d0c5403ead4c85"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/leaf_set/tests.rs": {
+      "current_sha256": "d894f517efe2f4ce2be2e0d17a74db65217f6e652ebc59be2c61c34f64e4f92e",
+      "edits": [
+        [
+          5303,
+          5365,
+          "        records: s.records,\n        functions: s.functions,\n"
+        ],
+        [
+          17774,
+          17905,
+          "                f.state.functions[i] = Some(f.state.selection((i + 1) % n).unwrap());\n"
+        ],
+        [
+          17943,
+          17992,
+          "                f.state.functions[i] = saved;\n"
+        ]
+      ],
+      "previous_sha256": "15b42cf8438d8f0a7074409dd7b598f4c705f8a254c0c9d2e4db3131c22d4ba8"
+    },
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": {
-      "current_sha256": "32e55a90906a1c023ba7a444fbfc51c7db3fd5f1da7fec545fbdeed818aa2740",
+      "current_sha256": "acc5e2c29ca05cf0a6a4642ced490776628ef42e005b863146c9935a99f669bf",
       "edits": [
         [
           207,
-          359,
+          628,
           ""
+        ],
+        [
+          1640,
+          1781,
+          "    matches!(&binding.profile, BindingProfile::Module { functions, .. }\n        if functions[0] != functions[1])\n"
+        ],
+        [
+          2489,
+          2581,
+          "        if limits != LIMITS || functions[0] == functions[1] {\n"
+        ],
+        [
+          6432,
+          6591,
+          "        if !module_runtime_matches(&self.binding)\n"
         ]
       ],
       "previous_sha256": "963de617df6022e7d7535fbc0b1a3b5a6cecfa97103bea8e46d66e0908fba154"
     },
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs": {
-      "current_sha256": "e2a5be581c256b29ae5608a6d5e4abd0224dce6dc8076a3bad040e50ae08eb25",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": {
+      "current_sha256": "317a108ccc431a1e47f5e0fba179d4979f75d45f360518f8f95432b34be7a458",
       "edits": [
         [
-          21638,
-          24842,
+          272,
+          588,
+          ""
+        ],
+        [
+          7560,
+          7719,
+          "        if !module_runtime_matches(&self.binding)\n"
+        ]
+      ],
+      "previous_sha256": "a556f01a775d39ce5563cb5631505388a71140b86fdd8d025650261c87189aef"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session.rs": {
+      "current_sha256": "c97808ea66cb1566d372bd5ed497aa84ac256fd9b061a969fa40ea3528dc2fd3",
+      "edits": [
+        [
+          99,
+          159,
+          "fn fixed(k: usize) -> Option<(Limits, Config)> {\n"
+        ],
+        [
+          654,
+          778,
+          "    matches!(profile, BindingProfile::Module { functions, .. } if functions[0] != functions[1])\n"
+        ],
+        [
+          1912,
+          2010,
+          ""
+        ]
+      ],
+      "previous_sha256": "285611e5e5ebc3ab491a85a02f90753068944462ff3751913f5ef3708cb98a98"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session/tests.rs": {
+      "current_sha256": "1e48ab4bbc4460da5b3e261d1ffe500c407e30c7cceef9a091b2e1a1df2f538b",
+      "edits": [
+        [
+          5912,
+          5974,
+          "        records: s.records,\n        functions: s.functions,\n"
+        ],
+        [
+          27521,
+          27606,
+          "    f.state.functions[0] = Some(f.state.selection(1).unwrap());\n"
+        ],
+        [
+          27632,
+          27669,
+          "    f.state.functions[0] = saved;\n"
+        ]
+      ],
+      "previous_sha256": "3704e39ba63ac6bfe71fcf354efca729d4e4b2d9b623c917a19b54a08e078733"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session_history.rs": {
+      "current_sha256": "55e1a24da766c67746d06325c41364601943a1018f2b62b7d530665ed727bfbc",
+      "edits": [
+        [
+          1445,
+          2008,
+          ""
+        ]
+      ],
+      "previous_sha256": "c5f677a3e91b58be013f4581e69207d59f38df4e40e39f67460107b4705110c0"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs": {
+      "current_sha256": "be66982cd4c35dc28f9cc2170dd6a13d6b07ee209b84561a7bcdadca628fefb1",
+      "edits": [
+        [
+          5426,
+          5488,
+          "        records: s.records,\n        functions: s.functions,\n"
+        ],
+        [
+          16299,
+          16384,
+          "    f.state.functions[0] = Some(f.state.selection(1).unwrap());\n"
+        ],
+        [
+          16410,
+          16480,
+          "    f.state.functions[0] = tag;\n    f.state.functions[1] = tag;\n"
+        ],
+        [
+          16506,
+          16542,
+          "    f.state.functions[1] = None;\n"
+        ],
+        [
+          21670,
+          24874,
           ""
         ]
       ],
       "previous_sha256": "1172b71c18b95cef986b447f13d81560b25266beb1f42fcf41985722718400a6"
     },
-    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs": {
-      "current_sha256": "fbccec0f9b001f5e4c43c33a2e6d4e6b443851845c7ab00afb4b98738b71468f",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/tests.rs": {
+      "current_sha256": "74c92759756de7f88c60ac4ca3bf9e219ced22a85ecfb45f28654726136b9606",
       "edits": [
         [
-          1708,
-          1801,
+          176,
+          1911,
           ""
         ],
         [
-          1821,
-          1938,
+          14726,
+          14827,
+          "    f.state.records[0].as_mut().unwrap().acknowledgement = NormalAcknowledgement::CallerCheckpoint;\n"
+        ]
+      ],
+      "previous_sha256": "5cb9a8c308a098ebaa224f884c8b9eb0d07121c8ea6910793593451dd53a6eac"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers/native.rs": {
+      "current_sha256": "4e32f2c1cac91e1cb2139289fb4bd8d3359c92d4bc833f71bd7985a5d8ee868a",
+      "edits": [
+        [
+          3657,
+          3690,
+          "        records: state.records,\n"
+        ]
+      ],
+      "previous_sha256": "5a97093795d644f25be07eccb857070160d197cad3eecb4d3945508631149bcb"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": {
+      "current_sha256": "75b1b200f1dece33fa22709afec1be4bb66506803c3a14127afc7c89d7815200",
+      "edits": [
+        [
+          1613,
+          1842,
+          "    InstalledNormalModuleSite, NormalModuleFunctionSite, NormalModulePreparationPolicy,\n    NormalModuleRole, NormalModuleRoleKind, NormalModuleSitePreparation,\n"
+        ]
+      ],
+      "previous_sha256": "8d3ce6320f578907a7c9d3809d4089edd57d7792f450efcf69bf850b915b75a9"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs": {
+      "current_sha256": "15be1c7aa592904fa25cde890b99706396f35b1fd46d58fd3a8f4a25d568bbc8",
+      "edits": [
+        [
+          213,
+          317,
           ""
         ],
         [
-          5246,
-          5280,
+          1812,
+          1928,
           ""
         ],
         [
-          8551,
-          8601,
+          1948,
+          2065,
+          ""
+        ],
+        [
+          2870,
+          3454,
+          ""
+        ],
+        [
+          5957,
+          6023,
+          ""
+        ],
+        [
+          9294,
+          9344,
           "        let (planned, site) = prepare_module(\n"
         ],
         [
-          8820,
-          8955,
+          9563,
+          9698,
           ""
         ],
         [
-          12956,
-          12990,
+          13699,
+          13765,
           ""
         ]
       ],
       "previous_sha256": "f9c2a90bb50664234ba1e61acdb730e694b443caf4de16c1b1012fd7c9b9af07"
     },
     "tools/rapid-profiler/src/frontend_native/mod.rs": {
-      "current_sha256": "786dbf59f8fd071b60cdb5c5c825cae9622fae2eaf0ddf5d0838337ffdb3dc32",
+      "current_sha256": "6e554f1de5f5b2def5e857fec0e1f13b847033386690a5dcfc1f25f519389ddb",
       "edits": [
         [
           5300,
@@ -5255,6 +6218,11 @@
           6295,
           6667,
           "    NormalModuleController, NormalModuleHistoryBatch, NormalModuleHistoryStream,\n    NormalModuleHistoryWindow, NormalModuleRecord, NormalModuleSessionController,\n    NormalModuleThread, NormalRecord, NormalThread, NormalTotals, PreparedNormalController,\n"
+        ],
+        [
+          9086,
+          9660,
+          ""
         ]
       ],
       "previous_sha256": "3cb25c24bf70fc25e8c72af6c51a81a59fc80a0ec0735c7473f57b6f108c5c0b"
@@ -5314,6 +6282,27 @@
         ]
       ],
       "previous_sha256": "84c7afb822f946e7e531026671a2920b89ed983e254bd21c19c6220a1e76e1a8"
+    },
+    "tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs": {
+      "current_sha256": "e279bdb36bfac8480f3ef75bb2e929bac89bdc3f202e44e4a03e93e5773e61b0",
+      "edits": [
+        [
+          4271,
+          4380,
+          ""
+        ],
+        [
+          6388,
+          6545,
+          ""
+        ],
+        [
+          7945,
+          9101,
+          ""
+        ]
+      ],
+      "previous_sha256": "ee5fce93db7d70a66d103d9613d4883fd93a8357ed4b612275bb5f39c6b7ae09"
     },
     "tools/rapid-profiler/src/frontend_native/ordinary/normal_leaf_set.rs": {
       "current_sha256": "2ade00c29a9f50e1273923eb96025e6f1dc5f8e7b2de7f7d7e9081753a85e3e1",
@@ -7039,6 +8028,1251 @@
       }
     }
   },
+  "source_successor_a8acec5": {
+    "added_default_methods": {
+      "tests/entry_admission_planning.rs": [
+        "entry_writer_cannot_change_the_permanent_return_or_escape_through_a_clone",
+        "certified_block_keeps_all_roles_heads_originals_and_one_entry_gate",
+        "return_only_successor_group_keeps_complete_current_overlay_without_a_gate",
+        "whole_function_preserves_closed_cfg_all_returns_and_every_original_head",
+        "incorrect_function_head_role_order_and_missing_return_refuse",
+        "semantic_entry_resume_and_small_resource_caps_fail_before_any_fallback",
+        "entry_admission_refuses_call_pair_indirect_entry_backedge_and_nonliteral_returns"
+      ],
+      "tests/support/native_normal_module/early_entry.rs": [
+        "nested_session_frame_roundtrips_multiple_immutable_blobs",
+        "nested_session_frame_rejects_truncation_and_bad_lengths",
+        "nested_session_frame_preserves_individual_blob_limit"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": [
+        "checked_visit_initial_corruption_refuses_before_mutation",
+        "checked_visit_fresh_used_keeps_entry_and_return_error_order",
+        "checked_visit_revalidates_after_return_and_preserves_old_owner_across_rearm",
+        "checked_visit_matches_full_shapes_for_every_mask_and_rearm",
+        "checked_visit_function_closed_retains_full_receipt_on_refusal",
+        "checked_visit_correspondence_rejects_swapped_and_unknown_generation_fields"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs": [
+        "early_entry_consecutive_all_bypass_then_partial_preserves_both_cursors",
+        "early_entry_returned_old_owner_survives_bypass_slot_reuse_and_rearm",
+        "early_entry_function_closed_receipt_is_not_fast_bypass",
+        "early_entry_refuses_duplicate_missing_and_stale_physical_positions",
+        "early_entry_active_seen_converse_and_poison_never_become_bypass",
+        "early_entry_alloc_refusal_preserves_receipt_and_outer_abandonment_poison",
+        "early_entry_profile_banks_and_controls_cannot_enter_mandatory_facades"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs": [
+        "early_entry_owned_module_k10_order01",
+        "early_entry_owned_module_k10_order10",
+        "early_entry_owned_module_k1000_order01",
+        "early_entry_owned_module_k1000_order10"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/presence.rs": [
+        "every_prefix_hole_tail_replacement_and_clear_matches_original_conditions",
+        "out_of_range_set_preserves_complete_array_and_presence"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/tests.rs": [
+        "normal_shape_refuses_every_record_or_function_hole_and_stray_tail"
+      ]
+    },
+    "added_ignored_methods": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs": [
+        "early_entry_owned_module_k10_order01",
+        "early_entry_owned_module_k10_order10",
+        "early_entry_owned_module_k1000_order01",
+        "early_entry_owned_module_k1000_order10"
+      ]
+    },
+    "base_revision": "82fac7898d86c9224d51289638cbfb7e8aaefc2f",
+    "current_corpus_sha256": "9d3e1ca9bb877d7765e53e9854f40667d7973a557867aa13d76396cc1c5ad069",
+    "default_doctest_additions": 1,
+    "default_harness_changes": 1,
+    "default_ignore_changes": 4,
+    "default_method_additions": 30,
+    "default_method_instances": {
+      "tests/entry_admission_planning.rs": [
+        "test/entry_admission_planning"
+      ],
+      "tests/support/native_normal_module/early_entry.rs": [
+        "test/frontend_native_calibrations"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": [
+        "unit/rapid_profiler/lib"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs": [
+        "unit/rapid_profiler/lib"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs": [
+        "unit/rapid_profiler/lib"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/presence.rs": [
+        "unit/rapid_profiler/lib"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/tests.rs": [
+        "unit/rapid_profiler/lib"
+      ]
+    },
+    "default_method_removals": 0,
+    "doctests": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": [
+        "/// ```compile_fail,E0277\n/// use rapid_profiler::frontend_native::OwnedEarlyEntryModuleThread;\n/// fn send<T: Send>() {} send::<OwnedEarlyEntryModuleThread>();\n/// ```"
+      ]
+    },
+    "feature_scope": {
+      "default_enabled": false,
+      "default_native_tests": "Four cfg(test) native methods remain explicitly ignored; no new feature-enabled qualification is claimed.",
+      "feature": "frontend-native-qualification"
+    },
+    "ignore_stimuli": [
+      [
+        "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs",
+        "#[test]\n#[ignore = \"fixed fresh release process, exact admitted C fixtures and 15s deadline\"]\nfn early_entry_owned_module_k10_order01(",
+        "#[test]\n#[cfg = \"fixed fresh release process, exact admitted C fixtures and 15s deadline\"]\nfn early_entry_owned_module_k10_order01("
+      ],
+      [
+        "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs",
+        "#[test]\n#[ignore = \"fixed fresh release process, exact admitted C fixtures and 15s deadline\"]\nfn early_entry_owned_module_k10_order10(",
+        "#[test]\n#[cfg = \"fixed fresh release process, exact admitted C fixtures and 15s deadline\"]\nfn early_entry_owned_module_k10_order10("
+      ],
+      [
+        "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs",
+        "#[test]\n#[ignore = \"fixed fresh release process, exact admitted C fixtures and 15s deadline\"]\nfn early_entry_owned_module_k1000_order01(",
+        "#[test]\n#[cfg = \"fixed fresh release process, exact admitted C fixtures and 15s deadline\"]\nfn early_entry_owned_module_k1000_order01("
+      ],
+      [
+        "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs",
+        "#[test]\n#[ignore = \"fixed fresh release process, exact admitted C fixtures and 15s deadline\"]\nfn early_entry_owned_module_k1000_order10(",
+        "#[test]\n#[cfg = \"fixed fresh release process, exact admitted C fixtures and 15s deadline\"]\nfn early_entry_owned_module_k1000_order10("
+      ]
+    ],
+    "incoming_main": "a8acec574ef15d913e101362d76d37cb75a7173a",
+    "module_chain_changes": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": {
+        "current": "pub use module::{\n    EarlyEntryModuleClient, EarlyEntryModuleObservations, EarlyEntryModulePhysicalRow,\n    EarlyEntryModuleSessionController, NormalModuleBatch, NormalModuleClient, NormalModuleClose,\n    NormalModuleCloseState, NormalModuleController, NormalModuleHistoryBatch,\n    NormalModuleHistoryStream, NormalModuleHistoryWindow, NormalModuleInputs, NormalModuleRecord,\n    NormalModuleSessionController, NormalModuleThread, OwnedEarlyEntryModuleResult,\n    OwnedEarlyEntryModuleThread, OwnedNormalModuleResult, OwnedNormalModuleThread,\n    PreparedEarlyEntryModuleSessionController, PreparedNormalModuleController,\n    PreparedNormalModuleSessionController,\n};",
+        "previous": "OwnedNormalModuleThread, PreparedNormalModuleController, PreparedNormalModuleSessionController,"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": {
+        "current": "pub use owned::{\n    EarlyEntryModuleClient, EarlyEntryModuleObservations, EarlyEntryModulePhysicalRow,\n    EarlyEntryModuleSessionController, NormalModuleClose, NormalModuleCloseState,\n    NormalModuleInputs, OwnedEarlyEntryModuleResult, OwnedEarlyEntryModuleThread,\n    OwnedNormalModuleResult, OwnedNormalModuleThread, PreparedEarlyEntryModuleSessionController,\n};",
+        "previous": "pub use owned::{\n    NormalModuleClose, NormalModuleCloseState, NormalModuleInputs, OwnedNormalModuleResult,\n    OwnedNormalModuleThread,\n};"
+      }
+    },
+    "module_chains": {
+      "src/controls.rs": [
+        "pub(crate) mod entry_admission;"
+      ],
+      "src/quiescent.rs": [
+        "mod entry_admission;"
+      ],
+      "tests/support/native_normal_module.rs": [
+        "#[path = \"native_normal_module/early_entry.rs\"]\npub mod early_entry;"
+      ],
+      "tests/support/native_normal_module/early_entry.rs": [
+        "#[path = \"early_entry/wide.rs\"]\npub(in super::super) mod wide;",
+        "#[cfg(test)]\nmod tests {"
+      ],
+      "tools/rapid-profiler/Cargo.toml": [
+        "[features]\n# Explicit native-oracle adapter only; default execution has no pause hooks.\nfrontend-native-qualification = []"
+      ],
+      "tools/rapid-profiler/native-interval/normal/module.rs": [
+        "#[cfg(feature = \"frontend-native-qualification\")]\npub(crate) mod early_entry;"
+      ],
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": [
+        "pub(crate) mod wide;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": [
+        "mod presence;",
+        "pub use module::{\n    EarlyEntryModuleClient, EarlyEntryModuleObservations, EarlyEntryModulePhysicalRow,\n    EarlyEntryModuleSessionController, NormalModuleBatch, NormalModuleClient, NormalModuleClose,\n    NormalModuleCloseState, NormalModuleController, NormalModuleHistoryBatch,\n    NormalModuleHistoryStream, NormalModuleHistoryWindow, NormalModuleInputs, NormalModuleRecord,\n    NormalModuleSessionController, NormalModuleThread, OwnedEarlyEntryModuleResult,\n    OwnedEarlyEntryModuleThread, OwnedNormalModuleResult, OwnedNormalModuleThread,\n    PreparedEarlyEntryModuleSessionController, PreparedNormalModuleController,\n    PreparedNormalModuleSessionController,\n};"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": [
+        "pub(in crate::frontend_native::always_on) mod owned;",
+        "pub use owned::{\n    EarlyEntryModuleClient, EarlyEntryModuleObservations, EarlyEntryModulePhysicalRow,\n    EarlyEntryModuleSessionController, NormalModuleClose, NormalModuleCloseState,\n    NormalModuleInputs, OwnedEarlyEntryModuleResult, OwnedEarlyEntryModuleThread,\n    OwnedNormalModuleResult, OwnedNormalModuleThread, PreparedEarlyEntryModuleSessionController,\n};"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": [
+        "pub(in crate::frontend_native::always_on) mod early_entry;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": [
+        "mod checked_visit;",
+        "mod controller;",
+        "#[cfg(any(test, feature = \"frontend-native-qualification\"))]\npub mod qualification;",
+        "#[cfg(test)]\nmod native;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/presence.rs": [
+        "#[cfg(test)]\nmod tests {"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs": [
+        "mod early_entry;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/early_entry.rs": [
+        "mod append;"
+      ]
+    },
+    "previous_corpus_sha256": "cd39bc3515d19929928dbd291cc58436639e6fdcf72c8060c7c38e5e29401ff3",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "src/controls.rs",
+      "src/controls/entry_admission.rs",
+      "src/quiescent.rs",
+      "src/quiescent/entry_admission.rs",
+      "src/quiescent/whole_function.rs",
+      "src/trampoline.rs",
+      "src/trampoline/early_control/tests.rs",
+      "tests/entry_admission_planning.rs",
+      "tests/support/native_normal_caller.rs",
+      "tests/support/native_normal_module.rs",
+      "tests/support/native_normal_module/early_entry.rs",
+      "tests/support/native_normal_module/early_entry/wide.rs",
+      "tests/support/native_normal_module/tests.rs",
+      "tests/support/native_ordinary.rs",
+      "tools/rapid-profiler/Cargo.toml",
+      "tools/rapid-profiler/native-interval/main.rs",
+      "tools/rapid-profiler/native-interval/normal/module.rs",
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs",
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/wide.rs",
+      "tools/rapid-profiler/src/frontend.rs",
+      "tools/rapid-profiler/src/frontend/interval_entry.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/epoch_storage.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/accuracy/tests.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/leaf_set/tests.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session/tests.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session_history.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/presence.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/tests.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers/native.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/early_entry.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/early_entry/append.rs",
+      "tools/rapid-profiler/src/frontend_native/mod.rs",
+      "tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs"
+    ],
+    "source_preimages": {
+      "src/controls.rs": {
+        "bytes": 16661,
+        "sha256": "1c5bb2eabd7ae0a80592811fd015b0d9ed1dba2c796993fd5e145002c549d5c9"
+      },
+      "src/controls/entry_admission.rs": null,
+      "src/quiescent.rs": {
+        "bytes": 122298,
+        "sha256": "54d6ebdb148de3660e64713d31a745d92f58141e851a17168ee4bd843ca0198d"
+      },
+      "src/quiescent/entry_admission.rs": null,
+      "src/quiescent/whole_function.rs": {
+        "bytes": 22472,
+        "sha256": "ccf5d4f17bb3ce47d7721ccefb029c81d8f4d018b140c4e84b179ee2fd6744c9"
+      },
+      "src/trampoline.rs": {
+        "bytes": 442213,
+        "sha256": "41c5bfeb00cb5aad4351ab8288cf71187343207b81745214d4ae961374d839b4"
+      },
+      "src/trampoline/early_control/tests.rs": {
+        "bytes": 17879,
+        "sha256": "edc38ab31065c28aca1eb4d5da7b55b4e492f6b09625773b893c33ca2ee12254"
+      },
+      "tests/entry_admission_planning.rs": null,
+      "tests/support/native_normal_caller.rs": {
+        "bytes": 120418,
+        "sha256": "327eaf21cc8b621c5ba9ac17bb079e5e5450fb7e4cfa6782c5fdb8627d6289ff"
+      },
+      "tests/support/native_normal_module.rs": {
+        "bytes": 36267,
+        "sha256": "26839ba9cabc3984026b6adf8f39de275020caafeaab6265beca54e32abdfbe5"
+      },
+      "tests/support/native_normal_module/early_entry.rs": null,
+      "tests/support/native_normal_module/early_entry/wide.rs": null,
+      "tests/support/native_normal_module/tests.rs": {
+        "bytes": 13625,
+        "sha256": "25bbf0cb854c2089622849e77a26dc03a385b5877a242893726159b02ae5cc8f"
+      },
+      "tests/support/native_ordinary.rs": {
+        "bytes": 58803,
+        "sha256": "dea6b6c34c2c9e8a296da6a3dda7a5b5e30044682d5481ec19a8c2f8a1e18571"
+      },
+      "tools/rapid-profiler/Cargo.toml": {
+        "bytes": 982,
+        "sha256": "ddd9e965854e3dbe5ebbeb672b802480839232bddc27e22be705b66fe1ad1de8"
+      },
+      "tools/rapid-profiler/native-interval/main.rs": {
+        "bytes": 56580,
+        "sha256": "7b12ba40876ed9aa5bbd7a4e1461bd357945516ef0fea93ea1c79c94e2c44b61"
+      },
+      "tools/rapid-profiler/native-interval/normal/module.rs": {
+        "bytes": 20518,
+        "sha256": "ec6afe224c3a45b9f89b826bfff834640eaaa03dee55b050de48a66e69644eeb"
+      },
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": null,
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/wide.rs": null,
+      "tools/rapid-profiler/src/frontend.rs": {
+        "bytes": 42892,
+        "sha256": "6f5ee8e11f0c7f47e2f9103d6b3fa2c329fddbef3040271d5c3699e6fe837e38"
+      },
+      "tools/rapid-profiler/src/frontend/interval_entry.rs": {
+        "bytes": 17218,
+        "sha256": "9d74d099755e6e8cff524898afaed33655d3470d035994e33d799e538d48d631"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/epoch_storage.rs": {
+        "bytes": 11537,
+        "sha256": "cdf27b420325c2ec2bdcc43c078d68282d432624f78a204f8648bb1b1d9ce3f0"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": {
+        "bytes": 54087,
+        "sha256": "d14c5ce91a8d57d97ca5c560e28f32cb620c5e2a5c7ab2affe49610552bbc944"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/accuracy/tests.rs": {
+        "bytes": 23930,
+        "sha256": "569af747cf449b5ea345d7fa7cafb53c3cdd2e73f127d266c9d0c5403ead4c85"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/leaf_set/tests.rs": {
+        "bytes": 26231,
+        "sha256": "15b42cf8438d8f0a7074409dd7b598f4c705f8a254c0c9d2e4db3131c22d4ba8"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": {
+        "bytes": 12027,
+        "sha256": "32e55a90906a1c023ba7a444fbfc51c7db3fd5f1da7fec545fbdeed818aa2740"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": {
+        "bytes": 19647,
+        "sha256": "a556f01a775d39ce5563cb5631505388a71140b86fdd8d025650261c87189aef"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": null,
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": null,
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": null,
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs": null,
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs": null,
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs": null,
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs": null,
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session.rs": {
+        "bytes": 8542,
+        "sha256": "285611e5e5ebc3ab491a85a02f90753068944462ff3751913f5ef3708cb98a98"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session/tests.rs": {
+        "bytes": 32224,
+        "sha256": "3704e39ba63ac6bfe71fcf354efca729d4e4b2d9b623c917a19b54a08e078733"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session_history.rs": {
+        "bytes": 4533,
+        "sha256": "c5f677a3e91b58be013f4581e69207d59f38df4e40e39f67460107b4705110c0"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs": {
+        "bytes": 24842,
+        "sha256": "e2a5be581c256b29ae5608a6d5e4abd0224dce6dc8076a3bad040e50ae08eb25"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/presence.rs": null,
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/tests.rs": {
+        "bytes": 23605,
+        "sha256": "5cb9a8c308a098ebaa224f884c8b9eb0d07121c8ea6910793593451dd53a6eac"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers/native.rs": {
+        "bytes": 36063,
+        "sha256": "5a97093795d644f25be07eccb857070160d197cad3eecb4d3945508631149bcb"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": {
+        "bytes": 36432,
+        "sha256": "8d3ce6320f578907a7c9d3809d4089edd57d7792f450efcf69bf850b915b75a9"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs": {
+        "bytes": 20333,
+        "sha256": "fbccec0f9b001f5e4c43c33a2e6d4e6b443851845c7ab00afb4b98738b71468f"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/early_entry.rs": null,
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/early_entry/append.rs": null,
+      "tools/rapid-profiler/src/frontend_native/mod.rs": {
+        "bytes": 9086,
+        "sha256": "786dbf59f8fd071b60cdb5c5c825cae9622fae2eaf0ddf5d0838337ffdb3dc32"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs": {
+        "bytes": 8836,
+        "sha256": "ee5fce93db7d70a66d103d9613d4883fd93a8357ed4b612275bb5f39c6b7ae09"
+      }
+    },
+    "source_projections": {
+      "src/controls.rs": {
+        "current_sha256": "13f21abc2980b52aa5bcd8f64be07f4d5433e89bcdea3e1bdadd731ba904eb4a",
+        "edits": [
+          [
+            815,
+            917,
+            ""
+          ],
+          [
+            11356,
+            11422,
+            "/// Final verified addresses of one optional ordinary point gate.\n"
+          ]
+        ],
+        "previous_sha256": "1c5bb2eabd7ae0a80592811fd015b0d9ed1dba2c796993fd5e145002c549d5c9"
+      },
+      "src/quiescent.rs": {
+        "current_sha256": "bf870f4253f9c8abf90acba6660189ee9271ca1405847d50af755d7d3665b08b",
+        "edits": [
+          [
+            1239,
+            1356,
+            ""
+          ],
+          [
+            1469,
+            1622,
+            "    plan_whole_function_controlled_detailed_after,\n"
+          ],
+          [
+            28311,
+            28395,
+            "// The PreContext variant is constructed only by the unsafe typed wrappers.\n"
+          ],
+          [
+            28655,
+            28720,
+            ""
+          ],
+          [
+            29120,
+            29168,
+            ""
+          ],
+          [
+            29459,
+            29521,
+            ""
+          ],
+          [
+            29857,
+            29916,
+            ""
+          ],
+          [
+            32317,
+            32707,
+            ""
+          ],
+          [
+            33852,
+            34116,
+            ""
+          ],
+          [
+            62515,
+            62649,
+            ""
+          ],
+          [
+            63086,
+            63530,
+            ""
+          ],
+          [
+            68027,
+            68439,
+            "            let Some(CoalescedActions::Controlled(actions)) = controls else {\n                return Err(Refusal::InvalidPlan);\n            };\n            proof.verify_image(scan, actions, &image)?;\n"
+          ]
+        ],
+        "previous_sha256": "54d6ebdb148de3660e64713d31a745d92f58141e851a17168ee4bd843ca0198d"
+      },
+      "src/quiescent/whole_function.rs": {
+        "current_sha256": "9ca1c0e169372d3225b24cee7b2007e3455cf02a8b8bc005cf388268eb3aee4d",
+        "edits": [
+          [
+            90,
+            187,
+            "use crate::controls::{ControlledAction, ProbeControl};\n"
+          ],
+          [
+            3456,
+            3503,
+            "    plan(request, actions, request.code)\n"
+          ],
+          [
+            4368,
+            7163,
+            "    plan(request, actions, &current)\n"
+          ],
+          [
+            7516,
+            7570,
+            ""
+          ],
+          [
+            8177,
+            8305,
+            ""
+          ],
+          [
+            9938,
+            10167,
+            "            (Some(CoalescedActions::Controlled(actions)), None),\n"
+          ],
+          [
+            20586,
+            21518,
+            ""
+          ]
+        ],
+        "previous_sha256": "ccf5d4f17bb3ce47d7721ccefb029c81d8f4d018b140c4e84b179ee2fd6744c9"
+      },
+      "src/trampoline.rs": {
+        "current_sha256": "32dc3b2f9aab5bf9e75c5c7124cadf5bec3ca1692f3ce8c771d3fe429a7e55bd",
+        "edits": [
+          [
+            888,
+            915,
+            ""
+          ],
+          [
+            46463,
+            47079,
+            ""
+          ],
+          [
+            47534,
+            47663,
+            "    // Some selects the bounded ordinary point profile, even if all bits are\n    // false (AfterCapture). Bits correspond exactly to controls/actions.\n    point_observations: Option<Box<[bool]>>,\n"
+          ],
+          [
+            51803,
+            51837,
+            "            point_observations: None,\n"
+          ],
+          [
+            55625,
+            55659,
+            "            point_observations: None,\n"
+          ],
+          [
+            60052,
+            60086,
+            "            point_observations: None,\n"
+          ],
+          [
+            62683,
+            62717,
+            "            point_observations: None,\n"
+          ],
+          [
+            64526,
+            64560,
+            "            point_observations: None,\n"
+          ],
+          [
+            70993,
+            71086,
+            "        plan.point_observations = Some(\n            actions\n"
+          ],
+          [
+            71229,
+            74223,
+            "        );\n"
+          ],
+          [
+            82693,
+            83074,
+            ""
+          ],
+          [
+            83210,
+            84148,
+            "        let Some(modes) = &self.point_observations else {\n"
+          ],
+          [
+            109565,
+            109608,
+            "                    .point_observations\n                    .as_ref()\n"
+          ],
+          [
+            117378,
+            117436,
+            "        if let Some(modes) = &self.point_observations {\n"
+          ],
+          [
+            119072,
+            119144,
+            "        let expected_early = self.point_observations.as_deref().unwrap_or(&[]);\n"
+          ],
+          [
+            133606,
+            133649,
+            "        if self.point_observations.is_some() {\n"
+          ],
+          [
+            183549,
+            183696,
+            ""
+          ],
+          [
+            190679,
+            190830,
+            ""
+          ]
+        ],
+        "previous_sha256": "41c5bfeb00cb5aad4351ab8288cf71187343207b81745214d4ae961374d839b4"
+      },
+      "src/trampoline/early_control/tests.rs": {
+        "current_sha256": "36aa14146a0a2f65e673926b4fe4416edb7471c2f960a8d1b3cb864ac55fbd57",
+        "edits": [
+          [
+            15692,
+            15776,
+            "    missing.point_observations = Some(vec![true].into_boxed_slice());\n"
+          ]
+        ],
+        "previous_sha256": "edc38ab31065c28aca1eb4d5da7b55b4e492f6b09625773b893c33ca2ee12254"
+      },
+      "tests/support/native_normal_caller.rs": {
+        "current_sha256": "d06f528e7987dd5e4a4482e1013ca6a65d0ccc54e02016730e0dc5082e925358",
+        "edits": [
+          [
+            28769,
+            28893,
+            ""
+          ],
+          [
+            29336,
+            29397,
+            ""
+          ],
+          [
+            38298,
+            38364,
+            ""
+          ],
+          [
+            38814,
+            38963,
+            "        walk.step(phase);\n"
+          ],
+          [
+            55798,
+            55936,
+            ""
+          ],
+          [
+            58277,
+            59041,
+            ""
+          ],
+          [
+            59466,
+            59515,
+            ""
+          ],
+          [
+            61185,
+            61491,
+            "        let ready = reads.map(|p| {\n            let wire = read_closed(p.0, self.deadline, WIRE_LIMIT);\n            if let Some(expected) = &self.call_pair {\n                WalkReady::CallPair(call_pair::Ready::decode(&wire, expected))\n            } else if let Some(expected) = &self.exact_accuracy {\n                WalkReady::ExactAccuracy(exact_accuracy::Ready::decode(\n                    &wire,\n                    expected.case,\n                    &expected.plan,\n                ))\n            } else if let Some(expected) = &self.selected_leaf_set {\n                WalkReady::SelectedLeafSet(selected_leaf_set::Ready::decode(\n                    &wire,\n                    expected.case,\n                    &expected.plan,\n                ))\n            } else if let Some(expected) = &self.leaf_set_copied {\n                WalkReady::LeafSetCopied(leaf_set_copied::Ready::decode(\n                    &wire,\n                    expected.case,\n                    &expected.plan,\n                ))\n            } else if let Some(expected) = &self.copied_rust {\n                WalkReady::CopiedRust(copied_rust::Ready::decode(\n                    &wire,\n                    expected.case,\n                    &expected.plan,\n                ))\n            } else if let Some(case) = self.module {\n                WalkReady::Module(if case.is_session() {\n                    module::Ready::decode_session(&wire)\n                } else {\n                    module::Ready::decode(&wire)\n                })\n            } else {\n                WalkReady::Single(match &self.reference {\n                    None => NormalReady::decode(&wire),\n                    Some(cells) => reference::ReferenceReady::decode(&wire, cells.address()),\n                })\n            }\n"
+          ],
+          [
+            61503,
+            63937,
+            ""
+          ],
+          [
+            69790,
+            70602,
+            ""
+          ],
+          [
+            71130,
+            71571,
+            ""
+          ],
+          [
+            72302,
+            72516,
+            ""
+          ],
+          [
+            77956,
+            78531,
+            "                        let j = r.journal().unwrap();\n                        let expected = profile.journal_words(\n                            r,\n                            self.mode,\n                            walk.child.pid as u64,\n                            self.caller_rsp(),\n                            &returns[index],\n                        );\n                        check_journal(&walk.child.memory(j.address, PAGE), &expected);\n                        if let Some(channel) = control.as_mut() {\n                            let stopped = self.snapshot(walk.child, r, logical_ret);\n                            channel.request(n + 1, walk.child, j, self.deadline);\n                            // Main remains at this actual C3; helper cannot mutate application state.\n                            assert_eq!(walk.child.registers().rip, pc);\n                            assert_state(&stopped, &self.snapshot(walk.child, r, logical_ret));\n"
+          ],
+          [
+            78622,
+            79275,
+            ""
+          ],
+          [
+            81308,
+            81424,
+            ""
+          ]
+        ],
+        "previous_sha256": "327eaf21cc8b621c5ba9ac17bb079e5e5450fb7e4cfa6782c5fdb8627d6289ff"
+      },
+      "tests/support/native_normal_module.rs": {
+        "current_sha256": "d43543eda95b81f822fb11112bb5bcb8a7d46e6d442d639e180c0af301a49d0b",
+        "edits": [
+          [
+            258,
+            327,
+            ""
+          ]
+        ],
+        "previous_sha256": "26839ba9cabc3984026b6adf8f39de275020caafeaab6265beca54e32abdfbe5"
+      },
+      "tests/support/native_normal_module/tests.rs": {
+        "current_sha256": "87bf281f1654d4b3c9ce49d34c0d9d59aa931c3c058c2ac6649edeeb1ee3cb5e",
+        "edits": [
+          [
+            12307,
+            14620,
+            ""
+          ]
+        ],
+        "previous_sha256": "25bbf0cb854c2089622849e77a26dc03a385b5877a242893726159b02ae5cc8f"
+      },
+      "tests/support/native_ordinary.rs": {
+        "current_sha256": "33e0cbfa2d195b5d7f7b8e777725bfa49f0df0e9f91a49630a8fdd7419337ee5",
+        "edits": [
+          [
+            16559,
+            16672,
+            "            \"whole ordinary child 20000-step budget: phase={phase} steps={} rip={:#x} pid={}\",\n"
+          ],
+          [
+            16736,
+            16809,
+            "            self.child.pid\n"
+          ],
+          [
+            17358,
+            17510,
+            "// step. The old reach_gate and step bodies/predicates remain literal.\n"
+          ]
+        ],
+        "previous_sha256": "dea6b6c34c2c9e8a296da6a3dda7a5b5e30044682d5481ec19a8c2f8a1e18571"
+      },
+      "tools/rapid-profiler/Cargo.toml": {
+        "current_sha256": "b533118e8ceaba2f14126ca48c0fc9756aff5e56a20d1f8dacc512a35698dc0d",
+        "edits": [
+          [
+            982,
+            1106,
+            ""
+          ]
+        ],
+        "previous_sha256": "ddd9e965854e3dbe5ebbeb672b802480839232bddc27e22be705b66fe1ad1de8"
+      },
+      "tools/rapid-profiler/native-interval/main.rs": {
+        "current_sha256": "e54f1b84dd6fc8591263bb399a0acb2dafb0a225bead6b34c2ab6bbcefa12ece",
+        "edits": [
+          [
+            46982,
+            50884,
+            ""
+          ]
+        ],
+        "previous_sha256": "7b12ba40876ed9aa5bbd7a4e1461bd357945516ef0fea93ea1c79c94e2c44b61"
+      },
+      "tools/rapid-profiler/native-interval/normal/module.rs": {
+        "current_sha256": "9a1179917963db7821f49067bc08f6ad91ff8d1502dcd152b16ac88f86d21b61",
+        "edits": [
+          [
+            457,
+            535,
+            ""
+          ]
+        ],
+        "previous_sha256": "ec6afe224c3a45b9f89b826bfff834640eaaa03dee55b050de48a66e69644eeb"
+      },
+      "tools/rapid-profiler/src/frontend.rs": {
+        "current_sha256": "351ddce6eba14085e654ad6e56a1f9afe5bfc98a8b6526d7bc5cdf35ae149430",
+        "edits": [
+          [
+            39105,
+            39657,
+            "        if handle.thread != self.identity || !Arc::ptr_eq(&handle.owner.spec, &self.session.spec) {\n"
+          ],
+          [
+            39718,
+            39745,
+            "        let ticket = handle\n            .owner\n"
+          ],
+          [
+            39964,
+            40002,
+            "            owner: Arc::clone(&handle.owner),\n"
+          ]
+        ],
+        "previous_sha256": "6f5ee8e11f0c7f47e2f9103d6b3fa2c329fddbef3040271d5c3699e6fe837e38"
+      },
+      "tools/rapid-profiler/src/frontend/interval_entry.rs": {
+        "current_sha256": "e25ae2104b3f168ed562671a9daa93bd20edf4117846ba5bd54be5963b2f19ff",
+        "edits": [
+          [
+            8462,
+            8462,
+            "                    let handle = AdmissionHandle {\n                        owner: Arc::clone(owner),\n                        thread: self.identity,\n                    };\n"
+          ],
+          [
+            8690,
+            8867,
+            "                    match self.enter_inner(&handle, function, value, slot) {\n"
+          ]
+        ],
+        "previous_sha256": "9d74d099755e6e8cff524898afaed33655d3470d035994e33d799e538d48d631"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/epoch_storage.rs": {
+        "current_sha256": "f302191dc1e12ff1fea709030e62a69cc4ad352d6abd59b0ed717eeec041cf4c",
+        "edits": [
+          [
+            1749,
+            1773,
+            ""
+          ],
+          [
+            3433,
+            3974,
+            ""
+          ],
+          [
+            5014,
+            5318,
+            ""
+          ],
+          [
+            8721,
+            8936,
+            ""
+          ]
+        ],
+        "previous_sha256": "cdf27b420325c2ec2bdcc43c078d68282d432624f78a204f8648bb1b1d9ce3f0"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": {
+        "current_sha256": "a33e16427b427882b013669292d58a2e0d390b0d500df26c3b8bd5951231490f",
+        "edits": [
+          [
+            1299,
+            1460,
+            ""
+          ],
+          [
+            1495,
+            2144,
+            "    NormalModuleBatch, NormalModuleClient, NormalModuleClose, NormalModuleCloseState,\n    NormalModuleController, NormalModuleHistoryBatch, NormalModuleHistoryStream,\n    NormalModuleHistoryWindow, NormalModuleInputs, NormalModuleRecord,\n    NormalModuleSessionController, NormalModuleThread, OwnedNormalModuleResult,\n    OwnedNormalModuleThread, PreparedNormalModuleController, PreparedNormalModuleSessionController,\n"
+          ],
+          [
+            2623,
+            2666,
+            ""
+          ],
+          [
+            6221,
+            6238,
+            ""
+          ],
+          [
+            14761,
+            14851,
+            "    records: [Option<NormalRecord>; CALLS],\n    functions: [Option<SelectedFunction>; CALLS],\n"
+          ],
+          [
+            26396,
+            26488,
+            "            records: [None; CALLS],\n            functions: [None; CALLS],\n"
+          ],
+          [
+            28444,
+            28544,
+            "            || self.records[..self.len].iter().any(Option::is_none)\n            || self.records[self.len..].iter().any(Option::is_some)\n            || self.functions[..self.len].iter().any(Option::is_none)\n            || self.functions[self.len..].iter().any(Option::is_some)\n"
+          ],
+          [
+            30877,
+            30877,
+            "    fn enter_function(\n        &mut self,\n        selected: SelectedFunction,\n        pc: u64,\n        rsp: u64,\n        word: u64,\n        start: RawTimestamp,\n    ) -> Result<(), BridgeError> {\n        self.selected_geometry(selected, pc, None)?;\n        self.shape()?;\n        if self.pending.is_some() {\n            // identity() already authenticated a new real entry. Never reread the\n            // old stack slot: this new CALL may have overwritten it legitimately.\n            self.confirm(NormalAcknowledgement::NextEntry { ordinal: self.next })?;\n        }\n        reserve_entry(self.len, self.journal.used())?;\n        let next = self.next.checked_add(1).ok_or(error(Cause::Capacity))?;\n        let entered = self\n            .totals\n            .entered\n            .checked_add(1)\n            .ok_or(error(Cause::Capacity))?;\n        if let Some(accuracy) = &mut self.accuracy {\n            accuracy.begin(self.len, selected, self.next)?;\n        }\n        let mut slot = ModelReturnSlot {\n            identity: self.next,\n            word: TOKEN,\n        };\n        let enter = match self.binding.entry_mode {\n            EntryMode::NonBlocking => ThreadModel::enter_interval,\n            EntryMode::Concurrent => ThreadModel::enter_interval_waiting,\n        };\n        let receipt = enter(\n            &mut self.model,\n            self.binding.install,\n            selected.function,\n            start.ticks,\n            &mut slot,\n        )\n        .map_err(|e| error(Cause::Entry(e)))?;\n        // Custody precedes every fallible postcondition, including history packing.\n        self.pending = Some(Pending {\n            selected,\n            ordinal: self.next,\n            rsp,\n            word,\n            entry_pc: pc,\n            start,\n            receipt,\n            slot,\n            summary: None,\n            returned: None,\n        });\n        let p = self.pending.as_mut().ok_or(error(Cause::Invariant))?;\n        let summary = p.receipt.summary().ok_or(error(Cause::Invariant))?;\n        p.summary = Some(summary);\n        let (kind, generation, bits) =\n            history::packed_for_function(&self.binding.session, p.selected.function, summary)?;\n        self.journal\n            .row([kind, p.ordinal, pc, rsp, word, generation, bits]);\n        self.journal.header(self.tid, 1);\n        self.next = next;\n        self.totals.entered = entered;\n        Ok(())\n    }\n"
+          ],
+          [
+            31115,
+            31115,
+            "    }\n    fn observe_function(\n        &mut self,\n        selected: SelectedFunction,\n        pc: u64,\n        rsp: u64,\n        word: u64,\n        end: RawTimestamp,\n    ) -> Result<(), BridgeError> {\n        self.shape()?;\n        let pending = self.pending.as_ref().ok_or(error(Cause::Return))?;\n        self.selected_geometry(selected, pending.entry_pc, Some(pc))?;\n        let p = self.pending.as_mut().ok_or(error(Cause::Return))?;\n        if p.selected != selected\n            || p.returned.is_some()\n            || p.rsp != rsp\n            || p.word != word\n            || p.slot.identity != p.ordinal\n        {\n            return Err(error(Cause::Return));\n        }\n        let summary = p.summary.ok_or(error(Cause::Invariant))?;\n        let (kind, generation, bits) =\n            history::packed_for_function(&self.binding.session, p.selected.function, summary)?;\n        let observed = self\n            .totals\n            .ret_observed\n            .checked_add(1)\n            .ok_or(error(Cause::Capacity))?;\n        if self.journal.used() >= EVENTS || self.len >= CALLS {\n            return Err(error(Cause::Capacity));\n        }\n        if let Some(accuracy) = &mut self.accuracy {\n            accuracy.end(self.len, selected, p.ordinal)?;\n        }\n        let raw = RawInterval {\n            ordinal: p.ordinal,\n            entry_pc: p.entry_pc,\n            return_pc: pc,\n            owner: timing::owner(summary),\n            start: p.start,\n            end,\n        };\n        self.journal\n            .row([kind + 1, p.ordinal, pc, rsp, word, generation, bits]);\n        p.returned = Some(raw);\n        self.totals.ret_observed = observed;\n        // Receipt, sampled frame and FunctionClosed owner remain untouched.\n        Ok(())\n"
+          ],
+          [
+            34529,
+            34635,
+            "        self.records[self.len] = Some(record);\n        self.functions[self.len] = Some(p.selected);\n"
+          ],
+          [
+            40077,
+            40139,
+            "        self.records = [None; CALLS];\n        self.functions = [None; CALLS];\n"
+          ],
+          [
+            40988,
+            41133,
+            ""
+          ],
+          [
+            50355,
+            50910,
+            ""
+          ]
+        ],
+        "previous_sha256": "d14c5ce91a8d57d97ca5c560e28f32cb620c5e2a5c7ab2affe49610552bbc944"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/accuracy/tests.rs": {
+        "current_sha256": "7f2cec42c53ed9267604d9867185be763f56224a8e3ddc8b561cb24669c1057e",
+        "edits": [
+          [
+            4855,
+            4917,
+            "        records: s.records,\n        functions: s.functions,\n"
+          ]
+        ],
+        "previous_sha256": "569af747cf449b5ea345d7fa7cafb53c3cdd2e73f127d266c9d0c5403ead4c85"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/leaf_set/tests.rs": {
+        "current_sha256": "d894f517efe2f4ce2be2e0d17a74db65217f6e652ebc59be2c61c34f64e4f92e",
+        "edits": [
+          [
+            5303,
+            5365,
+            "        records: s.records,\n        functions: s.functions,\n"
+          ],
+          [
+            17774,
+            17905,
+            "                f.state.functions[i] = Some(f.state.selection((i + 1) % n).unwrap());\n"
+          ],
+          [
+            17943,
+            17992,
+            "                f.state.functions[i] = saved;\n"
+          ]
+        ],
+        "previous_sha256": "15b42cf8438d8f0a7074409dd7b598f4c705f8a254c0c9d2e4db3131c22d4ba8"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": {
+        "current_sha256": "acc5e2c29ca05cf0a6a4642ced490776628ef42e005b863146c9935a99f669bf",
+        "edits": [
+          [
+            207,
+            260,
+            "mod owned;\n"
+          ],
+          [
+            277,
+            625,
+            "    NormalModuleClose, NormalModuleCloseState, NormalModuleInputs, OwnedNormalModuleResult,\n    OwnedNormalModuleThread,\n"
+          ],
+          [
+            1640,
+            1781,
+            "    matches!(&binding.profile, BindingProfile::Module { functions, .. }\n        if functions[0] != functions[1])\n"
+          ],
+          [
+            2489,
+            2581,
+            "        if limits != LIMITS || functions[0] == functions[1] {\n"
+          ],
+          [
+            6432,
+            6591,
+            "        if !module_runtime_matches(&self.binding)\n"
+          ]
+        ],
+        "previous_sha256": "32e55a90906a1c023ba7a444fbfc51c7db3fd5f1da7fec545fbdeed818aa2740"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": {
+        "current_sha256": "317a108ccc431a1e47f5e0fba179d4979f75d45f360518f8f95432b34be7a458",
+        "edits": [
+          [
+            272,
+            588,
+            ""
+          ],
+          [
+            7560,
+            7719,
+            "        if !module_runtime_matches(&self.binding)\n"
+          ]
+        ],
+        "previous_sha256": "a556f01a775d39ce5563cb5631505388a71140b86fdd8d025650261c87189aef"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session.rs": {
+        "current_sha256": "c97808ea66cb1566d372bd5ed497aa84ac256fd9b061a969fa40ea3528dc2fd3",
+        "edits": [
+          [
+            99,
+            159,
+            "fn fixed(k: usize) -> Option<(Limits, Config)> {\n"
+          ],
+          [
+            654,
+            778,
+            "    matches!(profile, BindingProfile::Module { functions, .. } if functions[0] != functions[1])\n"
+          ],
+          [
+            1912,
+            2010,
+            ""
+          ]
+        ],
+        "previous_sha256": "285611e5e5ebc3ab491a85a02f90753068944462ff3751913f5ef3708cb98a98"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session/tests.rs": {
+        "current_sha256": "1e48ab4bbc4460da5b3e261d1ffe500c407e30c7cceef9a091b2e1a1df2f538b",
+        "edits": [
+          [
+            5912,
+            5974,
+            "        records: s.records,\n        functions: s.functions,\n"
+          ],
+          [
+            27521,
+            27606,
+            "    f.state.functions[0] = Some(f.state.selection(1).unwrap());\n"
+          ],
+          [
+            27632,
+            27669,
+            "    f.state.functions[0] = saved;\n"
+          ]
+        ],
+        "previous_sha256": "3704e39ba63ac6bfe71fcf354efca729d4e4b2d9b623c917a19b54a08e078733"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session_history.rs": {
+        "current_sha256": "55e1a24da766c67746d06325c41364601943a1018f2b62b7d530665ed727bfbc",
+        "edits": [
+          [
+            1445,
+            2008,
+            ""
+          ]
+        ],
+        "previous_sha256": "c5f677a3e91b58be013f4581e69207d59f38df4e40e39f67460107b4705110c0"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs": {
+        "current_sha256": "be66982cd4c35dc28f9cc2170dd6a13d6b07ee209b84561a7bcdadca628fefb1",
+        "edits": [
+          [
+            5426,
+            5488,
+            "        records: s.records,\n        functions: s.functions,\n"
+          ],
+          [
+            16299,
+            16384,
+            "    f.state.functions[0] = Some(f.state.selection(1).unwrap());\n"
+          ],
+          [
+            16410,
+            16480,
+            "    f.state.functions[0] = tag;\n    f.state.functions[1] = tag;\n"
+          ],
+          [
+            16506,
+            16542,
+            "    f.state.functions[1] = None;\n"
+          ]
+        ],
+        "previous_sha256": "e2a5be581c256b29ae5608a6d5e4abd0224dce6dc8076a3bad040e50ae08eb25"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/tests.rs": {
+        "current_sha256": "74c92759756de7f88c60ac4ca3bf9e219ced22a85ecfb45f28654726136b9606",
+        "edits": [
+          [
+            176,
+            1911,
+            ""
+          ],
+          [
+            14726,
+            14827,
+            "    f.state.records[0].as_mut().unwrap().acknowledgement = NormalAcknowledgement::CallerCheckpoint;\n"
+          ]
+        ],
+        "previous_sha256": "5cb9a8c308a098ebaa224f884c8b9eb0d07121c8ea6910793593451dd53a6eac"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers/native.rs": {
+        "current_sha256": "4e32f2c1cac91e1cb2139289fb4bd8d3359c92d4bc833f71bd7985a5d8ee868a",
+        "edits": [
+          [
+            3657,
+            3690,
+            "        records: state.records,\n"
+          ]
+        ],
+        "previous_sha256": "5a97093795d644f25be07eccb857070160d197cad3eecb4d3945508631149bcb"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": {
+        "current_sha256": "75b1b200f1dece33fa22709afec1be4bb66506803c3a14127afc7c89d7815200",
+        "edits": [
+          [
+            1613,
+            1842,
+            "    InstalledNormalModuleSite, NormalModuleFunctionSite, NormalModulePreparationPolicy,\n    NormalModuleRole, NormalModuleRoleKind, NormalModuleSitePreparation,\n"
+          ]
+        ],
+        "previous_sha256": "8d3ce6320f578907a7c9d3809d4089edd57d7792f450efcf69bf850b915b75a9"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs": {
+        "current_sha256": "15be1c7aa592904fa25cde890b99706396f35b1fd46d58fd3a8f4a25d568bbc8",
+        "edits": [
+          [
+            213,
+            317,
+            ""
+          ],
+          [
+            1905,
+            1928,
+            ""
+          ],
+          [
+            2870,
+            3454,
+            ""
+          ],
+          [
+            5991,
+            6023,
+            ""
+          ],
+          [
+            13733,
+            13765,
+            ""
+          ]
+        ],
+        "previous_sha256": "fbccec0f9b001f5e4c43c33a2e6d4e6b443851845c7ab00afb4b98738b71468f"
+      },
+      "tools/rapid-profiler/src/frontend_native/mod.rs": {
+        "current_sha256": "6e554f1de5f5b2def5e857fec0e1f13b847033386690a5dcfc1f25f519389ddb",
+        "edits": [
+          [
+            9086,
+            9660,
+            ""
+          ]
+        ],
+        "previous_sha256": "786dbf59f8fd071b60cdb5c5c825cae9622fae2eaf0ddf5d0838337ffdb3dc32"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs": {
+        "current_sha256": "e279bdb36bfac8480f3ef75bb2e929bac89bdc3f202e44e4a03e93e5773e61b0",
+        "edits": [
+          [
+            4271,
+            4380,
+            ""
+          ],
+          [
+            6388,
+            6545,
+            ""
+          ],
+          [
+            7945,
+            9101,
+            ""
+          ]
+        ],
+        "previous_sha256": "ee5fce93db7d70a66d103d9613d4883fd93a8357ed4b612275bb5f39c6b7ae09"
+      }
+    },
+    "sources": {
+      "src/controls.rs": "13f21abc2980b52aa5bcd8f64be07f4d5433e89bcdea3e1bdadd731ba904eb4a",
+      "src/controls/entry_admission.rs": "b30e3fa18423b57be5dea11edd568c3930944e5879784f5625bdc9404e14b1e7",
+      "src/quiescent.rs": "bf870f4253f9c8abf90acba6660189ee9271ca1405847d50af755d7d3665b08b",
+      "src/quiescent/entry_admission.rs": "c8d4a3f32313f8cd564887a9686a59513ad066304930683362f4886d8adf3745",
+      "src/quiescent/whole_function.rs": "9ca1c0e169372d3225b24cee7b2007e3455cf02a8b8bc005cf388268eb3aee4d",
+      "src/trampoline.rs": "32dc3b2f9aab5bf9e75c5c7124cadf5bec3ca1692f3ce8c771d3fe429a7e55bd",
+      "src/trampoline/early_control/tests.rs": "36aa14146a0a2f65e673926b4fe4416edb7471c2f960a8d1b3cb864ac55fbd57",
+      "tests/entry_admission_planning.rs": "c661833cd0324c2ab71f1dd6de7d1360cd94f25d389b1c3d614d874b53389745",
+      "tests/support/native_normal_caller.rs": "d06f528e7987dd5e4a4482e1013ca6a65d0ccc54e02016730e0dc5082e925358",
+      "tests/support/native_normal_module.rs": "d43543eda95b81f822fb11112bb5bcb8a7d46e6d442d639e180c0af301a49d0b",
+      "tests/support/native_normal_module/early_entry.rs": "f77edfa9dd79840d223dc573a82905b6acf25e4d5ee07374fa3f94a7a7e4c9b6",
+      "tests/support/native_normal_module/early_entry/wide.rs": "f5dc66a3e042ca127ee49d8342fe76e8a1ceed260bd1dbda079269c9fb4f7b99",
+      "tests/support/native_normal_module/tests.rs": "87bf281f1654d4b3c9ce49d34c0d9d59aa931c3c058c2ac6649edeeb1ee3cb5e",
+      "tests/support/native_ordinary.rs": "33e0cbfa2d195b5d7f7b8e777725bfa49f0df0e9f91a49630a8fdd7419337ee5",
+      "tools/rapid-profiler/Cargo.toml": "b533118e8ceaba2f14126ca48c0fc9756aff5e56a20d1f8dacc512a35698dc0d",
+      "tools/rapid-profiler/native-interval/main.rs": "e54f1b84dd6fc8591263bb399a0acb2dafb0a225bead6b34c2ab6bbcefa12ece",
+      "tools/rapid-profiler/native-interval/normal/module.rs": "9a1179917963db7821f49067bc08f6ad91ff8d1502dcd152b16ac88f86d21b61",
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": "d9d63706dafe4cb602be6e96ef54811c926e94b2d5fc9f6c842f356d63d04d56",
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/wide.rs": "7348189734fc40d152290f3eee3fd2df92d50f47c5644496311daa39cacee62e",
+      "tools/rapid-profiler/src/frontend.rs": "351ddce6eba14085e654ad6e56a1f9afe5bfc98a8b6526d7bc5cdf35ae149430",
+      "tools/rapid-profiler/src/frontend/interval_entry.rs": "e25ae2104b3f168ed562671a9daa93bd20edf4117846ba5bd54be5963b2f19ff",
+      "tools/rapid-profiler/src/frontend_native/always_on/epoch_storage.rs": "f302191dc1e12ff1fea709030e62a69cc4ad352d6abd59b0ed717eeec041cf4c",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": "a33e16427b427882b013669292d58a2e0d390b0d500df26c3b8bd5951231490f",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/accuracy/tests.rs": "7f2cec42c53ed9267604d9867185be763f56224a8e3ddc8b561cb24669c1057e",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/leaf_set/tests.rs": "d894f517efe2f4ce2be2e0d17a74db65217f6e652ebc59be2c61c34f64e4f92e",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": "acc5e2c29ca05cf0a6a4642ced490776628ef42e005b863146c9935a99f669bf",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": "317a108ccc431a1e47f5e0fba179d4979f75d45f360518f8f95432b34be7a458",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": "2231e4f4d42f64f3aeafb84e9030587a097fb1f86b62d5ae75879a34afd07efb",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": "2d7029042dbeb7f424c6fadece769aefbbb2e140f08549efd7496f027ce7defe",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": "06206bdb834f93373d2421a24f8b11efb39ffc0709aae99f767a1f43f51636df",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs": "0c34d399ffa48e2e1395b5bcaee728bb85532a199ca81747f558a235da581f0a",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs": "1c4ab8b18a89e1589de160162c0457f640c1c0d932600b9a43c0d15f545bb96e",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs": "dbf8cc5fb8104eeb01cc5377a33c0c405d50d92b01f46cf03ee2644307986456",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs": "7207e57bf3a935e328dba15ff4da1a2d553c44c1a9f68941123796eb2ff5f072",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session.rs": "c97808ea66cb1566d372bd5ed497aa84ac256fd9b061a969fa40ea3528dc2fd3",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session/tests.rs": "1e48ab4bbc4460da5b3e261d1ffe500c407e30c7cceef9a091b2e1a1df2f538b",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session_history.rs": "55e1a24da766c67746d06325c41364601943a1018f2b62b7d530665ed727bfbc",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs": "be66982cd4c35dc28f9cc2170dd6a13d6b07ee209b84561a7bcdadca628fefb1",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/presence.rs": "cfd5427ac2fadabb2008f5d15c5e12a806682c75ac421b108cd83123ee22bb03",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/tests.rs": "74c92759756de7f88c60ac4ca3bf9e219ced22a85ecfb45f28654726136b9606",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers/native.rs": "4e32f2c1cac91e1cb2139289fb4bd8d3359c92d4bc833f71bd7985a5d8ee868a",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": "75b1b200f1dece33fa22709afec1be4bb66506803c3a14127afc7c89d7815200",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs": "15be1c7aa592904fa25cde890b99706396f35b1fd46d58fd3a8f4a25d568bbc8",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/early_entry.rs": "3df9449bee19c00b114d0ec763aa0940357d261c9bc83ffd5d727fa4424b5c3e",
+      "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/early_entry/append.rs": "fbb3c4d3e7999f05fd8e01ff8ec85fe5ec8bf9d70bda63de0eea11192203b09b",
+      "tools/rapid-profiler/src/frontend_native/mod.rs": "6e554f1de5f5b2def5e857fec0e1f13b847033386690a5dcfc1f25f519389ddb",
+      "tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs": "e279bdb36bfac8480f3ef75bb2e929bac89bdc3f202e44e4a03e93e5773e61b0"
+    },
+    "workspace_changes": {
+      "doc/rapid_profiler": {
+        "current": {
+          "ignored": 0,
+          "tests": 50
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 49
+        }
+      },
+      "test/entry_admission_planning": {
+        "current": {
+          "ignored": 0,
+          "tests": 7
+        },
+        "previous": null
+      },
+      "test/frontend_native_calibrations": {
+        "current": {
+          "ignored": 1,
+          "tests": 236
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 233
+        }
+      },
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 37,
+          "tests": 601
+        },
+        "previous": {
+          "ignored": 33,
+          "tests": 581
+        }
+      }
+    }
+  },
   "source_successor_abe7": {
     "added_default_methods": {
       "examples/owned_region_clock.rs": [
@@ -8096,7 +10330,7 @@
     "evaluation/admission/test_main34c47_inventory.py": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "f2874b7589b24a963da1fe3912378fa74cf20e6e0a4eb8ebf736d93ef182039a",
-    "evaluation/admission/test_main97ab_inventory.py": "6da3b364fe8d2d3f5883ce87dfa96d547047f92b08f6eabb3b83f2f6abbb549d",
+    "evaluation/admission/test_main97ab_inventory.py": "ea9e351176ad79d0013a60bfbeaf5990e649d5857e629d97024efb2f6aa7d7d5",
     "evaluation/admission/test_main981419_inventory.py": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
     "evaluation/admission/test_mainaf81_inventory.py": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
@@ -8125,7 +10359,8 @@
     "src/backedge_clock/owned_region.rs": "08200c9db8b5922f595fe46459b113ab7e2223eb9e45fb6c0f8b7eedd611c432",
     "src/backedge_clock/owned_region/tests.rs": "3cb1cb505378787bf4e1fd665477983f7908901f64449227ef20d915f704864d",
     "src/bundle.rs": "82e36a7edb832b33a18ae25e68e1d81b2c3b6ddb21b4620626f40fd66187b9af",
-    "src/controls.rs": "1c5bb2eabd7ae0a80592811fd015b0d9ed1dba2c796993fd5e145002c549d5c9",
+    "src/controls.rs": "13f21abc2980b52aa5bcd8f64be07f4d5433e89bcdea3e1bdadd731ba904eb4a",
+    "src/controls/entry_admission.rs": "b30e3fa18423b57be5dea11edd568c3930944e5879784f5625bdc9404e14b1e7",
     "src/emission.rs": "7eb271d9471d10c99b85d14a5bd33fa9f4787b7d970ad16c26fa6f8289cc7873",
     "src/emission/artifact_frame_tests.rs": "db27456d9816ae84f1a98c8529e136d0e678659322e34fddabce26ef26a4a324",
     "src/emission/placement.rs": "d5f296afd4e076b50af2db43123b543b8bc41d3257df9e2f88b2cf072256496f",
@@ -8144,22 +10379,25 @@
     "src/neighbor_overlap/tests.rs": "bc5880f3aff72cf5ea13b29592c7d848a879b5f9a71fabae7667888d027065e8",
     "src/neighbor_short.rs": "eb6870d77c53a5e29d911f0c1674281eafed44c63394364e393ed0bbd7d20897",
     "src/neighbor_short/tests.rs": "29c13e229d449458eb66843618c3429901abb2bd424e7099b931dfb612c95087",
-    "src/quiescent.rs": "54d6ebdb148de3660e64713d31a745d92f58141e851a17168ee4bd843ca0198d",
+    "src/quiescent.rs": "bf870f4253f9c8abf90acba6660189ee9271ca1405847d50af755d7d3665b08b",
     "src/quiescent/clock_region.rs": "be8ab2bfa2ba682361a1f647d51fceb9b43c9a600be3de711da2217c04ff1788",
     "src/quiescent/clock_region/tests.rs": "49decb1a58ab56dec5e00ac1e0797b57962758e4ba1a5aa680b79d81a807fb35",
+    "src/quiescent/entry_admission.rs": "c8d4a3f32313f8cd564887a9686a59513ad066304930683362f4886d8adf3745",
     "src/quiescent/fitting_tests.rs": "c2352d8f207a812572ce74714684941a921a2c2a99b420ed5fca1a71b229cdc5",
-    "src/trampoline.rs": "41c5bfeb00cb5aad4351ab8288cf71187343207b81745214d4ae961374d839b4",
+    "src/quiescent/whole_function.rs": "9ca1c0e169372d3225b24cee7b2007e3455cf02a8b8bc005cf388268eb3aee4d",
+    "src/trampoline.rs": "32dc3b2f9aab5bf9e75c5c7124cadf5bec3ca1692f3ce8c771d3fe429a7e55bd",
     "src/trampoline/artifact_allocation.rs": "ed23100722b011aadaabd7945583d82db0c1c43b00a31b1b14a252b48a580729",
     "src/trampoline/artifact_allocation/tests.rs": "a5ec8b16a83a9b0c51c431161f60490c41f2ad39d29ffe4d8c61e92ab077e0e7",
     "src/trampoline/artifact_jrcxz.rs": "89b78a5c4ff7668ec09b61d7dfcf1bcb5630adfaae57053efa54a710fbc0d713",
     "src/trampoline/clock_region_tests.rs": "76a75d05b1f711dbd4b36d373074309ab6923015b3eec2f9cd7a4db5ed913bb2",
     "src/trampoline/early_control.rs": "a0d2654210592fe80a8b2ae0982279265dcc178424a44e7444dae9f17fcb2d22",
-    "src/trampoline/early_control/tests.rs": "edc38ab31065c28aca1eb4d5da7b55b4e492f6b09625773b893c33ca2ee12254",
+    "src/trampoline/early_control/tests.rs": "36aa14146a0a2f65e673926b4fe4416edb7471c2f960a8d1b3cb864ac55fbd57",
     "src/trampoline/fitting.rs": "bf3b64017fdff8d47d45dfc495de39c86dd45766688726c3a4152b5b0b706df7",
     "src/trampoline/fitting/tests.rs": "b947cad0990f0a8a6357562da2c8420678121716ef4b29b83efe839b790ee223",
     "tests/early_control_oracle.rs": "2e097c5d136fb63f5e0e27bf7710f066f62f3e0c00ff4c194552dccba810a601",
     "tests/early_control_planning.rs": "d8bfbfdd8a4077b65e7d475c11f28fb32c9c5e555209fca23da901901f35b2a6",
     "tests/early_control_race_oracle.rs": "d9f00a4f27f48689b357cd017121002c4d8ead5324d54f8d694e6033468bae29",
+    "tests/entry_admission_planning.rs": "c661833cd0324c2ab71f1dd6de7d1360cd94f25d389b1c3d614d874b53389745",
     "tests/neighbor_eviction_oracle.rs": "685d5caa3933dd5649b70b4e8fa1e0ce632e1a9b52d51aed3c671288b77c5e64",
     "tests/support/adc_state.rs": "6210f02e2d4d1906fadecf2eadd876b02d0154ceb330c467e15817ed33e54ec0",
     "tests/support/adjacent_b2_fixture.rs": "dcaf2962f81f690785f61770713d13f0104bbef4b9e7beaed6f0d641aff33ca0",
@@ -8192,6 +10430,12 @@
     "tests/support/isolated_native_test.rs": "3a3dbcf84ddb0fb276ffb9aa9653b412f53abf7e9ddea5231a669504c9b768b1",
     "tests/support/jrcxz_artifact_oracle.rs": "fc30abfc30dbd1d0a0a23393890eddaeabf6a3679079b59b94231d0e49dfc5b8",
     "tests/support/jrcxz_state.rs": "ea3f380a179470e12264258e5a01bfefebaaebb7b0654b2354b81a9b4f5eb55f",
+    "tests/support/native_normal_caller.rs": "d06f528e7987dd5e4a4482e1013ca6a65d0ccc54e02016730e0dc5082e925358",
+    "tests/support/native_normal_module.rs": "d43543eda95b81f822fb11112bb5bcb8a7d46e6d442d639e180c0af301a49d0b",
+    "tests/support/native_normal_module/early_entry.rs": "f77edfa9dd79840d223dc573a82905b6acf25e4d5ee07374fa3f94a7a7e4c9b6",
+    "tests/support/native_normal_module/early_entry/wide.rs": "f5dc66a3e042ca127ee49d8342fe76e8a1ceed260bd1dbda079269c9fb4f7b99",
+    "tests/support/native_normal_module/tests.rs": "87bf281f1654d4b3c9ce49d34c0d9d59aa931c3c058c2ac6649edeeb1ee3cb5e",
+    "tests/support/native_ordinary.rs": "33e0cbfa2d195b5d7f7b8e777725bfa49f0df0e9f91a49630a8fdd7419337ee5",
     "tests/support/neighbor_fixture_arena.rs": "40d3564b0aa99f8aa61c95ed8f52c58b20c06931a98850ed849c886efadf9e2e",
     "tests/support/overlapping_neighbor_artifact_oracle.rs": "debf65214088e16ff777f68d599fc1a99b903c9d1613fbb7e14b21466d3e3f7d",
     "tests/support/overlapping_neighbor_artifact_oracle/state.rs": "55f8119dba3d5590fcfb9f5bc1bdfd7787b2b13f699c2980120bb52eb254e978",
@@ -8242,8 +10486,12 @@
     "tools/elf-rewrite/tests/indexed_dso_source.rs": "90589c35c4239473ab84bb3c11a65f017c83b78080a957544f64c08a88038dcf",
     "tools/elf-rewrite/tests/rx_run_loader.rs": "bf155716fcffec9d8008bd96e34eba88f00f689d3c5b28a65ac03c11ba526019",
     "tools/elf-rewrite/tests/support/composition_overlay.rs": "957573fdf12f81f63e302a761f298001a241e728d8251d65e5a85608c1fccf2b",
-    "tools/rapid-profiler/Cargo.toml": "ddd9e965854e3dbe5ebbeb672b802480839232bddc27e22be705b66fe1ad1de8",
+    "tools/rapid-profiler/Cargo.toml": "b533118e8ceaba2f14126ca48c0fc9756aff5e56a20d1f8dacc512a35698dc0d",
     "tools/rapid-profiler/README.md": "68b065b9fd33fee89ae3f42a714e9a1a1432f1d2de15f11d2d61328bfe6e8ba3",
+    "tools/rapid-profiler/native-interval/main.rs": "e54f1b84dd6fc8591263bb399a0acb2dafb0a225bead6b34c2ab6bbcefa12ece",
+    "tools/rapid-profiler/native-interval/normal/module.rs": "9a1179917963db7821f49067bc08f6ad91ff8d1502dcd152b16ac88f86d21b61",
+    "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": "d9d63706dafe4cb602be6e96ef54811c926e94b2d5fc9f6c842f356d63d04d56",
+    "tools/rapid-profiler/native-interval/normal/module/early_entry/wide.rs": "7348189734fc40d152290f3eee3fd2df92d50f47c5644496311daa39cacee62e",
     "tools/rapid-profiler/ordinary-interval/main.rs": "76c776c72b6818743a18a47dff80ad14f4cd03567bd62183ddf05d11eb2527a9",
     "tools/rapid-profiler/ordinary-interval/normal.rs": "0618d34ca349bcd15db6cd3061912cbb2e8f939e1cf38277b49e6b60d20a35a3",
     "tools/rapid-profiler/ordinary-interval/normal/csv.rs": "dec72317a616660dca1dd673f0ee0075361fcb7503537b930902da579a3d8aae",
@@ -8261,17 +10509,38 @@
     "tools/rapid-profiler/point-throughput/tests.rs": "c0d58b797b1e55f9b73611b3cacd98533d4a74783526d0b2fb9a838ea9e79dcc",
     "tools/rapid-profiler/src/data_flag.rs": "cb88833871f19cf0878101c9dcdbe122a69e0c1fdfab50cc79188f3f9947564c",
     "tools/rapid-profiler/src/data_flag/tests.rs": "f5ff511b0dd471522fd3da8db362fed6d29c76e5fff0c43ee1b0b7d95850c9c1",
+    "tools/rapid-profiler/src/frontend.rs": "351ddce6eba14085e654ad6e56a1f9afe5bfc98a8b6526d7bc5cdf35ae149430",
+    "tools/rapid-profiler/src/frontend/interval_entry.rs": "e25ae2104b3f168ed562671a9daa93bd20edf4117846ba5bd54be5963b2f19ff",
     "tools/rapid-profiler/src/frontend_native/always_on.rs": "3f49eaca5cd65646dfda745ac7e75efc2d5466deeeaa4fd646de0e04d2e26423",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": "d14c5ce91a8d57d97ca5c560e28f32cb620c5e2a5c7ab2affe49610552bbc944",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": "32e55a90906a1c023ba7a444fbfc51c7db3fd5f1da7fec545fbdeed818aa2740",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": "a556f01a775d39ce5563cb5631505388a71140b86fdd8d025650261c87189aef",
+    "tools/rapid-profiler/src/frontend_native/always_on/epoch_storage.rs": "f302191dc1e12ff1fea709030e62a69cc4ad352d6abd59b0ed717eeec041cf4c",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": "a33e16427b427882b013669292d58a2e0d390b0d500df26c3b8bd5951231490f",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/accuracy/tests.rs": "7f2cec42c53ed9267604d9867185be763f56224a8e3ddc8b561cb24669c1057e",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/leaf_set/tests.rs": "d894f517efe2f4ce2be2e0d17a74db65217f6e652ebc59be2c61c34f64e4f92e",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": "acc5e2c29ca05cf0a6a4642ced490776628ef42e005b863146c9935a99f669bf",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": "317a108ccc431a1e47f5e0fba179d4979f75d45f360518f8f95432b34be7a458",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": "2231e4f4d42f64f3aeafb84e9030587a097fb1f86b62d5ae75879a34afd07efb",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": "2d7029042dbeb7f424c6fadece769aefbbb2e140f08549efd7496f027ce7defe",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": "06206bdb834f93373d2421a24f8b11efb39ffc0709aae99f767a1f43f51636df",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs": "0c34d399ffa48e2e1395b5bcaee728bb85532a199ca81747f558a235da581f0a",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs": "1c4ab8b18a89e1589de160162c0457f640c1c0d932600b9a43c0d15f545bb96e",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs": "dbf8cc5fb8104eeb01cc5377a33c0c405d50d92b01f46cf03ee2644307986456",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs": "7207e57bf3a935e328dba15ff4da1a2d553c44c1a9f68941123796eb2ff5f072",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/native.rs": "1a314f3aed3aa6932876390c734336237a0ec28ffe1130bfbc73fc942c33f85b",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/performance.rs": "ba8215d7d38b2a70def2e7899d17437f159af915552e244d97b43ff88c1e5a01",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs": "e2a5be581c256b29ae5608a6d5e4abd0224dce6dc8076a3bad040e50ae08eb25",
-    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs": "fbccec0f9b001f5e4c43c33a2e6d4e6b443851845c7ab00afb4b98738b71468f",
-    "tools/rapid-profiler/src/frontend_native/mod.rs": "786dbf59f8fd071b60cdb5c5c825cae9622fae2eaf0ddf5d0838337ffdb3dc32",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session.rs": "c97808ea66cb1566d372bd5ed497aa84ac256fd9b061a969fa40ea3528dc2fd3",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session/tests.rs": "1e48ab4bbc4460da5b3e261d1ffe500c407e30c7cceef9a091b2e1a1df2f538b",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session_history.rs": "55e1a24da766c67746d06325c41364601943a1018f2b62b7d530665ed727bfbc",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/tests.rs": "be66982cd4c35dc28f9cc2170dd6a13d6b07ee209b84561a7bcdadca628fefb1",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/presence.rs": "cfd5427ac2fadabb2008f5d15c5e12a806682c75ac421b108cd83123ee22bb03",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/tests.rs": "74c92759756de7f88c60ac4ca3bf9e219ced22a85ecfb45f28654726136b9606",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/two_callers/native.rs": "4e32f2c1cac91e1cb2139289fb4bd8d3359c92d4bc833f71bd7985a5d8ee868a",
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": "75b1b200f1dece33fa22709afec1be4bb66506803c3a14127afc7c89d7815200",
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs": "15be1c7aa592904fa25cde890b99706396f35b1fd46d58fd3a8f4a25d568bbc8",
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/early_entry.rs": "3df9449bee19c00b114d0ec763aa0940357d261c9bc83ffd5d727fa4424b5c3e",
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module/early_entry/append.rs": "fbb3c4d3e7999f05fd8e01ff8ec85fe5ec8bf9d70bda63de0eea11192203b09b",
+    "tools/rapid-profiler/src/frontend_native/mod.rs": "6e554f1de5f5b2def5e857fec0e1f13b847033386690a5dcfc1f25f519389ddb",
     "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": "14931190161ed220a35d62b5ebde0161f3ffcef0f5e7ba0b5987a0572af6e387",
-    "tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs": "ee5fce93db7d70a66d103d9613d4883fd93a8357ed4b612275bb5f39c6b7ae09",
+    "tools/rapid-profiler/src/frontend_native/ordinary/module_caller.rs": "e279bdb36bfac8480f3ef75bb2e929bac89bdc3f202e44e4a03e93e5773e61b0",
     "tools/rapid-profiler/src/frontend_native/ordinary/module_caller_format_tests.rs": "dc81d94fba2f45b64b6ef3d6b4bb6b5cf195ab98a8abaa90d4dffb084fe05cbc",
     "tools/rapid-profiler/src/frontend_native/ordinary/normal_leaf_set.rs": "2ade00c29a9f50e1273923eb96025e6f1dc5f8e7b2de7f7d7e9081753a85e3e1",
     "tools/rapid-profiler/src/frontend_native/ordinary/normal_module.rs": "ca9144163957c131dd30e9a5794ac049ec94bb411515e3251064d7bbccb868f5",

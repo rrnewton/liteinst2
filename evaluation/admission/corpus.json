@@ -6123,7 +6123,7 @@
       },
       "doc/rapid_profiler": {
         "ignored": 0,
-        "tests": 49
+        "tests": 50
       },
       "test/a2_oracle": {
         "ignored": 0,
@@ -6265,6 +6265,10 @@
         "ignored": 0,
         "tests": 8
       },
+      "test/entry_admission_planning": {
+        "ignored": 0,
+        "tests": 7
+      },
       "test/entry_backedge": {
         "ignored": 0,
         "tests": 1
@@ -6303,7 +6307,7 @@
       },
       "test/frontend_native_calibrations": {
         "ignored": 1,
-        "tests": 233
+        "tests": 236
       },
       "test/generalized_pun_contract": {
         "ignored": 0,
@@ -6562,8 +6566,8 @@
         "tests": 3
       },
       "unit/rapid_profiler/lib": {
-        "ignored": 33,
-        "tests": 581
+        "ignored": 37,
+        "tests": 601
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,

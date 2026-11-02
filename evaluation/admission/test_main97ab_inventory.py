@@ -18,10 +18,81 @@ from test_parsing import counts, summary
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # Keep the merged typed entry-admission catalog distinct from every
+        # earlier boundary, including its four explicitly ignored native tests.
+        entry = current.DATA['source_successor_a8acec5']
+        entry_prior = current.before_a8acec5(actual)
+        entry_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(entry_prior), current.ENTRY_ADMISSION_PREVIOUS)
+        self.assertEqual((len(entry_rows), sum(x['tests'] for x in entry_rows.values()),
+                          sum(x['ignored'] for x in entry_rows.values())), (120, 4575, 43))
+        self.assertEqual((entry['default_method_additions'], entry['default_doctest_additions'],
+                          entry['default_method_removals'], entry['default_harness_changes'],
+                          entry['default_ignore_changes'], entry['recorder_identity_changes']),
+                         (30, 1, 0, 1, 4, 0))
+        self.assertEqual(sum(len(names) * len(entry['default_method_instances'][path])
+                             for path, names in entry['added_default_methods'].items()), 30)
+        self.assertEqual(sum(len(names) for names in entry['added_ignored_methods'].values()), 4)
+        self.assertEqual(sum(len(blocks) for blocks in entry['doctests'].values()), 1)
+        self.assertEqual(entry_prior['harness_test_counts']['serial_launch'],
+                         actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((actual['recorder_tests'], entry_prior['recorder_tests']), (366, 366))
+        for path, row in entry['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_a8acec5(path, raw, 'entry_admission_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (entry['source_preimages'][path]['bytes'], row['previous_sha256']))
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^entry_admission_source_inverse$'):
+                current.source_before_a8acec5(path, raw + b'\n', 'entry_admission_source_inverse')
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_a8acec5(entry_prior)
+        for name, change in entry['workspace_changes'].items():
+            self.assertEqual(entry_rows[name], change['current'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(entry_rows[name][field]), entry_rows[name][field] + 1):
+                    wrong = copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_a8acec5(wrong)
+            wrong = copy.deepcopy(actual)
+            del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_a8acec5(wrong)
+        read = Path.read_bytes
+        entry_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
+            for path, names in entry['added_default_methods'].items() for name in names]
+        entry_stimuli += [(path, literal, '')
+            for path, literals in entry['module_chains'].items() for literal in literals]
+        entry_stimuli += [(path, block, replacement)
+            for path, blocks in entry['doctests'].items() for block in blocks
+            for replacement in ('', block + '\n' + block, block.replace('compile_fail,E0277', 'ignore'))]
+        entry_stimuli += [tuple(row) for row in entry['ignore_stimuli']]
+        for path, literal, replacement in entry_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('entry-admission declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        for path in entry['source_paths']:
+            target = current.ROOT / path; raw = read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate != target: return read(candidate)
+                    if missing: raise FileNotFoundError(path)
+                    return raw + b'\n'
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                        current.require_sources()
         # The merged benchmark contributes three real tests in one new harness.
         # Preserve the whole earlier catalog as a distinct, refused predecessor.
         point_prior = current.before_e5ab521(actual)
-        point_rows = actual['harness_test_counts']['workspace_tests']
+        point_rows = entry_prior['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(point_prior), current.POINT_PREVIOUS)
         self.assertEqual((len(point_rows), sum(x['tests'] for x in point_rows.values()),
                           sum(x['ignored'] for x in point_rows.values())), (119, 4544, 39))
@@ -258,6 +329,13 @@ class Main97abInventoryTests(unittest.TestCase):
             for literal in re.findall(r'#\[ignore[^\n]*', (current.ROOT / path).read_text())]
         for path, literal, replacement in incoming_stimuli:
             target = current.ROOT / path; raw = read(target)
+            # The current export blocks grew; authenticate the old declarations
+            # in their exact predecessor before mutating the complete new blocks.
+            declaration = current.DATA['source_successor_a8acec5']['module_chain_changes'].get(path)
+            if declaration is not None and literal == declaration['previous']:
+                prior = current.source_before_a8acec5(path, raw, 'incoming_export_inverse')
+                self.assertEqual(prior.count(literal.encode()), 1)
+                literal = declaration['current']
             self.assertEqual(raw.count(literal.encode()), 1)
             wrong = raw.replace(literal.encode(), replacement.encode())
             def changed(candidate): return wrong if candidate == target else read(candidate)
