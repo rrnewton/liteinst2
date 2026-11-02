@@ -69,6 +69,17 @@ struct plr_counts {
     uint64_t chooser_attempts,chooser_selected,chooser_no_envelope;
     uint64_t publications12,hits12,entries_with12,completed_with12,historical_reconstructions,actual_entries12;
 };
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+struct ple_counts {
+    uint64_t chooser_attempts,chooser_selected,chooser_no_envelope;
+    uint64_t publications13,hits13,entries_with13,completed_with13,historical_reconstructions,actual_entries13;
+};
+struct ple_state {
+    unsigned choice_complete;
+    struct ple_counts counts;
+    struct li2_le_witness choice,check,historical;
+};
+#endif
 struct plr_state {
     volatile sig_atomic_t scope;
     unsigned route,choice_complete;

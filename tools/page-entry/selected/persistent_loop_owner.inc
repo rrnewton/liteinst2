@@ -1,5 +1,11 @@
 /* New profile only. Scratch is a member of the wholly registered/excluded pe.
    No operation here grants a source/entry lease or runs on an internal edge. */
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+static int ple_no_envelope(const struct li2_pg_source_key *);
+static int ple_cold(const struct li2_pg_sources *,const uintptr_t[2]);
+static unsigned ple_miss_reason(const struct li2_pg_source_key *);
+static int ple_history_no_envelope(uintptr_t);
+#endif
 enum plr_scope { PLR_COLD=1,PLR_CANCEL,PLR_HISTORY };
 static int plr_scope_enter(unsigned scope) {
     if(scope<PLR_COLD || scope>PLR_HISTORY || pe.loop.scope || pe_decoding ||
@@ -70,8 +76,12 @@ static int plr_cold(const struct li2_pg_sources *s,const uintptr_t pages[2]) {
             plr_no_envelope(&s->key),PE_PLAN,241);
         pe.loop.choice_complete=1;pe.loop.route=LI2_PF_VERSION;
         PLR_COUNT(chooser_no_envelope);
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+        return ple_cold(s,pages);
+#else
         return li2_lpf_plan_pages(pages,pe.candidate.plan.source,s->key.entry,&pe.p.layout,
             &pe.candidate.plan.table,&pe.cold,&pe.miss);
+#endif
     }
     if(!e) {
         pe_need(pe.loop.choice.ready==1 && !pe.loop.choice.result,PE_PLAN,242);
@@ -93,9 +103,15 @@ static unsigned plr_miss_reason(void) {
         !equal(pe.cold.source[i],s->key.page[i].bytes,LI2_REGION_PAGE))return 0;
     if(pe.loop.route==LI2_PF_VERSION) {
         if(!plr_no_envelope(&s->key))return 0;
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+        if(pe.effects.choice_complete!=1 || !ple_no_envelope(&s->key))return 0;
+#endif
         if(li2_lpr_fallback_miss_valid(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild))return pe.miss.reason;
         return li2_lpf_guard_relocation_reason(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild);
     }
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+    if(pe.loop.route==LI2_LPE_VERSION)return ple_miss_reason(&s->key);
+#endif
     if(pe.loop.route!=LI2_LP_VERSION || pe.loop.choice.ready!=1 || pe.loop.choice.result)return 0;
     unsigned reason=li2_lp_relocation_reason(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild,&pe.loop.check);
     return reason && equal(&pe.loop.choice,&pe.loop.check,sizeof pe.loop.choice)?reason:0;
@@ -135,6 +151,9 @@ static int plr_fallback_value(const struct pda_completion *c) {
        w->version!=LI2_LE_VERSION || w->bytes!=sizeof *w || w->ready ||
        w->result!=LI2_LE_NO_ENVELOPE || w->entry!=m->source.entry || w->eligible ||
        li2_le_validate(pe.loop.pages,pe.loop.source,m->source.entry,w,&pe.loop.check))goto done;
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+    if(!ple_history_no_envelope(m->source.entry))goto done;
+#endif
     struct li2_pg_plan *g=&pe.rebuild;
     if(li2_lpf_graph_history(pe.loop.pages,pe.loop.source,m->source.entry,&m->header.layout,
         m->header.table,g) || g->ready || g->heads!=e->heads || g->exits!=e->exits ||
@@ -233,3 +252,7 @@ static int plr_direct_value(const struct pda_completion *c) {
     le_zero(&pe.loop.direct,sizeof pe.loop.direct);
     plr_scope_leave(PLR_HISTORY);return valid;
 }
+
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+#include "persistent_loop_effects_owner.inc"
+#endif

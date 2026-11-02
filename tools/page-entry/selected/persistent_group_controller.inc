@@ -39,6 +39,12 @@
 #include "resident_source_lease.h"
 #endif
 #include "persistent_group_config.h"
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+#if LI2_PG_LOOP_EFFECTS_BINDING_VERSION != 1 || LI2_PG_LOOP_EFFECTS_POLICY_VERSION != 13 || \
+    LI2_PG_LOOP_EFFECTS_SCALAR_VERSION != 3 || LI2_PG_LOOP_EFFECTS_MOV_VERSION != 2
+#error "policy13 requires its separately bound source, scalar and byte-store contracts"
+#endif
+#endif
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
 #if LI2_PG_LOOP_BINDING_VERSION != 1 || LI2_PG_LOOP_POLICY_VERSION != 12 || LI2_PG_LOOP_FALLBACK_VERSION != 11 || \
     LI2_PG_LOOP_ENCODING_VERSION != 2
@@ -326,6 +332,9 @@ struct li2_pg_epoch {
     struct li2_pg_compact compact_rebuild;
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
     struct plr_state loop;
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+    struct ple_state effects;
+#endif
 #endif
 #ifndef LI2_PERSISTENT_RETAINED_TWO
     struct pe_payload publication;
@@ -784,10 +793,21 @@ static void ped_count(uint64_t *v) {pe_need(*v!=UINT64_MAX,PE_OVERFLOW,0);++*v;}
 #else
 #define PLR_COUNT(n) ped_count(&pe.loop.counts.n)
 #endif
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+#define PLE_COUNT(n) ped_count(&pe.effects.counts.n)
+#endif
 #include "persistent_loop_owner.inc"
 #endif
 static unsigned ped_bank_for(uintptr_t pc) {return pc<(UINT64_C(1)<<31)?0:1;}
 static int ped_capacity(void) {
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+    const struct ple_counts *ec=&pe.effects.counts;
+    if(ec->chooser_attempts==UINT64_MAX || ec->chooser_selected==UINT64_MAX ||
+       ec->chooser_no_envelope==UINT64_MAX || ec->publications13==UINT64_MAX ||
+       ec->hits13==UINT64_MAX || ec->entries_with13==UINT64_MAX ||
+       ec->completed_with13==UINT64_MAX || ec->historical_reconstructions==UINT64_MAX ||
+       ec->actual_entries13==UINT64_MAX)return 0;
+#endif
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
     const struct plr_counts *lc=&pe.loop.counts;
     if(lc->chooser_attempts==UINT64_MAX || lc->chooser_selected==UINT64_MAX ||
@@ -914,6 +934,10 @@ static void ped_reset_attempt(void) {
     pe_need(!pe.loop.scope && !pe_decoding,PE_REENTRY,240);
     pe.loop.route=pe.loop.choice_complete=0;
     le_zero(&pe.loop.choice,sizeof pe.loop.choice);
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+    pe.effects.choice_complete=0;
+    le_zero(&pe.effects.choice,sizeof pe.effects.choice);
+#endif
 #endif
     le_zero(&pe.p,sizeof pe.p);le_zero(&pe.ingress,sizeof pe.ingress);le_zero(&pe.before,sizeof pe.before);
     le_zero(&pe.after,sizeof pe.after);le_zero(&pe.unexpected_frame,sizeof pe.unexpected_frame);
@@ -1159,11 +1183,21 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
             !pe.miss.status && !pe.miss.reason && !pe.miss.site && !pe.miss.pc && !pe.miss.detail,
             PE_PLAN,pe.build_result);
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
-        int build=pe.loop.route==LI2_LP_VERSION?
+        int build=
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+            pe.loop.route==LI2_LPE_VERSION?
+            li2_lpe_compact_build(&pe.cold,&pe.rebuild,&pe.candidate.plan,&pe.effects.check):
+#endif
+            pe.loop.route==LI2_LP_VERSION?
             li2_lp_compact_build(&pe.cold,&pe.rebuild,&pe.candidate.plan,&pe.loop.check):
             li2_lpf_compact_build(&pe.cold,&pe.rebuild,&pe.candidate.plan);
         pe_need(!build,PE_PLAN,1);++pe.plan_proofs;
-        int validate=pe.loop.route==LI2_LP_VERSION?
+        int validate=
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+            pe.loop.route==LI2_LPE_VERSION?
+            li2_lpe_compact_validate(&pe.candidate.plan,&pe.rebuild,&pe.compact_rebuild,&pe.effects.check):
+#endif
+            pe.loop.route==LI2_LP_VERSION?
             li2_lp_compact_validate(&pe.candidate.plan,&pe.rebuild,&pe.compact_rebuild,&pe.loop.check):
             li2_lpf_compact_validate(&pe.candidate.plan,&pe.rebuild,&pe.compact_rebuild);
         pe_need(!validate,PE_PLAN,2);++pe.plan_proofs;
@@ -1251,6 +1285,9 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
 #endif
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
         if(pe.loop.route==LI2_LP_VERSION)PLR_COUNT(hits12);
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+        if(pe.loop.route==LI2_LPE_VERSION)PLE_COUNT(hits13);
+#endif
 #endif
         return pe_ready()?0:PE_PUBLICATION;
     }
@@ -1345,6 +1382,9 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
     g->proof_complete=1;g->complete=1;pe.p.publication=1;ped_count(PGC_REF(publications));
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
     if(pe.loop.route==LI2_LP_VERSION)PLR_COUNT(publications12);
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+    if(pe.loop.route==LI2_LPE_VERSION)PLE_COUNT(publications13);
+#endif
 #endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO
     pe.retained[pe.selected_slot].identity.generation=g->generation;
@@ -2010,6 +2050,26 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 }
 static void selected_persistent_report(unsigned status,unsigned code,long detail) {
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+    {
+        struct writer effects={.used=0};text(&effects,"LI2_LOOP_EFFECTS {\"version\":1");
+        field(&effects,",\"policy_version\":",LI2_LPE_VERSION);
+        field(&effects,",\"scalar_version\":",LI2_LOOP_SCALAR_VERSION);
+        field(&effects,",\"mov_version\":",LI2_BMG_VERSION);
+        field(&effects,",\"status\":",status);field(&effects,",\"failure_code\":",code);
+        field(&effects,",\"route\":",pe.loop.route);field(&effects,",\"scope\":",pe.loop.scope);
+        field(&effects,",\"choice_complete\":",pe.effects.choice_complete);
+#define PLE_FIELD(n) field(&effects,",\"" #n "\":",pe.effects.counts.n)
+        PLE_FIELD(chooser_attempts);PLE_FIELD(chooser_selected);PLE_FIELD(chooser_no_envelope);
+        PLE_FIELD(publications13);PLE_FIELD(hits13);PLE_FIELD(entries_with13);
+        PLE_FIELD(completed_with13);PLE_FIELD(historical_reconstructions);PLE_FIELD(actual_entries13);
+#undef PLE_FIELD
+        text(&effects,"}\n");
+        if(raw(SYS_write,report_fd<0?2:report_fd,(long)effects.bytes,effects.used,0,0,0)!=(long)effects.used) {
+            (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
+        }
+    }
+#endif
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
     {
         struct writer loop={.used=0};text(&loop,"LI2_LOOP_RUNTIME {\"version\":1");
@@ -2236,3 +2296,6 @@ int li2_pg_loop_replay_valid(const struct li2_lpr_replay *request,
 #endif
 #undef PLR_EXIT
 #undef PLR_RECOVER
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+#undef PLE_COUNT
+#endif

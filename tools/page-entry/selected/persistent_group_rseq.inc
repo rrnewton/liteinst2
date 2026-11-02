@@ -380,7 +380,11 @@ int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,co
         }
         struct li2_span_decoded actual={0};
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
-        int describe=p->version==LI2_LP_VERSION?li2_lr_describe(d->decoded.pc,window,n,&actual):
+        int describe=
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+            p->version==LI2_LPE_VERSION?li2_ler_describe(d->decoded.pc,window,n,&actual):
+#endif
+            p->version==LI2_LP_VERSION?li2_lr_describe(d->decoded.pc,window,n,&actual):
             (int)li2_decoder_span_describe(d->decoded.pc,window,n,&actual);
         if(describe || !region_rseq_equal(d,&actual,sizeof actual))return pgr_bad(LI2_RSEQ_PLAN,502);
 #else
@@ -396,6 +400,12 @@ int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,co
 #endif
         if(h->kind==LI2_PE_NONE) {
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+            if(p->version==LI2_LPE_VERSION) {
+                if(actual.ready!=1 || actual.refusal || li2_ler_none(d->decoded.pc,window,n,&actual))
+                    return pgr_bad(LI2_RSEQ_PLAN,503);
+            } else
+#endif
             if(p->version==LI2_LP_VERSION) {
                 if(actual.ready!=1 || actual.refusal || li2_lr_none(d->decoded.pc,window,n,&actual))
                     return pgr_bad(LI2_RSEQ_PLAN,503);
@@ -413,7 +423,14 @@ int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,co
             int e=decoded_footprint(&actual.decoded,uc,1);if(e)return pgr_bad((unsigned)e,504);
         } else if(h->kind==LI2_PE_MOV) {
             struct li2_mg_store actual_store={0};
-            if(actual.ready || !actual.refusal || li2_decoder_mov_store(d->decoded.pc,window,n,&actual_store) ||
+            if(actual.ready || !actual.refusal ||
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+               (p->version==LI2_LPE_VERSION && p->instruction[i].mov.version==LI2_BMG_VERSION?
+                li2_decoder_byte_mov_store(d->decoded.pc,window,n,&actual_store):
+                li2_decoder_mov_store(d->decoded.pc,window,n,&actual_store)) ||
+#else
+               li2_decoder_mov_store(d->decoded.pc,window,n,&actual_store) ||
+#endif
                actual_store.ready!=1 || actual_store.refusal ||
 #ifdef LI2_PERSISTENT_DISPATCH
                !region_rseq_equal(&actual_store,&p->instruction[i].mov,sizeof actual_store) ||

@@ -19,12 +19,21 @@
 #error "exact separate policy14 capture selection"
 #endif
 #endif
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+#if LI2_PERSISTENT_LOOP_EFFECTS != 1
+#error "explicit byte-store/register-multiply LOOP composition"
+#endif
+#include "persistent_loop_effects_plan.h"
+#endif
 #define LI2_LPR_VERSION 1U
 #define LI2_LPR_HEADER_VERSION 2U
 #define LI2_LPR_CAPTURE_VERSION 14U
 /* This is an exact descriptive dispatch, not proof of a stored certificate.
    Header/source/immutable bytes and owner lifetime must authenticate first. */
 static inline int li2_lpr_policy(unsigned p) {
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+    if(p==LI2_LPE_VERSION)return 1;
+#endif
     return p==LI2_PF_VERSION || p==LI2_LP_VERSION;
 }
 static inline int li2_lpr_header(uint64_t version,uint64_t policy,unsigned plan) {
@@ -32,6 +41,9 @@ static inline int li2_lpr_header(uint64_t version,uint64_t policy,unsigned plan)
 }
 static inline int li2_lpr_exit(const struct li2_pg_compact *p,uintptr_t pc,uint64_t flags) {
     if(!p)return -2;
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+    if(p->version==LI2_LPE_VERSION)return li2_lpe_compact_exit(p,pc,flags);
+#endif
     if(p->version==LI2_LP_VERSION)return li2_lp_compact_exit(p,pc,flags);
     if(p->version==LI2_PF_VERSION)return li2_lpf_compact_exit(p,pc,flags);
     return -2;
@@ -40,6 +52,9 @@ static inline int li2_lpr_recover(const struct li2_pg_compact *p,uintptr_t pc,
     const uint64_t r[16],uint64_t flags,const uint64_t spill[4],union li2_pg_guard *scratch,
     struct li2_pg_recovered *out) {
     if(!p)return LI2_PG_CORRUPT;
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+    if(p->version==LI2_LPE_VERSION)return li2_lpe_compact_recover(p,pc,r,flags,spill,scratch,out);
+#endif
     if(p->version==LI2_LP_VERSION)return li2_lp_compact_recover(p,pc,r,flags,spill,scratch,out);
     if(p->version==LI2_PF_VERSION)return li2_lpf_compact_recover(p,pc,r,flags,spill,scratch,out);
     return LI2_PG_CORRUPT;

@@ -34,6 +34,9 @@ static int pda_direct_exit_value(const struct pda_completion *c) {
        !e->exits || e->exits>LI2_PG_BOUNDARIES || e->index>=e->exits || e->arm>1 ||
        (e->flags&(SELECTED_TF|SELECTED_RF))!=SELECTED_RF)return 0;
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+    if(c->member[e->member].header.plan_policy==LI2_LPE_VERSION)return ple_direct_value(c);
+#endif
     if(c->member[e->member].header.plan_policy==LI2_LP_VERSION)return plr_direct_value(c);
     if(c->member[e->member].header.plan_policy!=LI2_PF_VERSION ||
        !plr_fallback_value(c))return 0;
@@ -563,6 +566,9 @@ static int pda_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,uc
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
     /* Count the actual authenticated redirect, not membership of a peer. */
     unsigned actual_loop_entry=0,entry_members=0;
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+    unsigned actual_effects_entry=0;
+#endif
     for(unsigned i=0;i<w->view.count;i++) {
         const struct li2_pgd_member *m=&w->view.member[i];
         if(m->identity.slot!=w->view.entry.slot || m->identity.bank!=w->view.entry.bank ||
@@ -571,6 +577,9 @@ static int pda_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,uc
         if(li2_pgs_head_lookup(m->plan,w->view.entry.target.pc,&target)!=1 ||
            !equal(&target,&w->view.entry.target,sizeof target))return PE_FRAME;
         ++entry_members;actual_loop_entry=m->plan->version==LI2_LP_VERSION;
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+        actual_effects_entry=m->plan->version==LI2_LPE_VERSION;
+#endif
     }
     if(entry_members!=1)return PE_FRAME;
 #endif
@@ -581,6 +590,12 @@ static int pda_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,uc
     for(unsigned i=0;i<w->view.count;i++)loop_entry|=w->view.member[i].plan->version==LI2_LP_VERSION;
     if(loop_entry)PLR_COUNT(entries_with12);
     if(actual_loop_entry)PLR_COUNT(actual_entries12);
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+    unsigned effects_entry=0;
+    for(unsigned i=0;i<w->view.count;i++)effects_entry|=w->view.member[i].plan->version==LI2_LPE_VERSION;
+    if(effects_entry)PLE_COUNT(entries_with13);
+    if(actual_effects_entry)PLE_COUNT(actual_entries13);
+#endif
 #endif
     selected_step_pending=1;selected_pending_route=SELECTED_PERSISTENT_EPOCH;pe_active=1;
 #ifdef LI2_PERSISTENT_SUBENTRY
@@ -781,6 +796,11 @@ static void pda_complete(void) {
     unsigned loop_completed=0;
     for(unsigned i=0;i<c->count;i++)loop_completed|=c->member[i].header.plan_policy==LI2_LP_VERSION;
     if(loop_completed)PLR_COUNT(completed_with12);
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+    unsigned effects_completed=0;
+    for(unsigned i=0;i<c->count;i++)effects_completed|=c->member[i].header.plan_policy==LI2_LPE_VERSION;
+    if(effects_completed)PLE_COUNT(completed_with13);
+#endif
 #endif
 }
 static _Noreturn void pda_abort(unsigned code,long detail) {
