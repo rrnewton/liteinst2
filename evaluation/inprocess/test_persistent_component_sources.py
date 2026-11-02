@@ -24,13 +24,13 @@ import persistent_component_sources as subject
 
 FACTS = {
     'persistent_group_compact.c': (
-        47353, '7dc4e4af1bd9f20bdc930f249e19979c61c04ec971fb3a130f4a3c080a37214e',
+        47574, '99ae834f6554b305eee450b64ba08d0efc5d7ef9bf666159567b9bcec8eb09d7',
         26769, '1ac0af7a2bb1a3621bd43754fac1173b0cf5ff16658c0be7b160088929ba5d2b'),
     'persistent_group_compact.h': (
         7608, '69586fc20db5ff1496b196ac006f54f7a9c0ce66eb7983791f6ecd84111ee96c',
         4113, '79d7b396a80bd426bc4e02721e1c6ed1cfa38c74617d470ef534e8bd6a2ddf32'),
     'persistent_group_plan.c': (
-        59591, '049be2a5a7d9447fe23e93383be3b01f0086e808c30a01cf910fe4382272cb15',
+        62348, 'd49ca2b1ffc4aac44bcdb5c84b6d7edfe73ef055b7b2d0a24153f56017bb4a7b',
         43305, '115fe0e64b7919674877bf7782c8bdc11bb3581fe41d766f373303fc4a7fb53b'),
     'persistent_group_plan.h': (
         12813, '1a8a0273efa7981bb11ecf33f5f1761ecce48095f17ca00055c25face81cfc5f',
