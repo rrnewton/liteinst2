@@ -98,6 +98,7 @@ impl<'a> CheckedRet<'a> {
         physical.shape(state)?;
         Ok(Self { physical, state })
     }
+    #[inline(always)]
     fn commit(
         self,
         selected: SelectedFunction,
@@ -154,6 +155,7 @@ impl<'a> CheckedRet<'a> {
     }
 }
 impl CommittedRet<'_> {
+    #[inline(always)]
     fn finish(self) -> Result<(), BridgeError> {
         let Self { checked, row } = self;
         let CheckedRet { physical, state } = checked;
