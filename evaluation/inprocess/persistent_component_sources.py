@@ -11,7 +11,7 @@ from pathlib import Path
 from page_selected import fact, need
 
 DATA = Path(__file__).with_suffix('.json')
-DATA_FACT = dict(bytes=5480, sha256='bec4b3724cffe2a6047babab5d199d12e66347b82bc8344c673a006c712c96ba')
+DATA_FACT = dict(bytes=5728, sha256='792824f7d09faeeeada4333094cfb74fd5bbd2fcd92adf456fe4e72c039690c7')
 GROUP = frozenset(('persistent_group_compact.c', 'persistent_group_compact.h',
                    'persistent_group_plan.c', 'persistent_group_plan.h'))
 RETAINED = frozenset(('persistent_retained_two.inc',))

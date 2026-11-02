@@ -1,0 +1,560 @@
+{
+  "archive": {
+    "bytes": 12007764,
+    "sha256": "d5ae6933ce1e905be557a9dac3ffd2341c7649c42f58f9594bba2365ea8ba399"
+  },
+  "component_results": {
+    "bounded_fusion_plan": {
+      "copied_boundaries": 56,
+      "corruptions": 14,
+      "direct_models": 1536,
+      "emitted_execution": 0,
+      "interiors": 19964,
+      "misses": 10,
+      "mov_models": 1280,
+      "old_version_refusals": 60,
+      "owner_credit": 0,
+      "plans": 14,
+      "typed_direct": 41984,
+      "typed_mov": 83456,
+      "version": 11
+    },
+    "loop_envelope": {
+      "boundaries_max": 8,
+      "corruptions": 16,
+      "emitted": 0,
+      "heads_max": 128,
+      "members": 2,
+      "owner_entries": 0,
+      "positive": 122,
+      "profile": "loop-envelope-component-v1",
+      "refused": 9,
+      "version": 12
+    },
+    "loop_plan": {
+      "bridge_controls": 53,
+      "copied_boundaries": 314,
+      "corruptions": 16,
+      "direct_models": 1152,
+      "emitted_execution": 0,
+      "interiors": 83383,
+      "misses": 8,
+      "mov_models": 320,
+      "old_version_refusals": 210,
+      "owner_credit": 0,
+      "plans": 35,
+      "profile": "loop-plan-component-v1",
+      "typed_direct": 31488,
+      "typed_mov": 20864,
+      "version": 12
+    },
+    "scalar_read": {
+      "accepted": 766,
+      "descriptor_version": 2,
+      "instruction_execution": false,
+      "model_cases": 269,
+      "new_codes": 5,
+      "old_rows": 5,
+      "owner_execution": false,
+      "postseal_equal": true,
+      "refusals": 63,
+      "schema": 1
+    },
+    "scalar_span_metadata": {
+      "accepted": 1283,
+      "code_forms": 131,
+      "max_register_rows": 4,
+      "none_checks": 1283,
+      "old_accepts": 53,
+      "plan_controls": 49,
+      "postseal_equal": 1,
+      "refusals": 26,
+      "schema": 1
+    }
+  },
+  "components_passed": 5,
+  "cpu": 128,
+  "empty_capture": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "executed_sources": {
+    "evaluation/inprocess/diagnose_loop_owner.py": {
+      "bytes": 10012,
+      "sha256": "ba11ca1eb9a1a8ef0c264d50757a0206d1d694ecc8dcd5e74f13174f0fc02cac"
+    },
+    "evaluation/inprocess/loop_components/run.py": {
+      "bytes": 30823,
+      "sha256": "9bde42ffe06f14b749f9370a01bdb24c01400a22f9b660e8013e259f7662665c"
+    },
+    "evaluation/inprocess/persistent_loop_native.py": {
+      "bytes": 16962,
+      "sha256": "6726516bd92d59f7d84a7502fcaa7eb6c08e585fd6f0c8127c4686ee6e4a5105"
+    },
+    "evaluation/inprocess/persistent_loop_native_prerequisite.py": {
+      "bytes": 20878,
+      "sha256": "7f7ba3d943a3e489559f967c83da2be6b4a01e08803b54dddaf2d54b536a9ca7"
+    }
+  },
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 128,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "interpretation": "The operator described repeated pre-prefix CPU-limit failures. The command rows show SIGKILL and elapsed wall time; they do not measure CPU time or identify the runtime hotspot.",
+  "legacy_prerequisites_validated": false,
+  "native_cases_passed": 28,
+  "native_control_counts": {
+    "elf_source": 29,
+    "layout": 560,
+    "native": 20100
+  },
+  "next_case": {
+    "build_lane": "maintained",
+    "case": 2,
+    "command_created": false,
+    "exit": null,
+    "launched": false,
+    "placement": 1,
+    "status": "failed"
+  },
+  "observation": "All nine launched subjects ended with SIGKILL (-9), expected exit0, under the unchanged 30 CPU-second/60 wall-second bounds. Their timed_out flags are false and all 27 stdout/stderr/record captures are empty. No application prefix or owner state was captured.",
+  "operator_stop": {
+    "observed_child_count": 0,
+    "reason": "repeated pre-prefix CPU-limit failures; preserve failed partial diagnostic and investigate one bounded sample",
+    "sent": true,
+    "signal": "SIGINT"
+  },
+  "outer": {
+    "error": "AssertionError()",
+    "operator_stop_record": {
+      "bytes": 277,
+      "sha256": "938e3c37d8c883fe6d6d11247f87855b321c5cf3cfdf1638c2d9e2f1183ea512"
+    },
+    "profile": "loop-diagnostic-sequence-v1",
+    "receipt": {
+      "bytes": 4557,
+      "sha256": "25c4ea6d88027f7f7b68bd4b13b2ee8da3a4a3ecc076a356e7b2b08a211d10e2"
+    },
+    "status": "failed"
+  },
+  "owner_build_setup_commands_completed": 70,
+  "owner_case_status_counts": {
+    "failed": 10,
+    "unexecuted": 46
+  },
+  "owner_error": "KeyboardInterrupt: ",
+  "owner_final_errors": [],
+  "owner_record_bytes_total": 0,
+  "owner_subject_commands_completed": 9,
+  "owner_subjects_completed_successfully": 0,
+  "owner_subjects_launched": 9,
+  "owner_subjects_not_launched": 47,
+  "owner_subjects_planned": 56,
+  "owner_validation_controls_executed": 0,
+  "performance_credit": false,
+  "preservation": "The prior seed-join failure and this interrupted owner attempt remain failed. The separate focused seed comparator regression does not qualify owner execution. Full original legacy, lifecycle, 392/522 qualification and performance gates remain mandatory.",
+  "production_prerequisite_eligible": false,
+  "profile": "loop-diagnostic-startup-failure-checkpoint-v1",
+  "projection_scope": "Whole closed receipt and command-row metadata joined; empty failed-subject captures checked. This checkpoint does not rerun native or component readers.",
+  "qualification_credit": false,
+  "remaining_cases_unexecuted": 46,
+  "reproduce": {
+    "commands": [
+      [
+        "python3",
+        "-B",
+        "evaluation/inprocess/persistent_loop_native.py",
+        "--expect-revision",
+        "9b157b79a271952c92d21a6c3b51cbdbae16b627",
+        "--cpu",
+        "128",
+        "--output",
+        "target/evaluation/inprocess/<FRESH_NATIVE>"
+      ],
+      [
+        "python3",
+        "-B",
+        "evaluation/inprocess/loop_components/run.py",
+        "--expect-revision",
+        "9b157b79a271952c92d21a6c3b51cbdbae16b627",
+        "--cpu",
+        "128",
+        "--archive",
+        "target/evaluation/inprocess/<FRESH_NATIVE>/artifacts/decoder.a",
+        "--archive-sha256",
+        "<FRESH_ARCHIVE_SHA>",
+        "--output",
+        "target/evaluation/inprocess/<FRESH_COMPONENT>"
+      ],
+      [
+        "python3",
+        "-B",
+        "evaluation/inprocess/diagnose_loop_owner.py",
+        "--expect-revision",
+        "9b157b79a271952c92d21a6c3b51cbdbae16b627",
+        "--cpu",
+        "128",
+        "--loop-native-receipt",
+        "target/evaluation/inprocess/<FRESH_NATIVE>/receipt.json",
+        "--loop-native-receipt-sha256",
+        "<FRESH_NATIVE_SHA>",
+        "--loop-component-receipt",
+        "target/evaluation/inprocess/<FRESH_COMPONENT>/receipt.json",
+        "--loop-component-receipt-sha256",
+        "<FRESH_COMPONENT_SHA>",
+        "--output",
+        "target/evaluation/inprocess/<FRESH_DIAGNOSTIC>"
+      ]
+    ],
+    "commands_are_portable_recipes": true,
+    "interruption": "These commands reproduce the bounded experiment. This historical attempt was manually stopped with SIGINT after nine closed failures and an observed child-free collector; no automatic interruption or identical timing is prescribed for a fresh run.",
+    "original_argv_observed": false,
+    "precondition": "Clean exact revision; one externally reserved CPU; offline Cargo dependencies and compiler tools on PATH. Create fresh native28 and component receipts, then run the unchanged diagnostic with their actual hashes and the native-built archive."
+  },
+  "revision": "9b157b79a271952c92d21a6c3b51cbdbae16b627",
+  "schema": 1,
+  "scope": "Closed partial diagnostic; native reference and pure component results do not validate translated owner execution. All durations are validation cost, not application performance.",
+  "seed_prerequisite": {
+    "bounds": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "captures": {
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 5792,
+        "sha256": "81490239c3ff3e31dad36f90e2c00bdb506d6d672d25a87fb971ee9c7209682f"
+      }
+    },
+    "elf": {
+      "bytes": 26752,
+      "sha256": "5d0a7d535ce7aff4fd212f643dea77fa4526e1842539f5cf07e7f096cfb668b9"
+    },
+    "exit": 0,
+    "reconstructed_and_authenticated_before_subject_launch": true,
+    "status": "passed",
+    "whole_record_sha256": "9b2c42fb69a77d6436fbb1680a48d4df6ee4da3219dc8df4f056dcac61afcf47"
+  },
+  "source": {
+    "head_sources_match": true,
+    "revision": "9b157b79a271952c92d21a6c3b51cbdbae16b627",
+    "source_manifest_sha256": "05104f2aa84a8ff4073db13d8ad04782cc69f5e3c3560398eb621364c196b550",
+    "tracked_clean": true,
+    "tree": "96bbbb66efc216437bd572617fb08e281aa3b015"
+  },
+  "stages": [
+    {
+      "bounds": {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "finite": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "program": [
+          30,
+          536870912,
+          16777216,
+          60
+        ],
+        "release_build": [
+          30,
+          536870912,
+          16777216,
+          60
+        ],
+        "seed": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "cleanup_complete": true,
+      "commands": 82,
+      "commands_sha256": "5952d9fd0ff187c2eb49f8466c904b2d0ee387a868c6744b65386f4bf9783de3",
+      "exit": 0,
+      "inputs_unchanged": true,
+      "name": "native",
+      "planned_commands": 82,
+      "receipt": {
+        "bytes": 2421261,
+        "sha256": "3b1e7b3112e0b7bfa2d162f492b2538e6ce3572515b9c2e0c6a95b347932149c"
+      },
+      "source_unchanged": true,
+      "status": "observed_native_references",
+      "validation_duration_ns": 454564531767
+    },
+    {
+      "bounds": {
+        "build": [
+          30,
+          536870912,
+          16777216,
+          60
+        ],
+        "component": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "cleanup_complete": true,
+      "commands": 60,
+      "commands_sha256": "25939700fc982b5b57e5fbe5d62c15275d4f388129a0c922d0b16e2e154079ad",
+      "exit": 0,
+      "inputs_unchanged": true,
+      "name": "components",
+      "planned_commands": 60,
+      "receipt": {
+        "bytes": 353817,
+        "sha256": "5695f1135015be09b2ff349c70386f1bc5713f342fbbbb96297a2e1587f0636e"
+      },
+      "source_unchanged": true,
+      "status": "components_passed",
+      "validation_duration_ns": 37654661668
+    },
+    {
+      "bounds": {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "finite": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "program": [
+          30,
+          536870912,
+          16777216,
+          60
+        ],
+        "release_build": [
+          30,
+          536870912,
+          16777216,
+          60
+        ],
+        "seed": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "cleanup_complete": true,
+      "commands": 79,
+      "commands_sha256": "1bb0e59bb1601f3b228e8bfe43cd8d34b2e34da062a581f06412549db2835da7",
+      "exit": 1,
+      "inputs_unchanged": true,
+      "name": "owner",
+      "planned_commands": 126,
+      "receipt": {
+        "bytes": 2487112,
+        "sha256": "aa76179573cb2deec9533e3ff1a83cbef43ee9a8b5c29f4a0994e0e3dfd078e9"
+      },
+      "source_unchanged": true,
+      "status": "failed",
+      "validation_duration_ns": 408162360999
+    }
+  ],
+  "status": "failed",
+  "subjects": [
+    {
+      "build_lane": "maintained",
+      "capture_bytes": {
+        "record": 0,
+        "stderr": 0,
+        "stdout": 0
+      },
+      "case": 0,
+      "exit": -9,
+      "expected_exit": 0,
+      "launched": true,
+      "placement": 0,
+      "status": "failed",
+      "timed_out": false,
+      "validation_duration_ns": 30156740412
+    },
+    {
+      "build_lane": "maintained",
+      "capture_bytes": {
+        "record": 0,
+        "stderr": 0,
+        "stdout": 0
+      },
+      "case": 0,
+      "exit": -9,
+      "expected_exit": 0,
+      "launched": true,
+      "placement": 1,
+      "status": "failed",
+      "timed_out": false,
+      "validation_duration_ns": 30156413502
+    },
+    {
+      "build_lane": "maintained",
+      "capture_bytes": {
+        "record": 0,
+        "stderr": 0,
+        "stdout": 0
+      },
+      "case": 0,
+      "exit": -9,
+      "expected_exit": 0,
+      "launched": true,
+      "placement": 2,
+      "status": "failed",
+      "timed_out": false,
+      "validation_duration_ns": 30159588853
+    },
+    {
+      "build_lane": "maintained",
+      "capture_bytes": {
+        "record": 0,
+        "stderr": 0,
+        "stdout": 0
+      },
+      "case": 0,
+      "exit": -9,
+      "expected_exit": 0,
+      "launched": true,
+      "placement": 3,
+      "status": "failed",
+      "timed_out": false,
+      "validation_duration_ns": 30160053993
+    },
+    {
+      "build_lane": "maintained",
+      "capture_bytes": {
+        "record": 0,
+        "stderr": 0,
+        "stdout": 0
+      },
+      "case": 1,
+      "exit": -9,
+      "expected_exit": 0,
+      "launched": true,
+      "placement": 0,
+      "status": "failed",
+      "timed_out": false,
+      "validation_duration_ns": 30153553374
+    },
+    {
+      "build_lane": "maintained",
+      "capture_bytes": {
+        "record": 0,
+        "stderr": 0,
+        "stdout": 0
+      },
+      "case": 1,
+      "exit": -9,
+      "expected_exit": 0,
+      "launched": true,
+      "placement": 1,
+      "status": "failed",
+      "timed_out": false,
+      "validation_duration_ns": 30156225141
+    },
+    {
+      "build_lane": "maintained",
+      "capture_bytes": {
+        "record": 0,
+        "stderr": 0,
+        "stdout": 0
+      },
+      "case": 1,
+      "exit": -9,
+      "expected_exit": 0,
+      "launched": true,
+      "placement": 2,
+      "status": "failed",
+      "timed_out": false,
+      "validation_duration_ns": 30158669575
+    },
+    {
+      "build_lane": "maintained",
+      "capture_bytes": {
+        "record": 0,
+        "stderr": 0,
+        "stdout": 0
+      },
+      "case": 1,
+      "exit": -9,
+      "expected_exit": 0,
+      "launched": true,
+      "placement": 3,
+      "status": "failed",
+      "timed_out": false,
+      "validation_duration_ns": 30157175713
+    },
+    {
+      "build_lane": "maintained",
+      "capture_bytes": {
+        "record": 0,
+        "stderr": 0,
+        "stdout": 0
+      },
+      "case": 2,
+      "exit": -9,
+      "expected_exit": 0,
+      "launched": true,
+      "placement": 0,
+      "status": "failed",
+      "timed_out": false,
+      "validation_duration_ns": 30153019893
+    }
+  ]
+}

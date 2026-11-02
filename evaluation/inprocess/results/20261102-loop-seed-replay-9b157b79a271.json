@@ -1,0 +1,219 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_seconds": 30,
+    "file_bytes": 16777216,
+    "wall_seconds": 60
+  },
+  "builds": 0,
+  "canonical_equal": true,
+  "canonical_seed_sha256": "412cdbb295c4813c87b3bb739e822af7f5483a1d6bae121ce95032cdc0c1c44e",
+  "commands": [
+    {
+      "bounds": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 2149,
+          "sha256": "0e2001da90d149ad971b8cf320539ef4fc14ac32519654ac3ea9e2a2657dc321"
+        }
+      },
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "seed-headers",
+      "profile": "metadata",
+      "validation_duration_ns": 12962155
+    },
+    {
+      "bounds": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "seed-link",
+      "profile": "release_build",
+      "validation_duration_ns": 69361859
+    },
+    {
+      "bounds": [
+        10,
+        268435456,
+        4194304,
+        20
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 175,
+          "sha256": "000adcbe663a6d2d0a51726df264387aa8f82e539329039d910a2620d2eec82a"
+        }
+      },
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "seed-libraries",
+      "profile": "inspect",
+      "validation_duration_ns": 5204085
+    },
+    {
+      "bounds": [
+        5,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 5792,
+          "sha256": "954a8da5c92c43d8dda393a253002b736fcd0280c65e3bdbbb69e345bd16d5f7"
+        }
+      },
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "seed-prerequisite",
+      "profile": "seed",
+      "validation_duration_ns": 3794209
+    }
+  ],
+  "comparator": {
+    "bytes": 20878,
+    "sha256": "7f7ba3d943a3e489559f967c83da2be6b4a01e08803b54dddaf2d54b536a9ca7"
+  },
+  "component_nodes": 6,
+  "controls": [
+    "cpuid_word",
+    "component_extent",
+    "fxsave_hash",
+    "missing_field",
+    "extra_field",
+    "bool_int"
+  ],
+  "cpuid_nodes": 68,
+  "difference_paths_sha256": "08e32f4e5a574ec4cc9c081313392116c82286ac3c1fd2ba937d3a8d6ad87ca7",
+  "driver": {
+    "bytes": 13639,
+    "sha256": "bdd8858820f2404757874cf5e7385189253a33f4ace8234d4377a56765cd10e2"
+  },
+  "error_type": null,
+  "git": {
+    "bytes": 4397400,
+    "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+  },
+  "historical_failure_reclassified": false,
+  "native_execution": 0,
+  "native_receipt": {
+    "bytes": 2420781,
+    "sha256": "645225d40f3e516a8c887ef0d6d9ef642efef005b8678c988a255c211fcd2912"
+  },
+  "original_cpu": 131,
+  "original_hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 131,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "original_seed_profile": {
+    "accepted": true,
+    "architectural_bytes_normalized": 0,
+    "cpu": 131,
+    "elf_sha256": "2076077fce33a7ad69cb0e27c2bd638a3cdc17714da96f6a89e3dc585fdc2449",
+    "fdp": 0,
+    "fip": 0,
+    "format": "c40e9d6d093b434587ecb375851113925d71e17a28258335a0aef0315b80c0b5",
+    "full_fxsave_sha256": "d47dd413bfffba65e91d78d25f1d10eaff4da7422cbb765763f395bef709692f",
+    "pid": 3883795,
+    "profile": "x87-seed-zero-fip-v1",
+    "record_bytes": 5792,
+    "record_sha256": "954a8da5c92c43d8dda393a253002b736fcd0280c65e3bdbbb69e345bd16d5f7",
+    "seed_bytes": "dbe3d9e8d9eb",
+    "seed_pcs": [
+      4198842,
+      4198872
+    ]
+  },
+  "original_seed_status": "passed",
+  "original_source": {
+    "head_sources_match": true,
+    "revision": "0bfae73a466836c97633396794e31a78d449aedd",
+    "source_manifest_sha256": "8cd1a2d0c75c545ae6a1dd40314ee2579c3a56ea215242821a2051120ff287e7",
+    "tracked_clean": true,
+    "tree": "26a1e72154cbee2a48ec90728e5ae926bdf471b4"
+  },
+  "performance_credit": false,
+  "phase": "complete",
+  "pinned_inputs": {
+    "count": 203,
+    "sha256": "b321820b71f43481e6b11de74c905940fb831abf7717db174fcb9e1319221d02"
+  },
+  "profile": "loop-seed-record-regression-v1",
+  "python_equal": false,
+  "qualification_credit": false,
+  "reproduce": [
+    "python3",
+    "-B",
+    "evaluation/inprocess/replay_loop_native_seed.py",
+    "--expect-revision",
+    "9b157b79a271952c92d21a6c3b51cbdbae16b627",
+    "--native-receipt",
+    "<RETAINED_NATIVE_RECEIPT>",
+    "--native-receipt-sha256",
+    "645225d40f3e516a8c887ef0d6d9ef642efef005b8678c988a255c211fcd2912",
+    "--comparator-sha256",
+    "7f7ba3d943a3e489559f967c83da2be6b4a01e08803b54dddaf2d54b536a9ca7",
+    "--output",
+    "target/evaluation/inprocess/<FRESH_ATTEMPT>"
+  ],
+  "review_cpu": 8,
+  "schema": 1,
+  "scope": "Retained seed serialization regression only; original owner failure remains failed.",
+  "seed_elf": {
+    "bytes": 26752,
+    "sha256": "2076077fce33a7ad69cb0e27c2bd638a3cdc17714da96f6a89e3dc585fdc2449"
+  },
+  "seed_raw": {
+    "bytes": 5792,
+    "sha256": "954a8da5c92c43d8dda393a253002b736fcd0280c65e3bdbbb69e345bd16d5f7"
+  },
+  "source_unchanged": true,
+  "status": "passed",
+  "tuple_list_nodes": 74,
+  "validator_revision": "9b157b79a271952c92d21a6c3b51cbdbae16b627",
+  "validator_tracked_clean": true,
+  "validator_tree": "96bbbb66efc216437bd572617fb08e281aa3b015"
+}
