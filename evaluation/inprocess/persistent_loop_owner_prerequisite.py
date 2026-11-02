@@ -113,7 +113,7 @@ def prerequisite(path,expected_sha256,r,pin,binary,archive):
         if name.startswith(('resolve-','version-')):
             environment={k:v for k,v in environment.items()if k!='LI2_DECODER_FEATURES'}
             if name in('resolve-cargo','resolve-rustc'):
-                environment={k:v for k,v in environment.items()if k in ENV or k in('HOME','CARGO_HOME','RUSTUP_HOME')}
+                environment={k:v for k,v in environment.items()if k in ENV or k in('HOME','CARGO_HOME','RUSTUP_HOME','LI2_MAPS_PROFILE')}
         argv=list(map(str,argv))
         if record:
             descriptors=row['descriptors']

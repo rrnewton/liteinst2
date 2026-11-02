@@ -16,6 +16,7 @@ from persistent_loop_build_default import before_loop_default
 from persistent_loop_native_build import application, reader_support, native_namespace, native_preparation, FIXTURE
 from persistent_loop_native import (ROOT, PROFILE, ORDER, SCHEDULE, CONTROL_COUNTS, summary, control_summary)
 from checks import admission
+from page_selected_shared_decoder import local_packages, source_paths, MANIFESTS
 
 FEATURES=('scalar-region','scalar-span','linked-epoch','mov-guard','scalar-read')
 SOURCES=('lib.rs','abi.rs','arena.rs','decode.rs','scan.rs','tf.rs','write_footprint.rs',
@@ -38,7 +39,10 @@ def archive_join(actual,directory,builder,archive,pin,binary,recorded,aliases):
     need(build['status']=='passed' and build['started']is True and build['command_completed']is True and
          build['final_errors']==[] and build['configuration_unchanged']is True and
          build['registry_before']==build['registry_after'] and build['decoder_features']==list(FEATURES),
-         'complete fresh eleven-source build and unchanged registry/configuration closure')
+         'complete fresh twelve-source build and unchanged registry/configuration closure')
+    need(build['maps_profile']==dict(requested='fresh-baseline',effective='fresh-baseline',implicit_default=False) and
+         builder.environment['LI2_MAPS_PROFILE']=='fresh-baseline',
+         'exact explicit baseline C profile surrounding the fresh LOOP archive')
     need(admission.cargo_configuration(builder.environment)==build['cargo_configuration'],
          'same whole permitted Cargo configuration at prerequisite consumption')
     need(builder.environment['LI2_DECODER_FEATURES']=='scalar-read,mov-guard' and
@@ -63,14 +67,14 @@ def archive_join(actual,directory,builder,archive,pin,binary,recorded,aliases):
     _,out,err=recorded('cargo-metadata',[builder.tools['cargo'],'metadata','--manifest-path',selected/'decoder/Cargo.toml',
         '--format-version','1','--locked','--offline','--features','scalar-read,mov-guard'],env=builder.environment)
     metadata=decode(out);locked=tomllib.loads(pin(selected/'decoder/Cargo.lock').read_text())['package']
-    local=[p for p in metadata['packages']if p['source']is None]
-    need(not err and Path(metadata['target_directory']).resolve()==ROOT/'target' and len(local)==1 and
-         Path(local[0]['manifest_path'])==selected/'decoder/Cargo.toml' and
+    local=local_packages(metadata,ROOT)
+    for name in MANIFESTS: pin(ROOT/name)
+    need(not err and Path(metadata['target_directory']).resolve()==ROOT/'target' and
          {(p['name'],p['version'])for p in metadata['packages']}=={(p['name'],p['version'])for p in locked},
          'whole actual offline package closure')
-    nodes=[n for n in metadata['resolve']['nodes']if n['id']==local[0]['id']]
+    nodes=[n for n in metadata['resolve']['nodes']if n['id']==local['id']]
     need(len(nodes)==1 and nodes[0]['features']==['default','linked-epoch','mov-guard','scalar-read','scalar-region','scalar-span'],
-         'literal eleven-source feature resolution')
+         'literal LOOP and shared-no_std feature resolution')
     registry=[]
     for p in metadata['packages']:
         lock=next(x for x in locked if(x['name'],x['version'])==(p['name'],p['version']))
@@ -94,15 +98,15 @@ def archive_join(actual,directory,builder,archive,pin,binary,recorded,aliases):
              row['source']==str(directory/'generic-observe'if row['name']=='generic-observe'else target/row['name']),
              'whole actual retained artifact and original copy provenance')
     retained=directory/'artifacts';need(fact(retained/'decoder.a')==actual['archive']==fact(archive),
-        'same freshly built eleven-source archive as the consuming experiment')
+        'same freshly built twelve-source archive as the consuming experiment')
     for name,tool in(('decoder-rustc.txt','rustc'),('decoder-cargo.txt','cargo'),('cc-version.txt','cc')):
         need((retained/name).read_text().strip()==build['versions'][tool],'actual build used the observed tool')
     dep=(retained/'decoder.d').read_text().strip();prefix=str(ROOT/'target/release/libli2_page_selected_decoder.a')+': '
     need(dep.startswith(prefix)and '\n'not in dep,'whole actual decoder dep-info target')
-    dependencies=shlex.split(dep[len(prefix):]);expected={str(selected/'decoder/src'/n)for n in SOURCES}
-    need(set(dependencies)==expected and len(dependencies)==11 and
+    dependencies=shlex.split(dep[len(prefix):]);expected=source_paths(ROOT,SOURCES)
+    need(set(dependencies)==expected and len(dependencies)==12 and
          build['dep_info']=={str(Path(p).relative_to(ROOT)):fact(pin(p))for p in dependencies},
-         'exact actual eleven-source compiler dependency closure')
+         'exact actual twelve-source compiler dependency closure')
     _,out,err=recorded('archive-text-exports',[builder.tools['nm'],'-g','--defined-only',retained/'decoder.a'],
         profile='inspect',env=builder.environment)
     need(not err and build['archive_text_exports']=={n:1 for n in EXPORTS},'exact nine required archive providers')
@@ -186,7 +190,7 @@ def authenticate(path,expected_sha256,r,pin,binary,archive):
         if name.startswith(('resolve-','version-')):
             environment={k:v for k,v in environment.items()if k!='LI2_DECODER_FEATURES'}
             if name in('resolve-cargo','resolve-rustc'):
-                environment={k:v for k,v in environment.items()if k in ENV or k in('HOME','CARGO_HOME','RUSTUP_HOME')}
+                environment={k:v for k,v in environment.items()if k in ENV or k in('HOME','CARGO_HOME','RUSTUP_HOME','LI2_MAPS_PROFILE')}
         need(row['argv']==list(map(str,argv))and row['environment']==environment and
              row['profile']==profile and row['expected_exit']==expected==0 and record is False,
              'whole source-derived recorded argv/environment/profile '+name)

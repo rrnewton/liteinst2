@@ -11,7 +11,7 @@ import stat
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA = Path(__file__).with_suffix('.json')
-DATA_FACT = {'bytes': 33446, 'sha256': 'edfc1ef5b7f7d6d16530ffbba911aa12a29f849bc1d8df86b3745c0f8091d0e6'}
+DATA_FACT = {'bytes': 34744, 'sha256': '04ad84b68bf5085ef705bec757ea213f919e40c1370d7280465c7ec20cc00a70'}
 
 
 def need(ok, message):
@@ -78,6 +78,12 @@ Unknown paths/targets do not acquire an inverse or an acceptance exemption.
     row = table['sources'].get(str(path.relative_to(ROOT)))
     if row is None:
         return dict(observed)  # The original caller comparison still rejects a mismatch.
+    if 'successor' in row:
+        successor = row['successor']
+        need(set(successor) == {'current', 'inverse'} and actual == successor['current'],
+             'one exact shared-x86 source successor; no mixed versions')
+        raw = inverse(raw, successor['inverse'], row['current'])
+        actual = byte_fact(raw)
     need(actual == row['current'], 'one exact installed source successor; no mixed versions')
     target = row['targets'].get(want['sha256'])
     need(target is not None and target['fact'] == want, 'one unchanged original source target')

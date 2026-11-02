@@ -5,6 +5,7 @@ object creation becomes a closed existing-object join, and the original actual
 byte-oracle reconstruction is reused. Only the explicit counter mode is admitted.
 """
 from persistent_loop_effects_build import *
+from page_selected_shared_decoder import source_key
 from persistent_loop_effects_owner_build import fast_bytes_reconstruct
 
 def binding_completed(builder, archive, image, output, pin, binary, run, *, mode):
@@ -23,7 +24,7 @@ def binding_completed(builder, archive, image, output, pin, binary, run, *, mode
             size, sha = fixed_loop_domain(name,path)
             need(digest(value) == digest(dict(bytes=size, sha256=sha)), 'unchanged reviewed scalar/NONE decoder domain')
         if name.endswith('.rs'):
-            need(digest(builder.record['dep_info'].get('tools/page-entry/selected/' + name)) == digest(value), 'actual archive compiled each bound decoder source')
+            need(digest(builder.record['dep_info'].get(source_key(SELECTED.parents[2], SELECTED, name))) == digest(value), 'actual archive compiled each bound decoder source')
         values.append(dict(path=name, **value))
     archive = pin(archive)
     archive_fact = fact(archive)

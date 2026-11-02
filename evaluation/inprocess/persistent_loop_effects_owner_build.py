@@ -6,6 +6,7 @@ builder predicates are retained; only fresh-directory/file creation becomes an
 exact existing-object/content join after whole receipt custody is established.
 """
 from persistent_loop_effects_build import *
+from page_selected_shared_decoder import source_key
 from scalar_span_trace_build import (observe_headers, elf, interpreter, PROGRAM_ENV,
     resolved_libraries, fast_bytes_completed, FAST_BYTES_STDOUT)
 import importlib.util
@@ -27,7 +28,7 @@ def binding_completed(builder, archive, image, output, pin, binary, run, *, mode
             size, sha = fixed_loop_domain(name,path)
             need(digest(value) == digest(dict(bytes=size, sha256=sha)), 'unchanged reviewed scalar/NONE decoder domain')
         if name.endswith('.rs'):
-            need(digest(builder.record['dep_info'].get('tools/page-entry/selected/' + name)) == digest(value), 'actual archive compiled each bound decoder source')
+            need(digest(builder.record['dep_info'].get(source_key(SELECTED.parents[2], SELECTED, name))) == digest(value), 'actual archive compiled each bound decoder source')
         values.append(dict(path=name, **value))
     archive = pin(archive)
     archive_fact = fact(archive)

@@ -615,6 +615,44 @@
           ""
         ]
       ],
+      "successor": {
+        "current": {
+          "bytes": 20114,
+          "sha256": "f2bb427352d4fb1221117b149ab1429a6dfb7da67d23fe252a1eddd4a8f5b9f4"
+        },
+        "inverse": [
+          [
+            15,
+            16,
+            ""
+          ],
+          [
+            160,
+            161,
+            ""
+          ],
+          [
+            182,
+            184,
+            "        local = [p for p in metadata['packages'] if p['source'] is None]\n        need(len(local) == 1, 'one actual local decoder package')\n        nodes = [n for n in metadata['resolve']['nodes'] if n['id'] == local[0]['id']]\n"
+          ],
+          [
+            206,
+            208,
+            "                need(path == decoder/'Cargo.toml' and package['source'] is None, 'actual local decoder manifest')\n"
+          ],
+          [
+            231,
+            232,
+            "        expected = {str(decoder/'src'/name) for name in ('lib.rs', 'abi.rs', 'arena.rs', 'decode.rs', 'scan.rs', 'tf.rs', 'write_footprint.rs', 'admission_oneshot.rs')}\n"
+          ],
+          [
+            235,
+            236,
+            "        need(set(dependencies) == expected and len(dependencies) == len(expected), 'exact eight plus explicitly named decoder sources')\n"
+          ]
+        ]
+      },
       "targets": {
         "9b3f0d0ec21b628409b2b1453ef8ae6cfbdc8692ee9b7f3c49cf605379ddd896": {
           "fact": {
