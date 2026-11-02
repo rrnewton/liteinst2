@@ -13,6 +13,7 @@ pub(super) struct CheckedExit<'a> {
 }
 
 impl<'a> CheckedExit<'a> {
+    #[inline]
     pub(super) fn check(
         model: &'a mut ThreadModel,
         slot: &'a mut ModelReturnSlot,
