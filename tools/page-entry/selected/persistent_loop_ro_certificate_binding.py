@@ -21,7 +21,7 @@ EFFECTS_INPUTS = (
     'persistent_loop_effects_compact.inc', 'persistent_loop_effects_owner.inc')
 RO_INPUTS = ('sealed_generation.h','sealed_generation.inc','private_code_query.h',
     'private_code_query.inc','sealed_byte_certificate.h','sealed_byte_certificate.inc',
-    'loop_ro_certificate.h','loop_ro_certificate.inc','persistent_loop_ro_certificate_binding.py',
+    'loop_ro_profile.h','loop_ro_certificate.h','loop_ro_certificate.inc','persistent_loop_ro_certificate_binding.py',
     'build-persistent-loop-ro-certificate.sh','loop_history_certificate.h',
     'loop_history_certificate.inc')
 LEAVES = PRIOR_LEAVES + EFFECTS_INPUTS + RO_INPUTS

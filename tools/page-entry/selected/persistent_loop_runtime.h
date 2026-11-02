@@ -7,7 +7,11 @@
     !defined(LI2_PERSISTENT_FUSED_RUNTIME) || LI2_PERSISTENT_FUSED_RUNTIME != 1
 #error "loop runtime explicitly composes policy12 with exact policy11 fallback"
 #endif
-#if defined(LI2_PERSISTENT_FUSED_CAPTURE) || defined(LI2_SEALED_BYTE_CERTIFICATE) || \
+#ifdef LI2_LOOP_RO_CERTIFICATE
+#include "loop_ro_profile.h"
+#endif
+#if defined(LI2_PERSISTENT_FUSED_CAPTURE) || \
+    (defined(LI2_SEALED_BYTE_CERTIFICATE) && !defined(LI2_LOOP_RO_CERTIFICATE)) || \
     defined(LI2_RESIDENT_STABLE_GENERATION)
 #error "loop runtime has a distinct capture and no implicit certificate/generation composition"
 #endif
