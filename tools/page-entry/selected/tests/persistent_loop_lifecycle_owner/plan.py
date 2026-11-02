@@ -178,7 +178,7 @@ def graph(source,page,entry,layout,table_bytes,*,policy,endpoint):
         elif kind==5:
             external=sum(1<<arm for arm,k in enumerate(succ)if k>=128)
             internal=tuple(0 if arm>=len(succ)or succ[arm]>=128 else a+512*succ[arm]for arm in range(2))
-            model=direct.emit(original,generated,spill,struct.pack('<3Q2IQ',at-64576,a,b,n,i,directory),external,internal,policy=policy)
+            model=direct.emit(original,generated,spill,struct.pack('<3Q2IQ',at-64576,a,b,n,i,directory),external,internal,policy=policy,encoding_domain=2)
             model=dict(model,whole=model['whole']+bytes(6488-len(model['whole'])))
             body=model['image'];instructions[i*144:(i+1)*144]=model['description']+bytes(24)
             guards[i*1584:(i+1)*1584]=model['record'];direct_models[i]=model

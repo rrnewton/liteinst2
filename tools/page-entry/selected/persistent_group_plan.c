@@ -676,8 +676,10 @@ static int emit_stubs(struct li2_pg_plan *p) {
     return 0;
 }
 #ifdef LI2_PERSISTENT_LOOP_PLAN
-static int pgd_emit_selected(struct li2_pg_plan *p,struct li2_pg_miss *miss,
-    int (*decode)(struct li2_pg_plan *,uintptr_t,const unsigned char *,size_t,struct li2_span_decoded *)) {
+static int pgd_emit_with_direct(struct li2_pg_plan *p,struct li2_pg_miss *miss,
+    int (*decode)(struct li2_pg_plan *,uintptr_t,const unsigned char *,size_t,struct li2_span_decoded *),
+    int (*direct_emit)(uintptr_t,const unsigned char *,size_t,unsigned,uintptr_t,uintptr_t,
+        const struct li2_jd_binding *,const uintptr_t[2],struct li2_dd_plan *)) {
 #else
 static int pgd_emit(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
 #endif
@@ -743,7 +745,7 @@ static int pgd_emit(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
             unsigned char bytes[15];size_t n=window(p,d->decoded.pc,bytes);
             struct li2_dd_plan *g=&p->guard[i].direct;
 #ifdef LI2_PERSISTENT_LOOP_PLAN
-            p->guard_result=(unsigned)(p->version==LI2_LP_VERSION?li2_ld_emit:li2_dd_emit)(
+            p->guard_result=(unsigned)direct_emit(
                 d->decoded.pc,bytes,n,a->external_mask,generated,p->layout.spill,&binding,internal,g);
 #else
             p->guard_result=(unsigned)li2_dd_emit(d->decoded.pc,bytes,n,a->external_mask,
@@ -866,6 +868,10 @@ static int pgd_emit(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
     return 0;
 }
 #ifdef LI2_PERSISTENT_LOOP_PLAN
+static int pgd_emit_selected(struct li2_pg_plan *p,struct li2_pg_miss *miss,
+    int (*decode)(struct li2_pg_plan *,uintptr_t,const unsigned char *,size_t,struct li2_span_decoded *)) {
+    return pgd_emit_with_direct(p,miss,decode,p->version==LI2_LP_VERSION?li2_ld_emit:li2_dd_emit);
+}
 static int pgd_emit(struct li2_pg_plan *p,struct li2_pg_miss *miss) {
     return pgd_emit_selected(p,miss,describe);
 }
@@ -1025,5 +1031,8 @@ int li2_pg_placement(uintptr_t entry,const struct li2_pg_layout *layout) {
 #endif
 
 #ifdef LI2_PERSISTENT_LOOP_PLAN
+#if defined(LI2_PG_LOOP_ENCODING_VERSION) && LI2_PG_LOOP_ENCODING_VERSION == 2
+#include "persistent_loop_fused_plan.inc"
+#endif
 #include "persistent_loop_plan.inc"
 #endif

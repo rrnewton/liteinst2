@@ -14,6 +14,7 @@ def load(name,path):
 HERE=Path(__file__).resolve().parent
 chooser=load('loop_saved_chooser',HERE/'chooser.py')
 old=load('loop_old_saved_pf',HERE.parent/'persistent_fused_owner/direct_history.py')
+fused=load('loop_bound_saved_pf',HERE/'fused_history.py')
 need=old.need
 
 
@@ -48,7 +49,7 @@ def direct_history(check,completion):
          'bounded whole historical direct identity')
     policy,key,chosen=rebuilt[member]
     if policy==11:
-        result=old.direct_history(check,completion)
+        result=fused.direct_history(check,completion)
         result.update(policy=11,chooser_result=1,policies=tuple(p for p,_,_ in rebuilt))
         return result
     s=chosen['selected'];c=s['choice']

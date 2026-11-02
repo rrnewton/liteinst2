@@ -36,7 +36,7 @@ static int pda_direct_exit_value(const struct pda_completion *c) {
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
     if(c->member[e->member].header.plan_policy==LI2_LP_VERSION)return plr_direct_value(c);
     if(c->member[e->member].header.plan_policy!=LI2_PF_VERSION ||
-       !plr_fallback_value(&c->member[e->member]))return 0;
+       !plr_fallback_value(c))return 0;
 #endif
     const struct li2_pg_source_key *s=&c->member[e->member].source;
     if(s->page[0].identity.address>=s->page[1].identity.address)return 0;

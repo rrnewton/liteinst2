@@ -9,8 +9,10 @@ import struct
 def need(ok,why):
     if not ok:raise ValueError(why)
 
-def emit(original,generated,spill,binding,external,internal,*,policy):
+def emit(original,generated,spill,binding,external,internal,*,policy,encoding_domain=1):
     need(type(policy)is int and policy in(11,12),'explicit authenticated per-certificate DIRECT policy')
+    need(type(encoding_domain)is int and encoding_domain in(1,2),
+         'explicit old or LOOP-bound encoding domain; no implicit PF11 far admission')
     pc,next_pc=struct.unpack_from('<2Q',original)
     target=struct.unpack_from('<Q',original,72)[0]
     available=struct.unpack_from('<I',original,44)[0]
@@ -53,10 +55,10 @@ def emit(original,generated,spill,binding,external,internal,*,policy):
     pieces += [bytes.fromhex('488b4908'),bytes.fromhex('48890d')+bytes(4)]+list(restore)+[bytes.fromhex('ff25')+bytes(4)]
     states += [(15,15,2,0),(15,15,2,0),(15,15,2,1),(15,15,1,1),(15,15,0,1),
         (15,13,0,1),(15,9,0,1),(15,1,0,1),(15,0,0,1)]
-    # Only policy12 may replace the old final miss E9's exact signed32
+    # Policy12 or separately authenticated LOOP domain2 may replace the final miss E9's exact signed32
     # failure. Every other relocation is still independently encoded below.
     miss_index=rejected+6;old_miss=sum(map(len,pieces[:miss_index]))
-    far=policy==12 and not -(1<<31)<=pc-generated-old_miss-5<(1<<31)
+    far=(policy==12 or encoding_domain==2) and not -(1<<31)<=pc-generated-old_miss-5<(1<<31)
     if far:pieces[miss_index]=b'\xff\x25'+bytes(4)+struct.pack('<Q',pc)
     offsets=[];at=0
     for value in pieces:offsets.append(at);at+=len(value)

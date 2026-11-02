@@ -459,7 +459,9 @@ int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,co
                !region_rseq_equal(&binding,&guard->binding,sizeof binding) ||
                guard->generated!=p->layout.generated[i/64]+(uintptr_t)(i%64)*LI2_PE_SLOT_BYTES ||
                guard->spill!=p->layout.spill || guard->record.image_bytes!=h->generated_length ||
-#ifdef LI2_PERSISTENT_LOOP_PLAN
+#if defined(LI2_PERSISTENT_LOOP_RUNTIME) && LI2_PG_LOOP_ENCODING_VERSION == 2
+               li2_ld_validate(guard))return pgr_bad(LI2_RSEQ_PLAN,531);
+#elif defined(LI2_PERSISTENT_LOOP_PLAN)
                (p->version==LI2_LP_VERSION?li2_ld_validate(guard):li2_dd_validate(guard)))return pgr_bad(LI2_RSEQ_PLAN,531);
 #else
                li2_dd_validate(guard))return pgr_bad(LI2_RSEQ_PLAN,531);

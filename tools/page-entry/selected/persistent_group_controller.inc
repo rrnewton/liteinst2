@@ -40,7 +40,8 @@
 #endif
 #include "persistent_group_config.h"
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
-#if LI2_PG_LOOP_BINDING_VERSION != 1 || LI2_PG_LOOP_POLICY_VERSION != 12 || LI2_PG_LOOP_FALLBACK_VERSION != 11
+#if LI2_PG_LOOP_BINDING_VERSION != 1 || LI2_PG_LOOP_POLICY_VERSION != 12 || LI2_PG_LOOP_FALLBACK_VERSION != 11 || \
+    LI2_PG_LOOP_ENCODING_VERSION != 2
 #error "loop runtime requires its own exact mixed-policy source/archive binding"
 #endif
 #endif
@@ -1160,11 +1161,11 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
         int build=pe.loop.route==LI2_LP_VERSION?
             li2_lp_compact_build(&pe.cold,&pe.rebuild,&pe.candidate.plan,&pe.loop.check):
-            li2_pf_compact_build(&pe.cold,&pe.rebuild,&pe.candidate.plan);
+            li2_lpf_compact_build(&pe.cold,&pe.rebuild,&pe.candidate.plan);
         pe_need(!build,PE_PLAN,1);++pe.plan_proofs;
         int validate=pe.loop.route==LI2_LP_VERSION?
             li2_lp_compact_validate(&pe.candidate.plan,&pe.rebuild,&pe.compact_rebuild,&pe.loop.check):
-            li2_pf_compact_validate(&pe.candidate.plan,&pe.rebuild,&pe.compact_rebuild);
+            li2_lpf_compact_validate(&pe.candidate.plan,&pe.rebuild,&pe.compact_rebuild);
         pe_need(!validate,PE_PLAN,2);++pe.plan_proofs;
 #else
 #ifdef LI2_PERSISTENT_FUSED_RUNTIME

@@ -74,6 +74,12 @@ class Check(prior.Check):
               b['decoder_read_version'],b['capture_version'])==(12,11,2,12,2,14)and
              b['pf_refusals']==dict(version=1,reason=256,shared_reasons=18,abi2=False),
              'exact distinct mixed11/12 source binding and schema14 capture profile')
+        domain=b.get('encoding_domain')
+        need(type(domain)is dict and all(type(domain.get(k))is int for k in
+             ('version','near_record','far_record','literal_bytes','literal_boundaries'))and
+             type(domain.get('policies'))is list and all(type(x)is int for x in domain['policies'])and
+             domain.get('old_pf_api')is False and domain==dict(version=2, policies=[11,12], near_record=1, far_record=2, miss='source-derived-rel32-or-rip-indirect-u64', literal_bytes=8, literal_boundaries=0, old_pf_api=False),
+             'exact LOOP-bound encoding domain2, canonical LD1/LD2 and no old PF API broadening')
         self.differential=b['mode']=='differential'
 
     def counts(self,b):

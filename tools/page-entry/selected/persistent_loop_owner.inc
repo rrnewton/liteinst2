@@ -70,7 +70,7 @@ static int plr_cold(const struct li2_pg_sources *s,const uintptr_t pages[2]) {
             plr_no_envelope(&s->key),PE_PLAN,241);
         pe.loop.choice_complete=1;pe.loop.route=LI2_PF_VERSION;
         PLR_COUNT(chooser_no_envelope);
-        return li2_pf_plan_pages(pages,pe.candidate.plan.source,s->key.entry,&pe.p.layout,
+        return li2_lpf_plan_pages(pages,pe.candidate.plan.source,s->key.entry,&pe.p.layout,
             &pe.candidate.plan.table,&pe.cold,&pe.miss);
     }
     if(!e) {
@@ -93,8 +93,7 @@ static unsigned plr_miss_reason(void) {
         !equal(pe.cold.source[i],s->key.page[i].bytes,LI2_REGION_PAGE))return 0;
     if(pe.loop.route==LI2_PF_VERSION) {
         if(!plr_no_envelope(&s->key))return 0;
-        if(li2_pfr_miss_valid(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild))return pe.miss.reason;
-        return li2_lp_fallback_relocation_reason(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild);
+        return li2_lpr_fallback_miss_valid(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild)?pe.miss.reason:0;
     }
     if(pe.loop.route!=LI2_LP_VERSION || pe.loop.choice.ready!=1 || pe.loop.choice.result)return 0;
     unsigned reason=li2_lp_relocation_reason(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild,&pe.loop.check);
@@ -116,20 +115,62 @@ static size_t plr_window(uintptr_t pc,unsigned char b[15]) {
     }
     return n;
 }
-/* The new profile's policy11 label proves a cold fallback, not an alternate
-   interpretation of a policy12 cut. Reconstruct that condition again before
-   the unchanged PF11 directional receipt validator sees a saved exit. */
-static int plr_fallback_value(const struct pda_member_completion *m) {
-    if(!m || !li2_lpr_header(m->header.version,m->header.plan_policy,LI2_PF_VERSION) ||
+/* LOOP-domain policy11 keeps the original PF source graph. Reconstruct the
+   complete NO_ENVELOPE, graph, cut ordinal and adapter from saved values;
+   no live slot or fabricated exclusion table supplies historical authority.
+   The caller subsequently retains every original PF directional predicate. */
+static int plr_fallback_value(const struct pda_completion *c) {
+    const struct pda_direct_exit *e=&c->direct_exit;
+    if(e->complete!=1 || e->reserved || e->member>=c->count || c->count>LI2_PGD_MEMBERS ||
+       e->head>=e->heads || !e->heads || e->heads>LI2_PG_HEADS || !e->exits ||
+       e->exits>LI2_PG_BOUNDARIES || e->index>=e->exits || e->arm>1 ||
+       (e->flags&(SELECTED_TF|SELECTED_RF))!=SELECTED_RF)return 0;
+    const struct pda_member_completion *m=&c->member[e->member];
+    if(!li2_lpr_header(m->header.version,m->header.plan_policy,LI2_PF_VERSION) ||
        !plr_scope_enter(PLR_HISTORY))return 0;
-    plr_source(&m->source);
+    int valid=0;plr_source(&m->source);
     struct li2_le_witness *w=&pe.loop.historical;
-    int result=li2_le_choose(pe.loop.pages,pe.loop.source,m->source.entry,w);
-    int valid=result==LI2_LE_NO_ENVELOPE && w->version==LI2_LE_VERSION &&
-        w->bytes==sizeof *w && !w->ready && w->result==LI2_LE_NO_ENVELOPE &&
-        w->entry==m->source.entry && !w->eligible &&
-        !li2_le_validate(pe.loop.pages,pe.loop.source,m->source.entry,w,&pe.loop.check);
-    if(valid)PLR_COUNT(historical_reconstructions);
+    if(li2_le_choose(pe.loop.pages,pe.loop.source,m->source.entry,w)!=LI2_LE_NO_ENVELOPE ||
+       w->version!=LI2_LE_VERSION || w->bytes!=sizeof *w || w->ready ||
+       w->result!=LI2_LE_NO_ENVELOPE || w->entry!=m->source.entry || w->eligible ||
+       li2_le_validate(pe.loop.pages,pe.loop.source,m->source.entry,w,&pe.loop.check))goto done;
+    struct li2_pg_plan *g=&pe.rebuild;
+    if(li2_lpf_graph_history(pe.loop.pages,pe.loop.source,m->source.entry,&m->header.layout,
+        m->header.table,g) || g->ready || g->heads!=e->heads || g->exits!=e->exits ||
+       g->links+g->exits>LI2_PG_BOUNDARIES)goto done;
+    const struct li2_pe_head *h=&g->head[e->head];
+    const struct li2_span_decoded *original=&g->original[e->head];
+    const struct li2_dd_descriptor *direct=&g->instruction[e->head].direct;
+    if(h->kind!=LI2_PG_DIRECT || e->arm>=h->successor_count ||
+       !(direct->external_mask&(1U<<e->arm)) || h->successors[e->arm]!=LI2_PG_HEADS+e->index ||
+       g->exit_pc[e->index]!=original->decoded.pc ||
+       !equal(&g->frontier[e->index],original,sizeof *original) ||
+       !equal(original,&e->original,sizeof *original) ||
+       !equal(direct,&e->direct,sizeof *direct) || li2_dd_arm(direct,e->flags)!=(int)e->arm)goto done;
+    struct li2_jd_binding binding;uintptr_t internal[2]={0};
+    if(li2_pg_dispatch_binding(pe.loop.pages,&m->header.layout,m->header.table,g->heads,e->head,&binding))goto done;
+    for(unsigned arm=0;arm<h->successor_count;arm++)if(!(direct->external_mask&(1U<<arm))) {
+        unsigned k=h->successors[arm];if(k>=g->heads)goto done;
+        if(k/64==e->head/64)internal[arm]=m->header.layout.generated[k/64]+(uintptr_t)(k%64)*LI2_PE_SLOT_BYTES;
+        else {
+            unsigned matches=0;
+            for(unsigned j=0;j<g->links;j++)if(g->edge[j].kind==LI2_PG_CAPACITY_LINK &&
+                g->edge[j].source_head==e->head && g->edge[j].successor==arm && g->edge[j].target_head==k) {
+                ++matches;internal[arm]=m->header.layout.stubs+6U*j;
+            }
+            if(matches!=1)goto done;
+        }
+    }
+    unsigned char bytes[15]={0};size_t n=plr_window(original->decoded.pc,bytes);
+    uintptr_t generated=m->header.layout.generated[e->head/64]+(uintptr_t)(e->head%64)*LI2_PE_SLOT_BYTES;
+    if(li2_ld_emit(original->decoded.pc,bytes,n,direct->external_mask,generated,m->header.spill,
+        &binding,internal,&pe.loop.direct) || !equal(&pe.loop.direct.original,direct,sizeof *direct))goto done;
+    struct li2_pe_head expected=*h;expected.generated_length=pe.loop.direct.record.image_bytes;
+    if(!equal(&expected,&e->row,sizeof expected))goto done;
+    PLR_COUNT(historical_reconstructions);valid=1;
+ done:
+    /* Both temporaries are dead after the exact saved-value comparison. */
+    le_zero(&pe.rebuild,sizeof pe.rebuild);le_zero(&pe.loop.direct,sizeof pe.loop.direct);
     plr_scope_leave(PLR_HISTORY);return valid;
 }
 /* Called only after all decoder-free receipt/source/header/closed checks.
