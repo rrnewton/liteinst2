@@ -145,6 +145,17 @@ static int sg_closed(void) {
     return !g->ready_generation && !g->active_refs && !g->member_refs[0] &&
         !g->member_refs[1] && !g->incoming[0] && !g->incoming[1] && !g->domain_refs;
 }
+#ifdef LI2_MAPS_MAINTAINED
+/* The maps helper has no owner authority. Only these exact already-closed,
+   fully protected selected-bank/proof extents can issue its trusted reset. */
+static long sg_anon_reset(uintptr_t at,size_t bytes) {
+    if(!sg_closed() ||
+       !((at==PE_SLOT(banks)[pe.selected_bank].generated && bytes==PE_CODE_BYTES) ||
+         (at==PE_SLOT(generation).proof && bytes==PE_PROOF_BYTES)) ||
+       selected_run_protect_contains(0,at,bytes)!=1)return -EINVAL;
+    return li2_maps_view_anon_reset(at,bytes);
+}
+#endif
 static int sg_reopen(uintptr_t code,uintptr_t proof) {
 #ifdef LI2_SEALED_BYTE_CERTIFICATE
     if(!sbc_unpublished())return PE_STATE;
@@ -163,14 +174,22 @@ static int sg_reopen(uintptr_t code,uintptr_t proof) {
     for(unsigned j=0;j<2 && !error;j++) {
         struct li2_sealed_identity *id=&sg_owner.state.bank[pe.selected_slot][j];
         if(id->code_live && id->code==code) {
+#ifdef LI2_MAPS_MAINTAINED
+            long result=sg_anon_reset(code,PE_CODE_BYTES);
+#else
             long result=raw(SYS_mmap,code,PE_CODE_BYTES,PROT_READ,
                 MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED,-1,0);
+#endif
             if((uintptr_t)result!=code)error=PE_PUBLICATION;
             else id->code_live=0;
         }
         if(!error && id->proof_live && id->proof==proof) {
+#ifdef LI2_MAPS_MAINTAINED
+            long result=sg_anon_reset(proof,PE_PROOF_BYTES);
+#else
             long result=raw(SYS_mmap,proof,PE_PROOF_BYTES,PROT_READ,
                 MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED,-1,0);
+#endif
             if((uintptr_t)result!=proof)error=PE_PUBLICATION;
             else id->proof_live=0;
         }

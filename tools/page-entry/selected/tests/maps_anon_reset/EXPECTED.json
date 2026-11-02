@@ -1,0 +1,18 @@
+[
+  {
+    "version": 1,
+    "differential": 0,
+    "positives": 5,
+    "fallback_controls": 20,
+    "row_refusals": 6,
+    "guest_executions": 0
+  },
+  {
+    "version": 1,
+    "differential": 1,
+    "positives": 5,
+    "fallback_controls": 20,
+    "row_refusals": 6,
+    "guest_executions": 0
+  }
+]

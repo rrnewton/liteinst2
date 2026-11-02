@@ -21,5 +21,10 @@ int li2_maps_view_enable(void);
 void li2_maps_view_unexplained(void);
 /* Existing owners that require a new physical acquisition retain that demand. */
 void li2_maps_view_require_fresh(void);
+/* Trusted runtime only: caller proves an exact owned/protected bank extent.
+   Issue the same R/private/anonymous MAP_FIXED call through the original raw
+   gateway. Only a complete successful replacement can project existing rows;
+   this grants no source, alias, generation, permission or execution authority. */
+long li2_maps_view_anon_reset(uintptr_t,size_t);
 void li2_maps_view_snapshot(struct li2_maps_view_stats *);
 #endif

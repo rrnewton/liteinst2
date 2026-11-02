@@ -1,6 +1,7 @@
 /* Distinct maintained-view experiment; the original maps-phase profile stays
-   unchanged. Only an actual successful gateway mprotect updates permissions.
-   Other mapping changes invalidate BEFORE execution, including partial errors.
+   unchanged. Actual successful gateway mprotect updates permissions; the
+   separately typed trusted anonymous reset can replace a complete owned range.
+   All mapping changes invalidate BEFORE execution, including partial errors.
    All source/byte/seal/alias/owner predicates still run against this projection.
    Bootstrap keeps raw VMA boundaries for exact projection/auxv checks. */
 #include "maps_view.h"
@@ -311,6 +312,60 @@ static int mv_protect(uintptr_t first,size_t bytes,unsigned prot) {
     for(size_t i=0;i<row_count;i++)rows[i]=mv_scratch[i];
     mv_receipt.rows=row_count;mv_receipt.observation.mutation_epoch=MV_LOAD(&maps_stats.mutation_epoch);
     return mv_inc(&mv.updates);
+}
+/* Rows-only reconstruction for the one exact anonymous R reset. File offsets
+   survive on both retained sides; the replacement has no inherited backing.
+   Failure leaves the old rows untouched and validity already revoked. */
+static int mv_anon_rows(uintptr_t first,size_t bytes) {
+    if(first<PAGE || !bytes || (first&(PAGE-1)) || (bytes&(PAGE-1)) ||
+       first>UINTPTR_MAX-bytes || !row_count || row_count>MAP_ROWS)return 0;
+    uintptr_t end=first+bytes,covered=first;size_t n=0;
+    for(size_t i=0;i<row_count;i++) {
+        const struct map_row *r=&rows[i];
+        if(r->first>=r->end || (r->first&(PAGE-1)) || (r->end&(PAGE-1)) ||
+           (i && rows[i-1].end>r->first) || (r->private!=0 && r->private!=1) ||
+           (r->prot&~(PROT_READ|PROT_WRITE|PROT_EXEC)))return 0;
+        if(!overlaps(first,end,r->first,r->end)) {
+            if(!mv_emit(&n,r,r->first,r->end,r->prot))return 0;
+        } else {
+            uintptr_t lo=first>r->first?first:r->first,hi=end<r->end?end:r->end;
+            struct map_row anon={.first=lo,.end=hi,.prot=PROT_READ,.private=1};
+            if(lo!=covered || !mv_emit(&n,r,r->first,lo,r->prot) ||
+               !mv_emit(&n,&anon,lo,hi,PROT_READ) ||
+               !mv_emit(&n,r,hi,r->end,r->prot))return 0;
+            covered=hi;
+        }
+    }
+    if(covered!=end)return 0;
+    row_count=mv_normalize(mv_scratch,n);
+    for(size_t i=0;i<row_count;i++)rows[i]=mv_scratch[i];
+    mv_receipt.rows=row_count;
+    mv_receipt.observation.mutation_epoch=MV_LOAD(&maps_stats.mutation_epoch);
+    /* mv.updates remains the original mprotect-only counter. */
+    return 1;
+}
+long li2_maps_view_anon_reset(uintptr_t first,size_t bytes) {
+    uint64_t handler=MV_LOAD(&maps_stats.handler_id),epoch=MV_LOAD(&maps_stats.mutation_epoch);
+    unsigned eligible=active && !tx.guard && MV_LOAD(&mv.enabled) && !MV_LOAD(&mv.poisoned) &&
+        !MV_LOAD(&maps_stats.poisoned) && MV_LOAD(&maps_stats.active) && handler &&
+        MV_LOAD(&maps_stats.valid)==1 && !MV_LOAD(&mv_depth) && !mv_stack_retired &&
+        epoch!=UINT64_MAX && first>=PAGE && bytes && !(first&(PAGE-1)) && !(bytes&(PAGE-1)) &&
+        first<=UINTPTR_MAX-bytes && hooks.protected_range && hooks.protected_range(first,bytes);
+    /* Never bypass raw(): rseq/custody invalidation, stack-growth detection,
+       pre-kernel map invalidation and error handling all execute unchanged. */
+    long result=RAW(SYS_mmap,first,bytes,PROT_READ,MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED,-1,0);
+    const long expected[7]={SYS_mmap,(long)first,(long)bytes,PROT_READ,
+        MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED,-1,0};
+    for(unsigned i=0;i<7;i++)if(mv_call[i]!=expected[i])eligible=0;
+    unsigned invalid=!MV_LOAD(&maps_stats.valid);
+    MV_STORE(&maps_stats.valid,0);
+    if(eligible && invalid && (uintptr_t)result==first && active && !tx.guard &&
+       MV_LOAD(&mv.enabled) && !MV_LOAD(&mv.poisoned) && !MV_LOAD(&maps_stats.poisoned) &&
+       MV_LOAD(&maps_stats.active) && MV_LOAD(&maps_stats.handler_id)==handler &&
+       MV_LOAD(&maps_stats.mutation_epoch)==epoch+1 && !MV_LOAD(&mv_depth) &&
+       mv_saved==1 && !mv_stack_retired && !MV_LOAD(&maps_stats.valid) &&
+       mv_anon_rows(first,bytes))MV_STORE(&maps_stats.valid,1);
+    return result;
 }
 void li2_maps_before_raw(long n,long a,long b,long c,long d,long e,long f) {
 #ifdef LI2_MAPS_CURRENT_TF
