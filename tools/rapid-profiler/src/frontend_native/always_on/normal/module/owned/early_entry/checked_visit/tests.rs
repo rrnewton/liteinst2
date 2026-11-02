@@ -1742,3 +1742,282 @@ fn entry_proof_matches_reference_across_receipt_kinds_and_bypasses() {
         }
     }
 }
+
+#[test]
+fn ret_normal_proof_matches_full_postshape_for_changed_fields() {
+    for order in [[0, 1], [1, 0]] {
+        for observed in [false, true] {
+            for bypasses in 0..3 {
+                // Real commit at each possible later position, with an actual
+                // older Returned owner retained while another epoch is current.
+                for fault in 0..6 {
+                    let mut f = Fixture::new(10, order);
+                    f.controller.arm(&f.epoch).unwrap();
+                    f.physical.begin(&f.state).unwrap();
+                    f.call(true);
+                    let older_raw = f.state.pending.as_ref().unwrap().returned.unwrap();
+                    f.controller.disarm(&f.epoch).unwrap();
+                    let next = f.controller.stage_prepared(f.banks.pop().unwrap()).unwrap();
+                    f.controller.arm(&next).unwrap();
+                    let held = normal_image(&f.state);
+                    for _ in 0..bypasses {
+                        f.call(false);
+                        assert_eq!(normal_image(&f.state), held);
+                        assert_eq!(
+                            f.physical.active.as_ref().unwrap().pending_position,
+                            Some(0)
+                        );
+                    }
+                    if observed {
+                        f.visit(true).unwrap();
+                    }
+                    let normal_before = normal_image(&f.state);
+                    let owners = identities(&f.state, &f.physical);
+                    let Visit {
+                        selected,
+                        pc,
+                        rsp,
+                        word,
+                        stamp,
+                        ..
+                    } = f.input(false);
+                    let committed = CheckedRet::new(&mut f.physical, &mut f.state)
+                        .unwrap()
+                        .commit(selected, pc, rsp, word, stamp)
+                        .unwrap();
+                    committed
+                        .checked
+                        .physical
+                        .shape(committed.checked.state)
+                        .unwrap();
+                    if !observed {
+                        assert_eq!(normal_image(committed.checked.state), normal_before);
+                    }
+                    let raw = committed
+                        .checked
+                        .state
+                        .pending
+                        .as_ref()
+                        .unwrap()
+                        .returned
+                        .unwrap();
+                    let count = committed.checked.state.totals.ret_observed;
+                    let generation = if observed {
+                        next.generation()
+                    } else {
+                        f.epoch.generation()
+                    };
+                    assert!(
+                        matches!(raw.owner, RawIntervalOwner::Sampled { generation: g, .. }
+                        if g == generation.get())
+                    );
+                    match fault {
+                        0 => {}
+                        1 => committed.checked.state.pending.as_mut().unwrap().returned = None,
+                        2 => {
+                            committed.checked.state.totals.ret_observed =
+                                count.checked_sub(1).unwrap()
+                        }
+                        3 => {
+                            committed.checked.state.totals.ret_observed =
+                                count.checked_add(1).unwrap()
+                        }
+                        4 => committed.checked.state.totals.ret_observed = u64::MAX,
+                        5 => {
+                            // Full shape checks presence, not the RawInterval
+                            // payload. Preserve that acceptance exactly;
+                            // observation and later confirmation stay unchanged.
+                            let mut altered = raw;
+                            altered.end.ticks += 1;
+                            committed.checked.state.pending.as_mut().unwrap().returned =
+                                Some(altered);
+                        }
+                        _ => unreachable!(),
+                    }
+                    let at_postcheck = (
+                        normal_image(committed.checked.state),
+                        physical_image(committed.checked.physical),
+                    );
+                    assert_eq!(
+                        at_postcheck.1.active.as_ref().unwrap().position,
+                        2 + bypasses
+                    );
+                    assert_eq!(
+                        at_postcheck.1.active.as_ref().unwrap().rows[1 + bypasses],
+                        Some(committed.row)
+                    );
+                    let expected = if matches!(fault, 0 | 5) {
+                        Ok(())
+                    } else {
+                        Err(error(Cause::Invariant))
+                    };
+                    // This is the unchanged full physical + normal checker on
+                    // the same actual committed state and real receipt identity.
+                    assert_eq!(
+                        committed.checked.physical.shape(committed.checked.state),
+                        expected
+                    );
+                    assert_eq!(committed.finish(), expected);
+                    assert_eq!(
+                        (normal_image(&f.state), physical_image(&f.physical)),
+                        at_postcheck
+                    );
+                    assert_eq!(identities(&f.state, &f.physical), owners);
+                    // Restore only the deliberate changed-field fault, then
+                    // consume the actual owner without rollback or second RET.
+                    f.state.pending.as_mut().unwrap().returned = Some(raw);
+                    f.state.totals.ret_observed = count;
+                    f.physical.shape(&f.state).unwrap();
+                    for _ in 0..(2 - bypasses) {
+                        f.call(false);
+                    }
+                    let batch = f.finish().0.unwrap();
+                    assert_eq!(batch.records().len(), if observed { 2 } else { 1 });
+                    assert_eq!(batch.records()[0].record.raw, older_raw);
+                    assert_eq!(batch.records().last().unwrap().record.raw, raw);
+                    assert!(f.state.pending.is_none());
+                    assert_eq!(
+                        f.controller
+                            .report(&f.epoch)
+                            .unwrap()
+                            .unwrap()
+                            .records()
+                            .count(),
+                        1
+                    );
+                    f.controller.disarm(&next).unwrap();
+                    assert_eq!(
+                        f.controller
+                            .report(&next)
+                            .unwrap()
+                            .unwrap()
+                            .records()
+                            .count(),
+                        usize::from(observed)
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn ret_normal_proof_keeps_combined_late_failure_order_and_committed_state() {
+    for order in [[0, 1], [1, 0]] {
+        for observed in [false, true] {
+            // All combinations: shared Identity precedes changed-normal or
+            // volatile Invariant, which precedes missing-active Outstanding.
+            for faults in 0..16 {
+                let bad_shared = faults & 1 != 0;
+                let bad_count = faults & 2 != 0;
+                let bad_used = faults & 4 != 0;
+                let no_active = faults & 8 != 0;
+                let mut f = Fixture::new(10, order);
+                f.controller.arm(&f.epoch).unwrap();
+                f.physical.begin(&f.state).unwrap();
+                if observed {
+                    f.visit(true).unwrap();
+                }
+                let normal_before = normal_image(&f.state);
+                let owners = identities(&f.state, &f.physical);
+                let Visit {
+                    selected,
+                    pc,
+                    rsp,
+                    word,
+                    stamp,
+                    ..
+                } = f.input(false);
+                let committed = CheckedRet::new(&mut f.physical, &mut f.state)
+                    .unwrap()
+                    .commit(selected, pc, rsp, word, stamp)
+                    .unwrap();
+                committed
+                    .checked
+                    .physical
+                    .shape(committed.checked.state)
+                    .unwrap();
+                if !observed {
+                    // An all-bypass batch has no pending owner or model frame.
+                    assert_eq!(normal_image(committed.checked.state), normal_before);
+                    assert!(committed.checked.state.pending.is_none());
+                }
+                let count = committed.checked.state.totals.ret_observed;
+                let used = committed.checked.state.journal.used();
+                let row = committed.row;
+                if bad_shared {
+                    committed
+                        .checked
+                        .physical
+                        .shared
+                        .failed
+                        .store(true, Ordering::Release);
+                }
+                if bad_count {
+                    committed.checked.state.totals.ret_observed = count.checked_add(1).unwrap();
+                }
+                if bad_used {
+                    committed.checked.state.journal.word(0, used as u64 + 1);
+                }
+                // Child-only access exercises the retained active guard; no
+                // production mutation hook or escaping borrow is introduced.
+                let active = if no_active {
+                    committed.checked.physical.active.take()
+                } else {
+                    None
+                };
+                let at_postcheck = (
+                    normal_image(committed.checked.state),
+                    physical_image(committed.checked.physical),
+                );
+                let expected = if bad_shared {
+                    Err(error(Cause::Identity))
+                } else if bad_count || bad_used {
+                    Err(error(Cause::Invariant))
+                } else if no_active {
+                    Err(error(Cause::Outstanding))
+                } else {
+                    Ok(())
+                };
+                assert_eq!(
+                    committed.checked.physical.shape(committed.checked.state),
+                    expected
+                );
+                assert_eq!(committed.finish(), expected);
+                assert_eq!(
+                    (normal_image(&f.state), physical_image(&f.physical)),
+                    at_postcheck
+                );
+                assert_eq!(identities(&f.state, &f.physical), owners);
+                f.physical.shared.failed.store(false, Ordering::Release);
+                f.state.totals.ret_observed = count;
+                f.state.journal.word(0, used as u64);
+                if let Some(active) = active {
+                    f.physical.active = Some(active);
+                }
+                let b = f.physical.active.as_ref().unwrap();
+                assert_eq!(b.position, 1);
+                assert_eq!(b.rows[0], Some(row));
+                f.physical.shape(&f.state).unwrap();
+                for _ in 0..3 {
+                    f.call(false);
+                }
+                let batch = f.finish().0;
+                assert_eq!(
+                    batch.as_ref().map(|b| b.records().len()),
+                    observed.then_some(1)
+                );
+                f.controller.disarm(&f.epoch).unwrap();
+                assert_eq!(
+                    f.controller
+                        .report(&f.epoch)
+                        .unwrap()
+                        .unwrap()
+                        .records()
+                        .count(),
+                    usize::from(observed)
+                );
+            }
+        }
+    }
+}

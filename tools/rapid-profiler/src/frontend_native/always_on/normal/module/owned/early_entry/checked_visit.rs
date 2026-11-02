@@ -159,10 +159,20 @@ impl CommittedRet<'_> {
     fn finish(self) -> Result<(), BridgeError> {
         let Self { checked, row } = self;
         let CheckedRet { physical, state } = checked;
-        // These stay fresh and in the old post-shape order. In particular,
-        // process/failed Acquire precedes all model and volatile journal reads.
+        // The original full precheck excludes accuracy and owns both states
+        // exclusively through this finish. RET changes only pending.returned,
+        // ret_observed and the journal; bypass changes no normal metadata.
+        // Model/receipt, other totals, next/cursor/len and prefixes stay fixed.
+        // Keep fresh process/failed Acquire first, then the changed normal
+        // relation and the volatile journal read at their old postcheck positions.
         physical.matches(state)?;
-        state.shape()?;
+        let outstanding = u64::from(state.pending.is_some());
+        let returned = u64::from(state.pending.as_ref().is_some_and(|p| p.returned.is_some()));
+        if state.totals.confirmed.checked_add(returned) != Some(state.totals.ret_observed)
+            || state.journal.used() != state.len * 2 + outstanding as usize + returned as usize
+        {
+            return Err(error(Cause::Invariant));
+        }
         let b = physical.active.as_ref().ok_or(error(Cause::Outstanding))?;
         // The private constructor establishes every old-prefix predicate. Its
         // only physical writes are the exact new row/RSP/position below, whose
