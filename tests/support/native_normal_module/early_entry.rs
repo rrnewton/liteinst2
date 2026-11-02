@@ -302,6 +302,14 @@ struct CodePages {
     unpaired_observations: usize,
     first_observed_step: Option<usize>,
 }
+
+// Parent-only instruction attribution. Record only completed transitions, just
+// like CodePages, and bound storage independently of the selected step profile.
+// An 80k run may exhaust this diagnostic without affecting its oracle verdict.
+#[path = "early_entry/pc_counts.rs"]
+mod pc_counts;
+use pc_counts::PcCounts;
+
 impl Default for CodePages {
     fn default() -> Self {
         Self {
@@ -382,6 +390,7 @@ impl CodePages {
 struct StepDiagnostics {
     visits: usize,
     pages: CodePages,
+    pcs: PcCounts,
     last: Option<(u64, usize)>,
     returns_seen: usize,
     boundaries: [Option<StepBoundary>; 16],
@@ -411,6 +420,7 @@ impl StepDiagnostics {
     fn visit(&mut self, child: &Tracee, pc: u64, step: usize, returns: usize) {
         self.visits = self.visits.saturating_add(1);
         self.pages.transition(self.last, step);
+        self.pcs.transition(self.last, step);
         // at_return() and the existing return postflight completed on the
         // preceding iteration; this sample is after the actual C3 step.
         if returns != self.returns_seen {
@@ -474,7 +484,7 @@ impl StepDiagnostics {
         }
         self.last = Some((pc, step));
     }
-    fn write_failure(&self) {
+    fn write_failure(&mut self) {
         use std::io::Write;
         let mut stderr = std::io::stderr().lock();
         // No child reads, formatting buffers, or checked-write panics in Drop.
@@ -509,6 +519,7 @@ impl StepDiagnostics {
             );
         }
         self.pages.write_failure(&mut stderr);
+        self.pcs.write_failure(&mut stderr);
     }
 }
 pub(in super::super) struct Witness {
