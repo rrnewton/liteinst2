@@ -36,6 +36,25 @@ H = lambda data: hashlib.sha256(data).hexdigest()
 HOOKS = {'tools/page-entry/selected/loop_ro_certificate.h': [{'new': '#include "loop_history_certificate.h"\n#ifdef LI2_LOOP_RO_TEST\n#include "loop_ro_oracle.h"\n#endif\n', 'old': '#include "loop_history_certificate.h"\n'}], 'tools/page-entry/selected/loop_ro_certificate.inc': [{'new': '    int error=lhc_initialize();if(error)return error;\n#ifdef LI2_LOOP_RO_TEST\n    error=lro_initialize();if(error)return error;\n#endif\n', 'old': '    int error=lhc_initialize();if(error)return error;\n'}, {'new': '    lhc_report(status,code);\n#ifdef LI2_LOOP_RO_TEST\n    lro_report(status,code);\n#endif\n', 'old': '    lhc_report(status,code);\n'}], 'tools/page-entry/selected/sealed_byte_certificate.inc': [{'new': 'static int pe_bytes(void) {\n#ifdef LI2_LOOP_RO_TEST\n    lro_byte_hook();\n#endif\n', 'old': 'static int pe_bytes(void) {\n'}], 'tools/page-entry/selected/loop_history_certificate.inc': [{'new': '    if(!lhc_match(c,i)) { (void)lhc_add(&lhc.counts.errors,1);return 0; }\n#ifdef LI2_LOOP_RO_TEST\n    lro_history_hook(c,i);\n#endif\n', 'old': '    if(!lhc_match(c,i)) { (void)lhc_add(&lhc.counts.errors,1);return 0; }\n'}], 'tools/page-entry/selected/persistent_group_controller.inc': [{'new': '#include "persistent_active_domain.inc"\n#ifdef LI2_LOOP_RO_TEST\n#include "loop_ro_oracle.inc"\n#endif\n', 'old': '#include "persistent_active_domain.inc"\n'}]}
 
 
+def source_input(relative, data, expected):
+    """Authenticate a whole compiler input, with only the complete hook inverse.
+
+    Hook presence/uniqueness is checked even when the retained build already
+    compiled these current default-off insertions. No partial inverse is used.
+    """
+    inverse = data
+    if relative in HOOKS:
+        for span in reversed(HOOKS[relative]):
+            before, after = span['old'].encode(), span['new'].encode()
+            need(inverse.count(after) == 1, 'one exact conditional test-hook span')
+            inverse = inverse.replace(after, before)
+    current = dict(bytes=len(data), sha256=H(data))
+    historical = dict(bytes=len(inverse), sha256=H(inverse))
+    need(expected == current or (relative in HOOKS and expected == historical),
+         'whole current production compiler input or exact complete test-hook inverse')
+    return 'current' if expected == current else 'hook_inverse'
+
+
 def reference(path, expected, r, pin, binary, complete, reader, image, seed):
     path = pin(path)
     need(path.name == 'receipt.json' and path.parent.parent == ROOT/'target/evaluation/inprocess'
@@ -66,9 +85,9 @@ def reference(path, expected, r, pin, binary, complete, reader, image, seed):
             capture = binary(directory/value['file'])
             need(capture.parent == directory and fact(capture) == {k: value[k] for k in ('bytes', 'sha256')},
                  'whole original bounded positive capture')
-    # The actual prior compiled source closure must equal current bytes except
-    # for exactly the six conditional test insertions. Generated prior headers
-    # remain their original retained bytes, never current binding authority.
+    # Every actual prior input is whole-equal to current bytes or the complete
+    # six-insertion inverse. Both branches require unique current hook spans.
+    # Generated prior headers remain retained, never current binding authority.
     seen = set()
     for mode in ('release', 'differential'):
         build = n['builds'][mode]
@@ -77,23 +96,12 @@ def reference(path, expected, r, pin, binary, complete, reader, image, seed):
             lexical = Path(name); data = pin(lexical).read_bytes(); relative = None
             try: relative = str(lexical.relative_to(ROOT))
             except ValueError: pass
-            if relative in HOOKS:
-                for span in reversed(HOOKS[relative]):
-                    before, after = span['old'].encode(), span['new'].encode()
-                    need(data.count(after) == 1, 'one exact conditional test-hook span')
-                    data = data.replace(after, before)
-                seen.add(relative)
-            need(dict(bytes=len(data), sha256=H(data)) == value,
-                 'whole original production compiler input or exact complete test-hook inverse')
+            source_input(relative, data, value)
+            if relative in HOOKS: seen.add(relative)
         for value in build['binding']['sources']:
             path = pin(ROOT/'tools/page-entry/selected'/value['path']); data = path.read_bytes()
             relative = str(path.relative_to(ROOT))
-            if relative in HOOKS:
-                for span in reversed(HOOKS[relative]):
-                    need(data.count(span['new'].encode()) == 1, 'exact bound test source span')
-                    data = data.replace(span['new'].encode(), span['old'].encode())
-            need(dict(bytes=len(data), sha256=H(data)) == {k: value[k] for k in ('bytes', 'sha256')},
-                 'whole original source-binding input retained, no permissive source drift')
+            source_input(relative, data, {k: value[k] for k in ('bytes', 'sha256')})
     need(seen == set(HOOKS), 'every test-hook donor was in actual prior compiled closure')
     command = next(x for x in n['commands'] if x['name'] == 'subject-native-0-0')
     out = pin(directory/command['captures']['stdout']['file']).read_bytes()
