@@ -29,12 +29,14 @@ impl<'a> CheckedVisit<'a> {
             .as_ref()
             .is_none_or(|p| p.ordinal != ordinal || p.returned.is_some())
     }
-    fn return_geometry(&self, selected: SelectedFunction, pc: u64) -> Result<(), BridgeError> {
-        let BindingProfile::Module { site, .. } = &self.state.binding.profile else {
-            return Err(error(Cause::Identity));
-        };
-        self.state
-            .selected_geometry(selected, site.functions()[selected.index].entry(), Some(pc))
+    #[inline(always)]
+    fn return_geometry<'r>(
+        &self,
+        rows: &'r mut RowSlots,
+        selected: SelectedFunction,
+        pc: u64,
+    ) -> Result<physical_slots::CheckedRow<'r>, BridgeError> {
+        rows.checked_return(self.state, selected, pc)
     }
     fn journal_shape(&self) -> Result<(), BridgeError> {
         // All other normal-shape predicates are local immutable metadata since
@@ -124,7 +126,7 @@ impl<'a> CheckedRet<'a> {
         {
             return Err(error(Cause::Return));
         }
-        checked.return_geometry(selected, pc)?;
+        let geometry = checked.return_geometry(&mut b.rows, selected, pc)?;
         if let Some(ordinal) = b.seen[index] {
             if b.pending_position != Some(index) || checked.pending_return_mismatch(ordinal) {
                 return Err(error(Cause::Return));
@@ -149,7 +151,7 @@ impl<'a> CheckedRet<'a> {
             return_word: word,
         };
         b.rsp = Some(rsp);
-        b.rows[index] = Some(row);
+        geometry.set(index, row);
         b.position += 1;
         Ok(CommittedRet { checked: self, row })
     }
@@ -253,7 +255,7 @@ impl<'a> CheckedEntry<'a> {
         // a consumed receipt or partially installed Pending is never retried.
         checked.enter(selected, pc, rsp, word, stamp)?;
         b.rsp = Some(rsp);
-        b.seen[index] = Some(ordinal);
+        b.seen.set(index, Some(ordinal));
         b.pending_position = Some(index);
         Ok(CommittedEntry {
             checked: self,

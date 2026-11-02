@@ -6,6 +6,7 @@ external 120-second owner. --output and --logs must be fresh; --logs must be
 beneath ROOT/target/evaluation. Build custody uses the existing
 closed.json/owner.json/receipt.json/request.json/artifact.json/Cargo-stream schema.
 Symbol overrides are explicit for revisions whose Rust symbol spelling changed.
+Optional --snapshot-symbol adds one exact qualification_snapshot_into capture.
 """
 import sys
 if not __debug__ or not sys.flags.isolated or not sys.dont_write_bytecode:
@@ -64,6 +65,7 @@ def main():
         p.add_argument('--' + name, required=True)
     p.add_argument('--shape-symbol', default=SHAPE)
     p.add_argument('--observer-symbol', default=OBSERVER)
+    p.add_argument('--snapshot-symbol', default=None)
     args = p.parse_args()
     assert re.fullmatch('[0-9a-f]{40}', args.revision)
     for digest in (args.build_closed_sha256, args.artifact_sha256):
@@ -71,6 +73,9 @@ def main():
     assert re.fullmatch('_RNv[A-Za-z0-9_]+13PhysicalState5shape', args.shape_symbol)
     assert 'early_entry' in args.shape_symbol
     assert re.fullmatch('_RNCNv[A-Za-z0-9_]+11early_entry5child[A-Za-z0-9_]+', args.observer_symbol)
+    if args.snapshot_symbol is not None:
+        assert re.fullmatch('_RNv[A-Za-z0-9_]+11early_entry13qualification27qualification_snapshot_into',
+                            args.snapshot_symbol)
     cpus = sorted(os.sched_getaffinity(0))
     assert len(cpus) == 1
     for which, value in ((resource.RLIMIT_CPU, 15), (resource.RLIMIT_AS, 256 << 20),
@@ -211,7 +216,10 @@ def main():
 
         git_status('git-before')
         unchanged()
-        for role, symbol in [('shape', args.shape_symbol), ('observer', args.observer_symbol)]:
+        roles = [('shape', args.shape_symbol), ('observer', args.observer_symbol)]
+        if args.snapshot_symbol is not None:
+            roles.append(('snapshot', args.snapshot_symbol))
+        for role, symbol in roles:
             text = capture(role, [str(tools['objdump']), '-d', '-M', 'intel',
                                  '--disassemble=' + symbol, str(elf)], 30)
             labels = re.findall(r'^([0-9a-f]+) <([^>]+)>:$', text, re.MULTILINE)

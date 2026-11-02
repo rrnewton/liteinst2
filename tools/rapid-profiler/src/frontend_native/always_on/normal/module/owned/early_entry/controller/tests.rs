@@ -323,7 +323,7 @@ fn early_entry_refuses_duplicate_missing_and_stale_physical_positions() {
     f.finish();
     f.physical.begin(&f.state).unwrap();
     f.call(false);
-    f.physical.active.as_mut().unwrap().rows[0] = Some(first);
+    f.physical.active.as_mut().unwrap().rows.set(0, Some(first));
     assert!(f.physical.shape(&f.state).is_err());
 }
 
@@ -338,7 +338,7 @@ fn early_entry_active_seen_converse_and_poison_never_become_bypass() {
         f.controller.disarm(&f.epoch).unwrap();
         let totals = f.state.totals;
         if mutate_seen {
-            f.physical.active.as_mut().unwrap().seen[0] = None;
+            f.physical.active.as_mut().unwrap().seen.set(0, None);
         } else {
             f.physical.active.as_mut().unwrap().pending_position = None;
         }
