@@ -74,9 +74,12 @@ def main():
     def git(*argv):
         return subprocess.check_output(['/usr/bin/git', '-c', 'index.threads=1', '-c', 'core.preloadIndex=false', *argv], env=env, timeout=15)
     helper = ROOT / 'evaluation/admission/processes.py'
+    adapter = Path(__file__).with_name('configure_join.py').resolve(strict=True)
     tools = ['gcc', 'as', 'ld', 'ar', 'ranlib', 'make', 'tar', 'xz', 'perl', 'rpm', 'prlimit', 'env', 'du', 'git', 'sh']
-    frozen = {str(p): pin(p) for p in [Path(__file__).resolve(), helper, archive, Path(sys.executable), *[Path('/usr/bin') / n for n in tools]]}
+    frozen = {str(p): pin(p) for p in [Path(__file__).resolve(), helper, adapter, archive, Path(sys.executable), *[Path('/usr/bin') / n for n in tools]]}
     assert frozen[str(helper)]['sha256'] == OWNER_SHA
+    assert frozen[str(adapter)]['sha256'] == 'd78402d45355a733250e8e8bbef88a7f4c335de9e02bc067d0c7f37c490b33a9'
+    assert git('ls-files', '--error-unmatch', str(adapter.relative_to(ROOT))).strip()
     assert (frozen[str(archive)]['bytes'], frozen[str(archive)]['sha256']) == (6007136, ARCHIVE_SHA)
     assert git('ls-files', '--error-unmatch', str(Path(__file__).resolve().relative_to(ROOT))).strip()
     def unchanged():
@@ -94,7 +97,8 @@ def main():
     receipt = dict(status='FAILED', revision=args.revision, tree=git('rev-parse', 'HEAD^{tree}').decode().strip(),
                    inputs=frozen, cpus=cpus, environment=env, slot_ceilings=CEILINGS,
                    scratch_admission_bytes=SCRATCH, scratch_is_quota=False, subject_executions=0,
-                   python=sys.version, load_before=os.getloadavg(), results=[], outcomes={n: 'UNOBSERVED' for n in ('metadata', 'extract', 'configure', 'make')})
+                   python=sys.version, load_before=os.getloadavg(), results=[], outcomes={n: 'UNOBSERVED' for n in ('metadata', 'extract', 'configure', 'make')},
+                   prior_failed_attempt=dict(path='ignored/direct-program-v1/cat-build-v1/closed.json', bytes=22533, sha256='100d807e4d74750acd61d71ef4138559ebc1f46d8dea0dc14f3b6cc2e716d4f2', status='FAILED', configure_leader=0, outer_termination='descendants_after_exit', reaped=2, make='UNOBSERVED', child_exit_statuses='not retained; no claim both were zombies'))
     durable(work / 'planned.json', receipt)
     safe, before_done = True, False
     def run(name, argv, cpu, wall, cwd=ROOT, address_space=2 * 1024**3, file_bytes=64 * MIB):
@@ -114,7 +118,20 @@ def main():
             stream.write(raw); stream.flush(); os.fsync(stream.fileno())
         row['capture'] = dict(bytes=len(raw), sha256=hashlib.sha256(raw).hexdigest())
         row['status'] = 'PASS' if result['exit_code'] == 0 and result['termination'] is None and result['reaped_descendants'] == 0 else 'FAILED'
-        unchanged(); assert row['status'] == 'PASS', name + ' failed'
+        unchanged()
+        if name == 'configure':
+            joined = work / 'configure-join.json'
+            if joined.exists():
+                joined_pin = pin(joined); assert joined_pin['bytes'] <= MIB
+                value = json.loads(joined.read_bytes()); assert pin(joined) == joined_pin
+                row['join'] = dict(receipt=joined_pin, result=value)
+                assert value['initial_echild'] is True and value['joined_echild'] is True and value['command'] == argv[7:]
+                children = [value['leader'], *value['adopted']]
+                assert all(child['exit_code'] == os.waitstatus_to_exitcode(child['wait_status']) for child in children)
+                joined_passed = all(child['exit_code'] == 0 for child in children)
+                assert value['status'] == ('PASS' if joined_passed else 'FAILED')
+            if row['status'] == 'PASS': assert 'join' in row and row['join']['result']['status'] == 'PASS'
+        assert row['status'] == 'PASS', name + ' failed'
         return raw
     def capacity(tag):
         totals, scratch = [], []
@@ -141,7 +158,7 @@ def main():
         assert all(v + SCRATCH < cap for v, cap in zip(before, CEILINGS)), '250 MB scratch reserve unavailable'
         commands = [('metadata', [sys.executable, '-I', '-B', '-c', METADATA], 30, 60, ROOT),
                     ('extract', ['/usr/bin/tar', '-xJf', str(archive), '-C', str(work), '--no-same-owner', '--exclude=coreutils-9.5/po/*.po', '--exclude=coreutils-9.5/po/*.gmo'], 30, 60, ROOT),
-                    ('configure', [str(work / 'coreutils-9.5/configure'), '--disable-nls', '--disable-dependency-tracking', '--disable-acl', '--disable-xattr', '--disable-libcap', '--without-libgmp', '--without-selinux'], 180, 300, work / 'build'),
+                    ('configure', [sys.executable, '-I', '-B', str(adapter), '--receipt', str(work / 'configure-join.json'), '--', str(work / 'coreutils-9.5/configure'), '--disable-nls', '--disable-dependency-tracking', '--disable-acl', '--disable-xattr', '--disable-libcap', '--without-libgmp', '--without-selinux'], 180, 300, work / 'build'),
                     ('make', ['/usr/bin/make', '-j1', '-f', 'Makefile', '-f', str(work / 'cat-only.mk'), 'cat-only'], 300, 600, work / 'build')]
         for name, argv, cpu, wall, cwd in commands:
             receipt['outcomes'][name] = 'DISPATCHED_UNKNOWN'
