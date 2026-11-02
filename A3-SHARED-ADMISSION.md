@@ -42,10 +42,18 @@ but retains its failed 180-second serial run. A separately declared
 it does not replace either original 180-second failure. Exact results and
 reproduction commands are in [the CFG receipt](evaluation/shared-cfg/README.md).
 
-The disassembly ledger importer, common-sites example graph, back-edge clock,
-frontend feasibility copies and legacy encoder orchestration still need
-consolidation. These changes do not implement certificates or certify complete
-binary CFG recovery. The exemption contract below remains a design proposal.
+The generalized-pun implementation at
+`f8f2e709b3019ecb52d479b09d7590ba52407606` shares staged head, store and
+current-successor queries between the real planner and the offline permit
+generator. They also share displacement constraints and the ordered illegal-entry
+alphabet. Search order, caller policy and first-error behavior remain separate
+and unchanged. Its full workspace and serial checks pass; exact results are in
+[the pun receipt](evaluation/shared-pun/README.md).
+
+The disassembly ledger importer, common-sites example graph, back-edge clock
+and legacy encoder orchestration still need consolidation. These changes do not
+implement certificates or certify complete binary CFG recovery. The exemption
+contract below remains a design proposal.
 
 ## Page certificate
 
