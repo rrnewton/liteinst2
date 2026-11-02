@@ -9,7 +9,7 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == 'b5ab3e974e6e497556a3b0b33462b668cca2c2c6a22de57c4554113b501b0b4b',
+require(hashlib.sha256(RAW).hexdigest() == '4fd74729990948fbb29b66211a63fcdb30e6596fc2dc40231bece4c5d5a4d78d',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
@@ -122,7 +122,12 @@ def source_before_bad32a8(path, raw, error):
 
 
 def source_before_f9f89ac(path, raw, error):
+    raw = source_before_fe97f683(path, raw, error)
     return inverse(path, raw, DATA['source_successor_f9f89ac']['source_projections'], error)
+
+
+def source_before_fe97f683(path, raw, error):
+    return inverse(path, raw, DATA['source_successor_fe97f683']['source_projections'], error)
 
 
 def require_sources(error='main97ab_source_inventory_differs'):

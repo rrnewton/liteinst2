@@ -18,6 +18,62 @@ from test_parsing import counts, summary
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # The current publisher adds two feature-only declarations; the entire
+        # default catalog and every historical source target remain exact.
+        publisher = current.DATA['source_successor_fe97f683']
+        publisher_path = 'tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs'
+        self.assertEqual((publisher['default_method_additions'], publisher['default_method_removals'],
+                          publisher['default_harness_changes'], publisher['default_ignore_changes'],
+                          publisher['default_doctest_additions'], publisher['recorder_identity_changes'],
+                          publisher['feature_method_additions'], publisher['feature_method_removals']),
+                         (0, 0, 0, 0, 0, 0, 2, 0))
+        self.assertEqual(publisher['added_feature_methods'], {publisher_path: [
+            'avx2_selection_requires_every_actual_image_and_complete_ymm_state',
+            'selected_publisher_preserves_all640_cells_resets_partition_and_alignment']})
+        self.assertEqual(publisher['feature_method_instances'], {publisher_path: [
+            'test/frontend_native_calibrations [frontend-native-qualification]']})
+        self.assertEqual((publisher['added_default_methods'], publisher['added_ignored_methods'],
+                          publisher['workspace_changes']), ({}, {}, {}))
+        self.assertEqual((publisher['current_corpus_sha256'], publisher['previous_corpus_sha256']),
+                         (current.CURRENT, current.CURRENT))
+        self.assertEqual(current.digest(actual), current.CURRENT)
+        self.assertEqual((len(publisher['source_paths']), len(publisher['source_projections'])), (2, 2))
+        self.assertEqual(current.DATA['methods'][publisher_path]['all'],
+                         current.DATA['source_successor_65ee8ea']['feature_only_methods'][publisher_path]
+                         + publisher['added_feature_methods'][publisher_path])
+        for path, literals in publisher['module_chains'].items():
+            self.assertEqual(literals, current.DATA['module_chains'][path])
+            text = (current.ROOT / path).read_text()
+            self.assertTrue(all(text.count(literal) == 1 for literal in literals))
+        for path, row in publisher['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_fe97f683(path, raw, 'publisher_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (publisher['source_preimages'][path]['bytes'], row['previous_sha256']))
+            self.assertEqual(row['previous_sha256'], current.DATA['source_successor_e691b0d']['sources'][path])
+            for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^publisher_source_inverse$'):
+                    current.source_before_fe97f683(path, wrong, 'publisher_source_inverse')
+            for field in ('edits', 'current_sha256', 'previous_sha256'):
+                malformed = copy.deepcopy(row)
+                if field == 'edits': malformed['edits'][0][2] += '\n'
+                else: malformed[field] = '0' * 64
+                with patch.dict(publisher['source_projections'], {path: malformed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^publisher_source_inverse$'):
+                        current.source_before_fe97f683(path, raw, 'publisher_source_inverse')
+        read = Path.read_bytes
+        target = current.ROOT / publisher_path
+        raw = read(target)
+        for name in publisher['added_feature_methods'][publisher_path]:
+            literal = ('fn ' + name + '(').encode()
+            self.assertEqual(raw.count(literal), 1)
+            wrong = raw.replace(literal, ('fn ' + name + '_wrong(').encode())
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {publisher_path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != publisher_path else (_ for _ in ()).throw(AssertionError('publisher declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
         # Immutable binding and completed-PC diagnostics add six default instances.
         binding = current.DATA['source_successor_f9f89ac']
         binding_prior = current.before_f9f89ac(actual)

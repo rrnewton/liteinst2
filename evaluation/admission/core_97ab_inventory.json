@@ -412,66 +412,71 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "013fd78372d46c6077cc4ada1b13e666affdd8366446f33a667a9d77343c448c",
+      "current_sha256": "fdc82071e3d669ca2cc2cfc2c823050d1f7f47967c67898cf9385ebab3fb9510",
       "edits": [
         [
           642,
-          46087,
+          5152,
           ""
         ],
         [
-          55458,
-          55569,
+          5152,
+          50597,
+          ""
+        ],
+        [
+          59968,
+          60079,
           "        self.assertEqual(actual['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],\n"
         ],
         [
-          60612,
-          60782,
+          65122,
+          65292,
           ""
         ],
         [
-          60829,
-          60923,
+          65339,
+          65433,
           "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n"
         ],
         [
-          61062,
-          61149,
+          65572,
+          65659,
           ""
         ],
         [
-          61408,
-          61487,
+          65918,
+          65997,
           ""
         ],
         [
-          62543,
-          63093,
+          67053,
+          67603,
           ""
         ],
         [
-          64612,
-          64708,
+          69122,
+          69218,
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          68551,
-          101863,
+          73061,
+          106373,
           ""
         ],
         [
-          108781,
-          112352,
+          113291,
+          116862,
           ""
         ],
         [
-          113632,
-          113821,
+          118142,
+          118331,
           "        for function, expected_projection in projections:\n"
         ],
         [
-          115115,
-          119969,
+          119625,
+          124479,
           ""
         ]
       ],
@@ -1882,7 +1887,9 @@
       "all": [
         "full_value_publisher_covers_all640_and_preserves_partition_and_bounds",
         "full_value_publisher_propagates_every_single_cell_change_and_zero_reset",
-        "full_value_publisher_handles_eight_and_sixteen_byte_alignment_with_canaries"
+        "full_value_publisher_handles_eight_and_sixteen_byte_alignment_with_canaries",
+        "avx2_selection_requires_every_actual_image_and_complete_ymm_state",
+        "selected_publisher_preserves_all640_cells_resets_partition_and_alignment"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -11611,6 +11618,91 @@
       }
     }
   },
+  "source_successor_fe97f683": {
+    "added_default_methods": {},
+    "added_feature_methods": {
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": [
+        "avx2_selection_requires_every_actual_image_and_complete_ymm_state",
+        "selected_publisher_preserves_all640_cells_resets_partition_and_alignment"
+      ]
+    },
+    "added_ignored_methods": {},
+    "base_revision": "f9f89aca173c38170162c8fb322ce4e47f87dcfd",
+    "current_corpus_sha256": "e0334e4ab7ffd51811b0aae7c5f0c6affc3969528f4a111079e80fd2934dc1ef",
+    "default_doctest_additions": 0,
+    "default_harness_changes": 0,
+    "default_ignore_changes": 0,
+    "default_method_additions": 0,
+    "default_method_removals": 0,
+    "feature_method_additions": 2,
+    "feature_method_instances": {
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": [
+        "test/frontend_native_calibrations [frontend-native-qualification]"
+      ]
+    },
+    "feature_method_removals": 0,
+    "feature_scope": "frontend-native-qualification only; its publisher module is absent from the default calibration harness. The native-oracle binary has test=false. Default workspace_tests remains cargo test --workspace.",
+    "incoming_main": "fe97f683d40625be0faec52a9a4a2458224ad97f",
+    "module_chains": {
+      "tools/rapid-profiler/native-interval/calibrations.rs": [
+        "#[cfg(feature = \"frontend-native-qualification\")]\n#[path = \"normal/module/early_entry/publisher.rs\"]\nmod early_entry_publisher;"
+      ],
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": [
+        "pub(crate) mod wide;",
+        "mod publisher;"
+      ]
+    },
+    "previous_corpus_sha256": "e0334e4ab7ffd51811b0aae7c5f0c6affc3969528f4a111079e80fd2934dc1ef",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs",
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs"
+    ],
+    "source_preimages": {
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": {
+        "bytes": 33415,
+        "sha256": "d4ca7a67f30a26cab24555f6bfcfd3c89909e9b4f40e860f4a49980e94a3205a"
+      },
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": {
+        "bytes": 10804,
+        "sha256": "68c939b30d4abae965b3c938438e1a4d659bf4fbd03337d80a5c347741acc79f"
+      }
+    },
+    "source_projections": {
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": {
+        "current_sha256": "687f921559b864a29993bea7db6a0375126388ce6d2a81a74ec3bb36d49bc918",
+        "edits": [
+          [
+            15551,
+            15621,
+            ""
+          ],
+          [
+            19563,
+            19738,
+            "                publisher::publish_words(header_out.try_into().unwrap(), &header);\n                publisher::publish_words(journal_out.try_into().unwrap(), &snapshot.journal);\n"
+          ]
+        ],
+        "previous_sha256": "d4ca7a67f30a26cab24555f6bfcfd3c89909e9b4f40e860f4a49980e94a3205a"
+      },
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": {
+        "current_sha256": "15b1e91c11c5174580876cbd233dd0436e0b671097e02e1357352e3765827800",
+        "edits": [
+          [
+            10804,
+            25700,
+            ""
+          ]
+        ],
+        "previous_sha256": "68c939b30d4abae965b3c938438e1a4d659bf4fbd03337d80a5c347741acc79f"
+      }
+    },
+    "sources": {
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": "687f921559b864a29993bea7db6a0375126388ce6d2a81a74ec3bb36d49bc918",
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": "15b1e91c11c5174580876cbd233dd0436e0b671097e02e1357352e3765827800"
+    },
+    "workspace_changes": {}
+  },
   "sources": {
     "Cargo.lock": "4aad718e815f59f813573d5f1302ea87c35b178a949bd5159882d5ee1301d89a",
     "Cargo.toml": "f1a018451ab4d6694747f58062ee03c9ad53e475865cf581d5de63c6906bcefb",
@@ -11625,7 +11717,7 @@
     "evaluation/admission/test_main34c47_inventory.py": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "7823badbd86e65b1597d70cecc64300f44b8880de28666a2dba8ba1554560396",
-    "evaluation/admission/test_main97ab_inventory.py": "013fd78372d46c6077cc4ada1b13e666affdd8366446f33a667a9d77343c448c",
+    "evaluation/admission/test_main97ab_inventory.py": "fdc82071e3d669ca2cc2cfc2c823050d1f7f47967c67898cf9385ebab3fb9510",
     "evaluation/admission/test_main981419_inventory.py": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
     "evaluation/admission/test_mainaf81_inventory.py": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
@@ -11787,8 +11879,8 @@
     "tools/rapid-profiler/native-interval/calibrations.rs": "c694791b56c655b30b22476aa68cde0426d5f163ef166ffd860e51d8405d0987",
     "tools/rapid-profiler/native-interval/main.rs": "e54f1b84dd6fc8591263bb399a0acb2dafb0a225bead6b34c2ab6bbcefa12ece",
     "tools/rapid-profiler/native-interval/normal/module.rs": "9a1179917963db7821f49067bc08f6ad91ff8d1502dcd152b16ac88f86d21b61",
-    "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": "d4ca7a67f30a26cab24555f6bfcfd3c89909e9b4f40e860f4a49980e94a3205a",
-    "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": "68c939b30d4abae965b3c938438e1a4d659bf4fbd03337d80a5c347741acc79f",
+    "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": "687f921559b864a29993bea7db6a0375126388ce6d2a81a74ec3bb36d49bc918",
+    "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": "15b1e91c11c5174580876cbd233dd0436e0b671097e02e1357352e3765827800",
     "tools/rapid-profiler/native-interval/normal/module/early_entry/wide.rs": "7348189734fc40d152290f3eee3fd2df92d50f47c5644496311daa39cacee62e",
     "tools/rapid-profiler/ordinary-interval/main.rs": "76c776c72b6818743a18a47dff80ad14f4cd03567bd62183ddf05d11eb2527a9",
     "tools/rapid-profiler/ordinary-interval/normal.rs": "0618d34ca349bcd15db6cd3061912cbb2e8f939e1cf38277b49e6b60d20a35a3",
