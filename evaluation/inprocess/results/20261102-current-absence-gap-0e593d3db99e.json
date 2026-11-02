@@ -1,0 +1,420 @@
+{
+  "actual_additive_argv": [
+    [
+      "/usr/bin/gcc",
+      "-std=gnu11",
+      "-O2",
+      "-g",
+      "-fno-stack-protector",
+      "-fno-builtin",
+      "-fno-tree-loop-distribute-patterns",
+      "-fno-tree-vectorize",
+      "-mgeneral-regs-only",
+      "-fno-asynchronous-unwind-tables",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-DLI2_TF_HANDOFF=1",
+      "-DLI2_REGISTER_RUN=1",
+      "-DLI2_MAPS_PHASE_REUSE=1",
+      "-DLI2_RSEQ_INACTIVE=1",
+      "-DLI2_NATIVE_PAGES=1",
+      "-DLI2_FAST_MEMSET=1",
+      "-DLI2_FAST_EQUAL=1",
+      "-DLI2_ONESHOT_PUBLICATION=1",
+      "-I${REPO}/tools/page-entry/selected",
+      "-I${REPO}/tools/page-entry/selected",
+      "-I${REPO}/tools/page-entry",
+      "-M",
+      "-MT",
+      "li2_fast_zero",
+      "${REPO}/tools/page-entry/selected/tests/current_absence_gap/oracle.c"
+    ],
+    [
+      "/usr/bin/gcc",
+      "-std=gnu11",
+      "-O2",
+      "-g",
+      "-fno-stack-protector",
+      "-fno-builtin",
+      "-fno-tree-loop-distribute-patterns",
+      "-fno-tree-vectorize",
+      "-mgeneral-regs-only",
+      "-fno-asynchronous-unwind-tables",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-DLI2_TF_HANDOFF=1",
+      "-DLI2_REGISTER_RUN=1",
+      "-DLI2_MAPS_PHASE_REUSE=1",
+      "-DLI2_RSEQ_INACTIVE=1",
+      "-DLI2_NATIVE_PAGES=1",
+      "-DLI2_FAST_MEMSET=1",
+      "-DLI2_FAST_EQUAL=1",
+      "-DLI2_ONESHOT_PUBLICATION=1",
+      "-I${REPO}/tools/page-entry/selected",
+      "-I${REPO}/tools/page-entry/selected",
+      "-I${REPO}/tools/page-entry",
+      "-Wl,--gc-sections,-z,noexecstack,--build-id=none",
+      "${REPO}/tools/page-entry/selected/tests/current_absence_gap/oracle.c",
+      "-o",
+      "${REPO}/target/evaluation/inprocess/current-absence-gap-attempt-1/build/current-absence-gap"
+    ],
+    [
+      "/usr/lib64/ld-linux-x86-64.so.2",
+      "--list",
+      "${REPO}/target/evaluation/inprocess/current-absence-gap-attempt-1/build/current-absence-gap"
+    ],
+    [
+      "${REPO}/target/evaluation/inprocess/current-absence-gap-attempt-1/build/current-absence-gap"
+    ]
+  ],
+  "additive": {
+    "appends": 8,
+    "certificate_checks": 50,
+    "linear_and_literal_equal": 1,
+    "mirror_sweep_pages": 89,
+    "null_results": 325,
+    "positive_results": 13,
+    "queries": 338,
+    "retirements": 8,
+    "rounds": 17,
+    "same_used_revivals": 2,
+    "version": 1,
+    "whole_state_unchanged": 1
+  },
+  "bounds": [
+    5,
+    536870912,
+    16777216,
+    15
+  ],
+  "cleanup_complete": true,
+  "commands": [
+    {
+      "duration_ns": 4064786,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-cc1",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 3937495,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-collect2",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 3862513,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-as",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 3914721,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-ld",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 3827871,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-cc",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 3830755,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-nm",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 8465017,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-objdump",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 3995412,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-ld",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 5360913,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-as",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 3994100,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-python",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 3745506,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "link-input-crt1.o",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 4066138,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "link-input-Scrt1.o",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 3805918,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "link-input-crti.o",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 4251427,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "link-input-crtn.o",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 3976203,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "link-input-crtbegin.o",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 4079338,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "link-input-crtbeginS.o",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 4153379,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "link-input-crtend.o",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 3784445,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "link-input-crtendS.o",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 4197355,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "link-input-libgcc.a",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 4097667,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "link-input-libgcc_s.so",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 4188402,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "link-input-libc.so",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 4629525,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "link-input-libc_nonshared.a",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 4028021,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "runtime-input-libc.so.6",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 4633120,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "runtime-input-libgcc_s.so.1",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 4508183,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "cc-specs",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 26742714,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "headers",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 1427272561,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "fixture-link",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 16197403,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "symbols",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 9732070,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "body",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 3551976,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "libraries",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 12645356,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "native",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 22888504,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "additive-headers",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 1339433105,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "additive-build",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 3530644,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "additive-libraries",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 7932837,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "additive-native",
+      "timed_out": false
+    }
+  ],
+  "cpu": 1,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "stepping": "0"
+  },
+  "implementation": "One 32-byte no-retained-address interval, valid only at the same append count. Retired addresses remain boundaries; mutable page facts are never cached.",
+  "original": {
+    "commands": 31,
+    "receipt": {
+      "bytes": 178681,
+      "sha256": "c625369049e0ad6550bcf36bdb7c0cbac4b864e36e918aa158360f3e92346a8a"
+    },
+    "result": {
+      "appends": 8192,
+      "hits": 2615,
+      "linear_and_literal_equal": 1,
+      "misses": 1101,
+      "queries": 3716,
+      "record_bytes": 64,
+      "record_capacity": 8192,
+      "retirements": 8192,
+      "rounds": 292,
+      "version": 1,
+      "whole_records_and_counts_unchanged": 1
+    }
+  },
+  "performance_credit": false,
+  "profile": "current-absence-gap-validation-v1",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 149839,
+    "sha256": "ad695215f1fadc448feb583da79f6c333c731b3288e6de6834d7f979e9a2f0d1"
+  },
+  "reproduce": {
+    "additive": [
+      [
+        "tools/page-entry/selected/tests/current_absence_gap/build.sh",
+        "tools/page-entry/selected",
+        "tools/page-entry/selected",
+        "${OUTPUT}"
+      ],
+      [
+        "${OUTPUT}/current-absence-gap"
+      ]
+    ],
+    "original": [
+      "python3.12",
+      "-B",
+      "evaluation/inprocess/page_current_lookup.py",
+      "--expect-revision",
+      "0e593d3db99e23306896ecdeea701f17e005f3d3"
+    ],
+    "reservation": "One reserved CPU1; supervise every build/native command with the recorded5CPU/15wall/512MiB/16MiB limits. Original collector ran unchanged in process; its31 and the four additive child commands are actual process observations."
+  },
+  "schema": 1,
+  "scope": "Original 3716-query oracle plus additive 338-query supplied-state oracle; no application, timing or qualification credit.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "0e593d3db99e23306896ecdeea701f17e005f3d3",
+    "source_manifest_sha256": "252cf6e372a6218974b07e8b459d5fb7d5c2927b0ec35d4b8167f8cd71d6478b",
+    "tracked_clean": true,
+    "tree": "aada79c19ca52bb027745258aeaf3e8f64a238fa"
+  },
+  "source_unchanged": true,
+  "status": "passed",
+  "wrapper_body": {
+    "bytes": 5,
+    "scope": "Existing <=512-byte wrapper check; this five-byte wrapper jumps to the separately emitted current function, so5 is not the implementation size.",
+    "sha256": "401d9775bc0b5d28c2a4398a9417178aa9feb83dce3e32d65f62deb20a9fbe55"
+  }
+}
