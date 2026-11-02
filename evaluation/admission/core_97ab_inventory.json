@@ -170,11 +170,21 @@
       "previous_sha256": "2f9a41e8e18c7a0911e6a5a715af82cfaedf7f881ed689102604783e2cf13496"
     },
     "evaluation/admission/core_813_inventory.py": {
-      "current_sha256": "99073f490c5d9d0ea96bacb676d437658407d8c63d3f3d7ebb17e7c98d710407",
+      "current_sha256": "39e192c6322471994bad328993e8c5d2a720c8788e3b2d71b4a552c42510b2f6",
       "edits": [
         [
-          4806,
-          5936,
+          247,
+          269,
+          ""
+        ],
+        [
+          3834,
+          3923,
+          "    return inventory_digest.hexdigest(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode())\n"
+        ],
+        [
+          4795,
+          5925,
           "              MAINABAB, MAIN83B, MAIN850, MAIN5A0, MAIN9950, MAIN2754, MAIN9C70, MAIN0A088, MAINE11, MAIN469, MAINB66, MAIN8F622, MAIN12E, MAINC6F, MAINSHORT, MAINSHORTNATIVE, MAINSHORTENGINE, MAINSHORTOWNERSHIP, MAINSHORTPENDING, MAINADJACENT, MAINFRONTEND, MAINROUTED, MAINROUTEDNATIVE, MAINSTARTUP, MAIN091, main367.DATA, main367.mainc712.DATA, main367.mainc712.main0fb574.DATA, main367.mainc712.main0fb574.mainaf81.DATA, main367.mainc712.main0fb574.mainaf81.maindd75.DATA, main367.mainc712.main0fb574.mainaf81.maindd75.main981419.DATA, main367.mainc712.main0fb574.mainaf81.maindd75.main981419.main20cbe.DATA, main367.mainc712.main0fb574.mainaf81.maindd75.main981419.main20cbe.mainacc247.DATA, main367.mainc712.main0fb574.mainaf81.maindd75.main981419.main20cbe.mainacc247.main34c47.DATA, main367.mainc712.main0fb574.mainaf81.maindd75.main981419.main20cbe.mainacc247.main34c47.maind8d85.DATA, main367.mainc712.main0fb574.mainaf81.maindd75.main981419.main20cbe.mainacc247.main34c47.maind8d85.mainf353.DATA)\n"
         ]
       ],
@@ -12258,7 +12268,7 @@
     "INTERFACES.md": "8b25e5b50512a5db60f38261c48c446fad1b36c46093f5b826729eb65e858d41",
     "evaluation/admission/core_20cbe_inventory.py": "2604731941c321438f9acbd96542095b145e014da20ac88b8fb64fc8387ccb38",
     "evaluation/admission/core_34c47_inventory.py": "19cc2d3d54fb122f06ba0719df7d9ccc6562708a3735147043201f825cbc9380",
-    "evaluation/admission/core_813_inventory.py": "99073f490c5d9d0ea96bacb676d437658407d8c63d3f3d7ebb17e7c98d710407",
+    "evaluation/admission/core_813_inventory.py": "39e192c6322471994bad328993e8c5d2a720c8788e3b2d71b4a552c42510b2f6",
     "evaluation/admission/core_981419_inventory.py": "cc7df60883eb58b31d1bafe426559afb8922f41d3caad748a46f373a37afdad0",
     "evaluation/admission/core_acc247_inventory.py": "0abab5091674ca911f5c54e7134b6bdaaddd8c73c06730e8a772649379e1e86b",
     "evaluation/admission/core_af81_inventory.py": "a105ac5093a619cb61adaf64954f1bf884fba705deeda6e379e071e393104043",

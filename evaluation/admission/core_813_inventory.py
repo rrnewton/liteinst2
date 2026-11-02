@@ -9,6 +9,7 @@ import re
 from parsing import require
 import inventory_syntax
 import inventory_digest
+import inventory_json
 import inventory_copy
 import inventory_splice
 import recorder_shards_inventory as recorder_shards
@@ -98,7 +99,7 @@ RECORDER_TESTS = 350
 
 
 def digest(value):
-    return inventory_digest.hexdigest(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode())
+    return inventory_digest.hexdigest(inventory_json.canonical_bytes(value, json.dumps))
 
 
 def precheck_null_corpus(declared, error):
