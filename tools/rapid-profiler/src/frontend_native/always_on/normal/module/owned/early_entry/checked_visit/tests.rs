@@ -116,8 +116,9 @@ impl Fixture {
     }
 }
 
-// Literal pre-optimization visit body, renamed only. Both normal transitions use
-// their original full-shape wrappers; this reference shares the unchanged tails.
+// Pre-optimization visit with mechanical slot-store adaptations. Its physical
+// checks use the literal pre-occupancy shape below; both normal transitions keep
+// their original full-shape wrappers and unchanged tails.
 impl PhysicalState {
     fn visit_with_full_shapes(
         &mut self,
@@ -132,7 +133,7 @@ impl PhysicalState {
             stamp,
             entry,
         } = visit;
-        self.shape(state)?;
+        self.shape_before_occupancy(state)?;
         let b = self.active.as_mut().ok_or(error(Cause::Outstanding))?;
         let index = b.position;
         if index >= 4
@@ -151,7 +152,7 @@ impl PhysicalState {
             let ordinal = state.next;
             state.enter_function(selected, pc, rsp, word, stamp)?;
             b.rsp = Some(rsp);
-            b.seen[index] = Some(ordinal);
+            b.seen.set(index, Some(ordinal));
             b.pending_position = Some(index);
         } else {
             let BindingProfile::Module { site, .. } = &state.binding.profile else {
@@ -176,18 +177,21 @@ impl PhysicalState {
                 return Err(error(Cause::Return));
             }
             b.rsp = Some(rsp);
-            b.rows[index] = Some(EarlyEntryModulePhysicalRow {
-                batch: b.number,
-                position: index,
-                function: selected.function,
-                observed_ordinal: b.seen[index],
-                return_pc: pc,
-                entry_rsp: rsp,
-                return_word: word,
-            });
+            b.rows.set(
+                index,
+                Some(EarlyEntryModulePhysicalRow {
+                    batch: b.number,
+                    position: index,
+                    function: selected.function,
+                    observed_ordinal: b.seen[index],
+                    return_pc: pc,
+                    entry_rsp: rsp,
+                    return_word: word,
+                }),
+            );
             b.position += 1;
         }
-        self.shape(state)
+        self.shape_before_occupancy(state)
     }
 }
 
@@ -291,8 +295,8 @@ fn physical_image(p: &PhysicalState) -> PhysicalImage {
             before_next: b.before.next,
             position: b.position,
             rsp: b.rsp,
-            seen: b.seen,
-            rows: b.rows,
+            seen: *b.seen,
+            rows: *b.rows,
             pending_position: b.pending_position,
         }),
     }
@@ -895,28 +899,33 @@ fn ret_proof_rejects_hostile_prefix_before_current_geometry_or_mutation() {
                     reference.pc += u64::from(bad_geometry);
                     let expected = match corruption {
                         0 => {
-                            f.physical.active.as_mut().unwrap().rows[0] = None;
+                            f.physical.active.as_mut().unwrap().rows.set(0, None);
                             Cause::Invariant
                         }
                         1 => {
                             let b = f.physical.active.as_mut().unwrap();
-                            b.rows[3] = b.rows[0];
+                            b.rows.set(3, b.rows[0]);
                             Cause::Invariant
                         }
                         2 => {
-                            f.physical.active.as_mut().unwrap().seen[3] = Some(f.state.next);
+                            f.physical
+                                .active
+                                .as_mut()
+                                .unwrap()
+                                .seen
+                                .set(3, Some(f.state.next));
                             Cause::Invariant
                         }
                         3 => {
                             let b = f.physical.active.as_mut().unwrap();
-                            b.seen[0] = Some(b.seen[0].unwrap() + 1);
+                            b.seen.set(0, Some(b.seen[0].unwrap() + 1));
                             Cause::Invariant
                         }
                         4 => {
-                            f.physical.active.as_mut().unwrap().rows[0]
-                                .as_mut()
-                                .unwrap()
-                                .return_pc += 1;
+                            let rows = &mut f.physical.active.as_mut().unwrap().rows;
+                            let mut row = rows[0].unwrap();
+                            row.return_pc += 1;
+                            rows.set(0, Some(row));
                             Cause::Identity
                         }
                         5 => {
@@ -1197,28 +1206,33 @@ fn entry_proof_hostile_prefix_refuses_before_entry_mutation() {
                 reference.pc += u64::from(bad_geometry);
                 let cause = match corruption {
                     0 => {
-                        f.physical.active.as_mut().unwrap().rows[0] = None;
+                        f.physical.active.as_mut().unwrap().rows.set(0, None);
                         Cause::Invariant
                     }
                     1 => {
                         let b = f.physical.active.as_mut().unwrap();
-                        b.rows[3] = b.rows[0];
+                        b.rows.set(3, b.rows[0]);
                         Cause::Invariant
                     }
                     2 => {
-                        f.physical.active.as_mut().unwrap().seen[3] = Some(f.state.next);
+                        f.physical
+                            .active
+                            .as_mut()
+                            .unwrap()
+                            .seen
+                            .set(3, Some(f.state.next));
                         Cause::Invariant
                     }
                     3 => {
                         let b = f.physical.active.as_mut().unwrap();
-                        b.seen[0] = Some(b.seen[0].unwrap() + 1);
+                        b.seen.set(0, Some(b.seen[0].unwrap() + 1));
                         Cause::Invariant
                     }
                     4 => {
-                        f.physical.active.as_mut().unwrap().rows[0]
-                            .as_mut()
-                            .unwrap()
-                            .return_pc += 1;
+                        let rows = &mut f.physical.active.as_mut().unwrap().rows;
+                        let mut row = rows[0].unwrap();
+                        row.return_pc += 1;
+                        rows.set(0, Some(row));
                         Cause::Identity
                     }
                     5 => {
@@ -1238,10 +1252,10 @@ fn entry_proof_hostile_prefix_refuses_before_entry_mutation() {
                         Cause::Invariant
                     }
                     9 => {
-                        f.physical.active.as_mut().unwrap().rows[1]
-                            .as_mut()
-                            .unwrap()
-                            .return_word += 8;
+                        let rows = &mut f.physical.active.as_mut().unwrap().rows;
+                        let mut row = rows[1].unwrap();
+                        row.return_word += 8;
+                        rows.set(1, Some(row));
                         Cause::Invariant
                     }
                     _ => unreachable!(),
@@ -1285,10 +1299,10 @@ fn entry_proof_new_confirmation_keeps_full_older_row_join() {
                 }
                 // A different legal RET passes the old pending-row geometry
                 // check but must fail the newly confirmed record relation.
-                f.physical.active.as_mut().unwrap().rows[0]
-                    .as_mut()
-                    .unwrap()
-                    .return_pc += 8;
+                let rows = &mut f.physical.active.as_mut().unwrap().rows;
+                let mut row = rows[0].unwrap();
+                row.return_pc += 8;
+                rows.set(0, Some(row));
                 f.physical.shape(&f.state).unwrap();
             }
             let old_raw = checked.state.pending.as_ref().unwrap().returned.unwrap();
@@ -1304,10 +1318,10 @@ fn entry_proof_new_confirmation_keeps_full_older_row_join() {
             // Repair only the deliberately inconsistent old row. Both actual
             // receipts remain correctly owned; no refusal rolled back entry.
             for f in [&mut checked, &mut original] {
-                f.physical.active.as_mut().unwrap().rows[0]
-                    .as_mut()
-                    .unwrap()
-                    .return_pc = f.state.records[0].unwrap().raw.return_pc;
+                let rows = &mut f.physical.active.as_mut().unwrap().rows;
+                let mut row = rows[0].unwrap();
+                row.return_pc = f.state.records[0].unwrap().raw.return_pc;
+                rows.set(0, Some(row));
                 f.physical.shape(&f.state).unwrap();
             }
             compare_visit(&mut checked, &mut original, &generations, false);
@@ -2400,5 +2414,397 @@ fn entry_normal_proof_keeps_changed_fields_depth_and_late_error_order() {
                 }
             }
         }
+    }
+}
+
+// Literal complete pre-occupancy shape, renamed only. Both methods inspect the same
+// real fixture, so no generation renaming or simulated model can hide a change.
+impl PhysicalState {
+    fn shape_before_occupancy(&self, state: &NormalState) -> Result<(), BridgeError> {
+        self.matches(state)?;
+        state.shape()?;
+        let b = self.active.as_ref().ok_or(error(Cause::Outstanding))?;
+        if b.number != self.batches.checked_add(1).ok_or(error(Cause::Capacity))?
+            || b.position > 4
+            || state.cursor != b.before.cursor
+            || b.rows[..b.position].iter().any(Option::is_none)
+            || b.rows[b.position..].iter().any(Option::is_some)
+            || b.seen[b.position.saturating_add(1).min(4)..]
+                .iter()
+                .any(Option::is_some)
+            || state
+                .totals
+                .entered
+                .checked_sub(b.before.cursor.totals.entered)
+                != Some(b.seen.iter().flatten().count() as u64)
+            || state
+                .totals
+                .ret_observed
+                .checked_sub(b.before.cursor.totals.ret_observed)
+                != Some(
+                    b.rows
+                        .iter()
+                        .flatten()
+                        .filter(|r| r.observed_ordinal.is_some())
+                        .count() as u64,
+                )
+        {
+            return Err(error(Cause::Invariant));
+        }
+        let mut ordinal = b.before.next;
+        let mut confirmed = 0;
+        for index in 0..4 {
+            if let Some(n) = b.seen[index] {
+                if n != ordinal {
+                    return Err(error(Cause::Invariant));
+                }
+                ordinal = ordinal.checked_add(1).ok_or(error(Cause::Capacity))?;
+            }
+            if let Some(row) = b.rows[index] {
+                if row.batch != b.number
+                    || row.position != index
+                    || row.function != self.order[index % 2].function
+                    || row.observed_ordinal != b.seen[index]
+                    || row.return_word != self.words[index]
+                    || Some(row.entry_rsp) != b.rsp
+                {
+                    return Err(error(Cause::Invariant));
+                }
+                let BindingProfile::Module { site, .. } = &state.binding.profile else {
+                    return Err(error(Cause::Identity));
+                };
+                state.selected_geometry(
+                    self.order[index % 2],
+                    site.functions()[self.order[index % 2].index].entry(),
+                    Some(row.return_pc),
+                )?;
+                if row.observed_ordinal.is_some() && b.pending_position != Some(index) {
+                    let r = state
+                        .records
+                        .get(confirmed)
+                        .and_then(|r| *r)
+                        .ok_or(error(Cause::Invariant))?;
+                    if state.functions[confirmed] != Some(self.order[index % 2])
+                        || Some(r.raw.ordinal) != row.observed_ordinal
+                        || r.raw.return_pc != row.return_pc
+                        || r.entry_rsp != row.entry_rsp
+                        || r.return_word != row.return_word
+                    {
+                        return Err(error(Cause::Invariant));
+                    }
+                    confirmed += 1;
+                }
+            }
+        }
+        if state.next != ordinal || state.len != confirmed {
+            return Err(error(Cause::Invariant));
+        }
+        match (b.pending_position, &state.pending) {
+            (None, None) if b.position == 4 || b.seen[b.position].is_none() => {}
+            (Some(index), Some(p)) if index < 4 => {
+                if b.seen[index] != Some(p.ordinal)
+                    || p.selected != self.order[index % 2]
+                    || p.word != self.words[index]
+                    || Some(p.rsp) != b.rsp
+                    || (p.returned.is_some() && (index >= b.position || b.rows[index].is_none()))
+                    || (p.returned.is_none() && (index != b.position || b.rows[index].is_some()))
+                    || (b.position < 4 && index != b.position && b.seen[b.position].is_some())
+                {
+                    return Err(error(Cause::Return));
+                }
+            }
+            _ => return Err(error(Cause::Return)),
+        }
+        Ok(())
+    }
+}
+
+fn compare_occupancy_shape_unchanged(f: &Fixture, expected: Result<(), BridgeError>) {
+    let before = (
+        normal_image(&f.state),
+        physical_image(&f.physical),
+        identities(&f.state, &f.physical),
+    );
+    let original = f.physical.shape_before_occupancy(&f.state);
+    assert_eq!(original, expected);
+    assert_eq!(
+        (
+            normal_image(&f.state),
+            physical_image(&f.physical),
+            identities(&f.state, &f.physical)
+        ),
+        before
+    );
+    assert_eq!(f.physical.shape(&f.state), original);
+    assert_eq!(
+        (
+            normal_image(&f.state),
+            physical_image(&f.physical),
+            identities(&f.state, &f.physical)
+        ),
+        before
+    );
+}
+
+#[test]
+fn physical_occupancy_matches_original_for_all_6480_metadata_patterns() {
+    let mut f = Fixture::new(10, [0, 1]);
+    f.physical.begin(&f.state).unwrap();
+    for _ in 0..4 {
+        f.call(false);
+    }
+    // Derive geometry/content from actual mandatory-return transitions. Only
+    // occupancy, row observation kind and physical position vary in this grid.
+    let rows = f.physical.returned(&f.state).unwrap();
+    assert_eq!(f.state.totals, NormalTotals::default());
+    let mut accepted = 0;
+    let mut refused = 0;
+    for seen_mask in 0u8..16 {
+        for row_pattern in 0usize..81 {
+            for position in 0..=4 {
+                let b = f.physical.active.as_mut().unwrap();
+                b.position = position;
+                b.rsp = (position != 0).then_some(rows[0].entry_rsp);
+                let mut digits = row_pattern;
+                for (index, original_row) in rows.iter().enumerate() {
+                    b.seen.set(
+                        index,
+                        (seen_mask & (1 << index) != 0).then_some(index as u64 + 1),
+                    );
+                    let kind = digits % 3;
+                    digits /= 3;
+                    let mut row = *original_row;
+                    row.observed_ordinal = (kind == 2).then_some(index as u64 + 1);
+                    b.rows.set(index, (kind != 0).then_some(row));
+                }
+                assert_eq!(digits, 0);
+                // Prove these cases reach physical checks, not NormalState's
+                // earlier refusal path. The five accepted shapes are exactly
+                // the empty/one/two/three/four all-bypass return prefixes.
+                assert_eq!(f.physical.matches(&f.state), Ok(()));
+                assert_eq!(f.state.shape(), Ok(()));
+                let bypass_prefix = (3usize.pow(position as u32) - 1) / 2;
+                if seen_mask == 0 && row_pattern == bypass_prefix {
+                    compare_occupancy_shape_unchanged(&f, Ok(()));
+                    accepted += 1;
+                } else {
+                    compare_occupancy_shape_unchanged(&f, Err(error(Cause::Invariant)));
+                    refused += 1;
+                }
+            }
+        }
+    }
+    assert_eq!((accepted, refused), (5, 6475));
+    let b = f.physical.active.as_mut().unwrap();
+    b.position = 4;
+    b.rsp = Some(rows[0].entry_rsp);
+    for (index, row) in rows.iter().enumerate() {
+        b.seen.set(index, None);
+        b.rows.set(index, Some(*row));
+    }
+    compare_occupancy_shape_unchanged(&f, Ok(()));
+    assert!(f.finish().0.is_none());
+    physical_occupancy_keeps_exact_error_precedence_and_underflow();
+}
+
+#[test]
+fn physical_occupancy_matches_original_live_prefixes_and_rearm() {
+    let mut batches = 0;
+    for k in [10, 1000] {
+        for order in [[0, 1], [1, 0]] {
+            for mask in 0u8..16 {
+                let mut f = Fixture::new(k, order);
+                f.controller.arm(&f.epoch).unwrap();
+                compare_occupancy_shape_unchanged(&f, Err(error(Cause::Outstanding)));
+                f.physical.begin(&f.state).unwrap();
+                compare_occupancy_shape_unchanged(&f, Ok(()));
+                let mut second = None;
+                for index in 0..4 {
+                    let observed = mask & (1 << index) != 0;
+                    if observed {
+                        f.visit(true).unwrap();
+                        compare_occupancy_shape_unchanged(&f, Ok(()));
+                    }
+                    let before_return = normal_image(&f.state);
+                    f.visit(false).unwrap();
+                    if !observed {
+                        // A bypass must not consume/replace an older Returned,
+                        // including after controller rearm and two bypasses.
+                        assert_eq!(normal_image(&f.state), before_return);
+                    }
+                    compare_occupancy_shape_unchanged(&f, Ok(()));
+                    if index == 0 {
+                        let prior_pending = normal_image(&f.state).pending;
+                        f.controller.disarm(&f.epoch).unwrap();
+                        let next = f.controller.stage_prepared(f.banks.pop().unwrap()).unwrap();
+                        f.controller.arm(&next).unwrap();
+                        assert_eq!(normal_image(&f.state).pending, prior_pending);
+                        compare_occupancy_shape_unchanged(&f, Ok(()));
+                        second = Some(next);
+                    }
+                }
+                let second = second.unwrap();
+                let (sparse, rows) = f.finish();
+                let count = mask.count_ones() as usize;
+                assert_eq!(
+                    rows.iter().filter(|r| r.observed_ordinal.is_some()).count(),
+                    count
+                );
+                assert_eq!(sparse.as_ref().map_or(0, |s| s.records().len()), count);
+                if let Some(sparse) = sparse {
+                    for (record, row) in sparse
+                        .records()
+                        .iter()
+                        .zip(rows.iter().filter(|r| r.observed_ordinal.is_some()))
+                    {
+                        let generation = if row.position == 0 {
+                            f.epoch.generation()
+                        } else {
+                            second.generation()
+                        };
+                        assert!(
+                            matches!(record.record.raw.owner, RawIntervalOwner::Sampled { generation: owner, .. } if owner == generation.get())
+                        );
+                        assert_eq!(Some(record.record.raw.ordinal), row.observed_ordinal);
+                        assert_eq!(record.function, row.function);
+                        assert_eq!(record.record.raw.return_pc, row.return_pc);
+                        assert_eq!(record.record.entry_rsp, row.entry_rsp);
+                        assert_eq!(record.record.return_word, row.return_word);
+                    }
+                }
+                compare_occupancy_shape_unchanged(&f, Err(error(Cause::Outstanding)));
+                let first_count = usize::from(mask & 1 != 0);
+                assert_eq!(
+                    f.controller
+                        .report(&f.epoch)
+                        .unwrap()
+                        .unwrap()
+                        .records()
+                        .count(),
+                    first_count
+                );
+                f.controller.disarm(&second).unwrap();
+                assert_eq!(
+                    f.controller
+                        .report(&second)
+                        .unwrap()
+                        .unwrap()
+                        .records()
+                        .count(),
+                    count - first_count
+                );
+                batches += 1;
+            }
+        }
+    }
+    assert_eq!(batches, 64);
+}
+
+// The exhaustive physical-query control also exercises the surrounding old
+// first-error boundaries; these are not capsule-local predicate tests.
+fn physical_occupancy_keeps_exact_error_precedence_and_underflow() {
+    for order in [[0, 1], [1, 0]] {
+        let mut f = Fixture::new(10, order);
+        f.physical.begin(&f.state).unwrap();
+        compare_occupancy_shape_unchanged(&f, Ok(()));
+        // The initial overflow is after matches/normal/active, but before any
+        // physical occupancy or cursor check. Restore each fault explicitly.
+        f.physical.batches = u64::MAX;
+        f.physical.shared.failed.store(true, Ordering::Release);
+        compare_occupancy_shape_unchanged(&f, Err(error(Cause::Identity)));
+        f.physical.shared.failed.store(false, Ordering::Release);
+        f.state.len = CALLS + 1;
+        compare_occupancy_shape_unchanged(&f, Err(error(Cause::Invariant)));
+        f.state.len = 0;
+        let active = f.physical.active.take();
+        compare_occupancy_shape_unchanged(&f, Err(error(Cause::Outstanding)));
+        f.physical.active = active;
+        assert_eq!(f.state.shape(), Ok(()));
+        for position in [5, usize::MAX] {
+            f.physical.active.as_mut().unwrap().position = position;
+            compare_occupancy_shape_unchanged(&f, Err(error(Cause::Capacity)));
+            f.physical.batches = 0;
+            compare_occupancy_shape_unchanged(&f, Err(error(Cause::Invariant)));
+            f.physical.batches = u64::MAX;
+        }
+        f.physical.active.as_mut().unwrap().position = 0;
+        f.physical.active.as_mut().unwrap().seen.set(3, Some(1));
+        compare_occupancy_shape_unchanged(&f, Err(error(Cause::Capacity)));
+        f.physical.batches = 0;
+        compare_occupancy_shape_unchanged(&f, Err(error(Cause::Invariant)));
+        f.physical.active.as_mut().unwrap().seen.set(3, None);
+        compare_occupancy_shape_unchanged(&f, Ok(()));
+        // NormalState only uses cursor.confirmed here. Change the independent
+        // cursor entered/RET totals on BOTH sides of the physical cursor join,
+        // making checked_sub fail without an earlier normal/cursor mismatch.
+        let cursor = f.state.cursor;
+        for entered in [true, false] {
+            f.state.cursor = cursor;
+            if entered {
+                f.state.cursor.totals.entered = 1;
+                assert_eq!(
+                    f.state
+                        .totals
+                        .entered
+                        .checked_sub(f.state.cursor.totals.entered),
+                    None
+                );
+            } else {
+                f.state.cursor.totals.ret_observed = 1;
+                assert_eq!(
+                    f.state
+                        .totals
+                        .ret_observed
+                        .checked_sub(f.state.cursor.totals.ret_observed),
+                    None
+                );
+            }
+            f.physical.active.as_mut().unwrap().before.cursor = f.state.cursor;
+            assert_eq!(f.state.shape(), Ok(()));
+            compare_occupancy_shape_unchanged(&f, Err(error(Cause::Invariant)));
+        }
+        f.state.cursor = cursor;
+        f.physical.active.as_mut().unwrap().before.cursor = cursor;
+        compare_occupancy_shape_unchanged(&f, Ok(()));
+        f.controller.arm(&f.epoch).unwrap();
+        f.call(true);
+        compare_occupancy_shape_unchanged(&f, Ok(()));
+        let old_next = f.physical.active.as_ref().unwrap().before.next;
+        let old_seen = f.physical.active.as_ref().unwrap().seen[0];
+        let old_row = f.physical.active.as_ref().unwrap().rows[0];
+        let b = f.physical.active.as_mut().unwrap();
+        b.before.next = u64::MAX;
+        b.seen.set(0, Some(u64::MAX));
+        let mut changed = b.rows[0].unwrap();
+        changed.observed_ordinal = Some(u64::MAX);
+        b.rows.set(0, Some(changed));
+        assert_eq!(f.state.shape(), Ok(()));
+        // Counts/prefix are valid: later ordinal overflow must remain Capacity.
+        compare_occupancy_shape_unchanged(&f, Err(error(Cause::Capacity)));
+        let row = f.physical.active.as_ref().unwrap().rows[0];
+        f.physical.active.as_mut().unwrap().rows.set(0, None);
+        compare_occupancy_shape_unchanged(&f, Err(error(Cause::Invariant)));
+        let mut changed = row.unwrap();
+        changed.return_pc += 1;
+        f.physical
+            .active
+            .as_mut()
+            .unwrap()
+            .rows
+            .set(0, Some(changed));
+        compare_occupancy_shape_unchanged(&f, Err(error(Cause::Capacity)));
+        let b = f.physical.active.as_mut().unwrap();
+        b.before.next = old_next;
+        b.seen.set(0, old_seen);
+        let mut changed = b.rows[0].unwrap();
+        changed.observed_ordinal = old_row.unwrap().observed_ordinal;
+        b.rows.set(0, Some(changed));
+        compare_occupancy_shape_unchanged(&f, Err(error(Cause::Identity)));
+        f.physical.active.as_mut().unwrap().rows.set(0, old_row);
+        compare_occupancy_shape_unchanged(&f, Ok(()));
+        for _ in 0..3 {
+            f.call(false);
+        }
+        assert_eq!(f.finish().0.unwrap().records().len(), 1);
     }
 }

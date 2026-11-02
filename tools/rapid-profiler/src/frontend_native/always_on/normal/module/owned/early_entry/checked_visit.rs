@@ -149,7 +149,7 @@ impl<'a> CheckedRet<'a> {
             return_word: word,
         };
         b.rsp = Some(rsp);
-        b.rows[index] = Some(row);
+        b.rows.set(index, Some(row));
         b.position += 1;
         Ok(CommittedRet { checked: self, row })
     }
@@ -253,7 +253,7 @@ impl<'a> CheckedEntry<'a> {
         // a consumed receipt or partially installed Pending is never retried.
         checked.enter(selected, pc, rsp, word, stamp)?;
         b.rsp = Some(rsp);
-        b.seen[index] = Some(ordinal);
+        b.seen.set(index, Some(ordinal));
         b.pending_position = Some(index);
         Ok(CommittedEntry {
             checked: self,

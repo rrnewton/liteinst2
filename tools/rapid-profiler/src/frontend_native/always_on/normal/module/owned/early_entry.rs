@@ -5,6 +5,8 @@ use crate::frontend_native::always_on::site::ordinary::InstalledEarlyEntryModule
 use liteinst2::controls::ControlWriter;
 use std::sync::atomic::AtomicBool;
 mod checked_visit;
+mod physical_slots;
+use physical_slots::{RowSlots, SeenSlots};
 mod controller;
 #[cfg(any(test, feature = "frontend-native-qualification"))]
 pub mod qualification;
@@ -111,8 +113,8 @@ struct PhysicalBatch {
     before: Baseline,
     position: usize,
     rsp: Option<u64>,
-    seen: [Option<u64>; 4],
-    rows: [Option<EarlyEntryModulePhysicalRow>; 4],
+    seen: SeenSlots,
+    rows: RowSlots,
     pending_position: Option<usize>,
 }
 struct Visit {
@@ -159,8 +161,8 @@ impl PhysicalState {
             before,
             position: 0,
             rsp: None,
-            seen: [None; 4],
-            rows: [None; 4],
+            seen: SeenSlots::empty(),
+            rows: RowSlots::empty(),
             pending_position: None,
         });
         Ok(())
@@ -172,27 +174,18 @@ impl PhysicalState {
         if b.number != self.batches.checked_add(1).ok_or(error(Cause::Capacity))?
             || b.position > 4
             || state.cursor != b.before.cursor
-            || b.rows[..b.position].iter().any(Option::is_none)
-            || b.rows[b.position..].iter().any(Option::is_some)
-            || b.seen[b.position.saturating_add(1).min(4)..]
-                .iter()
-                .any(Option::is_some)
+            || !b.rows.is_prefix(b.position)
+            || !b.seen.tail_is_empty(b.position.saturating_add(1).min(4))
             || state
                 .totals
                 .entered
                 .checked_sub(b.before.cursor.totals.entered)
-                != Some(b.seen.iter().flatten().count() as u64)
+                != Some(b.seen.count() as u64)
             || state
                 .totals
                 .ret_observed
                 .checked_sub(b.before.cursor.totals.ret_observed)
-                != Some(
-                    b.rows
-                        .iter()
-                        .flatten()
-                        .filter(|r| r.observed_ordinal.is_some())
-                        .count() as u64,
-                )
+                != Some(b.rows.observed_count() as u64)
         {
             return Err(error(Cause::Invariant));
         }
@@ -274,7 +267,7 @@ impl PhysicalState {
         {
             return Err(error(Cause::Return));
         }
-        Ok(b.rows.map(|row| row.expect("checked four physical rows")))
+        Ok((*b.rows).map(|row| row.expect("checked four physical rows")))
     }
     fn complete(
         &mut self,
@@ -287,7 +280,7 @@ impl PhysicalState {
         let b = self.active.as_ref().ok_or(error(Cause::Outstanding))?;
         let count = b.seen.iter().flatten().count();
         if b.position != 4
-            || b.rows != rows.map(Some)
+            || *b.rows != rows.map(Some)
             || observations.is_some() != (count != 0)
             || observations.map_or(0, |o| o.records.len()) != count
             || state
