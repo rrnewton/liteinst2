@@ -1,6 +1,22 @@
 /* Independent binding for the opt-in pair owner. No old one-page state or
    pages==1 predicate is changed, and no supplied snapshot grants a pin. */
 #include "native_pair.h"
+#ifdef LI2_RSEQ_CURRENT_DATA
+#include "rseq_current_data.h"
+/* The current helper consumes its mapping ticket before returning. Copy the
+   actual query kind and partial error data; neither a projected observation
+   nor an unavailable-view fallback is relabelled as a fresh acquisition.
+   Registration, live word, TLS and generation equality remain at each caller. */
+static int np_rseq_data(uintptr_t address,struct li2_rseq_data *out) {
+    if(!out)return LI2_RSEQ_ARGUMENT;
+    struct li2_rseq_current_data observed={0};
+    int result=li2_lifecycle_rseq_data_current(address,&observed);
+    *out=observed.data;
+    return result;
+}
+#else
+#define np_rseq_data li2_lifecycle_rseq_data
+#endif
 static struct li2_rseq_pair_progress np_rseq;
 static unsigned np_rseq_wait;
 static uint64_t np_rseq_closed_fs,np_rseq_closed_gs;
@@ -65,7 +81,7 @@ int li2_rseq_pair_seed(const struct li2_native_pair_owner *o) {
     __asm__ volatile("":::"memory");np_rseq_zero(&np_rseq.word_before);
     if(np_rseq.registered) {
         li2_maps_phase_end();struct li2_rseq_data observed={0};
-        int e=li2_lifecycle_rseq_data(state.address,&observed);
+        int e=np_rseq_data(state.address,&observed);
         if(e || !same_data(&state.data,&observed))return np_rseq_bad(LI2_RN_PIN,e?e:41);
         np_rseq.before=observed;np_rseq_zero(&np_rseq.word_before);
     }
@@ -131,7 +147,7 @@ int li2_rseq_pair_refresh(const struct li2_native_pair_owner *o,int closing) {
         return np_rseq_bad(LI2_RN_STATE,46);
     np_rseq_zero(&np_rseq.word_after);
     if(np_rseq.registered) {
-        li2_maps_phase_end();int e=li2_lifecycle_rseq_data(state.address,&np_rseq.after);
+        li2_maps_phase_end();int e=np_rseq_data(state.address,&np_rseq.after);
         if(e || !same_data(&np_rseq.before,&np_rseq.after))return np_rseq_bad(LI2_RN_PIN,e?e:42);
         np_rseq_zero(&np_rseq.word_after);
     }
@@ -172,7 +188,7 @@ int li2_rseq_pair_refault(const struct li2_native_pair_owner *o) {
     if(l->owner!=o || l->first_error || l->live || l->busy || !l->close.complete ||
        l->close.pages || l->close.first_error)return np_rseq_bad(LI2_RN_CLOSE,41);
     if(np_rseq.registered) {
-        li2_maps_phase_end();int e=li2_lifecycle_rseq_data(state.address,&np_rseq.after);
+        li2_maps_phase_end();int e=np_rseq_data(state.address,&np_rseq.after);
         if(e || !same_data(&np_rseq.before,&np_rseq.after))return np_rseq_bad(LI2_RN_PIN,e?e:43);
         np_rseq_zero(&np_rseq.word_after);
     }
@@ -193,3 +209,7 @@ int li2_rseq_pair_quiet(const struct li2_native_pair_owner *o) {
         !np_rseq.entry_checked && np_rseq.attempts==np_rseq.closed &&
         np_rseq.preentries==np_rseq.entries;
 }
+
+#ifndef LI2_RSEQ_CURRENT_DATA
+#undef np_rseq_data
+#endif
