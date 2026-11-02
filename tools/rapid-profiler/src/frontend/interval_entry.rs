@@ -315,7 +315,9 @@ impl ThreadModel {
                 {
                     return Err(IntervalExitError::ForeignEntry);
                 }
-                let (children, _) = self.exit_check(slot).map_err(IntervalExitError::Model)?;
+                let checked =
+                    completion::CheckedExit::check(self, slot).map_err(IntervalExitError::Model)?;
+                let children = checked.children();
                 let expected = Payload {
                     admission: *admission,
                     thread: entry.thread,
@@ -325,8 +327,7 @@ impl ThreadModel {
                         completed_children: children,
                     },
                 };
-                let (completion, payload) =
-                    self.finish(slot, end).map_err(IntervalExitError::Model)?;
+                let (completion, payload) = checked.complete(end, || {}, || {});
                 // Consumption precedes the impossible postcondition failure:
                 // no rollback/retry may invent a second completion.
                 entry.state = None;
