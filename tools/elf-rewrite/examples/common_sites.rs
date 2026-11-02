@@ -7,6 +7,8 @@ use iced_x86::{
     Code, CodeSize, FlowControl, Instruction, InstructionInfoFactory, Mnemonic, OpAccess, OpKind,
     Register, UsedMemory,
 };
+use li2core::contracts::AddressRange;
+use li2core::quiescent::feasibility::{Rel32Constraints as TargetPattern, pun_head};
 use li2core::scanner::InstructionScanner;
 use liteinst_rewrite::carrier::elf64::{
     Elf64, ElfVaddr, ObjectType, ParseLimits, SegmentType, Storage,
@@ -824,36 +826,11 @@ fn allocation_ranges(elf: &Elf64<'_>, p: &Policy, count: usize) -> Result<Vec<[(
     }
     Ok(result)
 }
-// These are the unchanged B1 forbidden-entry opcode bytes, not an emission
-// oracle. The core still qualifies instructions, emits images and checks fit.
-const ENTRY_BYTES: [u8; 14] = [
-    0x06, 0x07, 0x0e, 0x16, 0x17, 0x1e, 0x1f, 0x27, 0x2f, 0x37, 0x3f, 0x60, 0x61, 0xce,
-];
-#[derive(Clone, Copy, Debug)]
-struct TargetPattern {
-    next: u64,
-    fixed: [Option<u8>; 4],
-    entries: [bool; 4],
-}
-impl TargetPattern {
-    fn plain(next: u64) -> Self {
-        Self {
-            next,
-            fixed: [None; 4],
-            entries: [false; 4],
-        }
-    }
-    fn allows(self, digit: usize, byte: u8) -> bool {
-        self.fixed[digit].is_none_or(|b| b == byte)
-            && (!self.entries[digit] || ENTRY_BYTES.contains(&byte))
-    }
-}
-
 // A four-byte digit successor, not a walk over address-space bytes. A tight
 // prefix can recurse once at each digit; a larger digit takes the minimum
 // legal suffix. Thus no loop is proportional to the domain's byte length.
 fn encoded_at_least(pattern: TargetPattern, lower: u32) -> Option<u32> {
-    if (0..4).any(|n| !(0..=255).any(|b| pattern.allows(n, b))) {
+    if (0..4).any(|n| !(0..=255).any(|b| pattern.allows(n, b) == Some(true))) {
         return None;
     }
     fn digit(p: TargetPattern, lower: u32, n: i32, tight: bool, prefix: u32) -> Option<u32> {
@@ -863,7 +840,7 @@ fn encoded_at_least(pattern: TargetPattern, lower: u32) -> Option<u32> {
         let shift = n as u32 * 8;
         let floor = if tight { (lower >> shift) & 255 } else { 0 };
         for byte in floor..=255 {
-            if !p.allows(n as usize, byte as u8) {
+            if p.allows(n as usize, byte as u8) != Some(true) {
                 continue;
             }
             if let Some(value) = digit(
@@ -904,40 +881,23 @@ fn first_target(pattern: TargetPattern, range: (u64, u64)) -> Option<u64> {
 }
 
 fn pun_pattern(f: &Function, s: &Selected, prefixes: usize, p: &Policy) -> Option<TargetPattern> {
-    let pc = s.instruction.ip();
-    let len = s.instruction.len();
-    let displaced_end = pc.checked_add(len as u64)?;
-    let consumed_end = pc.checked_add(5 + prefixes as u64)?;
-    if !(1..=4).contains(&len)
-        || prefixes >= len
-        || len as u64 > p.search[1]
-        || pc < s.block.0
-        || displaced_end > s.block.1
-        || consumed_end > end(f.owner.pc, f.owner.length).ok()?
-        || pc / 64 != (displaced_end - 1) / 64
-    {
-        return None;
-    }
-    let store_len = len.next_power_of_two() as u64;
-    let store_pc = pc.min((pc | 63).checked_sub(store_len - 1)?);
-    if store_pc < f.owner.pc
-        || store_pc.checked_add(store_len)? > end(f.owner.pc, f.owner.length).ok()?
-    {
-        return None;
-    }
-    let offset = usize::try_from(pc - f.owner.pc).ok()?;
-    let free = len - prefixes - 1;
-    let suffix = f.bytes.get(offset + len..offset + 5 + prefixes)?;
-    let mut raw = [0; 4];
-    raw[free..].copy_from_slice(suffix);
-    // Match the core's checked lower-bound conversion BEFORE intersection.
-    let low = u64::try_from(i128::from(consumed_end) + i128::from(i32::from_le_bytes(raw))).ok()?;
-    low.checked_add(1_u64 << (8 * free))?;
-    let mut result = TargetPattern::plain(consumed_end);
-    for (slot, byte) in result.fixed.iter_mut().zip(raw).skip(free) {
-        *slot = Some(byte);
-    }
-    Some(result)
+    let source = AddressRange::new(f.owner.pc, usize::try_from(f.owner.length).ok()?).ok()?;
+    let block = AddressRange::new(
+        s.block.0,
+        usize::try_from(s.block.1.checked_sub(s.block.0)?).ok()?,
+    )
+    .ok()?;
+    let head = pun_head(
+        s.instruction.ip(),
+        s.instruction.len(),
+        prefixes,
+        source,
+        block,
+        usize::try_from(p.search[1]).ok()?,
+    )
+    .ok()?;
+    head.store_range().ok()?;
+    Some(head.targets(&f.bytes).ok()?.constraints())
 }
 
 fn original_patterns(f: &Function, s: &Selected, p: &Policy) -> Vec<TargetPattern> {
@@ -2338,5 +2298,188 @@ mod tests {
     fn scanner_rejects_invalid_and_truncated_tail() {
         assert!(decode(&[0x48], 0x1000).is_err());
         assert!(decode(&[0x90, 0x0f], 0x1000).is_err());
+    }
+
+    mod feasibility_parity {
+        use super::*;
+
+        fn predecessor_pun_pattern(
+            f: &Function,
+            s: &Selected,
+            prefixes: usize,
+            p: &Policy,
+        ) -> Option<TargetPattern> {
+            let pc = s.instruction.ip();
+            let len = s.instruction.len();
+            let displaced_end = pc.checked_add(len as u64)?;
+            let consumed_end = pc.checked_add(5 + prefixes as u64)?;
+            if !(1..=4).contains(&len)
+                || prefixes >= len
+                || len as u64 > p.search[1]
+                || pc < s.block.0
+                || displaced_end > s.block.1
+                || consumed_end > end(f.owner.pc, f.owner.length).ok()?
+                || pc / 64 != (displaced_end - 1) / 64
+            {
+                return None;
+            }
+            let store_len = len.next_power_of_two() as u64;
+            let store_pc = pc.min((pc | 63).checked_sub(store_len - 1)?);
+            if store_pc < f.owner.pc
+                || store_pc.checked_add(store_len)? > end(f.owner.pc, f.owner.length).ok()?
+            {
+                return None;
+            }
+            let offset = usize::try_from(pc - f.owner.pc).ok()?;
+            let free = len - prefixes - 1;
+            let suffix = f.bytes.get(offset + len..offset + 5 + prefixes)?;
+            let mut raw = [0; 4];
+            raw[free..].copy_from_slice(suffix);
+            // Match the core's checked lower-bound conversion BEFORE intersection.
+            let low = u64::try_from(i128::from(consumed_end) + i128::from(i32::from_le_bytes(raw)))
+                .ok()?;
+            low.checked_add(1_u64 << (8 * free))?;
+            let mut result = TargetPattern::plain(consumed_end);
+            for (slot, byte) in result.fixed.iter_mut().zip(raw).skip(free) {
+                *slot = Some(byte);
+            }
+            Some(result)
+        }
+
+        fn predecessor_patterns(f: &Function, s: &Selected, p: &Policy) -> Vec<TargetPattern> {
+            let logical = s.instruction.ip();
+            let mut patterns = Vec::new();
+            if let Some(pattern) = predecessor_pun_pattern(f, s, 0, p) {
+                patterns.push(pattern);
+            }
+            let mut physical: Vec<_> = f
+                .instructions
+                .iter()
+                .filter(|i| {
+                    s.block.0 <= i.ip()
+                        && i.ip() < s.block.1
+                        && i.ip() <= logical
+                        && logical - i.ip() <= p.search[0]
+                })
+                .map(Instruction::ip)
+                .collect();
+            physical.sort_by_key(|&pc| (pc != logical, pc % 64 > 56, logical - pc));
+            // The core spends max_sites on physical heads, even on invalid windows.
+            for pc in physical.into_iter().take(p.search[2] as usize) {
+                let mut window = Vec::new();
+                let mut stop = pc;
+                let mut valid = true;
+                for i in f.instructions.iter().filter(|i| i.ip() >= pc) {
+                    if i.ip() >= s.block.1 {
+                        break;
+                    }
+                    stop = i.next_ip();
+                    if stop > s.block.1 || stop - pc > p.search[1] {
+                        valid = false;
+                        break;
+                    }
+                    window.push(i);
+                    if stop - pc >= 5 && stop > logical {
+                        break;
+                    }
+                }
+                if !valid
+                    || stop - pc < 5
+                    || stop <= logical
+                    || window.iter().any(|i| {
+                        matches!(
+                            i.flow_control(),
+                            FlowControl::Call | FlowControl::IndirectCall
+                        ) || (i.flow_control() != FlowControl::Next && i.next_ip() != stop)
+                    })
+                {
+                    continue;
+                }
+                let Some(next) = pc.checked_add(5) else {
+                    continue;
+                };
+                let mut pattern = TargetPattern::plain(next);
+                for head in &f.instructions {
+                    if pc < head.ip() && head.ip() < next {
+                        pattern.entries[(head.ip() - pc - 1) as usize] = true;
+                    }
+                }
+                patterns.push(pattern);
+            }
+            for prefixes in 1..s.instruction.len().min(4) {
+                if let Some(pattern) = predecessor_pun_pattern(f, s, prefixes, p) {
+                    patterns.push(pattern);
+                }
+            }
+            patterns
+        }
+
+        #[test]
+        fn shared_patterns_match_complete_predecessor_inventory_and_padding_cases() {
+            let mut policy = policy(derived_policy_text().as_bytes()).unwrap();
+            let functions = original_corpus();
+            for style in ["heap-write", "jump-site"] {
+                let inventory = inventory(&functions, style).unwrap();
+                for sites in [0, 1, 64] {
+                    policy.search[2] = sites;
+                    for displaced in [1, 4, 80] {
+                        policy.search[1] = displaced;
+                        for upstream in [0, 64] {
+                            policy.search[0] = upstream;
+                            for selected in &inventory.selected {
+                                let function = &functions[selected.function];
+                                assert_eq!(
+                                    original_patterns(function, selected, &policy),
+                                    predecessor_patterns(function, selected, &policy),
+                                    "{style} site {} search {:?}",
+                                    selected.id,
+                                    policy.search
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+            policy.search = [64, 80, 64, 256, 4096];
+            for instruction in [
+                &[0x90][..],
+                &[0x66, 0x90],
+                &[0x0f, 0x1f, 0x00],
+                &[0x0f, 0x1f, 0x40, 0x00],
+            ] {
+                for offset in 60..64 {
+                    for left in [0, 1] {
+                        for right in [0, 1, 4, 8] {
+                            let physical = 0x1000 + offset;
+                            let mut bytes = vec![0x90; left];
+                            bytes.extend_from_slice(instruction);
+                            bytes.extend(vec![0x90; right]);
+                            let function = function(NAMES[0], physical - left as u64, &bytes);
+                            let instruction = *function
+                                .instructions
+                                .iter()
+                                .find(|item| item.ip() == physical)
+                                .unwrap();
+                            let selected = Selected {
+                                id: 1,
+                                function: 0,
+                                instruction,
+                                block: (physical, physical + instruction.len() as u64),
+                            };
+                            for prefixes in 0..=instruction.len() {
+                                assert_eq!(
+                                    pun_pattern(&function, &selected, prefixes, &policy),
+                                    predecessor_pun_pattern(
+                                        &function, &selected, prefixes, &policy
+                                    ),
+                                    "len {} offset {offset} left {left} right {right} prefixes {prefixes}",
+                                    instruction.len()
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
