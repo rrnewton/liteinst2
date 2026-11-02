@@ -213,6 +213,9 @@ def graph(source,page,base,entry,high,layout,table_bytes):
             gpr|=struct.unpack_from('<I',d,316)[0]
             for f in struct.unpack_from('<4I',d,296):flags|=f
     last_none=max(i for i,h in enumerate(heads)if h[0]==1);last_direct=max(direct_models)
+    # Cold rseq visits BFS heads in order: NONE and DIRECT write its footprint.
+    # MOV proof checks do not update it; retain the separate NONE/proved keys.
+    last_rseq=max(i for i,h in enumerate(heads)if h[0]in(1,5))
     return dict(head=b''.join(struct.pack('<8I',*h)for h in heads)+bytes(100*32),
         original=b''.join(originals)+bytes(100*336),frontier=b''.join(frontiers)+bytes(6*336),
         instruction=bytes(instructions),guard=bytes(guards),image=bytes(image),stub_image=b'\xcc'*4096,
@@ -222,5 +225,6 @@ def graph(source,page,base,entry,high,layout,table_bytes):
         offsets=tuple(base-page+OFFSETS[i]for i in order),order=order,head_rows=tuple(heads),original_rows=originals,
         frontier_rows=tuple(frontiers),guard_models={},dispatch_models={},direct_models=direct_models,
         boundary_rows=tuple(boundary_rows),gpr_written=gpr,flags_written=flags,
+        last_rseq_index=last_rseq,last_rseq_decoded=originals[last_rseq][:72],
         last_none_index=last_none,last_none_decoded=originals[last_none][:72],
         last_proved_index=last_direct,last_proved_decoded=originals[last_direct][:72])

@@ -199,6 +199,9 @@ def graph(source,page,entry,layout,table_bytes,*,policy,endpoint):
     boundary=tuple(dict(index=j,head=h,arm=arm,kind='direct',token=128+j,target=page+target)
                    for j,(h,arm,target)in enumerate(cuts))
     last_none=max(i for i,h in enumerate(heads)if h[0]==1);last_direct=max(direct_models);last_proved=max(last_direct,store if store is not None else -1)
+    # Cold rseq visits BFS heads in order: NONE and DIRECT write its footprint.
+    # MOV proof checks do not update it; retain the separate NONE/proved keys.
+    last_rseq=max(i for i,h in enumerate(heads)if h[0]in(1,5))
     return dict(head=b''.join(struct.pack('<8I',*h)for h in heads)+bytes((128-n)*32),
         original=b''.join(originals)+bytes((128-n)*336),frontier=b''.join(frontiers)+bytes((8-len(frontiers))*336),
         edge=bytes(8*48),instruction=bytes(instructions),guard=bytes(guards),image=bytes(image),stub_image=b'\xcc'*4096,
@@ -207,6 +210,7 @@ def graph(source,page,entry,layout,table_bytes,*,policy,endpoint):
         heads=n,stores=int(store is not None),exits=len(cuts),links=0,source_mask=1,member_heads=(n,0),offsets=offsets,
         head_rows=tuple(heads),original_rows=originals,frontier_rows=frontiers,boundary_rows=boundary,
         guard_models=guard_models,dispatch_models={},direct_models=direct_models,gpr_written=gpr,flags_written=flags,
+        last_rseq_index=last_rseq,last_rseq_decoded=originals[last_rseq][:72],
         last_none_index=last_none,last_none_decoded=originals[last_none][:72],last_proved_index=last_proved,
         last_proved_decoded=originals[last_proved][:72],last_store_index=store,
         last_store_scratch=guard_models[store]['scratch_regs']if store is not None else None,

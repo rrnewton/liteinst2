@@ -75,6 +75,7 @@ static int plr_cold(const struct li2_pg_sources *s,const uintptr_t pages[2]) {
     }
     if(!e) {
         pe_need(pe.loop.choice.ready==1 && !pe.loop.choice.result,PE_PLAN,242);
+        plr_source(&s->key);
         pe.loop.choice_complete=1;PLR_COUNT(chooser_selected);
     }
     return e;

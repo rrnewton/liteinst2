@@ -121,7 +121,7 @@ class Check(base.Check):
             prior_state=self.f(self.f(self.epochs[1],t,'terminal'),st,'state')
             need(estate==zstate==prior_state,'whole warm rseq state inherits cold-B terminal inspection')
         if not warm:
-            decoded=self.graph['last_none_decoded'];lastpc,lastnext=struct.unpack_from('<2Q',decoded)
+            decoded=self.graph['last_rseq_decoded'];lastpc,lastnext=struct.unpack_from('<2Q',decoded)
             code=struct.unpack_from('<I',decoded,24)[0];length=struct.unpack_from('<I',decoded,48)[0]
             need(lastnext==lastpc+length,'whole independently rebuilt final NONE proof')
             self.eq(estate,'li2_rseq_state',last_first=0,last_end=0,last_pc=lastpc,last_code=code,last_policy=1)

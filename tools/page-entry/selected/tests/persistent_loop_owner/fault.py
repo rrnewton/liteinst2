@@ -127,7 +127,7 @@ class Check(state.Check):
         a=self.pin(er,estate,serial,28,refs);z=self.pin(zr,zstate,serial,28,refs)
         need(z>a and estate==zstate,'actual gateway pin checks advance without rseq closure')
         self.r.change(er,zr,'li2_pg_rseq_progress',values=dict(raw_checks=z))
-        decoded=self.graph['last_none_decoded'];lastpc,lastnext=struct.unpack_from('<2Q',decoded);code=struct.unpack_from('<I',decoded,24)[0];length=struct.unpack_from('<I',decoded,48)[0]
+        decoded=self.graph['last_rseq_decoded'];lastpc,lastnext=struct.unpack_from('<2Q',decoded);code=struct.unpack_from('<I',decoded,24)[0];length=struct.unpack_from('<I',decoded,48)[0]
         need(lastnext==lastpc+length,'whole independently reconstructed last NONE proof')
         self.eq(estate,'li2_rseq_state',last_first=0,last_end=0,last_pc=lastpc,last_code=code,last_policy=1)
         self.eq(self.f(estate,'li2_rseq_state','last_footprint'),'li2_write_footprint',pc=lastpc,next_pc=lastnext,first=0,end=0,abi_version=1,policy=1,code=code,length=length)
