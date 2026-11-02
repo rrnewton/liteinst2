@@ -7,6 +7,7 @@ sys.dont_write_bytecode=True
 from checks import source
 from run import hardware
 from page_selected import ENV,fact,need,save,elf
+from page_selected_maps_sources import historical, bind as bind_maps_sources
 from page_selected_generic_build import Build,PROFILES as BUILD_PROFILES
 from page_selected_process import invoke
 from page_selected_register_time_build import recipe,expand,headers
@@ -92,7 +93,8 @@ def main():
         need(set(LEAVES)|{'evaluation/inprocess/scalar_region_component.py'}<=tracked,'all new compiler/reader/evaluator leaves committed')
         for path in sorted(tracked):
             if not path.startswith('evaluation/inprocess/results/'):pin(ROOT/path)
-        for path,expected in LEAVES.items():need(fact(pin(ROOT/path))==expected,'exact reviewed component leaf '+path)
+        bind_maps_sources(pin)
+        for path,expected in LEAVES.items():need(historical(ROOT/path,expected,fact(pin(ROOT/path)))==expected,'exact reviewed component leaf '+path)
         spec=importlib.util.spec_from_file_location('scalar_region_check',pin(FIXTURE/'check.py'));reader=importlib.util.module_from_spec(spec);spec.loader.exec_module(reader)
         for module in tuple(sys.modules.values()):
             path=getattr(module,'__file__',None)

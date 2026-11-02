@@ -23,6 +23,8 @@ def save(path,value):
 
 
 def main():
+    sys.path.insert(0,str(ROOT/'evaluation/inprocess'))
+    from page_selected_maps_sources import historical, bind as bind_maps_sources
     ap=argparse.ArgumentParser(description=__doc__,allow_abbrev=False)
     ap.add_argument('--tool-root',type=Path,required=True)
     ap.add_argument('--cpu',type=int,required=True)
@@ -56,8 +58,13 @@ def main():
     try:
         need(CPU in allowed and len(allowed)>1,'requested CPU allowed and a separate core remains for the real escape probe')
         source=pin(HERE/'SOURCE.json');m=json.loads(source.read_bytes())
-        pin(HERE/'run_exact_cpu.py',m['wrapper']);pin(HERE/'README.md',m['readme'])
-        for name,want in m['profile'].items():pin(PROFILE/name,want)
+        bind_maps_sources(pin)
+        wrapper=pin(HERE/'run_exact_cpu.py')
+        need(historical(wrapper,m['wrapper'],fact(wrapper))==m['wrapper'],'whole exact wrapper source inverse')
+        pin(HERE/'README.md',m['readme'])
+        for name,want in m['profile'].items():
+            path=pin(PROFILE/name)
+            need(historical(path,want,fact(path))==want,'whole exact profile source inverse')
         for name,want in m['tool_sources'].items():pin(TOOLS/name,want)
         for name,item in m['executables'].items():
             actual=sys.executable if name=='python' else shutil.which(name)

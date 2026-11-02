@@ -6,6 +6,7 @@ import shutil
 import struct
 
 from page_selected import fact, need
+from page_selected_maps_sources import historical, bind as bind_maps_sources
 from page_selected_register_time_compare import decode
 import page_selected_register_time_compare as timing
 import page_selected_register_time_build as link
@@ -73,13 +74,14 @@ def hidden_memset(path, inspected):
 
 
 def validate(pin):
+    bind_maps_sources(pin)
     rseq_inputs(pin)
     manifest = decode(pin(HERE/'page_selected_rseq_time_inputs.json').read_bytes())
     need(manifest['schema'] == 1 and manifest['fast_function'] ==
          dict(bytes=len(FAST), code_hex=FAST.hex(), sha256=FAST_SHA256), 'exact qualified primitive reference')
     need(fact(pin(HERE/'results'/REFERENCE)) == REFERENCE_FACT, 'retained public primitive qualification')
     for row in manifest['sources']:
-        need(fact(pin(ROOT/row['path'])) == {k: row[k] for k in ('bytes','sha256')}, 'exact rseq timing composition input')
+        need(historical(ROOT/row['path'], {k: row[k] for k in ('bytes','sha256')}, fact(pin(ROOT/row['path']))) == {k: row[k] for k in ('bytes','sha256')}, 'exact rseq timing composition input')
 
 
 def schema(pin):

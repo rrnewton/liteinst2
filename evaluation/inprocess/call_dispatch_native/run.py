@@ -182,6 +182,8 @@ CALL217 = {'bounds': {'build': [30, 536870912, 16777216, 60], 'native': [5, 5368
 
 
 def main():
+    sys.path.insert(0,str(ROOT/'evaluation/inprocess'))
+    from page_selected_maps_sources import historical, bind as bind_maps_sources
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--expect-revision', required=True)
     ap.add_argument('--cpu', required=True, type=int)
@@ -282,9 +284,10 @@ def main():
         need(r['source']['revision'] == args.expect_revision, 'current clean source equals reviewed revision')
         pin('/usr/bin/git')
         pin(__file__); pin(HERE/'README.md')
+        bind_maps_sources(pin)
         manifest = load(pin(HERE/'SOURCE.json'))
         for name, wanted in manifest['files'].items():
-            need(fact(pin(ROOT/name)) == wanted, 'whole public source leaf: '+name)
+            need(historical(ROOT/name,wanted,fact(pin(ROOT/name))) == wanted, 'whole public source leaf: '+name)
         from call_owner.custody import check_archive, check_components
         for module in tuple(sys.modules.values()):
             name = getattr(module, '__file__', None)

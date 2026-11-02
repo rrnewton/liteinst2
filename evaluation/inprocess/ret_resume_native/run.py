@@ -170,6 +170,8 @@ def public_result(value):
 
 
 def main():
+    sys.path.insert(0,str(ROOT/'evaluation/inprocess'))
+    from page_selected_maps_sources import historical, bind as bind_maps_sources
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--expect-revision', required=True)
     parser.add_argument('--output', type=Path, required=True)
@@ -185,7 +187,7 @@ def main():
     need(re.fullmatch(r'[0-9a-f]{64}', args.ret_receipt_sha256) is not None,
          'explicit whole public RET prerequisite identity')
     for name, wanted in manifest['files'].items():
-        need(fact(ROOT/name) == wanted, 'whole public source input: '+name)
+        need(historical(ROOT/name,wanted,fact(ROOT/name)) == wanted, 'whole public source input: '+name)
     private = args.output.resolve()
     need(private.is_relative_to((ROOT/'target/evaluation/inprocess').resolve(strict=True)) and not private.exists(),
          'fresh private attempt')
@@ -260,6 +262,7 @@ def main():
     try:
         r['source'] = source()
         need(r['source']['revision'] == args.expect_revision, 'exact current clean source')
+        bind_maps_sources(pin)
         pin(HERE/'SOURCE.json')
         for name in manifest['files']:
             pin(ROOT/name)

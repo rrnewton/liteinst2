@@ -15,6 +15,7 @@ sys.dont_write_bytecode = True
 from checks import source
 from run import hardware
 from page_selected import ENV as BASE_ENV, fact, interpreter, need, save
+from page_selected_maps_sources import historical, bind as bind_maps_sources
 from page_selected_generic import digest
 from page_selected_generic_build import Build, PROFILES as BUILD_PROFILES
 from page_selected_process import invoke
@@ -144,12 +145,13 @@ def main():
     try:
         r['source'] = source();need(r['source']['revision'] == args.expect_revision, 'exact committed source')
         r['hardware'] = hardware(cpu)
+        bind_maps_sources(pin)
         inputs_path = pin(HERE/'page_selected_register_time_inputs.json')
         inputs = decode(inputs_path.read_bytes());r['configuration'] = inputs
         need(inputs['schema'] == 1 and inputs['mechanism_manifest_sha256'] ==
              '3842a4be98e666ffdca9053d77aa9d875092111083b86d3b5ddc03a1ebf819ae', 'reviewed observer V2')
         for row in inputs['sources']:
-            path = pin(ROOT/row['path']);need(fact(path) == {k: row[k] for k in ('bytes','sha256')}, 'exact timing recipe/context input')
+            path = pin(ROOT/row['path']);need(historical(path, {k: row[k] for k in ('bytes','sha256')}, fact(path)) == {k: row[k] for k in ('bytes','sha256')}, 'exact timing recipe/context input')
         git = pin(shutil.which('git', path=ENV['PATH']))
         _, out, err = run('source-paths', [git, '-C', ROOT, 'ls-files', '-z', 'tools/page-entry', 'evaluation/inprocess'], profile='metadata')
         need(not err, 'source enumeration stderr')

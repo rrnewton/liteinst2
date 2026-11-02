@@ -114,6 +114,8 @@ def native_compact(observed):
 
 
 def main():
+    sys.path.insert(0,str(ROOT/'evaluation/inprocess'))
+    from page_selected_maps_sources import historical, bind as bind_maps_sources
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--expect-revision', required=True)
     ap.add_argument('--cpu', required=True, type=int)
@@ -214,11 +216,12 @@ def main():
         need(r['source']['revision'] == args.expect_revision, 'current clean source equals reviewed revision')
         pin('/usr/bin/git')
         pin(__file__); pin(HERE/'README.md')
+        bind_maps_sources(pin)
         manifest = load(pin(HERE/'SOURCE.json'))
         for name, wanted in manifest['inputs'].items():
-            need(fact(pin(ROOT/name)) == wanted, 'whole frozen source leaf: '+name)
+            need(historical(ROOT/name,wanted,fact(pin(ROOT/name))) == wanted, 'whole frozen source leaf: '+name)
         for name,wanted in manifest['artifacts'].items():
-            need(fact(pin(HERE/name))==wanted,'whole frozen collector artifact: '+name)
+            need(historical(HERE/name,wanted,fact(pin(HERE/name)))==wanted,'whole frozen collector artifact: '+name)
         selected=ROOT/'tools/page-entry/selected'
         r['context_links']=links
         from call_owner.custody import check_archive

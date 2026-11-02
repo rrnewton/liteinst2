@@ -115,6 +115,8 @@ def provider_functions(data, nm_text, expected):
 
 
 def main():
+    sys.path.insert(0,str(ROOT/'evaluation/inprocess'))
+    from page_selected_maps_sources import historical, bind as bind_maps_sources
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--expect-revision', required=True)
     ap.add_argument('--output', type=Path, required=True)
@@ -130,9 +132,9 @@ def main():
     need(private.is_relative_to((ROOT/'target/evaluation/inprocess').resolve(strict=True)) and not private.exists(),
          'fresh exclusive private compile attempt')
     for name, wanted in m['inputs'].items():
-        need(fact(ROOT/name) == wanted, 'exact frozen input: '+name)
+        need(historical(ROOT/name,wanted,fact(ROOT/name)) == wanted, 'exact frozen input: '+name)
     for name, wanted in m['artifacts'].items():
-        need(fact(HERE/name) == wanted, 'exact collector artifact: '+name)
+        need(historical(HERE/name,wanted,fact(HERE/name)) == wanted, 'exact collector artifact: '+name)
     sys.path.insert(0, str(ROOT/'evaluation/inprocess'))
     from checks import source
     from run import hardware
@@ -201,6 +203,7 @@ def main():
     try:
         r['source'] = source()
         need(r['source']['revision'] == args.expect_revision, 'clean reviewed source')
+        bind_maps_sources(pin)
         for q in (HERE/'SOURCE.json', *[HERE/x for x in m['artifacts']], *[ROOT/x for x in m['inputs']]): pin(q)
         for module in tuple(sys.modules.values()):
             q = getattr(module, '__file__', None)

@@ -3,6 +3,7 @@ from pathlib import Path
 from page_selected import need, fact
 from page_selected_generic_build import BUILD, PRODUCT
 from page_selected_register_time_build import recipe, expand, headers
+from page_selected_maps_recipe import extras as maps_extras
 
 UNITS = ('bridge.c', 'selected/runtime_loader.c', 'selected/lifecycle_loader.c',
     'selected/entry.S', 'selected/provider.c', 'selected/step_owner.c',
@@ -25,7 +26,8 @@ def commands(path, builder, output, archive, pin):
     values = {'$cc_bin': builder.tools['cc'], '$source_dir': PRODUCT,
               '$parent_dir': PRODUCT.parent, '$output_dir/decoder.a': archive,
               '$output_dir': output}
-    return [expand(row, values) for row in rows[1:]]
+    extra = maps_extras(path, builder.environment, rows)
+    return [expand(row, values, flags) for row, flags in zip(rows[1:], extra[1:], strict=True)]
 
 
 def before_default(label, argv, builder, pin, aliases, run, receipt):

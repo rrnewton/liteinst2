@@ -192,6 +192,8 @@ def publish(path,r,private):
     with path.open('x')as out:out.write(text)
 
 def main():
+    sys.path.insert(0,str(ROOT/'evaluation/inprocess'))
+    from page_selected_maps_sources import historical, bind as bind_maps_sources
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--expect-revision',required=True)
     for key in RECEIPTS:ap.add_argument('--'+key.replace('_','-'),type=Path,required=True)
@@ -284,7 +286,10 @@ def main():
             if presence[name]:pin(name)
         need(not presence['/etc/ld.so.preload'],'no global preload');r['configuration_presence']=presence
         need(DEPENDENCIES,'fixed unchanged process/terminal/build helper inputs')
-        for name,want in DEPENDENCIES.items():pin(ROOT/name,want)
+        bind_maps_sources(pin)
+        for name,want in DEPENDENCIES.items():
+            path=pin(ROOT/name)
+            need(historical(path,want,fact(path))==want,'whole historical dependency through exact source inverse: '+name)
         for name in('maps_view.h','maps_view.inc'):pin(SELECTED/name)
         for name in('oracle.c','build.sh','check.py'):pin(SELECTED/'tests/maps_view'/name)
         r['prerequisites']={k:unrolled_prerequisite(path,a.expect_revision,pin,binary,k)for k,path in(('component',a.component_receipt),('owner',a.owner_receipt))}

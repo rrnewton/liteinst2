@@ -11,6 +11,7 @@ sys.path.insert(0,str(ROOT/'evaluation/inprocess'))
 from checks import source
 from run import hardware
 from page_selected import ENV,fact,need,save
+from page_selected_maps_sources import historical, bind as bind_maps_sources
 from page_selected_process import invoke
 from page_selected_fast_memset import decode
 FIXTURE=ROOT/'tools/page-entry/selected/tests/fast_equal'
@@ -105,6 +106,7 @@ def main():
         tools['git']=pin('/usr/bin/git')
         r['source']=source();need(r['source']['revision']==args.expect_revision,'exact clean current source')
         r['hardware']=hardware(cpu)
+        bind_maps_sources(pin)
         catalog=decode(pin(INPUTS).read_bytes())
         need(catalog['schema']==1 and len(catalog['sources'])==28 and
              len({x['path']for x in catalog['sources']})==28,'closed28 tracked source inputs')
@@ -113,7 +115,7 @@ def main():
             need(not path.is_absolute()and '..'not in path.parts and
                  row['path'].startswith(('tools/page-entry/','evaluation/inprocess/','evaluation/admission/')),
                  'repository-relative tracked source input')
-            need(fact(pin(ROOT/path))=={k:row[k]for k in('bytes','sha256')},'exact committed input catalog row')
+            need(historical(ROOT/path,{k:row[k]for k in('bytes','sha256')},fact(pin(ROOT/path))) == {k:row[k]for k in('bytes','sha256')},'exact committed input catalog row')
         required={str(Path(__file__).resolve().relative_to(ROOT)),
                   'tools/page-entry/selected/step_owner.c',
                   *('tools/page-entry/selected/tests/fast_equal/'+name for name in

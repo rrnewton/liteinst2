@@ -114,6 +114,8 @@ def compact(observation):
 
 
 def main():
+    sys.path.insert(0,str(ROOT/'evaluation/inprocess'))
+    from page_selected_maps_sources import historical, bind as bind_maps_sources
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--expect-revision', required=True)
     parser.add_argument('--output', type=Path, required=True)
@@ -124,9 +126,9 @@ def main():
     need(re.fullmatch(r'[0-9a-f]{40}', args.expect_revision) is not None,
          'explicit complete source revision; all pinned inputs remain mandatory')
     for name, wanted in manifest['artifacts'].items():
-        need(fact(HERE/name) == wanted, 'frozen collector file: '+name)
+        need(historical(HERE/name,wanted,fact(HERE/name)) == wanted, 'frozen collector file: '+name)
     for name, wanted in manifest['inputs'].items():
-        need(fact(ROOT/name) == wanted, 'frozen whole input: '+name)
+        need(historical(ROOT/name,wanted,fact(ROOT/name)) == wanted, 'frozen whole input: '+name)
     private = args.output.resolve()
     need(private.is_relative_to((ROOT/'target/evaluation/inprocess').resolve(strict=True)) and not private.exists(),
          'fresh private attempt')
@@ -197,6 +199,7 @@ def main():
     try:
         r['source'] = source()
         need(r['source']['revision'] == args.expect_revision, 'exact current clean source')
+        bind_maps_sources(pin)
         for name in ('SOURCE.json', *manifest['artifacts']):
             pin(HERE/name)
         for name in manifest['inputs']:

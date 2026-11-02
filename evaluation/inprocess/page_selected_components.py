@@ -143,7 +143,8 @@ def main():
             row['nproc'] = 1
         if profile == 'archive':
             row['environment'].update(LI2_CC=str(tools['cc']), LI2_CARGO=str(tools['cargo']), RUSTC=str(tools['rustc']),
-                                      CARGO_INCREMENTAL='0', CARGO_BUILD_JOBS='1', CARGO_NET_OFFLINE='true', CARGO_TARGET_DIR=str(REPO/'target'))
+                                      CARGO_INCREMENTAL='0', CARGO_BUILD_JOBS='1', CARGO_NET_OFFLINE='true', CARGO_TARGET_DIR=str(REPO/'target'),
+                                      LI2_MAPS_PROFILE='fresh-baseline')
             for key in ('HOME', 'CARGO_HOME', 'RUSTUP_HOME'):
                 if key in os.environ:
                     row['environment'][key] = os.environ[key]

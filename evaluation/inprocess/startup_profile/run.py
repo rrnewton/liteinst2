@@ -21,6 +21,8 @@ LABEL='subject-maintained-2-0'
 
 
 def main():
+    sys.path.insert(0,str(ROOT/'evaluation/inprocess'))
+    from page_selected_maps_sources import historical, bind as bind_maps_sources
     ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--expect-revision',required=True)
     ap.add_argument('--origin-receipt',type=Path,required=True)
     ap.add_argument('--expect-origin-sha256',required=True)
@@ -86,10 +88,15 @@ def main():
         need(git('rev-parse','HEAD').decode().strip()==a.expect_revision and not git('status','--porcelain','-uno'),
              'exact clean committed source before observation')
         packet=pin(HERE/'SOURCE.json');s=json.loads(packet.read_bytes());r['observer_packet']=fact(packet)
+        bind_maps_sources(pin)
         for name,want in s['files'].items():
-            p=pin(HERE/name,want);private[str(p)]=fact(p)
+            p=pin(HERE/name)
+            need(historical(p,want,fact(p))=={k:want[k]for k in('bytes','sha256')},'whole static observer file inverse')
+            private[str(p)]=fact(p)
         need(set(private)=={str(HERE/'run.py'),str(HERE/'capture_profile.py')},'exact two frozen executable leaves')
-        for path,want in s['inputs'].items():pin(ROOT/path,want)
+        for path,want in s['inputs'].items():
+            actual=pin(ROOT/path)
+            need(historical(actual,want,fact(actual))=={k:want[k]for k in('bytes','sha256')},'whole static observer source inverse')
         code,compiled=source_paths(a.expect_revision);blobs=git_bytes(a.expect_revision,code|compiled)
         current={p:dict(bytes=len(v),sha256=H(v))for p,v in blobs.items()}
         need(all((ROOT/p).read_bytes()==v for p,v in blobs.items()),'whole current source closure')

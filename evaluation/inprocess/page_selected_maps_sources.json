@@ -1,0 +1,1191 @@
+{
+  "profile": "maps-default-source-inverses-v1",
+  "schema": 1,
+  "sources": {
+    "evaluation/inprocess/cached_ret_profile/run.py": {
+      "current": {
+        "bytes": 29711,
+        "sha256": "dae8c0694ceed3082e36c2ee873212ae73a13876cf072c301715ba2c7eeb0ce9"
+      },
+      "donor": {
+        "bytes": 29159,
+        "sha256": "ae62687f8a42daec331eee7eda0af0d10f6720443b13e81a76526d4c5c220411"
+      },
+      "inverse": [
+        [
+          56,
+          58,
+          ""
+        ],
+        [
+          125,
+          126,
+          ""
+        ],
+        [
+          127,
+          131,
+          "            p=binary(HERE/name,want);private[str(p)]=fact(p)\n"
+        ],
+        [
+          132,
+          135,
+          "        for path,want in s['inputs'].items():pin(ROOT/path,want)\n"
+        ]
+      ],
+      "targets": {
+        "ae62687f8a42daec331eee7eda0af0d10f6720443b13e81a76526d4c5c220411": {
+          "fact": {
+            "bytes": 29159,
+            "sha256": "ae62687f8a42daec331eee7eda0af0d10f6720443b13e81a76526d4c5c220411"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/call_dispatch_native/run.py": {
+      "current": {
+        "bytes": 33388,
+        "sha256": "18c3e271b869cd8caea40a6de1d38544dde05da48b201986219b73860181ff1d"
+      },
+      "donor": {
+        "bytes": 33191,
+        "sha256": "7ee867af3b31b5ce880eb13b88144b2a2dd7224222924574cf74777b5d19f2ee"
+      },
+      "inverse": [
+        [
+          184,
+          186,
+          ""
+        ],
+        [
+          286,
+          287,
+          ""
+        ],
+        [
+          289,
+          290,
+          "            need(fact(pin(ROOT/name)) == wanted, 'whole public source leaf: '+name)\n"
+        ]
+      ],
+      "targets": {
+        "7ee867af3b31b5ce880eb13b88144b2a2dd7224222924574cf74777b5d19f2ee": {
+          "fact": {
+            "bytes": 33191,
+            "sha256": "7ee867af3b31b5ce880eb13b88144b2a2dd7224222924574cf74777b5d19f2ee"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/call_push_native/run.py": {
+      "current": {
+        "bytes": 19326,
+        "sha256": "6fb12f1ecd531e9fe2667b811257ecb370dde293d9fe52903d173022c8369189"
+      },
+      "donor": {
+        "bytes": 19100,
+        "sha256": "aaec203c3ee2961a021294b9793f5eca99c926e1a906591760ba1374f6c0b301"
+      },
+      "inverse": [
+        [
+          116,
+          118,
+          ""
+        ],
+        [
+          128,
+          129,
+          "        need(fact(HERE/name) == wanted, 'frozen collector file: '+name)\n"
+        ],
+        [
+          130,
+          131,
+          "        need(fact(ROOT/name) == wanted, 'frozen whole input: '+name)\n"
+        ],
+        [
+          201,
+          202,
+          ""
+        ]
+      ],
+      "targets": {
+        "aaec203c3ee2961a021294b9793f5eca99c926e1a906591760ba1374f6c0b301": {
+          "fact": {
+            "bytes": 19100,
+            "sha256": "aaec203c3ee2961a021294b9793f5eca99c926e1a906591760ba1374f6c0b301"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/call_return_heads/run.py": {
+      "current": {
+        "bytes": 41339,
+        "sha256": "07ad0eec501c3091bb70c644c34415e1c8088c50fd7dc0d9efaa9cc0ca2d1b17"
+      },
+      "donor": {
+        "bytes": 41066,
+        "sha256": "067d88bab8e6f72100503535d19b1635a76afd8aed903abf4ac273ac7df5999b"
+      },
+      "inverse": [
+        [
+          180,
+          182,
+          ""
+        ],
+        [
+          195,
+          196,
+          "        need(fact(HERE/name) == value,'frozen collector artifact: '+name)\n"
+        ],
+        [
+          197,
+          198,
+          "        need(fact((ROOT/name).resolve(strict=True)) == value,'frozen source input: '+name)\n"
+        ],
+        [
+          209,
+          210,
+          "            need(value==expected,'whole source-bound installed roster member: '+relative)\n"
+        ],
+        [
+          311,
+          312,
+          ""
+        ]
+      ],
+      "targets": {
+        "067d88bab8e6f72100503535d19b1635a76afd8aed903abf4ac273ac7df5999b": {
+          "fact": {
+            "bytes": 41066,
+            "sha256": "067d88bab8e6f72100503535d19b1635a76afd8aed903abf4ac273ac7df5999b"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/direct_call_native/run.py": {
+      "current": {
+        "bytes": 30067,
+        "sha256": "b458162179d88c61e7a26705aefbaa9c56acc68b2d656d8ce67be31be383a056"
+      },
+      "donor": {
+        "bytes": 29841,
+        "sha256": "50e3290a4348f204449d3be75bf742823a4e1cbd08e1c0ddfec3627fac79f8d0"
+      },
+      "inverse": [
+        [
+          116,
+          118,
+          ""
+        ],
+        [
+          218,
+          219,
+          ""
+        ],
+        [
+          221,
+          222,
+          "            need(fact(pin(ROOT/name)) == wanted, 'whole frozen source leaf: '+name)\n"
+        ],
+        [
+          223,
+          224,
+          "            need(fact(pin(HERE/name))==wanted,'whole frozen collector artifact: '+name)\n"
+        ]
+      ],
+      "targets": {
+        "50e3290a4348f204449d3be75bf742823a4e1cbd08e1c0ddfec3627fac79f8d0": {
+          "fact": {
+            "bytes": 29841,
+            "sha256": "50e3290a4348f204449d3be75bf742823a4e1cbd08e1c0ddfec3627fac79f8d0"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/direct_call_owner/run.py": {
+      "current": {
+        "bytes": 42183,
+        "sha256": "ece7ba8062107da0758355c4ae2fb8185d620c7a3244c5db5542838054a0cf86"
+      },
+      "donor": {
+        "bytes": 41910,
+        "sha256": "13f1a37db4cd44690e42fcdf151795e5f074cecb077210be518aac0f4d540dcc"
+      },
+      "inverse": [
+        [
+          180,
+          182,
+          ""
+        ],
+        [
+          195,
+          196,
+          "        need(fact(HERE/name) == value,'frozen collector artifact: '+name)\n"
+        ],
+        [
+          197,
+          198,
+          "        need(fact((ROOT/name).resolve(strict=True)) == value,'frozen source input: '+name)\n"
+        ],
+        [
+          209,
+          210,
+          "            need(value==expected,'whole source-bound installed roster member: '+relative)\n"
+        ],
+        [
+          311,
+          312,
+          ""
+        ]
+      ],
+      "targets": {
+        "13f1a37db4cd44690e42fcdf151795e5f074cecb077210be518aac0f4d540dcc": {
+          "fact": {
+            "bytes": 41910,
+            "sha256": "13f1a37db4cd44690e42fcdf151795e5f074cecb077210be518aac0f4d540dcc"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/maps_view.py": {
+      "current": {
+        "bytes": 34944,
+        "sha256": "a8a71d54e82b6ff704ddbcfa155fba46a01a3e49436fdbae0f1804b3a7f4406d"
+      },
+      "donor": {
+        "bytes": 34640,
+        "sha256": "8807c646311f7f9b036fe4e860535e9eaa554bf10afb4748a2435e1ed59fcd5e"
+      },
+      "inverse": [
+        [
+          290,
+          292,
+          ""
+        ],
+        [
+          364,
+          368,
+          "        for name,want in DEPENDENCIES.items():pin(ROOT/name,want)\n"
+        ]
+      ],
+      "targets": {
+        "8807c646311f7f9b036fe4e860535e9eaa554bf10afb4748a2435e1ed59fcd5e": {
+          "fact": {
+            "bytes": 34640,
+            "sha256": "8807c646311f7f9b036fe4e860535e9eaa554bf10afb4748a2435e1ed59fcd5e"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/page_selected.py": {
+      "current": {
+        "bytes": 30046,
+        "sha256": "a35c3dc6ceae935446bee3d4e6b90dc6deaf94b582cf14591295754e6fb0de47"
+      },
+      "donor": {
+        "bytes": 29973,
+        "sha256": "941c10dca909c9eed84af6606da38e0f88e4f76eda7f3deaf034282680674e17"
+      },
+      "inverse": [
+        [
+          351,
+          353,
+          "                                      LI2_CC=str(tools['cc']), LI2_CARGO=str(tools['cargo']), RUSTC=str(tools['rustc']))\n"
+        ]
+      ],
+      "targets": {
+        "941c10dca909c9eed84af6606da38e0f88e4f76eda7f3deaf034282680674e17": {
+          "fact": {
+            "bytes": 29973,
+            "sha256": "941c10dca909c9eed84af6606da38e0f88e4f76eda7f3deaf034282680674e17"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/page_selected_chain_oracle.py": {
+      "current": {
+        "bytes": 13618,
+        "sha256": "e5e130ba1a2f288ec1c9537682f82c6a5ac7de26e4fb471fcd36208173653cf5"
+      },
+      "donor": {
+        "bytes": 13441,
+        "sha256": "446773afe8cd49a3d0b648664223df8e071382683a5fdfea577c1bbf876a94ae"
+      },
+      "inverse": [
+        [
+          16,
+          17,
+          ""
+        ],
+        [
+          101,
+          102,
+          ""
+        ],
+        [
+          108,
+          109,
+          "            need(fact(pin(ROOT/row['path']))=={k:row[k]for k in ('bytes','sha256')},'exact finite source/context input')\n"
+        ]
+      ],
+      "targets": {
+        "446773afe8cd49a3d0b648664223df8e071382683a5fdfea577c1bbf876a94ae": {
+          "fact": {
+            "bytes": 13441,
+            "sha256": "446773afe8cd49a3d0b648664223df8e071382683a5fdfea577c1bbf876a94ae"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/page_selected_components.py": {
+      "current": {
+        "bytes": 22663,
+        "sha256": "c032384ea145d13b9cbad98f8c375d67b838d4c95300def86bcbd520a99a732c"
+      },
+      "donor": {
+        "bytes": 22590,
+        "sha256": "74dea5e7e11f56a2179b51a802facb496078ea044cf1e298cccef2fdbd0b5735"
+      },
+      "inverse": [
+        [
+          145,
+          147,
+          "                                      CARGO_INCREMENTAL='0', CARGO_BUILD_JOBS='1', CARGO_NET_OFFLINE='true', CARGO_TARGET_DIR=str(REPO/'target'))\n"
+        ]
+      ],
+      "targets": {
+        "74dea5e7e11f56a2179b51a802facb496078ea044cf1e298cccef2fdbd0b5735": {
+          "fact": {
+            "bytes": 22590,
+            "sha256": "74dea5e7e11f56a2179b51a802facb496078ea044cf1e298cccef2fdbd0b5735"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/page_selected_fast_equal.py": {
+      "current": {
+        "bytes": 20370,
+        "sha256": "764e2aedde30042750ff68764fcbb66cc78f11ff5e3be0dc7f76d1888cd9860a"
+      },
+      "donor": {
+        "bytes": 20201,
+        "sha256": "d68c0b2b5591008bcecb6b6b62874d314acb1ec404fb2a8e519c8f2286885d45"
+      },
+      "inverse": [
+        [
+          13,
+          14,
+          ""
+        ],
+        [
+          108,
+          109,
+          ""
+        ],
+        [
+          117,
+          118,
+          "            need(fact(pin(ROOT/path))=={k:row[k]for k in('bytes','sha256')},'exact committed input catalog row')\n"
+        ]
+      ],
+      "targets": {
+        "d68c0b2b5591008bcecb6b6b62874d314acb1ec404fb2a8e519c8f2286885d45": {
+          "fact": {
+            "bytes": 20201,
+            "sha256": "d68c0b2b5591008bcecb6b6b62874d314acb1ec404fb2a8e519c8f2286885d45"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/page_selected_fast_zero.py": {
+      "current": {
+        "bytes": 13798,
+        "sha256": "12b5024b13cd90a5cc74f7cd2f1f600e7807bcc2fccf0664e1d8dbf0af56d854"
+      },
+      "donor": {
+        "bytes": 13619,
+        "sha256": "db0b5f7690c64a34bcb2b4115129eb3fb7ad3fcc477b356684e53aebfce742c4"
+      },
+      "inverse": [
+        [
+          18,
+          19,
+          ""
+        ],
+        [
+          114,
+          115,
+          ""
+        ],
+        [
+          119,
+          120,
+          "            need(fact(pin(ROOT/item['path']))=={k:item[k]for k in ('bytes','sha256')},'exact reviewed source input')\n"
+        ]
+      ],
+      "targets": {
+        "db0b5f7690c64a34bcb2b4115129eb3fb7ad3fcc477b356684e53aebfce742c4": {
+          "fact": {
+            "bytes": 13619,
+            "sha256": "db0b5f7690c64a34bcb2b4115129eb3fb7ad3fcc477b356684e53aebfce742c4"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/page_selected_generic.py": {
+      "current": {
+        "bytes": 29689,
+        "sha256": "8bf38fd137532e8a2748bd996fcae8fa73315b3628738adf5717a9ffb7a6a7fa"
+      },
+      "donor": {
+        "bytes": 26303,
+        "sha256": "e5e7690309267be887cee9b04d26e90a29f8d379110e22214948922c857a139a"
+      },
+      "inverse": [
+        [
+          79,
+          82,
+          ""
+        ],
+        [
+          93,
+          96,
+          ""
+        ],
+        [
+          126,
+          129,
+          ""
+        ],
+        [
+          137,
+          138,
+          "def main(*, embedded=False, repeat=False):\n"
+        ],
+        [
+          139,
+          143,
+          ""
+        ],
+        [
+          150,
+          152,
+          ""
+        ],
+        [
+          158,
+          159,
+          "    name = stamp+('-page-selected-repeat-' if repeat else '-page-selected-embedded-' if embedded else '-page-selected-generic-')+args.expect_revision[:12]\n"
+        ],
+        [
+          164,
+          165,
+          ""
+        ],
+        [
+          181,
+          186,
+          ""
+        ],
+        [
+          208,
+          210,
+          ""
+        ],
+        [
+          221,
+          223,
+          "    builder = Build(receipt, output, pin, binary, run)\n"
+        ],
+        [
+          240,
+          246,
+          ""
+        ],
+        [
+          302,
+          308,
+          "            row, repeat_row = repeat_compare.parse(err)\n"
+        ],
+        [
+          357,
+          366,
+          ""
+        ],
+        [
+          382,
+          386,
+          "        row, repeat_row = repeat_compare.parse(err)\n"
+        ],
+        [
+          388,
+          391,
+          ""
+        ]
+      ],
+      "targets": {
+        "e5e7690309267be887cee9b04d26e90a29f8d379110e22214948922c857a139a": {
+          "fact": {
+            "bytes": 26303,
+            "sha256": "e5e7690309267be887cee9b04d26e90a29f8d379110e22214948922c857a139a"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/page_selected_generic_build.py": {
+      "current": {
+        "bytes": 20037,
+        "sha256": "c5b83c8bd1d8cc0c9d66301b98d7e7c7f7670f3632cdc5af4304934f61a55f68"
+      },
+      "donor": {
+        "bytes": 19855,
+        "sha256": "e9cc1f609c0fb0cf7ec316adc6bb77c5d64cf6ac9730e8bf1031c29f95cc2f9e"
+      },
+      "inverse": [
+        [
+          14,
+          15,
+          ""
+        ],
+        [
+          64,
+          65,
+          "    def __init__(self, record, private, pin, binary, run, extra_decoder_sources=(), *, scalar_span=False, linked_epoch=False, mov_guard=False, add_guard=False):\n"
+        ],
+        [
+          96,
+          97,
+          ""
+        ]
+      ],
+      "targets": {
+        "9b3f0d0ec21b628409b2b1453ef8ae6cfbdc8692ee9b7f3c49cf605379ddd896": {
+          "fact": {
+            "bytes": 15355,
+            "sha256": "9b3f0d0ec21b628409b2b1453ef8ae6cfbdc8692ee9b7f3c49cf605379ddd896"
+          },
+          "git_revision": "0ddbbe6b4ab942e6569f73130b9435a133c31f00",
+          "inverse": [
+            [
+              63,
+              64,
+              "    def __init__(self, record, private, pin, binary, run, extra_decoder_sources=()):\n"
+            ],
+            [
+              68,
+              81,
+              "        self.extra_decoder_sources = extra_decoder_sources\n"
+            ],
+            [
+              82,
+              90,
+              ""
+            ],
+            [
+              161,
+              173,
+              ""
+            ],
+            [
+              181,
+              196,
+              "        need(len(nodes) == 1 and nodes[0]['features'] == ['default', *self.decoder_features],\n             'exact root decoder features, including empty default')\n"
+            ],
+            [
+              247,
+              271,
+              ""
+            ]
+          ]
+        },
+        "aeaa8efec3e2406c576e9c69110d58a0f281b2d5fe8c6f713444ec8ee297bb11": {
+          "fact": {
+            "bytes": 18638,
+            "sha256": "aeaa8efec3e2406c576e9c69110d58a0f281b2d5fe8c6f713444ec8ee297bb11"
+          },
+          "git_revision": "68a62b2672877241863604ff60f3763af2d5468f",
+          "inverse": [
+            [
+              63,
+              64,
+              "    def __init__(self, record, private, pin, binary, run, extra_decoder_sources=(), *, scalar_span=False, linked_epoch=False, mov_guard=False):\n"
+            ],
+            [
+              74,
+              77,
+              ""
+            ],
+            [
+              80,
+              81,
+              "        self.extra_decoder_sources = extra_decoder_sources + ((\"mov_guard.rs\",) if mov_guard else ())\n"
+            ],
+            [
+              88,
+              90,
+              ""
+            ],
+            [
+              170,
+              173,
+              ""
+            ],
+            [
+              181,
+              186,
+              "        if self.mov_guard:\n"
+            ],
+            [
+              265,
+              271,
+              ""
+            ]
+          ]
+        },
+        "e9cc1f609c0fb0cf7ec316adc6bb77c5d64cf6ac9730e8bf1031c29f95cc2f9e": {
+          "fact": {
+            "bytes": 19855,
+            "sha256": "e9cc1f609c0fb0cf7ec316adc6bb77c5d64cf6ac9730e8bf1031c29f95cc2f9e"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/page_selected_oneshot_build.py": {
+      "current": {
+        "bytes": 5072,
+        "sha256": "bf7fb6710766ca370569dfea47ed44c1f20ee953310a22e3cdfe51a6b96cf72f"
+      },
+      "donor": {
+        "bytes": 4912,
+        "sha256": "2cb3555349feaf664ec9b3b08ec6ec30736740bfbf668b4e0e8b89871ab1a1de"
+      },
+      "inverse": [
+        [
+          5,
+          6,
+          ""
+        ],
+        [
+          28,
+          30,
+          "    return [expand(row, values) for row in rows[1:]]\n"
+        ]
+      ],
+      "targets": {
+        "2cb3555349feaf664ec9b3b08ec6ec30736740bfbf668b4e0e8b89871ab1a1de": {
+          "fact": {
+            "bytes": 4912,
+            "sha256": "2cb3555349feaf664ec9b3b08ec6ec30736740bfbf668b4e0e8b89871ab1a1de"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/page_selected_register_time.py": {
+      "current": {
+        "bytes": 18600,
+        "sha256": "dc3cdaa32da183b4f0d9a3d78c42ec9cf65bfa077fe557d6a4df84b646eef453"
+      },
+      "donor": {
+        "bytes": 18433,
+        "sha256": "35551f50ed1cf5a73e3234d2b47bbd109db2a51d8a06c783ae34eda1ff2ca52e"
+      },
+      "inverse": [
+        [
+          17,
+          18,
+          ""
+        ],
+        [
+          147,
+          148,
+          ""
+        ],
+        [
+          153,
+          154,
+          "            path = pin(ROOT/row['path']);need(fact(path) == {k: row[k] for k in ('bytes','sha256')}, 'exact timing recipe/context input')\n"
+        ]
+      ],
+      "targets": {
+        "35551f50ed1cf5a73e3234d2b47bbd109db2a51d8a06c783ae34eda1ff2ca52e": {
+          "fact": {
+            "bytes": 18433,
+            "sha256": "35551f50ed1cf5a73e3234d2b47bbd109db2a51d8a06c783ae34eda1ff2ca52e"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/page_selected_rseq_prepare.py": {
+      "current": {
+        "bytes": 2188,
+        "sha256": "9d355f861d25269dcd5559996a68d0f91486059d5e914e033bb723551fb8ff1f"
+      },
+      "donor": {
+        "bytes": 2012,
+        "sha256": "e4df3ff2a80b4213a3588bf6d751d3913318a668f612a2c1f336c3f0399ae5e3"
+      },
+      "inverse": [
+        [
+          4,
+          5,
+          ""
+        ],
+        [
+          13,
+          14,
+          ""
+        ],
+        [
+          16,
+          17,
+          "        need(fact(pin(ROOT/row['path'])) == {k: row[k] for k in ('bytes', 'sha256')},\n"
+        ]
+      ],
+      "targets": {
+        "e4df3ff2a80b4213a3588bf6d751d3913318a668f612a2c1f336c3f0399ae5e3": {
+          "fact": {
+            "bytes": 2012,
+            "sha256": "e4df3ff2a80b4213a3588bf6d751d3913318a668f612a2c1f336c3f0399ae5e3"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/page_selected_rseq_time.py": {
+      "current": {
+        "bytes": 16502,
+        "sha256": "49a7877e3e2f6f913b77b6de5a404de99d2e5f49af82982904b260f18b1e1e3c"
+      },
+      "donor": {
+        "bytes": 16327,
+        "sha256": "55c439f65d560413c9881890508f86cd2433a94e4dae1cc31e450a8d334d7e7e"
+      },
+      "inverse": [
+        [
+          8,
+          9,
+          ""
+        ],
+        [
+          76,
+          77,
+          ""
+        ],
+        [
+          83,
+          84,
+          "        need(fact(pin(ROOT/row['path'])) == {k: row[k] for k in ('bytes','sha256')}, 'exact rseq timing composition input')\n"
+        ]
+      ],
+      "targets": {
+        "55c439f65d560413c9881890508f86cd2433a94e4dae1cc31e450a8d334d7e7e": {
+          "fact": {
+            "bytes": 16327,
+            "sha256": "55c439f65d560413c9881890508f86cd2433a94e4dae1cc31e450a8d334d7e7e"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/real_ls_profile/exact_cpu/run_exact_cpu.py": {
+      "current": {
+        "bytes": 11404,
+        "sha256": "836a23b6ebac40acab6801b969e5bdd9c433bef0e458e79c121cc0bfeec2de97"
+      },
+      "donor": {
+        "bytes": 11014,
+        "sha256": "4023683482a783cbbbb6feccf7b732b28cfb577cb0bfe29d966bac4bba8dfc7b"
+      },
+      "inverse": [
+        [
+          25,
+          27,
+          ""
+        ],
+        [
+          60,
+          67,
+          "        pin(HERE/'run_exact_cpu.py',m['wrapper']);pin(HERE/'README.md',m['readme'])\n        for name,want in m['profile'].items():pin(PROFILE/name,want)\n"
+        ]
+      ],
+      "targets": {
+        "4023683482a783cbbbb6feccf7b732b28cfb577cb0bfe29d966bac4bba8dfc7b": {
+          "fact": {
+            "bytes": 11014,
+            "sha256": "4023683482a783cbbbb6feccf7b732b28cfb577cb0bfe29d966bac4bba8dfc7b"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/real_ls_profile/run.py": {
+      "current": {
+        "bytes": 28665,
+        "sha256": "14d40e86bc69b76d378006119cabf914dd408478c8050e2864be3fb75f1fe63f"
+      },
+      "donor": {
+        "bytes": 28113,
+        "sha256": "f640b8bd28cbf11b47901f7fb6e1d47e0f458463adc7a3b9b59416e7b002d309"
+      },
+      "inverse": [
+        [
+          54,
+          56,
+          ""
+        ],
+        [
+          123,
+          124,
+          ""
+        ],
+        [
+          125,
+          129,
+          "            p=binary(HERE/name,want);private[str(p)]=fact(p)\n"
+        ],
+        [
+          130,
+          133,
+          "        for path,want in s['inputs'].items():pin(ROOT/path,want)\n"
+        ]
+      ],
+      "targets": {
+        "f640b8bd28cbf11b47901f7fb6e1d47e0f458463adc7a3b9b59416e7b002d309": {
+          "fact": {
+            "bytes": 28113,
+            "sha256": "f640b8bd28cbf11b47901f7fb6e1d47e0f458463adc7a3b9b59416e7b002d309"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/ret_dispatch/run.py": {
+      "current": {
+        "bytes": 44349,
+        "sha256": "be6461e1a6404f574899c5ac98ecdb69c1178fb8840be67f2a2f5bfc02123f4a"
+      },
+      "donor": {
+        "bytes": 44152,
+        "sha256": "6e4bfbc1a0fb6a78645d7a0eeb61007c45f6946c0bb35eed991a9b36d1231e7e"
+      },
+      "inverse": [
+        [
+          285,
+          287,
+          ""
+        ],
+        [
+          402,
+          403,
+          ""
+        ],
+        [
+          405,
+          406,
+          "            need(fact(pin(ROOT/name)) == wanted, 'whole public source leaf: '+name)\n"
+        ]
+      ],
+      "targets": {
+        "6e4bfbc1a0fb6a78645d7a0eeb61007c45f6946c0bb35eed991a9b36d1231e7e": {
+          "fact": {
+            "bytes": 44152,
+            "sha256": "6e4bfbc1a0fb6a78645d7a0eeb61007c45f6946c0bb35eed991a9b36d1231e7e"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/ret_owner/run.py": {
+      "current": {
+        "bytes": 40160,
+        "sha256": "c5f9b2427fe8efe2798be607ae5958736f8d9cf7c4ac5fe8e9cfe5eca5a9e42a"
+      },
+      "donor": {
+        "bytes": 39913,
+        "sha256": "a4cac9307c5d7b22220ab6f89d773486a13a757ac7da4da8e8ba2cc60e92779b"
+      },
+      "inverse": [
+        [
+          180,
+          182,
+          ""
+        ],
+        [
+          195,
+          196,
+          "        need(fact(HERE/name) == value,'frozen collector artifact: '+name)\n"
+        ],
+        [
+          197,
+          198,
+          "        need(fact((ROOT/name).resolve(strict=True)) == value,'frozen source input: '+name)\n"
+        ],
+        [
+          309,
+          310,
+          ""
+        ]
+      ],
+      "targets": {
+        "a4cac9307c5d7b22220ab6f89d773486a13a757ac7da4da8e8ba2cc60e92779b": {
+          "fact": {
+            "bytes": 39913,
+            "sha256": "a4cac9307c5d7b22220ab6f89d773486a13a757ac7da4da8e8ba2cc60e92779b"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/ret_resume_native/run.py": {
+      "current": {
+        "bytes": 30113,
+        "sha256": "d5c12f6c20aefa1c24dbafa3c095d99080463c346781568634cc346ae657aae5"
+      },
+      "donor": {
+        "bytes": 29916,
+        "sha256": "da2ff77593159db7554eb880b7dabb29742da86c1a330d46fa07ce8259e22744"
+      },
+      "inverse": [
+        [
+          172,
+          174,
+          ""
+        ],
+        [
+          189,
+          190,
+          "        need(fact(ROOT/name) == wanted, 'whole public source input: '+name)\n"
+        ],
+        [
+          264,
+          265,
+          ""
+        ]
+      ],
+      "targets": {
+        "da2ff77593159db7554eb880b7dabb29742da86c1a330d46fa07ce8259e22744": {
+          "fact": {
+            "bytes": 29916,
+            "sha256": "da2ff77593159db7554eb880b7dabb29742da86c1a330d46fa07ce8259e22744"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/ret_runtime_compile/run.py": {
+      "current": {
+        "bytes": 25223,
+        "sha256": "ff55bd5735b08c2ebed5116208b4a2128d19300692a50f0f687be3f0dd7d37df"
+      },
+      "donor": {
+        "bytes": 24997,
+        "sha256": "fd0c15c19c153ed38165f7d41f95cd78aeec6ab952d381165c5b25e503c79634"
+      },
+      "inverse": [
+        [
+          117,
+          119,
+          ""
+        ],
+        [
+          134,
+          135,
+          "        need(fact(ROOT/name) == wanted, 'exact frozen input: '+name)\n"
+        ],
+        [
+          136,
+          137,
+          "        need(fact(HERE/name) == wanted, 'exact collector artifact: '+name)\n"
+        ],
+        [
+          205,
+          206,
+          ""
+        ]
+      ],
+      "targets": {
+        "fd0c15c19c153ed38165f7d41f95cd78aeec6ab952d381165c5b25e503c79634": {
+          "fact": {
+            "bytes": 24997,
+            "sha256": "fd0c15c19c153ed38165f7d41f95cd78aeec6ab952d381165c5b25e503c79634"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/startup_profile/run.py": {
+      "current": {
+        "bytes": 22116,
+        "sha256": "6ca926a6278baa1eb4e61bdcab0de8960510ec4541e8d7718fd43b8380d72366"
+      },
+      "donor": {
+        "bytes": 21672,
+        "sha256": "d0ffcd774df745d7dd57377894fe31d1bda99f1e63f6b4b2abd64160baf7d8b2"
+      },
+      "inverse": [
+        [
+          23,
+          25,
+          ""
+        ],
+        [
+          90,
+          91,
+          ""
+        ],
+        [
+          92,
+          95,
+          "            p=pin(HERE/name,want);private[str(p)]=fact(p)\n"
+        ],
+        [
+          96,
+          99,
+          "        for path,want in s['inputs'].items():pin(ROOT/path,want)\n"
+        ]
+      ],
+      "targets": {
+        "d0ffcd774df745d7dd57377894fe31d1bda99f1e63f6b4b2abd64160baf7d8b2": {
+          "fact": {
+            "bytes": 21672,
+            "sha256": "d0ffcd774df745d7dd57377894fe31d1bda99f1e63f6b4b2abd64160baf7d8b2"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "evaluation/inprocess/unrolled_hash_performance.py": {
+      "current": {
+        "bytes": 30216,
+        "sha256": "7491e93222f37479192872679d7127dbec07c72761b1422eecd55869d3268569"
+      },
+      "donor": {
+        "bytes": 29912,
+        "sha256": "cc13c07ef14367b98ec8a5ad1134cc17c6a6e0171ddadeda150950c8a2835a0b"
+      },
+      "inverse": [
+        [
+          179,
+          181,
+          ""
+        ],
+        [
+          291,
+          295,
+          "        for name,want in DEPENDENCIES.items():pin(ROOT/name,want)\n"
+        ]
+      ],
+      "targets": {
+        "cc13c07ef14367b98ec8a5ad1134cc17c6a6e0171ddadeda150950c8a2835a0b": {
+          "fact": {
+            "bytes": 29912,
+            "sha256": "cc13c07ef14367b98ec8a5ad1134cc17c6a6e0171ddadeda150950c8a2835a0b"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    },
+    "tools/page-entry/selected/build.sh": {
+      "current": {
+        "bytes": 3860,
+        "sha256": "b6a12a144a83fbed77f17266b0d8052fb272aefa3b476769c1efab71a2a34c68"
+      },
+      "donor": {
+        "bytes": 3526,
+        "sha256": "eda7efcb95a5e8b35e180ef3b34a019aea14ad96f7e0ef2930dbb218f4dc3af9"
+      },
+      "inverse": [
+        [
+          42,
+          50,
+          ""
+        ],
+        [
+          53,
+          54,
+          "  -Wall -Wextra -Werror -DLI2_MAPS_PHASE_REUSE=1 -I\"$source_dir\" -I\"$parent_dir\" \\\n"
+        ]
+      ],
+      "targets": {
+        "9b7ba3e5d0789d7928c15828cc737808119f2e81b3dcc7cc8d093018b901ca79": {
+          "fact": {
+            "bytes": 3268,
+            "sha256": "9b7ba3e5d0789d7928c15828cc737808119f2e81b3dcc7cc8d093018b901ca79"
+          },
+          "git_revision": "0ddbbe6b4ab942e6569f73130b9435a133c31f00",
+          "inverse": [
+            [
+              26,
+              30,
+              ""
+            ]
+          ]
+        },
+        "ade5026c751d0e33d8805edcdde32bb5ff8ab32a4ef6921ccf5ce9677ff439ce": {
+          "fact": {
+            "bytes": 3436,
+            "sha256": "ade5026c751d0e33d8805edcdde32bb5ff8ab32a4ef6921ccf5ce9677ff439ce"
+          },
+          "git_revision": "68a62b2672877241863604ff60f3763af2d5468f",
+          "inverse": [
+            [
+              29,
+              30,
+              ""
+            ]
+          ]
+        },
+        "eda7efcb95a5e8b35e180ef3b34a019aea14ad96f7e0ef2930dbb218f4dc3af9": {
+          "fact": {
+            "bytes": 3526,
+            "sha256": "eda7efcb95a5e8b35e180ef3b34a019aea14ad96f7e0ef2930dbb218f4dc3af9"
+          },
+          "git_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+          "inverse": []
+        }
+      }
+    }
+  }
+}

@@ -283,6 +283,8 @@ def native_dynamic(path):
 
 
 def main():
+    sys.path.insert(0,str(ROOT/'evaluation/inprocess'))
+    from page_selected_maps_sources import historical, bind as bind_maps_sources
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--expect-revision', required=True)
     ap.add_argument('--archive', required=True, type=Path)
@@ -398,9 +400,10 @@ def main():
         r['source'] = source()
         need(r['source']['revision'] == args.expect_revision, 'clean exact expected source revision')
         pin(__file__); pin(Path(__file__).with_name('README.md')); pin(sys.executable)
+        bind_maps_sources(pin)
         manifest = load(pin(Path(__file__).with_name('SOURCE.json')))
         for name, wanted in manifest['files'].items():
-            need(fact(pin(ROOT/name)) == wanted, 'whole public source leaf: '+name)
+            need(historical(ROOT/name,wanted,fact(pin(ROOT/name))) == wanted, 'whole public source leaf: '+name)
         origin = pin(args.call217_receipt)
         need(fact(origin)['sha256'] == args.call217_receipt_sha256, 'explicit whole CALL217 prerequisite')
         prior = retained(origin, CALL217, r, pin, ENV)

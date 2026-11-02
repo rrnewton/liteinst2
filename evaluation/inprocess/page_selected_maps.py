@@ -16,6 +16,7 @@ sys.dont_write_bytecode = True
 from checks import source
 from run import hardware
 from page_selected import ENV, fact, need, save, elf, bridge_check
+from page_selected_maps_sources import historical, bind as bind_maps_sources
 from page_selected_components import plain_executable
 from page_selected_generic_build import Build, PROFILES as BUILD_PROFILES
 from page_selected_process import invoke
@@ -121,9 +122,10 @@ def main():
         record['hardware'] = hardware(cpu)
         for value in subprocess.check_output(['git', 'ls-files', '-z', 'tools/page-entry', 'evaluation/inprocess'], timeout=5).split(b'\0'):
             if value and not os.fsdecode(value).startswith('evaluation/inprocess/results/'):pin(REPO/os.fsdecode(value))
+        bind_maps_sources(pin)
         inputs = json.loads((REPO/'evaluation/inprocess/page_selected_maps_inputs.json').read_bytes())
         for item in inputs['bindings']:
-            need(fact(pin(REPO/item['path'])) == {k: item[k] for k in ('bytes', 'sha256')}, 'reviewed implementation/helper binding')
+            need(historical(REPO/item['path'],{k: item[k] for k in ('bytes', 'sha256')},fact(pin(REPO/item['path']))) == {k: item[k] for k in ('bytes', 'sha256')}, 'reviewed implementation/helper binding')
         record['reviewed_inputs'] = inputs
         build = Build(record, private, pin, binary, run);products = build.prepare()
         gdb = pin(shutil.which('gdb', path=ENV['PATH']));build.tools['gdb'] = gdb

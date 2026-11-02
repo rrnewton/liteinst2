@@ -178,6 +178,8 @@ def preparation(case,row,directory,original,roots,objects,description,carrier,pr
 
 
 def main():
+    sys.path.insert(0,str(ROOT/'evaluation/inprocess'))
+    from page_selected_maps_sources import historical, bind as bind_maps_sources
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--expect-revision',required=True)
     ap.add_argument('--output',type=Path,required=True)
@@ -191,9 +193,9 @@ def main():
          'assertions, Python3.11+ and original archive CPU independently reserved')
     need(re.fullmatch('[0-9a-f]{40}',args.expect_revision) is not None, 'explicit full installed revision')
     for name,value in manifest['artifacts'].items():
-        need(fact(HERE/name) == value,'frozen collector artifact: '+name)
+        need(historical(HERE/name,value,fact(HERE/name)) == value,'frozen collector artifact: '+name)
     for name,value in manifest['inputs'].items():
-        need(fact((ROOT/name).resolve(strict=True)) == value,'frozen source input: '+name)
+        need(historical((ROOT/name).resolve(strict=True),value,fact((ROOT/name).resolve(strict=True))) == value,'frozen source input: '+name)
     private = args.output.resolve(); cpu = args.cpu
     need(private.is_relative_to((ROOT/'target/evaluation/inprocess').resolve(strict=True)) and
          not private.exists(),'fresh contained private result')
@@ -205,7 +207,7 @@ def main():
             need(not Path(relative).is_absolute() and '..' not in Path(relative).parts and
                  relative not in context,'unique contained installed source roster')
             value=fact(path)
-            need(value==expected,'whole source-bound installed roster member: '+relative)
+            need(historical(path,expected,value)==expected,'whole source-bound installed roster member: '+relative)
             context[relative]=dict(origin=relative,copy=False,**value)
     # Installed source modules retain their original natural ROOT/SELECTED.
     # Every original context member is pinned in place; no facade copies or
@@ -307,6 +309,7 @@ def main():
     registry = []; environment = None
     try:
         r['source'] = source();need(r['source']['revision'] == args.expect_revision,'exact clean checkout')
+        bind_maps_sources(pin)
         for name in ('SOURCE.json',*manifest['artifacts']):pin(HERE/name)
         for name in manifest['inputs']:pin(ROOT/name)
         for rel,item in context.items():

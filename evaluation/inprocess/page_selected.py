@@ -349,7 +349,8 @@ def main():
         if build:
             row['bounds'] = (120, 2 << 30, 128 << 20, 150)
             row['environment'] = dict(ENV, CARGO_INCREMENTAL='0', CARGO_BUILD_JOBS='1', CARGO_NET_OFFLINE='true', CARGO_TARGET_DIR=str(REPO/'target'),
-                                      LI2_CC=str(tools['cc']), LI2_CARGO=str(tools['cargo']), RUSTC=str(tools['rustc']))
+                                      LI2_CC=str(tools['cc']), LI2_CARGO=str(tools['cargo']), RUSTC=str(tools['rustc']),
+                                      LI2_MAPS_PROFILE='fresh-baseline')
             for key in ('HOME', 'CARGO_HOME', 'RUSTUP_HOME'):
                 if key in os.environ: row['environment'][key] = os.environ[key]
         record['commands'].append(row)

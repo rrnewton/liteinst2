@@ -77,6 +77,9 @@ def publish(path, receipt, private, aliases):
             item['builtin_outcome'] = {k.removeprefix('builtin_'): v for k, v in row.items() if k.startswith('builtin_')}
         if case.get('namespace'):
             item['namespace'] = case['namespace']
+        if 'maps_view' in case:
+            item['maps_view'] = case['maps_view']
+            item['maps_controls'] = case['maps_controls']
         cases.append(item)
     diagnostic = receipt.get('ls_diagnostic')
     if diagnostic is not None:
@@ -88,6 +91,9 @@ def publish(path, receipt, private, aliases):
             r = receipt['ls_diagnostic']['repeat']
             diagnostic['repeat'] = {k: r[k] for k in ('attempts', 'completed', 'traces', 'queries')}
             diagnostic['repeat_report_sha256'] = digest(r)
+        if 'maps_view' in receipt['ls_diagnostic']:
+            diagnostic['maps_view'] = receipt['ls_diagnostic']['maps_view']
+            diagnostic['maps_controls'] = receipt['ls_diagnostic']['maps_controls']
     commands = []
     for command in receipt['commands']:
         commands.append(dict(name=command['name'], stage=command['stage'], profile=command['profile'],
@@ -118,6 +124,9 @@ def publish(path, receipt, private, aliases):
                 '--namespace', '${RUN}/namespace-<case>', '<carrier>', '<original>', '--', '<original>'],
             'ls_native': ['/bin/ls', '-d', '.'],
             'actual_commands': 'Normalized argv above; private ordered rows retain exact argv, environment and captured bytes.'})
+    if 'maps_profile' in receipt:
+        public.update(maps_profile=receipt['maps_profile'], maps_qualification=receipt.get('maps_qualification'),
+                      build_maps_profile=build.get('maps_profile'))
     text = json.dumps(public, indent=2, sort_keys=True, allow_nan=False)+'\n'
     need(not any(x and len(x)>1 and x in text for x in (str(Path.home()), str(ROOT), platform.node(), '/home/')),
          'private location in public receipt')
@@ -126,8 +135,12 @@ def publish(path, receipt, private, aliases):
         output.write(text)
 
 
-def main(*, embedded=False, repeat=False):
+def main(*, embedded=False, repeat=False, maps=False):
     need(type(embedded) is bool and type(repeat) is bool and (not repeat or embedded), 'closed cohort selector')
+    need(type(maps) is bool and (not maps or not embedded and not repeat), 'separate original-20 maps cohort')
+    if maps:
+        import page_selected_maps_default_reports as maps_reports
+        from page_selected_oneshot_build import before_default
     if repeat:
         import page_selected_repeat as repetition
     if embedded:
@@ -135,18 +148,21 @@ def main(*, embedded=False, repeat=False):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--expect-revision', required=True)
     ap.add_argument('--library-root', action='append', type=Path)
+    if maps:
+        ap.add_argument('--maps-profile', choices=('default', 'differential'), default='default')
     args = ap.parse_args()
     need(sys.flags.optimize == 0 and len(os.sched_getaffinity(0)) == 1, 'assertions and one reserved CPU')
     need(re.fullmatch('[0-9a-f]{40}', args.expect_revision), 'exact revision')
     cpu = next(iter(os.sched_getaffinity(0)))
     os.chdir(ROOT)
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    name = stamp+('-page-selected-repeat-' if repeat else '-page-selected-embedded-' if embedded else '-page-selected-generic-')+args.expect_revision[:12]
+    name = stamp+('-page-selected-maps-'+args.maps_profile+'-' if maps else '-page-selected-repeat-' if repeat else '-page-selected-embedded-' if embedded else '-page-selected-generic-')+args.expect_revision[:12]
     output = ROOT/'target/evaluation/inprocess'/name
     output.mkdir(parents=True, exist_ok=False)
     public = HERE/'results'/(name+'.json')
     need(not public.exists(), 'unique public receipt')
     pins, binaries, aliases = {}, {}, []
+    header_aliases = {}
     receipt = dict(schema=1, profile='page-selected-generic-v1', status='failed',
         scope='20 finite streams; separate real-ls diagnostic; no full ABI/B2/B3/performance claim',
         started_utc=stamp, expected_revision=args.expect_revision, source=None, source_unchanged=False,
@@ -163,6 +179,11 @@ def main(*, embedded=False, repeat=False):
         receipt.update(profile='page-selected-repeat-v1',
             scope='32 finite streams including ten canonical REP programs; separate real-ls diagnostic; no general REP, signal delivery, full B2/B3 or performance claim',
             reproduce=['python3', 'evaluation/inprocess/page_selected_repeat.py', '--expect-revision', args.expect_revision])
+    if maps:
+        receipt.update(profile='page-selected-maps-default-v1', maps_profile=args.maps_profile,
+            scope='original 20 finite cases and separate real-ls diagnostic; explicit maps row and controls; no full owner, ABI, performance or offline-admission qualification',
+            reproduce=['python3', 'evaluation/inprocess/page_selected_maps_default.py', '--maps-profile',
+                       args.maps_profile, '--expect-revision', args.expect_revision])
     for i, path in enumerate(args.library_root or [Path('/usr/lib64')]):
         aliases.append((str(path.resolve()), '${LIBRARY_ROOT_'+str(i)+'}'))
         if args.library_root:
@@ -185,6 +206,8 @@ def main(*, embedded=False, repeat=False):
     stage = 'build'
 
     def run(label, argv, expected=0, profile='native', env=None):
+        if maps and label == 'selected-build':
+            before_default(label, argv, builder, pin, header_aliases, run, receipt)
         need(all(fact(p) == v for p, v in pins.items()) and all(fact(p) == v for p, v in binaries.items()),
              'source/artifact changed before command')
         row = dict(name=label, stage=stage, profile=profile, argv=list(map(str, argv)), bounds=PROFILES[profile],
@@ -196,7 +219,8 @@ def main(*, embedded=False, repeat=False):
              'exact process outcome: '+label)
         return row, out, err
 
-    builder = Build(receipt, output, pin, binary, run)
+    selected_maps = (None if args.maps_profile == "default" else "differential") if maps else "fresh-baseline"
+    builder = Build(receipt, output, pin, binary, run, maps_profile=selected_maps)
     cohort_start = None
     try:
         receipt['source'] = source()
@@ -214,6 +238,12 @@ def main(*, embedded=False, repeat=False):
             if file and Path(file).resolve().is_relative_to(ROOT):
                 pin(file)
         built = builder.prepare()
+        if maps:
+            default_rows = receipt['default_include_closure']
+            need(len(default_rows) == 2 and str(ROOT/'tools/page-entry/selected/maps_view.inc') in
+                 default_rows[0]['headers'] and all('$' not in word for row in default_rows for word in row['argv']),
+                 'actual default C include closure uses the completely expanded maintained profile')
+            receipt['header_aliases'] = header_aliases
         bridge, observe = built['bridge'], built['observe']
         python = builder.tools['python']
         stage = 'cohort'
@@ -270,7 +300,12 @@ def main(*, embedded=False, repeat=False):
             namespace = output/('namespace-'+name)
             command, out, err = run('gated-'+name, [python, ROOT/'tools/page-entry/carrier.py', 'exec-loader',
                 '--library-root', spec['library_root'], '--namespace', namespace, carrier, original, '--', original], None)
-            row, repeat_row = repeat_compare.parse(err)
+            if maps:
+                row, repeat_row, view = maps_reports.parse(err, args.maps_profile)
+                case['maps_view'] = view
+                case['maps_controls'] = maps_reports.controls(err, args.maps_profile)
+            else:
+                row, repeat_row = repeat_compare.parse(err)
             if i < 22:
                 need(repeat_row is None, 'old finite programs cannot acquire a REP route')
             else:
@@ -320,6 +355,15 @@ def main(*, embedded=False, repeat=False):
             need(len(receipt['cases']) == 20 and all(x['accepted'] for x in receipt['cases']) and
                  len(receipt['commands'])-cohort_start == 76, 'all finite cases and exact command cohort')
 
+        if maps:
+            receipt['maps_qualification'] = dict(
+                finite_totals=maps_reports.aggregate(receipt['cases'], args.maps_profile),
+                activity_refusals=maps_reports.aggregate_controls(receipt['cases'], args.maps_profile),
+                row_refusals=sum(len(case['maps_controls']['refusals']) for case in receipt['cases']),
+                scope='fixed original20 case process totals, including bootstrap; no timing inference')
+            need(receipt['maps_qualification']['row_refusals'] == 420,
+                 'all twenty complete maps rows retain all21 additive controls')
+
         # Optional-progress workload is still a real native/gated pair. Its
         # first unsupported request is retained exactly; it is never ls success.
         ls = pin('/bin/ls')
@@ -336,9 +380,15 @@ def main(*, embedded=False, repeat=False):
             argv += ['--library-root', path.resolve()]
         argv += ['--namespace', namespace, carrier, ls, '--', ls, '-d', '.']
         command, out, err = run('gated-ls-diagnostic', argv, None)
-        row, repeat_row = repeat_compare.parse(err)
+        if maps:
+            row, repeat_row, diagnostic_view = maps_reports.parse(err, args.maps_profile)
+        else:
+            row, repeat_row = repeat_compare.parse(err)
         diagnostic = dict(status='failed', result=row, original=fact(ls), interpreter=fact(loader), repeat=repeat_row)
         receipt['ls_diagnostic'] = diagnostic
+        if maps:
+            diagnostic['maps_view'] = diagnostic_view
+            diagnostic['maps_controls'] = maps_reports.controls(err, args.maps_profile)
         if command['exit'] == 0:
             need(out == expected_out and row['status'] == row['failure_code'] == row['detail_abs'] == row['detail_negative'] == 0 and
                  row['step_route'] == 0 and row['generic_tf_attempts'] == row['generic_tf_steps'] and

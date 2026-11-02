@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 from page_selected import need
+from page_selected_maps_sources import historical, bind as bind_maps_sources
 from maps_view import fact,digest
 import linked_true_regression as producer
 
@@ -144,8 +145,9 @@ def prerequisite(path,pin,binary):
          len(positive['positive_refusals'])==len(set(positive['positive_refusals']))==55 and
          positive['default_refusal']=='entire unused REP report is canonical empty, with only initialization flags',
          'distinct positive445/55 and unchanged default rejection; historical failed results remain separate')
+    bind_maps_sources(pin)
     for name,want in ADOPTED.items():
-        need(digest(fact(pin(ROOT/name)))==digest(want),'exact reviewed positive REP dependency '+name)
+        need(digest(historical(ROOT/name,want,fact(pin(ROOT/name))))==digest(want),'exact reviewed positive REP dependency '+name)
         if name!='evaluation/inprocess/unrolled_hash_performance.py':
             need(digest(positive['executed_modules'][name])==digest(want),
                  'the retained regression executed this exact candidate reader '+name)

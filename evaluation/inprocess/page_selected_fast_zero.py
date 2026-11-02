@@ -16,6 +16,7 @@ sys.dont_write_bytecode=True
 from checks import source
 from run import hardware
 from page_selected import ENV, fact, need, save
+from page_selected_maps_sources import historical, bind as bind_maps_sources
 from page_selected_generic_build import Build, PROFILES as BUILD_PROFILES
 from page_selected_process import invoke
 from page_selected_register_time_compare import decode
@@ -111,11 +112,12 @@ def main():
     try:
         r['source']=source();need(r['source']['revision']==a.expect_revision,'exact clean committed revision')
         r['hardware']=hardware(cpu)
+        bind_maps_sources(pin)
         configuration=decode(pin(HERE/'page_selected_fast_zero_inputs.json').read_bytes());r['configuration']=configuration
         need(configuration['schema']==1 and configuration['native_processes']==COUNTS and configuration['native_bounds']==PROFILES['native'],
              'closed exact cohort and bounds')
         for item in configuration['sources']:
-            need(fact(pin(ROOT/item['path']))=={k:item[k]for k in ('bytes','sha256')},'exact reviewed source input')
+            need(historical(ROOT/item['path'],{k:item[k]for k in ('bytes','sha256')},fact(pin(ROOT/item['path']))) == {k:item[k]for k in ('bytes','sha256')},'exact reviewed source input')
         git=pin(shutil.which('git',path=ENV['PATH']))
         _,out,err=run('source-paths',[git,'-C',ROOT,'ls-files','-z','tools/page-entry','evaluation/inprocess'],profile='metadata')
         need(not err,'source enumeration stderr')

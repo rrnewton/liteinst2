@@ -12,6 +12,7 @@ import tomllib
 
 from checks import admission
 from page_selected import ENV, bridge_check, fact, need
+from page_selected_maps_recipe import configure as maps_configure
 
 REPO = Path(__file__).resolve().parents[2]
 PRODUCT = REPO/'tools/page-entry/selected'
@@ -61,7 +62,7 @@ def package_check(package):
 
 class Build:
     """Caller retains commands/first errors and checks source() before and after."""
-    def __init__(self, record, private, pin, binary, run, extra_decoder_sources=(), *, scalar_span=False, linked_epoch=False, mov_guard=False, add_guard=False):
+    def __init__(self, record, private, pin, binary, run, extra_decoder_sources=(), *, scalar_span=False, linked_epoch=False, mov_guard=False, add_guard=False, maps_profile="fresh-baseline"):
         need(type(extra_decoder_sources) is tuple and len(set(extra_decoder_sources)) == len(extra_decoder_sources) and
              all(type(n) is str and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*\.rs", n) for n in extra_decoder_sources),
              'exact unique local extra decoder source names')
@@ -93,6 +94,7 @@ class Build:
         self.private, self.pin, self.binary, self.invoke = private, pin, binary, run
         self.retained = private/'artifacts'
         self.tools, self.environment, self.packages = {}, dict(ENV), []
+        self.record["maps_profile"] = maps_configure(self.environment, maps_profile)
         self.configuration = None
         self.observer = private/'generic-observe'
         self.paths = {}

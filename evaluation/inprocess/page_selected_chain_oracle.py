@@ -14,6 +14,7 @@ sys.dont_write_bytecode=True
 from checks import source
 from run import hardware
 from page_selected import ENV,fact,need,save
+from page_selected_maps_sources import historical, bind as bind_maps_sources
 from page_selected_generic import digest
 from page_selected_generic_build import Build,PROFILES as BUILD_PROFILES
 from page_selected_process import invoke
@@ -98,13 +99,14 @@ def main():
     try:
         r['source']=source();need(r['source']['revision']==args.expect_revision,'exact committed source')
         r['hardware']=hardware(cpu)
+        bind_maps_sources(pin)
         inputs=decode(pin(HERE/'page_selected_chain_inputs.json').read_bytes());r['configuration']=inputs
         need(inputs['schema']==1 and inputs['finite_manifest_sha256']==
             'bd1b3b0f5d3d0d853b6e07914c54a747534c1c78cb61430237ef44b07302ec28' and
             inputs['report_route_manifest_sha256']=='36c9c9782193659a10e16f4a1811040651f35d323ab63a7bf3ef23766e34aef4',
             'reviewed immutable fixture and explicit qualified route successor')
         for row in inputs['sources']:
-            need(fact(pin(ROOT/row['path']))=={k:row[k]for k in ('bytes','sha256')},'exact finite source/context input')
+            need(historical(ROOT/row['path'],{k:row[k]for k in ('bytes','sha256')},fact(pin(ROOT/row['path']))) == {k:row[k]for k in ('bytes','sha256')},'exact finite source/context input')
         git=pin(shutil.which('git',path=ENV['PATH']))
         _,out,err=run('source-paths',[git,'-C',ROOT,'ls-files','-z','tools/page-entry','evaluation/inprocess'],profile='metadata')
         need(not err,'source enumeration stderr')

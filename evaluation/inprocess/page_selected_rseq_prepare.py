@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 from page_selected import fact, need
+from page_selected_maps_sources import historical, bind as bind_maps_sources
 from page_selected_rseq_compare import decode
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -10,9 +11,10 @@ CATALOG = ROOT/'evaluation/inprocess/page_selected_rseq_inputs.json'
 
 
 def validate(pin):
+    bind_maps_sources(pin)
     manifest = decode(pin(CATALOG).read_bytes())
     for row in manifest['inputs']:
-        need(fact(pin(ROOT/row['path'])) == {k: row[k] for k in ('bytes', 'sha256')},
+        need(historical(ROOT/row['path'], {k: row[k] for k in ('bytes', 'sha256')}, fact(pin(ROOT/row['path']))) == {k: row[k] for k in ('bytes', 'sha256')},
              'exact committed rseq input '+row['path'])
     return manifest
 
