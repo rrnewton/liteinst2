@@ -6555,7 +6555,7 @@
       },
       "unit/ordinary_interval/main": {
         "ignored": 1,
-        "tests": 518
+        "tests": 521
       },
       "unit/owned_region_clock/owned_region_clock": {
         "ignored": 0,
@@ -6567,7 +6567,7 @@
       },
       "unit/rapid_profiler/lib": {
         "ignored": 37,
-        "tests": 601
+        "tests": 604
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,

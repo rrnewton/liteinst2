@@ -18,20 +18,89 @@ from test_parsing import counts, summary
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # The later snapshot implementation adds three tests in the same
+        # Rapid library. Its prior source and complete catalog stay explicit.
+        snapshot = current.DATA['source_successor_79b34bc']
+        snapshot_prior = current.before_79b34bc(actual)
+        snapshot_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(snapshot_prior), current.ENTRY_ADMISSION_CURRENT)
+        self.assertEqual((len(snapshot_rows), sum(x['tests'] for x in snapshot_rows.values()),
+                          sum(x['ignored'] for x in snapshot_rows.values())), (120, 4581, 43))
+        self.assertEqual((snapshot['default_method_additions'], snapshot['default_method_removals'],
+                          snapshot['default_harness_changes'], snapshot['default_ignore_changes'],
+                          snapshot['default_doctest_additions'], snapshot['recorder_identity_changes']),
+                         (3, 0, 0, 0, 0, 0))
+        self.assertEqual(sum(len(names) * len(snapshot['default_method_instances'][path])
+                             for path, names in snapshot['added_default_methods'].items()), 3)
+        self.assertEqual(snapshot_rows['unit/rapid_profiler/lib'], counts(604, 37))
+        self.assertEqual(snapshot_prior['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'],
+                         counts(601, 37))
+        self.assertEqual(snapshot['added_ignored_methods'], {})
+        for path, row in snapshot['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_79b34bc(path, raw, 'snapshot_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (snapshot['source_preimages'][path]['bytes'], row['previous_sha256']))
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^snapshot_source_inverse$'):
+                current.source_before_79b34bc(path, raw + b'\n', 'snapshot_source_inverse')
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_79b34bc(snapshot_prior)
+        for field in ('tests', 'ignored'):
+            for value in (None, True, float(snapshot_rows['unit/rapid_profiler/lib'][field]),
+                          snapshot_rows['unit/rapid_profiler/lib'][field] + 1):
+                wrong = copy.deepcopy(actual)
+                wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field] = value
+                self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                    current.before_79b34bc(wrong)
+        wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_79b34bc(wrong)
+        read = Path.read_bytes
+        snapshot_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
+            for path, names in snapshot['added_default_methods'].items() for name in names]
+        snapshot_stimuli += [(path, literal, '')
+            for path, literals in snapshot['module_chains'].items() for literal in literals]
+        for path, literal, replacement in snapshot_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        for path in snapshot['source_paths']:
+            target = current.ROOT / path; raw = read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate != target: return read(candidate)
+                    if missing: raise FileNotFoundError(path)
+                    return raw + b'\n'
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                        current.require_sources()
         # Keep the merged typed entry-admission catalog distinct from every
         # earlier boundary, including its four explicitly ignored native tests.
         entry = current.DATA['source_successor_a8acec5']
         entry_prior = current.before_a8acec5(actual)
-        entry_rows = actual['harness_test_counts']['workspace_tests']
+        entry_rows = snapshot_prior['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(entry_prior), current.ENTRY_ADMISSION_PREVIOUS)
         self.assertEqual((len(entry_rows), sum(x['tests'] for x in entry_rows.values()),
-                          sum(x['ignored'] for x in entry_rows.values())), (120, 4575, 43))
+                          sum(x['ignored'] for x in entry_rows.values())), (120, 4578, 43))
         self.assertEqual((entry['default_method_additions'], entry['default_doctest_additions'],
                           entry['default_method_removals'], entry['default_harness_changes'],
                           entry['default_ignore_changes'], entry['recorder_identity_changes']),
-                         (30, 1, 0, 1, 4, 0))
+                         (33, 1, 0, 1, 4, 0))
         self.assertEqual(sum(len(names) * len(entry['default_method_instances'][path])
-                             for path, names in entry['added_default_methods'].items()), 30)
+                             for path, names in entry['added_default_methods'].items()), 33)
+        self.assertEqual(sum(map(len, entry['added_default_methods'].values())), 30)
+        self.assertEqual(entry['default_method_instances']['tests/support/native_normal_module/early_entry.rs'],
+                         ['test/frontend_native_calibrations', 'unit/ordinary_interval/main'])
+        self.assertEqual(entry_rows['unit/ordinary_interval/main'], counts(521, 1))
+        self.assertEqual(entry_prior['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],
+                         counts(518, 1))
         self.assertEqual(sum(len(names) for names in entry['added_ignored_methods'].values()), 4)
         self.assertEqual(sum(len(blocks) for blocks in entry['doctests'].values()), 1)
         self.assertEqual(entry_prior['harness_test_counts']['serial_launch'],
@@ -234,7 +303,7 @@ class Main97abInventoryTests(unittest.TestCase):
         self.assertEqual(sum(len(names) for names in phase['added_default_methods'].values()), 11)
         self.assertEqual(phase['default_method_instances'], {
             path: ['unit/ordinary_interval/main'] for path in phase['added_default_methods']})
-        self.assertEqual(actual['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],
+        self.assertEqual(entry_prior['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],
                          dict(tests=518, ignored=1))
         self.assertEqual(native_indexed['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],
                          dict(tests=507, ignored=1))
@@ -947,6 +1016,52 @@ class Main97abInventoryTests(unittest.TestCase):
         row = parsing.parse_harnesses(failed, expected, 1)[0]
         self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']),
                          ('FAILED', 48, 1))
+        self.assertEqual(row['partitions'][1]['summary']['failed'], 1)
+
+        # The incoming source adds one compile-fail declaration. Require its
+        # exact 2+48 rustdoc partition without changing the historical 2+47.
+        entry_doc = '\n'.join(('   Doc-tests rapid_profiler', 'running 2 tests', summary(2),
+                               'running 48 tests', summary(48),
+                               'all doctests ran in 0.67s; merged doctests compilation took 0.26s'))
+        entry_expected = {'doc/rapid_profiler': counts(50)}
+        self.assertEqual(snapshot_prior['harness_test_counts']['workspace_tests']['doc/rapid_profiler'],
+                         entry_expected['doc/rapid_profiler'])
+        row = parsing.parse_harnesses(entry_doc, entry_expected, 0)[0]
+        self.assertEqual(row['outer'], dict(passed=50, failed=0, ignored=0,
+                                           measured=0, filtered=0, result='ok'))
+        self.assertEqual(row['declared_outer_tests'], 2)
+        self.assertEqual([part['declared_tests'] for part in row['partitions']], [2, 48])
+        self.assertEqual([part['summary']['passed'] for part in row['partitions']], [2, 48])
+        self.assertEqual((row['nested_starts'], row['unmatched_nested_starts']), (0, 0))
+        reordered = '\n'.join(('   Doc-tests rapid_profiler', 'running 48 tests', summary(48),
+                               'running 2 tests', summary(2), entry_doc.splitlines()[-1]))
+        for bad in (entry_doc.replace('rapid_profiler', 'example'), reordered,
+                    entry_doc.replace('running 2 tests', 'running 3 tests'),
+                    entry_doc.replace('running 48 tests', 'running 47 tests'),
+                    entry_doc.replace('running 48 tests', 'running 49 tests'),
+                    entry_doc.replace(summary(2), summary(1)),
+                    entry_doc.replace(summary(48), summary(47)),
+                    entry_doc.replace(summary(2), summary(2, filtered=1)),
+                    entry_doc.replace(summary(48), summary(48, filtered=1)),
+                    entry_doc.replace(summary(48), summary(47, ignored=1)),
+                    entry_doc.replace(summary(48), summary(47, measured=1)),
+                    entry_doc.replace(summary(48), summary(47, failed=1)),
+                    entry_doc.replace(summary(48), summary(48, result='FAILED')),
+                    entry_doc.replace('running 48 tests', 'running 48 tests\nrunning 48 tests'),
+                    entry_doc.replace(summary(2), summary(2) + '\n' + summary(2)),
+                    entry_doc.replace(summary(2), ''), entry_doc.replace(summary(48), ''),
+                    '\n'.join(entry_doc.splitlines()[:-1]), entry_doc + '\n' + entry_doc.splitlines()[-1],
+                    entry_doc + '\nrunning 1 test\n' + summary(1),
+                    entry_doc.replace('all doctests ran in 0.67s;', 'all doctests ran in NaNs;')):
+            with self.subTest(entry_doc_partition=bad), self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, entry_expected, 0)
+        for total, ignored in ((49, 0), (51, 0), (50, 1)):
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(entry_doc, {'doc/rapid_profiler': counts(total, ignored)}, 0)
+        failed = entry_doc.replace(summary(48), summary(47, failed=1))
+        row = parsing.parse_harnesses(failed, entry_expected, 1)[0]
+        self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']),
+                         ('FAILED', 49, 1))
         self.assertEqual(row['partitions'][1]['summary']['failed'], 1)
 
 

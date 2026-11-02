@@ -9,10 +9,11 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '7009dfa873ff0710290241db59fd964fbb3ee0d25d0c2124c6e55cd4f4e9cd91',
+require(hashlib.sha256(RAW).hexdigest() == 'b4f765fd9bcc7953b5ecc8aceafb8b0d165b98b046c3959a502378d768662339',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
+ENTRY_ADMISSION_CURRENT = DATA['source_successor_79b34bc']['previous_corpus_sha256']
 ENTRY_ADMISSION_PREVIOUS = DATA['source_successor_a8acec5']['previous_corpus_sha256']
 POINT_PREVIOUS = DATA['source_successor_e5ab521']['previous_corpus_sha256']
 EARLY_PREVIOUS = DATA['source_successor_667921']['previous_corpus_sha256']
@@ -88,6 +89,10 @@ def source_before_a8acec5(path, raw, error):
     return inverse(path, raw, DATA['source_successor_a8acec5']['source_projections'], error)
 
 
+def source_before_79b34bc(path, raw, error):
+    return inverse(path, raw, DATA['source_successor_79b34bc']['source_projections'], error)
+
+
 def require_sources(error='main97ab_source_inventory_differs'):
     for path, expected in DATA['sources'].items():
         try:
@@ -115,14 +120,29 @@ def require_sources(error='main97ab_source_inventory_differs'):
                         for literal in DATA['module_chains'][path]), error)
         source_before(path, raw, error)
         source_before_a8acec5(path, raw, error)
+        source_before_79b34bc(path, raw, error)
         source_before_evaluation(path, raw, error)
+
+
+def before_79b34bc(declared, error='main97ab_inventory_differs'):
+    """Require all three snapshot tests and retain the corrected a8 catalog."""
+    require(type(declared) is dict and digest(declared) == CURRENT, error)
+    owned = plain_catalog((declared, DATA))
+    old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in DATA['source_successor_79b34bc']['workspace_changes'].items():
+        require(digest(rows[name]) == digest(change['current']), error)
+        rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == ENTRY_ADMISSION_CURRENT, error)
+    return old if owned else copy.deepcopy(old)
 
 
 def before_a8acec5(declared, error='main97ab_inventory_differs'):
     """Bind all default entry-admission tests and retain the complete old catalog."""
-    require(type(declared) is dict and digest(declared) == CURRENT, error)
     owned = plain_catalog((declared, DATA))
-    old = copy.deepcopy(declared)
+    declared = before_79b34bc(declared, error)
+    require(type(declared) is dict and digest(declared) == ENTRY_ADMISSION_CURRENT, error)
+    old = declared if owned else copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in DATA['source_successor_a8acec5']['workspace_changes'].items():
         require(digest(rows[name]) == digest(change['current']), error)
