@@ -2089,6 +2089,17 @@ fn fixed_exec_indexed_fixture(jump: &[u8], object_type: u64) -> (Vec<u8>, String
     (original, text, p)
 }
 
+fn fixed_exec_readback<'a>(
+    bytes: &'a [u8],
+    headers: &'a [usize],
+) -> crate::fixed_exec::OutputReadback<'a> {
+    crate::fixed_exec::OutputReadback {
+        bytes,
+        original_to_output_header: headers,
+        max_program_headers: 64,
+    }
+}
+
 #[test]
 fn fixed_exec_actual_indexed_encoder_carrier_route_and_legacy_refusals() {
     use crate::carrier::elf64::{Elf64, ElfVaddr, ParseLimits, SegmentType};
@@ -2152,8 +2163,18 @@ fn fixed_exec_actual_indexed_encoder_carrier_route_and_legacy_refusals() {
             },
         )
         .unwrap();
+        // This fixture has two original LOADs and no PT_PHDR. The carrier
+        // inserts PT_PHDR at zero, shifting both originals by one. Compare all
+        // 56 on-disk bytes independently of its internal header map.
+        assert_eq!(original_elf.program_headers().len(), 2);
+        assert_eq!(
+            written.program_headers()[0].kind,
+            SegmentType::ProgramHeaders
+        );
         for load in original_elf.segments(SegmentType::Load) {
-            assert_eq!(written.program_headers().get(load.index), Some(load));
+            let before = original_elf.header().program_offset.0 as usize + load.index * 56;
+            let after = written.header().program_offset.0 as usize + (load.index + 1) * 56;
+            assert_eq!(&original[before..before + 56], &bytes[after..after + 56]);
         }
         let ledger_text = std::str::from_utf8(&product.files()["ledger.tsv"]).unwrap();
         assert!(ledger_text.contains("bias_policy\tfixed-exec-zero-bias-indexed-jump32-v1\n"));
@@ -2303,9 +2324,20 @@ fn fixed_exec_writer_rejects_wrong_source_type_entry_and_original_load_records()
     let bytes = &product.files()["candidate.elf"];
     let dynamic =
         crate::carrier::dynamic::inspect(&elf, crate::carrier::dynamic::Limits::default()).unwrap();
+    // Independent fixture map: inserted PT_PHDR, then both original LOADs.
+    assert_eq!(elf.program_headers().len(), 2);
+    let headers = [1, 2];
     // This control isolates the writer's source/LOAD checks. The preceding
     // actual-route control and core producer controls cover every image field.
-    crate::fixed_exec::validate_output(&elf, binding, &[], bytes, 64, &dynamic, &[]).unwrap();
+    crate::fixed_exec::validate_output(
+        &elf,
+        binding,
+        &[],
+        fixed_exec_readback(bytes, &headers),
+        &dynamic,
+        &[],
+    )
+    .unwrap();
     let mut foreign = original.clone();
     foreign[0x11800] ^= 1;
     let foreign_elf = Elf64::parse(
@@ -2316,8 +2348,15 @@ fn fixed_exec_writer_rejects_wrong_source_type_entry_and_original_load_records()
     )
     .unwrap();
     assert!(
-        crate::fixed_exec::validate_output(&foreign_elf, binding, &[], bytes, 64, &dynamic, &[])
-            .is_err()
+        crate::fixed_exec::validate_output(
+            &foreign_elf,
+            binding,
+            &[],
+            fixed_exec_readback(bytes, &headers),
+            &dynamic,
+            &[]
+        )
+        .is_err()
     );
     for identity in [
         CodeIdentity {
@@ -2334,14 +2373,28 @@ fn fixed_exec_writer_rejects_wrong_source_type_entry_and_original_load_records()
     let mut altered = bytes.to_vec();
     put(&mut altered, 16, 2, 3);
     assert!(
-        crate::fixed_exec::validate_output(&elf, binding, &[], &altered, 64, &dynamic, &[])
-            .is_err()
+        crate::fixed_exec::validate_output(
+            &elf,
+            binding,
+            &[],
+            fixed_exec_readback(&altered, &headers),
+            &dynamic,
+            &[]
+        )
+        .is_err()
     );
     let mut altered = bytes.to_vec();
     put(&mut altered, 24, 8, PC + 1);
     assert!(
-        crate::fixed_exec::validate_output(&elf, binding, &[], &altered, 64, &dynamic, &[])
-            .is_err()
+        crate::fixed_exec::validate_output(
+            &elf,
+            binding,
+            &[],
+            fixed_exec_readback(&altered, &headers),
+            &dynamic,
+            &[]
+        )
+        .is_err()
     );
     let written = Elf64::parse(
         bytes,
@@ -2355,14 +2408,73 @@ fn fixed_exec_writer_rejects_wrong_source_type_entry_and_original_load_records()
     let mut altered = bytes.to_vec();
     put(
         &mut altered,
-        offset + original_load.index * 56 + 16,
+        offset + headers[original_load.index] * 56 + 16,
         8,
         original_load.vaddr.0 + 4096,
     );
     assert!(
-        crate::fixed_exec::validate_output(&elf, binding, &[], &altered, 64, &dynamic, &[])
-            .is_err()
+        crate::fixed_exec::validate_output(
+            &elf,
+            binding,
+            &[],
+            fixed_exec_readback(&altered, &headers),
+            &dynamic,
+            &[]
+        )
+        .is_err()
     );
+    for mapping in [
+        vec![],
+        vec![1],
+        vec![1, 2, 3],
+        vec![0, 2],
+        vec![1, 1],
+        vec![2, 1],
+        vec![1, usize::MAX],
+        vec![2, 3],
+    ] {
+        assert!(
+            crate::fixed_exec::validate_output(
+                &elf,
+                binding,
+                &[],
+                fixed_exec_readback(bytes, &mapping),
+                &dynamic,
+                &[],
+            )
+            .is_err(),
+            "mapping {mapping:?}"
+        );
+    }
+    // Every original LOAD field stays exact, including p_paddr, which does not
+    // affect the virtual-address mapping used by the parser.
+    assert!(original_load.file_size > 0);
+    for (field, width, value) in [
+        (0, 4, 4),
+        (4, 4, u64::from(original_load.flags.0 ^ 1)),
+        (8, 8, original_load.offset.0 + 4096),
+        (24, 8, original_load.physical_address + 1),
+        (32, 8, original_load.file_size - 1),
+        (40, 8, original_load.memory_size + 4096),
+        (48, 8, 8192),
+    ] {
+        let mut altered = bytes.to_vec();
+        let at = offset + headers[original_load.index] * 56 + field;
+        put(&mut altered, at, width, value);
+        assert_ne!(&altered[at..at + width], &bytes[at..at + width]);
+        assert!(
+            crate::fixed_exec::validate_output(
+                &elf,
+                binding,
+                &[],
+                fixed_exec_readback(&altered, &headers),
+                &dynamic,
+                &[],
+            )
+            .is_err(),
+            "LOAD field {field}"
+        );
+    }
 }
 
 #[test]
@@ -2594,4 +2706,104 @@ fn fixed_exec_portable_and_embedded_metadata_require_exact_binding_policy() {
             &ContentId::of(&product.files()["metadata.li2meta"]).0
         );
     }
+}
+
+#[test]
+fn fixed_exec_readback_uses_actual_low_gap_high_interleaved_header_map() {
+    use crate::carrier::{
+        self,
+        elf64::{Elf64, ElfVaddr, ParseLimits, SegmentType},
+    };
+    use li2core::contracts::{CodeIdentity, SourceIdentity};
+    let (mut original, _) = fixture(0, 0);
+    // Move the second original LOAD to leave a real gap. This input is bound
+    // afresh; it is never a mutation of a previously bound image.
+    put(&mut original, 24, 8, BASE + 0x40100);
+    put(&mut original, 64 + 56 + 16, 8, BASE + 0x40000);
+    put(&mut original, 64 + 56 + 24, 8, BASE + 0x40000);
+    let elf = Elf64::parse(
+        &original,
+        ParseLimits {
+            max_program_headers: 64,
+        },
+    )
+    .unwrap();
+    let identity = CodeIdentity {
+        source: SourceIdentity(ContentId::of(&original).0),
+        mapping: 1,
+        generation: 1,
+    };
+    let binding = crate::fixed_exec::bind(&elf, identity, 1).unwrap();
+    let images: Vec<_> = [BASE - 0x10000, BASE + 0x30000, BASE + 0x80000]
+        .into_iter()
+        .map(|pc| carrier::RxImage {
+            entry: ElfVaddr(pc),
+            bytes: vec![0xc3],
+        })
+        .collect();
+    let output = carrier::append_exec_carrier_with_interleaved_loads(
+        &elf,
+        carrier::ImageRequest {
+            carrier_vaddr: ElfVaddr(BASE + 0x20000),
+            payload: b"",
+            images: &images,
+            source_dependencies: &[],
+        },
+        &[],
+        carrier::ImagePolicy {
+            layout: carrier::CarrierPolicy {
+                page_size: 4096,
+                user_address_limit: 1 << 47,
+                max_added_file_bytes: 65536,
+                max_output_file_bytes: 262144,
+                max_program_headers: 64,
+                max_virtual_span: 1048576,
+            },
+            dynamic: carrier::dynamic::Limits::default(),
+            max_images: 3,
+            max_new_load_pages: 4,
+        },
+    )
+    .unwrap();
+    // PHDR, low image, original LOAD, carrier, gap image, original LOAD, high image.
+    assert_eq!(output.original_to_output_header, [2, 5]);
+    let written = Elf64::parse(
+        output.bytes(),
+        ParseLimits {
+            max_program_headers: 64,
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        written.program_headers()[0].kind,
+        SegmentType::ProgramHeaders
+    );
+    for (old, index) in elf.program_headers().iter().zip([2, 5]) {
+        let before = elf.header().program_offset.0 as usize + old.index * 56;
+        let after = written.header().program_offset.0 as usize + index * 56;
+        assert_eq!(
+            &original[before..before + 56],
+            &output.bytes()[after..after + 56]
+        );
+    }
+    crate::fixed_exec::validate_output(
+        &elf,
+        binding,
+        &[],
+        fixed_exec_readback(output.bytes(), &output.original_to_output_header),
+        &output.dynamic,
+        &[],
+    )
+    .unwrap();
+    assert!(
+        crate::fixed_exec::validate_output(
+            &elf,
+            binding,
+            &[],
+            fixed_exec_readback(output.bytes(), &[1, 2]),
+            &output.dynamic,
+            &[]
+        )
+        .is_err()
+    );
 }

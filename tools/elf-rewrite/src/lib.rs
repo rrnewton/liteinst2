@@ -833,8 +833,11 @@ fn prepare_selection_with_carrier_layout(
                     &elf,
                     binding,
                     &accepted,
-                    output.bytes(),
-                    s.limits.program_headers,
+                    fixed_exec::OutputReadback {
+                        bytes: output.bytes(),
+                        original_to_output_header: &output.original_to_output_header,
+                        max_program_headers: s.limits.program_headers,
+                    },
                     &dynamic,
                     &dependencies,
                 )?;

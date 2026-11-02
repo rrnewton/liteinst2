@@ -59,12 +59,17 @@ pub(crate) fn bind(
 // The existing writer has already checked edits/relocations/ownership/bounds.
 // This independent fixed-profile readback happens before candidate publication.
 // It cannot turn an earlier producer or carrier refusal into a partial success.
+pub(crate) struct OutputReadback<'a> {
+    pub bytes: &'a [u8],
+    pub original_to_output_header: &'a [usize],
+    pub max_program_headers: usize,
+}
+
 pub(crate) fn validate_output(
     original: &Elf64<'_>,
     binding: FixedImageBinding,
     plans: &[(u64, ArtifactPlan)],
-    output: &[u8],
-    max_program_headers: usize,
+    output: OutputReadback<'_>,
     dynamic: &carrier::dynamic::Inventory,
     dependencies: &[FileRange],
 ) -> Result<(), carrier::Error> {
@@ -74,9 +79,9 @@ pub(crate) fn validate_output(
         return Err(carrier::Error::OutputInvariant);
     }
     let written = Elf64::parse(
-        output,
+        output.bytes,
         ParseLimits {
-            max_program_headers,
+            max_program_headers: output.max_program_headers,
         },
     )?;
     if written.header().object_type != carrier::elf64::ObjectType::Executable
@@ -84,11 +89,23 @@ pub(crate) fn validate_output(
     {
         return Err(carrier::Error::OutputInvariant);
     }
-    // Preserve all original LOAD record fields, including file/BSS extents,
-    // flags and ordering. This is a structural zero-bias obligation, not a
-    // claim that a particular loader has already honored it.
+    // The carrier inserts/interleaves headers, so table indices are locations,
+    // not LOAD identities. Join its complete, ordered header map, then compare
+    // every original LOAD field at the actual output location. No virtual/file
+    // address, physical address, extent, permission or alignment may change.
+    let headers = output.original_to_output_header;
+    if headers.len() != original.program_headers().len()
+        || headers.windows(2).any(|pair| pair[0] >= pair[1])
+        || headers
+            .iter()
+            .any(|index| *index >= written.program_headers().len())
+    {
+        return Err(carrier::Error::OutputInvariant);
+    }
     for load in original.segments(SegmentType::Load) {
-        if written.program_headers().get(load.index) != Some(load) {
+        let mut expected = load.clone();
+        expected.index = headers[load.index];
+        if written.program_headers().get(expected.index) != Some(&expected) {
             return Err(carrier::Error::OutputInvariant);
         }
     }
