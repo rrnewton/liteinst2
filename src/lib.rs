@@ -21,6 +21,7 @@ pub mod bundle;
 pub mod cache_line;
 pub mod composition;
 pub mod contracts;
+pub mod control_flow;
 pub mod controls;
 pub mod emission;
 pub mod engine;

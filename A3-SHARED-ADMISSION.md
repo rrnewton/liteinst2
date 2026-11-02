@@ -6,9 +6,9 @@ The offline and runtime paths must share instruction facts, CFG construction,
 patch planning and encoding. Their adapters acquire bytes and publish results in
 different environments; they must not reimplement those algorithms.
 
-## Existing paths and consolidation
+## Baseline paths and consolidation
 
-| Stage | Current paths | Required consolidation |
+| Stage | Baseline paths | Required consolidation |
 | --- | --- | --- |
 | Decode | `src/scanner.rs` supplies the offline disassembly importer and core planners. Admission, selected semantics and the freestanding page decoder also instantiate iced-x86 1.21.0. | One allocation-free x86-64 decode/fact module usable by both std and freestanding builds. Keep exact decoder error/length/prefix information. Linear and all-start traversal are explicit policies over that module. |
 | Selected classes | `crates/liteinst-admission/src/scan.rs`, `crates/liteinst-launch/src/selected.rs`, `crates/liteinst-inprocess/src/selected/encoding.rs`, `tools/page-entry/selected/decoder/src/decode.rs`. | Share opcode classification and register/width facts. Keep syscall-ABI declarations, callback RSP restrictions and supported instruction policies in their adapters; a callback limitation must not hide an instruction from the scanner. |
@@ -26,6 +26,21 @@ No all-start scan may be replaced by a linear walk merely to share code.
 The E9Patch comparison frontend/RPC ordering remains an external reference and
 transport adapter. Sharing LiteInst algorithms does not mean rewriting that
 independent reference to agree with LiteInst.
+
+The first implementation, `7be445a56a42ef0544a8f0f59021fa39b39267e6`, moves
+decoder setup, selected classes and GPR/width facts into `crates/liteinst-x86`.
+Its workspace and freestanding regressions pass; its serial launch validation
+times out and remains failed in [the receipt](evaluation/shared-x86/README.md).
+The next source change moves head indexing, transfer facts, successors,
+reachability and block partitioning into `src/control_flow.rs`. Offline neighbor
+construction and the runtime ordinary/whole-function validators consume it,
+retaining their separate admission checks. Test-only predecessor references
+check behavior parity; they do not participate in production.
+
+The disassembly ledger importer, common-sites example graph, back-edge clock,
+frontend feasibility copies and legacy encoder orchestration still need
+consolidation. These changes do not implement certificates or certify complete
+binary CFG recovery. The exemption contract below remains a design proposal.
 
 ## Page certificate
 

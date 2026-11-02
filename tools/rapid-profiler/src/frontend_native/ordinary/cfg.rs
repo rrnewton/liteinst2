@@ -2,8 +2,8 @@
 //! prove pointer provenance, the checksum result, or termination.
 use super::{IntegerLeafCertificate, SetupRefusal};
 use iced_x86::{FlowControl, Mnemonic, OpKind, Register};
+use liteinst2::control_flow::{self, Coverage};
 use liteinst2::scanner::InstructionScanner;
-use std::collections::BTreeSet;
 
 fn gpr(register: Register) -> bool {
     register.is_gpr()
@@ -83,9 +83,7 @@ pub(super) fn admit(bytes: &[u8], base: u64) -> Result<IntegerLeafCertificate, S
         .scan(bytes, base)
         .map_err(|_| refusal)?;
     let items = scan.instructions();
-    let mut successors = vec![Vec::new(); items.len()];
-    let mut leaders = BTreeSet::from([0]);
-    for (n, item) in items.iter().enumerate() {
+    let graph = control_flow::build(&scan, |n, item, row| {
         let i = item.instruction();
         let raw = &bytes[item.offset()..item.offset() + item.len()];
         if i.has_lock_prefix()
@@ -101,7 +99,6 @@ pub(super) fn admit(bytes: &[u8], base: u64) -> Result<IntegerLeafCertificate, S
                 if !ordinary(i) || n + 1 == items.len() {
                     return Err(refusal);
                 }
-                successors[n].push(n + 1);
             }
             FlowControl::Return if raw == [0xc3] => {}
             FlowControl::ConditionalBranch | FlowControl::UnconditionalBranch => {
@@ -117,34 +114,22 @@ pub(super) fn admit(bytes: &[u8], base: u64) -> Result<IntegerLeafCertificate, S
                     return Err(refusal);
                 }
                 let target = i.near_branch_target();
-                let destination = items
-                    .iter()
-                    .position(|x| x.address() == target)
+                row.branch_target()
+                    .and_then(|target| target.head())
                     .ok_or(refusal)?;
                 if target == item.address() {
                     return Err(refusal);
                 }
-                successors[n].push(destination);
-                leaders.insert(destination);
-                if i.flow_control() == FlowControl::ConditionalBranch {
-                    if n + 1 == items.len() {
-                        return Err(refusal);
-                    }
-                    successors[n].push(n + 1);
-                    leaders.insert(n + 1);
+                if i.flow_control() == FlowControl::ConditionalBranch && n + 1 == items.len() {
+                    return Err(refusal);
                 }
             }
             _ => return Err(refusal),
         }
-    }
-    let mut reached = vec![false; items.len()];
-    let mut pending = vec![0];
-    while let Some(n) = pending.pop() {
-        if !reached[n] {
-            reached[n] = true;
-            pending.extend(successors[n].iter().copied());
-        }
-    }
+        Ok(())
+    })?;
+    let indexed = graph.indexed().map_err(|_| refusal)?;
+    let reached = indexed.reachable_from(0).map_err(|_| refusal)?;
     // Compilers can leave alignment NOPs between reachable blocks. No other
     // unreachable instruction/data is silently classified as code or skipped.
     if items
@@ -165,16 +150,15 @@ pub(super) fn admit(bytes: &[u8], base: u64) -> Result<IntegerLeafCertificate, S
     }
     // Every reachable node must have a CFG path to an ordinary RET. This is
     // structural exit coverage, not a proof that input-dependent loops terminate.
-    let mut can_return: Vec<_> = items
+    let return_indices: Vec<_> = items
         .iter()
-        .map(|x| returns.contains(&x.address()))
+        .enumerate()
+        .filter(|(_, item)| returns.contains(&item.address()))
+        .map(|(index, _)| index)
         .collect();
-    for _ in 0..items.len() {
-        for (n, next) in successors.iter().enumerate() {
-            let reaches = next.iter().any(|&target| can_return[target]);
-            can_return[n] |= reaches;
-        }
-    }
+    let can_return = indexed
+        .can_reach_any(&return_indices)
+        .map_err(|_| refusal)?;
     if reached
         .iter()
         .zip(&can_return)
@@ -182,31 +166,14 @@ pub(super) fn admit(bytes: &[u8], base: u64) -> Result<IntegerLeafCertificate, S
     {
         return Err(refusal);
     }
-    let mut blocks = Vec::new();
-    let mut n = 0;
-    while n < items.len() {
-        if !reached[n] {
-            n += 1;
-            continue;
-        }
-        let first = n;
-        loop {
-            let terminal = items[n].instruction().flow_control() != FlowControl::Next
-                || n + 1 == items.len()
-                || !reached[n + 1]
-                || leaders.contains(&(n + 1));
-            n += 1;
-            if terminal {
-                break;
-            }
-        }
-        blocks.push((items[first].address(), items[n - 1].instruction().next_ip()));
-    }
+    let blocks = indexed
+        .blocks(Coverage::Reachable(&reached))
+        .map_err(|_| refusal)?;
     if blocks.len() > 32 {
         return Err(refusal);
     }
     let mut edges = Vec::new();
-    for (n, next) in successors.iter().enumerate() {
+    for (n, next) in indexed.successors().iter().enumerate() {
         if reached[n] {
             edges.extend(
                 next.iter()
@@ -218,8 +185,10 @@ pub(super) fn admit(bytes: &[u8], base: u64) -> Result<IntegerLeafCertificate, S
         entry: base,
         end,
         heads: items.iter().map(|x| x.address()).collect(),
-        entries: leaders
-            .into_iter()
+        entries: graph
+            .branch_entries()
+            .iter()
+            .copied()
             .filter(|&n| reached[n])
             .map(|n| items[n].address())
             .collect(),
@@ -238,3 +207,7 @@ pub(super) fn admit(bytes: &[u8], base: u64) -> Result<IntegerLeafCertificate, S
 #[cfg(test)]
 #[path = "cfg_adc_tests.rs"]
 mod adc_tests;
+
+#[cfg(test)]
+#[path = "cfg_shared_tests.rs"]
+mod shared_tests;

@@ -1,0 +1,456 @@
+{
+  "attempts": 1,
+  "claim4": "A4 / claim 4 remains open against the strict 20,000-step profile; an 80,000-step pass does not complete it.",
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "capture_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "cleanup_complete": true,
+      "elapsed_seconds": 12.966574737802148,
+      "exit_code": 0,
+      "load_after": [
+        271.2,
+        285.35,
+        296.06
+      ],
+      "load_before": [
+        270.16,
+        285.92,
+        296.42
+      ],
+      "name": "fmt",
+      "reaped_descendants": 0,
+      "start_utc": "2026-11-02T18:48:22.302515+00:00",
+      "status": "PASS",
+      "termination": null,
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "capture_sha256": "b898ad55ce3093f58d5a806f5ee00670cd39c0a97f85e9bdfdd3af087433e906",
+      "cleanup_complete": true,
+      "elapsed_seconds": 41.08745114994235,
+      "exit_code": 0,
+      "load_after": [
+        280.88,
+        286.31,
+        295.95
+      ],
+      "load_before": [
+        271.2,
+        285.35,
+        296.06
+      ],
+      "name": "clippy",
+      "reaped_descendants": 0,
+      "start_utc": "2026-11-02T18:48:35.344496+00:00",
+      "status": "PASS",
+      "termination": null,
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "capture_sha256": "cd707cdda9720048dc61aaa40bfea960f251636998b371add2aa56c2e4f9c2cd",
+      "cleanup_complete": true,
+      "elapsed_seconds": 28.379256054991856,
+      "exit_code": 0,
+      "load_after": [
+        280.67,
+        285.97,
+        295.54
+      ],
+      "load_before": [
+        280.88,
+        286.31,
+        295.95
+      ],
+      "name": "check",
+      "reaped_descendants": 0,
+      "start_utc": "2026-11-02T18:49:16.487730+00:00",
+      "status": "PASS",
+      "termination": null,
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "sh",
+        "tools/page-entry/selected/build.sh"
+      ],
+      "capture_sha256": "a2378c2d7ff5cee88070a41cf846396dbcbe187f86814e81f957ef63175aa260",
+      "cleanup_complete": true,
+      "elapsed_seconds": 9.01953486702405,
+      "exit_code": 0,
+      "load_after": [
+        279.53,
+        285.55,
+        295.3
+      ],
+      "load_before": [
+        280.67,
+        285.97,
+        295.54
+      ],
+      "name": "decoder-default",
+      "reaped_descendants": 0,
+      "start_utc": "2026-11-02T18:49:45.012374+00:00",
+      "status": "PASS",
+      "termination": null,
+      "wall_limit_seconds": 150
+    },
+    {
+      "argv": [
+        "sh",
+        "tools/page-entry/selected/build.sh"
+      ],
+      "capture_sha256": "3625b082f212834528ac221037699ba26267a8d15c562c200f2c628e37a752a0",
+      "cleanup_complete": true,
+      "elapsed_seconds": 11.129196447087452,
+      "exit_code": 0,
+      "load_after": [
+        323.58,
+        299.07,
+        298.88
+      ],
+      "load_before": [
+        326.89,
+        298.85,
+        298.81
+      ],
+      "name": "decoder-extended",
+      "reaped_descendants": 0,
+      "start_utc": "2026-11-02T18:51:50.714574+00:00",
+      "status": "PASS",
+      "termination": null,
+      "wall_limit_seconds": 150
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-j",
+        "12",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "capture_sha256": "9006f0691bd1b635e4e72fbed7110169d0a7c2fdb889327acf76c265d1689c83",
+      "cleanup_complete": true,
+      "elapsed_seconds": 971.1215170768555,
+      "exit_code": 0,
+      "load_after": [
+        304.07,
+        267.0,
+        259.11
+      ],
+      "load_before": [
+        310.71,
+        312.97,
+        304.77
+      ],
+      "name": "workspace",
+      "reaped_descendants": 0,
+      "start_utc": "2026-11-02T18:54:34.252346+00:00",
+      "status": "PASS",
+      "termination": null,
+      "wall_limit_seconds": 1800
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "capture_sha256": "46795e45d3d6d7c1a86d327bd1bc7e012ea686cdcc8c17255ee6b41039480064",
+      "cleanup_complete": true,
+      "elapsed_seconds": 180.19087367411703,
+      "exit_code": -9,
+      "load_after": [
+        364.33,
+        298.81,
+        271.7
+      ],
+      "load_before": [
+        304.07,
+        267.0,
+        259.11
+      ],
+      "name": "serial-launch",
+      "reaped_descendants": 2,
+      "start_utc": "2026-11-02T19:10:47.854347+00:00",
+      "status": "FAILED",
+      "termination": "timeout",
+      "wall_limit_seconds": 180
+    }
+  ],
+  "decoder": {
+    "decoder-default": {
+      "archive": {
+        "bytes": 11179586,
+        "sha256": "9a551d2f5355a705920fd95fbfc94e69d2cac67f455edd44083be21c1dc61050"
+      },
+      "cases": [
+        {
+          "actual_exit": 0,
+          "expected_exit": 0,
+          "name": "forms",
+          "reader_controls": 12,
+          "result": {
+            "allocation_calls": 7695,
+            "arena_bytes": 16777216,
+            "deallocation_calls": 110,
+            "first_fatal_reason": 0,
+            "forms": 112,
+            "phase": 2,
+            "retained_high_water": 367688
+          }
+        },
+        {
+          "actual_exit": 125,
+          "expected_exit": 125,
+          "name": "tiny-arena",
+          "reader_controls": 4,
+          "result": {
+            "fatal_reason": 102
+          }
+        },
+        {
+          "actual_exit": 125,
+          "expected_exit": 125,
+          "name": "personality",
+          "reader_controls": 4,
+          "result": {
+            "fatal_reason": 106
+          }
+        },
+        {
+          "actual_exit": 0,
+          "expected_exit": 0,
+          "name": "freestanding",
+          "reader_controls": 14,
+          "result": {
+            "allocation_calls": 7695,
+            "arena_bytes": 16777216,
+            "deallocation_calls": 110,
+            "decoded_classes": 7,
+            "first_fatal_reason": 0,
+            "phase": 2,
+            "retained_high_water": 367688,
+            "scan_starts": 4110,
+            "schema_version": 1
+          }
+        }
+      ],
+      "features": []
+    },
+    "decoder-extended": {
+      "archive": {
+        "bytes": 11999658,
+        "sha256": "42c38444c2e7b9c1aac2e3791dd99e80a09a3f5b9620a00e65d9bccece3f4490"
+      },
+      "cases": [
+        {
+          "actual_exit": 0,
+          "expected_exit": 0,
+          "name": "forms",
+          "reader_controls": 12,
+          "result": {
+            "allocation_calls": 7699,
+            "arena_bytes": 16777216,
+            "deallocation_calls": 110,
+            "first_fatal_reason": 0,
+            "forms": 112,
+            "phase": 2,
+            "retained_high_water": 367992
+          }
+        },
+        {
+          "actual_exit": 125,
+          "expected_exit": 125,
+          "name": "tiny-arena",
+          "reader_controls": 4,
+          "result": {
+            "fatal_reason": 102
+          }
+        },
+        {
+          "actual_exit": 125,
+          "expected_exit": 125,
+          "name": "personality",
+          "reader_controls": 4,
+          "result": {
+            "fatal_reason": 106
+          }
+        },
+        {
+          "actual_exit": 0,
+          "expected_exit": 0,
+          "name": "freestanding",
+          "reader_controls": 14,
+          "result": {
+            "allocation_calls": 7699,
+            "arena_bytes": 16777216,
+            "deallocation_calls": 110,
+            "decoded_classes": 7,
+            "first_fatal_reason": 0,
+            "phase": 2,
+            "retained_high_water": 367992,
+            "scan_starts": 4110,
+            "schema_version": 1
+          }
+        }
+      ],
+      "features": [
+        "linked-epoch",
+        "mov-guard",
+        "add-guard"
+      ]
+    }
+  },
+  "environment": {
+    "CARGO_BUILD_JOBS": "12",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "LANG": "C",
+    "LC_ALL": "C",
+    "RUST_TEST_THREADS": "12"
+  },
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "landing_ready": false,
+  "limitations": [
+    "This campaign failed its serial launch gate and is not a landing-ready qualification.",
+    "No automatic retry; the unchanged 180-second deadline and every partial/unobserved result are retained.",
+    "Decoder controls are ordinary correctness regression, not a full freestanding registry/ELF qualification.",
+    "One shared decoder leaf is implemented; complete CFG/planner/encoder consolidation and runtime page exemptions remain work in progress.",
+    "No program throughput or page-exemption performance is measured."
+  ],
+  "page_exemptions_implemented": false,
+  "private_receipt": {
+    "bytes": 39972,
+    "sha256": "477a2d20994be7d45003e8b3943872ff1b6caa47c1b9b760269b1fec2d553481"
+  },
+  "profile": "shared-x86-correctness-1800-v1",
+  "reservation": {
+    "allocator": "cpuset-alloc",
+    "build_and_fixture_cpu": 8,
+    "cores": 12,
+    "cpus": [
+      8,
+      62,
+      110,
+      126,
+      159,
+      164,
+      167,
+      176,
+      254,
+      258,
+      260,
+      265
+    ],
+    "tag": "li2core-shared-x86-v1"
+  },
+  "reviews": {
+    "checks-v1-review.json": {
+      "bytes": 10587,
+      "sha256": "71920bd292f0d78118b5bf0cf767b810c2d07c14972eb2a1cc3d06d5a03ea9fe"
+    },
+    "test-roster-review.json": {
+      "bytes": 11889,
+      "sha256": "edd4f7c6c1b81a8d9f129d97ed72a3d839542b5569e0b34ac646185572974318"
+    }
+  },
+  "revision": "7be445a56a42ef0544a8f0f59021fa39b39267e6",
+  "schema": 1,
+  "scope": "Correctness only; no throughput or page-exemption claim.",
+  "serial_launch": {
+    "cause": "180-second wall timeout",
+    "completed_failed_terminals": 0,
+    "completed_harness_passed": 804,
+    "not_started": 221,
+    "observed_passed": 817,
+    "partial_harness_passed": 13,
+    "pending_without_terminal": 1,
+    "prior_denominator": 1039,
+    "status": "FAILED"
+  },
+  "sources": {
+    "evaluation/shared-x86/decoder.py": {
+      "bytes": 5266,
+      "sha256": "e8c3711af95b9cf59bdabf4fb00a27510d3b52dc528a01813f69bd2ecf2b5c57"
+    },
+    "evaluation/shared-x86/validate.py": {
+      "bytes": 8886,
+      "sha256": "5584f265d00d0d06d8e952cff0ee75d4172b73415dd766b68c731336df3f4092"
+    }
+  },
+  "status": "FAILED",
+  "storage": {
+    "after-allocated": {
+      "ignored": 12473999360,
+      "target": 7241023488,
+      "total": 19919663104
+    },
+    "after-apparent": {
+      "ignored": 11597590074,
+      "target": 7120856516,
+      "total": 18903677555
+    },
+    "before-allocated": {
+      "ignored": 12433375232,
+      "target": 5955141632,
+      "total": 18593140736
+    },
+    "before-apparent": {
+      "ignored": 11557316133,
+      "target": 5838133207,
+      "total": 17580663843
+    },
+    "capacity_ceilings": [
+      19994091520,
+      19061190371
+    ]
+  },
+  "target_directory": "target",
+  "toolchain": {
+    "cargo": "1.97.1 (c980f4866 2026-06-30)",
+    "cc": "GCC 11.5.0 20240719",
+    "rustc": "1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "tree": "b339b7dd9630e669d16710d8ca3b532fe906ae2e",
+  "workspace": {
+    "critical_regressions_passed": 27,
+    "failed": 0,
+    "ignored": 43,
+    "nested_passed": 11,
+    "new_tests": 3,
+    "prior_roster_preserved": true,
+    "raw_passed": 4586,
+    "short_neighbor_passed": 21,
+    "top_level_passed": 4575
+  }
+}

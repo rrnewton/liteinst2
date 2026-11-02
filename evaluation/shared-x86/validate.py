@@ -38,7 +38,9 @@ def durable(path, value):
         os.close(descriptor)
 
 
-def main():
+def main(*, commands=COMMANDS, profile='shared-x86-correctness-1800-v1',
+         scope='Correctness only; no throughput or page-exemption claim.',
+         log_namespace='shared-x86', validate_result=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--revision', required=True)
     parser.add_argument('--output', required=True, type=Path)
@@ -74,15 +76,16 @@ def main():
     owner = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(owner)
     out.mkdir(parents=True)
-    logs = ROOT / 'target/evaluation/shared-x86' / out.name
+    assert re.fullmatch('[a-z0-9-]+', log_namespace)
+    logs = ROOT / 'target/evaluation' / log_namespace / out.name
     logs.mkdir(parents=True, exist_ok=False)
-    receipt = dict(profile='shared-x86-correctness-1800-v1', revision=args.revision,
+    receipt = dict(profile=profile, revision=args.revision,
                    tree=git('rev-parse', 'HEAD^{tree}').decode().strip(), cpus=cpus,
                    hardware='AMD EPYC Zen 5 dev host', qualification='NONE',
-                   scope='Correctness only; no throughput or page-exemption claim.',
-                   environment=env, capacity_ceilings=CEILINGS, commands=COMMANDS,
+                   scope=scope,
+                   environment=env, capacity_ceilings=CEILINGS, commands=commands,
                    load_before=os.getloadavg(), results=[], status='FAILED',
-                   outcomes={name: 'UNOBSERVED' for name, _, _ in COMMANDS})
+                   outcomes={name: 'UNOBSERVED' for name, _, _ in commands})
     durable(out / 'planned.json', receipt)
     safe = True
     before_done = False
@@ -136,7 +139,7 @@ def main():
     try:
         capacity('before')
         before_done = True
-        for name, command, wall in COMMANDS:
+        for name, command, wall in commands:
             environment = dict(env)
             if name == 'serial-launch':
                 environment['RUST_TEST_THREADS'] = '1'
@@ -147,7 +150,9 @@ def main():
                 environment['LI2_DECODER_FEATURES'] = 'linked-epoch,mov-guard,add-guard'
             receipt['outcomes'][name] = 'DISPATCHED_UNKNOWN'
             try:
-                run(name, command, wall, environment)
+                raw = run(name, command, wall, environment)
+                if validate_result is not None:
+                    validate_result(name, raw)
                 if name.startswith('decoder-'):
                     measured = capacity(name + '-built')
                     assert all(value + 320 * 1024 * 1024 < ceiling for value, ceiling in zip(measured, CEILINGS)), 'decoder copy/link reserve unavailable'
