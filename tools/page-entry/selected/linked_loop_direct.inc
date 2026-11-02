@@ -105,7 +105,7 @@ int li2_ld_emit(uintptr_t pc,const unsigned char *bytes,size_t n,unsigned extern
     const unsigned char *jump=out->image+out->record.miss_offset;uint32_t delta;
     if(m->offset!=out->record.miss_offset || m->length!=5 || m->spill_valid!=15 ||
        m->dirty || m->flags!=LI2_MG_PHYSICAL || m->phase!=LI2_DD_BEFORE ||
-       jump[0]!=0xe9 || jump[1] || jump[2] || jump[3] || jump[4] ||
+       jump[0]!=0xe9 || jump[1]!=0x90 || jump[2] || jump[3] || jump[4] ||
        disp(generated+m->offset+5,pc,&delta))return e;
     zero(out,sizeof *out);e=ld_far_build(pc,bytes,n,external,generated,spill_at,b,internal,out);
     out->record.result=(uint32_t)e;if(e)out->record.ready=0;return e;

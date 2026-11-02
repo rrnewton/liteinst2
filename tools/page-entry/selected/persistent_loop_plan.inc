@@ -200,7 +200,7 @@ unsigned li2_lp_fallback_relocation_reason(const struct li2_pg_plan *p,const str
     const unsigned char *jump=g->image+r->miss_offset;uint32_t delta;
     if(last->offset!=r->miss_offset || last->length!=5 || last->spill_valid!=15 ||
        last->dirty || last->flags!=LI2_MG_PHYSICAL || last->phase!=LI2_DD_BEFORE ||
-       jump[0]!=0xe9 || jump[1] || jump[2] || jump[3] || jump[4] ||
+       jump[0]!=0xe9 || jump[1]!=0x90 || jump[2] || jump[3] || jump[4] ||
        displacement(g->generated+r->miss_offset+5,g->original.decoded.pc,&delta))return 0;
     return LI2_PGD_BRANCH_REACH;
 }

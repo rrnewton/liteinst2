@@ -50,6 +50,9 @@ static void adapter(uintptr_t generated,uintptr_t pc,unsigned cc,unsigned mask,u
     } else {
         assert(old_result==LI2_DD_RELOCATION && old.record.version==1 && !old.record.ready &&
             old.record.image_bytes==old.record.miss_offset+5 && li2_dd_validate(&p)==LI2_DD_CORRUPT);
+        /* The old branch writer keeps condition16's 0x90 placeholder until
+           a displacement is successfully patched. Authenticate it exactly. */
+        assert(!memcmp(old.image+old.record.miss_offset,"\xe9\x90\0\0\0",5));
         struct li2_dd_recovered got;
         assert(li2_dd_recover(&p,p.generated,raw,flags_for(63),spill,&got)!=0);
         unsigned at=p.record.miss_offset;
