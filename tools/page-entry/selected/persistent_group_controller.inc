@@ -72,7 +72,11 @@
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
 #ifdef LI2_PERSISTENT_LOOP_CAPTURE
 #ifdef LI2_PERSISTENT_LOOP_LIFECYCLE_CAPTURE
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS_LIFECYCLE_CAPTURE
+#include "persistent_loop_effects_lifecycle_observe.h"
+#else
 #include "persistent_loop_lifecycle_observe.h"
+#endif
 #else
 #ifdef LI2_PERSISTENT_LOOP_EFFECTS_CAPTURE
 #include "persistent_loop_effects_observe.h"
@@ -2223,7 +2227,11 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER_CAPTURE
 #ifdef LI2_PERSISTENT_LOOP_CAPTURE
 #ifdef LI2_PERSISTENT_LOOP_LIFECYCLE_CAPTURE
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS_LIFECYCLE_CAPTURE
+#include "persistent_loop_effects_lifecycle_observe.inc"
+#else
 #include "persistent_loop_lifecycle_observe.inc"
+#endif
 #else
 #ifdef LI2_PERSISTENT_LOOP_EFFECTS_CAPTURE
 #include "persistent_loop_effects_observe.inc"
