@@ -16,6 +16,9 @@ int li2_lpf_plan_pages(const uintptr_t[2],const unsigned char[2][LI2_REGION_PAGE
     struct li2_pg_plan *,struct li2_pg_miss *);
 int li2_lpf_plan_validate(const struct li2_pg_plan *,struct li2_pg_plan *);
 int li2_lpf_miss_validate(const struct li2_pg_plan *,const struct li2_pg_miss *,int,struct li2_pg_plan *);
+/* Exact unready guarded-RIP reach proof; source/NO_ENVELOPE authority stays with the LOOP owner. */
+unsigned li2_lpf_guard_relocation_reason(const struct li2_pg_plan *,const struct li2_pg_miss *,int,
+    struct li2_pg_plan *);
 /* Saved-completion graph reconstruction only. The caller authenticates the
    saved source, layout and table address and proves complete NO_ENVELOPE.
    This performs the unchanged PF decoder/BFS/cut checks and binding geometry;

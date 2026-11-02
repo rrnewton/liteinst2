@@ -69,6 +69,37 @@ def result(name, stdout, stderr):
     return dict(original_fused=original, loop_fused_far=value)
 
 
+# Preserve the complete existing two-row parser and its exact old populations.
+# The new row is a separate pure classifier regression, never owner evidence.
+prior_result = result
+
+
+def result(name, stdout, stderr):
+    if name != 'loop_fused_far':
+        return prior_result(name, stdout, stderr)
+    component.need(type(stdout) is bytes and 0 < len(stdout) <= 4096 and stderr == b'',
+                   'complete bounded three-row guard relocation output')
+    rows = stdout.splitlines(keepends=True)
+    component.need(len(rows) == 3, 'whole original PF and LPF rows followed by one guard relocation row')
+    previous = prior_result(name, b''.join(rows[:2]), stderr)
+    def unique(pairs):
+        value = dict(pairs)
+        component.need(len(value) == len(pairs), 'no duplicate guard relocation fields')
+        return value
+    value = json.loads(rows[2], object_pairs_hook=unique)
+    expected = dict(profile='loop-guard-relocation-component-v1', positive=4, root=2, partial=2,
+        miss_controls=24, plan_controls=216, prefix_controls=4, reason_controls=80,
+        result_controls=32, argument_controls=16, status_controls=24, success_refusals=4,
+        follow_refusals=2, copied_refusals=2, spill_refusals=2, spill_forged_refusals=2,
+        emitted_execution=0, owner_credit=0)
+    component.need(type(value) is dict and set(value) == set(expected) and
+                   all(type(value[k]) is type(v) and value[k] == v for k, v in expected.items()),
+                   'every exact additive guard relocation population and type')
+    component.need(json.dumps(value, separators=(',', ':')).encode()+b'\n' == rows[2],
+                   'one canonical complete guard relocation row')
+    return {**previous, 'loop_guard_relocation': value}
+
+
 if __name__ == '__main__':
     raise SystemExit(component.main(cases=CASES,
         profile='experimental-loop-fused-far-components-v1', result=result, reused_archive=True))

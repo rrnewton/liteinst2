@@ -93,7 +93,8 @@ static unsigned plr_miss_reason(void) {
         !equal(pe.cold.source[i],s->key.page[i].bytes,LI2_REGION_PAGE))return 0;
     if(pe.loop.route==LI2_PF_VERSION) {
         if(!plr_no_envelope(&s->key))return 0;
-        return li2_lpr_fallback_miss_valid(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild)?pe.miss.reason:0;
+        if(li2_lpr_fallback_miss_valid(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild))return pe.miss.reason;
+        return li2_lpf_guard_relocation_reason(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild);
     }
     if(pe.loop.route!=LI2_LP_VERSION || pe.loop.choice.ready!=1 || pe.loop.choice.result)return 0;
     unsigned reason=li2_lp_relocation_reason(&pe.cold,&pe.miss,pe.build_result,&pe.rebuild,&pe.loop.check);

@@ -95,3 +95,29 @@ int li2_lpf_graph_history(const uintptr_t pages[2],const unsigned char source[2]
     if(!e)e=li2_pg_dispatch_binding(pages,layout,table_address,out->heads,0,&binding);
  done:out->result=(unsigned)e;return e;
 }
+
+/* Separate LOOP-only cancellation proof for an unready policy11 MOV guard.
+   Keep both old PF miss classifiers exact. Whole LPF reconstruction and the
+   retained precise guard failure must agree; no ready publication is produced.
+   The owner separately authenticates its source lease and NO_ENVELOPE. */
+unsigned li2_lpf_guard_relocation_reason(const struct li2_pg_plan *p,const struct li2_pg_miss *m,int result,
+    struct li2_pg_plan *scratch) {
+    if(!p || !m || !scratch || result!=LI2_PG_RELOCATION || p->version!=LI2_PF_VERSION ||
+       p->decoder_result || p->guard_result!=LI2_MG_RELOCATION ||
+       m->version!=LI2_PF_VERSION || m->status!=LI2_PG_RELOCATION ||
+       m->site!=LI2_PGD_EMIT || m->reason!=LI2_PGD_GUARD_RIP_REACH ||
+       li2_lpf_miss_validate(p,m,result,scratch))return 0;
+    unsigned found=LI2_PG_HEADS;
+    for(unsigned i=0;i<p->heads;i++)if(p->original[i].decoded.pc==m->pc) {
+        if(found!=LI2_PG_HEADS)return 0;
+        found=i;
+    }
+    if(found==LI2_PG_HEADS)return 0;
+    const struct li2_pe_head *h=&p->head[found];const struct li2_span_decoded *d=&p->original[found];
+    if(h->kind!=LI2_PE_MOV || h->source_length!=d->decoded.length ||
+       d->decoded.next_pc!=m->pc+h->source_length || h->successor_count!=1 ||
+       !token_valid(p,h->successors[0]) || p->instruction[found].mov.rip_relative!=1)return 0;
+    struct li2_pg_miss expected={.version=LI2_PF_VERSION,.status=LI2_PG_RELOCATION};
+    return pgd_guard_reach(p,found,&expected) && expected.reason==LI2_PGD_GUARD_RIP_REACH &&
+        equal(m,&expected,sizeof expected)?LI2_PGD_GUARD_RIP_REACH:0;
+}

@@ -49,6 +49,8 @@ ACTIVE_PROVIDERS += ('li2_pf_plan_pages', 'li2_pf_plan_validate', 'li2_pf_miss_v
 POLICY_INPUTS += ('decoder/src/scalar_read.rs', 'scalar_read_decode.h', 'loop_envelope.h', 'loop_envelope.c', 'loop_read_bridge.h', 'loop_read_bridge.c', 'persistent_loop_plan.h', 'persistent_loop_plan.inc', 'persistent_loop_compact.inc', 'persistent_loop_runtime.h', 'persistent_loop_owner.inc', 'persistent_loop_negative_hint.h', 'persistent_loop_negative_hint.inc', 'linked_loop_direct.h', 'linked_loop_direct.inc', 'persistent_loop_fused_plan.h', 'persistent_loop_fused_plan.inc', 'persistent_loop_fused_compact.inc', 'build-loop-decoder.sh')
 ACTIVE_PROVIDERS += ('li2_decoder_scalar_read_describe', 'li2_decoder_scalar_read_none', 'li2_le_choose', 'li2_le_validate', 'li2_lr_describe', 'li2_lr_none', 'li2_lr_bridge_node', 'li2_lp_plan_pages', 'li2_lp_plan_validate', 'li2_lp_miss_validate', 'li2_lp_compact_build', 'li2_lp_compact_validate', 'li2_lp_compact_guard', 'li2_lp_compact_direct', 'li2_lp_compact_exit', 'li2_lp_compact_recover', 'li2_pg_loop_full_policy', 'li2_pg_loop_compact_policy', 'li2_pg_loop_replay_valid', 'li2_pg_source_negative_decline', 'li2_pg_source_negative_remember', 'li2_ld_emit', 'li2_ld_validate', 'li2_ld_recover', 'li2_lp_placement', 'li2_lp_relocation_reason', 'li2_lp_fallback_relocation_reason', 'li2_lpf_plan_pages', 'li2_lpf_plan_validate', 'li2_lpf_miss_validate', 'li2_lpf_compact_build', 'li2_lpf_compact_validate', 'li2_lpf_compact_guard', 'li2_lpf_compact_direct', 'li2_lpf_compact_exit', 'li2_lpf_compact_recover', 'li2_lpf_graph_history')
 
+ACTIVE_PROVIDERS += ('li2_lpf_guard_relocation_reason',)
+
 def fixed_loop_domain(name, path):
     if name != 'decoder/src/region.rs':
         return fixed_domain_source(name, path)

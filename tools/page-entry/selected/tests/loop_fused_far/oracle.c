@@ -293,6 +293,257 @@ static void lpf_partial(void) {
         ++partial_cases;
     }
 }
+
+/* Additive guard-cancellation proof only. No owner, permissions, publication,
+   cancellation lifecycle, or emitted execution is instantiated here. */
+static unsigned gc_positive,gc_root,gc_partial,gc_miss_controls,gc_plan_controls,gc_prefix_controls;
+static unsigned gc_reason_controls,gc_result_controls,gc_argument_controls,gc_status_controls;
+static unsigned gc_success,gc_follow,gc_copied,gc_spill,gc_spill_forged;
+
+static void gc_helper(void) {
+    /* machine.S region_app_enter stores RSP,RBX,RBP,R12..R15 then PUSHFQ.
+       The actual failed root's RBX bytes are retained independently below;
+       this source-relative placement also exercises the opposite direction. */
+    const unsigned regs[7]={4,3,5,12,13,14,15};
+    static const unsigned char observed[7]={0x48,0x89,0x1d,0xb2,0x02,0x01,0x00};
+    for(unsigned j=0;j<7;j++) {
+        unsigned char b[7]={(unsigned char)(0x48|((regs[j]>>3)<<2)),0x89,
+            (unsigned char)(5|((regs[j]&7)<<3)),0,0,0,0};
+        uint32_t displacement=0x102b1+j;
+        for(unsigned k=0;k<4;k++)b[3+k]=(unsigned char)(displacement>>(8*k));
+        lpf_put(7*j,b,7);
+    }
+    const unsigned char pushfq=0x9c;lpf_put(49,&pushfq,1);
+    assert(!memcmp(lpf_source[0]+7,observed,sizeof observed));
+}
+
+static void gc_plan_mutation(unsigned k,unsigned i) {
+    struct li2_pe_head *h=&full.head[i];struct li2_mg_plan *g=&full.guard[i].mov;
+    switch(k) {
+    case 0:full.version^=1;break;
+    case 1:full.bytes^=1;break;
+    case 2:full.ready=1;break;
+    case 3:full.result^=1;break;
+    case 4:--full.heads;break;
+    case 5:++full.exits;break;
+    case 6:++full.stores;break;
+    case 7:++full.source_bytes;break;
+    case 8:full.source_mask^=1;break;
+    case 9:full.decoder_result=1;break;
+    case 10:full.guard_result=LI2_MG_DECODER;break;
+    case 11:full.reserved=1;break;
+    case 12:full.reserved2=1;break;
+    case 13:++full.member_heads[0];break;
+    case 14:++full.entry;break;
+    case 15:full.page[0]+=4096;break;
+    case 16:full.layout.generated[0]+=4096;break;
+    case 17:full.layout.generated[1]+=4096;break;
+    case 18:full.layout.stubs+=4096;break;
+    case 19:full.layout.slots+=4096;break;
+    case 20:full.layout.spill+=4096;break;
+    case 21:full.layout.directory+=4096;break;
+    case 22:full.source[h->source_page][h->source_offset]^=1;break;
+    case 23:full.image[0][0]^=1;break;
+    case 24:full.table.node[0].first^=1;break;
+    case 25:h->kind=LI2_PE_NONE;break;
+    case 26:++h->source_length;break;
+    case 27:h->successor_count=2;break;
+    case 28:h->successors[0]=LI2_PG_HEADS+LI2_PG_BOUNDARIES;break;
+    case 29:++full.original[i].decoded.next_pc;break;
+    case 30:++full.original[i].decoded.pc;break;
+    case 31:full.instruction[i].mov.rip_relative=0;break;
+    case 32:full.instruction[i].mov.rip_target^=1;break;
+    case 33:++full.instruction[i].mov.displacement_offset;break;
+    case 34:g->version=2;break;
+    case 35:g->ready=1;break;
+    case 36:g->result=LI2_MG_DECODER;break;
+    case 37:++g->image_bytes;break;
+    case 38:++g->boundaries;break;
+    case 39:g->store_offset=1;break;
+    case 40:g->reject_offset=1;break;
+    case 41:g->reserved=1;break;
+    case 42:g->generated^=512;break;
+    case 43:g->spill+=8;break;
+    case 44:g->successor^=1;break;
+    case 45:g->original.rip_target^=1;break;
+    case 46:g->table.node[0].first^=1;break;
+    case 47:g->boundary[0].length^=1;break;
+    case 48:g->image[0]^=1;break;
+    case 49:g->scratch_regs[0]=1;break;
+    case 50:full.original[i].decoded.bytes[0]^=1;break;
+    case 51:h->source_page^=1;break;
+    case 52:h->source_offset^=1;break;
+    case 53:full.original[i?0:1].decoded.pc=full.original[i].decoded.pc;break;
+    default:assert(0);
+    }
+}
+
+static void gc_controls(const struct li2_pg_miss *miss,unsigned i,unsigned partial) {
+    struct li2_pg_miss original=*miss;old=full;
+    for(unsigned k=0;k<6;k++) {
+        struct li2_pg_miss changed=original;
+        if(k==0)changed.version^=1;if(k==1)changed.status^=1;if(k==2)changed.reason^=1;
+        if(k==3)changed.site^=1;if(k==4)changed.pc^=1;if(k==5)changed.detail^=1;
+        assert(memcmp(&changed,&original,sizeof changed) &&
+            !li2_lpf_guard_relocation_reason(&full,&changed,LI2_PG_RELOCATION,&scratch));++gc_miss_controls;
+    }
+    for(unsigned k=0;k<54;k++) {
+        full=old;gc_plan_mutation(k,i);
+        assert(memcmp(&full,&old,sizeof full) &&
+            !li2_lpf_guard_relocation_reason(&full,&original,LI2_PG_RELOCATION,&scratch));++gc_plan_controls;
+    }
+    full=old;
+    if(partial)for(unsigned k=0;k<2;k++) {
+        full=old;
+        if(!k)full.guard[0].direct.image[full.guard[0].direct.record.miss_offset+6]^=1;
+        else full.guard[0].direct.record.ready=0;
+        assert(memcmp(&full,&old,sizeof full) &&
+            !li2_lpf_guard_relocation_reason(&full,&original,LI2_PG_RELOCATION,&scratch));++gc_prefix_controls;
+    }
+    full=old;
+    for(unsigned reason=0;reason<=LI2_PGD_REASON_COUNT;reason++)if(reason!=LI2_PGD_GUARD_RIP_REACH) {
+        struct li2_pg_miss changed=original;changed.reason=reason;
+        assert(memcmp(&changed,&original,sizeof changed) &&
+            !li2_lpf_guard_relocation_reason(&full,&changed,LI2_PG_RELOCATION,&scratch));++gc_reason_controls;
+    }
+    const unsigned other_reasons[2]={LI2_PFD_BACKWARD_UNSUPPORTED,UINT32_MAX};
+    for(unsigned k=0;k<2;k++) {
+        struct li2_pg_miss changed=original;changed.reason=other_reasons[k];
+        assert(memcmp(&changed,&original,sizeof changed) &&
+            !li2_lpf_guard_relocation_reason(&full,&changed,LI2_PG_RELOCATION,&scratch));++gc_reason_controls;
+    }
+    const int results[8]={0,LI2_PG_MISS,LI2_PG_ARGUMENT,LI2_PG_DECODER,
+        LI2_PG_BOUNDARY,LI2_PG_GRAPH,LI2_PG_CORRUPT,9999};
+    for(unsigned k=0;k<8;k++) {
+        assert(!li2_lpf_guard_relocation_reason(&full,&original,results[k],&scratch));++gc_result_controls;
+    }
+    assert(!li2_lpf_guard_relocation_reason(0,&original,LI2_PG_RELOCATION,&scratch));++gc_argument_controls;
+    assert(!li2_lpf_guard_relocation_reason(&full,0,LI2_PG_RELOCATION,&scratch));++gc_argument_controls;
+    assert(!li2_lpf_guard_relocation_reason(&full,&original,LI2_PG_RELOCATION,0));++gc_argument_controls;
+    assert(!li2_lpf_guard_relocation_reason(&full,&original,LI2_PG_RELOCATION,&full));++gc_argument_controls;
+    /* These are explicit malformed-status controls, not manufactured observed
+       decoder/internal failures. Actual far spill and FOLLOW failures follow. */
+    const unsigned statuses[6]={LI2_MG_OK,LI2_MG_ARGUMENT,LI2_MG_DECODER,LI2_MG_FORM,LI2_MG_CAPACITY,LI2_MG_CORRUPT};
+    for(unsigned k=0;k<6;k++) {
+        full=old;full.guard_result=statuses[k];
+        assert(memcmp(&full,&old,sizeof full) &&
+            !li2_lpf_guard_relocation_reason(&full,&original,LI2_PG_RELOCATION,&scratch));++gc_status_controls;
+    }
+    full=old;assert(!memcmp(miss,&original,sizeof original));
+}
+
+static void gc_positives(void) {
+    for(unsigned direction=0;direction<2;direction++)for(unsigned partial=0;partial<2;partial++) {
+        uintptr_t page=direction?UINT64_C(0x700000000000):UINT64_C(0x200021000);
+        uintptr_t generated=direction?0x10000000:UINT64_C(0x700000000000);
+        lpf_setup(page,generated);unsigned entry=7,i=0;
+        if(!partial)gc_helper();
+        else {
+            entry=512;i=1;lpf_branch(512,4,page+768);
+            unsigned char b[7]={0x48,0x89,0x05,0,0,0,0};
+            uint32_t displacement=(uint32_t)((page+0x900000)-(page+518+7));
+            for(unsigned j=0;j<4;j++)b[3+j]=(unsigned char)(displacement>>(8*j));lpf_put(518,b,7);
+        }
+        struct li2_pg_miss miss;int e=li2_lpf_plan_pages(lpf_pages,lpf_source,page+entry,&lpf_layout,&lpf_table,&full,&miss);
+        assert(e==LI2_PG_RELOCATION && !full.ready && full.result==LI2_PG_RELOCATION &&
+            !full.decoder_result && full.guard_result==LI2_MG_RELOCATION &&
+            full.heads==(partial?2U:6U) && full.stores==(partial?1U:6U) &&
+            miss.version==11 && miss.status==LI2_PG_RELOCATION && miss.site==LI2_PGD_EMIT &&
+            miss.reason==LI2_PGD_GUARD_RIP_REACH && miss.pc==page+(partial?518U:7U) &&
+            miss.detail==page+(partial?0x900000U:0x102c0U));
+        assert(full.head[i].kind==LI2_PE_MOV && full.head[i].source_length==7 &&
+            full.instruction[i].mov.rip_relative==1 && full.instruction[i].mov.rip_target==miss.detail &&
+            !full.guard[i].mov.ready && full.guard[i].mov.result==LI2_MG_RELOCATION &&
+            full.guard[i].mov.image_bytes==28 && full.guard[i].mov.boundaries==4 &&
+            !full.guard[i].mov.store_offset && !full.guard[i].mov.reject_offset);
+        if(partial) {
+            assert(full.guard[0].direct.record.version==2 && full.guard[0].direct.record.ready==1 &&
+                !full.guard[0].direct.record.result && full.head[0].generated_length==full.guard[0].direct.record.image_bytes);
+            ++gc_partial;
+        } else {
+            assert(full.entry==page+7 && full.exit_pc[0]==page+49 &&
+                full.original[0].decoded.next_pc==page+14 && full.instruction[0].mov.source_reg==3);
+            ++gc_root;
+        }
+        old=full;struct li2_pg_miss saved=miss;
+        assert(li2_lpf_guard_relocation_reason(&full,&miss,e,&scratch)==LI2_PGD_GUARD_RIP_REACH &&
+            !memcmp(&scratch,&full,sizeof full) && !memcmp(&full,&old,sizeof full) && !memcmp(&miss,&saved,sizeof miss));
+        assert(!li2_lpr_fallback_miss_valid(&full,&miss,e,&scratch) &&
+            !li2_pfr_miss_valid(&full,&miss,e,&scratch));
+        assert(li2_lpf_plan_validate(&full,&scratch)==LI2_PG_CORRUPT &&
+            li2_lpf_compact_build(&full,&scratch,&bad)==LI2_PG_CORRUPT && !bad.ready && bad.result==LI2_PG_CORRUPT &&
+            !full.ready && !memcmp(&full,&old,sizeof full) && !memcmp(&miss,&saved,sizeof miss));
+        ++gc_positive;gc_controls(&miss,i,partial);
+    }
+}
+
+static void gc_other_results(void) {
+    static const unsigned char store[3]={0x48,0x89,0x0f};
+    for(unsigned direction=0;direction<2;direction++) {
+        uintptr_t page=direction?UINT64_C(0x700000000000):UINT64_C(0x200021000);
+        uintptr_t generated=direction?0x10000000:UINT64_C(0x700000000000);
+        struct li2_pg_miss miss;int e;
+        /* The identical helper with reachable generated bytes is an ordinary
+           ready success, not a relocation cancellation. */
+        lpf_setup(page,page+0x100000);gc_helper();
+        assert(!li2_lpf_plan_pages(lpf_pages,lpf_source,page+7,&lpf_layout,&lpf_table,&full,&miss) && full.ready==1 &&
+            !li2_lpf_guard_relocation_reason(&full,&miss,0,&scratch));++gc_success;
+        /* Non-RIP MOV emits a real store but cannot reach its original-PC
+           unsupported successor. FOLLOW remains rejected by the new API. */
+        lpf_setup(page,generated);lpf_put(512,store,sizeof store);
+        e=li2_lpf_plan_pages(lpf_pages,lpf_source,page+512,&lpf_layout,&lpf_table,&full,&miss);
+        assert(e==LI2_PG_RELOCATION && !full.ready && full.guard_result==LI2_MG_RELOCATION &&
+            miss.reason==LI2_PGD_GUARD_FOLLOW_REACH && miss.site==LI2_PGD_EMIT && miss.pc==page+512 && miss.detail==page+515 &&
+            full.guard[0].mov.store_offset && !full.guard[0].mov.reject_offset &&
+            !li2_lpf_miss_validate(&full,&miss,e,&scratch) &&
+            !li2_lpf_guard_relocation_reason(&full,&miss,e,&scratch) &&
+            !li2_lpr_fallback_miss_valid(&full,&miss,e,&scratch) && !li2_pfr_miss_valid(&full,&miss,e,&scratch));++gc_follow;
+        /* A real copied RIP load still uses the original old classifier; the
+           new guarded-write API must not borrow that distinct reason. */
+        lpf_setup(page,generated);
+        unsigned char load[7]={0x48,0x8b,0x05,0,0,0,0};
+        uint32_t delta=(uint32_t)((page+0x900000)-(page+512+7));
+        for(unsigned j=0;j<4;j++)load[3+j]=(unsigned char)(delta>>(8*j));lpf_put(512,load,7);
+        e=li2_lpf_plan_pages(lpf_pages,lpf_source,page+512,&lpf_layout,&lpf_table,&full,&miss);
+        assert(e==LI2_PG_RELOCATION && !full.ready && miss.reason==LI2_PGD_RIP_REACH &&
+            !li2_lpf_miss_validate(&full,&miss,e,&scratch) && li2_lpr_fallback_miss_valid(&full,&miss,e,&scratch) &&
+            !li2_lpf_guard_relocation_reason(&full,&miss,e,&scratch));++gc_copied;
+        /* A fully successful non-RIP MOV+far DIRECT baseline isolates spill
+           reach as the only changed input of the following failed build. */
+        lpf_setup(page,generated);lpf_put(512,store,sizeof store);lpf_branch(515,16,page+768);
+        assert(!li2_lpf_plan_pages(lpf_pages,lpf_source,page+512,&lpf_layout,&lpf_table,&full,&miss) && full.ready==1 &&
+            full.guard[1].direct.record.version==2 && !li2_lpf_guard_relocation_reason(&full,&miss,0,&scratch));++gc_success;
+        lpf_layout.spill=page+0x200000;
+        const struct li2_mg_range ranges[5]={{page,page+8192},{generated,generated+0x12000},
+            {generated+0x20000,generated+0x23000},{generated+0x30000,generated+0x90000},
+            {lpf_layout.spill,lpf_layout.spill+4096}};
+        assert(!li2_mg_table_build(ranges,5,generated+0x30000+offsetof(struct li2_pg_plan,table),&lpf_table));
+        e=li2_lpf_plan_pages(lpf_pages,lpf_source,page+512,&lpf_layout,&lpf_table,&full,&miss);
+        struct li2_pg_miss empty={.version=11,.status=LI2_PG_RELOCATION};
+        assert(e==LI2_PG_RELOCATION && !full.ready && full.guard_result==LI2_MG_RELOCATION &&
+            !memcmp(&miss,&empty,sizeof miss) && !full.guard[0].mov.ready &&
+            full.guard[0].mov.result==LI2_MG_RELOCATION && !full.guard[0].mov.image_bytes && !full.guard[0].mov.boundaries &&
+            !li2_lpf_miss_validate(&full,&miss,e,&scratch) && !li2_lpf_guard_relocation_reason(&full,&miss,e,&scratch));++gc_spill;
+        struct li2_pg_miss forged=miss;forged.reason=LI2_PGD_GUARD_RIP_REACH;forged.site=LI2_PGD_EMIT;
+        forged.pc=page+512;forged.detail=page+0x102c0;
+        assert(memcmp(&forged,&miss,sizeof miss) && li2_lpf_miss_validate(&full,&forged,e,&scratch)==LI2_PG_CORRUPT &&
+            !li2_lpf_guard_relocation_reason(&full,&forged,e,&scratch));++gc_spill_forged;
+    }
+}
+
+static void lpf_guard_relocation(void) {
+    struct li2_decoder_stats before,after;assert(!li2_decoder_stats(&before));
+    gc_positives();gc_other_results();
+    assert(gc_positive==4 && gc_root==2 && gc_partial==2 && gc_miss_controls==24 && gc_plan_controls==216 &&
+        gc_prefix_controls==4 && gc_reason_controls==80 && gc_result_controls==32 && gc_argument_controls==16 &&
+        gc_status_controls==24 && gc_success==4 && gc_follow==2 && gc_copied==2 && gc_spill==2 && gc_spill_forged==2);
+    assert(!li2_decoder_stats(&after) && after.phase==2 && !after.first_fatal_reason &&
+        after.allocation_calls==before.allocation_calls && after.deallocation_calls==before.deallocation_calls);
+    printf("{\"profile\":\"loop-guard-relocation-component-v1\",\"positive\":%u,\"root\":%u,\"partial\":%u,\"miss_controls\":%u,\"plan_controls\":%u,\"prefix_controls\":%u,\"reason_controls\":%u,\"result_controls\":%u,\"argument_controls\":%u,\"status_controls\":%u,\"success_refusals\":%u,\"follow_refusals\":%u,\"copied_refusals\":%u,\"spill_refusals\":%u,\"spill_forged_refusals\":%u,\"emitted_execution\":0,\"owner_credit\":0}\n",
+        gc_positive,gc_root,gc_partial,gc_miss_controls,gc_plan_controls,gc_prefix_controls,gc_reason_controls,
+        gc_result_controls,gc_argument_controls,gc_status_controls,gc_success,gc_follow,gc_copied,gc_spill,gc_spill_forged);
+}
+
 int main(void) {
     assert(!old_pf_main());struct li2_decoder_stats before,after;assert(!li2_decoder_stats(&before));
     lpf_plans();lpf_history_controls();lpf_refusals();lpf_partial();
@@ -305,5 +556,6 @@ int main(void) {
     printf("{\"profile\":\"loop-fused-far-component-v1\",\"near\":%u,\"far\":%u,\"histories\":%u,\"graph_controls\":%u,\"refusals\":%u,\"partial\":%u,\"partial_controls\":%u,\"direct_models\":%u,\"mov_models\":%u,\"corruptions\":%u,\"literal_refusals\":%u,\"links\":%u,\"copied_boundaries\":%u,\"old_sentinels\":%u,\"interiors\":%u,\"direct_steps\":%llu,\"mov_recoveries\":%llu,\"emitted_execution\":0,\"owner_credit\":0}\n",
         near_plans,far_plans,histories,graph_controls,refusals,partial_cases,partial_controls,lpf_models,lpf_mov_models,
         lpf_corruptions,lpf_literals,lpf_links,lpf_copied,lpf_sentinels,lpf_interiors,(unsigned long long)lpf_steps,(unsigned long long)lpf_mov_steps);
+    lpf_guard_relocation();
     return 0;
 }
