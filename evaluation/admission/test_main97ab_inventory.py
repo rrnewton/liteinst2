@@ -120,8 +120,10 @@ class Main97abInventoryTests(unittest.TestCase):
             prior = current.source_before_4261826(path, raw, 'row_prefix_source_inverse')
             self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
                              (row_prefix['source_preimages'][path]['bytes'], row['previous_sha256']))
-            self.assertEqual(row['previous_sha256'], current.DATA['source_successor_f9f89ac']['sources'].get(
-                path, current.DATA['source_successor_bad32a8']['sources'][path]))
+            self.assertEqual(row['previous_sha256'],
+                             current.DATA['source_successor_f9f89ac']['sources'][path]
+                             if path in current.DATA['source_successor_f9f89ac']['sources'] else
+                             current.DATA['source_successor_bad32a8']['sources'][path])
             for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^row_prefix_source_inverse$'):
                     current.source_before_4261826(path, wrong, 'row_prefix_source_inverse')
