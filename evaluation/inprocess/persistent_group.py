@@ -230,7 +230,9 @@ def component_oracles(builder,products,private,pin,binary,aliases,run,r):
          ('li2_decoder_region_describe','li2_decoder_span_describe','li2_decoder_link_none',
           'li2_decoder_mov_store','li2_decoder_tf_classify','li2_decoder_write_footprint')),
          'all actual pure-component decoder providers present exactly once')
-    for name,expected in COMPONENT_INPUTS.items():
+    from persistent_component_sources import qualify
+    qualified_inputs=qualify(COMPONENT_INPUTS,SELECTED,pin,r,'group')
+    for name,expected in qualified_inputs.items():
         need(digest(fact(pin(SELECTED/name)))==digest(expected),'unchanged complete pure component fixture '+name)
     shell_tools={n:dict(path=str(p),**fact(p))for n in('realpath','dirname')
         for p in[pin(shutil.which(n,path=builder.environment['PATH']))]}
@@ -585,6 +587,8 @@ def main():
         required|={str((SELECTED/name).relative_to(ROOT))for name in
             ('span_fast_bytes.h','tests/span_fast_bytes/oracle.c','tests/span_fast_bytes/build.sh')}
         required|={str((SELECTED/name).relative_to(ROOT))for name in COMPONENT_INPUTS}
+        required|={'evaluation/inprocess/persistent_component_sources.py',
+                   'evaluation/inprocess/persistent_component_sources.json'}
         need(required<=tracked,'all application/owner/build/reader sources committed')
         for name in sorted(tracked):
             if not name.startswith('evaluation/inprocess/results/'):pin(ROOT/name)

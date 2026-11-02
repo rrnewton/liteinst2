@@ -179,7 +179,9 @@ def authority_component(builder,products,private,pin,binary,aliases,run,r):
     need(len(r['component_oracles'])==1 and r['component_oracles'][0]['name']=='retained_authority',
          'one separate mandatory retained authority component')
     state=r['component_oracles'][0];state['status']='failed'
-    for name,want in COMPONENT_INPUTS.items():
+    from persistent_component_sources import qualify
+    qualified_inputs=qualify(COMPONENT_INPUTS,SELECTED,pin,r,'retained')
+    for name,want in qualified_inputs.items():
         need(digest(fact(pin(SELECTED/name)))==digest(want),'exact source-owned authority component '+name)
     fixture=SELECTED/'tests/persistent_retained_two';script=pin(fixture/'build.sh');prepare=pin(fixture/'prepare.py')
     inputs=('persistent_group_controller.inc','linked_controller.inc','selected_register_run.inc',
@@ -430,6 +432,8 @@ def main():
         required|={str((SELECTED/name).relative_to(ROOT))for name in
             ('span_fast_bytes.h','tests/span_fast_bytes/oracle.c','tests/span_fast_bytes/build.sh')}
         required|={str((SELECTED/name).relative_to(ROOT))for name in COMPONENT_INPUTS}
+        required|={'evaluation/inprocess/persistent_component_sources.py',
+                   'evaluation/inprocess/persistent_component_sources.json'}
         need(required<=tracked,'all application/owner/build/reader sources committed')
         for name in sorted(tracked):
             if not name.startswith('evaluation/inprocess/results/'):pin(ROOT/name)
