@@ -194,7 +194,7 @@ impl PhysicalState {
         }
         let mut ordinal = b.before.next;
         let mut confirmed = 0;
-        for index in 0..4 {
+        for index in 0..b.position {
             if let Some(n) = b.seen[index] {
                 if n != ordinal {
                     return Err(error(Cause::Invariant));
@@ -240,6 +240,14 @@ impl PhysicalState {
                     }
                     confirmed += 1;
                 }
+            }
+        }
+        if b.position < 4 {
+            if let Some(n) = b.seen[b.position] {
+                if n != ordinal {
+                    return Err(error(Cause::Invariant));
+                }
+                ordinal = ordinal.checked_add(1).ok_or(error(Cause::Capacity))?;
             }
         }
         if state.next != ordinal || state.len != confirmed {
