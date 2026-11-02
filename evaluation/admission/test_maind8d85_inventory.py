@@ -102,6 +102,23 @@ class MainD8d85InventoryTests(unittest.TestCase):
                         edit[0] += delta; edit[1] += delta
             if cargo:
                 native_outer[path] = cargo['native_row']
+            shared_outer = {path: cargo['shared_row']} if cargo else {}
+            if path == 'src/lib.rs':
+                self.assertEqual((before, after), ('pub mod emission;', ''))
+                shared_prior = native_indexed.source_before_3217b8ed(path, raw,
+                    'artifact_shared_outer_baseline')
+                self.assertEqual(shared_prior, native_prior)
+                self.assertEqual(shared_prior.count(before.encode()), 1)
+                row = copy.deepcopy(native_indexed.DATA['source_successor_3217b8ed']['source_projections'][path])
+                at = raw.index(before.encode()); stop = at + len(before.encode())
+                delta = len(after.encode()) - len(before.encode())
+                for edit in row['edits']:
+                    self.assertTrue(edit[1] <= at or edit[0] >= stop)
+                    if edit[0] >= stop:
+                        edit[0] += delta; edit[1] += delta
+                row.update(current_sha256=hashlib.sha256(wrong).hexdigest(),
+                           previous_sha256=hashlib.sha256(native_wrong).hexdigest())
+                shared_outer[path] = row
             upstream = copy.deepcopy(indexed.DATA['projections'])
             prior = indexed.source_before(path, raw, 'artifact_outer_inverse')
             wrong_prior = prior.replace(before.encode(), after.encode())
@@ -117,7 +134,7 @@ class MainD8d85InventoryTests(unittest.TestCase):
                     previous_sha256=hashlib.sha256(wrong_prior).hexdigest(), edits=rebased)
             def changed(candidate): return wrong if candidate == target else read(candidate)
             with patch.dict(native_indexed.DATA['source_successor_3217b8ed']['source_projections'],
-                            {path: cargo['shared_row']} if cargo else {}), \
+                            shared_outer), \
                  patch.dict(native_indexed.DATA['projections'], native_outer), \
                  patch.dict(indexed.DATA['projections'], upstream):
                 self.assertEqual(native_indexed.source_before(path, wrong,

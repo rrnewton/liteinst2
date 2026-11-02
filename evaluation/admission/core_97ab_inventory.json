@@ -815,7 +815,7 @@
       "previous_sha256": "b3b0c8d33e580affbd078b283fd13c3cdbf44d4855397aac694f4385880bdd1c"
     },
     "evaluation/admission/test_maind8d85_inventory.py": {
-      "current_sha256": "cf6f180fa0c17a6a149537f8627d017899781bbdb03a779daaa582dbaf0cfb50",
+      "current_sha256": "4151ab35f7f9bdd186c3f961c671697fbbad41b94bca05a4d5175cf734cdd12d",
       "edits": [
         [
           383,
@@ -844,22 +844,22 @@
         ],
         [
           5830,
-          6767,
+          7898,
           ""
         ],
         [
-          7018,
-          7109,
+          8149,
+          8240,
           "                at = raw.index(before.encode()); stop = at + len(before.encode())\n"
         ],
         [
-          7465,
-          7560,
+          8596,
+          8691,
           "                upstream[path].update(current_sha256=hashlib.sha256(wrong).hexdigest(),\n"
         ],
         [
-          7745,
-          8214,
+          8876,
+          9313,
           "            with patch.dict(indexed.DATA['projections'], upstream):\n"
         ]
       ],
@@ -13497,7 +13497,7 @@
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
     "evaluation/admission/test_mainaf81_inventory.py": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
     "evaluation/admission/test_mainc712_inventory.py": "f83655db9a2f51f91a3f245e7d04cd52a5bd749bdcf2d52c14d1d4e8c35c0825",
-    "evaluation/admission/test_maind8d85_inventory.py": "cf6f180fa0c17a6a149537f8627d017899781bbdb03a779daaa582dbaf0cfb50",
+    "evaluation/admission/test_maind8d85_inventory.py": "4151ab35f7f9bdd186c3f961c671697fbbad41b94bca05a4d5175cf734cdd12d",
     "evaluation/admission/test_maindd75_inventory.py": "852a822559e51563e9c1dab2f231c7025adf443a572f4943417f9edd391adc06",
     "evaluation/admission/test_mainf353_inventory.py": "b69dbba9015db200385f8f1e178cce1d3d34df86a0530feb5d9b3a6c79b68c86",
     "evaluation/ordinary-call-pair-session/freeze.py": "8c2c36d3f921e75ee5735133e44a1828ff0a5ba6c1d3d1483d09aca469412b89",
