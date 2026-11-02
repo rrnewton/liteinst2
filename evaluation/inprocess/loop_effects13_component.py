@@ -228,6 +228,14 @@ def prerequisite(path,expected_sha256,r,pin,binary,archive):
     proof,_,_=native_authenticate(actual['native_receipt'],actual['native_sha256'],r,pin,binary,archive)
     need(proof==actual['native_prerequisite'],'whole original thirteen-source native prerequisite')
     native=decode(Path(actual['native_receipt']).read_bytes());rows=actual['commands']
+    compiled_archive=pin(actual['archive_input']['path'])
+    compiled_fact=artifact_fact(binary(compiled_archive))
+    need(dict(path=str(compiled_archive),**compiled_fact)==actual['archive_input']==native['build']['artifacts']['decoder.a'] and
+        compiled_archive==Path(actual['native_receipt']).parent/'artifacts/decoder.a' and
+        fact(compiled_archive)==actual['archive']==fact(archive) and
+        actual['inputs'].get(str(compiled_archive))==fact(compiled_archive) and
+        actual['artifacts'].get(str(compiled_archive))==compiled_fact,
+        'whole exact component compiler archive pathname, native provenance and current consumer bytes')
     need(tuple((c['name'],c['profile'])for c in rows)==SCHEDULE,'all fixed component commands, no skip/retry')
     used=set()
     def captured(row,name):
@@ -251,7 +259,7 @@ def prerequisite(path,expected_sha256,r,pin,binary,archive):
         row=byname[name];need(row['argv']==list(map(str,argv))and row['environment']==dict(ENV if env is None else env)and
             row['profile']==profile and row['expected_exit']==expected and record==(profile=='native'),'whole exact argv/env/profile/outcome')
         used.add(name);return row,captured(row,'stdout'),captured(row,'stderr')
-    reader=load_reader(pin);result=workflow(private,native,archive,pin,binary,recorded,reader,create=False)
+    reader=load_reader(pin);result=workflow(private,native,compiled_archive,pin,binary,recorded,reader,create=False)
     reader.exact(result,actual['result'],'whole rederived build/metadata/forty raw states/controls')
     need(len(used)==len(SCHEDULE)and totals(result)==dict(planned_cases=40,completed_cases=40,original_lanes=40,generated_lanes=80,
         expected_fault_modes=4,observed_fault_modes=4,reader_controls=2080,policy13_loops=4,metadata_passed=True),'all mandatory finite populations')
@@ -306,7 +314,12 @@ def main():
         archive=pin(args.archive);need(re.fullmatch('[0-9a-f]{64}',args.archive_sha256)and fact(archive)['sha256']==args.archive_sha256,'whole explicit effects archive')
         r['archive']=fact(archive)
         proof,_,_=native_authenticate(args.native_receipt,args.native_receipt_sha256,r,pin,binary,archive);r['native_prerequisite']=proof
-        native=decode(Path(r['native_receipt']).read_bytes());reader=load_reader(pin);pin(__file__);pin(sys.executable);closure()
+        native=decode(Path(r['native_receipt']).read_bytes())
+        r['archive_input']=dict(path=str(archive),**artifact_fact(binary(archive)))
+        need(r['archive_input']==native['build']['artifacts']['decoder.a'] and
+            archive==Path(r['native_receipt']).parent/'artifacts/decoder.a',
+            'whole exact supplied archive is the authenticated native retained artifact')
+        reader=load_reader(pin);pin(__file__);pin(sys.executable);closure()
         workflow(private,native,archive,pin,binary,run,reader,create=True,result=r['result'])
         need(tuple((c['name'],c['profile'])for c in r['commands'])==SCHEDULE and all(c['status']!='failed'for c in r['result']['cases'])and len(r['result']['cases'])==40,'all fixed commands and forty actual state comparisons')
         r['status']=STATUS
