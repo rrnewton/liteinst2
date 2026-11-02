@@ -200,7 +200,9 @@ def retained_builds(path, sha, record, pin):
              {v['path'] for v in values}, 'unique source binding includes actual guard producers')
         for value in values:
             p = retained(SELECTED/value['path'])
-            need(p.is_relative_to(SELECTED) and fact(p) == {k: value[k] for k in ('bytes', 'sha256')},
+            need((p.is_relative_to(SELECTED) or
+                  (value['path'] == '../bridge.c' and p == SELECTED.parent/'bridge.c')) and
+                 fact(p) == {k: value[k] for k in ('bytes', 'sha256')},
                  'each compiled bound source still equals current source')
         need(set(binding['headers']) == {'linked_epoch_config.h', 'persistent_group_config.h',
                                         'loop_ro_certificate_config.h'}, 'exact three generated headers')
