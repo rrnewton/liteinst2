@@ -1,0 +1,355 @@
+{
+  "archives": {
+    "loop_native_archive": {
+      "bytes": 12007764,
+      "sha256": "d5ae6933ce1e905be557a9dac3ffd2341c7649c42f58f9594bba2365ea8ba399"
+    },
+    "native41_archive": {
+      "bytes": 11961622,
+      "sha256": "70365a924bbfaa1dd08628270a0c741e7cfeeb4e4f3e4ceec2991336d1e2b75d"
+    }
+  },
+  "bounds": {
+    "collector": {
+      "build": [
+        120,
+        2147483648,
+        134217728,
+        150
+      ],
+      "finite": [
+        5,
+        536870912,
+        16777216,
+        15
+      ],
+      "inspect": [
+        10,
+        268435456,
+        4194304,
+        20
+      ],
+      "metadata": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "program": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "release_build": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "seed": [
+        5,
+        536870912,
+        16777216,
+        15
+      ]
+    },
+    "component": {
+      "build": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "component": [
+        5,
+        536870912,
+        16777216,
+        15
+      ]
+    },
+    "initial_reserve_bytes": 1342177280,
+    "order": [
+      "cpu_seconds",
+      "address_space_bytes",
+      "file_bytes",
+      "wall_seconds"
+    ],
+    "outer_additional_timeout": null,
+    "slot_cap_bytes": 20000000000
+  },
+  "commands": 555,
+  "completed_expected_stages": 6,
+  "cpu": 10,
+  "failure": {
+    "cleanup_complete": true,
+    "command": "maintained-persistent-group-release-link",
+    "command_receipt": {
+      "bytes": 10777,
+      "sha256": "2dadb485ab68e3e69198b4d041388842176850fee01ddd4a4f95b53b619da224"
+    },
+    "compiler": "gcc",
+    "diagnostic": "-Werror=misleading-indentation",
+    "diagnostic_count": 2,
+    "duration_ns_validation_only": 17128916198,
+    "exit": 1,
+    "expected_exit": 0,
+    "inputs_unchanged": true,
+    "owner_commands": 24,
+    "owner_subjects_launched": 0,
+    "owner_subjects_planned": 56,
+    "owner_subjects_unexecuted": 56,
+    "source_file": "tools/page-entry/selected/persistent_loop_plan.inc",
+    "source_lines": [
+      156,
+      190
+    ],
+    "source_unchanged": true,
+    "stage": "loop_owner",
+    "stderr": {
+      "bytes": 1696,
+      "sha256": "c74e122df4c8e8ed818fee04b60e46da89264a501331dc1f03187a1d27ce383e"
+    },
+    "timed_out": false
+  },
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 10,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "launched_stages": 7,
+  "loop_lifecycle_validated": false,
+  "loop_owner_validated": false,
+  "orchestration_receipt": {
+    "bytes": 22304,
+    "sha256": "381df746d5e09f0edd21f0864347479c2fa8b2592784f46ed95a0e19dd4ace62"
+  },
+  "outer_duration_ns_validation_only": 3921997608019,
+  "outer_exit": 1,
+  "outer_receipt": {
+    "bytes": 2898,
+    "sha256": "6000da91973acdb3a5044a6f5e312ca0598e5718a3c7165a35fd18b67f637e2a"
+  },
+  "performance_credit": false,
+  "performance_target_met": null,
+  "planned_stages": 18,
+  "profile": "tunables-fullchain-failed-observation-v1",
+  "qualification_credit": false,
+  "reproduction": {
+    "argv": [
+      "python3.12",
+      "-B",
+      "evaluation/inprocess/reproduce_tunables.py",
+      "--expect-revision",
+      "39bd387f0cef7b1c9f190bb4f076668efc77bf7c",
+      "--cpu",
+      "10",
+      "--sdk",
+      "$SDK",
+      "--attempt",
+      "tunables-lpf-far-r1"
+    ],
+    "argv_basis": "Actual orchestration argv; only Python executable and external SDK path replaced by portable names. All other arguments are exact.",
+    "downstream_scope": "No loop owner subject, lifecycle, counted program, original392/522 qualification, or benchmark ran. The later fixes have not been applied to this historical result.",
+    "driver": {
+      "bytes": 20894,
+      "path": "evaluation/inprocess/reproduce_tunables.py",
+      "sha256": "bcd3fa0ea27bbeced88098619506d54a2b9b018496dfc47833d5c9477c1fb9d4"
+    },
+    "prerequisites": "Clean checkout at the recorded revision; externally reserved singleton CPU 10; complete DynamoRIO 11.91.0 SDK in SDK; original compiler/toolchain and offline Cargo inputs; fresh attempt output namespace.",
+    "timing_scope": "All durations are validation/build elapsed time, not plain-release workload timing or a performance comparison."
+  },
+  "revision": "39bd387f0cef7b1c9f190bb4f076668efc77bf7c",
+  "schema": 1,
+  "scope": "Compact projection of closed collector receipts. No collector, reader, model, control or subject was replayed to create this projection.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "39bd387f0cef7b1c9f190bb4f076668efc77bf7c",
+    "source_manifest_sha256": "f604df90dd81999737f943faec83457f9d9628d3df453c604bcabfb7dc56edea",
+    "tracked_clean": true,
+    "tree": "9cc11bd4c35478aa350b0417e89133461a27fb4e"
+  },
+  "stages": [
+    {
+      "bounds": "collector",
+      "cleanup_complete": true,
+      "command_exit_counts": {
+        "0": 139
+      },
+      "commands": 139,
+      "standalone_component_results": 0,
+      "duration_ns_validation_only": 1255672919577,
+      "exit": 0,
+      "expected_status": "passed",
+      "index": 1,
+      "inputs_unchanged": null,
+      "name": "native41",
+      "receipt": {
+        "bytes": 1557426,
+        "sha256": "231c7d69335d60919ca292718cd4174ef18ed8b145b3c50b5a91d9e4bb3b9866"
+      },
+      "source_unchanged": true,
+      "status": "passed",
+      "subjects_launched": 3
+    },
+    {
+      "bounds": "collector",
+      "cleanup_complete": true,
+      "command_exit_counts": {
+        "0": 101
+      },
+      "commands": 101,
+      "standalone_component_results": 0,
+      "duration_ns_validation_only": 770270295802,
+      "exit": 0,
+      "expected_status": "observed_unqualified",
+      "index": 2,
+      "inputs_unchanged": true,
+      "name": "bounded_block",
+      "receipt": {
+        "bytes": 1508586,
+        "sha256": "2a9dd16cae797f4a12cdba8383034954619e591e78efedacbed476f5ac0e8322"
+      },
+      "source_unchanged": true,
+      "status": "observed_unqualified",
+      "subjects_launched": 3
+    },
+    {
+      "bounds": "component",
+      "cleanup_complete": true,
+      "command_exit_counts": {
+        "0": 44
+      },
+      "commands": 44,
+      "standalone_component_results": 1,
+      "duration_ns_validation_only": 27282105459,
+      "exit": 0,
+      "expected_status": "components_passed",
+      "index": 3,
+      "inputs_unchanged": true,
+      "name": "fused_component",
+      "receipt": {
+        "bytes": 229972,
+        "sha256": "1ff7f05d625dcadf4e92d62e894ce81f5dc28c2632e09c2afac289cd92b593a3"
+      },
+      "source_unchanged": true,
+      "status": "components_passed",
+      "subjects_launched": 0
+    },
+    {
+      "bounds": "collector",
+      "cleanup_complete": true,
+      "command_exit_counts": {
+        "0": 103,
+        "125": 2
+      },
+      "commands": 105,
+      "standalone_component_results": 0,
+      "duration_ns_validation_only": 1123355284218,
+      "exit": 0,
+      "expected_status": "observed_unqualified",
+      "index": 4,
+      "inputs_unchanged": true,
+      "name": "bounded_fused",
+      "receipt": {
+        "bytes": 2032097,
+        "sha256": "c937dd882a91af6579d1fdec1a706d80b8ec12aec42c45f9fc09ba3332a29b73"
+      },
+      "source_unchanged": true,
+      "status": "observed_unqualified",
+      "subjects_launched": 7
+    },
+    {
+      "bounds": "collector",
+      "cleanup_complete": true,
+      "command_exit_counts": {
+        "0": 82
+      },
+      "commands": 82,
+      "standalone_component_results": 0,
+      "duration_ns_validation_only": 455371461148,
+      "exit": 0,
+      "expected_status": "observed_native_references",
+      "index": 5,
+      "inputs_unchanged": true,
+      "name": "loop_native",
+      "receipt": {
+        "bytes": 2440226,
+        "sha256": "84e687c807f56528944fb49a8cefe76ac6b65897bd7e649820a7f6ef2340e3de"
+      },
+      "source_unchanged": true,
+      "status": "observed_native_references",
+      "subjects_launched": 28
+    },
+    {
+      "bounds": "component",
+      "cleanup_complete": true,
+      "command_exit_counts": {
+        "0": 60
+      },
+      "commands": 60,
+      "standalone_component_results": 5,
+      "duration_ns_validation_only": 37605604293,
+      "exit": 0,
+      "expected_status": "components_passed",
+      "index": 6,
+      "inputs_unchanged": true,
+      "name": "loop_components",
+      "receipt": {
+        "bytes": 357142,
+        "sha256": "539e571c6e08dd761b68549b3f215f31a3cb4530778dc3aa023bb0298975ee3e"
+      },
+      "source_unchanged": true,
+      "status": "components_passed",
+      "subjects_launched": 0
+    },
+    {
+      "bounds": "collector",
+      "cleanup_complete": true,
+      "command_exit_counts": {
+        "0": 23,
+        "1": 1
+      },
+      "commands": 24,
+      "standalone_component_results": 0,
+      "duration_ns_validation_only": 51915456225,
+      "exit": 1,
+      "expected_status": "observed_focal_unqualified",
+      "index": 7,
+      "inputs_unchanged": true,
+      "name": "loop_owner",
+      "receipt": {
+        "bytes": 3091648,
+        "sha256": "eeef9273f283f12f23c98049d5ccb454e17a371d9d29fcebe865c4b1be3ebc7e"
+      },
+      "source_unchanged": true,
+      "status": "failed",
+      "subjects_launched": 0
+    }
+  ],
+  "status": "failed",
+  "subjects_launched": 41,
+  "unlaunched_stages": [
+    "loop_lifecycle",
+    "program",
+    "fixed",
+    "dynamic",
+    "group",
+    "resident",
+    "retained",
+    "joint392",
+    "cross522",
+    "qualification",
+    "benchmark"
+  ],
+  "whole_profile_qualified": false
+}
