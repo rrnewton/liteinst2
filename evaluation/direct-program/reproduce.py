@@ -27,8 +27,20 @@ REWRITE_PROFILES = {
     'mixed-entry-veneer-v1': '--whole-program-packed-entry-veneer-mixed-neighbors-4096',
     'fixed-exec-overlapping-v2': '--whole-program-fixed-exec-packed-overlapping-neighbors-4096',
 }
-CASES = [('empty', [], b'', b''), ('all-bytes-65536', [], bytes(range(256))*256, bytes(range(256))*256),
-         ('numbered', ['-n'], b'alpha\n\nbeta\nomega', b'     1\talpha\n     2\t\n     3\tbeta\n     4\tomega')]
+CATALOG_SHA = '2b89602488e2b1854e0df68ecdf49243d4c952a2f393fad4a56785db4a539bde'
+_catalog_bytes = Path(__file__).with_name('program_catalog.json').read_bytes()
+assert hashlib.sha256(_catalog_bytes).hexdigest() == CATALOG_SHA
+CATALOG = json.loads(_catalog_bytes)
+
+
+def program_cases(program):
+    def vector(name):
+        row = CATALOG['vectors'][name]
+        return bytes.fromhex(row['hex'])*row['repeat'] + bytes.fromhex(row['tail'])
+    return [(row['name'], row['argv'], vector(row['input']), vector(row['expected'])) for row in CATALOG['programs'][program]]
+
+
+CASES = program_cases('cat')
 
 
 def build(r, a):
@@ -58,20 +70,47 @@ def build(r, a):
 
 
 def functional(r, a):
+    corpus = a.corpus_profile == 'cat-head-wc-v1'
+    program = a.program if corpus else 'cat'
+    selected_cases = program_cases(program) if corpus else CASES
     stages = {n: dict(status='UNOBSERVED') for n in ('target', 'provider', 'materials', 'policy', 'li2', 'e9')}
-    cases = [dict(arm=arm, case=name, status='UNOBSERVED', argv=['cat', *argv], input_bytes=len(data), input_sha256=hashlib.sha256(data).hexdigest(), expected_stdout_sha256=hashlib.sha256(expected).hexdigest(), expected_bytes=len(expected)) for arm in ('original', 'li2', 'e9') for name, argv, data, expected in CASES]
+    cases = [dict(arm=arm, case=name, status='UNOBSERVED', argv=[program, *argv], input_bytes=len(data), input_sha256=hashlib.sha256(data).hexdigest(), expected_stdout_sha256=hashlib.sha256(expected).hexdigest(), expected_bytes=len(expected)) for arm in ('original', 'li2', 'e9') for name, argv, data, expected in selected_cases]
     r.record.update(stages=stages, cases=cases, planned_cases=9, inventory_status='UNOBSERVED', structural={arm: dict(status='UNOBSERVED') for arm in ('li2', 'e9')}, rewrite_profile=a.rewrite_profile)
+    if corpus:
+        r.record.update(corpus_profile=a.corpus_profile, program=program,
+            corpus_plan=dict(status='PLANNED_ONLY', dispatch_scope='Only the selected program is dispatched by this invocation; other entries are not results', programs=CATALOG['build_profiles'][a.corpus_profile], planned_rows=27,
+                rows=[dict(program=name, case=case['name'], arm=arm) for name in CATALOG['build_profiles'][a.corpus_profile] for arm in ('original', 'li2', 'e9') for case in CATALOG['programs'][name]]))
+        for row in cases: row['program'] = program
     S.save(r.work/'planned.json', r.record)
     assert a.trusted_complete_code and a.unit
     r.record['scope_before'] = r.scope()
-    cat_build, cat_authority = S.closed(a.cat_receipt, a.cat_receipt_sha256, 'READY_BUILT_UNEXECUTED')
+    receipt_path = a.program_receipt if corpus else a.cat_receipt
+    receipt_sha = a.program_receipt_sha256 if corpus else a.cat_receipt_sha256
+    cat_build, cat_authority = S.closed(receipt_path, receipt_sha, 'READY_BUILT_UNEXECUTED')
     rust_build, rust_authority = S.closed(a.build_receipt, a.build_receipt_sha256, 'READY_BUILT_UNEXECUTED')
     assert sum((q['bytes'], q['sha256']) == (6007136, 'cd328edeac92f6a665de9f323c93b712af1858bc2e0d88f3f7100469470a1b8a') for q in cat_build['inputs'].values()) == 1
     assert rust_build['revision'] == a.revision and rust_build['tree'] == r.record['tree'] and rust_build['subject_executions'] == 0
-    cat = Path(cat_build['artifact']['path']); cat_pin = r.freeze(cat, (cat_build['artifact']['bytes'], cat_build['artifact']['sha256']), M)
-    assert cat_build['subject_executions'] == 0 and cat_build['artifact']['header_hex'].startswith('7f454c46020101')
-    assert int.from_bytes(bytes.fromhex(cat_build['artifact']['header_hex'])[16:18], 'little') == 2
-    r.freeze(a.cat_receipt); r.freeze(a.build_receipt)
+    if corpus:
+        assert cat_build['build_profile'] == a.corpus_profile and cat_build['programs'] == CATALOG['build_profiles'][a.corpus_profile]
+        assert set(cat_build['artifacts']) == set(cat_build['artifact_outcomes']) == set(CATALOG['build_profiles'][a.corpus_profile])
+        assert all(value == 'PASS' for value in cat_build['artifact_outcomes'].values())
+        assert sum(q['sha256'] == CATALOG_SHA for q in cat_build['inputs'].values()) == 1
+        assert cat_build['environment']['CFLAGS'] == '-O2 -g0 -fno-pie' and cat_build['environment']['LDFLAGS'] == '-no-pie'
+        for name in CATALOG['build_profiles'][a.corpus_profile]:
+            entry = cat_build['artifacts'][name]
+            path = receipt_path.resolve().parent/('build/src/'+name)
+            assert entry['path'] == str(path) and len(entry['header_hex']) == 128
+            r.freeze(path, (entry['bytes'], entry['sha256']), M)
+            assert S.payload(path, entry, M)[:64].hex() == entry['header_hex']
+            header = bytes.fromhex(entry['header_hex'])
+            assert header[:7] == b'\x7fELF\x02\x01\x01' and int.from_bytes(header[16:18], 'little') == 2 and int.from_bytes(header[18:20], 'little') == 62
+        artifact = cat_build['artifacts'][program]
+    else:
+        artifact = cat_build['artifact']
+    cat = Path(artifact['path']); cat_pin = r.freeze(cat, (artifact['bytes'], artifact['sha256']), M)
+    assert cat_build['subject_executions'] == 0 and artifact['header_hex'].startswith('7f454c46020101')
+    assert int.from_bytes(bytes.fromhex(artifact['header_hex'])[16:18], 'little') == 2
+    r.freeze(receipt_path); r.freeze(a.build_receipt)
     products = {}
     for name, (manifest, kind, path) in PRODUCTS.items():
         product = rust_build['products'][name]; q = product['artifact']; cargo = product['cargo']
@@ -79,10 +118,11 @@ def functional(r, a):
         products[name] = r.root/path; r.freeze(products[name], (q['bytes'], q['sha256']))
     for path, size, digest in (PROVIDER, BACKEND): r.freeze(r.root/path, (size, digest))
     for name in ('libdw.so', 'libelf.so', 'libz.so'): r.freeze(Path('/usr/lib64')/name)
-    r.record.update(cat_build_authority=cat_authority, rust_build_authority=rust_authority, original=cat_pin,
+    r.record['program_build_authority' if corpus else 'cat_build_authority'] = cat_authority
+    r.record.update(rust_build_authority=rust_authority, original=cat_pin,
                     provider_source='5e098f7920b5b5535f553de599c94ee980e97e29', backend_source='0d5d36e4c4edcac37ca2499694d64302a391136f',
                     policy=dict(domain=7, arena=[16777216, 536870912], preferences=False, records_per_site=3),
-                    historical_scope='The earlier 1,035 misses/action pairs and strict full-coverage failures remain unchanged; these are new cat denominators.')
+                    historical_scope=('The earlier cat failure, 1,035 misses/action pairs and strict full-coverage failures remain unchanged; this is one program of the separately planned cat/head/wc corpus.' if corpus else 'The earlier 1,035 misses/action pairs and strict full-coverage failures remain unchanged; these are new cat denominators.'))
     r.capacity('before')
     def attempt(name, action):
         try:
@@ -195,9 +235,9 @@ def functional(r, a):
         r.record.setdefault('executables', {})[arm] = q
     for row in cases:
         if row['arm'] not in candidates: row['reason'] = 'No candidate produced by the single declared rewrite attempt'; continue
-        name, argv, data, expected = next(c for c in CASES if c[0] == row['case']); path = candidates[row['arm']]; q = r.frozen[str(path)]
+        name, argv, data, expected = next(c for c in selected_cases if c[0] == row['case']); path = candidates[row['arm']]; q = r.frozen[str(path)]
         directory = r.work/(row['arm']+'-'+name); directory.mkdir(); stdin = directory/'stdin'; S.write(stdin, data); inp = r.freeze(stdin)
-        intent = [sys.executable, '-I', '-B', Path(__file__).with_name('native_exec.py'), path, str(q['bytes']), q['sha256'], stdin, str(inp['bytes']), inp['sha256'], directory/'stderr', directory/'exec-error.json', 'cat', *argv]
+        intent = [sys.executable, '-I', '-B', Path(__file__).with_name('native_exec.py'), path, str(q['bytes']), q['sha256'], stdin, str(inp['bytes']), inp['sha256'], directory/'stderr', directory/'exec-error.json', program, *argv]
         row.update(status='UNRESOLVED', owner_result=row['arm']+'-'+name)
         result, stdout = r.run(row['arm']+'-'+name, intent, (20, 30, 2048*M, M, 128*1024), directory)
         stderr = S.payload(directory/'stderr', cap=M) if (directory/'stderr').is_file() else None
@@ -213,18 +253,28 @@ def functional(r, a):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument('phase', choices=('build', 'functional')); parser.add_argument('--revision', required=True); parser.add_argument('--work', type=Path, required=True)
-    for name in ('toolchain', 'cargo-home', 'user-home', 'cat-receipt', 'build-receipt'): parser.add_argument('--'+name, type=Path)
-    for name in ('cat-receipt-sha256', 'build-receipt-sha256', 'unit'): parser.add_argument('--'+name)
+    for name in ('toolchain', 'cargo-home', 'user-home', 'cat-receipt', 'build-receipt', 'program-receipt'): parser.add_argument('--'+name, type=Path)
+    for name in ('cat-receipt-sha256', 'build-receipt-sha256', 'program-receipt-sha256', 'unit'): parser.add_argument('--'+name)
+    parser.add_argument('--corpus-profile', choices=('cat-only-v1', 'cat-head-wc-v1'), default='cat-only-v1')
+    parser.add_argument('--program', choices=tuple(CATALOG['programs']))
     parser.add_argument('--rewrite-profile', choices=tuple(REWRITE_PROFILES), default='mixed-entry-veneer-v1')
     parser.add_argument('--trusted-complete-code', action='store_true'); a = parser.parse_args(); env = dict(S.BASE_ENV)
+    if a.corpus_profile == 'cat-head-wc-v1':
+        assert a.phase == 'functional' and a.program in CATALOG['build_profiles'][a.corpus_profile]
+        assert a.rewrite_profile == 'fixed-exec-overlapping-v2' and a.program_receipt and a.program_receipt_sha256
+        assert not a.cat_receipt and not a.cat_receipt_sha256
+    else:
+        assert a.program is None and not a.program_receipt and not a.program_receipt_sha256
     if a.phase == 'build':
         for path in (a.toolchain, a.cargo_home, a.user_home): assert path and path.is_absolute() and path.resolve(strict=True) == path and path.is_dir()
         env.update(HOME=str(a.user_home), CARGO_HOME=str(a.cargo_home), PATH=str(a.toolchain/'bin')+':/usr/bin:/bin', RUSTC=str(a.toolchain/'bin/rustc'), RUSTDOC=str(a.toolchain/'bin/rustdoc'), CARGO_TARGET_DIR=str(Path.cwd()/'target'), CARGO_INCREMENTAL='0', CARGO_BUILD_JOBS='1', CARGO_NET_OFFLINE='true', CARGO_TERM_COLOR='never', CARGO_PROFILE_RELEASE_OPT_LEVEL='3', CARGO_PROFILE_RELEASE_DEBUG='0', CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS='true', CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS='true')
     else:
-        for value in (a.cat_receipt_sha256, a.build_receipt_sha256): assert value and re.fullmatch('[0-9a-f]{64}', value)
-        assert a.cat_receipt and a.build_receipt
+        for value in ((a.program_receipt_sha256 if a.corpus_profile == 'cat-head-wc-v1' else a.cat_receipt_sha256), a.build_receipt_sha256): assert value and re.fullmatch('[0-9a-f]{64}', value)
+        assert (a.program_receipt if a.corpus_profile == 'cat-head-wc-v1' else a.cat_receipt) and a.build_receipt
     r = S.Run(a, env, a.phase, (128 if a.phase == 'build' else 160)*M); passed = False
-    try: passed = build(r, a) if a.phase == 'build' else functional(r, a)
+    try:
+        assert r.frozen[str(Path(__file__).with_name('program_catalog.json').resolve())]['sha256'] == CATALOG_SHA
+        passed = build(r, a) if a.phase == 'build' else functional(r, a)
     except BaseException as error: r.record['error'] = type(error).__name__+': '+str(error)
     return r.finish(passed)
 

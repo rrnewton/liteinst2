@@ -89,7 +89,7 @@ class Run:
         assert not self.work.exists() and not self.logs.exists()
         self.cpu = next(iter(os.sched_getaffinity(0))); self.safe = True; self.before = None
         helper = self.root / 'evaluation/admission/processes.py'
-        sources = [Path(__file__).resolve(), Path(__file__).with_name('reproduce.py'), Path(__file__).with_name('direct_data.py'), Path(__file__).with_name('native_exec.py')]
+        sources = [Path(__file__).resolve(), Path(__file__).with_name('reproduce.py'), Path(__file__).with_name('direct_data.py'), Path(__file__).with_name('native_exec.py'), Path(__file__).with_name('program_catalog.json')]
         self.frozen = {str(p.resolve()): pin(p) for p in [helper, Path(sys.executable), *sources, *[Path('/usr/bin')/n for n in ('git', 'du', 'prlimit', 'env')]]}
         assert self.frozen[str(helper)]['sha256'] == OWNER_SHA
         for source in sources: assert self.git('ls-files', '--error-unmatch', str(source.relative_to(self.root))).strip()

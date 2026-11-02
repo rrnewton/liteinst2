@@ -10,6 +10,9 @@ import stat
 import sys
 
 
+CATALOG_SHA = '2b89602488e2b1854e0df68ecdf49243d4c952a2f393fad4a56785db4a539bde'
+
+
 def high(fd):
     try: return fcntl.fcntl(fd, fcntl.F_DUPFD_CLOEXEC, 10)
     finally: os.close(fd)
@@ -27,7 +30,10 @@ def hold(path, size, digest):
 
 
 def main():
-    assert len(sys.argv) in (10, 11) and sys.argv[9:] in (['cat'], ['cat', '-n'])
+    catalog_bytes = Path(__file__).with_name('program_catalog.json').read_bytes()
+    assert hashlib.sha256(catalog_bytes).hexdigest() == CATALOG_SHA
+    catalog = json.loads(catalog_bytes)
+    assert sys.argv[9:] in [[program, *case['argv']] for program, cases in catalog['programs'].items() for case in cases]
     executable = hold(*sys.argv[1:4]); source = hold(*sys.argv[4:7])
     assert os.fstat(executable).st_mode & 0o777 == 0o500 and len(os.sched_getaffinity(0)) == 1
     for key, value in ((resource.RLIMIT_CPU, 20), (resource.RLIMIT_AS, 2*1024**3), (resource.RLIMIT_FSIZE, 1024**2), (resource.RLIMIT_CORE, 0)):
