@@ -1709,7 +1709,7 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     if(!pcw_coarse(uc,choice.page,&call_seed))return 0;
 #endif
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
-    /* A completed root refusal may decline a new cold offer. Existing retained
+    /* A completed source refusal may decline a new cold offer. Existing retained
        roots/subentries still take their full original publication path. */
     if(!choice.subentry && !(pe.retained[slot_index].generation.installed &&
        pe.retained[slot_index].publication.source.entry==pc) &&
@@ -1846,10 +1846,8 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
         /* The entire real cancellation, including unchanged frame/rseq/source
            validation and actual TF resume, has succeeded before hint storage. */
         if(!choice.subentry && !pe.warm && pe.loop.route==LI2_PF_VERSION &&
-           pe.loop.choice_complete==1 && pe.build_result==LI2_PG_MISS &&
-           pe.miss.version==LI2_PF_VERSION && pe.miss.status==LI2_PG_MISS &&
-           pe.miss.reason==LI2_PGD_ROOT_UNSUPPORTED && pe.miss.site==LI2_PGD_SOURCE &&
-           pe.miss.pc==pc && pe.cold.entry==pc)
+           pe.loop.choice_complete==1 &&
+           li2_pg_source_negative_refusal(&pe.cold,&pe.miss,pe.build_result,pc))
             li2_pg_source_negative_remember(&pe.token);
 #endif
         return 1;

@@ -66,6 +66,22 @@ struct li2_pg_source_progress {
 int li2_pg_source_initialize(void);
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
 /* Optional offer decline only; neither function grants an execution permit. */
+/* A reason filter only, called after the unchanged full chooser/miss
+   reconstruction and real HELD cancellation. It never validates a partial
+   plan or grants source/entry authority. The ROOT branch is the old predicate;
+   the additional branch names only the exact source-only PF graph refusal. */
+static inline int li2_pg_source_negative_refusal(const struct li2_pg_plan *plan,
+    const struct li2_pg_miss *miss,int result,uintptr_t pc) {
+    if(!plan || !miss || plan->entry!=pc || miss->version!=LI2_PF_VERSION ||
+       miss->site!=LI2_PGD_SOURCE)return 0;
+    if(miss->reason==LI2_PGD_ROOT_UNSUPPORTED)
+        return result==LI2_PG_MISS && miss->status==LI2_PG_MISS && miss->pc==pc;
+    return miss->reason==LI2_PFD_BACKWARD_UNSUPPORTED && result==LI2_PG_GRAPH &&
+        miss->status==LI2_PG_GRAPH && plan->version==LI2_PF_VERSION &&
+        !plan->ready && plan->result==LI2_PG_GRAPH &&
+        li2_pf_in_pair(plan->page,miss->pc) && li2_pf_in_pair(plan->page,miss->detail) &&
+        miss->detail<=miss->pc;
+}
 int li2_pg_source_negative_decline(uintptr_t,const uintptr_t[2]);
 void li2_pg_source_negative_remember(const struct li2_pg_token *);
 #endif
