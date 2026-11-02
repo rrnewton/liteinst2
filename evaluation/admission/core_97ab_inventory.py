@@ -1,6 +1,7 @@
 """Exact native indexed-DSO source successor; all earlier catalogs remain separate."""
 import copy
 import hashlib
+import inventory_digest
 import json
 from pathlib import Path
 import re
@@ -9,7 +10,7 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == 'df587e245e9244fc5605bac6893fecc9ccb7ac76408792bf07c9fa168728bb90',
+require(hashlib.sha256(RAW).hexdigest() == 'e35fff5f1c2778fe175adf97edf3b14ae949d34e6f3427d7406ab449d5d3c2e2',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
@@ -69,7 +70,7 @@ def inverse(path, raw, rows, error):
     if path not in rows:
         return raw
     row = rows[path]
-    require(type(raw) is bytes and hashlib.sha256(raw).hexdigest() == row['current_sha256'], error)
+    require(type(raw) is bytes and inventory_digest.with_sha256(raw, hashlib.sha256) == row['current_sha256'], error)
     last = len(raw)
     pieces = []
     for first, end, old in reversed(row['edits']):
@@ -80,7 +81,7 @@ def inverse(path, raw, rows, error):
         last = first
     pieces.append(raw[:last])
     raw = b''.join(reversed(pieces))
-    require(hashlib.sha256(raw).hexdigest() == row['previous_sha256'], error)
+    require(inventory_digest.with_sha256(raw, hashlib.sha256) == row['previous_sha256'], error)
     return raw
 
 

@@ -30,3 +30,19 @@ def hexdigest(data):
             return _large_hexdigest(data, sha256)
         return _hexdigest(data, sha256)
     return sha256(data).hexdigest()
+
+
+def with_sha256(data, sha256):
+    """Pure value reuse for the caller's current hash implementation.
+
+    Only exact immutable bytes and the known builtin SHA256 use the existing
+    bounded caches. A foreign/stateful callable, mutable input or oversized
+    input follows the original call on every invocation, including exceptions.
+    No path, expected digest, inverse metadata or validation result is a key.
+    """
+    if (type(data) is bytes and len(data) <= 1048576
+            and sha256 is _SHA256 and type(_SHA256) is BuiltinFunctionType):
+        if len(data) > 65536:
+            return _large_hexdigest(data, sha256)
+        return _hexdigest(data, sha256)
+    return sha256(data).hexdigest()

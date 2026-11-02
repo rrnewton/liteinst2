@@ -1,6 +1,7 @@
 """Exact37 source successor; all earlier catalogs remain separate."""
 import copy
 import hashlib
+import inventory_digest
 import json
 from pathlib import Path
 import re
@@ -30,14 +31,14 @@ def inverse(path, raw, rows, error):
     if path not in rows:
         return raw
     row = rows[path]
-    require(type(raw) is bytes and hashlib.sha256(raw).hexdigest() == row['current_sha256'], error)
+    require(type(raw) is bytes and inventory_digest.with_sha256(raw, hashlib.sha256) == row['current_sha256'], error)
     last = len(raw)
     for first, end, old in reversed(row['edits']):
         require(type(first) is int and type(end) is int and type(old) is str
                 and 0 <= first <= end <= last, error)
         raw = raw[:first] + old.encode() + raw[end:]
         last = first
-    require(hashlib.sha256(raw).hexdigest() == row['previous_sha256'], error)
+    require(inventory_digest.with_sha256(raw, hashlib.sha256) == row['previous_sha256'], error)
     return raw
 
 
