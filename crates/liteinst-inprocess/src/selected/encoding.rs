@@ -1,7 +1,8 @@
 //! Typed operand decoding. This is not an entry/head or CPU-capability proof.
 
-use iced_x86::{Code, Decoder, DecoderOptions, Register};
+use iced_x86::Register;
 use liteinst2::contracts::Refusal;
+use liteinst2::x86::{self, SelectedClass};
 
 use super::SelectedKind;
 
@@ -93,27 +94,26 @@ pub fn decode_selected(
     pc: u64,
     bytes: &[u8],
 ) -> Result<SelectedInstruction, Refusal> {
-    let mut decoder = Decoder::with_ip(64, bytes, pc, DecoderOptions::NONE);
-    let instruction = decoder.decode();
+    let instruction = x86::decode64(pc, bytes).instruction;
     if instruction.is_invalid() || instruction.len() == 0 || instruction.len() > bytes.len() {
         return Err(refused("invalid selected instruction encoding"));
     }
     let len = instruction.len();
     let next_pc = pc.checked_add(len as u64).ok_or(Refusal::InvalidRange)?;
-    let (actual, operand) = match instruction.code() {
-        Code::Cpuid => (SelectedKind::Cpuid, None),
-        Code::Rdtsc => (SelectedKind::Rdtsc, None),
-        Code::Syscall => (SelectedKind::Syscall, None),
-        Code::Rdtscp => (SelectedKind::Rdtscp, None),
-        Code::Rdrand_r16 | Code::Rdrand_r32 | Code::Rdrand_r64 => (
+    let (actual, operand) = match x86::selected_code(&instruction) {
+        Some(SelectedClass::Cpuid) => (SelectedKind::Cpuid, None),
+        Some(SelectedClass::Rdtsc) => (SelectedKind::Rdtsc, None),
+        Some(SelectedClass::Syscall) => (SelectedKind::Syscall, None),
+        Some(SelectedClass::Rdtscp) => (SelectedKind::Rdtscp, None),
+        Some(SelectedClass::Rdrand) => (
             SelectedKind::Rdrand,
             Some(register(instruction.op0_register())?),
         ),
-        Code::Rdseed_r16 | Code::Rdseed_r32 | Code::Rdseed_r64 => (
+        Some(SelectedClass::Rdseed) => (
             SelectedKind::Rdseed,
             Some(register(instruction.op0_register())?),
         ),
-        Code::Rdpid_r64 => (
+        Some(SelectedClass::Rdpid) => (
             SelectedKind::Rdpid,
             Some(register(instruction.op0_register())?),
         ),
@@ -154,22 +154,30 @@ pub fn decode_selected(
 }
 
 fn register(register: Register) -> Result<(SelectedDestination, SelectedWidth), Refusal> {
-    macro_rules! registers {
-        ($($name:ident => ($r16:ident, $r32:ident, $r64:ident)),+ $(,)?) => {
-            match register {
-                $(Register::$r16 => Ok((SelectedDestination::$name, SelectedWidth::Bits16)),
-                  Register::$r32 => Ok((SelectedDestination::$name, SelectedWidth::Bits32)),
-                  Register::$r64 => Ok((SelectedDestination::$name, SelectedWidth::Bits64)),)+
-                _ => Err(refused("selected operand is not an architectural GPR")),
-            }
-        };
-    }
-    registers! {
-        Rax => (AX, EAX, RAX), Rcx => (CX, ECX, RCX), Rdx => (DX, EDX, RDX),
-        Rbx => (BX, EBX, RBX), Rsp => (SP, ESP, RSP), Rbp => (BP, EBP, RBP),
-        Rsi => (SI, ESI, RSI), Rdi => (DI, EDI, RDI), R8 => (R8W, R8D, R8),
-        R9 => (R9W, R9D, R9), R10 => (R10W, R10D, R10), R11 => (R11W, R11D, R11),
-        R12 => (R12W, R12D, R12), R13 => (R13W, R13D, R13),
-        R14 => (R14W, R14D, R14), R15 => (R15W, R15D, R15),
-    }
+    let operand = x86::gpr(register)
+        .ok_or_else(|| refused("selected operand is not an architectural GPR"))?;
+    let destination = match operand.register {
+        x86::Gpr::Rax => SelectedDestination::Rax,
+        x86::Gpr::Rcx => SelectedDestination::Rcx,
+        x86::Gpr::Rdx => SelectedDestination::Rdx,
+        x86::Gpr::Rbx => SelectedDestination::Rbx,
+        x86::Gpr::Rsp => SelectedDestination::Rsp,
+        x86::Gpr::Rbp => SelectedDestination::Rbp,
+        x86::Gpr::Rsi => SelectedDestination::Rsi,
+        x86::Gpr::Rdi => SelectedDestination::Rdi,
+        x86::Gpr::R8 => SelectedDestination::R8,
+        x86::Gpr::R9 => SelectedDestination::R9,
+        x86::Gpr::R10 => SelectedDestination::R10,
+        x86::Gpr::R11 => SelectedDestination::R11,
+        x86::Gpr::R12 => SelectedDestination::R12,
+        x86::Gpr::R13 => SelectedDestination::R13,
+        x86::Gpr::R14 => SelectedDestination::R14,
+        x86::Gpr::R15 => SelectedDestination::R15,
+    };
+    let width = match operand.width {
+        x86::Width::Bits16 => SelectedWidth::Bits16,
+        x86::Width::Bits32 => SelectedWidth::Bits32,
+        x86::Width::Bits64 => SelectedWidth::Bits64,
+    };
+    Ok((destination, width))
 }

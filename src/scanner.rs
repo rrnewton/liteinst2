@@ -7,7 +7,7 @@
 use std::collections::BTreeMap;
 use std::fmt;
 
-use iced_x86::{Decoder, DecoderOptions, Instruction};
+use crate::x86::{Instruction, decoder64};
 
 use crate::cache_line::CacheLineSize;
 
@@ -333,7 +333,7 @@ impl InstructionScanner {
                 byte_len: code.len(),
             })?;
 
-        let mut decoder = Decoder::with_ip(64, code, base_address, DecoderOptions::NONE);
+        let mut decoder = decoder64(code, base_address);
         let mut instructions = Vec::new();
         let mut sites = BTreeMap::new();
 
@@ -428,7 +428,7 @@ impl InstructionScanner {
                 byte_len: code.len(),
             })?;
 
-        let mut decoder = Decoder::with_ip(64, code, base_address, DecoderOptions::NONE);
+        let mut decoder = decoder64(code, base_address);
         while decoder.position() < minimum_bytes {
             let offset = decoder.position();
             let instruction = decoder.decode();
