@@ -1,0 +1,153 @@
+{
+  "bounds": [
+    30,
+    536870912,
+    16777216,
+    60
+  ],
+  "cleanup_complete": true,
+  "commands": [
+    {
+      "duration_ns": 907571262,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "json-controls",
+      "timed_out": false
+    }
+  ],
+  "cpu": 6,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "stepping": "0"
+  },
+  "performance_credit": false,
+  "profile": "inventory-json-controls-v1",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 10933,
+    "sha256": "db3aa30496f734dac7f7598ee7eae8246c69006bcea637a54a617c0d578acf21"
+  },
+  "recorder_tests": 366,
+  "reproduce": [
+    "python3.12",
+    "-B",
+    "evaluation/admission/inventory_json_controls.py",
+    "-v"
+  ],
+  "schema": 1,
+  "scope": "24 additive exact cache controls; two native-slot mutation methods execute their complete assertions in isolated bounded children. No original recorder assertion, case or deadline changed. Prior failed attempt remains failed.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "45d7489bff1e6ac5e9f2e07deba97cc04da04e5c",
+    "source_manifest_sha256": "f482817c1d9509a0bc57aef24853f8997a163519b65349bc146101d0297b1435",
+    "tracked_clean": true,
+    "tree": "b1d094686afb62f2c4c0d49bde2d2451192ad0c7"
+  },
+  "source_unchanged": true,
+  "status": "passed",
+  "tests": [
+    {
+      "name": "test_bounds_and_deterministic_eviction",
+      "status": "passed"
+    },
+    {
+      "name": "test_dependency_change_during_key_keeps_original_provider_input",
+      "status": "passed"
+    },
+    {
+      "name": "test_dependency_substitutions_before_and_after_import_are_live",
+      "status": "passed"
+    },
+    {
+      "name": "test_exact_types_aliases_and_whole_values",
+      "status": "passed"
+    },
+    {
+      "name": "test_exceptions_never_populate_cache",
+      "status": "passed"
+    },
+    {
+      "name": "test_foreign_and_subclass_protocols_are_not_used_for_keys",
+      "status": "passed"
+    },
+    {
+      "name": "test_foreign_provider_metadata_never_runs_comparisons",
+      "status": "passed"
+    },
+    {
+      "name": "test_global_dependencies_and_integer_conversion_limit",
+      "status": "passed"
+    },
+    {
+      "name": "test_initial_instance_descriptors_must_belong_to_the_encoder",
+      "status": "passed"
+    },
+    {
+      "name": "test_initial_separator_data_descriptors_remain_live",
+      "status": "passed"
+    },
+    {
+      "name": "test_key_and_code_authority_providers_before_and_after_import",
+      "status": "passed"
+    },
+    {
+      "name": "test_literal_snapshot_rejects_external_object_opcodes_and_preserves_errors",
+      "status": "passed"
+    },
+    {
+      "name": "test_missing_optional_providers_fall_back_before_and_after_import",
+      "status": "passed"
+    },
+    {
+      "name": "test_mutable_native_encoder_type_is_not_blessed",
+      "status": "passed"
+    },
+    {
+      "name": "test_native_reference_has_exact_domain_and_readonly_members",
+      "status": "passed"
+    },
+    {
+      "name": "test_nested_mutations_and_restoration_use_fresh_keys",
+      "status": "passed"
+    },
+    {
+      "name": "test_owner_hash_provider_and_original_json_options_remain_live",
+      "status": "passed"
+    },
+    {
+      "name": "test_reference_survives_late_constructor_and_digit_limit_changes",
+      "status": "passed"
+    },
+    {
+      "name": "test_same_function_code_defaults_and_class_shape_changes",
+      "status": "passed"
+    },
+    {
+      "name": "test_snapshot_prevents_durable_mutation_poisoning",
+      "status": "passed"
+    },
+    {
+      "name": "test_stateful_and_identity_colliding_providers_before_and_after_import",
+      "status": "passed"
+    },
+    {
+      "name": "test_surrogate_registry_and_recursion_changes_stay_live",
+      "status": "passed"
+    },
+    {
+      "name": "test_temporary_provider_changes_never_poison_native_reference",
+      "status": "passed"
+    },
+    {
+      "name": "test_temporary_provider_original_input_mutation_cannot_publish_wrong_key",
+      "status": "passed"
+    }
+  ]
+}

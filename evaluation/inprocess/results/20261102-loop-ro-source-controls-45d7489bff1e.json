@@ -1,0 +1,67 @@
+{
+  "bounds": [
+    5,
+    536870912,
+    16777216,
+    15
+  ],
+  "cleanup_complete": true,
+  "commands": [
+    {
+      "duration_ns": 78971931,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "source-controls",
+      "timed_out": false
+    }
+  ],
+  "controls": {
+    "hook_files": 5,
+    "hook_spans": 6,
+    "native_subjects": 0,
+    "negatives": 48,
+    "positives": 11,
+    "qualification_credit": false,
+    "schema": 1,
+    "status": "observed_pure_source_controls"
+  },
+  "cpu": 1,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "stepping": "0"
+  },
+  "performance_credit": false,
+  "profile": "loop-ro-source-controls-v1",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 5769,
+    "sha256": "3017bc8b20756c859a8798ca9efa12a120c6949f6cb25dd4fa88b8df651ce5c2"
+  },
+  "reproduce": [
+    "python3.12",
+    "-B",
+    "evaluation/inprocess/loop_ro_native_source_controls.py"
+  ],
+  "schema": 1,
+  "scope": "Actual extracted production source-input predicate: exact whole current or exact complete six-hook inverse only. No native subjects or qualification.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "45d7489bff1e6ac5e9f2e07deba97cc04da04e5c",
+    "source_manifest_sha256": "f482817c1d9509a0bc57aef24853f8997a163519b65349bc146101d0297b1435",
+    "tracked_clean": true,
+    "tree": "b1d094686afb62f2c4c0d49bde2d2451192ad0c7"
+  },
+  "source_unchanged": true,
+  "status": "passed",
+  "test_source": {
+    "bytes": 4256,
+    "sha256": "4a35da9de349159d1b98657fc90a85fc875c9800feae260bcdffb8cbb538d0c5"
+  }
+}

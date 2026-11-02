@@ -1,0 +1,409 @@
+{
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "finite": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "program": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "release_build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "seed": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "cases": [
+    {
+      "captures": {
+        "record": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stderr": {
+          "bytes": 19129,
+          "sha256": "deb7e297c631d72e1ca69f2fd59492f89f12142181155675dd0aa981ffb5ef9f"
+        },
+        "stdout": {
+          "bytes": 18944,
+          "sha256": "58f89a5c1e5020cff74c5f01b314d1d9e013099e71e6291f92f46bc9d1429f31"
+        }
+      },
+      "duration_ns_validation_only": 2521741286,
+      "exit": 125,
+      "label": "subject-byte-0-0",
+      "status": "observed_causal_controls",
+      "suite": "byte",
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "record": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stderr": {
+          "bytes": 20427,
+          "sha256": "c1a623df13208db419af9421b6dff5a7d9e3f9babcde2da380c342d5746c6b6e"
+        },
+        "stdout": {
+          "bytes": 18944,
+          "sha256": "1468e4047c94d88d0a1dd062f6d0e5d0fd425911cbec1a270bfc9499b08ecb80"
+        }
+      },
+      "duration_ns_validation_only": 2341378032,
+      "exit": 125,
+      "label": "subject-history-0-0",
+      "status": "observed_causal_controls",
+      "suite": "history",
+      "timed_out": false
+    }
+  ],
+  "cleanup_complete": true,
+  "commands": [
+    {
+      "duration_ns": 7678634,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "historical-decoder-recipe",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 21738090798,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "byte-build",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 323413361,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "byte-headers",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 17685339,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "byte-undefined",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 16088532,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "byte-symbols",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 54223161,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "byte-carrier",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 19659703547,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "history-build",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 297957885,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "history-headers",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 16339071,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "history-undefined",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 16859503,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "history-symbols",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 47940539,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "history-carrier",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 2521741286,
+      "exit": 125,
+      "expected_exit": 125,
+      "name": "subject-byte-0-0",
+      "timed_out": false
+    },
+    {
+      "duration_ns": 2341378032,
+      "exit": 125,
+      "expected_exit": 125,
+      "name": "subject-history-0-0",
+      "timed_out": false
+    }
+  ],
+  "cpu": 148,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "stepping": "0"
+  },
+  "observations": [
+    {
+      "byte_certificate": {
+        "abort_invalidations": 1,
+        "bytes_per_complete_scan": 434176,
+        "decisions": 2715,
+        "differential": 1,
+        "disagreements": 1,
+        "failure_code": 3303,
+        "full_scan_bytes": 1178353664,
+        "full_scan_errors": 1,
+        "full_scans": 2715,
+        "hits": 2689,
+        "invalidations": 120,
+        "issues": 120,
+        "last_failure": 0,
+        "last_full_result": 0,
+        "live_queries": 8428,
+        "live_query_errors": 1,
+        "misses": 26,
+        "postseal_bytes": 52101120,
+        "status": 125,
+        "version": 1
+      },
+      "history_certificate": {
+        "abort_invalidations": 1,
+        "decisions": 4688,
+        "differential": 1,
+        "differential_checks": 1218,
+        "disagreements": 0,
+        "errors": 0,
+        "failure_code": 3303,
+        "full_calls": 4688,
+        "hits": 1218,
+        "invalidations": 308,
+        "issues": 308,
+        "misses": 3470,
+        "restored_bytes": 1519945328,
+        "status": 125,
+        "version": 1
+      },
+      "oracle": {
+        "byte_build_serial": 379,
+        "byte_phase": 7,
+        "byte_warm": 0,
+        "checks": 22,
+        "complete": 1,
+        "control": 1,
+        "epoch": 59,
+        "failure": 0,
+        "failure_code": 3303,
+        "generation": 120,
+        "initialized": 1,
+        "passed": 4194303,
+        "restorations": 23,
+        "root_serial": 120,
+        "source_entry": 67109376,
+        "started": 1,
+        "status": 125,
+        "version": 1
+      },
+      "readonly_queries": {
+        "failure_code": 3303,
+        "initialized": 1,
+        "mirror_opens": 120,
+        "mirror_seals": 120,
+        "query_attempts": 28960,
+        "query_errors": 5,
+        "readonly_calls": 25624,
+        "requested_pages": 600841,
+        "status": 125,
+        "version": 1
+      },
+      "suite": "byte"
+    },
+    {
+      "byte_certificate": {
+        "abort_invalidations": 1,
+        "bytes_per_complete_scan": 434176,
+        "decisions": 2677,
+        "differential": 1,
+        "disagreements": 0,
+        "failure_code": 3303,
+        "full_scan_bytes": 1162289152,
+        "full_scan_errors": 0,
+        "full_scans": 2677,
+        "hits": 2669,
+        "invalidations": 120,
+        "issues": 120,
+        "last_failure": 0,
+        "last_full_result": 0,
+        "live_queries": 8367,
+        "live_query_errors": 0,
+        "misses": 8,
+        "postseal_bytes": 52101120,
+        "status": 125,
+        "version": 1
+      },
+      "history_certificate": {
+        "abort_invalidations": 1,
+        "decisions": 4755,
+        "differential": 1,
+        "differential_checks": 1257,
+        "disagreements": 1,
+        "errors": 20,
+        "failure_code": 3303,
+        "full_calls": 4728,
+        "hits": 1257,
+        "invalidations": 309,
+        "issues": 309,
+        "misses": 3471,
+        "restored_bytes": 1527647320,
+        "status": 125,
+        "version": 1
+      },
+      "oracle": {
+        "byte_build_serial": 0,
+        "byte_phase": 0,
+        "byte_warm": 0,
+        "checks": 35,
+        "complete": 1,
+        "control": 2,
+        "epoch": 249,
+        "failure": 0,
+        "failure_code": 3303,
+        "generation": 120,
+        "initialized": 1,
+        "passed": 34359738367,
+        "restorations": 36,
+        "root_serial": 379,
+        "source_entry": 67109376,
+        "started": 1,
+        "status": 125,
+        "version": 1
+      },
+      "readonly_queries": {
+        "failure_code": 3303,
+        "initialized": 1,
+        "mirror_opens": 120,
+        "mirror_seals": 120,
+        "query_attempts": 42361,
+        "query_errors": 7,
+        "readonly_calls": 39082,
+        "requested_pages": 879074,
+        "status": 125,
+        "version": 1
+      },
+      "suite": "history"
+    }
+  ],
+  "owner_credit": false,
+  "performance_credit": false,
+  "prior_positive": {
+    "cpu": 148,
+    "current_production_sources_equal_except_exact_test_hooks": true,
+    "current_subjects_replayed": 0,
+    "native_capture": {
+      "bytes": 8588824,
+      "sha256": "7c1e395885670039dadffcde657661d00bf03f3b752878e16c68fcdbff38935b"
+    },
+    "native_frames": 107,
+    "native_instructions": 106,
+    "prior_subjects": 3,
+    "receipt": {
+      "bytes": 15102,
+      "sha256": "0fbdb59a1b54fcdd397d4a7be6e512c0d853b23fd22869e454e2574836cce940"
+    },
+    "revision": "7e7041fbe9c361abfb5987c9e9fa070cb563935f",
+    "scope": "Prior successful native/release/DIFF evidence; no positive subject rerun or current qualification.",
+    "source": {
+      "head_sources_match": true,
+      "revision": "7e7041fbe9c361abfb5987c9e9fa070cb563935f",
+      "source_manifest_sha256": "f326b533a6d25035acffb4c79aa43dd54398a36d99f6822ff667c6da5150c9ea",
+      "tracked_clean": true,
+      "tree": "0c9b3fe9ffe02a110cfc4ffa71a357331ccc5dc2"
+    }
+  },
+  "profile": "loop-ro-native-causal-v1",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 822645,
+    "sha256": "c901d3e28e7021094a0a6716b4e2fab7a116d6506c7cbb4784286866427ee7e9"
+  },
+  "reproduce": [
+    "/usr/local/fbcode/platform010/bin/python3.12",
+    "-B",
+    "evaluation/inprocess/loop_ro_native_controls.py",
+    "--expect-revision",
+    "45d7489bff1e6ac5e9f2e07deba97cc04da04e5c",
+    "--native-receipt",
+    "target/evaluation/inprocess/tunables-effects-full19-r3-loop-native/receipt.json",
+    "--native-receipt-sha256",
+    "784fe75f566ea134a65464010823430d2b6dcadf2036bc99c47629418d39f983",
+    "--positive-receipt",
+    "target/evaluation/inprocess/loop-ro-native-positive-attempt-4/receipt.json",
+    "--positive-receipt-sha256",
+    "8615a23e4f153f5efc056e6e39b4612cfacbc539b8aad379ea4746bf4350badd",
+    "--output",
+    "target/evaluation/inprocess/loop-ro-native-causal-attempt-3"
+  ],
+  "schema": 1,
+  "scope": "Two actual causal subjects, required exit125 only after all22 byte and35 history mutations and restorations. Prior positive fixture remains at its own revision. No final application, warm-code or interior-owner credit. The earlier setup failure remains failed.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "45d7489bff1e6ac5e9f2e07deba97cc04da04e5c",
+    "source_manifest_sha256": "f482817c1d9509a0bc57aef24853f8997a163519b65349bc146101d0297b1435",
+    "tracked_clean": true,
+    "tree": "b1d094686afb62f2c4c0d49bde2d2451192ad0c7"
+  },
+  "source_unchanged": true,
+  "status": "observed_causal_controls"
+}

@@ -1,0 +1,94 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_seconds": 180,
+    "file_size_bytes": 16777216,
+    "log_bytes": 8388608,
+    "wall_seconds": 180
+  },
+  "cache_info": {
+    "bypasses": 0,
+    "bytes": 15806851,
+    "entries": 60,
+    "evictions": 0,
+    "hits": 5868,
+    "max_blob": 1048576,
+    "max_bytes": 33554432,
+    "max_entries": 128,
+    "misses": 60
+  },
+  "captures": {
+    "cache-info.json": {
+      "bytes": 158,
+      "sha256": "13216127549e8634a24ff0678589ab150a510dcb64a175413669801515f8ce1b"
+    },
+    "measurement.log": {
+      "bytes": 267,
+      "sha256": "52a8aa74eeb94be5b8fa730c69ee583de9f7054d1785910c9418bc011ef134e9"
+    },
+    "projection.pstats": {
+      "bytes": 318450,
+      "sha256": "8bf317e7b7b06e2de0a05c726cedcab27b7dc3dbe3c7d338b59ffdf23f5dd2a9"
+    }
+  },
+  "command": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "52a8aa74eeb94be5b8fa730c69ee583de9f7054d1785910c9418bc011ef134e9",
+    "reaped_descendants": 0,
+    "seconds": 24.010403071995825,
+    "start_utc": "2026-11-02T21:41:56.073195+00:00",
+    "termination": null
+  },
+  "cpu": 3,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu_family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_upstream_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model_name": "AMD EPYC 9D85 158-Core Processor",
+    "stepping": "0"
+  },
+  "performance_credit": false,
+  "profile": "one-recorder-critical-cprofile-v2",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 8089,
+    "sha256": "46718b28494ee7c3ef2044dfcdefac9cfa4bf7290a7c4e9a0dc11308d7d3faa1"
+  },
+  "recorder_tests": 366,
+  "reproduce": [
+    "env",
+    "PYTHONPATH=evaluation/admission",
+    "timeout",
+    "180",
+    "prlimit",
+    "--cpu=180:180",
+    "--as=536870912:536870912",
+    "--fsize=16777216:16777216",
+    "python3.12",
+    "-B",
+    "-m",
+    "cProfile",
+    "-o",
+    "${OUTPUT}/projection.pstats",
+    "evaluation/admission/inventory_json_profile.py",
+    "${OUTPUT}/cache-info.json"
+  ],
+  "reservation": "One reserved CPU3; output directory must exist and files must be new.",
+  "schema": 1,
+  "scope": "Exact original critical recorder test. Accounting-only wrapper records cache after unittest exits. Validation diagnostic time only; complete366-test four-worker180-second requirement remains open.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "45d7489bff1e6ac5e9f2e07deba97cc04da04e5c",
+    "source_manifest_sha256": "f482817c1d9509a0bc57aef24853f8997a163519b65349bc146101d0297b1435",
+    "tracked_clean": true,
+    "tree": "b1d094686afb62f2c4c0d49bde2d2451192ad0c7"
+  },
+  "source_unchanged": true,
+  "status": "observed_diagnostic_only"
+}
