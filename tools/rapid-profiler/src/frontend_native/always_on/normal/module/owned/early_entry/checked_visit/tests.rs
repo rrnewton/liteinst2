@@ -874,3 +874,286 @@ fn checked_visit_correspondence_rejects_swapped_and_unknown_generation_fields() 
     // This control altered only copied images, never either real owner/state.
     assert!(generations.matches(&expected, normal_image(&original.state)));
 }
+
+#[test]
+fn ret_proof_rejects_hostile_prefix_before_current_geometry_or_mutation() {
+    for order in [[0, 1], [1, 0]] {
+        for observed in [false, true] {
+            for bad_geometry in [false, true] {
+                for corruption in 0..8 {
+                    let mut f = Fixture::new(10, order);
+                    f.controller.arm(&f.epoch).unwrap();
+                    f.physical.begin(&f.state).unwrap();
+                    f.call(true);
+                    if observed {
+                        f.visit(true).unwrap();
+                    }
+                    f.physical.shape(&f.state).unwrap();
+                    let mut candidate = f.input(false);
+                    let mut reference = f.input(false);
+                    candidate.pc += u64::from(bad_geometry);
+                    reference.pc += u64::from(bad_geometry);
+                    let expected = match corruption {
+                        0 => {
+                            f.physical.active.as_mut().unwrap().rows[0] = None;
+                            Cause::Invariant
+                        }
+                        1 => {
+                            let b = f.physical.active.as_mut().unwrap();
+                            b.rows[3] = b.rows[0];
+                            Cause::Invariant
+                        }
+                        2 => {
+                            f.physical.active.as_mut().unwrap().seen[3] = Some(f.state.next);
+                            Cause::Invariant
+                        }
+                        3 => {
+                            let b = f.physical.active.as_mut().unwrap();
+                            b.seen[0] = Some(b.seen[0].unwrap() + 1);
+                            Cause::Invariant
+                        }
+                        4 => {
+                            f.physical.active.as_mut().unwrap().rows[0]
+                                .as_mut()
+                                .unwrap()
+                                .return_pc += 1;
+                            Cause::Identity
+                        }
+                        5 => {
+                            f.physical.active.as_mut().unwrap().pending_position = Some(3);
+                            if observed {
+                                Cause::Return
+                            } else {
+                                Cause::Invariant
+                            }
+                        }
+                        6 => {
+                            f.physical.batches = u64::MAX;
+                            Cause::Capacity
+                        }
+                        7 => {
+                            f.physical.active = None;
+                            Cause::Outstanding
+                        }
+                        _ => unreachable!(),
+                    };
+                    let before = (normal_image(&f.state), physical_image(&f.physical));
+                    let owners = identities(&f.state, &f.physical);
+                    assert_eq!(
+                        f.physical.visit(&mut f.state, candidate),
+                        Err(error(expected))
+                    );
+                    assert_eq!(
+                        (normal_image(&f.state), physical_image(&f.physical)),
+                        before
+                    );
+                    assert_eq!(identities(&f.state, &f.physical), owners);
+                    // Same actual fixture and generations; the old full visit
+                    // must choose exactly the same error without changing it.
+                    assert_eq!(
+                        f.physical.visit_with_full_shapes(&mut f.state, reference),
+                        Err(error(expected))
+                    );
+                    assert_eq!(
+                        (normal_image(&f.state), physical_image(&f.physical)),
+                        before
+                    );
+                    assert_eq!(identities(&f.state, &f.physical), owners);
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn ret_proof_late_shared_and_journal_failures_keep_exact_committed_state() {
+    for order in [[0, 1], [1, 0]] {
+        for observed in [false, true] {
+            for (bad_shared, bad_used) in
+                [(false, false), (true, false), (false, true), (true, true)]
+            {
+                let mut f = Fixture::new(10, order);
+                f.controller.arm(&f.epoch).unwrap();
+                f.physical.begin(&f.state).unwrap();
+                f.call(true);
+                if observed {
+                    f.visit(true).unwrap();
+                }
+                let normal_before = normal_image(&f.state);
+                let owners = identities(&f.state, &f.physical);
+                let Visit {
+                    selected,
+                    pc,
+                    rsp,
+                    word,
+                    stamp,
+                    ..
+                } = f.input(false);
+                let committed = CheckedRet::new(&mut f.physical, &mut f.state)
+                    .unwrap()
+                    .commit(selected, pc, rsp, word, stamp)
+                    .unwrap();
+                // This is the production commit and production finish. Child
+                // access changes only the fresh shared/volatile observations.
+                // No hook or mutable state view is added to production.
+                committed
+                    .checked
+                    .physical
+                    .shape(committed.checked.state)
+                    .unwrap();
+                if !observed {
+                    assert_eq!(normal_image(committed.checked.state), normal_before);
+                }
+                let used = committed.checked.state.journal.used();
+                if bad_shared {
+                    committed
+                        .checked
+                        .physical
+                        .shared
+                        .failed
+                        .store(true, Ordering::Release);
+                }
+                if bad_used {
+                    committed.checked.state.journal.word(0, used as u64 + 1);
+                }
+                let at_postcheck = (
+                    normal_image(committed.checked.state),
+                    physical_image(committed.checked.physical),
+                );
+                assert_eq!(at_postcheck.1.active.as_ref().unwrap().position, 2);
+                assert_eq!(
+                    at_postcheck.1.active.as_ref().unwrap().rows[1],
+                    Some(committed.row)
+                );
+                let expected = if bad_shared {
+                    Err(error(Cause::Identity))
+                } else if bad_used {
+                    Err(error(Cause::Invariant))
+                } else {
+                    Ok(())
+                };
+                assert_eq!(
+                    committed.checked.physical.shape(committed.checked.state),
+                    expected
+                );
+                assert_eq!(committed.finish(), expected);
+                assert_eq!(
+                    (normal_image(&f.state), physical_image(&f.physical)),
+                    at_postcheck
+                );
+                assert_eq!(identities(&f.state, &f.physical), owners);
+                // Repair only the two deliberate late faults, then finish the
+                // actual receipts; refusal did not roll back or double-commit.
+                f.physical.shared.failed.store(false, Ordering::Release);
+                f.state.journal.word(0, used as u64);
+                f.physical.shape(&f.state).unwrap();
+                f.call(false);
+                f.call(false);
+                assert_eq!(
+                    f.finish().0.unwrap().records().len(),
+                    if observed { 2 } else { 1 }
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn ret_proof_preserves_all_receipt_kinds_across_bypass_and_rearm() {
+    for order in [[0, 1], [1, 0]] {
+        // InitialDisarmed, Admitted, FunctionClosed: no owner is inferred from
+        // whichever epoch the controller happens to publish after this RET.
+        for mode in 0..3 {
+            let mut f = Fixture::new(10, order);
+            if mode != 0 {
+                f.controller.arm(&f.epoch).unwrap();
+            }
+            if mode == 2 {
+                for _ in 0..5 {
+                    f.physical.begin(&f.state).unwrap();
+                    for _ in 0..4 {
+                        f.call(true);
+                    }
+                    assert_eq!(f.finish().0.unwrap().records().len(), 4);
+                }
+            }
+            f.physical.begin(&f.state).unwrap();
+            f.call(true);
+            let original_raw = f.state.pending.as_ref().unwrap().returned.unwrap();
+            match mode {
+                0 => assert!(matches!(
+                    original_raw.owner,
+                    RawIntervalOwner::InitialDisarmed
+                )),
+                1 => assert!(
+                    matches!(original_raw.owner, RawIntervalOwner::Sampled { generation, .. }
+                    if generation == f.epoch.generation().get())
+                ),
+                2 => assert!(
+                    matches!(original_raw.owner, RawIntervalOwner::FunctionClosed { generation }
+                    if generation == f.epoch.generation().get())
+                ),
+                _ => unreachable!(),
+            }
+            if mode != 0 {
+                f.controller.disarm(&f.epoch).unwrap();
+            }
+            let next = f.controller.stage_prepared(f.banks.pop().unwrap()).unwrap();
+            f.controller.arm(&next).unwrap();
+            let retained = normal_image(&f.state);
+            let owners = identities(&f.state, &f.physical);
+            let report_before = f
+                .controller
+                .report(&f.epoch)
+                .unwrap()
+                .map(|r| r.records().count());
+            if mode == 1 {
+                assert_eq!(report_before, None);
+            }
+            if mode == 2 {
+                assert_eq!(report_before, Some(20));
+            }
+            for _ in 0..3 {
+                f.call(false);
+                assert_eq!(normal_image(&f.state), retained);
+                assert_eq!(identities(&f.state, &f.physical), owners);
+                assert_eq!(
+                    f.physical.active.as_ref().unwrap().pending_position,
+                    Some(0)
+                );
+                assert_eq!(
+                    f.controller
+                        .report(&f.epoch)
+                        .unwrap()
+                        .map(|r| r.records().count()),
+                    report_before
+                );
+            }
+            let batch = f.finish().0.unwrap();
+            assert_eq!(batch.records().len(), 1);
+            assert_eq!(batch.records()[0].record.raw, original_raw);
+            assert!(f.state.pending.is_none());
+            if mode == 1 {
+                assert_eq!(
+                    f.controller
+                        .report(&f.epoch)
+                        .unwrap()
+                        .unwrap()
+                        .records()
+                        .count(),
+                    1
+                );
+            }
+            f.controller.disarm(&next).unwrap();
+            assert_eq!(
+                f.controller
+                    .report(&next)
+                    .unwrap()
+                    .unwrap()
+                    .records()
+                    .count(),
+                0
+            );
+        }
+    }
+}

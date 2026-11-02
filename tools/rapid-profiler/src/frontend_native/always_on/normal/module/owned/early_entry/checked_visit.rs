@@ -80,12 +80,117 @@ impl<'a> CheckedVisit<'a> {
     fn bypass(self) {}
 }
 
+// A RET certificate owns both exclusive borrows until its postcondition is
+// consumed. No mutable view, Session operation, callback or proof clone escapes.
+struct CheckedRet<'a> {
+    physical: &'a mut PhysicalState,
+    state: &'a mut NormalState,
+}
+struct CommittedRet<'a> {
+    checked: CheckedRet<'a>,
+    row: EarlyEntryModulePhysicalRow,
+}
+impl<'a> CheckedRet<'a> {
+    fn new(
+        physical: &'a mut PhysicalState,
+        state: &'a mut NormalState,
+    ) -> Result<Self, BridgeError> {
+        physical.shape(state)?;
+        Ok(Self { physical, state })
+    }
+    fn commit(
+        self,
+        selected: SelectedFunction,
+        pc: u64,
+        rsp: u64,
+        word: u64,
+        stamp: RawTimestamp,
+    ) -> Result<CommittedRet<'a>, BridgeError> {
+        // This reborrow uses the same full precheck; it cannot outlive commit.
+        let checked = CheckedVisit {
+            state: &mut *self.state,
+        };
+        let b = self
+            .physical
+            .active
+            .as_mut()
+            .ok_or(error(Cause::Outstanding))?;
+        let index = b.position;
+        if index >= 4
+            || selected != self.physical.order[index % 2]
+            || word != self.physical.words[index]
+            || b.rsp.is_some_and(|prior| prior != rsp)
+        {
+            return Err(error(Cause::Return));
+        }
+        checked.return_geometry(selected, pc)?;
+        if let Some(ordinal) = b.seen[index] {
+            if b.pending_position != Some(index) || checked.pending_return_mismatch(ordinal) {
+                return Err(error(Cause::Return));
+            }
+            // With accuracy excluded by the precheck, this changes only the
+            // journal, pending.returned and ret_observed. No confirmation or
+            // receipt/owner/record/prefix mutation occurs on this transition.
+            checked.observe(selected, pc, rsp, word, stamp)?;
+        } else {
+            if checked.has_unreturned_pending() {
+                return Err(error(Cause::Return));
+            }
+            checked.bypass();
+        }
+        let row = EarlyEntryModulePhysicalRow {
+            batch: b.number,
+            position: index,
+            function: selected.function,
+            observed_ordinal: b.seen[index],
+            return_pc: pc,
+            entry_rsp: rsp,
+            return_word: word,
+        };
+        b.rsp = Some(rsp);
+        b.rows[index] = Some(row);
+        b.position += 1;
+        Ok(CommittedRet { checked: self, row })
+    }
+}
+impl CommittedRet<'_> {
+    fn finish(self) -> Result<(), BridgeError> {
+        let Self { checked, row } = self;
+        let CheckedRet { physical, state } = checked;
+        // These stay fresh and in the old post-shape order. In particular,
+        // process/failed Acquire precedes all model and volatile journal reads.
+        physical.matches(state)?;
+        state.shape()?;
+        let b = physical.active.as_ref().ok_or(error(Cause::Outstanding))?;
+        // The private constructor establishes every old-prefix predicate. Its
+        // only physical writes are the exact new row/RSP/position below, whose
+        // complete delta is checked here. Both borrows stay exclusive throughout.
+        // seen/order/words/cursors/old rows/records and pending_position never
+        // change. Thus old ordinal/confirmed joins remain true, including an
+        // earlier Returned owner carried across bypasses. An observed new row is
+        // the still-unconfirmed pending row; a bypass contributes no ordinal.
+        if b.position != row.position + 1
+            || b.rsp != Some(row.entry_rsp)
+            || b.rows[row.position] != Some(row)
+            || b.seen[row.position] != row.observed_ordinal
+        {
+            return Err(error(Cause::Invariant));
+        }
+        Ok(())
+    }
+}
+
 impl PhysicalState {
     pub(super) fn visit(
         &mut self,
         state: &mut NormalState,
         visit: Visit,
     ) -> Result<(), BridgeError> {
+        if !visit.entry {
+            return CheckedRet::new(self, state)?
+                .commit(visit.selected, visit.pc, visit.rsp, visit.word, visit.stamp)?
+                .finish();
+        }
         let Visit {
             selected,
             pc,
