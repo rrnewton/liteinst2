@@ -1,0 +1,548 @@
+{
+  "archive_provenance": {
+    "archive": {
+      "bytes": 12045418,
+      "path": "target/evaluation/inprocess/tunables-effects-full19-r3-loop-native/artifacts/decoder.a",
+      "sha256": "bf81e0fbfebbda83a30dcc82b2ddded487e725d3df2052193e00ab79dcc9dd40"
+    },
+    "compiled_revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+    "current_13_rust_sources_equal": true,
+    "receipt": {
+      "bytes": 2503175,
+      "path": "target/evaluation/inprocess/tunables-effects-full19-r3-loop-native/receipt.json",
+      "sha256": "784fe75f566ea134a65464010823430d2b6dcadf2036bc99c47629418d39f983"
+    },
+    "same_revision_native_credit": false,
+    "scope": "Reuse exact supplied archive and source facts; no native reference replay or qualification credit"
+  },
+  "bounds": [
+    30,
+    536870912,
+    16777216,
+    60
+  ],
+  "clock": "CLOCK_MONOTONIC_RAW batch endpoints; two clock calls per row, not subtracted",
+  "commands": [
+    {
+      "argv": [
+        "/usr/bin/gcc",
+        "-std=gnu11",
+        "-O2",
+        "-g",
+        "-fno-builtin",
+        "-fno-stack-protector",
+        "-fno-tree-loop-distribute-patterns",
+        "-fno-tree-vectorize",
+        "-mgeneral-regs-only",
+        "-fno-omit-frame-pointer",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-Itools/page-entry/selected",
+        "-M",
+        "-MT",
+        "unit_cost_deps",
+        "evaluation/inprocess/admission_unit_cost/bench.c",
+        "evaluation/inprocess/admission_unit_cost/policy_lease.c",
+        "tools/page-entry/selected/native_policy.c"
+      ],
+      "duration_ns": 57068126,
+      "exit": 0,
+      "name": "headers",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "/usr/bin/gcc",
+        "-std=gnu11",
+        "-O2",
+        "-g",
+        "-fno-builtin",
+        "-fno-stack-protector",
+        "-fno-tree-loop-distribute-patterns",
+        "-fno-tree-vectorize",
+        "-mgeneral-regs-only",
+        "-fno-omit-frame-pointer",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-Itools/page-entry/selected",
+        "evaluation/inprocess/admission_unit_cost/bench.c",
+        "evaluation/inprocess/admission_unit_cost/policy_lease.c",
+        "tools/page-entry/selected/native_policy.c",
+        "target/evaluation/inprocess/tunables-effects-full19-r3-loop-native/artifacts/decoder.a",
+        "-Wl,-z,now,-z,relro,--no-undefined",
+        "-ldl",
+        "-lpthread",
+        "-lm",
+        "-o",
+        "target/evaluation/inprocess/admission-unit-cost-public-attempt-1/unit-cost"
+      ],
+      "duration_ns": 573860873,
+      "exit": 0,
+      "name": "build",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "target/evaluation/inprocess/admission-unit-cost-public-attempt-1/unit-cost",
+        "target/evaluation/inprocess/admission-unit-cost-public-attempt-1/ls.window",
+        "target/evaluation/inprocess/admission-unit-cost-public-attempt-1/true.window",
+        "target/evaluation/inprocess/admission-unit-cost-public-attempt-1/helper.window"
+      ],
+      "duration_ns": 2028190227,
+      "exit": 0,
+      "name": "measure",
+      "reaped": true,
+      "timed_out": false
+    }
+  ],
+  "cpu": 186,
+  "driver": {
+    "bytes": 22322,
+    "path": "evaluation/inprocess/admission_unit_cost/run.py",
+    "sha256": "326ab93d5d79278ba8ec36efa1e3272fdd866b0a9adc14c8db0ede111f57cdb9"
+  },
+  "first_samples": [
+    {
+      "checksum": 0,
+      "closes": 0,
+      "elapsed_ns": 365419,
+      "iterations": 1,
+      "major_faults": 0,
+      "mincore_calls": 0,
+      "minor_faults": 100,
+      "minor_pages": 0,
+      "mprotect_calls": 0,
+      "name": "decoder_initialize",
+      "opens": 0,
+      "policy_mask": 0,
+      "read_bytes": 0,
+      "reads": 0,
+      "sample": -1,
+      "scan_candidates": 0,
+      "scan_starts": 0,
+      "signals": 0,
+      "sync_core_calls": 0
+    },
+    {
+      "checksum": 0,
+      "closes": 0,
+      "elapsed_ns": 6981,
+      "iterations": 1,
+      "major_faults": 0,
+      "mincore_calls": 0,
+      "minor_faults": 0,
+      "minor_pages": 0,
+      "mprotect_calls": 2,
+      "name": "first_nx_fault_grant_ret_cycle",
+      "opens": 0,
+      "policy_mask": 0,
+      "read_bytes": 0,
+      "reads": 0,
+      "sample": -1,
+      "scan_candidates": 0,
+      "scan_starts": 0,
+      "signals": 1,
+      "sync_core_calls": 0
+    },
+    {
+      "checksum": 0,
+      "closes": 0,
+      "elapsed_ns": 1612,
+      "iterations": 1,
+      "major_faults": 0,
+      "mincore_calls": 0,
+      "minor_faults": 0,
+      "minor_pages": 0,
+      "mprotect_calls": 0,
+      "name": "first_nx_ucontext_ret_control",
+      "opens": 0,
+      "policy_mask": 0,
+      "read_bytes": 0,
+      "reads": 0,
+      "sample": -1,
+      "scan_candidates": 0,
+      "scan_starts": 0,
+      "signals": 1,
+      "sync_core_calls": 0
+    }
+  ],
+  "first_touch": "Code, altstack and scan data pre-touched; first signal retained separately. minor_first_write uses fresh anonymous pages with THP disabled; mmap/madvise/munmap excluded.",
+  "fixture_provenance": {
+    "artifact": {
+      "bytes": 115168,
+      "path": "target/evaluation/inprocess/tunables-effects-full19-r3-loop-native/application/tunables-loop-paired",
+      "sha256": "067419324451e85c19d694b33d6c8e522ca53fb5b11e322a3e6266e62108401b"
+    },
+    "current_inputs_equal": true,
+    "executed_by_micro": false,
+    "headers": 79
+  },
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 186,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "initialization": {
+    "abi": 1,
+    "allocations": 7697,
+    "arena": 16777216,
+    "deallocations": 110,
+    "phase": 2,
+    "retained": 367840,
+    "sync_query": 1023,
+    "sync_register": 0
+  },
+  "maps_scope": "Fresh openat/read-through-EOF/close syscall sequence only; no parser, maintained view, or loader validation.",
+  "measured_batches": 10,
+  "mincore_scope": "One absent predecessor page adjacent to a retained mapping; every mincore returns exact -ENOMEM. This models the maintained-view probe syscall, not the entire hit path.",
+  "no_outlier_removal": true,
+  "no_overhead_subtraction": true,
+  "overlap": "NX complete cycle includes revoke, signal delivery, checked handler grant, sigreturn and RET. Permission-pair/call and ucontext-skip rows are controls, not disjoint summands.",
+  "performance_target_credit": false,
+  "qualification_credit": false,
+  "quartiles": "inclusive linear interpolation",
+  "raw_csv": {
+    "bytes": 16984,
+    "path": "target/evaluation/inprocess/admission-unit-cost-public-attempt-1/raw.csv",
+    "sha256": "3a6d47e65a52166580d3a131e5fdb0bdafacec01136d7e27fdd415f41a4d7391"
+  },
+  "receipt": {
+    "bytes": 167373,
+    "path": "target/evaluation/inprocess/admission-unit-cost-public-attempt-1/receipt.json",
+    "sha256": "0312572fc9bbbefc98da20dc771c25179365ffbcb02b0dc452b43aac3d19abd4"
+  },
+  "reproduce_argv": [
+    "{PYTHON3_12}",
+    "-B",
+    "evaluation/inprocess/admission_unit_cost/run.py",
+    "--expect-revision",
+    "bb3ed1733190132bdaf6d4cbbd0ff066344bcc04",
+    "--native-receipt",
+    "{CLOSED_NATIVE_RECEIPT}",
+    "--native-sha256",
+    "784fe75f566ea134a65464010823430d2b6dcadf2036bc99c47629418d39f983",
+    "--output",
+    "{FRESH_OUTPUT}"
+  ],
+  "scan_inputs": [
+    {
+      "elf": {
+        "bytes": 140752,
+        "path": "/usr/bin/ls",
+        "sha256": "eec29318f59647c9a13b619e2738575164e3c43c7a1ee2b8509f36cb09019315"
+      },
+      "file_offset": 20466,
+      "halo_after": 14,
+      "halo_before": 14,
+      "name": "ls",
+      "page": 20480,
+      "requested_page_bytes": 4096,
+      "result": {
+        "candidates": 0,
+        "invalid": 337,
+        "starts": 4110,
+        "truncated": 0
+      },
+      "window": {
+        "bytes": 4124,
+        "path": "target/evaluation/inprocess/admission-unit-cost-public-attempt-1/ls.window",
+        "sha256": "48bcdae412e4b4da5d47e5cfb10b8d00c0e1b34afad41c1439c2e62230fd8d38"
+      }
+    },
+    {
+      "elf": {
+        "bytes": 27936,
+        "path": "/usr/bin/true",
+        "sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171"
+      },
+      "file_offset": 8178,
+      "halo_after": 14,
+      "halo_before": 14,
+      "name": "true",
+      "page": 8192,
+      "requested_page_bytes": 4096,
+      "result": {
+        "candidates": 0,
+        "invalid": 369,
+        "starts": 4110,
+        "truncated": 0
+      },
+      "window": {
+        "bytes": 4124,
+        "path": "target/evaluation/inprocess/admission-unit-cost-public-attempt-1/true.window",
+        "sha256": "7b126017d9b6a39b763caecce7778a4230f3dad6f320aace619c2c8c75fea3dd"
+      }
+    },
+    {
+      "elf": {
+        "bytes": 115168,
+        "path": "target/evaluation/inprocess/tunables-effects-full19-r3-loop-native/application/tunables-loop-paired",
+        "sha256": "067419324451e85c19d694b33d6c8e522ca53fb5b11e322a3e6266e62108401b"
+      },
+      "file_offset": 40946,
+      "halo_after": 14,
+      "halo_before": 14,
+      "name": "helper",
+      "page": 8590069760,
+      "requested_page_bytes": 4096,
+      "result": {
+        "candidates": 0,
+        "invalid": 114,
+        "starts": 4110,
+        "truncated": 0
+      },
+      "window": {
+        "bytes": 4124,
+        "path": "target/evaluation/inprocess/admission-unit-cost-public-attempt-1/helper.window",
+        "sha256": "0c35e2041753e05e3ad91a1879562a17e6b16638bcbe9cd02f6b127729752725"
+      }
+    }
+  ],
+  "scan_scope": "Initialized, warmed shared decoder scans4110 starts for a4096B page plus authenticated14B halos; each call includes whole88B summary equality. Actual native-policy byte scanner and constant source-lease refusal are separate rows. Initialization is one process cost, not a per-page charge.",
+  "schema": 1,
+  "scope": "isolated component costs, not complete admission or guest timing",
+  "source": {
+    "revision": "bb3ed1733190132bdaf6d4cbbd0ff066344bcc04",
+    "tracked_clean": true,
+    "tree": "5718d0e6c09d1edf764d9ad093ad0936967abd4c"
+  },
+  "statistics": [
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 1.62945,
+      "median_ns_per_iteration": 1.01025,
+      "min_ns_per_iteration": 1.00705,
+      "name": "empty_loop",
+      "q1_ns_per_iteration": 1.0086625,
+      "q3_ns_per_iteration": 1.3422625
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 88.06675,
+      "median_ns_per_iteration": 76.72392500000001,
+      "min_ns_per_iteration": 72.83585,
+      "name": "raw_getpid",
+      "q1_ns_per_iteration": 74.6332,
+      "q3_ns_per_iteration": 80.91601250000001
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 4.10165,
+      "median_ns_per_iteration": 2.6937749999999996,
+      "min_ns_per_iteration": 2.67955,
+      "name": "rx_ret_call",
+      "q1_ns_per_iteration": 2.6826375,
+      "q3_ns_per_iteration": 2.9292625
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 164.28365,
+      "median_ns_per_iteration": 135.2185,
+      "min_ns_per_iteration": 133.3427,
+      "name": "mprotect_same_rx",
+      "q1_ns_per_iteration": 134.7272625,
+      "q3_ns_per_iteration": 142.28561249999998
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 743.4131,
+      "median_ns_per_iteration": 573.760125,
+      "min_ns_per_iteration": 559.17695,
+      "name": "mprotect_r_rx_ret_pair",
+      "q1_ns_per_iteration": 563.4175,
+      "q3_ns_per_iteration": 653.93025
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 2000,
+      "max_ns_per_iteration": 1264.969,
+      "median_ns_per_iteration": 1099.558,
+      "min_ns_per_iteration": 1079.9815,
+      "name": "nx_signal_ucontext_ret",
+      "q1_ns_per_iteration": 1085.198875,
+      "q3_ns_per_iteration": 1251.013125
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 2000,
+      "max_ns_per_iteration": 2118.646,
+      "median_ns_per_iteration": 1755.8235,
+      "min_ns_per_iteration": 1717.5085,
+      "name": "nx_fault_grant_ret_cycle",
+      "q1_ns_per_iteration": 1731.4027500000002,
+      "q3_ns_per_iteration": 2051.411
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 500,
+      "max_ns_per_iteration": 19507.546,
+      "median_ns_per_iteration": 11094.475999999999,
+      "min_ns_per_iteration": 9473.302,
+      "name": "maps_open_close",
+      "q1_ns_per_iteration": 9770.979,
+      "q3_ns_per_iteration": 14320.6605
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 92.69615,
+      "median_ns_per_iteration": 81.886425,
+      "min_ns_per_iteration": 80.2665,
+      "name": "devnull_read",
+      "q1_ns_per_iteration": 81.3769375,
+      "q3_ns_per_iteration": 89.172375
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 500,
+      "max_ns_per_iteration": 46822.614,
+      "median_ns_per_iteration": 18851.011,
+      "min_ns_per_iteration": 16911.41,
+      "name": "maps_fresh_open_read_close",
+      "q1_ns_per_iteration": 17793.5285,
+      "q3_ns_per_iteration": 25397.362999999998
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 256,
+      "max_ns_per_iteration": 1294.796875,
+      "median_ns_per_iteration": 875.78515625,
+      "min_ns_per_iteration": 770.33203125,
+      "name": "minor_first_write",
+      "q1_ns_per_iteration": 805.5458984375,
+      "q3_ns_per_iteration": 958.4111328125
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 64,
+      "max_ns_per_iteration": 325750.140625,
+      "median_ns_per_iteration": 267493.6953125,
+      "min_ns_per_iteration": 255087.96875,
+      "name": "decoder_scan_ls",
+      "q1_ns_per_iteration": 259864.78125,
+      "q3_ns_per_iteration": 295251.40234375
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 64,
+      "max_ns_per_iteration": 331467.625,
+      "median_ns_per_iteration": 265063.40625,
+      "min_ns_per_iteration": 254882.8125,
+      "name": "decoder_scan_true",
+      "q1_ns_per_iteration": 258490.92578125,
+      "q3_ns_per_iteration": 283026.31640625
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 64,
+      "max_ns_per_iteration": 288146.515625,
+      "median_ns_per_iteration": 231124.5703125,
+      "min_ns_per_iteration": 213605.0625,
+      "name": "decoder_scan_helper",
+      "q1_ns_per_iteration": 220280.828125,
+      "q3_ns_per_iteration": 247052.734375
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 2000,
+      "max_ns_per_iteration": 8511.809,
+      "median_ns_per_iteration": 6532.35225,
+      "min_ns_per_iteration": 6122.066,
+      "name": "native_policy_ls",
+      "q1_ns_per_iteration": 6252.610999999999,
+      "q3_ns_per_iteration": 7338.163124999999
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 2000,
+      "max_ns_per_iteration": 9202.4355,
+      "median_ns_per_iteration": 7047.4255,
+      "min_ns_per_iteration": 6578.0805,
+      "name": "native_policy_true",
+      "q1_ns_per_iteration": 6739.430375,
+      "q3_ns_per_iteration": 7409.859375000001
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 2000,
+      "max_ns_per_iteration": 6000.4085,
+      "median_ns_per_iteration": 4852.26475,
+      "min_ns_per_iteration": 4334.452,
+      "name": "native_policy_helper",
+      "q1_ns_per_iteration": 4461.645875,
+      "q3_ns_per_iteration": 5635.668250000001
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 2.5684,
+      "median_ns_per_iteration": 2.0783500000000004,
+      "min_ns_per_iteration": 2.05855,
+      "name": "source_lease_policy_ls",
+      "q1_ns_per_iteration": 2.06935,
+      "q3_ns_per_iteration": 2.18415
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 2.39505,
+      "median_ns_per_iteration": 2.0741,
+      "min_ns_per_iteration": 2.0596,
+      "name": "source_lease_policy_true",
+      "q1_ns_per_iteration": 2.06585,
+      "q3_ns_per_iteration": 2.1406375
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 2.56085,
+      "median_ns_per_iteration": 2.08315,
+      "min_ns_per_iteration": 2.0591,
+      "name": "source_lease_policy_helper",
+      "q1_ns_per_iteration": 2.0641,
+      "q3_ns_per_iteration": 2.0914
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 2561.97635,
+      "median_ns_per_iteration": 2366.5289000000002,
+      "min_ns_per_iteration": 1942.9385,
+      "name": "membarrier_sync_core",
+      "q1_ns_per_iteration": 2323.1254999999996,
+      "q3_ns_per_iteration": 2434.707125
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 149.31665,
+      "median_ns_per_iteration": 142.846225,
+      "min_ns_per_iteration": 139.7443,
+      "name": "mincore_absent_predecessor",
+      "q1_ns_per_iteration": 141.16305,
+      "q3_ns_per_iteration": 145.9689875
+    }
+  ],
+  "status": "observed_component_unit_costs",
+  "sync_scope": "QUERY and REGISTER once before timing; each sync row calls PRIVATE_EXPEDITED_SYNC_CORE. Source has one sync after each native admission and one per nonempty close, not one per closed page. Neither is included in the NX cycle.",
+  "warmup_batches": 1,
+  "whole_admission_cost": false
+}
