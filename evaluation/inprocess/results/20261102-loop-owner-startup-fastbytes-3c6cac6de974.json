@@ -1,0 +1,343 @@
+{
+  "argv_encoding": "ROOT substitutes the exact checkout prefix; PYTHON is the pinned executable. Each EXTERNAL_<16 hex> substitutes one complete absolute token whose UTF-8 SHA256 has that prefix; recover its exact value from the original owner command. Actual child argv is unchanged.",
+  "cleanup_complete": true,
+  "cpu": 214,
+  "csv": {
+    "bytes": 842,
+    "sha256": "a9f73d04d440bc906aad4c837af6f4a40bdc7757c1d5df32910a3cfc8652823d"
+  },
+  "diagnostic_only": true,
+  "error_types": [],
+  "event": "cpu-clock:u",
+  "final_error_count": 0,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu": 214,
+    "cpu family": "26",
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "historical_failures_reclassified": false,
+  "inputs_unchanged": true,
+  "limitations": [
+    "Passive perf and noncoherent proc observations; sampling perturbs timing.",
+    "Observed CPU usage and signal only; no kernel kill-cause attribution.",
+    "One diagnostic child; no full qualification, performance comparison or replay of original reader controls.",
+    "The original fixed sampler measurement remains a separate receipt; this script records only its own execution."
+  ],
+  "native_receipt": {
+    "bytes": 2422223,
+    "mode": 420,
+    "sha256": "736519b25c350e007b9f116550cfbdf7aa685ab000dbcd79fad7fa49d2091f88"
+  },
+  "original_owner": {
+    "owner_profile": "persistent-loop-owner-diagnostic-v1",
+    "owner_status": "failed"
+  },
+  "original_subject": {
+    "captures": {
+      "record": {
+        "bytes": 0,
+        "file": "subject-maintained-0-0.record",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "bytes": 0,
+        "file": "subject-maintained-0-0.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 0,
+        "file": "subject-maintained-0-0.stdout",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "duration_ns": 30216444541,
+    "exit": -9,
+    "timed_out": false
+  },
+  "owner_receipt": {
+    "bytes": 2445638,
+    "mode": 420,
+    "sha256": "7cb918dc4860540c3edb65a813dce0223dfbc8387feb627334f83500a5596370"
+  },
+  "owner_subject_credit": false,
+  "perf": {
+    "data_bytes": 8519424,
+    "file": {
+      "bytes": 8913684,
+      "mode": 384,
+      "sha256": "83059c980c44da89a40b1d4feb834fe808f5f33dc93fbdf526b71571b768d3e1"
+    },
+    "lost": 0,
+    "record_types": {
+      "10": 66870,
+      "3": 1,
+      "4": 1,
+      "68": 260,
+      "69": 1,
+      "73": 1,
+      "74": 1,
+      "78": 3,
+      "79": 1,
+      "82": 1,
+      "9": 2710
+    },
+    "samples": 2710
+  },
+  "perf_bounds": [
+    10,
+    536870912,
+    16777216,
+    65
+  ],
+  "performance_credit": false,
+  "private_receipt": {
+    "bytes": 226679,
+    "mode": 420,
+    "sha256": "9e7e76c50f0971f8bb3e57ef13c624048ecceca80a715ccede42586c56c8ea65"
+  },
+  "profile": "loop-owner-startup-perf-diagnostic-v1",
+  "qualification_credit": false,
+  "remaining_function_samples": 402,
+  "reproduce": {
+    "argv": [
+      "$PYTHON",
+      "-B",
+      "$COPIED_DRIVER",
+      "--expect-revision",
+      "3c6cac6de974ddf8aee00f52d9d17b65bb11c995",
+      "--owner-receipt",
+      "$ROOT/target/evaluation/inprocess/loop-diagnostic-r3-owner/receipt.json",
+      "--owner-receipt-sha256",
+      "7cb918dc4860540c3edb65a813dce0223dfbc8387feb627334f83500a5596370",
+      "--output",
+      "$ROOT/target/evaluation/inprocess/loop-owner-startup-profile-fresh"
+    ],
+    "notes": "Reserve one CPU. ROOT is the clean checkout at the exact receipt revision; PYTHON is the original pinned Python executable. Copy this exact script outside the checkout when profiling an older revision. Use a fresh absolute output. Outer bounds:150s wall,60s CPU,512MiB AS,16MiB file."
+  },
+  "requested_hz": 99,
+  "sampled_subject": {
+    "captures": {
+      "record": {
+        "bytes": 0,
+        "mode": 384,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "bytes": 0,
+        "mode": 420,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 0,
+        "mode": 420,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "duration_ns": 30488988210,
+    "exit": -9,
+    "expected_exit": 0,
+    "max_rss_kib": 30456,
+    "reaped": true,
+    "system_cpu_ns": 2600621000,
+    "timed_out": false,
+    "user_cpu_ns": 27393690000
+  },
+  "schema": 1,
+  "script": {
+    "bytes": 34898,
+    "mode": 420,
+    "sha256": "73e0b8d3cba17904b6897c58d08a94b2f52931c21a9fab106e8cac6c21c8e8f5"
+  },
+  "source": {
+    "revision": "3c6cac6de974ddf8aee00f52d9d17b65bb11c995",
+    "tracked_clean": true,
+    "tree": "b957e4eac9772b2bdd8f60d57fa2350c8b9e9887"
+  },
+  "source_unchanged": true,
+  "status": "observed_startup_diagnostic",
+  "subject_argv": [
+    "$PYTHON",
+    "-B",
+    "$ROOT/tools/page-entry/selected/tests/tunables_loop_paired_app/launch.py",
+    "--root",
+    "$ROOT",
+    "--role",
+    "gated",
+    "--case",
+    "0",
+    "--placement",
+    "0",
+    "--control",
+    "0",
+    "--original",
+    "$ROOT/target/evaluation/inprocess/loop-diagnostic-r3-native/application/tunables-loop-paired",
+    "--preparation",
+    "$ROOT/target/evaluation/inprocess/loop-owner-startup-fastbytes-profile-r1/preparation.json",
+    "--library-root",
+    "$ROOT/target/evaluation/inprocess/loop-diagnostic-r3-native/application",
+    "--carrier",
+    "$ROOT/target/evaluation/inprocess/loop-diagnostic-r3-owner/maintained-build/carrier",
+    "--namespace",
+    "$ROOT/target/evaluation/inprocess/loop-owner-startup-fastbytes-profile-r1/namespace",
+    "--record-fd",
+    "3"
+  ],
+  "subject_argv_sha256": "6d9abd729bcdb947603f00935f3ed51b7bc75a2e7076e8a052d0dc08a63840d3",
+  "subject_bounds": [
+    30,
+    536870912,
+    16777216,
+    60
+  ],
+  "subject_environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "tools": {
+    "perf": {
+      "bytes": 12270728,
+      "mode": 493,
+      "name": "perf",
+      "sha256": "1be5e150695f3bc2b2f6df3cd937fe12527d5b1c7140716e9beb23b9cdd35f46"
+    },
+    "subject_python": {
+      "bytes": 13542408,
+      "mode": 493,
+      "name": "python3.12",
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    }
+  },
+  "top_functions": [
+    {
+      "function": "li2_pf_miss_validate",
+      "module": "bridge",
+      "percent": 21.99261992619926,
+      "samples": 596
+    },
+    {
+      "function": "li2_lp_miss_validate",
+      "module": "bridge",
+      "percent": 10.51660516605166,
+      "samples": 285
+    },
+    {
+      "function": "equal",
+      "module": "bridge",
+      "percent": 8.745387453874539,
+      "samples": 237
+    },
+    {
+      "function": "pda_receipt",
+      "module": "bridge",
+      "percent": 7.8966789667896675,
+      "samples": 214
+    },
+    {
+      "function": "li2_le_validate",
+      "module": "bridge",
+      "percent": 5.461254612546125,
+      "samples": 148
+    },
+    {
+      "function": "li2_pf_plan_pages",
+      "module": "bridge",
+      "percent": 4.317343173431734,
+      "samples": 117
+    },
+    {
+      "function": "li2_repeat_lease_closed",
+      "module": "bridge",
+      "percent": 4.280442804428044,
+      "samples": 116
+    },
+    {
+      "function": "li2_repeat_custody_quiet",
+      "module": "bridge",
+      "percent": 4.095940959409594,
+      "samples": 111
+    },
+    {
+      "function": "li2_pg_source_begin",
+      "module": "bridge",
+      "percent": 3.357933579335793,
+      "samples": 91
+    },
+    {
+      "function": "li2_lp_plan_pages",
+      "module": "bridge",
+      "percent": 2.915129151291513,
+      "samples": 79
+    },
+    {
+      "function": "pe_bytes",
+      "module": "bridge",
+      "percent": 1.6605166051660516,
+      "samples": 45
+    },
+    {
+      "function": "private_intersects",
+      "module": "bridge",
+      "percent": 1.6236162361623616,
+      "samples": 44
+    },
+    {
+      "function": "li2_mg_table_build.part.0",
+      "module": "bridge",
+      "percent": 1.5498154981549817,
+      "samples": 42
+    },
+    {
+      "function": "memcpy",
+      "module": "bridge",
+      "percent": 1.3284132841328413,
+      "samples": 36
+    },
+    {
+      "function": "li2_mg_table_validate",
+      "module": "bridge",
+      "percent": 1.2177121771217712,
+      "samples": 33
+    },
+    {
+      "function": "ptr_slots.part.0",
+      "module": "bridge",
+      "percent": 1.2177121771217712,
+      "samples": 33
+    },
+    {
+      "function": "li2_lifecycle_link_validate.part.0",
+      "module": "bridge",
+      "percent": 0.8487084870848709,
+      "samples": 23
+    },
+    {
+      "function": "selected_generic_trace",
+      "module": "bridge",
+      "percent": 0.8118081180811808,
+      "samples": 22
+    },
+    {
+      "function": "li2_le_choose",
+      "module": "bridge",
+      "percent": 0.6642066420664207,
+      "samples": 18
+    },
+    {
+      "function": "li2_pgu_progress_valid",
+      "module": "bridge",
+      "percent": 0.6642066420664207,
+      "samples": 18
+    }
+  ]
+}

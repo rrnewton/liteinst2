@@ -1,0 +1,266 @@
+{
+  "bounds": {
+    "capture_limit_bytes": 8388608,
+    "profiles": {
+      "build": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "component": [
+        5,
+        536870912,
+        16777216,
+        15
+      ],
+      "metadata": [
+        10,
+        536870912,
+        16777216,
+        20
+      ]
+    },
+    "tuple_units": [
+      "cpu_seconds",
+      "address_space_bytes",
+      "file_bytes",
+      "wall_seconds"
+    ]
+  },
+  "closure": {
+    "all_cleanup_complete": true,
+    "all_commands_exit_zero": true,
+    "all_commands_reaped": true,
+    "compiler_dependencies_unchanged": true,
+    "inputs_unchanged": true,
+    "source_unchanged": true
+  },
+  "command_count": 9,
+  "commands": [
+    {
+      "cleanup_complete": true,
+      "duration_ns": 10027778,
+      "exit": 0,
+      "name": "head-before",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "cleanup_complete": true,
+      "duration_ns": 3715415611,
+      "exit": 0,
+      "name": "status-before",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "cleanup_complete": true,
+      "duration_ns": 18220680,
+      "exit": 0,
+      "name": "cc-version",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "cleanup_complete": true,
+      "duration_ns": 50220309,
+      "exit": 0,
+      "name": "headers-before",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "cleanup_complete": true,
+      "duration_ns": 3627497857,
+      "exit": 0,
+      "name": "build",
+      "profile": "build",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "cleanup_complete": true,
+      "duration_ns": 10056540,
+      "exit": 0,
+      "name": "component",
+      "profile": "component",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "cleanup_complete": true,
+      "duration_ns": 36393698,
+      "exit": 0,
+      "name": "headers-after",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "cleanup_complete": true,
+      "duration_ns": 5380249,
+      "exit": 0,
+      "name": "head-after",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "cleanup_complete": true,
+      "duration_ns": 3540727335,
+      "exit": 0,
+      "name": "status-after",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    }
+  ],
+  "compiler": {
+    "version": "GCC 11.5.0 20240719 (Red Hat 11.5.0-15)",
+    "version_capture_sha256": "74566d49f091dd3143355e3cb50b5b52bed2973dde7c37139e4e7c69247091b0"
+  },
+  "compiler_dependency_count": 244,
+  "complete_capture_bytes": 32480,
+  "complete_capture_count": 18,
+  "error": null,
+  "executable": {
+    "bytes": 547576,
+    "sha256": "2a291a8bdfdcd21b5663c2884dd13ba6a216356c6c22009a5549b3fd989faa0c"
+  },
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu_model_recorded": false,
+    "operating_system": "Linux",
+    "reserved_cpu": 3
+  },
+  "input_count": 283,
+  "native_executed": false,
+  "observed": {
+    "backing_bytes": 176,
+    "checks": 1110,
+    "native_executed": false,
+    "qualification": false,
+    "raw_calls": 0,
+    "status": "component_passed"
+  },
+  "owner_validated": false,
+  "performance_credit": false,
+  "previous_attempt": {
+    "cause": "Pre-command shell identity lookup referenced absent /usr/bin/dash.",
+    "commands": 0,
+    "component_executed": false,
+    "correction": "Only the wrapper input pin changed to resolve the /bin/sh used by the unchanged recipe.",
+    "driver": {
+      "bytes": 7866,
+      "sha256": "a541a946446b5b110dfbb18dcd328bc6e2ebf680d6ca6af76ce060db942eb6c0"
+    },
+    "failure_remains_failed": true,
+    "receipt": {
+      "bytes": 2067,
+      "sha256": "144f8aad85b91e5c1d8069c50a05179bfe87e03435a28348579a757c9b225425"
+    },
+    "status": "failed"
+  },
+  "private_receipt": {
+    "bytes": 84978,
+    "sha256": "b67caa04f3e6c6341a76ce22b6a46436743b1d0ba6ee98b2a244af5aca91c8c8"
+  },
+  "profile": "loop-source-guard-component-v1",
+  "qualification_credit": false,
+  "release_macro_count": 47,
+  "reproduction": {
+    "commands": [
+      {
+        "argv": [
+          "/bin/sh",
+          "tools/page-entry/selected/tests/loop_source_guard/build.sh",
+          "tools/page-entry/selected",
+          "ABSOLUTE_FRESH_OUTPUT",
+          "headers"
+        ],
+        "profile": "metadata"
+      },
+      {
+        "argv": [
+          "/bin/sh",
+          "tools/page-entry/selected/tests/loop_source_guard/build.sh",
+          "tools/page-entry/selected",
+          "ABSOLUTE_FRESH_OUTPUT",
+          "build"
+        ],
+        "profile": "build"
+      },
+      {
+        "argv": [
+          "ABSOLUTE_FRESH_OUTPUT/loop-source-guard"
+        ],
+        "profile": "component"
+      },
+      {
+        "argv": [
+          "/bin/sh",
+          "tools/page-entry/selected/tests/loop_source_guard/build.sh",
+          "tools/page-entry/selected",
+          "ABSOLUTE_FRESH_OUTPUT",
+          "headers"
+        ],
+        "profile": "metadata"
+      }
+    ],
+    "environment": {
+      "LANG": "C",
+      "LC_ALL": "C",
+      "LI2_CC": "/usr/bin/gcc",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "TZ": "UTC"
+    },
+    "kind": "Portable manual recipe; not the original private wrapper argv.",
+    "readme": "tools/page-entry/selected/tests/loop_source_guard/README.md",
+    "requires": "One externally reserved CPU; installed sources matching the three production and two fixture hashes above.",
+    "working_directory": "repository root"
+  },
+  "schema": 1,
+  "scope": "Actual C source-guard component with supplied metadata; no application or owner execution.",
+  "source": {
+    "base_revision": "7c37ef6c69bbff0542e69906d0298a423be9db0b",
+    "driver": {
+      "bytes": 7860,
+      "sha256": "2c916f26fbbd4a7b8470158f5cd4ceb4bdbfd6017c43acb86628f4ac45531ce9"
+    },
+    "fixture_inputs": {
+      "tools/page-entry/selected/tests/loop_source_guard/build.sh": {
+        "bytes": 2151,
+        "sha256": "668892fc7d2c7aed4febcad3b5496e83a4cd30f98a6dcc269ca9e3ba7811b8ec"
+      },
+      "tools/page-entry/selected/tests/loop_source_guard/oracle.c": {
+        "bytes": 16278,
+        "sha256": "5708ae1cacb242892c1339ebf1fe3c40315e03b84cc49fd1ca30e33c149a5517"
+      }
+    },
+    "identity_note": "Execution used the stated base plus exactly three dirty tracked production files. The two fixture files and driver were private source inputs, not part of that base commit.",
+    "production_overrides": {
+      "tools/page-entry/selected/persistent_cross_pair_source.inc": {
+        "bytes": 12101,
+        "sha256": "6422ee44696e7b95cca55347de50f33c94122d17aa05cab89a5dd7e1c8ac33e8"
+      },
+      "tools/page-entry/selected/persistent_group_source.inc": {
+        "bytes": 39898,
+        "sha256": "3bbf029c43da39c208f56d08ff3cbc3d24b3a279be54d6f751994d8e3bc9c97e"
+      },
+      "tools/page-entry/selected/persistent_subentry_source.inc": {
+        "bytes": 6313,
+        "sha256": "9d20562a2a34ad522a905fb9297e8efc711e892f6ed646e53c6ff99a2344466a"
+      }
+    },
+    "tracked_clean": false
+  },
+  "status": "component_passed",
+  "timing_scope": "Validation command durations only; not application or benchmark measurements."
+}
