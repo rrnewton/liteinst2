@@ -18,11 +18,82 @@ from test_parsing import counts, summary
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # Five incoming default tests preserve every older catalog and test gate.
+        flat = current.DATA['source_successor_03ed2c31']
+        flat_prior = current.before_03ed2c31(actual)
+        flat_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(flat_prior), current.FLAT_PREVIOUS)
+        self.assertEqual((len(flat_rows), sum(x['tests'] for x in flat_rows.values()),
+                          sum(x['ignored'] for x in flat_rows.values())), (120, 4615, 43))
+        self.assertEqual(flat_rows['unit/rapid_profiler/lib'], counts(634, 37))
+        self.assertEqual(flat_prior['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'],
+                         counts(629, 37))
+        self.assertEqual((flat['default_method_additions'], flat['new_method_declarations'],
+                          flat['default_method_removals'], flat['default_harness_changes'],
+                          flat['default_ignore_changes'], flat['default_doctest_additions'],
+                          flat['recorder_identity_changes'], flat['feature_method_additions'],
+                          flat['feature_method_removals']), (5, 5, 0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(flat['added_default_methods'], {'tools/rapid-profiler/src/frontend/interval_entry/tests.rs': ['checked_exit_preserves_actual_receipt_refusals_and_owner_followthrough', 'checked_exit_drop_and_actual_completion_hooks_preserve_partial_state'], 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification/tests.rs': ['flat_witness_matches_typed_encoder_across_receipts_rearm_and_sparse_reset', 'flat_witness_copies_all_journal_words_and_keeps_actual_receipt_independent', 'flat_witness_preserves_refusals_sequence_panic_and_borrow_boundary']})
+        self.assertEqual(flat['default_method_instances'],
+                         {p: ['unit/rapid_profiler/lib'] for p in flat['added_default_methods']})
+        self.assertEqual((flat['added_feature_methods'], flat['added_ignored_methods']), ({}, {}))
+        self.assertEqual((len(flat['source_paths']), len(flat['source_projections'])), (7, 7))
+        self.assertEqual(flat['new_sources'], ['tools/rapid-profiler/src/frontend/completion.rs'])
+        self.assertEqual(flat['newly_bound_sources'], [
+            'tools/rapid-profiler/src/frontend/completion.rs',
+            'tools/rapid-profiler/src/frontend/interval_entry/tests.rs'])
+        self.assertEqual(flat_prior['harness_test_counts']['serial_launch'], actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((actual['recorder_tests'], flat_prior['recorder_tests']), (366, 366))
+        for path, row in flat['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_03ed2c31(path, raw, 'flat_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (flat['source_preimages'][path]['bytes'], row['previous_sha256']))
+            if path in flat['new_sources']:
+                self.assertEqual(prior, b'')
+            for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^flat_source_inverse$'):
+                    current.source_before_03ed2c31(path, wrong, 'flat_source_inverse')
+            for field in ('edits', 'current_sha256', 'previous_sha256'):
+                malformed = copy.deepcopy(row)
+                if field == 'edits': malformed['edits'][0][2] += '\n'
+                else: malformed[field] = '0' * 64
+                with patch.dict(flat['source_projections'], {path: malformed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^flat_source_inverse$'):
+                        current.source_before_03ed2c31(path, raw, 'flat_source_inverse')
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_03ed2c31(flat_prior)
+        for field in ('tests', 'ignored'):
+            for value in (None, True, float(flat_rows['unit/rapid_profiler/lib'][field]),
+                          flat_rows['unit/rapid_profiler/lib'][field] + 1):
+                wrong = copy.deepcopy(actual)
+                wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field] = value
+                self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                    current.before_03ed2c31(wrong)
+        wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_03ed2c31(wrong)
+        read = Path.read_bytes
+        flat_stimuli = [(p, 'fn ' + n + '(') for p, names in flat['added_default_methods'].items() for n in names]
+        flat_stimuli += [(p, literal) for p, literals in flat['module_chains'].items() for literal in literals]
+        for path, literal in flat_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            replacement = literal.replace('(', '_wrong(', 1) if literal.startswith('fn ') else literal[:-1] + ('x' if literal[-1] != 'x' else 'y')
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('flat declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
         # The two row-prefix methods are ordinary default library tests.
         # Preserve the complete fe97 catalog and every historical source target.
         row_prefix = current.DATA['source_successor_4261826']
         row_prefix_prior = current.before_4261826(actual)
-        row_prefix_rows = actual['harness_test_counts']['workspace_tests']
+        row_prefix_rows = flat_prior['harness_test_counts']['workspace_tests']
         row_prefix_path = 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs'
         self.assertEqual(current.digest(row_prefix_prior), current.ROW_PREFIX_PREVIOUS)
         self.assertEqual((len(row_prefix_rows), sum(x['tests'] for x in row_prefix_rows.values()),
@@ -1639,7 +1710,7 @@ class Main97abInventoryTests(unittest.TestCase):
         projections = ((current.before_96378, phase_catalog),
                        (current.before_29859, native_indexed),
                        (current.before_current, old))
-        for function, expected_projection in ((current.before_4261826, row_prefix_prior), (current.before_f9f89ac, binding_prior), (current.before_bad32a8, current_ret_prior), (current.before_e5462b7, physical_prior), *projections):
+        for function, expected_projection in ((current.before_03ed2c31, flat_prior), (current.before_4261826, row_prefix_prior), (current.before_f9f89ac, binding_prior), (current.before_bad32a8, current_ret_prior), (current.before_e5462b7, physical_prior), *projections):
             supplied = copy.deepcopy(actual)
             supplied['harness_test_counts']['serial_launch'] = PublishedCopy(
                 supplied['harness_test_counts']['serial_launch'])
@@ -1748,6 +1819,16 @@ class Main97abInventoryTests(unittest.TestCase):
         with patch.dict(change, previous=PublishedCopy(change['previous'])):
             result = current.before_4261826(actual)
             self.assertEqual(result, row_prefix_prior)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+
+        # Incoming metadata must not publish a caller-owned catalog through deepcopy.
+        published.clear()
+        change = flat['workspace_changes']['unit/rapid_profiler/lib']
+        with patch.dict(change, previous=PublishedCopy(change['previous'])):
+            result = current.before_03ed2c31(actual)
+            self.assertEqual(result, flat_prior)
             self.assertEqual(len(published), 1)
             self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
             self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))

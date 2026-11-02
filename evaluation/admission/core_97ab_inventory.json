@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "4ef605063559c4426825b606e642b444f4f67aa413fae42625fb30f3e8f2153b",
+  "current_corpus_sha256": "10c564c03c3740654105849f43910f67eb0644eb58429a4eed67a65343ce13c0",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -412,66 +412,66 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "1ea8c9d2003eb7ca2125490dc5de200505cc9467963717777afaba309083f923",
+      "current_sha256": "ef7aaa3ac228e1ea15a8fedf84bbf9378cd2860d5b1ae8d0596af296a4373fe3",
       "edits": [
         [
           642,
-          56760,
+          62938,
           ""
         ],
         [
-          66131,
-          66242,
+          72309,
+          72420,
           "        self.assertEqual(actual['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],\n"
         ],
         [
-          71285,
-          71455,
+          77463,
+          77633,
           ""
         ],
         [
-          71502,
-          71596,
+          77680,
+          77774,
           "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n"
         ],
         [
-          71735,
-          71822,
+          77913,
+          78000,
           ""
         ],
         [
-          72081,
-          72160,
+          78259,
+          78338,
           ""
         ],
         [
-          73216,
-          73766,
+          79394,
+          79944,
           ""
         ],
         [
-          75285,
-          75381,
+          81463,
+          81559,
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          79224,
-          112536,
+          85402,
+          118714,
           ""
         ],
         [
-          119454,
-          123025,
+          125632,
+          129203,
           ""
         ],
         [
-          124305,
-          124538,
+          130483,
+          130755,
           "        for function, expected_projection in projections:\n"
         ],
         [
-          125832,
-          131251,
+          132049,
+          138034,
           ""
         ]
       ],
@@ -2037,8 +2037,46 @@
       "macro_calls": [],
       "templates": []
     },
+    "tools/rapid-profiler/src/frontend/completion.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tools/rapid-profiler/src/frontend/interval_entry.rs": {
       "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/src/frontend/interval_entry/tests.rs": {
+      "all": [
+        "p01_initial_off_crosses_arm",
+        "p02_old_off_new_combined_keeps_reports",
+        "p03_function_closed_retains_original_owner_across_rearm",
+        "p04_real_lifo_nested_counts_only_admitted_children",
+        "p05_stale_action_counts_without_changing_binding",
+        "p06_existing_k_close_gap_keeps_dropped_admission",
+        "r01_writer_busy_is_nonblocking_and_resets_callback",
+        "r02_registry_busy_releases_writer_and_resets_callback",
+        "r03_writer_and_registry_poison_remain_errors",
+        "r04_terminal_after_mutation_is_never_disarmed",
+        "r05_wrong_install_and_unregistered_thread_precede_off_result",
+        "r06_unknown_function_is_not_an_off_pair",
+        "r07_receipts_require_exact_spec_and_registered_thread",
+        "r08_closed_present_epoch_is_not_removed",
+        "r09_inflight_and_record_storage_refusals_are_not_unsampled",
+        "r10_model_depth_limit_is_exact",
+        "r11_slot_reentry_and_both_counter_exhaustions_remain_exact",
+        "r13_non_top_and_full_frame_corruption_refuse_before_completion",
+        "r14_full_token_and_consumed_receipt_refuse",
+        "r15_model_drop_cancels_admission_but_unsampled_creates_no_terminal",
+        "r16_history_full_preserves_exact_prefix_and_current_owner",
+        "closed_function_receipt_alone_retains_e_permit_until_consumed",
+        "inconsistent_binding_or_history_is_an_error_not_off",
+        "checked_exit_preserves_actual_receipt_refusals_and_owner_followthrough",
+        "checked_exit_drop_and_actual_completion_hooks_preserve_partial_state"
+      ],
       "ignored": [],
       "macro_calls": [],
       "templates": []
@@ -2220,7 +2258,10 @@
       "all": [
         "snapshot_destination_matches_original_tls_across_return_rearm_and_drain",
         "snapshot_destination_preserves_sentinel_and_original_first_error",
-        "snapshot_observer_receives_complete_owned_copy_after_tls_borrows_end"
+        "snapshot_observer_receives_complete_owned_copy_after_tls_borrows_end",
+        "flat_witness_matches_typed_encoder_across_receipts_rearm_and_sparse_reset",
+        "flat_witness_copies_all_journal_words_and_keeps_actual_receipt_independent",
+        "flat_witness_preserves_refusals_sequence_panic_and_borrow_boundary"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -2675,6 +2716,13 @@
     "tools/rapid-profiler/src/data_flag.rs": [
       "#[cfg(test)]\nmod tests;"
     ],
+    "tools/rapid-profiler/src/frontend.rs": [
+      "mod completion;",
+      "mod interval_entry;"
+    ],
+    "tools/rapid-profiler/src/frontend/interval_entry.rs": [
+      "#[cfg(test)]\nmod tests;"
+    ],
     "tools/rapid-profiler/src/frontend_native/always_on.rs": [
       "mod normal;"
     ],
@@ -2740,7 +2788,8 @@
     ],
     "tools/rapid-profiler/src/lib.rs": [
       "pub mod frontend_native;",
-      "pub mod data_flag;"
+      "pub mod data_flag;",
+      "#[forbid(unsafe_code)]\npub mod frontend;"
     ],
     "tools/software-preemption/inline_gate.rs": [
       "mod region;"
@@ -6637,6 +6686,262 @@
   "python_current_sha256": "98dfa104e316da775c170d403fe22498481259b36ddb1b3c59e4010ee2a9d3da",
   "python_previous_sha256": "bd7e5915b51b090fc4ce58a3295aca83e505dc4cf21baa8f2294aa190e85b546",
   "schema": 1,
+  "source_successor_03ed2c31": {
+    "added_default_methods": {
+      "tools/rapid-profiler/src/frontend/interval_entry/tests.rs": [
+        "checked_exit_preserves_actual_receipt_refusals_and_owner_followthrough",
+        "checked_exit_drop_and_actual_completion_hooks_preserve_partial_state"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification/tests.rs": [
+        "flat_witness_matches_typed_encoder_across_receipts_rearm_and_sparse_reset",
+        "flat_witness_copies_all_journal_words_and_keeps_actual_receipt_independent",
+        "flat_witness_preserves_refusals_sequence_panic_and_borrow_boundary"
+      ]
+    },
+    "added_feature_methods": {},
+    "added_ignored_methods": {},
+    "base_revision": "4261826cc343c59333d6e2fe8e0f0ebc8d4551d6",
+    "current_corpus_sha256": "10c564c03c3740654105849f43910f67eb0644eb58429a4eed67a65343ce13c0",
+    "default_doctest_additions": 0,
+    "default_harness_changes": 0,
+    "default_ignore_changes": 0,
+    "default_method_additions": 5,
+    "default_method_instances": {
+      "tools/rapid-profiler/src/frontend/interval_entry/tests.rs": [
+        "unit/rapid_profiler/lib"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification/tests.rs": [
+        "unit/rapid_profiler/lib"
+      ]
+    },
+    "default_method_removals": 0,
+    "feature_method_additions": 0,
+    "feature_method_removals": 0,
+    "incoming_main": "03ed2c313c66274b623517f788f03ad43b13e752",
+    "module_chains": {
+      "tools/rapid-profiler/src/frontend.rs": [
+        "mod completion;",
+        "mod interval_entry;"
+      ],
+      "tools/rapid-profiler/src/frontend/interval_entry.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": [
+        "#[cfg(any(test, feature = \"frontend-native-qualification\"))]\npub mod qualification;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/rapid-profiler/src/lib.rs": [
+        "#[forbid(unsafe_code)]\npub mod frontend;",
+        "pub mod frontend_native;"
+      ]
+    },
+    "new_method_declarations": 5,
+    "new_sources": [
+      "tools/rapid-profiler/src/frontend/completion.rs"
+    ],
+    "newly_bound_sources": [
+      "tools/rapid-profiler/src/frontend/completion.rs",
+      "tools/rapid-profiler/src/frontend/interval_entry/tests.rs"
+    ],
+    "previous_corpus_sha256": "4ef605063559c4426825b606e642b444f4f67aa413fae42625fb30f3e8f2153b",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs",
+      "tools/rapid-profiler/src/frontend.rs",
+      "tools/rapid-profiler/src/frontend/completion.rs",
+      "tools/rapid-profiler/src/frontend/interval_entry.rs",
+      "tools/rapid-profiler/src/frontend/interval_entry/tests.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification/tests.rs"
+    ],
+    "source_preimages": {
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": {
+        "bytes": 33483,
+        "sha256": "687f921559b864a29993bea7db6a0375126388ce6d2a81a74ec3bb36d49bc918"
+      },
+      "tools/rapid-profiler/src/frontend.rs": {
+        "bytes": 43316,
+        "sha256": "351ddce6eba14085e654ad6e56a1f9afe5bfc98a8b6526d7bc5cdf35ae149430"
+      },
+      "tools/rapid-profiler/src/frontend/completion.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/rapid-profiler/src/frontend/interval_entry.rs": {
+        "bytes": 17147,
+        "sha256": "e25ae2104b3f168ed562671a9daa93bd20edf4117846ba5bd54be5963b2f19ff"
+      },
+      "tools/rapid-profiler/src/frontend/interval_entry/tests.rs": {
+        "bytes": 32340,
+        "sha256": "e307c215ca8200721054f98910dfd620a8fde95bfc72a226c14a08dd25ef053d"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs": {
+        "bytes": 11332,
+        "sha256": "7d73dca5f557264a33558c52f808eb6d33b3e4703a2007f0d8a44449d64939d1"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification/tests.rs": {
+        "bytes": 14541,
+        "sha256": "19791cfecc8dbaf9876e786d0f484ab3e08f29b5cb34eaf133ab1c13ccfcd607"
+      }
+    },
+    "source_projections": {
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": {
+        "current_sha256": "c6a41eda1a61b5f6e0be249260cc7ef517f53b31193dcf9097c29b5c2bb61e96",
+        "edits": [
+          [
+            297,
+            297,
+            "use rapid_profiler::frontend::HistoryBinding;\n"
+          ],
+          [
+            531,
+            609,
+            "    early_entry_qualification::{\n        self as qualification, OwnerSnapshot, PauseKind, QualificationRequest,\n        QualificationSnapshot,\n    },\n"
+          ],
+          [
+            2040,
+            2040,
+            "}\nfn totals(t: NormalTotals) -> [u64; 5] {\n    [\n        t.entered,\n        t.ret_observed,\n        t.confirmed,\n        t.completed,\n        t.unsampled,\n    ]\n}\nfn raw_owner(owner: RawIntervalOwner) -> [u64; 3] {\n    match owner {\n        RawIntervalOwner::Sampled {\n            generation,\n            invocation,\n        } => [1, generation, invocation as u64],\n        RawIntervalOwner::InitialDisarmed => [2, 0, 0],\n        RawIntervalOwner::Removed { generation } => [3, generation, 0],\n        RawIntervalOwner::FunctionClosed { generation } => [4, generation, 0],\n    }\n}\nfn owner_words(o: OwnerSnapshot) -> [u64; 8] {\n    let [kind, generation, invocation] = raw_owner(o.owner);\n    let (binding, index, bound_generation) = match o.binding {\n        HistoryBinding::Initial => (0, 0, 0),\n        HistoryBinding::Published {\n            action_index,\n            generation,\n        } => (1, action_index, generation.get()),\n        HistoryBinding::Removed {\n            action_index,\n            generation,\n        } => (2, action_index, generation.get()),\n    };\n    [\n        kind,\n        generation,\n        invocation,\n        o.history_len as u64,\n        binding,\n        index,\n        bound_generation,\n        o.closed_function.map_or(0, |f| f.0),\n    ]\n}\nfn encode_into(\n    kind: PauseKind,\n    sequence: u64,\n    s: &QualificationSnapshot,\n    h: &mut [u64; early::JOURNAL],\n) {\n    h.fill(0);\n    h[..15].copy_from_slice(&[\n        0x6561_726c_796d_6f64,\n        match kind {\n            PauseKind::AfterEntryPublished => 1,\n            PauseKind::AfterPreRetPublished => 2,\n        },\n        sequence,\n        s.binding_key as u64,\n        u64::from(s.pid),\n        s.tid,\n        s.registration,\n        s.completed_batches,\n        s.completed_calls,\n        s.active_batch.unwrap(),\n        s.position.unwrap() as u64,\n        s.next_ordinal,\n        s.model_depth as u64,\n        s.completed_sequence,\n        s.interval_batch,\n    ]);\n    h[15..20].copy_from_slice(&totals(s.totals));\n    h[20..25].copy_from_slice(&totals(s.interval_cursor_totals));\n    for (i, n) in s.entry_seen.iter().enumerate() {\n        h[25 + i] = n.unwrap_or(0);\n    }\n    for (i, row) in s.pre_rets.iter().enumerate() {\n        if let Some(r) = row {\n            h[29 + i * 7..36 + i * 7].copy_from_slice(&[\n                r.batch,\n                r.position as u64,\n                r.function.0,\n                r.observed_ordinal.unwrap_or(0),\n                r.return_pc,\n                r.entry_rsp,\n                r.return_word,\n            ]);\n        }\n    }\n    if let Some(p) = s.pending {\n        h[57..67].copy_from_slice(&[\n            1,\n            p.physical_batch,\n            p.physical_position as u64,\n            p.function.0,\n            p.ordinal,\n            p.entry_pc,\n            p.rsp,\n            p.word,\n            p.start.ticks,\n            u64::from(p.start.aux),\n        ]);\n        h[73] = p.slot.identity;\n        h[74] = p.slot.word;\n        if let Some(owner) = p.summary {\n            h[75] = 1;\n            h[76..84].copy_from_slice(&owner_words(owner));\n        }\n        if let Some(owner) = p.actual_summary {\n            h[84] = 1;\n            h[85..93].copy_from_slice(&owner_words(owner));\n            let [_, generation, invocation] = raw_owner(owner.owner);\n            h[71] = generation;\n            h[72] = invocation;\n        }\n        if let Some(r) = p.returned {\n            h[67] = 1;\n            h[68] = r.return_pc;\n            h[69] = r.end.ticks;\n            h[70] = u64::from(r.end.aux);\n            let [kind, generation, invocation] = raw_owner(r.owner);\n            h[93..103].copy_from_slice(&[\n                r.ordinal,\n                r.entry_pc,\n                r.return_pc,\n                kind,\n                generation,\n                invocation,\n                r.start.ticks,\n                u64::from(r.start.aux),\n                r.end.ticks,\n                u64::from(r.end.aux),\n            ]);\n        }\n    }\n"
+          ],
+          [
+            15065,
+            15065,
+            "        let mut sequence = 0;\n"
+          ],
+          [
+            15117,
+            15194,
+            "            qualification::install_observer(move |kind, snapshot| {\n                sequence += 1;\n                let mut header = [0; 128];\n                encode_into(kind, sequence, snapshot, &mut header);\n"
+          ],
+          [
+            15280,
+            15444,
+            "                publisher.publish_words(header_out.try_into().unwrap(), &header);\n                publisher.publish_words(journal_out.try_into().unwrap(), &snapshot.journal);\n"
+          ]
+        ],
+        "previous_sha256": "687f921559b864a29993bea7db6a0375126388ce6d2a81a74ec3bb36d49bc918"
+      },
+      "tools/rapid-profiler/src/frontend.rs": {
+        "current_sha256": "21554c3a459f3e9b25f233d7130f2ecd8192dfdce463a0a982acedb27ffca137",
+        "edits": [
+          [
+            41319,
+            41419,
+            "        let (children, next) = self.exit_check(slot)?;\n        let frame = self.frames.pop().expect(\"checked frame\");\n        let original = frame.slot.word;\n        let result = frame.complete(end, children, before_release, before_close);\n        self.completed_sequence = next;\n        slot.word = original;\n        Ok(result)\n"
+          ],
+          [
+            42788,
+            42804,
+            ""
+          ]
+        ],
+        "previous_sha256": "351ddce6eba14085e654ad6e56a1f9afe5bfc98a8b6526d7bc5cdf35ae149430"
+      },
+      "tools/rapid-profiler/src/frontend/completion.rs": {
+        "current_sha256": "aa7283644d932c1c22878b65ab85262577f80cde2bc304617733c7a654fbc222",
+        "edits": [
+          [
+            0,
+            1721,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/rapid-profiler/src/frontend/interval_entry.rs": {
+        "current_sha256": "3c241c6e68cac51f0a658caa0d8c20ce5986591669645b7435afdecccfde766b",
+        "edits": [
+          [
+            11523,
+            11703,
+            "                let (children, _) = self.exit_check(slot).map_err(IntervalExitError::Model)?;\n"
+          ],
+          [
+            12064,
+            12145,
+            "                let (completion, payload) =\n                    self.finish(slot, end).map_err(IntervalExitError::Model)?;\n"
+          ]
+        ],
+        "previous_sha256": "e25ae2104b3f168ed562671a9daa93bd20edf4117846ba5bd54be5963b2f19ff"
+      },
+      "tools/rapid-profiler/src/frontend/interval_entry/tests.rs": {
+        "current_sha256": "3828785630935276431e3baad736624184c14de1f4d84784763eda2278e151be",
+        "edits": [
+          [
+            32340,
+            59301,
+            ""
+          ]
+        ],
+        "previous_sha256": "e307c215ca8200721054f98910dfd620a8fde95bfc72a226c14a08dd25ef053d"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs": {
+        "current_sha256": "4abf0e6bc559e84c7b1113669ed62f5872c4c40e0d14585e3d95c13e8d4ba833",
+        "edits": [
+          [
+            6259,
+            16533,
+            "type Observer = Box<dyn FnMut(PauseKind, &QualificationSnapshot)>;\n"
+          ],
+          [
+            17140,
+            17215,
+            "    observer: impl FnMut(PauseKind, &QualificationSnapshot) + 'static,\n"
+          ],
+          [
+            17246,
+            19130,
+            ""
+          ],
+          [
+            19393,
+            19427,
+            "            *slot = Some(Box::new(observer));\n"
+          ],
+          [
+            19890,
+            19923,
+            "                let mut snapshot = std::mem::MaybeUninit::uninit();\n                qualification_snapshot_into(&mut snapshot)?;\n                // SAFETY: the helper returned success after initializing every\n                // field and releasing both TLS borrows. The reference cannot\n                // escape this observer call under its existing unsafe contract.\n                observer(kind, unsafe { snapshot.assume_init_ref() });\n"
+          ]
+        ],
+        "previous_sha256": "7d73dca5f557264a33558c52f808eb6d33b3e4703a2007f0d8a44449d64939d1"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification/tests.rs": {
+        "current_sha256": "dcc41b578a9dbb5c65336e4188a7d312d8ecad5dd956ffa250c9561379193715",
+        "edits": [
+          [
+            14541,
+            39924,
+            ""
+          ]
+        ],
+        "previous_sha256": "19791cfecc8dbaf9876e786d0f484ab3e08f29b5cb34eaf133ab1c13ccfcd607"
+      }
+    },
+    "sources": {
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": "c6a41eda1a61b5f6e0be249260cc7ef517f53b31193dcf9097c29b5c2bb61e96",
+      "tools/rapid-profiler/src/frontend.rs": "21554c3a459f3e9b25f233d7130f2ecd8192dfdce463a0a982acedb27ffca137",
+      "tools/rapid-profiler/src/frontend/completion.rs": "aa7283644d932c1c22878b65ab85262577f80cde2bc304617733c7a654fbc222",
+      "tools/rapid-profiler/src/frontend/interval_entry.rs": "3c241c6e68cac51f0a658caa0d8c20ce5986591669645b7435afdecccfde766b",
+      "tools/rapid-profiler/src/frontend/interval_entry/tests.rs": "3828785630935276431e3baad736624184c14de1f4d84784763eda2278e151be",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs": "4abf0e6bc559e84c7b1113669ed62f5872c4c40e0d14585e3d95c13e8d4ba833",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification/tests.rs": "dcc41b578a9dbb5c65336e4188a7d312d8ecad5dd956ffa250c9561379193715"
+    },
+    "workspace_changes": {
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 37,
+          "tests": 634
+        },
+        "previous": {
+          "ignored": 37,
+          "tests": 629
+        }
+      }
+    }
+  },
   "source_successor_124521": {
     "added_default_methods": {
       "src/emission/placement/overlap/tests.rs": [
@@ -11814,7 +12119,7 @@
     "evaluation/admission/test_main34c47_inventory.py": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "7823badbd86e65b1597d70cecc64300f44b8880de28666a2dba8ba1554560396",
-    "evaluation/admission/test_main97ab_inventory.py": "1ea8c9d2003eb7ca2125490dc5de200505cc9467963717777afaba309083f923",
+    "evaluation/admission/test_main97ab_inventory.py": "ef7aaa3ac228e1ea15a8fedf84bbf9378cd2860d5b1ae8d0596af296a4373fe3",
     "evaluation/admission/test_main981419_inventory.py": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
     "evaluation/admission/test_mainaf81_inventory.py": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
@@ -11976,7 +12281,7 @@
     "tools/rapid-profiler/native-interval/calibrations.rs": "c694791b56c655b30b22476aa68cde0426d5f163ef166ffd860e51d8405d0987",
     "tools/rapid-profiler/native-interval/main.rs": "e54f1b84dd6fc8591263bb399a0acb2dafb0a225bead6b34c2ab6bbcefa12ece",
     "tools/rapid-profiler/native-interval/normal/module.rs": "9a1179917963db7821f49067bc08f6ad91ff8d1502dcd152b16ac88f86d21b61",
-    "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": "687f921559b864a29993bea7db6a0375126388ce6d2a81a74ec3bb36d49bc918",
+    "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": "c6a41eda1a61b5f6e0be249260cc7ef517f53b31193dcf9097c29b5c2bb61e96",
     "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": "15b1e91c11c5174580876cbd233dd0436e0b671097e02e1357352e3765827800",
     "tools/rapid-profiler/native-interval/normal/module/early_entry/wide.rs": "7348189734fc40d152290f3eee3fd2df92d50f47c5644496311daa39cacee62e",
     "tools/rapid-profiler/ordinary-interval/main.rs": "76c776c72b6818743a18a47dff80ad14f4cd03567bd62183ddf05d11eb2527a9",
@@ -11996,8 +12301,10 @@
     "tools/rapid-profiler/point-throughput/tests.rs": "c0d58b797b1e55f9b73611b3cacd98533d4a74783526d0b2fb9a838ea9e79dcc",
     "tools/rapid-profiler/src/data_flag.rs": "cb88833871f19cf0878101c9dcdbe122a69e0c1fdfab50cc79188f3f9947564c",
     "tools/rapid-profiler/src/data_flag/tests.rs": "f5ff511b0dd471522fd3da8db362fed6d29c76e5fff0c43ee1b0b7d95850c9c1",
-    "tools/rapid-profiler/src/frontend.rs": "351ddce6eba14085e654ad6e56a1f9afe5bfc98a8b6526d7bc5cdf35ae149430",
-    "tools/rapid-profiler/src/frontend/interval_entry.rs": "e25ae2104b3f168ed562671a9daa93bd20edf4117846ba5bd54be5963b2f19ff",
+    "tools/rapid-profiler/src/frontend.rs": "21554c3a459f3e9b25f233d7130f2ecd8192dfdce463a0a982acedb27ffca137",
+    "tools/rapid-profiler/src/frontend/completion.rs": "aa7283644d932c1c22878b65ab85262577f80cde2bc304617733c7a654fbc222",
+    "tools/rapid-profiler/src/frontend/interval_entry.rs": "3c241c6e68cac51f0a658caa0d8c20ce5986591669645b7435afdecccfde766b",
+    "tools/rapid-profiler/src/frontend/interval_entry/tests.rs": "3828785630935276431e3baad736624184c14de1f4d84784763eda2278e151be",
     "tools/rapid-profiler/src/frontend_native/always_on.rs": "3f49eaca5cd65646dfda745ac7e75efc2d5466deeeaa4fd646de0e04d2e26423",
     "tools/rapid-profiler/src/frontend_native/always_on/epoch_storage.rs": "f302191dc1e12ff1fea709030e62a69cc4ad352d6abd59b0ed717eeec041cf4c",
     "tools/rapid-profiler/src/frontend_native/always_on/normal.rs": "a33e16427b427882b013669292d58a2e0d390b0d500df26c3b8bd5951231490f",
@@ -12013,8 +12320,8 @@
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs": "23944bb96f6d8112259691cf9b2f36aebeaa893aacd570647a4cdccf633f1e22",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs": "dbf8cc5fb8104eeb01cc5377a33c0c405d50d92b01f46cf03ee2644307986456",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/physical_slots.rs": "60201be06f6178026efacdb1519255a38ca5b452933d3296c3c0ee25bb6e5a0c",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs": "7d73dca5f557264a33558c52f808eb6d33b3e4703a2007f0d8a44449d64939d1",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification/tests.rs": "19791cfecc8dbaf9876e786d0f484ab3e08f29b5cb34eaf133ab1c13ccfcd607",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification.rs": "4abf0e6bc559e84c7b1113669ed62f5872c4c40e0d14585e3d95c13e8d4ba833",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/qualification/tests.rs": "dcc41b578a9dbb5c65336e4188a7d312d8ecad5dd956ffa250c9561379193715",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/native.rs": "1a314f3aed3aa6932876390c734336237a0ec28ffe1130bfbc73fc942c33f85b",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/performance.rs": "ba8215d7d38b2a70def2e7899d17437f159af915552e244d97b43ff88c1e5a01",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/session.rs": "c97808ea66cb1566d372bd5ed497aa84ac256fd9b061a969fa40ea3528dc2fd3",
