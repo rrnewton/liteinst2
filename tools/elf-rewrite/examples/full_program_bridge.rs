@@ -39,6 +39,11 @@ impl Profile {
 }
 type Result<T> = std::result::Result<T, String>;
 
+#[path = "full_program_bridge/input.rs"]
+mod input;
+#[path = "full_program_bridge/policy_cli.rs"]
+mod policy_cli;
+
 fn need(condition: bool, reason: &str) -> Result<()> {
     if condition {
         Ok(())
@@ -592,7 +597,14 @@ fn arguments(args: &[String]) -> Result<(&[String], Profile)> {
     }
 }
 fn run(args: &[String]) -> Result<bool> {
-    let (args, profile) = arguments(args)?;
+    if args.get(1).is_some_and(|s| s == "--policy-profile") {
+        return policy_cli::run(args);
+    }
+    let explicit = input::arguments(args)?;
+    let (args, profile) = match &explicit {
+        Some(input) => (input.args.as_slice(), Profile::Whole4096),
+        None => arguments(args)?,
+    };
     need(
         args.len() == 6 && args[1] == "--trusted-complete-code",
         "full_program_bridge --trusted-complete-code ORIGINAL DISASM.csv CSV_SHA256 NEW_DIRECTORY",
@@ -601,10 +613,14 @@ fn run(args: &[String]) -> Result<bool> {
     let csv_path = Path::new(&args[3]);
     let original = read(original_path, FILE_LIMIT)?;
     let csv = read(csv_path, TEXT_LIMIT)?;
-    need(
-        sha(&original.0) == ORIGINAL_SHA,
-        "not the pinned original e9patch",
-    )?;
+    if let Some(input) = &explicit {
+        input.verify(&original.0)?;
+    } else {
+        need(
+            sha(&original.0) == ORIGINAL_SHA,
+            "not the pinned original e9patch",
+        )?;
+    }
     need(
         args[4].len() == 64
             && args[4]
@@ -653,13 +669,19 @@ fn run(args: &[String]) -> Result<bool> {
     }
     let mut complete = format!(
         "LI2FULL-PROGRAM-MATERIALS\t1\nprofile\t{}\nstatus\t{}\noriginal_sha256\t{}\ncsv_sha256\t{}\n{counts}complete_code_premise\tcaller_supplied_not_proved\nplanning_attempted\tfalse\nqualification_complete\tfalse\n",
-        profile.name(),
+        if explicit.is_some() {
+            input::PROFILE
+        } else {
+            profile.name()
+        },
         if ready {
             "MATERIALS_READY"
         } else {
             "MATERIALS_REFUSED"
         },
-        ORIGINAL_SHA,
+        explicit
+            .as_ref()
+            .map_or_else(|| ORIGINAL_SHA.to_owned(), |i| hex(&i.expected.0)),
         args[4]
     );
     for (name, bytes) in &files {

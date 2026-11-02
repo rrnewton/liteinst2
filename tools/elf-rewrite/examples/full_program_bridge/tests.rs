@@ -519,3 +519,6 @@ fn full_program_whole_profile_requires_explicit_cli_and_complete_import() {
             .is_err()
     );
 }
+
+#[path = "input_tests.rs"]
+mod input_tests;

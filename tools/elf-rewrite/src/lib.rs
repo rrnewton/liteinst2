@@ -500,12 +500,7 @@ fn prepare_selection_with_carrier_layout(
         occupied.push(addr(load.vaddr.0 & !4095, end - (load.vaddr.0 & !4095))?);
     }
     // Prospective PHDR cap bounds the R-only carrier payload/table reservation.
-    let carrier_reserve = round_page(
-        (s.limits.program_headers as u64)
-            .checked_mul(56)
-            .and_then(|v| v.checked_add(128))
-            .ok_or_else(|| Error::new("carrier-reservation", "overflow"))?,
-    )?;
+    let carrier_reserve = carrier_table_reservation(s.limits.program_headers)?;
     let carrier_reserve = match addon {
         Some(addon) => addon.reservation(carrier_reserve)?,
         None => carrier_reserve,
@@ -1349,4 +1344,15 @@ fn round_page(n: u64) -> Result<u64, Error> {
     n.checked_add(4095)
         .map(|v| v & !4095)
         .ok_or_else(|| Error::new("round-page", "overflow"))
+}
+
+/// Checked page reservation for the existing prospective PHDR table/payload.
+/// This is geometry only, not carrier placement or executable admission.
+pub fn carrier_table_reservation(program_headers: usize) -> Result<u64, Error> {
+    round_page(
+        (program_headers as u64)
+            .checked_mul(56)
+            .and_then(|v| v.checked_add(128))
+            .ok_or_else(|| Error::new("carrier-reservation", "overflow"))?,
+    )
 }

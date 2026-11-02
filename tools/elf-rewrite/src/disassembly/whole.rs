@@ -4,6 +4,9 @@ use super::*;
 use li2core::contracts::LegalEntry;
 use std::sync::Arc;
 
+/// Opt-in input-independent policy construction with fixed legacy ceilings.
+pub mod policy;
+
 pub const PROFILE: &str = "elf-disassembly-null-jumps-shared-4096-v1";
 pub(super) const NEIGHBOR_METADATA: &str =
     "neighbor_victims\tlong-only\nneighbor_ownership\tinherited-t3\n";
