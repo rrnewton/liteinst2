@@ -16,7 +16,7 @@ COMMANDS = [
     ('graph', ['cargo', 'test', '-p', 'liteinst2', '--lib', 'control_flow::'], 180),
     ('whole-function', ['cargo', 'test', '-p', 'liteinst2', '--lib', 'quiescent::whole_function::'], 180),
     ('offline-neighbor', ['cargo', 'test', '-p', 'liteinst-rewrite', '--lib', 'neighbor_catalogue::'], 180),
-    ('runtime-ordinary', ['cargo', 'test', '-p', 'rapid-profiler', '--lib', 'frontend_native::ordinary::'], 180),
+    ('runtime-ordinary', ['cargo', 'test', '-p', 'rapid-profiler', '--lib', 'frontend_native::module::ordinary::'], 180),
     ('workspace', ['cargo', 'test', '-j', '12', '--workspace', '--no-fail-fast'], 1800),
     ('serial-launch', ['cargo', 'test', '-p', 'liteinst-launch', '--tests', '--', '--test-threads=1', '--nocapture'], 180),
 ]
