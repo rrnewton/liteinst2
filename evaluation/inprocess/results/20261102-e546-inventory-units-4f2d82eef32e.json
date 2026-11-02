@@ -1,0 +1,166 @@
+{
+  "commands": [
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 270,
+          "sha256": "219297c9db3259732748f69afb4eb8924db1ce515ff54ead328377acd6c11281"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_errors": [],
+      "descriptors_closed": true,
+      "duration_ns_validation_only": 38771272508,
+      "error": null,
+      "exit": 0,
+      "module": "test_main97ab_inventory",
+      "portable_argv": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "evaluation/admission",
+        "-p",
+        "test_main97ab_inventory.py",
+        "-v"
+      ],
+      "reaped": true,
+      "status": "passed",
+      "tests_completed": 1,
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 273,
+          "sha256": "e94679571ade15569844f0514199e4d9d164f4f2b4348c2158adadffeedd622d"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_errors": [],
+      "descriptors_closed": true,
+      "duration_ns_validation_only": 891714011,
+      "error": null,
+      "exit": 0,
+      "module": "test_main20cbe_inventory",
+      "portable_argv": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "evaluation/admission",
+        "-p",
+        "test_main20cbe_inventory.py",
+        "-v"
+      ],
+      "reaped": true,
+      "status": "passed",
+      "tests_completed": 1,
+      "timed_out": false
+    }
+  ],
+  "credit": {
+    "cargo": false,
+    "full_recorder": false,
+    "native": false,
+    "performance": false,
+    "qualification": false
+  },
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 1,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "limits": {
+    "address_space_bytes": 536870912,
+    "capture_file_bytes": 8388608,
+    "cpu_count": 1,
+    "cpu_seconds": 180,
+    "execution": "sequential",
+    "wall_seconds": 180
+  },
+  "profile": "focused-existing-inventory-units",
+  "receipt": {
+    "bytes": 7451,
+    "sha256": "3d1c926e74c64b42dcff138a1bf64f1b72ff812021d9554333d01644fcf5f45a"
+  },
+  "reproduction": {
+    "actual_child_cwd": "fresh private output directory",
+    "argv_normalization": "Only the interpreter and repository-absolute unittest start-directory are made portable; all flags and module selectors are unchanged.",
+    "bounded_process_owner": "evaluation/inprocess/page_selected_process.py:invoke",
+    "checkout": [
+      "git",
+      "switch",
+      "--detach",
+      "4f2d82eef32e1416a71a9090c2c349a0efc33425"
+    ],
+    "cwd": "repository root for the portable commands",
+    "reservation": "One pre-reserved CPU; apply each command's original CPU, wall, address-space and capture limits above.",
+    "restore": [
+      "git",
+      "restore",
+      "--source=6a57eba4b038e3984288bef7559e3051255c33ea",
+      "--worktree",
+      "--",
+      "evaluation/admission/core_97ab_inventory.json",
+      "evaluation/admission/core_97ab_inventory.py",
+      "evaluation/admission/corpus.json",
+      "evaluation/admission/test_main97ab_inventory.py"
+    ],
+    "source_requirement": "Checkout the recorded revision and restore only the four listed files from 6a57eba4b038e3984288bef7559e3051255c33ea, checking their whole hashes. This reconstructs the observed four-file dirty source, rather than relabelling it as a clean run."
+  },
+  "schema": 1,
+  "scope": "Two original admission unittest modules only; all bounds and method identities unchanged.",
+  "source": {
+    "modified_files": {
+      "evaluation/admission/core_97ab_inventory.json": {
+        "bytes": 467907,
+        "sha256": "e58748ea6bd10a18d81c20f4640937d0bdb739355742a5a3c366c649e5e2f2d8"
+      },
+      "evaluation/admission/core_97ab_inventory.py": {
+        "bytes": 19551,
+        "sha256": "ee3b776dea3cbef5aa5f5aeecacb762a3f82f7a1fad21eade4ead2864cf1a7e8"
+      },
+      "evaluation/admission/corpus.json": {
+        "bytes": 230598,
+        "sha256": "d66ef429b2295b130c35390d475a01e8b8c67de4771829111ae7513297ef8f38"
+      },
+      "evaluation/admission/test_main97ab_inventory.py": {
+        "bytes": 106915,
+        "sha256": "ff13d4dfc080a6d22514f15921d26387de96abd7d8ee27103d880fca443d9892"
+      }
+    },
+    "revision": "4f2d82eef32e1416a71a9090c2c349a0efc33425",
+    "source_unchanged": true,
+    "tracked_clean": false,
+    "tree": "13cd81cb6ecbf1d121f5e873011bfcae0bb3d2c3"
+  },
+  "status": "passed",
+  "total_duration_ns_validation_only": 39794472867
+}

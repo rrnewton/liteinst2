@@ -1,0 +1,10 @@
+command,exit,timed_out,reaped,duration_ns_validation_only,stdout_bytes,stderr_bytes
+fixture-paired,0,false,true,341321638,0,0
+fixture-lifecycle,0,false,true,294967787,0,0
+build-release,0,false,true,16263516750,0,0
+build-counters,0,false,true,16388383284,0,0
+build-capture,0,false,true,16851132871,0,0
+build-differential,0,false,true,16539851858,0,0
+build-release-differential,0,false,true,16509771374,0,0
+build-lifecycle-capture,0,false,true,16702242446,0,0
+build-lifecycle-differential,0,false,true,16711741261,0,0
