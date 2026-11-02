@@ -128,8 +128,24 @@
     ]
   },
   "evaluation_projections": {
+    "evaluation/admission/core_0fb574_inventory.py": {
+      "current_sha256": "d9d95914a0a30cc56cb8cea6a1ce25905ad61ae51bc6a6c3123837e3ef36085e",
+      "edits": [
+        [
+          122,
+          144,
+          ""
+        ],
+        [
+          861,
+          950,
+          "    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'),\n                                     allow_nan=False).encode()).hexdigest()\n"
+        ]
+      ],
+      "previous_sha256": "8e9369dfc0021cfdc55576e02a4e215b107e141079809fdb63fac354cb7db0c4"
+    },
     "evaluation/admission/core_20cbe_inventory.py": {
-      "current_sha256": "2604731941c321438f9acbd96542095b145e014da20ac88b8fb64fc8387ccb38",
+      "current_sha256": "4ca9d84ee22d2e2ec4c99e22658a2eb7b8a1ffd24eb2c3221e7e38052bda7c4e",
       "edits": [
         [
           97,
@@ -137,20 +153,30 @@
           ""
         ],
         [
-          1118,
-          1236,
+          133,
+          155,
+          ""
+        ],
+        [
+          877,
+          966,
+          "    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'),\n                                     allow_nan=False).encode()).hexdigest()\n"
+        ],
+        [
+          1070,
+          1188,
           "    require(type(raw) is bytes and hashlib.sha256(raw).hexdigest() == row['current_sha256'], error)\n"
         ],
         [
-          1512,
-          1608,
+          1464,
+          1560,
           "    require(hashlib.sha256(raw).hexdigest() == row['previous_sha256'], error)\n"
         ]
       ],
       "previous_sha256": "4663ff3b467d84c2fd6fb9687abd0198f277a86dcdcb1e72f3ccc16e562be8df"
     },
     "evaluation/admission/core_34c47_inventory.py": {
-      "current_sha256": "19cc2d3d54fb122f06ba0719df7d9ccc6562708a3735147043201f825cbc9380",
+      "current_sha256": "4e610fd085321e7a712d81e08a1d664c66191ba78e55956433d4ca7372f48207",
       "edits": [
         [
           110,
@@ -158,17 +184,59 @@
           ""
         ],
         [
-          1136,
-          1254,
+          146,
+          168,
+          ""
+        ],
+        [
+          895,
+          984,
+          "    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'),\n                                     allow_nan=False).encode()).hexdigest()\n"
+        ],
+        [
+          1088,
+          1206,
           "    require(type(raw) is bytes and hashlib.sha256(raw).hexdigest() == row['current_sha256'], error)\n"
         ],
         [
-          1530,
-          1626,
+          1482,
+          1578,
           "    require(hashlib.sha256(raw).hexdigest() == row['previous_sha256'], error)\n"
         ]
       ],
       "previous_sha256": "2f9a41e8e18c7a0911e6a5a715af82cfaedf7f881ed689102604783e2cf13496"
+    },
+    "evaluation/admission/core_367_inventory.py": {
+      "current_sha256": "edcf560ee4d13304f50ce800d83dd5c351caf86c780b5be5714bf1abe556c438",
+      "edits": [
+        [
+          117,
+          139,
+          ""
+        ],
+        [
+          849,
+          938,
+          "    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'),\n                                     allow_nan=False).encode()).hexdigest()\n"
+        ]
+      ],
+      "previous_sha256": "846a80ddd550766ea41c8c7d1e9f88347d8d746afdeb279d6e97d78dfc20588e"
+    },
+    "evaluation/admission/core_5cda_inventory.py": {
+      "current_sha256": "eff9e7b009ee858d846e1f1d67c10b5f5e37032e4ad83e3a45e393fa2e9960ee",
+      "edits": [
+        [
+          131,
+          153,
+          ""
+        ],
+        [
+          766,
+          855,
+          "    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()\n"
+        ]
+      ],
+      "previous_sha256": "3b787406588a05685e2727e2a07274e8c97736a7debedd98ae32093bf472fe8e"
     },
     "evaluation/admission/core_813_inventory.py": {
       "current_sha256": "39e192c6322471994bad328993e8c5d2a720c8788e3b2d71b4a552c42510b2f6",
@@ -192,7 +260,7 @@
       "previous_sha256": "d5758a0c8812b54458955b10d4ed37cf3aed50100135f7491d5772b113da903c"
     },
     "evaluation/admission/core_981419_inventory.py": {
-      "current_sha256": "cc7df60883eb58b31d1bafe426559afb8922f41d3caad748a46f373a37afdad0",
+      "current_sha256": "d24eca8ac8171d2832e442ff889ca1f7353b23a8e85f18b07e7711e8477a8b63",
       "edits": [
         [
           108,
@@ -200,20 +268,30 @@
           ""
         ],
         [
-          1127,
-          1245,
+          144,
+          166,
+          ""
+        ],
+        [
+          886,
+          975,
+          "    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'),\n                                     allow_nan=False).encode()).hexdigest()\n"
+        ],
+        [
+          1079,
+          1197,
           "    require(type(raw) is bytes and hashlib.sha256(raw).hexdigest() == row['current_sha256'], error)\n"
         ],
         [
-          1521,
-          1617,
+          1473,
+          1569,
           "    require(hashlib.sha256(raw).hexdigest() == row['previous_sha256'], error)\n"
         ]
       ],
       "previous_sha256": "525036113d9f6fdf0de56f2b0cb14d9ea61330d702603173824d6fe59ecc0c1b"
     },
     "evaluation/admission/core_acc247_inventory.py": {
-      "current_sha256": "0abab5091674ca911f5c54e7134b6bdaaddd8c73c06730e8a772649379e1e86b",
+      "current_sha256": "4395c38b2044bc1b08df2259c26dba6fa173ba01d70ca6423ea2dea2ebfc3f51",
       "edits": [
         [
           107,
@@ -221,20 +299,30 @@
           ""
         ],
         [
-          1133,
-          1251,
+          143,
+          165,
+          ""
+        ],
+        [
+          892,
+          981,
+          "    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'),\n                                     allow_nan=False).encode()).hexdigest()\n"
+        ],
+        [
+          1085,
+          1203,
           "    require(type(raw) is bytes and hashlib.sha256(raw).hexdigest() == row['current_sha256'], error)\n"
         ],
         [
-          1527,
-          1623,
+          1479,
+          1575,
           "    require(hashlib.sha256(raw).hexdigest() == row['previous_sha256'], error)\n"
         ]
       ],
       "previous_sha256": "085d7a5a5231de1b6567599d24e56caa96f2854b92389a6063596f6dadc3fc08"
     },
     "evaluation/admission/core_af81_inventory.py": {
-      "current_sha256": "a105ac5093a619cb61adaf64954f1bf884fba705deeda6e379e071e393104043",
+      "current_sha256": "f75c75d9289c56a1da6e74da2150f48349d52d406ef9c1d7a0bd2b32e4ec0dc7",
       "edits": [
         [
           122,
@@ -242,17 +330,43 @@
           ""
         ],
         [
-          1130,
-          1248,
+          158,
+          180,
+          ""
+        ],
+        [
+          889,
+          978,
+          "    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'),\n                                     allow_nan=False).encode()).hexdigest()\n"
+        ],
+        [
+          1082,
+          1200,
           "    require(type(raw) is bytes and hashlib.sha256(raw).hexdigest() == row['current_sha256'], error)\n"
         ],
         [
-          1524,
-          1620,
+          1476,
+          1572,
           "    require(hashlib.sha256(raw).hexdigest() == row['previous_sha256'], error)\n"
         ]
       ],
       "previous_sha256": "0f686d8f4e87370038bd29c909753994214e5b02c962a54c4858ca59e01c7f54"
+    },
+    "evaluation/admission/core_c712_inventory.py": {
+      "current_sha256": "d77f866b9bca1cb815e9e5c31e08e0c3d7abcff10880dc29520db1dc4518f57f",
+      "edits": [
+        [
+          125,
+          147,
+          ""
+        ],
+        [
+          867,
+          956,
+          "    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'),\n                                     allow_nan=False).encode()).hexdigest()\n"
+        ]
+      ],
+      "previous_sha256": "65f16e14f2f3af514348f8a2cace00af9efbb12ed4104c97ac86c988095baeb2"
     },
     "evaluation/admission/core_cc846_inventory.py": {
       "current_sha256": "69f5dbcac4a8e0e2a602b23d75fc665e216202b5854222c8044c25d1699153ac",
@@ -276,7 +390,7 @@
       "previous_sha256": "50bad72bf84156c309c259870e6ed0e737f3d2801673ebceb3026e96f8292e3e"
     },
     "evaluation/admission/core_d8d85_inventory.py": {
-      "current_sha256": "57c6fe491e7db3e4b8efb0208c704105023c0d72e6d734e282bfa5e9245238af",
+      "current_sha256": "0d607416de6c2e574475495851e0f492e89eea7936e62c269c93aa5e71492eaa",
       "edits": [
         [
           110,
@@ -284,20 +398,30 @@
           ""
         ],
         [
-          1120,
-          1238,
+          146,
+          168,
+          ""
+        ],
+        [
+          879,
+          968,
+          "    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'),\n                                     allow_nan=False).encode()).hexdigest()\n"
+        ],
+        [
+          1072,
+          1190,
           "    require(type(raw) is bytes and hashlib.sha256(raw).hexdigest() == row['current_sha256'], error)\n"
         ],
         [
-          1514,
-          1610,
+          1466,
+          1562,
           "    require(hashlib.sha256(raw).hexdigest() == row['previous_sha256'], error)\n"
         ]
       ],
       "previous_sha256": "61e3f8086425b4010dc2deed8e85cae98ce4f351f2602d47956412d043daa339"
     },
     "evaluation/admission/core_dd75_inventory.py": {
-      "current_sha256": "bd99f408b53f5ac9a890ee7d3735003f0cebbcdf1db6bca6245bd7849c83fff4",
+      "current_sha256": "45843b2c377b1f801da421ed20397f11f74c785e2c03bf255926e74a4c5f70b8",
       "edits": [
         [
           108,
@@ -305,59 +429,79 @@
           ""
         ],
         [
-          1130,
-          1248,
+          144,
+          166,
+          ""
+        ],
+        [
+          889,
+          978,
+          "    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'),\n                                     allow_nan=False).encode()).hexdigest()\n"
+        ],
+        [
+          1082,
+          1200,
           "    require(type(raw) is bytes and hashlib.sha256(raw).hexdigest() == row['current_sha256'], error)\n"
         ],
         [
-          1524,
-          1620,
+          1476,
+          1572,
           "    require(hashlib.sha256(raw).hexdigest() == row['previous_sha256'], error)\n"
         ]
       ],
       "previous_sha256": "40366892dc08741d1c65185e5abd55c79e4a1e5f328c2f49e5a9d667bb06627f"
     },
     "evaluation/admission/core_f353_inventory.py": {
-      "current_sha256": "869b7cbfe16f7b4f2b54385f13d58857ba6615dd176bae6c2934c1ca21c8e5d1",
+      "current_sha256": "6bf6ad784ebf0c624ce02cee27b13217d78b1063c386f063f49f7012af044199",
       "edits": [
         [
-          183,
-          222,
+          119,
+          141,
           ""
         ],
         [
-          1597,
-          1648,
+          205,
+          244,
           ""
         ],
         [
-          1756,
-          1818,
+          848,
+          937,
+          "    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'),\n                                     allow_nan=False).encode()).hexdigest()\n"
+        ],
+        [
+          1549,
+          1600,
           ""
         ],
         [
-          2017,
-          2067,
+          1708,
+          1770,
+          ""
+        ],
+        [
+          1969,
+          2019,
           "            raw = (ROOT / path).read_bytes()\n"
         ],
         [
-          2125,
-          2251,
+          2077,
+          2203,
           ""
         ],
         [
-          3238,
-          3339,
+          3190,
+          3291,
           "        source_before(path, raw, error)\n        source_before_evaluation(path, raw, error)\n"
         ],
         [
-          4187,
-          4255,
+          4139,
+          4207,
           ""
         ],
         [
-          4942,
-          4999,
+          4894,
+          4951,
           ""
         ]
       ],
@@ -393,6 +537,22 @@
         ]
       ],
       "previous_sha256": "6c9619fa5e4357af62f9420b21ca07aacaf117c0d8361405214264b12dac8e98"
+    },
+    "evaluation/admission/recorder_shards_inventory.py": {
+      "current_sha256": "4563e24c11ff1dde2c5b9be242d84cccc5b740a9cce6b42e3319439475b2e6a8",
+      "edits": [
+        [
+          111,
+          133,
+          ""
+        ],
+        [
+          737,
+          826,
+          "    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()\n"
+        ]
+      ],
+      "previous_sha256": "d90dca81509cdc6ee4fa874213a2a4337ba060c001508109fc04ecb19eb8c233"
     },
     "evaluation/admission/test_main0fb574_inventory.py": {
       "current_sha256": "23dc3397b29d500ec40529f14eb3f9aba466affc14e1c0f9953b5e405582f4fa",
@@ -13475,18 +13635,23 @@
     "crates/liteinst-x86/Cargo.toml": "922c8ce309c197c0cdd889aabd8ef6bbfa35899205a1fbdb5f92911b1dfbada2",
     "crates/liteinst-x86/src/lib.rs": "60a7d97cb4d4ec21bdf6752135cb79922238982a2b4915a1422a20614e6712a4",
     "crates/liteinst-x86/src/tests.rs": "cb9d1a732a372c9a1bc30bfb03659ed292b262d00962b707c83f6ce8d68668c8",
-    "evaluation/admission/core_20cbe_inventory.py": "2604731941c321438f9acbd96542095b145e014da20ac88b8fb64fc8387ccb38",
-    "evaluation/admission/core_34c47_inventory.py": "19cc2d3d54fb122f06ba0719df7d9ccc6562708a3735147043201f825cbc9380",
+    "evaluation/admission/core_0fb574_inventory.py": "d9d95914a0a30cc56cb8cea6a1ce25905ad61ae51bc6a6c3123837e3ef36085e",
+    "evaluation/admission/core_20cbe_inventory.py": "4ca9d84ee22d2e2ec4c99e22658a2eb7b8a1ffd24eb2c3221e7e38052bda7c4e",
+    "evaluation/admission/core_34c47_inventory.py": "4e610fd085321e7a712d81e08a1d664c66191ba78e55956433d4ca7372f48207",
+    "evaluation/admission/core_367_inventory.py": "edcf560ee4d13304f50ce800d83dd5c351caf86c780b5be5714bf1abe556c438",
+    "evaluation/admission/core_5cda_inventory.py": "eff9e7b009ee858d846e1f1d67c10b5f5e37032e4ad83e3a45e393fa2e9960ee",
     "evaluation/admission/core_813_inventory.py": "39e192c6322471994bad328993e8c5d2a720c8788e3b2d71b4a552c42510b2f6",
-    "evaluation/admission/core_981419_inventory.py": "cc7df60883eb58b31d1bafe426559afb8922f41d3caad748a46f373a37afdad0",
-    "evaluation/admission/core_acc247_inventory.py": "0abab5091674ca911f5c54e7134b6bdaaddd8c73c06730e8a772649379e1e86b",
-    "evaluation/admission/core_af81_inventory.py": "a105ac5093a619cb61adaf64954f1bf884fba705deeda6e379e071e393104043",
+    "evaluation/admission/core_981419_inventory.py": "d24eca8ac8171d2832e442ff889ca1f7353b23a8e85f18b07e7711e8477a8b63",
+    "evaluation/admission/core_acc247_inventory.py": "4395c38b2044bc1b08df2259c26dba6fa173ba01d70ca6423ea2dea2ebfc3f51",
+    "evaluation/admission/core_af81_inventory.py": "f75c75d9289c56a1da6e74da2150f48349d52d406ef9c1d7a0bd2b32e4ec0dc7",
+    "evaluation/admission/core_c712_inventory.py": "d77f866b9bca1cb815e9e5c31e08e0c3d7abcff10880dc29520db1dc4518f57f",
     "evaluation/admission/core_cc846_inventory.py": "69f5dbcac4a8e0e2a602b23d75fc665e216202b5854222c8044c25d1699153ac",
-    "evaluation/admission/core_d8d85_inventory.py": "57c6fe491e7db3e4b8efb0208c704105023c0d72e6d734e282bfa5e9245238af",
-    "evaluation/admission/core_dd75_inventory.py": "bd99f408b53f5ac9a890ee7d3735003f0cebbcdf1db6bca6245bd7849c83fff4",
-    "evaluation/admission/core_f353_inventory.py": "869b7cbfe16f7b4f2b54385f13d58857ba6615dd176bae6c2934c1ca21c8e5d1",
+    "evaluation/admission/core_d8d85_inventory.py": "0d607416de6c2e574475495851e0f492e89eea7936e62c269c93aa5e71492eaa",
+    "evaluation/admission/core_dd75_inventory.py": "45843b2c377b1f801da421ed20397f11f74c785e2c03bf255926e74a4c5f70b8",
+    "evaluation/admission/core_f353_inventory.py": "6bf6ad784ebf0c624ce02cee27b13217d78b1063c386f063f49f7012af044199",
     "evaluation/admission/parsing.py": "c51d69252cba8db3d286f9c2dc6e0c91709873d825f77cef9ff5f982a8dda86b",
     "evaluation/admission/recorder_parallel.py": "a30f938577e1e4038d314295d58e118dc39618d50ee0863ed510412f03635861",
+    "evaluation/admission/recorder_shards_inventory.py": "4563e24c11ff1dde2c5b9be242d84cccc5b740a9cce6b42e3319439475b2e6a8",
     "evaluation/admission/test_main0fb574_inventory.py": "23dc3397b29d500ec40529f14eb3f9aba466affc14e1c0f9953b5e405582f4fa",
     "evaluation/admission/test_main20cbe_inventory.py": "cef985fb3e1eb1b4204cf9ad6cfa83219fe999d8403b25bb4a8cf4bdce3fc03c",
     "evaluation/admission/test_main34c47_inventory.py": "fa2bb240bd7a9fdb6e79f18635ffe959fcd38facf479b882340aab5dca4461a0",

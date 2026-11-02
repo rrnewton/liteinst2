@@ -3,6 +3,7 @@ import copy
 import hashlib
 import inventory_digest
 import json
+import inventory_json
 from pathlib import Path
 import re
 
@@ -10,7 +11,7 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '725e9c978ce8ad69cad3edf74bc22ed727b5d42ecb0e6e6a5cbbdbb494ad5426',
+require(hashlib.sha256(RAW).hexdigest() == 'dee79f517a0e74b86aa4966044898a576add1516444326136ec21e5fe88e74f2',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
@@ -63,8 +64,7 @@ def plain_catalog(value):
     return True
 
 def digest(value):
-    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'),
-                                     allow_nan=False).encode()).hexdigest()
+    return hashlib.sha256(inventory_json.canonical_bytes(value, json.dumps)).hexdigest()
 
 
 def inverse(path, raw, rows, error):

@@ -1,6 +1,7 @@
 """Exact recorder354 successor; historical350 remains a separate proof boundary."""
 import hashlib
 import json
+import inventory_json
 from pathlib import Path
 from parsing import require
 import core_367_inventory as main367
@@ -18,7 +19,7 @@ ADDED = tuple(DATA['added'])
 
 
 def digest(value):
-    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+    return hashlib.sha256(inventory_json.canonical_bytes(value, json.dumps)).hexdigest()
 
 
 def source_before(path, raw, error):

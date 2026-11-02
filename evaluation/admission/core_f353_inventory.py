@@ -2,6 +2,7 @@
 import copy
 import hashlib
 import json
+import inventory_json
 from pathlib import Path
 import re
 
@@ -22,8 +23,7 @@ ADDED = 'test_mainf353_inventory.MainF353InventoryTests.test_exact_indexed_sourc
 
 
 def digest(value):
-    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'),
-                                     allow_nan=False).encode()).hexdigest()
+    return hashlib.sha256(inventory_json.canonical_bytes(value, json.dumps)).hexdigest()
 
 
 def inverse(path, raw, rows, error):
