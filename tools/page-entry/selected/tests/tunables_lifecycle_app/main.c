@@ -171,7 +171,7 @@ static void prepare(void) {
     lc_model_init(&model,&ua_input,prefix.data,base,endpoint,mode);
     if(native)native_setup();
 }
-static void collect(void) {
+static __attribute__((always_inline)) inline void collect(void) {
     need(!handling,81);
     struct lc_model expected;const struct lc_model *want=&model;
     if(native) {
