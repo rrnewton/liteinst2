@@ -1,0 +1,491 @@
+{
+  "full_required_checks_passed": false,
+  "hardware": {
+    "affinity_cpu_count": 4,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 44,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "notes": [
+    "Recorder retained its180second deadline andfourworkers. Focusedfour:acc247/dd75/f353passed,af81error; no case or assertion removed.",
+    "The first supplemental Cargo runner selected a compiler launcher requiring an unwritable lockfile; its PATH was corrected to the original required runner.",
+    "The second supplemental Cargo attempt was interrupted after slot allocation exceeded20GB. Original generated debug outputs were then removed with cargo clean --profile dev; raw result logs and receipts remain."
+  ],
+  "reproduce": [
+    "python3.12 -B evaluation/inprocess/checks.py --expect-revision 191f44440e656b1a0cb6a6031611940f0fea1b34"
+  ],
+  "revision": "191f44440e656b1a0cb6a6031611940f0fea1b34",
+  "runs": [
+    {
+      "commands": [
+        {
+          "argv": [
+            "python3",
+            "evaluation/admission/recorder_parallel.py"
+          ],
+          "cleanup_complete": true,
+          "exit_code": -9,
+          "id": "recorder_tests",
+          "seconds": 180.10362968896516,
+          "status": "failed",
+          "termination": "timeout",
+          "timeout_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "fmt",
+            "--check"
+          ],
+          "id": "fmt",
+          "status": "not_run",
+          "timeout_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "id": "clippy",
+          "status": "not_run",
+          "timeout_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "test",
+            "--workspace"
+          ],
+          "id": "workspace_tests",
+          "status": "not_run",
+          "timeout_seconds": 900
+        },
+        {
+          "argv": [
+            "cargo",
+            "check",
+            "--workspace",
+            "--all-features",
+            "--all-targets"
+          ],
+          "id": "workspace_check",
+          "status": "not_run",
+          "timeout_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst-launch",
+            "--tests",
+            "--",
+            "--test-threads=1",
+            "--nocapture"
+          ],
+          "id": "serial_launch",
+          "status": "not_run",
+          "timeout_seconds": 180
+        }
+      ],
+      "profile": "inprocess-required-checks-v1",
+      "receipt": {
+        "bytes": 7738,
+        "sha256": "925b4515b4ce9657ec6cf9eaad8fb26deae3ff4d897013e767a8f31a195e4f5a"
+      },
+      "source_unchanged": true,
+      "status": "failed"
+    },
+    {
+      "commands": [
+        {
+          "cleanup_complete": true,
+          "exit_code": 1,
+          "seconds": 4.82877712813206,
+          "termination": null
+        }
+      ],
+      "profile": "original-merged-tests-diagnostic-v1",
+      "receipt": {
+        "bytes": 1267823,
+        "sha256": "793ce705c8d4726588d1e724b65d860b5403bdf69b68fa9ebd79e5f9bb0f89ee"
+      },
+      "source_unchanged": true,
+      "status": "failed"
+    },
+    {
+      "commands": [
+        {
+          "argv": [
+            "cargo",
+            "fmt",
+            "--check"
+          ],
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "id": "fmt",
+          "seconds": 10.7785789729096,
+          "status": "passed",
+          "termination": null,
+          "timeout_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "cleanup_complete": true,
+          "exit_code": 101,
+          "id": "clippy",
+          "seconds": 11.33219988993369,
+          "status": "failed",
+          "termination": null,
+          "timeout_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "test",
+            "--workspace"
+          ],
+          "id": "workspace_tests",
+          "status": "not_run",
+          "timeout_seconds": 900
+        },
+        {
+          "argv": [
+            "cargo",
+            "check",
+            "--workspace",
+            "--all-features",
+            "--all-targets"
+          ],
+          "id": "workspace_check",
+          "status": "not_run",
+          "timeout_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst-launch",
+            "--tests",
+            "--",
+            "--test-threads=1",
+            "--nocapture"
+          ],
+          "id": "serial_launch",
+          "status": "not_run",
+          "timeout_seconds": 180
+        }
+      ],
+      "profile": "required-cargo-and-serial-only",
+      "receipt": {
+        "bytes": 6779,
+        "sha256": "8f90080ac5a5bb8ec2363834f5f3d4428118f08cb0d5103d21bb69c5944b7df6"
+      },
+      "source_unchanged": true,
+      "status": "failed"
+    },
+    {
+      "commands": [
+        {
+          "argv": [
+            "cargo",
+            "fmt",
+            "--check"
+          ],
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "id": "fmt",
+          "seconds": 10.940964679932222,
+          "status": "passed",
+          "termination": null,
+          "timeout_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "id": "clippy",
+          "seconds": 52.62736180704087,
+          "status": "passed",
+          "termination": null,
+          "timeout_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "test",
+            "--workspace"
+          ],
+          "cleanup_complete": true,
+          "exit_code": -9,
+          "harness_totals": {
+            "complete_harnesses": 31,
+            "expected_harnesses": 122,
+            "expected_ignored": 43,
+            "expected_tests": 4636,
+            "observed": {
+              "failed": 0,
+              "filtered": 0,
+              "ignored": 0,
+              "measured": 0,
+              "passed": 1093
+            }
+          },
+          "id": "workspace_tests",
+          "seconds": 184.0821967460215,
+          "status": "failed",
+          "termination": "interrupted",
+          "timeout_seconds": 900
+        },
+        {
+          "argv": [
+            "cargo",
+            "check",
+            "--workspace",
+            "--all-features",
+            "--all-targets"
+          ],
+          "id": "workspace_check",
+          "status": "not_run",
+          "timeout_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "test",
+            "-p",
+            "liteinst-launch",
+            "--tests",
+            "--",
+            "--test-threads=1",
+            "--nocapture"
+          ],
+          "id": "serial_launch",
+          "status": "not_run",
+          "timeout_seconds": 180
+        }
+      ],
+      "profile": "required-cargo-and-serial-only",
+      "receipt": {
+        "bytes": 7842,
+        "sha256": "857269c8db5a4dae4590c7a1fb8ed84f2597b4798ddb3d3e410549ba17eae5da"
+      },
+      "source_unchanged": true,
+      "status": "failed"
+    }
+  ],
+  "schema": 1,
+  "scope": "Failed required recorder deadline, failed focused mutation check, compiler-launch failure, and disk-interrupted Cargo workspace attempt are retained. Fmt and Clippy passed in the corrected Cargo attempt. No complete required-check, workspace or serial pass.",
+  "toolchain": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+  }
+}

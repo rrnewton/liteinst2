@@ -1,0 +1,3 @@
+ordinal,workload,lane,status,expected_exit,exit,process_start_ns,process_reaped_ns,process_ns,duration_ns,user_cpu_ns,system_cpu_ns,timed_out,reaped,inherited_reader_controls,certificate_reader_controls,validated_terminal_available
+0,ls,release,failed,0,-9,1756341260298682,1756371469211241,30208912559,30211554880,,,False,True,0,0,False
+1,true,release,failed,0,-9,1756372419180965,1756402716514504,30297333539,30299976320,,,False,True,0,0,False

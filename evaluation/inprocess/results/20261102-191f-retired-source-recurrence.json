@@ -1,0 +1,939 @@
+{
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "finite": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "program": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "release_build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "seed": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "cases": [
+    {
+      "captures": {
+        "counters": {
+          "bytes": 4096,
+          "sha256": "179848b1506be9620cf8b8817cce0f16eaeb2a28a60a450724642740bf90c7ed"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "certificate_reader_controls": 0,
+      "completed_program_measurement": false,
+      "controls_sha256": null,
+      "counter_error_type": null,
+      "counter_namespace_complete": true,
+      "counter_prefix": {
+        "effects": {
+          "actual_entries13": 0,
+          "chooser_attempts": 10389,
+          "chooser_no_envelope": 10389,
+          "chooser_selected": 0,
+          "completed_with13": 0,
+          "entries_with13": 0,
+          "historical_reconstructions": 0,
+          "hits13": 0,
+          "publications13": 0
+        },
+        "events": 21204,
+        "group": {
+          "cancelled": 4836,
+          "cold_attempts": 10670,
+          "completed": 6689,
+          "entries": 6689,
+          "hits": 833,
+          "offers": 11526,
+          "permit_claims": 7053,
+          "publications": 5833,
+          "retirements": 5832,
+          "unexpected": 0
+        },
+        "logical_bytes": 2016,
+        "loop": {
+          "actual_entries12": 291,
+          "chooser_attempts": 10670,
+          "chooser_no_envelope": 10389,
+          "chooser_selected": 281,
+          "completed_with12": 292,
+          "entries_with12": 292,
+          "historical_reconstructions": 2183,
+          "hits12": 10,
+          "publications12": 281
+        },
+        "maps": {
+          "acquisitions": 13065,
+          "active": 0,
+          "fresh_calls": 13065,
+          "handler_id": 21433,
+          "invalidations": 331019,
+          "mutation_epoch": 331019,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 1323968,
+          "valid": 0
+        },
+        "misses": [
+          0,
+          4329,
+          0,
+          0,
+          0,
+          0,
+          0,
+          12,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        "native": {
+          "admissions": 155,
+          "attempts": 433,
+          "blocked": 278,
+          "closed": 155,
+          "low_address_refusals": 0
+        },
+        "reason_prefix_usable": true,
+        "reasons": {
+          "attempts": 11526,
+          "error": 0,
+          "finished": 11525,
+          "first_failure": {
+            "internal_head": {
+              "bank": 0,
+              "installed": 0,
+              "lifetime": 0,
+              "registration_epoch": 0,
+              "registry": 0,
+              "rseq_address": 0,
+              "rseq_length": 0,
+              "rseq_signature": 0,
+              "source_key": 0,
+              "stored": 0
+            },
+            "no_resident_head": {
+              "bank": 0,
+              "installed": 4,
+              "lifetime": 0,
+              "registration_epoch": 0,
+              "registry": 2,
+              "rseq_address": 0,
+              "rseq_length": 0,
+              "rseq_signature": 0,
+              "source_key": 10655,
+              "stored": 0
+            },
+            "root": {
+              "bank": 0,
+              "installed": 0,
+              "lifetime": 0,
+              "registration_epoch": 0,
+              "registry": 0,
+              "rseq_address": 0,
+              "rseq_length": 0,
+              "rseq_signature": 0,
+              "source_key": 9,
+              "stored": 0
+            }
+          },
+          "in_flight": 1,
+          "outcomes": {
+            "internal_head": {
+              "cancelled": 0,
+              "cold_built": 0,
+              "cold_refused": 0,
+              "completed": 23,
+              "empty_publication": 0,
+              "replacement_publication": 0,
+              "warm_bound": 23,
+              "warm_plan": 23
+            },
+            "no_resident_head": {
+              "cancelled": 4836,
+              "cold_built": 5825,
+              "cold_refused": 4836,
+              "completed": 5824,
+              "empty_publication": 2,
+              "replacement_publication": 5822,
+              "warm_bound": 0,
+              "warm_plan": 0
+            },
+            "root": {
+              "cancelled": 0,
+              "cold_built": 9,
+              "cold_refused": 0,
+              "completed": 842,
+              "empty_publication": 0,
+              "replacement_publication": 9,
+              "warm_bound": 833,
+              "warm_plan": 833
+            }
+          },
+          "passed": {
+            "bank": 11520,
+            "installed": 11522,
+            "lifetime": 856,
+            "registration_epoch": 856,
+            "registry": 11520,
+            "rseq_address": 856,
+            "rseq_length": 856,
+            "rseq_signature": 856,
+            "source_key": 856,
+            "stored": 11522
+          },
+          "root_hits": 833,
+          "seen": {
+            "bank": 11520,
+            "installed": 11526,
+            "lifetime": 856,
+            "registration_epoch": 856,
+            "registry": 11522,
+            "rseq_address": 856,
+            "rseq_length": 856,
+            "rseq_signature": 856,
+            "source_key": 11520,
+            "stored": 11522
+          },
+          "selection": {
+            "internal_head": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                23
+              ]
+            ],
+            "no_resident_head": [
+              [
+                0,
+                3
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                10657
+              ]
+            ],
+            "root": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                842
+              ]
+            ]
+          },
+          "subentry_hits": 23
+        },
+        "retired": {
+          "bank_changed": 0,
+          "context_changed": 0,
+          "error": 0,
+          "exact_seen": 1867,
+          "gate4": 10664,
+          "lifetime_changed": 0,
+          "no_root": 8667,
+          "offer_age": {
+            "1": 610,
+            "17-64": 605,
+            "2": 59,
+            "3-4": 150,
+            "5-8": 132,
+            "65-256": 0,
+            "9-16": 311,
+            "over256": 0
+          },
+          "overwrites": 5816,
+          "registry_changed": 0,
+          "retirement_rank": [
+            617,
+            76,
+            156,
+            103,
+            59,
+            42,
+            110,
+            186,
+            27,
+            61,
+            33,
+            322,
+            21,
+            18,
+            0,
+            36
+          ],
+          "root_seen": 1997,
+          "saves": 5832,
+          "search_done": 10664,
+          "source_changed": 130,
+          "source_seen": 1867
+        },
+        "retired_prefix_usable": true,
+        "signals": [
+          7452,
+          13647,
+          105,
+          0,
+          0
+        ],
+        "version": 6,
+        "view": {
+          "comparisons": 0,
+          "differential": 0,
+          "enabled": 1,
+          "hits": 1323968,
+          "invalidations": 331019,
+          "mismatches": 0,
+          "poisoned": 0,
+          "queries": 1337033,
+          "refreshes": 13065,
+          "reserved": 0,
+          "stack_probes": 676553,
+          "unexplained": 1,
+          "updates": 282553
+        }
+      },
+      "duration_ns": 30211554880,
+      "error_type": "ValueError",
+      "exit": -9,
+      "expected_exit": 0,
+      "inherited_reader_controls": 0,
+      "involuntary_switches": null,
+      "lane": "release",
+      "major_faults": null,
+      "minor_faults": null,
+      "ordinal": 0,
+      "process_ns": 30208912559,
+      "process_reaped_ns": 1756371469211241,
+      "process_start_ns": 1756341260298682,
+      "reaped": true,
+      "reason_reader_controls": 0,
+      "status": "failed",
+      "system_cpu_ns": null,
+      "timed_out": false,
+      "user_cpu_ns": null,
+      "validated_terminal_available": false,
+      "voluntary_switches": null,
+      "workload": "ls"
+    },
+    {
+      "captures": {
+        "counters": {
+          "bytes": 4096,
+          "sha256": "3c670e4510d22837378db06d1f0d38956f90a7c399e9c2e739222a256a75be18"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "certificate_reader_controls": 0,
+      "completed_program_measurement": false,
+      "controls_sha256": null,
+      "counter_error_type": null,
+      "counter_namespace_complete": true,
+      "counter_prefix": {
+        "effects": {
+          "actual_entries13": 0,
+          "chooser_attempts": 8393,
+          "chooser_no_envelope": 8393,
+          "chooser_selected": 0,
+          "completed_with13": 0,
+          "entries_with13": 0,
+          "historical_reconstructions": 0,
+          "hits13": 0,
+          "publications13": 0
+        },
+        "events": 17122,
+        "group": {
+          "cancelled": 3651,
+          "cold_attempts": 8702,
+          "completed": 5773,
+          "entries": 5773,
+          "hits": 708,
+          "offers": 9425,
+          "permit_claims": 6295,
+          "publications": 5050,
+          "retirements": 5048,
+          "unexpected": 0
+        },
+        "logical_bytes": 2016,
+        "loop": {
+          "actual_entries12": 312,
+          "chooser_attempts": 8702,
+          "chooser_no_envelope": 8393,
+          "chooser_selected": 309,
+          "completed_with12": 313,
+          "entries_with12": 313,
+          "historical_reconstructions": 1929,
+          "hits12": 3,
+          "publications12": 309
+        },
+        "maps": {
+          "acquisitions": 11239,
+          "active": 0,
+          "fresh_calls": 11239,
+          "handler_id": 23674,
+          "invalidations": 285818,
+          "mutation_epoch": 285818,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 1142123,
+          "valid": 1
+        },
+        "misses": [
+          0,
+          3429,
+          0,
+          0,
+          0,
+          0,
+          0,
+          12,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        "native": {
+          "admissions": 86,
+          "attempts": 284,
+          "blocked": 198,
+          "closed": 86,
+          "low_address_refusals": 0
+        },
+        "reason_prefix_usable": true,
+        "reasons": {
+          "attempts": 9425,
+          "error": 0,
+          "finished": 9424,
+          "first_failure": {
+            "internal_head": {
+              "bank": 0,
+              "installed": 0,
+              "lifetime": 0,
+              "registration_epoch": 0,
+              "registry": 0,
+              "rseq_address": 0,
+              "rseq_length": 0,
+              "rseq_signature": 0,
+              "source_key": 0,
+              "stored": 0
+            },
+            "no_resident_head": {
+              "bank": 0,
+              "installed": 4,
+              "lifetime": 0,
+              "registration_epoch": 0,
+              "registry": 2,
+              "rseq_address": 0,
+              "rseq_length": 0,
+              "rseq_signature": 0,
+              "source_key": 8687,
+              "stored": 0
+            },
+            "root": {
+              "bank": 0,
+              "installed": 0,
+              "lifetime": 0,
+              "registration_epoch": 0,
+              "registry": 0,
+              "rseq_address": 0,
+              "rseq_length": 0,
+              "rseq_signature": 0,
+              "source_key": 9,
+              "stored": 0
+            }
+          },
+          "in_flight": 1,
+          "outcomes": {
+            "internal_head": {
+              "cancelled": 0,
+              "cold_built": 0,
+              "cold_refused": 0,
+              "completed": 15,
+              "empty_publication": 0,
+              "replacement_publication": 0,
+              "warm_bound": 15,
+              "warm_plan": 15
+            },
+            "no_resident_head": {
+              "cancelled": 3651,
+              "cold_built": 5041,
+              "cold_refused": 3652,
+              "completed": 5041,
+              "empty_publication": 2,
+              "replacement_publication": 5039,
+              "warm_bound": 0,
+              "warm_plan": 0
+            },
+            "root": {
+              "cancelled": 0,
+              "cold_built": 9,
+              "cold_refused": 0,
+              "completed": 717,
+              "empty_publication": 0,
+              "replacement_publication": 9,
+              "warm_bound": 708,
+              "warm_plan": 708
+            }
+          },
+          "passed": {
+            "bank": 9419,
+            "installed": 9421,
+            "lifetime": 723,
+            "registration_epoch": 723,
+            "registry": 9419,
+            "rseq_address": 723,
+            "rseq_length": 723,
+            "rseq_signature": 723,
+            "source_key": 723,
+            "stored": 9421
+          },
+          "root_hits": 708,
+          "seen": {
+            "bank": 9419,
+            "installed": 9425,
+            "lifetime": 723,
+            "registration_epoch": 723,
+            "registry": 9421,
+            "rseq_address": 723,
+            "rseq_length": 723,
+            "rseq_signature": 723,
+            "source_key": 9419,
+            "stored": 9421
+          },
+          "selection": {
+            "internal_head": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                15
+              ]
+            ],
+            "no_resident_head": [
+              [
+                0,
+                3
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                8689
+              ]
+            ],
+            "root": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                717
+              ]
+            ]
+          },
+          "subentry_hits": 15
+        },
+        "retired": {
+          "bank_changed": 0,
+          "context_changed": 0,
+          "error": 0,
+          "exact_seen": 1254,
+          "gate4": 8696,
+          "lifetime_changed": 0,
+          "no_root": 7352,
+          "offer_age": {
+            "1": 537,
+            "17-64": 189,
+            "2": 146,
+            "3-4": 84,
+            "5-8": 178,
+            "65-256": 0,
+            "9-16": 120,
+            "over256": 0
+          },
+          "overwrites": 5032,
+          "registry_changed": 0,
+          "retirement_rank": [
+            541,
+            150,
+            50,
+            51,
+            103,
+            33,
+            47,
+            95,
+            16,
+            21,
+            27,
+            101,
+            6,
+            4,
+            0,
+            9
+          ],
+          "root_seen": 1344,
+          "saves": 5048,
+          "search_done": 8696,
+          "source_changed": 90,
+          "source_seen": 1254
+        },
+        "retired_prefix_usable": true,
+        "signals": [
+          6300,
+          10737,
+          85,
+          0,
+          0
+        ],
+        "version": 6,
+        "view": {
+          "comparisons": 0,
+          "differential": 0,
+          "enabled": 1,
+          "hits": 1142123,
+          "invalidations": 285818,
+          "mismatches": 0,
+          "poisoned": 0,
+          "queries": 1153362,
+          "refreshes": 11239,
+          "reserved": 0,
+          "stack_probes": 584997,
+          "unexplained": 3,
+          "updates": 243957
+        }
+      },
+      "duration_ns": 30299976320,
+      "error_type": "ValueError",
+      "exit": -9,
+      "expected_exit": 0,
+      "inherited_reader_controls": 0,
+      "involuntary_switches": null,
+      "lane": "release",
+      "major_faults": null,
+      "minor_faults": null,
+      "ordinal": 1,
+      "process_ns": 30297333539,
+      "process_reaped_ns": 1756402716514504,
+      "process_start_ns": 1756372419180965,
+      "reaped": true,
+      "reason_reader_controls": 0,
+      "status": "failed",
+      "system_cpu_ns": null,
+      "timed_out": false,
+      "user_cpu_ns": null,
+      "validated_terminal_available": false,
+      "voluntary_switches": null,
+      "workload": "true"
+    }
+  ],
+  "cleanup_complete": true,
+  "commands": 39,
+  "count_scope": "Separate per-cell ABI6 prefix after reap, possibly partial. Reason gates observe only actual short-circuit evaluations. Exact means recorded source key and context equality, not generated-layout, claim or permission reuse authority. Sixteen-retirement misses are censored. Retirement rank includes duplicate publications and is not LRU distance or a cache-hit prediction. Offer age counts offers since retirement, in bins1/2/3-4/5-8/9-16/17-64/65-256/over256. When source matches without any full context match, bank/registry/lifetime deltas describe only the newest exact source match. Pre-offer refusals are outside the reason bank; linked ingress is not every kernel trap. No absent terminal is invented.",
+  "cpu": 1,
+  "error_type": "ValueError",
+  "errors_sha256": "e33e6c140530d3687c9fb735fb2dd27872881e577b60dd231c847b9d0f54b05a",
+  "final_error_count": 0,
+  "full_state_credit": false,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 1,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "performance_credit": false,
+  "profile": "loop-ro-retired-program-v1",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 2018100,
+    "sha256": "03228f24e69e358e9ad7a17a002d7ede34091e6999e4b1e2c5eb02320b230ce6"
+  },
+  "reproduce": [
+    "python3.12",
+    "-B",
+    "evaluation/inprocess/loop_ro_retired_program.py",
+    "--expect-revision",
+    "191f44440e656b1a0cb6a6031611940f0fea1b34",
+    "--output",
+    "target/evaluation/inprocess/loop-ro-retired-program-NEW"
+  ],
+  "revision": "191f44440e656b1a0cb6a6031611940f0fea1b34",
+  "schema": 1,
+  "scope": "Two ABI6 RO release programs only, with every original application/namespace/terminal reader and447/480+167 controls on completion. A killed prefix is a failed target. No native comparison, full-state or qualification credit.",
+  "source_unchanged": true,
+  "status": "failed",
+  "timing_scope": "Single whole-process observations including carrier/namespace/terminal output. Failed elapsed values describe failure cost only. No median, IQR, speedup, DR parity or first-touch/steady claim.",
+  "whole_profile_qualified": false
+}
