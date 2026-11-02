@@ -1061,3 +1061,714 @@ fn inconsistent_binding_or_history_is_an_error_not_off() {
         assert!(!t.in_callback);
     }
 }
+
+// Literal pre-change methods, with only method identifiers renamed.
+impl ThreadModel {
+    pub(crate) fn finish_interval_before_checked_exit(
+        &mut self,
+        entry: &mut IntervalEntry,
+        slot: &mut ModelReturnSlot,
+        end: Observation,
+    ) -> Result<IntervalExit, IntervalExitError> {
+        let state = entry.state.as_ref().ok_or(IntervalExitError::Consumed)?;
+        if !Arc::ptr_eq(&entry.spec, &self.session.spec) || entry.thread != self.identity {
+            return Err(IntervalExitError::ForeignEntry);
+        }
+        match state {
+            Entered::Admitted {
+                admission,
+                start_sequence,
+            } => {
+                if slot.identity != entry.original_slot.identity || slot.word != MODEL_CONTINUATION
+                {
+                    return Err(IntervalExitError::TokenMismatch);
+                }
+                let frame = self
+                    .frames
+                    .last()
+                    .ok_or(IntervalExitError::Model(ExitError::Empty))?;
+                if frame.slot != entry.original_slot
+                    || frame.thread != entry.thread
+                    || !Arc::ptr_eq(&frame.owner.spec, &entry.spec)
+                    || frame.owner.epoch.id() != admission.generation
+                    || frame.ticket.as_ref().map(OwnedTicket::admission) != Some(*admission)
+                    || frame.start_sequence != *start_sequence
+                {
+                    return Err(IntervalExitError::ForeignEntry);
+                }
+                let (children, _) = self.exit_check(slot).map_err(IntervalExitError::Model)?;
+                let expected = Payload {
+                    admission: *admission,
+                    thread: entry.thread,
+                    start_sequence: *start_sequence,
+                    outcome: PayloadOutcome::Completed {
+                        end,
+                        completed_children: children,
+                    },
+                };
+                let (completion, payload) = self
+                    .finish_before_checked_exit(slot, end)
+                    .map_err(IntervalExitError::Model)?;
+                // Consumption precedes the impossible postcondition failure:
+                // no rollback/retry may invent a second completion.
+                entry.state = None;
+                if completion.admission != expected.admission
+                    || payload != expected
+                    || *slot != entry.original_slot
+                {
+                    self.exhausted = true;
+                    return Err(IntervalExitError::CompletionMismatch);
+                }
+                Ok(IntervalExit::Completed {
+                    completion,
+                    payload,
+                    stamp: entry.stamp,
+                })
+            }
+            Entered::Unsampled(owner) => {
+                if *slot != entry.original_slot {
+                    return Err(IntervalExitError::TokenMismatch);
+                }
+                let reason = match owner {
+                    UnsampledOwner::Disarmed {
+                        observed: BindingChange::Initial,
+                    } => UnsampledSummary::InitialDisarmed,
+                    UnsampledOwner::Disarmed {
+                        observed: BindingChange::Removed { generation, .. },
+                    } => UnsampledSummary::Removed {
+                        generation: *generation,
+                    },
+                    UnsampledOwner::FunctionClosed { owner, function } => {
+                        UnsampledSummary::FunctionClosed {
+                            generation: owner.epoch.id(),
+                            function: *function,
+                        }
+                    }
+                    UnsampledOwner::Disarmed {
+                        observed: BindingChange::Published { .. },
+                    } => {
+                        return Err(IntervalExitError::ForeignEntry);
+                    }
+                };
+                entry.state = None;
+                Ok(IntervalExit::Unsampled {
+                    reason,
+                    stamp: entry.stamp,
+                })
+            }
+        }
+    }
+    pub fn finish_before_checked_exit(
+        &mut self,
+        slot: &mut ModelReturnSlot,
+        end: Observation,
+    ) -> Result<(Completion, Payload), ExitError> {
+        self.finish_inner_before_checked_exit(slot, end, || {}, || {})
+    }
+    fn finish_inner_before_checked_exit(
+        &mut self,
+        slot: &mut ModelReturnSlot,
+        end: Observation,
+        before_release: impl FnOnce(),
+        before_close: impl FnOnce(),
+    ) -> Result<(Completion, Payload), ExitError> {
+        let (children, next) = self.exit_check(slot)?;
+        let frame = self.frames.pop().expect("checked frame");
+        let original = frame.slot.word;
+        let result = frame.complete(end, children, before_release, before_close);
+        self.completed_sequence = next;
+        slot.word = original;
+        Ok(result)
+    }
+}
+
+// Complete observable local/owner images for same-fixture refusal comparisons.
+#[derive(Debug, Eq, PartialEq)]
+struct CheckedExitFrameImage {
+    owner: usize,
+    owner_strong: usize,
+    spec: usize,
+    ticket: Option<Admission>,
+    thread: u64,
+    start: u64,
+    slot: ModelReturnSlot,
+}
+#[derive(Debug, Eq, PartialEq)]
+enum CheckedExitEntryState {
+    Consumed,
+    Admitted(Admission, u64),
+    Disarmed(BindingChange),
+    Closed(usize, usize, GenerationId, FunctionId),
+}
+#[derive(Debug, Eq, PartialEq)]
+struct CheckedExitOwnerImage {
+    pointer: usize,
+    strong: usize,
+    records: Vec<RecordObservation>,
+    reservations: usize,
+    closed: Option<bool>,
+    population: Option<crate::generation::PopulationObservation>,
+    report: bool,
+}
+#[derive(Debug, Eq, PartialEq)]
+struct CheckedExitImage {
+    session: usize,
+    session_strong: usize,
+    identity: u64,
+    sequence: u64,
+    attempts: u64,
+    callback: bool,
+    exhausted: bool,
+    capacity: usize,
+    frames: Vec<CheckedExitFrameImage>,
+    entry_spec: usize,
+    entry_spec_strong: usize,
+    entry_thread: u64,
+    entry_slot: ModelReturnSlot,
+    stamp: EntryStamp,
+    state: CheckedExitEntryState,
+    slot: ModelReturnSlot,
+    owners: Vec<CheckedExitOwnerImage>,
+}
+fn checked_exit_image(
+    t: &ThreadModel,
+    entry: &IntervalEntry,
+    rs: ModelReturnSlot,
+    owners: &[&EpochHandle],
+) -> CheckedExitImage {
+    CheckedExitImage {
+        session: Arc::as_ptr(&t.session) as usize,
+        session_strong: Arc::strong_count(&t.session),
+        identity: t.identity,
+        sequence: t.completed_sequence,
+        attempts: t.attempts,
+        callback: t.in_callback,
+        exhausted: t.exhausted,
+        capacity: t.frames.capacity(),
+        frames: t
+            .frames
+            .iter()
+            .map(|f| CheckedExitFrameImage {
+                owner: Arc::as_ptr(&f.owner) as usize,
+                owner_strong: Arc::strong_count(&f.owner),
+                spec: Arc::as_ptr(&f.owner.spec) as usize,
+                ticket: f.ticket.as_ref().map(OwnedTicket::admission),
+                thread: f.thread,
+                start: f.start_sequence,
+                slot: f.slot,
+            })
+            .collect(),
+        entry_spec: Arc::as_ptr(&entry.spec) as usize,
+        entry_spec_strong: Arc::strong_count(&entry.spec),
+        entry_thread: entry.thread,
+        entry_slot: entry.original_slot,
+        stamp: entry.stamp,
+        state: match &entry.state {
+            None => CheckedExitEntryState::Consumed,
+            Some(Entered::Admitted {
+                admission,
+                start_sequence,
+            }) => CheckedExitEntryState::Admitted(*admission, *start_sequence),
+            Some(Entered::Unsampled(UnsampledOwner::Disarmed { observed })) => {
+                CheckedExitEntryState::Disarmed(*observed)
+            }
+            Some(Entered::Unsampled(UnsampledOwner::FunctionClosed { owner, function })) => {
+                CheckedExitEntryState::Closed(
+                    Arc::as_ptr(owner) as usize,
+                    Arc::strong_count(owner),
+                    owner.epoch.id(),
+                    *function,
+                )
+            }
+        },
+        slot: rs,
+        owners: owners
+            .iter()
+            .map(|e| CheckedExitOwnerImage {
+                pointer: Arc::as_ptr(&e.owner) as usize,
+                strong: Arc::strong_count(&e.owner),
+                records: records(e),
+                reservations: e.reservations(),
+                closed: e.owner.epoch.function_closed(A),
+                population: e.population(A),
+                report: e.try_report().is_some(),
+            })
+            .collect(),
+    }
+}
+fn checked_exit_refusal(
+    t: &mut ThreadModel,
+    entry: &mut IntervalEntry,
+    rs: &mut ModelReturnSlot,
+    owners: &[&EpochHandle],
+    expected: IntervalExitError,
+) {
+    let before = checked_exit_image(t, entry, *rs, owners);
+    assert_eq!(
+        t.finish_interval_before_checked_exit(entry, rs, Observation::Value(77)),
+        Err(expected),
+    );
+    assert_eq!(checked_exit_image(t, entry, *rs, owners), before);
+    assert_eq!(
+        t.finish_interval(entry, rs, Observation::Value(77)),
+        Err(expected),
+    );
+    assert_eq!(checked_exit_image(t, entry, *rs, owners), before);
+}
+fn checked_exit_run(
+    old: bool,
+    t: &mut ThreadModel,
+    entry: &mut IntervalEntry,
+    rs: &mut ModelReturnSlot,
+    end: Observation,
+) -> Result<IntervalExit, IntervalExitError> {
+    if old {
+        t.finish_interval_before_checked_exit(entry, rs, end)
+    } else {
+        t.finish_interval(entry, rs, end)
+    }
+}
+
+#[test]
+fn checked_exit_preserves_actual_receipt_refusals_and_owner_followthrough() {
+    // Both methods run on the very same malformed fixture. Every refusal is
+    // exact and leaves the complete image untouched before repair/completion.
+    for fault in 0..18 {
+        let s = session(limits());
+        let e = stage(&s, 2, 2, 4);
+        publish(&s, &e);
+        let foreign = session(limits());
+        let foreign_epoch = stage(&foreign, 2, 2, 4);
+        let mut t = s.register_thread(1).unwrap();
+        let mut rs = slot(1);
+        let mut entry = enter(&mut t, 10, &mut rs);
+        let saved_slot = rs;
+        let saved_spec = Arc::clone(&entry.spec);
+        let saved_owner = Arc::clone(&t.frames.last().unwrap().owner);
+        let admission = t
+            .frames
+            .last()
+            .unwrap()
+            .ticket
+            .as_ref()
+            .unwrap()
+            .admission();
+        let mut held_state = None;
+        let mut held_frame = None;
+        let mut held_ticket = None;
+        let expected = match fault {
+            0 | 14 => {
+                held_state = entry.state.take();
+                if fault == 14 {
+                    rs.word ^= 1;
+                }
+                IntervalExitError::Consumed
+            }
+            1 => {
+                entry.spec = Arc::clone(&foreign.inner.spec);
+                IntervalExitError::ForeignEntry
+            }
+            2 | 15 => {
+                entry.thread += 1;
+                if fault == 15 {
+                    t.completed_sequence = u64::MAX;
+                }
+                IntervalExitError::ForeignEntry
+            }
+            3 => {
+                rs.identity += 1;
+                IntervalExitError::TokenMismatch
+            }
+            4 | 16 => {
+                rs.word ^= 1;
+                if fault == 16 {
+                    t.frames.last_mut().unwrap().slot.word ^= 1;
+                }
+                IntervalExitError::TokenMismatch
+            }
+            5 => {
+                held_frame = t.frames.pop();
+                IntervalExitError::Model(ExitError::Empty)
+            }
+            6 | 17 => {
+                t.frames.last_mut().unwrap().slot.word ^= 1;
+                if fault == 17 {
+                    t.completed_sequence = u64::MAX;
+                }
+                IntervalExitError::ForeignEntry
+            }
+            7 => {
+                t.frames.last_mut().unwrap().thread += 1;
+                IntervalExitError::ForeignEntry
+            }
+            8 => {
+                t.frames.last_mut().unwrap().owner = Arc::clone(&foreign_epoch.owner);
+                IntervalExitError::ForeignEntry
+            }
+            9 => {
+                t.frames.last_mut().unwrap().start_sequence += 1;
+                IntervalExitError::ForeignEntry
+            }
+            10 => {
+                if let Some(Entered::Admitted { admission, .. }) = &mut entry.state {
+                    admission.entry_value ^= 1;
+                } else {
+                    unreachable!();
+                }
+                IntervalExitError::ForeignEntry
+            }
+            11 => {
+                held_ticket = t.frames.last_mut().unwrap().ticket.take();
+                IntervalExitError::ForeignEntry
+            }
+            12 => {
+                t.completed_sequence = u64::MAX;
+                IntervalExitError::Model(ExitError::Sequence)
+            }
+            13 => {
+                t.frames.last_mut().unwrap().start_sequence = 1;
+                if let Some(Entered::Admitted { start_sequence, .. }) = &mut entry.state {
+                    *start_sequence = 1;
+                } else {
+                    unreachable!();
+                }
+                IntervalExitError::Model(ExitError::Sequence)
+            }
+            _ => unreachable!(),
+        };
+        let controller = s.snapshot().unwrap();
+        checked_exit_refusal(&mut t, &mut entry, &mut rs, &[&e, &foreign_epoch], expected);
+        assert_eq!(s.snapshot().unwrap(), controller);
+        assert_eq!(e.reservations(), 1);
+        assert_eq!(records(&e)[0].record.terminal, None);
+        assert_eq!(records(&e)[0].payload, None);
+        // Independently exercise the generic first check and its precise errors.
+        if matches!(fault, 3..=5 | 12..=13) {
+            let error = match fault {
+                3 | 4 => ExitError::SlotMismatch,
+                5 => ExitError::Empty,
+                12..=13 => ExitError::Sequence,
+                _ => unreachable!(),
+            };
+            let before = checked_exit_image(&t, &entry, rs, &[&e, &foreign_epoch]);
+            let called = std::cell::Cell::new(false);
+            assert_eq!(
+                t.finish_inner_before_checked_exit(
+                    &mut rs,
+                    Observation::Value(88),
+                    || called.set(true),
+                    || called.set(true),
+                ),
+                Err(error)
+            );
+            assert!(!called.get());
+            assert_eq!(
+                checked_exit_image(&t, &entry, rs, &[&e, &foreign_epoch]),
+                before
+            );
+            assert_eq!(
+                t.finish_inner(
+                    &mut rs,
+                    Observation::Value(88),
+                    || called.set(true),
+                    || called.set(true),
+                ),
+                Err(error)
+            );
+            assert!(!called.get());
+            assert_eq!(
+                checked_exit_image(&t, &entry, rs, &[&e, &foreign_epoch]),
+                before
+            );
+        }
+        rs = saved_slot;
+        entry.spec = saved_spec;
+        entry.thread = 1;
+        entry.state = held_state.or(Some(Entered::Admitted {
+            admission,
+            start_sequence: 0,
+        }));
+        if let Some(frame) = held_frame {
+            t.frames.push(frame);
+        }
+        let frame = t.frames.last_mut().unwrap();
+        frame.slot = slot(1);
+        frame.thread = 1;
+        frame.start_sequence = 0;
+        frame.owner = saved_owner;
+        if let Some(ticket) = held_ticket {
+            frame.ticket = Some(ticket);
+        }
+        t.completed_sequence = 0;
+        finish(&mut t, &mut entry, &mut rs, 77);
+        assert_eq!(
+            records(&e),
+            vec![row(&e, 0, 10, (1, 0, 77, 0), retained(0))]
+        );
+        assert_eq!(t.completed_sequence(), 1);
+        assert_eq!(e.reservations(), 0);
+        assert_eq!(s.remove_current(), Ok(()));
+        assert_eq!(
+            e.try_report().unwrap().records().collect::<Vec<_>>(),
+            records(&e)
+        );
+    }
+    // Actual nesting across owner replacement and all three unsampled kinds.
+    // Each old/new run checks literal records against its own real generation;
+    // no identity normalization erases owner differences.
+    for old in [true, false] {
+        for k in [1, 2] {
+            let s = session(limits());
+            let a = stage(&s, k, 2, 4);
+            let b = stage(&s, k, 2, 4);
+            let mut t = s.register_thread(1).unwrap();
+            let (mut sa, mut sb, mut off_slot) = (slot(1), slot(2), slot(3));
+            let mut initial = enter(&mut t, 1, &mut off_slot);
+            publish(&s, &a);
+            assert_eq!(
+                checked_exit_run(
+                    old,
+                    &mut t,
+                    &mut initial,
+                    &mut off_slot,
+                    Observation::Value(2)
+                ),
+                Ok(IntervalExit::Unsampled {
+                    reason: UnsampledSummary::InitialDisarmed,
+                    stamp: initial.stamp
+                })
+            );
+            let mut outer = enter(&mut t, 10, &mut sa);
+            assert_eq!(s.remove_current(), Ok(()));
+            let mut removed = enter(&mut t, 11, &mut off_slot);
+            publish(&s, &b);
+            let mut inner = enter(&mut t, 20, &mut sb);
+            let expected = if let Some(Entered::Admitted { admission, .. }) = &inner.state {
+                *admission
+            } else {
+                unreachable!()
+            };
+            let result =
+                checked_exit_run(old, &mut t, &mut inner, &mut sb, Observation::Value(30)).unwrap();
+            let IntervalExit::Completed {
+                completion,
+                payload,
+                ..
+            } = result
+            else {
+                panic!("actual sampled receipt");
+            };
+            assert_eq!(completion.admission, expected);
+            assert_eq!(
+                payload,
+                row(&b, 0, 20, (1, 0, 30, 0), retained(0)).payload.unwrap()
+            );
+            assert_eq!(sb, slot(2));
+            assert!(inner.state.is_none());
+            assert_eq!(
+                checked_exit_run(
+                    old,
+                    &mut t,
+                    &mut removed,
+                    &mut off_slot,
+                    Observation::Value(31)
+                ),
+                Ok(IntervalExit::Unsampled {
+                    reason: UnsampledSummary::Removed {
+                        generation: a.generation()
+                    },
+                    stamp: removed.stamp
+                })
+            );
+            assert!(matches!(
+                checked_exit_run(old, &mut t, &mut outer, &mut sa, Observation::Value(40)),
+                Ok(IntervalExit::Completed { .. })
+            ));
+            assert_eq!(
+                records(&a),
+                vec![row(&a, 0, 10, (1, 0, 40, 1), retained(0))]
+            );
+            assert_eq!(
+                records(&b),
+                vec![row(&b, 0, 20, (1, 0, 30, 0), retained(0))]
+            );
+            assert_eq!(
+                (t.depth(), t.completed_sequence(), sa, sb, off_slot),
+                (0, 2, slot(1), slot(2), slot(3))
+            );
+            assert_eq!(
+                a.try_report().unwrap().records().collect::<Vec<_>>(),
+                records(&a)
+            );
+            if k == 2 {
+                let mut second = enter(&mut t, 50, &mut sb);
+                assert!(matches!(
+                    checked_exit_run(old, &mut t, &mut second, &mut sb, Observation::Value(60)),
+                    Ok(IntervalExit::Completed { .. })
+                ));
+                assert_eq!(records(&b)[1], row(&b, 1, 50, (1, 2, 60, 0), retained(1)));
+            }
+            let mut closed = enter(&mut t, 70, &mut sb);
+            assert_eq!(s.remove_current(), Ok(()));
+            let c = stage(&s, k, 2, 4);
+            publish(&s, &c);
+            assert_eq!(
+                checked_exit_run(old, &mut t, &mut closed, &mut sb, Observation::Value(80)),
+                Ok(IntervalExit::Unsampled {
+                    reason: UnsampledSummary::FunctionClosed {
+                        generation: b.generation(),
+                        function: A
+                    },
+                    stamp: closed.stamp
+                })
+            );
+            assert_eq!(sb, slot(2));
+            assert!(closed.state.is_none());
+            assert_eq!(
+                b.try_report().unwrap().records().collect::<Vec<_>>(),
+                records(&b)
+            );
+        }
+    }
+}
+
+struct CheckedExitHookDrop<'a>(&'a std::cell::RefCell<Vec<&'static str>>, &'static str);
+impl Drop for CheckedExitHookDrop<'_> {
+    fn drop(&mut self) {
+        self.0.borrow_mut().push(self.1);
+    }
+}
+#[test]
+fn checked_exit_drop_and_actual_completion_hooks_preserve_partial_state() {
+    for old in [true, false] {
+        for panic_at in 0..3 {
+            let s = session(limits());
+            let e = stage(&s, 1, 2, 4);
+            publish(&s, &e);
+            let mut t = s.register_thread(1).unwrap();
+            let mut rs = slot(1);
+            let entry = enter(&mut t, 10, &mut rs);
+            let before = checked_exit_image(&t, &entry, rs, &[&e]);
+            // Lexical drop of an actual successful token does not release,
+            // complete, restore, or retain anything. It leaves the real receipt.
+            {
+                let checked = completion::CheckedExit::check(&mut t, &mut rs).unwrap();
+                assert_eq!(checked.children(), 0);
+            }
+            assert_eq!(checked_exit_image(&t, &entry, rs, &[&e]), before);
+            let events = std::cell::RefCell::new(Vec::new());
+            let release_drop = CheckedExitHookDrop(&events, "release-drop");
+            let close_drop = CheckedExitHookDrop(&events, "close-drop");
+            let observe_partial = || {
+                assert_eq!(
+                    records(&e),
+                    vec![RecordObservation {
+                        record: Record {
+                            admission: before.frames[0].ticket.unwrap(),
+                            terminal: None
+                        },
+                        payload: Some(Payload {
+                            admission: before.frames[0].ticket.unwrap(),
+                            thread: 1,
+                            start_sequence: 0,
+                            outcome: PayloadOutcome::Completed {
+                                end: Observation::Unavailable(77),
+                                completed_children: 0
+                            }
+                        }),
+                    }]
+                );
+                assert_eq!(e.reservations(), 1);
+                assert!(e.try_report().is_none());
+                assert_eq!(e.owner.epoch.function_closed(A), Some(false));
+            };
+            let release = || {
+                let _owned = release_drop;
+                events.borrow_mut().push("release");
+                observe_partial();
+                assert_ne!(panic_at, 1, "actual before_release panic");
+            };
+            let close = || {
+                let _owned = close_drop;
+                events.borrow_mut().push("close");
+                observe_partial();
+                assert_ne!(panic_at, 2, "actual before_close panic");
+            };
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                if old {
+                    t.finish_inner_before_checked_exit(
+                        &mut rs,
+                        Observation::Unavailable(77),
+                        release,
+                        close,
+                    )
+                } else {
+                    t.finish_inner(&mut rs, Observation::Unavailable(77), release, close)
+                }
+            }));
+            assert_eq!(t.depth(), 0);
+            assert_eq!(e.reservations(), 0);
+            assert!(entry.state.is_some()); // Generic finish never consumes this separate receipt.
+            if panic_at == 0 {
+                let (c, p) = result.unwrap().unwrap();
+                assert_eq!(c.admission, before.frames[0].ticket.unwrap());
+                assert_eq!(c.disposition, retained(0));
+                assert_eq!(
+                    p.outcome,
+                    PayloadOutcome::Completed {
+                        end: Observation::Unavailable(77),
+                        completed_children: 0
+                    }
+                );
+                assert_eq!(t.completed_sequence(), 1);
+                assert_eq!(rs, slot(1));
+                assert_eq!(e.owner.epoch.function_closed(A), Some(true));
+            } else {
+                assert!(result.is_err());
+                assert_eq!(t.completed_sequence(), 0);
+                assert_eq!(rs.word, MODEL_CONTINUATION);
+                assert_eq!(e.owner.epoch.function_closed(A), Some(false));
+                let r = records(&e)[0];
+                assert_eq!(r.record.admission, before.frames[0].ticket.unwrap());
+                assert_eq!(
+                    r.record.terminal,
+                    Some(Terminal::Cancelled(CancelReason::DroppedTicket))
+                );
+                assert_eq!(
+                    r.payload.unwrap().outcome,
+                    PayloadOutcome::Completed {
+                        end: Observation::Unavailable(77),
+                        completed_children: 0
+                    }
+                );
+                // A panic after the retained-rank reservation does not refund it.
+                let mut next_slot = slot(2);
+                let mut next = enter(&mut t, 20, &mut next_slot);
+                let (c, _) = finish(&mut t, &mut next, &mut next_slot, 30);
+                assert_eq!(
+                    c.disposition,
+                    if panic_at == 1 {
+                        retained(0)
+                    } else {
+                        Disposition::DroppedAfterBudget
+                    }
+                );
+                assert_eq!(t.completed_sequence(), 1);
+                assert_eq!(e.reservations(), 0);
+            }
+            assert_eq!(
+                *events.borrow(),
+                if panic_at == 1 {
+                    vec!["release", "release-drop", "close-drop"]
+                } else {
+                    vec!["release", "release-drop", "close", "close-drop"]
+                }
+            );
+            assert_eq!(s.remove_current(), Ok(()));
+            assert_eq!(
+                e.try_report().unwrap().records().collect::<Vec<_>>(),
+                records(&e)
+            );
+        }
+    }
+}

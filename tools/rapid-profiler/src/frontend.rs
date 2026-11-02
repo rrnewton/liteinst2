@@ -1189,13 +1189,7 @@ impl ThreadModel {
         before_release: impl FnOnce(),
         before_close: impl FnOnce(),
     ) -> Result<(Completion, Payload), ExitError> {
-        let (children, next) = self.exit_check(slot)?;
-        let frame = self.frames.pop().expect("checked frame");
-        let original = frame.slot.word;
-        let result = frame.complete(end, children, before_release, before_close);
-        self.completed_sequence = next;
-        slot.word = original;
-        Ok(result)
+        Ok(completion::CheckedExit::check(self, slot)?.complete(end, before_release, before_close))
     }
     /// Explicit cancellation does not increment the completed-child sequence.
     pub fn cancel(&mut self, slot: &mut ModelReturnSlot) -> Result<Payload, ExitError> {
@@ -1234,6 +1228,7 @@ mod history_stream;
 pub use history_stream::HistoryBinding;
 pub(crate) use history_stream::{HistoryChunk, HistoryMode, HistoryView, MAX_HISTORY_POSITION};
 
+mod completion;
 mod interval_entry;
 pub(crate) use interval_entry::{
     BindingChange, IntervalEntry, IntervalEntryError, IntervalEntrySummary, IntervalExit,

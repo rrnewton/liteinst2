@@ -4,15 +4,11 @@ use super::*;
 mod publisher;
 pub(crate) mod wide;
 use native_module::early_entry::{self as early, Extra, Scenario, WITNESS_WORDS};
-use rapid_profiler::frontend::HistoryBinding;
 use rapid_profiler::frontend_native::{
     EarlyEntryModuleSessionController, EarlyEntryModuleSitePreparation,
     InstalledEarlyEntryModuleSite, IntervalEpoch, LoadedNormalModuleCaller,
     PreparedEarlyEntryModuleSessionController,
-    early_entry_qualification::{
-        self as qualification, OwnerSnapshot, PauseKind, QualificationRequest,
-        QualificationSnapshot,
-    },
+    early_entry_qualification::{self as qualification, QualificationRequest},
 };
 
 fn publish(prep: EarlyEntryModuleSitePreparation) -> InstalledEarlyEntryModuleSite {
@@ -49,142 +45,6 @@ fn publish(prep: EarlyEntryModuleSitePreparation) -> InstalledEarlyEntryModuleSi
     drop(lease);
     let (installed, receipt) = result.unwrap();
     unsafe { prep.seal(installed, receipt) }.unwrap()
-}
-fn totals(t: NormalTotals) -> [u64; 5] {
-    [
-        t.entered,
-        t.ret_observed,
-        t.confirmed,
-        t.completed,
-        t.unsampled,
-    ]
-}
-fn raw_owner(owner: RawIntervalOwner) -> [u64; 3] {
-    match owner {
-        RawIntervalOwner::Sampled {
-            generation,
-            invocation,
-        } => [1, generation, invocation as u64],
-        RawIntervalOwner::InitialDisarmed => [2, 0, 0],
-        RawIntervalOwner::Removed { generation } => [3, generation, 0],
-        RawIntervalOwner::FunctionClosed { generation } => [4, generation, 0],
-    }
-}
-fn owner_words(o: OwnerSnapshot) -> [u64; 8] {
-    let [kind, generation, invocation] = raw_owner(o.owner);
-    let (binding, index, bound_generation) = match o.binding {
-        HistoryBinding::Initial => (0, 0, 0),
-        HistoryBinding::Published {
-            action_index,
-            generation,
-        } => (1, action_index, generation.get()),
-        HistoryBinding::Removed {
-            action_index,
-            generation,
-        } => (2, action_index, generation.get()),
-    };
-    [
-        kind,
-        generation,
-        invocation,
-        o.history_len as u64,
-        binding,
-        index,
-        bound_generation,
-        o.closed_function.map_or(0, |f| f.0),
-    ]
-}
-fn encode_into(
-    kind: PauseKind,
-    sequence: u64,
-    s: &QualificationSnapshot,
-    h: &mut [u64; early::JOURNAL],
-) {
-    h.fill(0);
-    h[..15].copy_from_slice(&[
-        0x6561_726c_796d_6f64,
-        match kind {
-            PauseKind::AfterEntryPublished => 1,
-            PauseKind::AfterPreRetPublished => 2,
-        },
-        sequence,
-        s.binding_key as u64,
-        u64::from(s.pid),
-        s.tid,
-        s.registration,
-        s.completed_batches,
-        s.completed_calls,
-        s.active_batch.unwrap(),
-        s.position.unwrap() as u64,
-        s.next_ordinal,
-        s.model_depth as u64,
-        s.completed_sequence,
-        s.interval_batch,
-    ]);
-    h[15..20].copy_from_slice(&totals(s.totals));
-    h[20..25].copy_from_slice(&totals(s.interval_cursor_totals));
-    for (i, n) in s.entry_seen.iter().enumerate() {
-        h[25 + i] = n.unwrap_or(0);
-    }
-    for (i, row) in s.pre_rets.iter().enumerate() {
-        if let Some(r) = row {
-            h[29 + i * 7..36 + i * 7].copy_from_slice(&[
-                r.batch,
-                r.position as u64,
-                r.function.0,
-                r.observed_ordinal.unwrap_or(0),
-                r.return_pc,
-                r.entry_rsp,
-                r.return_word,
-            ]);
-        }
-    }
-    if let Some(p) = s.pending {
-        h[57..67].copy_from_slice(&[
-            1,
-            p.physical_batch,
-            p.physical_position as u64,
-            p.function.0,
-            p.ordinal,
-            p.entry_pc,
-            p.rsp,
-            p.word,
-            p.start.ticks,
-            u64::from(p.start.aux),
-        ]);
-        h[73] = p.slot.identity;
-        h[74] = p.slot.word;
-        if let Some(owner) = p.summary {
-            h[75] = 1;
-            h[76..84].copy_from_slice(&owner_words(owner));
-        }
-        if let Some(owner) = p.actual_summary {
-            h[84] = 1;
-            h[85..93].copy_from_slice(&owner_words(owner));
-            let [_, generation, invocation] = raw_owner(owner.owner);
-            h[71] = generation;
-            h[72] = invocation;
-        }
-        if let Some(r) = p.returned {
-            h[67] = 1;
-            h[68] = r.return_pc;
-            h[69] = r.end.ticks;
-            h[70] = u64::from(r.end.aux);
-            let [kind, generation, invocation] = raw_owner(r.owner);
-            h[93..103].copy_from_slice(&[
-                r.ordinal,
-                r.entry_pc,
-                r.return_pc,
-                kind,
-                generation,
-                invocation,
-                r.start.ticks,
-                u64::from(r.start.aux),
-                r.end.ticks,
-                u64::from(r.end.aux),
-            ]);
-        }
-    }
 }
 #[inline(never)]
 fn snapshot_ready() {
@@ -493,16 +353,12 @@ fn child(
             unsafe { client.attach_owned(caller, case.order, 1, stack, journal) }.unwrap();
         let witness = Box::new([0_u64; WITNESS_WORDS]);
         let witness_address = witness.as_ptr() as usize as u64;
-        let mut sequence = 0;
         let mut witness = witness;
         unsafe {
-            qualification::install_observer(move |kind, snapshot| {
-                sequence += 1;
-                let mut header = [0; 128];
-                encode_into(kind, sequence, snapshot, &mut header);
+            qualification::install_encoded_observer(move |header, journal| {
                 let (header_out, journal_out) = witness.split_at_mut(early::JOURNAL);
-                publisher.publish_words(header_out.try_into().unwrap(), &header);
-                publisher.publish_words(journal_out.try_into().unwrap(), &snapshot.journal);
+                publisher.publish_words(header_out.try_into().unwrap(), header);
+                publisher.publish_words(journal_out.try_into().unwrap(), journal);
                 snapshot_ready();
             })
         }
