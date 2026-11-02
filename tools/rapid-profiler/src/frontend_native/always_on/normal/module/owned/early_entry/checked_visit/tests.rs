@@ -54,7 +54,11 @@ impl Fixture {
         state.journal.header(state.tid, 0);
         let physical = PhysicalState {
             shared: client.shared,
-            local: LocalState::new(order.map(|i| state.selection(i).unwrap()), WORDS),
+            order: order.map(|i| state.selection(i).unwrap()),
+            words: WORDS,
+            batches: 0,
+            calls: 0,
+            active: None,
         };
         Self {
             state,
@@ -130,12 +134,11 @@ impl PhysicalState {
             entry,
         } = visit;
         self.shape_before_occupancy(state)?;
-        let raw = self.local.raw_mut();
-        let b = raw.active.as_mut().ok_or(error(Cause::Outstanding))?;
+        let b = self.active.as_mut().ok_or(error(Cause::Outstanding))?;
         let index = b.position;
         if index >= 4
-            || selected != raw.order[index % 2]
-            || word != raw.words[index]
+            || selected != self.order[index % 2]
+            || word != self.words[index]
             || b.rsp.is_some_and(|prior| prior != rsp)
         {
             return Err(error(Cause::Return));
@@ -896,25 +899,16 @@ fn ret_proof_rejects_hostile_prefix_before_current_geometry_or_mutation() {
                     reference.pc += u64::from(bad_geometry);
                     let expected = match corruption {
                         0 => {
-                            f.physical
-                                .local
-                                .raw_mut()
-                                .active
-                                .as_mut()
-                                .unwrap()
-                                .rows
-                                .set(0, None);
+                            f.physical.active.as_mut().unwrap().rows.set(0, None);
                             Cause::Invariant
                         }
                         1 => {
-                            let b = f.physical.local.raw_mut().active.as_mut().unwrap();
+                            let b = f.physical.active.as_mut().unwrap();
                             b.rows.set(3, b.rows[0]);
                             Cause::Invariant
                         }
                         2 => {
                             f.physical
-                                .local
-                                .raw_mut()
                                 .active
                                 .as_mut()
                                 .unwrap()
@@ -923,26 +917,19 @@ fn ret_proof_rejects_hostile_prefix_before_current_geometry_or_mutation() {
                             Cause::Invariant
                         }
                         3 => {
-                            let b = f.physical.local.raw_mut().active.as_mut().unwrap();
+                            let b = f.physical.active.as_mut().unwrap();
                             b.seen.set(0, Some(b.seen[0].unwrap() + 1));
                             Cause::Invariant
                         }
                         4 => {
-                            let rows =
-                                &mut f.physical.local.raw_mut().active.as_mut().unwrap().rows;
+                            let rows = &mut f.physical.active.as_mut().unwrap().rows;
                             let mut row = rows[0].unwrap();
                             row.return_pc += 1;
                             rows.set(0, Some(row));
                             Cause::Identity
                         }
                         5 => {
-                            f.physical
-                                .local
-                                .raw_mut()
-                                .active
-                                .as_mut()
-                                .unwrap()
-                                .pending_position = Some(3);
+                            f.physical.active.as_mut().unwrap().pending_position = Some(3);
                             if observed {
                                 Cause::Return
                             } else {
@@ -950,11 +937,11 @@ fn ret_proof_rejects_hostile_prefix_before_current_geometry_or_mutation() {
                             }
                         }
                         6 => {
-                            f.physical.local.raw_mut().batches = u64::MAX;
+                            f.physical.batches = u64::MAX;
                             Cause::Capacity
                         }
                         7 => {
-                            f.physical.local.raw_mut().active = None;
+                            f.physical.active = None;
                             Cause::Outstanding
                         }
                         _ => unreachable!(),
@@ -1219,25 +1206,16 @@ fn entry_proof_hostile_prefix_refuses_before_entry_mutation() {
                 reference.pc += u64::from(bad_geometry);
                 let cause = match corruption {
                     0 => {
-                        f.physical
-                            .local
-                            .raw_mut()
-                            .active
-                            .as_mut()
-                            .unwrap()
-                            .rows
-                            .set(0, None);
+                        f.physical.active.as_mut().unwrap().rows.set(0, None);
                         Cause::Invariant
                     }
                     1 => {
-                        let b = f.physical.local.raw_mut().active.as_mut().unwrap();
+                        let b = f.physical.active.as_mut().unwrap();
                         b.rows.set(3, b.rows[0]);
                         Cause::Invariant
                     }
                     2 => {
                         f.physical
-                            .local
-                            .raw_mut()
                             .active
                             .as_mut()
                             .unwrap()
@@ -1246,33 +1224,27 @@ fn entry_proof_hostile_prefix_refuses_before_entry_mutation() {
                         Cause::Invariant
                     }
                     3 => {
-                        let b = f.physical.local.raw_mut().active.as_mut().unwrap();
+                        let b = f.physical.active.as_mut().unwrap();
                         b.seen.set(0, Some(b.seen[0].unwrap() + 1));
                         Cause::Invariant
                     }
                     4 => {
-                        let rows = &mut f.physical.local.raw_mut().active.as_mut().unwrap().rows;
+                        let rows = &mut f.physical.active.as_mut().unwrap().rows;
                         let mut row = rows[0].unwrap();
                         row.return_pc += 1;
                         rows.set(0, Some(row));
                         Cause::Identity
                     }
                     5 => {
-                        f.physical
-                            .local
-                            .raw_mut()
-                            .active
-                            .as_mut()
-                            .unwrap()
-                            .pending_position = Some(1);
+                        f.physical.active.as_mut().unwrap().pending_position = Some(1);
                         Cause::Invariant
                     }
                     6 => {
-                        f.physical.local.raw_mut().batches = u64::MAX;
+                        f.physical.batches = u64::MAX;
                         Cause::Capacity
                     }
                     7 => {
-                        f.physical.local.raw_mut().active = None;
+                        f.physical.active = None;
                         Cause::Outstanding
                     }
                     8 => {
@@ -1280,7 +1252,7 @@ fn entry_proof_hostile_prefix_refuses_before_entry_mutation() {
                         Cause::Invariant
                     }
                     9 => {
-                        let rows = &mut f.physical.local.raw_mut().active.as_mut().unwrap().rows;
+                        let rows = &mut f.physical.active.as_mut().unwrap().rows;
                         let mut row = rows[1].unwrap();
                         row.return_word += 8;
                         rows.set(1, Some(row));
@@ -1327,7 +1299,7 @@ fn entry_proof_new_confirmation_keeps_full_older_row_join() {
                 }
                 // A different legal RET passes the old pending-row geometry
                 // check but must fail the newly confirmed record relation.
-                let rows = &mut f.physical.local.raw_mut().active.as_mut().unwrap().rows;
+                let rows = &mut f.physical.active.as_mut().unwrap().rows;
                 let mut row = rows[0].unwrap();
                 row.return_pc += 8;
                 rows.set(0, Some(row));
@@ -1346,7 +1318,7 @@ fn entry_proof_new_confirmation_keeps_full_older_row_join() {
             // Repair only the deliberately inconsistent old row. Both actual
             // receipts remain correctly owned; no refusal rolled back entry.
             for f in [&mut checked, &mut original] {
-                let rows = &mut f.physical.local.raw_mut().active.as_mut().unwrap().rows;
+                let rows = &mut f.physical.active.as_mut().unwrap().rows;
                 let mut row = rows[0].unwrap();
                 row.return_pc = f.state.records[0].unwrap().raw.return_pc;
                 rows.set(0, Some(row));
@@ -2004,7 +1976,7 @@ fn ret_normal_proof_keeps_combined_late_failure_order_and_committed_state() {
                 // Child-only access exercises the retained active guard; no
                 // production mutation hook or escaping borrow is introduced.
                 let active = if no_active {
-                    committed.checked.physical.local.raw_mut().active.take()
+                    committed.checked.physical.active.take()
                 } else {
                     None
                 };
@@ -2035,7 +2007,7 @@ fn ret_normal_proof_keeps_combined_late_failure_order_and_committed_state() {
                 f.state.totals.ret_observed = count;
                 f.state.journal.word(0, used as u64);
                 if let Some(active) = active {
-                    f.physical.local.raw_mut().active = Some(active);
+                    f.physical.active = Some(active);
                 }
                 let b = f.physical.active.as_ref().unwrap();
                 assert_eq!(b.position, 1);
@@ -2590,7 +2562,7 @@ fn physical_occupancy_matches_original_for_all_6480_metadata_patterns() {
     for seen_mask in 0u8..16 {
         for row_pattern in 0usize..81 {
             for position in 0..=4 {
-                let b = f.physical.local.raw_mut().active.as_mut().unwrap();
+                let b = f.physical.active.as_mut().unwrap();
                 b.position = position;
                 b.rsp = (position != 0).then_some(rows[0].entry_rsp);
                 let mut digits = row_pattern;
@@ -2623,7 +2595,7 @@ fn physical_occupancy_matches_original_for_all_6480_metadata_patterns() {
         }
     }
     assert_eq!((accepted, refused), (5, 6475));
-    let b = f.physical.local.raw_mut().active.as_mut().unwrap();
+    let b = f.physical.active.as_mut().unwrap();
     b.position = 4;
     b.rsp = Some(rows[0].entry_rsp);
     for (index, row) in rows.iter().enumerate() {
@@ -2737,44 +2709,30 @@ fn physical_occupancy_keeps_exact_error_precedence_and_underflow() {
         compare_occupancy_shape_unchanged(&f, Ok(()));
         // The initial overflow is after matches/normal/active, but before any
         // physical occupancy or cursor check. Restore each fault explicitly.
-        f.physical.local.raw_mut().batches = u64::MAX;
+        f.physical.batches = u64::MAX;
         f.physical.shared.failed.store(true, Ordering::Release);
         compare_occupancy_shape_unchanged(&f, Err(error(Cause::Identity)));
         f.physical.shared.failed.store(false, Ordering::Release);
         f.state.len = CALLS + 1;
         compare_occupancy_shape_unchanged(&f, Err(error(Cause::Invariant)));
         f.state.len = 0;
-        let active = f.physical.local.raw_mut().active.take();
+        let active = f.physical.active.take();
         compare_occupancy_shape_unchanged(&f, Err(error(Cause::Outstanding)));
-        f.physical.local.raw_mut().active = active;
+        f.physical.active = active;
         assert_eq!(f.state.shape(), Ok(()));
         for position in [5, usize::MAX] {
-            f.physical.local.raw_mut().active.as_mut().unwrap().position = position;
+            f.physical.active.as_mut().unwrap().position = position;
             compare_occupancy_shape_unchanged(&f, Err(error(Cause::Capacity)));
-            f.physical.local.raw_mut().batches = 0;
+            f.physical.batches = 0;
             compare_occupancy_shape_unchanged(&f, Err(error(Cause::Invariant)));
-            f.physical.local.raw_mut().batches = u64::MAX;
+            f.physical.batches = u64::MAX;
         }
-        f.physical.local.raw_mut().active.as_mut().unwrap().position = 0;
-        f.physical
-            .local
-            .raw_mut()
-            .active
-            .as_mut()
-            .unwrap()
-            .seen
-            .set(3, Some(1));
+        f.physical.active.as_mut().unwrap().position = 0;
+        f.physical.active.as_mut().unwrap().seen.set(3, Some(1));
         compare_occupancy_shape_unchanged(&f, Err(error(Cause::Capacity)));
-        f.physical.local.raw_mut().batches = 0;
+        f.physical.batches = 0;
         compare_occupancy_shape_unchanged(&f, Err(error(Cause::Invariant)));
-        f.physical
-            .local
-            .raw_mut()
-            .active
-            .as_mut()
-            .unwrap()
-            .seen
-            .set(3, None);
+        f.physical.active.as_mut().unwrap().seen.set(3, None);
         compare_occupancy_shape_unchanged(&f, Ok(()));
         // NormalState only uses cursor.confirmed here. Change the independent
         // cursor entered/RET totals on BOTH sides of the physical cursor join,
@@ -2801,26 +2759,12 @@ fn physical_occupancy_keeps_exact_error_precedence_and_underflow() {
                     None
                 );
             }
-            f.physical
-                .local
-                .raw_mut()
-                .active
-                .as_mut()
-                .unwrap()
-                .before
-                .cursor = f.state.cursor;
+            f.physical.active.as_mut().unwrap().before.cursor = f.state.cursor;
             assert_eq!(f.state.shape(), Ok(()));
             compare_occupancy_shape_unchanged(&f, Err(error(Cause::Invariant)));
         }
         f.state.cursor = cursor;
-        f.physical
-            .local
-            .raw_mut()
-            .active
-            .as_mut()
-            .unwrap()
-            .before
-            .cursor = cursor;
+        f.physical.active.as_mut().unwrap().before.cursor = cursor;
         compare_occupancy_shape_unchanged(&f, Ok(()));
         f.controller.arm(&f.epoch).unwrap();
         f.call(true);
@@ -2828,7 +2772,7 @@ fn physical_occupancy_keeps_exact_error_precedence_and_underflow() {
         let old_next = f.physical.active.as_ref().unwrap().before.next;
         let old_seen = f.physical.active.as_ref().unwrap().seen[0];
         let old_row = f.physical.active.as_ref().unwrap().rows[0];
-        let b = f.physical.local.raw_mut().active.as_mut().unwrap();
+        let b = f.physical.active.as_mut().unwrap();
         b.before.next = u64::MAX;
         b.seen.set(0, Some(u64::MAX));
         let mut changed = b.rows[0].unwrap();
@@ -2838,41 +2782,25 @@ fn physical_occupancy_keeps_exact_error_precedence_and_underflow() {
         // Counts/prefix are valid: later ordinal overflow must remain Capacity.
         compare_occupancy_shape_unchanged(&f, Err(error(Cause::Capacity)));
         let row = f.physical.active.as_ref().unwrap().rows[0];
-        f.physical
-            .local
-            .raw_mut()
-            .active
-            .as_mut()
-            .unwrap()
-            .rows
-            .set(0, None);
+        f.physical.active.as_mut().unwrap().rows.set(0, None);
         compare_occupancy_shape_unchanged(&f, Err(error(Cause::Invariant)));
         let mut changed = row.unwrap();
         changed.return_pc += 1;
         f.physical
-            .local
-            .raw_mut()
             .active
             .as_mut()
             .unwrap()
             .rows
             .set(0, Some(changed));
         compare_occupancy_shape_unchanged(&f, Err(error(Cause::Capacity)));
-        let b = f.physical.local.raw_mut().active.as_mut().unwrap();
+        let b = f.physical.active.as_mut().unwrap();
         b.before.next = old_next;
         b.seen.set(0, old_seen);
         let mut changed = b.rows[0].unwrap();
         changed.observed_ordinal = old_row.unwrap().observed_ordinal;
         b.rows.set(0, Some(changed));
         compare_occupancy_shape_unchanged(&f, Err(error(Cause::Identity)));
-        f.physical
-            .local
-            .raw_mut()
-            .active
-            .as_mut()
-            .unwrap()
-            .rows
-            .set(0, old_row);
+        f.physical.active.as_mut().unwrap().rows.set(0, old_row);
         compare_occupancy_shape_unchanged(&f, Ok(()));
         for _ in 0..3 {
             f.call(false);
@@ -3046,19 +2974,10 @@ fn geometry_facts_require_exact_owner_and_key_and_invalidate_on_replacement() {
             assert_eq!(rows, &before);
             // Identical replacement is still a mutation boundary: it drops the
             // fact, while the literal geometry fallback accepts the raw row.
-            a.physical
-                .local
-                .raw_mut()
-                .active
-                .as_mut()
-                .unwrap()
-                .rows
-                .set(0, Some(row));
+            a.physical.active.as_mut().unwrap().rows.set(0, Some(row));
             assert!(!geometry_hit(&a, 0, row.return_pc));
             geometry_shape_unchanged(&a, Ok(()));
             a.physical
-                .local
-                .raw_mut()
                 .active
                 .as_mut()
                 .unwrap()
@@ -3072,8 +2991,6 @@ fn geometry_facts_require_exact_owner_and_key_and_invalidate_on_replacement() {
                 assert!(
                     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                         a.physical
-                            .local
-                            .raw_mut()
                             .active
                             .as_mut()
                             .unwrap()
@@ -3084,31 +3001,15 @@ fn geometry_facts_require_exact_owner_and_key_and_invalidate_on_replacement() {
                 );
                 assert_eq!(a.physical.active.as_ref().unwrap().rows, before);
             }
-            a.physical
-                .local
-                .raw_mut()
-                .active
-                .as_mut()
-                .unwrap()
-                .rows
-                .set(0, None);
+            a.physical.active.as_mut().unwrap().rows.set(0, None);
             assert!(!geometry_hit(&a, 0, row.return_pc));
             geometry_shape_unchanged(&a, Err(error(Cause::Invariant)));
-            a.physical
-                .local
-                .raw_mut()
-                .active
-                .as_mut()
-                .unwrap()
-                .rows
-                .set(0, Some(row));
+            a.physical.active.as_mut().unwrap().rows.set(0, Some(row));
             assert!(!geometry_hit(&a, 0, row.return_pc));
             geometry_shape_unchanged(&a, Ok(()));
             let mut invalid = row;
             invalid.return_pc += 1;
             a.physical
-                .local
-                .raw_mut()
                 .active
                 .as_mut()
                 .unwrap()
@@ -3117,8 +3018,6 @@ fn geometry_facts_require_exact_owner_and_key_and_invalidate_on_replacement() {
             assert!(!geometry_hit(&a, 0, invalid.return_pc));
             geometry_shape_unchanged(&a, Err(error(Cause::Identity)));
             a.physical
-                .local
-                .raw_mut()
                 .active
                 .as_mut()
                 .unwrap()
@@ -3130,16 +3029,14 @@ fn geometry_facts_require_exact_owner_and_key_and_invalidate_on_replacement() {
             // Move the entire capsule. All numeric geometry and raw rows stay
             // equal, but its retained Arc still belongs to the other fixture.
             std::mem::swap(
-                &mut a.physical.local.raw_mut().active.as_mut().unwrap().rows,
-                &mut b.physical.local.raw_mut().active.as_mut().unwrap().rows,
+                &mut a.physical.active.as_mut().unwrap().rows,
+                &mut b.physical.active.as_mut().unwrap().rows,
             );
             assert!(!geometry_hit(&a, 0, row.return_pc));
             assert!(!geometry_hit(&b, 0, row.return_pc));
             geometry_shape_unchanged(&a, Ok(()));
             geometry_shape_unchanged(&b, Ok(()));
             b.physical
-                .local
-                .raw_mut()
                 .active
                 .as_mut()
                 .unwrap()
@@ -3150,15 +3047,13 @@ fn geometry_facts_require_exact_owner_and_key_and_invalidate_on_replacement() {
             assert!(!geometry_hit(&b, 0, row.return_pc));
             geometry_shape_unchanged(&b, Ok(()));
             std::mem::swap(
-                &mut a.physical.local.raw_mut().active.as_mut().unwrap().rows,
-                &mut b.physical.local.raw_mut().active.as_mut().unwrap().rows,
+                &mut a.physical.active.as_mut().unwrap().rows,
+                &mut b.physical.active.as_mut().unwrap().rows,
             );
             // A capsule with no owner also uses only the original fallback,
             // even when the actual checked-return API successfully writes it.
-            a.physical.local.raw_mut().active.as_mut().unwrap().rows = RowSlots::empty();
+            a.physical.active.as_mut().unwrap().rows = RowSlots::empty();
             a.physical
-                .local
-                .raw_mut()
                 .active
                 .as_mut()
                 .unwrap()
@@ -3209,14 +3104,7 @@ fn geometry_facts_preserve_original_geometry_error_precedence() {
         let checked = CheckedRet::new(&mut f.physical, &mut f.state).unwrap();
         let pending_position = checked.physical.active.as_ref().unwrap().pending_position;
         assert_eq!(pending_position, Some(1));
-        checked
-            .physical
-            .local
-            .raw_mut()
-            .active
-            .as_mut()
-            .unwrap()
-            .pending_position = Some(0);
+        checked.physical.active.as_mut().unwrap().pending_position = Some(0);
         let refusal_image = (
             normal_image(checked.state),
             physical_image(checked.physical),
@@ -3237,13 +3125,7 @@ fn geometry_facts_preserve_original_geometry_error_precedence() {
         );
         assert_eq!(f.physical.active.as_ref().unwrap().rows, refusal_rows);
         assert!(!geometry_hit(&f, 1, pc));
-        f.physical
-            .local
-            .raw_mut()
-            .active
-            .as_mut()
-            .unwrap()
-            .pending_position = pending_position;
+        f.physical.active.as_mut().unwrap().pending_position = pending_position;
         f.visit(false).unwrap();
         assert!(geometry_hit(&f, 1, pc));
         assert_eq!(f.state.len, 1);
@@ -3254,8 +3136,6 @@ fn geometry_facts_preserve_original_geometry_error_precedence() {
         let mut invalid = row;
         invalid.return_pc += 1;
         f.physical
-            .local
-            .raw_mut()
             .active
             .as_mut()
             .unwrap()
@@ -3266,14 +3146,12 @@ fn geometry_facts_preserve_original_geometry_error_precedence() {
         f.state.len = CALLS + 1;
         geometry_shape_unchanged(&f, Err(error(Cause::Invariant)));
         f.state.len = len;
-        f.physical.local.raw_mut().batches = u64::MAX;
+        f.physical.batches = u64::MAX;
         geometry_shape_unchanged(&f, Err(error(Cause::Capacity)));
-        f.physical.local.raw_mut().batches = 0;
+        f.physical.batches = 0;
         let mut bad_word = invalid;
         bad_word.return_word += 8;
         f.physical
-            .local
-            .raw_mut()
             .active
             .as_mut()
             .unwrap()
@@ -3281,8 +3159,6 @@ fn geometry_facts_preserve_original_geometry_error_precedence() {
             .set(0, Some(bad_word));
         geometry_shape_unchanged(&f, Err(error(Cause::Invariant)));
         f.physical
-            .local
-            .raw_mut()
             .active
             .as_mut()
             .unwrap()
@@ -3292,14 +3168,7 @@ fn geometry_facts_preserve_original_geometry_error_precedence() {
         f.state.pending.as_mut().unwrap().word += 8;
         assert_eq!(f.state.shape(), Ok(()));
         geometry_shape_unchanged(&f, Err(error(Cause::Identity)));
-        f.physical
-            .local
-            .raw_mut()
-            .active
-            .as_mut()
-            .unwrap()
-            .rows
-            .set(0, Some(row));
+        f.physical.active.as_mut().unwrap().rows.set(0, Some(row));
         geometry_shape_unchanged(&f, Err(error(Cause::Return)));
         f.state.pending.as_mut().unwrap().word = pending_word;
         // Another valid RET address must reach the later confirmed-record join,
@@ -3308,8 +3177,6 @@ fn geometry_facts_preserve_original_geometry_error_precedence() {
         different_valid_pc.return_pc = ENTRIES[f.physical.order[0].index] + 24;
         assert_ne!(different_valid_pc.return_pc, row.return_pc);
         f.physical
-            .local
-            .raw_mut()
             .active
             .as_mut()
             .unwrap()
@@ -3317,18 +3184,9 @@ fn geometry_facts_preserve_original_geometry_error_precedence() {
             .set(0, Some(different_valid_pc));
         assert_eq!(f.state.shape(), Ok(()));
         geometry_shape_unchanged(&f, Err(error(Cause::Invariant)));
-        f.physical
-            .local
-            .raw_mut()
-            .active
-            .as_mut()
-            .unwrap()
-            .rows
-            .set(0, Some(row));
+        f.physical.active.as_mut().unwrap().rows.set(0, Some(row));
         let selected = f.physical.order[0];
         f.physical
-            .local
-            .raw_mut()
             .active
             .as_mut()
             .unwrap()
@@ -3340,7 +3198,7 @@ fn geometry_facts_preserve_original_geometry_error_precedence() {
         // Preserve the original unchecked canonical site-index panic even with
         // a previously valid cached row. Neither shape may mutate on refusal.
         for index in [2, usize::MAX] {
-            f.physical.local.raw_mut().order[0].index = index;
+            f.physical.order[0].index = index;
             let before = (
                 normal_image(&f.state),
                 physical_image(&f.physical),
@@ -3378,7 +3236,7 @@ fn geometry_facts_preserve_original_geometry_error_precedence() {
             );
             assert_eq!(f.physical.active.as_ref().unwrap().rows, facts);
         }
-        f.physical.local.raw_mut().order[0] = selected;
+        f.physical.order[0] = selected;
         geometry_shape_unchanged(&f, Ok(()));
         for _ in 0..2 {
             f.call(false);
@@ -3412,22 +3270,8 @@ fn geometry_fact_owner_is_retained_until_the_batch_drops() {
         .unwrap()
         .return_pc;
     std::mem::swap(
-        &mut source
-            .physical
-            .local
-            .raw_mut()
-            .active
-            .as_mut()
-            .unwrap()
-            .rows,
-        &mut target
-            .physical
-            .local
-            .raw_mut()
-            .active
-            .as_mut()
-            .unwrap()
-            .rows,
+        &mut source.physical.active.as_mut().unwrap().rows,
+        &mut target.physical.active.as_mut().unwrap().rows,
     );
     drop(source);
     assert!(owner.upgrade().is_some());
@@ -3554,11 +3398,7 @@ fn current_ret_refusal(f: &mut Fixture, fault: usize, original: bool) {
     let rows = f.physical.active.as_ref().unwrap().rows.clone();
     let checked = CheckedVisit::new(&f.physical, &mut f.state).unwrap();
     let proof = checked
-        .return_geometry(
-            &mut f.physical.local.raw_mut().active.as_mut().unwrap().rows,
-            selected,
-            pc,
-        )
+        .return_geometry(&mut f.physical.active.as_mut().unwrap().rows, selected, pc)
         .unwrap();
     let removed = current_ret_fault(proof.checked.state, fault);
     let damaged = normal_image(proof.checked.state);
@@ -3700,22 +3540,8 @@ fn current_ret_geometry_uses_actual_validation_with_foreign_rows_and_rearm() {
                 &original.state.binding
             ));
             std::mem::swap(
-                &mut checked
-                    .physical
-                    .local
-                    .raw_mut()
-                    .active
-                    .as_mut()
-                    .unwrap()
-                    .rows,
-                &mut original
-                    .physical
-                    .local
-                    .raw_mut()
-                    .active
-                    .as_mut()
-                    .unwrap()
-                    .rows,
+                &mut checked.physical.active.as_mut().unwrap().rows,
+                &mut original.physical.active.as_mut().unwrap().rows,
             );
             compare_visit(&mut checked, &mut original, &generations, true);
             let summary = checked.state.pending.as_ref().unwrap().summary.unwrap();
@@ -3803,478 +3629,4 @@ fn current_ret_geometry_uses_actual_validation_with_foreign_rows_and_rearm() {
         }
     }
     assert_eq!(batches, 10);
-}
-
-// Literal current full shape, renamed only: this reference never consults the
-// local certificate and retains the original per-index failure order.
-impl PhysicalState {
-    fn shape_before_local_capsule(&self, state: &NormalState) -> Result<(), BridgeError> {
-        self.matches(state)?;
-        state.shape()?;
-        let b = self.active.as_ref().ok_or(error(Cause::Outstanding))?;
-        if b.number != self.batches.checked_add(1).ok_or(error(Cause::Capacity))?
-            || b.position > 4
-            || state.cursor != b.before.cursor
-            || !b.rows.is_prefix(b.position)
-            || !b.seen.tail_is_empty(b.position.saturating_add(1).min(4))
-            || state
-                .totals
-                .entered
-                .checked_sub(b.before.cursor.totals.entered)
-                != Some(b.seen.count() as u64)
-            || state
-                .totals
-                .ret_observed
-                .checked_sub(b.before.cursor.totals.ret_observed)
-                != Some(b.rows.observed_count() as u64)
-        {
-            return Err(error(Cause::Invariant));
-        }
-        let mut ordinal = b.before.next;
-        let mut confirmed = 0;
-        for index in 0..4 {
-            if let Some(n) = b.seen[index] {
-                if n != ordinal {
-                    return Err(error(Cause::Invariant));
-                }
-                ordinal = ordinal.checked_add(1).ok_or(error(Cause::Capacity))?;
-            }
-            if let Some(row) = b.rows[index] {
-                if row.batch != b.number
-                    || row.position != index
-                    || row.function != self.order[index % 2].function
-                    || row.observed_ordinal != b.seen[index]
-                    || row.return_word != self.words[index]
-                    || Some(row.entry_rsp) != b.rsp
-                {
-                    return Err(error(Cause::Invariant));
-                }
-                let BindingProfile::Module { site, .. } = &state.binding.profile else {
-                    return Err(error(Cause::Identity));
-                };
-                // Preserve canonical-entry indexing (including its original
-                // panic) before consulting the exact immutable geometry fact.
-                let selected = self.order[index % 2];
-                let entry = site.functions()[selected.index].entry();
-                if !b
-                    .rows
-                    .geometry_matches(index, state, selected, entry, row.return_pc)
-                {
-                    state.selected_geometry(selected, entry, Some(row.return_pc))?;
-                }
-                if row.observed_ordinal.is_some() && b.pending_position != Some(index) {
-                    let r = state
-                        .records
-                        .get(confirmed)
-                        .and_then(|r| *r)
-                        .ok_or(error(Cause::Invariant))?;
-                    if state.functions[confirmed] != Some(self.order[index % 2])
-                        || Some(r.raw.ordinal) != row.observed_ordinal
-                        || r.raw.return_pc != row.return_pc
-                        || r.entry_rsp != row.entry_rsp
-                        || r.return_word != row.return_word
-                    {
-                        return Err(error(Cause::Invariant));
-                    }
-                    confirmed += 1;
-                }
-            }
-        }
-        if state.next != ordinal || state.len != confirmed {
-            return Err(error(Cause::Invariant));
-        }
-        match (b.pending_position, &state.pending) {
-            (None, None) if b.position == 4 || b.seen[b.position].is_none() => {}
-            (Some(index), Some(p)) if index < 4 => {
-                if b.seen[index] != Some(p.ordinal)
-                    || p.selected != self.order[index % 2]
-                    || p.word != self.words[index]
-                    || Some(p.rsp) != b.rsp
-                    || (p.returned.is_some() && (index >= b.position || b.rows[index].is_none()))
-                    || (p.returned.is_none() && (index != b.position || b.rows[index].is_some()))
-                    || (b.position < 4 && index != b.position && b.seen[b.position].is_some())
-                {
-                    return Err(error(Cause::Return));
-                }
-            }
-            _ => return Err(error(Cause::Return)),
-        }
-        Ok(())
-    }
-}
-
-fn capsule_shape_matches_prior(f: &Fixture, expected: Result<(), BridgeError>) {
-    let before = (normal_image(&f.state), physical_image(&f.physical));
-    let owners = identities(&f.state, &f.physical);
-    let rows = f.physical.active.as_ref().map(|b| b.rows.clone());
-    assert_eq!(f.physical.shape_before_local_capsule(&f.state), expected);
-    assert_eq!(f.physical.shape(&f.state), expected);
-    assert_eq!(
-        (normal_image(&f.state), physical_image(&f.physical)),
-        before
-    );
-    assert_eq!(identities(&f.state, &f.physical), owners);
-    assert_eq!(f.physical.active.as_ref().map(|b| b.rows.clone()), rows);
-}
-
-#[test]
-fn local_capsule_tracks_real_lifecycle_and_failed_partial_transitions() {
-    for k in [10, 1000] {
-        for order in [[0, 1], [1, 0]] {
-            // Empty, older Returned across bypasses, sparse, and fully observed.
-            for mask in [0u8, 1, 5, 15] {
-                let mut checked = Fixture::new(k, order);
-                let mut original = Fixture::new(k, order);
-                let mut generations =
-                    Generations::new(checked.epoch.generation(), original.epoch.generation());
-                assert!(!checked.physical.local.is_certified());
-                checked.controller.arm(&checked.epoch).unwrap();
-                original.controller.arm(&original.epoch).unwrap();
-                for batch in 0..2 {
-                    checked.physical.begin(&checked.state).unwrap();
-                    original.physical.begin(&original.state).unwrap();
-                    assert!(checked.physical.local.is_certified());
-                    capsule_shape_matches_prior(&checked, Ok(()));
-                    for index in 0..4 {
-                        // Even a no-op generic borrow revokes the fact before
-                        // yielding mutable storage. Only a full success restores it.
-                        let image = physical_image(&checked.physical);
-                        let _ = checked.physical.local.raw_mut();
-                        assert!(!checked.physical.local.is_certified());
-                        assert_eq!(physical_image(&checked.physical), image);
-                        capsule_shape_matches_prior(&checked, Ok(()));
-                        assert!(checked.physical.local.is_certified());
-                        if mask & (1 << index) != 0 {
-                            compare_visit(&mut checked, &mut original, &generations, true);
-                            assert!(checked.physical.local.is_certified());
-                            capsule_shape_matches_prior(&checked, Ok(()));
-                        }
-                        compare_visit(&mut checked, &mut original, &generations, false);
-                        assert!(checked.physical.local.is_certified());
-                        capsule_shape_matches_prior(&checked, Ok(()));
-                        if batch == 0 && index == 0 {
-                            checked.controller.disarm(&checked.epoch).unwrap();
-                            original.controller.disarm(&original.epoch).unwrap();
-                            let a = checked
-                                .controller
-                                .stage_prepared(checked.banks.pop().unwrap())
-                                .unwrap();
-                            let b = original
-                                .controller
-                                .stage_prepared(original.banks.pop().unwrap())
-                                .unwrap();
-                            generations.bind(1, a.generation(), b.generation());
-                            checked.controller.arm(&a).unwrap();
-                            original.controller.arm(&b).unwrap();
-                            capsule_shape_matches_prior(&checked, Ok(()));
-                        }
-                    }
-                    compare_finish(&mut checked, &mut original, &generations);
-                    assert!(!checked.physical.local.is_certified());
-                    assert!(checked.physical.active.is_none());
-                }
-            }
-            // Observe/bypass may commit its exact row before a fresh postcheck
-            // refuses. Pending must not become Validated on either late failure.
-            for observed in [false, true] {
-                for (bad_shared, bad_used) in [(true, false), (false, true), (true, true)] {
-                    let mut f = Fixture::new(k, order);
-                    f.controller.arm(&f.epoch).unwrap();
-                    f.physical.begin(&f.state).unwrap();
-                    f.call(true);
-                    if observed {
-                        f.visit(true).unwrap();
-                    }
-                    assert!(f.physical.local.is_certified());
-                    let owners = identities(&f.state, &f.physical);
-                    let Visit {
-                        selected,
-                        pc,
-                        rsp,
-                        word,
-                        stamp,
-                        ..
-                    } = f.input(false);
-                    let committed = CheckedRet::new(&mut f.physical, &mut f.state)
-                        .unwrap()
-                        .commit(selected, pc, rsp, word, stamp)
-                        .unwrap();
-                    assert!(!committed.checked.physical.local.is_certified());
-                    let used = committed.checked.state.journal.used();
-                    if bad_shared {
-                        committed
-                            .checked
-                            .physical
-                            .shared
-                            .failed
-                            .store(true, Ordering::Release);
-                    }
-                    if bad_used {
-                        committed.checked.state.journal.word(0, used as u64 + 1);
-                    }
-                    let expected = Err(error(if bad_shared {
-                        Cause::Identity
-                    } else {
-                        Cause::Invariant
-                    }));
-                    assert_eq!(
-                        committed
-                            .checked
-                            .physical
-                            .shape_before_local_capsule(committed.checked.state),
-                        expected
-                    );
-                    let at_failure = (
-                        normal_image(committed.checked.state),
-                        physical_image(committed.checked.physical),
-                    );
-                    assert_eq!(committed.finish(), expected);
-                    assert!(!f.physical.local.is_certified());
-                    assert_eq!(
-                        (normal_image(&f.state), physical_image(&f.physical)),
-                        at_failure
-                    );
-                    assert_eq!(identities(&f.state, &f.physical), owners);
-                    f.physical.shared.failed.store(false, Ordering::Release);
-                    f.state.journal.word(0, used as u64);
-                    capsule_shape_matches_prior(&f, Ok(()));
-                    assert!(f.physical.local.is_certified());
-                    f.call(false);
-                    f.call(false);
-                    assert_eq!(
-                        f.finish().0.unwrap().records().len(),
-                        if observed { 2 } else { 1 }
-                    );
-                    assert!(!f.physical.local.is_certified());
-                }
-            }
-        }
-    }
-    // Actual confirmation consumes the receipt before the forged summary is
-    // rejected. The local capability must remain invalid, not certify a partial
-    // transition or hide the next pre-shape failure.
-    for order in [[0, 1], [1, 0]] {
-        let mut checked = Fixture::new(10, order);
-        let mut original = Fixture::new(10, order);
-        let generations = Generations::new(checked.epoch.generation(), original.epoch.generation());
-        for f in [&mut checked, &mut original] {
-            f.controller.arm(&f.epoch).unwrap();
-            f.physical.begin(&f.state).unwrap();
-            f.call(true);
-            f.call(false);
-            f.call(false);
-            let p = f.state.pending.as_mut().unwrap();
-            let IntervalEntrySummary::Admitted {
-                generation,
-                invocation,
-                history_len,
-                binding,
-            } = p.summary.unwrap()
-            else {
-                panic!()
-            };
-            let forged = IntervalEntrySummary::Admitted {
-                generation,
-                invocation: invocation + 1,
-                history_len,
-                binding,
-            };
-            p.summary = Some(forged);
-            p.returned.as_mut().unwrap().owner = timing::owner(forged);
-            let (_, _, bits) =
-                history::packed_for_function(&f.state.binding.session, p.selected.function, forged)
-                    .unwrap();
-            f.state.journal.word(10, bits);
-            f.state.journal.word(17, bits);
-            assert!(
-                f.state
-                    .confirmation(NormalAcknowledgement::NextEntry {
-                        ordinal: f.state.next
-                    })
-                    .is_ok()
-            );
-            capsule_shape_matches_prior(f, Ok(()));
-            assert!(f.physical.local.is_certified());
-        }
-        compare_entry_refusal(&mut checked, &mut original, &generations, Cause::Invariant);
-        for f in [&mut checked, &mut original] {
-            assert!(!f.physical.local.is_certified());
-            assert_eq!(f.state.model.completed_sequence(), 1);
-            assert_eq!(f.state.model.depth(), 0);
-            assert_eq!(f.state.len, 0);
-            let p = f.state.pending.as_mut().unwrap();
-            assert!(p.receipt.summary().is_none());
-            assert_eq!(p.slot.word, TOKEN);
-            assert_eq!(
-                f.state.model.finish_interval(
-                    &mut p.receipt,
-                    &mut p.slot,
-                    p.returned.unwrap().observation()
-                ),
-                Err(IntervalExitError::Consumed)
-            );
-            capsule_shape_matches_prior(f, Err(error(Cause::Invariant)));
-            assert!(!f.physical.local.is_certified());
-            f.controller.disarm(&f.epoch).unwrap();
-            assert_eq!(
-                f.controller
-                    .report(&f.epoch)
-                    .unwrap()
-                    .unwrap()
-                    .records()
-                    .count(),
-                1
-            );
-        }
-    }
-}
-
-#[test]
-fn local_capsule_invalidation_keeps_fresh_and_per_index_error_order() {
-    for k in [10, 1000] {
-        for order in [[0, 1], [1, 0]] {
-            let mut f = Fixture::new(k, order);
-            f.controller.arm(&f.epoch).unwrap();
-            f.physical.begin(&f.state).unwrap();
-            f.call(true);
-            f.call(true);
-            assert!(f.physical.local.is_certified());
-            let saved_record = f.state.records[0].unwrap();
-            // Raw normal-record content is independently rechecked even while
-            // local metadata remains certified. NormalState::shape alone accepts
-            // this populated record; the physical join must detect the mismatch.
-            let mut bad_record = saved_record;
-            bad_record.raw.return_pc += 1;
-            f.state.records.set(0, Some(bad_record));
-            assert_eq!(f.state.shape(), Ok(()));
-            assert!(f.physical.local.is_certified());
-            capsule_shape_matches_prior(&f, Err(error(Cause::Invariant)));
-            assert!(f.physical.local.is_certified());
-            f.state.records.set(0, Some(saved_record));
-            capsule_shape_matches_prior(&f, Ok(()));
-            // Fresh failed Acquire precedes fresh normal/journal rejection.
-            let used = f.state.journal.used();
-            f.state.journal.word(0, used as u64 + 1);
-            f.physical.shared.failed.store(true, Ordering::Release);
-            capsule_shape_matches_prior(&f, Err(error(Cause::Identity)));
-            assert!(f.physical.local.is_certified());
-            f.physical.shared.failed.store(false, Ordering::Release);
-            capsule_shape_matches_prior(&f, Err(error(Cause::Invariant)));
-            assert!(f.physical.local.is_certified());
-            f.state.journal.word(0, used as u64);
-            capsule_shape_matches_prior(&f, Ok(()));
-            // A generic hole must invalidate before the original prefix refusal.
-            let saved_row = f.physical.active.as_ref().unwrap().rows[0].unwrap();
-            f.physical
-                .local
-                .raw_mut()
-                .active
-                .as_mut()
-                .unwrap()
-                .rows
-                .set(0, None);
-            assert!(!f.physical.local.is_certified());
-            capsule_shape_matches_prior(&f, Err(error(Cause::Invariant)));
-            assert!(!f.physical.local.is_certified());
-            f.physical
-                .local
-                .raw_mut()
-                .active
-                .as_mut()
-                .unwrap()
-                .rows
-                .set(0, Some(saved_row));
-            capsule_shape_matches_prior(&f, Ok(()));
-            assert!(f.physical.local.is_certified());
-            // A rejected generic store still revokes certification before the
-            // panic. Bounds refusal must not alter any raw value or row fact.
-            for (seen_slot, index) in [
-                (true, 4),
-                (false, 4),
-                (true, usize::MAX),
-                (false, usize::MAX),
-            ] {
-                assert!(f.physical.local.is_certified());
-                let before = (normal_image(&f.state), physical_image(&f.physical));
-                let owners = identities(&f.state, &f.physical);
-                let rows = f.physical.active.as_ref().unwrap().rows.clone();
-                let refused = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    let b = f.physical.local.raw_mut().active.as_mut().unwrap();
-                    if seen_slot {
-                        b.seen.set(index, None);
-                    } else {
-                        b.rows.set(index, None);
-                    }
-                }));
-                assert!(refused.is_err());
-                assert!(!f.physical.local.is_certified());
-                assert_eq!(
-                    (normal_image(&f.state), physical_image(&f.physical)),
-                    before
-                );
-                assert_eq!(identities(&f.state, &f.physical), owners);
-                assert_eq!(&f.physical.active.as_ref().unwrap().rows, &rows);
-                capsule_shape_matches_prior(&f, Ok(()));
-                assert!(f.physical.local.is_certified());
-            }
-            // Compare two distinguishable later failures against an earlier
-            // fresh record mismatch. A global cached failure would reverse these.
-            for later_capacity in [false, true] {
-                let b = f.physical.active.as_ref().unwrap();
-                let prior_next = b.before.next;
-                let rows = *b.rows;
-                let seen = *b.seen;
-                let mut record = saved_record;
-                {
-                    let raw = f.physical.local.raw_mut();
-                    let b = raw.active.as_mut().unwrap();
-                    if later_capacity {
-                        b.before.next = u64::MAX - 1;
-                        b.seen.set(0, Some(u64::MAX - 1));
-                        b.seen.set(1, Some(u64::MAX));
-                        for (i, saved) in rows.iter().enumerate().take(2) {
-                            let mut row = saved.unwrap();
-                            row.observed_ordinal = b.seen[i];
-                            b.rows.set(i, Some(row));
-                        }
-                        record.raw.ordinal = u64::MAX - 1;
-                    } else {
-                        let mut row = rows[1].unwrap();
-                        row.return_pc = 0;
-                        b.rows.set(1, Some(row));
-                    }
-                }
-                record.raw.return_pc += 1;
-                f.state.records.set(0, Some(record));
-                assert_eq!(f.state.shape(), Ok(()));
-                assert!(!f.physical.local.is_certified());
-                capsule_shape_matches_prior(&f, Err(error(Cause::Invariant)));
-                assert!(!f.physical.local.is_certified());
-                record.raw.return_pc = saved_record.raw.return_pc;
-                f.state.records.set(0, Some(record));
-                capsule_shape_matches_prior(
-                    &f,
-                    Err(error(if later_capacity {
-                        Cause::Capacity
-                    } else {
-                        Cause::Identity
-                    })),
-                );
-                assert!(!f.physical.local.is_certified());
-                f.state.records.set(0, Some(saved_record));
-                let b = f.physical.local.raw_mut().active.as_mut().unwrap();
-                b.before.next = prior_next;
-                for (i, (seen, row)) in seen.into_iter().zip(rows).enumerate() {
-                    b.seen.set(i, seen);
-                    b.rows.set(i, row);
-                }
-                capsule_shape_matches_prior(&f, Ok(()));
-                assert!(f.physical.local.is_certified());
-            }
-            f.call(false);
-            f.call(false);
-            assert_eq!(f.finish().0.unwrap().records().len(), 2);
-            assert!(!f.physical.local.is_certified());
-        }
-    }
 }

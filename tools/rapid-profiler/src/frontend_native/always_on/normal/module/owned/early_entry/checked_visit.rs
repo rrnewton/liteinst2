@@ -30,29 +30,13 @@ impl<'a> CheckedVisit<'a> {
             .is_none_or(|p| p.ordinal != ordinal || p.returned.is_some())
     }
     #[inline(always)]
-    #[cfg(test)]
     fn return_geometry<'r>(
         self,
         rows: &'r mut RowSlots,
         selected: SelectedFunction,
         pc: u64,
-    ) -> Result<CheckedCurrentReturn<'a, physical_slots::CheckedRow<'r>>, BridgeError> {
+    ) -> Result<CheckedCurrentReturn<'a, 'r>, BridgeError> {
         let row = rows.checked_return(self.state, selected, pc)?;
-        Ok(CheckedCurrentReturn {
-            checked: self,
-            row,
-            selected,
-            pc,
-        })
-    }
-    #[inline(always)]
-    fn return_local_geometry<'r>(
-        self,
-        local: local_state::LocalVisit<'r>,
-        selected: SelectedFunction,
-        pc: u64,
-    ) -> Result<CheckedCurrentReturn<'a, local_state::CheckedRow<'r>>, BridgeError> {
-        let row = local.checked_return(self.state, selected, pc)?;
         Ok(CheckedCurrentReturn {
             checked: self,
             row,
@@ -109,26 +93,13 @@ impl<'a> CheckedVisit<'a> {
 // Only successful current-RET validation constructs this consuming capability.
 // It holds the same exclusive normal and row-slot borrows, without exposing a
 // mutable view or caching any Session observation. Stored row facts cannot mint it.
-trait ReturnGeometry {
-    fn canonical_entry(&self) -> u64;
-}
-impl ReturnGeometry for physical_slots::CheckedRow<'_> {
-    fn canonical_entry(&self) -> u64 {
-        physical_slots::CheckedRow::canonical_entry(self)
-    }
-}
-impl ReturnGeometry for local_state::CheckedRow<'_> {
-    fn canonical_entry(&self) -> u64 {
-        local_state::CheckedRow::canonical_entry(self)
-    }
-}
-struct CheckedCurrentReturn<'a, R> {
+struct CheckedCurrentReturn<'a, 'r> {
     checked: CheckedVisit<'a>,
-    row: R,
+    row: physical_slots::CheckedRow<'r>,
     selected: SelectedFunction,
     pc: u64,
 }
-impl<R: ReturnGeometry> CheckedCurrentReturn<'_, R> {
+impl<'r> CheckedCurrentReturn<'_, 'r> {
     fn pending_return_mismatch(&self, ordinal: u64) -> bool {
         self.checked.pending_return_mismatch(ordinal)
     }
@@ -136,7 +107,12 @@ impl<R: ReturnGeometry> CheckedCurrentReturn<'_, R> {
         self.checked.has_unreturned_pending()
     }
     #[inline(always)]
-    fn observe(self, rsp: u64, word: u64, end: RawTimestamp) -> Result<R, BridgeError> {
+    fn observe(
+        self,
+        rsp: u64,
+        word: u64,
+        end: RawTimestamp,
+    ) -> Result<physical_slots::CheckedRow<'r>, BridgeError> {
         self.checked.journal_shape()?;
         let pending = self
             .checked
@@ -156,7 +132,7 @@ impl<R: ReturnGeometry> CheckedCurrentReturn<'_, R> {
         Ok(self.row)
     }
     #[inline(always)]
-    fn bypass(self) -> R {
+    fn bypass(self) -> physical_slots::CheckedRow<'r> {
         self.checked.bypass();
         self.row
     }
@@ -193,22 +169,22 @@ impl<'a> CheckedRet<'a> {
         let checked = CheckedVisit {
             state: &mut *self.state,
         };
-        let local = self.physical.local.visit();
-        let b = local.active.as_ref().ok_or(error(Cause::Outstanding))?;
+        let b = self
+            .physical
+            .active
+            .as_mut()
+            .ok_or(error(Cause::Outstanding))?;
         let index = b.position;
         if index >= 4
-            || selected != local.order[index % 2]
-            || word != local.words[index]
+            || selected != self.physical.order[index % 2]
+            || word != self.physical.words[index]
             || b.rsp.is_some_and(|prior| prior != rsp)
         {
             return Err(error(Cause::Return));
         }
-        let number = b.number;
-        let seen = b.seen[index];
-        let pending_position = b.pending_position;
-        let geometry = checked.return_local_geometry(local, selected, pc)?;
-        let geometry = if let Some(ordinal) = seen {
-            if pending_position != Some(index) || geometry.pending_return_mismatch(ordinal) {
+        let geometry = checked.return_geometry(&mut b.rows, selected, pc)?;
+        let geometry = if let Some(ordinal) = b.seen[index] {
+            if b.pending_position != Some(index) || geometry.pending_return_mismatch(ordinal) {
                 return Err(error(Cause::Return));
             }
             // With accuracy excluded by the precheck, this changes only the
@@ -222,15 +198,17 @@ impl<'a> CheckedRet<'a> {
             geometry.bypass()
         };
         let row = EarlyEntryModulePhysicalRow {
-            batch: number,
+            batch: b.number,
             position: index,
             function: selected.function,
-            observed_ordinal: seen,
+            observed_ordinal: b.seen[index],
             return_pc: pc,
             entry_rsp: rsp,
             return_word: word,
         };
-        geometry.set(row);
+        b.rsp = Some(rsp);
+        geometry.set(index, row);
+        b.position += 1;
         Ok(CommittedRet { checked: self, row })
     }
 }
@@ -268,7 +246,6 @@ impl CommittedRet<'_> {
         {
             return Err(error(Cause::Invariant));
         }
-        physical.local.accept();
         Ok(())
     }
 }
@@ -310,12 +287,15 @@ impl<'a> CheckedEntry<'a> {
         let checked = CheckedVisit {
             state: &mut *self.state,
         };
-        let local = self.physical.local.visit();
-        let b = local.active.as_ref().ok_or(error(Cause::Outstanding))?;
+        let b = self
+            .physical
+            .active
+            .as_mut()
+            .ok_or(error(Cause::Outstanding))?;
         let index = b.position;
         if index >= 4
-            || selected != local.order[index % 2]
-            || word != local.words[index]
+            || selected != self.physical.order[index % 2]
+            || word != self.physical.words[index]
             || b.rsp.is_some_and(|prior| prior != rsp)
         {
             return Err(error(Cause::Return));
@@ -330,7 +310,9 @@ impl<'a> CheckedEntry<'a> {
         // remain in their original order. An error here gets no new postcheck:
         // a consumed receipt or partially installed Pending is never retried.
         checked.enter(selected, pc, rsp, word, stamp)?;
-        local.entry(index, ordinal, rsp);
+        b.rsp = Some(rsp);
+        b.seen.set(index, Some(ordinal));
+        b.pending_position = Some(index);
         Ok(CommittedEntry {
             checked: self,
             index,
@@ -427,7 +409,6 @@ impl CommittedEntry<'_> {
             }
             _ => return Err(error(Cause::Return)),
         }
-        physical.local.accept();
         Ok(())
     }
 }

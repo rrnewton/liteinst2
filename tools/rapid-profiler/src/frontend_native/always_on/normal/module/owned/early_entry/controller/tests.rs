@@ -54,7 +54,11 @@ impl Fixture {
         state.journal.header(state.tid, 0);
         let physical = PhysicalState {
             shared: client.shared,
-            local: LocalState::new(order.map(|i| state.selection(i).unwrap()), WORDS),
+            order: order.map(|i| state.selection(i).unwrap()),
+            words: WORDS,
+            batches: 0,
+            calls: 0,
+            active: None,
         };
         Self {
             state,
@@ -319,14 +323,7 @@ fn early_entry_refuses_duplicate_missing_and_stale_physical_positions() {
     f.finish();
     f.physical.begin(&f.state).unwrap();
     f.call(false);
-    f.physical
-        .local
-        .raw_mut()
-        .active
-        .as_mut()
-        .unwrap()
-        .rows
-        .set(0, Some(first));
+    f.physical.active.as_mut().unwrap().rows.set(0, Some(first));
     assert!(f.physical.shape(&f.state).is_err());
 }
 
@@ -341,22 +338,9 @@ fn early_entry_active_seen_converse_and_poison_never_become_bypass() {
         f.controller.disarm(&f.epoch).unwrap();
         let totals = f.state.totals;
         if mutate_seen {
-            f.physical
-                .local
-                .raw_mut()
-                .active
-                .as_mut()
-                .unwrap()
-                .seen
-                .set(0, None);
+            f.physical.active.as_mut().unwrap().seen.set(0, None);
         } else {
-            f.physical
-                .local
-                .raw_mut()
-                .active
-                .as_mut()
-                .unwrap()
-                .pending_position = None;
+            f.physical.active.as_mut().unwrap().pending_position = None;
         }
         let refusal = f.visit(false).unwrap_err();
         f.state.fail(refusal); // Exact production callback failure action.

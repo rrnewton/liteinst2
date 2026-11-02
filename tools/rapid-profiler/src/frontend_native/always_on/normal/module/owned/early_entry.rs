@@ -7,8 +7,6 @@ use std::sync::atomic::AtomicBool;
 mod binding_envelope;
 use binding_envelope::BindingEnvelope;
 mod checked_visit;
-mod local_state;
-use local_state::LocalState;
 mod physical_slots;
 use physical_slots::{RowSlots, SeenSlots};
 mod controller;
@@ -130,15 +128,13 @@ struct Visit {
     entry: bool,
 }
 struct PhysicalState {
-    local: LocalState,
+    order: [SelectedFunction; 2],
+    words: [u64; 4],
+    batches: u64,
+    calls: u64,
+    active: Option<PhysicalBatch>,
     // Drop an active batch's fact owner before the existing attachment owner.
     shared: Arc<Shared>,
-}
-impl std::ops::Deref for PhysicalState {
-    type Target = local_state::RawPhysicalState;
-    fn deref(&self) -> &Self::Target {
-        &self.local
-    }
 }
 thread_local! { static PHYSICAL: RefCell<Option<PhysicalState>> = const { RefCell::new(None) }; }
 
@@ -163,13 +159,109 @@ impl PhysicalState {
         let before = before_batch(state)?;
         let number = self.batches.checked_add(1).ok_or(error(Cause::Capacity))?;
         self.calls.checked_add(4).ok_or(error(Cause::Capacity))?;
-        self.local.begin(before, number, Arc::clone(&state.binding));
+        self.active = Some(PhysicalBatch {
+            number,
+            before,
+            position: 0,
+            rsp: None,
+            seen: SeenSlots::empty(),
+            rows: RowSlots::with_owner(Arc::clone(&state.binding)),
+            pending_position: None,
+        });
         Ok(())
     }
     fn shape(&self, state: &NormalState) -> Result<(), BridgeError> {
         self.matches(state)?;
         state.shape()?;
-        self.local.shape(state)
+        let b = self.active.as_ref().ok_or(error(Cause::Outstanding))?;
+        if b.number != self.batches.checked_add(1).ok_or(error(Cause::Capacity))?
+            || b.position > 4
+            || state.cursor != b.before.cursor
+            || !b.rows.is_prefix(b.position)
+            || !b.seen.tail_is_empty(b.position.saturating_add(1).min(4))
+            || state
+                .totals
+                .entered
+                .checked_sub(b.before.cursor.totals.entered)
+                != Some(b.seen.count() as u64)
+            || state
+                .totals
+                .ret_observed
+                .checked_sub(b.before.cursor.totals.ret_observed)
+                != Some(b.rows.observed_count() as u64)
+        {
+            return Err(error(Cause::Invariant));
+        }
+        let mut ordinal = b.before.next;
+        let mut confirmed = 0;
+        for index in 0..4 {
+            if let Some(n) = b.seen[index] {
+                if n != ordinal {
+                    return Err(error(Cause::Invariant));
+                }
+                ordinal = ordinal.checked_add(1).ok_or(error(Cause::Capacity))?;
+            }
+            if let Some(row) = b.rows[index] {
+                if row.batch != b.number
+                    || row.position != index
+                    || row.function != self.order[index % 2].function
+                    || row.observed_ordinal != b.seen[index]
+                    || row.return_word != self.words[index]
+                    || Some(row.entry_rsp) != b.rsp
+                {
+                    return Err(error(Cause::Invariant));
+                }
+                let BindingProfile::Module { site, .. } = &state.binding.profile else {
+                    return Err(error(Cause::Identity));
+                };
+                // Preserve canonical-entry indexing (including its original
+                // panic) before consulting the exact immutable geometry fact.
+                let selected = self.order[index % 2];
+                let entry = site.functions()[selected.index].entry();
+                if !b
+                    .rows
+                    .geometry_matches(index, state, selected, entry, row.return_pc)
+                {
+                    state.selected_geometry(selected, entry, Some(row.return_pc))?;
+                }
+                if row.observed_ordinal.is_some() && b.pending_position != Some(index) {
+                    let r = state
+                        .records
+                        .get(confirmed)
+                        .and_then(|r| *r)
+                        .ok_or(error(Cause::Invariant))?;
+                    if state.functions[confirmed] != Some(self.order[index % 2])
+                        || Some(r.raw.ordinal) != row.observed_ordinal
+                        || r.raw.return_pc != row.return_pc
+                        || r.entry_rsp != row.entry_rsp
+                        || r.return_word != row.return_word
+                    {
+                        return Err(error(Cause::Invariant));
+                    }
+                    confirmed += 1;
+                }
+            }
+        }
+        if state.next != ordinal || state.len != confirmed {
+            return Err(error(Cause::Invariant));
+        }
+        match (b.pending_position, &state.pending) {
+            (None, None) if b.position == 4 || b.seen[b.position].is_none() => {}
+            (Some(index), Some(p)) if index < 4 => {
+                if b.seen[index] != Some(p.ordinal)
+                    || p.selected != self.order[index % 2]
+                    || p.word != self.words[index]
+                    || Some(p.rsp) != b.rsp
+                    || (p.returned.is_some() && (index >= b.position || b.rows[index].is_none()))
+                    || (p.returned.is_none() && (index != b.position || b.rows[index].is_some()))
+                    || (b.position < 4 && index != b.position && b.seen[b.position].is_some())
+                {
+                    return Err(error(Cause::Return));
+                }
+            }
+            _ => return Err(error(Cause::Return)),
+        }
+        Ok(())
     }
     fn returned(
         &self,
@@ -246,8 +338,9 @@ impl PhysicalState {
             }
         }
         let calls = self.calls.checked_add(4).ok_or(error(Cause::Capacity))?;
-        let number = b.number;
-        self.local.complete(number, calls);
+        self.batches = b.number;
+        self.calls = calls;
+        self.active = None;
         Ok((self.batches, self.calls))
     }
 }
@@ -400,7 +493,11 @@ impl EarlyEntryModuleClient {
         let entries = order.map(|index| site.functions()[index].entry());
         let state = PhysicalState {
             shared: Arc::clone(&self.shared),
-            local: LocalState::new(selected, caller.continuations()),
+            order: selected,
+            words: caller.continuations(),
+            batches: 0,
+            calls: 0,
+            active: None,
         };
         PHYSICAL
             .try_with(|cell| {
