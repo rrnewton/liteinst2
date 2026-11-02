@@ -1,0 +1,212 @@
+{
+  "bounds": {
+    "observer": [
+      30,
+      1073741824,
+      134217728,
+      80
+    ],
+    "order": [
+      "cpu_seconds",
+      "address_space_bytes",
+      "file_bytes",
+      "wall_seconds"
+    ],
+    "target": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "target_capture_limit": 16777216,
+    "unwinder": [
+      30,
+      1073741824,
+      134217728,
+      80
+    ]
+  },
+  "bridge": {
+    "bytes": 5441928,
+    "sha256": "f3ac20f8526b0e5f957d0e2096db1828004b08c5bf3cac1686f69628c649d85f"
+  },
+  "closure": {
+    "children_after": "ECHILD",
+    "final_errors": [],
+    "inputs_unchanged": true,
+    "observer_error": null,
+    "process_and_fd_cleanup_complete": true,
+    "source_unchanged": true
+  },
+  "compiled_revision": "de48400c25b67916098f6457fb8f171797ad3305",
+  "cpu": 1,
+  "custody": {
+    "aliases": 3472,
+    "artifact_modes": 249,
+    "whole_unique_bytes": 458661158,
+    "whole_unique_input_artifact_files": 3461
+  },
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 1,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "leaf_partition": [
+    {
+      "function": "0x92160-0x9263f:lpf_project",
+      "sampled_period_ns": 6787878720,
+      "samples": 672
+    },
+    {
+      "function": "0x9450-0x951e:pe_bytes",
+      "sampled_period_ns": 5141414090,
+      "samples": 509
+    },
+    {
+      "function": "0x31670-0x32359:li2_pg_epoch_bind",
+      "sampled_period_ns": 2616161590,
+      "samples": 259
+    },
+    {
+      "function": "all_other_known_leaf_functions",
+      "sampled_period_ns": 13848484710,
+      "samples": 1371
+    },
+    {
+      "function": "unknown:other_mapping",
+      "sampled_period_ns": 30303030,
+      "samples": 3
+    }
+  ],
+  "leaf_partition_rule": "Every leaf with at least5% of all2,814 samples; known remainder and unknowns retain the full denominator.",
+  "observation_status": "observed_user_dwarf_diagnostic_only",
+  "observed_argv": [
+    "python3.12",
+    "-B",
+    "target/page-region-next/loop-effects-program-profile-r1/files/evaluation/inprocess/loop_effects_program_profile.py",
+    "--expect-revision",
+    "de48400c25b67916098f6457fb8f171797ad3305",
+    "--diagnostic-receipt",
+    "target/evaluation/inprocess/loop-effects-program-diagnostic-attempt-1/receipt.json",
+    "--diagnostic-sha256",
+    "9160aa25434428cba30cbb3d48965de6953987b7528503d75eaae14d277b2974",
+    "--output",
+    "target/evaluation/inprocess/loop-effects-program-profile-attempt-1"
+  ],
+  "observer_commands": [
+    {
+      "duration_ns": 18204199,
+      "exit": 0,
+      "name": "perf-libraries"
+    },
+    {
+      "duration_ns": 107232473,
+      "exit": 0,
+      "name": "user-dwarf-unwind"
+    }
+  ],
+  "original_failure_reclassified": false,
+  "perf_exit": 0,
+  "performance_credit": false,
+  "profile": "loop-effects-program-user-dwarf-diagnostic-v1",
+  "qualification_credit": false,
+  "records": {
+    "executed_private_driver": {
+      "bytes": 15064,
+      "path": "target/page-region-next/loop-effects-program-profile-r1/files/evaluation/inprocess/loop_effects_program_profile.py",
+      "sha256": "962d12d5916f33f192f2338e22801d30db4d7d0f8db7857131a4d991a1cfae83"
+    },
+    "observation": {
+      "bytes": 2081952,
+      "sha256": "f02cf478014e9a087971cea7062f9dcdfebf66014d04aa34126e2786e7e06009"
+    },
+    "original_failed_four_subject": {
+      "bytes": 2087525,
+      "sha256": "9160aa25434428cba30cbb3d48965de6953987b7528503d75eaae14d277b2974"
+    },
+    "public_driver": {
+      "byte_identical_to_executed_private": true,
+      "bytes": 15064,
+      "installed_during_observation": false,
+      "path": "evaluation/inprocess/loop_effects_program_profile.py",
+      "sha256": "962d12d5916f33f192f2338e22801d30db4d7d0f8db7857131a4d991a1cfae83"
+    }
+  },
+  "revision": "de48400c25b67916098f6457fb8f171797ad3305",
+  "sampling": {
+    "dwarf_stack_bytes": 4096,
+    "event": "cpu-clock:u",
+    "frequency_hz": 99,
+    "full_exec_exit_envelope": true,
+    "kernel_samples": 0,
+    "lost_samples": 0,
+    "period_per_sample_ns": 10101010,
+    "same_pid_held_exec_wrapper_included": true,
+    "sampled_period_ns": 28424242140,
+    "samples": 2814,
+    "strict_frequency": true,
+    "throttle_records": 0,
+    "unknown_leaf_samples": 3,
+    "unwind_complete": false,
+    "unwind_states": {
+      "bounded_observed_frames": 2054,
+      "empty": 3,
+      "leaf_only": 757
+    }
+  },
+  "schema": 1,
+  "scope": "One separately observed failed LS prefix. User-only sampled periods; no event counters, kernel-stack/wall-time allocation, kill-cause, successful-program, speedup or qualification claim.",
+  "source_manifest_sha256": "8b35b8323677c4491a836aa27f15e96700484b356e6824079f9c938853973de8",
+  "source_tree": "c96e57411de7aa326fd4f6ffa7698ded6a3f7728",
+  "successful_target_credit": false,
+  "target": {
+    "exit": -9,
+    "expected_exit": 0,
+    "process_ns": 30460952885,
+    "program": "/bin/ls -d .",
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "terminal_event_counts": null,
+    "timed_out": false,
+    "wait4": {
+      "maxrss_kib": 72468,
+      "system_seconds": 1.885858,
+      "user_seconds": 28.113396,
+      "wait_status": 9
+    }
+  },
+  "target_outcome": "failed_prefix",
+  "target_status": "failed",
+  "timeline": {
+    "bins": 31,
+    "bytes": 730,
+    "file": "20261102-loop-effects-ls-user-profile-de48400c25b6.csv",
+    "scope": "Conserved one-second buckets from profiler release; columns are samples. Period per sample is exact10,101,010ns. Final bin is partial.",
+    "sha256": "f2d349225bc7c243cc89e8c4944af35ab8eca194c3e21c57c951eb8087a3781c"
+  },
+  "tools": {
+    "perf": {
+      "bytes": 12270728,
+      "sha256": "1be5e150695f3bc2b2f6df3cd937fe12527d5b1c7140716e9beb23b9cdd35f46"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    }
+  }
+}

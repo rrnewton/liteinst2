@@ -1,0 +1,5 @@
+ordinal,workload,lane,status,exit,process_ns,user_cpu_ns,system_cpu_ns,minor_faults,major_faults,completed_program_measurement
+0,ls,native,passed,0,4357713,0,2705000,319,0,True
+1,ls,release,failed,-9,30212628253,29148608000,848860000,8623,0,False
+2,true,native,passed,0,3818273,0,2229000,277,0,True
+3,true,release,failed,-9,30218452758,29108669000,889400000,11073,0,False
