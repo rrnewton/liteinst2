@@ -1,0 +1,248 @@
+{
+  "archive": {
+    "bytes": 12007764,
+    "mode": "0644",
+    "sha256": "d5ae6933ce1e905be557a9dac3ffd2341c7649c42f58f9594bba2365ea8ba399"
+  },
+  "archive_builds": 0,
+  "archive_source_provenance_verified": false,
+  "bounds": {
+    "build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "component": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "captures": {
+    "bytes": 232943,
+    "count": 120,
+    "sha256": "564b181d56cb2efcd006d577c23c9204e3b32e54f09488dcbbb812b7e673140e"
+  },
+  "closure": {
+    "cleanup_complete": true,
+    "inputs_unchanged": true,
+    "source_unchanged": true
+  },
+  "commands": {
+    "errors": [],
+    "exit_counts": {
+      "0": 60
+    },
+    "planned": 60,
+    "recorded": 60,
+    "sha256": "4bc26a76851ca46156b540c2b7ed32541e54397987935272313e00533586a7f8"
+  },
+  "component_summary": {
+    "bytes": 49114,
+    "sha256": "3c6baeb17f77aa96c6c80bf7e4118de53f93a8b4a42ba350040bed7e7a8e1148"
+  },
+  "components": {
+    "bounded_fusion_plan": {
+      "binary": {
+        "bytes": 2987992,
+        "mode": "0755",
+        "sha256": "aeed630ee1b56f70232d2c57dac2bce4fcd15122976e4314501a3680092c7d82"
+      },
+      "recipe": {
+        "bytes": 1288,
+        "mode": "0755",
+        "sha256": "052e563facea68ac602557f7e57015c4bca0bbe3dcd3ed37312d67ce10549d94"
+      },
+      "result": {
+        "copied_boundaries": 56,
+        "corruptions": 14,
+        "direct_models": 1536,
+        "emitted_execution": 0,
+        "interiors": 19964,
+        "misses": 10,
+        "mov_models": 1280,
+        "old_version_refusals": 60,
+        "owner_credit": 0,
+        "plans": 14,
+        "typed_direct": 41984,
+        "typed_mov": 83456,
+        "version": 11
+      },
+      "status": "passed"
+    },
+    "loop_envelope": {
+      "binary": {
+        "bytes": 2559040,
+        "mode": "0755",
+        "sha256": "9a97dbeaa663cb5e0be7054f0f953873ac4f9f73e592c66e12dad1cfc93d9f0d"
+      },
+      "recipe": {
+        "bytes": 1088,
+        "mode": "0644",
+        "sha256": "ae895a748ea3d2209e8a926b9358f264f979fa7362e7182ed6c19735a19100dc"
+      },
+      "result": {
+        "boundaries_max": 8,
+        "corruptions": 16,
+        "emitted": 0,
+        "heads_max": 128,
+        "members": 2,
+        "owner_entries": 0,
+        "positive": 122,
+        "profile": "loop-envelope-component-v1",
+        "refused": 9,
+        "version": 12
+      },
+      "status": "passed"
+    },
+    "loop_plan": {
+      "binary": {
+        "bytes": 3078992,
+        "mode": "0755",
+        "sha256": "9fca58e23f1c097deae4f8825ed334bfc0f05cace0b434b798db9c112b095f5e"
+      },
+      "recipe": {
+        "bytes": 1518,
+        "mode": "0755",
+        "sha256": "3b8dfff2a237f703ebbd2d2e202adf00cd716b0af2977b20592b19032df311fb"
+      },
+      "result": {
+        "bridge_controls": 53,
+        "copied_boundaries": 314,
+        "corruptions": 16,
+        "direct_models": 1152,
+        "emitted_execution": 0,
+        "interiors": 83383,
+        "misses": 8,
+        "mov_models": 320,
+        "old_version_refusals": 210,
+        "owner_credit": 0,
+        "plans": 35,
+        "profile": "loop-plan-component-v1",
+        "typed_direct": 31488,
+        "typed_mov": 20864,
+        "version": 12
+      },
+      "status": "passed"
+    },
+    "scalar_read": {
+      "binary": {
+        "bytes": 2524376,
+        "mode": "0755",
+        "sha256": "7d6243e6ab1ef647b82dd4bf9d5b9922711258550621474de789dd44e95ab38e"
+      },
+      "recipe": {
+        "bytes": 991,
+        "mode": "0755",
+        "sha256": "991044c72482e3ce707a5abe392ed1e23a31436840417eff05d59df62a6f4e0a"
+      },
+      "result": {
+        "accepted": 766,
+        "descriptor_version": 2,
+        "instruction_execution": false,
+        "model_cases": 269,
+        "new_codes": 5,
+        "old_rows": 5,
+        "owner_execution": false,
+        "postseal_equal": true,
+        "refusals": 63,
+        "schema": 1
+      },
+      "status": "passed"
+    },
+    "scalar_span_metadata": {
+      "binary": {
+        "bytes": 2587816,
+        "mode": "0755",
+        "sha256": "06c799ac80c2ac4c0cf4eb263cf3bb446792b155009e18f16dd02fcdd7ea1a63"
+      },
+      "recipe": {
+        "bytes": 1256,
+        "mode": "0755",
+        "sha256": "0cc605dfa4991c21f031c85931a4bc77ef83d992ff7f1a1de8fd99af371e974a"
+      },
+      "result": {
+        "accepted": 1283,
+        "code_forms": 131,
+        "max_register_rows": 4,
+        "none_checks": 1283,
+        "old_accepts": 53,
+        "plan_controls": 49,
+        "postseal_equal": 1,
+        "refusals": 26,
+        "schema": 1
+      },
+      "status": "passed"
+    }
+  },
+  "cpu": 33,
+  "csv": {
+    "bytes": 1902,
+    "file": "result.csv",
+    "sha256": "b75ac56a194b51a2da3a5f0ac7e9810f2a9641d0554bbf0364547aa095a48adf"
+  },
+  "error": null,
+  "final_errors": [],
+  "generated_execution": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 33,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "native_execution": 0,
+  "owner_credit": false,
+  "performance_credit": false,
+  "profile": "experimental-loop-components-v1-projection",
+  "projection_only": true,
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 352176,
+    "sha256": "c9f717eb08b452c27bc305e27d8d90af7ef212dbc4d2ac4935b0553cbede5e5d"
+  },
+  "recorded_cohort_accepted": true,
+  "reproduce": {
+    "argv": [
+      "python3",
+      "-B",
+      "evaluation/inprocess/loop_components/run.py",
+      "--expect-revision",
+      "ddfc41a7a34f7f63a625c4ee6d13946624df3adc",
+      "--cpu",
+      "33",
+      "--archive",
+      "<FRESH_SAME_SOURCE_DECODER_ARCHIVE>",
+      "--archive-sha256",
+      "<FRESH_SHA256>",
+      "--output",
+      "target/evaluation/inprocess/<FRESH_ATTEMPT>"
+    ],
+    "note": "Fresh invocation recipe reconstructed from the tracked collector API; original collector argv was not retained in this receipt.",
+    "original_argv_observed": false,
+    "precondition": "Clean exact revision; same reserved CPU and fresh same-source prerequisites. Preserve all original gates."
+  },
+  "revision": "ddfc41a7a34f7f63a625c4ee6d13946624df3adc",
+  "schema": 1,
+  "scope": "Literal closed finite results only. Partial results on failed cases are not accepted equivalence; durations are validation cost.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "ddfc41a7a34f7f63a625c4ee6d13946624df3adc",
+    "source_manifest_sha256": "9e43ae30cb8083ac2b4be79516018e6a0e6e8f6a7d333358bd7264e788dc64ce",
+    "tracked_clean": true,
+    "tree": "57b62aca1a4d5d20d918e790cf46e2c0e2b51b99"
+  },
+  "status": "components_passed",
+  "subjects": [],
+  "whole_profile_qualified": false
+}

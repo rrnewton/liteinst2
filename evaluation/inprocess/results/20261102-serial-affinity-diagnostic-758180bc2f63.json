@@ -1,0 +1,112 @@
+{
+  "affinity_cpu_count": 1,
+  "bounds": {
+    "log_limit_bytes": 8388608,
+    "timeout_seconds": 180
+  },
+  "causality_established": false,
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "liteinst-launch",
+    "--tests",
+    "--",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "cpu": 129,
+  "diagnostic_receipt": {
+    "bytes": 311042,
+    "file": "target/evaluation/inprocess/serial-affinity-diagnostic-attempt-1/receipt.json",
+    "sha256": "0bf9d37fa68d90aed2f0d36e9b6233843381e7b5d02a8a5df94eb19ba58c971a"
+  },
+  "driver": {
+    "byte_identical_to_executed": true,
+    "bytes": 3241,
+    "file": "evaluation/admission/serial_affinity_diagnostic.py",
+    "sha256": "14a82c02e9383929d596f7c764ff35ac50071e74d83d21ec91bb3501c02ed09d"
+  },
+  "environment_delta": {
+    "LITEINST_EVALUATION": "1"
+  },
+  "full_six_check_credit": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "e06d01fbc70c3b04e7a938c3ad3dba794b22d3816a6d56659b16755002532f04",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_upstream_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model_name": "AMD EPYC 9D85 158-Core Processor",
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "harness_seconds": {
+    "tests/dynamic_admission.rs": 48.31,
+    "tests/selected_gate.rs": 5.57,
+    "unittests src/lib.rs": 58.1
+  },
+  "observed_populations": {
+    "backing_cleanup_harnesses": 1,
+    "dynamic_admission_fixtures": 15,
+    "dynamic_matrix_cases": 388,
+    "native_cases": 50,
+    "native_validation_fixtures": 110
+  },
+  "original_failed_checks": {
+    "additional_individual_passes": 6,
+    "affinity_cpu_count": 4,
+    "bytes": 11196,
+    "cleanup_complete": true,
+    "complete_harnesses": 24,
+    "configuration_unchanged": true,
+    "file": "evaluation/inprocess/results/20261102T013631.444130Z-checks-758180bc2f63.json",
+    "interrupted_tests": 1,
+    "passed_in_complete_harnesses": 982,
+    "serial_exit_code": -9,
+    "serial_seconds": 180.13006874686107,
+    "serial_status": "failed",
+    "serial_termination": "timeout",
+    "sha256": "e9d3bb5e2a9b2ebec897acc59e8f19c9f73a8c8e3ce502da46c4f52f40369e72",
+    "source_unchanged": true,
+    "status": "failed",
+    "unstarted_tests": 50
+  },
+  "performance_credit": false,
+  "private_log": {
+    "bytes": 1404571,
+    "sha256": "890254c79a00ffdf96dd0589c0c46cdbf041e6e81db564589235c229ef71f4a1"
+  },
+  "profile": "serial-affinity-diagnostic-summary-v1",
+  "qualification_credit": false,
+  "reproduce": {
+    "driver": "evaluation/admission/serial_affinity_diagnostic.py",
+    "notes": "Copy the driver outside the checkout before checking out this exact revision. Run from the clean repository root. SERIAL_DRIVER is the absolute copied-driver path; use a fresh absolute output path. The allocator selects one CPU; record its actual ID rather than assuming129.",
+    "shell": "env AGENT_UTILS_ENGINE=python cpuset-alloc run --cores 1 -- python3 -B \"$SERIAL_DRIVER\" --expect-revision 758180bc2f63dd817d92b65fa59ed06437ebea65 --output \"$PWD/target/evaluation/inprocess/serial-affinity-diagnostic-reproduction-1\""
+  },
+  "result": {
+    "cleanup_complete": true,
+    "configuration_unchanged": true,
+    "evidence_status": "complete",
+    "exit_code": 0,
+    "failed": 0,
+    "harnesses": 27,
+    "ignored": 0,
+    "passed": 1039,
+    "reaped_descendants": 0,
+    "seconds": 140.06644624797627,
+    "source_unchanged": true
+  },
+  "revision": "758180bc2f63dd817d92b65fa59ed06437ebea65",
+  "schema": 1,
+  "scope": "One diagnostic of the unchanged serial command. Original failed six-check receipt remains failed. No test, assertion, population, comparator, timeout, log cap or cleanup gate changed. This observation does not establish affinity as the cause or qualify the full suite.",
+  "source": {
+    "revision": "758180bc2f63dd817d92b65fa59ed06437ebea65",
+    "source_manifest_sha256": "c1804dbbd2a56cdca37b7b09fef47022f896ff891cd98ea005d4c10b901af699",
+    "tree": "88225f1146eff72774cd5636d1b50756b374f811"
+  },
+  "status": "passed"
+}

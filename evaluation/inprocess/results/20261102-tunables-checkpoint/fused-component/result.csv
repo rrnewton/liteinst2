@@ -1,0 +1,2 @@
+revision,cpu,cohort_status,kind,name,status,exit,validation_duration_ns,recorded_values_json,qualification_credit,performance_credit
+758180bc2f63dd817d92b65fa59ed06437ebea65,53,components_passed,component,bounded_fusion_plan,passed,0,1310921741,"{""copied_boundaries"":56,""corruptions"":14,""direct_models"":1536,""emitted_execution"":0,""interiors"":19964,""misses"":10,""mov_models"":1280,""old_version_refusals"":60,""owner_credit"":0,""plans"":14,""typed_direct"":41984,""typed_mov"":83456,""version"":11}",False,False

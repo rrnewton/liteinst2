@@ -1,0 +1,219 @@
+{
+  "archive": {
+    "bytes": 12007764,
+    "mode": "0644",
+    "sha256": "d5ae6933ce1e905be557a9dac3ffd2341c7649c42f58f9594bba2365ea8ba399"
+  },
+  "archive_builds": 0,
+  "archive_source_provenance_verified": false,
+  "bounds": {
+    "build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "component": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "captures": {
+    "bytes": 229820,
+    "count": 116,
+    "sha256": "4fc638c709bce43483b0c51a0e9ca1a9d7be6164aabe881cfea9602909500cf6"
+  },
+  "closure": {
+    "cleanup_complete": true,
+    "inputs_unchanged": true,
+    "source_unchanged": true
+  },
+  "commands": {
+    "errors": [],
+    "exit_counts": {
+      "0": 57,
+      "1": 1
+    },
+    "planned": 60,
+    "recorded": 58,
+    "sha256": "1b28b2a781c45a03d3b5ff12745d9f8693c60986af418d656bdfedc97264768d"
+  },
+  "component_summary": {
+    "bytes": 46543,
+    "sha256": "5045d67262f5b8cdd4fe5ce89c49315a929f041db0231752bf6038d2e5ff42d1"
+  },
+  "components": {
+    "bounded_fusion_plan": {
+      "binary": {
+        "bytes": 2988000,
+        "mode": "0755",
+        "sha256": "7da8913d3a247d44424b8149ad87b1b666a1342a456a06f0a71e66e8e2a2c0e9"
+      },
+      "recipe": {
+        "bytes": 1288,
+        "mode": "0755",
+        "sha256": "052e563facea68ac602557f7e57015c4bca0bbe3dcd3ed37312d67ce10549d94"
+      },
+      "result": {
+        "copied_boundaries": 56,
+        "corruptions": 14,
+        "direct_models": 1536,
+        "emitted_execution": 0,
+        "interiors": 19964,
+        "misses": 10,
+        "mov_models": 1280,
+        "old_version_refusals": 60,
+        "owner_credit": 0,
+        "plans": 14,
+        "typed_direct": 41984,
+        "typed_mov": 83456,
+        "version": 11
+      },
+      "status": "passed"
+    },
+    "loop_envelope": {
+      "binary": {
+        "bytes": 2559048,
+        "mode": "0755",
+        "sha256": "1491ec44fe5966d6be7a529264103860c2933ea97c3c55fd9580452a3b0a38bf"
+      },
+      "recipe": {
+        "bytes": 1088,
+        "mode": "0644",
+        "sha256": "ae895a748ea3d2209e8a926b9358f264f979fa7362e7182ed6c19735a19100dc"
+      },
+      "result": {
+        "boundaries_max": 8,
+        "corruptions": 16,
+        "emitted": 0,
+        "heads_max": 128,
+        "members": 2,
+        "owner_entries": 0,
+        "positive": 122,
+        "profile": "loop-envelope-component-v1",
+        "refused": 9,
+        "version": 12
+      },
+      "status": "passed"
+    },
+    "scalar_read": {
+      "binary": {
+        "bytes": 2524384,
+        "mode": "0755",
+        "sha256": "9ec804f243c8d3be2116c4bc4503ba2647188e17e1cd6a1c61b734d211aee919"
+      },
+      "recipe": {
+        "bytes": 991,
+        "mode": "0755",
+        "sha256": "991044c72482e3ce707a5abe392ed1e23a31436840417eff05d59df62a6f4e0a"
+      },
+      "result": {
+        "accepted": 766,
+        "descriptor_version": 2,
+        "instruction_execution": false,
+        "model_cases": 269,
+        "new_codes": 5,
+        "old_rows": 5,
+        "owner_execution": false,
+        "postseal_equal": true,
+        "refusals": 63,
+        "schema": 1
+      },
+      "status": "passed"
+    },
+    "scalar_span_metadata": {
+      "binary": {
+        "bytes": 2587824,
+        "mode": "0755",
+        "sha256": "db6fd1e8cee0d6c1beeaf44b174f5db51a13dbb166d73be48b4959499facceba"
+      },
+      "recipe": {
+        "bytes": 1256,
+        "mode": "0755",
+        "sha256": "0cc605dfa4991c21f031c85931a4bc77ef83d992ff7f1a1de8fd99af371e974a"
+      },
+      "result": {
+        "accepted": 1283,
+        "code_forms": 131,
+        "max_register_rows": 4,
+        "none_checks": 1283,
+        "old_accepts": 53,
+        "plan_controls": 49,
+        "postseal_equal": 1,
+        "refusals": 26,
+        "schema": 1
+      },
+      "status": "passed"
+    }
+  },
+  "cpu": 53,
+  "csv": {
+    "bytes": 1416,
+    "file": "result.csv",
+    "sha256": "9981e11f8414cf1defa6146f2aec89d8a4fcb163cf62cfdea8b45d3dae63697f"
+  },
+  "error": "ValueError: exact successful command: loop_plan-build",
+  "final_errors": [],
+  "generated_execution": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 53,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "native_execution": 0,
+  "owner_credit": false,
+  "performance_credit": false,
+  "profile": "experimental-loop-components-v1-projection",
+  "projection_only": true,
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 334846,
+    "sha256": "8adb158132f10eafb34b6df31d1190576603fb3d3a995de0a4ad5bfff443988e"
+  },
+  "recorded_cohort_accepted": false,
+  "reproduce": {
+    "argv": [
+      "python3",
+      "-B",
+      "evaluation/inprocess/loop_components/run.py",
+      "--expect-revision",
+      "758180bc2f63dd817d92b65fa59ed06437ebea65",
+      "--cpu",
+      "53",
+      "--archive",
+      "<FRESH_SAME_SOURCE_DECODER_ARCHIVE>",
+      "--archive-sha256",
+      "<FRESH_SHA256>",
+      "--output",
+      "target/evaluation/inprocess/<FRESH_ATTEMPT>"
+    ],
+    "note": "Fresh invocation recipe reconstructed from the tracked collector API; original collector argv was not retained in this receipt.",
+    "original_argv_observed": false,
+    "precondition": "Clean exact revision; same reserved CPU and fresh same-source prerequisites. Preserve all original gates."
+  },
+  "revision": "758180bc2f63dd817d92b65fa59ed06437ebea65",
+  "schema": 1,
+  "scope": "Literal closed finite results only. Partial results on failed cases are not accepted equivalence; durations are validation cost.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "758180bc2f63dd817d92b65fa59ed06437ebea65",
+    "source_manifest_sha256": "c1804dbbd2a56cdca37b7b09fef47022f896ff891cd98ea005d4c10b901af699",
+    "tracked_clean": true,
+    "tree": "88225f1146eff72774cd5636d1b50756b374f811"
+  },
+  "status": "failed",
+  "subjects": [],
+  "whole_profile_qualified": false
+}
