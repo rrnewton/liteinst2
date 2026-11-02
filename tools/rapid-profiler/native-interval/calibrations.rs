@@ -37,3 +37,8 @@ mod selected_leaf_set_check;
 // Separate Exact37 accuracy accounting; all existing registrations stay literal.
 #[path = "normal/selected_leaf_set/exact_check.rs"]
 mod exact_accuracy_check;
+
+// The exact observer publisher, with separate full-value controls.
+#[cfg(feature = "frontend-native-qualification")]
+#[path = "normal/module/early_entry/publisher.rs"]
+mod early_entry_publisher;

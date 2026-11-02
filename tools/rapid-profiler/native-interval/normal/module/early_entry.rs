@@ -1,6 +1,7 @@
 //! Qualification-feature only. Same production begin/returned/checkpoint/finish,
 //! oracle-owned arrays/stack; default safe-wrapper integration is a separate gate.
 use super::*;
+mod publisher;
 pub(crate) mod wide;
 use native_module::early_entry::{self as early, Extra, Scenario, WITNESS_WORDS};
 use rapid_profiler::frontend::HistoryBinding;
@@ -494,12 +495,8 @@ fn child(
                 sequence += 1;
                 let header = encode(kind, sequence, snapshot);
                 let (header_out, journal_out) = witness.split_at_mut(early::JOURNAL);
-                for (out, n) in header_out.iter_mut().zip(header.iter().copied()) {
-                    std::ptr::write_volatile(out, n);
-                }
-                for (out, n) in journal_out.iter_mut().zip(snapshot.journal.iter().copied()) {
-                    std::ptr::write_volatile(out, n);
-                }
+                publisher::publish_words(header_out.try_into().unwrap(), &header);
+                publisher::publish_words(journal_out.try_into().unwrap(), &snapshot.journal);
                 snapshot_ready();
             })
         }
