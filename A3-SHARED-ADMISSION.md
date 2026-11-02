@@ -83,6 +83,15 @@ original and E9Patch outputs also pass all three. The earlier profile remains
 failed. These are finite functional observations, not complete CFG recovery,
 runtime page exemptions or throughput measurements; see the
 [fixed-address result](evaluation/direct-program/fixed-exec-result/README.md).
+The `cat-head-wc-v1` comparison at
+`f4a561a8c29fa0298c24215d5f2027df79cbbf77` extends actual execution to
+GNU `head` and `wc` through the same shared pipeline. LiteInst and E9Patch each
+patch all 751 cat, 870 head and 1,228 wc imported jump sites. All 27 native
+program/case/arm rows pass exact stdout, exit-zero and empty-stderr checks.
+The shared catalog retains all nine cases and independently selects each program;
+no prior failure is replaced. This is finite functional evidence, with the
+complete-code and zero-bias loader obligations still unresolved; see the
+[three-program result](evaluation/direct-program/corpus-result/README.md).
 The exemption contract below remains a proposal.
 
 ## Page certificate

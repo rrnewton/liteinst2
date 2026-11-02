@@ -1,6 +1,6 @@
 # GNU cat/head/wc corpus protocol
 
-`cat-head-wc-v1` is an opt-in source extension. All **27 rows are PLANNED_ONLY; new outcomes are UNRUN**: three programs, three cases each, and original/LI2/E9 arms. Each invocation selects one program and plans nine rows; there is no aggregate dispatcher, automatic retry or inherited success. The [0076 fixed-cat PASS](fixed-exec-result/README.md) and [earlier cat FAILED](README.md) remain separate.
+`cat-head-wc-v1` is an opt-in source extension. The [completed comparison](corpus-result/README.md) at `f4a561a8c29fa0298c24215d5f2027df79cbbf77` passes all **27 rows**: three programs, three cases each, and original/LI2/E9 arms. Future invocations start with unobserved outcomes. Each invocation selects one program and plans nine rows; there is no aggregate dispatcher, automatic retry or inherited success. The [0076 fixed-cat PASS](fixed-exec-result/README.md) and [earlier cat FAILED](README.md) remain separate.
 
 The hash-pinned [catalog](program_catalog.json) defines exact stdin, argv and stdout: cat empty/all-byte/numbered; head empty/three-lines/4,097-byte prefix; wc empty-word/newline/whitespace-word counts. Default `cat-only-v1`, old cat receipt selectors and cases remain. The new route requires `fixed-exec-overlapping-v2` and the complete three-product build receipt; mixing old/new selectors refuses.
 
