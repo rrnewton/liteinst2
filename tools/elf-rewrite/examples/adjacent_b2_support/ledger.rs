@@ -226,6 +226,10 @@ fn actual_image(out: &mut String, image: ArtifactImageView<'_>) {
             p.logical_address()
         );
     }
+    assert!(
+        image.metadata().fixed_image().is_none(),
+        "paired example has no fixed-image profile"
+    );
     let mut fields: Vec<_> = image.metadata().fields().iter().collect();
     fields.sort_by_key(|field| field.offset);
     row!(out, "fields", fields.len());
@@ -233,6 +237,7 @@ fn actual_image(out: &mut String, image: ArtifactImageView<'_>) {
         let encoding = match field.encoding {
             ArtifactFieldEncoding::Relative => "relative",
             ArtifactFieldEncoding::Delta => "delta",
+            ArtifactFieldEncoding::FixedSigned32 => "fixed-signed32",
         };
         row!(
             out,

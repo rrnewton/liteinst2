@@ -50,13 +50,16 @@ pub enum Encoding {
     },
     /// Exportable live provenance, refused by the first offline PIC carrier.
     Absolute64,
+    /// Exact signed disp32 address contribution; the explicit fixed-zero-bias
+    /// linker must be used. The invariant linker continues to refuse it.
+    FixedSigned32,
 }
 
 impl Encoding {
     pub const fn width(self) -> usize {
         match self {
             Self::PcRelative8 { .. } => 1,
-            Self::PcRelative32 { .. } => 4,
+            Self::PcRelative32 { .. } | Self::FixedSigned32 => 4,
             Self::Delta64 { .. } | Self::Absolute64 => 8,
         }
     }
@@ -65,7 +68,7 @@ impl Encoding {
         match self {
             Self::PcRelative8 { next } | Self::PcRelative32 { next } => Some(next),
             Self::Delta64 { anchor } => Some(anchor),
-            Self::Absolute64 => None,
+            Self::Absolute64 | Self::FixedSigned32 => None,
         }
     }
 }
@@ -92,6 +95,10 @@ pub enum Role {
     OriginalAbsoluteOperand {
         original_pc: u64,
     },
+    OriginalIndexedJump {
+        original_pc: u64,
+        instruction_len: usize,
+    },
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -116,6 +123,7 @@ impl Fixup {
                 anchor: add(anchor)?,
             },
             Encoding::Absolute64 => Encoding::Absolute64,
+            Encoding::FixedSigned32 => Encoding::FixedSigned32,
         };
         Ok(Self {
             offset: add(self.offset)?,
@@ -221,6 +229,29 @@ pub fn link_bias_invariant(
     fields: &[Fixup],
     placements: &[ImagePlacement],
 ) -> Result<Vec<u8>, Error> {
+    link(image, template, fields, placements, None)
+}
+
+/// Explicit alternative to bias cancellation. This checks only supplied fields,
+/// not source completeness or a loader. The caller owes the typed source/ELF
+/// binding and zero runtime bias. Absolute64 remains unsupported.
+pub fn link_fixed_zero_bias(
+    image: ImageId,
+    template: &[u8],
+    fields: &[Fixup],
+    placements: &[ImagePlacement],
+    domain: BiasDomain,
+) -> Result<Vec<u8>, Error> {
+    link(image, template, fields, placements, Some(domain))
+}
+
+fn link(
+    image: ImageId,
+    template: &[u8],
+    fields: &[Fixup],
+    placements: &[ImagePlacement],
+    fixed_domain: Option<BiasDomain>,
+) -> Result<Vec<u8>, Error> {
     for (index, item) in placements.iter().enumerate() {
         if placements[..index]
             .iter()
@@ -281,6 +312,42 @@ pub fn link_bias_invariant(
                 offset: field.offset,
             });
         }
+        if field.encoding == Encoding::FixedSigned32 {
+            let Some(domain) = fixed_domain else {
+                return Err(Error::RequiresRuntimeAbsoluteFixup {
+                    offset: field.offset,
+                    role: field.role,
+                });
+            };
+            let target = target_address(placements, field.target)?;
+            if current.address.domain != domain {
+                return Err(Error::CrossBiasDomain {
+                    source: domain,
+                    target: current.address.domain,
+                });
+            }
+            if target.domain != domain {
+                return Err(Error::CrossBiasDomain {
+                    source: domain,
+                    target: target.domain,
+                });
+            }
+            let displacement = target.offset;
+            let value = i32::try_from(displacement).map_err(|_| Error::DisplacementOutOfRange {
+                offset: field.offset,
+                width,
+                displacement,
+            })?;
+            let bytes = value.to_le_bytes().to_vec();
+            // Fixed fields are preserved, not silently patched to a new target.
+            if bytes != field.expected {
+                return Err(Error::TemplateMismatch {
+                    offset: field.offset,
+                });
+            }
+            writes.push((start, bytes));
+            continue;
+        }
         let Some(origin) = field.encoding.origin() else {
             return Err(Error::RequiresRuntimeAbsoluteFixup {
                 offset: field.offset,
@@ -324,7 +391,7 @@ pub fn link_bias_invariant(
                 .map_err(|_| range_error())?
                 .to_le_bytes()
                 .to_vec(),
-            Encoding::Absolute64 => unreachable!(),
+            Encoding::Absolute64 | Encoding::FixedSigned32 => unreachable!(),
         };
         writes.push((start, bytes));
     }
@@ -595,5 +662,136 @@ mod tests {
             Err(Error::UnresolvedSymbol(99))
         );
         assert_eq!(bytes, original);
+    }
+}
+
+#[cfg(test)]
+mod fixed_exec_tests {
+    use super::*;
+
+    #[test]
+    fn fixed_signed32_is_preserved_only_under_explicit_domain_and_exact_bytes() {
+        let image = ImageId(9);
+        let placement = ImagePlacement {
+            image,
+            address: RelativeAddress {
+                domain: BiasDomain(7),
+                offset: 0x500000,
+            },
+            len: 4,
+        };
+        for value in [i32::MIN, -1, 0, 0x407660, i32::MAX] {
+            let bytes = value.to_le_bytes();
+            let field = Fixup {
+                offset: 0,
+                encoding: Encoding::FixedSigned32,
+                target: Target::Address(RelativeAddress {
+                    domain: BiasDomain(7),
+                    offset: i128::from(value),
+                }),
+                role: Role::OriginalIndexedJump {
+                    original_pc: 0x402445,
+                    instruction_len: 7,
+                },
+                expected: bytes.to_vec(),
+            };
+            assert!(matches!(
+                link_bias_invariant(image, &bytes, std::slice::from_ref(&field), &[placement]),
+                Err(Error::RequiresRuntimeAbsoluteFixup { .. })
+            ));
+            assert_eq!(
+                link_fixed_zero_bias(
+                    image,
+                    &bytes,
+                    std::slice::from_ref(&field),
+                    &[placement],
+                    BiasDomain(7)
+                )
+                .unwrap(),
+                bytes
+            );
+            assert!(matches!(
+                link_fixed_zero_bias(
+                    image,
+                    &bytes,
+                    std::slice::from_ref(&field),
+                    &[placement],
+                    BiasDomain(8)
+                ),
+                Err(Error::CrossBiasDomain { .. })
+            ));
+            let mut wrong_target = field.clone();
+            wrong_target.target = Target::Address(RelativeAddress {
+                domain: BiasDomain(7),
+                offset: i128::from(i32::MAX) + 1,
+            });
+            assert!(matches!(
+                link_fixed_zero_bias(image, &bytes, &[wrong_target], &[placement], BiasDomain(7)),
+                Err(Error::DisplacementOutOfRange { .. })
+            ));
+            let mut wrong_template = bytes;
+            wrong_template[0] ^= 1;
+            assert!(matches!(
+                link_fixed_zero_bias(
+                    image,
+                    &wrong_template,
+                    std::slice::from_ref(&field),
+                    &[placement],
+                    BiasDomain(7)
+                ),
+                Err(Error::TemplateMismatch { .. })
+            ));
+            let mut changed = field.clone();
+            changed.expected = wrong_template.to_vec();
+            assert!(matches!(
+                link_fixed_zero_bias(
+                    image,
+                    &wrong_template,
+                    &[changed],
+                    &[placement],
+                    BiasDomain(7)
+                ),
+                Err(Error::TemplateMismatch { .. })
+            ));
+            let mut wrong_domain = field.clone();
+            wrong_domain.target = Target::Address(RelativeAddress {
+                domain: BiasDomain(8),
+                offset: i128::from(value),
+            });
+            assert!(matches!(
+                link_fixed_zero_bias(image, &bytes, &[wrong_domain], &[placement], BiasDomain(7)),
+                Err(Error::CrossBiasDomain { .. })
+            ));
+            let rebased = field.rebased(19).unwrap();
+            assert_eq!(rebased.offset, 19);
+            assert_eq!(
+                (rebased.target, rebased.encoding, rebased.expected),
+                (field.target, field.encoding, field.expected)
+            );
+        }
+        let bytes = [0; 8];
+        let field = Fixup {
+            offset: 0,
+            encoding: Encoding::Absolute64,
+            target: Target::Address(RelativeAddress {
+                domain: BiasDomain(7),
+                offset: 0,
+            }),
+            role: Role::LogicalPc,
+            expected: bytes.to_vec(),
+        };
+        assert!(matches!(
+            link_fixed_zero_bias(
+                image,
+                &bytes,
+                &[field],
+                &[ImagePlacement {
+                    len: 8,
+                    ..placement
+                }],
+                BiasDomain(7)
+            ),
+            Err(Error::RequiresRuntimeAbsoluteFixup { .. })
+        ));
     }
 }

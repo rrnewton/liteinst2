@@ -191,7 +191,37 @@ pub(crate) fn plans(
                 )
                 .unwrap();
             }
+            if let Some(binding) = image.metadata().fixed_image() {
+                image
+                    .metadata()
+                    .validate_fixed_image(
+                        li2core::contracts::CodeIdentity {
+                            source: li2core::contracts::SourceIdentity(s.original.0),
+                            mapping: s.bias_domain,
+                            generation: 1,
+                        },
+                        s.bias_domain,
+                        0,
+                        image.address(),
+                        image.bytes(),
+                    )
+                    .map_err(|error| Error::new("fixed-field", error))?;
+                writeln!(
+                    &mut out,
+                    "unmet-fixed-image-binding\t{image_id}\t{}\t{}\t{}\t{}\t{}",
+                    hex(&binding.identity().source.0),
+                    binding.identity().mapping,
+                    binding.identity().generation,
+                    binding.domain(),
+                    binding.required_load_bias()
+                )
+                .unwrap();
+            }
             for f in image.metadata().fields() {
+                if let Some(source) = f.fixed_source {
+                    writeln!(&mut out, "original-fixed-field\t{image_id}\t{}\t{}\t{}\tsigned32\tloader-ownership-required",
+                        source.instruction().start(), source.instruction().len(), source.displacement().start()).unwrap();
+                }
                 let at = usize::try_from(f.offset).map_err(|e| Error::new("field", e))?;
                 let end = at
                     .checked_add(f.width)
@@ -208,7 +238,22 @@ pub(crate) fn plans(
                 };
                 if f.bias_domain != s.bias_domain
                     || f.origin > image.bytes().len() as u64
-                    || value != f.target - i128::from(image.address()) - i128::from(f.origin)
+                    || value
+                        != if f.encoding == li2core::emission::ArtifactFieldEncoding::FixedSigned32
+                        {
+                            if image.metadata().fixed_image().is_none()
+                                || f.origin != 0
+                                || f.width != 4
+                            {
+                                return Err(Error::new(
+                                    "field",
+                                    "fixed field lacks binding/width/origin",
+                                ));
+                            }
+                            f.target
+                        } else {
+                            f.target - i128::from(image.address()) - i128::from(f.origin)
+                        }
                 {
                     return Err(Error::new("field", "producer arithmetic/domain mismatch"));
                 }
@@ -522,4 +567,27 @@ pub(crate) fn plans_with_entry_veneers(
     }
     out.extend_from_slice(extension.as_bytes());
     Ok(out)
+}
+
+pub(crate) fn fixed_binding(ledger: &mut Vec<u8>, binding: li2core::emission::FixedImageBinding) {
+    let text = std::str::from_utf8(ledger).expect("producer ledger is ASCII");
+    let old = "bias_policy\tcommon-additive-module-relative-v1\n";
+    assert_eq!(text.matches(old).count(), 1);
+    *ledger = text
+        .replacen(
+            old,
+            "bias_policy\tfixed-exec-zero-bias-indexed-jump32-v1\n",
+            1,
+        )
+        .into_bytes();
+    ledger.extend_from_slice(
+        format!(
+            "required-fixed-source\t{}\t{}\t{}\t{}\t0\n",
+            hex(&binding.identity().source.0),
+            binding.identity().mapping,
+            binding.identity().generation,
+            binding.domain()
+        )
+        .as_bytes(),
+    );
 }

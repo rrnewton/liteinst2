@@ -23,6 +23,10 @@ PRODUCTS = {'full_program_bridge': ('tools/elf-rewrite/Cargo.toml', 'example', '
 PROFILE = dict(opt_level='3', debuginfo=0, debug_assertions=True, overflow_checks=True, test=False)
 PROVIDER = ('target/evaluation/e9-full-address-provider-v1/source/e9tool', 957120, 'af10f5847f332776c0c7ce2a81aea0ce6795982a6d1bcf819f516f25511d2aa2')
 BACKEND = ('ignored/a3/upstream/e9patch-pldi2020/e9patch', 93520, '890f76cb5741b6c7cfba3414ae72a64fd7deddc7d2dd33b17d53e8b906529fdb')
+REWRITE_PROFILES = {
+    'mixed-entry-veneer-v1': '--whole-program-packed-entry-veneer-mixed-neighbors-4096',
+    'fixed-exec-overlapping-v2': '--whole-program-fixed-exec-packed-overlapping-neighbors-4096',
+}
 CASES = [('empty', [], b'', b''), ('all-bytes-65536', [], bytes(range(256))*256, bytes(range(256))*256),
          ('numbered', ['-n'], b'alpha\n\nbeta\nomega', b'     1\talpha\n     2\t\n     3\tbeta\n     4\tomega')]
 
@@ -56,7 +60,7 @@ def build(r, a):
 def functional(r, a):
     stages = {n: dict(status='UNOBSERVED') for n in ('target', 'provider', 'materials', 'policy', 'li2', 'e9')}
     cases = [dict(arm=arm, case=name, status='UNOBSERVED', argv=['cat', *argv], input_bytes=len(data), input_sha256=hashlib.sha256(data).hexdigest(), expected_stdout_sha256=hashlib.sha256(expected).hexdigest(), expected_bytes=len(expected)) for arm in ('original', 'li2', 'e9') for name, argv, data, expected in CASES]
-    r.record.update(stages=stages, cases=cases, planned_cases=9, inventory_status='UNOBSERVED', structural={arm: dict(status='UNOBSERVED') for arm in ('li2', 'e9')})
+    r.record.update(stages=stages, cases=cases, planned_cases=9, inventory_status='UNOBSERVED', structural={arm: dict(status='UNOBSERVED') for arm in ('li2', 'e9')}, rewrite_profile=a.rewrite_profile)
     S.save(r.work/'planned.json', r.record)
     assert a.trusted_complete_code and a.unit
     r.record['scope_before'] = r.scope()
@@ -138,10 +142,34 @@ def functional(r, a):
     candidates = {}; r.capacity('before-generation')
     def li2():
         ledger = material/'ledger.txt'
-        row, _ = command('li2', [products['disassembly_sites'], '--whole-program-packed-entry-veneer-mixed-neighbors-4096', cat, ledger, r.frozen[str(ledger)]['sha256'], policy_path, r.frozen[str(policy_path)]['sha256'], r.work/'li2'], (180, 240, 3072*M, 64*M, 8*M))
+        row, _ = command('li2', [products['disassembly_sites'], REWRITE_PROFILES[a.rewrite_profile], cat, ledger, r.frozen[str(ledger)]['sha256'], policy_path, r.frozen[str(policy_path)]['sha256'], r.work/'li2'], (180, 240, 3072*M, 64*M, 8*M))
         completed(row)
         info = D.complete(r.work/'li2', S.payload); stages['li2']['complete'] = info; complete = info['fields']['candidate_complete'] == 'true'
         assert info['fields']['candidate_complete'] in ('true', 'false') and info['fields']['observed_original_sha256'] == cat_pin['sha256']
+        if a.rewrite_profile == 'fixed-exec-overlapping-v2':
+            expected_binding = dict(
+                profile='fixed-exec-zero-bias-indexed-jump32-v1',
+                planner_profile='whole-program-packed-overlapping-neighbors-4096',
+                address_binding='fixed-exec-zero-bias-indexed-jump32-v1',
+                required_object_type='ET_EXEC', required_load_bias='0',
+                fixed_source_sha256=cat_pin['sha256'],
+                fixed_source_mapping=str(r.record['policy']['domain']),
+                fixed_source_generation='1', fixed_binding_status='source-ET_EXEC-bound',
+                fixed_binding_qualification='unresolved-runtime-loader-obligation',
+                fixed_output_readback='checked' if complete else 'not-complete')
+            assert all(info['fields'].get(key) == value for key, value in expected_binding.items())
+            binding_rows = [
+                ('planner_profile', expected_binding['planner_profile']),
+                ('address_binding', expected_binding['address_binding']),
+                ('required_object_type', 'ET_EXEC'), ('required_load_bias', '0'),
+                ('fixed_binding_qualification', expected_binding['fixed_binding_qualification']),
+                ('selection_sha256', info['files']['selection.txt']['sha256']),
+                ('source_sha256', cat_pin['sha256']),
+                ('mapping', expected_binding['fixed_source_mapping']),
+                ('generation', '1'), ('domain', str(r.record['policy']['domain'])),
+                ('field_encoding', 'original-indexed-jump-signed32-v1')]
+            binding_bytes = ('LI2FIXED-EXEC-BINDING\t1\n' + ''.join(key+'\t'+value+'\n' for key, value in binding_rows)).encode()
+            assert S.payload(r.work/'li2/binding-policy.tsv', info['files']['binding-policy.tsv']) == binding_bytes
         if 'disassembly-inventory.tsv' in info['files']: assert D.inventory(S.payload(r.work/'li2/disassembly-inventory.tsv'), cat_pin['sha256'], r.frozen[str(ledger)]['sha256']) == sites
         if 'report.tsv' in info['files']: r.record['structural']['li2'] = D.li2_report(S.payload(r.work/'li2/report.tsv'), sites, cat_pin['sha256'], complete)
         r.record['structural']['li2']['status'] = 'PASS' if complete else 'FAILED'
@@ -187,6 +215,7 @@ def main():
     parser.add_argument('phase', choices=('build', 'functional')); parser.add_argument('--revision', required=True); parser.add_argument('--work', type=Path, required=True)
     for name in ('toolchain', 'cargo-home', 'user-home', 'cat-receipt', 'build-receipt'): parser.add_argument('--'+name, type=Path)
     for name in ('cat-receipt-sha256', 'build-receipt-sha256', 'unit'): parser.add_argument('--'+name)
+    parser.add_argument('--rewrite-profile', choices=tuple(REWRITE_PROFILES), default='mixed-entry-veneer-v1')
     parser.add_argument('--trusted-complete-code', action='store_true'); a = parser.parse_args(); env = dict(S.BASE_ENV)
     if a.phase == 'build':
         for path in (a.toolchain, a.cargo_home, a.user_home): assert path and path.is_absolute() and path.resolve(strict=True) == path and path.is_dir()

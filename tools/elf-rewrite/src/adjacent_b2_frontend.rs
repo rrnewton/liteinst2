@@ -344,6 +344,7 @@ fn baseline(
             dynamic,
             s,
             identity,
+            fixed_binding: None,
             owned_neighbors: false,
             mode: disassembly::NeighborMode::ShortT3Pending,
             record_baseline: true,
@@ -437,15 +438,7 @@ fn call_with_sites<R>(
         .iter()
         .find(|h| h.id == a.hook)
         .ok_or_else(|| Error::new("hook", "missing"))?;
-    let emission = ArtifactEmission::new(
-        TargetProfile::linux_x86_64_legacy_evex(s.target, s.bias_domain)
-            .map_err(|e| Error::new("target", e))?,
-        SymbolicHook {
-            identity: hook.id,
-            address: Some(hook.pc),
-        },
-        draft.occupied.clone(),
-    );
+    let emission = crate::fixed_exec::emission(s, hook, draft.occupied.clone(), None)?;
     let lower_site = PlanningSite {
         identity,
         code,

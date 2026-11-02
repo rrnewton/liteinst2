@@ -730,3 +730,378 @@ fn jrcxz_artifact_engine_keeps_source_pair_and_allocation_authority() {
         .is_err()
     );
 }
+
+#[test]
+fn fixed_exec_indexed_jump_producer_preserves_signed_fields_and_default_refusals() {
+    use iced_x86::{Code, Decoder, DecoderOptions, Register};
+    let identity = CodeIdentity {
+        source: SourceIdentity([0x31; 32]),
+        mapping: 7,
+        generation: 3,
+    };
+    let binding = FixedImageBinding::zero_bias(identity, 7).unwrap();
+    let fixed = target(Some(0x410000), vec![])
+        .with_fixed_image(binding)
+        .unwrap();
+    for (bytes, signed, index) in [
+        (
+            vec![0xff, 0x24, 0xc5, 0x60, 0x76, 0x40, 0],
+            0x407660_i128,
+            Register::RAX,
+        ),
+        (
+            vec![0xff, 0x24, 0xc5, 0x20, 0x7a, 0x40, 0],
+            0x407a20,
+            Register::RAX,
+        ),
+        (
+            vec![0xff, 0x24, 0xc5, 0x78, 0x7a, 0x40, 0],
+            0x407a78,
+            Register::RAX,
+        ),
+        (
+            vec![0xff, 0x24, 0xc5, 0x78, 0x7c, 0x40, 0],
+            0x407c78,
+            Register::RAX,
+        ),
+        (
+            vec![0xff, 0x24, 0xc5, 0x78, 0x7e, 0x40, 0],
+            0x407e78,
+            Register::RAX,
+        ),
+        (
+            vec![0x42, 0xff, 0x24, 0xe5, 0x18, 0x84, 0x40, 0],
+            0x408418,
+            Register::R12,
+        ),
+        (
+            vec![0xff, 0x24, 0xc5, 0, 0xf0, 0xff, 0xff],
+            -4096,
+            Register::RAX,
+        ),
+    ] {
+        let pc = 0x402445;
+        let scan = InstructionScanner::default().scan(&bytes, pc).unwrap();
+        let plan = TrampolinePlan::from_instruction(&scan, pc).unwrap();
+        assert!(matches!(
+            plan.emit_artifact_at(0x500000, &target(Some(0x410000), vec![])),
+            Err(TrampolineError::Artifact {
+                reason: ArtifactRefusalKind::RuntimeAbsoluteFixup,
+                ..
+            })
+        ));
+        let image = plan.emit_artifact_at(0x500000, &fixed).unwrap();
+        let metadata = image.artifact_metadata().unwrap();
+        assert_eq!(metadata.fixed_image(), Some(binding));
+        assert!(!metadata.qualification_complete());
+        let fields: Vec<_> = metadata
+            .fields()
+            .iter()
+            .filter(|field| field.encoding == ArtifactFieldEncoding::FixedSigned32)
+            .collect();
+        assert_eq!(fields.len(), 1);
+        let field = fields[0];
+        assert_eq!(
+            (field.width, field.origin, field.target, field.bias_domain),
+            (4, 0, signed, 7)
+        );
+        assert_eq!(
+            field.role,
+            format!(
+                "OriginalIndexedJump {{ original_pc: {pc}, instruction_len: {} }}",
+                bytes.len()
+            )
+        );
+        let at = field.offset as usize;
+        assert_eq!(&image.bytes()[at..at + 4], &(signed as i32).to_le_bytes());
+        let generated = image
+            .instruction_boundaries()
+            .iter()
+            .find(|(old, _)| *old == pc)
+            .unwrap()
+            .1;
+        let decoded = Decoder::with_ip(
+            64,
+            &image.bytes()[(generated - image.address()) as usize..],
+            generated,
+            DecoderOptions::NONE,
+        )
+        .decode();
+        assert_eq!(
+            (
+                decoded.code(),
+                decoded.memory_index(),
+                decoded.memory_index_scale()
+            ),
+            (Code::Jmp_rm64, index, 8)
+        );
+        assert_eq!(decoded.memory_displacement64(), signed as i64 as u64);
+        metadata
+            .validate_fixed_image(identity, 7, 0, image.address(), image.bytes())
+            .unwrap();
+        let mut corrupt = image.bytes().to_vec();
+        corrupt[at] ^= 1;
+        assert!(
+            metadata
+                .validate_fixed_image(identity, 7, 0, image.address(), &corrupt)
+                .is_err()
+        );
+        assert!(
+            metadata
+                .validate_fixed_image(identity, 7, 4096, image.address(), image.bytes())
+                .is_err()
+        );
+        for stale in [
+            CodeIdentity {
+                source: SourceIdentity([0x32; 32]),
+                ..identity
+            },
+            CodeIdentity {
+                generation: 4,
+                ..identity
+            },
+            CodeIdentity {
+                mapping: 8,
+                ..identity
+            },
+        ] {
+            assert!(
+                metadata
+                    .validate_fixed_image(stale, 7, 0, image.address(), image.bytes())
+                    .is_err()
+            );
+        }
+        let mut no_binding = metadata.clone();
+        no_binding.fixed_image = None;
+        assert!(
+            no_binding
+                .validate_fixed_image(identity, 7, 0, image.address(), image.bytes())
+                .is_err()
+        );
+    }
+}
+
+#[test]
+fn fixed_exec_keeps_non_jump_and_truncated_indexed_operand_refusals() {
+    let identity = CodeIdentity {
+        source: SourceIdentity([0x31; 32]),
+        mapping: 7,
+        generation: 3,
+    };
+    assert!(FixedImageBinding::zero_bias(identity, 8).is_err());
+    let binding = FixedImageBinding::zero_bias(identity, 7).unwrap();
+    assert!(
+        target(Some(0x410000), vec![])
+            .with_fixed_image(
+                FixedImageBinding::zero_bias(
+                    CodeIdentity {
+                        mapping: 8,
+                        ..identity
+                    },
+                    8
+                )
+                .unwrap()
+            )
+            .is_err()
+    );
+    let input = target(Some(0x410000), vec![])
+        .with_fixed_image(binding)
+        .unwrap();
+    for bytes in [
+        vec![0x48, 0x8b, 0x04, 0xc5, 0, 0x10, 0x40, 0], // indexed load
+        vec![0x48, 0x8d, 0x04, 0xc5, 0, 0x10, 0x40, 0], // LEA
+        vec![0x67, 0xff, 0x24, 0xc5, 0, 0x10, 0x40, 0], // 32-bit address
+        vec![0x64, 0xff, 0x24, 0xc5, 0, 0x10, 0x40, 0], // FS-relative
+        vec![0xff, 0x24, 0x85, 0, 0x10, 0x40, 0],       // scale four
+        vec![0xff, 0x14, 0xc5, 0, 0x10, 0x40, 0],       // indirect call
+    ] {
+        let scan = InstructionScanner::default()
+            .scan(&bytes, 0x400000)
+            .unwrap();
+        let plan = TrampolinePlan::from_instruction(&scan, 0x400000).unwrap();
+        assert!(matches!(
+            plan.emit_artifact_at(0x500000, &input),
+            Err(TrampolineError::Artifact {
+                reason: ArtifactRefusalKind::RuntimeAbsoluteFixup,
+                ..
+            })
+        ));
+    }
+    // Qualification retains the original call boundary and exact generation join.
+    assert!(
+        EmissionContext::Artifact(&input)
+            .qualify_source(identity)
+            .is_ok()
+    );
+    assert!(
+        EmissionContext::Artifact(&input)
+            .qualify_source(CodeIdentity {
+                generation: 4,
+                ..identity
+            })
+            .is_err()
+    );
+}
+
+#[test]
+fn fixed_exec_original_error_order_and_prepared_binding_remain_exact() {
+    let identity = CodeIdentity {
+        source: SourceIdentity([0x31; 32]),
+        mapping: 7,
+        generation: 3,
+    };
+    let binding = FixedImageBinding::zero_bias(identity, 7).unwrap();
+    let input = target(Some(0x410000), vec![])
+        .with_fixed_image(binding)
+        .unwrap();
+    let load = [0x48, 0x8b, 0x04, 0xc5, 0, 0x10, 0x40, 0];
+    let eip = [0x67, 0x48, 0x8b, 0x05, 0, 0, 0, 0];
+    for (first, second, reason) in [
+        (
+            &load[..],
+            &eip[..],
+            ArtifactRefusalKind::RuntimeAbsoluteFixup,
+        ),
+        (&eip[..], &load[..], ArtifactRefusalKind::UnmodelledEncoding),
+    ] {
+        let bytes = [first, second].concat();
+        let scan = InstructionScanner::default()
+            .scan(&bytes, 0x400000)
+            .unwrap();
+        let plan = TrampolinePlan::from_symbolic_window(
+            &scan,
+            0x400000,
+            0x400000,
+            0x400000 + bytes.len() as u64,
+            false,
+        )
+        .unwrap();
+        assert!(
+            matches!(plan.emit_artifact_at(0x500000, &input), Err(TrampolineError::Artifact { reason: actual, .. }) if actual == reason)
+        );
+    }
+    let jump = [0xff, 0x24, 0xc5, 0x60, 0x76, 0x40, 0];
+    let scan = InstructionScanner::default().scan(&jump, 0x400000).unwrap();
+    let plan =
+        TrampolinePlan::from_symbolic_window(&scan, 0x400000, 0x400000, 0x400007, false).unwrap();
+    let ordinary = plan.emit_artifact_at(0x500000, &input).unwrap();
+    let prepared = crate::trampoline::PreparedArtifact::new(&plan, &input).unwrap();
+    let emitted = prepared.emit_at(0x500000).unwrap();
+    assert_eq!(ordinary, emitted);
+    assert_eq!(
+        emitted.artifact_metadata().unwrap().fixed_image(),
+        Some(binding)
+    );
+
+    // Even a body with no fixed operand retains the obligation through a short
+    // entry veneer; it cannot disappear merely because this image has no disp32.
+    let scan = InstructionScanner::default()
+        .scan(&[0x75, 0xfe], 0x400000)
+        .unwrap();
+    let plan = TrampolinePlan::from_symbolic_short_instruction(&scan, 0x400000, false).unwrap();
+    let prepared = crate::trampoline::PreparedArtifact::new(&plan, &input).unwrap();
+    let placement =
+        crate::trampoline::EntryVeneerPlacement::new(0x500000, 0x500f45, prepared.size_bound())
+            .unwrap();
+    let allocation =
+        crate::trampoline::ArtifactTrampolineAllocation::emit(prepared, placement).unwrap();
+    assert_eq!(allocation.artifact_metadata().fixed_image(), Some(binding));
+    allocation
+        .artifact_metadata()
+        .validate_fixed_image(
+            identity,
+            7,
+            0,
+            allocation.storage_address(),
+            allocation.bytes(),
+        )
+        .unwrap();
+}
+
+#[test]
+fn fixed_exec_nop5_cannot_erase_binding_through_legacy_unwind_export() {
+    let pc = 0x401000;
+    let code = [0x0f, 0x1f, 0x44, 0, 0, 0xc3];
+    let function = AddressRange::new(pc, code.len()).unwrap();
+    let identity = CodeIdentity {
+        source: SourceIdentity([0x52; 32]),
+        mapping: 7,
+        generation: 5,
+    };
+    let entries = LegalEntrySet {
+        identity,
+        scope: function,
+        provenance: EntryProvenance::Declared("fixed and common NOP5 exporter control".into()),
+        completeness: EntryCompleteness::Complete,
+        entries: [pc, pc + 5]
+            .map(|address| LegalEntry {
+                address,
+                requires_endbr: false,
+            })
+            .to_vec(),
+        resumes: ResumeObligation::NoneExist,
+    };
+    let allocation = AllocationPolicy {
+        ranges: vec![AddressRange::new(0x1000000, 8192).unwrap()],
+        preferred_address: Some(0x1000000),
+        max_candidates: 256,
+        max_mappings: 1,
+        max_mapped_bytes: 8192,
+    };
+    let ordinary = target(
+        Some(pc + 0x2000),
+        vec![AddressRange::new(pc, 16384).unwrap()],
+    );
+    let binding = FixedImageBinding::zero_bias(identity, 7).unwrap();
+    let fixed = ordinary.clone().with_fixed_image(binding).unwrap();
+    let plan = |emission| {
+        crate::quiescent::plan_install_with_emission(&ArtifactRequest {
+            site: PlanningSite {
+                identity,
+                code: &code,
+                base_address: pc,
+                function,
+                block: function,
+                logical_pc: pc,
+                entries: &entries,
+                semantics: HookSemantics::Observe,
+                allocation: &allocation,
+                search: SearchPolicy {
+                    tactics: TacticPolicy::RelocationOnly,
+                    max_upstream_bytes: 0,
+                    max_sites: 1,
+                    ..SearchPolicy::default()
+                },
+            },
+            emission,
+        })
+        .unwrap()
+    };
+    let old = plan(&ordinary);
+    assert!(
+        old.frame_trace_nop5(&ordinary, crate::frame_trace::FrameTraceLimits::default())
+            .is_ok()
+    );
+    let proposed = plan(&fixed);
+    let before = proposed.images().next().unwrap();
+    assert_eq!(before.bytes(), old.images().next().unwrap().bytes());
+    assert_eq!(before.metadata().fixed_image(), Some(binding));
+    assert!(
+        !before
+            .metadata()
+            .fields()
+            .iter()
+            .any(|field| field.encoding == ArtifactFieldEncoding::FixedSigned32)
+    );
+    let bytes = before.bytes().to_vec();
+    let metadata = before.metadata().clone();
+    for supplied in [&fixed, &ordinary] {
+        assert!(matches!(
+            proposed.frame_trace_nop5(supplied, crate::frame_trace::FrameTraceLimits::default()),
+            Err(ArtifactFrameTraceRefusal::UnsupportedPlan)
+        ));
+        let after = proposed.images().next().unwrap();
+        assert_eq!(after.bytes(), bytes);
+        assert_eq!(after.metadata(), &metadata);
+    }
+}
