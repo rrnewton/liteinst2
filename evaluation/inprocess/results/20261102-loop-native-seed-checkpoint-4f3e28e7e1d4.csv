@@ -1,0 +1,10 @@
+stage,case,status,subjects,frames,native_controls,layout_controls,join_controls,exit,elapsed_ns_validation_only,qualification_credit,performance_credit
+native,0,observed_native_reference,4,428,5724,80,,0,1814952191,False,False
+native,1,observed_native_reference,4,104,2756,80,,0,2149821530,False,False
+native,2,observed_native_reference,4,144,3128,80,,0,648190962,False,False
+native,3,observed_native_reference,4,56,2316,80,,0,639603512,False,False
+native,4,observed_native_reference,4,56,2316,80,,0,633348210,False,False
+native,5,observed_native_reference,4,12,1912,80,,0,610281512,False,False
+native,6,observed_native_reference,4,16,1948,80,,0,605386204,False,False
+seed_replay,,passed,0,0,0,0,12,0,2048186985,False,False
+original_outer,,failed,,,,,,,,False,False

@@ -1,0 +1,333 @@
+{
+  "argv_normalization": "$PYTHON312 replaces the observed interpreter path; $REPO replaces only the absolute checkout prefix.",
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_seconds": 30,
+    "output_bytes": 16777216,
+    "wall_seconds": 60
+  },
+  "captures": {
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stdout": {
+      "bytes": 143,
+      "sha256": "30ce7b082ccaa0ad4bd8c0852acedc164b509ea49b2fa83ba5f9ac6773178ee5"
+    }
+  },
+  "cleanup_complete": true,
+  "cpu": 1,
+  "driver": {
+    "bytes": 12490,
+    "path": "evaluation/inprocess/loop_rseq_model.py",
+    "sha256": "6b7ce6acff1085aae3b780d227ec2030b5fadd3c40da46344b9420bdaf882a72"
+  },
+  "earlier_private_regression": {
+    "cleanup_complete": true,
+    "cpu": 15,
+    "hardware": {
+      "captured_by_execution_receipt": false,
+      "note": "Only CPU affinity was retained; no replay hardware snapshot was recorded."
+    },
+    "inputs_unchanged": true,
+    "models": {
+      "bfs_roots": 28,
+      "exit": 0,
+      "focal_graphs": 28,
+      "lifecycle_graphs": 6,
+      "status": "regression_passed",
+      "validation_duration_ns": 1415207071
+    },
+    "original_owner_receipt": {
+      "bytes": 2561991,
+      "sha256": "0469a2a8b6ff119e857d2ae26106677b1c07c9d22bffbf0816823359588e1328",
+      "status": "failed"
+    },
+    "public_reproduction": false,
+    "receipt": {
+      "bytes": 4426,
+      "sha256": "f157312f0f2ad8debf4051d18e93c741c2a32d9c144e70ba4ebac83455d2c389"
+    },
+    "replay": {
+      "error": "actual serialized source scratch belongs to a fully reconstructed witness",
+      "executed_corruption_controls": 0,
+      "exit": 1,
+      "helper": {
+        "bytes": 13569,
+        "sha256": "66546e878c58db601a67ce237cd41e96d809f20ed1c2f016e2dc58f790f75d4d"
+      },
+      "observed_argv": [
+        "$PYTHON312",
+        "-B",
+        "-c",
+        "import os,runpy,sys;os.chdir(sys.argv[1]);sys.argv=sys.argv[2:];runpy.run_path(sys.argv[0],run_name='__main__')",
+        "$REPO",
+        "$REPO/target/page-region-next/loop-rseq-inspection-r1/regression.py",
+        "--mode",
+        "replay"
+      ],
+      "original_reader_failure_reproduced": "exact li2_rseq_state.last_pc",
+      "pair_comparison": "not_run",
+      "planned_corruption_controls": 14,
+      "status": "regression_failed",
+      "validation_duration_ns": 4506306922
+    },
+    "reproduction_limitation": "This failed retained-record replay requires private helpers and the original closed corpus. The published model driver does not reproduce it.",
+    "revision": "4f3e28e7e1d434bc6d51c95bab828557a6d37442",
+    "source_unchanged": true,
+    "status": "failed"
+  },
+  "execution_receipt": {
+    "bytes": 2046,
+    "sha256": "d711e073f55bd073e9b1fb177b246fdb80da9e37099eaa87100d4f08b191e8b9"
+  },
+  "exit": 0,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu": 1,
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "processor": {
+      "cpu family": "26",
+      "model": "17",
+      "model name": "AMD EPYC 9D85 158-Core Processor",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    }
+  },
+  "inputs": {
+    "tools/page-entry/selected/tests/persistent_direct_frontier_owner/plan.py": {
+      "bytes": 24655,
+      "sha256": "9f451383592a582085679f50a5d0316f5f2ec03c8b71a529201a273d420f4314"
+    },
+    "tools/page-entry/selected/tests/persistent_loop_lifecycle_owner/plan.py": {
+      "bytes": 14883,
+      "sha256": "69645042a025696a883e09dd450a338ace204d6f4798ee7853ab401645dbb0bb"
+    },
+    "tools/page-entry/selected/tests/persistent_loop_owner/chooser.py": {
+      "bytes": 8029,
+      "sha256": "497ccd65a1af7b25ff52c6636457e25563748740db40bd3b14cbc2f2e044c64a"
+    },
+    "tools/page-entry/selected/tests/persistent_loop_owner/direct_model.py": {
+      "bytes": 5266,
+      "sha256": "aae943578e189be5d8bd89b2a1831270ab21b44d68ce47f700a4c86bc07215a6"
+    },
+    "tools/page-entry/selected/tests/persistent_loop_owner/plan.py": {
+      "bytes": 15022,
+      "sha256": "4d03ff6e160b4d50549a783c518d3029ae8562bf1a83547abedde08c9facbf94"
+    },
+    "tools/page-entry/selected/tests/persistent_loop_owner/source_decode.py": {
+      "bytes": 14360,
+      "sha256": "87269b009e8f4db9dec710aff5026b4179413b0b343be7f77d573c3f1c6f4bb2"
+    }
+  },
+  "inputs_unchanged": true,
+  "native_subjects": 0,
+  "observed_argv": [
+    "$PYTHON312",
+    "-B",
+    "-c",
+    "import os,runpy,sys;os.chdir(sys.argv[1]);sys.argv=sys.argv[2:];runpy.run_path(sys.argv[0],run_name='__main__')",
+    "$REPO",
+    "$REPO/target/page-region-next/loop-rseq-model-public-r1/files/evaluation/inprocess/loop_rseq_model.py",
+    "--expect-revision",
+    "9ee09db24c3a66d2ce02f26e7b0145800aa4f496",
+    "--output",
+    "$REPO/target/evaluation/inprocess/loop-rseq-model-r1/model"
+  ],
+  "owner_validated": false,
+  "performance_credit": false,
+  "profile": "loop-rseq-model-v1",
+  "python_version": "3.12.15+meta",
+  "qualification_credit": false,
+  "reaped": true,
+  "reproduction": {
+    "argv": [
+      "python3.12",
+      "-B",
+      "/path/to/loop_rseq_model.py",
+      "--expect-revision",
+      "9ee09db24c3a66d2ce02f26e7b0145800aa4f496",
+      "--output",
+      "FRESH_TARGET_OUTPUT"
+    ],
+    "driver_preparation": "Copy the published driver outside that historical checkout; require its recorded whole hash.",
+    "reservation": "Reserve one disjoint CPU before invoking the driver.",
+    "working_directory": "Clean checkout of the recorded revision."
+  },
+  "result": {
+    "bfs_orders_sha256": "a6d22c887f78489b0968223d7e74e753b0095048d32c1888efc0ee33fffd0489",
+    "bfs_roots": 28,
+    "focal_graphs": 28,
+    "focal_placements": {
+      "base_offsets": [
+        512,
+        4022
+      ],
+      "cases": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "pages": [
+        67108864,
+        123145302310912
+      ]
+    },
+    "lifecycle_graphs": 6,
+    "lifecycle_last_offsets": [
+      {
+        "last_rseq": 529,
+        "policy": 12,
+        "root": 512
+      },
+      {
+        "last_rseq": 266,
+        "policy": 11,
+        "root": 256
+      },
+      {
+        "last_rseq": 539,
+        "policy": 12,
+        "root": 535
+      }
+    ],
+    "root_last_offsets": [
+      [
+        0,
+        86
+      ],
+      [
+        4,
+        86
+      ],
+      [
+        8,
+        86
+      ],
+      [
+        12,
+        86
+      ],
+      [
+        18,
+        86
+      ],
+      [
+        23,
+        86
+      ],
+      [
+        26,
+        86
+      ],
+      [
+        28,
+        86
+      ],
+      [
+        32,
+        86
+      ],
+      [
+        35,
+        86
+      ],
+      [
+        37,
+        35
+      ],
+      [
+        40,
+        37
+      ],
+      [
+        43,
+        40
+      ],
+      [
+        46,
+        43
+      ],
+      [
+        48,
+        46
+      ],
+      [
+        52,
+        48
+      ],
+      [
+        56,
+        52
+      ],
+      [
+        59,
+        52
+      ],
+      [
+        61,
+        52
+      ],
+      [
+        63,
+        52
+      ],
+      [
+        65,
+        52
+      ],
+      [
+        67,
+        52
+      ],
+      [
+        71,
+        52
+      ],
+      [
+        75,
+        52
+      ],
+      [
+        79,
+        52
+      ],
+      [
+        81,
+        52
+      ],
+      [
+        83,
+        81
+      ],
+      [
+        86,
+        83
+      ]
+    ],
+    "whole_decoded_descriptors": 806
+  },
+  "result_receipt": {
+    "bytes": 7985,
+    "sha256": "394ee222e25c700bbc8116f40045c0acb7fe9e43d6c561f2e90cf400da9f7008"
+  },
+  "revision": "9ee09db24c3a66d2ce02f26e7b0145800aa4f496",
+  "schema": 1,
+  "scope": "Finite source-model regression only.",
+  "source_unchanged": true,
+  "status": "model_regression_passed",
+  "timed_out": false,
+  "timing_scope": "Validation cost only; not guest execution or a performance comparison.",
+  "tracked_clean": true,
+  "validation_duration_ns": {
+    "model": 92659078,
+    "process": 155384634
+  }
+}

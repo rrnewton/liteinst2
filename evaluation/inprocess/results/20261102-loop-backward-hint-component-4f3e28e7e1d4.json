@@ -1,0 +1,256 @@
+{
+  "actual_remember_observed": false,
+  "backward_component": {
+    "actual_remember_observed": false,
+    "classifications": 24,
+    "entries": 8,
+    "lookup_hits": 6,
+    "lookup_misses": 16,
+    "owner_entries": 0
+  },
+  "bounds": {
+    "build": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "component": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "metadata": [
+      10,
+      536870912,
+      16777216,
+      20
+    ]
+  },
+  "capture_count": 18,
+  "capture_limit_bytes": 8388608,
+  "command_count": 9,
+  "commands": [
+    {
+      "captures_sha256": "50ce287c88e7f3734287fd38175ac317229edbec65938241f20d33100582de38",
+      "cleanup_errors": [],
+      "descriptors_closed": true,
+      "duration_ns": 4099111,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "head-before",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures_sha256": "746f267bd82211666cc9ec5a406553d4bf2af8051e8fa01ff2a33394b6f64081",
+      "cleanup_errors": [],
+      "descriptors_closed": true,
+      "duration_ns": 33957527,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "status-before",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures_sha256": "cff7836891f65570fdcb941dd2b8d86982f5e5c05d370b6efb256551c00f6f1a",
+      "cleanup_errors": [],
+      "descriptors_closed": true,
+      "duration_ns": 3107703,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "cc-version",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures_sha256": "4ff512af46df971430a4da621dc9589760470834165e0f47baabd981a7e888cf",
+      "cleanup_errors": [],
+      "descriptors_closed": true,
+      "duration_ns": 35273694,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "headers-before",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures_sha256": "74d24ddb16912275d0618842321dab478c035b52e2f6a18cfadc549f6ac8e07d",
+      "cleanup_errors": [],
+      "descriptors_closed": true,
+      "duration_ns": 3460106932,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "build",
+      "profile": "build",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures_sha256": "daaef55bb3eee9809964c630709b7418fcc5955534d9511f810dce75d776b098",
+      "cleanup_errors": [],
+      "descriptors_closed": true,
+      "duration_ns": 7353664,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "component",
+      "profile": "component",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures_sha256": "ab90d9b4851a9074b4e982dd38afe27ea7085c5998f417daeb0ad20c449c55de",
+      "cleanup_errors": [],
+      "descriptors_closed": true,
+      "duration_ns": 32890627,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "headers-after",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures_sha256": "3ae426838bf4d016d0f13186678cd4058656f933ff865a1246c2d19f892906fc",
+      "cleanup_errors": [],
+      "descriptors_closed": true,
+      "duration_ns": 6273345,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "head-after",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures_sha256": "2c37e54f65a2b087d60b45fa21c74e89c76439cbd4ae5e0b5f6dd89d0542b8d9",
+      "cleanup_errors": [],
+      "descriptors_closed": true,
+      "duration_ns": 16558558,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "status-after",
+      "profile": "metadata",
+      "reaped": true,
+      "timed_out": false
+    }
+  ],
+  "compiler_M_dependency_count": 247,
+  "compiler_version_sha256": "74566d49f091dd3143355e3cb50b5b52bed2973dde7c37139e4e7c69247091b0",
+  "component": {
+    "entries": 8,
+    "hits": 26,
+    "misses": 87,
+    "owner_entries": 0,
+    "storage": 2
+  },
+  "cpu": 35,
+  "error": null,
+  "executable": {
+    "bytes": 548688,
+    "sha256": "0595078a4d84d2d71898e0795b113dea09437e6367db589fb1ea3084c3407b9e"
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model_recorded": false,
+    "kernel_build_sha256": "fa9e2f31f4f8539118d4b9701366b4a1f331b878dcde89fe2df3edc00e43c206",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "system": "Linux"
+  },
+  "historical_source": {
+    "head": "4f3e28e7e1d434bc6d51c95bab828557a6d37442",
+    "modified_component_inputs": {
+      "tools/page-entry/selected/persistent_group_controller.inc": {
+        "bytes": 108203,
+        "sha256": "1a5cae3cc44cf01e91d21f725d0fab5ebbab531869936e214e69fab898a3148c"
+      },
+      "tools/page-entry/selected/persistent_group_runtime.h": {
+        "bytes": 8975,
+        "sha256": "258ca4c99383161f41c2c2893031efe52fdcdf9180f85fa2c722f0ed5da29c53"
+      }
+    },
+    "modified_tracked_paths": [
+      "tools/page-entry/selected/persistent_group_controller.inc",
+      "tools/page-entry/selected/persistent_group_runtime.h",
+      "tools/page-entry/selected/persistent_loop_owner.inc",
+      "tools/page-entry/selected/tests/persistent_loop_lifecycle_owner/epochs.py",
+      "tools/page-entry/selected/tests/persistent_loop_lifecycle_owner/plan.py",
+      "tools/page-entry/selected/tests/persistent_loop_owner/fault.py",
+      "tools/page-entry/selected/tests/persistent_loop_owner/plan.py",
+      "tools/page-entry/selected/tests/persistent_loop_owner/positive.py"
+    ],
+    "repository_input_facts_sha256": "9b601cab001dd5a2d029b1dca4a2ec1e673e52d035c09619469d4ebcc1b85da4",
+    "repository_inputs": 142,
+    "tracked_clean": false,
+    "unchanged_base_repository_inputs": 140
+  },
+  "input_count": 293,
+  "inputs_unchanged": true,
+  "macro_count": 47,
+  "macro_roster_sha256": "c91473dcd4efacc216200fadbd8898aabac8ddc37f34821ed6180b4fe2b5b94a",
+  "native_subjects": 0,
+  "outer": {
+    "duration_ns": 4990348873,
+    "exit": 0,
+    "timeout_kill_after_seconds": 5,
+    "wall_limit_seconds": 180
+  },
+  "outer_receipt": {
+    "bytes": 1312,
+    "sha256": "240d5df88c616a7ba72719b83775d51c84b31be2aa2e45c97dd67199621e7039"
+  },
+  "owner_validated": false,
+  "performance_credit": false,
+  "profile": "loop-backward-hint-component-v1",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 88212,
+    "sha256": "bf26a914ebb184b2ca2fb181863416f468691b4180ca60f40264b2fe72cf2b7f"
+  },
+  "reproduction": {
+    "driver": {
+      "bytes": 9368,
+      "path": "evaluation/inprocess/loop_backward_hint_component.py",
+      "sha256": "597bad8112ef9abb004b42029206d7aaed525fb57efcb19cf1c8f8dd21b9abb7"
+    },
+    "driver_byte_identical_to_executed": true,
+    "observed_argv_normalization": "Host interpreter replaced by python3.12; repository-relative paths otherwise unchanged. README stages the exact tracked driver and fixture for a fresh run on the clean source-equivalent checkout.",
+    "observed_child_argv": [
+      "python3.12",
+      "-B",
+      "target/page-region-next/loop-backward-hint-r1/run.py",
+      "--expect-revision",
+      "4f3e28e7e1d434bc6d51c95bab828557a6d37442",
+      "--output",
+      "target/evaluation/inprocess/loop-backward-hint-component-attempt-1"
+    ],
+    "oracle": {
+      "bytes": 5700,
+      "path": "tools/page-entry/selected/tests/loop_backward_hint/oracle.c",
+      "sha256": "ff6b16befdb2c1a89dd2adae39801a19d3a973f44329c3ab20d52010d1873eb2"
+    },
+    "readme": "evaluation/inprocess/loop_backward_hint_component.README.md",
+    "recipe": {
+      "bytes": 2152,
+      "path": "tools/page-entry/selected/tests/loop_backward_hint/build.sh",
+      "sha256": "9a31d8d77e3f75862224b5912f69160b2d28d5e1c0c9626f023728a4eed60ca1"
+    }
+  },
+  "reproduction_source": {
+    "clean_revision": "567a27bfdb0a43b49b12ffdb5284d435d724aff9",
+    "observation_reclassified_as_clean": false,
+    "same_component_repository_input_bytes": true,
+    "same_component_repository_input_count": 142
+  },
+  "schema": 1,
+  "scope": "Actual-loader component only. Manually seeded lookups do not demonstrate a real owner remember/cancellation, native subject, qualification, or performance improvement.",
+  "source_unchanged": true,
+  "status": "component_passed"
+}

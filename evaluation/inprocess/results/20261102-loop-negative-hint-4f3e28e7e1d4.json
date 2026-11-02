@@ -1,0 +1,159 @@
+{
+  "bounds": {
+    "capture_limit_per_stream_bytes": 8388608,
+    "order": [
+      "cpu_seconds",
+      "address_space_bytes",
+      "file_size_bytes",
+      "wall_seconds"
+    ],
+    "profiles": {
+      "build": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "component": [
+        5,
+        536870912,
+        16777216,
+        15
+      ],
+      "metadata": [
+        10,
+        536870912,
+        16777216,
+        20
+      ]
+    }
+  },
+  "compile_attempt_1": {
+    "commands": 0,
+    "cpu": 198,
+    "error_type": "FileNotFoundError",
+    "inputs_unchanged": false,
+    "missing_input": "<stdin>",
+    "phase": "Inline harness tried to pin its synthetic module filename before any command.",
+    "receipt": {
+      "bytes": 2054,
+      "path": "target/evaluation/inprocess/loop-negative-hint-controller-compile-attempt-1/receipt.json",
+      "sha256": "2b02328a76e848b8f83b62b4103284288bc7494bf5f1e1f515c8e3f91248165f"
+    },
+    "source_unchanged": false,
+    "status": "failed"
+  },
+  "compile_attempt_2": {
+    "all_commands_closed": true,
+    "captures": 12,
+    "commands": 6,
+    "compile_duration_ns": 5464686878,
+    "compiler_header_count": 237,
+    "config_headers": [
+      {
+        "bytes": 497,
+        "content": "#ifndef LI2_LINKED_EPOCH_CONFIG_H\n#define LI2_LINKED_EPOCH_CONFIG_H\n#define LI2_LINK_BINDING_VERSION 1\n#define LI2_LINK_ARCHIVE_SHA256 {0xd5,0xae,0x69,0x33,0xce,0x1e,0x90,0x5b,0xe5,0x57,0xa9,0xda,0xc3,0xff,0xd2,0x34,0x1c,0x76,0x49,0xc4,0x2f,0x58,0xf9,0x59,0x4b,0xba,0x23,0x65,0xea,0x8b,0xa3,0x99}\n#define LI2_LINK_POLICY_SHA256 {0xe3,0xce,0xea,0x0d,0xa4,0x4c,0xc3,0x6f,0xa8,0x85,0xf2,0xc6,0xd4,0x7c,0xc0,0x9e,0x93,0x06,0x9d,0xd9,0xcb,0xd7,0x1f,0xd1,0x65,0x5f,0xa7,0x9d,0x0d,0x84,0x79,0x45}\n#endif\n",
+        "name": "linked_epoch_config.h",
+        "sha256": "1a14190707cc06cb022332682c6aa0d235342fe4d0e55e5f9f7841c0c9e86ba6"
+      },
+      {
+        "bytes": 654,
+        "content": "#ifndef LI2_PERSISTENT_GROUP_CONFIG_H\n#define LI2_PERSISTENT_GROUP_CONFIG_H\n#define LI2_PG_BINDING_VERSION 1\n#define LI2_PG_GROUP_BINDING_VERSION 4\n#define LI2_PG_LOOP_BINDING_VERSION 1\n#define LI2_PG_LOOP_POLICY_VERSION 12\n#define LI2_PG_LOOP_FALLBACK_VERSION 11\n#define LI2_PG_ARCHIVE_SHA256 {0xd5,0xae,0x69,0x33,0xce,0x1e,0x90,0x5b,0xe5,0x57,0xa9,0xda,0xc3,0xff,0xd2,0x34,0x1c,0x76,0x49,0xc4,0x2f,0x58,0xf9,0x59,0x4b,0xba,0x23,0x65,0xea,0x8b,0xa3,0x99}\n#define LI2_PG_POLICY_SHA256 {0xe3,0xce,0xea,0x0d,0xa4,0x4c,0xc3,0x6f,0xa8,0x85,0xf2,0xc6,0xd4,0x7c,0xc0,0x9e,0x93,0x06,0x9d,0xd9,0xcb,0xd7,0x1f,0xd1,0x65,0x5f,0xa7,0x9d,0x0d,0x84,0x79,0x45}\n#endif\n",
+        "name": "persistent_group_config.h",
+        "sha256": "f028abb95e1c52081abdf838faa01fd11b83d14b3e73d7cb09136e188485da50"
+      }
+    ],
+    "config_origin_revision": "3c6cac6de974ddf8aee00f52d9d17b65bb11c995",
+    "config_scope": "previous actual LOOP headers used only for type/syntax compile; no current binding or execution claim",
+    "cpu": 35,
+    "error": null,
+    "inputs_unchanged": true,
+    "macro_count": 47,
+    "object": {
+      "bytes": 2642856,
+      "sha256": "b5d9ef069b0de07ea1052e114015d6e830482c6098417c7e8215b13608600ac8"
+    },
+    "receipt": {
+      "bytes": 84686,
+      "path": "target/evaluation/inprocess/loop-negative-hint-controller-compile-attempt-2/receipt.json",
+      "sha256": "ccab259fd3776b68e60da82a788d231bff0fb339bef4a6178edfe76478bec8e2"
+    },
+    "source_unchanged": true,
+    "status": "compile_passed",
+    "translation_unit": "tools/page-entry/selected/runtime_loader.c"
+  },
+  "compiler": {
+    "path": "/usr/bin/gcc",
+    "version_stdout_sha256": "74566d49f091dd3143355e3cb50b5b52bed2973dde7c37139e4e7c69247091b0"
+  },
+  "component": {
+    "all_commands_closed": true,
+    "build_duration_ns": 3772917956,
+    "captures": 18,
+    "commands": 9,
+    "compiler_header_count": 246,
+    "component_duration_ns": 13264735,
+    "cpu": 123,
+    "error": null,
+    "executable": {
+      "bytes": 530704,
+      "sha256": "3dd012f8f6d6641aa1e4525bd2c860d23e5fe9a61acebef015dee9645ff2a2b5"
+    },
+    "inputs_unchanged": true,
+    "macro_count": 47,
+    "receipt": {
+      "bytes": 87082,
+      "path": "target/evaluation/inprocess/loop-negative-hint-component-attempt-1/receipt.json",
+      "sha256": "f9dccd7e30b79aa93c513fbce03ec6ab06089fb1338d28485497d17468918038"
+    },
+    "result": {
+      "entries": 8,
+      "hits": 26,
+      "misses": 87,
+      "owner_entries": 0,
+      "storage": 2
+    },
+    "source_unchanged": true,
+    "status": "component_passed"
+  },
+  "credits": {
+    "guest_native_execution": false,
+    "owner_validation": false,
+    "performance": false,
+    "qualification": false,
+    "real_cancellation": false
+  },
+  "hardware_observation": {
+    "cpu": 123,
+    "machine": "x86_64",
+    "receipt": "component",
+    "release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "system": "Linux",
+    "version": "#1 SMP PREEMPT Mon Aug 24 01:30:09 PDT 2026"
+  },
+  "limitations": [
+    "The component manually seeds metadata keys. It does not exercise completed-cancellation insertion or a guest owner entry.",
+    "The compile uses the two exact older generated headers below; it establishes syntax/type integration, not a linked current binding.",
+    "Hardware is recorded only by the component receipt; the compile receipts record CPU affinity but no independent hardware observation.",
+    "Attempt 1 remains a harness failure with zero commands; attempt 2 is a separate successful compile.",
+    "The README reconstructs portable commands from the receipts; that recipe has not itself been executed."
+  ],
+  "profile": "loop-negative-hint-component-and-compile-summary-v1",
+  "revision": "4f3e28e7e1d434bc6d51c95bab828557a6d37442",
+  "schema": 1,
+  "scope": "Component lookup/storage assertions and one runtime-loader translation-unit compile. Validation times only.",
+  "sources": {
+    "tools/page-entry/selected/build-persistent-loop.sh": {
+      "bytes": 5657,
+      "sha256": "479fb77b2d1a4edd1eb44adea3e059293b6571f1b1c5d898efe08903404f2908"
+    },
+    "tools/page-entry/selected/tests/loop_negative_hint/build.sh": {
+      "bytes": 2152,
+      "sha256": "15e9aead4cbcf2d17acef3532f31d04b6b79011e16ab9614ddd64bc4d93949e4"
+    },
+    "tools/page-entry/selected/tests/loop_negative_hint/oracle.c": {
+      "bytes": 7839,
+      "sha256": "815ec002df7fa7de6850befccb6a62fbc3c59db58885e00fa500f99a26c12ed0"
+    }
+  }
+}

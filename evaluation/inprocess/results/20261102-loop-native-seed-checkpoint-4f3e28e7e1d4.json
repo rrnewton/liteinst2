@@ -1,0 +1,422 @@
+{
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 23,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "historical_failure_reclassified": false,
+  "mixed_policy_validated": false,
+  "native": {
+    "actual_read_faults": 8,
+    "archive": {
+      "bytes": 12007764,
+      "sha256": "d5ae6933ce1e905be557a9dac3ffd2341c7649c42f58f9594bba2365ea8ba399"
+    },
+    "archive_provenance": "Fresh release archive with eleven source-derived Rust dependencies and five enabled decoder features.",
+    "bounds": {
+      "build": [
+        120,
+        2147483648,
+        134217728,
+        150
+      ],
+      "finite": [
+        5,
+        536870912,
+        16777216,
+        15
+      ],
+      "inspect": [
+        10,
+        268435456,
+        4194304,
+        20
+      ],
+      "metadata": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "program": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "release_build": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "seed": [
+        5,
+        536870912,
+        16777216,
+        15
+      ]
+    },
+    "bounds_order": [
+      "cpu_seconds",
+      "address_space_bytes",
+      "file_bytes",
+      "wall_seconds"
+    ],
+    "capture_limit_bytes": 16777216,
+    "captures": 164,
+    "cases": [
+      {
+        "actual_read_fault": false,
+        "case": 0,
+        "elapsed_ns_validation_only": 1814952191,
+        "exit": 0,
+        "frames_per_subject": 107,
+        "instructions_per_subject": 106,
+        "layout_controls": 80,
+        "native_controls": 5724,
+        "placements": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "status": "observed_native_reference",
+        "subjects": 4
+      },
+      {
+        "actual_read_fault": false,
+        "case": 1,
+        "elapsed_ns_validation_only": 2149821530,
+        "exit": 0,
+        "frames_per_subject": 26,
+        "instructions_per_subject": 25,
+        "layout_controls": 80,
+        "native_controls": 2756,
+        "placements": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "status": "observed_native_reference",
+        "subjects": 4
+      },
+      {
+        "actual_read_fault": false,
+        "case": 2,
+        "elapsed_ns_validation_only": 648190962,
+        "exit": 0,
+        "frames_per_subject": 36,
+        "instructions_per_subject": 35,
+        "layout_controls": 80,
+        "native_controls": 3128,
+        "placements": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "status": "observed_native_reference",
+        "subjects": 4
+      },
+      {
+        "actual_read_fault": false,
+        "case": 3,
+        "elapsed_ns_validation_only": 639603512,
+        "exit": 0,
+        "frames_per_subject": 14,
+        "instructions_per_subject": 13,
+        "layout_controls": 80,
+        "native_controls": 2316,
+        "placements": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "status": "observed_native_reference",
+        "subjects": 4
+      },
+      {
+        "actual_read_fault": false,
+        "case": 4,
+        "elapsed_ns_validation_only": 633348210,
+        "exit": 0,
+        "frames_per_subject": 14,
+        "instructions_per_subject": 13,
+        "layout_controls": 80,
+        "native_controls": 2316,
+        "placements": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "status": "observed_native_reference",
+        "subjects": 4
+      },
+      {
+        "actual_read_fault": true,
+        "case": 5,
+        "elapsed_ns_validation_only": 610281512,
+        "exit": 0,
+        "frames_per_subject": 3,
+        "instructions_per_subject": 1,
+        "layout_controls": 80,
+        "native_controls": 1912,
+        "placements": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "status": "observed_native_reference",
+        "subjects": 4
+      },
+      {
+        "actual_read_fault": true,
+        "case": 6,
+        "elapsed_ns_validation_only": 605386204,
+        "exit": 0,
+        "frames_per_subject": 4,
+        "instructions_per_subject": 2,
+        "layout_controls": 80,
+        "native_controls": 1948,
+        "placements": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "status": "observed_native_reference",
+        "subjects": 4
+      }
+    ],
+    "cleanup_complete": true,
+    "collector": {
+      "bytes": 16962,
+      "path": "evaluation/inprocess/persistent_loop_native.py",
+      "sha256": "6726516bd92d59f7d84a7502fcaa7eb6c08e585fd6f0c8127c4686ee6e4a5105"
+    },
+    "commands": 82,
+    "complete_public_csv": {
+      "bytes": 1831,
+      "sha256": "c4ca00a69ad24c479bd14ed193e2e7e07aa15ddd73001180cb38fde4c37509e5"
+    },
+    "complete_public_json": {
+      "bytes": 25842,
+      "sha256": "0a63098d34b108f38f5445a8d5446b2ff0d3d02ea1e90cc75893faa4c838b3a4"
+    },
+    "cpu": 23,
+    "elapsed_ns_validation_only": 455053180702,
+    "elf_controls": 29,
+    "error": null,
+    "frames": 816,
+    "inputs_unchanged": true,
+    "layout_controls": 560,
+    "native_controls": 20100,
+    "observed_argv_portable": [
+      "python3.12",
+      "-B",
+      "evaluation/inprocess/persistent_loop_native.py",
+      "--expect-revision",
+      "4f3e28e7e1d434bc6d51c95bab828557a6d37442",
+      "--cpu",
+      "23",
+      "--output",
+      "target/evaluation/inprocess/loop-diagnostic-r4-native"
+    ],
+    "receipt": {
+      "bytes": 2426560,
+      "sha256": "eb24445ff4f7a214fee6545e1e9ed58c51933ebc5eaac40779e6b076ed7ac8b2"
+    },
+    "source_unchanged": true,
+    "status": "observed_native_references",
+    "subjects": 28
+  },
+  "original_outer": {
+    "cap_bytes": 20000000000,
+    "closure_error": "AssertionError()",
+    "completed_stages": [
+      {
+        "exit": 0,
+        "name": "native",
+        "receipt": {
+          "bytes": 2426560,
+          "sha256": "eb24445ff4f7a214fee6545e1e9ed58c51933ebc5eaac40779e6b076ed7ac8b2"
+        },
+        "status": "observed_native_references"
+      }
+    ],
+    "cpu": 23,
+    "driver": {
+      "bytes": 4168,
+      "sha256": "a23a09d44be338ffa12b09a11fca437e93c176e1fc5112912145e3e94e5584dd"
+    },
+    "error": "AssertionError()",
+    "failure_context": "Post-native storage-guard failure reported by the operator. The retained outer records generic AssertionError values, not the exact failing operand or peak allocation.",
+    "initial_usage_bytes": 13866278912,
+    "performance_credit": false,
+    "production_prerequisite_eligible": false,
+    "profile": "loop-diagnostic-sequence-v1",
+    "qualification_credit": false,
+    "receipt": {
+      "bytes": 1573,
+      "sha256": "1b346fac33456ca02aba506397db50470472e9b9f8972f127a2f69ddfe572eea"
+    },
+    "reserve_bytes": 1342177280,
+    "source_unchanged": false,
+    "status": "failed",
+    "unexecuted_stages": [
+      "components",
+      "owner"
+    ]
+  },
+  "owner_validated": false,
+  "performance_credit": false,
+  "production_prerequisite_eligible": false,
+  "profile": "loop-native-and-seed-checkpoint-v1",
+  "qualification_credit": false,
+  "reproduction": {
+    "prerequisites": [
+      "Clean checkout at the exact revision; Python 3.12; offline Cargo dependencies and the source-required C/Rust toolchain.",
+      "Run the native collector on one externally reserved CPU. Run the retained-seed comparator on a separately reserved singleton.",
+      "Use fresh output directories. The seed command requires the exact retained native receipt and its retained inputs/artifacts; a fresh native collection has a new receipt hash.",
+      "Observed argv replace only the original Python executable with python3.12 and absolute repository paths with repository-relative paths. The recorded seed execution additionally used prlimit with the listed limits.",
+      "The original private outer is recorded as failed; its operational outcome is not a public collector qualification result."
+    ],
+    "tracked_scripts": [
+      "evaluation/inprocess/persistent_loop_native.py",
+      "evaluation/inprocess/replay_loop_native_seed.py"
+    ]
+  },
+  "revision": "4f3e28e7e1d434bc6d51c95bab828557a6d37442",
+  "schema": 1,
+  "scope": "Finite native reference and retained-seed diagnostic evidence only. All elapsed values are validation cost. The original outer remains failed; no component or owner result is inferred from it.",
+  "seed_replay": {
+    "builds": 0,
+    "canonical_equal": true,
+    "canonical_seed_sha256": "ac22db2f7b7900bb2d18db45dd7a87477b68e1c25b01a5bce5b15379a134332f",
+    "component_nodes": 6,
+    "cpuid_nodes": 68,
+    "driver": {
+      "bytes": 16229,
+      "sha256": "0032416c8ff76ff3e60af20f602d3b53ea95c8e1437a72ac0a3b4e4d39da4b16"
+    },
+    "elapsed_ns_validation_only": 2048186985,
+    "error_type": null,
+    "execution_receipt": {
+      "bytes": 2395,
+      "sha256": "da1282207832a86f9fc3bd3fe9960fdf9bdba28e86750d2c5fd52874a867bbc6"
+    },
+    "exit": 0,
+    "external_limits": {
+      "address_space_bytes": 536870912,
+      "cpu_seconds": 30,
+      "file_bytes": 16777216
+    },
+    "git_metadata_commands_executed": 2,
+    "inputs_unchanged": true,
+    "lifecycle_comparator": {
+      "bytes": 15536,
+      "sha256": "4e0f8bb032073f75b962223fa3b22761b0984bebd19c99e1f646739d94cee96c"
+    },
+    "lifecycle_join_controls": [
+      "cpuid_word",
+      "component_extent",
+      "fxsave_hash",
+      "missing_field",
+      "extra_field",
+      "bool_int"
+    ],
+    "native_comparator": {
+      "bytes": 20878,
+      "sha256": "7f7ba3d943a3e489559f967c83da2be6b4a01e08803b54dddaf2d54b536a9ca7"
+    },
+    "native_execution": 0,
+    "native_join_controls": [
+      "cpuid_word",
+      "component_extent",
+      "fxsave_hash",
+      "missing_field",
+      "extra_field",
+      "bool_int"
+    ],
+    "new_seed_commands_executed": 0,
+    "observed_argv_portable": [
+      "python3.12",
+      "-B",
+      "evaluation/inprocess/replay_loop_native_seed.py",
+      "--expect-revision",
+      "4f3e28e7e1d434bc6d51c95bab828557a6d37442",
+      "--native-receipt",
+      "target/evaluation/inprocess/loop-diagnostic-r4-native/receipt.json",
+      "--native-receipt-sha256",
+      "eb24445ff4f7a214fee6545e1e9ed58c51933ebc5eaac40779e6b076ed7ac8b2",
+      "--comparator-sha256",
+      "7f7ba3d943a3e489559f967c83da2be6b4a01e08803b54dddaf2d54b536a9ca7",
+      "--lifecycle-comparator-sha256",
+      "4e0f8bb032073f75b962223fa3b22761b0984bebd19c99e1f646739d94cee96c",
+      "--output",
+      "target/evaluation/inprocess/loop-native-seed-regression-r4"
+    ],
+    "original_cpu": 23,
+    "original_source": {
+      "head_sources_match": true,
+      "revision": "4f3e28e7e1d434bc6d51c95bab828557a6d37442",
+      "source_manifest_sha256": "1b1f1ea2eee11f4ea870c3ba9c2daf81095dc707691b582b826ddae3a07befa6",
+      "tracked_clean": true,
+      "tree": "43bb3cefdee0095c8ce5837715b6c8761839b1b9"
+    },
+    "pinned_inputs": {
+      "count": 203,
+      "sha256": "4d35e8e5d1edf7c0dc81052be9caf3dbf50638bbe2756186c201a67515749c0c"
+    },
+    "python_equal": false,
+    "replayed_seed_command_names": [
+      "seed-headers",
+      "seed-link",
+      "seed-libraries",
+      "seed-prerequisite"
+    ],
+    "result": {
+      "bytes": 6875,
+      "sha256": "a004dfde5bd7da80eedf7b446032f6421e60c621bbbd0abbef7b38340777bd20"
+    },
+    "review_cpu": 13,
+    "scope": "Retained actual seed serialization and the exact native/lifecycle seed comparators only. No full lifecycle prerequisite, owner, or native execution credit.",
+    "seed_elf": {
+      "bytes": 26752,
+      "sha256": "bfa83d32c4f8dd46204042f4007b9103364ff6608770cc928fbfbf57cacf8eba"
+    },
+    "seed_raw": {
+      "bytes": 5792,
+      "sha256": "a49eeb900a9ed4b4ce1c459fc7ee7dd6bf78c68679495d2b849b2fa348193335"
+    },
+    "source_unchanged": true,
+    "status": "passed",
+    "tuple_list_nodes": 74,
+    "validator_revision": "4f3e28e7e1d434bc6d51c95bab828557a6d37442",
+    "validator_tracked_clean": true,
+    "wall_seconds": 60
+  },
+  "source": {
+    "head_sources_match": true,
+    "revision": "4f3e28e7e1d434bc6d51c95bab828557a6d37442",
+    "source_manifest_sha256": "1b1f1ea2eee11f4ea870c3ba9c2daf81095dc707691b582b826ddae3a07befa6",
+    "tracked_clean": true,
+    "tree": "43bb3cefdee0095c8ce5837715b6c8761839b1b9"
+  },
+  "status": "partial_diagnostic_evidence"
+}

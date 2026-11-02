@@ -1,0 +1,372 @@
+{
+  "cases": [
+    {
+      "errors": [
+        "ValueError: exact li2_rseq_state.last_pc"
+      ],
+      "exit": 0,
+      "label": "subject-maintained-0-0",
+      "mode": 0,
+      "placement": 0,
+      "reader_analysis_completed": true,
+      "status": "failed",
+      "timed_out": false,
+      "whole_process_ns": 26203266178
+    },
+    {
+      "errors": [
+        "ValueError: exact li2_rseq_state.last_pc"
+      ],
+      "exit": 0,
+      "label": "subject-maintained-0-1",
+      "mode": 0,
+      "placement": 1,
+      "reader_analysis_completed": true,
+      "status": "failed",
+      "timed_out": false,
+      "whole_process_ns": 25862764153
+    },
+    {
+      "errors": [
+        "ValueError: exact contiguous two-image stub/slots/spill bank"
+      ],
+      "exit": 0,
+      "label": "subject-maintained-0-2",
+      "mode": 0,
+      "placement": 2,
+      "reader_analysis_completed": true,
+      "status": "failed",
+      "timed_out": false,
+      "whole_process_ns": 26170481089
+    },
+    {
+      "errors": [
+        "ValueError: exact contiguous two-image stub/slots/spill bank"
+      ],
+      "exit": 0,
+      "label": "subject-maintained-0-3",
+      "mode": 0,
+      "placement": 3,
+      "reader_analysis_completed": true,
+      "status": "failed",
+      "timed_out": false,
+      "whole_process_ns": 25591133423
+    },
+    {
+      "errors": [
+        "ValueError: exact li2_rseq_state.last_pc"
+      ],
+      "exit": 0,
+      "label": "subject-maintained-1-0",
+      "mode": 1,
+      "placement": 0,
+      "reader_analysis_completed": true,
+      "status": "failed",
+      "timed_out": false,
+      "whole_process_ns": 23287372943
+    },
+    {
+      "errors": [
+        "ValueError: exact li2_rseq_state.last_pc"
+      ],
+      "exit": 0,
+      "label": "subject-maintained-1-1",
+      "mode": 1,
+      "placement": 1,
+      "reader_analysis_completed": true,
+      "status": "failed",
+      "timed_out": false,
+      "whole_process_ns": 23539510674
+    },
+    {
+      "errors": [
+        "ValueError: exact contiguous two-image stub/slots/spill bank"
+      ],
+      "exit": 0,
+      "label": "subject-maintained-1-2",
+      "mode": 1,
+      "placement": 2,
+      "reader_analysis_completed": true,
+      "status": "failed",
+      "timed_out": false,
+      "whole_process_ns": 23440975124
+    },
+    {
+      "errors": [
+        "ValueError: exact contiguous two-image stub/slots/spill bank"
+      ],
+      "exit": 0,
+      "label": "subject-maintained-1-3",
+      "mode": 1,
+      "placement": 3,
+      "reader_analysis_completed": true,
+      "status": "failed",
+      "timed_out": false,
+      "whole_process_ns": 23271541769
+    },
+    {
+      "errors": [
+        "ValueError: exact li2_rseq_state.last_pc"
+      ],
+      "exit": 0,
+      "label": "subject-maintained-2-0",
+      "mode": 2,
+      "placement": 0,
+      "reader_analysis_completed": true,
+      "status": "failed",
+      "timed_out": false,
+      "whole_process_ns": 23274784013
+    },
+    {
+      "errors": [
+        "ValueError: exact li2_rseq_state.last_pc"
+      ],
+      "exit": 0,
+      "label": "subject-maintained-2-1",
+      "mode": 2,
+      "placement": 1,
+      "reader_analysis_completed": true,
+      "status": "failed",
+      "timed_out": false,
+      "whole_process_ns": 23306390481
+    },
+    {
+      "errors": [
+        "ValueError: exact contiguous two-image stub/slots/spill bank"
+      ],
+      "exit": 0,
+      "label": "subject-maintained-2-2",
+      "mode": 2,
+      "placement": 2,
+      "reader_analysis_completed": true,
+      "status": "failed",
+      "timed_out": false,
+      "whole_process_ns": 23487398965
+    },
+    {
+      "errors": [
+        "ValueError: exact contiguous two-image stub/slots/spill bank"
+      ],
+      "exit": 0,
+      "label": "subject-maintained-2-3",
+      "mode": 2,
+      "placement": 3,
+      "reader_analysis_completed": true,
+      "status": "failed",
+      "timed_out": false,
+      "whole_process_ns": 23338902685
+    },
+    {
+      "errors": [
+        "ValueError: actual serialized source scratch belongs to a fully reconstructed witness"
+      ],
+      "exit": 0,
+      "label": "subject-maintained-3-0",
+      "mode": 3,
+      "placement": 0,
+      "reader_analysis_completed": true,
+      "status": "failed",
+      "timed_out": false,
+      "whole_process_ns": 23226724109
+    },
+    {
+      "errors": [
+        "ValueError: actual serialized source scratch belongs to a fully reconstructed witness"
+      ],
+      "exit": 0,
+      "label": "subject-maintained-3-1",
+      "mode": 3,
+      "placement": 1,
+      "reader_analysis_completed": true,
+      "status": "failed",
+      "timed_out": false,
+      "whole_process_ns": 22804093103
+    },
+    {
+      "errors": [],
+      "exit": 0,
+      "label": "subject-maintained-3-2",
+      "mode": 3,
+      "placement": 2,
+      "reader_analysis_completed": false,
+      "status": "failed",
+      "timed_out": false,
+      "whole_process_ns": 23059624613
+    }
+  ],
+  "cleanup_complete": true,
+  "collector": {
+    "bytes": 10012,
+    "path": "evaluation/inprocess/diagnose_loop_owner.py",
+    "sha256": "ba11ca1eb9a1a8ef0c264d50757a0206d1d694ecc8dcd5e74f13174f0fc02cac"
+  },
+  "commands": {
+    "owner_reader_passes": 0,
+    "programs_executed": 15,
+    "programs_exit_zero": 15,
+    "programs_unexecuted": 41,
+    "setup": 70,
+    "total": 85
+  },
+  "diagnoses": [
+    {
+      "failure": "exact li2_rseq_state.last_pc",
+      "finding": "Expected-state model omitted DIRECT heads from the final cold rseq inspection; exact footprint comparison remains required."
+    },
+    {
+      "failure": "missing focal loop execution at high addresses",
+      "finding": "Both preallocated code banks lie beyond the existing rel32 return range. These cases completed through ordinary stepping, not through translated loops."
+    },
+    {
+      "failure": "source scratch matches no complete reconstructed witness",
+      "finding": "Successful cold loop left prior source scratch in place. Choice and check describe the current source; the stale scratch must be refreshed."
+    }
+  ],
+  "error": "KeyboardInterrupt: ",
+  "final_errors": [],
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 23,
+    "runner_cap_eff": "0000000000000000",
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "historical_failure_reclassified": false,
+  "inputs_unchanged": true,
+  "performance_credit": false,
+  "production_prerequisite_eligible": false,
+  "profile": "persistent-loop-owner-diagnostic-checkpoint-v1",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 2561991,
+    "sha256": "0469a2a8b6ff119e857d2ae26106677b1c07c9d22bffbf0816823359588e1328"
+  },
+  "reproduction": {
+    "argv": [
+      "python3.12",
+      "-B",
+      "evaluation/inprocess/diagnose_loop_owner.py",
+      "--expect-revision",
+      "4f3e28e7e1d434bc6d51c95bab828557a6d37442",
+      "--cpu",
+      "23",
+      "--output",
+      "target/evaluation/inprocess/loop-diagnostic-r4-continuation-owner",
+      "--loop-native-receipt",
+      "target/evaluation/inprocess/loop-diagnostic-r4-native/receipt.json",
+      "--loop-native-receipt-sha256",
+      "eb24445ff4f7a214fee6545e1e9ed58c51933ebc5eaac40779e6b076ed7ac8b2",
+      "--loop-component-receipt",
+      "target/evaluation/inprocess/loop-diagnostic-r4-continuation-components/receipt.json",
+      "--loop-component-receipt-sha256",
+      "459c919f965d0218e2659f6ed8f226967e8dde0355970ee713b9bb68107c9387"
+    ],
+    "limits": {
+      "build": [
+        120,
+        2147483648,
+        134217728,
+        150
+      ],
+      "finite": [
+        5,
+        536870912,
+        16777216,
+        15
+      ],
+      "inspect": [
+        10,
+        268435456,
+        4194304,
+        20
+      ],
+      "metadata": [
+        30,
+        536870912,
+        67108864,
+        60
+      ],
+      "program": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "release_build": [
+        30,
+        536870912,
+        16777216,
+        60
+      ],
+      "seed": [
+        5,
+        536870912,
+        16777216,
+        15
+      ]
+    },
+    "prerequisites": [
+      "Clean exact revision, original native28 receipt and five-component receipt with all their retained inputs and artifacts. Reserve one CPU; original run used CPU23.",
+      "Use fresh output paths and actual newly collected prerequisite hashes for a fresh run. The observed run was interrupted between child executions after15 completed programs; this remains a failed partial diagnostic."
+    ]
+  },
+  "revision": "4f3e28e7e1d434bc6d51c95bab828557a6d37442",
+  "schema": 1,
+  "scope": "Actual completed programs and failed owner validation only; elapsed values are diagnostic validation durations, not release performance. Original full qualification,392/522 and release native/page/DynamoRIO remain required.",
+  "source_unchanged": true,
+  "status": "failed",
+  "unexecuted_cases": [
+    "subject-maintained-3-3",
+    "subject-maintained-4-0",
+    "subject-maintained-4-1",
+    "subject-maintained-4-2",
+    "subject-maintained-4-3",
+    "subject-maintained-5-0",
+    "subject-maintained-5-1",
+    "subject-maintained-5-2",
+    "subject-maintained-5-3",
+    "subject-maintained-6-0",
+    "subject-maintained-6-1",
+    "subject-maintained-6-2",
+    "subject-maintained-6-3",
+    "subject-differential-0-0",
+    "subject-differential-0-1",
+    "subject-differential-0-2",
+    "subject-differential-0-3",
+    "subject-differential-1-0",
+    "subject-differential-1-1",
+    "subject-differential-1-2",
+    "subject-differential-1-3",
+    "subject-differential-2-0",
+    "subject-differential-2-1",
+    "subject-differential-2-2",
+    "subject-differential-2-3",
+    "subject-differential-3-0",
+    "subject-differential-3-1",
+    "subject-differential-3-2",
+    "subject-differential-3-3",
+    "subject-differential-4-0",
+    "subject-differential-4-1",
+    "subject-differential-4-2",
+    "subject-differential-4-3",
+    "subject-differential-5-0",
+    "subject-differential-5-1",
+    "subject-differential-5-2",
+    "subject-differential-5-3",
+    "subject-differential-6-0",
+    "subject-differential-6-1",
+    "subject-differential-6-2",
+    "subject-differential-6-3"
+  ]
+}
