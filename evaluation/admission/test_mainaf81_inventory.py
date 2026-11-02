@@ -1,5 +1,6 @@
 """Exact default ADC/compiled test census with explicit historical boundaries."""
 import copy
+from contextlib import ExitStack
 import hashlib
 import json
 from pathlib import Path
@@ -151,20 +152,62 @@ class MainAf81InventoryTests(unittest.TestCase):
             if 'native_row' in outer:
                 upstream[path] = outer['native_row']
                 changed_prior = outer['native']
-            with patch.dict(native_indexed.DATA['source_successor_79a4b8b']['source_projections'], outer['rows']['79a4b8b']), \
-                 patch.dict(native_indexed.DATA['source_successor_3217b8ed']['source_projections'], outer['rows']['3217b8ed']), \
-                 patch.dict(native_indexed.DATA['projections'], upstream), \
-                 patch.object(Path, 'read_bytes', changed), \
-                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_prior).hexdigest()}), \
-                 patch.object(current, 'source_before', side_effect=lambda p, b, e: b if p != path else (_ for _ in ()).throw(AssertionError('declaration gate omitted'))):
-                if path in ('tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs',
-                        'src/quiescent.rs',
-                        'tests/support/quiescent_oracle.rs',
-                        'tools/rapid-profiler/src/frontend_native/ordinary/mod.rs',
-                        'tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs'):
+            # Carry the same literal through every remaining exact source
+            # layer, keeping native and Af81 expected bytes distinct.
+            layers = ((native_indexed, 'projections'), (indexed, 'projections'),
+                      (artifact, 'projections'), (prepared, 'source_projections_bf8b'),
+                      (prepared, 'source_projections_23d6'), (prepared, 'projections'),
+                      (incoming, 'projections'), (newest, 'projections'),
+                      (latest, 'projections'), (current.maindd75, 'projections'))
+            source = outer['baseline']; historical_rows = []
+            for module, key in layers:
+                table = module.DATA[key]
+                if path not in table:
+                    continue
+                prior = module.inverse(path, source, table, 'adc_layer_baseline')
+                self.assertEqual((source.count(old_text.encode()), prior.count(old_text.encode())), (1, 1))
+                first = source.index(old_text.encode()); end = first + len(old_text.encode())
+                delta = len(new_text.encode()) - len(old_text.encode())
+                row = copy.deepcopy(table[path])
+                for edit in row['edits']:
+                    self.assertTrue(edit[1] <= first or edit[0] >= end)
+                    if edit[0] >= end:
+                        edit[0] += delta; edit[1] += delta
+                altered = source.replace(old_text.encode(), new_text.encode())
+                altered_prior = prior.replace(old_text.encode(), new_text.encode())
+                row.update(current_sha256=hashlib.sha256(altered).hexdigest(),
+                           previous_sha256=hashlib.sha256(altered_prior).hexdigest())
+                self.assertEqual(module.inverse(path, altered, {path: row},
+                    'adc_layer_mutated_inverse'), altered_prior)
+                if module is native_indexed:
+                    if upstream[path] != table[path]:
+                        self.assertEqual(upstream[path], row)
+                    upstream[path] = row
+                    changed_prior = altered_prior
+                else:
+                    historical_rows.append((table, row))
+                source = prior
+            self.assertEqual(hashlib.sha256(source).hexdigest(), current.DATA['sources'][path])
+            historical_prior = source.replace(old_text.encode(), new_text.encode())
+            with ExitStack() as source_rows:
+                for table, row in historical_rows:
+                    source_rows.enter_context(patch.dict(table, {path: row}))
+                with patch.dict(native_indexed.DATA['source_successor_79a4b8b']['source_projections'], outer['rows']['79a4b8b']), \
+                     patch.dict(native_indexed.DATA['source_successor_3217b8ed']['source_projections'], outer['rows']['3217b8ed']), \
+                     patch.dict(native_indexed.DATA['projections'], upstream), \
+                     patch.object(Path, 'read_bytes', changed), \
+                     patch.dict(current.DATA['sources'], {path: hashlib.sha256(historical_prior).hexdigest()}), \
+                     patch.object(current, 'source_before', side_effect=lambda p, b, e: b if p != path else (_ for _ in ()).throw(AssertionError('declaration gate omitted'))):
+                    if path in ('tools/rapid-profiler/ordinary-interval/normal/session/loop_trace.rs',
+                            'src/quiescent.rs',
+                            'tests/support/quiescent_oracle.rs',
+                            'tools/rapid-profiler/src/frontend_native/ordinary/mod.rs',
+                            'tools/rapid-profiler/src/frontend_native/always_on/site/ordinary/normal_module.rs'):
+                        self.assertEqual(native_indexed.source_before(path, changed_raw,
+                            'adc_outer_inverse_control'), changed_prior)
                     self.assertEqual(native_indexed.source_before(path, changed_raw,
-                        'adc_outer_inverse_control'), changed_prior)
-                self.assertEqual(native_indexed.source_before(path, changed_raw,
-                    'adc_all_outer_inverse_control'), changed_prior)
-                with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainaf81_source_inventory_differs$'):
-                    current.require_sources()
+                        'adc_all_outer_inverse_control'), changed_prior)
+                    self.assertEqual(current.maindd75.source_before(path, changed_raw,
+                        'adc_all_historical_inverse_control'), historical_prior)
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainaf81_source_inventory_differs$'):
+                        current.require_sources()

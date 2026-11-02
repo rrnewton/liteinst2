@@ -950,37 +950,37 @@
       "previous_sha256": "c8b2d6c0b859e6d757fcf9c9c5f6a43c75edcd594863e819c131dd37849e189b"
     },
     "evaluation/admission/test_mainaf81_inventory.py": {
-      "current_sha256": "4690032e170c1e939976081c3f391553c2eeff538b667e32bef0f48bde9bb99f",
+      "current_sha256": "7e0428b9868463e63d557e32ac21e5ca932ba60f13661d86e02d6dc872976aa4",
       "edits": [
         [
-          371,
-          479,
+          94,
+          127,
           ""
         ],
         [
-          834,
-          1125,
+          404,
+          512,
+          ""
+        ],
+        [
+          867,
+          1158,
           "        actual = current.maindd75.before_current(latest.before_current(newest.before_current(incoming.before_current(prepared.before_current(artifact.before_current(indexed.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))))))))\n"
         ],
         [
-          4203,
-          4477,
+          4236,
+          4510,
           "        identities = current.maindd75.before_python(latest.before_python(newest.before_python(incoming.before_python(prepared.before_python(artifact.before_python(indexed.before_python(historical.python_identities(Path(__file__).parent))))))))\n"
         ],
         [
-          8508,
-          8636,
+          8541,
+          8669,
           ""
         ],
         [
-          8801,
-          11160,
-          "            with patch.object(Path, 'read_bytes', changed), \\\n                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_raw).hexdigest()}), \\\n"
-        ],
-        [
-          11332,
-          12034,
-          ""
+          8834,
+          15028,
+          "            with patch.object(Path, 'read_bytes', changed), \\\n                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_raw).hexdigest()}), \\\n                 patch.object(current, 'source_before', side_effect=lambda p, b, e: b if p != path else (_ for _ in ()).throw(AssertionError('declaration gate omitted'))):\n                with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainaf81_source_inventory_differs$'):\n                    current.require_sources()\n"
         ]
       ],
       "previous_sha256": "46213dabe7607ba13e7f3f0b1de1acc76dd2f4f8b74d616e44af50c6a77244e6"
@@ -14174,7 +14174,7 @@
     "evaluation/admission/test_main97ab_inventory.py": "0401057094f968ffd5c73b26c26c7599269128b74a01496e06bac0e5d06c823d",
     "evaluation/admission/test_main981419_inventory.py": "a75ae36eed8dc312b702821d50c991e126430a4f3e294342d2b43e29cd1ff034",
     "evaluation/admission/test_mainacc247_inventory.py": "9deada610eedcdc46ef6ebba60f58fedcbf0171f382d7895f42c27756afe1c17",
-    "evaluation/admission/test_mainaf81_inventory.py": "4690032e170c1e939976081c3f391553c2eeff538b667e32bef0f48bde9bb99f",
+    "evaluation/admission/test_mainaf81_inventory.py": "7e0428b9868463e63d557e32ac21e5ca932ba60f13661d86e02d6dc872976aa4",
     "evaluation/admission/test_mainc712_inventory.py": "f83655db9a2f51f91a3f245e7d04cd52a5bd749bdcf2d52c14d1d4e8c35c0825",
     "evaluation/admission/test_maind8d85_inventory.py": "4151ab35f7f9bdd186c3f961c671697fbbad41b94bca05a4d5175cf734cdd12d",
     "evaluation/admission/test_maindd75_inventory.py": "4bd221188c28323d7af430d1c6e43dd201cd8659001fbeb1449dadb81402c156",
