@@ -1,0 +1,60 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_seconds": 180,
+    "output_bytes": 8388608,
+    "wall_seconds": 180
+  },
+  "cpu": 184,
+  "environment": {
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TMPDIR": "private_run/tmp"
+  },
+  "git_version": "git version 2.52.0",
+  "hardware": {
+    "cpu family": "26",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "native_qualification_credit": false,
+  "performance_credit": false,
+  "profile": "component-source-guard-tests-v1",
+  "reproduce": [
+    "python3",
+    "-B",
+    "evaluation/inprocess/test_persistent_component_sources.py"
+  ],
+  "result": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "23ac3b7d287f3029d3e04b76f37b92821d5f11de758dac54b12d47c6dc687838",
+    "reaped_descendants": 0,
+    "seconds": 0.9711217721924186,
+    "start_utc": "2026-11-02T01:00:56.662728+00:00",
+    "termination": null
+  },
+  "revision": "ce3dc5f4dbc3a7560c99fc160f4b622cffc1c087",
+  "schema": 1,
+  "source": {
+    "evaluation/inprocess/persistent_component_sources.json": {
+      "bytes": 5480,
+      "sha256": "bec4b3724cffe2a6047babab5d199d12e66347b82bc8344c673a006c712c96ba"
+    },
+    "evaluation/inprocess/persistent_component_sources.py": {
+      "bytes": 4173,
+      "sha256": "36b4ed1617ba48dc35b08e41ae0f6997401ede83d1ad74f882565f9e75ebd618"
+    },
+    "evaluation/inprocess/test_persistent_component_sources.py": {
+      "bytes": 9496,
+      "sha256": "2b6916c716553d2c149df7458470f0637f65033c36d81848f8ed29a96a46679f"
+    }
+  },
+  "source_unchanged": true,
+  "status": "passed",
+  "tests": 7
+}

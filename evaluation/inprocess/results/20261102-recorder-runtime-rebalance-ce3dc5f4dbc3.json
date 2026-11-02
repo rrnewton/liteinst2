@@ -1,0 +1,235 @@
+{
+  "bounds": {
+    "cpu_seconds": 180,
+    "output_bytes": 8388608,
+    "wall_seconds": 180
+  },
+  "capture": {
+    "bytes": 6739,
+    "sha256": "a329b9334ab6660e37200b2a4f899b81112d148f5ebcfb5511449e273db5701f"
+  },
+  "cases": [
+    {
+      "cpu_ns": 5646728071,
+      "identity": "test_runtime_inventory.RuntimeInventoryTests.test_current_catalog_preserves_every_old_row_helper_and_collection_exactly",
+      "module": "test_runtime_inventory",
+      "status": "passed",
+      "wall_ns": 5719348052
+    },
+    {
+      "cpu_ns": 2157380,
+      "identity": "test_runtime_inventory.RuntimeInventoryTests.test_exact_source_methods_bind_all_pure_and_three_native_cohorts",
+      "module": "test_runtime_inventory",
+      "status": "passed",
+      "wall_ns": 2174325
+    },
+    {
+      "cpu_ns": 5851986387,
+      "identity": "test_runtime_inventory.RuntimeInventoryTests.test_projection_refuses_missing_relabelled_unknown_and_changed_history",
+      "module": "test_runtime_inventory",
+      "status": "passed",
+      "wall_ns": 5912772432
+    },
+    {
+      "cpu_ns": 5524343736,
+      "identity": "test_runtime_launch_cleanup.RuntimeLaunchCleanupTests.test_launch_cleanup_addition_preserves_exact_sources_corpus_and_python_inventory",
+      "module": "test_runtime_launch_cleanup",
+      "status": "passed",
+      "wall_ns": 5581031127
+    },
+    {
+      "cpu_ns": 5512956714,
+      "identity": "test_runtime_launch_cleanup.RuntimeLaunchCleanupTests.test_launch_cleanup_closed_catalog_and_results_preserve_failure_prefix_and_privacy",
+      "module": "test_runtime_launch_cleanup",
+      "status": "passed",
+      "wall_ns": 5569063382
+    },
+    {
+      "cpu_ns": 5770710393,
+      "identity": "test_runtime_launch_cleanup.RuntimeLaunchCleanupTests.test_launch_cleanup_projection_rejects_source_row_count_and_historical_tampering",
+      "module": "test_runtime_launch_cleanup",
+      "status": "passed",
+      "wall_ns": 5821818949
+    }
+  ],
+  "command": {
+    "child_argv": [
+      "python3.12",
+      "-B",
+      "<byte-identical-copied-driver>",
+      "--measure"
+    ],
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "seconds": 29.21486464305781,
+    "termination": null
+  },
+  "cpu": 19,
+  "discovery": {
+    "sha256": "5525a6300b3ced3d92dea20fa89cee9a9b37e3c1af7da20d6e18943bdd9ec67c",
+    "tests": 366,
+    "wall_ns": 500417205,
+    "worker_counts": [
+      63,
+      104,
+      95,
+      104
+    ]
+  },
+  "driver": {
+    "bytes": 6327,
+    "path": "evaluation/admission/recorder_runtime_module_timing.py",
+    "sha256": "493c3909aa4d739e159b735d4f6de3c448753939ec807c7f19156a807ac2416a"
+  },
+  "evidence_limitations": "No separate outer-command receipt was retained. Observed bounds are the CPU, wall and output limits recorded by the diagnostic. The reproduction command explicitly requests an additional512MiB address-space cap.",
+  "hardware": {
+    "adjacent_check_receipt": {
+      "bytes": 7738,
+      "sha256": "4abae632d0c273fc2ed6b1c7a31b72a517fa3b17d5f1e850229111c391c3ef75"
+    },
+    "architecture": "x86_64",
+    "cpu": 19,
+    "cpu_family": "26",
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model_name": "AMD EPYC 9D85 158-Core Processor",
+    "observation": "Later read-only observation of the recorded CPU, corroborated by the adjacent closed check receipt; the timing receipt did not itself collect hardware metadata.",
+    "observed_utc": "2026-11-02T01:31:57.051974+00:00",
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs": {
+    "evaluation/admission/corpus.json": {
+      "bytes": 230598,
+      "sha256": "32e9f13600387c0739ed1ede11cd342b7167c1ba83834f9af80538fcd7286b09"
+    },
+    "evaluation/admission/processes.py": {
+      "bytes": 15760,
+      "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+    },
+    "evaluation/admission/recorder_parallel.py": {
+      "bytes": 14664,
+      "sha256": "b1d2c6a73087bc2177121ec23d25a784746939ba9cfd22713249982dae28dce7"
+    },
+    "evaluation/admission/recorder_shards_inventory.json": {
+      "bytes": 26627,
+      "sha256": "55e4cdcc53533e6cc2f335b91acbaead6daa6356b787786e50532c9fbda5b453"
+    },
+    "evaluation/admission/recorder_shards_inventory.py": {
+      "bytes": 3199,
+      "sha256": "d90dca81509cdc6ee4fa874213a2a4337ba060c001508109fc04ecb19eb8c233"
+    },
+    "evaluation/admission/test_runtime_inventory.py": {
+      "bytes": 36897,
+      "sha256": "b47739374d937c393573ac4bf669fb9a9042fd6c99b119591438264017b87f4b"
+    },
+    "evaluation/admission/test_runtime_launch_cleanup.py": {
+      "bytes": 14672,
+      "sha256": "28b196562b74a95e2c9baf6cd5d7d38f290bc943c19e598186e1ec093ca8d099"
+    }
+  },
+  "inputs_unchanged": true,
+  "modules": [
+    {
+      "cpu_ns": 11501109485,
+      "module": "test_runtime_inventory",
+      "status": "passed",
+      "tests": 3,
+      "wall_ns": 11634831655
+    },
+    {
+      "cpu_ns": 16808093698,
+      "module": "test_runtime_launch_cleanup",
+      "status": "passed",
+      "tests": 3,
+      "wall_ns": 16972299359
+    }
+  ],
+  "original_failure": {
+    "completed_cases": 365,
+    "later_checks": "not_run",
+    "promoted": false,
+    "receipt": {
+      "bytes": 7738,
+      "sha256": "4abae632d0c273fc2ed6b1c7a31b72a517fa3b17d5f1e850229111c391c3ef75"
+    },
+    "recorder_termination": "timeout",
+    "required_cases": 366,
+    "revision": "ce3dc5f4dbc3a7560c99fc160f4b622cffc1c087",
+    "status": "failed"
+  },
+  "performance_credit": false,
+  "proposed_partition": {
+    "after_counts": [
+      66,
+      101,
+      95,
+      104
+    ],
+    "before_counts": [
+      63,
+      104,
+      95,
+      104
+    ],
+    "current_worker": 0,
+    "discovery_order_changed": false,
+    "full_suite_executed": false,
+    "historical_shards_changed": false,
+    "identities": 366,
+    "module": "test_runtime_inventory",
+    "previous_worker": 1
+  },
+  "python": {
+    "compiler": "Clang 21.1.0",
+    "version": "3.12.15"
+  },
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 9092,
+    "sha256": "73d390023baa8dae639c3693c7e7749576ce015fe63631f01395e5378e6dadba"
+  },
+  "reproduce": {
+    "argv": [
+      "env",
+      "GIT_CONFIG_COUNT=2",
+      "GIT_CONFIG_KEY_0=index.threads",
+      "GIT_CONFIG_VALUE_0=1",
+      "GIT_CONFIG_KEY_1=core.preloadIndex",
+      "GIT_CONFIG_VALUE_1=false",
+      "AGENT_UTILS_ENGINE=python",
+      "cpuset-alloc",
+      "run",
+      "--cores",
+      "1",
+      "--tag",
+      "recorder-six-case-reproduction",
+      "--",
+      "prlimit",
+      "--as=536870912:536870912",
+      "python3",
+      "-B",
+      "<byte-identical-copied-driver>",
+      "--expect-revision",
+      "ce3dc5f4dbc3a7560c99fc160f4b622cffc1c087",
+      "--output",
+      "target/evaluation/inprocess/recorder-six-case-reproduction"
+    ],
+    "driver_path": "evaluation/admission/recorder_runtime_module_timing.py",
+    "driver_sha256": "493c3909aa4d739e159b735d4f6de3c448753939ec807c7f19156a807ac2416a",
+    "notes": [
+      "Copy the published driver outside the checkout before checking out the recorded revision; verify its SHA256.",
+      "Run from the clean checkout root at the recorded ce3 revision with a fresh output path and one reserved CPU.",
+      "The unchanged historical diagnostic requires both modules on worker1; it deliberately refuses the corrected partition.",
+      "The six original cases and all their assertions run normally under180-second CPU/wall and8MiB output bounds; reproduction produces a new diagnostic receipt."
+    ],
+    "source_revision": "ce3dc5f4dbc3a7560c99fc160f4b622cffc1c087"
+  },
+  "revision": "ce3dc5f4dbc3a7560c99fc160f4b622cffc1c087",
+  "schema": 1,
+  "scope": "Six original recorder cases measured once to choose a complete-module worker assignment; no full-suite or application performance claim.",
+  "source_unchanged": true,
+  "status": "measured_unqualified",
+  "tree": "064a13c6a96e6e8e23a293e5468dec568f87db5c"
+}
