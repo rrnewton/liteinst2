@@ -1,0 +1,190 @@
+{
+  "archive": {
+    "bytes": 12007764,
+    "mode": "0644",
+    "sha256": "d5ae6933ce1e905be557a9dac3ffd2341c7649c42f58f9594bba2365ea8ba399"
+  },
+  "bounds": {
+    "build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "component": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "cleanup_complete": true,
+  "commands": 44,
+  "components": {
+    "group_compact_fast_bytes": {
+      "compact_equivalence": {
+        "build_corrupt": 52,
+        "build_ok": 24,
+        "builds": 76,
+        "emitted_execution": 0,
+        "owner_credit": 0,
+        "profile": "group-compact-fast-bytes-v1",
+        "validate_corrupt": 300,
+        "validate_ok": 24,
+        "validations": 324,
+        "whole_input_scratch_output": 1
+      },
+      "original_lpf": {
+        "loop_fused_far": {
+          "copied_boundaries": 556,
+          "corruptions": 300,
+          "direct_models": 4608,
+          "direct_steps": 89984,
+          "emitted_execution": 0,
+          "far": 12,
+          "graph_controls": 8,
+          "histories": 24,
+          "interiors": 156068,
+          "links": 8,
+          "literal_refusals": 96,
+          "mov_models": 1280,
+          "mov_recoveries": 41984,
+          "near": 12,
+          "old_sentinels": 12,
+          "owner_credit": 0,
+          "partial": 4,
+          "partial_controls": 24,
+          "profile": "loop-fused-far-component-v1",
+          "refusals": 12
+        },
+        "loop_guard_relocation": {
+          "argument_controls": 16,
+          "copied_refusals": 2,
+          "emitted_execution": 0,
+          "follow_refusals": 2,
+          "miss_controls": 24,
+          "owner_credit": 0,
+          "partial": 2,
+          "plan_controls": 216,
+          "positive": 4,
+          "prefix_controls": 4,
+          "profile": "loop-guard-relocation-component-v1",
+          "reason_controls": 80,
+          "result_controls": 32,
+          "root": 2,
+          "spill_forged_refusals": 2,
+          "spill_refusals": 2,
+          "status_controls": 24,
+          "success_refusals": 4
+        },
+        "original_fused": {
+          "copied_boundaries": 56,
+          "corruptions": 14,
+          "direct_models": 1536,
+          "emitted_execution": 0,
+          "interiors": 19964,
+          "misses": 10,
+          "mov_models": 1280,
+          "old_version_refusals": 60,
+          "owner_credit": 0,
+          "plans": 14,
+          "typed_direct": 41984,
+          "typed_mov": 83456,
+          "version": 11
+        }
+      }
+    }
+  },
+  "cpu": 52,
+  "error": null,
+  "final_errors": [],
+  "generated_execution": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_count": 170,
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 52,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "native_execution": 0,
+  "owner_credit": false,
+  "performance_credit": false,
+  "profile": "experimental-group-compact-fast-bytes-v1",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 256021,
+    "mode": "0644",
+    "sha256": "1cf73e8ec90cf7170d052e6b6d484394deeaa64d354205e7bab87b765211c03f"
+  },
+  "reproduce": [
+    "python3.12",
+    "-B",
+    "evaluation/inprocess/group_compact_fast_bytes.py",
+    "--expect-revision",
+    "7e7041fbe9c361abfb5987c9e9fa070cb563935f",
+    "--cpu",
+    "52",
+    "--archive",
+    "target/evaluation/inprocess/tunables-lpf-far-r2-loop-native/artifacts/decoder.a",
+    "--archive-sha256",
+    "d5ae6933ce1e905be557a9dac3ffd2341c7649c42f58f9594bba2365ea8ba399",
+    "--archive-native-receipt",
+    "target/evaluation/inprocess/tunables-lpf-far-r2-loop-native/receipt.json",
+    "--archive-native-receipt-sha256",
+    "7335cedcff807ddb2411ffeaecebd1ddb9ff69cd910e117a46b386b1a1561877",
+    "--output",
+    "target/evaluation/inprocess/group-compact-fast-bytes-NEW"
+  ],
+  "reservation": "One externally reserved CPU; exact original CPU52 recorded.",
+  "reused_archive": {
+    "archive": {
+      "bytes": 12007764,
+      "mode": "0644",
+      "sha256": "d5ae6933ce1e905be557a9dac3ffd2341c7649c42f58f9594bba2365ea8ba399"
+    },
+    "archive_file": "target/evaluation/inprocess/tunables-lpf-far-r2-loop-native/artifacts/decoder.a",
+    "cpu": 1,
+    "native_inputs_revalidated": false,
+    "original_receipt_metadata_joined": true,
+    "receipt": {
+      "bytes": 2440227,
+      "file": "target/evaluation/inprocess/tunables-lpf-far-r2-loop-native/receipt.json",
+      "mode": "0644",
+      "sha256": "7335cedcff807ddb2411ffeaecebd1ddb9ff69cd910e117a46b386b1a1561877"
+    },
+    "same_head_native_credit": false,
+    "source": {
+      "head_sources_match": true,
+      "revision": "1e3ad6faaaa476ea131ade0dab9603687665027a",
+      "source_manifest_sha256": "07e2ba7ca8bf596416ad68a5aa0e264d47511bac1415d1150288b21f2b19d867",
+      "tracked_clean": true,
+      "tree": "e0de694cfda142aa9ac33a376ddb4f624d994ed4"
+    },
+    "status": "observed_native_references"
+  },
+  "schema": 1,
+  "scope": "One additive byte-equivalence component using original PF/LPF/guard-relocation oracle. No emitted instruction or runtime owner executed; timings are validation only.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "7e7041fbe9c361abfb5987c9e9fa070cb563935f",
+    "source_manifest_sha256": "f326b533a6d25035acffb4c79aa43dd54398a36d99f6822ff667c6da5150c9ea",
+    "tracked_clean": true,
+    "tree": "0c9b3fe9ffe02a110cfc4ffa71a357331ccc5dc2"
+  },
+  "source_unchanged": true,
+  "status": "components_passed",
+  "timing_scope": "Validation duration only; no performance comparison."
+}
