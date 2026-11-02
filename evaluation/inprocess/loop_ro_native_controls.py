@@ -99,8 +99,8 @@ def reference(path, expected, r, pin, binary, complete, reader, image, seed):
             source_input(relative, data, value)
             if relative in HOOKS: seen.add(relative)
         for value in build['binding']['sources']:
-            path = pin(ROOT/'tools/page-entry/selected'/value['path']); data = path.read_bytes()
-            relative = str(path.relative_to(ROOT))
+            source_path = pin(ROOT/'tools/page-entry/selected'/value['path']); data = source_path.read_bytes()
+            relative = str(source_path.relative_to(ROOT))
             source_input(relative, data, {k: value[k] for k in ('bytes', 'sha256')})
     need(seen == set(HOOKS), 'every test-hook donor was in actual prior compiled closure')
     command = next(x for x in n['commands'] if x['name'] == 'subject-native-0-0')
