@@ -3,7 +3,9 @@
 #include "bridge.h"
 #include "lifecycle_loader.h"
 #ifdef LI2_PERSISTENT_GROUP_COUNTERS
-#ifdef LI2_PERSISTENT_LOOP_COUNTERS
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS_COUNTERS
+#include "persistent_loop_effects_counters.h"
+#elif defined(LI2_PERSISTENT_LOOP_COUNTERS)
 #include "persistent_loop_counters.h"
 #else
 #include "persistent_group_counters.h"
@@ -769,7 +771,9 @@ static void protect(uintptr_t first,size_t bytes) {
     protected[protected_count++]=(struct li2_fork_range){first,first+bytes};
 }
 #ifdef LI2_PERSISTENT_GROUP_COUNTERS
-#ifdef LI2_PERSISTENT_LOOP_COUNTERS
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS_COUNTERS
+#include "persistent_loop_effects_counters.inc"
+#elif defined(LI2_PERSISTENT_LOOP_COUNTERS)
 #include "persistent_loop_counters.inc"
 #else
 #include "persistent_group_counters.inc"

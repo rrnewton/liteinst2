@@ -792,12 +792,14 @@ static void ped_count(uint64_t *v) {
 static void ped_count(uint64_t *v) {pe_need(*v!=UINT64_MAX,PE_OVERFLOW,0);++*v;}
 #endif
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
-#ifdef LI2_PERSISTENT_LOOP_COUNTERS
+#ifdef LI2_PERSISTENT_LOOP_EFFECTS_COUNTERS
+#include "persistent_loop_effects_counter_owner.inc"
+#elif defined(LI2_PERSISTENT_LOOP_COUNTERS)
 #include "persistent_loop_counter_owner.inc"
 #else
 #define PLR_COUNT(n) ped_count(&pe.loop.counts.n)
 #endif
-#ifdef LI2_PERSISTENT_LOOP_EFFECTS
+#if defined(LI2_PERSISTENT_LOOP_EFFECTS) && !defined(LI2_PERSISTENT_LOOP_EFFECTS_COUNTERS)
 #define PLE_COUNT(n) ped_count(&pe.effects.counts.n)
 #endif
 #include "persistent_loop_owner.inc"

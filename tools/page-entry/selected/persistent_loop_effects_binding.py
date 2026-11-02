@@ -22,7 +22,7 @@ EFFECTS_INPUTS = (
 LEAVES = PRIOR_LEAVES + EFFECTS_INPUTS
 CAPTURE_INPUTS = tuple({'persistent_loop_observe.h':'persistent_loop_effects_observe.h',
     'persistent_loop_observe.inc':'persistent_loop_effects_observe.inc'}.get(n,n)for n in PRIOR_CAPTURE_INPUTS) + ('persistent_loop_effects_capture_binding.py',)
-MODES = ('release', 'capture', 'differential')
+MODES = ('release', 'capture', 'differential', 'counters')
 
 
 def main():
@@ -35,6 +35,8 @@ def main():
     leaves = LEAVES
     if mode != 'release':
         leaves += ('build-persistent-loop-effects-' + mode + '.sh',)
+    if mode == 'counters':
+        leaves += ('persistent_group_counters.h', 'persistent_loop_counters.h', 'persistent_loop_effects_counters.h', 'persistent_loop_effects_counters.inc', 'persistent_loop_effects_counter_owner.inc')
     if mode in ('capture','differential'):
         leaves += CAPTURE_INPUTS
     values = []
@@ -61,6 +63,8 @@ def main():
     record = dict(version=1, profile='persistent-loop-effects-'+mode+'-v1', mode=mode, native_probe=True, parse_memo=True, unregistered=True, subentry=True, cross_pair=True, direct_frontier=True, bounded_fused=True, bounded_loop=True, policy_version=12, fallback_policy=11, encoding_domain=dict(version=2, policies=[11,12,13], near_record=1, far_record=2, miss='source-derived-rel32-or-rip-indirect-u64', literal_bytes=8, literal_boundaries=0, old_pf_api=False), header_version=2, chooser_version=12, decoder_read_version=2, effects=dict(binding_version=1, policy_version=13, scalar_version=3, mov_version=2, selection_order=[12,13,11]), capture_version=16 if mode in ('capture','differential') else None, pf_refusals=dict(version=1,reason=256,shared_reasons=18,abi2=False),
                   archive=actual_archive, policy_sha256=policy, original=original, sources=values,
                   headers={name: fact(text.encode()) for name, text in headers.items()})
+    if mode == 'counters':
+        record['counter_schema']=dict(version=4,bytes=896,base_bytes=824,page=4096,initial_seals=6,final_seals=23)
     paths = [output / name for name in headers] + [output / 'persistent_loop_effects_binding.json']
     need(not any(path.exists() for path in paths), 'fresh exclusive active-domain outputs')
     for name, text in headers.items():

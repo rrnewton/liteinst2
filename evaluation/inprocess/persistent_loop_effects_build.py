@@ -70,13 +70,13 @@ def fixed_loop_domain(name, path):
     return len(raw), H(raw)
 
 def binding_config(builder, archive, image, output, pin, binary, run, *, mode):
-    need(mode in ('release','capture','differential'), 'explicit mixed-policy build and separate schema16 capture')
+    need(mode in ('release','capture','differential','counters'), 'explicit mixed-policy build and separate schema16 capture')
     image = pin(binary(image))
     original = dynamic_original_image(image)
     values = []
     policy_inputs=POLICY_INPUTS
     if mode!='release':policy_inputs+=('build-persistent-loop-effects-'+mode+'.sh',)
-    if mode=='counters':policy_inputs+=('persistent_group_counters.h', 'persistent_loop_counters.h', 'persistent_loop_counters.inc', 'persistent_loop_counter_owner.inc')
+    if mode=='counters':policy_inputs+=('persistent_group_counters.h', 'persistent_loop_counters.h', 'persistent_loop_effects_counters.h', 'persistent_loop_effects_counters.inc', 'persistent_loop_effects_counter_owner.inc')
     if mode in ('capture','differential'):policy_inputs+=CAPTURE_INPUTS
     for name in policy_inputs:
         path = pin(SELECTED / name)
@@ -106,7 +106,7 @@ def binding_config(builder, archive, image, output, pin, binary, run, *, mode):
     record = dict(version=1, profile='persistent-loop-effects-'+mode+'-v1', mode=mode, native_probe=True, parse_memo=True, unregistered=True, subentry=True, cross_pair=True, direct_frontier=True, bounded_fused=True, bounded_loop=True, policy_version=12, fallback_policy=11, encoding_domain=dict(version=2, policies=[11,12,13], near_record=1, far_record=2, miss='source-derived-rel32-or-rip-indirect-u64', literal_bytes=8, literal_boundaries=0, old_pf_api=False), header_version=2, chooser_version=12, decoder_read_version=2, effects=dict(binding_version=1,policy_version=13,scalar_version=3,mov_version=2,selection_order=[12,13,11]), capture_version=16 if mode in ('capture','differential') else None, pf_refusals=dict(version=1,reason=256,shared_reasons=18,abi2=False), archive=archive_fact, policy_sha256=policy, original=original, sources=values, headers={name: dict(bytes=len(data), sha256=H(data)) for name, data in expected.items()})
     manifest = pin(binary(manifest))
     if mode=='counters':
-        record['counter_schema']=dict(version=3,bytes=824,base_bytes=752,page=4096,initial_seals=6,final_seals=23)
+        record['counter_schema']=dict(version=4,bytes=896,base_bytes=824,page=4096,initial_seals=6,final_seals=23)
     need(manifest.read_bytes() == (json.dumps(record, sort_keys=True) + '\n').encode(), 'complete typed persistent binding manifest')
     return dict(**record, header_paths=header_facts, manifest=dict(path=str(manifest), **fact(manifest)))
 
@@ -114,7 +114,7 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     need(type(capture) is bool and type(differential) is bool and (not differential or capture),
          'differential validation is an explicit capture mode')
     mode='counters' if retained_counters else 'differential' if differential else 'capture' if capture else 'release'
-    need(type(retained_counters) is bool and not retained_counters and not (capture and retained_counters),
+    need(type(retained_counters) is bool and not (capture and retained_counters),
          'explicit active-domain counters require release without capture')
     need(builder.mov_guard is True and builder.linked_epoch is True and (builder.scalar_span is True) and (builder.extra_decoder_sources == ('region.rs', 'mov_guard.rs', 'scalar_read.rs', 'loop_scalar.rs', 'byte_mov_guard.rs')) and (builder.decoder_features == FEATURES) and (builder.record.get('decoder_features') == list(FEATURES)) and (builder.environment.get('LI2_DECODER_FEATURES') == 'loop-effects'), 'one explicit persistent decoder feature/source closure')
     archive = pin(products['archive'])
@@ -141,7 +141,7 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     if differential:
         macros = ('MAPS_DIFFERENTIAL',) + macros
     if retained_counters:
-        macros = ('PERSISTENT_LOOP_COUNTERS', 'PERSISTENT_RETAINED_TWO_COUNTERS', 'PERSISTENT_GROUP_COUNTERS') + macros
+        macros = ('PERSISTENT_LOOP_EFFECTS_COUNTERS', 'PERSISTENT_LOOP_COUNTERS', 'PERSISTENT_RETAINED_TWO_COUNTERS', 'PERSISTENT_GROUP_COUNTERS') + macros
     name='bridge-persistent-loop-effects'+('' if mode=='release' else '-'+mode)+'.so'
     need(argv[-2:] == ['-o', str(output / name)] and [x for x in argv if x.endswith(('.c', '.S'))] == units and ([x for x in argv if x.startswith('-DLI2_')] == ['-DLI2_PERSISTENT_LOOP_EFFECTS=1','-DLI2_LOOP_EFFECTS=1','-DLI2_PG_LOOP_ENCODING_VERSION=2'] + ['-DLI2_' + n + '=1' for n in macros]) and all((x in argv for x in ('-O2', '-g', '-nostdlib', '-shared', '-fPIC', '-fvisibility=hidden', '-mgeneral-regs-only', '-fno-builtin', '-fno-tree-loop-distribute-patterns', '-fno-tree-vectorize', '-Wall', '-Wextra', '-Werror'))), 'exact effects13 no-FP recipe; original ordered TUs plus two effects TUs and optional codec')
     state = record['release_build'] = dict(status='failed', profile='persistent-loop-effects-'+mode+'-v1', recipe=fact(script), archive=fact(archive), argv=argv, persistent_binding=binding, capture=capture, qualification_credit=False)
@@ -172,8 +172,8 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
     required_group += ('scalar_read_decode.h','loop_envelope.h','loop_envelope.c','loop_read_bridge.h','loop_read_bridge.c','persistent_loop_plan.h','persistent_loop_plan.inc','persistent_loop_compact.inc','persistent_loop_runtime.h','persistent_loop_owner.inc', 'persistent_loop_negative_hint.h', 'persistent_loop_negative_hint.inc', 'linked_loop_direct.h', 'linked_loop_direct.inc', 'persistent_loop_fused_plan.h', 'persistent_loop_fused_plan.inc', 'persistent_loop_fused_compact.inc')
     required_group += tuple(n for n in EFFECTS_INPUTS if n.endswith(('.c','.h','.inc')))
     forbidden = {'persistent_plan.c', 'persistent_compact.c', 'persistent_lifetime.h', 'persistent_runtime.h', 'persistent_source.inc', 'persistent_rseq.inc', 'persistent_controller.inc', 'persistent_dynamic_controller.inc', 'persistent_dynamic_plan.h', 'persistent_dynamic_plan.inc', 'persistent_epoch_config.h', 'persistent_dynamic_capture_config.h', 'selected_scalar_span.inc', 'selected_scalar_span_reuse.inc', 'unrolled_hash_nested_fp.h'}
-    counter_names = {'persistent_group_counters.h', 'persistent_loop_counters.h', 'persistent_loop_counters.inc', 'persistent_loop_counter_owner.inc'}
-    need('persistent_group_counters.inc' not in names and names.intersection(counter_names) == (counter_names if retained_counters else set()), 'exact ABI3 counter bootstrap/header/event compiler closure only in explicit loop release diagnostic')
+    counter_names = {'persistent_group_counters.h', 'persistent_loop_counters.h', 'persistent_loop_effects_counters.h', 'persistent_loop_effects_counters.inc', 'persistent_loop_effects_counter_owner.inc'}
+    need(not names.intersection({'persistent_group_counters.inc','persistent_loop_counters.inc','persistent_loop_counter_owner.inc'}) and names.intersection(counter_names) == (counter_names if retained_counters else set()), 'exact ABI4 counter bootstrap/header/event compiler closure only in explicit effects release diagnostic')
     observation_names = {'persistent_loop_effects_observe.h','persistent_loop_effects_observe.inc',
                          'persistent_loop_observe_memory.h','persistent_loop_observe_memory.inc'}
     if capture:
@@ -208,7 +208,7 @@ def build_bridge(builder, products, private, pin, binary, aliases, run, record, 
             need(len(rows) == 1 and len(rows[0]) == 4 and rows[0][2] in (b'b', b'B', b'd', b'D') and
                  int(rows[0][1], 16) == extent, 'actual final-counter storage/type extent')
         counter_extents(builder,bridge,pin,run,state)
-        state['counter_schema'] = dict(version=3, bytes=824, base_bytes=752, page=4096, initial_seals=6, final_seals=23)
+        state['counter_schema'] = dict(version=4, bytes=896, base_bytes=824, page=4096, initial_seals=6, final_seals=23)
         state['counters'] = True
         state['retained_counters'] = True
     if capture:
@@ -225,25 +225,32 @@ from persistent_loop_effects_capture import capture_config, capture_extents
 
 
 def counter_extents(builder, bridge, pin, run, state):
-    """Independent ABI3 offsets from actual DWARF; no inferior is run."""
+    """Independent ABI4 offsets from actual DWARF; no inferior is run."""
     gdb=pin(shutil.which('gdb',path=ENV['PATH']))
     rows=[('base','sizeof(struct li2_pgc_record)',752),
-          ('record','sizeof(struct li2_plc_record)',824),
-          ('loop','(char*)&((struct li2_plc_record*)0)->loop-(char*)0',752),
-          ('counts','sizeof(struct li2_plc_counts)',72)]
+          ('prior_record','sizeof(struct li2_plc_record)',824),
+          ('record','sizeof(struct li2_plec_record)',896),
+          ('loop','(char*)&((struct li2_plec_record*)0)->base.loop-(char*)0',752),
+          ('counts','sizeof(struct li2_plc_counts)',72),
+          ('effects','(char*)&((struct li2_plec_record*)0)->effects-(char*)0',824),
+          ('effects_counts','sizeof(struct li2_plec_counts)',72)]
     fields=('chooser_attempts','chooser_selected','chooser_no_envelope','publications12','hits12',
             'entries_with12','completed_with12','historical_reconstructions','actual_entries12')
-    rows += [(name,'(char*)&((struct li2_plc_record*)0)->loop.'+name+'-(char*)0',752+8*i)
+    rows += [(name,'(char*)&((struct li2_plec_record*)0)->base.loop.'+name+'-(char*)0',752+8*i)
              for i,name in enumerate(fields)]
-    expression=('printf "LI2_LOOP_COUNTER_EXTENTS '+' '.join(['%llu']*len(rows))+'\\n", '+
+    effects=('chooser_attempts','chooser_selected','chooser_no_envelope','publications13','hits13',
+             'entries_with13','completed_with13','historical_reconstructions','actual_entries13')
+    rows += [('effects_'+name,'(char*)&((struct li2_plec_record*)0)->effects.'+name+'-(char*)0',824+8*i)
+             for i,name in enumerate(effects)]
+    expression=('printf "LI2_LOOP_EFFECTS_COUNTER_EXTENTS '+' '.join(['%llu']*len(rows))+'\\n", '+
                 ', '.join('(unsigned long long)('+expr+')' for _,expr,_ in rows))
-    _,out,err=run('persistent-loop-counter-extents',[gdb,'-nx','-nh','-batch',
+    _,out,err=run('persistent-loop-effects-counter-extents',[gdb,'-nx','-nh','-batch',
         '-iex','set auto-load off','-iex','set debuginfod enabled off',
         '-iex','set index-cache enabled off','-iex','maintenance set worker-threads 1',
         '-ex','file '+str(bridge),'-ex',expression,
-        '-ex',"python import gdb; print('LI2_LOOP_COUNTER_ALIGN '+str(gdb.lookup_type('struct li2_plc_record').alignof))"],
+        '-ex',"python import gdb; print('LI2_LOOP_EFFECTS_COUNTER_ALIGN '+str(gdb.lookup_type('struct li2_plec_record').alignof))"],
         profile='inspect',env=dict(builder.environment,MALLOC_ARENA_MAX='1'))
-    match=re.fullmatch(b'LI2_LOOP_COUNTER_EXTENTS '+b' '.join([rb'([0-9]+)']*len(rows))+b'\nLI2_LOOP_COUNTER_ALIGN 8\n',out)
+    match=re.fullmatch(b'LI2_LOOP_EFFECTS_COUNTER_EXTENTS '+b' '.join([rb'([0-9]+)']*len(rows))+b'\nLI2_LOOP_EFFECTS_COUNTER_ALIGN 8\n',out)
     need(not err and match is not None and tuple(map(int,match.groups()))==tuple(v for _,_,v in rows),
-         'whole actual ABI3 record and all nine offsets retain every old752-byte extent')
-    state['loop_counter_extents']=dict(zip((name for name,_,_ in rows),map(int,match.groups())))
+         'whole actual ABI4 record and eighteen offsets retain every old824-byte extent')
+    state['loop_effects_counter_extents']=dict(zip((name for name,_,_ in rows),map(int,match.groups())))
