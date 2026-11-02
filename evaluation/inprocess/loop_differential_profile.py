@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One user-DWARF observation of the retained differential capture fixture.
+"""One user-DWARF or explicit kernel-callchain differential observation.
 
 Reserve one CPU; use Python3.12 and a fresh target/evaluation/inprocess output.
 The failed six-command smoke remains failed. No builds, altered target limits,
@@ -75,6 +75,7 @@ def main():
     ap.add_argument('--smoke-receipt', type=Path, required=True)
     ap.add_argument('--smoke-receipt-sha256', required=True)
     ap.add_argument('--output', type=Path, required=True)
+    ap.add_argument('--kernel-callchains', action='store_true')
     a = ap.parse_args(); root = Path.cwd().resolve()
     sys.path[:0] = [str(root/'evaluation/inprocess'),str(root/'tools/page-entry')]
     from checks import source
@@ -87,6 +88,9 @@ def main():
     from persistent_dynamic import imported_sources
     from persistent_loop_native_build import preparation
     import namespace
+    if a.kernel_callchains:
+        import page_cost_kernel as kernel
+        from page_cost_profile_read import callchain_counts
     need(not sys.flags.optimize and sys.version_info[:2] == (3,12) and len(os.sched_getaffinity(0)) == 1 and
          re.fullmatch('[0-9a-f]{40}',a.expect_revision) and list(TARGET) == SUBJECT and
          re.fullmatch('[0-9a-f]{64}',a.smoke_receipt_sha256), 'exact reviewed subject/profile and source request')
@@ -100,6 +104,9 @@ def main():
         qualification_credit=False,performance_credit=False,owner_credit=False,successful_target_credit=False,
         original_smoke_reclassified=False,source_unchanged=False,inputs_unchanged=False,
         cleanup_complete=False,error=None,final_errors=[],namespace_aliases={})
+    if a.kernel_callchains:
+        r.update(profile='loop-differential-kernel-callchains-diagnostic-v1',kernel_callchains=True,
+                 unwinder_bounds=None,resource_usage='not collected by unchanged kernel-callchain profile')
     def pin(path, expected=None):
         lexical = Path(path).absolute(); p = lexical.resolve(strict=True); v = fact(p)
         if expected is not None:
@@ -188,6 +195,7 @@ def main():
         pin(config); driver = pin(__file__)
         row = dict(name='differential-0-0-user-dwarf',argv=[str(python),'-I',str(driver),'--record-child',str(config),fact(config)['sha256']],
                    environment=ENV,cwd=str(origin_path.parent),bounds=SUBJECT,capture_limit=16<<20,expected_exit=0)
+        if a.kernel_callchains: row['name'] = 'differential-0-0-kernel-callchains'
         r.update(target=row,original_launcher_argv=argv,original_receipt=fact(origin_path),original_subject=prior,
                  bridge=fact(bridge),carrier=fact(carrier),compiled_sources_equal_current=True)
         perf = pin('/usr/bin/perf'); perfinterp = pin(interpreter(perf))
@@ -195,10 +203,19 @@ def main():
         need(not errors, 'actual observer library listing')
         libs = observer_libraries(listed,perfinterp,pin)
         r['observer_libraries'] = {str(p):fact(p) for p in libs}
+        if a.kernel_callchains:
+            r['kernel_snapshot'] = kernel.capture(output/'kernel')
+            for p in (output/'kernel').iterdir(): binary(p)
         imported_sources(pin); stable()
-        out,err,owner = profile(row,capture,cpu,bridge,fact(bridge),perf=str(perf),user_dwarf=True)
+        if a.kernel_callchains:
+            out,err,owner = profile(row,capture,cpu,bridge,fact(bridge),perf=str(perf),kernel_callchains=True,user_dwarf=False)
+            need(owner['sampling']['full_exec_exit_envelope'] and owner['sampling']['loss_free'] and 'usage' not in row,
+                 'complete loss-free kernel-callchain envelope; no invented wait4 usage')
+        else:
+            out,err,owner = profile(row,capture,cpu,bridge,fact(bridge),perf=str(perf),user_dwarf=True)
         r['diagnostic'] = owner
-        need(owner['sampling']['full_exec_exit_envelope'] and owner['sampling']['loss_free'], 'complete loss-free user-DWARF envelope')
+        if not a.kernel_callchains:
+            need(owner['sampling']['full_exec_exit_envelope'] and owner['sampling']['loss_free'], 'complete loss-free user-DWARF envelope')
         observed = json.loads(binary(observed_path).read_bytes()); s = record.stat()
         need(observed == dict(pid=row['pid'],parent=owner['owner_pid'],group=row['pid'],argv=argv,environment=ENV,cpu=[cpu],
              record=dict(fd=3,device=s.st_dev,inode=s.st_ino,mode=0o600,bytes=0,nlink=1,access=os.O_WRONLY,inheritable=True)) and
@@ -208,21 +225,55 @@ def main():
                            (('stdout',capture/'target.stdout'),('stderr',capture/'target.stderr'),('record',record))}
         preparation(dict(lane=1,mode=0,placement=0,control=0),row,subject,original,roots,objects,description,carrier,output,binary,r)
         r['record_closed'] = dict(parent_never_owned=True,child_reaped=row['reaped'],children_after=owner['children_after'])
-        symfs = output/'symfs'; copy = symfs/str(bridge).lstrip('/'); copy.parent.mkdir(parents=True)
-        copy.write_bytes(bridge.read_bytes()); copy.chmod(0o444); pin(copy,fact(bridge))
-        env = dict(owner['perf']['environment'],DEBUGINFOD_CACHE_PATH=str(capture/'cache'))
-        text,unwind_err = run('user-dwarf-unwind',script_argv(perf,capture/'perf.data',symfs),env)
-        r['unwinder_stderr'] = fact(output/'user-dwarf-unwind.stderr')
-        r['attribution'] = attribute(capture,bridge,text,row['pid'])
-        details = json.loads((capture/'unwound.json').read_bytes()); bins = {}
-        for x in details:
-            second = (x['time_ns']-owner['release_ns'])//1_000_000_000
-            need(0 <= second < 60, 'sample in original target wall interval')
-            bucket = bins.setdefault(second,collections.Counter()); bucket[x['leaf']] += x['period']
-        r['timeline'] = [dict(second=s,period=sum(v.values()),leaf_periods=dict(v)) for s,v in sorted(bins.items())]
-        need(sum(x['period'] for x in r['timeline']) == r['attribution']['period'], 'complete sampled-period timeline')
+        if a.kernel_callchains:
+            samples = json.loads((capture/'samples.json').read_bytes())
+            resolver = kernel.load(output/'kernel',r['kernel_snapshot'])
+            r['kernel_counts'] = kernel.counts(samples,resolver,row['pid'])
+            chains = callchain_counts(samples,resolver,row['pid'])
+            need(chains['kernel_samples'] == r['kernel_counts']['kernel_samples'] and
+                 chains['kernel_sampled_period_total'] == r['kernel_counts']['kernel_sampled_period_total'],
+                 'all kernel caller samples and periods equal the unchanged leaf population')
+            blob = (json.dumps(chains,sort_keys=True,separators=(',',':'))+'\n').encode()
+            need(len(blob) <= 16<<20, 'complete bounded kernel caller table')
+            with (output/'callchains.json').open('xb') as f:
+                f.write(blob); f.flush(); os.fsync(f.fileno())
+            r['callchains'] = dict(fact(binary(output/'callchains.json')),
+                **{k:v for k,v in chains.items() if k not in ('disjoint','inclusive')})
+            user = collections.Counter(); periods = collections.Counter(); bins = {}; user_n = user_period = 0
+            for x in samples:
+                if x['pid'] != row['pid'] or not x['in_target_exec_window']: continue
+                need(x['cpumode'] in (1,2), 'only actual kernel/user modes inside target exec window')
+                second = (x['time']-owner['release_ns'])//1_000_000_000
+                need(0 <= second < 60, 'kernel-mode sample in original target wall interval')
+                bucket = bins.setdefault(second,collections.Counter())
+                bucket['kernel' if x['cpumode'] == 1 else 'user'] += x['period']
+                if x['cpumode'] == 2:
+                    key = (x['reason'],x['symbol']); user[key] += 1; periods[key] += x['period']
+                    user_n += 1; user_period += x['period']
+            need(sum(user.values()) == user_n and sum(periods.values()) == user_period,
+                 'every actual in-window user leaf retained without fabricated user callchains')
+            r['user_flat'] = dict(samples=user_n,sampled_period_total=user_period,
+                rows=[dict(reason=k[0],symbol=k[1],samples=n,sampled_period_total=periods[k])
+                      for k,n in sorted(user.items(),key=lambda x:(-x[1],str(x[0])))],user_callchains=False)
+            r['timeline'] = [dict(second=s,period=sum(v.values()),cpumode_periods=dict(v)) for s,v in sorted(bins.items())]
+            need(sum(x['period'] for x in r['timeline']) == user_period+r['kernel_counts']['kernel_sampled_period_total'],
+                 'complete user-plus-kernel sampled-period timeline')
+        else:
+            symfs = output/'symfs'; copy = symfs/str(bridge).lstrip('/'); copy.parent.mkdir(parents=True)
+            copy.write_bytes(bridge.read_bytes()); copy.chmod(0o444); pin(copy,fact(bridge))
+            env = dict(owner['perf']['environment'],DEBUGINFOD_CACHE_PATH=str(capture/'cache'))
+            text,unwind_err = run('user-dwarf-unwind',script_argv(perf,capture/'perf.data',symfs),env)
+            r['unwinder_stderr'] = fact(output/'user-dwarf-unwind.stderr')
+            r['attribution'] = attribute(capture,bridge,text,row['pid'])
+            details = json.loads((capture/'unwound.json').read_bytes()); bins = {}
+            for x in details:
+                second = (x['time_ns']-owner['release_ns'])//1_000_000_000
+                need(0 <= second < 60, 'sample in original target wall interval')
+                bucket = bins.setdefault(second,collections.Counter()); bucket[x['leaf']] += x['period']
+            r['timeline'] = [dict(second=s,period=sum(v.values()),leaf_periods=dict(v)) for s,v in sorted(bins.items())]
+            need(sum(x['period'] for x in r['timeline']) == r['attribution']['period'], 'complete sampled-period timeline')
         r['target_outcome'] = 'exit_zero' if row['exit'] == 0 else 'failed_prefix'
-        r['status'] = 'observed_user_dwarf_diagnostic_only'
+        r['status'] = 'observed_kernel_callchains_diagnostic_only' if a.kernel_callchains else 'observed_user_dwarf_diagnostic_only'
     except BaseException as e: r['error'] = type(e).__name__+': '+str(e)
     finally:
         owner_path = output/'capture/owner.json'
@@ -238,9 +289,14 @@ def main():
         if r['error'] or r['final_errors'] or not r['cleanup_complete']: r['status'] = 'failed'
         r.update(inputs=pins,artifacts=artifacts,aliases=aliases,
             scope='One unchanged differential capture fixture with fresh record/namespace. User-only sampled stacks include both same-PID Python wrappers; wait4 independently records user/system CPU and RSS. No kernel stack, complete unwind, kill-cause, timing, successful-subject or qualification inference.')
+        if a.kernel_callchains:
+            r['scope'] = ('One unchanged differential capture fixture with fresh record/namespace and both same-PID wrappers. '
+                'Actual99Hz user/kernel samples, kernel-only bounded callchains and flat user leaves. Core symbol intervals, '
+                'named-anchor priority, unknowns and overlapping inclusive paths stay explicit; no complete unwind, wait4 usage, '
+                'whole-CPU causal allocation, kill-cause, timing, successful-subject or qualification inference.')
         save(output/'receipt.json',r)
     print(json.dumps(dict(status=r['status'],target_exit=r.get('target',{}).get('exit'),receipt=str(output/'receipt.json'))),flush=True)
-    return int(r['status'] != 'observed_user_dwarf_diagnostic_only')
+    return int(r['status'] != ('observed_kernel_callchains_diagnostic_only' if a.kernel_callchains else 'observed_user_dwarf_diagnostic_only'))
 
 
 if __name__ == '__main__':
