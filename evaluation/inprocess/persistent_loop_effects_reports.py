@@ -194,9 +194,25 @@ def probe_partition(p,l,n,d,c,q,status,code,detail):
 
 def repeat_idle(p):
     need(p['repeat'] is None,'paired source has no ordinary REP instruction')
+    # route/pending are global controller observations, not REP-owner state.
+    # The two fixture outcomes are authenticated above by the full owner reader.
+    keys=('status','failure_code','detail_abs','detail_negative')
+    outcome=tuple(p['loader'][key]for key in keys)
+    need(all(type(v)is int for v in outcome)and outcome in((0,0,0,0),(125,3304,11,0)),
+         'exact paired outcome for unused REP global observations')
+    failed=outcome[0]==125
+    need(all(type(p['run'][key])is int for key in keys+('route','pending'))and
+         type(p['loader']['step_route'])is int and
+         tuple(p['run'][key]for key in keys)==outcome and
+         p['run']['route']==p['loader']['step_route']==(4 if failed else 0)and
+         p['run']['pending']==int(failed),
+         'unused REP joins exact global idle or persistent-epoch fault route and pending')
+    need(not failed or(type(p['group']['phase'])is int and p['group']['phase']==15),
+         'unused REP required read fault joins authenticated failed persistent epoch')
     row=p['repeat_lease'];expected={key:0 for key in LEASE_SCALARS}
     expected.update(version=1,**{key:p['loader'][key] for key in
         ('status','failure_code','detail_abs','detail_negative')})
+    expected.update(route=p['loader']['step_route'],pending=p['run']['pending'])
     expected.update({key:[0]*size for key,size in LEASE_ARRAYS.items()})
     expected['owner'][13]=1
     expected['custody'][0]=1
