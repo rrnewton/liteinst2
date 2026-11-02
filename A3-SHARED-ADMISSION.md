@@ -50,10 +50,18 @@ alphabet. Search order, caller policy and first-error behavior remain separate
 and unchanged. Its full workspace and serial checks pass; exact results are in
 [the pun receipt](evaluation/shared-pun/README.md).
 
-The disassembly ledger importer, common-sites example graph, back-edge clock
-and legacy encoder orchestration still need consolidation. These changes do not
-implement certificates or certify complete binary CFG recovery. The exemption
-contract below remains a design proposal.
+At `643c9f357eb41fd5ea20506738dcd44cfd6b0cf2`, the common-sites permit generator
+also uses the shared CFG facts and block cuts. Its aggregate diagnostics and
+complete decoded ownership remain unchanged. The offline material/policy adapter
+now accepts explicitly hash-pinned ET_EXEC programs through the existing importer,
+planner and emitter; it preserves the old pinned profiles and complete site
+inventories on refusal. The full correctness campaign passes, as recorded in
+[the direct-input receipt](evaluation/direct-input/README.md). Those checks do
+not establish application execution or the caller's complete-code premise.
+
+The disassembly ledger importer, back-edge clock and legacy encoder orchestration
+still need consolidation. These changes do not implement certificates or certify
+complete binary CFG recovery. The exemption contract below remains a proposal.
 
 ## Page certificate
 
