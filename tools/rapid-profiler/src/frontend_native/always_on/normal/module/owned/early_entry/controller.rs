@@ -102,7 +102,7 @@ impl PreparedEarlyEntryModuleSessionController {
             .unwrap_or(Err(error(Cause::Attachment)))?;
         let (inner, binding) = self.inner.activate_binding(EntryMode::Concurrent)?;
         let shared = Arc::new(Shared {
-            binding,
+            binding: BindingEnvelope::new(binding),
             failed: AtomicBool::new(false),
         });
         Ok((

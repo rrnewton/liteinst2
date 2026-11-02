@@ -4,6 +4,8 @@ use super::*;
 use crate::frontend_native::always_on::site::ordinary::InstalledEarlyEntryModuleSite;
 use liteinst2::controls::ControlWriter;
 use std::sync::atomic::AtomicBool;
+mod binding_envelope;
+use binding_envelope::BindingEnvelope;
 mod checked_visit;
 mod physical_slots;
 use physical_slots::{RowSlots, SeenSlots};
@@ -16,13 +18,13 @@ pub use controller::{
 };
 
 struct Shared {
-    binding: Arc<Binding>,
+    binding: BindingEnvelope,
     failed: AtomicBool,
 }
 impl Shared {
     fn check(&self) -> Result<(), BridgeError> {
         self.binding.process()?;
-        if self.failed.load(Ordering::Acquire) || !early_binding(&self.binding) {
+        if self.failed.load(Ordering::Acquire) || !self.binding.matches() {
             return Err(error(Cause::Identity));
         }
         Ok(())
