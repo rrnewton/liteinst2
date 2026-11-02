@@ -74,6 +74,15 @@ no partial candidate, and leaves its three execution cases unobserved. Six
 refusals require explicit provenance for absolute-indexed jump-table operands;
 four fail the selected placement profile. The complete comparison remains
 failed; see [the direct-program receipt](evaluation/direct-program/README.md).
+The separately named `fixed-exec-overlapping-v2` successor at
+`0076fced9793c7b1b8459b76020616791dafafbf` binds the indexed-jump operands to
+an exact ET_EXEC source identity and zero load bias through the shared encoder,
+and uses the existing overlapping-relay planner. It emits all 751 imported jump
+sites and executes the resulting cat on all three exact input/output cases;
+original and E9Patch outputs also pass all three. The earlier profile remains
+failed. These are finite functional observations, not complete CFG recovery,
+runtime page exemptions or throughput measurements; see the
+[fixed-address result](evaluation/direct-program/fixed-exec-result/README.md).
 The exemption contract below remains a proposal.
 
 ## Page certificate

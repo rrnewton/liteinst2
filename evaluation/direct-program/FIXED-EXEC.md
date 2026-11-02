@@ -1,6 +1,6 @@
 # Fixed-address ET_EXEC successor protocol
 
-This is a separately named experiment, `fixed-exec-overlapping-v2`, for the same GNU cat input and all 751 selected sites. The [first comparison](README.md) remains FAILED: ten LiteInst refusals, no candidate and three unobserved executions. This document defines the successor; it does not record an application pass.
+This is a separately named experiment, `fixed-exec-overlapping-v2`, for the same GNU cat input and all 751 selected sites. The [first comparison](README.md) remains FAILED: ten LiteInst refusals, no candidate and three unobserved executions. This document defines the successor; the separately recorded [functional result](fixed-exec-result/README.md) reports its executed outcome.
 
 The core adds an explicit source-identity/domain/zero-bias binding for a narrow indexed indirect-jump form: a 64-bit, base-less operand with a 64-bit index scaled by eight and a signed 32-bit displacement. The shared encoder records that displacement as an encoder-owned field, verifies the encoded operand and retains its exact signed address contribution. The ordinary bias-invariant constructor/linker keeps refusing it. Other absolute operand forms and unsupported prefixes do not acquire permission through this profile.
 
@@ -10,6 +10,6 @@ Use the existing [functional protocol](FUNCTIONAL.md) and successful source-buil
 
 All nine original/LiteInst/E9Patch case rows are retained. Each executed case requires literal stdout equality, exit zero and empty stderr. Both rewriters must account for the complete site population; LiteInst must emit a complete candidate before any of its cases can run. A refusal leaves dependent rows UNOBSERVED. The fixed arena remains `[0x01000000,0x20000000)`, with the same per-site permits and resource bounds. Release builds are required; elapsed times in this functional experiment are not throughput measurements.
 
-`validate_fixed.py` adds nonempty core fixup/fixed-binding and disassembly-CLI checks to the existing correctness campaign. It preserves fmt, strict Clippy, all-feature/all-target check, parallel workspace and serial launcher checks, their declared 1,800/360-second budgets, twelve reserved CPUs/jobs/harness threads (serial harness one), and the original cumulative storage ceilings. All earlier failures remain reported separately.
+`validate_fixed.py` adds nonempty core fixup/fixed-binding and disassembly-CLI checks to the existing correctness campaign. It preserves fmt, strict Clippy, all-feature/all-target check, parallel workspace and serial launcher checks, their declared 1,800/360-second budgets, twelve reserved CPUs/jobs/harness threads (serial harness one), and the original cumulative storage ceilings. All earlier failures remain reported separately. The [correctness receipt](fixed-exec-correctness/README.md) records both the initial failure and corrected pass.
 
 A4 / claim 4 remains open against the strict 20,000-step profile; an 80,000-step pass does not complete it.
