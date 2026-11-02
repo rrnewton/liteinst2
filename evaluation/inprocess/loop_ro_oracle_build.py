@@ -5,6 +5,7 @@ import sys
 
 from page_selected import fact, need, bridge_check
 from persistent_dynamic import load, imported_sources, digest
+from page_selected_shared_decoder import source_key
 from persistent_loop_effects_build import ACTIVE_PROVIDERS
 from persistent_epoch_build import dynamic_original_image
 from page_selected_register_time_build import recipe, expand, headers
@@ -38,7 +39,7 @@ def build_control(builder, archive, original, directory, pin, binary, aliases, r
     need(len(values) == len({v['path'] for v in values}), 'distinct complete RO source binding')
     for value in values:
         if value['path'].endswith('.rs'):
-            need(builder.record['dep_info']['tools/page-entry/selected/'+value['path']]
+            need(builder.record['dep_info'][source_key(ROOT, SELECTED, value['path'])]
                  == {k: value[k] for k in ('bytes', 'sha256')}, 'bound Rust belongs to retained archive')
     image = dynamic_original_image(original)
     policy = digest(dict(sources=values, original=image, mode=mode))

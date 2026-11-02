@@ -204,7 +204,10 @@ def retained_builds(path, sha, record, pin):
         for value in values:
             p = retained(SELECTED/value['path'])
             need((p.is_relative_to(SELECTED) or
-                  (value['path'] == '../bridge.c' and p == SELECTED.parent/'bridge.c')) and
+                  (value['path'] == '../bridge.c' and p == SELECTED.parent/'bridge.c') or
+                  (value['path'] in ('../../../crates/liteinst-x86/Cargo.toml',
+                                     '../../../crates/liteinst-x86/src/lib.rs') and
+                   p == ROOT/'crates/liteinst-x86'/value['path'].split('liteinst-x86/', 1)[1])) and
                  fact(p) == {k: value[k] for k in ('bytes', 'sha256')},
                  'each compiled bound source still equals current source')
         need(set(binding['headers']) == {'linked_epoch_config.h', 'persistent_group_config.h',

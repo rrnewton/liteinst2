@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Three fresh paired-v2 subjects for RO certificate setup/positive diagnosis.
 
-The exact historical archive, fixture, policy and seed are inputs only. Native,
-release and certificate-DIFF subjects all execute now. Both causal mutation
+The historical fixture, policy and seed stay separate from an optional exact
+current archive build receipt. Native, release and certificate-DIFF subjects
+all execute now. Both causal mutation
 suites, owner captures and the original full qualification remain pending.
 """
 import argparse
 import hashlib
+import io
+import tarfile
 import json
 import os
 from pathlib import Path
@@ -32,6 +35,7 @@ from persistent_loop_native_build import (FIXTURE, application, reader_support,
 from direct_frontier_loop_helpers import prepare_inputs
 from page_selected_register_time_build import recipe, expand, headers
 from page_selected import bridge_check
+from page_selected_shared_decoder import source_key
 from persistent_epoch_build import dynamic_original_image
 from persistent_loop_effects_counter_terminal import counters, completed_choice
 from persistent_fused_counter_terminal import completed
@@ -49,7 +53,33 @@ PAIR_KEYS = ('hardware', 'facts', 'seed', 'machine', 'source', 'data', 'stack',
 H = lambda data: hashlib.sha256(data).hexdigest()
 
 
-def retained_support(path, expected_sha, r, pin, binary, aliases, complete, run):
+def historical_sources(raw, expected):
+    """Authenticate a bounded Git archive; no extraction or current-source substitution."""
+    need(type(raw) is bytes and len(raw) <= 16 << 20 and len(expected) == 16,
+         'exact historical thirteen Rust sources, two manifests and recipe')
+    allowed_directories = {str(parent)+'/' for name in expected for parent in Path(name).parents
+                           if str(parent) != '.'}
+    seen = set(); files = {}
+    with tarfile.open(fileobj=io.BytesIO(raw), mode='r:') as bundle:
+        for member in bundle:
+            name = member.name
+            need(name not in seen and not Path(name).is_absolute() and '..' not in Path(name).parts,
+                 'unique relative historical archive member')
+            seen.add(name)
+            if member.isdir():
+                need(name.rstrip('/')+'/' in allowed_directories, 'only exact ancestor directories')
+                continue
+            need(member.isfile() and name in expected and member.size == expected[name]['bytes'],
+                 'only expected whole regular source files')
+            data = bundle.extractfile(member).read()
+            value = dict(bytes=len(data), sha256=H(data))
+            need(value == expected[name], 'whole historical source equals actual original compiler input')
+            files[name] = value
+    need(files == expected, 'every original historical source is authenticated without omission')
+    return files
+
+
+def retained_support(path, expected_sha, r, pin, binary, aliases, complete, run, *, current_build=None):
     """Replay only the exact 34 closed setup rows, never an old subject."""
     path = pin(path)
     need(path.name == 'receipt.json' and path.parent.parent == ROOT/'target/evaluation/inprocess'
@@ -107,17 +137,31 @@ def retained_support(path, expected_sha, r, pin, binary, aliases, complete, run)
          and archive.read_bytes()[:8] == b'!<arch>\n', 'whole retained actual archive')
     need(set(b['dep_info']) == {'tools/page-entry/selected/decoder/src/'+name for name in SOURCES},
          'exact thirteen-source effects archive domain')
-    for name, value in b['dep_info'].items():
-        need(fact(retained(ROOT/name)) == value, 'current Rust source equals actual retained compiler input')
-    for name in ('decoder/Cargo.toml', 'decoder/Cargo.lock'):
-        retained(SELECTED/name)
     recipe_path = pin(SELECTED/'build-loop-effects-decoder.sh')
     historical_recipe = n['inputs'][str(recipe_path)]
-    _, recipe_bytes, recipe_error = run('historical-decoder-recipe', [tools['git'], '-c',
-        'index.threads=1', '-c', 'core.preloadIndex=false', 'show',
-        n['revision']+':tools/page-entry/selected/build-loop-effects-decoder.sh'])
-    need(not recipe_error and dict(bytes=len(recipe_bytes), sha256=H(recipe_bytes)) == historical_recipe,
-         'whole actual historical Git recipe equals the retained archive producer input')
+    if current_build is None:
+        for name, value in b['dep_info'].items():
+            need(fact(retained(ROOT/name)) == value, 'current Rust source equals actual retained compiler input')
+        for name in ('decoder/Cargo.toml', 'decoder/Cargo.lock'):
+            retained(SELECTED/name)
+        _, recipe_bytes, recipe_error = run('historical-decoder-recipe', [tools['git'], '-c',
+            'index.threads=1', '-c', 'core.preloadIndex=false', 'show',
+            n['revision']+':tools/page-entry/selected/build-loop-effects-decoder.sh'])
+        need(not recipe_error and dict(bytes=len(recipe_bytes), sha256=H(recipe_bytes)) == historical_recipe,
+             'whole actual historical Git recipe equals the retained archive producer input')
+    else:
+        # These bytes authenticate only the old fixture/policy archive. The
+        # production links below must use the separately validated current one.
+        expected_sources = dict(b['dep_info'])
+        for name in ('decoder/Cargo.toml', 'decoder/Cargo.lock', 'build-loop-effects-decoder.sh'):
+            relative = 'tools/page-entry/selected/'+name
+            expected_sources[relative] = n['inputs'][str(ROOT/relative)]
+        need(all(n['inputs'][str(ROOT/name)] == value for name,value in expected_sources.items()),
+             'all historical Rust/config/recipe facts belong to the original producer')
+        _, raw, error = run('historical-decoder-recipe', [tools['git'], '-c', 'index.threads=1',
+            '-c', 'core.preloadIndex=false', 'archive', '--format=tar', n['revision'], '--', *sorted(expected_sources)])
+        need(not error, 'bounded historical source archive command')
+        historical_sources(raw, expected_sources)
     for name in ('/etc/ld.so.cache', '/etc/ld.so.preload'):
         r['presence'][name] = os.path.lexists(name)
         need(r['presence'][name] == n['presence'][name], 'original loader configuration presence')
@@ -159,6 +203,14 @@ def retained_support(path, expected_sha, r, pin, binary, aliases, complete, run)
         archive_build_recipe=dict(historical=historical_recipe, historical_revision=n['revision'],
             current=fact(recipe_path), current_used_to_rebuild=False), old_subjects_replayed=0,
         historical_qualification_credit=False)
+    if current_build is not None:
+        current, current_archive, proof = current_build
+        need(current.tools == builder.tools, 'actual current and historical compiler/tool identities remain exact')
+        r['retained_inputs']['current_decoder_and_fixture_compiled_sources_equal'] = False
+        r['retained_inputs'].update(current_fixture_compiled_sources_equal=True,
+            historical_decoder_sources_authenticated=True, current_archive=proof,
+            production_archive_is_historical=False)
+        builder, archive = current, current_archive
     return builder, archive, original, reader, image, seed, holder['application_build']
 
 
@@ -187,7 +239,7 @@ def build_ro(builder, archive, original, directory, pin, binary, aliases, run, s
     need(len(values) == len({v['path'] for v in values}), 'distinct complete RO source binding')
     for value in values:
         if value['path'].endswith('.rs'):
-            need(builder.record['dep_info']['tools/page-entry/selected/'+value['path']]
+            need(builder.record['dep_info'][source_key(ROOT, SELECTED, value['path'])]
                  == {k: value[k] for k in ('bytes', 'sha256')}, 'bound Rust belongs to retained archive')
     image = dynamic_original_image(original)
     policy = digest(dict(sources=values, original=image, mode=mode))
@@ -306,11 +358,15 @@ def main():
     ap.add_argument('--expect-revision', required=True)
     ap.add_argument('--native-receipt', type=Path, required=True)
     ap.add_argument('--native-receipt-sha256', required=True)
+    ap.add_argument('--current-build-receipt', type=Path)
+    ap.add_argument('--current-build-sha256')
     ap.add_argument('--output', type=Path, required=True)
     a = ap.parse_args(); affinity = os.sched_getaffinity(0)
     need(sys.version_info[:2] == (3, 12) and not sys.flags.optimize and len(affinity) == 1
          and re.fullmatch('[0-9a-f]{40}', a.expect_revision)
          and re.fullmatch('[0-9a-f]{64}', a.native_receipt_sha256), 'Python3.12/assertions, reserved singleton and exact identities')
+    need((a.current_build_receipt is None) == (a.current_build_sha256 is None),
+         'explicit current build receipt and whole hash are supplied together')
     cpu = next(iter(affinity)); private = a.output.absolute()
     need(private.parent == ROOT/'target/evaluation/inprocess' and not private.exists(), 'fresh output direct child')
     private.mkdir(); pins, artifacts, aliases = {}, {}, {}
@@ -375,8 +431,12 @@ def main():
     try:
         r['source'] = source(); need(r['source']['revision'] == a.expect_revision, 'exact clean current source')
         pin(__file__); imported_sources(pin)
+        current = None
+        if a.current_build_receipt is not None:
+            from loop_ro_current_archive import current_archive
+            current = current_archive(a.current_build_receipt, a.current_build_sha256, ROOT, pin, binary, aliases)
         builder, archive, original, reader, image, seed, app = retained_support(
-            a.native_receipt, a.native_receipt_sha256, r, pin, binary, aliases, complete, run)
+            a.native_receipt, a.native_receipt_sha256, r, pin, binary, aliases, complete, run, current_build=current)
         launch = pin(FIXTURE/'launch.py')
         first = r['cases'][0]; directory = private/first['label']; directory.mkdir()
         first.update(status='failed', launched=True)
@@ -457,6 +517,8 @@ def main():
             reproduction_argv=['python3.12', '-B', 'evaluation/inprocess/loop_ro_native_positive.py',
                 '--expect-revision', a.expect_revision, '--native-receipt', '<retained-native-receipt.json>',
                 '--native-receipt-sha256', a.native_receipt_sha256,
+                *(['--current-build-receipt', '<closed-current-program-build-receipt.json>',
+                   '--current-build-sha256', a.current_build_sha256] if a.current_build_receipt is not None else []),
                 '--output', 'target/evaluation/inprocess/<fresh-positive-output>'],
             scope='Positive setup diagnostic only: fresh native/app boundary pairs and global certificate hits. Causal mutations, interior owner capture and original qualification remain pending.')
         text = json.dumps(public, sort_keys=True, indent=2)+'\n'

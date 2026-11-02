@@ -57,7 +57,7 @@ def cohort(builder, products, private, pin, binary, aliases, run, r):
     need(archive == builder.paths['archive'] == builder.retained/'decoder.a' and
          str(archive) == owned['path'] and fact(archive) == r['archive'] ==
          {k: owned[k] for k in ('bytes', 'sha256')},
-         'this fresh13-source Build owns the exact archive used for both release links')
+         'this fresh14-source Build owns the exact archive used for both release links')
     (private/'external-inputs').mkdir()
     for kind, program, args, expected in PROGRAMS:
         original = pin(program)

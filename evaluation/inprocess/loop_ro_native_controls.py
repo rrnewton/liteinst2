@@ -124,6 +124,8 @@ def main():
     ap.add_argument('--native-receipt-sha256', required=True)
     ap.add_argument('--positive-receipt', type=Path, required=True)
     ap.add_argument('--positive-receipt-sha256', required=True)
+    ap.add_argument('--current-build-receipt', type=Path)
+    ap.add_argument('--current-build-sha256')
     ap.add_argument('--output', type=Path, required=True)
     a = ap.parse_args(); affinity = os.sched_getaffinity(0)
     need(sys.version_info[:2] == (3, 12) and not sys.flags.optimize and len(affinity) == 1
@@ -131,6 +133,8 @@ def main():
          and all(re.fullmatch('[0-9a-f]{64}', v) for v in
              (a.native_receipt_sha256, a.positive_receipt_sha256)),
          'Python3.12/assertions, reserved singleton and whole explicit identities')
+    need((a.current_build_receipt is None) == (a.current_build_sha256 is None),
+         'explicit current build receipt and whole hash are supplied together')
     cpu = next(iter(affinity)); private = a.output.absolute()
     need(private.parent == ROOT/'target/evaluation/inprocess' and not private.exists(), 'fresh direct output child')
     private.mkdir(); pins, artifacts, aliases = {}, {}, {}
@@ -197,8 +201,12 @@ def main():
     try:
         r['source'] = source(); need(r['source']['revision'] == a.expect_revision, 'exact clean current source')
         pin(__file__); imported_sources(pin)
+        current = None
+        if a.current_build_receipt is not None:
+            from loop_ro_current_archive import current_archive
+            current = current_archive(a.current_build_receipt, a.current_build_sha256, ROOT, pin, binary, aliases)
         builder, archive, original, reader, image, seed, app = positive.retained_support(
-            a.native_receipt, a.native_receipt_sha256, r, pin, binary, aliases, complete, run)
+            a.native_receipt, a.native_receipt_sha256, r, pin, binary, aliases, complete, run, current_build=current)
         native = reference(a.positive_receipt, a.positive_receipt_sha256, r, pin, binary, complete, reader, image, seed)
         launch = pin(FIXTURE/'launch.py'); subjects = {}
         for mode in MODES:

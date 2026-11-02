@@ -13,6 +13,7 @@ import tomllib
 from checks import admission
 from page_selected import ENV, bridge_check, fact, need
 from page_selected_maps_recipe import configure as maps_configure
+from page_selected_shared_decoder import local_packages, MANIFESTS, SHARED_SOURCE
 
 REPO = Path(__file__).resolve().parents[2]
 PRODUCT = REPO/'tools/page-entry/selected'
@@ -184,9 +185,9 @@ class Build:
         need(not err, 'metadata stderr')
         metadata = json.loads(out)
         need(Path(metadata['target_directory']).resolve() == REPO/'target', 'one repository Cargo target')
-        local = [p for p in metadata['packages'] if p['source'] is None]
-        need(len(local) == 1, 'one actual local decoder package')
-        nodes = [n for n in metadata['resolve']['nodes'] if n['id'] == local[0]['id']]
+        local = local_packages(metadata, REPO)
+        self.pin(REPO/SHARED_SOURCE)  # The transitive source lies outside the selected tracked-list prefix.
+        nodes = [n for n in metadata['resolve']['nodes'] if n['id'] == local['id']]
         if self.add_guard:
             need(len(nodes) == 1 and nodes[0]['features'] ==
                  ['add-guard', 'default', 'linked-epoch', 'mov-guard', 'scalar-region', 'scalar-span'],
@@ -209,7 +210,8 @@ class Build:
             lock = expected[(package['name'], package['version'])]
             path = self.pin(package['manifest_path'])
             if 'checksum' not in lock:
-                need(path == decoder/'Cargo.toml' and package['source'] is None, 'actual local decoder manifest')
+                need(path in {REPO/name for name in MANIFESTS} and package['source'] is None,
+                     'actual exact decoder/shared local manifest')
                 continue
             need(package['source'] == lock['source'], 'exact registry identity')
             self.packages.append(dict(name=package['name'], version=package['version'],
@@ -236,8 +238,8 @@ class Build:
         expected = {str(decoder/'src'/name) for name in ('lib.rs', 'abi.rs', 'arena.rs', 'decode.rs', 'scan.rs', 'tf.rs', 'write_footprint.rs', 'admission_oneshot.rs')}
         additions = {str(decoder/'src'/name) for name in self.extra_decoder_sources}
         need(not expected & additions, 'extra decoder sources do not duplicate original eight')
-        expected |= additions
-        need(set(dependencies) == expected and len(dependencies) == len(expected), 'exact eight plus explicitly named decoder sources')
+        expected |= additions | {str(REPO/SHARED_SOURCE)}
+        need(set(dependencies) == expected and len(dependencies) == len(expected), 'exact original decoder sources plus shared production lib.rs')
         self.record['dep_info'] = {str(Path(p).relative_to(REPO)): fact(self.pin(p)) for p in dependencies}
         out, err = self.run('archive-text-exports', [self.tools['nm'], '-g', '--defined-only', archive], 'inspect')
         need(not err, 'archive symbol inspection stderr')

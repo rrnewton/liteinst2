@@ -11,6 +11,7 @@ from persistent_group_binding import image_identity, need, fact
 from persistent_loop_binding import LEAVES as PRIOR_LEAVES, CAPTURE_INPUTS as PRIOR_CAPTURE_INPUTS
 
 EFFECTS_INPUTS = (
+    '../../../crates/liteinst-x86/Cargo.toml', '../../../crates/liteinst-x86/src/lib.rs',
     'persistent_loop_effects_binding.py', 'build-loop-effects-decoder.sh',
     'build-persistent-loop-effects.sh',
     'decoder/src/loop_scalar.rs', 'decoder/src/byte_mov_guard.rs',

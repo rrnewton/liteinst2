@@ -38,6 +38,7 @@ def main():
     from checks import source
     from run import hardware
     from page_selected import fact, interpreter, bridge_check
+    from page_selected_shared_decoder import source_key
     from page_selected_process import invoke
     from page_cost_profile import profile, TARGET, PERF
     from persistent_dynamic_profile import observer_libraries
@@ -195,7 +196,7 @@ def main():
              'every current policy source and exact original policy digest')
         for v in values:
             if v['path'].endswith('.rs'):
-                need(old['build']['dep_info']['tools/page-entry/selected/'+v['path']] ==
+                need(old['build']['dep_info'][source_key(root, selected, v['path'])] ==
                      {k: v[k] for k in ('bytes', 'sha256')}, 'current Rust source belongs to actual archive')
         used = []
         def recorded(name, argv, profile, env):

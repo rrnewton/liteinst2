@@ -9,6 +9,7 @@ from maps_view import (need, fact, SELECTED, UNITS, MACROS, recipe, expand, head
                        bridge_check, ENV, hidden_memset, body_check, digest, H)
 from linked_epoch_build import FIXED_DOMAIN, fixed_domain_source
 from scalar_span_trace_build import fast_bytes
+from page_selected_shared_decoder import source_key
 from persistent_epoch_build import FEATURES as OLD_FEATURES, dynamic_original_image
 FEATURES = OLD_FEATURES + ('scalar-read','loop-effects')
 from persistent_group_build import DISPATCH_POLICY_INPUTS, PROVIDERS, DISPATCH_PROVIDERS
@@ -51,7 +52,7 @@ ACTIVE_PROVIDERS += ('li2_decoder_scalar_read_describe', 'li2_decoder_scalar_rea
 
 ACTIVE_PROVIDERS += ('li2_lpf_guard_relocation_reason',)
 
-EFFECTS_INPUTS = ('persistent_loop_effects_binding.py', 'build-loop-effects-decoder.sh', 'build-persistent-loop-effects.sh', 'decoder/src/loop_scalar.rs', 'decoder/src/byte_mov_guard.rs', 'loop_scalar_decode.h', 'linked_byte_mov_guard.h', 'linked_byte_mov_guard.inc', 'loop_effects_envelope.h', 'loop_effects_envelope.c', 'loop_effects_bridge.h', 'loop_effects_bridge.c', 'loop_effects_store.h', 'persistent_loop_effects_plan.h', 'persistent_loop_effects_plan.inc', 'persistent_loop_effects_compact.inc', 'persistent_loop_effects_owner.inc')
+EFFECTS_INPUTS = ('../../../crates/liteinst-x86/Cargo.toml', '../../../crates/liteinst-x86/src/lib.rs', 'persistent_loop_effects_binding.py', 'build-loop-effects-decoder.sh', 'build-persistent-loop-effects.sh', 'decoder/src/loop_scalar.rs', 'decoder/src/byte_mov_guard.rs', 'loop_scalar_decode.h', 'linked_byte_mov_guard.h', 'linked_byte_mov_guard.inc', 'loop_effects_envelope.h', 'loop_effects_envelope.c', 'loop_effects_bridge.h', 'loop_effects_bridge.c', 'loop_effects_store.h', 'persistent_loop_effects_plan.h', 'persistent_loop_effects_plan.inc', 'persistent_loop_effects_compact.inc', 'persistent_loop_effects_owner.inc')
 POLICY_INPUTS += EFFECTS_INPUTS
 CAPTURE_INPUTS = tuple({'persistent_loop_observe.h':'persistent_loop_effects_observe.h','persistent_loop_observe.inc':'persistent_loop_effects_observe.inc'}.get(n,n)for n in CAPTURE_INPUTS) + ('persistent_loop_effects_capture_binding.py',)
 ACTIVE_PROVIDERS += ('li2_decoder_loop_scalar_describe', 'li2_decoder_loop_scalar_none', 'li2_decoder_byte_mov_store', 'li2_bmg_emit', 'li2_bmg_validate', 'li2_bmg_recover', 'li2_bmg_interval_allowed', 'li2_lee_choose', 'li2_lee_validate', 'li2_ler_describe', 'li2_ler_none', 'li2_ler_bridge_node', 'li2_lpe_plan_pages', 'li2_lpe_plan_validate', 'li2_lpe_miss_validate', 'li2_lpe_compact_build', 'li2_lpe_compact_validate', 'li2_lpe_compact_guard', 'li2_lpe_compact_direct', 'li2_lpe_compact_exit', 'li2_lpe_compact_recover', 'li2_lpe_placement', 'li2_lpe_relocation_reason')
@@ -85,7 +86,7 @@ def binding_config(builder, archive, image, output, pin, binary, run, *, mode):
             size, sha = fixed_loop_domain(name,path)
             need(digest(value) == digest(dict(bytes=size, sha256=sha)), 'unchanged reviewed scalar/NONE decoder domain')
         if name.endswith('.rs'):
-            need(digest(builder.record['dep_info'].get('tools/page-entry/selected/' + name)) == digest(value), 'actual archive compiled each bound decoder source')
+            need(digest(builder.record['dep_info'].get(source_key(SELECTED.parents[2], SELECTED, name))) == digest(value), 'actual archive compiled each bound decoder source')
         values.append(dict(path=name, **value))
     archive = pin(archive)
     archive_fact = fact(archive)
