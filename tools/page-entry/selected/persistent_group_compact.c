@@ -1,11 +1,26 @@
 #include "persistent_group_compact.h"
+#ifdef LI2_SPAN_FAST_BYTES
+#include "span_fast_bytes.h"
+#endif
 #if !defined(LI2_PERSISTENT_EPOCH) || LI2_PERSISTENT_EPOCH != 1 || \
     !defined(LI2_MOV_GUARD) || LI2_MOV_GUARD != 1
 #error "separate persistent description plus unchanged MOV primitive required"
 #endif
+#ifdef LI2_SPAN_FAST_BYTES
+static void zero(void *p,size_t n) { li2_span_bytes_zero(p,n); }
+#else
 static void zero(void *p,size_t n) { unsigned char *b=p;for(size_t i=0;i<n;i++)b[i]=0; }
+#endif
+#ifdef LI2_SPAN_FAST_BYTES
+static void copy(void *p,const void *q,size_t n) { li2_span_bytes_copy(p,q,n); }
+#else
 static void copy(void *p,const void *q,size_t n) { unsigned char *b=p;const unsigned char *a=q;for(size_t i=0;i<n;i++)b[i]=a[i]; }
+#endif
+#ifdef LI2_SPAN_FAST_BYTES
+static int equal(const void *p,const void *q,size_t n) { return li2_span_bytes_equal(p,q,n); }
+#else
 static int equal(const void *p,const void *q,size_t n) { const unsigned char *a=p,*b=q;for(size_t i=0;i<n;i++)if(a[i]!=b[i])return 0;return 1; }
+#endif
 static int all_zero(const void *p,size_t n) { const unsigned char *a=p;for(size_t i=0;i<n;i++)if(a[i])return 0;return 1; }
 static int storage(const void *p,size_t n) { return p && (uintptr_t)p<=UINTPTR_MAX-n; }
 static int overlap(uintptr_t a,size_t an,uintptr_t b,size_t bn) { return a<b+bn && b<a+an; }

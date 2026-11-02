@@ -24,7 +24,7 @@ import persistent_component_sources as subject
 
 FACTS = {
     'persistent_group_compact.c': (
-        47574, '99ae834f6554b305eee450b64ba08d0efc5d7ef9bf666159567b9bcec8eb09d7',
+        47998, '84e02fa0468c5bb63b644783f20c0d625e04f43815f4e4c2b760f4f666dc2f80',
         26769, '1ac0af7a2bb1a3621bd43754fac1173b0cf5ff16658c0be7b160088929ba5d2b'),
     'persistent_group_compact.h': (
         7608, '69586fc20db5ff1496b196ac006f54f7a9c0ce66eb7983791f6ecd84111ee96c',

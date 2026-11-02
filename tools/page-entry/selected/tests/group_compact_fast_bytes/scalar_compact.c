@@ -1,0 +1,40 @@
+/* Compile the exact current production TU with its original scalar helpers.
+   Rename every public definition in this fixed profile; static code and all
+   planner/decoder calls remain the original shared implementation. */
+#undef LI2_SPAN_FAST_BYTES
+#define li2_lp_compact_build scalar_li2_lp_compact_build
+#define li2_lp_compact_direct scalar_li2_lp_compact_direct
+#define li2_lp_compact_exit scalar_li2_lp_compact_exit
+#define li2_lp_compact_guard scalar_li2_lp_compact_guard
+#define li2_lp_compact_recover scalar_li2_lp_compact_recover
+#define li2_lp_compact_validate scalar_li2_lp_compact_validate
+#define li2_lpf_compact_build scalar_li2_lpf_compact_build
+#define li2_lpf_compact_direct scalar_li2_lpf_compact_direct
+#define li2_lpf_compact_exit scalar_li2_lpf_compact_exit
+#define li2_lpf_compact_guard scalar_li2_lpf_compact_guard
+#define li2_lpf_compact_recover scalar_li2_lpf_compact_recover
+#define li2_lpf_compact_validate scalar_li2_lpf_compact_validate
+#define li2_pb_compact_build scalar_li2_pb_compact_build
+#define li2_pb_compact_direct scalar_li2_pb_compact_direct
+#define li2_pb_compact_exit scalar_li2_pb_compact_exit
+#define li2_pb_compact_recover scalar_li2_pb_compact_recover
+#define li2_pb_compact_validate scalar_li2_pb_compact_validate
+#define li2_pf_compact_build scalar_li2_pf_compact_build
+#define li2_pf_compact_direct scalar_li2_pf_compact_direct
+#define li2_pf_compact_exit scalar_li2_pf_compact_exit
+#define li2_pf_compact_guard scalar_li2_pf_compact_guard
+#define li2_pf_compact_recover scalar_li2_pf_compact_recover
+#define li2_pf_compact_validate scalar_li2_pf_compact_validate
+#define li2_pg_compact_add scalar_li2_pg_compact_add
+#define li2_pg_compact_build scalar_li2_pg_compact_build
+#define li2_pg_compact_call scalar_li2_pg_compact_call
+#define li2_pg_compact_direct scalar_li2_pg_compact_direct
+#define li2_pg_compact_dispatch scalar_li2_pg_compact_dispatch
+#define li2_pg_compact_exit scalar_li2_pg_compact_exit
+#define li2_pg_compact_guard scalar_li2_pg_compact_guard
+#define li2_pg_compact_recover scalar_li2_pg_compact_recover
+#define li2_pg_compact_recover_ret scalar_li2_pg_compact_recover_ret
+#define li2_pg_compact_ret scalar_li2_pg_compact_ret
+#define li2_pg_compact_ret_loaded_miss scalar_li2_pg_compact_ret_loaded_miss
+#define li2_pg_compact_validate scalar_li2_pg_compact_validate
+#include "persistent_group_compact.c"
