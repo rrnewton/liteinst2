@@ -1,0 +1,9 @@
+operation,pair,position,implementation,cpu_ns,wall_ns,process_maxrss_kib
+decode,0,0,old,680589452,683813300,34852
+decode,0,1,candidate,157260247,158621352,34852
+decode,1,0,candidate,172290596,173671623,34852
+decode,1,1,old,735016143,739754118,34852
+encode_for_control,0,0,old,757808558,762410426,34852
+encode_for_control,0,1,candidate,144127149,145009420,34852
+encode_for_control,1,0,candidate,144015654,145140537,34852
+encode_for_control,1,1,old,706613219,711454409,34852
