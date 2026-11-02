@@ -1,6 +1,10 @@
 /* Actual two-page R/NX lease. Included in lifecycle_loader.c after the exact
    old fetch/span/link helpers; no old fetch storage or API is enlarged. */
 #include "persistent_group_runtime.h"
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+#include "persistent_loop_negative_hint.h"
+static struct li2_plnh_cache pg_negative_hint;
+#endif
 #ifdef LI2_PERSISTENT_SEALED_GENERATION
 /* Storage classification only. All token, source, layout and phase checks
    below still run. The returned permission record carries the sealed tag. */
@@ -132,6 +136,10 @@ int li2_pg_source_initialize(void) {
     if(pg_source.p.initialized || pg_source.p.phase || !hooks.protected_range)return LI2_FETCH_STATE;
     for(size_t i=0;i<sizeof pg_source;i++)
         if(!hooks.protected_range((uintptr_t)&pg_source+i,1))return LI2_FETCH_STATE;
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    for(size_t i=0;i<sizeof pg_negative_hint;i++)
+        if(!hooks.protected_range((uintptr_t)&pg_negative_hint+i,1))return LI2_FETCH_STATE;
+#endif
     pg_source.p.initialized=1;return 0;
 }
 int li2_pg_source_interlock(void) {
@@ -144,6 +152,9 @@ static int pgs_token(const struct li2_pg_token *t) {
         li2_pg_owner_phase(t) && pg_source.p.initialized && pg_source.p.serial==t->serial &&
         pgs_layout_bound(t,&pg_source.p.layout);
 }
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+#include "persistent_loop_negative_hint.inc"
+#endif
 int li2_pg_source_begin(const struct li2_pg_token *t,const struct li2_pg_layout *layout) {
     if(!t || !t->serial || li2_pg_owner_phase(t)!=LI2_PG_SEEDING || !pg_source.p.initialized ||
        li2_pg_source_interlock() || pg_source.p.first_error || pg_source.p.aborted ||

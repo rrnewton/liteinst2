@@ -1708,6 +1708,13 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     struct pcw_seed call_seed;
     if(!pcw_coarse(uc,choice.page,&call_seed))return 0;
 #endif
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+    /* A completed root refusal may decline a new cold offer. Existing retained
+       roots/subentries still take their full original publication path. */
+    if(!choice.subentry && !(pe.retained[slot_index].generation.installed &&
+       pe.retained[slot_index].publication.source.entry==pc) &&
+       li2_pg_source_negative_decline(pc,choice.page))return 0;
+#endif
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
     pgo_begin(sig,si,uc);
 #endif
@@ -1834,7 +1841,18 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     ptr2o_miss_held();
 #endif
         enum li2_chain_result result;
-        pe_need(!li2_pg_epoch_cancel(&pe.token,sig,si,uc,&result),PE_EVENT,3);return 1;
+        pe_need(!li2_pg_epoch_cancel(&pe.token,sig,si,uc,&result),PE_EVENT,3);
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+        /* The entire real cancellation, including unchanged frame/rseq/source
+           validation and actual TF resume, has succeeded before hint storage. */
+        if(!choice.subentry && !pe.warm && pe.loop.route==LI2_PF_VERSION &&
+           pe.loop.choice_complete==1 && pe.build_result==LI2_PG_MISS &&
+           pe.miss.version==LI2_PF_VERSION && pe.miss.status==LI2_PG_MISS &&
+           pe.miss.reason==LI2_PGD_ROOT_UNSUPPORTED && pe.miss.site==LI2_PGD_SOURCE &&
+           pe.miss.pc==pc && pe.cold.entry==pc)
+            li2_pg_source_negative_remember(&pe.token);
+#endif
+        return 1;
     }
     pe_need(!li2_pg_epoch_bind(&pe.token,&PE_SLOT(generation)),PE_PUBLICATION,2);
 #ifdef LI2_RESIDENT_SOURCE_PROBE

@@ -64,6 +64,11 @@ struct li2_pg_source_progress {
     struct li2_span_fetch_observation cancelled_fetch;
 };
 int li2_pg_source_initialize(void);
+#ifdef LI2_PERSISTENT_LOOP_RUNTIME
+/* Optional offer decline only; neither function grants an execution permit. */
+int li2_pg_source_negative_decline(uintptr_t,const uintptr_t[2]);
+void li2_pg_source_negative_remember(const struct li2_pg_token *);
+#endif
 int li2_pg_source_begin(const struct li2_pg_token *,const struct li2_pg_layout *);
 int li2_pg_source_prepare(const struct li2_pg_token *,const struct li2_fetch_ref *,const uintptr_t[2]);
 const struct li2_pg_sources *li2_pg_source_view(const struct li2_pg_token *);
