@@ -212,7 +212,7 @@ def loop_descriptions(f,h):
     branch=lambda at:ins(raw[at:at+2],176,((pc,4,0,64,1,8,0),),(64,0,0,0,0),flow=1,target=pc,condition=5)
     if h[3]<38:
         rows=(ins(raw[:3],401),ins(raw[3:7],249,(reg(0,64,3),imm(1,64,8)),arith),
-              ins(raw[7:10],110,(reg(0,64,1),reg(2,64,1)),arith),branch(10))
+              ins(raw[7:10],110,(reg(2,64,1),reg(0,64,1)),arith),branch(10))
         store=0
     else:
         rows=(ins(raw[:2],281,(reg(0,32,2),reg(2,32,1)),step=1),
