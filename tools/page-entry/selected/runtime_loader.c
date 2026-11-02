@@ -50,6 +50,11 @@ static uint64_t rsl_initialization[9];
 #include "repeat_owner.h"
 #include "tf_continuation.h"
 #include "selected_globals.inc"
+#ifdef LI2_LOOP_INGRESS_CENSUS
+static void lic_initialize(void);
+static void lic_seal(void);
+static void lic_report(unsigned,unsigned);
+#endif
 #ifdef LI2_EVENT_PROFILE
 #include "event_profile.h"
 static void event_seal(void);
@@ -450,6 +455,9 @@ static void rso_report(unsigned,unsigned,long);
 static void report(unsigned status,unsigned code,long detail) {
     if(reported) return;
     reported=1;
+#ifdef LI2_LOOP_INGRESS_CENSUS
+    lic_seal();
+#endif
 #ifdef LI2_RESIDENT_SOURCE_PROBE
     rso_report(status,code,detail);
 #endif
@@ -685,6 +693,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 #ifdef LI2_EVENT_PROFILE
     event_report();
+#endif
+#ifdef LI2_LOOP_INGRESS_CENSUS
+    lic_report(status,code);
 #endif
 }
 static void fail(unsigned code,long detail) {
@@ -1143,6 +1154,9 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #ifdef LI2_EVENT_PROFILE
 #include "event_profile.inc"
 #endif
+#ifdef LI2_LOOP_INGRESS_CENSUS
+#include "loop_ingress_census.inc"
+#endif
 #ifdef LI2_RESIDENT_SOURCE_PROBE
 #include "resident_source_probe.inc"
 #endif
@@ -1313,6 +1327,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #endif
     }
     checked(!handling && si && ptr,218,sig); handling=1;
+#ifdef LI2_LOOP_INGRESS_CENSUS
+    lic_ingress(sig,si,ptr);
+#endif
 #ifdef LI2_RESIDENT_SOURCE_PROBE
     rso_ingress(sig,si,ptr);
 #endif
@@ -1670,5 +1687,8 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
 #endif
 #ifdef LI2_MAPS_MAINTAINED
     checked(!li2_maps_view_enable(),770,1);
+#endif
+#ifdef LI2_LOOP_INGRESS_CENSUS
+    lic_initialize();
 #endif
 }
