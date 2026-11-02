@@ -9,10 +9,11 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '4fd74729990948fbb29b66211a63fcdb30e6596fc2dc40231bece4c5d5a4d78d',
+require(hashlib.sha256(RAW).hexdigest() == 'f257e7d9ca4f2dc82fff07f145df10bd1ec2e0b0284bd47e9476b39f58724d48',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
+ROW_PREFIX_PREVIOUS = DATA['source_successor_4261826']['previous_corpus_sha256']
 BINDING_PREVIOUS = DATA['source_successor_f9f89ac']['previous_corpus_sha256']
 CURRENT_RET_PREVIOUS = DATA['source_successor_bad32a8']['previous_corpus_sha256']
 PHYSICAL_PREVIOUS = DATA['source_successor_e5462b7']['previous_corpus_sha256']
@@ -127,7 +128,12 @@ def source_before_f9f89ac(path, raw, error):
 
 
 def source_before_fe97f683(path, raw, error):
+    raw = source_before_4261826(path, raw, error)
     return inverse(path, raw, DATA['source_successor_fe97f683']['source_projections'], error)
+
+
+def source_before_4261826(path, raw, error):
+    return inverse(path, raw, DATA['source_successor_4261826']['source_projections'], error)
 
 
 def require_sources(error='main97ab_source_inventory_differs'):
@@ -161,11 +167,25 @@ def require_sources(error='main97ab_source_inventory_differs'):
         source_before_evaluation(path, raw, error)
 
 
-def before_f9f89ac(declared, error='main97ab_inventory_differs'):
-    """Bind all six new default instances and retain the complete bad32 catalog."""
+def before_4261826(declared, error='main97ab_inventory_differs'):
+    """Bind both default row-prefix tests and retain the complete fe97 catalog."""
     require(type(declared) is dict and digest(declared) == CURRENT, error)
     owned = plain_catalog((declared, DATA))
     old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in DATA['source_successor_4261826']['workspace_changes'].items():
+        require(digest(rows[name]) == digest(change['current']), error)
+        rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == ROW_PREFIX_PREVIOUS, error)
+    return old if owned else copy.deepcopy(old)
+
+
+def before_f9f89ac(declared, error='main97ab_inventory_differs'):
+    """Bind all six new default instances and retain the complete bad32 catalog."""
+    owned = plain_catalog((declared, DATA))
+    declared = before_4261826(declared, error)
+    require(type(declared) is dict and digest(declared) == ROW_PREFIX_PREVIOUS, error)
+    old = declared if owned else copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in DATA['source_successor_f9f89ac']['workspace_changes'].items():
         require(digest(rows[name]) == digest(change['current']), error)
