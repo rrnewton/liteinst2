@@ -3,7 +3,9 @@
 #include "bridge.h"
 #include "lifecycle_loader.h"
 #ifdef LI2_PERSISTENT_GROUP_COUNTERS
-#ifdef LI2_LOOP_RO_REASONS
+#ifdef LI2_LOOP_RO_RETIRED
+#include "loop_ro_retired.h"
+#elif defined(LI2_LOOP_RO_REASONS)
 #include "loop_ro_reasons.h"
 #elif defined(LI2_PERSISTENT_LOOP_EFFECTS_COUNTERS)
 #include "persistent_loop_effects_counters.h"
@@ -777,7 +779,9 @@ static void protect(uintptr_t first,size_t bytes) {
     protected[protected_count++]=(struct li2_fork_range){first,first+bytes};
 }
 #ifdef LI2_PERSISTENT_GROUP_COUNTERS
-#ifdef LI2_LOOP_RO_REASONS
+#ifdef LI2_LOOP_RO_RETIRED
+#include "loop_ro_retired.inc"
+#elif defined(LI2_LOOP_RO_REASONS)
 #include "loop_ro_reasons.inc"
 #elif defined(LI2_PERSISTENT_LOOP_EFFECTS_COUNTERS)
 #include "persistent_loop_effects_counters.inc"

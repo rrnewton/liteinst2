@@ -9,12 +9,12 @@ from page_native_pair_performance import decode,H,PROGRAM_ENV
 from loop_ro_reason_counter import MAGIC, final_counter_prefix
 
 
-def program_invoke(row, directory, cpu, record=False, step=False):
+def _program_invoke(row, directory, cpu, record=False, step=False, *, version, logical_bytes, carrier_name, reader):
     need(record is False and step is False and row['bounds'] == [30, 512<<20, 16<<20, 60],
          'counter observation keeps the exact single release subject bounds')
     need(type(cpu) is int and cpu>=0 and os.sched_getaffinity(0)=={cpu} and len(row['argv'])>4 and
          list(map(str,row['argv'][1:4]))==['-B',str(Path(__file__).resolve().parents[2]/
-         'tools/page-entry/loop_ro_reason_carrier.py'),'exec-loader'],
+         ('tools/page-entry/'+carrier_name)),'exec-loader'],
          'one explicit CPU and separate source-owned ABI5 exec transport')
     counter_ro = None; counter_initial = None; counter_rw = None
     row['counter_observation'] = dict(usable=False, scope='final per-cell prefix after actual reap; no terminal or qualification claim')
@@ -85,12 +85,12 @@ def program_invoke(row, directory, cpu, record=False, step=False):
     try:
         need(row['argv'].count('{counter_fd}') == row['argv'].count('{counter_nonce}') == 1,
              'one explicit diagnostic fd and nonce argument')
-        counter_rw = os.memfd_create('li2-loop-effects-abi5-counters', os.MFD_CLOEXEC | os.MFD_ALLOW_SEALING)
+        counter_rw = os.memfd_create('li2-loop-effects-abi'+str(version)+'-counters', os.MFD_CLOEXEC | os.MFD_ALLOW_SEALING)
         counter_state = dict(name='counter_rw', fd=counter_rw, closed=False)
         descriptors.append((counter_rw, counter_state)); row['descriptors'].append(counter_state)
         os.ftruncate(counter_rw, 4096); os.fchmod(counter_rw, 0o600)
         cs = os.fstat(counter_rw); nonce = int.from_bytes(os.urandom(8), 'little') or 1
-        counter_initial = (MAGIC, 5, 1696, 4096, nonce, os.getpid(), cs.st_dev, cs.st_ino)
+        counter_initial = (MAGIC, version, logical_bytes, 4096, nonce, os.getpid(), cs.st_dev, cs.st_ino)
         initial = struct.pack('<8Q', *counter_initial)+bytes(4096-64)
         need(os.pwrite(counter_rw, initial, 0) == 4096, 'whole initial counter page')
         fcntl.fcntl(counter_rw, fcntl.F_ADD_SEALS, 6)
@@ -103,7 +103,7 @@ def program_invoke(row, directory, cpu, record=False, step=False):
         need((rs.st_dev, rs.st_ino, rs.st_size) == (cs.st_dev, cs.st_ino, 4096) and
              fcntl.fcntl(counter_ro, fcntl.F_GETFL) & os.O_ACCMODE == os.O_RDONLY,
              'parent holds same backing through genuine read-only descriptor, never a writable mapping')
-        row['counter_input'] = dict(version=5, bytes=4096, logical_bytes=1696, nonce=nonce, parent=os.getpid(),
+        row['counter_input'] = dict(version=version, bytes=4096, logical_bytes=logical_bytes, nonce=nonce, parent=os.getpid(),
                                    device=cs.st_dev, inode=cs.st_ino, initial_seals=6, child_fd=counter_rw)
         row['argv'] = [str(counter_rw) if x == '{counter_fd}' else str(nonce) if x == '{counter_nonce}' else x
                        for x in row['argv']]
@@ -191,7 +191,7 @@ def program_invoke(row, directory, cpu, record=False, step=False):
                      'final read-only descriptor identity unchanged')
                 seals = fcntl.fcntl(counter_ro, fcntl.F_GET_SEALS)
                 row['counter_observation'].update(final_seals=seals, raw=fact(destination))
-                value = final_counter_prefix(data, counter_initial, row['pid'], seals)
+                value = reader(data, counter_initial, row['pid'], seals)
                 row['counter_observation'].update(usable=True, **value)
             except BaseException as exc:
                 row['counter_observation']['error'] = type(exc).__name__+': '+str(exc)
@@ -228,7 +228,7 @@ def program_invoke(row, directory, cpu, record=False, step=False):
     return paths['stdout'].read_bytes(), paths['stderr'].read_bytes()
 
 
-def namespace_join(state,ns,binary,r,namespace,counter):
+def _namespace_join(state,ns,binary,r,namespace,counter,*,version,logical_bytes,environment_prefix,identity_name):
     observed=decode(binary(ns/'namespace.json').read_bytes());launch=decode(binary(ns/'launch.json').read_bytes())
     objects=state['objects'];description=state['description']
     need(all(observed[k]==v for k,v in description.items())and observed['directory']==str(ns)and
@@ -253,9 +253,9 @@ def namespace_join(state,ns,binary,r,namespace,counter):
          'device','inode','initial_seals','child_fd'} and
          all(type(v) is int and 0<v<1<<64 for v in counter.values()) and counter['child_fd']>2 and
          counter['child_fd'] not in fds and counter['initial_seals']==6 and
-         counter['bytes']==4096 and counter['version']==5 and counter['logical_bytes']==1696, 'separate exact counter preparation channel')
-    expected_env.update(LI2_LOOP_RO_REASON_FD=str(counter['child_fd']), LI2_LOOP_RO_REASON_NONCE=str(counter['nonce']))
-    actual_counter=launch.get('loop_ro_reason_counter')
+         counter['bytes']==4096 and counter['version']==version and counter['logical_bytes']==logical_bytes, 'separate exact counter preparation channel')
+    expected_env.update({environment_prefix+'_FD':str(counter['child_fd']),environment_prefix+'_NONCE':str(counter['nonce'])})
+    actual_counter=launch.get(identity_name)
     carrier_fd=launch.get('carrier_fd')
     need(actual_counter==counter and type(carrier_fd) is dict and
          set(carrier_fd)=={'fd','device','inode','seals'} and
@@ -266,5 +266,15 @@ def namespace_join(state,ns,binary,r,namespace,counter):
          'ABI5 channel and backing differ from actual sealed carrier and every dependency')
     need(launch==dict(schema_version=1,scope='first_entry_loader_candidate',status='prepared_not_executed',
         carrier_sha256=fact(state['carrier'])['sha256'],carrier_size=fact(state['carrier'])['bytes'],argv=state['argv'],
-        environment=expected_env,dependency_fds=fds,loop_ro_reason_counter=counter,carrier_fd=carrier_fd),
+        environment=expected_env,dependency_fds=fds,carrier_fd=carrier_fd,**{identity_name:counter}),
         'exact default-rseq launch/argv/environment/carrier/FD join')
+
+
+def program_invoke(row, directory, cpu, record=False, step=False):
+    return _program_invoke(row,directory,cpu,record,step,version=5,logical_bytes=1696,
+                           carrier_name="loop_ro_reason_carrier.py",reader=final_counter_prefix)
+
+
+def namespace_join(state,ns,binary,r,namespace,counter):
+    return _namespace_join(state,ns,binary,r,namespace,counter,version=5,logical_bytes=1696,
+        environment_prefix="LI2_LOOP_RO_REASON",identity_name="loop_ro_reason_counter")

@@ -29,7 +29,7 @@ def counter_descriptor(counter_fd, counter_nonce, parent):
     return dict(version=5,bytes=4096,logical_bytes=1696,nonce=counter_nonce,parent=parent,
                 device=cs.st_dev,inode=cs.st_ino,initial_seals=6,child_fd=counter_fd)
 
-def execute_loader(carrier, original, roots, directory, argv, fork_fds=None, child_failure=0, disable_rseq=False, provider_policy=None, *, late_sonames=(), counter_fd=None, counter_nonce=None):
+def _execute_loader(carrier, original, roots, directory, argv, fork_fds=None, child_failure=0, disable_rseq=False, provider_policy=None, *, late_sonames=(), counter_fd=None, counter_nonce=None, descriptor, environment_prefix, identity_name):
     # This separate command intentionally supplies a private namespace and a
     # closed environment. The original fixture's make/exec path is unchanged.
     if provider_policy not in (None, "mask-random-v1", "deterministic-builtins-v1"):
@@ -39,11 +39,11 @@ def execute_loader(carrier, original, roots, directory, argv, fork_fds=None, chi
     if counter_fd is not None:
         if fork_fds is not None:
             raise ValueError("counter carrier forbids fork profile")
-        counter_descriptor(counter_fd, counter_nonce, os.getppid())
+        descriptor(counter_fd, counter_nonce, os.getppid())
     if (counter_fd is None or counter_nonce is None or fork_fds is not None or child_failure or
             disable_rseq or provider_policy is not None or late_sonames):
         raise ValueError("ABI5 requires one default-rseq release process and one explicit counter channel")
-    counter_identity=counter_descriptor(counter_fd,counter_nonce,os.getppid())
+    counter_identity=descriptor(counter_fd,counter_nonce,os.getppid())
     import namespace
     with carrier.open("rb") as stream:
         data = stream.read(MAX_FILE + 1)
@@ -69,8 +69,8 @@ def execute_loader(carrier, original, roots, directory, argv, fork_fds=None, chi
         if counter_fd is not None:
             if counter_fd in fds or counter_fd == fd:
                 raise ValueError("counter descriptor is separate from carrier/dependencies")
-            env["LI2_LOOP_RO_REASON_FD"] = str(counter_fd)
-            env["LI2_LOOP_RO_REASON_NONCE"] = str(counter_nonce)
+            env[environment_prefix+"_FD"] = str(counter_fd)
+            env[environment_prefix+"_NONCE"] = str(counter_nonce)
         carrier_identity=os.fstat(fd)
         for item in (*fds,fd):
             identity=os.fstat(item)
@@ -103,7 +103,7 @@ def execute_loader(carrier, original, roots, directory, argv, fork_fds=None, chi
             "schema_version": 1, "scope": "first_entry_loader_candidate", "status": "prepared_not_executed",
             "carrier_sha256": hashlib.sha256(data).hexdigest(), "carrier_size": len(data),
             "argv": argv, "environment": env, "dependency_fds": fds,
-            "loop_ro_reason_counter": counter_identity, "carrier_fd": carrier_record,
+            identity_name: counter_identity, "carrier_fd": carrier_record,
         }, indent=2, sort_keys=True) + "\n")
         os.execve(fd, argv, env)
     finally:
@@ -113,7 +113,7 @@ def execute_loader(carrier, original, roots, directory, argv, fork_fds=None, chi
             os.close(item)
 
 
-def main():
+def _main(execute):
     parser=argparse.ArgumentParser(description=__doc__)
     sub=parser.add_subparsers(dest='mode',required=True)
     loader=sub.add_parser('exec-loader')
@@ -125,8 +125,17 @@ def main():
     loader.add_argument('original',type=Path)
     loader.add_argument('argv',nargs=argparse.REMAINDER)
     args=parser.parse_args()
-    execute_loader(args.carrier,args.original,args.library_root,args.namespace,args.argv,
+    execute(args.carrier,args.original,args.library_root,args.namespace,args.argv,
                    counter_fd=args.counter_fd,counter_nonce=args.counter_nonce)
+
+
+def execute_loader(carrier, original, roots, directory, argv, fork_fds=None, child_failure=0, disable_rseq=False, provider_policy=None, *, late_sonames=(), counter_fd=None, counter_nonce=None):
+    return _execute_loader(carrier,original,roots,directory,argv,fork_fds,child_failure,disable_rseq,provider_policy,
+        late_sonames=late_sonames,counter_fd=counter_fd,counter_nonce=counter_nonce,
+        descriptor=counter_descriptor,environment_prefix="LI2_LOOP_RO_REASON",identity_name="loop_ro_reason_counter")
+
+def main():
+    _main(execute_loader)
 
 
 if __name__=='__main__':main()

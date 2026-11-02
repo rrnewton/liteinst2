@@ -1,12 +1,20 @@
 /* Passive observations only. No helper result participates in admission;
    even observation overflow/state failure leaves the original decision intact. */
 #include "loop_ro_reasons.h"
+#ifdef LI2_LOOP_RO_RETIRED
+#include "loop_ro_retired.h"
+#endif
 _Static_assert(LI2_PTR_SLOTS==2,"observe the unchanged two-slot policy");
 static struct { unsigned stage,kind,occupied,bank,slot,installed,failed;uint64_t seen,passed; } lrr_state;
 static struct li2_lrr_counts *lrr_counts(void) {
     const struct li2_pgc_record *p=li2_pgc_current;
+#ifdef LI2_LOOP_RO_RETIRED
+    if(!p || p->header[1]!=LI2_LRX_VERSION || p->header[2]!=LI2_LRX_BYTES || !p->header[15])return 0;
+    return &((struct li2_lrx_record *)(void *)li2_pgc_current)->base.reasons;
+#else
     if(!p || p->header[1]!=LI2_LRR_VERSION || p->header[2]!=LI2_LRR_BYTES || !p->header[15])return 0;
     return &((struct li2_lrr_record *)(void *)li2_pgc_current)->reasons;
+#endif
 }
 static void lrr_bad(struct li2_lrr_counts *c,unsigned code) {
     if(c && !c->error)__atomic_store_n(&c->error,code,__ATOMIC_RELEASE);

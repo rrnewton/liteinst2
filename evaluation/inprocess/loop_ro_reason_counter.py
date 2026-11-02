@@ -26,6 +26,10 @@ def final_counter_prefix(data, initial, pid, seals):
     need(h[:8]==initial and h[8:12]==(pid,pid,6,23) and 4096<=h[12]<1<<47 and h[12]%4096==0 and
          h[13:]==(1,1,1) and not any(data[BYTES:]) and not any(data[596:600]),
          'exact initialized/protected/closed/ready final counter header and zero tail')
+    return dict(version=5,logical_bytes=1696,**_prefix_cells(data))
+
+
+def _prefix_cells(data):
     ingress=struct.unpack_from('<6Q',data,128)
     group=dict(zip(GROUP_NAMES,struct.unpack_from('<10Q',data,176),strict=True))
     misses=list(struct.unpack_from('<18Q',data,256))
@@ -47,7 +51,7 @@ def final_counter_prefix(data, initial, pid, seals):
                          for k,kind in enumerate(KINDS)}
     # A kill can split any two stores, including observed/production counters.
     # Do not manufacture conservation, a final completion, or a causal timing.
-    return dict(version=5,logical_bytes=1696,events=ingress[0],signals=list(ingress[1:]),
+    return dict(events=ingress[0],signals=list(ingress[1:]),
                 group=group,misses=misses,maps=maps,view=view,native=native,loop=loop,effects=effects,
                 reasons=reasons,reason_prefix_usable=words[0]==0)
 
@@ -73,6 +77,10 @@ def completed_prefix(prefix, terminal):
     """Cross-cell joins only after the unchanged complete application reader."""
     need(type(prefix) is dict and prefix.get('version')==5 and prefix.get('logical_bytes')==1696,
          'distinct ABI5 completion input, never an ABI4 schema substitution')
+    return _completed_reason_cells(prefix,terminal)
+
+
+def _completed_reason_cells(prefix,terminal):
     d=terminal['LI2_PERSISTENT_UNREGISTERED'];l=terminal['LI2_LINKED_EPOCH']
     need(all(d[k]==prefix['group'][k] for k in GROUP_NAMES) and d['misses']==prefix['misses'] and
          l['events']==prefix['events'] and l['signals']==prefix['signals'] and
@@ -108,9 +116,9 @@ def completed_prefix(prefix, terminal):
     need(r['passed'][GATES[-1]]==total('warm_plan'), 'all ten true terms precede each actual warm plan')
 
 
-def completed_controls(prefix, terminal):
+def _completed_controls(prefix, terminal, check):
     """Each observed reason cell changes independently; no synthetic successful run."""
-    completed_prefix(prefix,terminal);paths=[]
+    check(prefix,terminal);paths=[]
     def leaves(value,path=()):
         if type(value) is dict:
             for k,v in value.items():leaves(v,path+(k,))
@@ -125,11 +133,14 @@ def completed_controls(prefix, terminal):
         for part in path[:-1]:target=target[part]
         target[path[-1]]^=1
         need(changed!=prefix, 'nonidentity reason completion stimulus')
-        try:completed_prefix(changed,terminal)
+        try:check(changed,terminal)
         except ValueError:refused.append('.'.join(map(str,path)))
         else:raise ValueError('accepted reason completion mutation '+str(path))
     need(len(refused)==len(set(refused))==98, 'all98 actual reason completion mutations rejected')
     return dict(refusals=refused,guest_executions=0)
+
+def completed_controls(prefix,terminal):
+    return _completed_controls(prefix,terminal,completed_prefix)
 
 def prepare_counter_carrier(state, pin):
     root=Path(__file__).resolve().parents[2]

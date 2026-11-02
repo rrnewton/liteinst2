@@ -807,7 +807,9 @@ static void ped_count(uint64_t *v) {
 static void ped_count(uint64_t *v) {pe_need(*v!=UINT64_MAX,PE_OVERFLOW,0);++*v;}
 #endif
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
-#ifdef LI2_LOOP_RO_REASONS
+#ifdef LI2_LOOP_RO_RETIRED
+#include "loop_ro_retired_counter_owner.inc"
+#elif defined(LI2_LOOP_RO_REASONS)
 #include "loop_ro_reason_counter_owner.inc"
 #elif defined(LI2_PERSISTENT_LOOP_EFFECTS_COUNTERS)
 #include "persistent_loop_effects_counter_owner.inc"
@@ -921,11 +923,24 @@ static int ped_permitted(void) {
 #include "reuse_census_owner.inc"
 #endif
 #define RCC_TEST(bit,value) rcc_test((bit),!!(value))
+#elif defined(LI2_LOOP_RO_RETIRED)
+#include "loop_ro_reasons_owner.inc"
+#include "loop_ro_retired_owner.inc"
+#define RCC_TEST(bit,value) lrx_test((bit),lrr_test((bit),!!(value)))
 #elif defined(LI2_LOOP_RO_REASONS)
 #include "loop_ro_reasons_owner.inc"
 #define RCC_TEST(bit,value) lrr_test((bit),!!(value))
 #else
 #define RCC_TEST(bit,value) (value)
+#endif
+#ifdef LI2_LOOP_RO_RETIRED
+#define LRX_INITIALIZE() lrx_initialize()
+#define LRX_SOURCE(s,r) lrx_source((s),(r))
+#define LRX_RETIRE() lrx_retire()
+#else
+#define LRX_INITIALIZE() ((void)0)
+#define LRX_SOURCE(s,r) ((void)0)
+#define LRX_RETIRE() ((void)0)
 #endif
 #ifdef LI2_LOOP_RO_REASONS
 #define LRR_BEGIN(pc) lrr_begin(pc)
@@ -1010,6 +1025,7 @@ static void selected_persistent_initialize(void) {
     pe_need(!pe.initialized && !pe_busy && !pe_active,PE_STATE,0);pe_busy=1;
     unsigned a=0,b=0;for(unsigned i=0;i<32;i++){a|=pe_archive[i];b|=pe_policy[i];}
     pe_need(a && b && selected_run_protect_contains(0,(uintptr_t)&pe,sizeof pe)==1,PE_STATE,1);
+    LRX_INITIALIZE();
     pe.registered=1;pe.session=selected_session;
 #ifdef LI2_PERSISTENT_SEALED_GENERATION
     pe_need(!sg_initialize(),PE_PUBLICATION,190);
@@ -1105,6 +1121,7 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
     rcc_source(s,r);
 #endif
+    LRX_SOURCE(s,r);
     LRR_EVALUATE();
     if(RCC_TEST(0,PE_SLOT(generation).installed) && RCC_TEST(1,ped_stored()) && RCC_TEST(2,pe_registry()) &&
        RCC_TEST(3,PE_SLOT(generation).generated==pe.p.generated) &&
@@ -1338,6 +1355,7 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
        pe.candidate.plan.result || pe.next_generation>=UINT64_MAX/2)return PE_STATE;
     if(g->installed) {
         ped_claim();g->ready_generation=0;__asm__ volatile("":::"memory");ped_count(PGC_REF(retirements));
+        LRX_RETIRE();
 #ifdef LI2_PERSISTENT_RETAINED_TWO
         pe.retained[pe.selected_slot].identity.generation=0;
         pe.selection.generation=0;
