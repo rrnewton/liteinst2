@@ -407,6 +407,7 @@ fn child(
         .unwrap();
         let gates = prep.gates().to_vec();
         assert_eq!(gates.len(), 2);
+        let publisher = publisher::Publisher::for_preparation(&prep);
         let planned = prep.plan();
         assert_eq!(planned.plan().final_bytes().len(), 1);
         let final_source = &planned.plan().final_bytes()[0];
@@ -500,8 +501,8 @@ fn child(
                 let mut header = [0; 128];
                 encode_into(kind, sequence, snapshot, &mut header);
                 let (header_out, journal_out) = witness.split_at_mut(early::JOURNAL);
-                publisher::publish_words(header_out.try_into().unwrap(), &header);
-                publisher::publish_words(journal_out.try_into().unwrap(), &snapshot.journal);
+                publisher.publish_words(header_out.try_into().unwrap(), &header);
+                publisher.publish_words(journal_out.try_into().unwrap(), &snapshot.journal);
                 snapshot_ready();
             })
         }
