@@ -200,6 +200,36 @@ impl<'s> GraphFacts<'s> {
         &self.branch_entries
     }
 
+    /// Returns cuts over the caller's decoded owner without requiring indexing.
+    ///
+    /// Every non-`Next` instruction keeps its following cut below the owner end.
+    /// The callback only selects which local branch targets also become cuts;
+    /// it does not remove rows, diagnose transfers or establish ownership.
+    /// Unresolved branch targets never become cuts. As with `AllDecoded`, the
+    /// caller supplies the owner.
+    pub fn block_cuts(
+        &self,
+        owner: AddressRange,
+        mut include_branch: impl FnMut(usize) -> bool,
+    ) -> BTreeSet<u64> {
+        let items = self.scan.instructions();
+        let mut cuts = BTreeSet::from([owner.start(), owner.end()]);
+        for (index, (item, row)) in items.iter().zip(&self.rows).enumerate() {
+            let instruction = item.instruction();
+            if instruction.flow_control() != FlowControl::Next
+                && instruction.next_ip() < owner.end()
+            {
+                cuts.insert(instruction.next_ip());
+            }
+            if let Some(Target::Head(target)) = row.branch_target
+                && include_branch(index)
+            {
+                cuts.insert(items[target].address());
+            }
+        }
+        cuts
+    }
+
     /// Resolves every local edge without dropping unknown transfers or targets.
     /// Direct callee coordinates are deliberately outside this local check.
     pub fn indexed(&self) -> Result<IndexedGraph<'_, 's>, GraphError> {
@@ -273,19 +303,7 @@ impl IndexedGraph<'_, '_> {
         let items = self.facts.scan.instructions();
         let reached = match coverage {
             Coverage::AllDecoded(owner) => {
-                let mut cuts = BTreeSet::from([owner.start(), owner.end()]);
-                for (item, row) in items.iter().zip(&self.facts.rows) {
-                    let instruction = item.instruction();
-                    if instruction.flow_control() != FlowControl::Next
-                        && instruction.next_ip() < owner.end()
-                    {
-                        cuts.insert(instruction.next_ip());
-                    }
-                    if let Some(Target::Head(target)) = row.branch_target {
-                        cuts.insert(items[target].address());
-                    }
-                }
-                let cuts: Vec<_> = cuts.into_iter().collect();
+                let cuts: Vec<_> = self.facts.block_cuts(owner, |_| true).into_iter().collect();
                 return Ok(cuts.windows(2).map(|pair| (pair[0], pair[1])).collect());
             }
             Coverage::Reachable(reached) => reached,

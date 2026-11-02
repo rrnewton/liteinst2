@@ -50,10 +50,31 @@ alphabet. Search order, caller policy and first-error behavior remain separate
 and unchanged. Its full workspace and serial checks pass; exact results are in
 [the pun receipt](evaluation/shared-pun/README.md).
 
-The disassembly ledger importer, common-sites example graph, back-edge clock
-and legacy encoder orchestration still need consolidation. These changes do not
-implement certificates or certify complete binary CFG recovery. The exemption
-contract below remains a design proposal.
+At `643c9f357eb41fd5ea20506738dcd44cfd6b0cf2`, the common-sites permit generator
+also uses the shared CFG facts and block cuts. Its aggregate diagnostics and
+complete decoded ownership remain unchanged. The offline material/policy adapter
+now accepts explicitly hash-pinned ET_EXEC programs through the existing importer,
+planner and emitter; it preserves the old pinned profiles and complete site
+inventories on refusal. The full correctness campaign passes, as recorded in
+[the direct-input receipt](evaluation/direct-input/README.md). Those checks do
+not establish application execution or the caller's complete-code premise.
+
+Both frontends already call the same core instruction encoder. The legacy
+live-window/exact-syscall and ordered-artifact paths still duplicate internal
+save/callback/restore orchestration; ELF layout and live publication remain
+separate output adapters. The disassembly ledger importer and back-edge clock
+also retain graph consumers to consolidate. These changes do not implement
+certificates or certify complete binary CFG recovery.
+
+The first direct GNU coreutils 9.5 `cat` comparison at
+`25c9d0adb596642e11663e3ff90083be04ac02f4` executes the original and E9Patch
+output successfully on all three exact input/output cases. E9Patch patches all
+751 selected sites. LiteInst selects 741 local plans but refuses ten sites, emits
+no partial candidate, and leaves its three execution cases unobserved. Six
+refusals require explicit provenance for absolute-indexed jump-table operands;
+four fail the selected placement profile. The complete comparison remains
+failed; see [the direct-program receipt](evaluation/direct-program/README.md).
+The exemption contract below remains a proposal.
 
 ## Page certificate
 

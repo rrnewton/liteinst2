@@ -2109,3 +2109,6 @@ fn pending_selected_full_mode_bytes_count_toward_bounds_and_old_caps() {
         assert!(pending_bind(&o, &l, &wrong).is_err());
     }
 }
+
+#[path = "policy_tests.rs"]
+mod policy_tests;

@@ -8,8 +8,9 @@ use iced_x86::{
     Register, UsedMemory,
 };
 use li2core::contracts::AddressRange;
+use li2core::control_flow::{self, RowFacts, Target};
 use li2core::quiescent::feasibility::{Rel32Constraints as TargetPattern, pun_head};
-use li2core::scanner::InstructionScanner;
+use li2core::scanner::{InstructionScanner, ScanResult};
 use liteinst_rewrite::carrier::elf64::{
     Elf64, ElfVaddr, ObjectType, ParseLimits, SegmentType, Storage,
 };
@@ -345,8 +346,9 @@ struct Function {
     file_offset: u64,
     bytes: Vec<u8>,
     instructions: Vec<Instruction>,
+    scan: ScanResult,
 }
-fn decode(bytes: &[u8], pc: u64) -> Result<Vec<Instruction>> {
+fn decode_scan(bytes: &[u8], pc: u64) -> Result<ScanResult> {
     let scan = InstructionScanner::default()
         .scan(bytes, pc)
         .map_err(|e| e.to_string())?;
@@ -354,7 +356,10 @@ fn decode(bytes: &[u8], pc: u64) -> Result<Vec<Instruction>> {
         !scan.instructions().is_empty() && scan.instructions().len() <= HEAD_LIMIT,
         "complete nonempty head bound",
     )?;
-    Ok(scan
+    Ok(scan)
+}
+fn decode(bytes: &[u8], pc: u64) -> Result<Vec<Instruction>> {
+    Ok(decode_scan(bytes, pc)?
         .instructions()
         .iter()
         .map(|s| *s.instruction())
@@ -376,11 +381,17 @@ fn load_functions(original: &[u8], elf: &Elf64<'_>, p: &Policy) -> Result<(Vec<F
             "function in exact text",
         )?;
         let (bytes, file_offset) = owned_bytes(original, elf, owner)?;
+        let scan = decode_scan(bytes, owner.pc)?;
         functions.push(Function {
             owner: owner.clone(),
             file_offset,
             bytes: bytes.to_vec(),
-            instructions: decode(bytes, owner.pc)?,
+            instructions: scan
+                .instructions()
+                .iter()
+                .map(|s| *s.instruction())
+                .collect(),
+            scan,
         });
     }
     functions.sort_by_key(|f| f.owner.pc);
@@ -529,60 +540,83 @@ struct Graph {
     calls: BTreeSet<u64>,
     errors: BTreeSet<String>,
 }
+// Caller policy projects shared raw facts without turning an invalid function
+// into a fail-first result. In particular, indirect CALL has no edge here.
+fn graph_targets(
+    i: &Instruction,
+    row: &RowFacts,
+    entries: &BTreeSet<u64>,
+    calls: &mut BTreeSet<u64>,
+    errors: &mut BTreeSet<String>,
+) -> Vec<Target> {
+    let mut successors = Vec::new();
+    match i.flow_control() {
+        FlowControl::Next => successors.extend_from_slice(row.successors()),
+        FlowControl::Call if i.code() == Code::Call_rel32_64 => {
+            let target = row.call_target().expect("direct CALL fact");
+            if !entries.contains(&target) {
+                errors.insert(format!("0x{:x}:external-call", i.ip()));
+            }
+            calls.insert(target);
+            successors.push(row.continuation().expect("CALL continuation fact"));
+        }
+        FlowControl::Return if i.code() == Code::Retnq => {}
+        FlowControl::ConditionalBranch | FlowControl::UnconditionalBranch => {
+            // This profile accepts NearBranch64, not every near operand kind
+            // represented by the shared facts. Preserve that exact policy.
+            if direct(i).is_some() {
+                successors.push(row.branch_target().expect("near branch fact"));
+            } else {
+                errors.insert(format!("0x{:x}:non-near-branch", i.ip()));
+            }
+            if i.flow_control() == FlowControl::ConditionalBranch {
+                successors.push(row.continuation().expect("conditional continuation fact"));
+            }
+        }
+        _ => {
+            errors.insert(format!("0x{:x}:unsupported-control-flow", i.ip()));
+        }
+    }
+    successors
+}
 fn graph(f: &Function, entries: &BTreeSet<u64>) -> Graph {
-    let heads: BTreeSet<_> = f.instructions.iter().map(Instruction::ip).collect();
-    let stop = f.owner.pc + f.owner.length;
-    let mut boundaries = BTreeSet::from([f.owner.pc, stop]);
+    let items = f.scan.instructions();
     let mut edges = BTreeMap::new();
     let mut calls = BTreeSet::new();
     let mut errors = BTreeSet::new();
-    for i in &f.instructions {
-        let mut successors = Vec::new();
-        let next = i.next_ip();
-        if i.flow_control() != FlowControl::Next && next < stop {
-            boundaries.insert(next);
-        }
-        match i.flow_control() {
-            FlowControl::Next => successors.push(next),
-            FlowControl::Call if i.code() == Code::Call_rel32_64 => {
-                let target = i.near_branch_target();
-                if !entries.contains(&target) {
-                    errors.insert(format!("0x{:x}:external-call", i.ip()));
+    let facts = control_flow::build(&f.scan, |_, item, row| {
+        let i = item.instruction();
+        let successors = graph_targets(i, row, entries, &mut calls, &mut errors)
+            .into_iter()
+            .map(|target| match target {
+                Target::Head(index) => items[index].address(),
+                Target::NotHead(address) => {
+                    errors.insert(format!(
+                        "0x{:x}:target-not-function-head:0x{address:x}",
+                        i.ip()
+                    ));
+                    address
                 }
-                calls.insert(target);
-                successors.push(next);
-            }
-            FlowControl::Return if i.code() == Code::Retnq => {}
-            FlowControl::ConditionalBranch | FlowControl::UnconditionalBranch => {
-                if let Some(target) = direct(i) {
-                    successors.push(target);
-                    boundaries.insert(target);
-                } else {
-                    errors.insert(format!("0x{:x}:non-near-branch", i.ip()));
-                }
-                if i.flow_control() == FlowControl::ConditionalBranch {
-                    successors.push(next);
-                }
-            }
-            _ => {
-                errors.insert(format!("0x{:x}:unsupported-control-flow", i.ip()));
-            }
-        }
-        for target in &successors {
-            if !heads.contains(target) {
-                errors.insert(format!(
-                    "0x{:x}:target-not-function-head:0x{target:x}",
-                    i.ip()
-                ));
-            }
-        }
+            })
+            .collect();
         edges.insert(i.ip(), successors);
-    }
-    // Foreign branch coordinates remain explicit errors; never expand the
-    // function/block owner to accommodate them.
-    boundaries.retain(|p| *p == stop || heads.contains(p));
-    let bounds: Vec<_> = boundaries.into_iter().collect();
-    let blocks = bounds.windows(2).map(|p| (p[0], p[1])).collect();
+        Ok::<_, std::convert::Infallible>(())
+    })
+    .unwrap();
+    let owner = AddressRange::new(
+        f.owner.pc,
+        usize::try_from(f.owner.length).expect("bounded function length"),
+    )
+    .expect("checked function owner");
+    // Keep all decoded ownership, including unreachable padding. A branch
+    // rejected by this profile must not introduce a target cut either.
+    let mut cuts = facts.block_cuts(owner, |index| direct(items[index].instruction()).is_some());
+    // Foreign coordinates remain diagnostics and cannot enlarge ownership.
+    cuts.retain(|p| {
+        *p == owner.end() || items.binary_search_by_key(p, |item| item.address()).is_ok()
+    });
+    let cuts: Vec<_> = cuts.into_iter().collect();
+    let blocks = cuts.windows(2).map(|pair| (pair[0], pair[1])).collect();
     Graph {
         edges,
         blocks,
@@ -1407,6 +1441,7 @@ mod tests {
     use super::*;
 
     fn function(name: &str, pc: u64, bytes: &[u8]) -> Function {
+        let scan = decode_scan(bytes, pc).unwrap();
         Function {
             owner: Owner {
                 name: name.to_owned(),
@@ -1416,7 +1451,12 @@ mod tests {
             },
             file_offset: pc,
             bytes: bytes.to_vec(),
-            instructions: decode(bytes, pc).unwrap(),
+            instructions: scan
+                .instructions()
+                .iter()
+                .map(|s| *s.instruction())
+                .collect(),
+            scan,
         }
     }
     fn one(bytes: &[u8]) -> Instruction {
@@ -2479,6 +2519,222 @@ mod tests {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    mod graph_parity {
+        use super::*;
+
+        // Exact f8f2e709 graph body, with only its function name changed.
+        fn predecessor_graph(f: &Function, entries: &BTreeSet<u64>) -> Graph {
+            let heads: BTreeSet<_> = f.instructions.iter().map(Instruction::ip).collect();
+            let stop = f.owner.pc + f.owner.length;
+            let mut boundaries = BTreeSet::from([f.owner.pc, stop]);
+            let mut edges = BTreeMap::new();
+            let mut calls = BTreeSet::new();
+            let mut errors = BTreeSet::new();
+            for i in &f.instructions {
+                let mut successors = Vec::new();
+                let next = i.next_ip();
+                if i.flow_control() != FlowControl::Next && next < stop {
+                    boundaries.insert(next);
+                }
+                match i.flow_control() {
+                    FlowControl::Next => successors.push(next),
+                    FlowControl::Call if i.code() == Code::Call_rel32_64 => {
+                        let target = i.near_branch_target();
+                        if !entries.contains(&target) {
+                            errors.insert(format!("0x{:x}:external-call", i.ip()));
+                        }
+                        calls.insert(target);
+                        successors.push(next);
+                    }
+                    FlowControl::Return if i.code() == Code::Retnq => {}
+                    FlowControl::ConditionalBranch | FlowControl::UnconditionalBranch => {
+                        if let Some(target) = direct(i) {
+                            successors.push(target);
+                            boundaries.insert(target);
+                        } else {
+                            errors.insert(format!("0x{:x}:non-near-branch", i.ip()));
+                        }
+                        if i.flow_control() == FlowControl::ConditionalBranch {
+                            successors.push(next);
+                        }
+                    }
+                    _ => {
+                        errors.insert(format!("0x{:x}:unsupported-control-flow", i.ip()));
+                    }
+                }
+                for target in &successors {
+                    if !heads.contains(target) {
+                        errors.insert(format!(
+                            "0x{:x}:target-not-function-head:0x{target:x}",
+                            i.ip()
+                        ));
+                    }
+                }
+                edges.insert(i.ip(), successors);
+            }
+            // Foreign branch coordinates remain explicit errors; never expand the
+            // function/block owner to accommodate them.
+            boundaries.retain(|p| *p == stop || heads.contains(p));
+            let bounds: Vec<_> = boundaries.into_iter().collect();
+            let blocks = bounds.windows(2).map(|p| (p[0], p[1])).collect();
+            Graph {
+                edges,
+                blocks,
+                calls,
+                errors,
+            }
+        }
+
+        fn compare(f: &Function, entries: &BTreeSet<u64>) -> Graph {
+            assert_eq!(f.scan.snapshot(), f.bytes.as_slice());
+            assert_eq!(
+                f.scan
+                    .instructions()
+                    .iter()
+                    .map(|item| *item.instruction())
+                    .collect::<Vec<_>>(),
+                f.instructions
+            );
+            let old = predecessor_graph(f, entries);
+            let actual = graph(f, entries);
+            assert_eq!(actual.errors, old.errors);
+            assert_eq!(actual.calls, old.calls);
+            assert_eq!(actual.edges, old.edges);
+            assert_eq!(actual.blocks, old.blocks);
+            actual
+        }
+
+        #[test]
+        fn shared_graph_matches_complete_predecessor_corpus_and_invalid_functions() {
+            let functions = original_corpus();
+            let entries = functions.iter().map(|f| f.owner.pc).collect();
+            for f in &functions {
+                compare(f, &entries);
+                compare(f, &BTreeSet::new());
+            }
+            let fixtures: &[&[u8]] = &[
+                &[0xc3],
+                &[0xc2, 0, 0],
+                &[0x66, 0xc3],
+                &[0x48, 0xc3],
+                &[0xc3, 0x90, 0xc3],
+                &[0x90],
+                &[0xff, 0xd0, 0x74, 0x7f, 0xc3],
+                &[0xff, 0xe0, 0x0f, 0x05, 0xc3],
+                &[0xe8, 0xfb, 0x0f, 0, 0, 0xc3],
+                &[0xe8, 0xfb, 0x0f, 0, 0],
+                &[0xe8, 0, 0, 0, 0, 0xc3],
+                &[0x74, 0, 0xc3],
+                &[0x75, 0xff, 0xc3],
+                &[0x75, 0xfc, 0xc3],
+                &[0xeb, 1, 0x90, 0xc3],
+                &[0xe2, 0xfe, 0xc3],
+                &[0xe3, 0xfe, 0xc3],
+                &[0x66, 0x74, 0, 0xc3],
+            ];
+            for bytes in fixtures {
+                let f = function("graph fixture", 0x1000, bytes);
+                compare(&f, &BTreeSet::new());
+                compare(&f, &BTreeSet::from([0x1000, 0x1005, 0x2000]));
+            }
+        }
+
+        #[test]
+        fn shared_graph_preserves_aggregate_errors_call_policy_and_unreachable_blocks() {
+            let f = function("two faults", 0x1000, &[0xff, 0xd0, 0x74, 0x7f, 0xc3]);
+            let g = compare(&f, &BTreeSet::new());
+            assert_eq!(
+                g.errors,
+                BTreeSet::from([
+                    "0x1000:unsupported-control-flow".to_owned(),
+                    "0x1002:target-not-function-head:0x1083".to_owned(),
+                ])
+            );
+            assert!(g.calls.is_empty());
+            assert_eq!(
+                g.edges,
+                BTreeMap::from([
+                    (0x1000, vec![]),
+                    (0x1002, vec![0x1083, 0x1004]),
+                    (0x1004, vec![]),
+                ])
+            );
+            assert_eq!(
+                g.blocks,
+                [(0x1000, 0x1002), (0x1002, 0x1004), (0x1004, 0x1005)]
+            );
+
+            let f = function(
+                "foreign callee and missing continuation",
+                0x1000,
+                &[0xe8, 0xfb, 0x0f, 0, 0],
+            );
+            let g = compare(&f, &BTreeSet::new());
+            assert_eq!(
+                g.errors,
+                BTreeSet::from([
+                    "0x1000:external-call".to_owned(),
+                    "0x1000:target-not-function-head:0x1005".to_owned(),
+                ])
+            );
+            assert_eq!(g.calls, BTreeSet::from([0x2000]));
+            assert_eq!(g.edges, BTreeMap::from([(0x1000, vec![0x1005])]));
+            assert_eq!(g.blocks, [(0x1000, 0x1005)]);
+
+            let f = function("duplicate destinations", 0x1000, &[0x74, 0, 0xc3]);
+            let g = compare(&f, &BTreeSet::new());
+            assert!(g.errors.is_empty());
+            assert_eq!(g.edges[&0x1000], [0x1002, 0x1002]);
+            assert_eq!(g.blocks, [(0x1000, 0x1002), (0x1002, 0x1003)]);
+
+            let f = function("unreachable padding", 0x1000, &[0xeb, 1, 0x90, 0xc3]);
+            let g = compare(&f, &BTreeSet::new());
+            assert!(g.errors.is_empty());
+            assert_eq!(g.edges[&0x1002], [0x1003]);
+            assert_eq!(
+                g.blocks,
+                [(0x1000, 0x1002), (0x1002, 0x1003), (0x1003, 0x1004)]
+            );
+        }
+
+        #[test]
+        fn non64_branch_policy_keeps_fallthrough_but_does_not_add_a_target_cut() {
+            let f = function("synthetic operand policy", 0x1000, &[0x74, 1, 0x90, 0xc3]);
+            let facts = control_flow::build(&f.scan, |_, _, _| Ok::<_, ()>(())).unwrap();
+            let row = facts.row(0).unwrap();
+            assert_eq!(row.branch_target(), Some(Target::Head(2)));
+            assert_eq!(row.continuation(), Some(Target::Head(1)));
+            // This is a defensive caller-policy control, not a claim that the
+            // default 64-bit decoder emits these operand kinds for this Jcc.
+            for kind in [OpKind::NearBranch16, OpKind::NearBranch32] {
+                let mut instruction = f.instructions[0];
+                instruction.set_op0_kind(kind);
+                assert_eq!(instruction.flow_control(), FlowControl::ConditionalBranch);
+                assert!(direct(&instruction).is_none());
+                let mut calls = BTreeSet::new();
+                let mut errors = BTreeSet::new();
+                let targets =
+                    graph_targets(&instruction, row, &BTreeSet::new(), &mut calls, &mut errors);
+                assert_eq!(targets, [Target::Head(1)]);
+                assert!(calls.is_empty());
+                assert_eq!(
+                    errors,
+                    BTreeSet::from(["0x1000:non-near-branch".to_owned()])
+                );
+                let owner = AddressRange::new(0x1000, 4).unwrap();
+                let cuts = facts.block_cuts(owner, |index| {
+                    direct(if index == 0 {
+                        &instruction
+                    } else {
+                        f.scan.instructions()[index].instruction()
+                    })
+                    .is_some()
+                });
+                assert_eq!(cuts, BTreeSet::from([0x1000, 0x1002, 0x1004]));
             }
         }
     }
