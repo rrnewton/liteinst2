@@ -7,9 +7,12 @@ Run from the clean repository root with --expect-revision REV40,
 the guard that forbids every later process launch.
 The original seed helper and source/ELF/raw admission stay unchanged. Only the
 current, explicitly pinned require_seed_record helper supplies the new join.
+Also pass --lifecycle-comparator-sha256 SHA to exercise its exact canonical seed
+assertion with the same replayed seed and six mutations, not full admission.
 This diagnostic cannot qualify an owner or replace any failed historical run.
 """
 import argparse
+import ast
 import copy
 import hashlib
 import json
@@ -25,6 +28,7 @@ from types import SimpleNamespace
 ROOT=Path.cwd().resolve()
 NAMES=('seed-headers','seed-link','seed-libraries','seed-prerequisite')
 ERROR='whole original independently qualified seed'
+LIFECYCLE_ERROR='complete separately qualified seed capture'
 BOUNDS={'cpu_seconds':30,'wall_seconds':60,'address_space_bytes':512<<20,'file_bytes':16<<20}
 
 
@@ -49,12 +53,14 @@ def main():
     ap.add_argument('--native-receipt',type=Path,required=True)
     ap.add_argument('--native-receipt-sha256',required=True)
     ap.add_argument('--comparator-sha256',required=True)
+    ap.add_argument('--lifecycle-comparator-sha256',required=True)
     ap.add_argument('--output',type=Path,required=True);args=ap.parse_args()
     need(not sys.flags.optimize and sys.version_info[:2]==(3,12)and len(os.sched_getaffinity(0))==1,
          'assertions, Python3.12 and one externally reserved CPU')
     need(re.fullmatch('[0-9a-f]{40}',args.expect_revision)and
          all(re.fullmatch('[0-9a-f]{64}',v)for v in(args.native_receipt_sha256,args.comparator_sha256)),
          'explicit current revision and whole receipt/comparator identities')
+    need(re.fullmatch('[0-9a-f]{64}',args.lifecycle_comparator_sha256),'explicit whole lifecycle comparator identity')
     need(not args.output.exists(),'fresh diagnostic output')
     resource.setrlimit(resource.RLIMIT_CPU,(30,30));resource.setrlimit(resource.RLIMIT_AS,(512<<20,512<<20))
     resource.setrlimit(resource.RLIMIT_FSIZE,(16<<20,16<<20))
@@ -88,6 +94,7 @@ def main():
                       reproduce=['python3','-B','evaluation/inprocess/replay_loop_native_seed.py',
                         '--expect-revision',revision,'--native-receipt','<RETAINED_NATIVE_RECEIPT>',
                         '--native-receipt-sha256',args.native_receipt_sha256,'--comparator-sha256',args.comparator_sha256,
+                        '--lifecycle-comparator-sha256',args.lifecycle_comparator_sha256,
                         '--output','target/evaluation/inprocess/<FRESH_ATTEMPT>'])
         def pin(name):
             p=Path(name).resolve(strict=True);v=fact(p)
@@ -100,6 +107,9 @@ def main():
         comparator=ROOT/'evaluation/inprocess/persistent_loop_native_prerequisite.py'
         comparator_fact=fact(comparator)
         need(comparator_fact['sha256']==args.comparator_sha256,'exact current seed comparator')
+        lifecycle=ROOT/'evaluation/inprocess/persistent_loop_lifecycle_prerequisite.py'
+        lifecycle_fact=fact(lifecycle)
+        need(lifecycle_fact['sha256']==args.lifecycle_comparator_sha256,'exact current lifecycle seed comparator')
         pin(ROOT/'evaluation/inprocess/unrolled_hash_owner.py')
         pin(ROOT/'evaluation/inprocess/persistent_dynamic.py')
         def forbidden(*unused,**kwargs):raise RuntimeError('process launch forbidden during retained replay')
@@ -109,6 +119,19 @@ def main():
         import unrolled_hash_owner as original
         from persistent_dynamic import digest
         from persistent_loop_native_prerequisite import require_seed_record
+        # Exercise the actual one named lifecycle join, without importing or
+        # invoking that full prerequisite on a native-only receipt.
+        lifecycle_tree=ast.parse(lifecycle.read_bytes())
+        joins=[n for n in ast.walk(lifecycle_tree)if isinstance(n,ast.Call)and
+               isinstance(n.func,ast.Name)and n.func.id=='need'and len(n.args)==2 and
+               isinstance(n.args[1],ast.Constant)and n.args[1].value==LIFECYCLE_ERROR]
+        expected_join=ast.parse("need(digest(native_holder['seed_prerequisite'])==digest(a['seed_prerequisite']),"
+                                "'complete separately qualified seed capture')",mode='eval').body
+        need(len(joins)==1 and ast.dump(joins[0])==ast.dump(expected_join),'one exact whole canonical lifecycle seed assertion')
+        lifecycle_code=compile(ast.Expression(body=joins[0]),str(lifecycle),'eval')
+        def lifecycle_seed(recorded):
+            return eval(lifecycle_code,dict(__builtins__={},need=original.need,digest=digest,
+                native_holder={'seed_prerequisite':replayed},a={'seed_prerequisite':recorded}))
         # Every imported repository dependency, except the explicit comparator
         # successor and this new script, is a whole original native input.
         def imports():
@@ -159,6 +182,9 @@ def main():
         compare(replayed,saved,'')
         need(used==list(NAMES)and replayed!=saved and differences,'actual original JSON representation regression')
         require_seed_record(replayed,saved)
+        lifecycle_seed(saved)
+        result['lifecycle_join']=dict(comparator=lifecycle_fact,canonical_equal=True,controls=[],
+            scope='Exact lifecycle seed assertion only; no lifecycle prerequisite or owner credit.')
         result['phase']='tamper_controls'
         for label in('cpuid_word','component_extent','fxsave_hash','missing_field','extra_field','bool_int'):
             changed=copy.deepcopy(saved)
@@ -174,9 +200,15 @@ def main():
             except ValueError as error:need(str(error)==ERROR,'exact intended whole-seed rejection')
             else:raise ValueError('accepted seed corruption '+label)
             result['controls'].append(label)
+            try:lifecycle_seed(changed)
+            except ValueError as error:need(str(error)==LIFECYCLE_ERROR,'exact intended lifecycle whole-seed rejection')
+            else:raise ValueError('accepted lifecycle seed corruption '+label)
+            result['lifecycle_join']['controls'].append(label)
         result['phase']='closure';imports()
         need(all(fact(Path(p))==v for p,v in pins.items())and fact(path)==receipt_fact and
              fact(comparator)==comparator_fact and fact(Path(__file__).resolve())==result['driver'],'whole replay source/evidence unchanged')
+        need(fact(lifecycle)==lifecycle_fact and result['lifecycle_join']['controls']==result['controls'],
+             'whole lifecycle comparator unchanged and all six original corruptions rejected')
         result.update(status='passed',phase='complete',source_unchanged=True,comparator=comparator_fact,
             seed_raw=fact(directory/'seed-prerequisite.stdout'),seed_elf=fact(directory/'seed-probe'),
             canonical_seed_sha256=digest(replayed),python_equal=False,canonical_equal=True,

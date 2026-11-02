@@ -131,7 +131,7 @@ def prerequisite(path,expected_sha256,r,pin,binary,archive):
         if c['name']=='seed-prerequisite')+1],seed_prerequisite=dict(planned=1,status='unexecuted',launched=False,
         expected_exit=0,bounds=BOUNDS['seed'],completed_applications=0,owner_subjects=0,performance_credit=False))
     seed=seed_prerequisite(builder,directory,pin,binary,recorded,native_holder)
-    need(native_holder['seed_prerequisite']==a['seed_prerequisite'],'complete separately qualified seed capture')
+    need(digest(native_holder['seed_prerequisite'])==digest(a['seed_prerequisite']),'complete separately qualified seed capture')
     seed=(*seed,capture(rows['seed-prerequisite'],'stdout'))
     need([(c['lane'],c['mode'],c['placement'])for c in a['native_cases']]==[(0,c,p)for c,p in NATIVE_ORDER],
          'all four exact native references in original orientation/placement order')
