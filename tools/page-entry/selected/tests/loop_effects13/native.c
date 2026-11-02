@@ -385,7 +385,7 @@ static void plan_bytes(void){
     sealed(&directory,directory_bytes,sizeof directory_bytes,bank_address+0xa0000,PROT_READ);
     for(unsigned i=0;i<4;i++){struct owned_mapping *m=(struct owned_mapping *[]){&source,&image,&metadata,&directory}[i];
         long a=RAW(SYS_mmap,0,m->n,PROT_READ|PROT_WRITE,MAP_PRIVATE,m->fd,0);need(a>0&&!audit_mapping(m,PROT_READ),263);authority_checks++;
-        need(!RAW(SYS_munmap,a,m->n,0,0,0)&&audit_mapping(m,PROT_READ),264);unsigned char byte=0;need(RAW(SYS_pwrite64,m->fd,&byte,1,0,0,0)==-EPERM,265);authority_checks++;}
+        need(!RAW(SYS_munmap,a,m->n,0,0,0,0)&&audit_mapping(m,PROT_READ),264);unsigned char byte=0;need(RAW(SYS_pwrite64,m->fd,&byte,1,0,0,0)==-EPERM,265);authority_checks++;}
 }
 static void setup(void){
     need(getauxval(AT_PAGESZ)==PAGE&&RAW(SYS_getpid,0,0,0,0,0,0)==RAW(SYS_gettid,0,0,0,0,0,0),100);singleton();
@@ -424,7 +424,7 @@ static void retire(void){
     if(handling)return;
     uintptr_t *at[]={&reservation,&data_area,&slots_area,&spill_area,&stack_area};const size_t n[]={BANK,DATA+PAGE,PAGE,PAGE,STACK+2*PAGE};
     for(unsigned i=0;i<5;i++)if(*at[i]){if(RAW(SYS_munmap,*at[i],n[i],0,0,0,0)){if(!first_error)first_error=95+i;}else *at[i]=0;}
-    if(alt_area){stack_t disabled={.ss_flags=SS_DISABLE};if(RAW(SYS_sigaltstack,&disabled,0,0,0,0,0)){if(!first_error)first_error=98;}else if(RAW(SYS_munmap,alt_area,ALT+2*PAGE,0,0,0)){if(!first_error)first_error=99;}else alt_area=0;}
+    if(alt_area){stack_t disabled={.ss_flags=SS_DISABLE};if(RAW(SYS_sigaltstack,&disabled,0,0,0,0,0)){if(!first_error)first_error=98;}else if(RAW(SYS_munmap,alt_area,ALT+2*PAGE,0,0,0,0)){if(!first_error)first_error=99;}else alt_area=0;}
     cleanup_done=!first_error&&!source.at&&!image.at&&!metadata.at&&!directory.at&&source.fd==-1&&image.fd==-1&&metadata.fd==-1&&directory.fd==-1&&!reservation&&!data_area&&!slots_area&&!spill_area&&!stack_area&&!alt_area;
 }
 _Static_assert(32*sizeof(uint64_t)+sizeof(region_seed)+sizeof(xlayout)+2*sizeof(struct li2_decoder_stats)+
