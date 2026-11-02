@@ -26,6 +26,7 @@ def byte_fact(raw):
 def bind(pin):
     """Retain the actual shared adapter/table in the caller's ordinary closure."""
     pin(Path(__file__).resolve())
+    pin(Path(__file__).with_name('page_selected_maps_reset_sources.py').resolve())
     path = pin(DATA)
     need(byte_fact(path.read_bytes()) == DATA_FACT, 'whole source-owned maps inverse table')
 
@@ -77,7 +78,8 @@ Unknown paths/targets do not acquire an inverse or an acceptance exemption.
          table['profile'] == 'maps-default-source-inverses-v1', 'exact inverse table domain')
     row = table['sources'].get(str(path.relative_to(ROOT)))
     if row is None:
-        return dict(observed)  # The original caller comparison still rejects a mismatch.
+        from page_selected_maps_reset_sources import historical as reset_historical
+        return reset_historical(str(path.relative_to(ROOT)), want, observed, raw)
     if 'successor' in row:
         successor = row['successor']
         need(set(successor) == {'current', 'inverse'} and actual == successor['current'],
