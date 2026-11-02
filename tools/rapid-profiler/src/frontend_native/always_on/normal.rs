@@ -685,7 +685,6 @@ impl NormalState {
         };
         Ok(SelectedFunction { index, function })
     }
-    #[inline(always)]
     fn selected_geometry(
         &self,
         selected: SelectedFunction,
