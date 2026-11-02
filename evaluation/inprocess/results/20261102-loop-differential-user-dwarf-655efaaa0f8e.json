@@ -1,0 +1,417 @@
+{
+ "attribution": {
+  "denominator": "All 965 in-window user samples, including unknowns; raw CPU-clock period units (nanoseconds).",
+  "leaf_partition": {
+   "groups": 95,
+   "other_known": {
+    "groups": 89,
+    "sampled_period": 4656565610,
+    "samples": 461
+   },
+   "shown": [
+    {
+     "id": "leaf_1",
+     "label": "bridge:0x68b0-0x693e:equal",
+     "sampled_period": 1494949480,
+     "samples": 148
+    },
+    {
+     "id": "leaf_2",
+     "label": "bridge:0x69a40-0x69d8e:li2_repeat_lease_closed",
+     "sampled_period": 1030303020,
+     "samples": 102
+    },
+    {
+     "id": "leaf_3",
+     "label": "bridge:0x4af50-0x4b1d4:li2_repeat_custody_quiet",
+     "sampled_period": 999999990,
+     "samples": 99
+    },
+    {
+     "id": "leaf_4",
+     "label": "bridge:0x9450-0x951e:pe_bytes",
+     "sampled_period": 737373730,
+     "samples": 73
+    },
+    {
+     "id": "leaf_5",
+     "label": "bridge:0x30300-0x31eab:pda_receipt",
+     "sampled_period": 666666660,
+     "samples": 66
+    }
+   ],
+   "unknown": {
+    "sampled_period": 161616160,
+    "samples": 16
+   }
+  },
+  "observed_path_partition": {
+   "groups": 252,
+   "remainder": {
+    "groups": 250,
+    "sampled_period": 8585858500,
+    "samples": 850
+   },
+   "shown": [
+    {
+     "frames": [
+      "bridge:0x30300-0x31eab:pda_receipt",
+      "bridge:0x31eb0-0x320f0:pda_permitted.part.0",
+      "bridge:0x32de0-0x3334c:pe_sub_choose",
+      "bridge:0x35480-0x38985:selected_generic_trace",
+      "bridge:0x3cfe0-0x4002c:handler",
+      "bridge:0x61a40-0x61a5a:li2_raw6"
+     ],
+     "sampled_leaf": "bridge:0x30300-0x31eab:pda_receipt",
+     "sampled_period": 606060600,
+     "samples": 60,
+     "state": "bounded_observed_frames"
+    },
+    {
+     "frames": [
+      "bridge:0x68b0-0x693e:equal",
+      "bridge:0x3cfe0-0x4002c:handler",
+      "bridge:0x61a40-0x61a5a:li2_raw6"
+     ],
+     "sampled_leaf": "bridge:0x68b0-0x693e:equal",
+     "sampled_period": 555555550,
+     "samples": 55,
+     "state": "bounded_observed_frames"
+    }
+   ]
+  },
+  "path_scope": "Each path contains the authoritative leaf and every displayed raw-return-address frame; a repeated first leaf is intentional. Paths partition samples once. Unknowns remain in the remainder; no complete stack or causal ownership is established.",
+  "selection": "Every leaf and bounded observed path with sampled period >= 5% of the global user-period denominator; no rounded cutoff.",
+  "unwind_complete": false,
+  "unwind_states": {
+   "bounded_observed_frames": 889,
+   "empty": 16,
+   "leaf_only": 60
+  }
+ },
+ "bounds": {
+  "observer": [
+   30,
+   1073741824,
+   134217728,
+   80
+  ],
+  "order": [
+   "cpu_seconds",
+   "address_space_bytes",
+   "file_size_bytes",
+   "wall_seconds"
+  ],
+  "ordinary_capture_bytes": 16777216,
+  "perf_data_bytes": 134217728,
+  "target": [
+   30,
+   536870912,
+   16777216,
+   60
+  ],
+  "unwinder": [
+   30,
+   1073741824,
+   134217728,
+   80
+  ]
+ },
+ "closure": {
+  "adopted_children": 0,
+  "children_after": "ECHILD",
+  "children_before": "ECHILD",
+  "cleanup_complete": true,
+  "errors": [],
+  "inputs_unchanged": true,
+  "source_unchanged": true
+ },
+ "credits": {
+  "original_smoke_reclassified": false,
+  "owner": false,
+  "performance": false,
+  "qualification": false,
+  "successful_target": false
+ },
+ "hardware": {
+  "affinity_cpu_count": 1,
+  "architecture": "x86_64",
+  "cpu family": "26",
+  "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+  "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+  "kernel_version": "7.1.3",
+  "microcode": "0xb101066",
+  "model": "17",
+  "model name": "AMD EPYC 9D85 158-Core Processor",
+  "probe_cpu": 1,
+  "stepping": "0",
+  "vendor_id": "AuthenticAMD"
+ },
+ "independent_data_review": {
+  "artifact_bytes": 87267890,
+  "artifacts_hashed": 72,
+  "bridge_labels_joined_to_retained_elf": 180,
+  "observer_command_rows_joined": 2,
+  "ordered_unwind_headers": 965,
+  "owner_captures_hashed": 13,
+  "raw_dwarf_sample_payloads": 965,
+  "raw_perf_record_headers": 117549,
+  "scope": "Read-only hashes, raw record/sample payload joins, retained unwind-table arithmetic and ELF intervals. No target, unwinder or reader replay; no independent proof of complete unwinding or time allocation.",
+  "timeline_and_leaf_path_totals_conserved": true
+ },
+ "observer_commands": [
+  {
+   "captures": {
+    "stderr": {
+     "bytes": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stdout": {
+     "bytes": 3007,
+     "sha256": "d2b8ac526173f8e0c735ed62a053351c8f7b0fe596974a39f007279b7684c87d"
+    }
+   },
+   "cleanup_errors": [],
+   "duration_ns": 14148537,
+   "error": null,
+   "exit": 0,
+   "name": "perf-libraries",
+   "reaped": true,
+   "timed_out": false
+  },
+  {
+   "captures": {
+    "stderr": {
+     "bytes": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stdout": {
+     "bytes": 258845,
+     "sha256": "bf35c1c0a8bda682bd653d187df1c96ca32997bae44e5987b9f5da5274179169"
+    }
+   },
+   "cleanup_errors": [],
+   "duration_ns": 88407464,
+   "error": null,
+   "exit": 0,
+   "name": "user-dwarf-unwind",
+   "reaped": true,
+   "timed_out": false
+  }
+ ],
+ "perf": {
+  "clock": "mono",
+  "dwarf_stack_bytes": 4096,
+  "event": "cpu-clock:u",
+  "exit": 0,
+  "external_symbol_downloads": false,
+  "frequency_hz": 99,
+  "instrumented_observer_duration_ns": 30855238775,
+  "mmap_pages": 64,
+  "reaped": true,
+  "strict_frequency": true,
+  "unwinder_max_frames": 64,
+  "user_callchains": true
+ },
+ "private_table_facts": {
+  "attribution.json": {
+   "bytes": 112783,
+   "sha256": "a778c38c3b6a4fa88b9c348ae8224665b4a13906c23856ae6cd0486a569d224b"
+  },
+  "maps.json": {
+   "bytes": 28151550,
+   "sha256": "ed960b32317483d9e7f0d1d0b82b01a64286ab0157208ab2e9a38156e154e502"
+  },
+  "perf.data": {
+   "bytes": 19841116,
+   "sha256": "f32137bb627c4e7d1b89a0fc47cf1c1d23f37882f57eb0e42b41800adb43a903"
+  },
+  "samples.csv": {
+   "bytes": 5808,
+   "sha256": "d908ed1b2cd28ece426ed030abc0798a72e5d8acb14ae12d04509395b88f493e"
+  },
+  "samples.json": {
+   "bytes": 814044,
+   "sha256": "4e3df564d65f7280d3dc249eb5ad60420fafd068dbcbf0a45cdf88b971037443"
+  },
+  "unwound.json": {
+   "bytes": 389404,
+   "sha256": "ef9d3cf872cb39ed9925d7dd832f7fd78280b2ae6659ba68d95b1b19e53060a2"
+  }
+ },
+ "profile": "loop-differential-user-dwarf-diagnostic-v1",
+ "receipts": {
+  "diagnostic": {
+   "bytes": 1670975,
+   "path": "target/evaluation/inprocess/loop-differential-profile-attempt-1/receipt.json",
+   "sha256": "ea96f24cd74043206babdc814e417a6186e6e3addfe689b3fcef6f6bb1e6c47c"
+  },
+  "original_failed_smoke": {
+   "bytes": 1427150,
+   "path": "target/evaluation/inprocess/loop-guard-smoke-attempt-1/receipt.json",
+   "sha256": "cf9062450ae70c2bfbda05652e22f494181540b78e72f7040b0cc8aec75d4c90"
+  },
+  "owner": {
+   "bytes": 22535,
+   "path": "target/evaluation/inprocess/loop-differential-profile-attempt-1/capture/owner.json",
+   "sha256": "a33cdc968c7ae1e9e326f5602055bb08fa868fdff2633a0c30d1757a78976605"
+  }
+ },
+ "reproduction": {
+  "normalization": "Only the absolute Python executable is rendered as python3.12; all actual collector options and paths are retained.",
+  "observed_collector_argv_normalized": [
+   "python3.12",
+   "-B",
+   "evaluation/inprocess/loop_differential_profile.py",
+   "--expect-revision",
+   "655efaaa0f8ef77d23182f9d35712c0bb7a5e021",
+   "--smoke-receipt",
+   "target/evaluation/inprocess/loop-guard-smoke-attempt-1/receipt.json",
+   "--smoke-receipt-sha256",
+   "cf9062450ae70c2bfbda05652e22f494181540b78e72f7040b0cc8aec75d4c90",
+   "--output",
+   "target/evaluation/inprocess/loop-differential-profile-attempt-1"
+  ],
+  "reproduce_argv": [
+   "python3.12",
+   "-B",
+   "evaluation/inprocess/loop_differential_profile.py",
+   "--expect-revision",
+   "655efaaa0f8ef77d23182f9d35712c0bb7a5e021",
+   "--smoke-receipt",
+   "target/evaluation/inprocess/loop-guard-smoke-attempt-1/receipt.json",
+   "--smoke-receipt-sha256",
+   "cf9062450ae70c2bfbda05652e22f494181540b78e72f7040b0cc8aec75d4c90",
+   "--output",
+   "target/evaluation/inprocess/<fresh-user-profile>"
+  ],
+  "requirements": [
+   "Check out observer revision 655efaaa0f8ef77d23182f9d35712c0bb7a5e021; the tracked driver is bound above.",
+   "Restore the complete original smoke output and its bound native/compiler inputs at their recorded relative paths; the failed smoke receipt SHA remains mandatory. No rebuild or replacement binary is substituted.",
+   "Reserve one CPU; CPU 1 was observed. Use the pinned Python 3.12, perf and observer libraries; the driver authenticates all retained compiled-source/tool facts.",
+   "Use a fresh direct child of target/evaluation/inprocess. The observer creates new record and namespace files and retains original target/observer limits."
+  ]
+ },
+ "sampling": {
+  "authenticated_bridge_samples": 949,
+  "bridge_path_candidates": 949,
+  "full_exec_exit_envelope": true,
+  "kernel_samples": 0,
+  "loss_free": true,
+  "lost_samples": 0,
+  "sampled_period_total": 9747474650,
+  "samples": 965,
+  "target_samples": 965,
+  "throttle_records": 0,
+  "user_samples": 965
+ },
+ "schema": 1,
+ "scope": "One instrumented differential fixture, case 0 placement 0. The target failed. User-only CPU-clock sample weights do not allocate system CPU or elapsed time; wait4 usage is a separate measurement. Both same-PID Python wrappers are included.",
+ "source": {
+  "compiled_runtime": {
+   "head_sources_match": true,
+   "revision": "c9d8b4a4dc4a72761005d048aa5ad868125e382a",
+   "source_manifest_sha256": "d7ae856d38fbc6e9815abde00a86c699b3c75c8db7a3f7cc16efa329ff3ec078",
+   "tracked_clean": true,
+   "tree": "6351ab3e11d0b990d66fc623227055a944e75fd8"
+  },
+  "compiled_source_inputs_equal_at_observation": true,
+  "observer": {
+   "head_sources_match": true,
+   "revision": "655efaaa0f8ef77d23182f9d35712c0bb7a5e021",
+   "source_manifest_sha256": "bb15fc0888329eeaa5dde3c6d45773e771e21bd96805e881155d5a5376485c13",
+   "tracked_clean": true,
+   "tree": "8df4c2fde829092e66206544cbea2374684c9f6a"
+  },
+  "tools": {
+   "loop_differential_profile.py": {
+    "bytes": 18217,
+    "sha256": "9793a9619cfa9a59dd5bec0ada7e3ebbeb8cc547d4878685c09371ea8863a558"
+   },
+   "page_cost_profile.py": {
+    "bytes": 26578,
+    "sha256": "7b507bb98d91b7d8f6a9dc84be282160031284840140fb1d99272fd583e93cdc"
+   },
+   "page_cost_profile_read.py": {
+    "bytes": 35971,
+    "sha256": "ef6cfe33985a58596063822cb9b40df2ec301cdf5d51d6dd3ea6e05c12f9ccd2"
+   },
+   "perf": {
+    "bytes": 12270728,
+    "sha256": "1be5e150695f3bc2b2f6df3cd937fe12527d5b1c7140716e9beb23b9cdd35f46"
+   },
+   "persistent_dynamic_profile_read.py": {
+    "bytes": 33341,
+    "sha256": "7062f1c6f402168ca10a0f60601983f6a42fbec916c213ad309f417f55048eb4"
+   },
+   "persistent_loop_native_build.py": {
+    "bytes": 27369,
+    "sha256": "c8480d74b91df0aed07c02ec6d597825c284d6205e4cbafb6c81d195f6ac9195"
+   },
+   "python3.12": {
+    "bytes": 13542408,
+    "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+   }
+  }
+ },
+ "status": "observed_user_dwarf_diagnostic_only",
+ "target": {
+  "bridge": {
+   "bytes": 5345752,
+   "sha256": "c039e23de1c587bda0eb746295ab7e575494109be1b26c0e30ddb63d1f7a74d9"
+  },
+  "captures": {
+   "record": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "stdout": {
+    "bytes": 18944,
+    "sha256": "e0699ccba9258287158a4996f4cbfe75ef5bda7263d59d9f1595a6da6fdff508"
+   }
+  },
+  "carrier": {
+   "bytes": 116268,
+   "sha256": "ad43b46e8a71653e1065442fc9e9ba1e73b3b92db7f5db888f5e8c66cf20c905"
+  },
+  "case": 0,
+  "cleanup_errors": [],
+  "duration_scope": "Immediately before Popen through wait/reap, including attach preparation and same-PID wrappers; not baseline runtime.",
+  "error": null,
+  "exit": -9,
+  "expected_exit": 0,
+  "instrumented_process_duration_ns": 30396221482,
+  "kill_cause": "unknown",
+  "lane": "differential",
+  "placement": 0,
+  "reaped": true,
+  "record_closed": {
+   "child_reaped": true,
+   "children_after": "ECHILD",
+   "parent_never_owned": true
+  },
+  "terminal": null,
+  "timed_out": false,
+  "wait4": {
+   "maxrss_kib": 70496,
+   "system_seconds": 19.670566,
+   "user_seconds": 10.329506,
+   "wait_status": 9
+  }
+ },
+ "target_outcome": "failed_prefix",
+ "timeline": {
+  "bin_seconds": 1,
+  "bytes": 2199,
+  "columns": "Five globally selected leaves, all other known leaves, and unknown leaves form an exact per-bin partition; sample period is not wall time.",
+  "file": "20261102-loop-differential-user-dwarf-655efaaa0f8e.csv",
+  "last_bin": 30,
+  "rows": 31,
+  "sha256": "832e2cf7caee5061d2734ac725c4091ae066039585f93916a48c749c80732840",
+  "time_origin": "Profiler release of the same-PID target wrapper"
+ }
+}
