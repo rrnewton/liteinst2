@@ -1,0 +1,533 @@
+{
+  "archive_provenance": {
+    "archive": {
+      "bytes": 12045418,
+      "path": "target/evaluation/inprocess/tunables-effects-full19-r2-loop-native/artifacts/decoder.a",
+      "sha256": "bf81e0fbfebbda83a30dcc82b2ddded487e725d3df2052193e00ab79dcc9dd40"
+    },
+    "compiled_revision": "1b2028e795bac3b308114d73681311b67cf2da1a",
+    "current_13_rust_sources_equal": true,
+    "receipt": {
+      "bytes": 2496014,
+      "path": "target/evaluation/inprocess/tunables-effects-full19-r2-loop-native/receipt.json",
+      "sha256": "63ffcec24921e93d9ef9682e04feb411a1684f21c1ed93939701a5a0e4f4fbf1"
+    },
+    "same_revision_native": false
+  },
+  "bounds": [
+    30,
+    536870912,
+    16777216,
+    60
+  ],
+  "clock": "CLOCK_MONOTONIC_RAW batch endpoints; two clock calls per row, not subtracted",
+  "commands": [
+    {
+      "argv": [
+        "/usr/bin/gcc",
+        "-std=gnu11",
+        "-O2",
+        "-g",
+        "-fno-builtin",
+        "-fno-stack-protector",
+        "-fno-tree-loop-distribute-patterns",
+        "-fno-tree-vectorize",
+        "-mgeneral-regs-only",
+        "-fno-omit-frame-pointer",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-Itools/page-entry/selected",
+        "-M",
+        "-MT",
+        "unit_cost_deps",
+        "target/page-region-next/admission-unit-cost-r1/bench.c",
+        "target/page-region-next/admission-unit-cost-r1/policy_lease.c",
+        "tools/page-entry/selected/native_policy.c"
+      ],
+      "duration_ns": 77497551,
+      "exit": 0,
+      "name": "headers",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "/usr/bin/gcc",
+        "-std=gnu11",
+        "-O2",
+        "-g",
+        "-fno-builtin",
+        "-fno-stack-protector",
+        "-fno-tree-loop-distribute-patterns",
+        "-fno-tree-vectorize",
+        "-mgeneral-regs-only",
+        "-fno-omit-frame-pointer",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-Itools/page-entry/selected",
+        "target/page-region-next/admission-unit-cost-r1/bench.c",
+        "target/page-region-next/admission-unit-cost-r1/policy_lease.c",
+        "tools/page-entry/selected/native_policy.c",
+        "target/evaluation/inprocess/tunables-effects-full19-r2-loop-native/artifacts/decoder.a",
+        "-Wl,-z,now,-z,relro,--no-undefined",
+        "-ldl",
+        "-lpthread",
+        "-lm",
+        "-o",
+        "target/evaluation/inprocess/admission-unit-cost-attempt-1/unit-cost"
+      ],
+      "duration_ns": 636400125,
+      "exit": 0,
+      "name": "build",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "argv": [
+        "target/evaluation/inprocess/admission-unit-cost-attempt-1/unit-cost",
+        "target/evaluation/inprocess/admission-unit-cost-attempt-1/ls.window",
+        "target/evaluation/inprocess/admission-unit-cost-attempt-1/true.window",
+        "target/evaluation/inprocess/admission-unit-cost-attempt-1/helper.window"
+      ],
+      "duration_ns": 2799331061,
+      "exit": 0,
+      "name": "measure",
+      "reaped": true,
+      "timed_out": false
+    }
+  ],
+  "cpu": 15,
+  "driver": {
+    "bytes": 19688,
+    "path": "target/page-region-next/admission-unit-cost-r1/run.py",
+    "sha256": "4df200e1166a3cbe4d6a8f15d494fe710706318c6ef26a37f66e67630c9a6f6e"
+  },
+  "first_samples": [
+    {
+      "checksum": 0,
+      "closes": 0,
+      "elapsed_ns": 485669,
+      "iterations": 1,
+      "major_faults": 0,
+      "mincore_calls": 0,
+      "minor_faults": 100,
+      "minor_pages": 0,
+      "mprotect_calls": 0,
+      "name": "decoder_initialize",
+      "opens": 0,
+      "policy_mask": 0,
+      "read_bytes": 0,
+      "reads": 0,
+      "sample": -1,
+      "scan_candidates": 0,
+      "scan_starts": 0,
+      "signals": 0,
+      "sync_core_calls": 0
+    },
+    {
+      "checksum": 0,
+      "closes": 0,
+      "elapsed_ns": 14051,
+      "iterations": 1,
+      "major_faults": 0,
+      "mincore_calls": 0,
+      "minor_faults": 0,
+      "minor_pages": 0,
+      "mprotect_calls": 2,
+      "name": "first_nx_fault_grant_ret_cycle",
+      "opens": 0,
+      "policy_mask": 0,
+      "read_bytes": 0,
+      "reads": 0,
+      "sample": -1,
+      "scan_candidates": 0,
+      "scan_starts": 0,
+      "signals": 1,
+      "sync_core_calls": 0
+    },
+    {
+      "checksum": 0,
+      "closes": 0,
+      "elapsed_ns": 1833,
+      "iterations": 1,
+      "major_faults": 0,
+      "mincore_calls": 0,
+      "minor_faults": 0,
+      "minor_pages": 0,
+      "mprotect_calls": 0,
+      "name": "first_nx_ucontext_ret_control",
+      "opens": 0,
+      "policy_mask": 0,
+      "read_bytes": 0,
+      "reads": 0,
+      "sample": -1,
+      "scan_candidates": 0,
+      "scan_starts": 0,
+      "signals": 1,
+      "sync_core_calls": 0
+    }
+  ],
+  "first_touch": "Code, altstack and scan data pre-touched; first signal retained separately. minor_first_write uses fresh anonymous pages with THP disabled; mmap/madvise/munmap excluded.",
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 15,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "initialization": {
+    "abi": 1,
+    "allocations": 7697,
+    "arena": 16777216,
+    "deallocations": 110,
+    "phase": 2,
+    "retained": 367840,
+    "sync_query": 1023,
+    "sync_register": 0
+  },
+  "maps_scope": "Fresh openat/read-through-EOF/close syscall sequence only; no parser, maintained view, or loader validation.",
+  "measured_batches": 10,
+  "mincore_scope": "One absent predecessor page adjacent to a retained mapping; every mincore returns exact -ENOMEM. This models the maintained-view probe syscall, not the entire hit path.",
+  "no_outlier_removal": true,
+  "no_overhead_subtraction": true,
+  "overlap": "NX complete cycle includes revoke, signal delivery, checked handler grant, sigreturn and RET. Permission-pair/call and ucontext-skip rows are controls, not disjoint summands.",
+  "performance_target_credit": false,
+  "qualification_credit": false,
+  "quartiles": "inclusive linear interpolation",
+  "raw_csv": {
+    "bytes": 16998,
+    "path": "target/evaluation/inprocess/admission-unit-cost-attempt-1/raw.csv",
+    "sha256": "8130fff0479d7fd352cecc2cf7e04b1aee83ca9ea7a83326dcdce563e2a02392"
+  },
+  "receipt": {
+    "bytes": 164153,
+    "path": "target/evaluation/inprocess/admission-unit-cost-attempt-1/receipt.json",
+    "sha256": "723d06d6b187b814516d557fc93c06425aafb64b59f37ab497cd856350946ec0"
+  },
+  "reproduce_argv": [
+    "{PYTHON3_12}",
+    "-B",
+    "target/page-region-next/admission-unit-cost-r1/run.py",
+    "--expect-revision",
+    "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+    "--output",
+    "{FRESH_OUTPUT}"
+  ],
+  "scan_inputs": [
+    {
+      "elf": {
+        "bytes": 140752,
+        "path": "/usr/bin/ls",
+        "sha256": "eec29318f59647c9a13b619e2738575164e3c43c7a1ee2b8509f36cb09019315"
+      },
+      "file_offset": 20466,
+      "halo_after": 14,
+      "halo_before": 14,
+      "name": "ls",
+      "page": 20480,
+      "requested_page_bytes": 4096,
+      "result": {
+        "candidates": 0,
+        "invalid": 337,
+        "starts": 4110,
+        "truncated": 0
+      },
+      "window": {
+        "bytes": 4124,
+        "path": "target/evaluation/inprocess/admission-unit-cost-attempt-1/ls.window",
+        "sha256": "48bcdae412e4b4da5d47e5cfb10b8d00c0e1b34afad41c1439c2e62230fd8d38"
+      }
+    },
+    {
+      "elf": {
+        "bytes": 27936,
+        "path": "/usr/bin/true",
+        "sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171"
+      },
+      "file_offset": 8178,
+      "halo_after": 14,
+      "halo_before": 14,
+      "name": "true",
+      "page": 8192,
+      "requested_page_bytes": 4096,
+      "result": {
+        "candidates": 0,
+        "invalid": 369,
+        "starts": 4110,
+        "truncated": 0
+      },
+      "window": {
+        "bytes": 4124,
+        "path": "target/evaluation/inprocess/admission-unit-cost-attempt-1/true.window",
+        "sha256": "7b126017d9b6a39b763caecce7778a4230f3dad6f320aace619c2c8c75fea3dd"
+      }
+    },
+    {
+      "elf": {
+        "bytes": 115168,
+        "path": "target/evaluation/inprocess/tunables-effects-full19-r2-loop-native/application/tunables-loop-paired",
+        "sha256": "cb18eec2326ed0fedbb9c66e76ea9a560ce6d3da5a893832e69d3589c3d70d10"
+      },
+      "file_offset": 40946,
+      "halo_after": 14,
+      "halo_before": 14,
+      "name": "helper",
+      "page": 8590069760,
+      "requested_page_bytes": 4096,
+      "result": {
+        "candidates": 0,
+        "invalid": 114,
+        "starts": 4110,
+        "truncated": 0
+      },
+      "window": {
+        "bytes": 4124,
+        "path": "target/evaluation/inprocess/admission-unit-cost-attempt-1/helper.window",
+        "sha256": "0c35e2041753e05e3ad91a1879562a17e6b16638bcbe9cd02f6b127729752725"
+      }
+    }
+  ],
+  "scan_scope": "Initialized, warmed shared decoder scans4110 starts for a4096B page plus authenticated14B halos; each call includes whole88B summary equality. Actual native-policy byte scanner and constant source-lease refusal are separate rows. Initialization is one process cost, not a per-page charge.",
+  "schema": 1,
+  "scope": "isolated component costs, not complete admission or guest timing",
+  "source": {
+    "revision": "4ed9d1ca1ee6c73ac7a23e3ba714d93f5783dc4d",
+    "tracked_clean": true,
+    "tree": "3c4f2ad85a4cd0ec8eaa81d74bc9ab15f0d387b5"
+  },
+  "statistics": [
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 2.02255,
+      "median_ns_per_iteration": 1.726325,
+      "min_ns_per_iteration": 1.59135,
+      "name": "empty_loop",
+      "q1_ns_per_iteration": 1.652975,
+      "q3_ns_per_iteration": 2.0084875
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 87.53445,
+      "median_ns_per_iteration": 84.791775,
+      "min_ns_per_iteration": 81.1824,
+      "name": "raw_getpid",
+      "q1_ns_per_iteration": 83.0001125,
+      "q3_ns_per_iteration": 86.2465125
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 4.1687,
+      "median_ns_per_iteration": 3.6387,
+      "min_ns_per_iteration": 3.38305,
+      "name": "rx_ret_call",
+      "q1_ns_per_iteration": 3.492125,
+      "q3_ns_per_iteration": 3.9351375
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 165.3803,
+      "median_ns_per_iteration": 158.0976,
+      "min_ns_per_iteration": 152.44185,
+      "name": "mprotect_same_rx",
+      "q1_ns_per_iteration": 155.45515,
+      "q3_ns_per_iteration": 161.3929375
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 842.83335,
+      "median_ns_per_iteration": 787.375625,
+      "min_ns_per_iteration": 776.8398,
+      "name": "mprotect_r_rx_ret_pair",
+      "q1_ns_per_iteration": 779.6536375,
+      "q3_ns_per_iteration": 789.3714749999999
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 2000,
+      "max_ns_per_iteration": 1463.0865,
+      "median_ns_per_iteration": 1353.63225,
+      "min_ns_per_iteration": 1337.523,
+      "name": "nx_signal_ucontext_ret",
+      "q1_ns_per_iteration": 1343.474625,
+      "q3_ns_per_iteration": 1382.10025
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 2000,
+      "max_ns_per_iteration": 2458.546,
+      "median_ns_per_iteration": 2316.83575,
+      "min_ns_per_iteration": 2231.415,
+      "name": "nx_fault_grant_ret_cycle",
+      "q1_ns_per_iteration": 2299.645,
+      "q3_ns_per_iteration": 2323.9165000000003
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 500,
+      "max_ns_per_iteration": 18279.964,
+      "median_ns_per_iteration": 15450.686,
+      "min_ns_per_iteration": 14993.95,
+      "name": "maps_open_close",
+      "q1_ns_per_iteration": 15350.9465,
+      "q3_ns_per_iteration": 16002.389
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 102.902,
+      "median_ns_per_iteration": 96.793825,
+      "min_ns_per_iteration": 94.09025,
+      "name": "devnull_read",
+      "q1_ns_per_iteration": 95.571225,
+      "q3_ns_per_iteration": 98.002625
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 500,
+      "max_ns_per_iteration": 37172.888,
+      "median_ns_per_iteration": 28241.559,
+      "min_ns_per_iteration": 26898.042,
+      "name": "maps_fresh_open_read_close",
+      "q1_ns_per_iteration": 27473.7955,
+      "q3_ns_per_iteration": 30688.507999999998
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 256,
+      "max_ns_per_iteration": 1271.4765625,
+      "median_ns_per_iteration": 1053.7109375,
+      "min_ns_per_iteration": 970.36328125,
+      "name": "minor_first_write",
+      "q1_ns_per_iteration": 1001.1015625,
+      "q3_ns_per_iteration": 1144.150390625
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 64,
+      "max_ns_per_iteration": 371847.78125,
+      "median_ns_per_iteration": 356500.5234375,
+      "min_ns_per_iteration": 348990.34375,
+      "name": "decoder_scan_ls",
+      "q1_ns_per_iteration": 350359.98046875,
+      "q3_ns_per_iteration": 361580.8125
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 64,
+      "max_ns_per_iteration": 391923.859375,
+      "median_ns_per_iteration": 352393.9765625,
+      "min_ns_per_iteration": 335019.53125,
+      "name": "decoder_scan_true",
+      "q1_ns_per_iteration": 346093.80078125,
+      "q3_ns_per_iteration": 357863.8203125
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 64,
+      "max_ns_per_iteration": 294097.796875,
+      "median_ns_per_iteration": 287844.9609375,
+      "min_ns_per_iteration": 244914.71875,
+      "name": "decoder_scan_helper",
+      "q1_ns_per_iteration": 283916.09375,
+      "q3_ns_per_iteration": 289751.01953125
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 2000,
+      "max_ns_per_iteration": 13205.9815,
+      "median_ns_per_iteration": 11786.95375,
+      "min_ns_per_iteration": 10899.3185,
+      "name": "native_policy_ls",
+      "q1_ns_per_iteration": 11244.318625,
+      "q3_ns_per_iteration": 12111.6535
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 2000,
+      "max_ns_per_iteration": 12657.4625,
+      "median_ns_per_iteration": 12126.09275,
+      "min_ns_per_iteration": 11007.446,
+      "name": "native_policy_true",
+      "q1_ns_per_iteration": 11490.1005,
+      "q3_ns_per_iteration": 12337.48125
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 2000,
+      "max_ns_per_iteration": 10481.7915,
+      "median_ns_per_iteration": 9842.033500000001,
+      "min_ns_per_iteration": 9291.3145,
+      "name": "native_policy_helper",
+      "q1_ns_per_iteration": 9513.314,
+      "q3_ns_per_iteration": 10431.303124999999
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 4.95545,
+      "median_ns_per_iteration": 3.766175,
+      "min_ns_per_iteration": 3.69005,
+      "name": "source_lease_policy_ls",
+      "q1_ns_per_iteration": 3.7250750000000004,
+      "q3_ns_per_iteration": 3.9781
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 4.35105,
+      "median_ns_per_iteration": 3.790925,
+      "min_ns_per_iteration": 3.70955,
+      "name": "source_lease_policy_true",
+      "q1_ns_per_iteration": 3.7257374999999997,
+      "q3_ns_per_iteration": 3.967225
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 4.4757,
+      "median_ns_per_iteration": 3.9238750000000002,
+      "min_ns_per_iteration": 3.68655,
+      "name": "source_lease_policy_helper",
+      "q1_ns_per_iteration": 3.7752875,
+      "q3_ns_per_iteration": 4.2568875
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 3175.3342,
+      "median_ns_per_iteration": 3006.908075,
+      "min_ns_per_iteration": 2824.54705,
+      "name": "membarrier_sync_core",
+      "q1_ns_per_iteration": 2933.6577374999997,
+      "q3_ns_per_iteration": 3036.6046875
+    },
+    {
+      "batches": 10,
+      "iterations_per_batch": 20000,
+      "max_ns_per_iteration": 263.2362,
+      "median_ns_per_iteration": 192.18757499999998,
+      "min_ns_per_iteration": 186.21255,
+      "name": "mincore_absent_predecessor",
+      "q1_ns_per_iteration": 191.4469375,
+      "q3_ns_per_iteration": 198.694575
+    }
+  ],
+  "status": "observed_component_unit_costs",
+  "sync_scope": "QUERY and REGISTER once before timing; each sync row calls PRIVATE_EXPEDITED_SYNC_CORE. Source has one sync after each native admission and one per nonempty close, not one per closed page. Neither is included in the NX cycle.",
+  "warmup_batches": 1,
+  "whole_admission_cost": false
+}
