@@ -1,6 +1,6 @@
 """Additive source census and closed PROCMAP_QUERY cleanup parser calibrations."""
 import ast
-import copy
+import inventory_copy as copy
 import hashlib
 import json
 from pathlib import Path

@@ -138,11 +138,11 @@ def main():
                 inverse_refusals.append(relative+':'+label)
             else:
                 raise ValueError('accepted source inverse control: '+relative+':'+label)
-    need(len(endpoints) == len(set(endpoints)) == 31 and len(inverse_refusals) == 108,
-         'all thirty-one source endpoints and four controls for each27 changed sources')
+    need(len(endpoints) == len(set(endpoints)) == 32 and len(inverse_refusals) == 112,
+         'all thirty-two source endpoints and four controls for each28 changed sources')
     need(all(fact(path) == before for path, before in pins.items()), 'whole input closure')
     result = dict(schema=1, scope='pure recipe/source transport only',
-                  profile_argv=12, recipe_refusals=60, source_endpoints=31, inverse_refusals=108,
+                  profile_argv=12, recipe_refusals=60, source_endpoints=32, inverse_refusals=112,
                   source_inputs=pins, subjects=0, builds=0, qualification_credit=False)
     (output/'result.json').write_text(json.dumps(result, indent=2, sort_keys=True)+'\n')
     print(json.dumps({k: v for k, v in result.items() if k != 'source_inputs'}, separators=(',', ':')))

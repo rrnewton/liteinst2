@@ -291,6 +291,37 @@
         }
       }
     },
+    "evaluation/inprocess/page_native_pair_reports.py": {
+      "current": {
+        "bytes": 42355,
+        "sha256": "f59d98879949e6e1352b106bf5a06a827afd9b0d6d2c7ec9ac60e3b0ce71c908"
+      },
+      "donor": {
+        "bytes": 40779,
+        "sha256": "f80dc474cb2f68541aaf6d405ce96602b26a27240f9856a53ae3bd8db0965eb4"
+      },
+      "inverse": [
+        [
+          158,
+          181,
+          "def reports(stderr):\n"
+        ],
+        [
+          252,
+          253,
+          "        need(slot['phase'] <= 7 and slot['origin'] <= 2 and slot['fallback'] <= 6 and slot['owner_phase'] <= 6 and\n"
+        ]
+      ],
+      "targets": {
+        "f80dc474cb2f68541aaf6d405ce96602b26a27240f9856a53ae3bd8db0965eb4": {
+          "fact": {
+            "bytes": 40779,
+            "sha256": "f80dc474cb2f68541aaf6d405ce96602b26a27240f9856a53ae3bd8db0965eb4"
+          },
+          "inverse": []
+        }
+      }
+    },
     "evaluation/inprocess/page_selected.py": {
       "current": {
         "bytes": 30046,

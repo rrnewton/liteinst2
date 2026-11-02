@@ -1,6 +1,6 @@
 """Supplied-record/source controls; no child, compiler, feature test or native I/O."""
 
-import copy
+import inventory_copy as copy
 import json
 from pathlib import Path
 import unittest

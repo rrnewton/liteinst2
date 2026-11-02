@@ -11,7 +11,7 @@ import stat
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA = Path(__file__).with_suffix('.json')
-DATA_FACT = {'bytes': 32527, 'sha256': '0b80a6b969222e2f7f18aacc2c80889928b0b69f73a44c37fa9daa80e0e93bb1'}
+DATA_FACT = {'bytes': 33446, 'sha256': 'edfc1ef5b7f7d6d16530ffbba911aa12a29f849bc1d8df86b3745c0f8091d0e6'}
 
 
 def need(ok, message):
