@@ -56,7 +56,7 @@ def cohort(builder, products, private, pin, binary, aliases, run, r):
              rb['archive'] == fact(products['archive']) and rb['counter_schema'] == SCHEMA and
              rb['active_domain']['slots'] == rb['active_domain']['source_pairs_max'] == 2 and
              rb['active_domain']['differential'] is False and rb['dispatch']['shared_boundaries'] == 8 and
-             rb['direct_frontier'] == dict(version=1, policy_version=12, fallback_policy=11,
+             rb['direct_frontier'] == dict(version=1, policy_version=12, fallback_policy=11, encoding_domain=dict(version=2, policies=[11,12], near_record=1, far_record=2, miss='source-derived-rel32-or-rip-indirect-u64', literal_bytes=8, literal_boundaries=0, old_pf_api=False),
                 conditions=16, shared_boundaries=8, typed_external_arms=True,
                 unknown_target='original branch-before full drain',
                 partition='source-bound-loop-envelope-or-direction-fused', all_arms_directory=False) and
@@ -65,7 +65,7 @@ def cohort(builder, products, private, pin, binary, aliases, run, r):
              rb['persistent_binding']['mode'] == 'counters' and
              rb['persistent_binding']['profile'] == 'persistent-loop-counters-v3' and
              rb['pf_refusals'] == rb['persistent_binding']['pf_refusals'] == dict(version=1,reason=256,shared_reasons=18,abi2=False) and
-             rb['bounded_loop'] == dict(version=1, policy_version=12, fallback_policy=11, header_version=2,
+             rb['bounded_loop'] == dict(version=1, policy_version=12, fallback_policy=11, encoding_domain=dict(version=2, policies=[11,12], near_record=1, far_record=2, miss='source-derived-rel32-or-rip-indirect-u64', literal_bytes=8, literal_boundaries=0, old_pf_api=False),  header_version=2,
                 chooser_version=12, decoder_read_version=2, heads_max=128, shared_boundaries=8,
                 source_pages=2, active_members_max=2, call_ret=False, serialized_reconstruction=True,
                 fallback='complete-source-bound-NO_ENVELOPE-only') and

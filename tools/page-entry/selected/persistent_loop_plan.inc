@@ -153,7 +153,8 @@ unsigned li2_lp_relocation_reason(const struct li2_pg_plan *p,const struct li2_p
        li2_lp_miss_validate(p,m,result,scratch,w) || w->ready!=1 || w->result)return 0;
     unsigned found=LI2_PG_HEADS;
     for(unsigned i=0;i<p->heads;i++)if(p->original[i].decoded.pc==m->pc) {
-        if(found!=LI2_PG_HEADS)return 0;found=i;
+        if(found!=LI2_PG_HEADS)return 0;
+        found=i;
     }
     if(found==LI2_PG_HEADS)return 0;
     const struct li2_pe_head *h=&p->head[found];const struct li2_span_decoded *d=&p->original[found];
@@ -187,7 +188,8 @@ unsigned li2_lp_fallback_relocation_reason(const struct li2_pg_plan *p,const str
     unsigned found=LI2_PG_HEADS;
     for(unsigned i=0;i<p->heads;i++)if(p->head[i].kind==LI2_PG_DIRECT &&
         p->guard[i].direct.record.result==LI2_DD_RELOCATION) {
-        if(found!=LI2_PG_HEADS)return 0;found=i;
+        if(found!=LI2_PG_HEADS)return 0;
+        found=i;
     }
     if(found==LI2_PG_HEADS)return 0;
     const struct li2_dd_plan *g=&p->guard[found].direct;
