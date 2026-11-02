@@ -1,0 +1,4 @@
+revision,cpu,stage,status,exit,commands,planned_commands,validation_duration_ns,qualification_credit,performance_credit
+0bfae73a466836c97633396794e31a78d449aedd,131,native,observed_native_references,0,82,82,446825145375,False,False
+0bfae73a466836c97633396794e31a78d449aedd,131,components,components_passed,0,60,60,37593950718,False,False
+0bfae73a466836c97633396794e31a78d449aedd,131,owner,failed,1,20,126,18448241033,False,False

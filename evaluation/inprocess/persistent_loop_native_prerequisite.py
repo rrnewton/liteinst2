@@ -26,6 +26,12 @@ EXPORTS=('rust_eh_personality','li2_decoder_tf_classify','li2_decoder_write_foot
 COVERAGE=('native_v2_all_cases_and_placements','native_full_state','native_controls')
 
 
+def require_seed_record(replayed,recorded):
+    # The format authority uses tuples; the receipt stores JSON arrays. Compare
+    # the complete serialized records, preserving every field and scalar type.
+    need(digest(replayed)==digest(recorded),'whole original independently qualified seed')
+
+
 def archive_join(actual,directory,builder,archive,pin,binary,recorded,aliases):
     """Rejoin actual locked Rust source, exact compiler-M and retained build bytes."""
     build=actual['build'];selected=ROOT/'tools/page-entry/selected';target=ROOT/'target/page-entry/selected'
@@ -215,7 +221,7 @@ def authenticate(path,expected_sha256,r,pin,binary,archive):
     # The seed helper observes its own current last row in a real collector.
     holder['commands']=commands[:next(i for i,c in enumerate(commands)if c['name']=='seed-prerequisite')+1]
     seed=seed_prerequisite(builder,directory,pin,binary,recorded,holder)
-    need(holder['seed_prerequisite']==actual['seed_prerequisite'],'whole original independently qualified seed')
+    require_seed_record(holder['seed_prerequisite'],actual['seed_prerequisite'])
     seed=(*seed,capture(rows['seed-prerequisite'],'stdout'))
     need([(c['lane'],c['mode'],c['placement'])for c in actual['cases']]==[(0,c,p)for c,p in ORDER],
          'all28 actual native cases in fixed order')
