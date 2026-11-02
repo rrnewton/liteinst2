@@ -807,7 +807,9 @@ static void ped_count(uint64_t *v) {
 static void ped_count(uint64_t *v) {pe_need(*v!=UINT64_MAX,PE_OVERFLOW,0);++*v;}
 #endif
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
-#ifdef LI2_PERSISTENT_LOOP_EFFECTS_COUNTERS
+#ifdef LI2_LOOP_RO_REASONS
+#include "loop_ro_reason_counter_owner.inc"
+#elif defined(LI2_PERSISTENT_LOOP_EFFECTS_COUNTERS)
 #include "persistent_loop_effects_counter_owner.inc"
 #elif defined(LI2_PERSISTENT_LOOP_COUNTERS)
 #include "persistent_loop_counter_owner.inc"
@@ -919,8 +921,24 @@ static int ped_permitted(void) {
 #include "reuse_census_owner.inc"
 #endif
 #define RCC_TEST(bit,value) rcc_test((bit),!!(value))
+#elif defined(LI2_LOOP_RO_REASONS)
+#include "loop_ro_reasons_owner.inc"
+#define RCC_TEST(bit,value) lrr_test((bit),!!(value))
 #else
 #define RCC_TEST(bit,value) (value)
+#endif
+#ifdef LI2_LOOP_RO_REASONS
+#define LRR_BEGIN(pc) lrr_begin(pc)
+#define LRR_EVALUATE() lrr_evaluate()
+#define LRR_PLAN(kind) lrr_plan(kind)
+#define LRR_BOUND() lrr_bound()
+#define LRR_FINISH(kind) lrr_finish(kind)
+#else
+#define LRR_BEGIN(pc) ((void)0)
+#define LRR_EVALUATE() ((void)0)
+#define LRR_PLAN(kind) ((void)0)
+#define LRR_BOUND() ((void)0)
+#define LRR_FINISH(kind) ((void)0)
 #endif
 static void ped_claim(void) {
     pe_need(ped_permitted() && !pe_bytes(),PE_RELEASE,10);
@@ -1087,6 +1105,7 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
     rcc_source(s,r);
 #endif
+    LRR_EVALUATE();
     if(RCC_TEST(0,PE_SLOT(generation).installed) && RCC_TEST(1,ped_stored()) && RCC_TEST(2,pe_registry()) &&
        RCC_TEST(3,PE_SLOT(generation).generated==pe.p.generated) &&
 #ifdef LI2_PERSISTENT_SUBENTRY
@@ -1108,6 +1127,7 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
         rcc_plan(pe.subentry_selected?2U:1U);
 #endif
+        LRR_PLAN(pe.subentry_selected?2U:1U);
 #ifdef LI2_PERSISTENT_SUBENTRY
         pe_need(!pe_sub_fill(),PE_SOURCE,110);
 #endif
@@ -1180,6 +1200,7 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
             rcc_plan(3);
 #endif
+            LRR_PLAN(3);
             return 0;
         }
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
@@ -1246,6 +1267,7 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
         rcc_plan(4);
 #endif
+        LRR_PLAN(4);
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
         plr_scope_leave(PLR_COLD);
 #else
@@ -1625,6 +1647,7 @@ int li2_pg_epoch_cancel(const struct li2_pg_token *t,int sig,siginfo_t *si,ucont
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
     rcc_finish(1);
 #endif
+    LRR_FINISH(1);
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
     pgo_cancelled(sig,si,uc,*result);
 #endif
@@ -1834,6 +1857,7 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
     rcc_begin(pc);
 #endif
+    LRR_BEGIN(pc);
     pe_need(!le_capture(&pe.ingress,sig,si,uc),PE_FRAME,0);pe.close_started=1;
 #ifdef LI2_PERSISTENT_CROSS_PAIR
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER
@@ -1933,6 +1957,7 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
     rcc_bound();
 #endif
+    LRR_BOUND();
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
     pe_need(!pda_bind(uc),PE_PUBLICATION,70);
 #endif
@@ -1995,6 +2020,7 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
     rcc_finish(2);
 #endif
+    LRR_FINISH(2);
 #else
     ped_count(PGC_REF(completed));pe.p.completion_permit=1;
     pe_need(!PE_SLOT(permit).valid,PE_RELEASE,12);
