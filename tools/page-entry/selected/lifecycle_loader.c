@@ -102,6 +102,14 @@ static uintptr_t rounded(size_t length) {
     return (length+PAGE-1)&~(PAGE-1);
 }
 static int overlaps(uintptr_t a,uintptr_t b,uintptr_t c,uintptr_t d) { return a<d && c<b; }
+/* A complete miss may prove an interval with no retained address at all.
+   Dead rows also bound it: revival cannot turn one of those addresses into a
+   cached absence. Only append creates a record/address, and it advances used. */
+static struct {
+    uintptr_t first,last;
+    size_t used;
+    unsigned valid;
+} current_absence;
 static struct owned_page *current(uintptr_t address) {
     /* Positive location memo only. Records are append-only; retirement clears
        live without reviving a slot. All mutable facts remain in the live row.
@@ -112,10 +120,25 @@ static struct owned_page *current(uintptr_t address) {
         struct owned_page *p=&records[memo_slot-1];
         if (p->live && p->address==address) return p;
     }
+    if (current_absence.valid && current_absence.used==used &&
+        address>=current_absence.first && address<=current_absence.last) return 0;
     for (size_t i=used;i;i--) if (records[i-1].live && records[i-1].address==address) {
         memo_address=address; memo_used=used; memo_slot=i;
         return &records[i-1];
     }
+    /* The original complete live-row scan above is the miss authority.
+       A second scan only builds the optional stronger no-retained-row proof;
+       a retired exact address is never certified. No row facts are cached. */
+    uintptr_t first=0,last=UINTPTR_MAX;
+    for (size_t i=used;i;i--) {
+        uintptr_t at=records[i-1].address;
+        if (at==address) return 0;
+        if (at<address && at>=first) first=at+1; /* at cannot be UINTPTR_MAX */
+        if (at>address && at<=last) last=at-1; /* at cannot be zero */
+    }
+    current_absence.valid=0;
+    current_absence.first=first;current_absence.last=last;current_absence.used=used;
+    current_absence.valid=1; /* same singleton/no-callback contract as memo */
     return 0;
 }
 static const struct map_row *mapping(uintptr_t address) {

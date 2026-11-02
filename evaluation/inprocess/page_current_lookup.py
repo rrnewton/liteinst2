@@ -23,7 +23,7 @@ EXPECTED = dict(version=1, record_capacity=8192, record_bytes=64, appends=8192, 
                 whole_records_and_counts_unchanged=1, linear_and_literal_equal=1)
 # Exact reviewed production lookup and unmodified whole-TU oracle/recipe.
 INPUTS = {
-    'lifecycle_loader.c':'5958d99d3a5aa1f38eb825ccac5d9e15a8b9bd4afa6e30be565ac6a6fc8da257',
+    'lifecycle_loader.c':'526432883908d57dbe83b038d975084bc1fe35c1f41dd8f30789c67bf788a031',
     'tests/current_lookup/oracle.c':'684da2d92582b65acc0d1186e003372e8e9e70e9e7262d7a18a0fbd6b3d5337e',
     'tests/current_lookup/build.sh':'ee4077e450cc4feac2c059e17419f59e8a8092652f4f4a41e2a6f764ff371039',
     'tests/current_lookup/EXPECTED.json':'5033984bdf067cefb5ee1f8980ec3c6f39bf06545526bcbc5b0311096fde1f23',
@@ -32,7 +32,7 @@ INPUTS = {
 # The only alternate profile is this fixed, reviewed RX alias-query oracle.
 MAPS_EXPECTED = {'version': 1, 'checks': 120, 'refusals': 15, 'memo_hits': 38, 'direct_calls': 80, 'supplied_acquisitions': 22, 'real_cases': 9, 'real_acquisitions': 9, 'old_and_literal_equal': 1, 'inputs_unchanged': 1, 'same_page_scans': 2, 'same_page_hits': 6}
 MAPS_INPUTS = {
-    'lifecycle_loader.c':'5958d99d3a5aa1f38eb825ccac5d9e15a8b9bd4afa6e30be565ac6a6fc8da257',
+    'lifecycle_loader.c':'526432883908d57dbe83b038d975084bc1fe35c1f41dd8f30789c67bf788a031',
     'tests/maps_query_reuse/oracle.c':'ec3e43b442a0d688a1c5eafae3111fdce62e1167e6d4f0528a121d375aa5ed1b',
     'tests/maps_query_reuse/build.sh':'2474a064f09beccc29160f61c4999106c2e3857a510d0f0891036bd6ebdca3e9',
     'tests/maps_query_reuse/EXPECTED.json':'f99ca93ae3bf140916800a3319509d66c7e1ee0ac914aea41d20327476f408fb',
