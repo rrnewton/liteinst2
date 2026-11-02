@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "6fdd43b315d976ee63b38b08a9718298df35cedea76bd043e61a6e827d4f2c17",
+  "current_corpus_sha256": "e0334e4ab7ffd51811b0aae7c5f0c6affc3969528f4a111079e80fd2934dc1ef",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -412,66 +412,66 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "46fa1ddc574a820ddcb97d5af03c880ba1b6666919bc8c9a6356120ada35cbb5",
+      "current_sha256": "013fd78372d46c6077cc4ada1b13e666affdd8366446f33a667a9d77343c448c",
       "edits": [
         [
           642,
-          39084,
+          46087,
           ""
         ],
         [
-          48455,
-          48566,
+          55458,
+          55569,
           "        self.assertEqual(actual['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],\n"
         ],
         [
-          53609,
-          53779,
+          60612,
+          60782,
           ""
         ],
         [
-          53826,
-          53920,
+          60829,
+          60923,
           "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n"
         ],
         [
-          54059,
-          54146,
+          61062,
+          61149,
           ""
         ],
         [
-          54405,
-          54484,
+          61408,
+          61487,
           ""
         ],
         [
-          55540,
-          56090,
+          62543,
+          63093,
           ""
         ],
         [
-          57609,
-          57705,
+          64612,
+          64708,
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          61548,
-          94860,
+          68551,
+          101863,
           ""
         ],
         [
-          101778,
-          105349,
+          108781,
+          112352,
           ""
         ],
         [
-          106629,
-          106777,
+          113632,
+          113821,
           "        for function, expected_projection in projections:\n"
         ],
         [
-          108071,
-          112358,
+          115115,
+          119969,
           ""
         ]
       ],
@@ -1355,6 +1355,15 @@
       "macro_calls": [],
       "templates": []
     },
+    "tests/support/native_normal_module/early_entry/pc_counts.rs": {
+      "all": [
+        "counts_only_completed_transitions_and_preserves_each_pc",
+        "capacity_exhaustion_counts_drops_without_growing_or_losing_records"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tests/support/native_normal_module/early_entry/wide.rs": {
       "all": [],
       "ignored": [],
@@ -2105,6 +2114,15 @@
       "macro_calls": [],
       "templates": []
     },
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/binding_envelope.rs": {
+      "all": [
+        "binding_envelope_preserves_malformed_profiles_and_fresh_error_order",
+        "binding_envelope_replacement_revalidates_and_retains_exact_arc"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": {
       "all": [],
       "ignored": [],
@@ -2528,6 +2546,10 @@
     ],
     "tests/support/native_normal_module/early_entry.rs": [
       "#[path = \"early_entry/wide.rs\"]\npub(in super::super) mod wide;",
+      "#[cfg(test)]\nmod tests {",
+      "#[path = \"early_entry/pc_counts.rs\"]\nmod pc_counts;"
+    ],
+    "tests/support/native_normal_module/early_entry/pc_counts.rs": [
       "#[cfg(test)]\nmod tests {"
     ],
     "tests/support/native_ordinary.rs": [
@@ -2671,7 +2693,11 @@
       "mod controller;",
       "#[cfg(any(test, feature = \"frontend-native-qualification\"))]\npub mod qualification;",
       "#[cfg(test)]\nmod native;",
-      "mod physical_slots;"
+      "mod physical_slots;",
+      "mod binding_envelope;"
+    ],
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/binding_envelope.rs": [
+      "#[cfg(test)]\nmod tests {"
     ],
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": [
       "#[cfg(test)]\nmod tests;"
@@ -11286,6 +11312,182 @@
       }
     }
   },
+  "source_successor_f9f89ac": {
+    "added_default_methods": {
+      "tests/support/native_normal_module/early_entry/pc_counts.rs": [
+        "counts_only_completed_transitions_and_preserves_each_pc",
+        "capacity_exhaustion_counts_drops_without_growing_or_losing_records"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/binding_envelope.rs": [
+        "binding_envelope_preserves_malformed_profiles_and_fresh_error_order",
+        "binding_envelope_replacement_revalidates_and_retains_exact_arc"
+      ]
+    },
+    "added_ignored_methods": {},
+    "base_revision": "bad32a8bcb0aa40a7c4c99a9b590145cd96d4c4c",
+    "current_corpus_sha256": "e0334e4ab7ffd51811b0aae7c5f0c6affc3969528f4a111079e80fd2934dc1ef",
+    "default_doctest_additions": 0,
+    "default_harness_changes": 0,
+    "default_ignore_changes": 0,
+    "default_method_additions": 6,
+    "default_method_instances": {
+      "tests/support/native_normal_module/early_entry/pc_counts.rs": [
+        "test/frontend_native_calibrations",
+        "unit/ordinary_interval/main"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/binding_envelope.rs": [
+        "unit/rapid_profiler/lib"
+      ]
+    },
+    "default_method_removals": 0,
+    "feature_method_additions": 0,
+    "feature_method_removals": 0,
+    "incoming_main": "f9f89aca173c38170162c8fb322ce4e47f87dcfd",
+    "module_chains": {
+      "tests/support/native_normal_module/early_entry.rs": [
+        "#[path = \"early_entry/pc_counts.rs\"]\nmod pc_counts;"
+      ],
+      "tests/support/native_normal_module/early_entry/pc_counts.rs": [
+        "#[cfg(test)]\nmod tests {"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": [
+        "mod binding_envelope;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/binding_envelope.rs": [
+        "#[cfg(test)]\nmod tests {"
+      ]
+    },
+    "new_method_declarations": 4,
+    "previous_corpus_sha256": "6fdd43b315d976ee63b38b08a9718298df35cedea76bd043e61a6e827d4f2c17",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "tests/support/native_normal_module/early_entry.rs",
+      "tests/support/native_normal_module/early_entry/pc_counts.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/binding_envelope.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs"
+    ],
+    "source_preimages": {
+      "tests/support/native_normal_module/early_entry.rs": {
+        "bytes": 43054,
+        "sha256": "f77edfa9dd79840d223dc573a82905b6acf25e4d5ee07374fa3f94a7a7e4c9b6"
+      },
+      "tests/support/native_normal_module/early_entry/pc_counts.rs": null,
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": {
+        "bytes": 24168,
+        "sha256": "496a3dc1b09b0adfc0d07b67668b717d6f1f3ccdb1bb8e3879df4ea716634a71"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/binding_envelope.rs": null,
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs": {
+        "bytes": 10726,
+        "sha256": "0c34d399ffa48e2e1395b5bcaee728bb85532a199ca81747f558a235da581f0a"
+      }
+    },
+    "source_projections": {
+      "tests/support/native_normal_module/early_entry.rs": {
+        "current_sha256": "edcf5a68385a531233444ff10c26f8efe38edb85016d721a4f3f3a74525c4945",
+        "edits": [
+          [
+            9797,
+            10117,
+            ""
+          ],
+          [
+            13369,
+            13388,
+            ""
+          ],
+          [
+            14379,
+            14425,
+            ""
+          ],
+          [
+            17364,
+            17398,
+            "    fn write_failure(&self) {\n"
+          ],
+          [
+            18742,
+            18787,
+            ""
+          ]
+        ],
+        "previous_sha256": "f77edfa9dd79840d223dc573a82905b6acf25e4d5ee07374fa3f94a7a7e4c9b6"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": {
+        "current_sha256": "653fbdf578ee83945a7353254d0833296760a72a6c662449d611cda944a6e838",
+        "edits": [
+          [
+            330,
+            391,
+            ""
+          ],
+          [
+            726,
+            756,
+            "    binding: Arc<Binding>,\n"
+          ],
+          [
+            878,
+            954,
+            "        if self.failed.load(Ordering::Acquire) || !early_binding(&self.binding) {\n"
+          ]
+        ],
+        "previous_sha256": "496a3dc1b09b0adfc0d07b67668b717d6f1f3ccdb1bb8e3879df4ea716634a71"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs": {
+        "current_sha256": "a392eedaabb723cc1389bda78667b7fdfeba04cfd144bb1998305ddcc8b84294",
+        "edits": [
+          [
+            3860,
+            3912,
+            "            binding,\n"
+          ]
+        ],
+        "previous_sha256": "0c34d399ffa48e2e1395b5bcaee728bb85532a199ca81747f558a235da581f0a"
+      }
+    },
+    "sources": {
+      "tests/support/native_normal_module/early_entry.rs": "edcf5a68385a531233444ff10c26f8efe38edb85016d721a4f3f3a74525c4945",
+      "tests/support/native_normal_module/early_entry/pc_counts.rs": "444f69d76974d5cf1a3913952f4b0686fd7cf1a1604e4178967652fd5a09f98d",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": "653fbdf578ee83945a7353254d0833296760a72a6c662449d611cda944a6e838",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/binding_envelope.rs": "8252f5db57124cad966177efe95e3245a6c9f3d82d8601d5b1ea589d98a7ce97",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs": "a392eedaabb723cc1389bda78667b7fdfeba04cfd144bb1998305ddcc8b84294"
+    },
+    "workspace_changes": {
+      "test/frontend_native_calibrations": {
+        "current": {
+          "ignored": 1,
+          "tests": 238
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 236
+        }
+      },
+      "unit/ordinary_interval/main": {
+        "current": {
+          "ignored": 1,
+          "tests": 523
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 521
+        }
+      },
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 37,
+          "tests": 627
+        },
+        "previous": {
+          "ignored": 37,
+          "tests": 625
+        }
+      }
+    }
+  },
   "source_successor_fd4c6": {
     "added_default_methods": {
       "src/artifact_overlay_tests.rs": [
@@ -11423,7 +11625,7 @@
     "evaluation/admission/test_main34c47_inventory.py": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "7823badbd86e65b1597d70cecc64300f44b8880de28666a2dba8ba1554560396",
-    "evaluation/admission/test_main97ab_inventory.py": "46fa1ddc574a820ddcb97d5af03c880ba1b6666919bc8c9a6356120ada35cbb5",
+    "evaluation/admission/test_main97ab_inventory.py": "013fd78372d46c6077cc4ada1b13e666affdd8366446f33a667a9d77343c448c",
     "evaluation/admission/test_main981419_inventory.py": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
     "evaluation/admission/test_mainaf81_inventory.py": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
@@ -11525,7 +11727,8 @@
     "tests/support/jrcxz_state.rs": "ea3f380a179470e12264258e5a01bfefebaaebb7b0654b2354b81a9b4f5eb55f",
     "tests/support/native_normal_caller.rs": "d06f528e7987dd5e4a4482e1013ca6a65d0ccc54e02016730e0dc5082e925358",
     "tests/support/native_normal_module.rs": "d43543eda95b81f822fb11112bb5bcb8a7d46e6d442d639e180c0af301a49d0b",
-    "tests/support/native_normal_module/early_entry.rs": "f77edfa9dd79840d223dc573a82905b6acf25e4d5ee07374fa3f94a7a7e4c9b6",
+    "tests/support/native_normal_module/early_entry.rs": "edcf5a68385a531233444ff10c26f8efe38edb85016d721a4f3f3a74525c4945",
+    "tests/support/native_normal_module/early_entry/pc_counts.rs": "444f69d76974d5cf1a3913952f4b0686fd7cf1a1604e4178967652fd5a09f98d",
     "tests/support/native_normal_module/early_entry/wide.rs": "f5dc66a3e042ca127ee49d8342fe76e8a1ceed260bd1dbda079269c9fb4f7b99",
     "tests/support/native_normal_module/tests.rs": "87bf281f1654d4b3c9ce49d34c0d9d59aa931c3c058c2ac6649edeeb1ee3cb5e",
     "tests/support/native_ordinary.rs": "33e0cbfa2d195b5d7f7b8e777725bfa49f0df0e9f91a49630a8fdd7419337ee5",
@@ -11613,10 +11816,11 @@
     "tools/rapid-profiler/src/frontend_native/always_on/normal/leaf_set/tests.rs": "d894f517efe2f4ce2be2e0d17a74db65217f6e652ebc59be2c61c34f64e4f92e",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": "acc5e2c29ca05cf0a6a4642ced490776628ef42e005b863146c9935a99f669bf",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": "317a108ccc431a1e47f5e0fba179d4979f75d45f360518f8f95432b34be7a458",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": "496a3dc1b09b0adfc0d07b67668b717d6f1f3ccdb1bb8e3879df4ea716634a71",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": "653fbdf578ee83945a7353254d0833296760a72a6c662449d611cda944a6e838",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/binding_envelope.rs": "8252f5db57124cad966177efe95e3245a6c9f3d82d8601d5b1ea589d98a7ce97",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": "d1d01fa4979d0bd0bdfaff2bba1f785a9d095fb195ac59b7c22597493a16b463",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": "cf23108dcb7efe7e47f83876ff55f1a5abc2d74d5e67a625d7019a850765528d",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs": "0c34d399ffa48e2e1395b5bcaee728bb85532a199ca81747f558a235da581f0a",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs": "a392eedaabb723cc1389bda78667b7fdfeba04cfd144bb1998305ddcc8b84294",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs": "23944bb96f6d8112259691cf9b2f36aebeaa893aacd570647a4cdccf633f1e22",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs": "dbf8cc5fb8104eeb01cc5377a33c0c405d50d92b01f46cf03ee2644307986456",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/physical_slots.rs": "60201be06f6178026efacdb1519255a38ca5b452933d3296c3c0ee25bb6e5a0c",

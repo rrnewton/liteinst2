@@ -6307,7 +6307,7 @@
       },
       "test/frontend_native_calibrations": {
         "ignored": 1,
-        "tests": 236
+        "tests": 238
       },
       "test/generalized_pun_contract": {
         "ignored": 0,
@@ -6555,7 +6555,7 @@
       },
       "unit/ordinary_interval/main": {
         "ignored": 1,
-        "tests": 521
+        "tests": 523
       },
       "unit/owned_region_clock/owned_region_clock": {
         "ignored": 0,
@@ -6567,7 +6567,7 @@
       },
       "unit/rapid_profiler/lib": {
         "ignored": 37,
-        "tests": 625
+        "tests": 627
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,

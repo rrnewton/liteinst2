@@ -18,11 +18,92 @@ from test_parsing import counts, summary
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # Immutable binding and completed-PC diagnostics add six default instances.
+        binding = current.DATA['source_successor_f9f89ac']
+        binding_prior = current.before_f9f89ac(actual)
+        binding_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(binding_prior), current.BINDING_PREVIOUS)
+        self.assertEqual((len(binding_rows), sum(x['tests'] for x in binding_rows.values()),
+                          sum(x['ignored'] for x in binding_rows.values())), (120, 4608, 43))
+        self.assertEqual({name: binding_rows[name] for name in binding['workspace_changes']}, {
+            'unit/rapid_profiler/lib': counts(627, 37),
+            'test/frontend_native_calibrations': counts(238, 1),
+            'unit/ordinary_interval/main': counts(523, 1)})
+        self.assertEqual((binding['default_method_additions'], binding['new_method_declarations'],
+                          binding['default_method_removals'], binding['default_harness_changes'],
+                          binding['default_ignore_changes'], binding['default_doctest_additions'],
+                          binding['recorder_identity_changes'], binding['feature_method_additions'],
+                          binding['feature_method_removals']), (6, 4, 0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(binding['added_default_methods'], {'tests/support/native_normal_module/early_entry/pc_counts.rs': ['counts_only_completed_transitions_and_preserves_each_pc', 'capacity_exhaustion_counts_drops_without_growing_or_losing_records'], 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/binding_envelope.rs': ['binding_envelope_preserves_malformed_profiles_and_fresh_error_order', 'binding_envelope_replacement_revalidates_and_retains_exact_arc']})
+        self.assertEqual(binding['default_method_instances'], {'tests/support/native_normal_module/early_entry/pc_counts.rs': ['test/frontend_native_calibrations', 'unit/ordinary_interval/main'], 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/binding_envelope.rs': ['unit/rapid_profiler/lib']})
+        self.assertEqual(sum(len(names) * len(binding['default_method_instances'][path])
+                             for path, names in binding['added_default_methods'].items()), 6)
+        self.assertEqual(binding['added_ignored_methods'], {})
+        self.assertEqual((len(binding['source_paths']), len(binding['source_projections'])), (5, 3))
+        self.assertEqual([path for path, value in binding['source_preimages'].items() if value is None],
+                         ['tests/support/native_normal_module/early_entry/pc_counts.rs', 'tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/binding_envelope.rs'])
+        self.assertEqual(binding_prior['harness_test_counts']['serial_launch'],
+                         actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((actual['recorder_tests'], binding_prior['recorder_tests']), (366, 366))
+        for path, row in binding['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_f9f89ac(path, raw, 'binding_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (binding['source_preimages'][path]['bytes'], row['previous_sha256']))
+            for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^binding_source_inverse$'):
+                    current.source_before_f9f89ac(path, wrong, 'binding_source_inverse')
+            for field in ('edits', 'current_sha256', 'previous_sha256'):
+                malformed = copy.deepcopy(row)
+                if field == 'edits': malformed['edits'][0][2] += '\n'
+                else: malformed[field] = '0' * 64
+                with patch.dict(binding['source_projections'], {path: malformed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^binding_source_inverse$'):
+                        current.source_before_f9f89ac(path, raw, 'binding_source_inverse')
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_f9f89ac(binding_prior)
+        for name in binding['workspace_changes']:
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(binding_rows[name][field]), binding_rows[name][field] + 1):
+                    wrong = copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_f9f89ac(wrong)
+            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_f9f89ac(wrong)
+        read = Path.read_bytes
+        binding_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
+            for path, names in binding['added_default_methods'].items() for name in names]
+        binding_stimuli += [(path, literal, '')
+            for path, literals in binding['module_chains'].items() for literal in literals]
+        for path, literal, replacement in binding_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('binding declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        for path in binding['source_paths']:
+            target = current.ROOT / path; raw = read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate != target: return read(candidate)
+                    if missing: raise FileNotFoundError(path)
+                    return raw + b'\n'
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                        current.require_sources()
         # Current-RET geometry adds two default tests; the complete physical
         # predecessor and every earlier historical target stay exact.
         current_ret = current.DATA['source_successor_bad32a8']
         current_ret_prior = current.before_bad32a8(actual)
-        current_ret_rows = actual['harness_test_counts']['workspace_tests']
+        current_ret_rows = binding_prior['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(current_ret_prior), current.CURRENT_RET_PREVIOUS)
         self.assertEqual((len(current_ret_rows), sum(x['tests'] for x in current_ret_rows.values()),
                           sum(x['ignored'] for x in current_ret_rows.values())), (120, 4602, 43))
@@ -1429,7 +1510,7 @@ class Main97abInventoryTests(unittest.TestCase):
         projections = ((current.before_96378, phase_catalog),
                        (current.before_29859, native_indexed),
                        (current.before_current, old))
-        for function, expected_projection in ((current.before_bad32a8, current_ret_prior), (current.before_e5462b7, physical_prior), *projections):
+        for function, expected_projection in ((current.before_f9f89ac, binding_prior), (current.before_bad32a8, current_ret_prior), (current.before_e5462b7, physical_prior), *projections):
             supplied = copy.deepcopy(actual)
             supplied['harness_test_counts']['serial_launch'] = PublishedCopy(
                 supplied['harness_test_counts']['serial_launch'])
@@ -1518,6 +1599,16 @@ class Main97abInventoryTests(unittest.TestCase):
         with patch.dict(change, previous=PublishedCopy(change['previous'])):
             result = current.before_bad32a8(actual)
             self.assertEqual(result, current_ret_prior)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+
+        # The current metadata transition also cannot publish its private output.
+        published.clear()
+        change = binding['workspace_changes']['unit/rapid_profiler/lib']
+        with patch.dict(change, previous=PublishedCopy(change['previous'])):
+            result = current.before_f9f89ac(actual)
+            self.assertEqual(result, binding_prior)
             self.assertEqual(len(published), 1)
             self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
             self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
