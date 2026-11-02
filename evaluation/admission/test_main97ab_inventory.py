@@ -18,11 +18,86 @@ from test_parsing import counts, summary
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # Current RET proofs add ten default tests; the publisher's three tests
+        # remain feature-only and cannot increase the default calibration row.
+        ret = current.DATA['source_successor_65ee8ea']
+        ret_prior = current.before_65ee8ea(actual)
+        ret_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(ret_prior), current.RET_PROOF_PREVIOUS)
+        self.assertEqual((len(ret_rows), sum(x['tests'] for x in ret_rows.values()),
+                          sum(x['ignored'] for x in ret_rows.values())), (120, 4591, 43))
+        self.assertEqual(ret_rows['unit/rapid_profiler/lib'], counts(614, 37))
+        self.assertEqual(ret_prior['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'],
+                         counts(604, 37))
+        self.assertEqual(ret_rows['test/frontend_native_calibrations'], counts(236, 1))
+        self.assertEqual((ret['default_method_additions'], ret['default_method_removals'],
+                          ret['default_harness_changes'], ret['default_ignore_changes'],
+                          ret['default_doctest_additions'], ret['recorder_identity_changes']),
+                         (10, 0, 0, 0, 0, 0))
+        self.assertEqual(sum(len(names) * len(ret['default_method_instances'][path])
+                             for path, names in ret['added_default_methods'].items()), 10)
+        self.assertEqual(sum(map(len, ret['feature_only_methods'].values())), 3)
+        self.assertEqual(ret['added_ignored_methods'], {})
+        self.assertEqual((len(ret['source_paths']), len(ret['source_projections'])), (5, 4))
+        self.assertEqual([path for path, value in ret['source_preimages'].items() if value is None],
+                         ['tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs'])
+        self.assertEqual(ret_prior['harness_test_counts']['serial_launch'],
+                         actual['harness_test_counts']['serial_launch'])
+        for path, row in ret['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_65ee8ea(path, raw, 'ret_proof_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (ret['source_preimages'][path]['bytes'], row['previous_sha256']))
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^ret_proof_source_inverse$'):
+                current.source_before_65ee8ea(path, raw + b'\n', 'ret_proof_source_inverse')
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_65ee8ea(ret_prior)
+        for field in ('tests', 'ignored'):
+            for value in (None, True, float(ret_rows['unit/rapid_profiler/lib'][field]),
+                          ret_rows['unit/rapid_profiler/lib'][field] + 1):
+                wrong = copy.deepcopy(actual)
+                wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field] = value
+                self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                    current.before_65ee8ea(wrong)
+        wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_65ee8ea(wrong)
+        wrong = copy.deepcopy(actual)
+        wrong['harness_test_counts']['workspace_tests']['test/frontend_native_calibrations'] = counts(239, 1)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_65ee8ea(wrong)
+        read = Path.read_bytes
+        ret_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
+            for group in ('added_default_methods', 'feature_only_methods')
+            for path, names in ret[group].items() for name in names]
+        ret_stimuli += [(path, literal, '')
+            for path, literals in ret['module_chains'].items() for literal in literals]
+        for path, literal, replacement in ret_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        for path in ret['source_paths']:
+            target = current.ROOT / path; raw = read(target)
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate != target: return read(candidate)
+                    if missing: raise FileNotFoundError(path)
+                    return raw + b'\n'
+                with patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                        current.require_sources()
         # The later snapshot implementation adds three tests in the same
         # Rapid library. Its prior source and complete catalog stay explicit.
         snapshot = current.DATA['source_successor_79b34bc']
         snapshot_prior = current.before_79b34bc(actual)
-        snapshot_rows = actual['harness_test_counts']['workspace_tests']
+        snapshot_rows = ret_prior['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(snapshot_prior), current.ENTRY_ADMISSION_CURRENT)
         self.assertEqual((len(snapshot_rows), sum(x['tests'] for x in snapshot_rows.values()),
                           sum(x['ignored'] for x in snapshot_rows.values())), (120, 4581, 43))

@@ -9,10 +9,11 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '5de99ad8749c34b3319715248e3c9b041a216fae1a945707cfab48dd3de08203',
+require(hashlib.sha256(RAW).hexdigest() == '80cff3adc74ceaeb30f3b87c4b736e7ec1c5b4b8e853e9d1b7ce4f4597dd784d',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
+RET_PROOF_PREVIOUS = DATA['source_successor_65ee8ea']['previous_corpus_sha256']
 ENTRY_ADMISSION_CURRENT = DATA['source_successor_79b34bc']['previous_corpus_sha256']
 ENTRY_ADMISSION_PREVIOUS = DATA['source_successor_a8acec5']['previous_corpus_sha256']
 POINT_PREVIOUS = DATA['source_successor_e5ab521']['previous_corpus_sha256']
@@ -78,6 +79,7 @@ def inverse(path, raw, rows, error):
 
 
 def source_before(path, raw, error):
+    raw = source_before_65ee8ea(path, raw, error)
     return inverse(path, raw, DATA['projections'], error)
 
 
@@ -86,11 +88,17 @@ def source_before_evaluation(path, raw, error):
 
 
 def source_before_a8acec5(path, raw, error):
+    raw = source_before_65ee8ea(path, raw, error)
     return inverse(path, raw, DATA['source_successor_a8acec5']['source_projections'], error)
 
 
 def source_before_79b34bc(path, raw, error):
+    raw = source_before_65ee8ea(path, raw, error)
     return inverse(path, raw, DATA['source_successor_79b34bc']['source_projections'], error)
+
+
+def source_before_65ee8ea(path, raw, error):
+    return inverse(path, raw, DATA['source_successor_65ee8ea']['source_projections'], error)
 
 
 def require_sources(error='main97ab_source_inventory_differs'):
@@ -124,11 +132,25 @@ def require_sources(error='main97ab_source_inventory_differs'):
         source_before_evaluation(path, raw, error)
 
 
-def before_79b34bc(declared, error='main97ab_inventory_differs'):
-    """Require all three snapshot tests and retain the corrected a8 catalog."""
+def before_65ee8ea(declared, error='main97ab_inventory_differs'):
+    """Bind ten default RET-proof tests without counting feature-only publisher tests."""
     require(type(declared) is dict and digest(declared) == CURRENT, error)
     owned = plain_catalog((declared, DATA))
     old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in DATA['source_successor_65ee8ea']['workspace_changes'].items():
+        require(digest(rows[name]) == digest(change['current']), error)
+        rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == RET_PROOF_PREVIOUS, error)
+    return old if owned else copy.deepcopy(old)
+
+
+def before_79b34bc(declared, error='main97ab_inventory_differs'):
+    """Require all three snapshot tests and retain the corrected a8 catalog."""
+    owned = plain_catalog((declared, DATA))
+    declared = before_65ee8ea(declared, error)
+    require(type(declared) is dict and digest(declared) == RET_PROOF_PREVIOUS, error)
+    old = declared if owned else copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in DATA['source_successor_79b34bc']['workspace_changes'].items():
         require(digest(rows[name]) == digest(change['current']), error)

@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "ad0b95416ad164fdcae47ca21ec7c52f2a714ab0fc5042334983bf3ce45ab57e",
+  "current_corpus_sha256": "45a88de6ae1bde9b0c68ffbef75b786d1c95aee06148430d8f5949b4df9cb1b2",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -258,7 +258,7 @@
       "previous_sha256": "aadd1ba2d9329dcd05812369960669fd416f59871793f3f446f88cdbb898a207"
     },
     "evaluation/admission/test_main20cbe_inventory.py": {
-      "current_sha256": "e5a4985cb0bc0da65970faeaae9c6e2570b86263b0514b3d7858ba0937572c79",
+      "current_sha256": "923a043c56391ca900e490231446c7286b649f2e9976b5f8eaab85bc4aa31cf3",
       "edits": [
         [
           413,
@@ -277,32 +277,32 @@
         ],
         [
           8366,
-          8606,
+          8708,
           ""
         ],
         [
-          8889,
-          8952,
+          8991,
+          9121,
           ""
         ],
         [
-          9100,
-          9178,
+          9269,
+          9433,
           ""
         ],
         [
-          9306,
-          9856,
+          9561,
+          10562,
           ""
         ],
         [
-          9923,
-          10001,
+          10629,
+          10707,
           "            row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()\n"
         ],
         [
-          10195,
-          10496,
+          10901,
+          11419,
           "            with patch.dict(current.DATA['projections'], {path: row}):\n"
         ]
       ],
@@ -412,61 +412,61 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "d0471c6407d8b3f61c92f4b18d35e3557b4bd7ed96dfdf3bc8018fb9ffb6b46f",
+      "current_sha256": "e287f13cf1e93ba73bbe73602184c9992cbc4b7b03b45e818220c0cc6b5a7eac",
       "edits": [
         [
           642,
-          12700,
+          18189,
           ""
         ],
         [
-          22071,
-          22182,
+          27560,
+          27671,
           "        self.assertEqual(actual['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],\n"
         ],
         [
-          27225,
-          27395,
+          32714,
+          32884,
           ""
         ],
         [
-          27442,
-          27536,
+          32931,
+          33025,
           "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n"
         ],
         [
-          27675,
-          27762,
+          33164,
+          33251,
           ""
         ],
         [
-          28021,
-          28100,
+          33510,
+          33589,
           ""
         ],
         [
-          29156,
-          29706,
+          34645,
+          35195,
           ""
         ],
         [
-          31225,
-          31321,
+          36714,
+          36810,
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          35164,
-          68476,
+          40653,
+          73965,
           ""
         ],
         [
-          75394,
-          78965,
+          80883,
+          84454,
           ""
         ],
         [
-          81598,
-          84739,
+          87087,
+          90228,
           ""
         ]
       ],
@@ -1840,6 +1840,12 @@
       "macro_calls": [],
       "templates": []
     },
+    "tools/rapid-profiler/native-interval/calibrations.rs": {
+      "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tools/rapid-profiler/native-interval/main.rs": {
       "all": [],
       "ignored": [],
@@ -1854,6 +1860,16 @@
     },
     "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": {
       "all": [],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": {
+      "all": [
+        "full_value_publisher_covers_all640_and_preserves_partition_and_bounds",
+        "full_value_publisher_propagates_every_single_cell_change_and_zero_reset",
+        "full_value_publisher_handles_eight_and_sixteen_byte_alignment_with_canaries"
+      ],
       "ignored": [],
       "macro_calls": [],
       "templates": []
@@ -2097,7 +2113,17 @@
         "checked_visit_revalidates_after_return_and_preserves_old_owner_across_rearm",
         "checked_visit_matches_full_shapes_for_every_mask_and_rearm",
         "checked_visit_function_closed_retains_full_receipt_on_refusal",
-        "checked_visit_correspondence_rejects_swapped_and_unknown_generation_fields"
+        "checked_visit_correspondence_rejects_swapped_and_unknown_generation_fields",
+        "ret_proof_rejects_hostile_prefix_before_current_geometry_or_mutation",
+        "ret_proof_late_shared_and_journal_failures_keep_exact_committed_state",
+        "ret_proof_preserves_all_receipt_kinds_across_bypass_and_rearm",
+        "entry_proof_hostile_prefix_refuses_before_entry_mutation",
+        "entry_proof_new_confirmation_keeps_full_older_row_join",
+        "entry_proof_late_shared_and_journal_failures_keep_committed_entry",
+        "entry_proof_partial_confirmation_failure_preserves_consumed_owner",
+        "entry_proof_matches_reference_across_receipt_kinds_and_bypasses",
+        "ret_normal_proof_matches_full_postshape_for_changed_fields",
+        "ret_normal_proof_keeps_combined_late_failure_order_and_committed_state"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -2560,11 +2586,15 @@
       "[[bin]]\nname = \"point-throughput\"\npath = \"point-throughput/main.rs\"\ntest = true\nbench = false",
       "[features]\n# Explicit native-oracle adapter only; default execution has no pause hooks.\nfrontend-native-qualification = []"
     ],
+    "tools/rapid-profiler/native-interval/calibrations.rs": [
+      "#[cfg(feature = \"frontend-native-qualification\")]\n#[path = \"normal/module/early_entry/publisher.rs\"]\nmod early_entry_publisher;"
+    ],
     "tools/rapid-profiler/native-interval/normal/module.rs": [
       "#[cfg(feature = \"frontend-native-qualification\")]\npub(crate) mod early_entry;"
     ],
     "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": [
-      "pub(crate) mod wide;"
+      "pub(crate) mod wide;",
+      "mod publisher;"
     ],
     "tools/rapid-profiler/ordinary-interval/main.rs": [
       "mod normal;",
@@ -6867,6 +6897,173 @@
     ],
     "python_control_identity_changes": 0
   },
+  "source_successor_65ee8ea": {
+    "added_default_methods": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": [
+        "ret_proof_rejects_hostile_prefix_before_current_geometry_or_mutation",
+        "ret_proof_late_shared_and_journal_failures_keep_exact_committed_state",
+        "ret_proof_preserves_all_receipt_kinds_across_bypass_and_rearm",
+        "entry_proof_hostile_prefix_refuses_before_entry_mutation",
+        "entry_proof_new_confirmation_keeps_full_older_row_join",
+        "entry_proof_late_shared_and_journal_failures_keep_committed_entry",
+        "entry_proof_partial_confirmation_failure_preserves_consumed_owner",
+        "entry_proof_matches_reference_across_receipt_kinds_and_bypasses",
+        "ret_normal_proof_matches_full_postshape_for_changed_fields",
+        "ret_normal_proof_keeps_combined_late_failure_order_and_committed_state"
+      ]
+    },
+    "added_ignored_methods": {},
+    "base_revision": "79b34bc131b79a97cad02340de9bfb5c5d0c5616",
+    "current_corpus_sha256": "45a88de6ae1bde9b0c68ffbef75b786d1c95aee06148430d8f5949b4df9cb1b2",
+    "default_doctest_additions": 0,
+    "default_harness_changes": 0,
+    "default_ignore_changes": 0,
+    "default_method_additions": 10,
+    "default_method_instances": {
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": [
+        "unit/rapid_profiler/lib"
+      ]
+    },
+    "default_method_removals": 0,
+    "feature_method_instances": {
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": [
+        "test/frontend_native_calibrations [frontend-native-qualification]"
+      ]
+    },
+    "feature_only_methods": {
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": [
+        "full_value_publisher_covers_all640_and_preserves_partition_and_bounds",
+        "full_value_publisher_propagates_every_single_cell_change_and_zero_reset",
+        "full_value_publisher_handles_eight_and_sixteen_byte_alignment_with_canaries"
+      ]
+    },
+    "feature_scope": "frontend-native-qualification only; its publisher module is absent from the default calibration harness. The native-oracle binary has test=false. Default workspace_tests remains cargo test --workspace.",
+    "incoming_main": "65ee8eaa2475d57d43a0af2d20aa17290b2bb285",
+    "module_chains": {
+      "tools/rapid-profiler/native-interval/calibrations.rs": [
+        "#[cfg(feature = \"frontend-native-qualification\")]\n#[path = \"normal/module/early_entry/publisher.rs\"]\nmod early_entry_publisher;"
+      ],
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": [
+        "mod publisher;"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ]
+    },
+    "previous_corpus_sha256": "ad0b95416ad164fdcae47ca21ec7c52f2a714ab0fc5042334983bf3ce45ab57e",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "tools/rapid-profiler/native-interval/calibrations.rs",
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs",
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs"
+    ],
+    "source_preimages": {
+      "tools/rapid-profiler/native-interval/calibrations.rs": {
+        "bytes": 1454,
+        "sha256": "e16e47eedc7adb007806c17045379e6225ba7b5fa67a5c052c00efde06fe24c2"
+      },
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": {
+        "bytes": 33485,
+        "sha256": "d9d63706dafe4cb602be6e96ef54811c926e94b2d5fc9f6c842f356d63d04d56"
+      },
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": null,
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": {
+        "bytes": 10131,
+        "sha256": "284790f35e1d390531e3c6df9e36fcc359d8ba331c30f22c29589da7747ab647"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": {
+        "bytes": 32232,
+        "sha256": "a22d0e9f27c259525bf0ff1f03ef08a2e5a1b5effaaff3e83501ba13a505b539"
+      }
+    },
+    "source_projections": {
+      "tools/rapid-profiler/native-interval/calibrations.rs": {
+        "current_sha256": "c694791b56c655b30b22476aa68cde0426d5f163ef166ffd860e51d8405d0987",
+        "edits": [
+          [
+            1454,
+            1651,
+            ""
+          ]
+        ],
+        "previous_sha256": "e16e47eedc7adb007806c17045379e6225ba7b5fa67a5c052c00efde06fe24c2"
+      },
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": {
+        "current_sha256": "54102d77b114a056de6f15a35218a8b8031d4e1b876a522b4a41c2c0a8bae2a0",
+        "edits": [
+          [
+            180,
+            195,
+            ""
+          ],
+          [
+            19432,
+            19609,
+            "                for (out, n) in header_out.iter_mut().zip(header.iter().copied()) {\n                    std::ptr::write_volatile(out, n);\n                }\n                for (out, n) in journal_out.iter_mut().zip(snapshot.journal.iter().copied()) {\n                    std::ptr::write_volatile(out, n);\n                }\n"
+          ]
+        ],
+        "previous_sha256": "d9d63706dafe4cb602be6e96ef54811c926e94b2d5fc9f6c842f356d63d04d56"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": {
+        "current_sha256": "8a8efa79d05232da3bdf713e59d68e504543d39b7b20e7c88f93c843e6d18968",
+        "edits": [
+          [
+            2982,
+            13214,
+            ""
+          ],
+          [
+            13369,
+            13551,
+            "        let Visit {\n            selected,\n            pc,\n            rsp,\n            word,\n            stamp,\n            entry,\n        } = visit;\n        let checked = CheckedVisit::new(self, state)?;\n        let b = self.active.as_mut().ok_or(error(Cause::Outstanding))?;\n        let index = b.position;\n        if index >= 4\n            || selected != self.order[index % 2]\n            || word != self.words[index]\n            || b.rsp.is_some_and(|prior| prior != rsp)\n        {\n            return Err(error(Cause::Return));\n        }\n        if entry {\n            if b.seen[index].is_some() || checked.has_unreturned_pending() {\n                return Err(error(Cause::Return));\n            }\n            let ordinal = checked.next_ordinal();\n            checked.enter(selected, pc, rsp, word, stamp)?;\n            b.rsp = Some(rsp);\n            b.seen[index] = Some(ordinal);\n            b.pending_position = Some(index);\n"
+          ],
+          [
+            13568,
+            13723,
+            "            checked.return_geometry(selected, pc)?;\n            if let Some(ordinal) = b.seen[index] {\n                if b.pending_position != Some(index) || checked.pending_return_mismatch(ordinal) {\n                    return Err(error(Cause::Return));\n                }\n                checked.observe(selected, pc, rsp, word, stamp)?;\n            } else {\n                if checked.has_unreturned_pending() {\n                    return Err(error(Cause::Return));\n                }\n                checked.bypass();\n            }\n            b.rsp = Some(rsp);\n            b.rows[index] = Some(EarlyEntryModulePhysicalRow {\n                batch: b.number,\n                position: index,\n                function: selected.function,\n                observed_ordinal: b.seen[index],\n                return_pc: pc,\n                entry_rsp: rsp,\n                return_word: word,\n            });\n            b.position += 1;\n"
+          ],
+          [
+            13733,
+            13733,
+            "        self.shape(state)\n"
+          ]
+        ],
+        "previous_sha256": "284790f35e1d390531e3c6df9e36fcc359d8ba331c30f22c29589da7747ab647"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": {
+        "current_sha256": "93aa686b66d6656ab235de1196127da50218966971b91c0aaefcfbf1ca66e3a0",
+        "edits": [
+          [
+            32232,
+            81154,
+            ""
+          ]
+        ],
+        "previous_sha256": "a22d0e9f27c259525bf0ff1f03ef08a2e5a1b5effaaff3e83501ba13a505b539"
+      }
+    },
+    "sources": {
+      "tools/rapid-profiler/native-interval/calibrations.rs": "c694791b56c655b30b22476aa68cde0426d5f163ef166ffd860e51d8405d0987",
+      "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": "54102d77b114a056de6f15a35218a8b8031d4e1b876a522b4a41c2c0a8bae2a0",
+      "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": "f053dc48a2d564e78f34d7589572fa9c275f13c21f378045360d2f4acb5dcef9",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": "8a8efa79d05232da3bdf713e59d68e504543d39b7b20e7c88f93c843e6d18968",
+      "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": "93aa686b66d6656ab235de1196127da50218966971b91c0aaefcfbf1ca66e3a0"
+    },
+    "workspace_changes": {
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 37,
+          "tests": 614
+        },
+        "previous": {
+          "ignored": 37,
+          "tests": 604
+        }
+      }
+    }
+  },
   "source_successor_667921": {
     "added_default_methods": {
       "src/controls.rs": [
@@ -10550,11 +10747,11 @@
     "evaluation/admission/parsing.py": "c51d69252cba8db3d286f9c2dc6e0c91709873d825f77cef9ff5f982a8dda86b",
     "evaluation/admission/recorder_parallel.py": "a30f938577e1e4038d314295d58e118dc39618d50ee0863ed510412f03635861",
     "evaluation/admission/test_main0fb574_inventory.py": "23dc3397b29d500ec40529f14eb3f9aba466affc14e1c0f9953b5e405582f4fa",
-    "evaluation/admission/test_main20cbe_inventory.py": "e5a4985cb0bc0da65970faeaae9c6e2570b86263b0514b3d7858ba0937572c79",
+    "evaluation/admission/test_main20cbe_inventory.py": "923a043c56391ca900e490231446c7286b649f2e9976b5f8eaab85bc4aa31cf3",
     "evaluation/admission/test_main34c47_inventory.py": "2f8a54204aa0b68d564e224401170d44d21e90f56880a8a30e8f8dee000f0c82",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "7823badbd86e65b1597d70cecc64300f44b8880de28666a2dba8ba1554560396",
-    "evaluation/admission/test_main97ab_inventory.py": "d0471c6407d8b3f61c92f4b18d35e3557b4bd7ed96dfdf3bc8018fb9ffb6b46f",
+    "evaluation/admission/test_main97ab_inventory.py": "e287f13cf1e93ba73bbe73602184c9992cbc4b7b03b45e818220c0cc6b5a7eac",
     "evaluation/admission/test_main981419_inventory.py": "a3cab0bf06b1b23f052c7365b1b0017d574f5b8184ad5ee4c2599b0fb18b54af",
     "evaluation/admission/test_mainacc247_inventory.py": "fd1bd66b2bbad61eade881dc159b6279459b9907fec9235c07ac2ab97fe5e22e",
     "evaluation/admission/test_mainaf81_inventory.py": "f7d3f048beac4672bee2d40970e88f850ec6ec0b7d5631f320f2c569611a23d3",
@@ -10712,9 +10909,11 @@
     "tools/elf-rewrite/tests/support/composition_overlay.rs": "957573fdf12f81f63e302a761f298001a241e728d8251d65e5a85608c1fccf2b",
     "tools/rapid-profiler/Cargo.toml": "b533118e8ceaba2f14126ca48c0fc9756aff5e56a20d1f8dacc512a35698dc0d",
     "tools/rapid-profiler/README.md": "68b065b9fd33fee89ae3f42a714e9a1a1432f1d2de15f11d2d61328bfe6e8ba3",
+    "tools/rapid-profiler/native-interval/calibrations.rs": "c694791b56c655b30b22476aa68cde0426d5f163ef166ffd860e51d8405d0987",
     "tools/rapid-profiler/native-interval/main.rs": "e54f1b84dd6fc8591263bb399a0acb2dafb0a225bead6b34c2ab6bbcefa12ece",
     "tools/rapid-profiler/native-interval/normal/module.rs": "9a1179917963db7821f49067bc08f6ad91ff8d1502dcd152b16ac88f86d21b61",
-    "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": "d9d63706dafe4cb602be6e96ef54811c926e94b2d5fc9f6c842f356d63d04d56",
+    "tools/rapid-profiler/native-interval/normal/module/early_entry.rs": "54102d77b114a056de6f15a35218a8b8031d4e1b876a522b4a41c2c0a8bae2a0",
+    "tools/rapid-profiler/native-interval/normal/module/early_entry/publisher.rs": "f053dc48a2d564e78f34d7589572fa9c275f13c21f378045360d2f4acb5dcef9",
     "tools/rapid-profiler/native-interval/normal/module/early_entry/wide.rs": "7348189734fc40d152290f3eee3fd2df92d50f47c5644496311daa39cacee62e",
     "tools/rapid-profiler/ordinary-interval/main.rs": "76c776c72b6818743a18a47dff80ad14f4cd03567bd62183ddf05d11eb2527a9",
     "tools/rapid-profiler/ordinary-interval/normal.rs": "0618d34ca349bcd15db6cd3061912cbb2e8f939e1cf38277b49e6b60d20a35a3",
@@ -10743,8 +10942,8 @@
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module.rs": "acc5e2c29ca05cf0a6a4642ced490776628ef42e005b863146c9935a99f669bf",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned.rs": "317a108ccc431a1e47f5e0fba179d4979f75d45f360518f8f95432b34be7a458",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry.rs": "2231e4f4d42f64f3aeafb84e9030587a097fb1f86b62d5ae75879a34afd07efb",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": "284790f35e1d390531e3c6df9e36fcc359d8ba331c30f22c29589da7747ab647",
-    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": "a22d0e9f27c259525bf0ff1f03ef08a2e5a1b5effaaff3e83501ba13a505b539",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit.rs": "8a8efa79d05232da3bdf713e59d68e504543d39b7b20e7c88f93c843e6d18968",
+    "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/checked_visit/tests.rs": "93aa686b66d6656ab235de1196127da50218966971b91c0aaefcfbf1ca66e3a0",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller.rs": "0c34d399ffa48e2e1395b5bcaee728bb85532a199ca81747f558a235da581f0a",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/controller/tests.rs": "1c4ab8b18a89e1589de160162c0457f640c1c0d932600b9a43c0d15f545bb96e",
     "tools/rapid-profiler/src/frontend_native/always_on/normal/module/owned/early_entry/native.rs": "dbf8cc5fb8104eeb01cc5377a33c0c405d50d92b01f46cf03ee2644307986456",

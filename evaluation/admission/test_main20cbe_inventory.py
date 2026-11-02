@@ -118,6 +118,7 @@ class Main20cbeInventoryTests(unittest.TestCase):
         self.assertEqual(len(probes), 3)
         for path, literal in probes:
             target = current.ROOT / path; raw = read(target)
+            ret_outer = native_indexed.source_before_65ee8ea(path, raw, 'exact37_ret_source_inverse')
             outer = native_indexed.source_before(path, raw, 'exact37_current_source_inverse')
             self.assertEqual(hashlib.sha256(outer).hexdigest(),
                              current.DATA['projections'][path]['current_sha256'])
@@ -125,17 +126,26 @@ class Main20cbeInventoryTests(unittest.TestCase):
             self.assertEqual(hashlib.sha256(prior).hexdigest(), selected.DATA['sources'][path])
             self.assertEqual((raw.count(literal.encode()), prior.count(literal.encode())), (1, 1))
             self.assertEqual(outer.count(literal.encode()), 1)
+            self.assertEqual(ret_outer.count(literal.encode()), 1)
             altered = literal[:-1] + ('x' if literal[-1] != 'x' else 'y')
             changed_raw = raw.replace(literal.encode(), altered.encode())
+            changed_ret_outer = ret_outer.replace(literal.encode(), altered.encode())
             changed_outer = outer.replace(literal.encode(), altered.encode())
             changed_prior = prior.replace(literal.encode(), altered.encode())
             self.assertNotEqual(changed_raw, raw)
             # Keep the same mutation through the authenticated newer source
             # layer so the historical declaration gate remains the rejecting gate.
+            ret_rows = {}
+            ret_projections = native_indexed.DATA['source_successor_65ee8ea']['source_projections']
+            if path in ret_projections:
+                ret_row = copy.deepcopy(ret_projections[path])
+                ret_row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()
+                ret_row['previous_sha256'] = hashlib.sha256(changed_ret_outer).hexdigest()
+                ret_rows[path] = ret_row
             outer_rows = {}
             if path in native_indexed.DATA['projections']:
                 outer_row = copy.deepcopy(native_indexed.DATA['projections'][path])
-                outer_row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()
+                outer_row['current_sha256'] = hashlib.sha256(changed_ret_outer).hexdigest()
                 outer_row['previous_sha256'] = hashlib.sha256(changed_outer).hexdigest()
                 outer_rows[path] = outer_row
             row = copy.deepcopy(current.DATA['projections'][path])
@@ -143,8 +153,11 @@ class Main20cbeInventoryTests(unittest.TestCase):
             row['previous_sha256'] = hashlib.sha256(changed_prior).hexdigest()
             def changed(candidate):
                 return changed_raw if candidate == target else read(candidate)
-            with patch.dict(native_indexed.DATA['projections'], outer_rows), \
+            with patch.dict(ret_projections, ret_rows), \
+                 patch.dict(native_indexed.DATA['projections'], outer_rows), \
                  patch.dict(current.DATA['projections'], {path: row}):
+                self.assertEqual(native_indexed.source_before_65ee8ea(path, changed_raw,
+                    'exact37_ret_source_inverse'), changed_ret_outer)
                 self.assertEqual(native_indexed.source_before(path, changed_raw,
                     'exact37_current_source_inverse'), changed_outer)
                 self.assertEqual(current.source_before(path, changed_raw,
