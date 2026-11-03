@@ -40,5 +40,13 @@ observations and receipt identities. Their reproduction templates use the
 committed runners with fresh output directories and an externally reserved
 CPU. The native/program builds reuse an authenticated prior compiler archive
 whose relevant source bytes match; that provider's failed programs remain
-failed. No private source overlay is required. Fresh required checks, the
-complete qualification cohort and real-program completion remain pending.
+failed. No private source overlay is required.
+
+The later six-check run at `cf7d1288ce944e06ee1d7d19b0b49e7df51b3e32`
+passes formatting, Clippy, workspace checking, all 4,704 workspace tests
+(43 ignored), all 366 recorder cases and all 1,039 serial launch tests.
+The workspace and serial runs take 777.574 and 131.250 seconds respectively,
+within their original 900/180-second limits, with four parallel workers and
+one serial worker. The adjacent `20261103T105338.913117Z-checks-cf7d1288ce94.json`
+records the exact command, source, hardware and complete harness totals.
+The complete qualification cohort and real-program completion remain pending.
