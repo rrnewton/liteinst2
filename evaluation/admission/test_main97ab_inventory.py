@@ -68,7 +68,7 @@ def cargo_mutation(test, observed, before, after):
 
 def outer_declaration_mutation(test, path, observed, before, after):
     """Carry the same old stimulus through the two new, exact outer joins."""
-    names = ('f9c5982', '2294097', '9528851', '11cc419', '281c342', '064b48c', '79a4b8b', '3217b8ed')
+    names = ('0073fb6', 'f9c5982', '2294097', '9528851', '11cc419', '281c342', '064b48c', '79a4b8b', '3217b8ed')
     rows = {name: {} for name in names}
     baseline = current.source_before_65ee8ea(path, observed, 'declaration_outer_baseline')
     if path == 'Cargo.toml':
@@ -109,10 +109,78 @@ def outer_declaration_mutation(test, path, observed, before, after):
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # Twenty-four entry-alphabet methods extend three existing default harnesses.
+        alphabet = current.DATA['source_successor_0073fb6']
+        alphabet_prior = current.before_0073fb6(actual)
+        alphabet_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(alphabet_prior), current.ALPHABET_PREVIOUS)
+        self.assertEqual((len(alphabet_rows), sum(x['tests'] for x in alphabet_rows.values()),
+                          sum(x['ignored'] for x in alphabet_rows.values())), (122, 4771, 43))
+        self.assertEqual((alphabet['default_method_additions'], alphabet['new_method_declarations'],
+                          alphabet['default_method_removals'], alphabet['default_harness_changes'],
+                          alphabet['default_ignore_changes'], alphabet['default_doctest_additions'],
+                          alphabet['recorder_identity_changes'], alphabet['feature_method_additions'],
+                          alphabet['feature_method_removals']), (24, 24, 0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(alphabet['added_default_methods'], {'src/emission/placement/digits/tests.rs': ['all_entry_bytes_and_fixed_conflicts_are_exact_in_each_digit', 'digit_minimum_matches_finite_enumeration_across_carries', 'all_masks_match_small_signed_partial_and_full_page_oracle', 'fixed06_wrapper_matches_independent_argmin_for_every_mask', 'alphabet_geometry_does_not_change_fixed_profile_or_indexed_attempt_zero', 'clipped_signed_edges_empty_sets_and_interval_order_are_exact'], 'src/emission/placement/entry_alphabet/tests.rs': ['checked_target_preserves_seed_or_selects_one_alphabet_target', 'checked_target_rejoins_every_field_and_rejects_coherent_non_alphabet_bytes', 'consumption_rechecks_permits_occupancy_and_unchanged_one_page_policy'], 'src/entry_router/imp/entry_alphabet_native_tests.rs': ['alphabet_min5_every_entry_routes_through_production', 'alphabet_min5_ret_fault_preserves_prior_pop_and_callbacks', 'alphabet_min5_non06_pop_fault_preserves_uncommitted_state'], 'src/quiescent/artifact_window/placement_tests.rs': ['actual_prepared_window_uses_non06_target_with_all_entries_and_observations', 'explicit_fixed06_is_identical_to_legacy_success_and_refusal', 'one_failed_encode_has_no_indexed_proof_and_append_failure_keeps_image_acceptance', 'source_entry_current_overlay_and_size_refusals_keep_original_precedence', 'alphabet_authority_refuses_live_unprepared_and_mixed_control_paths'], 'tools/elf-rewrite/examples/disassembly_sites/grouped_alphabet_tests.rs': ['alphabet_cli_selector_is_distinct_and_preserves_old_routes_and_storage', 'alphabet_cli_keeps_complete_union_and_whole_unit_refusals_in_both_storage_modes', 'alphabet_cli_rejects_old_profile_and_repinned_placement_or_embedded_metadata'], 'tools/elf-rewrite/src/grouped_artifact_frontend/alphabet_tests.rs': ['alphabet_group_keeps_every_observation_and_retained_entry_in_one_plan', 'alphabet_policy_and_binding_are_distinct_while_min5_geometry_and_caps_stay_exact', 'alphabet_does_not_repair_short_min5_seals_or_split_atomically_withheld_groups', 'alphabet_storage_is_independent_and_singletons_keep_the_legacy_engine']})
+        self.assertEqual(alphabet['default_method_instances'], {'src/emission/placement/digits/tests.rs': ['unit/liteinst2/lib'], 'src/emission/placement/entry_alphabet/tests.rs': ['unit/liteinst2/lib'], 'src/entry_router/imp/entry_alphabet_native_tests.rs': ['unit/liteinst2/lib'], 'src/quiescent/artifact_window/placement_tests.rs': ['unit/liteinst2/lib'], 'tools/elf-rewrite/examples/disassembly_sites/grouped_alphabet_tests.rs': ['unit/disassembly_sites/disassembly_sites'], 'tools/elf-rewrite/src/grouped_artifact_frontend/alphabet_tests.rs': ['unit/liteinst_rewrite/lib']})
+        self.assertEqual((alphabet['added_feature_methods'], alphabet['added_ignored_methods']), ({}, {}))
+        self.assertEqual((len(alphabet['source_paths']), len(alphabet['source_projections'])), (24, 24))
+        self.assertEqual(alphabet['new_sources'], ['evaluation/direct-program/entry-alphabet-result/README.md', 'evaluation/direct-program/entry-alphabet-result/cases.csv', 'evaluation/direct-program/entry-alphabet-result/receipt.json', 'evaluation/direct-program/test_grouped_alphabet_linkage.py', 'evaluation/direct-program/validate_entry_alphabet.py', 'src/emission/placement/digits.rs', 'src/emission/placement/digits/tests.rs', 'src/emission/placement/entry_alphabet.rs', 'src/emission/placement/entry_alphabet/tests.rs', 'src/entry_router/imp/entry_alphabet_native_tests.rs', 'src/quiescent/artifact_window/placement_tests.rs', 'tools/elf-rewrite/examples/disassembly_sites/grouped_alphabet_tests.rs', 'tools/elf-rewrite/src/grouped_artifact_frontend/alphabet_tests.rs'])
+        self.assertEqual(alphabet['newly_bound_sources'], ['evaluation/direct-program/entry-alphabet-result/README.md', 'evaluation/direct-program/entry-alphabet-result/cases.csv', 'evaluation/direct-program/entry-alphabet-result/receipt.json', 'evaluation/direct-program/test_grouped_alphabet_linkage.py', 'evaluation/direct-program/validate_entry_alphabet.py', 'src/emission/placement/digits.rs', 'src/emission/placement/digits/tests.rs', 'src/emission/placement/entry_alphabet.rs', 'src/emission/placement/entry_alphabet/tests.rs', 'src/entry_router/imp/entry_alphabet_native_tests.rs', 'src/quiescent/artifact_window/placement_tests.rs', 'tools/elf-rewrite/examples/disassembly_sites/grouped_alphabet_tests.rs', 'tools/elf-rewrite/src/grouped_artifact_frontend/alphabet_tests.rs'])
+        self.assertEqual(alphabet_prior['harness_test_counts']['serial_launch'], actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((actual['recorder_tests'], alphabet_prior['recorder_tests']), (366, 366))
+        for name, change in alphabet['workspace_changes'].items():
+            self.assertEqual(alphabet_rows[name], change['current'])
+            self.assertEqual(alphabet_prior['harness_test_counts']['workspace_tests'][name], change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(alphabet_rows[name][field]), alphabet_rows[name][field] + 1):
+                    wrong = inventory_copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_0073fb6(wrong)
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_0073fb6(wrong)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_0073fb6(alphabet_prior)
+        for path, row in alphabet['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_0073fb6(path, raw, 'alphabet_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (alphabet['source_preimages'][path]['bytes'], row['previous_sha256']))
+            if path in alphabet['new_sources']:
+                self.assertEqual(prior, b'')
+            for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^alphabet_source_inverse$'):
+                    current.source_before_0073fb6(path, wrong, 'alphabet_source_inverse')
+            for field in ('edits', 'current_sha256', 'previous_sha256'):
+                malformed = inventory_copy.deepcopy(row)
+                if field == 'edits': malformed['edits'][0][2] += '\n'
+                else: malformed[field] = '0' * 64
+                with patch.dict(alphabet['source_projections'], {path: malformed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^alphabet_source_inverse$'):
+                        current.source_before_0073fb6(path, raw, 'alphabet_source_inverse')
+        read = Path.read_bytes
+        alphabet_stimuli = [(p, 'fn ' + n + '(') for p, names in alphabet['added_default_methods'].items() for n in names]
+        alphabet_stimuli += [(p, literal) for p, literals in alphabet['module_chains'].items() for literal in literals]
+        for path, literal in alphabet_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            replacement = literal.replace('(', '_wrong(', 1) if literal.startswith('fn ') else literal[:-1] + ('x' if literal[-1] != 'x' else 'y')
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('alphabet declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        self.assertEqual(alphabet['declaration_transports'], {'src/entry_router/imp/routed_jmp_native_tests.rs': {'previous': '#[path = "../../../tests/support/quiescent_oracle.rs"]\nmod oracle;', 'current': '#[path = "../../../tests/support/quiescent_oracle.rs"]\npub(super) mod oracle;'}})
         # Seventeen minimum-window methods extend three existing default harnesses.
         minimum = current.DATA['source_successor_f9c5982']
         minimum_prior = current.before_f9c5982(actual)
-        minimum_rows = actual['harness_test_counts']['workspace_tests']
+        minimum_rows = alphabet_prior['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(minimum_prior), current.MINIMUM_PREVIOUS)
         self.assertEqual((len(minimum_rows), sum(x['tests'] for x in minimum_rows.values()),
                           sum(x['ignored'] for x in minimum_rows.values())), (122, 4747, 43))
@@ -165,6 +233,11 @@ class Main97abInventoryTests(unittest.TestCase):
         minimum_stimuli = [(p, 'fn ' + n + '(') for p, names in minimum['added_default_methods'].items() for n in names]
         minimum_stimuli += [(p, literal) for p, literals in minimum['module_chains'].items() for literal in literals]
         for path, literal in minimum_stimuli:
+            # The same historical module stimulus at its exact new visibility.
+            if path in alphabet['declaration_transports']:
+                transport = alphabet['declaration_transports'][path]
+                if literal == transport['previous']:
+                    literal = transport['current']
             target = current.ROOT / path; raw = read(target)
             self.assertEqual(raw.count(literal.encode()), 1)
             replacement = literal.replace('(', '_wrong(', 1) if literal.startswith('fn ') else literal[:-1] + ('x' if literal[-1] != 'x' else 'y')
@@ -2603,6 +2676,24 @@ class Main97abInventoryTests(unittest.TestCase):
                 with patch.dict(change, previous=PublishedCopy(change['previous'])):
                     result = current.before_f9c5982(supplied)
             self.assertEqual(result, minimum_prior)
+            self.assertEqual(supplied, actual)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+
+        # The latest transition preserves private ownership for both sources.
+        for source in ('declared', 'metadata'):
+            supplied = copy.deepcopy(actual)
+            change = alphabet['workspace_changes']['unit/liteinst_rewrite/lib']
+            published.clear()
+            if source == 'declared':
+                supplied['harness_test_counts']['serial_launch'] = PublishedCopy(supplied['harness_test_counts']['serial_launch'])
+                result = current.before_0073fb6(supplied)
+            else:
+                with patch.dict(change, previous=PublishedCopy(change['previous'])):
+                    result = current.before_0073fb6(supplied)
+            self.assertEqual(result, alphabet_prior)
             self.assertEqual(supplied, actual)
             self.assertEqual(len(published), 1)
             self.assertFalse(mutable_ids(result) & mutable_ids(supplied))

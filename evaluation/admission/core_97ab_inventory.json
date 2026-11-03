@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "4df0bb68b9302d3c673f5cade6c9a6c6460da5bf07366d9db76855a8262781c5",
+  "current_corpus_sha256": "217902dd4ea6c307c8bf056cbda4b62d298b73ca2012dda06b0bad000c78f696",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -114,12 +114,19 @@
       "/// ```compile_fail,E0277\n/// use liteinst2::controls::ControlWriter;\n/// fn needs_clone<T: Clone>() {}\n/// fn duplicate() { needs_clone::<ControlWriter>(); }\n/// ```"
     ],
     "src/emission.rs": [],
+    "src/emission/placement.rs": [],
+    "src/emission/placement/digits.rs": [],
+    "src/emission/placement/digits/tests.rs": [],
+    "src/emission/placement/entry_alphabet.rs": [],
+    "src/emission/placement/entry_alphabet/tests.rs": [],
     "src/entry_router.rs": [],
+    "src/entry_router/imp/entry_alphabet_native_tests.rs": [],
     "src/entry_router/imp/routed_jmp_native_tests.rs": [],
     "src/lib.rs": [],
     "src/quiescent.rs": [],
     "src/quiescent/artifact_window.rs": [],
     "src/quiescent/artifact_window/min5_tests.rs": [],
+    "src/quiescent/artifact_window/placement_tests.rs": [],
     "src/quiescent/artifact_window/tests.rs": [],
     "src/quiescent/artifact_window/upstream_tests.rs": [],
     "src/quiescent/whole_function.rs": [],
@@ -141,6 +148,7 @@
     "tools/elf-rewrite/examples/adjacent_b2_support/ledger.rs": [],
     "tools/elf-rewrite/examples/common_sites.rs": [],
     "tools/elf-rewrite/examples/disassembly_sites.rs": [],
+    "tools/elf-rewrite/examples/disassembly_sites/grouped_alphabet_tests.rs": [],
     "tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs": [],
     "tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs": [],
     "tools/elf-rewrite/examples/disassembly_sites/grouped_upstream_tests.rs": [],
@@ -165,6 +173,7 @@
     "tools/elf-rewrite/src/disassembly/whole/tests.rs": [],
     "tools/elf-rewrite/src/fixed_exec.rs": [],
     "tools/elf-rewrite/src/grouped_artifact_frontend.rs": [],
+    "tools/elf-rewrite/src/grouped_artifact_frontend/alphabet_tests.rs": [],
     "tools/elf-rewrite/src/grouped_artifact_frontend/min5_tests.rs": [],
     "tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs": [],
     "tools/elf-rewrite/src/grouped_artifact_frontend/upstream_tests.rs": [],
@@ -827,7 +836,7 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "b39288cd55b0d73d2bc07f5e2ac118103a5e6a746a2f3638d1fc18561ead1c72",
+      "current_sha256": "bb2a18dd23c51c208e3be2cac9692998dc3b4525f98d18735749aeb92b50c7b6",
       "edits": [
         [
           110,
@@ -836,102 +845,102 @@
         ],
         [
           460,
-          5858,
+          5869,
           ""
         ],
         [
-          6062,
-          136784,
+          6073,
+          146925,
           ""
         ],
         [
-          138849,
-          138920,
+          148990,
+          149061,
           "            wrong = copy.deepcopy(actual); wrong[key] = None\n"
         ],
         [
-          139250,
-          139380,
+          149391,
+          149521,
           "                    wrong = copy.deepcopy(actual); wrong['harness_test_counts']['workspace_tests'][name][field] = value\n"
         ],
         [
-          141004,
-          141083,
+          151145,
+          151224,
           "                bad = copy.deepcopy(row); bad['edits'][0][2] += '\\n'\n"
         ],
         [
-          144055,
-          144132,
+          154196,
+          154273,
           "            row = copy.deepcopy(current.DATA['projections'][path])\n"
         ],
         [
-          146195,
-          146306,
+          156336,
+          156447,
           "        self.assertEqual(actual['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],\n"
         ],
         [
-          147064,
-          147120,
+          157205,
+          157261,
           "                wrong = copy.deepcopy(actual)\n"
         ],
         [
-          151359,
-          151529,
+          161500,
+          161670,
           ""
         ],
         [
-          151576,
-          151730,
+          161717,
+          161871,
           "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n                    wrong = copy.deepcopy(actual)\n"
         ],
         [
-          151819,
-          151906,
+          161960,
+          162047,
           ""
         ],
         [
-          152064,
-          152254,
+          162205,
+          162395,
           "            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]\n"
         ],
         [
-          153310,
-          153860,
+          163451,
+          164001,
           ""
         ],
         [
-          155379,
-          155475,
+          165520,
+          165616,
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          157257,
-          157317,
+          167398,
+          167458,
           "                    wrong = copy.deepcopy(actual)\n"
         ],
         [
-          157564,
-          157675,
+          167705,
+          167816,
           "            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]\n"
         ],
         [
-          159338,
-          192842,
+          169479,
+          202983,
           ""
         ],
         [
-          199760,
-          203331,
+          209901,
+          213472,
           ""
         ],
         [
-          204611,
-          204883,
+          214752,
+          215024,
           "        for function, expected_projection in projections:\n"
         ],
         [
-          206177,
-          220535,
+          216318,
+          231727,
           ""
         ]
       ],
@@ -1050,7 +1059,7 @@
       "previous_sha256": "c8b2d6c0b859e6d757fcf9c9c5f6a43c75edcd594863e819c131dd37849e189b"
     },
     "evaluation/admission/test_mainaf81_inventory.py": {
-      "current_sha256": "8b3b5ecd0058e20f07678d3f46d51bea1b40287c31cbc17cc40cd183d5660b14",
+      "current_sha256": "bafb098c255d7091af58ddab838058c3f3772a389170526418f5f3fc6da05205",
       "edits": [
         [
           94,
@@ -1079,7 +1088,7 @@
         ],
         [
           8834,
-          15820,
+          15952,
           "            with patch.object(Path, 'read_bytes', changed), \\\n                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_raw).hexdigest()}), \\\n                 patch.object(current, 'source_before', side_effect=lambda p, b, e: b if p != path else (_ for _ in ()).throw(AssertionError('declaration gate omitted'))):\n                with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainaf81_source_inventory_differs$'):\n                    current.require_sources()\n"
         ]
       ],
@@ -1107,7 +1116,7 @@
       "previous_sha256": "b3b0c8d33e580affbd078b283fd13c3cdbf44d4855397aac694f4385880bdd1c"
     },
     "evaluation/admission/test_maind8d85_inventory.py": {
-      "current_sha256": "db2c569f139932612cca8850825eef3312fc7e484002371b4ad9d323c8ac0813",
+      "current_sha256": "e9cda23592316f9fd60d2c2980f7ed853f783910a95806bfdc9ed5bcce9f252e",
       "edits": [
         [
           383,
@@ -1151,7 +1160,7 @@
         ],
         [
           8138,
-          9456,
+          9584,
           "            with patch.dict(indexed.DATA['projections'], upstream):\n"
         ]
       ],
@@ -1194,7 +1203,7 @@
       "previous_sha256": "4376c7bb3da59cd0afd56ec13922dc27c42c1d557d017f6ee2cc165870d5ffa9"
     },
     "evaluation/admission/test_mainf353_inventory.py": {
-      "current_sha256": "913cb38972eb2eb3f2bb43de8ec96ea1c7bbe9fbf87b57f3c94e59c26f09b766",
+      "current_sha256": "18ab29cceaa403a7a113268529c75fffba7e9154b3a444d59297a6b0e72bb674",
       "edits": [
         [
           379,
@@ -1228,7 +1237,7 @@
         ],
         [
           6702,
-          8527,
+          8655,
           "            with patch.object(Path, 'read_bytes', changed), \\\n                 patch.dict(current.DATA['sources'], {path:hashlib.sha256(wrong).hexdigest()}), \\\n                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('indexed declaration gate omitted'))):\n                with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainf353_source_inventory_differs$'):\n                    current.require_sources()\n"
         ]
       ],
@@ -1425,6 +1434,29 @@
       "macro_calls": [],
       "templates": []
     },
+    "src/emission/placement/digits/tests.rs": {
+      "all": [
+        "all_entry_bytes_and_fixed_conflicts_are_exact_in_each_digit",
+        "digit_minimum_matches_finite_enumeration_across_carries",
+        "all_masks_match_small_signed_partial_and_full_page_oracle",
+        "fixed06_wrapper_matches_independent_argmin_for_every_mask",
+        "alphabet_geometry_does_not_change_fixed_profile_or_indexed_attempt_zero",
+        "clipped_signed_edges_empty_sets_and_interval_order_are_exact"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/emission/placement/entry_alphabet/tests.rs": {
+      "all": [
+        "checked_target_preserves_seed_or_selects_one_alphabet_target",
+        "checked_target_rejoins_every_field_and_rejects_coherent_non_alphabet_bytes",
+        "consumption_rechecks_permits_occupancy_and_unchanged_one_page_policy"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "src/emission/placement/entry_veneer_tests.rs": {
       "all": [
         "entry_veneer_preserves_seed_and_solves_only_the_same_page_window",
@@ -1474,6 +1506,16 @@
     "src/entry_router.rs": {
       "all": [
         "quiescent_sigill_contract"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/entry_router/imp/entry_alphabet_native_tests.rs": {
+      "all": [
+        "alphabet_min5_every_entry_routes_through_production",
+        "alphabet_min5_ret_fault_preserves_prior_pop_and_callbacks",
+        "alphabet_min5_non06_pop_fault_preserves_uncommitted_state"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -1744,6 +1786,18 @@
         "block_and_displacement_bounds_keep_original_qualifier_precedence",
         "seal_does_not_bypass_current_overlay_pending_or_terminal_entry_checks",
         "seal_is_not_a_physical_budget_fitting_or_hook_binding_success"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/quiescent/artifact_window/placement_tests.rs": {
+      "all": [
+        "actual_prepared_window_uses_non06_target_with_all_entries_and_observations",
+        "explicit_fixed06_is_identical_to_legacy_success_and_refusal",
+        "one_failed_encode_has_no_indexed_proof_and_append_failure_keeps_image_acceptance",
+        "source_entry_current_overlay_and_size_refusals_keep_original_precedence",
+        "alphabet_authority_refuses_live_unprepared_and_mixed_control_paths"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -2358,6 +2412,16 @@
       "macro_calls": [],
       "templates": []
     },
+    "tools/elf-rewrite/examples/disassembly_sites/grouped_alphabet_tests.rs": {
+      "all": [
+        "alphabet_cli_selector_is_distinct_and_preserves_old_routes_and_storage",
+        "alphabet_cli_keeps_complete_union_and_whole_unit_refusals_in_both_storage_modes",
+        "alphabet_cli_rejects_old_profile_and_repinned_placement_or_embedded_metadata"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs": {
       "all": [
         "min5_cli_selector_is_explicit_and_keeps_legacy_and_storage_routes",
@@ -2805,6 +2869,17 @@
         "union_projection_rejects_class_population_and_policy_replay_mutations",
         "union_fixed_policy_keeps_ordered_permits_caps_and_first_errors",
         "union_actual_fixed_transaction_emits_or_refuses_complete_population"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/elf-rewrite/src/grouped_artifact_frontend/alphabet_tests.rs": {
+      "all": [
+        "alphabet_group_keeps_every_observation_and_retained_entry_in_one_plan",
+        "alphabet_policy_and_binding_are_distinct_while_min5_geometry_and_caps_stay_exact",
+        "alphabet_does_not_repair_short_min5_seals_or_split_atomically_withheld_groups",
+        "alphabet_storage_is_independent_and_singletons_keep_the_legacy_engine"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -3590,17 +3665,29 @@
       "#[cfg(test)]\nmod tests;",
       "#[cfg(test)]\nmod fitting_tests;",
       "#[cfg(test)]\nmod entry_veneer_tests;",
-      "mod overlap;"
+      "mod overlap;",
+      "mod digits;",
+      "mod entry_alphabet;"
+    ],
+    "src/emission/placement/digits.rs": [
+      "#[cfg(test)]\nmod tests;"
+    ],
+    "src/emission/placement/entry_alphabet.rs": [
+      "#[cfg(test)]\nmod tests;"
     ],
     "src/emission/placement/overlap.rs": [
       "#[cfg(test)]\nmod tests;"
     ],
     "src/entry_router.rs": [
       "#[cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]\nmod imp {",
-      "    #[cfg(test)]\n    mod routed_jmp_native_tests;"
+      "    #[cfg(test)]\n    mod routed_jmp_native_tests;",
+      "    #[cfg(test)]\n    mod entry_alphabet_native_tests;"
+    ],
+    "src/entry_router/imp/entry_alphabet_native_tests.rs": [
+      "use super::routed_jmp_native_tests::{ProductionRoutes, min5_size_certificate, oracle};"
     ],
     "src/entry_router/imp/routed_jmp_native_tests.rs": [
-      "#[path = \"../../../tests/support/quiescent_oracle.rs\"]\nmod oracle;"
+      "#[path = \"../../../tests/support/quiescent_oracle.rs\"]\npub(super) mod oracle;"
     ],
     "src/lib.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod artifact_emission_tests;",
@@ -3637,7 +3724,8 @@
     "src/quiescent/artifact_window.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;",
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod upstream_tests;",
-      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod min5_tests;"
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod min5_tests;",
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod placement_tests;"
     ],
     "src/quiescent/clock_region.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
@@ -3745,7 +3833,8 @@
       "#[cfg(test)]\n#[path = \"disassembly_sites/grouped_tests.rs\"]\nmod grouped_tests;",
       "#[cfg(test)]\n#[path = \"disassembly_sites/grouped_upstream_tests.rs\"]\nmod grouped_upstream_tests;",
       "#[cfg(test)]\n#[path = \"disassembly_sites/ledger_storage_tests.rs\"]\nmod ledger_storage_tests;",
-      "#[cfg(test)]\n#[path = \"disassembly_sites/grouped_min5_tests.rs\"]\nmod grouped_min5_tests;"
+      "#[cfg(test)]\n#[path = \"disassembly_sites/grouped_min5_tests.rs\"]\nmod grouped_min5_tests;",
+      "#[cfg(test)]\n#[path = \"disassembly_sites/grouped_alphabet_tests.rs\"]\nmod grouped_alphabet_tests;"
     ],
     "tools/elf-rewrite/examples/full_program_bridge.rs": [
       "#[cfg(test)]\n#[path = \"full_program_bridge/tests.rs\"]\nmod tests;",
@@ -3801,7 +3890,8 @@
     "tools/elf-rewrite/src/grouped_artifact_frontend.rs": [
       "#[cfg(test)]\nmod tests;",
       "#[cfg(test)]\nmod upstream_tests;",
-      "#[cfg(test)]\nmod min5_tests;"
+      "#[cfg(test)]\nmod min5_tests;",
+      "#[cfg(test)]\nmod alphabet_tests;"
     ],
     "tools/elf-rewrite/src/ledger_codec.rs": [
       "#[cfg(test)]\nmod tests;"
@@ -7849,6 +7939,1062 @@
   "python_current_sha256": "98dfa104e316da775c170d403fe22498481259b36ddb1b3c59e4010ee2a9d3da",
   "python_previous_sha256": "bd7e5915b51b090fc4ce58a3295aca83e505dc4cf21baa8f2294aa190e85b546",
   "schema": 1,
+  "source_successor_0073fb6": {
+    "added_default_methods": {
+      "src/emission/placement/digits/tests.rs": [
+        "all_entry_bytes_and_fixed_conflicts_are_exact_in_each_digit",
+        "digit_minimum_matches_finite_enumeration_across_carries",
+        "all_masks_match_small_signed_partial_and_full_page_oracle",
+        "fixed06_wrapper_matches_independent_argmin_for_every_mask",
+        "alphabet_geometry_does_not_change_fixed_profile_or_indexed_attempt_zero",
+        "clipped_signed_edges_empty_sets_and_interval_order_are_exact"
+      ],
+      "src/emission/placement/entry_alphabet/tests.rs": [
+        "checked_target_preserves_seed_or_selects_one_alphabet_target",
+        "checked_target_rejoins_every_field_and_rejects_coherent_non_alphabet_bytes",
+        "consumption_rechecks_permits_occupancy_and_unchanged_one_page_policy"
+      ],
+      "src/entry_router/imp/entry_alphabet_native_tests.rs": [
+        "alphabet_min5_every_entry_routes_through_production",
+        "alphabet_min5_ret_fault_preserves_prior_pop_and_callbacks",
+        "alphabet_min5_non06_pop_fault_preserves_uncommitted_state"
+      ],
+      "src/quiescent/artifact_window/placement_tests.rs": [
+        "actual_prepared_window_uses_non06_target_with_all_entries_and_observations",
+        "explicit_fixed06_is_identical_to_legacy_success_and_refusal",
+        "one_failed_encode_has_no_indexed_proof_and_append_failure_keeps_image_acceptance",
+        "source_entry_current_overlay_and_size_refusals_keep_original_precedence",
+        "alphabet_authority_refuses_live_unprepared_and_mixed_control_paths"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_alphabet_tests.rs": [
+        "alphabet_cli_selector_is_distinct_and_preserves_old_routes_and_storage",
+        "alphabet_cli_keeps_complete_union_and_whole_unit_refusals_in_both_storage_modes",
+        "alphabet_cli_rejects_old_profile_and_repinned_placement_or_embedded_metadata"
+      ],
+      "tools/elf-rewrite/src/grouped_artifact_frontend/alphabet_tests.rs": [
+        "alphabet_group_keeps_every_observation_and_retained_entry_in_one_plan",
+        "alphabet_policy_and_binding_are_distinct_while_min5_geometry_and_caps_stay_exact",
+        "alphabet_does_not_repair_short_min5_seals_or_split_atomically_withheld_groups",
+        "alphabet_storage_is_independent_and_singletons_keep_the_legacy_engine"
+      ]
+    },
+    "added_feature_methods": {},
+    "added_ignored_methods": {},
+    "base_revision": "817d4b52300048571598e5b15a5d5f57635b2033",
+    "current_corpus_sha256": "217902dd4ea6c307c8bf056cbda4b62d298b73ca2012dda06b0bad000c78f696",
+    "declaration_transports": {
+      "src/entry_router/imp/routed_jmp_native_tests.rs": {
+        "current": "#[path = \"../../../tests/support/quiescent_oracle.rs\"]\npub(super) mod oracle;",
+        "previous": "#[path = \"../../../tests/support/quiescent_oracle.rs\"]\nmod oracle;"
+      }
+    },
+    "default_doctest_additions": 0,
+    "default_harness_changes": 0,
+    "default_ignore_changes": 0,
+    "default_method_additions": 24,
+    "default_method_instances": {
+      "src/emission/placement/digits/tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "src/emission/placement/entry_alphabet/tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "src/entry_router/imp/entry_alphabet_native_tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "src/quiescent/artifact_window/placement_tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_alphabet_tests.rs": [
+        "unit/disassembly_sites/disassembly_sites"
+      ],
+      "tools/elf-rewrite/src/grouped_artifact_frontend/alphabet_tests.rs": [
+        "unit/liteinst_rewrite/lib"
+      ]
+    },
+    "default_method_removals": 0,
+    "feature_method_additions": 0,
+    "feature_method_removals": 0,
+    "incoming_main": "0073fb6bc43abc70cea9ed2d40aeca6ad5f9bbd7",
+    "merged_main_local_additions": {},
+    "merged_source_tree": "e1e54f5516031565328572608978199769c79b87",
+    "module_chains": {
+      "src/emission.rs": [
+        "pub(crate) mod placement;"
+      ],
+      "src/emission/placement.rs": [
+        "mod digits;",
+        "mod entry_alphabet;"
+      ],
+      "src/emission/placement/digits.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "src/emission/placement/entry_alphabet.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "src/entry_router.rs": [
+        "#[cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]\nmod imp {",
+        "    #[cfg(test)]\n    mod entry_alphabet_native_tests;"
+      ],
+      "src/entry_router/imp/entry_alphabet_native_tests.rs": [
+        "use super::routed_jmp_native_tests::{ProductionRoutes, min5_size_certificate, oracle};"
+      ],
+      "src/entry_router/imp/routed_jmp_native_tests.rs": [
+        "#[path = \"../../../tests/support/quiescent_oracle.rs\"]\npub(super) mod oracle;"
+      ],
+      "src/lib.rs": [
+        "pub mod emission;",
+        "mod entry_router;",
+        "pub mod quiescent;"
+      ],
+      "src/quiescent.rs": [
+        "mod artifact_window;"
+      ],
+      "src/quiescent/artifact_window.rs": [
+        "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod placement_tests;"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites.rs": [
+        "#[cfg(test)]\n#[path = \"disassembly_sites/grouped_alphabet_tests.rs\"]\nmod grouped_alphabet_tests;"
+      ],
+      "tools/elf-rewrite/src/grouped_artifact_frontend.rs": [
+        "#[cfg(test)]\nmod alphabet_tests;"
+      ],
+      "tools/elf-rewrite/src/lib.rs": [
+        "mod grouped_artifact_frontend;"
+      ]
+    },
+    "module_dependency_sources": {
+      "src/emission.rs": "6420f9b057a27195418b324f8b1e581abd55267f73674f2d16b5b4b29a73196c",
+      "src/lib.rs": "abf435a29ffdb821941ab4ffea147fc6af56c06748cb0d39b43ce62bfcebec14"
+    },
+    "new_method_declarations": 24,
+    "new_sources": [
+      "evaluation/direct-program/entry-alphabet-result/README.md",
+      "evaluation/direct-program/entry-alphabet-result/cases.csv",
+      "evaluation/direct-program/entry-alphabet-result/receipt.json",
+      "evaluation/direct-program/test_grouped_alphabet_linkage.py",
+      "evaluation/direct-program/validate_entry_alphabet.py",
+      "src/emission/placement/digits.rs",
+      "src/emission/placement/digits/tests.rs",
+      "src/emission/placement/entry_alphabet.rs",
+      "src/emission/placement/entry_alphabet/tests.rs",
+      "src/entry_router/imp/entry_alphabet_native_tests.rs",
+      "src/quiescent/artifact_window/placement_tests.rs",
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_alphabet_tests.rs",
+      "tools/elf-rewrite/src/grouped_artifact_frontend/alphabet_tests.rs"
+    ],
+    "newly_bound_sources": [
+      "evaluation/direct-program/entry-alphabet-result/README.md",
+      "evaluation/direct-program/entry-alphabet-result/cases.csv",
+      "evaluation/direct-program/entry-alphabet-result/receipt.json",
+      "evaluation/direct-program/test_grouped_alphabet_linkage.py",
+      "evaluation/direct-program/validate_entry_alphabet.py",
+      "src/emission/placement/digits.rs",
+      "src/emission/placement/digits/tests.rs",
+      "src/emission/placement/entry_alphabet.rs",
+      "src/emission/placement/entry_alphabet/tests.rs",
+      "src/entry_router/imp/entry_alphabet_native_tests.rs",
+      "src/quiescent/artifact_window/placement_tests.rs",
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_alphabet_tests.rs",
+      "tools/elf-rewrite/src/grouped_artifact_frontend/alphabet_tests.rs"
+    ],
+    "previous_corpus_sha256": "4df0bb68b9302d3c673f5cade6c9a6c6460da5bf07366d9db76855a8262781c5",
+    "previous_source_revision": "817d4b52300048571598e5b15a5d5f57635b2033",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "evaluation/direct-program/direct_data.py",
+      "evaluation/direct-program/entry-alphabet-result/README.md",
+      "evaluation/direct-program/entry-alphabet-result/cases.csv",
+      "evaluation/direct-program/entry-alphabet-result/receipt.json",
+      "evaluation/direct-program/reproduce.py",
+      "evaluation/direct-program/test_grouped_alphabet_linkage.py",
+      "evaluation/direct-program/validate_entry_alphabet.py",
+      "src/emission/placement.rs",
+      "src/emission/placement/digits.rs",
+      "src/emission/placement/digits/tests.rs",
+      "src/emission/placement/entry_alphabet.rs",
+      "src/emission/placement/entry_alphabet/tests.rs",
+      "src/entry_router.rs",
+      "src/entry_router/imp/entry_alphabet_native_tests.rs",
+      "src/entry_router/imp/routed_jmp_native_tests.rs",
+      "src/quiescent.rs",
+      "src/quiescent/artifact_window.rs",
+      "src/quiescent/artifact_window/placement_tests.rs",
+      "tests/support/min5_native.rs",
+      "tools/elf-rewrite/examples/disassembly_sites.rs",
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_alphabet_tests.rs",
+      "tools/elf-rewrite/src/grouped_artifact_frontend.rs",
+      "tools/elf-rewrite/src/grouped_artifact_frontend/alphabet_tests.rs",
+      "tools/elf-rewrite/src/lib.rs"
+    ],
+    "source_preimages": {
+      "evaluation/direct-program/direct_data.py": {
+        "bytes": 35377,
+        "sha256": "d2d8f73fdb74736c5cb1c46153f224049b82c6de901ad0c94e5a64291bf18379"
+      },
+      "evaluation/direct-program/entry-alphabet-result/README.md": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/entry-alphabet-result/cases.csv": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/entry-alphabet-result/receipt.json": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/reproduce.py": {
+        "bytes": 26389,
+        "sha256": "bb2a99e5911392e29f8dcffdf8587975a06f58b018599ed04718697c3e0191e1"
+      },
+      "evaluation/direct-program/test_grouped_alphabet_linkage.py": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/validate_entry_alphabet.py": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/emission/placement.rs": {
+        "bytes": 13714,
+        "sha256": "d5f296afd4e076b50af2db43123b543b8bc41d3257df9e2f88b2cf072256496f"
+      },
+      "src/emission/placement/digits.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/emission/placement/digits/tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/emission/placement/entry_alphabet.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/emission/placement/entry_alphabet/tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/entry_router.rs": {
+        "bytes": 30285,
+        "sha256": "61e0406541661d7390c8e75d68ca2d73b1bb5b0573371ae97ac0f714671f6280"
+      },
+      "src/entry_router/imp/entry_alphabet_native_tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/entry_router/imp/routed_jmp_native_tests.rs": {
+        "bytes": 7471,
+        "sha256": "fb68ac6d4c3aa2edcc48d2a85994cb3a4e69c19470e253790cc988e269b2d5cf"
+      },
+      "src/quiescent.rs": {
+        "bytes": 127572,
+        "sha256": "71c7a7c3e3033f73dab2a3f9e385326eca2b1ceae12610eb2abd743b1fabc152"
+      },
+      "src/quiescent/artifact_window.rs": {
+        "bytes": 18916,
+        "sha256": "f4838e928c383f7d5588b224e3f79ec34a6f810fd8f1d883b557e45a94a5b2bd"
+      },
+      "src/quiescent/artifact_window/placement_tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tests/support/min5_native.rs": {
+        "bytes": 21593,
+        "sha256": "87afbb3d74645935ef7e11c839c4f66a7720745b195e0556d7468453a0a80032"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites.rs": {
+        "bytes": 60163,
+        "sha256": "e8adad87d4e7c122ae70c7840612b0fdc9dd58838816ef58eedee3131a471052"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_alphabet_tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/grouped_artifact_frontend.rs": {
+        "bytes": 39357,
+        "sha256": "86bf627a182b37c8c58ce769b78a4a485cdbdf7fd7fc1a65dfc919292c8071a3"
+      },
+      "tools/elf-rewrite/src/grouped_artifact_frontend/alphabet_tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "bytes": 63382,
+        "sha256": "71abb28906187b3938d18d341d6224ce34b5975afa5202f1dfd07fbc89bf82ac"
+      }
+    },
+    "source_projections": {
+      "evaluation/direct-program/direct_data.py": {
+        "current_sha256": "9fb2557fb24974c488511ecbcb9e5bba34aa003d7ada5b97ad51cb2e382bc858",
+        "edits": [
+          [
+            11013,
+            11569,
+            "GROUPED_PROFILES = (GROUPED_PROFILE, GROUPED_UPSTREAM_PROFILE, GROUPED_MIN5_PROFILE)\n"
+          ],
+          [
+            15787,
+            15864,
+            "    min5 = profile == GROUPED_MIN5_PROFILE\n    upstream = profile in (GROUPED_UPSTREAM_PROFILE, GROUPED_MIN5_PROFILE)\n"
+          ],
+          [
+            17075,
+            17281,
+            "        expected_fields.update(grouping_policy_version='2', window_sealing='minimum-whole-instruction-v1')\n"
+          ],
+          [
+            20105,
+            20164,
+            "        prefix[0] = ['LI2GROUPING-POLICY', '2']\n"
+          ],
+          [
+            20464,
+            20636,
+            ""
+          ],
+          [
+            31681,
+            31811,
+            ""
+          ]
+        ],
+        "previous_sha256": "d2d8f73fdb74736c5cb1c46153f224049b82c6de901ad0c94e5a64291bf18379"
+      },
+      "evaluation/direct-program/entry-alphabet-result/README.md": {
+        "current_sha256": "214a3a37322cfcd4ce99389d3cf21a12895874c32a6b750c8c0c26f24dc25fa7",
+        "edits": [
+          [
+            0,
+            1376,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/entry-alphabet-result/cases.csv": {
+        "current_sha256": "238c11c07a804b53112d0c85e8a659af12072f906ea638b742b6007ec2259ae4",
+        "edits": [
+          [
+            0,
+            947,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/entry-alphabet-result/receipt.json": {
+        "current_sha256": "d2cf1c48f3c38d55f8ba5c22179b68afe445030736620a68121a75c14e62a5e4",
+        "edits": [
+          [
+            0,
+            18155,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/reproduce.py": {
+        "current_sha256": "6c3ed935516b8aaa5090496e455d7ebdc6a1a2732182fa407a8ab6eedbd5ce5a",
+        "edits": [
+          [
+            1869,
+            2003,
+            ""
+          ]
+        ],
+        "previous_sha256": "bb2a99e5911392e29f8dcffdf8587975a06f58b018599ed04718697c3e0191e1"
+      },
+      "evaluation/direct-program/test_grouped_alphabet_linkage.py": {
+        "current_sha256": "fcd245fb97befd97f3392aaa6a770e4d48b6f698468f4da5fe8045e33f5ab203",
+        "edits": [
+          [
+            0,
+            8052,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/validate_entry_alphabet.py": {
+        "current_sha256": "1df07958c7e89e8d988541e90b08ca7e85a01df5617a4db9f5186ee86bada09d",
+        "edits": [
+          [
+            0,
+            6835,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/emission/placement.rs": {
+        "current_sha256": "fd062546893798a29654ad633aad4ffc16838c3fd2f5cc08841213e31c14133f",
+        "edits": [
+          [
+            4665,
+            4884,
+            "    let fixed_mask = mask.iter().enumerate().fold(0_u64, |bits, (i, set)| {\n        bits | if *set { 0xff_u64 << (i * 8) } else { 0 }\n    });\n    // q = displacement - i32::MIN is monotone in target address. Its sign bit\n    // is inverted relative to the encoded signed displacement.\n    let fixed_value = (0x0606_0606_u64 ^ 0x8000_0000) & fixed_mask;\n    let mut best: Option<u64> = None;\n    for range in free {\n        let low = (i128::from(range.start()) - i128::from(next)).max(i128::from(i32::MIN));\n        let high = (i128::from(range.end() - 1) - i128::from(next)).min(i128::from(i32::MAX));\n        if low > high {\n            continue;\n        }\n        let qlow = (low - i128::from(i32::MIN)) as u64;\n        let qhigh = (high - i128::from(i32::MIN)) as u64;\n        if let Some(q) = low_offset(qlow, qhigh, fixed_mask, fixed_value, next % PAGE) {\n            let target = u64::try_from(i128::from(next) + i128::from(i32::MIN) + i128::from(q))\n                .map_err(|_| Refusal::InvalidRange)?;\n            if best.is_none_or(|old| (target % PAGE, target) < (old % PAGE, old)) {\n                best = Some(target);\n            }\n"
+          ],
+          [
+            4900,
+            4962,
+            "    let target = best.ok_or(Refusal::AllocationUnavailable)?;\n"
+          ],
+          [
+            7488,
+            7500,
+            "// Least fixed-bit integer in an inclusive interval. Each carry either finishes\n// or moves the highest mismatch upward; at most 32 carries are possible.\nfn first_fixed(low: u64, high: u64, mask: u64, value: u64) -> Option<u64> {\n    if low > high || high > u64::from(u32::MAX) || mask > u64::from(u32::MAX) || value & !mask != 0\n    {\n        return None;\n    }\n    let mut candidate = low;\n    for _ in 0..=u32::BITS {\n        if candidate > high {\n            return None;\n        }\n        let mismatch = (candidate ^ value) & mask;\n        if mismatch == 0 {\n            return Some(candidate);\n        }\n        let bit = 1_u64 << (63 - mismatch.leading_zeros());\n        if value & bit != 0 {\n            candidate = ((candidate | bit) & !(bit - 1)) | (value & (bit - 1));\n        } else {\n            let unit = bit.checked_mul(2)?;\n            candidate =\n                (candidate / unit).checked_add(1)?.checked_mul(unit)? | (value & (unit - 1));\n        }\n    }\n    None\n}\n"
+          ],
+          [
+            7501,
+            7705,
+            "// Minimize the page offset of next + q; i32::MIN is page aligned. Split only\n// the two partial q pages and one full-page interval, not every page/address.\nfn low_offset(low: u64, high: u64, mask: u64, value: u64, next_low: u64) -> Option<u64> {\n    let first = low / PAGE;\n    let last = high / PAGE;\n    let mut best: Option<u64> = None;\n    let mut consider = |page: u64, left: u64, right: u64| {\n        if page & (mask >> 12) != value >> 12 || left > right {\n            return;\n        }\n        let turn = (PAGE - next_low) % PAGE;\n        let tail = first_fixed(left.max(turn), right, mask & (PAGE - 1), value & (PAGE - 1));\n        let head = if turn == 0 {\n            None\n        } else {\n            first_fixed(\n                left,\n                right.min(turn - 1),\n                mask & (PAGE - 1),\n                value & (PAGE - 1),\n            )\n        };\n        if let Some(part) = tail.or(head) {\n            let q = page * PAGE + part;\n            if best.is_none_or(|old| ((q + next_low) % PAGE, q) < ((old + next_low) % PAGE, old)) {\n                best = Some(q);\n            }\n        }\n    };\n    consider(\n        first,\n        low % PAGE,\n        if first == last { high % PAGE } else { PAGE - 1 },\n    );\n    if first < last {\n        if let Some(page) = first_fixed(first + 1, last - 1, mask >> 12, value >> 12) {\n            consider(page, 0, PAGE - 1);\n        }\n        consider(last, 0, high % PAGE);\n    }\n    best\n}\n"
+          ],
+          [
+            10554,
+            10740,
+            ""
+          ]
+        ],
+        "previous_sha256": "d5f296afd4e076b50af2db43123b543b8bc41d3257df9e2f88b2cf072256496f"
+      },
+      "src/emission/placement/digits.rs": {
+        "current_sha256": "fa2db20b098624550758e814bb49170f10c011f3004bd415258055d7b16ef2a5",
+        "edits": [
+          [
+            0,
+            7656,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/emission/placement/digits/tests.rs": {
+        "current_sha256": "0f9ae6601067f7df3f1b49c5de23cd9049d00b1a374f7093ba1faa9b2c9dc519",
+        "edits": [
+          [
+            0,
+            8891,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/emission/placement/entry_alphabet.rs": {
+        "current_sha256": "72edc8f55e358f42fe9edd9a800517d5cffcfa9cc204bf512b5a17a6c6116681",
+        "edits": [
+          [
+            0,
+            4232,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/emission/placement/entry_alphabet/tests.rs": {
+        "current_sha256": "744620d8315bb6ec5a7247481aec70ad51cbe016abbe69df891102f6a7d7f33f",
+        "edits": [
+          [
+            0,
+            5497,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/entry_router.rs": {
+        "current_sha256": "91a4bbdfafa1170b8a4f1bf5a34418ee56442504c60ba681f767c01463905b98",
+        "edits": [
+          [
+            15053,
+            15108,
+            ""
+          ]
+        ],
+        "previous_sha256": "61e0406541661d7390c8e75d68ca2d73b1bb5b0573371ae97ac0f714671f6280"
+      },
+      "src/entry_router/imp/entry_alphabet_native_tests.rs": {
+        "current_sha256": "05db96b37265470aed0d50446d8d6e4483824b81a1f64c26726d520cf79ccd44",
+        "edits": [
+          [
+            0,
+            1362,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/entry_router/imp/routed_jmp_native_tests.rs": {
+        "current_sha256": "c73b60ddd392e2ec228805760af456f99e9b366189b3a34d5b96aea49fb44c9c",
+        "edits": [
+          [
+            344,
+            367,
+            "mod oracle;\n"
+          ],
+          [
+            425,
+            480,
+            "struct ProductionRoutes(RouteRegistration);\n"
+          ],
+          [
+            6945,
+            6982,
+            "fn min5_size_certificate(\n"
+          ]
+        ],
+        "previous_sha256": "fb68ac6d4c3aa2edcc48d2a85994cb3a4e69c19470e253790cc988e269b2d5cf"
+      },
+      "src/quiescent.rs": {
+        "current_sha256": "30ec7636028ee1d2cfe687ba42ffbaf3d10b78c73fe4ffcedb8f6034d22126aa",
+        "edits": [
+          [
+            872,
+            1140,
+            "    ArtifactObservationWindowSeal, plan_artifact_observation_window_after,\n    plan_artifact_observation_window_upstream_after, seal_artifact_observation_window_min5,\n"
+          ],
+          [
+            58011,
+            58117,
+            "    ArtifactObservations(&'a [u64]),\n"
+          ],
+          [
+            60989,
+            61065,
+            "        RelocationAuthority::ArtifactObservations(pcs) => Some(pcs),\n"
+          ],
+          [
+            61590,
+            61797,
+            ""
+          ],
+          [
+            69168,
+            69958,
+            "    let policy = if let Some(prepared) = prepared.as_ref() {\n"
+          ],
+          [
+            71715,
+            72735,
+            "        let target = if let Some((_, ordinal, target)) = routed {\n"
+          ],
+          [
+            73312,
+            73779,
+            "        let emitted = match prepared.take() {\n            Some(prepared) => prepared.emit_at(target),\n            None => trampoline.emit(request.emission, target),\n"
+          ],
+          [
+            79722,
+            80474,
+            "    search_evidence.finish_candidates(\n        image_search,\n        if routed.is_some() {\n            crate::search::CandidateProof::Indexed {\n                permanent_end_exclusive: Some(1),\n                omitted: None,\n            }\n        } else {\n            candidate_target_proof(\n                physical,\n                mask,\n                policy.preferred_address,\n                policy.max_candidates,\n            )\n        },\n    );\n"
+          ]
+        ],
+        "previous_sha256": "71c7a7c3e3033f73dab2a3f9e385326eca2b1ceae12610eb2abd743b1fabc152"
+      },
+      "src/quiescent/artifact_window.rs": {
+        "current_sha256": "b95e256a82bbadba3654246e050ad4b5a5371391f86aa97475a926949102e50b",
+        "edits": [
+          [
+            2325,
+            2873,
+            ""
+          ],
+          [
+            13280,
+            14328,
+            ""
+          ],
+          [
+            14550,
+            14970,
+            ""
+          ],
+          [
+            17187,
+            17364,
+            "                window.authority = RelocationAuthority::ArtifactObservations(input.observation_pcs);\n"
+          ],
+          [
+            21008,
+            21093,
+            ""
+          ]
+        ],
+        "previous_sha256": "f4838e928c383f7d5588b224e3f79ec34a6f810fd8f1d883b557e45a94a5b2bd"
+      },
+      "src/quiescent/artifact_window/placement_tests.rs": {
+        "current_sha256": "329b1d4810b643d4143b3f7f59d38dddfc28351841e17c7be4426b8b86fd8749",
+        "edits": [
+          [
+            0,
+            18048,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tests/support/min5_native.rs": {
+        "current_sha256": "cdf5e72625efc4f51ca05f9225e7ad6ddaa8ba1f5cf95a87b7deaebb731ae402",
+        "edits": [
+          [
+            652,
+            1000,
+            "use liteinst2::quiescent::{AllocationPolicy, ArtifactObservationSearchRequest, SearchPolicy, TacticPolicy,\n    plan_artifact_observation_window_upstream_after, seal_artifact_observation_window_min5};\n"
+          ],
+          [
+            1554,
+            2089,
+            ""
+          ],
+          [
+            2701,
+            2738,
+            ""
+          ],
+          [
+            2831,
+            3102,
+            ""
+          ],
+          [
+            3143,
+            3609,
+            "        if fault { assert!([0, 1].contains(&entry)); }\n        let lower = if fault { if entry == 0 { 24 } else { 16 } } else { 96 };\n"
+          ],
+          [
+            3658,
+            3724,
+            "        code[..5].copy_from_slice(&BODY);\n"
+          ],
+          [
+            3835,
+            3973,
+            "        code[PRELUDE + 6..].copy_from_slice(&i32::try_from(entry as i64 - (PRELUDE + 10) as i64).unwrap().to_le_bytes());\n"
+          ],
+          [
+            4285,
+            5342,
+            ""
+          ],
+          [
+            5902,
+            5980,
+            ""
+          ],
+          [
+            6043,
+            6231,
+            "        for i in 0..suffix {\n"
+          ],
+          [
+            6417,
+            6504,
+            "        if fault { assert_eq!(start_rsp + 8 * suffix as u64, oracle.initial_rsp); }\n"
+          ],
+          [
+            6747,
+            6849,
+            "        let function = range(base, BODY.len());\n        let heads = HEADS.map(|at| base + at as u64);\n"
+          ],
+          [
+            7302,
+            8139,
+            "        let target = base + 5 + 0x0601_0606;\n        let storage = target & !4095; assert_eq!(target - storage, 0x60b);\n"
+          ],
+          [
+            8195,
+            8286,
+            "        let allocation = AllocationPolicy { ranges: vec![range(storage, PAGE)], preferred_address: None,\n"
+          ],
+          [
+            8826,
+            8926,
+            "            identity, code: &BODY, base_address: base, function, block: function, logical_pc: base,\n"
+          ],
+          [
+            9208,
+            9332,
+            "        let predecessor = Composition::new(identity, vec![ExpectedBytes { address: base, bytes: BODY.to_vec() }]).unwrap();\n"
+          ],
+          [
+            9434,
+            9508,
+            "            artifact: request, end: base + 4, observation_pcs: &selected,\n"
+          ],
+          [
+            9737,
+            9839,
+            "        assert_eq!(seal.selected_span(), range(base, 4)); assert_eq!(seal.retained_span(), function);\n"
+          ],
+          [
+            9910,
+            9983,
+            "        let size_bound = certificate(base, &BODY, &selected, &emission);\n"
+          ],
+          [
+            10050,
+            10105,
+            "        let planned = plan_artifact_observation_window_upstream_after(&ArtifactObservationSearchRequest {\n"
+          ],
+          [
+            10197,
+            11544,
+            "        }, &predecessor, &[]).expect(\"required exact retained plan; no retry/fallback\");\n"
+          ],
+          [
+            11996,
+            12083,
+            "        assert_eq!(parts.writes, [ByteEdit { address: base, bytes: vec![0xe9, 6, 6, 1, 6] }]);\n"
+          ],
+          [
+            14618,
+            14832,
+            "        assert_eq!(composed.final_bytes().len(), 1); assert_eq!(composed.final_bytes()[0].address, base);\n        published[..5].copy_from_slice(&composed.final_bytes()[0].bytes);\n"
+          ],
+          [
+            15711,
+            15778,
+            "            selected, state, needed, entry, fault }\n"
+          ],
+          [
+            17545,
+            17689,
+            "            .chain(HEADS.iter().filter(|&&at| at >= self.entry).map(|&at| base + at as u64))\n"
+          ],
+          [
+            18230,
+            18699,
+            "    let lower = if owner.fault { pop_points.len() as u64 * 8 } else { 96 };\n    for (i, point) in pop_points.iter().enumerate() {\n"
+          ],
+          [
+            18789,
+            19182,
+            "        let following = result.points.iter().find(|p| p.logical_pc == match point.logical_pc - owner.oracle.code.address() { 0 => point.logical_pc + 1, 1 => point.logical_pc + 1, 2 => point.logical_pc + 2, _ => unreachable!() }).unwrap();\n        let value = match point.logical_pc - owner.oracle.code.address() { 0 => following.registers.rbx, 1 => following.registers.rbp, 2 => following.registers.r12, _ => unreachable!() };\n"
+          ],
+          [
+            19360,
+            19459,
+            "        assert_eq!(fault.state.logical_pc, owner.oracle.code.address() + 4);\n"
+          ],
+          [
+            19599,
+            19707,
+            ""
+          ],
+          [
+            19852,
+            20411,
+            ""
+          ],
+          [
+            21431,
+            21698,
+            "                assert!(index == 2 && active_call.is_none()); assert_eq!(pc, owner.oracle.code.address() + owner.entry as u64);\n"
+          ],
+          [
+            23965,
+            24290,
+            "        budget.charge(&child, 1); let physical = if installed { owner.bodies[3].1 } else { owner.oracle.code.address() + 4 };\n        let actual = owner.oracle.capture_fault(&child, physical, owner.oracle.code.address() + 4);\n"
+          ],
+          [
+            24627,
+            24758,
+            "    for bad in [vec![event(owner.oracle.code.address() + 4, owner.oracle.initial_rsp)], callbacks.iter().cloned().chain([event(0, 0)]).collect()] {\n"
+          ],
+          [
+            25759,
+            25959,
+            "    let owner = Owner::new(entry, fault, certificate); owner.lease(&owner.original, owner.identity, &owner.routes);\n"
+          ],
+          [
+            26114,
+            26217,
+            "    let mut wrong_source = owner.original.clone(); wrong_source[4] ^= 1;\n"
+          ],
+          [
+            27584,
+            28939,
+            ""
+          ]
+        ],
+        "previous_sha256": "87afbb3d74645935ef7e11c839c4f66a7720745b195e0556d7468453a0a80032"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites.rs": {
+        "current_sha256": "5a1fad3928ab0914e82f3e98cbb8a2bd8528ffd77c40d65a956dd68cfa327f41",
+        "edits": [
+          [
+            22716,
+            22758,
+            ""
+          ],
+          [
+            25431,
+            26098,
+            ""
+          ],
+          [
+            26327,
+            26394,
+            ""
+          ],
+          [
+            27684,
+            28118,
+            ""
+          ],
+          [
+            30125,
+            30248,
+            "        | PopulationMode::JumpStackGroupedMin5Upstream => {\n"
+          ],
+          [
+            31602,
+            32586,
+            "            if mode == PopulationMode::JumpStackGroupedMin5Upstream {\n                let product = liteinst_rewrite::prepare_disassembly_jump_stack_grouped_min5_upstream_with_ledger_storage(\n                    original, &selected, storage,\n                )?;\n"
+          ],
+          [
+            33113,
+            33149,
+            "                    liteinst_rewrite::grouped_min5_upstream_fixed_exec_binding_policy,\n"
+          ],
+          [
+            43348,
+            43436,
+            "        let (paths, mode) = arguments_with_grouped_min5_upstream(&args[2..])?;\n"
+          ],
+          [
+            43804,
+            43864,
+            "        arguments_with_grouped_min5_upstream(args)\n"
+          ],
+          [
+            44175,
+            44414,
+            "    let grouped_family = if mode == PopulationMode::JumpStackGroupedMin5Upstream {\n"
+          ],
+          [
+            48577,
+            48644,
+            ""
+          ],
+          [
+            48937,
+            49004,
+            ""
+          ],
+          [
+            62415,
+            62513,
+            ""
+          ]
+        ],
+        "previous_sha256": "e8adad87d4e7c122ae70c7840612b0fdc9dd58838816ef58eedee3131a471052"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_alphabet_tests.rs": {
+        "current_sha256": "420dd7f10a820166bc54bae528b3fdc33a2a39cdfada726603d18bcbc79d8a22",
+        "edits": [
+          [
+            0,
+            9663,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/grouped_artifact_frontend.rs": {
+        "current_sha256": "050c4875d77763eeb6011b319b6961d173071903f640f8dd47e833e2a91e729a",
+        "edits": [
+          [
+            315,
+            595,
+            "    ArtifactObservationSearchRequest, ArtifactObservationWindowSeal, PlanningFailure,\n    plan_artifact_observation_window_after, plan_artifact_observation_window_upstream_after,\n"
+          ],
+          [
+            984,
+            1098,
+            ""
+          ],
+          [
+            1218,
+            1244,
+            ""
+          ],
+          [
+            1488,
+            2114,
+            ""
+          ],
+          [
+            2744,
+            2899,
+            "        if self == Self::Min5Upstream {\n            upstream.replace(\"LI2GROUPING-POLICY\\t1\\n\", \"LI2GROUPING-POLICY\\t2\\n\")\n"
+          ],
+          [
+            2991,
+            3471,
+            "                    \"window\\tminimum-whole-instruction-through-last-selected-min5-v1\\nseal_source\\timmutable-original\\nseal_stage\\tbefore-overlay-mutation\\n\")\n"
+          ],
+          [
+            6488,
+            7290,
+            ""
+          ],
+          [
+            10082,
+            10213,
+            ""
+          ],
+          [
+            10268,
+            10384,
+            "    let min5 = profile == GroupProfile::Min5Upstream;\n"
+          ],
+          [
+            10830,
+            11116,
+            "        out.push_str(\"grouping_policy_version\\t2\\nwindow_sealing\\tminimum-whole-instruction-v1\\n\");\n"
+          ],
+          [
+            11961,
+            12211,
+            ""
+          ],
+          [
+            14428,
+            15043,
+            "        let mut out = Self::freeze_profile(elf, s, classes, GroupProfile::Min5Upstream)?;\n"
+          ],
+          [
+            19774,
+            19803,
+            "        if profile != GroupProfile::Min5Upstream {\n"
+          ],
+          [
+            20541,
+            20578,
+            "            if self.profile == GroupProfile::Min5Upstream {\n"
+          ],
+          [
+            25778,
+            25811,
+            "        if self.profile == GroupProfile::Min5Upstream {\n"
+          ],
+          [
+            36872,
+            36909,
+            "        if schedule.profile == GroupProfile::Min5Upstream {\n"
+          ],
+          [
+            38199,
+            38236,
+            "        if schedule.profile == GroupProfile::Min5Upstream {\n"
+          ],
+          [
+            39024,
+            40011,
+            "            GroupProfile::Upstream | GroupProfile::Min5Upstream => {\n                plan_artifact_observation_window_upstream_after(\n                    &ArtifactObservationSearchRequest {\n                        artifact,\n                        end: group.retained_window().end(),\n                        observation_pcs: pcs,\n                    },\n                    &draft.composition,\n                    &outside,\n                )\n"
+          ],
+          [
+            42965,
+            42999,
+            ""
+          ]
+        ],
+        "previous_sha256": "86bf627a182b37c8c58ce769b78a4a485cdbdf7fd7fc1a65dfc919292c8071a3"
+      },
+      "tools/elf-rewrite/src/grouped_artifact_frontend/alphabet_tests.rs": {
+        "current_sha256": "ca211afc8e5cf7dad5addd37a6043d0c130d68e2923b2bea66515aa6449d5b12",
+        "edits": [
+          [
+            0,
+            9358,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "current_sha256": "4e4ac6db6ada499b8a67e31e37e6100de34a4805bdc523fd97ece165c4757b07",
+        "edits": [
+          [
+            542,
+            846,
+            "    GROUPED_MIN5_UPSTREAM_PROFILE, GROUPED_PROFILE, GROUPED_UPSTREAM_PROFILE,\n    grouped_fixed_exec_binding_policy, grouped_fixed_exec_metadata,\n"
+          ],
+          [
+            1083,
+            1248,
+            ""
+          ],
+          [
+            27528,
+            27916,
+            ""
+          ]
+        ],
+        "previous_sha256": "71abb28906187b3938d18d341d6224ce34b5975afa5202f1dfd07fbc89bf82ac"
+      }
+    },
+    "sources": {
+      "evaluation/direct-program/direct_data.py": "9fb2557fb24974c488511ecbcb9e5bba34aa003d7ada5b97ad51cb2e382bc858",
+      "evaluation/direct-program/entry-alphabet-result/README.md": "214a3a37322cfcd4ce99389d3cf21a12895874c32a6b750c8c0c26f24dc25fa7",
+      "evaluation/direct-program/entry-alphabet-result/cases.csv": "238c11c07a804b53112d0c85e8a659af12072f906ea638b742b6007ec2259ae4",
+      "evaluation/direct-program/entry-alphabet-result/receipt.json": "d2cf1c48f3c38d55f8ba5c22179b68afe445030736620a68121a75c14e62a5e4",
+      "evaluation/direct-program/reproduce.py": "6c3ed935516b8aaa5090496e455d7ebdc6a1a2732182fa407a8ab6eedbd5ce5a",
+      "evaluation/direct-program/test_grouped_alphabet_linkage.py": "fcd245fb97befd97f3392aaa6a770e4d48b6f698468f4da5fe8045e33f5ab203",
+      "evaluation/direct-program/validate_entry_alphabet.py": "1df07958c7e89e8d988541e90b08ca7e85a01df5617a4db9f5186ee86bada09d",
+      "src/emission/placement.rs": "fd062546893798a29654ad633aad4ffc16838c3fd2f5cc08841213e31c14133f",
+      "src/emission/placement/digits.rs": "fa2db20b098624550758e814bb49170f10c011f3004bd415258055d7b16ef2a5",
+      "src/emission/placement/digits/tests.rs": "0f9ae6601067f7df3f1b49c5de23cd9049d00b1a374f7093ba1faa9b2c9dc519",
+      "src/emission/placement/entry_alphabet.rs": "72edc8f55e358f42fe9edd9a800517d5cffcfa9cc204bf512b5a17a6c6116681",
+      "src/emission/placement/entry_alphabet/tests.rs": "744620d8315bb6ec5a7247481aec70ad51cbe016abbe69df891102f6a7d7f33f",
+      "src/entry_router.rs": "91a4bbdfafa1170b8a4f1bf5a34418ee56442504c60ba681f767c01463905b98",
+      "src/entry_router/imp/entry_alphabet_native_tests.rs": "05db96b37265470aed0d50446d8d6e4483824b81a1f64c26726d520cf79ccd44",
+      "src/entry_router/imp/routed_jmp_native_tests.rs": "c73b60ddd392e2ec228805760af456f99e9b366189b3a34d5b96aea49fb44c9c",
+      "src/quiescent.rs": "30ec7636028ee1d2cfe687ba42ffbaf3d10b78c73fe4ffcedb8f6034d22126aa",
+      "src/quiescent/artifact_window.rs": "b95e256a82bbadba3654246e050ad4b5a5371391f86aa97475a926949102e50b",
+      "src/quiescent/artifact_window/placement_tests.rs": "329b1d4810b643d4143b3f7f59d38dddfc28351841e17c7be4426b8b86fd8749",
+      "tests/support/min5_native.rs": "cdf5e72625efc4f51ca05f9225e7ad6ddaa8ba1f5cf95a87b7deaebb731ae402",
+      "tools/elf-rewrite/examples/disassembly_sites.rs": "5a1fad3928ab0914e82f3e98cbb8a2bd8528ffd77c40d65a956dd68cfa327f41",
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_alphabet_tests.rs": "420dd7f10a820166bc54bae528b3fdc33a2a39cdfada726603d18bcbc79d8a22",
+      "tools/elf-rewrite/src/grouped_artifact_frontend.rs": "050c4875d77763eeb6011b319b6961d173071903f640f8dd47e833e2a91e729a",
+      "tools/elf-rewrite/src/grouped_artifact_frontend/alphabet_tests.rs": "ca211afc8e5cf7dad5addd37a6043d0c130d68e2923b2bea66515aa6449d5b12",
+      "tools/elf-rewrite/src/lib.rs": "4e4ac6db6ada499b8a67e31e37e6100de34a4805bdc523fd97ece165c4757b07"
+    },
+    "workspace_changes": {
+      "unit/disassembly_sites/disassembly_sites": {
+        "current": {
+          "ignored": 0,
+          "tests": 36
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 33
+        }
+      },
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 589
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 572
+        }
+      },
+      "unit/liteinst_rewrite/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 241
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 237
+        }
+      }
+    }
+  },
   "source_successor_03ed2c31": {
     "added_default_methods": {
       "tools/rapid-profiler/src/frontend/interval_entry/tests.rs": [
@@ -20823,17 +21969,20 @@
     "evaluation/admission/test_main34c47_inventory.py": "fa2bb240bd7a9fdb6e79f18635ffe959fcd38facf479b882340aab5dca4461a0",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "700e617272cdaa539e7997603bbda435bee8a9a2f6f7e4b5fd911c18c718f8d1",
-    "evaluation/admission/test_main97ab_inventory.py": "b39288cd55b0d73d2bc07f5e2ac118103a5e6a746a2f3638d1fc18561ead1c72",
+    "evaluation/admission/test_main97ab_inventory.py": "bb2a18dd23c51c208e3be2cac9692998dc3b4525f98d18735749aeb92b50c7b6",
     "evaluation/admission/test_main981419_inventory.py": "a75ae36eed8dc312b702821d50c991e126430a4f3e294342d2b43e29cd1ff034",
     "evaluation/admission/test_mainacc247_inventory.py": "9deada610eedcdc46ef6ebba60f58fedcbf0171f382d7895f42c27756afe1c17",
-    "evaluation/admission/test_mainaf81_inventory.py": "8b3b5ecd0058e20f07678d3f46d51bea1b40287c31cbc17cc40cd183d5660b14",
+    "evaluation/admission/test_mainaf81_inventory.py": "bafb098c255d7091af58ddab838058c3f3772a389170526418f5f3fc6da05205",
     "evaluation/admission/test_mainc712_inventory.py": "f83655db9a2f51f91a3f245e7d04cd52a5bd749bdcf2d52c14d1d4e8c35c0825",
-    "evaluation/admission/test_maind8d85_inventory.py": "db2c569f139932612cca8850825eef3312fc7e484002371b4ad9d323c8ac0813",
+    "evaluation/admission/test_maind8d85_inventory.py": "e9cda23592316f9fd60d2c2980f7ed853f783910a95806bfdc9ed5bcce9f252e",
     "evaluation/admission/test_maindd75_inventory.py": "4bd221188c28323d7af430d1c6e43dd201cd8659001fbeb1449dadb81402c156",
-    "evaluation/admission/test_mainf353_inventory.py": "913cb38972eb2eb3f2bb43de8ec96ea1c7bbe9fbf87b57f3c94e59c26f09b766",
+    "evaluation/admission/test_mainf353_inventory.py": "18ab29cceaa403a7a113268529c75fffba7e9154b3a444d59297a6b0e72bb674",
     "evaluation/direct-program/artifact-window-validation/README.md": "55e346a73e956cb5d7b6afc429f42e54981c6835430308c22f29d5ca250698df",
     "evaluation/direct-program/artifact-window-validation/receipt.json": "7223739d416d1d43f76fab0f681835dc2e0cb5e06aecd34d06eeeada332df1cc",
-    "evaluation/direct-program/direct_data.py": "d2d8f73fdb74736c5cb1c46153f224049b82c6de901ad0c94e5a64291bf18379",
+    "evaluation/direct-program/direct_data.py": "9fb2557fb24974c488511ecbcb9e5bba34aa003d7ada5b97ad51cb2e382bc858",
+    "evaluation/direct-program/entry-alphabet-result/README.md": "214a3a37322cfcd4ce99389d3cf21a12895874c32a6b750c8c0c26f24dc25fa7",
+    "evaluation/direct-program/entry-alphabet-result/cases.csv": "238c11c07a804b53112d0c85e8a659af12072f906ea638b742b6007ec2259ae4",
+    "evaluation/direct-program/entry-alphabet-result/receipt.json": "d2cf1c48f3c38d55f8ba5c22179b68afe445030736620a68121a75c14e62a5e4",
     "evaluation/direct-program/grouped-program-result/README.md": "5b8cb4e72c7bdd8082b4a05f0a9c1fae4540fcdf1ce03632caaebb38fb2f4499",
     "evaluation/direct-program/grouped-program-result/receipt.json": "a7ab177ca536f553ce5c2cf13d15a29d88c82026b3d505167cc60716b637da85",
     "evaluation/direct-program/grouped-program-result/results.csv": "bd0fd26559a1824672a4b431cec5ddb7570c417cce66a211bfbde84960206503",
@@ -20860,13 +22009,15 @@
     "evaluation/direct-program/minimum-window-result/receipt.json": "6d81beef4d04e3a2b9b53f2030bc3082425208d19f1c2765c324859bed34ab08",
     "evaluation/direct-program/minimum-window-validation/README.md": "e0c69aa89b97e715e4a9de0c9aa64ab5202fce1e4866e576c868828d59d77118",
     "evaluation/direct-program/minimum-window-validation/receipt.json": "d8dba0ac4e33aa36cb1e5b79d85ed3eef99da110cf87e88b9f4928e30a62de05",
-    "evaluation/direct-program/reproduce.py": "bb2a99e5911392e29f8dcffdf8587975a06f58b018599ed04718697c3e0191e1",
+    "evaluation/direct-program/reproduce.py": "6c3ed935516b8aaa5090496e455d7ebdc6a1a2732182fa407a8ab6eedbd5ce5a",
+    "evaluation/direct-program/test_grouped_alphabet_linkage.py": "fcd245fb97befd97f3392aaa6a770e4d48b6f698468f4da5fe8045e33f5ab203",
     "evaluation/direct-program/test_grouped_linkage.py": "c8175cfd914e27927310eb38b748dba7eb223b559d6364870459f670891ba53a",
     "evaluation/direct-program/test_grouped_min5_linkage.py": "3d949e635dfeedb8dd2285d179101a21c9dd18e62aa8f61397a51c14191b6657",
     "evaluation/direct-program/test_grouped_upstream_linkage.py": "5975201a8d37b1e1c3341be88336cb13cc8267adf382c7c1a87b0975a8627efa",
     "evaluation/direct-program/test_ledger_storage.py": "5fc05ab250961097e3e1d7d789fa862b9d4d218d45670fbca1bf86f448ef07dc",
     "evaluation/direct-program/test_stack_inventory.py": "3b0ecf9038b64d2cbef176736a60147842ea872a7f29818fdfaf40afb60f9b92",
     "evaluation/direct-program/validate_artifact_window.py": "1da3800c4e6d09578551db347e37a272a7ac83ee96d7f0ad4525ae24135e8937",
+    "evaluation/direct-program/validate_entry_alphabet.py": "1df07958c7e89e8d988541e90b08ca7e85a01df5617a4db9f5186ee86bada09d",
     "evaluation/direct-program/validate_grouped_artifact.py": "709ab97ba02b1807b99c0a3640513b215bd7405b29d6841a353cc2749ec10169",
     "evaluation/direct-program/validate_grouped_program.py": "c39ade50a9826fb9fd3f577b58f8334d650ac85c5f779434b0cee5034f9837a2",
     "evaluation/direct-program/validate_grouped_upstream.py": "d6c1cd4fb5e1f2b3a7c26252b1b034d8fcd6060fea6a55d6fbe7f5218a321998",
@@ -20912,15 +22063,20 @@
     "src/controls/entry_admission.rs": "b30e3fa18423b57be5dea11edd568c3930944e5879784f5625bdc9404e14b1e7",
     "src/emission.rs": "6420f9b057a27195418b324f8b1e581abd55267f73674f2d16b5b4b29a73196c",
     "src/emission/artifact_frame_tests.rs": "db27456d9816ae84f1a98c8529e136d0e678659322e34fddabce26ef26a4a324",
-    "src/emission/placement.rs": "d5f296afd4e076b50af2db43123b543b8bc41d3257df9e2f88b2cf072256496f",
+    "src/emission/placement.rs": "fd062546893798a29654ad633aad4ffc16838c3fd2f5cc08841213e31c14133f",
+    "src/emission/placement/digits.rs": "fa2db20b098624550758e814bb49170f10c011f3004bd415258055d7b16ef2a5",
+    "src/emission/placement/digits/tests.rs": "0f9ae6601067f7df3f1b49c5de23cd9049d00b1a374f7093ba1faa9b2c9dc519",
+    "src/emission/placement/entry_alphabet.rs": "72edc8f55e358f42fe9edd9a800517d5cffcfa9cc204bf512b5a17a6c6116681",
+    "src/emission/placement/entry_alphabet/tests.rs": "744620d8315bb6ec5a7247481aec70ad51cbe016abbe69df891102f6a7d7f33f",
     "src/emission/placement/entry_veneer_tests.rs": "257e424d6e514713e061024101daa08bfea7112206266358990a3bab44eb5058",
     "src/emission/placement/fitting_tests.rs": "40023b7808ed41e234d60b10a310fe4f1feb4a8ab0aa1e2cbcc136cc839ef9b6",
     "src/emission/placement/overlap.rs": "a4432266bee28708ab93041a156ab5403ce0b159b02d271c7a97207817ca5227",
     "src/emission/placement/overlap/tests.rs": "c1d34bac5263fef598cf8336d43168dca318cbeb488a5be303f034f07b534e38",
     "src/emission/placement/tests.rs": "2cc0dd6c0a26c88d4682365b375d94fd3cdab7783e0dec7770f4a7cb77f79def",
     "src/engine.rs": "711335309a192d15a35436aa8ac51fc1541abb939360d23a6cad5253ac7195c6",
-    "src/entry_router.rs": "61e0406541661d7390c8e75d68ca2d73b1bb5b0573371ae97ac0f714671f6280",
-    "src/entry_router/imp/routed_jmp_native_tests.rs": "fb68ac6d4c3aa2edcc48d2a85994cb3a4e69c19470e253790cc988e269b2d5cf",
+    "src/entry_router.rs": "91a4bbdfafa1170b8a4f1bf5a34418ee56442504c60ba681f767c01463905b98",
+    "src/entry_router/imp/entry_alphabet_native_tests.rs": "05db96b37265470aed0d50446d8d6e4483824b81a1f64c26726d520cf79ccd44",
+    "src/entry_router/imp/routed_jmp_native_tests.rs": "c73b60ddd392e2ec228805760af456f99e9b366189b3a34d5b96aea49fb44c9c",
     "src/eviction.rs": "1b963fcdb07cc8886d852bb0195603290ef105b35a6ca9268b0e187c051ae1e4",
     "src/lib.rs": "abf435a29ffdb821941ab4ffea147fc6af56c06748cb0d39b43ce62bfcebec14",
     "src/neighbor.rs": "f9f7c7eb8b2069169fbb20c71bf69105833154a19dc4df75e3f13ef59284ce33",
@@ -20930,9 +22086,10 @@
     "src/neighbor_overlap/tests.rs": "bc5880f3aff72cf5ea13b29592c7d848a879b5f9a71fabae7667888d027065e8",
     "src/neighbor_short.rs": "eb6870d77c53a5e29d911f0c1674281eafed44c63394364e393ed0bbd7d20897",
     "src/neighbor_short/tests.rs": "29c13e229d449458eb66843618c3429901abb2bd424e7099b931dfb612c95087",
-    "src/quiescent.rs": "71c7a7c3e3033f73dab2a3f9e385326eca2b1ceae12610eb2abd743b1fabc152",
-    "src/quiescent/artifact_window.rs": "f4838e928c383f7d5588b224e3f79ec34a6f810fd8f1d883b557e45a94a5b2bd",
+    "src/quiescent.rs": "30ec7636028ee1d2cfe687ba42ffbaf3d10b78c73fe4ffcedb8f6034d22126aa",
+    "src/quiescent/artifact_window.rs": "b95e256a82bbadba3654246e050ad4b5a5371391f86aa97475a926949102e50b",
     "src/quiescent/artifact_window/min5_tests.rs": "1921b54e75fa61b5fbf42df14ba8a52b44955091bcf3d19a8fdb87336edddc4c",
+    "src/quiescent/artifact_window/placement_tests.rs": "329b1d4810b643d4143b3f7f59d38dddfc28351841e17c7be4426b8b86fd8749",
     "src/quiescent/artifact_window/tests.rs": "89fa59a0a692b2055fc3d809f7fc5755aa45fb2cdb259c6a45f9b18e5957b222",
     "src/quiescent/artifact_window/upstream_tests.rs": "22c6289dd845194d2a03fc5f03af4f97972b4b9f0796ad9e126e03633d93e608",
     "src/quiescent/clock_region.rs": "be8ab2bfa2ba682361a1f647d51fceb9b43c9a600be3de711da2217c04ff1788",
@@ -20998,7 +22155,7 @@
     "tests/support/jrcxz_artifact_oracle.rs": "fc30abfc30dbd1d0a0a23393890eddaeabf6a3679079b59b94231d0e49dfc5b8",
     "tests/support/jrcxz_state.rs": "ea3f380a179470e12264258e5a01bfefebaaebb7b0654b2354b81a9b4f5eb55f",
     "tests/support/jump_stack_native.rs": "21f94b418ff2c3156d9c3e5a834307ef06a6123bc9230d4fc9640a939213e3b7",
-    "tests/support/min5_native.rs": "87afbb3d74645935ef7e11c839c4f66a7720745b195e0556d7468453a0a80032",
+    "tests/support/min5_native.rs": "cdf5e72625efc4f51ca05f9225e7ad6ddaa8ba1f5cf95a87b7deaebb731ae402",
     "tests/support/native_normal_caller.rs": "d06f528e7987dd5e4a4482e1013ca6a65d0ccc54e02016730e0dc5082e925358",
     "tests/support/native_normal_module.rs": "d43543eda95b81f822fb11112bb5bcb8a7d46e6d442d639e180c0af301a49d0b",
     "tests/support/native_normal_module/early_entry.rs": "edcf5a68385a531233444ff10c26f8efe38edb85016d721a4f3f3a74525c4945",
@@ -21024,7 +22181,8 @@
     "tools/elf-rewrite/e9-sites.py": "4270f18a2128543fa0eb1b1982ed8368b77c5216c0926a5012371c8a3a9ea893",
     "tools/elf-rewrite/examples/adjacent_b2_support/ledger.rs": "b5aaa00903ee90cb550b4e7cd274b4cc47e983d7aff139931bd3ae9ccc447b56",
     "tools/elf-rewrite/examples/common_sites.rs": "ef298ad0987dba8338c85f571940c7cac511cef970d6be8c0d7b0d3ef9ee95f6",
-    "tools/elf-rewrite/examples/disassembly_sites.rs": "e8adad87d4e7c122ae70c7840612b0fdc9dd58838816ef58eedee3131a471052",
+    "tools/elf-rewrite/examples/disassembly_sites.rs": "5a1fad3928ab0914e82f3e98cbb8a2bd8528ffd77c40d65a956dd68cfa327f41",
+    "tools/elf-rewrite/examples/disassembly_sites/grouped_alphabet_tests.rs": "420dd7f10a820166bc54bae528b3fdc33a2a39cdfada726603d18bcbc79d8a22",
     "tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs": "539e4808f39647c4953703d519eb884f73f37a75d47a9231c8c2c811d1016446",
     "tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs": "492b57c0026f4a6072bc1f60a4a724b9a8fa1fd9d3a2da5d90e3242350bd4714",
     "tools/elf-rewrite/examples/disassembly_sites/grouped_upstream_tests.rs": "3044e6b9f3dc224fa97d79980733f7dfdbfaac62401efeab96149dbd703b5ed9",
@@ -21065,7 +22223,8 @@
     "tools/elf-rewrite/src/disassembly/whole/policy.rs": "67574a672a45a7f589b29e20fcb7c71230fd3f9564bc13df7ca5e0c752917734",
     "tools/elf-rewrite/src/disassembly/whole/tests.rs": "068ef9febd1326c510ed37314f86c0da2a3348d27864e60915101aa4bae5db3d",
     "tools/elf-rewrite/src/fixed_exec.rs": "9fe7d3ca9335f5f735aa6b4d64fcd0d14e187e68a7ec761ce1bd3dfd42e62d5e",
-    "tools/elf-rewrite/src/grouped_artifact_frontend.rs": "86bf627a182b37c8c58ce769b78a4a485cdbdf7fd7fc1a65dfc919292c8071a3",
+    "tools/elf-rewrite/src/grouped_artifact_frontend.rs": "050c4875d77763eeb6011b319b6961d173071903f640f8dd47e833e2a91e729a",
+    "tools/elf-rewrite/src/grouped_artifact_frontend/alphabet_tests.rs": "ca211afc8e5cf7dad5addd37a6043d0c130d68e2923b2bea66515aa6449d5b12",
     "tools/elf-rewrite/src/grouped_artifact_frontend/min5_tests.rs": "7a415b3d99687b433a9c5ebd72d779116e3cd2dbcd0789b59486480dc1b9f930",
     "tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs": "dc0cb28c59778b3a51960537062567cd130693fd1c50fc3708b657384733035c",
     "tools/elf-rewrite/src/grouped_artifact_frontend/upstream_tests.rs": "c2cd4e928eb1725c6bfc0dd1b328749b75bd7de627221dfe3bf4a3a7b16daad2",
@@ -21073,7 +22232,7 @@
     "tools/elf-rewrite/src/ledger_codec.rs": "10a578b989c987175861599cb18ba77236828c7efd7d629225e96b349b22fc86",
     "tools/elf-rewrite/src/ledger_codec/tests.rs": "67ec3c4ac199c6145e7d836da2aadc90c7d02a9213dfa9c549747d9ab9a44793",
     "tools/elf-rewrite/src/ledger_storage.rs": "3fded659c3fb5a2ff46e0c4b0b537ac78b1a02b3be2ef6625ef08063b18f0b26",
-    "tools/elf-rewrite/src/lib.rs": "71abb28906187b3938d18d341d6224ce34b5975afa5202f1dfd07fbc89bf82ac",
+    "tools/elf-rewrite/src/lib.rs": "4e4ac6db6ada499b8a67e31e37e6100de34a4805bdc523fd97ece165c4757b07",
     "tools/elf-rewrite/src/model.rs": "25ce95f799669f062b774b344afdd0705299665fadd3ba666595a2efb10b191e",
     "tools/elf-rewrite/src/neighbor_catalogue.rs": "546c257b0be1f6fd48128b3fed5ab5f2d32fe3f85cb8fb611747d00d4b7aac9a",
     "tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs": "e3977076515f83ee1171a61d009aff724e791640fca2d9b953fbb24cf5e9854d",
