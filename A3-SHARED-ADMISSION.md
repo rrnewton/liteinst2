@@ -108,7 +108,7 @@ The exemption contract below remains a proposal.
 
 ## Current inventory and implementation boundary
 
-Source audit at `26472566d7259ffbde2b958dc6d86469bb122a4a` confirms the
+Source audit at `fd50d5ef02fd042fa4282cb83224d1b60900723c` confirms the
 consolidation above. Offline imports and runtime admission use
 `liteinst-x86` instruction facts; bounded graph consumers use
 `control_flow::{build, collect_block_cuts}` and its indexed traversals.
@@ -117,20 +117,23 @@ core planner, fitting and encoder. `trampoline::observer_sequence` now owns the
 common save/callback/restore sequence. ELF serialization, remote writes and
 in-process publication remain separate ownership and output adapters.
 
-Two concrete fact/policy duplications remain to merge, in this order:
+The two concrete fact/policy duplications identified by that audit are merged:
 
-1. The freestanding page decoder's `mov_guard` and `add_guard` repeat GPR enum
-   arithmetic; `region` repeats the 32/64-bit register table. Use the existing
-   `liteinst-x86::gpr`, preserving each adapter's exact width filter and the
-   region's AL/span's CL exceptions. Route their decoder setup through the same
-   factory while retaining every independent re-decode and identity check.
-2. `quiescent::whole_function::scalar` and the rapid profiler's ordinary CFG
-   adapter duplicate a pure scalar-instruction predicate. Extract that predicate
-   while retaining the distinct entry/backedge, size and qualification checks.
+1. The freestanding page decoder's `mov_guard`, `add_guard` and `region` use
+   `liteinst-x86::gpr` and the shared decoder factory. Each adapter retains its
+   exact width filter, the region's AL/span's CL exceptions, independent
+   re-decodes and identity checks.
+2. `quiescent::whole_function` and the rapid profiler's ordinary CFG adapter
+   use `scalar_profile::read_only_caller_saved`. Their entry/backedge, size and
+   qualification checks remain distinct; the shared predicate preserves the
+   original register aliases and immediate classes.
 
-This is not a license to replace all-start scanning with a linear walk, accept
-the union of instruction policies, or infer complete CFG recovery. The first
-merge is bounded to shared facts; it does not resolve corpus placement failures.
+[Current-source validation](evaluation/shared-x86/freestanding-facts/README.md)
+records 15 finite decoder/descriptor/model subjects and 138 reader controls.
+[Workspace validation](evaluation/direct-program/ledger-chunks-validation/README.md)
+retains the complete test census and earlier failed attempts. These fact merges
+do not establish complete CFG recovery or resolve corpus placement failures.
+All-start scanning and each consumer's instruction policy remain unchanged.
 
 The initial live certificate implementation should use a separately named fixed
 ET_EXEC/zero-bias subset with no unresolved code relocations. It must still meet
