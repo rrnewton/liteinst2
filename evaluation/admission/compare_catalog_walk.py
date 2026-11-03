@@ -16,7 +16,7 @@ CANDIDATE_SHA = 'c7edcd37a4fd1c194b9328f87f06acb08e53c6b87f85e9e4be34b9c368d3bfc
 
 def load(path, expected, candidate, overrides=None):
     raw = (path.read_bytes() if candidate else subprocess.check_output(
-        ['git', 'show', f'{DONOR_REVISION}:{SOURCE}'], cwd=ROOT))
+        ['/usr/bin/git', '--no-replace-objects', 'show', f'{DONOR_REVISION}:{SOURCE}'], cwd=ROOT))
     assert hashlib.sha256(raw).hexdigest() == expected
     names = {'plain_catalog', '_plain_catalog_fallback'} if candidate else {'plain_catalog'}
     nodes = [n for n in ast.parse(raw).body if isinstance(n, ast.FunctionDef) and n.name in names]
