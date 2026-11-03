@@ -73,6 +73,17 @@ pub(crate) fn validate_output(
     dynamic: &carrier::dynamic::Inventory,
     dependencies: &[FileRange],
 ) -> Result<(), carrier::Error> {
+    let views: Vec<_> = plans.iter().map(|(id, plan)| (*id, plan)).collect();
+    validate_output_views(original, binding, &views, output, dynamic, dependencies)
+}
+pub(crate) fn validate_output_views(
+    original: &Elf64<'_>,
+    binding: FixedImageBinding,
+    plans: &[(u64, &ArtifactPlan)],
+    output: OutputReadback<'_>,
+    dynamic: &carrier::dynamic::Inventory,
+    dependencies: &[FileRange],
+) -> Result<(), carrier::Error> {
     let rebound = bind(original, binding.identity(), binding.domain())
         .map_err(|_| carrier::Error::OutputInvariant)?;
     if rebound != binding {
@@ -202,4 +213,28 @@ pub(crate) fn validate_output(
             .map_err(|_| carrier::Error::OutputInvariant)?;
     }
     Ok(())
+}
+
+// Only the named group route uses this identity. Both portable and embedded
+// metadata bind the immutable complete partition and its explicit group tactic.
+pub(crate) fn grouped_binding_policy(
+    binding: FixedImageBinding,
+    selection: ContentId,
+    grouping: ContentId,
+) -> Vec<u8> {
+    let old = binding_policy(binding, selection);
+    let text = std::str::from_utf8(&old).expect("fixed binding is ASCII");
+    let mut bytes = text.replacen(
+        "planner_profile\twhole-program-packed-overlapping-neighbors-4096\n",
+        &format!("planner_profile\t{}\nsingleton_planner_profile\twhole-program-packed-overlapping-neighbors-4096\n", crate::grouped_artifact_frontend::GROUPED_PROFILE), 1,
+    ).into_bytes();
+    bytes.extend_from_slice(
+        format!(
+            "grouped_profile\t{}\ngrouping_policy_sha256\t{}\n",
+            crate::grouped_artifact_frontend::GROUPED_PROFILE,
+            ledger::hex(&grouping.0),
+        )
+        .as_bytes(),
+    );
+    bytes
 }

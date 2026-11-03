@@ -45,6 +45,15 @@ pub(crate) fn plans(
     composition: &Composition,
     deps: &[FileRange],
 ) -> Result<Vec<u8>, Error> {
+    let views: Vec<_> = plans.iter().map(|(id, plan)| (*id, plan)).collect();
+    plans_view(s, &views, composition, deps)
+}
+pub(crate) fn plans_view(
+    s: &Selection,
+    plans: &[(u64, &ArtifactPlan)],
+    composition: &Composition,
+    deps: &[FileRange],
+) -> Result<Vec<u8>, Error> {
     let mut out = format!(
         "LI2LEDGER\t1\noriginal_sha256\t{}\nselection_sha256\t{}\nbias_policy\tcommon-additive-module-relative-v1\nbias_domain\t{}\nqualification_complete\tfalse\nexecution_authority\tnone\ngrouping\tseparate-backing-only\nrequirement\t0\t101\tdeclared-entry-completeness-not-proven\nunresolved\tloader-abi-cpu-unwind-cet\n",
         hex(&s.original.0),
@@ -509,7 +518,16 @@ pub(crate) fn plans_with_entry_veneers(
     composition: &Composition,
     deps: &[FileRange],
 ) -> Result<Vec<u8>, Error> {
-    let mut out = plans(s, accepted, composition, deps)?;
+    let views: Vec<_> = accepted.iter().map(|(id, plan)| (*id, plan)).collect();
+    plans_with_entry_veneers_view(s, &views, composition, deps)
+}
+pub(crate) fn plans_with_entry_veneers_view(
+    s: &Selection,
+    accepted: &[(u64, &ArtifactPlan)],
+    composition: &Composition,
+    deps: &[FileRange],
+) -> Result<Vec<u8>, Error> {
+    let mut out = plans_view(s, accepted, composition, deps)?;
     let mut extension = String::new();
     let mut image_id = 0;
     for (site, plan) in accepted {
@@ -590,4 +608,32 @@ pub(crate) fn fixed_binding(ledger: &mut Vec<u8>, binding: li2core::emission::Fi
         )
         .as_bytes(),
     );
+}
+
+// A distinct top-level grammar prevents old single-site readers from silently
+// treating the primary logical_pc as the complete group population.
+pub(crate) fn grouped_plans(
+    s: &Selection,
+    accepted: &[(u64, &ArtifactPlan)],
+    composition: &Composition,
+    deps: &[FileRange],
+    associations: &[u8],
+) -> Result<Vec<u8>, Error> {
+    let bytes = plans_with_entry_veneers_view(s, accepted, composition, deps)?;
+    let text = std::str::from_utf8(&bytes).map_err(|e| Error::new("grouped-ledger", e))?;
+    if !text.starts_with("LI2LEDGER\t1\n")
+        || text.matches("grouping\tseparate-backing-only\n").count() != 1
+    {
+        return Err(Error::new("grouped-ledger", "legacy grammar mismatch"));
+    }
+    let mut out = text
+        .replacen("LI2LEDGER\t1\n", "LI2GROUPED-LEDGER\t1\n", 1)
+        .replacen(
+            "grouping\tseparate-backing-only\n",
+            "grouping\tcomplete-selected-block-units-v1\n",
+            1,
+        )
+        .into_bytes();
+    out.extend_from_slice(associations);
+    Ok(out)
 }

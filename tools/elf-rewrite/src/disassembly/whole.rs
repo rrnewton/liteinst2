@@ -105,6 +105,7 @@ impl<'a> Population<'a> {
 #[derive(Clone, Debug)]
 pub struct JumpStackWholeSelection {
     pub(crate) selection: Selection,
+    pub(crate) classes: Vec<li2core::x86::JumpStackClass>,
     files: BTreeMap<String, Vec<u8>>,
 }
 impl JumpStackWholeSelection {
@@ -267,7 +268,12 @@ impl super::jump_stack::JumpStackDisassembly {
     ) -> Result<JumpStackWholeSelection, Error> {
         let (selection, mut files) = self.population().bind(policy, expected_policy)?;
         files.insert("disassembly-inventory.tsv".into(), self.inventory());
-        Ok(JumpStackWholeSelection { selection, files })
+        let classes = self.sites().iter().map(|site| site.class()).collect();
+        Ok(JumpStackWholeSelection {
+            selection,
+            classes,
+            files,
+        })
     }
 }
 

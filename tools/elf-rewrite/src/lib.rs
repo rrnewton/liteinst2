@@ -9,6 +9,10 @@ pub mod offline_router;
 pub use adjacent_b2_frontend::prepare_disassembly_adjacent_b2;
 pub use adjacent_b2_frontend::routed_jmp::prepare_disassembly_adjacent_routed_jmp;
 mod fixed_exec;
+mod grouped_artifact_frontend;
+pub use grouped_artifact_frontend::{
+    GROUPED_PROFILE, prepare_disassembly_jump_stack_grouped_fixed_exec,
+};
 mod ledger;
 pub use fixed_exec::{
     BINDING_PROFILE as FIXED_EXEC_BINDING_PROFILE, METADATA as FIXED_EXEC_METADATA,
@@ -274,6 +278,7 @@ pub fn prepare_disassembly_whole_packed_entry_veneer_mixed_neighbors(
             },
             packed_rx_runs: true,
             fixed_exec: false,
+            grouped_classes: None,
         },
     )?;
     product.files.remove("bundle-index.tsv");
@@ -310,6 +315,7 @@ pub fn prepare_disassembly_whole_packed_overlapping_neighbors(
             },
             packed_rx_runs: true,
             fixed_exec: false,
+            grouped_classes: None,
         },
     )?;
     product.files.remove("bundle-index.tsv");
@@ -364,6 +370,7 @@ fn prepare_whole_fixed_exec(
             },
             packed_rx_runs: true,
             fixed_exec: true,
+            grouped_classes: None,
         },
     )?;
     product.files.remove("bundle-index.tsv");
@@ -492,6 +499,7 @@ fn prepare_selection_transaction(
             hooks,
             packed_rx_runs: false,
             fixed_exec: false,
+            grouped_classes: None,
         },
     )
 }
@@ -502,6 +510,7 @@ struct CarrierTransaction<'a, F> {
     hooks: TransactionHooks<'a, F>,
     packed_rx_runs: bool,
     fixed_exec: bool,
+    grouped_classes: Option<&'a [li2core::x86::JumpStackClass]>,
 }
 
 fn prepare_selection_with_carrier_layout(
@@ -517,6 +526,7 @@ fn prepare_selection_with_carrier_layout(
         hooks,
         packed_rx_runs,
         fixed_exec,
+        grouped_classes,
     } = transaction;
     let TransactionHooks { addon, mut gate } = hooks;
     if packed_rx_runs
@@ -536,6 +546,18 @@ fn prepare_selection_with_carrier_layout(
         return Err(Error::new(
             "fixed-exec-profile",
             "requires explicit packed overlapping route",
+        ));
+    }
+    if grouped_classes.is_some()
+        && (!fixed_exec
+            || !packed_rx_runs
+            || owned_neighbors
+            || adjacent.is_some()
+            || addon.is_some())
+    {
+        return Err(Error::new(
+            "grouped-profile",
+            "requires the fixed packed transaction without addons or adjacent planning",
         ));
     }
     if owned_neighbors && mode != disassembly::NeighborMode::LongOnly {
@@ -640,6 +662,12 @@ fn prepare_selection_with_carrier_layout(
             .require_unclaimed_ranges(&pending.iter().map(|(_, range)| *range).collect::<Vec<_>>())
             .map_err(|e| Error::new("pending-selected", e))?;
     }
+    // Freeze all units from original, sealed selection before any plan mutates the overlay.
+    let grouped_schedule = grouped_classes
+        .map(|classes| grouped_artifact_frontend::Schedule::freeze(&elf, s, classes))
+        .transpose()?;
+    let mut grouped_accepted = Vec::new();
+    let mut grouped_evidence = Vec::new();
     let reports: Vec<_> = s
         .sites
         .iter()
@@ -678,7 +706,23 @@ fn prepare_selection_with_carrier_layout(
         blocked_groups: Vec::new(),
         routed: Default::default(),
     };
-    if let Some(limits) = adjacent {
+    if let Some(schedule) = &grouped_schedule {
+        grouped_evidence = grouped_artifact_frontend::plan(
+            SingletonContext {
+                elf: &elf,
+                dynamic: &dynamic,
+                s,
+                identity,
+                fixed_binding,
+                owned_neighbors: false,
+                mode,
+                record_baseline: false,
+            },
+            schedule,
+            &mut draft,
+            &mut grouped_accepted,
+        );
+    } else if let Some(limits) = adjacent {
         match pair_profile {
             adjacent_b2_frontend::PairProfile::ForwardJcc => adjacent_b2_frontend::plan(
                 &elf, &dynamic, s, identity, limits, &ordered, &mut draft,
@@ -756,7 +800,27 @@ fn prepare_selection_with_carrier_layout(
         blocked_groups: _,
         routed: _,
     } = draft;
+    let plan_views: Vec<_> = grouped_accepted
+        .iter()
+        .map(|unit: &grouped_artifact_frontend::AcceptedGroup| {
+            (unit.primary(s), unit.plan.artifact())
+        })
+        .chain(accepted.iter().map(|(id, plan)| (*id, plan)))
+        .collect();
+    let grouped_associations = grouped_schedule
+        .as_ref()
+        .map(|schedule| schedule.associations(s, &grouped_accepted, &accepted, &reports))
+        .transpose()?;
     let mut files = BTreeMap::new();
+    for (unit, evidence) in grouped_evidence {
+        files.insert(
+            format!("group-{unit}.diagnostics.txt"),
+            evidence.into_bytes(),
+        );
+    }
+    if let Some(schedule) = &grouped_schedule {
+        files.insert("grouping-policy.tsv".into(), schedule.policy.clone());
+    }
     if owned_neighbors {
         files.insert(
             "planning-profile.tsv".into(),
@@ -768,14 +832,23 @@ fn prepare_selection_with_carrier_layout(
     files.insert("target.tsv".into(), profile.clone());
     files.insert("selection.txt".into(), s.manifest.clone());
     let compatibility_binding = if let Some(binding) = fixed_binding {
-        let policy = fixed_exec::binding_policy(binding, ContentId::of(&s.manifest));
+        let policy = match &grouped_schedule {
+            Some(schedule) => fixed_exec::grouped_binding_policy(
+                binding,
+                ContentId::of(&s.manifest),
+                ContentId::of(&schedule.policy),
+            ),
+            None => fixed_exec::binding_policy(binding, ContentId::of(&s.manifest)),
+        };
         let identity = ContentId::of(&policy);
         files.insert("binding-policy.tsv".into(), policy);
         identity
     } else {
         ContentId::of(&s.manifest)
     };
-    let mut ledger = if mode == disassembly::NeighborMode::WholeEntryVeneerMixedPending
+    let mut ledger = if let Some(associations) = &grouped_associations {
+        ledger::grouped_plans(s, &plan_views, &composition, &dependencies, associations)?
+    } else if mode == disassembly::NeighborMode::WholeEntryVeneerMixedPending
         || mode == disassembly::NeighborMode::WholeOverlappingPending
     {
         ledger::plans_with_entry_veneers(s, &accepted, &composition, &dependencies)?
@@ -786,7 +859,7 @@ fn prepare_selection_with_carrier_layout(
         ledger::fixed_binding(&mut ledger, binding);
     }
     files.insert("plan-ledger.tsv".into(), ledger.clone());
-    for (index, image) in accepted.iter().flat_map(|(_, p)| p.images()).enumerate() {
+    for (index, image) in plan_views.iter().flat_map(|(_, p)| p.images()).enumerate() {
         // Planned bytes remain inspectable even if another site refuses. They
         // are not an executable carrier or an applicable sparse transaction.
         files.insert(format!("image-{index:04}.bin"), image.bytes().to_vec());
@@ -802,7 +875,7 @@ fn prepare_selection_with_carrier_layout(
         let mut payload = b"LI2TOOL-CANDIDATE-UNREADY-V1\0".to_vec();
         payload.extend_from_slice(&ContentId::of(&initial_meta).0);
         payload.extend_from_slice(&ContentId::of(&ledger).0);
-        let images: Vec<_> = accepted
+        let images: Vec<_> = plan_views
             .iter()
             .flat_map(|(_, p)| p.images())
             .map(|i| carrier::RxImage {
@@ -851,18 +924,30 @@ fn prepare_selection_with_carrier_layout(
         };
         let result = result.and_then(|output| {
             if let Some(binding) = fixed_binding {
-                fixed_exec::validate_output(
-                    &elf,
-                    binding,
-                    &accepted,
-                    fixed_exec::OutputReadback {
-                        bytes: output.bytes(),
-                        original_to_output_header: &output.original_to_output_header,
-                        max_program_headers: s.limits.program_headers,
-                    },
-                    &dynamic,
-                    &dependencies,
-                )?;
+                let readback = fixed_exec::OutputReadback {
+                    bytes: output.bytes(),
+                    original_to_output_header: &output.original_to_output_header,
+                    max_program_headers: s.limits.program_headers,
+                };
+                if grouped_schedule.is_some() {
+                    fixed_exec::validate_output_views(
+                        &elf,
+                        binding,
+                        &plan_views,
+                        readback,
+                        &dynamic,
+                        &dependencies,
+                    )?;
+                } else {
+                    fixed_exec::validate_output(
+                        &elf,
+                        binding,
+                        &accepted,
+                        readback,
+                        &dynamic,
+                        &dependencies,
+                    )?;
+                }
             }
             Ok(output)
         });
@@ -1187,95 +1272,24 @@ fn attempt_singleton(
             return Err(Error::new("core-invariant", "engine metric missing"));
         };
         report.core_tactic = Some(*tactic);
-        if plan.qualification_complete() {
-            return Err(Error::new(
-                "readiness-invariant",
-                "unexpected qualification",
-            ));
-        }
-        let new_images = plan.images().count();
-        let new_bytes = plan
-            .images()
-            .try_fold(0_usize, |n, i| n.checked_add(i.bytes().len()))
-            .ok_or_else(|| Error::new("image-budget", "overflow"))?;
-        let mut new_pages = 0_u64;
-        let mut new_dependencies = Vec::new();
-        let mut next = composition.clone();
-        for step in plan.source_steps() {
-            // T2/T3 steps intentionally read their preceding internal overlay.
-            next.append(step)
-                .map_err(|e| Error::new("composition", e))?;
-            for dependency in &step.parts().dependencies {
-                let file = translate(elf, dependency.start(), dependency.len())?;
-                dynamic
-                    .check_source_ranges(&[file])
-                    .map_err(|e| Error::new("source-relocation", e))?;
-                new_dependencies.push(file);
-            }
-            for allocation in &step.parts().allocations {
-                new_pages = new_pages
-                    .checked_add(allocation.range.len() / 4096)
-                    .ok_or_else(|| Error::new("allocation-budget", "overflow"))?;
-            }
-        }
-        if image_count
-            .checked_add(new_images)
-            .is_none_or(|v| v > s.limits.images)
-            || image_bytes
-                .checked_add(new_bytes)
-                .is_none_or(|v| v > s.limits.image_bytes)
-            || allocation_pages
-                .checked_add(new_pages)
-                .is_none_or(|v| v > s.limits.new_load_pages)
-        {
-            return Err(Error::new(
-                "aggregate-budget",
-                "complete selected set exceeds declared resources",
-            ));
-        }
-        // Same-module hook contents are immutable dependencies too.
-        for hook in &s.hooks {
-            for bytes in next.final_bytes() {
-                let left = bytes.address.max(hook.pc);
-                let right =
-                    (bytes.address + bytes.bytes.len() as u64).min(hook.pc + hook.length as u64);
-                if left < right {
-                    let actual = &bytes.bytes
-                        [(left - bytes.address) as usize..(right - bytes.address) as usize];
-                    if actual
-                        != elf
-                            .executable_bytes(ElfVaddr(left), right - left)
-                            .map_err(|e| Error::new("hook-owner", e))?
-                    {
-                        return Err(Error::new(
-                            "hook-ownership",
-                            "source transformation changes hook",
-                        ));
-                    }
-                }
-            }
-        }
-        // Preserve every existing append/dependency/resource/hook failure first.
-        // First-four local success may refuse here; this never restarts search.
-        if matches!(
-            mode,
-            disassembly::NeighborMode::ShortT3Pending
-                | disassembly::NeighborMode::WholeCurrentPlacementMixedPending
-                | disassembly::NeighborMode::WholeFittingMixedPending
-                | disassembly::NeighborMode::WholeEntryVeneerMixedPending
-                | disassembly::NeighborMode::WholeOverlappingPending
-        ) {
-            next.require_unclaimed_ranges(&pending_ranges)
-                .map_err(|e| Error::new("pending-selected", e))?;
-        }
-        for step in plan.source_steps() {
-            occupied.extend(step.parts().allocations.iter().map(|a| a.range));
-        }
-        dependencies.extend(new_dependencies);
-        *image_count += new_images;
-        *image_bytes += new_bytes;
-        *allocation_pages += new_pages;
-        *composition = next;
+        admit_artifact(
+            AdmissionContext {
+                elf,
+                dynamic,
+                s,
+                mode,
+            },
+            AdmissionState {
+                composition,
+                occupied,
+                dependencies,
+                image_count,
+                image_bytes,
+                allocation_pages,
+            },
+            &plan,
+            &pending_ranges,
+        )?;
         Ok(plan)
     })();
     match prepared {
@@ -1290,6 +1304,134 @@ fn attempt_singleton(
             }
         }
     }
+}
+
+struct AdmissionContext<'a, 'code> {
+    elf: &'a Elf64<'code>,
+    dynamic: &'a carrier::dynamic::Inventory,
+    s: &'a Selection,
+    mode: disassembly::NeighborMode,
+}
+struct AdmissionState<'a> {
+    composition: &'a mut Composition,
+    occupied: &'a mut Vec<AddressRange>,
+    dependencies: &'a mut Vec<FileRange>,
+    image_count: &'a mut usize,
+    image_bytes: &'a mut usize,
+    allocation_pages: &'a mut u64,
+}
+// One shared post-plan admission, preserving legacy error/commit order. A group
+// supplies its one plan and exact outside-group pending intervals, not N clones.
+fn admit_artifact(
+    context: AdmissionContext<'_, '_>,
+    state: AdmissionState<'_>,
+    plan: &ArtifactPlan,
+    pending_ranges: &[AddressRange],
+) -> Result<(), Error> {
+    let AdmissionContext {
+        elf,
+        dynamic,
+        s,
+        mode,
+    } = context;
+    let AdmissionState {
+        composition,
+        occupied,
+        dependencies,
+        image_count,
+        image_bytes,
+        allocation_pages,
+    } = state;
+    if plan.qualification_complete() {
+        return Err(Error::new(
+            "readiness-invariant",
+            "unexpected qualification",
+        ));
+    }
+    let new_images = plan.images().count();
+    let new_bytes = plan
+        .images()
+        .try_fold(0_usize, |n, i| n.checked_add(i.bytes().len()))
+        .ok_or_else(|| Error::new("image-budget", "overflow"))?;
+    let mut new_pages = 0_u64;
+    let mut new_dependencies = Vec::new();
+    let mut next = composition.clone();
+    for step in plan.source_steps() {
+        // T2/T3 steps intentionally read their preceding internal overlay.
+        next.append(step)
+            .map_err(|e| Error::new("composition", e))?;
+        for dependency in &step.parts().dependencies {
+            let file = translate(elf, dependency.start(), dependency.len())?;
+            dynamic
+                .check_source_ranges(&[file])
+                .map_err(|e| Error::new("source-relocation", e))?;
+            new_dependencies.push(file);
+        }
+        for allocation in &step.parts().allocations {
+            new_pages = new_pages
+                .checked_add(allocation.range.len() / 4096)
+                .ok_or_else(|| Error::new("allocation-budget", "overflow"))?;
+        }
+    }
+    if image_count
+        .checked_add(new_images)
+        .is_none_or(|v| v > s.limits.images)
+        || image_bytes
+            .checked_add(new_bytes)
+            .is_none_or(|v| v > s.limits.image_bytes)
+        || allocation_pages
+            .checked_add(new_pages)
+            .is_none_or(|v| v > s.limits.new_load_pages)
+    {
+        return Err(Error::new(
+            "aggregate-budget",
+            "complete selected set exceeds declared resources",
+        ));
+    }
+    // Same-module hook contents are immutable dependencies too.
+    for hook in &s.hooks {
+        for bytes in next.final_bytes() {
+            let left = bytes.address.max(hook.pc);
+            let right =
+                (bytes.address + bytes.bytes.len() as u64).min(hook.pc + hook.length as u64);
+            if left < right {
+                let actual =
+                    &bytes.bytes[(left - bytes.address) as usize..(right - bytes.address) as usize];
+                if actual
+                    != elf
+                        .executable_bytes(ElfVaddr(left), right - left)
+                        .map_err(|e| Error::new("hook-owner", e))?
+                {
+                    return Err(Error::new(
+                        "hook-ownership",
+                        "source transformation changes hook",
+                    ));
+                }
+            }
+        }
+    }
+    // Preserve every existing append/dependency/resource/hook failure first.
+    // First-four local success may refuse here; this never restarts search.
+    if matches!(
+        mode,
+        disassembly::NeighborMode::ShortT3Pending
+            | disassembly::NeighborMode::WholeCurrentPlacementMixedPending
+            | disassembly::NeighborMode::WholeFittingMixedPending
+            | disassembly::NeighborMode::WholeEntryVeneerMixedPending
+            | disassembly::NeighborMode::WholeOverlappingPending
+    ) {
+        next.require_unclaimed_ranges(pending_ranges)
+            .map_err(|e| Error::new("pending-selected", e))?;
+    }
+    for step in plan.source_steps() {
+        occupied.extend(step.parts().allocations.iter().map(|a| a.range));
+    }
+    dependencies.extend(new_dependencies);
+    *image_count += new_images;
+    *image_bytes += new_bytes;
+    *allocation_pages += new_pages;
+    *composition = next;
+    Ok(())
 }
 
 fn validate_site(elf: &Elf64<'_>, s: &SelectedSite) -> Result<(), Error> {
