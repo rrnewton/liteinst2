@@ -1,0 +1,459 @@
+{
+  "archive_provider": {
+    "bytes": 2005554,
+    "sha256": "ce1c15754801cf8b956f6a286b6676019860e1a7e1fe9dca65fb092c6526e9b1"
+  },
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "finite": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "program": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "release_build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "seed": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "cases": [
+    {
+      "application_complete": true,
+      "application_reference_refusals": 5,
+      "application_refusals": 45,
+      "duration_ns": 201286884,
+      "exit": 0,
+      "expected_exit": 0,
+      "label": "native",
+      "native_frames": 12,
+      "native_instructions": 255,
+      "status": "passed"
+    },
+    {
+      "actual_refusals": 0,
+      "actual_restorations": 0,
+      "application_complete": true,
+      "descriptor": {
+        "common_differential": 0,
+        "common_full": 10209,
+        "common_hits": 3165,
+        "disagreements": 0,
+        "history_fallbacks": 9831,
+        "hits": 72,
+        "poisoned": 0,
+        "raw_invalidations": 4625,
+        "topology_differential": 0,
+        "topology_hits": 3017
+      },
+      "duration_ns": 3885934482,
+      "exit": 0,
+      "expected_exit": 0,
+      "full_captured_application_state_equal": true,
+      "label": "release",
+      "observer_control_counts": {
+        "backing_refusals": 28,
+        "phase_refusals": 50,
+        "query_chunk_refusals": 0,
+        "refusals": 193
+      },
+      "preentry_refusals": 0,
+      "preentry_restorations": 0,
+      "status": "passed",
+      "terminal_control_counts": {
+        "preentry_refusals": 84,
+        "refusals": 25
+      }
+    },
+    {
+      "actual_refusals": 0,
+      "actual_restorations": 0,
+      "application_complete": true,
+      "descriptor": {
+        "common_differential": 3165,
+        "common_full": 10209,
+        "common_hits": 3165,
+        "disagreements": 0,
+        "history_fallbacks": 9831,
+        "hits": 72,
+        "poisoned": 0,
+        "raw_invalidations": 4625,
+        "topology_differential": 3017,
+        "topology_hits": 3017
+      },
+      "duration_ns": 5644907641,
+      "exit": 0,
+      "expected_exit": 0,
+      "full_captured_application_state_equal": true,
+      "label": "differential",
+      "observer_control_counts": {
+        "backing_refusals": 28,
+        "phase_refusals": 50,
+        "query_chunk_refusals": 0,
+        "refusals": 193
+      },
+      "preentry_refusals": 0,
+      "preentry_restorations": 0,
+      "status": "passed",
+      "terminal_control_counts": {
+        "preentry_refusals": 84,
+        "refusals": 25
+      }
+    },
+    {
+      "actual_refusals": 24,
+      "actual_restorations": 24,
+      "application_complete": false,
+      "descriptor": {
+        "common_differential": 2450,
+        "common_full": 8006,
+        "common_hits": 2450,
+        "disagreements": 0,
+        "history_fallbacks": 7682,
+        "hits": 71,
+        "poisoned": 1,
+        "raw_invalidations": 3305,
+        "topology_differential": 2549,
+        "topology_hits": 2549
+      },
+      "duration_ns": 4212152519,
+      "exit": 125,
+      "expected_exit": 125,
+      "full_captured_application_state_equal": null,
+      "label": "exposure1",
+      "observer_control_counts": {
+        "backing_refusals": 28,
+        "phase_refusals": 50,
+        "query_chunk_refusals": 9,
+        "refusals": 279
+      },
+      "preentry_refusals": 75,
+      "preentry_restorations": 75,
+      "status": "passed",
+      "terminal_control_counts": {
+        "preentry_refusals": 84,
+        "refusals": 25
+      }
+    },
+    {
+      "actual_refusals": 24,
+      "actual_restorations": 24,
+      "application_complete": false,
+      "descriptor": {
+        "common_differential": 2450,
+        "common_full": 8006,
+        "common_hits": 2450,
+        "disagreements": 0,
+        "history_fallbacks": 7683,
+        "hits": 71,
+        "poisoned": 1,
+        "raw_invalidations": 3305,
+        "topology_differential": 2549,
+        "topology_hits": 2549
+      },
+      "duration_ns": 4196321421,
+      "exit": 125,
+      "expected_exit": 125,
+      "full_captured_application_state_equal": null,
+      "label": "exposure2",
+      "observer_control_counts": {
+        "backing_refusals": 28,
+        "phase_refusals": 50,
+        "query_chunk_refusals": 3,
+        "refusals": 279
+      },
+      "preentry_refusals": 75,
+      "preentry_restorations": 75,
+      "status": "passed",
+      "terminal_control_counts": {
+        "preentry_refusals": 84,
+        "refusals": 25
+      }
+    },
+    {
+      "actual_refusals": 24,
+      "actual_restorations": 24,
+      "application_complete": false,
+      "descriptor": {
+        "common_differential": 2450,
+        "common_full": 8006,
+        "common_hits": 2450,
+        "disagreements": 0,
+        "history_fallbacks": 7682,
+        "hits": 71,
+        "poisoned": 1,
+        "raw_invalidations": 3305,
+        "topology_differential": 2549,
+        "topology_hits": 2549
+      },
+      "duration_ns": 4228705059,
+      "exit": 125,
+      "expected_exit": 125,
+      "full_captured_application_state_equal": null,
+      "label": "exposure3",
+      "observer_control_counts": {
+        "backing_refusals": 28,
+        "phase_refusals": 50,
+        "query_chunk_refusals": 3,
+        "refusals": 279
+      },
+      "preentry_refusals": 75,
+      "preentry_restorations": 75,
+      "status": "passed",
+      "terminal_control_counts": {
+        "preentry_refusals": 84,
+        "refusals": 25
+      }
+    },
+    {
+      "actual_refusals": 24,
+      "actual_restorations": 24,
+      "application_complete": false,
+      "descriptor": {
+        "common_differential": 2451,
+        "common_full": 8003,
+        "common_hits": 2451,
+        "disagreements": 0,
+        "history_fallbacks": 7681,
+        "hits": 71,
+        "poisoned": 1,
+        "raw_invalidations": 3305,
+        "topology_differential": 2549,
+        "topology_hits": 2549
+      },
+      "duration_ns": 4146922995,
+      "exit": 125,
+      "expected_exit": 125,
+      "full_captured_application_state_equal": null,
+      "label": "exposure4",
+      "observer_control_counts": {
+        "backing_refusals": 28,
+        "phase_refusals": 50,
+        "query_chunk_refusals": 3,
+        "refusals": 279
+      },
+      "preentry_refusals": 75,
+      "preentry_restorations": 75,
+      "status": "passed",
+      "terminal_control_counts": {
+        "preentry_refusals": 84,
+        "refusals": 25
+      }
+    },
+    {
+      "actual_refusals": 24,
+      "actual_restorations": 24,
+      "application_complete": false,
+      "descriptor": {
+        "common_differential": 2451,
+        "common_full": 8003,
+        "common_hits": 2451,
+        "disagreements": 0,
+        "history_fallbacks": 7681,
+        "hits": 71,
+        "poisoned": 1,
+        "raw_invalidations": 3305,
+        "topology_differential": 2549,
+        "topology_hits": 2549
+      },
+      "duration_ns": 4151534262,
+      "exit": 125,
+      "expected_exit": 125,
+      "full_captured_application_state_equal": null,
+      "label": "exposure5",
+      "observer_control_counts": {
+        "backing_refusals": 28,
+        "phase_refusals": 50,
+        "query_chunk_refusals": 3,
+        "refusals": 279
+      },
+      "preentry_refusals": 75,
+      "preentry_restorations": 75,
+      "status": "passed",
+      "terminal_control_counts": {
+        "preentry_refusals": 84,
+        "refusals": 25
+      }
+    },
+    {
+      "actual_refusals": 24,
+      "actual_restorations": 24,
+      "application_complete": false,
+      "descriptor": {
+        "common_differential": 2450,
+        "common_full": 8003,
+        "common_hits": 2450,
+        "disagreements": 0,
+        "history_fallbacks": 7681,
+        "hits": 71,
+        "poisoned": 1,
+        "raw_invalidations": 3303,
+        "topology_differential": 2549,
+        "topology_hits": 2549
+      },
+      "duration_ns": 4266562891,
+      "exit": 125,
+      "expected_exit": 125,
+      "full_captured_application_state_equal": null,
+      "label": "exposure6",
+      "observer_control_counts": {
+        "backing_refusals": 28,
+        "phase_refusals": 50,
+        "query_chunk_refusals": 0,
+        "refusals": 227
+      },
+      "preentry_refusals": 75,
+      "preentry_restorations": 75,
+      "status": "passed",
+      "terminal_control_counts": {
+        "preentry_refusals": 84,
+        "refusals": 25
+      }
+    }
+  ],
+  "cleanup_complete": true,
+  "command_exit_counts": {
+    "0": 73,
+    "125": 6
+  },
+  "commands": 79,
+  "cpu": 27,
+  "error": null,
+  "every_gated_subject_active_members": [
+    1,
+    1,
+    3,
+    4,
+    4
+  ],
+  "every_gated_subject_intervals": [
+    {
+      "code_permission_operations": 0,
+      "entry": 4277760,
+      "events": 1,
+      "exit": 4277782,
+      "final_nx": 1,
+      "interior_signals": 0,
+      "original_instructions": 75,
+      "planning_operations": 0,
+      "publications": 0
+    },
+    {
+      "code_permission_operations": 0,
+      "entry": 4284416,
+      "events": 1,
+      "exit": 4277782,
+      "final_nx": 1,
+      "interior_signals": 0,
+      "original_instructions": 83,
+      "planning_operations": 0,
+      "publications": 0
+    },
+    {
+      "code_permission_operations": 0,
+      "entry": 4284416,
+      "events": 1,
+      "exit": 4277788,
+      "final_nx": 1,
+      "interior_signals": 0,
+      "original_instructions": 84,
+      "planning_operations": 0,
+      "publications": 0
+    }
+  ],
+  "final_errors": [],
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 27,
+    "runner_cap_eff": "0000000000000000",
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "performance_credit": false,
+  "profile": "loop-group-descriptor-abc255-v1",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 2096231,
+    "sha256": "6b9b9e51aaeb3b4f8dd2f17a15216a3fab7f3880281a45d4b8b7e0e50197ba25"
+  },
+  "reproduce": [
+    [
+      "python3.12",
+      "-B",
+      "evaluation/inprocess/loop_ro_program_release.py",
+      "--expect-revision",
+      "466858c3dfbf0898611386ca3b0b9d86fff023da",
+      "--output",
+      "target/evaluation/inprocess/ro-provider-NEW"
+    ],
+    [
+      "python3.12",
+      "-B",
+      "evaluation/inprocess/loop_group_descriptor_native.py",
+      "--expect-revision",
+      "466858c3dfbf0898611386ca3b0b9d86fff023da",
+      "--current-build",
+      "target/evaluation/inprocess/ro-provider-NEW/receipt.json",
+      "--current-build-sha256",
+      "SHA256_OF_FRESH_PROVIDER_RECEIPT",
+      "--output",
+      "target/evaluation/inprocess/descriptor-native-NEW"
+    ]
+  ],
+  "reproduce_context": "Each command runs under an externally reserved singleton CPU. Fresh receipt hash is content-derived; retained measured provider identity is recorded separately.",
+  "revision": "466858c3dfbf0898611386ca3b0b9d86fff023da",
+  "schema": 1,
+  "scope": "Finite natural installed ABC255 oracle only. All12 captured complete state frames match; no claim of interior owner-state observation, full19 qualification, whole-program timing or DynamoRIO-null parity.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "466858c3dfbf0898611386ca3b0b9d86fff023da",
+    "source_manifest_sha256": "aec5cec277c10480bad43bf09a18d5ae86132c4d685645ef1313ed92ff67e500",
+    "tracked_clean": true,
+    "tree": "6e27f77b08267f4f058f419801a68dde7aa539f4"
+  },
+  "source_context_is_natural": true,
+  "source_unchanged": true,
+  "status": "passed",
+  "timing_scope": "Single finite diagnostic durations, not a matched performance comparison.",
+  "whole_profile_qualified": false
+}

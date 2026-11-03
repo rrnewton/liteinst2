@@ -33,7 +33,12 @@ def main():
     ap.add_argument('--diagnostic-receipt', type=Path, required=True)
     ap.add_argument('--diagnostic-sha256', required=True)
     ap.add_argument('--output', type=Path, required=True)
-    a = ap.parse_args(); root = Path.cwd().resolve()
+    return execute(ap.parse_args())
+
+
+def execute(a, *, group_descriptor=False):
+    need(type(group_descriptor) is bool, 'explicit natural descriptor profile selector')
+    root = Path.cwd().resolve()
     sys.path[:0] = [str(root/'evaluation/inprocess'), str(root/'tools/page-entry')]
     from checks import source
     from run import hardware
@@ -46,7 +51,11 @@ def main():
     from persistent_dynamic import imported_sources, digest, load
     from page_selected_register_time_build import recipe, expand, headers
     from persistent_epoch_build import dynamic_original_image
-    from loop_ro_program_release import SCHEDULE, BOUNDS
+    if group_descriptor:
+        from loop_resident_rx_program import SCHEDULE, BOUNDS
+        from profile_storage import SlotGuard
+    else:
+        from loop_ro_program_release import SCHEDULE, BOUNDS
     from types import SimpleNamespace
     from page_cost_compare import PROGRAM_ENV
     from page_native_pair_performance import namespace_join
@@ -59,14 +68,24 @@ def main():
          re.fullmatch('[0-9a-f]{64}', a.diagnostic_sha256), 'exact source, Python and original subject bounds')
     cpu = next(iter(os.sched_getaffinity(0))); output = a.output.absolute()
     need(output.parent == root/'target/evaluation/inprocess' and not output.exists(), 'fresh private output')
+    storage = None
+    if group_descriptor:
+        need(list(PERF) == [30, 1 << 30, 128 << 20, 80], 'unchanged bounded observer and DWARF child limits')
+        storage = SlotGuard(root, output, PERF[2])
+        storage.reserve(0, 'initial metadata directory')
     output.mkdir(mode=0o700)
-    r = dict(schema=1, profile='loop-ro-program-user-dwarf-diagnostic-v1', status='failed',
+    r = dict(schema=1, profile='loop-group-descriptor-program-user-dwarf-natural-v1' if group_descriptor else 'loop-ro-program-user-dwarf-diagnostic-v1', status='failed',
         cpu=cpu, hardware=hardware(cpu), argv=[sys.executable, '-B', *sys.argv], source=None,
         compiled_source=None, subject_bounds=subject, observer_bounds=list(PERF), unwinder_bounds=list(PERF),
         commands=[], inputs_unchanged=False, source_unchanged=False, cleanup_complete=False,
         qualification_credit=False, performance_credit=False, successful_target_credit=False,
         original_diagnostic_reclassified=False, error=None, final_errors=[], namespace_aliases={},
         scope='One separately observed LS execution from the retained failed case and RO bridge. User-only 99Hz samples and actual wait4 usage; no terminal counts invented. No kernel stack, complete unwind, kill-cause, timing or qualification inference.')
+    if group_descriptor:
+        r.update(storage_guard=storage.record, matched_timing_credit=False, speedup_credit=False,
+            scope='One separately observed LS execution from an exact clean installed descriptor34 failure. '
+                  'User-only 99Hz samples and actual wait4 usage; no terminal counts invented, timing, '
+                  'kernel-stack, complete-unwind, kill-cause or qualification inference.')
     pins = {}; artifacts = {}; aliases = {}
     def pin(path, expected=None):
         lexical = Path(path).absolute(); p = lexical.resolve(strict=True); v = fact(p)
@@ -88,6 +107,7 @@ def main():
         finalize(r)
     def run(name, argv, env):
         stable()
+        if storage is not None: storage.reserve(2*PERF[2], 'observer child '+name)
         row = dict(name=name, argv=list(map(str, argv)), environment=env,
                    bounds=list(PERF), capture_limit=16 << 20, expected_exit=0)
         r['commands'].append(row)
@@ -100,17 +120,30 @@ def main():
         r['source'] = source()
         need(r['source']['revision'] == a.expect_revision, 'exact clean current observer revision')
         pin(__file__); imported_sources(pin)
+        if storage is not None: pin(storage.du, storage.du_fact)
         origin = pin(a.diagnostic_receipt)
         need(pins[str(origin)]['sha256'] == a.diagnostic_sha256 and origin.name == 'receipt.json' and
              origin.parent.parent == root/'target/evaluation/inprocess', 'whole closed original receipt')
         old = json.loads(origin.read_bytes()); r['compiled_source'] = old['source']
-        need(old['profile'] == 'loop-ro-program-release-v1' and old['status'] == 'failed' and
+        need(old['profile'] == ('loop-group-descriptor-program-release-v1' if group_descriptor else 'loop-ro-program-release-v1') and old['status'] == 'failed' and
              old['revision'] == old['source']['revision'] and old['source']['tracked_clean'] is True and
              old['source']['head_sources_match'] is True and old['source_unchanged'] is True and
              old['cleanup_complete'] is True and old['inputs_unchanged'] is True and old['final_errors'] == [] and
              old['qualification_credit'] is old['performance_credit'] is old['full_state_credit'] is False and
-             old['cpu'] == cpu and old['hardware'] == r['hardware'],
+             (group_descriptor or (old['cpu'] == cpu and old['hardware'] == r['hardware'])),
              'closed failed development observation on this exact CPU/hardware; no promotion')
+        if group_descriptor:
+            need(old['source'] == r['source'] and old['source_manifest'] is None and
+                 old['source_context'] == 'installed tracked source' and
+                 old['whole_profile_qualified'] is False and old['cpu'] == old['hardware']['probe_cpu'] and
+                 set(old['hardware']) == set(r['hardware']) and
+                 all(old['hardware'][k] == r['hardware'][k] for k in old['hardware'] if k != 'probe_cpu'),
+                 'exact natural34 installed source and all hardware fields except explicit reserved CPU number')
+            r.update(original_cpu=old['cpu'], original_hardware=old['hardware'], same_cpu=(cpu == old['cpu']),
+                hardware_comparison_excludes=['probe_cpu'],
+                cpu_scope='Current reserved singleton and original CPU remain separate; no matched timing comparison.')
+            need(all(Path(p).is_symlink() and os.readlink(p) == v for p,v in old['namespace_aliases'].items()),
+                 'all original descriptor namespace aliases remain exact')
         need(old['bounds'] == BOUNDS and len(SCHEDULE) == 34 and
              [(c['workload'], c['lane']) for c in old['cases']] == [('ls', 'release'), ('true', 'release')] and
              all(c['status'] == 'failed' and c['exit'] == -9 and
@@ -145,24 +178,47 @@ def main():
         original = pin('/bin/ls', old['system_inputs']['ls']['original'])
         build = old['release_builds']['ls']; binding = build['binding']
         need(build['status'] == 'compiled_diagnostic_only' and
-             binding['profile'] == 'persistent-loop-ro-certificate-release-v1' and binding['mode'] == 'release' and
+             binding['profile'] == ('persistent-loop-group-descriptor-program-release-v1' if group_descriptor else 'persistent-loop-ro-certificate-release-v1') and binding['mode'] == 'release' and
              binding['archive'] == old['archive'] and binding['capture_version'] is None and
              binding['byte_certificate'] == dict(version=1, sealed_generation=True, source_lease=False,
-                 mirror='isolated-anonymous-RO', root='isolated-anonymous-RO', mirror_pages=89, slots=2,
+                 mirror='isolated-anonymous-RO', root='isolated-anonymous-RO', mirror_pages=89, slots=8 if group_descriptor else 2,
                  full_scan_fallback=True, every_hit_full_scan=False, old_capture_compatible=False,
                  qualification_credit=False) and
-             binding['history_certificate'] == dict(version=1, cells=3, saved_completion='isolated-anonymous-RO',
+             binding['history_certificate'] == dict(version=1, cells=9 if group_descriptor else 3, saved_completion='isolated-anonymous-RO',
                  witnesses='isolated-anonymous-RO', complete_live_predicates=True,
                  every_hit_reconstruction=False, qualification_credit=False),
              'actual retained RO release, no test/capture/counter or differential profile')
+        if group_descriptor:
+            need('oracle' not in binding and 'control' not in binding and binding['rx_lifetime'] == dict(
+                 version=2, slots=8, source_release_version=1,
+                 continuation='at-most-two-authenticated-original-DIRECT-TF-steps', branch_limit=2,
+                 unsafe_handoff='revoke-all-before-original-route', original_domain_preserved=True,
+                 old_capture_compatible=False, code_permission_counts='actual-pe_permission-calls',
+                 metadata_permission_counts='actual-pe_permission-calls-only', qualification_credit=False),
+                 'exact separately typed eight-slot/two-branch production lifetime; no oracle instrumentation')
+            need(not any(k in binding for k in ('recurrence','cache8_observer','group_descriptor_observer')) and
+                 binding['cache8'] == dict(version=1,slots=8,members=8,completion_cells=9,source_pages=2,
+                     placement_banks=2,aggregate_heads=256,aggregate_boundaries=8,rx_receipt_version=2,
+                     selection='exact-root-or-head-then-empty-or-oldest-completion',
+                     activation='post-publication-DIRECT-connected-claimed-closure',
+                     inactive_heads_exposed=False,qualification_credit=False) and
+                 binding['cache8_program'] == dict(version=1,fields=63,slots=8,members=8,receipts=9,
+                     terminal_only=True,observation_authority=False,qualification_credit=False) and
+                 binding['group_descriptor'] == dict(version=1,groups=1,members=8,heads=256,boundaries=8,
+                     directory_order='ascending-retained-slot',directory_serial='descriptor-id',
+                     activation_claims='fresh-every-entry',raw_exposure='pre-kernel-monotone-epochs',
+                     common_proof='existing-LHC-owner',physical_queries='fresh-original-member-checks',
+                     old_capture_compatible=False,qualification_credit=False),
+                 'exact descriptor/cache8 activation contract and terminal-only reporting')
+        stem = 'persistent-loop-group-descriptor-program' if group_descriptor else 'persistent-loop-ro-certificate'
         bridge = pin(build['argv'][-1], build['bridge']); directory = bridge.parent
         need(directory == origin.parent/'ls-build/build' and str(bridge) in old['artifacts'] and
-             bridge.name == 'bridge-persistent-loop-ro-certificate.so' and bridge_check(bridge) == build['elf'],
+             bridge.name == 'bridge-'+stem+'.so' and bridge_check(bridge) == build['elf'],
              'actual retained bridge and independently checked ELF')
-        manifest = pin(directory/'persistent_loop_ro_certificate_binding.json', build['manifest'])
+        manifest = pin(directory/(stem.replace('-', '_')+'_binding.json'), build['manifest'])
         need(json.loads(manifest.read_bytes()) == binding, 'whole original generated binding manifest')
         selected = root/'tools/page-entry/selected'
-        recipe_path = pin(selected/'build-persistent-loop-ro-certificate.sh', build['recipe'])
+        recipe_path = pin(selected/('build-'+stem+'.sh'), build['recipe'])
         owned = old['build']['artifacts']['decoder.a']; archive = pin(owned['path'], owned)
         need(fact(archive) == old['archive'] and str(archive) in old['artifacts'], 'same fresh producer archive')
         tools = {k: pin(v['path'], v) for k, v in old['build']['tools'].items()}
@@ -178,6 +234,8 @@ def main():
              all(v['bytes'] == 0 for v in link['captures'].values()), 'whole actual source-owned shell link tuple')
         dependencies = ('persistent_epoch_binding', 'persistent_group_binding', 'persistent_retained_two_binding',
             'persistent_active_domain_binding', 'persistent_startup_binding', 'persistent_loop_binding')
+        if group_descriptor:
+            dependencies += ('persistent_loop_ro_certificate_binding', 'persistent_loop_resident_rx_binding')
         for name in dependencies:
             path = pin(selected/(name+'.py'))
             need(name not in sys.modules or Path(sys.modules[name].__file__).resolve() == path,
@@ -185,7 +243,8 @@ def main():
         previous = list(sys.path)
         try:
             sys.path.insert(0, str(selected))
-            binder = load('profile_ro_binding', selected/'persistent_loop_ro_certificate_binding.py', pin)
+            binder = load('profile_descriptor_binding' if group_descriptor else 'profile_ro_binding',
+                selected/(stem.replace('-', '_')+'_binding.py'), pin)
         finally:
             sys.path[:] = previous
         need(all(Path(sys.modules[n].__file__).resolve() == selected/(n+'.py') for n in dependencies),
@@ -218,7 +277,7 @@ def main():
              'all three actual source binding headers')
         for name, value in binding['headers'].items():
             need(fact(pin(directory/name, value)) == observed['headers'][str(directory/name)], 'whole compiled generated header')
-        need((directory/'loop_ro_certificate_config.h').read_text() == binder.certificate_header('release'),
+        need((directory/'loop_ro_certificate_config.h').read_text() == (sys.modules['persistent_loop_resident_rx_binding'] if group_descriptor else binder).certificate_header('release'),
              'literal RO release selector, with maintained maps and no differential or test hook')
         r['retained_build'] = dict(binding=binding, bridge=build['bridge'], recipe=build['recipe'],
             manifest=build['manifest'], compiler_argv=argv, headers=observed['headers'],
@@ -251,6 +310,9 @@ def main():
         libs = observer_libraries(listed, perfinterp, pin)
         r['observer_libraries'] = {str(p): fact(p) for p in libs}
         imported_sources(pin); stable(); capture = output/'capture'
+        if storage is not None:
+            storage.reserve(3*PERF[2]+2*TARGET[2], 'target and perf children')
+            storage.install()
         out, err, owner = profile(row, capture, cpu, bridge, fact(bridge), perf=str(perf), user_dwarf=True)
         r['diagnostic'] = owner
         need(owner['sampling']['full_exec_exit_envelope'] and owner['sampling']['loss_free'],
@@ -276,6 +338,9 @@ def main():
     except BaseException as error:
         r['error'] = type(error).__name__+': '+str(error)
     finally:
+        if storage is not None:
+            try: storage.restore()
+            except BaseException as error: r['final_errors'].append(type(error).__name__+': '+str(error))
         owner_path = output/'capture/owner.json'
         if owner_path.exists(): r['diagnostic'] = json.loads(owner_path.read_bytes())
         try:
@@ -289,6 +354,7 @@ def main():
             for c in r['commands'])
         if r['error'] or r['final_errors'] or not r['cleanup_complete']: r['status'] = 'failed'
         r.update(inputs=pins, artifacts=artifacts, aliases=aliases)
+        if storage is not None: storage.receipt(r)
         save(output/'receipt.json', r)
     print(json.dumps(dict(status=r['status'], target_exit=r.get('target', {}).get('exit'),
                          receipt=str(output/'receipt.json'))), flush=True)
