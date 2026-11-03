@@ -68,7 +68,7 @@ def cargo_mutation(test, observed, before, after):
 
 def outer_declaration_mutation(test, path, observed, before, after):
     """Carry the same old stimulus through the two new, exact outer joins."""
-    names = ('2294097', '9528851', '11cc419', '281c342', '064b48c', '79a4b8b', '3217b8ed')
+    names = ('f9c5982', '2294097', '9528851', '11cc419', '281c342', '064b48c', '79a4b8b', '3217b8ed')
     rows = {name: {} for name in names}
     baseline = current.source_before_65ee8ea(path, observed, 'declaration_outer_baseline')
     if path == 'Cargo.toml':
@@ -109,10 +109,77 @@ def outer_declaration_mutation(test, path, observed, before, after):
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # Seventeen minimum-window methods extend three existing default harnesses.
+        minimum = current.DATA['source_successor_f9c5982']
+        minimum_prior = current.before_f9c5982(actual)
+        minimum_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(minimum_prior), current.MINIMUM_PREVIOUS)
+        self.assertEqual((len(minimum_rows), sum(x['tests'] for x in minimum_rows.values()),
+                          sum(x['ignored'] for x in minimum_rows.values())), (122, 4747, 43))
+        self.assertEqual((minimum['default_method_additions'], minimum['new_method_declarations'],
+                          minimum['default_method_removals'], minimum['default_harness_changes'],
+                          minimum['default_ignore_changes'], minimum['default_doctest_additions'],
+                          minimum['recorder_identity_changes'], minimum['feature_method_additions'],
+                          minimum['feature_method_removals']), (17, 17, 0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(minimum['added_default_methods'], {'src/entry_router/imp/routed_jmp_native_tests.rs': ['min5_every_entry_routes_through_production_and_preserves_ret_state', 'min5_unselected_ret_fault_preserves_prior_pop_and_callback_state'], 'src/quiescent/artifact_window/min5_tests.rs': ['seal_stops_at_first_whole_end_without_conflating_selected_and_retained_spans', 'final_unselected_ret_uses_existing_encoder_routes_mask_and_continuation', 'owned_seal_joins_exact_geometry_identity_bytes_and_supplied_population', 'source_and_population_failures_precede_collection_without_search_credit', 'block_and_displacement_bounds_keep_original_qualifier_precedence', 'seal_does_not_bypass_current_overlay_pending_or_terminal_entry_checks', 'seal_is_not_a_physical_budget_fitting_or_hook_binding_success'], 'tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs': ['min5_cli_selector_is_explicit_and_keeps_legacy_and_storage_routes', 'min5_cli_keeps_complete_population_for_retained_ret_and_preflight_refusal', 'min5_cli_binding_rejects_old_profile_replay_and_mutated_policy_or_carrier'], 'tools/elf-rewrite/src/grouped_artifact_frontend/min5_tests.rs': ['min5_retained_ret_reaches_actual_carrier_without_changing_selected_population', 'min5_preflight_failure_keeps_all_units_and_exact_member_refusals_atomic', 'min5_full_manifest_and_frozen_source_join_reject_consumed_straddling_or_changed_input', 'min5_named_bounds_and_final_carrier_refusal_never_relax_atomicity', 'min5_reuses_compact_codec_and_unchanged_singleton_engine']})
+        self.assertEqual(minimum['default_method_instances'], {'src/entry_router/imp/routed_jmp_native_tests.rs': ['unit/liteinst2/lib'], 'src/quiescent/artifact_window/min5_tests.rs': ['unit/liteinst2/lib'], 'tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs': ['unit/disassembly_sites/disassembly_sites'], 'tools/elf-rewrite/src/grouped_artifact_frontend/min5_tests.rs': ['unit/liteinst_rewrite/lib']})
+        self.assertEqual((minimum['added_feature_methods'], minimum['added_ignored_methods']), ({}, {}))
+        self.assertEqual((len(minimum['source_paths']), len(minimum['source_projections'])), (23, 23))
+        self.assertEqual(minimum['new_sources'], ['evaluation/direct-program/minimum-window-result/README.md', 'evaluation/direct-program/minimum-window-result/cases.csv', 'evaluation/direct-program/minimum-window-result/receipt.json', 'evaluation/direct-program/minimum-window-validation/README.md', 'evaluation/direct-program/minimum-window-validation/receipt.json', 'evaluation/direct-program/test_grouped_min5_linkage.py', 'evaluation/direct-program/validate_minimum_window.py', 'src/quiescent/artifact_window/min5_tests.rs', 'tests/support/min5_native.rs', 'tests/support/router_witness.rs', 'tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs', 'tools/elf-rewrite/src/grouped_artifact_frontend/min5_tests.rs'])
+        self.assertEqual(minimum['newly_bound_sources'], ['evaluation/direct-program/minimum-window-result/README.md', 'evaluation/direct-program/minimum-window-result/cases.csv', 'evaluation/direct-program/minimum-window-result/receipt.json', 'evaluation/direct-program/minimum-window-validation/README.md', 'evaluation/direct-program/minimum-window-validation/receipt.json', 'evaluation/direct-program/test_grouped_min5_linkage.py', 'evaluation/direct-program/validate_minimum_window.py', 'src/entry_router/imp/routed_jmp_native_tests.rs', 'src/quiescent/artifact_window/min5_tests.rs', 'tests/support/min5_native.rs', 'tests/support/router_witness.rs', 'tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs', 'tools/elf-rewrite/src/grouped_artifact_frontend/min5_tests.rs', 'src/entry_router.rs'])
+        self.assertEqual(minimum_prior['harness_test_counts']['serial_launch'], actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((actual['recorder_tests'], minimum_prior['recorder_tests']), (366, 366))
+        for name, change in minimum['workspace_changes'].items():
+            self.assertEqual(minimum_rows[name], change['current'])
+            self.assertEqual(minimum_prior['harness_test_counts']['workspace_tests'][name], change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(minimum_rows[name][field]), minimum_rows[name][field] + 1):
+                    wrong = inventory_copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_f9c5982(wrong)
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_f9c5982(wrong)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_f9c5982(minimum_prior)
+        for path, row in minimum['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_f9c5982(path, raw, 'minimum_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (minimum['source_preimages'][path]['bytes'], row['previous_sha256']))
+            if path in minimum['new_sources']:
+                self.assertEqual(prior, b'')
+            for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^minimum_source_inverse$'):
+                    current.source_before_f9c5982(path, wrong, 'minimum_source_inverse')
+            for field in ('edits', 'current_sha256', 'previous_sha256'):
+                malformed = inventory_copy.deepcopy(row)
+                if field == 'edits': malformed['edits'][0][2] += '\n'
+                else: malformed[field] = '0' * 64
+                with patch.dict(minimum['source_projections'], {path: malformed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^minimum_source_inverse$'):
+                        current.source_before_f9c5982(path, raw, 'minimum_source_inverse')
+        read = Path.read_bytes
+        minimum_stimuli = [(p, 'fn ' + n + '(') for p, names in minimum['added_default_methods'].items() for n in names]
+        minimum_stimuli += [(p, literal) for p, literals in minimum['module_chains'].items() for literal in literals]
+        for path, literal in minimum_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            replacement = literal.replace('(', '_wrong(', 1) if literal.startswith('fn ') else literal[:-1] + ('x' if literal[-1] != 'x' else 'y')
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('minimum declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
         # Twenty-six upstream/ledger methods extend four existing default harnesses.
         upstream = current.DATA['source_successor_2294097']
         upstream_prior = current.before_2294097(actual)
-        upstream_rows = actual['harness_test_counts']['workspace_tests']
+        upstream_rows = minimum_prior['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(upstream_prior), current.UPSTREAM_PREVIOUS)
         self.assertEqual((len(upstream_rows), sum(x['tests'] for x in upstream_rows.values()),
                           sum(x['ignored'] for x in upstream_rows.values())), (122, 4730, 43))
@@ -2518,6 +2585,24 @@ class Main97abInventoryTests(unittest.TestCase):
                 with patch.dict(change, previous=PublishedCopy(change['previous'])):
                     result = current.before_2294097(supplied)
             self.assertEqual(result, upstream_prior)
+            self.assertEqual(supplied, actual)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+
+        # The latest transition preserves private ownership for both sources.
+        for source in ('declared', 'metadata'):
+            supplied = copy.deepcopy(actual)
+            change = minimum['workspace_changes']['unit/liteinst_rewrite/lib']
+            published.clear()
+            if source == 'declared':
+                supplied['harness_test_counts']['serial_launch'] = PublishedCopy(supplied['harness_test_counts']['serial_launch'])
+                result = current.before_f9c5982(supplied)
+            else:
+                with patch.dict(change, previous=PublishedCopy(change['previous'])):
+                    result = current.before_f9c5982(supplied)
+            self.assertEqual(result, minimum_prior)
             self.assertEqual(supplied, actual)
             self.assertEqual(len(published), 1)
             self.assertFalse(mutable_ids(result) & mutable_ids(supplied))

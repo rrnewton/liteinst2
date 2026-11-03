@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "3a2709f6ad474fcc170886c85aa30208ea4b35dbf52e8e7ad5a6b004c8b44747",
+  "current_corpus_sha256": "4df0bb68b9302d3c673f5cade6c9a6c6460da5bf07366d9db76855a8262781c5",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -114,9 +114,12 @@
       "/// ```compile_fail,E0277\n/// use liteinst2::controls::ControlWriter;\n/// fn needs_clone<T: Clone>() {}\n/// fn duplicate() { needs_clone::<ControlWriter>(); }\n/// ```"
     ],
     "src/emission.rs": [],
+    "src/entry_router.rs": [],
+    "src/entry_router/imp/routed_jmp_native_tests.rs": [],
     "src/lib.rs": [],
     "src/quiescent.rs": [],
     "src/quiescent/artifact_window.rs": [],
+    "src/quiescent/artifact_window/min5_tests.rs": [],
     "src/quiescent/artifact_window/tests.rs": [],
     "src/quiescent/artifact_window/upstream_tests.rs": [],
     "src/quiescent/whole_function.rs": [],
@@ -131,10 +134,14 @@
     "tests/quiescent_oracle.rs": [],
     "tests/support/artifact_window_native.rs": [],
     "tests/support/jump_stack_native.rs": [],
+    "tests/support/min5_native.rs": [],
     "tests/support/quiescent_oracle.rs": [],
+    "tests/support/routed_jmp_native.rs": [],
+    "tests/support/router_witness.rs": [],
     "tools/elf-rewrite/examples/adjacent_b2_support/ledger.rs": [],
     "tools/elf-rewrite/examples/common_sites.rs": [],
     "tools/elf-rewrite/examples/disassembly_sites.rs": [],
+    "tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs": [],
     "tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs": [],
     "tools/elf-rewrite/examples/disassembly_sites/grouped_upstream_tests.rs": [],
     "tools/elf-rewrite/examples/disassembly_sites/ledger_storage_tests.rs": [],
@@ -158,6 +165,7 @@
     "tools/elf-rewrite/src/disassembly/whole/tests.rs": [],
     "tools/elf-rewrite/src/fixed_exec.rs": [],
     "tools/elf-rewrite/src/grouped_artifact_frontend.rs": [],
+    "tools/elf-rewrite/src/grouped_artifact_frontend/min5_tests.rs": [],
     "tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs": [],
     "tools/elf-rewrite/src/grouped_artifact_frontend/upstream_tests.rs": [],
     "tools/elf-rewrite/src/ledger.rs": [],
@@ -819,7 +827,7 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "3df4e7fd8071e71a15f90bf587440b70ca059c0e7b8c06c371b38a6d17c33626",
+      "current_sha256": "b39288cd55b0d73d2bc07f5e2ac118103a5e6a746a2f3638d1fc18561ead1c72",
       "edits": [
         [
           110,
@@ -828,102 +836,102 @@
         ],
         [
           460,
-          5847,
+          5858,
           ""
         ],
         [
-          6051,
-          128028,
+          6062,
+          136784,
           ""
         ],
         [
-          130093,
-          130164,
+          138849,
+          138920,
           "            wrong = copy.deepcopy(actual); wrong[key] = None\n"
         ],
         [
-          130494,
-          130624,
+          139250,
+          139380,
           "                    wrong = copy.deepcopy(actual); wrong['harness_test_counts']['workspace_tests'][name][field] = value\n"
         ],
         [
-          132248,
-          132327,
+          141004,
+          141083,
           "                bad = copy.deepcopy(row); bad['edits'][0][2] += '\\n'\n"
         ],
         [
-          135299,
-          135376,
+          144055,
+          144132,
           "            row = copy.deepcopy(current.DATA['projections'][path])\n"
         ],
         [
-          137439,
-          137550,
+          146195,
+          146306,
           "        self.assertEqual(actual['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],\n"
         ],
         [
-          138308,
-          138364,
+          147064,
+          147120,
           "                wrong = copy.deepcopy(actual)\n"
         ],
         [
-          142603,
-          142773,
+          151359,
+          151529,
           ""
         ],
         [
-          142820,
-          142974,
+          151576,
+          151730,
           "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n                    wrong = copy.deepcopy(actual)\n"
         ],
         [
-          143063,
-          143150,
+          151819,
+          151906,
           ""
         ],
         [
-          143308,
-          143498,
+          152064,
+          152254,
           "            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]\n"
         ],
         [
-          144554,
-          145104,
+          153310,
+          153860,
           ""
         ],
         [
-          146623,
-          146719,
+          155379,
+          155475,
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          148501,
-          148561,
+          157257,
+          157317,
           "                    wrong = copy.deepcopy(actual)\n"
         ],
         [
-          148808,
-          148919,
+          157564,
+          157675,
           "            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]\n"
         ],
         [
-          150582,
-          184086,
+          159338,
+          192842,
           ""
         ],
         [
-          191004,
-          194575,
+          199760,
+          203331,
           ""
         ],
         [
-          195855,
-          196127,
+          204611,
+          204883,
           "        for function, expected_projection in projections:\n"
         ],
         [
-          197421,
-          210730,
+          206177,
+          220535,
           ""
         ]
       ],
@@ -1042,7 +1050,7 @@
       "previous_sha256": "c8b2d6c0b859e6d757fcf9c9c5f6a43c75edcd594863e819c131dd37849e189b"
     },
     "evaluation/admission/test_mainaf81_inventory.py": {
-      "current_sha256": "85912ad54586a03049bdfbcec1d5f3a64b4fdd48c541e0e35237586cbc10ccfd",
+      "current_sha256": "8b3b5ecd0058e20f07678d3f46d51bea1b40287c31cbc17cc40cd183d5660b14",
       "edits": [
         [
           94,
@@ -1071,7 +1079,7 @@
         ],
         [
           8834,
-          15688,
+          15820,
           "            with patch.object(Path, 'read_bytes', changed), \\\n                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_raw).hexdigest()}), \\\n                 patch.object(current, 'source_before', side_effect=lambda p, b, e: b if p != path else (_ for _ in ()).throw(AssertionError('declaration gate omitted'))):\n                with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainaf81_source_inventory_differs$'):\n                    current.require_sources()\n"
         ]
       ],
@@ -1099,7 +1107,7 @@
       "previous_sha256": "b3b0c8d33e580affbd078b283fd13c3cdbf44d4855397aac694f4385880bdd1c"
     },
     "evaluation/admission/test_maind8d85_inventory.py": {
-      "current_sha256": "83277edfbbd5da8efc9ad5b717b7919660f32610ccc0255abcd93a923ed4ba44",
+      "current_sha256": "db2c569f139932612cca8850825eef3312fc7e484002371b4ad9d323c8ac0813",
       "edits": [
         [
           383,
@@ -1143,7 +1151,7 @@
         ],
         [
           8138,
-          9328,
+          9456,
           "            with patch.dict(indexed.DATA['projections'], upstream):\n"
         ]
       ],
@@ -1186,7 +1194,7 @@
       "previous_sha256": "4376c7bb3da59cd0afd56ec13922dc27c42c1d557d017f6ee2cc165870d5ffa9"
     },
     "evaluation/admission/test_mainf353_inventory.py": {
-      "current_sha256": "509c78fe4494acb3c0372def3ef00d1ed396ab809ce4e7adc49a8c0d7ed87dfc",
+      "current_sha256": "913cb38972eb2eb3f2bb43de8ec96ea1c7bbe9fbf87b57f3c94e59c26f09b766",
       "edits": [
         [
           379,
@@ -1220,7 +1228,7 @@
         ],
         [
           6702,
-          8399,
+          8527,
           "            with patch.object(Path, 'read_bytes', changed), \\\n                 patch.dict(current.DATA['sources'], {path:hashlib.sha256(wrong).hexdigest()}), \\\n                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('indexed declaration gate omitted'))):\n                with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainf353_source_inventory_differs$'):\n                    current.require_sources()\n"
         ]
       ],
@@ -1463,6 +1471,158 @@
       "macro_calls": [],
       "templates": []
     },
+    "src/entry_router.rs": {
+      "all": [
+        "quiescent_sigill_contract"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/entry_router/imp/routed_jmp_native_tests.rs": {
+      "all": [
+        "min5_every_entry_routes_through_production_and_preserves_ret_state",
+        "min5_unselected_ret_fault_preserves_prior_pop_and_callback_state",
+        "actual_f_after_deactivation_uses_default_sigill",
+        "actual_f_without_owner_uses_default_sigill",
+        "readiness_disposition_and_duplicate_owner_refuse_before_source_publication"
+      ],
+      "ignored": [],
+      "macro_calls": [
+        [
+          "row!\\((row_\\d+), (\\d+)\\);",
+          [
+            [
+              "row_00",
+              "0"
+            ],
+            [
+              "row_01",
+              "1"
+            ],
+            [
+              "row_02",
+              "2"
+            ],
+            [
+              "row_03",
+              "3"
+            ],
+            [
+              "row_04",
+              "4"
+            ],
+            [
+              "row_05",
+              "5"
+            ],
+            [
+              "row_06",
+              "6"
+            ],
+            [
+              "row_07",
+              "7"
+            ],
+            [
+              "row_08",
+              "8"
+            ],
+            [
+              "row_09",
+              "9"
+            ],
+            [
+              "row_10",
+              "10"
+            ],
+            [
+              "row_11",
+              "11"
+            ],
+            [
+              "row_12",
+              "12"
+            ],
+            [
+              "row_13",
+              "13"
+            ],
+            [
+              "row_14",
+              "14"
+            ],
+            [
+              "row_15",
+              "15"
+            ],
+            [
+              "row_16",
+              "16"
+            ],
+            [
+              "row_17",
+              "17"
+            ],
+            [
+              "row_18",
+              "18"
+            ],
+            [
+              "row_19",
+              "19"
+            ],
+            [
+              "row_20",
+              "20"
+            ],
+            [
+              "row_21",
+              "21"
+            ],
+            [
+              "row_22",
+              "22"
+            ],
+            [
+              "row_23",
+              "23"
+            ],
+            [
+              "row_24",
+              "24"
+            ],
+            [
+              "row_25",
+              "25"
+            ],
+            [
+              "row_26",
+              "26"
+            ],
+            [
+              "row_27",
+              "27"
+            ],
+            [
+              "row_28",
+              "28"
+            ],
+            [
+              "row_29",
+              "29"
+            ],
+            [
+              "row_30",
+              "30"
+            ]
+          ]
+        ]
+      ],
+      "templates": [
+        "macro_rules! row {\n    ($name:ident, $index:expr) => {\n        #[test]\n        fn $name() {\n            isolated::run(\n                concat!(\n                    \"entry_router::imp::routed_jmp_native_tests::\",\n                    stringify!($name)\n                ),\n                \"LI2_ROUTED_JMP_NATIVE_ROW_V1\",\n                || native::run::<ProductionRoutes>($index),\n            );\n        }\n    };\n}\n"
+      ]
+    },
     "src/neighbor.rs": {
       "all": [
         "short_redirect_has_exact_signed_endpoints_without_wrapping"
@@ -1570,6 +1730,20 @@
         "nearby_simd_string_address_and_extra_prefix_forms_stay_refused",
         "exact_codes_do_not_bypass_register_or_memory_operand_checks",
         "existing_gpr_and_refused_special_forms_keep_their_outcomes"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/quiescent/artifact_window/min5_tests.rs": {
+      "all": [
+        "seal_stops_at_first_whole_end_without_conflating_selected_and_retained_spans",
+        "final_unselected_ret_uses_existing_encoder_routes_mask_and_continuation",
+        "owned_seal_joins_exact_geometry_identity_bytes_and_supplied_population",
+        "source_and_population_failures_precede_collection_without_search_credit",
+        "block_and_displacement_bounds_keep_original_qualifier_precedence",
+        "seal_does_not_bypass_current_overlay_pending_or_terminal_entry_checks",
+        "seal_is_not_a_physical_budget_fitting_or_hook_binding_success"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -2184,6 +2358,16 @@
       "macro_calls": [],
       "templates": []
     },
+    "tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs": {
+      "all": [
+        "min5_cli_selector_is_explicit_and_keeps_legacy_and_storage_routes",
+        "min5_cli_keeps_complete_population_for_retained_ret_and_preflight_refusal",
+        "min5_cli_binding_rejects_old_profile_replay_and_mutated_policy_or_carrier"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs": {
       "all": [
         "grouped_cli_selector_keeps_legacy_routes_and_rejects_mixed_or_partial_forms",
@@ -2621,6 +2805,18 @@
         "union_projection_rejects_class_population_and_policy_replay_mutations",
         "union_fixed_policy_keeps_ordered_permits_caps_and_first_errors",
         "union_actual_fixed_transaction_emits_or_refuses_complete_population"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/elf-rewrite/src/grouped_artifact_frontend/min5_tests.rs": {
+      "all": [
+        "min5_retained_ret_reaches_actual_carrier_without_changing_selected_population",
+        "min5_preflight_failure_keeps_all_units_and_exact_member_refusals_atomic",
+        "min5_full_manifest_and_frozen_source_join_reject_consumed_straddling_or_changed_input",
+        "min5_named_bounds_and_final_carrier_refusal_never_relax_atomicity",
+        "min5_reuses_compact_codec_and_unchanged_singleton_engine"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -3399,6 +3595,13 @@
     "src/emission/placement/overlap.rs": [
       "#[cfg(test)]\nmod tests;"
     ],
+    "src/entry_router.rs": [
+      "#[cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]\nmod imp {",
+      "    #[cfg(test)]\n    mod routed_jmp_native_tests;"
+    ],
+    "src/entry_router/imp/routed_jmp_native_tests.rs": [
+      "#[path = \"../../../tests/support/quiescent_oracle.rs\"]\nmod oracle;"
+    ],
     "src/lib.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod artifact_emission_tests;",
       "pub mod neighbor;",
@@ -3409,7 +3612,8 @@
       "pub mod backedge_clock;",
       "pub mod controls;",
       "pub mod control_flow;",
-      "mod artifact_fixups;"
+      "mod artifact_fixups;",
+      "mod entry_router;"
     ],
     "src/neighbor.rs": [
       "#[cfg(test)]\n#[path = \"neighbor_long_ownership_tests.rs\"]\nmod long_ownership_tests;",
@@ -3432,7 +3636,8 @@
     ],
     "src/quiescent/artifact_window.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;",
-      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod upstream_tests;"
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod upstream_tests;",
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod min5_tests;"
     ],
     "src/quiescent/clock_region.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
@@ -3539,7 +3744,8 @@
       "#[cfg(test)]\nmod fixed_exec_cli_tests {",
       "#[cfg(test)]\n#[path = \"disassembly_sites/grouped_tests.rs\"]\nmod grouped_tests;",
       "#[cfg(test)]\n#[path = \"disassembly_sites/grouped_upstream_tests.rs\"]\nmod grouped_upstream_tests;",
-      "#[cfg(test)]\n#[path = \"disassembly_sites/ledger_storage_tests.rs\"]\nmod ledger_storage_tests;"
+      "#[cfg(test)]\n#[path = \"disassembly_sites/ledger_storage_tests.rs\"]\nmod ledger_storage_tests;",
+      "#[cfg(test)]\n#[path = \"disassembly_sites/grouped_min5_tests.rs\"]\nmod grouped_min5_tests;"
     ],
     "tools/elf-rewrite/examples/full_program_bridge.rs": [
       "#[cfg(test)]\n#[path = \"full_program_bridge/tests.rs\"]\nmod tests;",
@@ -3594,7 +3800,8 @@
     ],
     "tools/elf-rewrite/src/grouped_artifact_frontend.rs": [
       "#[cfg(test)]\nmod tests;",
-      "#[cfg(test)]\nmod upstream_tests;"
+      "#[cfg(test)]\nmod upstream_tests;",
+      "#[cfg(test)]\nmod min5_tests;"
     ],
     "tools/elf-rewrite/src/ledger_codec.rs": [
       "#[cfg(test)]\nmod tests;"
@@ -19353,6 +19560,850 @@
       }
     }
   },
+  "source_successor_f9c5982": {
+    "added_default_methods": {
+      "src/entry_router/imp/routed_jmp_native_tests.rs": [
+        "min5_every_entry_routes_through_production_and_preserves_ret_state",
+        "min5_unselected_ret_fault_preserves_prior_pop_and_callback_state"
+      ],
+      "src/quiescent/artifact_window/min5_tests.rs": [
+        "seal_stops_at_first_whole_end_without_conflating_selected_and_retained_spans",
+        "final_unselected_ret_uses_existing_encoder_routes_mask_and_continuation",
+        "owned_seal_joins_exact_geometry_identity_bytes_and_supplied_population",
+        "source_and_population_failures_precede_collection_without_search_credit",
+        "block_and_displacement_bounds_keep_original_qualifier_precedence",
+        "seal_does_not_bypass_current_overlay_pending_or_terminal_entry_checks",
+        "seal_is_not_a_physical_budget_fitting_or_hook_binding_success"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs": [
+        "min5_cli_selector_is_explicit_and_keeps_legacy_and_storage_routes",
+        "min5_cli_keeps_complete_population_for_retained_ret_and_preflight_refusal",
+        "min5_cli_binding_rejects_old_profile_replay_and_mutated_policy_or_carrier"
+      ],
+      "tools/elf-rewrite/src/grouped_artifact_frontend/min5_tests.rs": [
+        "min5_retained_ret_reaches_actual_carrier_without_changing_selected_population",
+        "min5_preflight_failure_keeps_all_units_and_exact_member_refusals_atomic",
+        "min5_full_manifest_and_frozen_source_join_reject_consumed_straddling_or_changed_input",
+        "min5_named_bounds_and_final_carrier_refusal_never_relax_atomicity",
+        "min5_reuses_compact_codec_and_unchanged_singleton_engine"
+      ]
+    },
+    "added_feature_methods": {},
+    "added_ignored_methods": {},
+    "base_revision": "c2edb0ee1c0ab9452f9702c13611e8d6c0e26a22",
+    "current_corpus_sha256": "4df0bb68b9302d3c673f5cade6c9a6c6460da5bf07366d9db76855a8262781c5",
+    "default_doctest_additions": 0,
+    "default_harness_changes": 0,
+    "default_ignore_changes": 0,
+    "default_method_additions": 17,
+    "default_method_instances": {
+      "src/entry_router/imp/routed_jmp_native_tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "src/quiescent/artifact_window/min5_tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs": [
+        "unit/disassembly_sites/disassembly_sites"
+      ],
+      "tools/elf-rewrite/src/grouped_artifact_frontend/min5_tests.rs": [
+        "unit/liteinst_rewrite/lib"
+      ]
+    },
+    "default_method_removals": 0,
+    "feature_method_additions": 0,
+    "feature_method_removals": 0,
+    "incoming_main": "f9c59829ea7fb38855b6285a2efd115718c5072c",
+    "merged_main_local_additions": {},
+    "merged_source_tree": "fce98f5147a82d8fbb624d95db87115a01c0c9e9",
+    "module_chains": {
+      "src/entry_router.rs": [
+        "#[cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]\nmod imp {",
+        "    #[cfg(test)]\n    mod routed_jmp_native_tests;"
+      ],
+      "src/entry_router/imp/routed_jmp_native_tests.rs": [
+        "#[path = \"../../../tests/support/quiescent_oracle.rs\"]\nmod oracle;"
+      ],
+      "src/lib.rs": [
+        "mod entry_router;",
+        "pub mod quiescent;"
+      ],
+      "src/quiescent.rs": [
+        "mod artifact_window;"
+      ],
+      "src/quiescent/artifact_window.rs": [
+        "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod min5_tests;"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites.rs": [
+        "#[cfg(test)]\n#[path = \"disassembly_sites/grouped_min5_tests.rs\"]\nmod grouped_min5_tests;"
+      ],
+      "tools/elf-rewrite/src/grouped_artifact_frontend.rs": [
+        "#[cfg(test)]\nmod min5_tests;"
+      ],
+      "tools/elf-rewrite/src/lib.rs": [
+        "mod grouped_artifact_frontend;"
+      ]
+    },
+    "module_dependency_sources": {
+      "src/entry_router.rs": "61e0406541661d7390c8e75d68ca2d73b1bb5b0573371ae97ac0f714671f6280",
+      "src/lib.rs": "abf435a29ffdb821941ab4ffea147fc6af56c06748cb0d39b43ce62bfcebec14"
+    },
+    "new_method_declarations": 17,
+    "new_sources": [
+      "evaluation/direct-program/minimum-window-result/README.md",
+      "evaluation/direct-program/minimum-window-result/cases.csv",
+      "evaluation/direct-program/minimum-window-result/receipt.json",
+      "evaluation/direct-program/minimum-window-validation/README.md",
+      "evaluation/direct-program/minimum-window-validation/receipt.json",
+      "evaluation/direct-program/test_grouped_min5_linkage.py",
+      "evaluation/direct-program/validate_minimum_window.py",
+      "src/quiescent/artifact_window/min5_tests.rs",
+      "tests/support/min5_native.rs",
+      "tests/support/router_witness.rs",
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs",
+      "tools/elf-rewrite/src/grouped_artifact_frontend/min5_tests.rs"
+    ],
+    "newly_bound_sources": [
+      "evaluation/direct-program/minimum-window-result/README.md",
+      "evaluation/direct-program/minimum-window-result/cases.csv",
+      "evaluation/direct-program/minimum-window-result/receipt.json",
+      "evaluation/direct-program/minimum-window-validation/README.md",
+      "evaluation/direct-program/minimum-window-validation/receipt.json",
+      "evaluation/direct-program/test_grouped_min5_linkage.py",
+      "evaluation/direct-program/validate_minimum_window.py",
+      "src/entry_router/imp/routed_jmp_native_tests.rs",
+      "src/quiescent/artifact_window/min5_tests.rs",
+      "tests/support/min5_native.rs",
+      "tests/support/router_witness.rs",
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs",
+      "tools/elf-rewrite/src/grouped_artifact_frontend/min5_tests.rs",
+      "src/entry_router.rs"
+    ],
+    "previous_corpus_sha256": "3a2709f6ad474fcc170886c85aa30208ea4b35dbf52e8e7ad5a6b004c8b44747",
+    "previous_source_revision": "c2edb0ee1c0ab9452f9702c13611e8d6c0e26a22",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "evaluation/direct-program/direct_data.py",
+      "evaluation/direct-program/minimum-window-result/README.md",
+      "evaluation/direct-program/minimum-window-result/cases.csv",
+      "evaluation/direct-program/minimum-window-result/receipt.json",
+      "evaluation/direct-program/minimum-window-validation/README.md",
+      "evaluation/direct-program/minimum-window-validation/receipt.json",
+      "evaluation/direct-program/reproduce.py",
+      "evaluation/direct-program/test_grouped_min5_linkage.py",
+      "evaluation/direct-program/validate_minimum_window.py",
+      "src/entry_router/imp/routed_jmp_native_tests.rs",
+      "src/quiescent.rs",
+      "src/quiescent/artifact_window.rs",
+      "src/quiescent/artifact_window/min5_tests.rs",
+      "tests/support/artifact_window_native.rs",
+      "tests/support/min5_native.rs",
+      "tests/support/quiescent_oracle.rs",
+      "tests/support/routed_jmp_native.rs",
+      "tests/support/router_witness.rs",
+      "tools/elf-rewrite/examples/disassembly_sites.rs",
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs",
+      "tools/elf-rewrite/src/grouped_artifact_frontend.rs",
+      "tools/elf-rewrite/src/grouped_artifact_frontend/min5_tests.rs",
+      "tools/elf-rewrite/src/lib.rs"
+    ],
+    "source_preimages": {
+      "evaluation/direct-program/direct_data.py": {
+        "bytes": 31631,
+        "sha256": "db96bbf5ca80b7fa204553c4926780e1c00df710c4d7deee7b51429925f40cb2"
+      },
+      "evaluation/direct-program/minimum-window-result/README.md": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/minimum-window-result/cases.csv": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/minimum-window-result/receipt.json": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/minimum-window-validation/README.md": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/minimum-window-validation/receipt.json": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/reproduce.py": {
+        "bytes": 26273,
+        "sha256": "7e7a24bfe8ed4b540b3dbe309ebbf21c1f1ce98e05d419cddddbb1c137b41ae8"
+      },
+      "evaluation/direct-program/test_grouped_min5_linkage.py": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/validate_minimum_window.py": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/entry_router/imp/routed_jmp_native_tests.rs": {
+        "bytes": 6054,
+        "sha256": "5c6e939a964c0d4f64b062c31d8bed2f41fb8a0c20ccdc40dc46f0831bcc2bd9"
+      },
+      "src/quiescent.rs": {
+        "bytes": 127498,
+        "sha256": "5771d17d6ed4e6898bb34c6b50f429dd018df677f853e86da498a5c298b2fca1"
+      },
+      "src/quiescent/artifact_window.rs": {
+        "bytes": 12512,
+        "sha256": "35a85c2b73cb87d9ad6da109be939e8e27b37543cb207190973f6cbeedab5074"
+      },
+      "src/quiescent/artifact_window/min5_tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tests/support/artifact_window_native.rs": {
+        "bytes": 14671,
+        "sha256": "9a8d5113e570cf7fe34568c79eac1a1cbdb85a7af79d871ca6a2905bbc19e8e0"
+      },
+      "tests/support/min5_native.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tests/support/quiescent_oracle.rs": {
+        "bytes": 115336,
+        "sha256": "87de53f6dce9ca7a1e4f38fa7054c2e397f8b7720fb5849fc7021554d86638d7"
+      },
+      "tests/support/routed_jmp_native.rs": {
+        "bytes": 25408,
+        "sha256": "9c3f8a28175ddbc2bf8bc12e507f90ca0e3b61cbbc5835e03bc8cce9268c680b"
+      },
+      "tests/support/router_witness.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites.rs": {
+        "bytes": 57268,
+        "sha256": "22089d18045fa20461640a11cba32c3b056601ca899c581e33043ee7d10f2372"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/grouped_artifact_frontend.rs": {
+        "bytes": 30558,
+        "sha256": "a3747edb30b50e39a2049650486d2e0ee1c9dc27529e180befa7dece4ccea2ad"
+      },
+      "tools/elf-rewrite/src/grouped_artifact_frontend/min5_tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "bytes": 62752,
+        "sha256": "a4c42f29bf13b46b379b7c622821e9fb1d2601e0729f85dd5c2272e455534fbc"
+      }
+    },
+    "source_projections": {
+      "evaluation/direct-program/direct_data.py": {
+        "current_sha256": "d2d8f73fdb74736c5cb1c46153f224049b82c6de901ad0c94e5a64291bf18379",
+        "edits": [
+          [
+            10947,
+            11098,
+            "GROUPED_PROFILES = (GROUPED_PROFILE, GROUPED_UPSTREAM_PROFILE)\n"
+          ],
+          [
+            12173,
+            14810,
+            ""
+          ],
+          [
+            15316,
+            15434,
+            "    upstream = profile == GROUPED_UPSTREAM_PROFILE\n"
+          ],
+          [
+            16632,
+            16752,
+            ""
+          ],
+          [
+            18543,
+            18891,
+            ""
+          ],
+          [
+            19563,
+            19924,
+            ""
+          ],
+          [
+            21011,
+            21084,
+            ""
+          ],
+          [
+            21367,
+            21467,
+            "    source = members['disassembly.txt'].decode().splitlines()\n    assert source[0] == 'LI2DISASM 1' and source.count('original '+original) == 1\n    heads = {}\n    for line in source:\n        if line.startswith('head '):\n            match = re.fullmatch(r'head ([0-9]+) ([0-9a-f]+)', line); assert match\n            pc, encoded = numeric(match[1]), match[2]\n            assert pc not in heads and len(encoded) % 2 == 0 and 1 <= len(encoded)//2 <= 15\n            heads[pc] = len(encoded)//2\n    assert len(heads) <= 16384 and all(heads[s[1]] == s[2] for s in sites)\n"
+          ],
+          [
+            23354,
+            23418,
+            ""
+          ],
+          [
+            25240,
+            25287,
+            ""
+          ],
+          [
+            28891,
+            29296,
+            ""
+          ]
+        ],
+        "previous_sha256": "db96bbf5ca80b7fa204553c4926780e1c00df710c4d7deee7b51429925f40cb2"
+      },
+      "evaluation/direct-program/minimum-window-result/README.md": {
+        "current_sha256": "e104b5169b32bf5248e1c05a8d55c9bc1c102f8ca9d30e53f1aa7afd5bb8ddca",
+        "edits": [
+          [
+            0,
+            1953,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/minimum-window-result/cases.csv": {
+        "current_sha256": "6bdad8ccfa2ddcd9e4eb6da6b65b2e9a44ed247aae4569d1173165804d18aada",
+        "edits": [
+          [
+            0,
+            1226,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/minimum-window-result/receipt.json": {
+        "current_sha256": "6d81beef4d04e3a2b9b53f2030bc3082425208d19f1c2765c324859bed34ab08",
+        "edits": [
+          [
+            0,
+            17285,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/minimum-window-validation/README.md": {
+        "current_sha256": "e0c69aa89b97e715e4a9de0c9aa64ab5202fce1e4866e576c868828d59d77118",
+        "edits": [
+          [
+            0,
+            2109,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/minimum-window-validation/receipt.json": {
+        "current_sha256": "d8dba0ac4e33aa36cb1e5b79d85ed3eef99da110cf87e88b9f4928e30a62de05",
+        "edits": [
+          [
+            0,
+            13187,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/reproduce.py": {
+        "current_sha256": "bb2a99e5911392e29f8dcffdf8587975a06f58b018599ed04718697c3e0191e1",
+        "edits": [
+          [
+            1753,
+            1869,
+            ""
+          ]
+        ],
+        "previous_sha256": "7e7a24bfe8ed4b540b3dbe309ebbf21c1f1ce98e05d419cddddbb1c137b41ae8"
+      },
+      "evaluation/direct-program/test_grouped_min5_linkage.py": {
+        "current_sha256": "3d949e635dfeedb8dd2285d179101a21c9dd18e62aa8f61397a51c14191b6657",
+        "edits": [
+          [
+            0,
+            13592,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/validate_minimum_window.py": {
+        "current_sha256": "e0b1224fb29d40d6b01a044132ad1cf08a34f37ff9c6d1a7f93be191c181d26e",
+        "edits": [
+          [
+            0,
+            11445,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/entry_router/imp/routed_jmp_native_tests.rs": {
+        "current_sha256": "fb68ac6d4c3aa2edcc48d2a85994cb3a4e69c19470e253790cc988e269b2d5cf",
+        "edits": [
+          [
+            1308,
+            2017,
+            ""
+          ],
+          [
+            6763,
+            7471,
+            ""
+          ]
+        ],
+        "previous_sha256": "5c6e939a964c0d4f64b062c31d8bed2f41fb8a0c20ccdc40dc46f0831bcc2bd9"
+      },
+      "src/quiescent.rs": {
+        "current_sha256": "71c7a7c3e3033f73dab2a3f9e385326eca2b1ceae12610eb2abd743b1fabc152",
+        "edits": [
+          [
+            872,
+            1039,
+            "    plan_artifact_observation_window_after, plan_artifact_observation_window_upstream_after,\n"
+          ]
+        ],
+        "previous_sha256": "5771d17d6ed4e6898bb34c6b50f429dd018df677f853e86da498a5c298b2fca1"
+      },
+      "src/quiescent/artifact_window.rs": {
+        "current_sha256": "f4838e928c383f7d5588b224e3f79ec34a6f810fd8f1d883b557e45a94a5b2bd",
+        "edits": [
+          [
+            2325,
+            8649,
+            ""
+          ],
+          [
+            18836,
+            18916,
+            ""
+          ]
+        ],
+        "previous_sha256": "35a85c2b73cb87d9ad6da109be939e8e27b37543cb207190973f6cbeedab5074"
+      },
+      "src/quiescent/artifact_window/min5_tests.rs": {
+        "current_sha256": "1921b54e75fa61b5fbf42df14ba8a52b44955091bcf3d19a8fdb87336edddc4c",
+        "edits": [
+          [
+            0,
+            19604,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tests/support/artifact_window_native.rs": {
+        "current_sha256": "957546431dd83212b562d30fcfd6f6b60b377d72ed7701c52f36e679ff5381d5",
+        "edits": [
+          [
+            587,
+            641,
+            "fn event(pc: u64, rsp: u64) -> HookEvent {\n"
+          ],
+          [
+            790,
+            859,
+            "unsafe extern \"C\" fn observe(context: *mut HookContext) {\n"
+          ],
+          [
+            4321,
+            4437,
+            "fn events(oracle: &NativeOracle, points: &[Snapshot], selected: &[u64], needed: u64) -> Vec<HookEvent> {\n"
+          ]
+        ],
+        "previous_sha256": "9a8d5113e570cf7fe34568c79eac1a1cbdb85a7af79d871ca6a2905bbc19e8e0"
+      },
+      "tests/support/min5_native.rs": {
+        "current_sha256": "87afbb3d74645935ef7e11c839c4f66a7720745b195e0556d7468453a0a80032",
+        "edits": [
+          [
+            0,
+            21593,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tests/support/quiescent_oracle.rs": {
+        "current_sha256": "a74e2b942e50db80fe066b4e86b3047c74ba4482949ff52b8bc46a79896453b5",
+        "edits": [
+          [
+            22803,
+            23063,
+            ""
+          ]
+        ],
+        "previous_sha256": "87de53f6dce9ca7a1e4f38fa7054c2e397f8b7720fb5849fc7021554d86638d7"
+      },
+      "tests/support/routed_jmp_native.rs": {
+        "current_sha256": "cd2257a4f6713284b8e6abb49bad85acd4a2f0c84d1d4f330cfb896f54447960",
+        "edits": [
+          [
+            284,
+            384,
+            ""
+          ],
+          [
+            438,
+            546,
+            "// Implemented only inside entry_router::imp's cfg(test) child. The counter\n// coordinate is read from the stopped child, never dereferenced in the parent.\npub trait Router: Sized {\n    fn prepare();\n    fn verify();\n    fn stage(routes: &[EntryRoute]) -> Self;\n    fn counter_address(&self) -> u64;\n    fn deactivate(&self);\n    fn assert_active(&self);\n}\n"
+          ],
+          [
+            4915,
+            4915,
+            "struct Budget { used: usize }\nimpl Budget {\n    fn charge(&mut self, child: &Tracee, count: usize) {\n        self.used = self.used.checked_add(count).unwrap();\n        assert!(self.used <= MAX_STEPS, \"native instruction budget exhausted\");\n        assert!(Instant::now() < child.deadline, \"native wall budget exhausted\");\n    }\n    fn step(&mut self, child: &Tracee) {\n        self.charge(child, 1); child.step(&[]);\n    }\n}\nfn word(bytes: &[u8], offset: usize) -> u64 {\n    u64::from_ne_bytes(bytes[offset..offset+8].try_into().unwrap())\n}\nfn counter(child: &Tracee, address: u64) -> u64 { word(&child.memory(address, 8), 0) }\nfn trap(child: &Tracee, signal: i32) {\n    let status = child.wait();\n    assert!(libc::WIFSTOPPED(status), \"owned tracee exited: {status:#x}\");\n    assert_eq!(libc::WSTOPSIG(status), signal);\n}\nfn deliver(child: &Tracee, budget: &mut Budget, route: EntryRoute, counter_address: u64, before: u64) {\n    assert_eq!(child.registers().rip, route.original);\n    assert_eq!(counter(child,counter_address), before);\n    budget.charge(child, 1);\n    child.request(libc::PTRACE_SINGLESTEP, 0, 0); trap(child, libc::SIGILL);\n    assert_eq!(child.registers().rip, route.original);\n    // SAFETY: initialized native output for this stopped tracee's synchronous #UD.\n    let mut info: libc::siginfo_t = unsafe { core::mem::zeroed() };\n    child.request(libc::PTRACE_GETSIGINFO, 0, (&raw mut info) as usize);\n    assert_eq!((info.si_signo, info.si_code), (libc::SIGILL, 2));\n    assert_eq!(unsafe { info.si_addr() } as usize as u64, route.original);\n    budget.charge(child, 1);\n    child.request(libc::PTRACE_SINGLESTEP, 0, libc::SIGILL as usize); trap(child, libc::SIGTRAP);\n    // Step the actual production handler and its actual libc restorer. No PC\n    // setter, injected context, synthetic delivery, or inferred receipt exists.\n    loop {\n        let registers = child.registers();\n        if registers.rax == libc::SYS_rt_sigreturn as u64 && child.memory(registers.rip, 2) == [0x0f,0x05] {\n            child.request(libc::PTRACE_SETOPTIONS, 0, libc::PTRACE_O_TRACESYSGOOD as usize);\n            budget.charge(child, 1);\n            child.request(libc::PTRACE_SYSCALL, 0, 0); trap(child, libc::SIGTRAP | 0x80);\n            assert_eq!(child.registers().orig_rax, libc::SYS_rt_sigreturn as u64);\n            child.request(libc::PTRACE_SYSCALL, 0, 0); trap(child, libc::SIGTRAP | 0x80);\n            child.request(libc::PTRACE_SETOPTIONS, 0, 0);\n            assert_eq!(child.registers().rip, route.generated);\n            assert_eq!(counter(child,counter_address), before+1, \"child handler receipt after this exact delivery\");\n            return;\n        }\n        assert_ne!(registers.rip, route.generated, \"route destination without witnessed rt_sigreturn\");\n        budget.step(child);\n    }\n}\nfn finish(child: &Tracee) {\n    // SAFETY: exact still-owned traced child; Drop retains its existing 2s cleanup.\n    assert_eq!(unsafe { libc::kill(child.pid, libc::SIGKILL) }, 0);\n    let status=child.wait();\n    assert!(libc::WIFSIGNALED(status) && libc::WTERMSIG(status)==libc::SIGKILL && child.reaped.get());\n}\n"
+          ],
+          [
+            8635,
+            8756,
+            "    let r=child.registers(); let e=&expected.registers;\n    assert_eq!(r.rip,owner.proof.hook); assert_eq!(r.rsp%16,8);\n    let reserve=owner.oracle.initial_rsp-128;\n    assert!(r.rsp>=owner.oracle.stack.address()+PAGE as u64 && r.rsp+8<=reserve);\n    assert_eq!(word(&child.memory(r.rsp,8),0),returned);\n    assert!(r.rdi>=owner.oracle.stack.address()+PAGE as u64 && r.rdi+176<=reserve);\n    let c=child.memory(r.rdi,176);\n    let words=[expected.logical_pc,e.rsp,e.r15,e.r14,e.r13,e.r12,e.r11,e.r10,e.r9,e.r8,e.rdi,e.rsi,e.rbp,e.rbx,e.rdx,e.rcx,e.rax];\n    for (i,&value) in words.iter().enumerate() { assert_eq!(word(&c,i*8),value); }\n    assert_eq!(word(&c,136)&!DEBUGGER_FLAGS,e.eflags&!DEBUGGER_FLAGS);\n    let address=word(&c,144); assert_eq!(address%64,0);\n    assert_eq!((word(&c,152),word(&c,160),word(&c,168)),(owner.state.len(),owner.state.mask(),owner.state.format().raw()));\n    assert!(address>=owner.oracle.stack.address()+PAGE as u64 && address+owner.state.len()<=r.rdi);\n    let bytes=child.memory(address,owner.state.len() as usize);\n    assert_eq!(canonical_xstate(&bytes[..owner.state.image_len() as usize]),expected.xstate);\n"
+          ]
+        ],
+        "previous_sha256": "9c3f8a28175ddbc2bf8bc12e507f90ca0e3b61cbbc5835e03bc8cce9268c680b"
+      },
+      "tests/support/router_witness.rs": {
+        "current_sha256": "3178ac830b4a8508d25252032eab302f5b613c72a3f6ba9c7fee7d49ec3d09f3",
+        "edits": [
+          [
+            0,
+            5035,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites.rs": {
+        "current_sha256": "e8adad87d4e7c122ae70c7840612b0fdc9dd58838816ef58eedee3131a471052",
+        "edits": [
+          [
+            22682,
+            22716,
+            ""
+          ],
+          [
+            24806,
+            25389,
+            ""
+          ],
+          [
+            25463,
+            25618,
+            "        PopulationMode::JumpStackGrouped | PopulationMode::JumpStackGroupedUpstream\n"
+          ],
+          [
+            26545,
+            26908,
+            ""
+          ],
+          [
+            28864,
+            28975,
+            "        | PopulationMode::JumpStackGroupedUpstream => {\n"
+          ],
+          [
+            30329,
+            31335,
+            "            if storage == liteinst_rewrite::LedgerStorage::ReadChunks256 {\n"
+          ],
+          [
+            34140,
+            34829,
+            ""
+          ],
+          [
+            35263,
+            35263,
+            "    let binding_policy = if upstream {\n        liteinst_rewrite::grouped_upstream_fixed_exec_binding_policy\n    } else {\n        liteinst_rewrite::grouped_fixed_exec_binding_policy\n    };\n"
+          ],
+          [
+            41404,
+            41483,
+            "        let (paths, mode) = arguments_with_grouped_upstream(&args[2..])?;\n"
+          ],
+          [
+            41851,
+            41902,
+            "        arguments_with_grouped_upstream(args)\n"
+          ],
+          [
+            42213,
+            42431,
+            "    let grouped_family = if mode == PopulationMode::JumpStackGroupedUpstream {\n"
+          ],
+          [
+            46400,
+            46459,
+            ""
+          ],
+          [
+            46693,
+            46752,
+            ""
+          ],
+          [
+            60073,
+            60163,
+            ""
+          ]
+        ],
+        "previous_sha256": "22089d18045fa20461640a11cba32c3b056601ca899c581e33043ee7d10f2372"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs": {
+        "current_sha256": "539e4808f39647c4953703d519eb884f73f37a75d47a9231c8c2c811d1016446",
+        "edits": [
+          [
+            0,
+            8808,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/grouped_artifact_frontend.rs": {
+        "current_sha256": "86bf627a182b37c8c58ce769b78a4a485cdbdf7fd7fc1a65dfc919292c8071a3",
+        "edits": [
+          [
+            315,
+            537,
+            "    ArtifactObservationSearchRequest, plan_artifact_observation_window_after,\n    plan_artifact_observation_window_upstream_after,\n"
+          ],
+          [
+            791,
+            883,
+            ""
+          ],
+          [
+            985,
+            1003,
+            ""
+          ],
+          [
+            1182,
+            1247,
+            ""
+          ],
+          [
+            1372,
+            1449,
+            "        POLICY.replace(GROUPED_PROFILE, self.name()).replace(\n"
+          ],
+          [
+            1866,
+            2299,
+            "        )\n"
+          ],
+          [
+            4460,
+            5268,
+            ""
+          ],
+          [
+            7946,
+            8060,
+            ""
+          ],
+          [
+            8115,
+            8169,
+            ""
+          ],
+          [
+            8601,
+            8721,
+            ""
+          ],
+          [
+            9330,
+            10075,
+            ""
+          ],
+          [
+            10232,
+            10310,
+            ""
+          ],
+          [
+            10336,
+            10594,
+            ""
+          ],
+          [
+            11505,
+            13687,
+            ""
+          ],
+          [
+            16198,
+            16230,
+            ""
+          ],
+          [
+            16598,
+            16705,
+            "        out.policy = out.policy_bytes(s);\n"
+          ],
+          [
+            17387,
+            18259,
+            ""
+          ],
+          [
+            21444,
+            21503,
+            "        addr(floor, group.window.end() - floor)\n"
+          ],
+          [
+            22647,
+            23145,
+            ""
+          ],
+          [
+            23676,
+            23746,
+            "            || parts.displaced.end() != group.window.end()\n"
+          ],
+          [
+            30125,
+            32819,
+            ""
+          ],
+          [
+            33764,
+            34316,
+            ""
+          ],
+          [
+            34360,
+            34413,
+            "        if schedule.profile == GroupProfile::Upstream {\n"
+          ],
+          [
+            34946,
+            35527,
+            "        let first = &s.sites[group.members[0]];\n        let bytes = elf\n            .executable_bytes(ElfVaddr(first.snapshot.start()), first.snapshot.len())\n            .map_err(|e| Error::new(\"snapshot\", e))?;\n        let entries = LegalEntrySet {\n            identity,\n            scope: first.function,\n            provenance: EntryProvenance::Declared(format!(\n                \"selection provenance SHA-256 {}\",\n                ledger::hex(&first.provenance.0)\n            )),\n            completeness: first.completeness,\n            entries: first.heads.as_ref().clone(),\n            resumes: first.resumes.clone(),\n        };\n        let hook = s\n            .hooks\n            .iter()\n            .find(|h| h.id == first.hook)\n            .ok_or_else(|| Error::new(\"hook\", \"missing\"))?;\n        let emission = fixed_exec::emission(s, hook, draft.occupied.clone(), binding)?;\n        let mut search = first.search;\n        // This is the explicitly named group policy, authenticated before planning.\n        // Numeric budgets come from ONE compatible member, never their sum.\n        search.tactics = TacticPolicy::RelocationOnly;\n        let pcs: Vec<_> = group.members.iter().map(|&i| s.sites[i].pc).collect();\n        let artifact = ArtifactRequest {\n            site: PlanningSite {\n                identity,\n                code: bytes,\n                base_address: first.snapshot.start(),\n                function: first.function,\n                block: first.block,\n                logical_pc: first.pc,\n                entries: &entries,\n                semantics: first.semantics,\n                allocation: &first.selected_allocation,\n                search,\n            },\n            emission: &emission,\n        };\n"
+          ],
+          [
+            35824,
+            35866,
+            "                    observation_pcs: &pcs,\n"
+          ],
+          [
+            35962,
+            36417,
+            "            GroupProfile::Upstream => plan_artifact_observation_window_upstream_after(\n                &ArtifactObservationSearchRequest {\n                    artifact,\n                    end: group.window.end(),\n                    observation_pcs: &pcs,\n                },\n                &draft.composition,\n                &outside,\n            ),\n"
+          ],
+          [
+            37338,
+            37463,
+            "        if planned.observation_pcs() != pcs || planned.artifact().source_steps().len() != 1 {\n"
+          ],
+          [
+            39327,
+            39357,
+            ""
+          ]
+        ],
+        "previous_sha256": "a3747edb30b50e39a2049650486d2e0ee1c9dc27529e180befa7dece4ccea2ad"
+      },
+      "tools/elf-rewrite/src/grouped_artifact_frontend/min5_tests.rs": {
+        "current_sha256": "7a415b3d99687b433a9c5ebd72d779116e3cd2dbcd0789b59486480dc1b9f930",
+        "edits": [
+          [
+            0,
+            13612,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "current_sha256": "71abb28906187b3938d18d341d6224ce34b5975afa5202f1dfd07fbc89bf82ac",
+        "edits": [
+          [
+            542,
+            1072,
+            "    GROUPED_PROFILE, GROUPED_UPSTREAM_PROFILE, grouped_fixed_exec_binding_policy,\n    grouped_fixed_exec_metadata, grouped_upstream_fixed_exec_binding_policy,\n    grouped_upstream_fixed_exec_metadata, prepare_disassembly_jump_stack_grouped_fixed_exec,\n"
+          ],
+          [
+            27205,
+            27557,
+            ""
+          ]
+        ],
+        "previous_sha256": "a4c42f29bf13b46b379b7c622821e9fb1d2601e0729f85dd5c2272e455534fbc"
+      }
+    },
+    "sources": {
+      "evaluation/direct-program/direct_data.py": "d2d8f73fdb74736c5cb1c46153f224049b82c6de901ad0c94e5a64291bf18379",
+      "evaluation/direct-program/minimum-window-result/README.md": "e104b5169b32bf5248e1c05a8d55c9bc1c102f8ca9d30e53f1aa7afd5bb8ddca",
+      "evaluation/direct-program/minimum-window-result/cases.csv": "6bdad8ccfa2ddcd9e4eb6da6b65b2e9a44ed247aae4569d1173165804d18aada",
+      "evaluation/direct-program/minimum-window-result/receipt.json": "6d81beef4d04e3a2b9b53f2030bc3082425208d19f1c2765c324859bed34ab08",
+      "evaluation/direct-program/minimum-window-validation/README.md": "e0c69aa89b97e715e4a9de0c9aa64ab5202fce1e4866e576c868828d59d77118",
+      "evaluation/direct-program/minimum-window-validation/receipt.json": "d8dba0ac4e33aa36cb1e5b79d85ed3eef99da110cf87e88b9f4928e30a62de05",
+      "evaluation/direct-program/reproduce.py": "bb2a99e5911392e29f8dcffdf8587975a06f58b018599ed04718697c3e0191e1",
+      "evaluation/direct-program/test_grouped_min5_linkage.py": "3d949e635dfeedb8dd2285d179101a21c9dd18e62aa8f61397a51c14191b6657",
+      "evaluation/direct-program/validate_minimum_window.py": "e0b1224fb29d40d6b01a044132ad1cf08a34f37ff9c6d1a7f93be191c181d26e",
+      "src/entry_router/imp/routed_jmp_native_tests.rs": "fb68ac6d4c3aa2edcc48d2a85994cb3a4e69c19470e253790cc988e269b2d5cf",
+      "src/quiescent.rs": "71c7a7c3e3033f73dab2a3f9e385326eca2b1ceae12610eb2abd743b1fabc152",
+      "src/quiescent/artifact_window.rs": "f4838e928c383f7d5588b224e3f79ec34a6f810fd8f1d883b557e45a94a5b2bd",
+      "src/quiescent/artifact_window/min5_tests.rs": "1921b54e75fa61b5fbf42df14ba8a52b44955091bcf3d19a8fdb87336edddc4c",
+      "tests/support/artifact_window_native.rs": "957546431dd83212b562d30fcfd6f6b60b377d72ed7701c52f36e679ff5381d5",
+      "tests/support/min5_native.rs": "87afbb3d74645935ef7e11c839c4f66a7720745b195e0556d7468453a0a80032",
+      "tests/support/quiescent_oracle.rs": "a74e2b942e50db80fe066b4e86b3047c74ba4482949ff52b8bc46a79896453b5",
+      "tests/support/routed_jmp_native.rs": "cd2257a4f6713284b8e6abb49bad85acd4a2f0c84d1d4f330cfb896f54447960",
+      "tests/support/router_witness.rs": "3178ac830b4a8508d25252032eab302f5b613c72a3f6ba9c7fee7d49ec3d09f3",
+      "tools/elf-rewrite/examples/disassembly_sites.rs": "e8adad87d4e7c122ae70c7840612b0fdc9dd58838816ef58eedee3131a471052",
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs": "539e4808f39647c4953703d519eb884f73f37a75d47a9231c8c2c811d1016446",
+      "tools/elf-rewrite/src/grouped_artifact_frontend.rs": "86bf627a182b37c8c58ce769b78a4a485cdbdf7fd7fc1a65dfc919292c8071a3",
+      "tools/elf-rewrite/src/grouped_artifact_frontend/min5_tests.rs": "7a415b3d99687b433a9c5ebd72d779116e3cd2dbcd0789b59486480dc1b9f930",
+      "tools/elf-rewrite/src/lib.rs": "71abb28906187b3938d18d341d6224ce34b5975afa5202f1dfd07fbc89bf82ac"
+    },
+    "workspace_changes": {
+      "unit/disassembly_sites/disassembly_sites": {
+        "current": {
+          "ignored": 0,
+          "tests": 33
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 30
+        }
+      },
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 572
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 563
+        }
+      },
+      "unit/liteinst_rewrite/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 237
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 232
+        }
+      }
+    }
+  },
   "source_successor_f9f89ac": {
     "added_default_methods": {
       "tests/support/native_normal_module/early_entry/pc_counts.rs": [
@@ -19772,17 +20823,17 @@
     "evaluation/admission/test_main34c47_inventory.py": "fa2bb240bd7a9fdb6e79f18635ffe959fcd38facf479b882340aab5dca4461a0",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "700e617272cdaa539e7997603bbda435bee8a9a2f6f7e4b5fd911c18c718f8d1",
-    "evaluation/admission/test_main97ab_inventory.py": "3df4e7fd8071e71a15f90bf587440b70ca059c0e7b8c06c371b38a6d17c33626",
+    "evaluation/admission/test_main97ab_inventory.py": "b39288cd55b0d73d2bc07f5e2ac118103a5e6a746a2f3638d1fc18561ead1c72",
     "evaluation/admission/test_main981419_inventory.py": "a75ae36eed8dc312b702821d50c991e126430a4f3e294342d2b43e29cd1ff034",
     "evaluation/admission/test_mainacc247_inventory.py": "9deada610eedcdc46ef6ebba60f58fedcbf0171f382d7895f42c27756afe1c17",
-    "evaluation/admission/test_mainaf81_inventory.py": "85912ad54586a03049bdfbcec1d5f3a64b4fdd48c541e0e35237586cbc10ccfd",
+    "evaluation/admission/test_mainaf81_inventory.py": "8b3b5ecd0058e20f07678d3f46d51bea1b40287c31cbc17cc40cd183d5660b14",
     "evaluation/admission/test_mainc712_inventory.py": "f83655db9a2f51f91a3f245e7d04cd52a5bd749bdcf2d52c14d1d4e8c35c0825",
-    "evaluation/admission/test_maind8d85_inventory.py": "83277edfbbd5da8efc9ad5b717b7919660f32610ccc0255abcd93a923ed4ba44",
+    "evaluation/admission/test_maind8d85_inventory.py": "db2c569f139932612cca8850825eef3312fc7e484002371b4ad9d323c8ac0813",
     "evaluation/admission/test_maindd75_inventory.py": "4bd221188c28323d7af430d1c6e43dd201cd8659001fbeb1449dadb81402c156",
-    "evaluation/admission/test_mainf353_inventory.py": "509c78fe4494acb3c0372def3ef00d1ed396ab809ce4e7adc49a8c0d7ed87dfc",
+    "evaluation/admission/test_mainf353_inventory.py": "913cb38972eb2eb3f2bb43de8ec96ea1c7bbe9fbf87b57f3c94e59c26f09b766",
     "evaluation/direct-program/artifact-window-validation/README.md": "55e346a73e956cb5d7b6afc429f42e54981c6835430308c22f29d5ca250698df",
     "evaluation/direct-program/artifact-window-validation/receipt.json": "7223739d416d1d43f76fab0f681835dc2e0cb5e06aecd34d06eeeada332df1cc",
-    "evaluation/direct-program/direct_data.py": "db96bbf5ca80b7fa204553c4926780e1c00df710c4d7deee7b51429925f40cb2",
+    "evaluation/direct-program/direct_data.py": "d2d8f73fdb74736c5cb1c46153f224049b82c6de901ad0c94e5a64291bf18379",
     "evaluation/direct-program/grouped-program-result/README.md": "5b8cb4e72c7bdd8082b4a05f0a9c1fae4540fcdf1ce03632caaebb38fb2f4499",
     "evaluation/direct-program/grouped-program-result/receipt.json": "a7ab177ca536f553ce5c2cf13d15a29d88c82026b3d505167cc60716b637da85",
     "evaluation/direct-program/grouped-program-result/results.csv": "bd0fd26559a1824672a4b431cec5ddb7570c417cce66a211bfbde84960206503",
@@ -19804,8 +20855,14 @@
     "evaluation/direct-program/ledger-chunks-result/results.csv": "3ab8512b6d617d4aa95115aea4181ab2eb3750ad5d7bd4f9539e0be54f255765",
     "evaluation/direct-program/ledger-chunks-validation/README.md": "c73bb4722965b5e003361f5a9a15cdc2803e317f7b777f2d1bed37f106433d22",
     "evaluation/direct-program/ledger-chunks-validation/receipt.json": "e46177ef3dad8093fa79be4844bf145702ee19e9fa1180d8d8824837fa05b33a",
-    "evaluation/direct-program/reproduce.py": "7e7a24bfe8ed4b540b3dbe309ebbf21c1f1ce98e05d419cddddbb1c137b41ae8",
+    "evaluation/direct-program/minimum-window-result/README.md": "e104b5169b32bf5248e1c05a8d55c9bc1c102f8ca9d30e53f1aa7afd5bb8ddca",
+    "evaluation/direct-program/minimum-window-result/cases.csv": "6bdad8ccfa2ddcd9e4eb6da6b65b2e9a44ed247aae4569d1173165804d18aada",
+    "evaluation/direct-program/minimum-window-result/receipt.json": "6d81beef4d04e3a2b9b53f2030bc3082425208d19f1c2765c324859bed34ab08",
+    "evaluation/direct-program/minimum-window-validation/README.md": "e0c69aa89b97e715e4a9de0c9aa64ab5202fce1e4866e576c868828d59d77118",
+    "evaluation/direct-program/minimum-window-validation/receipt.json": "d8dba0ac4e33aa36cb1e5b79d85ed3eef99da110cf87e88b9f4928e30a62de05",
+    "evaluation/direct-program/reproduce.py": "bb2a99e5911392e29f8dcffdf8587975a06f58b018599ed04718697c3e0191e1",
     "evaluation/direct-program/test_grouped_linkage.py": "c8175cfd914e27927310eb38b748dba7eb223b559d6364870459f670891ba53a",
+    "evaluation/direct-program/test_grouped_min5_linkage.py": "3d949e635dfeedb8dd2285d179101a21c9dd18e62aa8f61397a51c14191b6657",
     "evaluation/direct-program/test_grouped_upstream_linkage.py": "5975201a8d37b1e1c3341be88336cb13cc8267adf382c7c1a87b0975a8627efa",
     "evaluation/direct-program/test_ledger_storage.py": "5fc05ab250961097e3e1d7d789fa862b9d4d218d45670fbca1bf86f448ef07dc",
     "evaluation/direct-program/test_stack_inventory.py": "3b0ecf9038b64d2cbef176736a60147842ea872a7f29818fdfaf40afb60f9b92",
@@ -19814,6 +20871,7 @@
     "evaluation/direct-program/validate_grouped_program.py": "c39ade50a9826fb9fd3f577b58f8334d650ac85c5f779434b0cee5034f9837a2",
     "evaluation/direct-program/validate_grouped_upstream.py": "d6c1cd4fb5e1f2b3a7c26252b1b034d8fcd6060fea6a55d6fbe7f5218a321998",
     "evaluation/direct-program/validate_ledger_chunks.py": "c357783e3e22acb637e575ccde95d74869ac676e5e30f3ca50cbfbb386dc01b6",
+    "evaluation/direct-program/validate_minimum_window.py": "e0b1224fb29d40d6b01a044132ad1cf08a34f37ff9c6d1a7f93be191c181d26e",
     "evaluation/direct-program/validate_stack.py": "8b47ebe73cbea143bcda6e03332f48f36ddba04d72ddbf8d39cf3159b068c0fe",
     "evaluation/ordinary-call-pair-session/freeze.py": "8c2c36d3f921e75ee5735133e44a1828ff0a5ba6c1d3d1483d09aca469412b89",
     "evaluation/ordinary-call-pair-session/launch.py": "4d93f5b99d8fe2993b6f4a1814972e04158d057d2d829cffe526dcbb118f064b",
@@ -19861,6 +20919,8 @@
     "src/emission/placement/overlap/tests.rs": "c1d34bac5263fef598cf8336d43168dca318cbeb488a5be303f034f07b534e38",
     "src/emission/placement/tests.rs": "2cc0dd6c0a26c88d4682365b375d94fd3cdab7783e0dec7770f4a7cb77f79def",
     "src/engine.rs": "711335309a192d15a35436aa8ac51fc1541abb939360d23a6cad5253ac7195c6",
+    "src/entry_router.rs": "61e0406541661d7390c8e75d68ca2d73b1bb5b0573371ae97ac0f714671f6280",
+    "src/entry_router/imp/routed_jmp_native_tests.rs": "fb68ac6d4c3aa2edcc48d2a85994cb3a4e69c19470e253790cc988e269b2d5cf",
     "src/eviction.rs": "1b963fcdb07cc8886d852bb0195603290ef105b35a6ca9268b0e187c051ae1e4",
     "src/lib.rs": "abf435a29ffdb821941ab4ffea147fc6af56c06748cb0d39b43ce62bfcebec14",
     "src/neighbor.rs": "f9f7c7eb8b2069169fbb20c71bf69105833154a19dc4df75e3f13ef59284ce33",
@@ -19870,8 +20930,9 @@
     "src/neighbor_overlap/tests.rs": "bc5880f3aff72cf5ea13b29592c7d848a879b5f9a71fabae7667888d027065e8",
     "src/neighbor_short.rs": "eb6870d77c53a5e29d911f0c1674281eafed44c63394364e393ed0bbd7d20897",
     "src/neighbor_short/tests.rs": "29c13e229d449458eb66843618c3429901abb2bd424e7099b931dfb612c95087",
-    "src/quiescent.rs": "5771d17d6ed4e6898bb34c6b50f429dd018df677f853e86da498a5c298b2fca1",
-    "src/quiescent/artifact_window.rs": "35a85c2b73cb87d9ad6da109be939e8e27b37543cb207190973f6cbeedab5074",
+    "src/quiescent.rs": "71c7a7c3e3033f73dab2a3f9e385326eca2b1ceae12610eb2abd743b1fabc152",
+    "src/quiescent/artifact_window.rs": "f4838e928c383f7d5588b224e3f79ec34a6f810fd8f1d883b557e45a94a5b2bd",
+    "src/quiescent/artifact_window/min5_tests.rs": "1921b54e75fa61b5fbf42df14ba8a52b44955091bcf3d19a8fdb87336edddc4c",
     "src/quiescent/artifact_window/tests.rs": "89fa59a0a692b2055fc3d809f7fc5755aa45fb2cdb259c6a45f9b18e5957b222",
     "src/quiescent/artifact_window/upstream_tests.rs": "22c6289dd845194d2a03fc5f03af4f97972b4b9f0796ad9e126e03633d93e608",
     "src/quiescent/clock_region.rs": "be8ab2bfa2ba682361a1f647d51fceb9b43c9a600be3de711da2217c04ff1788",
@@ -19907,7 +20968,7 @@
     "tests/support/adc_state.rs": "6210f02e2d4d1906fadecf2eadd876b02d0154ceb330c467e15817ed33e54ec0",
     "tests/support/adjacent_b2_fixture.rs": "dcaf2962f81f690785f61770713d13f0104bbef4b9e7beaed6f0d641aff33ca0",
     "tests/support/adjacent_b2_native.rs": "2ea1625733ccf5a1f9b87db1ac480bc00421eca7b54a63f9b6dc19ceec7e1771",
-    "tests/support/artifact_window_native.rs": "9a8d5113e570cf7fe34568c79eac1a1cbdb85a7af79d871ca6a2905bbc19e8e0",
+    "tests/support/artifact_window_native.rs": "957546431dd83212b562d30fcfd6f6b60b377d72ed7701c52f36e679ff5381d5",
     "tests/support/boundary_signal.rs": "949ccf6ee19949cdc1f16305dfb6d161f313df5536ec509968572afc21727a60",
     "tests/support/bounded_proc_stat.rs": "c7bf20dbf6c1ccb91ae54f7965b1957ef5f9cea7de063a7f8af556fe02559866",
     "tests/support/compiled_selected_state.rs": "3451cc5f88607a83adc8b4f95aaeab59661ae9a295c70e5482f3db25581d5691",
@@ -19937,6 +20998,7 @@
     "tests/support/jrcxz_artifact_oracle.rs": "fc30abfc30dbd1d0a0a23393890eddaeabf6a3679079b59b94231d0e49dfc5b8",
     "tests/support/jrcxz_state.rs": "ea3f380a179470e12264258e5a01bfefebaaebb7b0654b2354b81a9b4f5eb55f",
     "tests/support/jump_stack_native.rs": "21f94b418ff2c3156d9c3e5a834307ef06a6123bc9230d4fc9640a939213e3b7",
+    "tests/support/min5_native.rs": "87afbb3d74645935ef7e11c839c4f66a7720745b195e0556d7468453a0a80032",
     "tests/support/native_normal_caller.rs": "d06f528e7987dd5e4a4482e1013ca6a65d0ccc54e02016730e0dc5082e925358",
     "tests/support/native_normal_module.rs": "d43543eda95b81f822fb11112bb5bcb8a7d46e6d442d639e180c0af301a49d0b",
     "tests/support/native_normal_module/early_entry.rs": "edcf5a68385a531233444ff10c26f8efe38edb85016d721a4f3f3a74525c4945",
@@ -19950,10 +21012,11 @@
     "tests/support/owned_group_candidate.rs": "48a8780b1d99cb88b3deb252d1ecbfc8948628bd287d0bc20d06b9f6ca3a5786",
     "tests/support/parked_signal.rs": "9554d55be8397a500005f3a5f4f3e73c5bf647900b0d013646fcc7f8b8b2e355",
     "tests/support/process_text.rs": "ab415bb64e48a78700ac3fe6648eedf76644a533c2de3380f592e6ce260644f1",
-    "tests/support/quiescent_oracle.rs": "87de53f6dce9ca7a1e4f38fa7054c2e397f8b7720fb5849fc7021554d86638d7",
+    "tests/support/quiescent_oracle.rs": "a74e2b942e50db80fe066b4e86b3047c74ba4482949ff52b8bc46a79896453b5",
     "tests/support/routed_jmp_artifact.rs": "f9f37eeb884a3004328478129790a6b98305e5af70c31e2ce267346c7e123735",
     "tests/support/routed_jmp_fixture.rs": "9edb02b399e0d7c330c53eedefbad3d5c0b82876ac758f693f758ccdd5d77241",
-    "tests/support/routed_jmp_native.rs": "9c3f8a28175ddbc2bf8bc12e507f90ca0e3b61cbbc5835e03bc8cce9268c680b",
+    "tests/support/routed_jmp_native.rs": "cd2257a4f6713284b8e6abb49bad85acd4a2f0c84d1d4f330cfb896f54447960",
+    "tests/support/router_witness.rs": "3178ac830b4a8508d25252032eab302f5b613c72a3f6ba9c7fee7d49ec3d09f3",
     "tests/support/word_sync.rs": "8d7a590a68378251dfce241481f9549e38332f54e28201e41c7b011284448786",
     "tests/support/word_trace_method.rs": "04d38273f303f5d9211ac42751e96f04cd7a5db7ce9f3ba1bce4416bf66106b0",
     "tools/elf-rewrite/Cargo.toml": "44f89364d57a07c1f21d94467c0a619ca879d22e776368dfa9eda00c97a93e6d",
@@ -19961,7 +21024,8 @@
     "tools/elf-rewrite/e9-sites.py": "4270f18a2128543fa0eb1b1982ed8368b77c5216c0926a5012371c8a3a9ea893",
     "tools/elf-rewrite/examples/adjacent_b2_support/ledger.rs": "b5aaa00903ee90cb550b4e7cd274b4cc47e983d7aff139931bd3ae9ccc447b56",
     "tools/elf-rewrite/examples/common_sites.rs": "ef298ad0987dba8338c85f571940c7cac511cef970d6be8c0d7b0d3ef9ee95f6",
-    "tools/elf-rewrite/examples/disassembly_sites.rs": "22089d18045fa20461640a11cba32c3b056601ca899c581e33043ee7d10f2372",
+    "tools/elf-rewrite/examples/disassembly_sites.rs": "e8adad87d4e7c122ae70c7840612b0fdc9dd58838816ef58eedee3131a471052",
+    "tools/elf-rewrite/examples/disassembly_sites/grouped_min5_tests.rs": "539e4808f39647c4953703d519eb884f73f37a75d47a9231c8c2c811d1016446",
     "tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs": "492b57c0026f4a6072bc1f60a4a724b9a8fa1fd9d3a2da5d90e3242350bd4714",
     "tools/elf-rewrite/examples/disassembly_sites/grouped_upstream_tests.rs": "3044e6b9f3dc224fa97d79980733f7dfdbfaac62401efeab96149dbd703b5ed9",
     "tools/elf-rewrite/examples/disassembly_sites/ledger_storage_tests.rs": "46861b9b24bf1c2f28d2f92f22444fe1953d82b9b24486abeec856e96a660576",
@@ -20001,14 +21065,15 @@
     "tools/elf-rewrite/src/disassembly/whole/policy.rs": "67574a672a45a7f589b29e20fcb7c71230fd3f9564bc13df7ca5e0c752917734",
     "tools/elf-rewrite/src/disassembly/whole/tests.rs": "068ef9febd1326c510ed37314f86c0da2a3348d27864e60915101aa4bae5db3d",
     "tools/elf-rewrite/src/fixed_exec.rs": "9fe7d3ca9335f5f735aa6b4d64fcd0d14e187e68a7ec761ce1bd3dfd42e62d5e",
-    "tools/elf-rewrite/src/grouped_artifact_frontend.rs": "a3747edb30b50e39a2049650486d2e0ee1c9dc27529e180befa7dece4ccea2ad",
+    "tools/elf-rewrite/src/grouped_artifact_frontend.rs": "86bf627a182b37c8c58ce769b78a4a485cdbdf7fd7fc1a65dfc919292c8071a3",
+    "tools/elf-rewrite/src/grouped_artifact_frontend/min5_tests.rs": "7a415b3d99687b433a9c5ebd72d779116e3cd2dbcd0789b59486480dc1b9f930",
     "tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs": "dc0cb28c59778b3a51960537062567cd130693fd1c50fc3708b657384733035c",
     "tools/elf-rewrite/src/grouped_artifact_frontend/upstream_tests.rs": "c2cd4e928eb1725c6bfc0dd1b328749b75bd7de627221dfe3bf4a3a7b16daad2",
     "tools/elf-rewrite/src/ledger.rs": "10bcb092aaa8ba4d6c615b63e01cbf76b76981808efa1b6b53dc61962d484347",
     "tools/elf-rewrite/src/ledger_codec.rs": "10a578b989c987175861599cb18ba77236828c7efd7d629225e96b349b22fc86",
     "tools/elf-rewrite/src/ledger_codec/tests.rs": "67ec3c4ac199c6145e7d836da2aadc90c7d02a9213dfa9c549747d9ab9a44793",
     "tools/elf-rewrite/src/ledger_storage.rs": "3fded659c3fb5a2ff46e0c4b0b537ac78b1a02b3be2ef6625ef08063b18f0b26",
-    "tools/elf-rewrite/src/lib.rs": "a4c42f29bf13b46b379b7c622821e9fb1d2601e0729f85dd5c2272e455534fbc",
+    "tools/elf-rewrite/src/lib.rs": "71abb28906187b3938d18d341d6224ce34b5975afa5202f1dfd07fbc89bf82ac",
     "tools/elf-rewrite/src/model.rs": "25ce95f799669f062b774b344afdd0705299665fadd3ba666595a2efb10b191e",
     "tools/elf-rewrite/src/neighbor_catalogue.rs": "546c257b0be1f6fd48128b3fed5ab5f2d32fe3f85cb8fb611747d00d4b7aac9a",
     "tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs": "e3977076515f83ee1171a61d009aff724e791640fca2d9b953fbb24cf5e9854d",

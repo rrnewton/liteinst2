@@ -12,10 +12,11 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == 'bcf1dfc737cb50fcca02e70508c4f3b3afe6f1210d09e21699ffb04925be81ed',
+require(hashlib.sha256(RAW).hexdigest() == '3ebbadf81f4139186910618f7b95e38783bb5eff3fe6cda09b4a3219ec469dbb',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
+MINIMUM_PREVIOUS = DATA['source_successor_f9c5982']['previous_corpus_sha256']
 UPSTREAM_PREVIOUS = DATA['source_successor_2294097']['previous_corpus_sha256']
 GROUPED_PREVIOUS = DATA['source_successor_9528851']['previous_corpus_sha256']
 JUMP_PREVIOUS = DATA['source_successor_11cc419']['previous_corpus_sha256']
@@ -220,7 +221,12 @@ def source_before_9528851(path, raw, error):
 
 
 def source_before_2294097(path, raw, error):
+    raw = source_before_f9c5982(path, raw, error)
     return inverse(path, raw, DATA['source_successor_2294097']['source_projections'], error)
+
+
+def source_before_f9c5982(path, raw, error):
+    return inverse(path, raw, DATA['source_successor_f9c5982']['source_projections'], error)
 
 
 def require_sources(error='main97ab_source_inventory_differs'):
@@ -254,11 +260,25 @@ def require_sources(error='main97ab_source_inventory_differs'):
         source_before_evaluation(path, raw, error)
 
 
-def before_2294097(declared, error='main97ab_inventory_differs'):
-    """Bind twenty-six upstream/ledger tests without changing older catalogs."""
+def before_f9c5982(declared, error='main97ab_inventory_differs'):
+    """Bind seventeen minimum-window tests without changing older catalogs."""
     require(type(declared) is dict and digest(declared) == CURRENT, error)
     owned = plain_catalog((declared, DATA))
     old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in DATA['source_successor_f9c5982']['workspace_changes'].items():
+        require(digest(rows[name]) == digest(change['current']), error)
+        rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == MINIMUM_PREVIOUS, error)
+    return old if owned else copy.deepcopy(old)
+
+
+def before_2294097(declared, error='main97ab_inventory_differs'):
+    """Bind twenty-six upstream/ledger tests without changing older catalogs."""
+    owned = plain_catalog((declared, DATA))
+    declared = before_f9c5982(declared, error)
+    require(type(declared) is dict and digest(declared) == MINIMUM_PREVIOUS, error)
+    old = declared if owned else copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in DATA['source_successor_2294097']['workspace_changes'].items():
         require(digest(rows[name]) == digest(change['current']), error)
