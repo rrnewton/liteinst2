@@ -16,12 +16,11 @@ H=prior.H
 CONTROL_COUNT=335
 
 
-def effect_exit(p):
+def effect_exit(p,*,calls=30):
     # Same paired-v2 binary: identity3 + hardware2 + prefix-machine3 +
     # mappings8 + prefix-write1 + pre-entry-machine3 + post-machine3 +
     # getcpu1 + source-mprotect1 + munmap3 + suffix-write1 + exit_group1.
     # The original interpreter and hardware() issue1+67 CPUIDs.
-    calls=30
     l,e,o,cp=(p[k]for k in('loader','effect','oneshot','cpuid_nx'))
     need(l['last_syscall']==231 and l['source_syscalls']==l['syscalls']==l['forwarded']==calls,'exact tiny fixture successful exit syscall path')
     need(all(e[k]==v for k,v in dict(first_error=0,stage=4,busy=1,finished=0,kind=7,action=1,phase=5,error=0,

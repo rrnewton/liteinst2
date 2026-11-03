@@ -1,7 +1,8 @@
 """Exact successful terminal contract for the separate schema17 lifecycle.
 
-The real application has the same30-call successful syscall chronology and
-67 application CPUIDs as paired-v2. Its four generated lifetimes, mixed warm
+The real application has exactly29 successful syscalls and67 application
+CPUIDs. Its writable data remains available for the actual lifecycle stores;
+paired-v2 has one additional data-page mprotect and retains its30-call contract. Its four generated lifetimes, mixed warm
 entry, held cancellation, original store replay and replacement are proved by
 the distinct protected reader and actual native pair, never terminal counts.
 The original exercised REP/native-probe cohort remains mandatory separately.
@@ -57,10 +58,10 @@ def validate(p,view,pid,exit_status,parent,images,image_bytes,carrier,carrier_by
              companion_replacements=1).items()),
          'exact separate protected four-lifetime chronology, never inferred from global terminal counts')
     # Actual successful calls: identity3 + hardware2 + prefix-machine3 +
-    # mappings8 + prefix-write1 + pre-entry-machine3 + post-machine3 +
+    # mappings7 + prefix-write1 + pre-entry-machine3 + post-machine3 +
     # getcpu1 + source-mprotect1 + munmap3 + suffix-write1 + exit_group1.
     # machine.S adds no syscall. The original interpreter adds one CPUID.
-    effect_exit(p)
+    effect_exit(p,calls=29)
     return dict(application_completed=1,required_terminal_negative=0,
         mode=mode,placement=application['placement'],status=0,code=0,signal=0,
         generated_completed=4,terminal_join=terminal,subentry=subentry,pf_refusals=refusal,
