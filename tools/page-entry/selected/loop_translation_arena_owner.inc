@@ -149,13 +149,13 @@ static unsigned lta_propose_peer(unsigned *tried) {
     if(!tried || pe.p.phase!=LI2_PG_BOUND || pe.domain.work.bound)return LI2_PTR_SLOTS;
     for(unsigned node=0;node<PTR_NODE_COUNT;node++) {
         if((*tried&(1U<<node)) || lta_node_bound(node)>=0 || !PTR_NODE_AT(node).generation.installed)continue;
-        *tried|=1U<<node;
         pe_need(lta_closed_value(node),PE_RELEASE,9236);
         const struct li2_ptr_slot *s=&PTR_NODE_AT(node);
         const struct pe_payload *p=(const void *)s->proof;
         if(s->registry_count!=protected_count ||
            !equal(s->registry,protected,protected_count*sizeof *protected) ||
            !pda_registration(p) || !lc8_reachable(v,&p->plan))continue;
+        *tried|=1U<<node;
         unsigned victim=LI2_PTR_SLOTS;
         for(unsigned slot=0;slot<LI2_PTR_SLOTS;slot++) {
             unsigned included=0;
