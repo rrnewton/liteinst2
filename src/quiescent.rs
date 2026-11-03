@@ -18,10 +18,12 @@ use crate::trampoline::{ExecutableTrampoline, HookCallback, TrampolineImage, Tra
 mod artifact_window;
 pub use artifact_window::{
     ArtifactObservationPlan, ArtifactObservationRequest, ArtifactObservationSearchRequest,
-    ArtifactObservationWindowSeal, ArtifactRelocationPlacement,
-    plan_artifact_observation_window_after, plan_artifact_observation_window_upstream_after,
+    ArtifactObservationWindowSeal, ArtifactPhysicalWindowRow, ArtifactPhysicalWindowSchedule,
+    ArtifactRelocationPlacement, plan_artifact_observation_window_after,
+    plan_artifact_observation_window_upstream_after,
     plan_artifact_observation_window_upstream_after_with_placement,
-    seal_artifact_observation_window_min5,
+    plan_artifact_observation_windows_upstream_after_with_placement,
+    seal_artifact_observation_window_min5, seal_artifact_observation_windows_upstream_min5,
 };
 
 pub mod feasibility;
@@ -1415,6 +1417,34 @@ fn plan_at_with_controls(
     )
 }
 
+// Constant-size dependency union, including an instruction which the collector
+// examines and then refuses at its displacement bound. Not a retained window.
+#[derive(Default)]
+struct RelocationDependencies {
+    start: Option<u64>,
+    end: u64,
+}
+impl RelocationDependencies {
+    fn examined(&mut self, address: u64, len: usize) -> Result<(), Refusal> {
+        let end = address
+            .checked_add(u64::try_from(len).map_err(|_| Refusal::InvalidRange)?)
+            .ok_or(Refusal::InvalidRange)?;
+        self.start = Some(self.start.map_or(address, |start| start.min(address)));
+        self.end = self.end.max(end);
+        Ok(())
+    }
+    fn span(&self) -> Result<Option<AddressRange>, Refusal> {
+        self.start
+            .map(|start| {
+                AddressRange::new(
+                    start,
+                    usize::try_from(self.end - start).map_err(|_| Refusal::InvalidRange)?,
+                )
+            })
+            .transpose()
+    }
+}
+
 // Exact-end admission is opt-in; None retains the ordinary stopping and
 // qualification order. Collection finishes before any instruction is qualified.
 fn collect_relocation_window<'a>(
@@ -1424,6 +1454,26 @@ fn collect_relocation_window<'a>(
     last_logical: u64,
     exact_end: Option<u64>,
     search_evidence: &mut SearchEvidence,
+) -> Result<RelocationWindow<'a>, Refusal> {
+    collect_relocation_window_with_dependencies(
+        request,
+        scan,
+        physical,
+        last_logical,
+        exact_end,
+        search_evidence,
+        None,
+    )
+}
+
+fn collect_relocation_window_with_dependencies<'a>(
+    request: &PlanningRequest<'_>,
+    scan: &'a ScanResult,
+    physical: u64,
+    last_logical: u64,
+    exact_end: Option<u64>,
+    search_evidence: &mut SearchEvidence,
+    mut dependencies: Option<&mut RelocationDependencies>,
 ) -> Result<RelocationWindow<'a>, Refusal> {
     let scope = SearchScope {
         physical_pc: Some(physical),
@@ -1441,6 +1491,9 @@ fn collect_relocation_window<'a>(
         }
         if exact_end.is_some_and(|bound| item.address() >= bound) {
             break;
+        }
+        if let Some(dependencies) = dependencies.as_deref_mut() {
+            dependencies.examined(item.address(), item.len())?;
         }
         end = item.address() + item.len() as u64;
         if end > request.block.end() || end - physical > request.search.max_displaced_bytes as u64 {

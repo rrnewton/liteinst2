@@ -179,6 +179,7 @@ GROUPED_PROFILE = 'jumps-gpr-stack64-block-observation-v1'
 GROUPED_UPSTREAM_PROFILE = 'jumps-gpr-stack64-block-upstream-v1'
 GROUPED_MIN5_PROFILE = 'jumps-gpr-stack64-block-min5-upstream-v1'
 GROUPED_MIN5_ALPHABET_PROFILE = 'jumps-gpr-stack64-block-min5-alphabet-upstream-v1'
+GROUPED_PHYSICAL_PROFILE = 'jumps-gpr-stack64-block-physical-min5-alphabet-upstream-v1'
 # (upstream physical search, immutable min5 seal, grouping version, explicit placement)
 # Storage is independent; legacy descriptors preserve their exact text contracts.
 GROUPED_DESCRIPTORS = {
@@ -186,6 +187,7 @@ GROUPED_DESCRIPTORS = {
     GROUPED_UPSTREAM_PROFILE: (True, False, '1', None),
     GROUPED_MIN5_PROFILE: (True, True, '2', None),
     GROUPED_MIN5_ALPHABET_PROFILE: (True, True, '3', 'entry-alphabet-v1'),
+    GROUPED_PHYSICAL_PROFILE: (True, False, '4', 'entry-alphabet-v1'),
 }
 GROUPED_PROFILES = tuple(GROUPED_DESCRIPTORS)
 GROUPED_MEMBERS = ('grouping-policy.tsv', 'selection.txt', 'binding-policy.tsv',
@@ -206,7 +208,7 @@ def grouped_binding_bytes(selection, original, domain, grouping, *, profile=GROU
     return ('LI2FIXED-EXEC-BINDING\t1\n'+''.join(k+'\t'+v+'\n' for k, v in rows)).encode()
 
 
-def grouped_source_heads(raw, original, sites, numeric):
+def grouped_source_heads(raw, original, sites, numeric, *, encoded_bytes=None):
     """Interpret already source-pinned head lengths, without decoding code."""
     source = raw.decode().splitlines()
     assert source[0] == 'LI2DISASM 1' and source.count('original '+original) == 1
@@ -217,6 +219,7 @@ def grouped_source_heads(raw, original, sites, numeric):
             pc, encoded = numeric(match[1]), match[2]
             assert pc not in heads and len(encoded) % 2 == 0 and 1 <= len(encoded)//2 <= 15
             heads[pc] = len(encoded)//2
+            if encoded_bytes is not None: encoded_bytes[pc] = bytes.fromhex(encoded)
     assert len(heads) <= 16384 and all(heads[s[1]] == s[2] for s in sites)
     return heads
 
@@ -259,6 +262,84 @@ def grouped_min5_seals(policy, units, sites, heads, numeric):
     return seals
 
 
+def grouped_physical_seals(policy, units, sites, heads, encoded, numeric):
+    """Policy4 geometry only. Typed qualification and current reads stay in Rust."""
+    tags = {'unit-preflight', 'window-domain', 'window-source', 'physical-window'}
+    extra = {unit: [] for unit, population in enumerate(units) if len(population) > 1}
+    for row in policy:
+        if row[0] not in tags: continue
+        assert len(row) > 1
+        unit = numeric(row[1]); assert unit in extra
+        extra[unit].append(row)
+    def refusal(code, stage, detail):
+        assert numeric(code) > 0 and stage not in ('', '-', 'none', 'atomic-selection', 'carrier')
+        assert re.fullmatch(r'(?:[0-9a-f]{2})*', detail)
+        bytes.fromhex(detail).decode('utf-8')
+    for unit, rows in extra.items():
+        assert rows
+        if rows[0][0] == 'unit-preflight':
+            assert len(rows) == 1 and len(rows[0]) == 6 and rows[0][2] == 'refused'
+            refusal(*rows[0][3:]); continue
+        population = units[unit]
+        start, last = population[0][1], population[-1][1]
+        selected_end = last + population[-1][2]
+        block, block_len = population[0][6:8]; block_end = block + block_len
+        assert 0 <= block <= start <= last < selected_end <= block_end <= 2**64-1
+        assert all(s[6:8] == [block, block_len] for s in population)
+        floor = max(block, max(0, start-64))
+        domain = sorted((pc for pc in heads if floor <= pc <= start),
+                        key=lambda pc: (pc != start, pc % 64 > 56, start-pc))
+        total, sealed = len(domain), min(len(domain), 64)
+        assert 1 <= total <= 65 and domain[0] == start
+        assert rows[0] == ['window-domain', str(unit), str(total), str(sealed), str(total-sealed)]
+        assert len(rows) == sealed+2 and len(rows[1]) == 5 and rows[1][:2] == ['window-source', str(unit)]
+        examined, ready_ends = set(), [selected_end]
+        for ordinal, pc in enumerate(domain[:sealed]):
+            row = rows[ordinal+2]
+            assert len(row) == 9 and row[:4] == ['physical-window', str(unit), str(ordinal), str(pc)]
+            # Mirror only lengths and the collector's bounds/stop geometry, not
+            # instruction qualification. Include a cap-crossing/start instruction.
+            cursor, valid, visited = pc, True, []
+            while cursor < block_end:
+                assert cursor in heads
+                visited.append(cursor)
+                examined.add(cursor)
+                cursor += heads[cursor]
+                if cursor > block_end or cursor-pc > 256:
+                    valid = False; break
+                if cursor-pc >= 5 and cursor > last: break
+            valid = valid and cursor-pc >= 5 and cursor > last
+            if row[4] == 'ready':
+                assert valid and row[5:] == [str(cursor), '-', '-', '-']
+                assert visited == sorted(head for head in heads if pc <= head < cursor)
+                assert all(site[1] in visited for site in population)
+                ready_ends.append(cursor)
+                assert population == [s for s in sites if s[1] < cursor and pc < s[1]+s[2]]
+                assert all(pc <= s[1] < s[1]+s[2] <= cursor for s in population)
+            else:
+                assert row[4] == 'refused' and row[5] == '-' and row[7] == 'core'
+                refusal(*row[6:])
+        end = max(ready_ends)
+        assert population == [s for s in sites if s[1] < end and floor < s[1]+s[2]]
+        assert all(floor <= s[1] < s[1]+s[2] <= end for s in population)
+        left, right = min(examined), max(pc+heads[pc] for pc in examined)
+        assert 0 < right-left <= 335
+        data, cursor = bytearray(), left
+        while cursor < right:
+            assert cursor in encoded and len(encoded[cursor]) == heads[cursor]
+            data.extend(encoded[cursor]); cursor += heads[cursor]
+        assert cursor == right
+        assert rows[1] == ['window-source', str(unit), str(left), str(right), hashlib.sha256(data).hexdigest()]
+    return extra
+
+
+def grouped_physical_ordinal(rows, physical, end):
+    found = [int(row[2]) for row in rows if row[0] == 'physical-window'
+             and row[3:6] == [str(physical), 'ready', str(end)]]
+    assert len(found) == 1
+    return found[0]
+
+
 def grouped_linkage(info, members, sites, original, domain, report, *, source_ledger, profile=GROUPED_PROFILE, ledger_storage="inline"):
     """Join a full policy partition to unique local plans and final site outcomes.
 
@@ -268,6 +349,7 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
     """
     assert profile in GROUPED_PROFILES
     upstream, min5, policy_version, placement = GROUPED_DESCRIPTORS[profile]
+    physical_windows = profile == GROUPED_PHYSICAL_PROFILE
     assert ledger_storage in ('inline', CHUNK_STORAGE)
     compact = ledger_storage == CHUNK_STORAGE
     required = set(GROUPED_MEMBERS) | (set(CHUNK_MEMBERS) if compact else set())
@@ -286,6 +368,8 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
         embedded_metadata_binding='checked' if report['strict_full'] else 'not-complete')
     if min5:
         expected_fields.update(grouping_policy_version=policy_version, window_sealing='minimum-whole-instruction-v1')
+    if physical_windows:
+        expected_fields.update(grouping_policy_version='4', window_sealing='physical-minimum-whole-instruction-v1')
     if placement is not None: expected_fields['group_relocation_placement'] = placement
     assert all(fields.get(k) == v for k, v in expected_fields.items())
     assert all(name in info['files'] for name in ('metadata.li2meta', 'target.tsv', 'planning-profile.tsv'))
@@ -315,10 +399,17 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
     singles = sorted((v for v in blocks.values() if len(v) == 1), key=lambda v: -v[0][1])
     units = groups + singles
     policy = rows('grouping-policy.tsv')
+    if physical_windows:
+        assert members['grouping-policy.tsv'] == ('\n'.join('\t'.join(row) for row in policy)+'\n').encode('utf-8')
     # Only this distinct profile needs head geometry before policy comparison.
     # Legacy profiles retain the original parser invocation/error order below.
     heads = grouped_source_heads(members['disassembly.txt'], original, sites, numeric) if min5 else None
     seals = grouped_min5_seals(policy, units, sites, heads, numeric) if min5 else {}
+    physical_seals = {}
+    if physical_windows:
+        encoded = {}
+        heads = grouped_source_heads(members['disassembly.txt'], original, sites, numeric, encoded_bytes=encoded)
+        physical_seals = grouped_physical_seals(policy, units, sites, heads, encoded, numeric)
     prefix = [
         ['LI2GROUPING-POLICY', '1'], ['profile', profile],
         ['schedule', 'all-multisite-blocks-descending-then-singletons-descending-v1'],
@@ -335,8 +426,15 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
             ['window', 'minimum-whole-instruction-through-last-selected-min5-v1'],
             ['seal_source', 'immutable-original'], ['seal_stage', 'before-overlay-mutation']]
     if placement is not None:
+        if physical_windows:
+            prefix[0] = ['LI2GROUPING-POLICY', '4']
+            at = prefix.index(['window', 'first-selected-head-through-last-selected-instruction'])
+            prefix[at:at+1] = [['window', 'per-physical-minimum-whole-instruction-v1'],
+                ['seal_source', 'immutable-original'], ['seal_stage', 'before-overlay-mutation']]
         at = prefix.index(['seal_stage', 'before-overlay-mutation']) + 1
         prefix.insert(at, ['group_relocation_placement', placement])
+        if physical_windows:
+            prefix.insert(at+1, ['source_dependency', 'collector-examined-instruction-envelope-v1'])
     if upstream:
         at = prefix.index(['group_attempts', '1'])
         prefix[at:at+1] = [
@@ -355,12 +453,13 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
         kind = 'group' if len(population) > 1 else 'singleton'
         expected_policy.append(['unit', str(unit), kind, str(start), str(end), str(len(population))])
         if min5 and kind == 'group': expected_policy.append(seals[unit])
+        if physical_windows and kind == 'group': expected_policy.extend(physical_seals[unit])
         member_rows[unit] = [['member', str(unit), str(s[0]), str(s[1]), str(s[2]), s[8]] for s in population]
         expected_policy.extend(member_rows[unit])
     assert policy == expected_policy
 
     # Source-owned input rows provide the complete head set, without redisassembly.
-    if not min5: heads = grouped_source_heads(members['disassembly.txt'], original, sites, numeric)
+    if not min5 and not physical_windows: heads = grouped_source_heads(members['disassembly.txt'], original, sites, numeric)
     manifest = members['selection.txt'].decode().splitlines()
     assert manifest[0] == 'LI2TOOL-SHARED-REGIONS 1' and manifest.count('profile '+STACK_PROFILE) == 1
     hook_rows = [line.split() for line in manifest if line.startswith('hook ')]
@@ -414,6 +513,7 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
     assert set(steps) == primaries and {v[0] for v in images.values()} == primaries
     assert {name for name in info['files'] if re.fullmatch(r'image-[0-9]+\.bin', name)} == {f'image-{i:04}.bin' for i in images}
     assert {numeric(row[1]) for row in plan[:at] if row[0] in ('route', 'restored-boundary', 'field')} <= set(images)
+    actual_ordinals = {}
     for unit, primary in accepted.items():
         population = units[unit]
         if len(population) == 1: continue
@@ -425,6 +525,9 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
             step = steps[primary][0]
             assert step[:5] == ['step', str(primary), '0', 'relocation', str(start)]
             physical = numeric(step[5])
+            if physical_windows:
+                end = numeric(step[7])
+                actual_ordinals[unit] = grouped_physical_ordinal(physical_seals[unit], physical, end)
             floor = max(population[0][6], max(0, start-64))
             assert floor <= physical <= start and physical in heads
             assert step[6:] == [str(physical), str(end)] and 5 <= end-physical <= 256
@@ -475,6 +578,14 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
                 local.append(int(record['site']))
     assert set(local) == set(accepted_ids)
     records = {int(row['site']): row for row in report['rows']}
+    if physical_windows:
+        for unit, seal in physical_seals.items():
+            if seal[0][0] != 'unit-preflight': continue
+            assert unit not in accepted
+            for site in units[unit]:
+                row = records[site[0]]
+                assert row['core_tactic'] == 'none' and row['candidate_emitted'] == 'false'
+                assert (row['refusal_code'], row['stage'], row['detail_hex']) == tuple(seal[0][3:])
     if min5:
         for unit, seal in seals.items():
             if seal[2] != 'refused': continue
@@ -508,6 +619,7 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
     if placement is not None:
         result.update(grouping_policy_version=policy_version, group_relocation_placement=placement)
     if compact: result['ledger_storage'] = storage_result
+    if physical_windows: result['accepted_physical_ordinals'] = actual_ordinals
     return result
 
 

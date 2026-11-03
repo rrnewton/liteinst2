@@ -13,6 +13,17 @@ use li2core::quiescent::{
 use li2core::x86::JumpStackClass;
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
+mod physical;
+use li2core::quiescent::{
+    ArtifactPhysicalWindowSchedule, plan_artifact_observation_windows_upstream_after_with_placement,
+};
+pub use physical::{
+    GROUPED_PHYSICAL_MIN5_ALPHABET_UPSTREAM_PROFILE,
+    grouped_physical_min5_alphabet_upstream_fixed_exec_binding_policy,
+    grouped_physical_min5_alphabet_upstream_fixed_exec_metadata,
+    prepare_disassembly_jump_stack_grouped_physical_min5_alphabet_upstream_fixed_exec,
+    prepare_disassembly_jump_stack_grouped_physical_min5_alphabet_upstream_with_ledger_storage,
+};
 
 pub const GROUPED_PROFILE: &str = "jumps-gpr-stack64-block-observation-v1";
 pub const GROUPED_UPSTREAM_PROFILE: &str = "jumps-gpr-stack64-block-upstream-v1";
@@ -26,6 +37,7 @@ pub(crate) enum GroupProfile {
     Upstream,
     Min5Upstream,
     Min5AlphabetUpstream,
+    PhysicalMin5AlphabetUpstream,
 }
 impl GroupProfile {
     fn name(self) -> &'static str {
@@ -34,13 +46,18 @@ impl GroupProfile {
             Self::Upstream => GROUPED_UPSTREAM_PROFILE,
             Self::Min5Upstream => GROUPED_MIN5_UPSTREAM_PROFILE,
             Self::Min5AlphabetUpstream => GROUPED_MIN5_ALPHABET_UPSTREAM_PROFILE,
+            Self::PhysicalMin5AlphabetUpstream => GROUPED_PHYSICAL_MIN5_ALPHABET_UPSTREAM_PROFILE,
         }
     }
     fn min5(self) -> bool {
         matches!(self, Self::Min5Upstream | Self::Min5AlphabetUpstream)
     }
+    fn physical(self) -> bool {
+        self == Self::PhysicalMin5AlphabetUpstream
+    }
     fn policy_version(self) -> u8 {
         match self {
+            Self::PhysicalMin5AlphabetUpstream => 4,
             Self::Min5AlphabetUpstream => 3,
             Self::Min5Upstream => 2,
             Self::Exact | Self::Upstream => 1,
@@ -48,11 +65,22 @@ impl GroupProfile {
     }
     fn placement(self) -> ArtifactRelocationPlacement {
         match self {
-            Self::Min5AlphabetUpstream => ArtifactRelocationPlacement::EntryAlphabetV1,
+            Self::Min5AlphabetUpstream | Self::PhysicalMin5AlphabetUpstream => {
+                ArtifactRelocationPlacement::EntryAlphabetV1
+            }
             _ => ArtifactRelocationPlacement::Fixed06,
         }
     }
     fn policy(self) -> String {
+        if self.physical() {
+            return Self::Min5AlphabetUpstream.policy()
+                .replace("LI2GROUPING-POLICY\t3\n", "LI2GROUPING-POLICY\t4\n")
+                .replace(GROUPED_MIN5_ALPHABET_UPSTREAM_PROFILE, self.name())
+                .replace("window\tminimum-whole-instruction-through-last-selected-min5-v1\n",
+                    "window\tper-physical-minimum-whole-instruction-v1\n")
+                .replace("group_relocation_placement\tentry-alphabet-v1\n",
+                    "group_relocation_placement\tentry-alphabet-v1\nsource_dependency\tcollector-examined-instruction-envelope-v1\n");
+        }
         if self == Self::Exact {
             return POLICY.into();
         }
@@ -243,6 +271,7 @@ pub fn grouped_min5_alphabet_upstream_fixed_exec_metadata() -> String {
     grouped_metadata(GroupProfile::Min5AlphabetUpstream)
 }
 fn grouped_metadata(profile: GroupProfile) -> String {
+    let physical = profile.physical();
     let min5 = profile.min5();
     let version = profile.policy_version();
     let placement = profile.placement();
@@ -256,6 +285,11 @@ fn grouped_metadata(profile: GroupProfile) -> String {
         out.push_str(&format!(
             "grouping_policy_version\t{version}\nwindow_sealing\tminimum-whole-instruction-v1\n"
         ));
+    }
+    if physical {
+        out.push_str(
+            "grouping_policy_version\t4\nwindow_sealing\tphysical-minimum-whole-instruction-v1\n",
+        );
     }
     if placement == ArtifactRelocationPlacement::EntryAlphabetV1 {
         out.push_str("group_relocation_placement\tentry-alphabet-v1\n");
@@ -326,6 +360,7 @@ pub(crate) struct Group {
     // Original selected span remains independent of the sealed retained end.
     window: AddressRange,
     seal: Option<Result<ArtifactObservationWindowSeal, SealFailure>>,
+    physical: Option<Result<ArtifactPhysicalWindowSchedule, SealFailure>>,
 }
 impl Group {
     fn retained_window(&self) -> AddressRange {
@@ -496,6 +531,7 @@ impl Schedule {
                     members,
                     window: addr(first.pc, end - first.pc)?,
                     seal: None,
+                    physical: None,
                 });
             }
         }
@@ -508,7 +544,7 @@ impl Schedule {
             classes: classes.to_vec(),
             policy: Vec::new(),
         };
-        if !profile.min5() {
+        if !profile.min5() && !profile.physical() {
             out.policy = out.policy_bytes(s);
         }
         Ok(out)
@@ -530,6 +566,9 @@ impl Schedule {
                 group.members.len()
             )
             .unwrap();
+            if self.profile.physical() {
+                self.physical_policy(&mut text, unit, group);
+            }
             if self.profile.min5() {
                 match group
                     .seal
@@ -640,7 +679,22 @@ impl Schedule {
     fn upstream_envelope(&self, s: &Selection, group: &Group) -> Result<AddressRange, Error> {
         let first = &s.sites[group.members[0]];
         let floor = first.block.start().max(first.pc.saturating_sub(64));
-        addr(floor, group.retained_window().end() - floor)
+        let end = if self.profile.physical() {
+            group
+                .physical
+                .as_ref()
+                .and_then(|r| r.as_ref().ok())
+                .map_or(group.window.end(), |schedule| {
+                    schedule
+                        .rows()
+                        .iter()
+                        .filter_map(|row| row.outcome().ok())
+                        .fold(group.window.end(), u64::max)
+                })
+        } else {
+            group.retained_window().end()
+        };
+        addr(floor, end - floor)
     }
     fn validate_upstream(&self, s: &Selection, group: &Group) -> Result<(), Error> {
         let first = &s.sites[group.members[0]];
@@ -666,6 +720,9 @@ impl Schedule {
         group: &Group,
         plan: &ArtifactPlan,
     ) -> Result<(), Error> {
+        if self.profile.physical() {
+            return self.actual_physical_ordinal(s, group, plan).map(|_| ());
+        }
         if self.profile == GroupProfile::Exact {
             return Ok(());
         }
@@ -978,6 +1035,24 @@ fn attempt_group(
     );
     let mut locally_planned = false;
     let result = (|| {
+        if schedule.profile.physical() {
+            match &group.physical {
+                Some(Ok(_)) => {}
+                Some(Err(failure)) => {
+                    code = Some(failure.code);
+                    if let Some(core) = &failure.core {
+                        writeln!(diagnostics, "{core:#?}").unwrap();
+                    }
+                    return Err(failure.error.clone());
+                }
+                None => {
+                    return Err(Error::new(
+                        "grouped-physical-seal",
+                        "missing immutable preflight",
+                    ));
+                }
+            }
+        }
         if schedule.profile.min5() {
             match &group.seal {
                 Some(Ok(_)) => {}
@@ -1010,6 +1085,17 @@ fn attempt_group(
         let request = GroupRequest::new(elf, s, identity, binding, group, &draft.occupied)?;
         let pcs = &request.pcs;
         let artifact = request.artifact();
+        if schedule.profile.physical() {
+            let Some(Ok(seal)) = &group.physical else {
+                return Err(Error::new(
+                    "grouped-physical-seal",
+                    "missing successful preflight",
+                ));
+            };
+            seal.matches_request(&artifact, pcs)
+                .map_err(|e| Error::new("grouped-physical-seal", e))?;
+            schedule.validate_physical_membership(s, group, seal)?;
+        }
         if schedule.profile.min5() {
             let Some(Ok(seal)) = &group.seal else {
                 return Err(Error::new("grouped-seal", "missing successful preflight"));
@@ -1019,6 +1105,18 @@ fn attempt_group(
             schedule.validate_intersection(s, group, seal.retained_span())?;
         }
         let result = match schedule.profile {
+            GroupProfile::PhysicalMin5AlphabetUpstream => {
+                let Some(Ok(seal)) = &group.physical else {
+                    unreachable!("preflight checked")
+                };
+                plan_artifact_observation_windows_upstream_after_with_placement(
+                    &artifact,
+                    seal,
+                    &draft.composition,
+                    &outside,
+                    schedule.profile.placement(),
+                )
+            }
             GroupProfile::Exact => plan_artifact_observation_window_after(
                 &ArtifactObservationRequest {
                     artifact,
