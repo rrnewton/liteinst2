@@ -14,4 +14,6 @@ Reproduce from a clean checkout of the exact revision using [CORPUS.md](../CORPU
 
 The [original cat comparison](../README.md) remains **FAILED**: 741 local plans, ten refusals, no candidate and three LI2 cases UNOBSERVED. Its first configure failure, the [fixed-exec validation's first failure](../fixed-exec-correctness/README.md), earlier 1,035 misses/action pairs and strict N/N failures remain unchanged. The [earlier fixed-cat pass](../fixed-exec-result/README.md) is a separate revision/attempt, not head/wc credit.
 
+Fresh required hand-back checks at `febb3594cad0b864e72ab7eea62efcbfc739a735` pass: format, strict workspace Clippy, all-feature/all-target check, all seven focused targets, parallel workspace and serial launcher. Workspace records 4,616 raw passes (including nested child invocations), zero failures and 43 ignores; serial records 1,039 passes with no failures or ignores. All 16 command owners ended normally with complete cleanup and no rescued descendants. [validation.json](validation.json) records exact commands, source hashes, bounds, affinity, loads and reproduction. This separate check run does not repeat the 27 application cases or replace earlier failures.
+
 A4 / claim 4 remains open against the strict 20,000-step profile; an 80,000-step pass does not complete it.
