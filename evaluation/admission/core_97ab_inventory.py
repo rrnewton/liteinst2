@@ -12,10 +12,11 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '20d08cdc3275ced6de1856f0613a2666130310de8b552944ef7dea964d9a457c',
+require(hashlib.sha256(RAW).hexdigest() == '6651332373b6b82f0d0189efccaec1c03f42c3505a09e1bfbccddf19ef3af91d',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
+PHYSICAL_WINDOW_PREVIOUS = DATA['source_successor_426ea6a']['previous_corpus_sha256']
 ALPHABET_PREVIOUS = DATA['source_successor_0073fb6']['previous_corpus_sha256']
 MINIMUM_PREVIOUS = DATA['source_successor_f9c5982']['previous_corpus_sha256']
 UPSTREAM_PREVIOUS = DATA['source_successor_2294097']['previous_corpus_sha256']
@@ -232,7 +233,12 @@ def source_before_f9c5982(path, raw, error):
 
 
 def source_before_0073fb6(path, raw, error):
+    raw = source_before_426ea6a(path, raw, error)
     return inverse(path, raw, DATA['source_successor_0073fb6']['source_projections'], error)
+
+
+def source_before_426ea6a(path, raw, error):
+    return inverse(path, raw, DATA['source_successor_426ea6a']['source_projections'], error)
 
 
 def require_sources(error='main97ab_source_inventory_differs'):
@@ -266,11 +272,25 @@ def require_sources(error='main97ab_source_inventory_differs'):
         source_before_evaluation(path, raw, error)
 
 
-def before_0073fb6(declared, error='main97ab_inventory_differs'):
-    """Bind twenty-four entry-alphabet tests without changing older catalogs."""
+def before_426ea6a(declared, error='main97ab_inventory_differs'):
+    """Bind nineteen physical-window tests without changing older catalogs."""
     require(type(declared) is dict and digest(declared) == CURRENT, error)
     owned = plain_catalog((declared, DATA))
     old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in DATA['source_successor_426ea6a']['workspace_changes'].items():
+        require(digest(rows[name]) == digest(change['current']), error)
+        rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == PHYSICAL_WINDOW_PREVIOUS, error)
+    return old if owned else copy.deepcopy(old)
+
+
+def before_0073fb6(declared, error='main97ab_inventory_differs'):
+    """Bind twenty-four entry-alphabet tests without changing older catalogs."""
+    owned = plain_catalog((declared, DATA))
+    declared = before_426ea6a(declared, error)
+    require(type(declared) is dict and digest(declared) == PHYSICAL_WINDOW_PREVIOUS, error)
+    old = declared if owned else copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
     for name, change in DATA['source_successor_0073fb6']['workspace_changes'].items():
         require(digest(rows[name]) == digest(change['current']), error)

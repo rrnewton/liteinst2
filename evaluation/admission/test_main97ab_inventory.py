@@ -68,7 +68,7 @@ def cargo_mutation(test, observed, before, after):
 
 def outer_declaration_mutation(test, path, observed, before, after):
     """Carry the same old stimulus through the two new, exact outer joins."""
-    names = ('0073fb6', 'f9c5982', '2294097', '9528851', '11cc419', '281c342', '064b48c', '79a4b8b', '3217b8ed')
+    names = ('426ea6a', '0073fb6', 'f9c5982', '2294097', '9528851', '11cc419', '281c342', '064b48c', '79a4b8b', '3217b8ed')
     rows = {name: {} for name in names}
     baseline = current.source_before_65ee8ea(path, observed, 'declaration_outer_baseline')
     if path == 'Cargo.toml':
@@ -109,10 +109,78 @@ def outer_declaration_mutation(test, path, observed, before, after):
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # Nineteen physical-window methods extend three existing default harnesses.
+        physical_window = current.DATA['source_successor_426ea6a']
+        physical_window_prior = current.before_426ea6a(actual)
+        physical_window_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(physical_window_prior), current.PHYSICAL_WINDOW_PREVIOUS)
+        self.assertEqual((len(physical_window_rows), sum(x['tests'] for x in physical_window_rows.values()),
+                          sum(x['ignored'] for x in physical_window_rows.values())), (122, 4790, 43))
+        self.assertEqual((physical_window['default_method_additions'], physical_window['new_method_declarations'],
+                          physical_window['default_method_removals'], physical_window['default_harness_changes'],
+                          physical_window['default_ignore_changes'], physical_window['default_doctest_additions'],
+                          physical_window['recorder_identity_changes'], physical_window['feature_method_additions'],
+                          physical_window['feature_method_removals']), (19, 19, 0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(physical_window['added_default_methods'], {'src/entry_router/imp/physical_window_native_tests.rs': ['physical_min5_every_entry_routes_through_production', 'physical_min5_ret_fault_preserves_prior_pop_and_callbacks', 'physical_min5_non06_pop_fault_preserves_uncommitted_state'], 'src/quiescent/artifact_window/physical/tests.rs': ['earlier_physical_head_recovers_short_span_with_actual_alphabet_image_and_all_routes', 'refused_call_suffix_is_custodied_and_qualified_once_without_retained_authority', 'cap_start_fifteen_byte_dependency_keeps_one_sixty_four_of_sixty_five_run', 'owned_schedule_binds_source_policy_population_and_domain_without_borrowed_authority', 'reached_row_mismatch_aborts_instead_of_skipping_or_double_counting', 'fixed06_same_extent_preserves_complete_existing_plan_and_failure_results', 'fresh_overlay_entry_pending_and_image_errors_keep_shared_order_and_atomicity', 'immutable_global_guards_and_collector_early_breaks_keep_exact_dependencies'], 'tools/elf-rewrite/examples/disassembly_sites/grouped_physical_tests.rs': ['physical_cli_keeps_old_selectors_and_exact_storage_arity', 'physical_cli_full_population_and_repinned_policy_keep_portable_binding'], 'tools/elf-rewrite/src/grouped_artifact_frontend/physical/tests.rs': ['physical_min5_refused_same_site_keeps_earlier_minimum_and_actual_ordinal', 'physical_min5_refused_suffix_immediate_is_still_a_source_dependency', 'physical_min5_complete_manifest_rejects_consumed_and_straddling_foreign_members', 'physical_min5_serializes_first_sixty_four_rows_without_losing_omitted_prefix_membership', 'physical_min5_policy_refusal_has_no_invented_domain_and_atomic_failure_keeps_all_sites', 'physical_min5_storage_is_independent_and_carrier_refusal_cannot_promote_a_plan']})
+        self.assertEqual(physical_window['default_method_instances'], {'src/entry_router/imp/physical_window_native_tests.rs': ['unit/liteinst2/lib'], 'src/quiescent/artifact_window/physical/tests.rs': ['unit/liteinst2/lib'], 'tools/elf-rewrite/examples/disassembly_sites/grouped_physical_tests.rs': ['unit/disassembly_sites/disassembly_sites'], 'tools/elf-rewrite/src/grouped_artifact_frontend/physical/tests.rs': ['unit/liteinst_rewrite/lib']})
+        self.assertEqual((physical_window['added_feature_methods'], physical_window['added_ignored_methods']), ({}, {}))
+        self.assertEqual((len(physical_window['source_paths']), len(physical_window['source_projections'])), (20, 20))
+        self.assertEqual(physical_window['new_sources'], ['evaluation/direct-program/physical-window-result/README.md', 'evaluation/direct-program/physical-window-result/cases.csv', 'evaluation/direct-program/physical-window-result/receipt.json', 'evaluation/direct-program/test_grouped_physical_linkage.py', 'evaluation/direct-program/validate_physical_window.py', 'src/entry_router/imp/physical_window_native_tests.rs', 'src/quiescent/artifact_window/physical.rs', 'src/quiescent/artifact_window/physical/tests.rs', 'tools/elf-rewrite/examples/disassembly_sites/grouped_physical_tests.rs', 'tools/elf-rewrite/src/grouped_artifact_frontend/physical.rs', 'tools/elf-rewrite/src/grouped_artifact_frontend/physical/tests.rs'])
+        self.assertEqual(physical_window['newly_bound_sources'], ['evaluation/direct-program/physical-window-result/README.md', 'evaluation/direct-program/physical-window-result/cases.csv', 'evaluation/direct-program/physical-window-result/receipt.json', 'evaluation/direct-program/test_grouped_physical_linkage.py', 'evaluation/direct-program/validate_physical_window.py', 'src/entry_router/imp/physical_window_native_tests.rs', 'src/quiescent/artifact_window/physical.rs', 'src/quiescent/artifact_window/physical/tests.rs', 'tools/elf-rewrite/examples/disassembly_sites/grouped_physical_tests.rs', 'tools/elf-rewrite/src/grouped_artifact_frontend/physical.rs', 'tools/elf-rewrite/src/grouped_artifact_frontend/physical/tests.rs'])
+        self.assertEqual(physical_window_prior['harness_test_counts']['serial_launch'], actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((actual['recorder_tests'], physical_window_prior['recorder_tests']), (366, 366))
+        for name, change in physical_window['workspace_changes'].items():
+            self.assertEqual(physical_window_rows[name], change['current'])
+            self.assertEqual(physical_window_prior['harness_test_counts']['workspace_tests'][name], change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(physical_window_rows[name][field]), physical_window_rows[name][field] + 1):
+                    wrong = inventory_copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_426ea6a(wrong)
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_426ea6a(wrong)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_426ea6a(physical_window_prior)
+        for path, row in physical_window['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_426ea6a(path, raw, 'physical_window_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (physical_window['source_preimages'][path]['bytes'], row['previous_sha256']))
+            if path in physical_window['new_sources']:
+                self.assertEqual(prior, b'')
+            for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^physical_window_source_inverse$'):
+                    current.source_before_426ea6a(path, wrong, 'physical_window_source_inverse')
+            for field in ('edits', 'current_sha256', 'previous_sha256'):
+                malformed = inventory_copy.deepcopy(row)
+                if field == 'edits': malformed['edits'][0][2] += '\n'
+                else: malformed[field] = '0' * 64
+                with patch.dict(physical_window['source_projections'], {path: malformed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^physical_window_source_inverse$'):
+                        current.source_before_426ea6a(path, raw, 'physical_window_source_inverse')
+        read = Path.read_bytes
+        physical_window_stimuli = [(p, 'fn ' + n + '(') for p, names in physical_window['added_default_methods'].items() for n in names]
+        physical_window_stimuli += [(p, literal) for p, literals in physical_window['module_chains'].items() for literal in literals]
+        for path, literal in physical_window_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            replacement = literal.replace('(', '_wrong(', 1) if literal.startswith('fn ') else literal[:-1] + ('x' if literal[-1] != 'x' else 'y')
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('physical_window declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        self.assertEqual(physical_window['declaration_transports'], {})
         # Twenty-four entry-alphabet methods extend three existing default harnesses.
         alphabet = current.DATA['source_successor_0073fb6']
         alphabet_prior = current.before_0073fb6(actual)
-        alphabet_rows = actual['harness_test_counts']['workspace_tests']
+        alphabet_rows = physical_window_prior['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(alphabet_prior), current.ALPHABET_PREVIOUS)
         self.assertEqual((len(alphabet_rows), sum(x['tests'] for x in alphabet_rows.values()),
                           sum(x['ignored'] for x in alphabet_rows.values())), (122, 4771, 43))
@@ -2694,6 +2762,24 @@ class Main97abInventoryTests(unittest.TestCase):
                 with patch.dict(change, previous=PublishedCopy(change['previous'])):
                     result = current.before_0073fb6(supplied)
             self.assertEqual(result, alphabet_prior)
+            self.assertEqual(supplied, actual)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+
+        # The latest transition preserves private ownership for both sources.
+        for source in ('declared', 'metadata'):
+            supplied = copy.deepcopy(actual)
+            change = physical_window['workspace_changes']['unit/liteinst_rewrite/lib']
+            published.clear()
+            if source == 'declared':
+                supplied['harness_test_counts']['serial_launch'] = PublishedCopy(supplied['harness_test_counts']['serial_launch'])
+                result = current.before_426ea6a(supplied)
+            else:
+                with patch.dict(change, previous=PublishedCopy(change['previous'])):
+                    result = current.before_426ea6a(supplied)
+            self.assertEqual(result, physical_window_prior)
             self.assertEqual(supplied, actual)
             self.assertEqual(len(published), 1)
             self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
