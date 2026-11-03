@@ -2018,6 +2018,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_SUBENTRY
     struct pe_sub_choice choice;
 #ifdef LI2_LOOP_TRANSLATION_ARENA
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+    ltao_reentry(pc,sig,si,uc);
+#endif
     unsigned node_index;if(!lta_choose(pc,&choice,&node_index))return 0;
 #else
     if(!pe_sub_choose(pc,&choice))return 0;

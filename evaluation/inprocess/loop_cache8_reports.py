@@ -28,10 +28,16 @@ def read(stderr,record,control,mode,*,dependencies=None,effects_case=None):
     return _joined(stderr,record,control,mode,last_epoch=3,dependencies=dependencies,effects_case=effects_case)
 
 
-def _joined(stderr,record,control,mode,*,last_epoch,dependencies=None,effects_case=None):
+def _joined(stderr,record,control,mode,*,last_epoch,dependencies=None,effects_case=None,observation=None,transit_observation=None):
     parse,prior,certificate,effect=DEFAULT if dependencies is None else dependencies
     lines=stderr[:-1].split(b'\n')
-    if effects_case is None:status,code=(125,3303)if control else(0,0)
+    if observation is not None:
+        need(effects_case is None and callable(observation),'one explicit independently bound observation reader')
+        status,code,last=observation(record,control)
+        need(type(status)is int and type(code)is int and type(last)is tuple and len(last)==32 and
+             all(type(x)is int and 0<=x<1<<64 for x in (status,code,*last)),
+             'typed actual child outcome and complete observed owner counters')
+    elif effects_case is None:status,code=(125,3303)if control else(0,0)
     else:status,code={2:(0,0),3:(125,7),4:(125,101)}[effects_case]
     need(len(lines)>5 and lines[-1].startswith(PREFIX) and lines[-2].startswith(TRANSIT) and
          lines[-3].startswith(b'LI2_PERSISTENT_UNREGISTERED ') and
@@ -62,8 +68,9 @@ def _joined(stderr,record,control,mode,*,last_epoch,dependencies=None,effects_ca
              if 'status'in v and 'failure_code'in v),'every original typed terminal keeps the actual child outcome')
     d=raw['LI2_PERSISTENT_UNREGISTERED'];sub=raw['LI2_PERSISTENT_SUBENTRY']
     h=struct.unpack_from('<32Q',record)
-    if effects_case is None:last=struct.unpack_from('<32Q',record,544+last_epoch*227264+256+3*256)
-    else:last=struct.unpack_from('<32Q',record,910432+768+7*256)
+    if observation is None:
+        if effects_case is None:last=struct.unpack_from('<32Q',record,544+last_epoch*227264+256+3*256)
+        else:last=struct.unpack_from('<32Q',record,910432+768+7*256)
     if effects_case is None:
         need((d['status'],d['failure_code'],d['first_error'],d['detail_abs'],d['detail_negative'],d['active'],d['busy'])==
              (status,code,h[24],h[25],0,h[26],h[27]) and h[22:24]==(status,code),
@@ -110,10 +117,27 @@ def _joined(stderr,record,control,mode,*,last_epoch,dependencies=None,effects_ca
          actual['direct_offers']==actual['direct_steps']<=d['completed'] and
          actual['terminal_attempts']==actual['terminal_closed']==1,
          'shared actual member permission/release/call conservation, without two-member entry arithmetic')
-    need(transit['branch_limit']==2 and transit['offers']==transit['steps'] and
-         transit['limit_revokes']<=transit['steps'] and
-         transit['offers']+transit['declined']<=actual['direct_steps'],
-         'actual bounded DIRECT bridge conservation')
+    if transit_observation is None:
+        need(transit['branch_limit']==2 and transit['offers']==transit['steps'] and
+             transit['limit_revokes']<=transit['steps'] and
+             transit['offers']+transit['declined']<=actual['direct_steps'],
+             'actual bounded DIRECT bridge conservation')
+    else:
+        need(observation is not None and effects_case is None and callable(transit_observation),
+             'one explicit independently bound pending DIRECT observation')
+        pending,counters=transit_observation(record,control)
+        need(type(pending)is int and pending in(0,1) and
+             (counters is None if pending==0 else type(counters)is tuple and len(counters)==6 and
+              all(type(x)is int and 0<=x<1<<64 for x in counters)),
+             'typed actual pending ticket and complete pre-abort DIRECT counters')
+        if pending:
+            need((actual['direct_offers'],actual['direct_steps'],transit['offers'],transit['steps'],
+                  transit['declined'],transit['limit_revokes'])==counters,
+                 'terminal retains every actual pending-ticket counter without a fabricated completed step')
+        need(transit['branch_limit']==2 and transit['offers']==transit['steps']+pending and
+             transit['limit_revokes']<=transit['steps'] and
+             transit['offers']+transit['declined']<=actual['direct_steps'],
+             'actual bounded DIRECT bridge conservation including the independently observed pending ticket')
     if d['phase']==13:
         n=actual['last_count'];mask=actual['last_retained_mask']
         need(actual['last_complete']==1 and 1<=n<=8 and n==d['domain_members'] and mask<1<<n and
@@ -134,8 +158,8 @@ def controls(stderr,record,control,mode,*,dependencies=None,effects_case=None):
     return _controls(stderr,record,control,mode,partial(read,dependencies=dependencies,effects_case=effects_case),effects_case=effects_case)
 
 
-def _controls_joined(stderr,record,control,mode,*,last_epoch,dependencies=None):
-    return _controls(stderr,record,control,mode,partial(_joined,last_epoch=last_epoch,dependencies=dependencies))
+def _controls_joined(stderr,record,control,mode,*,last_epoch,dependencies=None,observation=None,transit_observation=None):
+    return _controls(stderr,record,control,mode,partial(_joined,last_epoch=last_epoch,dependencies=dependencies,observation=observation,transit_observation=transit_observation))
 
 
 def _controls(stderr,record,control,mode,validate,*,effects_case=None):

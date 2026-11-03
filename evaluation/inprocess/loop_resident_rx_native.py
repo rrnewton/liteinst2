@@ -40,7 +40,15 @@ DESCRIPTOR_SCHEDULE=SCHEDULE[:30]+tuple(
     ('subject-'+lane,'program')for lane in('native',)+tuple(x[0]for x in DESCRIPTOR_LANES))
 
 
-def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_case=None):
+ARENA_LANES=(('release','release',0,0),('differential','differential',0,0),
+             ('restored','differential',1,125),('inactive_aba','differential',2,125))
+ARENA_SCHEDULE=SCHEDULE[:30]+tuple(
+    (lane+'-'+name,profile)for lane,_,_,_ in ARENA_LANES for name,profile in(
+        ('build','release_build'),('headers','metadata'),('undefined','inspect'),('symbols','inspect'),('carrier','program')))+tuple(
+    ('subject-'+lane,'program')for lane in('native',)+tuple(x[0]for x in ARENA_LANES))
+
+
+def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_case=None, arena=False):
     """Explicit compiler/reader context; original source authority remains natural."""
     if context is not None and (type(context)is not dict or set(context)!=
             {'root','selected','reader_root','modules'}):
@@ -50,6 +58,9 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
         raise ValueError('explicit additive descriptor requires CACHE8')
     lanes=DESCRIPTOR_LANES if group_descriptor else LANES
     schedule=DESCRIPTOR_SCHEDULE if group_descriptor else SCHEDULE
+    if type(arena)is not bool or arena and (not cache8 or not group_descriptor or effects_case is not None):
+        raise ValueError('explicit distinct twelve-node/eight-active arena selector')
+    if arena:lanes,schedule=ARENA_LANES,ARENA_SCHEDULE
     if group_descriptor and effects_case is not None:
         raise ValueError('descriptor and real-effect cohorts are distinct selectors')
     if effects_case is not None and (type(effects_case)is not int or effects_case not in(2,3,4) or not cache8):
@@ -63,6 +74,7 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
     module_paths=MODULE_PATHS if not cache8 else dict(MODULE_PATHS,
         cache8='loop_cache8_reports.py',row='loop_ro_oracle_reports.py')
     if group_descriptor:module_paths=dict(module_paths,descriptor='loop_group_descriptor_reports.py')
+    if arena:module_paths=dict(module_paths,arena='loop_translation_arena_reports.py')
     root=ROOT if context is None else Path(context['root']).resolve(strict=True)
     reader_root=ROOT if context is None else Path(context['reader_root']).resolve(strict=True)
     selected=root/'tools/page-entry/selected' if context is None else Path(context['selected']).resolve(strict=True)
@@ -105,7 +117,8 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
     if cache8:
         reports=modules['cache8'].configured(modules['row'].row,modules['terminal'],
             modules['certificate'],modules['terminal'].effects)
-    if group_descriptor:reports=modules['descriptor'].configured(modules['row'].row,reports)
+    if group_descriptor and not arena:reports=modules['descriptor'].configured(modules['row'].row,reports)
+    if arena:fixture=selected/'tests/loop_translation_arena_app';reference='arena10-ab791'
     if effects_case is not None:
         fixture=selected/'tests/loop_cache8_effects';reference='cache8-effects'+str(effects_case)
         reports=modules['cache8'].configured(modules['row'].row,modules['terminal'],
@@ -134,6 +147,9 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
         r['profile']='loop-cache8-real-effect'+str(effects_case)+'-v1'
         r['scope']='actual guest mapping ABA or literal write/private-entry refusal; complete or explicitly partial native reference; old49 separate'
         r['effects_case']=effects_case
+    if arena:
+        r['profile']='loop-translation-arena-ab791-v1'
+        r['scope']='additive ten-root791 native state and fourteen real activations; restored predicates and inactive-mirror ABA separate; original79/49 remain mandatory'
     pins={};artifacts={};aliases={};presence={}
     def pin(path):
         alias=Path(os.path.abspath(path));p=alias.resolve(strict=True);v=fact(p)
@@ -155,6 +171,7 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
     def run(name,argv,profile='metadata',expected=0,env=None,record=False):
         closure();need(not any(c['name']==name for c in r['commands']),'unique actual command')
         need(len(r['commands'])<len(schedule) and schedule[len(r['commands'])]==(name,profile),
+             'one exact fixed55 arena command/profile schedule' if arena else
              'one exact fixed79 descriptor command/profile schedule' if group_descriptor else
              'one exact fixed49 command/profile schedule' if effects_case is None else 'one exact fixed real-effect command/profile schedule')
         row=dict(name=name,argv=list(map(str,argv)),environment=dict(ENV if env is None else env),
@@ -185,6 +202,9 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
         builder,archive,r['archive_provider']=current_archive(a.current_build,a.current_build_sha256,root,pin,binary,aliases)
         original=compile_subject(builder,private,pin,binary,aliases,run,r,reference=reference,fixture=fixture)
         reader,_,native_policy=reader_support(builder,private,pin,binary,run,r,fixture=fixture)
+        if arena:
+            common_reader=load('loop_translation_arena_common_app',selected/'tests/loop_cache8_app/read.py',pin)
+            reader=reader.configured(common_reader)
         if effects_case is not None:
             common_reader=load('loop_cache8_effects_common_app',selected/'tests/loop_cache8_app/read.py',pin)
             reader=reader.configured(common_reader,effects_case)
@@ -193,10 +213,14 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
         seed=seed_prerequisite(builder,private,pin,binary,run,r)
         need(r['seed_prerequisite']['status']=='passed','original independent seed prerequisite')
         if cache8:observer=load('loop_cache8_actual_observe',fixture/'observe.py',pin)
-        if group_descriptor:
+        if group_descriptor and not arena:
             descriptor_observer=load('loop_group_descriptor_actual_observe',
                 selected/'tests/loop_group_descriptor_app/observe.py',pin)
             observer=descriptor_observer.configured(observer)
+        if arena:
+            common_observer=load('loop_translation_arena_common_observe',selected/'tests/loop_cache8_app/observe.py',pin)
+            observer=observer.configured(common_observer)
+            reports=modules['arena'].configured(modules['row'].row,reports,modules['descriptor'],observer)
         if effects_case is not None:
             common_observer=load('loop_cache8_effects_common_observe',selected/'tests/loop_cache8_app/observe.py',pin)
             observer=observer.configured(common_observer)
@@ -205,7 +229,10 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
         for label,mode,control,expected in lanes:
             directory=private/(label+'-build');directory.mkdir();holder=r['lanes'][label]={}
             call=lane_run(label)
-            if group_descriptor:
+            if arena:
+                bridge=build_rx(builder,archive,original,directory,pin,binary,aliases,call,holder,mode,
+                    cache8=True,group_descriptor=True,arena=True,arena_observe=control,selected=selected,root=root)
+            elif group_descriptor:
                 bridge=build_rx(builder,archive,original,directory,pin,binary,aliases,call,holder,mode,
                     cache8=True,group_descriptor=True,group_descriptor_observe=control,selected=selected,root=root)
             elif effects_case is not None:
@@ -279,6 +306,67 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
                         need(len(c['terminal_controls']['entry_refusals'])==
                              len(set(c['terminal_controls']['entry_refusals']))==(0 if effects_case==2 else 9),
                              'all separate actual consumed-entry terminal controls')
+                elif arena:
+                    if control:
+                        need(native is not None and len(out)==reader.PREFIX,'actual failed arena application prefix only')
+                        prefix=reader._prefix(out,0,False,image,row['pid'],cpu,seed,reference=reference)
+                        need(all(prefix[k]==native[k]for k in('seed','source','stack','data','rsp','predecessor','hardware')),
+                             'whole actual arena causal source/seed/hardware equals fresh native')
+                        parsed=None;c['application_complete']=False
+                    else:
+                        parsed=reader.read(out,0,role=='native',row['exit'],image,row['pid'],cpu,seed,reference=reference)
+                        c['application_complete']=True
+                    if role=='native':
+                        c['application_controls']=reader.controls(out,0,True,row['exit'],image,row['pid'],cpu,seed,reference=reference)
+                        named(c['application_controls'],45,H(out))
+                        need(len(c['application_controls']['reference_refusals'])==
+                             len(set(c['application_controls']['reference_refusals']))==5 and
+                             len(c['application_controls']['arena_refusals'])==
+                             len(set(c['application_controls']['arena_refusals']))==39,
+                             'original45 and separate five reference/thirty-nine arena native controls')
+                        need(err==b'' and parsed['header'][5]==1,'actual complete791 native reference and empty stderr')
+                        native=parsed;c['native_instructions']=791;c['native_frames']=12
+                    else:
+                        need(native is not None and row['captures']['record']['bytes']==observer.WIRE+64,
+                             'complete actual arena wire without a historical capture cast')
+                        record_path=binary(private/row['captures']['record']['file']);record=record_path.read_bytes();st=record_path.stat()
+                        need(st.st_uid==os.getuid() and observer.q(record,256,2)==(st.st_dev,st.st_ino),
+                             'actual arena sink identity equals retained post-reap record inode')
+                        backing=fact(binary(carrier))
+                        need(backing==holder['subject_artifacts']['carrier'],'whole actual prepared arena carrier backing')
+                        c['carrier_backing']=backing
+                        c['observer']=observer.read(record,reader,native,image,row['pid'],st.st_uid,control,row['exit'],parsed,
+                            backing_size=backing['bytes'],layout=holder['arena_observer_layout'],differential=mode=='differential')
+                        c['observer_controls']=observer.controls(record,reader,native,image,row['pid'],st.st_uid,control,row['exit'],parsed,
+                            backing_size=backing['bytes'],layout=holder['arena_observer_layout'],differential=mode=='differential')
+                        named(c['observer_controls'],(427,471,363)[control],H(record))
+                        need(len(c['observer_controls']['phase_refusals'])==
+                             len(set(c['observer_controls']['phase_refusals']))==(100 if control==2 else 140),
+                             'all separately supplied exact arena phase-counter corruptions')
+                        need(len(c['observer_controls']['backing_refusals'])==
+                             len(set(c['observer_controls']['backing_refusals']))==(38 if control==2 else 78),
+                             'all separately supplied actual source backing-size corruptions')
+                        need(len(c['observer_controls']['pending_refusals'])==
+                             len(set(c['observer_controls']['pending_refusals']))==(46 if control==2 else 1),
+                             'all separate actual pending-ticket field corruptions and unused-record refusals')
+                        need(c['observer']['actual_refusals']==c['observer']['actual_restorations']==(24 if control else 0),
+                             'all24 original genuine source/owner predicate decisions remain required')
+                        need(c['observer']['arena_refusals']==c['observer']['arena_restorations']==
+                             (20 if control==1 else 12 if control==2 else 0) and
+                             c['observer']['raw_controls']==int(control==2),
+                             'all distinct dormant/binding predicates and the actual inactive-mirror ABA')
+                        if not control:c['pair']=c['observer']['native_pair']
+                        c['terminal']=reports.read(err,record,control,mode)
+                        c['terminal_controls']=reports.controls(err,record,control,mode)
+                        need(len(c['terminal_controls']['refusals'])==len(set(c['terminal_controls']['refusals']))==10 and
+                             len(c['terminal_controls']['arena_refusals'])==
+                             len(set(c['terminal_controls']['arena_refusals']))==reports.CONTROL_COUNT and
+                             len(c['terminal_controls']['common_cache_refusals'])==
+                             len(set(c['terminal_controls']['common_cache_refusals']))==24,
+                             'all original ten, separate arena joins and24 common-hit accounting terminal controls')
+                        need(len(c['terminal_controls']['pending_counter_refusals'])==
+                             len(set(c['terminal_controls']['pending_counter_refusals']))==(4 if control==2 else 0),
+                             'all four separate coherent actual pre-close terminal counter refusals')
                 elif cache8:
                     if label=='causal' or group_descriptor and control:
                         need(native is not None and len(out)==reader.PREFIX,
@@ -418,7 +506,11 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
                 need(last.get('reaped')is True and last.get('cleanup_errors')==[] and
                      all(d.get('closed')is True for d in last.get('descriptors',[])),
                      'failed subject closed before the next fixed subject')
-        if group_descriptor:
+        if arena:
+            need(len(schedule)==55 and len(r['commands'])==55 and len(r['cases'])==5 and
+                 all(c['status']=='passed'for c in r['cases']),
+                 'all five actual arena subjects,55 fixed commands and every original/additive comparator required')
+        elif group_descriptor:
             need(len(schedule)==79 and len(r['commands'])==79 and len(r['cases'])==9 and
                  all(c['status']=='passed'for c in r['cases']),
                  'all nine actual subjects and every original and additive comparator required')

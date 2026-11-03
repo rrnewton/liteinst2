@@ -30,20 +30,22 @@ def q(data,offset=0,count=1):return struct.unpack_from('<'+'Q'*count,data,offset
 
 def u(data,offset=0,count=1):return struct.unpack_from('<'+'I'*count,data,offset)
 
-def _frame(data,app,native,model,step,event,previous_nx,*,native_kinds=None):
+def _frame(data,app,native,model,step,event,previous_nx,*,native_kinds=None,raw_trace=False):
+    if raw_trace:
+        need(raw_trace is True and event is False,'explicit genuine pre-close TRACE frame')
     checkpoints=NATIVE_KINDS if native_kinds is None else native_kinds
     need(type(data)is bytes and len(data)==FRAME,'whole actual fixed frame')
     h=q(data,0,16);g=q(data,128,23);si=data[312:440];uc=data[440:1408];fp=data[1408:]
     sig=11 if event else 5
     need(h[0:2]==(1,sig) and h[6]%4096==0 and h[7]==524288 and h[8]==app.MASK and
-         h[9:14]==((0,0,0,0,0)if event else(1,0,0,0,0)) and h[14:]==(0,0),
+         h[9:14]==((0,0,0,0,0)if event or raw_trace else(1,0,0,0,0)) and h[14:]==(0,0),
          'actual frame completion, TLS observation status and exact signal stack')
     need(q(uc,40,23)==g and uc[304:432]==si and q(uc,224)[0]==h[4] and
          q(uc,16)[0]==h[6] and u(uc,24)[0]==0 and q(uc,32)[0]==h[7] and q(uc,296)[0]==app.MASK,
          'whole GREG/UC and actual Linux siginfo-mask alias')
     need(h[4]%16==0 and h[6]<=h[4]<=h[6]+h[7]-h[5] and 580<=h[5]<=65536,
          'whole actual FP storage range')
-    if event:
+    if event or raw_trace:
         need(h[2]==h[3]+304 and h[6]<=h[2]<=h[6]+h[7]-128 and
              h[6]<=h[3]<=h[6]+h[7]-968,'actual preentry SI/UC physical addresses')
         for a,value in ((h[2],si),(h[3],uc),(h[4],fp[:h[5]])):
@@ -57,13 +59,13 @@ def _frame(data,app,native,model,step,event,previous_nx,*,native_kinds=None):
          uc[:16]==reference['uc'][:16], 'all65536 actual FP bytes and kernel context flags equal native')
     pc,expected,flags,_,_=model[step]
     need(tuple(g[i]for i in app.GREG)==expected and g[16]==pc and
-         g[17]==(flags|(app.RF if event else 0)) and g[18]==0x2b000000000033 and
+         g[17]==(flags|(app.TF if raw_trace else app.RF if event else 0)) and g[18]==0x2b000000000033 and
          g[19:21]==((21,14)if event else(0,1)) and g[21]==app.MASK and
          g[22]==(pc if event else previous_nx), 'every original GPR/flag and exact final NX or post-close entry')
     need(u(si,0,3)==(sig,0,2) and q(si,16)[0]==pc,'literal TRACE or final original NX signal')
     if step in checkpoints:
         actual=native['observations'][0]['frames'][checkpoints[step]]['greg']
-        changed=list(actual);changed[17]=flags|(app.RF if event else 0)
+        changed=list(actual);changed[17]=flags|(app.TF if raw_trace else app.RF if event else 0)
         changed[19:21]=((21,14)if event else(0,1));changed[22]=pc if event else previous_nx
         need(g==tuple(changed),'whole23-register native checkpoint with exact final NX or post-close transformation')
     return dict(pc=pc,step=step,signal=sig,greg=g,fp_sha256=hashlib.sha256(fp).hexdigest())
@@ -72,12 +74,15 @@ def _key(raw,image,root,backing_size):
     need(len(raw)==8760 and q(raw)[0]==root,'whole exact source key root')
     index=ROOTS.index(root);pair=image['source_pairs'][index] if index<3 else image['reset_pair']
     base=(0x410000,0x412000,0x414000,0x416000)[index]
+    return _key_pages(raw,pair,base,image['source_offsets'][index],backing_size)
+
+def _key_pages(raw,pair,base,source_offset,backing_size):
     result=[]
     for i in range(2):
         at=8+i*4376;identity=struct.unpack_from('<5Q4I6Q',raw,at);backing=raw[at+104:at+280]
         fd=struct.unpack_from('<i',backing)[0];seals,returned=struct.unpack_from('<qq',backing,8)
         need(identity[0]==base+4096*i and identity[1]>0 and identity[2]>0 and
-             identity[3]==image['source_offsets'][index]+4096*i and identity[4]==0 and
+             identity[3]==source_offset+4096*i and identity[4]==0 and
              identity[5]==1 and identity[6]<34 and identity[7]==5 and identity[8]==1,
              'actual closed sealed executable-source identity')
         need(identity[9]<=identity[0] and identity[10]>=identity[0]+4096 and

@@ -1,6 +1,11 @@
 /* Test-only by-value observation of genuine CACHE8 activations. These fields
    never participate in publication, membership, dispatch or source authority. */
 #include "loop_cache8_observe.h"
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+#define LC8O_MAGIC UINT64_C(0x314f41544132494c)
+#define LC8O_FOOTER UINT64_C(0x314641544132494c)
+enum { LC8O_EPOCHS=14,LC8O_CONTROLS=24,LC8O_STOP=8971 };
+#else
 #define LC8O_MAGIC UINT64_C(0x314f38434132494c)
 #define LC8O_FOOTER UINT64_C(0x314638434132494c)
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
@@ -8,6 +13,7 @@
 enum { LC8O_EPOCHS=5,LC8O_CONTROLS=24,LC8O_STOP=8971 };
 #else
 enum { LC8O_EPOCHS=4,LC8O_CONTROLS=24,LC8O_STOP=8971 };
+#endif
 #endif
 struct lc8o_frame {
     uint64_t h[16],greg[23];
@@ -19,16 +25,26 @@ struct lc8o_member {
     uint64_t head[128];
 };
 struct lc8o_epoch {
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+    uint64_t h[32],counts[4][48];
+#else
     uint64_t h[32],counts[4][32];
+#endif
     struct lc8o_member member[8];
     unsigned char directory[12288];
     struct lc8o_frame entry,event;
 };
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+#include "loop_translation_arena_observe_types.inc"
+#endif
 struct lc8o_wire {
     uint64_t h[32];
     struct stat initial,terminal;
     struct lc8o_epoch epoch[LC8O_EPOCHS];
     uint64_t controls[LC8O_CONTROLS][4];
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+    struct ltao_wire arena;
+#endif
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
     struct lgdo_wire descriptor;
 #endif
@@ -38,10 +54,16 @@ _Static_assert(LI2_PTR_SLOTS==8 && LI2_PGD_MEMBERS==8 && LI2_PGD_RECEIPTS==9 &&
     "distinct cache8 dimensions, original plan and directory bounds");
 _Static_assert(sizeof(siginfo_t)==128 && sizeof(ucontext_t)==968 && sizeof(struct stat)==144 &&
     sizeof(struct lc8o_frame)==66944 && sizeof(struct lc8o_member)==9976 &&
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+    sizeof(struct lc8o_epoch)==227776 && sizeof(struct ltao_node)==592 &&
+    sizeof(struct ltao_raw)==13624 && sizeof(struct ltao_wire)==281144 &&
+    sizeof(struct lc8o_wire)==3471320,
+#else
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
     sizeof(struct lc8o_epoch)==227264 && sizeof(struct lc8o_wire)==1186576,
 #else
     sizeof(struct lc8o_epoch)==227264 && sizeof(struct lc8o_wire)==910368,
+#endif
 #endif
     "literal independently read cache8 wire");
 _Static_assert(sizeof(struct lc8o_wire)+64<4U*1024U*1024U,"unchanged bounded record capacity");
@@ -58,10 +80,24 @@ const uint64_t li2_lgdo_layout[] __attribute__((used,visibility("hidden")))={
     sizeof lhc.root,sizeof(union lhc_certificate_page),offsetof(struct lhc_root,cell),
     sizeof(struct lhc_certificate),sizeof(struct lgd_common_token)};
 #endif
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+const uint64_t li2_ltao_layout[] __attribute__((used,visibility("hidden")))={
+    1,sizeof(struct lc8o_wire),sizeof(struct lc8o_epoch),offsetof(struct lc8o_wire,arena),
+    sizeof(struct ltao_wire),sizeof(struct ltao_node),sizeof(struct ltao_raw),
+    sizeof(struct li2_private_code_query),sizeof(struct sbc_certificate),sizeof pe,
+    offsetof(struct li2_pg_epoch,arena)+offsetof(struct lta_state,node),sizeof(struct li2_ptr_slot),
+    offsetof(struct li2_ptr_slot,publication),sizeof lta_writer,sizeof lta_topology,
+    LC8O_EPOCHS,sizeof(struct lc8o_frame),sizeof(struct lc8o_member),sizeof(struct pe_payload)};
+#endif
 static struct {
     struct lc8o_wire wire;
     struct le_frame scratch;
     unsigned initialized,active,epochs,failure,busy,reported,controls,restorations;
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+    unsigned arena_controls,arena_restorations;
+    struct lta_dormant arena_saved;
+    unsigned char arena_page[PAGE];
+#endif
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
     struct lgdo_preentry_observation preentry;
     struct lgdo_common_observation common;
@@ -69,7 +105,7 @@ static struct {
     struct lhc_certificate isolation_certificate;
     uint64_t isolation_epoch[4];
 #endif
-#if LI2_LOOP_CACHE8_CONTROL == 1 || (defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) && LI2_LOOP_CACHE8_CONTROL != 0)
+#if LI2_LOOP_CACHE8_CONTROL == 1 || ((defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) || defined(LI2_LOOP_TRANSLATION_ARENA_OBSERVE)) && LI2_LOOP_CACHE8_CONTROL != 0)
     struct li2_pgd_view saved_view;
     struct li2_pgs_entry saved_entry;
     struct pda_completion saved_completion;
@@ -83,7 +119,11 @@ static _Noreturn void lc8o_fail(unsigned code) {
     selected_persistent_abort(PE_PUBLICATION,9000+(long)code);
 }
 static void lc8o_need(int value,unsigned code) {if(!value)lc8o_fail(code);}
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+static void lc8o_counts(uint64_t out[48]) {
+#else
 static void lc8o_counts(uint64_t out[32]) {
+#endif
     out[0]=*PGC_EVENT_REF;for(unsigned i=0;i<5;i++)out[1+i]=*PGC_SIGNAL_REF(i);
     const uint64_t owner[]={PGC_VALUE(publications),PGC_VALUE(cold_attempts),PGC_VALUE(hits),
         PGC_VALUE(offers),PGC_VALUE(entries),PGC_VALUE(completed)};
@@ -94,6 +134,13 @@ static void lc8o_counts(uint64_t out[32]) {
     const struct li2_loop_cache8_progress *p=li2_loop_cache8_progress();
     const uint64_t cache[]={p->cold_calls,p->compact_build_calls,p->compact_validate_calls,
         p->attach_attempts,p->accepted,p->source_declines};copy(out+19,cache,sizeof cache);
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+    const uint64_t arena[]={lta_writer.value.detached,lta_writer.value.rebound,
+        lta_writer.value.rebound_peers,lta_writer.value.cold_nodes,lta_writer.value.evicted,
+        lta_writer.value.epoch_invalidations,lta_writer.value.stale_refusals,
+        lta_writer.value.physical_checks,pe.arena.next_binding,lta_writer.value.poisoned};
+    copy(out+32,arena,sizeof arena);
+#endif
 }
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
 #include "loop_group_descriptor_observe.inc"
@@ -112,6 +159,9 @@ static void lc8o_frame(struct lc8o_frame *out,const struct le_frame *in,
     copy(out->greg,in->frame.greg,sizeof out->greg);copy(out->si,&in->si,sizeof out->si);
     copy(out->uc,&in->uc,sizeof out->uc);copy(out->fp,in->frame.fp,sizeof out->fp);
 }
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+#include "loop_translation_arena_observe.inc"
+#endif
 static int lc8o_initialize(void) {
     if(lc8o.initialized || protected_count>=RANGES ||
        selected_run_protect_add(0,(uintptr_t)&lc8o,sizeof lc8o))return PE_STATE;
@@ -136,15 +186,20 @@ static int lc8o_initialize(void) {
 #endif
     lc8o.initialized=1;return 0;
 }
-#if LI2_LOOP_CACHE8_CONTROL == 1 || (defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) && LI2_LOOP_CACHE8_CONTROL != 0)
+#if LI2_LOOP_CACHE8_CONTROL == 1 || ((defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) || defined(LI2_LOOP_TRANSLATION_ARENA_OBSERVE)) && LI2_LOOP_CACHE8_CONTROL != 0)
 static void lc8o_result(unsigned index,int value,int restored) {
     lc8o_need(index==lc8o.controls && index<LC8O_CONTROLS && value==0 && restored==1,2);
     uint64_t *r=lc8o.wire.controls[index];r[0]=index;r[1]=0;r[2]=(unsigned)value;r[3]=1;
     ++lc8o.controls;++lc8o.restorations;
 }
 static void lc8o_bound_controls(void) {
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+    if(lc8o.epochs!=4 || lc8o.controls)return;
+    lc8o_need(pe.domain.work.view.count==5 && pda_ready(0),3);
+#else
     if(lc8o.epochs!=2 || lc8o.controls)return;
     lc8o_need(pe.domain.work.view.count==3 && pda_ready(0),3);
+#endif
     lc8o.busy=1;lc8o.saved_view=pe.domain.work.view;lc8o.saved_entry=pe.entry;
     for(unsigned kind=0;kind<12;kind++) {
         struct li2_pgd_view *v=&pe.domain.work.view;
@@ -171,8 +226,13 @@ static void lc8o_bound_controls(void) {
     lc8o.busy=0;
 }
 static void lc8o_completion_controls(const struct pda_completion *original) {
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+    if(lc8o.epochs!=5)return;
+    lc8o_need(lc8o.controls==12 && original->count==5 && pda_receipt(original),5);
+#else
     if(lc8o.epochs!=3)return;
     lc8o_need(lc8o.controls==12 && original->count==3 && pda_receipt(original),5);
+#endif
     lc8o.busy=1;copy(&lc8o.saved_completion,original,sizeof lc8o.saved_completion);
     struct pda_completion *c=(struct pda_completion *)original;
     for(unsigned kind=0;kind<12;kind++) {
@@ -209,12 +269,17 @@ static void lc8o_bound(void) {
     if(lc8o.epochs>=3){lc8e_bound();return;}
 #endif
     uintptr_t entry=pe.domain.work.view.entry.target.pc;
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+    if(entry<UINT64_C(0x410200) || entry>UINT64_C(0x422200) ||
+       (entry-UINT64_C(0x410200))%UINT64_C(0x2000))return;
+#else
     if(entry!=UINT64_C(0x410200) && entry!=UINT64_C(0x412400) &&
        entry!=UINT64_C(0x414600) && entry!=UINT64_C(0x416000))return;
+#endif
     lc8o_need(lc8o.initialized && !lc8o.active && !lc8o.busy && lc8o.epochs<LC8O_EPOCHS,10);
     const struct li2_pgd_view *v=&pe.domain.work.view;
     lc8o_need(pda_ready(0) && v->count && v->count<=8,11);
-#if LI2_LOOP_CACHE8_CONTROL == 1 || (defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) && LI2_LOOP_CACHE8_CONTROL != 0)
+#if LI2_LOOP_CACHE8_CONTROL == 1 || ((defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) || defined(LI2_LOOP_TRANSLATION_ARENA_OBSERVE)) && LI2_LOOP_CACHE8_CONTROL != 0)
     lc8o_bound_controls();
 #endif
     struct lc8o_epoch *e=&lc8o.wire.epoch[lc8o.epochs];uint64_t *h=e->h;
@@ -222,9 +287,14 @@ static void lc8o_bound(void) {
     h[8]=pe.selected_slot;h[9]=pe.selected_bank;h[10]=pe.domain.work.receipt;
     h[11]=v->directory;h[12]=pe.entry.generation;h[13]=pe.entry.build_serial;
     h[14]=pe.entry.target.root;h[15]=pe.entry.target.generated;h[16]=pe.entry.target.head;
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+    h[28]=pe.arena.binding[pe.selected_slot].generation;h[29]=ptr_node_index(pe.selected_slot);
+    h[30]=lgd_group.value.id;
+    ltao_binding_controls();ltao_nodes(lc8o.epochs,0);
+#endif
     lc8o_counts(e->counts[0]);copy(e->directory,(void *)v->directory,sizeof e->directory);
     for(unsigned i=0;i<v->count;i++) {
-        const struct li2_pgd_member *m=&v->member[i];const struct li2_pg_generation *g=&pe.retained[m->identity.slot].generation;
+        const struct li2_pgd_member *m=&v->member[i];const struct li2_pg_generation *g=&PTR_SLOT_AT(m->identity.slot).generation;
         struct lc8o_member *out=&e->member[i];uint64_t *w=out->h;
         lc8o_need(m->plan->heads && m->plan->heads<=128,12);
         w[0]=1;w[1]=m->identity.slot;w[2]=m->identity.bank;w[3]=m->identity.generation;
@@ -232,6 +302,9 @@ static void lc8o_bound(void) {
         w[7]=m->plan->version;w[8]=m->plan->heads;w[9]=m->plan->exits;w[10]=m->plan->links;
         w[11]=m->key->entry;copy(w+12,&m->identity.layout,sizeof m->identity.layout);
         w[18]=g->ready_generation;w[19]=g->installed;w[20]=g->complete;w[21]=g->domain_refs;
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+        w[22]=m->identity.node;w[23]=m->identity.binding_generation;
+#endif
         copy(&out->key,m->key,sizeof out->key);
         for(unsigned j=0;j<m->plan->heads;j++)out->head[j]=m->plan->original[j].decoded.pc;
     }
@@ -284,13 +357,20 @@ static void lc8o_complete(const struct pda_completion *c) {
     lgdo_snapshot(lc8o.active-1,3);
     ++lc8o.epochs;lc8o.active=0;
 #else
-    lc8o_counts(e->counts[3]);++lc8o.epochs;lc8o.active=0;
+    lc8o_counts(e->counts[3]);
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+    ltao_nodes(lc8o.active-1,1);
+#endif
+    ++lc8o.epochs;lc8o.active=0;
 #endif
 #ifdef LI2_LOOP_CACHE8_EFFECTS
     lc8e_completed_first(c);
 #endif
-#if LI2_LOOP_CACHE8_CONTROL == 1 || (defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) && LI2_LOOP_CACHE8_CONTROL != 0)
+#if LI2_LOOP_CACHE8_CONTROL == 1 || ((defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) || defined(LI2_LOOP_TRANSLATION_ARENA_OBSERVE)) && LI2_LOOP_CACHE8_CONTROL != 0)
     lc8o_completion_controls(c);
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+    ltao_finished(c);
+#endif
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
     lgdo_finished(c);
 #endif
@@ -311,6 +391,9 @@ static void lc8o_report(unsigned status,unsigned code) {
     h[16]=lc8o.epochs;h[17]=lc8o.active;h[18]=lc8o.failure;h[19]=lc8o.busy;
     h[20]=lc8o.controls;h[21]=lc8o.restorations;h[22]=status;h[23]=code;
     h[24]=pe.p.first_error;h[25]=(uint64_t)pe.p.first_detail;h[26]=pe_active;h[27]=pe_busy;
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+    ltao_report(status,code);
+#endif
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
     lgdo_isolation_report(status,code);
     lgdo_common_report(status,code);

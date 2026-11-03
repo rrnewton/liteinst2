@@ -4,6 +4,9 @@
 #if defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) && defined(LI2_LOOP_CACHE8_EFFECTS)
 #error "descriptor and real-effect observation profiles are distinct"
 #endif
+#ifdef LI2_LOOP_TRANSLATION_ARENA_OBSERVE
+#include "loop_translation_arena_observe.h"
+#else
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
 #if !defined(LI2_LOOP_CACHE8_OBSERVE) || LI2_LOOP_CACHE8_OBSERVE != 1 || \
     !defined(LI2_LOOP_CACHE8_CONTROL) || \
@@ -21,7 +24,8 @@
 #error "exact distinct CACHE8 ABC169 observer binding required"
 #endif
 #endif
-#if (LI2_LOOP_CACHE8_CONTROL == 1 || (defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) && LI2_LOOP_CACHE8_CONTROL != 0)) && (!defined(LI2_SEALED_BYTE_CERTIFICATE_DIFFERENTIAL) || LI2_SEALED_BYTE_CERTIFICATE_DIFFERENTIAL != 1)
+#endif
+#if (LI2_LOOP_CACHE8_CONTROL == 1 || ((defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) || defined(LI2_LOOP_TRANSLATION_ARENA_OBSERVE)) && LI2_LOOP_CACHE8_CONTROL != 0)) && (!defined(LI2_SEALED_BYTE_CERTIFICATE_DIFFERENTIAL) || LI2_SEALED_BYTE_CERTIFICATE_DIFFERENTIAL != 1)
 #error "actual restored CACHE8 controls require every-hit differential certificates"
 #endif
 struct pda_completion;

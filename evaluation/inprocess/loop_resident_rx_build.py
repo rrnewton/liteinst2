@@ -17,8 +17,11 @@ RX_LIFETIME=dict(version=1,slots=2,source_release_version=1,
     metadata_permission_counts='actual-pe_permission-calls-only',qualification_credit=False)
 
 
-def build_rx(builder, archive, original, directory, pin, binary, aliases, run, state, mode, *, control=None, selected=None, root=None, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None, arena=False):
+def build_rx(builder, archive, original, directory, pin, binary, aliases, run, state, mode, *, control=None, selected=None, root=None, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None, arena=False, arena_observe=None):
     """Execute the real source-owned recipe, then bind its exact compiler closure."""
+    need(arena_observe is None or type(arena_observe)is int and arena_observe in (0,1,2) and
+         arena and (arena_observe==0 or mode=='differential'),
+         'literal arena positive/restored/inactive-ABA subject')
     need(type(arena)is bool and (not arena or cache8 and group_descriptor and not recurrence and
          cache8_observe is None and group_descriptor_observe is None and not cache8_program and
          cache8_effects is None and control is None),
@@ -60,6 +63,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     if cache8_effects is not None:stem+='-effects'
     if group_descriptor and cache8_program:stem+='-program'
     if arena:stem='persistent-loop-translation-arena'
+    if arena_observe is not None:stem+='-observe'
     binder_name=stem.replace('-','_')+'_binding'
     output = directory/'build'; output.mkdir()
     script = pin(selected/('build-'+stem+'.sh'))
@@ -93,13 +97,15 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     if cache8_observe is not None:policy_value['cache8_control']=cache8_observe
     if group_descriptor_observe is not None:policy_value['group_descriptor_control']=group_descriptor_observe
     if cache8_effects is not None:policy_value['cache8_effect']=cache8_effects
+    if arena_observe is not None:policy_value['arena_control']=arena_observe
     policy = digest(policy_value)
     environment = dict(builder.environment, LI2_CC=str(builder.tools['cc']), LI2_PYTHON=str(builder.tools['python']))
     _, out, err = run('build', [builder.tools['sh'], script, archive, original, output, mode]+
                       ([] if control is None else [str(control)])+
                       ([] if cache8_observe is None else [str(cache8_observe)])+
                       ([] if group_descriptor_observe is None else [str(group_descriptor_observe)])+
-                      ([] if cache8_effects is None else [str(cache8_effects)]),
+                      ([] if cache8_effects is None else [str(cache8_effects)])+
+                      ([] if arena_observe is None else [str(arena_observe)]),
                       profile='release_build', env=environment)
     need(out == err == b'', 'actual RO recipe has no diagnostics')
     manifest = binary(output/(binder_name+'.json'))
@@ -116,7 +122,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     need(set(binding) == set(constants) | {'profile', 'mode', 'archive', 'policy_sha256',
              'original', 'sources', 'headers', 'byte_certificate', 'history_certificate', 'rx_lifetime'} |
              (set() if control is None else {'control','oracle'}) |
-             ({'recurrence'} if recurrence else set()) | ({'cache8'} if cache8 else set()) | ({'cache8_observer'} if cache8_observe is not None else set()) | ({'cache8_program'} if cache8_program else set()) | ({'group_descriptor'} if group_descriptor else set()) | ({'group_descriptor_observer'} if group_descriptor_observe is not None else set()) | ({'cache8_effects'} if cache8_effects is not None else set()) | ({'arena'} if arena else set())
+             ({'recurrence'} if recurrence else set()) | ({'cache8'} if cache8 else set()) | ({'cache8_observer'} if cache8_observe is not None else set()) | ({'cache8_program'} if cache8_program else set()) | ({'group_descriptor'} if group_descriptor else set()) | ({'group_descriptor_observer'} if group_descriptor_observe is not None else set()) | ({'cache8_effects'} if cache8_effects is not None else set()) | ({'arena'} if arena else set()) | ({'arena_observer'} if arena_observe is not None else set())
          and digest({key: binding[key] for key in constants}) == digest(constants)
          and binding['profile'] == stem+'-'+mode+'-v1'
          and binding['mode'] == mode and binding['archive'] == fact(archive)
@@ -171,6 +177,13 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
              raw_invalidation='all-nodes-before-kernel-nonwrapping-epochs',
              inactive_heads_exposed=False,old_capture_compatible=False,qualification_credit=False),
              'exact inactive-node value custody and fresh eight-member execution authority')
+    if arena_observe is not None:
+        need(binding['arena_observer']==dict(version=1,control=arena_observe,reference='arena10-ab791',
+             epochs=14,wire_bytes=3471320,epoch_bytes=227776,layout_words=19,
+             old_controls=24 if arena_observe else 0,
+             binding_controls=20 if arena_observe==1 else 12 if arena_observe==2 else 0,
+             observation_authority=False,qualification_credit=False),
+             'exact separate arena frame/node/query observation')
     if cache8_observe is not None:
         need(binding['cache8_observer']==dict(version=1,control=cache8_observe,reference='cache8-abc169',
              observation_authority=False,qualification_credit=False),'exact distinct cache8 observer schema')
@@ -203,6 +216,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
         ('#define LI2_PG_LOOP_CACHE8_PROGRAM_BINDING_VERSION 1\n' if cache8_program else '')+
         ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_BINDING_VERSION 1\n' if group_descriptor else '')+
         ('#define LI2_PG_LOOP_TRANSLATION_ARENA_BINDING_VERSION 1\n' if arena else '')+
+        ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n#define LI2_PG_LOOP_TRANSLATION_ARENA_OBSERVE_BINDING_VERSION 1\n' if arena_observe is not None else '')+
         ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_OBSERVE_BINDING_VERSION 1\n' if group_descriptor_observe is not None else '')+
         ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n#define LI2_PG_LOOP_CACHE8_EFFECTS_BINDING_VERSION 1\n' if cache8_effects is not None else '')+
         ('#define LI2_PG_LOOP_RESIDENT_RX_ORACLE_BINDING_VERSION 1\n' if control is not None else '')+
@@ -218,7 +232,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     rows = recipe(script, '"$cc_bin"'); need(len(rows) == 1, 'one actual RO link command')
     substitutions = {'$cc_bin': builder.tools['cc'], '$selected_dir': selected,
         '$parent_dir': selected.parent, '$archive': archive, '$output': output,
-        '$control':str(cache8_effects if cache8_effects is not None else group_descriptor_observe if group_descriptor_observe is not None else cache8_observe if cache8_observe is not None else control)}
+        '$control':str(arena_observe if arena_observe is not None else cache8_effects if cache8_effects is not None else group_descriptor_observe if group_descriptor_observe is not None else cache8_observe if cache8_observe is not None else control)}
     argv = expand(rows[0], substitutions)
     old = recipe(pin(selected/'build-persistent-loop-effects.sh'), '"$cc_bin"')
     need(len(old) == 1, 'one unchanged effects release recipe')
@@ -228,6 +242,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
         (['-DLI2_LOOP_CACHE8=1'] if cache8 else [])+
         (['-DLI2_LOOP_GROUP_DESCRIPTOR=1'] if group_descriptor else [])+
         (['-DLI2_LOOP_TRANSLATION_ARENA=1'] if arena else [])+
+        ([] if arena_observe is None else ['-DLI2_LOOP_TRANSLATION_ARENA_OBSERVE=1','-DLI2_LOOP_CACHE8_OBSERVE=1','-DLI2_LOOP_CACHE8_CONTROL='+str(arena_observe)])+
         ([] if group_descriptor_observe is None else ['-DLI2_LOOP_GROUP_DESCRIPTOR_OBSERVE=1','-DLI2_LOOP_CACHE8_OBSERVE=1','-DLI2_LOOP_CACHE8_CONTROL='+str(group_descriptor_observe)])+
         (['-DLI2_LOOP_CACHE8_PROGRAM=1'] if cache8_program else [])+
         ([] if cache8_effects is None else ['-DLI2_LOOP_CACHE8_OBSERVE=1','-DLI2_LOOP_CACHE8_EFFECTS=1','-DLI2_LOOP_CACHE8_CONTROL='+str(cache8_effects)])+
@@ -236,6 +251,9 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     if cache8:
         expected.insert(expected.index('-Wl,-e,_start,-Bsymbolic,-z,now,-z,relro,-z,noexecstack,--build-id=none,--no-undefined'),
             '-Wl,--undefined=li2_loop_cache8_progress')
+    if arena_observe is not None:
+        expected.insert(expected.index('-Wl,-e,_start,-Bsymbolic,-z,now,-z,relro,-z,noexecstack,--build-id=none,--no-undefined'),
+            '-Wl,--undefined=li2_ltao_layout')
     if group_descriptor_observe is not None:
         expected.insert(expected.index('-Wl,-e,_start,-Bsymbolic,-z,now,-z,relro,-z,noexecstack,--build-id=none,--no-undefined'),
             '-Wl,--undefined=li2_lgdo_layout')
@@ -288,6 +306,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
              'actual isolated page-aligned certificate/owner storage '+name)
     if recurrence:state['recurrence_layout']=recurrence_layout(bridge,out)
     if group_descriptor_observe is not None:state['descriptor_observer_layout']=descriptor_observer_layout(bridge,out)
+    if arena_observe is not None:state['arena_observer_layout']=arena_observer_layout(bridge,out)
     state.update(bridge=fact(bridge), status='compiled_diagnostic_only')
     return bridge
 
@@ -344,3 +363,39 @@ def recurrence_layout(bridge, symbols):
     actual=struct.unpack_from('<'+str(len(expected))+'Q',data,offset)
     need(actual==expected,'all37 actual compiler sizes and offsets equal independent reader layout')
     return dict(symbol='li2_lrc_layout',address=address,bytes=size,values=list(actual),inferior_started=False)
+
+
+def arena_observer_layout(bridge,symbols):
+    """Actual readonly compiler layout and isolated arena storage extents."""
+    import struct
+    data,_,segments=elf(bridge)
+    def symbol(name,kinds):
+        rows=[line.split()for line in symbols.splitlines()if line.split()[-1:]==[name.encode()]]
+        need(len(rows)==1 and len(rows[0])==4 and rows[0][2]in kinds,'one arena layout/storage symbol '+name)
+        address,size=int(rows[0][0],16),int(rows[0][1],16)
+        need(address>0 and size>0,'complete nonempty arena layout/storage symbol')
+        return dict(address=address,bytes=size)
+    item=symbol('li2_ltao_layout',(b'r',b'R'));address,size=item['address'],item['bytes']
+    need(size==19*8,'exact nineteen-word arena compiler layout')
+    loads=[p for p in segments if p[0]==1 and p[1]==4 and p[3]<=address<address+size<=p[3]+p[5]]
+    need(len(loads)==1,'whole arena layout in one actual readonly LOAD')
+    load=loads[0];values=struct.unpack_from('<19Q',data,load[2]+address-load[3])
+    need(values[:9]==(1,3471320,227776,3190176,281144,592,13624,296,200) and
+         values[13:18]==(8192,4096,14,66944,9976) and 0<values[18]<=89*4096 and
+         all(values[i]>0 and values[i]%4096==0 for i in (9,10,11,12)) and
+         values[10]+12*values[11]<=values[9] and values[12]+89*4096<=values[11],
+         'exact wire and actual final-address twelve-node owner geometry')
+    owners={name:symbol(name,(b'b',b'B'))for name in ('pe','lta_writer','lta_topology','sg_owner','lc8o')}
+    for name,index in (('pe',9),('lta_writer',13),('lta_topology',14)):
+        obj=owners[name]
+        need(obj['bytes']==values[index] and obj['address']%4096==0,
+             'actual isolated arena extent '+name)
+    need(owners['sg_owner']['bytes']==8192 and owners['sg_owner']['address']%4096==0 and
+         owners['lc8o']['bytes']>values[1],'actual sealed backing and complete arena observer storage')
+    for i,(name,a)in enumerate(owners.items()):
+        need(sum(p[0]==1 and p[1]==6 and p[3]<=a['address']<a['address']+a['bytes']<=p[3]+p[6]
+                 for p in segments)==1,'whole actual writable ELF storage '+name)
+        for other,b in list(owners.items())[:i]:
+            need(a['address']+a['bytes']<=b['address'] or b['address']+b['bytes']<=a['address'],
+                 'distinct arena observation/authority extents '+name+'/'+other)
+    return dict(version=1,symbol=item,values=list(values),owners=owners,inferior_started=False)

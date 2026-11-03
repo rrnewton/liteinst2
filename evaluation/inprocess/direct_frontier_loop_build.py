@@ -56,10 +56,24 @@ def inspect_application(builder,private,pin,binary,run,state,original,app_units,
 def copy_oracle(builder,private,pin,binary,run,state,original,app_symbol,app_units, *, fixture=None):
     """Bound the actual fixture helper to an independent complete-byte oracle."""
     fixture=FIXTURE if fixture is None else Path(fixture).resolve(strict=True)
-    script=pin(fixture/'build-copy-oracle.sh');output=private/'active-app-copy-oracle'
+    arena='-DLI2_LOOP_TRANSLATION_ARENA_APP=1' in state['argv']
+    support=fixture.parent/'persistent_direct_frontier_app' if arena else fixture
+    if arena:
+        need(fixture.name=='loop_translation_arena_app' and
+             state['argv'].count('-DLI2_LOOP_TRANSLATION_ARENA_APP=1')==1 and
+             not any(x.startswith(('-DLI2_LOOP_RX_REFERENCE44=',
+                 '-DLI2_LOOP_GROUP_DESCRIPTOR_APP=','-DLI2_LOOP_CACHE8_EFFECT='))for x in state['argv']),
+             'one literal arena selector and the original shared copy-oracle source')
+    script=pin(support/'build-copy-oracle.sh');output=private/'active-app-copy-oracle'
     rows=recipe(script,'"$cc"');need(len(rows)==1,'one actual two-TU copy oracle recipe')
     argv=expand(rows[0],{'$cc':builder.tools['cc'],'$source_dir':fixture,'$output':output})
-    units=[str(pin(fixture/n))for n in('copy_oracle.c','pure.c')]
+    if arena:
+        need(argv.count(str(fixture/'copy_oracle.c'))==1,'one explicit shared oracle translation unit')
+        argv[argv.index(str(fixture/'copy_oracle.c'))]=str(pin(support/'copy_oracle.c'))
+        need(argv.count('-DLI2_FAST_EQUAL=1')==1,'one original helper-equality selector')
+        argv.insert(argv.index('-DLI2_FAST_EQUAL=1')+1,'-DLI2_LOOP_TRANSLATION_ARENA_APP=1')
+    if arena:units=[str(pin(support/'copy_oracle.c')),str(pin(fixture/'pure.c'))]
+    else:units=[str(pin(fixture/n))for n in ('copy_oracle.c','pure.c')]
     if '-DLI2_LOOP_RX_REFERENCE44=1' in state['argv']:
         argv.insert(argv.index('-Werror')+1,'-DLI2_LOOP_RX_REFERENCE44=1')
     if '-DLI2_LOOP_GROUP_DESCRIPTOR_APP=1' in state['argv']:
@@ -88,7 +102,7 @@ def copy_oracle(builder,private,pin,binary,run,state,original,app_symbol,app_uni
     need(not err and len(lines)==2 and all(x.startswith('li2_copy: ')for x in lines),
          'whole actual two-TU copy oracle header closure')
     includes={str(pin(n)):fact(pin(n))for line in lines for n in shlex.split(line.split(':',1)[1])}
-    need(set(units)|{str(fixture/'app.h')}<=set(includes)and
+    need(set(units)|{str(support/'app.h')}<=set(includes)and
          includes[str(fixture/'pure.c')]==state['headers'][str(fixture/'pure.c')],
          'oracle and application use the same complete actual helper source')
     observed['headers']=includes

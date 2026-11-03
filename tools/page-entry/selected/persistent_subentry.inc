@@ -97,6 +97,14 @@ static int lta_choose(uintptr_t pc,struct pe_sub_choice *out,unsigned *node_out)
             if(lta_node_bound(node)<0 && !PTR_NODE_AT(node).generation.installed) {
                 *node_out=node;break;
             }
+    /* A full arena must also replace older inactive publications; otherwise
+       dormant startup nodes permanently reduce the reusable capacity. The
+       preceding scan authenticated every installed inactive node. */
+    if(*node_out==bound && PTR_NODE_AT(bound).generation.installed)
+        for(unsigned node=0;node<PTR_NODE_COUNT;node++)
+            if(lta_node_bound(node)<0 && PTR_NODE_AT(node).generation.installed &&
+               PTR_NODE_AT(node).last_completed<PTR_NODE_AT(*node_out).last_completed)
+                *node_out=node;
     return 1;
 }
 #endif
