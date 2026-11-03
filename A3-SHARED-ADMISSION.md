@@ -62,8 +62,12 @@ not establish application execution or the caller's complete-code premise.
 Both frontends already call the same core instruction encoder. The legacy
 live-window/exact-syscall and ordered-artifact paths still duplicate internal
 save/callback/restore orchestration; ELF layout and live publication remain
-separate output adapters. The disassembly ledger importer and back-edge clock
-also retain graph consumers to consolidate. These changes do not implement
+separate output adapters. The two owned back-edge clock profiles now use the
+shared graph constructor, indexed successors and reachability; the two-backedge
+region also uses shared structural returnability. Each retains its original
+scalar, prefix, entry and backedge admission rules. The disassembly ledger
+importer still has global block-cut and direct-target policy to consolidate.
+These changes do not implement
 certificates or certify complete binary CFG recovery.
 
 The first direct GNU coreutils 9.5 `cat` comparison at

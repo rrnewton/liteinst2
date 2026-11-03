@@ -1,5 +1,6 @@
 //! Byte/control-flow checks only; external entry and memory ownership are not decoded.
 use super::ClockError;
+use crate::control_flow;
 use crate::scanner::InstructionScanner;
 use iced_x86::{FlowControl, Mnemonic, OpKind, Register};
 
@@ -11,10 +12,9 @@ pub(super) fn admit(bytes: &[u8], base: u64, logical_pc: u64) -> Result<Option<u
         .scan(bytes, base)
         .map_err(|_| ClockError::Source)?;
     let items = scan.instructions();
-    let mut successors = vec![Vec::new(); items.len()];
     let mut backedge = None;
     let mut returns = 0;
-    for (index, item) in items.iter().enumerate() {
+    let graph = control_flow::build(&scan, |index, item, row| {
         let instruction = item.instruction();
         let raw = &bytes[item.offset()..item.offset() + item.len()];
         if instruction.has_lock_prefix()
@@ -51,7 +51,6 @@ pub(super) fn admit(bytes: &[u8], base: u64, logical_pc: u64) -> Result<Option<u
                 {
                     return Err(ClockError::Source);
                 }
-                successors[index].push(index + 1);
             }
             FlowControl::Return if raw == [0xc3] && index + 1 == items.len() => {
                 returns += 1;
@@ -67,9 +66,8 @@ pub(super) fn admit(bytes: &[u8], base: u64, logical_pc: u64) -> Result<Option<u
                         | [0xe9, _, _, _, _]
                 );
                 let target = instruction.near_branch_target();
-                let destination = items
-                    .iter()
-                    .position(|i| i.address() == target)
+                row.branch_target()
+                    .and_then(|target| target.head())
                     .ok_or(ClockError::Source)?;
                 if !direct || target == item.address() {
                     return Err(ClockError::Source);
@@ -86,29 +84,22 @@ pub(super) fn admit(bytes: &[u8], base: u64, logical_pc: u64) -> Result<Option<u
                         return Err(ClockError::Source);
                     }
                 }
-                successors[index].push(destination);
-                if instruction.flow_control() == FlowControl::ConditionalBranch {
-                    if index + 1 == items.len() {
-                        return Err(ClockError::Source);
-                    }
-                    successors[index].push(index + 1);
+                if instruction.flow_control() == FlowControl::ConditionalBranch
+                    && index + 1 == items.len()
+                {
+                    return Err(ClockError::Source);
                 }
             }
             _ => return Err(ClockError::Source),
         }
-    }
+        Ok(())
+    })?;
     if returns != 1 {
         return Err(ClockError::Source);
     }
     let condition = backedge.ok_or(ClockError::Source)?;
-    let mut reached = vec![false; items.len()];
-    let mut pending = vec![0];
-    while let Some(index) = pending.pop() {
-        if !reached[index] {
-            reached[index] = true;
-            pending.extend(successors[index].iter().copied());
-        }
-    }
+    let indexed = graph.indexed().map_err(|_| ClockError::Source)?;
+    let reached = indexed.reachable_from(0).map_err(|_| ClockError::Source)?;
     if reached.iter().any(|seen| !seen) {
         return Err(ClockError::Source);
     }
