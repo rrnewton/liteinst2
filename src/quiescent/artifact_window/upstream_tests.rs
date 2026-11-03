@@ -241,8 +241,9 @@ fn short_span_uses_one_legal_prefix_and_preserves_every_head_and_observer() {
 #[test]
 fn constrained_offset_refuses_before_prefix_fits_in_the_same_arena() {
     // At logical0x4068fb, the +2/+4 heads fix rel32 bytes1/3 to06.
-    // Its minimum page offset is0xf00, leaving256B. At the four-byte
-    // LEA prefix only byte3 is fixed, so a page-aligned target is possible.
+    // This ordinal-zero mask domain has offsets0xf00..0xfff: at most256B.
+    // At the four-byte LEA prefix only byte3 is fixed. The fitter retains
+    // its available certified default seed BEFORE minimizing page offset.
     let logical = 0x0040_68fb;
     let f = Fixture::new(
         logical - 4,
@@ -263,6 +264,24 @@ fn constrained_offset_refuses_before_prefix_fits_in_the_same_arena() {
         exact.search.refusals.last().unwrap().class,
         RefusalClass::AddressPolicy
     );
+    assert_eq!(
+        candidate_target(logical, [false, true, false, true], None, 0),
+        Some(0x0641_6f00)
+    );
+    let prefix_window = crate::trampoline::ArtifactObservationWindow::checked(
+        &scan,
+        logical - 4,
+        logical + 5,
+        &pcs,
+    )
+    .unwrap();
+    let prefix_prepared =
+        crate::trampoline::PreparedArtifact::for_observation_window(&prefix_window, &f.emission)
+            .unwrap();
+    // The same three observers plus one ordinary LEA: fitting.rs charges15B
+    // for that additional original instruction, not an extra observer.
+    assert_eq!(prefix_prepared.size_bound(), prepared.size_bound() + 15);
+    assert!(prefix_prepared.size_bound() <= 4096 - 0x8fc);
     let group = f.plan(&pcs, logical + 5).unwrap();
     assert_eq!(
         group.artifact().source_steps()[0].parts().physical_pc,
@@ -272,9 +291,33 @@ fn constrained_offset_refuses_before_prefix_fits_in_the_same_arena() {
         group.artifact().source_steps()[0].parts().displaced.end(),
         logical + 5
     );
+    let image = group.artifact().images().next().unwrap();
+    let next = (logical - 4) + 5;
+    // Default displacement0x10000 has bytes[00,00,01,00]; constraining only
+    // byte3 to06 gives[00,00,01,06], independently of the observed result.
+    let expected_target = next + 0x0601_0000;
+    assert_eq!(expected_target, 0x0641_68fc);
     assert_eq!(
-        group.artifact().images().next().unwrap().address() % 4096,
-        0
+        candidate_target(logical - 4, [false, false, false, true], None, 0),
+        Some(expected_target)
+    );
+    assert_eq!(image.address(), expected_target);
+    assert_eq!(image.address() % 4096, 0x8fc);
+    assert!(image.bytes().len() <= prefix_prepared.size_bound());
+    assert!(image.address() % 4096 + prefix_prepared.size_bound() as u64 <= 4096);
+    assert_eq!(group.artifact().images().count(), 1);
+    let parts = group.artifact().source_steps()[0].parts();
+    assert_eq!(parts.writes.len(), 1);
+    assert_eq!(&parts.writes[0].bytes[..5], &[0xe9, 0, 0, 1, 0x06]);
+    assert_eq!(parts.allocations.len(), 1);
+    assert_eq!(
+        parts.allocations[0].range,
+        AddressRange::new(expected_target & !4095, 4096).unwrap()
+    );
+    assert!(
+        parts.allocations[0]
+            .range
+            .covers(AddressRange::new(image.address(), image.bytes().len()).unwrap())
     );
     assert_eq!(
         metrics(&group)
