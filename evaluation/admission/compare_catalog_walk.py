@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 DONOR_REVISION = 'e6bc85380d732e1046cde162c8b26d1ef95b3461'
 SOURCE = 'evaluation/admission/core_97ab_inventory.py'
 DONOR_SHA = '99f3ef0f027a95d26de2a4aec6d3b9e365e29d1e028a713847cdec43100371df'
-CANDIDATE_SHA = '475993de604227b5dd95bfafebddb5013b198990b5317ec3ab20ead555a81365'
+CANDIDATE_SHA = 'dd3658071887ba3fb8a4323bf39d835a33198ff0887405e6e3e4a5f6fce73fc5'
 
 
 def load(path, expected, candidate, overrides=None):

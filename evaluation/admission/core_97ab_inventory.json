@@ -600,7 +600,7 @@
       "previous_sha256": "9a3ea0d5eac1e23d005b86eac0d95d96c944d97294cce067a9717067a165da12"
     },
     "evaluation/admission/recorder_parallel.py": {
-      "current_sha256": "c438031ff4a60ae9c09cff918ac039c109fabba5b4379ed45aece2fad51865bd",
+      "current_sha256": "e2f64edf97aa140f77c4f9f3c24f6b7699ba137b05d35019c5f54f8afe67a7b4",
       "edits": [
         [
           1392,
@@ -23019,7 +23019,7 @@
     "evaluation/admission/core_dd75_inventory.py": "45843b2c377b1f801da421ed20397f11f74c785e2c03bf255926e74a4c5f70b8",
     "evaluation/admission/core_f353_inventory.py": "6bf6ad784ebf0c624ce02cee27b13217d78b1063c386f063f49f7012af044199",
     "evaluation/admission/parsing.py": "c51d69252cba8db3d286f9c2dc6e0c91709873d825f77cef9ff5f982a8dda86b",
-    "evaluation/admission/recorder_parallel.py": "c438031ff4a60ae9c09cff918ac039c109fabba5b4379ed45aece2fad51865bd",
+    "evaluation/admission/recorder_parallel.py": "e2f64edf97aa140f77c4f9f3c24f6b7699ba137b05d35019c5f54f8afe67a7b4",
     "evaluation/admission/recorder_shards_inventory.py": "4563e24c11ff1dde2c5b9be242d84cccc5b740a9cce6b42e3319439475b2e6a8",
     "evaluation/admission/test_main0fb574_inventory.py": "23dc3397b29d500ec40529f14eb3f9aba466affc14e1c0f9953b5e405582f4fa",
     "evaluation/admission/test_main20cbe_inventory.py": "cef985fb3e1eb1b4204cf9ad6cfa83219fe999d8403b25bb4a8cf4bdce3fc03c",
