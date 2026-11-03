@@ -751,7 +751,7 @@
       "previous_sha256": "154ea2ceef91052ff23126b4ca54e0fbcf9b511340f4805d80cc82b2128f929e"
     },
     "evaluation/admission/test_main813_inventory.py": {
-      "current_sha256": "7823badbd86e65b1597d70cecc64300f44b8880de28666a2dba8ba1554560396",
+      "current_sha256": "410148cd9cb22a37e4a1cd6d855a10341f33271ad5b62978973aa963f7111c43",
       "edits": [
         [
           388,
@@ -765,27 +765,27 @@
         ],
         [
           236976,
-          237098,
+          237253,
           ""
         ],
         [
-          237181,
-          237341,
+          237336,
+          237610,
           "             patch.dict(artifact_layer.DATA, projections=artifact_projections):\n"
         ],
         [
-          258879,
-          258997,
+          259148,
+          259266,
           ""
         ],
         [
-          259147,
-          259424,
+          259416,
+          259693,
           "        with patch.dict(main813.MAINFRONTEND, sources=frontend_without_parser), patch.dict(main813.MAINROUTED, sources=routed_without_parser), patch.dict(main813.MAINROUTEDNATIVE, sources=native_without_parser):\n"
         ],
         [
-          259592,
-          259915,
+          259861,
+          260184,
           "        with patch.dict(adjacent, sources=without_parser), patch.dict(main813.MAINFRONTEND, sources=frontend_without_parser), patch.dict(main813.MAINROUTED, sources=routed_without_parser), patch.dict(main813.MAINROUTEDNATIVE, sources=native_without_parser):\n"
         ]
       ],
@@ -1032,7 +1032,7 @@
       "previous_sha256": "b3b0c8d33e580affbd078b283fd13c3cdbf44d4855397aac694f4385880bdd1c"
     },
     "evaluation/admission/test_maind8d85_inventory.py": {
-      "current_sha256": "4151ab35f7f9bdd186c3f961c671697fbbad41b94bca05a4d5175cf734cdd12d",
+      "current_sha256": "e49e282e405348502e23f54adada46d9229bd51e5c4292a2fc4f5a4b9d83c9a8",
       "edits": [
         [
           383,
@@ -1041,42 +1041,42 @@
         ],
         [
           466,
-          517,
+          529,
           ""
         ],
         [
-          636,
-          773,
+          648,
+          785,
           "        actual = indexed.before_current(json.loads(Path(__file__).with_name('corpus.json').read_bytes()))\n"
         ],
         [
-          3086,
-          3212,
+          3098,
+          3224,
           "        identities = indexed.before_python(historical.python_identities(Path(__file__).parent))\n"
         ],
         [
-          5522,
-          5681,
+          5534,
+          5651,
           ""
         ],
         [
-          5830,
-          7898,
+          5800,
+          7160,
           ""
         ],
         [
-          8149,
-          8240,
+          7411,
+          7502,
           "                at = raw.index(before.encode()); stop = at + len(before.encode())\n"
         ],
         [
-          8596,
-          8691,
+          7858,
+          7953,
           "                upstream[path].update(current_sha256=hashlib.sha256(wrong).hexdigest(),\n"
         ],
         [
-          8876,
-          9313,
+          8138,
+          9072,
           "            with patch.dict(indexed.DATA['projections'], upstream):\n"
         ]
       ],
@@ -16659,13 +16659,13 @@
     "evaluation/admission/test_main20cbe_inventory.py": "cef985fb3e1eb1b4204cf9ad6cfa83219fe999d8403b25bb4a8cf4bdce3fc03c",
     "evaluation/admission/test_main34c47_inventory.py": "fa2bb240bd7a9fdb6e79f18635ffe959fcd38facf479b882340aab5dca4461a0",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
-    "evaluation/admission/test_main813_inventory.py": "7823badbd86e65b1597d70cecc64300f44b8880de28666a2dba8ba1554560396",
+    "evaluation/admission/test_main813_inventory.py": "410148cd9cb22a37e4a1cd6d855a10341f33271ad5b62978973aa963f7111c43",
     "evaluation/admission/test_main97ab_inventory.py": "261cd51ed6a79af38e3d80ff4b206544abfd1c14ed234d1de5759a4e5c5993b2",
     "evaluation/admission/test_main981419_inventory.py": "a75ae36eed8dc312b702821d50c991e126430a4f3e294342d2b43e29cd1ff034",
     "evaluation/admission/test_mainacc247_inventory.py": "9deada610eedcdc46ef6ebba60f58fedcbf0171f382d7895f42c27756afe1c17",
     "evaluation/admission/test_mainaf81_inventory.py": "d9966ddc3611cff190bf79dd548c9a57c99bb40e8be03cdd589300859ebdf465",
     "evaluation/admission/test_mainc712_inventory.py": "f83655db9a2f51f91a3f245e7d04cd52a5bd749bdcf2d52c14d1d4e8c35c0825",
-    "evaluation/admission/test_maind8d85_inventory.py": "4151ab35f7f9bdd186c3f961c671697fbbad41b94bca05a4d5175cf734cdd12d",
+    "evaluation/admission/test_maind8d85_inventory.py": "e49e282e405348502e23f54adada46d9229bd51e5c4292a2fc4f5a4b9d83c9a8",
     "evaluation/admission/test_maindd75_inventory.py": "4bd221188c28323d7af430d1c6e43dd201cd8659001fbeb1449dadb81402c156",
     "evaluation/admission/test_mainf353_inventory.py": "1e66715015dcc39dead5db53a17f7953f05d2e5554c6678d945f637b4cab6fdc",
     "evaluation/direct-program/direct_data.py": "225f17119fd52fffed556df8220af4bd6b58b29c356cf549a19e8d72e0ac51d7",

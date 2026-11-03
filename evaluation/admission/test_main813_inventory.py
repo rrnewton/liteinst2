@@ -3577,9 +3577,12 @@ class Main813InventoryTests(unittest.TestCase):
         del artifact_projections['src/trampoline.rs']
         native_projections = dict(native_indexed.DATA['projections'])
         del native_projections['src/trampoline.rs']
+        fixed_projections = dict(native_indexed.DATA['source_successor_064b48c']['source_projections'])
+        del fixed_projections['src/trampoline.rs']
         with patch.dict(main813.MAINROUTED, projections=historical_projections), \
              patch.dict(artifact_layer.DATA, projections=artifact_projections), \
-             patch.dict(native_indexed.DATA, projections=native_projections):
+             patch.dict(native_indexed.DATA, projections=native_projections), \
+             patch.dict(native_indexed.DATA['source_successor_064b48c'], source_projections=fixed_projections):
             self.assertIs(main813.source_before_short_pending('src/trampoline.rs', pending_unchanged, 'changed'),
                           pending_unchanged)
         # Bad old tables must fail after a valid pending source/inverse, not before it.
