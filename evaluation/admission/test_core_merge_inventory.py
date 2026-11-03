@@ -1,6 +1,6 @@
 """Static merged-core catalog and strict Cargo header controls."""
 
-import copy
+import inventory_copy as copy
 import hashlib
 import json
 from pathlib import Path

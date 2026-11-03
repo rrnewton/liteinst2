@@ -1,5 +1,6 @@
 """Exact native indexed-DSO successor; historical assertions remain in their original domains."""
 import copy
+import inventory_copy
 import hashlib
 import json
 import re
@@ -133,12 +134,12 @@ class Main97abInventoryTests(unittest.TestCase):
             self.assertEqual(jump_prior['harness_test_counts']['workspace_tests'][name], change['previous'])
             for field in ('tests', 'ignored'):
                 for value in (None, True, float(jump_rows[name][field]), jump_rows[name][field] + 1):
-                    wrong = copy.deepcopy(actual)
+                    wrong = inventory_copy.deepcopy(actual)
                     wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     self.assertNotEqual(current.digest(wrong), current.digest(actual))
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                         current.before_11cc419(wrong)
-            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_11cc419(wrong)
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
@@ -154,7 +155,7 @@ class Main97abInventoryTests(unittest.TestCase):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^jump_source_inverse$'):
                     current.source_before_11cc419(path, wrong, 'jump_source_inverse')
             for field in ('edits', 'current_sha256', 'previous_sha256'):
-                malformed = copy.deepcopy(row)
+                malformed = inventory_copy.deepcopy(row)
                 if field == 'edits': malformed['edits'][0][2] += '\n'
                 else: malformed[field] = '0' * 64
                 with patch.dict(jump['source_projections'], {path: malformed}):
@@ -200,12 +201,12 @@ class Main97abInventoryTests(unittest.TestCase):
             self.assertEqual(cfg_prior['harness_test_counts']['workspace_tests'][name], change['previous'])
             for field in ('tests', 'ignored'):
                 for value in (None, True, float(cfg_rows[name][field]), cfg_rows[name][field] + 1):
-                    wrong = copy.deepcopy(actual)
+                    wrong = inventory_copy.deepcopy(actual)
                     wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     self.assertNotEqual(current.digest(wrong), current.digest(actual))
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                         current.before_281c342(wrong)
-            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_281c342(wrong)
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
@@ -221,7 +222,7 @@ class Main97abInventoryTests(unittest.TestCase):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^cfg_source_inverse$'):
                     current.source_before_281c342(path, wrong, 'cfg_source_inverse')
             for field in ('edits', 'current_sha256', 'previous_sha256'):
-                malformed = copy.deepcopy(row)
+                malformed = inventory_copy.deepcopy(row)
                 if field == 'edits': malformed['edits'][0][2] += '\n'
                 else: malformed[field] = '0' * 64
                 with patch.dict(cfg['source_projections'], {path: malformed}):
@@ -267,12 +268,12 @@ class Main97abInventoryTests(unittest.TestCase):
             self.assertEqual(fixed_prior['harness_test_counts']['workspace_tests'][name], change['previous'])
             for field in ('tests', 'ignored'):
                 for value in (None, True, float(fixed_rows[name][field]), fixed_rows[name][field] + 1):
-                    wrong = copy.deepcopy(actual)
+                    wrong = inventory_copy.deepcopy(actual)
                     wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     self.assertNotEqual(current.digest(wrong), current.digest(actual))
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                         current.before_064b48c(wrong)
-            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_064b48c(wrong)
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
@@ -288,7 +289,7 @@ class Main97abInventoryTests(unittest.TestCase):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^fixed_source_inverse$'):
                     current.source_before_064b48c(path, wrong, 'fixed_source_inverse')
             for field in ('edits', 'current_sha256', 'previous_sha256'):
-                malformed = copy.deepcopy(row)
+                malformed = inventory_copy.deepcopy(row)
                 if field == 'edits': malformed['edits'][0][2] += '\n'
                 else: malformed[field] = '0' * 64
                 with patch.dict(fixed['source_projections'], {path: malformed}):
@@ -334,12 +335,12 @@ class Main97abInventoryTests(unittest.TestCase):
             self.assertEqual(direct_prior['harness_test_counts']['workspace_tests'][name], change['previous'])
             for field in ('tests', 'ignored'):
                 for value in (None, True, float(direct_rows[name][field]), direct_rows[name][field] + 1):
-                    wrong = copy.deepcopy(actual)
+                    wrong = inventory_copy.deepcopy(actual)
                     wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     self.assertNotEqual(current.digest(wrong), current.digest(actual))
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                         current.before_79a4b8b(wrong)
-            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_79a4b8b(wrong)
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
@@ -355,7 +356,7 @@ class Main97abInventoryTests(unittest.TestCase):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^direct_source_inverse$'):
                     current.source_before_79a4b8b(path, wrong, 'direct_source_inverse')
             for field in ('edits', 'current_sha256', 'previous_sha256'):
-                malformed = copy.deepcopy(row)
+                malformed = inventory_copy.deepcopy(row)
                 if field == 'edits': malformed['edits'][0][2] += '\n'
                 else: malformed[field] = '0' * 64
                 with patch.dict(direct['source_projections'], {path: malformed}):
@@ -404,12 +405,12 @@ class Main97abInventoryTests(unittest.TestCase):
             self.assertEqual(shared_rows[name], change['current'])
             for field in ('tests', 'ignored'):
                 for value in (None, True, float(shared_rows[name][field]), shared_rows[name][field] + 1):
-                    wrong = copy.deepcopy(actual)
+                    wrong = inventory_copy.deepcopy(actual)
                     wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     self.assertNotEqual(current.digest(wrong), current.digest(actual))
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                         current.before_3217b8ed(wrong)
-            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_3217b8ed(wrong)
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
@@ -425,7 +426,7 @@ class Main97abInventoryTests(unittest.TestCase):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^shared_source_inverse$'):
                     current.source_before_3217b8ed(path, wrong, 'shared_source_inverse')
             for field in ('edits', 'current_sha256', 'previous_sha256'):
-                malformed = copy.deepcopy(row)
+                malformed = inventory_copy.deepcopy(row)
                 if field == 'edits': malformed['edits'][0][2] += '\n'
                 else: malformed[field] = '0' * 64
                 with patch.dict(shared['source_projections'], {path: malformed}):
@@ -483,7 +484,7 @@ class Main97abInventoryTests(unittest.TestCase):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^flat_source_inverse$'):
                     current.source_before_03ed2c31(path, wrong, 'flat_source_inverse')
             for field in ('edits', 'current_sha256', 'previous_sha256'):
-                malformed = copy.deepcopy(row)
+                malformed = inventory_copy.deepcopy(row)
                 if field == 'edits': malformed['edits'][0][2] += '\n'
                 else: malformed[field] = '0' * 64
                 with patch.dict(flat['source_projections'], {path: malformed}):
@@ -494,12 +495,12 @@ class Main97abInventoryTests(unittest.TestCase):
         for field in ('tests', 'ignored'):
             for value in (None, True, float(actual['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field]),
                           actual['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field] + 1):
-                wrong = copy.deepcopy(actual)
+                wrong = inventory_copy.deepcopy(actual)
                 wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field] = value
                 self.assertNotEqual(current.digest(wrong), current.digest(actual))
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                     current.before_03ed2c31(wrong)
-        wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
+        wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
             current.before_03ed2c31(wrong)
         read = Path.read_bytes
@@ -556,7 +557,7 @@ class Main97abInventoryTests(unittest.TestCase):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^row_prefix_source_inverse$'):
                     current.source_before_4261826(path, wrong, 'row_prefix_source_inverse')
             for field in ('edits', 'current_sha256', 'previous_sha256'):
-                malformed = copy.deepcopy(row)
+                malformed = inventory_copy.deepcopy(row)
                 if field == 'edits': malformed['edits'][0][2] += '\n'
                 else: malformed[field] = '0' * 64
                 with patch.dict(row_prefix['source_projections'], {path: malformed}):
@@ -567,12 +568,12 @@ class Main97abInventoryTests(unittest.TestCase):
         for field in ('tests', 'ignored'):
             for value in (None, True, float(row_prefix_rows['unit/rapid_profiler/lib'][field]),
                           row_prefix_rows['unit/rapid_profiler/lib'][field] + 1):
-                wrong = copy.deepcopy(actual)
+                wrong = inventory_copy.deepcopy(actual)
                 wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field] = value
                 self.assertNotEqual(current.digest(wrong), current.digest(actual))
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                     current.before_4261826(wrong)
-        wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
+        wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
             current.before_4261826(wrong)
         read = Path.read_bytes
@@ -629,7 +630,7 @@ class Main97abInventoryTests(unittest.TestCase):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^publisher_source_inverse$'):
                     current.source_before_fe97f683(path, wrong, 'publisher_source_inverse')
             for field in ('edits', 'current_sha256', 'previous_sha256'):
-                malformed = copy.deepcopy(row)
+                malformed = inventory_copy.deepcopy(row)
                 if field == 'edits': malformed['edits'][0][2] += '\n'
                 else: malformed[field] = '0' * 64
                 with patch.dict(publisher['source_projections'], {path: malformed}):
@@ -684,7 +685,7 @@ class Main97abInventoryTests(unittest.TestCase):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^binding_source_inverse$'):
                     current.source_before_f9f89ac(path, wrong, 'binding_source_inverse')
             for field in ('edits', 'current_sha256', 'previous_sha256'):
-                malformed = copy.deepcopy(row)
+                malformed = inventory_copy.deepcopy(row)
                 if field == 'edits': malformed['edits'][0][2] += '\n'
                 else: malformed[field] = '0' * 64
                 with patch.dict(binding['source_projections'], {path: malformed}):
@@ -695,12 +696,12 @@ class Main97abInventoryTests(unittest.TestCase):
         for name in binding['workspace_changes']:
             for field in ('tests', 'ignored'):
                 for value in (None, True, float(binding_rows[name][field]), binding_rows[name][field] + 1):
-                    wrong = copy.deepcopy(actual)
+                    wrong = inventory_copy.deepcopy(actual)
                     wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     self.assertNotEqual(current.digest(wrong), current.digest(actual))
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                         current.before_f9f89ac(wrong)
-            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_f9f89ac(wrong)
         read = Path.read_bytes
@@ -771,7 +772,7 @@ class Main97abInventoryTests(unittest.TestCase):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^current_ret_source_inverse$'):
                     current.source_before_bad32a8(path, wrong, 'current_ret_source_inverse')
             for field in ('edits', 'current_sha256', 'previous_sha256'):
-                malformed = copy.deepcopy(row)
+                malformed = inventory_copy.deepcopy(row)
                 if field == 'edits': malformed['edits'][0][2] += '\n'
                 else: malformed[field] = '0' * 64
                 with patch.dict(current_ret['source_projections'], {path: malformed}):
@@ -782,12 +783,12 @@ class Main97abInventoryTests(unittest.TestCase):
         for field in ('tests', 'ignored'):
             for value in (None, True, float(current_ret_rows['unit/rapid_profiler/lib'][field]),
                           current_ret_rows['unit/rapid_profiler/lib'][field] + 1):
-                wrong = copy.deepcopy(actual)
+                wrong = inventory_copy.deepcopy(actual)
                 wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field] = value
                 self.assertNotEqual(current.digest(wrong), current.digest(actual))
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                     current.before_bad32a8(wrong)
-        wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
+        wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
             current.before_bad32a8(wrong)
         read = Path.read_bytes
@@ -856,7 +857,7 @@ class Main97abInventoryTests(unittest.TestCase):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^physical_source_inverse$'):
                     current.source_before_e5462b7(path, wrong, 'physical_source_inverse')
             for field in ('edits', 'current_sha256', 'previous_sha256'):
-                malformed = copy.deepcopy(row)
+                malformed = inventory_copy.deepcopy(row)
                 if field == 'edits': malformed['edits'][0][2] += '\n'
                 else: malformed[field] = '0' * 64
                 with patch.dict(physical['source_projections'], {path: malformed}):
@@ -867,12 +868,12 @@ class Main97abInventoryTests(unittest.TestCase):
         for field in ('tests', 'ignored'):
             for value in (None, True, float(physical_rows['unit/rapid_profiler/lib'][field]),
                           physical_rows['unit/rapid_profiler/lib'][field] + 1):
-                wrong = copy.deepcopy(actual)
+                wrong = inventory_copy.deepcopy(actual)
                 wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field] = value
                 self.assertNotEqual(current.digest(wrong), current.digest(actual))
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                     current.before_e5462b7(wrong)
-        wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
+        wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
             current.before_e5462b7(wrong)
         read = Path.read_bytes
@@ -943,7 +944,7 @@ class Main97abInventoryTests(unittest.TestCase):
             for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^entry_normal_source_inverse$'):
                     current.source_before_e691b0d(path, wrong, 'entry_normal_source_inverse')
-            malformed = copy.deepcopy(row)
+            malformed = inventory_copy.deepcopy(row)
             malformed['edits'][0][2] += '\n'
             with patch.dict(entry_normal['source_projections'], {path: malformed}):
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^entry_normal_source_inverse$'):
@@ -953,15 +954,15 @@ class Main97abInventoryTests(unittest.TestCase):
         for field in ('tests', 'ignored'):
             for value in (None, True, float(entry_normal_rows['unit/rapid_profiler/lib'][field]),
                           entry_normal_rows['unit/rapid_profiler/lib'][field] + 1):
-                wrong = copy.deepcopy(actual)
+                wrong = inventory_copy.deepcopy(actual)
                 wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field] = value
                 self.assertNotEqual(current.digest(wrong), current.digest(actual))
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                     current.before_e691b0d(wrong)
-        wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
+        wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
             current.before_e691b0d(wrong)
-        wrong = copy.deepcopy(actual)
+        wrong = inventory_copy.deepcopy(actual)
         wrong['harness_test_counts']['workspace_tests']['test/frontend_native_calibrations'] = counts(239, 1)
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
             current.before_e691b0d(wrong)
@@ -1028,15 +1029,15 @@ class Main97abInventoryTests(unittest.TestCase):
         for field in ('tests', 'ignored'):
             for value in (None, True, float(ret_rows['unit/rapid_profiler/lib'][field]),
                           ret_rows['unit/rapid_profiler/lib'][field] + 1):
-                wrong = copy.deepcopy(actual)
+                wrong = inventory_copy.deepcopy(actual)
                 wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field] = value
                 self.assertNotEqual(current.digest(wrong), current.digest(actual))
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                     current.before_65ee8ea(wrong)
-        wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
+        wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
             current.before_65ee8ea(wrong)
-        wrong = copy.deepcopy(actual)
+        wrong = inventory_copy.deepcopy(actual)
         wrong['harness_test_counts']['workspace_tests']['test/frontend_native_calibrations'] = counts(239, 1)
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
             current.before_65ee8ea(wrong)
@@ -1096,12 +1097,12 @@ class Main97abInventoryTests(unittest.TestCase):
         for field in ('tests', 'ignored'):
             for value in (None, True, float(snapshot_rows['unit/rapid_profiler/lib'][field]),
                           snapshot_rows['unit/rapid_profiler/lib'][field] + 1):
-                wrong = copy.deepcopy(actual)
+                wrong = inventory_copy.deepcopy(actual)
                 wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib'][field] = value
                 self.assertNotEqual(current.digest(wrong), current.digest(actual))
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                     current.before_79b34bc(wrong)
-        wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
+        wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests']['unit/rapid_profiler/lib']
         with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
             current.before_79b34bc(wrong)
         read = Path.read_bytes
@@ -1167,12 +1168,12 @@ class Main97abInventoryTests(unittest.TestCase):
             self.assertEqual(entry_rows[name], change['current'])
             for field in ('tests', 'ignored'):
                 for value in (None, True, float(entry_rows[name][field]), entry_rows[name][field] + 1):
-                    wrong = copy.deepcopy(actual)
+                    wrong = inventory_copy.deepcopy(actual)
                     wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     self.assertNotEqual(current.digest(wrong), current.digest(actual))
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                         current.before_a8acec5(wrong)
-            wrong = copy.deepcopy(actual)
+            wrong = inventory_copy.deepcopy(actual)
             del wrong['harness_test_counts']['workspace_tests'][name]
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_a8acec5(wrong)
@@ -1221,7 +1222,7 @@ class Main97abInventoryTests(unittest.TestCase):
         for field in ('tests', 'ignored'):
             for value in (None, True, float(point_rows['unit/point_throughput/main'][field]),
                           point_rows['unit/point_throughput/main'][field] + 1):
-                wrong = copy.deepcopy(actual)
+                wrong = inventory_copy.deepcopy(actual)
                 wrong['harness_test_counts']['workspace_tests']['unit/point_throughput/main'][field] = value
                 self.assertNotEqual(current.digest(wrong), current.digest(actual))
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
@@ -1254,13 +1255,13 @@ class Main97abInventoryTests(unittest.TestCase):
             previous.before_current(actual)
         self.assertEqual(previous.peel_current(actual, 'catalog_control', 'source_control'), previous.before_current(old))
         for key in actual:
-            wrong = copy.deepcopy(actual); wrong[key] = None
+            wrong = inventory_copy.deepcopy(actual); wrong[key] = None
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_current(wrong)
         for name in current.DATA['workspace_changes']:
             for field in ('tests', 'ignored'):
                 for value in (rows[name][field]+1, True, float(rows[name][field])):
-                    wrong = copy.deepcopy(actual); wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    wrong = inventory_copy.deepcopy(actual); wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                         current.before_current(wrong)
         identities = historical.python_identities(Path(__file__).parent)
@@ -1283,7 +1284,7 @@ class Main97abInventoryTests(unittest.TestCase):
                 for wrong in (raw+b'\n', raw[:-1], restored, bytearray(raw), raw.decode()):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^indexed_inverse_control$'):
                         function(path, wrong, 'indexed_inverse_control')
-                bad = copy.deepcopy(row); bad['edits'][0][2] += '\n'
+                bad = inventory_copy.deepcopy(row); bad['edits'][0][2] += '\n'
                 with patch.dict(current.DATA[kind], {path:bad}):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^indexed_bad_inverse_control$'):
                         function(path, raw, 'indexed_bad_inverse_control')
@@ -1324,7 +1325,7 @@ class Main97abInventoryTests(unittest.TestCase):
             changed_raw = raw.replace(literal.encode(), altered.encode())
             changed_prior = prior.replace(literal.encode(), altered.encode())
             self.assertNotEqual(changed_raw, raw)
-            row = copy.deepcopy(current.DATA['projections'][path])
+            row = inventory_copy.deepcopy(current.DATA['projections'][path])
             row['current_sha256'] = hashlib.sha256(changed_raw).hexdigest()
             row['previous_sha256'] = hashlib.sha256(changed_prior).hexdigest()
             def changed(candidate):
@@ -1363,7 +1364,7 @@ class Main97abInventoryTests(unittest.TestCase):
         for field in ('tests', 'ignored'):
             for value in (None, True, float(rows['unit/ordinary_interval/main'][field]),
                           rows['unit/ordinary_interval/main'][field] + 1):
-                wrong = copy.deepcopy(actual)
+                wrong = inventory_copy.deepcopy(actual)
                 wrong['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'][field] = value
                 with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                     current.before_29859(wrong)
@@ -1425,12 +1426,12 @@ class Main97abInventoryTests(unittest.TestCase):
             current_row = actual['harness_test_counts']['workspace_tests'][name]
             for field in ('tests', 'ignored'):
                 for value in (None, True, float(current_row[field]), current_row[field] + 1):
-                    wrong = copy.deepcopy(actual)
+                    wrong = inventory_copy.deepcopy(actual)
                     wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     self.assertNotEqual(current.digest(wrong), current.digest(actual))
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                         current.before_96378(wrong)
-            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
             self.assertNotEqual(current.digest(wrong), current.digest(actual))
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_96378(wrong)
@@ -1498,11 +1499,11 @@ class Main97abInventoryTests(unittest.TestCase):
                              change['previous'])
             for field in ('tests', 'ignored'):
                 for value in (None, True, float(placement_rows[name][field]), placement_rows[name][field] + 1):
-                    wrong = copy.deepcopy(actual)
+                    wrong = inventory_copy.deepcopy(actual)
                     wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                         current.before_fd4c6(wrong)
-            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_fd4c6(wrong)
         placement_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
@@ -1556,11 +1557,11 @@ class Main97abInventoryTests(unittest.TestCase):
                              change['previous'])
             for field in ('tests', 'ignored'):
                 for value in (None, True, float(entry_rows[name][field]), entry_rows[name][field] + 1):
-                    wrong = copy.deepcopy(actual)
+                    wrong = inventory_copy.deepcopy(actual)
                     wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                         current.before_b0a30(wrong)
-            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_b0a30(wrong)
         entry_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
@@ -1616,11 +1617,11 @@ class Main97abInventoryTests(unittest.TestCase):
                              change['previous'])
             for field in ('tests', 'ignored'):
                 for value in (None, True, float(rx_rows[name][field]), rx_rows[name][field] + 1):
-                    wrong = copy.deepcopy(actual)
+                    wrong = inventory_copy.deepcopy(actual)
                     wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                         current.before_b6fea(wrong)
-            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_b6fea(wrong)
         rx_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
@@ -1701,11 +1702,11 @@ class Main97abInventoryTests(unittest.TestCase):
                              change['previous'])
             for field in ('tests', 'ignored'):
                 for value in (None, True, float(actual['harness_test_counts']['workspace_tests'][name][field]), actual['harness_test_counts']['workspace_tests'][name][field] + 1):
-                    wrong = copy.deepcopy(actual)
+                    wrong = inventory_copy.deepcopy(actual)
                     wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                         current.before_124521(wrong)
-            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_124521(wrong)
         overlap_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
@@ -1767,11 +1768,11 @@ class Main97abInventoryTests(unittest.TestCase):
             self.assertEqual(clock_before['harness_test_counts']['workspace_tests'].get(name), change['previous'])
             for field in ('tests', 'ignored'):
                 for value in (None, True, float(clock_rows[name][field]), clock_rows[name][field] + 1):
-                    wrong = copy.deepcopy(actual)
+                    wrong = inventory_copy.deepcopy(actual)
                     wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                         current.before_abe7(wrong)
-            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_abe7(wrong)
         clock_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
@@ -1873,11 +1874,11 @@ class Main97abInventoryTests(unittest.TestCase):
             self.assertEqual(clock_rows[name], change['previous'])
             for field in ('tests', 'ignored'):
                 for value in (None, True, float(comparison_rows[name][field]), comparison_rows[name][field] + 1):
-                    wrong = copy.deepcopy(actual)
+                    wrong = inventory_copy.deepcopy(actual)
                     wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                         current.before_c110(wrong)
-            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_c110(wrong)
         comparison_stimuli = [(path, 'fn ' + name + '(', 'fn ' + name + '_wrong(')
@@ -1944,11 +1945,11 @@ class Main97abInventoryTests(unittest.TestCase):
             self.assertEqual(comparison_rows.get(name), change['previous'])
             for field in ('tests', 'ignored'):
                 for value in (None, True, float(early_rows[name][field]), early_rows[name][field]+1):
-                    wrong = copy.deepcopy(actual)
+                    wrong = inventory_copy.deepcopy(actual)
                     wrong['harness_test_counts']['workspace_tests'][name][field] = value
                     with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                         current.before_667921(wrong)
-            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
             with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
                 current.before_667921(wrong)
         early_stimuli = [(p, 'fn '+n+'(', 'fn '+n+'_wrong(')

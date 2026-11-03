@@ -792,71 +792,111 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "261cd51ed6a79af38e3d80ff4b206544abfd1c14ed234d1de5759a4e5c5993b2",
+      "current_sha256": "d4a992686c470339cd29902481ec9bcb368810d4e08a949a16afdceb83d34085",
       "edits": [
         [
-          438,
-          5803,
+          110,
+          132,
           ""
         ],
         [
-          6007,
-          105162,
+          460,
+          5825,
           ""
         ],
         [
-          114533,
-          114644,
+          6029,
+          105614,
+          ""
+        ],
+        [
+          107679,
+          107750,
+          "            wrong = copy.deepcopy(actual); wrong[key] = None\n"
+        ],
+        [
+          108080,
+          108210,
+          "                    wrong = copy.deepcopy(actual); wrong['harness_test_counts']['workspace_tests'][name][field] = value\n"
+        ],
+        [
+          109834,
+          109913,
+          "                bad = copy.deepcopy(row); bad['edits'][0][2] += '\\n'\n"
+        ],
+        [
+          112885,
+          112962,
+          "            row = copy.deepcopy(current.DATA['projections'][path])\n"
+        ],
+        [
+          115025,
+          115136,
           "        self.assertEqual(actual['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],\n"
         ],
         [
-          119687,
-          119857,
+          115894,
+          115950,
+          "                wrong = copy.deepcopy(actual)\n"
+        ],
+        [
+          120189,
+          120359,
           ""
         ],
         [
-          119904,
-          119998,
-          "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n"
+          120406,
+          120560,
+          "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n                    wrong = copy.deepcopy(actual)\n"
         ],
         [
-          120137,
-          120224,
+          120649,
+          120736,
           ""
         ],
         [
-          120483,
-          120562,
+          120894,
+          121084,
+          "            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]\n"
+        ],
+        [
+          122140,
+          122690,
           ""
         ],
         [
-          121618,
-          122168,
-          ""
-        ],
-        [
-          123687,
-          123783,
+          124209,
+          124305,
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          127626,
-          161010,
+          126087,
+          126147,
+          "                    wrong = copy.deepcopy(actual)\n"
+        ],
+        [
+          126394,
+          126505,
+          "            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]\n"
+        ],
+        [
+          128168,
+          161672,
           ""
         ],
         [
-          167928,
-          171499,
+          168590,
+          172161,
           ""
         ],
         [
-          172779,
-          173051,
+          173441,
+          173713,
           "        for function, expected_projection in projections:\n"
         ],
         [
-          174345,
-          185554,
+          175007,
+          186216,
           ""
         ]
       ],
@@ -16660,7 +16700,7 @@
     "evaluation/admission/test_main34c47_inventory.py": "fa2bb240bd7a9fdb6e79f18635ffe959fcd38facf479b882340aab5dca4461a0",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "410148cd9cb22a37e4a1cd6d855a10341f33271ad5b62978973aa963f7111c43",
-    "evaluation/admission/test_main97ab_inventory.py": "261cd51ed6a79af38e3d80ff4b206544abfd1c14ed234d1de5759a4e5c5993b2",
+    "evaluation/admission/test_main97ab_inventory.py": "d4a992686c470339cd29902481ec9bcb368810d4e08a949a16afdceb83d34085",
     "evaluation/admission/test_main981419_inventory.py": "a75ae36eed8dc312b702821d50c991e126430a4f3e294342d2b43e29cd1ff034",
     "evaluation/admission/test_mainacc247_inventory.py": "9deada610eedcdc46ef6ebba60f58fedcbf0171f382d7895f42c27756afe1c17",
     "evaluation/admission/test_mainaf81_inventory.py": "d9966ddc3611cff190bf79dd548c9a57c99bb40e8be03cdd589300859ebdf465",

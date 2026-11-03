@@ -11,7 +11,7 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '5c72068412c3b5a6ee026333db7e9c670cb4ba5aa7360fd7d44610598086d3b7',
+require(hashlib.sha256(RAW).hexdigest() == '284d36d39fd2a109b3a83029970861bf0603a35035d7c1c37b0fb2ff3b6f6361',
         'main97ab_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
