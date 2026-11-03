@@ -81,29 +81,67 @@ fn prepare_grouped(
     selected: &disassembly::whole::JumpStackWholeSelection,
     profile: GroupProfile,
 ) -> Result<Product, Error> {
-    let mut product = prepare_selection_with_carrier_layout(
+    prepare_grouped_with_storage(original, selected, profile, LedgerStorage::Inline)
+}
+
+/// Independent physical storage option. All grouping/planning policies stay fixed.
+pub fn prepare_disassembly_jump_stack_grouped_with_ledger_storage(
+    original: &[u8],
+    selected: &disassembly::whole::JumpStackWholeSelection,
+    upstream: bool,
+    storage: LedgerStorage,
+) -> Result<Product, Error> {
+    prepare_grouped_with_storage(
+        original,
+        selected,
+        if upstream {
+            GroupProfile::Upstream
+        } else {
+            GroupProfile::Exact
+        },
+        storage,
+    )
+}
+fn prepare_grouped_with_storage(
+    original: &[u8],
+    selected: &disassembly::whole::JumpStackWholeSelection,
+    profile: GroupProfile,
+    storage: LedgerStorage,
+) -> Result<Product, Error> {
+    let mut product = prepare_selection_with_storage(
         original,
         selected.selection.clone(),
         false,
         disassembly::NeighborMode::WholeOverlappingPending,
         None,
         adjacent_b2_frontend::PairProfile::ForwardJcc,
-        CarrierTransaction {
-            hooks: TransactionHooks {
-                addon: None,
-                gate: |_| Ok(()),
+        (
+            CarrierTransaction {
+                hooks: TransactionHooks {
+                    addon: None,
+                    gate: |_| Ok(()),
+                },
+                packed_rx_runs: true,
+                fixed_exec: true,
+                grouped_classes: Some((&selected.classes, profile)),
             },
-            packed_rx_runs: true,
-            fixed_exec: true,
-            grouped_classes: Some((&selected.classes, profile)),
-        },
+            storage,
+        ),
     )?;
     product.files.remove("bundle-index.tsv");
     let mut files = selected.packed_overlapping_files();
     let planning = files
         .get_mut("planning-profile.tsv")
         .expect("sealed union has a planning profile");
-    planning.extend_from_slice(grouped_metadata(profile).as_bytes());
+    let metadata = if storage == LedgerStorage::ReadChunks256 {
+        grouped_metadata(profile).replace(
+            "grouping_ledger\tLI2GROUPED-LEDGER-1\n",
+            "grouping_ledger\tLI2GROUPED-LEDGER-2\n",
+        )
+    } else {
+        grouped_metadata(profile)
+    };
+    planning.extend_from_slice(metadata.as_bytes());
     product.files.extend(files);
     product.files.insert(
         "bundle-index.tsv".into(),

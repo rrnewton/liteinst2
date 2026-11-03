@@ -21,6 +21,8 @@ def complete(directory, read):
             assert len(row) == 2 and row[0] not in fields; fields[row[0]] = row[1]
     assert {p.name for p in directory.iterdir()} == set(files) | {'COMPLETE'}
     assert all(p.is_file() and not p.is_symlink() for p in directory.iterdir())
+    if fields.get('ledger_storage') == 'read-chunks256-v1':
+        assert sum(files.get(name, {}).get('bytes', 0) for name in ('plan-ledger.tsv', 'ledger.tsv', 'read-chunks.tsv')) <= 128*M
     for name, expected in files.items(): read(directory/name, expected, cap=64*M)
     assert fields['qualification_complete'] == 'false'
     return dict(header=lines[0], fields=fields, files=files, inputs=inputs)
@@ -194,7 +196,7 @@ def grouped_binding_bytes(selection, original, domain, grouping, *, profile=GROU
     return ('LI2FIXED-EXEC-BINDING\t1\n'+''.join(k+'\t'+v+'\n' for k, v in rows)).encode()
 
 
-def grouped_linkage(info, members, sites, original, domain, report, *, source_ledger, profile=GROUPED_PROFILE):
+def grouped_linkage(info, members, sites, original, domain, report, *, source_ledger, profile=GROUPED_PROFILE, ledger_storage="inline"):
     """Join a full policy partition to unique local plans and final site outcomes.
 
     All members are pinned by COMPLETE first. This parses text records only;
@@ -203,16 +205,20 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
     """
     assert profile in GROUPED_PROFILES
     upstream = profile == GROUPED_UPSTREAM_PROFILE
-    assert set(members) == set(GROUPED_MEMBERS) and 0 < len(sites) <= 4096
+    assert ledger_storage in ('inline', CHUNK_STORAGE)
+    compact = ledger_storage == CHUNK_STORAGE
+    required = set(GROUPED_MEMBERS) | (set(CHUNK_MEMBERS) if compact else set())
+    assert set(members) == required and 0 < len(sites) <= 4096
     for name, raw in members.items():
         assert raw.endswith(b'\n') and len(raw) <= 64*M
         assert info['files'][name] == dict(bytes=len(raw), sha256=hashlib.sha256(raw).hexdigest())
     # Output self-pins do not prove which independently frozen input was read.
     assert info['files']['disassembly.txt'] == {k: source_ledger[k] for k in ('bytes', 'sha256')}
+    storage_result = chunk_storage(info, members, original) if compact else None
     fields = info['fields']; stack_complete(fields, sites)
     expected_fields = dict(profile=profile, planner_profile=profile,
         grouped_profile=profile, singleton_planner_profile='whole-program-packed-overlapping-neighbors-4096',
-        grouping_policy='grouping-policy.tsv', grouping_ledger='LI2GROUPED-LEDGER-1',
+        grouping_policy='grouping-policy.tsv', grouping_ledger='LI2GROUPED-LEDGER-2' if compact else 'LI2GROUPED-LEDGER-1',
         portable_metadata_verification='checked',
         embedded_metadata_binding='checked' if report['strict_full'] else 'not-complete')
     assert all(fields.get(k) == v for k, v in expected_fields.items())
@@ -223,7 +229,16 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
     number = lambda value: int(value) if re.fullmatch(r'0|[1-9][0-9]*', value) else None
     def numeric(value):
         result = number(value); assert result is not None; return result
-    def rows(name): return [line.split('\t') for line in members[name].decode().splitlines()]
+    def rows(name):
+        table = [line.split('\t') for line in members[name].decode().splitlines()]
+        if compact and name in ('plan-ledger.tsv', 'ledger.tsv'):
+            # Rust's authenticated bounded codec owns chunk interpretation.
+            # Only its declared representation rows are hidden for the same
+            # existing structural consumer; unknown semantic rows stay visible.
+            assert table[0] == ['LI2GROUPED-LEDGER', '2']
+            table[0] = ['LI2GROUPED-LEDGER', '1']
+            table = [row for row in table if row[0] not in ('read-storage', 'step-reads', 'step-read-ref')]
+        return table
     def one(table, tag):
         found = [row for row in table if row[0] == tag]; assert len(found) == 1; return found[0]
 
@@ -403,9 +418,77 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
         assert not any(row[0] in ('GROUP-ASSOCIATIONS', 'accepted-unit', 'member') for row in tail)
     else:
         assert final == pre and 'candidate.elf' not in info['files'] and 'source.li2sparse' not in info['files']
-    return dict(status='PASS' if report['strict_full'] else 'FAILED', policy_sha256=grouping,
+    result = dict(status='PASS' if report['strict_full'] else 'FAILED', policy_sha256=grouping,
                 policy_units=len(units), group_units=len(groups), singleton_units=len(singles),
                 accepted_units=len(accepted), accepted_members=len(accepted_ids),
                 unique_images=len(images), requested=len(sites), emitted=report['emitted'],
-                grouping_ledger='LI2GROUPED-LEDGER-1',
+                grouping_ledger='LI2GROUPED-LEDGER-2' if compact else 'LI2GROUPED-LEDGER-1',
                 metadata_verification='Rust format/embedded check recorded; Python authenticates member hashes and text joins')
+    if compact: result['ledger_storage'] = storage_result
+    return result
+
+
+CHUNK_STORAGE = 'read-chunks256-v1'
+CHUNK_MEMBERS = ('read-chunks.tsv', 'ledger-verification.tsv', 'bundle-index.tsv')
+
+
+def chunk_storage(info, members, original):
+    """Authenticate the Rust codec/replay receipt; never decode chunk contents."""
+    fields, pins = info['fields'], info['files']
+    expected = dict(ledger_storage=CHUNK_STORAGE, ledger_read_table='read-chunks.tsv',
+        ledger_verification='ledger-verification.tsv', ledger_bootstrap='unsupported',
+        ledger_wire_verification='checked', ledger_current_read_verification='checked-before-writes')
+    assert all(fields.get(k) == v for k, v in expected.items())
+    names = ('plan-ledger.tsv', 'ledger.tsv', 'read-chunks.tsv')
+    for name in (*names, 'ledger-verification.tsv', 'bundle-index.tsv'):
+        raw = members[name]
+        assert len(raw) <= 64*M and pins[name] == dict(bytes=len(raw), sha256=hashlib.sha256(raw).hexdigest())
+    assert sum(len(members[name]) for name in names) <= 128*M
+    plan, final, table = (members[name] for name in names)
+    assert final.startswith(plan)
+    head = plan.split(b'\n', 2)
+    assert head[0] == b'LI2GROUPED-LEDGER\t2'
+    assert head[1] == ('read-storage\t'+CHUNK_STORAGE+'\t'+str(len(table))+'\t'+pins['read-chunks.tsv']['sha256']).encode()
+    assert table.startswith(b'LI2READ-CHUNKS\t1\t256\t') and table.endswith(b'\n')
+    rows = [line.split('\t') for line in members['ledger-verification.tsv'].decode().splitlines()]
+    assert rows[0] == ['LI2LEDGER-VERIFICATION', '1']
+    values = {}; bound = {}
+    for row in rows[1:]:
+        if row[0] == 'member':
+            assert len(row) == 4 and row[1] not in bound and re.fullmatch(r'0|[1-9][0-9]*', row[2]) and re.fullmatch('[0-9a-f]{64}', row[3])
+            bound[row[1]] = dict(bytes=int(row[2]), sha256=row[3])
+        else:
+            assert len(row) == 2 and row[0] not in values; values[row[0]] = row[1]
+    assert bound == {name: pins[name] for name in names}
+    fixed = dict(storage=CHUNK_STORAGE, original_sha256=original,
+        selection_sha256=pins['selection.txt']['sha256'], wire='checked',
+        current_overlay_reads='checked-before-writes', semantic_scope='current-reads-and-record-shape-only',
+        bootstrap='unsupported', member_limit=str(64*M), aggregate_limit=str(128*M), qualification_complete='false')
+    assert set(values) == set(fixed) | {'canonical_bytes', 'canonical_sha256', 'steps', 'reads', 'references'}
+    assert all(values[k] == v for k, v in fixed.items())
+    assert re.fullmatch('[0-9a-f]{64}', values['canonical_sha256'])
+    for key in ('canonical_bytes', 'steps', 'reads', 'references'):
+        assert re.fullmatch(r'0|[1-9][0-9]*', values[key])
+    plan_rows = [line.split(b'\t') for line in plan.splitlines()]
+    assert int(values['steps']) == sum(row[0] == b'step' for row in plan_rows)
+    assert int(values['reads']) == sum(row[0] == b'step-read-ref' for row in plan_rows)
+    assert int(values['steps']) == int(values['reads'])
+    # Bundle and COMPLETE must name the same physical members, including the
+    # replay receipt itself. No proof inferred from six native output matches.
+    rows = [line.split('\t') for line in members['bundle-index.tsv'].decode().splitlines()]
+    assert rows[0] == ['LI2BUNDLE', '1']
+    bundle = {}; declarations = {}
+    for row in rows[1:]:
+        if row[0] == 'file':
+            assert len(row) == 4 and row[1] not in bundle and re.fullmatch(r'0|[1-9][0-9]*', row[2]) and re.fullmatch('[0-9a-f]{64}', row[3])
+            bundle[row[1]] = dict(bytes=int(row[2]), sha256=row[3])
+        else:
+            assert len(row) == 2 and row[0] not in declarations
+            declarations[row[0]] = row[1]
+    assert declarations == dict(original_sha256=original, qualification_complete='false',
+                                consumer_action='RuntimeScan-while-gated-until-qualified')
+    assert bundle == {name: pin for name, pin in pins.items() if name != 'bundle-index.tsv'}
+    return dict(storage=CHUNK_STORAGE, members=bound, verification=pins['ledger-verification.tsv'],
+        canonical_bytes=int(values['canonical_bytes']), canonical_sha256=values['canonical_sha256'],
+        steps=int(values['steps']), reads=int(values['reads']), references=int(values['references']),
+        semantic_scope=values['semantic_scope'], bootstrap='unsupported')

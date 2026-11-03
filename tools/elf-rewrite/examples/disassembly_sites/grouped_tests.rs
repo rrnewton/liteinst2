@@ -316,3 +316,11 @@ pub(super) fn upstream_run(
 ) {
     run(source, mode)
 }
+
+// Shared authored source for sibling storage controls; old tests remain literal.
+pub(super) fn storage_fixture() -> (Vec<u8>, Vec<u8>, Vec<u8>) {
+    six_pop()
+}
+pub(super) fn storage_fixture_chunks(chunks: &[&[u8]]) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
+    fixture(chunks)
+}

@@ -581,6 +581,13 @@ impl CandidateAddon for Bound {
         accepted: &[(u64, ArtifactPlan)],
         files: &mut BTreeMap<String, Vec<u8>>,
     ) -> Result<(), Error> {
+        if files.contains_key(crate::ledger_storage::TABLE)
+            || files.get("ledger.tsv").is_some_and(|bytes| {
+                bytes.starts_with(b"LI2LEDGER\t2\n") || bytes.starts_with(b"LI2GROUPED-LEDGER\t2\n")
+            })
+        {
+            crate::ledger_storage::require_inline_bootstrap(crate::LedgerStorage::ReadChunks256)?;
+        }
         let get = |name: &str| {
             files
                 .get(name)

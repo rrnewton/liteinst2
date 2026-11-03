@@ -396,6 +396,10 @@ fn main() {
     assert_eq!(&candidate[..original.len()], overlay);
 
     let plan = read(&directory.join("plan-ledger.tsv"), LIMIT);
+    assert!(
+        plan.starts_with(b"LI2LEDGER\t1\n"),
+        "this legacy verifier requires inline ledger version1"
+    );
     let lines: Vec<Vec<&str>> = std::str::from_utf8(&plan)
         .unwrap()
         .lines()
@@ -405,6 +409,10 @@ fn main() {
     let images: Vec<_> = lines.iter().filter(|r| r[0] == "image").collect();
     assert_eq!(images.len(), f.images.len());
     let ledger = read(&directory.join("ledger.tsv"), LIMIT);
+    assert!(
+        ledger.starts_with(b"LI2LEDGER\t1\n"),
+        "this legacy verifier requires inline ledger version1"
+    );
     let image_rows: Vec<_> = std::str::from_utf8(&ledger)
         .unwrap()
         .lines()

@@ -54,11 +54,23 @@ pub(crate) fn plans_view(
     composition: &Composition,
     deps: &[FileRange],
 ) -> Result<Vec<u8>, Error> {
-    let mut out = format!(
-        "LI2LEDGER\t1\noriginal_sha256\t{}\nselection_sha256\t{}\nbias_policy\tcommon-additive-module-relative-v1\nbias_domain\t{}\nqualification_complete\tfalse\nexecution_authority\tnone\ngrouping\tseparate-backing-only\nrequirement\t0\t101\tdeclared-entry-completeness-not-proven\nunresolved\tloader-abi-cpu-unwind-cet\n",
-        hex(&s.original.0),
-        hex(&ContentId::of(&s.manifest).0),
-        s.bias_domain
+    Ok(plans_view_encoded(s, plans, composition, deps, None)?.ledger)
+}
+pub(crate) fn plans_view_encoded<'a>(
+    s: &Selection,
+    plans: &[(u64, &'a ArtifactPlan)],
+    composition: &Composition,
+    deps: &[FileRange],
+    limits: Option<crate::ledger_codec::Limits>,
+) -> Result<crate::ledger_codec::EncodedPlan, Error> {
+    let mut out = crate::ledger_codec::PlanWriter::new(
+        format!(
+            "LI2LEDGER\t1\noriginal_sha256\t{}\nselection_sha256\t{}\nbias_policy\tcommon-additive-module-relative-v1\nbias_domain\t{}\nqualification_complete\tfalse\nexecution_authority\tnone\ngrouping\tseparate-backing-only\nrequirement\t0\t101\tdeclared-entry-completeness-not-proven\nunresolved\tloader-abi-cpu-unwind-cet\n",
+            hex(&s.original.0),
+            hex(&ContentId::of(&s.manifest).0),
+            s.bias_domain
+        ),
+        limits,
     );
     for hook in &s.hooks {
         writeln!(
@@ -95,15 +107,7 @@ pub(crate) fn plans_view(
                 p.requirements.quiescent, p.requirements.sync_core, p.requirements.sigill_router
             )
             .unwrap();
-            for read in &p.reads {
-                writeln!(
-                    &mut out,
-                    "step-read\t{site}\t{step_id}\t{}\t{}",
-                    read.address,
-                    hex(&read.bytes)
-                )
-                .unwrap();
-            }
+            out.reads(*site, step_id, &p.reads);
             for write in &p.writes {
                 writeln!(
                     &mut out,
@@ -308,7 +312,7 @@ pub(crate) fn plans_view(
         )
         .unwrap();
     }
-    Ok(out.into_bytes())
+    out.finish()
 }
 pub(crate) fn carrier(ledger: &mut Vec<u8>, output: &carrier::CarrierOutput) {
     let mut out = String::from("CARRIER-EXTENSION\t1\n");
@@ -528,6 +532,13 @@ pub(crate) fn plans_with_entry_veneers_view(
     deps: &[FileRange],
 ) -> Result<Vec<u8>, Error> {
     let mut out = plans_view(s, accepted, composition, deps)?;
+    append_entry_veneers(&mut out, accepted)?;
+    Ok(out)
+}
+pub(crate) fn append_entry_veneers(
+    out: &mut Vec<u8>,
+    accepted: &[(u64, &ArtifactPlan)],
+) -> Result<(), Error> {
     let mut extension = String::new();
     let mut image_id = 0;
     for (site, plan) in accepted {
@@ -584,7 +595,7 @@ pub(crate) fn plans_with_entry_veneers_view(
         }
     }
     out.extend_from_slice(extension.as_bytes());
-    Ok(out)
+    Ok(())
 }
 
 pub(crate) fn fixed_binding(ledger: &mut Vec<u8>, binding: li2core::emission::FixedImageBinding) {
@@ -620,14 +631,26 @@ pub(crate) fn grouped_plans(
     associations: &[u8],
 ) -> Result<Vec<u8>, Error> {
     let bytes = plans_with_entry_veneers_view(s, accepted, composition, deps)?;
+    apply_grouped_associations(bytes, associations, 1)
+}
+pub(crate) fn apply_grouped_associations(
+    bytes: Vec<u8>,
+    associations: &[u8],
+    version: u8,
+) -> Result<Vec<u8>, Error> {
+    let (old_header, new_header) = match version {
+        1 => ("LI2LEDGER\t1\n", "LI2GROUPED-LEDGER\t1\n"),
+        2 => ("LI2LEDGER\t2\n", "LI2GROUPED-LEDGER\t2\n"),
+        _ => return Err(Error::new("grouped-ledger", "unsupported storage version")),
+    };
     let text = std::str::from_utf8(&bytes).map_err(|e| Error::new("grouped-ledger", e))?;
-    if !text.starts_with("LI2LEDGER\t1\n")
+    if !text.starts_with(old_header)
         || text.matches("grouping\tseparate-backing-only\n").count() != 1
     {
         return Err(Error::new("grouped-ledger", "legacy grammar mismatch"));
     }
     let mut out = text
-        .replacen("LI2LEDGER\t1\n", "LI2GROUPED-LEDGER\t1\n", 1)
+        .replacen(old_header, new_header, 1)
         .replacen(
             "grouping\tseparate-backing-only\n",
             "grouping\tcomplete-selected-block-units-v1\n",
