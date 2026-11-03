@@ -140,6 +140,29 @@ static int binding(uintptr_t pc,size_t n,uintptr_t generated,uintptr_t spill_at,
     for(unsigned i=0;i<2;i++)if(!apart(b->directory,LI2_JD_DOMAIN_BYTES,b->image[i],LI2_JD_IMAGE_BYTES))return 0;
     return 1;
 }
+static int aux_binding(uintptr_t pc,size_t n,uintptr_t generated,uintptr_t spill_at,
+    const struct li2_jd_binding *b,const struct li2_dd_aux_binding *a) {
+    if(!a || !b || a->reserved || a->slot>=LI2_DD_AUX_SLOTS ||
+       !same(b,&a->owner,sizeof *b) || !b->heads || b->heads>LI2_JD_HEADS || b->head>=b->heads ||
+       n!=5 || (pc&4095U)>4096U-5U || (a->code&4095U) || (a->spill&4095U) ||
+       !address(a->code,LI2_DD_AUX_CODE_BYTES) || !address(a->spill,LI2_DD_AUX_SPILL_BYTES) ||
+       generated!=a->code+(uintptr_t)a->slot*LI2_DD_SLOT_BYTES ||
+       spill_at!=a->spill+(uintptr_t)a->slot*LI2_DD_AUX_SPILL_STRIDE)return 0;
+    /* Validate the unchanged real owner binding at its OWN ordinary head.
+       No auxiliary ordinal is passed off as a published member head. */
+    uintptr_t owner_generated=b->image[b->head/64]+(uintptr_t)(b->head%64)*512;
+    if(!binding(pc,n,owner_generated,spill_at,b) ||
+       !apart(a->code,LI2_DD_AUX_CODE_BYTES,a->spill,LI2_DD_AUX_SPILL_BYTES))return 0;
+    const uintptr_t first[2]={a->code,a->spill};
+    const size_t size[2]={LI2_DD_AUX_CODE_BYTES,LI2_DD_AUX_SPILL_BYTES};
+    for(unsigned i=0;i<2;i++) {
+        if(!apart(first[i],size[i],pc,n) ||
+           !apart(first[i],size[i],b->rows,(size_t)b->heads*sizeof(struct li2_span_decoded)) ||
+           !apart(first[i],size[i],b->directory,LI2_JD_DOMAIN_BYTES))return 0;
+        for(unsigned j=0;j<2;j++)if(!apart(first[i],size[i],b->image[j],LI2_JD_IMAGE_BYTES))return 0;
+    }
+    return 1;
+}
 static void domain_load(struct writer *w,unsigned target,unsigned base,unsigned offset) {
     unsigned char b[4]={(unsigned char)(0x48|((target>>3)<<2)|(base>>3)),0x8b,
         (unsigned char)(0x40|((target&7)<<3)|(base&7)),(unsigned char)offset};
@@ -148,8 +171,9 @@ static void domain_load(struct writer *w,unsigned target,unsigned base,unsigned 
 
 static int build(uintptr_t pc,const unsigned char *bytes,size_t n,unsigned external,
     uintptr_t generated,uintptr_t spill_at,const struct li2_jd_binding *b,const uintptr_t internal[2],
-    struct li2_dd_plan *p) {
-    if(!internal || !binding(pc,n,generated,spill_at,b))return LI2_DD_ARGUMENT;
+    const struct li2_dd_aux_binding *aux,struct li2_dd_plan *p) {
+    if(!internal || (aux?!aux_binding(pc,n,generated,spill_at,b,aux):
+                         !binding(pc,n,generated,spill_at,b)))return LI2_DD_ARGUMENT;
     p->record.version=LI2_DD_VERSION;p->generated=generated;p->spill=spill_at;
     copy(&p->binding,b,sizeof *b);copy(p->internal,internal,sizeof p->internal);
     int e=li2_dd_describe(pc,bytes,n,external,&p->original);if(e)return e;
@@ -231,7 +255,7 @@ int li2_dd_emit(uintptr_t pc,const unsigned char *bytes,size_t n,unsigned extern
     uintptr_t generated,uintptr_t spill_at,const struct li2_jd_binding *b,const uintptr_t internal[2],
     struct li2_dd_plan *out) {
     if(!out)return LI2_DD_ARGUMENT;
-    zero(out,sizeof *out);int e=build(pc,bytes,n,external,generated,spill_at,b,internal,out);
+    zero(out,sizeof *out);int e=build(pc,bytes,n,external,generated,spill_at,b,internal,0,out);
     out->record.result=(uint32_t)e;if(e)out->record.ready=0;return e;
 }
 int li2_dd_validate(const struct li2_dd_plan *p) {
@@ -269,6 +293,45 @@ int li2_dd_recover(const struct li2_dd_plan *p,uintptr_t pc,const uint64_t raw[1
     }
     for(unsigned i=0;i<4;i++)if(m->dirty&(1U<<i))out->gpr[p->record.scratch_regs[i]]=spill_words[i];
     out->phase=LI2_DD_BEFORE;out->original_pc=p->original.decoded.pc;out->complete=1;return 0;
+}
+
+int li2_dd_aux_emit(uintptr_t pc,const unsigned char *bytes,size_t n,
+    const struct li2_dd_aux_binding *b,struct li2_dd_aux_plan *out) {
+    if(!out)return LI2_DD_ARGUMENT;
+    zero(out,sizeof *out);out->version=LI2_DD_AUX_VERSION;
+    int e=LI2_DD_ARGUMENT;
+    if(b && bytes) {
+        copy(&out->binding,b,sizeof *b);
+        if(n!=5 || bytes[0]!=0xe9)e=LI2_DD_FORM;
+        else {
+            const uintptr_t internal[2]={0,0};
+            e=build(pc,bytes,n,1,b->code+(uintptr_t)b->slot*LI2_DD_SLOT_BYTES,
+                b->spill+(uintptr_t)b->slot*LI2_DD_AUX_SPILL_STRIDE,&b->owner,internal,b,&out->value);
+        }
+    }
+    out->value.record.result=(uint32_t)e;if(e)out->value.record.ready=0;
+    out->result=(uint32_t)e;out->ready=e?0U:1U;return e;
+}
+int li2_dd_aux_validate(const struct li2_dd_aux_plan *p) {
+    if(!p || p->version!=LI2_DD_AUX_VERSION || p->ready!=1 || p->result || p->reserved)
+        return LI2_DD_CORRUPT;
+    struct li2_dd_aux_plan expected;
+    int e=li2_dd_aux_emit(p->value.original.decoded.pc,p->value.original.decoded.bytes,
+        p->value.original.available,&p->binding,&expected);
+    return e || !same(p,&expected,sizeof *p)?LI2_DD_CORRUPT:0;
+}
+int li2_dd_aux_recover(const struct li2_dd_aux_plan *p,uintptr_t pc,const uint64_t raw[16],
+    uint64_t flags,const uint64_t spill_words[4],struct li2_dd_recovered *out) {
+    if(!out)return LI2_DD_ARGUMENT;
+    zero(out,sizeof *out);
+    if(!p || p->version!=LI2_DD_AUX_VERSION || p->ready!=1 || p->result || p->reserved ||
+       p->value.original.available!=5 || p->value.original.decoded.length!=5 ||
+       p->value.original.decoded.bytes[0]!=0xe9 || p->value.original.flow!=LI2_REGION_JMP ||
+       p->value.original.condition!=16 || p->value.original.external_mask!=1 ||
+       p->value.internal[0] || p->value.internal[1] ||
+       !aux_binding(p->value.original.decoded.pc,5,p->value.generated,p->value.spill,
+           &p->value.binding,&p->binding))return LI2_DD_CORRUPT;
+    return li2_dd_recover(&p->value,pc,raw,flags,spill_words,out);
 }
 
 #ifdef LI2_PERSISTENT_LOOP_PLAN

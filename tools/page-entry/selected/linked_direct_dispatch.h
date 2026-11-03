@@ -43,6 +43,27 @@ struct li2_dd_plan {
     unsigned char image[LI2_DD_SLOT_BYTES];
 };
 struct li2_dd_recovered { uint64_t gpr[16],flags,original_pc;uint32_t phase,complete; };
+/* Separate auxiliary placement, never an invented ordinary head. owner is the
+   actual immutable member binding; owner.head keeps its original meaning.
+   The owner must authenticate/register/seal these additional whole extents,
+   bind the exact five source bytes to a fresh source/rseq lease, and hold the
+   source and target node/generation/binding capabilities through final drain.
+   This value has no lease serial and confers no runtime authority. */
+#define LI2_DD_AUX_VERSION 1U
+#define LI2_DD_AUX_SLOTS 8U
+#define LI2_DD_AUX_CODE_BYTES 4096U
+#define LI2_DD_AUX_SPILL_BYTES 4096U
+#define LI2_DD_AUX_SPILL_STRIDE 64U
+struct li2_dd_aux_binding {
+    struct li2_jd_binding owner;
+    uintptr_t code,spill;
+    uint32_t slot,reserved;
+};
+struct li2_dd_aux_plan {
+    uint32_t version,ready,result,reserved;
+    struct li2_dd_aux_binding binding;
+    struct li2_dd_plan value;
+};
 /* Pure value reconstruction; no decoder, memory, source or entry authority. */
 int li2_dd_span(const struct li2_span_decoded *,unsigned,struct li2_dd_descriptor *);
 int li2_dd_describe(uintptr_t,const unsigned char *,size_t,unsigned,struct li2_dd_descriptor *);
@@ -55,8 +76,26 @@ int li2_dd_validate(const struct li2_dd_plan *);
    are read; never the target cell. Every row is original branch-before. */
 int li2_dd_recover(const struct li2_dd_plan *,uintptr_t,const uint64_t[16],uint64_t,
     const uint64_t[4],struct li2_dd_recovered *);
+/* The initial auxiliary form is exactly one in-page E9 rel32. It uses the same
+   directory search/image builder, decoder and initialized-spill recovery as
+   ordinary DIRECT. No existing head list, image, entry window or directory
+   authority is extended by these pure functions. The owner must select and
+   authenticate the complete sealed auxiliary record by savedPC BEFORE recover;
+   validate is cold reconstruction, never a replacement for that ownership. */
+int li2_dd_aux_emit(uintptr_t,const unsigned char *,size_t,
+    const struct li2_dd_aux_binding *,struct li2_dd_aux_plan *);
+int li2_dd_aux_validate(const struct li2_dd_aux_plan *);
+int li2_dd_aux_recover(const struct li2_dd_aux_plan *,uintptr_t,const uint64_t[16],uint64_t,
+    const uint64_t[4],struct li2_dd_recovered *);
 _Static_assert(sizeof(struct li2_dd_descriptor)==120,"typed direct descriptor");
 _Static_assert(sizeof(struct li2_dd_record)==1584,"bounded direct recovery rows");
 _Static_assert(sizeof(struct li2_dd_plan)==2288,"bounded direct adapter image");
 _Static_assert(sizeof(struct li2_dd_recovered)==152,"complete integer recovery");
+_Static_assert(sizeof(struct li2_dd_aux_binding)==64,"actual owner plus separate auxiliary placement");
+_Static_assert(sizeof(struct li2_dd_aux_plan)==2368,"complete typed auxiliary value");
+_Static_assert(LI2_DD_AUX_SLOTS*LI2_DD_SLOT_BYTES==LI2_DD_AUX_CODE_BYTES,
+               "eight distinct auxiliary image slots");
+_Static_assert(LI2_DD_AUX_SPILL_STRIDE>=40 &&
+               LI2_DD_AUX_SLOTS*LI2_DD_AUX_SPILL_STRIDE<=LI2_DD_AUX_SPILL_BYTES,
+               "separate initialized spills and target cells");
 #endif
