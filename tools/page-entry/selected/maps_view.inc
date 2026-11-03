@@ -373,7 +373,13 @@ long li2_maps_view_anon_reset(uintptr_t first,size_t bytes) {
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR
 #include "loop_group_descriptor.h"
 #endif
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+extern void li2_lcx_before_raw(long,long,long,long,long,long,long);
+#endif
 void li2_maps_before_raw(long n,long a,long b,long c,long d,long e,long f) {
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    li2_lcx_before_raw(n,a,b,c,d,e,f);
+#endif
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR
     li2_lgd_before_raw(n,a,b,c,d,e,f);
 #endif

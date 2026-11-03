@@ -48,6 +48,38 @@ static int lc8_reachable(const struct li2_pgd_view *v,const struct li2_pg_compac
     }
     return 0;
 }
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+/* Advisory only. The immutable candidate's saved pair is not a fresh source
+   lease. PGX preparation and every existing member/claim check still follow;
+   the owner reconstructs each accepted route again after actual source bind. */
+static int lc8_candidate_reachable(const struct li2_pgd_view *v,
+    const struct li2_pg_source_key *key,const struct li2_pg_compact *candidate) {
+    if(lc8_reachable(v,candidate))return 1;
+    for(unsigned i=0;i<v->count;i++) {
+        const struct li2_pg_compact *p=v->member[i].plan;
+        for(unsigned h=0;h<p->heads;h++)if(p->head[h].kind==LI2_PG_DIRECT) {
+            const struct li2_dd_descriptor *d=&p->instruction[h].direct;
+            if(!p->head[h].successor_count || p->head[h].successor_count>2 ||
+               d->external_mask&~3U)return 0;
+            for(unsigned a=0;a<p->head[h].successor_count;a++)if(d->external_mask&(1U<<a)) {
+                uintptr_t pc=d->target[a];unsigned possible=0;
+                for(unsigned page=0;page<2;page++) {
+                    uintptr_t base=key->page[page].identity.address;
+                    if(pc>=base && pc-base<=PAGE-5U &&
+                       key->page[page].bytes[pc-base]==0xe9)possible=1;
+                }
+                if(!possible)continue;
+                struct li2_lcx_tail tail={0};
+                pe_need(plr_scope_enter(PLR_HISTORY),PE_REENTRY,9410);
+                int e=li2_lcx_tail_value(key,candidate,pc,&tail);
+                plr_scope_leave(PLR_HISTORY);
+                if(!e)return 1;
+            }
+        }
+    }
+    return 0;
+}
+#endif
 static const struct li2_pgd_view *lc8_offer(const struct li2_pg_token *t) {
     struct pda_work *w=&pe.domain.work;const struct li2_pgd_view *v=&w->view;
     const unsigned i=w->peer_member;
@@ -66,7 +98,12 @@ static const struct li2_pgd_view *lc8_offer(const struct li2_pg_token *t) {
     const struct li2_pgs_entry *entry=li2_pgs_owner_entry(t);
     if(!entry || !equal(entry,&v->entry,sizeof *entry))return 0;
     w->offer=*v;w->offer.count=i+1;
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    return lc8_members(&w->offer) &&
+        lc8_candidate_reachable(v,v->member[i].key,v->member[i].plan)?&w->offer:0;
+#else
     return lc8_members(&w->offer) && lc8_reachable(v,v->member[i].plan)?&w->offer:0;
+#endif
 }
 static int lc8_attach(void) {
     struct pda_work *w=&pe.domain.work;
@@ -85,11 +122,20 @@ static int lc8_attach(void) {
             /* Corrupt cached authority remains a failure, not a cache miss. */
 #ifdef LI2_LOOP_TRANSLATION_ARENA
             pe_need(lta_available(slot),PE_RELEASE,82);
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+            /* Cold-only overwrite eligibility never proposes an active peer. */
+            if(lcx_cold_retired(ptr_node_index(slot)))continue;
+#endif
 #else
             pe_need(pda_permitted(slot),PE_RELEASE,82);
 #endif
             const struct pe_payload *p=(const void *)PTR_SLOT_AT(slot).proof;
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+            if(!pda_registry(slot) || !pda_registration(p) ||
+               !lc8_candidate_reachable(&w->view,&p->source,&p->plan))continue;
+#else
             if(!pda_registry(slot) || !pda_registration(p) || !lc8_reachable(&w->view,&p->plan))continue;
+#endif
             pda_member(i,slot);
             w->offer=w->view;w->offer.count=i+1;
             int compatible=lc8_members(&w->offer);

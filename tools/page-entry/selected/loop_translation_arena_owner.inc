@@ -38,6 +38,11 @@ static int lta_closed_value(unsigned node) {
 static int lta_available(unsigned slot) {
     unsigned node=ptr_node_index(slot);
     if(node>=PTR_NODE_COUNT)return 0;
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    /* Selection/overwrite classification only. Neither result is a reusable
+       completion or a prepared entry token. */
+    if(lcx_cold_pending(node) || lcx_cold_retired(node))return 1;
+#endif
     return PTR_NODE_AT(node).claim.valid?pda_permitted(slot):lta_closed_value(node);
 }
 /* Issued only after the original planner, byte publication, sealing and SBC
@@ -66,6 +71,11 @@ static int lta_detach(unsigned slot) {
     struct li2_ptr_slot *s=&PTR_NODE_AT(node);
     if(!s->generation.installed) return !s->identity.generation &&
         pda_zero(&s->claim,sizeof s->claim)?0:PE_STATE;
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    /* Actual post-close retirement already discarded this exact old claim.
+       Keep its protected cold-only token; do not mint dormant authority. */
+    if(lcx_cold_retired(node))return 0;
+#endif
     if(lta_closed_value(node))return 0;
     if(!pda_permitted(slot) || !lta_issued_value(node))return PE_RELEASE;
     int error=lprx_revoke(LPRX_COLD);if(error)return error;
@@ -84,7 +94,13 @@ static int lta_move(unsigned slot,unsigned node) {
     unsigned old=ptr_node_index(slot);
     if(old>=PTR_NODE_COUNT || node>=PTR_NODE_COUNT || !ptr_storage() ||
        lta_node_bound(node)>=0 || pe.arena.next_binding==UINT64_MAX)return PE_STATE;
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    if(PTR_NODE_AT(node).generation.installed && !lta_closed_value(node) &&
+       !(lcx_cold_retired(node) && !pe.warm && pe.p.phase==LI2_PG_IDLE &&
+         !pe.domain.work.bound))return PE_RELEASE;
+#else
     if(PTR_NODE_AT(node).generation.installed && !lta_closed_value(node))return PE_RELEASE;
+#endif
     int error=lta_detach(slot);if(error)return error;
     PTR_NODE_AT(old).identity.index=LI2_PTR_SLOTS;
     ++lta_writer.value.next_binding;pe.arena.next_binding=lta_writer.value.next_binding;
@@ -98,6 +114,9 @@ static int lta_move(unsigned slot,unsigned node) {
    still precede domain entry; no saved completion is replayed as current. */
 static int lta_prepare(unsigned slot) {
     unsigned node=ptr_node_index(slot);
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    if(lcx_cold_pending(node) || lcx_cold_retired(node))return PE_SOURCE;
+#endif
     if(node>=PTR_NODE_COUNT || !lta_closed_value(node) || !pda_registry(slot) ||
        !pda_registration((const void *)PTR_NODE_AT(node).proof) ||
        !ptr_stored(slot) || !ptr_slots(slot,0))return PE_SOURCE;
@@ -117,6 +136,9 @@ static int lta_prepare(unsigned slot) {
 }
 static int lta_prepared(unsigned slot) {
     unsigned node=ptr_node_index(slot);
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    if(lcx_cold_pending(node) || lcx_cold_retired(node))return 0;
+#endif
     if(node>=PTR_NODE_COUNT || !(pe.arena.rebind_mask&(1U<<slot)) || !lta_closed_value(node))return 0;
     const struct lta_dormant *d=&lta_writer.value.dormant[node];
     return d->prepared_serial==pe.p.serial && pe.p.serial &&
@@ -134,14 +156,26 @@ static int lta_take(unsigned slot,unsigned peer) {
 }
 static int lta_replace(unsigned slot) {
     unsigned node=ptr_node_index(slot);
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    if(node>=PTR_NODE_COUNT || pe.warm || pe.p.phase!=LI2_PG_CONSUMED)return PE_STATE;
+    if(lcx_cold_retired(node)) {
+        int error=lcx_retirement_take(node);if(error)return error;
+    } else if(!lta_closed_value(node))return PE_STATE;
+#else
     if(node>=PTR_NODE_COUNT || pe.warm || pe.p.phase!=LI2_PG_CONSUMED ||
        !lta_closed_value(node))return PE_STATE;
+#endif
     struct lta_dormant *d=&lta_writer.value.dormant[node];
     d->closed=d->reusable=d->prepared_serial=d->prepared_binding=0;
     pe.arena.rebind_mask&=~(1U<<slot);ped_count(&lta_writer.value.evicted);
     return 0;
 }
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+static int lc8_candidate_reachable(const struct li2_pgd_view *,
+    const struct li2_pg_source_key *,const struct li2_pg_compact *);
+#else
 static int lc8_reachable(const struct li2_pgd_view *,const struct li2_pg_compact *);
+#endif
 /* A bounded proposal loop. An incompatible node is attempted only once in
    this activation; it receives neither a source lease nor a current claim. */
 static unsigned lta_propose_peer(struct lta_peer_trials *tried) {
@@ -149,12 +183,21 @@ static unsigned lta_propose_peer(struct lta_peer_trials *tried) {
     if(!tried || pe.p.phase!=LI2_PG_BOUND || pe.domain.work.bound)return LI2_PTR_SLOTS;
     for(unsigned node=0;node<PTR_NODE_COUNT;node++) {
         if(tried->node[node] || lta_node_bound(node)>=0 || !PTR_NODE_AT(node).generation.installed)continue;
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+        if(lcx_cold_retired(node))continue; /* No dormant admission for a cold-only node. */
+#endif
         pe_need(lta_closed_value(node),PE_RELEASE,9236);
         const struct li2_ptr_slot *s=&PTR_NODE_AT(node);
         const struct pe_payload *p=(const void *)s->proof;
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+        if(s->registry_count!=protected_count ||
+           !equal(s->registry,protected,protected_count*sizeof *protected) ||
+           !pda_registration(p) || !lc8_candidate_reachable(v,&p->source,&p->plan))continue;
+#else
         if(s->registry_count!=protected_count ||
            !equal(s->registry,protected,protected_count*sizeof *protected) ||
            !pda_registration(p) || !lc8_reachable(v,&p->plan))continue;
+#endif
         tried->node[node]=1;
         unsigned victim=LI2_PTR_SLOTS;
         for(unsigned slot=0;slot<LI2_PTR_SLOTS;slot++) {

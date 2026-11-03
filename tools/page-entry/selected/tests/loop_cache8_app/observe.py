@@ -31,11 +31,19 @@ def q(data,offset=0,count=1):return struct.unpack_from('<'+'Q'*count,data,offset
 def u(data,offset=0,count=1):return struct.unpack_from('<'+'I'*count,data,offset)
 
 def _frame(data,app,native,model,step,event,previous_nx,*,native_kinds=None,raw_trace=False):
+    need(type(data)is bytes and len(data)==FRAME,'whole actual fixed frame')
+    h=q(data,0,16);g=q(data,128,23);si=data[312:440];uc=data[440:1408];fp=data[1408:]
+    return frame_fields(h,g,si,uc,fp,app,native,model,step,event,previous_nx,
+                        native_kinds=native_kinds,raw_trace=raw_trace)
+
+def frame_fields(h,g,si,uc,fp,app,native,model,step,event,previous_nx,*,native_kinds=None,raw_trace=False):
     if raw_trace:
         need(raw_trace is True and event is False,'explicit genuine pre-close TRACE frame')
     checkpoints=NATIVE_KINDS if native_kinds is None else native_kinds
-    need(type(data)is bytes and len(data)==FRAME,'whole actual fixed frame')
-    h=q(data,0,16);g=q(data,128,23);si=data[312:440];uc=data[440:1408];fp=data[1408:]
+    need(type(h)is tuple and len(h)==16 and type(g)is tuple and len(g)==23 and
+         all(type(x)is int and 0<=x<1<<64 for x in h+g) and
+         type(si)is bytes and len(si)==128 and type(uc)is bytes and len(uc)==968 and
+         type(fp)is bytes and len(fp)==65536,'whole typed shared frame values')
     sig=11 if event else 5
     need(h[0:2]==(1,sig) and h[6]%4096==0 and h[7]==524288 and h[8]==app.MASK and
          h[9:14]==((0,0,0,0,0)if event or raw_trace else(1,0,0,0,0)) and h[14:]==(0,0),

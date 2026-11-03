@@ -2,6 +2,10 @@
    primitive deliberately requires actual registered ACTIVE state. It does
    not broaden the old NONE domain or the old unregistered/default paths. */
 #include "persistent_group_runtime.h"
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+#include "loop_cached_direct_context.h"
+extern const struct li2_lcx_image *li2_lcx_pending_images(const struct li2_pg_token *);
+#endif
 #ifdef LI2_PERSISTENT_LOOP_PLAN
 #include "persistent_loop_plan.h"
 #endif
@@ -614,6 +618,53 @@ int li2_pg_rseq_cold(const struct li2_pg_token *t,const struct li2_pg_plan *p,co
     pgr_zero(&pg_rseq.word_entry);pg_rseq.cold_heads=p->heads;pg_rseq.cold_stores=stores;
     pg_rseq.cold_stubs=p->links;return 0;
 }
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+/* This new proof observes actual tail bytes under the already bound PGX and
+   rseq owner. It does not enlarge the ordinary entry window or invent a NONE
+   classifier result. All decoding runs in the controller's unchanged scope. */
+int li2_lcx_rseq_value(const struct li2_pg_token *t,const struct li2_lcx_lease *lease,
+    const struct li2_lcx_image *images,const ucontext_t *uc) {
+    const struct li2_pgd_view *v=li2_pgd_owner_view(t);
+    const struct li2_pgd_source_progress *source=li2_pgd_source_progress();
+    if(!pgr_token(t) || li2_pg_owner_phase(t)!=LI2_PG_BOUND || pg_rseq.first_error ||
+       pg_rseq.domain_bound!=1 || !pg_rseq.seed_complete || !region_rseq_current(uc) ||
+       !v || !source || source->bound!=1 || source->first_error ||
+       v->count!=source->count || v->count!=pg_rseq.domain_count ||
+       !region_rseq_equal(source->ref,pg_rseq.domain_ref,sizeof source->ref) ||
+       !lease || lease->version!=LI2_LCX_VERSION || lease->reserved ||
+       lease->token.owner!=t->owner || lease->token.serial!=t->serial ||
+       lease->members!=v->count || !lease->count || lease->count>LI2_DD_AUX_SLOTS ||
+       images!=li2_lcx_pending_images(t))return pgr_bad(LI2_RN_STATE,570);
+    pgr_zero(&pg_rseq.word_entry);
+    for(unsigned i=0;i<lease->count;i++) {
+        const struct li2_lcx_capability *c=&lease->capability[i];
+        const struct li2_lcx_image *image=&images[i];
+        if(c->route.owner_member>=v->count || c->route.from_member>=v->count ||
+           !region_rseq_equal(&c->owner,&v->member[c->route.owner_member].identity,sizeof c->owner) ||
+           !region_rseq_equal(&c->from,&v->member[c->route.from_member].identity,sizeof c->from) ||
+           !region_rseq_equal(&c->target,&c->owner,sizeof c->target) ||
+           image->tail.source_page>=2 || image->tail.source_offset>LI2_REGION_PAGE-5U ||
+           c->original!=image->tail.original.decoded.pc || c->auxiliary!=i)return pgr_bad(LI2_RSEQ_PLAN,570);
+        const struct li2_pg_source_key *key=v->member[c->route.owner_member].key;
+        const unsigned page=image->tail.source_page,offset=image->tail.source_offset;
+        if(!key || c->original!=key->page[page].identity.address+offset)return pgr_bad(LI2_RSEQ_PLAN,571);
+        const unsigned char *bytes=key->page[page].bytes+offset;
+        struct li2_span_decoded actual={0};struct li2_write_footprint independent={0};
+        if(li2_decoder_span_describe(c->original,bytes,5,&actual) ||
+           !region_rseq_equal(&actual,&image->tail.original,sizeof actual) ||
+           actual.ready!=1 || actual.refusal || actual.decoded.length!=5 ||
+           li2_decoder_link_none(c->original,bytes,5,&independent) ||
+           independent.abi_version!=1 || independent.policy!=LI2_WRITE_NONE || independent.first || independent.end ||
+           independent.pc!=actual.decoded.pc || independent.next_pc!=actual.decoded.next_pc ||
+           independent.code!=actual.decoded.code || independent.length!=5 ||
+           li2_dd_aux_validate(&image->plan))return pgr_bad(LI2_RSEQ_PLAN,572);
+        int error=decoded_footprint(&actual.decoded,uc,1);
+        if(error)return pgr_bad((unsigned)error,573);
+    }
+    if(!region_rseq_current(uc))return pgr_bad(LI2_RN_PIN,570);
+    pgr_zero(&pg_rseq.word_entry);return 0;
+}
+#endif
 int li2_pg_rseq_close(const struct li2_pg_token *t,const ucontext_t *uc) {
     if(!pgr_token(t) || pg_rseq.first_error || !pg_rseq.seed_complete || !pg_rseq.entry_complete ||
        li2_lifecycle_fetch_interlock() || !region_rseq_current(uc) || !pgr_source_terminal(t,0))

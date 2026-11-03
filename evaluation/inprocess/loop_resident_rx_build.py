@@ -17,8 +17,15 @@ RX_LIFETIME=dict(version=1,slots=2,source_release_version=1,
     metadata_permission_counts='actual-pe_permission-calls-only',qualification_credit=False)
 
 
-def build_rx(builder, archive, original, directory, pin, binary, aliases, run, state, mode, *, control=None, selected=None, root=None, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None, arena=False, arena_observe=None, arena_program=False, arena_capacity=False, arena_prefix=False):
+def build_rx(builder, archive, original, directory, pin, binary, aliases, run, state, mode, *, control=None, selected=None, root=None, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None, arena=False, arena_observe=None, arena_program=False, arena_capacity=False, arena_prefix=False, cached_direct_context=False, cached_direct_observe=None):
     """Execute the real source-owned recipe, then bind its exact compiler closure."""
+    need(type(cached_direct_context)is bool and (not cached_direct_context or
+         arena and cache8 and group_descriptor and not arena_program and not arena_capacity and
+         not arena_prefix and arena_observe is None and not cache8_program and not recurrence and
+         cache8_observe is None and group_descriptor_observe is None and cache8_effects is None and
+         control is None), 'distinct cached DIRECT context uses the original twelve-node arena')
+    need(cached_direct_observe is None or cached_direct_observe is True and cached_direct_context,
+         'cached DIRECT observation is explicit True with its separate source and compiler layout')
     need(type(arena_prefix)is bool and (not arena_prefix or arena and arena_program and
          arena_capacity and mode=='release' and arena_observe is None),
          'distinct capacity128 offers1024 prefix diagnostic, never a completed program')
@@ -76,6 +83,8 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     if arena_observe is not None:stem+='-observe'
     if arena_program:stem+='-program'
     if arena_prefix:stem='persistent-loop-translation-arena-prefix'
+    if cached_direct_context:stem='persistent-loop-cached-direct-context'
+    if cached_direct_observe is True:stem+='-observe'
     binder_name=stem.replace('-','_')+'_binding'
     output = directory/'build'; output.mkdir()
     script = pin(selected/('build-'+stem+'.sh'))
@@ -112,6 +121,8 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     if arena_observe is not None:policy_value['arena_control']=arena_observe
     if arena_capacity:policy_value['arena_capacity']=128
     if arena_prefix:policy_value['arena_prefix']=1024
+    if cached_direct_context:policy_value['cached_direct_context']=1
+    if cached_direct_observe is True:policy_value['cached_direct_observe']=1
     policy = digest(policy_value)
     environment = dict(builder.environment, LI2_CC=str(builder.tools['cc']), LI2_PYTHON=str(builder.tools['python']))
     _, out, err = run('build', [builder.tools['sh'], script, archive, original, output, mode]+
@@ -137,7 +148,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     need(set(binding) == set(constants) | {'profile', 'mode', 'archive', 'policy_sha256',
              'original', 'sources', 'headers', 'byte_certificate', 'history_certificate', 'rx_lifetime'} |
              (set() if control is None else {'control','oracle'}) |
-             ({'recurrence'} if recurrence else set()) | ({'cache8'} if cache8 else set()) | ({'cache8_observer'} if cache8_observe is not None else set()) | ({'cache8_program'} if cache8_program else set()) | ({'group_descriptor'} if group_descriptor else set()) | ({'group_descriptor_observer'} if group_descriptor_observe is not None else set()) | ({'cache8_effects'} if cache8_effects is not None else set()) | ({'arena'} if arena else set()) | ({'arena_observer'} if arena_observe is not None else set()) | ({'arena_program'} if arena_program else set()) | ({'arena_prefix'} if arena_prefix else set())
+             ({'recurrence'} if recurrence else set()) | ({'cache8'} if cache8 else set()) | ({'cache8_observer'} if cache8_observe is not None else set()) | ({'cache8_program'} if cache8_program else set()) | ({'group_descriptor'} if group_descriptor else set()) | ({'group_descriptor_observer'} if group_descriptor_observe is not None else set()) | ({'cache8_effects'} if cache8_effects is not None else set()) | ({'arena'} if arena else set()) | ({'arena_observer'} if arena_observe is not None else set()) | ({'arena_program'} if arena_program else set()) | ({'arena_prefix'} if arena_prefix else set()) | ({'cached_direct_context'} if cached_direct_context else set()) | ({'cached_direct_observer'} if cached_direct_observe is True else set())
          and digest({key: binding[key] for key in constants}) == digest(constants)
          and binding['profile'] == stem+('-capacity128' if arena_capacity else '')+'-'+mode+'-v1'
          and binding['mode'] == mode and binding['archive'] == fact(archive)
@@ -192,6 +203,18 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
              raw_invalidation='all-nodes-before-kernel-nonwrapping-epochs',
              inactive_heads_exposed=False,old_capture_compatible=False,qualification_credit=False),
              'exact inactive-node value custody and fresh eight-member execution authority')
+    if cached_direct_context:
+        need(binding['cached_direct_context']==dict(version=1,directory_version=2,nodes=12,active_bindings=8,completion_cells=9,
+             aggregate_heads=256,aggregate_boundaries=8,auxiliary_slots=8,
+             auxiliary_code_pages=1,auxiliary_spill_pages=1,tail_bytes=5,tail_opcode=233,
+             observation_authority=False,qualification_credit=False),
+             'exact separate cached DIRECT value and bounded auxiliary directory identity')
+    if cached_direct_observe is True:
+        need(binding['cached_direct_observer']==dict(version=1,reference='cached-direct-ab146',
+             epochs=4,phases=4,counters=64,layout_words=62,frame='whole-le_frame',
+             proof_presence='explicit',controls=0,performance_credit=False,
+             observation_authority=False,qualification_credit=False),
+             'exact separate cached DIRECT complete-frame and explicit-proof observer')
     if arena_program:
         need(binding['arena_program']==dict(version=arena_version,summary_fields=35,node_rows=arena_nodes//4,node_fields=55,
              nodes_per_row=4,nodes=arena_nodes,slots=8,count_version=2,count_fields=63,
@@ -243,6 +266,8 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
         ('#define LI2_PG_LOOP_CACHE8_PROGRAM_BINDING_VERSION 1\n' if cache8_program else '')+
         ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_BINDING_VERSION 1\n' if group_descriptor else '')+
         ('#define LI2_PG_LOOP_TRANSLATION_ARENA_BINDING_VERSION 1\n' if arena else '')+
+        ('#define LI2_PG_LOOP_CACHED_DIRECT_CONTEXT_BINDING_VERSION 1\n' if cached_direct_context else '')+
+        ('#define LI2_PG_LOOP_CACHED_DIRECT_CONTEXT_OBSERVE_BINDING_VERSION 1\n' if cached_direct_observe is True else '')+
         ('#define LI2_PG_LOOP_TRANSLATION_ARENA_PROGRAM_BINDING_VERSION 1\n' if arena_program else '')+
         ('#define LI2_PG_LOOP_TRANSLATION_ARENA_CAPACITY_BINDING_VERSION 1\n#define LI2_LOOP_TRANSLATION_ARENA_CAPACITY 128\n' if arena_capacity else '')+
         ('#define LI2_PG_LOOP_TRANSLATION_ARENA_PREFIX_BINDING_VERSION 1\n#define LI2_PG_LOOP_TRANSLATION_ARENA_PREFIX_OFFERS 1024\n' if arena_prefix else '')+
@@ -272,6 +297,8 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
         (['-DLI2_LOOP_CACHE8=1'] if cache8 else [])+
         (['-DLI2_LOOP_GROUP_DESCRIPTOR=1'] if group_descriptor else [])+
         (['-DLI2_LOOP_TRANSLATION_ARENA=1'] if arena else [])+
+        (['-DLI2_LOOP_CACHED_DIRECT_CONTEXT=1'] if cached_direct_context else [])+
+        (['-DLI2_LOOP_CACHED_DIRECT_CONTEXT_OBSERVE=1'] if cached_direct_observe is True else [])+
         ([] if arena_observe is None else ['-DLI2_LOOP_TRANSLATION_ARENA_OBSERVE=1','-DLI2_LOOP_CACHE8_OBSERVE=1','-DLI2_LOOP_CACHE8_CONTROL='+str(arena_observe)])+
         ([] if group_descriptor_observe is None else ['-DLI2_LOOP_GROUP_DESCRIPTOR_OBSERVE=1','-DLI2_LOOP_CACHE8_OBSERVE=1','-DLI2_LOOP_CACHE8_CONTROL='+str(group_descriptor_observe)])+
         (['-DLI2_LOOP_CACHE8_PROGRAM=1'] if cache8_program else [])+
@@ -283,6 +310,14 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     if cache8:
         expected.insert(expected.index('-Wl,-e,_start,-Bsymbolic,-z,now,-z,relro,-z,noexecstack,--build-id=none,--no-undefined'),
             '-Wl,--undefined=li2_loop_cache8_progress')
+    if cached_direct_context:
+        expected.insert(expected.index('-Wl,-e,_start,-Bsymbolic,-z,now,-z,relro,-z,noexecstack,--build-id=none,--no-undefined'),
+            '-Wl,--undefined=li2_lcx_tail_value,--undefined=li2_lcx_image_value,--undefined=li2_lcx_lease_value,--undefined=li2_dd_aux_emit,--undefined=li2_dd_aux_validate,--undefined=li2_dd_aux_recover')
+        expected.insert(expected.index(str(selected/'linked_direct_dispatch.c'))+1,
+            str(selected/'loop_cached_direct_context.c'))
+    if cached_direct_observe is True:
+        expected.insert(expected.index('-Wl,-e,_start,-Bsymbolic,-z,now,-z,relro,-z,noexecstack,--build-id=none,--no-undefined'),
+            '-Wl,--undefined=li2_lcxo_layout')
     if arena_observe is not None:
         expected.insert(expected.index('-Wl,-e,_start,-Bsymbolic,-z,now,-z,relro,-z,noexecstack,--build-id=none,--no-undefined'),
             '-Wl,--undefined=li2_ltao_layout')
@@ -326,6 +361,8 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     if cache8:
         providers+=('li2_loop_cache8_progress',)
     if group_descriptor:providers+=('li2_lgd_before_raw','li2_lgd_source_context')
+    if cached_direct_context:providers+=('li2_lcx_tail_value', 'li2_lcx_image_value', 'li2_lcx_lease_value', 'li2_dd_aux_emit', 'li2_dd_aux_validate', 'li2_dd_aux_recover')
+    if cached_direct_observe is True:providers+=('li2_lcx_before_raw','li2_lcx_pending_images','li2_lcx_rseq_value')
     if cache8_effects is not None:providers+=('li2_lifecycle_cache8_effects_memory',)
     for name in providers:
         found = [line.split() for line in out.splitlines() if line.split()[-1:] == [name.encode()]]
@@ -339,6 +376,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     if recurrence:state['recurrence_layout']=recurrence_layout(bridge,out)
     if group_descriptor_observe is not None:state['descriptor_observer_layout']=descriptor_observer_layout(bridge,out)
     if arena_observe is not None:state['arena_observer_layout']=arena_observer_layout(bridge,out)
+    if cached_direct_observe is True:state['cached_direct_observer_layout']=cached_direct_observer_layout(bridge,out)
     state.update(bridge=fact(bridge), status='compiled_diagnostic_only')
     return bridge
 
@@ -431,3 +469,90 @@ def arena_observer_layout(bridge,symbols):
             need(a['address']+a['bytes']<=b['address'] or b['address']+b['bytes']<=a['address'],
                  'distinct arena observation/authority extents '+name+'/'+other)
     return dict(version=1,symbol=item,values=list(values),owners=owners,inferior_started=False)
+
+
+def cached_direct_observer_layout(bridge,symbols):
+    """Read every compiler layout word; no guessed wire size or inferior execution.
+
+    These are structural build checks. The native reader must independently
+    validate the complete frame/production ABI and actual captured values.
+    """
+    import struct
+    data,_,segments=elf(bridge)
+    def symbol(name,kinds):
+        rows=[line.split()for line in symbols.splitlines()if line.split()[-1:]==[name.encode()]]
+        need(len(rows)==1 and len(rows[0])==4 and rows[0][2]in kinds,
+             'one actual cached DIRECT layout/storage symbol '+name)
+        address,size=int(rows[0][0],16),int(rows[0][1],16)
+        need(address>0 and size>0,'complete nonempty cached DIRECT layout/storage symbol')
+        return dict(address=address,bytes=size)
+    item=symbol('li2_lcxo_layout',(b'r',b'R'));address,size=item['address'],item['bytes']
+    need(size==62*8,'all sixty-two actual cached DIRECT compiler layout words')
+    loads=[p for p in segments if p[0]==1 and p[1]==4 and p[3]<=address<address+size<=p[3]+p[5]]
+    need(len(loads)==1,'whole cached DIRECT layout belongs to one actual readonly LOAD')
+    load=loads[0];values=struct.unpack_from('<62Q',data,load[2]+address-load[3])
+    need(values[0]==1 and values[3]==4 and all(v>0 for v in values[1:]) and
+         values[1]+64<4*1024*1024 and values[4]>=32*8+2*values[29] and
+         values[4]+4*values[2]==values[1],
+         'version one, four complete actual epochs and original whole-wire bound')
+    need(values[5]==values[17]+values[18]+8*8+128*8 and
+         values[6]==16*8+64*8+6*values[27]+2*values[28] and values[7]==32*8,
+         'complete member and four-phase counter/permission/query records')
+    extents=((values[7],8*values[5]),(values[8],4*values[6]),
+        (values[9],values[19]),(values[10],values[19]),(values[11],values[14]),
+        (values[12],values[16]),(values[13],values[15]))
+    for i,(offset,length)in enumerate(extents):
+        need(length>0 and offset+length<=values[2] and
+             (i==0 or extents[i-1][0]+extents[i-1][1]<=offset),
+             'whole ordered nonoverlapping actual epoch fields')
+    need(0<values[20]<values[21]<values[22]<values[23]<values[24]<values[19] and
+         values[22]+values[25]<=values[23] and values[26]+65536==values[25] and
+         values[25]<=values[19], 'complete original le_frame and full floating-point capacity')
+    need(0<values[36]<values[37]<values[38]<values[39]<values[40]<values[41]<values[14] and
+         values[36]+8*values[17]<=values[37] and values[37]+8*values[18]<=values[38] and
+         values[39]+8*values[30]<=values[40] and values[40]+values[31]<=values[41] and
+         values[41]+values[32]<=values[14] and
+         values[30]==values[34]+values[35] and values[32]==32+256*32 and
+         0<values[43]<values[44]<values[42] and
+         values[43]+values[28]<=values[44] and values[44]+values[28]<=values[42] and
+         values[42]+values[14]<=values[15],
+         'whole actual bundle and explicitly present side-proof storage')
+    need(0<values[46]<values[47]<values[48]<values[49]<values[50]<values[51]<values[52]<values[53]<values[16] and
+         values[46]+8*values[45]<=values[47] and values[51]+values[28]<=values[52] and
+         values[16]%4096==0 and 0<values[57]<values[58]<values[55]<=values[56] and
+         values[57]+values[18]<=values[58] and values[56]==89*4096,
+         'whole actual completion, source and immutable publication geometry')
+    need(values[59]==(values[14]+4095)//4096*4096 and
+         values[60]==(values[15]+4095)//4096*4096 and
+         values[59]<=64*4096 and values[60]<=64*4096 and values[61]%4096==0,
+         'actual page-rounded LCX storage retains original private-query bounds')
+    owners={name:symbol(name,(b'b',b'B'))for name in
+        ('pe','lcx_live','lcx_cells','lcx_runtime','lcxo')}
+    for name,expected in (('pe',values[54]),('lcx_live',values[59]),
+                          ('lcx_cells',9*values[60]),('lcx_runtime',values[61])):
+        need(owners[name]['bytes']==expected and owners[name]['address']%4096==0 and expected%4096==0,
+             'exact actual compiler size and page alignment '+name)
+    need(owners['lcxo']['bytes']>=values[1]+5*4,
+         'actual observer owns the full wire and all five control fields')
+    for i,(name,a)in enumerate(owners.items()):
+        need(sum(p[0]==1 and p[1]==6 and p[3]<=a['address']<a['address']+a['bytes']<=p[3]+p[6]
+                 for p in segments)==1,'whole actual writable ELF storage '+name)
+        for other,b in list(owners.items())[:i]:
+            need(a['address']+a['bytes']<=b['address'] or b['address']+b['bytes']<=a['address'],
+                 'distinct cached DIRECT observation/authority extents '+name+'/'+other)
+    names=(
+        'version','wire','epoch','epochs','wire_epoch',
+        'member','phase','epoch_member','epoch_phase','epoch_entry',
+        'epoch_event','epoch_bundle','epoch_completion','epoch_side','bundle',
+        'side','completion','ref','key','frame',
+        'frame_si','frame_uc','frame_step','frame_fs','frame_tls',
+        'step','step_fp','permission','query','stat',
+        'image','lease','directory','capability','tail',
+        'aux_plan','bundle_ref','bundle_key','bundle_route','bundle_image',
+        'bundle_lease','bundle_directory','side_bundle','side_code_closed','side_spill_closed',
+        'completion_member_size','completion_member','completion_source','completion_domain_source','completion_rseq',
+        'completion_fetch','completion_directory_closed','completion_rx','completion_direct_exit','pe',
+        'payload','proof_bytes','payload_source','payload_plan','live_bytes',
+        'cell_bytes','runtime_bytes',
+    )
+    return dict(zip(names,values),symbol=item,owners=owners,inferior_started=False)

@@ -48,7 +48,14 @@ ARENA_SCHEDULE=SCHEDULE[:30]+tuple(
     ('subject-'+lane,'program')for lane in('native',)+tuple(x[0]for x in ARENA_LANES))
 
 
-def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_case=None, arena=False):
+CACHED_DIRECT_LANES=(('release','release',0,0),('differential','differential',0,0))
+CACHED_DIRECT_SCHEDULE=SCHEDULE[:30]+tuple(
+    (lane+'-'+name,profile)for lane,_,_,_ in CACHED_DIRECT_LANES for name,profile in(
+        ('build','release_build'),('headers','metadata'),('undefined','inspect'),('symbols','inspect'),('carrier','program')))+tuple(
+    ('subject-'+lane,'program')for lane in('native',)+tuple(x[0]for x in CACHED_DIRECT_LANES))
+
+
+def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_case=None, arena=False, cached_direct_context=False):
     """Explicit compiler/reader context; original source authority remains natural."""
     if context is not None and (type(context)is not dict or set(context)!=
             {'root','selected','reader_root','modules'}):
@@ -61,6 +68,10 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
     if type(arena)is not bool or arena and (not cache8 or not group_descriptor or effects_case is not None):
         raise ValueError('explicit distinct twelve-node/eight-active arena selector')
     if arena:lanes,schedule=ARENA_LANES,ARENA_SCHEDULE
+    if type(cached_direct_context)is not bool or cached_direct_context and (
+            not cache8 or not group_descriptor or arena or effects_case is not None):
+        raise ValueError('distinct cached DIRECT positive diagnostic under CACHE8/descriptor')
+    if cached_direct_context:lanes,schedule=CACHED_DIRECT_LANES,CACHED_DIRECT_SCHEDULE
     if group_descriptor and effects_case is not None:
         raise ValueError('descriptor and real-effect cohorts are distinct selectors')
     if effects_case is not None and (type(effects_case)is not int or effects_case not in(2,3,4) or not cache8):
@@ -75,6 +86,7 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
         cache8='loop_cache8_reports.py',row='loop_ro_oracle_reports.py')
     if group_descriptor:module_paths=dict(module_paths,descriptor='loop_group_descriptor_reports.py')
     if arena:module_paths=dict(module_paths,arena='loop_translation_arena_reports.py')
+    if cached_direct_context:module_paths=dict(module_paths,cached_direct='loop_cached_direct_context_reports.py')
     root=ROOT if context is None else Path(context['root']).resolve(strict=True)
     reader_root=ROOT if context is None else Path(context['reader_root']).resolve(strict=True)
     selected=root/'tools/page-entry/selected' if context is None else Path(context['selected']).resolve(strict=True)
@@ -117,8 +129,9 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
     if cache8:
         reports=modules['cache8'].configured(modules['row'].row,modules['terminal'],
             modules['certificate'],modules['terminal'].effects)
-    if group_descriptor and not arena:reports=modules['descriptor'].configured(modules['row'].row,reports)
+    if group_descriptor and not arena and not cached_direct_context:reports=modules['descriptor'].configured(modules['row'].row,reports)
     if arena:fixture=selected/'tests/loop_translation_arena_app';reference='arena10-ab791'
+    if cached_direct_context:fixture=selected/'tests/loop_cached_direct_context_app';reference='cached-direct-ab146'
     if effects_case is not None:
         fixture=selected/'tests/loop_cache8_effects';reference='cache8-effects'+str(effects_case)
         reports=modules['cache8'].configured(modules['row'].row,modules['terminal'],
@@ -150,6 +163,10 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
     if arena:
         r['profile']='loop-translation-arena-ab791-v1'
         r['scope']='additive ten-root791 native state and fourteen real activations; restored predicates and inactive-mirror ABA separate; original79/49 remain mandatory'
+    if cached_direct_context:
+        r['profile']='loop-cached-direct-context-ab146-v1'
+        r['scope']='positive-only AB146 complete native comparison and actual cached DIRECT observations; causal/source/RAW/ABA/recovery controls and original55/79/full19 remain separate; no lifecycle qualification or timing credit'
+        r['causal_controls_executed']=False
     pins={};artifacts={};aliases={};presence={}
     def pin(path):
         alias=Path(os.path.abspath(path));p=alias.resolve(strict=True);v=fact(p)
@@ -171,6 +188,7 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
     def run(name,argv,profile='metadata',expected=0,env=None,record=False):
         closure();need(not any(c['name']==name for c in r['commands']),'unique actual command')
         need(len(r['commands'])<len(schedule) and schedule[len(r['commands'])]==(name,profile),
+             'one exact fixed43 cached DIRECT diagnostic command/profile schedule' if cached_direct_context else
              'one exact fixed55 arena command/profile schedule' if arena else
              'one exact fixed79 descriptor command/profile schedule' if group_descriptor else
              'one exact fixed49 command/profile schedule' if effects_case is None else 'one exact fixed real-effect command/profile schedule')
@@ -205,6 +223,9 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
         if arena:
             common_reader=load('loop_translation_arena_common_app',selected/'tests/loop_cache8_app/read.py',pin)
             reader=reader.configured(common_reader)
+        if cached_direct_context:
+            common_reader=load('loop_cached_direct_context_common_app',selected/'tests/loop_cache8_app/read.py',pin)
+            reader=reader.configured(common_reader)
         if effects_case is not None:
             common_reader=load('loop_cache8_effects_common_app',selected/'tests/loop_cache8_app/read.py',pin)
             reader=reader.configured(common_reader,effects_case)
@@ -213,7 +234,7 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
         seed=seed_prerequisite(builder,private,pin,binary,run,r)
         need(r['seed_prerequisite']['status']=='passed','original independent seed prerequisite')
         if cache8:observer=load('loop_cache8_actual_observe',fixture/'observe.py',pin)
-        if group_descriptor and not arena:
+        if group_descriptor and not arena and not cached_direct_context:
             descriptor_observer=load('loop_group_descriptor_actual_observe',
                 selected/'tests/loop_group_descriptor_app/observe.py',pin)
             observer=descriptor_observer.configured(observer)
@@ -221,6 +242,11 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
             common_observer=load('loop_translation_arena_common_observe',selected/'tests/loop_cache8_app/observe.py',pin)
             observer=observer.configured(common_observer)
             reports=modules['arena'].configured(modules['row'].row,reports,modules['descriptor'],observer)
+        if cached_direct_context:
+            common_frame=load('loop_cached_direct_context_common_frame',selected/'tests/loop_cache8_app/observe.py',pin)
+            common_descriptor=load('loop_cached_direct_context_common_descriptor',selected/'tests/loop_group_descriptor_app/observe.py',pin)
+            observer=observer.configured(common_frame,common_descriptor)
+            reports=modules['cached_direct'].configured(modules['row'].row,reports,modules['descriptor'],observer)
         if effects_case is not None:
             common_observer=load('loop_cache8_effects_common_observe',selected/'tests/loop_cache8_app/observe.py',pin)
             observer=observer.configured(common_observer)
@@ -229,7 +255,11 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
         for label,mode,control,expected in lanes:
             directory=private/(label+'-build');directory.mkdir();holder=r['lanes'][label]={}
             call=lane_run(label)
-            if arena:
+            if cached_direct_context:
+                bridge=build_rx(builder,archive,original,directory,pin,binary,aliases,call,holder,mode,
+                    cache8=True,group_descriptor=True,arena=True,cached_direct_context=True,
+                    cached_direct_observe=True,selected=selected,root=root)
+            elif arena:
                 bridge=build_rx(builder,archive,original,directory,pin,binary,aliases,call,holder,mode,
                     cache8=True,group_descriptor=True,arena=True,arena_observe=control,selected=selected,root=root)
             elif group_descriptor:
@@ -306,6 +336,50 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
                         need(len(c['terminal_controls']['entry_refusals'])==
                              len(set(c['terminal_controls']['entry_refusals']))==(0 if effects_case==2 else 9),
                              'all separate actual consumed-entry terminal controls')
+                elif cached_direct_context:
+                    parsed=reader.read(out,0,role=='native',row['exit'],image,row['pid'],cpu,seed,reference=reference)
+                    c['application_complete']=True
+                    if role=='native':
+                        c['application_controls']=reader.controls(out,0,True,row['exit'],image,row['pid'],cpu,seed,reference=reference)
+                        named(c['application_controls'],45,H(out))
+                        need(len(c['application_controls']['reference_refusals'])==
+                             len(set(c['application_controls']['reference_refusals']))==5 and
+                             len(c['application_controls']['context_refusals'])==
+                             len(set(c['application_controls']['context_refusals']))==10,
+                             'all45 original, five reference and ten two-root/tail native controls')
+                        need(err==b'' and parsed['header'][5]==1,
+                             'actual complete146 native reference and empty stderr')
+                        native=parsed;c['native_instructions']=146;c['native_frames']=12
+                    else:
+                        layout=holder['cached_direct_observer_layout']
+                        need(native is not None and row['captures']['record']['bytes']==layout['wire']+64,
+                             'complete actual compiler-sized cached DIRECT wire and footer')
+                        record_path=binary(private/row['captures']['record']['file']);record=record_path.read_bytes();st=record_path.stat()
+                        need(st.st_uid==os.getuid() and observer.q(record,256,2)==(st.st_dev,st.st_ino),
+                             'actual cached DIRECT sink equals retained post-reap record inode')
+                        backing=fact(binary(carrier))
+                        need(backing==holder['subject_artifacts']['carrier'],
+                             'whole actual prepared cached DIRECT carrier backing')
+                        c['carrier_backing']=backing
+                        c['observer']=observer.read(record,reader,native,image,row['pid'],st.st_uid,0,row['exit'],parsed,
+                            backing_size=backing['bytes'],layout=layout,binding=holder['binding'],differential=mode=='differential')
+                        c['observer_controls']=observer.controls(record,reader,native,image,row['pid'],st.st_uid,0,row['exit'],parsed,
+                            backing_size=backing['bytes'],layout=layout,binding=holder['binding'],differential=mode=='differential')
+                        named(c['observer_controls'],observer.CONTROL_COUNT,H(record))
+                        need(len(c['observer_controls']['phase_refusals'])==
+                             len(set(c['observer_controls']['phase_refusals']))==observer.PHASE_CONTROL_COUNT and
+                             len(c['observer_controls']['backing_refusals'])==
+                             len(set(c['observer_controls']['backing_refusals']))==observer.BACKING_CONTROL_COUNT,
+                             'all separately supplied exact cached DIRECT phase and carrier-backing corruptions')
+                        need(c['observer']['actual_refusals']==c['observer']['actual_restorations']==0 and
+                             c['observer']['qualification_credit']is False,
+                             'positive observation grants no actual causal or full lifecycle qualification credit')
+                        c['pair']=c['observer']['native_pair']
+                        c['terminal']=reports.read(err,record,0,mode,layout=layout)
+                        c['terminal_controls']=reports.controls(err,record,0,mode,layout=layout)
+                        need(len(c['terminal_controls']['refusals'])==
+                             len(set(c['terminal_controls']['refusals']))==reports.CONTROL_COUNT,
+                             'all separate actual cached DIRECT terminal join corruptions')
                 elif arena:
                     if control:
                         need(native is not None and len(out)==reader.PREFIX,'actual failed arena application prefix only')
@@ -506,7 +580,13 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
                 need(last.get('reaped')is True and last.get('cleanup_errors')==[] and
                      all(d.get('closed')is True for d in last.get('descriptors',[])),
                      'failed subject closed before the next fixed subject')
-        if arena:
+        if cached_direct_context:
+            need(len(schedule)==43 and len(r['commands'])==43 and len(r['cases'])==3 and
+                 all(c['status']=='passed'for c in r['cases']) and
+                 r['whole_profile_qualified']is False and r['qualification_credit']is False and
+                 r['performance_credit']is False and r['causal_controls_executed']is False,
+                 'all three actual cached DIRECT subjects and complete43-command diagnostic; no qualification promotion')
+        elif arena:
             need(len(schedule)==55 and len(r['commands'])==55 and len(r['cases'])==5 and
                  all(c['status']=='passed'for c in r['cases']),
                  'all five actual arena subjects,55 fixed commands and every original/additive comparator required')

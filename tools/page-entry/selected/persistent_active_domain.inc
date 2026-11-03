@@ -292,12 +292,21 @@ static int pda_receipt(const struct pda_completion *c) {
     return 1;
 }
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+static int pda_receipt_base(const struct pda_completion *c) {
+#else
 static int pda_receipt(const struct pda_completion *c) {
+#endif
 #ifdef LI2_LOOP_TRANSLATION_ARENA
     if(!lta_topology_live())return 0;
 #endif
     return lgd_common_value(c) && lhc_direct_value(c);
 }
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+static int pda_receipt(const struct pda_completion *c) {
+    return pda_receipt_base(c) && lcx_receipt(c);
+}
+#endif
 #endif
 #ifdef LI2_LOOP_RO_CERTIFICATE
 #include "loop_history_certificate.inc"
@@ -344,6 +353,9 @@ static void pda_reset(void) {
 #endif
     pe_need(!pe_active && !pe_busy && !pe.domain.work.aborting,PE_STATE,82);
     le_zero(&pe.domain.work,sizeof pe.domain.work);
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    lcx_reset();
+#endif
     pe.domain.work.peer=LI2_PTR_SLOTS;pe.domain.work.receipt=LI2_PGD_RECEIPTS;
     pe.domain.work.exit_member=pe.domain.work.recovery_member=LI2_PGD_MEMBERS;
 }
@@ -519,7 +531,14 @@ static int pda_directory_seal_full(void) {
     int error=pda_directory_value(&w->view,pe.p.serial,&w->directory);
     return error?error:pda_directory_publish();
 }
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+static int pda_directory_seal(void) {
+    if(lcx_runtime.value.work.candidate.count)return lcx_publish();
+    return lgd_directory();
+}
+#else
 static int pda_directory_seal(void) {return lgd_directory();}
+#endif
 #else
 static int pda_directory_seal(void) {
     struct pda_work *w=&pe.domain.work;struct li2_jd_domain_directory *d=&w->directory;
@@ -561,7 +580,17 @@ static int pda_directory_equal(void) {
 }
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR
 #include "loop_group_descriptor_owner.inc"
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+#include "loop_cached_direct_context_owner.inc"
+#endif
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+static int pda_directory_equal(void) {
+    if(lcx_runtime.value.work.candidate.count)return lcx_directory_equal(0);
+    return lgd_directory_equal();
+}
+#else
 static int pda_directory_equal(void) {return lgd_directory_equal();}
+#endif
 #endif
 static int pda_bind(const ucontext_t *uc) {
     struct pda_work *w=&pe.domain.work;
@@ -615,7 +644,11 @@ static int pda_bind(const ucontext_t *uc) {
     for(unsigned i=0;i<LI2_PGD_RECEIPTS;i++) {
         const struct pda_completion *c=&pe.domain.completion[i];
         if((pda_zero(c,sizeof *c) && !pe.domain.claimed[i]) ||
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+           ((pda_receipt(c) || lcx_reclaimable(c)) && pe.domain.claimed[i]==(1U<<c->count)-1U)) {
+#else
            (pda_receipt(c) && pe.domain.claimed[i]==(1U<<c->count)-1U)) {
+#endif
             w->receipt=i;break;
         }
     }
@@ -623,6 +656,9 @@ static int pda_bind(const ucontext_t *uc) {
     w->bound=1;
     if(!li2_pgd_owner_view(&pe.token) || li2_pgd_source_bind(&pe.token) ||
        li2_pgd_rseq_bind(&pe.token,uc))return PE_SOURCE;
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    int lcx_error=lcx_build(uc);if(lcx_error)return lcx_error;
+#endif
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR
     int descriptor_masks=lgd_view_match(&w->view);
     uint64_t descriptor_gpr=descriptor_masks?lgd_group.value.gpr_written:0;
@@ -710,6 +746,9 @@ static int pda_bind(const ucontext_t *uc) {
 #ifdef LI2_LOOP_CACHE8_OBSERVE
     lc8o_bound();
 #endif
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT_OBSERVE
+    lcxo_bound();
+#endif
     return 0;
 #else
     return pda_directory_seal();
@@ -749,6 +788,10 @@ static int pda_ready(unsigned linked) {
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR
 static int pda_ready(unsigned linked) {return pda_ready_value(linked,pda_directory_equal);}
 static int pda_ready_preentry(void) {
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    if(lcx_runtime.value.work.candidate.count)
+        return lgd_preentry_context() && pda_ready_value(1,lcx_directory_equal_preentry);
+#endif
     return lgd_preentry_context() && pda_ready_value(1,lgd_directory_equal_preentry);
 }
 #endif
@@ -757,6 +800,9 @@ static int pda_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,uc
     if(!pe_token(t) || pe.p.phase!=LI2_PG_BOUND || !pe_busy || pe_active || !pda_ready(0) ||
        !le_unchanged(&pe.before,si,uc))return PE_STATE;
     pe.p.phase=LI2_PG_OPENING;pe.p.opened_pages=0;
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    int auxiliary_open=lcx_open();if(auxiliary_open)return auxiliary_open;
+#endif
     for(unsigned i=0;i<w->view.count;i++) {
         const struct li2_pgd_ref *v=&w->view.member[i].identity;
         pda_select(v->slot,v->bank);if(pe_bytes())return PE_PUBLICATION;
@@ -835,8 +881,15 @@ static int pda_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,uc
 #endif
 #endif
     selected_step_pending=1;selected_pending_route=SELECTED_PERSISTENT_EPOCH;pe_active=1;
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    if(lcx_runtime.value.work.candidate.count)
+        pe_need(!lcx_count(&lcx_runtime.value.entries),PE_OVERFLOW,9428);
+#endif
 #ifdef LI2_LOOP_CACHE8_OBSERVE
     lc8o_enter();
+#endif
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT_OBSERVE
+    lcxo_enter();
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY
     if(w->view.entry.target.pc!=w->view.entry.target.root)ped_count(&pe.subentry_entries);
@@ -864,6 +917,9 @@ static int pda_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
     struct pda_work *w=&pe.domain.work;
 #ifdef LI2_LOOP_CACHE8_OBSERVE
     lc8o_preentry(sig,si,uc);
+#endif
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT_OBSERVE
+    lcxo_preentry(sig,si,uc);
 #endif
     pe_busy=1;pe.p.phase=LI2_PG_RECOVERING;pe.recovery_started=1;__asm__ volatile("":::"memory");
     if(le_capture(&pe.after,sig,si,uc))return PE_FRAME;
@@ -908,6 +964,12 @@ static int pda_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
         pe.exit_seen=1;pe.exit_index=(unsigned)exit;w->exit_member=member;pe.recovery_complete=1;return 0;
     }
     ped_count(PGC_REF(unexpected));
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    uint64_t auxiliary_raw[16];
+    for(unsigned i=0;i<16;i++)auxiliary_raw[i]=(uint64_t)g[pe_greg[i]];
+    int auxiliary_recovery=lcx_recover(pc,auxiliary_raw,(uint64_t)g[REG_EFL]);
+    if(auxiliary_recovery)return auxiliary_recovery<0?PE_PUBLICATION:PE_EVENT;
+#endif
     member=LI2_PGD_MEMBERS;
     for(unsigned i=0;i<w->view.count;i++)for(unsigned j=0;j<3;j++) {
         const struct li2_pg_layout *l=&w->view.member[i].identity.layout;
@@ -962,6 +1024,9 @@ static int pda_drain(const struct li2_pg_token *t) {
     if(!pe_token(t) || !pe_active || !pe_busy || pe.p.phase!=LI2_PG_RECOVERING ||
        !pe.exit_seen || !pe.recovery_complete || w->exit_member>=w->view.count || !pda_ready(1))return PE_STATE;
     pe.p.phase=LI2_PG_CLOSING;pe.p.closed_pages=0;
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    int auxiliary_close=lcx_close();if(auxiliary_close)return auxiliary_close;
+#endif
 #ifdef LI2_LOOP_RESIDENT_RX
     int quiet=lprx_drain();if(quiet)return quiet;
 #else
@@ -1001,7 +1066,11 @@ static void pda_complete(void) {
         pe.p.phase==LI2_PG_CLOSED && pe.domain.next_id!=UINT64_MAX,PE_RELEASE,85);
     struct pda_completion *c=&pe.domain.completion[w->receipt];
     pe_need((pda_zero(c,sizeof *c) && !pe.domain.claimed[w->receipt]) ||
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+        ((pda_receipt(c) || lcx_reclaimable(c)) && pe.domain.claimed[w->receipt]==(1U<<c->count)-1U),PE_RELEASE,86);
+#else
         (pda_receipt(c) && pe.domain.claimed[w->receipt]==(1U<<c->count)-1U),PE_RELEASE,86);
+#endif
 #ifdef LI2_LOOP_RO_CERTIFICATE
     pe_need(!lhc_begin(c),PE_RELEASE,122);
 #endif
@@ -1049,6 +1118,9 @@ static void pda_complete(void) {
     }
 #endif
     c->complete=1;pe.domain.claimed[w->receipt]=0;
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    pe_need(!lcx_complete(c),PE_RELEASE,9429);
+#endif
     pe_need(pda_receipt(c),PE_RELEASE,88);
 #ifdef LI2_LOOP_RO_CERTIFICATE
     pe_need(!lhc_issue(c),PE_RELEASE,123);
@@ -1083,6 +1155,9 @@ static void pda_complete(void) {
 #ifdef LI2_LOOP_CACHE8_OBSERVE
     lc8o_complete(c);
 #endif
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT_OBSERVE
+    lcxo_complete(c);
+#endif
 }
 static _Noreturn void pda_abort(unsigned code,long detail) {
     /* A corrupt directory/index cannot become an out-of-bounds cleanup read.
@@ -1094,6 +1169,9 @@ static _Noreturn void pda_abort(unsigned code,long detail) {
     lgd_poison();
 #endif
     pe_failing=1;pe_busy=1;pe.domain.work.aborting=1;
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    lcx_abort();
+#endif
     if(!pe.p.first_error){pe.p.first_error=code;pe.p.first_detail=detail;}
     pe.p.completion_permit=0;pe.p.phase=LI2_PG_FAILED;li2_maps_phase_fail();
     if(pe.initialized && ptr_storage()) {

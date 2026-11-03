@@ -74,6 +74,23 @@ ARENA=dict(version=1,nodes=12,active_bindings=8,completion_cells=9,member_refere
     inactive_heads_exposed=False,old_capture_compatible=False,qualification_credit=False)
 
 
+CACHED_DIRECT_CONTEXT_INPUTS=('persistent_loop_cached_direct_context_binding.py',
+    'build-persistent-loop-cached-direct-context.sh',
+    'loop_cached_direct_context.h','loop_cached_direct_context.c',
+    'loop_cached_direct_context_types.inc','loop_cached_direct_context_owner.inc')
+CACHED_DIRECT_CONTEXT=dict(version=1,directory_version=2,nodes=12,active_bindings=8,completion_cells=9,
+    aggregate_heads=256,aggregate_boundaries=8,auxiliary_slots=8,
+    auxiliary_code_pages=1,auxiliary_spill_pages=1,tail_bytes=5,tail_opcode=233,
+    observation_authority=False,qualification_credit=False)
+
+CACHED_DIRECT_OBSERVE_INPUTS=('persistent_loop_cached_direct_context_observe_binding.py',
+    'build-persistent-loop-cached-direct-context-observe.sh',
+    'loop_cached_direct_context_observe.h','loop_cached_direct_context_observe.inc')
+CACHED_DIRECT_OBSERVER=dict(version=1,reference='cached-direct-ab146',
+    epochs=4,phases=4,counters=64,layout_words=62,frame='whole-le_frame',
+    proof_presence='explicit',controls=0,performance_credit=False,
+    observation_authority=False,qualification_credit=False)
+
 RECURRENCE_INPUTS=('persistent_loop_rx_recurrence_binding.py','build-persistent-loop-rx-recurrence.sh',
     'loop_rx_recurrence.h','loop_rx_recurrence_attach.inc','loop_rx_recurrence_owner.inc',
     'counter_environment.inc')
@@ -83,7 +100,14 @@ RECURRENCE=dict(version=7,bytes=12382208,storage_bytes=12582912,capacity=1024,
     observation_authority=False,qualification_credit=False)
 
 
-def write_binding(selected, archive, image, output, mode, *, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None, arena=False, arena_observe=None, arena_program=False, arena_capacity=False, arena_prefix=False):
+def write_binding(selected, archive, image, output, mode, *, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None, arena=False, arena_observe=None, arena_program=False, arena_capacity=False, arena_prefix=False, cached_direct_context=False, cached_direct_observe=None):
+    need(type(cached_direct_context)is bool and (not cached_direct_context or
+         arena and cache8 and group_descriptor and not arena_program and not arena_capacity and
+         not arena_prefix and arena_observe is None and not cache8_program and not recurrence and
+         cache8_observe is None and group_descriptor_observe is None and cache8_effects is None),
+         'distinct cached DIRECT context uses the original twelve-node arena')
+    need(cached_direct_observe is None or cached_direct_observe is True and cached_direct_context,
+         'cached DIRECT observation is explicit True with its separate source and compiler layout')
     need(type(arena_prefix)is bool and (not arena_prefix or arena and arena_program and
          arena_capacity and mode=='release' and arena_observe is None),
          'distinct capacity128 offers1024 prefix diagnostic, never a completed program')
@@ -121,6 +145,8 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
     leaves = LEAVES + (RECURRENCE_INPUTS if recurrence else ()) + (CACHE8_INPUTS if cache8 else ()) + (CACHE8_OBSERVE_INPUTS if cache8_observe is not None else ()) + (CACHE8_PROGRAM_INPUTS if cache8_program else ()) + (GROUP_DESCRIPTOR_INPUTS if group_descriptor else ()) + (GROUP_DESCRIPTOR_OBSERVE_INPUTS if group_descriptor_observe is not None else ()) + ((CACHE8_OBSERVE_INPUTS+CACHE8_EFFECTS_INPUTS) if cache8_effects is not None else ())
     if group_descriptor and cache8_program:leaves+=GROUP_DESCRIPTOR_PROGRAM_INPUTS
     if arena:leaves+=ARENA_INPUTS
+    if cached_direct_context:leaves+=CACHED_DIRECT_CONTEXT_INPUTS
+    if cached_direct_observe is True:leaves+=CACHED_DIRECT_OBSERVE_INPUTS
     if arena_program:leaves+=ARENA_PROGRAM_INPUTS
     if arena_prefix:leaves+=ARENA_PREFIX_INPUTS
     if arena_observe is not None:leaves+=ARENA_OBSERVE_INPUTS
@@ -138,6 +164,8 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
     if arena_observe is not None:policy_value['arena_control']=arena_observe
     if arena_capacity:policy_value['arena_capacity']=128
     if arena_prefix:policy_value['arena_prefix']=1024
+    if cached_direct_context:policy_value['cached_direct_context']=1
+    if cached_direct_observe is True:policy_value['cached_direct_observe']=1
     policy = hashlib.sha256(json.dumps(policy_value,
                           sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     actual_archive = fact(archive.read_bytes())
@@ -155,6 +183,8 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
                   ('#define LI2_PG_LOOP_CACHE8_PROGRAM_BINDING_VERSION 1\n' if cache8_program else '') +
                   ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_BINDING_VERSION 1\n' if group_descriptor else '') +
                   ('#define LI2_PG_LOOP_TRANSLATION_ARENA_BINDING_VERSION 1\n' if arena else '') +
+                  ('#define LI2_PG_LOOP_CACHED_DIRECT_CONTEXT_BINDING_VERSION 1\n' if cached_direct_context else '') +
+                  ('#define LI2_PG_LOOP_CACHED_DIRECT_CONTEXT_OBSERVE_BINDING_VERSION 1\n' if cached_direct_observe is True else '') +
                   ('#define LI2_PG_LOOP_TRANSLATION_ARENA_PROGRAM_BINDING_VERSION 1\n' if arena_program else '') +
                   ('#define LI2_PG_LOOP_TRANSLATION_ARENA_CAPACITY_BINDING_VERSION 1\n#define LI2_LOOP_TRANSLATION_ARENA_CAPACITY 128\n' if arena_capacity else '') +
                   ('#define LI2_PG_LOOP_TRANSLATION_ARENA_PREFIX_BINDING_VERSION 1\n#define LI2_PG_LOOP_TRANSLATION_ARENA_PREFIX_OFFERS 1024\n' if arena_prefix else '') +
@@ -236,7 +266,15 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
     if arena_prefix:
         record['profile']='persistent-loop-translation-arena-prefix-capacity128-release-v1'
         record['arena_prefix']=ARENA_PREFIX
-    name=('persistent_loop_translation_arena_prefix_binding.json' if arena_prefix else
+    if cached_direct_context:
+        record['profile']='persistent-loop-cached-direct-context-'+mode+'-v1'
+        record['cached_direct_context']=CACHED_DIRECT_CONTEXT
+    if cached_direct_observe is True:
+        record['profile']='persistent-loop-cached-direct-context-observe-'+mode+'-v1'
+        record['cached_direct_observer']=CACHED_DIRECT_OBSERVER
+    name=('persistent_loop_cached_direct_context_observe_binding.json' if cached_direct_observe is True else
+          'persistent_loop_cached_direct_context_binding.json' if cached_direct_context else
+          'persistent_loop_translation_arena_prefix_binding.json' if arena_prefix else
           'persistent_loop_translation_arena_program_binding.json' if arena_program else
           'persistent_loop_translation_arena_observe_binding.json' if arena_observe is not None else
           'persistent_loop_translation_arena_binding.json' if arena else

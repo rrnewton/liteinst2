@@ -36,6 +36,9 @@ static int pe_sub_choose(uintptr_t pc,struct pe_sub_choice *out) {
     }
     for(unsigned i=0;i<LI2_PTR_SLOTS;i++) {
         const struct li2_ptr_slot *s=&PTR_SLOT_AT(i);if(!s->generation.installed)continue;
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+        if(lcx_cold_pending(ptr_node_index(i)) || lcx_cold_retired(ptr_node_index(i)))continue;
+#endif
         const struct pe_payload *p=(const void *)s->proof;struct li2_pgs_target target;
         int found=RCC_SELECT_TEST(4+i,li2_pgs_head_lookup(&p->plan,pc,&target));
         pe_need(found>=0,PE_PUBLICATION,110);
@@ -75,6 +78,9 @@ static int lta_choose(uintptr_t pc,struct pe_sub_choice *out,unsigned *node_out)
     for(unsigned node=0;node<PTR_NODE_COUNT;node++) {
         const struct li2_ptr_slot *slot=&PTR_NODE_AT(node);
         if(lta_node_bound(node)>=0 || !slot->generation.installed)continue;
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+        if(lcx_cold_retired(node))continue; /* May be a cold victim, never a cached head. */
+#endif
         pe_need(lta_closed_value(node),PE_RELEASE,9232);
         const struct pe_payload *p=(const void *)slot->proof;
         struct li2_pgs_target target;
@@ -115,6 +121,10 @@ static int lta_choose(uintptr_t pc,struct pe_sub_choice *out,unsigned *node_out)
 }
 #endif
 static int pe_sub_candidate(const struct li2_pg_sources *s,const struct pe_payload *p) {
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    if(lcx_cold_pending(ptr_node_index(pe.selected_slot)) ||
+       lcx_cold_retired(ptr_node_index(pe.selected_slot)))return 0;
+#endif
     if(s->key.entry==p->source.entry)return li2_pg_source_key_equal(&p->source,&s->key);
     if(!pe.subentry_selected || !li2_pgd_source_pair_equal(&p->source,&s->key))return 0;
     struct li2_pgs_target target;

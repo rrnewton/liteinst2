@@ -54,6 +54,12 @@
 #include "loop_group_descriptor.h"
 #ifdef LI2_LOOP_TRANSLATION_ARENA
 #include "loop_translation_arena.h"
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+#include "loop_cached_direct_context.h"
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT_OBSERVE
+#include "loop_cached_direct_context_observe.h"
+#endif
+#endif
 #ifdef LI2_LOOP_TRANSLATION_ARENA_PREFIX
 #include "loop_translation_arena_prefix.h"
 #endif
@@ -313,6 +319,9 @@ struct li2_ptr_slot {
 #include "persistent_active_domain_types.inc"
 #ifdef LI2_LOOP_TRANSLATION_ARENA
 #include "loop_translation_arena_types.inc"
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+#include "loop_cached_direct_context_types.inc"
+#endif
 #endif
 #ifdef LI2_LOOP_RESIDENT_RX
 #include "loop_resident_rx_types.inc"
@@ -1188,6 +1197,9 @@ static void selected_persistent_initialize(void) {
 #ifdef LI2_LOOP_CACHE8_OBSERVE
     pe_need(!lc8o_initialize(),PE_STATE,560);
 #endif
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT_OBSERVE
+    pe_need(!lcxo_initialize(),PE_STATE,9500);
+#endif
     pe.registered=1;pe.session=selected_session;
 #ifdef LI2_PERSISTENT_SEALED_GENERATION
     pe_need(!sg_initialize(),PE_PUBLICATION,190);
@@ -1244,6 +1256,9 @@ static void selected_persistent_initialize(void) {
 #endif
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR
     pe_need(!lgd_initialize(),PE_PUBLICATION,8991);
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    pe_need(!lcx_initialize(),PE_PUBLICATION,9426);
+#endif
 #endif
     pe_need(!li2_pg_source_initialize() && pe_identity(),PE_SOURCE,0);
 #ifdef LI2_LOOP_TRANSLATION_ARENA
@@ -2140,6 +2155,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_LOOP_RESIDENT_RX
     lprx_direct_closed();
 #endif
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT
+    pe_need(!lcx_retire_invalid(),PE_RELEASE,9427);
+#endif
 #ifdef LI2_LOOP_TRANSLATION_ARENA
     if(node_index!=ptr_node_index(slot_index))
         pe_need(!lta_move(slot_index,node_index),PE_RELEASE,9231);
@@ -2377,6 +2395,9 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 }
 static void selected_persistent_report(unsigned status,unsigned code,long detail) {
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT_OBSERVE
+    lcxo_report(status,code);
+#endif
 #ifdef LI2_PERSISTENT_LOOP_EFFECTS
     {
         struct writer effects={.used=0};text(&effects,"LI2_LOOP_EFFECTS {\"version\":1");
@@ -2529,6 +2550,9 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #include "loop_resident_rx_owner.inc"
 #ifdef LI2_LOOP_CACHE8_OBSERVE
 #include "loop_cache8_observe.inc"
+#endif
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT_OBSERVE
+#include "loop_cached_direct_context_observe.inc"
 #endif
 #ifdef LI2_LOOP_RESIDENT_RX_ORACLE
 #include "loop_resident_rx_oracle.inc"
