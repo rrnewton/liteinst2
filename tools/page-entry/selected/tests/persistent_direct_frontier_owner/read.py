@@ -637,14 +637,25 @@ class Check(old.Check):
         need(e==self.f(view,'li2_pgd_view','entry')==self.f(domain_source,'li2_pgd_source_progress','entry'),'whole focal entry in stage/view/source')
         peer=self.f(domain_source,'li2_pgd_source_progress','peer');count=self.i(view,'li2_pgd_view','count')
         if count==2:
-            self.eq(peer,'li2_pgx_source',started=1)
-            members=self.r.items(view,'li2_pgd_view','member','li2_pgd_member')
-            for i,m in enumerate(members):
+            members=self.r.items(view,'li2_pgd_view','member','li2_pgd_member');payloads=[]
+            for m in members:
                 identity=self.f(m,'li2_pgd_member','identity');matches=[c for c in self.certificates if self.i(c,'pdo_certificate','slot')==self.i(identity,'li2_pgd_ref','slot')and self.i(c,'pdo_certificate','generation')==self.i(identity,'li2_pgd_ref','generation')]
                 need(len(matches)==1,'peer table binds one complete immutable focal certificate')
-                payload=self.f(matches[0],'pdo_certificate','payload');cp=self.f(payload,'pe_payload','plan')
-                need(self.r.items(peer,'li2_pgx_source','table','li2_mg_table')[i]==self.f(cp,'li2_pg_compact','table'),'whole peer lease table equals actual immutable certificate table')
-                if i==1:self.key_identity(self.f(peer,'li2_pgx_source','key'),self.f(payload,'pe_payload','source'))
+                payloads.append(self.f(matches[0],'pdo_certificate','payload'))
+            keys=[self.f(payload,'pe_payload','source')for payload in payloads]
+            pages=[tuple(self.i(self.f(row,'li2_pg_source_page','identity'),'li2_fetch_page','address')for row in self.r.items(k,'li2_pg_source_key','page','li2_pg_source_page'))for k in keys]
+            if pages[0]==pages[1]:
+                # Equal addresses select the same-pair proof, never establish it.
+                # Pair identity excludes only the separately authenticated roots.
+                self.pair_key(keys[0],keys[1])
+                self.pair_key(self.f(source,'li2_pg_sources','key'),keys[0])
+                zero(peer,'same-pair focal entry has no fabricated peer lease')
+            else:
+                self.eq(peer,'li2_pgx_source',started=1)
+                for i,payload in enumerate(payloads):
+                    cp=self.f(payload,'pe_payload','plan')
+                    need(self.r.items(peer,'li2_pgx_source','table','li2_mg_table')[i]==self.f(cp,'li2_pg_compact','table'),'whole peer lease table equals actual immutable certificate table')
+                    if i==1:self.key_identity(self.f(peer,'li2_pgx_source','key'),self.f(payload,'pe_payload','source'))
         return e
 
 

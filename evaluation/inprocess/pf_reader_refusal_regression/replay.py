@@ -26,7 +26,7 @@ PACKET = Path(__file__).resolve().parent
 BASE = ROOT / 'target/evaluation/inprocess/bounded-fused-owner-attempt-2'
 TESTS = ROOT / 'tools/page-entry/selected/tests'
 RECEIPT = dict(bytes=1796341, sha256='a8c62be68aee68ee52ffb21052316dcdb779ab5f22f30cd24558b634ed92db07')
-INPUTS = {'bytes': 18620, 'sha256': '8ae7d7541054908538bd0100bdd70767d3ed159260edb90bbb4c78285af3553d'}
+INPUTS = {'bytes': 18620, 'sha256': '806ae653e3c38ba1b2645a6c63443bdeb4ebbbb2fe18d03a47845f2abf6a75f9'}
 REVISION = '641b3af039ede26bfe343f8196583a73bb9935e9'
 
 
@@ -55,6 +55,16 @@ def population(value, count, original=None):
 
 
 def historical_reader(relative, data):
+    if relative == 'persistent_direct_frontier_owner/read.py':
+        need(fact(data) == {'bytes': 156684, 'sha256': '16a3da5dd3f4da80af06add55205526dc4b04326a810b2a0412a318d7a041f83'}, 'whole current same-pair focal reader')
+        lines = data.decode('utf-8').splitlines(keepends=True)
+        result = []; at = 0
+        for first, end, previous in [[639, 641, "            self.eq(peer,'li2_pgx_source',started=1)\n            members=self.r.items(view,'li2_pgd_view','member','li2_pgd_member')\n            for i,m in enumerate(members):\n"], [643, 658, "                payload=self.f(matches[0],'pdo_certificate','payload');cp=self.f(payload,'pe_payload','plan')\n                need(self.r.items(peer,'li2_pgx_source','table','li2_mg_table')[i]==self.f(cp,'li2_pg_compact','table'),'whole peer lease table equals actual immutable certificate table')\n                if i==1:self.key_identity(self.f(peer,'li2_pgx_source','key'),self.f(payload,'pe_payload','source'))\n"]]:
+            need(at <= first <= end <= len(lines) and ''.join(lines[first:end]) != previous,
+                 'ordered exact focal-reader inverse span')
+            result.extend(lines[at:first]); result.append(previous); at = end
+        data = ''.join(result + lines[at:]).encode('utf-8')
+        need(fact(data) == {'bytes': 155896, 'sha256': 'b7826a043aaee74c530f2dcdd70152c05937810b12b127a15b395889c68e39ff'}, 'whole unchanged retained focal reader')
     if relative == 'persistent_direct_frontier_app/read.py':
         # This actual current reader was authenticated by take(). Reconstruct
         # only its unchanged retained endpoint before the existing whole join.

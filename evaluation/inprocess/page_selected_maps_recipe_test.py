@@ -150,7 +150,7 @@ def main():
             reset_refusals.append(name)
         else:
             raise ValueError('accepted reset source control: '+name)
-    need(len(reset_transport.SOURCES) == 9, 'all nine exact reset/RX/TLS/transit source rows')
+    need(len(reset_transport.SOURCES) == 10, 'all ten exact reset/RX/TLS/transit/focal source rows')
     for relative, row in reset_transport.SOURCES.items():
         path = pin(ROOT/relative); raw = path.read_bytes(); observed = fact(path)
         need(observed == row['current'], 'actual current reset/RX/TLS source fact')
@@ -170,13 +170,13 @@ def main():
             relative, row['prior'], observed, raw+b'# changed current source\n'))
         reject_reset(relative+':unknown_endpoint', lambda: reset_transport.historical(
             relative, dict(bytes=row['prior']['bytes'], sha256='0'*64), observed, raw))
-    need(len(reset_endpoints) == len(set(reset_endpoints)) == 10 and
-         len(reset_refusals) == len(set(reset_refusals)) == 54,
-         'all ten exact additional endpoints and fifty-four causal refusals')
+    need(len(reset_endpoints) == len(set(reset_endpoints)) == 11 and
+         len(reset_refusals) == len(set(reset_refusals)) == 60,
+         'all eleven exact additional endpoints and sixty causal refusals')
     need(all(fact(path) == before for path, before in pins.items()), 'whole input closure')
     result = dict(schema=1, scope='pure recipe/source transport only',
                   profile_argv=12, recipe_refusals=60, source_endpoints=32, inverse_refusals=112,
-                  reset_source_endpoints=10, reset_source_refusals=54,
+                  reset_source_endpoints=11, reset_source_refusals=60,
                   source_inputs=pins, subjects=0, builds=0, qualification_credit=False)
     (output/'result.json').write_text(json.dumps(result, indent=2, sort_keys=True)+'\n')
     print(json.dumps({k: v for k, v in result.items() if k != 'source_inputs'}, separators=(',', ':')))

@@ -693,9 +693,9 @@
       "sha256": "9f451383592a582085679f50a5d0316f5f2ec03c8b71a529201a273d420f4314"
     },
     "persistent_direct_frontier_owner/read.py": {
-      "bytes": 155896,
+      "bytes": 156684,
       "mode": 420,
-      "sha256": "b7826a043aaee74c530f2dcdd70152c05937810b12b127a15b395889c68e39ff"
+      "sha256": "16a3da5dd3f4da80af06add55205526dc4b04326a810b2a0412a318d7a041f83"
     },
     "persistent_direct_frontier_owner/wire.py": {
       "bytes": 51413,

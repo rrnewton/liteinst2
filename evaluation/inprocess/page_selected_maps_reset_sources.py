@@ -448,6 +448,29 @@ SOURCES = {
     },
     "targets": {}
   },
+  "tools/page-entry/selected/tests/persistent_direct_frontier_owner/read.py": {
+    "current": {
+      "bytes": 156684,
+      "sha256": "16a3da5dd3f4da80af06add55205526dc4b04326a810b2a0412a318d7a041f83"
+    },
+    "inverse": [
+      [
+        639,
+        641,
+        "            self.eq(peer,'li2_pgx_source',started=1)\n            members=self.r.items(view,'li2_pgd_view','member','li2_pgd_member')\n            for i,m in enumerate(members):\n"
+      ],
+      [
+        643,
+        658,
+        "                payload=self.f(matches[0],'pdo_certificate','payload');cp=self.f(payload,'pe_payload','plan')\n                need(self.r.items(peer,'li2_pgx_source','table','li2_mg_table')[i]==self.f(cp,'li2_pg_compact','table'),'whole peer lease table equals actual immutable certificate table')\n                if i==1:self.key_identity(self.f(peer,'li2_pgx_source','key'),self.f(payload,'pe_payload','source'))\n"
+      ]
+    ],
+    "prior": {
+      "bytes": 155896,
+      "sha256": "b7826a043aaee74c530f2dcdd70152c05937810b12b127a15b395889c68e39ff"
+    },
+    "targets": {}
+  },
   "tools/page-entry/selected/tf_chain.h": {
     "current": {
       "bytes": 7628,
