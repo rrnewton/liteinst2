@@ -2239,32 +2239,36 @@ impl TrampolinePlan {
                 .checked_add(entry_stop.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
             let recording = frames.as_deref().is_some_and(FrameRecorder::recording);
-            let mut instrumentation_frames =
-                HelperFrames::with_profile(FrameStage::SaveAndCall, self.observation_stack_profile);
-            let mut restore_frames =
-                HelperFrames::with_profile(FrameStage::Restore, self.observation_stack_profile);
-            let instrumentation = self
-                .encode_instrumentation(
-                    instrumentation_address,
-                    &extended_state,
-                    self.logical_address(),
-                    (
-                        Some(self.hook.expect("legacy plan always has a callback")),
-                        None,
-                    ),
-                    None,
-                    recording.then_some(&mut instrumentation_frames),
-                )?
-                .bytes;
-            let restore_address = instrumentation_address
-                .checked_add(instrumentation.len() as u64)
-                .ok_or(TrampolineError::AddressNotRepresentable { address })?;
-            let restore = encode_restore(
+            let observer_sequence::Emission {
+                instrumentation_frames,
+                restore_frames,
+                instrumentation,
                 restore_address,
+                restore,
+            } = observer_sequence::encode(
                 &extended_state,
                 self.observation_stack_profile,
-                recording.then_some(&mut restore_frames),
+                recording,
+                |frames| {
+                    self.encode_instrumentation(
+                        instrumentation_address,
+                        &extended_state,
+                        self.logical_address(),
+                        (
+                            Some(self.hook.expect("legacy plan always has a callback")),
+                            None,
+                        ),
+                        None,
+                        frames,
+                    )
+                },
+                |len| {
+                    instrumentation_address
+                        .checked_add(len as u64)
+                        .ok_or(TrampolineError::AddressNotRepresentable { address })
+                },
             )?;
+            let instrumentation = instrumentation.bytes;
             let completion_stop_address = restore_address
                 .checked_add(restore.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
@@ -2565,6 +2569,19 @@ impl TrampolinePlan {
         has_frames: bool,
         recording: bool,
     ) -> Result<OrderedPreparation, TrampolineError> {
+        self.prepare_ordered_input(artifact, has_frames, recording, None)
+    }
+
+    // A new symbolic population can enter only through its sealed window. The
+    // existing live/artifact derivation remains the default action input.
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    fn prepare_ordered_input(
+        &self,
+        artifact: Option<&ArtifactEmission>,
+        has_frames: bool,
+        recording: bool,
+        window: Option<&ArtifactObservationWindow>,
+    ) -> Result<OrderedPreparation, TrampolineError> {
         self.validate_stack_profile(artifact.is_some())?;
         self.validate_point_observations(artifact.is_some(), has_frames)?;
         if self.clock.is_some() && (artifact.is_some() || has_frames || self.ptrace_stops) {
@@ -2584,22 +2601,37 @@ impl TrampolinePlan {
                 "pre-context supports only unmixed live observing emission",
             ));
         }
+        if window.is_some_and(|window| {
+            !core::ptr::eq(self, window.plan()) || artifact.is_none() || has_frames || recording
+        }) {
+            return Err(artifact_error(
+                "artifact window requires its sealed symbolic plan",
+            ));
+        }
         let extended_state = match artifact {
             Some(input) => input.profile().saved_state(),
             None => SavedExtendedStateLayout::detect()?,
         };
-        let actions: Vec<(u64, Option<HookCallback>, bool)> = match artifact {
-            Some(_) if self.kind == TrampolineKind::PatchWindow => vec![(
-                self.logical_address(),
-                None,
-                self.relocated_start != self.logical_index,
-            )],
-            Some(_) => Vec::new(),
-            None => self
-                .actions
+        let actions: Vec<(u64, Option<HookCallback>, bool)> = if let Some(window) = window {
+            window
+                .observation_pcs()
                 .iter()
-                .map(|&(pc, hook, replace)| (pc, Some(hook), replace))
-                .collect(),
+                .map(|&pc| (pc, None, false))
+                .collect()
+        } else {
+            match artifact {
+                Some(_) if self.kind == TrampolineKind::PatchWindow => vec![(
+                    self.logical_address(),
+                    None,
+                    self.relocated_start != self.logical_index,
+                )],
+                Some(_) => Vec::new(),
+                None => self
+                    .actions
+                    .iter()
+                    .map(|&(pc, hook, replace)| (pc, Some(hook), replace))
+                    .collect(),
+            }
         };
         let mut fragments = Vec::new();
         let mut original_operands = Vec::new();
@@ -2733,30 +2765,32 @@ impl TrampolinePlan {
                 // These helpers use only register/stack operands, absolute MOV
                 // immediates and internal relative branches. Their byte strings
                 // are position independent and remain contiguous below.
-                let mut instrumentation_frames = HelperFrames::with_profile(
-                    FrameStage::SaveAndCall,
-                    self.observation_stack_profile,
-                );
-                let mut restore_frames =
-                    HelperFrames::with_profile(FrameStage::Restore, self.observation_stack_profile);
-                let instrumentation = self.encode_instrumentation(
-                    0,
-                    &extended_state,
-                    original.ip(),
-                    (
-                        hook,
-                        self.controls
-                            .get(action_index)
-                            .map(|action| &action.control),
-                    ),
-                    artifact,
-                    recording.then_some(&mut instrumentation_frames),
-                )?;
-                let restore = encode_restore(
-                    instrumentation.bytes.len() as u64,
+                let observer_sequence::Emission {
+                    instrumentation_frames,
+                    restore_frames,
+                    instrumentation,
+                    restore,
+                    ..
+                } = observer_sequence::encode(
                     &extended_state,
                     self.observation_stack_profile,
-                    recording.then_some(&mut restore_frames),
+                    recording,
+                    |frames| {
+                        self.encode_instrumentation(
+                            0,
+                            &extended_state,
+                            original.ip(),
+                            (
+                                hook,
+                                self.controls
+                                    .get(action_index)
+                                    .map(|action| &action.control),
+                            ),
+                            artifact,
+                            frames,
+                        )
+                    },
+                    |len| Ok(len as u64),
                 )?;
                 first_hook_lengths.get_or_insert((
                     observing_index,
@@ -2849,7 +2883,7 @@ impl TrampolinePlan {
                 return Err(encoding_error("early point gate population differs"));
             }
         }
-        Ok(OrderedPreparation {
+        let preparation = OrderedPreparation {
             extended_state,
             fragments,
             original_operands,
@@ -2862,7 +2896,11 @@ impl TrampolinePlan {
             clock_specs,
             precontext_specs,
             early_control_specs,
-        })
+        };
+        if let (Some(window), Some(input)) = (window, artifact) {
+            window.verify_preparation(input, action_index, &preparation)?;
+        }
+        Ok(preparation)
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -4098,8 +4136,14 @@ fn artifact_target(input: &ArtifactEmission, address: u64) -> Target {
     })
 }
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod observer_sequence;
+
 #[path = "trampoline/artifact_jrcxz.rs"]
 mod artifact_jrcxz;
+mod artifact_window;
+pub use artifact_window::{ArtifactObservationWindow, ArtifactWindowImage};
+
 mod fitting;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use fitting::OrderedPreparation;

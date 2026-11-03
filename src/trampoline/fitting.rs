@@ -56,14 +56,40 @@ impl PreparedArtifact {
                 ));
             }
             let preparation = plan.prepare_ordered(Some(input), false, false)?;
-            let size_bound = prepared_bound(&preparation)?;
-            Ok(Self {
-                plan: plan.clone(),
-                input: input.clone(),
-                preparation,
-                size_bound,
-            })
+            Self::from_preparation(plan, input, preparation)
         }
+    }
+
+    // This constructor cannot accept an arbitrary live plan/PC pair.
+    pub(super) fn for_observation_window(
+        window: &ArtifactObservationWindow,
+        input: &ArtifactEmission,
+    ) -> Result<Self, TrampolineError> {
+        #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+        {
+            let _ = (window, input);
+            Err(TrampolineError::UnsupportedPlatform)
+        }
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        {
+            let preparation = window.prepare(input)?;
+            Self::from_preparation(window.plan(), input, preparation)
+        }
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    fn from_preparation(
+        plan: &TrampolinePlan,
+        input: &ArtifactEmission,
+        preparation: OrderedPreparation,
+    ) -> Result<Self, TrampolineError> {
+        let size_bound = prepared_bound(&preparation)?;
+        Ok(Self {
+            plan: plan.clone(),
+            input: input.clone(),
+            preparation,
+            size_bound,
+        })
     }
 
     pub(crate) const fn size_bound(&self) -> usize {
