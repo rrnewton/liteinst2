@@ -2395,6 +2395,32 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 }
 static void selected_persistent_report(unsigned status,unsigned code,long detail) {
+#if defined(LI2_LOOP_CACHED_DIRECT_CONTEXT) && !defined(LI2_LOOP_CACHED_DIRECT_CONTEXT_OBSERVE)
+    /* Plain LCX program observation, after the original terminal revoke.
+       No queries, authority changes, traversal count or completion theorem. */
+    {
+        _Static_assert(21*21+512<4096,"bounded LCX terminal scalar row");
+        struct writer context={.used=0};text(&context,"LI2_LOOP_CACHED_DIRECT_PROGRAM {\"version\":1");
+        field(&context,",\"status\":",status);field(&context,",\"failure_code\":",code);
+        field(&context,",\"detail_negative\":",detail<0);
+        field(&context,",\"detail_abs\":",detail<0?0ULL-(uint64_t)detail:(uint64_t)detail);
+#define LCX_PROGRAM_FIELD(n) field(&context,",\"" #n "\":",lcx_runtime.value.n)
+        LCX_PROGRAM_FIELD(initialized);LCX_PROGRAM_FIELD(poisoned);
+        LCX_PROGRAM_FIELD(builds);LCX_PROGRAM_FIELD(opens);LCX_PROGRAM_FIELD(closes);
+        LCX_PROGRAM_FIELD(entries);LCX_PROGRAM_FIELD(recoveries);LCX_PROGRAM_FIELD(retirements);
+        LCX_PROGRAM_FIELD(invalidations);
+#undef LCX_PROGRAM_FIELD
+#define LCX_PROGRAM_WORK(n) field(&context,",\"" #n "\":",lcx_runtime.value.work.n)
+        LCX_PROGRAM_WORK(serial);LCX_PROGRAM_WORK(built);LCX_PROGRAM_WORK(published);
+        LCX_PROGRAM_WORK(opened);LCX_PROGRAM_WORK(closed);LCX_PROGRAM_WORK(recovery_owned);
+        LCX_PROGRAM_WORK(recovery_result);
+#undef LCX_PROGRAM_WORK
+        text(&context,"}\n");
+        if(raw(SYS_write,report_fd<0?2:report_fd,(long)context.bytes,context.used,0,0,0)!=(long)context.used) {
+            (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
+        }
+    }
+#endif
 #ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT_OBSERVE
     lcxo_report(status,code);
 #endif
