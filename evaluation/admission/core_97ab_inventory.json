@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "7f91ece036405aab329b52c4559e8304bd663edeccff8e980f3ef1d198972045",
+  "current_corpus_sha256": "9aab9f2eaa8bfb9ad8b8675aee85a5aee4ee2a2d0ef7b24c4faf9112a2af059d",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -113,14 +113,23 @@
     ],
     "src/emission.rs": [],
     "src/quiescent.rs": [],
+    "src/quiescent/artifact_window.rs": [],
+    "src/quiescent/artifact_window/tests.rs": [],
     "src/trampoline.rs": [],
     "src/trampoline/artifact_allocation.rs": [],
+    "src/trampoline/artifact_window.rs": [],
+    "src/trampoline/artifact_window/tests.rs": [],
+    "src/trampoline/fitting.rs": [],
+    "src/trampoline/observer_sequence.rs": [],
+    "src/trampoline/observer_sequence/tests.rs": [],
     "tests/quiescent_oracle.rs": [],
+    "tests/support/artifact_window_native.rs": [],
     "tests/support/jump_stack_native.rs": [],
     "tests/support/quiescent_oracle.rs": [],
     "tools/elf-rewrite/examples/adjacent_b2_support/ledger.rs": [],
     "tools/elf-rewrite/examples/common_sites.rs": [],
     "tools/elf-rewrite/examples/disassembly_sites.rs": [],
+    "tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs": [],
     "tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs": [],
     "tools/elf-rewrite/examples/full_program_bridge.rs": [],
     "tools/elf-rewrite/examples/full_program_bridge/input.rs": [],
@@ -137,6 +146,8 @@
     "tools/elf-rewrite/src/disassembly/whole/policy.rs": [],
     "tools/elf-rewrite/src/disassembly/whole/tests.rs": [],
     "tools/elf-rewrite/src/fixed_exec.rs": [],
+    "tools/elf-rewrite/src/grouped_artifact_frontend.rs": [],
+    "tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs": [],
     "tools/elf-rewrite/src/ledger.rs": [],
     "tools/elf-rewrite/src/lib.rs": [],
     "tools/elf-rewrite/src/selection.rs": [],
@@ -746,7 +757,7 @@
       "previous_sha256": "154ea2ceef91052ff23126b4ca54e0fbcf9b511340f4805d80cc82b2128f929e"
     },
     "evaluation/admission/test_main813_inventory.py": {
-      "current_sha256": "410148cd9cb22a37e4a1cd6d855a10341f33271ad5b62978973aa963f7111c43",
+      "current_sha256": "700e617272cdaa539e7997603bbda435bee8a9a2f6f7e4b5fd911c18c718f8d1",
       "edits": [
         [
           388,
@@ -760,34 +771,34 @@
         ],
         [
           236976,
-          237253,
+          237412,
           ""
         ],
         [
-          237336,
-          237610,
+          237495,
+          237885,
           "             patch.dict(artifact_layer.DATA, projections=artifact_projections):\n"
         ],
         [
-          259148,
-          259266,
+          259423,
+          259541,
           ""
         ],
         [
-          259416,
-          259693,
+          259691,
+          259968,
           "        with patch.dict(main813.MAINFRONTEND, sources=frontend_without_parser), patch.dict(main813.MAINROUTED, sources=routed_without_parser), patch.dict(main813.MAINROUTEDNATIVE, sources=native_without_parser):\n"
         ],
         [
-          259861,
-          260184,
+          260136,
+          260459,
           "        with patch.dict(adjacent, sources=without_parser), patch.dict(main813.MAINFRONTEND, sources=frontend_without_parser), patch.dict(main813.MAINROUTED, sources=routed_without_parser), patch.dict(main813.MAINROUTEDNATIVE, sources=native_without_parser):\n"
         ]
       ],
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "d4a992686c470339cd29902481ec9bcb368810d4e08a949a16afdceb83d34085",
+      "current_sha256": "bd831f116f050ef8eaa2a6c33c1d2e6f472aebfcaf65ba592fdafeef3e9ef10f",
       "edits": [
         [
           110,
@@ -796,102 +807,102 @@
         ],
         [
           460,
-          5825,
+          5836,
           ""
         ],
         [
-          6029,
-          105614,
+          6040,
+          116169,
           ""
         ],
         [
-          107679,
-          107750,
+          118234,
+          118305,
           "            wrong = copy.deepcopy(actual); wrong[key] = None\n"
         ],
         [
-          108080,
-          108210,
+          118635,
+          118765,
           "                    wrong = copy.deepcopy(actual); wrong['harness_test_counts']['workspace_tests'][name][field] = value\n"
         ],
         [
-          109834,
-          109913,
+          120389,
+          120468,
           "                bad = copy.deepcopy(row); bad['edits'][0][2] += '\\n'\n"
         ],
         [
-          112885,
-          112962,
+          123440,
+          123517,
           "            row = copy.deepcopy(current.DATA['projections'][path])\n"
         ],
         [
-          115025,
-          115136,
+          125580,
+          125691,
           "        self.assertEqual(actual['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],\n"
         ],
         [
-          115894,
-          115950,
+          126449,
+          126505,
           "                wrong = copy.deepcopy(actual)\n"
         ],
         [
-          120189,
-          120359,
+          130744,
+          130914,
           ""
         ],
         [
-          120406,
-          120560,
+          130961,
+          131115,
           "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n                    wrong = copy.deepcopy(actual)\n"
         ],
         [
-          120649,
-          120736,
+          131204,
+          131291,
           ""
         ],
         [
-          120894,
-          121084,
+          131449,
+          131639,
           "            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]\n"
         ],
         [
-          122140,
-          122690,
+          132695,
+          133245,
           ""
         ],
         [
-          124209,
-          124305,
+          134764,
+          134860,
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          126087,
-          126147,
+          136642,
+          136702,
           "                    wrong = copy.deepcopy(actual)\n"
         ],
         [
-          126394,
-          126505,
+          136949,
+          137060,
           "            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]\n"
         ],
         [
-          128168,
-          161672,
+          138723,
+          172227,
           ""
         ],
         [
-          168590,
-          172161,
+          179145,
+          182716,
           ""
         ],
         [
-          173441,
-          173713,
+          183996,
+          184268,
           "        for function, expected_projection in projections:\n"
         ],
         [
-          175007,
-          186216,
+          185562,
+          197820,
           ""
         ]
       ],
@@ -1010,7 +1021,7 @@
       "previous_sha256": "c8b2d6c0b859e6d757fcf9c9c5f6a43c75edcd594863e819c131dd37849e189b"
     },
     "evaluation/admission/test_mainaf81_inventory.py": {
-      "current_sha256": "d9966ddc3611cff190bf79dd548c9a57c99bb40e8be03cdd589300859ebdf465",
+      "current_sha256": "26b53b3b1ec334d1e4dd93bcfe7c84aacb0a626f571b01034231747f4892daa7",
       "edits": [
         [
           94,
@@ -1039,7 +1050,7 @@
         ],
         [
           8834,
-          15424,
+          15556,
           "            with patch.object(Path, 'read_bytes', changed), \\\n                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_raw).hexdigest()}), \\\n                 patch.object(current, 'source_before', side_effect=lambda p, b, e: b if p != path else (_ for _ in ()).throw(AssertionError('declaration gate omitted'))):\n                with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainaf81_source_inventory_differs$'):\n                    current.require_sources()\n"
         ]
       ],
@@ -1067,7 +1078,7 @@
       "previous_sha256": "b3b0c8d33e580affbd078b283fd13c3cdbf44d4855397aac694f4385880bdd1c"
     },
     "evaluation/admission/test_maind8d85_inventory.py": {
-      "current_sha256": "e49e282e405348502e23f54adada46d9229bd51e5c4292a2fc4f5a4b9d83c9a8",
+      "current_sha256": "0044685c98d6b4954c08913c28320f579d33d748dd6936a39d6b9911bb77adfa",
       "edits": [
         [
           383,
@@ -1111,7 +1122,7 @@
         ],
         [
           8138,
-          9072,
+          9200,
           "            with patch.dict(indexed.DATA['projections'], upstream):\n"
         ]
       ],
@@ -1154,7 +1165,7 @@
       "previous_sha256": "4376c7bb3da59cd0afd56ec13922dc27c42c1d557d017f6ee2cc165870d5ffa9"
     },
     "evaluation/admission/test_mainf353_inventory.py": {
-      "current_sha256": "1e66715015dcc39dead5db53a17f7953f05d2e5554c6678d945f637b4cab6fdc",
+      "current_sha256": "8df30ef14de6cd98c4eb66ea24e8d7a78d64b625f81ba9cb09d3c2dcf8b1a58e",
       "edits": [
         [
           379,
@@ -1188,7 +1199,7 @@
         ],
         [
           6702,
-          8143,
+          8271,
           "            with patch.object(Path, 'read_bytes', changed), \\\n                 patch.dict(current.DATA['sources'], {path:hashlib.sha256(wrong).hexdigest()}), \\\n                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('indexed declaration gate omitted'))):\n                with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainf353_source_inventory_differs$'):\n                    current.require_sources()\n"
         ]
       ],
@@ -1515,6 +1526,20 @@
       "macro_calls": [],
       "templates": []
     },
+    "src/quiescent/artifact_window/tests.rs": {
+      "all": [
+        "exact_six_pop_has_one_plan_and_all_selected_and_unselected_entry_routes",
+        "outside_branch_entries_keep_both_head_kinds_and_an_internal_transfer_still_refuses",
+        "explicit_population_and_profile_guards_refuse_before_any_physical_attempt",
+        "identity_current_bytes_and_cet_refuse_at_their_original_stages",
+        "pending_outsider_is_checked_after_candidate_append_without_mutating_predecessor",
+        "exact_end_and_displacement_bounds_precede_unchanged_call_qualification",
+        "one_page_one_candidate_and_symbol_limits_remain_hard_refusals"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "src/quiescent/clock_region/tests.rs": {
       "all": [
         "owned_clock_region_one_transaction_preserves_all_heads_and_two_gates",
@@ -1698,6 +1723,20 @@
       "macro_calls": [],
       "templates": []
     },
+    "src/trampoline/artifact_window/tests.rs": {
+      "all": [
+        "single_observation_keeps_ordinary_symbolic_bytes_maps_and_requirements",
+        "stack_window_preserves_every_head_and_exact_callback_pc_fields",
+        "internal_branch_targets_selected_entry_not_restored_body",
+        "population_validation_preserves_existing_window_error_precedence",
+        "complete_action_accounting_rejects_missing_duplicated_and_wrong_fields",
+        "artifact_linking_keeps_original_field_error_before_missing_hook_and_fixed_obligation",
+        "final_link_and_size_refusals_leave_old_live_actions_unsupported"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "src/trampoline/clock_region_tests.rs": {
       "all": [
         "two_clock_gates_are_keyed_to_exact_source_heads_and_share_one_owner",
@@ -1727,6 +1766,15 @@
         "prepared_bound_matches_ordinary_nop_jrcxz_and_hook_artifact_images",
         "prepared_emission_keeps_field_reach_and_fixed_fragment_refusals",
         "fitting_encoder_accounting_rejects_hidden_bytes_offsets_and_undersized_bound"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "src/trampoline/observer_sequence/tests.rs": {
+      "all": [
+        "instrumentation_refusal_precedes_restore_coordinate",
+        "successful_instrumentation_preserves_later_coordinate_refusal"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -1832,7 +1880,11 @@
         "jump_stack_native_low_gprs",
         "jump_stack_native_high_gprs",
         "jump_stack_native_rsp_loaded_value",
-        "jump_stack_native_operand_faults"
+        "jump_stack_native_operand_faults",
+        "artifact_window_native_every_entry",
+        "artifact_window_native_branch_paths",
+        "artifact_window_native_rsp_effects",
+        "artifact_window_native_later_operand_fault"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -2064,6 +2116,16 @@
         "owned_short_cli_preserves_positional_paths_and_exact_prebind_labels",
         "pending_short_cli_preserves_legacy_paths_and_exact_prebind_labels",
         "fixed_exec_selector_is_explicit_and_preserves_legacy_parsers"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs": {
+      "all": [
+        "grouped_cli_selector_keeps_legacy_routes_and_rejects_mixed_or_partial_forms",
+        "grouped_cli_uses_actual_typed_route_and_retains_complete_success_and_refusal_census",
+        "grouped_cli_metadata_rejects_policy_identity_and_embedded_product_corruption"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -2464,6 +2526,20 @@
         "union_projection_rejects_class_population_and_policy_replay_mutations",
         "union_fixed_policy_keeps_ordered_permits_caps_and_first_errors",
         "union_actual_fixed_transaction_emits_or_refuses_complete_population"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
+    "tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs": {
+      "all": [
+        "grouped_six_pop_carrier_retains_all_members_routes_and_one_image",
+        "grouped_policy_and_both_metadata_forms_bind_total_partition",
+        "grouped_membership_mutations_refuse_without_singleton_fallback",
+        "grouped_jump_member_is_never_filtered_and_refusal_is_atomic",
+        "grouped_pending_and_resource_failures_leave_complete_draft_unmodified",
+        "grouped_carrier_refusal_withholds_all_six_and_preserves_original_identity",
+        "grouped_nongroup_route_retains_legacy_images_edits_and_outcomes"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -3228,7 +3304,11 @@
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod fitting_tests;",
       "mod clock_region;\npub use clock_region::{plan_owned_clock_region, plan_owned_clock_region_detailed};",
       "mod entry_admission;",
-      "pub mod feasibility;"
+      "pub mod feasibility;",
+      "mod artifact_window;"
+    ],
+    "src/quiescent/artifact_window.rs": [
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
     ],
     "src/quiescent/clock_region.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
@@ -3247,9 +3327,14 @@
       "mod fitting;",
       "mod artifact_allocation;",
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod clock_region_tests;",
-      "#[cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]\nmod early_control;"
+      "#[cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]\nmod early_control;",
+      "mod artifact_window;",
+      "#[cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]\nmod observer_sequence;"
     ],
     "src/trampoline/artifact_allocation.rs": [
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
+    ],
+    "src/trampoline/artifact_window.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
     ],
     "src/trampoline/early_control.rs": [
@@ -3257,6 +3342,9 @@
     ],
     "src/trampoline/fitting.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
+    ],
+    "src/trampoline/observer_sequence.rs": [
+      "#[cfg(test)]\nmod tests;"
     ],
     "tests/early_control_oracle.rs": [
       "#![cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]",
@@ -3308,7 +3396,8 @@
       "include!(\"overlapping_neighbor_artifact_oracle/state.rs\");",
       "include!(\"early_control_race.rs\");",
       "include!(\"early_control_static.rs\");",
-      "#[cfg(test)]\n    pub mod jump_stack_native {\n        include!(\"jump_stack_native.rs\");\n    }"
+      "#[cfg(test)]\n    pub mod jump_stack_native {\n        include!(\"jump_stack_native.rs\");\n    }",
+      "#[cfg(test)]\n    pub mod artifact_window_native {\n        include!(\"artifact_window_native.rs\");\n    }"
     ],
     "tools/elf-rewrite/Cargo.toml": [
       "[[example]]\nname = \"indexed_dso_native\"\npath = \"examples/indexed_dso_native.rs\"\ntest = false\nbench = false",
@@ -3323,7 +3412,8 @@
     ],
     "tools/elf-rewrite/examples/disassembly_sites.rs": [
       "#[cfg(test)]\n#[path = \"disassembly_sites/whole_tests.rs\"]\nmod whole_tests;",
-      "#[cfg(test)]\nmod fixed_exec_cli_tests {"
+      "#[cfg(test)]\nmod fixed_exec_cli_tests {",
+      "#[cfg(test)]\n#[path = \"disassembly_sites/grouped_tests.rs\"]\nmod grouped_tests;"
     ],
     "tools/elf-rewrite/examples/full_program_bridge.rs": [
       "#[cfg(test)]\n#[path = \"full_program_bridge/tests.rs\"]\nmod tests;",
@@ -3376,11 +3466,15 @@
     "tools/elf-rewrite/src/disassembly/whole/tests.rs": [
       "mod jump_stack_binding_tests {"
     ],
+    "tools/elf-rewrite/src/grouped_artifact_frontend.rs": [
+      "#[cfg(test)]\nmod tests;"
+    ],
     "tools/elf-rewrite/src/lib.rs": [
       "pub mod carrier;",
       "pub mod disassembly;",
       "mod neighbor_catalogue;",
-      "mod fixed_exec;"
+      "mod fixed_exec;",
+      "mod grouped_artifact_frontend;"
     ],
     "tools/elf-rewrite/src/neighbor_catalogue.rs": [
       "#[cfg(test)]\n#[path = \"neighbor_catalogue_cfg_tests.rs\"]\nmod cfg_tests;"
@@ -13094,6 +13188,1174 @@
       }
     }
   },
+  "source_successor_9528851": {
+    "added_default_methods": {
+      "src/quiescent/artifact_window/tests.rs": [
+        "exact_six_pop_has_one_plan_and_all_selected_and_unselected_entry_routes",
+        "outside_branch_entries_keep_both_head_kinds_and_an_internal_transfer_still_refuses",
+        "explicit_population_and_profile_guards_refuse_before_any_physical_attempt",
+        "identity_current_bytes_and_cet_refuse_at_their_original_stages",
+        "pending_outsider_is_checked_after_candidate_append_without_mutating_predecessor",
+        "exact_end_and_displacement_bounds_precede_unchanged_call_qualification",
+        "one_page_one_candidate_and_symbol_limits_remain_hard_refusals"
+      ],
+      "src/trampoline/artifact_window/tests.rs": [
+        "single_observation_keeps_ordinary_symbolic_bytes_maps_and_requirements",
+        "stack_window_preserves_every_head_and_exact_callback_pc_fields",
+        "internal_branch_targets_selected_entry_not_restored_body",
+        "population_validation_preserves_existing_window_error_precedence",
+        "complete_action_accounting_rejects_missing_duplicated_and_wrong_fields",
+        "artifact_linking_keeps_original_field_error_before_missing_hook_and_fixed_obligation",
+        "final_link_and_size_refusals_leave_old_live_actions_unsupported"
+      ],
+      "src/trampoline/observer_sequence/tests.rs": [
+        "instrumentation_refusal_precedes_restore_coordinate",
+        "successful_instrumentation_preserves_later_coordinate_refusal"
+      ],
+      "tests/quiescent_oracle.rs": [
+        "artifact_window_native_every_entry",
+        "artifact_window_native_branch_paths",
+        "artifact_window_native_rsp_effects",
+        "artifact_window_native_later_operand_fault"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs": [
+        "grouped_cli_selector_keeps_legacy_routes_and_rejects_mixed_or_partial_forms",
+        "grouped_cli_uses_actual_typed_route_and_retains_complete_success_and_refusal_census",
+        "grouped_cli_metadata_rejects_policy_identity_and_embedded_product_corruption"
+      ],
+      "tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs": [
+        "grouped_six_pop_carrier_retains_all_members_routes_and_one_image",
+        "grouped_policy_and_both_metadata_forms_bind_total_partition",
+        "grouped_membership_mutations_refuse_without_singleton_fallback",
+        "grouped_jump_member_is_never_filtered_and_refusal_is_atomic",
+        "grouped_pending_and_resource_failures_leave_complete_draft_unmodified",
+        "grouped_carrier_refusal_withholds_all_six_and_preserves_original_identity",
+        "grouped_nongroup_route_retains_legacy_images_edits_and_outcomes"
+      ]
+    },
+    "added_feature_methods": {},
+    "added_ignored_methods": {},
+    "base_revision": "1a2f5aaf1ac0c8b5c2ca89902bef1bf7892bb003",
+    "current_corpus_sha256": "9aab9f2eaa8bfb9ad8b8675aee85a5aee4ee2a2d0ef7b24c4faf9112a2af059d",
+    "default_doctest_additions": 0,
+    "default_harness_changes": 0,
+    "default_ignore_changes": 0,
+    "default_method_additions": 30,
+    "default_method_instances": {
+      "src/quiescent/artifact_window/tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "src/trampoline/artifact_window/tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "src/trampoline/observer_sequence/tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "tests/quiescent_oracle.rs": [
+        "test/quiescent_oracle"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs": [
+        "unit/disassembly_sites/disassembly_sites"
+      ],
+      "tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs": [
+        "unit/liteinst_rewrite/lib"
+      ]
+    },
+    "default_method_removals": 0,
+    "feature_method_additions": 0,
+    "feature_method_removals": 0,
+    "incoming_main": "952885107db425014317e1e704162c057b916ffe",
+    "merged_source_tree": "5014ab1640c63244ceaf15c1bc255cf8daa5eacc",
+    "module_chains": {
+      "src/lib.rs": [
+        "pub mod quiescent;",
+        "pub mod trampoline;"
+      ],
+      "src/quiescent.rs": [
+        "mod artifact_window;"
+      ],
+      "src/quiescent/artifact_window.rs": [
+        "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
+      ],
+      "src/trampoline.rs": [
+        "mod artifact_window;",
+        "#[cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]\nmod observer_sequence;"
+      ],
+      "src/trampoline/artifact_window.rs": [
+        "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
+      ],
+      "src/trampoline/observer_sequence.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tests/quiescent_oracle.rs": [
+        "#![cfg(all(target_os = \"linux\", target_arch = \"x86_64\"))]",
+        "#[path = \"support/quiescent_oracle.rs\"]\nmod oracle;",
+        "#[path = \"support/isolated_native_test.rs\"]\nmod isolated_native_test;"
+      ],
+      "tests/support/quiescent_oracle.rs": [
+        "#[cfg(test)]\n    pub mod artifact_window_native {\n        include!(\"artifact_window_native.rs\");\n    }"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites.rs": [
+        "#[cfg(test)]\n#[path = \"disassembly_sites/grouped_tests.rs\"]\nmod grouped_tests;"
+      ],
+      "tools/elf-rewrite/src/grouped_artifact_frontend.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/elf-rewrite/src/lib.rs": [
+        "mod grouped_artifact_frontend;"
+      ]
+    },
+    "new_method_declarations": 30,
+    "new_sources": [
+      "evaluation/direct-program/artifact-window-validation/README.md",
+      "evaluation/direct-program/artifact-window-validation/receipt.json",
+      "evaluation/direct-program/grouped-program-result/README.md",
+      "evaluation/direct-program/grouped-program-result/receipt.json",
+      "evaluation/direct-program/grouped-program-result/results.csv",
+      "evaluation/direct-program/grouped-program-validation/README.md",
+      "evaluation/direct-program/grouped-program-validation/receipt.json",
+      "evaluation/direct-program/test_grouped_linkage.py",
+      "evaluation/direct-program/validate_artifact_window.py",
+      "evaluation/direct-program/validate_grouped_artifact.py",
+      "evaluation/direct-program/validate_grouped_program.py",
+      "src/quiescent/artifact_window.rs",
+      "src/quiescent/artifact_window/tests.rs",
+      "src/trampoline/artifact_window.rs",
+      "src/trampoline/artifact_window/tests.rs",
+      "src/trampoline/observer_sequence.rs",
+      "src/trampoline/observer_sequence/tests.rs",
+      "tests/support/artifact_window_native.rs",
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs",
+      "tools/elf-rewrite/src/grouped_artifact_frontend.rs",
+      "tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs"
+    ],
+    "newly_bound_sources": [
+      "evaluation/direct-program/artifact-window-validation/README.md",
+      "evaluation/direct-program/artifact-window-validation/receipt.json",
+      "evaluation/direct-program/grouped-program-result/README.md",
+      "evaluation/direct-program/grouped-program-result/receipt.json",
+      "evaluation/direct-program/grouped-program-result/results.csv",
+      "evaluation/direct-program/grouped-program-validation/README.md",
+      "evaluation/direct-program/grouped-program-validation/receipt.json",
+      "evaluation/direct-program/test_grouped_linkage.py",
+      "evaluation/direct-program/validate_artifact_window.py",
+      "evaluation/direct-program/validate_grouped_artifact.py",
+      "evaluation/direct-program/validate_grouped_program.py",
+      "src/quiescent/artifact_window.rs",
+      "src/quiescent/artifact_window/tests.rs",
+      "src/trampoline/artifact_window.rs",
+      "src/trampoline/artifact_window/tests.rs",
+      "src/trampoline/observer_sequence.rs",
+      "src/trampoline/observer_sequence/tests.rs",
+      "tests/support/artifact_window_native.rs",
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs",
+      "tools/elf-rewrite/src/grouped_artifact_frontend.rs",
+      "tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs"
+    ],
+    "previous_corpus_sha256": "7f91ece036405aab329b52c4559e8304bd663edeccff8e980f3ef1d198972045",
+    "previous_source_revision": "1a2f5aaf1ac0c8b5c2ca89902bef1bf7892bb003",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "A3-SHARED-ADMISSION.md",
+      "evaluation/direct-program/artifact-window-validation/README.md",
+      "evaluation/direct-program/artifact-window-validation/receipt.json",
+      "evaluation/direct-program/direct_data.py",
+      "evaluation/direct-program/grouped-program-result/README.md",
+      "evaluation/direct-program/grouped-program-result/receipt.json",
+      "evaluation/direct-program/grouped-program-result/results.csv",
+      "evaluation/direct-program/grouped-program-validation/README.md",
+      "evaluation/direct-program/grouped-program-validation/receipt.json",
+      "evaluation/direct-program/reproduce.py",
+      "evaluation/direct-program/test_grouped_linkage.py",
+      "evaluation/direct-program/validate_artifact_window.py",
+      "evaluation/direct-program/validate_grouped_artifact.py",
+      "evaluation/direct-program/validate_grouped_program.py",
+      "src/emission.rs",
+      "src/quiescent.rs",
+      "src/quiescent/artifact_window.rs",
+      "src/quiescent/artifact_window/tests.rs",
+      "src/trampoline.rs",
+      "src/trampoline/artifact_window.rs",
+      "src/trampoline/artifact_window/tests.rs",
+      "src/trampoline/fitting.rs",
+      "src/trampoline/observer_sequence.rs",
+      "src/trampoline/observer_sequence/tests.rs",
+      "tests/quiescent_oracle.rs",
+      "tests/support/artifact_window_native.rs",
+      "tests/support/quiescent_oracle.rs",
+      "tools/elf-rewrite/examples/disassembly_sites.rs",
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs",
+      "tools/elf-rewrite/src/disassembly/whole.rs",
+      "tools/elf-rewrite/src/fixed_exec.rs",
+      "tools/elf-rewrite/src/grouped_artifact_frontend.rs",
+      "tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs",
+      "tools/elf-rewrite/src/ledger.rs",
+      "tools/elf-rewrite/src/lib.rs"
+    ],
+    "source_preimages": {
+      "A3-SHARED-ADMISSION.md": {
+        "bytes": 19824,
+        "sha256": "13e14c269888d38cb4c90de3014ae910658d76e6008b5001184c62dcc1e60664"
+      },
+      "evaluation/direct-program/artifact-window-validation/README.md": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/artifact-window-validation/receipt.json": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/direct_data.py": {
+        "bytes": 10631,
+        "sha256": "225f17119fd52fffed556df8220af4bd6b58b29c356cf549a19e8d72e0ac51d7"
+      },
+      "evaluation/direct-program/grouped-program-result/README.md": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/grouped-program-result/receipt.json": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/grouped-program-result/results.csv": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/grouped-program-validation/README.md": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/grouped-program-validation/receipt.json": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/reproduce.py": {
+        "bytes": 24627,
+        "sha256": "cdebb7edc9aecb158bd13e60fe70352aa42ce21519dc89c898236a004731b4c6"
+      },
+      "evaluation/direct-program/test_grouped_linkage.py": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/validate_artifact_window.py": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/validate_grouped_artifact.py": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/validate_grouped_program.py": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/emission.rs": {
+        "bytes": 38666,
+        "sha256": "3e3e41f2e6d876b7a61e43328df9c4d4332f5ff2d55c41fd9612977ce63b21d3"
+      },
+      "src/quiescent.rs": {
+        "bytes": 123481,
+        "sha256": "ab30b4d2ae671c0ff0133c0507ddbc944849b9c9bf40c03fb509637b0c8964c3"
+      },
+      "src/quiescent/artifact_window.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/quiescent/artifact_window/tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/trampoline.rs": {
+        "bytes": 451673,
+        "sha256": "24cee069cec6abcf7f80c9731be6e37cba5934e9d3f414e2e5cce6ad00d554b2"
+      },
+      "src/trampoline/artifact_window.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/trampoline/artifact_window/tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/trampoline/fitting.rs": {
+        "bytes": 8269,
+        "sha256": "bf3b64017fdff8d47d45dfc495de39c86dd45766688726c3a4152b5b0b706df7"
+      },
+      "src/trampoline/observer_sequence.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/trampoline/observer_sequence/tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tests/quiescent_oracle.rs": {
+        "bytes": 36805,
+        "sha256": "58d0d8a971a185d3d8c7192e00311ff0328b6acea6919d7ef8cec6e4e54af94c"
+      },
+      "tests/support/artifact_window_native.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tests/support/quiescent_oracle.rs": {
+        "bytes": 115135,
+        "sha256": "fec9bcf05c8b5f18e4a58d6a74817fa330fdc119ee6739d57da0c0e9b625460d"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites.rs": {
+        "bytes": 41410,
+        "sha256": "dd35797c37b9db4c1599ffafd7b65ac4f338bdcf2c2668d8ca91673beaf466a6"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/disassembly/whole.rs": {
+        "bytes": 20451,
+        "sha256": "746d384bf0c943ca6983c4758d4cc59fa4f2261a10ea33c6b2167f2f1ae1ad5f"
+      },
+      "tools/elf-rewrite/src/fixed_exec.rs": {
+        "bytes": 9428,
+        "sha256": "7f559e4d4d2c2fffc608464d12581f9fbeeeb0ab62a9bfcfee13e1dd22906304"
+      },
+      "tools/elf-rewrite/src/grouped_artifact_frontend.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/ledger.rs": {
+        "bytes": 22546,
+        "sha256": "225f2d841e666e7164452dcadc2a6acc3e2c6c5f66818195fab94fe83d8604e1"
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "bytes": 54585,
+        "sha256": "e3d708f620c5fadd797b2b5efc1c0de198f4b9c3016af6c1fe7092d8d1c72cfc"
+      }
+    },
+    "source_projections": {
+      "A3-SHARED-ADMISSION.md": {
+        "current_sha256": "2fd37853f6df811c0cfd0abc816741dcadb5148b611e92d2f6cb120ba2a1aac3",
+        "edits": [
+          [
+            6246,
+            6893,
+            "Both frontends already call the same core instruction encoder. The legacy\nlive-window/exact-syscall and ordered-artifact paths still duplicate internal\nsave/callback/restore orchestration; ELF layout and live publication remain\nseparate output adapters. The two owned back-edge clock profiles now use the\n"
+          ]
+        ],
+        "previous_sha256": "13e14c269888d38cb4c90de3014ae910658d76e6008b5001184c62dcc1e60664"
+      },
+      "evaluation/direct-program/artifact-window-validation/README.md": {
+        "current_sha256": "55e346a73e956cb5d7b6afc429f42e54981c6835430308c22f29d5ca250698df",
+        "edits": [
+          [
+            0,
+            1954,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/artifact-window-validation/receipt.json": {
+        "current_sha256": "7223739d416d1d43f76fab0f681835dc2e0cb5e06aecd34d06eeeada332df1cc",
+        "edits": [
+          [
+            0,
+            6884,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/direct_data.py": {
+        "current_sha256": "671150f7ab01ebd08a1ce5452c4391daeba0a4c3a61231764fa4a00bda1b07ec",
+        "edits": [
+          [
+            10631,
+            24040,
+            ""
+          ]
+        ],
+        "previous_sha256": "225f17119fd52fffed556df8220af4bd6b58b29c356cf549a19e8d72e0ac51d7"
+      },
+      "evaluation/direct-program/grouped-program-result/README.md": {
+        "current_sha256": "5b8cb4e72c7bdd8082b4a05f0a9c1fae4540fcdf1ce03632caaebb38fb2f4499",
+        "edits": [
+          [
+            0,
+            3168,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/grouped-program-result/receipt.json": {
+        "current_sha256": "a7ab177ca536f553ce5c2cf13d15a29d88c82026b3d505167cc60716b637da85",
+        "edits": [
+          [
+            0,
+            13569,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/grouped-program-result/results.csv": {
+        "current_sha256": "bd0fd26559a1824672a4b431cec5ddb7570c417cce66a211bfbde84960206503",
+        "edits": [
+          [
+            0,
+            5199,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/grouped-program-validation/README.md": {
+        "current_sha256": "1a4c8d44e01e715fa14cde95e3a200009393dcdce1be65114722e234be699389",
+        "edits": [
+          [
+            0,
+            2651,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/grouped-program-validation/receipt.json": {
+        "current_sha256": "29d9d757dd76e189b4544302e3c89f7a91ea3e491098ad6ce6390fed89b63f42",
+        "edits": [
+          [
+            0,
+            9338,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/reproduce.py": {
+        "current_sha256": "6f82940466b3012b8a094653491794dfe088b2c5c7fb03f7ec47141e9d8eefb4",
+        "edits": [
+          [
+            1535,
+            1647,
+            ""
+          ],
+          [
+            4577,
+            4700,
+            "    stack = a.rewrite_profile == D.STACK_PROFILE\n"
+          ],
+          [
+            16103,
+            16202,
+            "        if a.rewrite_profile in ('fixed-exec-overlapping-v2', D.STACK_PROFILE):\n"
+          ],
+          [
+            16239,
+            16486,
+            "                profile=D.STACK_PROFILE if stack else 'fixed-exec-zero-bias-indexed-jump32-v1',\n                planner_profile='whole-program-packed-overlapping-neighbors-4096',\n"
+          ],
+          [
+            17963,
+            18182,
+            ""
+          ],
+          [
+            19019,
+            19372,
+            ""
+          ],
+          [
+            23646,
+            23799,
+            "        assert a.rewrite_profile in ('fixed-exec-overlapping-v2', D.STACK_PROFILE) and a.program_receipt and a.program_receipt_sha256\n"
+          ]
+        ],
+        "previous_sha256": "cdebb7edc9aecb158bd13e60fe70352aa42ce21519dc89c898236a004731b4c6"
+      },
+      "evaluation/direct-program/test_grouped_linkage.py": {
+        "current_sha256": "c8175cfd914e27927310eb38b748dba7eb223b559d6364870459f670891ba53a",
+        "edits": [
+          [
+            0,
+            13678,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/validate_artifact_window.py": {
+        "current_sha256": "1da3800c4e6d09578551db347e37a272a7ac83ee96d7f0ad4525ae24135e8937",
+        "edits": [
+          [
+            0,
+            2913,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/validate_grouped_artifact.py": {
+        "current_sha256": "709ab97ba02b1807b99c0a3640513b215bd7405b29d6841a353cc2749ec10169",
+        "edits": [
+          [
+            0,
+            4020,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/direct-program/validate_grouped_program.py": {
+        "current_sha256": "c39ade50a9826fb9fd3f577b58f8334d650ac85c5f779434b0cee5034f9837a2",
+        "edits": [
+          [
+            0,
+            3428,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/emission.rs": {
+        "current_sha256": "6420f9b057a27195418b324f8b1e581abd55267f73674f2d16b5b4b29a73196c",
+        "edits": [
+          [
+            23042,
+            23317,
+            ""
+          ]
+        ],
+        "previous_sha256": "3e3e41f2e6d876b7a61e43328df9c4d4332f5ff2d55c41fd9612977ce63b21d3"
+      },
+      "src/quiescent.rs": {
+        "current_sha256": "1218bf9e88ac2c901be456be6c4a85bad40971b28a49a3acaadbf3bd8a9b9108",
+        "edits": [
+          [
+            732,
+            881,
+            ""
+          ],
+          [
+            54663,
+            55515,
+            ""
+          ],
+          [
+            55622,
+            55622,
+            "    let last_logical = controls\n        .and_then(|actions| actions.len().checked_sub(1).map(|index| actions.pc(index)))\n        .unwrap_or(request.logical_pc);\n"
+          ],
+          [
+            55881,
+            55978,
+            ""
+          ],
+          [
+            56295,
+            56414,
+            "        if end - physical >= 5 && end > last_logical {\n"
+          ],
+          [
+            56615,
+            56723,
+            ""
+          ],
+          [
+            57445,
+            57600,
+            "    emit_relocation_window(\n        request,\n        scan,\n        source,\n        occupied,\n        (controls, clock),\n        RelocationWindow {\n            physical,\n            end,\n            displaced,\n            instructions,\n            authority: RelocationAuthority::Ordinary,\n        },\n        search_evidence,\n    )\n"
+          ],
+          [
+            57810,
+            57847,
+            ""
+          ],
+          [
+            58363,
+            60153,
+            ""
+          ],
+          [
+            60678,
+            61313,
+            ""
+          ],
+          [
+            64806,
+            65069,
+            "    let trampoline = if let Some((proof, _, _)) = routed {\n        TrampolinePlan::from_symbolic_routed_jmp(scan, proof)\n    } else if let Some((_, region)) = clock_region {\n        TrampolinePlan::from_owned_clock_region(scan, region)\n"
+          ],
+          [
+            65082,
+            65517,
+            "        match (clock, controls) {\n            (Some(_), Some(CoalescedActions::ControlledProfile(_, _))) => {\n                return Err(Refusal::InvalidPlan);\n            }\n            (Some(_), Some(CoalescedActions::PreContext(_))) => return Err(Refusal::InvalidPlan),\n            (Some(_), Some(CoalescedActions::PointObservations(_))) => {\n                return Err(Refusal::InvalidPlan);\n            }\n            (Some(_), Some(CoalescedActions::EntryAdmission(_))) => {\n                return Err(Refusal::InvalidPlan);\n            }\n            (Some(action), _) => TrampolinePlan::from_backedge_clock(scan, physical, end, action),\n            (None, Some(CoalescedActions::Controlled(actions))) => {\n                TrampolinePlan::from_controlled_actions(scan, physical, end, actions)\n            }\n            (None, Some(CoalescedActions::PointObservations(actions))) => {\n                TrampolinePlan::from_point_observation_actions(scan, physical, end, actions)\n            }\n            (None, Some(CoalescedActions::EntryAdmission(actions))) => {\n                // SAFETY: only the unsafe typed wrappers create this variant.\n                // Complete original decoding/current reads and per-window\n                // source authentication remain unchanged above.\n                unsafe {\n                    TrampolinePlan::from_entry_admission_actions(scan, physical, end, actions)\n"
+          ],
+          [
+            65535,
+            67960,
+            ""
+          ],
+          [
+            67974,
+            67974,
+            "            (None, Some(CoalescedActions::ControlledProfile(actions, profile))) => {\n                TrampolinePlan::from_controlled_actions_with_stack_profile(\n                    scan, physical, end, actions, profile,\n                )\n            }\n            (None, Some(CoalescedActions::PreContext(actions))) => {\n                // SAFETY: this private variant comes only from the unsafe typed\n                // wrappers, which retain the entire leaf/frame/callback contract.\n                // Original scan/current-read/whole-window guards above are unchanged.\n                unsafe { TrampolinePlan::from_precontext_actions(scan, physical, end, actions) }\n            }\n            (None, None) => request.emission.window(\n                scan,\n                physical,\n                request.logical_pc,\n                end,\n                request.semantics == HookSemantics::ReplaceFirst,\n            ),\n"
+          ],
+          [
+            67984,
+            68090,
+            "    }\n    .map_err(|e| Refusal::Backend(e.to_string()))?;\n"
+          ],
+          [
+            68524,
+            68601,
+            "    let mut prepared = request\n        .emission\n        .prepare_fitting(&trampoline)\n"
+          ],
+          [
+            71247,
+            71310,
+            "            None => request.emission.emit(&trampoline, target),\n"
+          ]
+        ],
+        "previous_sha256": "ab30b4d2ae671c0ff0133c0507ddbc944849b9c9bf40c03fb509637b0c8964c3"
+      },
+      "src/quiescent/artifact_window.rs": {
+        "current_sha256": "4bafb715bf51ac8522cabdb4db7c27d629740d822b12a59789a5c4b84443b976",
+        "edits": [
+          [
+            0,
+            8733,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/quiescent/artifact_window/tests.rs": {
+        "current_sha256": "89fa59a0a692b2055fc3d809f7fc5755aa45fb2cdb259c6a45f9b18e5957b222",
+        "edits": [
+          [
+            0,
+            17613,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/trampoline.rs": {
+        "current_sha256": "c1d1874afcf4059714780b7b77f753381af2b90492788ad39339d2a41d113c2d",
+        "edits": [
+          [
+            90859,
+            91010,
+            "            let mut instrumentation_frames =\n                HelperFrames::with_profile(FrameStage::SaveAndCall, self.observation_stack_profile);\n            let mut restore_frames =\n                HelperFrames::with_profile(FrameStage::Restore, self.observation_stack_profile);\n            let instrumentation = self\n                .encode_instrumentation(\n                    instrumentation_address,\n                    &extended_state,\n                    self.logical_address(),\n                    (\n                        Some(self.hook.expect(\"legacy plan always has a callback\")),\n                        None,\n                    ),\n                    None,\n                    recording.then_some(&mut instrumentation_frames),\n                )?\n                .bytes;\n            let restore_address = instrumentation_address\n                .checked_add(instrumentation.len() as u64)\n                .ok_or(TrampolineError::AddressNotRepresentable { address })?;\n            let restore = encode_restore(\n"
+          ],
+          [
+            91043,
+            91111,
+            ""
+          ],
+          [
+            91192,
+            91933,
+            "                recording.then_some(&mut restore_frames),\n"
+          ],
+          [
+            91949,
+            92006,
+            ""
+          ],
+          [
+            104926,
+            105470,
+            ""
+          ],
+          [
+            106295,
+            106580,
+            ""
+          ],
+          [
+            106752,
+            106899,
+            "        let actions: Vec<(u64, Option<HookCallback>, bool)> = match artifact {\n            Some(_) if self.kind == TrampolineKind::PatchWindow => vec![(\n                self.logical_address(),\n                None,\n                self.relocated_start != self.logical_index,\n            )],\n            Some(_) => Vec::new(),\n            None => self\n                .actions\n"
+          ],
+          [
+            106923,
+            107520,
+            "                .map(|&(pc, hook, replace)| (pc, Some(hook), replace))\n                .collect(),\n"
+          ],
+          [
+            113533,
+            113799,
+            "                let mut instrumentation_frames = HelperFrames::with_profile(\n                    FrameStage::SaveAndCall,\n                    self.observation_stack_profile,\n                );\n                let mut restore_frames =\n                    HelperFrames::with_profile(FrameStage::Restore, self.observation_stack_profile);\n                let instrumentation = self.encode_instrumentation(\n                    0,\n                    &extended_state,\n                    original.ip(),\n                    (\n                        hook,\n                        self.controls\n                            .get(action_index)\n                            .map(|action| &action.control),\n                    ),\n                    artifact,\n                    recording.then_some(&mut instrumentation_frames),\n                )?;\n                let restore = encode_restore(\n                    instrumentation.bytes.len() as u64,\n"
+          ],
+          [
+            113888,
+            114555,
+            "                    recording.then_some(&mut restore_frames),\n"
+          ],
+          [
+            118851,
+            118898,
+            "        Ok(OrderedPreparation {\n"
+          ],
+          [
+            119233,
+            119419,
+            "        })\n"
+          ],
+          [
+            168967,
+            169048,
+            ""
+          ],
+          [
+            169109,
+            169206,
+            ""
+          ]
+        ],
+        "previous_sha256": "24cee069cec6abcf7f80c9731be6e37cba5934e9d3f414e2e5cce6ad00d554b2"
+      },
+      "src/trampoline/artifact_window.rs": {
+        "current_sha256": "b082b82054dbc4e0d05a31214f709d885236d508f7fc2741639a2a93d67fbd45",
+        "edits": [
+          [
+            0,
+            5729,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/trampoline/artifact_window/tests.rs": {
+        "current_sha256": "73b04b778a3c2600158d84c17fb6ad3f22fa8630cc39a987a80c2f88e1459589",
+        "edits": [
+          [
+            0,
+            14911,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/trampoline/fitting.rs": {
+        "current_sha256": "f12897d9c7dc73c94691cdcc5969eddf9f1c1ad487e29f4542b2ba2bdb3d181c",
+        "edits": [
+          [
+            2608,
+            2669,
+            "            let size_bound = prepared_bound(&preparation)?;\n            Ok(Self {\n                plan: plan.clone(),\n                input: input.clone(),\n                preparation,\n                size_bound,\n            })\n"
+          ],
+          [
+            2679,
+            3747,
+            ""
+          ]
+        ],
+        "previous_sha256": "bf3b64017fdff8d47d45dfc495de39c86dd45766688726c3a4152b5b0b706df7"
+      },
+      "src/trampoline/observer_sequence.rs": {
+        "current_sha256": "8c334f32ee8cd0b0a419a9c735754db0af4f5c9a171c517abfbc734d3b3f6e24",
+        "edits": [
+          [
+            0,
+            1782,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/trampoline/observer_sequence/tests.rs": {
+        "current_sha256": "ba864e8cfbd5eaca1468d3390545f9cd662ac468d1ebfe7ec11a79eada2a1453",
+        "edits": [
+          [
+            0,
+            2637,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tests/quiescent_oracle.rs": {
+        "current_sha256": "c795b8b0d6297a57f115b68d9a4663aad94893a068c9f1cd8842eaf7ac7ac6fa",
+        "edits": [
+          [
+            36805,
+            37792,
+            ""
+          ]
+        ],
+        "previous_sha256": "58d0d8a971a185d3d8c7192e00311ff0328b6acea6919d7ef8cec6e4e54af94c"
+      },
+      "tests/support/artifact_window_native.rs": {
+        "current_sha256": "9a8d5113e570cf7fe34568c79eac1a1cbdb85a7af79d871ca6a2905bbc19e8e0",
+        "edits": [
+          [
+            0,
+            14671,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tests/support/quiescent_oracle.rs": {
+        "current_sha256": "87de53f6dce9ca7a1e4f38fa7054c2e397f8b7720fb5849fc7021554d86638d7",
+        "edits": [
+          [
+            23594,
+            23795,
+            ""
+          ]
+        ],
+        "previous_sha256": "fec9bcf05c8b5f18e4a58d6a74817fa330fdc119ee6739d57da0c0e9b625460d"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites.rs": {
+        "current_sha256": "7c8ee6bc5b6ce334afa30da4035e0fbc18a53fa60ea2664a854124344ebb1e3c",
+        "edits": [
+          [
+            22630,
+            22652,
+            ""
+          ],
+          [
+            22751,
+            22844,
+            ""
+          ],
+          [
+            22939,
+            23198,
+            "    if args.len() == 8 && args[1] == JUMP_STACK_FLAG {\n"
+          ],
+          [
+            23724,
+            23940,
+            "        Ok((&args[2..], PopulationMode::JumpStack))\n"
+          ],
+          [
+            24244,
+            24641,
+            ""
+          ],
+          [
+            25608,
+            25682,
+            "        PopulationMode::JumpStack => {\n"
+          ],
+          [
+            26346,
+            26820,
+            ""
+          ],
+          [
+            27060,
+            27736,
+            "            liteinst_rewrite::prepare_disassembly_jump_stack_fixed_exec_packed_overlapping_neighbors(\n                original, &selected,\n            )\n"
+          ],
+          [
+            27754,
+            33585,
+            ""
+          ],
+          [
+            34319,
+            34618,
+            ""
+          ],
+          [
+            37199,
+            37307,
+            "    if mode == PopulationMode::JumpStack {\n"
+          ],
+          [
+            37431,
+            37478,
+            ""
+          ],
+          [
+            38199,
+            38625,
+            ""
+          ],
+          [
+            49990,
+            50070,
+            ""
+          ]
+        ],
+        "previous_sha256": "dd35797c37b9db4c1599ffafd7b65ac4f338bdcf2c2668d8ca91673beaf466a6"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs": {
+        "current_sha256": "5f097193cc470f171f524aa9bff6a38cbdc80a1737fc2ec78bfbba842bd75290",
+        "edits": [
+          [
+            0,
+            9827,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/disassembly/whole.rs": {
+        "current_sha256": "8b73767ba743c79cf7f52f48e99374516729384748656ddb5d032e294bb1d5c1",
+        "edits": [
+          [
+            6607,
+            6666,
+            ""
+          ],
+          [
+            12943,
+            13132,
+            "        Ok(JumpStackWholeSelection { selection, files })\n"
+          ]
+        ],
+        "previous_sha256": "746d384bf0c943ca6983c4758d4cc59fa4f2261a10ea33c6b2167f2f1ae1ad5f"
+      },
+      "tools/elf-rewrite/src/fixed_exec.rs": {
+        "current_sha256": "9fe7d3ca9335f5f735aa6b4d64fcd0d14e187e68a7ec761ce1bd3dfd42e62d5e",
+        "edits": [
+          [
+            3082,
+            3518,
+            ""
+          ],
+          [
+            9864,
+            10852,
+            ""
+          ]
+        ],
+        "previous_sha256": "7f559e4d4d2c2fffc608464d12581f9fbeeeb0ab62a9bfcfee13e1dd22906304"
+      },
+      "tools/elf-rewrite/src/grouped_artifact_frontend.rs": {
+        "current_sha256": "7217a09ef7ea8fbc4076d8cfa37dc06b1aa2f878b52a0bc48148f6665f3ca036",
+        "edits": [
+          [
+            0,
+            22559,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs": {
+        "current_sha256": "d3cb853c783a6d9407a0ee78b8984f47412f78157b1cb0d4367dc9b6c14a2d72",
+        "edits": [
+          [
+            0,
+            20721,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/ledger.rs": {
+        "current_sha256": "36247ec0f4858840ba1c06085989153528ce3c370d1b832bec84cc5937c4a2dc",
+        "edits": [
+          [
+            1451,
+            1742,
+            ""
+          ],
+          [
+            19218,
+            19616,
+            "    let mut out = plans(s, accepted, composition, deps)?;\n"
+          ],
+          [
+            23177,
+            24218,
+            ""
+          ]
+        ],
+        "previous_sha256": "225f2d841e666e7164452dcadc2a6acc3e2c6c5f66818195fab94fe83d8604e1"
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "current_sha256": "c966efdf30a6f5a16610edb80f7026cb97fad5060060682651fda436912b5e9e",
+        "edits": [
+          [
+            474,
+            685,
+            ""
+          ],
+          [
+            11357,
+            11392,
+            ""
+          ],
+          [
+            12736,
+            12771,
+            ""
+          ],
+          [
+            14777,
+            14812,
+            ""
+          ],
+          [
+            18604,
+            18639,
+            ""
+          ],
+          [
+            18929,
+            18994,
+            ""
+          ],
+          [
+            19475,
+            19500,
+            ""
+          ],
+          [
+            20232,
+            20592,
+            ""
+          ],
+          [
+            24701,
+            25032,
+            ""
+          ],
+          [
+            26161,
+            26691,
+            "    if let Some(limits) = adjacent {\n"
+          ],
+          [
+            29172,
+            29623,
+            ""
+          ],
+          [
+            29660,
+            29965,
+            ""
+          ],
+          [
+            30425,
+            30767,
+            "        let policy = fixed_exec::binding_policy(binding, ContentId::of(&s.manifest));\n"
+          ],
+          [
+            30945,
+            31186,
+            "    let mut ledger = if mode == disassembly::NeighborMode::WholeEntryVeneerMixedPending\n"
+          ],
+          [
+            31595,
+            31683,
+            "    for (index, image) in accepted.iter().flat_map(|(_, p)| p.images()).enumerate() {\n"
+          ],
+          [
+            32511,
+            32551,
+            "        let images: Vec<_> = accepted\n"
+          ],
+          [
+            34547,
+            35473,
+            "                fixed_exec::validate_output(\n                    &elf,\n                    binding,\n                    &accepted,\n                    fixed_exec::OutputReadback {\n                        bytes: output.bytes(),\n                        original_to_output_header: &output.original_to_output_header,\n                        max_program_headers: s.limits.program_headers,\n                    },\n                    &dynamic,\n                    &dependencies,\n                )?;\n"
+          ],
+          [
+            47393,
+            47831,
+            "        if plan.qualification_complete() {\n            return Err(Error::new(\n                \"readiness-invariant\",\n                \"unexpected qualification\",\n            ));\n        }\n        let new_images = plan.images().count();\n        let new_bytes = plan\n            .images()\n            .try_fold(0_usize, |n, i| n.checked_add(i.bytes().len()))\n            .ok_or_else(|| Error::new(\"image-budget\", \"overflow\"))?;\n        let mut new_pages = 0_u64;\n        let mut new_dependencies = Vec::new();\n        let mut next = composition.clone();\n        for step in plan.source_steps() {\n            // T2/T3 steps intentionally read their preceding internal overlay.\n            next.append(step)\n                .map_err(|e| Error::new(\"composition\", e))?;\n            for dependency in &step.parts().dependencies {\n                let file = translate(elf, dependency.start(), dependency.len())?;\n                dynamic\n                    .check_source_ranges(&[file])\n                    .map_err(|e| Error::new(\"source-relocation\", e))?;\n                new_dependencies.push(file);\n            }\n            for allocation in &step.parts().allocations {\n                new_pages = new_pages\n                    .checked_add(allocation.range.len() / 4096)\n                    .ok_or_else(|| Error::new(\"allocation-budget\", \"overflow\"))?;\n            }\n        }\n        if image_count\n            .checked_add(new_images)\n            .is_none_or(|v| v > s.limits.images)\n            || image_bytes\n                .checked_add(new_bytes)\n                .is_none_or(|v| v > s.limits.image_bytes)\n            || allocation_pages\n                .checked_add(new_pages)\n                .is_none_or(|v| v > s.limits.new_load_pages)\n        {\n            return Err(Error::new(\n                \"aggregate-budget\",\n                \"complete selected set exceeds declared resources\",\n            ));\n        }\n        // Same-module hook contents are immutable dependencies too.\n        for hook in &s.hooks {\n            for bytes in next.final_bytes() {\n                let left = bytes.address.max(hook.pc);\n                let right =\n                    (bytes.address + bytes.bytes.len() as u64).min(hook.pc + hook.length as u64);\n                if left < right {\n                    let actual = &bytes.bytes\n                        [(left - bytes.address) as usize..(right - bytes.address) as usize];\n                    if actual\n                        != elf\n                            .executable_bytes(ElfVaddr(left), right - left)\n                            .map_err(|e| Error::new(\"hook-owner\", e))?\n                    {\n                        return Err(Error::new(\n                            \"hook-ownership\",\n                            \"source transformation changes hook\",\n                        ));\n                    }\n                }\n            }\n        }\n        // Preserve every existing append/dependency/resource/hook failure first.\n        // First-four local success may refuse here; this never restarts search.\n        if matches!(\n            mode,\n            disassembly::NeighborMode::ShortT3Pending\n                | disassembly::NeighborMode::WholeCurrentPlacementMixedPending\n                | disassembly::NeighborMode::WholeFittingMixedPending\n                | disassembly::NeighborMode::WholeEntryVeneerMixedPending\n                | disassembly::NeighborMode::WholeOverlappingPending\n        ) {\n            next.require_unclaimed_ranges(&pending_ranges)\n                .map_err(|e| Error::new(\"pending-selected\", e))?;\n        }\n        for step in plan.source_steps() {\n            occupied.extend(step.parts().allocations.iter().map(|a| a.range));\n        }\n        dependencies.extend(new_dependencies);\n        *image_count += new_images;\n        *image_bytes += new_bytes;\n        *allocation_pages += new_pages;\n        *composition = next;\n"
+          ],
+          [
+            48208,
+            52803,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3d708f620c5fadd797b2b5efc1c0de198f4b9c3016af6c1fe7092d8d1c72cfc"
+      }
+    },
+    "sources": {
+      "A3-SHARED-ADMISSION.md": "2fd37853f6df811c0cfd0abc816741dcadb5148b611e92d2f6cb120ba2a1aac3",
+      "evaluation/direct-program/artifact-window-validation/README.md": "55e346a73e956cb5d7b6afc429f42e54981c6835430308c22f29d5ca250698df",
+      "evaluation/direct-program/artifact-window-validation/receipt.json": "7223739d416d1d43f76fab0f681835dc2e0cb5e06aecd34d06eeeada332df1cc",
+      "evaluation/direct-program/direct_data.py": "671150f7ab01ebd08a1ce5452c4391daeba0a4c3a61231764fa4a00bda1b07ec",
+      "evaluation/direct-program/grouped-program-result/README.md": "5b8cb4e72c7bdd8082b4a05f0a9c1fae4540fcdf1ce03632caaebb38fb2f4499",
+      "evaluation/direct-program/grouped-program-result/receipt.json": "a7ab177ca536f553ce5c2cf13d15a29d88c82026b3d505167cc60716b637da85",
+      "evaluation/direct-program/grouped-program-result/results.csv": "bd0fd26559a1824672a4b431cec5ddb7570c417cce66a211bfbde84960206503",
+      "evaluation/direct-program/grouped-program-validation/README.md": "1a4c8d44e01e715fa14cde95e3a200009393dcdce1be65114722e234be699389",
+      "evaluation/direct-program/grouped-program-validation/receipt.json": "29d9d757dd76e189b4544302e3c89f7a91ea3e491098ad6ce6390fed89b63f42",
+      "evaluation/direct-program/reproduce.py": "6f82940466b3012b8a094653491794dfe088b2c5c7fb03f7ec47141e9d8eefb4",
+      "evaluation/direct-program/test_grouped_linkage.py": "c8175cfd914e27927310eb38b748dba7eb223b559d6364870459f670891ba53a",
+      "evaluation/direct-program/validate_artifact_window.py": "1da3800c4e6d09578551db347e37a272a7ac83ee96d7f0ad4525ae24135e8937",
+      "evaluation/direct-program/validate_grouped_artifact.py": "709ab97ba02b1807b99c0a3640513b215bd7405b29d6841a353cc2749ec10169",
+      "evaluation/direct-program/validate_grouped_program.py": "c39ade50a9826fb9fd3f577b58f8334d650ac85c5f779434b0cee5034f9837a2",
+      "src/emission.rs": "6420f9b057a27195418b324f8b1e581abd55267f73674f2d16b5b4b29a73196c",
+      "src/quiescent.rs": "1218bf9e88ac2c901be456be6c4a85bad40971b28a49a3acaadbf3bd8a9b9108",
+      "src/quiescent/artifact_window.rs": "4bafb715bf51ac8522cabdb4db7c27d629740d822b12a59789a5c4b84443b976",
+      "src/quiescent/artifact_window/tests.rs": "89fa59a0a692b2055fc3d809f7fc5755aa45fb2cdb259c6a45f9b18e5957b222",
+      "src/trampoline.rs": "c1d1874afcf4059714780b7b77f753381af2b90492788ad39339d2a41d113c2d",
+      "src/trampoline/artifact_window.rs": "b082b82054dbc4e0d05a31214f709d885236d508f7fc2741639a2a93d67fbd45",
+      "src/trampoline/artifact_window/tests.rs": "73b04b778a3c2600158d84c17fb6ad3f22fa8630cc39a987a80c2f88e1459589",
+      "src/trampoline/fitting.rs": "f12897d9c7dc73c94691cdcc5969eddf9f1c1ad487e29f4542b2ba2bdb3d181c",
+      "src/trampoline/observer_sequence.rs": "8c334f32ee8cd0b0a419a9c735754db0af4f5c9a171c517abfbc734d3b3f6e24",
+      "src/trampoline/observer_sequence/tests.rs": "ba864e8cfbd5eaca1468d3390545f9cd662ac468d1ebfe7ec11a79eada2a1453",
+      "tests/quiescent_oracle.rs": "c795b8b0d6297a57f115b68d9a4663aad94893a068c9f1cd8842eaf7ac7ac6fa",
+      "tests/support/artifact_window_native.rs": "9a8d5113e570cf7fe34568c79eac1a1cbdb85a7af79d871ca6a2905bbc19e8e0",
+      "tests/support/quiescent_oracle.rs": "87de53f6dce9ca7a1e4f38fa7054c2e397f8b7720fb5849fc7021554d86638d7",
+      "tools/elf-rewrite/examples/disassembly_sites.rs": "7c8ee6bc5b6ce334afa30da4035e0fbc18a53fa60ea2664a854124344ebb1e3c",
+      "tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs": "5f097193cc470f171f524aa9bff6a38cbdc80a1737fc2ec78bfbba842bd75290",
+      "tools/elf-rewrite/src/disassembly/whole.rs": "8b73767ba743c79cf7f52f48e99374516729384748656ddb5d032e294bb1d5c1",
+      "tools/elf-rewrite/src/fixed_exec.rs": "9fe7d3ca9335f5f735aa6b4d64fcd0d14e187e68a7ec761ce1bd3dfd42e62d5e",
+      "tools/elf-rewrite/src/grouped_artifact_frontend.rs": "7217a09ef7ea8fbc4076d8cfa37dc06b1aa2f878b52a0bc48148f6665f3ca036",
+      "tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs": "d3cb853c783a6d9407a0ee78b8984f47412f78157b1cb0d4367dc9b6c14a2d72",
+      "tools/elf-rewrite/src/ledger.rs": "36247ec0f4858840ba1c06085989153528ce3c370d1b832bec84cc5937c4a2dc",
+      "tools/elf-rewrite/src/lib.rs": "c966efdf30a6f5a16610edb80f7026cb97fad5060060682651fda436912b5e9e"
+    },
+    "workspace_changes": {
+      "test/quiescent_oracle": {
+        "current": {
+          "ignored": 0,
+          "tests": 47
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 43
+        }
+      },
+      "unit/disassembly_sites/disassembly_sites": {
+        "current": {
+          "ignored": 0,
+          "tests": 23
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 20
+        }
+      },
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 556
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 540
+        }
+      },
+      "unit/liteinst_rewrite/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 221
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 214
+        }
+      }
+    }
+  },
   "source_successor_96378": {
     "added_default_methods": {
       "src/artifact_emission_tests.rs": [
@@ -16663,7 +17925,7 @@
     "workspace_changes": {}
   },
   "sources": {
-    "A3-SHARED-ADMISSION.md": "13e14c269888d38cb4c90de3014ae910658d76e6008b5001184c62dcc1e60664",
+    "A3-SHARED-ADMISSION.md": "2fd37853f6df811c0cfd0abc816741dcadb5148b611e92d2f6cb120ba2a1aac3",
     "Cargo.lock": "cd3bad97380d53a02b1ff5b17985e5c48af95daff3c7fd96a99aa42d4d2a0f00",
     "Cargo.toml": "2eb81af6c8c354b58a9e54cc4a83a9369af20f276b40072633a1b76b2fca33df",
     "INTERFACES.md": "8b25e5b50512a5db60f38261c48c446fad1b36c46093f5b826729eb65e858d41",
@@ -16694,24 +17956,35 @@
     "evaluation/admission/test_main20cbe_inventory.py": "cef985fb3e1eb1b4204cf9ad6cfa83219fe999d8403b25bb4a8cf4bdce3fc03c",
     "evaluation/admission/test_main34c47_inventory.py": "fa2bb240bd7a9fdb6e79f18635ffe959fcd38facf479b882340aab5dca4461a0",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
-    "evaluation/admission/test_main813_inventory.py": "410148cd9cb22a37e4a1cd6d855a10341f33271ad5b62978973aa963f7111c43",
-    "evaluation/admission/test_main97ab_inventory.py": "d4a992686c470339cd29902481ec9bcb368810d4e08a949a16afdceb83d34085",
+    "evaluation/admission/test_main813_inventory.py": "700e617272cdaa539e7997603bbda435bee8a9a2f6f7e4b5fd911c18c718f8d1",
+    "evaluation/admission/test_main97ab_inventory.py": "bd831f116f050ef8eaa2a6c33c1d2e6f472aebfcaf65ba592fdafeef3e9ef10f",
     "evaluation/admission/test_main981419_inventory.py": "a75ae36eed8dc312b702821d50c991e126430a4f3e294342d2b43e29cd1ff034",
     "evaluation/admission/test_mainacc247_inventory.py": "9deada610eedcdc46ef6ebba60f58fedcbf0171f382d7895f42c27756afe1c17",
-    "evaluation/admission/test_mainaf81_inventory.py": "d9966ddc3611cff190bf79dd548c9a57c99bb40e8be03cdd589300859ebdf465",
+    "evaluation/admission/test_mainaf81_inventory.py": "26b53b3b1ec334d1e4dd93bcfe7c84aacb0a626f571b01034231747f4892daa7",
     "evaluation/admission/test_mainc712_inventory.py": "f83655db9a2f51f91a3f245e7d04cd52a5bd749bdcf2d52c14d1d4e8c35c0825",
-    "evaluation/admission/test_maind8d85_inventory.py": "e49e282e405348502e23f54adada46d9229bd51e5c4292a2fc4f5a4b9d83c9a8",
+    "evaluation/admission/test_maind8d85_inventory.py": "0044685c98d6b4954c08913c28320f579d33d748dd6936a39d6b9911bb77adfa",
     "evaluation/admission/test_maindd75_inventory.py": "4bd221188c28323d7af430d1c6e43dd201cd8659001fbeb1449dadb81402c156",
-    "evaluation/admission/test_mainf353_inventory.py": "1e66715015dcc39dead5db53a17f7953f05d2e5554c6678d945f637b4cab6fdc",
-    "evaluation/direct-program/direct_data.py": "225f17119fd52fffed556df8220af4bd6b58b29c356cf549a19e8d72e0ac51d7",
+    "evaluation/admission/test_mainf353_inventory.py": "8df30ef14de6cd98c4eb66ea24e8d7a78d64b625f81ba9cb09d3c2dcf8b1a58e",
+    "evaluation/direct-program/artifact-window-validation/README.md": "55e346a73e956cb5d7b6afc429f42e54981c6835430308c22f29d5ca250698df",
+    "evaluation/direct-program/artifact-window-validation/receipt.json": "7223739d416d1d43f76fab0f681835dc2e0cb5e06aecd34d06eeeada332df1cc",
+    "evaluation/direct-program/direct_data.py": "671150f7ab01ebd08a1ce5452c4391daeba0a4c3a61231764fa4a00bda1b07ec",
+    "evaluation/direct-program/grouped-program-result/README.md": "5b8cb4e72c7bdd8082b4a05f0a9c1fae4540fcdf1ce03632caaebb38fb2f4499",
+    "evaluation/direct-program/grouped-program-result/receipt.json": "a7ab177ca536f553ce5c2cf13d15a29d88c82026b3d505167cc60716b637da85",
+    "evaluation/direct-program/grouped-program-result/results.csv": "bd0fd26559a1824672a4b431cec5ddb7570c417cce66a211bfbde84960206503",
+    "evaluation/direct-program/grouped-program-validation/README.md": "1a4c8d44e01e715fa14cde95e3a200009393dcdce1be65114722e234be699389",
+    "evaluation/direct-program/grouped-program-validation/receipt.json": "29d9d757dd76e189b4544302e3c89f7a91ea3e491098ad6ce6390fed89b63f42",
     "evaluation/direct-program/jump-stack-profile.md": "e3e7a753c3c1d28e3dfa662e8609863fe3395f52069a6e18dd6ce4c5a544c904",
     "evaluation/direct-program/jump-stack-result/README.md": "d78ef6c05a2b357b62e8fc5cb6a6c50b004d72359d30fed010ada35f2ad1522a",
     "evaluation/direct-program/jump-stack-result/receipt.json": "638f81ef64e124bf04cd485d74435b51405e853435d61f33126593944201f658",
     "evaluation/direct-program/jump-stack-result/results.csv": "fda725e15c7f5ec9b3c71e5937e1a637233ee1895dece84228928874a157ef11",
     "evaluation/direct-program/jump-stack-validation/README.md": "df6fed8f3fa37b8f2ee5a34188cb9bb519b6b483ff989eb9eed3d8afe3fbfd23",
     "evaluation/direct-program/jump-stack-validation/receipt.json": "fc0e5d9fa12ee2d15f229e3ba866c7a968b4668a6f9500fd5780fa046ae9912d",
-    "evaluation/direct-program/reproduce.py": "cdebb7edc9aecb158bd13e60fe70352aa42ce21519dc89c898236a004731b4c6",
+    "evaluation/direct-program/reproduce.py": "6f82940466b3012b8a094653491794dfe088b2c5c7fb03f7ec47141e9d8eefb4",
+    "evaluation/direct-program/test_grouped_linkage.py": "c8175cfd914e27927310eb38b748dba7eb223b559d6364870459f670891ba53a",
     "evaluation/direct-program/test_stack_inventory.py": "3b0ecf9038b64d2cbef176736a60147842ea872a7f29818fdfaf40afb60f9b92",
+    "evaluation/direct-program/validate_artifact_window.py": "1da3800c4e6d09578551db347e37a272a7ac83ee96d7f0ad4525ae24135e8937",
+    "evaluation/direct-program/validate_grouped_artifact.py": "709ab97ba02b1807b99c0a3640513b215bd7405b29d6841a353cc2749ec10169",
+    "evaluation/direct-program/validate_grouped_program.py": "c39ade50a9826fb9fd3f577b58f8334d650ac85c5f779434b0cee5034f9837a2",
     "evaluation/direct-program/validate_stack.py": "8b47ebe73cbea143bcda6e03332f48f36ddba04d72ddbf8d39cf3159b068c0fe",
     "evaluation/ordinary-call-pair-session/freeze.py": "8c2c36d3f921e75ee5735133e44a1828ff0a5ba6c1d3d1483d09aca469412b89",
     "evaluation/ordinary-call-pair-session/launch.py": "4d93f5b99d8fe2993b6f4a1814972e04158d057d2d829cffe526dcbb118f064b",
@@ -16746,7 +18019,7 @@
     "src/control_flow/tests.rs": "dc7c724af7534f130255f71c950f84ec6ac8ff202bbd8b5956601af9a36b1ba3",
     "src/controls.rs": "13f21abc2980b52aa5bcd8f64be07f4d5433e89bcdea3e1bdadd731ba904eb4a",
     "src/controls/entry_admission.rs": "b30e3fa18423b57be5dea11edd568c3930944e5879784f5625bdc9404e14b1e7",
-    "src/emission.rs": "3e3e41f2e6d876b7a61e43328df9c4d4332f5ff2d55c41fd9612977ce63b21d3",
+    "src/emission.rs": "6420f9b057a27195418b324f8b1e581abd55267f73674f2d16b5b4b29a73196c",
     "src/emission/artifact_frame_tests.rs": "db27456d9816ae84f1a98c8529e136d0e678659322e34fddabce26ef26a4a324",
     "src/emission/placement.rs": "d5f296afd4e076b50af2db43123b543b8bc41d3257df9e2f88b2cf072256496f",
     "src/emission/placement/entry_veneer_tests.rs": "257e424d6e514713e061024101daa08bfea7112206266358990a3bab44eb5058",
@@ -16764,7 +18037,9 @@
     "src/neighbor_overlap/tests.rs": "bc5880f3aff72cf5ea13b29592c7d848a879b5f9a71fabae7667888d027065e8",
     "src/neighbor_short.rs": "eb6870d77c53a5e29d911f0c1674281eafed44c63394364e393ed0bbd7d20897",
     "src/neighbor_short/tests.rs": "29c13e229d449458eb66843618c3429901abb2bd424e7099b931dfb612c95087",
-    "src/quiescent.rs": "ab30b4d2ae671c0ff0133c0507ddbc944849b9c9bf40c03fb509637b0c8964c3",
+    "src/quiescent.rs": "1218bf9e88ac2c901be456be6c4a85bad40971b28a49a3acaadbf3bd8a9b9108",
+    "src/quiescent/artifact_window.rs": "4bafb715bf51ac8522cabdb4db7c27d629740d822b12a59789a5c4b84443b976",
+    "src/quiescent/artifact_window/tests.rs": "89fa59a0a692b2055fc3d809f7fc5755aa45fb2cdb259c6a45f9b18e5957b222",
     "src/quiescent/clock_region.rs": "be8ab2bfa2ba682361a1f647d51fceb9b43c9a600be3de711da2217c04ff1788",
     "src/quiescent/clock_region/tests.rs": "49decb1a58ab56dec5e00ac1e0797b57962758e4ba1a5aa680b79d81a807fb35",
     "src/quiescent/entry_admission.rs": "c8d4a3f32313f8cd564887a9686a59513ad066304930683362f4886d8adf3745",
@@ -16775,24 +18050,29 @@
     "src/quiescent/whole_function/cfg_tests.rs": "ff9813db6f94cb897434edfdd309d3cb7280ab3ae1c5dec8c64ecc430284b566",
     "src/quiescent/whole_function/tests.rs": "b01841775ab5787eee3784ec28b1715583b6af6c10b17032d0e43c2c1c38cfb1",
     "src/scanner.rs": "d01553acf8633268eb897c5af1687b40d4d7f4aa82ae080ff117db5a5d8e48c6",
-    "src/trampoline.rs": "24cee069cec6abcf7f80c9731be6e37cba5934e9d3f414e2e5cce6ad00d554b2",
+    "src/trampoline.rs": "c1d1874afcf4059714780b7b77f753381af2b90492788ad39339d2a41d113c2d",
     "src/trampoline/artifact_allocation.rs": "c0031dbd6d0887b744dc91509236c2016106cf524616f097dd9997fb75c498cb",
     "src/trampoline/artifact_allocation/tests.rs": "a5ec8b16a83a9b0c51c431161f60490c41f2ad39d29ffe4d8c61e92ab077e0e7",
     "src/trampoline/artifact_jrcxz.rs": "89b78a5c4ff7668ec09b61d7dfcf1bcb5630adfaae57053efa54a710fbc0d713",
+    "src/trampoline/artifact_window.rs": "b082b82054dbc4e0d05a31214f709d885236d508f7fc2741639a2a93d67fbd45",
+    "src/trampoline/artifact_window/tests.rs": "73b04b778a3c2600158d84c17fb6ad3f22fa8630cc39a987a80c2f88e1459589",
     "src/trampoline/clock_region_tests.rs": "76a75d05b1f711dbd4b36d373074309ab6923015b3eec2f9cd7a4db5ed913bb2",
     "src/trampoline/early_control.rs": "a0d2654210592fe80a8b2ae0982279265dcc178424a44e7444dae9f17fcb2d22",
     "src/trampoline/early_control/tests.rs": "36aa14146a0a2f65e673926b4fe4416edb7471c2f960a8d1b3cb864ac55fbd57",
-    "src/trampoline/fitting.rs": "bf3b64017fdff8d47d45dfc495de39c86dd45766688726c3a4152b5b0b706df7",
+    "src/trampoline/fitting.rs": "f12897d9c7dc73c94691cdcc5969eddf9f1c1ad487e29f4542b2ba2bdb3d181c",
     "src/trampoline/fitting/tests.rs": "b947cad0990f0a8a6357562da2c8420678121716ef4b29b83efe839b790ee223",
+    "src/trampoline/observer_sequence.rs": "8c334f32ee8cd0b0a419a9c735754db0af4f5c9a171c517abfbc734d3b3f6e24",
+    "src/trampoline/observer_sequence/tests.rs": "ba864e8cfbd5eaca1468d3390545f9cd662ac468d1ebfe7ec11a79eada2a1453",
     "tests/early_control_oracle.rs": "2e097c5d136fb63f5e0e27bf7710f066f62f3e0c00ff4c194552dccba810a601",
     "tests/early_control_planning.rs": "d8bfbfdd8a4077b65e7d475c11f28fb32c9c5e555209fca23da901901f35b2a6",
     "tests/early_control_race_oracle.rs": "d9f00a4f27f48689b357cd017121002c4d8ead5324d54f8d694e6033468bae29",
     "tests/entry_admission_planning.rs": "c661833cd0324c2ab71f1dd6de7d1360cd94f25d389b1c3d614d874b53389745",
     "tests/neighbor_eviction_oracle.rs": "685d5caa3933dd5649b70b4e8fa1e0ce632e1a9b52d51aed3c671288b77c5e64",
-    "tests/quiescent_oracle.rs": "58d0d8a971a185d3d8c7192e00311ff0328b6acea6919d7ef8cec6e4e54af94c",
+    "tests/quiescent_oracle.rs": "c795b8b0d6297a57f115b68d9a4663aad94893a068c9f1cd8842eaf7ac7ac6fa",
     "tests/support/adc_state.rs": "6210f02e2d4d1906fadecf2eadd876b02d0154ceb330c467e15817ed33e54ec0",
     "tests/support/adjacent_b2_fixture.rs": "dcaf2962f81f690785f61770713d13f0104bbef4b9e7beaed6f0d641aff33ca0",
     "tests/support/adjacent_b2_native.rs": "2ea1625733ccf5a1f9b87db1ac480bc00421eca7b54a63f9b6dc19ceec7e1771",
+    "tests/support/artifact_window_native.rs": "9a8d5113e570cf7fe34568c79eac1a1cbdb85a7af79d871ca6a2905bbc19e8e0",
     "tests/support/boundary_signal.rs": "949ccf6ee19949cdc1f16305dfb6d161f313df5536ec509968572afc21727a60",
     "tests/support/bounded_proc_stat.rs": "c7bf20dbf6c1ccb91ae54f7965b1957ef5f9cea7de063a7f8af556fe02559866",
     "tests/support/compiled_selected_state.rs": "3451cc5f88607a83adc8b4f95aaeab59661ae9a295c70e5482f3db25581d5691",
@@ -16835,7 +18115,7 @@
     "tests/support/owned_group_candidate.rs": "48a8780b1d99cb88b3deb252d1ecbfc8948628bd287d0bc20d06b9f6ca3a5786",
     "tests/support/parked_signal.rs": "9554d55be8397a500005f3a5f4f3e73c5bf647900b0d013646fcc7f8b8b2e355",
     "tests/support/process_text.rs": "ab415bb64e48a78700ac3fe6648eedf76644a533c2de3380f592e6ce260644f1",
-    "tests/support/quiescent_oracle.rs": "fec9bcf05c8b5f18e4a58d6a74817fa330fdc119ee6739d57da0c0e9b625460d",
+    "tests/support/quiescent_oracle.rs": "87de53f6dce9ca7a1e4f38fa7054c2e397f8b7720fb5849fc7021554d86638d7",
     "tests/support/routed_jmp_artifact.rs": "f9f37eeb884a3004328478129790a6b98305e5af70c31e2ce267346c7e123735",
     "tests/support/routed_jmp_fixture.rs": "9edb02b399e0d7c330c53eedefbad3d5c0b82876ac758f693f758ccdd5d77241",
     "tests/support/routed_jmp_native.rs": "9c3f8a28175ddbc2bf8bc12e507f90ca0e3b61cbbc5835e03bc8cce9268c680b",
@@ -16846,7 +18126,8 @@
     "tools/elf-rewrite/e9-sites.py": "4270f18a2128543fa0eb1b1982ed8368b77c5216c0926a5012371c8a3a9ea893",
     "tools/elf-rewrite/examples/adjacent_b2_support/ledger.rs": "b5aaa00903ee90cb550b4e7cd274b4cc47e983d7aff139931bd3ae9ccc447b56",
     "tools/elf-rewrite/examples/common_sites.rs": "ef298ad0987dba8338c85f571940c7cac511cef970d6be8c0d7b0d3ef9ee95f6",
-    "tools/elf-rewrite/examples/disassembly_sites.rs": "dd35797c37b9db4c1599ffafd7b65ac4f338bdcf2c2668d8ca91673beaf466a6",
+    "tools/elf-rewrite/examples/disassembly_sites.rs": "7c8ee6bc5b6ce334afa30da4035e0fbc18a53fa60ea2664a854124344ebb1e3c",
+    "tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs": "5f097193cc470f171f524aa9bff6a38cbdc80a1737fc2ec78bfbba842bd75290",
     "tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs": "0cab4393c681277f0366baf4fc846f15a4903c3b46bb0a0c7c031cee98b61574",
     "tools/elf-rewrite/examples/full_program_bridge.rs": "0596c24b924b4721ea0b1ead10e1154d9fa86cd5a23573109a9c67fc1880dc6b",
     "tools/elf-rewrite/examples/full_program_bridge/input.rs": "5b34fa9db429c75c3b8e0f14d27d128bb7e1a2bdcf654f1f10197ee3fa39e353",
@@ -16876,12 +18157,14 @@
     "tools/elf-rewrite/src/disassembly/jump_stack.rs": "88be15c569737c71dc3c4c91084ad300c30e643df0223a6a82682912988c86aa",
     "tools/elf-rewrite/src/disassembly/policy_tests.rs": "727d2b4259e3aa9c87a82d847dfc34437ea96805a16438f2e3be4a4d5537db49",
     "tools/elf-rewrite/src/disassembly/tests.rs": "7fe825e0ac542540ba3a067bc66b206349c509c9723a738848374650e287bde7",
-    "tools/elf-rewrite/src/disassembly/whole.rs": "746d384bf0c943ca6983c4758d4cc59fa4f2261a10ea33c6b2167f2f1ae1ad5f",
+    "tools/elf-rewrite/src/disassembly/whole.rs": "8b73767ba743c79cf7f52f48e99374516729384748656ddb5d032e294bb1d5c1",
     "tools/elf-rewrite/src/disassembly/whole/policy.rs": "67574a672a45a7f589b29e20fcb7c71230fd3f9564bc13df7ca5e0c752917734",
     "tools/elf-rewrite/src/disassembly/whole/tests.rs": "068ef9febd1326c510ed37314f86c0da2a3348d27864e60915101aa4bae5db3d",
-    "tools/elf-rewrite/src/fixed_exec.rs": "7f559e4d4d2c2fffc608464d12581f9fbeeeb0ab62a9bfcfee13e1dd22906304",
-    "tools/elf-rewrite/src/ledger.rs": "225f2d841e666e7164452dcadc2a6acc3e2c6c5f66818195fab94fe83d8604e1",
-    "tools/elf-rewrite/src/lib.rs": "e3d708f620c5fadd797b2b5efc1c0de198f4b9c3016af6c1fe7092d8d1c72cfc",
+    "tools/elf-rewrite/src/fixed_exec.rs": "9fe7d3ca9335f5f735aa6b4d64fcd0d14e187e68a7ec761ce1bd3dfd42e62d5e",
+    "tools/elf-rewrite/src/grouped_artifact_frontend.rs": "7217a09ef7ea8fbc4076d8cfa37dc06b1aa2f878b52a0bc48148f6665f3ca036",
+    "tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs": "d3cb853c783a6d9407a0ee78b8984f47412f78157b1cb0d4367dc9b6c14a2d72",
+    "tools/elf-rewrite/src/ledger.rs": "36247ec0f4858840ba1c06085989153528ce3c370d1b832bec84cc5937c4a2dc",
+    "tools/elf-rewrite/src/lib.rs": "c966efdf30a6f5a16610edb80f7026cb97fad5060060682651fda436912b5e9e",
     "tools/elf-rewrite/src/model.rs": "25ce95f799669f062b774b344afdd0705299665fadd3ba666595a2efb10b191e",
     "tools/elf-rewrite/src/neighbor_catalogue.rs": "546c257b0be1f6fd48128b3fed5ab5f2d32fe3f85cb8fb611747d00d4b7aac9a",
     "tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs": "e3977076515f83ee1171a61d009aff724e791640fca2d9b953fbb24cf5e9854d",

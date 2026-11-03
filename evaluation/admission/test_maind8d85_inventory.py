@@ -121,7 +121,8 @@ class MainD8d85InventoryTests(unittest.TestCase):
                 upstream[path].update(current_sha256=hashlib.sha256(native_wrong).hexdigest(),
                     previous_sha256=hashlib.sha256(wrong_prior).hexdigest(), edits=rebased)
             def changed(candidate): return wrong if candidate == target else read(candidate)
-            with patch.dict(native_indexed.DATA['source_successor_11cc419']['source_projections'], outer['rows']['11cc419']), \
+            with patch.dict(native_indexed.DATA['source_successor_9528851']['source_projections'], outer['rows']['9528851']), \
+                 patch.dict(native_indexed.DATA['source_successor_11cc419']['source_projections'], outer['rows']['11cc419']), \
                  patch.dict(native_indexed.DATA['source_successor_281c342']['source_projections'], outer['rows']['281c342']), \
                  patch.dict(native_indexed.DATA['source_successor_064b48c']['source_projections'], outer['rows']['064b48c']), \
                  patch.dict(native_indexed.DATA['source_successor_79a4b8b']['source_projections'], outer['rows']['79a4b8b']), \

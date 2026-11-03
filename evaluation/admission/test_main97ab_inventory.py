@@ -68,7 +68,7 @@ def cargo_mutation(test, observed, before, after):
 
 def outer_declaration_mutation(test, path, observed, before, after):
     """Carry the same old stimulus through the two new, exact outer joins."""
-    names = ('11cc419', '281c342', '064b48c', '79a4b8b', '3217b8ed')
+    names = ('9528851', '11cc419', '281c342', '064b48c', '79a4b8b', '3217b8ed')
     rows = {name: {} for name in names}
     baseline = current.source_before_65ee8ea(path, observed, 'declaration_outer_baseline')
     if path == 'Cargo.toml':
@@ -109,10 +109,77 @@ def outer_declaration_mutation(test, path, observed, before, after):
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # Thirty grouped-artifact methods extend four existing default harnesses.
+        grouped = current.DATA['source_successor_9528851']
+        grouped_prior = current.before_9528851(actual)
+        grouped_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(grouped_prior), current.GROUPED_PREVIOUS)
+        self.assertEqual((len(grouped_rows), sum(x['tests'] for x in grouped_rows.values()),
+                          sum(x['ignored'] for x in grouped_rows.values())), (122, 4704, 43))
+        self.assertEqual((grouped['default_method_additions'], grouped['new_method_declarations'],
+                          grouped['default_method_removals'], grouped['default_harness_changes'],
+                          grouped['default_ignore_changes'], grouped['default_doctest_additions'],
+                          grouped['recorder_identity_changes'], grouped['feature_method_additions'],
+                          grouped['feature_method_removals']), (30, 30, 0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(grouped['added_default_methods'], {'src/quiescent/artifact_window/tests.rs': ['exact_six_pop_has_one_plan_and_all_selected_and_unselected_entry_routes', 'outside_branch_entries_keep_both_head_kinds_and_an_internal_transfer_still_refuses', 'explicit_population_and_profile_guards_refuse_before_any_physical_attempt', 'identity_current_bytes_and_cet_refuse_at_their_original_stages', 'pending_outsider_is_checked_after_candidate_append_without_mutating_predecessor', 'exact_end_and_displacement_bounds_precede_unchanged_call_qualification', 'one_page_one_candidate_and_symbol_limits_remain_hard_refusals'], 'src/trampoline/artifact_window/tests.rs': ['single_observation_keeps_ordinary_symbolic_bytes_maps_and_requirements', 'stack_window_preserves_every_head_and_exact_callback_pc_fields', 'internal_branch_targets_selected_entry_not_restored_body', 'population_validation_preserves_existing_window_error_precedence', 'complete_action_accounting_rejects_missing_duplicated_and_wrong_fields', 'artifact_linking_keeps_original_field_error_before_missing_hook_and_fixed_obligation', 'final_link_and_size_refusals_leave_old_live_actions_unsupported'], 'src/trampoline/observer_sequence/tests.rs': ['instrumentation_refusal_precedes_restore_coordinate', 'successful_instrumentation_preserves_later_coordinate_refusal'], 'tests/quiescent_oracle.rs': ['artifact_window_native_every_entry', 'artifact_window_native_branch_paths', 'artifact_window_native_rsp_effects', 'artifact_window_native_later_operand_fault'], 'tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs': ['grouped_cli_selector_keeps_legacy_routes_and_rejects_mixed_or_partial_forms', 'grouped_cli_uses_actual_typed_route_and_retains_complete_success_and_refusal_census', 'grouped_cli_metadata_rejects_policy_identity_and_embedded_product_corruption'], 'tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs': ['grouped_six_pop_carrier_retains_all_members_routes_and_one_image', 'grouped_policy_and_both_metadata_forms_bind_total_partition', 'grouped_membership_mutations_refuse_without_singleton_fallback', 'grouped_jump_member_is_never_filtered_and_refusal_is_atomic', 'grouped_pending_and_resource_failures_leave_complete_draft_unmodified', 'grouped_carrier_refusal_withholds_all_six_and_preserves_original_identity', 'grouped_nongroup_route_retains_legacy_images_edits_and_outcomes']})
+        self.assertEqual(grouped['default_method_instances'], {'src/quiescent/artifact_window/tests.rs': ['unit/liteinst2/lib'], 'src/trampoline/artifact_window/tests.rs': ['unit/liteinst2/lib'], 'src/trampoline/observer_sequence/tests.rs': ['unit/liteinst2/lib'], 'tests/quiescent_oracle.rs': ['test/quiescent_oracle'], 'tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs': ['unit/disassembly_sites/disassembly_sites'], 'tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs': ['unit/liteinst_rewrite/lib']})
+        self.assertEqual((grouped['added_feature_methods'], grouped['added_ignored_methods']), ({}, {}))
+        self.assertEqual((len(grouped['source_paths']), len(grouped['source_projections'])), (35, 35))
+        self.assertEqual(grouped['new_sources'], ['evaluation/direct-program/artifact-window-validation/README.md', 'evaluation/direct-program/artifact-window-validation/receipt.json', 'evaluation/direct-program/grouped-program-result/README.md', 'evaluation/direct-program/grouped-program-result/receipt.json', 'evaluation/direct-program/grouped-program-result/results.csv', 'evaluation/direct-program/grouped-program-validation/README.md', 'evaluation/direct-program/grouped-program-validation/receipt.json', 'evaluation/direct-program/test_grouped_linkage.py', 'evaluation/direct-program/validate_artifact_window.py', 'evaluation/direct-program/validate_grouped_artifact.py', 'evaluation/direct-program/validate_grouped_program.py', 'src/quiescent/artifact_window.rs', 'src/quiescent/artifact_window/tests.rs', 'src/trampoline/artifact_window.rs', 'src/trampoline/artifact_window/tests.rs', 'src/trampoline/observer_sequence.rs', 'src/trampoline/observer_sequence/tests.rs', 'tests/support/artifact_window_native.rs', 'tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs', 'tools/elf-rewrite/src/grouped_artifact_frontend.rs', 'tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs'])
+        self.assertEqual(grouped['newly_bound_sources'], ['evaluation/direct-program/artifact-window-validation/README.md', 'evaluation/direct-program/artifact-window-validation/receipt.json', 'evaluation/direct-program/grouped-program-result/README.md', 'evaluation/direct-program/grouped-program-result/receipt.json', 'evaluation/direct-program/grouped-program-result/results.csv', 'evaluation/direct-program/grouped-program-validation/README.md', 'evaluation/direct-program/grouped-program-validation/receipt.json', 'evaluation/direct-program/test_grouped_linkage.py', 'evaluation/direct-program/validate_artifact_window.py', 'evaluation/direct-program/validate_grouped_artifact.py', 'evaluation/direct-program/validate_grouped_program.py', 'src/quiescent/artifact_window.rs', 'src/quiescent/artifact_window/tests.rs', 'src/trampoline/artifact_window.rs', 'src/trampoline/artifact_window/tests.rs', 'src/trampoline/observer_sequence.rs', 'src/trampoline/observer_sequence/tests.rs', 'tests/support/artifact_window_native.rs', 'tools/elf-rewrite/examples/disassembly_sites/grouped_tests.rs', 'tools/elf-rewrite/src/grouped_artifact_frontend.rs', 'tools/elf-rewrite/src/grouped_artifact_frontend/tests.rs'])
+        self.assertEqual(grouped_prior['harness_test_counts']['serial_launch'], actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((actual['recorder_tests'], grouped_prior['recorder_tests']), (366, 366))
+        for name, change in grouped['workspace_changes'].items():
+            self.assertEqual(grouped_rows[name], change['current'])
+            self.assertEqual(grouped_prior['harness_test_counts']['workspace_tests'][name], change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(grouped_rows[name][field]), grouped_rows[name][field] + 1):
+                    wrong = inventory_copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_9528851(wrong)
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_9528851(wrong)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_9528851(grouped_prior)
+        for path, row in grouped['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_9528851(path, raw, 'grouped_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (grouped['source_preimages'][path]['bytes'], row['previous_sha256']))
+            if path in grouped['new_sources']:
+                self.assertEqual(prior, b'')
+            for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^grouped_source_inverse$'):
+                    current.source_before_9528851(path, wrong, 'grouped_source_inverse')
+            for field in ('edits', 'current_sha256', 'previous_sha256'):
+                malformed = inventory_copy.deepcopy(row)
+                if field == 'edits': malformed['edits'][0][2] += '\n'
+                else: malformed[field] = '0' * 64
+                with patch.dict(grouped['source_projections'], {path: malformed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^grouped_source_inverse$'):
+                        current.source_before_9528851(path, raw, 'grouped_source_inverse')
+        read = Path.read_bytes
+        grouped_stimuli = [(p, 'fn ' + n + '(') for p, names in grouped['added_default_methods'].items() for n in names]
+        grouped_stimuli += [(p, literal) for p, literals in grouped['module_chains'].items() for literal in literals]
+        for path, literal in grouped_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            replacement = literal.replace('(', '_wrong(', 1) if literal.startswith('fn ') else literal[:-1] + ('x' if literal[-1] != 'x' else 'y')
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('grouped declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
         # Eighteen jump/register-stack methods extend five existing default harnesses.
         jump = current.DATA['source_successor_11cc419']
         jump_prior = current.before_11cc419(actual)
-        jump_rows = actual['harness_test_counts']['workspace_tests']
+        jump_rows = grouped_prior['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(jump_prior), current.JUMP_PREVIOUS)
         self.assertEqual((len(jump_rows), sum(x['tests'] for x in jump_rows.values()),
                           sum(x['ignored'] for x in jump_rows.values())), (122, 4674, 43))
@@ -2348,6 +2415,24 @@ class Main97abInventoryTests(unittest.TestCase):
                 with patch.dict(change, previous=PublishedCopy(change['previous'])):
                     result = current.before_11cc419(supplied)
             self.assertEqual(result, jump_prior)
+            self.assertEqual(supplied, actual)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+
+        # The latest transition preserves private ownership for both sources.
+        for source in ('declared', 'metadata'):
+            supplied = copy.deepcopy(actual)
+            change = grouped['workspace_changes']['unit/liteinst_rewrite/lib']
+            published.clear()
+            if source == 'declared':
+                supplied['harness_test_counts']['serial_launch'] = PublishedCopy(supplied['harness_test_counts']['serial_launch'])
+                result = current.before_9528851(supplied)
+            else:
+                with patch.dict(change, previous=PublishedCopy(change['previous'])):
+                    result = current.before_9528851(supplied)
+            self.assertEqual(result, grouped_prior)
             self.assertEqual(supplied, actual)
             self.assertEqual(len(published), 1)
             self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
