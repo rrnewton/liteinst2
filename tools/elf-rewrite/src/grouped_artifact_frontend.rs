@@ -4,8 +4,9 @@ use crate::*;
 use li2core::planner::HookSemantics;
 use li2core::quiescent::{
     AllocationPolicy, ArtifactObservationPlan, ArtifactObservationRequest,
-    ArtifactObservationSearchRequest, plan_artifact_observation_window_after,
-    plan_artifact_observation_window_upstream_after,
+    ArtifactObservationSearchRequest, ArtifactObservationWindowSeal, PlanningFailure,
+    plan_artifact_observation_window_after, plan_artifact_observation_window_upstream_after,
+    seal_artifact_observation_window_min5,
 };
 use li2core::x86::JumpStackClass;
 use std::collections::BTreeSet;
@@ -13,27 +14,37 @@ use std::fmt::Write as _;
 
 pub const GROUPED_PROFILE: &str = "jumps-gpr-stack64-block-observation-v1";
 pub const GROUPED_UPSTREAM_PROFILE: &str = "jumps-gpr-stack64-block-upstream-v1";
+pub const GROUPED_MIN5_UPSTREAM_PROFILE: &str = "jumps-gpr-stack64-block-min5-upstream-v1";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum GroupProfile {
     Exact,
     Upstream,
+    Min5Upstream,
 }
 impl GroupProfile {
     fn name(self) -> &'static str {
         match self {
             Self::Exact => GROUPED_PROFILE,
             Self::Upstream => GROUPED_UPSTREAM_PROFILE,
+            Self::Min5Upstream => GROUPED_MIN5_UPSTREAM_PROFILE,
         }
     }
     fn policy(self) -> String {
         if self == Self::Exact {
             return POLICY.into();
         }
-        POLICY.replace(GROUPED_PROFILE, self.name()).replace(
+        let upstream = POLICY.replace(GROUPED_PROFILE, self.name()).replace(
             "group_attempts\t1\n",
             "physical_schedule\tsame-site-then-single-cache-line-then-nearest-upstream-v1\nmax_physical_sites\t64\nmax_upstream_bytes\t64\nmax_displaced_bytes\t256\nimage_candidates_per_physical\t1\nimage_mappings_per_physical\t1\nimage_bytes_per_physical\t4096\nphysical_domain\tsame-block-heads-through-first-member\nmembership\tfull-manifest-maximum-prefix-and-actual-window\n",
-        )
+        );
+        if self == Self::Min5Upstream {
+            upstream.replace("LI2GROUPING-POLICY\t1\n", "LI2GROUPING-POLICY\t2\n")
+                .replace("window\tfirst-selected-head-through-last-selected-instruction\n",
+                    "window\tminimum-whole-instruction-through-last-selected-min5-v1\nseal_source\timmutable-original\nseal_stage\tbefore-overlay-mutation\n")
+        } else {
+            upstream
+        }
     }
     pub(crate) fn binding_policy(
         self,
@@ -74,6 +85,24 @@ pub fn prepare_disassembly_jump_stack_grouped_upstream_fixed_exec(
     selected: &disassembly::whole::JumpStackWholeSelection,
 ) -> Result<Product, Error> {
     prepare_grouped(original, selected, GroupProfile::Upstream)
+}
+
+/// Separate minimum-window endpoint policy, frozen before any overlay mutation.
+/// The supplied selection is unchanged; final native/loader obligations remain.
+pub fn prepare_disassembly_jump_stack_grouped_min5_upstream_fixed_exec(
+    original: &[u8],
+    selected: &disassembly::whole::JumpStackWholeSelection,
+) -> Result<Product, Error> {
+    prepare_grouped(original, selected, GroupProfile::Min5Upstream)
+}
+
+/// The same minimum-window policy with the existing independent ledger codec.
+pub fn prepare_disassembly_jump_stack_grouped_min5_upstream_with_ledger_storage(
+    original: &[u8],
+    selected: &disassembly::whole::JumpStackWholeSelection,
+    storage: LedgerStorage,
+) -> Result<Product, Error> {
+    prepare_grouped_with_storage(original, selected, GroupProfile::Min5Upstream, storage)
 }
 
 fn prepare_grouped(
@@ -158,13 +187,20 @@ pub fn grouped_fixed_exec_metadata() -> String {
 pub fn grouped_upstream_fixed_exec_metadata() -> String {
     grouped_metadata(GroupProfile::Upstream)
 }
+pub fn grouped_min5_upstream_fixed_exec_metadata() -> String {
+    grouped_metadata(GroupProfile::Min5Upstream)
+}
 fn grouped_metadata(profile: GroupProfile) -> String {
+    let min5 = profile == GroupProfile::Min5Upstream;
     let profile = profile.name();
     let mut out = FIXED_EXEC_METADATA.replacen(
         "planner_profile\twhole-program-packed-overlapping-neighbors-4096\n",
         &format!("planner_profile\t{profile}\nsingleton_planner_profile\twhole-program-packed-overlapping-neighbors-4096\n"), 1,
     );
     out.push_str(&format!("grouped_profile\t{profile}\ngrouping_policy\tgrouping-policy.tsv\ngrouping_ledger\tLI2GROUPED-LEDGER-1\n"));
+    if min5 {
+        out.push_str("grouping_policy_version\t2\nwindow_sealing\tminimum-whole-instruction-v1\n");
+    }
     out
 }
 
@@ -185,11 +221,52 @@ pub fn grouped_upstream_fixed_exec_binding_policy(
     GroupProfile::Upstream.binding_policy(binding, selection, grouping)
 }
 
+pub fn grouped_min5_upstream_fixed_exec_binding_policy(
+    binding: FixedImageBinding,
+    selection: ContentId,
+    grouping: ContentId,
+) -> Vec<u8> {
+    GroupProfile::Min5Upstream.binding_policy(binding, selection, grouping)
+}
+
+#[derive(Clone, Debug)]
+struct SealFailure {
+    error: Error,
+    code: u32,
+    core: Option<Box<PlanningFailure>>,
+}
+impl SealFailure {
+    fn adapter(error: Error) -> Self {
+        Self {
+            error,
+            code: 10_001,
+            core: None,
+        }
+    }
+    fn core(failure: PlanningFailure) -> Self {
+        Self {
+            error: Error::new("core", &failure.reason),
+            code: model::core_code(&failure.reason),
+            core: Some(Box::new(failure)),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub(crate) struct Group {
     // Indices into the immutable complete selected roster, in original PC order.
     members: Vec<usize>,
+    // Original selected span remains independent of the sealed retained end.
     window: AddressRange,
+    seal: Option<Result<ArtifactObservationWindowSeal, SealFailure>>,
+}
+impl Group {
+    fn retained_window(&self) -> AddressRange {
+        match &self.seal {
+            Some(Ok(seal)) => seal.retained_span(),
+            _ => self.window,
+        }
+    }
 }
 #[derive(Clone, Debug)]
 pub(crate) struct Schedule {
@@ -224,6 +301,55 @@ impl Schedule {
         classes: &[JumpStackClass],
     ) -> Result<Self, Error> {
         Self::freeze_profile(elf, s, classes, GroupProfile::Upstream)
+    }
+    pub(crate) fn freeze_min5_upstream(
+        elf: &Elf64<'_>,
+        s: &Selection,
+        classes: &[JumpStackClass],
+        identity: CodeIdentity,
+        binding: Option<FixedImageBinding>,
+        occupied: &[AddressRange],
+    ) -> Result<Self, Error> {
+        let mut out = Self::freeze_profile(elf, s, classes, GroupProfile::Min5Upstream)?;
+        for unit in 0..out.groups.len() {
+            let result = (|| {
+                let group = &out.groups[unit];
+                out.validate_group(s, group).map_err(SealFailure::adapter)?;
+                out.validate_upstream(s, group)
+                    .map_err(SealFailure::adapter)?;
+                for &i in &group.members {
+                    validate_site(elf, &s.sites[i]).map_err(SealFailure::adapter)?;
+                }
+                let request = GroupRequest::new(elf, s, identity, binding, group, occupied)
+                    .map_err(SealFailure::adapter)?;
+                let seal = seal_artifact_observation_window_min5(&request.artifact(), &request.pcs)
+                    .map_err(SealFailure::core)?;
+                if seal.selected_span() != group.window {
+                    return Err(SealFailure::adapter(Error::new(
+                        "grouped-seal",
+                        "selected span differs",
+                    )));
+                }
+                out.validate_intersection(s, group, seal.retained_span())
+                    .map_err(SealFailure::adapter)?;
+                let floor = s.sites[group.members[0]]
+                    .block
+                    .start()
+                    .max(group.window.start().saturating_sub(64));
+                out.validate_intersection(
+                    s,
+                    group,
+                    addr(floor, seal.retained_span().end() - floor)
+                        .map_err(SealFailure::adapter)?,
+                )
+                .map_err(SealFailure::adapter)?;
+                Ok(seal)
+            })();
+            // A refused seal remains one whole unit. No overlay has changed.
+            out.groups[unit].seal = Some(result);
+        }
+        out.policy = out.policy_bytes(s);
+        Ok(out)
     }
     fn freeze_profile(
         elf: &Elf64<'_>,
@@ -282,6 +408,7 @@ impl Schedule {
                 groups.push(Group {
                     members,
                     window: addr(first.pc, end - first.pc)?,
+                    seal: None,
                 });
             }
         }
@@ -294,7 +421,9 @@ impl Schedule {
             classes: classes.to_vec(),
             policy: Vec::new(),
         };
-        out.policy = out.policy_bytes(s);
+        if profile != GroupProfile::Min5Upstream {
+            out.policy = out.policy_bytes(s);
+        }
         Ok(out)
     }
     fn policy_bytes(&self, s: &Selection) -> Vec<u8> {
@@ -314,6 +443,28 @@ impl Schedule {
                 group.members.len()
             )
             .unwrap();
+            if self.profile == GroupProfile::Min5Upstream {
+                match group
+                    .seal
+                    .as_ref()
+                    .expect("minimum-window schedule sealed before serialization")
+                {
+                    Ok(seal) => writeln!(
+                        text,
+                        "window-seal\t{unit}\tready\t{}\t-\t-\t-",
+                        seal.retained_span().end()
+                    )
+                    .unwrap(),
+                    Err(failure) => writeln!(
+                        text,
+                        "window-seal\t{unit}\trefused\t-\t{}\t{}\t{}",
+                        failure.code,
+                        failure.error.stage,
+                        ledger::hex(failure.error.detail.as_bytes())
+                    )
+                    .unwrap(),
+                }
+            }
             for &i in &group.members {
                 self.member(&mut text, s, unit, i);
             }
@@ -402,7 +553,7 @@ impl Schedule {
     fn upstream_envelope(&self, s: &Selection, group: &Group) -> Result<AddressRange, Error> {
         let first = &s.sites[group.members[0]];
         let floor = first.block.start().max(first.pc.saturating_sub(64));
-        addr(floor, group.window.end() - floor)
+        addr(floor, group.retained_window().end() - floor)
     }
     fn validate_upstream(&self, s: &Selection, group: &Group) -> Result<(), Error> {
         let first = &s.sites[group.members[0]];
@@ -431,6 +582,19 @@ impl Schedule {
         if self.profile == GroupProfile::Exact {
             return Ok(());
         }
+        if self.profile == GroupProfile::Min5Upstream {
+            match &group.seal {
+                Some(Ok(seal)) if seal.selected_span() == group.window => {
+                    self.validate_intersection(s, group, seal.retained_span())?;
+                }
+                _ => {
+                    return Err(Error::new(
+                        "grouped-seal",
+                        "accepted unit lacks its frozen seal",
+                    ));
+                }
+            }
+        }
         self.validate_upstream(s, group)?;
         let first = &s.sites[group.members[0]];
         let [step] = plan.source_steps() else {
@@ -444,7 +608,7 @@ impl Schedule {
         if parts.logical_pc != first.pc
             || parts.physical_pc > first.pc
             || parts.physical_pc != parts.displaced.start()
-            || parts.displaced.end() != group.window.end()
+            || parts.displaced.end() != group.retained_window().end()
             || parts.displaced.len() > 256
             || !envelope.covers(parts.displaced)
             || !first.block.covers(parts.displaced)
@@ -622,6 +786,81 @@ pub(crate) fn plan(
     evidence
 }
 
+// Own temporary entry/emission data; the core seal owns only bounded geometry.
+// Both immutable preflight and actual attempt use this one request construction.
+struct GroupRequest<'a> {
+    first: &'a SelectedSite,
+    bytes: &'a [u8],
+    identity: CodeIdentity,
+    entries: LegalEntrySet,
+    emission: li2core::emission::ArtifactEmission,
+    search: li2core::quiescent::SearchPolicy,
+    pcs: Vec<u64>,
+}
+impl<'a> GroupRequest<'a> {
+    fn new(
+        elf: &'a Elf64<'_>,
+        s: &'a Selection,
+        identity: CodeIdentity,
+        binding: Option<FixedImageBinding>,
+        group: &Group,
+        occupied: &[AddressRange],
+    ) -> Result<Self, Error> {
+        let first = &s.sites[group.members[0]];
+        let bytes = elf
+            .executable_bytes(ElfVaddr(first.snapshot.start()), first.snapshot.len())
+            .map_err(|e| Error::new("snapshot", e))?;
+        let entries = LegalEntrySet {
+            identity,
+            scope: first.function,
+            provenance: EntryProvenance::Declared(format!(
+                "selection provenance SHA-256 {}",
+                ledger::hex(&first.provenance.0)
+            )),
+            completeness: first.completeness,
+            entries: first.heads.as_ref().clone(),
+            resumes: first.resumes.clone(),
+        };
+        let hook = s
+            .hooks
+            .iter()
+            .find(|h| h.id == first.hook)
+            .ok_or_else(|| Error::new("hook", "missing"))?;
+        let emission = fixed_exec::emission(s, hook, occupied.to_vec(), binding)?;
+        let mut search = first.search;
+        // This is the explicitly named group policy, authenticated before planning.
+        // Numeric budgets come from ONE compatible member, never their sum.
+        search.tactics = TacticPolicy::RelocationOnly;
+        let pcs: Vec<_> = group.members.iter().map(|&i| s.sites[i].pc).collect();
+        Ok(Self {
+            first,
+            bytes,
+            identity,
+            entries,
+            emission,
+            search,
+            pcs,
+        })
+    }
+    fn artifact(&self) -> ArtifactRequest<'_> {
+        ArtifactRequest {
+            site: PlanningSite {
+                identity: self.identity,
+                code: self.bytes,
+                base_address: self.first.snapshot.start(),
+                function: self.first.function,
+                block: self.first.block,
+                logical_pc: self.first.pc,
+                entries: &self.entries,
+                semantics: self.first.semantics,
+                allocation: &self.first.selected_allocation,
+                search: self.search,
+            },
+            emission: &self.emission,
+        }
+    }
+}
+
 fn attempt_group(
     context: &SingletonContext<'_, '_>,
     schedule: &Schedule,
@@ -652,8 +891,21 @@ fn attempt_group(
     );
     let mut locally_planned = false;
     let result = (|| {
+        if schedule.profile == GroupProfile::Min5Upstream {
+            match &group.seal {
+                Some(Ok(_)) => {}
+                Some(Err(failure)) => {
+                    code = Some(failure.code);
+                    if let Some(core) = &failure.core {
+                        writeln!(diagnostics, "{core:#?}").unwrap();
+                    }
+                    return Err(failure.error.clone());
+                }
+                None => return Err(Error::new("grouped-seal", "missing immutable preflight")),
+            }
+        }
         schedule.validate_group(s, group)?;
-        if schedule.profile == GroupProfile::Upstream {
+        if schedule.profile != GroupProfile::Exact {
             schedule.validate_upstream(s, group)?;
         }
         for &i in &group.members {
@@ -668,67 +920,39 @@ fn attempt_group(
         {
             return Err(Error::new("grouped-pending", "member was already consumed"));
         }
-        let first = &s.sites[group.members[0]];
-        let bytes = elf
-            .executable_bytes(ElfVaddr(first.snapshot.start()), first.snapshot.len())
-            .map_err(|e| Error::new("snapshot", e))?;
-        let entries = LegalEntrySet {
-            identity,
-            scope: first.function,
-            provenance: EntryProvenance::Declared(format!(
-                "selection provenance SHA-256 {}",
-                ledger::hex(&first.provenance.0)
-            )),
-            completeness: first.completeness,
-            entries: first.heads.as_ref().clone(),
-            resumes: first.resumes.clone(),
-        };
-        let hook = s
-            .hooks
-            .iter()
-            .find(|h| h.id == first.hook)
-            .ok_or_else(|| Error::new("hook", "missing"))?;
-        let emission = fixed_exec::emission(s, hook, draft.occupied.clone(), binding)?;
-        let mut search = first.search;
-        // This is the explicitly named group policy, authenticated before planning.
-        // Numeric budgets come from ONE compatible member, never their sum.
-        search.tactics = TacticPolicy::RelocationOnly;
-        let pcs: Vec<_> = group.members.iter().map(|&i| s.sites[i].pc).collect();
-        let artifact = ArtifactRequest {
-            site: PlanningSite {
-                identity,
-                code: bytes,
-                base_address: first.snapshot.start(),
-                function: first.function,
-                block: first.block,
-                logical_pc: first.pc,
-                entries: &entries,
-                semantics: first.semantics,
-                allocation: &first.selected_allocation,
-                search,
-            },
-            emission: &emission,
-        };
+        let request = GroupRequest::new(elf, s, identity, binding, group, &draft.occupied)?;
+        let pcs = &request.pcs;
+        let artifact = request.artifact();
+        if schedule.profile == GroupProfile::Min5Upstream {
+            let Some(Ok(seal)) = &group.seal else {
+                return Err(Error::new("grouped-seal", "missing successful preflight"));
+            };
+            seal.matches_request(&artifact, pcs)
+                .map_err(|e| Error::new("grouped-seal", e))?;
+            schedule.validate_intersection(s, group, seal.retained_span())?;
+        }
         let result = match schedule.profile {
             GroupProfile::Exact => plan_artifact_observation_window_after(
                 &ArtifactObservationRequest {
                     artifact,
                     physical_pc: group.window.start(),
                     end: group.window.end(),
-                    observation_pcs: &pcs,
+                    observation_pcs: pcs,
                 },
                 &draft.composition,
                 &outside,
             ),
-            GroupProfile::Upstream => plan_artifact_observation_window_upstream_after(
-                &ArtifactObservationSearchRequest {
-                    artifact,
-                    end: group.window.end(),
-                    observation_pcs: &pcs,
-                },
-                &draft.composition,
-                &outside,
-            ),
+            GroupProfile::Upstream | GroupProfile::Min5Upstream => {
+                plan_artifact_observation_window_upstream_after(
+                    &ArtifactObservationSearchRequest {
+                        artifact,
+                        end: group.retained_window().end(),
+                        observation_pcs: pcs,
+                    },
+                    &draft.composition,
+                    &outside,
+                )
+            }
         };
         let planned = match result {
             Ok(plan) => plan,
@@ -753,7 +977,9 @@ fn attempt_group(
             ));
         }
         writeln!(diagnostics, "{:?}", planned.artifact().metrics()).unwrap();
-        if planned.observation_pcs() != pcs || planned.artifact().source_steps().len() != 1 {
+        if planned.observation_pcs() != pcs.as_slice()
+            || planned.artifact().source_steps().len() != 1
+        {
             return Err(Error::new(
                 "grouped-invariant",
                 "opaque result population or source-step count",
@@ -813,3 +1039,6 @@ mod tests;
 
 #[cfg(test)]
 mod upstream_tests;
+
+#[cfg(test)]
+mod min5_tests;
