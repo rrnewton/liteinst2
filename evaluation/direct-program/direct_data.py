@@ -174,12 +174,15 @@ def e9_statistics(raw, info, original, size, output_size):
 
 
 GROUPED_PROFILE = 'jumps-gpr-stack64-block-observation-v1'
+GROUPED_UPSTREAM_PROFILE = 'jumps-gpr-stack64-block-upstream-v1'
+GROUPED_PROFILES = (GROUPED_PROFILE, GROUPED_UPSTREAM_PROFILE)
 GROUPED_MEMBERS = ('grouping-policy.tsv', 'selection.txt', 'binding-policy.tsv',
                    'plan-ledger.tsv', 'ledger.tsv', 'report.tsv', 'disassembly.txt')
 
 
-def grouped_binding_bytes(selection, original, domain, grouping):
-    rows = [('planner_profile', GROUPED_PROFILE),
+def grouped_binding_bytes(selection, original, domain, grouping, *, profile=GROUPED_PROFILE):
+    assert profile in GROUPED_PROFILES
+    rows = [('planner_profile', profile),
             ('singleton_planner_profile', 'whole-program-packed-overlapping-neighbors-4096'),
             ('address_binding', 'fixed-exec-zero-bias-indexed-jump32-v1'),
             ('required_object_type', 'ET_EXEC'), ('required_load_bias', '0'),
@@ -187,17 +190,19 @@ def grouped_binding_bytes(selection, original, domain, grouping):
             ('selection_sha256', selection), ('source_sha256', original),
             ('mapping', str(domain)), ('generation', '1'), ('domain', str(domain)),
             ('field_encoding', 'original-indexed-jump-signed32-v1'),
-            ('grouped_profile', GROUPED_PROFILE), ('grouping_policy_sha256', grouping)]
+            ('grouped_profile', profile), ('grouping_policy_sha256', grouping)]
     return ('LI2FIXED-EXEC-BINDING\t1\n'+''.join(k+'\t'+v+'\n' for k, v in rows)).encode()
 
 
-def grouped_linkage(info, members, sites, original, domain, report, *, source_ledger):
+def grouped_linkage(info, members, sites, original, domain, report, *, source_ledger, profile=GROUPED_PROFILE):
     """Join a full policy partition to unique local plans and final site outcomes.
 
     All members are pinned by COMPLETE first. This parses text records only;
     portable/embedded binary checks use the producer's existing Rust format API.
     Accepted units are local-plan evidence, never candidate-emission authority.
     """
+    assert profile in GROUPED_PROFILES
+    upstream = profile == GROUPED_UPSTREAM_PROFILE
     assert set(members) == set(GROUPED_MEMBERS) and 0 < len(sites) <= 4096
     for name, raw in members.items():
         assert raw.endswith(b'\n') and len(raw) <= 64*M
@@ -205,8 +210,8 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
     # Output self-pins do not prove which independently frozen input was read.
     assert info['files']['disassembly.txt'] == {k: source_ledger[k] for k in ('bytes', 'sha256')}
     fields = info['fields']; stack_complete(fields, sites)
-    expected_fields = dict(profile=GROUPED_PROFILE, planner_profile=GROUPED_PROFILE,
-        grouped_profile=GROUPED_PROFILE, singleton_planner_profile='whole-program-packed-overlapping-neighbors-4096',
+    expected_fields = dict(profile=profile, planner_profile=profile,
+        grouped_profile=profile, singleton_planner_profile='whole-program-packed-overlapping-neighbors-4096',
         grouping_policy='grouping-policy.tsv', grouping_ledger='LI2GROUPED-LEDGER-1',
         portable_metadata_verification='checked',
         embedded_metadata_binding='checked' if report['strict_full'] else 'not-complete')
@@ -214,7 +219,7 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
     assert all(name in info['files'] for name in ('metadata.li2meta', 'target.tsv', 'planning-profile.tsv'))
     selection = info['files']['selection.txt']['sha256']
     grouping = info['files']['grouping-policy.tsv']['sha256']
-    assert members['binding-policy.tsv'] == grouped_binding_bytes(selection, original, domain, grouping)
+    assert members['binding-policy.tsv'] == grouped_binding_bytes(selection, original, domain, grouping, profile=profile)
     number = lambda value: int(value) if re.fullmatch(r'0|[1-9][0-9]*', value) else None
     def numeric(value):
         result = number(value); assert result is not None; return result
@@ -230,7 +235,7 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
     units = groups + singles
     policy = rows('grouping-policy.tsv')
     prefix = [
-        ['LI2GROUPING-POLICY', '1'], ['profile', GROUPED_PROFILE],
+        ['LI2GROUPING-POLICY', '1'], ['profile', profile],
         ['schedule', 'all-multisite-blocks-descending-then-singletons-descending-v1'],
         ['window', 'first-selected-head-through-last-selected-instruction'],
         ['group_tactic', 'RelocationOnly'], ['group_attempts', '1'], ['group_fallback', 'none'],
@@ -238,6 +243,15 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
         ['singleton_profile', 'whole-program-packed-overlapping-neighbors-4096'],
         ['qualification_complete', 'false'], ['original_sha256', original],
         ['selection_sha256', selection], ['complete_site_count', str(len(sites))]]
+    if upstream:
+        at = prefix.index(['group_attempts', '1'])
+        prefix[at:at+1] = [
+            ['physical_schedule', 'same-site-then-single-cache-line-then-nearest-upstream-v1'],
+            ['max_physical_sites', '64'], ['max_upstream_bytes', '64'],
+            ['max_displaced_bytes', '256'], ['image_candidates_per_physical', '1'],
+            ['image_mappings_per_physical', '1'], ['image_bytes_per_physical', '4096'],
+            ['physical_domain', 'same-block-heads-through-first-member'],
+            ['membership', 'full-manifest-maximum-prefix-and-actual-window']]
     expected_policy = list(prefix)
     member_rows = {}
     for unit, population in enumerate(units):
@@ -317,12 +331,32 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
         population = units[unit]
         if len(population) == 1: continue
         start, end = population[0][1], population[-1][1]+population[-1][2]
-        assert steps[primary] == [['step', str(primary), '0', 'relocation', str(start), str(start), str(start), str(end)]]
+        physical = start
+        if upstream:
+            assert len(steps[primary]) == 1
+            step = steps[primary][0]
+            assert step[:5] == ['step', str(primary), '0', 'relocation', str(start)]
+            physical = numeric(step[5])
+            floor = max(population[0][6], max(0, start-64))
+            assert floor <= physical <= start and physical in heads
+            assert step[6:] == [str(physical), str(end)] and 5 <= end-physical <= 256
+            assert all(s[6] == population[0][6] and s[7] == population[0][7] for s in population)
+            assert end <= population[0][6]+population[0][7]
+            # Full immutable selection, including accepted and straddling rows.
+            # Neither pending-only membership nor a self-pinned shorter ledger suffices.
+            for left in (floor, physical):
+                assert population == [s for s in sites if s[1] < end and left < s[1]+s[2]]
+                assert all(left <= s[1] < s[1]+s[2] <= end for s in population)
+        else:
+            assert steps[primary] == [['step', str(primary), '0', 'relocation', str(start), str(start), str(start), str(end)]]
         owned = [i for i, v in images.items() if v[0] == primary]; assert len(owned) == 1
         image = owned[0]; address, size = images[image][1:]
         routes = [row for row in plan[:at] if row[:2] == ['route', str(image)]]
         restored = [row for row in plan[:at] if row[:2] == ['restored-boundary', str(image)]]
-        expected_heads = sorted(pc for pc in heads if start <= pc < end)
+        expected_heads = sorted(pc for pc in heads if physical <= pc < end)
+        if upstream:
+            assert size <= 4096 and expected_heads[0] == physical
+            assert all(pc+heads[pc] == next_pc for pc, next_pc in zip(expected_heads, expected_heads[1:]+[end]))
         for table in (routes, restored):
             assert all(len(row) == 4 and address <= numeric(row[3]) < address+size for row in table)
             assert [numeric(row[2]) for row in table] == expected_heads

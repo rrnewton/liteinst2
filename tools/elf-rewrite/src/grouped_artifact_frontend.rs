@@ -4,13 +4,55 @@ use crate::*;
 use li2core::planner::HookSemantics;
 use li2core::quiescent::{
     AllocationPolicy, ArtifactObservationPlan, ArtifactObservationRequest,
-    plan_artifact_observation_window_after,
+    ArtifactObservationSearchRequest, plan_artifact_observation_window_after,
+    plan_artifact_observation_window_upstream_after,
 };
 use li2core::x86::JumpStackClass;
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
 
 pub const GROUPED_PROFILE: &str = "jumps-gpr-stack64-block-observation-v1";
+pub const GROUPED_UPSTREAM_PROFILE: &str = "jumps-gpr-stack64-block-upstream-v1";
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum GroupProfile {
+    Exact,
+    Upstream,
+}
+impl GroupProfile {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Exact => GROUPED_PROFILE,
+            Self::Upstream => GROUPED_UPSTREAM_PROFILE,
+        }
+    }
+    fn policy(self) -> String {
+        if self == Self::Exact {
+            return POLICY.into();
+        }
+        POLICY.replace(GROUPED_PROFILE, self.name()).replace(
+            "group_attempts\t1\n",
+            "physical_schedule\tsame-site-then-single-cache-line-then-nearest-upstream-v1\nmax_physical_sites\t64\nmax_upstream_bytes\t64\nmax_displaced_bytes\t256\nimage_candidates_per_physical\t1\nimage_mappings_per_physical\t1\nimage_bytes_per_physical\t4096\nphysical_domain\tsame-block-heads-through-first-member\nmembership\tfull-manifest-maximum-prefix-and-actual-window\n",
+        )
+    }
+    pub(crate) fn binding_policy(
+        self,
+        binding: FixedImageBinding,
+        selection: ContentId,
+        grouping: ContentId,
+    ) -> Vec<u8> {
+        let bytes = fixed_exec::grouped_binding_policy(binding, selection, grouping);
+        if self == Self::Exact {
+            return bytes;
+        }
+        // Reuse the sole canonical formatter. Only its two source-controlled
+        // profile labels differ; identities and every obligation stay literal.
+        String::from_utf8(bytes)
+            .expect("canonical ASCII binding policy")
+            .replace(GROUPED_PROFILE, self.name())
+            .into_bytes()
+    }
+}
 const POLICY: &str = "LI2GROUPING-POLICY\t1\nprofile\tjumps-gpr-stack64-block-observation-v1\nschedule\tall-multisite-blocks-descending-then-singletons-descending-v1\nwindow\tfirst-selected-head-through-last-selected-instruction\ngroup_tactic\tRelocationOnly\ngroup_attempts\t1\ngroup_fallback\tnone\nmember_budgets\tshared-not-summed\nentry_completeness\tAllInstructionHeads\nsingleton_profile\twhole-program-packed-overlapping-neighbors-4096\nqualification_complete\tfalse\n";
 
 /// Separate typed profile; the input is still the sealed FULL jump/stack union.
@@ -21,6 +63,23 @@ const POLICY: &str = "LI2GROUPING-POLICY\t1\nprofile\tjumps-gpr-stack64-block-ob
 pub fn prepare_disassembly_jump_stack_grouped_fixed_exec(
     original: &[u8],
     selected: &disassembly::whole::JumpStackWholeSelection,
+) -> Result<Product, Error> {
+    prepare_grouped(original, selected, GroupProfile::Exact)
+}
+
+/// Separately named bounded physical search; partition, selected spans, source
+/// policies and final atomic admission are identical to the exact profile.
+pub fn prepare_disassembly_jump_stack_grouped_upstream_fixed_exec(
+    original: &[u8],
+    selected: &disassembly::whole::JumpStackWholeSelection,
+) -> Result<Product, Error> {
+    prepare_grouped(original, selected, GroupProfile::Upstream)
+}
+
+fn prepare_grouped(
+    original: &[u8],
+    selected: &disassembly::whole::JumpStackWholeSelection,
+    profile: GroupProfile,
 ) -> Result<Product, Error> {
     let mut product = prepare_selection_with_carrier_layout(
         original,
@@ -36,15 +95,15 @@ pub fn prepare_disassembly_jump_stack_grouped_fixed_exec(
             },
             packed_rx_runs: true,
             fixed_exec: true,
-            grouped_classes: Some(&selected.classes),
+            grouped_classes: Some((&selected.classes, profile)),
         },
     )?;
     product.files.remove("bundle-index.tsv");
     let mut files = selected.packed_overlapping_files();
-    let profile = files
+    let planning = files
         .get_mut("planning-profile.tsv")
         .expect("sealed union has a planning profile");
-    profile.extend_from_slice(grouped_fixed_exec_metadata().as_bytes());
+    planning.extend_from_slice(grouped_metadata(profile).as_bytes());
     product.files.extend(files);
     product.files.insert(
         "bundle-index.tsv".into(),
@@ -56,11 +115,18 @@ pub fn prepare_disassembly_jump_stack_grouped_fixed_exec(
 /// Canonical group-profile labels shared by the artifact and explicit CLI.
 /// These declarations preserve all loader/readiness obligations.
 pub fn grouped_fixed_exec_metadata() -> String {
+    grouped_metadata(GroupProfile::Exact)
+}
+pub fn grouped_upstream_fixed_exec_metadata() -> String {
+    grouped_metadata(GroupProfile::Upstream)
+}
+fn grouped_metadata(profile: GroupProfile) -> String {
+    let profile = profile.name();
     let mut out = FIXED_EXEC_METADATA.replacen(
         "planner_profile\twhole-program-packed-overlapping-neighbors-4096\n",
-        &format!("planner_profile\t{GROUPED_PROFILE}\nsingleton_planner_profile\twhole-program-packed-overlapping-neighbors-4096\n"), 1,
+        &format!("planner_profile\t{profile}\nsingleton_planner_profile\twhole-program-packed-overlapping-neighbors-4096\n"), 1,
     );
-    out.push_str(&format!("grouped_profile\t{GROUPED_PROFILE}\ngrouping_policy\tgrouping-policy.tsv\ngrouping_ledger\tLI2GROUPED-LEDGER-1\n"));
+    out.push_str(&format!("grouped_profile\t{profile}\ngrouping_policy\tgrouping-policy.tsv\ngrouping_ledger\tLI2GROUPED-LEDGER-1\n"));
     out
 }
 
@@ -71,7 +137,14 @@ pub fn grouped_fixed_exec_binding_policy(
     selection: ContentId,
     grouping: ContentId,
 ) -> Vec<u8> {
-    fixed_exec::grouped_binding_policy(binding, selection, grouping)
+    GroupProfile::Exact.binding_policy(binding, selection, grouping)
+}
+pub fn grouped_upstream_fixed_exec_binding_policy(
+    binding: FixedImageBinding,
+    selection: ContentId,
+    grouping: ContentId,
+) -> Vec<u8> {
+    GroupProfile::Upstream.binding_policy(binding, selection, grouping)
 }
 
 #[derive(Clone, Debug)]
@@ -82,6 +155,7 @@ pub(crate) struct Group {
 }
 #[derive(Clone, Debug)]
 pub(crate) struct Schedule {
+    pub(crate) profile: GroupProfile,
     groups: Vec<Group>,
     singletons: Vec<usize>,
     classes: Vec<JumpStackClass>,
@@ -103,6 +177,21 @@ impl Schedule {
         elf: &Elf64<'_>,
         s: &Selection,
         classes: &[JumpStackClass],
+    ) -> Result<Self, Error> {
+        Self::freeze_profile(elf, s, classes, GroupProfile::Exact)
+    }
+    pub(crate) fn freeze_upstream(
+        elf: &Elf64<'_>,
+        s: &Selection,
+        classes: &[JumpStackClass],
+    ) -> Result<Self, Error> {
+        Self::freeze_profile(elf, s, classes, GroupProfile::Upstream)
+    }
+    fn freeze_profile(
+        elf: &Elf64<'_>,
+        s: &Selection,
+        classes: &[JumpStackClass],
+        profile: GroupProfile,
     ) -> Result<Self, Error> {
         if classes.len() != s.sites.len() || s.sites.is_empty() {
             return Err(Error::new("grouped-population", "complete class count"));
@@ -161,6 +250,7 @@ impl Schedule {
         groups.sort_by_key(|group| std::cmp::Reverse(group.window.start()));
         singletons.sort_by_key(|&i| std::cmp::Reverse(s.sites[i].pc));
         let mut out = Self {
+            profile,
             groups,
             singletons,
             classes: classes.to_vec(),
@@ -170,8 +260,9 @@ impl Schedule {
         Ok(out)
     }
     fn policy_bytes(&self, s: &Selection) -> Vec<u8> {
+        let policy = self.profile.policy();
         let mut text = format!(
-            "{POLICY}original_sha256\t{}\nselection_sha256\t{}\ncomplete_site_count\t{}\n",
+            "{policy}original_sha256\t{}\nselection_sha256\t{}\ncomplete_site_count\t{}\n",
             ledger::hex(&s.original.0),
             ledger::hex(&ContentId::of(&s.manifest).0),
             s.sites.len()
@@ -217,26 +308,7 @@ impl Schedule {
     }
     fn validate_group(&self, s: &Selection, group: &Group) -> Result<(), Error> {
         let first = &s.sites[group.members[0]];
-        let mut intersection = Vec::new();
-        for (i, site) in s.sites.iter().enumerate() {
-            let range = addr(site.pc, u64::from(site.length))?;
-            if range.start() < group.window.end() && group.window.start() < range.end() {
-                if !group.window.covers(range) {
-                    return Err(Error::new(
-                        "grouped-membership",
-                        "selected instruction straddles window",
-                    ));
-                }
-                intersection.push(i);
-            }
-        }
-        intersection.sort_by_key(|&i| s.sites[i].pc);
-        if intersection != group.members || group.members.len() < 2 {
-            return Err(Error::new(
-                "grouped-membership",
-                "window must contain its exact full selected intersection",
-            ));
-        }
+        self.validate_intersection(s, group, group.window)?;
         if first.completeness != EntryCompleteness::AllInstructionHeads
             || first.semantics != HookSemantics::Observe
             || first.forced.is_some()
@@ -260,6 +332,95 @@ impl Schedule {
             }
         }
         Ok(())
+    }
+    fn validate_intersection(
+        &self,
+        s: &Selection,
+        group: &Group,
+        window: AddressRange,
+    ) -> Result<(), Error> {
+        let mut intersection = Vec::new();
+        for (i, site) in s.sites.iter().enumerate() {
+            let range = addr(site.pc, u64::from(site.length))?;
+            if range.start() < window.end() && window.start() < range.end() {
+                if !window.covers(range) {
+                    return Err(Error::new(
+                        "grouped-membership",
+                        "selected instruction straddles window",
+                    ));
+                }
+                intersection.push(i);
+            }
+        }
+        intersection.sort_by_key(|&i| s.sites[i].pc);
+        if intersection != group.members || group.members.len() < 2 {
+            return Err(Error::new(
+                "grouped-membership",
+                "window must contain its exact full selected intersection",
+            ));
+        }
+        Ok(())
+    }
+    fn upstream_envelope(&self, s: &Selection, group: &Group) -> Result<AddressRange, Error> {
+        let first = &s.sites[group.members[0]];
+        let floor = first.block.start().max(first.pc.saturating_sub(64));
+        addr(floor, group.window.end() - floor)
+    }
+    fn validate_upstream(&self, s: &Selection, group: &Group) -> Result<(), Error> {
+        let first = &s.sites[group.members[0]];
+        if first.search.max_sites != 64
+            || first.search.max_upstream_bytes != 64
+            || first.search.max_displaced_bytes != 256
+            || [&first.selected_allocation, &first.victim_allocation]
+                .iter()
+                .any(|a| a.max_candidates != 1 || a.max_mappings != 1 || a.max_mapped_bytes != 4096)
+        {
+            return Err(Error::new(
+                "grouped-upstream-policy",
+                "unchanged bounded search and image tuple required",
+            ));
+        }
+        // This uses the FULL immutable selection, including already accepted
+        // and straddling intervals. Pending is not a completeness substitute.
+        self.validate_intersection(s, group, self.upstream_envelope(s, group)?)
+    }
+    fn validate_actual_window(
+        &self,
+        s: &Selection,
+        group: &Group,
+        plan: &ArtifactPlan,
+    ) -> Result<(), Error> {
+        if self.profile == GroupProfile::Exact {
+            return Ok(());
+        }
+        self.validate_upstream(s, group)?;
+        let first = &s.sites[group.members[0]];
+        let [step] = plan.source_steps() else {
+            return Err(Error::new(
+                "grouped-association",
+                "one actual physical window required",
+            ));
+        };
+        let parts = step.parts();
+        let envelope = self.upstream_envelope(s, group)?;
+        if parts.logical_pc != first.pc
+            || parts.physical_pc > first.pc
+            || parts.physical_pc != parts.displaced.start()
+            || parts.displaced.end() != group.window.end()
+            || parts.displaced.len() > 256
+            || !envelope.covers(parts.displaced)
+            || !first.block.covers(parts.displaced)
+            || !first
+                .heads
+                .iter()
+                .any(|head| head.address == parts.physical_pc)
+        {
+            return Err(Error::new(
+                "grouped-association",
+                "actual upstream head/window outside frozen domain",
+            ));
+        }
+        self.validate_intersection(s, group, parts.displaced)
     }
     pub(crate) fn associations(
         &self,
@@ -298,6 +459,7 @@ impl Schedule {
                 ));
             }
             self.validate_group(s, expected)?;
+            self.validate_actual_window(s, expected, accepted.plan.artifact())?;
             writeln!(
                 text,
                 "accepted-unit\t{}\t{}\tgroup\t{}",
@@ -453,6 +615,9 @@ fn attempt_group(
     let mut locally_planned = false;
     let result = (|| {
         schedule.validate_group(s, group)?;
+        if schedule.profile == GroupProfile::Upstream {
+            schedule.validate_upstream(s, group)?;
+        }
         for &i in &group.members {
             validate_site(elf, &s.sites[i])?;
         }
@@ -491,35 +656,50 @@ fn attempt_group(
         // Numeric budgets come from ONE compatible member, never their sum.
         search.tactics = TacticPolicy::RelocationOnly;
         let pcs: Vec<_> = group.members.iter().map(|&i| s.sites[i].pc).collect();
-        let request = ArtifactObservationRequest {
-            artifact: ArtifactRequest {
-                site: PlanningSite {
-                    identity,
-                    code: bytes,
-                    base_address: first.snapshot.start(),
-                    function: first.function,
-                    block: first.block,
-                    logical_pc: first.pc,
-                    entries: &entries,
-                    semantics: first.semantics,
-                    allocation: &first.selected_allocation,
-                    search,
-                },
-                emission: &emission,
+        let artifact = ArtifactRequest {
+            site: PlanningSite {
+                identity,
+                code: bytes,
+                base_address: first.snapshot.start(),
+                function: first.function,
+                block: first.block,
+                logical_pc: first.pc,
+                entries: &entries,
+                semantics: first.semantics,
+                allocation: &first.selected_allocation,
+                search,
             },
-            physical_pc: group.window.start(),
-            end: group.window.end(),
-            observation_pcs: &pcs,
+            emission: &emission,
         };
-        let planned =
-            match plan_artifact_observation_window_after(&request, &draft.composition, &outside) {
-                Ok(plan) => plan,
-                Err(failure) => {
-                    code = Some(model::core_code(&failure.reason));
-                    writeln!(diagnostics, "{failure:#?}").unwrap();
-                    return Err(Error::new("core", failure.reason));
-                }
-            };
+        let result = match schedule.profile {
+            GroupProfile::Exact => plan_artifact_observation_window_after(
+                &ArtifactObservationRequest {
+                    artifact,
+                    physical_pc: group.window.start(),
+                    end: group.window.end(),
+                    observation_pcs: &pcs,
+                },
+                &draft.composition,
+                &outside,
+            ),
+            GroupProfile::Upstream => plan_artifact_observation_window_upstream_after(
+                &ArtifactObservationSearchRequest {
+                    artifact,
+                    end: group.window.end(),
+                    observation_pcs: &pcs,
+                },
+                &draft.composition,
+                &outside,
+            ),
+        };
+        let planned = match result {
+            Ok(plan) => plan,
+            Err(failure) => {
+                code = Some(model::core_code(&failure.reason));
+                writeln!(diagnostics, "{failure:#?}").unwrap();
+                return Err(Error::new("core", failure.reason));
+            }
+        };
         locally_planned = true;
         let li2core::emission::ArtifactMetrics::Single(metrics) = planned.artifact().metrics()
         else {
@@ -541,6 +721,7 @@ fn attempt_group(
                 "opaque result population or source-step count",
             ));
         }
+        schedule.validate_actual_window(s, group, planned.artifact())?;
         admit_artifact(
             AdmissionContext {
                 elf,
@@ -591,3 +772,6 @@ fn attempt_group(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod upstream_tests;

@@ -301,3 +301,18 @@ fn grouped_cli_metadata_rejects_policy_identity_and_embedded_product_corruption(
         "grouped-cli-metadata"
     );
 }
+
+// Sibling upstream controls reuse the exact imported fixture/CLI adapter.
+pub(super) fn upstream_fixture(chunks: &[&[u8]]) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
+    fixture(chunks)
+}
+pub(super) fn upstream_run(
+    source: &(Vec<u8>, Vec<u8>, Vec<u8>),
+    mode: PopulationMode,
+) -> (
+    liteinst_rewrite::Product,
+    BTreeMap<String, Vec<u8>>,
+    Option<[usize; 3]>,
+) {
+    run(source, mode)
+}

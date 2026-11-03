@@ -11,8 +11,10 @@ pub use adjacent_b2_frontend::routed_jmp::prepare_disassembly_adjacent_routed_jm
 mod fixed_exec;
 mod grouped_artifact_frontend;
 pub use grouped_artifact_frontend::{
-    GROUPED_PROFILE, grouped_fixed_exec_binding_policy, grouped_fixed_exec_metadata,
-    prepare_disassembly_jump_stack_grouped_fixed_exec,
+    GROUPED_PROFILE, GROUPED_UPSTREAM_PROFILE, grouped_fixed_exec_binding_policy,
+    grouped_fixed_exec_metadata, grouped_upstream_fixed_exec_binding_policy,
+    grouped_upstream_fixed_exec_metadata, prepare_disassembly_jump_stack_grouped_fixed_exec,
+    prepare_disassembly_jump_stack_grouped_upstream_fixed_exec,
 };
 mod ledger;
 pub use fixed_exec::{
@@ -511,7 +513,10 @@ struct CarrierTransaction<'a, F> {
     hooks: TransactionHooks<'a, F>,
     packed_rx_runs: bool,
     fixed_exec: bool,
-    grouped_classes: Option<&'a [li2core::x86::JumpStackClass]>,
+    grouped_classes: Option<(
+        &'a [li2core::x86::JumpStackClass],
+        grouped_artifact_frontend::GroupProfile,
+    )>,
 }
 
 fn prepare_selection_with_carrier_layout(
@@ -665,7 +670,14 @@ fn prepare_selection_with_carrier_layout(
     }
     // Freeze all units from original, sealed selection before any plan mutates the overlay.
     let grouped_schedule = grouped_classes
-        .map(|classes| grouped_artifact_frontend::Schedule::freeze(&elf, s, classes))
+        .map(|(classes, profile)| match profile {
+            grouped_artifact_frontend::GroupProfile::Exact => {
+                grouped_artifact_frontend::Schedule::freeze(&elf, s, classes)
+            }
+            grouped_artifact_frontend::GroupProfile::Upstream => {
+                grouped_artifact_frontend::Schedule::freeze_upstream(&elf, s, classes)
+            }
+        })
         .transpose()?;
     let mut grouped_accepted = Vec::new();
     let mut grouped_evidence = Vec::new();
@@ -834,7 +846,7 @@ fn prepare_selection_with_carrier_layout(
     files.insert("selection.txt".into(), s.manifest.clone());
     let compatibility_binding = if let Some(binding) = fixed_binding {
         let policy = match &grouped_schedule {
-            Some(schedule) => fixed_exec::grouped_binding_policy(
+            Some(schedule) => schedule.profile.binding_policy(
                 binding,
                 ContentId::of(&s.manifest),
                 ContentId::of(&schedule.policy),
