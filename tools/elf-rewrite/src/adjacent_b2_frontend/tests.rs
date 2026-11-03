@@ -1216,6 +1216,7 @@ fn baseline_draft(f: &Fixture) -> SelectionDraft {
                 dynamic: &dynamic,
                 s,
                 identity,
+                fixed_binding: None,
                 owned_neighbors: false,
                 mode: disassembly::NeighborMode::ShortT3Pending,
                 record_baseline: true,

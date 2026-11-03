@@ -2112,3 +2112,104 @@ fn pending_selected_full_mode_bytes_count_toward_bounds_and_old_caps() {
 
 #[path = "policy_tests.rs"]
 mod policy_tests;
+
+// Retain the ordinary two-region ELF fixture; replace only its final C3 region
+// with an explicitly enumerated second instruction stream.
+fn cut_regions(first: &[&[u8]], second: &[&[u8]]) -> (Vec<u8>, String) {
+    let (mut original, mut locations) = fixture(first);
+    let old_digest = digest(&original);
+    let code: Vec<_> = second
+        .iter()
+        .flat_map(|bytes| bytes.iter().copied())
+        .collect();
+    assert!(code.len() <= 256);
+    original[0x1f00..0x1f00 + code.len()].copy_from_slice(&code);
+    let mut replacement = format!("region {HOOK} 7936 {}\n", code.len());
+    let mut pc = HOOK;
+    for bytes in second {
+        writeln!(replacement, "head {pc} {}", ledger::hex(bytes)).unwrap();
+        pc += bytes.len() as u64;
+    }
+    locations = locations.replace(
+        &format!("region {HOOK} 7936 1\nhead {HOOK} c3\n"),
+        &replacement,
+    );
+    locations = locations.replace(&old_digest, &digest(&original));
+    (original, locations)
+}
+
+fn cut_transfer(prefix: &[u8], target: u64) -> Vec<u8> {
+    let mut bytes = prefix.to_vec();
+    let next = PC + bytes.len() as u64 + 4;
+    let displacement = i32::try_from(i128::from(target) - i128::from(next)).unwrap();
+    bytes.extend(displacement.to_le_bytes());
+    bytes
+}
+
+#[test]
+fn imported_cuts_keep_cross_region_call_branch_and_xbegin_targets() {
+    let second: &[&[u8]] = &[&[0x90], &[0x90], &[0xeb, 0], &[0xc3]];
+    for (prefix, selected) in [
+        (&[0xe9][..], true),
+        (&[0xe8][..], false),
+        (&[0xc7, 0xf8][..], false),
+    ] {
+        let transfer = cut_transfer(prefix, HOOK + 1);
+        let (original, locations) = cut_regions(&[&transfer, &[0x90], &[0xc3]], second);
+        let imported = checked(&original, &locations).unwrap();
+        assert_eq!(imported.jumps.len(), if selected { 2 } else { 1 });
+        let site = imported.jumps.last().unwrap();
+        assert_eq!(site.pc, HOOK + 2);
+        assert_eq!(site.block, addr(HOOK + 1, 3).unwrap());
+        assert_eq!(site.region, addr(HOOK, 5).unwrap());
+        assert_eq!(site.file_offset, 7938);
+        assert_eq!(site.id, if selected { 2 } else { 1 });
+        if selected {
+            assert_eq!(imported.jumps[0].pc, PC);
+            assert_eq!(
+                imported.jumps[0].block,
+                addr(PC, transfer.len() as u64).unwrap()
+            );
+        }
+    }
+    // The complete global head set is not an external-target allowlist. An
+    // external non-RX callee remains accepted and does not add an invented cut.
+    let call = cut_transfer(&[0xe8], BASE + 0x8000);
+    let (original, locations) = cut_regions(&[&call, &[0xc3]], second);
+    let imported = checked(&original, &locations).unwrap();
+    assert_eq!(imported.jumps.len(), 1);
+    assert_eq!(imported.jumps[0].block, addr(HOOK, 4).unwrap());
+}
+
+#[test]
+fn imported_cuts_keep_global_contradictions_after_all_ledger_and_entry_checks() {
+    let second: &[&[u8]] = &[&[0x66, 0x90], &[0xeb, 0], &[0xc3]];
+    for prefix in [&[0xe9][..], &[0xe8], &[0xc7, 0xf8]] {
+        // A globally mapped executable target in the middle of a head, or in
+        // an undeclared executable gap, is refused for all near-operand kinds.
+        for target in [HOOK + 1, PC + 0x100] {
+            let transfer = cut_transfer(prefix, target);
+            let (original, locations) = cut_regions(&[&transfer, &[0xc3]], second);
+            assert_eq!(
+                checked(&original, &locations).unwrap_err(),
+                Error::new("disassembly", "direct target contradicts complete ledger")
+            );
+        }
+    }
+    let call = cut_transfer(&[0xe8], PC + 0x100);
+    let (original, locations) = cut_regions(&[&call, &[0xc3]], second);
+    // A malformed later region is diagnosed before the earlier direct target.
+    let bad_head = locations.replace(&format!("head {HOOK} 6690"), &format!("head {HOOK} 6691"));
+    assert_eq!(
+        checked(&original, &bad_head).unwrap_err(),
+        Error::new("disassembly", "head bytes")
+    );
+    // Once the full ledger is valid, the existing ELF-entry check still leads.
+    let mut changed = original.clone();
+    put64(&mut changed, 24, PC + 1);
+    let rebound = locations.replace(&digest(&original), &digest(&changed));
+    assert_eq!(
+        checked(&changed, &rebound).unwrap_err(),
+        Error::new("disassembly", "ELF entry missing from code ledger")
+    );
+}

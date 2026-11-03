@@ -120,3 +120,96 @@ fn unresolved_rows_and_public_dimensions_refuse_without_reordering_callbacks() {
     assert_eq!(result.unwrap_err(), "unreachable row still checked");
     assert_eq!(visited, [0, 1]);
 }
+
+#[test]
+fn shared_cut_collector_keeps_global_direct_facts_separate_from_local_edges() {
+    // CALL 0x2000; XBEGIN BASE+12; NOP; RET. The CALL is external to this
+    // scan; XBEGIN has a near operand but is not a local branch-row category.
+    let source = scan(&[0xe8, 0xfb, 0x0f, 0, 0, 0xc7, 0xf8, 1, 0, 0, 0, 0x90, 0xc3]);
+    let items = source.instructions();
+    assert_eq!(direct_target(items[0].instruction()), Some(0x2000));
+    assert_eq!(direct_target(items[1].instruction()), Some(BASE + 12));
+    assert_eq!(direct_target(items[2].instruction()), None);
+    assert_eq!(direct_target(items[3].instruction()), None);
+    let owner = AddressRange::new(BASE, 13).unwrap();
+    let mut visited = Vec::new();
+    let cuts = collect_block_cuts(
+        [owner],
+        items.iter().map(|item| item.instruction()),
+        |_, _| true,
+        |index, target| {
+            visited.push((index, target));
+            Ok::<_, ()>(true)
+        },
+    )
+    .unwrap();
+    assert_eq!(visited, [(0, 0x2000), (1, BASE + 12)]);
+    assert_eq!(
+        cuts,
+        BTreeSet::from([BASE, BASE + 5, BASE + 11, BASE + 12, BASE + 13, 0x2000])
+    );
+
+    let graph = build(&source, |_, _, _| Ok::<_, ()>(())).unwrap();
+    assert_eq!(graph.row(0).unwrap().call_target(), Some(0x2000));
+    assert!(graph.row(1).unwrap().unresolved_transfer());
+    let mut local_callbacks = Vec::new();
+    assert_eq!(
+        graph.block_cuts(owner, |index| {
+            local_callbacks.push(index);
+            true
+        }),
+        BTreeSet::from([BASE, BASE + 5, BASE + 11, BASE + 13])
+    );
+    assert!(local_callbacks.is_empty()); // Neither CALL nor XBEGIN is relabeled.
+
+    // Defensive raw-operand coverage; no claim that default 64-bit decoding
+    // produces a 16/32-bit CALL operand for these bytes.
+    for kind in [
+        OpKind::NearBranch16,
+        OpKind::NearBranch32,
+        OpKind::NearBranch64,
+    ] {
+        let mut instruction = *items[0].instruction();
+        instruction.set_op0_kind(kind);
+        match kind {
+            OpKind::NearBranch16 => instruction.set_near_branch16(0x2000),
+            OpKind::NearBranch32 => instruction.set_near_branch32(0x2000),
+            OpKind::NearBranch64 => instruction.set_near_branch64(0x2000),
+            _ => unreachable!(),
+        }
+        assert_eq!(direct_target(&instruction), Some(0x2000));
+    }
+}
+
+#[test]
+fn shared_cut_collector_preserves_policy_order_and_first_error() {
+    let source = scan(&[0xe8, 0xfb, 0x0f, 0, 0, 0xeb, 0, 0xc3]);
+    let events = std::cell::RefCell::new(Vec::new());
+    let result = collect_block_cuts(
+        [AddressRange::new(BASE, 8).unwrap()],
+        source.instructions().iter().map(|item| item.instruction()),
+        |index, next| {
+            events.borrow_mut().push(("following", index, next));
+            true
+        },
+        |index, target| {
+            events.borrow_mut().push(("direct", index, target));
+            Err::<bool, _>("first global target refusal")
+        },
+    );
+    assert_eq!(result, Err("first global target refusal"));
+    assert_eq!(
+        events.into_inner(),
+        [("following", 0, BASE + 5), ("direct", 0, 0x2000)]
+    );
+
+    let source = scan(&[0xff, 0xd0, 0xff, 0xe0, 0xc3]);
+    let cuts = collect_block_cuts(
+        [AddressRange::new(BASE, 5).unwrap()],
+        source.instructions().iter().map(|item| item.instruction()),
+        |_, _| true,
+        |_, _| -> Result<bool, ()> { panic!("indirect transfer has no direct operand") },
+    )
+    .unwrap();
+    assert_eq!(cuts, BTreeSet::from([BASE, BASE + 2, BASE + 4, BASE + 5]));
+}

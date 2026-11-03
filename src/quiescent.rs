@@ -936,7 +936,7 @@ pub(crate) fn validated_source_core(
     {
         return Err(Refusal::InvalidRange);
     }
-    request.emission.qualify()?;
+    request.emission.qualify_source(request.identity)?;
     // Original instruction identity is independent of authenticated prior edits.
     let scan = InstructionScanner::default()
         .scan(request.original_code, request.base_address)

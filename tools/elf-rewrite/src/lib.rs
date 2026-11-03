@@ -8,7 +8,12 @@ pub mod disassembly;
 pub mod offline_router;
 pub use adjacent_b2_frontend::prepare_disassembly_adjacent_b2;
 pub use adjacent_b2_frontend::routed_jmp::prepare_disassembly_adjacent_routed_jmp;
+mod fixed_exec;
 mod ledger;
+pub use fixed_exec::{
+    BINDING_PROFILE as FIXED_EXEC_BINDING_PROFILE, METADATA as FIXED_EXEC_METADATA,
+    binding_policy as fixed_exec_binding_policy,
+};
 pub mod model;
 mod neighbor_catalogue;
 pub mod selection;
@@ -32,6 +37,7 @@ pub struct Product {
     files: BTreeMap<String, Vec<u8>>,
     reports: Vec<SiteReport>,
     complete: bool,
+    fixed_binding: Option<FixedImageBinding>,
 }
 impl Product {
     pub fn files(&self) -> &BTreeMap<String, Vec<u8>> {
@@ -42,6 +48,10 @@ impl Product {
     }
     pub fn candidate_complete(&self) -> bool {
         self.complete
+    }
+    /// Exact source declaration, independently checked again by the fixed writer.
+    pub const fn fixed_image_binding(&self) -> Option<FixedImageBinding> {
+        self.fixed_binding
     }
     pub const fn qualification_complete(&self) -> bool {
         false
@@ -263,6 +273,7 @@ pub fn prepare_disassembly_whole_packed_entry_veneer_mixed_neighbors(
                 gate: |_| Ok(()),
             },
             packed_rx_runs: true,
+            fixed_exec: false,
         },
     )?;
     product.files.remove("bundle-index.tsv");
@@ -298,10 +309,48 @@ pub fn prepare_disassembly_whole_packed_overlapping_neighbors(
                 gate: |_| Ok(()),
             },
             packed_rx_runs: true,
+            fixed_exec: false,
         },
     )?;
     product.files.remove("bundle-index.tsv");
     product.files.extend(selected.packed_overlapping_files());
+    product.files.insert(
+        "bundle-index.tsv".into(),
+        ledger::index(selected.selection.original, &product.files),
+    );
+    Ok(product)
+}
+
+/// Explicit fixed-address ET_EXEC profile. Uses the existing packed overlapping
+/// planner and unchanged policy/budgets. No fallback to a common-bias profile,
+/// partial candidate, loader admission or page-exemption authority is provided.
+pub fn prepare_disassembly_whole_fixed_exec_packed_overlapping_neighbors(
+    original: &[u8],
+    selected: &disassembly::whole::WholeProgramSelection,
+) -> Result<Product, Error> {
+    let mut product = prepare_selection_with_carrier_layout(
+        original,
+        selected.selection.clone(),
+        false,
+        disassembly::NeighborMode::WholeOverlappingPending,
+        None,
+        adjacent_b2_frontend::PairProfile::ForwardJcc,
+        CarrierTransaction {
+            hooks: TransactionHooks {
+                addon: None,
+                gate: |_| Ok(()),
+            },
+            packed_rx_runs: true,
+            fixed_exec: true,
+        },
+    )?;
+    product.files.remove("bundle-index.tsv");
+    let mut files = selected.packed_overlapping_files();
+    files
+        .get_mut("planning-profile.tsv")
+        .expect("typed whole-program selection retains its profile")
+        .extend_from_slice(FIXED_EXEC_METADATA.as_bytes());
+    product.files.extend(files);
     product.files.insert(
         "bundle-index.tsv".into(),
         ledger::index(selected.selection.original, &product.files),
@@ -420,6 +469,7 @@ fn prepare_selection_transaction(
         CarrierTransaction {
             hooks,
             packed_rx_runs: false,
+            fixed_exec: false,
         },
     )
 }
@@ -429,6 +479,7 @@ fn prepare_selection_transaction(
 struct CarrierTransaction<'a, F> {
     hooks: TransactionHooks<'a, F>,
     packed_rx_runs: bool,
+    fixed_exec: bool,
 }
 
 fn prepare_selection_with_carrier_layout(
@@ -443,6 +494,7 @@ fn prepare_selection_with_carrier_layout(
     let CarrierTransaction {
         hooks,
         packed_rx_runs,
+        fixed_exec,
     } = transaction;
     let TransactionHooks { addon, mut gate } = hooks;
     if packed_rx_runs
@@ -455,6 +507,13 @@ fn prepare_selection_with_carrier_layout(
         return Err(Error::new(
             "carrier-layout",
             "packed RX runs require the whole entry-veneer route",
+        ));
+    }
+    if fixed_exec && (!packed_rx_runs || mode != disassembly::NeighborMode::WholeOverlappingPending)
+    {
+        return Err(Error::new(
+            "fixed-exec-profile",
+            "requires explicit packed overlapping route",
         ));
     }
     if owned_neighbors && mode != disassembly::NeighborMode::LongOnly {
@@ -485,6 +544,11 @@ fn prepare_selection_with_carrier_layout(
         source: SourceIdentity(s.original.0),
         mapping: s.bias_domain,
         generation: 1,
+    };
+    let fixed_binding = if fixed_exec {
+        Some(fixed_exec::bind(&elf, identity, s.bias_domain)?)
+    } else {
+        None
     };
     let mut occupied = Vec::new();
     for load in elf.segments(SegmentType::Load) {
@@ -620,6 +684,7 @@ fn prepare_selection_with_carrier_layout(
                     dynamic: &dynamic,
                     s,
                     identity,
+                    fixed_binding,
                     owned_neighbors,
                     mode,
                     record_baseline: false,
@@ -680,6 +745,14 @@ fn prepare_selection_with_carrier_layout(
     let profile = ledger::target(s);
     files.insert("target.tsv".into(), profile.clone());
     files.insert("selection.txt".into(), s.manifest.clone());
+    let compatibility_binding = if let Some(binding) = fixed_binding {
+        let policy = fixed_exec::binding_policy(binding, ContentId::of(&s.manifest));
+        let identity = ContentId::of(&policy);
+        files.insert("binding-policy.tsv".into(), policy);
+        identity
+    } else {
+        ContentId::of(&s.manifest)
+    };
     let mut ledger = if mode == disassembly::NeighborMode::WholeEntryVeneerMixedPending
         || mode == disassembly::NeighborMode::WholeOverlappingPending
     {
@@ -687,6 +760,9 @@ fn prepare_selection_with_carrier_layout(
     } else {
         ledger::plans(s, &accepted, &composition, &dependencies)?
     };
+    if let Some(binding) = fixed_binding {
+        ledger::fixed_binding(&mut ledger, binding);
+    }
     files.insert("plan-ledger.tsv".into(), ledger.clone());
     for (index, image) in accepted.iter().flat_map(|(_, p)| p.images()).enumerate() {
         // Planned bytes remain inspectable even if another site refuses. They
@@ -697,9 +773,10 @@ fn prepare_selection_with_carrier_layout(
     let mut candidate = None;
     let mut sparse = None;
     if reports.iter().all(|r| r.refusal.is_none()) {
-        let initial_meta = make_metadata(original, s, &reports, true, &profile)?
-            .encode(formats::Limits::default())
-            .map_err(|e| Error::new("metadata", e))?;
+        let initial_meta =
+            make_metadata(original, s, &reports, true, &profile, compatibility_binding)?
+                .encode(formats::Limits::default())
+                .map_err(|e| Error::new("metadata", e))?;
         let mut payload = b"LI2TOOL-CANDIDATE-UNREADY-V1\0".to_vec();
         payload.extend_from_slice(&ContentId::of(&initial_meta).0);
         payload.extend_from_slice(&ContentId::of(&ledger).0);
@@ -750,6 +827,23 @@ fn prepare_selection_with_carrier_layout(
             Some(addon) => addon.carrier(&elf, request, &edits, policy),
             None => write_carrier(&elf, request, &edits, policy),
         };
+        let result = result.and_then(|output| {
+            if let Some(binding) = fixed_binding {
+                fixed_exec::validate_output(
+                    &elf,
+                    binding,
+                    &accepted,
+                    fixed_exec::OutputReadback {
+                        bytes: output.bytes(),
+                        original_to_output_header: &output.original_to_output_header,
+                        max_program_headers: s.limits.program_headers,
+                    },
+                    &dynamic,
+                    &dependencies,
+                )?;
+            }
+            Ok(output)
+        });
         match result {
             Ok(output) => {
                 if adjacent.is_some() {
@@ -781,6 +875,9 @@ fn prepare_selection_with_carrier_layout(
                     .map_err(|e| Error::new("sparse-wire", e))?,
                 );
                 ledger::carrier(&mut ledger, &output);
+                if fixed_binding.is_some() {
+                    ledger.extend_from_slice(b"fixed-original-field-ownership\tchecked-original-dependencies-and-loader-writes\nfixed-output-readback\tchecked\n");
+                }
                 if packed_rx_runs {
                     ledger::packed_rx_runs(&mut ledger, &output)?;
                 }
@@ -825,7 +922,14 @@ fn prepare_selection_with_carrier_layout(
         };
         files.insert(name.into(), bytes);
     }
-    let metadata = make_metadata(original, s, &reports, false, &profile)?;
+    let metadata = make_metadata(
+        original,
+        s,
+        &reports,
+        false,
+        &profile,
+        compatibility_binding,
+    )?;
     files.insert(
         "metadata.li2meta".into(),
         metadata
@@ -860,6 +964,7 @@ fn prepare_selection_with_carrier_layout(
         files,
         reports,
         complete,
+        fixed_binding,
     })
 }
 
@@ -868,6 +973,7 @@ struct SingletonContext<'a, 'code> {
     dynamic: &'a carrier::dynamic::Inventory,
     s: &'a Selection,
     identity: CodeIdentity,
+    fixed_binding: Option<FixedImageBinding>,
     owned_neighbors: bool,
     mode: disassembly::NeighborMode,
     record_baseline: bool,
@@ -882,6 +988,7 @@ fn attempt_singleton(
         dynamic,
         s,
         identity,
+        fixed_binding,
         owned_neighbors,
         mode,
         record_baseline,
@@ -926,15 +1033,7 @@ fn attempt_singleton(
             .iter()
             .find(|h| h.id == site.hook)
             .ok_or_else(|| Error::new("hook", "missing"))?;
-        let emission = ArtifactEmission::new(
-            TargetProfile::linux_x86_64_legacy_evex(s.target, s.bias_domain)
-                .map_err(|e| Error::new("target", e))?,
-            SymbolicHook {
-                identity: hook.id,
-                address: Some(hook.pc),
-            },
-            occupied.clone(),
-        );
+        let emission = fixed_exec::emission(s, hook, occupied.clone(), fixed_binding)?;
         let request = ArtifactRequest {
             site: PlanningSite {
                 identity,
@@ -1287,6 +1386,7 @@ fn make_metadata(
     reports: &[SiteReport],
     pretend_emitted: bool,
     profile: &[u8],
+    binding: ContentId,
 ) -> Result<Metadata, Error> {
     let records = reports
         .iter()
@@ -1313,7 +1413,7 @@ fn make_metadata(
             hook_abi: 1,
             arena: 1,
             target: ContentId::of(profile),
-            binding: ContentId::of(&s.manifest),
+            binding,
         },
         records,
     )

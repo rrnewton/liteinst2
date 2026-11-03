@@ -16,6 +16,7 @@ ARCHIVE_SHA = 'cd328edeac92f6a665de9f323c93b712af1858bc2e0d88f3f7100469470a1b8a'
 OWNER_SHA = '0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f'
 CEILINGS = (19_994_091_520, 19_061_190_371)
 SCRATCH, MIB = 250_000_000, 1024**2
+CATALOG_SHA = '2b89602488e2b1854e0df68ecdf49243d4c952a2f393fad4a56785db4a539bde'
 MAKEFILE = '.PHONY: cat-only\ncat-only: $(BUILT_SOURCES)\n\t$(MAKE) -j1 -f Makefile src/cat\n'
 METADATA = r'''import json, pathlib, subprocess
 def run(argv):
@@ -62,7 +63,17 @@ def main():
     parser.add_argument('--revision', required=True)
     parser.add_argument('--archive', required=True, type=Path)
     parser.add_argument('--work', required=True, type=Path)
+    parser.add_argument('--build-profile', choices=('cat-only-v1', 'cat-head-wc-v1'), default='cat-only-v1')
     args = parser.parse_args()
+    catalog_path = Path(__file__).with_name('program_catalog.json').resolve(strict=True)
+    catalog_bytes = catalog_path.read_bytes()
+    assert hashlib.sha256(catalog_bytes).hexdigest() == CATALOG_SHA
+    catalog = json.loads(catalog_bytes)
+    programs = catalog['build_profiles'][args.build_profile]
+    corpus = args.build_profile == 'cat-head-wc-v1'
+    make_name = 'corpus-only' if corpus else 'cat-only'
+    makefile = ('.PHONY: corpus-only\ncorpus-only: $(BUILT_SOURCES)\n\t$(MAKE) -j1 -f Makefile '
+                + ' '.join('src/'+name for name in programs) + '\n') if corpus else MAKEFILE
     assert re.fullmatch('[0-9a-f]{40}', args.revision) and Path.cwd().resolve() == ROOT
     work = args.work.absolute(); archive = args.archive.resolve(strict=True)
     assert work == work.resolve() and work.is_relative_to(ROOT / 'ignored') and work != ROOT / 'ignored'
@@ -76,7 +87,9 @@ def main():
     helper = ROOT / 'evaluation/admission/processes.py'
     adapter = Path(__file__).with_name('configure_join.py').resolve(strict=True)
     tools = ['gcc', 'as', 'ld', 'ar', 'ranlib', 'make', 'tar', 'xz', 'perl', 'rpm', 'prlimit', 'env', 'du', 'git', 'sh']
-    frozen = {str(p): pin(p) for p in [Path(__file__).resolve(), helper, adapter, archive, Path(sys.executable), *[Path('/usr/bin') / n for n in tools]]}
+    frozen = {str(p): pin(p) for p in [Path(__file__).resolve(), catalog_path, helper, adapter, archive, Path(sys.executable), *[Path('/usr/bin') / n for n in tools]]}
+    assert frozen[str(catalog_path)]['sha256'] == CATALOG_SHA
+    assert git('ls-files', '--error-unmatch', str(catalog_path.relative_to(ROOT))).strip()
     assert frozen[str(helper)]['sha256'] == OWNER_SHA
     assert frozen[str(adapter)]['sha256'] == 'd78402d45355a733250e8e8bbef88a7f4c335de9e02bc067d0c7f37c490b33a9'
     assert git('ls-files', '--error-unmatch', str(adapter.relative_to(ROOT))).strip()
@@ -89,16 +102,18 @@ def main():
     unchanged()
     spec = importlib.util.spec_from_file_location('cat_build_owner', helper)
     owner = importlib.util.module_from_spec(spec); spec.loader.exec_module(owner)
-    logs = ROOT / 'target/evaluation/direct-program-cat' / work.name
+    logs = ROOT / ('target/evaluation/direct-program-coreutils-corpus' if corpus else 'target/evaluation/direct-program-cat') / work.name
     assert not logs.exists(); work.mkdir(); logs.mkdir(parents=True)
     (work / 'tmp').mkdir(); (work / 'build').mkdir()
-    (work / 'cat-only.mk').write_text(MAKEFILE)
-    frozen[str(work / 'cat-only.mk')] = pin(work / 'cat-only.mk')
+    (work / (make_name+'.mk')).write_text(makefile)
+    frozen[str(work / (make_name+'.mk'))] = pin(work / (make_name+'.mk'))
     receipt = dict(status='FAILED', revision=args.revision, tree=git('rev-parse', 'HEAD^{tree}').decode().strip(),
                    inputs=frozen, cpus=cpus, environment=env, slot_ceilings=CEILINGS,
                    scratch_admission_bytes=SCRATCH, scratch_is_quota=False, subject_executions=0,
                    python=sys.version, load_before=os.getloadavg(), results=[], outcomes={n: 'UNOBSERVED' for n in ('metadata', 'extract', 'configure', 'make')},
                    prior_failed_attempt=dict(path='ignored/direct-program-v1/cat-build-v1/closed.json', bytes=22533, sha256='100d807e4d74750acd61d71ef4138559ebc1f46d8dea0dc14f3b6cc2e716d4f2', status='FAILED', configure_leader=0, outer_termination='descendants_after_exit', reaped=2, make='UNOBSERVED', child_exit_statuses='not retained; no claim both were zombies'))
+    if corpus:
+        receipt.update(build_profile=args.build_profile, programs=programs, artifacts={name: None for name in programs}, artifact_outcomes={name: 'UNOBSERVED' for name in programs})
     durable(work / 'planned.json', receipt)
     safe, before_done = True, False
     def run(name, argv, cpu, wall, cwd=ROOT, address_space=2 * 1024**3, file_bytes=64 * MIB):
@@ -159,7 +174,7 @@ def main():
         commands = [('metadata', [sys.executable, '-I', '-B', '-c', METADATA], 30, 60, ROOT),
                     ('extract', ['/usr/bin/tar', '-xJf', str(archive), '-C', str(work), '--no-same-owner', '--exclude=coreutils-9.5/po/*.po', '--exclude=coreutils-9.5/po/*.gmo'], 30, 60, ROOT),
                     ('configure', [sys.executable, '-I', '-B', str(adapter), '--receipt', str(work / 'configure-join.json'), '--', str(work / 'coreutils-9.5/configure'), '--disable-nls', '--disable-dependency-tracking', '--disable-acl', '--disable-xattr', '--disable-libcap', '--without-libgmp', '--without-selinux'], 180, 300, work / 'build'),
-                    ('make', ['/usr/bin/make', '-j1', '-f', 'Makefile', '-f', str(work / 'cat-only.mk'), 'cat-only'], 300, 600, work / 'build')]
+                    ('make', ['/usr/bin/make', '-j1', '-f', 'Makefile', '-f', str(work / (make_name+'.mk')), make_name], 300, 600, work / 'build')]
         for name, argv, cpu, wall, cwd in commands:
             receipt['outcomes'][name] = 'DISPATCHED_UNKNOWN'
             raw = run(name, argv, cpu, wall, cwd)
@@ -168,11 +183,16 @@ def main():
             receipt['outcomes'][name] = 'PASS'
         assert source_inventory() == receipt['extracted_source_sha256']
         receipt['configuration'] = {name: pin(work / 'build' / name) for name in ('config.log', 'config.status', 'Makefile', 'lib/config.h')}
-        product = work / 'build/src/cat'; receipt['artifact'] = pin(product)
-        with product.open('rb') as stream: header = stream.read(64)
-        receipt['artifact']['header_hex'] = header.hex()
-        assert len(header) == 64 and header[:7] == b'\x7fELF\x02\x01\x01' and int.from_bytes(header[16:18], 'little') == 2 and int.from_bytes(header[18:20], 'little') == 62
-        assert int.from_bytes(header[20:24], 'little') == 1 and int.from_bytes(header[52:54], 'little') == 64 and product.stat().st_mode & 0o111
+        for name in programs:
+            if corpus: receipt['artifact_outcomes'][name] = 'FAILED'
+            product = work / ('build/src/'+name); artifact = pin(product)
+            if corpus: receipt['artifacts'][name] = artifact
+            else: receipt['artifact'] = artifact
+            with product.open('rb') as stream: header = stream.read(64)
+            artifact['header_hex'] = header.hex()
+            assert len(header) == 64 and header[:7] == b'\x7fELF\x02\x01\x01' and int.from_bytes(header[16:18], 'little') == 2 and int.from_bytes(header[18:20], 'little') == 62
+            assert int.from_bytes(header[20:24], 'little') == 1 and int.from_bytes(header[52:54], 'little') == 64 and product.stat().st_mode & 0o111
+            if corpus: receipt['artifact_outcomes'][name] = 'PASS'
         receipt['build_passed'] = True
     except BaseException as error:
         receipt['error'] = type(error).__name__ + ': ' + str(error)

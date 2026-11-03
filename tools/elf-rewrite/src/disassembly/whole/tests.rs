@@ -2070,3 +2070,740 @@ fn whole_packed_overlapping_preserves_direct_outputs_and_carrier_limits() {
             .contains(PACKED_OVERLAPPING_METADATA)
     );
 }
+
+fn fixed_exec_indexed_fixture(jump: &[u8], object_type: u64) -> (Vec<u8>, String, String) {
+    let (mut original, _) = fixture(0, 0);
+    put(&mut original, 16, 2, object_type);
+    original[0x1100..0x1100 + jump.len()].copy_from_slice(jump);
+    original[0x1100 + jump.len()] = 0xc3;
+    let end = PC + jump.len() as u64;
+    let text = format!(
+        "LI2DISASM 1\noriginal {}\ncontract complete-code no-overlap no-code-as-data private-image\nregion {PC} 4352 {}\nhead {PC} {}\nhead {end} c3\nregion {HOOK} 73472 1\nhead {HOOK} c3\n",
+        digest(&original),
+        jump.len() + 1,
+        ledger::hex(jump)
+    );
+    let mut p = policy(&original, &text, 0);
+    let target = BASE + 0x40000;
+    writeln!(p, "search 1 B1 0 80 1 none 1 1\nallocation 1 selected {target} 1 4096 {target}:4096\nallocation 1 victim {target} 1 4096 {target}:4096").unwrap();
+    (original, text, p)
+}
+
+fn fixed_exec_readback<'a>(
+    bytes: &'a [u8],
+    headers: &'a [usize],
+) -> crate::fixed_exec::OutputReadback<'a> {
+    crate::fixed_exec::OutputReadback {
+        bytes,
+        original_to_output_header: headers,
+        max_program_headers: 64,
+    }
+}
+
+#[test]
+fn fixed_exec_actual_indexed_encoder_carrier_route_and_legacy_refusals() {
+    use crate::carrier::elf64::{Elf64, ElfVaddr, ParseLimits, SegmentType};
+    use iced_x86::{Code, Decoder, DecoderOptions};
+    for jump in [
+        vec![0xff, 0x24, 0xc5, 0x60, 0x76, 0x40, 0],
+        vec![0xff, 0x24, 0xc5, 0x20, 0x7a, 0x40, 0],
+        vec![0xff, 0x24, 0xc5, 0x78, 0x7a, 0x40, 0],
+        vec![0xff, 0x24, 0xc5, 0x78, 0x7c, 0x40, 0],
+        vec![0xff, 0x24, 0xc5, 0x78, 0x7e, 0x40, 0],
+        vec![0x42, 0xff, 0x24, 0xe5, 0x18, 0x84, 0x40, 0],
+    ] {
+        let (original, text, p) = fixed_exec_indexed_fixture(&jump, 2);
+        let selected = bind(&original, &text, &p).unwrap();
+        let saved = selected.manifest().to_vec();
+        let old =
+            crate::prepare_disassembly_whole_packed_overlapping_neighbors(&original, &selected)
+                .unwrap();
+        assert!(!old.candidate_complete());
+        assert_eq!(old.reports().len(), 1);
+        assert!(
+            old.reports()[0]
+                .diagnostics
+                .contains("RuntimeAbsoluteFixup")
+        );
+        assert!(!old.files().contains_key("candidate.elf"));
+        let product = crate::prepare_disassembly_whole_fixed_exec_packed_overlapping_neighbors(
+            &original, &selected,
+        )
+        .unwrap();
+        assert!(product.candidate_complete(), "{:?}", product.reports());
+        assert!(!product.qualification_complete());
+        assert_eq!(product.reports().len(), 1);
+        assert!(product.reports()[0].candidate_emitted && product.reports()[0].refusal.is_none());
+        assert_eq!(
+            product.reports()[0].core_tactic,
+            Some(li2core::engine::Tactic::Relocation)
+        );
+        let binding = product.fixed_image_binding().unwrap();
+        assert_eq!(binding.identity().source.0, ContentId::of(&original).0);
+        assert_eq!(
+            (
+                binding.domain(),
+                binding.identity().generation,
+                binding.required_load_bias()
+            ),
+            (1, 1, 0)
+        );
+        let original_elf = Elf64::parse(
+            &original,
+            ParseLimits {
+                max_program_headers: 64,
+            },
+        )
+        .unwrap();
+        let bytes = &product.files()["candidate.elf"];
+        let written = Elf64::parse(
+            bytes,
+            ParseLimits {
+                max_program_headers: 64,
+            },
+        )
+        .unwrap();
+        // This fixture has two original LOADs and no PT_PHDR. The carrier
+        // inserts PT_PHDR at zero, shifting both originals by one. Compare all
+        // 56 on-disk bytes independently of its internal header map.
+        assert_eq!(original_elf.program_headers().len(), 2);
+        assert_eq!(
+            written.program_headers()[0].kind,
+            SegmentType::ProgramHeaders
+        );
+        for load in original_elf.segments(SegmentType::Load) {
+            let before = original_elf.header().program_offset.0 as usize + load.index * 56;
+            let after = written.header().program_offset.0 as usize + (load.index + 1) * 56;
+            assert_eq!(&original[before..before + 56], &bytes[after..after + 56]);
+        }
+        let ledger_text = std::str::from_utf8(&product.files()["ledger.tsv"]).unwrap();
+        assert!(ledger_text.contains("bias_policy\tfixed-exec-zero-bias-indexed-jump32-v1\n"));
+        assert_eq!(
+            ledger_text
+                .lines()
+                .filter(|line| line.starts_with("unmet-fixed-image-binding\t"))
+                .count(),
+            1
+        );
+        assert_eq!(
+            ledger_text
+                .lines()
+                .filter(|line| line.starts_with("field\t") && line.contains("\tFixedSigned32\t"))
+                .count(),
+            1
+        );
+        let decoded_original = Decoder::with_ip(64, &jump, PC, DecoderOptions::NONE).decode();
+        let mut found = 0;
+        for line in ledger_text
+            .lines()
+            .filter(|line| line.starts_with("image\t"))
+        {
+            let row: Vec<_> = line.split('\t').collect();
+            let address: u64 = row[3].parse().unwrap();
+            let image = &product.files()[row[6]];
+            assert_eq!(
+                written
+                    .executable_bytes(ElfVaddr(address), image.len() as u64)
+                    .unwrap(),
+                image
+            );
+            for instruction in Decoder::with_ip(64, image, address, DecoderOptions::NONE) {
+                if instruction.code() == Code::Jmp_rm64 {
+                    assert_eq!(
+                        instruction.memory_displacement64(),
+                        decoded_original.memory_displacement64()
+                    );
+                    assert_eq!(instruction.memory_index(), decoded_original.memory_index());
+                    assert_eq!(instruction.memory_index_scale(), 8);
+                    found += 1;
+                }
+            }
+        }
+        assert_eq!(found, 1);
+        assert_eq!(selected.manifest(), saved);
+        assert_eq!(
+            product.files()["disassembly-inventory.tsv"],
+            old.files()["disassembly-inventory.tsv"]
+        );
+        assert_eq!(product.files()["disassembly-policy.txt"], p.as_bytes());
+    }
+}
+
+#[test]
+fn fixed_exec_binding_keeps_complete_atomic_refusals_and_both_pair_obligations() {
+    let jump = [0xff, 0x24, 0xc5, 0x60, 0x76, 0x40, 0];
+    let (original, text, p) = fixed_exec_indexed_fixture(&jump, 3);
+    let selected = bind(&original, &text, &p).unwrap();
+    let error = crate::prepare_disassembly_whole_fixed_exec_packed_overlapping_neighbors(
+        &original, &selected,
+    )
+    .unwrap_err();
+    assert_eq!(error.stage, "fixed-exec-binding");
+    let mut changed = original.clone();
+    changed[0x1100] ^= 1;
+    assert_eq!(
+        crate::prepare_disassembly_whole_fixed_exec_packed_overlapping_neighbors(
+            &changed, &selected
+        )
+        .unwrap_err()
+        .stage,
+        "original-identity"
+    );
+
+    let (original, text, p) = overlapping_fixture(false);
+    let selected = bind(&original, &text, &p).unwrap();
+    let old = crate::prepare_disassembly_whole_packed_overlapping_neighbors(&original, &selected)
+        .unwrap();
+    let product = crate::prepare_disassembly_whole_fixed_exec_packed_overlapping_neighbors(
+        &original, &selected,
+    )
+    .unwrap();
+    assert!(old.candidate_complete() && product.candidate_complete());
+    assert_eq!(old.files()["report.tsv"], product.files()["report.tsv"]);
+    let ledger = std::str::from_utf8(&product.files()["ledger.tsv"]).unwrap();
+    assert_eq!(
+        ledger
+            .lines()
+            .filter(|line| line.starts_with("unmet-fixed-image-binding\t"))
+            .count(),
+        2
+    );
+    for (name, bytes) in old
+        .files()
+        .iter()
+        .filter(|(name, _)| name.starts_with("image-"))
+    {
+        assert_eq!(&product.files()[name], bytes);
+    }
+    let (original, text, p) = packed_rx_fixture();
+    let p = p.replace("262144 64 4294967296", "262144 4 4294967296");
+    let selected = bind(&original, &text, &p).unwrap();
+    let product = crate::prepare_disassembly_whole_fixed_exec_packed_overlapping_neighbors(
+        &original, &selected,
+    )
+    .unwrap();
+    assert!(!product.candidate_complete());
+    assert_eq!(
+        product.reports().iter().map(|r| r.id).collect::<Vec<_>>(),
+        [1, 2]
+    );
+    assert!(
+        product
+            .reports()
+            .iter()
+            .all(|r| r.refusal_code == Some(10_002) && !r.candidate_emitted)
+    );
+    assert!(!product.files().contains_key("candidate.elf"));
+    assert!(!product.files().contains_key("source.li2sparse"));
+    assert_eq!(
+        product.files()["disassembly-inventory.tsv"],
+        selected.files["disassembly-inventory.tsv"]
+    );
+}
+
+#[test]
+fn fixed_exec_writer_rejects_wrong_source_type_entry_and_original_load_records() {
+    use crate::carrier::elf64::{Elf64, ParseLimits, SegmentType};
+    use li2core::contracts::{CodeIdentity, SourceIdentity};
+    let (original, text, p) =
+        fixed_exec_indexed_fixture(&[0xff, 0x24, 0xc5, 0x60, 0x76, 0x40, 0], 2);
+    let selected = bind(&original, &text, &p).unwrap();
+    let product = crate::prepare_disassembly_whole_fixed_exec_packed_overlapping_neighbors(
+        &original, &selected,
+    )
+    .unwrap();
+    assert!(product.candidate_complete());
+    let binding = product.fixed_image_binding().unwrap();
+    let elf = Elf64::parse(
+        &original,
+        ParseLimits {
+            max_program_headers: 64,
+        },
+    )
+    .unwrap();
+    let bytes = &product.files()["candidate.elf"];
+    let dynamic =
+        crate::carrier::dynamic::inspect(&elf, crate::carrier::dynamic::Limits::default()).unwrap();
+    // Independent fixture map: inserted PT_PHDR, then both original LOADs.
+    assert_eq!(elf.program_headers().len(), 2);
+    let headers = [1, 2];
+    // This control isolates the writer's source/LOAD checks. The preceding
+    // actual-route control and core producer controls cover every image field.
+    crate::fixed_exec::validate_output(
+        &elf,
+        binding,
+        &[],
+        fixed_exec_readback(bytes, &headers),
+        &dynamic,
+        &[],
+    )
+    .unwrap();
+    let mut foreign = original.clone();
+    foreign[0x11800] ^= 1;
+    let foreign_elf = Elf64::parse(
+        &foreign,
+        ParseLimits {
+            max_program_headers: 64,
+        },
+    )
+    .unwrap();
+    assert!(
+        crate::fixed_exec::validate_output(
+            &foreign_elf,
+            binding,
+            &[],
+            fixed_exec_readback(bytes, &headers),
+            &dynamic,
+            &[]
+        )
+        .is_err()
+    );
+    for identity in [
+        CodeIdentity {
+            source: SourceIdentity([0xff; 32]),
+            ..binding.identity()
+        },
+        CodeIdentity {
+            mapping: 2,
+            ..binding.identity()
+        },
+    ] {
+        assert!(crate::fixed_exec::bind(&elf, identity, 1).is_err());
+    }
+    let mut altered = bytes.to_vec();
+    put(&mut altered, 16, 2, 3);
+    assert!(
+        crate::fixed_exec::validate_output(
+            &elf,
+            binding,
+            &[],
+            fixed_exec_readback(&altered, &headers),
+            &dynamic,
+            &[]
+        )
+        .is_err()
+    );
+    let mut altered = bytes.to_vec();
+    put(&mut altered, 24, 8, PC + 1);
+    assert!(
+        crate::fixed_exec::validate_output(
+            &elf,
+            binding,
+            &[],
+            fixed_exec_readback(&altered, &headers),
+            &dynamic,
+            &[]
+        )
+        .is_err()
+    );
+    let written = Elf64::parse(
+        bytes,
+        ParseLimits {
+            max_program_headers: 64,
+        },
+    )
+    .unwrap();
+    let offset = written.header().program_offset.0 as usize;
+    let original_load = elf.segments(SegmentType::Load).next().unwrap();
+    let mut altered = bytes.to_vec();
+    put(
+        &mut altered,
+        offset + headers[original_load.index] * 56 + 16,
+        8,
+        original_load.vaddr.0 + 4096,
+    );
+    assert!(
+        crate::fixed_exec::validate_output(
+            &elf,
+            binding,
+            &[],
+            fixed_exec_readback(&altered, &headers),
+            &dynamic,
+            &[]
+        )
+        .is_err()
+    );
+    for mapping in [
+        vec![],
+        vec![1],
+        vec![1, 2, 3],
+        vec![0, 2],
+        vec![1, 1],
+        vec![2, 1],
+        vec![1, usize::MAX],
+        vec![2, 3],
+    ] {
+        assert!(
+            crate::fixed_exec::validate_output(
+                &elf,
+                binding,
+                &[],
+                fixed_exec_readback(bytes, &mapping),
+                &dynamic,
+                &[],
+            )
+            .is_err(),
+            "mapping {mapping:?}"
+        );
+    }
+    // Every original LOAD field stays exact, including p_paddr, which does not
+    // affect the virtual-address mapping used by the parser.
+    assert!(original_load.file_size > 0);
+    for (field, width, value) in [
+        (0, 4, 4),
+        (4, 4, u64::from(original_load.flags.0 ^ 1)),
+        (8, 8, original_load.offset.0 + 4096),
+        (24, 8, original_load.physical_address + 1),
+        (32, 8, original_load.file_size - 1),
+        (40, 8, original_load.memory_size + 4096),
+        (48, 8, 8192),
+    ] {
+        let mut altered = bytes.to_vec();
+        let at = offset + headers[original_load.index] * 56 + field;
+        put(&mut altered, at, width, value);
+        assert_ne!(&altered[at..at + width], &bytes[at..at + width]);
+        assert!(
+            crate::fixed_exec::validate_output(
+                &elf,
+                binding,
+                &[],
+                fixed_exec_readback(&altered, &headers),
+                &dynamic,
+                &[],
+            )
+            .is_err(),
+            "LOAD field {field}"
+        );
+    }
+}
+
+#[test]
+fn fixed_exec_real_rela_write_on_original_disp32_refuses_after_core_success() {
+    use crate::carrier::elf64::{Elf64, ParseLimits};
+    let jump = [0xff, 0x24, 0xc5, 0x60, 0x76, 0x40, 0];
+    let (mut original, mut text, mut p) = fixed_exec_indexed_fixture(&jump, 2);
+    let old_digest = digest(&original);
+    let old_ledger = digest(text.as_bytes());
+    original.resize(0x13000, 0);
+    put(&mut original, 56, 2, 4);
+    // Distinct non-executable RW owner of dynamic metadata and its RELA table.
+    // R_X86_64_32 writes exactly the original indexed displacement, with no
+    // DT_TEXTREL flag: the real source-dependency check must reject the write.
+    for (index, kind, flags, offset, length, align) in
+        [(2, 1, 6, 0x12000, 4096, 4096), (3, 2, 6, 0x12200, 64, 8)]
+    {
+        for (field, width, value) in [
+            (0, 4, kind),
+            (4, 4, flags),
+            (8, 8, offset),
+            (16, 8, BASE + offset),
+            (24, 8, BASE + offset),
+            (32, 8, length),
+            (40, 8, length),
+            (48, 8, align),
+        ] {
+            put(&mut original, 64 + index * 56 + field, width, value);
+        }
+    }
+    for (index, (tag, value)) in [(7, BASE + 0x12800), (8, 24), (9, 24)]
+        .into_iter()
+        .enumerate()
+    {
+        put(&mut original, 0x12200 + index * 16, 8, tag);
+        put(&mut original, 0x12208 + index * 16, 8, value);
+    }
+    put(&mut original, 0x12800, 8, PC + 3);
+    put(&mut original, 0x12808, 8, 10);
+    put(&mut original, 0x12810, 8, 0x407660);
+    text = text.replacen(&old_digest, &digest(&original), 1);
+    p = p.replacen(&old_digest, &digest(&original), 1).replacen(
+        &old_ledger,
+        &digest(text.as_bytes()),
+        1,
+    );
+    let elf = Elf64::parse(
+        &original,
+        ParseLimits {
+            max_program_headers: 64,
+        },
+    )
+    .unwrap();
+    let dynamic =
+        crate::carrier::dynamic::inspect(&elf, crate::carrier::dynamic::Limits::default()).unwrap();
+    assert_eq!(dynamic.writes.len(), 1);
+    assert_eq!(
+        (
+            dynamic.writes[0].range.start().0,
+            dynamic.writes[0].range.len()
+        ),
+        (PC + 3, 4)
+    );
+    let selected = bind(&original, &text, &p).unwrap();
+    let old = crate::prepare_disassembly_whole_packed_overlapping_neighbors(&original, &selected)
+        .unwrap();
+    assert!(
+        old.reports()[0]
+            .diagnostics
+            .contains("RuntimeAbsoluteFixup")
+    );
+    let product = crate::prepare_disassembly_whole_fixed_exec_packed_overlapping_neighbors(
+        &original, &selected,
+    )
+    .unwrap();
+    assert!(!product.candidate_complete());
+    let report = &product.reports()[0];
+    assert_eq!(
+        report.core_tactic,
+        Some(li2core::engine::Tactic::Relocation)
+    );
+    assert_eq!(report.refusal.as_ref().unwrap().stage, "source-relocation");
+    assert!(
+        report
+            .refusal
+            .as_ref()
+            .unwrap()
+            .detail
+            .contains("SourceRelocation")
+    );
+    assert!(!report.candidate_emitted);
+    assert!(!product.files().contains_key("candidate.elf"));
+    assert!(!product.files().contains_key("source.li2sparse"));
+    assert_eq!(
+        product.files()["disassembly-inventory.tsv"],
+        selected.files["disassembly-inventory.tsv"]
+    );
+    assert_eq!(product.files()["disassembly-policy.txt"], p.as_bytes());
+}
+
+#[test]
+fn fixed_exec_portable_and_embedded_metadata_require_exact_binding_policy() {
+    use crate::{Compatibility, Metadata};
+    let (original, text, p) = packed_rx_fixture();
+    let selected = bind(&original, &text, &p).unwrap();
+    let old = crate::prepare_disassembly_whole_packed_overlapping_neighbors(&original, &selected)
+        .unwrap();
+    let fixed = crate::prepare_disassembly_whole_fixed_exec_packed_overlapping_neighbors(
+        &original, &selected,
+    )
+    .unwrap();
+    assert!(old.candidate_complete() && fixed.candidate_complete());
+    assert_eq!(old.files()["selection.txt"], fixed.files()["selection.txt"]);
+    assert_eq!(old.files()["target.tsv"], fixed.files()["target.tsv"]);
+    assert_eq!(old.files()["report.tsv"], fixed.files()["report.tsv"]);
+    assert!(!old.files().contains_key("binding-policy.tsv"));
+    let selection_id = ContentId::of(selected.manifest());
+    let legacy = Compatibility {
+        planner: li2core::contracts::CONTRACT_VERSION,
+        encoder: 1,
+        hook_abi: 1,
+        arena: 1,
+        target: ContentId::of(&old.files()["target.tsv"]),
+        binding: selection_id,
+    };
+    let old_metadata = Metadata::decode(
+        &old.files()["metadata.li2meta"],
+        &legacy,
+        formats::Limits::default(),
+    )
+    .unwrap();
+    old_metadata.verify_original(&original).unwrap();
+    old_metadata
+        .verify_selection(selection_id, &[1, 2])
+        .unwrap();
+    assert_eq!(old_metadata.compatibility(), &legacy);
+    let binding = fixed.fixed_image_binding().unwrap();
+    assert_eq!(binding.identity().source.0, ContentId::of(&original).0);
+    assert_eq!(
+        (
+            binding.identity().mapping,
+            binding.identity().generation,
+            binding.domain(),
+            binding.required_load_bias()
+        ),
+        (1, 1, 1, 0)
+    );
+    // Independent spelling binds the profile, source, selection, domain,
+    // generation, signed operand policy and unresolved zero-bias obligation.
+    let expected = format!(
+        "LI2FIXED-EXEC-BINDING\t1\nplanner_profile\twhole-program-packed-overlapping-neighbors-4096\naddress_binding\tfixed-exec-zero-bias-indexed-jump32-v1\nrequired_object_type\tET_EXEC\nrequired_load_bias\t0\nfixed_binding_qualification\tunresolved-runtime-loader-obligation\nselection_sha256\t{}\nsource_sha256\t{}\nmapping\t1\ngeneration\t1\ndomain\t1\nfield_encoding\toriginal-indexed-jump-signed32-v1\n",
+        ledger::hex(&selection_id.0),
+        digest(&original),
+    );
+    assert_eq!(fixed.files()["binding-policy.tsv"], expected.as_bytes());
+    assert_eq!(
+        crate::fixed_exec_binding_policy(binding, selection_id),
+        expected.as_bytes()
+    );
+    let declared = Compatibility {
+        binding: ContentId::of(expected.as_bytes()),
+        ..legacy.clone()
+    };
+    assert_ne!(declared.binding, legacy.binding);
+    let bytes = &fixed.files()["metadata.li2meta"];
+    assert!(matches!(
+        Metadata::decode(bytes, &legacy, formats::Limits::default()),
+        Err(formats::Error::Incompatible)
+    ));
+    assert!(matches!(
+        Metadata::decode(
+            &old.files()["metadata.li2meta"],
+            &declared,
+            formats::Limits::default()
+        ),
+        Err(formats::Error::Incompatible)
+    ));
+    let decoded = Metadata::decode(bytes, &declared, formats::Limits::default()).unwrap();
+    decoded.verify_original(&original).unwrap();
+    decoded.verify_selection(selection_id, &[1, 2]).unwrap();
+    assert!(decoded.declares_complete_trampoline_coverage());
+    for (field, from, to) in [
+        (
+            "selection_sha256",
+            ledger::hex(&selection_id.0),
+            "00".repeat(32),
+        ),
+        ("source_sha256", digest(&original), "01".repeat(32)),
+        ("mapping", "1".into(), "2".into()),
+        ("generation", "1".into(), "2".into()),
+        ("domain", "1".into(), "2".into()),
+        ("required_object_type", "ET_EXEC".into(), "ET_DYN".into()),
+        ("required_load_bias", "0".into(), "4096".into()),
+        (
+            "field_encoding",
+            "original-indexed-jump-signed32-v1".into(),
+            "relative32".into(),
+        ),
+    ] {
+        let before = format!("{field}\t{from}\n");
+        assert_eq!(expected.matches(&before).count(), 1);
+        let changed = expected.replace(&before, &format!("{field}\t{to}\n"));
+        let incompatible = Compatibility {
+            binding: ContentId::of(changed.as_bytes()),
+            ..declared.clone()
+        };
+        assert!(
+            matches!(
+                Metadata::decode(bytes, &incompatible, formats::Limits::default()),
+                Err(formats::Error::Incompatible)
+            ),
+            "{field}"
+        );
+    }
+    // The carrier embeds the digest of its initial metadata. On a complete
+    // candidate its outcomes equal the final portable metadata outcomes.
+    let marker = b"LI2TOOL-CANDIDATE-UNREADY-V1\0";
+    for product in [&old, &fixed] {
+        let candidate = &product.files()["candidate.elf"];
+        let positions: Vec<_> = candidate
+            .windows(marker.len())
+            .enumerate()
+            .filter_map(|(at, value)| (value == marker).then_some(at))
+            .collect();
+        assert_eq!(positions.len(), 1);
+        let at = positions[0] + marker.len();
+        assert_eq!(
+            &candidate[at..at + 32],
+            &ContentId::of(&product.files()["metadata.li2meta"]).0
+        );
+    }
+}
+
+#[test]
+fn fixed_exec_readback_uses_actual_low_gap_high_interleaved_header_map() {
+    use crate::carrier::{
+        self,
+        elf64::{Elf64, ElfVaddr, ParseLimits, SegmentType},
+    };
+    use li2core::contracts::{CodeIdentity, SourceIdentity};
+    let (mut original, _) = fixture(0, 0);
+    // Move the second original LOAD to leave a real gap. This input is bound
+    // afresh; it is never a mutation of a previously bound image.
+    put(&mut original, 24, 8, BASE + 0x40100);
+    put(&mut original, 64 + 56 + 16, 8, BASE + 0x40000);
+    put(&mut original, 64 + 56 + 24, 8, BASE + 0x40000);
+    let elf = Elf64::parse(
+        &original,
+        ParseLimits {
+            max_program_headers: 64,
+        },
+    )
+    .unwrap();
+    let identity = CodeIdentity {
+        source: SourceIdentity(ContentId::of(&original).0),
+        mapping: 1,
+        generation: 1,
+    };
+    let binding = crate::fixed_exec::bind(&elf, identity, 1).unwrap();
+    let images: Vec<_> = [BASE - 0x10000, BASE + 0x30000, BASE + 0x80000]
+        .into_iter()
+        .map(|pc| carrier::RxImage {
+            entry: ElfVaddr(pc),
+            bytes: vec![0xc3],
+        })
+        .collect();
+    let output = carrier::append_exec_carrier_with_interleaved_loads(
+        &elf,
+        carrier::ImageRequest {
+            carrier_vaddr: ElfVaddr(BASE + 0x20000),
+            payload: b"",
+            images: &images,
+            source_dependencies: &[],
+        },
+        &[],
+        carrier::ImagePolicy {
+            layout: carrier::CarrierPolicy {
+                page_size: 4096,
+                user_address_limit: 1 << 47,
+                max_added_file_bytes: 65536,
+                max_output_file_bytes: 262144,
+                max_program_headers: 64,
+                max_virtual_span: 1048576,
+            },
+            dynamic: carrier::dynamic::Limits::default(),
+            max_images: 3,
+            max_new_load_pages: 4,
+        },
+    )
+    .unwrap();
+    // PHDR, low image, original LOAD, carrier, gap image, original LOAD, high image.
+    assert_eq!(output.original_to_output_header, [2, 5]);
+    let written = Elf64::parse(
+        output.bytes(),
+        ParseLimits {
+            max_program_headers: 64,
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        written.program_headers()[0].kind,
+        SegmentType::ProgramHeaders
+    );
+    for (old, index) in elf.program_headers().iter().zip([2, 5]) {
+        let before = elf.header().program_offset.0 as usize + old.index * 56;
+        let after = written.header().program_offset.0 as usize + index * 56;
+        assert_eq!(
+            &original[before..before + 56],
+            &output.bytes()[after..after + 56]
+        );
+    }
+    crate::fixed_exec::validate_output(
+        &elf,
+        binding,
+        &[],
+        fixed_exec_readback(output.bytes(), &output.original_to_output_header),
+        &output.dynamic,
+        &[],
+    )
+    .unwrap();
+    assert!(
+        crate::fixed_exec::validate_output(
+            &elf,
+            binding,
+            &[],
+            fixed_exec_readback(output.bytes(), &[1, 2]),
+            &output.dynamic,
+            &[]
+        )
+        .is_err()
+    );
+}

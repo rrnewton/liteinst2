@@ -56,7 +56,7 @@ use crate::artifact_fragments;
 use crate::controls::{ControlledAction, PointObservationAction, ProbeControl};
 use crate::emission::{
     ArtifactEmission, ArtifactField, ArtifactFieldEncoding, ArtifactImageMetadata,
-    ArtifactRequirement,
+    ArtifactRequirement, FixedOperandSource,
 };
 use crate::frame_trace::{
     FrameCallKind, FrameEffect, FrameEmission, FrameEntryOrigin, FrameRecorder, FrameStage,
@@ -3153,8 +3153,19 @@ impl TrampolinePlan {
                 },
                 len: bytes.len() as u64,
             };
-            bytes = fixups::link_bias_invariant(ImageId(address), &bytes, &fields, &[placement])
-                .map_err(artifact_fixup_error)?;
+            bytes = match input.fixed_image() {
+                Some(binding) => fixups::link_fixed_zero_bias(
+                    ImageId(address),
+                    &bytes,
+                    &fields,
+                    &[placement],
+                    BiasDomain(binding.domain()),
+                ),
+                None => {
+                    fixups::link_bias_invariant(ImageId(address), &bytes, &fields, &[placement])
+                }
+            }
+            .map_err(artifact_fixup_error)?;
             Some(artifact_metadata(
                 input,
                 address,
@@ -4094,7 +4105,23 @@ mod fitting;
 use fitting::OrderedPreparation;
 pub(crate) use fitting::PreparedArtifact;
 mod artifact_allocation;
+pub(crate) use artifact_allocation::validate_fields as validate_artifact_fields;
 pub(crate) use artifact_allocation::{ArtifactTrampolineAllocation, EntryVeneerPlacement};
+
+// Narrow opt-in: the ordinary indexed-memory refusal still covers loads,
+// LEAs, truncated addressing, segment overrides and all other operand forms.
+fn fixed_indexed_jump(instruction: &Instruction) -> bool {
+    instruction.code() == Code::Jmp_rm64
+        && instruction.op_count() == 1
+        && instruction.op0_kind() == OpKind::Memory
+        && instruction.memory_base() == iced_x86::Register::None
+        && instruction.memory_index().is_gpr64()
+        && instruction.memory_index_scale() == 8
+        && instruction.segment_prefix() == iced_x86::Register::None
+        && !instruction.has_lock_prefix()
+        && !instruction.has_rep_prefix()
+        && !instruction.has_repne_prefix()
+}
 
 fn append_artifact_original_fields(
     fields: &mut Vec<Fixup>,
@@ -4110,6 +4137,7 @@ fn append_artifact_original_fields(
             OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64
         );
         let rip = original.is_ip_rel_memory_operand();
+        let indexed = input.fixed_image().is_some() && fixed_indexed_jump(&original);
         // A SIB index does not make a base-less disp32 load-bias invariant.
         // Until its address contribution has an explicit runtime fixup, retain
         // the required refusal rather than omitting a known address field.
@@ -4117,6 +4145,7 @@ fn append_artifact_original_fields(
             && !rip
             && original.memory_base() == iced_x86::Register::None
             && original.memory_index() != iced_x86::Register::None
+            && !indexed
         {
             return Err(TrampolineError::Artifact {
                 reason: crate::emission::ArtifactRefusalKind::RuntimeAbsoluteFixup,
@@ -4127,7 +4156,7 @@ fn append_artifact_original_fields(
             && !rip
             && original.memory_base() == iced_x86::Register::None
             && original.memory_index() == iced_x86::Register::None;
-        if !branch && !rip && !absolute {
+        if !branch && !rip && !absolute && !indexed {
             continue;
         }
         if (branch && original.op0_kind() != OpKind::NearBranch64)
@@ -4209,6 +4238,36 @@ fn append_artifact_original_fields(
                     original_pc: original.ip(),
                 },
             )
+        } else if indexed {
+            // iced represents a sign-extended 64-bit address contribution as
+            // u64; preserve its signed value, not a positive u64 reinterpretation.
+            let signed = original.memory_displacement64() as i64;
+            if !fixed_indexed_jump(&decoded)
+                || decoded.code() != original.code()
+                || decoded.len() != original.len()
+                || decoded.memory_index() != original.memory_index()
+                || decoded.memory_index_scale() != original.memory_index_scale()
+                || decoded.memory_displ_size() != original.memory_displ_size()
+                || decoded.memory_displacement64() != original.memory_displacement64()
+                || constants.displacement_size() != 4
+                || i32::try_from(signed).is_err()
+            {
+                return Err(artifact_error(
+                    "encoder changed fixed indexed-jump address provenance",
+                ));
+            }
+            (
+                constants.displacement_offset(),
+                constants.displacement_size(),
+                Target::Address(RelativeAddress {
+                    domain: BiasDomain(input.profile().bias_domain()),
+                    offset: i128::from(signed),
+                }),
+                Role::OriginalIndexedJump {
+                    original_pc: original.ip(),
+                    instruction_len: original.len(),
+                },
+            )
         } else {
             (
                 constants.displacement_offset(),
@@ -4223,14 +4282,18 @@ fn append_artifact_original_fields(
             .checked_add(decoded.len())
             .ok_or_else(|| artifact_error("original instruction end overflow"))?
             as u64;
-        let encoding = match (absolute, width) {
-            (true, 8) => Encoding::Absolute64,
-            (false, 1) if branch => Encoding::PcRelative8 { next },
-            (false, 4) => Encoding::PcRelative32 { next },
-            _ => {
-                return Err(artifact_error(
-                    "original operand has unsupported relative width",
-                ));
+        let encoding = if indexed {
+            Encoding::FixedSigned32
+        } else {
+            match (absolute, width) {
+                (true, 8) => Encoding::Absolute64,
+                (false, 1) if branch => Encoding::PcRelative8 { next },
+                (false, 4) => Encoding::PcRelative32 { next },
+                _ => {
+                    return Err(artifact_error(
+                        "original operand has unsupported relative width",
+                    ));
+                }
             }
         };
         if local
@@ -4277,6 +4340,12 @@ fn artifact_metadata(
                     (ArtifactFieldEncoding::Relative, next)
                 }
                 Encoding::Delta64 { anchor } => (ArtifactFieldEncoding::Delta, anchor),
+                Encoding::FixedSigned32 if input.fixed_image().is_some() => {
+                    (ArtifactFieldEncoding::FixedSigned32, 0)
+                }
+                Encoding::FixedSigned32 => {
+                    return Err(artifact_error("fixed field lacks its binding"));
+                }
                 Encoding::Absolute64 => {
                     return Err(artifact_error("absolute field escaped artifact linking"));
                 }
@@ -4293,6 +4362,29 @@ fn artifact_metadata(
                     ));
                 }
             };
+            let fixed_source = match field.role {
+                Role::OriginalIndexedJump {
+                    original_pc,
+                    instruction_len,
+                } => {
+                    let instruction =
+                        crate::contracts::AddressRange::new(original_pc, instruction_len).map_err(
+                            |_| artifact_error("fixed original instruction range wraps"),
+                        )?;
+                    if instruction_len < 4 || field.encoding != Encoding::FixedSigned32 {
+                        return Err(artifact_error("fixed source instruction/encoding mismatch"));
+                    }
+                    let displacement =
+                        crate::contracts::AddressRange::new(instruction.end() - 4, 4).map_err(
+                            |_| artifact_error("fixed original displacement range wraps"),
+                        )?;
+                    Some(FixedOperandSource {
+                        instruction,
+                        displacement,
+                    })
+                }
+                _ => None,
+            };
             Ok(ArtifactField {
                 offset: field.offset,
                 width: field.encoding.width(),
@@ -4301,6 +4393,7 @@ fn artifact_metadata(
                 target: target.offset,
                 bias_domain: target.domain.0,
                 role: format!("{:?}", field.role),
+                fixed_source,
             })
         })
         .collect::<Result<Vec<_>, _>>()?;
@@ -4320,6 +4413,7 @@ fn artifact_metadata(
     Ok(ArtifactImageMetadata {
         fields,
         requirements,
+        fixed_image: input.fixed_image(),
     })
 }
 

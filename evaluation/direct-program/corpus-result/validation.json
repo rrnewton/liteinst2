@@ -1,0 +1,449 @@
+{
+  "capacity": {
+    "after-allocated": {
+      "ignored": 12373798912,
+      "target": 7352967168,
+      "total": 19931959296
+    },
+    "after-apparent": {
+      "ignored": 11438617263,
+      "target": 7231650688,
+      "total": 18855926346
+    },
+    "before-allocated": {
+      "ignored": 12370382848,
+      "target": 7339999232,
+      "total": 19915575296
+    },
+    "before-apparent": {
+      "ignored": 11435375215,
+      "target": 7218792968,
+      "total": 18839826578
+    }
+  },
+  "capacity_ceilings": [
+    19994091520,
+    19061190371
+  ],
+  "claim4": "A4 / claim 4 remains open against the strict 20,000-step profile; an 80,000-step pass does not complete it.",
+  "closed_receipt_sha256": "a45942067d6ee7541ff8258b1a1ecdb1e9e9dc90a58180d4404f92fb4efbe403",
+  "cpus": [
+    3,
+    6,
+    20,
+    23,
+    27,
+    30,
+    40,
+    45,
+    54,
+    82,
+    85,
+    102
+  ],
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "load_after": [
+    58.58,
+    57.46,
+    68.65
+  ],
+  "load_before": [
+    58.88,
+    73.96,
+    86.38
+  ],
+  "owners": {
+    "cleanup_complete": true,
+    "normal_zero": 16,
+    "rescued_descendants": 0,
+    "total": 16
+  },
+  "profile": "fixed-exec-correctness-1800-360-v1",
+  "raw_summary_notes": "Workspace raw summary totals include nested child invocations; focused observations overlap each other and the workspace. Serial is a separate execution. Never add these counts as distinct tests.",
+  "reproduce": "cpuset-alloc run --cores 12 --tag corpus-checks-reproduce -- python3.9 -I -B evaluation/direct-program/validate_fixed.py --revision febb3594cad0b864e72ab7eea62efcbfc739a735 --output ignored/corpus-checks-reproduce --toolchain \"$TOOLCHAIN\"",
+  "reproduction_notes": "Use a clean checkout of the exact revision, a fresh output namespace and the offline stable Rust 1.97.1 toolchain. The runner sets CARGO_INCREMENTAL=0, one target, dev/test debug=0, 12 build jobs and harness threads; serial launcher uses one thread. Toolchain version is carried from the prior build receipt, not freshly measured here.",
+  "reservation": "cpuset-alloc reserved these 12 CPUs and applied AllowedCPUs to the whole command tree; actual runner affinity recorded. Root-attested reservation, no independent ledger witness.",
+  "results": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "load_after": [
+        75.25,
+        76.66,
+        87.0
+      ],
+      "load_before": [
+        62.18,
+        74.39,
+        86.45
+      ],
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "fmt",
+      "outcome": "PASS",
+      "raw_summary_count": 0,
+      "raw_summary_totals": null,
+      "seconds": 12.63844641810283,
+      "start_utc": "2026-11-03T00:03:45.669819+00:00",
+      "wall_seconds": 180
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "load_after": [
+        75.25,
+        76.66,
+        87.0
+      ],
+      "load_before": [
+        75.25,
+        76.66,
+        87.0
+      ],
+      "log_sha256": "148008a3dc2c6b75a26c1aeb8523e537a1b87f96be0df0e649a3ed5d2efd948f",
+      "name": "clippy",
+      "outcome": "PASS",
+      "raw_summary_count": 0,
+      "raw_summary_totals": null,
+      "seconds": 0.525865426985547,
+      "start_utc": "2026-11-03T00:03:58.374513+00:00",
+      "wall_seconds": 180
+    },
+    {
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "load_after": [
+        75.25,
+        76.66,
+        87.0
+      ],
+      "load_before": [
+        75.25,
+        76.66,
+        87.0
+      ],
+      "log_sha256": "8a10254974bbd1a52574924f2ba6e2e78269a27b8d61c996e00c4498f15edb56",
+      "name": "check",
+      "outcome": "PASS",
+      "raw_summary_count": 0,
+      "raw_summary_totals": null,
+      "seconds": 0.4293888108804822,
+      "start_utc": "2026-11-03T00:03:58.971207+00:00",
+      "wall_seconds": 180
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "control_flow::"
+      ],
+      "load_after": [
+        75.25,
+        76.66,
+        87.0
+      ],
+      "load_before": [
+        75.25,
+        76.66,
+        87.0
+      ],
+      "log_sha256": "4222f4af7037f04d7852d10bbb56fa22787390e038ef2563cfa35e63ae22f364",
+      "name": "graph",
+      "outcome": "PASS",
+      "raw_summary_count": 1,
+      "raw_summary_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 2
+      },
+      "seconds": 0.07185823796316981,
+      "start_utc": "2026-11-03T00:03:59.468624+00:00",
+      "wall_seconds": 180
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "artifact_fixups::"
+      ],
+      "load_after": [
+        75.25,
+        76.66,
+        87.0
+      ],
+      "load_before": [
+        75.25,
+        76.66,
+        87.0
+      ],
+      "log_sha256": "20fd168756cc7ff6b8944d4d150baa5d56721afe6ab8ec8bc492ea3d2293e3b6",
+      "name": "fixups",
+      "outcome": "PASS",
+      "raw_summary_count": 1,
+      "raw_summary_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 9
+      },
+      "seconds": 0.05801361193880439,
+      "start_utc": "2026-11-03T00:03:59.632410+00:00",
+      "wall_seconds": 180
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "fixed_exec_"
+      ],
+      "load_after": [
+        75.25,
+        76.66,
+        87.0
+      ],
+      "load_before": [
+        75.25,
+        76.66,
+        87.0
+      ],
+      "log_sha256": "aba5daafb15fac647827ecc15271c6580907b18d9da64da75a0de490acf7eb66",
+      "name": "fixed-exec",
+      "outcome": "PASS",
+      "raw_summary_count": 1,
+      "raw_summary_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 5
+      },
+      "seconds": 0.051272687036544085,
+      "start_utc": "2026-11-03T00:03:59.779739+00:00",
+      "wall_seconds": 180
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-rewrite",
+        "--example",
+        "common_sites"
+      ],
+      "load_after": [
+        75.25,
+        76.66,
+        87.0
+      ],
+      "load_before": [
+        75.25,
+        76.66,
+        87.0
+      ],
+      "log_sha256": "eca40d562af94a719452272365c2a74493751793922e820bf9ecec3949b429b2",
+      "name": "offline-permits",
+      "outcome": "PASS",
+      "raw_summary_count": 1,
+      "raw_summary_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 28
+      },
+      "seconds": 0.3949026698246598,
+      "start_utc": "2026-11-03T00:03:59.934082+00:00",
+      "wall_seconds": 180
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-rewrite",
+        "--lib"
+      ],
+      "load_after": [
+        81.65,
+        77.99,
+        87.32
+      ],
+      "load_before": [
+        75.25,
+        76.66,
+        87.0
+      ],
+      "log_sha256": "926f9d502a4ca37bd6e98a50a2e77496baa54d7de6aa305ee8a84d3644e4133e",
+      "name": "rewrite",
+      "outcome": "PASS",
+      "raw_summary_count": 1,
+      "raw_summary_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 205
+      },
+      "seconds": 7.470422435784712,
+      "start_utc": "2026-11-03T00:04:00.412487+00:00",
+      "wall_seconds": 180
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-rewrite",
+        "--example",
+        "full_program_bridge"
+      ],
+      "load_after": [
+        81.65,
+        77.99,
+        87.32
+      ],
+      "load_before": [
+        81.65,
+        77.99,
+        87.32
+      ],
+      "log_sha256": "b6834b5c295f24b12b9696c9037b0d0416b0c9c2f42be99776deceefc50b2c01",
+      "name": "bridge",
+      "outcome": "PASS",
+      "raw_summary_count": 1,
+      "raw_summary_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 13
+      },
+      "seconds": 0.17684490699321032,
+      "start_utc": "2026-11-03T00:04:07.984832+00:00",
+      "wall_seconds": 180
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-rewrite",
+        "--example",
+        "disassembly_sites"
+      ],
+      "load_after": [
+        81.65,
+        77.99,
+        87.32
+      ],
+      "load_before": [
+        81.65,
+        77.99,
+        87.32
+      ],
+      "log_sha256": "71c51e6c880e10b4173bd01be7c45757fb47fe26fa933cad61862a6b3ec10358",
+      "name": "disassembly-cli",
+      "outcome": "PASS",
+      "raw_summary_count": 1,
+      "raw_summary_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 18
+      },
+      "seconds": 0.10194913600571454,
+      "start_utc": "2026-11-03T00:04:08.224518+00:00",
+      "wall_seconds": 180
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "12",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "load_after": [
+        55.9,
+        56.8,
+        70.39
+      ],
+      "load_before": [
+        81.65,
+        77.99,
+        87.32
+      ],
+      "log_sha256": "868b1362f41ab5edd05a09bf716d4e190741a65d59b1de2d85f79c52bc5a9863",
+      "name": "workspace",
+      "outcome": "PASS",
+      "raw_summary_count": 134,
+      "raw_summary_totals": {
+        "failed": 0,
+        "ignored": 43,
+        "passed": 4616
+      },
+      "seconds": 838.095744526945,
+      "start_utc": "2026-11-03T00:04:08.381577+00:00",
+      "wall_seconds": 1800
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "load_after": [
+        63.83,
+        58.4,
+        69.07
+      ],
+      "load_before": [
+        55.9,
+        56.8,
+        70.39
+      ],
+      "log_sha256": "7288948805df67ce5452f125cce5a052a255db92eb4a658c39d5d2773efb8851",
+      "name": "serial-launch",
+      "outcome": "PASS",
+      "raw_summary_count": 27,
+      "raw_summary_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 1039
+      },
+      "seconds": 129.10348916403018,
+      "start_utc": "2026-11-03T00:18:06.568428+00:00",
+      "wall_seconds": 360
+    }
+  ],
+  "revision": "febb3594cad0b864e72ab7eea62efcbfc739a735",
+  "runner_sources": {
+    "evaluation/admission/processes.py": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+    "evaluation/direct-program/validate_fixed.py": "817c4881dab32019a819ca4cf1be6ba66af602a896b2afb53b10d84a61a02447",
+    "evaluation/shared-x86/validate.py": "0ca942b5e015851f171f01dac88375b98c7ddfd1bccc2a86163884347a21e306"
+  },
+  "schema": 1,
+  "scope": "Fresh required hand-back correctness checks. Corpus execution remains the separate f4a561a8 experiment. Durations are operational observations, not benchmarks. No strict20k, runtime page-exemption or complete-CFG qualification.",
+  "status": "PASS",
+  "tree": "6aa6f58e5732ea330aeac24c7afb41947ad1d64b"
+}

@@ -206,17 +206,13 @@ impl ArtifactTrampolineAllocation {
             || self.metadata.fields.last()
                 != Some(&veneer_field(self.placement, original_pc, domain))
             || self.metadata.requirements != body_metadata.requirements
+            || self.metadata.fixed_image != body_metadata.fixed_image
         {
             return Err(invalid(
                 "veneer field inventory or outstanding requirements changed",
             ));
         }
-        validate_fields(
-            &self.bytes,
-            self.storage_address(),
-            domain,
-            &self.metadata.fields,
-        )?;
+        validate_fields(&self.bytes, self.storage_address(), domain, &self.metadata)?;
         let body_maps = self.body.program_counter_mappings();
         if self.program_counters.len() != body_maps.len() + 1
             || self.program_counters.get(..body_maps.len()) != Some(body_maps)
@@ -278,6 +274,7 @@ fn veneer_field(placement: EntryVeneerPlacement, original_pc: u64, domain: u64) 
         target: i128::from(placement.storage_address()),
         bias_domain: domain,
         role: format!("{:?}", Role::EntryVeneer { original_pc }),
+        fixed_source: None,
     }
 }
 
@@ -368,7 +365,7 @@ fn validate_body(
         return Err(invalid("veneer page overlaps its original instruction"));
     }
     let domain = returned.bias_domain;
-    validate_fields(body.bytes(), body.address(), domain, &metadata.fields)?;
+    validate_fields(body.bytes(), body.address(), domain, metadata)?;
     for field in &metadata.fields {
         // No previously local endpoint may silently become padding/veneer after
         // extending storage. Body-local generated edges retain the old emitter's
@@ -401,13 +398,13 @@ fn validate_body(
 
 // Independent readback of signed field arithmetic. No new field is inferred
 // from a scan, and no old field/role is removed or reconstructed speculatively.
-fn validate_fields(
+pub(crate) fn validate_fields(
     bytes: &[u8],
     base: u64,
     domain: u64,
-    fields: &[ArtifactField],
+    metadata: &ArtifactImageMetadata,
 ) -> Result<(), TrampolineError> {
-    let mut ordered: Vec<_> = fields.iter().collect();
+    let mut ordered: Vec<_> = metadata.fields.iter().collect();
     ordered.sort_unstable_by_key(|field| field.offset);
     let mut previous_end = 0_u64;
     for field in ordered {
@@ -427,18 +424,38 @@ fn validate_fields(
         let raw = &bytes[field.offset as usize..end as usize];
         let actual = match (field.encoding, raw) {
             (ArtifactFieldEncoding::Relative, [a]) => i128::from(i8::from_le_bytes([*a])),
-            (ArtifactFieldEncoding::Relative, [a, b, c, d]) => {
-                i128::from(i32::from_le_bytes([*a, *b, *c, *d]))
-            }
+            (
+                ArtifactFieldEncoding::Relative | ArtifactFieldEncoding::FixedSigned32,
+                [a, b, c, d],
+            ) => i128::from(i32::from_le_bytes([*a, *b, *c, *d])),
             (ArtifactFieldEncoding::Delta, [a, b, c, d, e, f, g, h]) => {
                 i128::from(i64::from_le_bytes([*a, *b, *c, *d, *e, *f, *g, *h]))
             }
             _ => return Err(invalid("artifact field encoding/width mismatch")),
         };
-        let expected = field
-            .target
-            .checked_sub(i128::from(base) + i128::from(field.origin))
-            .ok_or_else(|| invalid("artifact field arithmetic overflow"))?;
+        let expected = if field.encoding == ArtifactFieldEncoding::FixedSigned32 {
+            if metadata
+                .fixed_image
+                .is_none_or(|binding| binding.domain() != domain)
+                || field.origin != 0
+                || field.fixed_source.is_none_or(|source| {
+                    source.displacement().len() != 4
+                        || !source.instruction().covers(source.displacement())
+                        || source.displacement().end() != source.instruction().end()
+                })
+            {
+                return Err(invalid("fixed field lacks its exact zero-bias domain"));
+            }
+            field.target
+        } else {
+            if field.fixed_source.is_some() {
+                return Err(invalid("relative field has fixed provenance"));
+            }
+            field
+                .target
+                .checked_sub(i128::from(base) + i128::from(field.origin))
+                .ok_or_else(|| invalid("artifact field arithmetic overflow"))?
+        };
         if actual != expected {
             return Err(invalid(
                 "artifact field bytes do not encode their exact target",

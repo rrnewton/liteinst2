@@ -62,9 +62,15 @@ not establish application execution or the caller's complete-code premise.
 Both frontends already call the same core instruction encoder. The legacy
 live-window/exact-syscall and ordered-artifact paths still duplicate internal
 save/callback/restore orchestration; ELF layout and live publication remain
-separate output adapters. The disassembly ledger importer and back-edge clock
-also retain graph consumers to consolidate. These changes do not implement
-certificates or certify complete binary CFG recovery.
+separate output adapters. The two owned back-edge clock profiles now use the
+shared graph constructor, indexed successors and reachability; the two-backedge
+region also uses shared structural returnability. Each retains its original
+scalar, prefix, entry and backedge admission rules. The disassembly ledger
+importer and local block partitions also share block-cut collection and raw
+near-target facts. The importer retains its global executable-LOAD/head checks
+for cross-region branches, CALL and XBEGIN; local graph callers retain their
+own target policy. These changes do not implement certificates or certify
+complete binary CFG recovery.
 
 The first direct GNU coreutils 9.5 `cat` comparison at
 `25c9d0adb596642e11663e3ff90083be04ac02f4` executes the original and E9Patch
@@ -74,6 +80,24 @@ no partial candidate, and leaves its three execution cases unobserved. Six
 refusals require explicit provenance for absolute-indexed jump-table operands;
 four fail the selected placement profile. The complete comparison remains
 failed; see [the direct-program receipt](evaluation/direct-program/README.md).
+The separately named `fixed-exec-overlapping-v2` successor at
+`0076fced9793c7b1b8459b76020616791dafafbf` binds the indexed-jump operands to
+an exact ET_EXEC source identity and zero load bias through the shared encoder,
+and uses the existing overlapping-relay planner. It emits all 751 imported jump
+sites and executes the resulting cat on all three exact input/output cases;
+original and E9Patch outputs also pass all three. The earlier profile remains
+failed. These are finite functional observations, not complete CFG recovery,
+runtime page exemptions or throughput measurements; see the
+[fixed-address result](evaluation/direct-program/fixed-exec-result/README.md).
+The `cat-head-wc-v1` comparison at
+`f4a561a8c29fa0298c24215d5f2027df79cbbf77` extends actual execution to
+GNU `head` and `wc` through the same shared pipeline. LiteInst and E9Patch each
+patch all 751 cat, 870 head and 1,228 wc imported jump sites. All 27 native
+program/case/arm rows pass exact stdout, exit-zero and empty-stderr checks.
+The shared catalog retains all nine cases and independently selects each program;
+no prior failure is replaced. This is finite functional evidence, with the
+complete-code and zero-bias loader obligations still unresolved; see the
+[three-program result](evaluation/direct-program/corpus-result/README.md).
 The exemption contract below remains a proposal.
 
 ## Page certificate

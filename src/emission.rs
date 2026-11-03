@@ -107,12 +107,56 @@ impl TargetProfile {
     }
 }
 
+/// An explicit fixed-image declaration, not evidence about a live loader.
+/// The artifact frontend must join this exact source generation to an ET_EXEC
+/// file and preserve its original LOAD addresses. Execution still owes zero
+/// load bias; declaring it never grants admission or clears other requirements.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct FixedImageBinding {
+    identity: CodeIdentity,
+    domain: u64,
+}
+impl FixedImageBinding {
+    /// Declare the only supported fixed-address obligation: zero load bias.
+    pub fn zero_bias(identity: CodeIdentity, domain: u64) -> Result<Self, Refusal> {
+        if identity.mapping != domain {
+            return Err(Refusal::StaleGeneration);
+        }
+        Ok(Self { identity, domain })
+    }
+    /// Exact original source, mapping and generation; never just an address.
+    pub const fn identity(self) -> CodeIdentity {
+        self.identity
+    }
+    /// Domain shared by relative and fixed address fields.
+    pub const fn domain(self) -> u64 {
+        self.domain
+    }
+    /// This profile cannot be relocated by a nonzero runtime load bias.
+    pub const fn required_load_bias(self) -> i128 {
+        0
+    }
+    /// Check a supplied binding; this does not observe or authenticate a loader.
+    pub fn verify(
+        self,
+        identity: CodeIdentity,
+        domain: u64,
+        load_bias: i128,
+    ) -> Result<(), Refusal> {
+        if self.identity != identity || self.domain != domain || load_bias != 0 {
+            return Err(Refusal::StaleGeneration);
+        }
+        Ok(())
+    }
+}
+
 /// Explicit target-side inputs; no host CPUID or /proc maps are consulted.
 #[derive(Clone, Debug)]
 pub struct ArtifactEmission {
     profile: TargetProfile,
     hook: SymbolicHook,
     occupied: Vec<AddressRange>,
+    fixed_image: Option<FixedImageBinding>,
 }
 
 impl ArtifactEmission {
@@ -124,7 +168,20 @@ impl ArtifactEmission {
             profile,
             hook,
             occupied,
+            fixed_image: None,
         }
+    }
+    /// Opt into the fixed-image obligation. The default constructor and all
+    /// common-bias refusals remain unchanged. Source identity is checked again
+    /// at the existing request-qualification boundary.
+    pub fn with_fixed_image(mut self, binding: FixedImageBinding) -> Result<Self, Refusal> {
+        binding.verify(binding.identity(), self.profile.bias_domain(), 0)?;
+        self.fixed_image = Some(binding);
+        Ok(self)
+    }
+    /// Fixed-address obligation retained by every generated image, if selected.
+    pub const fn fixed_image(&self) -> Option<FixedImageBinding> {
+        self.fixed_image
     }
     /// Target profile, never inferred from the compiler's process.
     pub const fn profile(&self) -> &TargetProfile {
@@ -267,6 +324,19 @@ impl EmissionContext<'_> {
             Self::Artifact(_) | Self::CurrentPlacement(_) | Self::Fitting(_) => Ok(()),
         }
     }
+    pub(crate) fn qualify_source(self, identity: CodeIdentity) -> Result<(), Refusal> {
+        self.qualify()?;
+        let fixed = match self {
+            Self::Artifact(input) | Self::CurrentPlacement(input) | Self::Fitting(input) => input
+                .fixed_image()
+                .map(|binding| (binding, input.profile().bias_domain())),
+            Self::Live(_) => None,
+        };
+        if let Some((binding, domain)) = fixed {
+            binding.verify(identity, domain, 0)?;
+        }
+        Ok(())
+    }
     pub(crate) fn occupied(self) -> Result<Vec<AddressRange>, Refusal> {
         match self {
             Self::Live(_) => crate::quiescent::occupied_ranges(),
@@ -332,6 +402,28 @@ pub enum ArtifactFieldEncoding {
     Relative,
     /// Signed invariant difference from the recorded in-image RIP anchor.
     Delta,
+    /// A producer-owned signed disp32 address contribution, valid only under
+    /// the exact fixed-image zero-bias obligation. This is not PIC.
+    FixedSigned32,
+}
+
+/// Producer-owned source spans for one fixed signed32 operand. The instruction
+/// and its final four displacement bytes are joined to original ELF bytes by
+/// the fixed writer; neither span asserts absence of loader writes by itself.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct FixedOperandSource {
+    pub(crate) instruction: AddressRange,
+    pub(crate) displacement: AddressRange,
+}
+impl FixedOperandSource {
+    /// Exact original decoded instruction, including any retained REX prefix.
+    pub const fn instruction(self) -> AddressRange {
+        self.instruction
+    }
+    /// Original signed32 bytes; final encoder offset is recorded separately.
+    pub const fn displacement(self) -> AddressRange {
+        self.displacement
+    }
 }
 
 /// Stable reason classes for provisional artifact emission refusal.
@@ -366,6 +458,8 @@ pub struct ArtifactField {
     pub bias_domain: u64,
     /// Exact producer role, including an original instruction PC when relevant.
     pub role: String,
+    /// Original fixed-operand provenance; absent for common-bias fields.
+    pub fixed_source: Option<FixedOperandSource>,
 }
 
 /// Unresolved artifact qualification; none is silently marked satisfied.
@@ -395,6 +489,7 @@ pub enum ArtifactRequirement {
 pub struct ArtifactImageMetadata {
     pub(crate) fields: Vec<ArtifactField>,
     pub(crate) requirements: Vec<ArtifactRequirement>,
+    pub(crate) fixed_image: Option<FixedImageBinding>,
 }
 impl ArtifactImageMetadata {
     /// Known emitted address operands, including their exact field origins.
@@ -404,6 +499,32 @@ impl ArtifactImageMetadata {
     /// Requirements remaining before an executable artifact can be admitted.
     pub fn requirements(&self) -> &[ArtifactRequirement] {
         &self.requirements
+    }
+    /// Additional unresolved loader obligation; no live-loader proof is implied.
+    pub const fn fixed_image(&self) -> Option<FixedImageBinding> {
+        self.fixed_image
+    }
+    /// Independent final-byte readback using the producer's complete field ledger.
+    /// The caller must separately bind the original ELF and all LOAD mappings.
+    pub fn validate_fixed_image(
+        &self,
+        identity: CodeIdentity,
+        domain: u64,
+        load_bias: i128,
+        address: u64,
+        bytes: &[u8],
+    ) -> Result<(), TrampolineError> {
+        let binding = self.fixed_image.ok_or_else(|| TrampolineError::Artifact {
+            reason: ArtifactRefusalKind::InvalidFieldLedger,
+            message: "fixed image lacks its source/zero-bias obligation".into(),
+        })?;
+        binding
+            .verify(identity, domain, load_bias)
+            .map_err(|error| TrampolineError::Artifact {
+                reason: ArtifactRefusalKind::InvalidFieldLedger,
+                message: format!("fixed image binding mismatch: {error:?}"),
+            })?;
+        crate::trampoline::validate_artifact_fields(bytes, address, domain, self)
     }
     /// This draft never claims whole-artifact provenance completeness.
     pub const fn qualification_complete(&self) -> bool {
@@ -574,9 +695,12 @@ impl ArtifactPlan {
             || parts.requirements.sigill_router
             || image.layout().observation_stack_profile != ObservationStackProfile::Legacy128
             || image.artifact_metadata().is_none_or(|metadata| {
-                metadata
-                    .requirements()
-                    .contains(&ArtifactRequirement::EntryRouterBootstrap)
+                // The optional frame/unwind export has no fixed-image binding
+                // field yet. Do not erase the new unresolved obligation.
+                metadata.fixed_image().is_some()
+                    || metadata
+                        .requirements()
+                        .contains(&ArtifactRequirement::EntryRouterBootstrap)
             })
         {
             return Err(Failure::UnsupportedPlan);

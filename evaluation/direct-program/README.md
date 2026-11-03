@@ -15,6 +15,7 @@ A4 / claim 4 remains open against the strict 20,000-step profile; an 80,000-step
 Use a clean checkout of the exact revision, Python 3.9 `-I -B`, recorded compiler tools and offline Cargo cache. Stage the summary-pinned coreutils archive as `$ARCHIVE`, E9Tool at `target/evaluation/e9-full-address-provider-v1/source/e9tool`, and E9 backend at `ignored/a3/upstream/e9patch-pldi2020/e9patch`. These external inputs are prerequisites; no signature-verification claim is made. Set `$ROOT`, one externally reserved `$CPU`, `$TOOLCHAIN`, `$CARGO_HOME`, `$USER_HOME`, and fresh `$RUN` beneath `$ROOT/ignored`. Child outputs and derived owner-log namespaces must be absent. Run sequentially:
 
 ```bash
+set -euo pipefail
 cd "$ROOT"
 REV=25c9d0adb596642e11663e3ff90083be04ac02f4
 mkdir -p "$RUN"
@@ -36,4 +37,4 @@ UNIT=li2core-direct-cat-reproduction
   --trusted-complete-code --unit "$UNIT"
 ```
 
-The final command retains the recorded FAILED outcome. Scripts enforce bounded children, durable owners before payloads, postflight status guards and unchanged storage ceilings. The historical coordinator additionally owned this invocation with a 2,400-second wall backstop. Parent address-space limits must permit E9's 36 GiB virtual reservation; the cgroup still caps physical memory at 1 GiB. Reproduction cannot prove the caller-supplied completeness premise or correctness beyond these three cases.
+The recorded final invocation failed. Scripts enforce bounded children, durable owners before payloads, postflight status guards and unchanged storage ceilings. The historical coordinator additionally owned this invocation with a 2,400-second wall backstop. Parent address-space limits must permit E9's 36 GiB virtual reservation; the cgroup still caps physical memory at 1 GiB. Reproduction cannot prove the caller-supplied completeness premise or correctness beyond these three cases.

@@ -75,6 +75,7 @@ enum Mode {
     WholeEntryVeneerMixedPending4096,
     WholePackedEntryVeneerMixedPending4096,
     WholePackedOverlapping4096,
+    WholeFixedExecPackedOverlapping4096,
 }
 
 fn arguments_with_ownership(args: &[String]) -> Result<(&[String], Mode), String> {
@@ -280,8 +281,35 @@ fn arguments_with_packed_overlapping(args: &[String]) -> Result<(&[String], Mode
     }
 }
 
+// Only the complete new leading form opts into fixed address fields. Every
+// legacy parser and its positional filename semantics remain unchanged.
+fn arguments_with_fixed_exec(args: &[String]) -> Result<(&[String], Mode), String> {
+    const FLAG: &str = "--whole-program-fixed-exec-packed-overlapping-neighbors-4096";
+    if args.len() == 8 && args[1] == FLAG {
+        if args[2..].iter().any(|arg| {
+            arg.starts_with("--whole-program-")
+                || matches!(
+                    arg.as_str(),
+                    "--short-neighbors-only"
+                        | "--short-neighbors-owned"
+                        | "--short-neighbors-pending"
+                )
+        }) {
+            return Err("disassembly_sites fixed-exec: mixed/repeated profile selector".into());
+        }
+        Ok((&args[2..], Mode::WholeFixedExecPackedOverlapping4096))
+    } else {
+        arguments_with_packed_overlapping(args)
+    }
+}
+
 fn labels_with_ownership(mode: Mode) -> (&'static str, &'static str, &'static str) {
     match mode {
+        Mode::WholeFixedExecPackedOverlapping4096 => (
+            liteinst_rewrite::FIXED_EXEC_BINDING_PROFILE,
+            liteinst_rewrite::FIXED_EXEC_METADATA,
+            " address_binding=fixed-exec-zero-bias-indexed-jump32-v1 required_object_type=ET_EXEC required_load_bias=0 planner=whole-program-packed-overlapping-neighbors-4096",
+        ),
         Mode::WholePackedOverlapping4096 => (
             disassembly::whole::PROFILE,
             disassembly::whole::PACKED_OVERLAPPING_METADATA,
@@ -349,6 +377,7 @@ fn prepare_inputs(
             Mode::WholeFittingMixedPending4096 => imported.inventory_whole_program(),
             Mode::WholePackedEntryVeneerMixedPending4096 => imported.inventory_whole_program(),
             Mode::WholePackedOverlapping4096 => imported.inventory_whole_program(),
+            Mode::WholeFixedExecPackedOverlapping4096 => imported.inventory_whole_program(),
             Mode::WholeEntryVeneerMixedPending4096 => imported.inventory_whole_program(),
             Mode::LongOnly => imported.inventory(),
             Mode::ShortOnly => imported.inventory_short_neighbors(),
@@ -357,6 +386,12 @@ fn prepare_inputs(
         },
     );
     let selected = match mode {
+        Mode::WholeFixedExecPackedOverlapping4096 => {
+            let selected = imported.bind_whole_program(policy, expected_policy)?;
+            assert_eq!(selected.profile(), disassembly::whole::PROFILE);
+            files.insert("selection.txt".into(), selected.manifest().to_vec());
+            return liteinst_rewrite::prepare_disassembly_whole_fixed_exec_packed_overlapping_neighbors(original, &selected);
+        }
         Mode::WholePackedOverlapping4096 => {
             let selected = imported.bind_whole_program(policy, expected_policy)?;
             assert_eq!(selected.profile(), profile);
@@ -423,7 +458,7 @@ fn prepare_inputs(
 
 fn run() -> Result<bool, String> {
     let raw_args: Vec<_> = std::env::args().collect();
-    let (args, mode) = arguments_with_packed_overlapping(&raw_args)?;
+    let (args, mode) = arguments_with_fixed_exec(&raw_args)?;
     let (profile, family, stdout_family) = labels_with_ownership(mode);
     let expected_ledger = selection::id(&args[2]).map_err(|e| e.to_string())?;
     let expected_policy = selection::id(&args[4]).map_err(|e| e.to_string())?;
@@ -451,8 +486,10 @@ fn run() -> Result<bool, String> {
     {
         return Err("inputs changed during preparation".into());
     }
+    let mut fixed_binding = None;
     let complete = match prepared {
         Ok(product) => {
+            fixed_binding = product.fixed_image_binding();
             files.extend(product.files().clone());
             product.candidate_complete()
         }
@@ -479,6 +516,17 @@ fn run() -> Result<bool, String> {
         "LI2DISASSEMBLY-DIRECTORY\t1\nprofile\t{profile}\n{family}observed_original_sha256\t{}\ncandidate_complete\t{complete}\nqualification_complete\tfalse\n",
         digest(&original)
     );
+    if mode == Mode::WholeFixedExecPackedOverlapping4096 {
+        match fixed_binding {
+            Some(binding) => index.push_str(&format!(
+                "fixed_binding_status\tsource-ET_EXEC-bound\nfixed_source_sha256\t{}\nfixed_source_mapping\t{}\nfixed_source_generation\t{}\nfixed_output_readback\t{}\n",
+                binding.identity().source.0.iter().map(|b| format!("{b:02x}")).collect::<String>(),
+                binding.identity().mapping, binding.identity().generation,
+                if complete { "checked" } else { "not-complete" },
+            )),
+            None => index.push_str("fixed_binding_status\tunbound\nfixed_output_readback\tnot-complete\n"),
+        }
+    }
     for (name, bytes) in &files {
         write(&output.join(name), bytes)?;
         index.push_str(&format!(
@@ -722,3 +770,65 @@ mod tests {
 #[cfg(test)]
 #[path = "disassembly_sites/whole_tests.rs"]
 mod whole_tests;
+
+#[cfg(test)]
+mod fixed_exec_cli_tests {
+    use super::*;
+    #[test]
+    fn fixed_exec_selector_is_explicit_and_preserves_legacy_parsers() {
+        let positional: Vec<_> = [
+            "program",
+            "original",
+            "ledger",
+            "ledger-sha",
+            "policy",
+            "policy-sha",
+            "out",
+        ]
+        .into_iter()
+        .map(str::to_owned)
+        .collect();
+        assert_eq!(
+            arguments_with_fixed_exec(&positional),
+            arguments_with_packed_overlapping(&positional)
+        );
+        for flag in [
+            "--whole-program-packed-overlapping-neighbors-4096",
+            "--whole-program-packed-entry-veneer-mixed-neighbors-4096",
+            "--whole-program-4096",
+            "--short-neighbors-only",
+        ] {
+            let mut old = positional.clone();
+            old.insert(1, flag.into());
+            assert_eq!(
+                arguments_with_fixed_exec(&old),
+                arguments_with_packed_overlapping(&old)
+            );
+        }
+        let mut args = positional.clone();
+        args.insert(
+            1,
+            "--whole-program-fixed-exec-packed-overlapping-neighbors-4096".into(),
+        );
+        assert_eq!(
+            arguments_with_fixed_exec(&args).unwrap(),
+            (&positional[1..], Mode::WholeFixedExecPackedOverlapping4096)
+        );
+        let (profile, metadata, _) =
+            labels_with_ownership(Mode::WholeFixedExecPackedOverlapping4096);
+        assert_eq!(profile, liteinst_rewrite::FIXED_EXEC_BINDING_PROFILE);
+        assert!(metadata.contains("required_load_bias\t0\n"));
+        for flag in [
+            args[1].clone(),
+            "--whole-program-packed-overlapping-neighbors-4096".into(),
+            "--short-neighbors-only".into(),
+        ] {
+            let mut mixed = args.clone();
+            mixed[2] = flag;
+            assert!(arguments_with_fixed_exec(&mixed).is_err());
+        }
+        assert!(arguments_with_fixed_exec(&args[..7]).is_ok()); // old seven positional filenames
+        args.push("extra".into());
+        assert!(arguments_with_fixed_exec(&args).is_err());
+    }
+}
