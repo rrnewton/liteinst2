@@ -106,6 +106,65 @@ complete-code and zero-bias loader obligations still unresolved; see the
 [three-program result](evaluation/direct-program/corpus-result/README.md).
 The exemption contract below remains a proposal.
 
+## Current inventory and implementation boundary
+
+Source audit at `26472566d7259ffbde2b958dc6d86469bb122a4a` confirms the
+consolidation above. Offline imports and runtime admission use
+`liteinst-x86` instruction facts; bounded graph consumers use
+`control_flow::{build, collect_block_cuts}` and its indexed traversals.
+Offline singleton/grouped requests and live selected publication use the same
+core planner, fitting and encoder. `trampoline::observer_sequence` now owns the
+common save/callback/restore sequence. ELF serialization, remote writes and
+in-process publication remain separate ownership and output adapters.
+
+Two concrete fact/policy duplications remain to merge, in this order:
+
+1. The freestanding page decoder's `mov_guard` and `add_guard` repeat GPR enum
+   arithmetic; `region` repeats the 32/64-bit register table. Use the existing
+   `liteinst-x86::gpr`, preserving each adapter's exact width filter and the
+   region's AL/span's CL exceptions. Route their decoder setup through the same
+   factory while retaining every independent re-decode and identity check.
+2. `quiescent::whole_function::scalar` and the rapid profiler's ordinary CFG
+   adapter duplicate a pure scalar-instruction predicate. Extract that predicate
+   while retaining the distinct entry/backedge, size and qualification checks.
+
+This is not a license to replace all-start scanning with a linear walk, accept
+the union of instruction policies, or infer complete CFG recovery. The first
+merge is bounded to shared facts; it does not resolve corpus placement failures.
+
+The initial live certificate implementation should use a separately named fixed
+ET_EXEC/zero-bias subset with no unresolved code relocations. It must still meet
+every completeness and mutation condition below. The proposed type transition is
+an inert parsed certificate, verified coverage, a load-bound dependency group,
+then an owner-only pre-admitted group. `liteinst-artifact::Metadata` and
+`OracleChain` cannot mint the final state. Reuse admission's `Snapshot`,
+`LegalEntrySet` and `core_bridge::export` for descriptive facts; bind actual mapped
+bytes through the launch owner's held-source acquisition and mapping/admission
+generations. The owner's maintained domain and dependency index must revoke the
+whole group before any relevant effect. Whole-domain revocation is an acceptable
+first implementation; selective revocation needs its own proof. All certificate,
+index and history allocations remain bounded before publication.
+
+Up-front authentication is stricter than the study's lazy first-use cache: no
+eligible page enters the admission fault gate, including before constructors or
+IFUNC execution. Load-time validation is measured separately. Unchanged eligible
+pages must have zero admission faults, decoder/CFG starts, replans, admission maps
+refreshes and per-entry certificate lookups. These states and the live exemption
+remain unimplemented; current caller-supplied completeness declarations do not
+qualify.
+
+The historical 2,053-site candidate exceeded Linux's program-header limit.
+The packed RX-run writer addresses that loader constraint, retains exact owned mappings, checks the
+1,170-header ELF64 bound, and is already used by the grouped path. Later evidence
+records 661 headers and original/LI2 `--help` parity; that finite case does not
+establish general program coverage. The broader jump/PUSH/POP upstream corpus
+still fails: cat/head withhold all output after 88/80 core refusals, and wc reaches
+the unchanged 64 MiB ledger limit with unknown planning counts. All 27 native rows
+are retained: 18 original/E9 passes and nine LI2 unobserved. The separate jump-only
+cat/head/wc corpus passed all 27 rows. See the existing
+[upstream result](evaluation/direct-program/grouped-upstream-result/README.md)
+and [jump-only result](evaluation/direct-program/corpus-result/README.md).
+
 ## Page certificate
 
 A new versioned, producer-authenticated coverage record is required. Existing

@@ -1,6 +1,7 @@
 //! Four memory-store Codes only. Description is not a write/execution permit.
 use crate::{abi, arena, tf};
-use iced_x86::{Code, Decoder, DecoderOptions, OpKind, Register};
+use liteinst_x86 as x86;
+use iced_x86::{Code, OpKind, Register};
 
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
@@ -22,9 +23,9 @@ const _: () = {
 };
 const NO_REG: u32 = 16;
 fn gpr(r: Register, wide: bool) -> Option<u32> {
-    let first = (if wide { Register::RAX } else { Register::EAX }) as u32;
-    let value = r as u32;
-    if value >= first && value - first < 16 { Some(value-first) } else { None }
+    let width = if wide { x86::Width::Bits64 } else { x86::Width::Bits32 };
+    x86::gpr(r).filter(|operand| operand.width == width)
+        .map(|operand| operand.register as u32)
 }
 fn address(r: Register) -> Option<u32> {
     if r == Register::None { Some(NO_REG) } else { gpr(r, true) }
@@ -55,7 +56,7 @@ fn one(pc: u64, source: &[u8]) -> Result<Store, u32> {
         || instruction.segment_prefix() != Register::None { return Ok(out); }
     // Re-decode supplies actual displacement/immediate positions; identity joins
     // prevent treating a hand-parsed operand as an independent iced result.
-    let mut decoder = Decoder::with_ip(64, source, pc, DecoderOptions::NONE);
+    let mut decoder = x86::decoder64(source, pc);
     let again = decoder.decode();
     if again != instruction { return Ok(out); }
     let constants = decoder.get_constant_offsets(&again);

@@ -3,9 +3,10 @@
 //! for this domain: at most 3 register rows and 1 memory row (see CONTRACT.md).
 
 use crate::{abi, arena};
+use liteinst_x86 as x86;
 use core::{cell::UnsafeCell, mem::MaybeUninit};
 use iced_x86::{
-    Code, CodeSize, Decoder, DecoderOptions, Instruction, InstructionInfo, InstructionInfoFactory,
+    Code, CodeSize, Instruction, InstructionInfo, InstructionInfoFactory,
     MemorySize, OpAccess, OpKind, Register, RflagsBits,
 };
 
@@ -191,43 +192,10 @@ fn canonical(pc: u64) -> bool {
 }
 
 fn register(reg: Register) -> Option<(u32, u32)> {
-    use Register::*;
-    Some(match reg {
-        AL => (0, 8),
-        EAX => (0, 32),
-        ECX => (1, 32),
-        EDX => (2, 32),
-        EBX => (3, 32),
-        ESP => (4, 32),
-        EBP => (5, 32),
-        ESI => (6, 32),
-        EDI => (7, 32),
-        R8D => (8, 32),
-        R9D => (9, 32),
-        R10D => (10, 32),
-        R11D => (11, 32),
-        R12D => (12, 32),
-        R13D => (13, 32),
-        R14D => (14, 32),
-        R15D => (15, 32),
-        RAX => (0, 64),
-        RCX => (1, 64),
-        RDX => (2, 64),
-        RBX => (3, 64),
-        RSP => (4, 64),
-        RBP => (5, 64),
-        RSI => (6, 64),
-        RDI => (7, 64),
-        R8 => (8, 64),
-        R9 => (9, 64),
-        R10 => (10, 64),
-        R11 => (11, 64),
-        R12 => (12, 64),
-        R13 => (13, 64),
-        R14 => (14, 64),
-        R15 => (15, 64),
-        _ => return Option::None,
-    })
+    if reg == Register::AL { return Some((0, 8)); }
+    x86::gpr(reg)
+        .filter(|operand| matches!(operand.width, x86::Width::Bits32 | x86::Width::Bits64))
+        .map(|operand| (operand.register as u32, operand.width as u32))
 }
 fn address_register(reg: Register) -> Option<u32> {
     if reg == Register::None {
@@ -659,7 +627,7 @@ pub(crate) fn one(pc: u64, source: &[u8], _call: &arena::Call) -> Result<Descrip
     if !canonical(pc) || !canonical(decoded.next_pc) {
         return Ok(refused(ADDRESS));
     }
-    let mut decoder = Decoder::with_ip(64, source, pc, DecoderOptions::NONE);
+    let mut decoder = x86::decoder64(source, pc);
     let ins = decoder.decode();
     if ins.is_invalid()
         || ins.code() as u32 != decoded.code
@@ -1141,7 +1109,7 @@ mod span {
         let refused = |reason| Description { decoded, version: VERSION, refusal: reason, ..Description::default() };
         if decoded.decode_status != abi::VALID { return Ok(refused(old.refusal)); }
         if !canonical(pc) || !canonical(decoded.next_pc) { return Ok(refused(ADDRESS)); }
-        let mut decoder = Decoder::with_ip(64, source, pc, DecoderOptions::NONE);
+        let mut decoder = x86::decoder64(source, pc);
         let ins = decoder.decode();
         if ins.is_invalid() || ins.code() as u32 != decoded.code || ins.len() as u32 != decoded.length
             || ins.next_ip() != decoded.next_pc || decoded.kind != abi::NONE { return Ok(refused(EFFECTS)); }

@@ -1,7 +1,8 @@
 //! One 64-bit memory ADD Code. Description is not source/write/RX authority.
 use crate::{abi, arena, tf};
+use liteinst_x86 as x86;
 use core::{cell::UnsafeCell, mem::MaybeUninit};
-use iced_x86::{Code, CodeSize, Decoder, DecoderOptions, Instruction, InstructionInfoFactory, MemorySize, OpAccess, OpKind, Register, RflagsBits};
+use iced_x86::{Code, CodeSize, Instruction, InstructionInfoFactory, MemorySize, OpAccess, OpKind, Register, RflagsBits};
 
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
@@ -23,9 +24,9 @@ const _: () = {
 };
 const NO_REG: u32 = 16;
 fn gpr(r: Register, wide: bool) -> Option<u32> {
-    let first = (if wide { Register::RAX } else { Register::EAX }) as u32;
-    let value = r as u32;
-    if value >= first && value - first < 16 { Some(value-first) } else { None }
+    let width = if wide { x86::Width::Bits64 } else { x86::Width::Bits32 };
+    x86::gpr(r).filter(|operand| operand.width == width)
+        .map(|operand| operand.register as u32)
 }
 fn address(r: Register) -> Option<u32> {
     if r == Register::None { Some(NO_REG) } else { gpr(r, true) }
@@ -102,7 +103,7 @@ fn one(pc: u64, source: &[u8], call: &arena::Call) -> Result<Descriptor, u32> {
         || instruction.segment_prefix() != Register::None { return Ok(out); }
     // Re-decode supplies actual displacement/immediate positions; identity joins
     // prevent treating a hand-parsed operand as an independent iced result.
-    let mut decoder = Decoder::with_ip(64, source, pc, DecoderOptions::NONE);
+    let mut decoder = x86::decoder64(source, pc);
     let again = decoder.decode();
     if again != instruction { return Ok(out); }
     let constants = decoder.get_constant_offsets(&again);
