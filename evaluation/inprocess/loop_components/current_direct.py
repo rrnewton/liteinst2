@@ -26,7 +26,7 @@ INPUTS = {
     'evaluation/inprocess/loop_components/run.py': (33903, '7ae6aa3ab2c989553c4feffa2901c751015e7307071ae4e8a628fcb66436695c'),
     'evaluation/inprocess/loop_ro_current_archive.py': (6501, '87b8c393d93cf0679366ff62be12438cc97755aa778783a3346d2e0773898fd7'),
     'tools/page-entry/selected/linked_direct_dispatch.h': (5663, '72571ff2d571392e2ead7df1c4ba59c8fba0709efd7fbaea9987e19e8c1ebba9'),
-    'tools/page-entry/selected/linked_direct_dispatch.c': (22518, '733ec398f674cb4b783db15478e3f2b4ff2680a99e1d4d8df0ec1f55dd3bc4ef'),
+    'tools/page-entry/selected/linked_direct_dispatch.c': (22664, 'e40761aa34a2ad87a3d4139bf8227a77a0d5e2b395d662a4b2ad4b728d184ea4'),
     'tools/page-entry/selected/tests/persistent_direct_frontier/oracle.c': (19093, '9cb736c77a75b25de07528038f085fdbb587ae9bd013adca5dbee627ced163d3'),
     'tools/page-entry/selected/tests/persistent_direct_frontier/model.c': (8264, 'a4a828079fa7099dda6accf7086e30a585af371d02b157bcf6361837156da3ac'),
     'tools/page-entry/selected/tests/persistent_direct_frontier/model.h': (610, '459f8dc91183f9393289e78f71823804226261934d55827a641118e71dbd919c'),

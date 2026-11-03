@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include "loop_translation_arena.h"
 #include "persistent_active_domain.h"
-#include "linked_direct_dispatch.h"
+#include "linked_loop_direct.h"
 #if !defined(LI2_LOOP_CACHED_DIRECT_CONTEXT) || LI2_LOOP_CACHED_DIRECT_CONTEXT != 1 || \
     !defined(LI2_PG_LOOP_CACHED_DIRECT_CONTEXT_BINDING_VERSION) || \
     LI2_PG_LOOP_CACHED_DIRECT_CONTEXT_BINDING_VERSION != 1

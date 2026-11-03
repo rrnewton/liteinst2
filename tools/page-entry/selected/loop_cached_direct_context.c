@@ -55,7 +55,7 @@ int li2_lcx_image_value(const struct li2_pgd_member *owner,uintptr_t pc,
     /* owner.head is a REAL target head, never an auxiliary ordinal. */
     if(li2_pg_dispatch_binding(p->page,&p->layout,p->table.address,p->heads,
            out->tail.target.head,&binding.owner))return LI2_DD_FORM;
-    return li2_dd_aux_emit(pc,out->tail.original.decoded.bytes,5,&binding,&out->plan);
+    return li2_ld_aux_emit(pc,out->tail.original.decoded.bytes,5,&binding,&out->plan);
 }
 static int append(struct li2_lcx_directory *d,struct li2_lcx_row row) {
     if(d->count>=LI2_JD_DOMAIN_HEADS)return LI2_DD_CAPACITY;

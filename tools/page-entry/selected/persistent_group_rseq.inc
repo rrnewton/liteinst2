@@ -657,7 +657,7 @@ int li2_lcx_rseq_value(const struct li2_pg_token *t,const struct li2_lcx_lease *
            independent.abi_version!=1 || independent.policy!=LI2_WRITE_NONE || independent.first || independent.end ||
            independent.pc!=actual.decoded.pc || independent.next_pc!=actual.decoded.next_pc ||
            independent.code!=actual.decoded.code || independent.length!=5 ||
-           li2_dd_aux_validate(&image->plan))return pgr_bad(LI2_RSEQ_PLAN,572);
+           li2_ld_aux_validate(&image->plan))return pgr_bad(LI2_RSEQ_PLAN,572);
         int error=decoded_footprint(&actual.decoded,uc,1);
         if(error)return pgr_bad((unsigned)error,573);
     }

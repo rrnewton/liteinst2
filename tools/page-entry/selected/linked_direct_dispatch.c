@@ -354,17 +354,21 @@ int li2_dd_aux_validate(const struct li2_dd_aux_plan *p) {
         p->value.original.available,&p->binding,&expected);
     return e || !same(p,&expected,sizeof *p)?LI2_DD_CORRUPT:0;
 }
-int li2_dd_aux_recover(const struct li2_dd_aux_plan *p,uintptr_t pc,const uint64_t raw[16],
-    uint64_t flags,const uint64_t spill_words[4],struct li2_dd_recovered *out) {
-    if(!out)return LI2_DD_ARGUMENT;
-    zero(out,sizeof *out);
-    if(!p || p->version!=LI2_DD_AUX_VERSION || p->ready!=1 || p->result || p->reserved ||
+static int aux_recovery_value(const struct li2_dd_aux_plan *p,uint32_t version) {
+    if(!p || p->version!=version || p->ready!=1 || p->result || p->reserved ||
        p->value.original.available!=5 || p->value.original.decoded.length!=5 ||
        p->value.original.decoded.bytes[0]!=0xe9 || p->value.original.flow!=LI2_REGION_JMP ||
        p->value.original.condition!=16 || p->value.original.external_mask!=1 ||
        p->value.internal[0] || p->value.internal[1] ||
        !aux_binding(p->value.original.decoded.pc,5,p->value.generated,p->value.spill,
-           &p->value.binding,&p->binding))return LI2_DD_CORRUPT;
+           &p->value.binding,&p->binding))return 0;
+    return 1;
+}
+int li2_dd_aux_recover(const struct li2_dd_aux_plan *p,uintptr_t pc,const uint64_t raw[16],
+    uint64_t flags,const uint64_t spill_words[4],struct li2_dd_recovered *out) {
+    if(!out)return LI2_DD_ARGUMENT;
+    zero(out,sizeof *out);
+    if(!aux_recovery_value(p,LI2_DD_AUX_VERSION))return LI2_DD_CORRUPT;
     return li2_dd_recover(&p->value,pc,raw,flags,spill_words,out);
 }
 

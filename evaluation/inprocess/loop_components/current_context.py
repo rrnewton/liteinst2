@@ -15,11 +15,11 @@ NAME = 'cached_direct_context_component'
 READER = None
 INPUTS = dict(shared.INPUTS, **{
     'evaluation/inprocess/loop_components/current_direct.py':
-        (14268, '190640ba7dc3bb1e33338d5f34cdc6253af807c33169f0810e89cfdb76d008d2'),
+        (14268, '9e7cc7c093d5c078747e3723f539b6d705f62be2c9666b196a34b57cabf5eb8b'),
     'tools/page-entry/selected/loop_cached_direct_context.h':
-        (3937, 'f4a3401428eb8653f15e7a722332a28e67ff13dee0dadaf16eef5ab2c7e64a36'),
+        (3933, '06fce76e8d5c48a89fd72427f5bed851e4f9d887b8ec9c10e4f5e929a64ba363'),
     'tools/page-entry/selected/loop_cached_direct_context.c':
-        (10253, '7857028bdf4187ae226dab4c790fa1a63e6370ae9c40152e18fc1df49fe542b7'),
+        (10253, '6a83ad1af290681c9ffb4cf41ddecfb88bd1b2e7f1a0fe5c80ce297c0b49800a'),
     'tools/page-entry/selected/tests/cached_direct_context_component/build.sh':
         (3264, 'bed685beacc6c8433ec3ae78f539ffc1aafc312133f29f45c7b0452789905fd3'),
     'tools/page-entry/selected/tests/cached_direct_context_component/oracle.c':

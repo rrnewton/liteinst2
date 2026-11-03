@@ -321,7 +321,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
             '-Wl,--undefined=li2_loop_cache8_progress')
     if cached_direct_context:
         expected.insert(expected.index('-Wl,-e,_start,-Bsymbolic,-z,now,-z,relro,-z,noexecstack,--build-id=none,--no-undefined'),
-            '-Wl,--undefined=li2_lcx_tail_value,--undefined=li2_lcx_image_value,--undefined=li2_lcx_lease_value,--undefined=li2_dd_aux_emit,--undefined=li2_dd_aux_validate,--undefined=li2_dd_aux_recover')
+            '-Wl,--undefined=li2_lcx_tail_value,--undefined=li2_lcx_image_value,--undefined=li2_lcx_lease_value,--undefined=li2_dd_aux_emit,--undefined=li2_dd_aux_validate,--undefined=li2_dd_aux_recover,--undefined=li2_ld_aux_emit,--undefined=li2_ld_aux_validate,--undefined=li2_ld_aux_recover')
         expected.insert(expected.index(str(selected/'linked_direct_dispatch.c'))+1,
             str(selected/'loop_cached_direct_context.c'))
     if cached_direct_observe is True:
@@ -373,7 +373,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     if cache8:
         providers+=('li2_loop_cache8_progress',)
     if group_descriptor:providers+=('li2_lgd_before_raw','li2_lgd_source_context')
-    if cached_direct_context:providers+=('li2_lcx_tail_value', 'li2_lcx_image_value', 'li2_lcx_lease_value', 'li2_dd_aux_emit', 'li2_dd_aux_validate', 'li2_dd_aux_recover')
+    if cached_direct_context:providers+=('li2_lcx_tail_value', 'li2_lcx_image_value', 'li2_lcx_lease_value', 'li2_dd_aux_emit', 'li2_dd_aux_validate', 'li2_dd_aux_recover', 'li2_ld_aux_emit', 'li2_ld_aux_validate', 'li2_ld_aux_recover')
     if cached_direct_observe is True:providers+=('li2_lcx_before_raw','li2_lcx_pending_images','li2_lcx_rseq_value')
     if cache8_effects is not None:providers+=('li2_lifecycle_cache8_effects_memory',)
     for name in providers:

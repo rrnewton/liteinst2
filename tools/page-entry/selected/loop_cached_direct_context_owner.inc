@@ -285,7 +285,7 @@ static int lcx_recover(uintptr_t pc,const uint64_t raw[16],uint64_t flags) {
     /* The complete sealed record and actual savedPC select the spill first.
        The shared boundary routine reads only initialized dirty spill words. */
     w->recovery_owned=1;
-    w->recovery_result=(unsigned)li2_dd_aux_recover(p,pc,raw,flags,
+    w->recovery_result=(unsigned)li2_ld_aux_recover(p,pc,raw,flags,
         (const uint64_t *)p->value.spill,&w->recovered);
     if(lcx_count(&o->recoveries))return -1;
     return 1; /* All AUX signals remain terminal, even exact recovery success. */
