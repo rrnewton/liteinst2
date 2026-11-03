@@ -16,7 +16,7 @@ READER = None
 INPUTS = dict(shared.INPUTS, **{
     'evaluation/inprocess/loop_components/current_direct.py': (14759, '2e03abff431121e2ef6acf3b2dbbcc5c538933dd5660e761e7c3dc6459f26edf'),
     'tools/page-entry/selected/linked_loop_direct.h': (1903, 'dd1a0411cb258fc4109f0f9ee855d2c2539cffb499b30ffa138ca47ffb56e516'),
-    'tools/page-entry/selected/linked_loop_direct.inc': (5485, 'cd36449b96cc574393f2e6249b5d32e0b33053e8c1b18606f2383d6d9fdd877e'),
+    'tools/page-entry/selected/linked_loop_direct.inc': (5655, '217453f636b27862db716ad3dd6985c805b0a514e54d19dba53ef91028f225b7'),
     'tools/page-entry/selected/tests/cached_direct_aux_far/native.c': (14921, '9da647fd0796dfb0a5cea0854ca017b0f9c41e03350762a53d134413843715f1'),
     'tools/page-entry/selected/tests/cached_direct_aux_far/model.c': (6581, '1dcb80084ccc868625ec2fe66d26fdfa7de334beb94e29fa5518fb8474c379a0'),
     'tools/page-entry/selected/tests/cached_direct_aux_far/model.h': (340, '1f7baf777b3a6ebb0a012a83fd7ce810ae3f155689721d434a718a5ea19ee5f1'),

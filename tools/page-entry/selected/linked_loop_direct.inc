@@ -86,9 +86,12 @@ int li2_ld_aux_validate(const struct li2_dd_aux_plan *p) {
 }
 int li2_ld_aux_recover(const struct li2_dd_aux_plan *p,uintptr_t pc,const uint64_t raw[16],
     uint64_t flags,const uint64_t spill_words[4],struct li2_dd_recovered *out) {
-    if(p && p->version==LI2_DD_AUX_VERSION)return li2_dd_aux_recover(p,pc,raw,flags,spill_words,out);
+    if(p && p->version==LI2_DD_AUX_VERSION && p->value.record.version==LI2_DD_VERSION)
+        return li2_dd_aux_recover(p,pc,raw,flags,spill_words,out);
     if(!out)return LI2_DD_ARGUMENT;
     zero(out,sizeof *out);
-    if(!aux_recovery_value(p,LI2_LD_AUX_VERSION))return LI2_DD_CORRUPT;
+    /* Mixed outer/inner versions corrupt the typed AUX value. */
+    if(!aux_recovery_value(p,LI2_LD_AUX_VERSION) || p->value.record.version!=LI2_LD_VERSION)
+        return LI2_DD_CORRUPT;
     return recover(&p->value,pc,raw,flags,spill_words,LI2_LD_VERSION,1,out);
 }
