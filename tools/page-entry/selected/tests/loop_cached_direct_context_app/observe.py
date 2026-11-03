@@ -200,6 +200,64 @@ def terminal_observation(data,control,*,layout):
     at=layout['wire_epoch']+layout['epoch']+layout['epoch_phase']+3*layout['phase']+128
     return 0,0,q(data,at,32)
 
+def complete_epoch(raw,index,v,h,owners,intervals,app,native,model,image,backing_size,pid,binding,common,descriptor):
+    roots=MEMBERS[index];e=q(raw,0,32);present=int(index==1)
+    need(e[:5]==(1,1,1,1,roots[0]) and e[5]>0 and e[6:8]==(len(roots),0) and
+         e[8]<8 and e[9]<2 and e[10]<9 and e[11]>0 and e[11]%4096==0 and
+         e[12]>0 and e[13]>0 and e[14]==roots[0] and e[16:19]==(0,present,present) and
+         e[19]>0 and e[22:28]==(0,index,1,1,0,13) and not any(e[28:]),
+         'actual two-epoch member/exit geometry and explicitly present auxiliary proof')
+    cursor=256
+    for offset,size in intervals:
+        zero(raw[cursor:offset],'whole epoch alignment padding');cursor=offset+size
+    zero(raw[cursor:],'whole trailing epoch padding')
+    members=[]
+    for i in range(8):
+        value=raw[v['epoch_member']+i*v['member']:v['epoch_member']+(i+1)*v['member']]
+        if i<len(roots):members.append(_member(value,roots[i],e,v,image,backing_size,common))
+        else:zero(value,'whole unused actual member capacity')
+    need(all(len({m[k]for m in members})==len(members)for k in('generation','binding','node','slot')),
+         'simultaneously live members have distinct complete identities')
+    primary=members[0]
+    need(e[8:10]==(primary['slot'],primary['bank']) and e[12]==primary['generation'] and
+         e[15]==primary['layout'][0],'actual original head0 of the primary member')
+    proof=raw[v['epoch_bundle']:v['epoch_bundle']+v['bundle']]
+    side=raw[v['epoch_side']:v['epoch_side']+v['side']]
+    bundle=_bundle(proof,v,e,members,pid,app,binding)if present else None
+    if not present:zero(proof+side,'ordinary activation has genuinely absent LCX proof')
+    else:
+        need(bundle['token']==h[9] and q(side,0,3)==(1,e[19],e[5]) and q(side,24)[0]>0 and
+             q(side,32)[0]>0 and side[v['side_bundle']:]==proof,
+             'same actual immutable auxiliary proof and issued side completion identity')
+        descriptor._query(side[40:336],bundle['code'],4096,1)
+        descriptor._query(side[336:632],bundle['spill'],4096,3)
+    completion=raw[v['epoch_completion']:v['epoch_completion']+v['completion']]
+    need(q(completion,0,2)==(e[19],e[5]) and u(completion,16,2)==(len(roots),1),
+         'original completion identity and actual completed member count')
+    for i,m in enumerate(members):
+        offset=v['completion_member']+i*v['completion_member_size']
+        need(completion[offset:offset+96]==m['raw'] and
+             completion[offset+96+296:offset+96+296+8760]==m['key'],
+             'whole member and source identities in the actual original completion')
+    counts=[_phase(raw[v['epoch_phase']+i*v['phase']:v['epoch_phase']+(i+1)*v['phase']],
+        v,e,i,present,bundle,owners,descriptor)for i in range(4)]
+    need(all(all(x<=y for x,y in zip(counts[i],counts[i+1]))for i in range(3)),
+         'all observed counters are monotonic')
+    before,entered,event,complete=counts
+    need(entered[10]==before[10]+1 and entered[11]==before[11],
+         'one actual generated entry follows each bound snapshot')
+    need(entered==event,'zero interior signals or owner operations in the actual generated interval')
+    need(tuple(b-a for a,b in zip(event[:6],complete[:6]))==(1,1,0,0,0,0) and
+         complete[11]==event[11]+1,'one final NX and one actual completed epoch')
+    need(entered[42:49]==event[42:49] and complete[44]==event[44]+present and
+         complete[46:48]==event[46:48]==(0,0) and complete[48]==event[48]+3*present,
+         'actual auxiliary close and two side seals, without recovery or retirement')
+    entry=_frame(raw[v['epoch_entry']:v['epoch_entry']+v['frame']],v,e,app,native,model,
+                 ENTRIES[index],False,0x4101fe if index==0 else 0x410207,common)
+    event_frame=_frame(raw[v['epoch_event']:v['epoch_event']+v['frame']],v,e,app,native,model,
+                 EXITS[index],True,0,common)
+    return dict(header=e,members=members,counts=counts,entry=entry,event=event_frame)
+
 def read(data,app,native,image,pid,uid,control,exit_status,gated=None,*,backing_size,layout,
          differential,binding,dependencies):
     common,descriptor=dependencies;h=_framing(data,control,layout);v=layout
@@ -218,62 +276,9 @@ def read(data,app,native,image,pid,uid,control,exit_status,gated=None,*,backing_
          'complete independently checked146-step native reference')
     model=app.trace_model(native);epochs=[]
     for index,roots in enumerate(MEMBERS):
-        at=v['wire_epoch']+index*v['epoch'];raw=data[at:at+v['epoch']];e=q(raw,0,32);present=int(index==1)
-        need(e[:5]==(1,1,1,1,roots[0]) and e[5]>0 and e[6:8]==(len(roots),0) and
-             e[8]<8 and e[9]<2 and e[10]<9 and e[11]>0 and e[11]%4096==0 and
-             e[12]>0 and e[13]>0 and e[14]==roots[0] and e[16:19]==(0,present,present) and
-             e[19]>0 and e[22:28]==(0,index,1,1,0,13) and not any(e[28:]),
-             'actual two-epoch member/exit geometry and explicitly present auxiliary proof')
-        cursor=256
-        for offset,size in intervals:
-            zero(raw[cursor:offset],'whole epoch alignment padding');cursor=offset+size
-        zero(raw[cursor:],'whole trailing epoch padding')
-        members=[]
-        for i in range(8):
-            value=raw[v['epoch_member']+i*v['member']:v['epoch_member']+(i+1)*v['member']]
-            if i<len(roots):members.append(_member(value,roots[i],e,v,image,backing_size,common))
-            else:zero(value,'whole unused actual member capacity')
-        need(all(len({m[k]for m in members})==len(members)for k in('generation','binding','node','slot')),
-             'simultaneously live members have distinct complete identities')
-        primary=members[0]
-        need(e[8:10]==(primary['slot'],primary['bank']) and e[12]==primary['generation'] and
-             e[15]==primary['layout'][0],'actual original head0 of the primary member')
-        proof=raw[v['epoch_bundle']:v['epoch_bundle']+v['bundle']]
-        side=raw[v['epoch_side']:v['epoch_side']+v['side']]
-        bundle=_bundle(proof,v,e,members,pid,app,binding)if present else None
-        if not present:zero(proof+side,'ordinary activation has genuinely absent LCX proof')
-        else:
-            need(bundle['token']==h[9] and q(side,0,3)==(1,e[19],e[5]) and q(side,24)[0]>0 and
-                 q(side,32)[0]>0 and side[v['side_bundle']:]==proof,
-                 'same actual immutable auxiliary proof and issued side completion identity')
-            descriptor._query(side[40:336],bundle['code'],4096,1)
-            descriptor._query(side[336:632],bundle['spill'],4096,3)
-        completion=raw[v['epoch_completion']:v['epoch_completion']+v['completion']]
-        need(q(completion,0,2)==(e[19],e[5]) and u(completion,16,2)==(len(roots),1),
-             'original completion identity and actual completed member count')
-        for i,m in enumerate(members):
-            offset=v['completion_member']+i*v['completion_member_size']
-            need(completion[offset:offset+96]==m['raw'] and
-                 completion[offset+96+296:offset+96+296+8760]==m['key'],
-                 'whole member and source identities in the actual original completion')
-        counts=[_phase(raw[v['epoch_phase']+i*v['phase']:v['epoch_phase']+(i+1)*v['phase']],
-            v,e,i,present,bundle,owners,descriptor)for i in range(4)]
-        need(all(all(x<=y for x,y in zip(counts[i],counts[i+1]))for i in range(3)),
-             'all observed counters are monotonic')
-        before,entered,event,complete=counts
-        need(entered[10]==before[10]+1 and entered[11]==before[11],
-             'one actual generated entry follows each bound snapshot')
-        need(entered==event,'zero interior signals or owner operations in the actual generated interval')
-        need(tuple(b-a for a,b in zip(event[:6],complete[:6]))==(1,1,0,0,0,0) and
-             complete[11]==event[11]+1,'one final NX and one actual completed epoch')
-        need(entered[42:49]==event[42:49] and complete[44]==event[44]+present and
-             complete[46:48]==event[46:48]==(0,0) and complete[48]==event[48]+3*present,
-             'actual auxiliary close and two side seals, without recovery or retirement')
-        entry=_frame(raw[v['epoch_entry']:v['epoch_entry']+v['frame']],v,e,app,native,model,
-                     ENTRIES[index],False,0x4101fe if index==0 else 0x410207,common)
-        event_frame=_frame(raw[v['epoch_event']:v['epoch_event']+v['frame']],v,e,app,native,model,
-                     EXITS[index],True,0,common)
-        epochs.append(dict(header=e,members=members,counts=counts,entry=entry,event=event_frame))
+        at=v['wire_epoch']+index*v['epoch'];raw=data[at:at+v['epoch']]
+        epochs.append(complete_epoch(raw,index,v,h,owners,intervals,app,native,model,image,
+                                     backing_size,pid,binding,common,descriptor))
     zero(data[v['wire_epoch']+2*v['epoch']:v['wire']],'whole unused observer epoch capacity')
     need(epochs[0]['header'][5]<epochs[1]['header'][5] and
          epochs[0]['header'][19]<epochs[1]['header'][19] and

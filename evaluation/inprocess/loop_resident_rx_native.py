@@ -55,7 +55,7 @@ CACHED_DIRECT_SCHEDULE=SCHEDULE[:30]+tuple(
     ('subject-'+lane,'program')for lane in('native',)+tuple(x[0]for x in CACHED_DIRECT_LANES))
 
 
-def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_case=None, arena=False, cached_direct_context=False):
+def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_case=None, arena=False, cached_direct_context=False, cached_direct_aba=False):
     """Explicit compiler/reader context; original source authority remains natural."""
     if context is not None and (type(context)is not dict or set(context)!=
             {'root','selected','reader_root','modules'}):
@@ -72,6 +72,10 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
             not cache8 or not group_descriptor or arena or effects_case is not None):
         raise ValueError('distinct cached DIRECT positive diagnostic under CACHE8/descriptor')
     if cached_direct_context:lanes,schedule=CACHED_DIRECT_LANES,CACHED_DIRECT_SCHEDULE
+    if type(cached_direct_aba)is not bool or cached_direct_aba and not cached_direct_context:
+        raise ValueError('distinct live-proof ABA requires cached DIRECT observation')
+    if cached_direct_aba:
+        lanes=tuple((label,mode,1,125)for label,mode,_,_ in CACHED_DIRECT_LANES)
     if group_descriptor and effects_case is not None:
         raise ValueError('descriptor and real-effect cohorts are distinct selectors')
     if effects_case is not None and (type(effects_case)is not int or effects_case not in(2,3,4) or not cache8):
@@ -87,6 +91,7 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
     if group_descriptor:module_paths=dict(module_paths,descriptor='loop_group_descriptor_reports.py')
     if arena:module_paths=dict(module_paths,arena='loop_translation_arena_reports.py')
     if cached_direct_context:module_paths=dict(module_paths,cached_direct='loop_cached_direct_context_reports.py')
+    if cached_direct_aba:module_paths=dict(module_paths,cached_direct='loop_cached_direct_context_aba_reports.py')
     root=ROOT if context is None else Path(context['root']).resolve(strict=True)
     reader_root=ROOT if context is None else Path(context['reader_root']).resolve(strict=True)
     selected=root/'tools/page-entry/selected' if context is None else Path(context['selected']).resolve(strict=True)
@@ -167,6 +172,9 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
         r['profile']='loop-cached-direct-context-ab146-v1'
         r['scope']='positive-only AB146 complete native comparison and actual cached DIRECT observations; causal/source/RAW/ABA/recovery controls and original55/79/full19 remain separate; no lifecycle qualification or timing credit'
         r['causal_controls_executed']=False
+    if cached_direct_aba:
+        r['profile']='loop-cached-direct-context-ab146-live-proof-aba-v1'
+        r['scope']='one actual live-proof ABA at second bound with original3303/detail3 refusal; positive43/original55/79 and other causal gates remain separate'
     pins={};artifacts={};aliases={};presence={}
     def pin(path):
         alias=Path(os.path.abspath(path));p=alias.resolve(strict=True);v=fact(p)
@@ -245,7 +253,10 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
         if cached_direct_context:
             common_frame=load('loop_cached_direct_context_common_frame',selected/'tests/loop_cache8_app/observe.py',pin)
             common_descriptor=load('loop_cached_direct_context_common_descriptor',selected/'tests/loop_group_descriptor_app/observe.py',pin)
-            observer=observer.configured(common_frame,common_descriptor)
+            if cached_direct_aba:
+                aba_observer=load('loop_cached_direct_context_actual_aba',fixture/'aba.py',pin)
+                observer=aba_observer.configured(observer,common_frame,common_descriptor)
+            else:observer=observer.configured(common_frame,common_descriptor)
             reports=modules['cached_direct'].configured(modules['row'].row,reports,modules['descriptor'],observer)
         if effects_case is not None:
             common_observer=load('loop_cache8_effects_common_observe',selected/'tests/loop_cache8_app/observe.py',pin)
@@ -258,7 +269,7 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
             if cached_direct_context:
                 bridge=build_rx(builder,archive,original,directory,pin,binary,aliases,call,holder,mode,
                     cache8=True,group_descriptor=True,arena=True,cached_direct_context=True,
-                    cached_direct_observe=True,selected=selected,root=root)
+                    cached_direct_observe=True,selected=selected,root=root,**(dict(cached_direct_aba=True)if cached_direct_aba else{}))
             elif arena:
                 bridge=build_rx(builder,archive,original,directory,pin,binary,aliases,call,holder,mode,
                     cache8=True,group_descriptor=True,arena=True,arena_observe=control,selected=selected,root=root)
@@ -336,6 +347,36 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
                         need(len(c['terminal_controls']['entry_refusals'])==
                              len(set(c['terminal_controls']['entry_refusals']))==(0 if effects_case==2 else 9),
                              'all separate actual consumed-entry terminal controls')
+                elif cached_direct_aba and role=='gated':
+                    need(native is not None and len(out)==reader.PREFIX,'actual failed ABA application prefix only')
+                    prefix=reader._prefix(out,0,False,image,row['pid'],cpu,seed,reference=reference)
+                    need(all(prefix[k]==native[k]for k in('seed','source','stack','data','rsp','predecessor','hardware')),
+                         'whole actual ABA causal source/seed/hardware equals fresh native')
+                    c['application_complete']=False
+                    layout=holder['cached_direct_observer_layout'];aba_layout=holder['cached_direct_aba_layout']
+                    need(row['captures']['record']['bytes']==layout['wire']+64+aba_layout['record']+64,
+                         'complete ordinary partial wire plus distinct actual ABA appendix')
+                    record_path=binary(private/row['captures']['record']['file']);record=record_path.read_bytes();st=record_path.stat()
+                    need(st.st_uid==os.getuid() and observer.q(record,256,2)==(st.st_dev,st.st_ino),
+                         'actual ABA sink equals retained post-reap record inode')
+                    backing=fact(binary(carrier))
+                    need(backing==holder['subject_artifacts']['carrier'],'whole actual ABA carrier backing')
+                    c['carrier_backing']=backing
+                    kw=dict(backing_size=backing['bytes'],layout=layout,aba_layout=aba_layout,
+                            binding=holder['binding'],differential=mode=='differential')
+                    c['observer']=observer.read(record,reader,native,image,row['pid'],st.st_uid,1,row['exit'],None,**kw)
+                    c['observer_controls']=observer.controls(record,reader,native,image,row['pid'],st.st_uid,1,row['exit'],None,**kw)
+                    named(c['observer_controls'],observer.CONTROL_COUNT,H(record))
+                    need(len(c['observer_controls']['phase_refusals'])==len(set(c['observer_controls']['phase_refusals']))==observer.PHASE_CONTROL_COUNT and
+                         len(c['observer_controls']['backing_refusals'])==len(set(c['observer_controls']['backing_refusals']))==observer.BACKING_CONTROL_COUNT,
+                         'all separate supplied ABA phase and actual carrier corruptions')
+                    need(c['observer']['actual_refusals']==c['observer']['actual_restorations']==c['observer']['raw_controls']==1 and
+                         c['observer']['qualification_credit']is False and c['observer']['completed_application']is False,
+                         'one real restored ABA and refused entry, never a completed application')
+                    c['terminal']=reports.read(err,record,1,mode,layout=layout,aba_layout=aba_layout)
+                    c['terminal_controls']=reports.controls(err,record,1,mode,layout=layout,aba_layout=aba_layout)
+                    need(len(c['terminal_controls']['refusals'])==len(set(c['terminal_controls']['refusals']))==reports.CONTROL_COUNT,
+                         'all separate literal stopped-terminal controls')
                 elif cached_direct_context:
                     parsed=reader.read(out,0,role=='native',row['exit'],image,row['pid'],cpu,seed,reference=reference)
                     c['application_complete']=True
@@ -580,7 +621,13 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
                 need(last.get('reaped')is True and last.get('cleanup_errors')==[] and
                      all(d.get('closed')is True for d in last.get('descriptors',[])),
                      'failed subject closed before the next fixed subject')
-        if cached_direct_context:
+        if cached_direct_aba:
+            need(len(schedule)==43 and len(r['commands'])==43 and len(r['cases'])==3 and
+                 all(c['status']=='passed'for c in r['cases']) and
+                 r['whole_profile_qualified']is False and r['qualification_credit']is False and r['performance_credit']is False,
+                 'complete distinct43-command actual ABA cohort, with no qualification or timing promotion')
+            r['causal_controls_executed']=True
+        elif cached_direct_context:
             need(len(schedule)==43 and len(r['commands'])==43 and len(r['cases'])==3 and
                  all(c['status']=='passed'for c in r['cases']) and
                  r['whole_profile_qualified']is False and r['qualification_credit']is False and

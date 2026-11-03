@@ -109,6 +109,9 @@ static void lcxo_phase(struct lcxo_epoch *e,unsigned stage) {
     out->proof_write=w->proof_write;out->proof_seal=w->proof_seal;
     out->spill_before=w->spill_before;out->spill_closed=w->spill_closed;
 }
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT_ABA
+#include "loop_cached_direct_context_aba.inc"
+#endif
 static int lcxo_initialize(void) {
     if(lcxo.initialized || protected_count>=RANGES ||
        selected_run_protect_add(0,(uintptr_t)&lcxo,sizeof lcxo))return PE_STATE;
@@ -123,6 +126,9 @@ static int lcxo_initialize(void) {
     h[8]=LI2_LTA_NODES;h[9]=(uintptr_t)&pe;h[10]=(uintptr_t)&lcxo;
     h[11]=(uint64_t)fd;h[12]=(uint64_t)fl;h[13]=(uint64_t)st;
     h[14]=(uintptr_t)fork_gate_stack.ss_sp;h[15]=fork_gate_stack.ss_size;
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT_ABA
+    if(selected_run_protect_add(0,(uintptr_t)&lcxa,sizeof lcxa))return PE_STATE;
+#endif
     lcxo.initialized=1;return 0;
 }
 static void lcxo_bound(void) {
@@ -149,6 +155,9 @@ static void lcxo_bound(void) {
             equal(&out->key,&b->key[i],sizeof out->key),5);
     }
     lcxo_phase(e,0);lcxo.active=lcxo.epochs+1;
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT_ABA
+    lcxa_bound(e);
+#endif
 }
 static void lcxo_same_bundle(const struct lcxo_epoch *e) {
     const struct lcx_bundle *b=lcx_current_bundle();
@@ -211,4 +220,7 @@ static void lcxo_report(unsigned status,unsigned code) {
         if(result<=0 || (size_t)result>sizeof footer-at)return;
         at+=(size_t)result;
     }
+#ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT_ABA
+    lcxa_report(status,code);
+#endif
 }
