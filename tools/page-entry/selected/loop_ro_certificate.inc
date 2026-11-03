@@ -1,7 +1,12 @@
 /* Included after the complete protected sg_owner and original owner types.
    No mutable state or cached source result is hidden in a pure planner. */
+#ifdef LI2_LOOP_CACHE8
+_Static_assert(LI2_PTR_SLOTS==8 && PE_PROOF_BYTES==89U*PAGE,
+    "eight retained certificates with the unchanged complete publication bytes");
+#else
 _Static_assert(LI2_PTR_SLOTS==2 && PE_PROOF_BYTES==89U*PAGE,
     "same two retained certificates and complete publication bytes");
+#endif
 _Static_assert(_Alignof(struct li2_ptr_slot)==PAGE &&
     offsetof(struct li2_ptr_slot,publication)%PAGE==0 &&
     sizeof(((struct li2_ptr_slot *)0)->publication_pages)==PE_PROOF_BYTES &&

@@ -69,7 +69,13 @@ struct pda_work {
     struct li2_pgd_view view;
     unsigned bound,peer,primary,primary_bank,exit_member,receipt;
     unsigned recovery_member,completion,aborting;
+#ifdef LI2_LOOP_CACHE8
+    unsigned peer_member;
+    struct li2_pgd_view offer;
+    struct pda_claim_observation peer_claim[LI2_PGD_MEMBERS-1U];
+#else
     struct pda_claim_observation peer_claim;
+#endif
     struct pg_proof_query proof_exit[LI2_PGD_MEMBERS];
     struct le_permission directory_write,directory_seal;
     struct li2_private_code_query directory_closed;

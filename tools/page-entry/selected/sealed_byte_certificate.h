@@ -39,8 +39,14 @@ struct sbc_counts {
     unsigned initialized,last_failure;
     int last_full_result,reserved;
 };
+#ifdef LI2_LOOP_CACHE8
+_Static_assert(LI2_PTR_SLOTS==8 && sizeof(struct sbc_certificate)==200 &&
+    sizeof(struct sbc_owner)==1744 && sizeof(struct sbc_counts)==120,
+    "literal eight-slot x86-64 byte-certificate metadata");
+#else
 _Static_assert(sizeof(struct sbc_certificate)==200 && sizeof(struct sbc_owner)==448 &&
     sizeof(struct sbc_counts)==120,"literal x86-64 byte-certificate metadata");
+#endif
 enum sbc_failure { SBC_NONE=0,SBC_FULL_SCAN_ERROR=1,SBC_DISAGREEMENT=2,SBC_LIVE_QUERY_ERROR=3 };
 static int sbc_initialize(void);
 static int sbc_replace_begin(void);

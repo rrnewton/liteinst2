@@ -16,4 +16,7 @@
 #if !defined(LI2_PG_LOOP_RESIDENT_RX_BINDING_VERSION) || LI2_PG_LOOP_RESIDENT_RX_BINDING_VERSION != 1
 #error "LOOP retained RX requires its complete distinct source binding"
 #endif
+#ifdef LI2_LOOP_CACHE8
+#include "loop_cache8_profile.h"
+#endif
 #endif

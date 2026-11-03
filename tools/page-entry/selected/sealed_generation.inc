@@ -24,8 +24,13 @@
     defined(LI2_PERSISTENT_RETAINED_EIGHT_HISTORY) || defined(LI2_REUSE_CENSUS)
 #error "sealed query evidence requires its own reader; no old capture cast"
 #endif
+#ifdef LI2_LOOP_CACHE8
+_Static_assert(LI2_PTR_SLOTS==8 && PE_CODE_BYTES==17U*PAGE && PE_PROOF_BYTES==89U*PAGE,
+    "eight retained certificates with unchanged complete code/proof extents");
+#else
 _Static_assert(LI2_PTR_SLOTS==2 && PE_CODE_BYTES==17U*PAGE && PE_PROOF_BYTES==89U*PAGE,
     "unchanged two retained certificates and complete code/proof extents");
+#endif
 _Static_assert(LI2_SEALED_REQUIRED_SEALS==
     (F_SEAL_WRITE|F_SEAL_GROW|F_SEAL_SHRINK|F_SEAL_SEAL),"all file seals");
 struct sg_owner_state {

@@ -129,7 +129,11 @@ static int lprx_drain(void) {
     return lprx_add(&pe.rx.quiet_releases,1);
 }
 static int lprx_complete_value(const struct pda_completion *c) {
+#ifdef LI2_LOOP_CACHE8
+    if(!c || c->rx.version!=2 || c->rx.count!=c->count || c->rx.reserved ||
+#else
     if(!c || c->rx.version!=1 || c->rx.count!=c->count || c->rx.reserved ||
+#endif
        !c->count || c->count>LI2_PGD_MEMBERS || c->rx.retained_mask&~((1U<<c->count)-1U) ||
        !li2_pgd_source_rx_value(&c->source,&c->domain_source,&c->rx.source) ||
        c->rx.source.token.owner!=&pe || c->rx.source.token.serial!=c->serial ||
@@ -456,7 +460,11 @@ static void lprx_terminal(void) {
     if(good)(void)lprx_add(&pe.rx.terminal_closed,1);
 }
 static void lprx_report(unsigned status,unsigned code) {
+#ifdef LI2_LOOP_CACHE8
+    struct writer transit={0};text(&transit,"LI2_LOOP_CACHE8_TRANSIT {\"version\":1");
+#else
     struct writer transit={0};text(&transit,"LI2_LOOP_RX_TRANSIT {\"version\":1");
+#endif
     field(&transit,",\"status\":",status);field(&transit,",\"failure_code\":",code);
     field(&transit,",\"branch_limit\":",LPRX_DIRECT_LIMIT);
     field(&transit,",\"offers\":",pe.rx.transit_offers);
@@ -468,19 +476,30 @@ static void lprx_report(unsigned status,unsigned code) {
 #ifdef LI2_LOOP_RESIDENT_RX_ORACLE
     lrxo_report(status,code);
 #endif
+#ifdef LI2_LOOP_CACHE8_OBSERVE
+    lc8o_report(status,code);
+#endif
     const struct pda_work *work=&pe.domain.work;
     const struct pda_completion *last=0;
     if(pe.p.phase==LI2_PG_CLOSED && work->bound==1 && work->completion==1 &&
        work->receipt<LI2_PGD_RECEIPTS) {
         const struct pda_completion *c=&pe.domain.completion[work->receipt];
         if(c->complete==1 && c->id==pe.domain.next_id && c->serial==pe.p.serial &&
+#ifdef LI2_LOOP_CACHE8
+           c->count==work->view.count && c->rx.version==2 && c->rx.count==c->count &&
+#else
            c->count==work->view.count && c->rx.version==1 && c->rx.count==c->count &&
+#endif
            c->source.serial==c->serial && c->domain_source.token.owner==&pe &&
            c->domain_source.token.serial==c->serial && c->rx.source.token.owner==&pe &&
            c->rx.source.token.serial==c->serial &&
            equal(&c->domain_source.entry,&work->view.entry,sizeof work->view.entry))last=c;
     }
+#ifdef LI2_LOOP_CACHE8
+    struct writer w={0};text(&w,"LI2_LOOP_CACHE8_RX {\"version\":2");
+#else
     struct writer w={0};text(&w,"LI2_LOOP_RESIDENT_RX {\"version\":1");
+#endif
     field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
 #define LPRX_FIELD(n) field(&w,",\"" #n "\":",pe.rx.n)
     LPRX_FIELD(entries);LPRX_FIELD(retained_entries);LPRX_FIELD(quiet_releases);

@@ -11,6 +11,11 @@
 #error "group release owner has its own future capture contract"
 #endif
 #include "persistent_group_plan.h"
+#ifdef LI2_LOOP_CACHE8_OBSERVE
+#ifndef LI2_LOOP_CACHE8
+#error "cache8 observer requires its actual eight-member owner"
+#endif
+#endif
 #if defined(LI2_SEALED_BYTE_CERTIFICATE_DIFFERENTIAL) && !defined(LI2_SEALED_BYTE_CERTIFICATE)
 #error "byte differential requires the explicit byte certificate profile"
 #endif
@@ -43,6 +48,9 @@
 #include "loop_ro_certificate.h"
 #ifdef LI2_LOOP_RESIDENT_RX
 #include "loop_resident_rx.h"
+#ifdef LI2_LOOP_CACHE8
+#include "loop_cache8.h"
+#endif
 #endif
 #endif
 #ifdef LI2_PERSISTENT_LOOP_EFFECTS
@@ -257,7 +265,11 @@ struct ped_permit {
     struct li2_pg_rseq_progress rseq;
 };
 #ifdef LI2_PERSISTENT_RETAINED_TWO
+#ifdef LI2_LOOP_CACHE8
+#define LI2_PTR_SLOTS LI2_LOOP_CACHE8_SLOTS
+#else
 #define LI2_PTR_SLOTS 2U
+#endif
 /* Fixed-address authority. A selection is never an execution/source permit. */
 struct li2_ptr_slot_ref {
     const struct li2_pg_epoch *owner;
@@ -297,6 +309,9 @@ struct li2_ptr_slot {
 struct li2_pg_epoch {
 #ifdef LI2_LOOP_RESIDENT_RX
     struct lprx_state rx;
+#ifdef LI2_LOOP_CACHE8
+    struct li2_loop_cache8_progress cache8;
+#endif
 #endif
     struct li2_pg_progress p,last_terminal;
 #ifdef LI2_PERSISTENT_SUBENTRY
@@ -381,6 +396,9 @@ struct li2_pg_epoch {
 #endif
 };
 static struct li2_pg_epoch pe;
+#ifdef LI2_LOOP_CACHE8
+const struct li2_loop_cache8_progress *li2_loop_cache8_progress(void) {return &pe.cache8;}
+#endif
 #ifdef LI2_PERSISTENT_RET_DISPATCH
 #include "persistent_ret_resume.h"
 #endif
@@ -1072,6 +1090,9 @@ static void selected_persistent_initialize(void) {
 #ifdef LI2_LOOP_RESIDENT_RX_ORACLE
     pe_need(!lrxo_initialize(),PE_STATE,540);
 #endif
+#ifdef LI2_LOOP_CACHE8_OBSERVE
+    pe_need(!lc8o_initialize(),PE_STATE,560);
+#endif
     pe.registered=1;pe.session=selected_session;
 #ifdef LI2_PERSISTENT_SEALED_GENERATION
     pe_need(!sg_initialize(),PE_PUBLICATION,190);
@@ -1224,6 +1245,9 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
         pe_need(plr_scope_enter(PLR_COLD),PE_REENTRY,243);
         pe.build_started=1;ped_count(PGC_REF(cold_attempts));
+#ifdef LI2_LOOP_CACHE8
+        ped_count(&pe.cache8.cold_calls);
+#endif
         pe.build_result=plr_cold(s,pages);
 #else
         pe.build_started=1;pe_decoding=1;ped_count(PGC_REF(cold_attempts));__asm__ volatile("":::"memory");
@@ -1304,6 +1328,9 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
             !pe.miss.status && !pe.miss.reason && !pe.miss.site && !pe.miss.pc && !pe.miss.detail,
             PE_PLAN,pe.build_result);
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
+#ifdef LI2_LOOP_CACHE8
+        ped_count(&pe.cache8.compact_build_calls);
+#endif
         int build=
 #ifdef LI2_PERSISTENT_LOOP_EFFECTS
             pe.loop.route==LI2_LPE_VERSION?
@@ -1313,6 +1340,9 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
             li2_lp_compact_build(&pe.cold,&pe.rebuild,&pe.candidate.plan,&pe.loop.check):
             li2_lpf_compact_build(&pe.cold,&pe.rebuild,&pe.candidate.plan);
         pe_need(!build,PE_PLAN,1);++pe.plan_proofs;
+#ifdef LI2_LOOP_CACHE8
+        ped_count(&pe.cache8.compact_validate_calls);
+#endif
         int validate=
 #ifdef LI2_PERSISTENT_LOOP_EFFECTS
             pe.loop.route==LI2_LPE_VERSION?
@@ -2351,6 +2381,9 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #include "persistent_active_domain.inc"
 #ifdef LI2_LOOP_RESIDENT_RX
 #include "loop_resident_rx_owner.inc"
+#ifdef LI2_LOOP_CACHE8_OBSERVE
+#include "loop_cache8_observe.inc"
+#endif
 #ifdef LI2_LOOP_RESIDENT_RX_ORACLE
 #include "loop_resident_rx_oracle.inc"
 #endif

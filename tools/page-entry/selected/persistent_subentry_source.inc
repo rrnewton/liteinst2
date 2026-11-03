@@ -51,7 +51,11 @@ int li2_pgs_entry_source(const struct li2_pgs_entry *e,uintptr_t root,
     if(!e || !root || !actual || !layout || e->complete!=1 || e->reserved ||
        !e->token.owner || !e->token.serial || e->token.serial!=actual->serial ||
        !e->transfer_serial || !e->generation || !e->build_serial || e->build_serial>e->token.serial ||
+#ifdef LI2_LOOP_CACHE8
+       e->slot>=LI2_LOOP_CACHE8_SLOTS || e->bank>1 || actual->complete!=1 || actual->reserved ||
+#else
        e->slot>=2 || e->bank>1 || actual->complete!=1 || actual->reserved ||
+#endif
        !e->anchor.owner || !e->anchor.sequence ||
        !equal(&e->anchor,&actual->anchor,sizeof e->anchor))return 0;
     const struct li2_pgs_target *t=&e->target;const struct li2_pe_head *h=&e->row;

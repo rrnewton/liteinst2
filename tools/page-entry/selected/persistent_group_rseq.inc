@@ -300,8 +300,16 @@ int li2_pgd_rseq_bind(const struct li2_pg_token *t,const ucontext_t *uc) {
            v->member[i].identity.root!=v->member[i].plan->entry ||
            v->member[i].identity.layout.directory!=v->directory ||
 #ifdef LI2_PERSISTENT_CROSS_PAIR
+#ifdef LI2_LOOP_CACHE8
+           (i==0?!li2_pgd_source_pair_equal(v->member[i].key,&s->source.key):
+             (li2_pgd_source_pair_equal(v->member[i].key,&s->source.key)?
+               !li2_pgu_zero(&d->peer[i-1],sizeof d->peer[i-1]):
+               !li2_pgx_source_value(&d->peer[i-1],&s->source,t,
+                   &v->member[i].identity,v->member[i].key,2))))
+#else
            ((i==0 || !d->peer.started)?!li2_pgd_source_pair_equal(v->member[i].key,&s->source.key):
                !li2_pgx_source_value(&d->peer,&s->source,t,&v->member[i].identity,v->member[i].key,2)))
+#endif
 #else
            !li2_pgd_source_pair_equal(v->member[i].key,&s->source.key))
 #endif
@@ -316,6 +324,12 @@ int li2_pgd_rseq_bind(const struct li2_pg_token *t,const ucontext_t *uc) {
        original cold proof and registration binding. This joins both to this
        one fresh actual ACTIVE registration and one complete held source pair;
        no decoder proof or second registration is invented here. */
+#endif
+#ifdef LI2_LOOP_CACHE8
+    for(unsigned i=d->count;i<LI2_PGD_MEMBERS;i++)
+        if(!li2_pgu_zero(&d->ref[i],sizeof d->ref[i]) ||
+           (i && !li2_pgu_zero(&d->peer[i-1],sizeof d->peer[i-1])))
+            return pgr_bad(LI2_RN_PIN,512);
 #endif
     pgr_zero(&pg_rseq.word_entry);
     pg_rseq.domain_count=d->count;

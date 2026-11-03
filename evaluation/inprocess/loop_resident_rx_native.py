@@ -32,11 +32,14 @@ SCHEDULE=APP_SCHEDULE+(('policy-headers','metadata'),('policy-link','release_bui
 
 
 
-def execute(a, *, context=None):
+def execute(a, *, context=None, cache8=False):
     """Explicit compiler/reader context; original source authority remains natural."""
     if context is not None and (type(context)is not dict or set(context)!=
             {'root','selected','reader_root','modules'}):
         raise ValueError('complete explicit compiler/reader context')
+    if type(cache8)is not bool:raise ValueError('explicit additive cache8 selector')
+    module_paths=MODULE_PATHS if not cache8 else dict(MODULE_PATHS,
+        cache8='loop_cache8_reports.py',row='loop_ro_oracle_reports.py')
     root=ROOT if context is None else Path(context['root']).resolve(strict=True)
     reader_root=ROOT if context is None else Path(context['reader_root']).resolve(strict=True)
     selected=root/'tools/page-entry/selected' if context is None else Path(context['selected']).resolve(strict=True)
@@ -50,15 +53,15 @@ def execute(a, *, context=None):
         from page_selected import ENV,fact,need,save
         from page_selected_process import invoke
         from page_selected_effect_ls import program_invoke
-        from persistent_dynamic import BOUNDS,imported_sources,seed_prerequisite,named,H
+        from persistent_dynamic import BOUNDS,imported_sources,seed_prerequisite,named,H,load
         from loop_ro_current_archive import current_archive
         if context is None:
             import importlib
-            modules={key:importlib.import_module(Path(name).stem) for key,name in MODULE_PATHS.items()}
+            modules={key:importlib.import_module(Path(name).stem) for key,name in module_paths.items()}
         else:modules=context['modules']
     finally:sys.path[:]=previous_path
-    need(type(modules)is dict and set(modules)==set(MODULE_PATHS), 'complete explicit helper modules')
-    for key,name in MODULE_PATHS.items():
+    need(type(modules)is dict and set(modules)==set(module_paths), 'complete explicit helper modules')
+    for key,name in module_paths.items():
         need(Path(modules[key].__file__).resolve(strict=True)==reader_root/'evaluation/inprocess'/name,
              'canonical explicit helper module '+key)
     need('persistent_terminal_extent' in sys.modules and
@@ -74,7 +77,11 @@ def execute(a, *, context=None):
     prepare_inputs=modules['app_helpers'].prepare_inputs;preparation=modules['app_helpers'].preparation
     observer=modules['observer'];reports=modules['terminal'].configured(
         modules['fused'],modules['effects'],modules['certificate'])
-    fixture=selected/'tests/persistent_direct_frontier_app'
+    fixture=selected/('tests/loop_cache8_app' if cache8 else 'tests/persistent_direct_frontier_app')
+    reference='cache8-abc169' if cache8 else 'direct44'
+    if cache8:
+        reports=modules['cache8'].configured(modules['row'].row,modules['terminal'],
+            modules['certificate'],modules['terminal'].effects)
     need(not sys.flags.optimize and len(os.sched_getaffinity(0))==1,'assertions and reserved singleton')
     cpu=next(iter(os.sched_getaffinity(0)));private=Path(a.output).absolute()
     need(private.parent==root/'target/evaluation/inprocess','private output under the original root')
@@ -89,6 +96,9 @@ def execute(a, *, context=None):
         scope='complete44-step native model and application state; typed RX observer/32 restored controls; no old owner capture or full19 credit',
         seed_prerequisite=dict(planned=1,status='unexecuted',launched=False,expected_exit=0,
             bounds=BOUNDS['seed'],owner_subjects=0,completed_applications=0,performance_credit=False))
+    if cache8:
+        r['profile']='loop-cache8-abc169-v1'
+        r['scope']='additive ABC169 full native state and real four-epoch/24-refusal wire; old49 remains separate'
     pins={};artifacts={};aliases={};presence={}
     def pin(path):
         alias=Path(os.path.abspath(path));p=alias.resolve(strict=True);v=fact(p)
@@ -137,16 +147,22 @@ def execute(a, *, context=None):
             if presence[path]:pin(path)
         need(not presence['/etc/ld.so.preload'],'no global preload')
         builder,archive,r['archive_provider']=current_archive(a.current_build,a.current_build_sha256,root,pin,binary,aliases)
-        original=compile_subject(builder,private,pin,binary,aliases,run,r,reference='direct44',fixture=fixture)
+        original=compile_subject(builder,private,pin,binary,aliases,run,r,reference=reference,fixture=fixture)
         reader,_,native_policy=reader_support(builder,private,pin,binary,run,r,fixture=fixture)
         image=reader.elf(original.read_bytes(),native_policy)
         seed=seed_prerequisite(builder,private,pin,binary,run,r)
         need(r['seed_prerequisite']['status']=='passed','original independent seed prerequisite')
-        launcher=pin(fixture/'launch.py');subject={};r['lanes']={}
+        if cache8:observer=load('loop_cache8_actual_observe',fixture/'observe.py',pin)
+        launcher=pin((selected/'tests/persistent_direct_frontier_app' if cache8 else fixture)/'launch.py')
+        subject={};r['lanes']={}
         for label,mode,control,expected in LANES:
             directory=private/(label+'-build');directory.mkdir();holder=r['lanes'][label]={}
             call=lane_run(label)
-            bridge=build_rx(builder,archive,original,directory,pin,binary,aliases,call,holder,mode,
+            if cache8:
+                bridge=build_rx(builder,archive,original,directory,pin,binary,aliases,call,holder,mode,
+                    cache8=True,cache8_observe=control,selected=selected,root=root)
+            else:
+                bridge=build_rx(builder,archive,original,directory,pin,binary,aliases,call,holder,mode,
                             control=control,selected=selected,root=root)
             inputs=prepare_inputs(original,bridge,builder,directory,pin,binary,call,holder,r['application_build'])
             subject[label]=(holder,bridge,*inputs)
@@ -164,30 +180,75 @@ def execute(a, *, context=None):
             try:
                 row,out,err=run('subject-'+label,argv,profile='program',expected=expected,record=role=='gated')
                 preparation(c,row,directory,original,roots,objects,description,carrier,private,binary,r)
-                if role=='gated':need(row['captures']['record']['bytes']==0,'no old protected owner wire or capture cast')
-                if label=='causal':
-                    need(native is not None and len(out)==reader.PREFIX,'actual failed application prefix only')
-                    prefix=reader._prefix(out,0,False,image,row['pid'],cpu,seed,reference='direct44')
-                    need(all(prefix[k]==native[k] for k in ('seed','source','stack','data','rsp','predecessor','hardware')),
-                         'whole actual causal prefix source/seed/hardware equals fresh native')
-                    c['observer'],ordinary=observer.observed(err,1)
-                    c['observer_controls']=observer.controls(err,1)
-                    c['application_complete']=False
-                else:
-                    parsed=reader.read(out,0,role=='native',row['exit'],image,row['pid'],cpu,seed,reference='direct44')
-                    if role=='native':
-                        c['application_controls']=reader.controls(out,0,True,row['exit'],image,row['pid'],cpu,seed,reference='direct44')
-                        named(c['application_controls'],40,H(out))
-                        need(err==b'' and parsed['header'][5]==1,'actual native44 reference and empty stderr')
-                        native=parsed;c['native_instructions']=44;c['native_frames']=12
+                if cache8:
+                    if label=='causal':
+                        need(native is not None and len(out)==reader.PREFIX,'actual failed ABC169 application prefix only')
+                        prefix=reader._prefix(out,0,False,image,row['pid'],cpu,seed,reference=reference)
+                        need(all(prefix[k]==native[k]for k in('seed','source','stack','data','rsp','predecessor','hardware')),
+                             'whole actual causal source/seed/hardware equals fresh native')
+                        parsed=None;c['application_complete']=False
                     else:
-                        need(native is not None and parsed['header'][4:6]==(0,0),
-                             'actual same-mode gated role before common full-state comparison')
-                        c['pair']=reader.application_pair(native,parsed)
-                        c['observer'],ordinary=observer.observed(err,0)
-                        c['observer_controls']=observer.controls(err,0)
-                        c['terminal']=reports.finite(ordinary,mode)
-                    c['application_complete']=True
+                        parsed=reader.read(out,0,role=='native',row['exit'],image,row['pid'],cpu,seed,reference=reference)
+                        c['application_complete']=True
+                    if role=='native':
+                        c['application_controls']=reader.controls(out,0,True,row['exit'],image,row['pid'],cpu,seed,reference=reference)
+                        named(c['application_controls'],45,H(out))
+                        need(err==b'' and parsed['header'][5]==1,'actual native169 reference and empty stderr')
+                        native=parsed;c['native_instructions']=169;c['native_frames']=12
+                    else:
+                        need(native is not None and row['captures']['record']['bytes']==observer.WIRE+64,
+                             'complete actual independent CACHE8 wire; no old capture cast')
+                        record_path=binary(private/row['captures']['record']['file']);record=record_path.read_bytes()
+                        st=record_path.stat()
+                        need(st.st_uid==os.getuid() and observer.q(record,256,2)==(st.st_dev,st.st_ino),
+                             'captured sink identity equals actual post-reap record inode')
+                        backing=fact(binary(carrier))
+                        need(backing==holder['subject_artifacts']['carrier'],
+                             'whole independently prepared actual carrier backing identity')
+                        c['carrier_backing']=backing
+                        c['observer']=observer.read(record,reader,native,image,row['pid'],st.st_uid,control,row['exit'],parsed,
+                            backing_size=backing['bytes'])
+                        c['observer_controls']=observer.controls(record,reader,native,image,row['pid'],st.st_uid,control,row['exit'],parsed,
+                            backing_size=backing['bytes'])
+                        named(c['observer_controls'],109 if control else 81,H(record))
+                        need(len(c['observer_controls']['phase_refusals'])==
+                             len(set(c['observer_controls']['phase_refusals']))==40,
+                             'all40 separate coherent phase-counter corruptions required')
+                        need(len(c['observer_controls']['backing_refusals'])==
+                             len(set(c['observer_controls']['backing_refusals']))==20,
+                             'all20 independent actual and external backing-size corruptions required')
+                        need(c['observer']['actual_refusals']==c['observer']['actual_restorations']==(24 if control else 0),
+                             'every literal genuine mutation/restoration or exact positive zero')
+                        if not control:c['pair']=c['observer']['native_pair']
+                        c['terminal']=reports.read(err,record,control,mode)
+                        c['terminal_controls']=reports.controls(err,record,control,mode)
+                        need(len(c['terminal_controls']['refusals'])==len(set(c['terminal_controls']['refusals']))==10,
+                             'all ten exact typed terminal/binary-join corruptions')
+                else:
+                    if role=='gated':need(row['captures']['record']['bytes']==0,'no old protected owner wire or capture cast')
+                    if label=='causal':
+                        need(native is not None and len(out)==reader.PREFIX,'actual failed application prefix only')
+                        prefix=reader._prefix(out,0,False,image,row['pid'],cpu,seed,reference='direct44')
+                        need(all(prefix[k]==native[k] for k in ('seed','source','stack','data','rsp','predecessor','hardware')),
+                             'whole actual causal prefix source/seed/hardware equals fresh native')
+                        c['observer'],ordinary=observer.observed(err,1)
+                        c['observer_controls']=observer.controls(err,1)
+                        c['application_complete']=False
+                    else:
+                        parsed=reader.read(out,0,role=='native',row['exit'],image,row['pid'],cpu,seed,reference='direct44')
+                        if role=='native':
+                            c['application_controls']=reader.controls(out,0,True,row['exit'],image,row['pid'],cpu,seed,reference='direct44')
+                            named(c['application_controls'],40,H(out))
+                            need(err==b'' and parsed['header'][5]==1,'actual native44 reference and empty stderr')
+                            native=parsed;c['native_instructions']=44;c['native_frames']=12
+                        else:
+                            need(native is not None and parsed['header'][4:6]==(0,0),
+                                 'actual same-mode gated role before common full-state comparison')
+                            c['pair']=reader.application_pair(native,parsed)
+                            c['observer'],ordinary=observer.observed(err,0)
+                            c['observer_controls']=observer.controls(err,0)
+                            c['terminal']=reports.finite(ordinary,mode)
+                        c['application_complete']=True
                 c.update(status='passed',exit=row['exit'],duration_ns=row['duration_ns'],captures=row['captures'])
             except Exception as e:
                 c['error']=type(e).__name__+': '+str(e)

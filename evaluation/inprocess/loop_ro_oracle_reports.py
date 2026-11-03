@@ -19,7 +19,7 @@ ROSTERS = {
 }
 
 
-def row(line, prefix, fields):
+def row(line, prefix, fields, *, version=1):
     need(type(line) is bytes and line.startswith(prefix) and len(line) < 4096,
          'bounded actual causal-test terminal row')
     values = json.loads(line[len(prefix):], object_pairs_hook=list)
@@ -28,7 +28,7 @@ def row(line, prefix, fields):
          'whole ordered unique causal-test fields')
     value = dict(values)
     need(all(type(v) is int and 0 <= v < 1 << 64 for v in value.values())
-         and value['version'] == 1 and line == prefix +
+         and value['version'] == version and line == prefix +
          json.dumps(value, separators=(',', ':'), allow_nan=False).encode(),
          'canonical unsigned actual causal-test values')
     return value

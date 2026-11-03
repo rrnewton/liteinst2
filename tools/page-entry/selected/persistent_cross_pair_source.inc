@@ -91,8 +91,13 @@ static int pgx_epochs(const struct li2_pg_token *t,const struct li2_pgx_source *
         x->allocation_epoch==s->allocation_epoch && x->generation_epoch==s->generation_epoch &&
         x->transactions_epoch==s->transactions_epoch && x->records_epoch==s->records_epoch;
 }
+#ifdef LI2_LOOP_CACHE8
+static int pgx_check(const struct li2_pg_token *t,struct li2_pgx_source *x,
+    const struct li2_pg_source_key *expected,unsigned stage,struct owned_page original[2]) {
+#else
 static int pgx_check(const struct li2_pg_token *t,struct li2_pgx_source *x,
     const struct li2_pg_source_key *expected,unsigned stage) {
+#endif
     if(stage>=LI2_PGX_CHECKS || !pgx_epochs(t,x) || !pgx_geometry(expected) ||
        x->first_error || x->declined || x->checks!=stage ||
        !pgsd_zero(&x->checkpoint[stage],sizeof x->checkpoint[stage]))
@@ -117,7 +122,11 @@ static int pgx_check(const struct li2_pg_token *t,struct li2_pgx_source *x,
             if(!stage)return pgx_decline(x,1+i);
             return pgx_error(x,LI2_FETCH_STALE,113+i);
         }
+#ifdef LI2_LOOP_CACHE8
+        if(stage && !fetch_owned_equal(p,&original[i]))
+#else
         if(stage && !fetch_owned_equal(p,&pg_source.peer_original[i]))
+#endif
             return pgx_error(x,LI2_FETCH_STALE,115+i);
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
         if(pgs_loop_page_check(p,r,&check))return pgx_error(x,check.code,check.detail);
@@ -133,7 +142,11 @@ static int pgx_check(const struct li2_pg_token *t,struct li2_pgx_source *x,
             .vma_first=r->first,.vma_end=r->end,.vma_major=r->major,.vma_minor=r->minor,
             .vma_inode=r->inode,.vma_offset=r->offset};
         ++c->pages;
+#ifdef LI2_LOOP_CACHE8
+        if(!stage) {original[i]=*p;x->key.page[i].identity=c->page[i];}
+#else
         if(!stage) {pg_source.peer_original[i]=*p;x->key.page[i].identity=c->page[i];}
+#endif
         if(!span_source_page_equal(&c->page[i],&expected->page[i].identity)) {
             if(!stage)return pgx_decline(x,3+i);
             return pgx_error(x,LI2_FETCH_STALE,119+i);
@@ -165,10 +178,18 @@ static int pgx_check(const struct li2_pg_token *t,struct li2_pgx_source *x,
     if(!pgx_epochs(t,x))return pgx_error(x,LI2_FETCH_STALE,125);
     c->complete=1;++x->checks;return 0;
 }
+#ifdef LI2_LOOP_CACHE8
+int li2_pgx_source_prepare_member(const struct li2_pg_token *t,unsigned member,unsigned *accepted) {
+    if(!member || member>=LI2_PGD_MEMBERS)return pgsd_bad(LI2_FETCH_STATE,126);
+    struct li2_pgx_source *x=&pg_source.peer_candidate[member-1];
+    const struct li2_pgd_view *offer=li2_pgx_owner_offer(t);
+    const struct li2_pgd_member *m=offer && offer->count==member+1?&offer->member[member]:0;
+#else
 int li2_pgx_source_prepare(const struct li2_pg_token *t,unsigned *accepted) {
     struct li2_pgx_source *x=&pg_source.peer_candidate;
     const struct li2_pgd_view *offer=li2_pgx_owner_offer(t);
     const struct li2_pgd_member *m=offer?&offer->member[1]:0;
+#endif
     const struct li2_pg_sources *s=&pg_source.p.source;
     if(!accepted || !m || li2_pg_owner_phase(t)!=LI2_PG_BOUND ||
        pg_source.p.phase!=LI2_PGS_HELD || pg_source.domain.bound ||
@@ -182,11 +203,84 @@ int li2_pgx_source_prepare(const struct li2_pg_token *t,unsigned *accepted) {
     if(!primary || !li2_pgx_guard_union(primary,m->plan))return pgx_error(x,LI2_FETCH_STATE,127);
     x->table[0]=primary->table;x->table[1]=m->plan->table;
     int e=pgs_live(t);if(e)return pgx_error(x,(unsigned)e,128);
+#ifdef LI2_LOOP_CACHE8
+    e=pgx_check(t,x,m->key,LI2_PGX_PREPARE,pg_source.peer_original[member-1]);
+    if(e || x->declined)return e;
+#else
     e=pgx_check(t,x,m->key,LI2_PGX_PREPARE);if(e || x->declined)return e;
+#endif
     x->complete=1;
     if(!li2_pgx_source_value(x,s,t,&m->identity,m->key,1))return pgx_error(x,LI2_FETCH_SOURCE,129);
     *accepted=1;return 0;
 }
+#ifdef LI2_LOOP_CACHE8
+/* Legacy API remains a literal first-peer wrapper, not a separate validator. */
+int li2_pgx_source_prepare(const struct li2_pg_token *t,unsigned *accepted) {
+    return li2_pgx_source_prepare_member(t,1,accepted);
+}
+static int pgx_bound_members(const struct li2_pgd_view *v) {
+    if(!v || !v->count || v->count>LI2_PGD_MEMBERS)return 0;
+    unsigned checks=0;
+    for(unsigned i=1;i<LI2_PGD_MEMBERS;i++) {
+        const struct li2_pgx_source *x=&pg_source.domain.peer[i-1];
+        if(i>=v->count || li2_pgd_source_pair_equal(v->member[0].key,v->member[i].key)) {
+            if(!pgsd_zero(x,sizeof *x))return 0;
+            continue;
+        }
+        if(!checks)checks=x->checks;
+        if(checks<2 || checks>LI2_PGX_CHECKS || x->checks!=checks ||
+           !li2_pgx_source_value(x,&pg_source.p.source,&v->token,
+               &v->member[i].identity,v->member[i].key,checks) ||
+           !equal(&x->table[0],&v->member[0].plan->table,sizeof x->table[0]) ||
+           !equal(&x->table[1],&v->member[i].plan->table,sizeof x->table[1]))return 0;
+    }
+    return 1;
+}
+static int pgx_terminal_members(const struct li2_pgd_source_progress *d,
+    const struct li2_pg_sources *primary) {
+    if(!d || !primary || !d->count || d->count>LI2_PGD_MEMBERS)return 0;
+    for(unsigned i=1;i<LI2_PGD_MEMBERS;i++) {
+        const struct li2_pgx_source *x=&d->peer[i-1];
+        if(i<d->count && x->started) {
+            if(!li2_pgx_source_value(x,primary,&d->token,&d->ref[i],
+                &x->key,LI2_PGX_CHECKS))return 0;
+        } else if(!pgsd_zero(x,sizeof *x))return 0;
+    }
+    return 1;
+}
+static int pgx_bind(const struct li2_pg_token *t,const struct li2_pgd_view *v) {
+    if(!v || !v->count || v->count>LI2_PGD_MEMBERS ||
+       !pgsd_zero(pg_source.domain.peer,sizeof pg_source.domain.peer))
+        return pgsd_bad(LI2_FETCH_STATE,130);
+    for(unsigned i=1;i<v->count;i++) {
+        struct li2_pgx_source *x=&pg_source.domain.peer[i-1];
+        const struct li2_pgx_source *candidate=&pg_source.peer_candidate[i-1];
+        if(li2_pgd_source_pair_equal(v->member[0].key,v->member[i].key)) {
+            if(!pgsd_zero(candidate,sizeof *candidate))return pgsd_bad(LI2_FETCH_STATE,130);
+            continue;
+        }
+        if(!li2_pgx_source_value(candidate,&pg_source.p.source,t,
+            &v->member[i].identity,v->member[i].key,1))return pgsd_bad(LI2_FETCH_SOURCE,131);
+        *x=*candidate;
+        int e=pgx_check(t,x,v->member[i].key,LI2_PGX_BIND,pg_source.peer_original[i-1]);
+        if(e)return e;
+    }
+    return 0;
+}
+static int pgx_live(const struct li2_pg_token *t,const struct li2_pgd_view *v,unsigned stage) {
+    if(!v || !v->count || v->count>LI2_PGD_MEMBERS)return pgsd_bad(LI2_FETCH_STATE,132);
+    for(unsigned i=1;i<LI2_PGD_MEMBERS;i++) {
+        struct li2_pgx_source *x=&pg_source.domain.peer[i-1];
+        if(i>=v->count || li2_pgd_source_pair_equal(v->member[0].key,v->member[i].key)) {
+            if(!pgsd_zero(x,sizeof *x))return pgsd_bad(LI2_FETCH_STATE,132);
+            continue;
+        }
+        int e=pgx_check(t,x,v->member[i].key,stage,pg_source.peer_original[i-1]);
+        if(e)return e;
+    }
+    return 0;
+}
+#else
 static int pgx_bound(const struct li2_pgd_view *v,unsigned checks) {
     const struct li2_pgx_source *x=&pg_source.domain.peer;
     if(v->count==1 || li2_pgd_source_pair_equal(v->member[0].key,v->member[1].key))
@@ -210,3 +304,4 @@ static int pgx_live(const struct li2_pg_token *t,const struct li2_pgd_view *v,un
         return pgsd_zero(&pg_source.domain.peer,sizeof pg_source.domain.peer)?0:pgsd_bad(LI2_FETCH_STATE,132);
     return pgx_check(t,&pg_source.domain.peer,v->member[1].key,stage);
 }
+#endif

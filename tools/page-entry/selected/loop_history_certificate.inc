@@ -43,8 +43,13 @@ struct lhc_storage {
 #endif
 } __attribute__((aligned(PAGE)));
 static struct lhc_storage lhc;
+#ifdef LI2_LOOP_CACHE8
+_Static_assert(LI2_PGD_RECEIPTS==9 && LI2_PGD_MEMBERS==8,
+    "eight active members and nine completion cells");
+#else
 _Static_assert(LI2_PGD_RECEIPTS==3 && LI2_PGD_MEMBERS==2,
     "the original two active members and three completion cells");
+#endif
 _Static_assert(sizeof(struct lhc_root)<=PAGE && sizeof(union lhc_root_page)==PAGE &&
     sizeof(union lhc_capsule)%PAGE==0 && offsetof(struct lhc_storage,capsule)%PAGE==0 &&
     offsetof(struct lhc_storage,counts)%PAGE==0 && sizeof lhc%PAGE==0,

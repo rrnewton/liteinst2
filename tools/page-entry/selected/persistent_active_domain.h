@@ -6,9 +6,16 @@
     !defined(LI2_PERSISTENT_DISPATCH) || LI2_PERSISTENT_DISPATCH != 1
 #error "active domain requires two retained resident certificates"
 #endif
+#ifdef LI2_LOOP_CACHE8
+#include "loop_cache8_profile.h"
+#define LI2_PGD_MEMBERS LI2_LOOP_CACHE8_MEMBERS
+#define LI2_PGD_RECEIPTS LI2_LOOP_CACHE8_RECEIPTS
+#define LI2_PGD_VERSION 2U
+#else
 #define LI2_PGD_MEMBERS 2U
 #define LI2_PGD_RECEIPTS 3U
 #define LI2_PGD_VERSION 1U
+#endif
 #ifdef LI2_PERSISTENT_SUBENTRY
 #include "persistent_subentry.h"
 #endif
@@ -51,7 +58,11 @@ struct li2_pgd_source_progress {
     struct li2_private_code_query open[LI2_PGD_MEMBERS][3];
     struct li2_private_code_query close[LI2_PGD_MEMBERS][3];
 #ifdef LI2_PERSISTENT_CROSS_PAIR
+#ifdef LI2_LOOP_CACHE8
+    struct li2_pgx_source peer[LI2_PGD_MEMBERS-1U];
+#else
     struct li2_pgx_source peer;
+#endif
 #endif
 #ifdef LI2_PERSISTENT_SUBENTRY
     struct li2_pgs_entry entry;

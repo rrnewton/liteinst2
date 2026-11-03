@@ -152,7 +152,10 @@ def copy_oracle(builder,private,pin,binary,run,state,original,app_symbol,app_uni
 
 def compile_subject(builder,private,pin,binary,aliases,run,r, *, reference='direct41', fixture=None):
     fixture=FIXTURE if fixture is None else Path(fixture).resolve(strict=True)
-    need(reference in ('direct41','direct44'), 'explicit unchanged41 or additive44 seed recipe')
+    if reference=='cache8-abc169':
+        need(fixture.name=='loop_cache8_app','exact additive three-root/two-phase fixture source')
+    else:
+        need(reference in ('direct41','direct44'), 'explicit unchanged41 or additive44 seed recipe')
     output=private/'application';output.mkdir()
     script=pin(fixture/'build.sh');linker=pin(fixture/'app.ld')
     rows=recipe(script,'"$cc"');need(len(rows)==2,'exact interpreter and freestanding application recipes')

@@ -35,6 +35,10 @@ struct li2_pgx_source {
    A stale proposal may be declined before any peer permit is consumed. */
 const struct li2_pgd_view *li2_pgx_owner_offer(const struct li2_pg_token *);
 int li2_pgx_source_prepare(const struct li2_pg_token *,unsigned *);
+#ifdef LI2_LOOP_CACHE8
+/* Position is the actual pending owner-offer member, proposed only once. */
+int li2_pgx_source_prepare_member(const struct li2_pg_token *,unsigned,unsigned *);
+#endif
 int li2_pgx_guard_union(const struct li2_pg_compact *,const struct li2_pg_compact *);
 /* By-value historical validation; never follows a replaced sibling pointer. */
 int li2_pgx_source_value(const struct li2_pgx_source *,const struct li2_pg_sources *,

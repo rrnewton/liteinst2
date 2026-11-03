@@ -174,15 +174,24 @@ static int pda_receipt(const struct pda_completion *c) {
         const struct li2_pg_generation *g=&m->generation;
         const struct li2_pgd_ref *v=&m->identity;
         if(v->slot>=LI2_PTR_SLOTS || v->bank>1 || !v->generation || !v->root ||
+#ifndef LI2_LOOP_CACHE8
            (i && (v->slot==c->member[0].identity.slot || v->generation==c->member[0].identity.generation)) ||
+#endif
            v->generation!=g->generation || v->proof!=g->proof || v->root!=m->source.entry ||
            !pg_layout_equal(&v->layout,&g->layout) || v->layout.directory!=pe.domain.directory ||
            !equal(v,&d->ref[i],sizeof *v) || !equal(v,&r->domain_ref[i],sizeof *v) ||
 #ifdef LI2_PERSISTENT_CROSS_PAIR
+#ifdef LI2_LOOP_CACHE8
+           ((!i || !d->peer[i-1].started)?!li2_pgd_source_pair_equal(&s->source.key,&m->source):
+               (!li2_pgx_source_value(&d->peer[i-1],&s->source,&d->token,v,&m->source,LI2_PGX_CHECKS) ||
+                d->peer[i-1].table[0].address!=c->member[0].header.table ||
+                d->peer[i-1].table[1].address!=m->header.table)) ||
+#else
            ((!i || !d->peer.started)?!li2_pgd_source_pair_equal(&s->source.key,&m->source):
                (!li2_pgx_source_value(&d->peer,&s->source,&d->token,v,&m->source,LI2_PGX_CHECKS) ||
                 d->peer.table[0].address!=c->member[0].header.table ||
                 d->peer.table[1].address!=m->header.table)) ||
+#endif
 #else
            !li2_pgd_source_pair_equal(&s->source.key,&m->source) ||
 #endif
@@ -214,6 +223,10 @@ static int pda_receipt(const struct pda_completion *c) {
            g->cell[2].started!=1 || g->cell[2].complete!=1 || g->cell[2].after ||
            g->cell[2].generation!=g->generation || g->cell[2].serial!=c->serial ||
            !pg_query_complete(&g->cell[2].mapping,g->spill,PAGE,PROT_READ|PROT_WRITE))return 0;
+#ifdef LI2_LOOP_CACHE8
+        for(unsigned j=0;j<i;j++)if(v->slot==c->member[j].identity.slot ||
+            v->generation==c->member[j].identity.generation)return 0;
+#endif
         /* Independent source/controller queries retain distinct actual maps
            receipts; every exact interval/protection must close separately. */
 #ifdef LI2_LOOP_RESIDENT_RX
@@ -231,9 +244,18 @@ static int pda_receipt(const struct pda_completion *c) {
 #endif
     }
 #ifdef LI2_PERSISTENT_CROSS_PAIR
+#ifdef LI2_LOOP_CACHE8
+    for(unsigned i=1;i<LI2_PGD_MEMBERS;i++) {
+        const struct li2_pgx_source *peer=&d->peer[i-1];
+        if(i>=c->count || li2_pgd_source_pair_equal(&c->member[0].source,&c->member[i].source)) {
+            if(!pda_zero(peer,sizeof *peer))return 0;
+        } else if(peer->started!=1)return 0;
+    }
+#else
     if(c->count==1 || li2_pgd_source_pair_equal(&c->member[0].source,&c->member[1].source)) {
         if(!pda_zero(&d->peer,sizeof d->peer))return 0;
     } else if(d->peer.started!=1)return 0;
+#endif
 #endif
     for(unsigned i=c->count;i<LI2_PGD_MEMBERS;i++)if(!pda_zero(&c->member[i],sizeof c->member[i]) ||
         !pda_zero(&d->ref[i],sizeof d->ref[i]) || !pda_zero(d->open[i],sizeof d->open[i]) ||
@@ -334,9 +356,15 @@ static int pda_disjoint(const struct li2_pg_compact *a,const struct li2_pg_compa
     for(unsigned i=0;i<a->exits;i++)for(unsigned j=0;j<b->exits;j++)if(a->exit_pc[i]==b->exit_pc[j])return 0;
     return 1;
 }
+#ifdef LI2_LOOP_CACHE8
+#include "loop_cache8_owner.inc"
+#endif
 static void pda_offer_peer(void) {
     pe_need(!pe.domain.work.bound && pe.domain.work.peer==LI2_PTR_SLOTS &&
         pe.p.phase==LI2_PG_HELD,PE_STATE,85);
+#ifdef LI2_LOOP_CACHE8
+    /* Actual source/claim closure follows the primary publication in bind. */
+#else
     if(!pe.warm)return; /* A new cold certificate cannot expand its activation. */
     unsigned peer=1U-pe.selected_slot;
     const struct li2_ptr_slot *s=&pe.retained[peer];
@@ -351,6 +379,7 @@ static void pda_offer_peer(void) {
 #endif
        !pda_disjoint(&pe_payload()->plan,&p->plan))return;
     pe.domain.work.peer=peer;
+#endif
 }
 static int pda_member_live(const struct li2_pgd_member *m) {
     const struct li2_pgd_ref *v=&m->identity;
@@ -373,16 +402,23 @@ const struct li2_pgd_view *li2_pgd_owner_view(const struct li2_pg_token *t) {
     const struct li2_pgs_entry *entry=li2_pgs_owner_entry(t);
     if(!entry || !equal(entry,&v->entry,sizeof *entry))return 0;
 #endif
+#ifdef LI2_LOOP_CACHE8
+    if(!lc8_members(v))return 0;
+#else
     for(unsigned i=0;i<v->count;i++)if(!pda_member_live(&v->member[i]) ||
         (i && (v->member[i].identity.slot==v->member[0].identity.slot ||
                v->member[i].identity.generation==v->member[0].identity.generation)))return 0;
 #ifdef LI2_PERSISTENT_CROSS_PAIR
     if(v->count==2 && !li2_pgx_guard_union(v->member[0].plan,v->member[1].plan))return 0;
 #endif
+#endif
     return v;
 }
 #ifdef LI2_PERSISTENT_CROSS_PAIR
 const struct li2_pgd_view *li2_pgx_owner_offer(const struct li2_pg_token *t) {
+#ifdef LI2_LOOP_CACHE8
+    return lc8_offer(t);
+#else
     const struct pda_work *w=&pe.domain.work;const struct li2_pgd_view *v=&w->view;
     if(!pe_token(t) || pe.p.phase!=LI2_PG_BOUND || !pe_busy || pe_active || !pe.warm ||
        w->bound || w->peer>=LI2_PTR_SLOTS || w->primary>=LI2_PTR_SLOTS || w->peer==w->primary ||
@@ -398,6 +434,7 @@ const struct li2_pgd_view *li2_pgx_owner_offer(const struct li2_pg_token *t) {
     if(!entry || !equal(entry,&v->entry,sizeof *entry))return 0;
 #endif
     return v;
+#endif
 }
 #endif
 static void pda_member(unsigned at,unsigned slot) {
@@ -458,6 +495,9 @@ static int pda_bind(const ucontext_t *uc) {
     w->view.entry=*entry;
 #endif
     pda_member(0,w->primary);
+#ifdef LI2_LOOP_CACHE8
+    int attach=lc8_attach();if(attach)return attach;
+#else
 #ifdef LI2_PERSISTENT_CROSS_PAIR
     if(pe.warm && w->peer<LI2_PTR_SLOTS) {
         pda_member(1,w->peer);
@@ -487,6 +527,7 @@ static int pda_bind(const ucontext_t *uc) {
         pda_member(1,peer);w->view.count=2;
         pda_select(w->primary,w->primary_bank);
     }
+#endif
     for(unsigned i=0;i<LI2_PGD_RECEIPTS;i++) {
         const struct pda_completion *c=&pe.domain.completion[i];
         if((pda_zero(c,sizeof *c) && !pe.domain.claimed[i]) ||
@@ -555,7 +596,16 @@ static int pda_bind(const ucontext_t *uc) {
     int error=pda_directory_seal();if(error)return error;
     return pcw_bind(uc);
 #else
+#ifdef LI2_LOOP_CACHE8
+    int sealed=pda_directory_seal();if(sealed)return sealed;
+    ped_count(&pe.cache8.bound_by_count[w->view.count]);
+#ifdef LI2_LOOP_CACHE8_OBSERVE
+    lc8o_bound();
+#endif
+    return 0;
+#else
     return pda_directory_seal();
+#endif
 #endif
 }
 static int pda_ready(unsigned linked) {
@@ -604,7 +654,13 @@ static int pda_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,uc
     }
     pda_select(w->primary,w->primary_bank);
 #ifdef LI2_LOOP_RESIDENT_RX
+#ifdef LI2_LOOP_CACHE8
+    unsigned retained=0;
+    for(unsigned i=0;i<w->view.count;i++)retained+=(w->rx_retained_mask>>i)&1U;
+    if(w->rx_retained_mask&~((1U<<w->view.count)-1U))return PE_SOURCE;
+#else
     unsigned retained=(w->rx_retained_mask&1U)+((w->rx_retained_mask>>1)&1U);
+#endif
     if(retained>w->view.count || pe.p.opened_pages!=17U*(w->view.count-retained) || li2_pgd_source_opened(t) ||
 #else
     if(pe.p.opened_pages!=17U*w->view.count || li2_pgd_source_opened(t) ||
@@ -640,6 +696,9 @@ static int pda_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,uc
 #endif
     pe.p.phase=LI2_PG_EXECUTING;pe.redirected=1;ped_count(PGC_REF(entries));
     if(w->view.count==2)ped_count(&pe.domain.dual_entries);
+#ifdef LI2_LOOP_CACHE8
+    ped_count(&pe.cache8.entered_by_count[w->view.count]);
+#endif
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
     unsigned loop_entry=0;
     for(unsigned i=0;i<w->view.count;i++)loop_entry|=w->view.member[i].plan->version==LI2_LP_VERSION;
@@ -653,6 +712,9 @@ static int pda_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,uc
 #endif
 #endif
     selected_step_pending=1;selected_pending_route=SELECTED_PERSISTENT_EPOCH;pe_active=1;
+#ifdef LI2_LOOP_CACHE8_OBSERVE
+    lc8o_enter();
+#endif
 #ifdef LI2_PERSISTENT_SUBENTRY
     if(w->view.entry.target.pc!=w->view.entry.target.root)ped_count(&pe.subentry_entries);
     __asm__ volatile("":::"memory");uc->uc_mcontext.gregs[REG_RIP]=(greg_t)w->view.entry.target.generated;
@@ -672,6 +734,9 @@ static int pda_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
        pe.p.phase!=LI2_PG_EXECUTING || selected_pending_route!=SELECTED_PERSISTENT_EPOCH ||
        selected_step_pending!=1 || pe.p.first_error || !pda_ready(1))return PE_REENTRY;
     struct pda_work *w=&pe.domain.work;
+#ifdef LI2_LOOP_CACHE8_OBSERVE
+    lc8o_preentry(sig,si,uc);
+#endif
     pe_busy=1;pe.p.phase=LI2_PG_RECOVERING;pe.recovery_started=1;__asm__ volatile("":::"memory");
     if(le_capture(&pe.after,sig,si,uc))return PE_FRAME;
     const greg_t *g=pe.after.frame.greg;uintptr_t pc=(uintptr_t)g[REG_RIP];
@@ -816,7 +881,11 @@ static void pda_complete(void) {
     c->source=*li2_pg_source_progress();c->domain_source=*li2_pgd_source_progress();
     c->rseq=*li2_pg_rseq_progress();c->fetch=pe.final_fetch;c->directory_closed=w->directory_closed;
 #ifdef LI2_LOOP_RESIDENT_RX
+#ifdef LI2_LOOP_CACHE8
+    c->rx.version=2;c->rx.count=c->count;c->rx.retained_mask=w->rx_retained_mask;
+#else
     c->rx.version=1;c->rx.count=c->count;c->rx.retained_mask=w->rx_retained_mask;
+#endif
     c->rx.source=*li2_pgd_source_rx_progress();
     copy(c->rx.open,w->rx_open,sizeof c->rx.open);
     copy(c->rx.code,w->rx_quiet,sizeof c->rx.code);
@@ -863,6 +932,9 @@ static void pda_complete(void) {
         pe_need(pda_permitted(c->member[i].identity.slot),PE_RELEASE,89);
     }
     if(c->count==2)ped_count(&pe.domain.dual_completed);
+#ifdef LI2_LOOP_CACHE8
+    ped_count(&pe.cache8.completed_by_count[c->count]);
+#endif
 #ifdef LI2_PERSISTENT_SUBENTRY
     if(w->view.entry.target.pc!=w->view.entry.target.root)ped_count(&pe.subentry_completed);
 #endif
@@ -879,6 +951,9 @@ static void pda_complete(void) {
 #endif
 #ifdef LI2_LOOP_RESIDENT_RX_ORACLE
     lrxo_complete(c);
+#endif
+#ifdef LI2_LOOP_CACHE8_OBSERVE
+    lc8o_complete(c);
 #endif
 }
 static _Noreturn void pda_abort(unsigned code,long detail) {
