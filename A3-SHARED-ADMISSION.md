@@ -106,6 +106,68 @@ complete-code and zero-bias loader obligations still unresolved; see the
 [three-program result](evaluation/direct-program/corpus-result/README.md).
 The exemption contract below remains a proposal.
 
+## Current inventory and implementation boundary
+
+Source audit at `fd50d5ef02fd042fa4282cb83224d1b60900723c` confirms the
+consolidation above. Offline imports and runtime admission use
+`liteinst-x86` instruction facts; bounded graph consumers use
+`control_flow::{build, collect_block_cuts}` and its indexed traversals.
+Offline singleton/grouped requests and live selected publication use the same
+core planner, fitting and encoder. `trampoline::observer_sequence` now owns the
+common save/callback/restore sequence. ELF serialization, remote writes and
+in-process publication remain separate ownership and output adapters.
+
+The two concrete fact/policy duplications identified by that audit are merged:
+
+1. The freestanding page decoder's `mov_guard`, `add_guard` and `region` use
+   `liteinst-x86::gpr` and the shared decoder factory. Each adapter retains its
+   exact width filter, the region's AL/span's CL exceptions, independent
+   re-decodes and identity checks.
+2. `quiescent::whole_function` and the rapid profiler's ordinary CFG adapter
+   use `scalar_profile::read_only_caller_saved`. Their entry/backedge, size and
+   qualification checks remain distinct; the shared predicate preserves the
+   original register aliases and immediate classes.
+
+[Current-source validation](evaluation/shared-x86/freestanding-facts/README.md)
+records 15 finite decoder/descriptor/model subjects and 138 reader controls.
+[Workspace validation](evaluation/direct-program/ledger-chunks-validation/README.md)
+retains the complete test census and earlier failed attempts. These fact merges
+do not establish complete CFG recovery or resolve corpus placement failures.
+All-start scanning and each consumer's instruction policy remain unchanged.
+
+The initial live certificate implementation should use a separately named fixed
+ET_EXEC/zero-bias subset with no unresolved code relocations. It must still meet
+every completeness and mutation condition below. The proposed type transition is
+an inert parsed certificate, verified coverage, a load-bound dependency group,
+then an owner-only pre-admitted group. `liteinst-artifact::Metadata` and
+`OracleChain` cannot mint the final state. Reuse admission's `Snapshot`,
+`LegalEntrySet` and `core_bridge::export` for descriptive facts; bind actual mapped
+bytes through the launch owner's held-source acquisition and mapping/admission
+generations. The owner's maintained domain and dependency index must revoke the
+whole group before any relevant effect. Whole-domain revocation is an acceptable
+first implementation; selective revocation needs its own proof. All certificate,
+index and history allocations remain bounded before publication.
+
+Up-front authentication is stricter than the study's lazy first-use cache: no
+eligible page enters the admission fault gate, including before constructors or
+IFUNC execution. Load-time validation is measured separately. Unchanged eligible
+pages must have zero admission faults, decoder/CFG starts, replans, admission maps
+refreshes and per-entry certificate lookups. These states and the live exemption
+remain unimplemented; current caller-supplied completeness declarations do not
+qualify.
+
+The historical 2,053-site candidate exceeded Linux's program-header limit.
+The packed RX-run writer addresses that loader constraint, retains exact owned mappings, checks the
+1,170-header ELF64 bound, and is already used by the grouped path. Later evidence
+records 661 headers and original/LI2 `--help` parity; that finite case does not
+establish general program coverage. The broader jump/PUSH/POP upstream corpus
+still fails: cat/head withhold all output after 88/80 core refusals, and wc reaches
+the unchanged 64 MiB ledger limit with unknown planning counts. All 27 native rows
+are retained: 18 original/E9 passes and nine LI2 unobserved. The separate jump-only
+cat/head/wc corpus passed all 27 rows. See the existing
+[upstream result](evaluation/direct-program/grouped-upstream-result/README.md)
+and [jump-only result](evaluation/direct-program/corpus-result/README.md).
+
 ## Page certificate
 
 A new versioned, producer-authenticated coverage record is required. Existing

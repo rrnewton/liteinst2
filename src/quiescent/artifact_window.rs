@@ -22,6 +22,26 @@ pub struct ArtifactObservationRequest<'a> {
     pub observation_pcs: &'a [u64],
 }
 
+/// Separately opted-in same-block upstream search for one fixed observation group.
+///
+/// The selected population and exclusive end never change between candidates.
+/// Numeric search policy is supplied once, not summed over members. The named
+/// frontend profile binds its 64-byte/64-head/256-byte limits and allocation arena;
+/// this generic core honors the supplied SearchPolicy and retains the existing
+/// one-candidate/one-mapping/4096-byte artifact allocation contract.
+///
+/// The caller must prove that every allowed expanded interval intersects the
+/// COMPLETE selected manifest in exactly observation_pcs, including previously
+/// accepted and straddling intervals. A pending-only list is not that proof.
+pub struct ArtifactObservationSearchRequest<'a> {
+    /// Immutable source and caller-owned target/hook/search/allocation binding.
+    pub artifact: ArtifactRequest<'a>,
+    /// Exclusive whole-instruction end, unchanged across physical candidates.
+    pub end: u64,
+    /// Complete ordered observation heads; first equals artifact.site.logical_pc.
+    pub observation_pcs: &'a [u64],
+}
+
 /// One opaque artifact plan plus its complete ordered observation population.
 /// The frontend must preserve this association through one AcceptedUnit, ledger,
 /// resource accounting and portable metadata; never clone the plan per member.
@@ -70,6 +90,50 @@ pub fn plan_artifact_observation_window_after(
     predecessor: &Composition,
     pending: &[AddressRange],
 ) -> Result<ArtifactObservationPlan, PlanningFailure> {
+    plan_window(input, predecessor, pending, PhysicalDomain::Exact)
+}
+
+/// Search the existing ordered physical heads for the same exact end/population.
+///
+/// Source, observing/all-head/profile and pending checks precede one frozen
+/// PhysicalSites domain. Each visited head uses the same collector, qualifier,
+/// entry/CET/current-byte checks, one-page fitter and transactional append as the
+/// exact API. Failed trials do not change predecessor; no member is removed and
+/// no end is extended. Earlier failed attempts and nested image runs survive a
+/// later success. A bounded stop is not a proof that no placement exists.
+///
+/// `pending` contains complete OUTSIDE-GROUP original intervals. The caller owes
+/// the full-manifest prefix proof documented by ArtifactObservationSearchRequest,
+/// aggregate resource/atomic publication checks and the unchanged callback/loader
+/// and POP RSP scratch obligations of the exact API. No live capability is added.
+pub fn plan_artifact_observation_window_upstream_after(
+    input: &ArtifactObservationSearchRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+) -> Result<ArtifactObservationPlan, PlanningFailure> {
+    // The common population check starts at the first observation. Actual
+    // physical candidates are separately enumerated from validated original heads.
+    let window = ArtifactObservationRequest {
+        artifact: input.artifact,
+        physical_pc: input.artifact.site.logical_pc,
+        end: input.end,
+        observation_pcs: input.observation_pcs,
+    };
+    plan_window(&window, predecessor, pending, PhysicalDomain::Upstream)
+}
+
+#[derive(Clone, Copy)]
+enum PhysicalDomain {
+    Exact,
+    Upstream,
+}
+
+fn plan_window(
+    input: &ArtifactObservationRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    domain: PhysicalDomain,
+) -> Result<ArtifactObservationPlan, PlanningFailure> {
     let mut attempts = Vec::new();
     let mut search = SearchEvidence::default();
     let result = (|| {
@@ -88,62 +152,71 @@ pub fn plan_artifact_observation_window_after(
         validate_population(input, &scan).inspect_err(|reason| {
             search.qualification(SearchScope::default(), reason);
         })?;
+        let candidates = match domain {
+            PhysicalDomain::Exact => vec![input.physical_pc],
+            PhysicalDomain::Upstream => physical_head_schedule(&request, &scan),
+        };
         let physical_run = search.begin(
             SearchDomain::PhysicalSites,
             SearchScope::default(),
             request.search.max_sites,
-            Some(1),
+            Some(candidates.len()),
         );
         if request.search.max_sites == 0 {
-            search.known_limit_hit(physical_run, 1);
+            // Population validation proves that the first observation is a
+            // same-block head, so the exact and upstream domains are nonempty.
+            search.known_limit_hit(physical_run, candidates.len());
             return Err(Refusal::NoPatchWindow);
         }
         let occupied = request.emission.occupied()?;
-        search.visit(physical_run);
-        let candidate: Result<PlannedInstall, Refusal> = (|| {
-            let mut window = collect_relocation_window(
-                &request,
-                &scan,
-                input.physical_pc,
-                *input.observation_pcs.last().ok_or(Refusal::InvalidPlan)?,
-                Some(input.end),
-                &mut search,
-            )?;
-            window.authority = RelocationAuthority::ArtifactObservations(input.observation_pcs);
-            let planned = emit_relocation_window(
-                &request,
-                &scan,
-                source,
-                &occupied,
-                (None, None),
-                window,
-                &mut search,
-            )?;
-            let mut joined = predecessor.clone();
-            joined.append(planned.plan())?;
-            joined.require_unclaimed_ranges(pending)?;
-            Ok(planned)
-        })();
-        match candidate {
-            Ok(planned) => {
-                search.accept(physical_run);
-                attempts.push(SiteAttempt {
-                    tactic: PatchTactic::Relocation,
-                    physical_pc: input.physical_pc,
-                    refusal: None,
-                });
+        for physical in candidates.into_iter().take(request.search.max_sites) {
+            search.visit(physical_run);
+            let candidate: Result<PlannedInstall, Refusal> = (|| {
+                let mut window = collect_relocation_window(
+                    &request,
+                    &scan,
+                    physical,
+                    *input.observation_pcs.last().ok_or(Refusal::InvalidPlan)?,
+                    Some(input.end),
+                    &mut search,
+                )?;
+                window.authority = RelocationAuthority::ArtifactObservations(input.observation_pcs);
+                let planned = emit_relocation_window(
+                    &request,
+                    &scan,
+                    source,
+                    &occupied,
+                    (None, None),
+                    window,
+                    &mut search,
+                )?;
+                let mut joined = predecessor.clone();
+                joined.append(planned.plan())?;
+                joined.require_unclaimed_ranges(pending)?;
                 Ok(planned)
-            }
-            Err(reason) => {
-                attempts.push(SiteAttempt {
+            })();
+            match candidate {
+                Ok(planned) => {
+                    search.accept(physical_run);
+                    attempts.push(SiteAttempt {
+                        tactic: PatchTactic::Relocation,
+                        physical_pc: physical,
+                        refusal: None,
+                    });
+                    return Ok(planned);
+                }
+                Err(reason) => attempts.push(SiteAttempt {
                     tactic: PatchTactic::Relocation,
-                    physical_pc: input.physical_pc,
-                    refusal: Some(reason.clone()),
-                });
-                search.finish(physical_run);
-                Err(reason)
+                    physical_pc: physical,
+                    refusal: Some(reason),
+                }),
             }
         }
+        search.finish(physical_run);
+        Err(attempts
+            .last()
+            .and_then(|attempt| attempt.refusal.clone())
+            .unwrap_or(Refusal::NoPatchWindow))
     })();
     match result {
         Ok(mut planned) => {
@@ -213,3 +286,6 @@ fn validate_population(
 
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod tests;
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod upstream_tests;

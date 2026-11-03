@@ -324,8 +324,10 @@ pub(in crate::linux::remote::dynamic::owner) fn launch_owner(
     inherited_mask: u64,
 ) -> (DynamicEvent, KernelProgressReader) {
     owner.lifecycle_options = Some(options.lifecycle);
-    let until = Instant::now() + TIMEOUT;
     let file_guard = crate::TEST_FILE_FORK.lock().unwrap();
+    // Waiting for fixture/fork exclusion is harness setup, not admission work.
+    // Launch and initial admission still share one unrenewed TIMEOUT below.
+    let until = Instant::now() + TIMEOUT;
     let launched = launch::start(
         owner,
         &LaunchCommand::new(&fixture.path),

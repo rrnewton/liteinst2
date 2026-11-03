@@ -1,6 +1,7 @@
 //! Separate closed TF-transparent profile. Old decoding/step classification is unchanged.
-use iced_x86::{Code, Decoder, DecoderOptions, Instruction, OpKind};
+use iced_x86::{Code, Instruction, OpKind};
 use crate::abi;
+use liteinst_x86 as x86;
 
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
@@ -347,7 +348,7 @@ fn classify(
     let mut out = Classification { pc, next_pc: decoded.next_pc,
         abi_version: 1, code: decoded.code, length: decoded.length, ..Classification::default() };
     if decoded.decode_status != abi::VALID || decoded.kind != abi::NONE { return Ok(out); }
-    let mut decoder = Decoder::with_ip(64, source, pc, DecoderOptions::NONE);
+    let mut decoder = x86::decoder64(source, pc);
     let instruction = decoder.decode();
     if let Some(output) = instruction_out { *output = instruction; }
     if instruction.code() == Code::Lodsq_RAX_m64 {

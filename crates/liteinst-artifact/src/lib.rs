@@ -31,6 +31,22 @@ impl ContentId {
     }
 }
 
+/// Incremental SHA-256 over exact ordered bytes; no execution authority.
+/// This avoids requiring callers to concatenate bounded streaming records.
+#[derive(Default)]
+pub struct ContentHasher(Sha256);
+impl ContentHasher {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    pub fn update(&mut self, bytes: &[u8]) {
+        self.0.update(bytes);
+    }
+    pub fn finish(self) -> ContentId {
+        ContentId(self.0.finalize().into())
+    }
+}
+
 /// Exact compatibility identity. These fields do not certify target support.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Compatibility {
@@ -450,3 +466,22 @@ impl<'a> Reader<'a> {
 #[cfg(test)]
 #[path = "metadata_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod streaming_content_id_tests {
+    use super::{ContentHasher, ContentId};
+    #[test]
+    fn incremental_empty_boundaries_and_many_updates_equal_exact_content_id() {
+        assert_eq!(ContentHasher::new().finish(), ContentId::of(&[]));
+        let bytes: Vec<_> = (0..4099).map(|n| (n % 251) as u8).collect();
+        for width in [1, 63, 64, 65, 255, 256, 257, 4096] {
+            let mut hash = ContentHasher::new();
+            hash.update(&[]);
+            for part in bytes.chunks(width) {
+                hash.update(part);
+                hash.update(&[]);
+            }
+            assert_eq!(hash.finish(), ContentId::of(&bytes));
+        }
+    }
+}

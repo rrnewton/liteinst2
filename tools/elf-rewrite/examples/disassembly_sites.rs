@@ -463,6 +463,7 @@ enum PopulationMode {
     Existing(Mode),
     JumpStack,
     JumpStackGrouped,
+    JumpStackGroupedUpstream,
 }
 const JUMP_STACK_FLAG: &str = "--whole-program-fixed-exec-packed-overlapping-jump-stack64-4096";
 const GROUPED_FLAG: &str = "--whole-program-fixed-exec-block-observation-jump-stack64-4096";
@@ -496,6 +497,25 @@ fn arguments_with_jump_stack(args: &[String]) -> Result<(&[String], PopulationMo
         arguments_with_fixed_exec(args).map(|(args, mode)| (args, PopulationMode::Existing(mode)))
     }
 }
+const GROUPED_UPSTREAM_FLAG: &str = "--whole-program-fixed-exec-block-upstream-jump-stack64-4096";
+fn arguments_with_grouped_upstream(args: &[String]) -> Result<(&[String], PopulationMode), String> {
+    if args.get(1).is_some_and(|arg| arg == GROUPED_UPSTREAM_FLAG) {
+        // Reuse exact-profile arity and mixed-selector guards. Only the typed
+        // selector changes; positional names are returned from the original argv.
+        let mut exact = args.to_vec();
+        exact[1] = GROUPED_FLAG.into();
+        arguments_with_jump_stack(&exact)?;
+        Ok((&args[2..], PopulationMode::JumpStackGroupedUpstream))
+    } else {
+        arguments_with_jump_stack(args)
+    }
+}
+fn is_grouped(mode: PopulationMode) -> bool {
+    matches!(
+        mode,
+        PopulationMode::JumpStackGrouped | PopulationMode::JumpStackGroupedUpstream
+    )
+}
 fn labels_with_population(mode: PopulationMode) -> (&'static str, &'static str, &'static str) {
     match mode {
         PopulationMode::Existing(mode) => labels_with_ownership(mode),
@@ -503,6 +523,11 @@ fn labels_with_population(mode: PopulationMode) -> (&'static str, &'static str, 
             liteinst_rewrite::GROUPED_PROFILE,
             "", // run() supplies the shared owned canonical metadata string.
             " selection_profile=jumps-gpr-stack64-v1 grouped_profile=jumps-gpr-stack64-block-observation-v1 address_binding=fixed-exec-zero-bias-indexed-jump32-v1 required_object_type=ET_EXEC required_load_bias=0",
+        ),
+        PopulationMode::JumpStackGroupedUpstream => (
+            liteinst_rewrite::GROUPED_UPSTREAM_PROFILE,
+            "",
+            " selection_profile=jumps-gpr-stack64-v1 grouped_profile=jumps-gpr-stack64-block-upstream-v1 address_binding=fixed-exec-zero-bias-indexed-jump32-v1 required_object_type=ET_EXEC required_load_bias=0",
         ),
         PopulationMode::JumpStack => (
             disassembly::jump_stack::PROFILE,
@@ -520,7 +545,34 @@ fn prepare_population_inputs(
     mode: PopulationMode,
     capture: (&mut BTreeMap<String, Vec<u8>>, &mut Option<[usize; 3]>),
 ) -> Result<liteinst_rewrite::Product, liteinst_rewrite::Error> {
+    prepare_population_inputs_with_storage(
+        original,
+        ledger,
+        expected_ledger,
+        policy,
+        expected_policy,
+        (mode, liteinst_rewrite::LedgerStorage::Inline),
+        capture,
+    )
+}
+
+fn prepare_population_inputs_with_storage(
+    original: &[u8],
+    ledger: &[u8],
+    expected_ledger: ContentId,
+    policy: &[u8],
+    expected_policy: ContentId,
+    population: (PopulationMode, liteinst_rewrite::LedgerStorage),
+    capture: (&mut BTreeMap<String, Vec<u8>>, &mut Option<[usize; 3]>),
+) -> Result<liteinst_rewrite::Product, liteinst_rewrite::Error> {
+    let (mode, storage) = population;
     let (files, classes) = capture;
+    if storage == liteinst_rewrite::LedgerStorage::ReadChunks256 && !is_grouped(mode) {
+        return Err(liteinst_rewrite::Error {
+            stage: "ledger-storage",
+            detail: "compact storage requires grouped fixed profile".into(),
+        });
+    }
     match mode {
         PopulationMode::Existing(mode) => prepare_inputs(
             original,
@@ -531,7 +583,9 @@ fn prepare_population_inputs(
             mode,
             files,
         ),
-        PopulationMode::JumpStack | PopulationMode::JumpStackGrouped => {
+        PopulationMode::JumpStack
+        | PopulationMode::JumpStackGrouped
+        | PopulationMode::JumpStackGroupedUpstream => {
             use li2core::x86::JumpStackClass;
             let imported = disassembly::jump_stack::import(original, ledger, expected_ledger)?;
             let mut counts = [0; 3];
@@ -547,7 +601,7 @@ fn prepare_population_inputs(
             files.insert("disassembly-inventory.tsv".into(), imported.inventory());
             // The binder consumes the import. Retain only checked geometry for
             // the grouped verifier; legacy mode allocates no duplicate roster.
-            let geometry: Vec<_> = if mode == PopulationMode::JumpStackGrouped {
+            let geometry: Vec<_> = if is_grouped(mode) {
                 imported
                     .sites()
                     .iter()
@@ -559,7 +613,41 @@ fn prepare_population_inputs(
             let selected = imported.bind_whole_program(policy, expected_policy)?;
             assert_eq!(selected.profile(), disassembly::jump_stack::PROFILE);
             files.insert("selection.txt".into(), selected.manifest().to_vec());
-            if mode == PopulationMode::JumpStackGrouped {
+            if storage == liteinst_rewrite::LedgerStorage::ReadChunks256 {
+                let upstream = mode == PopulationMode::JumpStackGroupedUpstream;
+                let product =
+                    liteinst_rewrite::prepare_disassembly_jump_stack_grouped_with_ledger_storage(
+                        original, &selected, upstream, storage,
+                    )?;
+                liteinst_rewrite::ledger_storage::verify_jump_stack(
+                    original,
+                    &selected,
+                    product.files(),
+                )?;
+                verify_grouped_metadata_for_profile(
+                    original,
+                    &geometry,
+                    selected.manifest(),
+                    &product,
+                    product.files(),
+                    upstream,
+                )?;
+                Ok(product)
+            } else if mode == PopulationMode::JumpStackGroupedUpstream {
+                let product =
+                    liteinst_rewrite::prepare_disassembly_jump_stack_grouped_upstream_fixed_exec(
+                        original, &selected,
+                    )?;
+                verify_grouped_metadata_for_profile(
+                    original,
+                    &geometry,
+                    selected.manifest(),
+                    &product,
+                    product.files(),
+                    true,
+                )?;
+                Ok(product)
+            } else if mode == PopulationMode::JumpStackGrouped {
                 let product = liteinst_rewrite::prepare_disassembly_jump_stack_grouped_fixed_exec(
                     original, &selected,
                 )?;
@@ -588,6 +676,16 @@ fn verify_grouped_metadata(
     product: &liteinst_rewrite::Product,
     files: &BTreeMap<String, Vec<u8>>,
 ) -> Result<(), liteinst_rewrite::Error> {
+    verify_grouped_metadata_for_profile(original, geometry, manifest, product, files, false)
+}
+fn verify_grouped_metadata_for_profile(
+    original: &[u8],
+    geometry: &[disassembly::JumpSite],
+    manifest: &[u8],
+    product: &liteinst_rewrite::Product,
+    files: &BTreeMap<String, Vec<u8>>,
+    upstream: bool,
+) -> Result<(), liteinst_rewrite::Error> {
     let failure = |detail: &str| liteinst_rewrite::Error {
         stage: "grouped-cli-metadata",
         detail: detail.into(),
@@ -601,7 +699,12 @@ fn verify_grouped_metadata(
     let binding = product
         .fixed_image_binding()
         .ok_or_else(|| failure("missing fixed binding"))?;
-    let expected = liteinst_rewrite::grouped_fixed_exec_binding_policy(
+    let binding_policy = if upstream {
+        liteinst_rewrite::grouped_upstream_fixed_exec_binding_policy
+    } else {
+        liteinst_rewrite::grouped_fixed_exec_binding_policy
+    };
+    let expected = binding_policy(
         binding,
         ContentId::of(manifest),
         ContentId::of(get("grouping-policy.tsv")?),
@@ -730,16 +833,54 @@ fn jump_stack_fields(counts: Option<[usize; 3]>) -> String {
     )
 }
 
+// Storage is a separate, explicit leading option; every old parse delegates.
+fn arguments_with_storage(
+    args: &[String],
+) -> Result<(&[String], PopulationMode, liteinst_rewrite::LedgerStorage), String> {
+    use liteinst_rewrite::LedgerStorage;
+    if args.get(1).is_some_and(|value| value == "--ledger-storage") {
+        let storage = match args.get(2).map(String::as_str) {
+            Some("inline") => LedgerStorage::Inline,
+            Some("read-chunks256-v1") => LedgerStorage::ReadChunks256,
+            _ => return Err("unknown or missing ledger storage mode".into()),
+        };
+        // args[2] occupies only the delegated, ignored argv[0] slot.
+        let (paths, mode) = arguments_with_grouped_upstream(&args[2..])?;
+        if paths.iter().any(|s| s == "--ledger-storage")
+            || (storage == LedgerStorage::ReadChunks256 && !is_grouped(mode))
+        {
+            return Err(
+                "compact ledger requires exactly one grouped fixed profile and storage selector"
+                    .into(),
+            );
+        }
+        Ok((paths, mode, storage))
+    } else {
+        arguments_with_grouped_upstream(args)
+            .map(|(paths, mode)| (paths, mode, LedgerStorage::Inline))
+    }
+}
+
 fn run() -> Result<bool, String> {
     let raw_args: Vec<_> = std::env::args().collect();
-    let (args, mode) = arguments_with_jump_stack(&raw_args)?;
+    let (args, mode, storage) = arguments_with_storage(&raw_args)?;
     let (profile, family, stdout_family) = labels_with_population(mode);
-    let grouped_family = if mode == PopulationMode::JumpStackGrouped {
+    let grouped_family = if mode == PopulationMode::JumpStackGroupedUpstream {
+        liteinst_rewrite::grouped_upstream_fixed_exec_metadata()
+    } else if mode == PopulationMode::JumpStackGrouped {
         liteinst_rewrite::grouped_fixed_exec_metadata()
     } else {
         String::new()
     };
-    let family = if mode == PopulationMode::JumpStackGrouped {
+    let grouped_family = if storage == liteinst_rewrite::LedgerStorage::ReadChunks256 {
+        grouped_family.replace(
+            "grouping_ledger\tLI2GROUPED-LEDGER-1\n",
+            "grouping_ledger\tLI2GROUPED-LEDGER-2\n",
+        )
+    } else {
+        grouped_family
+    };
+    let family = if is_grouped(mode) {
         grouped_family.as_str()
     } else {
         family
@@ -754,15 +895,27 @@ fn run() -> Result<bool, String> {
         ("disassembly-policy.txt".to_owned(), policy.clone()),
     ]);
     let mut classes = None;
-    let prepared = prepare_population_inputs(
-        &original,
-        &ledger,
-        expected_ledger,
-        &policy,
-        expected_policy,
-        mode,
-        (&mut files, &mut classes),
-    );
+    let prepared = if storage == liteinst_rewrite::LedgerStorage::Inline {
+        prepare_population_inputs(
+            &original,
+            &ledger,
+            expected_ledger,
+            &policy,
+            expected_policy,
+            mode,
+            (&mut files, &mut classes),
+        )
+    } else {
+        prepare_population_inputs_with_storage(
+            &original,
+            &ledger,
+            expected_ledger,
+            &policy,
+            expected_policy,
+            (mode, storage),
+            (&mut files, &mut classes),
+        )
+    };
     // Same input reread ordering as the existing prepare CLI: no outcome is
     // dispatched and no output is published before all three snapshots agree.
     if read(Path::new(&args[0]), disassembly::INPUT_LIMIT)? != original
@@ -775,8 +928,14 @@ fn run() -> Result<bool, String> {
     let complete = match prepared {
         Ok(product) => {
             fixed_binding = product.fixed_image_binding();
-            files.extend(product.files().clone());
-            product.candidate_complete()
+            if storage == liteinst_rewrite::LedgerStorage::Inline {
+                files.extend(product.files().clone());
+                product.candidate_complete()
+            } else {
+                let complete = product.candidate_complete();
+                files.extend(product.into_files());
+                complete
+            }
         }
         Err(error) => {
             // An invalid/untrusted ledger has no verified denominator, but the
@@ -803,7 +962,9 @@ fn run() -> Result<bool, String> {
     );
     if matches!(
         mode,
-        PopulationMode::JumpStack | PopulationMode::JumpStackGrouped
+        PopulationMode::JumpStack
+            | PopulationMode::JumpStackGrouped
+            | PopulationMode::JumpStackGroupedUpstream
     ) {
         index.push_str(&jump_stack_fields(classes));
     }
@@ -811,6 +972,7 @@ fn run() -> Result<bool, String> {
         mode,
         PopulationMode::JumpStack
             | PopulationMode::JumpStackGrouped
+            | PopulationMode::JumpStackGroupedUpstream
             | PopulationMode::Existing(Mode::WholeFixedExecPackedOverlapping4096)
     ) {
         match fixed_binding {
@@ -823,7 +985,7 @@ fn run() -> Result<bool, String> {
             None => index.push_str("fixed_binding_status\tunbound\nfixed_output_readback\tnot-complete\n"),
         }
     }
-    if mode == PopulationMode::JumpStackGrouped {
+    if is_grouped(mode) {
         index.push_str(if fixed_binding.is_some() {
             "portable_metadata_verification\tchecked\n"
         } else {
@@ -834,6 +996,12 @@ fn run() -> Result<bool, String> {
         } else {
             "embedded_metadata_binding\tnot-complete\n"
         });
+    }
+    if storage == liteinst_rewrite::LedgerStorage::ReadChunks256 {
+        index.push_str("ledger_storage\tread-chunks256-v1\nledger_read_table\tread-chunks.tsv\nledger_verification\tledger-verification.tsv\nledger_bootstrap\tunsupported\n");
+        index.push_str(if files.contains_key(liteinst_rewrite::ledger_storage::VERIFICATION) {
+            "ledger_wire_verification\tchecked\nledger_current_read_verification\tchecked-before-writes\n"
+        } else { "ledger_wire_verification\tunavailable\nledger_current_read_verification\tunavailable\n" });
     }
     for (name, bytes) in &files {
         write(&output.join(name), bytes)?;
@@ -1144,3 +1312,11 @@ mod fixed_exec_cli_tests {
 #[cfg(test)]
 #[path = "disassembly_sites/grouped_tests.rs"]
 mod grouped_tests;
+
+#[cfg(test)]
+#[path = "disassembly_sites/grouped_upstream_tests.rs"]
+mod grouped_upstream_tests;
+
+#[cfg(test)]
+#[path = "disassembly_sites/ledger_storage_tests.rs"]
+mod ledger_storage_tests;

@@ -572,3 +572,29 @@ fn grouped_nongroup_route_retains_legacy_images_edits_and_outcomes() {
             .all(|r| r.refusal.as_ref().unwrap().stage == "grouped-policy")
     );
 }
+
+// Sibling upstream controls reuse the existing source fixture, not its tests.
+pub(super) const UPSTREAM_BASE: u64 = BASE;
+pub(super) const UPSTREAM_PC: u64 = PC;
+pub(super) fn upstream_source(
+    chunks: &[&[u8]],
+) -> (Vec<u8>, disassembly::whole::JumpStackWholeSelection) {
+    source(chunks)
+}
+pub(super) fn upstream_elf(bytes: &[u8]) -> Elf64<'_> {
+    elf(bytes)
+}
+pub(super) fn upstream_draft(
+    original: &[u8],
+    selected: &disassembly::whole::JumpStackWholeSelection,
+) -> adjacent_b2_frontend::SelectionDraft {
+    draft(original, selected)
+}
+pub(super) fn upstream_run_group(
+    original: &[u8],
+    selected: &disassembly::whole::JumpStackWholeSelection,
+    schedule: &Schedule,
+    state: &mut adjacent_b2_frontend::SelectionDraft,
+) -> Vec<AcceptedGroup> {
+    run_group(original, selected, schedule, state)
+}

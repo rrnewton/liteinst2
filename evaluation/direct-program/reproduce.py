@@ -28,6 +28,7 @@ REWRITE_PROFILES = {
     'fixed-exec-overlapping-v2': '--whole-program-fixed-exec-packed-overlapping-neighbors-4096',
     'jumps-gpr-stack64-v1': '--whole-program-fixed-exec-packed-overlapping-jump-stack64-4096',
     'jumps-gpr-stack64-block-observation-v1': '--whole-program-fixed-exec-block-observation-jump-stack64-4096',
+    'jumps-gpr-stack64-block-upstream-v1': '--whole-program-fixed-exec-block-upstream-jump-stack64-4096',
 }
 CATALOG_SHA = '2b89602488e2b1854e0df68ecdf49243d4c952a2f393fad4a56785db4a539bde'
 _catalog_bytes = Path(__file__).with_name('program_catalog.json').read_bytes()
@@ -73,8 +74,11 @@ def build(r, a):
 
 def functional(r, a):
     corpus = a.corpus_profile == 'cat-head-wc-v1'
-    grouped = a.rewrite_profile == D.GROUPED_PROFILE
-    stack = a.rewrite_profile in (D.STACK_PROFILE, D.GROUPED_PROFILE)
+    grouped = a.rewrite_profile in D.GROUPED_PROFILES
+    stack = a.rewrite_profile in (D.STACK_PROFILE, *D.GROUPED_PROFILES)
+    if a.ledger_storage != 'inline':
+        assert grouped and a.ledger_storage == D.CHUNK_STORAGE
+        r.record['ledger_storage'] = a.ledger_storage
     selection_profile = D.STACK_PROFILE if stack else None
     input_profile = 'et-exec-jumps-gpr-stack64-v1' if stack else 'et-exec-whole-4096-v1'
     policy_profile = 'et-exec-jumps-gpr-stack64-bounded-512m-v1' if stack else 'et-exec-whole-bounded-512m-v1'
@@ -198,14 +202,15 @@ def functional(r, a):
     candidates = {}; r.capacity('before-generation')
     def li2():
         ledger = material/'ledger.txt'
-        row, _ = command('li2', [products['disassembly_sites'], REWRITE_PROFILES[a.rewrite_profile], cat, ledger, r.frozen[str(ledger)]['sha256'], policy_path, r.frozen[str(policy_path)]['sha256'], r.work/'li2'], (180, 240, 3072*M, 64*M, 8*M))
+        storage_args = [] if a.ledger_storage == 'inline' else ['--ledger-storage', a.ledger_storage]
+        row, _ = command('li2', [products['disassembly_sites'], *storage_args, REWRITE_PROFILES[a.rewrite_profile], cat, ledger, r.frozen[str(ledger)]['sha256'], policy_path, r.frozen[str(policy_path)]['sha256'], r.work/'li2'], (180, 240, 3072*M, 64*M, 8*M))
         completed(row)
         info = D.complete(r.work/'li2', S.payload); stages['li2']['complete'] = info; complete = info['fields']['candidate_complete'] == 'true'
         assert info['fields']['candidate_complete'] in ('true', 'false') and info['fields']['observed_original_sha256'] == cat_pin['sha256']
-        if a.rewrite_profile in ('fixed-exec-overlapping-v2', D.STACK_PROFILE, D.GROUPED_PROFILE):
+        if a.rewrite_profile in ('fixed-exec-overlapping-v2', D.STACK_PROFILE, *D.GROUPED_PROFILES):
             expected_binding = dict(
-                profile=D.GROUPED_PROFILE if grouped else D.STACK_PROFILE if stack else 'fixed-exec-zero-bias-indexed-jump32-v1',
-                planner_profile=D.GROUPED_PROFILE if grouped else 'whole-program-packed-overlapping-neighbors-4096',
+                profile=a.rewrite_profile if grouped else D.STACK_PROFILE if stack else 'fixed-exec-zero-bias-indexed-jump32-v1',
+                planner_profile=a.rewrite_profile if grouped else 'whole-program-packed-overlapping-neighbors-4096',
                 address_binding='fixed-exec-zero-bias-indexed-jump32-v1',
                 required_object_type='ET_EXEC', required_load_bias='0',
                 fixed_source_sha256=cat_pin['sha256'],
@@ -226,7 +231,7 @@ def functional(r, a):
                 ('field_encoding', 'original-indexed-jump-signed32-v1')]
             binding_bytes = ('LI2FIXED-EXEC-BINDING\t1\n' + ''.join(key+'\t'+value+'\n' for key, value in binding_rows)).encode()
             if grouped:
-                binding_bytes = D.grouped_binding_bytes(info['files']['selection.txt']['sha256'], cat_pin['sha256'], r.record['policy']['domain'], info['files']['grouping-policy.tsv']['sha256'])
+                binding_bytes = D.grouped_binding_bytes(info['files']['selection.txt']['sha256'], cat_pin['sha256'], r.record['policy']['domain'], info['files']['grouping-policy.tsv']['sha256'], profile=a.rewrite_profile)
             assert S.payload(r.work/'li2/binding-policy.tsv', info['files']['binding-policy.tsv']) == binding_bytes
         if stack:
             D.stack_complete(info['fields'], sites)
@@ -235,8 +240,9 @@ def functional(r, a):
         if 'disassembly-inventory.tsv' in info['files']: assert D.inventory(S.payload(r.work/'li2/disassembly-inventory.tsv'), cat_pin['sha256'], r.frozen[str(ledger)]['sha256'], selection_profile=selection_profile) == sites
         if 'report.tsv' in info['files']: r.record['structural']['li2'] = D.li2_report(S.payload(r.work/'li2/report.tsv'), sites, cat_pin['sha256'], complete)
         if grouped:
-            members = {name: S.payload(r.work/'li2'/name, info['files'][name], cap=64*M) for name in D.GROUPED_MEMBERS}
-            r.record['structural']['li2']['grouping'] = D.grouped_linkage(info, members, sites, cat_pin['sha256'], r.record['policy']['domain'], r.record['structural']['li2'], source_ledger=r.frozen[str(ledger)])
+            member_names = D.GROUPED_MEMBERS + (() if a.ledger_storage == 'inline' else D.CHUNK_MEMBERS)
+            members = {name: S.payload(r.work/'li2'/name, info['files'][name], cap=64*M) for name in member_names}
+            r.record['structural']['li2']['grouping'] = D.grouped_linkage(info, members, sites, cat_pin['sha256'], r.record['policy']['domain'], r.record['structural']['li2'], source_ledger=r.frozen[str(ledger)], profile=a.rewrite_profile, ledger_storage=a.ledger_storage)
         r.record['structural']['li2']['status'] = 'PASS' if complete else 'FAILED'
         if not complete: assert row['owner']['exit_code'] == 2; return None
         assert row['status'] == 'PASS' and 'candidate.elf' in info['files'] and 'report.tsv' in info['files']
@@ -283,10 +289,12 @@ def main():
     parser.add_argument('--corpus-profile', choices=('cat-only-v1', 'cat-head-wc-v1'), default='cat-only-v1')
     parser.add_argument('--program', choices=tuple(CATALOG['programs']))
     parser.add_argument('--rewrite-profile', choices=tuple(REWRITE_PROFILES), default='mixed-entry-veneer-v1')
+    parser.add_argument('--ledger-storage', choices=('inline', D.CHUNK_STORAGE), default='inline')
     parser.add_argument('--trusted-complete-code', action='store_true'); a = parser.parse_args(); env = dict(S.BASE_ENV)
+    if a.ledger_storage != 'inline': assert a.phase == 'functional' and a.rewrite_profile in D.GROUPED_PROFILES
     if a.corpus_profile == 'cat-head-wc-v1':
         assert a.phase == 'functional' and a.program in CATALOG['build_profiles'][a.corpus_profile]
-        assert a.rewrite_profile in ('fixed-exec-overlapping-v2', D.STACK_PROFILE, D.GROUPED_PROFILE) and a.program_receipt and a.program_receipt_sha256
+        assert a.rewrite_profile in ('fixed-exec-overlapping-v2', D.STACK_PROFILE, *D.GROUPED_PROFILES) and a.program_receipt and a.program_receipt_sha256
         assert not a.cat_receipt and not a.cat_receipt_sha256
     else:
         assert a.program is None and not a.program_receipt and not a.program_receipt_sha256

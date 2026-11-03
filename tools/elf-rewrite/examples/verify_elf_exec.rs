@@ -247,6 +247,10 @@ fn main() {
         image
     );
     let ledger = read(&directory.join("ledger.tsv"), LIMIT);
+    assert!(
+        ledger.starts_with(b"LI2LEDGER\t1\n"),
+        "this legacy verifier requires inline ledger version1"
+    );
     let image_rows: Vec<_> = std::str::from_utf8(&ledger)
         .unwrap()
         .lines()

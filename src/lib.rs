@@ -45,6 +45,7 @@ pub mod precontext;
 pub mod probe;
 pub mod quiescent;
 pub mod rapid;
+pub mod scalar_profile;
 pub mod scanner;
 /// Shared descriptive decoder, selected-opcode and full-GPR facts.
 pub use liteinst_x86 as x86;

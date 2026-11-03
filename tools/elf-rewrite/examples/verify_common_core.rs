@@ -499,42 +499,8 @@ fn field(
 
 fn ledger_shape(rows: &[Vec<&str>], router: RouterMode) {
     for r in rows {
-        let length = match r[0] {
-            "LI2LEDGER"
-            | "original_sha256"
-            | "selection_sha256"
-            | "bias_policy"
-            | "bias_domain"
-            | "qualification_complete"
-            | "execution_authority"
-            | "grouping"
-            | "unresolved"
-            | "CARRIER-EXTENSION"
-            | "candidate_sha256"
-            | "new_load_pages"
-            | "phdr_vaddr" => 2,
-            "requirement" | "route" | "restored-boundary" | "unmet-requirement"
-            | "entry-preserved" => 4,
-            "entry-router-required" if router.enabled() => 5,
-            "hook"
-            | "step-read"
-            | "semantic-write"
-            | "live-store-span"
-            | "pc-range"
-            | "elf-change"
-            | "original-symbol-reference" => 5,
-            "step" => 8,
-            "live-prerequisites-not-receipts" | "allocation" | "elf-image" => 6,
-            "source-relay-geometry-hex"
-            | "byte-lock"
-            | "original-file-dependency"
-            | "phdr_file"
-            | "original-loader-table"
-            | "original-loader-protected" => 3,
-            "image" | "original-loader-write" => 7,
-            "field" => 10,
-            _ => panic!("unknown or unsupported ledger record {}", r[0]),
-        };
+        let length = liteinst_rewrite::ledger_storage::legacy_record_width(r[0], router.enabled())
+            .unwrap_or_else(|| panic!("unknown or unsupported ledger record {}", r[0]));
         assert_eq!(r.len(), length);
     }
     for (tag, value) in [
@@ -1573,8 +1539,13 @@ fn main() {
         {
             assert_eq!(read.len(), 5);
             let b = unhex(read[4]);
-            let at = file_at(&old, n(read[3]), b.len());
-            assert_eq!(&overlay[at..at + b.len()], b);
+            liteinst_rewrite::ledger_storage::compare_current(
+                &old,
+                &overlay,
+                n(read[3]),
+                liteinst_rewrite::ledger_storage::ExpectedRead::Inline(&b),
+            )
+            .unwrap();
         }
         for write in r
             .iter()

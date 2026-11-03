@@ -17,7 +17,8 @@ use crate::trampoline::{ExecutableTrampoline, HookCallback, TrampolineImage, Tra
 
 mod artifact_window;
 pub use artifact_window::{
-    ArtifactObservationPlan, ArtifactObservationRequest, plan_artifact_observation_window_after,
+    ArtifactObservationPlan, ArtifactObservationRequest, ArtifactObservationSearchRequest,
+    plan_artifact_observation_window_after, plan_artifact_observation_window_upstream_after,
 };
 
 pub mod feasibility;
@@ -262,6 +263,35 @@ pub fn plan_install_with_emission(
     plan_install_core(&PlanningRequest::artifact(request)).map(ArtifactPlan::single)
 }
 
+// Pure enumeration only: callers retain their own prerequisite, occupied and
+// zero-budget checks at their original positions. The complete domain is kept
+// even when max_sites will omit heads; SearchEvidence owns that classification.
+fn physical_head_schedule(request: &PlanningRequest<'_>, scan: &ScanResult) -> Vec<u64> {
+    let mut candidates: Vec<_> = scan
+        .instructions()
+        .iter()
+        .filter(|item| {
+            request.block.contains(item.address())
+                && item.address() <= request.logical_pc
+                && request.logical_pc - item.address() <= request.search.max_upstream_bytes as u64
+        })
+        .map(|item| item.address())
+        .collect();
+    // Original decoded heads are unique, so all sort keys are distinct.
+    // Reverse retains ordinary enumeration; coalesced order is identical.
+    candidates.reverse();
+    // Same-site first; otherwise favor a single-cache-line store, then the
+    // nearest upstream head. Quiescence remains required for live placements.
+    candidates.sort_by_key(|&pc| {
+        (
+            pc != request.logical_pc,
+            pc % 64 > 56,
+            request.logical_pc - pc,
+        )
+    });
+    candidates
+}
+
 pub(crate) fn plan_install_core(
     request: &PlanningRequest<'_>,
 ) -> Result<PlannedInstall, PlanningFailure> {
@@ -318,26 +348,7 @@ pub(crate) fn plan_install_core(
                 }
             }
         }
-        let mut candidates: Vec<_> = scan
-            .instructions()
-            .iter()
-            .filter(|i| {
-                request.block.contains(i.address())
-                    && i.address() <= request.logical_pc
-                    && request.logical_pc - i.address() <= request.search.max_upstream_bytes as u64
-            })
-            .map(|i| i.address())
-            .collect();
-        candidates.reverse();
-        // Same-site first; otherwise favor a single-cache-line store, then the
-        // nearest upstream head. Quiescence is required for every placement.
-        candidates.sort_by_key(|&pc| {
-            (
-                pc != request.logical_pc,
-                pc % 64 > 56,
-                request.logical_pc - pc,
-            )
-        });
+        let mut candidates = physical_head_schedule(request, &scan);
         if request.search.tactics == TacticPolicy::PrefixPunOnly {
             candidates.clear();
         }
@@ -841,24 +852,7 @@ fn plan_coalesced_flavor(
         if let Some(clock) = clock {
             occupied.push(clock.clock.range());
         }
-        let mut candidates: Vec<_> = scan
-            .instructions()
-            .iter()
-            .filter(|item| {
-                request.block.contains(item.address())
-                    && item.address() <= request.logical_pc
-                    && request.logical_pc - item.address()
-                        <= request.search.max_upstream_bytes as u64
-            })
-            .map(|item| item.address())
-            .collect();
-        candidates.sort_by_key(|&pc| {
-            (
-                pc != request.logical_pc,
-                pc % 64 > 56,
-                request.logical_pc - pc,
-            )
-        });
+        let candidates = physical_head_schedule(request, &scan);
         let sites = search_evidence.begin(
             SearchDomain::PhysicalSites,
             SearchScope::default(),

@@ -11,14 +11,20 @@ pub use adjacent_b2_frontend::routed_jmp::prepare_disassembly_adjacent_routed_jm
 mod fixed_exec;
 mod grouped_artifact_frontend;
 pub use grouped_artifact_frontend::{
-    GROUPED_PROFILE, grouped_fixed_exec_binding_policy, grouped_fixed_exec_metadata,
-    prepare_disassembly_jump_stack_grouped_fixed_exec,
+    GROUPED_PROFILE, GROUPED_UPSTREAM_PROFILE, grouped_fixed_exec_binding_policy,
+    grouped_fixed_exec_metadata, grouped_upstream_fixed_exec_binding_policy,
+    grouped_upstream_fixed_exec_metadata, prepare_disassembly_jump_stack_grouped_fixed_exec,
+    prepare_disassembly_jump_stack_grouped_upstream_fixed_exec,
+    prepare_disassembly_jump_stack_grouped_with_ledger_storage,
 };
 mod ledger;
+pub mod ledger_codec;
+pub mod ledger_storage;
 pub use fixed_exec::{
     BINDING_PROFILE as FIXED_EXEC_BINDING_PROFILE, METADATA as FIXED_EXEC_METADATA,
     binding_policy as fixed_exec_binding_policy,
 };
+pub use ledger_storage::LedgerStorage;
 pub mod model;
 mod neighbor_catalogue;
 pub mod selection;
@@ -47,6 +53,10 @@ pub struct Product {
 impl Product {
     pub fn files(&self) -> &BTreeMap<String, Vec<u8>> {
         &self.files
+    }
+    /// Moves owned output members without duplicating a compact encoding envelope.
+    pub fn into_files(self) -> BTreeMap<String, Vec<u8>> {
+        self.files
     }
     pub fn reports(&self) -> &[SiteReport] {
         &self.reports
@@ -511,7 +521,10 @@ struct CarrierTransaction<'a, F> {
     hooks: TransactionHooks<'a, F>,
     packed_rx_runs: bool,
     fixed_exec: bool,
-    grouped_classes: Option<&'a [li2core::x86::JumpStackClass]>,
+    grouped_classes: Option<(
+        &'a [li2core::x86::JumpStackClass],
+        grouped_artifact_frontend::GroupProfile,
+    )>,
 }
 
 fn prepare_selection_with_carrier_layout(
@@ -523,6 +536,30 @@ fn prepare_selection_with_carrier_layout(
     pair_profile: adjacent_b2_frontend::PairProfile,
     transaction: CarrierTransaction<'_, impl FnMut(&'static str) -> Result<(), Error>>,
 ) -> Result<Product, Error> {
+    prepare_selection_with_storage(
+        original,
+        selection,
+        owned_neighbors,
+        mode,
+        adjacent,
+        pair_profile,
+        (transaction, LedgerStorage::Inline),
+    )
+}
+
+fn prepare_selection_with_storage(
+    original: &[u8],
+    selection: Selection,
+    owned_neighbors: bool,
+    mode: disassembly::NeighborMode,
+    adjacent: Option<disassembly::adjacent_b2::AdjacentB2Limits>,
+    pair_profile: adjacent_b2_frontend::PairProfile,
+    configuration: (
+        CarrierTransaction<'_, impl FnMut(&'static str) -> Result<(), Error>>,
+        LedgerStorage,
+    ),
+) -> Result<Product, Error> {
+    let (transaction, storage) = configuration;
     let CarrierTransaction {
         hooks,
         packed_rx_runs,
@@ -530,6 +567,22 @@ fn prepare_selection_with_carrier_layout(
         grouped_classes,
     } = transaction;
     let TransactionHooks { addon, mut gate } = hooks;
+    if storage != LedgerStorage::Inline {
+        if addon.is_some() {
+            ledger_storage::require_inline_bootstrap(storage)?;
+        }
+        if grouped_classes.is_none()
+            || !fixed_exec
+            || !packed_rx_runs
+            || adjacent.is_some()
+            || owned_neighbors
+        {
+            return Err(Error::new(
+                "ledger-storage",
+                "compact storage requires explicit grouped fixed profile",
+            ));
+        }
+    }
     if packed_rx_runs
         && (owned_neighbors
             || adjacent.is_some()
@@ -665,7 +718,14 @@ fn prepare_selection_with_carrier_layout(
     }
     // Freeze all units from original, sealed selection before any plan mutates the overlay.
     let grouped_schedule = grouped_classes
-        .map(|classes| grouped_artifact_frontend::Schedule::freeze(&elf, s, classes))
+        .map(|(classes, profile)| match profile {
+            grouped_artifact_frontend::GroupProfile::Exact => {
+                grouped_artifact_frontend::Schedule::freeze(&elf, s, classes)
+            }
+            grouped_artifact_frontend::GroupProfile::Upstream => {
+                grouped_artifact_frontend::Schedule::freeze_upstream(&elf, s, classes)
+            }
+        })
         .transpose()?;
     let mut grouped_accepted = Vec::new();
     let mut grouped_evidence = Vec::new();
@@ -834,7 +894,7 @@ fn prepare_selection_with_carrier_layout(
     files.insert("selection.txt".into(), s.manifest.clone());
     let compatibility_binding = if let Some(binding) = fixed_binding {
         let policy = match &grouped_schedule {
-            Some(schedule) => fixed_exec::grouped_binding_policy(
+            Some(schedule) => schedule.profile.binding_policy(
                 binding,
                 ContentId::of(&s.manifest),
                 ContentId::of(&schedule.policy),
@@ -847,7 +907,33 @@ fn prepare_selection_with_carrier_layout(
     } else {
         ContentId::of(&s.manifest)
     };
-    let mut ledger = if let Some(associations) = &grouped_associations {
+    let mut ledger = if storage == LedgerStorage::ReadChunks256 {
+        ledger_storage::check_plans(original, s, &plan_views)?;
+        let encoded = ledger_codec::encode_plan(
+            s,
+            &plan_views,
+            &composition,
+            &dependencies,
+            ledger_storage::limits(s, original.len(), 0)?,
+        )?;
+        ledger_storage::before_plan_extensions(
+            s,
+            original.len(),
+            encoded.ledger.len(),
+            encoded.table.len(),
+            plan_views.iter().map(|(_, p)| p.images().count()).sum(),
+            grouped_associations.as_ref().map_or(0, Vec::len),
+        )?;
+        let mut bytes = encoded.ledger;
+        ledger::append_entry_veneers(&mut bytes, &plan_views)?;
+        let bytes = ledger::apply_grouped_associations(
+            bytes,
+            grouped_associations.as_ref().expect("compact grouped gate"),
+            2,
+        )?;
+        files.insert(ledger_storage::TABLE.into(), encoded.table);
+        bytes
+    } else if let Some(associations) = &grouped_associations {
         ledger::grouped_plans(s, &plan_views, &composition, &dependencies, associations)?
     } else if mode == disassembly::NeighborMode::WholeEntryVeneerMixedPending
         || mode == disassembly::NeighborMode::WholeOverlappingPending
@@ -858,6 +944,13 @@ fn prepare_selection_with_carrier_layout(
     };
     if let Some(binding) = fixed_binding {
         ledger::fixed_binding(&mut ledger, binding);
+    }
+    if storage == LedgerStorage::ReadChunks256 {
+        ledger_storage::limits(s, original.len(), 0)?.check_storage_lengths(
+            ledger.len(),
+            ledger.len(),
+            files[ledger_storage::TABLE].len(),
+        )?;
     }
     files.insert("plan-ledger.tsv".into(), ledger.clone());
     for (index, image) in plan_views.iter().flat_map(|(_, p)| p.images()).enumerate() {
@@ -982,6 +1075,15 @@ fn prepare_selection_with_carrier_layout(
                     )
                     .map_err(|e| Error::new("sparse-wire", e))?,
                 );
+                if storage == LedgerStorage::ReadChunks256 {
+                    ledger_storage::before_carrier_extension(
+                        s,
+                        original.len(),
+                        ledger.len(),
+                        files[ledger_storage::TABLE].len(),
+                        &output,
+                    )?;
+                }
                 ledger::carrier(&mut ledger, &output);
                 if fixed_binding.is_some() {
                     ledger.extend_from_slice(b"fixed-original-field-ownership\tchecked-original-dependencies-and-loader-writes\nfixed-output-readback\tchecked\n");
@@ -1045,6 +1147,10 @@ fn prepare_selection_with_carrier_layout(
             .map_err(|e| Error::new("metadata", e))?,
     );
     files.insert("ledger.tsv".into(), ledger);
+    if storage == LedgerStorage::ReadChunks256 {
+        let proof = ledger_storage::verify(original, s, &files)?;
+        files.insert(ledger_storage::VERIFICATION.into(), proof);
+    }
     files.insert("report.tsv".into(), ledger::report(s, &reports, complete));
     for report in &reports {
         files.insert(
