@@ -195,7 +195,38 @@ fn min5_full_manifest_and_frozen_source_join_reject_consumed_straddling_or_chang
     changed[0x1104] = 0x90;
     let mut state = draft(&changed, &selected);
     let before = state.composition.clone();
-    assert!(run_group(&changed, &selected, &schedule, &mut state).is_empty());
+    let identity = state.composition.identity();
+    let original_elf = elf(&original);
+    let binding =
+        fixed_exec::bind(&original_elf, identity, selected.selection.bias_domain).unwrap();
+    let changed_elf = elf(&changed);
+    // Public admission must reject the changed digest before group planning.
+    let error =
+        fixed_exec::bind(&changed_elf, identity, selected.selection.bias_domain).unwrap_err();
+    assert_eq!(error.stage, "fixed-exec-binding");
+    assert_eq!(error.detail, "\"original digest mismatch\"");
+    // Independently challenge the frozen seal using the previously bound input.
+    // This deliberately stale internal context is not a new public admission.
+    let dynamic =
+        carrier::dynamic::inspect(&changed_elf, carrier::dynamic::Limits::default()).unwrap();
+    let mut accepted = Vec::new();
+    let evidence = plan(
+        SingletonContext {
+            elf: &changed_elf,
+            dynamic: &dynamic,
+            s: &selected.selection,
+            identity,
+            fixed_binding: Some(binding),
+            owned_neighbors: false,
+            mode: disassembly::NeighborMode::WholeOverlappingPending,
+            record_baseline: false,
+        },
+        &schedule,
+        &mut state,
+        &mut accepted,
+    );
+    assert_eq!(evidence.len(), schedule.groups.len());
+    assert!(accepted.is_empty());
     assert_eq!(state.composition, before);
     assert!(
         state
