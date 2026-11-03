@@ -144,18 +144,18 @@ static int lta_replace(unsigned slot) {
 static int lc8_reachable(const struct li2_pgd_view *,const struct li2_pg_compact *);
 /* A bounded proposal loop. An incompatible node is attempted only once in
    this activation; it receives neither a source lease nor a current claim. */
-static unsigned lta_propose_peer(unsigned *tried) {
+static unsigned lta_propose_peer(struct lta_peer_trials *tried) {
     const struct li2_pgd_view *v=&pe.domain.work.view;
     if(!tried || pe.p.phase!=LI2_PG_BOUND || pe.domain.work.bound)return LI2_PTR_SLOTS;
     for(unsigned node=0;node<PTR_NODE_COUNT;node++) {
-        if((*tried&(1U<<node)) || lta_node_bound(node)>=0 || !PTR_NODE_AT(node).generation.installed)continue;
+        if(tried->node[node] || lta_node_bound(node)>=0 || !PTR_NODE_AT(node).generation.installed)continue;
         pe_need(lta_closed_value(node),PE_RELEASE,9236);
         const struct li2_ptr_slot *s=&PTR_NODE_AT(node);
         const struct pe_payload *p=(const void *)s->proof;
         if(s->registry_count!=protected_count ||
            !equal(s->registry,protected,protected_count*sizeof *protected) ||
            !pda_registration(p) || !lc8_reachable(v,&p->plan))continue;
-        *tried|=1U<<node;
+        tried->node[node]=1;
         unsigned victim=LI2_PTR_SLOTS;
         for(unsigned slot=0;slot<LI2_PTR_SLOTS;slot++) {
             unsigned included=0;

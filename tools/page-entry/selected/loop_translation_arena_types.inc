@@ -5,6 +5,9 @@ struct lta_binding {
     uint64_t generation;
     uint32_t node,reserved;
 };
+/* Each compatible reachable immutable node is proposed at most once. This
+   bounded local inventory is independent of the eight active-slot masks. */
+struct lta_peer_trials { unsigned char node[LI2_LTA_NODES]; };
 struct lta_state {
     struct li2_ptr_slot node[LI2_LTA_NODES];
     struct lta_binding binding[LI2_PTR_SLOTS];

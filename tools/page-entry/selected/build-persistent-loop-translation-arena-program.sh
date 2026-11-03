@@ -1,7 +1,7 @@
 #!/bin/sh
 # Distinct eight-slot active lifetime; unchanged planners, emitters and original bounds.
 set -eu
-test "$#" -eq 4
+test "$#" -eq 4 || { test "$#" -eq 5 && test "$5" = 128; }
 selected_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 parent_dir=$(CDPATH= cd -- "$selected_dir/.." && pwd)
 archive=$1
@@ -11,7 +11,11 @@ profile=$4
 case "$profile" in release) ;; *) exit 2 ;; esac
 test -f "$archive"
 test -f "$image"
-"${LI2_PYTHON:-python3}" "$selected_dir/persistent_loop_translation_arena_program_binding.py" "$selected_dir" "$archive" "$image" "$output" "$profile"
+if test "$#" -eq 5; then
+  "${LI2_PYTHON:-python3}" "$selected_dir/persistent_loop_translation_arena_program_binding.py" "$selected_dir" "$archive" "$image" "$output" "$profile" 128
+else
+  "${LI2_PYTHON:-python3}" "$selected_dir/persistent_loop_translation_arena_program_binding.py" "$selected_dir" "$archive" "$image" "$output" "$profile"
+fi
 cc_bin=${LI2_CC:-cc}
 "$cc_bin" -std=gnu11 -O2 -g -nostdlib -shared -fPIC -fvisibility=hidden \
   -fno-stack-protector -fno-builtin -fno-tree-loop-distribute-patterns -fno-tree-vectorize \

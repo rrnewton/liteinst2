@@ -54,8 +54,10 @@ SCHEDULE = SETUP + tuple((kind+'-'+name, profile) for kind, _, _, _ in PROGRAMS
 
 
 def prepare_workloads(builder, products, private, pin, binary, aliases, run, r, *,
-                      build=build_rx, selected=None, cache8=False, group_descriptor=False, arena=False):
+                      build=build_rx, selected=None, cache8=False, group_descriptor=False, arena=False, arena_capacity=False):
     """The original two release links and complete namespace/image preparation."""
+    arena_nodes=128 if arena_capacity else 12
+    arena_version=2 if arena_capacity else 1
     states = {}; builds = r['release_builds'] = {}
     archive = pin(products['archive']); owned = builder.record['artifacts']['decoder.a']
     need(archive == builder.paths['archive'] == builder.retained/'decoder.a' and
@@ -72,7 +74,8 @@ def prepare_workloads(builder, products, private, pin, binary, aliases, run, r, 
         if arena:
             bridge = build(builder, archive, original, directory, pin, binary, aliases,
                            labelled, holder, 'release', selected=selected,cache8=True,cache8_program=True,
-                           group_descriptor=True,arena=True,arena_program=True)
+                           group_descriptor=True,arena=True,arena_program=True,
+                           **({'arena_capacity':True} if arena_capacity else {}))
         elif group_descriptor:
             bridge = build(builder, archive, original, directory, pin, binary, aliases,
                            labelled, holder, 'release', selected=selected,cache8=True,cache8_program=True,group_descriptor=True)
@@ -83,7 +86,7 @@ def prepare_workloads(builder, products, private, pin, binary, aliases, run, r, 
             bridge = build(builder, archive, original, directory, pin, binary, aliases,
                            labelled, holder, 'release', selected=selected)
         need(holder['status'] == 'compiled_diagnostic_only' and
-             holder['binding']['profile'] == ('persistent-loop-translation-arena-program-release-v1' if arena else 'persistent-loop-group-descriptor-program-release-v1' if group_descriptor else 'persistent-loop-cache8-program-release-v1' if cache8 else 'persistent-loop-resident-rx-release-v1') and
+             holder['binding']['profile'] == ('persistent-loop-translation-arena-program-capacity128-release-v1' if arena_capacity else 'persistent-loop-translation-arena-program-release-v1' if arena else 'persistent-loop-group-descriptor-program-release-v1' if group_descriptor else 'persistent-loop-cache8-program-release-v1' if cache8 else 'persistent-loop-resident-rx-release-v1') and
              holder['binding']['mode'] == 'release' and
              holder['binding']['archive'] == r['archive'] and
              holder['binding']['capture_version'] is None and
@@ -106,12 +109,12 @@ def prepare_workloads(builder, products, private, pin, binary, aliases, run, r, 
                  'group_descriptor_observer' not in holder['binding'],
                  'actual production descriptor identity and no finite observer')
         if arena:
-            need(holder['binding']['arena_program']==dict(version=1,summary_fields=35,node_rows=3,node_fields=55,
-                 nodes_per_row=4,nodes=12,slots=8,count_version=2,count_fields=63,terminal_only=True,
+            need(holder['binding']['arena_program']==dict(version=arena_version,summary_fields=35,node_rows=arena_nodes//4,node_fields=55,
+                 nodes_per_row=4,nodes=arena_nodes,slots=8,count_version=2,count_fields=63,terminal_only=True,
                  observation_authority=False,qualification_credit=False) and
-                 holder['binding']['arena']==dict(version=1,nodes=12,active_bindings=8,completion_cells=9,
+                 holder['binding']['arena']==dict(version=arena_version,nodes=arena_nodes,active_bindings=8,completion_cells=9,
                  member_reference_version=3,code_pages=17,placement_banks=2,proof_pages=89,mirror_pages=89,
-                 sealed_root_pages=2,aggregate_heads=256,aggregate_boundaries=8,final_addresses=True,
+                 sealed_root_pages=12 if arena_capacity else 2,aggregate_heads=256,aggregate_boundaries=8,final_addresses=True,
                  dormant_authority='protected-issued-SBC-and-unexposed-node',
                  admission='fresh-source-rseq-registry-physical-then-current-binding',
                  claims='consume-at-detach-issue-only-after-real-completion',
@@ -125,9 +128,9 @@ def prepare_workloads(builder, products, private, pin, binary, aliases, run, r, 
 
 
 def cohort(builder, products, private, pin, binary, aliases, run, r, *,
-           build=build_rx, terminal=reports, selected=None, expected_commands=34, cache8=False, group_descriptor=False, arena=False):
+           build=build_rx, terminal=reports, selected=None, expected_commands=34, cache8=False, group_descriptor=False, arena=False, arena_capacity=False):
     states = prepare_workloads(builder, products, private, pin, binary, aliases, run, r,
-                               build=build, selected=selected, cache8=cache8, group_descriptor=group_descriptor, arena=arena)
+                               build=build, selected=selected, cache8=cache8, group_descriptor=group_descriptor, arena=arena, arena_capacity=arena_capacity)
     need(terminal.prior.CONTROL_COUNTS == CONTROL_COUNTS and len(r['cases']) == 2,
          'fixed two release subjects and every unchanged real-program reader control')
     expected_output = {kind: out for kind, _, _, out in PROGRAMS}
@@ -165,7 +168,7 @@ def cohort(builder, products, private, pin, binary, aliases, run, r, *,
                      'coherent_coverage.token_repartition'],
                      'both coherent whole-program mutations reach the exact common coverage theorem')
             if arena:
-                need(len(controls['arena_refusals'])==len(set(controls['arena_refusals']))==633,
+                need(len(controls['arena_refusals'])==len(set(controls['arena_refusals']))==(5650 if arena_capacity else 633),
                      'all separate200 arena field triples and33 distinct complete-validator encoding refusals')
                 need(controls['physical_query_refusals']==['coherent_physical_query_count'],
                      'whole coherent SBC query mutation reaches exact independent arena ownership accounting')
@@ -197,7 +200,9 @@ def cohort(builder, products, private, pin, binary, aliases, run, r, *,
          'both fixed diagnostic attempts and the complete declared source-owned schedule, no discarded failure')
 
 
-def execute(a, *, context=None, cache8=False, group_descriptor=False, arena=False):
+def execute(a, *, context=None, cache8=False, group_descriptor=False, arena=False, arena_capacity=False):
+    need(type(arena_capacity)is bool and (not arena_capacity or arena and context is None),
+         'capacity128 uses the installed distinct arena release program experiment')
     need(type(arena)is bool and (not arena or cache8 and group_descriptor),
          'explicit terminal-only arena program over unchanged CACHE8 and descriptor validators')
     need(type(group_descriptor)is bool and (not group_descriptor or cache8),
@@ -219,6 +224,8 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, arena=Fals
     if arena and context is None:
         import loop_translation_arena_program_reports
         terminal=loop_translation_arena_program_reports
+        if arena_capacity:
+            terminal=terminal.configured(*terminal.DEFAULT,node_count=128)
     build = build_rx if context is None else context['build_module'].build_rx
     schedule = SCHEDULE if context is None else SCHEDULE[len(SETUP):]
     need(len(SETUP)==20 and len(SCHEDULE)==34 and len(schedule)==(34 if context is None else 14),
@@ -260,6 +267,10 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, arena=Fals
         r['scope']='Two actual arena release programs with every original application/namespace/certificate/RX/transit/CACHE8/descriptor/common-proof check plus633 twelve-node terminal controls. Finite791 remains a separate prerequisite. No full-state, full-profile, repeated-sample or performance credit.'
         if context is None:
             r['reproduce'][2]=str(Path(__file__).resolve().with_name('loop_translation_arena_program.py'))
+    if arena_capacity:
+        r['profile']='loop-translation-arena-program-capacity128-release-v1'
+        r['scope']='128 immutable translation nodes with unchanged eight active bindings, nine completion cells, original application/certificate/RX/descriptor predicates and5650 complete all-node terminal controls. Separate capacity experiment; original12 native validation and full19 remain required. No speedup or repeated-sample credit.'
+        r['reproduce'].append('--capacity128')
     pins = {}; aliases = {}; artifacts = {}; presence = {}
     def pin(path, want=None):
         alias=Path(os.path.abspath(path)); p=alias.resolve(strict=True); value=fact(p)
@@ -345,7 +356,7 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, arena=Fals
             products = dict(archive=archive)
         r['archive'] = fact(products['archive'])
         cohort(builder, products, private, pin, binary, aliases, run, r,
-               build=build, terminal=terminal, selected=selected, expected_commands=len(schedule), cache8=cache8, group_descriptor=group_descriptor, arena=arena)
+               build=build, terminal=terminal, selected=selected, expected_commands=len(schedule), cache8=cache8, group_descriptor=group_descriptor, arena=arena, arena_capacity=arena_capacity)
         need(not r['final_errors'], 'complete retained command custody')
         r['status'] = 'completed_diagnostic'
     except BaseException as error:
@@ -379,6 +390,18 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, arena=Fals
         cases = []
         for case in r['cases']:
             observed = {k: v for k, v in case.items() if k not in ('controls', 'error')}
+            if arena_capacity and 'observed' in case:
+                # The complete validated 128-node value stays in the receipt.
+                # Public summary size is unchanged; its projection carries no
+                # validation authority and never replaces the full reader.
+                full=case['observed'];nodes=full['arena_nodes'];owner=full['persistent']
+                need(len(nodes)==128,'public projection follows the complete128-node theorem')
+                observed['observed']=dict(value_sha256=digest(full),arena=full['arena'],
+                    arena_nodes=dict(count=128,sha256=digest(nodes),
+                        installed=sum(n['generation']>0 for n in nodes),
+                        dormant=sum(n['active_slot']==8 and n['generation']>0 for n in nodes)),
+                    persistent={k:owner[k]for k in
+                        ('publications','retirements','cold_attempts','entries','completed','hits')})
             observed['error_type'] = case.get('error', '').split(':', 1)[0] or None
             controls = case.get('controls', {})
             observed.update(inherited_reader_controls=len(controls.get('inherited', {}).get('inherited', {}).get('refusals', [])),
@@ -411,6 +434,8 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, arena=Fals
         if arena:
             summary['reproduce'][2]='evaluation/inprocess/loop_translation_arena_program.py'
             summary['reproduce'][-1]='target/evaluation/inprocess/loop-translation-arena-program-NEW'
+        if arena_capacity:
+            summary['reproduce'].append('--capacity128')
         if context is not None:
             summary['reproduce']=None
             summary['source_manifest']=r['source_manifest']

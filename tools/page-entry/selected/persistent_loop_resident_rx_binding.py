@@ -74,7 +74,9 @@ RECURRENCE=dict(version=7,bytes=12382208,storage_bytes=12582912,capacity=1024,
     observation_authority=False,qualification_credit=False)
 
 
-def write_binding(selected, archive, image, output, mode, *, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None, arena=False, arena_observe=None, arena_program=False):
+def write_binding(selected, archive, image, output, mode, *, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None, arena=False, arena_observe=None, arena_program=False, arena_capacity=False):
+    need(type(arena_capacity)is bool and (not arena_capacity or arena_program),
+         '128-node capacity experiment requires the separate release program profile')
     need(type(arena_program)is bool and (not arena_program or arena and cache8_program and
          arena_observe is None and mode=='release'),
          'distinct terminal-only twelve-node arena program profile')
@@ -121,6 +123,7 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
     if group_descriptor_observe is not None:policy_value['group_descriptor_control']=group_descriptor_observe
     if cache8_effects is not None:policy_value['cache8_effect']=cache8_effects
     if arena_observe is not None:policy_value['arena_control']=arena_observe
+    if arena_capacity:policy_value['arena_capacity']=128
     policy = hashlib.sha256(json.dumps(policy_value,
                           sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     actual_archive = fact(archive.read_bytes())
@@ -139,6 +142,7 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
                   ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_BINDING_VERSION 1\n' if group_descriptor else '') +
                   ('#define LI2_PG_LOOP_TRANSLATION_ARENA_BINDING_VERSION 1\n' if arena else '') +
                   ('#define LI2_PG_LOOP_TRANSLATION_ARENA_PROGRAM_BINDING_VERSION 1\n' if arena_program else '') +
+                  ('#define LI2_PG_LOOP_TRANSLATION_ARENA_CAPACITY_BINDING_VERSION 1\n#define LI2_LOOP_TRANSLATION_ARENA_CAPACITY 128\n' if arena_capacity else '') +
                   ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n#define LI2_PG_LOOP_TRANSLATION_ARENA_OBSERVE_BINDING_VERSION 1\n' if arena_observe is not None else '') +
                   ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_OBSERVE_BINDING_VERSION 1\n' if group_descriptor_observe is not None else '') +
                   ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n#define LI2_PG_LOOP_CACHE8_EFFECTS_BINDING_VERSION 1\n' if cache8_effects is not None else '') +
@@ -209,6 +213,11 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
             old_controls=24 if arena_observe else 0,
             binding_controls=20 if arena_observe==1 else 12 if arena_observe==2 else 0,
             observation_authority=False,qualification_credit=False)
+    if arena_capacity:
+        record['profile']='persistent-loop-translation-arena-program-capacity128-release-v1'
+        record['arena']=dict(ARENA,version=2,nodes=128,sealed_root_pages=12)
+        record['arena_program']=dict(ARENA_PROGRAM,version=2,node_rows=32,nodes=128)
+        record['byte_certificate']=dict(record['byte_certificate'],slots=128)
     name=('persistent_loop_translation_arena_program_binding.json' if arena_program else
           'persistent_loop_translation_arena_observe_binding.json' if arena_observe is not None else
           'persistent_loop_translation_arena_binding.json' if arena else

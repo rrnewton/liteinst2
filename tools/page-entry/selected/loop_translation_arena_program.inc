@@ -4,12 +4,25 @@
     LI2_PG_LOOP_TRANSLATION_ARENA_PROGRAM_BINDING_VERSION != 1
 #error "exact distinct arena program observation binding required"
 #endif
+#ifdef LI2_LOOP_TRANSLATION_ARENA_CAPACITY
+_Static_assert(PTR_NODE_COUNT==128 && LI2_PTR_SLOTS==8 && LI2_PGD_RECEIPTS==9,
+    "all immutable nodes and unchanged active/completion bounds");
+_Static_assert(55U*21U+1854U<=sizeof(((struct writer *)0)->bytes),
+    "three-digit node identities and two-digit chunks fit the original writer");
+#else
 _Static_assert(PTR_NODE_COUNT==12 && LI2_PTR_SLOTS==8 && LI2_PGD_RECEIPTS==9,
     "all immutable nodes and unchanged active/completion bounds");
 _Static_assert(55U*21U+1800U<=sizeof(((struct writer *)0)->bytes),
     "complete four-node terminal rows fit the original writer");
+#endif
+_Static_assert(PTR_NODE_COUNT%4U==0 && PTR_NODE_COUNT<=128U,
+    "every immutable node is emitted once in bounded four-node rows");
 static void lta_program_report(unsigned status,unsigned code) {
+#ifdef LI2_LOOP_TRANSLATION_ARENA_CAPACITY
+    struct writer w={0};text(&w,"LI2_LOOP_ARENA_PROGRAM {\"version\":2");
+#else
     struct writer w={0};text(&w,"LI2_LOOP_ARENA_PROGRAM {\"version\":1");
+#endif
     field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
     field(&w,",\"nodes\":",PTR_NODE_COUNT);field(&w,",\"slots\":",LI2_PTR_SLOTS);
     field(&w,",\"initialized\":",lta_writer.value.initialized);
@@ -29,9 +42,13 @@ static void lta_program_report(unsigned status,unsigned code) {
     LTAP_SLOT(4);LTAP_SLOT(5);LTAP_SLOT(6);LTAP_SLOT(7);
 #undef LTAP_SLOT
     text(&w,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
-    for(unsigned chunk=0;chunk<3;chunk++) {
+    for(unsigned chunk=0;chunk<PTR_NODE_COUNT/4U;chunk++) {
         le_zero(&w,sizeof w);text(&w,"LI2_LOOP_ARENA_NODES");number(&w,chunk);
+#ifdef LI2_LOOP_TRANSLATION_ARENA_CAPACITY
+        text(&w," {\"version\":2");field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
+#else
         text(&w," {\"version\":1");field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
+#endif
         for(unsigned node=4U*chunk;node<4U*(chunk+1U);node++) {
             const struct li2_ptr_slot *s=&PTR_NODE_AT(node);
             const struct lta_dormant *d=&lta_writer.value.dormant[node];

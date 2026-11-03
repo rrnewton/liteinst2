@@ -74,7 +74,7 @@ static int lc8_attach(void) {
        !pda_zero(w->peer_claim,sizeof w->peer_claim) || !pda_zero(&w->offer,sizeof w->offer) ||
        !lc8_members(&w->view))return PE_STATE;
 #ifdef LI2_LOOP_TRANSLATION_ARENA
-    unsigned tried_nodes=0;
+    struct lta_peer_trials tried_nodes={0};
 #endif
     while(w->view.count<LI2_PGD_MEMBERS) {
         unsigned peer=LI2_PTR_SLOTS,i=w->view.count;

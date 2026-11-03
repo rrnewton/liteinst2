@@ -36,7 +36,11 @@ _Static_assert(LI2_SEALED_REQUIRED_SEALS==
 #ifdef LI2_LOOP_TRANSLATION_ARENA
 #define SG_NODE_COUNT PTR_NODE_COUNT
 #define SG_NODE_INDEX ptr_node_index(pe.selected_slot)
+#ifdef LI2_LOOP_TRANSLATION_ARENA_CAPACITY
+#define SG_ROOT_BYTES ((sizeof(struct sg_owner_state)+PAGE-1U)&~(size_t)(PAGE-1U))
+#else
 #define SG_ROOT_BYTES (2U*PAGE)
+#endif
 static int sg_selected_node(void) {
     unsigned node=ptr_node_index(pe.selected_slot);
     return pe.selected_slot<LI2_PTR_SLOTS && node<PTR_NODE_COUNT && ptr_node_storage(node);
@@ -61,8 +65,16 @@ static union {
     unsigned char page[SG_ROOT_BYTES];
 } sg_owner __attribute__((aligned(PAGE)));
 #ifdef LI2_LOOP_TRANSLATION_ARENA
+#ifdef LI2_LOOP_TRANSLATION_ARENA_CAPACITY
+_Static_assert(LI2_PTR_SLOTS==8 && SG_NODE_COUNT==128 && sizeof(struct sg_owner_state)==48160 &&
+    sizeof sg_owner==12U*PAGE,"exact twelve-page immutable 128-node seal owner");
+#else
 _Static_assert(LI2_PTR_SLOTS==8 && SG_NODE_COUNT==12 && sizeof(struct sg_owner_state)==4544 &&
     sizeof sg_owner==2U*PAGE,"exact two-page immutable arena seal owner");
+#endif
+_Static_assert(sizeof(struct sg_owner_state)<=SIZE_MAX-(PAGE-1U) &&
+    sizeof sg_owner==SG_ROOT_BYTES && !(SG_ROOT_BYTES&(PAGE-1U)) && SG_ROOT_BYTES<=64U*PAGE,
+    "complete nonoverflowing seal owner fits the unchanged physical query bound");
 #else
 _Static_assert(sizeof sg_owner==PAGE,"one separately protected owner page");
 #endif

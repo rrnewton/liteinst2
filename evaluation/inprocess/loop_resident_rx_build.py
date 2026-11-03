@@ -17,8 +17,12 @@ RX_LIFETIME=dict(version=1,slots=2,source_release_version=1,
     metadata_permission_counts='actual-pe_permission-calls-only',qualification_credit=False)
 
 
-def build_rx(builder, archive, original, directory, pin, binary, aliases, run, state, mode, *, control=None, selected=None, root=None, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None, arena=False, arena_observe=None, arena_program=False):
+def build_rx(builder, archive, original, directory, pin, binary, aliases, run, state, mode, *, control=None, selected=None, root=None, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None, arena=False, arena_observe=None, arena_program=False, arena_capacity=False):
     """Execute the real source-owned recipe, then bind its exact compiler closure."""
+    need(type(arena_capacity)is bool and (not arena_capacity or arena_program),
+         '128-node capacity experiment uses the release program path only')
+    arena_nodes=128 if arena_capacity else 12
+    arena_version=2 if arena_capacity else 1
     need(type(arena_program)is bool and (not arena_program or arena and cache8_program and
          arena_observe is None and mode=='release'),
          'distinct terminal-only twelve-node arena program profile')
@@ -102,6 +106,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     if group_descriptor_observe is not None:policy_value['group_descriptor_control']=group_descriptor_observe
     if cache8_effects is not None:policy_value['cache8_effect']=cache8_effects
     if arena_observe is not None:policy_value['arena_control']=arena_observe
+    if arena_capacity:policy_value['arena_capacity']=128
     policy = digest(policy_value)
     environment = dict(builder.environment, LI2_CC=str(builder.tools['cc']), LI2_PYTHON=str(builder.tools['python']))
     _, out, err = run('build', [builder.tools['sh'], script, archive, original, output, mode]+
@@ -109,7 +114,8 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
                       ([] if cache8_observe is None else [str(cache8_observe)])+
                       ([] if group_descriptor_observe is None else [str(group_descriptor_observe)])+
                       ([] if cache8_effects is None else [str(cache8_effects)])+
-                      ([] if arena_observe is None else [str(arena_observe)]),
+                      ([] if arena_observe is None else [str(arena_observe)])+
+                      (['128'] if arena_capacity else []),
                       profile='release_build', env=environment)
     need(out == err == b'', 'actual RO recipe has no diagnostics')
     manifest = binary(output/(binder_name+'.json'))
@@ -128,12 +134,12 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
              (set() if control is None else {'control','oracle'}) |
              ({'recurrence'} if recurrence else set()) | ({'cache8'} if cache8 else set()) | ({'cache8_observer'} if cache8_observe is not None else set()) | ({'cache8_program'} if cache8_program else set()) | ({'group_descriptor'} if group_descriptor else set()) | ({'group_descriptor_observer'} if group_descriptor_observe is not None else set()) | ({'cache8_effects'} if cache8_effects is not None else set()) | ({'arena'} if arena else set()) | ({'arena_observer'} if arena_observe is not None else set()) | ({'arena_program'} if arena_program else set())
          and digest({key: binding[key] for key in constants}) == digest(constants)
-         and binding['profile'] == stem+'-'+mode+'-v1'
+         and binding['profile'] == stem+('-capacity128' if arena_capacity else '')+'-'+mode+'-v1'
          and binding['mode'] == mode and binding['archive'] == fact(archive)
          and binding['original'] == image and binding['sources'] == values
          and binding['policy_sha256'] == policy and binding['capture_version'] is None
          and binding['byte_certificate'] == dict(version=1, sealed_generation=True, source_lease=False,
-             mirror='isolated-anonymous-RO', root='isolated-anonymous-RO', mirror_pages=89, slots=12 if arena else 8 if cache8 else 2,
+             mirror='isolated-anonymous-RO', root='isolated-anonymous-RO', mirror_pages=89, slots=arena_nodes if arena else 8 if cache8 else 2,
              full_scan_fallback=True, every_hit_full_scan=mode=='differential',
              old_capture_compatible=False, qualification_credit=False)
          and binding['history_certificate'] == dict(version=1, cells=9 if cache8 else 3, saved_completion='isolated-anonymous-RO',
@@ -172,9 +178,9 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
              activation='fresh-binding-DIRECT-connected-closure' if arena else 'post-publication-DIRECT-connected-claimed-closure',
              inactive_heads_exposed=False,qualification_credit=False),'exact cache/activation limits')
     if arena:
-        need(binding['arena']==dict(version=1,nodes=12,active_bindings=8,completion_cells=9,
+        need(binding['arena']==dict(version=arena_version,nodes=arena_nodes,active_bindings=8,completion_cells=9,
              member_reference_version=3,code_pages=17,placement_banks=2,proof_pages=89,
-             mirror_pages=89,sealed_root_pages=2,aggregate_heads=256,aggregate_boundaries=8,
+             mirror_pages=89,sealed_root_pages=12 if arena_capacity else 2,aggregate_heads=256,aggregate_boundaries=8,
              final_addresses=True,dormant_authority='protected-issued-SBC-and-unexposed-node',
              admission='fresh-source-rseq-registry-physical-then-current-binding',
              claims='consume-at-detach-issue-only-after-real-completion',
@@ -182,8 +188,8 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
              inactive_heads_exposed=False,old_capture_compatible=False,qualification_credit=False),
              'exact inactive-node value custody and fresh eight-member execution authority')
     if arena_program:
-        need(binding['arena_program']==dict(version=1,summary_fields=35,node_rows=3,node_fields=55,
-             nodes_per_row=4,nodes=12,slots=8,count_version=2,count_fields=63,
+        need(binding['arena_program']==dict(version=arena_version,summary_fields=35,node_rows=arena_nodes//4,node_fields=55,
+             nodes_per_row=4,nodes=arena_nodes,slots=8,count_version=2,count_fields=63,
              terminal_only=True,observation_authority=False,qualification_credit=False),
              'exact terminal-only twelve-node and eight-binding observations')
     if arena_observe is not None:
@@ -226,6 +232,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
         ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_BINDING_VERSION 1\n' if group_descriptor else '')+
         ('#define LI2_PG_LOOP_TRANSLATION_ARENA_BINDING_VERSION 1\n' if arena else '')+
         ('#define LI2_PG_LOOP_TRANSLATION_ARENA_PROGRAM_BINDING_VERSION 1\n' if arena_program else '')+
+        ('#define LI2_PG_LOOP_TRANSLATION_ARENA_CAPACITY_BINDING_VERSION 1\n#define LI2_LOOP_TRANSLATION_ARENA_CAPACITY 128\n' if arena_capacity else '')+
         ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n#define LI2_PG_LOOP_TRANSLATION_ARENA_OBSERVE_BINDING_VERSION 1\n' if arena_observe is not None else '')+
         ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_OBSERVE_BINDING_VERSION 1\n' if group_descriptor_observe is not None else '')+
         ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n#define LI2_PG_LOOP_CACHE8_EFFECTS_BINDING_VERSION 1\n' if cache8_effects is not None else '')+

@@ -29,12 +29,29 @@ struct lta_epochs {
     uint64_t detached,rebound,rebound_peers,cold_nodes,evicted;
     uint64_t epoch_invalidations,stale_refusals,physical_checks;
 };
+#ifdef LI2_LOOP_TRANSLATION_ARENA_CAPACITY
+#define LTA_WRITER_BYTES ((sizeof(struct lta_epochs)+PAGE-1U)&~(size_t)(PAGE-1U))
+#else
+#define LTA_WRITER_BYTES (2U*PAGE)
+#endif
 static union {
     struct lta_epochs value;
-    unsigned char pages[2U*PAGE];
+    unsigned char pages[LTA_WRITER_BYTES];
 } lta_writer __attribute__((aligned(PAGE)));
+#ifdef LI2_LOOP_TRANSLATION_ARENA_CAPACITY
+_Static_assert(LI2_LTA_NODES==128 && sizeof(struct lta_epochs)==42080 &&
+    sizeof lta_topology==PAGE && sizeof lta_writer==11U*PAGE,
+    "exact isolated 128-node arena metadata extents");
+#else
 _Static_assert(sizeof lta_topology==PAGE && sizeof lta_writer==2U*PAGE &&
     sizeof(struct lta_epochs)<=2U*PAGE,"complete isolated arena metadata extents");
+#endif
+_Static_assert(sizeof(struct lta_epochs)<=SIZE_MAX-(PAGE-1U) &&
+    sizeof lta_writer==LTA_WRITER_BYTES && !(LTA_WRITER_BYTES&(PAGE-1U)) &&
+    LTA_WRITER_BYTES<=64U*PAGE && PTR_NODE_COUNT<=SIZE_MAX/PE_ALLOC_BYTES &&
+    PTR_NODE_COUNT<=SIZE_MAX/PE_PROOF_BYTES && PTR_NODE_COUNT<=SIZE_MAX/sizeof(struct li2_ptr_slot) &&
+    PTR_NODE_COUNT*PE_ALLOC_BYTES<(UINT64_C(1)<<31),
+    "bounded metadata queries and nonoverflowing final-address allocations");
 
 static unsigned ptr_node_index(unsigned slot) {
     if(slot>=LI2_PTR_SLOTS)return PTR_NODE_COUNT;
@@ -94,16 +111,15 @@ static int ptr_node_storage(unsigned node) {
 static int lta_storage(void) {
     if(!pe.initialized || !pe.registered || pe.arena.initialized!=1 ||
        pe.selected_slot>=LI2_PTR_SLOTS || pe.selected_bank>1 || !lta_topology_live())return 0;
-    unsigned nodes=0;
     for(unsigned slot=0;slot<LI2_PTR_SLOTS;slot++) {
         unsigned node=ptr_node_index(slot);
-        if(node>=PTR_NODE_COUNT || (nodes&(1U<<node)) || !ptr_node_storage(node))return 0;
-        nodes|=1U<<node;
+        if(node>=PTR_NODE_COUNT || !ptr_node_storage(node))return 0;
         const struct li2_ptr_slot *s=&PTR_NODE_AT(node);
         if(s->identity.index!=slot)return 0;
         for(unsigned j=0;j<slot;j++) {
             const struct li2_ptr_slot *other=&PTR_SLOT_AT(j);
-            if(pe.arena.binding[slot].generation==pe.arena.binding[j].generation ||
+            if(node==ptr_node_index(j) ||
+               pe.arena.binding[slot].generation==pe.arena.binding[j].generation ||
                (s->identity.generation && s->identity.generation==other->identity.generation))return 0;
         }
     }

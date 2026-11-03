@@ -1,4 +1,4 @@
-"""Actual twelve-node ownership over every original real-program validator.
+"""Actual bounded node ownership over every original real-program validator.
 
 Eight active bindings and dormant immutable nodes are distinct. These terminal
 observations grant no admission authority and infer no unobserved guest events.
@@ -29,36 +29,56 @@ DEFAULT=(cache8.prior,cache8.certificate,cache8.rx,row,cache8,program,descriptor
 prior=cache8.prior
 
 
-def split(stderr,parse=row):
+def _schema(node_count):
+    need(type(node_count)is int and node_count in(12,128),'exact separately bound arena node capacity')
+    if node_count==12:return NODE_PREFIXES,NODE_FIELDS,1,CONTROL_COUNT
+    prefixes=tuple(('LI2_LOOP_ARENA_NODES'+str(i)+' ').encode()for i in range(32))
+    fields=tuple(('version','status','failure_code')+tuple(
+        'node'+str(i)+'_'+name for i in range(4*chunk,4*(chunk+1))for name in NODE_NAMES)
+        for chunk in range(32))
+    return prefixes,fields,2,5650
+
+
+def split(stderr,parse=row,*,node_count=12):
+    node_prefixes,node_fields,version,_=_schema(node_count)
+    row_count=1+node_count//4
     need(type(stderr)is bytes and stderr.endswith(b'\n'),'whole actual arena program terminal')
-    lines=stderr[:-1].split(b'\n');prefixes=(PREFIX,)+NODE_PREFIXES
+    lines=stderr[:-1].split(b'\n');prefixes=(PREFIX,)+node_prefixes
     positions=[];values=[]
-    need(len(FIELDS)==35 and tuple(map(len,NODE_FIELDS))==(55,55,55),
-         'complete summary and all twelve actual node fields')
-    for prefix,fields in zip(prefixes,(FIELDS,)+NODE_FIELDS,strict=True):
+    need(len(FIELDS)==35 and tuple(map(len,node_fields))==(55,)*(node_count//4),
+         'complete summary and all twelve actual node fields'if node_count==12 else
+         'complete summary and all128 actual node fields')
+    for prefix,fields in zip(prefixes,(FIELDS,)+node_fields,strict=True):
         found=[i for i,line in enumerate(lines)if line.startswith(prefix)]
         need(len(found)==1,'one complete actual arena summary or node row')
-        positions.append(found[0]);values.append(parse(lines[found[0]],prefix,fields))
+        positions.append(found[0])
+        values.append(parse(lines[found[0]],prefix,fields)if node_count==12 else
+                      parse(lines[found[0]],prefix,fields,version=version))
     first=positions[0]
-    need(first>0 and positions==list(range(first,first+4)) and first==len(lines)-7 and
+    need(first>0 and positions==list(range(first,first+row_count)) and first==len(lines)-row_count-3 and
          lines[first-1].startswith(b'LI2_PERSISTENT_UNREGISTERED ') and
-         lines[first+4].startswith(cache8.PREFIX) and
-         lines[first+5].startswith(cache8.TRANSIT_PREFIX) and lines[first+6].startswith(cache8.RX_PREFIX),
-         'four arena rows at the exact producer boundary before unchanged CACHE8 and RX rows')
+         lines[first+row_count].startswith(cache8.PREFIX) and
+         lines[first+row_count+1].startswith(cache8.TRANSIT_PREFIX) and lines[first+row_count+2].startswith(cache8.RX_PREFIX),
+         'four arena rows at the exact producer boundary before unchanged CACHE8 and RX rows'if node_count==12 else
+         '33 arena rows at the exact producer boundary before unchanged CACHE8 and RX rows')
     need(all(value['status']==value['failure_code']==0 for value in values),
-         'all four actual arena rows report successful complete programs')
-    nodes=tuple({name:values[1+i//4]['node'+str(i)+'_'+name]for name in NODE_NAMES}for i in range(12))
-    return values[0],nodes,b'\n'.join(lines[:first]+lines[first+4:])+b'\n',first,values
+         'all four actual arena rows report successful complete programs'if node_count==12 else
+         'all33 actual arena rows report successful complete programs')
+    nodes=tuple({name:values[1+i//4]['node'+str(i)+'_'+name]for name in NODE_NAMES}for i in range(node_count))
+    return values[0],nodes,b'\n'.join(lines[:first]+lines[first+row_count:])+b'\n',first,values
 
 
-def retained(arena,nodes,counts,actual,d,s):
+def retained(arena,nodes,counts,actual,d,s,*,node_count=12):
     """Fresh program theorem from all node identities and actual call sites."""
-    need((arena['nodes'],arena['slots'],arena['initialized'],arena['topology_epoch'])==(12,8,1,1) and
+    _schema(node_count)
+    if node_count==128:need(len(nodes)==128,'every actual immutable node is present in the capacity theorem')
+    need((arena['nodes'],arena['slots'],arena['initialized'],arena['topology_epoch'])==(node_count,8,1,1) and
          arena['poisoned']in(0,1) and arena['rebind_mask']==arena['stale_refusals']==0,
-         'exact initialized twelve-node topology and no outstanding fresh preparation or invented stale count')
+         'exact initialized twelve-node topology and no outstanding fresh preparation or invented stale count'if node_count==12 else
+         'exact initialized128-node topology and no outstanding fresh preparation or invented stale count')
     bindings=tuple(arena['slot'+str(i)+'_binding']for i in range(8))
     active=tuple(arena['slot'+str(i)+'_node']for i in range(8))
-    need(len(set(active))==8 and all(n<12 for n in active) and
+    need(len(set(active))==8 and all(n<node_count for n in active) and
          len(set(bindings))==8 and all(0<b<=arena['next_binding']for b in bindings) and
          max(bindings)==arena['next_binding']==arena['writer_next_binding'] and
          arena['next_binding']>=8 and arena['detached']<=arena['next_binding']-8,
@@ -67,7 +87,8 @@ def retained(arena,nodes,counts,actual,d,s):
     need(all(0<=g<=d['publications']for g in generations) and
          len({g for g in generations if g})==installed and max(generations)==d['publications'] and
          d['retirements']==d['publications']-installed and arena['cold_nodes']==d['publications'],
-         'all twelve immutable generations account for every actual publication and retirement')
+         'all twelve immutable generations account for every actual publication and retirement'if node_count==12 else
+         'all128 immutable generations account for every actual publication and retirement')
     for i,n in enumerate(nodes):
         need(n['active_slot']==(active.index(i)if i in active else 8) and
              n['node_epoch']>0 and n['prepared_serial']==n['prepared_binding']==0,
@@ -119,42 +140,46 @@ def retained(arena,nodes,counts,actual,d,s):
          'the original cold and compact API calls account for every successful publication')
 
 
-def _pipeline(arena,nodes,deps):
+def _pipeline(arena,nodes,deps,*,node_count=12):
+    _schema(node_count)
     original,ro,rx,parse,shared,group,descriptor=deps
     certificate=SimpleNamespace(check=partial(ro.check,physical_checks=arena['physical_checks']),
         controls=partial(ro.controls,physical_checks=arena['physical_checks']))
     terminal=shared.configured(original,certificate,rx,parse,counts_version=2,
-        retained_check=partial(retained,arena,nodes))
+        retained_check=partial(retained,arena,nodes,node_count=node_count))
     return group.configured(terminal,descriptor,parse)
 
 
-def check(stdout,stderr,args,kind,mode,*,dependencies=None):
+def check(stdout,stderr,args,kind,mode,*,dependencies=None,node_count=12):
     deps=DEFAULT if dependencies is None else dependencies
-    arena,nodes,ordinary,_,_=split(stderr,deps[3])
-    result=_pipeline(arena,nodes,deps).check(stdout,ordinary,args,kind,mode)
+    arena,nodes,ordinary,_,_=split(stderr,deps[3],node_count=node_count)
+    result=_pipeline(arena,nodes,deps,node_count=node_count).check(stdout,ordinary,args,kind,mode)
     need(not result['descriptor']['poisoned'] or arena['poisoned']==1,
          'actual descriptor poison also retires arena reuse through the shared owner path')
-    result.update(arena=arena,arena_nodes=list(nodes),profile='persistent-loop-translation-arena-program-v1',
-        arena_count_scope='Actual twelve-node publication, detach, rebind, exposure and active-binding observations. No absent events, internal iterations or performance inferred.',
+    result.update(arena=arena,arena_nodes=list(nodes),
+        profile='persistent-loop-translation-arena-program-v1'if node_count==12 else 'persistent-loop-translation-arena-program-v2',
+        arena_count_scope='Actual twelve-node publication, detach, rebind, exposure and active-binding observations. No absent events, internal iterations or performance inferred.'if node_count==12 else
+            'Actual128-node publication, detach, rebind, exposure and active-binding observations. No absent events, internal iterations or performance inferred.',
         qualification_credit=False)
     return result
 
 
-def controls(stdout,stderr,args,kind,mode,*,dependencies=None):
+def controls(stdout,stderr,args,kind,mode,*,dependencies=None,node_count=12):
+    node_prefixes,node_fields,version,control_count=_schema(node_count)
     deps=DEFAULT if dependencies is None else dependencies
-    baseline=check(stdout,stderr,args,kind,mode,dependencies=deps)
-    arena,nodes,ordinary,first,values=split(stderr,deps[3])
-    inherited=_pipeline(arena,nodes,deps).controls(stdout,ordinary,args,kind,mode)
+    baseline=check(stdout,stderr,args,kind,mode,dependencies=deps,node_count=node_count)
+    arena,nodes,ordinary,first,values=split(stderr,deps[3],node_count=node_count)
+    inherited=_pipeline(arena,nodes,deps,node_count=node_count).controls(stdout,ordinary,args,kind,mode)
     lines=stderr[:-1].split(b'\n');refusals=[];owner=baseline['persistent']
     def reject(label,changed):
         need(changed!=stderr,'distinct actual whole arena-program mutation')
-        try:check(stdout,changed,args,kind,mode,dependencies=deps)
+        try:check(stdout,changed,args,kind,mode,dependencies=deps,node_count=node_count)
         except ValueError:refusals.append(label)
         else:raise ValueError('accepted arena-program mutation '+label)
     def replace(label,index,value):
-        changed=list(lines);changed[first+index]=((PREFIX,)+NODE_PREFIXES)[index]+json.dumps(value,separators=(',',':')).encode()
+        changed=list(lines);changed[first+index]=((PREFIX,)+node_prefixes)[index]+json.dumps(value,separators=(',',':')).encode()
         reject(label,b'\n'.join(changed)+b'\n')
-    for index,(fields,actual)in enumerate(zip((FIELDS,)+NODE_FIELDS,values,strict=True)):
+    for index,(fields,actual)in enumerate(zip((FIELDS,)+node_fields,values,strict=True)):
         for name in fields:
             label=str(index)+'.'+name
             value=dict(actual);del value[name];replace('missing.'+label,index,value)
@@ -162,7 +187,7 @@ def controls(stdout,stderr,args,kind,mode,*,dependencies=None):
             value=dict(actual)
             if index==0:
                 if name=='poisoned':changed=2
-                elif name.endswith('_node'):changed=12
+                elif name.endswith('_node'):changed=node_count
                 elif name.endswith('_binding'):changed=0
                 elif name in ('version','initialized','topology_epoch'):changed=0
                 else:changed=value[name]+1
@@ -180,7 +205,7 @@ def controls(stdout,stderr,args,kind,mode,*,dependencies=None):
             value[name]=changed;replace('semantic.'+label,index,value)
         value=dict(actual);value['extra']=0;replace('extra.'+str(index),index,value)
         replace('key_order.'+str(index),index,dict(reversed(list(actual.items()))))
-        changed=list(lines);changed[first+index]=lines[first+index][:-1]+b',"version":1}'
+        changed=list(lines);changed[first+index]=lines[first+index][:-1]+b',"version":'+str(version).encode()+b'}'
         reject('duplicate_key.'+str(index),b'\n'.join(changed)+b'\n')
         reject('missing_row.'+str(index),b'\n'.join(lines[:first+index]+lines[first+index+1:])+b'\n')
         reject('duplicate_row.'+str(index),b'\n'.join(lines[:first+index]+[lines[first+index]]+lines[first+index:])+b'\n')
@@ -191,8 +216,9 @@ def controls(stdout,stderr,args,kind,mode,*,dependencies=None):
         changed=list(lines);changed[first+index]+=b' '*4096
         reject('writer_bound.'+str(index),b'\n'.join(changed)+b'\n')
     reject('newline',stderr[:-1])
-    need(len(refusals)==len(set(refusals))==CONTROL_COUNT,
-         'all200 actual fields retain three full-validator mutations plus33 distinct encoding refusals')
+    need(len(refusals)==len(set(refusals))==control_count,
+         'all200 actual fields retain three full-validator mutations plus33 distinct encoding refusals'if node_count==12 else
+         'all1795 actual fields retain three full-validator mutations plus265 distinct encoding refusals')
     result=dict(inherited);result['arena_refusals']=refusals
     # Preserve the certificate equation while falsifying its independently
     # reported physical-preparation count. The complete ownership predicate
@@ -209,7 +235,7 @@ def controls(stdout,stderr,args,kind,mode,*,dependencies=None):
     changed[index]=byte_prefix+json.dumps(certificate,separators=(',',':')).encode()
     supplied=b'\n'.join(changed)+b'\n'
     need(supplied!=stderr,'distinct coherent physical-count and whole original certificate mutation')
-    try:check(stdout,supplied,args,kind,mode,dependencies=deps)
+    try:check(stdout,supplied,args,kind,mode,dependencies=deps,node_count=node_count)
     except ValueError as error:
         need(str(error)=='real detach claims, dormant primary/peer consumption and retired closed-node conservation',
              'coherent physical query count reaches its exact ownership conservation predicate')
@@ -218,7 +244,9 @@ def controls(stdout,stderr,args,kind,mode,*,dependencies=None):
     return result
 
 
-def configured(original,ro,rx,parse,shared,group,descriptor):
+def configured(original,ro,rx,parse,shared,group,descriptor,*,node_count=12):
+    _,_,_,control_count=_schema(node_count)
     deps=(original,ro,rx,parse,shared,group,descriptor)
-    return SimpleNamespace(prior=original,CONTROL_COUNT=CONTROL_COUNT,
-        check=partial(check,dependencies=deps),controls=partial(controls,dependencies=deps))
+    return SimpleNamespace(prior=original,CONTROL_COUNT=control_count,
+        check=partial(check,dependencies=deps,node_count=node_count),
+        controls=partial(controls,dependencies=deps,node_count=node_count))

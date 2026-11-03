@@ -1,9 +1,19 @@
 /* Included after the complete protected sg_owner and original owner types.
    No mutable state or cached source result is hidden in a pure planner. */
 #ifdef LI2_LOOP_TRANSLATION_ARENA
+#ifdef LI2_LOOP_TRANSLATION_ARENA_CAPACITY
+_Static_assert(LI2_PTR_SLOTS==8 && SBC_NODE_COUNT==128 && PE_PROOF_BYTES==89U*PAGE,
+    "128 immutable mirrors with eight active retained bindings");
+/* This field owns one selected writer, never a set of concurrent writers.
+   Node+1 keeps zero as no writer without a node-width bit shift. */
+#define LRC_WRITER_NODE (SBC_NODE_INDEX+1U)
+#else
 _Static_assert(LI2_PTR_SLOTS==8 && SBC_NODE_COUNT==12 && PE_PROOF_BYTES==89U*PAGE,
     "twelve immutable mirrors with eight active retained bindings");
+#define LRC_WRITER_NODE (1U<<SBC_NODE_INDEX)
+#endif
 #else
+#define LRC_WRITER_NODE (1U<<SBC_NODE_INDEX)
 #ifdef LI2_LOOP_CACHE8
 _Static_assert(LI2_PTR_SLOTS==8 && PE_PROOF_BYTES==89U*PAGE,
     "eight retained certificates with the unchanged complete publication bytes");
@@ -99,7 +109,7 @@ static int lrc_mirror_begin(void) {
     /* The existing replacement protocol already invalidated this slot's
        certificate and assigned the nonwrapping mirror epoch/writer serial. */
     if(sg_permission(PROT_READ|PROT_WRITE))return PE_PUBLICATION;
-    sg_owner.state.ro_writable_mask=1U<<SBC_NODE_INDEX;
+    sg_owner.state.ro_writable_mask=LRC_WRITER_NODE;
     __asm__ volatile("":::"memory");
     if(sg_permission(PROT_READ))return PE_PUBLICATION;
     if(raw(SYS_mprotect,(long)&PE_SLOT(publication),PE_PROOF_BYTES,
@@ -111,7 +121,7 @@ static int lrc_mirror_end(void) {
     if(!sg_selected_node())return PE_STATE;
 #endif
     if(sg_owner.state.ro_initialized!=1 || pe.selected_slot>=LI2_PTR_SLOTS ||
-       sg_owner.state.ro_writable_mask!=(1U<<SBC_NODE_INDEX) ||
+       sg_owner.state.ro_writable_mask!=LRC_WRITER_NODE ||
        !sbc_unpublished() || handling!=1 || !pe_busy || pe_active || pe_failing ||
        pe.resuming || !pe_identity() || pe.p.phase!=LI2_PG_PUBLISHING ||
        lrc_observed.mirror_seals==UINT64_MAX)

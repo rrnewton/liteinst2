@@ -51,9 +51,15 @@ struct sbc_counts {
     int last_full_result,reserved;
 };
 #ifdef LI2_LOOP_TRANSLATION_ARENA
+#ifdef LI2_LOOP_TRANSLATION_ARENA_CAPACITY
+_Static_assert(LI2_PTR_SLOTS==8 && SBC_NODE_COUNT==128 && sizeof(struct sbc_certificate)==200 &&
+    sizeof(struct sbc_owner)==27664 && sizeof(struct sbc_counts)==120,
+    "128 immutable byte identities, eight active bindings");
+#else
 _Static_assert(LI2_PTR_SLOTS==8 && SBC_NODE_COUNT==12 && sizeof(struct sbc_certificate)==200 &&
     sizeof(struct sbc_owner)==2608 && sizeof(struct sbc_counts)==120,
     "twelve immutable byte identities, eight active bindings");
+#endif
 #else
 #ifdef LI2_LOOP_CACHE8
 _Static_assert(LI2_PTR_SLOTS==8 && sizeof(struct sbc_certificate)==200 &&
