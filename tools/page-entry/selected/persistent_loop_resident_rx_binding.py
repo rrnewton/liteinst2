@@ -42,6 +42,12 @@ CACHE8=dict(version=1,slots=8,members=8,completion_cells=9,source_pages=2,placem
     activation='post-publication-DIRECT-connected-claimed-closure',
     inactive_heads_exposed=False,qualification_credit=False)
 
+ARENA_PROGRAM_INPUTS=('persistent_loop_translation_arena_program_binding.py',
+    'build-persistent-loop-translation-arena-program.sh','loop_translation_arena_program.inc')
+ARENA_PROGRAM=dict(version=1,summary_fields=35,node_rows=3,node_fields=55,
+    nodes_per_row=4,nodes=12,slots=8,count_version=2,count_fields=63,
+    terminal_only=True,observation_authority=False,qualification_credit=False)
+
 ARENA_OBSERVE_INPUTS=('persistent_loop_translation_arena_observe_binding.py','build-persistent-loop-translation-arena-observe.sh',
     'loop_cache8_observe.h','loop_cache8_observe.inc','loop_translation_arena_observe.h',
     'loop_translation_arena_observe_types.inc','loop_translation_arena_observe.inc')
@@ -68,12 +74,15 @@ RECURRENCE=dict(version=7,bytes=12382208,storage_bytes=12582912,capacity=1024,
     observation_authority=False,qualification_credit=False)
 
 
-def write_binding(selected, archive, image, output, mode, *, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None, arena=False, arena_observe=None):
+def write_binding(selected, archive, image, output, mode, *, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None, arena=False, arena_observe=None, arena_program=False):
+    need(type(arena_program)is bool and (not arena_program or arena and cache8_program and
+         arena_observe is None and mode=='release'),
+         'distinct terminal-only twelve-node arena program profile')
     need(arena_observe is None or type(arena_observe)is int and arena_observe in (0,1,2) and
          arena and (arena_observe==0 or mode=='differential'),
          'literal arena positive/restored/inactive-ABA subject')
     need(type(arena)is bool and (not arena or cache8 and group_descriptor and not recurrence and
-         cache8_observe is None and group_descriptor_observe is None and not cache8_program and
+         cache8_observe is None and group_descriptor_observe is None and (not cache8_program or arena_program) and
          cache8_effects is None),'distinct twelve-node arena with eight active bindings')
     need(cache8_effects is None or type(cache8_effects)is int and cache8_effects in (2,3,4) and
          cache8 and not recurrence and cache8_observe is None and not cache8_program and
@@ -98,6 +107,7 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
     leaves = LEAVES + (RECURRENCE_INPUTS if recurrence else ()) + (CACHE8_INPUTS if cache8 else ()) + (CACHE8_OBSERVE_INPUTS if cache8_observe is not None else ()) + (CACHE8_PROGRAM_INPUTS if cache8_program else ()) + (GROUP_DESCRIPTOR_INPUTS if group_descriptor else ()) + (GROUP_DESCRIPTOR_OBSERVE_INPUTS if group_descriptor_observe is not None else ()) + ((CACHE8_OBSERVE_INPUTS+CACHE8_EFFECTS_INPUTS) if cache8_effects is not None else ())
     if group_descriptor and cache8_program:leaves+=GROUP_DESCRIPTOR_PROGRAM_INPUTS
     if arena:leaves+=ARENA_INPUTS
+    if arena_program:leaves+=ARENA_PROGRAM_INPUTS
     if arena_observe is not None:leaves+=ARENA_OBSERVE_INPUTS
     need(len(leaves)==len(set(leaves)), 'whole distinct LOOP and RO-certificate source closure')
     values = []
@@ -128,6 +138,7 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
                   ('#define LI2_PG_LOOP_CACHE8_PROGRAM_BINDING_VERSION 1\n' if cache8_program else '') +
                   ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_BINDING_VERSION 1\n' if group_descriptor else '') +
                   ('#define LI2_PG_LOOP_TRANSLATION_ARENA_BINDING_VERSION 1\n' if arena else '') +
+                  ('#define LI2_PG_LOOP_TRANSLATION_ARENA_PROGRAM_BINDING_VERSION 1\n' if arena_program else '') +
                   ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n#define LI2_PG_LOOP_TRANSLATION_ARENA_OBSERVE_BINDING_VERSION 1\n' if arena_observe is not None else '') +
                   ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_OBSERVE_BINDING_VERSION 1\n' if group_descriptor_observe is not None else '') +
                   ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n#define LI2_PG_LOOP_CACHE8_EFFECTS_BINDING_VERSION 1\n' if cache8_effects is not None else '') +
@@ -187,6 +198,10 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
         record['arena']=ARENA
         record['cache8']=dict(CACHE8,version=2,selection='active-binding-to-stable-node',
             activation='fresh-binding-DIRECT-connected-closure')
+    if arena_program:
+        record['profile']='persistent-loop-translation-arena-program-release-v1'
+        record['arena_program']=ARENA_PROGRAM
+        record['cache8_program']=dict(CACHE8_PROGRAM,version=2)
     if arena_observe is not None:
         record['profile']='persistent-loop-translation-arena-observe-'+mode+'-v1'
         record['arena_observer']=dict(version=1,control=arena_observe,reference='arena10-ab791',
@@ -194,7 +209,8 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
             old_controls=24 if arena_observe else 0,
             binding_controls=20 if arena_observe==1 else 12 if arena_observe==2 else 0,
             observation_authority=False,qualification_credit=False)
-    name=('persistent_loop_translation_arena_observe_binding.json' if arena_observe is not None else
+    name=('persistent_loop_translation_arena_program_binding.json' if arena_program else
+          'persistent_loop_translation_arena_observe_binding.json' if arena_observe is not None else
           'persistent_loop_translation_arena_binding.json' if arena else
           'persistent_loop_cache8_effects_binding.json' if cache8_effects is not None else
           'persistent_loop_group_descriptor_program_binding.json' if group_descriptor and cache8_program else

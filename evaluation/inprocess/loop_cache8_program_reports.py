@@ -27,7 +27,7 @@ DEFAULT=(application,certificate,rx,row)
 prior=application
 
 
-def split(stderr,parse=row):
+def split(stderr,parse=row,*,version=1):
     need(type(stderr)is bytes and stderr.endswith(b'\n'),'whole actual CACHE8 program terminal')
     lines=stderr[:-1].split(b'\n')
     found=[i for i,x in enumerate(lines)if x.startswith(PREFIX)]
@@ -35,7 +35,9 @@ def split(stderr,parse=row):
          lines[found[0]-1].startswith(b'LI2_PERSISTENT_UNREGISTERED ') and
          lines[-2].startswith(TRANSIT_PREFIX) and lines[-1].startswith(RX_PREFIX),
          'one complete CACHE8 count row at its exact terminal producer position')
-    i=found[0];actual=parse(lines[i],PREFIX,FIELDS)
+    i=found[0]
+    if version==1:actual=parse(lines[i],PREFIX,FIELDS)
+    else:actual=parse(lines[i],PREFIX,FIELDS,version=version)
     need(actual['status']==actual['failure_code']==0 and
          (actual['slots'],actual['members'],actual['receipts'])==(8,8,9),
          'successful exact eight-slot/eight-member/nine-receipt count observation')
@@ -89,10 +91,10 @@ def members(d):
          'actual one-to-eight-member CACHE8 domain or unbound cancellation')
 
 
-def callbacks(counts,actual,dependencies):
+def callbacks(counts,actual,dependencies,*,retained_check=None):
     prior,ro,old,parse=dependencies
     options=dict(extent=old.extent(actual,members=MEMBERS),
-                 retained=partial(retained,counts,actual),members=members)
+                 retained=partial(retained if retained_check is None else retained_check,counts,actual),members=members)
     def check(stdout,stderr,args,kind,lane):
         result=prior.check(stdout,stderr,args,kind,lane,**options)
         total=sum(i*counts['entered'+str(i)]for i in MEMBERS)
@@ -103,15 +105,18 @@ def callbacks(counts,actual,dependencies):
     return check,controls
 
 
-def check(stdout,stderr,args,kind,mode,*,dependencies=None):
+def check(stdout,stderr,args,kind,mode,*,dependencies=None,counts_version=1,retained_check=None):
     deps=DEFAULT if dependencies is None else dependencies
     prior,ro,old,parse=deps
     need(mode=='release','the separate CACHE8 program recipe is exactly release')
-    counts,without=split(stderr,parse)
+    need(type(counts_version)is int and ((counts_version==1 and retained_check is None)or
+         (counts_version==2 and callable(retained_check))),
+         'explicit original or separately typed arena ownership validator')
+    counts,without=split(stderr,parse,version=counts_version)
     transit,_=old.transit_row(without,prefix=TRANSIT_PREFIX,rx_prefix=RX_PREFIX,parse=parse)
     actual,original=old.split(without,prefix=RX_PREFIX,version=2,transit_prefix=TRANSIT_PREFIX,parse=parse)
     old.transit_joined(transit,actual)
-    terminal,_=callbacks(counts,actual,deps)
+    terminal,_=callbacks(counts,actual,deps,retained_check=retained_check)
     result=ro.check(stdout,original,args,kind,mode,terminal_check=terminal)
     result.update(rx=actual,transit=transit,cache8=counts,
                   profile='persistent-loop-cache8-program-v1',qualification_credit=False)
@@ -169,19 +174,19 @@ def count_controls(stderr,counts,persistent,validate):
     return refusals
 
 
-def controls(stdout,stderr,args,kind,mode,*,dependencies=None):
+def controls(stdout,stderr,args,kind,mode,*,dependencies=None,counts_version=1,retained_check=None):
     deps=DEFAULT if dependencies is None else dependencies
     prior,ro,old,parse=deps
-    baseline=check(stdout,stderr,args,kind,mode,dependencies=deps)
-    counts,without=split(stderr,parse)
+    baseline=check(stdout,stderr,args,kind,mode,dependencies=deps,counts_version=counts_version,retained_check=retained_check)
+    counts,without=split(stderr,parse,version=counts_version)
     actual,original=old.split(without,prefix=RX_PREFIX,version=2,transit_prefix=TRANSIT_PREFIX,parse=parse)
-    terminal,terminal_controls=callbacks(counts,actual,deps)
+    terminal,terminal_controls=callbacks(counts,actual,deps,retained_check=retained_check)
     inherited=ro.controls(stdout,original,args,kind,mode,
         terminal_check=terminal,terminal_controls=terminal_controls)
     need(len(inherited['refusals'])==167 and
          len(inherited['inherited']['refusals'])==prior.CONTROL_COUNTS[kind],
          'all original447/480 application plus167 certificate controls retained')
-    validate=lambda value:check(stdout,value,args,kind,mode,dependencies=deps)
+    validate=lambda value:check(stdout,value,args,kind,mode,dependencies=deps,counts_version=counts_version,retained_check=retained_check)
     missing_rx=b'\n'.join(stderr[:-1].split(b'\n')[:-2])+b'\n'
     refusals=old.terminal_controls(stderr,actual,missing_rx,validate,prefix=RX_PREFIX)
     transit=old.transit_controls(stderr,validate,prefix=TRANSIT_PREFIX,rx_prefix=RX_PREFIX,
@@ -190,7 +195,8 @@ def controls(stdout,stderr,args,kind,mode,*,dependencies=None):
         cache8_refusals=count_controls(stderr,counts,baseline['persistent'],validate))
 
 
-def configured(prior,ro,old,parse):
+def configured(prior,ro,old,parse,*,counts_version=1,retained_check=None):
     dependencies=(prior,ro,old,parse)
-    return SimpleNamespace(prior=prior,check=partial(check,dependencies=dependencies),
-                           controls=partial(controls,dependencies=dependencies))
+    return SimpleNamespace(prior=prior,check=partial(check,dependencies=dependencies,
+        counts_version=counts_version,retained_check=retained_check),
+        controls=partial(controls,dependencies=dependencies,counts_version=counts_version,retained_check=retained_check))

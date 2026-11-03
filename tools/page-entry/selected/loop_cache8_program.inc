@@ -9,8 +9,19 @@ _Static_assert(LI2_PTR_SLOTS==8 && LI2_PGD_MEMBERS==8 && LI2_PGD_RECEIPTS==9,
     "literal cache8 program terminal dimensions");
 _Static_assert(63U*21U+1600U<=sizeof(((struct writer *)0)->bytes),
     "complete bounded cache8 program terminal");
+#ifdef LI2_LOOP_TRANSLATION_ARENA_PROGRAM
+#include "loop_translation_arena_program.inc"
+#define LC8P_SLOT_AT(n) PTR_SLOT_AT(n)
+#else
+#define LC8P_SLOT_AT(n) pe.retained[n]
+#endif
 static void lc8p_report(unsigned status,unsigned code) {
+#ifdef LI2_LOOP_TRANSLATION_ARENA_PROGRAM
+    lta_program_report(status,code);
+    struct writer w={0};text(&w,"LI2_LOOP_CACHE8_COUNTS {\"version\":2");
+#else
     struct writer w={0};text(&w,"LI2_LOOP_CACHE8_COUNTS {\"version\":1");
+#endif
     field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
     field(&w,",\"slots\":",LI2_PTR_SLOTS);field(&w,",\"members\":",LI2_PGD_MEMBERS);
     field(&w,",\"receipts\":",LI2_PGD_RECEIPTS);
@@ -19,9 +30,9 @@ static void lc8p_report(unsigned status,unsigned code) {
     LC8P_VALUE(attach_attempts);LC8P_VALUE(accepted);LC8P_VALUE(source_declines);
 #undef LC8P_VALUE
 #define LC8P_SLOT(n) \
-    field(&w,",\"slot" #n "_generation\":",pe.retained[n].identity.generation); \
-    field(&w,",\"slot" #n "_permit\":",pe.retained[n].claim.valid); \
-    field(&w,",\"slot" #n "_completed_serial\":",pe.retained[n].last_completed)
+    field(&w,",\"slot" #n "_generation\":",LC8P_SLOT_AT(n).identity.generation); \
+    field(&w,",\"slot" #n "_permit\":",LC8P_SLOT_AT(n).claim.valid); \
+    field(&w,",\"slot" #n "_completed_serial\":",LC8P_SLOT_AT(n).last_completed)
     LC8P_SLOT(0);LC8P_SLOT(1);LC8P_SLOT(2);LC8P_SLOT(3);
     LC8P_SLOT(4);LC8P_SLOT(5);LC8P_SLOT(6);LC8P_SLOT(7);
 #undef LC8P_SLOT
@@ -34,3 +45,4 @@ static void lc8p_report(unsigned status,unsigned code) {
 #undef LC8P_COUNT
     text(&w,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
 }
+#undef LC8P_SLOT_AT

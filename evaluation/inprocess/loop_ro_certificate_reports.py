@@ -25,7 +25,9 @@ FIELDS = (
      'invalidations', 'abort_invalidations', 'errors', 'restored_bytes'))
 
 
-def split(stderr, mode):
+def split(stderr, mode, *, physical_checks=0):
+    need(type(physical_checks)is int and 0<=physical_checks<1<<64,
+         'literal additional successful arena physical-check count')
     need(type(stderr) is bytes and stderr.endswith(b'\n') and
          mode in ('release', 'differential'), 'exact RO stream and certificate mode')
     lines = stderr[:-1].split(b'\n')
@@ -64,7 +66,7 @@ def split(stderr, mode):
          byte['full_scans'] == (byte['decisions'] if diff else byte['misses']) and
          byte['full_scan_bytes'] == byte['full_scans'] * byte['bytes_per_complete_scan'] and
          byte['postseal_bytes'] == byte['issues'] * byte['bytes_per_complete_scan'] and
-         byte['live_queries'] == 3 * (byte['issues'] + byte['hits']) and
+         byte['live_queries'] == 3 * (byte['issues'] + byte['hits'] + physical_checks) and
          byte['invalidations'] == byte['issues'] == ro['mirror_opens'] == ro['mirror_seals'],
          'actual byte decisions, complete scans and sealed publication arithmetic')
     need(all(byte[k] == 0 for k in ('full_scan_errors', 'disagreements',
@@ -84,8 +86,8 @@ def split(stderr, mode):
     return dict(byte_certificate=byte, readonly_queries=ro, history_certificate=history), remaining
 
 
-def check(stdout, stderr, args, kind, mode, *, terminal_check=prior.check):
-    certificate, original = split(stderr, mode)
+def check(stdout, stderr, args, kind, mode, *, terminal_check=prior.check, physical_checks=0):
+    certificate, original = split(stderr, mode, physical_checks=physical_checks)
     # Both certificate modes use the actual maintained maps recipe. No row is
     # relabelled as a maps-DIFF observation or as an old capture-layout record.
     result = terminal_check(stdout, original, args, kind, 'release')
@@ -108,9 +110,9 @@ def check(stdout, stderr, args, kind, mode, *, terminal_check=prior.check):
 
 
 def controls(stdout, stderr, args, kind, mode, *, terminal_check=prior.check,
-             terminal_controls=prior.controls):
-    check(stdout, stderr, args, kind, mode, terminal_check=terminal_check)
-    _, original = split(stderr, mode)
+             terminal_controls=prior.controls, physical_checks=0):
+    check(stdout, stderr, args, kind, mode, terminal_check=terminal_check, physical_checks=physical_checks)
+    _, original = split(stderr, mode, physical_checks=physical_checks)
     inherited = terminal_controls(stdout, original, args, kind, 'release')
     need(len(inherited['refusals']) == len(set(inherited['refusals'])) == prior.CONTROL_COUNTS[kind],
          'all unchanged LOOP13 real-program reader controls')
@@ -120,7 +122,7 @@ def controls(stdout, stderr, args, kind, mode, *, terminal_check=prior.check,
     def reject(label, changed):
         need(type(changed) is bytes and changed != stderr, 'actual RO row mutation')
         try:
-            check(stdout, changed, args, kind, mode, terminal_check=terminal_check)
+            check(stdout, changed, args, kind, mode, terminal_check=terminal_check, physical_checks=physical_checks)
         except ValueError:
             refusals.append(label)
         else:
@@ -156,7 +158,7 @@ def controls(stdout, stderr, args, kind, mode, *, terminal_check=prior.check,
     need(len(refusals) == len(set(refusals)) == 2 * sum(map(len, FIELDS)) + 27,
          'complete distinct additive RO terminal schema and outcome controls')
     schema_count = len(refusals)
-    actual, _ = split(stderr, mode)
+    actual, _ = split(stderr, mode, physical_checks=physical_checks)
     row_names = ('byte_certificate', 'readonly_queries', 'history_certificate')
     indices = [next(i for i, line in enumerate(lines) if line.startswith(p)) for p in PREFIXES]
 
@@ -190,14 +192,14 @@ def controls(stdout, stderr, args, kind, mode, *, terminal_check=prior.check,
     semantic('publication_join', {
         0: dict(issues=issues, invalidations=issues,
                 postseal_bytes=issues * byte['bytes_per_complete_scan'],
-                live_queries=3 * (issues + byte['hits'])),
+                live_queries=3 * (issues + byte['hits'] + physical_checks)),
         1: dict(mirror_opens=issues, mirror_seals=issues)})
     issues = history['issues'] - 1
     semantic('completion_join', {2: dict(issues=issues, invalidations=issues)})
     semantic('byte_hit_exercise', {0: dict(hits=0, misses=byte['decisions'],
         full_scans=byte['decisions'],
         full_scan_bytes=byte['decisions'] * byte['bytes_per_complete_scan'],
-        live_queries=3 * byte['issues'])})
+        live_queries=3 * (byte['issues'] + physical_checks))})
     semantic('history_hit_exercise', {2: dict(hits=0, misses=history['decisions'],
         full_calls=history['decisions'], differential_checks=0, restored_bytes=0)})
     for number, prefix in enumerate(PREFIXES):

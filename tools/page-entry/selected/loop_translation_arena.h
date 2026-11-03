@@ -5,9 +5,20 @@
     !defined(LI2_PG_LOOP_TRANSLATION_ARENA_BINDING_VERSION) || LI2_PG_LOOP_TRANSLATION_ARENA_BINDING_VERSION != 1
 #error "translation arena requires its distinct source and lifetime binding"
 #endif
+#ifdef LI2_LOOP_TRANSLATION_ARENA_PROGRAM
+#if LI2_LOOP_TRANSLATION_ARENA_PROGRAM != 1 || \
+    !defined(LI2_LOOP_CACHE8_PROGRAM) || LI2_LOOP_CACHE8_PROGRAM != 1 || \
+    !defined(LI2_PG_LOOP_TRANSLATION_ARENA_PROGRAM_BINDING_VERSION) || \
+    LI2_PG_LOOP_TRANSLATION_ARENA_PROGRAM_BINDING_VERSION != 1 || \
+    defined(LI2_LOOP_TRANSLATION_ARENA_OBSERVE) || defined(LI2_LOOP_CACHE8_EFFECTS) || \
+    defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) || defined(LI2_LOOP_RESIDENT_RX_ORACLE)
+#error "arena program terminal requires its exact separate source binding"
+#endif
+#else
 #if defined(LI2_LOOP_CACHE8_EFFECTS) || defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) || \
     defined(LI2_LOOP_CACHE8_PROGRAM) || defined(LI2_LOOP_RESIDENT_RX_ORACLE)
 #error "translation arena has a distinct observation and completion identity"
+#endif
 #endif
 #define LI2_LTA_NODES 12U
 #define LI2_LTA_VERSION 1U

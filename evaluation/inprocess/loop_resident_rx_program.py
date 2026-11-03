@@ -54,7 +54,7 @@ SCHEDULE = SETUP + tuple((kind+'-'+name, profile) for kind, _, _, _ in PROGRAMS
 
 
 def prepare_workloads(builder, products, private, pin, binary, aliases, run, r, *,
-                      build=build_rx, selected=None, cache8=False, group_descriptor=False):
+                      build=build_rx, selected=None, cache8=False, group_descriptor=False, arena=False):
     """The original two release links and complete namespace/image preparation."""
     states = {}; builds = r['release_builds'] = {}
     archive = pin(products['archive']); owned = builder.record['artifacts']['decoder.a']
@@ -69,7 +69,11 @@ def prepare_workloads(builder, products, private, pin, binary, aliases, run, r, 
         holder = builds[kind] = {}
         def labelled(name, argv, **kwargs):
             return run(kind+'-'+name, argv, **kwargs)
-        if group_descriptor:
+        if arena:
+            bridge = build(builder, archive, original, directory, pin, binary, aliases,
+                           labelled, holder, 'release', selected=selected,cache8=True,cache8_program=True,
+                           group_descriptor=True,arena=True,arena_program=True)
+        elif group_descriptor:
             bridge = build(builder, archive, original, directory, pin, binary, aliases,
                            labelled, holder, 'release', selected=selected,cache8=True,cache8_program=True,group_descriptor=True)
         elif cache8:
@@ -79,7 +83,7 @@ def prepare_workloads(builder, products, private, pin, binary, aliases, run, r, 
             bridge = build(builder, archive, original, directory, pin, binary, aliases,
                            labelled, holder, 'release', selected=selected)
         need(holder['status'] == 'compiled_diagnostic_only' and
-             holder['binding']['profile'] == ('persistent-loop-group-descriptor-program-release-v1' if group_descriptor else 'persistent-loop-cache8-program-release-v1' if cache8 else 'persistent-loop-resident-rx-release-v1') and
+             holder['binding']['profile'] == ('persistent-loop-translation-arena-program-release-v1' if arena else 'persistent-loop-group-descriptor-program-release-v1' if group_descriptor else 'persistent-loop-cache8-program-release-v1' if cache8 else 'persistent-loop-resident-rx-release-v1') and
              holder['binding']['mode'] == 'release' and
              holder['binding']['archive'] == r['archive'] and
              holder['binding']['capture_version'] is None and
@@ -89,7 +93,7 @@ def prepare_workloads(builder, products, private, pin, binary, aliases, run, r, 
              holder['binding']['rx_lifetime']['original_domain_preserved'] is True,
              'actual separately bound RX release with no test/capture profile')
         if cache8:
-            need(holder['binding']['cache8_program']==dict(version=1,fields=63,slots=8,members=8,receipts=9,
+            need(holder['binding']['cache8_program']==dict(version=2 if arena else 1,fields=63,slots=8,members=8,receipts=9,
                  terminal_only=True,observation_authority=False,qualification_credit=False) and
                  'cache8_observer' not in holder['binding'],
                  'actual terminal-only CACHE8 release and no finite observer')
@@ -101,15 +105,29 @@ def prepare_workloads(builder, products, private, pin, binary, aliases, run, r, 
                  old_capture_compatible=False,qualification_credit=False) and
                  'group_descriptor_observer' not in holder['binding'],
                  'actual production descriptor identity and no finite observer')
+        if arena:
+            need(holder['binding']['arena_program']==dict(version=1,summary_fields=35,node_rows=3,node_fields=55,
+                 nodes_per_row=4,nodes=12,slots=8,count_version=2,count_fields=63,terminal_only=True,
+                 observation_authority=False,qualification_credit=False) and
+                 holder['binding']['arena']==dict(version=1,nodes=12,active_bindings=8,completion_cells=9,
+                 member_reference_version=3,code_pages=17,placement_banks=2,proof_pages=89,mirror_pages=89,
+                 sealed_root_pages=2,aggregate_heads=256,aggregate_boundaries=8,final_addresses=True,
+                 dormant_authority='protected-issued-SBC-and-unexposed-node',
+                 admission='fresh-source-rseq-registry-physical-then-current-binding',
+                 claims='consume-at-detach-issue-only-after-real-completion',
+                 raw_invalidation='all-nodes-before-kernel-nonwrapping-epochs',inactive_heads_exposed=False,
+                 old_capture_compatible=False,qualification_credit=False) and
+                 'arena_observer' not in holder['binding'],
+                 'actual twelve-node terminal-only arena recipe with original active and completion bounds')
         states[kind] = prepare_workload(kind, original, args, bridge, builder,
                                        private, pin, binary, run, r, namespace)
     return states
 
 
 def cohort(builder, products, private, pin, binary, aliases, run, r, *,
-           build=build_rx, terminal=reports, selected=None, expected_commands=34, cache8=False, group_descriptor=False):
+           build=build_rx, terminal=reports, selected=None, expected_commands=34, cache8=False, group_descriptor=False, arena=False):
     states = prepare_workloads(builder, products, private, pin, binary, aliases, run, r,
-                               build=build, selected=selected, cache8=cache8, group_descriptor=group_descriptor)
+                               build=build, selected=selected, cache8=cache8, group_descriptor=group_descriptor, arena=arena)
     need(terminal.prior.CONTROL_COUNTS == CONTROL_COUNTS and len(r['cases']) == 2,
          'fixed two release subjects and every unchanged real-program reader control')
     expected_output = {kind: out for kind, _, _, out in PROGRAMS}
@@ -146,6 +164,11 @@ def cohort(builder, products, private, pin, binary, aliases, run, r, *,
                 need(controls['common_coverage_refusals']==['coherent_coverage.no_token',
                      'coherent_coverage.token_repartition'],
                      'both coherent whole-program mutations reach the exact common coverage theorem')
+            if arena:
+                need(len(controls['arena_refusals'])==len(set(controls['arena_refusals']))==633,
+                     'all separate200 arena field triples and33 distinct complete-validator encoding refusals')
+                need(controls['physical_query_refusals']==['coherent_physical_query_count'],
+                     'whole coherent SBC query mutation reaches exact independent arena ownership accounting')
             case.update(observed=observed, controls=controls, namespace_complete=True,
                         status='passed', completed_program_measurement=True)
         except Exception as error:
@@ -174,7 +197,9 @@ def cohort(builder, products, private, pin, binary, aliases, run, r, *,
          'both fixed diagnostic attempts and the complete declared source-owned schedule, no discarded failure')
 
 
-def execute(a, *, context=None, cache8=False, group_descriptor=False):
+def execute(a, *, context=None, cache8=False, group_descriptor=False, arena=False):
+    need(type(arena)is bool and (not arena or cache8 and group_descriptor),
+         'explicit terminal-only arena program over unchanged CACHE8 and descriptor validators')
     need(type(group_descriptor)is bool and (not group_descriptor or cache8),
          'explicit descriptor program over the existing CACHE8 program path')
     need(type(cache8)is bool,'explicit separate CACHE8 program selector')
@@ -191,6 +216,9 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False):
     if group_descriptor and context is None:
         import loop_group_descriptor_program_reports
         terminal=loop_group_descriptor_program_reports
+    if arena and context is None:
+        import loop_translation_arena_program_reports
+        terminal=loop_translation_arena_program_reports
     build = build_rx if context is None else context['build_module'].build_rx
     schedule = SCHEDULE if context is None else SCHEDULE[len(SETUP):]
     need(len(SETUP)==20 and len(SCHEDULE)==34 and len(schedule)==(34 if context is None else 14),
@@ -227,6 +255,11 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False):
         r['scope']='Two actual descriptor release programs with every unchanged CACHE8/application/certificate/RX/transit control plus75 descriptor controls. Native79 remains a separate prerequisite. No full-profile or performance credit.'
         if context is None:
             r['reproduce'][2]=str(Path(__file__).resolve().with_name('loop_group_descriptor_program.py'))
+    if arena:
+        r['profile']='loop-translation-arena-program-release-v1' if context is None else 'loop-translation-arena-program-overlay-v1'
+        r['scope']='Two actual arena release programs with every original application/namespace/certificate/RX/transit/CACHE8/descriptor/common-proof check plus633 twelve-node terminal controls. Finite791 remains a separate prerequisite. No full-state, full-profile, repeated-sample or performance credit.'
+        if context is None:
+            r['reproduce'][2]=str(Path(__file__).resolve().with_name('loop_translation_arena_program.py'))
     pins = {}; aliases = {}; artifacts = {}; presence = {}
     def pin(path, want=None):
         alias=Path(os.path.abspath(path)); p=alias.resolve(strict=True); value=fact(p)
@@ -312,7 +345,7 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False):
             products = dict(archive=archive)
         r['archive'] = fact(products['archive'])
         cohort(builder, products, private, pin, binary, aliases, run, r,
-               build=build, terminal=terminal, selected=selected, expected_commands=len(schedule), cache8=cache8, group_descriptor=group_descriptor)
+               build=build, terminal=terminal, selected=selected, expected_commands=len(schedule), cache8=cache8, group_descriptor=group_descriptor, arena=arena)
         need(not r['final_errors'], 'complete retained command custody')
         r['status'] = 'completed_diagnostic'
     except BaseException as error:
@@ -358,6 +391,9 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False):
                 observed['transit_reader_controls']=len(controls.get('transit_refusals',[]))
             if group_descriptor:
                 observed['descriptor_reader_controls']=len(controls.get('descriptor_refusals',[]))
+            if arena:
+                observed['arena_reader_controls']=len(controls.get('arena_refusals',[]))
+                observed['physical_query_reader_controls']=len(controls.get('physical_query_refusals',[]))
             cases.append(observed)
         summary.update(receipt=fact(private/'receipt.json'), commands=len(r['commands']), cases=cases,
             error_type=(r['error'] or '').split(':', 1)[0] or None,
@@ -372,6 +408,9 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False):
         if group_descriptor:
             summary['reproduce'][2]='evaluation/inprocess/loop_group_descriptor_program.py'
             summary['reproduce'][-1]='target/evaluation/inprocess/loop-group-descriptor-program-NEW'
+        if arena:
+            summary['reproduce'][2]='evaluation/inprocess/loop_translation_arena_program.py'
+            summary['reproduce'][-1]='target/evaluation/inprocess/loop-translation-arena-program-NEW'
         if context is not None:
             summary['reproduce']=None
             summary['source_manifest']=r['source_manifest']

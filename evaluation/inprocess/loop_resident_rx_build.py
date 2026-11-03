@@ -17,13 +17,16 @@ RX_LIFETIME=dict(version=1,slots=2,source_release_version=1,
     metadata_permission_counts='actual-pe_permission-calls-only',qualification_credit=False)
 
 
-def build_rx(builder, archive, original, directory, pin, binary, aliases, run, state, mode, *, control=None, selected=None, root=None, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None, arena=False, arena_observe=None):
+def build_rx(builder, archive, original, directory, pin, binary, aliases, run, state, mode, *, control=None, selected=None, root=None, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None, arena=False, arena_observe=None, arena_program=False):
     """Execute the real source-owned recipe, then bind its exact compiler closure."""
+    need(type(arena_program)is bool and (not arena_program or arena and cache8_program and
+         arena_observe is None and mode=='release'),
+         'distinct terminal-only twelve-node arena program profile')
     need(arena_observe is None or type(arena_observe)is int and arena_observe in (0,1,2) and
          arena and (arena_observe==0 or mode=='differential'),
          'literal arena positive/restored/inactive-ABA subject')
     need(type(arena)is bool and (not arena or cache8 and group_descriptor and not recurrence and
-         cache8_observe is None and group_descriptor_observe is None and not cache8_program and
+         cache8_observe is None and group_descriptor_observe is None and (not cache8_program or arena_program) and
          cache8_effects is None and control is None),
          'distinct twelve-node arena with eight active bindings and original compiler')
     need(cache8_effects is None or type(cache8_effects)is int and cache8_effects in (2,3,4) and
@@ -64,6 +67,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     if group_descriptor and cache8_program:stem+='-program'
     if arena:stem='persistent-loop-translation-arena'
     if arena_observe is not None:stem+='-observe'
+    if arena_program:stem+='-program'
     binder_name=stem.replace('-','_')+'_binding'
     output = directory/'build'; output.mkdir()
     script = pin(selected/('build-'+stem+'.sh'))
@@ -122,7 +126,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     need(set(binding) == set(constants) | {'profile', 'mode', 'archive', 'policy_sha256',
              'original', 'sources', 'headers', 'byte_certificate', 'history_certificate', 'rx_lifetime'} |
              (set() if control is None else {'control','oracle'}) |
-             ({'recurrence'} if recurrence else set()) | ({'cache8'} if cache8 else set()) | ({'cache8_observer'} if cache8_observe is not None else set()) | ({'cache8_program'} if cache8_program else set()) | ({'group_descriptor'} if group_descriptor else set()) | ({'group_descriptor_observer'} if group_descriptor_observe is not None else set()) | ({'cache8_effects'} if cache8_effects is not None else set()) | ({'arena'} if arena else set()) | ({'arena_observer'} if arena_observe is not None else set())
+             ({'recurrence'} if recurrence else set()) | ({'cache8'} if cache8 else set()) | ({'cache8_observer'} if cache8_observe is not None else set()) | ({'cache8_program'} if cache8_program else set()) | ({'group_descriptor'} if group_descriptor else set()) | ({'group_descriptor_observer'} if group_descriptor_observe is not None else set()) | ({'cache8_effects'} if cache8_effects is not None else set()) | ({'arena'} if arena else set()) | ({'arena_observer'} if arena_observe is not None else set()) | ({'arena_program'} if arena_program else set())
          and digest({key: binding[key] for key in constants}) == digest(constants)
          and binding['profile'] == stem+'-'+mode+'-v1'
          and binding['mode'] == mode and binding['archive'] == fact(archive)
@@ -157,7 +161,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
              first_epochs=3,app_tail_bytes=512,observer_bytes=2003032,observation_authority=False,qualification_credit=False),
              'exact typed actual guest effect observation')
     if cache8_program:
-        need(binding['cache8_program']==dict(version=1,fields=63,slots=8,members=8,receipts=9,
+        need(binding['cache8_program']==dict(version=2 if arena_program else 1,fields=63,slots=8,members=8,receipts=9,
              terminal_only=True,observation_authority=False,qualification_credit=False),
              'exact terminal-only all-slot/count observation')
     expected_lifetime=dict(RX_LIFETIME,version=2,slots=8) if cache8 else RX_LIFETIME
@@ -177,6 +181,11 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
              raw_invalidation='all-nodes-before-kernel-nonwrapping-epochs',
              inactive_heads_exposed=False,old_capture_compatible=False,qualification_credit=False),
              'exact inactive-node value custody and fresh eight-member execution authority')
+    if arena_program:
+        need(binding['arena_program']==dict(version=1,summary_fields=35,node_rows=3,node_fields=55,
+             nodes_per_row=4,nodes=12,slots=8,count_version=2,count_fields=63,
+             terminal_only=True,observation_authority=False,qualification_credit=False),
+             'exact terminal-only twelve-node and eight-binding observations')
     if arena_observe is not None:
         need(binding['arena_observer']==dict(version=1,control=arena_observe,reference='arena10-ab791',
              epochs=14,wire_bytes=3471320,epoch_bytes=227776,layout_words=19,
@@ -216,6 +225,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
         ('#define LI2_PG_LOOP_CACHE8_PROGRAM_BINDING_VERSION 1\n' if cache8_program else '')+
         ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_BINDING_VERSION 1\n' if group_descriptor else '')+
         ('#define LI2_PG_LOOP_TRANSLATION_ARENA_BINDING_VERSION 1\n' if arena else '')+
+        ('#define LI2_PG_LOOP_TRANSLATION_ARENA_PROGRAM_BINDING_VERSION 1\n' if arena_program else '')+
         ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n#define LI2_PG_LOOP_TRANSLATION_ARENA_OBSERVE_BINDING_VERSION 1\n' if arena_observe is not None else '')+
         ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_OBSERVE_BINDING_VERSION 1\n' if group_descriptor_observe is not None else '')+
         ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n#define LI2_PG_LOOP_CACHE8_EFFECTS_BINDING_VERSION 1\n' if cache8_effects is not None else '')+
@@ -245,6 +255,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
         ([] if arena_observe is None else ['-DLI2_LOOP_TRANSLATION_ARENA_OBSERVE=1','-DLI2_LOOP_CACHE8_OBSERVE=1','-DLI2_LOOP_CACHE8_CONTROL='+str(arena_observe)])+
         ([] if group_descriptor_observe is None else ['-DLI2_LOOP_GROUP_DESCRIPTOR_OBSERVE=1','-DLI2_LOOP_CACHE8_OBSERVE=1','-DLI2_LOOP_CACHE8_CONTROL='+str(group_descriptor_observe)])+
         (['-DLI2_LOOP_CACHE8_PROGRAM=1'] if cache8_program else [])+
+        (['-DLI2_LOOP_TRANSLATION_ARENA_PROGRAM=1'] if arena_program else [])+
         ([] if cache8_effects is None else ['-DLI2_LOOP_CACHE8_OBSERVE=1','-DLI2_LOOP_CACHE8_EFFECTS=1','-DLI2_LOOP_CACHE8_CONTROL='+str(cache8_effects)])+
         ([] if cache8_observe is None else ['-DLI2_LOOP_CACHE8_OBSERVE=1','-DLI2_LOOP_CACHE8_CONTROL='+str(cache8_observe)])+
         ([] if control is None else ['-DLI2_LOOP_RESIDENT_RX_ORACLE=1','-DLI2_LOOP_RESIDENT_RX_CONTROL='+str(control)]))
