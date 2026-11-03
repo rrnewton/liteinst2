@@ -9,7 +9,6 @@ use li2core::planner::HookSemantics;
 use li2core::quiescent::{AllocationPolicy, SearchPolicy, TacticPolicy};
 use li2core::quiescent::{ArtifactObservationRequest, plan_artifact_observation_window_after};
 use li2core::trampoline::SavedExtendedStateLayout;
-use std::fmt::Write as _;
 
 const PC: u64 = 0x400000;
 fn limits(steps: usize, reads: usize, bytes: usize) -> Limits {

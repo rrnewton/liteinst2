@@ -56,9 +56,9 @@ pub(crate) fn plans_view(
 ) -> Result<Vec<u8>, Error> {
     Ok(plans_view_encoded(s, plans, composition, deps, None)?.ledger)
 }
-pub(crate) fn plans_view_encoded<'a>(
+pub(crate) fn plans_view_encoded(
     s: &Selection,
-    plans: &[(u64, &'a ArtifactPlan)],
+    plans: &[(u64, &ArtifactPlan)],
     composition: &Composition,
     deps: &[FileRange],
     limits: Option<crate::ledger_codec::Limits>,
