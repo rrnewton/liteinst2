@@ -370,7 +370,13 @@ long li2_maps_view_anon_reset(uintptr_t first,size_t bytes) {
        mv_anon_rows(first,bytes))MV_STORE(&maps_stats.valid,1);
     return result;
 }
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+#include "loop_group_descriptor.h"
+#endif
 void li2_maps_before_raw(long n,long a,long b,long c,long d,long e,long f) {
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    li2_lgd_before_raw(n,a,b,c,d,e,f);
+#endif
 #ifdef LI2_MAPS_CURRENT_TF
     mct_raw_boundary();
 #endif

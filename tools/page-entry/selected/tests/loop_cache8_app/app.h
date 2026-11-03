@@ -9,6 +9,9 @@
 #define UA_STACK 224
 #ifndef __ASSEMBLER__
 #include <stdint.h>
+#ifdef LI2_LOOP_CACHE8_EFFECT
+#include "../loop_cache8_effects/effects.h"
+#endif
 struct ua_live { uint64_t g[16],flags; uint16_t selectors[6]; uint32_t reserved; };
 struct ua_frame { uint64_t h[12]; unsigned char si[128],uc[UA_UC],fp[UA_FP]; };
 struct ra_prefix {

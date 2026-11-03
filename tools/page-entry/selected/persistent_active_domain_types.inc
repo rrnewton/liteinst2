@@ -80,6 +80,10 @@ struct pda_work {
     struct le_permission directory_write,directory_seal;
     struct li2_private_code_query directory_closed;
     struct li2_jd_domain_directory directory;
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    uint64_t descriptor_id,descriptor_epoch;
+    struct li2_private_code_query descriptor_query;
+#endif
 #ifdef LI2_LOOP_RESIDENT_RX
     unsigned rx_retained_mask;
     struct li2_private_code_query rx_open[LI2_PGD_MEMBERS][3],rx_quiet[LI2_PGD_MEMBERS][3];

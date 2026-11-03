@@ -295,16 +295,55 @@ All other prefix restrictions and owner predicates remain. Real dynamically
 linked applications still stop at unsupported instructions, as recorded in
 the evaluation receipts.
 
-Both selected builds share physical `/proc/self/maps` rows only within one
-uninterrupted handler phase. Each query retains its ownership, seals,
-permissions and source-byte checks. Execution, application syscalls, unwhitelisted raw calls,
-nested events and failures invalidate the rows; later handlers acquire fresh rows.
-`page_selected_maps.py` qualifies four existing positive/capacity cases, fourteen
-terminal controls and nine new acquisition/invalidation modes on one reserved
-CPU. The connected and first/hit measurement scripts exercise the production
-bridge separately. Exact revisions, commands and numeric results are recorded
-in `evaluation/inprocess/RESULTS.md`; finite timing results do not establish
-real-program completion.
+The selected page runtime uses a maintained address-space view by default
+since revision `19e1502b3f5a533b8f283a1359660f1673de5726`. Its build scripts
+select `LI2_MAPS_PROFILE=maintained` when that variable is unset; the view starts
+after bootstrap and self-test. Set `LI2_MAPS_PROFILE=differential` to compare
+every reused view with a fresh acquisition. Any difference poisons the view and
+refuses the operation. `LI2_MAPS_PROFILE=fresh-baseline` selects the original
+fresh-read profile for comparison. These profiles preserve the source, backing,
+allocation, generation, alias and entry predicates.
+
+Successful intercepted `mprotect` updates the view's permission intervals.
+Other mapping operations invalidate before execution. Failed or partial
+operations require a fresh acquisition. Nested adapters apply each update once.
+The runtime still refuses unsupported guest operations, including `mremap` and
+`exec`; invalidating their raw gateways does not add support for them.
+
+The view represents maximal contiguous intervals with identical permissions,
+sharing and backing identity, and continuous file offsets. Differential mode
+compares every field of every canonical interval, including unmapped gaps.
+Bootstrap checks that require actual VMA boundaries run before this mode is
+enabled. Existing owners that demand physical fresh acquisitions retain those
+demands and receipt checks. Projected and differentially verified observations
+have separate receipt kinds; they are never labelled as fresh acquisitions.
+
+Kernel stack expansion needs separate treatment. The bridge registers the real
+initial stack pointer. Before reuse after a handler boundary or a kernel access
+that could grow that stack, a private `mincore` probe checks the page below the
+last raw stack extent. A mapped predecessor requires a fresh view. Before a
+mapping operation could split an unobserved grown stack, growth retires reuse.
+Operations touching the tracked stack also retire reuse. All later queries then
+use fresh maps. The runtime already refuses additional grow-down mappings and
+shared-mm threads. `READ_IMPLIES_EXEC` is refused before enabling the updater.
+
+Reproduce the finite native oracles and release comparison with a reserved CPU:
+
+```
+python3 evaluation/inprocess/maps_view.py --expect-revision FULL_COMMIT_SHA
+```
+
+The evaluator records the exact revision, hardware, compiler/input identities,
+commands, numerical outcomes and raw timing samples under `evaluation/`. It
+requires the native positive and refusal controls before the 42 fixed real
+launches: ten baseline and maintained samples each for `ls -d .` and `true`,
+plus one differential run of each. Existing CPU, wall, memory, output and
+application-result bounds remain unchanged. Differential timing is diagnostic;
+it receives no performance credit. The baseline reports wall time and existing
+route counts, not a newly measured physical maps-open count. On a successful
+maintained run, miss refreshes plus differential comparisons count its physical
+fresh acquisitions. DynamoRIO-null parity requires a separate completed-program comparison;
+the implementation alone establishes no speedup.
 
 Canonical RDSSPQ r64 uses a separate observed-state entry. Two adjacent actual
 RDSSPQ reads must preserve distinct destination seeds before either source page
@@ -469,3 +508,67 @@ still runs at the next hardware fault. The hint grants no execute permission;
 stale or unknown receipts keep ordinary fallback. Relocation retries and graph
 retries have separate counters. The baseline profile and its results remain
 separate; this feature requires its own full-state qualification.
+
+## Retained LOOP group descriptor
+
+The opt-in descriptor retains a canonical group directory and common proof for
+up to eight members. Every activation still obtains fresh claims and performs
+the existing source, backing, rseq and physical-permission checks. RAW exposure
+invalidates reuse before kernel execution; restoring bytes does not restore the
+old authority. This uses the existing decoder, CFG, planner and encoder. It does
+not implement offline exemptions from those admission checks.
+
+At base revision `8bf253ca0359933d420200d5f1a68b6c851b0a0e`, the held private
+native3 overlay passed all 79 commands and nine subjects. Both release and
+DIFF completed the 255-instruction native application with full state equality
+at all 12 captured frames.
+Five focal activations had member counts 1/1/3/4/4. The three generated intervals
+covered 75/83/84 original instructions, each with one final NX event and zero
+interior signals, planning, publications or code-permission operations. Six
+separate causal subjects retained their expected failures and all predicate,
+restoration and reader controls. Native attempts 1 and 2 remain failed.
+
+The separate descriptor program3 overlay failed both `/bin/ls -d .` and
+`/bin/true`: SIGKILL at the original 30-second CPU limit after 30.162858829 and
+30.174873282 seconds wall time. Neither produced a terminal row or a completed
+program result. Those times describe failure cost; no event totals, speedup or
+DynamoRIO parity follow. [The compact result](../../../evaluation/inprocess/results/20261103-loop-group-descriptor.json)
+records hardware, exact overlays, receipt identities, numerical outcomes and
+command templates. These observations do not identify the remaining runtime cost.
+
+This is a provisional diagnostic result. The private overlay identities are
+not a standalone public reproducer, and installing the combined descriptor/
+effects union does not regenerate the historical bytes or embedded policy
+hashes. Fresh installed-source native/program evidence is still required.
+The combined source candidate is unexecuted. After its reviewed installation
+at a clean revision, use the existing shared collectors
+under an externally reserved singleton CPU (Python 3.12):
+
+```sh
+python3.12 -B evaluation/inprocess/loop_ro_program_release.py \
+  --expect-revision CLEAN_INSTALLED_REVISION \
+  --output target/evaluation/inprocess/descriptor-provider-NEW
+python3.12 -B evaluation/inprocess/loop_group_descriptor_native.py \
+  --expect-revision CLEAN_INSTALLED_REVISION \
+  --current-build target/evaluation/inprocess/descriptor-provider-NEW/receipt.json \
+  --current-build-sha256 ACTUAL_PROVIDER_RECEIPT_SHA256 \
+  --output target/evaluation/inprocess/descriptor-native-NEW
+```
+
+Only the provider's fully authenticated build prefix is eligible for reuse;
+failed provider program outcomes remain failures. Require the complete native
+cohort before the separate program run:
+
+```sh
+python3.12 -B evaluation/inprocess/loop_group_descriptor_program.py \
+  --expect-revision CLEAN_INSTALLED_REVISION \
+  --output target/evaluation/inprocess/descriptor-program-NEW
+```
+
+The natural program collector runs all 34 commands; the recorded private run
+used 20 authenticated prior build commands and 14 fresh commands. All original
+bounds, predicates and control populations remain required. The dedicated
+descriptor recipes explicitly compile the maintained maps view; their unchanged
+build environment does not override that fixed recipe. Finite native success
+does not qualify the new source union, real programs, the full required gate or
+the full19 cohort.

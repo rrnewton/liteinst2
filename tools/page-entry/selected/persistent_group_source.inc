@@ -48,6 +48,11 @@ static unsigned pgs_loop_owned_class(const struct owned_page *p) {
     if(p->backing==ANONYMOUS && p->object==OBJECTS && !p->initial_extent)return ANONYMOUS;
     return 0;
 }
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+/* Exact external context read by the unchanged saved-page classifiers. Zero
+   is invalid, including an out-of-bound current object inventory. */
+uint64_t li2_lgd_source_context(void) {return object_count<=OBJECTS?(uint64_t)object_count+1U:0;}
+#endif
 static unsigned pgs_loop_page_class(const struct li2_fetch_page *p) {
     if(!p || object_count>OBJECTS)return 0;
     if(p->backing==SEALED)return p->object<object_count?SEALED:0;

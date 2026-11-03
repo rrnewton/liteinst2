@@ -1,6 +1,12 @@
+#if defined(LI2_LOOP_GROUP_DESCRIPTOR_APP) && defined(LI2_LOOP_CACHE8_EFFECT)
+#error "descriptor and real-effect application profiles are distinct"
+#endif
 /* Additive CACHE8 three-root/two-lifetime full native-state fixture.
    Original DIRECT41/44 files and their required subjects are unchanged. */
 #define _GNU_SOURCE
+#if defined(LI2_LOOP_GROUP_DESCRIPTOR_APP) && LI2_LOOP_GROUP_DESCRIPTOR_APP != 1
+#error "exact descriptor native application selector required"
+#endif
 #include "app.h"
 #include <asm/prctl.h>
 #include <errno.h>
@@ -45,8 +51,17 @@ extern void direct_frontier_restorer(void);
 static struct kernel_action old_actions[2];
 static unsigned actions_installed;
 static const uint64_t machine_zero[8]={0};
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_APP
+static const unsigned traces[1]={255};
+extern unsigned char region_app_reset_tail[];
+static const unsigned checkpoints[12]={0,1,3,4,6,7,82,84,167,169,253,255};
+#elif defined(LI2_LOOP_CACHE8_EFFECT)
+static const unsigned traces[1]={LI2_LOOP_CACHE8_EFFECT==2?167:83};
+static const unsigned checkpoints[12]={0,1,4,7,82,83,83,86,89,164,165,167};
+#else
 static const unsigned traces[1]={169};
 static const unsigned checkpoints[12]={0,1,4,7,82,83,85,88,91,166,167,169};
+#endif
 static const unsigned regs[16]={REG_RAX,REG_RCX,REG_RDX,REG_RBX,REG_RSP,REG_RBP,REG_RSI,REG_RDI,REG_R8,REG_R9,REG_R10,REG_R11,REG_R12,REG_R13,REG_R14,REG_R15};
 _Static_assert(sizeof(ucontext_t)==968 && offsetof(ucontext_t,uc_mcontext.gregs)==40 && offsetof(ucontext_t,uc_mcontext.fpregs)==224 && offsetof(ucontext_t,uc_sigmask)==296 && offsetof(ucontext_t,uc_stack)==16 && offsetof(siginfo_t,si_addr)==16,"actual Linux signal ABI");
 _Static_assert(sizeof(struct ua_live)==152 && sizeof(struct ua_frame)==66784 && sizeof(struct ra_prefix)==35272 && sizeof(struct ra_observation)==839192 && sizeof(struct ra_effect)==136 && sizeof(struct ra_suffix)==839592,"distinct complete active-domain application wire");
@@ -74,10 +89,16 @@ static void retain(int sig,const siginfo_t *si,const ucontext_t *uc,unsigned kin
  f->h[5]=(uintptr_t)si;f->h[6]=(uintptr_t)uc;f->h[7]=sizeof *uc;f->h[8]=(uintptr_t)p;f->h[9]=n;f->h[10]=alt_area+UA_PAGE;f->h[11]=ALT_BYTES;
  copy(f->si,si,sizeof *si);copy(f->uc,uc,sizeof *uc);copy(f->fp,p,n);++frames;
 }
+#ifdef LI2_LOOP_CACHE8_EFFECT
+#include "../loop_cache8_effects/effects.inc"
+#endif
 static void handler(int sig,siginfo_t *si,void *ptr){
  need(native&&!handling&&si&&ptr&&observation,30);handling=1;ucontext_t *uc=ptr;greg_t *g=uc->uc_mcontext.gregs;
  uintptr_t pc=(uintptr_t)g[REG_RIP],page=(uintptr_t)region_app_page;
  need(!ended&&!si->si_errno&&si->si_signo==sig,31);
+#ifdef LI2_LOOP_CACHE8_EFFECT
+ if(lc8e_native_event(sig,si,uc)){handling=0;return;}
+#endif
  if(!started){
   need(sig==SIGSEGV&&si->si_code==SEGV_ACCERR&&(uintptr_t)si->si_addr==predecessor&&pc==predecessor&&g[REG_ERR]==21&&g[REG_TRAPNO]==14&&(uintptr_t)g[REG_CR2]==predecessor,32);
   need((uint64_t)g[REG_EFL]==(ua_input.flags|RF),33);for(unsigned i=0;i<16;i++)need((uint64_t)g[regs[i]]==ua_input.g[i],34);
@@ -86,7 +107,51 @@ static void handler(int sig,siginfo_t *si,void *ptr){
  if(sig==SIGTRAP){
   need(si->si_code==TRAP_TRACE&&g[REG_ERR]==0&&g[REG_TRAPNO]==1&&(g[REG_EFL]&TF)&&steps<traces[mode],36);
   ++steps;
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_APP
+  /* All255 actual original transitions across three complete phases. */
+  const unsigned pcs[254]={
+    0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,
+    0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,0x207,0x2400,
+    0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,0x207,0x2400,0x2404,0x2408,
+    0x4600,0x4604,0x4608,0x460c,0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,
+    0x4608,0x460c,0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,
+    0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,
+    0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x4612,0x4616,0x6ffa,0x6000,
+    0x6007,0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,
+    0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,0x207,
+    0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,0x207,0x2400,0x2404,
+    0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,
+    0x4604,0x4608,0x460c,0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,
+    0x460c,0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,
+    0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x4612,0x4616,0x6ffa,
+    0x6000,0x6007,0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,
+    0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,
+    0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,0x207,0x2400,
+    0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,0x207,0x2400,0x2404,0x2408,
+    0x4600,0x4604,0x4608,0x460c,0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,
+    0x4608,0x460c,0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,
+    0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x4612,0x4616,
+    0x461c,0x7000};
+  uintptr_t want=steps<=254?page+pcs[steps-1]:endpoint;
+#else
   /* All169 actual original transitions, including both true reset and final exits. */
+#ifdef LI2_LOOP_CACHE8_EFFECT
+  const unsigned pcs[166]={
+    0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,
+    0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,0x207,0x2400,
+    0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,0x207,0x2400,0x2404,0x2408,
+    0x4600,0x4604,0x4608,0x460c,0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,
+    0x4608,0x460c,0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,
+    0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,
+    0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x4612,0x4616,0x6000,0x204,
+    0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,0x207,0x2400,
+    0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,0x207,0x2400,0x2404,0x2408,
+    0x4600,0x4604,0x4608,0x460c,0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,
+    0x4608,0x460c,0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,
+    0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,
+    0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,0x207,0x2400,
+    0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x4612,0x4616,0x461c,0x7000};
+#else
   const unsigned pcs[168]={
     0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,
     0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,0x207,0x2400,
@@ -102,14 +167,27 @@ static void handler(int sig,siginfo_t *si,void *ptr){
     0x4608,0x460c,0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,
     0x200,0x204,0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x200,0x204,
     0x207,0x2400,0x2404,0x2408,0x4600,0x4604,0x4608,0x460c,0x4612,0x4616,0x461c,0x7000};
+#endif
+#ifdef LI2_LOOP_CACHE8_EFFECT
+  uintptr_t want=steps<=166?page+pcs[steps-1]:endpoint;
+#else
   uintptr_t want=steps<=168?page+pcs[steps-1]:endpoint;
+#endif
+#endif
   need(pc==want&&(uintptr_t)si->si_addr==want,38);
   if(steps==1){
    need((uint64_t)g[REG_EFL]==(ua_input.flags|TF),39);
    for(unsigned i=0;i<16;i++)need((uint64_t)g[regs[i]]==ua_input.g[i],40);
   }
   if(frames<12&&steps==checkpoints[frames])retain(sig,si,uc,frames);
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_APP
+  if(steps==255){ended=1;g[REG_EFL]&=~(greg_t)TF;}
+#elif defined(LI2_LOOP_CACHE8_EFFECT)
+  if(steps==83)lc8e_native_window(uc);
+  if(LI2_LOOP_CACHE8_EFFECT==2 && steps==167){ended=1;g[REG_EFL]&=~(greg_t)TF;}
+#else
   if(steps==169){ended=1;g[REG_EFL]&=~(greg_t)TF;}
+#endif
   handling=0;return;
  }
  die(41); /* No asynchronous or data-fault success is claimed by this loop fixture. */
@@ -168,7 +246,11 @@ static void inputs(void){
  ua_input.g[0]=1;ua_input.g[1]=8;ua_input.g[2]=(uintptr_t)region_app_block_b;
  ua_input.g[3]=(uintptr_t)region_app_head;ua_input.g[6]=(uintptr_t)region_app_capture;
  ua_input.g[4]=STACK_BASE+UA_PAGE+STACK_EXTENT-504;ua_input.g[7]=DATA_BASE;
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_APP
+ ua_input.g[8]=3;
+#else
  ua_input.g[8]=2;
+#endif
  ua_input.flags=0xad7;need((ua_input.g[4]&15)==8,121);
  copy((void *)DATA_BASE,prefix.data,UA_DATA);copy((void *)(ua_input.g[4]-128),prefix.stack,UA_STACK);
  copy(&prefix.seed,&ua_input,sizeof prefix.seed);copy(prefix.source,region_app_page,UA_SOURCE);
@@ -185,12 +267,20 @@ static void collect(void){
  copy(observation->source,region_app_page,UA_SOURCE);copy(observation->stack,(void *)(ua_input.g[4]-128),UA_STACK);copy(observation->data,(void *)DATA_BASE,UA_DATA);
  need(same(prefix.source,observation->source,UA_SOURCE)&&same(prefix.stack,observation->stack,UA_STACK),94);
  unsigned char expected_data[UA_DATA];copy(expected_data,prefix.data,UA_DATA);
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_APP
+ uint64_t first_value=163,second_value=165,third_value=169;
+#else
  uint64_t first_value=107,second_value=109,third_value=113;
+#endif
  copy(expected_data,&first_value,8);copy(expected_data+8,&second_value,8);copy(expected_data+16,&third_value,8);
  need(same(expected_data,observation->data,UA_DATA),94);
  for(unsigned i=0;i<16;i++) {
   uint64_t expected=ua_input.g[i];
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_APP
+  if(i==0)expected+=168;
+#else
   if(i==0)expected+=112;
+#endif
   if(i==1)expected=0;
   if(i==8)expected=0;
   need(ua_after.g[i]==expected,155+i);
@@ -239,9 +329,20 @@ int main(int argc,char **argv){
       region_app_c_store-region_app_page==0x4604&&region_app_a_direct-region_app_page==0x207&&
       region_app_b_direct-region_app_page==0x2408&&region_app_c_repeat-region_app_page==0x460c&&
       region_app_c_reset-region_app_page==0x4616&&region_app_c_exit-region_app_page==0x461c&&
+#ifdef LI2_LOOP_CACHE8_EFFECT
+      region_app_reset-region_app_page==0x6000&&lc8e_geometry()&&
+#else
       region_app_reset-region_app_page==0x6000&&region_app_reset_jump-region_app_page==0x6007&&
+#endif
       (uint64_t)region_app_capture-(uint64_t)region_app_page==0x7000,120);
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_APP
+ need(region_app_reset_tail-region_app_page==0x6ffa,120);
+#endif
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_APP
+ uint64_t *h=prefix.h;h[0]=RA_MAGIC;h[1]=3;h[2]=sizeof prefix;h[3]=sizeof suffix;h[4]=mode;h[5]=native;
+#else
  uint64_t *h=prefix.h;h[0]=RA_MAGIC;h[1]=1;h[2]=sizeof prefix;h[3]=sizeof suffix;h[4]=mode;h[5]=native;
+#endif
  h[6]=(uint64_t)RAW(SYS_getpid,0,0,0,0,0,0);h[7]=(uint64_t)RAW(SYS_gettid,0,0,0,0,0,0);need(h[6]>0&&h[6]==h[7],81);
  unsigned cpu=0,node=0;need(!RAW(SYS_getcpu,&cpu,&node,0,0,0,0),82);h[8]=cpu;h[9]=node;
  h[10]=focal_head;h[11]=(uintptr_t)region_app_page;h[12]=DATA_BASE;h[13]=STACK_BASE;hardware();machine(prefix.machine);
@@ -256,6 +357,9 @@ int main(int argc,char **argv){
  h[34]=endpoint;h[35]=predecessor;h[36]=traces[mode];h[37]=sizeof(struct ra_observation);h[38]=12;h[39]=45;
  h[40]=(uintptr_t)region_app_block_b;h[41]=(uintptr_t)region_app_block_c;h[42]=UA_SOURCE;h[43]=RSEQ_BASE;h[44]=RSEQ_SIG;
  h[45]=(uintptr_t)region_app_a_direct;h[46]=(uintptr_t)region_app_b_direct;h[47]=(uintptr_t)region_app_c_reset;
+#ifdef LI2_LOOP_CACHE8_EFFECT
+ h[1]=2;h[39]=LI2_LOOP_CACHE8_EFFECT;lc8e_initialize();
+#endif
  /* Force the existing positive REP lease before its required unregistered
     snapshot. The low original RX page is ineligible for native admission. */
  repeat_setup();
@@ -271,7 +375,19 @@ int main(int argc,char **argv){
   if(native)need(!RAW(SYS_mprotect,region_app_page,UA_SOURCE,PROT_READ,0,0,0),152);
   region_app_enter();collect();
  }
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_APP
+ suffix.h[0]=RA_MAGIC^1;suffix.h[1]=3;suffix.h[2]=mode;suffix.h[3]=native;suffix.h[4]=first_error;suffix.h[6]=h[30];
+#else
  suffix.h[0]=RA_MAGIC^1;suffix.h[1]=1;suffix.h[2]=mode;suffix.h[3]=native;suffix.h[4]=first_error;suffix.h[6]=h[30];
+#endif
  suffix.h[10]=2;suffix.h[11]=1;
+#ifdef LI2_LOOP_CACHE8_EFFECT
+ suffix.h[1]=2;
+#endif
+#ifdef LI2_LOOP_CACHE8_EFFECT
+ registration(0);registration(1);cleanup();need(!first_error&&output(&suffix,sizeof suffix),97);
+ lc8e_complete();return 0;
+#else
  registration(0);registration(1);cleanup();need(!first_error&&output(&suffix,sizeof suffix),97);return 0;
+#endif
 }

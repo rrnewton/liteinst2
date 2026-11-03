@@ -114,7 +114,11 @@ static int pda_direct_exit_value(const struct pda_completion *c) {
 #ifdef LI2_PERSISTENT_RET_DISPATCH
 static int pda_ret_exit_value(const struct pda_completion *);
 #endif
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+static int pda_receipt_common_full(const struct pda_completion *c) {
+#else
 static int pda_receipt(const struct pda_completion *c) {
+#endif
     if(!c || !c->id || c->id>pe.domain.next_id || !c->serial || c->serial>pe.next_serial ||
        c->complete!=1 || !c->count || c->count>LI2_PGD_MEMBERS)return 0;
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER
@@ -268,6 +272,7 @@ static int pda_receipt(const struct pda_completion *c) {
 #endif
         !equal(&s->opened[j],&d->open[0][j],sizeof s->opened[j]) ||
         !equal(&s->closed[j],&d->close[0][j],sizeof s->closed[j]))return 0;
+#ifndef LI2_LOOP_GROUP_DESCRIPTOR
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
 #ifdef LI2_LOOP_RO_CERTIFICATE
     if(!lhc_direct_value(c))return 0;
@@ -275,10 +280,19 @@ static int pda_receipt(const struct pda_completion *c) {
     if(!pda_direct_exit_value(c))return 0;
 #endif
 #endif
+#endif
     return 1;
 }
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+static int pda_receipt(const struct pda_completion *c) {
+    return lgd_common_value(c) && lhc_direct_value(c);
+}
+#endif
 #ifdef LI2_LOOP_RO_CERTIFICATE
 #include "loop_history_certificate.inc"
+#endif
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+#include "loop_group_descriptor_writer.inc"
 #endif
 static int pda_permitted(unsigned slot) {
     if(slot>=LI2_PTR_SLOTS || !ptr_storage())return 0;
@@ -446,6 +460,42 @@ static void pda_member(unsigned at,unsigned slot) {
             .proof=s->proof,.root=p->source.entry,.layout=s->generation.layout},
         .plan=&p->plan,.key=&p->source};
 }
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+static int pda_directory_value(const struct li2_pgd_view *v,uint64_t serial,
+    struct li2_jd_domain_directory *d) {
+    if(d->count || d->version || d->serial || !serial)return PE_STATE;
+    d->version=LI2_JD_DOMAIN_VERSION;d->serial=serial;
+    for(unsigned i=0;i<v->count;i++) {
+        const struct li2_pgd_member *m=&v->member[i];const struct li2_pg_compact *p=m->plan;
+        for(unsigned j=0;j<p->heads;j++) {
+            if(d->count>=LI2_JD_DOMAIN_HEADS)return PE_PLAN;
+            const uintptr_t pc=p->original[j].decoded.pc;
+            for(size_t k=0;k<d->count;k++)if(d->row[k].pc==pc)return PE_PLAN;
+            d->row[d->count++]=(struct li2_jd_domain_row){.pc=pc,
+                .generated=p->layout.generated[j/64]+(uintptr_t)(j%64)*LI2_PE_SLOT_BYTES,
+                .generation=m->identity.generation,.slot=m->identity.slot,.head=j};
+        }
+    }
+    if(!d->count || d->count>LI2_JD_DOMAIN_HEADS)return PE_PLAN;
+    return 0;
+}
+static int pda_directory_publish(void) {
+    struct pda_work *w=&pe.domain.work;struct li2_jd_domain_directory *d=&w->directory;
+    int e=pe_permission(pe.domain.directory,LI2_JD_DOMAIN_BYTES,PROT_READ|PROT_WRITE,&w->directory_write);
+    if(e)return e;
+    volatile unsigned char *b=(void *)pe.domain.directory;const unsigned char *expected=(const void *)d;
+    for(size_t i=0;i<LI2_JD_DOMAIN_BYTES;i++)b[i]=i<sizeof *d?expected[i]:0;
+    e=pe_permission(pe.domain.directory,LI2_JD_DOMAIN_BYTES,PROT_READ,&w->directory_seal);if(e)return e;
+    for(size_t i=0;i<LI2_JD_DOMAIN_BYTES;i++)if(b[i]!=(i<sizeof *d?expected[i]:0))return PE_PUBLICATION;
+    return 0;
+}
+static int pda_directory_seal_full(void) {
+    struct pda_work *w=&pe.domain.work;
+    int error=pda_directory_value(&w->view,pe.p.serial,&w->directory);
+    return error?error:pda_directory_publish();
+}
+static int pda_directory_seal(void) {return lgd_directory();}
+#else
 static int pda_directory_seal(void) {
     struct pda_work *w=&pe.domain.work;struct li2_jd_domain_directory *d=&w->directory;
     if(d->count || d->version || d->serial)return PE_STATE;
@@ -470,7 +520,12 @@ static int pda_directory_seal(void) {
     for(size_t i=0;i<LI2_JD_DOMAIN_BYTES;i++)if(b[i]!=(i<sizeof *d?expected[i]:0))return PE_PUBLICATION;
     return 0;
 }
+#endif
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+static int pda_directory_equal_full(void) {
+#else
 static int pda_directory_equal(void) {
+#endif
     const struct pda_work *w=&pe.domain.work;
     if(w->directory_seal.complete!=1 || w->directory_seal.result || w->directory_seal.sync_result ||
        !pg_query_complete(&w->directory_seal.query,pe.domain.directory,LI2_JD_DOMAIN_BYTES,PROT_READ))return 0;
@@ -479,6 +534,10 @@ static int pda_directory_equal(void) {
     for(size_t i=0;i<LI2_JD_DOMAIN_BYTES;i++)if(b[i]!=(i<sizeof w->directory?expected[i]:0))return 0;
     return 1;
 }
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+#include "loop_group_descriptor_owner.inc"
+static int pda_directory_equal(void) {return lgd_directory_equal();}
+#endif
 static int pda_bind(const ucontext_t *uc) {
     struct pda_work *w=&pe.domain.work;
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
@@ -539,6 +598,11 @@ static int pda_bind(const ucontext_t *uc) {
     w->bound=1;
     if(!li2_pgd_owner_view(&pe.token) || li2_pgd_source_bind(&pe.token) ||
        li2_pgd_rseq_bind(&pe.token,uc))return PE_SOURCE;
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    int descriptor_masks=lgd_view_match(&w->view);
+    uint64_t descriptor_gpr=descriptor_masks?lgd_group.value.gpr_written:0;
+    uint64_t descriptor_flags=descriptor_masks?lgd_group.value.flags_written:0;
+#endif
     for(unsigned i=0;i<w->view.count;i++) {
         const struct li2_pgd_member *m=&w->view.member[i];
         struct li2_pg_generation *g=&pe.retained[m->identity.slot].generation;
@@ -546,6 +610,9 @@ static int pda_bind(const ucontext_t *uc) {
         pda_select(m->identity.slot,m->identity.bank);
         if(pe_bytes())return PE_PUBLICATION;
         g->domain_refs=1;
+#if defined(LI2_LOOP_GROUP_DESCRIPTOR) && !defined(LI2_SEALED_BYTE_CERTIFICATE_DIFFERENTIAL)
+        if(!descriptor_masks)
+#endif
         for(unsigned j=0;j<m->plan->heads;j++)if(m->plan->head[j].kind==LI2_PE_NONE
 #ifdef LI2_PERSISTENT_DIRECT_FRONTIER
             || m->plan->head[j].kind==LI2_PG_DIRECT
@@ -584,6 +651,22 @@ static int pda_bind(const ucontext_t *uc) {
         }
     }
     pda_select(w->primary,w->primary_bank);
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    if(descriptor_masks) {
+#ifdef LI2_SEALED_BYTE_CERTIFICATE_DIFFERENTIAL
+        if(pe.gpr_written!=descriptor_gpr || pe.flags_written!=descriptor_flags) {
+            (void)lgd_count(&lgd_counts.disagreements);return PE_PLAN;
+        }
+#else
+        /* pe_build already accumulated the current primary's actual masks.
+           The matched immutable group contains that exact primary member;
+           adding its aggregate must preserve every previously proved write. */
+        if((pe.gpr_written|descriptor_gpr)!=descriptor_gpr ||
+           (pe.flags_written|descriptor_flags)!=descriptor_flags)return PE_STATE;
+        pe.gpr_written=descriptor_gpr;pe.flags_written=descriptor_flags;
+#endif
+    }
+#endif
     if((pe.gpr_written&~UINT64_C(0xffff)) || (pe.gpr_written&(UINT64_C(1)<<4)) ||
        (pe.flags_written&~UINT64_C(0x8d5)))return PE_PLAN;
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
@@ -608,9 +691,18 @@ static int pda_bind(const ucontext_t *uc) {
 #endif
 #endif
 }
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+static int pda_ready_value(unsigned linked,int (*directory_equal)(void)) {
+#else
 static int pda_ready(unsigned linked) {
+#endif
     const struct pda_work *w=&pe.domain.work;
-    if(linked>1 || !li2_pgd_owner_view(&pe.token) || !pe_ready() || !pda_directory_equal())return 0;
+    if(linked>1 || !li2_pgd_owner_view(&pe.token) || !pe_ready() ||
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+       !directory_equal())return 0;
+#else
+       !pda_directory_equal())return 0;
+#endif
 #ifdef LI2_PERSISTENT_CALL_DISPATCH
     if(!pcw_equal())return 0;
 #endif
@@ -629,6 +721,12 @@ static int pda_ready(unsigned linked) {
     }
     return 1;
 }
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+static int pda_ready(unsigned linked) {return pda_ready_value(linked,pda_directory_equal);}
+static int pda_ready_preentry(void) {
+    return lgd_preentry_context() && pda_ready_value(1,lgd_directory_equal_preentry);
+}
+#endif
 static int pda_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,ucontext_t *uc) {
     struct pda_work *w=&pe.domain.work;
     if(!pe_token(t) || pe.p.phase!=LI2_PG_BOUND || !pe_busy || pe_active || !pda_ready(0) ||
@@ -732,7 +830,12 @@ static int pda_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
 #endif
     if(pe_busy || pe_closing || pe_decoding || handling || !pe_active || !pe.redirected ||
        pe.p.phase!=LI2_PG_EXECUTING || selected_pending_route!=SELECTED_PERSISTENT_EPOCH ||
-       selected_step_pending!=1 || pe.p.first_error || !pda_ready(1))return PE_REENTRY;
+       selected_step_pending!=1 || pe.p.first_error ||
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+       !pda_ready_preentry())return PE_REENTRY;
+#else
+       !pda_ready(1))return PE_REENTRY;
+#endif
     struct pda_work *w=&pe.domain.work;
 #ifdef LI2_LOOP_CACHE8_OBSERVE
     lc8o_preentry(sig,si,uc);
@@ -962,6 +1065,9 @@ static _Noreturn void pda_abort(unsigned code,long detail) {
     if(pe_failing || pe.selected_slot>=LI2_PTR_SLOTS || pe.domain.work.aborting) {
         (void)li2_raw6(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
     }
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    lgd_poison();
+#endif
     pe_failing=1;pe_busy=1;pe.domain.work.aborting=1;
     if(!pe.p.first_error){pe.p.first_error=code;pe.p.first_detail=detail;}
     pe.p.completion_permit=0;pe.p.phase=LI2_PG_FAILED;li2_maps_phase_fail();

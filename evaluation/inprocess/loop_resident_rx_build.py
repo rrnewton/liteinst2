@@ -17,8 +17,20 @@ RX_LIFETIME=dict(version=1,slots=2,source_release_version=1,
     metadata_permission_counts='actual-pe_permission-calls-only',qualification_credit=False)
 
 
-def build_rx(builder, archive, original, directory, pin, binary, aliases, run, state, mode, *, control=None, selected=None, root=None, recurrence=False, cache8=False, cache8_observe=None, cache8_program=False):
+def build_rx(builder, archive, original, directory, pin, binary, aliases, run, state, mode, *, control=None, selected=None, root=None, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None):
     """Execute the real source-owned recipe, then bind its exact compiler closure."""
+    need(cache8_effects is None or type(cache8_effects)is int and cache8_effects in (2,3,4) and
+         cache8 and not recurrence and control is None and cache8_observe is None and not cache8_program and
+         (cache8_effects==2 or mode=='differential'),'distinct literal real guest effect subject')
+    need(cache8_effects is None or not group_descriptor and group_descriptor_observe is None,
+         'real effects and descriptor profiles are mutually exclusive')
+    need(group_descriptor_observe is None or type(group_descriptor_observe)is int and
+         0<=group_descriptor_observe<=6 and group_descriptor and
+         (group_descriptor_observe==0 or mode=='differential'),'literal descriptor native/exposure subject')
+    need(type(group_descriptor)is bool and (not group_descriptor or cache8 and not recurrence and
+         cache8_observe is None and control is None and
+         (not cache8_program or group_descriptor_observe is None)),
+         'distinct production descriptor without old finite capture')
     need(type(cache8_program)is bool and (not cache8_program or
          cache8 and not recurrence and cache8_observe is None and control is None and mode=='release'),
          'distinct release-only cache8 program terminal without finite observer')
@@ -39,6 +51,10 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     if cache8:stem='persistent-loop-cache8'
     if cache8_observe is not None:stem+='-observe'
     if cache8_program:stem+='-program'
+    if group_descriptor:stem='persistent-loop-group-descriptor'
+    if group_descriptor_observe is not None:stem+='-observe'
+    if cache8_effects is not None:stem+='-effects'
+    if group_descriptor and cache8_program:stem+='-program'
     binder_name=stem.replace('-','_')+'_binding'
     output = directory/'build'; output.mkdir()
     script = pin(selected/('build-'+stem+'.sh'))
@@ -70,11 +86,15 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     policy_value=dict(sources=values, original=image, mode=mode)
     if control is not None:policy_value['control']=control
     if cache8_observe is not None:policy_value['cache8_control']=cache8_observe
+    if group_descriptor_observe is not None:policy_value['group_descriptor_control']=group_descriptor_observe
+    if cache8_effects is not None:policy_value['cache8_effect']=cache8_effects
     policy = digest(policy_value)
     environment = dict(builder.environment, LI2_CC=str(builder.tools['cc']), LI2_PYTHON=str(builder.tools['python']))
     _, out, err = run('build', [builder.tools['sh'], script, archive, original, output, mode]+
                       ([] if control is None else [str(control)])+
-                      ([] if cache8_observe is None else [str(cache8_observe)]),
+                      ([] if cache8_observe is None else [str(cache8_observe)])+
+                      ([] if group_descriptor_observe is None else [str(group_descriptor_observe)])+
+                      ([] if cache8_effects is None else [str(cache8_effects)]),
                       profile='release_build', env=environment)
     need(out == err == b'', 'actual RO recipe has no diagnostics')
     manifest = binary(output/(binder_name+'.json'))
@@ -91,7 +111,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     need(set(binding) == set(constants) | {'profile', 'mode', 'archive', 'policy_sha256',
              'original', 'sources', 'headers', 'byte_certificate', 'history_certificate', 'rx_lifetime'} |
              (set() if control is None else {'control','oracle'}) |
-             ({'recurrence'} if recurrence else set()) | ({'cache8'} if cache8 else set()) | ({'cache8_observer'} if cache8_observe is not None else set()) | ({'cache8_program'} if cache8_program else set())
+             ({'recurrence'} if recurrence else set()) | ({'cache8'} if cache8 else set()) | ({'cache8_observer'} if cache8_observe is not None else set()) | ({'cache8_program'} if cache8_program else set()) | ({'group_descriptor'} if group_descriptor else set()) | ({'group_descriptor_observer'} if group_descriptor_observe is not None else set()) | ({'cache8_effects'} if cache8_effects is not None else set())
          and digest({key: binding[key] for key in constants}) == digest(constants)
          and binding['profile'] == stem+'-'+mode+'-v1'
          and binding['mode'] == mode and binding['archive'] == fact(archive)
@@ -110,6 +130,21 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
              row_bytes=12088,source_bytes=8760,initial_seals=6,final_seals=23,
              denominator='actual-pe_build-after-coarse-and-negative-hint',stop_detail=8960,
              observation_authority=False,qualification_credit=False), 'exact passive observation schema')
+    if group_descriptor:
+        need(binding['group_descriptor']==dict(version=1,groups=1,members=8,heads=256,boundaries=8,
+             directory_order='ascending-retained-slot',directory_serial='descriptor-id',
+             activation_claims='fresh-every-entry',raw_exposure='pre-kernel-monotone-epochs',
+             common_proof='existing-LHC-owner',physical_queries='fresh-original-member-checks',
+             old_capture_compatible=False,qualification_credit=False),'exact immutable-value owner profile')
+    if group_descriptor_observe is not None:
+        need(binding['group_descriptor_observer']==dict(version=1,control=group_descriptor_observe,reference='cache8-abc255',
+            epochs=5,wire_bytes=1186576,original_controls=24 if group_descriptor_observe else 0,
+            raw_controls=1 if 1<=group_descriptor_observe<=5 else 0,epoch_owner_refusal=group_descriptor_observe==6,
+            observation_authority=False,qualification_credit=False),'exact descriptor exposure subject and wire')
+    if cache8_effects is not None:
+        need(binding['cache8_effects']==dict(version=1,control=cache8_effects,reference='cache8-effects'+str(cache8_effects),
+             first_epochs=3,app_tail_bytes=512,observer_bytes=2003032,observation_authority=False,qualification_credit=False),
+             'exact typed actual guest effect observation')
     if cache8_program:
         need(binding['cache8_program']==dict(version=1,fields=63,slots=8,members=8,receipts=9,
              terminal_only=True,observation_authority=False,qualification_credit=False),
@@ -149,8 +184,11 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
         '#define LI2_PG_LOOP_RO_BINDING_VERSION 1\n#define LI2_PG_LOOP_RESIDENT_RX_BINDING_VERSION 1\n'+
         ('#define LI2_PG_LOOP_RX_RECURRENCE_BINDING_VERSION 1\n' if recurrence else '')+
         ('#define LI2_PG_LOOP_CACHE8_BINDING_VERSION 1\n' if cache8 else '')+
-        ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n' if cache8_observe is not None else '')+
+        ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n' if cache8_observe is not None or group_descriptor_observe is not None else '')+
         ('#define LI2_PG_LOOP_CACHE8_PROGRAM_BINDING_VERSION 1\n' if cache8_program else '')+
+        ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_BINDING_VERSION 1\n' if group_descriptor else '')+
+        ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_OBSERVE_BINDING_VERSION 1\n' if group_descriptor_observe is not None else '')+
+        ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n#define LI2_PG_LOOP_CACHE8_EFFECTS_BINDING_VERSION 1\n' if cache8_effects is not None else '')+
         ('#define LI2_PG_LOOP_RESIDENT_RX_ORACLE_BINDING_VERSION 1\n' if control is not None else '')+
         '#define LI2_PG_LOOP_BINDING_VERSION 1\n#define LI2_PG_LOOP_POLICY_VERSION 12\n'
         '#define LI2_PG_LOOP_FALLBACK_VERSION 11\n#define LI2_PG_LOOP_ENCODING_VERSION 2\n'
@@ -164,7 +202,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     rows = recipe(script, '"$cc_bin"'); need(len(rows) == 1, 'one actual RO link command')
     substitutions = {'$cc_bin': builder.tools['cc'], '$selected_dir': selected,
         '$parent_dir': selected.parent, '$archive': archive, '$output': output,
-        '$control':str(cache8_observe if cache8_observe is not None else control)}
+        '$control':str(cache8_effects if cache8_effects is not None else group_descriptor_observe if group_descriptor_observe is not None else cache8_observe if cache8_observe is not None else control)}
     argv = expand(rows[0], substitutions)
     old = recipe(pin(selected/'build-persistent-loop-effects.sh'), '"$cc_bin"')
     need(len(old) == 1, 'one unchanged effects release recipe')
@@ -172,12 +210,21 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     expected[expected.index('-Werror')+1:expected.index('-Werror')+1] = (['-include', str(output/'loop_ro_certificate_config.h'), '-DLI2_LOOP_RESIDENT_RX=1']+
         (['-DLI2_LOOP_RX_RECURRENCE=1'] if recurrence else [])+
         (['-DLI2_LOOP_CACHE8=1'] if cache8 else [])+
+        (['-DLI2_LOOP_GROUP_DESCRIPTOR=1'] if group_descriptor else [])+
+        ([] if group_descriptor_observe is None else ['-DLI2_LOOP_GROUP_DESCRIPTOR_OBSERVE=1','-DLI2_LOOP_CACHE8_OBSERVE=1','-DLI2_LOOP_CACHE8_CONTROL='+str(group_descriptor_observe)])+
         (['-DLI2_LOOP_CACHE8_PROGRAM=1'] if cache8_program else [])+
+        ([] if cache8_effects is None else ['-DLI2_LOOP_CACHE8_OBSERVE=1','-DLI2_LOOP_CACHE8_EFFECTS=1','-DLI2_LOOP_CACHE8_CONTROL='+str(cache8_effects)])+
         ([] if cache8_observe is None else ['-DLI2_LOOP_CACHE8_OBSERVE=1','-DLI2_LOOP_CACHE8_CONTROL='+str(cache8_observe)])+
         ([] if control is None else ['-DLI2_LOOP_RESIDENT_RX_ORACLE=1','-DLI2_LOOP_RESIDENT_RX_CONTROL='+str(control)]))
     if cache8:
         expected.insert(expected.index('-Wl,-e,_start,-Bsymbolic,-z,now,-z,relro,-z,noexecstack,--build-id=none,--no-undefined'),
             '-Wl,--undefined=li2_loop_cache8_progress')
+    if group_descriptor_observe is not None:
+        expected.insert(expected.index('-Wl,-e,_start,-Bsymbolic,-z,now,-z,relro,-z,noexecstack,--build-id=none,--no-undefined'),
+            '-Wl,--undefined=li2_lgdo_layout')
+    if cache8_effects is not None:
+        expected.insert(expected.index('-Wl,-e,_start,-Bsymbolic,-z,now,-z,relro,-z,noexecstack,--build-id=none,--no-undefined'),
+            '-Wl,--undefined=li2_lifecycle_cache8_effects_memory')
     if recurrence:
         expected.insert(expected.index('-Wl,-e,_start,-Bsymbolic,-z,now,-z,relro,-z,noexecstack,--build-id=none,--no-undefined'),
             '-Wl,--undefined=li2_lrc_layout')
@@ -211,18 +258,55 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
         'li2_pgd_source_rx_progress','li2_pgd_source_rx_value','li2_tf_chain_trace_direct')
     if cache8:
         providers+=('li2_loop_cache8_progress',)
+    if group_descriptor:providers+=('li2_lgd_before_raw','li2_lgd_source_context')
+    if cache8_effects is not None:providers+=('li2_lifecycle_cache8_effects_memory',)
     for name in providers:
         found = [line.split() for line in out.splitlines() if line.split()[-1:] == [name.encode()]]
         need(len(found) == 1 and len(found[0]) == 4 and found[0][2] in (b't', b'T')
              and int(found[0][1], 16) > 0, 'one actual complete provider '+name)
-    for name in ('pe', 'sg_owner', 'lhc'):
+    for name in ('pe', 'sg_owner', 'lhc')+ (('lgd_writer','lgd_group','lgd_candidate') if group_descriptor else ()):
         found = [line.split() for line in out.splitlines() if line.split()[-1:] == [name.encode()]]
         need(len(found) == 1 and len(found[0]) == 4 and found[0][2] in (b'b', b'B')
              and int(found[0][0], 16) % 4096 == 0 and int(found[0][1], 16) % 4096 == 0,
              'actual isolated page-aligned certificate/owner storage '+name)
     if recurrence:state['recurrence_layout']=recurrence_layout(bridge,out)
+    if group_descriptor_observe is not None:state['descriptor_observer_layout']=descriptor_observer_layout(bridge,out)
     state.update(bridge=fact(bridge), status='compiled_diagnostic_only')
     return bridge
+
+
+def descriptor_observer_layout(bridge,symbols):
+    """Compiler-owned offsets and ELF storage symbols; existing inspection only."""
+    import struct
+    data,_,segments=elf(bridge)
+    def symbol(name,kinds):
+        rows=[line.split()for line in symbols.splitlines()if line.split()[-1:]==[name.encode()]]
+        need(len(rows)==1 and len(rows[0])==4 and rows[0][2]in kinds,'one actual descriptor layout/storage symbol '+name)
+        address,size=int(rows[0][0],16),int(rows[0][1],16)
+        need(address>0 and size>0,'complete nonempty descriptor layout/storage symbol')
+        return dict(address=address,bytes=size)
+    item=symbol('li2_lgdo_layout',(b'r',b'R'));address,size=item['address'],item['bytes']
+    need(size==18*8,'complete actual eighteen-word descriptor layout object')
+    loads=[p for p in segments if p[0]==1 and p[1]==4 and p[3]<=address<address+size<=p[3]+p[5]]
+    need(len(loads)==1,'whole descriptor layout belongs to one actual readonly ELF LOAD')
+    load=loads[0];offset=load[2]+address-load[3]
+    values=struct.unpack_from('<18Q',data,offset)
+    need(values[:9]==(1,1186576,227264,1137632,48944,2280,3216,296,336) and
+         values[16:]==(4096,5) and values[11]==4096 and
+         all(values[i]>0 and values[i]%4096==0 for i in range(9,17)) and
+         values[10]+9*values[9]<=values[14] and values[11]+9*values[12]<=values[15] and
+         values[13]<=16*4096,'independent wire layout and actual isolated completion/capsule/storage geometry')
+    owners={name:symbol(name,(b'b',b'B'))for name in('pe','lhc','lgd_group','lgd_writer')}
+    for name,index in (('pe',14),('lhc',15),('lgd_group',13),('lgd_writer',16)):
+        obj=owners[name]
+        need(obj['bytes']==values[index] and obj['address']%4096==0 and
+             sum(p[0]==1 and p[1]==6 and p[3]<=obj['address']<obj['address']+obj['bytes']<=p[3]+p[6]for p in segments)==1,
+             'actual compiler size and full writable ELF owner extent '+name)
+    for i,(name,a)in enumerate(owners.items()):
+        for other,b in list(owners.items())[:i]:
+            need(a['address']+a['bytes']<=b['address'] or b['address']+b['bytes']<=a['address'],
+                 'distinct whole actual descriptor owners '+name+'/'+other)
+    return dict(version=1,symbol=item,values=list(values),owners=owners,inferior_started=False)
 
 
 def recurrence_layout(bridge, symbols):

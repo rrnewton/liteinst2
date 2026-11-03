@@ -32,14 +32,37 @@ SCHEDULE=APP_SCHEDULE+(('policy-headers','metadata'),('policy-link','release_bui
 
 
 
-def execute(a, *, context=None, cache8=False):
+DESCRIPTOR_LANES=(('release','release',0,0),('differential','differential',0,0))+tuple(
+    ('exposure'+str(i),'differential',i,125)for i in range(1,7))
+DESCRIPTOR_SCHEDULE=SCHEDULE[:30]+tuple(
+    (lane+'-'+name,profile)for lane,_,_,_ in DESCRIPTOR_LANES for name,profile in(
+        ('build','release_build'),('headers','metadata'),('undefined','inspect'),('symbols','inspect'),('carrier','program')))+tuple(
+    ('subject-'+lane,'program')for lane in('native',)+tuple(x[0]for x in DESCRIPTOR_LANES))
+
+
+def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_case=None):
     """Explicit compiler/reader context; original source authority remains natural."""
     if context is not None and (type(context)is not dict or set(context)!=
             {'root','selected','reader_root','modules'}):
         raise ValueError('complete explicit compiler/reader context')
     if type(cache8)is not bool:raise ValueError('explicit additive cache8 selector')
+    if type(group_descriptor)is not bool or group_descriptor and not cache8:
+        raise ValueError('explicit additive descriptor requires CACHE8')
+    lanes=DESCRIPTOR_LANES if group_descriptor else LANES
+    schedule=DESCRIPTOR_SCHEDULE if group_descriptor else SCHEDULE
+    if group_descriptor and effects_case is not None:
+        raise ValueError('descriptor and real-effect cohorts are distinct selectors')
+    if effects_case is not None and (type(effects_case)is not int or effects_case not in(2,3,4) or not cache8):
+        raise ValueError('literal additive genuine-effect case under cache8')
+    if effects_case is not None:
+        lanes=(('release','release',2,0),('differential','differential',2,0))if effects_case==2 else(
+            ('differential','differential',effects_case,125),)
+        schedule=SCHEDULE[:30]+tuple((lane+'-'+name,profile)for lane,_,_,_ in lanes for name,profile in(
+            ('build','release_build'),('headers','metadata'),('undefined','inspect'),('symbols','inspect'),('carrier','program')))+tuple(
+            ('subject-'+lane,'program')for lane in('native',)+tuple(x[0]for x in lanes))
     module_paths=MODULE_PATHS if not cache8 else dict(MODULE_PATHS,
         cache8='loop_cache8_reports.py',row='loop_ro_oracle_reports.py')
+    if group_descriptor:module_paths=dict(module_paths,descriptor='loop_group_descriptor_reports.py')
     root=ROOT if context is None else Path(context['root']).resolve(strict=True)
     reader_root=ROOT if context is None else Path(context['reader_root']).resolve(strict=True)
     selected=root/'tools/page-entry/selected' if context is None else Path(context['selected']).resolve(strict=True)
@@ -78,10 +101,15 @@ def execute(a, *, context=None, cache8=False):
     observer=modules['observer'];reports=modules['terminal'].configured(
         modules['fused'],modules['effects'],modules['certificate'])
     fixture=selected/('tests/loop_cache8_app' if cache8 else 'tests/persistent_direct_frontier_app')
-    reference='cache8-abc169' if cache8 else 'direct44'
+    reference='cache8-abc255' if group_descriptor else 'cache8-abc169' if cache8 else 'direct44'
     if cache8:
         reports=modules['cache8'].configured(modules['row'].row,modules['terminal'],
             modules['certificate'],modules['terminal'].effects)
+    if group_descriptor:reports=modules['descriptor'].configured(modules['row'].row,reports)
+    if effects_case is not None:
+        fixture=selected/'tests/loop_cache8_effects';reference='cache8-effects'+str(effects_case)
+        reports=modules['cache8'].configured(modules['row'].row,modules['terminal'],
+            modules['certificate'],modules['terminal'].effects,effects_case=effects_case)
     need(not sys.flags.optimize and len(os.sched_getaffinity(0))==1,'assertions and reserved singleton')
     cpu=next(iter(os.sched_getaffinity(0)));private=Path(a.output).absolute()
     need(private.parent==root/'target/evaluation/inprocess','private output under the original root')
@@ -99,6 +127,13 @@ def execute(a, *, context=None, cache8=False):
     if cache8:
         r['profile']='loop-cache8-abc169-v1'
         r['scope']='additive ABC169 full native state and real four-epoch/24-refusal wire; old49 remains separate'
+    if group_descriptor:
+        r['profile']='loop-group-descriptor-abc255-v1'
+        r['scope']='additive ABC255 full native state; five genuine activations, warm descriptor and six independent actual RAW controls; old49 remains separate'
+    if effects_case is not None:
+        r['profile']='loop-cache8-real-effect'+str(effects_case)+'-v1'
+        r['scope']='actual guest mapping ABA or literal write/private-entry refusal; complete or explicitly partial native reference; old49 separate'
+        r['effects_case']=effects_case
     pins={};artifacts={};aliases={};presence={}
     def pin(path):
         alias=Path(os.path.abspath(path));p=alias.resolve(strict=True);v=fact(p)
@@ -119,8 +154,9 @@ def execute(a, *, context=None, cache8=False):
              'all actual sealed namespace aliases unchanged')
     def run(name,argv,profile='metadata',expected=0,env=None,record=False):
         closure();need(not any(c['name']==name for c in r['commands']),'unique actual command')
-        need(len(r['commands'])<len(SCHEDULE) and SCHEDULE[len(r['commands'])]==(name,profile),
-             'one exact fixed49 command/profile schedule')
+        need(len(r['commands'])<len(schedule) and schedule[len(r['commands'])]==(name,profile),
+             'one exact fixed79 descriptor command/profile schedule' if group_descriptor else
+             'one exact fixed49 command/profile schedule' if effects_case is None else 'one exact fixed real-effect command/profile schedule')
         row=dict(name=name,argv=list(map(str,argv)),environment=dict(ENV if env is None else env),
             profile=profile,bounds=BOUNDS[profile],capture_limit=16<<20,expected_exit=expected)
         r['commands'].append(row)
@@ -149,16 +185,33 @@ def execute(a, *, context=None, cache8=False):
         builder,archive,r['archive_provider']=current_archive(a.current_build,a.current_build_sha256,root,pin,binary,aliases)
         original=compile_subject(builder,private,pin,binary,aliases,run,r,reference=reference,fixture=fixture)
         reader,_,native_policy=reader_support(builder,private,pin,binary,run,r,fixture=fixture)
-        image=reader.elf(original.read_bytes(),native_policy)
+        if effects_case is not None:
+            common_reader=load('loop_cache8_effects_common_app',selected/'tests/loop_cache8_app/read.py',pin)
+            reader=reader.configured(common_reader,effects_case)
+        image=(reader.elf(original.read_bytes(),native_policy,reference=reference)if group_descriptor else
+               reader.elf(original.read_bytes(),native_policy))
         seed=seed_prerequisite(builder,private,pin,binary,run,r)
         need(r['seed_prerequisite']['status']=='passed','original independent seed prerequisite')
         if cache8:observer=load('loop_cache8_actual_observe',fixture/'observe.py',pin)
+        if group_descriptor:
+            descriptor_observer=load('loop_group_descriptor_actual_observe',
+                selected/'tests/loop_group_descriptor_app/observe.py',pin)
+            observer=descriptor_observer.configured(observer)
+        if effects_case is not None:
+            common_observer=load('loop_cache8_effects_common_observe',selected/'tests/loop_cache8_app/observe.py',pin)
+            observer=observer.configured(common_observer)
         launcher=pin((selected/'tests/persistent_direct_frontier_app' if cache8 else fixture)/'launch.py')
         subject={};r['lanes']={}
-        for label,mode,control,expected in LANES:
+        for label,mode,control,expected in lanes:
             directory=private/(label+'-build');directory.mkdir();holder=r['lanes'][label]={}
             call=lane_run(label)
-            if cache8:
+            if group_descriptor:
+                bridge=build_rx(builder,archive,original,directory,pin,binary,aliases,call,holder,mode,
+                    cache8=True,group_descriptor=True,group_descriptor_observe=control,selected=selected,root=root)
+            elif effects_case is not None:
+                bridge=build_rx(builder,archive,original,directory,pin,binary,aliases,call,holder,mode,
+                    cache8=True,cache8_effects=effects_case,selected=selected,root=root)
+            elif cache8:
                 bridge=build_rx(builder,archive,original,directory,pin,binary,aliases,call,holder,mode,
                     cache8=True,cache8_observe=control,selected=selected,root=root)
             else:
@@ -167,11 +220,11 @@ def execute(a, *, context=None, cache8=False):
             inputs=prepare_inputs(original,bridge,builder,directory,pin,binary,call,holder,r['application_build'])
             subject[label]=(holder,bridge,*inputs)
         imported_sources(pin);native=None
-        for label,mode,control,expected in (('native','release',0,0),)+LANES:
+        for label,mode,control,expected in (('native','release',0,0),)+lanes:
             c=dict(label=label,lane='native' if label=='native' else 'gated',mode=0,control=0,
                    certificate_mode=mode,oracle_control=control,expected_exit=expected,status='failed')
             r['cases'].append(c);directory=private/('subject-'+label);directory.mkdir()
-            holder,bridge,interp,roots,objects,description,images,raws,carrier=subject['release' if label=='native' else label]
+            holder,bridge,interp,roots,objects,description,images,raws,carrier=subject[(lanes[0][0] if effects_case is not None else 'release') if label=='native' else label]
             role='native' if label=='native' else 'gated'
             argv=[builder.tools['python'],'-B',launcher,'--root',root,'--role',role,'--mode','0','--control','0',
                 '--original',original,'--preparation',directory/'preparation.json']
@@ -180,9 +233,56 @@ def execute(a, *, context=None, cache8=False):
             try:
                 row,out,err=run('subject-'+label,argv,profile='program',expected=expected,record=role=='gated')
                 preparation(c,row,directory,original,roots,objects,description,carrier,private,binary,r)
-                if cache8:
-                    if label=='causal':
-                        need(native is not None and len(out)==reader.PREFIX,'actual failed ABC169 application prefix only')
+                if effects_case is not None:
+                    parsed=reader.read(out,0,role=='native',row['exit'],image,row['pid'],cpu,seed,reference=reference)
+                    c['application_complete']=parsed['application_complete']
+                    if role=='native':
+                        c['application_controls']=reader.controls(out,0,True,row['exit'],image,row['pid'],cpu,seed,reference=reference)
+                        named(c['application_controls'],97 if effects_case==2 else 77,H(out))
+                        need(err==b'' and parsed['header'][5]==1,'actual complete or partial native effect reference and empty stderr')
+                        native=parsed;c['native_instructions']=195 if effects_case==2 else None
+                        c['native_tf_events']=167 if effects_case==2 else 83
+                        c['native_window_instructions']=28 if effects_case==2 else 0
+                        c['native_frames']={2:12,3:7,4:6}[effects_case]
+                    else:
+                        need(native is not None and row['captures']['record']['bytes']==observer.SIZE,
+                             'complete original plus distinct actual guest-effect wire')
+                        record_path=binary(private/row['captures']['record']['file']);record=record_path.read_bytes();st=record_path.stat()
+                        need(st.st_uid==os.getuid() and observer.q(record,256,2)==(st.st_dev,st.st_ino),
+                             'actual post-reap effect record inode equals the retained fresh sink')
+                        backing=fact(binary(carrier))
+                        need(backing==holder['subject_artifacts']['carrier'],'whole real prepared carrier backing identity')
+                        c['carrier_backing']=backing
+                        c['observer']=observer.read(record,reader,native,image,row['pid'],st.st_uid,effects_case,row['exit'],parsed,
+                            backing_size=backing['bytes'])
+                        c['observer_controls']=observer.controls(record,reader,native,image,row['pid'],st.st_uid,effects_case,row['exit'],parsed,
+                            backing_size=backing['bytes'])
+                        named(c['observer_controls'],163 if effects_case==2 else 121,H(record))
+                        need(len(c['observer_controls']['entry_refusals'])==
+                             len(set(c['observer_controls']['entry_refusals']))==(0 if effects_case==2 else 18),
+                             'all separate exact consumed-entry wire controls')
+                        need(len(c['observer_controls']['maps_phase_refusals'])==
+                             len(set(c['observer_controls']['maps_phase_refusals']))==(36 if effects_case==2 else 18),
+                             'all separately counted actual maps-phase provenance corruptions')
+                        need(len(c['observer_controls']['code_maps_refusals'])==
+                             len(set(c['observer_controls']['code_maps_refusals']))==(24 if effects_case==2 else 12),
+                             'all separately counted actual code-query provenance corruptions')
+                        need(len(c['observer_controls']['initialized_refusals'])==
+                             len(set(c['observer_controls']['initialized_refusals']))==(0 if effects_case==2 else 16),
+                             'all actual generic frames reject incomplete or excessive initialization counts')
+                        if effects_case==2:c['pair']=c['observer']['native_pair']
+                        c['terminal']=reports.read(err,record,effects_case,mode)
+                        c['terminal_controls']=reports.controls(err,record,effects_case,mode)
+                        need(len(c['terminal_controls']['refusals'])==len(set(c['terminal_controls']['refusals']))==10 and
+                             len(c['terminal_controls']['effect_refusals'])==len(set(c['terminal_controls']['effect_refusals']))==4,
+                             'all ten original plus four distinct generic-role terminal controls')
+                        need(len(c['terminal_controls']['entry_refusals'])==
+                             len(set(c['terminal_controls']['entry_refusals']))==(0 if effects_case==2 else 9),
+                             'all separate actual consumed-entry terminal controls')
+                elif cache8:
+                    if label=='causal' or group_descriptor and control:
+                        need(native is not None and len(out)==reader.PREFIX,
+                             'actual failed ABC255 application prefix only' if group_descriptor else 'actual failed ABC169 application prefix only')
                         prefix=reader._prefix(out,0,False,image,row['pid'],cpu,seed,reference=reference)
                         need(all(prefix[k]==native[k]for k in('seed','source','stack','data','rsp','predecessor','hardware')),
                              'whole actual causal source/seed/hardware equals fresh native')
@@ -193,8 +293,13 @@ def execute(a, *, context=None, cache8=False):
                     if role=='native':
                         c['application_controls']=reader.controls(out,0,True,row['exit'],image,row['pid'],cpu,seed,reference=reference)
                         named(c['application_controls'],45,H(out))
-                        need(err==b'' and parsed['header'][5]==1,'actual native169 reference and empty stderr')
-                        native=parsed;c['native_instructions']=169;c['native_frames']=12
+                        if group_descriptor:
+                            need(len(c['application_controls']['reference_refusals'])==
+                                 len(set(c['application_controls']['reference_refusals']))==5,
+                                 'five separate exact ABC255 reference corruptions')
+                        need(err==b'' and parsed['header'][5]==1,
+                             'actual native255 reference and empty stderr' if group_descriptor else 'actual native169 reference and empty stderr')
+                        native=parsed;c['native_instructions']=255 if group_descriptor else 169;c['native_frames']=12
                     else:
                         need(native is not None and row['captures']['record']['bytes']==observer.WIRE+64,
                              'complete actual independent CACHE8 wire; no old capture cast')
@@ -206,24 +311,59 @@ def execute(a, *, context=None, cache8=False):
                         need(backing==holder['subject_artifacts']['carrier'],
                              'whole independently prepared actual carrier backing identity')
                         c['carrier_backing']=backing
-                        c['observer']=observer.read(record,reader,native,image,row['pid'],st.st_uid,control,row['exit'],parsed,
-                            backing_size=backing['bytes'])
-                        c['observer_controls']=observer.controls(record,reader,native,image,row['pid'],st.st_uid,control,row['exit'],parsed,
-                            backing_size=backing['bytes'])
-                        named(c['observer_controls'],109 if control else 81,H(record))
-                        need(len(c['observer_controls']['phase_refusals'])==
-                             len(set(c['observer_controls']['phase_refusals']))==40,
-                             'all40 separate coherent phase-counter corruptions required')
-                        need(len(c['observer_controls']['backing_refusals'])==
-                             len(set(c['observer_controls']['backing_refusals']))==20,
-                             'all20 independent actual and external backing-size corruptions required')
-                        need(c['observer']['actual_refusals']==c['observer']['actual_restorations']==(24 if control else 0),
-                             'every literal genuine mutation/restoration or exact positive zero')
-                        if not control:c['pair']=c['observer']['native_pair']
-                        c['terminal']=reports.read(err,record,control,mode)
-                        c['terminal_controls']=reports.controls(err,record,control,mode)
-                        need(len(c['terminal_controls']['refusals'])==len(set(c['terminal_controls']['refusals']))==10,
-                             'all ten exact typed terminal/binary-join corruptions')
+                        if group_descriptor:
+                            c['observer']=observer.read(record,reader,native,image,row['pid'],st.st_uid,control,row['exit'],parsed,
+                                backing_size=backing['bytes'],layout=holder['descriptor_observer_layout'],differential=mode=='differential')
+                            c['observer_controls']=observer.controls(record,reader,native,image,row['pid'],st.st_uid,control,row['exit'],parsed,
+                                backing_size=backing['bytes'],layout=holder['descriptor_observer_layout'],differential=mode=='differential')
+                        else:
+                            c['observer']=observer.read(record,reader,native,image,row['pid'],st.st_uid,control,row['exit'],parsed,
+                                backing_size=backing['bytes'])
+                            c['observer_controls']=observer.controls(record,reader,native,image,row['pid'],st.st_uid,control,row['exit'],parsed,
+                                backing_size=backing['bytes'])
+                        if group_descriptor:
+                            named(c['observer_controls'],observer.CONTROL_COUNTS[control],H(record))
+                            need(len(c['observer_controls']['phase_refusals'])==
+                                 len(set(c['observer_controls']['phase_refusals']))==50,
+                                 'all50 separate coherent descriptor phase-counter corruptions required')
+                            need(len(c['observer_controls']['backing_refusals'])==
+                                 len(set(c['observer_controls']['backing_refusals']))==28,
+                                 'all28 independent actual and external descriptor backing-size corruptions required')
+                            need(len(c['observer_controls']['query_chunk_refusals'])==
+                                 len(set(c['observer_controls']['query_chunk_refusals']))==
+                                 (9 if control==1 else 3 if 2<=control<=5 else 0),
+                                 'separate full-object bounded-query corruption population')
+                            need(c['observer']['actual_refusals']==c['observer']['actual_restorations']==(24 if control else 0),
+                                 'all24 actual original predicate controls remain separate from RAW exposures')
+                            need(c['observer']['raw_controls']==(1 if 1<=control<=5 else 0) and
+                                 c['observer']['epoch_owner_refusal']==(control==6),
+                                 'one independently eligible actual RAW action or exact epoch-owner refusal')
+                            if not control:c['pair']=c['observer']['native_pair']
+                            c['terminal']=reports.read(err,record,control,mode)
+                            c['terminal_controls']=reports.controls(err,record,control,mode)
+                            need(len(c['terminal_controls']['refusals'])==
+                                 len(set(c['terminal_controls']['refusals']))==reports.CONTROL_COUNT,
+                                 'all distinct descriptor terminal and binary snapshot controls')
+                            need(len(c['terminal_controls']['preentry_refusals'])==
+                                 len(set(c['terminal_controls']['preentry_refusals']))==reports.PREENTRY_CONTROL_COUNT==84 and
+                                 c['terminal']['preentry']['attempted']==c['terminal']['preentry']['refused']==
+                                 c['terminal']['preentry']['restorations']==(75 if control else 0),
+                                 'separate complete incoming-context guard and terminal controls')
+                        else:
+                            named(c['observer_controls'],109 if control else 81,H(record))
+                            need(len(c['observer_controls']['phase_refusals'])==
+                                 len(set(c['observer_controls']['phase_refusals']))==40,
+                                 'all40 separate coherent phase-counter corruptions required')
+                            need(len(c['observer_controls']['backing_refusals'])==
+                                 len(set(c['observer_controls']['backing_refusals']))==20,
+                                 'all20 independent actual and external backing-size corruptions required')
+                            need(c['observer']['actual_refusals']==c['observer']['actual_restorations']==(24 if control else 0),
+                                 'every literal genuine mutation/restoration or exact positive zero')
+                            if not control:c['pair']=c['observer']['native_pair']
+                            c['terminal']=reports.read(err,record,control,mode)
+                            c['terminal_controls']=reports.controls(err,record,control,mode)
+                            need(len(c['terminal_controls']['refusals'])==len(set(c['terminal_controls']['refusals']))==10,
+                                 'all ten exact typed terminal/binary-join corruptions')
                 else:
                     if role=='gated':need(row['captures']['record']['bytes']==0,'no old protected owner wire or capture cast')
                     if label=='causal':
@@ -257,9 +397,18 @@ def execute(a, *, context=None, cache8=False):
                 need(last.get('reaped')is True and last.get('cleanup_errors')==[] and
                      all(d.get('closed')is True for d in last.get('descriptors',[])),
                      'failed subject closed before the next fixed subject')
-        need(len(SCHEDULE)==49 and len(r['commands'])==49 and
-             len(r['cases'])==4 and all(c['status']=='passed' for c in r['cases']),
-             'all four actual fixed subjects and every unchanged comparator required')
+        if group_descriptor:
+            need(len(schedule)==79 and len(r['commands'])==79 and len(r['cases'])==9 and
+                 all(c['status']=='passed'for c in r['cases']),
+                 'all nine actual subjects and every original and additive comparator required')
+        elif effects_case is None:
+            need(len(SCHEDULE)==49 and len(r['commands'])==49 and
+                 len(r['cases'])==4 and all(c['status']=='passed' for c in r['cases']),
+                 'all four actual fixed subjects and every unchanged comparator required')
+        else:
+            need(len(schedule)==(43 if effects_case==2 else 37) and len(r['commands'])==len(schedule) and
+                 len(r['cases'])==(3 if effects_case==2 else 2) and all(c['status']=='passed'for c in r['cases']),
+                 'every literal real-effect subject and fixed unchanged-bound command is required')
         r['status']='passed'
     except BaseException as e:
         if r['error'] is None:r['error']=type(e).__name__+': '+str(e)

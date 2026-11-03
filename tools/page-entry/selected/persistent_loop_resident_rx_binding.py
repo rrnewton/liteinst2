@@ -18,10 +18,24 @@ CACHE8_OBSERVE_INPUTS=('persistent_loop_cache8_observe_binding.py','build-persis
     'loop_cache8_observe.h','loop_cache8_observe.inc')
 CACHE8_INPUTS=('persistent_loop_cache8_binding.py','build-persistent-loop-cache8.sh',
     'loop_cache8_profile.h','loop_cache8.h','loop_cache8_owner.inc')
+CACHE8_EFFECTS_INPUTS=('persistent_loop_cache8_effects_binding.py','build-persistent-loop-cache8-effects.sh',
+    'loop_cache8_effects_observe.h','loop_cache8_effects_observe.inc',
+    'loop_cache8_effects_memory.h','loop_cache8_effects_memory.inc')
 CACHE8_PROGRAM_INPUTS=('persistent_loop_cache8_program_binding.py','build-persistent-loop-cache8-program.sh',
     'loop_cache8_program.inc')
 CACHE8_PROGRAM=dict(version=1,fields=63,slots=8,members=8,receipts=9,
     terminal_only=True,observation_authority=False,qualification_credit=False)
+GROUP_DESCRIPTOR_INPUTS=('persistent_loop_group_descriptor_binding.py','build-persistent-loop-group-descriptor.sh',
+    'loop_group_descriptor.h','loop_group_descriptor_writer.inc','loop_group_descriptor_owner.inc','maps_view.inc')
+GROUP_DESCRIPTOR_PROGRAM_INPUTS=('persistent_loop_group_descriptor_program_binding.py',
+    'build-persistent-loop-group-descriptor-program.sh')
+GROUP_DESCRIPTOR_OBSERVE_INPUTS=('persistent_loop_group_descriptor_observe_binding.py','build-persistent-loop-group-descriptor-observe.sh',
+    'loop_cache8_observe.h','loop_cache8_observe.inc','loop_group_descriptor_observe.h','loop_group_descriptor_observe.inc')
+GROUP_DESCRIPTOR=dict(version=1,groups=1,members=8,heads=256,boundaries=8,
+    directory_order='ascending-retained-slot',directory_serial='descriptor-id',
+    activation_claims='fresh-every-entry',raw_exposure='pre-kernel-monotone-epochs',
+    common_proof='existing-LHC-owner',physical_queries='fresh-original-member-checks',
+    old_capture_compatible=False,qualification_credit=False)
 CACHE8=dict(version=1,slots=8,members=8,completion_cells=9,source_pages=2,placement_banks=2,
     aggregate_heads=256,aggregate_boundaries=8,rx_receipt_version=2,
     selection='exact-root-or-head-then-empty-or-oldest-completion',
@@ -38,7 +52,17 @@ RECURRENCE=dict(version=7,bytes=12382208,storage_bytes=12582912,capacity=1024,
     observation_authority=False,qualification_credit=False)
 
 
-def write_binding(selected, archive, image, output, mode, *, recurrence=False, cache8=False, cache8_observe=None, cache8_program=False):
+def write_binding(selected, archive, image, output, mode, *, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None):
+    need(cache8_effects is None or type(cache8_effects)is int and cache8_effects in (2,3,4) and
+         cache8 and not recurrence and cache8_observe is None and not cache8_program and
+         (cache8_effects==2 or mode=='differential'),'distinct literal real guest effect subject')
+    need(cache8_effects is None or not group_descriptor and group_descriptor_observe is None,
+         'real effects and descriptor profiles are mutually exclusive')
+    need(group_descriptor_observe is None or type(group_descriptor_observe)is int and
+         0<=group_descriptor_observe<=6 and group_descriptor and
+         (group_descriptor_observe==0 or mode=='differential'),'literal descriptor native/exposure subject')
+    need(type(group_descriptor)is bool and (not group_descriptor or cache8 and not recurrence and
+         cache8_observe is None and (not cache8_program or group_descriptor_observe is None)),'distinct production descriptor without old finite capture')
     need(type(cache8_program)is bool and (not cache8_program or
          cache8 and not recurrence and cache8_observe is None and mode=='release'),
          'distinct release-only cache8 program terminal without finite observer')
@@ -49,7 +73,8 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
          'literal original RX mode or distinct release-only recurrence profile')
     need(selected.is_dir() and archive.is_file() and image.is_file() and output.is_dir(),
          'actual active-domain binding inputs')
-    leaves = LEAVES + (RECURRENCE_INPUTS if recurrence else ()) + (CACHE8_INPUTS if cache8 else ()) + (CACHE8_OBSERVE_INPUTS if cache8_observe is not None else ()) + (CACHE8_PROGRAM_INPUTS if cache8_program else ())
+    leaves = LEAVES + (RECURRENCE_INPUTS if recurrence else ()) + (CACHE8_INPUTS if cache8 else ()) + (CACHE8_OBSERVE_INPUTS if cache8_observe is not None else ()) + (CACHE8_PROGRAM_INPUTS if cache8_program else ()) + (GROUP_DESCRIPTOR_INPUTS if group_descriptor else ()) + (GROUP_DESCRIPTOR_OBSERVE_INPUTS if group_descriptor_observe is not None else ()) + ((CACHE8_OBSERVE_INPUTS+CACHE8_EFFECTS_INPUTS) if cache8_effects is not None else ())
+    if group_descriptor and cache8_program:leaves+=GROUP_DESCRIPTOR_PROGRAM_INPUTS
     need(len(leaves)==len(set(leaves)), 'whole distinct LOOP and RO-certificate source closure')
     values = []
     for name in leaves:
@@ -59,6 +84,8 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
     original = image_identity(image.read_bytes())
     policy_value=dict(sources=values, original=original, mode=mode)
     if cache8_observe is not None:policy_value['cache8_control']=cache8_observe
+    if group_descriptor_observe is not None:policy_value['group_descriptor_control']=group_descriptor_observe
+    if cache8_effects is not None:policy_value['cache8_effect']=cache8_effects
     policy = hashlib.sha256(json.dumps(policy_value,
                           sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     actual_archive = fact(archive.read_bytes())
@@ -72,8 +99,11 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
                   '#define LI2_PG_LOOP_RO_BINDING_VERSION 1\n#define LI2_PG_LOOP_RESIDENT_RX_BINDING_VERSION 1\n' +
                   ('#define LI2_PG_LOOP_RX_RECURRENCE_BINDING_VERSION 1\n' if recurrence else '') +
                   ('#define LI2_PG_LOOP_CACHE8_BINDING_VERSION 1\n' if cache8 else '') +
-                  ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n' if cache8_observe is not None else '') +
+                  ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n' if cache8_observe is not None or group_descriptor_observe is not None else '') +
                   ('#define LI2_PG_LOOP_CACHE8_PROGRAM_BINDING_VERSION 1\n' if cache8_program else '') +
+                  ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_BINDING_VERSION 1\n' if group_descriptor else '') +
+                  ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_OBSERVE_BINDING_VERSION 1\n' if group_descriptor_observe is not None else '') +
+                  ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n#define LI2_PG_LOOP_CACHE8_EFFECTS_BINDING_VERSION 1\n' if cache8_effects is not None else '') +
                   '#define LI2_PG_LOOP_BINDING_VERSION 1\n#define LI2_PG_LOOP_POLICY_VERSION 12\n#define LI2_PG_LOOP_FALLBACK_VERSION 11\n#define LI2_PG_LOOP_ENCODING_VERSION 2\n'
                   '#define LI2_PG_LOOP_EFFECTS_BINDING_VERSION 1\n#define LI2_PG_LOOP_EFFECTS_POLICY_VERSION 13\n#define LI2_PG_LOOP_EFFECTS_SCALAR_VERSION 3\n#define LI2_PG_LOOP_EFFECTS_MOV_VERSION 2\n'
                   '#define LI2_PG_ARCHIVE_SHA256 ' + literal(actual_archive['sha256']) + '\n'
@@ -110,7 +140,26 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
     if cache8_program:
         record['profile']='persistent-loop-cache8-program-release-v1'
         record['cache8_program']=CACHE8_PROGRAM
-    name=('persistent_loop_cache8_program_binding.json' if cache8_program else
+    if group_descriptor:
+        record['profile']='persistent-loop-group-descriptor-'+mode+'-v1'
+        record['group_descriptor']=GROUP_DESCRIPTOR
+    if group_descriptor_observe is not None:
+        record['profile']='persistent-loop-group-descriptor-observe-'+mode+'-v1'
+        record['group_descriptor_observer']=dict(version=1,control=group_descriptor_observe,reference='cache8-abc255',
+            epochs=5,wire_bytes=1186576,original_controls=24 if group_descriptor_observe else 0,
+            raw_controls=1 if 1<=group_descriptor_observe<=5 else 0,
+            epoch_owner_refusal=group_descriptor_observe==6,observation_authority=False,qualification_credit=False)
+    if group_descriptor and cache8_program:
+        record['profile']='persistent-loop-group-descriptor-program-release-v1'
+    if cache8_effects is not None:
+        record['profile']='persistent-loop-cache8-effects-'+mode+'-v1'
+        record['cache8_effects']=dict(version=1,control=cache8_effects,reference='cache8-effects'+str(cache8_effects),
+            first_epochs=3,app_tail_bytes=512,observer_bytes=2003032,observation_authority=False,qualification_credit=False)
+    name=('persistent_loop_cache8_effects_binding.json' if cache8_effects is not None else
+          'persistent_loop_group_descriptor_program_binding.json' if group_descriptor and cache8_program else
+          'persistent_loop_group_descriptor_observe_binding.json' if group_descriptor_observe is not None else
+          'persistent_loop_group_descriptor_binding.json' if group_descriptor else
+          'persistent_loop_cache8_program_binding.json' if cache8_program else
           'persistent_loop_cache8_observe_binding.json' if cache8_observe is not None else
           'persistent_loop_cache8_binding.json' if cache8 else
           'persistent_loop_rx_recurrence_binding.json' if recurrence else 'persistent_loop_resident_rx_binding.json')

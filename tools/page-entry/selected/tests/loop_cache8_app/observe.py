@@ -30,7 +30,8 @@ def q(data,offset=0,count=1):return struct.unpack_from('<'+'Q'*count,data,offset
 
 def u(data,offset=0,count=1):return struct.unpack_from('<'+'I'*count,data,offset)
 
-def _frame(data,app,native,model,step,event,previous_nx):
+def _frame(data,app,native,model,step,event,previous_nx,*,native_kinds=None):
+    checkpoints=NATIVE_KINDS if native_kinds is None else native_kinds
     need(type(data)is bytes and len(data)==FRAME,'whole actual fixed frame')
     h=q(data,0,16);g=q(data,128,23);si=data[312:440];uc=data[440:1408];fp=data[1408:]
     sig=11 if event else 5
@@ -60,8 +61,8 @@ def _frame(data,app,native,model,step,event,previous_nx):
          g[19:21]==((21,14)if event else(0,1)) and g[21]==app.MASK and
          g[22]==(pc if event else previous_nx), 'every original GPR/flag and exact final NX or post-close entry')
     need(u(si,0,3)==(sig,0,2) and q(si,16)[0]==pc,'literal TRACE or final original NX signal')
-    if step in NATIVE_KINDS:
-        actual=native['observations'][0]['frames'][NATIVE_KINDS[step]]['greg']
+    if step in checkpoints:
+        actual=native['observations'][0]['frames'][checkpoints[step]]['greg']
         changed=list(actual);changed[17]=flags|(app.RF if event else 0)
         changed[19:21]=((21,14)if event else(0,1));changed[22]=pc if event else previous_nx
         need(g==tuple(changed),'whole23-register native checkpoint with exact final NX or post-close transformation')
@@ -92,10 +93,29 @@ def _key(raw,image,root,backing_size):
         result.append(identity)
     return tuple(result)
 
-def _epoch(raw,index,app,native,image,model,backing_size):
+def _epoch(raw,index,app,native,image,model,backing_size,*,geometry=None):
     need(len(raw)==EPOCH,'whole actual epoch')
-    h=q(raw,0,32);count=len(MEMBERS[index]);entry=ROOTS[index]
-    need(h[:5]==(1,1,1,1,entry) and h[5]>0 and h[6]==count and h[7]==0 and
+    if geometry is None:
+        members_expected=MEMBERS[index];entry_expected=ROOTS[index];warm_expected=0
+        entry_step=ENTRIES[index];exit_step=EXITS[index];native_kinds=None
+    else:
+        need(type(geometry)is dict and set(geometry)=={'members','entry','warm','entry_step','exit_step',
+             'previous_nx','directory_serial','native_kinds'},'complete explicit descriptor epoch geometry')
+        members_expected=geometry['members'];entry_expected=geometry['entry'];warm_expected=geometry['warm']
+        entry_step=geometry['entry_step'];exit_step=geometry['exit_step'];native_kinds=geometry['native_kinds']
+        need(type(members_expected)is tuple and 1<=len(members_expected)<=8 and
+             all(type(root)is int and root in ROOTS for root in members_expected) and
+             len(set(members_expected))==len(members_expected) and entry_expected==members_expected[0] and
+             type(warm_expected)is int and warm_expected in(0,1) and
+             type(entry_step)is int and type(exit_step)is int and 0<entry_step<exit_step<len(model) and
+             type(geometry['previous_nx'])is int and geometry['previous_nx']>0 and
+             type(geometry['directory_serial'])is int and geometry['directory_serial']>0 and
+             type(native_kinds)is dict and entry_step in native_kinds and exit_step in native_kinds and
+             all(type(step)is int and type(kind)is int and 0<=kind<12 and
+                 native['observations'][0]['frames'][kind]['header'][2]==step
+                 for step,kind in native_kinds.items()),'exact explicit descriptor/native checkpoint identities')
+    h=q(raw,0,32);count=len(members_expected);entry=entry_expected
+    need(h[:5]==(1,1,1,1,entry) and h[5]>0 and h[6]==count and h[7]==warm_expected and
          h[8]<8 and h[9]<2 and h[10]<9 and h[11]%4096==0 and h[11]>0 and
          h[12]>0 and h[13]>0 and h[14]==entry and h[16]==0,
          'literal actual cold primary and completed source-derived four-epoch geometry')
@@ -123,7 +143,7 @@ def _epoch(raw,index,app,native,image,model,backing_size):
         value=raw[1280+i*MEMBER:1280+(i+1)*MEMBER]
         if i>=count:
             need(value==bytes(MEMBER),'whole unused member capacity zero');continue
-        m=q(value,0,24);root=MEMBERS[index][i];which=ROOTS.index(root);heads=HEADS[which]
+        m=q(value,0,24);root=members_expected[i];which=ROOTS.index(root);heads=HEADS[which]
         need(m[0]==1 and m[1]<8 and m[2]<2 and m[3]>0 and m[4]>0 and m[5]==root and
              m[6]>0 and m[6]%4096==0 and m[7]==11 and m[8]==len(heads) and
              m[9]==(3 if which==2 else 1) and m[10]==0 and m[11]==root and
@@ -139,21 +159,23 @@ def _epoch(raw,index,app,native,image,model,backing_size):
     primary=members[0]['words'];need(h[8:10]==primary[1:3] and h[12:14]==primary[3:5] and h[15]==primary[12],
          'actual entry belongs to the genuine primary publication')
     directory=raw[81088:93376];n=sum(len(m['heads'])for m in members)
-    need(q(directory,0,4)==(1,n,h[5],0),'complete sealed dispatch directory header')
+    directory_serial=h[5] if geometry is None else geometry['directory_serial']
+    need(q(directory,0,4)==(1,n,directory_serial,0),'complete sealed dispatch directory header')
     rows=[struct.unpack_from('<QQQII',directory,32+32*i)for i in range(n)]
     expected=[]
-    for m in members:
+    ordered=members if geometry is None else sorted(members,key=lambda m:m['words'][1])
+    for m in ordered:
         w=m['words']
         expected.extend((pc,w[12+j//64]+512*(j%64),w[3],w[1],j)for j,pc in enumerate(m['heads']))
     need(rows==expected and directory[32+32*n:]==bytes(12288-32-32*n),
          'whole exact member/head-order original/generated/generation dispatch directory')
-    previous=(0x4101fe,0x410207,0x412408,0x414616)[index]
-    entry_frame=_frame(raw[93376:160320],app,native,model,ENTRIES[index],False,previous)
-    exit_frame=_frame(raw[160320:],app,native,model,EXITS[index],True,0)
+    previous=(0x4101fe,0x410207,0x412408,0x414616)[index] if geometry is None else geometry['previous_nx']
+    entry_frame=_frame(raw[93376:160320],app,native,model,entry_step,False,previous,native_kinds=native_kinds)
+    exit_frame=_frame(raw[160320:],app,native,model,exit_step,True,0,native_kinds=native_kinds)
     need(members[h[21]]['root']==(ROOTS[index]if index<3 else ROOTS[2]),
          'actual final event selected the exact member that owns original exit')
     return dict(header=h,counters=counters,members=members,entry=entry_frame,event=exit_frame,
-                interior_events=0,original_instructions=EXITS[index]-ENTRIES[index])
+                interior_events=0,original_instructions=exit_step-entry_step)
 
 def read(data,app,native,image,pid,uid,control,exit_status,gated=None,*,backing_size):
     need(type(data)is bytes and len(data)==WIRE+64 and type(control)is int and control in(0,1) and

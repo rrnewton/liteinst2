@@ -6,6 +6,9 @@ enum { LHC_LOOP=1U,LHC_EFFECTS=2U,LHC_REBUILD=4U };
 struct lhc_certificate {
     unsigned valid,policy,mask,reserved;
     uint64_t epoch,id,serial;
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    uint64_t raw_root,raw_cell,raw_capsule,source_context,directory;
+#endif
     const struct li2_pg_epoch *owner;
     const struct pda_completion *completion;
     uintptr_t capsule;
@@ -163,13 +166,34 @@ static int lhc_issue(const struct pda_completion *c) {
     struct lhc_certificate *v=&lhc.root.value.cell[i];
     *v=(struct lhc_certificate){.policy=mask?(unsigned)c->member[c->direct_exit.member].header.plan_policy:0,
         .mask=mask,.epoch=epoch,.id=c->id,.serial=c->serial,.owner=&pe,.completion=c,
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+        .capsule=(uintptr_t)&lhc.capsule[i],.session=pe.session,
+        .raw_root=lgd_root_epoch(),.raw_cell=lgd_cell_epoch(i),.raw_capsule=lgd_capsule_epoch(i),
+        .source_context=li2_lgd_source_context(),.directory=pe.domain.directory};
+#else
         .capsule=(uintptr_t)&lhc.capsule[i],.session=pe.session};
+#endif
     copy(v->archive,pe_archive,32);copy(v->policy_hash,pe_policy,32);
     lhc.root.value.writer=0;__asm__ volatile("":::"memory");v->valid=1;
     if(lhc_permission((uintptr_t)&lhc.root,sizeof lhc.root,PROT_READ))return PE_PUBLICATION;
     ++lhc.counts.issues;return 0;
 }
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+static int lhc_exposure_current(unsigned i) {
+    if(i>=LI2_PGD_RECEIPTS || !lgd_epochs_live())return 0;
+    const struct lhc_certificate *v=&lhc.root.value.cell[i];
+    return v->directory==pe.domain.directory &&
+        v->source_context && v->source_context==li2_lgd_source_context() &&
+        v->raw_root && v->raw_root==lgd_root_epoch() &&
+        v->raw_cell && v->raw_cell==lgd_cell_epoch(i) &&
+        v->raw_capsule && v->raw_capsule==lgd_capsule_epoch(i);
+}
+#endif
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+static int lhc_match_identity(const struct pda_completion *c,unsigned i) {
+#else
 static int lhc_match(const struct pda_completion *c,unsigned i) {
+#endif
     if(i>=LI2_PGD_RECEIPTS || !lhc_root_live() || lhc.root.value.writer)return 0;
     const struct lhc_certificate *v=&lhc.root.value.cell[i];
     return v->valid==1 && !v->reserved && v->epoch && v->epoch==lhc.root.value.epoch[i] &&
@@ -181,6 +205,11 @@ static int lhc_match(const struct pda_completion *c,unsigned i) {
         !lrc_readonly((uintptr_t)c,sizeof *c) &&
         !lrc_readonly((uintptr_t)&lhc.capsule[i],sizeof lhc.capsule[i]);
 }
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+static int lhc_match(const struct pda_completion *c,unsigned i) {
+    return lhc_exposure_current(i) && lhc_match_identity(c,i);
+}
+#endif
 static int lhc_restore(const struct pda_completion *c,unsigned i) {
     const struct lhc_certificate *v=&lhc.root.value.cell[i];
     const struct lhc_witnesses *w=&lhc.capsule[i].value;
@@ -209,6 +238,15 @@ static int lhc_direct_value(const struct pda_completion *c) {
         if(lhc_add(&lhc.counts.misses,1))return 0;
         return lhc_full(c);
     }
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    /* A raw writable/replacement exposure retires BOTH common-value and
+       witness reuse. Restoring R does not restore an old graph certificate. */
+    if(!lhc_exposure_current(i)) {
+        if(!lhc_match_identity(c,i)) { (void)lhc_add(&lhc.counts.errors,1);return 0; }
+        if(lhc_add(&lhc.counts.misses,1) || lgd_history_fallback())return 0;
+        return lhc_full(c);
+    }
+#endif
     if(!lhc_match(c,i)) { (void)lhc_add(&lhc.counts.errors,1);return 0; }
 #ifdef LI2_LOOP_RO_TEST
     lro_history_hook(c,i);
@@ -285,5 +323,8 @@ static void lhc_report(unsigned status,unsigned code) {
     if(raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0)!=(long)w.used) {
         (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
     }
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    lgd_report(status,code);
+#endif
 }
 #undef LHC_ROUND

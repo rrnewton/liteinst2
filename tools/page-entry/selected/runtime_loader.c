@@ -58,6 +58,9 @@ static uint64_t rsl_initialization[9];
 #include "selected_globals.inc"
 #ifdef LI2_LOOP_RESIDENT_RX
 #include "loop_resident_rx.h"
+#ifdef LI2_LOOP_CACHE8_EFFECTS
+#include "loop_cache8_effects_observe.h"
+#endif
 #ifdef LI2_LOOP_RX_RECURRENCE
 #include "loop_rx_recurrence.h"
 #endif
@@ -938,6 +941,9 @@ static void dispatch_operation(long n,ucontext_t *context) {
 #endif
     ++syscall_count; last_syscall=n;
     long a[6]={g[REG_RDI],g[REG_RSI],g[REG_RDX],g[REG_R10],g[REG_R8],g[REG_R9]},result;
+#ifdef LI2_LOOP_CACHE8_EFFECTS
+    lc8e_syscall_before(n,a,context);
+#endif
 #ifdef LI2_PERSISTENT_SEALED_GENERATION
     sg_fd_guard(n,a);
 #ifdef LI2_FLAG_STACK
@@ -1103,6 +1109,9 @@ static void dispatch_operation(long n,ucontext_t *context) {
             selected_effect_native_return(&owned_result);
         }
     }
+#endif
+#ifdef LI2_LOOP_CACHE8_EFFECTS
+    lc8e_syscall_after(n,a,result,context);
 #endif
 #ifdef LI2_RSEQ_INACTIVE
 #ifdef LI2_RESIDENT_SOURCE_PROBE

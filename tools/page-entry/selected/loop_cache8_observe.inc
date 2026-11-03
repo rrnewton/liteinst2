@@ -3,7 +3,12 @@
 #include "loop_cache8_observe.h"
 #define LC8O_MAGIC UINT64_C(0x314f38434132494c)
 #define LC8O_FOOTER UINT64_C(0x314638434132494c)
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+#include "loop_group_descriptor_observe.h"
+enum { LC8O_EPOCHS=5,LC8O_CONTROLS=24,LC8O_STOP=8971 };
+#else
 enum { LC8O_EPOCHS=4,LC8O_CONTROLS=24,LC8O_STOP=8971 };
+#endif
 struct lc8o_frame {
     uint64_t h[16],greg[23];
     unsigned char si[128],uc[968],fp[65536];
@@ -24,23 +29,47 @@ struct lc8o_wire {
     struct stat initial,terminal;
     struct lc8o_epoch epoch[LC8O_EPOCHS];
     uint64_t controls[LC8O_CONTROLS][4];
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+    struct lgdo_wire descriptor;
+#endif
 };
 _Static_assert(LI2_PTR_SLOTS==8 && LI2_PGD_MEMBERS==8 && LI2_PGD_RECEIPTS==9 &&
     LI2_PG_HEADS==128 && LI2_JD_DOMAIN_BYTES==12288 && sizeof(struct li2_pg_source_key)==8760,
     "distinct cache8 dimensions, original plan and directory bounds");
 _Static_assert(sizeof(siginfo_t)==128 && sizeof(ucontext_t)==968 && sizeof(struct stat)==144 &&
     sizeof(struct lc8o_frame)==66944 && sizeof(struct lc8o_member)==9976 &&
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+    sizeof(struct lc8o_epoch)==227264 && sizeof(struct lc8o_wire)==1186576,
+#else
     sizeof(struct lc8o_epoch)==227264 && sizeof(struct lc8o_wire)==910368,
+#endif
     "literal independently read cache8 wire");
 _Static_assert(sizeof(struct lc8o_wire)+64<4U*1024U*1024U,"unchanged bounded record capacity");
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+/* Read from the actual readonly ELF by the existing build inspection. These
+   offsets describe compiler layout and never participate in runtime policy. */
+const uint64_t li2_lgdo_layout[] __attribute__((used,visibility("hidden")))={
+    1,sizeof(struct lc8o_wire),sizeof(struct lc8o_epoch),offsetof(struct lc8o_wire,descriptor),
+    sizeof(struct lgdo_wire),sizeof(struct lgdo_snapshot),sizeof(struct lgdo_raw),
+    sizeof(struct li2_private_code_query),sizeof(struct le_permission),sizeof(struct pda_completion),
+    offsetof(struct li2_pg_epoch,domain)+offsetof(struct pda_state,completion),
+    offsetof(struct lhc_storage,capsule),sizeof(union lhc_capsule),sizeof lgd_group,
+    sizeof pe,sizeof lhc,sizeof lgd_writer,LC8O_EPOCHS};
+#endif
 static struct {
     struct lc8o_wire wire;
     struct le_frame scratch;
     unsigned initialized,active,epochs,failure,busy,reported,controls,restorations;
-#if LI2_LOOP_CACHE8_CONTROL == 1
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+    struct lgdo_preentry_observation preentry;
+#endif
+#if LI2_LOOP_CACHE8_CONTROL == 1 || (defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) && LI2_LOOP_CACHE8_CONTROL != 0)
     struct li2_pgd_view saved_view;
     struct li2_pgs_entry saved_entry;
     struct pda_completion saved_completion;
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+    union lgdo_saved descriptor_saved;
+#endif
 #endif
 } lc8o;
 static _Noreturn void lc8o_fail(unsigned code) {
@@ -60,6 +89,9 @@ static void lc8o_counts(uint64_t out[32]) {
     const uint64_t cache[]={p->cold_calls,p->compact_build_calls,p->compact_validate_calls,
         p->attach_attempts,p->accepted,p->source_declines};copy(out+19,cache,sizeof cache);
 }
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+#include "loop_group_descriptor_observe.inc"
+#endif
 static void lc8o_frame(struct lc8o_frame *out,const struct le_frame *in,
                       const siginfo_t *si,const ucontext_t *uc) {
     lc8o_need(!out->h[0] && in->started==1 && in->si_saved==1 && in->uc_saved==1 &&
@@ -83,14 +115,22 @@ static int lc8o_initialize(void) {
     if(fd || fl<0 || (fl&(O_ACCMODE|O_APPEND|O_NONBLOCK))!=O_WRONLY || st ||
        !S_ISREG(lc8o.wire.initial.st_mode) || (lc8o.wire.initial.st_mode&07777)!=0600 ||
        lc8o.wire.initial.st_nlink!=1 || lc8o.wire.initial.st_size)return PE_STATE;
+    #ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+    h[0]=LC8O_MAGIC;h[1]=2;h[2]=sizeof lc8o.wire;h[3]=sizeof(struct lc8o_epoch);
+#else
     h[0]=LC8O_MAGIC;h[1]=1;h[2]=sizeof lc8o.wire;h[3]=sizeof(struct lc8o_epoch);
+#endif
     h[4]=LI2_LOOP_CACHE8_CONTROL;h[5]=8;h[6]=8;h[7]=9;h[8]=LC8O_EPOCHS;
     h[9]=(uintptr_t)&pe;h[10]=(uintptr_t)&lc8o;
     h[11]=(uint64_t)fd;h[12]=(uint64_t)fl;h[13]=(uint64_t)st;
     h[14]=(uintptr_t)fork_gate_stack.ss_sp;h[15]=fork_gate_stack.ss_size;
+#ifdef LI2_LOOP_CACHE8_EFFECTS
+    if(lc8e_initialize())return PE_STATE;
+    h[1]=2;
+#endif
     lc8o.initialized=1;return 0;
 }
-#if LI2_LOOP_CACHE8_CONTROL == 1
+#if LI2_LOOP_CACHE8_CONTROL == 1 || (defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) && LI2_LOOP_CACHE8_CONTROL != 0)
 static void lc8o_result(unsigned index,int value,int restored) {
     lc8o_need(index==lc8o.controls && index<LC8O_CONTROLS && value==0 && restored==1,2);
     uint64_t *r=lc8o.wire.controls[index];r[0]=index;r[1]=0;r[2]=(unsigned)value;r[3]=1;
@@ -159,13 +199,16 @@ static void lc8o_completion_controls(const struct pda_completion *original) {
 }
 #endif
 static void lc8o_bound(void) {
+#ifdef LI2_LOOP_CACHE8_EFFECTS
+    if(lc8o.epochs>=3){lc8e_bound();return;}
+#endif
     uintptr_t entry=pe.domain.work.view.entry.target.pc;
     if(entry!=UINT64_C(0x410200) && entry!=UINT64_C(0x412400) &&
        entry!=UINT64_C(0x414600) && entry!=UINT64_C(0x416000))return;
     lc8o_need(lc8o.initialized && !lc8o.active && !lc8o.busy && lc8o.epochs<LC8O_EPOCHS,10);
     const struct li2_pgd_view *v=&pe.domain.work.view;
     lc8o_need(pda_ready(0) && v->count && v->count<=8,11);
-#if LI2_LOOP_CACHE8_CONTROL == 1
+#if LI2_LOOP_CACHE8_CONTROL == 1 || (defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) && LI2_LOOP_CACHE8_CONTROL != 0)
     lc8o_bound_controls();
 #endif
     struct lc8o_epoch *e=&lc8o.wire.epoch[lc8o.epochs];uint64_t *h=e->h;
@@ -186,24 +229,43 @@ static void lc8o_bound(void) {
         copy(&out->key,m->key,sizeof out->key);
         for(unsigned j=0;j<m->plan->heads;j++)out->head[j]=m->plan->original[j].decoded.pc;
     }
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+    lgdo_snapshot(lc8o.epochs,0);
+#endif
     lc8o.active=lc8o.epochs+1;
 }
 static void lc8o_enter(void) {
+#ifdef LI2_LOOP_CACHE8_EFFECTS
+    if(lc8o.epochs>=3){lc8e_enter();return;}
+#endif
     if(!lc8o.active)return;
     struct lc8o_epoch *e=&lc8o.wire.epoch[lc8o.active-1];
     lc8o_need(e->h[0]==1 && !e->h[1] && e->h[5]==pe.p.serial && pda_ready(1),13);
     e->h[1]=1;e->h[17]=pe.domain.work.rx_retained_mask;lc8o_counts(e->counts[1]);
     lc8o_frame(&e->entry,&pe.before,0,0);
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+    lgdo_snapshot(lc8o.active-1,1);
+#endif
 }
 static void lc8o_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
+#ifdef LI2_LOOP_CACHE8_EFFECTS
+    if(lc8o.epochs>=3){lc8e_preentry(sig,si,uc);return;}
+#endif
     if(!lc8o.active)return;
     struct lc8o_epoch *e=&lc8o.wire.epoch[lc8o.active-1];
     lc8o_need(e->h[1]==1 && !e->h[2] && !lc8o.busy,14);
     e->h[2]=1;lc8o_counts(e->counts[2]);le_zero(&lc8o.scratch,sizeof lc8o.scratch);
     lc8o_need(!le_capture(&lc8o.scratch,sig,si,uc),15);
     lc8o_frame(&e->event,&lc8o.scratch,si,uc);
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+    lgdo_preentry(lc8o.active-1);
+    lgdo_snapshot(lc8o.active-1,2);
+#endif
 }
 static void lc8o_complete(const struct pda_completion *c) {
+#ifdef LI2_LOOP_CACHE8_EFFECTS
+    if(lc8o.epochs>=3){lc8e_completed(c);return;}
+#endif
     if(!lc8o.active)return;
     struct lc8o_epoch *e=&lc8o.wire.epoch[lc8o.active-1];
     lc8o_need(e->h[2]==1 && !e->h[3] && c->serial==e->h[5] && c->count==e->h[6] &&
@@ -211,13 +273,30 @@ static void lc8o_complete(const struct pda_completion *c) {
     e->h[3]=1;e->h[18]=c->id;e->h[19]=c->rx.version;e->h[20]=c->rx.retained_mask;
     e->h[21]=pe.domain.work.exit_member;e->h[22]=pe.exit_index;e->h[23]=pe.exit_seen;
     e->h[24]=pe.recovery_complete;e->h[25]=pe.guest_data_fault;e->h[26]=pe.p.phase;
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+    lc8o_counts(e->counts[3]);
+    lgdo_snapshot(lc8o.active-1,3);
+    ++lc8o.epochs;lc8o.active=0;
+#else
     lc8o_counts(e->counts[3]);++lc8o.epochs;lc8o.active=0;
-#if LI2_LOOP_CACHE8_CONTROL == 1
+#endif
+#ifdef LI2_LOOP_CACHE8_EFFECTS
+    lc8e_completed_first(c);
+#endif
+#if LI2_LOOP_CACHE8_CONTROL == 1 || (defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) && LI2_LOOP_CACHE8_CONTROL != 0)
     lc8o_completion_controls(c);
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+    lgdo_finished(c);
+#endif
     if(lc8o.epochs==LC8O_EPOCHS) {
         lc8o_need(lc8o.controls==LC8O_CONTROLS && lc8o.restorations==LC8O_CONTROLS && !lc8o.busy,17);
         selected_persistent_abort(PE_PUBLICATION,LC8O_STOP);
     }
+#endif
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+#if LI2_LOOP_CACHE8_CONTROL == 0
+    lgdo_finished(c);
+#endif
 #endif
 }
 static void lc8o_report(unsigned status,unsigned code) {
@@ -226,6 +305,9 @@ static void lc8o_report(unsigned status,unsigned code) {
     h[16]=lc8o.epochs;h[17]=lc8o.active;h[18]=lc8o.failure;h[19]=lc8o.busy;
     h[20]=lc8o.controls;h[21]=lc8o.restorations;h[22]=status;h[23]=code;
     h[24]=pe.p.first_error;h[25]=(uint64_t)pe.p.first_detail;h[26]=pe_active;h[27]=pe_busy;
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+    lgdo_preentry_report(status,code);
+#endif
     long fl=raw(SYS_fcntl,3,F_GETFL,0,0,0,0),st=raw(SYS_fstat,3,(long)&lc8o.wire.terminal,0,0,0,0);
     h[28]=(uint64_t)fl;h[29]=(uint64_t)st;h[30]=(uint64_t)pe.session.pid;h[31]=(uint64_t)pe.session.tid;
     const struct stat *a=&lc8o.wire.initial,*b=&lc8o.wire.terminal;
@@ -239,11 +321,21 @@ static void lc8o_report(unsigned status,unsigned code) {
         at+=(size_t)result;
     }
     if(at!=sizeof lc8o.wire)return;
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+    const uint64_t footer[]={LC8O_FOOTER,2,sizeof lc8o.wire,at,calls,(uint64_t)result,status,code};
+#else
     const uint64_t footer[]={LC8O_FOOTER,1,sizeof lc8o.wire,at,calls,(uint64_t)result,status,code};
+#endif
     at=0;calls=0;
     while(at<sizeof footer && calls<64) {
         ++calls;result=raw(SYS_write,3,(long)((const unsigned char *)footer+at),sizeof footer-at,0,0,0);
         if(result<=0 || (size_t)result>sizeof footer-at)return;
         at+=(size_t)result;
     }
+#ifdef LI2_LOOP_CACHE8_EFFECTS
+    lc8e_report(status,code);
+#endif
 }
+#ifdef LI2_LOOP_CACHE8_EFFECTS
+#include "loop_cache8_effects_observe.inc"
+#endif

@@ -46,6 +46,8 @@ def inspect_application(builder,private,pin,binary,run,state,original,app_units,
         need(re.search(r'\bmovabsq?\s+\$0x'+format(symbols[name]['address'],'x')+r',',bodies[caller])is not None,
              'actual '+caller+' materializes full-width '+name+' address without truncated relocation')
     state['helper_callers']=callers
+    effects=[x for x in state['argv'] if x.startswith('-DLI2_LOOP_CACHE8_EFFECT=')]
+    if effects:state['real_effect']=effect_image(original,out,int(effects[0].rsplit('=',1)[1]))
     copy_oracle(builder,private,pin,binary,run,state,original,symbols['copy'],app_units,fixture=fixture)
     state.update(status='passed',artifact=fact(original),symbols=symbols);return original
 
@@ -60,6 +62,14 @@ def copy_oracle(builder,private,pin,binary,run,state,original,app_symbol,app_uni
     units=[str(pin(fixture/n))for n in('copy_oracle.c','pure.c')]
     if '-DLI2_LOOP_RX_REFERENCE44=1' in state['argv']:
         argv.insert(argv.index('-Werror')+1,'-DLI2_LOOP_RX_REFERENCE44=1')
+    if '-DLI2_LOOP_GROUP_DESCRIPTOR_APP=1' in state['argv']:
+        argv.insert(argv.index('-Werror')+1,'-DLI2_LOOP_GROUP_DESCRIPTOR_APP=1')
+    effects=[x for x in state['argv'] if x.startswith('-DLI2_LOOP_CACHE8_EFFECT=')]
+    need(not effects or len(effects)==1 and effects[0] in tuple('-DLI2_LOOP_CACHE8_EFFECT='+str(i) for i in (2,3,4)),
+         'one literal real-effect application compiler selector')
+    if effects:argv.insert(argv.index('-Werror')+1,effects[0])
+    need(not effects or '-DLI2_LOOP_GROUP_DESCRIPTOR_APP=1' not in state['argv'],
+         'one distinct descriptor or real-effect application selector')
     flags=lambda args,inputs:[x for x in args[1:-2]if x not in inputs and not x.startswith('-Wl,')]
     app_flags=flags(state['argv'],app_units)
     interpreter_define='-DLI2_DIRECT_FRONTIER_INTERPRETER=\"'+str(original.parent/'fixture-interpreter.so')+'\"'
@@ -152,7 +162,11 @@ def copy_oracle(builder,private,pin,binary,run,state,original,app_symbol,app_uni
 
 def compile_subject(builder,private,pin,binary,aliases,run,r, *, reference='direct41', fixture=None):
     fixture=FIXTURE if fixture is None else Path(fixture).resolve(strict=True)
-    if reference=='cache8-abc169':
+    if reference=='cache8-abc255':
+        need(fixture.name=='loop_cache8_app','exact additive three-phase descriptor fixture source')
+    elif reference in ('cache8-effects2','cache8-effects3','cache8-effects4'):
+        need(fixture.name=='loop_cache8_effects','exact additive real-effect fixture source')
+    elif reference=='cache8-abc169':
         need(fixture.name=='loop_cache8_app','exact additive three-root/two-phase fixture source')
     else:
         need(reference in ('direct41','direct44'), 'explicit unchanged41 or additive44 seed recipe')
@@ -196,6 +210,9 @@ def compile_subject(builder,private,pin,binary,aliases,run,r, *, reference='dire
     need(data[at:at+size]==expected_body,'complete actual interpreter performs original auxv AT_ENTRY transfer')
     argv=expand(rows[1],values)
     if reference == 'direct44':argv.insert(argv.index('-Werror')+1,'-DLI2_LOOP_RX_REFERENCE44=1')
+    if reference == 'cache8-abc255':argv.insert(argv.index('-Werror')+1,'-DLI2_LOOP_GROUP_DESCRIPTOR_APP=1')
+    if reference in ('cache8-effects2','cache8-effects3','cache8-effects4'):
+        argv.insert(argv.index('-Werror')+1,'-DLI2_LOOP_CACHE8_EFFECT='+reference[-1])
     units=[str(pin(fixture/n))for n in ('main.c','pure.c','machine.S','entry.S')]
     need([x for x in argv if x.endswith(('.c','.S'))]==units and
          argv[-2:]==['-o',str(output/'persistent-direct-frontier-app')]and
@@ -231,3 +248,57 @@ def compile_subject(builder,private,pin,binary,aliases,run,r, *, reference='dire
     _,out,err=run('app-undefined',[builder.tools['nm'],'-u',image],profile='inspect',env=builder.environment)
     need(out==err==b'','no unresolved actual freestanding application imports')
     return inspect_application(builder,private,pin,binary,run,state,image,units,fixture=fixture)
+
+
+def effect_image(original,actual_symbols,kind):
+    """Literal actual fixture bytes, never an instruction/admission decoder."""
+    import struct
+    need(kind in (2,3,4),'one fixed actual real effect')
+    symbols={}
+    for line in actual_symbols.decode().splitlines():
+        fields=line.split()
+        if len(fields) in (3,4) and (fields[-1].startswith('region_app_') or fields[-1]=='lc8e_state'):
+            name=fields[-1]
+            need(name not in symbols,'unique actual application symbol names')
+            symbols[name]=(int(fields[0],16),int(fields[1],16) if len(fields)==4 else 0,fields[-2])
+    sites={'region_app_reset':0x416000,'region_app_head':0x410200,'region_app_block_b':0x412400,
+           'lc8e_state':0x800000}
+    if kind==2:sites.update(region_app_effect_syscall0=0x416048,region_app_effect_syscall1=0x41606f,
+                           region_app_reset_jump=0x4160b3,region_app_effect_end=0x4160b8)
+    elif kind==3:sites.update(region_app_effect_write=0x416000,region_app_reset_jump=0x416008,
+                             region_app_effect_end=0x41600a)
+    else:sites.update(region_app_effect_load=0x416000,region_app_effect_jump=0x416007,
+                     region_app_reset_jump=0x416007,region_app_effect_end=0x416009)
+    need(all(name in symbols and symbols[name][0]==value for name,value in sites.items()) and
+         symbols['lc8e_state'][1:]==(256,'B'),'actual fixed effect sites and whole zero-initialized guest state')
+    data,_,segments=elf(original)
+    state=[x for x in segments if x[0]==1 and x[3]<=0x800000<x[3]+x[6]]
+    need(len(state)==1 and state[0][1]==6 and state[0][3]==0x800000 and state[0][5]==0 and state[0][6]==4096,
+         'actual separate whole original RW/NX zero-file state page')
+    first=sites['region_app_reset'];end=sites['region_app_effect_end'];body=bytearray()
+    def rip(op,target,tail=b''):
+        body.extend(op+struct.pack('<i',target-(first+len(body)+len(op)+4+len(tail)))+tail)
+    if kind==2:
+        for op,offset in ((b'\x48\x89\x05',0),(b'\x48\x89\x0d',8),(b'\x48\x89\x15',16),
+                          (b'\x48\x89\x35',24),(b'\x48\x89\x3d',32),(b'\x4c\x89\x1d',40)):
+            rip(op,0x800000+offset)
+        rip(b'\xc7\x05',0x800040,struct.pack('<I',1))
+        body.extend(b'\xbf'+struct.pack('<I',0x412000)+b'\xbe'+struct.pack('<I',4096)+
+                    b'\xba'+struct.pack('<I',1)+b'\xb8'+struct.pack('<I',10)+b'\x0f\x05')
+        rip(b'\x48\x89\x05',0x800030)
+        rip(b'\xc7\x05',0x800048,struct.pack('<I',1));rip(b'\xc7\x05',0x800050,struct.pack('<I',1))
+        body.extend(b'\xba'+struct.pack('<I',5)+b'\xb8'+struct.pack('<I',10)+b'\x0f\x05')
+        rip(b'\x48\x89\x05',0x800038);rip(b'\xc7\x05',0x800058,struct.pack('<I',1))
+        for op,offset in ((b'\x48\x8b\x0d',8),(b'\x48\x8b\x15',16),(b'\x48\x8b\x35',24),
+                          (b'\x48\x8b\x3d',32),(b'\x4c\x8b\x1d',40),(b'\x48\x8b\x05',0)):
+            rip(op,0x800000+offset)
+        body.extend(b'\x48\xc7\xc1\x08\x00\x00\x00');rip(b'\xe9',0x410200)
+    elif kind==3:body.extend(bytes.fromhex('c60425002441005a0f0b'))
+    else:rip(b'\x48\x8b\x05',0x800060);body.extend(b'\xff\xe0')
+    owners=[x for x in segments if x[0]==1 and x[1]==5 and x[3]<=first<end<=x[3]+x[5]]
+    need(len(owners)==1 and len(body)==end-first,'whole literal actual effect body extent')
+    owner=owners[0];at=owner[2]+first-owner[3]
+    need(data[at:at+len(body)]==body,'every actual guest effect opcode/displacement/immediate matches its fixed model')
+    return dict(kind=kind,sites=sites,bytes=len(body),sha256=H(body),state_bytes=256,state_page_bytes=4096,
+                reference='cache8-effects'+str(kind),total_instructions=195 if kind==2 else None,
+                native_tf_events=167 if kind==2 else 83,guest_mapping_admission=kind==2)

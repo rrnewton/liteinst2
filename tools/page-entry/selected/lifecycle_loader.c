@@ -1236,3 +1236,6 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 #ifdef LI2_PERSISTENT_CROSS_PAIR_CAPTURE
 #include "persistent_cross_pair_observe_memory.inc"
 #endif
+#ifdef LI2_LOOP_CACHE8_EFFECTS
+#include "loop_cache8_effects_memory.inc"
+#endif

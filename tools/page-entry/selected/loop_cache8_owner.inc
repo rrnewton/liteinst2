@@ -3,7 +3,11 @@
 static int pda_member_live(const struct li2_pgd_member *);
 static void pda_member(unsigned,unsigned);
 
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+static int lc8_members_full(const struct li2_pgd_view *v) {
+#else
 static int lc8_members(const struct li2_pgd_view *v) {
+#endif
     if(!v || !v->count || v->count>LI2_PGD_MEMBERS || v->reserved)return 0;
     unsigned heads=0,boundaries=0;
     for(unsigned i=0;i<v->count;i++) {
@@ -24,6 +28,9 @@ static int lc8_members(const struct li2_pgd_view *v) {
         if(!pda_zero(&v->member[i],sizeof v->member[i]))return 0;
     return heads && heads<=LI2_JD_DOMAIN_HEADS && boundaries<=LI2_PG_BOUNDARIES;
 }
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+static int lc8_members(const struct li2_pgd_view *v) {return lgd_members(v);}
+#endif
 /* Advisory reachability only, from the already validated immutable DIRECT
    descriptor to an exact original head in the candidate publication. Source,
    generation, guard-table, claim and physical queries are separate below. */

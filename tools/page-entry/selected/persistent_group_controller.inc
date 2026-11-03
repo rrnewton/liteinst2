@@ -50,6 +50,9 @@
 #include "loop_resident_rx.h"
 #ifdef LI2_LOOP_CACHE8
 #include "loop_cache8.h"
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+#include "loop_group_descriptor.h"
+#endif
 #endif
 #endif
 #endif
@@ -446,6 +449,20 @@ static int pda_preentry(int,const siginfo_t *,const ucontext_t *);
 static int pda_drain(const struct li2_pg_token *);
 static void pda_complete(void);
 static int pda_receipt(const struct pda_completion *);
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+static int lgd_initialize(void);
+static void lgd_report(unsigned,unsigned);
+static int lgd_common_value(const struct pda_completion *);
+static int lgd_epochs_live(void);
+static uint64_t lgd_root_epoch(void);
+static uint64_t lgd_cell_epoch(unsigned);
+static uint64_t lgd_capsule_epoch(unsigned);
+static int lgd_history_fallback(void);
+static int lgd_members(const struct li2_pgd_view *);
+static int lgd_view_match(const struct li2_pgd_view *);
+static int lgd_directory(void);
+static int lgd_directory_equal(void);
+#endif
 static _Noreturn void pda_abort(unsigned,long);
 #endif
 unsigned li2_pg_owner_phase(const struct li2_pg_token *t) {
@@ -1142,6 +1159,9 @@ static void selected_persistent_initialize(void) {
 #ifdef LI2_PERSISTENT_RETAINED_TWO
     }
     pe.selected_slot=0;pe.selection=pe.retained[0].identity;
+#endif
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    pe_need(!lgd_initialize(),PE_PUBLICATION,8991);
 #endif
     pe_need(!li2_pg_source_initialize() && pe_identity(),PE_SOURCE,0);
     pe.initialized=1;pe_busy=0;

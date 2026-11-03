@@ -23,6 +23,8 @@ FIELDS=('version','status','failure_code','slots','members','receipts',
     ('generation','permit','completed_serial'))+tuple(
     name+str(i) for i in range(9) for name in ('bound','entered','completed'))
 DEFAULT=(application,certificate,rx,row)
+# Natural execute() passes this module directly to the shared cohort.
+prior=application
 
 
 def split(stderr,parse=row):

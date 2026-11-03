@@ -202,6 +202,9 @@ static int lprx_revoke(unsigned reason) {
 }
 static void lprx_before_unsafe(unsigned reason) {
     int e=lprx_revoke(reason);if(e)selected_persistent_abort((unsigned)e,500+(long)reason);
+#ifdef LI2_LOOP_CACHE8_EFFECTS
+    lc8e_unsafe(reason);
+#endif
 #ifdef LI2_LOOP_RESIDENT_RX_ORACLE
     lrxo_unsafe(reason);
 #endif

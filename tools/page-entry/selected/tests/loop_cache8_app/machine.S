@@ -1,3 +1,6 @@
+#if defined(LI2_LOOP_GROUP_DESCRIPTOR_APP) && defined(LI2_LOOP_CACHE8_EFFECT)
+#error "descriptor and real-effect application profiles are distinct"
+#endif
 #include "app.h"
 .section .li2_ua_machine,"ax",@progbits
 .balign 4096
@@ -173,7 +176,11 @@ region_app_c_repeat:
     .byte 0x49,0x83,0xe8,1
 region_app_c_reset:
     .byte 0x0f,0x85
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_APP
+    .long region_app_reset_tail-(.+4)
+#else
     .long region_app_reset-(.+4)
+#endif
 region_app_c_exit:
     .byte 0xe9
     .long region_app_capture-(.+4)
@@ -191,11 +198,27 @@ region_app_source_end:
 .globl region_app_reset,region_app_reset_end,region_app_reset_jump
 .type region_app_reset,@function
 region_app_reset:
+#ifdef LI2_LOOP_CACHE8_EFFECT
+#include "../loop_cache8_effects/reset.inc"
+#else
     .byte 0x48,0xc7,0xc1,8,0,0,0
 region_app_reset_jump:
     .byte 0xe9
     .long region_app_head-(.+4)
+#endif
 .size region_app_reset,.-region_app_reset
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR_APP
+/* The unchanged PAGE-15 gate leaves this genuine original branch outside
+   persistent entry. The existing two-DIRECT handoff reaches reset on its
+   second actual branch; neither immutable generated plan contains this head. */
+.org 0xffa,0xcc
+.globl region_app_reset_tail
+.type region_app_reset_tail,@function
+region_app_reset_tail:
+    .byte 0xe9
+    .long region_app_reset-(.+4)
+.size region_app_reset_tail,.-region_app_reset_tail
+#endif
 .org 4096,0xcc
 region_app_reset_end:
 /* Native-only fault observation continuation, with the same transparent
