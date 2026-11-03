@@ -1,0 +1,355 @@
+{
+  "archive_provider": {
+    "archive": {
+      "bytes": 12060118,
+      "sha256": "32e373a5e5a926a52bf5ea8c89e91cc6d8d99ae82ab018778c9cb2a09c4a5992"
+    },
+    "archive_rebuilt_by_consumer": false,
+    "cpu": 3,
+    "current_compiler_inputs_equal": true,
+    "performance_credit": false,
+    "producer_status": "failed",
+    "producer_subjects": [
+      {
+        "exit": -9,
+        "name": "ls-release",
+        "timed_out": false
+      },
+      {
+        "exit": -9,
+        "name": "true-release",
+        "timed_out": false
+      }
+    ],
+    "program_qualification_credit": false,
+    "receipt": {
+      "bytes": 1971802,
+      "sha256": "265c993dbc2932092c7ce85402545fd9e04587df1be02b2dd21d97143cf90c01"
+    },
+    "revision": "638b36693faa156a1e4cb2775a885ec2fae23aaa"
+  },
+  "archive_provider_scope": "Only the complete 20-command build prefix of the closed 34-command failed producer; both program subjects remain failed.",
+  "bounds": {
+    "finite": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "program": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "release_build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "seed": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "bounds_order": [
+    "cpu_seconds",
+    "address_space_bytes",
+    "file_size_bytes",
+    "wall_seconds"
+  ],
+  "cases": [
+    {
+      "application_complete": true,
+      "application_reader_refusals": 40,
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 858480,
+          "sha256": "70e09a145e8b8a737df47e667bd584749038577d7184d76b08cacaacd28e3e9f"
+        }
+      },
+      "certificate_mode": "release",
+      "exit": 0,
+      "expected_exit": 0,
+      "label": "native",
+      "lane": "native",
+      "native_frames": 12,
+      "native_instructions": 44,
+      "status": "passed"
+    },
+    {
+      "actual_controls": 0,
+      "actual_target_restorations": 0,
+      "actual_transit_controls": 0,
+      "application_complete": true,
+      "byte_history_differential_disagreements": [
+        0,
+        0
+      ],
+      "captures": {
+        "record": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stderr": {
+          "bytes": 21541,
+          "sha256": "0489f6669128e7e888534bbab7371b25cb9e4806813c6497c57a6930cf5054eb"
+        },
+        "stdout": {
+          "bytes": 858480,
+          "sha256": "8b3359e622cf83755d8ab61b79b6718e9a6aaeede0d39dd6a64382d62ca1b484"
+        }
+      },
+      "certificate_mode": "release",
+      "exit": 0,
+      "expected_exit": 0,
+      "label": "release",
+      "lane": "gated",
+      "member_counts": [
+        1,
+        1,
+        2
+      ],
+      "pair": {
+        "full_application_state_equal": true,
+        "interior_owner_state_observed": false
+      },
+      "retained_masks": [
+        0,
+        0,
+        2
+      ],
+      "status": "passed",
+      "supplied_row_refusals": {
+        "abort_refusals": 0,
+        "refusals": 496,
+        "target_refusals": 101,
+        "ticket_refusals": 84,
+        "transit_refusals": 28
+      },
+      "terminal_rx": {
+        "direct_offers": 93,
+        "direct_steps": 93,
+        "entries": 576,
+        "quiet_releases": 384,
+        "retained_entries": 3,
+        "terminal_attempts": 1,
+        "terminal_closed": 1
+      }
+    },
+    {
+      "actual_controls": 0,
+      "actual_target_restorations": 0,
+      "actual_transit_controls": 0,
+      "application_complete": true,
+      "byte_history_differential_disagreements": [
+        0,
+        0
+      ],
+      "captures": {
+        "record": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stderr": {
+          "bytes": 21551,
+          "sha256": "0ec7a4f988439ee38ccd9a178aa3ad19f11e2d5b6267ac2e813ac795f449b58a"
+        },
+        "stdout": {
+          "bytes": 858480,
+          "sha256": "d254816d04e88ae7dbe9738ab3db611bd83143c12675eed2c74066d53062fe8f"
+        }
+      },
+      "certificate_mode": "differential",
+      "exit": 0,
+      "expected_exit": 0,
+      "label": "differential",
+      "lane": "gated",
+      "member_counts": [
+        1,
+        1,
+        2
+      ],
+      "pair": {
+        "full_application_state_equal": true,
+        "interior_owner_state_observed": false
+      },
+      "retained_masks": [
+        0,
+        0,
+        2
+      ],
+      "status": "passed",
+      "supplied_row_refusals": {
+        "abort_refusals": 0,
+        "refusals": 496,
+        "target_refusals": 101,
+        "ticket_refusals": 84,
+        "transit_refusals": 28
+      },
+      "terminal_rx": {
+        "direct_offers": 93,
+        "direct_steps": 93,
+        "entries": 576,
+        "quiet_releases": 384,
+        "retained_entries": 3,
+        "terminal_attempts": 1,
+        "terminal_closed": 1
+      }
+    },
+    {
+      "actual_controls": 32,
+      "actual_target_restorations": 1,
+      "actual_transit_controls": 16,
+      "application_complete": false,
+      "captures": {
+        "record": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stderr": {
+          "bytes": 25739,
+          "sha256": "9c9eb944b515970551b3c72db7fa015c63abd89b63fedc21f76ed05cf62008d8"
+        },
+        "stdout": {
+          "bytes": 27080,
+          "sha256": "da0974b9b008570d5b452e25872372d41d040c3157d973b21f4e64026bb4ee4d"
+        }
+      },
+      "certificate_mode": "differential",
+      "exit": 125,
+      "expected_exit": 125,
+      "label": "causal",
+      "lane": "gated",
+      "member_counts": [
+        1,
+        1,
+        2
+      ],
+      "required_diagnostic": {
+        "detail": 8850,
+        "exit": 125,
+        "failure_code": 3303,
+        "restored_controls": 32,
+        "restored_transit_controls": 16
+      },
+      "retained_masks": [
+        0,
+        0,
+        2
+      ],
+      "status": "passed",
+      "supplied_row_refusals": {
+        "abort_refusals": 3,
+        "refusals": 976,
+        "target_refusals": 101,
+        "ticket_refusals": 324,
+        "transit_refusals": 28
+      }
+    }
+  ],
+  "cleanup_complete": true,
+  "commands": {
+    "capture_bytes": 3601795,
+    "capture_limit_bytes": 16777216,
+    "captures": 101,
+    "count": 49,
+    "exit_zero": 48,
+    "required_exit125": 1
+  },
+  "cpu": 1,
+  "driver": {
+    "bytes": 15763,
+    "path": "evaluation/inprocess/loop_resident_rx_native.py",
+    "sha256": "90106d9f456f652b0434ceb4297a0fbabaffe305a9cea25605e5f2218004bd82"
+  },
+  "error": null,
+  "extent_reader_controls": {
+    "positives": 5,
+    "refusals": 62,
+    "scope": "synthetic predicate only"
+  },
+  "final_error_count": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 1,
+    "runner_cap_eff": "0000000000000000",
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "performance_credit": false,
+  "profile": "loop-resident-rx-direct44-v1",
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 1202599,
+    "sha256": "c325cd619c6afd41dc1c3cf0c5f7c1cc6129dc423cd54461f32d87a3ec23d010"
+  },
+  "reproduction": {
+    "fresh_provider": "Use one dedicated checkout: run the provider command at its exact revision under a reserved singleton, then switch that same checkout to the native revision. Supply the fresh provider receipt path and its SHA256 to the native command; use a fresh output. Recorded CPUs were provider3/native1. The ignored retained receipts are not included in this public projection.",
+    "native_command_with_retained_provider": [
+      "python3.12",
+      "-B",
+      "evaluation/inprocess/loop_resident_rx_native.py",
+      "--expect-revision",
+      "e220f63c23ffefa920db0d5893fb36e263dc45e3",
+      "--current-build",
+      "target/evaluation/inprocess/loop-ro-program-release-attempt-5/receipt.json",
+      "--current-build-sha256",
+      "265c993dbc2932092c7ce85402545fd9e04587df1be02b2dd21d97143cf90c01",
+      "--output",
+      "target/evaluation/inprocess/loop-resident-rx-native-NEW"
+    ],
+    "provider_command_at_provider_revision": [
+      "python3.12",
+      "-B",
+      "evaluation/inprocess/loop_ro_program_release.py",
+      "--expect-revision",
+      "638b36693faa156a1e4cb2775a885ec2fae23aaa",
+      "--output",
+      "target/evaluation/inprocess/loop-ro-program-release-NEW"
+    ]
+  },
+  "revision": "e220f63c23ffefa920db0d5893fb36e263dc45e3",
+  "schema": 1,
+  "scope": "Complete 44-instruction/12-frame application comparison for release and differential, typed actual A/B/A retained peer and causal controls. No independent whole-owner capture, real-program completion, full19 qualification, timing or parity claim. Prior failed runs remain failed.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "e220f63c23ffefa920db0d5893fb36e263dc45e3",
+    "source_manifest_sha256": "038abcf0dba6d67c0c517ec4202606797ca2530179b194efce650a065f1e069d",
+    "tracked_clean": true,
+    "tree": "44886e20bcc23a7d2586fbcc49ef7ada2cf2c86b"
+  },
+  "source_unchanged": true,
+  "status": "passed",
+  "whole_profile_qualified": false
+}
