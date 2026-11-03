@@ -233,7 +233,7 @@ def component_result(name, stdout, stderr):
 
 
 def main(*, cases=CASES, profile='experimental-loop-components-v1',
-         result=component_result, reused_archive=False):
+         result=component_result, reused_archive=False, prepare=None, selected=SELECTED, root=ROOT):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--expect-revision', required=True)
     ap.add_argument('--archive', required=True, type=Path)
@@ -249,14 +249,14 @@ def main(*, cases=CASES, profile='experimental-loop-components-v1',
     need(re.fullmatch('[0-9a-f]{40}', args.expect_revision) and
          re.fullmatch('[0-9a-f]{64}', args.archive_sha256), 'explicit full source and archive identities')
     private = args.output.resolve()
-    need(private.is_relative_to((ROOT/'target/evaluation/inprocess').resolve(strict=True)) and not private.exists(),
+    need(private.is_relative_to((root/'target/evaluation/inprocess').resolve(strict=True)) and not private.exists(),
          'fresh private attempt below target/evaluation/inprocess')
-    sys.path.insert(0, str(ROOT/'evaluation/inprocess'))
+    sys.path.insert(0, str(root/'evaluation/inprocess'))
     from checks import source
     from run import hardware
     from page_selected import ENV, save
     from page_selected_process import invoke
-    os.chdir(ROOT)
+    os.chdir(root)
     private.mkdir()
     receipt = private/'receipt.json'
     pins, aliases, artifacts, presence = {}, {}, {}, {}
@@ -346,7 +346,7 @@ def main(*, cases=CASES, profile='experimental-loop-components-v1',
         pin('/usr/bin/git')
         r['source'] = source()
         need(r['source']['revision'] == args.expect_revision, 'clean exact expected source revision')
-        pin(__file__); pin(Path(__file__).with_name('README.md')); pin(sys.executable)
+        pin(__file__); pin(root/'evaluation/inprocess/loop_components/README.md'); pin(sys.executable)
         for module in tuple(sys.modules.values()):
             name = getattr(module, '__file__', None)
             if name and Path(name).is_file():
@@ -367,7 +367,7 @@ def main(*, cases=CASES, profile='experimental-loop-components-v1',
         if reused_archive:
             prior = pin(args.archive_native_receipt)
             need(prior.name == 'receipt.json' and
-                 prior.parent.parent == ROOT/'target/evaluation/inprocess' and
+                 prior.parent.parent == root/'target/evaluation/inprocess' and
                  re.fullmatch('[0-9a-f]{64}', args.archive_native_receipt_sha256) and
                  fact(prior)['sha256'] == args.archive_native_receipt_sha256,
                  'explicit whole retained native receipt for reused archive')
@@ -387,8 +387,8 @@ def main(*, cases=CASES, profile='experimental-loop-components-v1',
             need(prior_archive == archive and record == dict(path=str(archive), **actual) and
                  native['artifacts'][str(archive)] == actual,
                  'reused archive path and whole bytes/mode join both retained native inventories')
-            r['reused_archive'] = dict(receipt=dict(file=str(prior.relative_to(ROOT)), **fact(prior)),
-                archive_file=str(archive.relative_to(ROOT)), archive=r['archive'], source=native['source'],
+            r['reused_archive'] = dict(receipt=dict(file=str(prior.relative_to(root)), **fact(prior)),
+                archive_file=str(archive.relative_to(root)), archive=r['archive'], source=native['source'],
                 cpu=native['cpu'], status=native['status'], original_receipt_metadata_joined=True,
                 native_inputs_revalidated=False, same_head_native_credit=False)
         tools = {name: pin(shutil.which(name, path=ENV['PATH'])) for name in ('cc', 'nm')}
@@ -431,18 +431,24 @@ def main(*, cases=CASES, profile='experimental-loop-components-v1',
         need(all(names.count(name) == 1 for name in required), 'all exact decoder component providers')
 
         for name, case in cases.items():
-            fixture = SELECTED/'tests'/case.get('recipe_fixture', name); recipe = pin(fixture/'build.sh')
+            fixture = selected/'tests'/case.get('recipe_fixture', name); recipe = pin(fixture/'build.sh')
             need(fact(recipe)['sha256'] == case['recipe_sha256'], 'unchanged complete component recipe')
             output_dir = private/name; output_dir.mkdir(); output = output_dir/case.get('output_leaf', 'component')
-            units = [str(SELECTED/x) for x in case['units']]
+            units = [str(selected/x) for x in case['units']]
             for p in units: pin(p)
+            prepared = None
+            if prepare is not None:
+                prepared = prepare(name, selected, fixture, output_dir, tools, pin, artifact, run)
+                need(type(prepared) is tuple and prepared and
+                     all(type(p) is str and Path(p).is_absolute() for p in prepared) and
+                     len(set(prepared)) == len(prepared), 'exact explicit prepared header paths')
             text = recipe.read_text().replace('\\\n', ' ')
             lines = [line.strip() for line in text.splitlines() if line.strip().startswith('"$cc_bin" ')]
             need(len(lines) == 1, 'one exact compiler recipe')
-            replacements = {'$cc_bin': tools['cc'], '$fixture': fixture, '$selected': SELECTED,
+            replacements = {'$cc_bin': tools['cc'], '$fixture': fixture, '$selected': selected,
                             '$archive': archive, '$output': output_dir if case.get('output_directory') else output,
-                            '$root': ROOT, '$chooser': SELECTED, '$scalar': SELECTED, '$overlay': SELECTED,
-                            '$kind': 'metadata', '$support': SELECTED/'tests/decoder/support.c'}
+                            '$root': root, '$chooser': selected, '$scalar': selected, '$overlay': selected,
+                            '$kind': 'metadata', '$support': selected/'tests/decoder/support.c'}
             argv = []
             for word in shlex.split(lines[0]):
                 for key, value in replacements.items(): word = word.replace(key, str(value))
@@ -457,7 +463,9 @@ def main(*, cases=CASES, profile='experimental-loop-components-v1',
                  'every complete actual compiler-M rule')
             headers = {str(pin(x)) for line in rules for x in shlex.split(line.split(':', 1)[1])}
             need({str(Path(x).resolve()) for x in units} |
-                 {str((SELECTED/x).resolve()) for x in case['headers']} <= headers, 'complete typed component header closure')
+                 {str((selected/x).resolve()) for x in case['headers']} <= headers, 'complete typed component header closure')
+            if prepare is not None:
+                need(set(prepared) <= headers, 'every actual prepared header in compiler-M closure')
             additions = ['-save-temps=obj', '-Wl,--trace']
             out, err = run(name+'-build', argv[:-2]+additions+argv[-2:])
             need(not err, 'strict original -Werror compiler/linker stderr')
@@ -529,10 +537,10 @@ def main(*, cases=CASES, profile='experimental-loop-components-v1',
     if reused_archive:
         summary['reused_archive'] = r.get('reused_archive')
     payload = json.dumps(summary, indent=2, sort_keys=True)+'\n'
-    need(str(ROOT) not in payload and str(private) not in payload and '/home/' not in payload, 'public projection excludes private paths')
+    need(str(root) not in payload and str(private) not in payload and '/home/' not in payload, 'public projection excludes private paths')
     (private/'summary.json').write_text(payload)
     print(json.dumps(dict(status=r['status'], components={n: v['result'] for n, v in r['components'].items()},
-                         qualification_credit=False, summary=str((private/'summary.json').relative_to(ROOT))), sort_keys=True))
+                         qualification_credit=False, summary=str((private/'summary.json').relative_to(root))), sort_keys=True))
     return int(r['status'] != 'components_passed')
 
 

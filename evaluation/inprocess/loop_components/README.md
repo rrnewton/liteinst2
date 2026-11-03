@@ -36,3 +36,24 @@ Expected fixed populations are source requirements, not observed results until
 an attempt actually completes. The old PF result comparator is retained exactly;
 new scalar and chooser fields have exact types/values and the policy12 C oracle
 retains exact two-call typed recovery assertions for each independent model step.
+
+The separate cached-transfer component uses the same planner, DIRECT emitter,
+recovery implementation and independent instruction model. Run its installed
+source entry on a reserved CPU with a closed, same-revision RO build receipt:
+
+```sh
+python3.12 -B evaluation/inprocess/loop_components/current_context.py \
+  --expect-revision <40-hex-revision> --cpu <reserved-cpu> \
+  --current-build target/evaluation/inprocess/<ro-build>/receipt.json \
+  --current-build-sha256 <64-hex-receipt-digest> \
+  --output target/evaluation/inprocess/<fresh-context-attempt>
+```
+
+Its 45-command schedule includes extraction of the actual production proof
+types and legal-head lookup before compiling the component. It requires 960
+models, complete image mutations, reconstructed-output comparisons, and the
+tail, owner and lease rejection cases. It grants no generated-code execution
+or runtime authority. The original DIRECT/auxiliary component entry remains
+`current_direct.py`, with its unchanged 48-command population. A failed
+real-program run in the archive provider remains failed when its successfully
+built archive is reused.

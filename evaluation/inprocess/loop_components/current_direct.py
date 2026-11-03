@@ -23,7 +23,7 @@ from loop_components import run as component
 
 PROFILE = 'cached-direct-components-current-archive-v1'
 INPUTS = {
-    'evaluation/inprocess/loop_components/run.py': (33294, '497583587d7e22baa3ddf248d9ed4f625ce3ffc234da01bfa8d51ee58643336d'),
+    'evaluation/inprocess/loop_components/run.py': (33903, '7ae6aa3ab2c989553c4feffa2901c751015e7307071ae4e8a628fcb66436695c'),
     'evaluation/inprocess/loop_ro_current_archive.py': (6501, '87b8c393d93cf0679366ff62be12438cc97755aa778783a3346d2e0773898fd7'),
     'tools/page-entry/selected/linked_direct_dispatch.h': (5663, '72571ff2d571392e2ead7df1c4ba59c8fba0709efd7fbaea9987e19e8c1ebba9'),
     'tools/page-entry/selected/linked_direct_dispatch.c': (20341, '1feef55f4ba977f11cb31c98e18ef5566e76992b6bfebfc735d652b46e680de1'),
@@ -78,7 +78,12 @@ def result(name, stdout, stderr):
     return observed
 
 
-def main():
+def execute(*, cases=CASES, profile=PROFILE, inputs=INPUTS, schedule=SCHEDULE,
+            command_count=48, result=result, prepare=None, entry_file=__file__,
+            command_message='all forty-eight bounded original collector children',
+            case_message='both actual component results',
+            scope='Only original DIRECT and auxiliary emitter/model/recovery components. No generated-code, '
+                  'native owner, current native55/79, full19, program-completion or performance credit.'):
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('expect-revision', 'current-build', 'current-build-sha256', 'output'):
         parser.add_argument('--'+name, required=True)
@@ -93,7 +98,7 @@ def main():
     need(private.parent == ROOT/'target/evaluation/inprocess' and not private.exists(), 'fresh confined output')
     private.mkdir(mode=0o700)
     pins = {}; aliases = {}; artifacts = {}
-    r = dict(schema=1, profile=PROFILE, status='failed', revision=a.expect_revision, cpu=a.cpu,
+    r = dict(schema=1, profile=profile, status='failed', revision=a.expect_revision, cpu=a.cpu,
         source=None, source_unchanged=False, inputs_unchanged=False, cleanup_complete=False,
         bounds=component.BOUNDS, inputs=pins, aliases=aliases, artifacts=artifacts,
         source_archive_joined=False,
@@ -126,9 +131,10 @@ def main():
         r['source'] = source()
         need(r['source']['revision'] == a.expect_revision, 'exact clean source before any child')
         pin(__file__)
-        for name, (size, sha) in INPUTS.items():
+        if entry_file != __file__: pin(entry_file)
+        for name, (size, sha) in inputs.items():
             need(fact(pin(ROOT/name)) == dict(bytes=size, sha256=sha), 'reviewed whole input '+name)
-        for name, case in CASES.items():
+        for name, case in cases.items():
             need(fact(pin(component.SELECTED/'tests'/name/'build.sh'))['sha256'] == case['recipe_sha256'],
                  'both unchanged literal compiler recipes')
         imported_sources(pin)
@@ -143,7 +149,7 @@ def main():
             '--archive', str(archive), '--archive-sha256', fact(archive)['sha256'],
             '--output', str(private/'components')]
         try:
-            r['component_exit'] = component.main(cases=CASES, profile=PROFILE, result=result)
+            r['component_exit'] = component.main(cases=cases, profile=profile, result=result, prepare=prepare)
         finally:
             sys.argv = original_argv
         path = binary(private/'components/receipt.json'); inner = json.loads(path.read_bytes())
@@ -157,13 +163,13 @@ def main():
              {k: inner['archive'][k] for k in ('bytes', 'sha256')} == fact(archive) and
              all(inner['tools'][k] == str(builder.tools[k]) for k in ('cc', 'nm', 'python', 'git')),
              'complete original component custody, current archive and actual compiler identities')
-        need(len(SCHEDULE) == 48 and tuple(c['name'] for c in inner['commands']) == SCHEDULE and
+        need(len(schedule) == command_count and tuple(c['name'] for c in inner['commands']) == schedule and
              all(c['expected_exit'] == c['exit'] == 0 and c['reaped'] is True and
                  c['timed_out'] is False and c['error'] is None and c['cleanup_errors'] == []
-                 for c in inner['commands']), 'all forty-eight bounded original collector children')
-        need(set(inner['components']) == set(CASES) and
-             all(inner['components'][n]['status'] == 'passed' for n in CASES), 'both actual component results')
-        r['results'] = {name: inner['components'][name]['result'] for name in CASES}
+                 for c in inner['commands']), command_message)
+        need(set(inner['components']) == set(cases) and
+             all(inner['components'][n]['status'] == 'passed' for n in cases), case_message)
+        r['results'] = {name: inner['components'][name]['result'] for name in cases}
         r['status'] = 'components_passed'
     except BaseException as error:
         r['error'] = type(error).__name__+': '+str(error)
@@ -185,14 +191,13 @@ def main():
         results=r.get('results'), commands=len(inner['commands']) if inner else 0,
         source_archive_joined=r['source_archive_joined'], error_type=(r['error'] or '').split(':', 1)[0] or None,
         final_error_count=len(r['final_errors']),
-        scope='Only original DIRECT and auxiliary emitter/model/recovery components. No generated-code, '
-              'native owner, current native55/79, full19, program-completion or performance credit.')
-    summary['reproduce'] = ['python3.12', '-B', str(Path(__file__).resolve().relative_to(ROOT)),
+        scope=scope)
+    summary['reproduce'] = ['python3.12', '-B', str(Path(entry_file).resolve().relative_to(ROOT)),
         '--expect-revision', a.expect_revision, '--cpu', str(a.cpu),
         '--current-build', str(Path(a.current_build).resolve().relative_to(ROOT)),
         '--current-build-sha256', a.current_build_sha256,
         '--output', str(private.relative_to(ROOT))+'-NEW']
-    summary['runner'] = fact(Path(__file__))
+    summary['runner'] = fact(Path(entry_file))
     if proof:
         summary['archive_provider'] = {k: proof[k] for k in ('receipt', 'revision', 'archive',
             'producer_status', 'producer_subjects', 'current_compiler_inputs_equal',
@@ -210,6 +215,10 @@ def main():
     with (private/'summary.json').open('x') as stream: stream.write(payload)
     print(json.dumps(dict(status=r['status'], summary=str((private/'summary.json').relative_to(ROOT)))))
     return int(r['status'] != 'components_passed')
+
+
+def main():
+    return execute()
 
 
 if __name__ == '__main__':
