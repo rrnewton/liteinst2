@@ -459,7 +459,13 @@ static void lprx_terminal(void) {
     }
     if(good)(void)lprx_add(&pe.rx.terminal_closed,1);
 }
+#ifdef LI2_LOOP_CACHE8_PROGRAM
+#include "loop_cache8_program.inc"
+#endif
 static void lprx_report(unsigned status,unsigned code) {
+#ifdef LI2_LOOP_CACHE8_PROGRAM
+    lc8p_report(status,code);
+#endif
 #ifdef LI2_LOOP_CACHE8
     struct writer transit={0};text(&transit,"LI2_LOOP_CACHE8_TRANSIT {\"version\":1");
 #else

@@ -32,14 +32,14 @@ TRANSIT_PREFIX=b'LI2_LOOP_RX_TRANSIT '
 TRANSIT_FIELDS=('version','status','failure_code','branch_limit','offers','steps','declined','limit_revokes')
 
 
-def transit_row(stderr,*,oracle=False):
+def transit_row(stderr,*,oracle=False,prefix=TRANSIT_PREFIX,rx_prefix=PREFIX,preceding=b'LI2_PERSISTENT_UNREGISTERED ',parse=row):
     need(type(stderr)is bytes and stderr.endswith(b'\n'),'whole actual transit terminal')
-    lines=stderr[:-1].split(b'\n');found=[i for i,x in enumerate(lines) if x.startswith(TRANSIT_PREFIX)]
+    lines=stderr[:-1].split(b'\n');found=[i for i,x in enumerate(lines) if x.startswith(prefix)]
     need(len(found)==1 and 0<found[0]<len(lines)-1 and
-         lines[found[0]-1].startswith(b'LI2_PERSISTENT_UNREGISTERED ') and
-         lines[found[0]+1].startswith(b'LI2_LOOP_RX_TRANSIT_TICKET ' if oracle else PREFIX),
+         lines[found[0]-1].startswith(preceding) and
+         lines[found[0]+1].startswith(b'LI2_LOOP_RX_TRANSIT_TICKET ' if oracle else rx_prefix),
          'one distinct transit row in its exact production or finite-observer position')
-    i=found[0];actual=row(lines[i],TRANSIT_PREFIX,TRANSIT_FIELDS)
+    i=found[0];actual=parse(lines[i],prefix,TRANSIT_FIELDS)
     need(actual['branch_limit']==2,'literal total budget of two original DIRECT branches')
     return actual,b'\n'.join(lines[:i]+lines[i+1:])+b'\n'
 
@@ -51,10 +51,10 @@ def transit_joined(transit,actual):
          'actual second-branch closes and budget revocations; first-ticket meaning unchanged')
 
 
-def transit_controls(stderr,validate,*,oracle=False):
-    actual,_=transit_row(stderr,oracle=oracle);lines=stderr[:-1].split(b'\n')
-    index=next(i for i,x in enumerate(lines) if x.startswith(TRANSIT_PREFIX));refusals=[]
-    rx=row(lines[-1],PREFIX,FIELDS)
+def transit_controls(stderr,validate,*,oracle=False,prefix=TRANSIT_PREFIX,rx_prefix=PREFIX,rx_version=1,preceding=b'LI2_PERSISTENT_UNREGISTERED ',parse=row):
+    actual,_=transit_row(stderr,oracle=oracle,prefix=prefix,rx_prefix=rx_prefix,preceding=preceding,parse=parse);lines=stderr[:-1].split(b'\n')
+    index=next(i for i,x in enumerate(lines) if x.startswith(prefix));refusals=[]
+    rx=parse(lines[-1],rx_prefix,FIELDS) if rx_version==1 else parse(lines[-1],rx_prefix,FIELDS,version=rx_version)
     def reject(label,changed):
         need(changed!=stderr,'actual supplied transit-row mutation')
         try:validate(changed)
@@ -68,40 +68,40 @@ def transit_controls(stderr,validate,*,oracle=False):
             elif key=='declined':changed[key]=rx['direct_steps']+1
             elif key=='limit_revokes':changed[key]=actual['steps']+1
             else:changed[key]^=1
-            copy=list(lines);copy[index]=TRANSIT_PREFIX+json.dumps(changed,separators=(',',':')).encode()
+            copy=list(lines);copy[index]=prefix+json.dumps(changed,separators=(',',':')).encode()
             reject(kind+'.'+key,b'\n'.join(copy)+b'\n')
     for label,copy in (('missing',lines[:index]+lines[index+1:]),
                        ('duplicate',lines[:index]+[lines[index]]+lines[index:]),
                        ('late',lines[:index]+lines[index+1:]+[lines[index]])):
         reject(label,b'\n'.join(copy)+b'\n')
     changed=dict(actual);changed['extra']=0;copy=list(lines)
-    copy[index]=TRANSIT_PREFIX+json.dumps(changed,separators=(',',':')).encode()
+    copy[index]=prefix+json.dumps(changed,separators=(',',':')).encode()
     reject('extra',b'\n'.join(copy)+b'\n')
     need(len(refusals)==len(set(refusals))==28,'separate complete transit counter controls')
     return refusals
 
 
-def split(stderr):
-    _,stderr=transit_row(stderr)
+def split(stderr,*,prefix=PREFIX,version=1,transit_prefix=TRANSIT_PREFIX,parse=row):
+    _,stderr=transit_row(stderr,prefix=transit_prefix,rx_prefix=prefix,parse=parse)
     need(type(stderr) is bytes and stderr.endswith(b'\n'), 'whole RX terminal bytes')
     lines=stderr[:-1].split(b'\n')
-    found=[i for i,x in enumerate(lines) if x.startswith(PREFIX)]
+    found=[i for i,x in enumerate(lines) if x.startswith(prefix)]
     need(found==[len(lines)-1] and len(lines)>1 and
          lines[-2].startswith(b'LI2_PERSISTENT_UNREGISTERED '),
          'one distinct RX row after the complete original terminal')
-    actual=row(lines[-1],PREFIX,FIELDS)
+    actual=parse(lines[-1],prefix,FIELDS) if version==1 else parse(lines[-1],prefix,FIELDS,version=version)
     need(actual['status']==actual['failure_code']==0,
          'actual successful RX terminal, never a killed or exceptional prefix')
     return actual,b'\n'.join(lines[:-1])+b'\n'
 
 
-def extent(actual):
+def extent(actual,*,members=(1,2)):
     def check(d):
         if d['phase']==13:
             n=actual['last_count'];mask=actual['last_retained_mask']
             need(actual['last_complete']==1 and actual['last_id']>0 and
                  actual['last_serial']==d['serial'] and n==d['domain_members'] and
-                 n in (1,2) and mask < 1<<n and actual['last_source_phase']==9 and
+                 n in members and mask < 1<<n and actual['last_source_phase']==9 and
                  actual['last_generation']==d['generation'] and
                  actual['last_slot']==d['selected_slot'] and actual['last_bank']in(0,1),
                  'literal final completed RX cell identity and typed release')
@@ -115,10 +115,11 @@ def extent(actual):
     return check
 
 
-def joined(actual,raw):
+def joined(actual,raw,*,member_entries=None,members=(1,2)):
     d=raw['LI2_PERSISTENT_UNREGISTERED'];s=raw['LI2_PERSISTENT_SUBENTRY']
-    extent(actual)(d)
-    need(actual['entries']==d['entries']+d['dual_entries'] and
+    extent(actual,members=members)(d)
+    entries=d['entries']+d['dual_entries'] if member_entries is None else member_entries
+    need(actual['entries']==entries and
          actual['quiet_releases']==d['completed'] and
          actual['retained_entries']<=actual['entries'] and
          actual['code_opens']==3*(actual['entries']-actual['retained_entries']) and
@@ -178,20 +179,28 @@ def check(stdout,stderr,args,kind,mode,*,dependencies=None):
 def controls(stdout,stderr,args,kind,mode,*,dependencies=None):
     pf,prior,ro=DEFAULT_DEPENDENCIES if dependencies is None else dependencies
     check(stdout,stderr,args,kind,mode,dependencies=dependencies)
-    actual,original=split(stderr);terminal,terminal_controls=callbacks(actual,dependencies)
+    actual,original=split(stderr);terminal,application_controls=callbacks(actual,dependencies)
     inherited=ro.controls(stdout,original,args,kind,mode,
-        terminal_check=terminal,terminal_controls=terminal_controls)
+        terminal_check=terminal,terminal_controls=application_controls)
     need(len(inherited['refusals'])==167 and
          len(inherited['inherited']['refusals'])==prior.CONTROL_COUNTS[kind],
          'all original447/480 application plus167 certificate controls retained')
+    refusals=terminal_controls(stderr,actual,original,
+        lambda value:check(stdout,value,args,kind,mode,dependencies=dependencies))
+    return dict(inherited=inherited,refusals=refusals,
+        transit_refusals=transit_controls(stderr,
+            lambda value:check(stdout,value,args,kind,mode,dependencies=dependencies)))
+
+
+def terminal_controls(stderr,actual,original,validate,*,prefix=PREFIX):
     lines=stderr[:-1].split(b'\n');refusals=[]
     def reject(label,value):
         need(value!=stderr,'actual distinct RX mutation')
-        try:check(stdout,value,args,kind,mode,dependencies=dependencies)
+        try:validate(value)
         except ValueError:refusals.append(label)
         else:raise ValueError('accepted RX terminal mutation '+label)
     def replace(label,value):
-        reject(label,b'\n'.join(lines[:-1]+[PREFIX+json.dumps(value,separators=(',',':')).encode()])+b'\n')
+        reject(label,b'\n'.join(lines[:-1]+[prefix+json.dumps(value,separators=(',',':')).encode()])+b'\n')
     for key in FIELDS:
         changed=dict(actual);del changed[key];replace('missing.'+key,changed)
         changed=dict(actual);changed[key]=bool(changed[key]);replace('boolean.'+key,changed)
@@ -215,9 +224,7 @@ def controls(stdout,stderr,args,kind,mode,*,dependencies=None):
     changed['code_syncs']=changed['code_opens']+changed['code_writes']
     replace('semantic.actual_revoke_calls',changed)
     need(len(refusals)==len(set(refusals))==106,'fixed complete additive RX controls')
-    return dict(inherited=inherited,refusals=refusals,
-        transit_refusals=transit_controls(stderr,
-            lambda value:check(stdout,value,args,kind,mode,dependencies=dependencies)))
+    return refusals
 
 
 def configured(fused, application, certificate):

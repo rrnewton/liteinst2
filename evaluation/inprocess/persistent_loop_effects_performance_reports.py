@@ -38,7 +38,35 @@ EFFECTS_POPULATIONS = dict(effects_schema=42, effects_semantic=11, effects_event
 CONTROL_COUNTS = {'ls': 447, 'true': 480}
 
 
-def _completed(raw, lane, *, extent=nx_extent):
+def _retained(d,s):
+    need(d['selected_slot']in(0,1), 'actual selected retained slot')
+    generations=(d['slot0_generation'],d['slot1_generation'])
+    permits=(d['slot0_permit'],d['slot1_permit'])
+    completed_serials=(d['slot0_completed_serial'],d['slot1_completed_serial'])
+    installed=sum(g>0 for g in generations)
+    need(all(0<=g<=d['publications'] for g in generations)and
+         (not all(generations)or generations[0]!=generations[1])and
+         max(generations)==d['publications']and
+         permits==tuple(int(g>0)for g in generations)and
+         all((0<c<=d['serial'])if g else c==0 for g,c in zip(generations,completed_serials,strict=True)),
+         'actual distinct retained generations and their completed permits')
+    need(d['generation']==generations[d['selected_slot']]and d['permit']==permits[d['selected_slot']]and
+         d['retirements']==d['publications']-installed and
+         d['permit_claims']==d['hits']+s['hits']+d['retirements']+d['dual_entries'] and
+         d['dual_entries']==d['dual_completed'] and 0<=d['dual_entries']<=d['hits']+s['hits'],
+         'two-slot publication/retirement accounting and selected generation identity')
+    if d['generation']:
+        need(0<d['build_serial']<=completed_serials[d['selected_slot']], 'selected immutable build precedes its actual completion')
+    else:
+        need(d['build_serial']==0, 'no invented selected-generation build serial')
+
+
+def _members(d):
+    need(d['domain_members'] in (1,2) if d['phase']==13 else d['domain_members']==0,
+         'actual one/two-member domain or unbound cancellation')
+
+
+def _completed(raw, lane, *, extent=nx_extent, retained=_retained, members=_members):
     """Whole PF terminal arithmetic; exact maps mode is selected by this profile."""
     f=raw['LI2_PF_REFUSALS']
     need(f['status']==f['failure_code']==0 and f['refused']==f['cancelled'],
@@ -62,26 +90,7 @@ def _completed(raw, lane, *, extent=nx_extent):
          d['cold_attempts']==d['publications']+d['cancelled'] and
          d['misses'][0]==0 and sum(d['misses'])+f['cancelled']==d['cancelled'],
          'exact completed, cold and genuinely cancelled resident partitions')
-    need(d['selected_slot']in(0,1), 'actual selected retained slot')
-    generations=(d['slot0_generation'],d['slot1_generation'])
-    permits=(d['slot0_permit'],d['slot1_permit'])
-    completed_serials=(d['slot0_completed_serial'],d['slot1_completed_serial'])
-    installed=sum(g>0 for g in generations)
-    need(all(0<=g<=d['publications'] for g in generations)and
-         (not all(generations)or generations[0]!=generations[1])and
-         max(generations)==d['publications']and
-         permits==tuple(int(g>0)for g in generations)and
-         all((0<c<=d['serial'])if g else c==0 for g,c in zip(generations,completed_serials,strict=True)),
-         'actual distinct retained generations and their completed permits')
-    need(d['generation']==generations[d['selected_slot']]and d['permit']==permits[d['selected_slot']]and
-         d['retirements']==d['publications']-installed and
-         d['permit_claims']==d['hits']+s['hits']+d['retirements']+d['dual_entries'] and
-         d['dual_entries']==d['dual_completed'] and 0<=d['dual_entries']<=d['hits']+s['hits'],
-         'two-slot publication/retirement accounting and selected generation identity')
-    if d['generation']:
-        need(0<d['build_serial']<=completed_serials[d['selected_slot']], 'selected immutable build precedes its actual completion')
-    else:
-        need(d['build_serial']==0, 'no invented selected-generation build serial')
+    retained(d,s)
     if not d['offers']:
         need(d['phase']==d['opened_pages']==d['closed_pages']==d['anchor_released']==
              d['registration_rechecked']==d['recovery_complete']==d['domain_members']==0, 'actual unused resident owner')
@@ -89,8 +98,7 @@ def _completed(raw, lane, *, extent=nx_extent):
         need(d['phase']in(13,14)and d['anchor_released']==d['registration_rechecked']==1,
              'last chosen epoch is actually closed or fully cancelled')
         extent(d)
-        need(d['domain_members'] in (1,2) if d['phase']==13 else d['domain_members']==0,
-             'actual one/two-member domain or unbound cancellation')
+        members(d)
     need(s['selections']>=s['hits']==s['entries']==s['completed'],
          'actual completed subentry selection/hit/entry partition')
     if d['phase']==13:
@@ -217,7 +225,7 @@ def _parts(stderr, lane):
     return parsed, view, original
 
 
-def _read(stdout, stderr, args, kind, lane, *, extent=nx_extent):
+def _read(stdout, stderr, args, kind, lane, *, extent=nx_extent, retained=_retained, members=_members):
     need(kind in ('ls', 'true') and lane in ('release', 'differential') and
          type(args) is tuple and len(args) == 7,
          'exact plain LS/true lane and complete actual process/input arguments')
@@ -240,7 +248,7 @@ def _read(stdout, stderr, args, kind, lane, *, extent=nx_extent):
         ('LI2_LINKED_NATIVE_PROBE', 'native_probe'), ('LI2_CHAIN', 'chain'),
         ('LI2_NATIVE_PAIR', 'native_pair'), ('LI2_PF_REFUSALS', 'pf_refusals'))}
     raw['LI2_MAPS_VIEW'] = view
-    _completed(raw, lane, extent=extent)
+    _completed(raw, lane, extent=extent, retained=retained, members=members)
     _effects_completed(parsed)
     need(parsed['linked']['events'] == parsed['scalar_region']['events'] ==
          parsed['unrolled']['events'] and
@@ -262,8 +270,8 @@ def _read(stdout, stderr, args, kind, lane, *, extent=nx_extent):
     return parsed, view, original, summary, closure
 
 
-def check(stdout, stderr, args, kind, lane, *, extent=nx_extent):
-    parsed, view, _, _, _ = _read(stdout, stderr, args, kind, lane, extent=extent)
+def check(stdout, stderr, args, kind, lane, *, extent=nx_extent, retained=_retained, members=_members):
+    parsed, view, _, _, _ = _read(stdout, stderr, args, kind, lane, extent=extent, retained=retained, members=members)
     return dict(
         application_completed=True, lane=lane, workload=kind,
         maps_view=view, loop_runtime=parsed['loop_runtime'], loop_effects=parsed['loop_effects'],
@@ -281,8 +289,8 @@ def check(stdout, stderr, args, kind, lane, *, extent=nx_extent):
         full_state_credit=False, qualification_credit=False)
 
 
-def controls(stdout, stderr, args, kind, lane, *, extent=nx_extent):
-    parsed, view, original, _, closure = _read(stdout, stderr, args, kind, lane, extent=extent)
+def controls(stdout, stderr, args, kind, lane, *, extent=nx_extent, retained=_retained, members=_members):
+    parsed, view, original, _, closure = _read(stdout, stderr, args, kind, lane, extent=extent, retained=retained, members=members)
     inherited = cost.supplied_controls(
         stdout, original, *args, workload=kind,
         cache_completed=cache_reports.completed, chain_closure=closure,
@@ -303,7 +311,7 @@ def controls(stdout, stderr, args, kind, lane, *, extent=nx_extent):
     def reject(name, changed, *, expected=None):
         need(type(changed) is bytes and changed != stderr, 'actual plain mutation ' + name)
         try:
-            _read(stdout, changed, args, kind, lane, extent=extent)
+            _read(stdout, changed, args, kind, lane, extent=extent, retained=retained, members=members)
         except ValueError as error:
             need(expected is None or str(error) == expected, 'exact plain refusal cause ' + name)
             names.append(name)

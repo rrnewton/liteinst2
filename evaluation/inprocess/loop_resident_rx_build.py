@@ -17,8 +17,11 @@ RX_LIFETIME=dict(version=1,slots=2,source_release_version=1,
     metadata_permission_counts='actual-pe_permission-calls-only',qualification_credit=False)
 
 
-def build_rx(builder, archive, original, directory, pin, binary, aliases, run, state, mode, *, control=None, selected=None, root=None, recurrence=False, cache8=False, cache8_observe=None):
+def build_rx(builder, archive, original, directory, pin, binary, aliases, run, state, mode, *, control=None, selected=None, root=None, recurrence=False, cache8=False, cache8_observe=None, cache8_program=False):
     """Execute the real source-owned recipe, then bind its exact compiler closure."""
+    need(type(cache8_program)is bool and (not cache8_program or
+         cache8 and not recurrence and cache8_observe is None and control is None and mode=='release'),
+         'distinct release-only cache8 program terminal without finite observer')
     need(mode in ('release','differential') and
          (control is None or type(control)is int and control in (0,1)) and
          (control!=1 or mode=='differential'), 'explicit production or finite RX mode')
@@ -35,6 +38,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     if recurrence:stem='persistent-loop-rx-recurrence'
     if cache8:stem='persistent-loop-cache8'
     if cache8_observe is not None:stem+='-observe'
+    if cache8_program:stem+='-program'
     binder_name=stem.replace('-','_')+'_binding'
     output = directory/'build'; output.mkdir()
     script = pin(selected/('build-'+stem+'.sh'))
@@ -87,7 +91,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     need(set(binding) == set(constants) | {'profile', 'mode', 'archive', 'policy_sha256',
              'original', 'sources', 'headers', 'byte_certificate', 'history_certificate', 'rx_lifetime'} |
              (set() if control is None else {'control','oracle'}) |
-             ({'recurrence'} if recurrence else set()) | ({'cache8'} if cache8 else set()) | ({'cache8_observer'} if cache8_observe is not None else set())
+             ({'recurrence'} if recurrence else set()) | ({'cache8'} if cache8 else set()) | ({'cache8_observer'} if cache8_observe is not None else set()) | ({'cache8_program'} if cache8_program else set())
          and digest({key: binding[key] for key in constants}) == digest(constants)
          and binding['profile'] == stem+'-'+mode+'-v1'
          and binding['mode'] == mode and binding['archive'] == fact(archive)
@@ -106,6 +110,10 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
              row_bytes=12088,source_bytes=8760,initial_seals=6,final_seals=23,
              denominator='actual-pe_build-after-coarse-and-negative-hint',stop_detail=8960,
              observation_authority=False,qualification_credit=False), 'exact passive observation schema')
+    if cache8_program:
+        need(binding['cache8_program']==dict(version=1,fields=63,slots=8,members=8,receipts=9,
+             terminal_only=True,observation_authority=False,qualification_credit=False),
+             'exact terminal-only all-slot/count observation')
     expected_lifetime=dict(RX_LIFETIME,version=2,slots=8) if cache8 else RX_LIFETIME
     if cache8:
         need(binding['cache8']==dict(version=1,slots=8,members=8,completion_cells=9,source_pages=2,
@@ -142,6 +150,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
         ('#define LI2_PG_LOOP_RX_RECURRENCE_BINDING_VERSION 1\n' if recurrence else '')+
         ('#define LI2_PG_LOOP_CACHE8_BINDING_VERSION 1\n' if cache8 else '')+
         ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n' if cache8_observe is not None else '')+
+        ('#define LI2_PG_LOOP_CACHE8_PROGRAM_BINDING_VERSION 1\n' if cache8_program else '')+
         ('#define LI2_PG_LOOP_RESIDENT_RX_ORACLE_BINDING_VERSION 1\n' if control is not None else '')+
         '#define LI2_PG_LOOP_BINDING_VERSION 1\n#define LI2_PG_LOOP_POLICY_VERSION 12\n'
         '#define LI2_PG_LOOP_FALLBACK_VERSION 11\n#define LI2_PG_LOOP_ENCODING_VERSION 2\n'
@@ -163,6 +172,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     expected[expected.index('-Werror')+1:expected.index('-Werror')+1] = (['-include', str(output/'loop_ro_certificate_config.h'), '-DLI2_LOOP_RESIDENT_RX=1']+
         (['-DLI2_LOOP_RX_RECURRENCE=1'] if recurrence else [])+
         (['-DLI2_LOOP_CACHE8=1'] if cache8 else [])+
+        (['-DLI2_LOOP_CACHE8_PROGRAM=1'] if cache8_program else [])+
         ([] if cache8_observe is None else ['-DLI2_LOOP_CACHE8_OBSERVE=1','-DLI2_LOOP_CACHE8_CONTROL='+str(cache8_observe)])+
         ([] if control is None else ['-DLI2_LOOP_RESIDENT_RX_ORACLE=1','-DLI2_LOOP_RESIDENT_RX_CONTROL='+str(control)]))
     if cache8:

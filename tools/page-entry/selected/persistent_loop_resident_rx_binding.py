@@ -18,6 +18,10 @@ CACHE8_OBSERVE_INPUTS=('persistent_loop_cache8_observe_binding.py','build-persis
     'loop_cache8_observe.h','loop_cache8_observe.inc')
 CACHE8_INPUTS=('persistent_loop_cache8_binding.py','build-persistent-loop-cache8.sh',
     'loop_cache8_profile.h','loop_cache8.h','loop_cache8_owner.inc')
+CACHE8_PROGRAM_INPUTS=('persistent_loop_cache8_program_binding.py','build-persistent-loop-cache8-program.sh',
+    'loop_cache8_program.inc')
+CACHE8_PROGRAM=dict(version=1,fields=63,slots=8,members=8,receipts=9,
+    terminal_only=True,observation_authority=False,qualification_credit=False)
 CACHE8=dict(version=1,slots=8,members=8,completion_cells=9,source_pages=2,placement_banks=2,
     aggregate_heads=256,aggregate_boundaries=8,rx_receipt_version=2,
     selection='exact-root-or-head-then-empty-or-oldest-completion',
@@ -34,7 +38,10 @@ RECURRENCE=dict(version=7,bytes=12382208,storage_bytes=12582912,capacity=1024,
     observation_authority=False,qualification_credit=False)
 
 
-def write_binding(selected, archive, image, output, mode, *, recurrence=False, cache8=False, cache8_observe=None):
+def write_binding(selected, archive, image, output, mode, *, recurrence=False, cache8=False, cache8_observe=None, cache8_program=False):
+    need(type(cache8_program)is bool and (not cache8_program or
+         cache8 and not recurrence and cache8_observe is None and mode=='release'),
+         'distinct release-only cache8 program terminal without finite observer')
     need(cache8_observe is None or type(cache8_observe)is int and cache8_observe in (0,1) and
          cache8 and (cache8_observe==0 or mode=='differential'),'literal cache8 positive or differential predicate controls')
     need(type(cache8)is bool and not (cache8 and recurrence), 'distinct cache8 or old observation layout')
@@ -42,7 +49,7 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
          'literal original RX mode or distinct release-only recurrence profile')
     need(selected.is_dir() and archive.is_file() and image.is_file() and output.is_dir(),
          'actual active-domain binding inputs')
-    leaves = LEAVES + (RECURRENCE_INPUTS if recurrence else ()) + (CACHE8_INPUTS if cache8 else ()) + (CACHE8_OBSERVE_INPUTS if cache8_observe is not None else ())
+    leaves = LEAVES + (RECURRENCE_INPUTS if recurrence else ()) + (CACHE8_INPUTS if cache8 else ()) + (CACHE8_OBSERVE_INPUTS if cache8_observe is not None else ()) + (CACHE8_PROGRAM_INPUTS if cache8_program else ())
     need(len(leaves)==len(set(leaves)), 'whole distinct LOOP and RO-certificate source closure')
     values = []
     for name in leaves:
@@ -66,6 +73,7 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
                   ('#define LI2_PG_LOOP_RX_RECURRENCE_BINDING_VERSION 1\n' if recurrence else '') +
                   ('#define LI2_PG_LOOP_CACHE8_BINDING_VERSION 1\n' if cache8 else '') +
                   ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n' if cache8_observe is not None else '') +
+                  ('#define LI2_PG_LOOP_CACHE8_PROGRAM_BINDING_VERSION 1\n' if cache8_program else '') +
                   '#define LI2_PG_LOOP_BINDING_VERSION 1\n#define LI2_PG_LOOP_POLICY_VERSION 12\n#define LI2_PG_LOOP_FALLBACK_VERSION 11\n#define LI2_PG_LOOP_ENCODING_VERSION 2\n'
                   '#define LI2_PG_LOOP_EFFECTS_BINDING_VERSION 1\n#define LI2_PG_LOOP_EFFECTS_POLICY_VERSION 13\n#define LI2_PG_LOOP_EFFECTS_SCALAR_VERSION 3\n#define LI2_PG_LOOP_EFFECTS_MOV_VERSION 2\n'
                   '#define LI2_PG_ARCHIVE_SHA256 ' + literal(actual_archive['sha256']) + '\n'
@@ -99,7 +107,11 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
         record['profile']='persistent-loop-cache8-observe-'+mode+'-v1'
         record['cache8_observer']=dict(version=1,control=cache8_observe,reference='cache8-abc169',
             observation_authority=False,qualification_credit=False)
-    name=('persistent_loop_cache8_observe_binding.json' if cache8_observe is not None else
+    if cache8_program:
+        record['profile']='persistent-loop-cache8-program-release-v1'
+        record['cache8_program']=CACHE8_PROGRAM
+    name=('persistent_loop_cache8_program_binding.json' if cache8_program else
+          'persistent_loop_cache8_observe_binding.json' if cache8_observe is not None else
           'persistent_loop_cache8_binding.json' if cache8 else
           'persistent_loop_rx_recurrence_binding.json' if recurrence else 'persistent_loop_resident_rx_binding.json')
     paths = [output / name for name in headers] + [output / name]

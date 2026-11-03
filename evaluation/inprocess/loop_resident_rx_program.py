@@ -54,7 +54,7 @@ SCHEDULE = SETUP + tuple((kind+'-'+name, profile) for kind, _, _, _ in PROGRAMS
 
 
 def prepare_workloads(builder, products, private, pin, binary, aliases, run, r, *,
-                      build=build_rx, selected=None):
+                      build=build_rx, selected=None, cache8=False):
     """The original two release links and complete namespace/image preparation."""
     states = {}; builds = r['release_builds'] = {}
     archive = pin(products['archive']); owned = builder.record['artifacts']['decoder.a']
@@ -69,10 +69,14 @@ def prepare_workloads(builder, products, private, pin, binary, aliases, run, r, 
         holder = builds[kind] = {}
         def labelled(name, argv, **kwargs):
             return run(kind+'-'+name, argv, **kwargs)
-        bridge = build(builder, archive, original, directory, pin, binary, aliases,
-                       labelled, holder, 'release', selected=selected)
+        if cache8:
+            bridge = build(builder, archive, original, directory, pin, binary, aliases,
+                           labelled, holder, 'release', selected=selected,cache8=True,cache8_program=True)
+        else:
+            bridge = build(builder, archive, original, directory, pin, binary, aliases,
+                           labelled, holder, 'release', selected=selected)
         need(holder['status'] == 'compiled_diagnostic_only' and
-             holder['binding']['profile'] == 'persistent-loop-resident-rx-release-v1' and
+             holder['binding']['profile'] == ('persistent-loop-cache8-program-release-v1' if cache8 else 'persistent-loop-resident-rx-release-v1') and
              holder['binding']['mode'] == 'release' and
              holder['binding']['archive'] == r['archive'] and
              holder['binding']['capture_version'] is None and
@@ -81,15 +85,20 @@ def prepare_workloads(builder, products, private, pin, binary, aliases, run, r, 
              holder['binding']['rx_lifetime']['old_capture_compatible'] is False and
              holder['binding']['rx_lifetime']['original_domain_preserved'] is True,
              'actual separately bound RX release with no test/capture profile')
+        if cache8:
+            need(holder['binding']['cache8_program']==dict(version=1,fields=63,slots=8,members=8,receipts=9,
+                 terminal_only=True,observation_authority=False,qualification_credit=False) and
+                 'cache8_observer' not in holder['binding'],
+                 'actual terminal-only CACHE8 release and no finite observer')
         states[kind] = prepare_workload(kind, original, args, bridge, builder,
                                        private, pin, binary, run, r, namespace)
     return states
 
 
 def cohort(builder, products, private, pin, binary, aliases, run, r, *,
-           build=build_rx, terminal=reports, selected=None, expected_commands=34):
+           build=build_rx, terminal=reports, selected=None, expected_commands=34, cache8=False):
     states = prepare_workloads(builder, products, private, pin, binary, aliases, run, r,
-                               build=build, selected=selected)
+                               build=build, selected=selected, cache8=cache8)
     need(terminal.prior.CONTROL_COUNTS == CONTROL_COUNTS and len(r['cases']) == 2,
          'fixed two release subjects and every unchanged real-program reader control')
     expected_output = {kind: out for kind, _, _, out in PROGRAMS}
@@ -114,6 +123,10 @@ def cohort(builder, products, private, pin, binary, aliases, run, r, *,
                  len(controls['inherited']['refusals']) == len(set(controls['inherited']['refusals'])) == RO_CONTROL_COUNT and
                  len(controls['refusals']) == len(set(controls['refusals'])) == RX_CONTROL_COUNT,
                  'all original447/480 reader controls,167 certificate controls and106 typed RX controls')
+            if cache8:
+                need(len(controls['transit_refusals'])==len(set(controls['transit_refusals']))==28 and
+                     len(controls['cache8_refusals'])==len(set(controls['cache8_refusals']))==214,
+                     'complete original DIRECT transit and additive all-slot/count controls')
             case.update(observed=observed, controls=controls, namespace_complete=True,
                         status='passed', completed_program_measurement=True)
         except Exception as error:
@@ -142,7 +155,8 @@ def cohort(builder, products, private, pin, binary, aliases, run, r, *,
          'both fixed diagnostic attempts and the complete declared source-owned schedule, no discarded failure')
 
 
-def execute(a, *, context=None):
+def execute(a, *, context=None, cache8=False):
+    need(type(cache8)is bool,'explicit separate CACHE8 program selector')
     if context is not None:
         need(type(context) is dict and set(context)=={'root','selected','build_module','reports_module',
              'current_build_receipt','current_build_sha256','source_manifest'},
@@ -150,6 +164,9 @@ def execute(a, *, context=None):
     root = ROOT if context is None else Path(context['root']).resolve(strict=True)
     selected = None if context is None else Path(context['selected']).resolve(strict=True)
     terminal = reports if context is None else context['reports_module']
+    if cache8 and context is None:
+        import loop_cache8_program_reports
+        terminal=loop_cache8_program_reports
     build = build_rx if context is None else context['build_module'].build_rx
     schedule = SCHEDULE if context is None else SCHEDULE[len(SETUP):]
     need(len(SETUP)==20 and len(SCHEDULE)==34 and len(schedule)==(34 if context is None else 14),
@@ -178,6 +195,9 @@ def execute(a, *, context=None):
         count_scope='Actual fully checked terminal rows. Linked ingress is not every kernel trap; policy redirects are not internal iterations. No counter bank or invented absent events.',
         reproduce=None if context is not None else [sys.executable, '-B', str(Path(__file__).resolve()),
                    '--expect-revision', a.expect_revision, '--output', str(private)])
+    if cache8:
+        r['profile']='loop-cache8-program-release-v1' if context is None else 'loop-cache8-program-overlay-v1'
+        r['scope']='Two actual CACHE8 release programs with all original application/namespace/terminal checks,447/480 application,167 certificate,106 RX,28 transit and214 count controls. Native/causal proof remains a separate prerequisite; no full-profile, repeated-sample or performance credit.'
     pins = {}; aliases = {}; artifacts = {}; presence = {}
     def pin(path, want=None):
         alias=Path(os.path.abspath(path)); p=alias.resolve(strict=True); value=fact(p)
@@ -263,7 +283,7 @@ def execute(a, *, context=None):
             products = dict(archive=archive)
         r['archive'] = fact(products['archive'])
         cohort(builder, products, private, pin, binary, aliases, run, r,
-               build=build, terminal=terminal, selected=selected, expected_commands=len(schedule))
+               build=build, terminal=terminal, selected=selected, expected_commands=len(schedule), cache8=cache8)
         need(not r['final_errors'], 'complete retained command custody')
         r['status'] = 'completed_diagnostic'
     except BaseException as error:
@@ -304,6 +324,9 @@ def execute(a, *, context=None):
                 rx_reader_controls=len(controls.get('refusals', [])),
                 controls_sha256=digest(controls) if controls else None,
                 validated_terminal_available='observed' in case)
+            if cache8:
+                observed['cache8_reader_controls']=len(controls.get('cache8_refusals',[]))
+                observed['transit_reader_controls']=len(controls.get('transit_refusals',[]))
             cases.append(observed)
         summary.update(receipt=fact(private/'receipt.json'), commands=len(r['commands']), cases=cases,
             error_type=(r['error'] or '').split(':', 1)[0] or None,
@@ -312,6 +335,9 @@ def execute(a, *, context=None):
             reproduce=['python3.12', '-B', 'evaluation/inprocess/loop_resident_rx_program.py',
                        '--expect-revision', a.expect_revision, '--output',
                        'target/evaluation/inprocess/loop-resident-rx-program-NEW'])
+        if cache8:
+            summary['reproduce'][2]='evaluation/inprocess/loop_cache8_program.py'
+            summary['reproduce'][-1]='target/evaluation/inprocess/loop-cache8-program-NEW'
         if context is not None:
             summary['reproduce']=None
             summary['source_manifest']=r['source_manifest']
