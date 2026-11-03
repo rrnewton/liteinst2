@@ -8,6 +8,7 @@ base=load('lifecycle_owner_base',HERE/'base.py')
 need,zero,q,canonical=base.need,base.zero,base.q,base.canonical
 PAGE,TF,RF,MASK,U64,GREG=base.PAGE,base.TF,base.RF,base.MASK,base.U64,base.GREG
 history=base.history
+member_expected=load('lifecycle_shared_expected',HERE.parent/'persistent_loop_lifecycle_owner/expected.py')
 class Check(base.Check):
     def epoch(self,b,index,baseline):
         t='pdo_epoch';st='pdo_stage';gt='li2_pg_generation';pt='li2_pg_progress';it='pdo_epoch_info';warm=index==2;count=2 if warm else 1
@@ -82,7 +83,9 @@ class Check(base.Check):
         exit_ref=refs[self.exit_member];exit_ci,exit_graph=self.graph_for(exit_ref)
         boundary=next(x for x in exit_graph['boundary_rows']if x['target']==target)
         need(self.page+exit_graph['offsets'][boundary['head']]==exitpc,'actual native branch equals complete member frontier')
-        info=self.f(b,t,'info');bank=self.i(refs[0],'li2_pgd_ref','bank');self.eq(info,it,selected_bank=bank,warm=int(warm),initialized=1,registered=1,code_allocated=2,proof_allocated=1,code_registered=2,proof_registered=1,close_started=1,close_complete=1,prepare_started=1,prepare_complete=1,build_started=int(not warm),build_returned=int(not warm),redirected=1,exit_seen=1,exit_index=boundary['index'],recovery_started=1,recovery_complete=1,guest_data_fault=0,cleanup_started=0,cleanup_complete=0,consumed=1,plan_proofs=0 if warm else 2,none_proofs=0 if warm else 1,code_allocation=self.h_alloc,proof_allocation=self.h_proof_alloc,build_result=0,recovery_result=0,release_result=0,gpr_written=self.graph['gpr_written'],flags_written=self.graph['flags_written'],ticket=self.symbol('span_transfer'),registry_count=len(self.ranges))
+        member_values=member_expected.epoch(self.page,tuple(self.graph_for(ref)[1]for ref in refs),
+            bytes(self.f(ew,'pda_work','directory')),tuple(frame['greg'][16]for frame in self.native_frames),lo,hi)
+        info=self.f(b,t,'info');bank=self.i(refs[0],'li2_pgd_ref','bank');self.eq(info,it,selected_bank=bank,warm=int(warm),initialized=1,registered=1,code_allocated=2,proof_allocated=1,code_registered=2,proof_registered=1,close_started=1,close_complete=1,prepare_started=1,prepare_complete=1,build_started=int(not warm),build_returned=int(not warm),redirected=1,exit_seen=1,exit_index=boundary['index'],recovery_started=1,recovery_complete=1,guest_data_fault=0,cleanup_started=0,cleanup_complete=0,consumed=1,plan_proofs=0 if warm else 2,none_proofs=0 if warm else 1,code_allocation=self.h_alloc,proof_allocation=self.h_proof_alloc,build_result=0,recovery_result=0,release_result=0,gpr_written=member_values['gpr_written'],flags_written=member_values['flags_written'],ticket=self.symbol('span_transfer'),registry_count=len(self.ranges))
         self.eq(self.f(info,it,'token'),'li2_pg_token',owner=self.symbol('pe'),serial=serial)
         need(self.f(info,it,'session')==self.f(self.b,'pdo_wire','session')and self.f(info,it,'registry')==self.f(initial,'pdo_registry','ranges')and self.f(info,it,'banks')==self.f(terminal,'pdo_slot','banks'),'whole actual domain session/registry/banks')
         if installed:
@@ -157,7 +160,7 @@ class Check(base.Check):
                  'complete final member scratch equals last actual native DIRECT boundary')
             gend=self.f(zrows[slotindex],'pdo_slot','generation')
             lastcell=self.r.items(gend,gt,'cell','pg_dispatch_cell_transition')[2]
-            need(self.i(lastcell,'pg_dispatch_cell_transition','before')==0,'actual final reset binds completed directory dispatch')
+            need(self.i(lastcell,'pg_dispatch_cell_transition','before')==member_values['cell_before'][i],'actual final reset binds completed directory dispatch')
             if warm:
                 old_epoch=self.epochs[member_ci]
                 need(init==self.f(old_epoch,t,'terminal_spill')[:PAGE],'whole warm scratch equals prior owning certificate completion')

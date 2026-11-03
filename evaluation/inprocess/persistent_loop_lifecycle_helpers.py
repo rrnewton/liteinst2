@@ -51,6 +51,9 @@ not inferred from paired-v2 populations or accepted from a passing summary.
     need(all(type(v)is int and v>0 for k,v in values.items()if k not in('native','owner'))and
          values['application']==596 and values['metadata']==24 and values['elf']==33 and
          values['pair']==1069 and values['pf']==36 and values['terminal']==335,'all lifecycle control classes and whole full-state pair population')
+    values['expected']=owner_reader.EXPECTED_COUNT
+    need(type(values['expected'])is int and values['expected']==10,
+         'separate actual lifecycle expected-value control population')
     return values
 
 
@@ -182,6 +185,9 @@ def evaluate(case,row,stdout,stderr,record,layout,image,support,native,owner_rea
     need(p['count']==len(names)==len(set(names))==counts['pair']and p['native_operations']==0 and
          p['qualification_credit']is False and all(type(n)is str and n for n in names),
          'every literal full-state lifecycle pair corruption rejected')
+    result['expected_owner_controls']=owner_reader.expected_controls(*owner_args)
+    named(result['expected_owner_controls'],counts['expected'],H(record))
+    if progress is not None:progress['expected_owner_controls']=result['expected_owner_controls']
     return result
 
 

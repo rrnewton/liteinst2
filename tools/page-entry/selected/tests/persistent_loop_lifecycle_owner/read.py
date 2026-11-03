@@ -49,3 +49,10 @@ def loop_terminal(parsed,owner):
 
 pair=pairs.pair
 pair_controls=pairs.controls
+
+
+EXPECTED_COUNT=envelope.cancellation.epochs.member_expected.CONTROL_COUNT
+
+def expected_controls(data,layout,image,app,native,pid,cpu,exit_status):
+    return envelope.cancellation.epochs.member_expected.controls(read,prior.codec,RAW_BYTES,SCHEMA_VERSION,
+        data,layout,image,app,native,pid,cpu,exit_status)
