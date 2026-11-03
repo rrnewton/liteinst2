@@ -211,7 +211,7 @@ fn chunk_storage_table_proof_and_physical_embedded_plan_mutations_refuse() {
     .unwrap();
     let error = ledger_storage::verify_jump_stack(&source.0, &selected, &bad).unwrap_err();
     assert_eq!(error.stage, "ledger-storage");
-    assert_eq!(error.detail, "unknown or malformed semantic record");
+    assert_eq!(error.detail, "\"unknown or malformed semantic record\"");
 }
 
 #[test]
