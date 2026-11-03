@@ -237,8 +237,8 @@ fn trace(owner: &Owner, baseline: &Baseline, route_counter: u64, installed: bool
                 budget.step(&child); continue;
             }
             assert_ne!(pc, owner.hook.address(), "callback without witnessed CALL");
-            if let Some((returned, rsp)) = active_call {
-                if pc == returned { assert_eq!(child.registers().rsp, rsp); active_call = None; owner.journal.assert_events(&child, &callbacks); }
+            if let Some((_, rsp)) = active_call.filter(|(returned, _)| pc == *returned) {
+                assert_eq!(child.registers().rsp, rsp); active_call = None; owner.journal.assert_events(&child, &callbacks);
             }
         }
         if let Some(&logical) = boundaries.get(&pc) {

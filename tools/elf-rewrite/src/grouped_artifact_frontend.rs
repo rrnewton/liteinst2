@@ -233,7 +233,7 @@ pub fn grouped_min5_upstream_fixed_exec_binding_policy(
 struct SealFailure {
     error: Error,
     code: u32,
-    core: Option<PlanningFailure>,
+    core: Option<Box<PlanningFailure>>,
 }
 impl SealFailure {
     fn adapter(error: Error) -> Self {
@@ -247,7 +247,7 @@ impl SealFailure {
         Self {
             error: Error::new("core", &failure.reason),
             code: model::core_code(&failure.reason),
-            core: Some(failure),
+            core: Some(Box::new(failure)),
         }
     }
 }
