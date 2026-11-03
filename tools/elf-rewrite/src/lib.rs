@@ -11,7 +11,8 @@ pub use adjacent_b2_frontend::routed_jmp::prepare_disassembly_adjacent_routed_jm
 mod fixed_exec;
 mod grouped_artifact_frontend;
 pub use grouped_artifact_frontend::{
-    GROUPED_PROFILE, prepare_disassembly_jump_stack_grouped_fixed_exec,
+    GROUPED_PROFILE, grouped_fixed_exec_binding_policy, grouped_fixed_exec_metadata,
+    prepare_disassembly_jump_stack_grouped_fixed_exec,
 };
 mod ledger;
 pub use fixed_exec::{

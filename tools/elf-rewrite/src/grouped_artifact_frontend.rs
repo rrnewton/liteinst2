@@ -16,8 +16,8 @@ const POLICY: &str = "LI2GROUPING-POLICY\t1\nprofile\tjumps-gpr-stack64-block-ob
 /// Separate typed profile; the input is still the sealed FULL jump/stack union.
 /// Each multisite original block becomes one immutable work unit before any
 /// planning. A refused group is never retried as singletons. Other blocks keep
-/// the old singleton engine. No CLI selector, loader admission or execution is
-/// implied; future adapters must name this profile and preserve its full census.
+/// the old singleton engine. The explicit CLI names this profile and preserves
+/// its full census; neither API nor CLI grants loader admission or execution.
 pub fn prepare_disassembly_jump_stack_grouped_fixed_exec(
     original: &[u8],
     selected: &disassembly::whole::JumpStackWholeSelection,
@@ -44,17 +44,34 @@ pub fn prepare_disassembly_jump_stack_grouped_fixed_exec(
     let profile = files
         .get_mut("planning-profile.tsv")
         .expect("sealed union has a planning profile");
-    profile.extend_from_slice(FIXED_EXEC_METADATA.replacen(
-        "planner_profile\twhole-program-packed-overlapping-neighbors-4096\n",
-        &format!("planner_profile\t{GROUPED_PROFILE}\nsingleton_planner_profile\twhole-program-packed-overlapping-neighbors-4096\n"), 1,
-    ).as_bytes());
-    profile.extend_from_slice(format!("grouped_profile\t{GROUPED_PROFILE}\ngrouping_policy\tgrouping-policy.tsv\ngrouping_ledger\tLI2GROUPED-LEDGER-1\n").as_bytes());
+    profile.extend_from_slice(grouped_fixed_exec_metadata().as_bytes());
     product.files.extend(files);
     product.files.insert(
         "bundle-index.tsv".into(),
         ledger::index(selected.selection.original, &product.files),
     );
     Ok(product)
+}
+
+/// Canonical group-profile labels shared by the artifact and explicit CLI.
+/// These declarations preserve all loader/readiness obligations.
+pub fn grouped_fixed_exec_metadata() -> String {
+    let mut out = FIXED_EXEC_METADATA.replacen(
+        "planner_profile\twhole-program-packed-overlapping-neighbors-4096\n",
+        &format!("planner_profile\t{GROUPED_PROFILE}\nsingleton_planner_profile\twhole-program-packed-overlapping-neighbors-4096\n"), 1,
+    );
+    out.push_str(&format!("grouped_profile\t{GROUPED_PROFILE}\ngrouping_policy\tgrouping-policy.tsv\ngrouping_ledger\tLI2GROUPED-LEDGER-1\n"));
+    out
+}
+
+/// The same canonical bytes used by initial embedded and final portable metadata.
+/// Authentication of the full grouping policy remains the caller's obligation.
+pub fn grouped_fixed_exec_binding_policy(
+    binding: FixedImageBinding,
+    selection: ContentId,
+    grouping: ContentId,
+) -> Vec<u8> {
+    fixed_exec::grouped_binding_policy(binding, selection, grouping)
 }
 
 #[derive(Clone, Debug)]
