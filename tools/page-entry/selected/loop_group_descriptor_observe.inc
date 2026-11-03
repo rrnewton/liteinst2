@@ -253,7 +253,7 @@ static void lgdo_isolation_raw(struct pda_completion *c,const struct pda_complet
     uint64_t *mask=bundle?&o->raw_bundle_mask:&o->raw_cell_mask;
     uintptr_t first=bundle?(uintptr_t)&lhc.root:lhc_certificate_address(i);
     size_t bytes=bundle?sizeof lhc.root:lhc_certificate_bytes();
-    struct li2_private_code_query query;
+    struct li2_private_code_query query={0};
     uint64_t before[28],after[28],invalidations=lgd_writer.value.invalidations;
     lc8o_need(!*mask && !lrc_readonly(first,bytes) && lhc_match_identity(c,i) &&
         lhc_match_identity(peer,j) && lhc_exposure_current(j) &&
