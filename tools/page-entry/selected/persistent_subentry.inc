@@ -81,10 +81,16 @@ static int lta_choose(uintptr_t pc,struct pe_sub_choice *out,unsigned *node_out)
         int found=li2_pgs_head_lookup(&p->plan,pc,&target);
         pe_need(found>=0,PE_PUBLICATION,9233);
         if(!found || !li2_pgs_source_pair_advisory(pc,target.page))continue;
-        pe_need(match==PTR_NODE_COUNT,PE_STATE,9234);match=node;
-        for(unsigned b=0;b<2;b++)if(slot->banks[b].generated==slot->generation.generated)bank=b;
-        pe_need(bank<2 && target.root==p->source.entry,PE_STATE,9235);
-        pages[0]=target.page[0];pages[1]=target.page[1];subentry=pc!=target.root;
+        unsigned candidate_bank=2,candidate_subentry=pc!=target.root;
+        for(unsigned b=0;b<2;b++)if(slot->banks[b].generated==slot->generation.generated)candidate_bank=b;
+        pe_need(candidate_bank<2 && target.root==p->source.entry,PE_STATE,9235);
+        /* Distinct immutable plans may share a head. Preserve node order for
+           subentries, prefer a unique exact root, and still check every node. */
+        pe_need(match==PTR_NODE_COUNT || subentry || candidate_subentry,PE_STATE,9234);
+        if(match==PTR_NODE_COUNT || (!candidate_subentry && subentry)) {
+            match=node;bank=candidate_bank;subentry=candidate_subentry;
+            pages[0]=target.page[0];pages[1]=target.page[1];
+        }
     }
     if(match<PTR_NODE_COUNT) {
         *out=(struct pe_sub_choice){out->slot,bank,subentry,{pages[0],pages[1]}};

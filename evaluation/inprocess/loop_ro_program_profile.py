@@ -36,7 +36,9 @@ def main():
     return execute(ap.parse_args())
 
 
-def execute(a, *, group_descriptor=False):
+def execute(a, *, group_descriptor=False, arena=False):
+    need(type(arena) is bool and (not arena or group_descriptor),
+         'explicit arena profile over the complete natural descriptor profiler')
     need(type(group_descriptor) is bool, 'explicit natural descriptor profile selector')
     root = Path.cwd().resolve()
     sys.path[:0] = [str(root/'evaluation/inprocess'), str(root/'tools/page-entry')]
@@ -74,7 +76,7 @@ def execute(a, *, group_descriptor=False):
         storage = SlotGuard(root, output, PERF[2])
         storage.reserve(0, 'initial metadata directory')
     output.mkdir(mode=0o700)
-    r = dict(schema=1, profile='loop-group-descriptor-program-user-dwarf-natural-v1' if group_descriptor else 'loop-ro-program-user-dwarf-diagnostic-v1', status='failed',
+    r = dict(schema=1, profile='loop-translation-arena-program-user-dwarf-natural-v1' if arena else 'loop-group-descriptor-program-user-dwarf-natural-v1' if group_descriptor else 'loop-ro-program-user-dwarf-diagnostic-v1', status='failed',
         cpu=cpu, hardware=hardware(cpu), argv=[sys.executable, '-B', *sys.argv], source=None,
         compiled_source=None, subject_bounds=subject, observer_bounds=list(PERF), unwinder_bounds=list(PERF),
         commands=[], inputs_unchanged=False, source_unchanged=False, cleanup_complete=False,
@@ -86,6 +88,10 @@ def execute(a, *, group_descriptor=False):
             scope='One separately observed LS execution from an exact clean installed descriptor34 failure. '
                   'User-only 99Hz samples and actual wait4 usage; no terminal counts invented, timing, '
                   'kernel-stack, complete-unwind, kill-cause or qualification inference.')
+    if arena:
+        r['scope'] = ('One separately observed LS execution from an exact clean installed arena34 failure. '
+            'User-only 99Hz samples and actual wait4 usage; no terminal counts invented, timing, '
+            'kernel-stack, complete-unwind, kill-cause or qualification inference.')
     pins = {}; artifacts = {}; aliases = {}
     def pin(path, expected=None):
         lexical = Path(path).absolute(); p = lexical.resolve(strict=True); v = fact(p)
@@ -125,7 +131,7 @@ def execute(a, *, group_descriptor=False):
         need(pins[str(origin)]['sha256'] == a.diagnostic_sha256 and origin.name == 'receipt.json' and
              origin.parent.parent == root/'target/evaluation/inprocess', 'whole closed original receipt')
         old = json.loads(origin.read_bytes()); r['compiled_source'] = old['source']
-        need(old['profile'] == ('loop-group-descriptor-program-release-v1' if group_descriptor else 'loop-ro-program-release-v1') and old['status'] == 'failed' and
+        need(old['profile'] == ('loop-translation-arena-program-release-v1' if arena else 'loop-group-descriptor-program-release-v1' if group_descriptor else 'loop-ro-program-release-v1') and old['status'] == 'failed' and
              old['revision'] == old['source']['revision'] and old['source']['tracked_clean'] is True and
              old['source']['head_sources_match'] is True and old['source_unchanged'] is True and
              old['cleanup_complete'] is True and old['inputs_unchanged'] is True and old['final_errors'] == [] and
@@ -144,11 +150,18 @@ def execute(a, *, group_descriptor=False):
                 cpu_scope='Current reserved singleton and original CPU remain separate; no matched timing comparison.')
             need(all(Path(p).is_symlink() and os.readlink(p) == v for p,v in old['namespace_aliases'].items()),
                  'all original descriptor namespace aliases remain exact')
-        need(old['bounds'] == BOUNDS and len(SCHEDULE) == 34 and
-             [(c['workload'], c['lane']) for c in old['cases']] == [('ls', 'release'), ('true', 'release')] and
-             all(c['status'] == 'failed' and c['exit'] == -9 and
-                 c['completed_program_measurement'] is False and 'observed' not in c for c in old['cases']),
-             'literal original two-subject failure, without completed-program counters')
+        if arena:
+            need(old['bounds'] == BOUNDS and len(SCHEDULE) == 34 and
+                 [(c['workload'], c['lane']) for c in old['cases']] == [('ls', 'release'), ('true', 'release')] and
+                 all(c['status'] == 'failed' and type(c['exit']) is int and c['exit'] in (-9, 125) and
+                     c['completed_program_measurement'] is False and 'observed' not in c for c in old['cases']),
+                 'exact two failed arena subjects: cutoff or explicit runtime refusal, never completion')
+        else:
+            need(old['bounds'] == BOUNDS and len(SCHEDULE) == 34 and
+                 [(c['workload'], c['lane']) for c in old['cases']] == [('ls', 'release'), ('true', 'release')] and
+                 all(c['status'] == 'failed' and c['exit'] == -9 and
+                     c['completed_program_measurement'] is False and 'observed' not in c for c in old['cases']),
+                 'literal original two-subject failure, without completed-program counters')
         for p, v in old['inputs'].items(): pin(p, v)
         for p, v in old['artifacts'].items(): binary(pin(p, v))
         for lexical, actual in old['aliases'].items():
@@ -158,9 +171,15 @@ def execute(a, *, group_descriptor=False):
         need(all(os.path.lexists(p) == present for p, present in old['presence'].items()) and
              old['presence']['/etc/ld.so.preload'] is False, 'original loader configuration presence')
         commands = old['commands']
-        need(tuple((c['name'], c['profile']) for c in commands) == SCHEDULE and
-             len(commands) == len({c['name'] for c in commands}) == 34 and
-             [c['exit'] for c in commands] == [0]*32+[-9, -9], 'all original34 command identities and outcomes')
+        if arena:
+            need(tuple((c['name'], c['profile']) for c in commands) == SCHEDULE and
+                 len(commands) == len({c['name'] for c in commands}) == 34 and
+                 [c['exit'] for c in commands] == [0]*32+[c['exit'] for c in old['cases']],
+                 'all original34 command identities and exact separately retained arena failures')
+        else:
+            need(tuple((c['name'], c['profile']) for c in commands) == SCHEDULE and
+                 len(commands) == len({c['name'] for c in commands}) == 34 and
+                 [c['exit'] for c in commands] == [0]*32+[-9, -9], 'all original34 command identities and outcomes')
         for c in commands:
             need(type(c['exit']) is int and c['reaped'] is True and c['timed_out'] is False and
                  c['error'] is None and c['cleanup_errors'] == [] and
@@ -172,16 +191,71 @@ def execute(a, *, group_descriptor=False):
                 need(Path(v['file']).name == v['file'], 'local original capture')
                 pin(origin.parent/v['file'], v)
         prior, = [c for c in commands if c['name'] == 'ls-release']
-        need(prior['exit'] == -9 and prior['bounds'] == subject and prior['capture_limit'] == 16 << 20 and
-             prior['expected_exit'] == 0 and prior['environment'] == PROGRAM_ENV and
-             all(v['bytes'] == 0 for v in prior['captures'].values()), 'exact failed RO LS tuple, without terminal')
+        if arena:
+            from loop_ro_oracle_reports import row as terminal_row
+            import loop_translation_arena_program_reports as arena_reports
+            import loop_cache8_program_reports as cache8_reports
+            import loop_resident_rx_reports as rx_reports
+            import page_selected_generic_compare as generic_reports
+            def failed_arena(stdout, stderr, code):
+                need(type(code) is int and code in (-9, 125) and stdout == b'',
+                     'literal failed arena exit and complete empty application stdout')
+                if code == -9:
+                    need(stderr == b'', 'actual cutoff has no invented terminal')
+                    return dict(exit=code, terminal=False)
+                need(type(stderr) is bytes and stderr.endswith(b'\n'), 'whole actual failed arena terminal')
+                lines = stderr[:-1].split(b'\n')
+                specs = ((arena_reports.PREFIX, arena_reports.FIELDS, 1), *(
+                    (prefix, fields, 1) for prefix, fields in zip(
+                        arena_reports.NODE_PREFIXES, arena_reports.NODE_FIELDS, strict=True)),
+                    (cache8_reports.PREFIX, cache8_reports.FIELDS, 2),
+                    (cache8_reports.TRANSIT_PREFIX, rx_reports.TRANSIT_FIELDS, 1),
+                    (cache8_reports.RX_PREFIX, rx_reports.FIELDS, 2))
+                need(len(lines) > 7 and lines[-8].startswith(b'LI2_PERSISTENT_UNREGISTERED '),
+                     'exact failed arena producer boundary before all seven typed rows')
+                values = []
+                for line, (prefix, fields, version) in zip(lines[-7:], specs, strict=True):
+                    need(sum(x.startswith(prefix) for x in lines) == 1, 'one whole failed arena terminal row')
+                    values.append(terminal_row(line, prefix, fields, version=version))
+                failure = values[0]['failure_code']
+                loader_lines = [line for line in lines if line.startswith(b'LI2_LOADER ')]
+                need(len(loader_lines) == 1 and len(loader_lines[0]) < 4096, 'one bounded original loader failure')
+                loader = json.loads(loader_lines[0][11:], object_pairs_hook=generic_reports.unique)
+                need(type(loader) is dict and set(loader) == generic_reports.KEYS and
+                     loader['scope'] == 'partial_selected_reusable_effects' and loader['version'] == 1 and
+                     all(type(v) is int and 0 <= v < 1 << 64 for k,v in loader.items() if k != 'scope') and
+                     loader_lines[0] == b'LI2_LOADER '+json.dumps(loader,separators=(',',':')).encode() and
+                     loader['status'] == code and loader['failure_code'] == failure and loader['detail_negative'] in (0,1),
+                     'whole original loader schema and exact failed outcome, without success arithmetic')
+                need(failure > 0 and all(v['status'] == code and v['failure_code'] == failure for v in values) and
+                     (values[0]['nodes'], values[0]['slots']) == (12, 8) and
+                     (values[4]['slots'], values[4]['members'], values[4]['receipts']) == (8, 8, 9),
+                     'all actual arena terminal outcomes agree without successful-program arithmetic')
+                return dict(exit=code, terminal=True, failure_code=failure,
+                            detail_abs=loader['detail_abs'], detail_negative=loader['detail_negative'],
+                            stderr_bytes=len(stderr), stderr_sha256=hashlib.sha256(stderr).hexdigest())
+            failures = {}
+            for case, command in zip(old['cases'], commands[-2:], strict=True):
+                need(command['name'] == case['workload']+'-release' and
+                     all(case['captures'][k] == {n:command['captures'][k][n] for n in ('bytes','sha256')}
+                         for k in ('stdout','stderr')), 'whole actual failed case and command captures join')
+                captures = {k:(origin.parent/command['captures'][k]['file']).read_bytes() for k in ('stdout','stderr')}
+                failures[case['workload']] = failed_arena(captures['stdout'], captures['stderr'], command['exit'])
+            r['original_failure_outcomes'] = failures
+            need(prior['bounds'] == subject and prior['capture_limit'] == 16 << 20 and
+                 prior['expected_exit'] == 0 and prior['environment'] == PROGRAM_ENV,
+                 'exact failed arena LS subject tuple; original intended exit remains zero')
+        else:
+            need(prior['exit'] == -9 and prior['bounds'] == subject and prior['capture_limit'] == 16 << 20 and
+                 prior['expected_exit'] == 0 and prior['environment'] == PROGRAM_ENV and
+                 all(v['bytes'] == 0 for v in prior['captures'].values()), 'exact failed RO LS tuple, without terminal')
         original = pin('/bin/ls', old['system_inputs']['ls']['original'])
         build = old['release_builds']['ls']; binding = build['binding']
         need(build['status'] == 'compiled_diagnostic_only' and
-             binding['profile'] == ('persistent-loop-group-descriptor-program-release-v1' if group_descriptor else 'persistent-loop-ro-certificate-release-v1') and binding['mode'] == 'release' and
+             binding['profile'] == ('persistent-loop-translation-arena-program-release-v1' if arena else 'persistent-loop-group-descriptor-program-release-v1' if group_descriptor else 'persistent-loop-ro-certificate-release-v1') and binding['mode'] == 'release' and
              binding['archive'] == old['archive'] and binding['capture_version'] is None and
              binding['byte_certificate'] == dict(version=1, sealed_generation=True, source_lease=False,
-                 mirror='isolated-anonymous-RO', root='isolated-anonymous-RO', mirror_pages=89, slots=8 if group_descriptor else 2,
+                 mirror='isolated-anonymous-RO', root='isolated-anonymous-RO', mirror_pages=89, slots=12 if arena else 8 if group_descriptor else 2,
                  full_scan_fallback=True, every_hit_full_scan=False, old_capture_compatible=False,
                  qualification_credit=False) and
              binding['history_certificate'] == dict(version=1, cells=9 if group_descriptor else 3, saved_completion='isolated-anonymous-RO',
@@ -197,12 +271,12 @@ def execute(a, *, group_descriptor=False):
                  metadata_permission_counts='actual-pe_permission-calls-only', qualification_credit=False),
                  'exact separately typed eight-slot/two-branch production lifetime; no oracle instrumentation')
             need(not any(k in binding for k in ('recurrence','cache8_observer','group_descriptor_observer')) and
-                 binding['cache8'] == dict(version=1,slots=8,members=8,completion_cells=9,source_pages=2,
+                 binding['cache8'] == dict(version=2 if arena else 1,slots=8,members=8,completion_cells=9,source_pages=2,
                      placement_banks=2,aggregate_heads=256,aggregate_boundaries=8,rx_receipt_version=2,
-                     selection='exact-root-or-head-then-empty-or-oldest-completion',
-                     activation='post-publication-DIRECT-connected-claimed-closure',
+                     selection='active-binding-to-stable-node' if arena else 'exact-root-or-head-then-empty-or-oldest-completion',
+                     activation='fresh-binding-DIRECT-connected-closure' if arena else 'post-publication-DIRECT-connected-claimed-closure',
                      inactive_heads_exposed=False,qualification_credit=False) and
-                 binding['cache8_program'] == dict(version=1,fields=63,slots=8,members=8,receipts=9,
+                 binding['cache8_program'] == dict(version=2 if arena else 1,fields=63,slots=8,members=8,receipts=9,
                      terminal_only=True,observation_authority=False,qualification_credit=False) and
                  binding['group_descriptor'] == dict(version=1,groups=1,members=8,heads=256,boundaries=8,
                      directory_order='ascending-retained-slot',directory_serial='descriptor-id',
@@ -210,7 +284,21 @@ def execute(a, *, group_descriptor=False):
                      common_proof='existing-LHC-owner',physical_queries='fresh-original-member-checks',
                      old_capture_compatible=False,qualification_credit=False),
                  'exact descriptor/cache8 activation contract and terminal-only reporting')
-        stem = 'persistent-loop-group-descriptor-program' if group_descriptor else 'persistent-loop-ro-certificate'
+        if arena:
+            need(not any(k in binding for k in ('arena_observer','cache8_effects')) and
+                 binding['arena']==dict(version=1,nodes=12,active_bindings=8,completion_cells=9,
+                     member_reference_version=3,code_pages=17,placement_banks=2,proof_pages=89,
+                     mirror_pages=89,sealed_root_pages=2,aggregate_heads=256,aggregate_boundaries=8,
+                     final_addresses=True,dormant_authority='protected-issued-SBC-and-unexposed-node',
+                     admission='fresh-source-rseq-registry-physical-then-current-binding',
+                     claims='consume-at-detach-issue-only-after-real-completion',
+                     raw_invalidation='all-nodes-before-kernel-nonwrapping-epochs',
+                     inactive_heads_exposed=False,old_capture_compatible=False,qualification_credit=False) and
+                 binding['arena_program']==dict(version=1,summary_fields=35,node_rows=3,node_fields=55,
+                     nodes_per_row=4,nodes=12,slots=8,count_version=2,count_fields=63,
+                     terminal_only=True,observation_authority=False,qualification_credit=False),
+                 'exact twelve-node/eight-binding arena and actual terminal-only program schema')
+        stem = 'persistent-loop-translation-arena-program' if arena else 'persistent-loop-group-descriptor-program' if group_descriptor else 'persistent-loop-ro-certificate'
         bridge = pin(build['argv'][-1], build['bridge']); directory = bridge.parent
         need(directory == origin.parent/'ls-build/build' and str(bridge) in old['artifacts'] and
              bridge.name == 'bridge-'+stem+'.so' and bridge_check(bridge) == build['elf'],
@@ -243,7 +331,7 @@ def execute(a, *, group_descriptor=False):
         previous = list(sys.path)
         try:
             sys.path.insert(0, str(selected))
-            binder = load('profile_descriptor_binding' if group_descriptor else 'profile_ro_binding',
+            binder = load('profile_arena_binding' if arena else 'profile_descriptor_binding' if group_descriptor else 'profile_ro_binding',
                 selected/(stem.replace('-', '_')+'_binding.py'), pin)
         finally:
             sys.path[:] = previous
@@ -304,6 +392,8 @@ def execute(a, *, group_descriptor=False):
                    cwd=str(origin.parent), bounds=subject, capture_limit=16 << 20, expected_exit=0)
         r.update(target=row, original_receipt=fact(origin), original_subject=prior,
                  bridge=fact(bridge), carrier=fact(carrier), compiled_inputs_equal_current=True)
+        if arena:
+            r['diagnostic_expected_failure'] = dict(failures['ls'])
         perf = pin('/usr/bin/perf'); perfinterp = pin(interpreter(perf))
         listed, errors = run('perf-libraries', [perfinterp, '--list', perf], PROGRAM_ENV)
         need(not errors, 'actual observer dependency listing')
@@ -333,6 +423,13 @@ def execute(a, *, group_descriptor=False):
             bucket = bins.setdefault(second, collections.Counter()); bucket[x['leaf']] += x['period']
         r['timeline'] = [dict(second=s, period=sum(v.values()), leaf_periods=dict(v)) for s, v in sorted(bins.items())]
         need(sum(x['period'] for x in r['timeline']) == r['attribution']['period'], 'all sampled periods conserved')
+        if arena:
+            observed_failure = failed_arena(out, err, row['exit'])
+            need(row['exit'] == failures['ls']['exit'] and
+                 all(observed_failure.get(k) == failures['ls'].get(k) for k in
+                     ('failure_code','detail_abs','detail_negative')),
+                 'separate observed arena execution retains the exact original failure exit, code and detail')
+            r['observed_failure_outcome'] = observed_failure
         r['target_outcome'] = 'exit_zero_unqualified' if row['exit'] == 0 else 'failed_prefix'
         r['status'] = 'observed_user_dwarf_diagnostic_only'
     except BaseException as error:
