@@ -361,6 +361,9 @@ mod imp {
     mod entry_alphabet_native_tests;
 
     #[cfg(test)]
+    mod physical_window_native_tests;
+
+    #[cfg(test)]
     mod tests {
         use super::*;
         use std::io::Write;

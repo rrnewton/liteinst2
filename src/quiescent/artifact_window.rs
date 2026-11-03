@@ -3,6 +3,13 @@
 use super::*;
 use crate::composition::Composition;
 
+mod physical;
+pub use physical::{
+    ArtifactPhysicalWindowRow, ArtifactPhysicalWindowSchedule,
+    plan_artifact_observation_windows_upstream_after_with_placement,
+    seal_artifact_observation_windows_upstream_min5,
+};
+
 /// A declared group-only relocation attempt, never an implicit singleton fallback.
 ///
 /// The artifact site retains one common source/entry/target/hook and numeric
@@ -176,15 +183,7 @@ pub fn seal_artifact_observation_window_min5(
             None,
             &mut search,
         )?;
-        let last = scan.site(last_pc).ok_or(Refusal::NotInstructionHead)?;
-        let selected_end = last_pc
-            .checked_add(last.instruction_len() as u64)
-            .ok_or(Refusal::InvalidRange)?;
-        let selected = AddressRange::new(
-            request.logical_pc,
-            usize::try_from(selected_end - request.logical_pc)
-                .map_err(|_| Refusal::InvalidRange)?,
-        )?;
+        let selected = selected_observation_span(&request, &scan, last_pc)?;
         // Both copies follow the bounded collector. Distinct supplied heads all
         // lie in its interval; byte and PC counts are bounded by retained length.
         Ok(ArtifactObservationWindowSeal {
@@ -205,6 +204,21 @@ pub fn seal_artifact_observation_window_min5(
         attempts: Vec::new(),
         search,
     })
+}
+
+fn selected_observation_span(
+    request: &PlanningRequest<'_>,
+    scan: &ScanResult,
+    last_pc: u64,
+) -> Result<AddressRange, Refusal> {
+    let last = scan.site(last_pc).ok_or(Refusal::NotInstructionHead)?;
+    let selected_end = last_pc
+        .checked_add(last.instruction_len() as u64)
+        .ok_or(Refusal::InvalidRange)?;
+    AddressRange::new(
+        request.logical_pc,
+        usize::try_from(selected_end - request.logical_pc).map_err(|_| Refusal::InvalidRange)?,
+    )
 }
 
 /// One opaque artifact plan plus its complete ordered observation population.
@@ -342,6 +356,30 @@ fn plan_window_with_placement(
     domain: PhysicalDomain,
     placement: ArtifactRelocationPlacement,
 ) -> Result<ArtifactObservationPlan, PlanningFailure> {
+    plan_window_with_geometry(
+        input,
+        predecessor,
+        pending,
+        domain,
+        placement,
+        WindowGeometry::FixedEnd,
+    )
+}
+
+#[derive(Clone, Copy)]
+enum WindowGeometry<'a> {
+    FixedEnd,
+    PhysicalMin5(&'a ArtifactPhysicalWindowSchedule),
+}
+
+fn plan_window_with_geometry(
+    input: &ArtifactObservationRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    domain: PhysicalDomain,
+    placement: ArtifactRelocationPlacement,
+    geometry: WindowGeometry<'_>,
+) -> Result<ArtifactObservationPlan, PlanningFailure> {
     let mut attempts = Vec::new();
     let mut search = SearchEvidence::default();
     let result = (|| {
@@ -364,6 +402,9 @@ fn plan_window_with_placement(
             PhysicalDomain::Exact => vec![input.physical_pc],
             PhysicalDomain::Upstream => physical_head_schedule(&request, &scan),
         };
+        if let WindowGeometry::PhysicalMin5(schedule) = geometry {
+            schedule.authenticate(input, &request, &scan, &candidates)?;
+        }
         let physical_run = search.begin(
             SearchDomain::PhysicalSites,
             SearchScope::default(),
@@ -377,17 +418,46 @@ fn plan_window_with_placement(
             return Err(Refusal::NoPatchWindow);
         }
         let occupied = request.emission.occupied()?;
-        for physical in candidates.into_iter().take(request.search.max_sites) {
+        for (ordinal, physical) in candidates
+            .into_iter()
+            .take(request.search.max_sites)
+            .enumerate()
+        {
             search.visit(physical_run);
-            let candidate: Result<PlannedInstall, Refusal> = (|| {
-                let mut window = collect_relocation_window(
+            // Authentication errors escape the outer result, never the trial
+            // catch-and-continue below. Only reached rows collect/record evidence.
+            let collected = if let WindowGeometry::PhysicalMin5(schedule) = geometry {
+                let evidence_start = search.refusals.len();
+                let collected = collect_relocation_window(
                     &request,
                     &scan,
                     physical,
                     *input.observation_pcs.last().ok_or(Refusal::InvalidPlan)?,
-                    Some(input.end),
+                    None,
                     &mut search,
+                );
+                schedule.authenticate_row(
+                    ordinal,
+                    physical,
+                    &collected,
+                    &search.refusals[evidence_start..],
                 )?;
+                Some(collected)
+            } else {
+                None
+            };
+            let candidate: Result<PlannedInstall, Refusal> = (|| {
+                let mut window = match collected {
+                    Some(window) => window?,
+                    None => collect_relocation_window(
+                        &request,
+                        &scan,
+                        physical,
+                        *input.observation_pcs.last().ok_or(Refusal::InvalidPlan)?,
+                        Some(input.end),
+                        &mut search,
+                    )?,
+                };
                 window.authority = RelocationAuthority::ArtifactObservations {
                     pcs: input.observation_pcs,
                     placement,
