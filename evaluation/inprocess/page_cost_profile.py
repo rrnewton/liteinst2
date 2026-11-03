@@ -55,7 +55,7 @@ def child(config, ready, release):
     os.execve(c['argv'][0], c['argv'], c['environment'])
 
 
-def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', kernel_callchains=False, user_dwarf=False, resident_counters=False, resident_per_thread=False):
+def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', kernel_callchains=False, user_dwarf=False, resident_counters=False, resident_per_thread=False, snapshot=None):
     """One fresh exact launch. Caller still validates source/namespace/terminal reports."""
     import page_default_ls_release_provenance as provenance
     observe, same = provenance.observe, provenance.same
@@ -67,6 +67,9 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
          'distinct resident counter observation requires the original user-DWARF profile')
     need(type(resident_per_thread)is bool and (not resident_per_thread or resident_counters),
          'explicit resident-only per-thread observer profile')
+    if snapshot is not None:
+        need(callable(snapshot) and user_dwarf and not kernel_callchains and not resident_counters,
+             'separate parent-only snapshot on the original user-DWARF target')
     if user_dwarf:
         from persistent_dynamic_profile_read import summarize
     if resident_counters:
@@ -252,7 +255,22 @@ def profile(row, directory, cpu, bridge, bridge_fact, *, perf='/usr/bin/perf', k
         result['release_ns'] = time.monotonic_ns(); need(os.write(gw, b'G') == 1, 'one release'); close(gw)
         remaining = start+TARGET[3]-time.monotonic()
         need(remaining > 0, 'unchanged wall bound includes attach preparation')
-        done = select.select(list(pidfds.values()), [], [], remaining)[0]
+        if snapshot is not None:
+            checkpoint = result['release_ns']/1e9+5
+            need(not select.select(list(pidfds.values()), [], [], max(0, checkpoint-time.monotonic()))[0],
+                 'both actual children survive until the required five-second snapshot')
+            result['snapshot'] = snapshot(pid=target.pid, pidfd=pidfds['target'], row=row,
+                deadline=start+TARGET[3], release_ns=result['release_ns'])
+            observed = result['snapshot']
+            need(type(observed) is dict and observed.get('version') == 1 and
+                 observed.get('status') == 'observed' and observed.get('checkpoint_seconds') == 5 and
+                 observed.get('stopped') is observed.get('resumed') is observed.get('single_task') is True,
+                 'mandatory actual stopped read and resume completed without omitted observation')
+            remaining = start+TARGET[3]-time.monotonic()
+            need(remaining > 0, 'snapshot stays inside the unchanged full target wall bound')
+            done = select.select(list(pidfds.values()), [], [], remaining)[0]
+        else:
+            done = select.select(list(pidfds.values()), [], [], remaining)[0]
         row['timed_out'] = not done
         need(pidfds['target'] in done, 'target wall bound or profiler stopped before target exit')
         result['target_exit_ready_ns'] = time.monotonic_ns()

@@ -15,7 +15,12 @@ def main():
     ap.add_argument('--diagnostic-receipt', type=Path, required=True)
     ap.add_argument('--diagnostic-sha256', required=True)
     ap.add_argument('--output', type=Path, required=True)
-    return execute(ap.parse_args(), group_descriptor=True, arena=True)
+    ap.add_argument('--capacity128', action='store_true',
+                    help='profile the distinct128-node failure under unchanged target and observer bounds')
+    ap.add_argument('--snapshot', action='store_true',
+                    help='take one parent-only stopped-state counter snapshot; no timing or completion credit')
+    args = ap.parse_args()
+    return execute(args, group_descriptor=True, arena=True, arena_capacity=args.capacity128, snapshot=args.snapshot)
 
 
 if __name__ == '__main__':
