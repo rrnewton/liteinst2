@@ -598,6 +598,14 @@ impl ArtifactFrameTrace {
         self.trace.exact_image()
     }
 }
+impl<'a> ArtifactImageView<'a> {
+    // Internal read-only borrowing; this adds no live image ownership conversion.
+    pub(crate) const fn from_direct(image: &'a TrampolineImage) -> Self {
+        Self {
+            image: ArtifactImageRef::Direct(image),
+        }
+    }
+}
 impl ArtifactImageView<'_> {
     /// Canonical external entry; for an ordinary direct image this is address().
     pub fn entry_address(&self) -> u64 {

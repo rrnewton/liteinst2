@@ -462,10 +462,15 @@ fn prepare_inputs(
 enum PopulationMode {
     Existing(Mode),
     JumpStack,
+    JumpStackGrouped,
 }
 const JUMP_STACK_FLAG: &str = "--whole-program-fixed-exec-packed-overlapping-jump-stack64-4096";
+const GROUPED_FLAG: &str = "--whole-program-fixed-exec-block-observation-jump-stack64-4096";
 fn arguments_with_jump_stack(args: &[String]) -> Result<(&[String], PopulationMode), String> {
-    if args.len() == 8 && args[1] == JUMP_STACK_FLAG {
+    if args.get(1).is_some_and(|arg| arg == GROUPED_FLAG) && args.len() != 8 {
+        return Err("disassembly_sites grouped: exact argument count required".into());
+    }
+    if args.len() == 8 && matches!(args[1].as_str(), JUMP_STACK_FLAG | GROUPED_FLAG) {
         if args[2..].iter().any(|arg| {
             arg.starts_with("--whole-program-")
                 || arg.starts_with("--short-neighbors-")
@@ -479,7 +484,14 @@ fn arguments_with_jump_stack(args: &[String]) -> Result<(&[String], PopulationMo
         }) {
             return Err("disassembly_sites jump-stack: mixed/repeated profile selector".into());
         }
-        Ok((&args[2..], PopulationMode::JumpStack))
+        Ok((
+            &args[2..],
+            if args[1] == GROUPED_FLAG {
+                PopulationMode::JumpStackGrouped
+            } else {
+                PopulationMode::JumpStack
+            },
+        ))
     } else {
         arguments_with_fixed_exec(args).map(|(args, mode)| (args, PopulationMode::Existing(mode)))
     }
@@ -487,6 +499,11 @@ fn arguments_with_jump_stack(args: &[String]) -> Result<(&[String], PopulationMo
 fn labels_with_population(mode: PopulationMode) -> (&'static str, &'static str, &'static str) {
     match mode {
         PopulationMode::Existing(mode) => labels_with_ownership(mode),
+        PopulationMode::JumpStackGrouped => (
+            liteinst_rewrite::GROUPED_PROFILE,
+            "", // run() supplies the shared owned canonical metadata string.
+            " selection_profile=jumps-gpr-stack64-v1 grouped_profile=jumps-gpr-stack64-block-observation-v1 address_binding=fixed-exec-zero-bias-indexed-jump32-v1 required_object_type=ET_EXEC required_load_bias=0",
+        ),
         PopulationMode::JumpStack => (
             disassembly::jump_stack::PROFILE,
             liteinst_rewrite::FIXED_EXEC_METADATA,
@@ -514,7 +531,7 @@ fn prepare_population_inputs(
             mode,
             files,
         ),
-        PopulationMode::JumpStack => {
+        PopulationMode::JumpStack | PopulationMode::JumpStackGrouped => {
             use li2core::x86::JumpStackClass;
             let imported = disassembly::jump_stack::import(original, ledger, expected_ledger)?;
             let mut counts = [0; 3];
@@ -528,15 +545,176 @@ fn prepare_population_inputs(
             assert_eq!(counts.iter().sum::<usize>(), imported.sites().len());
             *classes = Some(counts);
             files.insert("disassembly-inventory.tsv".into(), imported.inventory());
+            // The binder consumes the import. Retain only checked geometry for
+            // the grouped verifier; legacy mode allocates no duplicate roster.
+            let geometry: Vec<_> = if mode == PopulationMode::JumpStackGrouped {
+                imported
+                    .sites()
+                    .iter()
+                    .map(|site| site.geometry().clone())
+                    .collect()
+            } else {
+                Vec::new()
+            };
             let selected = imported.bind_whole_program(policy, expected_policy)?;
             assert_eq!(selected.profile(), disassembly::jump_stack::PROFILE);
             files.insert("selection.txt".into(), selected.manifest().to_vec());
-            liteinst_rewrite::prepare_disassembly_jump_stack_fixed_exec_packed_overlapping_neighbors(
-                original, &selected,
-            )
+            if mode == PopulationMode::JumpStackGrouped {
+                let product = liteinst_rewrite::prepare_disassembly_jump_stack_grouped_fixed_exec(
+                    original, &selected,
+                )?;
+                verify_grouped_metadata(
+                    original,
+                    &geometry,
+                    selected.manifest(),
+                    &product,
+                    product.files(),
+                )?;
+                Ok(product)
+            } else {
+                liteinst_rewrite::prepare_disassembly_jump_stack_fixed_exec_packed_overlapping_neighbors(
+                    original, &selected,
+                )
+            }
         }
     }
 }
+// Binary metadata is verified by its existing Rust format implementation, never
+// by a second Python decoder. Files are borrowed and no candidate is executed.
+fn verify_grouped_metadata(
+    original: &[u8],
+    geometry: &[disassembly::JumpSite],
+    manifest: &[u8],
+    product: &liteinst_rewrite::Product,
+    files: &BTreeMap<String, Vec<u8>>,
+) -> Result<(), liteinst_rewrite::Error> {
+    let failure = |detail: &str| liteinst_rewrite::Error {
+        stage: "grouped-cli-metadata",
+        detail: detail.into(),
+    };
+    let get = |name: &str| {
+        files
+            .get(name)
+            .map(Vec::as_slice)
+            .ok_or_else(|| failure("missing required group product member"))
+    };
+    let binding = product
+        .fixed_image_binding()
+        .ok_or_else(|| failure("missing fixed binding"))?;
+    let expected = liteinst_rewrite::grouped_fixed_exec_binding_policy(
+        binding,
+        ContentId::of(manifest),
+        ContentId::of(get("grouping-policy.tsv")?),
+    );
+    if get("binding-policy.tsv")? != expected || get("selection.txt")? != manifest {
+        return Err(failure("grouping policy/selection binding mismatch"));
+    }
+    let compatibility = formats::Compatibility {
+        planner: li2core::contracts::CONTRACT_VERSION,
+        encoder: 1,
+        hook_abi: 1,
+        arena: 1,
+        target: ContentId::of(get("target.tsv")?),
+        binding: ContentId::of(&expected),
+    };
+    let metadata_bytes = get("metadata.li2meta")?;
+    let metadata =
+        formats::Metadata::decode(metadata_bytes, &compatibility, formats::Limits::default())
+            .map_err(|_| failure("portable compatibility or metadata integrity"))?;
+    metadata
+        .verify_original(original)
+        .map_err(|_| failure("portable original identity"))?;
+    let ids: Vec<_> = geometry.iter().map(|site| site.id).collect();
+    metadata
+        .verify_selection(ContentId::of(manifest), &ids)
+        .map_err(|_| failure("portable complete selection"))?;
+    if product.reports().len() != ids.len()
+        || metadata.declares_complete_trampoline_coverage() != product.candidate_complete()
+    {
+        return Err(failure("portable outcome count/coverage"));
+    }
+    for ((actual, report), site) in metadata.sites().iter().zip(product.reports()).zip(geometry) {
+        if (
+            actual.id,
+            actual.original_pc,
+            actual.file_offset,
+            usize::from(actual.length),
+        ) != (site.id, site.pc, site.file_offset, site.length)
+            || (
+                report.id,
+                report.pc,
+                report.file_offset,
+                usize::from(report.length),
+            ) != (site.id, site.pc, site.file_offset, site.length)
+            || report.candidate_emitted != product.candidate_complete()
+        {
+            return Err(failure("portable per-site identity/emission"));
+        }
+        let outcome = if report.candidate_emitted && report.refusal.is_none() {
+            use li2core::engine::Tactic;
+            formats::Outcome::Rewritten(
+                match report
+                    .core_tactic
+                    .ok_or_else(|| failure("missing tactic"))?
+                {
+                    Tactic::Relocation => formats::Tactic::Relocation,
+                    Tactic::GeneralizedPun => formats::Tactic::GeneralizedPun,
+                    Tactic::PrefixedPun => formats::Tactic::PrefixedPun,
+                    Tactic::SuccessorEviction => formats::Tactic::SuccessorEviction,
+                    Tactic::NeighborEviction => formats::Tactic::NeighborEviction,
+                },
+            )
+        } else {
+            formats::Outcome::Refused(report.refusal_code.unwrap_or(10_003))
+        };
+        if actual.outcome != outcome {
+            return Err(failure("portable per-site outcome"));
+        }
+    }
+    if product.candidate_complete() {
+        let candidate = get("candidate.elf")?;
+        let marker = b"LI2TOOL-CANDIDATE-UNREADY-V1\0";
+        // Reuse the checked ELF reader. The existing carrier places its payload
+        // at the eight-byte-aligned end of the appended program table. Marker
+        // bytes in original data are legal and are never searched or counted.
+        let output = formats::elf64::Elf64::parse(
+            candidate,
+            formats::elf64::ParseLimits {
+                max_program_headers: 2910, // unchanged sealed whole-policy ceiling
+            },
+        )
+        .map_err(|_| failure("embedded carrier ELF"))?;
+        let header = output.header();
+        if header.program_offset.0 < original.len() as u64 {
+            return Err(failure("embedded table is not appended"));
+        }
+        let end = header
+            .program_offset
+            .0
+            .checked_add(u64::from(header.program_count) * u64::from(header.program_entry_size))
+            .ok_or_else(|| failure("embedded table overflow"))?;
+        let payload = usize::try_from(
+            end.checked_add(7)
+                .ok_or_else(|| failure("embedded alignment overflow"))?
+                & !7,
+        )
+        .map_err(|_| failure("embedded host offset"))?;
+        let at = payload
+            .checked_add(marker.len())
+            .ok_or_else(|| failure("embedded marker overflow"))?;
+        if candidate.get(payload..at) != Some(marker.as_slice())
+            || candidate.get(at..at + 32) != Some(ContentId::of(metadata_bytes).0.as_slice())
+            || candidate.get(at + 32..at + 64)
+                != Some(ContentId::of(get("plan-ledger.tsv")?).0.as_slice())
+        {
+            return Err(failure("embedded metadata/plan identity"));
+        }
+    } else if files.contains_key("candidate.elf") || files.contains_key("source.li2sparse") {
+        return Err(failure("incomplete product has candidate payload"));
+    }
+    Ok(())
+}
+
 fn jump_stack_fields(counts: Option<[usize; 3]>) -> String {
     let value =
         |index: usize| counts.map_or_else(|| "unavailable".into(), |n| n[index].to_string());
@@ -556,6 +734,16 @@ fn run() -> Result<bool, String> {
     let raw_args: Vec<_> = std::env::args().collect();
     let (args, mode) = arguments_with_jump_stack(&raw_args)?;
     let (profile, family, stdout_family) = labels_with_population(mode);
+    let grouped_family = if mode == PopulationMode::JumpStackGrouped {
+        liteinst_rewrite::grouped_fixed_exec_metadata()
+    } else {
+        String::new()
+    };
+    let family = if mode == PopulationMode::JumpStackGrouped {
+        grouped_family.as_str()
+    } else {
+        family
+    };
     let expected_ledger = selection::id(&args[2]).map_err(|e| e.to_string())?;
     let expected_policy = selection::id(&args[4]).map_err(|e| e.to_string())?;
     let original = read(Path::new(&args[0]), disassembly::INPUT_LIMIT)?;
@@ -613,12 +801,16 @@ fn run() -> Result<bool, String> {
         "LI2DISASSEMBLY-DIRECTORY\t1\nprofile\t{profile}\n{family}observed_original_sha256\t{}\ncandidate_complete\t{complete}\nqualification_complete\tfalse\n",
         digest(&original)
     );
-    if mode == PopulationMode::JumpStack {
+    if matches!(
+        mode,
+        PopulationMode::JumpStack | PopulationMode::JumpStackGrouped
+    ) {
         index.push_str(&jump_stack_fields(classes));
     }
     if matches!(
         mode,
         PopulationMode::JumpStack
+            | PopulationMode::JumpStackGrouped
             | PopulationMode::Existing(Mode::WholeFixedExecPackedOverlapping4096)
     ) {
         match fixed_binding {
@@ -630,6 +822,18 @@ fn run() -> Result<bool, String> {
             )),
             None => index.push_str("fixed_binding_status\tunbound\nfixed_output_readback\tnot-complete\n"),
         }
+    }
+    if mode == PopulationMode::JumpStackGrouped {
+        index.push_str(if fixed_binding.is_some() {
+            "portable_metadata_verification\tchecked\n"
+        } else {
+            "portable_metadata_verification\tunavailable\n"
+        });
+        index.push_str(if complete {
+            "embedded_metadata_binding\tchecked\n"
+        } else {
+            "embedded_metadata_binding\tnot-complete\n"
+        });
     }
     for (name, bytes) in &files {
         write(&output.join(name), bytes)?;
@@ -936,3 +1140,7 @@ mod fixed_exec_cli_tests {
         assert!(arguments_with_fixed_exec(&args).is_err());
     }
 }
+
+#[cfg(test)]
+#[path = "disassembly_sites/grouped_tests.rs"]
+mod grouped_tests;

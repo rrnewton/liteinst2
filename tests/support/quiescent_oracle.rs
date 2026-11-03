@@ -628,6 +628,12 @@ mod ordered_trace {
         include!("jump_stack_native.rs");
     }
 
+    // Finite emission-only artifact windows; the old state/event/fault oracle is unchanged.
+    #[cfg(test)]
+    pub mod artifact_window_native {
+        include!("artifact_window_native.rs");
+    }
+
     const EVENT_CAPACITY: usize = 128;
     thread_local! {
         static ACTIVE_LOG: Cell<(*mut u64, usize)> = const { Cell::new((core::ptr::null_mut(), 0)) };

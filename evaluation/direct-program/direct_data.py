@@ -171,3 +171,207 @@ def e9_statistics(raw, info, original, size, output_size):
     assert int(one(rb'^input_file_size + = ([0-9]+)$')) == size
     assert int(one(rb'^output_file_size + = ([0-9]+) \([0-9]+\.[0-9]{2}%\)$')) == output_size
     return dict(requested=n, successful=total[0], failed=n-total[0], strict_full=total[0] == n, tactics=tactics, ordered_outcomes=outcomes)
+
+
+GROUPED_PROFILE = 'jumps-gpr-stack64-block-observation-v1'
+GROUPED_MEMBERS = ('grouping-policy.tsv', 'selection.txt', 'binding-policy.tsv',
+                   'plan-ledger.tsv', 'ledger.tsv', 'report.tsv', 'disassembly.txt')
+
+
+def grouped_binding_bytes(selection, original, domain, grouping):
+    rows = [('planner_profile', GROUPED_PROFILE),
+            ('singleton_planner_profile', 'whole-program-packed-overlapping-neighbors-4096'),
+            ('address_binding', 'fixed-exec-zero-bias-indexed-jump32-v1'),
+            ('required_object_type', 'ET_EXEC'), ('required_load_bias', '0'),
+            ('fixed_binding_qualification', 'unresolved-runtime-loader-obligation'),
+            ('selection_sha256', selection), ('source_sha256', original),
+            ('mapping', str(domain)), ('generation', '1'), ('domain', str(domain)),
+            ('field_encoding', 'original-indexed-jump-signed32-v1'),
+            ('grouped_profile', GROUPED_PROFILE), ('grouping_policy_sha256', grouping)]
+    return ('LI2FIXED-EXEC-BINDING\t1\n'+''.join(k+'\t'+v+'\n' for k, v in rows)).encode()
+
+
+def grouped_linkage(info, members, sites, original, domain, report, *, source_ledger):
+    """Join a full policy partition to unique local plans and final site outcomes.
+
+    All members are pinned by COMPLETE first. This parses text records only;
+    portable/embedded binary checks use the producer's existing Rust format API.
+    Accepted units are local-plan evidence, never candidate-emission authority.
+    """
+    assert set(members) == set(GROUPED_MEMBERS) and 0 < len(sites) <= 4096
+    for name, raw in members.items():
+        assert raw.endswith(b'\n') and len(raw) <= 64*M
+        assert info['files'][name] == dict(bytes=len(raw), sha256=hashlib.sha256(raw).hexdigest())
+    # Output self-pins do not prove which independently frozen input was read.
+    assert info['files']['disassembly.txt'] == {k: source_ledger[k] for k in ('bytes', 'sha256')}
+    fields = info['fields']; stack_complete(fields, sites)
+    expected_fields = dict(profile=GROUPED_PROFILE, planner_profile=GROUPED_PROFILE,
+        grouped_profile=GROUPED_PROFILE, singleton_planner_profile='whole-program-packed-overlapping-neighbors-4096',
+        grouping_policy='grouping-policy.tsv', grouping_ledger='LI2GROUPED-LEDGER-1',
+        portable_metadata_verification='checked',
+        embedded_metadata_binding='checked' if report['strict_full'] else 'not-complete')
+    assert all(fields.get(k) == v for k, v in expected_fields.items())
+    assert all(name in info['files'] for name in ('metadata.li2meta', 'target.tsv', 'planning-profile.tsv'))
+    selection = info['files']['selection.txt']['sha256']
+    grouping = info['files']['grouping-policy.tsv']['sha256']
+    assert members['binding-policy.tsv'] == grouped_binding_bytes(selection, original, domain, grouping)
+    number = lambda value: int(value) if re.fullmatch(r'0|[1-9][0-9]*', value) else None
+    def numeric(value):
+        result = number(value); assert result is not None; return result
+    def rows(name): return [line.split('\t') for line in members[name].decode().splitlines()]
+    def one(table, tag):
+        found = [row for row in table if row[0] == tag]; assert len(found) == 1; return found[0]
+
+    # Verify the declared block partition. No code decoding or placement occurs.
+    blocks = {}
+    for site in sites: blocks.setdefault((site[6], site[7]), []).append(site)
+    groups = sorted((v for v in blocks.values() if len(v) > 1), key=lambda v: -v[0][1])
+    singles = sorted((v for v in blocks.values() if len(v) == 1), key=lambda v: -v[0][1])
+    units = groups + singles
+    policy = rows('grouping-policy.tsv')
+    prefix = [
+        ['LI2GROUPING-POLICY', '1'], ['profile', GROUPED_PROFILE],
+        ['schedule', 'all-multisite-blocks-descending-then-singletons-descending-v1'],
+        ['window', 'first-selected-head-through-last-selected-instruction'],
+        ['group_tactic', 'RelocationOnly'], ['group_attempts', '1'], ['group_fallback', 'none'],
+        ['member_budgets', 'shared-not-summed'], ['entry_completeness', 'AllInstructionHeads'],
+        ['singleton_profile', 'whole-program-packed-overlapping-neighbors-4096'],
+        ['qualification_complete', 'false'], ['original_sha256', original],
+        ['selection_sha256', selection], ['complete_site_count', str(len(sites))]]
+    expected_policy = list(prefix)
+    member_rows = {}
+    for unit, population in enumerate(units):
+        start, end = population[0][1], population[-1][1]+population[-1][2]
+        assert population == [s for s in sites if s[1] < end and start < s[1]+s[2]]
+        assert all(start <= s[1] < s[1]+s[2] <= end for s in population)
+        kind = 'group' if len(population) > 1 else 'singleton'
+        expected_policy.append(['unit', str(unit), kind, str(start), str(end), str(len(population))])
+        member_rows[unit] = [['member', str(unit), str(s[0]), str(s[1]), str(s[2]), s[8]] for s in population]
+        expected_policy.extend(member_rows[unit])
+    assert policy == expected_policy
+
+    # Source-owned input rows provide the complete head set, without redisassembly.
+    source = members['disassembly.txt'].decode().splitlines()
+    assert source[0] == 'LI2DISASM 1' and source.count('original '+original) == 1
+    heads = {}
+    for line in source:
+        if line.startswith('head '):
+            match = re.fullmatch(r'head ([0-9]+) ([0-9a-f]+)', line); assert match
+            pc, encoded = numeric(match[1]), match[2]
+            assert pc not in heads and len(encoded) % 2 == 0 and 1 <= len(encoded)//2 <= 15
+            heads[pc] = len(encoded)//2
+    assert len(heads) <= 16384 and all(heads[s[1]] == s[2] for s in sites)
+    manifest = members['selection.txt'].decode().splitlines()
+    assert manifest[0] == 'LI2TOOL-SHARED-REGIONS 1' and manifest.count('profile '+STACK_PROFILE) == 1
+    hook_rows = [line.split() for line in manifest if line.startswith('hook ')]
+    assert len(hook_rows) == 1 and len(hook_rows[0]) == 5 and hook_rows[0][1] == '1' and hook_rows[0][3] == '1'
+    hook = numeric(hook_rows[0][2])
+    assert hook_rows[0][4] == hashlib.sha256(b'\xc3').hexdigest() and heads[hook] == 1
+
+    plan = rows('plan-ledger.tsv')
+    assert plan[0] == ['LI2GROUPED-LEDGER', '1']
+    for key, value in [('original_sha256', original), ('selection_sha256', selection),
+        ('bias_policy', 'fixed-exec-zero-bias-indexed-jump32-v1'), ('bias_domain', str(domain)),
+        ('qualification_complete', 'false'), ('execution_authority', 'none'),
+        ('grouping', 'complete-selected-block-units-v1')]: assert one(plan, key) == [key, value]
+    assert [row for row in plan if row[0] == 'hook'] == [['hook', '1', str(hook), '1', hook_rows[0][4]]]
+    at = plan.index(['GROUP-ASSOCIATIONS', '1'])
+    assert sum(row[0] == 'GROUP-ASSOCIATIONS' for row in plan) == 1
+    assert not any(row[0] in ('member', 'accepted-unit', 'accepted_member_count', 'complete_site_count', 'policy_sha256') for row in plan[:at])
+    assert plan[at+1] == ['policy_sha256', grouping]
+    assert plan[-1] == ['required-fixed-source', original, str(domain), '1', str(domain), '0']
+    accepted = {}; cursor = at+2
+    while cursor < len(plan) and plan[cursor][0] == 'accepted-unit':
+        row = plan[cursor]; assert len(row) == 5
+        unit, primary, count = map(numeric, (row[1], row[2], row[4]))
+        assert unit not in accepted and unit < len(units)
+        population = units[unit]
+        assert primary == population[0][0] and count == len(population)
+        assert row[3] == ('group' if count > 1 else 'singleton')
+        assert plan[cursor+1:cursor+1+count] == member_rows[unit]
+        accepted[unit] = primary; cursor += 1+count
+    assert list(accepted) == sorted(accepted)
+    accepted_ids = [s[0] for unit in accepted for s in units[unit]]
+    assert len(set(accepted_ids)) == len(accepted_ids)
+    assert plan[cursor:-1] == [['accepted_member_count', str(len(accepted_ids))], ['complete_site_count', str(len(sites))]]
+
+    # Every unique plan/image belongs to one accepted unit. Group fields name
+    # every observed PC and the shared hook; routes include unselected heads too.
+    primaries = set(accepted.values()); steps = {}; images = {}
+    for row in plan[:at]:
+        if row[0] == 'step':
+            assert len(row) == 8 and numeric(row[1]) in primaries
+            primary, step = numeric(row[1]), numeric(row[2])
+            assert step == len(steps.setdefault(primary, [])); steps[primary].append(row)
+        if row[0] == 'image':
+            assert len(row) == 7
+            image, primary, address, size = map(numeric, row[1:5])
+            assert image == len(images) and primary in primaries and size > 0
+            assert row[6] == f'image-{image:04}.bin'
+            assert info['files'][row[6]] == dict(bytes=size, sha256=row[5])
+            images[image] = (primary, address, size)
+    assert set(steps) == primaries and {v[0] for v in images.values()} == primaries
+    assert {name for name in info['files'] if re.fullmatch(r'image-[0-9]+\.bin', name)} == {f'image-{i:04}.bin' for i in images}
+    assert {numeric(row[1]) for row in plan[:at] if row[0] in ('route', 'restored-boundary', 'field')} <= set(images)
+    for unit, primary in accepted.items():
+        population = units[unit]
+        if len(population) == 1: continue
+        start, end = population[0][1], population[-1][1]+population[-1][2]
+        assert steps[primary] == [['step', str(primary), '0', 'relocation', str(start), str(start), str(start), str(end)]]
+        owned = [i for i, v in images.items() if v[0] == primary]; assert len(owned) == 1
+        image = owned[0]; address, size = images[image][1:]
+        routes = [row for row in plan[:at] if row[:2] == ['route', str(image)]]
+        restored = [row for row in plan[:at] if row[:2] == ['restored-boundary', str(image)]]
+        expected_heads = sorted(pc for pc in heads if start <= pc < end)
+        for table in (routes, restored):
+            assert all(len(row) == 4 and address <= numeric(row[3]) < address+size for row in table)
+            assert [numeric(row[2]) for row in table] == expected_heads
+        data = [row for row in plan[:at] if row[:2] == ['field', str(image)]]
+        assert all(len(row) == 10 for row in data)
+        logical = [numeric(row[6]) for row in data if row[8] == b'LogicalPc'.hex()]
+        calls = [numeric(row[6]) for row in data if row[8] == b'HookCall'.hex()]
+        assert logical == [s[1] for s in population] and calls == [hook]*len(population)
+        assert all(row[7] == str(domain) for row in data)
+        assert info['files'].get(f'group-{unit}.diagnostics.txt') is not None
+
+    assert report == li2_report(members['report.tsv'], sites, original, report['strict_full'])
+    report_rows = rows('report.tsv')
+    assert one(report_rows, 'selection_sha256') == ['selection_sha256', selection]
+    local = []
+    assert report['requested'] == len(sites) and len(report['rows']) == len(sites)
+    for record in report['rows']:
+        emitted = record['candidate_emitted'] == 'true'
+        stage, code = record['stage'], record['refusal_code']
+        if report['strict_full']:
+            assert emitted and stage == code == 'none' and record['core_tactic'] in ('B1', 'B2', 'T1', 'T2', 'T3')
+            local.append(int(record['site']))
+        else:
+            assert not emitted and stage != 'none' and code != 'none'
+            if stage in ('atomic-selection', 'carrier'):
+                assert code == ('10003' if stage == 'atomic-selection' else '10002')
+                assert record['core_tactic'] in ('B1', 'B2', 'T1', 'T2', 'T3')
+                local.append(int(record['site']))
+    assert set(local) == set(accepted_ids)
+    records = {int(row['site']): row for row in report['rows']}
+    for population in groups:
+        signatures = {(records[s[0]]['core_tactic'], records[s[0]]['candidate_emitted'], records[s[0]]['refusal_code'], records[s[0]]['stage']) for s in population}
+        assert len(signatures) == 1
+        if population[0][0] in accepted_ids:
+            assert all(records[s[0]]['core_tactic'] == 'B1' for s in population)
+    final = members['ledger.tsv']; pre = members['plan-ledger.tsv']
+    assert final.startswith(pre)
+    if report['strict_full']:
+        assert set(accepted_ids) == {s[0] for s in sites}
+        assert final[len(pre):].startswith(b'CARRIER-EXTENSION\t1\n')
+        tail = rows('ledger.tsv')[len(plan):]
+        assert one(tail, 'candidate_sha256') == ['candidate_sha256', info['files']['candidate.elf']['sha256']]
+        assert one(tail, 'fixed-output-readback') == ['fixed-output-readback', 'checked']
+        assert not any(row[0] in ('GROUP-ASSOCIATIONS', 'accepted-unit', 'member') for row in tail)
+    else:
+        assert final == pre and 'candidate.elf' not in info['files'] and 'source.li2sparse' not in info['files']
+    return dict(status='PASS' if report['strict_full'] else 'FAILED', policy_sha256=grouping,
+                policy_units=len(units), group_units=len(groups), singleton_units=len(singles),
+                accepted_units=len(accepted), accepted_members=len(accepted_ids),
+                unique_images=len(images), requested=len(sites), emitted=report['emitted'],
+                grouping_ledger='LI2GROUPED-LEDGER-1',
+                metadata_verification='Rust format/embedded check recorded; Python authenticates member hashes and text joins')

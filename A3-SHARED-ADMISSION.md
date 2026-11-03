@@ -59,10 +59,16 @@ inventories on refusal. The full correctness campaign passes, as recorded in
 [the direct-input receipt](evaluation/direct-input/README.md). Those checks do
 not establish application execution or the caller's complete-code premise.
 
-Both frontends already call the same core instruction encoder. The legacy
-live-window/exact-syscall and ordered-artifact paths still duplicate internal
-save/callback/restore orchestration; ELF layout and live publication remain
-separate output adapters. The two owned back-edge clock profiles now use the
+The table above records the historical baseline. Both frontends use the same
+core instruction encoder. At `7e7bd04c7f224f480b018363152cf771d79ad968`,
+the legacy live-window/exact-syscall and ordered-artifact paths share
+save/callback/restore orchestration through
+`src/trampoline/observer_sequence.rs`; coordinates and final frame publication
+remain with each caller. The grouped bridge at
+`52ec3184b994cf10eb6cdfcbd8c8a361d7e14961` reuses the existing
+relocation-window collector, fitting placement, B1 planning and core encoder.
+ELF layout and live publication remain separate output adapters.
+The two owned back-edge clock profiles now use the
 shared graph constructor, indexed successors and reachability; the two-backedge
 region also uses shared structural returnability. Each retains its original
 scalar, prefix, entry and backedge admission rules. The disassembly ledger
