@@ -1,0 +1,162 @@
+{
+  "actual_child_command": [
+    "/usr/bin/prlimit",
+    "--cpu=30:30",
+    "--as=536870912:536870912",
+    "--fsize=16777216:16777216",
+    "python3.12",
+    "-B",
+    "evaluation/admission/compare_catalog_walk.py"
+  ],
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_seconds": 30,
+    "file_size_bytes": 16777216,
+    "log_bytes": 8388608,
+    "wall_seconds": 60
+  },
+  "executed_revision": "1a2f5aaf1ac0c8b5c2ca89902bef1bf7892bb003",
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu_family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_upstream_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model_name": "AMD EPYC 9D85 158-Core Processor",
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "historical_helper_revision": "e6bc85380d732e1046cde162c8b26d1ef95b3461",
+  "notes": [
+    "The first portable run emitted the expected 82-comparison JSON but failed strict descendant cleanup. It remains failed.",
+    "The corrected portable run uses the system Git with replacement objects disabled; all original controls and limits remain.",
+    "Times are diagnostic command durations, not a throughput comparison or performance claim."
+  ],
+  "portable_successor_executed": true,
+  "qualification_credit": false,
+  "reproduce": [
+    "python3.12",
+    "-B",
+    "evaluation/admission/compare_catalog_walk.py"
+  ],
+  "rows": [
+    {
+      "attempt": "recorder-plain-walk-r2-attempt-1",
+      "command": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "c50d7170708ae472a34d298930eab5b74dbb0678e69ae945565459fc1ad91444",
+        "reaped_descendants": 0,
+        "seconds": 0.2908684299327433,
+        "start_utc": "2026-11-03T05:54:41.255667+00:00",
+        "termination": null
+      },
+      "cpu": 3,
+      "error": null,
+      "inputs_unchanged": true,
+      "qualification_credit": false,
+      "receipt": {
+        "bytes": 1283401,
+        "sha256": "d31fb19244ee301c14767cfa69bf777ff08f8d36f758bcebd02cd63ecede19d2"
+      },
+      "reported_comparisons": {
+        "comparisons": 82,
+        "fresh_graph_per_call": true,
+        "metadata_comparisons": 8,
+        "original_comparisons": 74,
+        "qualification_credit": false,
+        "status": "passed_differential_only"
+      },
+      "revision": "e6bc85380d732e1046cde162c8b26d1ef95b3461",
+      "source_manifest_sha256": "adbf3587fd7f01df2cf50b99531d9713afc6363061cec0fb9260cb752c7eb792",
+      "source_unchanged": true,
+      "status": "passed_differential_only",
+      "tree": "225cdcfb7c75cd100376bf7bb6ce31ece6cbd560"
+    },
+    {
+      "attempt": "recorder-plain-walk-public-attempt-1",
+      "command": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "c50d7170708ae472a34d298930eab5b74dbb0678e69ae945565459fc1ad91444",
+        "reaped_descendants": 21,
+        "seconds": 0.9622657971922308,
+        "start_utc": "2026-11-03T06:02:13.593744+00:00",
+        "termination": "descendants_after_exit"
+      },
+      "cpu": 6,
+      "error": "AssertionError: ",
+      "inputs_unchanged": true,
+      "qualification_credit": false,
+      "receipt": {
+        "bytes": 1282500,
+        "sha256": "fe70b0c096f01c57b44d8e337ae77b87d177d2b53c3da52d377a94f76ea30386"
+      },
+      "reported_comparisons": null,
+      "revision": "25765c8a3209ef5e46f63449496a3c4598dad824",
+      "source_manifest_sha256": "6086480a44c1ff566618a553af9f249e75d752701e244f11a8f76ed5894c5aad",
+      "source_unchanged": true,
+      "status": "failed",
+      "tree": "54a94b2592d4af98c57b04a76b1b88834c7c3b41"
+    },
+    {
+      "attempt": "recorder-plain-walk-public-attempt-2",
+      "command": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "c50d7170708ae472a34d298930eab5b74dbb0678e69ae945565459fc1ad91444",
+        "reaped_descendants": 0,
+        "seconds": 0.36580761312507093,
+        "start_utc": "2026-11-03T06:04:08.687388+00:00",
+        "termination": null
+      },
+      "cpu": 0,
+      "error": null,
+      "inputs_unchanged": true,
+      "qualification_credit": false,
+      "receipt": {
+        "bytes": 1282787,
+        "sha256": "09a2f0a59ef2ffd9e0f36e97e5b6594d4933f283b7f5875226a614bd293609a4"
+      },
+      "reported_comparisons": {
+        "comparisons": 82,
+        "fresh_graph_per_call": true,
+        "metadata_comparisons": 8,
+        "original_comparisons": 74,
+        "qualification_credit": false,
+        "status": "passed_differential_only"
+      },
+      "revision": "1a2f5aaf1ac0c8b5c2ca89902bef1bf7892bb003",
+      "source_manifest_sha256": "9a9137409e89330a1bbf88c0bd128a183312895ff7a125a5170425c0e6c72003",
+      "source_unchanged": true,
+      "status": "passed_differential_only",
+      "tree": "569869b62eea4883b9c046947749921e92b4c421"
+    }
+  ],
+  "schema": 1,
+  "scope": "Exact-source catalog traversal equivalence; full recorder and Cargo qualification are separate.",
+  "source_inputs": {
+    "/usr/bin/git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "evaluation/admission/compare_catalog_walk.py": {
+      "bytes": 6506,
+      "sha256": "b1488eb8948afd57bf8a7b91b534864845c32d85e8dc2ffc2376b467927180c9"
+    },
+    "evaluation/admission/core_97ab_inventory.json": {
+      "bytes": 693558,
+      "sha256": "ac196b84225e7ddf99bbd04c22682377e8d9efd55c927d21330c7ca9fb210ae2"
+    },
+    "evaluation/admission/core_97ab_inventory.py": {
+      "bytes": 30798,
+      "sha256": "c7edcd37a4fd1c194b9328f87f06acb08e53c6b87f85e9e4be34b9c368d3bfca"
+    }
+  },
+  "supervisor": "evaluation/admission/processes.py:run_command, 60 seconds and default 8 MiB log cap; fresh singleton CPU reservation"
+}
