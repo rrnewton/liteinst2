@@ -1,0 +1,69 @@
+{
+  "artifacts_unchanged": true,
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_seconds": 30,
+    "file_size_bytes": 16777216,
+    "log_bytes": 8388608,
+    "wall_seconds": 60
+  },
+  "cleanup_complete": true,
+  "command": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 1,
+    "private_log_sha256": "01a8066ef3b30d6ab83683e7a54ab59e5952f46fc2af0ecb06ff913eeb088ad7",
+    "reaped_descendants": 0,
+    "seconds": 0.1444893809966743,
+    "start_utc": "2026-11-03T07:06:52.113679+00:00",
+    "termination": null
+  },
+  "configuration_unchanged": true,
+  "cpu": 1,
+  "error": "ValueError: whole successful child closure",
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu_family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_upstream_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model_name": "AMD EPYC 9D85 158-Core Processor",
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "observed": {
+    "errors": 1,
+    "failures": 1,
+    "passed": 8,
+    "tests": 10
+  },
+  "performance_credit": false,
+  "qualification_credit": false,
+  "reason": "Three exception-message checks invoked the deliberately replaced regex compiler through unittest; successor checks exact exception type and text directly.",
+  "receipt": {
+    "bytes": 1355091,
+    "sha256": "86928c1b1fd8466421302dd5cd67e3fe2abb0e419329928f15b812d3f7b1393d"
+  },
+  "reproduce": [
+    "python3.12",
+    "-B",
+    "evaluation/admission/check_source_values.py",
+    "--expect-revision",
+    "3a9e36cf0108f9c4236762b83a7111717a2f864d",
+    "--cpu",
+    "RESERVED_CPU",
+    "--output",
+    "target/evaluation/inprocess/source-values-controls-NEW"
+  ],
+  "revision": "3a9e36cf0108f9c4236762b83a7111717a2f864d",
+  "schema": 1,
+  "source_unchanged": true,
+  "status": "failed",
+  "unlaunched": [
+    "inventory_digest_controls",
+    "compare_catalog_walk"
+  ]
+}

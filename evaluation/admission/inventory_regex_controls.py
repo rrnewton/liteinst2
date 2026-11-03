@@ -51,8 +51,9 @@ class RegexValueControls(unittest.TestCase):
         with patch.object(re, '_compile', side_effect=AssertionError('extra compile')):
             self.assertEqual(values.with_findall(provider, 'a', 'a'), ['a', 'a', 1])
             self.assertEqual(values.with_findall(provider, 'a', 'a'), ['a', 'a', 2])
-            with self.assertRaisesRegex(LookupError, '^third provider call$'):
+            with self.assertRaises(LookupError) as error:
                 values.with_findall(provider, 'a', 'a')
+            self.assertEqual(str(error.exception), 'third provider call')
         self.assertEqual(provider.calls, 3)
         self.assertEqual(values._CACHE, {})
 
@@ -69,14 +70,16 @@ class RegexValueControls(unittest.TestCase):
             events.append(('compile', pattern, flags)); return compiled
         with patch.object(re, '_compile', compile_now):
             self.assertEqual(values.with_findall(FINDALL, 'a', 'a'), ['a', 1])
-            with self.assertRaisesRegex(LookupError, '^second foreign result$'):
+            with self.assertRaises(LookupError) as error:
                 values.with_findall(FINDALL, 'a', 'a')
+            self.assertEqual(str(error.exception), 'second foreign result')
         self.assertEqual(events, [('compile', 'a', 0), ('findall', 'a', 1),
                                   ('compile', 'a', 0), ('findall', 'a', 2)])
         with patch.object(re, '_compile', side_effect=LookupError('actual compiler')) as calls:
             for _ in range(2):
-                with self.assertRaisesRegex(LookupError, '^actual compiler$'):
+                with self.assertRaises(LookupError) as error:
                     values.with_findall(FINDALL, 'a', 'a')
+                self.assertEqual(str(error.exception), 'actual compiler')
             self.assertEqual(calls.call_count, 2)
         self.assertEqual(values._CACHE, {})
 

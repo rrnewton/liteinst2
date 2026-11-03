@@ -19,7 +19,7 @@ from processes import run_command
 
 PINS = {
     'inventory_regex.py': '031f5c9332cff56a06de905181b7e262962591f67be4a7554523a3f54f4e6fc6',
-    'inventory_regex_controls.py': '03c551d6be8a382b80264e96a93693ec9844ba4200c42a339262d9af44b7932c',
+    'inventory_regex_controls.py': '20e5b879e2b47393414589d0dd670213a2a0e9fe09052752570d3a690e2762a8',
     'inventory_digest.py': '1453fa84f3603c03ff9ce3861e797b68d7f879b7c172dbc8fce3d55a64d2f59c',
     'inventory_digest_controls.py': '78487b64b234d5e6cce6971d51af4b2e8f64e0f235031be5bce65154c2c29367',
     'core_97ab_inventory.py': '1e3d7f40c6ba1bbf44c52aa25badd79821d1c14aa3db93ef7adff0bc7517941b',
