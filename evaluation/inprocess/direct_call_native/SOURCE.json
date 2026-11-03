@@ -1035,15 +1035,25 @@
       "mode": "0755",
       "sha256": "52bc56fd68cfefb47e045838e42752c603235e5e575693e34311756994a2df93"
     },
+    "tools/page-entry/selected/tests/direct_call_native/capture.inc": {
+      "bytes": 2738,
+      "mode": "0644",
+      "sha256": "af391add5d2d9309ae40acabefddb687507e0d6a8e4379ac1bd328f8664bdf9a"
+    },
+    "tools/page-entry/selected/tests/direct_call_native/frame.h": {
+      "bytes": 255,
+      "mode": "0644",
+      "sha256": "c6d5616a7ac2e9cb9c1dcd9186398a26e303714a597dafcede594772df24bccc"
+    },
     "tools/page-entry/selected/tests/direct_call_native/probe.S": {
       "bytes": 1846,
       "mode": "0644",
       "sha256": "734a8e4eba941f3b69c4031c5281cb0b2ccc35c9b92fbc53596ebe95a9ed86b9"
     },
     "tools/page-entry/selected/tests/direct_call_native/probe.c": {
-      "bytes": 22432,
+      "bytes": 19791,
       "mode": "0644",
-      "sha256": "c050d35e23dba96b525a53a6e5fa8b9f30377891806f7c1eca01d8622317e12e"
+      "sha256": "c829a576b7c0cc37f6a563233caf641d6713ce76f38b7387849f9d9c6bef2a19"
     },
     "tools/page-entry/selected/tests/direct_call_native/read.py": {
       "bytes": 28909,

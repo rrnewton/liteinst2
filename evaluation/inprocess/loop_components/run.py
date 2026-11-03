@@ -233,7 +233,7 @@ def component_result(name, stdout, stderr):
 
 
 def main(*, cases=CASES, profile='experimental-loop-components-v1',
-         result=component_result, reused_archive=False, prepare=None, selected=SELECTED, root=ROOT):
+         result=component_result, reused_archive=False, prepare=None, selected=SELECTED, root=ROOT, execution=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--expect-revision', required=True)
     ap.add_argument('--archive', required=True, type=Path)
@@ -471,8 +471,12 @@ def main(*, cases=CASES, profile='experimental-loop-components-v1',
             need(not err, 'strict original -Werror compiler/linker stderr')
             objects = {str(output_dir/(output.name+'-'+Path(p).stem+'.o')) for p in units}
             for p in units:
-                for suffix in ('.i', '.s', '.o', '.su'):
-                    artifact(output_dir/(output.name+'-'+Path(p).stem+suffix))
+                if execution is not None and Path(p).suffix == '.S':
+                    for suffix in ('.s', '.o'):
+                        artifact(output_dir/(output.name+'-'+Path(p).stem+suffix))
+                else:
+                    for suffix in ('.i', '.s', '.o', '.su'):
+                        artifact(output_dir/(output.name+'-'+Path(p).stem+suffix))
             trace = out.decode().splitlines()
             need(trace and all(Path(x).is_absolute() for x in trace), 'whole absolute actual linker trace')
             linked = {str(Path(x).resolve(strict=True)) for x in trace}
@@ -486,6 +490,12 @@ def main(*, cases=CASES, profile='experimental-loop-components-v1',
             r['components'][name].update(status='passed', result=result(name, out, err))
         need(list(r['components']) == list(cases) and all(v['status'] == 'passed' for v in r['components'].values()),
              'all five old/additive component populations passed')
+        if execution is not None:
+            observed = execution(r)
+            need(type(observed) is dict and set(observed) == {'generated_execution', 'native_execution'} and
+                 all(type(v) is int and 0 < v < 1 << 64 for v in observed.values()),
+                 'explicit actual native observation counts from the complete typed reader')
+            r.update(observed)
         r['status'] = 'components_passed'
     except BaseException as error:
         r['error'] = type(error).__name__+': '+str(error)
@@ -534,6 +544,8 @@ def main(*, cases=CASES, profile='experimental-loop-components-v1',
             reaped=c.get('reaped', False), timed_out=c.get('timed_out', False), cleanup_errors=len(c.get('cleanup_errors', [])),
             argv_sha256=digest(canonical(c['argv'])), captures={n: {k: v[k] for k in ('bytes', 'sha256')}
                 for n, v in c.get('captures', {}).items()}) for c in r['commands']])
+    if execution is not None:
+        summary.update({k: r[k] for k in ('generated_execution', 'native_execution')})
     if reused_archive:
         summary['reused_archive'] = r.get('reused_archive')
     payload = json.dumps(summary, indent=2, sort_keys=True)+'\n'

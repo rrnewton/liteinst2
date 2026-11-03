@@ -23,7 +23,7 @@ from loop_components import run as component
 
 PROFILE = 'cached-direct-components-current-archive-v1'
 INPUTS = {
-    'evaluation/inprocess/loop_components/run.py': (33903, '7ae6aa3ab2c989553c4feffa2901c751015e7307071ae4e8a628fcb66436695c'),
+    'evaluation/inprocess/loop_components/run.py': (34654, '24c8ab8012368097727292e3c30cb7f004a0dbab0a4c8d3eb42bee9d3ba16e70'),
     'evaluation/inprocess/loop_ro_current_archive.py': (6501, '87b8c393d93cf0679366ff62be12438cc97755aa778783a3346d2e0773898fd7'),
     'tools/page-entry/selected/linked_direct_dispatch.h': (5663, '72571ff2d571392e2ead7df1c4ba59c8fba0709efd7fbaea9987e19e8c1ebba9'),
     'tools/page-entry/selected/linked_direct_dispatch.c': (22664, 'e40761aa34a2ad87a3d4139bf8227a77a0d5e2b395d662a4b2ad4b728d184ea4'),
@@ -79,7 +79,7 @@ def result(name, stdout, stderr):
 
 
 def execute(*, cases=CASES, profile=PROFILE, inputs=INPUTS, schedule=SCHEDULE,
-            command_count=48, result=result, prepare=None, entry_file=__file__,
+            command_count=48, result=result, prepare=None, execution=None, entry_file=__file__,
             command_message='all forty-eight bounded original collector children',
             case_message='both actual component results',
             scope='Only original DIRECT and auxiliary emitter/model/recovery components. No generated-code, '
@@ -149,7 +149,10 @@ def execute(*, cases=CASES, profile=PROFILE, inputs=INPUTS, schedule=SCHEDULE,
             '--archive', str(archive), '--archive-sha256', fact(archive)['sha256'],
             '--output', str(private/'components')]
         try:
-            r['component_exit'] = component.main(cases=cases, profile=profile, result=result, prepare=prepare)
+            if execution is None:
+                r['component_exit'] = component.main(cases=cases, profile=profile, result=result, prepare=prepare)
+            else:
+                r['component_exit'] = component.main(cases=cases, profile=profile, result=result, prepare=prepare, execution=execution)
         finally:
             sys.argv = original_argv
         path = binary(private/'components/receipt.json'); inner = json.loads(path.read_bytes())
@@ -169,6 +172,11 @@ def execute(*, cases=CASES, profile=PROFILE, inputs=INPUTS, schedule=SCHEDULE,
                  for c in inner['commands']), command_message)
         need(set(inner['components']) == set(cases) and
              all(inner['components'][n]['status'] == 'passed' for n in cases), case_message)
+        if execution is not None:
+            observed = execution(inner)
+            need(all(inner[k] == observed[k] for k in ('generated_execution', 'native_execution')),
+                 'exact completed inner native/generated observation counts')
+            r.update(observed)
         r['results'] = {name: inner['components'][name]['result'] for name in cases}
         r['status'] = 'components_passed'
     except BaseException as error:
