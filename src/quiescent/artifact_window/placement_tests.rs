@@ -480,6 +480,7 @@ fn alphabet_authority_refuses_live_unprepared_and_mixed_control_paths() {
         window.authority = RelocationAuthority::ArtifactObservations {
             pcs: &PCS,
             placement: ArtifactRelocationPlacement::EntryAlphabetV1,
+            suffix: ArtifactRoutedSuffix::Qualified62,
         };
         let controls = match mode {
             0 => {

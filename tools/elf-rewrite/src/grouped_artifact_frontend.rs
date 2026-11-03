@@ -14,8 +14,10 @@ use li2core::x86::JumpStackClass;
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
 mod physical;
+mod suffix60;
 use li2core::quiescent::{
-    ArtifactPhysicalWindowSchedule, plan_artifact_observation_windows_upstream_after_with_placement,
+    ArtifactPhysicalWindowSchedule, ArtifactRoutedSuffix,
+    plan_artifact_observation_windows_upstream_after_with_placement_and_suffix,
 };
 pub use physical::{
     GROUPED_PHYSICAL_MIN5_ALPHABET_UPSTREAM_PROFILE,
@@ -24,6 +26,7 @@ pub use physical::{
     prepare_disassembly_jump_stack_grouped_physical_min5_alphabet_upstream_fixed_exec,
     prepare_disassembly_jump_stack_grouped_physical_min5_alphabet_upstream_with_ledger_storage,
 };
+pub use suffix60::*;
 
 pub const GROUPED_PROFILE: &str = "jumps-gpr-stack64-block-observation-v1";
 pub const GROUPED_UPSTREAM_PROFILE: &str = "jumps-gpr-stack64-block-upstream-v1";
@@ -38,6 +41,7 @@ pub(crate) enum GroupProfile {
     Min5Upstream,
     Min5AlphabetUpstream,
     PhysicalMin5AlphabetUpstream,
+    PhysicalMin5AlphabetSuffix60Upstream,
 }
 impl GroupProfile {
     fn name(self) -> &'static str {
@@ -47,16 +51,23 @@ impl GroupProfile {
             Self::Min5Upstream => GROUPED_MIN5_UPSTREAM_PROFILE,
             Self::Min5AlphabetUpstream => GROUPED_MIN5_ALPHABET_UPSTREAM_PROFILE,
             Self::PhysicalMin5AlphabetUpstream => GROUPED_PHYSICAL_MIN5_ALPHABET_UPSTREAM_PROFILE,
+            Self::PhysicalMin5AlphabetSuffix60Upstream => {
+                GROUPED_PHYSICAL_MIN5_ALPHABET_SUFFIX60_UPSTREAM_PROFILE
+            }
         }
     }
     fn min5(self) -> bool {
         matches!(self, Self::Min5Upstream | Self::Min5AlphabetUpstream)
     }
     fn physical(self) -> bool {
-        self == Self::PhysicalMin5AlphabetUpstream
+        matches!(
+            self,
+            Self::PhysicalMin5AlphabetUpstream | Self::PhysicalMin5AlphabetSuffix60Upstream
+        )
     }
     fn policy_version(self) -> u8 {
         match self {
+            Self::PhysicalMin5AlphabetSuffix60Upstream => 5,
             Self::PhysicalMin5AlphabetUpstream => 4,
             Self::Min5AlphabetUpstream => 3,
             Self::Min5Upstream => 2,
@@ -65,13 +76,29 @@ impl GroupProfile {
     }
     fn placement(self) -> ArtifactRelocationPlacement {
         match self {
-            Self::Min5AlphabetUpstream | Self::PhysicalMin5AlphabetUpstream => {
+            Self::Min5AlphabetUpstream
+            | Self::PhysicalMin5AlphabetUpstream
+            | Self::PhysicalMin5AlphabetSuffix60Upstream => {
                 ArtifactRelocationPlacement::EntryAlphabetV1
             }
             _ => ArtifactRelocationPlacement::Fixed06,
         }
     }
+    fn suffix(self) -> ArtifactRoutedSuffix {
+        if self == Self::PhysicalMin5AlphabetSuffix60Upstream {
+            ArtifactRoutedSuffix::SingleByte60
+        } else {
+            ArtifactRoutedSuffix::Qualified62
+        }
+    }
     fn policy(self) -> String {
+        if self == Self::PhysicalMin5AlphabetSuffix60Upstream {
+            return Self::PhysicalMin5AlphabetUpstream.policy()
+                .replace("LI2GROUPING-POLICY\t4\n", "LI2GROUPING-POLICY\t5\n")
+                .replace(GROUPED_PHYSICAL_MIN5_ALPHABET_UPSTREAM_PROFILE, self.name())
+                .replace("group_relocation_placement\tentry-alphabet-v1\n",
+                    "group_relocation_placement\tentry-alphabet-v1\ngroup_routed_suffix\tsingle-byte60-v1\n");
+        }
         if self.physical() {
             return Self::Min5AlphabetUpstream.policy()
                 .replace("LI2GROUPING-POLICY\t3\n", "LI2GROUPING-POLICY\t4\n")
@@ -112,12 +139,15 @@ impl GroupProfile {
         if self == Self::Exact {
             return bytes;
         }
-        // Reuse the sole canonical formatter. Only its two source-controlled
-        // profile labels differ; identities and every obligation stay literal.
-        String::from_utf8(bytes)
+        // Reuse the sole canonical formatter. Old profile bytes stay literal;
+        // policy 5 additionally records the explicit grouped suffix mode.
+        let mut text = String::from_utf8(bytes)
             .expect("canonical ASCII binding policy")
-            .replace(GROUPED_PROFILE, self.name())
-            .into_bytes()
+            .replace(GROUPED_PROFILE, self.name());
+        if self.suffix() == ArtifactRoutedSuffix::SingleByte60 {
+            text.push_str("group_routed_suffix\tsingle-byte60-v1\n");
+        }
+        text.into_bytes()
     }
 }
 const POLICY: &str = "LI2GROUPING-POLICY\t1\nprofile\tjumps-gpr-stack64-block-observation-v1\nschedule\tall-multisite-blocks-descending-then-singletons-descending-v1\nwindow\tfirst-selected-head-through-last-selected-instruction\ngroup_tactic\tRelocationOnly\ngroup_attempts\t1\ngroup_fallback\tnone\nmember_budgets\tshared-not-summed\nentry_completeness\tAllInstructionHeads\nsingleton_profile\twhole-program-packed-overlapping-neighbors-4096\nqualification_complete\tfalse\n";
@@ -275,6 +305,7 @@ fn grouped_metadata(profile: GroupProfile) -> String {
     let min5 = profile.min5();
     let version = profile.policy_version();
     let placement = profile.placement();
+    let suffix = profile.suffix();
     let profile = profile.name();
     let mut out = FIXED_EXEC_METADATA.replacen(
         "planner_profile\twhole-program-packed-overlapping-neighbors-4096\n",
@@ -287,12 +318,15 @@ fn grouped_metadata(profile: GroupProfile) -> String {
         ));
     }
     if physical {
-        out.push_str(
-            "grouping_policy_version\t4\nwindow_sealing\tphysical-minimum-whole-instruction-v1\n",
-        );
+        out.push_str(&format!(
+            "grouping_policy_version\t{version}\nwindow_sealing\tphysical-minimum-whole-instruction-v1\n",
+        ));
     }
     if placement == ArtifactRelocationPlacement::EntryAlphabetV1 {
         out.push_str("group_relocation_placement\tentry-alphabet-v1\n");
+    }
+    if suffix == ArtifactRoutedSuffix::SingleByte60 {
+        out.push_str("group_routed_suffix\tsingle-byte60-v1\n");
     }
     out
 }
@@ -1105,16 +1139,18 @@ fn attempt_group(
             schedule.validate_intersection(s, group, seal.retained_span())?;
         }
         let result = match schedule.profile {
-            GroupProfile::PhysicalMin5AlphabetUpstream => {
+            GroupProfile::PhysicalMin5AlphabetUpstream
+            | GroupProfile::PhysicalMin5AlphabetSuffix60Upstream => {
                 let Some(Ok(seal)) = &group.physical else {
                     unreachable!("preflight checked")
                 };
-                plan_artifact_observation_windows_upstream_after_with_placement(
+                plan_artifact_observation_windows_upstream_after_with_placement_and_suffix(
                     &artifact,
                     seal,
                     &draft.composition,
                     &outside,
                     schedule.profile.placement(),
+                    schedule.profile.suffix(),
                 )
             }
             GroupProfile::Exact => plan_artifact_observation_window_after(

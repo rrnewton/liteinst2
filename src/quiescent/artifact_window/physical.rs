@@ -293,6 +293,33 @@ pub fn plan_artifact_observation_windows_upstream_after_with_placement(
     pending: &[AddressRange],
     placement: ArtifactRelocationPlacement,
 ) -> Result<ArtifactObservationPlan, PlanningFailure> {
+    plan_artifact_observation_windows_upstream_after_with_placement_and_suffix(
+        artifact,
+        schedule,
+        predecessor,
+        pending,
+        placement,
+        ArtifactRoutedSuffix::Qualified62,
+    )
+}
+
+/// Plan an artifact observation group with an explicit routed-suffix encoding.
+///
+/// The frozen schedule, FULL manifest and pending obligations, bounded physical
+/// search, one image per physical trial and final composition checks are exactly
+/// those of the default physical-min5 API. SingleByte60 changes only actual
+/// routed suffix bytes at or beyond physical + 5 during the same emission; it
+/// neither catches ownership refusals nor re-encodes a rejected plan. The caller
+/// must bind this opt-in encoding to its policy and portable identity. Ordinary
+/// and singleton planners retain their existing encoding and search behavior.
+pub fn plan_artifact_observation_windows_upstream_after_with_placement_and_suffix(
+    artifact: &ArtifactRequest<'_>,
+    schedule: &ArtifactPhysicalWindowSchedule,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    placement: ArtifactRelocationPlacement,
+    suffix: ArtifactRoutedSuffix,
+) -> Result<ArtifactObservationPlan, PlanningFailure> {
     let input = ArtifactObservationRequest {
         artifact: *artifact,
         physical_pc: artifact.site.logical_pc,
@@ -305,6 +332,7 @@ pub fn plan_artifact_observation_windows_upstream_after_with_placement(
         pending,
         PhysicalDomain::Upstream,
         placement,
+        suffix,
         WindowGeometry::PhysicalMin5(schedule),
     )
 }

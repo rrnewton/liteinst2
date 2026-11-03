@@ -7,6 +7,7 @@ mod physical;
 pub use physical::{
     ArtifactPhysicalWindowRow, ArtifactPhysicalWindowSchedule,
     plan_artifact_observation_windows_upstream_after_with_placement,
+    plan_artifact_observation_windows_upstream_after_with_placement_and_suffix,
     seal_artifact_observation_windows_upstream_min5,
 };
 
@@ -59,6 +60,24 @@ pub enum ArtifactRelocationPlacement {
     /// Select one certified target from the exact existing entry-byte alphabet.
     /// Consumers must bind this explicit choice to their policy and readback.
     EntryAlphabetV1,
+}
+
+/// Explicit encoding for routed suffix heads of an artifact observation group.
+///
+/// This choice is independent of relocation placement. It applies only to heads
+/// at or beyond physical + 5, never to E9 displacement bytes. Existing artifact,
+/// ordinary and singleton APIs retain Qualified62. Consumers must authenticate
+/// the opt-in choice with their policy and portable readback. Neither variant
+/// grants runtime authority or changes source reads, dependencies or ownership.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum ArtifactRoutedSuffix {
+    /// Preserve the existing qualified 0x62 marker and its 0x60 fallback. Every
+    /// actual 0x62 retains the complete 15-byte fetch lock in Composition.
+    #[default]
+    Qualified62,
+    /// Emit the existing one-byte 0x60 invalid PUSHA encoding at every routed
+    /// suffix head. It is unconditionally #UD in the declared 64-bit envelope.
+    SingleByte60,
 }
 
 /// Immutable geometry of the smallest same-block window covering the supplied
@@ -362,6 +381,7 @@ fn plan_window_with_placement(
         pending,
         domain,
         placement,
+        ArtifactRoutedSuffix::Qualified62,
         WindowGeometry::FixedEnd,
     )
 }
@@ -378,6 +398,7 @@ fn plan_window_with_geometry(
     pending: &[AddressRange],
     domain: PhysicalDomain,
     placement: ArtifactRelocationPlacement,
+    suffix: ArtifactRoutedSuffix,
     geometry: WindowGeometry<'_>,
 ) -> Result<ArtifactObservationPlan, PlanningFailure> {
     let mut attempts = Vec::new();
@@ -461,6 +482,7 @@ fn plan_window_with_geometry(
                 window.authority = RelocationAuthority::ArtifactObservations {
                     pcs: input.observation_pcs,
                     placement,
+                    suffix,
                 };
                 let planned = emit_relocation_window(
                     &request,

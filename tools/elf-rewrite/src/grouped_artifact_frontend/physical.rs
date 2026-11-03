@@ -49,8 +49,28 @@ impl Schedule {
         binding: Option<FixedImageBinding>,
         occupied: &[AddressRange],
     ) -> Result<Self, Error> {
-        let mut out =
-            Self::freeze_profile(elf, s, classes, GroupProfile::PhysicalMin5AlphabetUpstream)?;
+        Self::freeze_physical_profile(
+            elf,
+            s,
+            classes,
+            identity,
+            binding,
+            occupied,
+            GroupProfile::PhysicalMin5AlphabetUpstream,
+        )
+    }
+
+    pub(crate) fn freeze_physical_profile(
+        elf: &Elf64<'_>,
+        s: &Selection,
+        classes: &[JumpStackClass],
+        identity: CodeIdentity,
+        binding: Option<FixedImageBinding>,
+        occupied: &[AddressRange],
+        profile: GroupProfile,
+    ) -> Result<Self, Error> {
+        debug_assert!(profile.physical());
+        let mut out = Self::freeze_profile(elf, s, classes, profile)?;
         for unit in 0..out.groups.len() {
             let result = (|| {
                 let group = &out.groups[unit];

@@ -11,7 +11,8 @@ use liteinst2::planner::HookSemantics;
 use liteinst2::quiescent::{AllocationPolicy, ArtifactObservationSearchRequest, ArtifactRelocationPlacement, SearchPolicy, TacticPolicy,
     plan_artifact_observation_window_upstream_after, plan_artifact_observation_window_upstream_after_with_placement,
     seal_artifact_observation_window_min5, seal_artifact_observation_windows_upstream_min5,
-    plan_artifact_observation_windows_upstream_after_with_placement};
+    plan_artifact_observation_windows_upstream_after_with_placement,
+    plan_artifact_observation_windows_upstream_after_with_placement_and_suffix, ArtifactRoutedSuffix};
 use liteinst2::search::{SearchDomain, SearchStop};
 use liteinst2::sync_core::SyncCore;
 use liteinst2::trampoline::{SavedExtendedStateLayout, HOOK_CONTEXT_STACK_PREFIX_BYTES};
@@ -20,6 +21,10 @@ const BODY: [u8; 5] = [0x5b, 0x5d, 0x41, 0x5c, 0xc3];
 const HEADS: [usize; 4] = [0, 1, 2, 4];
 const PHYSICAL_BODY: [u8; 5] = [0x66, 0x90, 0x5b, 0x5d, 0xc3];
 const PHYSICAL_HEADS: [usize; 4] = [0, 2, 3, 4];
+// This selected-RET fixture exercises the general observation core API. The
+// jump/PUSH/POP corpus frontend does not select RET; no corpus equivalence follows.
+const SUFFIX_BODY: [u8; 8] = [0x0f, 0x1f, 0x44, 0, 0, 0x5b, 0x5d, 0xc3];
+const SUFFIX_HEADS: [usize; 4] = [0, 5, 6, 7];
 const PRELUDE: usize = 0x100;
 const SEEDS: [u64; 2] = [0x1234_5678_8765_4320, 0xfedc_ba98_0123_4567];
 fn range(address: u64, length: usize) -> AddressRange { AddressRange::new(address, length).unwrap() }
@@ -30,7 +35,7 @@ pub type SizeCertificate = fn(u64, &[u8], &[u64], &ArtifactEmission) -> usize;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Fault { None, Ret, Pop }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum Window { SelectedMin5, PhysicalMin5 }
+enum Window { SelectedMin5, PhysicalMin5, SingleByteSuffix, SingleByteSuffixPageEnd }
 #[derive(Clone, Copy)]
 enum PopRegister { Rbx, Rbp, R12 }
 impl PopRegister {
@@ -39,11 +44,11 @@ impl PopRegister {
     }
 }
 #[derive(Clone, Copy)]
-enum Operation { Nop, Pop(PopRegister), Ret }
+enum Operation { Nop, Nop5, Pop(PopRegister), Ret }
 #[derive(Clone, Copy)]
 struct Instruction { at: usize, next: usize, operation: Operation }
 struct Description {
-    body: &'static [u8; 5], heads: &'static [usize; 4], instructions: [Instruction; 4],
+    body: &'static [u8], heads: &'static [usize; 4], instructions: [Instruction; 4],
     selected: &'static [usize], ret_fault_entries: [usize; 2], provenance: &'static str,
 }
 const LEGACY: Description = Description {
@@ -68,6 +73,17 @@ const PHYSICAL: Description = Description {
     selected: &[2, 3], ret_fault_entries: [2, 3],
     provenance: "complete finite two-byte NOP/two-POP/RET literal grammar",
 };
+const SINGLE_BYTE_SUFFIX: Description = Description {
+    body: &SUFFIX_BODY, heads: &SUFFIX_HEADS,
+    instructions: [
+        Instruction { at: 0, next: 5, operation: Operation::Nop5 },
+        Instruction { at: 5, next: 6, operation: Operation::Pop(PopRegister::Rbx) },
+        Instruction { at: 6, next: 7, operation: Operation::Pop(PopRegister::Rbp) },
+        Instruction { at: 7, next: 8, operation: Operation::Ret },
+    ],
+    selected: &[5, 7], ret_fault_entries: [5, 6],
+    provenance: "complete finite five-byte NOP/two-POP/selected-RET literal grammar",
+};
 impl Description {
     fn validate(&self) {
         assert_eq!(self.instructions.map(|instruction| instruction.at), *self.heads);
@@ -75,6 +91,7 @@ impl Description {
         for instruction in self.instructions {
             let bytes: &[u8] = match instruction.operation {
                 Operation::Nop => &[0x66, 0x90],
+                Operation::Nop5 => &[0x0f, 0x1f, 0x44, 0, 0],
                 Operation::Pop(PopRegister::Rbx) => &[0x5b],
                 Operation::Pop(PopRegister::Rbp) => &[0x5d],
                 Operation::Pop(PopRegister::R12) => &[0x41, 0x5c],
@@ -83,9 +100,15 @@ impl Description {
             assert_eq!(&self.body[instruction.at..instruction.next], bytes);
             if matches!(instruction.operation, Operation::Pop(_)) { pops.push(instruction.at); }
         }
-        assert_eq!(pops.as_slice(), self.selected);
+        if self.body == SUFFIX_BODY {
+            assert_eq!(pops, [5, 6]); assert_eq!(self.selected, [5, 7]);
+            assert_eq!(*self.heads, [0, 5, 6, 7]);
+            assert_eq!((self.instructions[3].at, self.instructions[3].next), (7, 8));
+        } else {
+            assert_eq!(pops.as_slice(), self.selected);
+            assert_eq!((self.instructions[3].at, self.instructions[3].next), (4, 5));
+        }
         assert!(matches!(self.instructions[3].operation, Operation::Ret));
-        assert_eq!((self.instructions[3].at, self.instructions[3].next), (4, 5));
     }
     fn pop(&self, at: usize) -> (PopRegister, usize) {
         let instruction = self.instructions.iter().find(|instruction| instruction.at == at).unwrap();
@@ -100,16 +123,28 @@ impl Description {
 struct Fixture { placement: ArtifactRelocationPlacement, fault: Fault, window: Window }
 impl Fixture {
     fn description(self) -> &'static Description {
-        match self.window { Window::SelectedMin5 => &LEGACY, Window::PhysicalMin5 => &PHYSICAL }
+        match self.window {
+            Window::SelectedMin5 => &LEGACY, Window::PhysicalMin5 => &PHYSICAL,
+            Window::SingleByteSuffix | Window::SingleByteSuffixPageEnd => &SINGLE_BYTE_SUFFIX,
+        }
     }
+    fn single_byte_suffix(self) -> bool {
+        matches!(self.window, Window::SingleByteSuffix | Window::SingleByteSuffixPageEnd)
+    }
+    fn page_end(self) -> bool { self.window == Window::SingleByteSuffixPageEnd }
     fn body_offset(self) -> usize {
+        if self.page_end() { return PAGE - SUFFIX_BODY.len(); }
         match self.placement {
             ArtifactRelocationPlacement::Fixed06 => 0,
             ArtifactRelocationPlacement::EntryAlphabetV1 => 0x8f5,
         }
     }
     fn fault_at(self) -> Option<usize> {
-        match self.fault { Fault::None => None, Fault::Ret => Some(4), Fault::Pop => Some(2) }
+        match self.fault {
+            Fault::None => None,
+            Fault::Ret => Some(if self.single_byte_suffix() { 7 } else { 4 }),
+            Fault::Pop => Some(2),
+        }
     }
 }
 
@@ -120,6 +155,8 @@ struct Owner {
     // Ownership is transferred from this retained reservation without holes.
     _arena: super::super::neighbor_fixture_arena::NeighborFixtureArena,
     _guard: Option<Mapping>,
+    // Kept inaccessible across every original/installed/restored child.
+    code_guard: Option<Mapping>,
     journal: HookEventLog,
     original: Vec<u8>,
     published: Vec<u8>,
@@ -146,6 +183,10 @@ impl Owner {
         let description = fixture.description(); description.validate();
         assert!(description.heads.contains(&entry));
         if fixture.window == Window::PhysicalMin5 { assert_eq!(fixture.placement, ArtifactRelocationPlacement::EntryAlphabetV1); }
+        if fixture.single_byte_suffix() {
+            assert_eq!(fixture.placement, ArtifactRelocationPlacement::EntryAlphabetV1);
+            assert_ne!(fixture.fault, Fault::Pop, "this fixture keeps the selected-POP fault controls unchanged");
+        }
         let fault = fixture.fault != Fault::None;
         if fixture.fault == Fault::Ret { assert!(description.ret_fault_entries.contains(&entry)); }
         if fixture.fault == Fault::Pop {
@@ -156,28 +197,45 @@ impl Owner {
             Fault::Ret => match fixture.window {
                 Window::SelectedMin5 => if entry == 0 { 24 } else { 16 },
                 Window::PhysicalMin5 => if entry == 2 { 16 } else { 8 },
+                Window::SingleByteSuffix | Window::SingleByteSuffixPageEnd => if entry == 5 { 16 } else { 8 },
             },
             Fault::Pop => 0,
         };
         let body_offset = fixture.body_offset();
+        let mut source = description.body.to_vec();
+        if fixture.window == Window::SingleByteSuffix {
+            // The qualified default really has all 15 authenticated fetch bytes
+            // for each suffix, including the last head. This tail is outside the
+            // eight-byte function/block and is never executed by these children.
+            source.extend_from_slice(&[0; 14]);
+        }
         let mut code = vec![0xcc; PRELUDE + 10];
         if body_offset == 0 { code[..5].copy_from_slice(description.body); }
         code[PRELUDE..PRELUDE + 6].copy_from_slice(&[0x48, 0x8d, 0x64, 0x24, 0_u8.wrapping_sub(lower), 0xe9]);
         code[PRELUDE + 6..].copy_from_slice(&i32::try_from((body_offset + entry) as i64 - (PRELUDE + 10) as i64).unwrap().to_le_bytes());
-        let (mut oracle, mut adjacent, mut arena) = NativeOracle::with_neighbor_fixture(&code, &[PAGE]);
-        let hook = adjacent.pop().unwrap(); assert!(adjacent.is_empty());
+        let lengths: &[usize] = if fixture.page_end() { &[PAGE, PAGE] } else { &[PAGE] };
+        let (mut oracle, mut adjacent, mut arena) = NativeOracle::with_neighbor_fixture(&code, lengths);
+        let hook = adjacent.pop().unwrap();
+        let code_guard = if fixture.page_end() {
+            let guard = adjacent.pop().unwrap(); guard.protect(libc::PROT_NONE); Some(guard)
+        } else { None };
+        assert!(adjacent.is_empty());
         let base = oracle.code.address(); assert_eq!(base % PAGE as u64, 0);
-        assert_eq!(hook.address(), base + PAGE as u64);
+        if let Some(guard) = &code_guard {
+            assert_eq!(guard.address(), base + PAGE as u64); assert_eq!(guard.len, PAGE);
+            assert_eq!(hook.address(), base + 2 * PAGE as u64);
+            assert_eq!(base + body_offset as u64 + 7, guard.address() - 1);
+        } else { assert_eq!(hook.address(), base + PAGE as u64); }
         let body = base + body_offset as u64;
         if body_offset != 0 {
             // The constructor's short-input/sentinel contract stays unchanged.
             // Derive the full expected page from its pristine snapshot, changing
-            // only BODY, before any original trace or installed publication.
-            assert!(code.len() < PAGE / 2 && body_offset > PAGE / 2 && body_offset + description.body.len() <= PAGE);
+            // only the authenticated source, before any child or publication.
+            assert!(code.len() < PAGE / 2 && body_offset > PAGE / 2 && body_offset + source.len() <= PAGE);
             assert_eq!(oracle.return_pc(), base + (PAGE / 2) as u64);
             let pristine = oracle.original_code.clone(); assert_eq!(oracle.code.bytes(), pristine);
-            let mut expected = pristine.clone(); expected[body_offset..body_offset + description.body.len()].copy_from_slice(description.body);
-            oracle.code.initialize(body_offset, description.body);
+            let mut expected = pristine.clone(); expected[body_offset..body_offset + source.len()].copy_from_slice(&source);
+            oracle.code.initialize(body_offset, &source);
             assert_eq!(oracle.code.bytes(), expected);
             assert_eq!(&oracle.code.bytes()[PRELUDE..PRELUDE + 10], &pristine[PRELUDE..PRELUDE + 10]);
             assert_eq!(oracle.code.bytes()[PAGE / 2], pristine[PAGE / 2]);
@@ -214,7 +272,14 @@ impl Owner {
             entries: heads.map(|address| LegalEntry { address, requires_endbr: false }).to_vec(),
             resumes: ResumeObligation::NoneExist,
         };
-        let (target, permit, patch) = if fixture.window == Window::PhysicalMin5 {
+        let (target, permit, patch) = if fixture.single_byte_suffix() {
+            let target = base + 0x1_0000;
+            let mut patch = vec![0xe9];
+            patch.extend_from_slice(&i32::try_from(target - (body + 5)).unwrap().to_le_bytes());
+            patch.extend_from_slice(&[0x60; 3]);
+            assert_eq!(patch.len(), 8);
+            (target, range(target, PAGE), patch)
+        } else if fixture.window == Window::PhysicalMin5 {
             let target = base + 0x0606_1000;
             assert_eq!(target - (body + 5), 0x0606_0706);
             let fixed_first = body + 5 + 0x0606_0600;
@@ -222,12 +287,12 @@ impl Owner {
             assert_eq!((fixed_first - base, fixed_last - base), (0x0606_0efa, 0x0606_0ff9));
             assert_eq!(fixed_first / PAGE as u64, fixed_last / PAGE as u64);
             assert_eq!(PAGE - (fixed_first % PAGE as u64) as usize, 262);
-            (target, range(base + 0x0606_0000, 2 * PAGE), [0xe9, 6, 7, 6, 6])
+            (target, range(base + 0x0606_0000, 2 * PAGE), vec![0xe9, 6, 7, 6, 6])
         } else { match fixture.placement {
             ArtifactRelocationPlacement::Fixed06 => {
                 let target = base + 5 + 0x0601_0606;
                 assert_eq!(target % PAGE as u64, 0x60b);
-                (target, range(target & !4095, PAGE), [0xe9, 6, 6, 1, 6])
+                (target, range(target & !4095, PAGE), vec![0xe9, 6, 6, 1, 6])
             }
             ArtifactRelocationPlacement::EntryAlphabetV1 => {
                 let target = base + 0x0600_1000;
@@ -235,7 +300,7 @@ impl Owner {
                 let fixed_minimum = body + 5 + 0x0600_0606;
                 assert_eq!(fixed_minimum, base + 0x0600_0f00);
                 assert_eq!(PAGE - (fixed_minimum % PAGE as u64) as usize, 256);
-                (target, range(base + 0x0600_0000, 2 * PAGE), [0xe9, 6, 7, 0, 6])
+                (target, range(base + 0x0600_0000, 2 * PAGE), vec![0xe9, 6, 7, 0, 6])
             }
         } };
         let storage = target & !4095;
@@ -248,13 +313,15 @@ impl Owner {
             SymbolicHook { identity: 11, address: Some(hook.address()) },
             vec![range(base, PAGE), range(hook.address(), PAGE)]);
         let request = ArtifactRequest { site: PlanningSite {
-            identity, code: description.body, base_address: body, function, block: function, logical_pc: selected[0],
+            identity, code: &source, base_address: body, function, block: function, logical_pc: selected[0],
             entries: &entries, semantics: HookSemantics::Observe, allocation: &allocation,
             search: SearchPolicy { max_upstream_bytes: 64, max_sites: 64, max_displaced_bytes: 256,
                 tactics: TacticPolicy::RelocationOnly },
         }, emission: &emission };
-        let predecessor = Composition::new(identity, vec![ExpectedBytes { address: body, bytes: description.body.to_vec() }]).unwrap();
-        let (planned, size_bound) = if fixture.window == Window::PhysicalMin5 {
+        let predecessor = Composition::new(identity, vec![ExpectedBytes { address: body, bytes: source.clone() }]).unwrap();
+        let (planned, size_bound) = if fixture.single_byte_suffix() {
+            single_byte_suffix_plan(&request, &predecessor, &selected, certificate, fixture.page_end())
+        } else if fixture.window == Window::PhysicalMin5 {
             physical_plan(&request, &predecessor, &selected, certificate)
         } else {
             let old = plan_artifact_observation_window_upstream_after(&ArtifactObservationSearchRequest {
@@ -297,6 +364,11 @@ impl Owner {
         assert_eq!(parts.identity, identity); assert_eq!(parts.entries, entries);
         assert_eq!(parts.displaced, function); assert_eq!(parts.reads, predecessor.originals());
         if fixture.window == Window::PhysicalMin5 { assert_eq!((parts.logical_pc, parts.physical_pc), (body + 2, body)); }
+        if fixture.single_byte_suffix() {
+            assert_eq!((parts.logical_pc, parts.physical_pc), (body + 5, body));
+            assert_eq!(parts.dependencies, [range(body, source.len())]);
+            assert_eq!(&patch[5..], [0x60; 3]);
+        }
         assert_eq!(parts.writes, [ByteEdit { address: body, bytes: patch.to_vec() }]);
         assert_eq!(parts.allocations, [AllocationRequest { range: range(storage, PAGE), alignment: PAGE }]);
         assert_eq!(parts.requirements, PublicationRequirements { quiescent: true, sync_core: true, sigill_router: true });
@@ -305,7 +377,10 @@ impl Owner {
         assert_eq!(view.address(), target); assert!(view.bytes().len() <= size_bound); assert!(range(storage, PAGE).covers(range(target, view.bytes().len())));
         assert_eq!(view.entry_routes().iter().map(|r| r.0).collect::<Vec<_>>(), heads);
         let bodies = view.instruction_boundaries().to_vec(); assert_eq!(bodies.iter().map(|r| r.0).collect::<Vec<_>>(), heads);
-        assert_eq!(view.entry_routes()[3], bodies[3]);
+        if fixture.single_byte_suffix() {
+            for index in [0, 2] { assert_eq!(view.entry_routes()[index], bodies[index]); }
+            for index in [1, 3] { assert!(view.entry_routes()[index].1 < bodies[index].1); }
+        } else { assert_eq!(view.entry_routes()[3], bodies[3]); }
         if fixture.window == Window::PhysicalMin5 {
             assert_eq!(view.entry_routes()[0], bodies[0], "unselected NOP has no callback prefix");
             for index in [1, 2] { assert!(view.entry_routes()[index].1 < bodies[index].1); }
@@ -315,7 +390,10 @@ impl Owner {
         let routes: Vec<_> = parts.obligations.iter().filter_map(|o| match o { EntryObligation::Routed(r) => Some(*r), _ => None }).collect();
         assert_eq!(routes, view.entry_routes()[1..].iter().map(|&(original, generated)| EntryRoute { original, generated }).collect::<Vec<_>>());
         let fields: Vec<_> = view.metadata().fields().iter().filter(|f| f.role == "HookCall").collect();
-        match fixture.window { Window::SelectedMin5 => assert_eq!(fields.len(), 3), Window::PhysicalMin5 => assert_eq!(fields.len(), 2) }
+        match fixture.window {
+            Window::SelectedMin5 => assert_eq!(fields.len(), 3), Window::PhysicalMin5 => assert_eq!(fields.len(), 2),
+            Window::SingleByteSuffix | Window::SingleByteSuffixPageEnd => assert_eq!(fields.len(), 2),
+        }
         assert_eq!(view.metadata().fields().iter().filter(|f| f.role == "LogicalPc").map(|f| f.target).collect::<Vec<_>>(), selected.iter().map(|&pc| i128::from(pc)).collect::<Vec<_>>());
         let calls: Vec<_> = fields.iter().zip(&selected).map(|(f, &logical)| {
             assert_eq!(f.target, i128::from(hook.address())); assert_eq!(f.width, 4);
@@ -329,7 +407,9 @@ impl Owner {
         assert_eq!(predecessor.originals(), predecessor.final_bytes()); composed.require_unclaimed_ranges(&[]).unwrap();
         let original = oracle.original_code.clone(); let mut published = original.clone();
         assert_eq!(composed.final_bytes().len(), 1); assert_eq!(composed.final_bytes()[0].address, body);
-        published[body_offset..body_offset + description.body.len()].copy_from_slice(&composed.final_bytes()[0].bytes);
+        assert_eq!(composed.final_bytes()[0].bytes.len(), source.len());
+        published[body_offset..body_offset + source.len()].copy_from_slice(&composed.final_bytes()[0].bytes);
+        assert_eq!(&published[body_offset + description.body.len()..], &original[body_offset + description.body.len()..]);
         let mut image_bytes = vec![0xcc; PAGE]; let offset = usize::try_from(target - storage).unwrap();
         image_bytes[offset..offset + view.bytes().len()].copy_from_slice(view.bytes());
         image.initialize(0, &image_bytes); image.protect(libc::PROT_READ | libc::PROT_EXEC);
@@ -338,7 +418,7 @@ impl Owner {
         hook_bytes[10..12].copy_from_slice(&[0xff, 0xe0]);
         hook.initialize(0, &hook_bytes); hook.protect(libc::PROT_READ | libc::PROT_EXEC);
         oracle.code.protect(libc::PROT_READ | libc::PROT_EXEC);
-        Self { oracle, image, hook, _arena: arena, _guard: guard, journal: HookEventLog::new(),
+        Self { oracle, image, hook, _arena: arena, _guard: guard, code_guard, journal: HookEventLog::new(),
             original, published, image_bytes, hook_bytes, identity, routes, bodies, calls,
             selected, state, needed, entry, fault, body, fixture }
     }
@@ -367,7 +447,7 @@ impl Owner {
     fn path(&self) -> Vec<u64> {
         let base = self.oracle.code.address();
         [base + PRELUDE as u64, base + PRELUDE as u64 + 5].into_iter()
-            .chain(self.fixture.description().heads.iter().filter(|&&at| at >= self.entry && at <= self.fixture.fault_at().unwrap_or(4)).map(|&at| self.body + at as u64))
+            .chain(self.fixture.description().heads.iter().filter(|&&at| at >= self.entry && at <= self.fixture.fault_at().unwrap_or(self.fixture.description().body.len() - 1)).map(|&at| self.body + at as u64))
             .chain((!self.fault).then(|| self.oracle.return_pc())).collect()
     }
 }
@@ -433,12 +513,107 @@ fn physical_plan(
     (planned, size_bound)
 }
 
+// Both suffix modes consume the same opaque schedule and sole shared emitter.
+// The default is retained as an exact producer control, never published here.
+fn single_byte_suffix_plan(
+    request: &ArtifactRequest<'_>, predecessor: &Composition, selected: &[u64],
+    certificate: SizeCertificate, page_end: bool,
+) -> (liteinst2::quiescent::ArtifactObservationPlan, usize) {
+    let body = request.site.base_address;
+    assert_eq!(&request.site.code[..8], SUFFIX_BODY);
+    assert_eq!(request.site.code.len(), if page_end { 8 } else { 22 });
+    if !page_end { assert_eq!(&request.site.code[8..], [0; 14]); }
+    assert_eq!(selected, [body + 5, body + 7]);
+    assert_eq!(request.site.function, range(body, 8));
+    assert_eq!(request.site.block, range(body, 8));
+    let unchanged = predecessor.clone();
+    let same_site = seal_artifact_observation_window_min5(request, selected)
+        .expect_err("same-site POP/POP/RET is only three bytes");
+    assert_eq!(same_site.reason, Refusal::NoPatchWindow);
+    assert!(same_site.attempts.is_empty() && same_site.search.runs.is_empty());
+    assert!(!same_site.search.accepted && !same_site.search.classification_complete);
+    let schedule = seal_artifact_observation_windows_upstream_min5(request, selected).unwrap();
+    assert_eq!(schedule.selected_span(), range(body + 5, 3));
+    assert_eq!(schedule.observation_pcs(), selected);
+    assert_eq!(schedule.matches_request(request, selected), Ok(()));
+    let policy = schedule.search_policy();
+    assert_eq!((policy.tactics, policy.max_upstream_bytes, policy.max_displaced_bytes, policy.max_sites),
+        (TacticPolicy::RelocationOnly, 64, 256, 64));
+    assert_eq!(schedule.physical_domain(), [body + 5, body]);
+    assert_eq!(schedule.rows().iter().map(|row| (row.ordinal(), row.physical_pc())).collect::<Vec<_>>(),
+        [(0, body + 5), (1, body)]);
+    assert_eq!(schedule.rows()[0].outcome(), Err(&Refusal::NoPatchWindow));
+    assert_eq!(schedule.rows()[1].outcome(), Ok(body + 8));
+    assert_eq!(schedule.rows()[0].qualification().len(), 1);
+    assert_eq!(schedule.rows()[0].qualification()[0].reason, Refusal::NoPatchWindow);
+    assert!(schedule.rows()[1].qualification().is_empty());
+    // The collector needs exactly the eight instruction bytes. The emitted
+    // plan below still authenticates all 22 source bytes in the interior case.
+    assert_eq!(schedule.source_dependency(), Some((range(body, 8), SUFFIX_BODY.as_slice())));
+    let size_bound = certificate(body, &SUFFIX_BODY, selected, request.emission);
+    assert!(size_bound > 0 && size_bound <= PAGE);
+    let default = plan_artifact_observation_windows_upstream_after_with_placement(
+        request, &schedule, predecessor, &[], ArtifactRelocationPlacement::EntryAlphabetV1)
+        .expect("required actual default suffix plan; no fallback");
+    assert_eq!(predecessor, &unchanged);
+    let planned = plan_artifact_observation_windows_upstream_after_with_placement_and_suffix(
+        request, &schedule, predecessor, &[], ArtifactRelocationPlacement::EntryAlphabetV1,
+        ArtifactRoutedSuffix::SingleByte60)
+        .expect("required actual single-byte suffix plan; no retry/fallback");
+    assert_eq!(predecessor, &unchanged);
+    assert_eq!(planned.search().runs.iter().map(|run| (run.domain, run.limit, run.examined, run.stop)).collect::<Vec<_>>(), [
+        (SearchDomain::PhysicalSites, 64, 2, SearchStop::Accepted),
+        (SearchDomain::SelectedImages, 1, 1, SearchStop::Accepted),
+    ]);
+    assert_eq!(planned.search().runs[0].finite_total, Some(2));
+    assert_eq!(planned.search().runs[1].finite_total, None);
+    assert_eq!(planned.search().runs[1].candidates, None);
+    assert!(planned.search().accepted && !planned.search().classification_complete);
+    assert_eq!(planned.search().refusals, schedule.rows()[0].qualification(), "qualification recorded once");
+    let liteinst2::emission::ArtifactMetrics::Single(metrics) = planned.artifact().metrics() else { panic!("one actual shared relocation result") };
+    assert_eq!((metrics.upstream_bytes, metrics.displaced_bytes, metrics.prefix_instructions, metrics.allocation_attempts), (5, 8, 1, 1));
+    assert_eq!(metrics.attempts.iter().map(|attempt| (attempt.physical_pc, attempt.refusal.as_ref())).collect::<Vec<_>>(),
+        [(body + 5, Some(&Refusal::NoPatchWindow)), (body, None)]);
+    assert!(metrics.attempts.iter().all(|attempt| attempt.tactic == liteinst2::quiescent::PatchTactic::Relocation));
+    assert_eq!(default.artifact().source_steps().len(), 1);
+    assert_eq!(planned.artifact().source_steps().len(), 1);
+    let old = default.artifact().source_steps()[0].parts();
+    let new = planned.artifact().source_steps()[0].parts();
+    assert_eq!(old.writes.len(), 1); assert_eq!(old.writes[0].address, body);
+    assert_eq!(old.writes[0].bytes.len(), 8);
+    assert_eq!(&old.writes[0].bytes[5..], if page_end { &[0x60; 3] } else { &[0x62; 3] });
+    let mut expected = old.clone(); expected.writes[0].bytes[5..].copy_from_slice(&[0x60; 3]);
+    assert_eq!(new, &expected);
+    // Compare every image, route, logical mapping and metadata field. Only the
+    // expected source write is adjusted above; neither produced plan is mutated.
+    let old_images: Vec<_> = default.artifact().images().collect();
+    let new_images: Vec<_> = planned.artifact().images().collect();
+    assert_eq!(old_images.len(), 1); assert_eq!(new_images.len(), 1);
+    let old_image = &old_images[0]; let new_image = &new_images[0];
+    assert_eq!(old_image.address(), new_image.address());
+    assert_eq!(old_image.bytes(), new_image.bytes());
+    assert_eq!(old_image.entry_routes(), new_image.entry_routes());
+    assert_eq!(old_image.instruction_boundaries(), new_image.instruction_boundaries());
+    assert_eq!(old_image.program_counter_mappings(), new_image.program_counter_mappings());
+    assert_eq!(old_image.metadata(), new_image.metadata());
+    assert_eq!(default.observation_pcs(), planned.observation_pcs());
+    assert_eq!(default.search(), planned.search());
+    let mut old_joined = predecessor.clone(); old_joined.append(&default.artifact().source_steps()[0]).unwrap();
+    let mut new_joined = predecessor.clone(); new_joined.append(&planned.artifact().source_steps()[0]).unwrap();
+    assert_eq!(old_joined.locks(), [range(body, if page_end { 8 } else { 22 })]);
+    assert_eq!(new_joined.locks(), [range(body, 8)]);
+    (planned, size_bound)
+}
+
 fn original(owner: &Owner, seed: u64) -> Baseline {
     let path = owner.path();
     let result = if owner.fault { owner.oracle.original_fault(&path, seed, (libc::SIGSEGV, 2, owner.oracle.initial_rsp)) }
         else { owner.oracle.original(&path, seed) };
     assert_eq!(result.points.iter().map(|p| p.logical_pc).collect::<Vec<_>>(), path);
-    let pop_points: Vec<_> = result.points.iter().filter(|p| owner.selected.contains(&p.logical_pc)).collect();
+    let pop_points: Vec<_> = if owner.fixture.single_byte_suffix() {
+        result.points.iter().filter(|point| owner.fixture.description().instructions.iter().any(|instruction|
+            point.logical_pc == owner.body + instruction.at as u64 && matches!(instruction.operation, Operation::Pop(_)))).collect()
+    } else { result.points.iter().filter(|p| owner.selected.contains(&p.logical_pc)).collect() };
     let completed = if owner.fixture.fault == Fault::Pop {
         assert_eq!(pop_points.len(), 1); assert_eq!(pop_points[0].logical_pc, owner.body + 2);
         assert_eq!(pop_points[0].registers.rsp, owner.oracle.initial_rsp);
@@ -469,7 +644,11 @@ fn original(owner: &Owner, seed: u64) -> Baseline {
         // The unchanged shared scratch inequalities are checked against original
         // RSP values before publishing or executing any helper in these cases.
         let expected_events = events(&owner.oracle, &result.points, &owner.selected, owner.needed);
-        assert_eq!(expected_events.len(), pop_points.len());
+        if owner.fixture.single_byte_suffix() {
+            let expected_pcs: &[usize] = if owner.entry <= 5 { &[5, 7] } else { &[7] };
+            assert_eq!(expected_events.iter().map(|event| event.logical_pc).collect::<Vec<_>>(),
+                expected_pcs.iter().map(|&at| owner.body + at as u64).collect::<Vec<_>>());
+        } else { assert_eq!(expected_events.len(), pop_points.len()); }
         if owner.fixture.fault == Fault::Pop {
             assert_eq!(expected_events, [event(owner.body + 2, owner.oracle.initial_rsp)]);
         }
@@ -490,7 +669,23 @@ fn trace(owner: &Owner, baseline: &Baseline, route_counter: u64, installed: bool
             if let Some(&route) = owner.routes.iter().find(|r| r.original == pc) {
                 assert!(index == 2 && active_call.is_none()); assert_eq!(pc, owner.body + owner.entry as u64);
                 if owner.fixture.placement == ArtifactRelocationPlacement::EntryAlphabetV1 && owner.entry == 2 { assert_eq!(child.memory(pc, 1), [0x07]); }
-                assert_eq!(deliveries, 0); deliver(&child, &mut budget, route, route_counter, deliveries); deliveries += 1; continue;
+                if owner.fixture.single_byte_suffix() {
+                    assert!(owner.entry >= 5); assert_eq!(child.memory(pc, 1), [0x60]);
+                    assert_state(&baseline.points[index], &owner.oracle.snapshot(&child, pc, &owner.published));
+                    if owner.fixture.page_end() && owner.entry == 7 {
+                        assert_eq!(pc + 1, owner.code_guard.as_ref().unwrap().address());
+                    }
+                }
+                assert_eq!(deliveries, 0); deliver(&child, &mut budget, route, route_counter, deliveries); deliveries += 1;
+                if owner.fixture.single_byte_suffix() {
+                    // Real SIGILL/code 2/exact si_addr and production handler /
+                    // rt_sigreturn were witnessed by deliver. Before a callback
+                    // or relocated operand executes, every application byte and
+                    // register must still match: PUSHA committed nothing.
+                    assert_eq!(child.registers().rip, route.generated);
+                    assert_state(&baseline.points[index], &owner.oracle.snapshot(&child, pc, &owner.published));
+                }
+                continue;
             }
             if let Some(&(call, logical)) = owner.calls.iter().find(|c| c.0 == pc) {
                 assert!(active_call.is_none()); let expected = &baseline.points[index]; assert_eq!(logical, expected.logical_pc);
@@ -625,4 +820,27 @@ pub fn physical_pop_faults<R: Router>(certificate: SizeCertificate) {
         let (hooks, routes) = run_owner::<R>(owner, seed); census[0] += 1; census[1] += hooks; census[2] += routes;
     }
     assert_eq!(census, [2, 2, 2]);
+}
+
+// Every original head is entered with two full states. A selected RET is part of
+// the general core API fixture, not a claim about the jump/PUSH/POP corpus policy.
+pub fn single_byte_suffix_entries<R: Router>(certificate: SizeCertificate, page_end: bool) {
+    let window = if page_end { Window::SingleByteSuffixPageEnd } else { Window::SingleByteSuffix };
+    let mut census = [0_usize; 3];
+    for entry in SUFFIX_HEADS { for seed in SEEDS {
+        let owner = Owner::with_fixture(entry, Fixture { placement: ArtifactRelocationPlacement::EntryAlphabetV1,
+            fault: Fault::None, window }, certificate);
+        let (hooks, routes) = run_owner::<R>(owner, seed); census[0] += 1; census[1] += hooks; census[2] += routes;
+    } }
+    assert_eq!(census, [8, 12, 6]); // 24 original/installed/restored children
+}
+pub fn single_byte_suffix_ret_faults<R: Router>(certificate: SizeCertificate, page_end: bool) {
+    let window = if page_end { Window::SingleByteSuffixPageEnd } else { Window::SingleByteSuffix };
+    let mut census = [0_usize; 3];
+    for entry in [5, 6] { for seed in SEEDS {
+        let owner = Owner::with_fixture(entry, Fixture { placement: ArtifactRelocationPlacement::EntryAlphabetV1,
+            fault: Fault::Ret, window }, certificate);
+        let (hooks, routes) = run_owner::<R>(owner, seed); census[0] += 1; census[1] += hooks; census[2] += routes;
+    } }
+    assert_eq!(census, [4, 6, 4]); // 12 children; RET faults after real prior POPs and callbacks
 }

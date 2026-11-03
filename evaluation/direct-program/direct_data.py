@@ -180,6 +180,7 @@ GROUPED_UPSTREAM_PROFILE = 'jumps-gpr-stack64-block-upstream-v1'
 GROUPED_MIN5_PROFILE = 'jumps-gpr-stack64-block-min5-upstream-v1'
 GROUPED_MIN5_ALPHABET_PROFILE = 'jumps-gpr-stack64-block-min5-alphabet-upstream-v1'
 GROUPED_PHYSICAL_PROFILE = 'jumps-gpr-stack64-block-physical-min5-alphabet-upstream-v1'
+GROUPED_SUFFIX60_PROFILE = 'jumps-gpr-stack64-block-physical-min5-alphabet-suffix60-upstream-v1'
 # (upstream physical search, immutable min5 seal, grouping version, explicit placement)
 # Storage is independent; legacy descriptors preserve their exact text contracts.
 GROUPED_DESCRIPTORS = {
@@ -188,6 +189,7 @@ GROUPED_DESCRIPTORS = {
     GROUPED_MIN5_PROFILE: (True, True, '2', None),
     GROUPED_MIN5_ALPHABET_PROFILE: (True, True, '3', 'entry-alphabet-v1'),
     GROUPED_PHYSICAL_PROFILE: (True, False, '4', 'entry-alphabet-v1'),
+    GROUPED_SUFFIX60_PROFILE: (True, False, '5', 'entry-alphabet-v1'),
 }
 GROUPED_PROFILES = tuple(GROUPED_DESCRIPTORS)
 GROUPED_MEMBERS = ('grouping-policy.tsv', 'selection.txt', 'binding-policy.tsv',
@@ -205,6 +207,7 @@ def grouped_binding_bytes(selection, original, domain, grouping, *, profile=GROU
             ('mapping', str(domain)), ('generation', '1'), ('domain', str(domain)),
             ('field_encoding', 'original-indexed-jump-signed32-v1'),
             ('grouped_profile', profile), ('grouping_policy_sha256', grouping)]
+    if profile == GROUPED_SUFFIX60_PROFILE: rows.append(('group_routed_suffix', 'single-byte60-v1'))
     return ('LI2FIXED-EXEC-BINDING\t1\n'+''.join(k+'\t'+v+'\n' for k, v in rows)).encode()
 
 
@@ -349,7 +352,8 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
     """
     assert profile in GROUPED_PROFILES
     upstream, min5, policy_version, placement = GROUPED_DESCRIPTORS[profile]
-    physical_windows = profile == GROUPED_PHYSICAL_PROFILE
+    suffix60 = profile == GROUPED_SUFFIX60_PROFILE
+    physical_windows = profile in (GROUPED_PHYSICAL_PROFILE, GROUPED_SUFFIX60_PROFILE)
     assert ledger_storage in ('inline', CHUNK_STORAGE)
     compact = ledger_storage == CHUNK_STORAGE
     required = set(GROUPED_MEMBERS) | (set(CHUNK_MEMBERS) if compact else set())
@@ -369,7 +373,8 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
     if min5:
         expected_fields.update(grouping_policy_version=policy_version, window_sealing='minimum-whole-instruction-v1')
     if physical_windows:
-        expected_fields.update(grouping_policy_version='4', window_sealing='physical-minimum-whole-instruction-v1')
+        expected_fields.update(grouping_policy_version=policy_version, window_sealing='physical-minimum-whole-instruction-v1')
+    if suffix60: expected_fields['group_routed_suffix'] = 'single-byte60-v1'
     if placement is not None: expected_fields['group_relocation_placement'] = placement
     assert all(fields.get(k) == v for k, v in expected_fields.items())
     assert all(name in info['files'] for name in ('metadata.li2meta', 'target.tsv', 'planning-profile.tsv'))
@@ -427,7 +432,7 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
             ['seal_source', 'immutable-original'], ['seal_stage', 'before-overlay-mutation']]
     if placement is not None:
         if physical_windows:
-            prefix[0] = ['LI2GROUPING-POLICY', '4']
+            prefix[0] = ['LI2GROUPING-POLICY', policy_version]
             at = prefix.index(['window', 'first-selected-head-through-last-selected-instruction'])
             prefix[at:at+1] = [['window', 'per-physical-minimum-whole-instruction-v1'],
                 ['seal_source', 'immutable-original'], ['seal_stage', 'before-overlay-mutation']]
@@ -435,6 +440,7 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
         prefix.insert(at, ['group_relocation_placement', placement])
         if physical_windows:
             prefix.insert(at+1, ['source_dependency', 'collector-examined-instruction-envelope-v1'])
+        if suffix60: prefix.insert(at+1, ['group_routed_suffix', 'single-byte60-v1'])
     if upstream:
         at = prefix.index(['group_attempts', '1'])
         prefix[at:at+1] = [
@@ -618,6 +624,7 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
                 metadata_verification='Rust format/embedded check recorded; Python authenticates member hashes and text joins')
     if placement is not None:
         result.update(grouping_policy_version=policy_version, group_relocation_placement=placement)
+    if suffix60: result['group_routed_suffix'] = 'single-byte60-v1'
     if compact: result['ledger_storage'] = storage_result
     if physical_windows: result['accepted_physical_ordinals'] = actual_ordinals
     return result

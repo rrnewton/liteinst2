@@ -19,10 +19,11 @@ mod artifact_window;
 pub use artifact_window::{
     ArtifactObservationPlan, ArtifactObservationRequest, ArtifactObservationSearchRequest,
     ArtifactObservationWindowSeal, ArtifactPhysicalWindowRow, ArtifactPhysicalWindowSchedule,
-    ArtifactRelocationPlacement, plan_artifact_observation_window_after,
+    ArtifactRelocationPlacement, ArtifactRoutedSuffix, plan_artifact_observation_window_after,
     plan_artifact_observation_window_upstream_after,
     plan_artifact_observation_window_upstream_after_with_placement,
     plan_artifact_observation_windows_upstream_after_with_placement,
+    plan_artifact_observation_windows_upstream_after_with_placement_and_suffix,
     seal_artifact_observation_window_min5, seal_artifact_observation_windows_upstream_min5,
 };
 
@@ -1547,6 +1548,7 @@ enum RelocationAuthority<'a> {
     ArtifactObservations {
         pcs: &'a [u64],
         placement: ArtifactRelocationPlacement,
+        suffix: ArtifactRoutedSuffix,
     },
     WholeFunction(&'a whole_function::Verified),
     OwnedClockRegion {
@@ -1652,6 +1654,10 @@ fn emit_relocation_window(
             ..
         }
     );
+    let suffix = match authority {
+        RelocationAuthority::ArtifactObservations { suffix, .. } => suffix,
+        _ => ArtifactRoutedSuffix::Qualified62,
+    };
     let whole_function = match authority {
         RelocationAuthority::WholeFunction(proof) => Some(proof),
         _ => None,
@@ -2006,6 +2012,13 @@ fn emit_relocation_window(
         for &head in heads.iter().rev() {
             if head >= physical + 5 {
                 let at = (head - physical) as usize;
+                // This explicit artifact group mode changes the actual suffix
+                // opcode, never the E9 displacement or ownership rules. Every
+                // emitted 0x62 still owns its full authenticated fetch envelope.
+                if suffix == ArtifactRoutedSuffix::SingleByte60 {
+                    patch[at] = 0x60;
+                    continue;
+                }
                 patch[at] = 0x62;
                 let following = |delta: usize| {
                     patch.get(at + delta).copied().or_else(|| {

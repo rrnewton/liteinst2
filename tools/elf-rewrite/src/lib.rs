@@ -12,11 +12,14 @@ mod fixed_exec;
 mod grouped_artifact_frontend;
 pub use grouped_artifact_frontend::{
     GROUPED_MIN5_ALPHABET_UPSTREAM_PROFILE, GROUPED_MIN5_UPSTREAM_PROFILE,
+    GROUPED_PHYSICAL_MIN5_ALPHABET_SUFFIX60_UPSTREAM_PROFILE,
     GROUPED_PHYSICAL_MIN5_ALPHABET_UPSTREAM_PROFILE, GROUPED_PROFILE, GROUPED_UPSTREAM_PROFILE,
     grouped_fixed_exec_binding_policy, grouped_fixed_exec_metadata,
     grouped_min5_alphabet_upstream_fixed_exec_binding_policy,
     grouped_min5_alphabet_upstream_fixed_exec_metadata,
     grouped_min5_upstream_fixed_exec_binding_policy, grouped_min5_upstream_fixed_exec_metadata,
+    grouped_physical_min5_alphabet_suffix60_upstream_fixed_exec_binding_policy,
+    grouped_physical_min5_alphabet_suffix60_upstream_fixed_exec_metadata,
     grouped_physical_min5_alphabet_upstream_fixed_exec_binding_policy,
     grouped_physical_min5_alphabet_upstream_fixed_exec_metadata,
     grouped_upstream_fixed_exec_binding_policy, grouped_upstream_fixed_exec_metadata,
@@ -25,6 +28,8 @@ pub use grouped_artifact_frontend::{
     prepare_disassembly_jump_stack_grouped_min5_alphabet_upstream_with_ledger_storage,
     prepare_disassembly_jump_stack_grouped_min5_upstream_fixed_exec,
     prepare_disassembly_jump_stack_grouped_min5_upstream_with_ledger_storage,
+    prepare_disassembly_jump_stack_grouped_physical_min5_alphabet_suffix60_upstream_fixed_exec,
+    prepare_disassembly_jump_stack_grouped_physical_min5_alphabet_suffix60_upstream_with_ledger_storage,
     prepare_disassembly_jump_stack_grouped_physical_min5_alphabet_upstream_fixed_exec,
     prepare_disassembly_jump_stack_grouped_physical_min5_alphabet_upstream_with_ledger_storage,
     prepare_disassembly_jump_stack_grouped_upstream_fixed_exec,
@@ -740,6 +745,17 @@ fn prepare_selection_with_storage(
                     identity,
                     fixed_binding,
                     &occupied,
+                )
+            }
+            grouped_artifact_frontend::GroupProfile::PhysicalMin5AlphabetSuffix60Upstream => {
+                grouped_artifact_frontend::Schedule::freeze_physical_profile(
+                    &elf,
+                    s,
+                    classes,
+                    identity,
+                    fixed_binding,
+                    &occupied,
+                    profile,
                 )
             }
             grouped_artifact_frontend::GroupProfile::Exact => {

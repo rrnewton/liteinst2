@@ -32,6 +32,7 @@ REWRITE_PROFILES = {
     'jumps-gpr-stack64-block-min5-upstream-v1': '--whole-program-fixed-exec-block-min5-upstream-jump-stack64-4096',
     'jumps-gpr-stack64-block-min5-alphabet-upstream-v1': '--whole-program-fixed-exec-block-min5-alphabet-upstream-jump-stack64-4096',
     'jumps-gpr-stack64-block-physical-min5-alphabet-upstream-v1': '--whole-program-fixed-exec-block-physical-min5-alphabet-upstream-jump-stack64-4096',
+    'jumps-gpr-stack64-block-physical-min5-alphabet-suffix60-upstream-v1': '--whole-program-fixed-exec-block-physical-min5-alphabet-suffix60-upstream-jump-stack64-4096',
 }
 CATALOG_SHA = '2b89602488e2b1854e0df68ecdf49243d4c952a2f393fad4a56785db4a539bde'
 _catalog_bytes = Path(__file__).with_name('program_catalog.json').read_bytes()

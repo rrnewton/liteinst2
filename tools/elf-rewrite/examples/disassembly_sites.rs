@@ -467,6 +467,7 @@ enum PopulationMode {
     JumpStackGroupedMin5Upstream,
     JumpStackGroupedMin5AlphabetUpstream,
     JumpStackGroupedPhysicalMin5AlphabetUpstream,
+    JumpStackGroupedPhysicalMin5AlphabetSuffix60Upstream,
 }
 const JUMP_STACK_FLAG: &str = "--whole-program-fixed-exec-packed-overlapping-jump-stack64-4096";
 const GROUPED_FLAG: &str = "--whole-program-fixed-exec-block-observation-jump-stack64-4096";
@@ -558,10 +559,16 @@ fn is_grouped(mode: PopulationMode) -> bool {
             | PopulationMode::JumpStackGroupedMin5Upstream
             | PopulationMode::JumpStackGroupedMin5AlphabetUpstream
             | PopulationMode::JumpStackGroupedPhysicalMin5AlphabetUpstream
+            | PopulationMode::JumpStackGroupedPhysicalMin5AlphabetSuffix60Upstream
     )
 }
 fn labels_with_population(mode: PopulationMode) -> (&'static str, &'static str, &'static str) {
     match mode {
+        PopulationMode::JumpStackGroupedPhysicalMin5AlphabetSuffix60Upstream => (
+            liteinst_rewrite::GROUPED_PHYSICAL_MIN5_ALPHABET_SUFFIX60_UPSTREAM_PROFILE,
+            "",
+            " selection_profile=jumps-gpr-stack64-v1 grouped_profile=jumps-gpr-stack64-block-physical-min5-alphabet-suffix60-upstream-v1 group_relocation_placement=entry-alphabet-v1 group_routed_suffix=single-byte60-v1 address_binding=fixed-exec-zero-bias-indexed-jump32-v1 required_object_type=ET_EXEC required_load_bias=0",
+        ),
         PopulationMode::JumpStackGroupedPhysicalMin5AlphabetUpstream => (
             liteinst_rewrite::GROUPED_PHYSICAL_MIN5_ALPHABET_UPSTREAM_PROFILE,
             "",
@@ -647,7 +654,8 @@ fn prepare_population_inputs_with_storage(
         | PopulationMode::JumpStackGroupedUpstream
         | PopulationMode::JumpStackGroupedMin5Upstream
         | PopulationMode::JumpStackGroupedMin5AlphabetUpstream
-        | PopulationMode::JumpStackGroupedPhysicalMin5AlphabetUpstream => {
+        | PopulationMode::JumpStackGroupedPhysicalMin5AlphabetUpstream
+        | PopulationMode::JumpStackGroupedPhysicalMin5AlphabetSuffix60Upstream => {
             use li2core::x86::JumpStackClass;
             let imported = disassembly::jump_stack::import(original, ledger, expected_ledger)?;
             let mut counts = [0; 3];
@@ -680,10 +688,13 @@ fn prepare_population_inputs_with_storage(
                 PopulationMode::JumpStackGroupedMin5Upstream
                     | PopulationMode::JumpStackGroupedMin5AlphabetUpstream
                     | PopulationMode::JumpStackGroupedPhysicalMin5AlphabetUpstream
+                    | PopulationMode::JumpStackGroupedPhysicalMin5AlphabetSuffix60Upstream
             ) {
                 let prepare = if mode
-                    == PopulationMode::JumpStackGroupedPhysicalMin5AlphabetUpstream
+                    == PopulationMode::JumpStackGroupedPhysicalMin5AlphabetSuffix60Upstream
                 {
+                    liteinst_rewrite::prepare_disassembly_jump_stack_grouped_physical_min5_alphabet_suffix60_upstream_with_ledger_storage
+                } else if mode == PopulationMode::JumpStackGroupedPhysicalMin5AlphabetUpstream {
                     liteinst_rewrite::prepare_disassembly_jump_stack_grouped_physical_min5_alphabet_upstream_with_ledger_storage
                 } else if mode == PopulationMode::JumpStackGroupedMin5AlphabetUpstream {
                     liteinst_rewrite::prepare_disassembly_jump_stack_grouped_min5_alphabet_upstream_with_ledger_storage
@@ -691,8 +702,10 @@ fn prepare_population_inputs_with_storage(
                     liteinst_rewrite::prepare_disassembly_jump_stack_grouped_min5_upstream_with_ledger_storage
                 };
                 let binding_policy = if mode
-                    == PopulationMode::JumpStackGroupedPhysicalMin5AlphabetUpstream
+                    == PopulationMode::JumpStackGroupedPhysicalMin5AlphabetSuffix60Upstream
                 {
+                    liteinst_rewrite::grouped_physical_min5_alphabet_suffix60_upstream_fixed_exec_binding_policy
+                } else if mode == PopulationMode::JumpStackGroupedPhysicalMin5AlphabetUpstream {
                     liteinst_rewrite::grouped_physical_min5_alphabet_upstream_fixed_exec_binding_policy
                 } else if mode == PopulationMode::JumpStackGroupedMin5AlphabetUpstream {
                     liteinst_rewrite::grouped_min5_alphabet_upstream_fixed_exec_binding_policy
@@ -974,6 +987,26 @@ fn arguments_with_grouped_physical_min5_alphabet_upstream(
         arguments_with_grouped_min5_alphabet_upstream(args)
     }
 }
+const GROUPED_PHYSICAL_MIN5_ALPHABET_SUFFIX60_UPSTREAM_FLAG: &str =
+    "--whole-program-fixed-exec-block-physical-min5-alphabet-suffix60-upstream-jump-stack64-4096";
+fn arguments_with_grouped_physical_min5_alphabet_suffix60_upstream(
+    args: &[String],
+) -> Result<(&[String], PopulationMode), String> {
+    if args
+        .get(1)
+        .is_some_and(|arg| arg == GROUPED_PHYSICAL_MIN5_ALPHABET_SUFFIX60_UPSTREAM_FLAG)
+    {
+        let mut exact = args.to_vec();
+        exact[1] = GROUPED_FLAG.into();
+        arguments_with_jump_stack(&exact)?;
+        Ok((
+            &args[2..],
+            PopulationMode::JumpStackGroupedPhysicalMin5AlphabetSuffix60Upstream,
+        ))
+    } else {
+        arguments_with_grouped_physical_min5_alphabet_upstream(args)
+    }
+}
 fn arguments_with_storage(
     args: &[String],
 ) -> Result<(&[String], PopulationMode, liteinst_rewrite::LedgerStorage), String> {
@@ -985,7 +1018,8 @@ fn arguments_with_storage(
             _ => return Err("unknown or missing ledger storage mode".into()),
         };
         // args[2] occupies only the delegated, ignored argv[0] slot.
-        let (paths, mode) = arguments_with_grouped_physical_min5_alphabet_upstream(&args[2..])?;
+        let (paths, mode) =
+            arguments_with_grouped_physical_min5_alphabet_suffix60_upstream(&args[2..])?;
         if paths.iter().any(|s| s == "--ledger-storage")
             || (storage == LedgerStorage::ReadChunks256 && !is_grouped(mode))
         {
@@ -996,7 +1030,7 @@ fn arguments_with_storage(
         }
         Ok((paths, mode, storage))
     } else {
-        arguments_with_grouped_physical_min5_alphabet_upstream(args)
+        arguments_with_grouped_physical_min5_alphabet_suffix60_upstream(args)
             .map(|(paths, mode)| (paths, mode, LedgerStorage::Inline))
     }
 }
@@ -1005,19 +1039,22 @@ fn run() -> Result<bool, String> {
     let raw_args: Vec<_> = std::env::args().collect();
     let (args, mode, storage) = arguments_with_storage(&raw_args)?;
     let (profile, family, stdout_family) = labels_with_population(mode);
-    let grouped_family = if mode == PopulationMode::JumpStackGroupedPhysicalMin5AlphabetUpstream {
-        liteinst_rewrite::grouped_physical_min5_alphabet_upstream_fixed_exec_metadata()
-    } else if mode == PopulationMode::JumpStackGroupedMin5AlphabetUpstream {
-        liteinst_rewrite::grouped_min5_alphabet_upstream_fixed_exec_metadata()
-    } else if mode == PopulationMode::JumpStackGroupedMin5Upstream {
-        liteinst_rewrite::grouped_min5_upstream_fixed_exec_metadata()
-    } else if mode == PopulationMode::JumpStackGroupedUpstream {
-        liteinst_rewrite::grouped_upstream_fixed_exec_metadata()
-    } else if mode == PopulationMode::JumpStackGrouped {
-        liteinst_rewrite::grouped_fixed_exec_metadata()
-    } else {
-        String::new()
-    };
+    let grouped_family =
+        if mode == PopulationMode::JumpStackGroupedPhysicalMin5AlphabetSuffix60Upstream {
+            liteinst_rewrite::grouped_physical_min5_alphabet_suffix60_upstream_fixed_exec_metadata()
+        } else if mode == PopulationMode::JumpStackGroupedPhysicalMin5AlphabetUpstream {
+            liteinst_rewrite::grouped_physical_min5_alphabet_upstream_fixed_exec_metadata()
+        } else if mode == PopulationMode::JumpStackGroupedMin5AlphabetUpstream {
+            liteinst_rewrite::grouped_min5_alphabet_upstream_fixed_exec_metadata()
+        } else if mode == PopulationMode::JumpStackGroupedMin5Upstream {
+            liteinst_rewrite::grouped_min5_upstream_fixed_exec_metadata()
+        } else if mode == PopulationMode::JumpStackGroupedUpstream {
+            liteinst_rewrite::grouped_upstream_fixed_exec_metadata()
+        } else if mode == PopulationMode::JumpStackGrouped {
+            liteinst_rewrite::grouped_fixed_exec_metadata()
+        } else {
+            String::new()
+        };
     let grouped_family = if storage == liteinst_rewrite::LedgerStorage::ReadChunks256 {
         grouped_family.replace(
             "grouping_ledger\tLI2GROUPED-LEDGER-1\n",
@@ -1114,6 +1151,7 @@ fn run() -> Result<bool, String> {
             | PopulationMode::JumpStackGroupedMin5Upstream
             | PopulationMode::JumpStackGroupedMin5AlphabetUpstream
             | PopulationMode::JumpStackGroupedPhysicalMin5AlphabetUpstream
+            | PopulationMode::JumpStackGroupedPhysicalMin5AlphabetSuffix60Upstream
     ) {
         index.push_str(&jump_stack_fields(classes));
     }
@@ -1126,6 +1164,7 @@ fn run() -> Result<bool, String> {
             | PopulationMode::JumpStackGroupedMin5AlphabetUpstream
             | PopulationMode::Existing(Mode::WholeFixedExecPackedOverlapping4096)
             | PopulationMode::JumpStackGroupedPhysicalMin5AlphabetUpstream
+            | PopulationMode::JumpStackGroupedPhysicalMin5AlphabetSuffix60Upstream
     ) {
         match fixed_binding {
             Some(binding) => index.push_str(&format!(
@@ -1484,3 +1523,7 @@ mod grouped_alphabet_tests;
 #[cfg(test)]
 #[path = "disassembly_sites/grouped_physical_tests.rs"]
 mod grouped_physical_tests;
+
+#[cfg(test)]
+#[path = "disassembly_sites/grouped_suffix60_tests.rs"]
+mod grouped_suffix60_tests;

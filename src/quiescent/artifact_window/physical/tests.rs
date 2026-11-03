@@ -822,3 +822,383 @@ fn immutable_global_guards_and_collector_early_breaks_keep_exact_dependencies() 
         ))
     );
 }
+
+// A complete selected group in an eight-byte block, followed by a distinct
+// pending block. All source bytes remain authenticated even when only eight
+// bytes are displaced. The interior suffix contains selected and unselected
+// heads, while the four E9 displacement heads remain constrained by placement.
+fn routed_suffix_artifact(f: &Fixture) -> ArtifactRequest<'_> {
+    let mut input = f.artifact(f.base);
+    input.site.block = AddressRange::new(f.base, 8).unwrap();
+    input
+}
+
+fn routed_suffix_plan(
+    input: &ArtifactRequest<'_>,
+    schedule: &ArtifactPhysicalWindowSchedule,
+    prior: &Composition,
+    pending: &[AddressRange],
+    placement: ArtifactRelocationPlacement,
+    suffix: ArtifactRoutedSuffix,
+) -> Result<ArtifactObservationPlan, PlanningFailure> {
+    plan_artifact_observation_windows_upstream_after_with_placement_and_suffix(
+        input, schedule, prior, pending, placement, suffix,
+    )
+}
+
+fn assert_suffix_images_equal(left: &ArtifactObservationPlan, right: &ArtifactObservationPlan) {
+    assert_eq!(left.artifact().images().count(), 1);
+    assert_eq!(right.artifact().images().count(), 1);
+    let left_image = left.artifact().images().next().unwrap();
+    let right_image = right.artifact().images().next().unwrap();
+    assert_eq!(left_image.address(), right_image.address());
+    assert_eq!(left_image.bytes(), right_image.bytes());
+    assert_eq!(left_image.entry_routes(), right_image.entry_routes());
+    assert_eq!(
+        left_image.instruction_boundaries(),
+        right_image.instruction_boundaries()
+    );
+    assert_eq!(
+        left_image.program_counter_mappings(),
+        right_image.program_counter_mappings()
+    );
+    assert_eq!(left_image.metadata(), right_image.metadata());
+    assert_eq!(left.observation_pcs(), right.observation_pcs());
+    assert_eq!(left.search(), right.search());
+    assert!(!left.artifact().qualification_complete());
+    assert!(!right.artifact().qualification_complete());
+}
+
+#[test]
+fn single_byte_suffix_preserves_exact_plan_and_releases_only_real_fetch_footprint() {
+    let f = Fixture::new(BASE, &[0x90; 32]);
+    let input = routed_suffix_artifact(&f);
+    let pcs = [BASE, BASE + 7];
+    let schedule = seal_artifact_observation_windows_upstream_min5(&input, &pcs).unwrap();
+    assert_eq!(schedule.physical_domain(), [BASE]);
+    assert_eq!(schedule.rows()[0].outcome(), Ok(BASE + 8));
+    let prior = f.predecessor();
+    let pending = [AddressRange::new(BASE + 8, 1).unwrap()];
+    assert_eq!(prior.require_unclaimed_ranges(&pending), Ok(()));
+    for placement in [
+        ArtifactRelocationPlacement::Fixed06,
+        ArtifactRelocationPlacement::EntryAlphabetV1,
+    ] {
+        let default = plan_artifact_observation_windows_upstream_after_with_placement(
+            &input,
+            &schedule,
+            &prior,
+            &[],
+            placement,
+        )
+        .unwrap();
+        let explicit = routed_suffix_plan(
+            &input,
+            &schedule,
+            &prior,
+            &[],
+            placement,
+            ArtifactRoutedSuffix::Qualified62,
+        )
+        .unwrap();
+        assert_eq!(
+            default.artifact().source_steps(),
+            explicit.artifact().source_steps()
+        );
+        assert_suffix_images_equal(&default, &explicit);
+        let old_step = &default.artifact().source_steps()[0];
+        let old_parts = old_step.parts();
+        assert_eq!(default.artifact().source_steps().len(), 1);
+        assert_eq!(old_parts.displaced, AddressRange::new(BASE, 8).unwrap());
+        assert_eq!(
+            old_parts.reads,
+            [ExpectedBytes {
+                address: BASE,
+                bytes: f.code.clone()
+            }]
+        );
+        assert_eq!(old_parts.dependencies, [f.entries.scope]);
+        assert_eq!(old_parts.writes.len(), 1);
+        assert_eq!(old_parts.writes[0].address, BASE);
+        assert_eq!(
+            old_parts.writes[0].bytes,
+            [0xe9, 0x06, 0x06, 0x06, 0x06, 0x62, 0x62, 0x62]
+        );
+        let mut old_joined = prior.clone();
+        old_joined.append(old_step).unwrap();
+        // Three actual 0x62 heads retain all 15 bytes; the last ends at +22.
+        assert_eq!(old_joined.locks(), [AddressRange::new(BASE, 22).unwrap()]);
+        assert_eq!(
+            old_joined.require_unclaimed_ranges(&pending),
+            Err(Refusal::OwnershipConflict)
+        );
+        let refused = routed_suffix_plan(
+            &input,
+            &schedule,
+            &prior,
+            &pending,
+            placement,
+            ArtifactRoutedSuffix::Qualified62,
+        )
+        .unwrap_err();
+        assert_eq!(refused.reason, Refusal::OwnershipConflict);
+        assert_eq!(refused.attempts.len(), 1);
+        assert_eq!(refused.attempts[0].physical_pc, BASE);
+        assert_eq!(
+            refused.attempts[0].refusal,
+            Some(Refusal::OwnershipConflict)
+        );
+        assert_eq!(refused.search.runs.len(), 2);
+        assert_eq!(refused.search.runs[0].stop, SearchStop::DomainComplete);
+        assert_eq!(refused.search.runs[0].examined, 1);
+        assert_eq!(refused.search.runs[1].stop, SearchStop::Accepted);
+        assert_eq!(refused.search.runs[1].examined, 1);
+        assert!(!refused.search.accepted);
+        let single = routed_suffix_plan(
+            &input,
+            &schedule,
+            &prior,
+            &pending,
+            placement,
+            ArtifactRoutedSuffix::SingleByte60,
+        )
+        .unwrap();
+        let mut expected = old_parts.clone();
+        expected.writes[0].bytes[5..8].copy_from_slice(&[0x60; 3]);
+        assert_eq!(single.artifact().source_steps().len(), 1);
+        assert_eq!(single.artifact().source_steps()[0].parts(), &expected);
+        assert_suffix_images_equal(&default, &single);
+        let mut joined = prior.clone();
+        joined.append(&single.artifact().source_steps()[0]).unwrap();
+        assert_eq!(joined.locks(), [AddressRange::new(BASE, 8).unwrap()]);
+        assert_eq!(joined.require_unclaimed_ranges(&pending), Ok(()));
+        assert_eq!(&joined.final_bytes()[0].bytes[8..], &f.code[8..]);
+        assert_eq!(pending, [AddressRange::new(BASE + 8, 1).unwrap()]);
+        assert_eq!(prior, f.predecessor());
+    }
+}
+
+#[test]
+fn single_byte_suffix_never_exempts_true_overlap_or_already_claimed_pending() {
+    let f = Fixture::new(BASE, &[0x90; 32]);
+    let input = routed_suffix_artifact(&f);
+    let pcs = [BASE, BASE + 7];
+    let schedule = seal_artifact_observation_windows_upstream_min5(&input, &pcs).unwrap();
+    let prior = f.predecessor();
+    for suffix in [
+        ArtifactRoutedSuffix::Qualified62,
+        ArtifactRoutedSuffix::SingleByte60,
+    ] {
+        for offset in [0, 4, 5, 7] {
+            let pending = [AddressRange::new(BASE + offset, 1).unwrap()];
+            let refused = routed_suffix_plan(
+                &input,
+                &schedule,
+                &prior,
+                &pending,
+                ArtifactRelocationPlacement::EntryAlphabetV1,
+                suffix,
+            )
+            .unwrap_err();
+            assert_eq!(refused.reason, Refusal::OwnershipConflict);
+            assert_eq!(refused.attempts.len(), 1);
+            assert_eq!(
+                refused.attempts[0].refusal,
+                Some(Refusal::OwnershipConflict)
+            );
+            assert_eq!(refused.search.runs[1].stop, SearchStop::Accepted);
+            assert_eq!(prior, f.predecessor());
+        }
+    }
+    let mut upper = f.artifact(BASE + 8);
+    upper.site.block = AddressRange::new(BASE + 8, 8).unwrap();
+    let upper_schedule =
+        seal_artifact_observation_windows_upstream_min5(&upper, &[BASE + 8, BASE + 15]).unwrap();
+    let upper_group = routed_suffix_plan(
+        &upper,
+        &upper_schedule,
+        &prior,
+        &[],
+        ArtifactRelocationPlacement::EntryAlphabetV1,
+        ArtifactRoutedSuffix::SingleByte60,
+    )
+    .unwrap();
+    let mut claimed = prior.clone();
+    claimed
+        .append(&upper_group.artifact().source_steps()[0])
+        .unwrap();
+    let before = claimed.clone();
+    let pending = [AddressRange::new(BASE + 8, 1).unwrap()];
+    for suffix in [
+        ArtifactRoutedSuffix::Qualified62,
+        ArtifactRoutedSuffix::SingleByte60,
+    ] {
+        no_search(
+            &routed_suffix_plan(
+                &input,
+                &schedule,
+                &claimed,
+                &pending,
+                ArtifactRelocationPlacement::EntryAlphabetV1,
+                suffix,
+            )
+            .unwrap_err(),
+            Refusal::OwnershipConflict,
+        );
+        assert_eq!(claimed, before);
+    }
+}
+
+#[test]
+fn single_byte_suffix_keeps_full_source_staleness_and_coverage_guards() {
+    let f = Fixture::new(BASE, &[0x90; 32]);
+    let input = routed_suffix_artifact(&f);
+    let schedule =
+        seal_artifact_observation_windows_upstream_min5(&input, &[BASE, BASE + 7]).unwrap();
+    for suffix in [
+        ArtifactRoutedSuffix::Qualified62,
+        ArtifactRoutedSuffix::SingleByte60,
+    ] {
+        // Both a changed routed suffix and a byte beyond every displaced/fetch
+        // interval remain covered by the complete original-source read guard.
+        for offset in [5, 31] {
+            let mut stale_bytes = f.code.clone();
+            stale_bytes[offset] = 0x91;
+            let stale = Composition::new(
+                f.entries.identity,
+                vec![ExpectedBytes {
+                    address: BASE,
+                    bytes: stale_bytes,
+                }],
+            )
+            .unwrap();
+            let before = stale.clone();
+            no_search(
+                &routed_suffix_plan(
+                    &input,
+                    &schedule,
+                    &stale,
+                    &[],
+                    ArtifactRelocationPlacement::EntryAlphabetV1,
+                    suffix,
+                )
+                .unwrap_err(),
+                Refusal::ExpectedBytesChanged,
+            );
+            assert_eq!(stale, before);
+        }
+        for len in [5, 8, 22, 31] {
+            let short = Composition::new(
+                f.entries.identity,
+                vec![ExpectedBytes {
+                    address: BASE,
+                    bytes: f.code[..len].to_vec(),
+                }],
+            )
+            .unwrap();
+            let before = short.clone();
+            no_search(
+                &routed_suffix_plan(
+                    &input,
+                    &schedule,
+                    &short,
+                    &[],
+                    ArtifactRelocationPlacement::EntryAlphabetV1,
+                    suffix,
+                )
+                .unwrap_err(),
+                Refusal::DependencyNotHeld,
+            );
+            assert_eq!(short, before);
+        }
+    }
+}
+
+#[test]
+fn single_byte_suffix_keeps_default_fallback_and_short_window_bytes_exact() {
+    assert_eq!(
+        ArtifactRoutedSuffix::default(),
+        ArtifactRoutedSuffix::Qualified62
+    );
+    // Source coverage, executable-page edge, and invalid-P1 qualification keep
+    // the old fallback behavior. SingleByte60 does not change generated code.
+    for (base, mut bytes) in [
+        (BASE, vec![0x90; 8]),
+        (BASE + 4088, vec![0x90; 32]),
+        (BASE, vec![0x90; 32]),
+    ] {
+        if base == BASE && bytes.len() == 32 {
+            bytes[9] = 0x94; // Last suffix P1 bit 2 is set: use the old fallback.
+        }
+        let f = Fixture::new(base, &bytes);
+        let input = routed_suffix_artifact(&f);
+        let schedule =
+            seal_artifact_observation_windows_upstream_min5(&input, &[base, base + 7]).unwrap();
+        let prior = f.predecessor();
+        let default = plan_artifact_observation_windows_upstream_after_with_placement(
+            &input,
+            &schedule,
+            &prior,
+            &[],
+            ArtifactRelocationPlacement::EntryAlphabetV1,
+        )
+        .unwrap();
+        let explicit = routed_suffix_plan(
+            &input,
+            &schedule,
+            &prior,
+            &[],
+            ArtifactRelocationPlacement::EntryAlphabetV1,
+            ArtifactRoutedSuffix::Qualified62,
+        )
+        .unwrap();
+        assert_eq!(
+            default.artifact().source_steps(),
+            explicit.artifact().source_steps()
+        );
+        assert_suffix_images_equal(&default, &explicit);
+        assert_eq!(
+            default.artifact().source_steps()[0].parts().writes[0].bytes[7],
+            0x60
+        );
+        let single = routed_suffix_plan(
+            &input,
+            &schedule,
+            &prior,
+            &[],
+            ArtifactRelocationPlacement::EntryAlphabetV1,
+            ArtifactRoutedSuffix::SingleByte60,
+        )
+        .unwrap();
+        let mut expected = default.artifact().source_steps()[0].parts().clone();
+        expected.writes[0].bytes[5..8].copy_from_slice(&[0x60; 3]);
+        assert_eq!(single.artifact().source_steps()[0].parts(), &expected);
+        assert_suffix_images_equal(&default, &single);
+    }
+    let f = Fixture::short();
+    let schedule = f.seal(&[P + 2, P + 3]);
+    let prior = f.predecessor();
+    let input = f.artifact(P + 2);
+    let default = f
+        .plan(
+            &schedule,
+            &prior,
+            &[],
+            ArtifactRelocationPlacement::EntryAlphabetV1,
+        )
+        .unwrap();
+    let single = routed_suffix_plan(
+        &input,
+        &schedule,
+        &prior,
+        &[],
+        ArtifactRelocationPlacement::EntryAlphabetV1,
+        ArtifactRoutedSuffix::SingleByte60,
+    )
+    .unwrap();
+    assert_eq!(
+        default.artifact().source_steps(),
+        single.artifact().source_steps()
+    );
+    assert_suffix_images_equal(&default, &single);
+}

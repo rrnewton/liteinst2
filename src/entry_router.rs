@@ -364,6 +364,9 @@ mod imp {
     mod physical_window_native_tests;
 
     #[cfg(test)]
+    mod single_byte_suffix_native_tests;
+
+    #[cfg(test)]
     mod tests {
         use super::*;
         use std::io::Write;
