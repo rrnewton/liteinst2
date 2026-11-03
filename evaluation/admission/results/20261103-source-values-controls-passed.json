@@ -1,0 +1,92 @@
+{
+  "artifacts_unchanged": true,
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_seconds": 30,
+    "file_size_bytes": 16777216,
+    "log_bytes": 8388608,
+    "wall_seconds": 60
+  },
+  "cleanup_complete": true,
+  "commands": [
+    {
+      "count": 10,
+      "id": "inventory_regex_controls",
+      "result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "503fa29baff56344d2e477acd938ad87de720864b5eafe2e7bcf46a38ed1f764",
+        "reaped_descendants": 0,
+        "seconds": 0.15376751404255629,
+        "start_utc": "2026-11-03T07:09:28.021879+00:00",
+        "termination": null
+      }
+    },
+    {
+      "count": 6,
+      "id": "inventory_digest_controls",
+      "result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "8249c964abe4a62e823cef605e33f42343f05fff36b6cd5efa95de372a166296",
+        "reaped_descendants": 0,
+        "seconds": 0.12506872997619212,
+        "start_utc": "2026-11-03T07:09:28.186122+00:00",
+        "termination": null
+      }
+    },
+    {
+      "count": 82,
+      "id": "compare_catalog_walk",
+      "result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "c50d7170708ae472a34d298930eab5b74dbb0678e69ae945565459fc1ad91444",
+        "reaped_descendants": 0,
+        "seconds": 0.3475415320135653,
+        "start_utc": "2026-11-03T07:09:28.322143+00:00",
+        "termination": null
+      }
+    }
+  ],
+  "configuration_unchanged": true,
+  "cpu": 62,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu_family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_upstream_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model_name": "AMD EPYC 9D85 158-Core Processor",
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_unchanged": true,
+  "performance_credit": false,
+  "qualification_credit": false,
+  "receipt": {
+    "bytes": 1357049,
+    "sha256": "cb36e656565c730c50496ce13de6ddd80b598761b2f9c551404b8e7c2a90455d"
+  },
+  "recorder_gate_credit": false,
+  "reproduce": [
+    "python3.12",
+    "-B",
+    "evaluation/admission/check_source_values.py",
+    "--expect-revision",
+    "8bf253ca0359933d420200d5f1a68b6c851b0a0e",
+    "--cpu",
+    "RESERVED_CPU",
+    "--output",
+    "target/evaluation/inprocess/source-values-controls-NEW"
+  ],
+  "revision": "8bf253ca0359933d420200d5f1a68b6c851b0a0e",
+  "schema": 1,
+  "source_unchanged": true,
+  "status": "passed_controls_only"
+}
