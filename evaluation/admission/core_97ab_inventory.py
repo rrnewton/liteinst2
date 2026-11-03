@@ -2,6 +2,7 @@
 import copy
 import hashlib
 import inventory_digest
+import inventory_regex
 import json
 import inventory_json
 from pathlib import Path
@@ -222,21 +223,21 @@ def require_sources(error='main97ab_source_inventory_differs'):
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
-        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        require(inventory_digest.with_sha256(raw, hashlib.sha256) == expected, error)
         if path in DATA['methods']:
-            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            found = inventory_regex.with_findall(re.findall, r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
             row = DATA['methods'][path]
             require([name for _, name in found] == row['all'] and
                     [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
                     raw.count(b'#[test]') == len(found) + len(row['templates']), error)
             require(all(raw.decode().count(template) == 1 for template in row['templates']), error)
             for pattern, matches in row['macro_calls']:
-                require([list(x) if isinstance(x, tuple) else x for x in re.findall(pattern, raw.decode())] == matches, error)
+                require([list(x) if isinstance(x, tuple) else x for x in inventory_regex.with_findall(re.findall, pattern, raw.decode())] == matches, error)
         if path in DATA['doctests']:
-            require(re.findall(r'(?ms)^/// ```[^\n]*\n.*?^/// ```$', raw.decode())
+            require(inventory_regex.with_findall(re.findall, r'(?ms)^/// ```[^\n]*\n.*?^/// ```$', raw.decode())
                     == DATA['doctests'][path], error)
         if path in DATA['source_successor_abe7']['doctest_sources']:
-            require(re.findall(r'(?ms)^[ \t]*/// ```[^\n]*\n.*?^[ \t]*/// ```$', raw.decode())
+            require(inventory_regex.with_findall(re.findall, r'(?ms)^[ \t]*/// ```[^\n]*\n.*?^[ \t]*/// ```$', raw.decode())
                     == DATA['source_successor_abe7']['doctest_sources'][path], error)
         if path in DATA['module_chains']:
             require(all(raw.decode().count(literal) == 1
