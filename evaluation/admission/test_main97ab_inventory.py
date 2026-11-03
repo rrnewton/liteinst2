@@ -68,7 +68,7 @@ def cargo_mutation(test, observed, before, after):
 
 def outer_declaration_mutation(test, path, observed, before, after):
     """Carry the same old stimulus through the two new, exact outer joins."""
-    names = ('9528851', '11cc419', '281c342', '064b48c', '79a4b8b', '3217b8ed')
+    names = ('2294097', '9528851', '11cc419', '281c342', '064b48c', '79a4b8b', '3217b8ed')
     rows = {name: {} for name in names}
     baseline = current.source_before_65ee8ea(path, observed, 'declaration_outer_baseline')
     if path == 'Cargo.toml':
@@ -109,10 +109,77 @@ def outer_declaration_mutation(test, path, observed, before, after):
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # Twenty-six upstream/ledger methods extend four existing default harnesses.
+        upstream = current.DATA['source_successor_2294097']
+        upstream_prior = current.before_2294097(actual)
+        upstream_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(upstream_prior), current.UPSTREAM_PREVIOUS)
+        self.assertEqual((len(upstream_rows), sum(x['tests'] for x in upstream_rows.values()),
+                          sum(x['ignored'] for x in upstream_rows.values())), (122, 4730, 43))
+        self.assertEqual((upstream['default_method_additions'], upstream['new_method_declarations'],
+                          upstream['default_method_removals'], upstream['default_harness_changes'],
+                          upstream['default_ignore_changes'], upstream['default_doctest_additions'],
+                          upstream['recorder_identity_changes'], upstream['feature_method_additions'],
+                          upstream['feature_method_removals']), (26, 26, 0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(upstream['added_default_methods'], {'crates/liteinst-artifact/src/lib.rs': ['incremental_empty_boundaries_and_many_updates_equal_exact_content_id'], 'src/quiescent/artifact_window/upstream_tests.rs': ['short_span_uses_one_legal_prefix_and_preserves_every_head_and_observer', 'constrained_offset_refuses_before_prefix_fits_in_the_same_arena', 'sixty_five_heads_share_one_sixty_four_site_domain_and_retain_omission', 'block_distance_displacement_call_and_nonfinal_transfer_remain_hard_boundaries', 'identity_pending_overlay_and_cet_checks_keep_predecessor_unchanged', 'oversized_certificate_is_not_rescued_by_an_earlier_head_or_unresolved_hook', 'population_allocation_and_per_head_symbol_failures_are_never_bypassed'], 'tools/elf-rewrite/examples/disassembly_sites/grouped_upstream_tests.rs': ['upstream_cli_selector_is_distinct_and_legacy_arguments_are_literal', 'upstream_cli_short_group_uses_full_union_and_keeps_block_refusal', 'upstream_cli_metadata_requires_new_policy_identity_and_exact_product'], 'tools/elf-rewrite/examples/disassembly_sites/ledger_storage_tests.rs': ['chunk_storage_selector_is_independent_and_legacy_parse_remains_exact', 'chunk_storage_actual_group_preserves_inline_plans_images_outcomes_and_bindings', 'chunk_storage_table_proof_and_physical_embedded_plan_mutations_refuse', 'chunk_storage_replays_evolving_reads_and_retains_atomic_refusals'], 'tools/elf-rewrite/src/grouped_artifact_frontend/upstream_tests.rs': ['upstream_short_group_keeps_members_and_routes_unselected_prefix_once', 'upstream_full_manifest_rejects_consumed_and_straddling_prefix_members', 'upstream_named_bounds_and_final_carrier_failure_remain_atomic', 'upstream_nongroup_engine_matches_exact_images_and_outcomes'], 'tools/elf-rewrite/src/ledger_codec/tests.rs': ['same_real_multi_step_plans_expand_exactly_and_replay_current_overlay', 'repinned_stale_second_read_fails_overlay_not_only_container_hash', 'empty_repeated_same_address_and_short_tail_reads_keep_exact_ordinals', 'table_identity_canonical_ids_reference_order_and_lengths_are_checked', 'shared_extensions_preserve_grouped_and_fixed_canonical_records', 'advertised_work_and_aggregate_staging_refuse_without_expansion_allocation', 'first_codec_error_is_retained_but_existing_semantic_error_still_wins']})
+        self.assertEqual(upstream['default_method_instances'], {'crates/liteinst-artifact/src/lib.rs': ['unit/liteinst_artifact/lib'], 'src/quiescent/artifact_window/upstream_tests.rs': ['unit/liteinst2/lib'], 'tools/elf-rewrite/examples/disassembly_sites/grouped_upstream_tests.rs': ['unit/disassembly_sites/disassembly_sites'], 'tools/elf-rewrite/examples/disassembly_sites/ledger_storage_tests.rs': ['unit/disassembly_sites/disassembly_sites'], 'tools/elf-rewrite/src/grouped_artifact_frontend/upstream_tests.rs': ['unit/liteinst_rewrite/lib'], 'tools/elf-rewrite/src/ledger_codec/tests.rs': ['unit/liteinst_rewrite/lib']})
+        self.assertEqual((upstream['added_feature_methods'], upstream['added_ignored_methods']), ({}, {}))
+        self.assertEqual((len(upstream['source_paths']), len(upstream['source_projections'])), (50, 50))
+        self.assertEqual(upstream['new_sources'], ['evaluation/direct-program/grouped-upstream-result/README.md', 'evaluation/direct-program/grouped-upstream-result/receipt.json', 'evaluation/direct-program/grouped-upstream-result/results.csv', 'evaluation/direct-program/grouped-upstream-validation/README.md', 'evaluation/direct-program/grouped-upstream-validation/receipt.json', 'evaluation/direct-program/ledger-chunks-result/README.md', 'evaluation/direct-program/ledger-chunks-result/receipt.json', 'evaluation/direct-program/ledger-chunks-result/results.csv', 'evaluation/direct-program/ledger-chunks-validation/README.md', 'evaluation/direct-program/ledger-chunks-validation/receipt.json', 'evaluation/direct-program/test_grouped_upstream_linkage.py', 'evaluation/direct-program/test_ledger_storage.py', 'evaluation/direct-program/validate_grouped_upstream.py', 'evaluation/direct-program/validate_ledger_chunks.py', 'evaluation/shared-x86/decoder_facts_support.py', 'evaluation/shared-x86/freestanding-facts/README.md', 'evaluation/shared-x86/freestanding-facts/receipt.json', 'evaluation/shared-x86/validate_decoder_facts.py', 'src/quiescent/artifact_window/upstream_tests.rs', 'src/scalar_profile.rs', 'tools/elf-rewrite/examples/disassembly_sites/grouped_upstream_tests.rs', 'tools/elf-rewrite/examples/disassembly_sites/ledger_storage_tests.rs', 'tools/elf-rewrite/src/grouped_artifact_frontend/upstream_tests.rs', 'tools/elf-rewrite/src/ledger_codec.rs', 'tools/elf-rewrite/src/ledger_codec/tests.rs', 'tools/elf-rewrite/src/ledger_storage.rs'])
+        self.assertEqual(upstream['newly_bound_sources'], ['crates/liteinst-artifact/src/lib.rs', 'crates/liteinst-launch/src/linux/remote/dynamic/owner/kernel_journal/tests/native.rs', 'evaluation/direct-program/grouped-upstream-result/README.md', 'evaluation/direct-program/grouped-upstream-result/receipt.json', 'evaluation/direct-program/grouped-upstream-result/results.csv', 'evaluation/direct-program/grouped-upstream-validation/README.md', 'evaluation/direct-program/grouped-upstream-validation/receipt.json', 'evaluation/direct-program/ledger-chunks-result/README.md', 'evaluation/direct-program/ledger-chunks-result/receipt.json', 'evaluation/direct-program/ledger-chunks-result/results.csv', 'evaluation/direct-program/ledger-chunks-validation/README.md', 'evaluation/direct-program/ledger-chunks-validation/receipt.json', 'evaluation/direct-program/test_grouped_upstream_linkage.py', 'evaluation/direct-program/test_ledger_storage.py', 'evaluation/direct-program/validate_grouped_upstream.py', 'evaluation/direct-program/validate_ledger_chunks.py', 'evaluation/shared-x86/decoder_facts_support.py', 'evaluation/shared-x86/freestanding-facts/README.md', 'evaluation/shared-x86/freestanding-facts/receipt.json', 'evaluation/shared-x86/validate_decoder_facts.py', 'src/quiescent/artifact_window/upstream_tests.rs', 'src/scalar_profile.rs', 'tools/elf-rewrite/examples/disassembly_sites/grouped_upstream_tests.rs', 'tools/elf-rewrite/examples/disassembly_sites/ledger_storage_tests.rs', 'tools/elf-rewrite/examples/verify_common_core.rs', 'tools/elf-rewrite/examples/verify_elf_exec.rs', 'tools/elf-rewrite/examples/verify_elf_tactics.rs', 'tools/elf-rewrite/src/grouped_artifact_frontend/upstream_tests.rs', 'tools/elf-rewrite/src/ledger_codec.rs', 'tools/elf-rewrite/src/ledger_codec/tests.rs', 'tools/elf-rewrite/src/ledger_storage.rs', 'tools/elf-rewrite/src/offline_router.rs', 'tools/page-entry/selected/decoder/src/add_guard.rs', 'tools/page-entry/selected/decoder/src/mov_guard.rs', 'tools/page-entry/selected/decoder/src/region.rs', 'tools/page-entry/selected/decoder/src/tf.rs'])
+        self.assertEqual(upstream_prior['harness_test_counts']['serial_launch'], actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((actual['recorder_tests'], upstream_prior['recorder_tests']), (366, 366))
+        for name, change in upstream['workspace_changes'].items():
+            self.assertEqual(upstream_rows[name], change['current'])
+            self.assertEqual(upstream_prior['harness_test_counts']['workspace_tests'][name], change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(upstream_rows[name][field]), upstream_rows[name][field] + 1):
+                    wrong = inventory_copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_2294097(wrong)
+            wrong = inventory_copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_2294097(wrong)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_2294097(upstream_prior)
+        for path, row in upstream['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_2294097(path, raw, 'upstream_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (upstream['source_preimages'][path]['bytes'], row['previous_sha256']))
+            if path in upstream['new_sources']:
+                self.assertEqual(prior, b'')
+            for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^upstream_source_inverse$'):
+                    current.source_before_2294097(path, wrong, 'upstream_source_inverse')
+            for field in ('edits', 'current_sha256', 'previous_sha256'):
+                malformed = inventory_copy.deepcopy(row)
+                if field == 'edits': malformed['edits'][0][2] += '\n'
+                else: malformed[field] = '0' * 64
+                with patch.dict(upstream['source_projections'], {path: malformed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^upstream_source_inverse$'):
+                        current.source_before_2294097(path, raw, 'upstream_source_inverse')
+        read = Path.read_bytes
+        upstream_stimuli = [(p, 'fn ' + n + '(') for p, names in upstream['added_default_methods'].items() for n in names]
+        upstream_stimuli += [(p, literal) for p, literals in upstream['module_chains'].items() for literal in literals]
+        for path, literal in upstream_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            replacement = literal.replace('(', '_wrong(', 1) if literal.startswith('fn ') else literal[:-1] + ('x' if literal[-1] != 'x' else 'y')
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('upstream declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
         # Thirty grouped-artifact methods extend four existing default harnesses.
         grouped = current.DATA['source_successor_9528851']
         grouped_prior = current.before_9528851(actual)
-        grouped_rows = actual['harness_test_counts']['workspace_tests']
+        grouped_rows = upstream_prior['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(grouped_prior), current.GROUPED_PREVIOUS)
         self.assertEqual((len(grouped_rows), sum(x['tests'] for x in grouped_rows.values()),
                           sum(x['ignored'] for x in grouped_rows.values())), (122, 4704, 43))
@@ -2433,6 +2500,24 @@ class Main97abInventoryTests(unittest.TestCase):
                 with patch.dict(change, previous=PublishedCopy(change['previous'])):
                     result = current.before_9528851(supplied)
             self.assertEqual(result, grouped_prior)
+            self.assertEqual(supplied, actual)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+
+        # The latest transition preserves private ownership for both sources.
+        for source in ('declared', 'metadata'):
+            supplied = copy.deepcopy(actual)
+            change = upstream['workspace_changes']['unit/liteinst_rewrite/lib']
+            published.clear()
+            if source == 'declared':
+                supplied['harness_test_counts']['serial_launch'] = PublishedCopy(supplied['harness_test_counts']['serial_launch'])
+                result = current.before_2294097(supplied)
+            else:
+                with patch.dict(change, previous=PublishedCopy(change['previous'])):
+                    result = current.before_2294097(supplied)
+            self.assertEqual(result, upstream_prior)
             self.assertEqual(supplied, actual)
             self.assertEqual(len(published), 1)
             self.assertFalse(mutable_ids(result) & mutable_ids(supplied))

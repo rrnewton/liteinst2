@@ -192,7 +192,8 @@ class MainAf81InventoryTests(unittest.TestCase):
             with ExitStack() as source_rows:
                 for table, row in historical_rows:
                     source_rows.enter_context(patch.dict(table, {path: row}))
-                with patch.dict(native_indexed.DATA['source_successor_9528851']['source_projections'], outer['rows']['9528851']), \
+                with patch.dict(native_indexed.DATA['source_successor_2294097']['source_projections'], outer['rows']['2294097']), \
+                     patch.dict(native_indexed.DATA['source_successor_9528851']['source_projections'], outer['rows']['9528851']), \
                      patch.dict(native_indexed.DATA['source_successor_11cc419']['source_projections'], outer['rows']['11cc419']), \
                      patch.dict(native_indexed.DATA['source_successor_281c342']['source_projections'], outer['rows']['281c342']), \
                      patch.dict(native_indexed.DATA['source_successor_064b48c']['source_projections'], outer['rows']['064b48c']), \
