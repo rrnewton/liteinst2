@@ -5,8 +5,9 @@ use crate::carrier::elf64::{Elf64, ElfVaddr, ParseLimits, SegmentType};
 use crate::model::{Error, Selection};
 use crate::{addr, ledger, selection, translate};
 use formats::ContentId;
-use iced_x86::{Code, FlowControl, Instruction, OpKind};
+use iced_x86::{Code, Instruction};
 use li2core::contracts::{AddressRange, EntryCompleteness};
+use li2core::control_flow;
 use li2core::scanner::InstructionScanner;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -578,15 +579,11 @@ pub fn import(
         elf.header().entry.0 == 0 || heads.contains(&elf.header().entry.0),
         "ELF entry missing from code ledger",
     )?;
-    let mut cuts: BTreeSet<_> = regions
-        .iter()
-        .flat_map(|r| [r.range.start(), r.range.end()])
-        .collect();
-    for i in regions.iter().flat_map(|r| &r.instructions) {
-        if i.flow_control() != FlowControl::Next {
-            cuts.insert(i.next_ip());
-        }
-        if let Some(target) = direct(i) {
+    let cuts = control_flow::collect_block_cuts(
+        regions.iter().map(|r| r.range),
+        regions.iter().flat_map(|r| &r.instructions),
+        |_, _| true,
+        |_, target| {
             let original_executable = elf.segments(SegmentType::Load).any(|s| {
                 s.flags.executable() && s.vaddr.0 <= target && target - s.vaddr.0 < s.memory_size
             });
@@ -594,11 +591,9 @@ pub fn import(
                 !original_executable || heads.contains(&target),
                 "direct target contradicts complete ledger",
             )?;
-            if heads.contains(&target) {
-                cuts.insert(target);
-            }
-        }
-    }
+            Ok::<_, Error>(heads.contains(&target))
+        },
+    )?;
     let mut jumps = Vec::new();
     for r in &regions {
         for i in r.instructions.iter().filter(|i| jump(i)) {
@@ -633,18 +628,6 @@ fn jump(i: &Instruction) -> bool {
     format!("{:?}", i.mnemonic())
         .to_ascii_lowercase()
         .starts_with('j')
-}
-fn direct(i: &Instruction) -> Option<u64> {
-    if i.op_count() > 0
-        && matches!(
-            i.op0_kind(),
-            OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64
-        )
-    {
-        Some(i.near_branch_target())
-    } else {
-        None
-    }
 }
 fn rows(bytes: &[u8]) -> Result<Vec<&str>, Error> {
     check(

@@ -66,9 +66,11 @@ separate output adapters. The two owned back-edge clock profiles now use the
 shared graph constructor, indexed successors and reachability; the two-backedge
 region also uses shared structural returnability. Each retains its original
 scalar, prefix, entry and backedge admission rules. The disassembly ledger
-importer still has global block-cut and direct-target policy to consolidate.
-These changes do not implement
-certificates or certify complete binary CFG recovery.
+importer and local block partitions also share block-cut collection and raw
+near-target facts. The importer retains its global executable-LOAD/head checks
+for cross-region branches, CALL and XBEGIN; local graph callers retain their
+own target policy. These changes do not implement certificates or certify
+complete binary CFG recovery.
 
 The first direct GNU coreutils 9.5 `cat` comparison at
 `25c9d0adb596642e11663e3ff90083be04ac02f4` executes the original and E9Patch

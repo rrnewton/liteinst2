@@ -5,7 +5,7 @@
 
 use crate::contracts::AddressRange;
 use crate::scanner::{ScanResult, ScannedInstruction};
-use iced_x86::{FlowControl, OpKind};
+use iced_x86::{FlowControl, Instruction, OpKind};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// A decoded local successor, including an explicit unresolved coordinate.
@@ -103,6 +103,52 @@ pub enum Coverage<'a> {
     Reachable(&'a [bool]),
 }
 
+/// Returns an encoded near operand, independently of the transfer category.
+///
+/// This includes direct CALL and XBEGIN as well as branches. It proves neither
+/// local head membership nor target ownership, reachability or qualification.
+pub fn direct_target(instruction: &Instruction) -> Option<u64> {
+    (instruction.op_count() > 0
+        && matches!(
+            instruction.op0_kind(),
+            OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64
+        ))
+    .then(|| instruction.near_branch_target())
+}
+
+/// Collects owner boundaries, following cuts and admitted direct-target cuts.
+///
+/// Instructions are visited in their supplied order. For each non-`Next` row,
+/// `include_following` chooses its next-IP cut. The direct-target callback then
+/// validates that row's encoded near operand and chooses whether it is a cut;
+/// its first error stops collection. Indirect transfers still get a following
+/// cut but have no invented target. No local-head, reachability or callee rule
+/// is implicit: callers retain those policies, including cross-owner targets.
+pub fn collect_block_cuts<'a, E>(
+    owners: impl IntoIterator<Item = AddressRange>,
+    instructions: impl IntoIterator<Item = &'a Instruction>,
+    mut include_following: impl FnMut(usize, u64) -> bool,
+    mut include_direct: impl FnMut(usize, u64) -> Result<bool, E>,
+) -> Result<BTreeSet<u64>, E> {
+    let mut cuts = owners
+        .into_iter()
+        .flat_map(|owner| [owner.start(), owner.end()])
+        .collect::<BTreeSet<_>>();
+    for (index, instruction) in instructions.into_iter().enumerate() {
+        if instruction.flow_control() != FlowControl::Next
+            && include_following(index, instruction.next_ip())
+        {
+            cuts.insert(instruction.next_ip());
+        }
+        if let Some(target) = direct_target(instruction)
+            && include_direct(index, target)?
+        {
+            cuts.insert(target);
+        }
+    }
+    Ok(cuts)
+}
+
 /// Builds pure rows and invokes caller validation once per head in source order.
 ///
 /// After indexing heads, each callback runs before its row is accepted or the
@@ -133,12 +179,7 @@ pub fn build<'a, E>(
     for (index, item) in scan.instructions().iter().enumerate() {
         let instruction = item.instruction();
         let flow = instruction.flow_control();
-        let near = (instruction.op_count() > 0
-            && matches!(
-                instruction.op0_kind(),
-                OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64
-            ))
-        .then(|| instruction.near_branch_target());
+        let near = direct_target(instruction);
         let next = resolve(instruction.next_ip());
         let mut row = RowFacts {
             successors: Vec::new(),
@@ -212,22 +253,23 @@ impl<'s> GraphFacts<'s> {
         owner: AddressRange,
         mut include_branch: impl FnMut(usize) -> bool,
     ) -> BTreeSet<u64> {
-        let items = self.scan.instructions();
-        let mut cuts = BTreeSet::from([owner.start(), owner.end()]);
-        for (index, (item, row)) in items.iter().zip(&self.rows).enumerate() {
-            let instruction = item.instruction();
-            if instruction.flow_control() != FlowControl::Next
-                && instruction.next_ip() < owner.end()
-            {
-                cuts.insert(instruction.next_ip());
-            }
-            if let Some(Target::Head(target)) = row.branch_target
-                && include_branch(index)
-            {
-                cuts.insert(items[target].address());
-            }
+        match collect_block_cuts(
+            [owner],
+            self.scan
+                .instructions()
+                .iter()
+                .map(|item| item.instruction()),
+            |_, next| next < owner.end(),
+            |index, _| {
+                Ok::<_, core::convert::Infallible>(
+                    matches!(self.rows[index].branch_target, Some(Target::Head(_)))
+                        && include_branch(index),
+                )
+            },
+        ) {
+            Ok(cuts) => cuts,
+            Err(never) => match never {},
         }
-        cuts
     }
 
     /// Resolves every local edge without dropping unknown transfers or targets.
