@@ -57,22 +57,31 @@ def copy_oracle(builder,private,pin,binary,run,state,original,app_symbol,app_uni
     """Bound the actual fixture helper to an independent complete-byte oracle."""
     fixture=FIXTURE if fixture is None else Path(fixture).resolve(strict=True)
     arena='-DLI2_LOOP_TRANSLATION_ARENA_APP=1' in state['argv']
-    support=fixture.parent/'persistent_direct_frontier_app' if arena else fixture
+    cached_direct='-DLI2_LOOP_CACHED_DIRECT_CONTEXT_APP=1' in state['argv']
+    need(not(arena and cached_direct),'one finite application selector')
+    support=fixture.parent/'persistent_direct_frontier_app' if arena or cached_direct else fixture
     if arena:
         need(fixture.name=='loop_translation_arena_app' and
              state['argv'].count('-DLI2_LOOP_TRANSLATION_ARENA_APP=1')==1 and
              not any(x.startswith(('-DLI2_LOOP_RX_REFERENCE44=',
                  '-DLI2_LOOP_GROUP_DESCRIPTOR_APP=','-DLI2_LOOP_CACHE8_EFFECT='))for x in state['argv']),
              'one literal arena selector and the original shared copy-oracle source')
+    if cached_direct:
+        need(fixture.name=='loop_cached_direct_context_app' and
+             state['argv'].count('-DLI2_LOOP_CACHED_DIRECT_CONTEXT_APP=1')==1 and
+             not any(x.startswith(('-DLI2_LOOP_RX_REFERENCE44=',
+                 '-DLI2_LOOP_GROUP_DESCRIPTOR_APP=','-DLI2_LOOP_CACHE8_EFFECT='))for x in state['argv']),
+             'one literal cached DIRECT selector and the unchanged shared copy oracle')
     script=pin(support/'build-copy-oracle.sh');output=private/'active-app-copy-oracle'
     rows=recipe(script,'"$cc"');need(len(rows)==1,'one actual two-TU copy oracle recipe')
     argv=expand(rows[0],{'$cc':builder.tools['cc'],'$source_dir':fixture,'$output':output})
-    if arena:
+    if arena or cached_direct:
         need(argv.count(str(fixture/'copy_oracle.c'))==1,'one explicit shared oracle translation unit')
         argv[argv.index(str(fixture/'copy_oracle.c'))]=str(pin(support/'copy_oracle.c'))
         need(argv.count('-DLI2_FAST_EQUAL=1')==1,'one original helper-equality selector')
-        argv.insert(argv.index('-DLI2_FAST_EQUAL=1')+1,'-DLI2_LOOP_TRANSLATION_ARENA_APP=1')
-    if arena:units=[str(pin(support/'copy_oracle.c')),str(pin(fixture/'pure.c'))]
+        argv.insert(argv.index('-DLI2_FAST_EQUAL=1')+1,
+            '-DLI2_LOOP_CACHED_DIRECT_CONTEXT_APP=1' if cached_direct else '-DLI2_LOOP_TRANSLATION_ARENA_APP=1')
+    if arena or cached_direct:units=[str(pin(support/'copy_oracle.c')),str(pin(fixture/'pure.c'))]
     else:units=[str(pin(fixture/n))for n in ('copy_oracle.c','pure.c')]
     if '-DLI2_LOOP_RX_REFERENCE44=1' in state['argv']:
         argv.insert(argv.index('-Werror')+1,'-DLI2_LOOP_RX_REFERENCE44=1')
@@ -176,7 +185,9 @@ def copy_oracle(builder,private,pin,binary,run,state,original,app_symbol,app_uni
 
 def compile_subject(builder,private,pin,binary,aliases,run,r, *, reference='direct41', fixture=None):
     fixture=FIXTURE if fixture is None else Path(fixture).resolve(strict=True)
-    if reference=='arena10-ab791':
+    if reference=='cached-direct-ab146':
+        need(fixture.name=='loop_cached_direct_context_app','exact two-root cached DIRECT fixture source')
+    elif reference=='arena10-ab791':
         need(fixture.name=='loop_translation_arena_app','exact ten-root arena fixture source')
     elif reference=='cache8-abc255':
         need(fixture.name=='loop_cache8_app','exact additive three-phase descriptor fixture source')
@@ -229,6 +240,9 @@ def compile_subject(builder,private,pin,binary,aliases,run,r, *, reference='dire
     if reference == 'cache8-abc255':argv.insert(argv.index('-Werror')+1,'-DLI2_LOOP_GROUP_DESCRIPTOR_APP=1')
     if reference in ('cache8-effects2','cache8-effects3','cache8-effects4'):
         argv.insert(argv.index('-Werror')+1,'-DLI2_LOOP_CACHE8_EFFECT='+reference[-1])
+    if reference == 'cached-direct-ab146':
+        need(argv.count('-DLI2_LOOP_CACHED_DIRECT_CONTEXT_APP=1')==1,
+             'one literal standalone cached DIRECT application selector')
     if reference == 'arena10-ab791':
         need(argv.count('-DLI2_LOOP_TRANSLATION_ARENA_APP=1')==1,
              'one literal standalone arena application selector')
