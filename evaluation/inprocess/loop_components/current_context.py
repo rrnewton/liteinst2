@@ -15,7 +15,7 @@ NAME = 'cached_direct_context_component'
 READER = None
 INPUTS = dict(shared.INPUTS, **{
     'evaluation/inprocess/loop_components/current_direct.py':
-        (14268, '1c15a10054fa28f22e483e78ac692e41b93bd1db88088674aff2caf11ab15099'),
+        (14268, '190640ba7dc3bb1e33338d5f34cdc6253af807c33169f0810e89cfdb76d008d2'),
     'tools/page-entry/selected/loop_cached_direct_context.h':
         (3937, 'f4a3401428eb8653f15e7a722332a28e67ff13dee0dadaf16eef5ab2c7e64a36'),
     'tools/page-entry/selected/loop_cached_direct_context.c':

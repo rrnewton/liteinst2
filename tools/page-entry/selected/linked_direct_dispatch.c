@@ -169,12 +169,17 @@ static void domain_load(struct writer *w,unsigned target,unsigned base,unsigned 
     emit(w,b,4);
 }
 
+/* One directory-search/image algorithm. Typed wrappers choose the unchanged
+   near transfer or LOOP's forced-far transfer. Their different failure-write
+   ordering is intentional: near emits E9 before testing displacement, while
+   forced-far rejects a representable E9 before emitting any miss bytes. */
 static int build(uintptr_t pc,const unsigned char *bytes,size_t n,unsigned external,
     uintptr_t generated,uintptr_t spill_at,const struct li2_jd_binding *b,const uintptr_t internal[2],
-    const struct li2_dd_aux_binding *aux,struct li2_dd_plan *p) {
+    const struct li2_dd_aux_binding *aux,uint32_t record_version,unsigned far_miss,
+    struct li2_dd_plan *p) {
     if(!internal || (aux?!aux_binding(pc,n,generated,spill_at,b,aux):
                          !binding(pc,n,generated,spill_at,b)))return LI2_DD_ARGUMENT;
-    p->record.version=LI2_DD_VERSION;p->generated=generated;p->spill=spill_at;
+    p->record.version=record_version;p->generated=generated;p->spill=spill_at;
     copy(&p->binding,b,sizeof *b);copy(p->internal,internal,sizeof p->internal);
     int e=li2_dd_describe(pc,bytes,n,external,&p->original);if(e)return e;
     unsigned arms=p->original.flow==LI2_REGION_JCC?2:1;
@@ -225,9 +230,21 @@ static int build(uintptr_t pc,const unsigned char *bytes,size_t n,unsigned exter
     immediate(&w,A,0,32);rr(&w,0x3b,A,E);unsigned again=branch(&w,2);
     unsigned rejected=p->record.image_bytes;
     restore(&w);p->record.miss_offset=p->record.image_bytes;
-    unsigned miss=branch(&w,16);uint32_t d;
-    if(!disp(generated+miss+5,pc,&d))return LI2_DD_RELOCATION;
-    put32(p->image+miss+1,d);
+    uint32_t d;
+    if(far_miss) {
+        /* The target is immutable image data, not an instruction boundary. All
+           GPRs and flags have already been restored at the six-byte JMP. */
+        if(disp(generated+p->record.miss_offset+5,pc,&d))return LI2_DD_ARGUMENT;
+        static const unsigned char far_jump[6]={0xff,0x25,0,0,0,0};
+        emit(&w,far_jump,sizeof far_jump);
+        if(w.error || p->record.image_bytes>LI2_DD_SLOT_BYTES-8 ||
+           (generated&4095U)+p->record.image_bytes+8>4096U)return LI2_DD_CAPACITY;
+        put64(p->image+p->record.image_bytes,pc);p->record.image_bytes+=8;
+    } else {
+        unsigned miss=branch(&w,16);
+        if(!disp(generated+miss+5,pc,&d))return LI2_DD_RELOCATION;
+        put32(p->image+miss+1,d);
+    }
     unsigned hit=p->record.image_bytes;
     w.valid=15;w.dirty=15;w.flags=LI2_MG_AH_AL;w.phase=LI2_DD_BEFORE;
     domain_load(&w,A,A,8);
@@ -255,7 +272,7 @@ int li2_dd_emit(uintptr_t pc,const unsigned char *bytes,size_t n,unsigned extern
     uintptr_t generated,uintptr_t spill_at,const struct li2_jd_binding *b,const uintptr_t internal[2],
     struct li2_dd_plan *out) {
     if(!out)return LI2_DD_ARGUMENT;
-    zero(out,sizeof *out);int e=build(pc,bytes,n,external,generated,spill_at,b,internal,0,out);
+    zero(out,sizeof *out);int e=build(pc,bytes,n,external,generated,spill_at,b,internal,0,LI2_DD_VERSION,0,out);
     out->record.result=(uint32_t)e;if(e)out->record.ready=0;return e;
 }
 int li2_dd_validate(const struct li2_dd_plan *p) {
@@ -265,12 +282,25 @@ int li2_dd_validate(const struct li2_dd_plan *p) {
         p->generated,p->spill,&p->binding,p->internal,&expected);
     return e || !same(p,&expected,sizeof *p)?LI2_DD_CORRUPT:0;
 }
-int li2_dd_recover(const struct li2_dd_plan *p,uintptr_t pc,const uint64_t raw[16],uint64_t flags,
-                   const uint64_t spill_words[4],struct li2_dd_recovered *out) {
+static int recover(const struct li2_dd_plan *p,uintptr_t pc,const uint64_t raw[16],uint64_t flags,
+                   const uint64_t spill_words[4],uint32_t record_version,unsigned far_miss,
+                   struct li2_dd_recovered *out) {
     if(!out)return LI2_DD_ARGUMENT;
     zero(out,sizeof *out);
-    if(!p || !raw || !spill_words || p->record.version!=LI2_DD_VERSION || p->record.ready!=1 || p->record.result ||
+    if(!p || !raw || !spill_words || p->record.version!=record_version || p->record.ready!=1 || p->record.result ||
        !p->record.boundaries || p->record.boundaries>LI2_DD_BOUNDARIES || pc<p->generated)return LI2_DD_ARGUMENT;
+    if(far_miss) {
+        /* Even an invented row cannot make any target-literal byte recoverable.
+           The real RX page supplies this exact immutable data; no target cell or
+           guest memory is read during decoder-free recovery. */
+        unsigned miss=p->record.miss_offset;
+        if(miss>LI2_DD_SLOT_BYTES-14 || p->record.image_bytes>LI2_DD_SLOT_BYTES ||
+           miss+14>p->record.image_bytes || (p->generated&4095U)+miss+14>4096U ||
+           p->image[miss]!=0xff || p->image[miss+1]!=0x25 ||
+           p->image[miss+2] || p->image[miss+3] || p->image[miss+4] || p->image[miss+5])return LI2_DD_CORRUPT;
+        for(unsigned i=0;i<8;i++)if(p->image[miss+6+i]!=(unsigned char)(p->original.decoded.pc>>(8*i)))return LI2_DD_CORRUPT;
+        if(pc-p->generated>=miss+6 && pc-p->generated<miss+14)return LI2_DD_CORRUPT;
+    }
     const struct li2_mg_boundary *m=0;
     for(unsigned i=0;i<p->record.boundaries;i++)if(pc-p->generated==p->record.boundary[i].offset) {
         if(m)return LI2_DD_CORRUPT;
@@ -294,6 +324,10 @@ int li2_dd_recover(const struct li2_dd_plan *p,uintptr_t pc,const uint64_t raw[1
     for(unsigned i=0;i<4;i++)if(m->dirty&(1U<<i))out->gpr[p->record.scratch_regs[i]]=spill_words[i];
     out->phase=LI2_DD_BEFORE;out->original_pc=p->original.decoded.pc;out->complete=1;return 0;
 }
+int li2_dd_recover(const struct li2_dd_plan *p,uintptr_t pc,const uint64_t raw[16],uint64_t flags,
+                   const uint64_t spill_words[4],struct li2_dd_recovered *out) {
+    return recover(p,pc,raw,flags,spill_words,LI2_DD_VERSION,0,out);
+}
 
 int li2_dd_aux_emit(uintptr_t pc,const unsigned char *bytes,size_t n,
     const struct li2_dd_aux_binding *b,struct li2_dd_aux_plan *out) {
@@ -306,7 +340,7 @@ int li2_dd_aux_emit(uintptr_t pc,const unsigned char *bytes,size_t n,
         else {
             const uintptr_t internal[2]={0,0};
             e=build(pc,bytes,n,1,b->code+(uintptr_t)b->slot*LI2_DD_SLOT_BYTES,
-                b->spill+(uintptr_t)b->slot*LI2_DD_AUX_SPILL_STRIDE,&b->owner,internal,b,&out->value);
+                b->spill+(uintptr_t)b->slot*LI2_DD_AUX_SPILL_STRIDE,&b->owner,internal,b,LI2_DD_VERSION,0,&out->value);
         }
     }
     out->value.record.result=(uint32_t)e;if(e)out->value.record.ready=0;
