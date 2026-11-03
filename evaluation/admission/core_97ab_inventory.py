@@ -46,7 +46,7 @@ RECORDER_TESTS = 366
 ADDED = 'test_main97ab_inventory.Main97abInventoryTests.test_exact_native_indexed_sources_and_historical_refusals'
 
 
-def plain_catalog(value):
+def _plain_catalog_fallback(value):
     """Only builtin object graphs have ordinary, non-publishing deepcopy semantics."""
     pending = [value]
     seen = set()
@@ -65,6 +65,43 @@ def plain_catalog(value):
             pending.extend(item.values())
         else:
             pending.extend(item)
+    return True
+
+def plain_catalog(value):
+    """Fresh builtin scan; keep the original live walker for foreign behavior."""
+    if (type is not ().__class__.__class__ or str is not ''.__class__ or
+            int is not (0).__class__ or bool is not True.__class__ or
+            float is not (0.0).__class__ or dict is not {}.__class__ or
+            list is not [].__class__ or tuple is not ().__class__ or
+            set is not {0}.__class__ or type(id) is not [].append.__class__):
+        return _plain_catalog_fallback(value)
+    kind_of, identity_of = type, id
+    name, module = identity_of.__name__, identity_of.__module__
+    if (kind_of(name) is not str or kind_of(module) is not str or
+            name != 'id' or module != 'builtins'):
+        return _plain_catalog_fallback(value)
+    text, integer, boolean, real, null = str, int, bool, float, None.__class__
+    mapping, sequence, fixed = dict, list, tuple
+    pending = [(value,)]
+    seen = set()
+    while pending:
+        for item in pending.pop():
+            kind = kind_of(item)
+            if kind is text or kind is integer or kind is boolean or kind is real or kind is null:
+                continue
+            if kind is not mapping and kind is not sequence and kind is not fixed:
+                # Only native operations ran so far. Restart before invoking
+                # any foreign metaclass equality or substituted builtin hook.
+                return _plain_catalog_fallback(value)
+            identity = identity_of(item)
+            if identity in seen:
+                continue
+            seen.add(identity)
+            if kind is mapping:
+                pending.append(item.keys())
+                pending.append(item.values())
+            else:
+                pending.append(item)
     return True
 
 def digest(value):
