@@ -936,3 +936,39 @@ fn jump_stack_native_operand_faults() {
         oracle::jump_stack_native::operand_faults,
     );
 }
+
+#[test]
+fn artifact_window_native_every_entry() {
+    isolated_native_test::run(
+        "artifact_window_native_every_entry",
+        "LITEINST2_ARTIFACT_WINDOW_ORACLE_CHILD",
+        oracle::artifact_window_native::every_entry,
+    );
+}
+
+#[test]
+fn artifact_window_native_branch_paths() {
+    isolated_native_test::run(
+        "artifact_window_native_branch_paths",
+        "LITEINST2_ARTIFACT_WINDOW_ORACLE_CHILD",
+        oracle::artifact_window_native::branch_paths,
+    );
+}
+
+#[test]
+fn artifact_window_native_rsp_effects() {
+    isolated_native_test::run(
+        "artifact_window_native_rsp_effects",
+        "LITEINST2_ARTIFACT_WINDOW_ORACLE_CHILD",
+        oracle::artifact_window_native::rsp_effects,
+    );
+}
+
+#[test]
+fn artifact_window_native_later_operand_fault() {
+    isolated_native_test::run(
+        "artifact_window_native_later_operand_fault",
+        "LITEINST2_ARTIFACT_WINDOW_ORACLE_CHILD",
+        oracle::artifact_window_native::later_operand_fault,
+    );
+}
