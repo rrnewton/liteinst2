@@ -15,6 +15,11 @@ use crate::scanner::{InstructionScanner, ScanResult};
 use crate::search::{RefusalClass, SearchDomain, SearchEvidence, SearchScope};
 use crate::trampoline::{ExecutableTrampoline, HookCallback, TrampolineImage, TrampolinePlan};
 
+mod artifact_window;
+pub use artifact_window::{
+    ArtifactObservationPlan, ArtifactObservationRequest, plan_artifact_observation_window_after,
+};
+
 pub mod feasibility;
 use feasibility::ENTRY_BYTES as ILLEGAL;
 
@@ -1397,13 +1402,36 @@ fn plan_at_with_controls(
     ),
     search_evidence: &mut SearchEvidence,
 ) -> Result<PlannedInstall, Refusal> {
+    let last_logical = controls
+        .and_then(|actions| actions.len().checked_sub(1).map(|index| actions.pc(index)))
+        .unwrap_or(request.logical_pc);
+    let window =
+        collect_relocation_window(request, scan, physical, last_logical, None, search_evidence)?;
+    emit_relocation_window(
+        request,
+        scan,
+        source,
+        occupied,
+        (controls, clock),
+        window,
+        search_evidence,
+    )
+}
+
+// Exact-end admission is opt-in; None retains the ordinary stopping and
+// qualification order. Collection finishes before any instruction is qualified.
+fn collect_relocation_window<'a>(
+    request: &PlanningRequest<'_>,
+    scan: &'a ScanResult,
+    physical: u64,
+    last_logical: u64,
+    exact_end: Option<u64>,
+    search_evidence: &mut SearchEvidence,
+) -> Result<RelocationWindow<'a>, Refusal> {
     let scope = SearchScope {
         physical_pc: Some(physical),
         ..SearchScope::default()
     };
-    let last_logical = controls
-        .and_then(|actions| actions.len().checked_sub(1).map(|index| actions.pc(index)))
-        .unwrap_or(request.logical_pc);
     let mut end = physical;
     let mut instructions = Vec::new();
     for item in scan
@@ -1414,19 +1442,27 @@ fn plan_at_with_controls(
         if item.address() >= request.block.end() {
             break;
         }
+        if exact_end.is_some_and(|bound| item.address() >= bound) {
+            break;
+        }
         end = item.address() + item.len() as u64;
         if end > request.block.end() || end - physical > request.search.max_displaced_bytes as u64 {
             search_evidence.qualification(scope, &Refusal::NoPatchWindow);
             return Err(Refusal::NoPatchWindow);
         }
         instructions.push(item);
-        if end - physical >= 5 && end > last_logical {
+        if exact_end.map_or(end - physical >= 5 && end > last_logical, |bound| {
+            end >= bound
+        }) {
             break;
         }
     }
     if end - physical < 5 || end <= last_logical {
         search_evidence.qualification(scope, &Refusal::NoPatchWindow);
         return Err(Refusal::NoPatchWindow);
+    }
+    if exact_end.is_some_and(|bound| end != bound) {
+        return Err(Refusal::NotInstructionHead);
     }
     let displaced = AddressRange::new(physical, (end - physical) as usize)?;
     for item in &instructions {
@@ -1444,21 +1480,13 @@ fn plan_at_with_controls(
             }
         }
     }
-    emit_relocation_window(
-        request,
-        scan,
-        source,
-        occupied,
-        (controls, clock),
-        RelocationWindow {
-            physical,
-            end,
-            displaced,
-            instructions,
-            authority: RelocationAuthority::Ordinary,
-        },
-        search_evidence,
-    )
+    Ok(RelocationWindow {
+        physical,
+        end,
+        displaced,
+        instructions,
+        authority: RelocationAuthority::Ordinary,
+    })
 }
 
 // Each opt-in whole-region or routed-suffix mode retains its own proof;
@@ -1466,6 +1494,7 @@ fn plan_at_with_controls(
 #[derive(Clone, Copy)]
 enum RelocationAuthority<'a> {
     Ordinary,
+    ArtifactObservations(&'a [u64]),
     WholeFunction(&'a whole_function::Verified),
     OwnedClockRegion {
         proof: &'a clock_region::Verified,
@@ -1483,6 +1512,48 @@ struct RelocationWindow<'a> {
     displaced: AddressRange,
     instructions: Vec<&'a crate::scanner::ScannedInstruction>,
     authority: RelocationAuthority<'a>,
+}
+
+// Both producers use the same fitting certificate, address loop and B1
+// source/router construction. Only the sealed artifact window supplies multiple
+// observations; there is no conversion from arbitrary live Actions.
+enum RelocationProducer {
+    Ordinary(TrampolinePlan),
+    Observations(crate::trampoline::ArtifactObservationWindow),
+}
+impl RelocationProducer {
+    fn prepare_fitting(
+        &self,
+        emission: crate::emission::EmissionContext<'_>,
+    ) -> Result<Option<crate::trampoline::PreparedArtifact>, crate::trampoline::TrampolineError>
+    {
+        match self {
+            Self::Ordinary(plan) => emission.prepare_fitting(plan),
+            Self::Observations(window) => match emission {
+                crate::emission::EmissionContext::Fitting(input) => {
+                    crate::trampoline::PreparedArtifact::for_observation_window(window, input)
+                        .map(Some)
+                }
+                _ => Err(crate::trampoline::TrampolineError::Artifact {
+                    reason: crate::emission::ArtifactRefusalKind::UnmodelledEncoding,
+                    message: "artifact observation planning requires fitting emission".into(),
+                }),
+            },
+        }
+    }
+    fn emit(
+        &self,
+        emission: crate::emission::EmissionContext<'_>,
+        address: u64,
+    ) -> Result<TrampolineImage, crate::trampoline::TrampolineError> {
+        match self {
+            Self::Ordinary(plan) => emission.emit(plan, address),
+            Self::Observations(_) => Err(crate::trampoline::TrampolineError::Artifact {
+                reason: crate::emission::ArtifactRefusalKind::InvalidFieldLedger,
+                message: "fitting emission requires its prepared artifact".into(),
+            }),
+        }
+    }
 }
 
 fn emit_relocation_window(
@@ -1504,6 +1575,23 @@ fn emit_relocation_window(
         instructions,
         authority,
     } = window;
+    let observations = match authority {
+        RelocationAuthority::ArtifactObservations(pcs) => Some(pcs),
+        _ => None,
+    };
+    if observations.is_some_and(|pcs| {
+        controls.is_some()
+            || clock.is_some()
+            || request.semantics != HookSemantics::Observe
+            || request.entries.completeness != EntryCompleteness::AllInstructionHeads
+            || pcs.first().copied() != Some(request.logical_pc)
+            || !matches!(
+                request.emission,
+                crate::emission::EmissionContext::Fitting(_)
+            )
+    }) {
+        return Err(Refusal::InvalidPlan);
+    }
     let whole_function = match authority {
         RelocationAuthority::WholeFunction(proof) => Some(proof),
         _ => None,
@@ -1598,58 +1686,70 @@ fn emit_relocation_window(
     request
         .require_original(displaced)
         .inspect_err(|reason| search_evidence.qualification(scope, reason))?;
-    let trampoline = if let Some((proof, _, _)) = routed {
-        TrampolinePlan::from_symbolic_routed_jmp(scan, proof)
-    } else if let Some((_, region)) = clock_region {
-        TrampolinePlan::from_owned_clock_region(scan, region)
+    let trampoline = if let Some(pcs) = observations {
+        RelocationProducer::Observations(
+            crate::trampoline::ArtifactObservationWindow::checked(scan, physical, end, pcs)
+                .map_err(|e| Refusal::Backend(e.to_string()))?,
+        )
     } else {
-        match (clock, controls) {
-            (Some(_), Some(CoalescedActions::ControlledProfile(_, _))) => {
-                return Err(Refusal::InvalidPlan);
-            }
-            (Some(_), Some(CoalescedActions::PreContext(_))) => return Err(Refusal::InvalidPlan),
-            (Some(_), Some(CoalescedActions::PointObservations(_))) => {
-                return Err(Refusal::InvalidPlan);
-            }
-            (Some(_), Some(CoalescedActions::EntryAdmission(_))) => {
-                return Err(Refusal::InvalidPlan);
-            }
-            (Some(action), _) => TrampolinePlan::from_backedge_clock(scan, physical, end, action),
-            (None, Some(CoalescedActions::Controlled(actions))) => {
-                TrampolinePlan::from_controlled_actions(scan, physical, end, actions)
-            }
-            (None, Some(CoalescedActions::PointObservations(actions))) => {
-                TrampolinePlan::from_point_observation_actions(scan, physical, end, actions)
-            }
-            (None, Some(CoalescedActions::EntryAdmission(actions))) => {
-                // SAFETY: only the unsafe typed wrappers create this variant.
-                // Complete original decoding/current reads and per-window
-                // source authentication remain unchanged above.
-                unsafe {
-                    TrampolinePlan::from_entry_admission_actions(scan, physical, end, actions)
+        let plan = if let Some((proof, _, _)) = routed {
+            TrampolinePlan::from_symbolic_routed_jmp(scan, proof)
+        } else if let Some((_, region)) = clock_region {
+            TrampolinePlan::from_owned_clock_region(scan, region)
+        } else {
+            match (clock, controls) {
+                (Some(_), Some(CoalescedActions::ControlledProfile(_, _))) => {
+                    return Err(Refusal::InvalidPlan);
                 }
+                (Some(_), Some(CoalescedActions::PreContext(_))) => {
+                    return Err(Refusal::InvalidPlan);
+                }
+                (Some(_), Some(CoalescedActions::PointObservations(_))) => {
+                    return Err(Refusal::InvalidPlan);
+                }
+                (Some(_), Some(CoalescedActions::EntryAdmission(_))) => {
+                    return Err(Refusal::InvalidPlan);
+                }
+                (Some(action), _) => {
+                    TrampolinePlan::from_backedge_clock(scan, physical, end, action)
+                }
+                (None, Some(CoalescedActions::Controlled(actions))) => {
+                    TrampolinePlan::from_controlled_actions(scan, physical, end, actions)
+                }
+                (None, Some(CoalescedActions::PointObservations(actions))) => {
+                    TrampolinePlan::from_point_observation_actions(scan, physical, end, actions)
+                }
+                (None, Some(CoalescedActions::EntryAdmission(actions))) => {
+                    // SAFETY: only the unsafe typed wrappers create this variant.
+                    // Complete original decoding/current reads and per-window
+                    // source authentication remain unchanged above.
+                    unsafe {
+                        TrampolinePlan::from_entry_admission_actions(scan, physical, end, actions)
+                    }
+                }
+                (None, Some(CoalescedActions::ControlledProfile(actions, profile))) => {
+                    TrampolinePlan::from_controlled_actions_with_stack_profile(
+                        scan, physical, end, actions, profile,
+                    )
+                }
+                (None, Some(CoalescedActions::PreContext(actions))) => {
+                    // SAFETY: this private variant comes only from the unsafe typed
+                    // wrappers, which retain the entire leaf/frame/callback contract.
+                    // Original scan/current-read/whole-window guards above are unchanged.
+                    unsafe { TrampolinePlan::from_precontext_actions(scan, physical, end, actions) }
+                }
+                (None, None) => request.emission.window(
+                    scan,
+                    physical,
+                    request.logical_pc,
+                    end,
+                    request.semantics == HookSemantics::ReplaceFirst,
+                ),
             }
-            (None, Some(CoalescedActions::ControlledProfile(actions, profile))) => {
-                TrampolinePlan::from_controlled_actions_with_stack_profile(
-                    scan, physical, end, actions, profile,
-                )
-            }
-            (None, Some(CoalescedActions::PreContext(actions))) => {
-                // SAFETY: this private variant comes only from the unsafe typed
-                // wrappers, which retain the entire leaf/frame/callback contract.
-                // Original scan/current-read/whole-window guards above are unchanged.
-                unsafe { TrampolinePlan::from_precontext_actions(scan, physical, end, actions) }
-            }
-            (None, None) => request.emission.window(
-                scan,
-                physical,
-                request.logical_pc,
-                end,
-                request.semantics == HookSemantics::ReplaceFirst,
-            ),
         }
-    }
-    .map_err(|e| Refusal::Backend(e.to_string()))?;
+        .map_err(|e| Refusal::Backend(e.to_string()))?;
+        RelocationProducer::Ordinary(plan)
+    };
     let mut mask = [false; 4];
     for &head in &heads {
         if head < physical + 5 {
@@ -1665,9 +1765,8 @@ fn emit_relocation_window(
     {
         return Err(Refusal::InvalidPlan);
     }
-    let mut prepared = request
-        .emission
-        .prepare_fitting(&trampoline)
+    let mut prepared = trampoline
+        .prepare_fitting(request.emission)
         .map_err(|error| Refusal::Backend(error.to_string()))?;
     let effective;
     let policy = if let Some(prepared) = prepared.as_ref() {
@@ -1749,7 +1848,7 @@ fn emit_relocation_window(
         }
         let emitted = match prepared.take() {
             Some(prepared) => prepared.emit_at(target),
-            None => request.emission.emit(&trampoline, target),
+            None => trampoline.emit(request.emission, target),
         };
         let image = match emitted {
             Ok(image) => image,

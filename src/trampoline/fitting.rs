@@ -61,7 +61,7 @@ impl PreparedArtifact {
     }
 
     // This constructor cannot accept an arbitrary live plan/PC pair.
-    pub(super) fn for_observation_window(
+    pub(crate) fn for_observation_window(
         window: &ArtifactObservationWindow,
         input: &ArtifactEmission,
     ) -> Result<Self, TrampolineError> {
