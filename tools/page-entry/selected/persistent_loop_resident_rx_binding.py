@@ -44,6 +44,15 @@ CACHE8=dict(version=1,slots=8,members=8,completion_cells=9,source_pages=2,placem
 
 ARENA_PROGRAM_INPUTS=('persistent_loop_translation_arena_program_binding.py',
     'build-persistent-loop-translation-arena-program.sh','loop_translation_arena_program.inc')
+ARENA_PREFIX_INPUTS=('persistent_loop_translation_arena_prefix_binding.py',
+    'build-persistent-loop-translation-arena-prefix.sh',
+    'loop_translation_arena_prefix.h','loop_translation_arena_prefix.inc')
+ARENA_PREFIX=dict(version=1,offers=1024,wire_bytes=8952,header_bytes=128,counter_words=160,
+    maps_view_bytes=88,maps_bytes=64,phase_words=24,binding_bytes=16,node_bytes=56,
+    nodes=128,slots=8,checkpoint='actual-offers-before-ingress-or-close',
+    output='stderr',expected_exit=125,write_failure_exit=126,ordinary_report=False,
+    observation_authority=False,qualification_credit=False)
+
 ARENA_PROGRAM=dict(version=1,summary_fields=35,node_rows=3,node_fields=55,
     nodes_per_row=4,nodes=12,slots=8,count_version=2,count_fields=63,
     terminal_only=True,observation_authority=False,qualification_credit=False)
@@ -74,7 +83,10 @@ RECURRENCE=dict(version=7,bytes=12382208,storage_bytes=12582912,capacity=1024,
     observation_authority=False,qualification_credit=False)
 
 
-def write_binding(selected, archive, image, output, mode, *, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None, arena=False, arena_observe=None, arena_program=False, arena_capacity=False):
+def write_binding(selected, archive, image, output, mode, *, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None, arena=False, arena_observe=None, arena_program=False, arena_capacity=False, arena_prefix=False):
+    need(type(arena_prefix)is bool and (not arena_prefix or arena and arena_program and
+         arena_capacity and mode=='release' and arena_observe is None),
+         'distinct capacity128 offers1024 prefix diagnostic, never a completed program')
     need(type(arena_capacity)is bool and (not arena_capacity or arena_program),
          '128-node capacity experiment requires the separate release program profile')
     need(type(arena_program)is bool and (not arena_program or arena and cache8_program and
@@ -110,6 +122,7 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
     if group_descriptor and cache8_program:leaves+=GROUP_DESCRIPTOR_PROGRAM_INPUTS
     if arena:leaves+=ARENA_INPUTS
     if arena_program:leaves+=ARENA_PROGRAM_INPUTS
+    if arena_prefix:leaves+=ARENA_PREFIX_INPUTS
     if arena_observe is not None:leaves+=ARENA_OBSERVE_INPUTS
     need(len(leaves)==len(set(leaves)), 'whole distinct LOOP and RO-certificate source closure')
     values = []
@@ -124,6 +137,7 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
     if cache8_effects is not None:policy_value['cache8_effect']=cache8_effects
     if arena_observe is not None:policy_value['arena_control']=arena_observe
     if arena_capacity:policy_value['arena_capacity']=128
+    if arena_prefix:policy_value['arena_prefix']=1024
     policy = hashlib.sha256(json.dumps(policy_value,
                           sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     actual_archive = fact(archive.read_bytes())
@@ -143,6 +157,7 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
                   ('#define LI2_PG_LOOP_TRANSLATION_ARENA_BINDING_VERSION 1\n' if arena else '') +
                   ('#define LI2_PG_LOOP_TRANSLATION_ARENA_PROGRAM_BINDING_VERSION 1\n' if arena_program else '') +
                   ('#define LI2_PG_LOOP_TRANSLATION_ARENA_CAPACITY_BINDING_VERSION 1\n#define LI2_LOOP_TRANSLATION_ARENA_CAPACITY 128\n' if arena_capacity else '') +
+                  ('#define LI2_PG_LOOP_TRANSLATION_ARENA_PREFIX_BINDING_VERSION 1\n#define LI2_PG_LOOP_TRANSLATION_ARENA_PREFIX_OFFERS 1024\n' if arena_prefix else '') +
                   ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n#define LI2_PG_LOOP_TRANSLATION_ARENA_OBSERVE_BINDING_VERSION 1\n' if arena_observe is not None else '') +
                   ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_OBSERVE_BINDING_VERSION 1\n' if group_descriptor_observe is not None else '') +
                   ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n#define LI2_PG_LOOP_CACHE8_EFFECTS_BINDING_VERSION 1\n' if cache8_effects is not None else '') +
@@ -218,7 +233,11 @@ def write_binding(selected, archive, image, output, mode, *, recurrence=False, c
         record['arena']=dict(ARENA,version=2,nodes=128,sealed_root_pages=12)
         record['arena_program']=dict(ARENA_PROGRAM,version=2,node_rows=32,nodes=128)
         record['byte_certificate']=dict(record['byte_certificate'],slots=128)
-    name=('persistent_loop_translation_arena_program_binding.json' if arena_program else
+    if arena_prefix:
+        record['profile']='persistent-loop-translation-arena-prefix-capacity128-release-v1'
+        record['arena_prefix']=ARENA_PREFIX
+    name=('persistent_loop_translation_arena_prefix_binding.json' if arena_prefix else
+          'persistent_loop_translation_arena_program_binding.json' if arena_program else
           'persistent_loop_translation_arena_observe_binding.json' if arena_observe is not None else
           'persistent_loop_translation_arena_binding.json' if arena else
           'persistent_loop_cache8_effects_binding.json' if cache8_effects is not None else

@@ -54,6 +54,9 @@
 #include "loop_group_descriptor.h"
 #ifdef LI2_LOOP_TRANSLATION_ARENA
 #include "loop_translation_arena.h"
+#ifdef LI2_LOOP_TRANSLATION_ARENA_PREFIX
+#include "loop_translation_arena_prefix.h"
+#endif
 #endif
 #endif
 #endif
@@ -2109,6 +2112,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     ped_reset_attempt();pe.selected_bank=bank_index;
 #endif
     pe_closing=1;pe_busy=1;ped_count(PGC_REF(offers));__asm__ volatile("":::"memory");
+#ifdef LI2_LOOP_TRANSLATION_ARENA_PREFIX
+    if(PGC_VALUE(offers)==LTAPF_OFFERS)ltapf_stop(sig,si,uc);
+#endif
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
     rcc_begin(pc);
 #endif
@@ -2639,4 +2645,7 @@ int li2_pg_loop_replay_valid(const struct li2_lpr_replay *request,
 #undef PLR_RECOVER
 #ifdef LI2_PERSISTENT_LOOP_EFFECTS
 #undef PLE_COUNT
+#endif
+#ifdef LI2_LOOP_TRANSLATION_ARENA_PREFIX
+#include "loop_translation_arena_prefix.inc"
 #endif

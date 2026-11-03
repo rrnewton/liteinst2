@@ -54,8 +54,13 @@ SCHEDULE = SETUP + tuple((kind+'-'+name, profile) for kind, _, _, _ in PROGRAMS
 
 
 def prepare_workloads(builder, products, private, pin, binary, aliases, run, r, *,
-                      build=build_rx, selected=None, cache8=False, group_descriptor=False, arena=False, arena_capacity=False):
+                      build=build_rx, selected=None, cache8=False, group_descriptor=False, arena=False, arena_capacity=False, prefix_identity=None):
     """The original two release links and complete namespace/image preparation."""
+    if prefix_identity is not None:
+        from loop_translation_arena_prefix_reports import preparation_identity
+        need(prefix_identity is preparation_identity and cache8 and group_descriptor and arena and
+             arena_capacity and selected is None,
+             'only the source-owned capacity128 prefix identity may share this preparation')
     arena_nodes=128 if arena_capacity else 12
     arena_version=2 if arena_capacity else 1
     states = {}; builds = r['release_builds'] = {}
@@ -86,7 +91,7 @@ def prepare_workloads(builder, products, private, pin, binary, aliases, run, r, 
             bridge = build(builder, archive, original, directory, pin, binary, aliases,
                            labelled, holder, 'release', selected=selected)
         need(holder['status'] == 'compiled_diagnostic_only' and
-             holder['binding']['profile'] == ('persistent-loop-translation-arena-program-capacity128-release-v1' if arena_capacity else 'persistent-loop-translation-arena-program-release-v1' if arena else 'persistent-loop-group-descriptor-program-release-v1' if group_descriptor else 'persistent-loop-cache8-program-release-v1' if cache8 else 'persistent-loop-resident-rx-release-v1') and
+             holder['binding']['profile'] == (prefix_identity(holder) if prefix_identity is not None else 'persistent-loop-translation-arena-program-capacity128-release-v1' if arena_capacity else 'persistent-loop-translation-arena-program-release-v1' if arena else 'persistent-loop-group-descriptor-program-release-v1' if group_descriptor else 'persistent-loop-cache8-program-release-v1' if cache8 else 'persistent-loop-resident-rx-release-v1') and
              holder['binding']['mode'] == 'release' and
              holder['binding']['archive'] == r['archive'] and
              holder['binding']['capture_version'] is None and
