@@ -550,6 +550,11 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
         direct_source,direct_arm,direct_flags,&selected_decoded,flags),1788,3);
 #endif
 #endif
+#ifdef LI2_LOOP_RESIDENT_RX
+    unsigned retained_direct=direct_original &&
+        lprx_direct_begin(direct_replay,direct_original,direct_descriptor,direct_arm,flags);
+    if(!retained_direct)lprx_before_unsafe(LPRX_FETCH);
+#endif
     if(!selected_selftesting) {
         if(!first_target_pc)first_target_pc=pc;
         ++faults;if(pc==original_interpreter.entry)++first_interpreter;
@@ -601,7 +606,15 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
     /* A completed PF DIRECT miss is still branch-before. After the same
        selected-effect and rseq gates, execute that one original branch via
        the ordinary TF owner before offering its real successor elsewhere. */
+#ifdef LI2_LOOP_RESIDENT_RX
+    if(direct_original) {
+        selected_generic_begin(sig,si,context,flags);
+        if(retained_direct)lprx_direct_armed();
+        return;
+    }
+#else
     if(direct_original) {selected_generic_begin(sig,si,context,flags);return;}
+#endif
 #endif
     if(!selected_selftesting && li2_repeat_candidate(&selected_decoded)) {
 #ifdef LI2_REPEAT_RX_LEASE

@@ -8,7 +8,9 @@ int li2_rsl_owner_quiet(void) {
 #ifdef LI2_PERSISTENT_RET_DISPATCH
     if(prr_pending || prr_busy || (prr.run.loaded.complete && !prr.run.consumed))return 0;
 #endif
-#ifdef LI2_RESIDENT_THREE
+#ifdef LI2_RESIDENT_RX
+    if(!li2_r3_rx_execution_quiet())return 0;
+#elif defined(LI2_RESIDENT_THREE)
     if(!li2_r3_owner_quiet())return 0;
 #endif
     for(unsigned i=0;i<LI2_PTR_SLOTS;i++) {
@@ -38,7 +40,9 @@ int li2_rsl_source_mutation_quiet(void) {
 #ifdef LI2_PERSISTENT_RET_DISPATCH
     if(prr_pending || prr_busy || (prr.run.loaded.complete && !prr.run.consumed))return 0;
 #endif
-#ifdef LI2_RESIDENT_THREE
+#ifdef LI2_RESIDENT_RX
+    if(!li2_r3_rx_execution_quiet())return 0;
+#elif defined(LI2_RESIDENT_THREE)
     if(!li2_r3_owner_quiet())return 0;
 #endif
     for(unsigned i=0;i<LI2_PTR_SLOTS;i++) {

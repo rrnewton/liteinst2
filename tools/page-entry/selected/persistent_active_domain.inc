@@ -128,10 +128,21 @@ static int pda_receipt(const struct pda_completion *c) {
     const struct li2_pg_source_progress *s=&c->source;
     const struct li2_pgd_source_progress *d=&c->domain_source;
     const struct li2_pg_rseq_progress *r=&c->rseq;
+#ifdef LI2_LOOP_RESIDENT_RX
+    if(!lprx_complete_value(c))return 0;
+#endif
+#ifdef LI2_LOOP_RESIDENT_RX
+    if(s->serial!=c->serial || s->phase!=LI2_PGS_RX_RELEASED || s->first_error || s->first_detail || s->aborted ||
+#else
     if(s->serial!=c->serial || s->phase!=LI2_PGS_RELEASED || s->first_error || s->first_detail || s->aborted ||
+#endif
        s->source.complete!=1 || s->source.serial!=c->serial || s->release_started!=1 ||
        s->release_complete!=1 || s->opened_extents!=3 || s->opened_pages!=17 ||
+#ifdef LI2_LOOP_RESIDENT_RX
+       s->closed_extents || s->closed_pages || s->cancel_started || s->cancel_complete ||
+#else
        s->closed_extents!=3 || s->closed_pages!=17 || s->cancel_started || s->cancel_complete ||
+#endif
        !pg_layout_equal(&s->layout,&c->member[0].identity.layout) ||
 #ifdef LI2_PERSISTENT_SUBENTRY
        !li2_pgs_entry_value(&d->entry,&c->member[0].source,&s->source,&c->member[0].identity.layout) ||
@@ -142,7 +153,11 @@ static int pda_receipt(const struct pda_completion *c) {
        !li2_pg_source_key_equal(&s->source.key,&c->member[0].source) ||
 #endif
        d->token.owner!=&pe || d->token.serial!=c->serial || d->count!=c->count ||
+#ifdef LI2_LOOP_RESIDENT_RX
+       d->bound!=1 || d->opened!=1 || d->closed || d->released!=1 || d->first_error || d->first_detail ||
+#else
        d->bound!=1 || d->opened!=1 || d->closed!=1 || d->released!=1 || d->first_error || d->first_detail ||
+#endif
        r->token.owner!=&pe || r->token.serial!=c->serial || r->active || r->checking ||
        r->first_error || r->first_detail || r->unsafe_terminal || r->seed_complete!=1 || r->entry_complete!=1 ||
        r->close_complete!=1 || r->cancel_started || r->cancel_complete ||
@@ -188,7 +203,11 @@ static int pda_receipt(const struct pda_completion *c) {
            g->installed!=1 || g->complete!=1 || g->proof_complete!=1 ||
            g->ready_generation!=v->generation || g->linked || g->active_refs ||
            g->member_refs[0] || g->member_refs[1] || g->incoming[0] || g->incoming[1] || g->domain_refs ||
+#ifdef LI2_LOOP_RESIDENT_RX
+           !pda_zero(g->close,sizeof g->close) || !pg_proof_query_complete(&m->proof,g->proof,PROT_READ) ||
+#else
            !pg_closed(&g->layout,g->close) || !pg_proof_query_complete(&m->proof,g->proof,PROT_READ) ||
+#endif
            g->slots[2].started!=1 || g->slots[2].complete!=1 || g->slots[2].linked ||
            g->slots[2].copied!=PAGE || g->slots[2].verified!=PAGE ||
            !pg_query_complete(&g->slots[2].seal.query,g->layout.slots,PAGE,PROT_READ) ||
@@ -197,6 +216,10 @@ static int pda_receipt(const struct pda_completion *c) {
            !pg_query_complete(&g->cell[2].mapping,g->spill,PAGE,PROT_READ|PROT_WRITE))return 0;
         /* Independent source/controller queries retain distinct actual maps
            receipts; every exact interval/protection must close separately. */
+#ifdef LI2_LOOP_RESIDENT_RX
+        /* The complete RX query/open-transition checks are in the typed
+           value validator, including zero unused/cold-vs-retained fields. */
+#else
         for(unsigned j=0;j<3;j++)if(!pda_query(&d->open[i][j],&v->layout,j,PROT_READ|PROT_EXEC) ||
             !pda_query(&d->close[i][j],&v->layout,j,PROT_READ) ||
             !pda_query(&g->close[j].query,&v->layout,j,PROT_READ) ||
@@ -205,6 +228,7 @@ static int pda_receipt(const struct pda_completion *c) {
             g->open[j].complete!=1 || g->open[j].prot!=(PROT_READ|PROT_EXEC) ||
             g->open[j].result || g->open[j].sync_result ||
             !pda_query(&g->open[j].query,&v->layout,j,PROT_READ|PROT_EXEC))return 0;
+#endif
     }
 #ifdef LI2_PERSISTENT_CROSS_PAIR
     if(c->count==1 || li2_pgd_source_pair_equal(&c->member[0].source,&c->member[1].source)) {
@@ -215,7 +239,11 @@ static int pda_receipt(const struct pda_completion *c) {
         !pda_zero(&d->ref[i],sizeof d->ref[i]) || !pda_zero(d->open[i],sizeof d->open[i]) ||
         !pda_zero(d->close[i],sizeof d->close[i]) || !pda_zero(&r->domain_ref[i],sizeof r->domain_ref[i]))return 0;
     for(unsigned j=0;j<3;j++)if(!pda_query(&s->opened[j],&s->layout,j,PROT_READ|PROT_EXEC) ||
+#ifdef LI2_LOOP_RESIDENT_RX
+        !pda_zero(&s->closed[j],sizeof s->closed[j]) ||
+#else
         !pda_query(&s->closed[j],&s->layout,j,PROT_READ) ||
+#endif
         !equal(&s->opened[j],&d->open[0][j],sizeof s->opened[j]) ||
         !equal(&s->closed[j],&d->close[0][j],sizeof s->closed[j]))return 0;
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
@@ -246,7 +274,11 @@ static int pda_permitted(unsigned slot) {
        !equal(&m->header,&s->publication.header,sizeof m->header) ||
        !equal(&m->source,&s->publication.source,sizeof m->source) ||
        m->identity.bank!=pda_bank(slot) || s->banks[m->identity.bank].virgin ||
+#ifdef LI2_LOOP_RESIDENT_RX
+       !lprx_permitted(slot) || !ptr_slots(slot,0))return 0;
+#else
        s->banks[m->identity.bank].prot!=PROT_READ || !ptr_slots(slot,0))return 0;
+#endif
     return *(const volatile uint64_t *)(s->generation.spill+32)==0;
 }
 static void pda_claim(unsigned slot) {
@@ -439,7 +471,12 @@ static int pda_bind(const ucontext_t *uc) {
     if(pe.warm && w->peer<LI2_PTR_SLOTS) {
         unsigned peer=w->peer;pe_need(peer!=w->primary && pda_permitted(peer),PE_RELEASE,83);
         pda_select(peer,pda_bank(peer));
+#ifdef LI2_LOOP_RESIDENT_RX
+        int peer_prot=lprx_slot_prot(peer);
+        pe_need(peer_prot>=0 && !pe_bytes() && !pg_queries(&PE_SLOT(generation).layout,peer_prot,w->peer_claim.code) &&
+#else
         pe_need(!pe_bytes() && !pg_queries(&PE_SLOT(generation).layout,PROT_READ,w->peer_claim.code) &&
+#endif
             !pg_proof_query(PE_SLOT(generation).proof,PROT_READ,&w->peer_claim.proof) &&
             !pe_query(PE_SLOT(generation).spill,PAGE,PROT_READ|PROT_WRITE,&w->peer_claim.spill) &&
             !pe_query(PE_SLOT(generation).layout.slots,PAGE,PROT_READ,&w->peer_claim.slots),PE_RELEASE,84);
@@ -555,12 +592,23 @@ static int pda_enter(const struct li2_pg_token *t,int sig,const siginfo_t *si,uc
     for(unsigned i=0;i<w->view.count;i++) {
         const struct li2_pgd_ref *v=&w->view.member[i].identity;
         pda_select(v->slot,v->bank);struct li2_pg_generation *g=&PE_SLOT(generation);unsigned pages=0;
+#ifdef LI2_LOOP_RESIDENT_RX
+        (void)g;(void)pages;
+        int e=lprx_enter(i);if(e)return e;
+        if(!pg_refs(1) || !pg_slots(1))return PE_PUBLICATION;
+#else
         int e=pg_permissions(&g->layout,PROT_READ|PROT_EXEC,g->open,&pages);if(e)return e;
         if(pages!=17 || !pg_refs(1) || !pg_slots(1))return PE_PUBLICATION;
         PE_SLOT(banks)[v->bank].prot=PROT_READ|PROT_EXEC;pe.p.opened_pages+=pages;
+#endif
     }
     pda_select(w->primary,w->primary_bank);
+#ifdef LI2_LOOP_RESIDENT_RX
+    unsigned retained=(w->rx_retained_mask&1U)+((w->rx_retained_mask>>1)&1U);
+    if(retained>w->view.count || pe.p.opened_pages!=17U*(w->view.count-retained) || li2_pgd_source_opened(t) ||
+#else
     if(pe.p.opened_pages!=17U*w->view.count || li2_pgd_source_opened(t) ||
+#endif
        li2_pg_rseq_live(t,uc,&pe.live[1]))return PE_SOURCE;
     pe_tls(&pe.before);
     for(unsigned i=0;i<w->view.count;i++) {
@@ -721,6 +769,9 @@ static int pda_drain(const struct li2_pg_token *t) {
     if(!pe_token(t) || !pe_active || !pe_busy || pe.p.phase!=LI2_PG_RECOVERING ||
        !pe.exit_seen || !pe.recovery_complete || w->exit_member>=w->view.count || !pda_ready(1))return PE_STATE;
     pe.p.phase=LI2_PG_CLOSING;pe.p.closed_pages=0;
+#ifdef LI2_LOOP_RESIDENT_RX
+    int quiet=lprx_drain();if(quiet)return quiet;
+#else
     /* First close EVERY bank. No reset/ref release can precede the last NX. */
     for(unsigned i=0;i<w->view.count;i++) {
         const struct li2_pgd_ref *v=&w->view.member[i].identity;
@@ -730,6 +781,7 @@ static int pda_drain(const struct li2_pg_token *t) {
         pe.retained[v->slot].banks[v->bank].prot=PROT_READ;pe.p.closed_pages+=pages;
     }
     if(pe.p.closed_pages!=17U*w->view.count)return PE_PUBLICATION;
+#endif
     for(unsigned i=0;i<w->view.count;i++) {
         const struct li2_pgd_ref *v=&w->view.member[i].identity;
         pda_select(v->slot,v->bank);int e=pg_link_data(2);if(e)return e;
@@ -738,7 +790,11 @@ static int pda_drain(const struct li2_pg_token *t) {
     pda_select(w->primary,w->primary_bank);pe.proof_exit=w->proof_exit[0];
     if(!pda_directory_equal() || pe_query(pe.domain.directory,LI2_JD_DOMAIN_BYTES,PROT_READ,&w->directory_closed))return PE_PUBLICATION;
     pe.p.phase=LI2_PG_RELEASING;
+#ifdef LI2_LOOP_RESIDENT_RX
+    pe.release_result=li2_pgd_source_release_rx(t);if(pe.release_result)return pe.release_result;
+#else
     pe.release_result=li2_pgd_source_release(t);if(pe.release_result)return pe.release_result;
+#endif
     pe.p.anchor_released=1;pe.final_fetch=*li2_lifecycle_fetch_progress();
     if(pe.final_fetch.held || pe.final_fetch.complete!=1 || pe.final_fetch.first_error ||
        pe.final_fetch.sequence!=pe.ref.sequence)return PE_RELEASE;
@@ -759,6 +815,12 @@ static void pda_complete(void) {
     le_zero(c,sizeof *c);c->id=++pe.domain.next_id;c->serial=pe.p.serial;c->count=w->view.count;
     c->source=*li2_pg_source_progress();c->domain_source=*li2_pgd_source_progress();
     c->rseq=*li2_pg_rseq_progress();c->fetch=pe.final_fetch;c->directory_closed=w->directory_closed;
+#ifdef LI2_LOOP_RESIDENT_RX
+    c->rx.version=1;c->rx.count=c->count;c->rx.retained_mask=w->rx_retained_mask;
+    c->rx.source=*li2_pgd_source_rx_progress();
+    copy(c->rx.open,w->rx_open,sizeof c->rx.open);
+    copy(c->rx.code,w->rx_quiet,sizeof c->rx.code);
+#endif
     for(unsigned i=0;i<c->count;i++) {
         const struct li2_pgd_member *m=&w->view.member[i];struct li2_ptr_slot *s=&pe.retained[m->identity.slot];
         pe_need(!s->claim.valid && !s->claim.id && !s->permit.valid,PE_RELEASE,87);
@@ -814,6 +876,9 @@ static void pda_complete(void) {
     for(unsigned i=0;i<c->count;i++)effects_completed|=c->member[i].header.plan_policy==LI2_LPE_VERSION;
     if(effects_completed)PLE_COUNT(completed_with13);
 #endif
+#endif
+#ifdef LI2_LOOP_RESIDENT_RX_ORACLE
+    lrxo_complete(c);
 #endif
 }
 static _Noreturn void pda_abort(unsigned code,long detail) {

@@ -2,6 +2,7 @@
 import json
 import persistent_fused_refusal_reports as pf
 from linked_frontier_census import need
+from persistent_terminal_extent import nx_extent
 import linked_native_probe_reports as probe
 from persistent_group_counter_process import GROUP_NAMES
 MISS_REASONS=('none','root_unsupported','source_invalid','source_truncated','source_overlap',
@@ -58,7 +59,7 @@ def counters(stderr):
     return result
 
 
-def completed(raw):
+def completed(raw, *, extent=nx_extent):
     """Successful diagnostic arithmetic only; no full release acceptance claim."""
     f=raw['LI2_PF_REFUSALS']
     need(f['status']==f['failure_code']==0 and f['refused']==f['cancelled'],
@@ -105,8 +106,7 @@ def completed(raw):
     else:
         need(d['phase']in(13,14)and d['anchor_released']==d['registration_rechecked']==1,
              'last chosen epoch is actually closed or fully cancelled')
-        need((d['opened_pages'],d['closed_pages'],d['recovery_complete'])==
-             ((17*d['domain_members'],17*d['domain_members'],1)if d['phase']==13 else(0,0,0)), 'exact executed versus unentered terminal extent')
+        extent(d)
         need(d['domain_members'] in (1,2) if d['phase']==13 else d['domain_members']==0,
              'actual one/two-member domain or unbound cancellation')
     need(s['selections']>=s['hits']==s['entries']==s['completed'],

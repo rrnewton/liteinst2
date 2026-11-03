@@ -11,6 +11,15 @@ U64,TF,RF=(1<<64)-1,0x100,0x10000
 MASK=0xffffffffbffbfae7
 TRACES=(41,)
 STEPS=(0,1,5,6,11,12,18,26,32,39,40,41)
+REFERENCE41 = (10, 41, STEPS, 2, 1, U64-1)
+REFERENCE44 = (11, 44, (0,1,6,7,14,15,21,29,35,42,43,44), 1, 0, U64-2)
+
+
+def reference_profile(name):
+    need(type(name) is str and name in ('direct41', 'direct44'), 'explicit exact native reference profile')
+    return REFERENCE41 if name == 'direct41' else REFERENCE44
+
+
 GREG=(13,14,12,11,15,10,9,8,0,1,2,3,4,5,6,7)
 VECTORS=b''.join(struct.pack('<Q',0x3141592653589793+i+1)for i in range(256))
 MASKS=struct.pack('<8Q',0x0123456789abcdef,0xfedcba9876543210,0xaaaaaaaa55555555,0x0f0ff0f0a5a55a5a,0x1111222233334444,0x8877665544332211,0xffff00000000ffff,0x5a5a5a5aa5a5a5a5)
@@ -150,7 +159,7 @@ def live(data):
     need(len(data) == 152 and data[148:] == bytes(4), 'complete live state and reserved tail')
     return q(data, 0, 16), q(data, 128)[0], data[136:148]
 
-def reference_frame(data, prefix, layout, kind, steps, attempt):
+def reference_frame(data, prefix, layout, kind, steps, attempt, *, reference='direct41'):
     need(len(data) == FRAME, 'complete native reference frame')
     h = q(data, 0, 12); si = data[96:224]; uc = data[224:1248]; fp = data[1248:]
     fault=False
@@ -166,15 +175,15 @@ def reference_frame(data, prefix, layout, kind, steps, attempt):
     need(h[8] % 16 == 0 and q(uc, 224)[0] == h[8] and uc[968:] == bytes(56) and fp[h[9]:] == bytes(FP - h[9]), 'actual FP pointer and full unused capacities')
     need(u(fp, 464, 2) == (0x46505853, h[9]) and u(fp, 480)[0] == h[9] - 4 and u(fp, h[9] - 4)[0] == 0x46505845 and q(fp, 520)[0] == 0, 'complete standard kernel FP geometry')
     need(q(uc, 296)[0] == prefix['machine'][0] and q(uc, 16)[0] == h[10] and u(uc, 24)[0] == 0 and q(uc, 32)[0] == h[11], 'actual application mask and altstack')
-    g = q(uc, 40, 23); pc = frame_pc(prefix,kind)
+    g = q(uc, 40, 23); pc = frame_pc(prefix,kind, reference=reference)
     need(u(si, 0, 3) == (sig, 0, 2) and g[16] == pc and g[19:21] == ((21, 14) if kind == 0 else (6, 14) if fault else (0, 1)), 'genuine native signal origin')
     if kind==0 or fault:
         address = prefix['fault_address'] if fault else pc
         need(q(si, 16)[0] == address and g[22] == address, 'real source NX/data fault address')
     else:need(q(si,16)[0]==pc and g[22]==prefix['predecessor'],'actual TRACE PC and retained original NX CR2')
-    expected = frame_state(prefix,kind)
+    expected = frame_state(prefix,kind, reference=reference)
     need(tuple(g[i] for i in GREG) == expected and g[18] == 0x2b000000000033 and g[21] == MASK, 'complete actual native GPR model')
-    expected_flags=trace_model(prefix)[steps][2] | (RF if kind==0 else TF)
+    expected_flags=trace_model(prefix, reference=reference)[steps][2] | (RF if kind==0 else TF)
     need(g[17]==expected_flags,'every actual native flag including AF and causal TF/RF')
     need(h[9] <= prefix['header'][15] + 4 and q(fp, 512)[0] & ~prefix['header'][14] == 0 and q(fp, 512)[0] & 0xe7 == 0xe7, 'full bounded standard enabled state')
     for reg in range(32):
@@ -199,11 +208,12 @@ def reference_frame(data, prefix, layout, kind, steps, attempt):
     need(fp[8:24] == bytes(16) and struct.unpack_from('<HH', fp) == (0x37f, 0x3000) and fp[4] == 0xc0 and u(fp, 24)[0] == 0x1f80, 'independently qualified exact zero FIP/FDP and initial scalar FP')
     return dict(header=h, si=si, uc=uc, fp=fp, greg=g)
 
-def fixture(mode,image):
+def fixture(mode,image, *, reference='direct41'):
     need(type(mode)is int and mode==0,'explicit cross-pair success only')
     seed=[0x3141592600000000+i*0x102030405 for i in range(16)]
     seed[0]=1;seed[1]=3;seed[2]=image['symbols']['region_app_block_b'];seed[3]=image['head']
-    seed[8]=2;seed[9]=1;seed[10]=1
+    profile=reference_profile(reference)
+    seed[8]=profile[3];seed[9]=1;seed[10]=profile[4]
     seed[4]=RSP;seed[6]=image['symbols']['region_app_capture'];seed[7]=DATA
     data=bytearray(1+(i*17)%255 for i in range(8192))
     return (tuple(seed),0xad7,bytes(12)),bytes(data),bytes((i*29+7)&255 for i in range(224))
@@ -215,13 +225,13 @@ def arithmetic(a,b,flags,subtract=False):
     updated|=(a^b^value)&16;updated|=int(value==0)<<6;updated|=(value>>63)<<7;updated|=overflow<<11
     return value,(flags&~0x8d5)|updated
 
-def trace_model(prefix):
+def trace_model(prefix, *, reference='direct41'):
     """All41 original next-PC states, including the ordinary unknown Jcc and
     low-to-high capture jump. Both complete store effects are modeled."""
     pc=prefix['predecessor'];g=list(prefix['seed'][0]);flags=prefix['seed'][1]
     page=prefix['source_page_address'];data=prefix['data'];stack=prefix['stack']
     out=[(pc,tuple(g),flags,data,stack)]
-    for _ in range(41):
+    for _ in range(reference_profile(reference)[1]):
         off=pc-page
         if off==0x1fe:pc+=2
         elif off in(0x200,0x2400):
@@ -249,31 +259,33 @@ def trace_model(prefix):
     need(out[-1][0]==prefix['expected_exit_pc'],'actual model ends at high capture suffix')
     return out
 
-def frame_pc(prefix,kind):
-    need(type(kind)is int and 0<=kind<len(STEPS),'one of12 explicitly retained native boundaries')
-    return trace_model(prefix)[STEPS[kind]][0]
+def frame_pc(prefix,kind, *, reference='direct41'):
+    steps=reference_profile(reference)[2]
+    need(type(kind)is int and 0<=kind<len(steps),'one of12 explicitly retained native boundaries')
+    return trace_model(prefix, reference=reference)[steps[kind]][0]
 
-def frame_state(prefix,kind):return trace_model(prefix)[STEPS[kind]][1]
+def frame_state(prefix,kind, *, reference='direct41'):return trace_model(prefix, reference=reference)[reference_profile(reference)[2][kind]][1]
 
-def state(seed,data,mode):
+def state(seed,data,mode, *, reference='direct41'):
     need(mode==0,'only the explicit loop result')
-    out=list(seed);out[0]+=9;out[1]=0;out[8]=1;out[10]=U64-1;return tuple(out)
+    out=list(seed);out[0]+=9;out[1]=0;out[8]=1;out[10]=reference_profile(reference)[5];return tuple(out)
 
 def written(data,mode):
     need(mode==0,'two exact full-width final store effects')
     out=bytearray(data);struct.pack_into('<2Q',out,0,8,10);return bytes(out)
 
-def _prefix(data,mode,native,image,pid,cpu,seed_reference):
+def _prefix(data,mode,native,image,pid,cpu,seed_reference, *, reference='direct41'):
     need(type(data)is bytes and len(data)==PREFIX and type(mode)is int and mode==0 and type(native)is bool,'typed complete persistent app prefix')
     need(mode==0,'no unvalidated fault mode')
+    profile=reference_profile(reference)
     h=q(data,0,48);hardware=[u(data,384+i*24,6)for i in range(67)]
     seed=live(data[1992:2144]);machine=q(data,2144,8)
     source,stack,memory=data[2208:18592],data[18592:18816],data[18816:27008]
     head=image['head'];frontier=image['symbols']['region_app_capture_high'];predecessor=head-2
     need(type(pid)is int and 0<pid<1<<31 and type(cpu)is int and cpu>=0,'actual process and reserved CPU')
-    need(h[:9]==(MAGIC,10,PREFIX,SUFFIX,mode,int(native),pid,pid,cpu)and h[9]<=0xffffffff and h[10:14]==(head,image['page'],DATA,STACK),'exact source/process/entry')
+    need(h[:9]==(MAGIC,profile[0],PREFIX,SUFFIX,mode,int(native),pid,pid,cpu)and h[9]<=0xffffffff and h[10:14]==(head,image['page'],DATA,STACK),'exact source/process/entry')
     need(h[16:26]==(mode,int(mode==1),image['symbols']['region_app_seed_x87'],968,FRAME,40,224,296,16,16)and h[26]==h[28]==0,'actual complete signal geometry')
-    need(h[30:]==(1,224,DATA+8192 if mode==1 else 0,8 if mode==1 else 0,frontier,predecessor,TRACES[mode],OBS,12,40,image['page']+0x2400,image['page']+PAGE,16384,RSEQ,0x53053053,image['page']+0x215,image['page']+0x3ffa,image['page']+0x241b),'exact cyclic fixture and reserved header')
+    need(h[30:]==(1,224,DATA+8192 if mode==1 else 0,8 if mode==1 else 0,frontier,predecessor,profile[1],OBS,12,40,image['page']+0x2400,image['page']+PAGE,16384,RSEQ,0x53053053,image['page']+0x215,image['page']+0x3ffa,image['page']+0x241b),'exact cyclic fixture and reserved header')
     need(source==image['source']and machine[0]==MASK and machine[1:3]==(0,0) and machine[3:5]==(0x33,0x2b)and machine[5:]==(0,0,0),'whole ELF source and actual machine')
     need([x[:2]for x in hardware]==[(0,0),(1,0),(7,0)]+[(13,i)for i in range(64)]and hardware[0][2]>=13 and hardware[1][4]&0x0c000000==0x0c000000 and hardware[2][3]&0x40010000==0x40010000,'all actual CPUID rows')
     need(h[14]&0xe7==0xe7 and h[15]==hardware[3][3]and 576<=h[15]<=FP,'actual XCR0 and capacity')
@@ -282,20 +294,21 @@ def _prefix(data,mode,native,image,pid,cpu,seed_reference):
     for i in range(2,64):
         if h[14]>>i&1:
             row=hardware[3+i];need(row[2]>0 and row[3]>=576 and row[3]+row[2]<=h[15]and row[4]&1==0,'complete standard component geometry')
-    expected,want_data,want_stack=fixture(mode,image)
+    expected,want_data,want_stack=fixture(mode,image, reference=reference)
     need(seed==expected and memory==want_data and stack==want_stack,'all actual seeded GPR/data/stack bytes')
     registration=q(data,27008,9)
     need(registration==(U64,)+(0,)*8,'explicit registration not-attempted marker and unavailable snapshots')
     return dict(symbols=image['symbols'],header=h,mode=mode,head=head,predecessor=predecessor,source_page_address=image['page'],source=source,hardware=hardware,xcr0=h[14],data=memory,stack=stack,rsp=RSP,seed=seed,machine=machine,expected_exit_pc=head if mode==1 else frontier,fault_pc=head if mode==1 else 0,fault_address=DATA+8192 if mode==1 else 0,suffix=None,observations=[])
 
-def read(data,mode,native,exit_status,image,pid,cpu,seed_reference):
+def read(data,mode,native,exit_status,image,pid,cpu,seed_reference, *, reference='direct41'):
     need(type(data)is bytes and type(mode)is int and mode==0 and type(native)is bool and type(exit_status)is int,'typed actual outcome')
     full=native or mode==0
     need(exit_status==(0 if mode==0 else 125)and len(data)==PREFIX+(SUFFIX if full else 0),'exact native/gated status and complete output')
-    r=_prefix(data[:PREFIX],mode,native,image,pid,cpu,seed_reference)
+    profile=reference_profile(reference)
+    r=_prefix(data[:PREFIX],mode,native,image,pid,cpu,seed_reference, reference=reference)
     if not full:return r
     suffix=data[PREFIX:];end=q(suffix,0,16)
-    need(end==(MAGIC^1,10,mode,int(native),0,1,1,12 if native else 0,TRACES[mode]if native else 0,int(mode==1),2,1,0,0,0,0),'complete cleanup and collection-before-registration chronology')
+    need(end==(MAGIC^1,profile[0],mode,int(native),0,1,1,12 if native else 0,profile[1]if native else 0,int(mode==1),2,1,0,0,0,0),'complete cleanup and collection-before-registration chronology')
     effects=[q(suffix,128+i*136,17)for i in range(2)]
     for i,row in enumerate(effects):
         need(row[:9]==(i+1,334,RSEQ,32,i,0x53053053,0,0,0),'actual rseq lifecycle arguments and zero result')
@@ -304,9 +317,9 @@ def read(data,mode,native,exit_status,image,pid,cpu,seed_reference):
     value=suffix[400:];h=q(value,0,16);before,after=live(value[128:280]),live(value[280:432]);mb,ma=q(value,432,8),q(value,496,8)
     a,b=value[560:2676],value[2676:4792];selectors=struct.pack('<6H',0x33,0x2b,0,0,0,0)
     need(mb==ma==r['machine'],'whole actual FS/GS/mask bracket')
-    need(h==(1,0,12 if native else 0,TRACES[mode]if native else 0,int(mode==1),int(native),0,0,image['symbols']['region_app_capture_high'],0,0,0,0,0,0,0),'whole invocation header')
+    need(h==(1,0,12 if native else 0,profile[1]if native else 0,int(mode==1),int(native),0,0,image['symbols']['region_app_capture_high'],0,0,0,0,0,0,0),'whole invocation header')
     need(before==(r['seed'][0],r['seed'][1],selectors)and after[2]==selectors and not after[1]&(TF|RF)and a==b==LIVE_SEED,'all inputs/selectors/live vector bytes')
-    need(after[0]==state(r['seed'][0],r['data'],mode)and after[1]==0x246,'all defined loop GPR and flag results')
+    need(after[0]==state(r['seed'][0],r['data'],mode, reference=reference)and after[1]==0x246,'all defined loop GPR and flag results')
     need(value[4792:21176]==r['source']and value[21176:21400]==r['stack']and value[21400:29592]==written(r['data'],mode),'whole source/stack and exact completed store effects')
     frames=[]
     for i in range(12):
@@ -314,8 +327,8 @@ def read(data,mode,native,exit_status,image,pid,cpu,seed_reference):
         if not native or(mode==1 and i>=3):need(frame==bytes(FRAME),'no fabricated native signal')
         else:
             kind=i
-            steps=STEPS[i]
-            frames.append(reference_frame(frame,r,image,kind,steps,0))
+            steps=profile[2][i]
+            frames.append(reference_frame(frame,r,image,kind,steps,0, reference=reference))
     if native:
         need(all(f['fp']==frames[0]['fp']for f in frames),'all65536 native FP bytes conserved')
         need(after[1]==frames[-1]['greg'][17]&~(TF|RF),'actual undefined AF and all terminal flags')
@@ -325,10 +338,10 @@ def read(data,mode,native,exit_status,image,pid,cpu,seed_reference):
 
 APP_CONTROL_COUNTS={0:40}
 
-def controls(data,mode,native,exit_status,image,pid,cpu,seed_reference):
+def controls(data,mode,native,exit_status,image,pid,cpu,seed_reference, *, reference='direct41'):
     """Sixteen complete-state classes plus eight active-domain checkpoint checks."""
     need(native is True and mode in APP_CONTROL_COUNTS,'native-only application supplied controls')
-    read(data,mode,native,exit_status,image,pid,cpu,seed_reference)
+    read(data,mode,native,exit_status,image,pid,cpu,seed_reference, reference=reference)
     observation=PREFIX+400;frame=observation+29592
     tests=(('version',8),('CPU',8*8),('hardware',384+8),('seed_GPR',1992),
            ('source',2208),('stack',18592),('data',18816),('registration_result',27008),
@@ -358,18 +371,27 @@ def controls(data,mode,native,exit_status,image,pid,cpu,seed_reference):
     refused=[]
     for name,offset in tests:
         mutant=bytearray(data);mutant[offset]^=1
-        try:read(bytes(mutant),mode,native,exit_status,image,pid,cpu,seed_reference)
+        try:read(bytes(mutant),mode,native,exit_status,image,pid,cpu,seed_reference, reference=reference)
         except ValueError:refused.append(name)
         else:raise ValueError('supplied actual app corruption accepted '+name)
     return dict(original_sha256=hashlib.sha256(data).hexdigest(),refusals=refused,native_operations=0,mode=mode)
+
+
+def application_pair(native,gated):
+    """One shared full application-state comparison, no owner/permission credit."""
+    need(native['header'][8:19]==gated['header'][8:19]and native['hardware']==gated['hardware']and all(native[k]==gated[k]for k in('seed','source','stack','data','rsp','predecessor')),'whole same-source/CPU/seed pair inputs')
+    need(len(native['observations'])==len(gated['observations'])==1,'actual complete application observations')
+    reference=native['observations'][0]
+    actual=gated['observations'][0]
+    need(all(reference[k]==actual[k]for k in('before','after','live','data','stack'))and gated['effects']==native['effects']and gated['suffix']is not None,'whole actual application state and later registration lifecycle')
+    return dict(full_application_state_equal=True, interior_owner_state_observed=False)
 
 
 def pair(native,gated,owner):
     """Two real cold epochs and one cross-pair lifetime; every compared frame
     retains all23 GREG and all65536 FP bytes with causal TF/RF/CR2 only."""
     need(native['mode']==gated['mode']==owner['mode']==0 and native['header'][5]==1 and gated['header'][5]==0,'exact cross-pair native/generated pair')
-    need(native['header'][8:19]==gated['header'][8:19]and native['hardware']==gated['hardware']and all(native[k]==gated[k]for k in('seed','source','stack','data','rsp','predecessor')),'whole same-source/CPU/seed pair inputs')
-    need(len(native['observations'])==len(gated['observations'])==1,'actual complete application observations')
+    application_pair(native,gated)
     reference=native['observations'][0];frames=reference['frames'];machine=gated['machine'];attempts=owner['attempts'];page=gated['source_page_address'];model=trace_model(native)
     def compare(actual,ref,event,cr2=None):
         need(type(actual['greg'])is tuple and len(actual['greg'])==23 and type(actual['fp'])is bytes and len(actual['fp'])==FP and actual['fp_bytes']==ref['header'][9]and actual['mask']==MASK,'complete actual protected pair frame')
@@ -402,8 +424,7 @@ def pair(native,gated,owner):
     need(d['frontier_member']==1 and d['frontier_arm']==1 and
          d['frontier_pc']==page+0x3ffa and d['frontier_target']==page+0x4000,
          'actual peer conditional unknown arm and exact original target')
-    actual=gated['observations'][0]
-    need(all(reference[k]==actual[k]for k in('before','after','live','data','stack'))and gated['effects']==native['effects']and gated['suffix']is not None,'whole actual application state and later registration lifecycle')
+
     return dict(observed_direct_frontier=1,invocations=1,generated_completed=3,cold_publications=2,warm_entries=1,dual_entries=1,retained_generations=2,shared_domain_lifetimes=1,joint_source_pairs=2,joint_source_pages=4,joint_closed_pages=34,modeled_joint_retired_instructions=27,modeled_final_frontier_instructions=1,modeled_cross_certificate_transfers=3,measured_interior_signals=0,native_instructions=41,native_full_frames=12,lifetime_mode=2,registration_epoch=0,registration_calls=0,word_observed=0,word_available=False,qualification_credit=False)
 
 PAIR_CONTROL_COUNTS={0:28}

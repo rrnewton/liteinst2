@@ -19,6 +19,11 @@ static int rsl_generation_dirty(void) {
     if(g->state>LI2_RSG_DIRTY)return LI2_FETCH_STATE;
     if(g->state==LI2_RSG_LIVE || g->state==LI2_RSG_SUSPENDED) {
         if(g->generation==UINT64_MAX || g->invalidations==UINT64_MAX)return LI2_FETCH_STATE;
+#ifdef LI2_RESIDENT_RX
+        /* Revoke all resident code before dirtying this identity. A failed
+           revoke never reaches the mutator or returns to guest execution. */
+        int retire=li2_r3_rx_retire();if(retire)return retire;
+#endif
         ++g->generation;++g->invalidations;g->state=LI2_RSG_DIRTY;
     }
     g->pending=0;g->pending_epoch=0;g->number=0;
@@ -45,7 +50,11 @@ static int rsl_generation_before(long number,const long args[6]) {
     if(!rsl_generation_preservable(number,args))return rsl_generation_dirty();
     g->state=LI2_RSG_SUSPENDED;g->pending=1;g->pending_epoch=rsl.owner.p.epoch;
     g->number=number;for(unsigned i=0;i<6;i++)g->args[i]=args[i];
+#ifdef LI2_RESIDENT_RX
+    return li2_r3_rx_suspend();
+#else
     return 0;
+#endif
 }
 int li2_rsl_generation_after_effect(long number,const long args[6],long result) {
     struct li2_rsl_generation_progress *g=&rsl.owner.content;
@@ -69,6 +78,9 @@ int li2_rsl_generation_after_effect(long number,const long args[6],long result) 
     else {
         ++g->preserved;g->state=LI2_RSG_LIVE;g->pending=0;g->pending_epoch=0;g->number=0;
         for(unsigned i=0;i<6;i++)g->args[i]=0;
+#ifdef LI2_RESIDENT_RX
+        error=li2_r3_rx_resume();
+#endif
     }
     return rsl_finish(error);
 }
@@ -102,3 +114,18 @@ int li2_rsl_resident_content_live(const struct li2_r3_token *t,const struct li2_
 const struct li2_rsl_generation_progress *li2_rsl_generation_progress(void) {
     return &rsl.owner.content;
 }
+
+#ifdef LI2_RESIDENT_RX
+unsigned li2_rsl_resident_content_state(const struct li2_rsl_content_ref *ref) {
+    const struct li2_rsl_generation_progress *g=&rsl.owner.content;
+    if(!ref || ref->owner!=&rsl.owner || !rsl.owner.p.initialized ||
+       !ref->generation || ref->generation!=g->generation ||
+       !ref->publication_epoch || ref->publication_epoch!=g->publication_epoch ||
+       g->publication_epoch>rsl.owner.p.epoch ||
+       (g->state!=LI2_RSG_LIVE && g->state!=LI2_RSG_SUSPENDED) ||
+       (g->state==LI2_RSG_LIVE && g->pending) ||
+       (g->state==LI2_RSG_SUSPENDED && (g->pending!=1 ||
+         g->pending_epoch!=rsl.owner.p.epoch)))return ~0U;
+    return g->state;
+}
+#endif

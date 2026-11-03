@@ -535,13 +535,29 @@ static void chain_begin_trace(struct li2_tf_chain *c,int sig,siginfo_t *si,ucont
 #ifdef LI2_TF_SAME_PAGE_LEASE
 #include "tf_same_page.inc"
 #endif
+#ifdef LI2_LOOP_RESIDENT_RX
+static enum li2_chain_result chain_trace(struct li2_tf_chain *c,int sig,siginfo_t *si,
+    ucontext_t *uc,li2_tf_direct_prepared prepared) {
+#else
 enum li2_chain_result li2_tf_chain_trace(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext_t *uc) {
+#endif
     chain_need(c,chain_registered_ok(c) && c->pending && !c->in_handler && !c->first_error,
                LI2_CHAIN_STATE,4);
+#ifdef LI2_LOOP_RESIDENT_RX
+    if(prepared) {
+        const struct li2_tf_chain_slot *current=chain_slot(c);
+        chain_need(c,current->owner.classification.flow==LI2_TF_NEAR_FLOW &&
+            current->owner.classification.family==LI2_TF_BRANCH,LI2_CHAIN_ROUTE,10);
+    }
+#endif
     c->in_handler=1;unsigned previous=c->active;struct li2_tf_chain_slot *p=chain_slot(c);
     chain_need(c,p->phase==LI2_CHAIN_EXECUTING && c->event_id>p->event_id,LI2_CHAIN_ORIGIN,5);
 #ifdef LI2_TF_SAME_PAGE_LEASE
+#ifdef LI2_LOOP_RESIDENT_RX
+    if(!prepared && chain_same_page(c,sig,si,uc))return LI2_CHAIN_LEASE_RUNNING;
+#else
     if(chain_same_page(c,sig,si,uc))return LI2_CHAIN_LEASE_RUNNING;
+#endif
 #endif
 #ifdef LI2_TF_SEALED_CUSTODY
     li2_page_custody_discard(LI2_CUSTODY_MISS);
@@ -615,6 +631,13 @@ enum li2_chain_result li2_tf_chain_trace(struct li2_tf_chain *c,int sig,siginfo_
     chain_need(c,boundary>=0,LI2_CHAIN_STATE,5);
     s->fallback=(unsigned)boundary;
 #endif
+#ifdef LI2_LOOP_RESIDENT_RX
+    if(prepared) {
+        prepared(c,p,s,uc);
+        chain_need(c,chain_closed(p) && chain_frame_equal(&p->owner.step.after,uc,1),
+            LI2_CHAIN_FRAME,8);
+    }
+#endif
     if(s->fallback) {
 #ifdef LI2_EVENT_PROFILE
         li2_event_site(&s->fetch.pages[0],s->decoded.pc,s->decoded.code,s->fallback);
@@ -631,6 +654,16 @@ enum li2_chain_result li2_tf_chain_trace(struct li2_tf_chain *c,int sig,siginfo_
     chain_arm(c,s,flags);chain_produce(c,previous,c->active,sig,si,uc);
     chain_begin_trace(c,sig,si,uc);return LI2_CHAIN_RUNNING;
 }
+#ifdef LI2_LOOP_RESIDENT_RX
+enum li2_chain_result li2_tf_chain_trace(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext_t *uc) {
+    return chain_trace(c,sig,si,uc,0);
+}
+enum li2_chain_result li2_tf_chain_trace_direct(struct li2_tf_chain *c,int sig,
+    siginfo_t *si,ucontext_t *uc,li2_tf_direct_prepared prepared) {
+    chain_need(c,prepared!=0,LI2_CHAIN_ARGUMENT,10);
+    return chain_trace(c,sig,si,uc,prepared);
+}
+#endif
 _Noreturn void li2_tf_chain_unexpected(struct li2_tf_chain *c,int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_MAPS_PHASE_REUSE
     li2_maps_phase_fail();

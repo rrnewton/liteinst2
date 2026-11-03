@@ -26,9 +26,10 @@ EXPECTED_STATUS={('native',0):'observed_native_direct_frontier',
     ('maintained',0):'observed_generated_direct_frontier_maintained',
     ('differential',0):'observed_generated_direct_frontier_differential'}
 
-def reader_support(builder,private,pin,binary,run,r):
+def reader_support(builder,private,pin,binary,run,r, *, fixture=None):
+    fixture=FIXTURE if fixture is None else Path(fixture).resolve(strict=True)
     pin(OWNER/'direct_history.py')
-    reader=load('persistent_direct_frontier_app_read',FIXTURE/'read.py',pin)
+    reader=load('persistent_direct_frontier_app_read',fixture/'read.py',pin)
     owner=load('persistent_direct_frontier_owner_read',OWNER/'read.py',pin)
     policy=private/'native-policy.so';unit=pin(SELECTED/'native_policy.c')
     flags=['-std=gnu11','-O2','-g','-Wall','-Wextra','-Werror','-fPIC','-shared']

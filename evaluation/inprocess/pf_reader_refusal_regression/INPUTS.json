@@ -673,9 +673,9 @@
       "sha256": "9eaa2a3f84cc35501aef978b35768bf5ead32ededb9fb2432bffe3a4ce9c3089"
     },
     "persistent_direct_frontier_app/read.py": {
-      "bytes": 35492,
+      "bytes": 36830,
       "mode": 420,
-      "sha256": "273cd7c05858c889bef229d2f32439ee794e8f3107bf04d8e5d21457f2f12b71"
+      "sha256": "ba86eca297742d95498b8f535276daccc278e67336f84fcb5906e06cc9bb6581"
     },
     "persistent_direct_frontier_owner/direct_history.py": {
       "bytes": 7573,

@@ -19,7 +19,11 @@ static int plr_scope_enter(unsigned scope) {
         if(s->generation.linked || s->generation.active_refs || s->generation.domain_refs ||
            s->generation.member_refs[0] || s->generation.member_refs[1] ||
            s->generation.incoming[0] || s->generation.incoming[1])return 0;
+#ifdef LI2_LOOP_RESIDENT_RX
+        if(!lprx_history_quiet(i))return 0;
+#else
         for(unsigned j=0;j<2;j++)if(s->banks[j].prot== (PROT_READ|PROT_EXEC))return 0;
+#endif
     }
     if(scope==PLR_COLD || scope==PLR_CANCEL) {
         if(pe.p.phase!=LI2_PG_HELD || !pe_busy || pe_active || pe.consumed ||
@@ -34,7 +38,11 @@ static int plr_scope_enter(unsigned scope) {
             const struct li2_pg_source_progress *s=li2_pg_source_progress();
             const struct li2_pg_rseq_progress *r=li2_pg_rseq_progress();
             if(!pe_busy || pe.p.phase!=LI2_PG_CLOSED || !pe.p.anchor_released ||
+#ifdef LI2_LOOP_RESIDENT_RX
+               !pe.p.registration_rechecked || !s || s->phase!=LI2_PGS_RX_RELEASED ||
+#else
                !pe.p.registration_rechecked || !s || s->phase!=LI2_PGS_RELEASED ||
+#endif
                s->first_error || s->release_complete!=1 || !r || r->active ||
                r->checking || r->first_error || r->close_complete!=1)return 0;
         }

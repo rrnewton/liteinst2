@@ -8,7 +8,8 @@ from persistent_dynamic import H
 from persistent_active_domain import COPY_COUNTS,COPY_STDOUT
 FIXTURE=Path(__file__).resolve().parents[2]/'tools/page-entry/selected/tests/persistent_direct_frontier_app'
 
-def inspect_application(builder,private,pin,binary,run,state,original,app_units):
+def inspect_application(builder,private,pin,binary,run,state,original,app_units, *, fixture=None):
+    fixture=FIXTURE if fixture is None else Path(fixture).resolve(strict=True)
     _,head,segments=elf(original)
     need(head[1:4]==(2,62,1)and not any(s[0]==1 and s[1]&3==3 for s in segments),'actual non-PIE x86-64 app without WX')
     _,_,err=run('app-elf',[builder.tools['readelf'],'-h','-l','-d','-r','-W',original],profile='inspect',env=builder.environment)
@@ -45,17 +46,20 @@ def inspect_application(builder,private,pin,binary,run,state,original,app_units)
         need(re.search(r'\bmovabsq?\s+\$0x'+format(symbols[name]['address'],'x')+r',',bodies[caller])is not None,
              'actual '+caller+' materializes full-width '+name+' address without truncated relocation')
     state['helper_callers']=callers
-    copy_oracle(builder,private,pin,binary,run,state,original,symbols['copy'],app_units)
+    copy_oracle(builder,private,pin,binary,run,state,original,symbols['copy'],app_units,fixture=fixture)
     state.update(status='passed',artifact=fact(original),symbols=symbols);return original
 
 
 
-def copy_oracle(builder,private,pin,binary,run,state,original,app_symbol,app_units):
+def copy_oracle(builder,private,pin,binary,run,state,original,app_symbol,app_units, *, fixture=None):
     """Bound the actual fixture helper to an independent complete-byte oracle."""
-    script=pin(FIXTURE/'build-copy-oracle.sh');output=private/'active-app-copy-oracle'
+    fixture=FIXTURE if fixture is None else Path(fixture).resolve(strict=True)
+    script=pin(fixture/'build-copy-oracle.sh');output=private/'active-app-copy-oracle'
     rows=recipe(script,'"$cc"');need(len(rows)==1,'one actual two-TU copy oracle recipe')
-    argv=expand(rows[0],{'$cc':builder.tools['cc'],'$source_dir':FIXTURE,'$output':output})
-    units=[str(pin(FIXTURE/n))for n in('copy_oracle.c','pure.c')]
+    argv=expand(rows[0],{'$cc':builder.tools['cc'],'$source_dir':fixture,'$output':output})
+    units=[str(pin(fixture/n))for n in('copy_oracle.c','pure.c')]
+    if '-DLI2_LOOP_RX_REFERENCE44=1' in state['argv']:
+        argv.insert(argv.index('-Werror')+1,'-DLI2_LOOP_RX_REFERENCE44=1')
     flags=lambda args,inputs:[x for x in args[1:-2]if x not in inputs and not x.startswith('-Wl,')]
     app_flags=flags(state['argv'],app_units)
     interpreter_define='-DLI2_DIRECT_FRONTIER_INTERPRETER=\"'+str(original.parent/'fixture-interpreter.so')+'\"'
@@ -74,16 +78,16 @@ def copy_oracle(builder,private,pin,binary,run,state,original,app_symbol,app_uni
     need(not err and len(lines)==2 and all(x.startswith('li2_copy: ')for x in lines),
          'whole actual two-TU copy oracle header closure')
     includes={str(pin(n)):fact(pin(n))for line in lines for n in shlex.split(line.split(':',1)[1])}
-    need(set(units)|{str(FIXTURE/'app.h')}<=set(includes)and
-         includes[str(FIXTURE/'pure.c')]==state['headers'][str(FIXTURE/'pure.c')],
+    need(set(units)|{str(fixture/'app.h')}<=set(includes)and
+         includes[str(fixture/'pure.c')]==state['headers'][str(fixture/'pure.c')],
          'oracle and application use the same complete actual helper source')
     observed['headers']=includes
     # Actual preprocessing proves the entry-assembly define has no effect on
     # the complete helper TU; -nostdlib changes link startup only.
-    _,app_pure,err=run('app-pure-preprocess',[builder.tools['cc'],*app_flags,'-E','-P',FIXTURE/'pure.c'],
+    _,app_pure,err=run('app-pure-preprocess',[builder.tools['cc'],*app_flags,'-E','-P',fixture/'pure.c'],
         profile='finite',env=builder.environment)
     need(app_pure and not err,'whole actual application helper preprocessing')
-    _,oracle_pure,err=run('copy-pure-preprocess',[builder.tools['cc'],*flags(argv,units),'-E','-P',FIXTURE/'pure.c'],
+    _,oracle_pure,err=run('copy-pure-preprocess',[builder.tools['cc'],*flags(argv,units),'-E','-P',fixture/'pure.c'],
         profile='finite',env=builder.environment)
     need(app_pure==oracle_pure and not err,'whole helper preprocessing agrees in both exact compiler contexts')
     observed['preprocessed_helper']=dict(bytes=len(app_pure),sha256=H(app_pure))
@@ -146,13 +150,15 @@ def copy_oracle(builder,private,pin,binary,run,state,original,app_symbol,app_uni
         bounds=row['bounds'],captures={k:{j:v[j]for j in('bytes','sha256')}for k,v in row['captures'].items()})
 
 
-def compile_subject(builder,private,pin,binary,aliases,run,r):
+def compile_subject(builder,private,pin,binary,aliases,run,r, *, reference='direct41', fixture=None):
+    fixture=FIXTURE if fixture is None else Path(fixture).resolve(strict=True)
+    need(reference in ('direct41','direct44'), 'explicit unchanged41 or additive44 seed recipe')
     output=private/'application';output.mkdir()
-    script=pin(FIXTURE/'build.sh');linker=pin(FIXTURE/'app.ld')
+    script=pin(fixture/'build.sh');linker=pin(fixture/'app.ld')
     rows=recipe(script,'"$cc"');need(len(rows)==2,'exact interpreter and freestanding application recipes')
-    values={'$cc':builder.tools['cc'],'$source_dir':FIXTURE,'$output':output}
-    interp_unit=pin(FIXTURE/'fixture-interpreter.S')
-    donor=pin(FIXTURE.parents[2]/'fixture-interpreter.S')
+    values={'$cc':builder.tools['cc'],'$source_dir':fixture,'$output':output}
+    interp_unit=pin(fixture/'fixture-interpreter.S')
+    donor=pin(fixture.parents[2]/'fixture-interpreter.S')
     need(interp_unit.read_bytes()==donor.read_bytes(),'complete original source-owned fixture interpreter')
     interp_argv=expand(rows[0],values)
     expected=[str(builder.tools['cc']),'-nostdlib','-shared','-Wl,-e,_start,-z,noexecstack,--build-id=none',
@@ -186,7 +192,8 @@ def compile_subject(builder,private,pin,binary,aliases,run,r):
     owner=owners[0];at=owner[2]+start-owner[3]
     need(data[at:at+size]==expected_body,'complete actual interpreter performs original auxv AT_ENTRY transfer')
     argv=expand(rows[1],values)
-    units=[str(pin(FIXTURE/n))for n in ('main.c','pure.c','machine.S','entry.S')]
+    if reference == 'direct44':argv.insert(argv.index('-Werror')+1,'-DLI2_LOOP_RX_REFERENCE44=1')
+    units=[str(pin(fixture/n))for n in ('main.c','pure.c','machine.S','entry.S')]
     need([x for x in argv if x.endswith(('.c','.S'))]==units and
          argv[-2:]==['-o',str(output/'persistent-direct-frontier-app')]and
          '-Wl,-T,'+str(linker)in argv and '-DLI2_FAST_EQUAL=1'in argv and
@@ -211,7 +218,7 @@ def compile_subject(builder,private,pin,binary,aliases,run,r):
             path=Path(name).absolute();resolved=str(pin(path))
             need(str(path)not in aliases or aliases[str(path)]==resolved,'unchanged application header alias')
             aliases[str(path)]=resolved;includes[resolved]=fact(resolved)
-    need(set(units)|{str(FIXTURE/'app.h')}<=set(includes),'all actual freestanding source/header inputs')
+    need(set(units)|{str(fixture/'app.h')}<=set(includes),'all actual freestanding source/header inputs')
     state['headers']=includes
     _,out,err=run('app-link',argv,profile='release_build',env=builder.environment)
     need(out==err==b'','strict actual freestanding application build')
@@ -220,4 +227,4 @@ def compile_subject(builder,private,pin,binary,aliases,run,r):
          'actual application names only exact fresh source-owned interpreter and no dependencies')
     _,out,err=run('app-undefined',[builder.tools['nm'],'-u',image],profile='inspect',env=builder.environment)
     need(out==err==b'','no unresolved actual freestanding application imports')
-    return inspect_application(builder,private,pin,binary,run,state,image,units)
+    return inspect_application(builder,private,pin,binary,run,state,image,units,fixture=fixture)

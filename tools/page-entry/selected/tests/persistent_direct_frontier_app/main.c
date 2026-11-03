@@ -13,6 +13,9 @@
 #include <sys/auxv.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+#if defined(LI2_LOOP_RX_REFERENCE44) && LI2_LOOP_RX_REFERENCE44 != 1
+#error "only the explicit source-identical DIRECT44 seed variant"
+#endif
 #define RA_MAGIC UINT64_C(0x414450414132494c)
 #define DATA_BASE UINT64_C(0x500000000000)
 #define STACK_BASE UINT64_C(0x500000100000)
@@ -45,8 +48,16 @@ extern void direct_frontier_restorer(void);
 static struct kernel_action old_actions[2];
 static unsigned actions_installed;
 static const uint64_t machine_zero[8]={0};
+#ifdef LI2_LOOP_RX_REFERENCE44
+static const unsigned traces[1]={44};
+#else
 static const unsigned traces[1]={41};
+#endif
+#ifdef LI2_LOOP_RX_REFERENCE44
+static const unsigned checkpoints[12]={0,1,6,7,14,15,21,29,35,42,43,44};
+#else
 static const unsigned checkpoints[12]={0,1,5,6,11,12,18,26,32,39,40,41};
+#endif
 static const unsigned regs[16]={REG_RAX,REG_RCX,REG_RDX,REG_RBX,REG_RSP,REG_RBP,REG_RSI,REG_RDI,REG_R8,REG_R9,REG_R10,REG_R11,REG_R12,REG_R13,REG_R14,REG_R15};
 _Static_assert(sizeof(ucontext_t)==968 && offsetof(ucontext_t,uc_mcontext.gregs)==40 && offsetof(ucontext_t,uc_mcontext.fpregs)==224 && offsetof(ucontext_t,uc_sigmask)==296 && offsetof(ucontext_t,uc_stack)==16 && offsetof(siginfo_t,si_addr)==16,"actual Linux signal ABI");
 _Static_assert(sizeof(struct ua_live)==152 && sizeof(struct ua_frame)==66784 && sizeof(struct ra_prefix)==27080 && sizeof(struct ra_observation)==831000 && sizeof(struct ra_effect)==136 && sizeof(struct ra_suffix)==831400,"distinct complete active-domain application wire");
@@ -88,6 +99,10 @@ static void handler(int sig,siginfo_t *si,void *ptr){
   ++steps;
   /* Every original next PC is checked, including both cold register JMPs,
      all generated-loop reference branches and the unknown-arm ordinary tail. */
+#ifdef LI2_LOOP_RX_REFERENCE44
+  const unsigned pcs[43]={0x200,0x204,0x207,0x20b,0x20d,0x210,0x2400,0x2404,0x2408,0x240c,0x2410,0x2412,0x2416,0x3ffa,0x200,0x204,0x207,0x20b,0x20d,0x210,0x2400,0x2404,0x2408,0x240c,0x2410,0x2412,0x2416,0x3ffa,0x200,0x204,0x207,0x20b,0x20d,0x210,0x2400,0x2404,0x2408,0x240c,0x2410,0x2412,0x2416,0x3ffa,0x4000};
+  uintptr_t want=steps<=43?page+pcs[steps-1]:endpoint;
+#else
   const unsigned pcs[40]={0x200,0x204,0x207,0x20b,0x215,
       0x2400,0x2404,0x2408,0x240c,0x2410,0x241b,
       0x200,0x204,0x207,0x20b,0x20d,0x210,
@@ -95,13 +110,18 @@ static void handler(int sig,siginfo_t *si,void *ptr){
       0x200,0x204,0x207,0x20b,0x20d,0x210,
       0x2400,0x2404,0x2408,0x240c,0x2410,0x2412,0x2416,0x3ffa,0x4000};
   uintptr_t want=steps<=40?page+pcs[steps-1]:endpoint;
+#endif
   need(pc==want&&(uintptr_t)si->si_addr==want,38);
   if(steps==1){
    need((uint64_t)g[REG_EFL]==(ua_input.flags|TF),39);
    for(unsigned i=0;i<16;i++)need((uint64_t)g[regs[i]]==ua_input.g[i],40);
   }
   if(frames<12&&steps==checkpoints[frames])retain(sig,si,uc,frames);
+#ifdef LI2_LOOP_RX_REFERENCE44
+  if(steps==44){ended=1;g[REG_EFL]&=~(greg_t)TF;}
+#else
   if(steps==41){ended=1;g[REG_EFL]&=~(greg_t)TF;}
+#endif
   handling=0;return;
  }
  die(41); /* No asynchronous or data-fault success is claimed by this loop fixture. */
@@ -160,7 +180,11 @@ static void inputs(void){
  ua_input.g[0]=1;ua_input.g[1]=3;ua_input.g[2]=(uintptr_t)region_app_block_b;
  ua_input.g[3]=(uintptr_t)region_app_head;ua_input.g[6]=(uintptr_t)region_app_capture;
  ua_input.g[4]=STACK_BASE+UA_PAGE+STACK_EXTENT-504;ua_input.g[7]=DATA_BASE;
+#ifdef LI2_LOOP_RX_REFERENCE44
+ ua_input.g[8]=1;ua_input.g[9]=1;ua_input.g[10]=0;
+#else
  ua_input.g[8]=2;ua_input.g[9]=1;ua_input.g[10]=1;
+#endif
  ua_input.flags=0xad7;need((ua_input.g[4]&15)==8,121);
  copy((void *)DATA_BASE,prefix.data,UA_DATA);copy((void *)(ua_input.g[4]-128),prefix.stack,UA_STACK);
  copy(&prefix.seed,&ua_input,sizeof prefix.seed);copy(prefix.source,region_app_page,UA_SOURCE);
@@ -185,7 +209,11 @@ static void collect(void){
   if(i==0)expected+=9;
   if(i==1)expected=0;
   if(i==8)expected=1;
+#ifdef LI2_LOOP_RX_REFERENCE44
+  if(i==10)expected=UINT64_MAX-2;
+#else
   if(i==10)expected=UINT64_MAX-1;
+#endif
   need(ua_after.g[i]==expected,155+i);
  }
  need(ua_after.flags==UINT64_C(0x246),180);
@@ -232,7 +260,11 @@ int main(int argc,char **argv){
       region_app_b_exit-region_app_pair_b==0x41b&&
       region_app_a_direct-region_app_page==0x210&&region_app_a_reset-region_app_page==0x20d&&
       region_app_b_condition-region_app_page==0x2412&&region_app_b_tail_jump-region_app_page==0x2416,120);
+#ifdef LI2_LOOP_RX_REFERENCE44
+ uint64_t *h=prefix.h;h[0]=RA_MAGIC;h[1]=11;h[2]=sizeof prefix;h[3]=sizeof suffix;h[4]=mode;h[5]=native;
+#else
  uint64_t *h=prefix.h;h[0]=RA_MAGIC;h[1]=10;h[2]=sizeof prefix;h[3]=sizeof suffix;h[4]=mode;h[5]=native;
+#endif
  h[6]=(uint64_t)RAW(SYS_getpid,0,0,0,0,0,0);h[7]=(uint64_t)RAW(SYS_gettid,0,0,0,0,0,0);need(h[6]>0&&h[6]==h[7],81);
  unsigned cpu=0,node=0;need(!RAW(SYS_getcpu,&cpu,&node,0,0,0,0),82);h[8]=cpu;h[9]=node;
  h[10]=focal_head;h[11]=(uintptr_t)region_app_page;h[12]=DATA_BASE;h[13]=STACK_BASE;hardware();machine(prefix.machine);
@@ -262,7 +294,11 @@ int main(int argc,char **argv){
   if(native)need(!RAW(SYS_mprotect,region_app_page,UA_SOURCE,PROT_READ,0,0,0),152);
   region_app_enter();collect();
  }
+#ifdef LI2_LOOP_RX_REFERENCE44
+ suffix.h[0]=RA_MAGIC^1;suffix.h[1]=11;suffix.h[2]=mode;suffix.h[3]=native;suffix.h[4]=first_error;suffix.h[6]=h[30];
+#else
  suffix.h[0]=RA_MAGIC^1;suffix.h[1]=10;suffix.h[2]=mode;suffix.h[3]=native;suffix.h[4]=first_error;suffix.h[6]=h[30];
+#endif
  suffix.h[10]=2;suffix.h[11]=1;
  registration(0);registration(1);cleanup();need(!first_error&&output(&suffix,sizeof suffix),97);return 0;
 }

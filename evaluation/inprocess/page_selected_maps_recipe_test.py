@@ -18,6 +18,7 @@ from page_selected_register_time_build import recipe, expand
 from page_selected_oneshot_build import commands
 import page_selected_maps_recipe as selection
 import page_selected_maps_sources as transport
+import page_selected_maps_reset_sources as reset_transport
 
 ROOT = Path(__file__).resolve().parents[2]
 SELECTED = ROOT/'tools/page-entry/selected'
@@ -140,9 +141,42 @@ def main():
                 raise ValueError('accepted source inverse control: '+relative+':'+label)
     need(len(endpoints) == len(set(endpoints)) == 32 and len(inverse_refusals) == 112,
          'all thirty-two source endpoints and four controls for each28 changed sources')
+    # Additional exact reset/RX/TLS endpoints. Original table cases above remain.
+    reset_endpoints = []; reset_refusals = []
+    def reject_reset(name, call):
+        try:
+            call()
+        except ValueError:
+            reset_refusals.append(name)
+        else:
+            raise ValueError('accepted reset source control: '+name)
+    need(len(reset_transport.SOURCES) == 9, 'all nine exact reset/RX/TLS/transit source rows')
+    for relative, row in reset_transport.SOURCES.items():
+        path = pin(ROOT/relative); raw = path.read_bytes(); observed = fact(path)
+        need(observed == row['current'], 'actual current reset/RX/TLS source fact')
+        wants = [row['prior']] + [target['fact'] for target in row['targets'].values()]
+        for want in wants:
+            need(reset_transport.historical(relative, want, observed, raw) == want,
+                 'whole exact reset/RX/TLS historical endpoint')
+            reset_endpoints.append((relative, want['sha256']))
+        for label, edits, expected in (
+                ('missing', [], row['prior']),
+                ('order', [[1, 0, 'x']], row['prior']),
+                ('range', [[0, len(raw)+1, 'x']], row['prior']),
+                ('target', row['inverse'], dict(bytes=row['prior']['bytes'], sha256='0'*64))):
+            reject_reset(relative+':'+label,
+                         lambda: transport.inverse(raw, edits, expected))
+        reject_reset(relative+':current_byte', lambda: reset_transport.historical(
+            relative, row['prior'], observed, raw+b'# changed current source\n'))
+        reject_reset(relative+':unknown_endpoint', lambda: reset_transport.historical(
+            relative, dict(bytes=row['prior']['bytes'], sha256='0'*64), observed, raw))
+    need(len(reset_endpoints) == len(set(reset_endpoints)) == 10 and
+         len(reset_refusals) == len(set(reset_refusals)) == 54,
+         'all ten exact additional endpoints and fifty-four causal refusals')
     need(all(fact(path) == before for path, before in pins.items()), 'whole input closure')
     result = dict(schema=1, scope='pure recipe/source transport only',
                   profile_argv=12, recipe_refusals=60, source_endpoints=32, inverse_refusals=112,
+                  reset_source_endpoints=10, reset_source_refusals=54,
                   source_inputs=pins, subjects=0, builds=0, qualification_credit=False)
     (output/'result.json').write_text(json.dumps(result, indent=2, sort_keys=True)+'\n')
     print(json.dumps({k: v for k, v in result.items() if k != 'source_inputs'}, separators=(',', ':')))

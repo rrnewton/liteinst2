@@ -17,7 +17,9 @@
 /* These three publications are not li2_pgd_member objects. Neither the old
    two-member view nor the old two-slot backing owner is widened or cast. */
 #define LI2_R3_CERTIFICATES 3U
-#ifdef LI2_RESIDENT_STABLE_GENERATION
+#ifdef LI2_RESIDENT_RX
+#define LI2_R3_VERSION 3U
+#elif defined(LI2_RESIDENT_STABLE_GENERATION)
 #define LI2_R3_VERSION 2U
 #else
 #define LI2_R3_VERSION 1U
@@ -77,4 +79,7 @@ struct li2_r3_rseq_progress {
     unsigned cold[LI2_R3_CERTIFICATES];
 };
 const struct li2_r3_rseq_progress *li2_r3_rseq_progress(void);
+#ifdef LI2_RESIDENT_RX
+#include "resident_rx.h"
+#endif
 #endif

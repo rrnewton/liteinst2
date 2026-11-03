@@ -467,7 +467,7 @@ def controls(data,layout,image,app,pid,cpu,exit_status):
     return dict(refusals=refused,count=len(refused),source_sha256=hashlib.sha256(data).hexdigest(),native_operations=0)
 
 
-def pair(native,gated,owner):
+def pair_state(native,gated,owner):
     """Whole state/968-byte UC; only authenticated lane coordinates and closed TF move."""
     need(native['role']=='native'and gated['role']=='gated'and native['complete']==gated['complete']==1 and len(native['frames'])==5 and gated['frames']==[],'complete actual native and gated applications')
     for key in('source','head','source_page_address','predecessor','terminal_pc','capture_pc','capture_pointer','hardware','xcr0','machine','stack','cpu'):
@@ -497,14 +497,22 @@ def pair(native,gated,owner):
         need(actual_uc==bytes(expected_uc),'all968 normalized UC bytes; only authenticated altstack/FP/RSP coordinates and actual before-TF closure translate')
         need(owner[name+'_stack']==gated['stack']==native['stack'],'all520 native/owner stack bytes at '+name)
     need((owner['entry_pc'],owner['terminal_pc'],owner['next_pc'])==(gated['head'],gated['terminal_pc'],gated['capture_pc'])and owner['source']==native['source'],'actual original entry/frontier/next and whole six source pages')
+
+
+def pair(native,gated,owner):
+    pair_state(native,gated,owner)
     need(owner['cold_publications']==owner['resident_certificates']==3 and owner['entries']==owner['completed']==owner['anchor_released']==1 and owner['closed_pages']==51 and owner['interior_signals']==0 and owner['terminal_ingresses']==1 and owner['old_active_domain_limit']==2,'three independent publications and one real all-three closed lifetime without enlarging the old owner')
     need(owner['models']==[dict(heads=2,exits=1),dict(heads=2,exits=1),dict(heads=3,exits=2)]and owner['native_instructions']==30 and owner['generated_guest_instructions']==28,'exact independent graph and four-cycle native/generated populations')
     return dict(observed_resident_three=1,cycles=4,native_trace_events=30,native_full_frames=5,protected_full_frames=3,fp_storage_per_frame=65536,ucontext_bytes_per_frame=968,stack_bytes=520,cold_publications=3,entries=1,completed=1,resident_certificates=3,old_active_domain_limit=2,closed_pages=51,interior_signals=0,terminal_ingresses=1,source_cost=owner['source_cost'],qualification_credit=False,performance_credit=False)
 
 
 def pair_controls(native,gated,owner):
+    return pair_controls_checked(native,gated,owner,pair)
+
+
+def pair_controls_checked(native,gated,owner,check):
     import copy
-    pair(native,gated,owner);tests=[]
+    check(native,gated,owner);tests=[]
     for which in('before','terminal','next'):
         for field in('greg','fp','mask','fs','gs','si','uc'):tests.append((which,field))
     refused=[]
@@ -514,19 +522,19 @@ def pair_controls(native,gated,owner):
         elif type(value)is bytes:
             v=bytearray(value);v[304 if field=='uc'else 0]^=1;changed[which][field]=bytes(v)
         else:changed[which][field]=value^1
-        try:pair(native,gated,changed)
+        try:check(native,gated,changed)
         except ValueError:refused.append(which+'_'+field)
         else:raise ValueError('accepted actual full-frame pair corruption '+which+'_'+field)
     for field in('rsp','cold_publications','entries','completed','resident_certificates','closed_pages','interior_signals','terminal_ingresses','anchor_released','old_active_domain_limit','native_instructions','generated_guest_instructions','terminal_pc','next_pc','source'):
         changed=copy.deepcopy(owner);value=changed[field]
         if type(value)is bytes:v=bytearray(value);v[0]^=1;changed[field]=bytes(v)
         else:changed[field]=value^1
-        try:pair(native,gated,changed)
+        try:check(native,gated,changed)
         except ValueError:refused.append(field)
         else:raise ValueError('accepted actual resident pair corruption '+field)
     for field in('before_stack','terminal_stack','next_stack'):
         changed=copy.deepcopy(owner);v=bytearray(changed[field]);v[-1]^=1;changed[field]=bytes(v)
-        try:pair(native,gated,changed)
+        try:check(native,gated,changed)
         except ValueError:refused.append(field)
         else:raise ValueError('accepted literal520 stack pair corruption '+field)
     need(len(refused)==39,'all39 finite D3 pair controls refused')
@@ -534,7 +542,7 @@ def pair_controls(native,gated,owner):
         changed=copy.deepcopy(owner)
         for which in('before','terminal','next'):
             v=bytearray(changed[which]['uc']);v[offset]^=1;changed[which]['uc']=bytes(v)
-        try:pair(native,gated,changed)
+        try:check(native,gated,changed)
         except ValueError:refused.append('coordinated_full_UC_'+str(offset))
         else:raise ValueError('accepted coordinated unaliased full-UC corruption '+str(offset))
     need(len(refused)==44,'all39 original plus five coordinated whole-UC controls refused')

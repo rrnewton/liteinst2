@@ -280,6 +280,13 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,sdk):
             for kind,path,args in [('ls','/bin/ls',['-d','.']),('true','/bin/true',[])]}
     drrun,client,dr_env=build_dr(sdk,builder,private,pin,binary,run,r)
     dr_diagnostics(drrun,client,states,private,pin,binary,run,r,dr_env)
+    launch_cohort(builder,states,private,binary,run,r,namespace,drrun,client,dr_env)
+
+
+def launch_cohort(builder,states,private,binary,run,r,namespace,drrun,client,dr_env,*,
+                  gated_check=None,gated_controls=None,
+                  cleanup_check=None):
+    """The original sixty launches; explicit adapters retain their own full readers."""
     r['terminal_reports']={};r['reader_controls']={}
     for ordinal,(kind,repeat,lane) in enumerate(ORDER):
         name=NAMES[ordinal];s=states[kind];case=r['cases'][ordinal]
@@ -296,10 +303,10 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,sdk):
             need(out==(b'.\n' if kind=='ls' else b''),'exact real program output')
             if lane=='gated':
                 pair.namespace_join(s,ns,binary,r,namespace)
-                parsed,summary=cost_reports.check(out,err,row['pid'],row['exit'],row['stdout_provenance_before'],
+                parsed,summary=(cost_reports.check if gated_check is None else gated_check)(out,err,row['pid'],row['exit'],row['stdout_provenance_before'],
                     s['images'],s['image_bytes'],fact(s['carrier']),s['carrier_bytes'],workload=kind)
                 r['terminal_reports'][name]=parsed;case['comparison']=summary
-                r['reader_controls'][name]=cost_reports.supplied_controls(out,err,row['pid'],row['exit'],
+                r['reader_controls'][name]=(cost_reports.supplied_controls if gated_controls is None else gated_controls)(out,err,row['pid'],row['exit'],
                     row['stdout_provenance_before'],s['images'],s['image_bytes'],fact(s['carrier']),s['carrier_bytes'],workload=kind)
             else:
                 need(err==b'','native/DR stderr exactly empty')
@@ -314,6 +321,7 @@ def cohort(builder,products,private,pin,binary,aliases,run,r,sdk):
                 case.update({k:actual.get(k) for k in ('exit','process_ns','timed_out','reaped','user_cpu_ns','system_cpu_ns',
                     'minor_faults','major_faults','voluntary_switches','involuntary_switches')})
                 case['captures']={k:{f:v[f] for f in ('bytes','sha256')} for k,v in actual.get('captures',{}).items()}
+            if cleanup_check is not None:cleanup_check(name,attempted)
             print(json.dumps({k:case.get(k) for k in ('ordinal','workload','lane','status','exit','process_ns','error')}),flush=True)
     need(len(r['cases'])==60 and all(c['status']=='passed' for c in r['cases']),
          'all sixty planned attempts must complete; failures retained without replacement')

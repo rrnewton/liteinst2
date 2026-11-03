@@ -27,4 +27,7 @@
 #if !defined(LI2_PG_LOOP_RO_BINDING_VERSION) || LI2_PG_LOOP_RO_BINDING_VERSION != 1
 #error "LOOP RO certificate requires its separately bound complete source policy"
 #endif
+#ifdef LI2_LOOP_RESIDENT_RX
+#include "loop_resident_rx_profile.h"
+#endif
 #endif

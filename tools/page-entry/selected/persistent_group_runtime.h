@@ -46,6 +46,9 @@ int li2_pg_owner_cancel_prot(const struct li2_pg_token *,unsigned);
 enum li2_pg_source_phase {
     LI2_PGS_IDLE,LI2_PGS_SEEDING,LI2_PGS_PREPARING,LI2_PGS_HELD,LI2_PGS_RX,
     LI2_PGS_CLOSED,LI2_PGS_RELEASED,LI2_PGS_FAILED,LI2_PGS_CANCELLED
+#ifdef LI2_LOOP_RESIDENT_RX
+    ,LI2_PGS_RX_RELEASED
+#endif
 };
 struct li2_pg_source_progress {
     unsigned initialized,phase,first_error,pages_copied,bytes_copied[2];
@@ -63,6 +66,22 @@ struct li2_pg_source_progress {
     struct li2_private_code_query cancel_code[3];
     struct li2_span_fetch_observation cancelled_fetch;
 };
+#ifdef LI2_LOOP_RESIDENT_RX
+/* Execution claim release while the distinct publication lifetime stays RX.
+   This is descriptive evidence, never an old closed/NX receipt or a permit. */
+struct li2_pgd_rx_source_release {
+    struct li2_pg_token token;
+    unsigned started,complete,count,extents,pages;
+    struct li2_pgd_ref ref[LI2_PGD_MEMBERS];
+    struct li2_private_code_query query[LI2_PGD_MEMBERS][3];
+    struct li2_span_fetch_observation released_fetch;
+};
+int li2_pgd_source_release_rx(const struct li2_pg_token *);
+int li2_pgd_source_terminal_rx(const struct li2_pg_token *);
+const struct li2_pgd_rx_source_release *li2_pgd_source_rx_progress(void);
+int li2_pgd_source_rx_value(const struct li2_pg_source_progress *,
+    const struct li2_pgd_source_progress *,const struct li2_pgd_rx_source_release *);
+#endif
 int li2_pg_source_initialize(void);
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
 /* Optional offer decline only; neither function grants an execution permit. */

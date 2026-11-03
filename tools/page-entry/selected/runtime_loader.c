@@ -56,6 +56,9 @@ static uint64_t rsl_initialization[9];
 #include "repeat_owner.h"
 #include "tf_continuation.h"
 #include "selected_globals.inc"
+#ifdef LI2_LOOP_RESIDENT_RX
+#include "loop_resident_rx.h"
+#endif
 #ifdef LI2_LOOP_INGRESS_CENSUS
 static void lic_initialize(void);
 static void lic_seal(void);
@@ -469,6 +472,14 @@ static void rso_report(unsigned,unsigned,long);
 static void report(unsigned status,unsigned code,long detail) {
     if(reported) return;
     reported=1;
+#ifdef LI2_RESIDENT_RX
+    /* Termination cannot leave an RX lifetime reported as a normal closure.
+       This best-effort revoke never changes status/code or releases a claim. */
+    li2_r3_rx_terminal();
+#endif
+#ifdef LI2_LOOP_RESIDENT_RX
+    lprx_terminal();
+#endif
 #ifdef LI2_LOOP_INGRESS_CENSUS
     lic_seal();
 #endif
@@ -711,6 +722,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #ifdef LI2_LOOP_INGRESS_CENSUS
     lic_report(status,code);
 #endif
+#ifdef LI2_LOOP_RESIDENT_RX
+    lprx_report(status,code);
+#endif
 }
 static void fail(unsigned code,long detail) {
 #ifdef LI2_FLAG_STACK
@@ -888,6 +902,9 @@ static void leto_fd_guard(long,const long[6]);
 static void lpef_fd_guard(long,const long[6]);
 #endif
 static void dispatch_operation(long n,ucontext_t *context) {
+#ifdef LI2_LOOP_RESIDENT_RX
+    lprx_before_unsafe(LPRX_RAW);
+#endif
 #ifdef LI2_LINKED_EPOCH
     if(li2_lifecycle_link_interlock() || selected_linked_epoch_active || selected_linked_epoch_busy)
         selected_linked_epoch_abort(3100,440);
@@ -1189,6 +1206,9 @@ void li2_flag_stack_handler(int sig,siginfo_t *si,void *ptr) {
 }
 #endif
 static void handler(int sig,siginfo_t *si,void *ptr) {
+#ifdef LI2_LOOP_RESIDENT_RX
+    lprx_preentry(sig,si,ptr);
+#endif
 #ifdef LI2_RESIDENT_THREE
     selected_resident_three_preentry(sig,si,ptr);
 #endif
@@ -1445,6 +1465,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
         selected_pending_route=SELECTED_NO_STEP;
     } else if(sig==SIGSEGV) {
         checked(selected_pending_route==SELECTED_NO_STEP,658,0);
+#ifdef LI2_LOOP_RESIDENT_RX
+        lprx_before_unsafe(LPRX_NATIVE);
+#endif
 #ifdef LI2_NATIVE_PAGES
 #if defined(LI2_LINKED_EPOCH_CAPTURE) && !defined(LI2_LINKED_EPOCH_REUSE_CAPTURE)
         int native_admitted=selected_native_fetch(sig,si,ptr);
@@ -1470,6 +1493,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
     li2_entry_time_arm();
 #endif
 #ifdef LI2_TF_HANDOFF
+#ifdef LI2_LOOP_RESIDENT_RX
+    lprx_handler_end();
+#endif
     li2_tf_chain_handler_end(&selected_chain);
 #endif
 #ifdef LI2_LINKED_PREEDGE_CAPTURE

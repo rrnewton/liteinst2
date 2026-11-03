@@ -1,3 +1,11 @@
+#ifdef LI2_RESIDENT_RX
+/* Observe the actual finite compiler and publication calls without changing
+   their inputs, return values or the old unselected translation unit. */
+#define li2_pg_plan_pages(...) LI2_R3_RX_CALL(LI2_R3_RX_PLAN,(li2_pg_plan_pages)(__VA_ARGS__))
+#define li2_pg_compact_build(...) LI2_R3_RX_CALL(LI2_R3_RX_COMPACT_BUILD,(li2_pg_compact_build)(__VA_ARGS__))
+#define li2_pg_compact_validate(...) LI2_R3_RX_CALL(LI2_R3_RX_COMPACT_VALIDATE,(li2_pg_compact_validate)(__VA_ARGS__))
+#define r3_publish(...) LI2_R3_RX_CALL(LI2_R3_RX_PUBLISH,(r3_publish)(__VA_ARGS__))
+#endif
 /* The first resident execution is deliberately a single image-bound root and
    exactly three discovered direct-branch regions. No supplied graph, address
    list, larger old pgd view, or scripted completion grants execution. */
@@ -7,9 +15,13 @@ static _Noreturn void r3_fail(unsigned code,long detail) {
     (void)r3_permission(PROT_READ|PROT_WRITE);
     if(!r3.first_error){r3.first_error=code;r3.first_detail=detail;}
     if(r3.active && r3.unexpected<UINT64_MAX)++r3.unexpected;
+#ifdef LI2_RESIDENT_RX
+    li2_r3_rx_terminal();
+#else
     for(unsigned i=0;i<LI2_R3_CERTIFICATES;i++)if(r3.certificate[i].identity.code_live)
         (void)raw(SYS_mprotect,r3.certificate[i].identity.code,R3_CODE_BYTES,PROT_READ,0,0,0);
     (void)raw(SYS_membarrier,32,0,0,0,0,0);
+#endif
     r3.phase=LI2_R3_FAILED;(void)r3_permission(PROT_READ);
     selected_persistent_abort(code,detail);
 }
@@ -123,14 +135,26 @@ static int r3_plans(const ucontext_t *uc) {
                r3_discover(&c->mirror.plan))return R3_SOURCE;
         }
     } else if(r3.count!=LI2_R3_CERTIFICATES || r3.planned!=LI2_R3_CERTIFICATES ||
-              r3.publications!=LI2_R3_CERTIFICATES || !r3_all_nx())return R3_PUBLICATION;
+              r3.publications!=LI2_R3_CERTIFICATES ||
+#ifdef LI2_RESIDENT_RX
+              !r3_rx_entry_storage())return R3_PUBLICATION;
+#else
+              !r3_all_nx())return R3_PUBLICATION;
+#endif
     if(r3.count!=LI2_R3_CERTIFICATES || r3.planned!=LI2_R3_CERTIFICATES)return R3_SOURCE;
     r3.gpr_written=0;r3.flags_written=0;
     for(unsigned i=0;i<r3.count;i++) {
         struct r3_certificate *c=&r3.certificate[i];const struct li2_pg_compact *p=&c->mirror.plan;
         if(!p->heads || p->heads>LI2_PE_HEADS || p->links || p->stores || !p->exits ||
            p->exits>LI2_PG_BOUNDARIES || li2_rsl_resident_plan(&r3.token,i) ||
+#ifdef LI2_RESIDENT_RX
+           /* The warm branch above first authenticates every complete sealed
+              payload/code image and live source binding. No mutable key or
+              readiness flag alone substitutes for the original theorem. */
+           (!r3.publications && li2_pg_compact_validate(p,&r3_work.rebuild,&r3_work.compact_rebuild)))return R3_SOURCE;
+#else
            li2_pg_compact_validate(p,&r3_work.rebuild,&r3_work.compact_rebuild))return R3_SOURCE;
+#endif
         for(unsigned j=0;j<p->heads;j++) {
             if(p->head[j].kind!=LI2_PE_NONE && p->head[j].kind!=LI2_PG_DIRECT)return R3_SOURCE;
             const struct li2_span_decoded *d=&p->original[j];
@@ -166,10 +190,18 @@ static int r3_open(void) {
     }
     for(unsigned i=0;i<r3.count;i++) {
         struct r3_certificate *c=&r3.certificate[i];
+#ifdef LI2_RESIDENT_RX
+        if(r3_rx_code_permission(c,PROT_READ|PROT_EXEC))
+#else
         if(raw(SYS_mprotect,c->identity.code,R3_CODE_BYTES,PROT_READ|PROT_EXEC,0,0,0))
+#endif
             return R3_PUBLICATION;
     }
+#ifdef LI2_RESIDENT_RX
+    if(r3_rx_sync())return R3_PUBLICATION;
+#else
     if(raw(SYS_membarrier,32,0,0,0,0,0))return R3_PUBLICATION;
+#endif
     for(unsigned i=0;i<r3.count;i++) {
         struct r3_certificate *c=&r3.certificate[i];
         le_zero(c->opened,sizeof c->opened);
@@ -177,7 +209,14 @@ static int r3_open(void) {
         if(r3_code_query(i,PROT_READ|PROT_EXEC,c->opened) || r3_proof_query(i,proof) ||
            r3_data_query(i) || r3_bytes(i))return R3_PUBLICATION;
     }
+#ifdef LI2_RESIDENT_RX
+    if(!r3_directory_query() || r3.rx_lifetime!=LI2_R3_RX_UNISSUED ||
+       !r3_rx_content(LI2_RSG_LIVE))return R3_PUBLICATION;
+    r3.rx_lifetime=LI2_R3_RX_RESIDENT;
+    return 0;
+#else
     return r3_directory_query()?0:R3_PUBLICATION;
+#endif
 }
 static int r3_preserved(void) {
     const greg_t *a=r3.before.frame.greg,*b=r3.after.frame.greg;
@@ -200,6 +239,7 @@ static int r3_preserved(void) {
         r3.before.frame.fp_bytes!=r3.after.frame.fp_bytes ||
         !equal(r3.before.frame.fp,r3.after.frame.fp,LI2_STEP_FP_BYTES)?R3_RESULT:0;
 }
+#ifndef LI2_RESIDENT_RX
 static int r3_drain(const ucontext_t *uc) {
     if(r3.phase!=LI2_R3_RECOVERING || !r3.busy || !r3.active || !r3.exit_seen ||
        r3.count!=LI2_R3_CERTIFICATES)return R3_STATE;
@@ -225,6 +265,7 @@ static int r3_drain(const ucontext_t *uc) {
     if(li2_r3_rseq_close(&r3.token,uc) || !r3_all_nx())return R3_RSEQ;
     return 0;
 }
+#endif
 static int selected_resident_three_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     if(!r3.initialized || r3.first_error || r3.busy || r3.active ||
        (r3.phase!=LI2_R3_IDLE && r3.phase!=LI2_R3_DRAINED) ||
@@ -239,7 +280,12 @@ static int selected_resident_three_trace_try(int sig,siginfo_t *si,ucontext_t *u
     r3_need(!r3_permission(PROT_READ|PROT_WRITE),R3_PUBLICATION,10);
     r3_need(!pe_busy && !pe_active && !pe_decoding && !pe_closing &&
         !li2_pg_epoch_interlock() && !li2_pg_rseq_progress()->active &&
-        r3.serial<UINT64_MAX && r3_registry_initial() && r3_identity() && r3_all_nx(),R3_STATE,11);
+        r3.serial<UINT64_MAX && r3_registry_initial() && r3_identity() &&
+#ifdef LI2_RESIDENT_RX
+        r3_rx_entry_storage(),R3_STATE,11);
+#else
+        r3_all_nx(),R3_STATE,11);
+#endif
     r3.busy=1;r3.phase=LI2_R3_CLOSING_TRACE;++r3.serial;
     r3.token=(struct li2_r3_token){&r3,r3.serial};r3.consumed=0;r3.released=0;r3.exit_seen=0;
     le_zero(&r3.before,sizeof r3.before);le_zero(&r3.after,sizeof r3.after);
@@ -278,7 +324,13 @@ static int selected_resident_three_trace_try(int sig,siginfo_t *si,ucontext_t *u
         r3_need(!r3_directory_build(),R3_PUBLICATION,23);
     }
     r3.phase=LI2_R3_BOUND;
-    r3_need(!r3_current(uc) && !r3_open() && le_unchanged(&r3.before,si,uc) &&
+    r3_need(!r3_current(uc) &&
+#ifdef LI2_RESIDENT_RX
+        !(r3.rx_lifetime==LI2_R3_RX_RESIDENT?r3_rx_reenter():r3_open()) &&
+#else
+        !r3_open() &&
+#endif
+        le_unchanged(&r3.before,si,uc) &&
         r3.entries<UINT64_MAX,R3_PUBLICATION,24);
     r3.phase=LI2_R3_ACTIVE;r3.active=1;++r3.entries;
     uintptr_t target=r3.certificate[0].layout.generated[0];
@@ -325,11 +377,19 @@ static void selected_resident_three_exit(int sig,siginfo_t *si,ucontext_t *uc) {
         if(exit>=0){++found;r3.exit_member=i;r3.exit_index=(unsigned)exit;}
     }
     r3_need(found==1 && !r3_preserved(),R3_RESULT,36);r3.exit_seen=1;r3.phase=LI2_R3_RECOVERING;
+#ifdef LI2_RESIDENT_RX
+    r3_need(!r3_rx_release(uc) && le_unchanged(&r3.after,si,uc) && r3.completed<UINT64_MAX,R3_SOURCE,37);
+#else
     r3_need(!r3_drain(uc) && le_unchanged(&r3.after,si,uc) && r3.completed<UINT64_MAX,R3_SOURCE,37);
+#endif
     ++r3.completed;r3.phase=LI2_R3_DRAINED;r3.busy=0;r3.ticket=0;
     selected_pending_route=SELECTED_NO_STEP;selected_step_pending=0;
     selected_logical_flags=(uint64_t)g[REG_EFL]&~SELECTED_RF;selected_flags_known=1;
+#ifdef LI2_RESIDENT_RX
+    r3_need(r3.entries==r3.completed && li2_r3_rx_execution_quiet(),R3_STATE,38);
+#else
     r3_need(r3.entries==r3.completed && li2_r3_owner_quiet(),R3_STATE,38);
+#endif
     r3_need(!r3_permission(PROT_READ),R3_PUBLICATION,39);
 #ifdef LI2_RESIDENT_THREE_CAPTURE
     r3o_terminal();
@@ -338,3 +398,10 @@ static void selected_resident_three_exit(int sig,siginfo_t *si,ucontext_t *uc) {
        executed and no synthetic completion/frame is substituted. */
     selected_fetch(sig,si,uc);
 }
+
+#ifdef LI2_RESIDENT_RX
+#undef li2_pg_plan_pages
+#undef li2_pg_compact_build
+#undef li2_pg_compact_validate
+#undef r3_publish
+#endif

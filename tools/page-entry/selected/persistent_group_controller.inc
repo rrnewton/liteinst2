@@ -41,6 +41,9 @@
 #include "persistent_group_config.h"
 #ifdef LI2_LOOP_RO_CERTIFICATE
 #include "loop_ro_certificate.h"
+#ifdef LI2_LOOP_RESIDENT_RX
+#include "loop_resident_rx.h"
+#endif
 #endif
 #ifdef LI2_PERSISTENT_LOOP_EFFECTS
 #if LI2_PG_LOOP_EFFECTS_BINDING_VERSION != 1 || LI2_PG_LOOP_EFFECTS_POLICY_VERSION != 13 || \
@@ -287,8 +290,14 @@ struct li2_ptr_slot {
 #endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
 #include "persistent_active_domain_types.inc"
+#ifdef LI2_LOOP_RESIDENT_RX
+#include "loop_resident_rx_types.inc"
+#endif
 #endif
 struct li2_pg_epoch {
+#ifdef LI2_LOOP_RESIDENT_RX
+    struct lprx_state rx;
+#endif
     struct li2_pg_progress p,last_terminal;
 #ifdef LI2_PERSISTENT_SUBENTRY
     struct li2_pgs_entry entry;
@@ -390,6 +399,17 @@ static unsigned ptr_choose(uintptr_t);
 static uintptr_t pcw_address(void);
 #endif
 static volatile sig_atomic_t pe_busy,pe_active,pe_failing,pe_closing,pe_decoding,pe_terminal_ingress;
+#ifdef LI2_LOOP_RESIDENT_RX
+static int lprx_slot_prot(unsigned);
+static int lprx_slots_prot(unsigned);
+static int lprx_history_quiet(unsigned);
+static int lprx_permitted(unsigned);
+static int lprx_complete_value(const struct pda_completion *);
+static int lprx_enter(unsigned);
+static int lprx_drain(void);
+static int lprx_revoke(unsigned);
+static int lprx_permission_count(uintptr_t,size_t,int,unsigned);
+#endif
 static const unsigned char pe_archive[32]=LI2_PG_ARCHIVE_SHA256;
 static const unsigned char pe_policy[32]=LI2_PG_POLICY_SHA256;
 static const unsigned pe_greg[16]={REG_RAX,REG_RCX,REG_RDX,REG_RBX,REG_RSP,REG_RBP,REG_RSI,REG_RDI,
@@ -483,8 +503,14 @@ static int pg_proof_query(uintptr_t address,int prot,struct pg_proof_query *q) {
 static int pe_permission(uintptr_t address,size_t bytes,int prot,struct le_permission *p) {
     if(p->started)return PE_STATE;
     p->started=1;p->prot=prot;__asm__ volatile("":::"memory");
+#ifdef LI2_LOOP_RESIDENT_RX
+    if(lprx_permission_count(address,bytes,prot,0))return PE_OVERFLOW;
+#endif
     p->result=raw(SYS_mprotect,address,bytes,prot,0,0,0);p->returned=1;
     p->sync_started=1;__asm__ volatile("":::"memory");
+#ifdef LI2_LOOP_RESIDENT_RX
+    if(lprx_permission_count(address,bytes,prot,1))return PE_OVERFLOW;
+#endif
     p->sync_result=raw(SYS_membarrier,32,0,0,0,0,0);p->sync_returned=1;
     int e=pe_query(address,bytes,prot,&p->query);
     if(p->result || p->sync_result || e)return PE_PUBLICATION;
@@ -621,7 +647,12 @@ static int pg_link_data(unsigned step) {
     if(t->started || (step && (!pg_slots(!linked) || !pg_refs(!linked))) ||
        (!step && (g->linked || !pg_refs(0))))return PE_STATE;
     t->started=1;t->linked=linked;
+#ifdef LI2_LOOP_RESIDENT_RX
+    int code_prot=lprx_slots_prot(step);if(code_prot<0)return PE_STATE;
+    int e=pg_queries(&g->layout,code_prot,t->code);if(e)return e;
+#else
     int e=pg_queries(&g->layout,PROT_READ,t->code);if(e)return e;
+#endif
     if(linked) {
         g->active_refs=1;g->member_refs[0]=g->member_refs[1]=1;
         for(unsigned i=0;i<p->links;i++) {
@@ -642,7 +673,11 @@ static int pg_link_data(unsigned step) {
     struct pg_dispatch_cell_transition *cell=&g->cell[step];
     if(cell->started || cell->complete || !pe_busy || pe_closing)return PE_STATE;
     for(unsigned i=0;i<3;i++)if(!pg_query_complete(&t->code[i],pg_extent(&g->layout,i),
+#ifdef LI2_LOOP_RESIDENT_RX
+        pg_extent_bytes(i),code_prot))return PE_PUBLICATION;
+#else
         pg_extent_bytes(i),PROT_READ))return PE_PUBLICATION;
+#endif
     cell->started=1;cell->generation=g->generation;cell->serial=pe.p.serial;
     if((e=pe_query(g->spill,PAGE,PROT_READ|PROT_WRITE,&cell->mapping)))return e;
     volatile uint64_t *target=(void *)(g->spill+32);
@@ -957,7 +992,12 @@ static int ped_permitted(void) {
 #endif
 static void ped_claim(void) {
     pe_need(ped_permitted() && !pe_bytes(),PE_RELEASE,10);
+#ifdef LI2_LOOP_RESIDENT_RX
+    const int claim_prot=lprx_slot_prot(pe.selected_slot);
+    pe_need(claim_prot>=0 && !pg_queries(&PE_SLOT(generation).layout,claim_prot,pe.claim_code) &&
+#else
     pe_need(!pg_queries(&PE_SLOT(generation).layout,PROT_READ,pe.claim_code) &&
+#endif
         !pg_proof_query(PE_SLOT(generation).proof,PROT_READ,&pe.claim_proof) &&
         !pe_query(PE_SLOT(generation).spill,PAGE,PROT_READ|PROT_WRITE,&pe.claim_spill) &&
         !pe_query(PE_SLOT(generation).layout.slots,PAGE,PROT_READ,&pe.claim_slots),PE_RELEASE,11);
@@ -1026,6 +1066,9 @@ static void selected_persistent_initialize(void) {
     unsigned a=0,b=0;for(unsigned i=0;i<32;i++){a|=pe_archive[i];b|=pe_policy[i];}
     pe_need(a && b && selected_run_protect_contains(0,(uintptr_t)&pe,sizeof pe)==1,PE_STATE,1);
     LRX_INITIALIZE();
+#ifdef LI2_LOOP_RESIDENT_RX_ORACLE
+    pe_need(!lrxo_initialize(),PE_STATE,540);
+#endif
     pe.registered=1;pe.session=selected_session;
 #ifdef LI2_PERSISTENT_SEALED_GENERATION
     pe_need(!sg_initialize(),PE_PUBLICATION,190);
@@ -1122,6 +1165,9 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
     rcc_source(s,r);
 #endif
     LRX_SOURCE(s,r);
+#ifdef LI2_LOOP_RESIDENT_RX_ORACLE
+    lrxo_build(s->key.entry);
+#endif
     LRR_EVALUATE();
     if(RCC_TEST(0,PE_SLOT(generation).installed) && RCC_TEST(1,ped_stored()) && RCC_TEST(2,pe_registry()) &&
        RCC_TEST(3,PE_SLOT(generation).generated==pe.p.generated) &&
@@ -1149,6 +1195,10 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         pe_need(!pe_sub_fill(),PE_SOURCE,110);
 #endif
     } else {
+#ifdef LI2_LOOP_RESIDENT_RX
+        /* Cold construction/cancellation may write or resume outside LOOP. */
+        pe_need(!lprx_revoke(LPRX_COLD),PE_PUBLICATION,500);
+#endif
         le_zero(&pe.candidate,sizeof pe.candidate);
         size_t n=0;for(size_t i=0;i<protected_count;i++)
             pe.exclusions[n++]=(struct li2_mg_range){protected[i].first,protected[i].end};
@@ -1384,6 +1434,9 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
 #endif
     if(pg_permissions(&b->layout,PROT_READ|PROT_WRITE,pe.reopen_code,0) ||
        pg_proof_permission(proof,PROT_READ|PROT_WRITE,&pe.reopen_proof))return PE_PUBLICATION;
+#ifdef LI2_LOOP_RESIDENT_RX
+    le_zero(&pe.rx.slot[pe.selected_slot],sizeof pe.rx.slot[pe.selected_slot]);
+#endif
     le_zero(g,sizeof *g);g->generated=b->generated;g->spill=b->spill;g->proof=proof;g->layout=b->layout;
     for(unsigned i=0;i<3;i++)g->code_writable[i]=pe.reopen_code[i].query;
     g->proof_writable=pe.reopen_proof.query;
@@ -1894,6 +1947,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
         pe.transfer.event==selected_chain.event_id && pe.transfer.pc==pc &&
         pe.transfer.flags==((uint64_t)pe.ingress.frame.greg[REG_EFL]&~SELECTED_TF),PE_EVENT,0);
     pe.close_complete=1;pe_closing=0;pe.flags=pe.transfer.flags;
+#ifdef LI2_LOOP_RESIDENT_RX
+    lprx_direct_closed();
+#endif
     selected_logical_flags=pe.flags;selected_flags_known=1;selected_step_pending=0;selected_pending_route=SELECTED_NO_STEP;
     pe_need(!le_capture(&pe.before,sig,si,uc),PE_FRAME,1);
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
@@ -2269,6 +2325,12 @@ _Static_assert(48*21+1200<=sizeof(((struct writer *)0)->bytes),"bounded distinct
 #endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
 #include "persistent_active_domain.inc"
+#ifdef LI2_LOOP_RESIDENT_RX
+#include "loop_resident_rx_owner.inc"
+#ifdef LI2_LOOP_RESIDENT_RX_ORACLE
+#include "loop_resident_rx_oracle.inc"
+#endif
+#endif
 #ifdef LI2_LOOP_RO_TEST
 #include "loop_ro_oracle.inc"
 #endif

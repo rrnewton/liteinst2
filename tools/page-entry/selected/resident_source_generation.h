@@ -5,7 +5,11 @@
     !defined(LI2_EFFECT_PROVIDER) || LI2_EFFECT_PROVIDER != 1
 #error "stable content requires the separate resident and actual effect owners"
 #endif
-#if defined(LI2_RESIDENT_THREE_CAPTURE) && \
+#if defined(LI2_RESIDENT_RX) && defined(LI2_RESIDENT_THREE_CAPTURE)
+#if !defined(LI2_RESIDENT_RX_CAPTURE) || LI2_RESIDENT_RX_CAPTURE != 1
+#error "retained RX has a distinct capture and lifecycle contract"
+#endif
+#elif defined(LI2_RESIDENT_THREE_CAPTURE) && \
     (!defined(LI2_RESIDENT_GENERATION_CAPTURE) || LI2_RESIDENT_GENERATION_CAPTURE != 1)
 #error "version-2 generation proofs require the distinct repeated-owner capture"
 #endif
@@ -38,4 +42,10 @@ int li2_rsl_generation_not_native(void);
 int li2_rsl_generation_source_mutation(void);
 int li2_rsl_source_mutation_quiet(void);
 const struct li2_rsl_generation_progress *li2_rsl_generation_progress(void);
+#ifdef LI2_RESIDENT_RX
+/* Descriptive actual publication state, independent of an execution binding.
+   ~0U means that the whole owner/generation/publication tuple is stale.
+   Callers must still authenticate actual storage, live source and entry. */
+unsigned li2_rsl_resident_content_state(const struct li2_rsl_content_ref *);
+#endif
 #endif

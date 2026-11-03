@@ -130,10 +130,21 @@ int li2_r3_rseq_cold(const struct li2_r3_token *t,unsigned index,const ucontext_
     if(bytes!=p->source_bytes || !region_rseq_current(uc))return LI2_RSEQ_PLAN;
     r3r_word(&r3r.word_entry);r3r.cold[index]=1;return 0;
 }
+#ifdef LI2_RESIDENT_RX
+/* Same actual TLS/current-data/word proof, distinct execution-release authority.
+   The old close wrapper below continues to require actual all-NX closure. */
+static int r3r_finish(const struct li2_r3_token *t,const ucontext_t *uc,
+                     int (*completed)(const struct li2_r3_token *)) {
+#else
 int li2_r3_rseq_close(const struct li2_r3_token *t,const ucontext_t *uc) {
+#endif
     if(!r3r_token(t) || !r3r.seed_complete || r3r.close_complete ||
        !region_rseq_current(uc) || li2_lifecycle_fetch_interlock() ||
+#ifdef LI2_RESIDENT_RX
+       !completed(t))return LI2_RN_STATE;
+#else
        !li2_r3_owner_closed(t))return LI2_RN_STATE;
+#endif
     r3r_word(&r3r.word_after);
     if(r3r.registered) {
         struct li2_rseq_current_data after={0};li2_maps_phase_end();
@@ -144,3 +155,12 @@ int li2_r3_rseq_close(const struct li2_r3_token *t,const ucontext_t *uc) {
     r3r_word(&r3r.word_after);r3r.close_complete=1;
     __asm__ volatile("":::"memory");r3r.active=0;return 0;
 }
+
+#ifdef LI2_RESIDENT_RX
+int li2_r3_rseq_close(const struct li2_r3_token *t,const ucontext_t *uc) {
+    return r3r_finish(t,uc,li2_r3_owner_closed);
+}
+int li2_r3_rseq_release(const struct li2_r3_token *t,const ucontext_t *uc) {
+    return r3r_finish(t,uc,li2_r3_rx_execution_closed);
+}
+#endif

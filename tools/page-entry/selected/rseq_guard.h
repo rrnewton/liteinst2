@@ -70,6 +70,11 @@ int li2_rseq_after_syscall(long,const long[6]);
    keeps it unchanged until the original instruction. Errors return to that
    actual cleanup owner; they never call hooks.fail recursively. */
 int li2_rseq_check_instruction(const struct li2_decoded *,const ucontext_t *);
+#ifdef LI2_RESIDENT_SOURCE_LEASE
+/* Only the actual scoped TLS observer can match. This grants no guest syscall,
+   source/permission authority, or exemption for another output buffer. */
+int li2_rseq_tls_observer(long,long,long,long,long,long,long);
+#endif
 struct li2_run_plan;
 int li2_rseq_check_run(const struct li2_run_plan *,const ucontext_t *);
 #ifdef LI2_UNROLLED_HASH

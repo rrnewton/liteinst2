@@ -214,6 +214,9 @@ int li2_maps_clock_observer_register(const void *buffer,size_t bytes) {
    stack observer below. Other nonmapping syscalls can still write
    application/source/custody bytes. */
 static __attribute__((unused)) int maps_nonmutating(long n,long a,long b,long c,long d,long e,long f) {
+#ifdef LI2_RESIDENT_SOURCE_LEASE
+    if(li2_rseq_tls_observer(n,a,b,c,d,e,f))return 1;
+#endif
 #if defined(LI2_MAPS_DIFFERENTIAL) || defined(LI2_MAPS_CURRENT_TF)
     if(mv_observer_matches(n,a,b,c,d,e,f))return 1;
 #endif

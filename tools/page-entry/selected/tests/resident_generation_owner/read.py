@@ -17,11 +17,11 @@ PAGE,FP,TF,RF,MASK=base.PAGE,base.FP,base.TF,base.RF,base.MASK
 T,STATE,CERT,STEP=base.T,base.STATE,base.CERT,base.STEP
 GREG=base.GREG
 
-def elf_symbols(data):
+def elf_symbols(data,registered=wire.REGISTERED):
     h,loads=old.elf(data)
     need(h[11]==64 and h[12]>0 and h[6]+h[12]*64<=len(data),'whole actual bridge section table')
     sections=[struct.unpack_from('<IIQQQQIIQQ',data,h[6]+64*i)for i in range(h[12])]
-    wanted=set(wire.REGISTERED)|{'li2_raw6','li2_gateway_start','li2_gateway_end','span_transfer','selected_chain','protected','maps_current','rows'}
+    wanted=set(registered)|{'li2_raw6','li2_gateway_start','li2_gateway_end','span_transfer','selected_chain','protected','maps_current','rows'}
     symbols={}
     for s in sections:
         if s[1]!=2:continue
@@ -40,11 +40,14 @@ def elf_symbols(data):
 
 
 class Check(base.Check):
+    wire=wire
+    closed_pages=51
+    certificate_version=2
     def __init__(self,r,image,app,pid,cpu):
         self.r,self.image,self.app,self.pid,self.cpu=r,image,app,pid,cpu
         self.ordinal=r.ordinal;self.serial=self.ordinal+1
         self.b=r.data;self.h=q(self.f(self.b,T,'h'));self.maps_seen={};self.source_ids={};self.backings={};self.bases={};self.objects={}
-        self.eh,self.ph,self.symbols=elf_symbols(image['bridge'])
+        self.eh,self.ph,self.symbols=elf_symbols(image['bridge'],self.wire.REGISTERED)
         need(set(r.layout['symbols'])==set(self.symbols)|{'r3_owner','span_progress','pg_domain_source'}and all(r.layout['symbols'][k]==v[0]for k,v in self.symbols.items()),'same complete actual ELF and DWARF symbols')
         need(r.layout['symbols']['r3_owner']==r.layout['symbols']['r3_memory'],'actual aligned owner union starts at its real symbol')
         self.bias=self.h[9]-r.layout['symbols']['r3_owner']
@@ -57,7 +60,7 @@ class Check(base.Check):
         self.page=0x410000;self.head=0x410200
         need(app['source']==plan.source_image()and app['head']==self.head and app['terminal_pc']==0x41420e and app['role']=='gated'and app['pid']==pid and app['cpu']==cpu,'whole actual finite gated application identity')
         self.binding=image['persistent_binding']
-        need(self.binding['version']==1 and self.binding['profile']=='resident-generation-two-flags-capture-v1'and self.binding['mode']=='release'and all(self.binding[k]is True for k in('native_probe','parse_memo','unregistered','subentry','cross_pair','direct_frontier','resident_three','sealed_storage','source_lease','flag_stack','helper_tf','stable_generation','generation_capture','tf_nx_page_boundary'))and self.binding['activations']==2,'actual distinct capture build binding')
+        self.binding_identity()
         need(image['maps_mode']in('maintained','differential'),'actual maps build mode');self.differential=image['maps_mode']=='differential'
         geom=self.binding['geometry'];need(geom['root']==self.head and geom['roots']==[self.head,0x412200,0x414200]and geom['source']==dict(bytes=24576,sha256=hashlib.sha256(app['source']).hexdigest()),'exact bound complete source geometry')
         self.certificates=r.items(self.b,T,'certificate',CERT)
@@ -75,33 +78,43 @@ class Check(base.Check):
         self.content=self.f(self.entered,STATE,'content')
         self.publication_epoch=self.i(self.content,'li2_rsl_content_ref','publication_epoch')
 
+    def binding_identity(self):
+        need(self.binding['version']==1 and self.binding['profile']=='resident-generation-two-flags-capture-v1'and self.binding['mode']=='release'and all(self.binding[k]is True for k in('native_probe','parse_memo','unregistered','subentry','cross_pair','direct_frontier','resident_three','sealed_storage','source_lease','flag_stack','helper_tf','stable_generation','generation_capture','tf_nx_page_boundary'))and self.binding['activations']==2,'actual distinct capture build binding')
+
+    def registry_storage(self):
+        need(self.symbol('r3_memory')==self.h[9]and self.symbols['r3_memory'][1]==1249280 and self.h[3]==self.wire.OWNER_BYTES and self.symbols['r3_work'][1]==2329264 and self.symbols['rsl'][1]==70*PAGE and self.symbols['rsl_initialization'][1]==72,'actual complete separate owner/source/bootstrap storage')
+
+    def storage_state(self,b,active):
+        t=STATE
+        need(struct.unpack('<3I',self.f(b,t,'references'))==(int(active),)*3 and struct.unpack('<3I',self.f(b,t,'closed'))==(int(not active),)*3 and struct.unpack('<3I',self.f(b,t,'installed'))==(1,1,1)and q(self.f(b,t,'generation'))==(1,2,3),'all three actual backing references, closure bits and generations')
+
     def registry(self):
         count=self.i(self.entered,STATE,'registry_count');need(0<count<=128,'whole bounded actual protected registry')
         rows=self.r.items(self.b,T,'registry','li2_fork_range');ranges=[self.v(x,'li2_fork_range','first end')for x in rows[:count]]
         for row in rows[count:]:zero(row,'whole unused protected registry range')
         need(all(canonical(a,z-a)for a,z in ranges),'all actual protected intervals')
-        declarations=self.r.layout['registrations'];need(set(declarations)==set(wire.REGISTERED),'whole exact compiled registration roster');objects=[]
+        declarations=self.r.layout['registrations'];need(set(declarations)==set(self.wire.REGISTERED),'whole exact compiled registration roster');objects=[]
         headers=self.image['headers'];need(type(headers)is dict and headers,'actual complete compiler-M header closure')
-        for name,(source,tag)in wire.REGISTERED.items():
+        for name,(source,tag)in self.wire.REGISTERED.items():
             d=declarations[name];at,n=self.symbols[name];a,z=self.bias+at,self.bias+at+n
             need(set(d)=={'address','bytes','alignment','tag','source'}and(d['address'],d['bytes'],d['tag'])==(at,n,tag)and type(d['alignment'])is int and 0<d['alignment']<=PAGE and not d['alignment']&(d['alignment']-1)and a%d['alignment']==0 and d['source'].endswith('/tools/page-entry/selected/'+source),'actual complete symbol/DWARF/source identity '+name)
             need(d['source']in headers and set(headers[d['source']])=={'bytes','sha256'},'registered DWARF origin belongs to actual compiler-M closure')
             objects.append((a,z))
-            if name not in wire.LIFETIME:need(ranges.count((a,z))==1,'whole strict protected object '+name)
+            if name not in self.wire.LIFETIME:need(ranges.count((a,z))==1,'whole strict protected object '+name)
             loads=[p for p in self.ph if p[0]==1 and p[6]and self.bias+p[3]<z and a<self.bias+p[3]+p[6]]
             need(len(loads)==1 and loads[0][1]==6 and self.bias+loads[0][3]<=a<z<=self.bias+loads[0][3]+loads[0][6],'whole object in actual RW/NX bridge LOAD')
             p=loads[0];rounded=((self.bias+p[3])&-PAGE,(self.bias+p[3]+p[6]+PAGE-1)&-PAGE)
             need(ranges.count(rounded)==1,'whole containing bridge LOAD remains protected')
         need(all(a%PAGE==z%PAGE==0 or(a,z)in objects for a,z in ranges),'every non-page interval is an exact source registration')
         arena=self.i(self.entered,STATE,'arena');need(canonical(arena,327*PAGE)and arena%PAGE==0 and ranges.count((arena,arena+327*PAGE))==1,'whole independent three-certificate arena protection')
-        need(self.symbol('r3_memory')==self.h[9]and self.symbols['r3_memory'][1]==1249280 and self.h[3]==wire.OWNER_BYTES and self.symbols['r3_work'][1]==2329264 and self.symbols['rsl'][1]==70*PAGE and self.symbols['rsl_initialization'][1]==72,'actual complete separate owner/source/bootstrap storage')
+        self.registry_storage()
         self.ranges=ranges
 
     def certificate(self,index):
         b=self.certificates[index];payload=self.f(b,CERT,'payload');header=self.f(payload,'r3_payload','header');t='r3_header';layout=self.layouts[index]
         arena=self.i(self.entered,STATE,'arena');code=arena+index*108*PAGE;proof=code+19*PAGE;directory=arena+324*PAGE
         need(layout==(code,code+8*PAGE,code+16*PAGE,code+17*PAGE,code+18*PAGE,directory),'separate exact three-resident code/data/proof/directory geometry')
-        self.eq(header,t,version=2,bytes=362568,generation=index+1,publication_serial=1,index=index,source_epoch=self.publication_epoch,root=self.head+index*8192,owner=self.h[9])
+        self.eq(header,t,version=self.certificate_version,bytes=362568,generation=index+1,publication_serial=1,index=index,source_epoch=self.publication_epoch,root=self.head+index*8192,owner=self.h[9])
         need(self.f(header,t,'content')==self.content,'whole exact owner-issued immutable publication content reference')
         need(self.f(header,t,'archive')==bytes.fromhex(self.binding['archive']['sha256'])and self.f(header,t,'policy')==bytes.fromhex(self.binding['policy_sha256']),'whole actual archive/source-policy publication identity')
         identity=self.f(b,CERT,'identity');self.eq(identity,'li2_sealed_identity',bytes=106*PAGE,generation=index+1,code=code,proof=proof,code_bytes=69632,proof_bytes=364544,code_live=1,proof_live=1)
@@ -122,13 +135,16 @@ class Check(base.Check):
         expected_spill=bytes(PAGE)if self.ordinal==0 else plan.terminal_spill(index,self.app['seed'],self.layouts)
         need(self.f(b,CERT,'spill_entered')==expected_spill,'whole actual cold-zero or retained prior-completion spill page')
         need(self.f(b,CERT,'spill_closed')==plan.terminal_spill(index,self.app['seed'],self.layouts),'all final scratch bytes including C last external-arm provenance')
+        self.certificate_permissions(b,identity,layout,proof)
+        return expected
+
+    def certificate_permissions(self,b,identity,layout,proof):
         for field,prot in(('published',1),('opened',5),('drained',1)):
             for i,row in enumerate(self.r.items(b,CERT,field,'li2_sealed_code_query')):self.sealed_query(row,identity,layout[i],prot,8 if i<2 else 1)
         for row,offset,pages in zip(self.r.items(b,CERT,'proof','li2_sealed_code_query'),(0,64*PAGE),(64,25),strict=True):self.sealed_query(row,identity,proof+offset,1,pages)
         for field,address,prot in(('slot_query',layout[3],1),('spill_query',layout[4],3)):
             for row in self.r.items(b,CERT,field,'li2_private_code_query'):self.query(row,address,prot)
         for field,size in(('proof_scan',364544),('code_scan',69632),('slot_scan',4096)):self.scan(self.f(b,CERT,field),size)
-        return expected
 
     def prebind_content(self):
         r=self.resident_before;t='li2_rsl_resident_progress';g=self.generation_before;gt='li2_rsl_generation_progress'
@@ -150,7 +166,7 @@ class Check(base.Check):
         self.eq(b,t,phase=7 if active else 10,busy=int(active),active=int(active),consumed=1,released=int(not active),exit_seen=int(not active),first_error=0,first_detail=0,registry_bound=1,serial=self.serial,publications=3,entries=self.serial,completed=self.ordinal+int(not active),cancelled=0,unexpected=0,ingresses=self.ordinal+int(not active),root=self.head,count=3,planned=3,exit_member=0 if active and self.ordinal==0 else 2,exit_index=0 if active and self.ordinal==0 else 1,flags=0xad7,gpr_written=3,flags_written=0x8d5)
         for k in('arena','directory','registry_count','token','source','content','source_pages'):
             need(self.f(b,t,k)==self.f(self.entered,t,k),'whole stable resident identity '+k)
-        need(struct.unpack('<3I',self.f(b,t,'references'))==(int(active),)*3 and struct.unpack('<3I',self.f(b,t,'closed'))==(int(not active),)*3 and struct.unpack('<3I',self.f(b,t,'installed'))==(1,1,1)and q(self.f(b,t,'generation'))==(1,2,3),'all three actual backing references, closure bits and generations')
+        self.storage_state(b,active)
         self.eq(self.f(b,t,'token'),'li2_r3_token',owner=self.h[9],serial=self.serial)
         self.eq(self.f(b,t,'source'),'li2_rsl_ref',owner=self.symbol('rsl'))
         epoch=self.i(self.f(b,t,'source'),'li2_rsl_ref','epoch');need(epoch>0,'real source lease epoch')
@@ -198,12 +214,16 @@ class Check(base.Check):
             need(self.f(generation,gt,k)==self.f(self.generation_before,gt,k),'no guest effects or source writes inside generated activation '+k)
         need(generation==self.f(self.entered,t,'generation_progress'),'whole immutable content observation through this real activation')
 
+    def record_identity(self):
+        h=self.h
+        need(h[:9]==(0x334f47525732494c,3,self.wire.RECORD_BYTES,self.wire.OWNER_BYTES,362568,364544,69632,968,128),'exact distinct full D3 wire extents')
+        record_at=self.r.types['rgo_bundle']['fields']['record']['offset']+self.ordinal*self.wire.RECORD_BYTES
+        need(h[9:12]==(self.symbol('r3_owner'),self.symbol('rgo_bundle')+record_at,self.symbol('selected_chain'))and self.symbols['rgo_bundle'][1]==self.wire.RAW_BYTES,'actual owner/bundle/member/chain ELF identity')
+
     def finish(self,status):
         h=self.h;r=self.r
         need(type(status)is int and status==0,'actual successful complete finite D3 process')
-        need(h[:9]==(0x334f47525732494c,3,wire.RECORD_BYTES,wire.OWNER_BYTES,362568,364544,69632,968,128),'exact distinct full D3 wire extents')
-        record_at=self.r.types['rgo_bundle']['fields']['record']['offset']+self.ordinal*wire.RECORD_BYTES
-        need(h[9:12]==(self.symbol('r3_owner'),self.symbol('rgo_bundle')+record_at,self.symbol('selected_chain'))and self.symbols['rgo_bundle'][1]==wire.RAW_BYTES,'actual owner/bundle/member/chain ELF identity')
+        self.record_identity()
         retained=r.layout['retained_storage'];need(set(retained)=={'retained','selected_slot','selection','previous_selection','domain'}and retained['retained']['bytes']==2*r.types['li2_ptr_slot']['bytes']and retained['selected_slot']['bytes']==4 and retained['selection']['bytes']==retained['previous_selection']['bytes']==24 and retained['selected_slot']['offset']==retained['retained']['offset']+retained['retained']['bytes'],'actual unchanged old two-slot storage extent remains distinct')
         need(h[12]%PAGE==0 and canonical(h[12],524288)and h[13:16]==(524288,1,0)and h[16]&(3|0x400|0x800)==1 and h[17:19]==(0,1),'actual altstack and owned regular sink flags')
         need(h[19:22]==(self.head,0x41420e,self.app['capture_pc'])and h[22]==self.app['rsp']and h[23]==self.app['capture_pointer']and h[24:28]==(1,1,1,1)and h[28]>0 and h[29]==h[28]+1 and h[30]==h[29]+1 and h[31]in(0,1)and h[32]>0,'actual one-entry/one-terminal/next-TRACE chronology')
@@ -229,23 +249,11 @@ class Check(base.Check):
         stacks=[self.memory(b,i)for i,b in enumerate(r.items(self.b,T,'memory','li2_r3o_memory'))]
         anchor,first,end,_,_,_=self.stack_identity
         costs={k:{name:self.i(self.f(self.f(self.b,T,k),STATE,'resident_progress'),'li2_rsl_resident_progress',name)for name in('bindings','snapshots','plans','validations','authentications','fresh_maps_passes','source_bytes','plan_source_bytes','guard_pages','observation_seals')}for k in('entered','terminal','closed','handoff')}
-        return dict(ordinal=self.ordinal,actual_serial=self.serial,cumulative_entries=self.serial,cumulative_completed=self.serial,content_reference=q(self.content),generation_progress={k:self.i(self.f(self.entered,STATE,'generation_progress'),'li2_rsl_generation_progress',k)for k in('generation','publication_epoch','effects','preserved','invalidations','source_mutations')},rsp=h[22],kernel_altstack=h[12],kernel_altstack_bytes=h[13],original_stack_anchor=anchor,original_stack_first=first,original_stack_end=end,before=self.before,terminal=self.after,next=self.next,before_stack=stacks[0],terminal_stack=stacks[1],next_stack=stacks[2],source=self.app['source'],source_page_address=self.page,entry_pc=self.head,terminal_pc=0x41420e,next_pc=self.app['capture_pc'],cold_publications=3,entries=1,completed=1,resident_certificates=3,old_active_domain_limit=2,closed_pages=51,anchor_released=1,interior_signals=0,terminal_ingresses=1,native_instructions=30,generated_guest_instructions=28,source_pages=self.source_count,source_epoch=self.i(self.f(self.entered,STATE,'source'),'li2_rsl_ref','epoch'),source_cost=costs,source_before=dict(zip(('epoch','bindings','invalidations','valid'),self.v(self.source_before,'li2_rsl_progress','epoch bindings invalidations valid'))),layout_rows=self.layouts,models=[dict(heads=x['heads'],exits=x['exits'])for x in models],signal_counts=ingress,status=0,code=0,detail=0,qualification_credit=False,performance_credit=False)
+        return dict(ordinal=self.ordinal,actual_serial=self.serial,cumulative_entries=self.serial,cumulative_completed=self.serial,content_reference=q(self.content),generation_progress={k:self.i(self.f(self.entered,STATE,'generation_progress'),'li2_rsl_generation_progress',k)for k in('generation','publication_epoch','effects','preserved','invalidations','source_mutations')},rsp=h[22],kernel_altstack=h[12],kernel_altstack_bytes=h[13],original_stack_anchor=anchor,original_stack_first=first,original_stack_end=end,before=self.before,terminal=self.after,next=self.next,before_stack=stacks[0],terminal_stack=stacks[1],next_stack=stacks[2],source=self.app['source'],source_page_address=self.page,entry_pc=self.head,terminal_pc=0x41420e,next_pc=self.app['capture_pc'],cold_publications=3,entries=1,completed=1,resident_certificates=3,old_active_domain_limit=2,closed_pages=self.closed_pages,anchor_released=1,interior_signals=0,terminal_ingresses=1,native_instructions=30,generated_guest_instructions=28,source_pages=self.source_count,source_epoch=self.i(self.f(self.entered,STATE,'source'),'li2_rsl_ref','epoch'),source_cost=costs,source_before=dict(zip(('epoch','bindings','invalidations','valid'),self.v(self.source_before,'li2_rsl_progress','epoch bindings invalidations valid'))),layout_rows=self.layouts,models=[dict(heads=x['heads'],exits=x['exits'])for x in models],signal_counts=ingress,status=0,code=0,detail=0,qualification_credit=False,performance_credit=False)
 
 
 
-def read(data,layout,image,app,pid,cpu,exit_status):
-    need(type(data)is bytes and type(pid)is int and 0<pid<1<<31 and type(cpu)is int and cpu>=0 and
-         type(exit_status)is int and exit_status==0,'whole actual successful two-activation process')
-    need(len(data)==wire.RAW_BYTES+64 and len(data)<4<<20,'complete bounded two-record generation transport')
-    footer=q(data[-64:]);need(footer[:4]==(0x314647525732494c,1,wire.RAW_BYTES,wire.RAW_BYTES)and
-        1<=footer[4]<=64 and 0<footer[5]<=wire.RAW_BYTES and footer[6:]==(0,0),'whole successful bounded bundle footer')
-    r=wire.Reader(memoryview(data)[:-64],layout);h=q(r.field(r.data,'rgo_bundle','h'))
-    need(h==(0x314247525732494c,1,wire.RAW_BYTES,wire.RECORD_BYTES,1,2,2,2,0,0,0,1,0,0,1,wire.OWNER_BYTES),
-         'exact two completed records, unchanged publications, genuine process success')
-    need(type(app)is dict and app['version']==1 and app['complete']is True and app['records']==2 and
-         app['owner_credit']is False and len(app['applications'])==2,'two complete separately authenticated gated applications')
-    checks=[Check(wire.RecordView(r,i),image,app['applications'][i],pid,cpu)for i in range(2)]
-    values=[c.finish(exit_status)for c in checks]
+def activation_relation(r,checks,values):
     first,last=checks;a,b=values
     need(a['content_reference']==b['content_reference']and a['source_pages']==b['source_pages']and
          b['source_epoch']==a['source_epoch']+9,'one immutable content identity, nine genuine revoked execution leases')
@@ -265,10 +273,11 @@ def read(data,layout,image,app,pid,cpu,exit_status):
              'whole real prior scratch state survives without a fabricated reset')
     need(first.h[30]<last.h[28] and first.h[32]<last.h[32],
          'actual ordered close, intervening effects and later genuine entry')
-    final=bytes(r.field(r.data,'rgo_bundle','final'));t=STATE
-    for key in r.types[t]['fields']:
-        if key not in('fetch','source_progress','resident_progress','generation_progress','maps'):
-            need(last.f(final,t,key)==last.f(last.handoff,t,key),'whole actual final drained owner field '+key)
+    return first,last,a,b
+
+
+def final_source_state(r,last,final,b):
+    t=STATE
     sp=last.f(final,t,'source_progress');pt='li2_rsl_progress'
     last.eq(sp,pt,initialized=1,valid=0,pages=last.source_count,reserved=0)
     zero(last.f(sp,pt,'bound'),'actual exit invalidates old owner binding')
@@ -298,6 +307,27 @@ def read(data,layout,image,app,pid,cpu,exit_status):
     for key in('fresh_calls','acquisitions','reuses','invalidations','handler_id','mutation_epoch'):
         need(last.i(maps,'li2_maps_stats',key)>=last.i(last.f(last.handoff,t,'maps'),'li2_maps_stats',key),
              'monotonic actual final maps counter '+key)
+
+
+def read(data,layout,image,app,pid,cpu,exit_status):
+    need(type(data)is bytes and type(pid)is int and 0<pid<1<<31 and type(cpu)is int and cpu>=0 and
+         type(exit_status)is int and exit_status==0,'whole actual successful two-activation process')
+    need(len(data)==wire.RAW_BYTES+64 and len(data)<4<<20,'complete bounded two-record generation transport')
+    footer=q(data[-64:]);need(footer[:4]==(0x314647525732494c,1,wire.RAW_BYTES,wire.RAW_BYTES)and
+        1<=footer[4]<=64 and 0<footer[5]<=wire.RAW_BYTES and footer[6:]==(0,0),'whole successful bounded bundle footer')
+    r=wire.Reader(memoryview(data)[:-64],layout);h=q(r.field(r.data,'rgo_bundle','h'))
+    need(h==(0x314247525732494c,1,wire.RAW_BYTES,wire.RECORD_BYTES,1,2,2,2,0,0,0,1,0,0,1,wire.OWNER_BYTES),
+         'exact two completed records, unchanged publications, genuine process success')
+    need(type(app)is dict and app['version']==1 and app['complete']is True and app['records']==2 and
+         app['owner_credit']is False and len(app['applications'])==2,'two complete separately authenticated gated applications')
+    checks=[Check(wire.RecordView(r,i),image,app['applications'][i],pid,cpu)for i in range(2)]
+    values=[c.finish(exit_status)for c in checks]
+    first,last,a,b=activation_relation(r,checks,values)
+    final=bytes(r.field(r.data,'rgo_bundle','final'));t=STATE
+    for key in r.types[t]['fields']:
+        if key not in('fetch','source_progress','resident_progress','generation_progress','maps'):
+            need(last.f(final,t,key)==last.f(last.handoff,t,key),'whole actual final drained owner field '+key)
+    final_source_state(r,last,final,b)
     ingress=q(r.field(r.data,'rgo_bundle','ingress'))
     need(sum(ingress[1:])==ingress[0]>=last.h[30]and ingress[1]>=2 and ingress[2]>=4 and
          ingress[3:]==(1,0,0),'complete final signal partition; both focal intervals stay literal')
@@ -336,10 +366,14 @@ def pair_controls(native,gated,owner):
 
 
 def record_controls(data,layout,image,app,pid,cpu,exit_status,ordinal):
+    return record_controls_checked(data,layout,image,app,pid,cpu,exit_status,ordinal,read,wire,'rgo_bundle','drained')
+
+
+def record_controls_checked(data,layout,image,app,pid,cpu,exit_status,ordinal,check,transport,bundle_name,release_name):
     """Causal supplied corruptions of this new finite observation only."""
-    read(data,layout,image,app,pid,cpu,exit_status);types=layout['types'];tests=[]
+    check(data,layout,image,app,pid,cpu,exit_status);types=layout['types'];tests=[]
     need(type(ordinal)is int and ordinal in(0,1),'exact supplied-record control ordinal')
-    start=types['rgo_bundle']['fields']['record']['offset']+ordinal*wire.RECORD_BYTES
+    start=types[bundle_name]['fields']['record']['offset']+ordinal*transport.RECORD_BYTES
     def at(path):
         t=T;offset=start
         for key,index in path:
@@ -377,7 +411,7 @@ def record_controls(data,layout,image,app,pid,cpu,exit_status,ordinal):
             ('generated',('code',)),('code_tail',(('code',69631),)),('proof_tail',('proof_tail',)),
             ('slots',('slots',)),('initial_spill',('spill_entered',)),('final_spill',('spill_closed',)),
             ('published_NX',(('published',0),'expected_prot')),('opened_RX',(('opened',0),'actual_prot')),
-            ('drained_NX',(('drained',0),'complete')),('seals',(('opened',0),'sealed','seals_result')),
+            ('drained_NX',((release_name,0),'complete')),('seals',(('opened',0),'sealed','seals_result')),
             ('query_backing',(('opened',0),'sealed','identity','inode')),('alias_census',(('proof',0),'sealed','alias_pages')),
             ('proof_offset',(('proof',1),'sealed','offset')),('anonymous_sidecar',(('slot_query',0),'sealed','kind')),
             ('whole_byte_scan',('proof_scan','compared'))):
@@ -399,16 +433,16 @@ def record_controls(data,layout,image,app,pid,cpu,exit_status,ordinal):
     refused=[]
     for name,offset in tests:
         changed=bytearray(data);changed[offset]^=1
-        try:read(bytes(changed),layout,image,app,pid,cpu,exit_status)
+        try:check(bytes(changed),layout,image,app,pid,cpu,exit_status)
         except ValueError:refused.append(name)
         else:raise ValueError('accepted supplied finite D3 corruption '+name)
     changed=bytearray(data);valid=struct.unpack_from('<I',data,start+356)[0]
     struct.pack_into('<Q',changed,start+376,0 if valid else 1)
-    try:read(bytes(changed),layout,image,app,pid,cpu,exit_status)
+    try:check(bytes(changed),layout,image,app,pid,cpu,exit_status)
     except ValueError:refused.append('prebind_old_serial')
     else:raise ValueError('accepted actual prebind old-owner serial corruption')
     for name,changed in(('truncated',data[:-1]),('extra',data+b'\0'),('failed_footer',data[:-16]+struct.pack('<QQ',125,4900))):
-        try:read(changed,layout,image,app,pid,cpu,exit_status)
+        try:check(changed,layout,image,app,pid,cpu,exit_status)
         except ValueError:refused.append(name)
         else:raise ValueError('accepted complete-record/failed-outcome corruption '+name)
     need(len(refused)==231,'all231 finite D3 owner supplied controls refused')
@@ -417,10 +451,14 @@ def record_controls(data,layout,image,app,pid,cpu,exit_status,ordinal):
 
 
 def record_prepared_controls(data,layout,image,app,pid,cpu,exit_status,ordinal):
+    return record_prepared_controls_checked(data,layout,image,app,pid,cpu,exit_status,ordinal,read,wire,'rgo_bundle','drained')
+
+
+def record_prepared_controls_checked(data,layout,image,app,pid,cpu,exit_status,ordinal,check,transport,bundle_name,release_name):
     """Separate exact prepared/released chronology mutations; original231 stay whole."""
-    read(data,layout,image,app,pid,cpu,exit_status);types=layout['types'];refused=[]
+    check(data,layout,image,app,pid,cpu,exit_status);types=layout['types'];refused=[]
     need(type(ordinal)is int and ordinal in(0,1),'exact prepared-record control ordinal')
-    start=types['rgo_bundle']['fields']['record']['offset']+ordinal*wire.RECORD_BYTES
+    start=types[bundle_name]['fields']['record']['offset']+ordinal*transport.RECORD_BYTES
     def at(path):
         t=T;offset=start;size=types[t]['bytes']
         for item in path:
@@ -434,7 +472,7 @@ def record_prepared_controls(data,layout,image,app,pid,cpu,exit_status,ordinal):
         return offset,size
     def reject(name,changed):
         need(bytes(changed)!=data,'changed prepared-fetch stimulus '+name)
-        try:read(bytes(changed),layout,image,app,pid,cpu,exit_status)
+        try:check(bytes(changed),layout,image,app,pid,cpu,exit_status)
         except ValueError:refused.append(name)
         else:raise ValueError('accepted supplied prepared/released fetch corruption '+name)
     def flip(name,path,tail=False):
@@ -474,11 +512,15 @@ def record_prepared_controls(data,layout,image,app,pid,cpu,exit_status,ordinal):
 
 
 def generation_controls(data,layout,image,app,pid,cpu,exit_status):
+    return generation_controls_checked(data,layout,image,app,pid,cpu,exit_status,read,wire,'rgo_bundle','drained')
+
+
+def generation_controls_checked(data,layout,image,app,pid,cpu,exit_status,check,transport,bundle_name,release_name):
     """Additive content/activation-boundary corruptions; old controls stay separate."""
-    read(data,layout,image,app,pid,cpu,exit_status)
+    check(data,layout,image,app,pid,cpu,exit_status)
     types=layout['types'];refused=[]
     def at(path):
-        t='rgo_bundle';offset=0
+        t=bundle_name;offset=0
         for item in path:
             key,index=(item,0)if type(item)is str else item
             f=types[t]['fields'][key];offset+=f['offset'];child=layout['edges'][t].get(key)
@@ -490,7 +532,7 @@ def generation_controls(data,layout,image,app,pid,cpu,exit_status):
         return offset
     def reject(name,changed):
         need(bytes(changed)!=data,'causal changed generation stimulus '+name)
-        try:read(bytes(changed),layout,image,app,pid,cpu,exit_status)
+        try:check(bytes(changed),layout,image,app,pid,cpu,exit_status)
         except ValueError:refused.append(name)
         else:raise ValueError('accepted supplied generation corruption '+name)
     def flip(name,path):

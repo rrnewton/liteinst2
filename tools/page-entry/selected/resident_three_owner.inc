@@ -62,6 +62,10 @@ struct li2_r3_owner {
     struct li2_jd_domain_directory expected_directory;
     struct li2_private_code_query directory_query;
     struct r3_certificate certificate[LI2_R3_CERTIFICATES];
+#ifdef LI2_RESIDENT_RX
+    unsigned rx_lifetime;
+    struct li2_fetch_progress rx_release;
+#endif
 };
 static union {
     struct li2_r3_owner owner;
@@ -76,9 +80,27 @@ static struct {
     struct li2_mg_table table;
     struct li2_pg_source_page page;
     struct li2_dd_plan direct;
+#ifdef LI2_RESIDENT_RX
+    struct li2_r3_rx_progress rx;
+#endif
 } r3_work;
+#ifdef LI2_RESIDENT_RX
+int li2_r3_rx_observe(unsigned operation,unsigned succeeded) {
+    if(operation>=LI2_R3_RX_OPERATIONS || succeeded>1)return R3_STATE;
+    struct li2_r3_rx_call *p=&r3_work.rx.call[operation];
+    if(!succeeded) {if(p->attempted==UINT64_MAX)return R3_STATE;++p->attempted;}
+    else {if(p->succeeded>=p->attempted)return R3_STATE;++p->succeeded;}
+    return 0;
+}
+const struct li2_r3_rx_progress *li2_r3_rx_progress(void) {return &r3_work.rx;}
+#endif
 static int r3_permission(int prot) {
+#ifdef LI2_RESIDENT_RX
+    return LI2_R3_RX_CALL(LI2_R3_RX_OWNER_PERMISSION,
+        raw(SYS_mprotect,(long)&r3_memory,sizeof r3_memory,prot,0,0,0))?R3_PUBLICATION:0;
+#else
     return raw(SYS_mprotect,(long)&r3_memory,sizeof r3_memory,prot,0,0,0)?R3_PUBLICATION:0;
+#endif
 }
 static int r3_registry(void) {
     return r3.registry_count==protected_count && protected_count<=RANGES &&
@@ -265,10 +287,16 @@ int li2_r3_owner_quiet(void) {
         selected_pending_route!=SELECTED_RESIDENT_THREE && !li2_r3_rseq_progress()->active &&
         (!r3.held.owner || (r3.released && !li2_lifecycle_fetch_interlock())) && r3_all_nx();
 }
+#ifdef LI2_RESIDENT_RX
+static int r3_current(const ucontext_t *);
+#include "resident_rx.inc"
+#endif
 #include "resident_three_storage.inc"
 #include "resident_three_controller.inc"
 #ifdef LI2_RESIDENT_THREE_CAPTURE
-#ifdef LI2_RESIDENT_GENERATION_CAPTURE
+#ifdef LI2_RESIDENT_RX_CAPTURE
+#include "resident_rx_observe.inc"
+#elif defined(LI2_RESIDENT_GENERATION_CAPTURE)
 #include "resident_generation_observe.inc"
 #else
 #include "resident_three_observe.inc"

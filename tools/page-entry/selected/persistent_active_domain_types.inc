@@ -47,6 +47,13 @@ struct pda_completion {
     struct li2_pg_rseq_progress rseq;
     struct li2_fetch_progress fetch;
     struct li2_private_code_query directory_closed;
+#ifdef LI2_LOOP_RESIDENT_RX
+    struct {
+        unsigned version,count,retained_mask,reserved;
+        struct li2_pgd_rx_source_release source;
+        struct li2_private_code_query open[LI2_PGD_MEMBERS][3],code[LI2_PGD_MEMBERS][3];
+    } rx;
+#endif
 #ifdef LI2_PERSISTENT_RET_DISPATCH
     struct pda_ret_exit ret_exit;
 #endif
@@ -67,6 +74,10 @@ struct pda_work {
     struct le_permission directory_write,directory_seal;
     struct li2_private_code_query directory_closed;
     struct li2_jd_domain_directory directory;
+#ifdef LI2_LOOP_RESIDENT_RX
+    unsigned rx_retained_mask;
+    struct li2_private_code_query rx_open[LI2_PGD_MEMBERS][3],rx_quiet[LI2_PGD_MEMBERS][3];
+#endif
 };
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
 struct plr_counts {

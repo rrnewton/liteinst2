@@ -51,10 +51,42 @@ static int ready(void) {
     if(!state.initialized || state.first_error)return bad(LI2_RSEQ_STATE,0);
     return 0;
 }
+#ifdef LI2_RESIDENT_SOURCE_LEASE
+/* Included only by the actual rseq owner under RESIDENT_SOURCE_LEASE.
+   No kernel call, map query, state repair, or guest-supplied authority. */
+static unsigned tls_observer_selector;
+_Static_assert(__atomic_always_lock_free(sizeof tls_observer_selector,0),"TLS observer scope");
+_Static_assert(sizeof state.fs_base==8 && sizeof state.gs_base==8,"actual TLS output extents");
+int li2_rseq_tls_observer(long n,long a,long b,long c,long d,long e,long f) {
+    unsigned selector=__atomic_load_n(&tls_observer_selector,__ATOMIC_ACQUIRE);
+    if(!state.initialized || state.first_error || !private_range || n!=SYS_arch_prctl ||
+       !selector || a!=(long)selector || c || d || e || f)return 0;
+    uintptr_t output;
+    if(selector==ARCH_GET_FS)output=(uintptr_t)&state.fs_base;
+    else if(selector==ARCH_GET_GS)output=(uintptr_t)&state.gs_base;
+    else return 0;
+    if((uintptr_t)b!=output || (output&7) || output>UINTPTR_MAX-8)return 0;
+    /* The range callback reports overlap, so prove each complete destination
+       byte separately. An arbitrary partly overlapping buffer cannot match. */
+    for(unsigned i=0;i<8;i++)if(private_range(output+i,1)!=1)return 0;
+    return 1;
+}
+#endif
 static int tls_observe(void) {
     state.tls_attempted=1;state.tls_complete=0;
+#ifdef LI2_RESIDENT_SOURCE_LEASE
+    /* Only these two actual calls can carry the private-output observer scope.
+       Recursive/nested use never overwrites the enclosing call identity. */
+    if(__atomic_load_n(&tls_observer_selector,__ATOMIC_ACQUIRE))return bad(LI2_RSEQ_STATE,181);
+    __atomic_store_n(&tls_observer_selector,ARCH_GET_FS,__ATOMIC_RELEASE);
+    state.fs_result=CALL(SYS_arch_prctl,ARCH_GET_FS,&state.fs_base,0,0,0,0);
+    __atomic_store_n(&tls_observer_selector,ARCH_GET_GS,__ATOMIC_RELEASE);
+    state.gs_result=CALL(SYS_arch_prctl,ARCH_GET_GS,&state.gs_base,0,0,0,0);
+    __atomic_store_n(&tls_observer_selector,0,__ATOMIC_RELEASE);
+#else
     state.fs_result=CALL(SYS_arch_prctl,ARCH_GET_FS,&state.fs_base,0,0,0,0);
     state.gs_result=CALL(SYS_arch_prctl,ARCH_GET_GS,&state.gs_base,0,0,0,0);
+#endif
     if(state.fs_result || state.gs_result)return bad(LI2_RSEQ_TLS,state.fs_result?state.fs_result:state.gs_result);
     state.tls_complete=1;return 0;
 }

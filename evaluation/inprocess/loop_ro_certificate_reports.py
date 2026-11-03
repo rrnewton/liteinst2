@@ -84,11 +84,11 @@ def split(stderr, mode):
     return dict(byte_certificate=byte, readonly_queries=ro, history_certificate=history), remaining
 
 
-def check(stdout, stderr, args, kind, mode):
+def check(stdout, stderr, args, kind, mode, *, terminal_check=prior.check):
     certificate, original = split(stderr, mode)
     # Both certificate modes use the actual maintained maps recipe. No row is
     # relabelled as a maps-DIFF observation or as an old capture-layout record.
-    result = prior.check(stdout, original, args, kind, 'release')
+    result = terminal_check(stdout, original, args, kind, 'release')
     byte = certificate['byte_certificate']
     history = certificate['history_certificate']
     persistent = result['persistent']
@@ -107,10 +107,11 @@ def check(stdout, stderr, args, kind, mode):
     return result
 
 
-def controls(stdout, stderr, args, kind, mode):
-    check(stdout, stderr, args, kind, mode)
+def controls(stdout, stderr, args, kind, mode, *, terminal_check=prior.check,
+             terminal_controls=prior.controls):
+    check(stdout, stderr, args, kind, mode, terminal_check=terminal_check)
     _, original = split(stderr, mode)
-    inherited = prior.controls(stdout, original, args, kind, 'release')
+    inherited = terminal_controls(stdout, original, args, kind, 'release')
     need(len(inherited['refusals']) == len(set(inherited['refusals'])) == prior.CONTROL_COUNTS[kind],
          'all unchanged LOOP13 real-program reader controls')
     lines = stderr[:-1].split(b'\n')
@@ -119,7 +120,7 @@ def controls(stdout, stderr, args, kind, mode):
     def reject(label, changed):
         need(type(changed) is bytes and changed != stderr, 'actual RO row mutation')
         try:
-            check(stdout, changed, args, kind, mode)
+            check(stdout, changed, args, kind, mode, terminal_check=terminal_check)
         except ValueError:
             refusals.append(label)
         else:

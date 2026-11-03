@@ -130,6 +130,17 @@ void li2_tf_chain_begin_nx(struct li2_tf_chain *,const struct li2_fetch_ref *,
    now owns TF; FALLBACK means its real borrow was closed/released with no RX.
    Mandatory ownership/decoder API/cleanup errors never return as fallback. */
 enum li2_chain_result li2_tf_chain_trace(struct li2_tf_chain *,int,siginfo_t *,ucontext_t *);
+#ifdef LI2_LOOP_RESIDENT_RX
+/* Same complete TRACE engine, with one handler-only observation after the real
+   predecessor close/release and successor preparation/classification. The hook
+   grants no chain authority: all existing fallback/arm/rseq/frame gates follow.
+   This API requires an actually executing near branch, so the fallthrough-only
+   same-page lease cannot bypass the hook. */
+typedef void (*li2_tf_direct_prepared)(const struct li2_tf_chain *,
+    const struct li2_tf_chain_slot *,const struct li2_tf_chain_slot *,const ucontext_t *);
+enum li2_chain_result li2_tf_chain_trace_direct(struct li2_tf_chain *,int,
+    siginfo_t *,ucontext_t *,li2_tf_direct_prepared);
+#endif
 _Noreturn void li2_tf_chain_abort(struct li2_tf_chain *,unsigned,long);
 _Noreturn void li2_tf_chain_unexpected(struct li2_tf_chain *,int,siginfo_t *,ucontext_t *);
 /* Ends the handler scope; a capability never survives application execution. */

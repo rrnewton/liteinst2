@@ -8,6 +8,91 @@ NATIVE=[5,512<<20,16<<20,15]
 INSPECT=[10,256<<20,4<<20,20]
 ENV=dict(PATH='/usr/bin:/bin',LANG='C',LC_ALL='C',TZ='UTC',PYTHONDONTWRITEBYTECODE='1')
 
+def gated_process(root,here,path,old,pin,capture,layout,binding,headers,maps_mode,
+                  bundle_name='rgo_bundle',record_bytes=2064000):
+    """Shared literal namespace, stdout and record custody; no outcome coercion."""
+    selected=root/'tools/page-entry/selected';cpu=old['cpu']
+    commands={v['name']:v for v in old['commands']}
+    app=pin(old['application']['path'],old['application'])
+    interp=pin(old['interpreter']['path'],old['interpreter'])
+    bridge=pin(old['builds']['bridge']['output']['path'],old['builds']['bridge']['output'])
+    gp=path;gated=old;compiled=old;carrier_row=commands['carrier'];grow=commands['gated-fixture'];carrier=pin(gp.parent/'carrier')
+    python=str(pin(sys.executable));carrier_tool=pin(root/'tools/page-entry/carrier.py')
+    need(carrier_row['argv']==[python,'-B',str(carrier_tool),'make',str(app),str(bridge),str(carrier)]and
+         set(carrier_row['captures'])=={'stdout','stderr'}and not capture(gp.parent,carrier_row,'stderr'),
+         'exact actual carrier construction command')
+    identity=json.loads(capture(gp.parent,carrier_row,'stdout'),object_pairs_hook=unique)
+    need(all(identity[k+'_sha256']==fact(p)['sha256']for k,p in(('original',app),('interpreter',interp),('bridge',bridge),('carrier',carrier)))and
+         gated['subject_artifacts']=={k:fact(p)for k,p in(('original',app),('interpreter',interp),('bridge',bridge),('carrier',carrier))},
+         'whole real carrier/original/interpreter/bridge artifact identity')
+    namespace=module('namespace',pin(root/'tools/page-entry/namespace.py'))
+    need(namespace.parse(app.read_bytes())==dict(elf_type=2,needed=[],soname=None,interpreter=interp)and
+         namespace.parse(interp.read_bytes())==dict(elf_type=3,needed=[],soname=None,interpreter=None)and
+         namespace.parse(carrier.read_bytes())['interpreter']==bridge,'actual empty dependency pair and carrier PT_INTERP')
+    objects,description=namespace.plan(app,[app.parent],bytes.fromhex(fact(app)['sha256']),bytes.fromhex(fact(interp)['sha256']))
+    need(objects==[]and gated['namespace_plan']==description and
+         gated['runtime_libraries']=={interp.name:dict(path=str(interp),**fact(interp))}and
+         gated['runtime_library_scope']=='source_owned_no_needed_fixture; no dynamic-loader list command',
+         'exact source-owned no-needed namespace/interpreter contract')
+    need(gated['external_inputs']==[dict(fact(p),roles=[role])for role,p in(('original',app),('interpreter',interp))]and
+         all(fact(pin(gp.parent/'external-inputs'/(str(i)+'.elf')))==fact(p)for i,p in enumerate((app,interp))),
+         'both independently retained full original input copies')
+    ns=gp.parent/'namespace';observed=load(pin(ns/'namespace.json'));launch=load(pin(ns/'launch.json'));prep=load(pin(gp.parent/'preparation.json'))
+    need(observed==dict(description,schema_version=1,scope='explicit_sealed_dependency_namespace',status='prepared_not_executed',
+         directory=str(ns),objects=[],search_policy='explicit roots; no RPATH/RUNPATH/cache emulation',
+         identity_policy='sealed copies and private paths; not filesystem transparency'),'complete actual empty namespace manifest')
+    launcher=pin(here.parent/'resident_three/launch.py')
+    need(grow['argv']==[python,'-B',str(launcher),'--root',str(root),'--role','gated','--mode','0','--control','0',
+         '--original',str(app),'--preparation',str(gp.parent/'preparation.json'),'--library-root',str(app.parent),
+         '--carrier',str(carrier),'--namespace',str(ns),'--record-fd',str(grow['descriptors'][0]['fd'])]and
+         len(grow['descriptors'])==1 and grow['descriptors'][0]['name']=='record'and
+         type(grow['descriptors'][0]['fd'])is int and grow['descriptors'][0]['fd']>=3 and
+         set(grow['captures'])=={'stdout','stderr','record'},'exact one-subject launcher/record argument and complete streams')
+    need(prep['schema_version']==1 and prep['status']=='prepared_not_executed'and prep['role']=='gated'and
+         prep['pid']==grow['pid']and prep['cpu']==[cpu]and prep['reset_mask']==prep['launch_mask']==0 and
+         prep['argv']==[str(app),'gated']and prep['default_rseq']is False and prep['mode']==prep['control']==0 and
+         type(prep['previous_mask'])is int and 0<=prep['previous_mask']<1<<64 and
+         [v['signal']for v in prep['dispositions']]==[n for n in range(1,65)if n not in(9,19)]and
+         all(set(v)=={'signal','before','after'}and type(v['before'])is int and 0<=v['before']<1<<64 and v['after']==0 for v in prep['dispositions']),
+         'whole actual PID/CPU/mask/disposition/mode preparation')
+    env=dict(PATH='/usr/bin:/bin',LANG='C',LC_ALL='C',TZ='UTC',LD_BIND_NOW='1',LD_LIBRARY_PATH=str(ns),
+             LI2_DEPENDENCY_FDS='',GLIBC_TUNABLES='glibc.pthread.rseq=0',LI2_PERSISTENT_RETAINED_TWO_APP_MODE='0')
+    need(launch==dict(schema_version=1,scope='first_entry_loader_candidate',status='prepared_not_executed',argv=prep['argv'],
+         dependency_fds=[],carrier_sha256=fact(carrier)['sha256'],carrier_size=fact(carrier)['bytes'],environment=env)and
+         prep['late_sonames']==[]and prep['environment_source']==str(ns/'launch.json'),'complete actual gated exec/carrier/environment join')
+    record_path=pin(gp.parent/grow['captures']['record']['file']);st=record_path.stat()
+    need(stat.S_ISREG(st.st_mode)and st.st_nlink==1 and stat.S_IMODE(st.st_mode)==0o600 and
+         prep['observer']==dict(fd=3,device=st.st_dev,inode=st.st_ino),'same actual exclusive inherited owner record descriptor')
+    raw=capture(gp.parent,grow,'stdout');stderr=capture(gp.parent,grow,'stderr');record=capture(gp.parent,grow,'record')
+    output_stat=(gp.parent/grow['captures']['stdout']['file']).stat()
+    before=grow['stdout_provenance_before'];after=grow['stdout_provenance_after']
+    need(before['parent_fd']==after['parent_fd']and before['identity']==after['identity']and
+         before['open_route']==after['open_route']=='exclusive-normal-open/Popen-stdout-dup2-exec'and
+         type(before['parent_fd'])is int and before['parent_fd']>2,'same actual ordinary stdout descriptor through execution')
+    for observation,size in((before,0),(after,len(raw))):
+        identity=observation['identity'];data=bytes.fromhex(observation['statx_hex'])
+        need(len(identity)==7 and len(data)==256 and identity[:2]==[output_stat.st_dev,output_stat.st_ino]and
+             identity[3:6]==[os.major(output_stat.st_dev),os.minor(output_stat.st_dev),output_stat.st_mode]and
+             identity[2]>0 and identity[6]&os.O_ACCMODE==os.O_WRONLY and not identity[6]&os.O_PATH and
+             struct.unpack_from('<I',data)[0]&0x1103==0x1103 and not struct.unpack_from('<I',data)[0]&0x4000 and
+             struct.unpack_from('<H',data,28)[0]==output_stat.st_mode and
+             struct.unpack_from('<Q',data,32)[0]==output_stat.st_ino and struct.unpack_from('<Q',data,40)[0]==size and
+             struct.unpack_from('<IIQ',data,136)==tuple(identity[3:5]+[identity[2]]),
+             'complete actual stdout statx/fstat identity and before/after extent')
+    image=image_inventory(app,interp,carrier,objects,observed)
+    image.update(bridge=bridge.read_bytes(),persistent_binding=binding,headers=headers,maps_mode=maps_mode)
+    # Both records must identify the actual exclusive inherited sink.
+    record_base=layout['types'][bundle_name]['fields']['record']['offset']
+    for ordinal in range(2):
+        for key in('sink_initial','sink_terminal'):
+            offset=record_base+ordinal*record_bytes+layout['types']['r3o_wire']['fields'][key]['offset']
+            for name,value in(('st_dev',st.st_dev),('st_ino',st.st_ino)):
+                field=layout['types']['stat']['fields'][name]
+                need(field['bytes']==8 and struct.unpack_from('<Q',record,offset+field['offset'])[0]==value,
+                     'whole typed record identifies actual sink: '+str(ordinal)+'/'+key+'/'+name)
+    return grow,raw,stderr,record,image,record_path
+
+
 def check(root,here,r,path,old,pin,capture,closed):
     from page_selected_register_time_build import recipe,expand
     from page_selected import bridge_check
@@ -160,81 +245,9 @@ def check(root,here,r,path,old,pin,capture,closed):
              for i,v in enumerate(native_controls['controls'])),'all160 original native controls on two actual full records')
     relation=loaded_application_relation(app.read_bytes(),app.read_bytes(),interp,interp)
     need(relation['native']==relation['gated'],'the native and gated lanes use one entire identical built ELF')
-    gp=path;gated=old;compiled=old;carrier_row=commands['carrier'];grow=commands['gated-fixture'];carrier=pin(gp.parent/'carrier')
-    python=str(pin(sys.executable));carrier_tool=pin(root/'tools/page-entry/carrier.py')
-    need(carrier_row['argv']==[python,'-B',str(carrier_tool),'make',str(app),str(bridge),str(carrier)]and
-         set(carrier_row['captures'])=={'stdout','stderr'}and not capture(gp.parent,carrier_row,'stderr'),
-         'exact actual carrier construction command')
-    identity=json.loads(capture(gp.parent,carrier_row,'stdout'),object_pairs_hook=unique)
-    need(all(identity[k+'_sha256']==fact(p)['sha256']for k,p in(('original',app),('interpreter',interp),('bridge',bridge),('carrier',carrier)))and
-         gated['subject_artifacts']=={k:fact(p)for k,p in(('original',app),('interpreter',interp),('bridge',bridge),('carrier',carrier))},
-         'whole real carrier/original/interpreter/bridge artifact identity')
-    namespace=module('namespace',pin(root/'tools/page-entry/namespace.py'))
-    need(namespace.parse(app.read_bytes())==dict(elf_type=2,needed=[],soname=None,interpreter=interp)and
-         namespace.parse(interp.read_bytes())==dict(elf_type=3,needed=[],soname=None,interpreter=None)and
-         namespace.parse(carrier.read_bytes())['interpreter']==bridge,'actual empty dependency pair and carrier PT_INTERP')
-    objects,description=namespace.plan(app,[app.parent],bytes.fromhex(fact(app)['sha256']),bytes.fromhex(fact(interp)['sha256']))
-    need(objects==[]and gated['namespace_plan']==description and
-         gated['runtime_libraries']=={interp.name:dict(path=str(interp),**fact(interp))}and
-         gated['runtime_library_scope']=='source_owned_no_needed_fixture; no dynamic-loader list command',
-         'exact source-owned no-needed namespace/interpreter contract')
-    need(gated['external_inputs']==[dict(fact(p),roles=[role])for role,p in(('original',app),('interpreter',interp))]and
-         all(fact(pin(gp.parent/'external-inputs'/(str(i)+'.elf')))==fact(p)for i,p in enumerate((app,interp))),
-         'both independently retained full original input copies')
-    ns=gp.parent/'namespace';observed=load(pin(ns/'namespace.json'));launch=load(pin(ns/'launch.json'));prep=load(pin(gp.parent/'preparation.json'))
-    need(observed==dict(description,schema_version=1,scope='explicit_sealed_dependency_namespace',status='prepared_not_executed',
-         directory=str(ns),objects=[],search_policy='explicit roots; no RPATH/RUNPATH/cache emulation',
-         identity_policy='sealed copies and private paths; not filesystem transparency'),'complete actual empty namespace manifest')
-    launcher=pin(here.parent/'resident_three/launch.py')
-    need(grow['argv']==[python,'-B',str(launcher),'--root',str(root),'--role','gated','--mode','0','--control','0',
-         '--original',str(app),'--preparation',str(gp.parent/'preparation.json'),'--library-root',str(app.parent),
-         '--carrier',str(carrier),'--namespace',str(ns),'--record-fd',str(grow['descriptors'][0]['fd'])]and
-         len(grow['descriptors'])==1 and grow['descriptors'][0]['name']=='record'and
-         type(grow['descriptors'][0]['fd'])is int and grow['descriptors'][0]['fd']>=3 and
-         set(grow['captures'])=={'stdout','stderr','record'},'exact one-subject launcher/record argument and complete streams')
-    need(prep['schema_version']==1 and prep['status']=='prepared_not_executed'and prep['role']=='gated'and
-         prep['pid']==grow['pid']and prep['cpu']==[cpu]and prep['reset_mask']==prep['launch_mask']==0 and
-         prep['argv']==[str(app),'gated']and prep['default_rseq']is False and prep['mode']==prep['control']==0 and
-         type(prep['previous_mask'])is int and 0<=prep['previous_mask']<1<<64 and
-         [v['signal']for v in prep['dispositions']]==[n for n in range(1,65)if n not in(9,19)]and
-         all(set(v)=={'signal','before','after'}and type(v['before'])is int and 0<=v['before']<1<<64 and v['after']==0 for v in prep['dispositions']),
-         'whole actual PID/CPU/mask/disposition/mode preparation')
-    env=dict(PATH='/usr/bin:/bin',LANG='C',LC_ALL='C',TZ='UTC',LD_BIND_NOW='1',LD_LIBRARY_PATH=str(ns),
-             LI2_DEPENDENCY_FDS='',GLIBC_TUNABLES='glibc.pthread.rseq=0',LI2_PERSISTENT_RETAINED_TWO_APP_MODE='0')
-    need(launch==dict(schema_version=1,scope='first_entry_loader_candidate',status='prepared_not_executed',argv=prep['argv'],
-         dependency_fds=[],carrier_sha256=fact(carrier)['sha256'],carrier_size=fact(carrier)['bytes'],environment=env)and
-         prep['late_sonames']==[]and prep['environment_source']==str(ns/'launch.json'),'complete actual gated exec/carrier/environment join')
-    record_path=pin(gp.parent/grow['captures']['record']['file']);st=record_path.stat()
-    need(stat.S_ISREG(st.st_mode)and st.st_nlink==1 and stat.S_IMODE(st.st_mode)==0o600 and
-         prep['observer']==dict(fd=3,device=st.st_dev,inode=st.st_ino),'same actual exclusive inherited owner record descriptor')
-    raw=capture(gp.parent,grow,'stdout');stderr=capture(gp.parent,grow,'stderr');record=capture(gp.parent,grow,'record')
-    output_stat=(gp.parent/grow['captures']['stdout']['file']).stat()
-    before=grow['stdout_provenance_before'];after=grow['stdout_provenance_after']
-    need(before['parent_fd']==after['parent_fd']and before['identity']==after['identity']and
-         before['open_route']==after['open_route']=='exclusive-normal-open/Popen-stdout-dup2-exec'and
-         type(before['parent_fd'])is int and before['parent_fd']>2,'same actual ordinary stdout descriptor through execution')
-    for observation,size in((before,0),(after,len(raw))):
-        identity=observation['identity'];data=bytes.fromhex(observation['statx_hex'])
-        need(len(identity)==7 and len(data)==256 and identity[:2]==[output_stat.st_dev,output_stat.st_ino]and
-             identity[3:6]==[os.major(output_stat.st_dev),os.minor(output_stat.st_dev),output_stat.st_mode]and
-             identity[2]>0 and identity[6]&os.O_ACCMODE==os.O_WRONLY and not identity[6]&os.O_PATH and
-             struct.unpack_from('<I',data)[0]&0x1103==0x1103 and not struct.unpack_from('<I',data)[0]&0x4000 and
-             struct.unpack_from('<H',data,28)[0]==output_stat.st_mode and
-             struct.unpack_from('<Q',data,32)[0]==output_stat.st_ino and struct.unpack_from('<Q',data,40)[0]==size and
-             struct.unpack_from('<IIQ',data,136)==tuple(identity[3:5]+[identity[2]]),
-             'complete actual stdout statx/fstat identity and before/after extent')
+    grow,raw,stderr,record,image,record_path=gated_process(root,here,path,old,pin,capture,layout,binding,headers,maps_mode)
+    gp=path;gated=old
     owner=module('owner',pin(selected/'tests/resident_generation_owner/read.py'))
-    image=image_inventory(app,interp,carrier,objects,observed)
-    image.update(bridge=bridge.read_bytes(),persistent_binding=binding,headers=headers,maps_mode=maps_mode)
-    # Both records must identify the actual exclusive inherited sink.
-    record_base=layout['types']['rgo_bundle']['fields']['record']['offset']
-    for ordinal in range(2):
-        for key in('sink_initial','sink_terminal'):
-            offset=record_base+ordinal*2064000+layout['types']['r3o_wire']['fields'][key]['offset']
-            for name,value in(('st_dev',st.st_dev),('st_ino',st.st_ino)):
-                field=layout['types']['stat']['fields'][name]
-                need(field['bytes']==8 and struct.unpack_from('<Q',record,offset+field['offset'])[0]==value,
-                     'whole typed record identifies actual sink: '+str(ordinal)+'/'+key+'/'+name)
     if effect:
         need(raw==b'' and grow['exit']==125,'failed prefix never becomes successful application output')
         actual_reports,parsed=certificate_reports.failed_prefix(stderr)

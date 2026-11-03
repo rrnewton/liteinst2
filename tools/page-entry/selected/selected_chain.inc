@@ -24,6 +24,17 @@ static void selected_generic_trace(int sig,siginfo_t *si,ucontext_t *context) {
     prto_declined(context);
 #endif
 #endif
+#ifdef LI2_LOOP_RESIDENT_RX
+    enum li2_chain_result result;
+    if(lprx_branch_phase()) {
+        /* Only the actual authenticated original DIRECT may reach this path.
+           Fresh handler preparation grants no RX retention by itself. The
+           shared engine callback either binds one final DIRECT or revokes
+           before the unchanged fallback/ordinary successor can execute. */
+        result=li2_tf_chain_trace_direct(&selected_chain,sig,si,context,lprx_transit_prepared);
+    } else {
+        lprx_before_unsafe(LPRX_DECLINED);
+#endif
 #ifdef LI2_SCALAR_SPAN_TRACE
 #ifdef LI2_LINKED_EPOCH
     if(selected_linked_epoch_trace_try(sig,si,context))return;
@@ -31,7 +42,12 @@ static void selected_generic_trace(int sig,siginfo_t *si,ucontext_t *context) {
     if(selected_scalar_span_trace_try(sig,si,context))return;
 #endif
 #endif
+#ifdef LI2_LOOP_RESIDENT_RX
+        result=li2_tf_chain_trace(&selected_chain,sig,si,context);
+    }
+#else
     enum li2_chain_result result=li2_tf_chain_trace(&selected_chain,sig,si,context);
+#endif
     const struct li2_tf_chain_slot *previous=&selected_chain.slots[selected_chain.active^1];
 #ifdef LI2_TF_SAME_PAGE_LEASE
     if(result==LI2_CHAIN_LEASE_RUNNING) {
@@ -57,6 +73,12 @@ static void selected_generic_trace(int sig,siginfo_t *si,ucontext_t *context) {
 #endif
         ;
     selected_pending_route=selected_step_pending?SELECTED_GENERIC_TF:SELECTED_NO_STEP;
+#ifdef LI2_LOOP_RESIDENT_RX
+    if(lprx_branch_phase()) {
+        checked(result==LI2_CHAIN_RUNNING && lprx_branch_phase()==1,656,3);
+        lprx_direct_armed();
+    }
+#endif
     selected_initialized();
 #if defined(LI2_EFFECT_PROVIDER) && defined(LI2_TF_HANDOFF) && defined(LI2_REGISTER_RUN)
     if(result==LI2_CHAIN_NX_FALLBACK &&

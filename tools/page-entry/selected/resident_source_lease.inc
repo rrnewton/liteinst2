@@ -52,7 +52,12 @@ static void rsl_resident_clear(void) {
 _Static_assert(LI2_PGD_MEMBERS==2 && LI2_MG_RANGES==131 && LI2_RSL_PAGES==64,
     "new source retention does not enlarge old execution/guard bounds");
 static int rsl_permission(int prot) {
+#ifdef LI2_RESIDENT_RX
+    return LI2_R3_RX_CALL(LI2_R3_RX_SOURCE_PERMISSION,
+        RAW(SYS_mprotect,(uintptr_t)&rsl,sizeof rsl,prot,0,0,0))?LI2_FETCH_STATE:0;
+#else
     return RAW(SYS_mprotect,(uintptr_t)&rsl,sizeof rsl,prot,0,0,0)?LI2_FETCH_STATE:0;
+#endif
 }
 static int rsl_finish(int error) {
     int seal=rsl_permission(PROT_READ);return error?error:seal;

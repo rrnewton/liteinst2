@@ -105,7 +105,11 @@ static int pgr_source_terminal(const struct li2_pg_token *t,unsigned cancelled) 
         for(size_t i=0;i<sizeof pg_rseq.domain_ref;i++)if(b[i])return 0;
     } else if(pg_rseq.domain_bound!=1 || pg_rseq.domain_count!=domain->count ||
               !region_rseq_equal(pg_rseq.domain_ref,domain->ref,sizeof domain->ref) ||
+#ifdef LI2_LOOP_RESIDENT_RX
+              !li2_pgd_source_terminal_rx(t))return 0;
+#else
               !li2_pgd_source_terminal(t))return 0;
+#endif
 #endif
     const struct li2_pg_source_progress *s=li2_pg_source_progress();
     const struct li2_pg_layout *l=li2_pg_owner_layout(t);
@@ -121,9 +125,17 @@ static int pgr_source_terminal(const struct li2_pg_token *t,unsigned cancelled) 
            s->cancelled_fetch.progress.first_error ||
            s->cancelled_fetch.ref.owner!=s->source.anchor.owner ||
            s->cancelled_fetch.ref.sequence!=s->source.anchor.sequence)return 0;
+#ifdef LI2_LOOP_RESIDENT_RX
+    } else {
+        /* The exact source-owned RX release value retains all real source,
+           fetch and domain joins, without claiming any closed R/NX query. */
+        return li2_pgd_source_rx_value(s,domain,li2_pgd_source_rx_progress());
+    }
+#else
     } else if(s->phase!=LI2_PGS_RELEASED || s->cancel_started || s->cancel_complete ||
               s->opened_extents!=3 || s->opened_pages!=17 || s->closed_extents!=3 || s->closed_pages!=17)
         return 0;
+#endif
     for(unsigned i=0;i<3;i++) {
         uintptr_t first=i<2?l->generated[i]:l->stubs;
         size_t bytes=i<2?LI2_PE_IMAGE_BYTES:LI2_PG_STUB_BYTES;

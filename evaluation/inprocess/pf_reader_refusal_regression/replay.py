@@ -26,7 +26,7 @@ PACKET = Path(__file__).resolve().parent
 BASE = ROOT / 'target/evaluation/inprocess/bounded-fused-owner-attempt-2'
 TESTS = ROOT / 'tools/page-entry/selected/tests'
 RECEIPT = dict(bytes=1796341, sha256='a8c62be68aee68ee52ffb21052316dcdb779ab5f22f30cd24558b634ed92db07')
-INPUTS = {'bytes': 18620, 'sha256': 'cde016d8fb9b886bb41e007e0820329657a9cd68643ce83d5fda093ce490647c'}
+INPUTS = {'bytes': 18620, 'sha256': '8ae7d7541054908538bd0100bdd70767d3ed159260edb90bbb4c78285af3553d'}
 REVISION = '641b3af039ede26bfe343f8196583a73bb9935e9'
 
 
@@ -55,6 +55,49 @@ def population(value, count, original=None):
 
 
 def historical_reader(relative, data):
+    if relative == 'persistent_direct_frontier_app/read.py':
+        # This actual current reader was authenticated by take(). Reconstruct
+        # only its unchanged retained endpoint before the existing whole join.
+        need(fact(data) == {'bytes': 36830, 'sha256': 'ba86eca297742d95498b8f535276daccc278e67336f84fcb5906e06cc9bb6581'}, 'whole current direct reader')
+        lines = data.decode('utf-8').splitlines(keepends=True)
+        result = []; at = 0
+        for first, end, previous in [
+            [13, 22, ''],
+            [161, 162, 'def reference_frame(data, prefix, layout, kind, steps, attempt):\n'],
+            [177, 178, '    g = q(uc, 40, 23); pc = frame_pc(prefix,kind)\n'],
+            [183, 184, '    expected = frame_state(prefix,kind)\n'],
+            [185, 186, '    expected_flags=trace_model(prefix)[steps][2] | (RF if kind==0 else TF)\n'],
+            [210, 211, 'def fixture(mode,image):\n'],
+            [214, 216, '    seed[8]=2;seed[9]=1;seed[10]=1\n'],
+            [227, 228, 'def trace_model(prefix):\n'],
+            [233, 234, '    for _ in range(41):\n'],
+            [261, 265, "def frame_pc(prefix,kind):\n    need(type(kind)is int and 0<=kind<len(STEPS),'one of12 explicitly retained native boundaries')\n    return trace_model(prefix)[STEPS[kind]][0]\n"],
+            [266, 267, 'def frame_state(prefix,kind):return trace_model(prefix)[STEPS[kind]][1]\n'],
+            [268, 269, 'def state(seed,data,mode):\n'],
+            [270, 271, '    out=list(seed);out[0]+=9;out[1]=0;out[8]=1;out[10]=U64-1;return tuple(out)\n'],
+            [276, 277, 'def _prefix(data,mode,native,image,pid,cpu,seed_reference):\n'],
+            [279, 280, ''],
+            [285, 286, "    need(h[:9]==(MAGIC,10,PREFIX,SUFFIX,mode,int(native),pid,pid,cpu)and h[9]<=0xffffffff and h[10:14]==(head,image['page'],DATA,STACK),'exact source/process/entry')\n"],
+            [287, 288, "    need(h[30:]==(1,224,DATA+8192 if mode==1 else 0,8 if mode==1 else 0,frontier,predecessor,TRACES[mode],OBS,12,40,image['page']+0x2400,image['page']+PAGE,16384,RSEQ,0x53053053,image['page']+0x215,image['page']+0x3ffa,image['page']+0x241b),'exact cyclic fixture and reserved header')\n"],
+            [296, 297, '    expected,want_data,want_stack=fixture(mode,image)\n'],
+            [302, 303, 'def read(data,mode,native,exit_status,image,pid,cpu,seed_reference):\n'],
+            [306, 308, '    r=_prefix(data[:PREFIX],mode,native,image,pid,cpu,seed_reference)\n'],
+            [310, 311, "    need(end==(MAGIC^1,10,mode,int(native),0,1,1,12 if native else 0,TRACES[mode]if native else 0,int(mode==1),2,1,0,0,0,0),'complete cleanup and collection-before-registration chronology')\n"],
+            [319, 320, "    need(h==(1,0,12 if native else 0,TRACES[mode]if native else 0,int(mode==1),int(native),0,0,image['symbols']['region_app_capture_high'],0,0,0,0,0,0,0),'whole invocation header')\n"],
+            [321, 322, "    need(after[0]==state(r['seed'][0],r['data'],mode)and after[1]==0x246,'all defined loop GPR and flag results')\n"],
+            [329, 331, '            steps=STEPS[i]\n            frames.append(reference_frame(frame,r,image,kind,steps,0))\n'],
+            [340, 341, 'def controls(data,mode,native,exit_status,image,pid,cpu,seed_reference):\n'],
+            [343, 344, '    read(data,mode,native,exit_status,image,pid,cpu,seed_reference)\n'],
+            [373, 374, '        try:read(bytes(mutant),mode,native,exit_status,image,pid,cpu,seed_reference)\n'],
+            [377, 387, ''],
+            [393, 394, "    need(native['header'][8:19]==gated['header'][8:19]and native['hardware']==gated['hardware']and all(native[k]==gated[k]for k in('seed','source','stack','data','rsp','predecessor')),'whole same-source/CPU/seed pair inputs')\n    need(len(native['observations'])==len(gated['observations'])==1,'actual complete application observations')\n"],
+            [426, 427, "    actual=gated['observations'][0]\n    need(all(reference[k]==actual[k]for k in('before','after','live','data','stack'))and gated['effects']==native['effects']and gated['suffix']is not None,'whole actual application state and later registration lifecycle')\n"],
+        ]:
+            need(at <= first <= end <= len(lines) and ''.join(lines[first:end]) != previous,
+                 'ordered exact direct-reader inverse span')
+            result.extend(lines[at:first]); result.append(previous); at = end
+        data = ''.join(result + lines[at:]).encode('utf-8')
+        need(fact(data) == {'bytes': 35492, 'sha256': '273cd7c05858c889bef229d2f32439ee794e8f3107bf04d8e5d21457f2f12b71'}, 'whole unchanged retained direct reader')
     replacements = {
         'persistent_fused_app/read.py': [
             (b"==(1,1,1,0,0,0,1),'actual unsupported-store miss", b"==(1,5,1,0,0,0,1),'actual unsupported-store miss")],
@@ -188,7 +231,7 @@ def main():
 
         # Copy only small Python sources, never raw captures or generated images.
         # Historical source is the exact recorded whole, reconstructed by the
-        # three explicit literal inverses plus the two explanatory comments.
+        # original PF literal inverses and the exact direct-reader whole inverse.
         historical_tests = directory/'historical-tests'
         for relative, expected in contract['readers'].items():
             path = TESTS/relative

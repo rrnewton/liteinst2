@@ -83,6 +83,9 @@ int li2_maps_clock_observer_register(const void *buffer,size_t bytes) {
 }
 #endif
 static int maps_nonmutating(long n,long a,long b,long c,long d,long e,long f) {
+#ifdef LI2_RESIDENT_SOURCE_LEASE
+    if(li2_rseq_tls_observer(n,a,b,c,d,e,f))return 1;
+#endif
 #ifdef LI2_RUN_TIMING
     if(n==SYS_clock_gettime && a==4 && maps_clock_observer &&
        (uintptr_t)b==maps_clock_observer && !c && !d && !e && !f)return 1;
