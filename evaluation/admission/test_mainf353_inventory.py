@@ -101,7 +101,8 @@ class MainF353InventoryTests(unittest.TestCase):
             def changed(candidate): return wrong if candidate == target else read(candidate)
             if 'native_row' in outer:
                 upstream[path] = outer['native_row']
-            with patch.dict(native_indexed.DATA['source_successor_281c342']['source_projections'], outer['rows']['281c342']), \
+            with patch.dict(native_indexed.DATA['source_successor_11cc419']['source_projections'], outer['rows']['11cc419']), \
+                 patch.dict(native_indexed.DATA['source_successor_281c342']['source_projections'], outer['rows']['281c342']), \
                  patch.dict(native_indexed.DATA['source_successor_064b48c']['source_projections'], outer['rows']['064b48c']), \
                  patch.dict(native_indexed.DATA['source_successor_79a4b8b']['source_projections'], outer['rows']['79a4b8b']), \
                  patch.dict(native_indexed.DATA['source_successor_3217b8ed']['source_projections'], outer['rows']['3217b8ed']), \

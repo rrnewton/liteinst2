@@ -6427,7 +6427,7 @@
       },
       "test/quiescent_oracle": {
         "ignored": 0,
-        "tests": 39
+        "tests": 43
       },
       "test/rel32_endpoint_oracle": {
         "ignored": 0,
@@ -6515,11 +6515,11 @@
       },
       "unit/disassembly_sites/disassembly_sites": {
         "ignored": 0,
-        "tests": 18
+        "tests": 20
       },
       "unit/full_program_bridge/full_program_bridge": {
         "ignored": 0,
-        "tests": 13
+        "tests": 16
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
@@ -6551,7 +6551,7 @@
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
-        "tests": 207
+        "tests": 214
       },
       "unit/liteinst_rewrite/main": {
         "ignored": 0,
@@ -6559,7 +6559,7 @@
       },
       "unit/liteinst_x86/lib": {
         "ignored": 0,
-        "tests": 3
+        "tests": 5
       },
       "unit/ordinary_interval/main": {
         "ignored": 1,

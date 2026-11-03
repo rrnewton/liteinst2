@@ -67,7 +67,7 @@ def cargo_mutation(test, observed, before, after):
 
 def outer_declaration_mutation(test, path, observed, before, after):
     """Carry the same old stimulus through the two new, exact outer joins."""
-    names = ('281c342', '064b48c', '79a4b8b', '3217b8ed')
+    names = ('11cc419', '281c342', '064b48c', '79a4b8b', '3217b8ed')
     rows = {name: {} for name in names}
     baseline = current.source_before_65ee8ea(path, observed, 'declaration_outer_baseline')
     if path == 'Cargo.toml':
@@ -108,10 +108,77 @@ def outer_declaration_mutation(test, path, observed, before, after):
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # Eighteen jump/register-stack methods extend five existing default harnesses.
+        jump = current.DATA['source_successor_11cc419']
+        jump_prior = current.before_11cc419(actual)
+        jump_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(jump_prior), current.JUMP_PREVIOUS)
+        self.assertEqual((len(jump_rows), sum(x['tests'] for x in jump_rows.values()),
+                          sum(x['ignored'] for x in jump_rows.values())), (122, 4674, 43))
+        self.assertEqual((jump['default_method_additions'], jump['new_method_declarations'],
+                          jump['default_method_removals'], jump['default_harness_changes'],
+                          jump['default_ignore_changes'], jump['default_doctest_additions'],
+                          jump['recorder_identity_changes'], jump['feature_method_additions'],
+                          jump['feature_method_removals']), (18, 18, 0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(jump['added_default_methods'], {'crates/liteinst-x86/src/tests.rs': ['jump_fact_matches_the_complete_legacy_mnemonic_population', 'register_stack_union_keeps_all_registers_and_exact_code_boundaries'], 'tests/quiescent_oracle.rs': ['jump_stack_native_low_gprs', 'jump_stack_native_high_gprs', 'jump_stack_native_rsp_loaded_value', 'jump_stack_native_operand_faults'], 'tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs': ['jump_stack_rewrite_selector_preserves_old_routes_and_rejects_mixing', 'jump_stack_rewrite_uses_typed_prepare_and_retains_every_imported_row_on_refusal'], 'tools/elf-rewrite/examples/full_program_bridge/input_tests.rs': ['jump_stack_material_selection_joins_every_rpc_patch_and_keeps_caps', 'jump_stack_input_selectors_keep_pin_type_and_mixed_mode_refusals', 'jump_stack_material_policy_files_keep_full_counts_on_policy_refusal'], 'tools/elf-rewrite/src/disassembly/tests.rs': ['jump_stack_import_keeps_complete_union_and_literal_old_inventory', 'jump_stack_import_preserves_shared_first_errors_and_global_target_checks', 'jump_stack_import_keeps_every_register_without_legacy_profile_promotion'], 'tools/elf-rewrite/src/disassembly/whole/tests.rs': ['complete_union_policy_and_shared_manifest_retain_rsp_prefixes_and_classes', 'union_projection_rejects_class_population_and_policy_replay_mutations', 'union_fixed_policy_keeps_ordered_permits_caps_and_first_errors', 'union_actual_fixed_transaction_emits_or_refuses_complete_population']})
+        self.assertEqual(jump['default_method_instances'], {'crates/liteinst-x86/src/tests.rs': ['unit/liteinst_x86/lib'], 'tests/quiescent_oracle.rs': ['test/quiescent_oracle'], 'tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs': ['unit/disassembly_sites/disassembly_sites'], 'tools/elf-rewrite/examples/full_program_bridge/input_tests.rs': ['unit/full_program_bridge/full_program_bridge'], 'tools/elf-rewrite/src/disassembly/tests.rs': ['unit/liteinst_rewrite/lib'], 'tools/elf-rewrite/src/disassembly/whole/tests.rs': ['unit/liteinst_rewrite/lib']})
+        self.assertEqual((jump['added_feature_methods'], jump['added_ignored_methods']), ({}, {}))
+        self.assertEqual((len(jump['source_paths']), len(jump['source_projections'])), (30, 30))
+        self.assertEqual(jump['new_sources'], ['evaluation/direct-program/jump-stack-profile.md', 'evaluation/direct-program/jump-stack-result/README.md', 'evaluation/direct-program/jump-stack-result/receipt.json', 'evaluation/direct-program/jump-stack-result/results.csv', 'evaluation/direct-program/jump-stack-validation/README.md', 'evaluation/direct-program/jump-stack-validation/receipt.json', 'evaluation/direct-program/test_stack_inventory.py', 'evaluation/direct-program/validate_stack.py', 'tests/support/jump_stack_native.rs', 'tools/elf-rewrite/src/disassembly/jump_stack.rs'])
+        self.assertEqual(jump['newly_bound_sources'], ['evaluation/direct-program/direct_data.py', 'evaluation/direct-program/jump-stack-profile.md', 'evaluation/direct-program/jump-stack-result/README.md', 'evaluation/direct-program/jump-stack-result/receipt.json', 'evaluation/direct-program/jump-stack-result/results.csv', 'evaluation/direct-program/jump-stack-validation/README.md', 'evaluation/direct-program/jump-stack-validation/receipt.json', 'evaluation/direct-program/reproduce.py', 'evaluation/direct-program/test_stack_inventory.py', 'evaluation/direct-program/validate_stack.py', 'tests/quiescent_oracle.rs', 'tests/support/jump_stack_native.rs', 'tools/elf-rewrite/src/disassembly/jump_stack.rs'])
+        self.assertEqual(jump_prior['harness_test_counts']['serial_launch'], actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((actual['recorder_tests'], jump_prior['recorder_tests']), (366, 366))
+        for name, change in jump['workspace_changes'].items():
+            self.assertEqual(jump_rows[name], change['current'])
+            self.assertEqual(jump_prior['harness_test_counts']['workspace_tests'][name], change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(jump_rows[name][field]), jump_rows[name][field] + 1):
+                    wrong = copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_11cc419(wrong)
+            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_11cc419(wrong)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_11cc419(jump_prior)
+        for path, row in jump['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_11cc419(path, raw, 'jump_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (jump['source_preimages'][path]['bytes'], row['previous_sha256']))
+            if path in jump['new_sources']:
+                self.assertEqual(prior, b'')
+            for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^jump_source_inverse$'):
+                    current.source_before_11cc419(path, wrong, 'jump_source_inverse')
+            for field in ('edits', 'current_sha256', 'previous_sha256'):
+                malformed = copy.deepcopy(row)
+                if field == 'edits': malformed['edits'][0][2] += '\n'
+                else: malformed[field] = '0' * 64
+                with patch.dict(jump['source_projections'], {path: malformed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^jump_source_inverse$'):
+                        current.source_before_11cc419(path, raw, 'jump_source_inverse')
+        read = Path.read_bytes
+        jump_stimuli = [(p, 'fn ' + n + '(') for p, names in jump['added_default_methods'].items() for n in names]
+        jump_stimuli += [(p, literal) for p, literals in jump['module_chains'].items() for literal in literals]
+        for path, literal in jump_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            replacement = literal.replace('(', '_wrong(', 1) if literal.startswith('fn ') else literal[:-1] + ('x' if literal[-1] != 'x' else 'y')
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('jump declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
         # Eight shared-CFG methods extend two existing default harnesses.
         cfg = current.DATA['source_successor_281c342']
         cfg_prior = current.before_281c342(actual)
-        cfg_rows = actual['harness_test_counts']['workspace_tests']
+        cfg_rows = jump_prior['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(cfg_prior), current.CFG_PREVIOUS)
         self.assertEqual((len(cfg_rows), sum(x['tests'] for x in cfg_rows.values()),
                           sum(x['ignored'] for x in cfg_rows.values())), (122, 4656, 43))
@@ -2262,6 +2329,24 @@ class Main97abInventoryTests(unittest.TestCase):
                 with patch.dict(change, previous=PublishedCopy(change['previous'])):
                     result = current.before_281c342(supplied)
             self.assertEqual(result, cfg_prior)
+            self.assertEqual(supplied, actual)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+
+        # The latest transition preserves private ownership for both sources.
+        for source in ('declared', 'metadata'):
+            supplied = copy.deepcopy(actual)
+            change = jump['workspace_changes']['unit/liteinst_rewrite/lib']
+            published.clear()
+            if source == 'declared':
+                supplied['harness_test_counts']['serial_launch'] = PublishedCopy(supplied['harness_test_counts']['serial_launch'])
+                result = current.before_11cc419(supplied)
+            else:
+                with patch.dict(change, previous=PublishedCopy(change['previous'])):
+                    result = current.before_11cc419(supplied)
+            self.assertEqual(result, jump_prior)
             self.assertEqual(supplied, actual)
             self.assertEqual(len(published), 1)
             self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
