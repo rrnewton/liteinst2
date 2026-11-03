@@ -1080,3 +1080,195 @@ fn whole_packed_overlapping_cli_retains_mode_and_denominator_on_refusal() {
     let (_, family, _) = labels_with_ownership(Mode::WholePackedOverlapping4096);
     assert_eq!(family, disassembly::whole::PACKED_OVERLAPPING_METADATA);
 }
+
+#[test]
+fn jump_stack_rewrite_selector_preserves_old_routes_and_rejects_mixing() {
+    let base = args();
+    for flag in [
+        "--whole-program-fixed-exec-packed-overlapping-neighbors-4096",
+        "--whole-program-packed-overlapping-neighbors-4096",
+        "--whole-program-4096",
+        "--short-neighbors-only",
+    ] {
+        let mut old = base.clone();
+        old.insert(1, flag.into());
+        assert_eq!(
+            arguments_with_jump_stack(&old),
+            arguments_with_fixed_exec(&old).map(|(a, m)| (a, PopulationMode::Existing(m)))
+        );
+    }
+    let mut input = base.clone();
+    input.insert(1, JUMP_STACK_FLAG.into());
+    assert_eq!(
+        arguments_with_jump_stack(&input).unwrap(),
+        (&base[1..], PopulationMode::JumpStack)
+    );
+    let (profile, metadata, _) = labels_with_population(PopulationMode::JumpStack);
+    assert_eq!(profile, disassembly::jump_stack::PROFILE);
+    assert_eq!(metadata, liteinst_rewrite::FIXED_EXEC_METADATA);
+    assert!(metadata.contains("required_load_bias\t0\n"));
+    for flag in [
+        JUMP_STACK_FLAG,
+        "--whole-program-4096",
+        "--short-neighbors-only",
+        "--input-profile",
+        "--policy-profile",
+    ] {
+        for position in 2..8 {
+            let mut mixed = input.clone();
+            mixed[position] = flag.into();
+            assert!(arguments_with_jump_stack(&mixed).is_err());
+        }
+    }
+    // Existing seven positional filenames retain their old interpretation.
+    assert_eq!(
+        arguments_with_jump_stack(&input[..7]),
+        arguments_with_fixed_exec(&input[..7]).map(|(a, m)| (a, PopulationMode::Existing(m)))
+    );
+    input.push("extra".into());
+    assert!(arguments_with_jump_stack(&input).is_err());
+    assert_eq!(
+        jump_stack_fields(None),
+        "selection_profile\tjumps-gpr-stack64-v1\ncomplete_site_count\tunavailable\njump_count\tunavailable\npush_r64_count\tunavailable\npop_r64_count\tunavailable\n"
+    );
+}
+
+#[test]
+fn jump_stack_rewrite_uses_typed_prepare_and_retains_every_imported_row_on_refusal() {
+    use li2core::contracts::AddressRange;
+    use liteinst_rewrite::disassembly::whole::policy::{self, Carrier, NullHook, PolicyOptions};
+    let (mut original, ledger, _) = fixture();
+    let old_digest = digest(&original);
+    original[0x1107..0x1109].copy_from_slice(&[0x54, 0x5c]);
+    let ledger = String::from_utf8(ledger)
+        .unwrap()
+        .replace(&old_digest, &digest(&original))
+        .replace("head 4198663 7500\n", "head 4198663 54\nhead 4198664 5c\n")
+        .into_bytes();
+    let imported =
+        disassembly::jump_stack::import(&original, &ledger, ContentId::of(&ledger)).unwrap();
+    assert_eq!(imported.sites().len(), 3);
+    let expected: Vec<_> = imported
+        .sites()
+        .iter()
+        .map(|s| {
+            let g = s.geometry();
+            (g.id, g.pc, g.length as u8, g.file_offset)
+        })
+        .collect();
+    assert_eq!(
+        expected,
+        [
+            (1, 4198663, 1, 4359),
+            (2, 4198664, 1, 4360),
+            (3, 4198665, 2, 4361)
+        ]
+    );
+    let options = PolicyOptions {
+        domain: 7,
+        hook: NullHook::LowestOriginalRet,
+        carrier: Carrier::AfterLoads,
+        arena: AddressRange::new(0x01000000, 0x1f000000).unwrap(),
+    };
+    let mut rows = String::new();
+    for id in 1..=3 {
+        writeln!(rows, "search {id} preferred 64 256 64 none 256 4096").unwrap();
+        for role in ["selected", "victim"] {
+            writeln!(
+                rows,
+                "allocation {id} {role} none 1 4096 16777216:520093696"
+            )
+            .unwrap();
+        }
+    }
+    let spec = policy::spec_from_jump_stack_records(
+        &imported,
+        &original,
+        options,
+        b"target fxsave64\n",
+        rows.as_bytes(),
+    )
+    .unwrap();
+    let policy = policy::build_jump_stack_policy(&imported, &original, &spec).unwrap();
+    let mut files = BTreeMap::new();
+    let mut classes = None;
+    let product = prepare_population_inputs(
+        &original,
+        &ledger,
+        ContentId::of(&ledger),
+        &policy,
+        ContentId::of(&policy),
+        PopulationMode::JumpStack,
+        (&mut files, &mut classes),
+    )
+    .unwrap();
+    assert_eq!(classes, Some([1, 1, 1]));
+    assert_eq!(
+        product
+            .reports()
+            .iter()
+            .map(|r| (r.id, r.pc, r.length, r.file_offset))
+            .collect::<Vec<_>>(),
+        expected
+    );
+    assert_eq!(files["disassembly-inventory.tsv"], imported.inventory());
+    assert_eq!(
+        product.files()["disassembly-inventory.tsv"],
+        imported.inventory()
+    );
+    assert_eq!(
+        product.fixed_image_binding().unwrap().identity().source.0,
+        ContentId::of(&original).0
+    );
+    assert!(!product.qualification_complete());
+    assert!(
+        std::str::from_utf8(&files["selection.txt"])
+            .unwrap()
+            .contains("profile jumps-gpr-stack64-v1\n")
+    );
+    for (bytes, pin) in [(policy.clone(), ContentId([0; 32])), {
+        let old = String::from_utf8(policy.clone())
+            .unwrap()
+            .replace(
+                "LI2DISASM-JUMP-STACK-WHOLE-POLICY 1",
+                "LI2DISASM-WHOLE-POLICY 1",
+            )
+            .into_bytes();
+        let pin = ContentId::of(&old);
+        (old, pin)
+    }] {
+        let mut retained = BTreeMap::new();
+        let mut counts = None;
+        assert!(
+            prepare_population_inputs(
+                &original,
+                &ledger,
+                ContentId::of(&ledger),
+                &bytes,
+                pin,
+                PopulationMode::JumpStack,
+                (&mut retained, &mut counts)
+            )
+            .is_err()
+        );
+        assert_eq!(counts, Some([1, 1, 1]));
+        assert_eq!(retained["disassembly-inventory.tsv"], imported.inventory());
+        assert!(!retained.contains_key("selection.txt"));
+    }
+    let mut retained = BTreeMap::new();
+    let mut counts = None;
+    assert!(
+        prepare_population_inputs(
+            &original,
+            &ledger,
+            ContentId([0; 32]),
+            &policy,
+            ContentId::of(&policy),
+            PopulationMode::JumpStack,
+            (&mut retained, &mut counts)
+        )
+        .is_err()
+    );
+    assert!(retained.is_empty());
+    assert_eq!(counts, None);
+}

@@ -112,3 +112,77 @@ fn exact_form_and_mnemonic_views_remain_distinct() {
         Width::Bits64
     );
 }
+
+#[test]
+fn jump_fact_matches_the_complete_legacy_mnemonic_population() {
+    extern crate std;
+    let mut count = 0;
+    for mnemonic in Mnemonic::values() {
+        let expected = std::format!("{mnemonic:?}")
+            .to_ascii_lowercase()
+            .starts_with('j');
+        assert_eq!(is_jump_mnemonic(mnemonic), expected, "{mnemonic:?}");
+        count += usize::from(expected);
+    }
+    assert_eq!(count, 23);
+}
+
+#[test]
+fn register_stack_union_keeps_all_registers_and_exact_code_boundaries() {
+    for (opcode, code, class) in [
+        (0x50, Code::Push_r64, JumpStackClass::PushRegister64),
+        (0x58, Code::Pop_r64, JumpStackClass::PopRegister64),
+    ] {
+        for index in 0..16_u8 {
+            let bytes = [0x41, opcode + (index & 7)];
+            let bytes = if index < 8 { &bytes[1..] } else { &bytes[..] };
+            let decoded = decode64(0x1000, bytes);
+            assert_eq!(decoded.error, DecoderError::None);
+            assert_eq!(decoded.instruction.code(), code);
+            assert_eq!(jump_or_register_stack(&decoded.instruction), Some(class));
+            let operand = gpr(decoded.instruction.op0_register()).unwrap();
+            assert_eq!(
+                (operand.register as u8, operand.width),
+                (index, Width::Bits64)
+            );
+        }
+    }
+    for bytes in [
+        &[0x66, 0x50][..],
+        &[0x66, 0x58],
+        &[0xff, 0xf0],
+        &[0x8f, 0xc0],
+        &[0xff, 0x30],
+        &[0x8f, 0],
+        &[0x6a, 0],
+        &[0x68, 0, 0, 0, 0],
+        &[0x9c],
+        &[0x9d],
+        &[0x0f, 0xa0],
+        &[0x0f, 0xa1],
+        &[0xc3],
+        &[0xe8, 0, 0, 0, 0],
+        &[0xe2, 0],
+        &[0xc7, 0xf8, 0, 0, 0, 0],
+    ] {
+        let decoded = decode64(0x1000, bytes);
+        assert_eq!(decoded.error, DecoderError::None, "{bytes:x?}");
+        assert_eq!(
+            jump_or_register_stack(&decoded.instruction),
+            None,
+            "{bytes:x?}"
+        );
+    }
+    // Selection retains these Code forms; existing consumers decide whether
+    // a prefix is qualified. This is deliberately not a runtime admission test.
+    for (bytes, class) in [
+        (&[0x48, 0x54][..], JumpStackClass::PushRegister64),
+        (&[0xf3, 0x5c][..], JumpStackClass::PopRegister64),
+        (&[0x75, 0][..], JumpStackClass::Jump),
+        (&[0xff, 0xe0][..], JumpStackClass::Jump),
+    ] {
+        let decoded = decode64(0x1000, bytes);
+        assert_eq!(decoded.error, DecoderError::None);
+        assert_eq!(jump_or_register_stack(&decoded.instruction), Some(class));
+    }
+}

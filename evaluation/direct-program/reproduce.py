@@ -26,6 +26,7 @@ BACKEND = ('ignored/a3/upstream/e9patch-pldi2020/e9patch', 93520, '890f76cb5741b
 REWRITE_PROFILES = {
     'mixed-entry-veneer-v1': '--whole-program-packed-entry-veneer-mixed-neighbors-4096',
     'fixed-exec-overlapping-v2': '--whole-program-fixed-exec-packed-overlapping-neighbors-4096',
+    'jumps-gpr-stack64-v1': '--whole-program-fixed-exec-packed-overlapping-jump-stack64-4096',
 }
 CATALOG_SHA = '2b89602488e2b1854e0df68ecdf49243d4c952a2f393fad4a56785db4a539bde'
 _catalog_bytes = Path(__file__).with_name('program_catalog.json').read_bytes()
@@ -71,6 +72,10 @@ def build(r, a):
 
 def functional(r, a):
     corpus = a.corpus_profile == 'cat-head-wc-v1'
+    stack = a.rewrite_profile == D.STACK_PROFILE
+    selection_profile = D.STACK_PROFILE if stack else None
+    input_profile = 'et-exec-jumps-gpr-stack64-v1' if stack else 'et-exec-whole-4096-v1'
+    policy_profile = 'et-exec-jumps-gpr-stack64-bounded-512m-v1' if stack else 'et-exec-whole-bounded-512m-v1'
     program = a.program if corpus else 'cat'
     selected_cases = program_cases(program) if corpus else CASES
     stages = {n: dict(status='UNOBSERVED') for n in ('target', 'provider', 'materials', 'policy', 'li2', 'e9')}
@@ -81,6 +86,7 @@ def functional(r, a):
             corpus_plan=dict(status='PLANNED_ONLY', dispatch_scope='Only the selected program is dispatched by this invocation; other entries are not results', programs=CATALOG['build_profiles'][a.corpus_profile], planned_rows=27,
                 rows=[dict(program=name, case=case['name'], arm=arm) for name in CATALOG['build_profiles'][a.corpus_profile] for arm in ('original', 'li2', 'e9') for case in CATALOG['programs'][name]]))
         for row in cases: row['program'] = program
+    if stack: r.record['selection_profile'] = D.STACK_PROFILE
     S.save(r.work/'planned.json', r.record)
     assert a.trusted_complete_code and a.unit
     r.record['scope_before'] = r.scope()
@@ -152,13 +158,16 @@ def functional(r, a):
     sites, rpc_info, material = None, None, r.work/'materials'
     def materials():
         nonlocal sites, rpc_info
-        row, _ = command('materials', [products['full_program_bridge'], '--input-profile', 'et-exec-whole-4096-v1', '--original-sha256', cat_pin['sha256'], '--trusted-complete-code', cat, csv_path, r.frozen[str(csv_path)]['sha256'], material], (30, 45, 512*M, 16*M, M))
+        row, _ = command('materials', [products['full_program_bridge'], '--input-profile', input_profile, '--original-sha256', cat_pin['sha256'], '--trusted-complete-code', cat, csv_path, r.frozen[str(csv_path)]['sha256'], material], (30, 45, 512*M, 16*M, M))
         completed(row)
         info = D.complete(material, S.payload); stages['materials']['complete'] = info
-        assert info['fields']['profile'] == 'et-exec-whole-4096-v1' and info['fields']['original_sha256'] == cat_pin['sha256'] and info['fields']['csv_sha256'] == r.frozen[str(csv_path)]['sha256']
+        assert info['fields']['profile'] == input_profile and info['fields']['original_sha256'] == cat_pin['sha256'] and info['fields']['csv_sha256'] == r.frozen[str(csv_path)]['sha256']
         if 'sites.tsv' in info['files']:
-            sites = D.inventory(S.payload(material/'sites.tsv'), cat_pin['sha256'], info['files']['ledger.txt']['sha256'])
+            sites = D.inventory(S.payload(material/'sites.tsv'), cat_pin['sha256'], info['files']['ledger.txt']['sha256'], selection_profile=selection_profile)
             assert int(info['fields']['sites']) == len(sites)
+            if stack:
+                D.stack_complete(info['fields'], sites)
+                r.record['selected_class_counts'] = D.stack_counts(sites)
             r.record.update(inventory_status='IMPORTED_COMPLETE_DENOMINATOR', requested_sites=len(sites), complete_inventory=sites)
         if info['fields']['status'] == 'MATERIALS_REFUSED':
             assert row['owner']['exit_code'] == 2; return None
@@ -170,10 +179,15 @@ def functional(r, a):
     def policy():
         rows = r.work/'policy-rows.txt'; S.write(rows, D.uniform_rows(sites)); r.freeze(rows)
         ledger = material/'ledger.txt'; ledger_pin = r.freeze(ledger)
-        row, _ = command('policy', [products['full_program_bridge'], '--policy-profile', 'et-exec-whole-bounded-512m-v1', '--trusted-complete-code', cat, cat_pin['sha256'], ledger, ledger_pin['sha256'], target_path, r.frozen[str(target_path)]['sha256'], rows, r.frozen[str(rows)]['sha256'], '7', '16777216', '520093696', 'lowest', 'after-loads', r.work/'policy'], (20, 30, 512*M, 16*M, M))
+        row, _ = command('policy', [products['full_program_bridge'], '--policy-profile', policy_profile, '--trusted-complete-code', cat, cat_pin['sha256'], ledger, ledger_pin['sha256'], target_path, r.frozen[str(target_path)]['sha256'], rows, r.frozen[str(rows)]['sha256'], '7', '16777216', '520093696', 'lowest', 'after-loads', r.work/'policy'], (20, 30, 512*M, 16*M, M))
         completed(row)
         info = D.complete(r.work/'policy', S.payload); stages['policy']['complete'] = info
-        assert info['fields']['profile'] == 'et-exec-whole-bounded-512m-v1' and int(info['fields']['complete_jump_count']) == len(sites)
+        assert info['fields']['profile'] == policy_profile and int(info['fields']['complete_site_count' if stack else 'complete_jump_count']) == len(sites)
+        if stack:
+            D.stack_complete(info['fields'], sites)
+            raw_inventory = S.payload(r.work/'policy/sites.tsv', info['files']['sites.tsv'])
+            assert raw_inventory == S.payload(material/'sites.tsv', stages['materials']['complete']['files']['sites.tsv'])
+            assert D.inventory(raw_inventory, cat_pin['sha256'], ledger_pin['sha256'], selection_profile=selection_profile) == sites
         for name, path in (('original', cat), ('ledger', ledger), ('target', target_path), ('rows', rows)): S.payload(path, info['inputs'][name])
         if info['fields']['status'] == 'POLICY_REFUSED': assert row['owner']['exit_code'] == 2; return None
         assert info['fields']['status'] == 'POLICY_READY' and row['status'] == 'PASS'
@@ -186,9 +200,9 @@ def functional(r, a):
         completed(row)
         info = D.complete(r.work/'li2', S.payload); stages['li2']['complete'] = info; complete = info['fields']['candidate_complete'] == 'true'
         assert info['fields']['candidate_complete'] in ('true', 'false') and info['fields']['observed_original_sha256'] == cat_pin['sha256']
-        if a.rewrite_profile == 'fixed-exec-overlapping-v2':
+        if a.rewrite_profile in ('fixed-exec-overlapping-v2', D.STACK_PROFILE):
             expected_binding = dict(
-                profile='fixed-exec-zero-bias-indexed-jump32-v1',
+                profile=D.STACK_PROFILE if stack else 'fixed-exec-zero-bias-indexed-jump32-v1',
                 planner_profile='whole-program-packed-overlapping-neighbors-4096',
                 address_binding='fixed-exec-zero-bias-indexed-jump32-v1',
                 required_object_type='ET_EXEC', required_load_bias='0',
@@ -210,7 +224,11 @@ def functional(r, a):
                 ('field_encoding', 'original-indexed-jump-signed32-v1')]
             binding_bytes = ('LI2FIXED-EXEC-BINDING\t1\n' + ''.join(key+'\t'+value+'\n' for key, value in binding_rows)).encode()
             assert S.payload(r.work/'li2/binding-policy.tsv', info['files']['binding-policy.tsv']) == binding_bytes
-        if 'disassembly-inventory.tsv' in info['files']: assert D.inventory(S.payload(r.work/'li2/disassembly-inventory.tsv'), cat_pin['sha256'], r.frozen[str(ledger)]['sha256']) == sites
+        if stack:
+            D.stack_complete(info['fields'], sites)
+            assert 'disassembly-inventory.tsv' in info['files']
+            assert S.payload(r.work/'li2/disassembly-inventory.tsv', info['files']['disassembly-inventory.tsv']) == S.payload(material/'sites.tsv', stages['materials']['complete']['files']['sites.tsv'])
+        if 'disassembly-inventory.tsv' in info['files']: assert D.inventory(S.payload(r.work/'li2/disassembly-inventory.tsv'), cat_pin['sha256'], r.frozen[str(ledger)]['sha256'], selection_profile=selection_profile) == sites
         if 'report.tsv' in info['files']: r.record['structural']['li2'] = D.li2_report(S.payload(r.work/'li2/report.tsv'), sites, cat_pin['sha256'], complete)
         r.record['structural']['li2']['status'] = 'PASS' if complete else 'FAILED'
         if not complete: assert row['owner']['exit_code'] == 2; return None
@@ -261,7 +279,7 @@ def main():
     parser.add_argument('--trusted-complete-code', action='store_true'); a = parser.parse_args(); env = dict(S.BASE_ENV)
     if a.corpus_profile == 'cat-head-wc-v1':
         assert a.phase == 'functional' and a.program in CATALOG['build_profiles'][a.corpus_profile]
-        assert a.rewrite_profile == 'fixed-exec-overlapping-v2' and a.program_receipt and a.program_receipt_sha256
+        assert a.rewrite_profile in ('fixed-exec-overlapping-v2', D.STACK_PROFILE) and a.program_receipt and a.program_receipt_sha256
         assert not a.cat_receipt and not a.cat_receipt_sha256
     else:
         assert a.program is None and not a.program_receipt and not a.program_receipt_sha256

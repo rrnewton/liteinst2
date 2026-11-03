@@ -456,10 +456,106 @@ fn prepare_inputs(
     prepare_disassembly(original, &selected)
 }
 
+// The selector is separate from every old placement mode. Its type cannot be
+// passed to the old jump-only binder or planning adapter.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum PopulationMode {
+    Existing(Mode),
+    JumpStack,
+}
+const JUMP_STACK_FLAG: &str = "--whole-program-fixed-exec-packed-overlapping-jump-stack64-4096";
+fn arguments_with_jump_stack(args: &[String]) -> Result<(&[String], PopulationMode), String> {
+    if args.len() == 8 && args[1] == JUMP_STACK_FLAG {
+        if args[2..].iter().any(|arg| {
+            arg.starts_with("--whole-program-")
+                || arg.starts_with("--short-neighbors-")
+                || matches!(
+                    arg.as_str(),
+                    "--input-profile"
+                        | "--policy-profile"
+                        | "--original-sha256"
+                        | "--trusted-complete-code"
+                )
+        }) {
+            return Err("disassembly_sites jump-stack: mixed/repeated profile selector".into());
+        }
+        Ok((&args[2..], PopulationMode::JumpStack))
+    } else {
+        arguments_with_fixed_exec(args).map(|(args, mode)| (args, PopulationMode::Existing(mode)))
+    }
+}
+fn labels_with_population(mode: PopulationMode) -> (&'static str, &'static str, &'static str) {
+    match mode {
+        PopulationMode::Existing(mode) => labels_with_ownership(mode),
+        PopulationMode::JumpStack => (
+            disassembly::jump_stack::PROFILE,
+            liteinst_rewrite::FIXED_EXEC_METADATA,
+            " selection_profile=jumps-gpr-stack64-v1 address_binding=fixed-exec-zero-bias-indexed-jump32-v1 required_object_type=ET_EXEC required_load_bias=0 planner=whole-program-packed-overlapping-neighbors-4096",
+        ),
+    }
+}
+fn prepare_population_inputs(
+    original: &[u8],
+    ledger: &[u8],
+    expected_ledger: ContentId,
+    policy: &[u8],
+    expected_policy: ContentId,
+    mode: PopulationMode,
+    capture: (&mut BTreeMap<String, Vec<u8>>, &mut Option<[usize; 3]>),
+) -> Result<liteinst_rewrite::Product, liteinst_rewrite::Error> {
+    let (files, classes) = capture;
+    match mode {
+        PopulationMode::Existing(mode) => prepare_inputs(
+            original,
+            ledger,
+            expected_ledger,
+            policy,
+            expected_policy,
+            mode,
+            files,
+        ),
+        PopulationMode::JumpStack => {
+            use li2core::x86::JumpStackClass;
+            let imported = disassembly::jump_stack::import(original, ledger, expected_ledger)?;
+            let mut counts = [0; 3];
+            for site in imported.sites() {
+                counts[match site.class() {
+                    JumpStackClass::Jump => 0,
+                    JumpStackClass::PushRegister64 => 1,
+                    JumpStackClass::PopRegister64 => 2,
+                }] += 1;
+            }
+            assert_eq!(counts.iter().sum::<usize>(), imported.sites().len());
+            *classes = Some(counts);
+            files.insert("disassembly-inventory.tsv".into(), imported.inventory());
+            let selected = imported.bind_whole_program(policy, expected_policy)?;
+            assert_eq!(selected.profile(), disassembly::jump_stack::PROFILE);
+            files.insert("selection.txt".into(), selected.manifest().to_vec());
+            liteinst_rewrite::prepare_disassembly_jump_stack_fixed_exec_packed_overlapping_neighbors(
+                original, &selected,
+            )
+        }
+    }
+}
+fn jump_stack_fields(counts: Option<[usize; 3]>) -> String {
+    let value =
+        |index: usize| counts.map_or_else(|| "unavailable".into(), |n| n[index].to_string());
+    let total = counts.map_or_else(
+        || "unavailable".into(),
+        |n| n.iter().sum::<usize>().to_string(),
+    );
+    format!(
+        "selection_profile\tjumps-gpr-stack64-v1\ncomplete_site_count\t{total}\njump_count\t{}\npush_r64_count\t{}\npop_r64_count\t{}\n",
+        value(0),
+        value(1),
+        value(2)
+    )
+}
+
 fn run() -> Result<bool, String> {
     let raw_args: Vec<_> = std::env::args().collect();
-    let (args, mode) = arguments_with_fixed_exec(&raw_args)?;
-    let (profile, family, stdout_family) = labels_with_ownership(mode);
+    let (args, mode) = arguments_with_jump_stack(&raw_args)?;
+    let (profile, family, stdout_family) = labels_with_population(mode);
     let expected_ledger = selection::id(&args[2]).map_err(|e| e.to_string())?;
     let expected_policy = selection::id(&args[4]).map_err(|e| e.to_string())?;
     let original = read(Path::new(&args[0]), disassembly::INPUT_LIMIT)?;
@@ -469,14 +565,15 @@ fn run() -> Result<bool, String> {
         ("disassembly.txt".to_owned(), ledger.clone()),
         ("disassembly-policy.txt".to_owned(), policy.clone()),
     ]);
-    let prepared = prepare_inputs(
+    let mut classes = None;
+    let prepared = prepare_population_inputs(
         &original,
         &ledger,
         expected_ledger,
         &policy,
         expected_policy,
         mode,
-        &mut files,
+        (&mut files, &mut classes),
     );
     // Same input reread ordering as the existing prepare CLI: no outcome is
     // dispatched and no output is published before all three snapshots agree.
@@ -516,7 +613,14 @@ fn run() -> Result<bool, String> {
         "LI2DISASSEMBLY-DIRECTORY\t1\nprofile\t{profile}\n{family}observed_original_sha256\t{}\ncandidate_complete\t{complete}\nqualification_complete\tfalse\n",
         digest(&original)
     );
-    if mode == Mode::WholeFixedExecPackedOverlapping4096 {
+    if mode == PopulationMode::JumpStack {
+        index.push_str(&jump_stack_fields(classes));
+    }
+    if matches!(
+        mode,
+        PopulationMode::JumpStack
+            | PopulationMode::Existing(Mode::WholeFixedExecPackedOverlapping4096)
+    ) {
         match fixed_binding {
             Some(binding) => index.push_str(&format!(
                 "fixed_binding_status\tsource-ET_EXEC-bound\nfixed_source_sha256\t{}\nfixed_source_mapping\t{}\nfixed_source_generation\t{}\nfixed_output_readback\t{}\n",

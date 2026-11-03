@@ -454,9 +454,7 @@ fn writes(access: OpAccess) -> bool {
 }
 fn jump(i: &Instruction) -> bool {
     // This is the finite shared E9 asm=j.* rule, not all control flow.
-    format!("{:?}", i.mnemonic())
-        .to_ascii_lowercase()
-        .starts_with('j')
+    li2core::x86::is_jump_mnemonic(i.mnemonic())
 }
 fn direct(i: &Instruction) -> Option<u64> {
     if i.op_count() > 0 && i.op0_kind() == OpKind::NearBranch64 {

@@ -482,6 +482,30 @@ pub fn import(
     ledger_bytes: &[u8],
     expected_ledger: ContentId,
 ) -> Result<Disassembly, Error> {
+    let checked = import_regions(original, ledger_bytes, expected_ledger)?;
+    let jumps = collect_sites(&checked, |i| jump(i).then_some(()), |site, ()| site)?;
+    Ok(Disassembly {
+        original: checked.original,
+        ledger: ledger_bytes.to_vec(),
+        regions: checked.regions,
+        jumps,
+    })
+}
+
+// Shared checked code/cuts. Neither representation grants a recovered CFG or
+// changes the source-order validation pass before selection starts.
+#[derive(Clone, Debug)]
+struct CheckedRegions {
+    original: ContentId,
+    regions: Vec<Region>,
+    cuts: BTreeSet<u64>,
+}
+
+fn import_regions(
+    original: &[u8],
+    ledger_bytes: &[u8],
+    expected_ledger: ContentId,
+) -> Result<CheckedRegions, Error> {
     check(original.len() <= INPUT_LIMIT, "original size")?;
     check(ledger_bytes.len() <= TEXT_LIMIT, "ledger size")?;
     check(
@@ -594,9 +618,25 @@ pub fn import(
             Ok::<_, Error>(heads.contains(&target))
         },
     )?;
-    let mut jumps = Vec::new();
-    for r in &regions {
-        for i in r.instructions.iter().filter(|i| jump(i)) {
+    Ok(CheckedRegions {
+        original: original_id,
+        regions,
+        cuts,
+    })
+}
+
+// Geometry/order is common to both selectors. Selection is descriptive and
+// precedes semantic qualification, placement and every whole-policy bound.
+fn collect_sites<C, T>(
+    checked: &CheckedRegions,
+    mut classify: impl FnMut(&Instruction) -> Option<C>,
+    mut make: impl FnMut(JumpSite, C) -> T,
+) -> Result<Vec<T>, Error> {
+    let mut sites = Vec::new();
+    let cuts = &checked.cuts;
+    for r in &checked.regions {
+        for i in &r.instructions {
+            let Some(class) = classify(i) else { continue };
             let start = *cuts.range(r.range.start()..=i.ip()).next_back().unwrap();
             let end = *cuts
                 .range((
@@ -605,29 +645,23 @@ pub fn import(
                 ))
                 .next()
                 .unwrap();
-            jumps.push(JumpSite {
-                id: jumps.len() as u64 + 1,
+            let site = JumpSite {
+                id: sites.len() as u64 + 1,
                 pc: i.ip(),
                 length: i.len(),
                 file_offset: r.offset + (i.ip() - r.range.start()),
                 region: r.range,
                 block: addr(start, end - start)?,
-            });
+            };
+            sites.push(make(site, class));
         }
     }
-    Ok(Disassembly {
-        original: original_id,
-        ledger: ledger_bytes.to_vec(),
-        regions,
-        jumps,
-    })
+    Ok(sites)
 }
 
 fn jump(i: &Instruction) -> bool {
-    // Literal existing common_sites asm=j.* classifier, not a reachability test.
-    format!("{:?}", i.mnemonic())
-        .to_ascii_lowercase()
-        .starts_with('j')
+    // The shared fact retains the old asm=j.* population without admission.
+    li2core::x86::is_jump_mnemonic(i.mnemonic())
 }
 fn rows(bytes: &[u8]) -> Result<Vec<&str>, Error> {
     check(
@@ -673,6 +707,8 @@ fn check(ok: bool, why: &'static str) -> Result<(), Error> {
 }
 
 pub mod adjacent_b2;
+/// Explicit complete union metadata, with no legacy/planner conversion.
+pub mod jump_stack;
 pub mod whole;
 pub use adjacent_b2::{AdjacentB2DisassemblySelection, AdjacentB2Limits};
 

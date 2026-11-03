@@ -8,16 +8,23 @@ fn options(args: &[String]) -> Result<PolicyOptions> {
     need(
         args.len() == 18
             && args[1] == "--policy-profile"
-            && args[2] == policy::PROFILE
+            && matches!(
+                args[2].as_str(),
+                policy::PROFILE | policy::JUMP_STACK_PROFILE
+            )
             && args[3] == "--trusted-complete-code"
             && !args[4..].iter().any(|s| {
-                matches!(
-                    s.as_str(),
-                    "--policy-profile"
-                        | "--input-profile"
-                        | "--whole-program-4096"
-                        | "--trusted-complete-code"
-                )
+                (args[2] == policy::JUMP_STACK_PROFILE
+                    && (s.starts_with("--whole-program-")
+                        || s.starts_with("--short-neighbors-")
+                        || s == "--original-sha256"))
+                    || matches!(
+                        s.as_str(),
+                        "--policy-profile"
+                            | "--input-profile"
+                            | "--whole-program-4096"
+                            | "--trusted-complete-code"
+                    )
             }),
         "full_program_bridge --policy-profile et-exec-whole-bounded-512m-v1 --trusted-complete-code ORIGINAL ORIGINAL_SHA LEDGER LEDGER_SHA TARGET TARGET_SHA ROWS ROWS_SHA DOMAIN ARENA_START ARENA_LEN lowest|HOOK after-loads|CARRIER OUT",
     )?;
@@ -45,6 +52,7 @@ fn options(args: &[String]) -> Result<PolicyOptions> {
 
 pub(super) fn run(args: &[String]) -> Result<bool> {
     let options = options(args)?;
+    let jump_stack = args[2] == policy::JUMP_STACK_PROFILE;
     let paths = [
         Path::new(&args[4]),
         Path::new(&args[6]),
@@ -66,21 +74,41 @@ pub(super) fn run(args: &[String]) -> Result<bool> {
     }
     let mut files = Vec::new();
     let mut sites = None;
-    let result = disassembly::import(&inputs[0].0, &inputs[1].0, ContentId::of(&inputs[1].0))
-        .and_then(|imported| {
-            sites = Some(imported.jumps().len());
-            // Preserve the complete input/inventory even when policy binding refuses.
-            files.push(("ledger.txt", inputs[1].0.clone()));
-            files.push(("sites.tsv", imported.inventory_whole_program()));
-            let spec = policy::spec_from_records(
-                &imported,
-                &inputs[0].0,
-                options,
-                &inputs[2].0,
-                &inputs[3].0,
-            )?;
-            policy::build_policy(&imported, &inputs[0].0, &spec)
-        });
+    let mut classes = None;
+    let result = if jump_stack {
+        disassembly::jump_stack::import(&inputs[0].0, &inputs[1].0, ContentId::of(&inputs[1].0))
+            .and_then(|imported| {
+                sites = Some(imported.sites().len());
+                classes = Some(jump_stack_counts(&imported));
+                files.push(("ledger.txt", inputs[1].0.clone()));
+                files.push(("sites.tsv", imported.inventory()));
+                let spec = policy::spec_from_jump_stack_records(
+                    &imported,
+                    &inputs[0].0,
+                    options,
+                    &inputs[2].0,
+                    &inputs[3].0,
+                )?;
+                policy::build_jump_stack_policy(&imported, &inputs[0].0, &spec)
+            })
+    } else {
+        disassembly::import(&inputs[0].0, &inputs[1].0, ContentId::of(&inputs[1].0)).and_then(
+            |imported| {
+                sites = Some(imported.jumps().len());
+                // Preserve the complete input/inventory even when policy binding refuses.
+                files.push(("ledger.txt", inputs[1].0.clone()));
+                files.push(("sites.tsv", imported.inventory_whole_program()));
+                let spec = policy::spec_from_records(
+                    &imported,
+                    &inputs[0].0,
+                    options,
+                    &inputs[2].0,
+                    &inputs[3].0,
+                )?;
+                policy::build_policy(&imported, &inputs[0].0, &spec)
+            },
+        )
+    };
     for (index, path) in paths.iter().enumerate() {
         need(
             read(path, caps[index])? == inputs[index]
@@ -98,15 +126,32 @@ pub(super) fn run(args: &[String]) -> Result<bool> {
             false
         }
     };
+    let census = if jump_stack {
+        if let Some(counts) = classes {
+            need(
+                sites == Some(counts.iter().sum()),
+                "complete policy class census",
+            )?;
+        }
+        jump_stack_fields(classes)
+    } else {
+        format!(
+            "complete_jump_count\t{}\n",
+            sites.map_or_else(|| "unavailable".into(), |n| n.to_string())
+        )
+    };
     let mut complete = format!(
-        "LI2FULL-PROGRAM-POLICY\t1\nprofile\t{}\nstatus\t{}\ncomplete_jump_count\t{}\ncomplete_code_premise\tcaller_supplied_not_proved\nplanning_attempted\tfalse\nqualification_complete\tfalse\n",
-        policy::PROFILE,
+        "LI2FULL-PROGRAM-POLICY\t1\nprofile\t{}\nstatus\t{}\n{census}complete_code_premise\tcaller_supplied_not_proved\nplanning_attempted\tfalse\nqualification_complete\tfalse\n",
+        if jump_stack {
+            policy::JUMP_STACK_PROFILE
+        } else {
+            policy::PROFILE
+        },
         if ready {
             "POLICY_READY"
         } else {
             "POLICY_REFUSED"
-        },
-        sites.map_or_else(|| "unavailable".into(), |n| n.to_string())
+        }
     );
     for (name, captured) in ["original", "ledger", "target", "rows"].iter().zip(&inputs) {
         writeln!(

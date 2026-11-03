@@ -900,3 +900,39 @@ fn native_no_op_oracle_preserves_generalized_pun_fault_state_body() {
         "native generalized-pun fault oracle: 2 seeds; SIGSEGV/SEGV_MAPERR at address0 and original PC+5; installed and retired full state matched"
     );
 }
+
+#[test]
+fn jump_stack_native_low_gprs() {
+    isolated_native_test::run(
+        "jump_stack_native_low_gprs",
+        "LITEINST2_JUMP_STACK_ORACLE_CHILD",
+        oracle::jump_stack_native::low_gprs,
+    );
+}
+
+#[test]
+fn jump_stack_native_high_gprs() {
+    isolated_native_test::run(
+        "jump_stack_native_high_gprs",
+        "LITEINST2_JUMP_STACK_ORACLE_CHILD",
+        oracle::jump_stack_native::high_gprs,
+    );
+}
+
+#[test]
+fn jump_stack_native_rsp_loaded_value() {
+    isolated_native_test::run(
+        "jump_stack_native_rsp_loaded_value",
+        "LITEINST2_JUMP_STACK_ORACLE_CHILD",
+        oracle::jump_stack_native::rsp_loaded_value,
+    );
+}
+
+#[test]
+fn jump_stack_native_operand_faults() {
+    isolated_native_test::run(
+        "jump_stack_native_operand_faults",
+        "LITEINST2_JUMP_STACK_ORACLE_CHILD",
+        oracle::jump_stack_native::operand_faults,
+    );
+}

@@ -28,12 +28,14 @@ const CONTEXT: u64 = 127 + 2 + 15;
 enum Profile {
     Legacy,
     Whole4096,
+    JumpStack4096,
 }
 impl Profile {
     fn name(self) -> &'static str {
         match self {
             Self::Legacy => "e9patch-full-sections-null-jumps-v1",
             Self::Whole4096 => disassembly::whole::MATERIAL_PROFILE,
+            Self::JumpStack4096 => disassembly::jump_stack::PROFILE,
         }
     }
 }
@@ -428,7 +430,7 @@ fn rpc_profile(
     let path = quoted_path(path)?;
     let events = match profile {
         Profile::Legacy => events(heads, selected)?,
-        Profile::Whole4096 => events_whole(heads, selected)?,
+        Profile::Whole4096 | Profile::JumpStack4096 => events_whole(heads, selected)?,
     };
     let mut messages = vec![
         ("binary", format!("\"filename\":{path},\"mode\":\"exe\"")),
@@ -484,22 +486,14 @@ struct Materials {
     regions: Vec<u8>,
     heads: usize,
     sites: usize,
+    classes: Option<[usize; 3]>,
     rpc: Result<Vec<u8>>,
 }
-fn bridge(original: &[u8], csv: &[u8], path: &str) -> Result<Materials> {
-    bridge_profile(original, csv, path, Profile::Legacy)
-}
-fn bridge_profile(original: &[u8], csv: &[u8], path: &str, profile: Profile) -> Result<Materials> {
-    let (regions, region_inventory) = regions(original)?;
-    let heads = csv_heads(csv)?;
-    let ledger = ledger(original, &regions, &heads)?.into_bytes();
-    // This is the existing independently checked decoder/classifier. CSV has
-    // no mnemonic column, and there is no new decoder or selective head filter.
-    let imported = disassembly::import(original, &ledger, ContentId::of(&ledger))
-        .map_err(|e| format!("independent importer: {e}"))?;
-    let selected = imported
-        .jumps()
-        .iter()
+fn selected_heads<'a>(
+    heads: &[Head],
+    sites: impl Iterator<Item = &'a disassembly::JumpSite>,
+) -> Result<Vec<usize>> {
+    sites
         .map(|site| {
             let i = heads
                 .binary_search_by_key(&site.pc, |h| h.pc)
@@ -510,10 +504,66 @@ fn bridge_profile(original: &[u8], csv: &[u8], path: &str, profile: Profile) -> 
             )?;
             Ok(i)
         })
-        .collect::<Result<Vec<_>>>()?;
-    let inventory = match profile {
-        Profile::Legacy => imported.inventory(),
-        Profile::Whole4096 => imported.inventory_whole_program(),
+        .collect()
+}
+
+fn jump_stack_counts(imported: &disassembly::jump_stack::JumpStackDisassembly) -> [usize; 3] {
+    use li2core::x86::JumpStackClass;
+    let mut counts = [0; 3];
+    for site in imported.sites() {
+        counts[match site.class() {
+            JumpStackClass::Jump => 0,
+            JumpStackClass::PushRegister64 => 1,
+            JumpStackClass::PopRegister64 => 2,
+        }] += 1;
+    }
+    counts
+}
+
+fn jump_stack_fields(counts: Option<[usize; 3]>) -> String {
+    let value =
+        |index: usize| counts.map_or_else(|| "unavailable".into(), |n| n[index].to_string());
+    let total = counts.map_or_else(
+        || "unavailable".into(),
+        |n| n.iter().sum::<usize>().to_string(),
+    );
+    format!(
+        "selection_profile\tjumps-gpr-stack64-v1\ncomplete_site_count\t{total}\njump_count\t{}\npush_r64_count\t{}\npop_r64_count\t{}\n",
+        value(0),
+        value(1),
+        value(2)
+    )
+}
+
+fn bridge(original: &[u8], csv: &[u8], path: &str) -> Result<Materials> {
+    bridge_profile(original, csv, path, Profile::Legacy)
+}
+fn bridge_profile(original: &[u8], csv: &[u8], path: &str, profile: Profile) -> Result<Materials> {
+    let (regions, region_inventory) = regions(original)?;
+    let heads = csv_heads(csv)?;
+    let ledger = ledger(original, &regions, &heads)?.into_bytes();
+    // This is the existing independently checked decoder/classifier. CSV has
+    // no mnemonic column, and there is no new decoder or selective head filter.
+    let (selected, inventory, classes) = if profile == Profile::JumpStack4096 {
+        let imported = disassembly::jump_stack::import(original, &ledger, ContentId::of(&ledger))
+            .map_err(|e| format!("independent importer: {e}"))?;
+        let selected = selected_heads(&heads, imported.sites().iter().map(|s| s.geometry()))?;
+        let counts = jump_stack_counts(&imported);
+        need(
+            counts.iter().sum::<usize>() == selected.len(),
+            "complete union class census",
+        )?;
+        (selected, imported.inventory(), Some(counts))
+    } else {
+        let imported = disassembly::import(original, &ledger, ContentId::of(&ledger))
+            .map_err(|e| format!("independent importer: {e}"))?;
+        let selected = selected_heads(&heads, imported.jumps().iter())?;
+        let inventory = match profile {
+            Profile::Legacy => imported.inventory(),
+            Profile::Whole4096 => imported.inventory_whole_program(),
+            Profile::JumpStack4096 => unreachable!("union handled above"),
+        };
+        (selected, inventory, None)
     };
     need(
         inventory.len() <= FILE_LIMIT,
@@ -525,9 +575,12 @@ fn bridge_profile(original: &[u8], csv: &[u8], path: &str, profile: Profile) -> 
         regions: region_inventory.into_bytes(),
         heads: heads.len(),
         sites: selected.len(),
+        classes,
         rpc: match profile {
             Profile::Legacy => rpc(&heads, &selected, path),
-            Profile::Whole4096 => rpc_profile(&heads, &selected, path, profile),
+            Profile::Whole4096 | Profile::JumpStack4096 => {
+                rpc_profile(&heads, &selected, path, profile)
+            }
         },
     })
 }
@@ -602,7 +655,7 @@ fn run(args: &[String]) -> Result<bool> {
     }
     let explicit = input::arguments(args)?;
     let (args, profile) = match &explicit {
-        Some(input) => (input.args.as_slice(), Profile::Whole4096),
+        Some(input) => (input.args.as_slice(), input.profile),
         None => arguments(args)?,
     };
     need(
@@ -633,7 +686,9 @@ fn run(args: &[String]) -> Result<bool> {
     let path = resolved.to_str().ok_or("non-UTF8 original path")?;
     let result = match profile {
         Profile::Legacy => bridge(&original.0, &csv.0, path),
-        Profile::Whole4096 => bridge_profile(&original.0, &csv.0, path, profile),
+        Profile::Whole4096 | Profile::JumpStack4096 => {
+            bridge_profile(&original.0, &csv.0, path, profile)
+        }
     };
     need(
         read(original_path, FILE_LIMIT)? == original
@@ -649,7 +704,15 @@ fn run(args: &[String]) -> Result<bool> {
                 ("sites.tsv", m.inventory),
                 ("regions.tsv", m.regions),
             ]);
-            let counts = format!("heads\t{}\nsites\t{}\n", m.heads, m.sites);
+            let mut counts = format!("heads\t{}\nsites\t{}\n", m.heads, m.sites);
+            if profile == Profile::JumpStack4096 {
+                need(
+                    m.classes
+                        .is_some_and(|n| n.iter().sum::<usize>() == m.sites),
+                    "complete material class census",
+                )?;
+                counts.push_str(&jump_stack_fields(m.classes));
+            }
             match m.rpc {
                 Ok(rpc) => {
                     files.push(("request.jsonl", rpc));
@@ -660,7 +723,13 @@ fn run(args: &[String]) -> Result<bool> {
         }
         Err(e) => (
             false,
-            "heads\tunavailable\nsites\tunavailable\n".to_owned(),
+            {
+                let mut counts = "heads\tunavailable\nsites\tunavailable\n".to_owned();
+                if profile == Profile::JumpStack4096 {
+                    counts.push_str(&jump_stack_fields(None));
+                }
+                counts
+            },
             Some(e),
         ),
     };
@@ -669,11 +738,9 @@ fn run(args: &[String]) -> Result<bool> {
     }
     let mut complete = format!(
         "LI2FULL-PROGRAM-MATERIALS\t1\nprofile\t{}\nstatus\t{}\noriginal_sha256\t{}\ncsv_sha256\t{}\n{counts}complete_code_premise\tcaller_supplied_not_proved\nplanning_attempted\tfalse\nqualification_complete\tfalse\n",
-        if explicit.is_some() {
-            input::PROFILE
-        } else {
-            profile.name()
-        },
+        explicit
+            .as_ref()
+            .map_or_else(|| profile.name(), input::Input::name),
         if ready {
             "MATERIALS_READY"
         } else {
