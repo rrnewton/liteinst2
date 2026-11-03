@@ -12,12 +12,12 @@ use liteinst2::trampoline::{
 const SEEDS: [u64; 2] = [0x1234_5678_8765_4320, 0xfedc_ba98_0123_4567];
 const WINDOW: usize = 16;
 
-fn event(pc: u64, rsp: u64) -> HookEvent {
+pub(super) fn event(pc: u64, rsp: u64) -> HookEvent {
     // With the separately exact PC this encoding is invertible, not a hash.
     HookEvent { probe_id: rsp.rotate_left(32) ^ pc, logical_pc: pc }
 }
 
-unsafe extern "C" fn observe(context: *mut HookContext) {
+pub(super) unsafe extern "C" fn observe(context: *mut HookContext) {
     // SAFETY: the fixed child owns this live frame and private event page.
     unsafe {
         let context = &*context;
@@ -88,7 +88,7 @@ fn emit(
     (output, needed)
 }
 
-fn events(oracle: &NativeOracle, points: &[Snapshot], selected: &[u64], needed: u64) -> Vec<HookEvent> {
+pub(super) fn events(oracle: &NativeOracle, points: &[Snapshot], selected: &[u64], needed: u64) -> Vec<HookEvent> {
     let mut result = Vec::new();
     for point in points.iter().filter(|p| selected.contains(&p.logical_pc)) {
         let rsp = point.registers.rsp;

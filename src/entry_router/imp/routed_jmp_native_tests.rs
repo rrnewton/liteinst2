@@ -33,6 +33,22 @@ impl Router for ProductionRoutes {
         assert!(self.0.batch.active.load(Ordering::Acquire));
     }
 }
+#[test]
+fn min5_every_entry_routes_through_production_and_preserves_ret_state() {
+    isolated::run(
+        "entry_router::imp::routed_jmp_native_tests::min5_every_entry_routes_through_production_and_preserves_ret_state",
+        "LI2_MIN5_NATIVE_ENTRIES_V1",
+        || oracle::min5_native::entries::<ProductionRoutes>(min5_size_certificate),
+    );
+}
+#[test]
+fn min5_unselected_ret_fault_preserves_prior_pop_and_callback_state() {
+    isolated::run(
+        "entry_router::imp::routed_jmp_native_tests::min5_unselected_ret_fault_preserves_prior_pop_and_callback_state",
+        "LI2_MIN5_NATIVE_RET_FAULT_V1",
+        || oracle::min5_native::ret_faults::<ProductionRoutes>(min5_size_certificate),
+    );
+}
 macro_rules! row {
     ($name:ident, $index:expr) => {
         #[test]
@@ -167,4 +183,27 @@ fn readiness_disposition_and_duplicate_owner_refuse_before_source_publication() 
             })
         },
     );
+}
+
+// The sizing implementation stays crate-private. This adapter exposes only its
+// actual bound to the shared cfg(test) fixture; it emits no substitute image.
+fn min5_size_certificate(
+    base: u64,
+    code: &[u8],
+    selected: &[u64],
+    emission: &crate::emission::ArtifactEmission,
+) -> usize {
+    let scan = crate::scanner::InstructionScanner::default()
+        .scan(code, base)
+        .unwrap();
+    let window = crate::trampoline::ArtifactObservationWindow::checked(
+        &scan,
+        base,
+        base + code.len() as u64,
+        selected,
+    )
+    .unwrap();
+    crate::trampoline::PreparedArtifact::for_observation_window(&window, emission)
+        .unwrap()
+        .size_bound()
 }

@@ -604,6 +604,16 @@ mod ordered_trace {
     pub use word_sync::WordPublication;
     include!("word_trace_method.rs");
 
+    // One shared witness steps the production router without changing its limits.
+    #[cfg(test)]
+    pub mod router_witness {
+        include!("router_witness.rs");
+    }
+    #[cfg(test)]
+    pub mod min5_native {
+        include!("min5_native.rs");
+    }
+
     // Additive fixed routed-JMP native adapter; existing oracle bodies stay exact.
     #[cfg(test)]
     pub mod routed_jmp_native {

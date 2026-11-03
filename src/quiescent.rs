@@ -18,7 +18,8 @@ use crate::trampoline::{ExecutableTrampoline, HookCallback, TrampolineImage, Tra
 mod artifact_window;
 pub use artifact_window::{
     ArtifactObservationPlan, ArtifactObservationRequest, ArtifactObservationSearchRequest,
-    plan_artifact_observation_window_after, plan_artifact_observation_window_upstream_after,
+    ArtifactObservationWindowSeal, plan_artifact_observation_window_after,
+    plan_artifact_observation_window_upstream_after, seal_artifact_observation_window_min5,
 };
 
 pub mod feasibility;

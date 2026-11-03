@@ -42,6 +42,159 @@ pub struct ArtifactObservationSearchRequest<'a> {
     pub observation_pcs: &'a [u64],
 }
 
+/// Immutable geometry of the smallest same-block window covering the supplied
+/// observation heads and at least five bytes. This is not a complete-selection
+/// certificate: the caller must join both spans to its FULL selected manifest.
+///
+/// Only bounded retained bytes and PCs are owned. No borrowed entry, hook or
+/// emission authority survives scoped request construction. Current ownership,
+/// entries/CET, placement, callback/stack safety and final publication are still
+/// checked or owed by the existing planner and its consumer.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ArtifactObservationWindowSeal {
+    identity: CodeIdentity,
+    source: AddressRange,
+    function: AddressRange,
+    block: AddressRange,
+    selected: AddressRange,
+    retained: AddressRange,
+    max_displaced_bytes: usize,
+    observation_pcs: Box<[u64]>,
+    original_bytes: Box<[u8]>,
+}
+impl ArtifactObservationWindowSeal {
+    /// First selected head through the last selected instruction, before padding.
+    pub const fn selected_span(&self) -> AddressRange {
+        self.selected
+    }
+    /// Minimal whole-instruction span, independently bounded by the original block.
+    pub const fn retained_span(&self) -> AddressRange {
+        self.retained
+    }
+    /// Exact supplied ordered heads; no inferred selection completeness.
+    pub fn observation_pcs(&self) -> &[u64] {
+        &self.observation_pcs
+    }
+    /// Join this geometry to immutable source coordinates, identity, bound and PCs.
+    /// This does not revalidate mutable admission facts or replace planning. In
+    /// particular an unchanged original request can match after Composition has
+    /// claimed its bytes; the existing planner must then reject that overlay.
+    pub fn matches_request(
+        &self,
+        artifact: &ArtifactRequest<'_>,
+        observation_pcs: &[u64],
+    ) -> Result<(), Refusal> {
+        let site = &artifact.site;
+        if site.identity != self.identity {
+            return Err(Refusal::StaleGeneration);
+        }
+        if AddressRange::new(site.base_address, site.code.len())? != self.source
+            || site.function != self.function
+            || site.block != self.block
+            || site.logical_pc != self.selected.start()
+        {
+            return Err(Refusal::InvalidRange);
+        }
+        if site.search.max_displaced_bytes != self.max_displaced_bytes
+            || observation_pcs != self.observation_pcs.as_ref()
+        {
+            return Err(Refusal::InvalidPlan);
+        }
+        if retained_source_bytes(site.code, self.source, self.retained)?
+            != self.original_bytes.as_ref()
+        {
+            return Err(Refusal::ExpectedBytesChanged);
+        }
+        Ok(())
+    }
+}
+
+fn retained_source_bytes(
+    bytes: &[u8],
+    source: AddressRange,
+    retained: AddressRange,
+) -> Result<&[u8], Refusal> {
+    if !source.covers(retained) {
+        return Err(Refusal::InvalidRange);
+    }
+    let start =
+        usize::try_from(retained.start() - source.start()).map_err(|_| Refusal::InvalidRange)?;
+    let end =
+        usize::try_from(retained.end() - source.start()).map_err(|_| Refusal::InvalidRange)?;
+    bytes.get(start..end).ok_or(Refusal::InvalidRange)
+}
+
+/// Freeze a minimum five-byte geometry from immutable source, before any search.
+///
+/// Uses the same source/population checks and ordinary bounded collector as B1;
+/// every retained instruction is qualified and a control transfer must be final.
+/// A supported unselected final RET is retained without adding an observation.
+/// Existing fixed-end APIs and their error/evidence order are unchanged.
+///
+/// Success does not try a candidate or grant allocation/entry/ownership authority.
+/// Failure has no attempted candidates or search runs; qualification evidence
+/// retains its existing sites. Consumers must preserve failed units and every
+/// selected member, authenticate the exact minimal end, then use the unchanged
+/// upstream planner with that fixed end. No splitting or selection filtering.
+pub fn seal_artifact_observation_window_min5(
+    artifact: &ArtifactRequest<'_>,
+    observation_pcs: &[u64],
+) -> Result<ArtifactObservationWindowSeal, PlanningFailure> {
+    let mut search = SearchEvidence::default();
+    let result = (|| {
+        let request = PlanningRequest::artifact(artifact);
+        let (source, scan) = validated_source_core(&request).inspect_err(|reason| {
+            search.qualification(SearchScope::default(), reason);
+        })?;
+        let input = ArtifactObservationRequest {
+            artifact: *artifact,
+            physical_pc: request.logical_pc,
+            end: request.block.end(),
+            observation_pcs,
+        };
+        validate_population(&input, &scan).inspect_err(|reason| {
+            search.qualification(SearchScope::default(), reason);
+        })?;
+        let last_pc = *observation_pcs.last().ok_or(Refusal::InvalidPlan)?;
+        let window = collect_relocation_window(
+            &request,
+            &scan,
+            request.logical_pc,
+            last_pc,
+            None,
+            &mut search,
+        )?;
+        let last = scan.site(last_pc).ok_or(Refusal::NotInstructionHead)?;
+        let selected_end = last_pc
+            .checked_add(last.instruction_len() as u64)
+            .ok_or(Refusal::InvalidRange)?;
+        let selected = AddressRange::new(
+            request.logical_pc,
+            usize::try_from(selected_end - request.logical_pc)
+                .map_err(|_| Refusal::InvalidRange)?,
+        )?;
+        // Both copies follow the bounded collector. Distinct supplied heads all
+        // lie in its interval; byte and PC counts are bounded by retained length.
+        Ok(ArtifactObservationWindowSeal {
+            identity: request.identity,
+            source,
+            function: request.function,
+            block: request.block,
+            selected,
+            retained: window.displaced,
+            max_displaced_bytes: request.search.max_displaced_bytes,
+            observation_pcs: observation_pcs.into(),
+            original_bytes: retained_source_bytes(request.original_code, source, window.displaced)?
+                .into(),
+        })
+    })();
+    result.map_err(|reason| PlanningFailure {
+        reason,
+        attempts: Vec::new(),
+        search,
+    })
+}
+
 /// One opaque artifact plan plus its complete ordered observation population.
 /// The frontend must preserve this association through one AcceptedUnit, ledger,
 /// resource accounting and portable metadata; never clone the plan per member.
@@ -289,3 +442,6 @@ mod tests;
 
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod upstream_tests;
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod min5_tests;

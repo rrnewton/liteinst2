@@ -177,7 +177,8 @@ def e9_statistics(raw, info, original, size, output_size):
 
 GROUPED_PROFILE = 'jumps-gpr-stack64-block-observation-v1'
 GROUPED_UPSTREAM_PROFILE = 'jumps-gpr-stack64-block-upstream-v1'
-GROUPED_PROFILES = (GROUPED_PROFILE, GROUPED_UPSTREAM_PROFILE)
+GROUPED_MIN5_PROFILE = 'jumps-gpr-stack64-block-min5-upstream-v1'
+GROUPED_PROFILES = (GROUPED_PROFILE, GROUPED_UPSTREAM_PROFILE, GROUPED_MIN5_PROFILE)
 GROUPED_MEMBERS = ('grouping-policy.tsv', 'selection.txt', 'binding-policy.tsv',
                    'plan-ledger.tsv', 'ledger.tsv', 'report.tsv', 'disassembly.txt')
 
@@ -196,6 +197,59 @@ def grouped_binding_bytes(selection, original, domain, grouping, *, profile=GROU
     return ('LI2FIXED-EXEC-BINDING\t1\n'+''.join(k+'\t'+v+'\n' for k, v in rows)).encode()
 
 
+def grouped_source_heads(raw, original, sites, numeric):
+    """Interpret already source-pinned head lengths, without decoding code."""
+    source = raw.decode().splitlines()
+    assert source[0] == 'LI2DISASM 1' and source.count('original '+original) == 1
+    heads = {}
+    for line in source:
+        if line.startswith('head '):
+            match = re.fullmatch(r'head ([0-9]+) ([0-9a-f]+)', line); assert match
+            pc, encoded = numeric(match[1]), match[2]
+            assert pc not in heads and len(encoded) % 2 == 0 and 1 <= len(encoded)//2 <= 15
+            heads[pc] = len(encoded)//2
+    assert len(heads) <= 16384 and all(heads[s[1]] == s[2] for s in sites)
+    return heads
+
+
+def grouped_min5_seals(policy, units, sites, heads, numeric):
+    """Check exact original geometry; refused seals are not semantic proofs."""
+    seals = {}
+    for row in policy:
+        if row[0] != 'window-seal': continue
+        assert len(row) == 7
+        unit = numeric(row[1])
+        assert unit < len(units) and unit not in seals and len(units[unit]) > 1
+        population = units[unit]
+        start, selected_end = population[0][1], population[-1][1]+population[-1][2]
+        if row[2] == 'ready':
+            assert row[4:] == ['-', '-', '-']
+            assert all(s[6:8] == population[0][6:8] for s in population)
+            block_start, block_length = population[0][6:8]
+            end = start; visited = []
+            while end < selected_end or end-start < 5:
+                assert end in heads
+                visited.append(end)
+                end += heads[end]
+                assert end <= block_start+block_length and end-start <= 256
+            assert start >= block_start and end >= selected_end
+            assert visited == sorted(pc for pc in heads if start <= pc < end)
+            assert all(site[1] in visited for site in population)
+            assert numeric(row[3]) == end
+            floor = max(block_start, max(0, start-64))
+            # The immutable full manifest includes accepted and straddling rows.
+            for left in (start, floor):
+                assert population == [s for s in sites if s[1] < end and left < s[1]+s[2]]
+                assert all(left <= s[1] < s[1]+s[2] <= end for s in population)
+        else:
+            assert row[2] == 'refused' and row[3] == '-'
+            assert numeric(row[4]) > 0 and row[5] not in ('', '-', 'none', 'atomic-selection', 'carrier')
+            assert re.fullmatch(r'(?:[0-9a-f]{2})*', row[6])
+        seals[unit] = row
+    assert set(seals) == {unit for unit, population in enumerate(units) if len(population) > 1}
+    return seals
+
+
 def grouped_linkage(info, members, sites, original, domain, report, *, source_ledger, profile=GROUPED_PROFILE, ledger_storage="inline"):
     """Join a full policy partition to unique local plans and final site outcomes.
 
@@ -204,7 +258,8 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
     Accepted units are local-plan evidence, never candidate-emission authority.
     """
     assert profile in GROUPED_PROFILES
-    upstream = profile == GROUPED_UPSTREAM_PROFILE
+    min5 = profile == GROUPED_MIN5_PROFILE
+    upstream = profile in (GROUPED_UPSTREAM_PROFILE, GROUPED_MIN5_PROFILE)
     assert ledger_storage in ('inline', CHUNK_STORAGE)
     compact = ledger_storage == CHUNK_STORAGE
     required = set(GROUPED_MEMBERS) | (set(CHUNK_MEMBERS) if compact else set())
@@ -221,6 +276,8 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
         grouping_policy='grouping-policy.tsv', grouping_ledger='LI2GROUPED-LEDGER-2' if compact else 'LI2GROUPED-LEDGER-1',
         portable_metadata_verification='checked',
         embedded_metadata_binding='checked' if report['strict_full'] else 'not-complete')
+    if min5:
+        expected_fields.update(grouping_policy_version='2', window_sealing='minimum-whole-instruction-v1')
     assert all(fields.get(k) == v for k, v in expected_fields.items())
     assert all(name in info['files'] for name in ('metadata.li2meta', 'target.tsv', 'planning-profile.tsv'))
     selection = info['files']['selection.txt']['sha256']
@@ -249,6 +306,10 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
     singles = sorted((v for v in blocks.values() if len(v) == 1), key=lambda v: -v[0][1])
     units = groups + singles
     policy = rows('grouping-policy.tsv')
+    # Only this distinct profile needs head geometry before policy comparison.
+    # Legacy profiles retain the original parser invocation/error order below.
+    heads = grouped_source_heads(members['disassembly.txt'], original, sites, numeric) if min5 else None
+    seals = grouped_min5_seals(policy, units, sites, heads, numeric) if min5 else {}
     prefix = [
         ['LI2GROUPING-POLICY', '1'], ['profile', profile],
         ['schedule', 'all-multisite-blocks-descending-then-singletons-descending-v1'],
@@ -258,6 +319,12 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
         ['singleton_profile', 'whole-program-packed-overlapping-neighbors-4096'],
         ['qualification_complete', 'false'], ['original_sha256', original],
         ['selection_sha256', selection], ['complete_site_count', str(len(sites))]]
+    if min5:
+        prefix[0] = ['LI2GROUPING-POLICY', '2']
+        at = prefix.index(['window', 'first-selected-head-through-last-selected-instruction'])
+        prefix[at:at+1] = [
+            ['window', 'minimum-whole-instruction-through-last-selected-min5-v1'],
+            ['seal_source', 'immutable-original'], ['seal_stage', 'before-overlay-mutation']]
     if upstream:
         at = prefix.index(['group_attempts', '1'])
         prefix[at:at+1] = [
@@ -275,21 +342,13 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
         assert all(start <= s[1] < s[1]+s[2] <= end for s in population)
         kind = 'group' if len(population) > 1 else 'singleton'
         expected_policy.append(['unit', str(unit), kind, str(start), str(end), str(len(population))])
+        if min5 and kind == 'group': expected_policy.append(seals[unit])
         member_rows[unit] = [['member', str(unit), str(s[0]), str(s[1]), str(s[2]), s[8]] for s in population]
         expected_policy.extend(member_rows[unit])
     assert policy == expected_policy
 
     # Source-owned input rows provide the complete head set, without redisassembly.
-    source = members['disassembly.txt'].decode().splitlines()
-    assert source[0] == 'LI2DISASM 1' and source.count('original '+original) == 1
-    heads = {}
-    for line in source:
-        if line.startswith('head '):
-            match = re.fullmatch(r'head ([0-9]+) ([0-9a-f]+)', line); assert match
-            pc, encoded = numeric(match[1]), match[2]
-            assert pc not in heads and len(encoded) % 2 == 0 and 1 <= len(encoded)//2 <= 15
-            heads[pc] = len(encoded)//2
-    assert len(heads) <= 16384 and all(heads[s[1]] == s[2] for s in sites)
+    if not min5: heads = grouped_source_heads(members['disassembly.txt'], original, sites, numeric)
     manifest = members['selection.txt'].decode().splitlines()
     assert manifest[0] == 'LI2TOOL-SHARED-REGIONS 1' and manifest.count('profile '+STACK_PROFILE) == 1
     hook_rows = [line.split() for line in manifest if line.startswith('hook ')]
@@ -317,6 +376,7 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
         population = units[unit]
         assert primary == population[0][0] and count == len(population)
         assert row[3] == ('group' if count > 1 else 'singleton')
+        if min5 and count > 1: assert seals[unit][2] == 'ready'
         assert plan[cursor+1:cursor+1+count] == member_rows[unit]
         accepted[unit] = primary; cursor += 1+count
     assert list(accepted) == sorted(accepted)
@@ -346,6 +406,7 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
         population = units[unit]
         if len(population) == 1: continue
         start, end = population[0][1], population[-1][1]+population[-1][2]
+        if min5: end = numeric(seals[unit][3])
         physical = start
         if upstream:
             assert len(steps[primary]) == 1
@@ -402,6 +463,14 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
                 local.append(int(record['site']))
     assert set(local) == set(accepted_ids)
     records = {int(row['site']): row for row in report['rows']}
+    if min5:
+        for unit, seal in seals.items():
+            if seal[2] != 'refused': continue
+            assert unit not in accepted
+            for site in units[unit]:
+                row = records[site[0]]
+                assert row['core_tactic'] == 'none' and row['candidate_emitted'] == 'false'
+                assert (row['refusal_code'], row['stage'], row['detail_hex']) == tuple(seal[4:])
     for population in groups:
         signatures = {(records[s[0]]['core_tactic'], records[s[0]]['candidate_emitted'], records[s[0]]['refusal_code'], records[s[0]]['stage']) for s in population}
         assert len(signatures) == 1
