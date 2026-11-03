@@ -1,0 +1,275 @@
+{
+  "attempts": {
+    "focused": 1,
+    "full": 1
+  },
+  "capacity_after": {
+    "allocated": {
+      "ignored": 12162404352,
+      "target": 7424860160,
+      "total": 19792732160
+    },
+    "apparent": {
+      "ignored": 11220138313,
+      "target": 7302756918,
+      "total": 18708776075
+    }
+  },
+  "capture_limit_bytes": 8388608,
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "name": "fmt",
+      "seconds": 12.089849021984264,
+      "status": "PASS",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-I",
+        "-B",
+        "evaluation/direct-program/test_stack_inventory.py"
+      ],
+      "name": "inventory-python",
+      "seconds": 0.10575885511934757,
+      "status": "PASS",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "name": "clippy",
+      "seconds": 37.278157636057585,
+      "status": "PASS",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "name": "check",
+      "seconds": 21.717963899020106,
+      "status": "PASS",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "control_flow::"
+      ],
+      "name": "graph",
+      "seconds": 0.032351729925721884,
+      "status": "PASS",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "backedge_clock::"
+      ],
+      "name": "clock",
+      "seconds": 0.028883249033242464,
+      "status": "PASS",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-rewrite",
+        "--lib",
+        "disassembly::tests::imported_cuts_"
+      ],
+      "name": "import-cuts",
+      "seconds": 7.106857831822708,
+      "status": "PASS",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "quiescent_oracle",
+        "jump_stack_native_"
+      ],
+      "name": "native-stack",
+      "seconds": 5.8664876110851765,
+      "status": "PASS",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "trampoline::artifact_window::tests::"
+      ],
+      "name": "artifact-window",
+      "seconds": 0.028869933914393187,
+      "status": "PASS",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "trampoline::observer_sequence::tests::"
+      ],
+      "name": "observer-sequence",
+      "seconds": 0.026777179911732674,
+      "status": "PASS",
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-j",
+        "12",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "name": "workspace",
+      "seconds": 826.7061190409586,
+      "status": "PASS",
+      "wall_limit_seconds": 1800
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "name": "serial-launch",
+      "seconds": 181.07612640690058,
+      "status": "PASS",
+      "wall_limit_seconds": 360
+    }
+  ],
+  "cpus": [
+    45,
+    52,
+    53,
+    72,
+    118,
+    130,
+    146,
+    202,
+    215,
+    229,
+    243,
+    255
+  ],
+  "environment": {
+    "CARGO_BUILD_JOBS": "12",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "RUST_TEST_THREADS": "12"
+  },
+  "focused_controls": {
+    "artifact_window": 7,
+    "failed": 0,
+    "ignored": 0,
+    "observer_sequence": 2
+  },
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "load_after": [
+    134.44,
+    100.96,
+    68.11
+  ],
+  "load_before": [
+    94.84,
+    54.97,
+    48.1
+  ],
+  "owners": {
+    "all_normal_exit0_clean_zero_rescues": true,
+    "count": 16
+  },
+  "profile": "artifact-window-correctness-1800-360-v1",
+  "provenance": {
+    "census_sha256": "a73baa81259e2edf4cc5f15b15c250f23fba555105c9015f9e09e85cda800bbb",
+    "focused_closed_sha256": "d69f0f83fa30f54dd391753358552840fd30aef4e4d05eec488fc2ae6cb4e331",
+    "full_closed_sha256": "f01a6a026e31a7a59a565ea682a83801e81fcae346fc0422e4a5cff7192593ec",
+    "prior_closed_sha256": "54c4b45e7b895383b70b094c40f95cea8da5da218bc48704397696e96a1287b2",
+    "runner_sha256": "1da3800c4e6d09578551db347e37a272a7ac83ee96d7f0ad4525ae24135e8937"
+  },
+  "qualification": "NONE",
+  "reproduce": "AGENT_UTILS_ENGINE=python \"$CPUSET_ALLOC\" run --cores 12 --tag li2core-artifact-window-full -- python3.9 -I -B evaluation/direct-program/validate_artifact_window.py --revision 172a7a9bc3fd361c91a5c94cd25e44af3ccdf1dd --output \"$PWD/ignored/artifact-window-reproduction\" --toolchain \"$TOOLCHAIN\"",
+  "revision": "172a7a9bc3fd361c91a5c94cd25e44af3ccdf1dd",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nrelease: 1.97.1\nLLVM version: 22.1.6",
+  "rustc_metadata_source": "Root captured rustc -vV after campaign closure from the same toolchain directory. This metadata query is separate from the recorded campaign commands.",
+  "schema": "li2-artifact-window-validation-v1",
+  "scope": "Shared ordered artifact emission and preservation of prior correctness controls. Grouped planner/frontend/native-window controls are not included. No performance or strict A4 qualification.",
+  "serial_launch": {
+    "critical_regressions": 5,
+    "failed": 0,
+    "ignored": 0,
+    "passed": 1039,
+    "roster_sha256": "bfaaa7b62148757370f36e2ad52761ce4a45be9937b3dd020ac38a1b39f2d720"
+  },
+  "serial_launch_threads": 1,
+  "slot_ceilings": [
+    19994091520,
+    19061190371
+  ],
+  "status": "PASS",
+  "strict_claim": "A4 / claim 4 remains open against the strict 20,000-step profile; an 80,000-step pass does not complete it.",
+  "target": "x86_64-unknown-linux-gnu",
+  "tree": "c3c61bfc8aed5cd9c03d750f398459b1d66f040b",
+  "workspace": {
+    "added": 9,
+    "critical_regressions": 27,
+    "failed": 0,
+    "full_prior_roster_preserved": true,
+    "ignored": 43,
+    "nested_passed": 11,
+    "removed": 0,
+    "roster_sha256": "872a7de742db8eb37ccd37b9ba11ed08cbcaa09bd48c657828f7105461e907ef",
+    "short_neighbor": 21,
+    "should_panic": 539,
+    "top_level_passed": 4640
+  }
+}
