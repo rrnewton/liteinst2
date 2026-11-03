@@ -18,8 +18,10 @@ use crate::trampoline::{ExecutableTrampoline, HookCallback, TrampolineImage, Tra
 mod artifact_window;
 pub use artifact_window::{
     ArtifactObservationPlan, ArtifactObservationRequest, ArtifactObservationSearchRequest,
-    ArtifactObservationWindowSeal, plan_artifact_observation_window_after,
-    plan_artifact_observation_window_upstream_after, seal_artifact_observation_window_min5,
+    ArtifactObservationWindowSeal, ArtifactRelocationPlacement,
+    plan_artifact_observation_window_after, plan_artifact_observation_window_upstream_after,
+    plan_artifact_observation_window_upstream_after_with_placement,
+    seal_artifact_observation_window_min5,
 };
 
 pub mod feasibility;
@@ -1489,7 +1491,10 @@ fn collect_relocation_window<'a>(
 #[derive(Clone, Copy)]
 enum RelocationAuthority<'a> {
     Ordinary,
-    ArtifactObservations(&'a [u64]),
+    ArtifactObservations {
+        pcs: &'a [u64],
+        placement: ArtifactRelocationPlacement,
+    },
     WholeFunction(&'a whole_function::Verified),
     OwnedClockRegion {
         proof: &'a clock_region::Verified,
@@ -1571,7 +1576,7 @@ fn emit_relocation_window(
         authority,
     } = window;
     let observations = match authority {
-        RelocationAuthority::ArtifactObservations(pcs) => Some(pcs),
+        RelocationAuthority::ArtifactObservations { pcs, .. } => Some(pcs),
         _ => None,
     };
     if observations.is_some_and(|pcs| {
@@ -1587,6 +1592,13 @@ fn emit_relocation_window(
     }) {
         return Err(Refusal::InvalidPlan);
     }
+    let entry_alphabet = matches!(
+        authority,
+        RelocationAuthority::ArtifactObservations {
+            placement: ArtifactRelocationPlacement::EntryAlphabetV1,
+            ..
+        }
+    );
     let whole_function = match authority {
         RelocationAuthority::WholeFunction(proof) => Some(proof),
         _ => None,
@@ -1764,7 +1776,26 @@ fn emit_relocation_window(
         .prepare_fitting(request.emission)
         .map_err(|error| Refusal::Backend(error.to_string()))?;
     let effective;
-    let policy = if let Some(prepared) = prepared.as_ref() {
+    let mut exact_target = None;
+    let policy = if entry_alphabet {
+        let prepared = prepared.as_ref().ok_or(Refusal::InvalidPlan)?;
+        exact_target = Some(
+            crate::emission::placement::entry_alphabet_fitting(
+                &crate::emission::placement::RelocationPlacementFacts {
+                    physical,
+                    mask,
+                    policy: request.allocation,
+                    occupied,
+                    source,
+                    prepared_bound: prepared.size_bound(),
+                },
+            )
+            .inspect_err(|reason| {
+                search_evidence.refusal(scope, RefusalClass::AddressPolicy, reason)
+            })?,
+        );
+        request.allocation
+    } else if let Some(prepared) = prepared.as_ref() {
         effective = crate::emission::placement::fitting_for_relocation(
             request.allocation,
             physical,
@@ -1823,7 +1854,27 @@ fn emit_relocation_window(
     };
     for attempt in 0..slots {
         search_evidence.visit(image_search);
-        let target = if let Some((_, ordinal, target)) = routed {
+        let target = if entry_alphabet {
+            // Rejoin complete original-derived head geometry and the same
+            // prepared object. Do not send this target through attempt zero:
+            // that scheduler overwrites every constrained byte with 0x06.
+            let current_mask =
+                std::array::from_fn(|digit| heads.contains(&(physical + 1 + digit as u64)));
+            let prepared = prepared.as_ref().ok_or(Refusal::InvalidPlan)?;
+            Some(
+                exact_target
+                    .take()
+                    .ok_or(Refusal::InvalidPlan)?
+                    .into_target(&crate::emission::placement::RelocationPlacementFacts {
+                        physical,
+                        mask: current_mask,
+                        policy,
+                        occupied,
+                        source,
+                        prepared_bound: prepared.size_bound(),
+                    })?,
+            )
+        } else if let Some((_, ordinal, target)) = routed {
             if mask != [false, true, false, false]
                 || ordinal >= policy.max_candidates
                 || candidate_target(physical, mask, policy.preferred_address, ordinal)
@@ -1841,9 +1892,15 @@ fn emit_relocation_window(
         if !seen.insert(target) {
             continue;
         }
-        let emitted = match prepared.take() {
-            Some(prepared) => prepared.emit_at(target),
-            None => trampoline.emit(request.emission, target),
+        let emitted = if entry_alphabet {
+            // The alphabet arm never falls back to ordinary emission and never
+            // prepares or encodes a second candidate after this consumption.
+            prepared.take().ok_or(Refusal::InvalidPlan)?.emit_at(target)
+        } else {
+            match prepared.take() {
+                Some(prepared) => prepared.emit_at(target),
+                None => trampoline.emit(request.emission, target),
+            }
         };
         let image = match emitted {
             Ok(image) => image,
@@ -1985,22 +2042,28 @@ fn emit_relocation_window(
             },
         });
     }
-    search_evidence.finish_candidates(
-        image_search,
-        if routed.is_some() {
-            crate::search::CandidateProof::Indexed {
-                permanent_end_exclusive: Some(1),
-                omitted: None,
-            }
-        } else {
-            candidate_target_proof(
-                physical,
-                mask,
-                policy.preferred_address,
-                policy.max_candidates,
-            )
-        },
-    );
+    if entry_alphabet {
+        // This is one selected certified image, not an indexed-schedule proof.
+        // finite_total remains None and candidates remains None.
+        search_evidence.finish(image_search);
+    } else {
+        search_evidence.finish_candidates(
+            image_search,
+            if routed.is_some() {
+                crate::search::CandidateProof::Indexed {
+                    permanent_end_exclusive: Some(1),
+                    omitted: None,
+                }
+            } else {
+                candidate_target_proof(
+                    physical,
+                    mask,
+                    policy.preferred_address,
+                    policy.max_candidates,
+                )
+            },
+        );
+    }
     Err(last_error)
 }
 

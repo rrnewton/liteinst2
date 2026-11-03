@@ -42,6 +42,18 @@ pub struct ArtifactObservationSearchRequest<'a> {
     pub observation_pcs: &'a [u64],
 }
 
+/// Artifact-only relocation placement; live emission and existing APIs retain
+/// the fixed-06 indexed schedule. Neither variant grants mapping or runtime authority.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum ArtifactRelocationPlacement {
+    /// Preserve the existing seed, fixed-06 fitter and candidate evidence.
+    #[default]
+    Fixed06,
+    /// Select one certified target from the exact existing entry-byte alphabet.
+    /// Consumers must bind this explicit choice to their policy and readback.
+    EntryAlphabetV1,
+}
+
 /// Immutable geometry of the smallest same-block window covering the supplied
 /// observation heads and at least five bytes. This is not a complete-selection
 /// certificate: the caller must join both spans to its FULL selected manifest.
@@ -275,6 +287,33 @@ pub fn plan_artifact_observation_window_upstream_after(
     plan_window(&window, predecessor, pending, PhysicalDomain::Upstream)
 }
 
+/// Explicit artifact-only alphabet fitting over the same frozen physical domain.
+///
+/// All obligations and numeric bounds of the upstream API remain. This selects
+/// at most one certified image per physical head, without an indexed-candidate
+/// exhaustion claim. Full manifest, final publication and runtime proofs remain
+/// caller-owned; this choice must be authenticated by any portable consumer.
+pub fn plan_artifact_observation_window_upstream_after_with_placement(
+    input: &ArtifactObservationSearchRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    placement: ArtifactRelocationPlacement,
+) -> Result<ArtifactObservationPlan, PlanningFailure> {
+    let window = ArtifactObservationRequest {
+        artifact: input.artifact,
+        physical_pc: input.artifact.site.logical_pc,
+        end: input.end,
+        observation_pcs: input.observation_pcs,
+    };
+    plan_window_with_placement(
+        &window,
+        predecessor,
+        pending,
+        PhysicalDomain::Upstream,
+        placement,
+    )
+}
+
 #[derive(Clone, Copy)]
 enum PhysicalDomain {
     Exact,
@@ -286,6 +325,22 @@ fn plan_window(
     predecessor: &Composition,
     pending: &[AddressRange],
     domain: PhysicalDomain,
+) -> Result<ArtifactObservationPlan, PlanningFailure> {
+    plan_window_with_placement(
+        input,
+        predecessor,
+        pending,
+        domain,
+        ArtifactRelocationPlacement::Fixed06,
+    )
+}
+
+fn plan_window_with_placement(
+    input: &ArtifactObservationRequest<'_>,
+    predecessor: &Composition,
+    pending: &[AddressRange],
+    domain: PhysicalDomain,
+    placement: ArtifactRelocationPlacement,
 ) -> Result<ArtifactObservationPlan, PlanningFailure> {
     let mut attempts = Vec::new();
     let mut search = SearchEvidence::default();
@@ -333,7 +388,10 @@ fn plan_window(
                     Some(input.end),
                     &mut search,
                 )?;
-                window.authority = RelocationAuthority::ArtifactObservations(input.observation_pcs);
+                window.authority = RelocationAuthority::ArtifactObservations {
+                    pcs: input.observation_pcs,
+                    placement,
+                };
                 let planned = emit_relocation_window(
                     &request,
                     &scan,
@@ -445,3 +503,6 @@ mod upstream_tests;
 
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod min5_tests;
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod placement_tests;

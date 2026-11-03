@@ -135,30 +135,13 @@ fn minimum_relocation_target(
     free: Vec<AddressRange>,
     next: u64,
 ) -> Result<u64, Refusal> {
-    let fixed_mask = mask.iter().enumerate().fold(0_u64, |bits, (i, set)| {
-        bits | if *set { 0xff_u64 << (i * 8) } else { 0 }
-    });
-    // q = displacement - i32::MIN is monotone in target address. Its sign bit
-    // is inverted relative to the encoded signed displacement.
-    let fixed_value = (0x0606_0606_u64 ^ 0x8000_0000) & fixed_mask;
-    let mut best: Option<u64> = None;
-    for range in free {
-        let low = (i128::from(range.start()) - i128::from(next)).max(i128::from(i32::MIN));
-        let high = (i128::from(range.end() - 1) - i128::from(next)).min(i128::from(i32::MAX));
-        if low > high {
-            continue;
-        }
-        let qlow = (low - i128::from(i32::MIN)) as u64;
-        let qhigh = (high - i128::from(i32::MIN)) as u64;
-        if let Some(q) = low_offset(qlow, qhigh, fixed_mask, fixed_value, next % PAGE) {
-            let target = u64::try_from(i128::from(next) + i128::from(i32::MIN) + i128::from(q))
-                .map_err(|_| Refusal::InvalidRange)?;
-            if best.is_none_or(|old| (target % PAGE, target) < (old % PAGE, old)) {
-                best = Some(target);
-            }
+    let mut constraints = crate::quiescent::feasibility::Rel32Constraints::plain(next);
+    for (fixed, constrained) in constraints.fixed.iter_mut().zip(mask) {
+        if constrained {
+            *fixed = Some(0x06);
         }
     }
-    let target = best.ok_or(Refusal::AllocationUnavailable)?;
+    let target = digits::minimum_target(constraints, &free)?;
     if candidate_target(physical, mask, Some(target), 0) != Some(target) {
         return Err(Refusal::InvalidPlan);
     }
@@ -234,76 +217,12 @@ pub(crate) fn fitting_for_relocation(
     Ok(effective)
 }
 
-// Least fixed-bit integer in an inclusive interval. Each carry either finishes
-// or moves the highest mismatch upward; at most 32 carries are possible.
-fn first_fixed(low: u64, high: u64, mask: u64, value: u64) -> Option<u64> {
-    if low > high || high > u64::from(u32::MAX) || mask > u64::from(u32::MAX) || value & !mask != 0
-    {
-        return None;
-    }
-    let mut candidate = low;
-    for _ in 0..=u32::BITS {
-        if candidate > high {
-            return None;
-        }
-        let mismatch = (candidate ^ value) & mask;
-        if mismatch == 0 {
-            return Some(candidate);
-        }
-        let bit = 1_u64 << (63 - mismatch.leading_zeros());
-        if value & bit != 0 {
-            candidate = ((candidate | bit) & !(bit - 1)) | (value & (bit - 1));
-        } else {
-            let unit = bit.checked_mul(2)?;
-            candidate =
-                (candidate / unit).checked_add(1)?.checked_mul(unit)? | (value & (unit - 1));
-        }
-    }
-    None
-}
+mod digits;
 
-// Minimize the page offset of next + q; i32::MIN is page aligned. Split only
-// the two partial q pages and one full-page interval, not every page/address.
-fn low_offset(low: u64, high: u64, mask: u64, value: u64, next_low: u64) -> Option<u64> {
-    let first = low / PAGE;
-    let last = high / PAGE;
-    let mut best: Option<u64> = None;
-    let mut consider = |page: u64, left: u64, right: u64| {
-        if page & (mask >> 12) != value >> 12 || left > right {
-            return;
-        }
-        let turn = (PAGE - next_low) % PAGE;
-        let tail = first_fixed(left.max(turn), right, mask & (PAGE - 1), value & (PAGE - 1));
-        let head = if turn == 0 {
-            None
-        } else {
-            first_fixed(
-                left,
-                right.min(turn - 1),
-                mask & (PAGE - 1),
-                value & (PAGE - 1),
-            )
-        };
-        if let Some(part) = tail.or(head) {
-            let q = page * PAGE + part;
-            if best.is_none_or(|old| ((q + next_low) % PAGE, q) < ((old + next_low) % PAGE, old)) {
-                best = Some(q);
-            }
-        }
-    };
-    consider(
-        first,
-        low % PAGE,
-        if first == last { high % PAGE } else { PAGE - 1 },
-    );
-    if first < last {
-        if let Some(page) = first_fixed(first + 1, last - 1, mask >> 12, value >> 12) {
-            consider(page, 0, PAGE - 1);
-        }
-        consider(last, 0, high % PAGE);
-    }
-    best
-}
+// Keep the existing private arithmetic control entrypoints over the shared
+// digit query; production relocation uses the same query through fixed-06.
+#[cfg(test)]
+use digits::{first_fixed, low_offset};
 
 #[cfg(test)]
 mod tests;
@@ -383,3 +302,7 @@ mod entry_veneer_tests;
 // Explicit overlapping source relays; existing placement modes stay unchanged.
 mod overlap;
 pub(crate) use overlap::joint_overlapping_targets;
+
+// Explicit artifact-only certified target; legacy wrappers above stay unchanged.
+mod entry_alphabet;
+pub(crate) use entry_alphabet::{RelocationPlacementFacts, entry_alphabet_fitting};

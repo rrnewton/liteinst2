@@ -8,8 +8,10 @@ use liteinst2::composition::Composition;
 use liteinst2::contracts::*;
 use liteinst2::emission::{ArtifactEmission, ArtifactFieldEncoding, ArtifactRequest, PlanningSite, SymbolicHook, TargetProfile};
 use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{AllocationPolicy, ArtifactObservationSearchRequest, SearchPolicy, TacticPolicy,
-    plan_artifact_observation_window_upstream_after, seal_artifact_observation_window_min5};
+use liteinst2::quiescent::{AllocationPolicy, ArtifactObservationSearchRequest, ArtifactRelocationPlacement, SearchPolicy, TacticPolicy,
+    plan_artifact_observation_window_upstream_after, plan_artifact_observation_window_upstream_after_with_placement,
+    seal_artifact_observation_window_min5};
+use liteinst2::search::{SearchDomain, SearchStop};
 use liteinst2::sync_core::SyncCore;
 use liteinst2::trampoline::{SavedExtendedStateLayout, HOOK_CONTEXT_STACK_PREFIX_BYTES};
 
@@ -21,6 +23,22 @@ fn range(address: u64, length: usize) -> AddressRange { AddressRange::new(addres
 use super::routed_jmp_native::refused as rejected;
 
 pub type SizeCertificate = fn(u64, &[u8], &[u64], &ArtifactEmission) -> usize;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Fault { None, Ret, Pop }
+#[derive(Clone, Copy)]
+struct Fixture { placement: ArtifactRelocationPlacement, fault: Fault }
+impl Fixture {
+    fn body_offset(self) -> usize {
+        match self.placement {
+            ArtifactRelocationPlacement::Fixed06 => 0,
+            ArtifactRelocationPlacement::EntryAlphabetV1 => 0x8f5,
+        }
+    }
+    fn fault_at(self) -> Option<usize> {
+        match self.fault { Fault::None => None, Fault::Ret => Some(4), Fault::Pop => Some(2) }
+    }
+}
 
 struct Owner {
     oracle: NativeOracle,
@@ -43,20 +61,46 @@ struct Owner {
     needed: u64,
     entry: usize,
     fault: bool,
+    body: u64,
+    fixture: Fixture,
 }
 impl Owner {
     fn new(entry: usize, fault: bool, certificate: SizeCertificate) -> Self {
+        Self::with_fixture(entry, Fixture { placement: ArtifactRelocationPlacement::Fixed06,
+            fault: if fault { Fault::Ret } else { Fault::None } }, certificate)
+    }
+    fn with_fixture(entry: usize, fixture: Fixture, certificate: SizeCertificate) -> Self {
         assert!(HEADS.contains(&entry));
-        if fault { assert!([0, 1].contains(&entry)); }
-        let lower = if fault { if entry == 0 { 24 } else { 16 } } else { 96 };
+        let fault = fixture.fault != Fault::None;
+        if fixture.fault == Fault::Ret { assert!([0, 1].contains(&entry)); }
+        if fixture.fault == Fault::Pop {
+            assert_eq!(entry, 2); assert_eq!(fixture.placement, ArtifactRelocationPlacement::EntryAlphabetV1);
+        }
+        let lower = match fixture.fault { Fault::None => 96, Fault::Ret => if entry == 0 { 24 } else { 16 }, Fault::Pop => 0 };
+        let body_offset = fixture.body_offset();
         let mut code = vec![0xcc; PRELUDE + 10];
-        code[..5].copy_from_slice(&BODY);
+        if body_offset == 0 { code[..5].copy_from_slice(&BODY); }
         code[PRELUDE..PRELUDE + 6].copy_from_slice(&[0x48, 0x8d, 0x64, 0x24, 0_u8.wrapping_sub(lower), 0xe9]);
-        code[PRELUDE + 6..].copy_from_slice(&i32::try_from(entry as i64 - (PRELUDE + 10) as i64).unwrap().to_le_bytes());
+        code[PRELUDE + 6..].copy_from_slice(&i32::try_from((body_offset + entry) as i64 - (PRELUDE + 10) as i64).unwrap().to_le_bytes());
         let (mut oracle, mut adjacent, mut arena) = NativeOracle::with_neighbor_fixture(&code, &[PAGE]);
         let hook = adjacent.pop().unwrap(); assert!(adjacent.is_empty());
         let base = oracle.code.address(); assert_eq!(base % PAGE as u64, 0);
         assert_eq!(hook.address(), base + PAGE as u64);
+        let body = base + body_offset as u64;
+        if body_offset != 0 {
+            // The constructor's short-input/sentinel contract stays unchanged.
+            // Derive the full expected page from its pristine snapshot, changing
+            // only BODY, before any original trace or installed publication.
+            assert!(code.len() < PAGE / 2 && body_offset > PAGE / 2 && body_offset + BODY.len() <= PAGE);
+            assert_eq!(oracle.return_pc(), base + (PAGE / 2) as u64);
+            let pristine = oracle.original_code.clone(); assert_eq!(oracle.code.bytes(), pristine);
+            let mut expected = pristine.clone(); expected[body_offset..body_offset + BODY.len()].copy_from_slice(&BODY);
+            oracle.code.initialize(body_offset, &BODY);
+            assert_eq!(oracle.code.bytes(), expected);
+            assert_eq!(&oracle.code.bytes()[PRELUDE..PRELUDE + 10], &pristine[PRELUDE..PRELUDE + 10]);
+            assert_eq!(oracle.code.bytes()[PAGE / 2], pristine[PAGE / 2]);
+            oracle.original_code = expected;
+        }
         let guard = if fault {
             assert_eq!(oracle.stack.len, STACK_BYTES + PAGE);
             let guard = Mapping {
@@ -67,16 +111,19 @@ impl Owner {
             guard.protect(libc::PROT_NONE); Some(guard)
         } else { None };
         let suffix = HEADS.iter().filter(|&&at| at >= entry && at != 4).count();
+        let completed = if fixture.fault == Fault::Pop { 0 } else { suffix };
         let start_rsp = oracle.initial_rsp - u64::from(lower);
-        for i in 0..suffix {
+        // Only successful original operands are initialized. In the routed POP
+        // fault case start_rsp is the guard itself and this loop is empty.
+        for i in 0..completed {
             let value = 0x1020_3040_5060_7080_u64 + i as u64;
             oracle.stack.initialize((start_rsp - oracle.stack.address()) as usize + 8 * i, &value.to_le_bytes());
         }
-        if fault { assert_eq!(start_rsp + 8 * suffix as u64, oracle.initial_rsp); }
+        if fault { assert_eq!(start_rsp + 8 * completed as u64, oracle.initial_rsp); }
         else { oracle.stack.initialize((start_rsp - oracle.stack.address()) as usize + 8 * suffix, &oracle.return_pc().to_le_bytes()); }
         let identity = CodeIdentity { source: SourceIdentity([0x35; 32]), mapping: base, generation: 1 };
-        let function = range(base, BODY.len());
-        let heads = HEADS.map(|at| base + at as u64);
+        let function = range(body, BODY.len());
+        let heads = HEADS.map(|at| body + at as u64);
         let selected = heads[..3].to_vec();
         let entries = LegalEntrySet {
             identity, scope: function,
@@ -85,10 +132,24 @@ impl Owner {
             entries: heads.map(|address| LegalEntry { address, requires_endbr: false }).to_vec(),
             resumes: ResumeObligation::NoneExist,
         };
-        let target = base + 5 + 0x0601_0606;
-        let storage = target & !4095; assert_eq!(target - storage, 0x60b);
+        let (target, permit, patch) = match fixture.placement {
+            ArtifactRelocationPlacement::Fixed06 => {
+                let target = base + 5 + 0x0601_0606;
+                assert_eq!(target % PAGE as u64, 0x60b);
+                (target, range(target & !4095, PAGE), [0xe9, 6, 6, 1, 6])
+            }
+            ArtifactRelocationPlacement::EntryAlphabetV1 => {
+                let target = base + 0x0600_1000;
+                assert_eq!(target - (body + 5), 0x0600_0706);
+                let fixed_minimum = body + 5 + 0x0600_0606;
+                assert_eq!(fixed_minimum, base + 0x0600_0f00);
+                assert_eq!(PAGE - (fixed_minimum % PAGE as u64) as usize, 256);
+                (target, range(base + 0x0600_0000, 2 * PAGE), [0xe9, 6, 7, 0, 6])
+            }
+        };
+        let storage = target & !4095;
         let image = arena.take_writable(storage, PAGE);
-        let allocation = AllocationPolicy { ranges: vec![range(storage, PAGE)], preferred_address: None,
+        let allocation = AllocationPolicy { ranges: vec![permit], preferred_address: None,
             max_candidates: 1, max_mappings: 1, max_mapped_bytes: PAGE };
         let state = SavedExtendedStateLayout::detect().unwrap();
         let needed = state.len() + HOOK_CONTEXT_STACK_PREFIX_BYTES as u64 + PAGE as u64 + 64;
@@ -96,31 +157,50 @@ impl Owner {
             SymbolicHook { identity: 11, address: Some(hook.address()) },
             vec![range(base, PAGE), range(hook.address(), PAGE)]);
         let request = ArtifactRequest { site: PlanningSite {
-            identity, code: &BODY, base_address: base, function, block: function, logical_pc: base,
+            identity, code: &BODY, base_address: body, function, block: function, logical_pc: body,
             entries: &entries, semantics: HookSemantics::Observe, allocation: &allocation,
             search: SearchPolicy { max_upstream_bytes: 64, max_sites: 64, max_displaced_bytes: 256,
                 tactics: TacticPolicy::RelocationOnly },
         }, emission: &emission };
-        let predecessor = Composition::new(identity, vec![ExpectedBytes { address: base, bytes: BODY.to_vec() }]).unwrap();
+        let predecessor = Composition::new(identity, vec![ExpectedBytes { address: body, bytes: BODY.to_vec() }]).unwrap();
         let old = plan_artifact_observation_window_upstream_after(&ArtifactObservationSearchRequest {
-            artifact: request, end: base + 4, observation_pcs: &selected,
+            artifact: request, end: body + 4, observation_pcs: &selected,
         }, &predecessor, &[]).expect_err("old four-byte profile must still refuse");
         assert_eq!(old.reason, Refusal::NoPatchWindow);
         let seal = seal_artifact_observation_window_min5(&request, &selected).unwrap();
-        assert_eq!(seal.selected_span(), range(base, 4)); assert_eq!(seal.retained_span(), function);
+        assert_eq!(seal.selected_span(), range(body, 4)); assert_eq!(seal.retained_span(), function);
         assert_eq!(seal.matches_request(&request, &selected), Ok(()));
-        let size_bound = certificate(base, &BODY, &selected, &emission);
+        let size_bound = certificate(body, &BODY, &selected, &emission);
         assert!(size_bound <= PAGE - (target - storage) as usize);
-        let planned = plan_artifact_observation_window_upstream_after(&ArtifactObservationSearchRequest {
+        let input = ArtifactObservationSearchRequest {
             artifact: request, end: seal.retained_span().end(), observation_pcs: &selected,
-        }, &predecessor, &[]).expect("required exact retained plan; no retry/fallback");
+        };
+        let planned = match fixture.placement {
+            ArtifactRelocationPlacement::Fixed06 => plan_artifact_observation_window_upstream_after(&input, &predecessor, &[]),
+            ArtifactRelocationPlacement::EntryAlphabetV1 => {
+                assert!(size_bound > 256 && size_bound <= PAGE);
+                let fixed = plan_artifact_observation_window_upstream_after(&input, &predecessor, &[]).unwrap_err();
+                assert_eq!(fixed.reason, Refusal::AllocationUnavailable);
+                assert_eq!(fixed.attempts.len(), 1);
+                plan_artifact_observation_window_upstream_after_with_placement(&input, &predecessor, &[], fixture.placement)
+            }
+        }.expect("required exact retained plan; no retry/fallback");
+        if fixture.placement == ArtifactRelocationPlacement::EntryAlphabetV1 {
+            assert_eq!(planned.search().runs.iter().map(|r| (r.domain, r.limit, r.examined, r.stop)).collect::<Vec<_>>(), [
+                (SearchDomain::PhysicalSites, 64, 1, SearchStop::Accepted),
+                (SearchDomain::SelectedImages, 1, 1, SearchStop::Accepted),
+            ]);
+            assert_eq!(planned.search().runs[1].finite_total, None);
+            assert_eq!(planned.search().runs[1].candidates, None);
+            assert!(!planned.search().classification_complete);
+        }
         assert_eq!(planned.observation_pcs(), selected);
         let artifact = planned.artifact(); assert!(!artifact.qualification_complete());
         assert_eq!(artifact.source_steps().len(), 1);
         let step = &artifact.source_steps()[0]; let parts = step.parts();
         assert_eq!(parts.identity, identity); assert_eq!(parts.entries, entries);
         assert_eq!(parts.displaced, function); assert_eq!(parts.reads, predecessor.originals());
-        assert_eq!(parts.writes, [ByteEdit { address: base, bytes: vec![0xe9, 6, 6, 1, 6] }]);
+        assert_eq!(parts.writes, [ByteEdit { address: body, bytes: patch.to_vec() }]);
         assert_eq!(parts.allocations, [AllocationRequest { range: range(storage, PAGE), alignment: PAGE }]);
         assert_eq!(parts.requirements, PublicationRequirements { quiescent: true, sync_core: true, sigill_router: true });
         step.check_entry_obligations().unwrap();
@@ -146,8 +226,8 @@ impl Owner {
         let mut composed = predecessor.clone(); composed.append(step).unwrap();
         assert_eq!(predecessor.originals(), predecessor.final_bytes()); composed.require_unclaimed_ranges(&[]).unwrap();
         let original = oracle.original_code.clone(); let mut published = original.clone();
-        assert_eq!(composed.final_bytes().len(), 1); assert_eq!(composed.final_bytes()[0].address, base);
-        published[..5].copy_from_slice(&composed.final_bytes()[0].bytes);
+        assert_eq!(composed.final_bytes().len(), 1); assert_eq!(composed.final_bytes()[0].address, body);
+        published[body_offset..body_offset + BODY.len()].copy_from_slice(&composed.final_bytes()[0].bytes);
         let mut image_bytes = vec![0xcc; PAGE]; let offset = usize::try_from(target - storage).unwrap();
         image_bytes[offset..offset + view.bytes().len()].copy_from_slice(view.bytes());
         image.initialize(0, &image_bytes); image.protect(libc::PROT_READ | libc::PROT_EXEC);
@@ -158,7 +238,7 @@ impl Owner {
         oracle.code.protect(libc::PROT_READ | libc::PROT_EXEC);
         Self { oracle, image, hook, _arena: arena, _guard: guard, journal: HookEventLog::new(),
             original, published, image_bytes, hook_bytes, identity, routes, bodies, calls,
-            selected, state, needed, entry, fault }
+            selected, state, needed, entry, fault, body, fixture }
     }
     fn lease(&self, source: &[u8], identity: CodeIdentity, routes: &[EntryRoute]) {
         assert_eq!(identity, self.identity); assert_eq!(source, self.oracle.code.bytes());
@@ -185,7 +265,7 @@ impl Owner {
     fn path(&self) -> Vec<u64> {
         let base = self.oracle.code.address();
         [base + PRELUDE as u64, base + PRELUDE as u64 + 5].into_iter()
-            .chain(HEADS.iter().filter(|&&at| at >= self.entry).map(|&at| base + at as u64))
+            .chain(HEADS.iter().filter(|&&at| at >= self.entry && at <= self.fixture.fault_at().unwrap_or(4)).map(|&at| self.body + at as u64))
             .chain((!self.fault).then(|| self.oracle.return_pc())).collect()
     }
 }
@@ -196,20 +276,35 @@ fn original(owner: &Owner, seed: u64) -> Baseline {
         else { owner.oracle.original(&path, seed) };
     assert_eq!(result.points.iter().map(|p| p.logical_pc).collect::<Vec<_>>(), path);
     let pop_points: Vec<_> = result.points.iter().filter(|p| owner.selected.contains(&p.logical_pc)).collect();
-    let lower = if owner.fault { pop_points.len() as u64 * 8 } else { 96 };
-    for (i, point) in pop_points.iter().enumerate() {
+    let completed = if owner.fixture.fault == Fault::Pop {
+        assert_eq!(pop_points.len(), 1); assert_eq!(pop_points[0].logical_pc, owner.body + 2);
+        assert_eq!(pop_points[0].registers.rsp, owner.oracle.initial_rsp);
+        assert_eq!(pop_points[0].registers.r12, result.initial.r12); 0
+    } else { pop_points.len() };
+    let lower = if owner.fault { completed as u64 * 8 } else { 96 };
+    for (i, point) in pop_points[..completed].iter().enumerate() {
         assert_eq!(point.registers.rsp, owner.oracle.initial_rsp - lower + i as u64 * 8);
-        let following = result.points.iter().find(|p| p.logical_pc == match point.logical_pc - owner.oracle.code.address() { 0 => point.logical_pc + 1, 1 => point.logical_pc + 1, 2 => point.logical_pc + 2, _ => unreachable!() }).unwrap();
-        let value = match point.logical_pc - owner.oracle.code.address() { 0 => following.registers.rbx, 1 => following.registers.rbp, 2 => following.registers.r12, _ => unreachable!() };
+        let following = result.points.iter().find(|p| p.logical_pc == match point.logical_pc - owner.body { 0 => point.logical_pc + 1, 1 => point.logical_pc + 1, 2 => point.logical_pc + 2, _ => unreachable!() }).unwrap();
+        let value = match point.logical_pc - owner.body { 0 => following.registers.rbx, 1 => following.registers.rbp, 2 => following.registers.r12, _ => unreachable!() };
         assert_eq!(value, 0x1020_3040_5060_7080 + i as u64);
         assert_eq!(following.registers.rsp, point.registers.rsp + 8);
     }
     if let Some(fault) = &result.fault {
-        assert_eq!(fault.state.logical_pc, owner.oracle.code.address() + 4);
+        assert_eq!(fault.state.logical_pc, owner.body + owner.fixture.fault_at().unwrap() as u64);
         assert_eq!(fault.state.registers.rsp, owner.oracle.initial_rsp);
         assert_state(result.points.last().unwrap(), &fault.state);
+        if owner.fixture.fault == Fault::Pop { assert_eq!(fault.state.registers.r12, result.initial.r12); }
     } else {
         assert_eq!(result.points.last().unwrap().registers.rsp, owner.oracle.initial_rsp - 96 + (pop_points.len() as u64 + 1) * 8);
+    }
+    if owner.fixture.placement == ArtifactRelocationPlacement::EntryAlphabetV1 {
+        // The unchanged shared scratch inequalities are checked against original
+        // RSP values before publishing or executing any helper in these cases.
+        let expected_events = events(&owner.oracle, &result.points, &owner.selected, owner.needed);
+        assert_eq!(expected_events.len(), pop_points.len());
+        if owner.fixture.fault == Fault::Pop {
+            assert_eq!(expected_events, [event(owner.body + 2, owner.oracle.initial_rsp)]);
+        }
     }
     result
 }
@@ -225,7 +320,8 @@ fn trace(owner: &Owner, baseline: &Baseline, route_counter: u64, installed: bool
         assert_eq!(counter(&child, route_counter), deliveries);
         if installed {
             if let Some(&route) = owner.routes.iter().find(|r| r.original == pc) {
-                assert!(index == 2 && active_call.is_none()); assert_eq!(pc, owner.oracle.code.address() + owner.entry as u64);
+                assert!(index == 2 && active_call.is_none()); assert_eq!(pc, owner.body + owner.entry as u64);
+                if owner.fixture.placement == ArtifactRelocationPlacement::EntryAlphabetV1 && owner.entry == 2 { assert_eq!(child.memory(pc, 1), [0x07]); }
                 assert_eq!(deliveries, 0); deliver(&child, &mut budget, route, route_counter, deliveries); deliveries += 1; continue;
             }
             if let Some(&(call, logical)) = owner.calls.iter().find(|c| c.0 == pc) {
@@ -255,13 +351,15 @@ fn trace(owner: &Owner, baseline: &Baseline, route_counter: u64, installed: bool
     let expected_events = if installed { events(&owner.oracle, &baseline.points, &owner.selected, owner.needed) } else { vec![] };
     assert_eq!(callbacks, expected_events); owner.journal.assert_events(&child, &callbacks);
     if let Some(expected) = &baseline.fault {
-        budget.charge(&child, 1); let physical = if installed { owner.bodies[3].1 } else { owner.oracle.code.address() + 4 };
-        let actual = owner.oracle.capture_fault(&child, physical, owner.oracle.code.address() + 4);
+        budget.charge(&child, 1);
+        let at = owner.fixture.fault_at().unwrap(); let logical = owner.body + at as u64;
+        let physical = if installed { owner.bodies[HEADS.iter().position(|&head| head == at).unwrap()].1 } else { logical };
+        let actual = owner.oracle.capture_fault(&child, physical, logical);
         assert_eq!((actual.signal, actual.code, actual.address), (expected.signal, expected.code, expected.address));
         assert_state(&expected.state, &actual.state); assert_eq!(actual.state.registers.rsp, owner.oracle.initial_rsp);
         owner.journal.assert_events(&child, &callbacks); owner.immutable(&child, installed);
     }
-    for bad in [vec![event(owner.oracle.code.address() + 4, owner.oracle.initial_rsp)], callbacks.iter().cloned().chain([event(0, 0)]).collect()] {
+    for bad in [vec![event(owner.body + 4, owner.oracle.initial_rsp)], callbacks.iter().cloned().chain([event(0, 0)]).collect()] {
         rejected(|| owner.journal.assert_events(&child, &bad));
     }
     if !callbacks.is_empty() { rejected(|| owner.journal.assert_events(&child, &callbacks[..callbacks.len() - 1])); }
@@ -280,10 +378,13 @@ fn trace(owner: &Owner, baseline: &Baseline, route_counter: u64, installed: bool
     let result = (callbacks.len(), deliveries as usize); finish(&child); result
 }
 fn run<R: Router>(entry: usize, seed: u64, fault: bool, certificate: SizeCertificate) -> (usize, usize) {
-    let owner = Owner::new(entry, fault, certificate); owner.lease(&owner.original, owner.identity, &owner.routes);
+    run_owner::<R>(Owner::new(entry, fault, certificate), seed)
+}
+fn run_owner<R: Router>(owner: Owner, seed: u64) -> (usize, usize) {
+    owner.lease(&owner.original, owner.identity, &owner.routes);
     let mut wrong_identity = owner.identity; wrong_identity.generation += 1;
     rejected(|| owner.lease(&owner.original, wrong_identity, &owner.routes));
-    let mut wrong_source = owner.original.clone(); wrong_source[4] ^= 1;
+    let mut wrong_source = owner.original.clone(); wrong_source[owner.fixture.body_offset() + 4] ^= 1;
     rejected(|| owner.lease(&wrong_source, owner.identity, &owner.routes));
     let mut wrong_routes = owner.routes.clone(); wrong_routes.last_mut().unwrap().generated += 1;
     rejected(|| owner.lease(&owner.original, owner.identity, &wrong_routes));
@@ -302,4 +403,29 @@ pub fn ret_faults<R: Router>(certificate: SizeCertificate) {
     let mut census = [0_usize; 3];
     for entry in [0, 1] { for seed in SEEDS { let (hooks, routes) = run::<R>(entry, seed, true, certificate); census[0] += 1; census[1] += hooks; census[2] += routes; } }
     assert_eq!(census, [4, 10, 2]);
+}
+
+pub fn alphabet_entries<R: Router>(certificate: SizeCertificate) {
+    let mut census = [0_usize; 3];
+    for entry in HEADS { for seed in SEEDS {
+        let owner = Owner::with_fixture(entry, Fixture { placement: ArtifactRelocationPlacement::EntryAlphabetV1, fault: Fault::None }, certificate);
+        let (hooks, routes) = run_owner::<R>(owner, seed); census[0] += 1; census[1] += hooks; census[2] += routes;
+    } }
+    assert_eq!(census, [8, 12, 6]);
+}
+pub fn alphabet_ret_faults<R: Router>(certificate: SizeCertificate) {
+    let mut census = [0_usize; 3];
+    for entry in [0, 1] { for seed in SEEDS {
+        let owner = Owner::with_fixture(entry, Fixture { placement: ArtifactRelocationPlacement::EntryAlphabetV1, fault: Fault::Ret }, certificate);
+        let (hooks, routes) = run_owner::<R>(owner, seed); census[0] += 1; census[1] += hooks; census[2] += routes;
+    } }
+    assert_eq!(census, [4, 10, 2]);
+}
+pub fn alphabet_pop_faults<R: Router>(certificate: SizeCertificate) {
+    let mut census = [0_usize; 3];
+    for seed in SEEDS {
+        let owner = Owner::with_fixture(2, Fixture { placement: ArtifactRelocationPlacement::EntryAlphabetV1, fault: Fault::Pop }, certificate);
+        let (hooks, routes) = run_owner::<R>(owner, seed); census[0] += 1; census[1] += hooks; census[2] += routes;
+    }
+    assert_eq!(census, [2, 2, 2]);
 }
