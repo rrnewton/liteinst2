@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
+static _Alignas(64) unsigned char arena[16U<<20];
 static struct li2_dd_aux_plan example,bad;
 static const struct li2_dd_aux_plan *active;
 static uint64_t decoded,models,steps,recoveries,mutations,refusals;
@@ -145,7 +146,11 @@ static void whole_value(void) {
     assert(decoded==before);
 }
 int main(void) {
+    struct li2_decoder_stats before,after;
+    assert(!li2_decoder_initialize(arena,sizeof arena,&before));
     accepted();geometry();whole_value();
+    assert(!li2_decoder_stats(&after) && after.phase==2 && !after.first_fatal_reason &&
+        after.allocation_calls==before.allocation_calls && after.deallocation_calls==before.deallocation_calls);
     printf("{\"profile\":\"cached_direct_aux_component\",\"models\":%llu,\"steps\":%llu,"
         "\"recoveries\":%llu,\"whole_byte_mutations\":%llu,\"refusals\":%llu,"
         "\"runtime_authority\":false,\"native_credit\":false}\n",
