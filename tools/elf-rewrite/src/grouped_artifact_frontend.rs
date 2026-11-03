@@ -4,8 +4,10 @@ use crate::*;
 use li2core::planner::HookSemantics;
 use li2core::quiescent::{
     AllocationPolicy, ArtifactObservationPlan, ArtifactObservationRequest,
-    ArtifactObservationSearchRequest, ArtifactObservationWindowSeal, PlanningFailure,
-    plan_artifact_observation_window_after, plan_artifact_observation_window_upstream_after,
+    ArtifactObservationSearchRequest, ArtifactObservationWindowSeal, ArtifactRelocationPlacement,
+    PlanningFailure, plan_artifact_observation_window_after,
+    plan_artifact_observation_window_upstream_after,
+    plan_artifact_observation_window_upstream_after_with_placement,
     seal_artifact_observation_window_min5,
 };
 use li2core::x86::JumpStackClass;
@@ -15,12 +17,15 @@ use std::fmt::Write as _;
 pub const GROUPED_PROFILE: &str = "jumps-gpr-stack64-block-observation-v1";
 pub const GROUPED_UPSTREAM_PROFILE: &str = "jumps-gpr-stack64-block-upstream-v1";
 pub const GROUPED_MIN5_UPSTREAM_PROFILE: &str = "jumps-gpr-stack64-block-min5-upstream-v1";
+pub const GROUPED_MIN5_ALPHABET_UPSTREAM_PROFILE: &str =
+    "jumps-gpr-stack64-block-min5-alphabet-upstream-v1";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum GroupProfile {
     Exact,
     Upstream,
     Min5Upstream,
+    Min5AlphabetUpstream,
 }
 impl GroupProfile {
     fn name(self) -> &'static str {
@@ -28,6 +33,23 @@ impl GroupProfile {
             Self::Exact => GROUPED_PROFILE,
             Self::Upstream => GROUPED_UPSTREAM_PROFILE,
             Self::Min5Upstream => GROUPED_MIN5_UPSTREAM_PROFILE,
+            Self::Min5AlphabetUpstream => GROUPED_MIN5_ALPHABET_UPSTREAM_PROFILE,
+        }
+    }
+    fn min5(self) -> bool {
+        matches!(self, Self::Min5Upstream | Self::Min5AlphabetUpstream)
+    }
+    fn policy_version(self) -> u8 {
+        match self {
+            Self::Min5AlphabetUpstream => 3,
+            Self::Min5Upstream => 2,
+            Self::Exact | Self::Upstream => 1,
+        }
+    }
+    fn placement(self) -> ArtifactRelocationPlacement {
+        match self {
+            Self::Min5AlphabetUpstream => ArtifactRelocationPlacement::EntryAlphabetV1,
+            _ => ArtifactRelocationPlacement::Fixed06,
         }
     }
     fn policy(self) -> String {
@@ -38,10 +60,16 @@ impl GroupProfile {
             "group_attempts\t1\n",
             "physical_schedule\tsame-site-then-single-cache-line-then-nearest-upstream-v1\nmax_physical_sites\t64\nmax_upstream_bytes\t64\nmax_displaced_bytes\t256\nimage_candidates_per_physical\t1\nimage_mappings_per_physical\t1\nimage_bytes_per_physical\t4096\nphysical_domain\tsame-block-heads-through-first-member\nmembership\tfull-manifest-maximum-prefix-and-actual-window\n",
         );
-        if self == Self::Min5Upstream {
-            upstream.replace("LI2GROUPING-POLICY\t1\n", "LI2GROUPING-POLICY\t2\n")
+        if self.min5() {
+            let policy = upstream.replace("LI2GROUPING-POLICY\t1\n", &format!("LI2GROUPING-POLICY\t{}\n", self.policy_version()))
                 .replace("window\tfirst-selected-head-through-last-selected-instruction\n",
-                    "window\tminimum-whole-instruction-through-last-selected-min5-v1\nseal_source\timmutable-original\nseal_stage\tbefore-overlay-mutation\n")
+                    "window\tminimum-whole-instruction-through-last-selected-min5-v1\nseal_source\timmutable-original\nseal_stage\tbefore-overlay-mutation\n");
+            if self.placement() == ArtifactRelocationPlacement::EntryAlphabetV1 {
+                policy.replace("seal_stage\tbefore-overlay-mutation\n",
+                    "seal_stage\tbefore-overlay-mutation\ngroup_relocation_placement\tentry-alphabet-v1\n")
+            } else {
+                policy
+            }
         } else {
             upstream
         }
@@ -103,6 +131,27 @@ pub fn prepare_disassembly_jump_stack_grouped_min5_upstream_with_ledger_storage(
     storage: LedgerStorage,
 ) -> Result<Product, Error> {
     prepare_grouped_with_storage(original, selected, GroupProfile::Min5Upstream, storage)
+}
+
+/// Minimum-window geometry with the explicit artifact entry-alphabet placement.
+/// Singletons retain their existing planner; this grants no execution authority.
+pub fn prepare_disassembly_jump_stack_grouped_min5_alphabet_upstream_fixed_exec(
+    original: &[u8],
+    selected: &disassembly::whole::JumpStackWholeSelection,
+) -> Result<Product, Error> {
+    prepare_grouped(original, selected, GroupProfile::Min5AlphabetUpstream)
+}
+pub fn prepare_disassembly_jump_stack_grouped_min5_alphabet_upstream_with_ledger_storage(
+    original: &[u8],
+    selected: &disassembly::whole::JumpStackWholeSelection,
+    storage: LedgerStorage,
+) -> Result<Product, Error> {
+    prepare_grouped_with_storage(
+        original,
+        selected,
+        GroupProfile::Min5AlphabetUpstream,
+        storage,
+    )
 }
 
 fn prepare_grouped(
@@ -190,8 +239,13 @@ pub fn grouped_upstream_fixed_exec_metadata() -> String {
 pub fn grouped_min5_upstream_fixed_exec_metadata() -> String {
     grouped_metadata(GroupProfile::Min5Upstream)
 }
+pub fn grouped_min5_alphabet_upstream_fixed_exec_metadata() -> String {
+    grouped_metadata(GroupProfile::Min5AlphabetUpstream)
+}
 fn grouped_metadata(profile: GroupProfile) -> String {
-    let min5 = profile == GroupProfile::Min5Upstream;
+    let min5 = profile.min5();
+    let version = profile.policy_version();
+    let placement = profile.placement();
     let profile = profile.name();
     let mut out = FIXED_EXEC_METADATA.replacen(
         "planner_profile\twhole-program-packed-overlapping-neighbors-4096\n",
@@ -199,7 +253,12 @@ fn grouped_metadata(profile: GroupProfile) -> String {
     );
     out.push_str(&format!("grouped_profile\t{profile}\ngrouping_policy\tgrouping-policy.tsv\ngrouping_ledger\tLI2GROUPED-LEDGER-1\n"));
     if min5 {
-        out.push_str("grouping_policy_version\t2\nwindow_sealing\tminimum-whole-instruction-v1\n");
+        out.push_str(&format!(
+            "grouping_policy_version\t{version}\nwindow_sealing\tminimum-whole-instruction-v1\n"
+        ));
+    }
+    if placement == ArtifactRelocationPlacement::EntryAlphabetV1 {
+        out.push_str("group_relocation_placement\tentry-alphabet-v1\n");
     }
     out
 }
@@ -227,6 +286,14 @@ pub fn grouped_min5_upstream_fixed_exec_binding_policy(
     grouping: ContentId,
 ) -> Vec<u8> {
     GroupProfile::Min5Upstream.binding_policy(binding, selection, grouping)
+}
+
+pub fn grouped_min5_alphabet_upstream_fixed_exec_binding_policy(
+    binding: FixedImageBinding,
+    selection: ContentId,
+    grouping: ContentId,
+) -> Vec<u8> {
+    GroupProfile::Min5AlphabetUpstream.binding_policy(binding, selection, grouping)
 }
 
 #[derive(Clone, Debug)]
@@ -310,7 +377,27 @@ impl Schedule {
         binding: Option<FixedImageBinding>,
         occupied: &[AddressRange],
     ) -> Result<Self, Error> {
-        let mut out = Self::freeze_profile(elf, s, classes, GroupProfile::Min5Upstream)?;
+        Self::freeze_min5_profile(
+            elf,
+            s,
+            classes,
+            identity,
+            binding,
+            occupied,
+            GroupProfile::Min5Upstream,
+        )
+    }
+    pub(crate) fn freeze_min5_profile(
+        elf: &Elf64<'_>,
+        s: &Selection,
+        classes: &[JumpStackClass],
+        identity: CodeIdentity,
+        binding: Option<FixedImageBinding>,
+        occupied: &[AddressRange],
+        profile: GroupProfile,
+    ) -> Result<Self, Error> {
+        debug_assert!(profile.min5());
+        let mut out = Self::freeze_profile(elf, s, classes, profile)?;
         for unit in 0..out.groups.len() {
             let result = (|| {
                 let group = &out.groups[unit];
@@ -421,7 +508,7 @@ impl Schedule {
             classes: classes.to_vec(),
             policy: Vec::new(),
         };
-        if profile != GroupProfile::Min5Upstream {
+        if !profile.min5() {
             out.policy = out.policy_bytes(s);
         }
         Ok(out)
@@ -443,7 +530,7 @@ impl Schedule {
                 group.members.len()
             )
             .unwrap();
-            if self.profile == GroupProfile::Min5Upstream {
+            if self.profile.min5() {
                 match group
                     .seal
                     .as_ref()
@@ -582,7 +669,7 @@ impl Schedule {
         if self.profile == GroupProfile::Exact {
             return Ok(());
         }
-        if self.profile == GroupProfile::Min5Upstream {
+        if self.profile.min5() {
             match &group.seal {
                 Some(Ok(seal)) if seal.selected_span() == group.window => {
                     self.validate_intersection(s, group, seal.retained_span())?;
@@ -891,7 +978,7 @@ fn attempt_group(
     );
     let mut locally_planned = false;
     let result = (|| {
-        if schedule.profile == GroupProfile::Min5Upstream {
+        if schedule.profile.min5() {
             match &group.seal {
                 Some(Ok(_)) => {}
                 Some(Err(failure)) => {
@@ -923,7 +1010,7 @@ fn attempt_group(
         let request = GroupRequest::new(elf, s, identity, binding, group, &draft.occupied)?;
         let pcs = &request.pcs;
         let artifact = request.artifact();
-        if schedule.profile == GroupProfile::Min5Upstream {
+        if schedule.profile.min5() {
             let Some(Ok(seal)) = &group.seal else {
                 return Err(Error::new("grouped-seal", "missing successful preflight"));
             };
@@ -942,16 +1029,29 @@ fn attempt_group(
                 &draft.composition,
                 &outside,
             ),
-            GroupProfile::Upstream | GroupProfile::Min5Upstream => {
-                plan_artifact_observation_window_upstream_after(
-                    &ArtifactObservationSearchRequest {
-                        artifact,
-                        end: group.retained_window().end(),
-                        observation_pcs: pcs,
-                    },
-                    &draft.composition,
-                    &outside,
-                )
+            GroupProfile::Upstream
+            | GroupProfile::Min5Upstream
+            | GroupProfile::Min5AlphabetUpstream => {
+                let request = ArtifactObservationSearchRequest {
+                    artifact,
+                    end: group.retained_window().end(),
+                    observation_pcs: pcs,
+                };
+                match schedule.profile.placement() {
+                    ArtifactRelocationPlacement::Fixed06 => {
+                        plan_artifact_observation_window_upstream_after(
+                            &request,
+                            &draft.composition,
+                            &outside,
+                        )
+                    }
+                    placement => plan_artifact_observation_window_upstream_after_with_placement(
+                        &request,
+                        &draft.composition,
+                        &outside,
+                        placement,
+                    ),
+                }
             }
         };
         let planned = match result {
@@ -1042,3 +1142,6 @@ mod upstream_tests;
 
 #[cfg(test)]
 mod min5_tests;
+
+#[cfg(test)]
+mod alphabet_tests;

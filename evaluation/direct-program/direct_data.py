@@ -178,7 +178,16 @@ def e9_statistics(raw, info, original, size, output_size):
 GROUPED_PROFILE = 'jumps-gpr-stack64-block-observation-v1'
 GROUPED_UPSTREAM_PROFILE = 'jumps-gpr-stack64-block-upstream-v1'
 GROUPED_MIN5_PROFILE = 'jumps-gpr-stack64-block-min5-upstream-v1'
-GROUPED_PROFILES = (GROUPED_PROFILE, GROUPED_UPSTREAM_PROFILE, GROUPED_MIN5_PROFILE)
+GROUPED_MIN5_ALPHABET_PROFILE = 'jumps-gpr-stack64-block-min5-alphabet-upstream-v1'
+# (upstream physical search, immutable min5 seal, grouping version, explicit placement)
+# Storage is independent; legacy descriptors preserve their exact text contracts.
+GROUPED_DESCRIPTORS = {
+    GROUPED_PROFILE: (False, False, '1', None),
+    GROUPED_UPSTREAM_PROFILE: (True, False, '1', None),
+    GROUPED_MIN5_PROFILE: (True, True, '2', None),
+    GROUPED_MIN5_ALPHABET_PROFILE: (True, True, '3', 'entry-alphabet-v1'),
+}
+GROUPED_PROFILES = tuple(GROUPED_DESCRIPTORS)
 GROUPED_MEMBERS = ('grouping-policy.tsv', 'selection.txt', 'binding-policy.tsv',
                    'plan-ledger.tsv', 'ledger.tsv', 'report.tsv', 'disassembly.txt')
 
@@ -258,8 +267,7 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
     Accepted units are local-plan evidence, never candidate-emission authority.
     """
     assert profile in GROUPED_PROFILES
-    min5 = profile == GROUPED_MIN5_PROFILE
-    upstream = profile in (GROUPED_UPSTREAM_PROFILE, GROUPED_MIN5_PROFILE)
+    upstream, min5, policy_version, placement = GROUPED_DESCRIPTORS[profile]
     assert ledger_storage in ('inline', CHUNK_STORAGE)
     compact = ledger_storage == CHUNK_STORAGE
     required = set(GROUPED_MEMBERS) | (set(CHUNK_MEMBERS) if compact else set())
@@ -277,7 +285,8 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
         portable_metadata_verification='checked',
         embedded_metadata_binding='checked' if report['strict_full'] else 'not-complete')
     if min5:
-        expected_fields.update(grouping_policy_version='2', window_sealing='minimum-whole-instruction-v1')
+        expected_fields.update(grouping_policy_version=policy_version, window_sealing='minimum-whole-instruction-v1')
+    if placement is not None: expected_fields['group_relocation_placement'] = placement
     assert all(fields.get(k) == v for k, v in expected_fields.items())
     assert all(name in info['files'] for name in ('metadata.li2meta', 'target.tsv', 'planning-profile.tsv'))
     selection = info['files']['selection.txt']['sha256']
@@ -320,11 +329,14 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
         ['qualification_complete', 'false'], ['original_sha256', original],
         ['selection_sha256', selection], ['complete_site_count', str(len(sites))]]
     if min5:
-        prefix[0] = ['LI2GROUPING-POLICY', '2']
+        prefix[0] = ['LI2GROUPING-POLICY', policy_version]
         at = prefix.index(['window', 'first-selected-head-through-last-selected-instruction'])
         prefix[at:at+1] = [
             ['window', 'minimum-whole-instruction-through-last-selected-min5-v1'],
             ['seal_source', 'immutable-original'], ['seal_stage', 'before-overlay-mutation']]
+    if placement is not None:
+        at = prefix.index(['seal_stage', 'before-overlay-mutation']) + 1
+        prefix.insert(at, ['group_relocation_placement', placement])
     if upstream:
         at = prefix.index(['group_attempts', '1'])
         prefix[at:at+1] = [
@@ -493,6 +505,8 @@ def grouped_linkage(info, members, sites, original, domain, report, *, source_le
                 unique_images=len(images), requested=len(sites), emitted=report['emitted'],
                 grouping_ledger='LI2GROUPED-LEDGER-2' if compact else 'LI2GROUPED-LEDGER-1',
                 metadata_verification='Rust format/embedded check recorded; Python authenticates member hashes and text joins')
+    if placement is not None:
+        result.update(grouping_policy_version=policy_version, group_relocation_placement=placement)
     if compact: result['ledger_storage'] = storage_result
     return result
 

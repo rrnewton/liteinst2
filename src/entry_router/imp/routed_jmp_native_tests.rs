@@ -5,10 +5,10 @@ use crate::isolated_native_test as isolated;
 // its complete bodies and assertions are retained.
 #[allow(dead_code)]
 #[path = "../../../tests/support/quiescent_oracle.rs"]
-mod oracle;
+pub(super) mod oracle;
 use oracle::routed_jmp_native::{self as native, Router};
 
-struct ProductionRoutes(RouteRegistration);
+pub(super) struct ProductionRoutes(RouteRegistration);
 impl Router for ProductionRoutes {
     fn prepare() {
         super::prepare().unwrap();
@@ -187,7 +187,7 @@ fn readiness_disposition_and_duplicate_owner_refuse_before_source_publication() 
 
 // The sizing implementation stays crate-private. This adapter exposes only its
 // actual bound to the shared cfg(test) fixture; it emits no substitute image.
-fn min5_size_certificate(
+pub(super) fn min5_size_certificate(
     base: u64,
     code: &[u8],
     selected: &[u64],

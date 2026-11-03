@@ -465,6 +465,7 @@ enum PopulationMode {
     JumpStackGrouped,
     JumpStackGroupedUpstream,
     JumpStackGroupedMin5Upstream,
+    JumpStackGroupedMin5AlphabetUpstream,
 }
 const JUMP_STACK_FLAG: &str = "--whole-program-fixed-exec-packed-overlapping-jump-stack64-4096";
 const GROUPED_FLAG: &str = "--whole-program-fixed-exec-block-observation-jump-stack64-4096";
@@ -528,12 +529,33 @@ fn arguments_with_grouped_min5_upstream(
         arguments_with_grouped_upstream(args)
     }
 }
+const GROUPED_MIN5_ALPHABET_UPSTREAM_FLAG: &str =
+    "--whole-program-fixed-exec-block-min5-alphabet-upstream-jump-stack64-4096";
+fn arguments_with_grouped_min5_alphabet_upstream(
+    args: &[String],
+) -> Result<(&[String], PopulationMode), String> {
+    if args
+        .get(1)
+        .is_some_and(|arg| arg == GROUPED_MIN5_ALPHABET_UPSTREAM_FLAG)
+    {
+        let mut exact = args.to_vec();
+        exact[1] = GROUPED_FLAG.into();
+        arguments_with_jump_stack(&exact)?;
+        Ok((
+            &args[2..],
+            PopulationMode::JumpStackGroupedMin5AlphabetUpstream,
+        ))
+    } else {
+        arguments_with_grouped_min5_upstream(args)
+    }
+}
 fn is_grouped(mode: PopulationMode) -> bool {
     matches!(
         mode,
         PopulationMode::JumpStackGrouped
             | PopulationMode::JumpStackGroupedUpstream
             | PopulationMode::JumpStackGroupedMin5Upstream
+            | PopulationMode::JumpStackGroupedMin5AlphabetUpstream
     )
 }
 fn labels_with_population(mode: PopulationMode) -> (&'static str, &'static str, &'static str) {
@@ -553,6 +575,11 @@ fn labels_with_population(mode: PopulationMode) -> (&'static str, &'static str, 
             liteinst_rewrite::GROUPED_MIN5_UPSTREAM_PROFILE,
             "",
             " selection_profile=jumps-gpr-stack64-v1 grouped_profile=jumps-gpr-stack64-block-min5-upstream-v1 address_binding=fixed-exec-zero-bias-indexed-jump32-v1 required_object_type=ET_EXEC required_load_bias=0",
+        ),
+        PopulationMode::JumpStackGroupedMin5AlphabetUpstream => (
+            liteinst_rewrite::GROUPED_MIN5_ALPHABET_UPSTREAM_PROFILE,
+            "",
+            " selection_profile=jumps-gpr-stack64-v1 grouped_profile=jumps-gpr-stack64-block-min5-alphabet-upstream-v1 group_relocation_placement=entry-alphabet-v1 address_binding=fixed-exec-zero-bias-indexed-jump32-v1 required_object_type=ET_EXEC required_load_bias=0",
         ),
         PopulationMode::JumpStack => (
             disassembly::jump_stack::PROFILE,
@@ -611,7 +638,8 @@ fn prepare_population_inputs_with_storage(
         PopulationMode::JumpStack
         | PopulationMode::JumpStackGrouped
         | PopulationMode::JumpStackGroupedUpstream
-        | PopulationMode::JumpStackGroupedMin5Upstream => {
+        | PopulationMode::JumpStackGroupedMin5Upstream
+        | PopulationMode::JumpStackGroupedMin5AlphabetUpstream => {
             use li2core::x86::JumpStackClass;
             let imported = disassembly::jump_stack::import(original, ledger, expected_ledger)?;
             let mut counts = [0; 3];
@@ -639,10 +667,23 @@ fn prepare_population_inputs_with_storage(
             let selected = imported.bind_whole_program(policy, expected_policy)?;
             assert_eq!(selected.profile(), disassembly::jump_stack::PROFILE);
             files.insert("selection.txt".into(), selected.manifest().to_vec());
-            if mode == PopulationMode::JumpStackGroupedMin5Upstream {
-                let product = liteinst_rewrite::prepare_disassembly_jump_stack_grouped_min5_upstream_with_ledger_storage(
-                    original, &selected, storage,
-                )?;
+            if matches!(
+                mode,
+                PopulationMode::JumpStackGroupedMin5Upstream
+                    | PopulationMode::JumpStackGroupedMin5AlphabetUpstream
+            ) {
+                let prepare = if mode == PopulationMode::JumpStackGroupedMin5AlphabetUpstream {
+                    liteinst_rewrite::prepare_disassembly_jump_stack_grouped_min5_alphabet_upstream_with_ledger_storage
+                } else {
+                    liteinst_rewrite::prepare_disassembly_jump_stack_grouped_min5_upstream_with_ledger_storage
+                };
+                let binding_policy = if mode == PopulationMode::JumpStackGroupedMin5AlphabetUpstream
+                {
+                    liteinst_rewrite::grouped_min5_alphabet_upstream_fixed_exec_binding_policy
+                } else {
+                    liteinst_rewrite::grouped_min5_upstream_fixed_exec_binding_policy
+                };
+                let product = prepare(original, &selected, storage)?;
                 if storage == liteinst_rewrite::LedgerStorage::ReadChunks256 {
                     liteinst_rewrite::ledger_storage::verify_jump_stack(
                         original,
@@ -656,7 +697,7 @@ fn prepare_population_inputs_with_storage(
                     selected.manifest(),
                     &product,
                     product.files(),
-                    liteinst_rewrite::grouped_min5_upstream_fixed_exec_binding_policy,
+                    binding_policy,
                 )?;
                 Ok(product)
             } else if storage == liteinst_rewrite::LedgerStorage::ReadChunks256 {
@@ -908,7 +949,7 @@ fn arguments_with_storage(
             _ => return Err("unknown or missing ledger storage mode".into()),
         };
         // args[2] occupies only the delegated, ignored argv[0] slot.
-        let (paths, mode) = arguments_with_grouped_min5_upstream(&args[2..])?;
+        let (paths, mode) = arguments_with_grouped_min5_alphabet_upstream(&args[2..])?;
         if paths.iter().any(|s| s == "--ledger-storage")
             || (storage == LedgerStorage::ReadChunks256 && !is_grouped(mode))
         {
@@ -919,7 +960,7 @@ fn arguments_with_storage(
         }
         Ok((paths, mode, storage))
     } else {
-        arguments_with_grouped_min5_upstream(args)
+        arguments_with_grouped_min5_alphabet_upstream(args)
             .map(|(paths, mode)| (paths, mode, LedgerStorage::Inline))
     }
 }
@@ -928,7 +969,9 @@ fn run() -> Result<bool, String> {
     let raw_args: Vec<_> = std::env::args().collect();
     let (args, mode, storage) = arguments_with_storage(&raw_args)?;
     let (profile, family, stdout_family) = labels_with_population(mode);
-    let grouped_family = if mode == PopulationMode::JumpStackGroupedMin5Upstream {
+    let grouped_family = if mode == PopulationMode::JumpStackGroupedMin5AlphabetUpstream {
+        liteinst_rewrite::grouped_min5_alphabet_upstream_fixed_exec_metadata()
+    } else if mode == PopulationMode::JumpStackGroupedMin5Upstream {
         liteinst_rewrite::grouped_min5_upstream_fixed_exec_metadata()
     } else if mode == PopulationMode::JumpStackGroupedUpstream {
         liteinst_rewrite::grouped_upstream_fixed_exec_metadata()
@@ -1031,6 +1074,7 @@ fn run() -> Result<bool, String> {
             | PopulationMode::JumpStackGrouped
             | PopulationMode::JumpStackGroupedUpstream
             | PopulationMode::JumpStackGroupedMin5Upstream
+            | PopulationMode::JumpStackGroupedMin5AlphabetUpstream
     ) {
         index.push_str(&jump_stack_fields(classes));
     }
@@ -1040,6 +1084,7 @@ fn run() -> Result<bool, String> {
             | PopulationMode::JumpStackGrouped
             | PopulationMode::JumpStackGroupedUpstream
             | PopulationMode::JumpStackGroupedMin5Upstream
+            | PopulationMode::JumpStackGroupedMin5AlphabetUpstream
             | PopulationMode::Existing(Mode::WholeFixedExecPackedOverlapping4096)
     ) {
         match fixed_binding {
@@ -1391,3 +1436,7 @@ mod ledger_storage_tests;
 #[cfg(test)]
 #[path = "disassembly_sites/grouped_min5_tests.rs"]
 mod grouped_min5_tests;
+
+#[cfg(test)]
+#[path = "disassembly_sites/grouped_alphabet_tests.rs"]
+mod grouped_alphabet_tests;
