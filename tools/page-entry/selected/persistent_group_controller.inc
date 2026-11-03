@@ -2420,6 +2420,36 @@ static void selected_persistent_report(unsigned status,unsigned code,long detail
             (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
         }
     }
+    /* Preserve a failed cold image as data only. Count gates the sole array
+       access; terminal cleanup never reconstructs or clears this candidate. */
+    {
+        _Static_assert(19*21+512<4096,"bounded LCX candidate scalar row");
+        const struct lcx_bundle *candidate=&lcx_runtime.value.work.candidate;
+        unsigned present=candidate->count>=1 && candidate->count<=LI2_DD_AUX_SLOTS;
+        const struct li2_dd_aux_plan *aux=present?&candidate->image[candidate->count-1].plan:0;
+        const struct li2_dd_plan *inner=aux?&aux->value:0;
+        struct writer image={.used=0};text(&image,"LI2_LOOP_CACHED_DIRECT_CANDIDATE {\"version\":1");
+        field(&image,",\"status\":",status);field(&image,",\"failure_code\":",code);
+        field(&image,",\"detail_negative\":",detail<0);
+        field(&image,",\"detail_abs\":",detail<0?0ULL-(uint64_t)detail:(uint64_t)detail);
+        field(&image,",\"members\":",candidate->members);field(&image,",\"count\":",candidate->count);
+        field(&image,",\"image_present\":",present);
+        field(&image,",\"aux_version\":",aux?aux->version:0);
+        field(&image,",\"aux_ready\":",aux?aux->ready:0);
+        field(&image,",\"aux_result\":",aux?aux->result:0);
+        field(&image,",\"inner_version\":",inner?inner->record.version:0);
+        field(&image,",\"inner_ready\":",inner?inner->record.ready:0);
+        field(&image,",\"inner_result\":",inner?inner->record.result:0);
+        field(&image,",\"original_pc\":",inner?inner->original.decoded.pc:0);
+        field(&image,",\"generated\":",inner?inner->generated:0);
+        field(&image,",\"miss_offset\":",inner?inner->record.miss_offset:0);
+        field(&image,",\"image_bytes\":",inner?inner->record.image_bytes:0);
+        field(&image,",\"boundaries\":",inner?inner->record.boundaries:0);
+        text(&image,"}\n");
+        if(raw(SYS_write,report_fd<0?2:report_fd,(long)image.bytes,image.used,0,0,0)!=(long)image.used) {
+            (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
+        }
+    }
 #endif
 #ifdef LI2_LOOP_CACHED_DIRECT_CONTEXT_OBSERVE
     lcxo_report(status,code);

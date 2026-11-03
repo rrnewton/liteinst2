@@ -35,6 +35,11 @@ PREFIX = b'LI2_LOOP_CACHED_DIRECT_PROGRAM '
 FIELDS = tuple(('version status failure_code detail_negative detail_abs initialized poisoned '
     'builds opens closes entries recoveries retirements invalidations serial built published '
     'opened closed recovery_owned recovery_result').split())
+CANDIDATE_PREFIX = b'LI2_LOOP_CACHED_DIRECT_CANDIDATE '
+CANDIDATE_IMAGE_FIELDS = tuple(('aux_version aux_ready aux_result inner_version inner_ready '
+    'inner_result original_pc generated miss_offset image_bytes boundaries').split())
+CANDIDATE_FIELDS = ('version', 'status', 'failure_code', 'detail_negative', 'detail_abs',
+    'members', 'count', 'image_present') + CANDIDATE_IMAGE_FIELDS
 PAIR_COUNTS = ('events', 'seeds', 'extensions', 'epochs_closed', 'one_page_closes',
     'two_page_closes', 'policy_closes', 'capacity_closes', 'refaults', 'refault_completed')
 OUTCOME = ('status', 'failure_code', 'detail_negative', 'detail_abs')
@@ -53,8 +58,8 @@ def terminal(stderr, exit_status):
          len({name for name, _, _ in parts}) == len(parts),
          'bounded complete terminal rows with unique actual names')
     values = {name: original.rseq.decode(raw) for name, _, raw in parts}
-    required = (b'LI2_LOADER', b'LI2_NATIVE_PAIR', b'LI2_NATIVE', PREFIX[:-1])
-    need(all(name in values for name in required), 'actual loader, pair, native and plain LCX rows')
+    required = (b'LI2_LOADER', b'LI2_NATIVE_PAIR', b'LI2_NATIVE', PREFIX[:-1], CANDIDATE_PREFIX[:-1])
+    need(all(name in values for name in required), 'actual loader, pair, native, plain LCX and candidate rows')
     loader, pair, native = (values[name] for name in required[:3])
     original._unsigned(loader, original.generic.KEYS-{'scope'}, scope='partial_selected_reusable_effects')
     need(loader['version'] == loader['selected_profile'] == loader['generic_tf_profile'] == 1,
@@ -65,22 +70,32 @@ def terminal(stderr, exit_status):
     original._unsigned(native, original.NATIVE_KEYS-{'revisit_ns'}, {'revisit_ns': native['revisit_count']})
     need(native['version'] == 1, 'original native counter version')
     at = [i for i, line in enumerate(lines) if line.startswith(PREFIX)]
-    need(len(at) == 1 and at[0]+1 < len(lines) and
-         lines[at[0]+1].startswith(b'LI2_LOOP_EFFECTS '), 'plain LCX row at original controller report boundary')
+    need(len(at) == 1 and at[0]+2 < len(lines) and
+         lines[at[0]+1].startswith(CANDIDATE_PREFIX) and
+         lines[at[0]+2].startswith(b'LI2_LOOP_EFFECTS '), 'exact plain LCX, candidate and original report boundary')
     context = scalar_row(lines[at[0]], PREFIX, FIELDS)
+    candidate = scalar_row(lines[at[0]+1], CANDIDATE_PREFIX, CANDIDATE_FIELDS)
+    need(all(candidate[k] < 1 << 32 for k in ('members', 'count', 'image_present',
+             'aux_version', 'aux_ready', 'aux_result', 'inner_version', 'inner_ready',
+             'inner_result', 'miss_offset', 'image_bytes', 'boundaries')) and
+         candidate['image_present'] == int(1 <= candidate['count'] <= 8),
+         'actual uint32 candidate fields and exact bounded image-presence selector')
+    need(candidate['aux_ready'] in (0, 1) and candidate['inner_ready'] in (0, 1) and
+         (candidate['image_present'] or all(candidate[k] == 0 for k in CANDIDATE_IMAGE_FIELDS)),
+         'actual ready flags and whole zero absent-image projection; no success-plan theorem')
     need(all(context[k] in (0, 1) for k in ('initialized', 'poisoned', 'built', 'published',
              'opened', 'closed', 'recovery_owned')), 'actual binary LCX state fields')
     need(all(tuple(v[k] for k in OUTCOME) == tuple(loader[k] for k in OUTCOME)
-             for v in (pair, context)) and
+             for v in (pair, context, candidate)) and
          (native['status'], native['failure_code']) == (loader['status'], loader['failure_code']) and
          loader['status'] == exit_status,
          'every observed terminal outcome equals the actual process exit')
     if exit_status == 0:
         need(all(loader[k] == 0 for k in OUTCOME), 'successful execution has no reported failure')
-    return dict(loader=loader, native=native, native_pair=pair, lcx=context,
+    return dict(loader=loader, native=native, native_pair=pair, lcx=context, lcx_candidate=candidate,
         native_pair_counts=dict(zip(PAIR_COUNTS, pair['counts'], strict=True)),
         other_rows=[name.decode() for name in values if name not in required],
-        validation_scope='Four schema-checked terminal rows and exact outcome joins; other rows retained raw.',
+        validation_scope='Five schema-checked terminal rows and exact outcome joins; other rows retained raw.',
         owner_proof_validated=False, edge_traversals=None, qualification_credit=False)
 
 
