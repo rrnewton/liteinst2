@@ -1,0 +1,305 @@
+{
+  "bounds": {
+    "disk_allocated_bytes_before_each_command_less_than": 20000000000,
+    "log_bytes_per_command": 8388608,
+    "reserved_cpus": 4,
+    "wall_seconds": "Each command retains its timeout_seconds; workspace tests use the unchanged 900-second profile."
+  },
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "environment_delta": {},
+      "exit_code": 0,
+      "id": "fmt",
+      "log": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "reaped_descendants": 0,
+      "seconds": 10.623140322044492,
+      "start_utc": "2026-11-03T04:49:16.763502+00:00",
+      "status": "passed",
+      "termination": null,
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "environment_delta": {},
+      "exit_code": 0,
+      "id": "clippy",
+      "log": {
+        "bytes": 1736,
+        "sha256": "fbf57cd327e4fa86b9a1df1f55e56f66c875b3b4129ccfe0d3cc98b3b82587aa"
+      },
+      "reaped_descendants": 0,
+      "seconds": 58.87973168306053,
+      "start_utc": "2026-11-03T04:49:29.094502+00:00",
+      "status": "passed",
+      "termination": null,
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "environment_delta": {},
+      "exit_code": 0,
+      "harnesses": {
+        "complete": 122,
+        "expected_ignored": 43,
+        "expected_tests": 4674,
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 43,
+        "measured": 0,
+        "passed": 4631
+      },
+      "id": "workspace_tests",
+      "log": {
+        "bytes": 1609494,
+        "sha256": "a4089f21f1a382b5b5b6a6bf37cfac7e662f1fb4171a23804caee50611173d82"
+      },
+      "reaped_descendants": 0,
+      "seconds": 875.8565277298912,
+      "start_utc": "2026-11-03T04:50:29.687492+00:00",
+      "status": "passed",
+      "termination": null,
+      "timeout_seconds": 900
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "environment_delta": {},
+      "exit_code": 0,
+      "id": "workspace_check",
+      "log": {
+        "bytes": 1156,
+        "sha256": "ada8e8590960e91ae53bdf88aa7d572aba0ef120a9d9ae6c0a787e93ff8dcb8f"
+      },
+      "reaped_descendants": 0,
+      "seconds": 39.722620086045936,
+      "start_utc": "2026-11-03T05:05:07.370638+00:00",
+      "status": "passed",
+      "termination": null,
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "environment_delta": {
+        "LITEINST_EVALUATION": "1"
+      },
+      "exit_code": 0,
+      "harnesses": {
+        "complete": 27,
+        "expected_ignored": 0,
+        "expected_tests": 1039,
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1039
+      },
+      "id": "serial_launch",
+      "log": {
+        "bytes": 1404568,
+        "sha256": "40fcf395dbe84c3873df484f023f16b9b632e77743f3847df93b09f6d9105001"
+      },
+      "reaped_descendants": 0,
+      "seconds": 167.11717851203866,
+      "start_utc": "2026-11-03T05:05:53.489212+00:00",
+      "status": "passed",
+      "termination": null,
+      "timeout_seconds": 180
+    }
+  ],
+  "configuration": [
+    {
+      "format": "config.toml",
+      "location": "ancestor_5",
+      "sha256": "e36ce2ec7de39d1ea2276c016bb660190b960cf4ef23dda9414661bc40ef45b3",
+      "status": "transport_only"
+    },
+    {
+      "format": "config",
+      "location": "ancestor_6",
+      "status": "unreadable"
+    },
+    {
+      "format": "config.toml",
+      "location": "ancestor_6",
+      "status": "unreadable"
+    },
+    {
+      "format": "config.toml",
+      "location": "cargo_home",
+      "sha256": "e36ce2ec7de39d1ea2276c016bb660190b960cf4ef23dda9414661bc40ef45b3",
+      "status": "transport_only"
+    }
+  ],
+  "configuration_unchanged": true,
+  "environment": {
+    "execution_path": "{checkout}/target/validation-tools-54cfe:{rustup}/toolchains/stable-x86_64-unknown-linux-gnu/bin:{cargo_home}/bin:/usr/bin:/bin",
+    "fixed": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TERM_COLOR": "never",
+      "LANG": "C.UTF-8",
+      "LC_ALL": "C.UTF-8",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOCFLAGS": "",
+      "RUSTFLAGS": "",
+      "RUST_TEST_THREADS": "4"
+    },
+    "inherited_locations_only": [
+      "PATH",
+      "HOME",
+      "CARGO_HOME",
+      "RUSTUP_HOME"
+    ],
+    "locations": {
+      "CARGO_TARGET_DIR": "{checkout}/target",
+      "TMPDIR": "{fresh_output}/tmp"
+    },
+    "scope": "Fixed values and location selection come from the authenticated driver/helpers; the receipt does not record resolved tool versions or complete location values."
+  },
+  "execution_driver": {
+    "bytes": 3170,
+    "identity": "retained private required-cargo-followthrough-r1/run.py",
+    "sha256": "814d37b375f1d40f53c91b1747c5b07e68c826c2b8f167a9f80457b8e3263f78"
+  },
+  "hardware": {
+    "affinity_cpu_count": 4,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 1,
+    "runner_cap_eff": "0000000000000000",
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "hardware_record_sha256": "5f1c8ed5be65b834e006eef5ec6bee69f28262669ef4d77119ddcbd05459748a",
+  "isa_flags_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+  "limitations": [
+    "The separately retained recorder failures and timeouts remain failed.",
+    "No full required-check, native-runtime, or performance qualification is granted."
+  ],
+  "profile": "cargo-followthrough-summary-v1",
+  "receipt": {
+    "bytes": 410137,
+    "sha256": "cff2666f135d85e6f69039d666872b8b5ea622959ad492e8165f59192985b553"
+  },
+  "recorder_pass_credit": false,
+  "recorder_run": false,
+  "reproduce": {
+    "argv": [
+      "cpuset-alloc",
+      "run",
+      "--cores",
+      "4",
+      "--",
+      "python3.12",
+      "-B",
+      "{reproducer}/cargo_followthrough.py",
+      "--expect-revision",
+      "f147195b62bb1d1d627670797e0f71d506288984",
+      "--output",
+      "target/evaluation/inprocess/cargo-followthrough-FRESH"
+    ],
+    "checkout_revision": "f147195b62bb1d1d627670797e0f71d506288984",
+    "cwd": "the clean checkout",
+    "requirements": [
+      "Keep the reproducer outside the historical checkout when it is absent from that revision.",
+      "Provision the original toolchain/dependency cache on an absolute PATH; the existing helper rejects non-transport Cargo configuration.",
+      "The output parent must exist, and the output directory must be new."
+    ],
+    "scope": "Portable successor invokes the same five shared commands, evidence parsers, and process cleanup. It was not the driver used for the historical result.",
+    "script": "evaluation/inprocess/cargo_followthrough.py",
+    "script_fact": {
+      "bytes": 3879,
+      "sha256": "17a23eb5d765b5e89536c4a31ae95b6c8a2ccba5fa64e1f3d732526c896158df"
+    },
+    "successor_executed": false
+  },
+  "schema": 1,
+  "scope": "Four required Cargo checks plus serial, after the separately retained failed recorder. This does not qualify or replace the whole required-check gate.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "f147195b62bb1d1d627670797e0f71d506288984",
+    "source_manifest_sha256": "6136ca3eaceb20a157201857a2baca28cdbadd169d56d3163898bc7bee6d75e6",
+    "tracked_clean": true,
+    "tree": "1b804e193a751a5105a21ee59958800d0c8e9f2f"
+  },
+  "source_helpers": [
+    {
+      "bytes": 7782,
+      "path": "evaluation/inprocess/checks.py",
+      "sha256": "04c89dcabf70a7986225bca51a59725a98fc620caef24c78519112ebe1c71e39"
+    },
+    {
+      "bytes": 21614,
+      "path": "evaluation/admission/run.py",
+      "sha256": "d9462b5ec03f3085564907d0fa1d42e882d49900651e05899d5b3f4122ddab3f"
+    },
+    {
+      "bytes": 15760,
+      "path": "evaluation/admission/processes.py",
+      "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+    },
+    {
+      "bytes": 230759,
+      "path": "evaluation/admission/corpus.json",
+      "sha256": "deefd5b52954c63bad92343525b64c0057b500e423e17d27af5be50d4afb0ead"
+    }
+  ],
+  "source_unchanged": true,
+  "status": "passed_cargo_and_serial_only",
+  "whole_profile_qualified": false
+}
