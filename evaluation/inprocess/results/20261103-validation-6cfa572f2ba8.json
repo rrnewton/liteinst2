@@ -1,0 +1,271 @@
+{
+  "all_cleanup_complete": true,
+  "commands": [
+    {
+      "affinity_provenance": {
+        "bytes": 190,
+        "sha256": "15853c89f0bef31ea251bd3ddc35207300c957e90849b068bf79018f0e6a3491",
+        "source": "saved allocator stderr"
+      },
+      "argv": [
+        "python3",
+        "evaluation/admission/recorder_parallel.py"
+      ],
+      "cleanup_complete": true,
+      "cohort": "required",
+      "cpus": [
+        19,
+        44,
+        72,
+        112
+      ],
+      "environment_delta": {},
+      "exit_code": -9,
+      "id": "recorder_tests",
+      "private_log_sha256": "e6aae4b1c42d09dbb2e54f444e1c134ae027bde9b97a835699d3063f6cd59c1e",
+      "seconds": 180.07628291798756,
+      "start_utc": "2026-11-02T23:47:20.995320+00:00",
+      "status": "failed",
+      "termination": "timeout",
+      "timeout_seconds": 180
+    },
+    {
+      "affinity_cpu_count": 4,
+      "affinity_scope": "Complete processor list not retained in this receipt.",
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "cleanup_complete": true,
+      "cohort": "cargo_serial",
+      "environment_delta": {},
+      "exit_code": 0,
+      "id": "fmt",
+      "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "probe_cpu": 15,
+      "seconds": 10.872832369059324,
+      "start_utc": "2026-11-02T23:51:39.041995+00:00",
+      "status": "passed",
+      "termination": null,
+      "timeout_seconds": 180
+    },
+    {
+      "affinity_cpu_count": 4,
+      "affinity_scope": "Complete processor list not retained in this receipt.",
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "cleanup_complete": true,
+      "cohort": "cargo_serial",
+      "environment_delta": {},
+      "exit_code": 0,
+      "id": "clippy",
+      "private_log_sha256": "1f5c1f1985b04f75e8aada61ddfb83456b3cad1488fe80accd95006de61a813d",
+      "probe_cpu": 15,
+      "seconds": 70.75444356212392,
+      "start_utc": "2026-11-02T23:51:49.915098+00:00",
+      "status": "passed",
+      "termination": null,
+      "timeout_seconds": 180
+    },
+    {
+      "affinity_cpu_count": 4,
+      "affinity_scope": "Complete processor list not retained in this receipt.",
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "cleanup_complete": true,
+      "cohort": "cargo_serial",
+      "environment_delta": {},
+      "exit_code": 0,
+      "harness_totals": {
+        "complete_harnesses": 122,
+        "expected_harnesses": 122,
+        "expected_ignored": 43,
+        "expected_tests": 4636,
+        "observed": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 43,
+          "measured": 0,
+          "passed": 4593
+        }
+      },
+      "id": "workspace_tests",
+      "private_log_sha256": "beb9a871136af4eff45e4756291778686d37037d2ba1d6b7530129fdf1f7b08b",
+      "probe_cpu": 15,
+      "seconds": 786.839626685949,
+      "start_utc": "2026-11-02T23:53:00.669796+00:00",
+      "status": "passed",
+      "termination": null,
+      "timeout_seconds": 900
+    },
+    {
+      "affinity_cpu_count": 4,
+      "affinity_scope": "Complete processor list not retained in this receipt.",
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "cleanup_complete": true,
+      "cohort": "cargo_serial",
+      "environment_delta": {},
+      "exit_code": 0,
+      "id": "workspace_check",
+      "private_log_sha256": "8bfc10474118ce79b87a51c1a1eef74f044086e94831867e48cc6d76d5695916",
+      "probe_cpu": 15,
+      "seconds": 39.77158420602791,
+      "start_utc": "2026-11-03T00:06:07.552221+00:00",
+      "status": "passed",
+      "termination": null,
+      "timeout_seconds": 180
+    },
+    {
+      "affinity_cpu_count": 4,
+      "affinity_scope": "Complete processor list not retained in this receipt.",
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "cleanup_complete": true,
+      "cohort": "cargo_serial",
+      "environment_delta": {
+        "LITEINST_EVALUATION": "1"
+      },
+      "exit_code": 0,
+      "harness_totals": {
+        "complete_harnesses": 27,
+        "expected_harnesses": 27,
+        "expected_ignored": 0,
+        "expected_tests": 1039,
+        "observed": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 1039
+        }
+      },
+      "id": "serial_launch",
+      "private_log_sha256": "be123b14f8303e1227eb0baf312d3da7ccb217b45b2463119b8339f9715bfeaa",
+      "probe_cpu": 15,
+      "seconds": 140.51381587190554,
+      "start_utc": "2026-11-03T00:06:47.324061+00:00",
+      "status": "passed",
+      "termination": null,
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "python3",
+        "evaluation/inprocess/diagnostics/recorder_timing.py"
+      ],
+      "cleanup_complete": true,
+      "cohort": "diagnostic",
+      "cpus": [
+        37,
+        43,
+        85,
+        91
+      ],
+      "exit_code": 0,
+      "id": "recorder_tests",
+      "private_log_sha256": "b27dc3ba5bf3b1a29645fcc28a52c5236b60a2d8d0a0705613d3878b61a4bb76",
+      "qualification_credit": false,
+      "required_check_credit": false,
+      "seconds": 157.1347669600509,
+      "start_utc": "2026-11-02T23:51:24.986558+00:00",
+      "status": "passed",
+      "termination": null,
+      "tests_passed": 366,
+      "timeout_seconds": 180
+    }
+  ],
+  "configuration_unchanged": true,
+  "environment": {
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "target",
+    "CARGO_TERM_COLOR": "never",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "RLIMIT_CORE": 0,
+    "RUSTC_WORKSPACE_WRAPPER": "",
+    "RUSTC_WRAPPER": "",
+    "RUSTDOCFLAGS": "",
+    "RUSTFLAGS": "",
+    "RUST_TEST_THREADS": "4",
+    "TMPDIR": "private_run/tmp"
+  },
+  "full_required_checks_passed": false,
+  "hardware": {
+    "affinity_cpu_count": 4,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "ordered_isa_sha256": "defe5156816881e25a329b7f4202c24060826a9d5f76a585431c6b788069816b",
+    "runner_cap_eff": "0000000000000000",
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "original_remaining_commands": "Not run by failed required invocation. Five original Cargo/serial commands executed by the separate supplemental driver.",
+  "original_required_status": "failed",
+  "receipts": {
+    "cargo_serial": {
+      "bytes": 9339,
+      "sha256": "b6c93ed14ccae78adcf24150d2c229ccb14bc3ff31c37ab7e0e68d746e078cfd"
+    },
+    "diagnostic": {
+      "bytes": 1335638,
+      "sha256": "b56bfb76a670943f5e127c7fc12b5eaf1206a53ffb6ba42088c681dc3151d942"
+    },
+    "required": {
+      "bytes": 7738,
+      "sha256": "314e8de7d9f9d7f799078630ee6a2a312d5e2c30bb7f950ff967706a92b05522"
+    }
+  },
+  "reproduce": "evaluation/inprocess/validation_6cfa/README.md",
+  "revision": "6cfa572f2ba8d2cad10077f3674e0cca5de4a084",
+  "schema": 1,
+  "scope": "Validation outcomes only. Diagnostic pass never replaces the original recorder timeout. No whole runtime or performance qualification.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "6cfa572f2ba8d2cad10077f3674e0cca5de4a084",
+    "source_manifest_sha256": "97f029893f79ffa07fd2ee26d33820bf2cfa725505cb48d46146393d5f964fdc",
+    "tracked_clean": true,
+    "tree": "38698407ba8a79bbeb0707ff7388d11813103dfb"
+  },
+  "source_unchanged": true,
+  "toolchain": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "toolchain_scope": "Versions observed by the required driver immediately before these supplemental checks; same configured stable toolchain."
+}

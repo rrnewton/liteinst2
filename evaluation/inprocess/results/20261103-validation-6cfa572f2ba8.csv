@@ -1,0 +1,8 @@
+cohort,command,exit_code,seconds,timeout_seconds,passed,failed,ignored,harnesses
+required,recorder_tests,-9,180.07628291798756,180,,,,
+cargo_serial,fmt,0,10.872832369059324,180,,,,
+cargo_serial,clippy,0,70.75444356212392,180,,,,
+cargo_serial,workspace_tests,0,786.839626685949,900,4593,0,43,122
+cargo_serial,workspace_check,0,39.77158420602791,180,,,,
+cargo_serial,serial_launch,0,140.51381587190554,180,1039,0,0,27
+diagnostic,recorder_tests,0,157.1347669600509,180,366,,,

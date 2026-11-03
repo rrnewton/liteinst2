@@ -1,0 +1,18 @@
+kind,name,status,exit,commands,validation_ns,mode,placement,lane,subject_ns,error
+stage,native41,passed,0,139,416426406617,,,,,
+stage,bounded_block,observed_unqualified,0,101,266576907122,,,,,
+stage,fused_component,components_passed,0,44,24035471282,,,,,
+stage,bounded_fused,observed_unqualified,0,105,377037794097,,,,,
+stage,loop_native,observed_native_references,0,82,445917981381,,,,,
+stage,loop_components,components_passed,0,60,37774693278,,,,,
+stage,effects_component,observed_component_comparisons,0,71,46888646329,,,,,
+stage,loop_owner,observed_focal_unqualified,0,126,8036791722306,,,,,
+stage,loop_lifecycle,failed,1,116,403044322019,,,,,
+subject,subject-maintained-0-0,failed,0,,,0,0,maintained,6515028178,ValueError: exact pdo_epoch_info.gpr_written
+subject,subject-maintained-0-1,failed,0,,,0,1,maintained,5149407713,ValueError: exact pdo_epoch_info.gpr_written
+subject,subject-maintained-1-0,failed,0,,,1,0,maintained,4333095924,ValueError: actual final reset binds completed directory dispatch
+subject,subject-maintained-1-1,failed,0,,,1,1,maintained,4492801618,ValueError: actual final reset binds completed directory dispatch
+subject,subject-differential-0-0,failed,0,,,0,0,differential,6799473313,ValueError: exact pdo_epoch_info.gpr_written
+subject,subject-differential-0-1,failed,0,,,0,1,differential,8661589679,ValueError: exact pdo_epoch_info.gpr_written
+subject,subject-differential-1-0,failed,0,,,1,0,differential,6032976547,ValueError: actual final reset binds completed directory dispatch
+subject,subject-differential-1-1,failed,0,,,1,1,differential,6372934194,ValueError: actual final reset binds completed directory dispatch
