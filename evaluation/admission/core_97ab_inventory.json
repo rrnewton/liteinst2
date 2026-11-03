@@ -72,7 +72,7 @@
     ]
   },
   "base_revision": "17f0ef90e6e5c87ff54bfd7f1e7cd16e383369d7",
-  "current_corpus_sha256": "63a316f953d11bed9775ca16c06b4926d8f255e3688431c027ede1452596a399",
+  "current_corpus_sha256": "23558f7669fdd20936fa6144b131b4e3ef227ba6bb164a6def308f193cf812c3",
   "default_harness_changes": 0,
   "default_ignore_changes": 0,
   "default_method_instances": {
@@ -98,22 +98,40 @@
   "default_test_additions": 58,
   "doctests": {
     "crates/liteinst-x86/src/lib.rs": [],
+    "src/artifact_emission_tests.rs": [],
+    "src/artifact_fixups.rs": [],
+    "src/backedge_clock/owned_loop.rs": [],
+    "src/backedge_clock/owned_region.rs": [],
+    "src/backedge_clock/owned_region/cfg_shared_tests.rs": [],
     "src/control_flow.rs": [],
+    "src/control_flow/tests.rs": [],
     "src/controls.rs": [
       "/// ```compile_fail\n/// use liteinst2::controls::ControlIdentity;\n/// fn escape<'dispatch>(token: ControlIdentity<'dispatch>) -> ControlIdentity<'static> {\n///     token\n/// }\n/// ```",
       "/// ```compile_fail\n/// use std::cell::Cell;\n/// use liteinst2::controls::{ControlIdentity, ProbeControl};\n/// use liteinst2::trampoline::HookContext;\n/// thread_local! { static SAVED: Cell<Option<ControlIdentity<'static>>> = const { Cell::new(None) }; }\n/// unsafe extern \"C\" fn retain<'dispatch>(_: *mut HookContext, token: ControlIdentity<'dispatch>) {\n///     SAVED.with(|slot| slot.set(Some(token)));\n/// }\n/// let _ = ProbeControl::new_managed_bound(retain, false);\n/// ```",
       "/// ```compile_fail,E0277\n/// use liteinst2::controls::ControlWriter;\n/// fn needs_clone<T: Clone>() {}\n/// fn duplicate() { needs_clone::<ControlWriter>(); }\n/// ```"
     ],
+    "src/emission.rs": [],
+    "src/quiescent.rs": [],
+    "src/trampoline.rs": [],
+    "src/trampoline/artifact_allocation.rs": [],
+    "tools/elf-rewrite/examples/adjacent_b2_support/ledger.rs": [],
     "tools/elf-rewrite/examples/common_sites.rs": [],
+    "tools/elf-rewrite/examples/disassembly_sites.rs": [],
     "tools/elf-rewrite/examples/full_program_bridge.rs": [],
     "tools/elf-rewrite/examples/full_program_bridge/input.rs": [],
     "tools/elf-rewrite/examples/full_program_bridge/input_tests.rs": [],
     "tools/elf-rewrite/examples/full_program_bridge/policy_cli.rs": [],
     "tools/elf-rewrite/examples/full_program_bridge/tests.rs": [],
+    "tools/elf-rewrite/src/adjacent_b2_frontend.rs": [],
+    "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs": [],
+    "tools/elf-rewrite/src/disassembly.rs": [],
     "tools/elf-rewrite/src/disassembly/policy_tests.rs": [],
     "tools/elf-rewrite/src/disassembly/tests.rs": [],
     "tools/elf-rewrite/src/disassembly/whole.rs": [],
     "tools/elf-rewrite/src/disassembly/whole/policy.rs": [],
+    "tools/elf-rewrite/src/disassembly/whole/tests.rs": [],
+    "tools/elf-rewrite/src/fixed_exec.rs": [],
+    "tools/elf-rewrite/src/ledger.rs": [],
     "tools/elf-rewrite/src/lib.rs": [],
     "tools/rapid-profiler/src/frontend.rs": [
       "/// ```compile_fail,E0616\n/// use rapid_profiler::frontend::EpochHandle;\n/// fn escape(handle: EpochHandle) { let epoch = handle.owner.epoch; }\n/// ```",
@@ -767,71 +785,71 @@
       "previous_sha256": "022f120ee6803ee1f5ed172f399328d671b4c51bd78bdc252880f3e0072cc68e"
     },
     "evaluation/admission/test_main97ab_inventory.py": {
-      "current_sha256": "0401057094f968ffd5c73b26c26c7599269128b74a01496e06bac0e5d06c823d",
+      "current_sha256": "697a21bc42f99e34405ceeb1fccd7acfe592bd754247774f238ce669d941778f",
       "edits": [
         [
           438,
-          5770,
+          5792,
           ""
         ],
         [
-          5974,
-          83055,
+          5996,
+          96724,
           ""
         ],
         [
-          92426,
-          92537,
+          106095,
+          106206,
           "        self.assertEqual(actual['harness_test_counts']['workspace_tests']['unit/ordinary_interval/main'],\n"
         ],
         [
-          97580,
-          97750,
+          111249,
+          111419,
           ""
         ],
         [
-          97797,
-          97891,
+          111466,
+          111560,
           "                for value in (None, True, float(live_rows[name][field]), live_rows[name][field] + 1):\n"
         ],
         [
-          98030,
-          98117,
+          111699,
+          111786,
           ""
         ],
         [
-          98376,
-          98455,
+          112045,
+          112124,
           ""
         ],
         [
-          99511,
-          100061,
+          113180,
+          113730,
           ""
         ],
         [
-          101580,
-          101676,
+          115249,
+          115345,
           "        placement_rows = actual['harness_test_counts']['workspace_tests']\n"
         ],
         [
-          105519,
-          138903,
+          119188,
+          152572,
           ""
         ],
         [
-          145821,
-          149392,
+          159490,
+          163061,
           ""
         ],
         [
-          150672,
-          150944,
+          164341,
+          164613,
           "        for function, expected_projection in projections:\n"
         ],
         [
-          152238,
-          160318,
+          165907,
+          176073,
           ""
         ]
       ],
@@ -950,7 +968,7 @@
       "previous_sha256": "c8b2d6c0b859e6d757fcf9c9c5f6a43c75edcd594863e819c131dd37849e189b"
     },
     "evaluation/admission/test_mainaf81_inventory.py": {
-      "current_sha256": "7e0428b9868463e63d557e32ac21e5ca932ba60f13661d86e02d6dc872976aa4",
+      "current_sha256": "d2e497375dd6493a2c3f18aa97df49e9c4f39cd3a14279a532409bcbeab6df49",
       "edits": [
         [
           94,
@@ -979,7 +997,7 @@
         ],
         [
           8834,
-          15028,
+          15292,
           "            with patch.object(Path, 'read_bytes', changed), \\\n                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(changed_raw).hexdigest()}), \\\n                 patch.object(current, 'source_before', side_effect=lambda p, b, e: b if p != path else (_ for _ in ()).throw(AssertionError('declaration gate omitted'))):\n                with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainaf81_source_inventory_differs$'):\n                    current.require_sources()\n"
         ]
       ],
@@ -1094,7 +1112,7 @@
       "previous_sha256": "4376c7bb3da59cd0afd56ec13922dc27c42c1d557d017f6ee2cc165870d5ffa9"
     },
     "evaluation/admission/test_mainf353_inventory.py": {
-      "current_sha256": "6707691d3aaac4def7c07e935f31b70b32850b6bd510dc797d7984da587196f9",
+      "current_sha256": "cc64345f558b385451373bbb7f19c98755dafc54515199fe075961e3089bbedc",
       "edits": [
         [
           379,
@@ -1128,7 +1146,7 @@
         ],
         [
           6702,
-          7759,
+          8015,
           "            with patch.object(Path, 'read_bytes', changed), \\\n                 patch.dict(current.DATA['sources'], {path:hashlib.sha256(wrong).hexdigest()}), \\\n                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('indexed declaration gate omitted'))):\n                with self.assertRaisesRegex(parsing.InvalidEvidence, '^mainf353_source_inventory_differs$'):\n                    current.require_sources()\n"
         ]
       ],
@@ -1169,7 +1187,11 @@
         "indexed_and_truncated_address_shapes_keep_exact_refusals_and_positive_control",
         "jrcxz_artifact_bridge_has_complete_fields_paths_and_pc_ownership",
         "jrcxz_artifact_bridge_routes_internal_entries_and_keeps_finite_refusals",
-        "jrcxz_artifact_engine_keeps_source_pair_and_allocation_authority"
+        "jrcxz_artifact_engine_keeps_source_pair_and_allocation_authority",
+        "fixed_exec_indexed_jump_producer_preserves_signed_fields_and_default_refusals",
+        "fixed_exec_keeps_non_jump_and_truncated_indexed_operand_refusals",
+        "fixed_exec_original_error_order_and_prepared_binding_remain_exact",
+        "fixed_exec_nop5_cannot_erase_binding_through_legacy_unwind_export"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -1184,7 +1206,8 @@
         "field_bounds_templates_overlap_and_origins_are_checked",
         "equal_numeric_bias_does_not_authorize_cross_module_binding",
         "exact_image_targets_use_their_own_placement_and_identity",
-        "later_failure_leaves_original_template_unchanged"
+        "later_failure_leaves_original_template_unchanged",
+        "fixed_signed32_is_preserved_only_under_explicit_domain_and_exact_bytes"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -1223,6 +1246,17 @@
       "macro_calls": [],
       "templates": []
     },
+    "src/backedge_clock/owned_region/cfg_shared_tests.rs": {
+      "all": [
+        "owned_cfg_shared_positive_graphs_and_distinct_scalar_profiles",
+        "owned_cfg_shared_refusals_and_exact_backedge_rosters",
+        "owned_cfg_shared_region_returnability_is_not_added_to_loop",
+        "owned_cfg_shared_size_address_and_supplied_scan_guards"
+      ],
+      "ignored": [],
+      "macro_calls": [],
+      "templates": []
+    },
     "src/backedge_clock/owned_region/tests.rs": {
       "all": [
         "owned_region_accepts_two_backedges_and_exact_scalar_forms",
@@ -1242,7 +1276,9 @@
     "src/control_flow/tests.rs": {
       "all": [
         "local_edges_keep_callees_multiplicity_and_padding_partitions_distinct",
-        "unresolved_rows_and_public_dimensions_refuse_without_reordering_callbacks"
+        "unresolved_rows_and_public_dimensions_refuse_without_reordering_callbacks",
+        "shared_cut_collector_keeps_global_direct_facts_separate_from_local_edges",
+        "shared_cut_collector_preserves_policy_order_and_first_error"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -1967,7 +2003,8 @@
       "all": [
         "short_profile_cli_labels_mode_before_policy_binding",
         "owned_short_cli_preserves_positional_paths_and_exact_prebind_labels",
-        "pending_short_cli_preserves_legacy_paths_and_exact_prebind_labels"
+        "pending_short_cli_preserves_legacy_paths_and_exact_prebind_labels",
+        "fixed_exec_selector_is_explicit_and_preserves_legacy_parsers"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -2322,7 +2359,9 @@
         "pending_selected_guard_reads_actual_transactional_coverage_and_locks",
         "pending_selected_failed_site_stays_pending_and_first_four_do_not_restart",
         "pending_selected_mode_identity_and_complete_denominator_are_explicit",
-        "pending_selected_full_mode_bytes_count_toward_bounds_and_old_caps"
+        "pending_selected_full_mode_bytes_count_toward_bounds_and_old_caps",
+        "imported_cuts_keep_cross_region_call_branch_and_xbegin_targets",
+        "imported_cuts_keep_global_contradictions_after_all_ledger_and_entry_checks"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -2347,7 +2386,13 @@
         "whole_packed_rx_runs_preserve_pending_and_carrier_refusal_denominators",
         "whole_packed_overlapping_emits_exact_relay_and_both_owned_images",
         "whole_packed_overlapping_retains_pending_original_and_atomic_denominator",
-        "whole_packed_overlapping_preserves_direct_outputs_and_carrier_limits"
+        "whole_packed_overlapping_preserves_direct_outputs_and_carrier_limits",
+        "fixed_exec_actual_indexed_encoder_carrier_route_and_legacy_refusals",
+        "fixed_exec_binding_keeps_complete_atomic_refusals_and_both_pair_obligations",
+        "fixed_exec_writer_rejects_wrong_source_type_entry_and_original_load_records",
+        "fixed_exec_real_rela_write_on_original_disp32_refuses_after_core_success",
+        "fixed_exec_portable_and_embedded_metadata_require_exact_binding_policy",
+        "fixed_exec_readback_uses_actual_low_gap_high_interleaved_header_map"
       ],
       "ignored": [],
       "macro_calls": [],
@@ -3049,16 +3094,21 @@
       "#[cfg(test)]\nmod tests {",
       "#[cfg(not(all(target_os = \"linux\", target_arch = \"x86_64\")))]\ncompile_error!(\"owned_region_clock requires Linux x86-64\");"
     ],
+    "src/artifact_fixups.rs": [
+      "#[cfg(test)]\nmod fixed_exec_tests {"
+    ],
     "src/backedge_clock.rs": [
       "mod batch;",
       "mod owned_region;",
-      "pub use batch::{ClockBatch, ClockBatchCall};"
+      "pub use batch::{ClockBatch, ClockBatchCall};",
+      "mod owned_loop;"
     ],
     "src/backedge_clock/batch.rs": [
       "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
     ],
     "src/backedge_clock/owned_region.rs": [
-      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;"
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod tests;",
+      "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod cfg_shared_tests;"
     ],
     "src/control_flow.rs": [
       "#[cfg(test)]\nmod tests;"
@@ -3088,7 +3138,8 @@
       "pub mod quiescent;",
       "pub mod backedge_clock;",
       "pub mod controls;",
-      "pub mod control_flow;"
+      "pub mod control_flow;",
+      "mod artifact_fixups;"
     ],
     "src/neighbor.rs": [
       "#[cfg(test)]\n#[path = \"neighbor_long_ownership_tests.rs\"]\nmod long_ownership_tests;",
@@ -3194,7 +3245,8 @@
       "#[cfg(test)]\nmod tests {"
     ],
     "tools/elf-rewrite/examples/disassembly_sites.rs": [
-      "#[cfg(test)]\n#[path = \"disassembly_sites/whole_tests.rs\"]\nmod whole_tests;"
+      "#[cfg(test)]\n#[path = \"disassembly_sites/whole_tests.rs\"]\nmod whole_tests;",
+      "#[cfg(test)]\nmod fixed_exec_cli_tests {"
     ],
     "tools/elf-rewrite/examples/full_program_bridge.rs": [
       "#[cfg(test)]\n#[path = \"full_program_bridge/tests.rs\"]\nmod tests;",
@@ -3246,7 +3298,8 @@
     "tools/elf-rewrite/src/lib.rs": [
       "pub mod carrier;",
       "pub mod disassembly;",
-      "mod neighbor_catalogue;"
+      "mod neighbor_catalogue;",
+      "mod fixed_exec;"
     ],
     "tools/elf-rewrite/src/neighbor_catalogue.rs": [
       "#[cfg(test)]\n#[path = \"neighbor_catalogue_cfg_tests.rs\"]\nmod cfg_tests;"
@@ -7539,6 +7592,745 @@
       }
     }
   },
+  "source_successor_064b48c": {
+    "added_default_methods": {
+      "src/artifact_emission_tests.rs": [
+        "fixed_exec_indexed_jump_producer_preserves_signed_fields_and_default_refusals",
+        "fixed_exec_keeps_non_jump_and_truncated_indexed_operand_refusals",
+        "fixed_exec_original_error_order_and_prepared_binding_remain_exact",
+        "fixed_exec_nop5_cannot_erase_binding_through_legacy_unwind_export"
+      ],
+      "src/artifact_fixups.rs": [
+        "fixed_signed32_is_preserved_only_under_explicit_domain_and_exact_bytes"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites.rs": [
+        "fixed_exec_selector_is_explicit_and_preserves_legacy_parsers"
+      ],
+      "tools/elf-rewrite/src/disassembly/whole/tests.rs": [
+        "fixed_exec_actual_indexed_encoder_carrier_route_and_legacy_refusals",
+        "fixed_exec_binding_keeps_complete_atomic_refusals_and_both_pair_obligations",
+        "fixed_exec_writer_rejects_wrong_source_type_entry_and_original_load_records",
+        "fixed_exec_real_rela_write_on_original_disp32_refuses_after_core_success",
+        "fixed_exec_portable_and_embedded_metadata_require_exact_binding_policy",
+        "fixed_exec_readback_uses_actual_low_gap_high_interleaved_header_map"
+      ]
+    },
+    "added_feature_methods": {},
+    "added_ignored_methods": {},
+    "base_revision": "6cfa572f2ba8d2cad10077f3674e0cca5de4a084",
+    "current_corpus_sha256": "938e4dea4549365758fe8739a424ade40dd9f89a20bed0a9fa8cfde7232b7ebe",
+    "default_doctest_additions": 0,
+    "default_harness_changes": 0,
+    "default_ignore_changes": 0,
+    "default_method_additions": 12,
+    "default_method_instances": {
+      "src/artifact_emission_tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "src/artifact_fixups.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites.rs": [
+        "unit/disassembly_sites/disassembly_sites"
+      ],
+      "tools/elf-rewrite/src/disassembly/whole/tests.rs": [
+        "unit/liteinst_rewrite/lib"
+      ]
+    },
+    "default_method_removals": 0,
+    "feature_method_additions": 0,
+    "feature_method_removals": 0,
+    "incoming_main": "064b48c39ddaf23423a7d397b083853e4bb52a89",
+    "merged_source_tree": "8695270935959f2e41f85acdca7b1da87987d7c5",
+    "module_chains": {
+      "src/artifact_fixups.rs": [
+        "#[cfg(test)]\nmod fixed_exec_tests {"
+      ],
+      "src/lib.rs": [
+        "mod artifact_fixups;",
+        "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod artifact_emission_tests;"
+      ],
+      "tools/elf-rewrite/Cargo.toml": [
+        "[[example]]\nname = \"disassembly_sites\"\npath = \"examples/disassembly_sites.rs\"\ntest = true"
+      ],
+      "tools/elf-rewrite/examples/disassembly_sites.rs": [
+        "#[cfg(test)]\nmod fixed_exec_cli_tests {"
+      ],
+      "tools/elf-rewrite/src/disassembly.rs": [
+        "pub mod whole;"
+      ],
+      "tools/elf-rewrite/src/disassembly/whole.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/elf-rewrite/src/lib.rs": [
+        "mod fixed_exec;",
+        "pub mod disassembly;"
+      ]
+    },
+    "new_method_declarations": 12,
+    "new_sources": [
+      "tools/elf-rewrite/src/fixed_exec.rs"
+    ],
+    "newly_bound_sources": [
+      "tools/elf-rewrite/examples/adjacent_b2_support/ledger.rs",
+      "tools/elf-rewrite/src/fixed_exec.rs"
+    ],
+    "previous_corpus_sha256": "63a316f953d11bed9775ca16c06b4926d8f255e3688431c027ede1452596a399",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "src/artifact_emission_tests.rs",
+      "src/artifact_fixups.rs",
+      "src/emission.rs",
+      "src/quiescent.rs",
+      "src/trampoline.rs",
+      "src/trampoline/artifact_allocation.rs",
+      "tools/elf-rewrite/examples/adjacent_b2_support/ledger.rs",
+      "tools/elf-rewrite/examples/disassembly_sites.rs",
+      "tools/elf-rewrite/src/adjacent_b2_frontend.rs",
+      "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs",
+      "tools/elf-rewrite/src/disassembly/whole/tests.rs",
+      "tools/elf-rewrite/src/fixed_exec.rs",
+      "tools/elf-rewrite/src/ledger.rs",
+      "tools/elf-rewrite/src/lib.rs"
+    ],
+    "source_preimages": {
+      "src/artifact_emission_tests.rs": {
+        "bytes": 25841,
+        "sha256": "3d99c55494ae2816bfbc75f5ff8ffdbf56ef2a4634c283e8e6d8ecb435831ead"
+      },
+      "src/artifact_fixups.rs": {
+        "bytes": 18917,
+        "sha256": "9fb44c45a3ac4fe8fe5b2544c116dbb356f0171ef5ce74d3355caeda7457770e"
+      },
+      "src/emission.rs": {
+        "bytes": 33385,
+        "sha256": "7eb271d9471d10c99b85d14a5bd33fa9f4787b7d970ad16c26fa6f8289cc7873"
+      },
+      "src/quiescent.rs": {
+        "bytes": 123458,
+        "sha256": "b52c1cc3e03885051333f60f06d06c510b604e14d571cf1838df4e20dde9732c"
+      },
+      "src/trampoline.rs": {
+        "bytes": 447307,
+        "sha256": "32dc3b2f9aab5bf9e75c5c7124cadf5bec3ca1692f3ce8c771d3fe429a7e55bd"
+      },
+      "src/trampoline/artifact_allocation.rs": {
+        "bytes": 16794,
+        "sha256": "ed23100722b011aadaabd7945583d82db0c1c43b00a31b1b14a252b48a580729"
+      },
+      "tools/elf-rewrite/examples/adjacent_b2_support/ledger.rs": {
+        "bytes": 36703,
+        "sha256": "4a668c16d1606dccb2748c4545c0a7fae82e11167f4990dca1f1931d47d73d61"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites.rs": {
+        "bytes": 32403,
+        "sha256": "aec5ebbd5a61f284114cebbecabd9a515f7eac7aa2883bafd7242930b6eb8ea8"
+      },
+      "tools/elf-rewrite/src/adjacent_b2_frontend.rs": {
+        "bytes": 35786,
+        "sha256": "c2ea2ccd923a8ed5cc0bc83beb604f90503ab34b33fef120a6bd7a26bcd67a90"
+      },
+      "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs": {
+        "bytes": 85337,
+        "sha256": "fc7eb3d28777c24a3902c61514115fc99913cc2b33764eb3f7dd976f1a1aa25c"
+      },
+      "tools/elf-rewrite/src/disassembly/whole/tests.rs": {
+        "bytes": 83990,
+        "sha256": "33d309f2eab6d63e4c672c42951b3aa63cf55f63418a23cebf5a5221bc5d59ed"
+      },
+      "tools/elf-rewrite/src/fixed_exec.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/ledger.rs": {
+        "bytes": 19658,
+        "sha256": "79b90df021fbed429da1961a4d02edb1b6f09c6dfd606a9f53f592a193a483ee"
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "bytes": 50173,
+        "sha256": "088b5f8cc6b856eedd43d9b2365d93a2b5b3d4ec204088e3df09befafb28c4a0"
+      }
+    },
+    "source_projections": {
+      "src/artifact_emission_tests.rs": {
+        "current_sha256": "5e39b957d9ed8e357ec78de8e5db67670196eb1c05b47eb9876fffcb64f6448d",
+        "edits": [
+          [
+            25841,
+            38666,
+            ""
+          ]
+        ],
+        "previous_sha256": "3d99c55494ae2816bfbc75f5ff8ffdbf56ef2a4634c283e8e6d8ecb435831ead"
+      },
+      "src/artifact_fixups.rs": {
+        "current_sha256": "54cc62cda1e037a2b06d227bfb1753099a91774f129999e6a185a4e72f527dc0",
+        "edits": [
+          [
+            1718,
+            1890,
+            ""
+          ],
+          [
+            2013,
+            2079,
+            "            Self::PcRelative32 { .. } => 4,\n"
+          ],
+          [
+            2350,
+            2410,
+            "            Self::Absolute64 => None,\n"
+          ],
+          [
+            2975,
+            3066,
+            ""
+          ],
+          [
+            4053,
+            4117,
+            ""
+          ],
+          [
+            6920,
+            7620,
+            ""
+          ],
+          [
+            9711,
+            11123,
+            ""
+          ],
+          [
+            12730,
+            12808,
+            "            Encoding::Absolute64 => unreachable!(),\n"
+          ],
+          [
+            21426,
+            25940,
+            ""
+          ]
+        ],
+        "previous_sha256": "9fb44c45a3ac4fe8fe5b2544c116dbb356f0171ef5ce74d3355caeda7457770e"
+      },
+      "src/emission.rs": {
+        "current_sha256": "3e3e41f2e6d876b7a61e43328df9c4d4332f5ff2d55c41fd9612977ce63b21d3",
+        "edits": [
+          [
+            4482,
+            6060,
+            ""
+          ],
+          [
+            6275,
+            6319,
+            ""
+          ],
+          [
+            6754,
+            6785,
+            ""
+          ],
+          [
+            6795,
+            7421,
+            ""
+          ],
+          [
+            12185,
+            12710,
+            ""
+          ],
+          [
+            15043,
+            15966,
+            ""
+          ],
+          [
+            17279,
+            17403,
+            ""
+          ],
+          [
+            18829,
+            18884,
+            ""
+          ],
+          [
+            19230,
+            20388,
+            ""
+          ],
+          [
+            26790,
+            27142,
+            "                metadata\n                    .requirements()\n                    .contains(&ArtifactRequirement::EntryRouterBootstrap)\n"
+          ]
+        ],
+        "previous_sha256": "7eb271d9471d10c99b85d14a5bd33fa9f4787b7d970ad16c26fa6f8289cc7873"
+      },
+      "src/quiescent.rs": {
+        "current_sha256": "ab30b4d2ae671c0ff0133c0507ddbc944849b9c9bf40c03fb509637b0c8964c3",
+        "edits": [
+          [
+            38344,
+            38400,
+            "    request.emission.qualify()?;\n"
+          ]
+        ],
+        "previous_sha256": "b52c1cc3e03885051333f60f06d06c510b604e14d571cf1838df4e20dde9732c"
+      },
+      "src/trampoline.rs": {
+        "current_sha256": "24cee069cec6abcf7f80c9731be6e37cba5934e9d3f414e2e5cce6ad00d554b2",
+        "edits": [
+          [
+            1998,
+            2043,
+            "    ArtifactRequirement,\n"
+          ],
+          [
+            130178,
+            130687,
+            "            bytes = fixups::link_bias_invariant(ImageId(address), &bytes, &fields, &[placement])\n                .map_err(artifact_fixup_error)?;\n"
+          ],
+          [
+            168042,
+            168123,
+            ""
+          ],
+          [
+            168213,
+            168916,
+            ""
+          ],
+          [
+            169416,
+            169502,
+            ""
+          ],
+          [
+            169954,
+            169978,
+            ""
+          ],
+          [
+            170500,
+            170554,
+            "        if !branch && !rip && !absolute {\n"
+          ],
+          [
+            173919,
+            175389,
+            ""
+          ],
+          [
+            175897,
+            176397,
+            "        let encoding = match (absolute, width) {\n            (true, 8) => Encoding::Absolute64,\n            (false, 1) if branch => Encoding::PcRelative8 { next },\n            (false, 4) => Encoding::PcRelative32 { next },\n            _ => {\n                return Err(artifact_error(\n                    \"original operand has unsupported relative width\",\n                ));\n"
+          ],
+          [
+            177867,
+            178169,
+            ""
+          ],
+          [
+            178893,
+            180002,
+            ""
+          ],
+          [
+            180304,
+            180334,
+            ""
+          ],
+          [
+            181013,
+            181055,
+            ""
+          ]
+        ],
+        "previous_sha256": "32dc3b2f9aab5bf9e75c5c7124cadf5bec3ca1692f3ce8c771d3fe429a7e55bd"
+      },
+      "src/trampoline/artifact_allocation.rs": {
+        "current_sha256": "c0031dbd6d0887b744dc91509236c2016106cf524616f097dd9997fb75c498cb",
+        "edits": [
+          [
+            7668,
+            7738,
+            ""
+          ],
+          [
+            7884,
+            7971,
+            "        validate_fields(\n            &self.bytes,\n            self.storage_address(),\n            domain,\n            &self.metadata.fields,\n        )?;\n"
+          ],
+          [
+            10160,
+            10188,
+            ""
+          ],
+          [
+            13517,
+            13587,
+            "    validate_fields(body.bytes(), body.address(), domain, &metadata.fields)?;\n"
+          ],
+          [
+            14950,
+            14981,
+            "fn validate_fields(\n"
+          ],
+          [
+            15031,
+            15069,
+            "    fields: &[ArtifactField],\n"
+          ],
+          [
+            15104,
+            15168,
+            "    let mut ordered: Vec<_> = fields.iter().collect();\n"
+          ],
+          [
+            15962,
+            16161,
+            "            (ArtifactFieldEncoding::Relative, [a, b, c, d]) => {\n                i128::from(i32::from_le_bytes([*a, *b, *c, *d]))\n            }\n"
+          ],
+          [
+            16421,
+            17453,
+            "        let expected = field\n            .target\n            .checked_sub(i128::from(base) + i128::from(field.origin))\n            .ok_or_else(|| invalid(\"artifact field arithmetic overflow\"))?;\n"
+          ]
+        ],
+        "previous_sha256": "ed23100722b011aadaabd7945583d82db0c1c43b00a31b1b14a252b48a580729"
+      },
+      "tools/elf-rewrite/examples/adjacent_b2_support/ledger.rs": {
+        "current_sha256": "b5aaa00903ee90cb550b4e7cd274b4cc47e983d7aff139931bd3ae9ccc447b56",
+        "edits": [
+          [
+            7617,
+            7739,
+            ""
+          ],
+          [
+            8081,
+            8151,
+            ""
+          ]
+        ],
+        "previous_sha256": "4a668c16d1606dccb2748c4545c0a7fae82e11167f4990dca1f1931d47d73d61"
+      },
+      "tools/elf-rewrite/examples/disassembly_sites.rs": {
+        "current_sha256": "42811adf29f92f316abe692cd02a005dc9155f4d738ba474f21946c90e5c8741",
+        "edits": [
+          [
+            2421,
+            2462,
+            ""
+          ],
+          [
+            11420,
+            12362,
+            ""
+          ],
+          [
+            12464,
+            12816,
+            ""
+          ],
+          [
+            18090,
+            18183,
+            ""
+          ],
+          [
+            18598,
+            19023,
+            ""
+          ],
+          [
+            22481,
+            22543,
+            "    let (args, mode) = arguments_with_packed_overlapping(&raw_args)?;\n"
+          ],
+          [
+            23779,
+            23813,
+            ""
+          ],
+          [
+            23874,
+            23933,
+            ""
+          ],
+          [
+            25141,
+            25837,
+            ""
+          ],
+          [
+            35037,
+            37196,
+            ""
+          ]
+        ],
+        "previous_sha256": "aec5ebbd5a61f284114cebbecabd9a515f7eac7aa2883bafd7242930b6eb8ea8"
+      },
+      "tools/elf-rewrite/src/adjacent_b2_frontend.rs": {
+        "current_sha256": "a541c8bd6d24dba03a8509efa8f662766d57b6470afa9c800a18821b1dcf5ca5",
+        "edits": [
+          [
+            11866,
+            11899,
+            ""
+          ],
+          [
+            14486,
+            14574,
+            "    let emission = ArtifactEmission::new(\n        TargetProfile::linux_x86_64_legacy_evex(s.target, s.bias_domain)\n            .map_err(|e| Error::new(\"target\", e))?,\n        SymbolicHook {\n            identity: hook.id,\n            address: Some(hook.pc),\n        },\n        draft.occupied.clone(),\n    );\n"
+          ]
+        ],
+        "previous_sha256": "c2ea2ccd923a8ed5cc0bc83beb604f90503ab34b33fef120a6bd7a26bcd67a90"
+      },
+      "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs": {
+        "current_sha256": "00e02e8e5c4b9677fc2985bf3756dd2d5f6054db38940b3c16f2175d293f7108",
+        "edits": [
+          [
+            41015,
+            41052,
+            ""
+          ]
+        ],
+        "previous_sha256": "fc7eb3d28777c24a3902c61514115fc99913cc2b33764eb3f7dd976f1a1aa25c"
+      },
+      "tools/elf-rewrite/src/disassembly/whole/tests.rs": {
+        "current_sha256": "9e2ca99b39d24ef230bda9a681c3f12c8252579623669bd6cd1471283f26d4f1",
+        "edits": [
+          [
+            83990,
+            110171,
+            ""
+          ]
+        ],
+        "previous_sha256": "33d309f2eab6d63e4c672c42951b3aa63cf55f63418a23cebf5a5221bc5d59ed"
+      },
+      "tools/elf-rewrite/src/fixed_exec.rs": {
+        "current_sha256": "7f559e4d4d2c2fffc608464d12581f9fbeeeb0ab62a9bfcfee13e1dd22906304",
+        "edits": [
+          [
+            0,
+            9428,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "tools/elf-rewrite/src/ledger.rs": {
+        "current_sha256": "225f2d841e666e7164452dcadc2a6acc3e2c6c5f66818195fab94fe83d8604e1",
+        "edits": [
+          [
+            7042,
+            8152,
+            ""
+          ],
+          [
+            8201,
+            8521,
+            ""
+          ],
+          [
+            9440,
+            10224,
+            "                    || value != f.target - i128::from(image.address()) - i128::from(f.origin)\n"
+          ],
+          [
+            21778,
+            22546,
+            ""
+          ]
+        ],
+        "previous_sha256": "79b90df021fbed429da1961a4d02edb1b6f09c6dfd606a9f53f592a193a483ee"
+      },
+      "tools/elf-rewrite/src/lib.rs": {
+        "current_sha256": "1c2ac7bda8affe94ba701f76f15bf23fa29ab6c554789223faa905355d791d63",
+        "edits": [
+          [
+            458,
+            474,
+            ""
+          ],
+          [
+            486,
+            644,
+            ""
+          ],
+          [
+            1426,
+            1472,
+            ""
+          ],
+          [
+            1713,
+            1904,
+            ""
+          ],
+          [
+            11115,
+            11146,
+            ""
+          ],
+          [
+            12459,
+            12490,
+            ""
+          ],
+          [
+            12618,
+            14001,
+            ""
+          ],
+          [
+            17457,
+            17488,
+            ""
+          ],
+          [
+            17756,
+            17778,
+            ""
+          ],
+          [
+            18239,
+            18259,
+            ""
+          ],
+          [
+            18743,
+            18991,
+            ""
+          ],
+          [
+            20025,
+            20161,
+            ""
+          ],
+          [
+            25198,
+            25233,
+            ""
+          ],
+          [
+            27173,
+            27508,
+            ""
+          ],
+          [
+            27843,
+            27945,
+            ""
+          ],
+          [
+            28493,
+            28719,
+            "        let initial_meta = make_metadata(original, s, &reports, true, &profile)?\n            .encode(formats::Limits::default())\n            .map_err(|e| Error::new(\"metadata\", e))?;\n"
+          ],
+          [
+            30854,
+            31494,
+            ""
+          ],
+          [
+            32862,
+            33089,
+            ""
+          ],
+          [
+            34829,
+            34982,
+            "    let metadata = make_metadata(original, s, &reports, false, &profile)?;\n"
+          ],
+          [
+            36058,
+            36081,
+            ""
+          ],
+          [
+            36251,
+            36297,
+            ""
+          ],
+          [
+            36613,
+            36636,
+            ""
+          ],
+          [
+            38009,
+            38097,
+            "        let emission = ArtifactEmission::new(\n            TargetProfile::linux_x86_64_legacy_evex(s.target, s.bias_domain)\n                .map_err(|e| Error::new(\"target\", e))?,\n            SymbolicHook {\n                identity: hook.id,\n                address: Some(hook.pc),\n            },\n            occupied.clone(),\n        );\n"
+          ],
+          [
+            51522,
+            51546,
+            ""
+          ],
+          [
+            52400,
+            52421,
+            "            binding: ContentId::of(&s.manifest),\n"
+          ]
+        ],
+        "previous_sha256": "088b5f8cc6b856eedd43d9b2365d93a2b5b3d4ec204088e3df09befafb28c4a0"
+      }
+    },
+    "sources": {
+      "src/artifact_emission_tests.rs": "5e39b957d9ed8e357ec78de8e5db67670196eb1c05b47eb9876fffcb64f6448d",
+      "src/artifact_fixups.rs": "54cc62cda1e037a2b06d227bfb1753099a91774f129999e6a185a4e72f527dc0",
+      "src/emission.rs": "3e3e41f2e6d876b7a61e43328df9c4d4332f5ff2d55c41fd9612977ce63b21d3",
+      "src/quiescent.rs": "ab30b4d2ae671c0ff0133c0507ddbc944849b9c9bf40c03fb509637b0c8964c3",
+      "src/trampoline.rs": "24cee069cec6abcf7f80c9731be6e37cba5934e9d3f414e2e5cce6ad00d554b2",
+      "src/trampoline/artifact_allocation.rs": "c0031dbd6d0887b744dc91509236c2016106cf524616f097dd9997fb75c498cb",
+      "tools/elf-rewrite/examples/adjacent_b2_support/ledger.rs": "b5aaa00903ee90cb550b4e7cd274b4cc47e983d7aff139931bd3ae9ccc447b56",
+      "tools/elf-rewrite/examples/disassembly_sites.rs": "42811adf29f92f316abe692cd02a005dc9155f4d738ba474f21946c90e5c8741",
+      "tools/elf-rewrite/src/adjacent_b2_frontend.rs": "a541c8bd6d24dba03a8509efa8f662766d57b6470afa9c800a18821b1dcf5ca5",
+      "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs": "00e02e8e5c4b9677fc2985bf3756dd2d5f6054db38940b3c16f2175d293f7108",
+      "tools/elf-rewrite/src/disassembly/whole/tests.rs": "9e2ca99b39d24ef230bda9a681c3f12c8252579623669bd6cd1471283f26d4f1",
+      "tools/elf-rewrite/src/fixed_exec.rs": "7f559e4d4d2c2fffc608464d12581f9fbeeeb0ab62a9bfcfee13e1dd22906304",
+      "tools/elf-rewrite/src/ledger.rs": "225f2d841e666e7164452dcadc2a6acc3e2c6c5f66818195fab94fe83d8604e1",
+      "tools/elf-rewrite/src/lib.rs": "1c2ac7bda8affe94ba701f76f15bf23fa29ab6c554789223faa905355d791d63"
+    },
+    "workspace_changes": {
+      "unit/disassembly_sites/disassembly_sites": {
+        "current": {
+          "ignored": 0,
+          "tests": 18
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 17
+        }
+      },
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 534
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 529
+        }
+      },
+      "unit/liteinst_rewrite/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 205
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 199
+        }
+      }
+    }
+  },
   "source_successor_124521": {
     "added_default_methods": {
       "src/emission/placement/overlap/tests.rs": [
@@ -7733,6 +8525,487 @@
         "previous": {
           "ignored": 0,
           "tests": 192
+        }
+      }
+    }
+  },
+  "source_successor_281c342": {
+    "added_default_methods": {
+      "src/backedge_clock/owned_region/cfg_shared_tests.rs": [
+        "owned_cfg_shared_positive_graphs_and_distinct_scalar_profiles",
+        "owned_cfg_shared_refusals_and_exact_backedge_rosters",
+        "owned_cfg_shared_region_returnability_is_not_added_to_loop",
+        "owned_cfg_shared_size_address_and_supplied_scan_guards"
+      ],
+      "src/control_flow/tests.rs": [
+        "shared_cut_collector_keeps_global_direct_facts_separate_from_local_edges",
+        "shared_cut_collector_preserves_policy_order_and_first_error"
+      ],
+      "tools/elf-rewrite/src/disassembly/tests.rs": [
+        "imported_cuts_keep_cross_region_call_branch_and_xbegin_targets",
+        "imported_cuts_keep_global_contradictions_after_all_ledger_and_entry_checks"
+      ]
+    },
+    "added_feature_methods": {},
+    "added_ignored_methods": {},
+    "base_revision": "6cfa572f2ba8d2cad10077f3674e0cca5de4a084",
+    "current_corpus_sha256": "23558f7669fdd20936fa6144b131b4e3ef227ba6bb164a6def308f193cf812c3",
+    "default_doctest_additions": 0,
+    "default_harness_changes": 0,
+    "default_ignore_changes": 0,
+    "default_method_additions": 8,
+    "default_method_instances": {
+      "src/backedge_clock/owned_region/cfg_shared_tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "src/control_flow/tests.rs": [
+        "unit/liteinst2/lib"
+      ],
+      "tools/elf-rewrite/src/disassembly/tests.rs": [
+        "unit/liteinst_rewrite/lib"
+      ]
+    },
+    "default_method_removals": 0,
+    "feature_method_additions": 0,
+    "feature_method_removals": 0,
+    "incoming_main": "281c34222b484f7bd86e8e9f056cb419a40389a2",
+    "merged_source_tree": "1d6e7cfef932cbc293d5863104cdb10b2b0598d6",
+    "module_chains": {
+      "src/backedge_clock.rs": [
+        "mod owned_loop;",
+        "mod owned_region;"
+      ],
+      "src/backedge_clock/owned_region.rs": [
+        "#[cfg(all(test, target_os = \"linux\", target_arch = \"x86_64\"))]\nmod cfg_shared_tests;"
+      ],
+      "src/control_flow.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "src/lib.rs": [
+        "pub mod backedge_clock;",
+        "pub mod control_flow;"
+      ],
+      "tools/elf-rewrite/src/disassembly.rs": [
+        "#[cfg(test)]\nmod tests;"
+      ],
+      "tools/elf-rewrite/src/lib.rs": [
+        "pub mod disassembly;"
+      ]
+    },
+    "new_method_declarations": 8,
+    "new_sources": [
+      "evaluation/shared-cfg/disassembly-cuts/README.md",
+      "evaluation/shared-cfg/disassembly-cuts/receipt.json",
+      "evaluation/shared-cfg/owned-clock/README.md",
+      "evaluation/shared-cfg/owned-clock/receipt.json",
+      "evaluation/shared-cfg/validate_clock.py",
+      "evaluation/shared-cfg/validate_cuts.py",
+      "src/backedge_clock/owned_region/cfg_shared_tests.rs"
+    ],
+    "newly_bound_sources": [
+      "A3-SHARED-ADMISSION.md",
+      "evaluation/shared-cfg/disassembly-cuts/README.md",
+      "evaluation/shared-cfg/disassembly-cuts/receipt.json",
+      "evaluation/shared-cfg/owned-clock/README.md",
+      "evaluation/shared-cfg/owned-clock/receipt.json",
+      "evaluation/shared-cfg/validate_clock.py",
+      "evaluation/shared-cfg/validate_cuts.py",
+      "src/backedge_clock/owned_loop.rs",
+      "src/backedge_clock/owned_region/cfg_shared_tests.rs"
+    ],
+    "previous_corpus_sha256": "938e4dea4549365758fe8739a424ade40dd9f89a20bed0a9fa8cfde7232b7ebe",
+    "previous_source_tree": "8695270935959f2e41f85acdca7b1da87987d7c5",
+    "recorder_identity_changes": 0,
+    "source_paths": [
+      "A3-SHARED-ADMISSION.md",
+      "evaluation/shared-cfg/disassembly-cuts/README.md",
+      "evaluation/shared-cfg/disassembly-cuts/receipt.json",
+      "evaluation/shared-cfg/owned-clock/README.md",
+      "evaluation/shared-cfg/owned-clock/receipt.json",
+      "evaluation/shared-cfg/validate_clock.py",
+      "evaluation/shared-cfg/validate_cuts.py",
+      "src/backedge_clock/owned_loop.rs",
+      "src/backedge_clock/owned_region.rs",
+      "src/backedge_clock/owned_region/cfg_shared_tests.rs",
+      "src/control_flow.rs",
+      "src/control_flow/tests.rs",
+      "tools/elf-rewrite/src/disassembly.rs",
+      "tools/elf-rewrite/src/disassembly/tests.rs"
+    ],
+    "source_preimages": {
+      "A3-SHARED-ADMISSION.md": {
+        "bytes": 18744,
+        "sha256": "910f6217297b728c65f8c1142d9dc2e767e63d6e13abd2756059641499fe0520"
+      },
+      "evaluation/shared-cfg/disassembly-cuts/README.md": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/shared-cfg/disassembly-cuts/receipt.json": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/shared-cfg/owned-clock/README.md": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/shared-cfg/owned-clock/receipt.json": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/shared-cfg/validate_clock.py": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/shared-cfg/validate_cuts.py": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/backedge_clock/owned_loop.rs": {
+        "bytes": 5048,
+        "sha256": "b3e22850158a77c4f335906d932e9de57c87a4a913c5dbf99c44d2a98993d127"
+      },
+      "src/backedge_clock/owned_region.rs": {
+        "bytes": 7593,
+        "sha256": "08200c9db8b5922f595fe46459b113ab7e2223eb9e45fb6c0f8b7eedd611c432"
+      },
+      "src/backedge_clock/owned_region/cfg_shared_tests.rs": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/control_flow.rs": {
+        "bytes": 12454,
+        "sha256": "7e29c562aeb4203b020e012dfdc506f0aaa0340f1ee43e51a679db241b6e52c5"
+      },
+      "src/control_flow/tests.rs": {
+        "bytes": 4596,
+        "sha256": "e068722fc49af99d32bde17a431bac578a8244acd8be4c869edf19a1a134ab45"
+      },
+      "tools/elf-rewrite/src/disassembly.rs": {
+        "bytes": 27466,
+        "sha256": "c4591382e90efd3cc2cc077029b32ebf096d422859fd79198d09af054b5acda0"
+      },
+      "tools/elf-rewrite/src/disassembly/tests.rs": {
+        "bytes": 81378,
+        "sha256": "8a90fbc676ba9a75cfa698a865effa2cf60077006f9267768cd736d1d78d0786"
+      }
+    },
+    "source_projections": {
+      "A3-SHARED-ADMISSION.md": {
+        "current_sha256": "13e14c269888d38cb4c90de3014ae910658d76e6008b5001184c62dcc1e60664",
+        "edits": [
+          [
+            6474,
+            7118,
+            "separate output adapters. The disassembly ledger importer and back-edge clock\nalso retain graph consumers to consolidate. These changes do not implement\ncertificates or certify complete binary CFG recovery.\n"
+          ],
+          [
+            8389,
+            9032,
+            ""
+          ]
+        ],
+        "previous_sha256": "910f6217297b728c65f8c1142d9dc2e767e63d6e13abd2756059641499fe0520"
+      },
+      "evaluation/shared-cfg/disassembly-cuts/README.md": {
+        "current_sha256": "6a1aabd96b0d2da3702789fb6b440945183470b1226c21461b72581006c93024",
+        "edits": [
+          [
+            0,
+            2560,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/shared-cfg/disassembly-cuts/receipt.json": {
+        "current_sha256": "ba8e71ed5eaee5e6f1ae57919a46508b5ec0c65be0d102cc9bc080ff5ca1453a",
+        "edits": [
+          [
+            0,
+            10514,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/shared-cfg/owned-clock/README.md": {
+        "current_sha256": "501f866f08ba921b629287ee392154ad60366e913c3f651236285281a1c899cb",
+        "edits": [
+          [
+            0,
+            2673,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/shared-cfg/owned-clock/receipt.json": {
+        "current_sha256": "2a6ac863f6b1398927a2c00b6cc63e1d8e76e7461c5a3c95a9fbfd8901bfc8e5",
+        "edits": [
+          [
+            0,
+            9394,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/shared-cfg/validate_clock.py": {
+        "current_sha256": "5ea9b52b2491189c15e2f4ce121244ffe06f51fa1ab0254ef34acfebeca31377",
+        "edits": [
+          [
+            0,
+            2550,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "evaluation/shared-cfg/validate_cuts.py": {
+        "current_sha256": "fec399cb8ff7dde21248061386e9b80f2116c513259f6a3e8a22990b09c8b42d",
+        "edits": [
+          [
+            0,
+            2151,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/backedge_clock/owned_loop.rs": {
+        "current_sha256": "49d6d59e2264f8d120501dab024cfca2ecb4d6ea07335883b2cdc05c8d8109c6",
+        "edits": [
+          [
+            111,
+            136,
+            ""
+          ],
+          [
+            590,
+            590,
+            "    let mut successors = vec![Vec::new(); items.len()];\n"
+          ],
+          [
+            644,
+            708,
+            "    for (index, item) in items.iter().enumerate() {\n"
+          ],
+          [
+            2298,
+            2298,
+            "                successors[index].push(index + 1);\n"
+          ],
+          [
+            3002,
+            3092,
+            "                let destination = items\n                    .iter()\n                    .position(|i| i.address() == target)\n"
+          ],
+          [
+            3872,
+            4070,
+            "                successors[index].push(destination);\n                if instruction.flow_control() == FlowControl::ConditionalBranch {\n                    if index + 1 == items.len() {\n                        return Err(ClockError::Source);\n                    }\n                    successors[index].push(index + 1);\n"
+          ],
+          [
+            4161,
+            4185,
+            "    }\n"
+          ],
+          [
+            4310,
+            4456,
+            "    let mut reached = vec![false; items.len()];\n    let mut pending = vec![0];\n    while let Some(index) = pending.pop() {\n        if !reached[index] {\n            reached[index] = true;\n            pending.extend(successors[index].iter().copied());\n        }\n    }\n"
+          ]
+        ],
+        "previous_sha256": "b3e22850158a77c4f335906d932e9de57c87a4a913c5dbf99c44d2a98993d127"
+      },
+      "src/backedge_clock/owned_region.rs": {
+        "current_sha256": "febbb1364baa177b50d843d09e8118133efcbb2ce5abc43d36c165ae4dcbb400",
+        "edits": [
+          [
+            103,
+            128,
+            ""
+          ],
+          [
+            1466,
+            1466,
+            "    let mut successors = vec![Vec::new(); items.len()];\n"
+          ],
+          [
+            1527,
+            1590,
+            "    for (index, item) in items.iter().enumerate() {\n"
+          ],
+          [
+            2253,
+            2253,
+            "                successors[index].push(index + 1);\n"
+          ],
+          [
+            2977,
+            3067,
+            "                let destination = items\n                    .iter()\n                    .position(|head| head.address() == target)\n"
+          ],
+          [
+            3878,
+            4076,
+            "                successors[index].push(destination);\n                if instruction.flow_control() == FlowControl::ConditionalBranch {\n                    if index + 1 == items.len() {\n                        return Err(ClockError::Source);\n                    }\n                    successors[index].push(index + 1);\n"
+          ],
+          [
+            4167,
+            4191,
+            "    }\n"
+          ],
+          [
+            4283,
+            4429,
+            "    let mut reached = vec![false; items.len()];\n    let mut pending = vec![0];\n    while let Some(index) = pending.pop() {\n        if !reached[index] {\n            reached[index] = true;\n            pending.extend(successors[index].iter().copied());\n        }\n    }\n"
+          ],
+          [
+            4675,
+            4790,
+            "    let mut can_return = vec![false; items.len()];\n    can_return[items.len() - 1] = true;\n    for _ in 0..items.len() {\n        for (index, next) in successors.iter().enumerate() {\n            can_return[index] |= next.iter().any(|&target| can_return[target]);\n        }\n    }\n"
+          ],
+          [
+            7096,
+            7182,
+            ""
+          ]
+        ],
+        "previous_sha256": "08200c9db8b5922f595fe46459b113ab7e2223eb9e45fb6c0f8b7eedd611c432"
+      },
+      "src/backedge_clock/owned_region/cfg_shared_tests.rs": {
+        "current_sha256": "d0f912b297c585d5f28b3edc6ce3cb0ce557fc71f1aaa072e42ee4043c782ef1",
+        "edits": [
+          [
+            0,
+            10148,
+            ""
+          ]
+        ],
+        "previous_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "src/control_flow.rs": {
+        "current_sha256": "ca17cdf45ae2591c8fee867bab2534ceb1ba52a13abaf81a846aed321f14bc53",
+        "edits": [
+          [
+            326,
+            376,
+            "use iced_x86::{FlowControl, OpKind};\n"
+          ],
+          [
+            3554,
+            5530,
+            ""
+          ],
+          [
+            6751,
+            6798,
+            "        let near = (instruction.op_count() > 0\n            && matches!(\n                instruction.op0_kind(),\n                OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64\n            ))\n        .then(|| instruction.near_branch_target());\n"
+          ],
+          [
+            9503,
+            10055,
+            "        let items = self.scan.instructions();\n        let mut cuts = BTreeSet::from([owner.start(), owner.end()]);\n        for (index, (item, row)) in items.iter().zip(&self.rows).enumerate() {\n            let instruction = item.instruction();\n            if instruction.flow_control() != FlowControl::Next\n                && instruction.next_ip() < owner.end()\n            {\n                cuts.insert(instruction.next_ip());\n            }\n            if let Some(Target::Head(target)) = row.branch_target\n                && include_branch(index)\n            {\n                cuts.insert(items[target].address());\n            }\n"
+          ],
+          [
+            10065,
+            10065,
+            "        cuts\n"
+          ]
+        ],
+        "previous_sha256": "7e29c562aeb4203b020e012dfdc506f0aaa0340f1ee43e51a679db241b6e52c5"
+      },
+      "src/control_flow/tests.rs": {
+        "current_sha256": "dc7c724af7534f130255f71c950f84ec6ac8ff202bbd8b5956601af9a36b1ba3",
+        "edits": [
+          [
+            4596,
+            8193,
+            ""
+          ]
+        ],
+        "previous_sha256": "e068722fc49af99d32bde17a431bac578a8244acd8be4c869edf19a1a134ab45"
+      },
+      "tools/elf-rewrite/src/disassembly.rs": {
+        "current_sha256": "021b6e89475ee8f389e4a19a04645d4a3b425aa9544c35e848d10aaa04bd57e3",
+        "edits": [
+          [
+            419,
+            454,
+            "use iced_x86::{Code, FlowControl, Instruction, OpKind};\n"
+          ],
+          [
+            513,
+            540,
+            ""
+          ],
+          [
+            23790,
+            23977,
+            "    let mut cuts: BTreeSet<_> = regions\n        .iter()\n        .flat_map(|r| [r.range.start(), r.range.end()])\n        .collect();\n    for i in regions.iter().flat_map(|r| &r.instructions) {\n        if i.flow_control() != FlowControl::Next {\n            cuts.insert(i.next_ip());\n        }\n        if let Some(target) = direct(i) {\n"
+          ],
+          [
+            24332,
+            24403,
+            "            if heads.contains(&target) {\n                cuts.insert(target);\n            }\n        }\n    }\n"
+          ],
+          [
+            25506,
+            25506,
+            "}\nfn direct(i: &Instruction) -> Option<u64> {\n    if i.op_count() > 0\n        && matches!(\n            i.op0_kind(),\n            OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64\n        )\n    {\n        Some(i.near_branch_target())\n    } else {\n        None\n    }\n"
+          ]
+        ],
+        "previous_sha256": "c4591382e90efd3cc2cc077029b32ebf096d422859fd79198d09af054b5acda0"
+      },
+      "tools/elf-rewrite/src/disassembly/tests.rs": {
+        "current_sha256": "74fbb6e69b2646864205f74299f5d0f4cb22192b77684ab6341d27541573f4a8",
+        "edits": [
+          [
+            81378,
+            85757,
+            ""
+          ]
+        ],
+        "previous_sha256": "8a90fbc676ba9a75cfa698a865effa2cf60077006f9267768cd736d1d78d0786"
+      }
+    },
+    "sources": {
+      "A3-SHARED-ADMISSION.md": "13e14c269888d38cb4c90de3014ae910658d76e6008b5001184c62dcc1e60664",
+      "evaluation/shared-cfg/disassembly-cuts/README.md": "6a1aabd96b0d2da3702789fb6b440945183470b1226c21461b72581006c93024",
+      "evaluation/shared-cfg/disassembly-cuts/receipt.json": "ba8e71ed5eaee5e6f1ae57919a46508b5ec0c65be0d102cc9bc080ff5ca1453a",
+      "evaluation/shared-cfg/owned-clock/README.md": "501f866f08ba921b629287ee392154ad60366e913c3f651236285281a1c899cb",
+      "evaluation/shared-cfg/owned-clock/receipt.json": "2a6ac863f6b1398927a2c00b6cc63e1d8e76e7461c5a3c95a9fbfd8901bfc8e5",
+      "evaluation/shared-cfg/validate_clock.py": "5ea9b52b2491189c15e2f4ce121244ffe06f51fa1ab0254ef34acfebeca31377",
+      "evaluation/shared-cfg/validate_cuts.py": "fec399cb8ff7dde21248061386e9b80f2116c513259f6a3e8a22990b09c8b42d",
+      "src/backedge_clock/owned_loop.rs": "49d6d59e2264f8d120501dab024cfca2ecb4d6ea07335883b2cdc05c8d8109c6",
+      "src/backedge_clock/owned_region.rs": "febbb1364baa177b50d843d09e8118133efcbb2ce5abc43d36c165ae4dcbb400",
+      "src/backedge_clock/owned_region/cfg_shared_tests.rs": "d0f912b297c585d5f28b3edc6ce3cb0ce557fc71f1aaa072e42ee4043c782ef1",
+      "src/control_flow.rs": "ca17cdf45ae2591c8fee867bab2534ceb1ba52a13abaf81a846aed321f14bc53",
+      "src/control_flow/tests.rs": "dc7c724af7534f130255f71c950f84ec6ac8ff202bbd8b5956601af9a36b1ba3",
+      "tools/elf-rewrite/src/disassembly.rs": "021b6e89475ee8f389e4a19a04645d4a3b425aa9544c35e848d10aaa04bd57e3",
+      "tools/elf-rewrite/src/disassembly/tests.rs": "74fbb6e69b2646864205f74299f5d0f4cb22192b77684ab6341d27541573f4a8"
+    },
+    "workspace_changes": {
+      "unit/liteinst2/lib": {
+        "current": {
+          "ignored": 1,
+          "tests": 540
+        },
+        "previous": {
+          "ignored": 1,
+          "tests": 534
+        }
+      },
+      "unit/liteinst_rewrite/lib": {
+        "current": {
+          "ignored": 0,
+          "tests": 207
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 205
         }
       }
     }
@@ -14140,6 +15413,7 @@
     "workspace_changes": {}
   },
   "sources": {
+    "A3-SHARED-ADMISSION.md": "13e14c269888d38cb4c90de3014ae910658d76e6008b5001184c62dcc1e60664",
     "Cargo.lock": "cd3bad97380d53a02b1ff5b17985e5c48af95daff3c7fd96a99aa42d4d2a0f00",
     "Cargo.toml": "2eb81af6c8c354b58a9e54cc4a83a9369af20f276b40072633a1b76b2fca33df",
     "INTERFACES.md": "8b25e5b50512a5db60f38261c48c446fad1b36c46093f5b826729eb65e858d41",
@@ -14171,14 +15445,14 @@
     "evaluation/admission/test_main34c47_inventory.py": "fa2bb240bd7a9fdb6e79f18635ffe959fcd38facf479b882340aab5dca4461a0",
     "evaluation/admission/test_main367_inventory.py": "c073b4c808b703b8bb62e5b0dfbcb031f8d319e0d7ec9cede69750681f4fffdb",
     "evaluation/admission/test_main813_inventory.py": "7823badbd86e65b1597d70cecc64300f44b8880de28666a2dba8ba1554560396",
-    "evaluation/admission/test_main97ab_inventory.py": "0401057094f968ffd5c73b26c26c7599269128b74a01496e06bac0e5d06c823d",
+    "evaluation/admission/test_main97ab_inventory.py": "697a21bc42f99e34405ceeb1fccd7acfe592bd754247774f238ce669d941778f",
     "evaluation/admission/test_main981419_inventory.py": "a75ae36eed8dc312b702821d50c991e126430a4f3e294342d2b43e29cd1ff034",
     "evaluation/admission/test_mainacc247_inventory.py": "9deada610eedcdc46ef6ebba60f58fedcbf0171f382d7895f42c27756afe1c17",
-    "evaluation/admission/test_mainaf81_inventory.py": "7e0428b9868463e63d557e32ac21e5ca932ba60f13661d86e02d6dc872976aa4",
+    "evaluation/admission/test_mainaf81_inventory.py": "d2e497375dd6493a2c3f18aa97df49e9c4f39cd3a14279a532409bcbeab6df49",
     "evaluation/admission/test_mainc712_inventory.py": "f83655db9a2f51f91a3f245e7d04cd52a5bd749bdcf2d52c14d1d4e8c35c0825",
     "evaluation/admission/test_maind8d85_inventory.py": "4151ab35f7f9bdd186c3f961c671697fbbad41b94bca05a4d5175cf734cdd12d",
     "evaluation/admission/test_maindd75_inventory.py": "4bd221188c28323d7af430d1c6e43dd201cd8659001fbeb1449dadb81402c156",
-    "evaluation/admission/test_mainf353_inventory.py": "6707691d3aaac4def7c07e935f31b70b32850b6bd510dc797d7984da587196f9",
+    "evaluation/admission/test_mainf353_inventory.py": "cc64345f558b385451373bbb7f19c98755dafc54515199fe075961e3089bbedc",
     "evaluation/ordinary-call-pair-session/freeze.py": "8c2c36d3f921e75ee5735133e44a1828ff0a5ba6c1d3d1483d09aca469412b89",
     "evaluation/ordinary-call-pair-session/launch.py": "4d93f5b99d8fe2993b6f4a1814972e04158d057d2d829cffe526dcbb118f064b",
     "evaluation/ordinary-call-pair-session/native_receipt.py": "d3e3c7c06e62d179a698ae5336e57cdee9b7a0e986cdc7a0520ec2b40fe5b700",
@@ -14190,21 +15464,29 @@
     "evaluation/ordinary-selected-session/coordinate_controls.py": "0f10ef52165b2252b4120f8a19b84558db018df64986036ab7cd12af8857127a",
     "evaluation/ordinary-selected-session/driver_controls.py": "c366723d09e76e1f0670f313df881d6513be8fe4226079fabf7c1d77570dc67e",
     "evaluation/ordinary-selected-session/reproduce.py": "933e1be206412e7021fab10d13af7a8f8e114471e1420fd1fe05383ac546c67d",
+    "evaluation/shared-cfg/disassembly-cuts/README.md": "6a1aabd96b0d2da3702789fb6b440945183470b1226c21461b72581006c93024",
+    "evaluation/shared-cfg/disassembly-cuts/receipt.json": "ba8e71ed5eaee5e6f1ae57919a46508b5ec0c65be0d102cc9bc080ff5ca1453a",
+    "evaluation/shared-cfg/owned-clock/README.md": "501f866f08ba921b629287ee392154ad60366e913c3f651236285281a1c899cb",
+    "evaluation/shared-cfg/owned-clock/receipt.json": "2a6ac863f6b1398927a2c00b6cc63e1d8e76e7461c5a3c95a9fbfd8901bfc8e5",
+    "evaluation/shared-cfg/validate_clock.py": "5ea9b52b2491189c15e2f4ce121244ffe06f51fa1ab0254ef34acfebeca31377",
+    "evaluation/shared-cfg/validate_cuts.py": "fec399cb8ff7dde21248061386e9b80f2116c513259f6a3e8a22990b09c8b42d",
     "examples/owned_region_clock.rs": "beaf0fa630b31de0bd3a9aa63427c78cc9c99e24ee2c2eab51f400f41fb3b004",
-    "src/artifact_emission_tests.rs": "3d99c55494ae2816bfbc75f5ff8ffdbf56ef2a4634c283e8e6d8ecb435831ead",
-    "src/artifact_fixups.rs": "9fb44c45a3ac4fe8fe5b2544c116dbb356f0171ef5ce74d3355caeda7457770e",
+    "src/artifact_emission_tests.rs": "5e39b957d9ed8e357ec78de8e5db67670196eb1c05b47eb9876fffcb64f6448d",
+    "src/artifact_fixups.rs": "54cc62cda1e037a2b06d227bfb1753099a91774f129999e6a185a4e72f527dc0",
     "src/artifact_overlay_tests.rs": "05b65ce29e2475a90222a5493c8553dfdf51936e7c47f982a9d4fa3cfff71a12",
     "src/backedge_clock.rs": "5242ed3b52ca5a9ea01d8dc785803683dd04e02676edfbc8d58032b6f02e079b",
     "src/backedge_clock/batch.rs": "21fba759a30ce1a88143e9cfaf18c318bf2de2376d4342b36b5e212ca6e331ad",
     "src/backedge_clock/batch/tests.rs": "462b558540076a64bd1973810e46bab62f0ee763a6fe7737c0a9686530eaa86a",
-    "src/backedge_clock/owned_region.rs": "08200c9db8b5922f595fe46459b113ab7e2223eb9e45fb6c0f8b7eedd611c432",
+    "src/backedge_clock/owned_loop.rs": "49d6d59e2264f8d120501dab024cfca2ecb4d6ea07335883b2cdc05c8d8109c6",
+    "src/backedge_clock/owned_region.rs": "febbb1364baa177b50d843d09e8118133efcbb2ce5abc43d36c165ae4dcbb400",
+    "src/backedge_clock/owned_region/cfg_shared_tests.rs": "d0f912b297c585d5f28b3edc6ce3cb0ce557fc71f1aaa072e42ee4043c782ef1",
     "src/backedge_clock/owned_region/tests.rs": "3cb1cb505378787bf4e1fd665477983f7908901f64449227ef20d915f704864d",
     "src/bundle.rs": "82e36a7edb832b33a18ae25e68e1d81b2c3b6ddb21b4620626f40fd66187b9af",
-    "src/control_flow.rs": "7e29c562aeb4203b020e012dfdc506f0aaa0340f1ee43e51a679db241b6e52c5",
-    "src/control_flow/tests.rs": "e068722fc49af99d32bde17a431bac578a8244acd8be4c869edf19a1a134ab45",
+    "src/control_flow.rs": "ca17cdf45ae2591c8fee867bab2534ceb1ba52a13abaf81a846aed321f14bc53",
+    "src/control_flow/tests.rs": "dc7c724af7534f130255f71c950f84ec6ac8ff202bbd8b5956601af9a36b1ba3",
     "src/controls.rs": "13f21abc2980b52aa5bcd8f64be07f4d5433e89bcdea3e1bdadd731ba904eb4a",
     "src/controls/entry_admission.rs": "b30e3fa18423b57be5dea11edd568c3930944e5879784f5625bdc9404e14b1e7",
-    "src/emission.rs": "7eb271d9471d10c99b85d14a5bd33fa9f4787b7d970ad16c26fa6f8289cc7873",
+    "src/emission.rs": "3e3e41f2e6d876b7a61e43328df9c4d4332f5ff2d55c41fd9612977ce63b21d3",
     "src/emission/artifact_frame_tests.rs": "db27456d9816ae84f1a98c8529e136d0e678659322e34fddabce26ef26a4a324",
     "src/emission/placement.rs": "d5f296afd4e076b50af2db43123b543b8bc41d3257df9e2f88b2cf072256496f",
     "src/emission/placement/entry_veneer_tests.rs": "257e424d6e514713e061024101daa08bfea7112206266358990a3bab44eb5058",
@@ -14222,7 +15504,7 @@
     "src/neighbor_overlap/tests.rs": "bc5880f3aff72cf5ea13b29592c7d848a879b5f9a71fabae7667888d027065e8",
     "src/neighbor_short.rs": "eb6870d77c53a5e29d911f0c1674281eafed44c63394364e393ed0bbd7d20897",
     "src/neighbor_short/tests.rs": "29c13e229d449458eb66843618c3429901abb2bd424e7099b931dfb612c95087",
-    "src/quiescent.rs": "b52c1cc3e03885051333f60f06d06c510b604e14d571cf1838df4e20dde9732c",
+    "src/quiescent.rs": "ab30b4d2ae671c0ff0133c0507ddbc944849b9c9bf40c03fb509637b0c8964c3",
     "src/quiescent/clock_region.rs": "be8ab2bfa2ba682361a1f647d51fceb9b43c9a600be3de711da2217c04ff1788",
     "src/quiescent/clock_region/tests.rs": "49decb1a58ab56dec5e00ac1e0797b57962758e4ba1a5aa680b79d81a807fb35",
     "src/quiescent/entry_admission.rs": "c8d4a3f32313f8cd564887a9686a59513ad066304930683362f4886d8adf3745",
@@ -14233,8 +15515,8 @@
     "src/quiescent/whole_function/cfg_tests.rs": "ff9813db6f94cb897434edfdd309d3cb7280ab3ae1c5dec8c64ecc430284b566",
     "src/quiescent/whole_function/tests.rs": "b01841775ab5787eee3784ec28b1715583b6af6c10b17032d0e43c2c1c38cfb1",
     "src/scanner.rs": "d01553acf8633268eb897c5af1687b40d4d7f4aa82ae080ff117db5a5d8e48c6",
-    "src/trampoline.rs": "32dc3b2f9aab5bf9e75c5c7124cadf5bec3ca1692f3ce8c771d3fe429a7e55bd",
-    "src/trampoline/artifact_allocation.rs": "ed23100722b011aadaabd7945583d82db0c1c43b00a31b1b14a252b48a580729",
+    "src/trampoline.rs": "24cee069cec6abcf7f80c9731be6e37cba5934e9d3f414e2e5cce6ad00d554b2",
+    "src/trampoline/artifact_allocation.rs": "c0031dbd6d0887b744dc91509236c2016106cf524616f097dd9997fb75c498cb",
     "src/trampoline/artifact_allocation/tests.rs": "a5ec8b16a83a9b0c51c431161f60490c41f2ad39d29ffe4d8c61e92ab077e0e7",
     "src/trampoline/artifact_jrcxz.rs": "89b78a5c4ff7668ec09b61d7dfcf1bcb5630adfaae57053efa54a710fbc0d713",
     "src/trampoline/clock_region_tests.rs": "76a75d05b1f711dbd4b36d373074309ab6923015b3eec2f9cd7a4db5ed913bb2",
@@ -14300,8 +15582,9 @@
     "tools/elf-rewrite/Cargo.toml": "44f89364d57a07c1f21d94467c0a619ca879d22e776368dfa9eda00c97a93e6d",
     "tools/elf-rewrite/e9-sites-controls.py": "f90efe8819b3e0c06749906b2115cc224fd415d3d3662bef72931bb31f71d7be",
     "tools/elf-rewrite/e9-sites.py": "4270f18a2128543fa0eb1b1982ed8368b77c5216c0926a5012371c8a3a9ea893",
+    "tools/elf-rewrite/examples/adjacent_b2_support/ledger.rs": "b5aaa00903ee90cb550b4e7cd274b4cc47e983d7aff139931bd3ae9ccc447b56",
     "tools/elf-rewrite/examples/common_sites.rs": "cb35ceb5c066c609c49e5aa21761e773e8b9528580bfe2c3f346f0b227705af5",
-    "tools/elf-rewrite/examples/disassembly_sites.rs": "aec5ebbd5a61f284114cebbecabd9a515f7eac7aa2883bafd7242930b6eb8ea8",
+    "tools/elf-rewrite/examples/disassembly_sites.rs": "42811adf29f92f316abe692cd02a005dc9155f4d738ba474f21946c90e5c8741",
     "tools/elf-rewrite/examples/disassembly_sites/whole_tests.rs": "5a1d5ac99bd5c06d569e9e2abeaf81d88731db35713adbd1a369f858cdf27a29",
     "tools/elf-rewrite/examples/full_program_bridge.rs": "2d30be871c76295791bca1d93e92cc4c14fa8c5181ee1357cffce3a953d94742",
     "tools/elf-rewrite/examples/full_program_bridge/input.rs": "e019de40ee87d24915b4071aefb0c03d71126b65da163717e10502efeb7411b6",
@@ -14318,23 +15601,24 @@
     "tools/elf-rewrite/examples/indexed_dso_support/observations.rs": "1537cb75de246ab20a00616fc61b2acb85706f5326ea1e34a5fa93841e566c28",
     "tools/elf-rewrite/examples/indexed_dso_support/runtime.rs": "08278f2d4b5cb044b4ed0442f9e2bf113eb24f6d68b59e61b042cc7e3530a5bc",
     "tools/elf-rewrite/examples/support/common_core_foreign.rs": "d0363b0c396aff6d16258948e5c81ff201e3dbcb165d380c363ddba2066b0891",
-    "tools/elf-rewrite/src/adjacent_b2_frontend.rs": "c2ea2ccd923a8ed5cc0bc83beb604f90503ab34b33fef120a6bd7a26bcd67a90",
+    "tools/elf-rewrite/src/adjacent_b2_frontend.rs": "a541c8bd6d24dba03a8509efa8f662766d57b6470afa9c800a18821b1dcf5ca5",
     "tools/elf-rewrite/src/adjacent_b2_frontend/routed_jmp.rs": "dc910457536b6c637377bf39c1f1c4599dd70aaeaa19759510ac9e0674edccb7",
-    "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs": "fc7eb3d28777c24a3902c61514115fc99913cc2b33764eb3f7dd976f1a1aa25c",
+    "tools/elf-rewrite/src/adjacent_b2_frontend/tests.rs": "00e02e8e5c4b9677fc2985bf3756dd2d5f6054db38940b3c16f2175d293f7108",
     "tools/elf-rewrite/src/carrier/dynamic.rs": "e8894421db22dbd4bc07728abdfc7409688e120fb3ba8536547dcaad4e354ba0",
     "tools/elf-rewrite/src/carrier/dynamic_metadata.rs": "8315e03c460d0bd92a37f88b87b6c75d16694b1a8a4614d4b67f83febd627ea6",
     "tools/elf-rewrite/src/carrier/image_fixtures.rs": "b875b46e44e5dceb921cb89d05b095653864bcb7f9ec522245b177ce5627aaa0",
     "tools/elf-rewrite/src/carrier/mod.rs": "31171dad3debf0c617661f2f1e88eec70db8d9b3e915fd56624525880dd6ce85",
     "tools/elf-rewrite/src/carrier/rx_run_fixtures.rs": "5aaa7e606769219d3093e033325c9632b3f15cc11ce6aec003d2d442741731cd",
     "tools/elf-rewrite/src/carrier/rx_runs.rs": "4b54d2396e5555ab13465a5f46266c7a990013146deea58fa8e2dbb1316f43b2",
-    "tools/elf-rewrite/src/disassembly.rs": "c4591382e90efd3cc2cc077029b32ebf096d422859fd79198d09af054b5acda0",
+    "tools/elf-rewrite/src/disassembly.rs": "021b6e89475ee8f389e4a19a04645d4a3b425aa9544c35e848d10aaa04bd57e3",
     "tools/elf-rewrite/src/disassembly/policy_tests.rs": "727d2b4259e3aa9c87a82d847dfc34437ea96805a16438f2e3be4a4d5537db49",
-    "tools/elf-rewrite/src/disassembly/tests.rs": "8a90fbc676ba9a75cfa698a865effa2cf60077006f9267768cd736d1d78d0786",
+    "tools/elf-rewrite/src/disassembly/tests.rs": "74fbb6e69b2646864205f74299f5d0f4cb22192b77684ab6341d27541573f4a8",
     "tools/elf-rewrite/src/disassembly/whole.rs": "33c59f4baded05e529e1fe4117eef9ceee72b1de7b53fd24568c7cb3ea5c6d5f",
     "tools/elf-rewrite/src/disassembly/whole/policy.rs": "74473dc524db7adde852b27a9afdcfc877626f8ca3ac94b4bf30e432af6e9d61",
-    "tools/elf-rewrite/src/disassembly/whole/tests.rs": "33d309f2eab6d63e4c672c42951b3aa63cf55f63418a23cebf5a5221bc5d59ed",
-    "tools/elf-rewrite/src/ledger.rs": "79b90df021fbed429da1961a4d02edb1b6f09c6dfd606a9f53f592a193a483ee",
-    "tools/elf-rewrite/src/lib.rs": "088b5f8cc6b856eedd43d9b2365d93a2b5b3d4ec204088e3df09befafb28c4a0",
+    "tools/elf-rewrite/src/disassembly/whole/tests.rs": "9e2ca99b39d24ef230bda9a681c3f12c8252579623669bd6cd1471283f26d4f1",
+    "tools/elf-rewrite/src/fixed_exec.rs": "7f559e4d4d2c2fffc608464d12581f9fbeeeb0ab62a9bfcfee13e1dd22906304",
+    "tools/elf-rewrite/src/ledger.rs": "225f2d841e666e7164452dcadc2a6acc3e2c6c5f66818195fab94fe83d8604e1",
+    "tools/elf-rewrite/src/lib.rs": "1c2ac7bda8affe94ba701f76f15bf23fa29ab6c554789223faa905355d791d63",
     "tools/elf-rewrite/src/model.rs": "25ce95f799669f062b774b344afdd0705299665fadd3ba666595a2efb10b191e",
     "tools/elf-rewrite/src/neighbor_catalogue.rs": "546c257b0be1f6fd48128b3fed5ab5f2d32fe3f85cb8fb611747d00d4b7aac9a",
     "tools/elf-rewrite/src/neighbor_catalogue_cfg_tests.rs": "e3977076515f83ee1171a61d009aff724e791640fca2d9b953fbb24cf5e9854d",

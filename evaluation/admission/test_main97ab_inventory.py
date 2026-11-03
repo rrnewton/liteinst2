@@ -67,7 +67,7 @@ def cargo_mutation(test, observed, before, after):
 
 def outer_declaration_mutation(test, path, observed, before, after):
     """Carry the same old stimulus through the two new, exact outer joins."""
-    names = ('79a4b8b', '3217b8ed')
+    names = ('281c342', '064b48c', '79a4b8b', '3217b8ed')
     rows = {name: {} for name in names}
     baseline = current.source_before_65ee8ea(path, observed, 'declaration_outer_baseline')
     if path == 'Cargo.toml':
@@ -108,10 +108,144 @@ def outer_declaration_mutation(test, path, observed, before, after):
 class Main97abInventoryTests(unittest.TestCase):
     def test_exact_native_indexed_sources_and_historical_refusals(self):
         actual = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        # Eight shared-CFG methods extend two existing default harnesses.
+        cfg = current.DATA['source_successor_281c342']
+        cfg_prior = current.before_281c342(actual)
+        cfg_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(cfg_prior), current.CFG_PREVIOUS)
+        self.assertEqual((len(cfg_rows), sum(x['tests'] for x in cfg_rows.values()),
+                          sum(x['ignored'] for x in cfg_rows.values())), (122, 4656, 43))
+        self.assertEqual((cfg['default_method_additions'], cfg['new_method_declarations'],
+                          cfg['default_method_removals'], cfg['default_harness_changes'],
+                          cfg['default_ignore_changes'], cfg['default_doctest_additions'],
+                          cfg['recorder_identity_changes'], cfg['feature_method_additions'],
+                          cfg['feature_method_removals']), (8, 8, 0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(cfg['added_default_methods'], {'src/backedge_clock/owned_region/cfg_shared_tests.rs': ['owned_cfg_shared_positive_graphs_and_distinct_scalar_profiles', 'owned_cfg_shared_refusals_and_exact_backedge_rosters', 'owned_cfg_shared_region_returnability_is_not_added_to_loop', 'owned_cfg_shared_size_address_and_supplied_scan_guards'], 'src/control_flow/tests.rs': ['shared_cut_collector_keeps_global_direct_facts_separate_from_local_edges', 'shared_cut_collector_preserves_policy_order_and_first_error'], 'tools/elf-rewrite/src/disassembly/tests.rs': ['imported_cuts_keep_cross_region_call_branch_and_xbegin_targets', 'imported_cuts_keep_global_contradictions_after_all_ledger_and_entry_checks']})
+        self.assertEqual(cfg['default_method_instances'], {'src/backedge_clock/owned_region/cfg_shared_tests.rs': ['unit/liteinst2/lib'], 'src/control_flow/tests.rs': ['unit/liteinst2/lib'], 'tools/elf-rewrite/src/disassembly/tests.rs': ['unit/liteinst_rewrite/lib']})
+        self.assertEqual((cfg['added_feature_methods'], cfg['added_ignored_methods']), ({}, {}))
+        self.assertEqual((len(cfg['source_paths']), len(cfg['source_projections'])), (14, 14))
+        self.assertEqual(cfg['new_sources'], ['evaluation/shared-cfg/disassembly-cuts/README.md', 'evaluation/shared-cfg/disassembly-cuts/receipt.json', 'evaluation/shared-cfg/owned-clock/README.md', 'evaluation/shared-cfg/owned-clock/receipt.json', 'evaluation/shared-cfg/validate_clock.py', 'evaluation/shared-cfg/validate_cuts.py', 'src/backedge_clock/owned_region/cfg_shared_tests.rs'])
+        self.assertEqual(cfg['newly_bound_sources'], ['A3-SHARED-ADMISSION.md', 'evaluation/shared-cfg/disassembly-cuts/README.md', 'evaluation/shared-cfg/disassembly-cuts/receipt.json', 'evaluation/shared-cfg/owned-clock/README.md', 'evaluation/shared-cfg/owned-clock/receipt.json', 'evaluation/shared-cfg/validate_clock.py', 'evaluation/shared-cfg/validate_cuts.py', 'src/backedge_clock/owned_loop.rs', 'src/backedge_clock/owned_region/cfg_shared_tests.rs'])
+        self.assertEqual(cfg_prior['harness_test_counts']['serial_launch'], actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((actual['recorder_tests'], cfg_prior['recorder_tests']), (366, 366))
+        for name, change in cfg['workspace_changes'].items():
+            self.assertEqual(cfg_rows[name], change['current'])
+            self.assertEqual(cfg_prior['harness_test_counts']['workspace_tests'][name], change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(cfg_rows[name][field]), cfg_rows[name][field] + 1):
+                    wrong = copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_281c342(wrong)
+            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_281c342(wrong)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_281c342(cfg_prior)
+        for path, row in cfg['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_281c342(path, raw, 'cfg_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (cfg['source_preimages'][path]['bytes'], row['previous_sha256']))
+            if path in cfg['new_sources']:
+                self.assertEqual(prior, b'')
+            for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^cfg_source_inverse$'):
+                    current.source_before_281c342(path, wrong, 'cfg_source_inverse')
+            for field in ('edits', 'current_sha256', 'previous_sha256'):
+                malformed = copy.deepcopy(row)
+                if field == 'edits': malformed['edits'][0][2] += '\n'
+                else: malformed[field] = '0' * 64
+                with patch.dict(cfg['source_projections'], {path: malformed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^cfg_source_inverse$'):
+                        current.source_before_281c342(path, raw, 'cfg_source_inverse')
+        read = Path.read_bytes
+        cfg_stimuli = [(p, 'fn ' + n + '(') for p, names in cfg['added_default_methods'].items() for n in names]
+        cfg_stimuli += [(p, literal) for p, literals in cfg['module_chains'].items() for literal in literals]
+        for path, literal in cfg_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            replacement = literal.replace('(', '_wrong(', 1) if literal.startswith('fn ') else literal[:-1] + ('x' if literal[-1] != 'x' else 'y')
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('cfg declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
+        # Twelve fixed-ET_EXEC methods extend three existing default harnesses.
+        fixed = current.DATA['source_successor_064b48c']
+        fixed_prior = current.before_064b48c(actual)
+        fixed_rows = cfg_prior['harness_test_counts']['workspace_tests']
+        self.assertEqual(current.digest(fixed_prior), current.FIXED_PREVIOUS)
+        self.assertEqual((len(fixed_rows), sum(x['tests'] for x in fixed_rows.values()),
+                          sum(x['ignored'] for x in fixed_rows.values())), (122, 4648, 43))
+        self.assertEqual((fixed['default_method_additions'], fixed['new_method_declarations'],
+                          fixed['default_method_removals'], fixed['default_harness_changes'],
+                          fixed['default_ignore_changes'], fixed['default_doctest_additions'],
+                          fixed['recorder_identity_changes'], fixed['feature_method_additions'],
+                          fixed['feature_method_removals']), (12, 12, 0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(fixed['added_default_methods'], {'src/artifact_emission_tests.rs': ['fixed_exec_indexed_jump_producer_preserves_signed_fields_and_default_refusals', 'fixed_exec_keeps_non_jump_and_truncated_indexed_operand_refusals', 'fixed_exec_original_error_order_and_prepared_binding_remain_exact', 'fixed_exec_nop5_cannot_erase_binding_through_legacy_unwind_export'], 'src/artifact_fixups.rs': ['fixed_signed32_is_preserved_only_under_explicit_domain_and_exact_bytes'], 'tools/elf-rewrite/examples/disassembly_sites.rs': ['fixed_exec_selector_is_explicit_and_preserves_legacy_parsers'], 'tools/elf-rewrite/src/disassembly/whole/tests.rs': ['fixed_exec_actual_indexed_encoder_carrier_route_and_legacy_refusals', 'fixed_exec_binding_keeps_complete_atomic_refusals_and_both_pair_obligations', 'fixed_exec_writer_rejects_wrong_source_type_entry_and_original_load_records', 'fixed_exec_real_rela_write_on_original_disp32_refuses_after_core_success', 'fixed_exec_portable_and_embedded_metadata_require_exact_binding_policy', 'fixed_exec_readback_uses_actual_low_gap_high_interleaved_header_map']})
+        self.assertEqual(fixed['default_method_instances'], {'src/artifact_emission_tests.rs': ['unit/liteinst2/lib'], 'src/artifact_fixups.rs': ['unit/liteinst2/lib'], 'tools/elf-rewrite/examples/disassembly_sites.rs': ['unit/disassembly_sites/disassembly_sites'], 'tools/elf-rewrite/src/disassembly/whole/tests.rs': ['unit/liteinst_rewrite/lib']})
+        self.assertEqual((fixed['added_feature_methods'], fixed['added_ignored_methods']), ({}, {}))
+        self.assertEqual((len(fixed['source_paths']), len(fixed['source_projections'])), (14, 14))
+        self.assertEqual(fixed['new_sources'], ['tools/elf-rewrite/src/fixed_exec.rs'])
+        self.assertEqual(fixed['newly_bound_sources'], ['tools/elf-rewrite/examples/adjacent_b2_support/ledger.rs', 'tools/elf-rewrite/src/fixed_exec.rs'])
+        self.assertEqual(fixed_prior['harness_test_counts']['serial_launch'], actual['harness_test_counts']['serial_launch'])
+        self.assertEqual((actual['recorder_tests'], fixed_prior['recorder_tests']), (366, 366))
+        for name, change in fixed['workspace_changes'].items():
+            self.assertEqual(fixed_rows[name], change['current'])
+            self.assertEqual(fixed_prior['harness_test_counts']['workspace_tests'][name], change['previous'])
+            for field in ('tests', 'ignored'):
+                for value in (None, True, float(fixed_rows[name][field]), fixed_rows[name][field] + 1):
+                    wrong = copy.deepcopy(actual)
+                    wrong['harness_test_counts']['workspace_tests'][name][field] = value
+                    self.assertNotEqual(current.digest(wrong), current.digest(actual))
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                        current.before_064b48c(wrong)
+            wrong = copy.deepcopy(actual); del wrong['harness_test_counts']['workspace_tests'][name]
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+                current.before_064b48c(wrong)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_inventory_differs$'):
+            current.before_064b48c(fixed_prior)
+        for path, row in fixed['source_projections'].items():
+            raw = (current.ROOT / path).read_bytes()
+            prior = current.source_before_064b48c(path, raw, 'fixed_source_inverse')
+            self.assertEqual((len(prior), hashlib.sha256(prior).hexdigest()),
+                             (fixed['source_preimages'][path]['bytes'], row['previous_sha256']))
+            if path in fixed['new_sources']:
+                self.assertEqual(prior, b'')
+            for wrong in (raw + b'\n', raw[:-1], prior, bytearray(raw), raw.decode()):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^fixed_source_inverse$'):
+                    current.source_before_064b48c(path, wrong, 'fixed_source_inverse')
+            for field in ('edits', 'current_sha256', 'previous_sha256'):
+                malformed = copy.deepcopy(row)
+                if field == 'edits': malformed['edits'][0][2] += '\n'
+                else: malformed[field] = '0' * 64
+                with patch.dict(fixed['source_projections'], {path: malformed}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^fixed_source_inverse$'):
+                        current.source_before_064b48c(path, raw, 'fixed_source_inverse')
+        read = Path.read_bytes
+        fixed_stimuli = [(p, 'fn ' + n + '(') for p, names in fixed['added_default_methods'].items() for n in names]
+        fixed_stimuli += [(p, literal) for p, literals in fixed['module_chains'].items() for literal in literals]
+        for path, literal in fixed_stimuli:
+            target = current.ROOT / path; raw = read(target)
+            self.assertEqual(raw.count(literal.encode()), 1)
+            replacement = literal.replace('(', '_wrong(', 1) if literal.startswith('fn ') else literal[:-1] + ('x' if literal[-1] != 'x' else 'y')
+            wrong = raw.replace(literal.encode(), replacement.encode())
+            self.assertNotEqual(wrong, raw)
+            def changed(candidate): return wrong if candidate == target else read(candidate)
+            with patch.object(Path, 'read_bytes', changed), \
+                 patch.dict(current.DATA['sources'], {path: hashlib.sha256(wrong).hexdigest()}), \
+                 patch.object(current, 'source_before', side_effect=lambda p,b,e: b if p != path else (_ for _ in ()).throw(AssertionError('fixed declaration gate omitted'))):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^main97ab_source_inventory_differs$'):
+                    current.require_sources()
         # Nine direct-input/CFG methods extend three existing default harnesses.
         direct = current.DATA['source_successor_79a4b8b']
         direct_prior = current.before_79a4b8b(actual)
-        direct_rows = actual['harness_test_counts']['workspace_tests']
+        direct_rows = fixed_prior['harness_test_counts']['workspace_tests']
         self.assertEqual(current.digest(direct_prior), current.DIRECT_PREVIOUS)
         self.assertEqual((len(direct_rows), sum(x['tests'] for x in direct_rows.values()),
                           sum(x['ignored'] for x in direct_rows.values())), (122, 4636, 43))
@@ -2092,6 +2226,42 @@ class Main97abInventoryTests(unittest.TestCase):
                 with patch.dict(change, previous=PublishedCopy(change['previous'])):
                     result = current.before_79a4b8b(supplied)
             self.assertEqual(result, direct_prior)
+            self.assertEqual(supplied, actual)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+
+        # The latest transition preserves private ownership for both sources.
+        for source in ('declared', 'metadata'):
+            supplied = copy.deepcopy(actual)
+            change = fixed['workspace_changes']['unit/liteinst_rewrite/lib']
+            published.clear()
+            if source == 'declared':
+                supplied['harness_test_counts']['serial_launch'] = PublishedCopy(supplied['harness_test_counts']['serial_launch'])
+                result = current.before_064b48c(supplied)
+            else:
+                with patch.dict(change, previous=PublishedCopy(change['previous'])):
+                    result = current.before_064b48c(supplied)
+            self.assertEqual(result, fixed_prior)
+            self.assertEqual(supplied, actual)
+            self.assertEqual(len(published), 1)
+            self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
+            self.assertFalse(mutable_ids(result) & mutable_ids(published[0]))
+            self.assertFalse(mutable_ids(result) & mutable_ids(current.DATA))
+
+        # The latest transition preserves private ownership for both sources.
+        for source in ('declared', 'metadata'):
+            supplied = copy.deepcopy(actual)
+            change = cfg['workspace_changes']['unit/liteinst_rewrite/lib']
+            published.clear()
+            if source == 'declared':
+                supplied['harness_test_counts']['serial_launch'] = PublishedCopy(supplied['harness_test_counts']['serial_launch'])
+                result = current.before_281c342(supplied)
+            else:
+                with patch.dict(change, previous=PublishedCopy(change['previous'])):
+                    result = current.before_281c342(supplied)
+            self.assertEqual(result, cfg_prior)
             self.assertEqual(supplied, actual)
             self.assertEqual(len(published), 1)
             self.assertFalse(mutable_ids(result) & mutable_ids(supplied))
