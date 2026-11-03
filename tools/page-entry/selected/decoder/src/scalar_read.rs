@@ -153,7 +153,7 @@ fn one(pc: u64, source: &[u8], call: &arena::Call) -> Result<Description, u32> {
     let refused = |reason| Description { decoded, version: READ_VERSION, refusal: reason, ..Description::default() };
     if decoded.decode_status != abi::VALID { return Ok(refused(old.refusal)); }
     if !canonical(pc) || !canonical(decoded.next_pc) { return Ok(refused(ADDRESS)); }
-    let mut decoder = Decoder::with_ip(64, source, pc, DecoderOptions::NONE);
+    let mut decoder = x86::decoder64(source, pc);
     let ins = decoder.decode();
     if ins.is_invalid() || ins.code() as u32 != decoded.code || ins.len() as u32 != decoded.length
         || ins.next_ip() != decoded.next_pc || decoded.kind != abi::NONE { return Ok(refused(EFFECTS)); }

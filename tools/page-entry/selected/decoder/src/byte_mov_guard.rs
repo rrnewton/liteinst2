@@ -38,7 +38,7 @@ fn one(pc: u64, source: &[u8]) -> Result<Store, u32> {
         || instruction.has_lock_prefix() || instruction.has_rep_prefix() || instruction.has_repne_prefix()
         || !matches!(instruction.memory_segment(), Register::DS | Register::SS)
         || instruction.segment_prefix() != Register::None { return Ok(out); }
-    let mut decoder = Decoder::with_ip(64, source, pc, DecoderOptions::NONE);
+    let mut decoder = x86::decoder64(source, pc);
     let again = decoder.decode();
     if again != instruction { return Ok(out); }
     let constants = decoder.get_constant_offsets(&again);
