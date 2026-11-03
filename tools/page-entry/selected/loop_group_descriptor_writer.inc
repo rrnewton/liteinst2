@@ -11,7 +11,7 @@ struct lgd_epochs {
     uint64_t initialized,poisoned,next_id;
     uint64_t root,certificate[LI2_PGD_RECEIPTS],cell[LI2_PGD_RECEIPTS],capsule[LI2_PGD_RECEIPTS];
     uint64_t lhc_writer;
-    uint64_t publication[LI2_PTR_SLOTS],manifest,directory;
+    uint64_t publication[PTR_NODE_COUNT],manifest,directory;
     uint64_t invalidations,unclassified,overflows;
     struct lgd_common_token common[LI2_PGD_RECEIPTS];
 };
@@ -23,7 +23,12 @@ _Static_assert(sizeof(struct lgd_epochs)<=PAGE && sizeof lgd_writer==PAGE,
     "writer epochs have their own complete protected page");
 static uintptr_t lgd_manifest_address(void);
 static size_t lgd_manifest_bytes(void);
-static void lgd_poison(void) { lgd_writer.value.poisoned=1; }
+static void lgd_poison(void) {
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    lta_poison();
+#endif
+    lgd_writer.value.poisoned=1;
+}
 static void lgd_advance(uint64_t *value) {
     if(*value==UINT64_MAX) {
         lgd_poison();
@@ -34,6 +39,9 @@ static int lgd_overlaps(uintptr_t first,uintptr_t end,uintptr_t at,size_t bytes)
     return bytes && at<=UINTPTR_MAX-bytes && first<at+bytes && at<end;
 }
 static void lgd_writer_range(uintptr_t first,size_t bytes) {
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    lta_writer_range(first,bytes);
+#endif
     if(bytes && first<=UINTPTR_MAX-bytes && first+bytes<=UINTPTR_MAX-(PAGE-1U) &&
        lgd_overlaps(first&~(uintptr_t)(PAGE-1U),
            (first+bytes+PAGE-1U)&~(uintptr_t)(PAGE-1U),(uintptr_t)&lgd_writer,sizeof lgd_writer)) {
@@ -41,6 +49,9 @@ static void lgd_writer_range(uintptr_t first,size_t bytes) {
     }
 }
 static void lgd_exposure(uintptr_t first,size_t bytes) {
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    lta_exposure(first,bytes);
+#endif
     if(!bytes)return; /* A zero-length kernel operation changes no mapping. */
     /* Include the complete last page the kernel could affect. Overflow is a
        permanent loss of reuse, never a wrapped apparently-disjoint range. */
@@ -62,15 +73,15 @@ static void lgd_exposure(uintptr_t first,size_t bytes) {
         LGD_EXPOSE(&pe.domain.completion[i],sizeof pe.domain.completion[i],lgd_writer.value.cell[i]);
         LGD_EXPOSE(&lhc.capsule[i],sizeof lhc.capsule[i],lgd_writer.value.capsule[i]);
     }
-    for(unsigned i=0;i<LI2_PTR_SLOTS;i++) {
+    for(unsigned i=0;i<PTR_NODE_COUNT;i++) {
         /* sg_owner contains the immutable SBC issuance identity. It changes
            only on real publication/writer transitions; conservatively retire
            every group publication reference before any such root exposure. */
         LGD_EXPOSE(&sg_owner,sizeof sg_owner,lgd_writer.value.publication[i]);
-        LGD_EXPOSE(&pe.retained[i].publication,PE_PROOF_BYTES,lgd_writer.value.publication[i]);
-        LGD_EXPOSE(pe.retained[i].proof,PE_PROOF_BYTES,lgd_writer.value.publication[i]);
+        LGD_EXPOSE(&PTR_NODE_AT(i).publication,PE_PROOF_BYTES,lgd_writer.value.publication[i]);
+        LGD_EXPOSE(PTR_NODE_AT(i).proof,PE_PROOF_BYTES,lgd_writer.value.publication[i]);
         for(unsigned bank=0;bank<2;bank++)
-            LGD_EXPOSE(pe.retained[i].banks[bank].generated,PE_CODE_BYTES,lgd_writer.value.publication[i]);
+            LGD_EXPOSE(PTR_NODE_AT(i).banks[bank].generated,PE_CODE_BYTES,lgd_writer.value.publication[i]);
     }
     LGD_EXPOSE(lgd_manifest_address(),lgd_manifest_bytes(),lgd_writer.value.manifest);
     LGD_EXPOSE(pe.domain.directory,LI2_JD_DOMAIN_BYTES,lgd_writer.value.directory);

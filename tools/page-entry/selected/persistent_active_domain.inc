@@ -2,12 +2,12 @@
    under one source/rseq lifetime. These helpers never run on an internal edge. */
 static void pda_select(unsigned slot,unsigned bank) {
     pe_need(slot<LI2_PTR_SLOTS && bank<2,PE_STATE,80);
-    pe.selected_slot=slot;pe.selection=pe.retained[slot].identity;pe.selected_bank=bank;
+    pe.selected_slot=slot;pe.selection=PTR_SLOT_AT(slot).identity;pe.selected_bank=bank;
     pe_need(ptr_selected(),PE_STATE,81);
 }
 static unsigned pda_bank(unsigned slot) {
     if(slot>=LI2_PTR_SLOTS)return 2;
-    const struct li2_ptr_slot *s=&pe.retained[slot];unsigned found=2;
+    const struct li2_ptr_slot *s=&PTR_SLOT_AT(slot);unsigned found=2;
     for(unsigned i=0;i<2;i++)if(s->generation.generated==s->banks[i].generated &&
         pg_layout_equal(&s->generation.layout,&s->banks[i].layout)) {
         if(found!=2)return 2;
@@ -178,6 +178,10 @@ static int pda_receipt(const struct pda_completion *c) {
         const struct li2_pg_generation *g=&m->generation;
         const struct li2_pgd_ref *v=&m->identity;
         if(v->slot>=LI2_PTR_SLOTS || v->bank>1 || !v->generation || !v->root ||
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+           v->node>=PTR_NODE_COUNT || v->node_reserved || !v->binding_generation ||
+           v->binding_generation>pe.arena.next_binding ||
+#endif
 #ifndef LI2_LOOP_CACHE8
            (i && (v->slot==c->member[0].identity.slot || v->generation==c->member[0].identity.generation)) ||
 #endif
@@ -229,6 +233,10 @@ static int pda_receipt(const struct pda_completion *c) {
            !pg_query_complete(&g->cell[2].mapping,g->spill,PAGE,PROT_READ|PROT_WRITE))return 0;
 #ifdef LI2_LOOP_CACHE8
         for(unsigned j=0;j<i;j++)if(v->slot==c->member[j].identity.slot ||
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+            v->node==c->member[j].identity.node ||
+            v->binding_generation==c->member[j].identity.binding_generation ||
+#endif
             v->generation==c->member[j].identity.generation)return 0;
 #endif
         /* Independent source/controller queries retain distinct actual maps
@@ -285,6 +293,9 @@ static int pda_receipt(const struct pda_completion *c) {
 }
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR
 static int pda_receipt(const struct pda_completion *c) {
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    if(!lta_topology_live())return 0;
+#endif
     return lgd_common_value(c) && lhc_direct_value(c);
 }
 #endif
@@ -296,7 +307,7 @@ static int pda_receipt(const struct pda_completion *c) {
 #endif
 static int pda_permitted(unsigned slot) {
     if(slot>=LI2_PTR_SLOTS || !ptr_storage())return 0;
-    const struct li2_ptr_slot *s=&pe.retained[slot];const struct li2_pgd_claim *q=&s->claim;
+    const struct li2_ptr_slot *s=&PTR_SLOT_AT(slot);const struct li2_pgd_claim *q=&s->claim;
     if(q->valid!=1 || q->reserved || q->cell>=LI2_PGD_RECEIPTS || q->member>=LI2_PGD_MEMBERS ||
        !q->id || s->permit.valid || !ptr_stored(slot))return 0;
     const struct pda_completion *c=&pe.domain.completion[q->cell];
@@ -305,6 +316,10 @@ static int pda_permitted(unsigned slot) {
        (pe.domain.claimed[q->cell]&(1U<<q->member)))return 0;
     const struct pda_member_completion *m=&c->member[q->member];
     if(m->identity.slot!=slot || m->identity.generation!=s->identity.generation ||
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+       m->identity.node!=ptr_node_index(slot) || m->identity.node_reserved ||
+       m->identity.binding_generation!=pe.arena.binding[slot].generation ||
+#endif
        m->identity.proof!=s->proof || s->last_completed!=c->serial ||
        !equal(&m->generation,&s->generation,sizeof s->generation) ||
        !equal(&m->header,&s->publication.header,sizeof m->header) ||
@@ -319,7 +334,7 @@ static int pda_permitted(unsigned slot) {
 }
 static void pda_claim(unsigned slot) {
     pe_need(pda_permitted(slot),PE_RELEASE,80);
-    struct li2_pgd_claim *q=&pe.retained[slot].claim;
+    struct li2_pgd_claim *q=&PTR_SLOT_AT(slot).claim;
     pe.domain.claimed[q->cell]|=1U<<q->member;
     *q=(struct li2_pgd_claim){0};
 }
@@ -347,8 +362,8 @@ static void pda_initialize(void) {
 }
 static int pda_registry(unsigned slot) {
     return slot<LI2_PTR_SLOTS && protected_count<=RANGES &&
-        pe.retained[slot].registry_count==protected_count &&
-        equal(pe.retained[slot].registry,protected,protected_count*sizeof *protected);
+        PTR_SLOT_AT(slot).registry_count==protected_count &&
+        equal(PTR_SLOT_AT(slot).registry,protected,protected_count*sizeof *protected);
 }
 static int pda_registration(const struct pe_payload *p) {
     const struct li2_pg_rseq_progress *r=li2_pg_rseq_progress();
@@ -370,6 +385,9 @@ static int pda_disjoint(const struct li2_pg_compact *a,const struct li2_pg_compa
     for(unsigned i=0;i<a->exits;i++)for(unsigned j=0;j<b->exits;j++)if(a->exit_pc[i]==b->exit_pc[j])return 0;
     return 1;
 }
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+#include "loop_translation_arena_owner.inc"
+#endif
 #ifdef LI2_LOOP_CACHE8
 #include "loop_cache8_owner.inc"
 #endif
@@ -381,7 +399,7 @@ static void pda_offer_peer(void) {
 #else
     if(!pe.warm)return; /* A new cold certificate cannot expand its activation. */
     unsigned peer=1U-pe.selected_slot;
-    const struct li2_ptr_slot *s=&pe.retained[peer];
+    const struct li2_ptr_slot *s=&PTR_SLOT_AT(peer);
     if(!s->generation.installed)return;
     pe_need(pda_permitted(peer),PE_RELEASE,82);
     const struct pe_payload *p=(const void *)s->proof;
@@ -398,9 +416,13 @@ static void pda_offer_peer(void) {
 static int pda_member_live(const struct li2_pgd_member *m) {
     const struct li2_pgd_ref *v=&m->identity;
     if(v->slot>=LI2_PTR_SLOTS || v->bank>1 || !v->generation || !ptr_storage())return 0;
-    const struct li2_ptr_slot *s=&pe.retained[v->slot];const struct li2_pg_generation *g=&s->generation;
+    const struct li2_ptr_slot *s=&PTR_SLOT_AT(v->slot);const struct li2_pg_generation *g=&s->generation;
     const struct pe_payload *p=(const void *)s->proof;
     return ptr_stored(v->slot) && v->generation==s->identity.generation && v->generation==g->generation &&
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+        v->node==ptr_node_index(v->slot) && !v->node_reserved &&
+        v->binding_generation==pe.arena.binding[v->slot].generation &&
+#endif
         v->proof==s->proof && v->root==p->source.entry && m->plan==&p->plan && m->key==&p->source &&
         pg_layout_equal(&v->layout,&g->layout) && pg_layout_equal(&v->layout,&s->banks[v->bank].layout) &&
         v->layout.directory==pe.domain.directory && pda_registry(v->slot) && pda_registration(p);
@@ -454,9 +476,12 @@ const struct li2_pgd_view *li2_pgx_owner_offer(const struct li2_pg_token *t) {
 static void pda_member(unsigned at,unsigned slot) {
     struct pda_work *w=&pe.domain.work;unsigned bank=pda_bank(slot);
     pe_need(at<LI2_PGD_MEMBERS && slot<LI2_PTR_SLOTS && bank<2,PE_STATE,86);
-    struct li2_ptr_slot *s=&pe.retained[slot];const struct pe_payload *p=(const void *)s->proof;
+    struct li2_ptr_slot *s=&PTR_SLOT_AT(slot);const struct pe_payload *p=(const void *)s->proof;
     w->view.member[at]=(struct li2_pgd_member){
         .identity={.generation=s->identity.generation,.slot=slot,.bank=bank,
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+            .node=ptr_node_index(slot),.binding_generation=pe.arena.binding[slot].generation,
+#endif
             .proof=s->proof,.root=p->source.entry,.layout=s->generation.layout},
         .plan=&p->plan,.key=&p->source};
 }
@@ -605,7 +630,7 @@ static int pda_bind(const ucontext_t *uc) {
 #endif
     for(unsigned i=0;i<w->view.count;i++) {
         const struct li2_pgd_member *m=&w->view.member[i];
-        struct li2_pg_generation *g=&pe.retained[m->identity.slot].generation;
+        struct li2_pg_generation *g=&PTR_SLOT_AT(m->identity.slot).generation;
         if(g->domain_refs || g->linked || g->active_refs)return PE_STATE;
         pda_select(m->identity.slot,m->identity.bank);
         if(pe_bytes())return PE_PUBLICATION;
@@ -708,7 +733,7 @@ static int pda_ready(unsigned linked) {
 #endif
     for(unsigned i=0;i<w->view.count;i++) {
         const struct li2_pgd_ref *v=&w->view.member[i].identity;
-        const struct li2_pg_generation *g=&pe.retained[v->slot].generation;
+        const struct li2_pg_generation *g=&PTR_SLOT_AT(v->slot).generation;
         if(g->domain_refs!=1 || g->active_refs!=linked || g->member_refs[0]!=linked ||
            g->member_refs[1]!=linked || !ptr_slots(v->slot,linked))return 0;
         uint64_t incoming[2]={0,0};
@@ -943,10 +968,10 @@ static int pda_drain(const struct li2_pg_token *t) {
     /* First close EVERY bank. No reset/ref release can precede the last NX. */
     for(unsigned i=0;i<w->view.count;i++) {
         const struct li2_pgd_ref *v=&w->view.member[i].identity;
-        struct li2_pg_generation *g=&pe.retained[v->slot].generation;unsigned pages=0;
+        struct li2_pg_generation *g=&PTR_SLOT_AT(v->slot).generation;unsigned pages=0;
         int e=pg_permissions(&g->layout,PROT_READ,g->close,&pages);if(e)return e;
         if(pages!=17 || !pg_closed(&g->layout,g->close))return PE_PUBLICATION;
-        pe.retained[v->slot].banks[v->bank].prot=PROT_READ;pe.p.closed_pages+=pages;
+        PTR_SLOT_AT(v->slot).banks[v->bank].prot=PROT_READ;pe.p.closed_pages+=pages;
     }
     if(pe.p.closed_pages!=17U*w->view.count)return PE_PUBLICATION;
 #endif
@@ -967,7 +992,7 @@ static int pda_drain(const struct li2_pg_token *t) {
     if(pe.final_fetch.held || pe.final_fetch.complete!=1 || pe.final_fetch.first_error ||
        pe.final_fetch.sequence!=pe.ref.sequence)return PE_RELEASE;
     if(li2_pg_rseq_close(t,&pe.after.uc))return PE_RSEQ;
-    for(unsigned i=0;i<w->view.count;i++)pe.retained[w->view.member[i].identity.slot].generation.domain_refs=0;
+    for(unsigned i=0;i<w->view.count;i++)PTR_SLOT_AT(w->view.member[i].identity.slot).generation.domain_refs=0;
     pe.p.registration_rechecked=1;pe.p.phase=LI2_PG_CLOSED;return 0;
 }
 static void pda_complete(void) {
@@ -994,7 +1019,7 @@ static void pda_complete(void) {
     copy(c->rx.code,w->rx_quiet,sizeof c->rx.code);
 #endif
     for(unsigned i=0;i<c->count;i++) {
-        const struct li2_pgd_member *m=&w->view.member[i];struct li2_ptr_slot *s=&pe.retained[m->identity.slot];
+        const struct li2_pgd_member *m=&w->view.member[i];struct li2_ptr_slot *s=&PTR_SLOT_AT(m->identity.slot);
         pe_need(!s->claim.valid && !s->claim.id && !s->permit.valid,PE_RELEASE,87);
         c->member[i]=(struct pda_member_completion){.identity=m->identity,.header=s->publication.header,
             .source=s->publication.source,.generation=s->generation,.proof=w->proof_exit[i]};
@@ -1029,7 +1054,7 @@ static void pda_complete(void) {
     pe_need(!lhc_issue(c),PE_RELEASE,123);
 #endif
     for(unsigned i=0;i<c->count;i++) {
-        struct li2_ptr_slot *s=&pe.retained[c->member[i].identity.slot];
+        struct li2_ptr_slot *s=&PTR_SLOT_AT(c->member[i].identity.slot);
         s->claim=(struct li2_pgd_claim){.id=c->id,.cell=w->receipt,.member=i,.valid=1};
         s->last_completed=c->serial;
         pe_need(pda_permitted(c->member[i].identity.slot),PE_RELEASE,89);
@@ -1073,7 +1098,7 @@ static _Noreturn void pda_abort(unsigned code,long detail) {
     pe.p.completion_permit=0;pe.p.phase=LI2_PG_FAILED;li2_maps_phase_fail();
     if(pe.initialized && ptr_storage()) {
         for(unsigned i=0;i<LI2_PTR_SLOTS;i++) {
-            struct li2_ptr_slot *s=&pe.retained[i];
+            struct li2_ptr_slot *s=&PTR_SLOT_AT(i);
             if(s->generation.installed) {
                 s->generation.ready_generation=0;unsigned ignored=0;
                 (void)pg_permissions(&s->generation.layout,PROT_READ,s->generation.cleanup,&ignored);

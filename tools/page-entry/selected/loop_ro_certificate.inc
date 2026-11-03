@@ -1,11 +1,16 @@
 /* Included after the complete protected sg_owner and original owner types.
    No mutable state or cached source result is hidden in a pure planner. */
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+_Static_assert(LI2_PTR_SLOTS==8 && SBC_NODE_COUNT==12 && PE_PROOF_BYTES==89U*PAGE,
+    "twelve immutable mirrors with eight active retained bindings");
+#else
 #ifdef LI2_LOOP_CACHE8
 _Static_assert(LI2_PTR_SLOTS==8 && PE_PROOF_BYTES==89U*PAGE,
     "eight retained certificates with the unchanged complete publication bytes");
 #else
 _Static_assert(LI2_PTR_SLOTS==2 && PE_PROOF_BYTES==89U*PAGE,
     "same two retained certificates and complete publication bytes");
+#endif
 #endif
 _Static_assert(_Alignof(struct li2_ptr_slot)==PAGE &&
     offsetof(struct li2_ptr_slot,publication)%PAGE==0 &&
@@ -14,7 +19,11 @@ _Static_assert(_Alignof(struct li2_ptr_slot)==PAGE &&
         offsetof(struct li2_ptr_slot,publication)+PE_PROOF_BYTES,
     "no mutable owner field shares a publication-mirror page");
 _Static_assert(_Alignof(struct li2_pg_epoch)==PAGE &&
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    offsetof(struct li2_pg_epoch,arena.node)%PAGE==0,
+#else
     offsetof(struct li2_pg_epoch,retained)%PAGE==0,
+#endif
     "every reserved mirror address is aligned in the real owner");
 
 /* Observations carry no authority. The shared helper counts actual calls from
@@ -54,8 +63,8 @@ static int lrc_initialize(void) {
     if(lrc_observed.initialized || protected_count>=RANGES ||
        selected_run_protect_add(0,(uintptr_t)&lrc_observed,sizeof lrc_observed))return PE_STATE;
     lrc_observed.initialized=1;
-    for(unsigned slot=0;slot<LI2_PTR_SLOTS;slot++) {
-        uintptr_t at=(uintptr_t)&pe.retained[slot].publication;
+    for(unsigned slot=0;slot<SBC_NODE_COUNT;slot++) {
+        uintptr_t at=(uintptr_t)&SBC_NODE_AT(slot).publication;
         /* The page-isolation assertions above make this replacement disjoint
            from every adjacent owner field. No guest has run in this owner. */
         long result=raw(SYS_mmap,at,PE_PROOF_BYTES,PROT_READ,
@@ -70,6 +79,9 @@ static int lrc_initialize(void) {
     return 0; /* sg_initialize seals the complete root before returning. */
 }
 static int lrc_state(void) {
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    if(!sg_selected_node())return 0;
+#endif
     if(sg_owner.state.ro_initialized!=1 || sg_owner.state.ro_writable_mask ||
        sg_owner.state.bytes.poisoned || pe.selected_slot>=LI2_PTR_SLOTS ||
        handling!=1 || !pe_busy || pe_failing || pe.resuming ||
@@ -87,7 +99,7 @@ static int lrc_mirror_begin(void) {
     /* The existing replacement protocol already invalidated this slot's
        certificate and assigned the nonwrapping mirror epoch/writer serial. */
     if(sg_permission(PROT_READ|PROT_WRITE))return PE_PUBLICATION;
-    sg_owner.state.ro_writable_mask=1U<<pe.selected_slot;
+    sg_owner.state.ro_writable_mask=1U<<SBC_NODE_INDEX;
     __asm__ volatile("":::"memory");
     if(sg_permission(PROT_READ))return PE_PUBLICATION;
     if(raw(SYS_mprotect,(long)&PE_SLOT(publication),PE_PROOF_BYTES,
@@ -95,8 +107,11 @@ static int lrc_mirror_begin(void) {
     ++lrc_observed.mirror_opens;return 0;
 }
 static int lrc_mirror_end(void) {
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    if(!sg_selected_node())return PE_STATE;
+#endif
     if(sg_owner.state.ro_initialized!=1 || pe.selected_slot>=LI2_PTR_SLOTS ||
-       sg_owner.state.ro_writable_mask!=(1U<<pe.selected_slot) ||
+       sg_owner.state.ro_writable_mask!=(1U<<SBC_NODE_INDEX) ||
        !sbc_unpublished() || handling!=1 || !pe_busy || pe_active || pe_failing ||
        pe.resuming || !pe_identity() || pe.p.phase!=LI2_PG_PUBLISHING ||
        lrc_observed.mirror_seals==UINT64_MAX)
@@ -114,8 +129,8 @@ static void lrc_abort(void) {
     /* The caller has poisoned/invalidate-all before this close. An error here
        remains terminal; no resumed guest or certificate reuse follows it. */
     lhc_abort();
-    for(unsigned slot=0;slot<LI2_PTR_SLOTS;slot++)
-        (void)raw(SYS_mprotect,(long)&pe.retained[slot].publication,
+    for(unsigned slot=0;slot<SBC_NODE_COUNT;slot++)
+        (void)raw(SYS_mprotect,(long)&SBC_NODE_AT(slot).publication,
             PE_PROOF_BYTES,PROT_READ,0,0,0);
 }
 static void lrc_report(unsigned status,unsigned code) {

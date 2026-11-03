@@ -10,7 +10,11 @@
 #include "loop_cache8_profile.h"
 #define LI2_PGD_MEMBERS LI2_LOOP_CACHE8_MEMBERS
 #define LI2_PGD_RECEIPTS LI2_LOOP_CACHE8_RECEIPTS
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+#define LI2_PGD_VERSION 3U
+#else
 #define LI2_PGD_VERSION 2U
+#endif
 #else
 #define LI2_PGD_MEMBERS 2U
 #define LI2_PGD_RECEIPTS 3U
@@ -23,6 +27,10 @@
    replaced. A pointer into a retired member is never completion evidence. */
 struct li2_pgd_ref {
     uint64_t generation;
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    uint64_t binding_generation;
+    uint32_t node,node_reserved;
+#endif
     uint32_t slot,bank;
     uintptr_t proof,root;
     struct li2_pg_layout layout;

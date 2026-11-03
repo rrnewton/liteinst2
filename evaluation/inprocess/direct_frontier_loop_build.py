@@ -162,7 +162,9 @@ def copy_oracle(builder,private,pin,binary,run,state,original,app_symbol,app_uni
 
 def compile_subject(builder,private,pin,binary,aliases,run,r, *, reference='direct41', fixture=None):
     fixture=FIXTURE if fixture is None else Path(fixture).resolve(strict=True)
-    if reference=='cache8-abc255':
+    if reference=='arena10-ab791':
+        need(fixture.name=='loop_translation_arena_app','exact ten-root arena fixture source')
+    elif reference=='cache8-abc255':
         need(fixture.name=='loop_cache8_app','exact additive three-phase descriptor fixture source')
     elif reference in ('cache8-effects2','cache8-effects3','cache8-effects4'):
         need(fixture.name=='loop_cache8_effects','exact additive real-effect fixture source')
@@ -213,6 +215,9 @@ def compile_subject(builder,private,pin,binary,aliases,run,r, *, reference='dire
     if reference == 'cache8-abc255':argv.insert(argv.index('-Werror')+1,'-DLI2_LOOP_GROUP_DESCRIPTOR_APP=1')
     if reference in ('cache8-effects2','cache8-effects3','cache8-effects4'):
         argv.insert(argv.index('-Werror')+1,'-DLI2_LOOP_CACHE8_EFFECT='+reference[-1])
+    if reference == 'arena10-ab791':
+        need(argv.count('-DLI2_LOOP_TRANSLATION_ARENA_APP=1')==1,
+             'one literal standalone arena application selector')
     units=[str(pin(fixture/n))for n in ('main.c','pure.c','machine.S','entry.S')]
     need([x for x in argv if x.endswith(('.c','.S'))]==units and
          argv[-2:]==['-o',str(output/'persistent-direct-frontier-app')]and

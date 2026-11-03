@@ -1,3 +1,6 @@
+#ifndef PTR_SLOT_AT
+#define PTR_SLOT_AT(i) pe.retained[i]
+#endif
 /* The unchanged pure selector component includes this leaf directly. */
 #ifndef LI2_REUSE_CENSUS
 #ifndef RCC_SELECT_RESET
@@ -15,7 +18,7 @@ static int pe_sub_choose(uintptr_t pc,struct pe_sub_choice *out) {
     *out=(struct pe_sub_choice){0};
     RCC_SELECT_RESET();
     unsigned slot=ptr_choose(pc);uintptr_t page=pc&~(PAGE-1);
-    const struct li2_ptr_slot *chosen=&pe.retained[slot];
+    const struct li2_ptr_slot *chosen=&PTR_SLOT_AT(slot);
     if(chosen->generation.installed && chosen->publication.source.entry==pc) {
 #ifdef LI2_PERSISTENT_LOOP_EFFECTS
         /* ptr_choose authenticated this whole immutable publication and its
@@ -32,7 +35,7 @@ static int pe_sub_choose(uintptr_t pc,struct pe_sub_choice *out) {
 #endif
     }
     for(unsigned i=0;i<LI2_PTR_SLOTS;i++) {
-        const struct li2_ptr_slot *s=&pe.retained[i];if(!s->generation.installed)continue;
+        const struct li2_ptr_slot *s=&PTR_SLOT_AT(i);if(!s->generation.installed)continue;
         const struct pe_payload *p=(const void *)s->proof;struct li2_pgs_target target;
         int found=RCC_SELECT_TEST(4+i,li2_pgs_head_lookup(&p->plan,pc,&target));
         pe_need(found>=0,PE_PUBLICATION,110);
@@ -59,6 +62,44 @@ static int pe_sub_choose(uintptr_t pc,struct pe_sub_choice *out) {
 #endif
     *out=(struct pe_sub_choice){slot,ped_bank_for(pc),0,{page,page+PAGE}};return 1;
 }
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+/* All choices are advisory. Only lta_move, after real TRACE closure, changes
+   a binding; fresh source and physical admission follow that move. */
+static int lta_choose(uintptr_t pc,struct pe_sub_choice *out,unsigned *node_out) {
+    if(!node_out || !pe_sub_choose(pc,out))return 0;
+    unsigned bound=ptr_node_index(out->slot);if(bound>=PTR_NODE_COUNT)return 0;
+    *node_out=bound;
+    if(out->subentry || (PTR_NODE_AT(bound).generation.installed &&
+       PTR_NODE_AT(bound).publication.source.entry==pc))return 1;
+    unsigned match=PTR_NODE_COUNT,bank=2,subentry=0;uintptr_t pages[2]={0};
+    for(unsigned node=0;node<PTR_NODE_COUNT;node++) {
+        const struct li2_ptr_slot *slot=&PTR_NODE_AT(node);
+        if(lta_node_bound(node)>=0 || !slot->generation.installed)continue;
+        pe_need(lta_closed_value(node),PE_RELEASE,9232);
+        const struct pe_payload *p=(const void *)slot->proof;
+        struct li2_pgs_target target;
+        int found=li2_pgs_head_lookup(&p->plan,pc,&target);
+        pe_need(found>=0,PE_PUBLICATION,9233);
+        if(!found || !li2_pgs_source_pair_advisory(pc,target.page))continue;
+        pe_need(match==PTR_NODE_COUNT,PE_STATE,9234);match=node;
+        for(unsigned b=0;b<2;b++)if(slot->banks[b].generated==slot->generation.generated)bank=b;
+        pe_need(bank<2 && target.root==p->source.entry,PE_STATE,9235);
+        pages[0]=target.page[0];pages[1]=target.page[1];subentry=pc!=target.root;
+    }
+    if(match<PTR_NODE_COUNT) {
+        *out=(struct pe_sub_choice){out->slot,bank,subentry,{pages[0],pages[1]}};
+        *node_out=match;return 1;
+    }
+    /* Prefer unused immutable storage before replacing a live publication.
+       The eight active bindings and every actual member bound stay fixed. */
+    if(PTR_NODE_AT(bound).generation.installed)
+        for(unsigned node=0;node<PTR_NODE_COUNT;node++)
+            if(lta_node_bound(node)<0 && !PTR_NODE_AT(node).generation.installed) {
+                *node_out=node;break;
+            }
+    return 1;
+}
+#endif
 static int pe_sub_candidate(const struct li2_pg_sources *s,const struct pe_payload *p) {
     if(s->key.entry==p->source.entry)return li2_pg_source_key_equal(&p->source,&s->key);
     if(!pe.subentry_selected || !li2_pgd_source_pair_equal(&p->source,&s->key))return 0;

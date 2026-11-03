@@ -17,8 +17,12 @@ RX_LIFETIME=dict(version=1,slots=2,source_release_version=1,
     metadata_permission_counts='actual-pe_permission-calls-only',qualification_credit=False)
 
 
-def build_rx(builder, archive, original, directory, pin, binary, aliases, run, state, mode, *, control=None, selected=None, root=None, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None):
+def build_rx(builder, archive, original, directory, pin, binary, aliases, run, state, mode, *, control=None, selected=None, root=None, recurrence=False, cache8=False, cache8_observe=None, group_descriptor=False, cache8_program=False, group_descriptor_observe=None, cache8_effects=None, arena=False):
     """Execute the real source-owned recipe, then bind its exact compiler closure."""
+    need(type(arena)is bool and (not arena or cache8 and group_descriptor and not recurrence and
+         cache8_observe is None and group_descriptor_observe is None and not cache8_program and
+         cache8_effects is None and control is None),
+         'distinct twelve-node arena with eight active bindings and original compiler')
     need(cache8_effects is None or type(cache8_effects)is int and cache8_effects in (2,3,4) and
          cache8 and not recurrence and control is None and cache8_observe is None and not cache8_program and
          (cache8_effects==2 or mode=='differential'),'distinct literal real guest effect subject')
@@ -55,6 +59,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     if group_descriptor_observe is not None:stem+='-observe'
     if cache8_effects is not None:stem+='-effects'
     if group_descriptor and cache8_program:stem+='-program'
+    if arena:stem='persistent-loop-translation-arena'
     binder_name=stem.replace('-','_')+'_binding'
     output = directory/'build'; output.mkdir()
     script = pin(selected/('build-'+stem+'.sh'))
@@ -111,14 +116,14 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     need(set(binding) == set(constants) | {'profile', 'mode', 'archive', 'policy_sha256',
              'original', 'sources', 'headers', 'byte_certificate', 'history_certificate', 'rx_lifetime'} |
              (set() if control is None else {'control','oracle'}) |
-             ({'recurrence'} if recurrence else set()) | ({'cache8'} if cache8 else set()) | ({'cache8_observer'} if cache8_observe is not None else set()) | ({'cache8_program'} if cache8_program else set()) | ({'group_descriptor'} if group_descriptor else set()) | ({'group_descriptor_observer'} if group_descriptor_observe is not None else set()) | ({'cache8_effects'} if cache8_effects is not None else set())
+             ({'recurrence'} if recurrence else set()) | ({'cache8'} if cache8 else set()) | ({'cache8_observer'} if cache8_observe is not None else set()) | ({'cache8_program'} if cache8_program else set()) | ({'group_descriptor'} if group_descriptor else set()) | ({'group_descriptor_observer'} if group_descriptor_observe is not None else set()) | ({'cache8_effects'} if cache8_effects is not None else set()) | ({'arena'} if arena else set())
          and digest({key: binding[key] for key in constants}) == digest(constants)
          and binding['profile'] == stem+'-'+mode+'-v1'
          and binding['mode'] == mode and binding['archive'] == fact(archive)
          and binding['original'] == image and binding['sources'] == values
          and binding['policy_sha256'] == policy and binding['capture_version'] is None
          and binding['byte_certificate'] == dict(version=1, sealed_generation=True, source_lease=False,
-             mirror='isolated-anonymous-RO', root='isolated-anonymous-RO', mirror_pages=89, slots=8 if cache8 else 2,
+             mirror='isolated-anonymous-RO', root='isolated-anonymous-RO', mirror_pages=89, slots=12 if arena else 8 if cache8 else 2,
              full_scan_fallback=True, every_hit_full_scan=mode=='differential',
              old_capture_compatible=False, qualification_credit=False)
          and binding['history_certificate'] == dict(version=1, cells=9 if cache8 else 3, saved_completion='isolated-anonymous-RO',
@@ -151,11 +156,21 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
              'exact terminal-only all-slot/count observation')
     expected_lifetime=dict(RX_LIFETIME,version=2,slots=8) if cache8 else RX_LIFETIME
     if cache8:
-        need(binding['cache8']==dict(version=1,slots=8,members=8,completion_cells=9,source_pages=2,
+        need(binding['cache8']==dict(version=2 if arena else 1,slots=8,members=8,completion_cells=9,source_pages=2,
              placement_banks=2,aggregate_heads=256,aggregate_boundaries=8,rx_receipt_version=2,
-             selection='exact-root-or-head-then-empty-or-oldest-completion',
-             activation='post-publication-DIRECT-connected-claimed-closure',
+             selection='active-binding-to-stable-node' if arena else 'exact-root-or-head-then-empty-or-oldest-completion',
+             activation='fresh-binding-DIRECT-connected-closure' if arena else 'post-publication-DIRECT-connected-claimed-closure',
              inactive_heads_exposed=False,qualification_credit=False),'exact cache/activation limits')
+    if arena:
+        need(binding['arena']==dict(version=1,nodes=12,active_bindings=8,completion_cells=9,
+             member_reference_version=3,code_pages=17,placement_banks=2,proof_pages=89,
+             mirror_pages=89,sealed_root_pages=2,aggregate_heads=256,aggregate_boundaries=8,
+             final_addresses=True,dormant_authority='protected-issued-SBC-and-unexposed-node',
+             admission='fresh-source-rseq-registry-physical-then-current-binding',
+             claims='consume-at-detach-issue-only-after-real-completion',
+             raw_invalidation='all-nodes-before-kernel-nonwrapping-epochs',
+             inactive_heads_exposed=False,old_capture_compatible=False,qualification_credit=False),
+             'exact inactive-node value custody and fresh eight-member execution authority')
     if cache8_observe is not None:
         need(binding['cache8_observer']==dict(version=1,control=cache8_observe,reference='cache8-abc169',
              observation_authority=False,qualification_credit=False),'exact distinct cache8 observer schema')
@@ -187,6 +202,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
         ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n' if cache8_observe is not None or group_descriptor_observe is not None else '')+
         ('#define LI2_PG_LOOP_CACHE8_PROGRAM_BINDING_VERSION 1\n' if cache8_program else '')+
         ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_BINDING_VERSION 1\n' if group_descriptor else '')+
+        ('#define LI2_PG_LOOP_TRANSLATION_ARENA_BINDING_VERSION 1\n' if arena else '')+
         ('#define LI2_PG_LOOP_GROUP_DESCRIPTOR_OBSERVE_BINDING_VERSION 1\n' if group_descriptor_observe is not None else '')+
         ('#define LI2_PG_LOOP_CACHE8_OBSERVE_BINDING_VERSION 1\n#define LI2_PG_LOOP_CACHE8_EFFECTS_BINDING_VERSION 1\n' if cache8_effects is not None else '')+
         ('#define LI2_PG_LOOP_RESIDENT_RX_ORACLE_BINDING_VERSION 1\n' if control is not None else '')+
@@ -211,6 +227,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
         (['-DLI2_LOOP_RX_RECURRENCE=1'] if recurrence else [])+
         (['-DLI2_LOOP_CACHE8=1'] if cache8 else [])+
         (['-DLI2_LOOP_GROUP_DESCRIPTOR=1'] if group_descriptor else [])+
+        (['-DLI2_LOOP_TRANSLATION_ARENA=1'] if arena else [])+
         ([] if group_descriptor_observe is None else ['-DLI2_LOOP_GROUP_DESCRIPTOR_OBSERVE=1','-DLI2_LOOP_CACHE8_OBSERVE=1','-DLI2_LOOP_CACHE8_CONTROL='+str(group_descriptor_observe)])+
         (['-DLI2_LOOP_CACHE8_PROGRAM=1'] if cache8_program else [])+
         ([] if cache8_effects is None else ['-DLI2_LOOP_CACHE8_OBSERVE=1','-DLI2_LOOP_CACHE8_EFFECTS=1','-DLI2_LOOP_CACHE8_CONTROL='+str(cache8_effects)])+
@@ -264,7 +281,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
         found = [line.split() for line in out.splitlines() if line.split()[-1:] == [name.encode()]]
         need(len(found) == 1 and len(found[0]) == 4 and found[0][2] in (b't', b'T')
              and int(found[0][1], 16) > 0, 'one actual complete provider '+name)
-    for name in ('pe', 'sg_owner', 'lhc')+ (('lgd_writer','lgd_group','lgd_candidate') if group_descriptor else ()):
+    for name in ('pe', 'sg_owner', 'lhc')+ (('lgd_writer','lgd_group','lgd_candidate') if group_descriptor else ())+(('lta_topology','lta_writer') if arena else ()):
         found = [line.split() for line in out.splitlines() if line.split()[-1:] == [name.encode()]]
         need(len(found) == 1 and len(found[0]) == 4 and found[0][2] in (b'b', b'B')
              and int(found[0][0], 16) % 4096 == 0 and int(found[0][1], 16) % 4096 == 0,

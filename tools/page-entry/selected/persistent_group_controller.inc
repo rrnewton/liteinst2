@@ -52,6 +52,9 @@
 #include "loop_cache8.h"
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR
 #include "loop_group_descriptor.h"
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+#include "loop_translation_arena.h"
+#endif
 #endif
 #endif
 #endif
@@ -305,6 +308,9 @@ struct li2_ptr_slot {
 #endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
 #include "persistent_active_domain_types.inc"
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+#include "loop_translation_arena_types.inc"
+#endif
 #ifdef LI2_LOOP_RESIDENT_RX
 #include "loop_resident_rx_types.inc"
 #endif
@@ -326,7 +332,11 @@ struct li2_pg_epoch {
     uint64_t misses[LI2_PGD_REASON_COUNT];
     unsigned selected_bank,resuming,warm;
 #ifdef LI2_PERSISTENT_RETAINED_TWO
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    struct lta_state arena;
+#else
     struct li2_ptr_slot retained[LI2_PTR_SLOTS];
+#endif
     unsigned selected_slot;
     struct li2_ptr_slot_ref selection,previous_selection;
 #endif
@@ -406,7 +416,30 @@ const struct li2_loop_cache8_progress *li2_loop_cache8_progress(void) {return &p
 #include "persistent_ret_resume.h"
 #endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO
-#define PE_SLOT(field) (pe.retained[pe.selected_slot].field)
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+#define PTR_NODE_COUNT LI2_LTA_NODES
+#define PTR_NODE_AT(i) (pe.arena.node[(i)])
+static unsigned ptr_node_index(unsigned);
+static int ptr_node_storage(unsigned);
+static int ptr_node_bytes_full(unsigned);
+static struct li2_ptr_slot *ptr_slot_address(unsigned);
+static int lta_available(unsigned);
+static int lta_published(void);
+static int lta_prepare(unsigned);
+static int lta_prepared(unsigned);
+static int lta_take(unsigned,unsigned);
+static int lta_replace(unsigned);
+static int lta_move(unsigned,unsigned);
+static int lta_node_bound(unsigned);
+static int lta_closed_value(unsigned);
+#define PTR_SLOT_AT(i) (*ptr_slot_address(i))
+#else
+#define PTR_NODE_COUNT LI2_PTR_SLOTS
+#define PTR_NODE_AT(i) pe.retained[i]
+#define PTR_SLOT_AT(i) pe.retained[i]
+#define ptr_node_index(i) i
+#endif
+#define PE_SLOT(field) (PTR_SLOT_AT(pe.selected_slot).field)
 static int ptr_storage(void);
 static int ptr_selected(void);
 static int ptr_stored(unsigned);
@@ -730,6 +763,9 @@ static int pg_link_data(unsigned step) {
     if(!pg_refs(linked))return PE_STATE;
     t->complete=1;return 0;
 }
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+#include "loop_translation_arena_storage.inc"
+#endif
 #ifdef LI2_SEALED_BYTE_CERTIFICATE
 #define pe_bytes pe_bytes_full
 #endif
@@ -738,16 +774,35 @@ _Static_assert(LI2_PG_CANCELLING+1==LI2_RCC_PHASES,"exact actual owner phase cen
 static void rcc_scan(unsigned,unsigned);
 #define pe_bytes pe_bytes_census_full
 #endif
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+static int ptr_node_bytes_full(unsigned node) {
+    if(!ptr_node_storage(node))return PE_STATE;
+    const struct li2_ptr_slot *slot=&PTR_NODE_AT(node);
+    const struct li2_pg_generation *g=&slot->generation;
+    const struct pe_payload *p=(const void *)g->proof;
+#else
 static int pe_bytes(void) {
     const struct li2_pg_generation *g=&PE_SLOT(generation);
     const struct pe_payload *p=pe_payload();
+#endif
     const volatile unsigned char *code=(const void *)g->generated,*proof=(const void *)g->proof;
+    #ifdef LI2_LOOP_TRANSLATION_ARENA
+    const unsigned char *expected=(const void *)&slot->publication;
+#else
     const unsigned char *expected=(const void *)&PE_SLOT(publication);
+#endif
     for(size_t i=0;i<PE_CODE_BYTES;i++)if(code[i]!=pg_code_byte(&p->plan,i))return PE_PUBLICATION;
     for(size_t i=0;i<PE_PROOF_BYTES;i++)
+        #ifdef LI2_LOOP_TRANSLATION_ARENA
+        if(proof[i]!=(i<sizeof slot->publication?expected[i]:0))return PE_PUBLICATION;
+#else
         if(proof[i]!=(i<sizeof PE_SLOT(publication)?expected[i]:0))return PE_PUBLICATION;
+#endif
     return 0;
 }
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+static int pe_bytes(void) {return ptr_node_bytes_full(ptr_node_index(pe.selected_slot));}
+#endif
 #ifdef LI2_SEALED_BYTE_CERTIFICATE
 #undef pe_bytes
 #include "sealed_byte_certificate.inc"
@@ -1032,7 +1087,12 @@ static int ped_permitted(void) {
 #define LRR_FINISH(kind) ((void)0)
 #endif
 static void ped_claim(void) {
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    pe_need((pe.warm && !PE_SLOT(claim).valid?lta_prepared(pe.selected_slot):
+        lta_available(pe.selected_slot)) && !pe_bytes(),PE_RELEASE,10);
+#else
     pe_need(ped_permitted() && !pe_bytes(),PE_RELEASE,10);
+#endif
 #ifdef LI2_LOOP_RESIDENT_RX
     const int claim_prot=lprx_slot_prot(pe.selected_slot);
     pe_need(claim_prot>=0 && !pg_queries(&PE_SLOT(generation).layout,claim_prot,pe.claim_code) &&
@@ -1046,7 +1106,14 @@ static void ped_claim(void) {
     pe_need(!sbco_claim(),PE_STATE,196);
 #endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    if(PE_SLOT(claim).valid) {pda_claim(pe.selected_slot);ped_count(PGC_REF(permit_claims));}
+    else if(pe.warm)pe_need(!lta_take(pe.selected_slot,0),PE_RELEASE,9238);
+    else pe_need(!lta_replace(pe.selected_slot),PE_RELEASE,9238);
+    __asm__ volatile("":::"memory");
+#else
     pda_claim(pe.selected_slot);ped_count(PGC_REF(permit_claims));__asm__ volatile("":::"memory");
+#endif
 #else
     PE_SLOT(permit).valid=0;ped_count(PGC_REF(permit_claims));__asm__ volatile("":::"memory");
 #endif
@@ -1060,7 +1127,12 @@ static void ped_reset_attempt(void) {
 #endif
     pe_need(!pe_busy && !pe_active && !pe.resuming &&
         (pe.p.phase==LI2_PG_IDLE || pe.p.phase==LI2_PG_CLOSED || pe.p.phase==LI2_PG_CANCELLED) &&
-        !pe.p.first_error && (!PE_SLOT(generation).installed || ped_permitted()),PE_STATE,30);
+        !pe.p.first_error && (!PE_SLOT(generation).installed ||
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+        lta_available(pe.selected_slot)),PE_STATE,30);
+#else
+        ped_permitted()),PE_STATE,30);
+#endif
     pe.last_terminal=pe.p;
 #ifdef LI2_PERSISTENT_SUBENTRY
     le_zero(&pe.entry,sizeof pe.entry);pe.subentry_selected=0;
@@ -1126,11 +1198,14 @@ static void selected_persistent_initialize(void) {
 #ifdef LI2_PERSISTENT_RET_DISPATCH
     prr_initialize();
 #endif
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    pe_need(!lta_allocate_storage(),PE_PUBLICATION,9201);
+#else
 #ifdef LI2_PERSISTENT_RETAINED_TWO
     pe_need(protected_count<=RANGES-3U*LI2_PTR_SLOTS,PE_STATE,40);
     for(unsigned slot=0;slot<LI2_PTR_SLOTS;slot++) {
         pe.selected_slot=slot;
-        pe.retained[slot].identity=(struct li2_ptr_slot_ref){.owner=&pe,.index=slot};
+        PTR_SLOT_AT(slot).identity=(struct li2_ptr_slot_ref){.owner=&pe,.index=slot};
 #endif
     for(unsigned i=0;i<2;i++) {
         long v=raw(SYS_mmap,0,PE_ALLOC_BYTES,PROT_READ|PROT_WRITE,
@@ -1151,7 +1226,7 @@ static void selected_persistent_initialize(void) {
     pe_need(v>0 && !((uintptr_t)v&(PAGE-1)) && (uintptr_t)v<(UINT64_C(1)<<47)-PE_PROOF_BYTES,PE_PUBLICATION,v);
     PE_SLOT(generation).proof=(uintptr_t)v;PE_SLOT(proof_allocated)=1;
 #ifdef LI2_PERSISTENT_RETAINED_TWO
-    pe.retained[pe.selected_slot].proof=(uintptr_t)v;
+    PTR_SLOT_AT(pe.selected_slot).proof=(uintptr_t)v;
 #endif
     pe_need(!selected_run_protect_add(0,(uintptr_t)v,PE_PROOF_BYTES),PE_STATE,3);PE_SLOT(proof_registered)=1;
     pe_need(!pg_proof_query(PE_SLOT(generation).proof,PROT_READ|PROT_WRITE,&PE_SLOT(generation).proof_writable),PE_PUBLICATION,2);
@@ -1161,12 +1236,16 @@ static void selected_persistent_initialize(void) {
         &PE_SLOT(banks)[i].initial_slots),PE_PUBLICATION,4);
 #ifdef LI2_PERSISTENT_RETAINED_TWO
     }
-    pe.selected_slot=0;pe.selection=pe.retained[0].identity;
+    pe.selected_slot=0;pe.selection=PTR_SLOT_AT(0).identity;
+#endif
 #endif
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR
     pe_need(!lgd_initialize(),PE_PUBLICATION,8991);
 #endif
     pe_need(!li2_pg_source_initialize() && pe_identity(),PE_SOURCE,0);
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    pe_need(!lta_seal_storage(),PE_PUBLICATION,9202);
+#endif
     pe.initialized=1;pe_busy=0;
 }
 int li2_pg_epoch_begin(const struct li2_tf_span_transfer *ticket,uint64_t serial,
@@ -1232,7 +1311,13 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
        RCC_TEST(6,PE_SLOT(publication).header.registered_epoch==r->registration_epoch) &&
        RCC_TEST(7,PE_SLOT(publication).header.rseq_address==r->address) &&
        RCC_TEST(8,PE_SLOT(publication).header.rseq_length==r->length) && RCC_TEST(9,PE_SLOT(publication).header.rseq_signature==r->signature)) {
-        pe_need(ped_permitted() && !pe_bytes(),PE_PUBLICATION,10);pe.warm=1;
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+        if(!PE_SLOT(claim).valid)pe_need(!lta_prepare(pe.selected_slot),PE_PUBLICATION,9230);
+        else pe_need(ped_permitted() && !pe_bytes(),PE_PUBLICATION,10);
+#else
+        pe_need(ped_permitted() && !pe_bytes(),PE_PUBLICATION,10);
+#endif
+        pe.warm=1;
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
         pe.loop.route=pe_payload()->plan.version;
         pe_need(li2_lpr_header(pe_payload()->header.version,pe_payload()->header.plan_policy,pe.loop.route),PE_PLAN,243);
@@ -1447,8 +1532,14 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
        !pe.consumed || pe.p.publication || !pe_busy || pe_active)return PE_STATE;
     struct li2_pg_generation *g=&PE_SLOT(generation);
     if(pe.warm) {
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+        if(!(pe.arena.rebind_mask&(1U<<pe.selected_slot)?lta_prepared(pe.selected_slot):
+             ped_permitted()) || !pe_registry() || g->generated!=pe.p.generated)return PE_STATE;
+        ped_claim();
+#else
         if(!ped_permitted() || !pe_registry() || g->generated!=pe.p.generated)return PE_STATE;
         ped_claim();
+#endif
         le_zero(g->open,sizeof g->open);le_zero(g->close,sizeof g->close);le_zero(g->cleanup,sizeof g->cleanup);
         le_zero(&g->slots[1],2U*sizeof g->slots[1]);
 #ifdef LI2_PERSISTENT_DISPATCH
@@ -1475,12 +1566,12 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
         ped_claim();g->ready_generation=0;__asm__ volatile("":::"memory");ped_count(PGC_REF(retirements));
         LRX_RETIRE();
 #ifdef LI2_PERSISTENT_RETAINED_TWO
-        pe.retained[pe.selected_slot].identity.generation=0;
+        PTR_SLOT_AT(pe.selected_slot).identity.generation=0;
         pe.selection.generation=0;
 #endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO
-    } else if(PE_SLOT(permit).valid || pe.retained[pe.selected_slot].identity.generation ||
-              pe.retained[pe.selected_slot].last_completed)return PE_STATE;
+    } else if(PE_SLOT(permit).valid || PTR_SLOT_AT(pe.selected_slot).identity.generation ||
+              PTR_SLOT_AT(pe.selected_slot).last_completed)return PE_STATE;
 #else
     } else if(pe.next_generation || PE_SLOT(permit).valid)return PE_STATE;
 #endif
@@ -1575,14 +1666,17 @@ int li2_pg_epoch_bind(const struct li2_pg_token *t,const struct li2_pg_generatio
 #endif
 #endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO
-    pe.retained[pe.selected_slot].identity.generation=g->generation;
-    pe.selection=pe.retained[pe.selected_slot].identity;
+    PTR_SLOT_AT(pe.selected_slot).identity.generation=g->generation;
+    pe.selection=PTR_SLOT_AT(pe.selected_slot).identity;
 #endif
 #ifdef LI2_SEALED_BYTE_CERTIFICATE
     if((e=sbc_issue()))return e;
 #endif
     __asm__ volatile("":::"memory");g->ready_generation=g->generation;pe.p.phase=LI2_PG_BOUND;
     if((e=pg_link_data(0)))return e;
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    if((e=lta_published()))return e;
+#endif
 #ifdef LI2_PERSISTENT_SUBENTRY
     if((e=pe_sub_fill()))return e;
 #endif
@@ -1922,13 +2016,22 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
        TRACE close. A decline leaves the original dispatch path intact. */
 #ifdef LI2_PERSISTENT_RETAINED_TWO
 #ifdef LI2_PERSISTENT_SUBENTRY
-    struct pe_sub_choice choice;if(!pe_sub_choose(pc,&choice))return 0;
+    struct pe_sub_choice choice;
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    unsigned node_index;if(!lta_choose(pc,&choice,&node_index))return 0;
+#else
+    if(!pe_sub_choose(pc,&choice))return 0;
+#endif
     const unsigned bank_index=choice.bank,slot_index=choice.slot;
 #else
     const unsigned bank_index=ped_bank_for(pc);
     const unsigned slot_index=ptr_choose(pc);
 #endif
-    const struct ped_bank *bank=&pe.retained[slot_index].banks[bank_index];
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    const struct ped_bank *bank=&PTR_NODE_AT(node_index).banks[bank_index];
+#else
+    const struct ped_bank *bank=&PTR_SLOT_AT(slot_index).banks[bank_index];
+#endif
 #else
     const unsigned bank_index=ped_bank_for(pc);
     const struct ped_bank *bank=&PE_SLOT(banks)[bank_index];
@@ -1950,9 +2053,16 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
     /* A completed source refusal may decline a new cold offer. Existing retained
        roots/subentries still take their full original publication path. */
-    if(!choice.subentry && !(pe.retained[slot_index].generation.installed &&
-       pe.retained[slot_index].publication.source.entry==pc) &&
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    const struct li2_ptr_slot *candidate_slot=&PTR_NODE_AT(node_index);
+    if(!choice.subentry && !(candidate_slot->generation.installed &&
+       candidate_slot->publication.source.entry==pc) &&
        li2_pg_source_negative_decline(pc,choice.page))return 0;
+#else
+    if(!choice.subentry && !(PTR_SLOT_AT(slot_index).generation.installed &&
+       PTR_SLOT_AT(slot_index).publication.source.entry==pc) &&
+       li2_pg_source_negative_decline(pc,choice.page))return 0;
+#endif
 #endif
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
     pgo_begin(sig,si,uc);
@@ -1986,7 +2096,7 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
 #endif
 #ifdef LI2_PERSISTENT_RETAINED_TWO
     ped_reset_attempt();pe.previous_selection=pe.selection;pe.selected_slot=slot_index;
-    pe.selection=pe.retained[slot_index].identity;pe.selected_bank=bank_index;
+    pe.selection=PTR_SLOT_AT(slot_index).identity;pe.selected_bank=bank_index;
     pe_need(ptr_selected(),PE_STATE,41);
 #ifdef LI2_PERSISTENT_SUBENTRY
     pe.subentry_selected=choice.subentry;
@@ -2020,6 +2130,10 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     pe.close_complete=1;pe_closing=0;pe.flags=pe.transfer.flags;
 #ifdef LI2_LOOP_RESIDENT_RX
     lprx_direct_closed();
+#endif
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    if(node_index!=ptr_node_index(slot_index))
+        pe_need(!lta_move(slot_index,node_index),PE_RELEASE,9231);
 #endif
     selected_logical_flags=pe.flags;selected_flags_known=1;selected_step_pending=0;selected_pending_route=SELECTED_NO_STEP;
     pe_need(!le_capture(&pe.before,sig,si,uc),PE_FRAME,1);
@@ -2184,7 +2298,7 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
     copy(PE_SLOT(permit).close,PE_SLOT(generation).close,sizeof PE_SLOT(permit).close);
     copy(PE_SLOT(permit).member_generation,PE_SLOT(generation).member_generation,sizeof PE_SLOT(permit).member_generation);
 #ifdef LI2_PERSISTENT_RETAINED_TWO
-    pe.retained[pe.selected_slot].last_completed=pe.p.serial;
+    PTR_SLOT_AT(pe.selected_slot).last_completed=pe.p.serial;
 #endif
     pe_need(ped_permitted(),PE_RELEASE,13);
 #endif
@@ -2359,20 +2473,20 @@ static void selected_persistent_report(unsigned status,unsigned code,long detail
     field(&w,",\"first_error\":",pe.p.first_error);field(&w,",\"active\":",pe_active);field(&w,",\"busy\":",pe_busy);
 #ifdef LI2_PERSISTENT_RETAINED_TWO
     field(&w,",\"selected_slot\":",pe.selected_slot);
-    field(&w,",\"slot0_generation\":",pe.retained[0].identity.generation);
-    field(&w,",\"slot1_generation\":",pe.retained[1].identity.generation);
+    field(&w,",\"slot0_generation\":",PTR_SLOT_AT(0).identity.generation);
+    field(&w,",\"slot1_generation\":",PTR_SLOT_AT(1).identity.generation);
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
-    field(&w,",\"slot0_permit\":",pe.retained[0].claim.valid);
+    field(&w,",\"slot0_permit\":",PTR_SLOT_AT(0).claim.valid);
 #else
-    field(&w,",\"slot0_permit\":",pe.retained[0].permit.valid);
+    field(&w,",\"slot0_permit\":",PTR_SLOT_AT(0).permit.valid);
 #endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
-    field(&w,",\"slot1_permit\":",pe.retained[1].claim.valid);
+    field(&w,",\"slot1_permit\":",PTR_SLOT_AT(1).claim.valid);
 #else
-    field(&w,",\"slot1_permit\":",pe.retained[1].permit.valid);
+    field(&w,",\"slot1_permit\":",PTR_SLOT_AT(1).permit.valid);
 #endif
-    field(&w,",\"slot0_completed_serial\":",pe.retained[0].last_completed);
-    field(&w,",\"slot1_completed_serial\":",pe.retained[1].last_completed);
+    field(&w,",\"slot0_completed_serial\":",PTR_SLOT_AT(0).last_completed);
+    field(&w,",\"slot1_completed_serial\":",PTR_SLOT_AT(1).last_completed);
 #endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
     field(&w,",\"domain_members\":",pe.domain.work.view.count);
@@ -2485,7 +2599,7 @@ unsigned li2_pg_loop_compact_policy(const struct li2_pg_token *t,const struct li
             p->version==pe.loop.route?pe.loop.route:0;
     }
     for(unsigned i=0;i<LI2_PTR_SLOTS;i++) {
-        const struct li2_ptr_slot *s=&pe.retained[i];
+        const struct li2_ptr_slot *s=&PTR_SLOT_AT(i);
         if(!s->generation.installed || p!=&((const struct pe_payload *)s->proof)->plan)continue;
         if(!ptr_stored(i))return 0;
         const struct pe_header *h=&s->publication.header;

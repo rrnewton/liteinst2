@@ -58,7 +58,11 @@ static const struct li2_pgd_view *lc8_offer(const struct li2_pg_token *t) {
        !equal(&v->token,t,sizeof *t) || v->directory!=pe.domain.directory ||
        v->member[0].identity.slot!=w->primary || v->member[i].identity.slot!=w->peer ||
        !pg_layout_equal(&v->member[0].identity.layout,&pe.p.layout) ||
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+       !lta_available(w->peer))return 0;
+#else
        !pda_permitted(w->peer))return 0;
+#endif
     const struct li2_pgs_entry *entry=li2_pgs_owner_entry(t);
     if(!entry || !equal(entry,&v->entry,sizeof *entry))return 0;
     w->offer=*v;w->offer.count=i+1;
@@ -69,15 +73,22 @@ static int lc8_attach(void) {
     if(w->bound || w->view.count!=1 || w->peer!=LI2_PTR_SLOTS || w->peer_member ||
        !pda_zero(w->peer_claim,sizeof w->peer_claim) || !pda_zero(&w->offer,sizeof w->offer) ||
        !lc8_members(&w->view))return PE_STATE;
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    unsigned tried_nodes=0;
+#endif
     while(w->view.count<LI2_PGD_MEMBERS) {
         unsigned peer=LI2_PTR_SLOTS,i=w->view.count;
         for(unsigned slot=0;slot<LI2_PTR_SLOTS;slot++) {
             unsigned included=0;
             for(unsigned j=0;j<i;j++)included|=w->view.member[j].identity.slot==slot;
-            if(included || !pe.retained[slot].generation.installed)continue;
+            if(included || !PTR_SLOT_AT(slot).generation.installed)continue;
             /* Corrupt cached authority remains a failure, not a cache miss. */
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+            pe_need(lta_available(slot),PE_RELEASE,82);
+#else
             pe_need(pda_permitted(slot),PE_RELEASE,82);
-            const struct pe_payload *p=(const void *)pe.retained[slot].proof;
+#endif
+            const struct pe_payload *p=(const void *)PTR_SLOT_AT(slot).proof;
             if(!pda_registry(slot) || !pda_registration(p) || !lc8_reachable(&w->view,&p->plan))continue;
             pda_member(i,slot);
             w->offer=w->view;w->offer.count=i+1;
@@ -86,6 +97,17 @@ static int lc8_attach(void) {
             if(compatible) {peer=slot;break;}
             le_zero(&w->view.member[i],sizeof w->view.member[i]);
         }
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+        if(peer==LI2_PTR_SLOTS) {
+            unsigned proposed=lta_propose_peer(&tried_nodes);
+            if(proposed<LI2_PTR_SLOTS) {
+                pda_member(i,proposed);w->offer=w->view;w->offer.count=i+1;
+                int compatible=lc8_members(&w->offer);le_zero(&w->offer,sizeof w->offer);
+                if(compatible)peer=proposed;
+                else {le_zero(&w->view.member[i],sizeof w->view.member[i]);continue;}
+            }
+        }
+#endif
         if(peer==LI2_PTR_SLOTS)break;
         w->peer=peer;w->peer_member=i;ped_count(&pe.cache8.attach_attempts);
         if(!li2_pgd_source_pair_equal(w->view.member[0].key,w->view.member[i].key)) {
@@ -100,7 +122,12 @@ static int lc8_attach(void) {
                 w->peer=LI2_PTR_SLOTS;w->peer_member=0;break;
             }
         }
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+        if(!PTR_SLOT_AT(peer).claim.valid)pe_need(!lta_prepare(peer),PE_RELEASE,9239);
+        else pe_need(pda_permitted(peer),PE_RELEASE,83);
+#else
         pe_need(pda_permitted(peer),PE_RELEASE,83);
+#endif
         pda_select(peer,pda_bank(peer));
         struct pda_claim_observation *claim=&w->peer_claim[i-1];
         int prot=lprx_slot_prot(peer);
@@ -108,7 +135,12 @@ static int lc8_attach(void) {
             !pg_proof_query(PE_SLOT(generation).proof,PROT_READ,&claim->proof) &&
             !pe_query(PE_SLOT(generation).spill,PAGE,PROT_READ|PROT_WRITE,&claim->spill) &&
             !pe_query(PE_SLOT(generation).layout.slots,PAGE,PROT_READ,&claim->slots),PE_RELEASE,84);
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+        if(pe.arena.rebind_mask&(1U<<peer))pe_need(!lta_take(peer,1),PE_RELEASE,9240);
+        else {pda_claim(peer);ped_count(PGC_REF(permit_claims));}
+#else
         pda_claim(peer);ped_count(PGC_REF(permit_claims));
+#endif
         struct li2_pg_generation *g=&PE_SLOT(generation);
         le_zero(g->open,sizeof g->open);le_zero(g->close,sizeof g->close);le_zero(g->cleanup,sizeof g->cleanup);
         le_zero(&g->slots[1],2U*sizeof g->slots[1]);le_zero(&g->cell[1],2U*sizeof g->cell[1]);

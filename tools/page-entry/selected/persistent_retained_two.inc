@@ -1,12 +1,18 @@
+#ifndef PTR_SLOT_AT
+#define PTR_SLOT_AT(i) pe.retained[i]
+#endif
 /* Included only by the opt-in two-slot controller. All original semantic,
    physical query and full-byte checks remain at their original checkpoints. */
 static int ptr_selected(void) {
     if(pe.selected_slot>=LI2_PTR_SLOTS)return 0;
-    const struct li2_ptr_slot_ref *a=&pe.selection,*b=&pe.retained[pe.selected_slot].identity;
+    const struct li2_ptr_slot_ref *a=&pe.selection,*b=&PTR_SLOT_AT(pe.selected_slot).identity;
     return a->owner==&pe && b->owner==&pe && a->index==pe.selected_slot &&
         b->index==pe.selected_slot && !a->reserved && !b->reserved &&
         a->generation==b->generation;
 }
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+static int ptr_storage(void) {return lta_storage();}
+#else
 static int ptr_storage(void) {
     if(!pe.initialized || !pe.registered || pe.selected_slot>=LI2_PTR_SLOTS ||
        pe.selected_bank>1 || protected_count>RANGES ||
@@ -18,7 +24,7 @@ static int ptr_storage(void) {
        selected_run_protect_contains(0,pe.domain.directory,LI2_JD_DOMAIN_BYTES)!=1)return 0;
 #endif
     for(unsigned i=0;i<LI2_PTR_SLOTS;i++) {
-        const struct li2_ptr_slot *s=&pe.retained[i];
+        const struct li2_ptr_slot *s=&PTR_SLOT_AT(i);
         if(s->identity.owner!=&pe || s->identity.index!=i || s->identity.reserved ||
            s->code_allocated!=2 || s->code_registered!=2 || s->proof_allocated!=1 ||
            s->proof_registered!=1 || !s->proof || (s->proof&(PAGE-1)) ||
@@ -39,8 +45,8 @@ static int ptr_storage(void) {
         }
     }
     for(unsigned i=0;i<LI2_PTR_SLOTS;i++)for(unsigned j=0;j<i;j++)
-        if(pe.retained[i].identity.generation &&
-           pe.retained[i].identity.generation==pe.retained[j].identity.generation)return 0;
+        if(PTR_SLOT_AT(i).identity.generation &&
+           PTR_SLOT_AT(i).identity.generation==PTR_SLOT_AT(j).identity.generation)return 0;
     for(unsigned i=0;i<used;i++) {
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
         if(first[i]<pe.domain.directory+LI2_JD_DOMAIN_BYTES && pe.domain.directory<end[i])return 0;
@@ -50,9 +56,10 @@ static int ptr_storage(void) {
     }
     return 1;
 }
+#endif
 static int ptr_slots(unsigned index,unsigned linked) {
     if(index>=LI2_PTR_SLOTS || !ptr_storage())return 0;
-    const struct li2_ptr_slot *s=&pe.retained[index];
+    const struct li2_ptr_slot *s=&PTR_SLOT_AT(index);
     const struct li2_pg_generation *g=&s->generation;
     const struct li2_pg_compact *p=&((const struct pe_payload *)s->proof)->plan;
 #ifdef LI2_PERSISTENT_DISPATCH
@@ -71,7 +78,7 @@ static int ptr_slots(unsigned index,unsigned linked) {
 }
 static int ptr_stored(unsigned index) {
     if(index>=LI2_PTR_SLOTS)return 0;
-    const struct li2_ptr_slot *s=&pe.retained[index];
+    const struct li2_ptr_slot *s=&PTR_SLOT_AT(index);
     const struct li2_pg_generation *g=&s->generation;
     if(!pe_registered_storage() || g->installed!=1 || g->complete!=1 || g->proof_complete!=1 ||
        !g->generation || g->generation>pe.next_generation || g->generation!=s->identity.generation || g->ready_generation!=g->generation ||
@@ -138,7 +145,7 @@ static int ptr_permitted(unsigned index) { return pda_permitted(index); }
 #else
 static int ptr_permitted(unsigned index) {
     if(index>=LI2_PTR_SLOTS)return 0;
-    const struct li2_ptr_slot *slot=&pe.retained[index];
+    const struct li2_ptr_slot *slot=&PTR_SLOT_AT(index);
     const struct ped_permit *p=&slot->permit;
     const struct li2_pg_generation *g=&slot->generation;
     const struct li2_pg_source_progress *s=&p->source;
@@ -195,7 +202,7 @@ static unsigned ptr_choose(uintptr_t pc) {
         !pe.p.first_error,PE_STATE,42);
     unsigned match=LI2_PTR_SLOTS,empty=LI2_PTR_SLOTS,victim=LI2_PTR_SLOTS;
     for(unsigned i=0;i<LI2_PTR_SLOTS;i++) {
-        const struct li2_ptr_slot *s=&pe.retained[i];const struct li2_pg_generation *g=&s->generation;
+        const struct li2_ptr_slot *s=&PTR_SLOT_AT(i);const struct li2_pg_generation *g=&s->generation;
         if(!g->installed) {
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
             pe_need(!s->claim.valid && !s->claim.id && !g->domain_refs,PE_STATE,73);
@@ -207,11 +214,15 @@ static unsigned ptr_choose(uintptr_t pc) {
             if(empty==LI2_PTR_SLOTS)empty=i;
             continue;
         }
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+        pe_need(lta_available(i),PE_RELEASE,40+(long)i);
+#else
         pe_need(ptr_permitted(i),PE_RELEASE,40+(long)i);
+#endif
         if(s->publication.source.entry==pc) {
             pe_need(match==LI2_PTR_SLOTS,PE_STATE,45);match=i;
         }
-        if(victim==LI2_PTR_SLOTS || s->last_completed<pe.retained[victim].last_completed)victim=i;
+        if(victim==LI2_PTR_SLOTS || s->last_completed<PTR_SLOT_AT(victim).last_completed)victim=i;
     }
     unsigned chosen=match!=LI2_PTR_SLOTS?match:empty!=LI2_PTR_SLOTS?empty:victim;
     pe_need(chosen<LI2_PTR_SLOTS,PE_STATE,46);return chosen;

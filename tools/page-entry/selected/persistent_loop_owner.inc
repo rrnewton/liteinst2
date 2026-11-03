@@ -15,7 +15,7 @@ static int plr_scope_enter(unsigned scope) {
     uint64_t mask=0;
     if(raw(SYS_rt_sigprocmask,SIG_SETMASK,0,(long)&mask,8,0,0) || mask!=SELECTED_MASK)return 0;
     for(unsigned i=0;i<LI2_PTR_SLOTS;i++) {
-        const struct li2_ptr_slot *s=&pe.retained[i];
+        const struct li2_ptr_slot *s=&PTR_SLOT_AT(i);
         if(s->generation.linked || s->generation.active_refs || s->generation.domain_refs ||
            s->generation.member_refs[0] || s->generation.member_refs[1] ||
            s->generation.incoming[0] || s->generation.incoming[1])return 0;
@@ -25,6 +25,20 @@ static int plr_scope_enter(unsigned scope) {
         for(unsigned j=0;j<2;j++)if(s->banks[j].prot== (PROT_READ|PROT_EXEC))return 0;
 #endif
     }
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    /* A detached translation is outside the active view, but must still be
+       quiescent before any shared planner or history reconstruction runs. */
+    for(unsigned node=0;node<PTR_NODE_COUNT;node++) {
+        if(lta_node_bound(node)>=0)continue;
+        if(!ptr_node_storage(node))return 0;
+        const struct li2_ptr_slot *s=&PTR_NODE_AT(node);
+        if(s->generation.linked || s->generation.active_refs || s->generation.domain_refs ||
+           s->generation.member_refs[0] || s->generation.member_refs[1] ||
+           s->generation.incoming[0] || s->generation.incoming[1])return 0;
+        for(unsigned bank=0;bank<2;bank++)
+            if(s->banks[bank].prot==(PROT_READ|PROT_EXEC))return 0;
+    }
+#endif
     if(scope==PLR_COLD || scope==PLR_CANCEL) {
         if(pe.p.phase!=LI2_PG_HELD || !pe_busy || pe_active || pe.consumed ||
            pe.redirected || pe.p.opened_pages)return 0;

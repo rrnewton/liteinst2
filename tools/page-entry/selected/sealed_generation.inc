@@ -33,38 +33,56 @@ _Static_assert(LI2_PTR_SLOTS==2 && PE_CODE_BYTES==17U*PAGE && PE_PROOF_BYTES==89
 #endif
 _Static_assert(LI2_SEALED_REQUIRED_SEALS==
     (F_SEAL_WRITE|F_SEAL_GROW|F_SEAL_SHRINK|F_SEAL_SEAL),"all file seals");
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+#define SG_NODE_COUNT PTR_NODE_COUNT
+#define SG_NODE_INDEX ptr_node_index(pe.selected_slot)
+#define SG_ROOT_BYTES (2U*PAGE)
+static int sg_selected_node(void) {
+    unsigned node=ptr_node_index(pe.selected_slot);
+    return pe.selected_slot<LI2_PTR_SLOTS && node<PTR_NODE_COUNT && ptr_node_storage(node);
+}
+#else
+#define SG_NODE_COUNT LI2_PTR_SLOTS
+#define SG_NODE_INDEX pe.selected_slot
+#define SG_ROOT_BYTES PAGE
+#endif
 struct sg_owner_state {
     unsigned initialized,reserved;
 #ifdef LI2_LOOP_RO_CERTIFICATE
     unsigned ro_initialized,ro_writable_mask;
 #endif
-    struct li2_sealed_identity bank[LI2_PTR_SLOTS][2];
+    struct li2_sealed_identity bank[SG_NODE_COUNT][2];
 #ifdef LI2_SEALED_BYTE_CERTIFICATE
     struct sbc_owner bytes;
 #endif
 };
 static union {
     struct sg_owner_state state;
-    unsigned char page[PAGE];
+    unsigned char page[SG_ROOT_BYTES];
 } sg_owner __attribute__((aligned(PAGE)));
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+_Static_assert(LI2_PTR_SLOTS==8 && SG_NODE_COUNT==12 && sizeof(struct sg_owner_state)==4544 &&
+    sizeof sg_owner==2U*PAGE,"exact two-page immutable arena seal owner");
+#else
 _Static_assert(sizeof sg_owner==PAGE,"one separately protected owner page");
+#endif
 
 static int sg_permission(int prot) {
-    return raw(SYS_mprotect,(long)&sg_owner,PAGE,prot,0,0,0)?PE_PUBLICATION:0;
+    return raw(SYS_mprotect,(long)&sg_owner,SG_ROOT_BYTES,prot,0,0,0)?PE_PUBLICATION:0;
 }
 static int sg_initialize(void) {
     if(sg_owner.state.initialized || ((uintptr_t)&sg_owner&(PAGE-1)) ||
-       protected_count>=RANGES || selected_run_protect_add(0,(uintptr_t)&sg_owner,PAGE))return PE_STATE;
+       protected_count>=RANGES || selected_run_protect_add(0,(uintptr_t)&sg_owner,SG_ROOT_BYTES))return PE_STATE;
 #ifdef LI2_LOOP_RO_CERTIFICATE
     /* Fixed isolated root: ordinary syscall outputs must obey its R mapping. */
-    if((uintptr_t)raw(SYS_mmap,(long)&sg_owner,PAGE,PROT_READ|PROT_WRITE,
+    if((uintptr_t)raw(SYS_mmap,(long)&sg_owner,SG_ROOT_BYTES,PROT_READ|PROT_WRITE,
         MAP_PRIVATE|MAP_ANONYMOUS|MAP_FIXED,-1,0)!=(uintptr_t)&sg_owner)return PE_PUBLICATION;
 #endif
     /* The page is not writable during guest execution or forwarded syscalls.
        Same-uid external ptrace/proc-memory access must also be unavailable. */
     if(raw(SYS_prctl,PR_SET_DUMPABLE,0,0,0,0,0) ||
        raw(SYS_prctl,PR_GET_DUMPABLE,0,0,0,0,0)!=0)return PE_PUBLICATION;
-    for(unsigned i=0;i<LI2_PTR_SLOTS;i++)for(unsigned j=0;j<2;j++)
+    for(unsigned i=0;i<SG_NODE_COUNT;i++)for(unsigned j=0;j<2;j++)
         sg_owner.state.bank[i][j].fd=-1;
     sg_owner.state.initialized=1;
 #ifdef LI2_SEALED_BYTE_CERTIFICATE
@@ -78,7 +96,7 @@ static int sg_interval(uintptr_t first,size_t bytes,uintptr_t at,size_t length) 
 }
 static const struct li2_sealed_identity *sg_find(uintptr_t at,size_t bytes) {
     const struct li2_sealed_identity *found=0;
-    for(unsigned i=0;i<LI2_PTR_SLOTS;i++)for(unsigned j=0;j<2;j++) {
+    for(unsigned i=0;i<SG_NODE_COUNT;i++)for(unsigned j=0;j<2;j++) {
         const struct li2_sealed_identity *id=&sg_owner.state.bank[i][j];
         if((id->code_live && sg_interval(id->code,id->code_bytes,at,bytes)) ||
            (id->proof_live && sg_interval(id->proof,id->proof_bytes,at,bytes))) {
@@ -143,6 +161,9 @@ static int sg_check_extent(const struct li2_sealed_identity *id,uintptr_t at,siz
     return 0;
 }
 static int sg_closed(void) {
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    if(!sg_selected_node())return 0;
+#endif
     if(!sg_owner.state.initialized || !pe_busy || pe_active || pe.resuming ||
        pe.p.phase!=LI2_PG_CONSUMED || pe.selected_slot>=LI2_PTR_SLOTS || pe.selected_bank>1)
         return 0;
@@ -170,14 +191,14 @@ static int sg_reopen(uintptr_t code,uintptr_t proof) {
     /* Every live alias is still R/NX, and the old permission/claim checks have
        already completed. No sealed backing is ever made writable. */
     for(unsigned j=0;j<2;j++) {
-        const struct li2_sealed_identity *id=&sg_owner.state.bank[pe.selected_slot][j];
+        const struct li2_sealed_identity *id=&sg_owner.state.bank[SG_NODE_INDEX][j];
         if(id->code_live && id->code==code && sg_check_extent(id,code,PE_CODE_BYTES))return PE_PUBLICATION;
         if(id->proof_live && id->proof==proof && sg_check_extent(id,proof,PE_PROOF_BYTES))return PE_PUBLICATION;
     }
     if(sg_permission(PROT_READ|PROT_WRITE))return PE_PUBLICATION;
     int error=0;
     for(unsigned j=0;j<2 && !error;j++) {
-        struct li2_sealed_identity *id=&sg_owner.state.bank[pe.selected_slot][j];
+        struct li2_sealed_identity *id=&sg_owner.state.bank[SG_NODE_INDEX][j];
         if(id->code_live && id->code==code) {
 #ifdef LI2_MAPS_MAINTAINED
             long result=sg_anon_reset(code,PE_CODE_BYTES);
@@ -215,6 +236,9 @@ static int sg_write(long fd,const unsigned char *bytes,size_t count,size_t offse
     return 0;
 }
 static int sg_publish(const struct li2_pg_generation *g) {
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    if(!sg_selected_node())return PE_STATE;
+#endif
 #ifdef LI2_SEALED_BYTE_CERTIFICATE
     if(!sbc_unpublished())return PE_STATE;
 #endif
@@ -226,7 +250,7 @@ static int sg_publish(const struct li2_pg_generation *g) {
        g->code_copied!=PE_CODE_BYTES || g->proof_zeroed!=PE_PROOF_BYTES ||
        g->proof_copied!=sizeof(struct pe_payload))
         return PE_STATE;
-    struct li2_sealed_identity *old=&sg_owner.state.bank[pe.selected_slot][pe.selected_bank];
+    struct li2_sealed_identity *old=&sg_owner.state.bank[SG_NODE_INDEX][pe.selected_bank];
     if(old->fd!=-1 || old->code_live || old->proof_live)return PE_STATE;
     long fd=raw(SYS_memfd_create,(long)"li2-sealed-generation",MFD_CLOEXEC|MFD_ALLOW_SEALING,0,0,0,0);
     if(fd<0 || fd>INT32_MAX)return PE_PUBLICATION;
@@ -257,7 +281,7 @@ static int sg_publish(const struct li2_pg_generation *g) {
 }
 static void sg_fd_guard(long number,const long args[6]) {
     if(!sg_owner.state.initialized)return;
-    for(unsigned i=0;i<LI2_PTR_SLOTS;i++)for(unsigned j=0;j<2;j++) {
+    for(unsigned i=0;i<SG_NODE_COUNT;i++)for(unsigned j=0;j<2;j++) {
         const struct li2_sealed_identity *id=&sg_owner.state.bank[i][j];
         if(id->fd<0)continue;
         if((number==SYS_close || number==SYS_write || number==SYS_writev || number==SYS_fcntl) &&

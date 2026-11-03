@@ -112,7 +112,7 @@ static int lgd_initialize(void) {
     lgd_writer.value.root=lgd_writer.value.manifest=lgd_writer.value.directory=1;
     for(unsigned i=0;i<LI2_PGD_RECEIPTS;i++)
         lgd_writer.value.certificate[i]=lgd_writer.value.cell[i]=lgd_writer.value.capsule[i]=1;
-    for(unsigned i=0;i<LI2_PTR_SLOTS;i++)lgd_writer.value.publication[i]=1;
+    for(unsigned i=0;i<PTR_NODE_COUNT;i++)lgd_writer.value.publication[i]=1;
     __asm__ volatile("":::"memory");lgd_writer.value.initialized=1;
     return 0;
 }
@@ -139,13 +139,16 @@ static int lgd_manifest_live_context(unsigned preentry) {
 static int lgd_manifest_live(void) {return lgd_manifest_live_context(0);}
 static int lgd_member_match(const struct li2_pgd_member *m,const struct lgd_member *saved) {
     unsigned slot=m->identity.slot;
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    if(ptr_node_index(slot)>=PTR_NODE_COUNT)return 0;
+#endif
     if(slot>=LI2_PTR_SLOTS || !equal(m,&saved->value,sizeof *m) ||
-       saved->exposure!=lgd_writer.value.publication[slot] ||
-       !saved->exposure || sg_owner.state.bytes.poisoned || sg_owner.state.bytes.writer[slot])return 0;
-    const struct sbc_certificate *c=&sg_owner.state.bytes.certificate[slot];
-    return c->valid==1 && !c->reserved && c->slot==slot && c->bank==m->identity.bank &&
+       saved->exposure!=lgd_writer.value.publication[ptr_node_index(slot)] ||
+       !saved->exposure || sg_owner.state.bytes.poisoned || sg_owner.state.bytes.writer[ptr_node_index(slot)])return 0;
+    const struct sbc_certificate *c=&sg_owner.state.bytes.certificate[ptr_node_index(slot)];
+    return c->valid==1 && !c->reserved && c->slot==ptr_node_index(slot) && c->bank==m->identity.bank &&
         c->generation==m->identity.generation && c->owner==&pe &&
-        c->mirror_epoch==sg_owner.state.bytes.mirror_epoch[slot] &&
+        c->mirror_epoch==sg_owner.state.bytes.mirror_epoch[ptr_node_index(slot)] &&
         equal(c,&saved->certificate,sizeof *c);
 }
 /* A bijection, never a count-only or root-only membership test. The fresh
@@ -265,9 +268,12 @@ static int lgd_directory(void) {
     copy(next->archive,pe_archive,32);copy(next->policy,pe_policy,32);
     for(unsigned i=0;i<canonical.count;i++) {
         unsigned slot=canonical.member[i].identity.slot;
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+        if(ptr_node_index(slot)>=PTR_NODE_COUNT)return PE_STATE;
+#endif
         next->member[i]=(struct lgd_member){.value=canonical.member[i],
-            .certificate=sg_owner.state.bytes.certificate[slot],
-            .exposure=lgd_writer.value.publication[slot]};
+            .certificate=sg_owner.state.bytes.certificate[ptr_node_index(slot)],
+            .exposure=lgd_writer.value.publication[ptr_node_index(slot)]};
     }
     copy(&lgd_group,&lgd_candidate,sizeof lgd_group);
     __asm__ volatile("":::"memory");

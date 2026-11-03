@@ -8,8 +8,8 @@ static int lprx_add(uint64_t *n,uint64_t amount) {
 }
 static int lprx_permission_count(uintptr_t address,size_t bytes,int prot,unsigned sync) {
     unsigned code=0;
-    for(unsigned s=0;s<LI2_PTR_SLOTS;s++)for(unsigned b=0;b<2;b++) {
-        const struct ped_bank *bank=&pe.retained[s].banks[b];
+    for(unsigned s=0;s<PTR_NODE_COUNT;s++)for(unsigned b=0;b<2;b++) {
+        const struct ped_bank *bank=&PTR_NODE_AT(s).banks[b];
         if(!bank->allocated)continue;
         for(unsigned j=0;j<3;j++)code+=address==pg_extent(&bank->layout,j) &&
             bytes==pg_extent_bytes(j);
@@ -22,7 +22,7 @@ static int lprx_permission_count(uintptr_t address,size_t bytes,int prot,unsigne
 }
 static int lprx_slot_prot(unsigned slot) {
     if(slot>=LI2_PTR_SLOTS || !ptr_storage())return -1;
-    const struct li2_ptr_slot *s=&pe.retained[slot];
+    const struct li2_ptr_slot *s=&PTR_SLOT_AT(slot);
     const struct li2_pg_generation *g=&s->generation;
     const struct lprx_slot *r=&pe.rx.slot[slot];
     unsigned bank=2;
@@ -44,7 +44,7 @@ static int lprx_slot_prot(unsigned slot) {
 }
 static int lprx_history_quiet(unsigned slot) {
     if(slot>=LI2_PTR_SLOTS)return 0;
-    const struct li2_ptr_slot *s=&pe.retained[slot];
+    const struct li2_ptr_slot *s=&PTR_SLOT_AT(slot);
     for(unsigned b=0;b<2;b++)if(s->banks[b].prot==(PROT_READ|PROT_EXEC)) {
         if(lprx_slot_prot(slot)!=(PROT_READ|PROT_EXEC) || pe.rx.slot[slot].bank!=b ||
            s->generation.active_refs || s->generation.member_refs[0] || s->generation.member_refs[1] ||
@@ -57,7 +57,7 @@ static int lprx_history_quiet(unsigned slot) {
 }
 static int lprx_permitted(unsigned slot) {
     int prot=lprx_slot_prot(slot);if(prot<0)return 0;
-    const struct li2_pg_generation *g=&pe.retained[slot].generation;
+    const struct li2_pg_generation *g=&PTR_SLOT_AT(slot).generation;
     if(g->linked || g->active_refs || g->domain_refs || g->member_refs[0] || g->member_refs[1] ||
        g->incoming[0] || g->incoming[1])return 0;
     struct li2_private_code_query q[3]={0};
@@ -122,8 +122,8 @@ static int lprx_drain(void) {
     for(unsigned i=0;i<w->view.count;i++) {
         unsigned slot=w->view.member[i].identity.slot;
         if(slot>=LI2_PTR_SLOTS || lprx_slot_prot(slot)!=(PROT_READ|PROT_EXEC) ||
-           !pda_zero(pe.retained[slot].generation.close,sizeof pe.retained[slot].generation.close) ||
-           pg_queries(&pe.retained[slot].generation.layout,PROT_READ|PROT_EXEC,
+           !pda_zero(PTR_SLOT_AT(slot).generation.close,sizeof PTR_SLOT_AT(slot).generation.close) ||
+           pg_queries(&PTR_SLOT_AT(slot).generation.layout,PROT_READ|PROT_EXEC,
                pe.domain.work.rx_quiet[i]))return PE_PUBLICATION;
     }
     return lprx_add(&pe.rx.quiet_releases,1);
@@ -178,7 +178,7 @@ static int lprx_revoke(unsigned reason) {
         struct lprx_slot *r=&pe.rx.slot[i];
         unsigned rx=0;
         for(unsigned b=0;b<2;b++)
-            if(pe.retained[i].banks[b].prot==(PROT_READ|PROT_EXEC)) {
+            if(PTR_SLOT_AT(i).banks[b].prot==(PROT_READ|PROT_EXEC)) {
                 if(r->phase!=LPRX_RESIDENT || r->bank!=b)return PE_STATE;
                 ++rx;
             }
@@ -187,14 +187,14 @@ static int lprx_revoke(unsigned reason) {
                 (r->phase!=LPRX_REVOKED || lprx_slot_prot(i)!=PROT_READ)))return PE_STATE;
             continue;
         }
-        const struct li2_pg_generation *g=&pe.retained[i].generation;
+        const struct li2_pg_generation *g=&PTR_SLOT_AT(i).generation;
         if(rx!=1 || lprx_slot_prot(i)!=(PROT_READ|PROT_EXEC) || g->linked || g->active_refs ||
            g->domain_refs || g->member_refs[0] || g->member_refs[1] ||
            g->incoming[0] || g->incoming[1])return PE_STATE;
         r->phase=LPRX_REVOKING;__asm__ volatile("":::"memory");
         unsigned pages=0;int e=pg_permissions(&r->layout,PROT_READ,r->revoke,&pages);
         if(e || pages!=17 || !pg_closed(&r->layout,r->revoke))return PE_PUBLICATION;
-        pe.retained[i].banks[r->bank].prot=PROT_READ;
+        PTR_SLOT_AT(i).banks[r->bank].prot=PROT_READ;
         if(lprx_add(&pe.rx.revocations[reason],1))return PE_OVERFLOW;
         __asm__ volatile("":::"memory");r->phase=LPRX_REVOKED;
     }
@@ -352,7 +352,7 @@ static void lprx_preentry(int sig,const siginfo_t *si,const ucontext_t *uc) {
     const struct lprx_branch *b=&pe.rx.branch;
     if(!b->phase) {
         for(unsigned i=0;i<LI2_PTR_SLOTS;i++)for(unsigned j=0;j<2;j++)
-            if(pe.retained[i].banks[j].prot==(PROT_READ|PROT_EXEC))
+            if(PTR_SLOT_AT(i).banks[j].prot==(PROT_READ|PROT_EXEC))
                 selected_persistent_abort(PE_EVENT,523);
         return;
     }
@@ -451,15 +451,19 @@ static void lprx_terminal(void) {
     if(!pe.initialized)return;
     if(lprx_add(&pe.rx.terminal_attempts,1))return;
     le_zero(&pe.rx.branch,sizeof pe.rx.branch);
+#ifdef LI2_LOOP_TRANSLATION_ARENA
+    unsigned good=lta_terminal();
+#else
     unsigned good=1;
-    for(unsigned i=0;i<LI2_PTR_SLOTS;i++)for(unsigned b=0;b<2;b++) {
-        struct ped_bank *bank=&pe.retained[i].banks[b];
+    for(unsigned i=0;i<PTR_NODE_COUNT;i++)for(unsigned b=0;b<2;b++) {
+        struct ped_bank *bank=&PTR_NODE_AT(i).banks[b];
         if(bank->prot!=(PROT_READ|PROT_EXEC))continue;
         struct le_permission close[3]={0};unsigned pages=0;
         if(pg_permissions(&bank->layout,PROT_READ,close,&pages) || pages!=17 ||
            !pg_closed(&bank->layout,close))good=0;
         else bank->prot=PROT_READ;
     }
+#endif
     if(good)(void)lprx_add(&pe.rx.terminal_closed,1);
 }
 #ifdef LI2_LOOP_CACHE8_PROGRAM
