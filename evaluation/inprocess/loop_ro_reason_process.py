@@ -9,7 +9,7 @@ from page_native_pair_performance import decode,H,PROGRAM_ENV
 from loop_ro_reason_counter import MAGIC, final_counter_prefix
 
 
-def _program_invoke(row, directory, cpu, record=False, step=False, *, version, logical_bytes, carrier_name, reader):
+def _program_invoke(row, directory, cpu, record=False, step=False, *, version, logical_bytes, carrier_name, reader, storage_bytes=4096):
     need(record is False and step is False and row['bounds'] == [30, 512<<20, 16<<20, 60],
          'counter observation keeps the exact single release subject bounds')
     need(type(cpu) is int and cpu>=0 and os.sched_getaffinity(0)=={cpu} and len(row['argv'])>4 and
@@ -88,11 +88,11 @@ def _program_invoke(row, directory, cpu, record=False, step=False, *, version, l
         counter_rw = os.memfd_create('li2-loop-effects-abi'+str(version)+'-counters', os.MFD_CLOEXEC | os.MFD_ALLOW_SEALING)
         counter_state = dict(name='counter_rw', fd=counter_rw, closed=False)
         descriptors.append((counter_rw, counter_state)); row['descriptors'].append(counter_state)
-        os.ftruncate(counter_rw, 4096); os.fchmod(counter_rw, 0o600)
+        os.ftruncate(counter_rw, storage_bytes); os.fchmod(counter_rw, 0o600)
         cs = os.fstat(counter_rw); nonce = int.from_bytes(os.urandom(8), 'little') or 1
-        counter_initial = (MAGIC, version, logical_bytes, 4096, nonce, os.getpid(), cs.st_dev, cs.st_ino)
-        initial = struct.pack('<8Q', *counter_initial)+bytes(4096-64)
-        need(os.pwrite(counter_rw, initial, 0) == 4096, 'whole initial counter page')
+        counter_initial = (MAGIC, version, logical_bytes, storage_bytes, nonce, os.getpid(), cs.st_dev, cs.st_ino)
+        initial = struct.pack('<8Q', *counter_initial)+bytes(storage_bytes-64)
+        need(os.pwrite(counter_rw, initial, 0) == storage_bytes, 'whole initial counter page')
         fcntl.fcntl(counter_rw, fcntl.F_ADD_SEALS, 6)
         need(fcntl.fcntl(counter_rw, fcntl.F_GET_SEALS) == 6, 'exact grow/shrink seals before target writer')
         # Reopening makes a genuine read-only description. dup() would retain RW.
@@ -100,10 +100,10 @@ def _program_invoke(row, directory, cpu, record=False, step=False, *, version, l
         counter_read_state = dict(name='counter_ro', fd=counter_ro, closed=False)
         row['descriptors'].append(counter_read_state)
         rs = os.fstat(counter_ro)
-        need((rs.st_dev, rs.st_ino, rs.st_size) == (cs.st_dev, cs.st_ino, 4096) and
+        need((rs.st_dev, rs.st_ino, rs.st_size) == (cs.st_dev, cs.st_ino, storage_bytes) and
              fcntl.fcntl(counter_ro, fcntl.F_GETFL) & os.O_ACCMODE == os.O_RDONLY,
              'parent holds same backing through genuine read-only descriptor, never a writable mapping')
-        row['counter_input'] = dict(version=version, bytes=4096, logical_bytes=logical_bytes, nonce=nonce, parent=os.getpid(),
+        row['counter_input'] = dict(version=version, bytes=storage_bytes, logical_bytes=logical_bytes, nonce=nonce, parent=os.getpid(),
                                    device=cs.st_dev, inode=cs.st_ino, initial_seals=6, child_fd=counter_rw)
         row['argv'] = [str(counter_rw) if x == '{counter_fd}' else str(nonce) if x == '{counter_nonce}' else x
                        for x in row['argv']]
@@ -180,13 +180,13 @@ def _program_invoke(row, directory, cpu, record=False, step=False, *, version, l
         if counter_ro is not None:
             try:
                 need(row['reaped'] is True and not row['cleanup_errors'], 'final read follows actual target/group cleanup')
-                data = os.pread(counter_ro, 4097, 0)
+                data = os.pread(counter_ro, storage_bytes+1, 0)
                 destination = directory/(row['name']+'.counters')
                 with destination.open('xb') as stream: stream.write(data)
                 paths['counters'] = destination
                 rs = os.fstat(counter_ro)
                 need(counter_initial is not None and (rs.st_dev, rs.st_ino, rs.st_size) ==
-                     (counter_initial[6], counter_initial[7], 4096) and
+                     (counter_initial[6], counter_initial[7], storage_bytes) and
                      fcntl.fcntl(counter_ro, fcntl.F_GETFL) & os.O_ACCMODE == os.O_RDONLY,
                      'final read-only descriptor identity unchanged')
                 seals = fcntl.fcntl(counter_ro, fcntl.F_GET_SEALS)
@@ -228,7 +228,7 @@ def _program_invoke(row, directory, cpu, record=False, step=False, *, version, l
     return paths['stdout'].read_bytes(), paths['stderr'].read_bytes()
 
 
-def _namespace_join(state,ns,binary,r,namespace,counter,*,version,logical_bytes,environment_prefix,identity_name):
+def _namespace_join(state,ns,binary,r,namespace,counter,*,version,logical_bytes,environment_prefix,identity_name,storage_bytes=4096):
     observed=decode(binary(ns/'namespace.json').read_bytes());launch=decode(binary(ns/'launch.json').read_bytes())
     objects=state['objects'];description=state['description']
     need(all(observed[k]==v for k,v in description.items())and observed['directory']==str(ns)and
@@ -253,7 +253,7 @@ def _namespace_join(state,ns,binary,r,namespace,counter,*,version,logical_bytes,
          'device','inode','initial_seals','child_fd'} and
          all(type(v) is int and 0<v<1<<64 for v in counter.values()) and counter['child_fd']>2 and
          counter['child_fd'] not in fds and counter['initial_seals']==6 and
-         counter['bytes']==4096 and counter['version']==version and counter['logical_bytes']==logical_bytes, 'separate exact counter preparation channel')
+         counter['bytes']==storage_bytes and counter['version']==version and counter['logical_bytes']==logical_bytes, 'separate exact counter preparation channel')
     expected_env.update({environment_prefix+'_FD':str(counter['child_fd']),environment_prefix+'_NONCE':str(counter['nonce'])})
     actual_counter=launch.get(identity_name)
     carrier_fd=launch.get('carrier_fd')

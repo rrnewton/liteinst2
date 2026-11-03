@@ -958,6 +958,9 @@ static int ped_permitted(void) {
 #include "reuse_census_owner.inc"
 #endif
 #define RCC_TEST(bit,value) rcc_test((bit),!!(value))
+#elif defined(LI2_LOOP_RX_RECURRENCE)
+#include "loop_rx_recurrence_owner.inc"
+#define RCC_TEST(bit,value) lrc_test((bit),!!(value))
 #elif defined(LI2_LOOP_RO_RETIRED)
 #include "loop_ro_reasons_owner.inc"
 #include "loop_ro_retired_owner.inc"
@@ -1164,6 +1167,9 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
     rcc_source(s,r);
 #endif
+#ifdef LI2_LOOP_RX_RECURRENCE
+    lrc_begin(s,r);
+#endif
     LRX_SOURCE(s,r);
 #ifdef LI2_LOOP_RESIDENT_RX_ORACLE
     lrxo_build(s->key.entry);
@@ -1191,6 +1197,9 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         rcc_plan(pe.subentry_selected?2U:1U);
 #endif
         LRR_PLAN(pe.subentry_selected?2U:1U);
+#ifdef LI2_LOOP_RX_RECURRENCE
+    lrc_plan(pe.subentry_selected?2U:1U);
+#endif
 #ifdef LI2_PERSISTENT_SUBENTRY
         pe_need(!pe_sub_fill(),PE_SOURCE,110);
 #endif
@@ -1268,6 +1277,9 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
             rcc_plan(3);
 #endif
             LRR_PLAN(3);
+#ifdef LI2_LOOP_RX_RECURRENCE
+    lrc_plan(3);
+#endif
             return 0;
         }
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
@@ -1335,6 +1347,9 @@ static int pe_build(int sig,const siginfo_t *si,const ucontext_t *uc) {
         rcc_plan(4);
 #endif
         LRR_PLAN(4);
+#ifdef LI2_LOOP_RX_RECURRENCE
+    lrc_plan(4);
+#endif
 #ifdef LI2_PERSISTENT_LOOP_RUNTIME
         plr_scope_leave(PLR_COLD);
 #else
@@ -1719,6 +1734,9 @@ int li2_pg_epoch_cancel(const struct li2_pg_token *t,int sig,siginfo_t *si,ucont
     rcc_finish(1);
 #endif
     LRR_FINISH(1);
+#ifdef LI2_LOOP_RX_RECURRENCE
+    lrc_finish(1);
+#endif
 #ifdef LI2_PERSISTENT_GROUP_CAPTURE
     pgo_cancelled(sig,si,uc,*result);
 #endif
@@ -2032,6 +2050,9 @@ static int selected_persistent_trace_try(int sig,siginfo_t *si,ucontext_t *uc) {
     rcc_bound();
 #endif
     LRR_BOUND();
+#ifdef LI2_LOOP_RX_RECURRENCE
+    lrc_bound();
+#endif
 #ifdef LI2_PERSISTENT_ACTIVE_DOMAIN
     pe_need(!pda_bind(uc),PE_PUBLICATION,70);
 #endif
@@ -2095,6 +2116,9 @@ static void selected_persistent_exit(int sig,siginfo_t *si,ucontext_t *uc) {
     rcc_finish(2);
 #endif
     LRR_FINISH(2);
+#ifdef LI2_LOOP_RX_RECURRENCE
+    lrc_finish(2);
+#endif
 #else
     ped_count(PGC_REF(completed));pe.p.completion_permit=1;
     pe_need(!PE_SLOT(permit).valid,PE_RELEASE,12);

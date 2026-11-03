@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 import sys
-from page_selected import fact, need, bridge_check
+from page_selected import fact, need, bridge_check, elf
 from persistent_dynamic import load, imported_sources, digest
 from persistent_loop_effects_build import ACTIVE_PROVIDERS
 from persistent_epoch_build import dynamic_original_image
@@ -17,21 +17,25 @@ RX_LIFETIME=dict(version=1,slots=2,source_release_version=1,
     metadata_permission_counts='actual-pe_permission-calls-only',qualification_credit=False)
 
 
-def build_rx(builder, archive, original, directory, pin, binary, aliases, run, state, mode, *, control=None, selected=None, root=None):
+def build_rx(builder, archive, original, directory, pin, binary, aliases, run, state, mode, *, control=None, selected=None, root=None, recurrence=False):
     """Execute the real source-owned recipe, then bind its exact compiler closure."""
     need(mode in ('release','differential') and
          (control is None or type(control)is int and control in (0,1)) and
          (control!=1 or mode=='differential'), 'explicit production or finite RX mode')
+    need(type(recurrence)is bool and (not recurrence or mode=='release' and control is None),
+         'distinct release-only passive recurrence build')
     root=ROOT if root is None else Path(root).resolve(strict=True)
     selected=SELECTED if selected is None else Path(selected).resolve(strict=True)
     need(selected.is_dir(), 'actual explicit selected compiler source context')
     stem='persistent-loop-resident-rx'+('-oracle' if control is not None else '')
+    if recurrence:stem='persistent-loop-rx-recurrence'
     binder_name=stem.replace('-','_')+'_binding'
     output = directory/'build'; output.mkdir()
     script = pin(selected/('build-'+stem+'.sh'))
     dependencies = ('persistent_epoch_binding', 'persistent_group_binding',
         'persistent_retained_two_binding', 'persistent_active_domain_binding',
-        'persistent_startup_binding', 'persistent_loop_binding', 'persistent_loop_ro_certificate_binding')
+        'persistent_startup_binding', 'persistent_loop_binding', 'persistent_loop_ro_certificate_binding') + (
+        ('persistent_loop_resident_rx_binding',) if recurrence else ())
     selected = selected.resolve(strict=True)
     paths = {name: pin(selected/(name+'.py')) for name in dependencies}
     for name, path in paths.items():
@@ -44,7 +48,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     finally:
         sys.path[:] = previous_path
     need(all(name in sys.modules and Path(sys.modules[name].__file__).resolve(strict=True) == path
-             for name, path in paths.items()), 'all seven actual canonical binding dependencies loaded')
+             for name, path in paths.items()), 'all actual canonical binding dependencies loaded')
     imported_sources(pin)
     values = [dict(path=name, **fact(pin(selected/name))) for name in binder.LEAVES]
     need(len(values) == len({v['path'] for v in values}), 'distinct complete RO source binding')
@@ -74,7 +78,8 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
         pf_refusals=dict(version=1, reason=256, shared_reasons=18, abi2=False))
     need(set(binding) == set(constants) | {'profile', 'mode', 'archive', 'policy_sha256',
              'original', 'sources', 'headers', 'byte_certificate', 'history_certificate', 'rx_lifetime'} |
-             (set() if control is None else {'control','oracle'})
+             (set() if control is None else {'control','oracle'}) |
+             ({'recurrence'} if recurrence else set())
          and digest({key: binding[key] for key in constants}) == digest(constants)
          and binding['profile'] == stem+'-'+mode+'-v1'
          and binding['mode'] == mode and binding['archive'] == fact(archive)
@@ -88,6 +93,11 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
              witnesses='isolated-anonymous-RO', complete_live_predicates=True,
              every_hit_reconstruction=mode=='differential', qualification_credit=False),
          'exact source/archive/image/mode certificate binding, never old capture ABI')
+    if recurrence:
+        need(binding['recurrence']==dict(version=7,bytes=12382208,storage_bytes=12582912,capacity=1024,
+             row_bytes=12088,source_bytes=8760,initial_seals=6,final_seals=23,
+             denominator='actual-pe_build-after-coarse-and-negative-hint',stop_detail=8960,
+             observation_authority=False,qualification_credit=False), 'exact passive observation schema')
     need(binding['rx_lifetime']==RX_LIFETIME and
          (control is None or binding['control']==control and binding['oracle']==dict(
              version=1,control=control,epochs=3,controls=32 if control else 0,
@@ -111,6 +121,7 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     expected_persistent = ('#ifndef LI2_PERSISTENT_GROUP_CONFIG_H\n#define LI2_PERSISTENT_GROUP_CONFIG_H\n'
         '#define LI2_PG_BINDING_VERSION 1\n#define LI2_PG_GROUP_BINDING_VERSION 4\n'
         '#define LI2_PG_LOOP_RO_BINDING_VERSION 1\n#define LI2_PG_LOOP_RESIDENT_RX_BINDING_VERSION 1\n'+
+        ('#define LI2_PG_LOOP_RX_RECURRENCE_BINDING_VERSION 1\n' if recurrence else '')+
         ('#define LI2_PG_LOOP_RESIDENT_RX_ORACLE_BINDING_VERSION 1\n' if control is not None else '')+
         '#define LI2_PG_LOOP_BINDING_VERSION 1\n#define LI2_PG_LOOP_POLICY_VERSION 12\n'
         '#define LI2_PG_LOOP_FALLBACK_VERSION 11\n#define LI2_PG_LOOP_ENCODING_VERSION 2\n'
@@ -130,7 +141,11 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
     need(len(old) == 1, 'one unchanged effects release recipe')
     expected = expand(old[0], substitutions)
     expected[expected.index('-Werror')+1:expected.index('-Werror')+1] = (['-include', str(output/'loop_ro_certificate_config.h'), '-DLI2_LOOP_RESIDENT_RX=1']+
+        (['-DLI2_LOOP_RX_RECURRENCE=1'] if recurrence else [])+
         ([] if control is None else ['-DLI2_LOOP_RESIDENT_RX_ORACLE=1','-DLI2_LOOP_RESIDENT_RX_CONTROL='+str(control)]))
+    if recurrence:
+        expected.insert(expected.index('-Wl,-e,_start,-Bsymbolic,-z,now,-z,relro,-z,noexecstack,--build-id=none,--no-undefined'),
+            '-Wl,--undefined=li2_lrc_layout')
     expected.insert(expected.index('-Wl,-e,_start,-Bsymbolic,-z,now,-z,relro,-z,noexecstack,--build-id=none,--no-undefined'),
         '-Wl,--undefined=li2_lifecycle_sealed_code_query,--undefined=li2_pg_storage_query')
     expected[-1] = str(output/('bridge-'+stem+'.so'))
@@ -167,5 +182,25 @@ def build_rx(builder, archive, original, directory, pin, binary, aliases, run, s
         need(len(found) == 1 and len(found[0]) == 4 and found[0][2] in (b'b', b'B')
              and int(found[0][0], 16) % 4096 == 0 and int(found[0][1], 16) % 4096 == 0,
              'actual isolated page-aligned certificate/owner storage '+name)
+    if recurrence:state['recurrence_layout']=recurrence_layout(bridge,out)
     state.update(bridge=fact(bridge), status='compiled_diagnostic_only')
     return bridge
+
+
+def recurrence_layout(bridge, symbols):
+    """Exact compiler-emitted sizeof/offsetof values in the actual ELF; no inferior."""
+    import struct
+    expected=(12582912,12382208,12088,8760,1024,9784,11832,104,176,4376,
+              8,16,24,168,172,0,8,24,48,0,8,280,
+              0,8,16,24,32,40,44,48,52,56,64,72,80,88,96)
+    found=[line.split() for line in symbols.splitlines() if line.split()[-1:]==[b'li2_lrc_layout']]
+    need(len(found)==1 and len(found[0])==4 and found[0][2] in (b'r',b'R') and
+         int(found[0][1],16)==8*len(expected),'one exact actual compiler layout object')
+    address=int(found[0][0],16);size=int(found[0][1],16)
+    data,_,segments=elf(bridge)
+    matches=[p for p in segments if p[0]==1 and p[1]==4 and p[3]<=address and address+size<=p[3]+p[5]]
+    need(len(matches)==1,'whole layout object in one actual readonly ELF LOAD')
+    segment=matches[0];offset=segment[2]+address-segment[3]
+    actual=struct.unpack_from('<'+str(len(expected))+'Q',data,offset)
+    need(actual==expected,'all37 actual compiler sizes and offsets equal independent reader layout')
+    return dict(symbol='li2_lrc_layout',address=address,bytes=size,values=list(actual),inferior_started=False)

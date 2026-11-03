@@ -16,14 +16,21 @@ LEAVES = RO_LEAVES + RX_INPUTS
 MODES = ('release', 'differential')
 
 
-def main():
-    need(len(sys.argv) == 6 and sys.argv[5] in MODES,
-         'selected directory, actual archive, original image, output directory, mode')
-    selected, archive, image, output = (Path(x).resolve(strict=True) for x in sys.argv[1:5])
-    mode = sys.argv[5]
+RECURRENCE_INPUTS=('persistent_loop_rx_recurrence_binding.py','build-persistent-loop-rx-recurrence.sh',
+    'loop_rx_recurrence.h','loop_rx_recurrence_attach.inc','loop_rx_recurrence_owner.inc',
+    'counter_environment.inc')
+RECURRENCE=dict(version=7,bytes=12382208,storage_bytes=12582912,capacity=1024,
+    row_bytes=12088,source_bytes=8760,initial_seals=6,final_seals=23,
+    denominator='actual-pe_build-after-coarse-and-negative-hint',stop_detail=8960,
+    observation_authority=False,qualification_credit=False)
+
+
+def write_binding(selected, archive, image, output, mode, *, recurrence=False):
+    need(mode in MODES and type(recurrence)is bool and (not recurrence or mode=='release'),
+         'literal original RX mode or distinct release-only recurrence profile')
     need(selected.is_dir() and archive.is_file() and image.is_file() and output.is_dir(),
          'actual active-domain binding inputs')
-    leaves = LEAVES
+    leaves = LEAVES + (RECURRENCE_INPUTS if recurrence else ())
     need(len(leaves)==len(set(leaves)), 'whole distinct LOOP and RO-certificate source closure')
     values = []
     for name in leaves:
@@ -41,7 +48,8 @@ def main():
               '#define LI2_LINK_POLICY_SHA256 ' + literal(policy) + '\n#endif\n')
     persistent = ('#ifndef LI2_PERSISTENT_GROUP_CONFIG_H\n#define LI2_PERSISTENT_GROUP_CONFIG_H\n'
                   '#define LI2_PG_BINDING_VERSION 1\n#define LI2_PG_GROUP_BINDING_VERSION 4\n'
-                  '#define LI2_PG_LOOP_RO_BINDING_VERSION 1\n#define LI2_PG_LOOP_RESIDENT_RX_BINDING_VERSION 1\n'
+                  '#define LI2_PG_LOOP_RO_BINDING_VERSION 1\n#define LI2_PG_LOOP_RESIDENT_RX_BINDING_VERSION 1\n' +
+                  ('#define LI2_PG_LOOP_RX_RECURRENCE_BINDING_VERSION 1\n' if recurrence else '') +
                   '#define LI2_PG_LOOP_BINDING_VERSION 1\n#define LI2_PG_LOOP_POLICY_VERSION 12\n#define LI2_PG_LOOP_FALLBACK_VERSION 11\n#define LI2_PG_LOOP_ENCODING_VERSION 2\n'
                   '#define LI2_PG_LOOP_EFFECTS_BINDING_VERSION 1\n#define LI2_PG_LOOP_EFFECTS_POLICY_VERSION 13\n#define LI2_PG_LOOP_EFFECTS_SCALAR_VERSION 3\n#define LI2_PG_LOOP_EFFECTS_MOV_VERSION 2\n'
                   '#define LI2_PG_ARCHIVE_SHA256 ' + literal(actual_archive['sha256']) + '\n'
@@ -65,13 +73,25 @@ def main():
         code_permission_counts='actual-pe_permission-calls',
         metadata_permission_counts='actual-pe_permission-calls-only',
         qualification_credit=False)
-    paths = [output / name for name in headers] + [output / 'persistent_loop_resident_rx_binding.json']
+    if recurrence:
+        record['profile']='persistent-loop-rx-recurrence-release-v1'
+        record['recurrence']=RECURRENCE
+    name='persistent_loop_rx_recurrence_binding.json' if recurrence else 'persistent_loop_resident_rx_binding.json'
+    paths = [output / name for name in headers] + [output / name]
     need(not any(path.exists() for path in paths), 'fresh exclusive active-domain outputs')
     for name, text in headers.items():
         with (output / name).open('x') as stream:
             stream.write(text)
     with paths[-1].open('x') as stream:
         stream.write(json.dumps(record, sort_keys=True) + '\n')
+
+
+def main():
+    need(len(sys.argv) == 6 and sys.argv[5] in MODES,
+         'selected directory, actual archive, original image, output directory, mode')
+    selected, archive, image, output = (Path(x).resolve(strict=True) for x in sys.argv[1:5])
+    mode = sys.argv[5]
+    write_binding(selected,archive,image,output,mode)
 
 
 if __name__ == '__main__':

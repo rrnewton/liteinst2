@@ -58,6 +58,9 @@ static uint64_t rsl_initialization[9];
 #include "selected_globals.inc"
 #ifdef LI2_LOOP_RESIDENT_RX
 #include "loop_resident_rx.h"
+#ifdef LI2_LOOP_RX_RECURRENCE
+#include "loop_rx_recurrence.h"
+#endif
 #endif
 #ifdef LI2_LOOP_INGRESS_CENSUS
 static void lic_initialize(void);
@@ -810,6 +813,9 @@ static void protect(uintptr_t first,size_t bytes) {
 #include "reuse_census_attach.inc"
 #endif
 #endif
+#ifdef LI2_LOOP_RX_RECURRENCE
+#include "loop_rx_recurrence_attach.inc"
+#endif
 static int private_intersects(uintptr_t first,size_t bytes) {
     if (!bytes || first>UINTPTR_MAX-bytes) return 1;
     for(size_t i=0;i<protected_count;i++) if(first<protected[i].end && protected[i].first<first+bytes) return 1;
@@ -1551,6 +1557,9 @@ static size_t parse_fds(int fds[32]) {
     return count;
 }
 void runtime_arm(const struct image *main,const struct image *interp,size_t minimum) {
+#ifdef LI2_LOOP_RX_RECURRENCE
+    lrc_attach();
+#endif
 #ifdef LI2_PERSISTENT_GROUP_COUNTERS
     pgc_attach();
 #if defined(LI2_REUSE_CENSUS) || defined(LI2_PERSISTENT_BLOCK_CENSUS)
