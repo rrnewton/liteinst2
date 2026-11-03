@@ -61,6 +61,8 @@ static void lcxa_bound(const struct lcxo_epoch *e) {
         pe.p.phase==LI2_PG_BOUND && pe_busy==1 && !pe_active && handling==1 &&
         w->serial==h[5] && w->built==1 && w->published==1 && !w->opened && !w->closed &&
         o->code_epoch==e->phase[0].h[10] && o->directory_epoch==e->phase[0].h[12],65);
+    /* Observe real TLS only in the appendix after the whole production frame check. */
+    pe_tls(&lcxa.before);
     h[4]=1;
     /* Return normally: no synthetic abort and no repaired issued epoch. */
 }
