@@ -266,69 +266,8 @@ fn unsupported() -> Refusal {
     Refusal::UnsupportedSemantics("whole-function closed scalar profile".into())
 }
 
-fn gpr(register: Register) -> bool {
-    register.is_gpr()
-        && matches!(
-            register.full_register(),
-            Register::RAX
-                | Register::RCX
-                | Register::RDX
-                | Register::RSI
-                | Register::RDI
-                | Register::R8
-                | Register::R9
-                | Register::R10
-                | Register::R11
-        )
-}
-fn address_register(register: Register) -> bool {
-    register == Register::None || (register.is_gpr64() && gpr(register))
-}
 fn scalar(i: &Instruction) -> bool {
-    if !matches!(
-        i.mnemonic(),
-        Mnemonic::Mov
-            | Mnemonic::Movzx
-            | Mnemonic::Lea
-            | Mnemonic::Xor
-            | Mnemonic::Add
-            | Mnemonic::Adc
-            | Mnemonic::Sub
-            | Mnemonic::And
-            | Mnemonic::Or
-            | Mnemonic::Test
-            | Mnemonic::Cmp
-            | Mnemonic::Inc
-            | Mnemonic::Dec
-            | Mnemonic::Nop
-    ) {
-        return false;
-    }
-    for n in 0..i.op_count() {
-        match i.op_kind(n) {
-            OpKind::Register if gpr(i.op_register(n)) => {}
-            OpKind::Memory => {
-                if (n == 0
-                    && !matches!(i.mnemonic(), Mnemonic::Cmp | Mnemonic::Test | Mnemonic::Nop))
-                    || i.memory_base() == Register::None
-                    || !address_register(i.memory_base())
-                    || !address_register(i.memory_index())
-                {
-                    return false;
-                }
-            }
-            OpKind::Immediate8
-            | OpKind::Immediate16
-            | OpKind::Immediate32
-            | OpKind::Immediate64
-            | OpKind::Immediate8to16
-            | OpKind::Immediate8to32
-            | OpKind::Immediate8to64
-            | OpKind::Immediate32to64 => {}
-            _ => return false,
-        }
-    }
-    true
+    crate::scalar_profile::read_only_caller_saved(i)
 }
 
 // Constructed only after exact closed-CFG, role and entry-fact validation.
