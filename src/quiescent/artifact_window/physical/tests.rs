@@ -310,13 +310,39 @@ fn refused_call_suffix_is_custodied_and_qualified_once_without_retained_authorit
             ArtifactRelocationPlacement::Fixed06,
         )
         .unwrap();
+    assert_eq!(group.artifact().source_steps().len(), 1);
+    let parts = group.artifact().source_steps()[0].parts();
+    assert_eq!(parts.displaced, AddressRange::new(BASE, 5).unwrap());
+    // The shared emitter guards the complete source snapshot. Read dependency
+    // is distinct from displacement: the refused CALL must remain unmodified
+    // and absent from the generated instruction boundaries.
     assert_eq!(
-        group.artifact().source_steps()[0].parts().displaced,
-        AddressRange::new(BASE, 5).unwrap()
+        parts.reads,
+        [ExpectedBytes {
+            address: BASE,
+            bytes: bytes.to_vec()
+        }]
     );
+    assert_eq!(parts.dependencies, [f.entries.scope]);
+    assert_eq!(parts.writes.len(), 1);
+    assert_eq!(parts.writes[0].address, BASE);
+    assert_eq!(parts.writes[0].bytes.len(), 5);
+    assert_eq!(group.artifact().images().count(), 1);
+    let image = group.artifact().images().next().unwrap();
     assert_eq!(
-        group.artifact().source_steps()[0].parts().reads[0].bytes,
-        bytes[..5]
+        image
+            .instruction_boundaries()
+            .iter()
+            .map(|entry| entry.0)
+            .collect::<Vec<_>>(),
+        [BASE, BASE + 3, BASE + 4]
+    );
+    let tail = image.address() + image.bytes().len() as u64 - 5;
+    assert_eq!(
+        crate::x86::decode64(tail, &image.bytes()[image.bytes().len() - 5..])
+            .instruction
+            .near_branch_target(),
+        BASE + 5
     );
     assert_eq!(group.search().refusals, seal.rows()[0].qualification());
     assert_eq!(group.search().runs[0].examined, 2);
