@@ -1,0 +1,485 @@
+{
+  "schema": 1,
+  "profile": "loop-translation-arena-program-capacity128-user-dwarf-natural-v1",
+  "source": {
+    "head_sources_match": true,
+    "revision": "7b59c7688904449ee69e98bcb6ebf01d7bed7532",
+    "source_manifest_sha256": "783cd187210f37a283d9c9cfee53921e31c2357f309a0793c10c351331d00698",
+    "tracked_clean": true,
+    "tree": "6fd6c2acd8edb384823b4dfd365665ee1ec8a213"
+  },
+  "status": "observed_user_dwarf_diagnostic_only",
+  "cpu": 37,
+  "original_cpu": 242,
+  "same_cpu": false,
+  "subject_bounds": [
+    30,
+    536870912,
+    16777216,
+    60
+  ],
+  "observer_bounds": [
+    30,
+    1073741824,
+    134217728,
+    80
+  ],
+  "unwinder_bounds": [
+    30,
+    1073741824,
+    134217728,
+    80
+  ],
+  "compiled_inputs_equal_current": true,
+  "inputs_unchanged": true,
+  "source_unchanged": true,
+  "cleanup_complete": true,
+  "final_errors": [],
+  "performance_credit": false,
+  "qualification_credit": false,
+  "successful_target_credit": false,
+  "matched_timing_credit": false,
+  "speedup_credit": false,
+  "original_diagnostic_reclassified": false,
+  "receipt": {
+    "bytes": 2405687,
+    "sha256": "1eb85946c2ffe59b4e683ea68c74609b88e97cc708204b4b4f77ece06dc66b42"
+  },
+  "original_receipt": {
+    "bytes": 2056406,
+    "sha256": "9a76d37bc059bc11c0d1878ed9cac89d1e6c05c7de5df5d88ef8b8de434f8efd"
+  },
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 37,
+    "runner_cap_eff": "0000000000000000",
+    "runner_is_root": false,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "hardware_sha256": "8a4e12b03826ee83b4576690673798b58e73715f7ad1eea89ed0f1fdff00953f",
+  "storage_guard": {
+    "adapters_restored": true,
+    "all_accepted": true,
+    "cap_bytes": 20000000000,
+    "checks": 9
+  },
+  "reproduce": [
+    "python3.12",
+    "-B",
+    "evaluation/inprocess/loop_translation_arena_program_profile.py",
+    "--expect-revision",
+    "7b59c7688904449ee69e98bcb6ebf01d7bed7532",
+    "--diagnostic-receipt",
+    "target/evaluation/inprocess/loop-translation-arena-capacity128-program-attempt-3/receipt.json",
+    "--diagnostic-sha256",
+    "9a76d37bc059bc11c0d1878ed9cac89d1e6c05c7de5df5d88ef8b8de434f8efd",
+    "--output",
+    "target/evaluation/inprocess/loop-translation-arena-capacity128-program-profile-NEW",
+    "--capacity128"
+  ],
+  "error": null,
+  "target_outcome": "failed_prefix",
+  "observed_failure_outcome": {
+    "exit": -9,
+    "terminal": false
+  },
+  "target": {
+    "cleanup_errors": [],
+    "error": null,
+    "exit": -9,
+    "expected_exit": 0,
+    "process_ns": 30551973730,
+    "reaped": true,
+    "timed_out": false,
+    "usage": {
+      "maxrss_kib": 121276,
+      "system_seconds": 4.566523,
+      "user_seconds": 25.440418,
+      "wait_status": 9
+    }
+  },
+  "sampling": {
+    "authenticated_bridge_samples": 2506,
+    "event_counts": {
+      "10": 189029,
+      "3": 3,
+      "4": 1,
+      "68": 262,
+      "69": 1,
+      "73": 1,
+      "74": 1,
+      "78": 4,
+      "82": 1,
+      "9": 2511
+    },
+    "full_exec_exit_envelope": true,
+    "kernel_samples": 0,
+    "loss_free": true,
+    "lost_samples": 0,
+    "sampled_period_total": 25363636110,
+    "samples": 2511,
+    "throttle_records": 0,
+    "user_samples": 2511
+  },
+  "attribution": {
+    "period": 25363636110,
+    "samples": 2511,
+    "unknown_leaf_period": 50505050,
+    "unknown_leaf_samples": 5,
+    "unwind_complete": false,
+    "unwind_states": {
+      "bounded_observed_frames": 2319,
+      "empty": 5,
+      "leaf_only": 187
+    }
+  },
+  "top_functions": [
+    {
+      "key": "bridge:0x68b0-0x693e:equal",
+      "period": 2090909070,
+      "samples": 207
+    },
+    {
+      "key": "bridge:0x6f940-0x6fa0e:pgx_terminal_members",
+      "period": 1484848470,
+      "samples": 147
+    },
+    {
+      "key": "bridge:0xa61c0-0xa6692:lpf_project",
+      "period": 1343434330,
+      "samples": 133
+    },
+    {
+      "key": "bridge:0x42a30-0x44792:li2_pg_epoch_bind",
+      "period": 1292929280,
+      "samples": 128
+    },
+    {
+      "key": "bridge:0x71140-0x718de:li2_pg_source_begin",
+      "period": 1101010090,
+      "samples": 109
+    },
+    {
+      "key": "bridge:0x5e190-0x5e5c5:li2_maps_after_raw",
+      "period": 1070707060,
+      "samples": 106
+    },
+    {
+      "key": "bridge:0x71970-0x720d5:pgsd_view",
+      "period": 909090900,
+      "samples": 90
+    },
+    {
+      "key": "bridge:0xa01c0-0xa0459:li2_lpf_miss_validate",
+      "period": 707070700,
+      "samples": 70
+    },
+    {
+      "key": "bridge:0x66050-0x66291:li2_lifecycle_private_code_query.part.0",
+      "period": 626262620,
+      "samples": 62
+    },
+    {
+      "key": "bridge:0x217c0-0x2289d:lgd_common_value",
+      "period": 575757570,
+      "samples": 57
+    },
+    {
+      "key": "bridge:0x67490-0x67b0d:li2_lifecycle_sealed_code_query",
+      "period": 575757570,
+      "samples": 57
+    },
+    {
+      "key": "bridge:0x2bde0-0x2bf0b:ptr_slots.part.0",
+      "period": 525252520,
+      "samples": 52
+    },
+    {
+      "key": "bridge:0x38270-0x3868c:lhc_direct_value",
+      "period": 515151510,
+      "samples": 51
+    },
+    {
+      "key": "bridge:0x54590-0x54745:current",
+      "period": 515151510,
+      "samples": 51
+    },
+    {
+      "key": "bridge:0x4e360-0x514f7:handler",
+      "period": 494949490,
+      "samples": 49
+    },
+    {
+      "key": "bridge:0xb47c0-0xb499e:li2_le_validate",
+      "period": 454545450,
+      "samples": 45
+    },
+    {
+      "key": "bridge:0x54a00-0x54acf:mv_emit",
+      "period": 444444440,
+      "samples": 44
+    },
+    {
+      "key": "bridge:0x72760-0x72b75:li2_pgd_source_bind",
+      "period": 444444440,
+      "samples": 44
+    },
+    {
+      "key": "bridge:0xa21e0-0xa2499:li2_lpe_miss_validate",
+      "period": 434343430,
+      "samples": 43
+    },
+    {
+      "key": "bridge:0xa1190-0xa1449:li2_lp_miss_validate",
+      "period": 404040400,
+      "samples": 40
+    }
+  ],
+  "other_functions": {
+    "functions": 144,
+    "samples": 921,
+    "period": 9303030210
+  },
+  "unknown_functions": [
+    {
+      "key": "unknown:other_mapping",
+      "period": 50505050,
+      "samples": 5
+    }
+  ],
+  "timeline": [
+    {
+      "second": 0,
+      "samples": 62,
+      "period": 626262620,
+      "unknown_samples": 3,
+      "unknown_period": 30303030
+    },
+    {
+      "second": 1,
+      "samples": 79,
+      "period": 797979790,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 2,
+      "samples": 77,
+      "period": 777777770,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 3,
+      "samples": 73,
+      "period": 737373730,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 4,
+      "samples": 82,
+      "period": 828282820,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 5,
+      "samples": 83,
+      "period": 838383830,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 6,
+      "samples": 89,
+      "period": 898989890,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 7,
+      "samples": 90,
+      "period": 909090900,
+      "unknown_samples": 1,
+      "unknown_period": 10101010
+    },
+    {
+      "second": 8,
+      "samples": 83,
+      "period": 838383830,
+      "unknown_samples": 1,
+      "unknown_period": 10101010
+    },
+    {
+      "second": 9,
+      "samples": 84,
+      "period": 848484840,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 10,
+      "samples": 84,
+      "period": 848484840,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 11,
+      "samples": 79,
+      "period": 797979790,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 12,
+      "samples": 73,
+      "period": 737373730,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 13,
+      "samples": 85,
+      "period": 858585850,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 14,
+      "samples": 82,
+      "period": 828282820,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 15,
+      "samples": 86,
+      "period": 868686860,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 16,
+      "samples": 85,
+      "period": 858585850,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 17,
+      "samples": 84,
+      "period": 848484840,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 18,
+      "samples": 85,
+      "period": 858585850,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 19,
+      "samples": 80,
+      "period": 808080800,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 20,
+      "samples": 88,
+      "period": 888888880,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 21,
+      "samples": 80,
+      "period": 808080800,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 22,
+      "samples": 86,
+      "period": 868686860,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 23,
+      "samples": 91,
+      "period": 919191910,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 24,
+      "samples": 84,
+      "period": 848484840,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 25,
+      "samples": 86,
+      "period": 868686860,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 26,
+      "samples": 85,
+      "period": 858585850,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 27,
+      "samples": 90,
+      "period": 909090900,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 28,
+      "samples": 87,
+      "period": 878787870,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 29,
+      "samples": 85,
+      "period": 858585850,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    },
+    {
+      "second": 30,
+      "samples": 24,
+      "period": 242424240,
+      "unknown_samples": 0,
+      "unknown_period": 0
+    }
+  ],
+  "functions_csv": {
+    "path": "evaluation/inprocess/results/20261103-arena-capacity128-profile-7b59c76-functions.csv",
+    "rows": 165,
+    "bytes": 12490,
+    "sha256": "2a272dd39b84dcf435b12fda862ca0f9e50af677b7e620e2afb393e69a1a5b21"
+  },
+  "event_count_scope": "Raw perf record types. MMAP2 records may repeat mappings and are not guest mmap calls; sample counts are not runtime event counters.",
+  "scope": "One user-only 99 Hz profile of the failed ls prefix. All 2511 samples, including five unknowns, stay in the denominator. Sample shares describe user CPU locations, not a wall-time partition; system time and incomplete stacks remain unattributed. No completed-program timing, speedup or parity credit. No runtime counter snapshot was requested in this separate sampling-only run.",
+  "reproduction_note": "The reproduce argv records the original revision and historical receipt hash. For a new measurement, first run the natural capacity128 34-command program cohort on that clean revision into a fresh output directory. If its receipt meets the unchanged profiler input gates, pass its actual path and SHA256 to the profiler with another fresh output directory; generated receipt hashes need not equal the historical hash."
+}

@@ -1,0 +1,163 @@
+{
+  "schema": 1,
+  "profile": "loop-translation-arena-program-capacity128-release-v1",
+  "revision": "7b59c7688904449ee69e98bcb6ebf01d7bed7532",
+  "source_context": "installed tracked source",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "finite": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "program": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "release_build": [
+      30,
+      536870912,
+      16777216,
+      60
+    ],
+    "seed": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "cpu": 242,
+  "status": "failed",
+  "source_unchanged": true,
+  "inputs_unchanged": true,
+  "cleanup_complete": true,
+  "performance_credit": false,
+  "qualification_credit": false,
+  "full_state_credit": false,
+  "whole_profile_qualified": false,
+  "source": {
+    "head_sources_match": true,
+    "revision": "7b59c7688904449ee69e98bcb6ebf01d7bed7532",
+    "source_manifest_sha256": "783cd187210f37a283d9c9cfee53921e31c2357f309a0793c10c351331d00698",
+    "tracked_clean": true,
+    "tree": "6fd6c2acd8edb384823b4dfd365665ee1ec8a213"
+  },
+  "receipt": {
+    "bytes": 2056406,
+    "sha256": "9a76d37bc059bc11c0d1878ed9cac89d1e6c05c7de5df5d88ef8b8de434f8efd"
+  },
+  "reproduce": [
+    "python3.12",
+    "-B",
+    "evaluation/inprocess/loop_translation_arena_program.py",
+    "--expect-revision",
+    "7b59c7688904449ee69e98bcb6ebf01d7bed7532",
+    "--output",
+    "target/evaluation/inprocess/loop-translation-arena-capacity128-program-NEW",
+    "--capacity128"
+  ],
+  "final_error_count": 0,
+  "commands": 34,
+  "setup_commands_passed": 32,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 242,
+    "runner_cap_eff": "0000000000000000",
+    "runner_is_root": false,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "hardware_sha256": "b77ecdbec7950a28f682b36e3aba8377a08772926afcc9a7063e796a4c4d4b0c",
+  "cases": [
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "completed_program_measurement": false,
+      "duration_ns": 30181991800,
+      "exit": -9,
+      "expected_exit": 0,
+      "involuntary_switches": 162,
+      "lane": "release",
+      "major_faults": 0,
+      "minor_faults": 276311,
+      "process_ns": 30181229115,
+      "reaped": true,
+      "status": "failed",
+      "system_cpu_ns": 2961501000,
+      "timed_out": false,
+      "user_cpu_ns": 27040902000,
+      "voluntary_switches": 2,
+      "workload": "ls",
+      "validated_terminal_available": false,
+      "successful_program_controls": "unexecuted; no credit"
+    },
+    {
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "completed_program_measurement": false,
+      "duration_ns": 30180346534,
+      "exit": -9,
+      "expected_exit": 0,
+      "involuntary_switches": 121,
+      "lane": "release",
+      "major_faults": 0,
+      "minor_faults": 195048,
+      "process_ns": 30179417860,
+      "reaped": true,
+      "status": "failed",
+      "system_cpu_ns": 2634388000,
+      "timed_out": false,
+      "user_cpu_ns": 27364424000,
+      "voluntary_switches": 12,
+      "workload": "true",
+      "validated_terminal_available": false,
+      "successful_program_controls": "unexecuted; no credit"
+    }
+  ],
+  "timing_scope": "Whole-process observations at the original bounds. Failed elapsed values describe failure cost only; no matched timing, speedup or parity credit.",
+  "scope": "Both release programs exited -9 under the unchanged 30 CPU-second / 60 wall-second bounds. All 32 setup commands passed. Empty terminals provide no completed-program counters or successful-program validator credit.",
+  "reproduction_note": "Run the natural capacity128 34-command program cohort on the named clean revision into a fresh output directory. Receipt hashes identify individual runs. A later profiler must receive that newly produced receipt path and its actual SHA256, subject to the unchanged profiler input gates."
+}
