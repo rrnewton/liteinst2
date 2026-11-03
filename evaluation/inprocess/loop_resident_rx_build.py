@@ -286,13 +286,14 @@ def descriptor_observer_layout(bridge,symbols):
         need(address>0 and size>0,'complete nonempty descriptor layout/storage symbol')
         return dict(address=address,bytes=size)
     item=symbol('li2_lgdo_layout',(b'r',b'R'));address,size=item['address'],item['bytes']
-    need(size==18*8,'complete actual eighteen-word descriptor layout object')
+    need(size==23*8,'complete actual version2 twenty-three-word descriptor layout object')
     loads=[p for p in segments if p[0]==1 and p[1]==4 and p[3]<=address<address+size<=p[3]+p[5]]
     need(len(loads)==1,'whole descriptor layout belongs to one actual readonly ELF LOAD')
     load=loads[0];offset=load[2]+address-load[3]
-    values=struct.unpack_from('<18Q',data,offset)
-    need(values[:9]==(1,1186576,227264,1137632,48944,2280,3216,296,336) and
-         values[16:]==(4096,5) and values[11]==4096 and
+    values=struct.unpack_from('<23Q',data,offset)
+    need(values[:9]==(2,1186576,227264,1137632,48944,2280,3216,296,336) and
+         values[16:18]==(4096,5) and values[11]==40960 and
+         values[18:]==(40960,4096,4096,224,288) and
          all(values[i]>0 and values[i]%4096==0 for i in range(9,17)) and
          values[10]+9*values[9]<=values[14] and values[11]+9*values[12]<=values[15] and
          values[13]<=16*4096,'independent wire layout and actual isolated completion/capsule/storage geometry')
@@ -306,7 +307,7 @@ def descriptor_observer_layout(bridge,symbols):
         for other,b in list(owners.items())[:i]:
             need(a['address']+a['bytes']<=b['address'] or b['address']+b['bytes']<=a['address'],
                  'distinct whole actual descriptor owners '+name+'/'+other)
-    return dict(version=1,symbol=item,values=list(values),owners=owners,inferior_started=False)
+    return dict(version=2,symbol=item,values=list(values),owners=owners,inferior_started=False)
 
 
 def recurrence_layout(bridge, symbols):

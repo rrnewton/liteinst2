@@ -48,20 +48,21 @@ static int lgd_common_snapshot(const struct pda_completion *c,unsigned i,
        !c->id || c->id>pe.domain.next_id || !c->serial || c->serial>pe.next_serial ||
        !lgd_epochs_live() || !lhc_match_identity(c,i))return 0;
     uint64_t source_context=li2_lgd_source_context();
-    if(!source_context || !pe.domain.directory || !lgd_root_epoch() ||
+    if(!source_context || !pe.domain.directory || !lgd_root_epoch() || !lgd_certificate_epoch(i) ||
        !lgd_cell_epoch(i) || !lgd_capsule_epoch(i))return 0;
     le_zero(out,sizeof *out);
     out->valid=1;out->index=i;out->raw_root=lgd_root_epoch();
+    out->raw_certificate=lgd_certificate_epoch(i);
     out->raw_cell=lgd_cell_epoch(i);out->raw_capsule=lgd_capsule_epoch(i);
     out->source_context=source_context;out->directory=pe.domain.directory;
-    copy(&out->certificate,&lhc.root.value.cell[i],sizeof out->certificate);
+    copy(&out->certificate,lhc_cell(i),sizeof out->certificate);
     return 1;
 }
 static int lgd_common_value(const struct pda_completion *c) {
     unsigned i=lhc_index(c);
     /* Current monotone owner bounds are checked even on an immutable-value
        hit. lhc_match binds the whole owner/session/policy, exact R cell and
-       capsule, issuance serial, and all three raw exposure epochs. */
+       capsule, issuance serial, and all four raw exposure epochs. */
     int hit=c && c->id && c->id<=pe.domain.next_id && c->serial && c->serial<=pe.next_serial &&
         i<LI2_PGD_RECEIPTS && lhc_match(c,i);
     struct lgd_common_token before,after;
@@ -110,7 +111,7 @@ static int lgd_initialize(void) {
        before this point, and no guest has executed. */
     lgd_writer.value.root=lgd_writer.value.manifest=lgd_writer.value.directory=1;
     for(unsigned i=0;i<LI2_PGD_RECEIPTS;i++)
-        lgd_writer.value.cell[i]=lgd_writer.value.capsule[i]=1;
+        lgd_writer.value.certificate[i]=lgd_writer.value.cell[i]=lgd_writer.value.capsule[i]=1;
     for(unsigned i=0;i<LI2_PTR_SLOTS;i++)lgd_writer.value.publication[i]=1;
     __asm__ volatile("":::"memory");lgd_writer.value.initialized=1;
     return 0;

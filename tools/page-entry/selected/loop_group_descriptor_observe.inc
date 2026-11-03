@@ -138,7 +138,7 @@ static int lgdo_queries(uintptr_t first,size_t bytes,struct li2_private_code_que
 static void lgdo_raw_controls(const struct pda_completion *original) {
     unsigned cell=lhc_index(original);
     lc8o_need(cell<9 && original->count==4 && lhc_mask(original)==7 &&
-        lhc.root.value.cell[cell].policy==LI2_PF_VERSION &&
+        lhc_cell(cell)->policy==LI2_PF_VERSION &&
         lhc_exposure_current(cell) && lhc_match(original,cell) && pda_receipt(original) &&
         lgd_view_match(&pe.domain.work.view) && lgd_directory_equal(),74);
     copy(&lc8o.saved_completion,original,sizeof lc8o.saved_completion);
@@ -157,7 +157,7 @@ static void lgdo_raw_controls(const struct pda_completion *original) {
         else {first=pe.domain.directory;bytes=LI2_JD_DOMAIN_BYTES;
             copy(lc8o.descriptor_saved.directory,(const void *)first,bytes);}
         h[0]=1;h[1]=kind;h[2]=cell;h[3]=first;h[4]=bytes;
-        h[12]=lhc_mask(original);h[13]=lhc.root.value.cell[cell].policy;
+        h[12]=lhc_mask(original);h[13]=lhc_cell(cell)->policy;
         lgdo_counts(r->counts[0]);lgdo_epoch(r->epoch[0],cell);
         lc8o_need(!lgdo_queries(first,bytes,r->query[0]),75);
         lgdo_permission(r,0,first,bytes,PROT_READ|PROT_WRITE);
@@ -168,7 +168,7 @@ static void lgdo_raw_controls(const struct pda_completion *original) {
         lc8o_need(!h[11],91);
         if(kind==0)c->complete=0;
         else if(kind==1)((unsigned char *)&lhc.capsule[cell])[0]^=1;
-        else if(kind==2)lhc.root.value.cell[cell].id^=1;
+        else if(kind==2)lhc_cell(cell)->id^=1;
         else if(kind==3)lgd_group.value.count=9;
         else ((struct li2_jd_domain_directory *)first)->row[0].generated^=1;
         lgdo_permission(r,1,first,bytes,PROT_READ);lgdo_epoch(r->epoch[2],cell);
@@ -206,7 +206,7 @@ static void lgdo_raw_controls(const struct pda_completion *original) {
 #if LI2_LOOP_CACHE8_CONTROL
 /* These are cache-miss/issuance controls, not fabricated whole-owner failures.
    The complete common theorem still runs on every deliberately forced miss. */
-static void lgdo_common_pair(const struct pda_completion *c,unsigned i) {
+static void lgdo_common_pair_record(const struct pda_completion *c,unsigned i,uint64_t *pairs) {
     uint64_t full=lgd_counts.common_full,hits=lgd_counts.common_hits,
         differential=lgd_counts.common_differential,lhc=lgd_counts.common_lhc_hits,
         renewed=lgd_counts.common_revalidated_hits;
@@ -219,7 +219,10 @@ static void lgdo_common_pair(const struct pda_completion *c,unsigned i) {
     lc8o_need(lgd_common_value(c) && lgd_counts.common_full==full+1 &&
         lgd_counts.common_hits==hits+1 && lgd_counts.common_differential==differential+1 &&
         lgd_counts.common_lhc_hits==lhc && lgd_counts.common_revalidated_hits==renewed+1,111);
-    ++lc8o.common.quiet_pairs;
+    ++*pairs;
+}
+static void lgdo_common_pair(const struct pda_completion *c,unsigned i) {
+    lgdo_common_pair_record(c,i,&lc8o.common.quiet_pairs);
 }
 static void lgdo_common_unissued(const struct pda_completion *c,unsigned i) {
     struct lgd_common_token saved,unused;
@@ -235,22 +238,146 @@ static void lgdo_common_permission(uintptr_t first,size_t bytes,int prot) {
     lc8o_need(!raw(SYS_mprotect,(long)first,bytes,prot,0,0,0),113);
 }
 #endif
+#if LI2_LOOP_CACHE8_CONTROL
+/* Snapshot every certificate-related RAW epoch, not a hash or an authority. */
+static void lgdo_isolation_epochs(uint64_t out[28]) {
+    out[0]=lgd_root_epoch();
+    for(unsigned i=0;i<9;i++) {
+        out[1+i]=lgd_certificate_epoch(i);
+        out[10+i]=lgd_cell_epoch(i);out[19+i]=lgd_capsule_epoch(i);
+    }
+}
+static void lgdo_isolation_raw(struct pda_completion *c,const struct pda_completion *peer,
+    unsigned i,unsigned j,unsigned bundle) {
+    struct lgdo_isolation_observation *o=&lc8o.isolation;
+    uint64_t *mask=bundle?&o->raw_bundle_mask:&o->raw_cell_mask;
+    uintptr_t first=bundle?(uintptr_t)&lhc.root:lhc_certificate_address(i);
+    size_t bytes=bundle?sizeof lhc.root:lhc_certificate_bytes();
+    struct li2_private_code_query query;
+    uint64_t before[28],after[28],invalidations=lgd_writer.value.invalidations;
+    lc8o_need(!*mask && !lrc_readonly(first,bytes) && lhc_match_identity(c,i) &&
+        lhc_match_identity(peer,j) && lhc_exposure_current(j) &&
+        (bundle?!lhc_exposure_current(i):lhc_exposure_current(i)),143);
+    copy(&lc8o.descriptor_saved.root,&lhc.root,sizeof lhc.root);
+    lgdo_isolation_epochs(before);*mask=1;
+    lgdo_common_permission(first,bytes,PROT_READ|PROT_WRITE);
+    lc8o_need(!pe_query(first,bytes,PROT_READ|PROT_WRITE,&query),144);*mask|=2;
+    lgdo_isolation_epochs(after);
+    for(unsigned k=0;k<28;k++)
+        lc8o_need(after[k]==before[k]+(bundle?k<10:k==1+i),145);
+    lc8o_need(lgd_writer.value.invalidations==invalidations+1,146);*mask|=4;
+    lc8o_need(!lhc_exposure_current(i) &&
+        lhc_exposure_current(j)==(bundle?0:1),147);*mask|=8;
+    lgdo_common_permission(first,bytes,PROT_READ);
+    lc8o_need(!lrc_readonly(first,bytes),148);*mask|=16;
+    lc8o_need(equal(&lc8o.descriptor_saved.root,&lhc.root,sizeof lhc.root),149);*mask|=32;
+    lgdo_isolation_epochs(after);
+    for(unsigned k=0;k<28;k++)
+        lc8o_need(after[k]==before[k]+(bundle?k<10:k==1+i),150);
+    lc8o_need(lgd_writer.value.invalidations==invalidations+1 &&
+        !lhc_exposure_current(i) && lhc_exposure_current(j)==(bundle?0:1),151);*mask|=64;
+    uint64_t fallback=lgd_counts.history_fallbacks,hits=lhc.counts.hits,
+        common=lgd_counts.common_lhc_hits;
+    lc8o_need(pda_receipt(c) && pda_receipt(peer) &&
+        lgd_counts.history_fallbacks==fallback+(bundle?2:1) &&
+        lhc.counts.hits==hits+(bundle?0:1) &&
+        lgd_counts.common_lhc_hits==common+(bundle?0:1),152);*mask|=128;
+    if(bundle)++o->raw_bundle;else ++o->raw_cell;
+}
+#endif
+static void lgdo_isolation(const struct pda_completion *current) {
+    if(lc8o.epochs>2)return;
+    struct lgdo_isolation_observation *o=&lc8o.isolation;
+    unsigned j=lhc_index(current);
+    lc8o_need(current && current->complete==1 && current->serial==pe.p.serial &&
+        j<9 && !lc8o.busy && !lhc_writer() && lhc_mask(current)==7 &&
+        lhc_match(current,j) && lhc_exposure_current(j),153);
+    if(lc8o.epochs==1) {
+        lc8o_need(!o->epochs,154);o->epochs=1;o->cell=j;o->id=current->id;o->serial=current->serial;
+        copy(&lc8o.isolation_certificate,lhc_cell(j),sizeof lc8o.isolation_certificate);
+        lc8o.isolation_epoch[0]=lgd_root_epoch();
+        lc8o.isolation_epoch[1]=lgd_certificate_epoch(j);
+        lc8o.isolation_epoch[2]=lgd_cell_epoch(j);lc8o.isolation_epoch[3]=lgd_capsule_epoch(j);
+        return;
+    }
+    unsigned i=(unsigned)o->cell;struct pda_completion *old=&pe.domain.completion[i];
+    lc8o_need(lc8o.epochs==2 && o->epochs==1 && i<9 && j!=i &&
+        old->id==o->id && old->serial==o->serial &&
+        equal(&lc8o.isolation_certificate,lhc_cell(i),sizeof lc8o.isolation_certificate) &&
+        lc8o.isolation_epoch[0]==lgd_root_epoch() &&
+        lc8o.isolation_epoch[1]==lgd_certificate_epoch(i) &&
+        lc8o.isolation_epoch[2]==lgd_cell_epoch(i) &&
+        lc8o.isolation_epoch[3]==lgd_capsule_epoch(i) &&
+        lhc_match(old,i) && lhc_exposure_current(i),155);
+    o->epochs=2;o->peer=j;o->peer_id=current->id;o->peer_serial=current->serial;o->preserved=1;
+    uint64_t common=lgd_counts.common_lhc_hits,history=lhc.counts.hits,
+        renewed=lgd_counts.common_revalidated_hits;
+    lc8o_need(pda_receipt(old) && lgd_counts.common_lhc_hits==common+1 &&
+        lhc.counts.hits==history+1 && lgd_counts.common_revalidated_hits==renewed,156);
+    o->common_hit=o->history_hit=1;
+#if LI2_LOOP_CACHE8_CONTROL
+    lc8o.busy=1;
+    lgdo_isolation_raw(old,current,i,j,0);
+    lgdo_isolation_raw(old,current,i,j,1);
+    lc8o.busy=0;
+#endif
+    /* Restore the actual current completion's canonical historical scratch.
+       The ordinary persistent exit independently validates it again. */
+    lc8o_need(pda_receipt(current),157);
+}
+static void lgdo_isolation_report(unsigned status,unsigned code) {
+    const struct lgdo_isolation_observation *o=&lc8o.isolation;
+    struct writer w={.used=0};text(&w,"LI2_LOOP_HISTORY_ISOLATION {\"version\":1");
+    field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
+    field(&w,",\"control\":",LI2_LOOP_CACHE8_CONTROL);
+#define LGDO_ISOLATION_FIELD(n) field(&w,",\"" #n "\":",o->n)
+    LGDO_ISOLATION_FIELD(epochs);LGDO_ISOLATION_FIELD(cell);LGDO_ISOLATION_FIELD(id);
+    LGDO_ISOLATION_FIELD(serial);LGDO_ISOLATION_FIELD(peer);LGDO_ISOLATION_FIELD(peer_id);
+    LGDO_ISOLATION_FIELD(peer_serial);LGDO_ISOLATION_FIELD(preserved);
+    LGDO_ISOLATION_FIELD(common_hit);LGDO_ISOLATION_FIELD(history_hit);
+    LGDO_ISOLATION_FIELD(raw_cell);LGDO_ISOLATION_FIELD(raw_cell_mask);
+    LGDO_ISOLATION_FIELD(raw_bundle);LGDO_ISOLATION_FIELD(raw_bundle_mask);
+    LGDO_ISOLATION_FIELD(stale_setup);LGDO_ISOLATION_FIELD(stale_setup_mask);
+    LGDO_ISOLATION_FIELD(extra_misses);LGDO_ISOLATION_FIELD(extra_restorations);
+    LGDO_ISOLATION_FIELD(extra_mask);
+#undef LGDO_ISOLATION_FIELD
+    text(&w,"}\n");
+    if(raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0)!=(long)w.used) {
+        (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
+    }
+}
 static void lgdo_common_controls(const struct pda_completion *current) {
 #if LI2_LOOP_CACHE8_CONTROL
     if(lc8o.epochs!=4)return;
     struct lgdo_common_observation *o=&lc8o.common;
     lc8o_need(!o->epochs && !lc8o.busy && current && current->complete==1 &&
-        current->serial==pe.p.serial && !lhc.root.value.writer &&
+        current->serial==pe.p.serial && !lhc_writer() &&
         lgd_writer.value.initialized==1 && !lgd_writer.value.poisoned &&
         handling==1 && !pe_failing && !pe.resuming,114);
     struct pda_completion *c=0;unsigned i=LI2_PGD_RECEIPTS;
     for(unsigned at=0;at<LI2_PGD_RECEIPTS;at++) {
         struct pda_completion *old=&pe.domain.completion[at];
-        if(old!=current && old->id && !lhc_exposure_current(at) && lhc_match_identity(old,at)) {
+        if(old!=current && old->id && lhc_match_identity(old,at)) {
             c=old;i=at;break;
         }
     }
     lc8o_need(c && i<LI2_PGD_RECEIPTS,115);lc8o.busy=1;
+    /* Per-cell issuance no longer makes unrelated completions stale. Establish
+       the old suite's premise through an actual exposure, never epoch stores. */
+    struct lgdo_isolation_observation *isolation=&lc8o.isolation;
+    lc8o_need(!isolation->stale_setup && !lrc_readonly((uintptr_t)c,sizeof *c),140);
+    isolation->stale_setup_mask=1;
+    uint64_t before_root=lgd_root_epoch(),before_certificate=lgd_certificate_epoch(i),
+        before_cell=lgd_cell_epoch(i),before_capsule=lgd_capsule_epoch(i);
+    lgdo_common_permission((uintptr_t)c,sizeof *c,PROT_READ|PROT_WRITE);
+    lgdo_common_permission((uintptr_t)c,sizeof *c,PROT_READ);
+    isolation->stale_setup_mask|=2;
+    lc8o_need(lgd_root_epoch()==before_root && lgd_certificate_epoch(i)==before_certificate &&
+        lgd_cell_epoch(i)==before_cell+1 && lgd_capsule_epoch(i)==before_capsule,141);
+    isolation->stale_setup_mask|=4;
+    lc8o_need(!lrc_readonly((uintptr_t)c,sizeof *c) && lhc_match_identity(c,i) &&
+        !lhc_exposure_current(i),142);
+    isolation->stale_setup_mask|=8;isolation->stale_setup=1;
     o->epochs=1;o->serial=current->serial;o->cell=i;o->id=c->id;o->cell_serial=c->serial;
     struct lgd_common_token *t=&lgd_writer.value.common[i];
     le_zero(t,sizeof *t);lgdo_common_pair(c,i);
@@ -289,7 +416,7 @@ static void lgdo_common_controls(const struct pda_completion *current) {
         else if(kind==4)pe.resuming=1;
         else {
             lgdo_common_permission((uintptr_t)&lhc.root,sizeof lhc.root,PROT_READ|PROT_WRITE);
-            lhc.root.value.writer=i+1;
+            lhc_set_writer(i+1);
             lgdo_common_permission((uintptr_t)&lhc.root,sizeof lhc.root,PROT_READ);
         }
         lgdo_common_unissued(c,i);++o->guard_unissued;
@@ -300,7 +427,7 @@ static void lgdo_common_controls(const struct pda_completion *current) {
         else if(kind==4)pe.resuming=0;
         else {
             lgdo_common_permission((uintptr_t)&lhc.root,sizeof lhc.root,PROT_READ|PROT_WRITE);
-            lhc.root.value.writer=0;
+            lhc_set_writer(0);
             lgdo_common_permission((uintptr_t)&lhc.root,sizeof lhc.root,PROT_READ);
         }
         le_zero(t,sizeof *t);lgdo_common_pair(c,i);++o->guard_restorations;
@@ -333,7 +460,16 @@ static void lgdo_common_controls(const struct pda_completion *current) {
     uint64_t history=lgd_counts.history_fallbacks;
     lc8o_need(!lhc_exposure_current(i) && pda_receipt(c) &&
         lgd_counts.history_fallbacks==history+1,119);
-    o->history_fallback=1;lc8o_need(o->quiet_pairs==42,120);lc8o.busy=0;
+    o->history_fallback=1;lc8o_need(o->quiet_pairs==42,120);
+    /* Two new certificate-epoch fields are additional to the unchanged31
+       original mutations and42 original miss/hit pairs. */
+    for(unsigned kind=0;kind<2;kind++) {
+        if(kind==0)t->raw_certificate^=1;
+        else t->certificate.raw_certificate^=1;
+        lgdo_common_pair_record(c,i,&isolation->extra_restorations);
+        ++isolation->extra_misses;isolation->extra_mask|=UINT64_C(1)<<kind;
+    }
+    lc8o.busy=0;
 #else
     (void)current;
 #endif
@@ -358,6 +494,7 @@ static void lgdo_common_report(unsigned status,unsigned code) {
     }
 }
 static void lgdo_finished(const struct pda_completion *c) {
+    lgdo_isolation(c);
     lgdo_common_controls(c);
     if(lc8o.epochs!=5)return;
     uint64_t *h=lc8o.wire.descriptor.h;

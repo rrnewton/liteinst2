@@ -333,9 +333,89 @@ def controls_cached(stderr,record,control,mode,*,dependencies):
     return result
 
 
+ISOLATION_PREFIX=b'LI2_LOOP_HISTORY_ISOLATION '
+ISOLATION_FIELDS=('version','status','failure_code','control','epochs','cell','id','serial',
+    'peer','peer_id','peer_serial','preserved','common_hit','history_hit',
+    'raw_cell','raw_cell_mask','raw_bundle','raw_bundle_mask','stale_setup','stale_setup_mask',
+    'extra_misses','extra_restorations','extra_mask')
+ISOLATION_CONTROL_COUNT=78
+
+
+def _isolation_split(stderr,parse):
+    need(type(stderr)is bytes and stderr.endswith(b'\n'),'whole actual per-cell isolation terminal')
+    lines=stderr[:-1].split(b'\n');positions=[i for i,line in enumerate(lines)if line.startswith(ISOLATION_PREFIX)]
+    need(len(positions)==1 and 0<positions[0]<len(lines)-1 and
+         lines[positions[0]-1].startswith(b'LI2_LOOP_CACHE8_TRANSIT ') and
+         lines[positions[0]+1].startswith(COMMON_PREFIX),
+         'one isolation row between actual TRANSIT and unchanged common observations')
+    at=positions[0]
+    return parse(lines[at],ISOLATION_PREFIX,ISOLATION_FIELDS),b'\n'.join(lines[:at]+lines[at+1:])+b'\n',at
+
+
+def read_isolated(stderr,record,control,mode,*,dependencies):
+    parse,_=dependencies
+    actual,ordinary,_=_isolation_split(stderr,parse)
+    result=read_cached(ordinary,record,control,mode,dependencies=dependencies)
+    first=q(record,544,32);second=q(record,544+227264,32)
+    need(first[6]==second[6]==1 and 0<=first[10]<9 and 0<=second[10]<9 and
+         first[10]!=second[10] and 0<first[18]<second[18] and 0<first[5]<second[5],
+         'isolation binds two distinct genuine single-member completed activations')
+    expected=dict(version=1,status=125 if control else 0,failure_code=3303 if control else 0,
+        control=control,epochs=2,cell=first[10],id=first[18],serial=first[5],
+        peer=second[10],peer_id=second[18],peer_serial=second[5],
+        preserved=1,common_hit=1,history_hit=1,
+        raw_cell=1 if control else 0,raw_cell_mask=255 if control else 0,
+        raw_bundle=1 if control else 0,raw_bundle_mask=255 if control else 0,
+        stale_setup=1 if control else 0,stale_setup_mask=15 if control else 0,
+        extra_misses=2 if control else 0,extra_restorations=2 if control else 0,
+        extra_mask=3 if control else 0)
+    need(actual==expected,
+         'exact issued-peer preservation, real cell/bundle exposures and separate new epoch controls')
+    result['isolation']=actual
+    return result
+
+
+def controls_isolated(stderr,record,control,mode,*,dependencies):
+    parse,_=dependencies
+    read_isolated(stderr,record,control,mode,dependencies=dependencies)
+    actual,ordinary,at=_isolation_split(stderr,parse)
+    result=controls_cached(ordinary,record,control,mode,dependencies=dependencies)
+    lines=stderr[:-1].split(b'\n');refusals=[]
+    def reject(label,changed):
+        need(changed!=stderr,'distinct supplied whole per-cell isolation mutation')
+        try:read_isolated(changed,record,control,mode,dependencies=dependencies)
+        except ValueError:refusals.append(label)
+        else:raise ValueError('accepted per-cell isolation mutation '+label)
+    def replace(label,fields):
+        changed=list(lines);changed[at]=ISOLATION_PREFIX+json.dumps(fields,separators=(',',':')).encode()
+        reject(label,b'\n'.join(changed)+b'\n')
+    need(len(ISOLATION_FIELDS)==23,'literal separate per-cell isolation schema')
+    for name in ISOLATION_FIELDS:
+        fields=dict(actual);del fields[name];replace('missing.'+name,fields)
+        fields=dict(actual);fields[name]=bool(fields[name]);replace('boolean.'+name,fields)
+        fields=dict(actual);fields[name]^=1;replace('value.'+name,fields)
+    fields=dict(actual);fields['extra']=0;replace('extra',fields)
+    replace('key_order',dict(reversed(list(actual.items()))))
+    changed=list(lines);changed[at]=lines[at][:-1]+b',"version":1}'
+    reject('duplicate_key',b'\n'.join(changed)+b'\n')
+    reject('missing_row',b'\n'.join(lines[:at]+lines[at+1:])+b'\n')
+    reject('duplicate_row',b'\n'.join(lines[:at]+[lines[at]]+lines[at:])+b'\n')
+    changed=list(lines);changed[at],changed[at+1]=changed[at+1],changed[at]
+    reject('row_order',b'\n'.join(changed)+b'\n')
+    reject('newline',stderr[:-1])
+    changed=list(lines);changed[at]=lines[at].replace(b'{',b'{ ',1)
+    reject('whitespace',b'\n'.join(changed)+b'\n')
+    changed=list(lines);changed[at]+=b' '*4096
+    reject('writer_bound',b'\n'.join(changed)+b'\n')
+    need(len(refusals)==len(set(refusals))==ISOLATION_CONTROL_COUNT,
+         'all69 scalar and9 encoding isolation mutations through the full terminal reader')
+    result['isolation_refusals']=refusals
+    return result
+
+
 def configured(parse,common):
     dependencies=(parse,common)
-    return SimpleNamespace(read=partial(read_cached,dependencies=dependencies),
-        controls=partial(controls_cached,dependencies=dependencies),CONTROL_COUNT=CONTROL_COUNT,
+    return SimpleNamespace(read=partial(read_isolated,dependencies=dependencies),
+        controls=partial(controls_isolated,dependencies=dependencies),CONTROL_COUNT=CONTROL_COUNT,
         PREENTRY_CONTROL_COUNT=PREENTRY_CONTROL_COUNT,COMMON_CONTROL_COUNT=COMMON_CONTROL_COUNT,
-        CACHE_CONTROL_COUNT=CACHE_CONTROL_COUNT)
+        CACHE_CONTROL_COUNT=CACHE_CONTROL_COUNT,ISOLATION_CONTROL_COUNT=ISOLATION_CONTROL_COUNT)

@@ -43,6 +43,14 @@ struct lgdo_common_observation {
 };
 _Static_assert(sizeof(struct lgdo_common_observation)==152,
     "separate fixed common-revalidation observations");
+struct lgdo_isolation_observation {
+    uint64_t epochs,cell,id,serial,peer,peer_id,peer_serial;
+    uint64_t preserved,common_hit,history_hit;
+    uint64_t raw_cell,raw_cell_mask,raw_bundle,raw_bundle_mask;
+    uint64_t stale_setup,stale_setup_mask,extra_misses,extra_restorations,extra_mask;
+};
+_Static_assert(sizeof(struct lgdo_isolation_observation)==152,
+    "separate per-cell isolation observations leave the binary wire unchanged");
 union lgdo_saved {
     union lhc_root_page root;
     union lhc_capsule capsule;
@@ -59,4 +67,5 @@ static void lgdo_finished(const struct pda_completion *);
 static void lgdo_preentry(unsigned);
 static void lgdo_preentry_report(unsigned,unsigned);
 static void lgdo_common_report(unsigned,unsigned);
+static void lgdo_isolation_report(unsigned,unsigned);
 #endif

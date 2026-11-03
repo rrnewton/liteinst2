@@ -7,7 +7,7 @@ struct lhc_certificate {
     unsigned valid,policy,mask,reserved;
     uint64_t epoch,id,serial;
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR
-    uint64_t raw_root,raw_cell,raw_capsule,source_context,directory;
+    uint64_t raw_root,raw_certificate,raw_cell,raw_capsule,source_context,directory;
 #endif
     const struct li2_pg_epoch *owner;
     const struct pda_completion *completion;
@@ -15,12 +15,31 @@ struct lhc_certificate {
     struct li2_step_session session;
     unsigned char archive[32],policy_hash[32];
 };
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+/* The header never opens during ordinary issuance. A new certificate can
+   retire only its own page, not any other cell's immutable theorem. */
+struct lhc_certificate_value { uint64_t epoch; struct lhc_certificate certificate; };
+union lhc_certificate_page {
+    struct lhc_certificate_value value;
+    unsigned char page[PAGE];
+};
+struct lhc_root {
+    unsigned initialized,poisoned,reserved,cell_count;
+    unsigned char header_padding[PAGE-4U*sizeof(unsigned)];
+    union lhc_certificate_page cell[LI2_PGD_RECEIPTS];
+};
+union lhc_root_page {
+    struct lhc_root value;
+    unsigned char pages[(1U+LI2_PGD_RECEIPTS)*PAGE];
+};
+#else
 struct lhc_root {
     unsigned initialized,poisoned,writer,reserved;
     uint64_t epoch[LI2_PGD_RECEIPTS];
     struct lhc_certificate cell[LI2_PGD_RECEIPTS];
 };
 union lhc_root_page { struct lhc_root value; unsigned char page[PAGE]; };
+#endif
 struct lhc_witnesses { struct li2_le_witness loop,effects; };
 union lhc_capsule {
     struct lhc_witnesses value;
@@ -53,16 +72,69 @@ _Static_assert(LI2_PGD_RECEIPTS==9 && LI2_PGD_MEMBERS==8,
 _Static_assert(LI2_PGD_RECEIPTS==3 && LI2_PGD_MEMBERS==2,
     "the original two active members and three completion cells");
 #endif
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+_Static_assert(sizeof(struct lhc_certificate_value)<=PAGE && sizeof(union lhc_certificate_page)==PAGE &&
+    offsetof(struct lhc_root,cell)==PAGE &&
+    sizeof(struct lhc_root)==(1U+LI2_PGD_RECEIPTS)*PAGE &&
+    sizeof(union lhc_root_page)==sizeof(struct lhc_root) &&
+    sizeof(union lhc_capsule)%PAGE==0 && offsetof(struct lhc_storage,capsule)%PAGE==0 &&
+    offsetof(struct lhc_storage,counts)%PAGE==0 && sizeof lhc%PAGE==0,
+    "immutable header, individual certificates and witnesses have isolated pages");
+#else
 _Static_assert(sizeof(struct lhc_root)<=PAGE && sizeof(union lhc_root_page)==PAGE &&
     sizeof(union lhc_capsule)%PAGE==0 && offsetof(struct lhc_storage,capsule)%PAGE==0 &&
     offsetof(struct lhc_storage,counts)%PAGE==0 && sizeof lhc%PAGE==0,
     "root and each witness capsule have isolated pages");
+#endif
 _Static_assert(_Alignof(struct pda_completion)==PAGE && sizeof(struct pda_completion)%PAGE==0 &&
     offsetof(struct pda_state,completion)%PAGE==0 &&
     offsetof(struct pda_state,claimed)>=offsetof(struct pda_state,completion)+
         sizeof(((struct pda_state *)0)->completion),
     "completion pages contain no mutable claim masks or adjacent owner state");
 
+/* These accessors preserve the original non-descriptor/LRO representation. */
+static struct lhc_certificate *lhc_cell(unsigned i) {
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    return &lhc.root.value.cell[i].value.certificate;
+#else
+    return &lhc.root.value.cell[i];
+#endif
+}
+static uint64_t *lhc_epoch(unsigned i) {
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    return &lhc.root.value.cell[i].value.epoch;
+#else
+    return &lhc.root.value.epoch[i];
+#endif
+}
+static uint64_t lhc_writer(void) {
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    return lgd_lhc_writer();
+#else
+    return lhc.root.value.writer;
+#endif
+}
+static void lhc_set_writer(uint64_t value) {
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    lgd_lhc_set_writer(value);
+#else
+    lhc.root.value.writer=(unsigned)value;
+#endif
+}
+static uintptr_t lhc_certificate_address(unsigned i) {
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    return (uintptr_t)&lhc.root.value.cell[i];
+#else
+    (void)i;return (uintptr_t)&lhc.root;
+#endif
+}
+static size_t lhc_certificate_bytes(void) {
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    return sizeof(union lhc_certificate_page);
+#else
+    return sizeof lhc.root;
+#endif
+}
 static int lhc_add(uint64_t *value,uint64_t n) {
     if(*value>UINT64_MAX-n)return PE_OVERFLOW;
     *value+=n;return 0;
@@ -86,7 +158,20 @@ static int lhc_root_live(void) {
         !lhc.root.value.reserved && handling==1 && !pe_failing && !pe.resuming &&
         pe.initialized==1 && pe.registered==1 && pe_identity() &&
         selected_run_protect_contains(0,(uintptr_t)&lhc,sizeof lhc)==1 &&
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+        lhc.root.value.cell_count==LI2_PGD_RECEIPTS &&
+        !lrc_readonly((uintptr_t)&lhc.root,PAGE);
+#else
         !lrc_readonly((uintptr_t)&lhc.root,sizeof lhc.root);
+#endif
+}
+static int lhc_cell_live(unsigned i) {
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    return i<LI2_PGD_RECEIPTS && lhc_root_live() &&
+        !lrc_readonly(lhc_certificate_address(i),lhc_certificate_bytes());
+#else
+    (void)i;return lhc_root_live();
+#endif
 }
 static int lhc_initialize(void) {
     if(pe.initialized || !pe_busy || pe_active || pe.resuming ||
@@ -105,6 +190,9 @@ static int lhc_initialize(void) {
            lhc_permission((uintptr_t)&lhc.capsule[i],sizeof lhc.capsule[i],PROT_READ) ||
            lrc_readonly((uintptr_t)&lhc.capsule[i],sizeof lhc.capsule[i]))return PE_PUBLICATION;
     }
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    lhc.root.value.cell_count=LI2_PGD_RECEIPTS;
+#endif
     lhc.root.value.initialized=1;
     return lhc_permission((uintptr_t)&lhc.root,sizeof lhc.root,PROT_READ);
 }
@@ -112,24 +200,24 @@ static int lhc_initialize(void) {
    immediately before the original zero-and-fill of that exact cell. */
 static int lhc_begin(struct pda_completion *c) {
     unsigned i=lhc_index(c);
-    if(i>=LI2_PGD_RECEIPTS || !lhc_root_live() || lhc.root.value.writer ||
+    if(i>=LI2_PGD_RECEIPTS || !lhc_cell_live(i) || lhc_writer() ||
        !pe_busy || pe.p.phase!=LI2_PG_CLOSED || pe.domain.work.receipt!=i ||
        !pe.domain.work.bound || pe.domain.work.completion ||
-       lhc.root.value.epoch[i]==UINT64_MAX ||
+       (*lhc_epoch(i))==UINT64_MAX ||
        lhc.counts.invalidations==UINT64_MAX)return PE_STATE;
-    const struct lhc_certificate *old=&lhc.root.value.cell[i];
+    const struct lhc_certificate *old=lhc_cell(i);
     if(c->id) {
-        if(old->valid!=1 || !old->epoch || old->epoch!=lhc.root.value.epoch[i] ||
+        if(old->valid!=1 || !old->epoch || old->epoch!=(*lhc_epoch(i)) ||
            old->completion!=c || old->id!=c->id || old->serial!=c->serial ||
            !c->count || c->count>LI2_PGD_MEMBERS ||
            pe.domain.claimed[i]!=(1U<<c->count)-1U)return PE_STATE;
     } else if(old->valid || !pda_zero(c,sizeof *c) || pe.domain.claimed[i])return PE_STATE;
-    if(lhc_permission((uintptr_t)&lhc.root,sizeof lhc.root,PROT_READ|PROT_WRITE))return PE_PUBLICATION;
-    ++lhc.root.value.epoch[i];
-    le_zero(&lhc.root.value.cell[i],sizeof lhc.root.value.cell[i]);
-    lhc.root.value.writer=i+1;
+    if(lhc_permission(lhc_certificate_address(i),lhc_certificate_bytes(),PROT_READ|PROT_WRITE))return PE_PUBLICATION;
+    ++(*lhc_epoch(i));
+    le_zero(lhc_cell(i),sizeof *lhc_cell(i));
+    lhc_set_writer(i+1);
     __asm__ volatile("":::"memory");
-    if(lhc_permission((uintptr_t)&lhc.root,sizeof lhc.root,PROT_READ))return PE_PUBLICATION;
+    if(lhc_permission(lhc_certificate_address(i),lhc_certificate_bytes(),PROT_READ))return PE_PUBLICATION;
     ++lhc.counts.invalidations;
     if(lhc_permission((uintptr_t)c,sizeof *c,PROT_READ|PROT_WRITE) ||
        lhc_permission((uintptr_t)&lhc.capsule[i],sizeof lhc.capsule[i],PROT_READ|PROT_WRITE))
@@ -140,8 +228,8 @@ static int lhc_begin(struct pda_completion *c) {
    witnesses are copied once; no failed or partial theorem is certified. */
 static int lhc_issue(const struct pda_completion *c) {
     unsigned i=lhc_index(c),mask=lhc_mask(c);
-    if(i>=LI2_PGD_RECEIPTS || !lhc_root_live() || lhc.root.value.writer!=i+1 ||
-       lhc.root.value.cell[i].valid || !lhc.root.value.epoch[i] ||
+    if(i>=LI2_PGD_RECEIPTS || !lhc_cell_live(i) || lhc_writer()!=i+1 ||
+       lhc_cell(i)->valid || !(*lhc_epoch(i)) ||
        !pe_busy || pe.p.phase!=LI2_PG_CLOSED || pe.domain.work.receipt!=i ||
        pe.domain.work.completion || c->complete!=1 || c->id!=pe.domain.next_id ||
        c->serial!=pe.p.serial || pe.domain.claimed[i] || pe.loop.scope || pe_decoding ||
@@ -161,30 +249,40 @@ static int lhc_issue(const struct pda_completion *c) {
        lhc_permission((uintptr_t)&lhc.capsule[i],sizeof lhc.capsule[i],PROT_READ) ||
        lrc_readonly((uintptr_t)c,sizeof *c) ||
        lrc_readonly((uintptr_t)&lhc.capsule[i],sizeof lhc.capsule[i]))return PE_PUBLICATION;
-    if(lhc_permission((uintptr_t)&lhc.root,sizeof lhc.root,PROT_READ|PROT_WRITE))return PE_PUBLICATION;
-    uint64_t epoch=lhc.root.value.epoch[i];
-    struct lhc_certificate *v=&lhc.root.value.cell[i];
+    if(lhc_permission(lhc_certificate_address(i),lhc_certificate_bytes(),PROT_READ|PROT_WRITE))return PE_PUBLICATION;
+    uint64_t epoch=(*lhc_epoch(i));
+    struct lhc_certificate *v=lhc_cell(i);
     *v=(struct lhc_certificate){.policy=mask?(unsigned)c->member[c->direct_exit.member].header.plan_policy:0,
         .mask=mask,.epoch=epoch,.id=c->id,.serial=c->serial,.owner=&pe,.completion=c,
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR
         .capsule=(uintptr_t)&lhc.capsule[i],.session=pe.session,
-        .raw_root=lgd_root_epoch(),.raw_cell=lgd_cell_epoch(i),.raw_capsule=lgd_capsule_epoch(i),
+        .raw_root=lgd_root_epoch(),.raw_certificate=lgd_certificate_epoch(i),
+        .raw_cell=lgd_cell_epoch(i),.raw_capsule=lgd_capsule_epoch(i),
         .source_context=li2_lgd_source_context(),.directory=pe.domain.directory};
 #else
         .capsule=(uintptr_t)&lhc.capsule[i],.session=pe.session};
 #endif
     copy(v->archive,pe_archive,32);copy(v->policy_hash,pe_policy,32);
-    lhc.root.value.writer=0;__asm__ volatile("":::"memory");v->valid=1;
-    if(lhc_permission((uintptr_t)&lhc.root,sizeof lhc.root,PROT_READ))return PE_PUBLICATION;
+#ifndef LI2_LOOP_GROUP_DESCRIPTOR
+    lhc_set_writer(0);
+#endif
+    __asm__ volatile("":::"memory");v->valid=1;
+    if(lhc_permission(lhc_certificate_address(i),lhc_certificate_bytes(),PROT_READ))return PE_PUBLICATION;
+#ifdef LI2_LOOP_GROUP_DESCRIPTOR
+    /* No certificate is usable until its actual page is sealed and queried. */
+    if(lrc_readonly(lhc_certificate_address(i),lhc_certificate_bytes()))return PE_PUBLICATION;
+    lhc_set_writer(0);
+#endif
     ++lhc.counts.issues;return 0;
 }
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR
 static int lhc_exposure_current(unsigned i) {
     if(i>=LI2_PGD_RECEIPTS || !lgd_epochs_live())return 0;
-    const struct lhc_certificate *v=&lhc.root.value.cell[i];
+    const struct lhc_certificate *v=lhc_cell(i);
     return v->directory==pe.domain.directory &&
         v->source_context && v->source_context==li2_lgd_source_context() &&
         v->raw_root && v->raw_root==lgd_root_epoch() &&
+        v->raw_certificate && v->raw_certificate==lgd_certificate_epoch(i) &&
         v->raw_cell && v->raw_cell==lgd_cell_epoch(i) &&
         v->raw_capsule && v->raw_capsule==lgd_capsule_epoch(i);
 }
@@ -194,9 +292,9 @@ static int lhc_match_identity(const struct pda_completion *c,unsigned i) {
 #else
 static int lhc_match(const struct pda_completion *c,unsigned i) {
 #endif
-    if(i>=LI2_PGD_RECEIPTS || !lhc_root_live() || lhc.root.value.writer)return 0;
-    const struct lhc_certificate *v=&lhc.root.value.cell[i];
-    return v->valid==1 && !v->reserved && v->epoch && v->epoch==lhc.root.value.epoch[i] &&
+    if(i>=LI2_PGD_RECEIPTS || !lhc_cell_live(i) || lhc_writer())return 0;
+    const struct lhc_certificate *v=lhc_cell(i);
+    return v->valid==1 && !v->reserved && v->epoch && v->epoch==(*lhc_epoch(i)) &&
         v->id==c->id && v->serial==c->serial &&
         v->owner==&pe && v->completion==c && v->capsule==(uintptr_t)&lhc.capsule[i] &&
         equal(&v->session,&pe.session,sizeof pe.session) && equal(v->archive,pe_archive,32) &&
@@ -211,7 +309,7 @@ static int lhc_match(const struct pda_completion *c,unsigned i) {
 }
 #endif
 static int lhc_restore(const struct pda_completion *c,unsigned i) {
-    const struct lhc_certificate *v=&lhc.root.value.cell[i];
+    const struct lhc_certificate *v=lhc_cell(i);
     const struct lhc_witnesses *w=&lhc.capsule[i].value;
     if(!v->mask || !plr_scope_enter(PLR_HISTORY))return 0;
     plr_source(&c->member[c->direct_exit.member].source);
@@ -230,9 +328,9 @@ static int lhc_full(const struct pda_completion *c) {
 }
 static int lhc_direct_value(const struct pda_completion *c) {
     unsigned i=lhc_index(c);
-    if(lhc_add(&lhc.counts.decisions,1) || i>=LI2_PGD_RECEIPTS || !lhc_root_live())return 0;
+    if(lhc_add(&lhc.counts.decisions,1) || i>=LI2_PGD_RECEIPTS || !lhc_cell_live(i))return 0;
     /* First completion proof runs with this sole invalidated cell writable. */
-    if(lhc.root.value.writer==i+1 && !lhc.root.value.cell[i].valid && lhc.root.value.epoch[i] &&
+    if(lhc_writer()==i+1 && !lhc_cell(i)->valid && (*lhc_epoch(i)) &&
        pe_busy && pe.p.phase==LI2_PG_CLOSED && pe.domain.work.receipt==i &&
        c->id==pe.domain.next_id && c->serial==pe.p.serial) {
         if(lhc_add(&lhc.counts.misses,1))return 0;
@@ -251,7 +349,7 @@ static int lhc_direct_value(const struct pda_completion *c) {
 #ifdef LI2_LOOP_RO_TEST
     lro_history_hook(c,i);
 #endif
-    if(!lhc.root.value.cell[i].mask) {
+    if(!lhc_cell(i)->mask) {
         if(lhc_add(&lhc.counts.misses,1))return 0;
         return lhc_full(c); /* the original whole-zero direct-exit predicate */
     }
@@ -274,7 +372,7 @@ static int lhc_direct_value(const struct pda_completion *c) {
     if(lhc_add(&lhc.counts.differential_checks,1))return 0;
     int actual=lhc_full(c);
     if(actual) {
-        uint64_t *n=lhc.root.value.cell[i].policy==LI2_LPE_VERSION?
+        uint64_t *n=lhc_cell(i)->policy==LI2_LPE_VERSION?
             &s->expected_effects.counts.historical_reconstructions:
             &s->expected_loop.counts.historical_reconstructions;
         if(*n==UINT64_MAX)return 0;
@@ -282,21 +380,21 @@ static int lhc_direct_value(const struct pda_completion *c) {
     }
     int same=cached==actual && equal(&pe.loop,&s->expected_loop,sizeof pe.loop) &&
         equal(&pe.effects,&s->expected_effects,sizeof pe.effects) &&
-        ((cached && (lhc.root.value.cell[i].mask&LHC_REBUILD))?pda_zero(&pe.rebuild,sizeof pe.rebuild):
+        ((cached && (lhc_cell(i)->mask&LHC_REBUILD))?pda_zero(&pe.rebuild,sizeof pe.rebuild):
             equal(&pe.rebuild,&s->before_rebuild,sizeof pe.rebuild));
     if(!same) { (void)lhc_add(&lhc.counts.disagreements,1);return 0; }
 #endif
     if(!cached)return 0;
     uint64_t bytes=2U*PAGE+sizeof pe.loop.pages+2U*sizeof pe.loop.historical+sizeof pe.loop.direct;
-    if(lhc.root.value.cell[i].mask&LHC_EFFECTS)bytes+=2U*sizeof pe.effects.historical;
-    if(lhc.root.value.cell[i].mask&LHC_REBUILD)bytes+=sizeof pe.rebuild;
+    if(lhc_cell(i)->mask&LHC_EFFECTS)bytes+=2U*sizeof pe.effects.historical;
+    if(lhc_cell(i)->mask&LHC_REBUILD)bytes+=sizeof pe.rebuild;
     return !lhc_add(&lhc.counts.restored_bytes,bytes);
 }
 static void lhc_abort(void) {
     if(lhc.root.value.initialized!=1)return;
     if(!lhc_permission((uintptr_t)&lhc.root,sizeof lhc.root,PROT_READ|PROT_WRITE)) {
         lhc.root.value.poisoned=1;
-        for(unsigned i=0;i<LI2_PGD_RECEIPTS;i++)lhc.root.value.cell[i].valid=0;
+        for(unsigned i=0;i<LI2_PGD_RECEIPTS;i++)lhc_cell(i)->valid=0;
         __asm__ volatile("":::"memory");
         (void)lhc_permission((uintptr_t)&lhc.root,sizeof lhc.root,PROT_READ);
     }

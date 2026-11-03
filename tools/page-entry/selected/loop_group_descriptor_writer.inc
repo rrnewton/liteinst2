@@ -4,12 +4,13 @@
 /* A complete common-value proof may be reused within one quiet exposure
    epoch. This token never renews an LHC witness or its original RAW stamps. */
 struct lgd_common_token {
-    uint64_t valid,index,raw_root,raw_cell,raw_capsule,source_context,directory;
+    uint64_t valid,index,raw_root,raw_certificate,raw_cell,raw_capsule,source_context,directory;
     struct lhc_certificate certificate;
 };
 struct lgd_epochs {
     uint64_t initialized,poisoned,next_id;
-    uint64_t root,cell[LI2_PGD_RECEIPTS],capsule[LI2_PGD_RECEIPTS];
+    uint64_t root,certificate[LI2_PGD_RECEIPTS],cell[LI2_PGD_RECEIPTS],capsule[LI2_PGD_RECEIPTS];
+    uint64_t lhc_writer;
     uint64_t publication[LI2_PTR_SLOTS],manifest,directory;
     uint64_t invalidations,unclassified,overflows;
     struct lgd_common_token common[LI2_PGD_RECEIPTS];
@@ -55,8 +56,9 @@ static void lgd_exposure(uintptr_t first,size_t bytes) {
         lgd_advance(&(epoch));changed=1; \
     } \
 } while(0)
-    LGD_EXPOSE(&lhc.root,sizeof lhc.root,lgd_writer.value.root);
+    LGD_EXPOSE(&lhc.root,PAGE,lgd_writer.value.root);
     for(unsigned i=0;i<LI2_PGD_RECEIPTS;i++) {
+        LGD_EXPOSE(lhc_certificate_address(i),lhc_certificate_bytes(),lgd_writer.value.certificate[i]);
         LGD_EXPOSE(&pe.domain.completion[i],sizeof pe.domain.completion[i],lgd_writer.value.cell[i]);
         LGD_EXPOSE(&lhc.capsule[i],sizeof lhc.capsule[i],lgd_writer.value.capsule[i]);
     }
@@ -109,5 +111,8 @@ static int lgd_epochs_live(void) {
         selected_run_protect_contains(0,(uintptr_t)&lgd_writer,sizeof lgd_writer)==1;
 }
 static uint64_t lgd_root_epoch(void) {return lgd_writer.value.root;}
+static uint64_t lgd_certificate_epoch(unsigned i) {return i<LI2_PGD_RECEIPTS?lgd_writer.value.certificate[i]:0;}
+static uint64_t lgd_lhc_writer(void) {return lgd_writer.value.lhc_writer;}
+static void lgd_lhc_set_writer(uint64_t value) {lgd_writer.value.lhc_writer=value;}
 static uint64_t lgd_cell_epoch(unsigned i) {return i<LI2_PGD_RECEIPTS?lgd_writer.value.cell[i]:0;}
 static uint64_t lgd_capsule_epoch(unsigned i) {return i<LI2_PGD_RECEIPTS?lgd_writer.value.capsule[i]:0;}

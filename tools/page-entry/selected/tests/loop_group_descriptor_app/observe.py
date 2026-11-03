@@ -39,17 +39,17 @@ def _zero(data,why):need(not any(data),why)
 
 def _layout(layout,pe):
     need(type(layout)is dict and set(layout)=={'version','symbol','values','owners','inferior_started'} and
-         layout['version']==1 and layout['inferior_started']is False,
+         layout['version']==2 and layout['inferior_started']is False,
          'actual compiler-only descriptor layout authority')
     v=layout['values'];owners=layout['owners']
-    need(type(v)is list and len(v)==18 and all(type(n)is int and n>=0 for n in v) and
-         v[:9]==[1,WIRE,EPOCH,APPEND,EXTRA,SNAPSHOT,3216,296,336] and v[11]==4096 and
-         v[16:]==[4096,5] and type(owners)is dict and set(owners)=={'pe','lhc','lgd_group','lgd_writer'},
+    need(type(v)is list and len(v)==23 and all(type(n)is int and n>=0 for n in v) and
+         v[:9]==[2,WIRE,EPOCH,APPEND,EXTRA,SNAPSHOT,3216,296,336] and v[11]==40960 and
+         v[16:18]==[4096,5] and v[18:]==[40960,4096,4096,224,288] and type(owners)is dict and set(owners)=={'pe','lhc','lgd_group','lgd_writer'},
          'exact independently decoded layout dimensions and owners')
     need(all(type(x)is dict and set(x)=={'address','bytes'} and
              all(type(x[k])is int and x[k]>0 for k in x) for x in owners.values()) and
          type(layout['symbol'])is dict and set(layout['symbol'])=={'address','bytes'} and
-         type(layout['symbol']['bytes'])is int and layout['symbol']['bytes']==144 and
+         type(layout['symbol']['bytes'])is int and layout['symbol']['bytes']==184 and
          type(layout['symbol']['address'])is int and layout['symbol']['address']>0,
          'whole actual defined ELF owner and readonly layout symbols')
     need(v[9]>0 and v[9]%4096==0 and v[10]%4096==0 and v[10]+9*v[9]<=v[14] and
@@ -149,7 +149,7 @@ def _raw(raw,header,final,epoch,control,values,owners):
     kind=control-1;cell=epoch['header'][10]
     first=(owners['pe']+values[10]+cell*values[9],owners['lhc']+values[11]+cell*values[12],
            owners['lhc'],owners['lgd_group'],epoch['header'][11])[kind]
-    size=(values[9],values[12],4096,values[13],12288)[kind]
+    size=(values[9],values[12],values[18],values[13],12288)[kind]
     need(a==(1,1,EXTRA,control,1)+(0,)*11 and
          h==(1,kind,cell,first,size,int(kind==1),1,1,int(kind>=3),0,0,0,7,11)+(0,)*18,
          'one genuine exact RAW exposure, full restoration and unchanged reconstruction outcome')

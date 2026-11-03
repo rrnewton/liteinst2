@@ -49,12 +49,14 @@ _Static_assert(sizeof(struct lc8o_wire)+64<4U*1024U*1024U,"unchanged bounded rec
 /* Read from the actual readonly ELF by the existing build inspection. These
    offsets describe compiler layout and never participate in runtime policy. */
 const uint64_t li2_lgdo_layout[] __attribute__((used,visibility("hidden")))={
-    1,sizeof(struct lc8o_wire),sizeof(struct lc8o_epoch),offsetof(struct lc8o_wire,descriptor),
+    2,sizeof(struct lc8o_wire),sizeof(struct lc8o_epoch),offsetof(struct lc8o_wire,descriptor),
     sizeof(struct lgdo_wire),sizeof(struct lgdo_snapshot),sizeof(struct lgdo_raw),
     sizeof(struct li2_private_code_query),sizeof(struct le_permission),sizeof(struct pda_completion),
     offsetof(struct li2_pg_epoch,domain)+offsetof(struct pda_state,completion),
     offsetof(struct lhc_storage,capsule),sizeof(union lhc_capsule),sizeof lgd_group,
-    sizeof pe,sizeof lhc,sizeof lgd_writer,LC8O_EPOCHS};
+    sizeof pe,sizeof lhc,sizeof lgd_writer,LC8O_EPOCHS,
+    sizeof lhc.root,sizeof(union lhc_certificate_page),offsetof(struct lhc_root,cell),
+    sizeof(struct lhc_certificate),sizeof(struct lgd_common_token)};
 #endif
 static struct {
     struct lc8o_wire wire;
@@ -63,6 +65,9 @@ static struct {
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
     struct lgdo_preentry_observation preentry;
     struct lgdo_common_observation common;
+    struct lgdo_isolation_observation isolation;
+    struct lhc_certificate isolation_certificate;
+    uint64_t isolation_epoch[4];
 #endif
 #if LI2_LOOP_CACHE8_CONTROL == 1 || (defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) && LI2_LOOP_CACHE8_CONTROL != 0)
     struct li2_pgd_view saved_view;
@@ -307,6 +312,7 @@ static void lc8o_report(unsigned status,unsigned code) {
     h[20]=lc8o.controls;h[21]=lc8o.restorations;h[22]=status;h[23]=code;
     h[24]=pe.p.first_error;h[25]=(uint64_t)pe.p.first_detail;h[26]=pe_active;h[27]=pe_busy;
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+    lgdo_isolation_report(status,code);
     lgdo_common_report(status,code);
     lgdo_preentry_report(status,code);
 #endif

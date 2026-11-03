@@ -362,6 +362,14 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
                             need(len(c['terminal_controls']['common_cache_refusals'])==
                                  len(set(c['terminal_controls']['common_cache_refusals']))==reports.CACHE_CONTROL_COUNT==24,
                                  'separate exact common-hit partition accounting controls')
+                            need(len(c['terminal_controls']['isolation_refusals'])==
+                                 len(set(c['terminal_controls']['isolation_refusals']))==reports.ISOLATION_CONTROL_COUNT==78 and
+                                 c['terminal']['isolation']['preserved']==1 and
+                                 c['terminal']['isolation']['raw_cell']==
+                                 c['terminal']['isolation']['raw_bundle']==(1 if control else 0) and
+                                 c['terminal']['isolation']['extra_misses']==
+                                 c['terminal']['isolation']['extra_restorations']==(2 if control else 0),
+                                 'separate actual per-cell preservation/exposures and all78 terminal controls')
                         else:
                             named(c['observer_controls'],109 if control else 81,H(record))
                             need(len(c['observer_controls']['phase_refusals'])==
