@@ -1,0 +1,57 @@
+{
+  "bounds": [
+    5,
+    536870912,
+    4194304,
+    15
+  ],
+  "cases": 13,
+  "cleanup_complete": true,
+  "cpu": 1,
+  "exit": 0,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 1
+  },
+  "inputs": {
+    "tools/page-entry/selected/persistent_group_controller.inc": {
+      "bytes": 122169,
+      "sha256": "62be72316bde84b73f5c2e27ad1a4398b017eedafd3182aea60af1e922b2714c"
+    },
+    "tools/page-entry/selected/persistent_subentry.inc": {
+      "bytes": 9145,
+      "sha256": "5b3cb33a99ac19fb57cf9c43d20e618f2237425ebd155ba36d7d94a7f26bb1e8"
+    },
+    "tools/page-entry/selected/tests/loop_translation_arena_selector/check.py": {
+      "bytes": 7495,
+      "sha256": "afa3ce2f03e514fc27f596c93fa93c1ad40f7370063b79653a49f63742be4f64"
+    }
+  },
+  "native_execution_credit": false,
+  "qualification_credit": false,
+  "reproduce": [
+    "python3.12",
+    "-B",
+    "tools/page-entry/selected/tests/loop_translation_arena_selector/check.py",
+    "tools/page-entry/selected",
+    "target/evaluation/inprocess/arena-selector-NEW",
+    "--cc",
+    "/usr/bin/cc"
+  ],
+  "schema": 1,
+  "scope": "Actual extracted production selector with scripted advisory dependencies; no physical admission or native execution credit.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "b2016d1e2dc0b65acc7710cee9ca713c3b1c13bf",
+    "source_manifest_sha256": "3703c3bf4fbdaac39cb7d409bf2c51b533681d7740dd175865203dd4d9ba21dd",
+    "tracked_clean": true,
+    "tree": "bfb0330cfcb226b3a3ea16d13ba9e75595c49e5c"
+  },
+  "source_unchanged": true,
+  "status": "passed"
+}
