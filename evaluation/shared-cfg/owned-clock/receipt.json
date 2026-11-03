@@ -1,0 +1,328 @@
+{
+  "capacity": {
+    "after-allocated": {
+      "ignored": 12333060096,
+      "target": 7375511552,
+      "total": 19913797632
+    },
+    "after-apparent": {
+      "ignored": 11397624424,
+      "target": 7254074831,
+      "total": 18837381803
+    },
+    "before-allocated": {
+      "ignored": 12330037248,
+      "target": 7352999936,
+      "total": 19888263168
+    },
+    "before-apparent": {
+      "ignored": 11394687446,
+      "target": 7231656591,
+      "total": 18812026585
+    }
+  },
+  "capacity_ceilings": [
+    19994091520,
+    19061190371
+  ],
+  "census_review_sha256": "588c027856392831ab3f596f3abdc0a279bd91dfecf935cd350819a03f879356",
+  "claim4": "A4 / claim 4 remains open against the strict 20,000-step profile; an 80,000-step pass does not complete it.",
+  "closed_receipt_sha256": "9d9107f10f2e43d03334aa421d654bcf54255d88105b5bc66eb6b1ad04919b8c",
+  "cpus": [
+    1,
+    8,
+    17,
+    40,
+    63,
+    65,
+    75,
+    112,
+    113,
+    151,
+    154,
+    156
+  ],
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "load_after": [
+    27.35,
+    33.83,
+    41.81
+  ],
+  "load_before": [
+    37.57,
+    48.02,
+    58.75
+  ],
+  "owners": {
+    "cleanup_complete": true,
+    "normal_zero": 11,
+    "rescued_descendants": 0,
+    "total": 11
+  },
+  "profile": "owned-clock-shared-cfg-correctness-1800-360-v1",
+  "raw_summary_notes": "Raw workspace totals include nested child invocations. Focused and serial executions overlap workspace coverage; do not sum them as distinct tests.",
+  "reproduce": "cpuset-alloc run --cores 12 --tag owned-clock-cfg-reproduce -- python3.9 -I -B evaluation/shared-cfg/validate_clock.py --revision f8785f2d7c4cc79c8d42862f177f8d54b62bed81 --output ignored/owned-clock-cfg-reproduce --toolchain \"$TOOLCHAIN\"",
+  "reproduction_notes": "Clean checkout of exact revision; fresh output namespace; offline stable Rust 1.97.1 toolchain, version carried from the prior build receipt rather than freshly measured. One target; incremental/dev-debug/test-debug off; build jobs and harness threads 12, serial launcher 1. No automatic retry.",
+  "reservation": "cpuset-alloc reserved 12 CPUs and pinned the whole command tree with AllowedCPUs; actual runner affinity recorded. Root-attested, no independent ledger witness.",
+  "results": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "load_after": [
+        38.93,
+        47.6,
+        58.38
+      ],
+      "load_before": [
+        36.83,
+        47.51,
+        58.47
+      ],
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "fmt",
+      "raw_summary_count": 0,
+      "raw_summary_totals": null,
+      "seconds": 11.026563920080662,
+      "start_utc": "2026-11-03T00:36:48.497868+00:00",
+      "status": "PASS",
+      "wall_seconds": 180
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "load_after": [
+        47.93,
+        48.94,
+        58.43
+      ],
+      "load_before": [
+        38.93,
+        47.6,
+        58.38
+      ],
+      "log_sha256": "9d7d30ad57feff85b8ab77f8344e8007ea82d2320ccfcd0e71ad17d13cebbf30",
+      "name": "clippy",
+      "raw_summary_count": 0,
+      "raw_summary_totals": null,
+      "seconds": 35.3251177710481,
+      "start_utc": "2026-11-03T00:36:59.560163+00:00",
+      "status": "PASS",
+      "wall_seconds": 180
+    },
+    {
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "load_after": [
+        48.2,
+        48.91,
+        58.17
+      ],
+      "load_before": [
+        47.93,
+        48.94,
+        58.43
+      ],
+      "log_sha256": "c39b2bd013cf00e806707ff5c80d7148ce78c090834da9497ff39fee5d6ed31b",
+      "name": "check",
+      "raw_summary_count": 0,
+      "raw_summary_totals": null,
+      "seconds": 23.164882095064968,
+      "start_utc": "2026-11-03T00:37:34.922696+00:00",
+      "status": "PASS",
+      "wall_seconds": 180
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "control_flow::"
+      ],
+      "load_after": [
+        51.7,
+        49.63,
+        58.3
+      ],
+      "load_before": [
+        48.2,
+        48.91,
+        58.17
+      ],
+      "log_sha256": "06772fb77941fd06b130fb9ad65cf0b72e51e033d2648ac1dc11ae41d9e181e8",
+      "name": "graph",
+      "raw_summary_count": 1,
+      "raw_summary_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 2
+      },
+      "seconds": 10.212720185983926,
+      "start_utc": "2026-11-03T00:37:58.121758+00:00",
+      "status": "PASS",
+      "wall_seconds": 180
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "backedge_clock::"
+      ],
+      "load_after": [
+        51.7,
+        49.63,
+        58.3
+      ],
+      "load_before": [
+        51.7,
+        49.63,
+        58.3
+      ],
+      "log_sha256": "2aec96d005e4d514696b624af046afdb906afaf6d840101b9a9c49f8c0616ea5",
+      "name": "clock",
+      "raw_summary_count": 1,
+      "raw_summary_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 37
+      },
+      "seconds": 0.03189972904510796,
+      "start_utc": "2026-11-03T00:38:08.369049+00:00",
+      "status": "PASS",
+      "wall_seconds": 180
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-j",
+        "12",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "load_after": [
+        46.56,
+        38.88,
+        44.45
+      ],
+      "load_before": [
+        51.7,
+        49.63,
+        58.3
+      ],
+      "log_sha256": "5f9397855dec6730a3498d663596681d37dcb06aefa9a8ddfb407ca345644c4c",
+      "name": "workspace",
+      "raw_summary_count": 134,
+      "raw_summary_totals": {
+        "failed": 0,
+        "ignored": 43,
+        "passed": 4620
+      },
+      "seconds": 848.5933271120302,
+      "start_utc": "2026-11-03T00:38:08.435149+00:00",
+      "status": "PASS",
+      "wall_seconds": 1800
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "load_after": [
+        26.94,
+        33.86,
+        41.86
+      ],
+      "load_before": [
+        44.52,
+        38.59,
+        44.32
+      ],
+      "log_sha256": "ec14262915d872a28347047d232957fcbeef65c63ba55a5b70d12a22ee00d1cd",
+      "name": "serial-launch",
+      "raw_summary_count": 27,
+      "raw_summary_totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 1039
+      },
+      "seconds": 126.22191130300052,
+      "start_utc": "2026-11-03T00:52:17.081386+00:00",
+      "status": "PASS",
+      "wall_seconds": 360
+    }
+  ],
+  "revision": "f8785f2d7c4cc79c8d42862f177f8d54b62bed81",
+  "runner_sources": {
+    "evaluation/admission/processes.py": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+    "evaluation/shared-cfg/validate_clock.py": "5ea9b52b2491189c15e2f4ce121244ffe06f51fa1ab0254ef34acfebeca31377",
+    "evaluation/shared-x86/validate.py": "0ca942b5e015851f171f01dac88375b98c7ddfd1bccc2a86163884347a21e306"
+  },
+  "schema": 1,
+  "scope": "Shared CFG construction preserves both existing owned-clock admission profiles. No broader clock, runtime page-exemption, throughput or strict claim-4 qualification. Durations are operational observations, not benchmarks.",
+  "status": "PASS",
+  "test_census": {
+    "added_controls": [
+      "owned_cfg_shared_positive_graphs_and_distinct_scalar_profiles",
+      "owned_cfg_shared_refusals_and_exact_backedge_rosters",
+      "owned_cfg_shared_region_returnability_is_not_added_to_loop",
+      "owned_cfg_shared_size_address_and_supplied_scan_guards"
+    ],
+    "baseline_revision": "febb3594cad0b864e72ab7eea62efcbfc739a735",
+    "each_new_control_once_in_focus_and_workspace": true,
+    "method": "Complete sorted [context,name,full_terminal,multiplicity] multiset. Normalize only executable16-hex suffix and doctest line coordinate. Preserve all ignore/should-panic text and multiplicities; join delayed terminals within actual context. Explicitly subtract only the same11 named nested child invocations; raw totals are not distinct tests. Whole context sequences and summary multisets agree except root-library +4 PASS.",
+    "removed": 0,
+    "retained": {
+      "harnessless_backing_records_per_log": 8,
+      "ignore_reasons": 43,
+      "serial_critical": 5,
+      "short_neighbor": 21,
+      "should_panic": 539,
+      "workspace_critical": 27
+    },
+    "serial": {
+      "failed": 0,
+      "ignored": 0,
+      "old_roster_unchanged": true,
+      "passed": 1039,
+      "roster_sha256": "bfaaa7b62148757370f36e2ad52761ce4a45be9937b3dd020ac38a1b39f2d720"
+    },
+    "workspace": {
+      "failed": 0,
+      "ignored": 43,
+      "nested_passed": 11,
+      "old_roster_unchanged_after_exact_four_additions": true,
+      "raw_passed": 4620,
+      "raw_roster_sha256": "e6203db9edf80def0a653235e303f10d978078a636bd0815d17eeb54f5b342f6",
+      "top_level_passed": 4609,
+      "top_level_roster_sha256": "e64e1170d65372f46ef49b6deb719dbb509184d500808a531e43dd2de58a7017"
+    }
+  },
+  "tree": "3c9e7d8587c127b552e19e7632b55bb9ed14c8a0"
+}
