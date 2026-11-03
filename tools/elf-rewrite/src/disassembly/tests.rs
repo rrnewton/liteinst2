@@ -2213,3 +2213,184 @@ fn imported_cuts_keep_global_contradictions_after_all_ledger_and_entry_checks() 
         Error::new("disassembly", "ELF entry missing from code ledger")
     );
 }
+
+#[test]
+fn jump_stack_import_keeps_complete_union_and_literal_old_inventory() {
+    use li2core::x86::JumpStackClass::{Jump, PopRegister64, PushRegister64};
+    // The branch skips three selected heads; neither reachability nor later
+    // prefix qualification may remove them from the requested denominator.
+    let (original, ledger) = fixture(&[
+        &[0xeb, 4],
+        &[0x54],
+        &[0x5c],
+        &[0x41, 0x57],
+        &[0x41, 0x5f],
+        &[0xf3, 0x50],
+        &[0x66, 0x50],
+        &[0xff, 0xf0],
+        &[0x8f, 0xc0],
+        &[0xe8, 0, 0, 0, 0],
+        &[0xc3],
+        &[0x90],
+        &[0x75, 0],
+        &[0xc3],
+    ]);
+    let union = jump_stack::import(
+        &original,
+        ledger.as_bytes(),
+        ContentId::of(ledger.as_bytes()),
+    )
+    .unwrap();
+    assert_eq!(union.profile(), "jumps-gpr-stack64-v1");
+    assert_eq!(union.original(), ContentId::of(&original));
+    assert_eq!(union.ledger(), ledger.as_bytes());
+    assert_eq!(union.head_count(), 15);
+    let rows: Vec<_> = union
+        .sites()
+        .iter()
+        .map(|s| {
+            (
+                s.geometry().id,
+                s.geometry().pc - PC,
+                s.geometry().length,
+                s.class(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        rows,
+        [
+            (1, 0, 2, Jump),
+            (2, 2, 1, PushRegister64),
+            (3, 3, 1, PopRegister64),
+            (4, 4, 2, PushRegister64),
+            (5, 6, 2, PopRegister64),
+            (6, 8, 2, PushRegister64),
+            (7, 23, 2, Jump),
+        ]
+    );
+    assert_eq!(union.sites()[1].geometry().block, addr(PC + 2, 4).unwrap());
+    assert_eq!(union.sites()[4].geometry().block, addr(PC + 6, 15).unwrap());
+    let actual = String::from_utf8(union.inventory()).unwrap();
+    assert!(actual.contains("selection_status\tclassified-unbound\n"));
+    assert!(actual.contains("complete_head_count\t15\ncomplete_site_count\t7\njump_count\t2\npush_r64_count\t3\npop_r64_count\t2\nqualification_complete\tfalse\n"));
+    assert_eq!(
+        actual
+            .lines()
+            .filter(|line| line.ends_with("\tpush-r64"))
+            .count(),
+        3
+    );
+    assert_eq!(
+        actual
+            .lines()
+            .filter(|line| line.ends_with("\tpop-r64"))
+            .count(),
+        2
+    );
+    let old = checked(&original, &ledger).unwrap();
+    let expected = format!(
+        "LI2DISASSEMBLY-INVENTORY\t1\nprofile\telf-disassembly-null-jumps-v1\noriginal_sha256\t{}\nledger_sha256\t{}\ncomplete_jump_count\t2\nqualification_complete\tfalse\nid\tpc\tlength\tfile_offset\tregion_pc\tregion_length\tblock_pc\tblock_length\n1\t{PC}\t2\t4352\t{PC}\t26\t{PC}\t2\n2\t{}\t2\t4375\t{PC}\t26\t{}\t3\n",
+        digest(&original),
+        digest(ledger.as_bytes()),
+        PC + 23,
+        PC + 22,
+    );
+    assert_eq!(old.inventory(), expected.as_bytes());
+    assert_eq!(
+        old.jumps().iter().map(|s| s.pc).collect::<Vec<_>>(),
+        [PC, PC + 23]
+    );
+}
+
+#[test]
+fn jump_stack_import_preserves_shared_first_errors_and_global_target_checks() {
+    // Valid decoding but a direct target into the middle of its own E9.
+    let (original, ledger) = fixture(&[&[0xe9, 0xfc, 0xff, 0xff, 0xff], &[0x54], &[0x5c]]);
+    let malformed = ledger.replace(&format!("head {HOOK} c3"), &format!("head {HOOK} 90"));
+    for (text, expected_digest, detail) in [
+        (
+            malformed.as_str(),
+            ContentId::of(b"different ledger"),
+            "ledger digest",
+        ),
+        (
+            malformed.as_str(),
+            ContentId::of(malformed.as_bytes()),
+            "head bytes",
+        ),
+        (
+            ledger.as_str(),
+            ContentId::of(ledger.as_bytes()),
+            "direct target contradicts complete ledger",
+        ),
+    ] {
+        let expected = Error::new("disassembly", detail);
+        assert_eq!(
+            import(&original, text.as_bytes(), expected_digest).unwrap_err(),
+            expected
+        );
+        assert_eq!(
+            jump_stack::import(&original, text.as_bytes(), expected_digest).unwrap_err(),
+            expected
+        );
+    }
+    let mut missing_entry = original.clone();
+    put64(&mut missing_entry, 24, PC + 1);
+    let locations = ledger.replace(&digest(&original), &digest(&missing_entry));
+    assert_eq!(
+        jump_stack::import(
+            &missing_entry,
+            locations.as_bytes(),
+            ContentId::of(locations.as_bytes())
+        )
+        .unwrap_err(),
+        Error::new("disassembly", "ELF entry missing from code ledger"),
+    );
+}
+
+#[test]
+fn jump_stack_import_keeps_every_register_without_legacy_profile_promotion() {
+    use li2core::x86::JumpStackClass::{PopRegister64, PushRegister64};
+    let mut chunks = Vec::new();
+    for opcode in [0x50_u8, 0x58] {
+        for register in 0..16_u8 {
+            let mut bytes = Vec::new();
+            if register >= 8 {
+                bytes.push(0x41);
+            }
+            bytes.push(opcode + (register & 7));
+            chunks.push(bytes);
+        }
+    }
+    let views: Vec<_> = chunks.iter().map(Vec::as_slice).collect();
+    let (original, ledger) = fixture(&views);
+    let union = jump_stack::import(
+        &original,
+        ledger.as_bytes(),
+        ContentId::of(ledger.as_bytes()),
+    )
+    .unwrap();
+    assert_eq!(union.sites().len(), 32);
+    assert_eq!(union.head_count(), 33);
+    assert!(
+        union.sites()[..16]
+            .iter()
+            .all(|s| s.class() == PushRegister64)
+    );
+    assert!(
+        union.sites()[16..]
+            .iter()
+            .all(|s| s.class() == PopRegister64)
+    );
+    assert_eq!(union.sites()[4].geometry().pc, PC + 4); // PUSH RSP.
+    assert_eq!(union.sites()[20].geometry().pc, PC + 28); // POP RSP.
+    assert_eq!(union.sites().last().unwrap().geometry().id, 32);
+    assert!(checked(&original, &ledger).unwrap().jumps().is_empty());
+    let inventory = String::from_utf8(union.inventory()).unwrap();
+    assert!(inventory.contains(
+        "complete_site_count\t32\njump_count\t0\npush_r64_count\t16\npop_r64_count\t16\n"
+    ));
+    // Inventory is metadata, never an alternate LI2TOOL planning manifest.
+    assert!(selection::parse(inventory.as_bytes()).is_err());
+}

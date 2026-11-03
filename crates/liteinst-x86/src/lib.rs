@@ -103,6 +103,76 @@ pub fn selected_mnemonic(instruction: &Instruction) -> Option<SelectedClass> {
     })
 }
 
+/// The existing `j*` mnemonic population, not all control transfers.
+///
+/// This includes unusual/far jump forms without granting relocation support.
+/// CALL, RET, LOOP and XBEGIN are not members of this descriptive family.
+pub fn is_jump_mnemonic(mnemonic: Mnemonic) -> bool {
+    matches!(
+        mnemonic,
+        Mnemonic::Ja
+            | Mnemonic::Jae
+            | Mnemonic::Jb
+            | Mnemonic::Jbe
+            | Mnemonic::Jcxz
+            | Mnemonic::Je
+            | Mnemonic::Jecxz
+            | Mnemonic::Jg
+            | Mnemonic::Jge
+            | Mnemonic::Jl
+            | Mnemonic::Jle
+            | Mnemonic::Jmp
+            | Mnemonic::Jmpe
+            | Mnemonic::Jne
+            | Mnemonic::Jno
+            | Mnemonic::Jnp
+            | Mnemonic::Jns
+            | Mnemonic::Jo
+            | Mnemonic::Jp
+            | Mnemonic::Jrcxz
+            | Mnemonic::Js
+            | Mnemonic::Jknzd
+            | Mnemonic::Jkzd
+    )
+}
+
+/// Descriptive members of the jumps plus exact register-stack union.
+/// This does not establish helper-stack safety or an instruction's admission.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum JumpStackClass {
+    /// Any member of the existing `j*` mnemonic population.
+    Jump,
+    /// Exactly `Code::Push_r64`, including RSP.
+    PushRegister64,
+    /// Exactly `Code::Pop_r64`, including RSP.
+    PopRegister64,
+}
+
+impl JumpStackClass {
+    /// Canonical descriptive class label for the separately bound population.
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::Jump => "jump",
+            Self::PushRegister64 => "push-r64",
+            Self::PopRegister64 => "pop-r64",
+        }
+    }
+}
+
+/// Classifies the complete union without filtering prefixes or registers.
+///
+/// Other PUSH/POP encodings, including register operands encoded with r/m
+/// opcodes, are excluded. Constructed operands and execution support remain
+/// consumer obligations; the Code fact is not a new qualification rule.
+pub fn jump_or_register_stack(instruction: &Instruction) -> Option<JumpStackClass> {
+    match instruction.code() {
+        Code::Push_r64 => Some(JumpStackClass::PushRegister64),
+        Code::Pop_r64 => Some(JumpStackClass::PopRegister64),
+        _ if is_jump_mnemonic(instruction.mnemonic()) => Some(JumpStackClass::Jump),
+        _ => None,
+    }
+}
+
 /// General-purpose register identity in architectural encoding order.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(u8)]

@@ -1,6 +1,8 @@
 //! Input-independent construction of one explicitly bounded whole policy.
 //! All supplied heads/premises and all planner/carrier refusals remain required.
+use super::super::jump_stack::JumpStackDisassembly;
 use super::super::{Disassembly, append, check, rows};
+use super::Population;
 use crate::carrier::elf64::{Elf64, ObjectType, ParseLimits, SegmentType};
 use crate::model::{Error, Limits, SelectedSite};
 use crate::{addr, carrier_table_reservation, ledger, round_page, selection};
@@ -11,6 +13,7 @@ use li2core::trampoline::{SavedExtendedStateFormat, SavedExtendedStateLayout};
 use std::fmt::Write as _;
 
 pub const PROFILE: &str = "et-exec-whole-bounded-512m-v1";
+pub const JUMP_STACK_PROFILE: &str = "et-exec-jumps-gpr-stack64-bounded-512m-v1";
 const PAGE: u64 = 4096;
 const LOW: u64 = 262144;
 const HIGH: u64 = 536870912;
@@ -66,7 +69,7 @@ pub struct WholePolicySpec {
 }
 
 fn geometry(
-    imported: &Disassembly,
+    imported: Population<'_>,
     original: &[u8],
     options: PolicyOptions,
 ) -> Result<(u64, u64), Error> {
@@ -153,16 +156,17 @@ fn geometry(
 }
 
 fn header(
-    imported: &Disassembly,
+    imported: Population<'_>,
     options: PolicyOptions,
     target: &str,
     hook: u64,
     carrier: u64,
 ) -> String {
     format!(
-        "LI2DISASM-WHOLE-POLICY 1\noriginal {}\nledger {}\n{target}\ndomain {}\ncarrier {carrier}\nlimits {} {} {} {} {} {} {} {} {}\nnull-hook {hook}\n",
+        "{}\noriginal {}\nledger {}\n{target}\ndomain {}\ncarrier {carrier}\nlimits {} {} {} {} {} {} {} {} {}\nnull-hook {hook}\n",
+        imported.policy_header(),
         ledger::hex(&imported.original.0),
-        ledger::hex(&ContentId::of(&imported.ledger).0),
+        ledger::hex(&ContentId::of(imported.ledger).0),
         options.domain,
         LIMITS.input_bytes,
         LIMITS.sites,
@@ -220,10 +224,55 @@ fn fixed_site(site: &SelectedSite) -> Result<(), Error> {
     Ok(())
 }
 
+// The union's explicit bounded profile cannot bypass its fixed ceilings or
+// search tuple by supplying a hand-written new-header policy. Legacy binding
+// retains its original generic limits and error order.
+pub(super) fn check_jump_stack_selection(selected: &crate::model::Selection) -> Result<(), Error> {
+    let l = selected.limits;
+    check(
+        l.input_bytes == LIMITS.input_bytes
+            && l.sites == LIMITS.sites
+            && l.images == LIMITS.images
+            && l.image_bytes == LIMITS.image_bytes
+            && l.new_load_pages == LIMITS.new_load_pages
+            && l.output_bytes == LIMITS.output_bytes
+            && l.added_file_bytes == LIMITS.added_file_bytes
+            && l.program_headers == LIMITS.program_headers
+            && l.virtual_span == LIMITS.virtual_span,
+        "unchanged union profile limits",
+    )?;
+    for site in &selected.sites {
+        fixed_site(site)?;
+    }
+    Ok(())
+}
+
 /// Decode target/search/allocation records through the existing whole binder.
 /// This adds fixed-profile checks; it does not introduce another input grammar.
 pub fn spec_from_records(
     imported: &Disassembly,
+    original: &[u8],
+    options: PolicyOptions,
+    target: &[u8],
+    records: &[u8],
+) -> Result<WholePolicySpec, Error> {
+    spec_from_population_records(imported.population(), original, options, target, records)
+}
+
+/// Same fixed policy grammar and bounds, bound to the complete typed union.
+/// WholePolicySpec is descriptive input; it is not a transferable selection authority.
+pub fn spec_from_jump_stack_records(
+    imported: &JumpStackDisassembly,
+    original: &[u8],
+    options: PolicyOptions,
+    target: &[u8],
+    records: &[u8],
+) -> Result<WholePolicySpec, Error> {
+    spec_from_population_records(imported.population(), original, options, target, records)
+}
+
+fn spec_from_population_records(
+    imported: Population<'_>,
     original: &[u8],
     options: PolicyOptions,
     target: &[u8],
@@ -237,10 +286,10 @@ pub fn spec_from_records(
     )?;
     let record_rows = rows(records)?;
     check(
-        imported.jumps.len() <= LIMITS.sites && record_rows.len() == imported.jumps.len() * 3,
+        imported.site_count() <= LIMITS.sites && record_rows.len() == imported.site_count() * 3,
         "complete ordered policy records",
     )?;
-    for (site, triple) in imported.jumps.iter().zip(record_rows.chunks_exact(3)) {
+    for ((site, _), triple) in imported.sites().zip(record_rows.chunks_exact(3)) {
         for (row, (tag, role)) in triple.iter().zip([
             ("search", None),
             ("allocation", Some("selected")),
@@ -261,11 +310,9 @@ pub fn spec_from_records(
         &mut raw,
         std::str::from_utf8(records).map_err(|e| Error::new("policy-text", e))?,
     )?;
-    let selected = imported
-        .clone()
-        .bind_whole_program(raw.as_bytes(), ContentId::of(raw.as_bytes()))?;
+    let (selected, _) = imported.bind(raw.as_bytes(), ContentId::of(raw.as_bytes()))?;
     let mut sites = Vec::new();
-    for site in &selected.selection.sites {
+    for site in &selected.sites {
         fixed_site(site)?;
         let role = |a: &li2core::quiescent::AllocationPolicy| RolePlacement {
             preferred: a.preferred_address,
@@ -279,7 +326,7 @@ pub fn spec_from_records(
     }
     Ok(WholePolicySpec {
         options,
-        target: selected.selection.target,
+        target: selected.target,
         sites,
     })
 }
@@ -315,9 +362,27 @@ pub fn build_policy(
     original: &[u8],
     spec: &WholePolicySpec,
 ) -> Result<Vec<u8>, Error> {
+    build_population_policy(imported.population(), original, spec)
+}
+
+/// Emit the distinct union policy header; no site is filtered or converted to
+/// the old jump-only authority. The existing binder validates every final row.
+pub fn build_jump_stack_policy(
+    imported: &JumpStackDisassembly,
+    original: &[u8],
+    spec: &WholePolicySpec,
+) -> Result<Vec<u8>, Error> {
+    build_population_policy(imported.population(), original, spec)
+}
+
+fn build_population_policy(
+    imported: Population<'_>,
+    original: &[u8],
+    spec: &WholePolicySpec,
+) -> Result<Vec<u8>, Error> {
     let (hook, carrier) = geometry(imported, original, spec.options)?;
     check(
-        spec.sites.len() == imported.jumps.len() && spec.sites.len() <= LIMITS.sites,
+        spec.sites.len() == imported.site_count() && spec.sites.len() <= LIMITS.sites,
         "complete policy site census",
     )?;
     let mut text = header(
@@ -327,7 +392,7 @@ pub fn build_policy(
         hook,
         carrier,
     );
-    for (site, expected) in spec.sites.iter().zip(&imported.jumps) {
+    for (site, (expected, _)) in spec.sites.iter().zip(imported.sites()) {
         check(site.id == expected.id, "complete policy site order")?;
         append(
             &mut text,
@@ -347,8 +412,6 @@ pub fn build_policy(
         }
     }
     // Preserve all independently decoded heads and the complete existing binder.
-    imported
-        .clone()
-        .bind_whole_program(text.as_bytes(), ContentId::of(text.as_bytes()))?;
+    imported.bind(text.as_bytes(), ContentId::of(text.as_bytes()))?;
     Ok(text.into_bytes())
 }

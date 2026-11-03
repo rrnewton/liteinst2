@@ -328,9 +328,31 @@ pub fn prepare_disassembly_whole_fixed_exec_packed_overlapping_neighbors(
     original: &[u8],
     selected: &disassembly::whole::WholeProgramSelection,
 ) -> Result<Product, Error> {
+    prepare_whole_fixed_exec(original, &selected.selection, || {
+        selected.packed_overlapping_files()
+    })
+}
+
+/// Complete jump/register-stack union under the explicit fixed-address ET_EXEC
+/// contract. Uses the same qualification, pending ownership, planner, encoder,
+/// carrier and all-or-none transaction; no runtime/stack-fault guarantee follows.
+pub fn prepare_disassembly_jump_stack_fixed_exec_packed_overlapping_neighbors(
+    original: &[u8],
+    selected: &disassembly::whole::JumpStackWholeSelection,
+) -> Result<Product, Error> {
+    prepare_whole_fixed_exec(original, &selected.selection, || {
+        selected.packed_overlapping_files()
+    })
+}
+
+fn prepare_whole_fixed_exec(
+    original: &[u8],
+    selected: &Selection,
+    profile_files: impl FnOnce() -> BTreeMap<String, Vec<u8>>,
+) -> Result<Product, Error> {
     let mut product = prepare_selection_with_carrier_layout(
         original,
-        selected.selection.clone(),
+        selected.clone(),
         false,
         disassembly::NeighborMode::WholeOverlappingPending,
         None,
@@ -345,7 +367,7 @@ pub fn prepare_disassembly_whole_fixed_exec_packed_overlapping_neighbors(
         },
     )?;
     product.files.remove("bundle-index.tsv");
-    let mut files = selected.packed_overlapping_files();
+    let mut files = profile_files();
     files
         .get_mut("planning-profile.tsv")
         .expect("typed whole-program selection retains its profile")
@@ -353,7 +375,7 @@ pub fn prepare_disassembly_whole_fixed_exec_packed_overlapping_neighbors(
     product.files.extend(files);
     product.files.insert(
         "bundle-index.tsv".into(),
-        ledger::index(selected.selection.original, &product.files),
+        ledger::index(selected.original, &product.files),
     );
     Ok(product)
 }

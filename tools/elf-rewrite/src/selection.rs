@@ -23,6 +23,52 @@ pub(crate) struct SharedEntries<'a> {
     pub null_hook: u64,
 }
 
+#[derive(Clone, Copy)]
+enum SharedSites<'a> {
+    Jumps(&'a [crate::disassembly::JumpSite]),
+    Population(crate::disassembly::whole::Population<'a>),
+}
+impl<'a> SharedSites<'a> {
+    fn len(self) -> usize {
+        match self {
+            Self::Jumps(s) => s.len(),
+            Self::Population(p) => p.site_count(),
+        }
+    }
+    fn is_empty(self) -> bool {
+        self.len() == 0
+    }
+    fn get(self, index: usize) -> Option<&'a crate::disassembly::JumpSite> {
+        match self {
+            Self::Jumps(s) => s.get(index),
+            Self::Population(p) => p.site(index).map(|s| s.0),
+        }
+    }
+    fn iter(self) -> impl ExactSizeIterator<Item = &'a crate::disassembly::JumpSite> {
+        (0..self.len()).map(move |i| self.get(i).expect("sealed shared population index"))
+    }
+    fn class(self, index: usize) -> Option<li2core::x86::JumpStackClass> {
+        match self {
+            Self::Jumps(_) => None,
+            Self::Population(p) => p.site(index).and_then(|s| s.1),
+        }
+    }
+    fn profile(self) -> &'static str {
+        match self {
+            Self::Jumps(_) => crate::disassembly::whole::PROFILE,
+            Self::Population(p) => p.profile(),
+        }
+    }
+}
+#[derive(Clone, Copy)]
+struct SharedExpected<'a> {
+    original: ContentId,
+    ledger: ContentId,
+    regions: &'a [SharedRegion],
+    sites: SharedSites<'a>,
+    null_hook: u64,
+}
+
 pub fn parse(bytes: &[u8]) -> Result<Selection, Error> {
     if bytes.len() > 1024 * 1024 {
         return Err(bad("manifest exceeds 1 MiB"));
@@ -33,6 +79,40 @@ pub fn parse(bytes: &[u8]) -> Result<Selection, Error> {
 pub(crate) fn parse_shared_projection(
     bytes: &[u8],
     expected: &SharedEntries<'_>,
+) -> Result<Selection, Error> {
+    parse_checked_projection(
+        bytes,
+        SharedExpected {
+            original: expected.original,
+            ledger: expected.ledger,
+            regions: expected.regions,
+            sites: SharedSites::Jumps(expected.sites),
+            null_hook: expected.null_hook,
+        },
+    )
+}
+
+pub(crate) fn parse_population_projection(
+    bytes: &[u8],
+    population: crate::disassembly::whole::Population<'_>,
+    regions: &[SharedRegion],
+    null_hook: u64,
+) -> Result<Selection, Error> {
+    parse_checked_projection(
+        bytes,
+        SharedExpected {
+            original: population.original(),
+            ledger: population.ledger_id(),
+            regions,
+            sites: SharedSites::Population(population),
+            null_hook,
+        },
+    )
+}
+
+fn parse_checked_projection(
+    bytes: &[u8],
+    expected: SharedExpected<'_>,
 ) -> Result<Selection, Error> {
     use crate::disassembly::whole::{HEAD_LIMIT, SELECTION_LIMIT, SITE_LIMIT};
     if bytes.len() > SELECTION_LIMIT {
@@ -62,7 +142,7 @@ pub(crate) fn parse_shared_projection(
     parse_records(bytes, Some(expected))
 }
 
-fn parse_records(bytes: &[u8], shared: Option<&SharedEntries<'_>>) -> Result<Selection, Error> {
+fn parse_records(bytes: &[u8], shared: Option<SharedExpected<'_>>) -> Result<Selection, Error> {
     let text = std::str::from_utf8(bytes).map_err(|e| bad(e.to_string()))?;
     let mut lines = text.lines();
     let header = if shared.is_some() {
@@ -130,8 +210,7 @@ fn parse_records(bytes: &[u8], shared: Option<&SharedEntries<'_>>) -> Result<Sel
     let original = get("original")?;
     exact(original, 1)?;
     if let Some(expected) = shared {
-        use crate::disassembly::whole::PROFILE;
-        if get("profile")?.as_slice() != [PROFILE]
+        if get("profile")?.as_slice() != [expected.sites.profile()]
             || get("ledger")?.len() != 1
             || id(get("ledger")?[0])? != expected.ledger
             || id(original[0])? != expected.original
@@ -159,7 +238,7 @@ fn parse_records(bytes: &[u8], shared: Option<&SharedEntries<'_>>) -> Result<Sel
         if references.len() != expected.sites.len()
             || references
                 .iter()
-                .zip(expected.sites)
+                .zip(expected.sites.iter())
                 .any(|(r, site)| num(r[1]).ok() != Some(site.id))
         {
             return Err(bad("shared complete reference census/order"));
@@ -239,7 +318,8 @@ fn parse_records(bytes: &[u8], shared: Option<&SharedEntries<'_>>) -> Result<Sel
         }
     }
     for f in records.iter().filter(|f| f[0] == "site") {
-        exact(f, 14)?;
+        let class = shared.and_then(|expected| expected.sites.class(sites.len()));
+        exact(f, if class.is_some() { 15 } else { 14 })?;
         let site_id = num(f[1])?;
         if let Some(expected) = shared {
             let s = expected
@@ -258,6 +338,9 @@ fn parse_records(bytes: &[u8], shared: Option<&SharedEntries<'_>>) -> Result<Sel
             {
                 return Err(bad("shared complete site geometry/order"));
             }
+        }
+        if class.is_some_and(|class| f[14] != class.name()) {
+            return Err(bad("shared independently decoded site class"));
         }
         let lookup = |kind: &str, which: Option<&str>| -> Result<&Vec<&str>, Error> {
             records

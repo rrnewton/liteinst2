@@ -2807,3 +2807,351 @@ fn fixed_exec_readback_uses_actual_low_gap_high_interleaved_header_map() {
         .is_err()
     );
 }
+
+// Source-only fixtures for the separate complete union. No candidate is executed.
+mod jump_stack_binding_tests {
+    use super::*;
+    use crate::disassembly::jump_stack::{self, JumpStackDisassembly};
+    use li2core::x86::JumpStackClass;
+
+    fn source(chunks: &[Vec<u8>]) -> (Vec<u8>, String) {
+        let (mut original, _) = fixture(0, 0);
+        let code: Vec<_> = chunks.iter().flatten().copied().collect();
+        assert!(code.len() < (HOOK - PC) as usize);
+        original[0x1100..0x1100 + code.len()].copy_from_slice(&code);
+        let mut text = format!(
+            "LI2DISASM 1\noriginal {}\ncontract complete-code no-overlap no-code-as-data private-image\nregion {PC} 4352 {}\n",
+            digest(&original),
+            code.len(),
+        );
+        let mut pc = PC;
+        for chunk in chunks {
+            writeln!(text, "head {pc} {}", ledger::hex(chunk)).unwrap();
+            pc += chunk.len() as u64;
+        }
+        writeln!(text, "region {HOOK} 73472 1\nhead {HOOK} c3").unwrap();
+        (original, text)
+    }
+    fn checked(original: &[u8], text: &str) -> JumpStackDisassembly {
+        jump_stack::import(original, text.as_bytes(), ContentId::of(text.as_bytes())).unwrap()
+    }
+    fn options() -> policy::PolicyOptions {
+        policy::PolicyOptions {
+            domain: 7,
+            hook: policy::NullHook::Address(HOOK),
+            carrier: policy::Carrier::AfterLoads,
+            arena: AddressRange::new(0x0100_0000, 0x1f00_0000).unwrap(),
+        }
+    }
+    fn records(count: usize) -> Vec<u8> {
+        let mut rows = String::new();
+        for id in 1..=count {
+            let pc = 0x0400_0000 + id as u64 * 0x2000;
+            writeln!(rows, "search {id} preferred 64 256 64 none 256 4096\nallocation {id} selected {pc} 1 4096 {pc}:4096\nallocation {id} victim {pc} 1 4096 {pc}:4096").unwrap();
+        }
+        rows.into_bytes()
+    }
+    fn policy_for(imported: &JumpStackDisassembly, original: &[u8]) -> Vec<u8> {
+        let spec = policy::spec_from_jump_stack_records(
+            imported,
+            original,
+            options(),
+            b"target fxsave64\n",
+            &records(imported.sites().len()),
+        )
+        .unwrap();
+        policy::build_jump_stack_policy(imported, original, &spec).unwrap()
+    }
+    fn parse_union(bytes: &[u8], imported: &JumpStackDisassembly) -> Result<Selection, Error> {
+        let population = imported.population();
+        let regions = population.shared_regions()?;
+        selection::parse_population_projection(bytes, population, &regions, HOOK)
+    }
+
+    #[test]
+    fn complete_union_policy_and_shared_manifest_retain_rsp_prefixes_and_classes() {
+        let mut chunks = Vec::new();
+        for opcode in [0x50, 0x58] {
+            for register in 0..16 {
+                let mut instruction = if register >= 8 {
+                    vec![0x41]
+                } else {
+                    Vec::new()
+                };
+                instruction.push(opcode + register % 8);
+                chunks.push(instruction);
+            }
+        }
+        chunks.extend([vec![0xf3, 0x50], vec![0xe9, 0, 0, 0, 0], vec![0xc3]]);
+        let (original, text) = source(&chunks);
+        let imported = checked(&original, &text);
+        let p = policy_for(&imported, &original);
+        let bound = imported
+            .clone()
+            .bind_whole_program(&p, ContentId::of(&p))
+            .unwrap();
+        assert_eq!(bound.profile(), "jumps-gpr-stack64-v1");
+        assert_eq!(bound.selection.sites.len(), 34);
+        assert_eq!(imported.sites()[4].class(), JumpStackClass::PushRegister64);
+        assert_eq!(imported.sites()[20].class(), JumpStackClass::PopRegister64);
+        assert_eq!(imported.sites()[32].geometry().length, 2);
+        let parsed = parse_union(bound.manifest(), &imported).unwrap();
+        assert_eq!(parsed.manifest, bound.manifest());
+        assert_eq!(parsed.sites.len(), 34);
+        assert!(Arc::ptr_eq(&parsed.sites[0].heads, &parsed.sites[33].heads));
+        assert_eq!(parsed.sites[0].heads.len(), 35);
+        for ((site, expected), source) in parsed
+            .sites
+            .iter()
+            .zip(&bound.selection.sites)
+            .zip(imported.sites())
+        {
+            assert_eq!(
+                (site.id, site.pc, site.length as usize, site.file_offset),
+                (
+                    source.geometry().id,
+                    source.geometry().pc,
+                    source.geometry().length,
+                    source.geometry().file_offset
+                )
+            );
+            assert_eq!(site.provenance, ContentId::of(text.as_bytes()));
+            assert_eq!(site.completeness, EntryCompleteness::AllInstructionHeads);
+            assert_eq!(
+                site.resumes,
+                li2core::contracts::ResumeObligation::NoneExist
+            );
+            assert_eq!(site.heads, expected.heads);
+        }
+        let profile = std::str::from_utf8(&bound.files["planning-profile.tsv"]).unwrap();
+        assert!(profile.contains("complete_site_count\t34\njump_count\t1\npush_r64_count\t17\npop_r64_count\t16\nqualification_complete\tfalse\n"));
+        assert_eq!(
+            bound.files["disassembly-inventory.tsv"],
+            imported.inventory()
+        );
+        assert_eq!(bound.files["disassembly-policy.txt"], p);
+        assert!(selection::parse(bound.manifest()).is_err());
+        let legacy = super::imported(&original, &text);
+        assert_eq!(legacy.jumps().len(), 1);
+        assert!(
+            legacy
+                .clone()
+                .bind_whole_program(&p, ContentId::of(&p))
+                .is_err()
+        );
+        let legacy_policy = policy(&original, &text, 1);
+        assert!(
+            imported
+                .bind_whole_program(
+                    legacy_policy.as_bytes(),
+                    ContentId::of(legacy_policy.as_bytes())
+                )
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn union_projection_rejects_class_population_and_policy_replay_mutations() {
+        let (original, text) =
+            source(&[vec![0x50], vec![0x5c], vec![0xe9, 0, 0, 0, 0], vec![0xc3]]);
+        let imported = checked(&original, &text);
+        let p = policy_for(&imported, &original);
+        let bound = imported
+            .clone()
+            .bind_whole_program(&p, ContentId::of(&p))
+            .unwrap();
+        let manifest = std::str::from_utf8(bound.manifest()).unwrap();
+        let site = manifest
+            .lines()
+            .find(|row| row.starts_with("site 2 "))
+            .unwrap();
+        let reference = manifest
+            .lines()
+            .find(|row| row.starts_with("entries-ref 2 "))
+            .unwrap();
+        for altered in [
+            manifest.replacen("original-decode push-r64", "original-decode pop-r64", 1),
+            manifest.replacen("original-decode push-r64", "original-decode", 1),
+            manifest.replacen(
+                "profile jumps-gpr-stack64-v1",
+                &format!("profile {PROFILE}"),
+                1,
+            ),
+            manifest.replace(&format!("{site}\n"), ""),
+            manifest.replace(&format!("{reference}\n"), ""),
+            manifest.replacen("entries-ref 2 1", "entries-ref 2 2", 1),
+        ] {
+            assert_ne!(altered.as_bytes(), bound.manifest());
+            assert!(parse_union(altered.as_bytes(), &imported).is_err());
+        }
+        let policy_text = std::str::from_utf8(&p).unwrap();
+        for altered in [
+            policy_text.replacen("1048576 4096 2896", "1048576 4096 2897", 1),
+            policy_text.replacen("12120064", "12120065", 1),
+            policy_text.replacen(
+                "preferred 64 256 64 none 256 4096",
+                "preferred 64 256 65 none 256 4096",
+                1,
+            ),
+            policy_text.replacen(" 1 4096 ", " 2 4096 ", 1),
+            policy_text.replacen(JUMP_STACK_POLICY_HEADER, POLICY_HEADER, 1),
+        ] {
+            assert_ne!(altered.as_bytes(), p);
+            assert!(
+                imported
+                    .clone()
+                    .bind_whole_program(altered.as_bytes(), ContentId::of(altered.as_bytes()))
+                    .is_err()
+            );
+        }
+        let mut spec = policy::spec_from_jump_stack_records(
+            &imported,
+            &original,
+            options(),
+            b"target fxsave64\n",
+            &records(3),
+        )
+        .unwrap();
+        spec.sites.swap(0, 1);
+        assert!(policy::build_jump_stack_policy(&imported, &original, &spec).is_err());
+        spec.sites.swap(0, 1);
+        spec.sites.pop();
+        assert!(policy::build_jump_stack_policy(&imported, &original, &spec).is_err());
+    }
+
+    #[test]
+    fn union_fixed_policy_keeps_ordered_permits_caps_and_first_errors() {
+        let (original, text) = source(&[vec![0x50], vec![0xc3]]);
+        let imported = checked(&original, &text);
+        let mut spec = policy::spec_from_jump_stack_records(
+            &imported,
+            &original,
+            options(),
+            b"target fxsave64\n",
+            &records(1),
+        )
+        .unwrap();
+        let outside = AddressRange::new(0x0080_0000, 4096).unwrap();
+        let inside = AddressRange::new(0x0400_0000, 4096).unwrap();
+        spec.sites[0].selected.permits = vec![outside, inside, inside];
+        let p = policy::build_jump_stack_policy(&imported, &original, &spec).unwrap();
+        let bound = imported
+            .clone()
+            .bind_whole_program(&p, ContentId::of(&p))
+            .unwrap();
+        assert_eq!(
+            bound.selection.sites[0].selected_allocation.ranges,
+            vec![inside, inside]
+        );
+        assert_eq!(
+            bound.selection.sites[0]
+                .selected_allocation
+                .preferred_address,
+            spec.sites[0].selected.preferred
+        );
+        assert_eq!(
+            (
+                bound.selection.limits.sites,
+                bound.selection.limits.images,
+                bound.selection.limits.output_bytes
+            ),
+            (4096, 2896, 12120064)
+        );
+        spec.sites[0].selected.permits = vec![outside];
+        let no_permit = policy::build_jump_stack_policy(&imported, &original, &spec).unwrap_err();
+        assert!(no_permit.detail.contains("no in-arena permit"));
+        let mut changed = original.clone();
+        changed[0x200] ^= 1;
+        let first = policy::build_jump_stack_policy(&imported, &changed, &spec).unwrap_err();
+        assert!(first.detail.contains("policy original identity"));
+        for (sites, nops, expected) in [
+            (4097, 0, "whole complete site bound"),
+            (1, 16382, "whole complete head bound"),
+        ] {
+            let (original, text) = fixture(sites, nops);
+            let imported = checked(&original, &text);
+            let mut p =
+                policy(&original, &text, 0).replacen(POLICY_HEADER, JUMP_STACK_POLICY_HEADER, 1);
+            // Header validation and the importer census precede policy records.
+            p.push_str("search 1 preferred 64 256 64 none 256 4096\n");
+            let error = imported
+                .bind_whole_program(p.as_bytes(), ContentId::of(p.as_bytes()))
+                .unwrap_err();
+            assert!(error.detail.contains(expected), "{error:?}");
+        }
+    }
+
+    #[test]
+    fn union_actual_fixed_transaction_emits_or_refuses_complete_population() {
+        // Five-byte exact Push_r64/Pop_r64 encodings provide patch windows while
+        // retaining the RSP operands. This is an encoder/carrier test, not native
+        // stack-fault or observer transparency evidence.
+        let chunks = [
+            vec![0x2e, 0x2e, 0x2e, 0x2e, 0x54],
+            vec![0x2e, 0x2e, 0x2e, 0x2e, 0x5c],
+            vec![0xe9, 0, 0, 0, 0],
+            vec![0xc3],
+        ];
+        let (original, text) = source(&chunks);
+        let imported = checked(&original, &text);
+        let p = policy_for(&imported, &original);
+        let selected = imported.bind_whole_program(&p, ContentId::of(&p)).unwrap();
+        let product =
+            crate::prepare_disassembly_jump_stack_fixed_exec_packed_overlapping_neighbors(
+                &original, &selected,
+            )
+            .unwrap();
+        assert!(product.candidate_complete(), "{:?}", product.reports());
+        assert!(!product.qualification_complete());
+        assert_eq!(product.reports().len(), 3);
+        assert!(
+            product
+                .reports()
+                .iter()
+                .all(|r| r.refusal.is_none() && r.candidate_emitted)
+        );
+        assert!(product.files().contains_key("candidate.elf"));
+        let profile = std::str::from_utf8(&product.files()["planning-profile.tsv"]).unwrap();
+        assert!(profile.contains("profile\tjumps-gpr-stack64-v1\n"));
+        assert!(profile.contains(PACKED_OVERLAPPING_METADATA));
+        assert!(profile.contains(crate::FIXED_EXEC_METADATA));
+        assert_eq!(
+            product.files()["disassembly-inventory.tsv"],
+            selected.files["disassembly-inventory.tsv"]
+        );
+        let mut changed = original.clone();
+        changed[0x200] ^= 1;
+        assert!(
+            crate::prepare_disassembly_jump_stack_fixed_exec_packed_overlapping_neighbors(
+                &changed, &selected
+            )
+            .is_err()
+        );
+
+        let (original, text) = source(&[vec![0xf3, 0x50], vec![0xe9, 0, 0, 0, 0], vec![0xc3]]);
+        let imported = checked(&original, &text);
+        assert_eq!(imported.sites().len(), 2);
+        let p = policy_for(&imported, &original);
+        let selected = imported.bind_whole_program(&p, ContentId::of(&p)).unwrap();
+        let refused =
+            crate::prepare_disassembly_jump_stack_fixed_exec_packed_overlapping_neighbors(
+                &original, &selected,
+            )
+            .unwrap();
+        assert_eq!(refused.reports().len(), 2);
+        assert!(!refused.candidate_complete() && !refused.qualification_complete());
+        assert!(
+            refused.reports()[0]
+                .diagnostics
+                .contains("UnsupportedSemantics")
+        );
+        assert!(refused.reports()[0].refusal.is_some());
+        assert!(refused.reports().iter().all(|r| !r.candidate_emitted));
+        assert!(!refused.files().contains_key("candidate.elf"));
+        assert!(!refused.files().contains_key("source.li2sparse"));
+        assert_eq!(
+            refused.files()["disassembly-inventory.tsv"],
+            selected.files["disassembly-inventory.tsv"]
+        );
+    }
+}

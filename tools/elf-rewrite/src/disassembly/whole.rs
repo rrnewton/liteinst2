@@ -29,6 +29,108 @@ pub const HEAD_LIMIT: usize = 16384;
 pub const MESSAGE_LIMIT: usize = 32768;
 pub const SELECTION_LIMIT: usize = 2 * 1024 * 1024;
 const POLICY_HEADER: &str = "LI2DISASM-WHOLE-POLICY 1";
+const JUMP_STACK_POLICY_HEADER: &str = "LI2DISASM-JUMP-STACK-WHOLE-POLICY 1";
+
+#[derive(Clone, Copy)]
+enum Sites<'a> {
+    Jumps(&'a [JumpSite]),
+    JumpStack(&'a [super::jump_stack::Site]),
+}
+
+/// Borrowed sealed population: only the two checked importers construct it.
+/// It carries no planner, loader, fault-transparency or execution authority.
+#[derive(Clone, Copy)]
+pub(crate) struct Population<'a> {
+    original: ContentId,
+    ledger: &'a [u8],
+    regions: &'a [Region],
+    sites: Sites<'a>,
+}
+impl<'a> Population<'a> {
+    pub(super) fn jump_stack(
+        original: ContentId,
+        ledger: &'a [u8],
+        regions: &'a [Region],
+        sites: &'a [super::jump_stack::Site],
+    ) -> Self {
+        Self {
+            original,
+            ledger,
+            regions,
+            sites: Sites::JumpStack(sites),
+        }
+    }
+    pub(crate) fn original(self) -> ContentId {
+        self.original
+    }
+    pub(crate) fn ledger_id(self) -> ContentId {
+        ContentId::of(self.ledger)
+    }
+    pub(crate) fn profile(self) -> &'static str {
+        match self.sites {
+            Sites::Jumps(_) => PROFILE,
+            Sites::JumpStack(_) => super::jump_stack::PROFILE,
+        }
+    }
+    fn policy_header(self) -> &'static str {
+        match self.sites {
+            Sites::Jumps(_) => POLICY_HEADER,
+            Sites::JumpStack(_) => JUMP_STACK_POLICY_HEADER,
+        }
+    }
+    pub(crate) fn site_count(self) -> usize {
+        match self.sites {
+            Sites::Jumps(s) => s.len(),
+            Sites::JumpStack(s) => s.len(),
+        }
+    }
+    pub(crate) fn site(
+        self,
+        index: usize,
+    ) -> Option<(&'a JumpSite, Option<li2core::x86::JumpStackClass>)> {
+        match self.sites {
+            Sites::Jumps(s) => s.get(index).map(|s| (s, None)),
+            Sites::JumpStack(s) => s.get(index).map(|s| (s.geometry(), Some(s.class()))),
+        }
+    }
+    fn sites(
+        self,
+    ) -> impl ExactSizeIterator<Item = (&'a JumpSite, Option<li2core::x86::JumpStackClass>)> {
+        (0..self.site_count()).map(move |index| self.site(index).expect("sealed population index"))
+    }
+}
+
+/// Complete union, with no conversion to the public legacy selection type.
+/// Binding is not an accepted plan or qualification result.
+#[derive(Clone, Debug)]
+pub struct JumpStackWholeSelection {
+    pub(crate) selection: Selection,
+    files: BTreeMap<String, Vec<u8>>,
+}
+impl JumpStackWholeSelection {
+    pub const fn profile(&self) -> &'static str {
+        super::jump_stack::PROFILE
+    }
+    pub fn manifest(&self) -> &[u8] {
+        &self.selection.manifest
+    }
+    pub(crate) fn packed_overlapping_files(&self) -> BTreeMap<String, Vec<u8>> {
+        packed_overlapping_files(&self.files)
+    }
+}
+
+fn packed_overlapping_files(source: &BTreeMap<String, Vec<u8>>) -> BTreeMap<String, Vec<u8>> {
+    let mut files = source.clone();
+    let profile = files
+        .get_mut("planning-profile.tsv")
+        .expect("typed whole-program selection retains its profile");
+    let text = std::str::from_utf8(profile).expect("typed profile is ASCII");
+    let (before, after) = text
+        .split_once(NEIGHBOR_METADATA)
+        .expect("typed profile has exactly one original neighbor identity");
+    *profile = format!("{before}{PACKED_OVERLAPPING_METADATA}{after}").into_bytes();
+    files
+}
 
 /// Only the complete importer constructs this selection. There is no conversion
 /// to a legacy manifest or caller-supplied recovered-function authority.
@@ -85,16 +187,7 @@ impl WholeProgramSelection {
     }
 
     pub(crate) fn packed_overlapping_files(&self) -> BTreeMap<String, Vec<u8>> {
-        let mut files = self.files.clone();
-        let profile = files
-            .get_mut("planning-profile.tsv")
-            .expect("typed whole-program selection retains its profile");
-        let text = std::str::from_utf8(profile).expect("typed profile is ASCII");
-        let (before, after) = text
-            .split_once(NEIGHBOR_METADATA)
-            .expect("typed profile has exactly one original neighbor identity");
-        *profile = format!("{before}{PACKED_OVERLAPPING_METADATA}{after}").into_bytes();
-        files
+        packed_overlapping_files(&self.files)
     }
 
     pub(crate) fn entry_veneer_mixed_files(&self) -> BTreeMap<String, Vec<u8>> {
@@ -135,7 +228,51 @@ impl Disassembly {
         .into_bytes()
     }
 
+    fn population(&self) -> Population<'_> {
+        Population {
+            original: self.original,
+            ledger: &self.ledger,
+            regions: &self.regions,
+            sites: Sites::Jumps(&self.jumps),
+        }
+    }
+
+    #[cfg(test)]
     fn shared_regions(&self) -> Result<Vec<selection::SharedRegion>, Error> {
+        self.population().shared_regions()
+    }
+
+    /// Bind the complete legacy jump population with its unchanged identity.
+    pub fn bind_whole_program(
+        self,
+        policy: &[u8],
+        expected_policy: ContentId,
+    ) -> Result<WholeProgramSelection, Error> {
+        let (selection, mut files) = self.population().bind(policy, expected_policy)?;
+        files.insert(
+            "disassembly-inventory.tsv".into(),
+            self.inventory_whole_program(),
+        );
+        Ok(WholeProgramSelection { selection, files })
+    }
+}
+
+impl super::jump_stack::JumpStackDisassembly {
+    /// Bind every jump/register-stack head, including RSP and later-refused prefixes.
+    /// No conversion to the old public selection and no qualification is granted.
+    pub fn bind_whole_program(
+        self,
+        policy: &[u8],
+        expected_policy: ContentId,
+    ) -> Result<JumpStackWholeSelection, Error> {
+        let (selection, mut files) = self.population().bind(policy, expected_policy)?;
+        files.insert("disassembly-inventory.tsv".into(), self.inventory());
+        Ok(JumpStackWholeSelection { selection, files })
+    }
+}
+
+impl Population<'_> {
+    fn shared_regions(self) -> Result<Vec<selection::SharedRegion>, Error> {
         let heads = self
             .regions
             .iter()
@@ -145,7 +282,7 @@ impl Disassembly {
             "whole complete head bound",
         )?;
         check(
-            !self.jumps.is_empty() && self.jumps.len() <= SITE_LIMIT,
+            self.site_count() > 0 && self.site_count() <= SITE_LIMIT,
             "whole complete site bound",
         )?;
         Ok(self
@@ -171,17 +308,17 @@ impl Disassembly {
     /// The shared manifest is <=2 MiB; all other old numeric ceilings apply.
     /// Core accepted plans still retain full entry/read vectors, so frontend
     /// sharing is not a whole-planner memory bound or performance claim.
-    pub fn bind_whole_program(
+    fn bind(
         self,
         policy: &[u8],
         expected_policy: ContentId,
-    ) -> Result<WholeProgramSelection, Error> {
+    ) -> Result<(Selection, BTreeMap<String, Vec<u8>>), Error> {
         check(policy.len() <= TEXT_LIMIT, "policy size")?;
         check(ContentId::of(policy) == expected_policy, "policy digest")?;
         let rows = rows(policy)?;
-        let ledger_id = ContentId::of(&self.ledger);
+        let ledger_id = ContentId::of(self.ledger);
         check(
-            rows.len() >= 8 && rows[0] == POLICY_HEADER,
+            rows.len() >= 8 && rows[0] == self.policy_header(),
             "whole policy header",
         )?;
         check(
@@ -208,8 +345,9 @@ impl Disassembly {
             "null hook is not an original C3 head",
         )?;
         let regions = self.shared_regions()?;
+        let profile_name = self.profile();
         let mut manifest = format!(
-            "LI2TOOL-SHARED-REGIONS 1\nprofile {PROFILE}\n{}\nledger {}\n{}\n{}\n{}\n{}\nhook 1 {hook} 1 {}\n",
+            "LI2TOOL-SHARED-REGIONS 1\nprofile {profile_name}\n{}\nledger {}\n{}\n{}\n{}\n{}\nhook 1 {hook} 1 {}\n",
             rows[1],
             ledger::hex(&ledger_id.0),
             rows[3],
@@ -239,7 +377,8 @@ impl Disassembly {
             }
             append(&mut manifest, "\n")?;
         }
-        for site in &self.jumps {
+        for (site, class) in self.sites() {
+            let class_suffix = class.map_or_else(String::new, |class| format!(" {}", class.name()));
             let region = regions
                 .iter()
                 .position(|r| r.range == site.region)
@@ -247,7 +386,7 @@ impl Disassembly {
             append(
                 &mut manifest,
                 &format!(
-                    "site {} {} {} {} {} {} {} {} {} {} 1 observe original-decode\nentries-ref {} {}\nresumes {} none\n",
+                    "site {} {} {} {} {} {} {} {} {} {} 1 observe original-decode{class_suffix}\nentries-ref {} {}\nresumes {} none\n",
                     site.id,
                     site.pc,
                     site.length,
@@ -272,36 +411,53 @@ impl Disassembly {
             append(&mut manifest, row)?;
             append(&mut manifest, "\n")?;
         }
-        let selection = selection::parse_shared_projection(
-            manifest.as_bytes(),
-            &selection::SharedEntries {
-                original: self.original,
-                ledger: ledger_id,
-                regions: &regions,
-                sites: &self.jumps,
-                null_hook: hook,
-            },
-        )?;
+        let selection = match self.sites {
+            Sites::Jumps(sites) => selection::parse_shared_projection(
+                manifest.as_bytes(),
+                &selection::SharedEntries {
+                    original: self.original,
+                    ledger: ledger_id,
+                    regions: &regions,
+                    sites,
+                    null_hook: hook,
+                },
+            ),
+            Sites::JumpStack(_) => {
+                selection::parse_population_projection(manifest.as_bytes(), self, &regions, hook)
+            }
+        }?;
+        if matches!(self.sites, Sites::JumpStack(_)) {
+            policy::check_jump_stack_selection(&selection)?;
+        }
+        let census = match self.sites {
+            Sites::Jumps(sites) => format!("complete_jump_count\t{}\n", sites.len()),
+            Sites::JumpStack(sites) => {
+                use li2core::x86::JumpStackClass;
+                let count = |class| sites.iter().filter(|site| site.class() == class).count();
+                format!(
+                    "complete_site_count\t{}\njump_count\t{}\npush_r64_count\t{}\npop_r64_count\t{}\n",
+                    sites.len(),
+                    count(JumpStackClass::Jump),
+                    count(JumpStackClass::PushRegister64),
+                    count(JumpStackClass::PopRegister64)
+                )
+            }
+        };
         let profile = format!(
-            "LI2PLANNING\t1\nprofile\t{PROFILE}\n{NEIGHBOR_METADATA}scope\tartifact-code-regions-not-functions\nentries\tall-verified-instruction-heads\noriginal_sha256\t{}\nledger_sha256\t{}\npolicy_sha256\t{}\nselection_sha256\t{}\ncomplete_jump_count\t{}\nqualification_complete\tfalse\n",
+            "LI2PLANNING\t1\nprofile\t{profile_name}\n{NEIGHBOR_METADATA}scope\tartifact-code-regions-not-functions\nentries\tall-verified-instruction-heads\noriginal_sha256\t{}\nledger_sha256\t{}\npolicy_sha256\t{}\nselection_sha256\t{}\n{census}qualification_complete\tfalse\n",
             ledger::hex(&self.original.0),
             ledger::hex(&ledger_id.0),
             ledger::hex(&expected_policy.0),
-            ledger::hex(&ContentId::of(&selection.manifest).0),
-            self.jumps.len()
+            ledger::hex(&ContentId::of(&selection.manifest).0)
         );
-        Ok(WholeProgramSelection {
+        Ok((
             selection,
-            files: BTreeMap::from([
+            BTreeMap::from([
                 ("planning-profile.tsv".into(), profile.into_bytes()),
-                ("disassembly.txt".into(), self.ledger.clone()),
+                ("disassembly.txt".into(), self.ledger.to_vec()),
                 ("disassembly-policy.txt".into(), policy.to_vec()),
-                (
-                    "disassembly-inventory.tsv".into(),
-                    self.inventory_whole_program(),
-                ),
             ]),
-        })
+        ))
     }
 }
 

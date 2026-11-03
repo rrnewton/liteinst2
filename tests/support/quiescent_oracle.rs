@@ -357,6 +357,25 @@ impl NativeOracle {
         instruction_boundaries: &[(u64, u64)],
         owned_sigill_heads: &[u64],
     ) {
+        self.assert_patched_inspecting(
+            baseline,
+            entry,
+            instruction_boundaries,
+            owned_sigill_heads,
+            |_| {},
+        );
+    }
+
+    // Additive fixture inspection at the final stopped child; the existing
+    // complete state/fault comparison body is shared unchanged below.
+    fn assert_patched_inspecting(
+        &self,
+        baseline: &Baseline,
+        entry: u64,
+        instruction_boundaries: &[(u64, u64)],
+        owned_sigill_heads: &[u64],
+        inspect: impl FnOnce(&Tracee),
+    ) {
         self.code.protect(libc::PROT_READ | libc::PROT_EXEC);
         let child = Tracee::fork();
         let mut initial = baseline.initial;
@@ -404,6 +423,7 @@ impl NativeOracle {
             );
             assert_state(&expected.state, &actual.state);
         }
+        inspect(&child);
     }
 
     fn capture_fault(&self, child: &Tracee, physical_pc: u64, logical_pc: u64) -> FaultSnapshot {
@@ -599,6 +619,13 @@ mod ordered_trace {
     #[cfg(test)]
     pub mod early_control_static {
         include!("early_control_static.rs");
+    }
+
+    // Finite PUSH/POP state/fault fixtures reuse this exact native owner,
+    // state comparator and event log; no instruction interpreter is added.
+    #[cfg(test)]
+    pub mod jump_stack_native {
+        include!("jump_stack_native.rs");
     }
 
     const EVENT_CAPACITY: usize = 128;

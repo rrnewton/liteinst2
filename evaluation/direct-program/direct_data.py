@@ -26,7 +26,60 @@ def complete(directory, read):
     return dict(header=lines[0], fields=fields, files=files, inputs=inputs)
 
 
-def inventory(raw, original_sha, ledger_sha):
+STACK_PROFILE = 'jumps-gpr-stack64-v1'
+
+
+def stack_counts(sites):
+    assert all(len(row) == 9 and row[8] in ('jump', 'push-r64', 'pop-r64') for row in sites)
+    return dict(selection_profile=STACK_PROFILE, complete_site_count=len(sites),
+                jump_count=sum(row[8] == 'jump' for row in sites),
+                push_r64_count=sum(row[8] == 'push-r64' for row in sites),
+                pop_r64_count=sum(row[8] == 'pop-r64' for row in sites))
+
+
+def stack_complete(fields, sites):
+    assert all(fields.get(key) == str(value) for key, value in stack_counts(sites).items())
+
+
+def _stack_inventory(raw, original_sha, ledger_sha):
+    lines = raw.decode().splitlines()
+    assert raw.endswith(b'\n') and lines[0] == 'LI2DISASSEMBLY-INVENTORY\t1'
+    header = 'id\tpc\tlength\tfile_offset\tregion_pc\tregion_length\tblock_pc\tblock_length\tclass'
+    index = lines.index(header)
+    fields = {}
+    for line in lines[1:index]:
+        row = line.split('\t'); assert len(row) == 2 and row[0] not in fields
+        fields[row[0]] = row[1]
+    assert set(fields) == {'profile', 'selection_status', 'original_sha256', 'ledger_sha256',
+                           'complete_head_count', 'complete_site_count', 'jump_count',
+                           'push_r64_count', 'pop_r64_count', 'qualification_complete'}
+    assert fields['profile'] == STACK_PROFILE and fields['selection_status'] == 'classified-unbound'
+    assert fields['original_sha256'] == original_sha and fields['ledger_sha256'] == ledger_sha
+    assert fields['qualification_complete'] == 'false'
+    for key in ('complete_head_count', 'complete_site_count', 'jump_count', 'push_r64_count', 'pop_r64_count'):
+        assert re.fullmatch(r'0|[1-9][0-9]*', fields[key])
+    rows = []
+    for line in lines[index+1:]:
+        row = line.split('\t')
+        assert len(row) == 9 and all(re.fullmatch(r'0|[1-9][0-9]*', v) for v in row[:8])
+        rows.append([*map(int, row[:8]), row[8]])
+    counts = stack_counts(rows)
+    assert all(fields[key] == str(value) for key, value in counts.items() if key != 'selection_profile')
+    assert int(fields['complete_head_count']) >= len(rows)
+    assert [row[0] for row in rows] == list(range(1, len(rows)+1))
+    assert all(1 <= row[2] <= 15 and row[5] > 0 and row[7] > 0
+               and row[4] <= row[6] <= row[1] < row[1]+row[2] <= row[6]+row[7] <= row[4]+row[5] for row in rows)
+    assert all(a[1] < b[1] for a, b in zip(rows, rows[1:]))
+    assert len({row[3] for row in rows}) == len(rows)
+    # Do not cap or truncate this unbound denominator: later material/policy
+    # refusal must still retain every requested row, even above whole limits.
+    return rows
+
+
+def inventory(raw, original_sha, ledger_sha, *, selection_profile=None):
+    if selection_profile is not None:
+        assert selection_profile == STACK_PROFILE
+        return _stack_inventory(raw, original_sha, ledger_sha)
     lines = raw.decode().splitlines(); assert raw.endswith(b'\n') and lines[0] == 'LI2DISASSEMBLY-INVENTORY\t1'
     header = 'id\tpc\tlength\tfile_offset\tregion_pc\tregion_length\tblock_pc\tblock_length'
     index = lines.index(header); fields = dict(line.split('\t') for line in lines[1:index])
