@@ -14,9 +14,10 @@ import loop_group_descriptor_reports as descriptor
 prior=cache8.prior
 DEFAULT=(cache8,descriptor,row)
 CONTROL_COUNT=75
+COVERAGE_ERROR='fresh full proofs plus measured revalidation cover every completed and historical proof'
 
 
-def joined(actual,result):
+def joined(actual,result,common_cache):
     owner=result['persistent'];counts=result['cache8']
     history=result['certificate']['history_certificate']
     bound=sum(counts['bound'+str(i)]for i in range(1,9))
@@ -31,20 +32,24 @@ def joined(actual,result):
     need(1<=actual['writer_epoch']<=actual['raw_invalidations']+1 and
          actual['topology_differential']==actual['common_differential']==0,
          'actual monotone manifest exposure and separately bound release proof mode')
-    need(actual['common_full']>=owner['completed']+actual['history_fallbacks'] and
+    need(actual['common_full']>=owner['completed'] and
          actual['history_fallbacks']<=history['misses']-history['issues'] and
          actual['common_hits']<=history['decisions']<=actual['common_hits']+actual['common_full'],
          'fresh first common proofs, independently exposed history fallback and actual receipt-call partition')
+    need(actual['common_full']+common_cache['revalidated_hits']>=owner['completed']+actual['history_fallbacks'],
+         COVERAGE_ERROR)
     return bound-actual['issues']-actual['hits']
 
 
 def check(stdout,stderr,args,kind,mode,*,dependencies=None):
     program,shared,parse=DEFAULT if dependencies is None else dependencies
     need(mode=='release','the separate descriptor program recipe is exactly release')
-    actual,ordinary,_=shared.split(stderr,parse)
+    common_cache,without_cache,_=shared.split_cache(stderr,parse)
+    actual,ordinary,_=shared.split(without_cache,parse)
+    shared.join_cache(common_cache,actual)
     result=program.check(stdout,ordinary,args,kind,mode)
-    residual=joined(actual,result)
-    result.update(descriptor=actual,descriptor_binding_residual=residual,
+    residual=joined(actual,result,common_cache)
+    result.update(descriptor=actual,common_cache=common_cache,descriptor_binding_residual=residual,
         descriptor_count_scope='Actual directory hits, topology hits and common-proof hits are distinct. Binding residual is numerical only; no trap, syscall or fallback attribution.',
         profile='persistent-loop-group-descriptor-program-v1',qualification_credit=False)
     return result
@@ -54,7 +59,9 @@ def controls(stdout,stderr,args,kind,mode,*,dependencies=None):
     deps=DEFAULT if dependencies is None else dependencies
     program,shared,parse=deps
     baseline=check(stdout,stderr,args,kind,mode,dependencies=deps)
-    actual,ordinary,index=shared.split(stderr,parse)
+    _,without_cache,cache_index=shared.split_cache(stderr,parse)
+    actual,ordinary,index=shared.split(without_cache,parse)
+    if cache_index<=index:index+=1
     inherited=program.controls(stdout,ordinary,args,kind,mode)
     lines=stderr[:-1].split(b'\n');refusals=[]
     def reject(label,changed):
@@ -106,6 +113,39 @@ def controls(stdout,stderr,args,kind,mode,*,dependencies=None):
     need(len(refusals)==len(set(refusals))==CONTROL_COUNT,
          'all44 schema,9 encoding,19 source-counter and3 coherent descriptor-program refusals')
     result=dict(inherited);result['descriptor_refusals']=refusals
+    validate=partial(check,stdout,args=args,kind=kind,mode=mode,dependencies=deps)
+    result['common_cache_refusals']=shared.cache_controls(stderr,parse,validate)
+    common_cache,_,cache_index=shared.split_cache(stderr,parse)
+    history_positions=[i for i,line in enumerate(lines)if line.startswith(shared.HISTORY)]
+    need(len(history_positions)==1,'one validated actual history row for coherent coverage controls')
+    history_index=history_positions[0]
+    need(json.loads(lines[history_index][len(shared.HISTORY):])==history,
+         'whole actual history row joins the already validated application certificate')
+    coverage=[]
+    for label,extra in (('coherent_coverage.no_token',1),('coherent_coverage.token_repartition',2)):
+        changed_history=dict(history)
+        for name in ('misses','full_calls','decisions'):changed_history[name]+=extra
+        fields=dict(actual)
+        fields.update(common_full=owner['completed'],history_fallbacks=extra,
+                      common_hits=changed_history['decisions'])
+        cache=dict(common_cache)
+        cache.update(lhc_hits=fields['common_hits']-(extra-1),revalidated_hits=extra-1)
+        # Keep the release history equations, first-proof floor, exact hit
+        # partition and remaining descriptor inequalities coherent. Only the
+        # separate coverage theorem is short by one real proof obligation.
+        changed=list(lines)
+        for at,prefix,value in ((history_index,shared.HISTORY,changed_history),
+                                (index,shared.PREFIX,fields),(cache_index,shared.CACHE_PREFIX,cache)):
+            changed[at]=prefix+json.dumps(value,separators=(',',':')).encode()
+        supplied=b'\n'.join(changed)+b'\n'
+        need(supplied!=stderr,'distinct coherent whole program coverage mutation')
+        try:validate(supplied)
+        except ValueError as error:
+            need(str(error)==COVERAGE_ERROR,'coherent mutation reaches the exact common coverage theorem')
+            coverage.append(label)
+        else:raise ValueError('accepted coherent common coverage mutation '+label)
+    need(len(coverage)==len(set(coverage))==2,'both separate coherent common coverage refusals')
+    result['common_coverage_refusals']=coverage
     return result
 
 

@@ -62,6 +62,7 @@ static struct {
     unsigned initialized,active,epochs,failure,busy,reported,controls,restorations;
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
     struct lgdo_preentry_observation preentry;
+    struct lgdo_common_observation common;
 #endif
 #if LI2_LOOP_CACHE8_CONTROL == 1 || (defined(LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE) && LI2_LOOP_CACHE8_CONTROL != 0)
     struct li2_pgd_view saved_view;
@@ -306,6 +307,7 @@ static void lc8o_report(unsigned status,unsigned code) {
     h[20]=lc8o.controls;h[21]=lc8o.restorations;h[22]=status;h[23]=code;
     h[24]=pe.p.first_error;h[25]=(uint64_t)pe.p.first_detail;h[26]=pe_active;h[27]=pe_busy;
 #ifdef LI2_LOOP_GROUP_DESCRIPTOR_OBSERVE
+    lgdo_common_report(status,code);
     lgdo_preentry_report(status,code);
 #endif
     long fl=raw(SYS_fcntl,3,F_GETFL,0,0,0,0),st=raw(SYS_fstat,3,(long)&lc8o.wire.terminal,0,0,0,0);

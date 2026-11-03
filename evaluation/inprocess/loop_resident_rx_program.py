@@ -141,6 +141,11 @@ def cohort(builder, products, private, pin, binary, aliases, run, r, *,
             if group_descriptor:
                 need(len(controls['descriptor_refusals'])==len(set(controls['descriptor_refusals']))==75,
                      'all separate descriptor schema, source-counter and coherent full-validator refusals')
+                need(len(controls['common_cache_refusals'])==len(set(controls['common_cache_refusals']))==24,
+                     'all separate exact common-hit partition accounting controls')
+                need(controls['common_coverage_refusals']==['coherent_coverage.no_token',
+                     'coherent_coverage.token_repartition'],
+                     'both coherent whole-program mutations reach the exact common coverage theorem')
             case.update(observed=observed, controls=controls, namespace_complete=True,
                         status='passed', completed_program_measurement=True)
         except Exception as error:

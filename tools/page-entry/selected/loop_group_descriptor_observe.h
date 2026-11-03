@@ -33,6 +33,16 @@ struct lgdo_preentry_observation {
 };
 _Static_assert(sizeof(struct lgdo_preentry_observation)==168,
     "separate bounded preentry terminal observations");
+/* Actual common-only cache decisions; no original binary row changes. */
+struct lgdo_common_observation {
+    uint64_t epochs,serial,cell,id,cell_serial,quiet_pairs;
+    uint64_t token_misses,token_restorations,token_mask;
+    uint64_t guard_unissued,guard_restorations,guard_mask;
+    uint64_t raw_unissued,raw_restorations,raw_mask;
+    uint64_t failed_full,failed_unissued,failed_restored,history_fallback;
+};
+_Static_assert(sizeof(struct lgdo_common_observation)==152,
+    "separate fixed common-revalidation observations");
 union lgdo_saved {
     union lhc_root_page root;
     union lhc_capsule capsule;
@@ -48,4 +58,5 @@ static void lgdo_snapshot(unsigned,unsigned);
 static void lgdo_finished(const struct pda_completion *);
 static void lgdo_preentry(unsigned);
 static void lgdo_preentry_report(unsigned,unsigned);
+static void lgdo_common_report(unsigned,unsigned);
 #endif

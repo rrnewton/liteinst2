@@ -28,6 +28,7 @@ static struct {
     uint64_t issues,hits,topology_hits,topology_full,topology_differential;
     uint64_t common_hits,common_full,common_differential,history_fallbacks;
     uint64_t directory_writes,directory_queries,disagreements;
+    uint64_t common_lhc_hits,common_revalidated_hits;
 } lgd_counts;
 _Static_assert(sizeof lgd_group%PAGE==0 && sizeof lgd_group<=16U*PAGE,
     "one fixed isolated group manifest, at most sixteen pages");
@@ -38,6 +39,24 @@ static int lgd_count(uint64_t *n) {
     ++*n;return 0;
 }
 static int lgd_history_fallback(void) {return lgd_count(&lgd_counts.history_fallbacks);}
+/* Capture only an actually sealed, still-owned cell. The whole certificate
+   includes owner/session/archive/policy and its original issuance identity;
+   the separate epochs describe this new common proof, not a new LHC issue. */
+static int lgd_common_snapshot(const struct pda_completion *c,unsigned i,
+    struct lgd_common_token *out) {
+    if(!out || !c || i>=LI2_PGD_RECEIPTS || lhc_index(c)!=i ||
+       !c->id || c->id>pe.domain.next_id || !c->serial || c->serial>pe.next_serial ||
+       !lgd_epochs_live() || !lhc_match_identity(c,i))return 0;
+    uint64_t source_context=li2_lgd_source_context();
+    if(!source_context || !pe.domain.directory || !lgd_root_epoch() ||
+       !lgd_cell_epoch(i) || !lgd_capsule_epoch(i))return 0;
+    le_zero(out,sizeof *out);
+    out->valid=1;out->index=i;out->raw_root=lgd_root_epoch();
+    out->raw_cell=lgd_cell_epoch(i);out->raw_capsule=lgd_capsule_epoch(i);
+    out->source_context=source_context;out->directory=pe.domain.directory;
+    copy(&out->certificate,&lhc.root.value.cell[i],sizeof out->certificate);
+    return 1;
+}
 static int lgd_common_value(const struct pda_completion *c) {
     unsigned i=lhc_index(c);
     /* Current monotone owner bounds are checked even on an immutable-value
@@ -45,11 +64,25 @@ static int lgd_common_value(const struct pda_completion *c) {
        capsule, issuance serial, and all three raw exposure epochs. */
     int hit=c && c->id && c->id<=pe.domain.next_id && c->serial && c->serial<=pe.next_serial &&
         i<LI2_PGD_RECEIPTS && lhc_match(c,i);
+    struct lgd_common_token before,after;
+    int eligible=0,revalidated=0;
+    if(!hit) {
+        eligible=lgd_common_snapshot(c,i,&before);
+        hit=eligible && equal(&before,&lgd_writer.value.common[i],sizeof before);
+        revalidated=hit;
+    }
     if(!hit) {
         if(lgd_count(&lgd_counts.common_full))return 0;
-        return pda_receipt_common_full(c);
+        int actual=pda_receipt_common_full(c);
+        /* First issuance is writable and cannot reach this store. A changed
+           owner/identity/exposure during the full proof cannot issue either. */
+        if(actual && eligible && lgd_common_snapshot(c,i,&after) &&
+           equal(&before,&after,sizeof before))
+            copy(&lgd_writer.value.common[i],&after,sizeof after);
+        return actual;
     }
-    if(lgd_count(&lgd_counts.common_hits))return 0;
+    if(lgd_count(&lgd_counts.common_hits) ||
+       lgd_count(revalidated?&lgd_counts.common_revalidated_hits:&lgd_counts.common_lhc_hits))return 0;
 #ifdef LI2_SEALED_BYTE_CERTIFICATE_DIFFERENTIAL
     if(lgd_count(&lgd_counts.common_differential) || !pda_receipt_common_full(c)) {
         (void)lgd_count(&lgd_counts.disagreements);return 0;
@@ -245,7 +278,17 @@ static int lgd_directory(void) {
     if(lgd_count(&lgd_counts.issues))return PE_OVERFLOW;
     return lgd_directory_current();
 }
+static void lgd_common_cache_report(unsigned status,unsigned code) {
+    struct writer w={.used=0};text(&w,"LI2_LOOP_COMMON_CACHE {\"version\":1");
+    field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
+    field(&w,",\"lhc_hits\":",lgd_counts.common_lhc_hits);
+    field(&w,",\"revalidated_hits\":",lgd_counts.common_revalidated_hits);text(&w,"}\n");
+    if(raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0)!=(long)w.used) {
+        (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
+    }
+}
 static void lgd_report(unsigned status,unsigned code) {
+    lgd_common_cache_report(status,code);
     struct writer w={.used=0};text(&w,"LI2_LOOP_GROUP_DESCRIPTOR {\"version\":1");
     field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
     field(&w,",\"initialized\":",lgd_writer.value.initialized);

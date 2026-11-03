@@ -349,6 +349,19 @@ def execute(a, *, context=None, cache8=False, group_descriptor=False, effects_ca
                                  c['terminal']['preentry']['attempted']==c['terminal']['preentry']['refused']==
                                  c['terminal']['preentry']['restorations']==(75 if control else 0),
                                  'separate complete incoming-context guard and terminal controls')
+                            need(len(c['terminal_controls']['common_refusals'])==
+                                 len(set(c['terminal_controls']['common_refusals']))==reports.COMMON_CONTROL_COUNT==78 and
+                                 c['terminal']['common']['quiet_pairs']==(42 if control else 0) and
+                                 c['terminal']['common']['token_misses']==
+                                 c['terminal']['common']['token_restorations']==(31 if control else 0) and
+                                 c['terminal']['common']['guard_unissued']==
+                                 c['terminal']['common']['guard_restorations']==(6 if control else 0) and
+                                 c['terminal']['common']['raw_unissued']==
+                                 c['terminal']['common']['raw_restorations']==(3 if control else 0),
+                                 'separate actual common revalidation decisions and full-reader controls')
+                            need(len(c['terminal_controls']['common_cache_refusals'])==
+                                 len(set(c['terminal_controls']['common_cache_refusals']))==reports.CACHE_CONTROL_COUNT==24,
+                                 'separate exact common-hit partition accounting controls')
                         else:
                             named(c['observer_controls'],109 if control else 81,H(record))
                             need(len(c['observer_controls']['phase_refusals'])==

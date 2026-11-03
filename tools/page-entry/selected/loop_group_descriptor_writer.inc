@@ -1,11 +1,18 @@
 /* Included after the real LHC owner types. These epochs do not grant source,
    execution, claim, or permission authority. They only retire immutable-value
    reuse before an exposure. The containing pages are permanently private RW. */
+/* A complete common-value proof may be reused within one quiet exposure
+   epoch. This token never renews an LHC witness or its original RAW stamps. */
+struct lgd_common_token {
+    uint64_t valid,index,raw_root,raw_cell,raw_capsule,source_context,directory;
+    struct lhc_certificate certificate;
+};
 struct lgd_epochs {
     uint64_t initialized,poisoned,next_id;
     uint64_t root,cell[LI2_PGD_RECEIPTS],capsule[LI2_PGD_RECEIPTS];
     uint64_t publication[LI2_PTR_SLOTS],manifest,directory;
     uint64_t invalidations,unclassified,overflows;
+    struct lgd_common_token common[LI2_PGD_RECEIPTS];
 };
 static union {
     struct lgd_epochs value;

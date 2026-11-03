@@ -171,8 +171,171 @@ def controls_preentry(stderr,record,control,mode,*,dependencies):
     return result
 
 
+
+COMMON_PREFIX=b'LI2_LOOP_COMMON_REVALIDATION '
+COMMON_FIELDS=('version','status','failure_code','control','epochs','serial','cell','id',
+    'cell_serial','quiet_pairs','token_misses','token_restorations','token_mask',
+    'guard_unissued','guard_restorations','guard_mask','raw_unissued','raw_restorations',
+    'raw_mask','failed_full','failed_unissued','failed_restored','history_fallback')
+COMMON_CONTROL_COUNT=78
+
+
+def _common_split(stderr,parse):
+    need(type(stderr)is bytes and stderr.endswith(b'\n'),'whole actual common-revalidation terminal')
+    lines=stderr[:-1].split(b'\n');positions=[i for i,line in enumerate(lines)if line.startswith(COMMON_PREFIX)]
+    need(len(positions)==1 and 0<positions[0]<len(lines)-1 and
+         lines[positions[0]-1].startswith(b'LI2_LOOP_CACHE8_TRANSIT ') and
+         lines[positions[0]+1].startswith(PREENTRY_PREFIX),
+         'one common-revalidation row between actual TRANSIT and preentry observations')
+    at=positions[0]
+    return parse(lines[at],COMMON_PREFIX,COMMON_FIELDS),b'\n'.join(lines[:at]+lines[at+1:])+b'\n',at
+
+
+def read_common(stderr,record,control,mode,*,dependencies):
+    parse,_=dependencies
+    actual,ordinary,_=_common_split(stderr,parse)
+    result=read_preentry(ordinary,record,control,mode,dependencies=dependencies)
+    expected=dict.fromkeys(COMMON_FIELDS,0)
+    expected.update(version=1,status=125 if control else 0,failure_code=3303 if control else 0,
+                    control=control)
+    if control:
+        fourth=APPEND+128+(3*4+3)*SNAPSHOT
+        snapshot=q(record,fourth,32);cell=actual['cell']
+        need(type(cell)is int and 0<=cell<9 and cell!=snapshot[8],
+             'common-revalidation uses a distinct actual older completion cell')
+        saved=q(record,fourth+1024+32*cell,4)
+        need(0<saved[0]<snapshot[19] and 0<saved[1]<snapshot[1] and 1<=saved[2]<=8,
+             'common-revalidation identity joins the earlier whole fourth-completion snapshot')
+        expected.update(epochs=1,serial=snapshot[1],cell=cell,id=saved[0],cell_serial=saved[1],
+            quiet_pairs=42,token_misses=31,token_restorations=31,token_mask=(1<<31)-1,
+            guard_unissued=6,guard_restorations=6,guard_mask=63,
+            raw_unissued=3,raw_restorations=3,raw_mask=7,
+            failed_full=1,failed_unissued=1,failed_restored=1,history_fallback=1)
+    need(actual==expected,
+         'exact actual common-only misses, full reproofs, quiet reuse and unchanged historical fallback')
+    result['common']=actual
+    return result
+
+
+def controls_common(stderr,record,control,mode,*,dependencies):
+    parse,_=dependencies
+    read_common(stderr,record,control,mode,dependencies=dependencies)
+    actual,ordinary,at=_common_split(stderr,parse)
+    result=controls_preentry(ordinary,record,control,mode,dependencies=dependencies)
+    lines=stderr[:-1].split(b'\n');refusals=[]
+    def reject(label,changed):
+        need(changed!=stderr,'distinct supplied whole common-revalidation terminal mutation')
+        try:read_common(changed,record,control,mode,dependencies=dependencies)
+        except ValueError:refusals.append(label)
+        else:raise ValueError('accepted common-revalidation terminal mutation '+label)
+    def replace(label,fields):
+        changed=list(lines);changed[at]=COMMON_PREFIX+json.dumps(fields,separators=(',',':')).encode()
+        reject(label,b'\n'.join(changed)+b'\n')
+    need(len(COMMON_FIELDS)==23,'literal separate common-revalidation schema')
+    for name in COMMON_FIELDS:
+        fields=dict(actual);del fields[name];replace('missing.'+name,fields)
+        fields=dict(actual);fields[name]=bool(fields[name]);replace('boolean.'+name,fields)
+        fields=dict(actual);fields[name]^=1;replace('value.'+name,fields)
+    fields=dict(actual);fields['extra']=0;replace('extra',fields)
+    replace('key_order',dict(reversed(list(actual.items()))))
+    changed=list(lines);changed[at]=lines[at][:-1]+b',"version":1}'
+    reject('duplicate_key',b'\n'.join(changed)+b'\n')
+    reject('missing_row',b'\n'.join(lines[:at]+lines[at+1:])+b'\n')
+    reject('duplicate_row',b'\n'.join(lines[:at]+[lines[at]]+lines[at:])+b'\n')
+    changed=list(lines);changed[at],changed[at+1]=changed[at+1],changed[at]
+    reject('row_order',b'\n'.join(changed)+b'\n')
+    reject('newline',stderr[:-1])
+    changed=list(lines);changed[at]=lines[at].replace(b'{',b'{ ',1)
+    reject('whitespace',b'\n'.join(changed)+b'\n')
+    changed=list(lines);changed[at]+=b' '*4096
+    reject('writer_bound',b'\n'.join(changed)+b'\n')
+    need(len(refusals)==len(set(refusals))==COMMON_CONTROL_COUNT,
+         'all69 scalar and9 encoding common-revalidation mutations through the full terminal reader')
+    result['common_refusals']=refusals
+    return result
+
+
+
+CACHE_PREFIX=b'LI2_LOOP_COMMON_CACHE '
+CACHE_FIELDS=('version','status','failure_code','lhc_hits','revalidated_hits')
+CACHE_CONTROL_COUNT=24
+
+
+def split_cache(stderr,parse):
+    need(type(stderr)is bytes and stderr.endswith(b'\n'),'whole actual common-cache accounting terminal')
+    lines=stderr[:-1].split(b'\n');positions=[i for i,line in enumerate(lines)if line.startswith(CACHE_PREFIX)]
+    need(len(positions)==1 and 0<positions[0]<len(lines)-1 and
+         lines[positions[0]-1].startswith(HISTORY) and lines[positions[0]+1].startswith(PREFIX),
+         'one separate common-cache accounting row between actual history and descriptor rows')
+    at=positions[0]
+    return parse(lines[at],CACHE_PREFIX,CACHE_FIELDS),b'\n'.join(lines[:at]+lines[at+1:])+b'\n',at
+
+
+def join_cache(cache,actual):
+    need(cache['version']==1 and cache['status']==actual['status'] and
+         cache['failure_code']==actual['failure_code'] and
+         cache['lhc_hits']+cache['revalidated_hits']==actual['common_hits'],
+         'actual old-LHC and renewed-token hits exactly partition every common-cache hit')
+
+
+def cache_controls(stderr,parse,validate):
+    validate(stderr)
+    actual,_,at=split_cache(stderr,parse)
+    lines=stderr[:-1].split(b'\n');refusals=[]
+    def reject(label,changed):
+        need(changed!=stderr,'distinct supplied whole common-cache accounting mutation')
+        try:validate(changed)
+        except ValueError:refusals.append(label)
+        else:raise ValueError('accepted common-cache accounting mutation '+label)
+    def replace(label,fields):
+        changed=list(lines);changed[at]=CACHE_PREFIX+json.dumps(fields,separators=(',',':')).encode()
+        reject(label,b'\n'.join(changed)+b'\n')
+    need(len(CACHE_FIELDS)==5,'literal separate common-cache accounting schema')
+    for name in CACHE_FIELDS:
+        fields=dict(actual);del fields[name];replace('missing.'+name,fields)
+        fields=dict(actual);fields[name]=bool(fields[name]);replace('boolean.'+name,fields)
+        fields=dict(actual);fields[name]^=1;replace('value.'+name,fields)
+    fields=dict(actual);fields['extra']=0;replace('extra',fields)
+    replace('key_order',dict(reversed(list(actual.items()))))
+    changed=list(lines);changed[at]=lines[at][:-1]+b',"version":1}'
+    reject('duplicate_key',b'\n'.join(changed)+b'\n')
+    reject('missing_row',b'\n'.join(lines[:at]+lines[at+1:])+b'\n')
+    reject('duplicate_row',b'\n'.join(lines[:at]+[lines[at]]+lines[at:])+b'\n')
+    changed=list(lines);changed[at],changed[at+1]=changed[at+1],changed[at]
+    reject('row_order',b'\n'.join(changed)+b'\n')
+    reject('newline',stderr[:-1])
+    changed=list(lines);changed[at]=lines[at].replace(b'{',b'{ ',1)
+    reject('whitespace',b'\n'.join(changed)+b'\n')
+    changed=list(lines);changed[at]+=b' '*4096
+    reject('writer_bound',b'\n'.join(changed)+b'\n')
+    need(len(refusals)==len(set(refusals))==CACHE_CONTROL_COUNT,
+         'all15 scalar and9 encoding accounting mutations through the complete caller validator')
+    return refusals
+
+
+def read_cached(stderr,record,control,mode,*,dependencies):
+    parse,_=dependencies
+    cache,ordinary,_=split_cache(stderr,parse)
+    result=read_common(ordinary,record,control,mode,dependencies=dependencies)
+    join_cache(cache,result['descriptor'])
+    need(cache['revalidated_hits']>=(43 if control else 0),
+         'actual cache-hit total includes42 controlled quiet hits and the final whole receipt hit')
+    result['common_cache']=cache
+    return result
+
+
+def controls_cached(stderr,record,control,mode,*,dependencies):
+    parse,_=dependencies
+    _,ordinary,_=split_cache(stderr,parse)
+    result=controls_common(ordinary,record,control,mode,dependencies=dependencies)
+    validate=partial(read_cached,record=record,control=control,mode=mode,dependencies=dependencies)
+    result['common_cache_refusals']=cache_controls(stderr,parse,validate)
+    return result
+
+
 def configured(parse,common):
     dependencies=(parse,common)
-    return SimpleNamespace(read=partial(read_preentry,dependencies=dependencies),
-        controls=partial(controls_preentry,dependencies=dependencies),CONTROL_COUNT=CONTROL_COUNT,
-        PREENTRY_CONTROL_COUNT=PREENTRY_CONTROL_COUNT)
+    return SimpleNamespace(read=partial(read_cached,dependencies=dependencies),
+        controls=partial(controls_cached,dependencies=dependencies),CONTROL_COUNT=CONTROL_COUNT,
+        PREENTRY_CONTROL_COUNT=PREENTRY_CONTROL_COUNT,COMMON_CONTROL_COUNT=COMMON_CONTROL_COUNT,
+        CACHE_CONTROL_COUNT=CACHE_CONTROL_COUNT)

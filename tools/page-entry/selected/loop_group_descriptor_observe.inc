@@ -203,7 +203,162 @@ static void lgdo_raw_controls(const struct pda_completion *original) {
     }
 }
 #endif
+#if LI2_LOOP_CACHE8_CONTROL
+/* These are cache-miss/issuance controls, not fabricated whole-owner failures.
+   The complete common theorem still runs on every deliberately forced miss. */
+static void lgdo_common_pair(const struct pda_completion *c,unsigned i) {
+    uint64_t full=lgd_counts.common_full,hits=lgd_counts.common_hits,
+        differential=lgd_counts.common_differential,lhc=lgd_counts.common_lhc_hits,
+        renewed=lgd_counts.common_revalidated_hits;
+    struct lgd_common_token actual;
+    lc8o_need(!lhc_exposure_current(i) && lgd_common_value(c) &&
+        lgd_counts.common_full==full+1 && lgd_counts.common_hits==hits &&
+        lgd_counts.common_differential==differential &&
+        lgd_common_snapshot(c,i,&actual) &&
+        equal(&actual,&lgd_writer.value.common[i],sizeof actual),110);
+    lc8o_need(lgd_common_value(c) && lgd_counts.common_full==full+1 &&
+        lgd_counts.common_hits==hits+1 && lgd_counts.common_differential==differential+1 &&
+        lgd_counts.common_lhc_hits==lhc && lgd_counts.common_revalidated_hits==renewed+1,111);
+    ++lc8o.common.quiet_pairs;
+}
+static void lgdo_common_unissued(const struct pda_completion *c,unsigned i) {
+    struct lgd_common_token saved,unused;
+    copy(&saved,&lgd_writer.value.common[i],sizeof saved);
+    uint64_t full=lgd_counts.common_full,hits=lgd_counts.common_hits,
+        differential=lgd_counts.common_differential;
+    lc8o_need(!lgd_common_snapshot(c,i,&unused) && lgd_common_value(c) &&
+        lgd_counts.common_full==full+1 && lgd_counts.common_hits==hits &&
+        lgd_counts.common_differential==differential &&
+        equal(&saved,&lgd_writer.value.common[i],sizeof saved),112);
+}
+static void lgdo_common_permission(uintptr_t first,size_t bytes,int prot) {
+    lc8o_need(!raw(SYS_mprotect,(long)first,bytes,prot,0,0,0),113);
+}
+#endif
+static void lgdo_common_controls(const struct pda_completion *current) {
+#if LI2_LOOP_CACHE8_CONTROL
+    if(lc8o.epochs!=4)return;
+    struct lgdo_common_observation *o=&lc8o.common;
+    lc8o_need(!o->epochs && !lc8o.busy && current && current->complete==1 &&
+        current->serial==pe.p.serial && !lhc.root.value.writer &&
+        lgd_writer.value.initialized==1 && !lgd_writer.value.poisoned &&
+        handling==1 && !pe_failing && !pe.resuming,114);
+    struct pda_completion *c=0;unsigned i=LI2_PGD_RECEIPTS;
+    for(unsigned at=0;at<LI2_PGD_RECEIPTS;at++) {
+        struct pda_completion *old=&pe.domain.completion[at];
+        if(old!=current && old->id && !lhc_exposure_current(at) && lhc_match_identity(old,at)) {
+            c=old;i=at;break;
+        }
+    }
+    lc8o_need(c && i<LI2_PGD_RECEIPTS,115);lc8o.busy=1;
+    o->epochs=1;o->serial=current->serial;o->cell=i;o->id=c->id;o->cell_serial=c->serial;
+    struct lgd_common_token *t=&lgd_writer.value.common[i];
+    le_zero(t,sizeof *t);lgdo_common_pair(c,i);
+    for(unsigned kind=0;kind<31;kind++) {
+        switch(kind) {
+        case 0:t->valid^=1;break;case 1:t->index^=1;break;
+        case 2:t->raw_root^=1;break;case 3:t->raw_cell^=1;break;
+        case 4:t->raw_capsule^=1;break;case 5:t->source_context^=1;break;
+        case 6:t->directory^=PAGE;break;case 7:t->certificate.valid^=1;break;
+        case 8:t->certificate.policy^=1;break;case 9:t->certificate.mask^=1;break;
+        case 10:t->certificate.reserved^=1;break;case 11:t->certificate.epoch^=1;break;
+        case 12:t->certificate.id^=1;break;case 13:t->certificate.serial^=1;break;
+        case 14:t->certificate.raw_root^=1;break;case 15:t->certificate.raw_cell^=1;break;
+        case 16:t->certificate.raw_capsule^=1;break;case 17:t->certificate.source_context^=1;break;
+        case 18:t->certificate.directory^=PAGE;break;case 19:t->certificate.owner=0;break;
+        case 20:t->certificate.completion=0;break;case 21:t->certificate.capsule^=PAGE;break;
+        case 22:t->certificate.session.pid^=1;break;case 23:t->certificate.session.tid^=1;break;
+        case 24:t->certificate.session.sync_register^=1;break;
+        case 25:t->certificate.session.sync_query^=1;break;
+        case 26:t->certificate.session.application_mask^=1;break;
+        case 27:t->certificate.session.initialized^=1;break;
+        case 28:t->certificate.session.self_test_complete^=1;break;
+        case 29:t->certificate.archive[0]^=1;break;
+        default:t->certificate.policy_hash[0]^=1;break;
+        }
+        lgdo_common_pair(c,i);++o->token_misses;++o->token_restorations;
+        o->token_mask|=UINT64_C(1)<<kind;
+    }
+    /* Supplied guard mutations are restored literally. Real RAW epochs are
+       never restored; the writer control uses actual root permission calls. */
+    for(unsigned kind=0;kind<6;kind++) {
+        if(kind==0)lgd_writer.value.initialized=0;
+        else if(kind==1)lgd_writer.value.poisoned=1;
+        else if(kind==2)handling=0;
+        else if(kind==3)pe_failing=1;
+        else if(kind==4)pe.resuming=1;
+        else {
+            lgdo_common_permission((uintptr_t)&lhc.root,sizeof lhc.root,PROT_READ|PROT_WRITE);
+            lhc.root.value.writer=i+1;
+            lgdo_common_permission((uintptr_t)&lhc.root,sizeof lhc.root,PROT_READ);
+        }
+        lgdo_common_unissued(c,i);++o->guard_unissued;
+        if(kind==0)lgd_writer.value.initialized=1;
+        else if(kind==1)lgd_writer.value.poisoned=0;
+        else if(kind==2)handling=1;
+        else if(kind==3)pe_failing=0;
+        else if(kind==4)pe.resuming=0;
+        else {
+            lgdo_common_permission((uintptr_t)&lhc.root,sizeof lhc.root,PROT_READ|PROT_WRITE);
+            lhc.root.value.writer=0;
+            lgdo_common_permission((uintptr_t)&lhc.root,sizeof lhc.root,PROT_READ);
+        }
+        le_zero(t,sizeof *t);lgdo_common_pair(c,i);++o->guard_restorations;
+        o->guard_mask|=UINT64_C(1)<<kind;
+    }
+    for(unsigned kind=0;kind<3;kind++) {
+        uintptr_t first=kind==0?(uintptr_t)c:kind==1?(uintptr_t)&lhc.capsule[i]:(uintptr_t)&lhc.root;
+        size_t bytes=kind==0?sizeof *c:kind==1?sizeof lhc.capsule[i]:sizeof lhc.root;
+        uint64_t root=lgd_root_epoch(),cell=lgd_cell_epoch(i),capsule=lgd_capsule_epoch(i);
+        lc8o_need(!lrc_readonly(first,bytes),116);
+        lgdo_common_permission(first,bytes,PROT_READ|PROT_WRITE);
+        lgdo_common_unissued(c,i);++o->raw_unissued;
+        lgdo_common_permission(first,bytes,PROT_READ);
+        lc8o_need(!lrc_readonly(first,bytes) && lgd_root_epoch()==root+(kind==2) &&
+            lgd_cell_epoch(i)==cell+(kind==0) && lgd_capsule_epoch(i)==capsule+(kind==1),117);
+        lgdo_common_pair(c,i);++o->raw_restorations;o->raw_mask|=UINT64_C(1)<<kind;
+    }
+    struct lgd_common_token saved;copy(&saved,t,sizeof saved);
+    lgdo_common_permission((uintptr_t)c,sizeof *c,PROT_READ|PROT_WRITE);c->complete=0;
+    lgdo_common_permission((uintptr_t)c,sizeof *c,PROT_READ);
+    uint64_t full=lgd_counts.common_full,hits=lgd_counts.common_hits,
+        differential=lgd_counts.common_differential;
+    lc8o_need(!lgd_common_value(c) && lgd_counts.common_full==full+1 &&
+        lgd_counts.common_hits==hits && lgd_counts.common_differential==differential &&
+        equal(&saved,t,sizeof saved),118);
+    o->failed_full=1;o->failed_unissued=1;
+    lgdo_common_permission((uintptr_t)c,sizeof *c,PROT_READ|PROT_WRITE);c->complete=1;
+    lgdo_common_permission((uintptr_t)c,sizeof *c,PROT_READ);
+    lgdo_common_pair(c,i);o->failed_restored=1;
+    uint64_t history=lgd_counts.history_fallbacks;
+    lc8o_need(!lhc_exposure_current(i) && pda_receipt(c) &&
+        lgd_counts.history_fallbacks==history+1,119);
+    o->history_fallback=1;lc8o_need(o->quiet_pairs==42,120);lc8o.busy=0;
+#else
+    (void)current;
+#endif
+}
+static void lgdo_common_report(unsigned status,unsigned code) {
+    const struct lgdo_common_observation *o=&lc8o.common;
+    struct writer w={.used=0};text(&w,"LI2_LOOP_COMMON_REVALIDATION {\"version\":1");
+    field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
+    field(&w,",\"control\":",LI2_LOOP_CACHE8_CONTROL);
+#define LGDO_COMMON_FIELD(n) field(&w,",\"" #n "\":",o->n)
+    LGDO_COMMON_FIELD(epochs);LGDO_COMMON_FIELD(serial);LGDO_COMMON_FIELD(cell);
+    LGDO_COMMON_FIELD(id);LGDO_COMMON_FIELD(cell_serial);LGDO_COMMON_FIELD(quiet_pairs);
+    LGDO_COMMON_FIELD(token_misses);LGDO_COMMON_FIELD(token_restorations);LGDO_COMMON_FIELD(token_mask);
+    LGDO_COMMON_FIELD(guard_unissued);LGDO_COMMON_FIELD(guard_restorations);LGDO_COMMON_FIELD(guard_mask);
+    LGDO_COMMON_FIELD(raw_unissued);LGDO_COMMON_FIELD(raw_restorations);LGDO_COMMON_FIELD(raw_mask);
+    LGDO_COMMON_FIELD(failed_full);LGDO_COMMON_FIELD(failed_unissued);LGDO_COMMON_FIELD(failed_restored);
+    LGDO_COMMON_FIELD(history_fallback);
+#undef LGDO_COMMON_FIELD
+    text(&w,"}\n");
+    if(raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0)!=(long)w.used) {
+        (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
+    }
+}
 static void lgdo_finished(const struct pda_completion *c) {
+    lgdo_common_controls(c);
     if(lc8o.epochs!=5)return;
     uint64_t *h=lc8o.wire.descriptor.h;
     lc8o_need(!h[0],85);h[0]=1;h[1]=1;h[2]=sizeof lc8o.wire.descriptor;h[3]=LI2_LOOP_CACHE8_CONTROL;
