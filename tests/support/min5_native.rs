@@ -18,7 +18,7 @@ const HEADS: [usize; 4] = [0, 1, 2, 4];
 const PRELUDE: usize = 0x100;
 const SEEDS: [u64; 2] = [0x1234_5678_8765_4320, 0xfedc_ba98_0123_4567];
 fn range(address: u64, length: usize) -> AddressRange { AddressRange::new(address, length).unwrap() }
-fn rejected(f: impl FnOnce()) { assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).is_err()); }
+use super::routed_jmp_native::refused as rejected;
 
 pub type SizeCertificate = fn(u64, &[u8], &[u64], &ArtifactEmission) -> usize;
 

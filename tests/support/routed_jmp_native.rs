@@ -5,6 +5,8 @@ use liteinst2::sync_core::SyncCore;
 use liteinst2::trampoline::SavedExtendedStateLayout;
 mod fixture { include!("routed_jmp_fixture.rs"); }
 use fixture::*;
+// The min5 fixture uses the same isolated expected-panic checker.
+pub(super) use fixture::refused;
 mod artifact { include!("routed_jmp_artifact.rs"); }
 
 pub use super::router_witness::Router;
