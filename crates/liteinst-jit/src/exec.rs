@@ -1022,12 +1022,12 @@ impl Executable {
         // async signal before the caller's mask is restored, so a
         // default-terminate signal cannot kill the caller before
         // it observes the stop. Taken numbers are reported.
-        if let Err(RunError::Fault(f)) = &mut r {
-            if let Ok(extra) = take_all_pending_async() {
-                for sig in extra {
-                    if sig != f.signum && !f.also_pending.contains(&sig) {
-                        f.also_pending.push(sig);
-                    }
+        if let Err(RunError::Fault(f)) = &mut r
+            && let Ok(extra) = take_all_pending_async()
+        {
+            for sig in extra {
+                if sig != f.signum && !f.also_pending.contains(&sig) {
+                    f.also_pending.push(sig);
                 }
             }
         }
