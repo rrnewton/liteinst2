@@ -1,0 +1,17 @@
+[package]
+name = "minijit-bench"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94"
+license = "BSD-2-Clause"
+description = "S3 parallel-track component micro-benchmarks: streaming copy, decode, scan, patch costs"
+publish = false
+
+# Standalone: not a member of the liteinst2 workspace.
+[workspace]
+
+[dependencies]
+iced-x86 = { version = "=1.21.0", default-features = false, features = ["std", "decoder", "instr_info"] }
+
+[profile.release]
+debug = false
