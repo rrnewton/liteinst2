@@ -167,6 +167,9 @@ pub struct Outcome {
     pub branches: u64,
     pub instructions: u64,
     pub exits: u64,
+    /// Pending async signals taken into custody during the return
+    /// transition (dequeued while blocked, reported, not lost).
+    pub also_pending: Vec<i32>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -734,16 +737,22 @@ fn async_signal_range() -> impl Iterator<Item = i32> {
     })
 }
 
-fn pending_async_signal() -> Result<Option<i32>, Refuse> {
+fn pending_async_signals() -> Result<Vec<i32>, Refuse> {
     let mut set: libc::sigset_t = unsafe { core::mem::zeroed() };
     // SAFETY: sigpending fills the set.
     if unsafe { libc::sigpending(&mut set) } != 0 {
         return Err(Refuse::SignalOwnership { signum: 0 });
     }
-    Ok(async_signal_range().find(|&sig| {
-        // SAFETY: membership query on a filled set.
-        (unsafe { libc::sigismember(&set, sig) } == 1)
-    }))
+    Ok(async_signal_range()
+        .filter(|&sig| {
+            // SAFETY: membership query on a filled set.
+            (unsafe { libc::sigismember(&set, sig) } == 1)
+        })
+        .collect())
+}
+
+fn pending_async_signal() -> Result<Option<i32>, Refuse> {
+    Ok(pending_async_signals()?.into_iter().next())
 }
 
 /// Take custody of *every* pending async signal: dequeue all
@@ -775,9 +784,17 @@ fn take_all_pending_async() -> Result<Vec<i32>, Refuse> {
             let mut info: libc::siginfo_t = unsafe { core::mem::zeroed() };
             // SAFETY: dequeue one pending instance of the blocked sig.
             let r = unsafe { libc::sigtimedwait(&set, &mut info, &ts) };
-            if r != sig {
+            if r == sig {
+                continue;
+            }
+            let errno = std::io::Error::last_os_error().raw_os_error();
+            if r == -1 && errno == Some(libc::EAGAIN) {
                 break;
             }
+            if r == -1 && errno == Some(libc::EINTR) {
+                continue;
+            }
+            return Err(Refuse::SignalOwnership { signum: sig });
         }
         taken.push(sig);
     }
@@ -987,6 +1004,26 @@ impl Executable {
     /// at admission. No signal transparency is claimed; accepting
     /// this reduction vs transparent delivery remains an explicit
     /// owner scope decision (see status note).
+    ///
+    /// Return-transition custody: after `run_masked` returns, this
+    /// wrapper never restores the caller's mask until every
+    /// pending async signal is dequeued and reported (success and
+    /// fault returns, in `also_pending`) or explicitly retained
+    /// blocked (refusal returns). On a refusal, the exact refusal
+    /// is returned and the handed-back mask is the caller's old
+    /// mask plus only the bits for signals that were pending at
+    /// the transition; those signals are not dequeued and remain
+    /// both pending and blocked under the caller's custody. The
+    /// caller is expected to `sigwait`/dequeue them or explicitly
+    /// unblock them after observing the refusal. They cannot be
+    /// delivered merely by starting a later run: that run
+    /// snapshots this handed-back mask as its own `old` mask and
+    /// restores it, subject to the same custody rules (a later
+    /// run may report still-pending signals under its own custody
+    /// transition, but it never unblocks them silently). If the
+    /// pending set cannot even be observed or dequeued, the whole
+    /// async range stays blocked in the handed-back mask and the
+    /// named custody error is returned instead.
     pub fn run(
         &mut self,
         state: GuestState,
@@ -1018,22 +1055,79 @@ impl Executable {
             libc::pthread_sigmask(libc::SIG_BLOCK, &set, &mut old);
         }
         let mut r = self.run_masked(state, handler, mem, return_sentinel);
-        // Custody sweep: any Fault return takes every still-pending
-        // async signal before the caller's mask is restored, so a
-        // default-terminate signal cannot kill the caller before
-        // it observes the stop. Taken numbers are reported.
-        if let Err(RunError::Fault(f)) = &mut r
-            && let Ok(extra) = take_all_pending_async()
-        {
-            for sig in extra {
-                if sig != f.signum && !f.also_pending.contains(&sig) {
-                    f.also_pending.push(sig);
+        // Custody transition for *every* return after this run
+        // installed the blocked mask. Until pending async signals
+        // are proven absent, dequeued/reported, or explicitly
+        // retained blocked, restoring `old` could let a
+        // default-terminate signal kill the caller before it can
+        // observe this return.
+        let mut restore = old;
+        let mut custody_error: Option<Refuse> = None;
+        match pending_async_signals() {
+            Err(e) => {
+                // Without a reliable pending set, the only safe
+                // mask to hand back blocks the whole async range.
+                for sig in async_signal_range() {
+                    // SAFETY: adding one signal to a local set.
+                    unsafe {
+                        libc::sigaddset(&mut restore, sig);
+                    }
                 }
+                custody_error = Some(e);
             }
+            Ok(pending) if !pending.is_empty() => match &mut r {
+                Ok(outcome) => match take_all_pending_async() {
+                    Ok(taken) => outcome.also_pending = taken,
+                    Err(e) => {
+                        for sig in async_signal_range() {
+                            // SAFETY: adding one signal to a local set.
+                            unsafe {
+                                libc::sigaddset(&mut restore, sig);
+                            }
+                        }
+                        custody_error = Some(e);
+                    }
+                },
+                Err(RunError::Fault(f)) => match take_all_pending_async() {
+                    Ok(extra) => {
+                        for sig in extra {
+                            if sig != f.signum && !f.also_pending.contains(&sig) {
+                                f.also_pending.push(sig);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        for sig in async_signal_range() {
+                            // SAFETY: adding one signal to a local set.
+                            unsafe {
+                                libc::sigaddset(&mut restore, sig);
+                            }
+                        }
+                        custody_error = Some(e);
+                    }
+                },
+                Err(RunError::Refuse(_)) => {
+                    // Preserve the exact refusal and the caller's
+                    // pending signals: keep only the actually
+                    // pending numbers blocked in the handed-back
+                    // mask instead of silently dequeuing them.
+                    for sig in pending {
+                        // SAFETY: adding one signal to a local set.
+                        unsafe {
+                            libc::sigaddset(&mut restore, sig);
+                        }
+                    }
+                }
+            },
+            Ok(_) => {}
         }
-        // SAFETY: restoring the caller's previous mask.
+        // SAFETY: install the exact caller mask plus any custody
+        // bits retained above and documented on this method.
         unsafe {
-            libc::pthread_sigmask(libc::SIG_SETMASK, &old, core::ptr::null_mut());
+            libc::pthread_sigmask(libc::SIG_SETMASK, &restore, core::ptr::null_mut());
+        }
+        if let Some(e) = custody_error {
+            return Err(e.into());
         }
         r
     }
@@ -1136,6 +1230,7 @@ impl Executable {
                 branches: tot_branches,
                 instructions: tot_instructions,
                 exits,
+                also_pending: Vec::new(),
             };
             match data.exit_kind {
                 exit_kind::RETURN => {

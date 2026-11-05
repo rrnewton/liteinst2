@@ -33,3 +33,10 @@ path = "src/bin/o1_child.rs"
 test = false
 bench = false
 doc = false
+
+[[bin]]
+name = "liteinst-jit-custody-child"
+path = "src/bin/custody_child.rs"
+test = false
+bench = false
+doc = false

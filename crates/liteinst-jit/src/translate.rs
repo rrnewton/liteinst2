@@ -1088,6 +1088,11 @@ mod tests {
             ("vstmxcsr", &[0xc5, 0xf8, 0xae, 0x18, 0xc3]),
             ("sttilecfg", &[0xc4, 0xe2, 0x79, 0x49, 0x00, 0xc3]),
             ("senduipi", &[0xf3, 0x0f, 0xc7, 0xf0, 0xc3]),
+            // Descriptor-table access is discussed only as a test
+            // coverage note in the round-6 review; this regression
+            // does not broaden admission. A mutant that swaps any
+            // allowlisted entry for LAR must turn this case red.
+            ("lar", &[0x48, 0x0f, 0x02, 0xc0, 0xc3]),
         ];
         for (name, bytes) in cases {
             let r = region(bytes.to_vec());
