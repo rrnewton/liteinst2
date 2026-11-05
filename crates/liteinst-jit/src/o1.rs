@@ -65,6 +65,8 @@ pub struct OracleOutcome {
     pub state: GuestState,
     /// `(faulting source pc, signum)` when the guest faulted/trapped.
     pub fault: Option<(u64, i32)>,
+    /// Raw `si_addr` of the faulting stop (0 when none).
+    pub fault_addr: u64,
     pub dst_bytes: Vec<u8>,
     pub data_bytes: Vec<u8>,
     pub stack_window: Vec<u8>,
@@ -282,6 +284,7 @@ fn run_o1_impl(
     let mut branches: u64 = 0;
     let mut instructions: u64 = 0;
     let mut fault: Option<(u64, i32)> = None;
+    let mut fault_addr: u64 = 0;
     let mut steps: u64 = 0;
     let final_state = loop {
         let cur = get_regs(pid);
@@ -329,6 +332,8 @@ fn run_o1_impl(
             if !stepped {
                 // A guest trap (int3/hardware trap), not our step:
                 // the instruction does not retire.
+                // SAFETY: siginfo was filled by PTRACE_GETSIGINFO.
+                fault_addr = unsafe { get_siginfo(pid).si_addr() } as usize as u64;
                 fault = Some((prev_pc, sig));
                 break regs_to_state(&after);
             }
@@ -345,6 +350,8 @@ fn run_o1_impl(
             instructions += 1;
             break regs_to_state(&after);
         }
+        // SAFETY: siginfo was filled by PTRACE_GETSIGINFO.
+        fault_addr = unsafe { get_siginfo(pid).si_addr() } as usize as u64;
         fault = Some((prev_pc, sig));
         break regs_to_state(&after);
     };
@@ -382,6 +389,7 @@ fn run_o1_impl(
         instructions,
         state: final_state,
         fault,
+        fault_addr,
         dst_bytes,
         data_bytes,
         stack_window,

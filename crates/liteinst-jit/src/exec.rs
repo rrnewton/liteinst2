@@ -322,7 +322,17 @@ fn chain_previous(sig: i32, info: *mut libc::siginfo_t, ctx: *mut libc::c_void) 
     }
 }
 
+/// Establish the SysV host direction-flag state. First action in
+/// any Rust code reached with guest flags live.
+fn clear_df() {
+    // SAFETY: CLD affects only DF, which the host ABI requires clear.
+    unsafe {
+        core::arch::asm!("cld");
+    }
+}
+
 extern "C" fn fault_handler(sig: i32, info: *mut libc::siginfo_t, ctx: *mut libc::c_void) {
+    clear_df();
     let active = ACTIVE.load(Ordering::SeqCst);
     if active.is_null() || ctx.is_null() {
         chain_previous(sig, info, ctx);
@@ -528,6 +538,10 @@ pub fn recover_fault(
             match stage {
                 CommonStage::BeforeRspSave => {}
                 CommonStage::RspSaved => state.rsp = data.state.rsp,
+                CommonStage::FlagsSaved => {
+                    state.rsp = data.state.rsp;
+                    state.rflags = data.state.rflags;
+                }
                 CommonStage::AllSaved => state = data.state,
             }
             instructions = retired_at(instructions, data.exit_src);
@@ -536,6 +550,15 @@ pub fn recover_fault(
         Recovery::Fallthrough { next } => next,
     };
     state.rip = src_pc;
+    // Preserve siginfo address semantics: SIGFPE/SIGILL name the
+    // faulting instruction (a generated address), and a fetch
+    // fault names the interrupted PC. Those translate to source
+    // addresses; a guest data-operand address never does.
+    let addr = if signum == libc::SIGFPE || signum == libc::SIGILL || addr == gen_pc {
+        t.pcmap.lookup(addr).map_or(src_pc, |e| e.recover(addr))
+    } else {
+        addr
+    };
     Fault {
         kind,
         src_pc,
@@ -834,6 +857,7 @@ impl Executable {
             let data = unsafe { core::ptr::read(self.data) };
             state = data.state;
             if jumped != 0 {
+                clear_df();
                 return Err(RunError::Fault(Box::new(recover_fault(
                     &self.translation,
                     self.profile,

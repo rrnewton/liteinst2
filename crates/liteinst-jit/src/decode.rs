@@ -155,10 +155,30 @@ fn refused_mnemonic(m: Mnemonic) -> Option<&'static str> {
         Mnemonic::Getsec | Mnemonic::Invd | Mnemonic::Wbinvd | Mnemonic::Invlpg => {
             "system instruction outside P1a envelope"
         }
-        Mnemonic::Monitor | Mnemonic::Mwait => "MONITOR/MWAIT outside P1a envelope",
+        Mnemonic::Monitor
+        | Mnemonic::Mwait
+        | Mnemonic::Monitorx
+        | Mnemonic::Mwaitx
+        | Mnemonic::Umonitor
+        | Mnemonic::Umwait
+        | Mnemonic::Tpause
+        | Mnemonic::Rdpru => "counter/wait instruction outside P1a envelope",
+        Mnemonic::Rdpkru => "PKRU access outside P1a envelope",
+        Mnemonic::Ldmxcsr | Mnemonic::Stmxcsr => "MXCSR access outside P1a envelope",
+        Mnemonic::In | Mnemonic::Out => "port I/O outside P1a envelope",
+        Mnemonic::Encls | Mnemonic::Serialize => "system instruction outside P1a envelope",
+        Mnemonic::Clflush | Mnemonic::Clflushopt | Mnemonic::Clwb | Mnemonic::Cldemote => {
+            "cache maintenance outside P1a envelope"
+        }
         Mnemonic::Fxsave
         | Mnemonic::Fxsave64
         | Mnemonic::Fxrstor
+        | Mnemonic::Fxrstor64
+        | Mnemonic::Xsavec
+        | Mnemonic::Xsavec64
+        | Mnemonic::Xrstor64
+        | Mnemonic::Xrstors64
+        | Mnemonic::Xsaves64
         | Mnemonic::Xsave
         | Mnemonic::Xsave64
         | Mnemonic::Xsaveopt
@@ -171,6 +191,32 @@ fn refused_mnemonic(m: Mnemonic) -> Option<&'static str> {
         }
         _ => return None,
     })
+}
+
+/// First opcode byte(s) after legacy/REX prefixes, for the
+/// opcode-space partition below.
+fn refused_opcode_space(bytes: &[u8]) -> Option<&'static str> {
+    let mut i = 0;
+    while i < bytes.len()
+        && matches!(
+            bytes[i],
+            0xf0 | 0xf2 | 0xf3 | 0x26 | 0x2e | 0x36 | 0x3e | 0x64 | 0x65 | 0x66 | 0x67
+        )
+    {
+        i += 1;
+    }
+    if i < bytes.len() && (0x40..=0x4f).contains(&bytes[i]) {
+        i += 1;
+    }
+    match bytes.get(i) {
+        Some(0x0f) => match bytes.get(i + 1) {
+            Some(0x01) => Some("0F 01 system opcode space outside P1a envelope"),
+            Some(0xae) => Some("0F AE system/save opcode space outside P1a envelope"),
+            _ => None,
+        },
+        Some(0xd8..=0xdf) => Some("x87 opcode space outside P1a envelope"),
+        _ => None,
+    }
 }
 
 /// Decode one instruction and admit it only if its effects are
@@ -206,6 +252,21 @@ pub fn decode_supported(bytes: &[u8], pc: u64) -> Result<DecodedInsn, Refuse> {
                     src_pc: pc,
                     reason: "segment override outside P1a envelope",
                 });
+            }
+            if ins.is_save_restore_instruction() {
+                return Err(Refuse::Unrelocatable {
+                    src_pc: pc,
+                    reason: "save/restore instruction outside P1a envelope",
+                });
+            }
+            // Family/encoding coverage for hidden architectural
+            // state that register-use metadata does not enumerate:
+            // the 0F 01 (system: PKRU, counters, SGX, serialize,
+            // shadow-stack) and 0F AE (save/restore, MXCSR, fences,
+            // WAITPKG) maps and the x87 ESC map are refused as
+            // spaces, not example-by-example.
+            if let Some(reason) = refused_opcode_space(bytes) {
+                return Err(Refuse::Unrelocatable { src_pc: pc, reason });
             }
             if ins.has_xacquire_prefix() || ins.has_xrelease_prefix() {
                 return Err(Refuse::Unrelocatable {

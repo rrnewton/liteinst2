@@ -370,9 +370,14 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         };
         assert_eq!(f.signum, libc::SIGFPE);
         assert_eq!(f.instructions, 3);
+        // R3: SIGFPE si_addr is an instruction address and must be
+        // reported as the source PC, never the cache PC.
+        assert_eq!(f.addr, f.src_pc, "div fault addr is source pc");
+        assert_eq!(f.addr - jr.base, 9, "div offset");
         let o1 = run_o1(std::path::Path::new(CHILD), "div_zero", |_, _| {});
         assert_eq!(o1.fault.map(|x| x.1), Some(libc::SIGFPE));
         assert_eq!(o1.instructions, 3);
+        assert_eq!(o1.fault_addr - o1.base, 9, "o1 div addr offset");
     }
     // REP STOSB partial progress into a guard page: 16 bytes land,
     // RCX/RDI stop exactly at the boundary on both engines.
@@ -434,6 +439,60 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         assert_eq!(o1.instructions, 1);
         assert_eq!(o1.fault.map(|x| x.1), Some(f.signum));
     }
+    // R2: guest DF is preserved in saved state while host handler
+    // code observes DF clear at its first instruction.
+    {
+        struct DfProbe {
+            host_flags: u64,
+            guest_flags: u64,
+            inner: CaptureHandler,
+        }
+        impl liteinst_jit::exec::Handler for DfProbe {
+            fn syscall(
+                &mut self,
+                state: &mut GuestState,
+                insn_pc: u64,
+                next_pc: u64,
+            ) -> Result<liteinst_jit::exec::Resume, Refuse> {
+                self.inner.syscall(state, insn_pc, next_pc)
+            }
+            fn nondet(
+                &mut self,
+                state: &mut GuestState,
+                kind: liteinst_jit::decode::NondetKind,
+                insn_pc: u64,
+                next_pc: u64,
+            ) -> Result<liteinst_jit::exec::Resume, Refuse> {
+                let flags: u64;
+                // SAFETY: pushfq/pop only reads flags into a register.
+                unsafe {
+                    core::arch::asm!("pushfq; pop {}", out(reg) flags);
+                }
+                self.host_flags = flags;
+                self.guest_flags = state.rflags;
+                self.inner.nondet(state, kind, insn_pc, next_pc)
+            }
+        }
+        let fixture = fixtures::by_name("std_cld");
+        let guest = MappedGuest::map(&fixture.bytes).expect("map");
+        let region = guest.region(&fixture.bytes, Generation(1));
+        let mut exec =
+            Executable::prepare(&region, guest.base, CountProfile::Branches).expect("prepare");
+        let state = guest.initial_state();
+        let mut probe = DfProbe {
+            host_flags: u64::MAX,
+            guest_flags: 0,
+            inner: CaptureHandler::default(),
+        };
+        let out = exec
+            .run(state, &mut probe, &ProcessMemory, RETURN_SENTINEL)
+            .expect("std_cld run");
+        assert_eq!(probe.host_flags & 0x400, 0, "host DF clear in handler");
+        assert_ne!(probe.guest_flags & 0x400, 0, "guest DF preserved in state");
+        assert_eq!(out.state.rflags & 0x400, 0, "guest executed its cld");
+        let _ = compare("std_cld");
+    }
+
     // Oracle trap provenance: a native int3 is a guest trap, not a
     // completed step; the JIT refuses int3 at translation (F4).
     {

@@ -74,6 +74,9 @@ pub enum CommonStage {
     BeforeRspSave,
     /// Guest RSP is in `state.rsp`; interrupted RSP is scratch.
     RspSaved,
+    /// Guest RSP and RFLAGS are in `state`; interrupted flags may
+    /// already have been host-cleared (CLD) and must not be used.
+    FlagsSaved,
     /// Every guest register is in `state`; interrupted registers
     /// after this point may already hold host values.
     AllSaved,

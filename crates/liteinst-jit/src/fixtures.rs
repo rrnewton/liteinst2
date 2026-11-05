@@ -258,6 +258,13 @@ pub fn all() -> Vec<Fixture> {
             ],
         },
         Fixture {
+            // std; xor eax,eax; cpuid; cld; ret — guest DF must be
+            // set in saved state at the handler exit while host
+            // code observes DF clear (Astra R2 shape).
+            name: "std_cld",
+            bytes: vec![0xfd, 0x31, 0xc0, 0x0f, 0xa2, 0xfc, 0xc3],
+        },
+        Fixture {
             name: "indirect_jmp",
             bytes: asm(|a| {
                 a.mov(rax, rdi)?;

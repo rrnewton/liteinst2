@@ -581,6 +581,13 @@ fn emit_common_exit(e: &mut Emitter) -> Result<u64, Refuse> {
         e.buf.extend_from_slice(&d.to_le_bytes());
         Ok(())
     })?;
+    // Guest flags are captured; host code after this point runs
+    // under the SysV ABI, which requires DF clear. The guest DF
+    // survives in state.rflags and is restored by iret on re-entry.
+    e.seg(0, Phase::CommonExit, rec(CommonStage::FlagsSaved), |e| {
+        e.buf.push(0xfc); // cld
+        Ok(())
+    })?;
     for (off, reg) in [
         (ST_RAX, 0u8),
         (ST_RCX, 1),
@@ -598,7 +605,7 @@ fn emit_common_exit(e: &mut Emitter) -> Result<u64, Refuse> {
         (ST_R14, 14),
         (ST_R15, 15),
     ] {
-        e.seg(0, Phase::CommonExit, rec(RspSaved), |e| {
+        e.seg(0, Phase::CommonExit, rec(FlagsSaved), |e| {
             e.mov_mem_reg(OFF_STATE + off, reg)
         })?;
     }
@@ -945,6 +952,20 @@ mod tests {
             ("popfq", &[0x9d, 0xc3]),
             ("swapgs", &[0x0f, 0x01, 0xf8, 0xc3]),
             ("fs-load", &[0x64, 0x48, 0x8b, 0x04, 0x25, 0, 0, 0, 0, 0xc3]),
+            // R1 hidden-state families (decode-only; never executed).
+            ("wrpkru", &[0x0f, 0x01, 0xef, 0xc3]),
+            ("rdpkru", &[0x0f, 0x01, 0xee, 0xc3]),
+            ("rdpru", &[0x0f, 0x01, 0xfd, 0xc3]),
+            ("mwaitx", &[0x0f, 0x01, 0xfb, 0xc3]),
+            ("monitorx", &[0x0f, 0x01, 0xfa, 0xc3]),
+            ("ldmxcsr", &[0x0f, 0xae, 0x10, 0xc3]),
+            ("fninit", &[0xdb, 0xe3, 0xc3]),
+            ("fldcw", &[0xd9, 0x28, 0xc3]),
+            ("fnstenv", &[0xd9, 0x30, 0xc3]),
+            ("fxrstor64", &[0x48, 0x0f, 0xae, 0x08, 0xc3]),
+            ("xrstor64", &[0x48, 0x0f, 0xae, 0x28, 0xc3]),
+            ("xsavec", &[0x0f, 0xc7, 0x20, 0xc3]),
+            ("umonitor", &[0xf3, 0x48, 0x0f, 0xae, 0xf0, 0xc3]),
         ];
         for (name, bytes) in cases {
             let r = region(bytes.to_vec());
