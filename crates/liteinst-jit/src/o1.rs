@@ -126,13 +126,23 @@ pub fn instruction_has_rep(ins: &Instruction) -> bool {
             | Mnemonic::Stosd
             | Mnemonic::Stosq
             | Mnemonic::Lodsb
+            | Mnemonic::Lodsw
+            | Mnemonic::Lodsd
+            | Mnemonic::Lodsq
             | Mnemonic::Cmpsb
+            | Mnemonic::Cmpsw
+            | Mnemonic::Cmpsd
+            | Mnemonic::Cmpsq
             | Mnemonic::Scasb
             | Mnemonic::Scasw
             | Mnemonic::Scasd
             | Mnemonic::Scasq
             | Mnemonic::Insb
+            | Mnemonic::Insw
+            | Mnemonic::Insd
             | Mnemonic::Outsb
+            | Mnemonic::Outsw
+            | Mnemonic::Outsd
     );
     string_op && (ins.has_rep_prefix() || ins.has_repne_prefix())
 }

@@ -164,6 +164,9 @@ fn refused_mnemonic(m: Mnemonic) -> Option<&'static str> {
         | Mnemonic::Tpause
         | Mnemonic::Rdpru => "counter/wait instruction outside P1a envelope",
         Mnemonic::Rdpkru | Mnemonic::Wrpkru => "PKRU access outside P1a envelope",
+        Mnemonic::Emms | Mnemonic::Femms | Mnemonic::Wait => {
+            "x87/MMX state instruction outside P1a envelope"
+        }
         Mnemonic::Ldmxcsr | Mnemonic::Stmxcsr | Mnemonic::Vldmxcsr | Mnemonic::Vstmxcsr => {
             "MXCSR access outside P1a envelope"
         }

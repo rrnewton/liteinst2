@@ -331,6 +331,12 @@ pub fn all() -> Vec<Fixture> {
             ],
         },
         Fixture {
+            // mov ecx,3; rep lodsq; ret (rsi=src) — wide REP
+            // retirement: exactly 3 instructions total.
+            name: "rep_lodsq",
+            bytes: vec![0xb9, 0x03, 0x00, 0x00, 0x00, 0xf3, 0x48, 0xad, 0xc3],
+        },
+        Fixture {
             name: "indirect_jmp",
             bytes: asm(|a| {
                 a.mov(rax, rdi)?;

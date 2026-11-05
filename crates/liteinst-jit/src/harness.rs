@@ -120,6 +120,7 @@ impl MappedGuest {
             "loop_insn" | "loopne_insn" | "loope_insn" => (0, 7, 0, 0, 0),
             "rep_stosb_ok" => (dst, 0, 32, 0, 0),
             "repne_scasb" => (src, 0, 32, 0, 0),
+            "rep_lodsq" => (0, src, 0, 0, 0),
             "jrcxz" => (0, 0, 0, 0, 0),
             "syscall_write" => (0, src, 5, 0, 0),
             "fault_load" | "redzone_reentry" => (data, 0, 0, 0, 0),

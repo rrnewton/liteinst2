@@ -231,6 +231,7 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         "loope_insn",
         "rep_stosb_ok",
         "repne_scasb",
+        "rep_lodsq",
         "r11_data",
     ] {
         let (jit, _o1) = compare(name);
@@ -248,6 +249,15 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
             "ret_imm16" => {}
             _ => {}
         }
+    }
+
+    // T6 executed width assertion: MOV + completed REP LODSQ +
+    // RET is exactly 3 retired instructions on both engines.
+    {
+        let (jit, o1) = compare("rep_lodsq");
+        assert_eq!(jit.instructions, 3, "jit rep lodsq count");
+        assert_eq!(o1.instructions, 3, "o1 rep lodsq count");
+        assert_eq!(jit.state.rax, o1.state.rax);
     }
 
     // rep buffers and captured writes, byte-exact.
