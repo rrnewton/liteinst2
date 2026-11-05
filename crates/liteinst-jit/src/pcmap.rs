@@ -97,6 +97,9 @@ pub enum Recovery {
     },
     /// Block-head instruction-credit stub for `block`.
     InsnCountStub { block: u64, stage: StubStage },
+    /// Block-head pending-signal poll stub for `block`; stages
+    /// describe spill state only (no guest-visible credit).
+    PollStub { block: u64, stage: StubStage },
     /// Direct-call sequence for the call at `call_pc`.
     Call {
         call_pc: u64,

@@ -542,6 +542,46 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
             Err(RunError::Refuse(Refuse::StaleGeneration { .. }))
         ));
     }
+    // R5 progress bound: a pending async signal stops a long
+    // in-cache loop at a poll exit instead of being deferred
+    // until the (effectively unbounded) run returns.
+    {
+        let mut set: libc::sigset_t = unsafe { core::mem::zeroed() };
+        let mut old: libc::sigset_t = unsafe { core::mem::zeroed() };
+        unsafe {
+            libc::sigemptyset(&mut set);
+            libc::sigaddset(&mut set, libc::SIGUSR1);
+            libc::pthread_sigmask(libc::SIG_BLOCK, &set, &mut old);
+        }
+        let me = unsafe { libc::pthread_self() };
+        let killer = std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(50));
+            unsafe {
+                libc::pthread_kill(me, libc::SIGUSR1);
+            }
+        });
+        let jr = run_jit("loop_insn", |s| s.rsi = 400_000_000);
+        killer.join().expect("killer thread");
+        match jr.outcome {
+            Err(RunError::Fault(f)) => {
+                assert_eq!(f.kind, liteinst_jit::exec::FaultKind::AsyncSignal);
+                assert_eq!(f.signum, libc::SIGUSR1);
+                assert!(f.branches > 0 && f.branches < 400_000_000, "{f:?}");
+            }
+            other => panic!("poll async outcome: {other:?}"),
+        }
+        // Consume the pending signal while still blocked, then restore.
+        let mut info: libc::siginfo_t = unsafe { core::mem::zeroed() };
+        let ts = libc::timespec {
+            tv_sec: 0,
+            tv_nsec: 0,
+        };
+        unsafe {
+            libc::sigtimedwait(&set, &mut info, &ts);
+            libc::pthread_sigmask(libc::SIG_SETMASK, &old, core::ptr::null_mut());
+        }
+    }
+
     // Driver binary agrees with its per-fixture expectations (F6).
     {
         let status = std::process::Command::new(env!("CARGO_BIN_EXE_liteinst-jit-run"))

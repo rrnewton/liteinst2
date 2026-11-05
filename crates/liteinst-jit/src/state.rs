@@ -9,6 +9,7 @@ pub mod exit_kind {
     pub const INDIRECT: u64 = 2;
     pub const SYSCALL: u64 = 3;
     pub const NONDET: u64 = 4;
+    pub const POLL: u64 = 5;
 }
 
 /// Full general-purpose guest state transferred at cache entry/exit.
@@ -50,6 +51,7 @@ pub struct JitData {
     pub interrupted: GuestState,
     pub branch_count: u64,
     pub instruction_count: u64,
+    pub poll_remaining: u64,
     pub spill_rax: u64,
     pub spill_flags: u64,
     pub exit_kind: u64,
@@ -73,6 +75,7 @@ impl JitData {
             interrupted: GuestState::default(),
             branch_count: 0,
             instruction_count: 0,
+            poll_remaining: 0,
             spill_rax: 0,
             spill_flags: 0,
             exit_kind: 0,
@@ -105,6 +108,7 @@ impl JitData {
 pub const OFF_STATE: usize = core::mem::offset_of!(JitData, state);
 pub const OFF_BRANCH_COUNT: usize = core::mem::offset_of!(JitData, branch_count);
 pub const OFF_INSTRUCTION_COUNT: usize = core::mem::offset_of!(JitData, instruction_count);
+pub const OFF_POLL: usize = core::mem::offset_of!(JitData, poll_remaining);
 pub const OFF_SPILL_RAX: usize = core::mem::offset_of!(JitData, spill_rax);
 pub const OFF_SPILL_FLAGS: usize = core::mem::offset_of!(JitData, spill_flags);
 pub const OFF_EXIT_KIND: usize = core::mem::offset_of!(JitData, exit_kind);

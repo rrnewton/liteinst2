@@ -22,6 +22,8 @@ use crate::translate::{Translation, translate};
 use crate::types::{CacheKey, CountProfile, Generation, RegionFacts, byte_hash};
 
 pub const CODE_CAP: usize = 1 << 18;
+/// Block entries between pending-signal polls (progress bound).
+pub const POLL_BUDGET: u64 = 16384;
 const PAGE: usize = 4096;
 
 core::arch::global_asm!(
@@ -62,6 +64,8 @@ core::arch::global_asm!(
     "mov r15, [rdi + {r15}]",
     "mov rdi, [rdi + {rdi}]",
     "iretq",
+    ".global liteinst_jit_enter_end",
+    "liteinst_jit_enter_end:",
     host_rsp = const OFF_HOST_RSP,
     host_rbx = const OFF_HOST_RBX,
     host_rbp = const OFF_HOST_RBP,
@@ -90,6 +94,14 @@ core::arch::global_asm!(
 
 unsafe extern "C" {
     fn liteinst_jit_enter(data: *mut JitData, entry: *const u8);
+    fn liteinst_jit_enter_end();
+}
+
+fn bridge_range() -> (u64, u64) {
+    (
+        liteinst_jit_enter as *const () as usize as u64,
+        liteinst_jit_enter_end as *const () as usize as u64,
+    )
 }
 
 /// What a handler asks the dispatcher to do after an exit.
@@ -266,6 +278,8 @@ impl Drop for Arena {
 struct ActiveRun {
     gen_lo: u64,
     gen_hi: u64,
+    bridge_lo: u64,
+    bridge_hi: u64,
     data: *mut JitData,
     fault_gen_pc: u64,
     fault_addr: u64,
@@ -300,7 +314,10 @@ fn chain_previous(sig: i32, info: *mut libc::siginfo_t, ctx: *mut libc::c_void) 
     // SAFETY: PREV_HANDLERS is written once at install time before
     // any guest code runs, single-threaded dispatcher discipline.
     let (handler, flags) = unsafe { PREV_HANDLERS[idx] };
-    if handler == usize::MAX || handler == libc::SIG_DFL || handler == libc::SIG_IGN {
+    if handler == libc::SIG_IGN {
+        return; // An ignored signal stays ignored, exactly.
+    }
+    if handler == usize::MAX || handler == libc::SIG_DFL {
         // SAFETY: default disposition and re-raise reproduces the
         // kernel-visible fault exactly.
         unsafe {
@@ -343,7 +360,8 @@ extern "C" fn fault_handler(sig: i32, info: *mut libc::siginfo_t, ctx: *mut libc
     let rip = gregs[libc::REG_RIP as usize] as u64;
     // SAFETY: `active` is live for the whole cache-entry window.
     let run = unsafe { &mut *active };
-    if rip < run.gen_lo || rip >= run.gen_hi {
+    let in_bridge = rip >= run.bridge_lo && rip < run.bridge_hi;
+    if !in_bridge && (rip < run.gen_lo || rip >= run.gen_hi) {
         chain_previous(sig, info, ctx);
         return;
     }
@@ -448,8 +466,19 @@ pub fn recover_fault(
             None => counted,
         }
     };
-    let mut kind = if async_kind {
+    let kind = if async_kind {
         FaultKind::AsyncSignal
+    } else if matches!(
+        entry.recovery,
+        Recovery::BranchStub { .. }
+            | Recovery::InsnCountStub { .. }
+            | Recovery::PollStub { .. }
+            | Recovery::ExitStub { .. }
+            | Recovery::CommonExit { .. }
+    ) {
+        // Private spill/counter/exit/state accesses are executor
+        // machinery, whatever source successor they recover to.
+        FaultKind::ExecutorError
     } else {
         FaultKind::GuestFault
     };
@@ -500,6 +529,21 @@ pub fn recover_fault(
             }
             block
         }
+        Recovery::PollStub { block, stage } => {
+            match stage {
+                StubStage::BeforeCreditPristine => {}
+                StubStage::BeforeCreditSpilled => state.rax = data.spill_rax,
+                StubStage::AfterCreditSpilled => {
+                    state.rax = data.spill_rax;
+                    state.rflags = flags_from_spill(data.spill_flags, raw.rflags);
+                }
+                StubStage::AfterCreditFlagsRestored => {
+                    state.rax = data.spill_rax;
+                }
+                StubStage::Committed => {}
+            }
+            block
+        }
         Recovery::Call {
             call_pc,
             target,
@@ -534,7 +578,9 @@ pub fn recover_fault(
             entry.src_pc
         }
         Recovery::CommonExit { stage } => {
-            kind = FaultKind::ExecutorError;
+            // Kind already decided by provenance above: a positive
+            // synchronous code here is machinery; an asynchronous
+            // signal stays AsyncSignal at any location.
             match stage {
                 CommonStage::BeforeRspSave => {}
                 CommonStage::RspSaved => state.rsp = data.state.rsp,
@@ -573,10 +619,30 @@ pub fn recover_fault(
 /// Alternate signal stack so faults with a wild guest RSP (whose
 /// signal frame could not be built on the guest stack at all) still
 /// reach the recovery handler.
-fn ensure_altstack() {
-    static ONCE: std::sync::Once = std::sync::Once::new();
-    ONCE.call_once(|| {
+fn ensure_altstack() -> Result<(), Refuse> {
+    static STATE: std::sync::OnceLock<Result<(), Refuse>> = std::sync::OnceLock::new();
+    static ALT_BASE: std::sync::atomic::AtomicPtr<u8> =
+        std::sync::atomic::AtomicPtr::new(core::ptr::null_mut());
+    *STATE.get_or_init(|| {
         const ALT_LEN: usize = 1 << 20;
+        let mut old: libc::stack_t = unsafe { core::mem::zeroed() };
+        // SAFETY: query-only sigaltstack with a null new stack.
+        if unsafe { libc::sigaltstack(core::ptr::null(), &mut old) } != 0 {
+            return Err(Refuse::MappingPolicy {
+                operation: "sigaltstack query",
+                errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
+            });
+        }
+        if old.ss_flags & libc::SS_DISABLE == 0 {
+            // An alternate stack we did not install (the Rust
+            // runtime installs one for its stack-overflow handler):
+            // preserve and reuse it, never replace it.
+            if old.ss_size >= 8192 {
+                ALT_BASE.store(old.ss_sp as *mut u8, Ordering::SeqCst);
+                return Ok(());
+            }
+            return Err(Refuse::SignalOwnership { signum: 0 });
+        }
         // SAFETY: leaked anonymous mapping used only as sigaltstack.
         let base = unsafe {
             libc::mmap(
@@ -589,23 +655,65 @@ fn ensure_altstack() {
             )
         };
         if base == libc::MAP_FAILED {
-            return;
+            return Err(Refuse::MappingPolicy {
+                operation: "mmap altstack",
+                errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
+            });
         }
+        ALT_BASE.store(base as *mut u8, Ordering::SeqCst);
         let stack = libc::stack_t {
             ss_sp: base,
             ss_flags: 0,
             ss_size: ALT_LEN,
         };
-        // SAFETY: installing the leaked mapping as this thread's
-        // alternate signal stack (single-threaded P1a dispatcher).
-        unsafe {
-            libc::sigaltstack(&stack, core::ptr::null_mut());
+        // SAFETY: installing our leaked mapping after proving no
+        // foreign alternate stack is active.
+        if unsafe { libc::sigaltstack(&stack, core::ptr::null_mut()) } != 0 {
+            return Err(Refuse::MappingPolicy {
+                operation: "sigaltstack install",
+                errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
+            });
         }
-    });
+        Ok(())
+    })
+}
+/// P1a signal envelope admission: asynchronous signals are
+/// blocked (not guest-delivered) during a run, so a process that
+/// has installed a handler for one is refused before execution
+/// rather than having delivery silently deferred. Default and
+/// ignore dispositions are admitted (and preserved on restore).
+fn check_async_handlers() -> Result<(), Refuse> {
+    for sig in 1..=31 {
+        if sig == libc::SIGKILL || sig == libc::SIGSTOP || FAULT_SIGNALS.contains(&sig) {
+            continue;
+        }
+        let mut old: libc::sigaction = unsafe { core::mem::zeroed() };
+        // SAFETY: query-only sigaction.
+        if unsafe { libc::sigaction(sig, core::ptr::null(), &mut old) } != 0 {
+            continue;
+        }
+        if old.sa_sigaction != libc::SIG_DFL && old.sa_sigaction != libc::SIG_IGN {
+            return Err(Refuse::SignalOwnership { signum: sig });
+        }
+    }
+    Ok(())
+}
+
+fn pending_async_signal() -> Option<i32> {
+    let mut set: libc::sigset_t = unsafe { core::mem::zeroed() };
+    // SAFETY: sigpending fills the set.
+    if unsafe { libc::sigpending(&mut set) } != 0 {
+        return None;
+    }
+    (1..=31).find(|&sig| {
+        sig != libc::SIGKILL && sig != libc::SIGSTOP && !FAULT_SIGNALS.contains(&sig)
+            // SAFETY: membership query on a filled set.
+            && unsafe { libc::sigismember(&set, sig) } == 1
+    })
 }
 
 fn install_fault_handlers() -> Result<(), Refuse> {
-    ensure_altstack();
+    ensure_altstack()?;
     for (idx, sig) in FAULT_SIGNALS.into_iter().enumerate() {
         let mut old: libc::sigaction = unsafe { core::mem::zeroed() };
         // SAFETY: query-only sigaction with a null new action.
@@ -640,7 +748,7 @@ fn install_fault_handlers() -> Result<(), Refuse> {
 /// synthesized call/return stack effects would desynchronize it.
 /// Old or CET-less kernels answer EINVAL, treated as inactive
 /// (probed on this host against asm/prctl.h ARCH_SHSTK_STATUS).
-fn cet_shadow_stack_active() -> bool {
+fn cet_shadow_stack_active() -> Result<bool, Refuse> {
     const ARCH_SHSTK_STATUS: i32 = 0x5005;
     let mut features: u64 = 0;
     // SAFETY: arch_prctl status query writing one u64 through the
@@ -652,7 +760,26 @@ fn cet_shadow_stack_active() -> bool {
             core::ptr::addr_of_mut!(features),
         )
     };
-    r == 0 && features & 1 != 0
+    if r == 0 {
+        return Ok(features & 1 != 0);
+    }
+    match std::io::Error::last_os_error().raw_os_error() {
+        // Known CET-unavailable answers are inactive proof; every
+        // other failure is unknown state and refuses (R5).
+        Some(libc::EINVAL) | Some(libc::ENODEV) | Some(libc::ENOSYS) => Ok(false),
+        _ => Err(Refuse::Arch {
+            what: "CET shadow-stack status unknown",
+        }),
+    }
+}
+
+fn check_cet_inactive() -> Result<(), Refuse> {
+    if cet_shadow_stack_active()? {
+        return Err(Refuse::Arch {
+            what: "CET shadow stack active (call/ret rewriting unadmitted)",
+        });
+    }
+    Ok(())
 }
 
 fn lahf_available() -> bool {
@@ -683,11 +810,7 @@ impl Executable {
                 what: "LAHF/SAHF unavailable in 64-bit mode",
             });
         }
-        if cet_shadow_stack_active() {
-            return Err(Refuse::Arch {
-                what: "CET shadow stack active (call/ret rewriting unadmitted)",
-            });
-        }
+        check_cet_inactive()?;
         let mut arena = Arena::new()?;
         let base = arena.base as u64;
         let data_addr = arena.data_addr();
@@ -766,12 +889,15 @@ impl Executable {
     /// Run from `state.rip` until a return pops `return_sentinel`, a
     /// handler says `Done`, a named refusal, or a fault.
     ///
-    /// Signal envelope (explicit, P1a): all blockable signals
-    /// except the synchronous fault set are blocked for the
-    /// duration of each run and restored after; an asynchronously
-    /// sent fault-set signal stops the run as
-    /// `FaultKind::AsyncSignal` (recovered, not guest-delivered).
-    /// No asynchronous guest-signal transparency is claimed.
+    /// Signal envelope (explicit, P1a): asynchronous signals are
+    /// blocked while translated code runs and are never
+    /// guest-delivered mid-cache. A per-block poll (every
+    /// `POLL_BUDGET` block entries) bounds deferral: a pending
+    /// async signal stops the run as `FaultKind::AsyncSignal`
+    /// with recovered state. Installed async handlers are refused
+    /// at admission. No signal transparency is claimed; accepting
+    /// this reduction vs transparent delivery remains an explicit
+    /// owner scope decision (see status note).
     pub fn run(
         &mut self,
         state: GuestState,
@@ -787,6 +913,8 @@ impl Executable {
             .into());
         }
         install_fault_handlers()?;
+        check_cet_inactive()?;
+        check_async_handlers()?;
         // SAFETY: sigset locals live for both mask calls.
         let (mut set, mut old): (libc::sigset_t, libc::sigset_t) =
             unsafe { (core::mem::zeroed(), core::mem::zeroed()) };
@@ -828,9 +956,13 @@ impl Executable {
                 let mut fresh = JitData::new(state);
                 fresh.branch_count = tot_branches;
                 fresh.instruction_count = tot_instructions;
+                fresh.poll_remaining = POLL_BUDGET;
                 core::ptr::write(self.data, fresh);
             }
+            let (bridge_lo, bridge_hi) = bridge_range();
             let mut active = ActiveRun {
+                bridge_lo,
+                bridge_hi,
                 gen_lo: self.translation.gen_base,
                 gen_hi: self
                     .translation
@@ -858,6 +990,25 @@ impl Executable {
             state = data.state;
             if jumped != 0 {
                 clear_df();
+                if active.fault_gen_pc >= active.bridge_lo && active.fault_gen_pc < active.bridge_hi
+                {
+                    // Entry bridge: no guest instruction has run in
+                    // this entry, so the seeded entry state in
+                    // data.state is the exact guest state.
+                    return Err(RunError::Fault(Box::new(Fault {
+                        kind: if active.fault_si_code <= 0 {
+                            FaultKind::AsyncSignal
+                        } else {
+                            FaultKind::ExecutorError
+                        },
+                        src_pc: data.state.rip,
+                        addr: active.fault_addr,
+                        signum: active.fault_sig,
+                        state: data.state,
+                        branches: data.branch_count,
+                        instructions: data.instruction_count,
+                    })));
+                }
                 return Err(RunError::Fault(Box::new(recover_fault(
                     &self.translation,
                     self.profile,
@@ -903,6 +1054,21 @@ impl Executable {
                     }
                     // Loop: the block_gen lookup above resolves the
                     // return target or refuses it by name.
+                }
+                exit_kind::POLL => {
+                    state.rip = data.exit_src;
+                    if let Some(sig) = pending_async_signal() {
+                        return Err(RunError::Fault(Box::new(Fault {
+                            kind: FaultKind::AsyncSignal,
+                            src_pc: data.exit_src,
+                            addr: 0,
+                            signum: sig,
+                            state,
+                            branches: done.branches,
+                            instructions: done.instructions,
+                        })));
+                    }
+                    // No signal pending: re-enter with a fresh budget.
                 }
                 exit_kind::INDIRECT => {
                     return Err(Refuse::IndirectUnresolved {
@@ -1037,7 +1203,7 @@ mod recovery_tests {
         assert_eq!(f.state.rax, 0x1111);
         assert_eq!(f.state.rip, successor);
         assert_eq!(f.state.rflags, 0x202, "flags pristine before INC");
-        assert_eq!(f.kind, FaultKind::GuestFault);
+        assert_eq!(f.kind, FaultKind::ExecutorError, "private stub access");
         // After the credit store: no second credit, flags rebuilt.
         let e = find(&t, |r| {
             matches!(
@@ -1126,8 +1292,19 @@ mod recovery_tests {
                 libc::SIGSEGV,
                 1,
             );
-            let is_common = matches!(e.recovery, Recovery::CommonExit { .. });
-            assert_eq!(f.kind == FaultKind::ExecutorError, is_common, "entry {e:?}");
+            let is_machinery = matches!(
+                e.recovery,
+                Recovery::BranchStub { .. }
+                    | Recovery::InsnCountStub { .. }
+                    | Recovery::PollStub { .. }
+                    | Recovery::ExitStub { .. }
+                    | Recovery::CommonExit { .. }
+            );
+            assert_eq!(
+                f.kind == FaultKind::ExecutorError,
+                is_machinery,
+                "entry {e:?}"
+            );
             assert_ne!(f.state.rip, 0, "entry {e:?} recovers a source pc");
             if matches!(
                 e.recovery,
@@ -1138,5 +1315,25 @@ mod recovery_tests {
                 assert_eq!(f.state.rax, 0x7777, "saved state wins over host regs");
             }
         }
+        // R4: an asynchronous signal at a common-exit byte stays
+        // AsyncSignal; location does not relabel provenance.
+        let e = find(&t, |r| {
+            matches!(
+                r,
+                Recovery::CommonExit {
+                    stage: CommonStage::BeforeRspSave
+                }
+            )
+        });
+        let f = recover_fault(
+            &t,
+            CountProfile::BranchesAndInstructions,
+            e.gen_start,
+            &data,
+            0,
+            libc::SIGSEGV,
+            0,
+        );
+        assert_eq!(f.kind, FaultKind::AsyncSignal);
     }
 }

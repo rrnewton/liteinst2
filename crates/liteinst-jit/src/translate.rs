@@ -22,9 +22,9 @@ use crate::state::SCRATCH_LEN;
 use crate::state::{
     OFF_BRANCH_COUNT, OFF_EXIT_KIND, OFF_EXIT_NEXT, OFF_EXIT_SRC, OFF_HOST_R12, OFF_HOST_R13,
     OFF_HOST_R14, OFF_HOST_R15, OFF_HOST_RBP, OFF_HOST_RBX, OFF_HOST_RSP, OFF_INSTRUCTION_COUNT,
-    OFF_SCRATCH, OFF_SPILL_FLAGS, OFF_SPILL_RAX, OFF_STATE, ST_R8, ST_R9, ST_R10, ST_R11, ST_R12,
-    ST_R13, ST_R14, ST_R15, ST_RAX, ST_RBP, ST_RBX, ST_RCX, ST_RDI, ST_RDX, ST_RFLAGS, ST_RSI,
-    ST_RSP, exit_kind,
+    OFF_POLL, OFF_SCRATCH, OFF_SPILL_FLAGS, OFF_SPILL_RAX, OFF_STATE, ST_R8, ST_R9, ST_R10, ST_R11,
+    ST_R12, ST_R13, ST_R14, ST_R15, ST_RAX, ST_RBP, ST_RBX, ST_RCX, ST_RDI, ST_RDX, ST_RFLAGS,
+    ST_RSI, ST_RSP, exit_kind,
 };
 use crate::types::{CountProfile, RegionFacts};
 
@@ -280,6 +280,7 @@ pub fn discover(region: &RegionFacts, entry: u64) -> Result<BTreeMap<u64, Block>
 enum FixTarget {
     Block(u64),
     CountStub { branch: u64, successor: u64 },
+    PollExit(u64),
     CommonExit,
 }
 
@@ -296,6 +297,7 @@ struct Emitter {
     pcmap: PcMap,
     fixups: Vec<(usize, FixTarget)>,
     stubs: Vec<(u64, u64)>,
+    poll_exits: Vec<u64>,
 }
 
 impl Emitter {
@@ -474,6 +476,82 @@ impl Emitter {
             return Ok(());
         }
         self.credit_stub(OFF_INSTRUCTION_COUNT, n, None, src)
+    }
+    /// Block-head pending-signal poll: decrement the per-entry
+    /// budget; on exhaustion exit to the dispatcher (which checks
+    /// for pending asynchronous signals) instead of continuing.
+    /// Flag-neutral and mapped per instruction like credit stubs.
+    fn poll_stub(&mut self, block: u64) -> Result<(), Refuse> {
+        use StubStage::*;
+        let rec = |stage: StubStage| Recovery::PollStub { block, stage };
+        if !self.poll_exits.contains(&block) {
+            self.poll_exits.push(block);
+        }
+        self.seg(block, Phase::CountStub, rec(BeforeCreditPristine), |e| {
+            e.mov_mem_rax(OFF_SPILL_RAX)
+        })?;
+        self.seg(block, Phase::CountStub, rec(BeforeCreditPristine), |e| {
+            e.buf.extend_from_slice(&[0x0f, 0x90, 0xc0]);
+            Ok(())
+        })?;
+        self.seg(block, Phase::CountStub, rec(BeforeCreditSpilled), |e| {
+            e.buf.push(0x9f);
+            Ok(())
+        })?;
+        self.seg(block, Phase::CountStub, rec(BeforeCreditSpilled), |e| {
+            e.mov_mem_rax(OFF_SPILL_FLAGS)
+        })?;
+        self.seg(block, Phase::CountStub, rec(BeforeCreditSpilled), |e| {
+            let d = e.disp(OFF_POLL, 7)?;
+            e.buf.extend_from_slice(&[0x48, 0xff, 0x0d]); // dec qword [rip+d]
+            e.buf.extend_from_slice(&d.to_le_bytes());
+            Ok(())
+        })?;
+        // jnz continue_restore (disp covers restore-A + jmp = 22)
+        self.seg(block, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+            e.buf.extend_from_slice(&[0x75, 22]);
+            Ok(())
+        })?;
+        // Poll path: restore, then exit to the dispatcher poll.
+        self.seg(block, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+            e.mov_rax_mem(OFF_SPILL_FLAGS)
+        })?;
+        self.seg(block, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+            e.buf.extend_from_slice(&[0x04, 0x7f]);
+            Ok(())
+        })?;
+        self.seg(block, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+            e.buf.push(0x9e);
+            Ok(())
+        })?;
+        self.seg(
+            block,
+            Phase::CountStub,
+            rec(AfterCreditFlagsRestored),
+            |e| e.mov_rax_mem(OFF_SPILL_RAX),
+        )?;
+        self.seg(block, Phase::CountStub, rec(Committed), |e| {
+            e.jmp_fix(FixTarget::PollExit(block));
+            Ok(())
+        })?;
+        // Continue path: restore and fall into the block body.
+        self.seg(block, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+            e.mov_rax_mem(OFF_SPILL_FLAGS)
+        })?;
+        self.seg(block, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+            e.buf.extend_from_slice(&[0x04, 0x7f]);
+            Ok(())
+        })?;
+        self.seg(block, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+            e.buf.push(0x9e);
+            Ok(())
+        })?;
+        self.seg(
+            block,
+            Phase::CountStub,
+            rec(AfterCreditFlagsRestored),
+            |e| e.mov_rax_mem(OFF_SPILL_RAX),
+        )
     }
     fn exit_stub(&mut self, kind: u64, src: u64, next: u64) -> Result<(), Refuse> {
         use ExitStage::*;
@@ -654,11 +732,13 @@ pub fn translate(
         pcmap: PcMap::new(),
         fixups: Vec::new(),
         stubs: Vec::new(),
+        poll_exits: Vec::new(),
     };
     let mut block_gen: BTreeMap<u64, u64> = BTreeMap::new();
     let mut stub_gen: HashMap<(u64, u64), u64> = HashMap::new();
     for block in blocks.values() {
         block_gen.insert(block.start, e.pc());
+        e.poll_stub(block.start)?;
         if profile == CountProfile::BranchesAndInstructions {
             e.block_head_add(block.start, block.instruction_total())?;
         }
@@ -856,6 +936,12 @@ pub fn translate(
         stub_gen.insert((branch, successor), e.pc());
         e.count_stub_body(branch, successor)?;
     }
+    let mut poll_gen: HashMap<u64, u64> = HashMap::new();
+    let pending_polls: Vec<u64> = e.poll_exits.clone();
+    for block in pending_polls {
+        poll_gen.insert(block, e.pc());
+        e.exit_stub(exit_kind::POLL, block, block)?;
+    }
     let common_exit = emit_common_exit(&mut e)?;
     for (at, target) in std::mem::take(&mut e.fixups) {
         let dest = match target {
@@ -865,6 +951,9 @@ pub fn translate(
             FixTarget::CountStub { branch, successor } => *stub_gen
                 .get(&(branch, successor))
                 .ok_or(Refuse::InteriorEntry { target: successor })?,
+            FixTarget::PollExit(block) => *poll_gen
+                .get(&block)
+                .ok_or(Refuse::InteriorEntry { target: block })?,
             FixTarget::CommonExit => common_exit,
         };
         let next = gen_base.wrapping_add(at as u64).wrapping_add(4);
