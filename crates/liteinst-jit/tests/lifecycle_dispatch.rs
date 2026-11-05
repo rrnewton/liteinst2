@@ -138,24 +138,20 @@ fn lifecycle_syscalls_refuse_before_handler() {
     );
     assert_eq!(calls, 0, "int 0x80 handler must not be called");
 
-    // Sysenter uses this dispatcher's native-number contract:
-    // a reserved alias refuses before the handler, while an
-    // ordinary alias still dispatches with raw RAX intact.
-    let execve_alias = (1u64 << 32) | 59;
-    let (result, calls, _) = run_guest(entry_bytes_movabs(execve_alias, &[0x0f, 0x34, 0xc3]));
-    assert_eq!(
-        result,
-        Err(RunError::Refuse(Refuse::ExecSuccessor)),
-        "sysenter execve alias exact refusal"
-    );
-    assert_eq!(calls, 0, "sysenter execve alias handler calls");
-
-    let write_alias = (1u64 << 32) | 1;
-    let (result, calls, last_rax) = run_guest(entry_bytes_movabs(write_alias, &[0x0f, 0x34, 0xc3]));
-    assert!(
-        result.is_ok(),
-        "sysenter ordinary alias control: {result:?}"
-    );
-    assert_eq!(calls, 1, "sysenter ordinary alias positive control");
-    assert_eq!(last_rax, write_alias, "sysenter raw RAX retained");
+    // Sysenter is a compat entry on Linux (or invalid where
+    // compat is unavailable), never native dispatch: both a
+    // reserved alias and an ordinary alias refuse by its own
+    // distinct name before any number interpretation.
+    for nr in [59u64, 1] {
+        let value = (1u64 << 32) | nr;
+        let (result, calls, _) = run_guest(entry_bytes_movabs(value, &[0x0f, 0x34, 0xc3]));
+        assert_eq!(
+            result,
+            Err(RunError::Refuse(Refuse::Arch {
+                what: "sysenter compat entry outside P1a envelope"
+            })),
+            "sysenter value {value:#x} exact refusal"
+        );
+        assert_eq!(calls, 0, "sysenter value {value:#x} handler calls");
+    }
 }
