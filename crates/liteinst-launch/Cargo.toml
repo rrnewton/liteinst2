@@ -21,7 +21,7 @@ dev-exec-backing-cleanup = []
 dev-owned-stack-consumer-oracle = ["dep:sha2"]
 
 [dev-dependencies]
-liteinst-launch = { version = "=0.2.0", path = ".", features = ["dev-exec-backing-cleanup"] }
+liteinst-launch = { path = ".", features = ["dev-exec-backing-cleanup"] }
 
 [[test]]
 name = "exec_backing_cleanup"
