@@ -3,8 +3,8 @@
 [who-am-i: musejit, host withheld. Owner: musejit (muse, devbig030) since 2026-11-05T12:03:34Z]
 
 Command: `sh crates/liteinst-jit/mutants/run.sh` from the
-workspace root, 2026-11-05T14:25Z; re-executed at the round-3 head below, on liteinst2 branch
-`musejit/work-20261105` at base head `a9f4bb29` (full hash in the hand-back status)
+workspace root, 2026-11-05; last re-executed at the head below, on liteinst2 branch
+`musejit/work-20261105` at base head `38f059f0a2f6a175500565cdf9076ea975e5398d`, re-executed there after the round-4 repairs
 (the patches in this directory, applied and reversed one at a
 time; the script first requires a green baseline, then requires
 each mutant run to fail with its named causal assertion — a
