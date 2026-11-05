@@ -6,13 +6,14 @@
 use std::io::Write;
 
 use liteinst_jit::fixtures;
-use liteinst_jit::harness::MappedGuest;
+use liteinst_jit::harness::{MappedGuest, REDZONE_MARKER};
 use liteinst_jit::o1::ChildInfo;
 
 fn main() {
     let name = std::env::args().nth(1).expect("fixture name arg");
     let fixture = fixtures::by_name(&name);
     let guest = MappedGuest::map(&fixture.bytes).expect("map fixture");
+    guest.plant_below_rsp(REDZONE_MARKER);
     let data: &'static mut [u64; 16] = Box::leak(Box::new(core::array::from_fn(|i| i as u64)));
     let dst: &'static mut [u8; 32] = Box::leak(Box::new([0u8; 32]));
     let src: &'static mut [u8; 32] = Box::leak(Box::new(core::array::from_fn(|i| i as u8)));

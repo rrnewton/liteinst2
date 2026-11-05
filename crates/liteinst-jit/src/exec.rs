@@ -14,9 +14,8 @@ use crate::cache::{CacheIndex, CacheRecord};
 use crate::refuse::Refuse;
 use crate::state::{
     GuestState, JitData, OFF_HOST_R12, OFF_HOST_R13, OFF_HOST_R14, OFF_HOST_R15, OFF_HOST_RBP,
-    OFF_HOST_RBX, OFF_HOST_RSP, OFF_STATE, OFF_TMP_ENTRY, ST_R8, ST_R9, ST_R10, ST_R11, ST_R12,
-    ST_R13, ST_R14, ST_R15, ST_RAX, ST_RBP, ST_RBX, ST_RCX, ST_RDI, ST_RDX, ST_RFLAGS, ST_RSI,
-    ST_RSP, exit_kind,
+    OFF_HOST_RBX, OFF_HOST_RSP, OFF_STATE, ST_R8, ST_R9, ST_R10, ST_R11, ST_R12, ST_R13, ST_R14,
+    ST_R15, ST_RAX, ST_RBP, ST_RBX, ST_RCX, ST_RDI, ST_RDX, ST_RFLAGS, ST_RSI, ST_RSP, exit_kind,
 };
 use crate::translate::{Translation, translate};
 use crate::types::{CacheKey, CountProfile, Generation, RegionFacts, byte_hash};
@@ -34,13 +33,18 @@ core::arch::global_asm!(
     "mov [rdi + {host_r13}], r13",
     "mov [rdi + {host_r14}], r14",
     "mov [rdi + {host_r15}], r15",
-    "mov [rdi + {tmp}], rsi",
+    // Build the iret frame on the HOST stack (SS, guest RSP, guest
+    // RFLAGS, CS, entry) so entry writes no guest memory at all,
+    // including the red zone below guest RSP.
+    "xor eax, eax",
+    "mov ax, ss",
+    "push rax",
+    "push qword ptr [rdi + {rsp}]",
     "push qword ptr [rdi + {flags}]",
-    "popfq",
-    "mov rsp, [rdi + {rsp}]",
-    "mov rax, [rdi + {tmp}]",
-    "lea rsp, [rsp - 8]",
-    "mov [rsp], rax",
+    "xor eax, eax",
+    "mov ax, cs",
+    "push rax",
+    "push rsi",
     "mov rax, [rdi + {rax}]",
     "mov rbx, [rdi + {rbx}]",
     "mov rcx, [rdi + {rcx}]",
@@ -56,7 +60,7 @@ core::arch::global_asm!(
     "mov r14, [rdi + {r14}]",
     "mov r15, [rdi + {r15}]",
     "mov rdi, [rdi + {rdi}]",
-    "ret",
+    "iretq",
     host_rsp = const OFF_HOST_RSP,
     host_rbx = const OFF_HOST_RBX,
     host_rbp = const OFF_HOST_RBP,
@@ -64,7 +68,6 @@ core::arch::global_asm!(
     host_r13 = const OFF_HOST_R13,
     host_r14 = const OFF_HOST_R14,
     host_r15 = const OFF_HOST_R15,
-    tmp = const OFF_TMP_ENTRY,
     flags = const OFF_STATE + ST_RFLAGS,
     rsp = const OFF_STATE + ST_RSP,
     rax = const OFF_STATE + ST_RAX,
@@ -109,6 +112,7 @@ pub trait Handler {
     fn nondet(
         &mut self,
         _state: &mut GuestState,
+        _kind: crate::decode::NondetKind,
         insn_pc: u64,
         _next_pc: u64,
     ) -> Result<Resume, Refuse> {
@@ -383,6 +387,25 @@ fn install_fault_handlers() -> Result<(), Refuse> {
     Ok(())
 }
 
+/// True when a CET shadow stack is active for this process, where
+/// synthesized call/return stack effects would desynchronize it.
+/// Old or CET-less kernels answer EINVAL, treated as inactive
+/// (probed on this host against asm/prctl.h ARCH_SHSTK_STATUS).
+fn cet_shadow_stack_active() -> bool {
+    const ARCH_SHSTK_STATUS: i32 = 0x5005;
+    let mut features: u64 = 0;
+    // SAFETY: arch_prctl status query writing one u64 through the
+    // provided pointer.
+    let r = unsafe {
+        libc::syscall(
+            libc::SYS_arch_prctl,
+            ARCH_SHSTK_STATUS,
+            core::ptr::addr_of_mut!(features),
+        )
+    };
+    r == 0 && features & 1 != 0
+}
+
 fn lahf_available() -> bool {
     let r = core::arch::x86_64::__cpuid_count(0x8000_0001, 0);
     r.ecx & 1 != 0
@@ -409,6 +432,11 @@ impl Executable {
         if !lahf_available() {
             return Err(Refuse::Arch {
                 what: "LAHF/SAHF unavailable in 64-bit mode",
+            });
+        }
+        if cet_shadow_stack_active() {
+            return Err(Refuse::Arch {
+                what: "CET shadow stack active (call/ret rewriting unadmitted)",
             });
         }
         let mut arena = Arena::new()?;
@@ -453,6 +481,25 @@ impl Executable {
             profile,
             valid: true,
         })
+    }
+
+    /// Retired-instruction total when execution stopped *before*
+    /// the instruction at `src_pc`, correcting the block-head
+    /// pre-credit under the instruction-counting profile.
+    fn retired_instructions_at(&self, counted: u64, src_pc: u64) -> u64 {
+        if self.profile != CountProfile::BranchesAndInstructions {
+            return counted;
+        }
+        for block in self.translation.blocks.values() {
+            let pcs = block.insn_pcs();
+            if let Some(pos) = pcs.iter().position(|&p| p == src_pc) {
+                return counted - (block.instruction_total() - pos as u64);
+            }
+            if block.term_pc() == Some(src_pc) {
+                return counted - (block.instruction_total() - pcs.len() as u64);
+            }
+        }
+        counted
     }
 
     pub fn translation(&self) -> &Translation {
@@ -569,16 +616,20 @@ impl Executable {
             match data.exit_kind {
                 exit_kind::RETURN => {
                     let Some(target) = mem.read_u64(state.rsp) else {
+                        // The return did not retire: exclude its
+                        // block-head pre-credit (F3).
+                        state.rip = data.exit_src;
                         return Err(RunError::Fault(Box::new(Fault {
                             src_pc: data.exit_src,
                             addr: state.rsp,
                             signum: libc::SIGSEGV,
                             state,
                             branches: data.branch_count,
-                            instructions: data.instruction_count,
+                            instructions: self
+                                .retired_instructions_at(data.instruction_count, data.exit_src),
                         })));
                     };
-                    state.rsp = state.rsp.wrapping_add(8);
+                    state.rsp = state.rsp.wrapping_add(8).wrapping_add(data.exit_next);
                     state.rip = target;
                     if target == return_sentinel {
                         let mut out = done;
@@ -612,7 +663,21 @@ impl Executable {
                 }
                 exit_kind::NONDET => {
                     state.rip = data.exit_src;
-                    let resume = handler.nondet(&mut state, data.exit_src, data.exit_next)?;
+                    let kind = self
+                        .translation
+                        .blocks
+                        .values()
+                        .find_map(|b| match &b.term {
+                            Some(t) if t.pc == data.exit_src => match t.class {
+                                crate::decode::InsnClass::Nondet(k) => Some(k),
+                                _ => None,
+                            },
+                            _ => None,
+                        })
+                        .ok_or(Refuse::NoHandler {
+                            src_pc: data.exit_src,
+                        })?;
+                    let resume = handler.nondet(&mut state, kind, data.exit_src, data.exit_next)?;
                     tot_instructions += 1;
                     match resume {
                         Resume::Done => {

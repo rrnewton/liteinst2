@@ -173,6 +173,36 @@ pub fn all() -> Vec<Fixture> {
             }),
         },
         Fixture {
+            // Reads the planted red-zone marker, exits via CPUID
+            // (dispatcher re-entry), reads it again, returns the
+            // difference: 0 only if neither entry overwrote [rsp-8].
+            name: "redzone_reentry",
+            bytes: asm(|a| {
+                a.mov(rax, qword_ptr(rsp - 8))?;
+                a.mov(qword_ptr(rdi), rax)?;
+                a.xor(eax, eax)?;
+                a.cpuid()?;
+                a.mov(rax, qword_ptr(rsp - 8))?;
+                a.sub(rax, qword_ptr(rdi))?;
+                a.ret()?;
+                Ok(())
+            }),
+        },
+        Fixture {
+            name: "ret_imm16",
+            bytes: vec![0xc2, 0x10, 0x00],
+        },
+        Fixture {
+            // mov rsp,rdi; ret  (rdi is the bad stack in fault runs)
+            name: "fault_ret",
+            bytes: vec![0x48, 0x89, 0xfc, 0xc3],
+        },
+        Fixture {
+            // rdtsc; ret — the reference handler must refuse it.
+            name: "rdtsc_exit",
+            bytes: vec![0x0f, 0x31, 0xc3],
+        },
+        Fixture {
             name: "indirect_jmp",
             bytes: asm(|a| {
                 a.mov(rax, rdi)?;

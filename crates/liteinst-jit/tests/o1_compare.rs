@@ -17,11 +17,13 @@ struct JitResult {
     written: Vec<u8>,
     dst: Vec<u8>,
     base: u64,
+    stack_top: u64,
 }
 
 fn run_jit(name: &str, tweak: impl FnOnce(&mut GuestState)) -> JitResult {
     let fixture = fixtures::by_name(name);
     let guest = MappedGuest::map(&fixture.bytes).expect("map");
+    guest.plant_below_rsp(liteinst_jit::harness::REDZONE_MARKER);
     let region = guest.region(&fixture.bytes, Generation(1));
     let mut exec = Executable::prepare(&region, guest.base, CountProfile::BranchesAndInstructions)
         .expect("prepare");
@@ -49,6 +51,7 @@ fn run_jit(name: &str, tweak: impl FnOnce(&mut GuestState)) -> JitResult {
         written: handler.written,
         dst,
         base: guest.base,
+        stack_top: guest.stack_top(),
     }
 }
 
@@ -181,6 +184,50 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         "fault pc offset"
     );
 
+    // F2: entry and re-entry must not write the red zone.
+    {
+        let (jit, o1) = compare("redzone_reentry");
+        assert_eq!(jit.state.rax, 0, "red-zone marker disturbed");
+        assert_eq!(o1.state.rax, 0);
+    }
+    // F3: ret imm16 pops the immediate as well as the return slot.
+    {
+        let jit = run_jit("ret_imm16", |_| {});
+        let out = jit.outcome.expect("ret_imm16 jit");
+        assert_eq!(out.state.rsp - jit.stack_top, 24, "jit ret imm16 rsp delta");
+        let o1 = run_o1(std::path::Path::new(CHILD), "ret_imm16", |_, _| {});
+        assert_eq!(o1.state.rsp - o1.stack_top, 24, "o1 ret imm16 rsp delta");
+        assert_eq!(out.instructions, o1.instructions);
+        assert_eq!(out.branches, o1.branches);
+    }
+    // F3: a faulting return stack read retires only prior insns.
+    {
+        let jit = run_jit("fault_ret", |s| s.rdi = 0x0dea_d000);
+        let f = match jit.outcome {
+            Err(RunError::Fault(f)) => f,
+            other => panic!("fault_ret jit: {other:?}"),
+        };
+        assert_eq!(f.instructions, 1, "only the mov retired");
+        assert_eq!(f.branches, 0);
+        assert_eq!(f.state.rsp, 0x0dea_d000);
+        let o1 = run_o1(std::path::Path::new(CHILD), "fault_ret", |r, _| {
+            r.rdi = 0x0dea_d000;
+        });
+        assert_eq!(o1.instructions, 1);
+        assert_eq!(o1.branches, 0);
+        let (o1_pc, o1_sig) = o1.fault.expect("o1 fault_ret fault");
+        assert_eq!(o1_sig, f.signum);
+        assert_eq!(f.src_pc - jit.base, o1_pc - o1.base);
+    }
+    // F6: the reference handler serves CPUID only, by identity.
+    {
+        let jit = run_jit("rdtsc_exit", |_| {});
+        assert!(matches!(
+            jit.outcome,
+            Err(RunError::Refuse(Refuse::NoHandler { .. }))
+        ));
+    }
+
     // Indirect control flow refuses by name (P1a boundary).
     let jit = run_jit("indirect_jmp", |_| {});
     assert!(matches!(
@@ -191,6 +238,7 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
     // Invalidation: after invalidate(), running refuses stale.
     let fixture = fixtures::by_name("sum_loop");
     let guest = MappedGuest::map(&fixture.bytes).expect("map");
+    guest.plant_below_rsp(liteinst_jit::harness::REDZONE_MARKER);
     let region = guest.region(&fixture.bytes, Generation(1));
     let mut exec =
         Executable::prepare(&region, guest.base, CountProfile::Branches).expect("prepare");

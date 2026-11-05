@@ -13,7 +13,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use iced_x86::{ConditionCode, Encoder};
 
-use crate::decode::{DecodedInsn, InsnClass, decode_one};
+use crate::decode::{DecodedInsn, InsnClass, decode_supported};
 use crate::pcmap::{PcMap, PcMapEntry, Phase};
 use crate::refuse::Refuse;
 use crate::state::{
@@ -45,7 +45,9 @@ pub enum Terminator {
     Fallthrough {
         next: u64,
     },
-    Return,
+    Return {
+        pop_extra: u16,
+    },
     Indirect,
     SyscallExit {
         next: u64,
@@ -169,9 +171,7 @@ pub fn discover(region: &RegionFacts, entry: u64) -> Result<BTreeMap<u64, Block>
             let Some(bytes) = region.slice_from(pc) else {
                 return Err(Refuse::Decode { src_pc: pc });
             };
-            let Some(d) = decode_one(bytes, pc) else {
-                return Err(Refuse::Decode { src_pc: pc });
-            };
+            let d = decode_supported(bytes, pc)?;
             decoded.insert(pc, d.len);
             let next = pc.wrapping_add(d.len as u64);
             // A queued or built block start strictly inside this
@@ -215,12 +215,19 @@ pub fn discover(region: &RegionFacts, entry: u64) -> Result<BTreeMap<u64, Block>
                         vec![target, next],
                     );
                 }
-                InsnClass::Return => break (Some(pc), Terminator::Return, vec![]),
+                InsnClass::Return => {
+                    let pop_extra = if d.instruction.op_count() == 1 {
+                        d.instruction.immediate16()
+                    } else {
+                        0
+                    };
+                    break (Some(pc), Terminator::Return { pop_extra }, vec![]);
+                }
                 InsnClass::Indirect => break (Some(pc), Terminator::Indirect, vec![]),
                 InsnClass::Syscall => {
                     break (Some(pc), Terminator::SyscallExit { next }, vec![next]);
                 }
-                InsnClass::Nondet => {
+                InsnClass::Nondet(_) => {
                     break (Some(pc), Terminator::NondetExit { next }, vec![next]);
                 }
             }
@@ -228,12 +235,10 @@ pub fn discover(region: &RegionFacts, entry: u64) -> Result<BTreeMap<u64, Block>
         // Re-decode the terminator instruction for emission needs
         // (condition code, loop-like re-encode).
         let term = match term_pc {
-            Some(tp) => Some(
-                region
-                    .slice_from(tp)
-                    .and_then(|b| decode_one(b, tp))
-                    .ok_or(Refuse::Decode { src_pc: tp })?,
-            ),
+            Some(tp) => Some(decode_supported(
+                region.slice_from(tp).ok_or(Refuse::Decode { src_pc: tp })?,
+                tp,
+            )?),
             None => None,
         };
         blocks.insert(
@@ -626,8 +631,8 @@ pub fn translate(
             Terminator::Fallthrough { next } => {
                 e.jmp_fix(FixTarget::Block(next));
             }
-            Terminator::Return => {
-                e.exit_stub(exit_kind::RETURN, term_pc, 0)?;
+            Terminator::Return { pop_extra } => {
+                e.exit_stub(exit_kind::RETURN, term_pc, u64::from(pop_extra))?;
             }
             Terminator::Indirect => {
                 e.exit_stub(exit_kind::INDIRECT, term_pc, 0)?;
@@ -724,6 +729,32 @@ mod tests {
             discover(&r, 0x10_0000),
             Err(Refuse::InteriorEntry { .. })
         ));
+    }
+
+    #[test]
+    fn envelope_refuses_by_default() {
+        // One representative per refused family; each must refuse
+        // by name instead of being copied as Ordinary (F4).
+        let cases: &[(&str, &[u8])] = &[
+            ("wrfsbase", &[0xf3, 0x48, 0x0f, 0xae, 0xd8, 0xc3]),
+            ("hlt", &[0xf4, 0xc3]),
+            ("int3", &[0xcc, 0xc3]),
+            ("rdpmc", &[0x0f, 0x33, 0xc3]),
+            ("xbegin", &[0xc7, 0xf8, 0x00, 0x00, 0x00, 0x00, 0xc3]),
+            ("fxsave", &[0x0f, 0xae, 0x00, 0xc3]),
+            ("movaps-xmm", &[0x0f, 0x28, 0xc1, 0xc3]),
+            ("popfq", &[0x9d, 0xc3]),
+            ("swapgs", &[0x0f, 0x01, 0xf8, 0xc3]),
+            ("fs-load", &[0x64, 0x48, 0x8b, 0x04, 0x25, 0, 0, 0, 0, 0xc3]),
+        ];
+        for (name, bytes) in cases {
+            let r = region(bytes.to_vec());
+            let out = discover(&r, 0x10_0000);
+            assert!(
+                matches!(out, Err(Refuse::Unrelocatable { .. })),
+                "{name}: got {out:?}"
+            );
+        }
     }
 
     #[test]

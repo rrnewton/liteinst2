@@ -48,14 +48,14 @@ impl Handler for CaptureHandler {
     fn nondet(
         &mut self,
         state: &mut GuestState,
+        kind: crate::decode::NondetKind,
         insn_pc: u64,
         next_pc: u64,
     ) -> Result<Resume, Refuse> {
         self.nondets += 1;
-        // Only CPUID is served (the fixture contract). The decoder
-        // also routes RDTSC-class here; verify the bytes by refusing
-        // anything whose native emulation would be wrong: CPUID
-        // operands are implicit, so serve from state registers.
+        if kind != crate::decode::NondetKind::Cpuid {
+            return Err(Refuse::NoHandler { src_pc: insn_pc });
+        }
         let leaf = state.rax as u32;
         let sub = state.rcx as u32;
         let r = core::arch::x86_64::__cpuid_count(leaf, sub);
@@ -63,7 +63,6 @@ impl Handler for CaptureHandler {
         state.rbx = u64::from(r.ebx);
         state.rcx = u64::from(r.ecx);
         state.rdx = u64::from(r.edx);
-        let _ = insn_pc;
         Ok(Resume::At(next_pc))
     }
 }

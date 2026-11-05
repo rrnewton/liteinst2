@@ -49,6 +49,8 @@ impl ChildInfo {
 pub struct OracleOutcome {
     /// Child fixture load base (for PC offset comparisons).
     pub base: u64,
+    /// Child initial stack top (for RSP delta comparisons).
+    pub stack_top: u64,
     pub branches: u64,
     pub instructions: u64,
     pub state: GuestState,
@@ -266,6 +268,7 @@ pub fn run_o1(
     let _ = Write::flush(&mut std::io::stdout());
     OracleOutcome {
         base: info.base,
+        stack_top: info.stack_top,
         branches,
         instructions,
         state: final_state,

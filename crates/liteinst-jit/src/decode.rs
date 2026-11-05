@@ -3,7 +3,26 @@
 //! Classification is descriptive only; the translator decides what it
 //! can copy and refuses everything else by name.
 
-use iced_x86::{Code, Decoder, DecoderOptions, Instruction, Mnemonic, OpKind};
+use iced_x86::InstructionInfoFactory;
+use iced_x86::{
+    Code, Decoder, DecoderOptions, FlowControl, Instruction, Mnemonic, OpKind, Register,
+};
+
+use crate::refuse::Refuse;
+
+/// Nondeterministic/system instructions that end a block and exit
+/// to the handler. Identity travels with the exit so a handler can
+/// only serve instructions it actually implements.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NondetKind {
+    Cpuid,
+    Rdtsc,
+    Rdtscp,
+    Rdrand,
+    Rdseed,
+    Rdpid,
+    Xgetbv,
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum InsnClass {
@@ -23,7 +42,7 @@ pub enum InsnClass {
     Return,
     Indirect,
     Syscall,
-    Nondet,
+    Nondet(NondetKind),
 }
 
 #[derive(Clone, Debug)]
@@ -34,21 +53,17 @@ pub struct DecodedInsn {
     pub instruction: Instruction,
 }
 
-fn is_nondet(code: Code) -> bool {
-    matches!(
-        code,
-        Code::Cpuid
-            | Code::Rdtsc
-            | Code::Rdtscp
-            | Code::Rdrand_r16
-            | Code::Rdrand_r32
-            | Code::Rdrand_r64
-            | Code::Rdseed_r16
-            | Code::Rdseed_r32
-            | Code::Rdseed_r64
-            | Code::Rdpid_r64
-            | Code::Xgetbv
-    )
+fn nondet_kind(code: Code) -> Option<NondetKind> {
+    Some(match code {
+        Code::Cpuid => NondetKind::Cpuid,
+        Code::Rdtsc => NondetKind::Rdtsc,
+        Code::Rdtscp => NondetKind::Rdtscp,
+        Code::Rdrand_r16 | Code::Rdrand_r32 | Code::Rdrand_r64 => NondetKind::Rdrand,
+        Code::Rdseed_r16 | Code::Rdseed_r32 | Code::Rdseed_r64 => NondetKind::Rdseed,
+        Code::Rdpid_r64 => NondetKind::Rdpid,
+        Code::Xgetbv => NondetKind::Xgetbv,
+        _ => return None,
+    })
 }
 
 fn is_syscall_class(code: Code, mnemonic: Mnemonic) -> bool {
@@ -81,8 +96,8 @@ pub fn decode_one(bytes: &[u8], pc: u64) -> Option<DecodedInsn> {
     let code = ins.code();
     let class = if is_syscall_class(code, ins.mnemonic()) {
         InsnClass::Syscall
-    } else if is_nondet(code) {
-        InsnClass::Nondet
+    } else if let Some(kind) = nondet_kind(code) {
+        InsnClass::Nondet(kind)
     } else if ins.mnemonic() == Mnemonic::Ret {
         InsnClass::Return
     } else if is_loop_like(code, ins.mnemonic()) || code.is_jcc_short() || code.is_jcc_near() {
@@ -123,6 +138,106 @@ pub fn decode_one(bytes: &[u8], pc: u64) -> Option<DecodedInsn> {
     })
 }
 
+/// Instructions whose effects are outside the P1a envelope even
+/// though they decode: system/state-save/trap forms that copied
+/// native execution in the executor process would not serve with
+/// guest semantics.
+fn refused_mnemonic(m: Mnemonic) -> Option<&'static str> {
+    Some(match m {
+        Mnemonic::Hlt => "HLT outside P1a envelope",
+        Mnemonic::Rdpmc => "RDPMC outside P1a envelope",
+        Mnemonic::Rdmsr | Mnemonic::Wrmsr => "MSR access outside P1a envelope",
+        Mnemonic::Rdfsbase
+        | Mnemonic::Rdgsbase
+        | Mnemonic::Wrfsbase
+        | Mnemonic::Wrgsbase
+        | Mnemonic::Swapgs => "FS/GS base access outside P1a envelope",
+        Mnemonic::Getsec | Mnemonic::Invd | Mnemonic::Wbinvd | Mnemonic::Invlpg => {
+            "system instruction outside P1a envelope"
+        }
+        Mnemonic::Monitor | Mnemonic::Mwait => "MONITOR/MWAIT outside P1a envelope",
+        Mnemonic::Fxsave
+        | Mnemonic::Fxsave64
+        | Mnemonic::Fxrstor
+        | Mnemonic::Xsave
+        | Mnemonic::Xsave64
+        | Mnemonic::Xsaveopt
+        | Mnemonic::Xsaves
+        | Mnemonic::Xrstor
+        | Mnemonic::Xrstors
+        | Mnemonic::Xsetbv => "extended-state save/restore outside P1a envelope",
+        Mnemonic::Pushf | Mnemonic::Pushfq | Mnemonic::Popf | Mnemonic::Popfq => {
+            "direct flags stack access outside P1a envelope"
+        }
+        _ => return None,
+    })
+}
+
+/// Decode one instruction and admit it only if its effects are
+/// inside the explicit P1a envelope. Ordinary instructions must be
+/// plain next-instruction flow over GPRs/memory: no privilege, no
+/// segment/CR/DR/TR/vector/x87/mask registers (explicit or
+/// implicit), no segment override, no transactional prefixes, and
+/// no refused mnemonic. Control/syscall/nondet classes keep their
+/// existing exit semantics; anything else refuses by name. A
+/// permissive decoder fallback is not a relocation proof.
+pub fn decode_supported(bytes: &[u8], pc: u64) -> Result<DecodedInsn, Refuse> {
+    let d = decode_one(bytes, pc).ok_or(Refuse::Decode { src_pc: pc })?;
+    let ins = &d.instruction;
+    match d.class {
+        InsnClass::Ordinary => {
+            if ins.flow_control() != FlowControl::Next {
+                return Err(Refuse::Unrelocatable {
+                    src_pc: pc,
+                    reason: "unsupported control flow outside P1a envelope",
+                });
+            }
+            if ins.is_privileged() {
+                return Err(Refuse::Unrelocatable {
+                    src_pc: pc,
+                    reason: "privileged instruction outside P1a envelope",
+                });
+            }
+            if let Some(reason) = refused_mnemonic(ins.mnemonic()) {
+                return Err(Refuse::Unrelocatable { src_pc: pc, reason });
+            }
+            if ins.segment_prefix() != Register::None {
+                return Err(Refuse::Unrelocatable {
+                    src_pc: pc,
+                    reason: "segment override outside P1a envelope",
+                });
+            }
+            if ins.has_xacquire_prefix() || ins.has_xrelease_prefix() {
+                return Err(Refuse::Unrelocatable {
+                    src_pc: pc,
+                    reason: "transactional prefix outside P1a envelope",
+                });
+            }
+            let mut factory = InstructionInfoFactory::new();
+            let info = factory.info(ins);
+            for used in info.used_registers() {
+                let r: Register = used.register();
+                if r != Register::None && !r.is_gpr() && !r.is_ip() {
+                    return Err(Refuse::Unrelocatable {
+                        src_pc: pc,
+                        reason: "non-GPR register effect outside P1a envelope",
+                    });
+                }
+            }
+        }
+        InsnClass::Return => {
+            if !matches!(ins.code(), Code::Retnq | Code::Retnq_imm16) {
+                return Err(Refuse::Unrelocatable {
+                    src_pc: pc,
+                    reason: "far/other return outside P1a envelope",
+                });
+            }
+        }
+        _ => {}
+    }
+    Ok(d)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -151,7 +266,7 @@ mod tests {
         // cpuid
         assert_eq!(
             decode_one(&[0x0f, 0xa2], 0x1000).unwrap().class,
-            InsnClass::Nondet
+            InsnClass::Nondet(NondetKind::Cpuid)
         );
         // jmp rax
         assert_eq!(

@@ -7,6 +7,7 @@ use crate::state::GuestState;
 use crate::types::{Generation, RegionFacts};
 
 pub const RETURN_SENTINEL: u64 = 0;
+pub const REDZONE_MARKER: u64 = 0x1122_3344_5566_7788;
 
 pub struct MappedGuest {
     code: *mut u8,
@@ -78,6 +79,15 @@ impl MappedGuest {
         }
     }
 
+    /// Plant a witness qword immediately below the initial RSP
+    /// (the red-zone slot a correct entry transfer must not write).
+    pub fn plant_below_rsp(&self, value: u64) {
+        // SAFETY: the slot is inside the owned stack mapping.
+        unsafe {
+            ((self.stack_top() - 8) as *mut u64).write(value);
+        }
+    }
+
     pub fn stack_top(&self) -> u64 {
         (self.stack as u64) + (self.stack_len as u64) - 8
     }
@@ -100,7 +110,7 @@ impl MappedGuest {
             "loop_insn" => (0, 7, 0, 0, 0),
             "jrcxz" => (0, 0, 0, 0, 0),
             "syscall_write" => (0, src, 5, 0, 0),
-            "fault_load" => (data, 0, 0, 0, 0),
+            "fault_load" | "redzone_reentry" => (data, 0, 0, 0, 0),
             "indirect_jmp" => (base, 0, 0, 0, 0),
             _ => (0, 0, 0, 0, 0),
         }

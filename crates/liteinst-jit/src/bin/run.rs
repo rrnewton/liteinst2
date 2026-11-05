@@ -21,12 +21,20 @@ fn main() -> std::process::ExitCode {
             }
         };
         let region = guest.region(&fixture.bytes, Generation(1));
+        guest.plant_below_rsp(liteinst_jit::harness::REDZONE_MARKER);
+        let expected = match fixture.name {
+            "indirect_jmp" | "rdtsc_exit" => "REFUSED",
+            "fault_ret" => "FAULT",
+            _ => "OK",
+        };
         let mut exec =
             match Executable::prepare(&region, guest.base, CountProfile::BranchesAndInstructions) {
                 Ok(e) => e,
                 Err(e) => {
                     println!("{}: REFUSED {e}", fixture.name);
-                    failures += 1;
+                    if expected != "REFUSED" {
+                        failures += 1;
+                    }
                     continue;
                 }
             };
@@ -46,16 +54,32 @@ fn main() -> std::process::ExitCode {
         state.rax = rax;
         state.rcx = rcx;
         let mut handler = CaptureHandler::default();
-        match exec.run(state, &mut handler, &ProcessMemory, RETURN_SENTINEL) {
-            Ok(out) => println!(
-                "{}: OK rax={} branches={} instructions={} exits={}",
-                fixture.name, out.state.rax as i64, out.branches, out.instructions, out.exits
-            ),
-            Err(RunError::Refuse(r)) => println!("{}: REFUSED {r}", fixture.name),
-            Err(RunError::Fault(f)) => println!(
-                "{}: FAULT src={:#x} addr={:#x} sig={} branches={} instructions={}",
-                fixture.name, f.src_pc, f.addr, f.signum, f.branches, f.instructions
-            ),
+        let actual = match exec.run(state, &mut handler, &ProcessMemory, RETURN_SENTINEL) {
+            Ok(out) => {
+                println!(
+                    "{}: OK rax={} branches={} instructions={} exits={}",
+                    fixture.name, out.state.rax as i64, out.branches, out.instructions, out.exits
+                );
+                "OK"
+            }
+            Err(RunError::Refuse(r)) => {
+                println!("{}: REFUSED {r}", fixture.name);
+                "REFUSED"
+            }
+            Err(RunError::Fault(f)) => {
+                println!(
+                    "{}: FAULT src={:#x} addr={:#x} sig={} branches={} instructions={}",
+                    fixture.name, f.src_pc, f.addr, f.signum, f.branches, f.instructions
+                );
+                "FAULT"
+            }
+        };
+        if actual != expected {
+            println!(
+                "{}: MISMATCH expected {expected} got {actual}",
+                fixture.name
+            );
+            failures += 1;
         }
         if fixture.name == "rep_movsb" && dst != src {
             println!("rep_movsb: BUFFER MISMATCH");
