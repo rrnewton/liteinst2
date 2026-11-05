@@ -553,15 +553,10 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
             Err(RunError::Refuse(Refuse::NoHandler { .. }))
         ));
     }
-    // A fault before a block's conditional branch credits no branch.
+    // A fault before a block's conditional branch credits no
+    // branch. The native arm runs first so a JIT-side failure
+    // (e.g. mutant 05) can never suppress the oracle comparison.
     {
-        let jr = run_jit("fault_before_branch", |s| s.rdi = 0x0dea_d000);
-        let f = match jr.outcome {
-            Err(RunError::Fault(f)) => f,
-            other => panic!("fault_before_branch jit: {other:?}"),
-        };
-        assert_eq!(f.branches, 0, "fault_before_branch branches");
-        assert_eq!(f.instructions, 0);
         let o1 = run_o1(
             std::path::Path::new(CHILD),
             "fault_before_branch",
@@ -569,8 +564,15 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
                 r.rdi = 0x0dea_d000;
             },
         );
-        assert_eq!(o1.branches, 0);
-        assert_eq!(o1.instructions, 0);
+        assert_eq!(o1.branches, 0, "native arm branches");
+        assert_eq!(o1.instructions, 0, "native arm instructions");
+        let jr = run_jit("fault_before_branch", |s| s.rdi = 0x0dea_d000);
+        let f = match jr.outcome {
+            Err(RunError::Fault(f)) => f,
+            other => panic!("fault_before_branch jit: {other:?}"),
+        };
+        assert_eq!(f.branches, o1.branches, "fault_before_branch branches");
+        assert_eq!(f.instructions, o1.instructions);
     }
 
     // T7 live: a store whose target numerically equals its own
