@@ -126,6 +126,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "liteinst-jit"
+version = "0.1.0"
+dependencies = [
+ "iced-x86",
+ "libc",
+]
+
+[[package]]
 name = "liteinst-launch"
 version = "0.2.1"
 dependencies = [

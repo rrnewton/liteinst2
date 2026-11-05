@@ -1,0 +1,23 @@
+//! Bounded direct-block translation with folded branch counting.
+//!
+//! Phase P1a envelope: straight-line code plus direct branches over
+//! private, non-writable source mappings, single-threaded guests.
+//! Indirect control flow, self-modifying code, and `execve`
+//! successors refuse by name (see [`Refuse`]). Syscall-class and
+//! nondeterministic instructions end their block and exit to a
+//! caller-supplied handler; they never execute natively from the
+//! cache. This crate makes no whole-program claim.
+#![deny(unsafe_op_in_unsafe_fn)]
+
+#[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+compile_error!("liteinst-jit requires Linux x86-64");
+
+pub mod cache;
+pub mod pcmap;
+pub mod refuse;
+pub mod types;
+
+pub use cache::{CacheIndex, CacheRecord};
+pub use pcmap::{PcMap, PcMapEntry, Phase};
+pub use refuse::Refuse;
+pub use types::{CacheKey, CountProfile, Generation, RegionFacts, byte_hash};
