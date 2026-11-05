@@ -1,0 +1,88 @@
+//! Standalone P1a driver: runs the corpus-v1 fixtures through the
+//! translator and prints software counts. This is a bounded-fixture
+//! driver, not a whole-program runner.
+
+use liteinst_jit::exec::{Executable, ProcessMemory, RunError};
+use liteinst_jit::fixtures;
+use liteinst_jit::handler::CaptureHandler;
+use liteinst_jit::harness::{MappedGuest, RETURN_SENTINEL};
+use liteinst_jit::types::{CountProfile, Generation};
+
+fn main() -> std::process::ExitCode {
+    let data: Vec<u64> = (0..16).collect();
+    let mut failures = 0;
+    for fixture in fixtures::all() {
+        let guest = match MappedGuest::map(&fixture.bytes) {
+            Ok(g) => g,
+            Err(e) => {
+                println!("{}: MAP-FAIL {e}", fixture.name);
+                failures += 1;
+                continue;
+            }
+        };
+        let region = guest.region(&fixture.bytes, Generation(1));
+        let mut exec =
+            match Executable::prepare(&region, guest.base, CountProfile::BranchesAndInstructions) {
+                Ok(e) => e,
+                Err(e) => {
+                    println!("{}: REFUSED {e}", fixture.name);
+                    failures += 1;
+                    continue;
+                }
+            };
+        let mut state = guest.initial_state();
+        let mut dst = vec![0u8; 32];
+        let src: Vec<u8> = (0..32u8).collect();
+        match fixture.name {
+            "sum_loop" | "branchy_even_sum" | "call_helper" => {
+                state.rdi = data.as_ptr() as u64;
+                state.rsi = data.len() as u64;
+            }
+            "flags_adc" => {
+                state.rax = 10;
+                state.rdi = 3;
+                state.rsi = 5;
+            }
+            "rip_data" => state.rdi = 1,
+            "rep_movsb" => {
+                state.rdi = dst.as_mut_ptr() as u64;
+                state.rsi = src.as_ptr() as u64;
+                state.rdx = 32;
+            }
+            "loop_insn" => state.rsi = 7,
+            "jrcxz" => state.rcx = 0,
+            "syscall_write" => {
+                state.rsi = src.as_ptr() as u64;
+                state.rdx = 5;
+            }
+            "fault_load" => state.rdi = data.as_ptr() as u64,
+            "indirect_jmp" => state.rdi = guest.base,
+            _ => {}
+        }
+        let mut handler = CaptureHandler::default();
+        match exec.run(state, &mut handler, &ProcessMemory, RETURN_SENTINEL) {
+            Ok(out) => println!(
+                "{}: OK rax={} branches={} instructions={} exits={}",
+                fixture.name, out.state.rax as i64, out.branches, out.instructions, out.exits
+            ),
+            Err(RunError::Refuse(r)) => println!("{}: REFUSED {r}", fixture.name),
+            Err(RunError::Fault(f)) => println!(
+                "{}: FAULT src={:#x} addr={:#x} sig={} branches={} instructions={}",
+                fixture.name, f.src_pc, f.addr, f.signum, f.branches, f.instructions
+            ),
+        }
+        if fixture.name == "rep_movsb" && dst != src {
+            println!("rep_movsb: BUFFER MISMATCH");
+            failures += 1;
+        }
+        if fixture.name == "syscall_write" && handler.written != src[..5] {
+            println!("syscall_write: CAPTURE MISMATCH {:?}", handler.written);
+            failures += 1;
+        }
+    }
+    if failures == 0 {
+        std::process::ExitCode::SUCCESS
+    } else {
+        std::process::ExitCode::FAILURE
+    }
+}

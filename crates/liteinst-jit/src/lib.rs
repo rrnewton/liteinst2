@@ -13,11 +13,21 @@
 compile_error!("liteinst-jit requires Linux x86-64");
 
 pub mod cache;
+pub mod decode;
+pub mod exec;
+pub mod fixtures;
+pub mod handler;
+pub mod harness;
 pub mod pcmap;
 pub mod refuse;
+pub mod state;
+pub mod translate;
 pub mod types;
 
 pub use cache::{CacheIndex, CacheRecord};
+pub use exec::{Executable, Fault, GuestMemory, Handler, Outcome, ProcessMemory, Resume, RunError};
 pub use pcmap::{PcMap, PcMapEntry, Phase};
 pub use refuse::Refuse;
+pub use state::GuestState;
+pub use translate::{Block, Terminator, Translation, translate};
 pub use types::{CacheKey, CountProfile, Generation, RegionFacts, byte_hash};

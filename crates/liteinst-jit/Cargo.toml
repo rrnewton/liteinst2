@@ -17,5 +17,12 @@ publish = false
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder", "encoder", "code_asm"] }
+iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder", "encoder", "code_asm", "instr_info"] }
 libc = "0.2.186"
+
+[[bin]]
+name = "liteinst-jit-run"
+path = "src/bin/run.rs"
+test = false
+bench = false
+doc = false
