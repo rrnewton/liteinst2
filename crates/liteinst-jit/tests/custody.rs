@@ -59,7 +59,7 @@ fn custody_ok_return_reports_also_pending() {
     let outcome = exec
         .run(state, &mut handler, &ProcessMemory, RETURN_SENTINEL)
         .expect("successful run takes pending signal into custody");
-    assert_eq!(outcome.branches, 17);
+    assert_eq!(outcome.branches, 17, "sum_loop: branches");
     assert_eq!(outcome.also_pending, vec![libc::SIGUSR1]);
     // SAFETY: restoring this thread's mask saved above; the
     // signal was dequeued, so unblocking cannot deliver it.
