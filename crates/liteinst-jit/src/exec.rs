@@ -761,6 +761,17 @@ fn pending_async_signal() -> Result<Option<i32>, Refuse> {
     Ok(pending_async_signals()?.into_iter().next())
 }
 
+/// Result of `run_masked`, retaining custody-error provenance.
+/// `poll_custody_error` means the returned custody refusal came
+/// from the Poll arm's own observation/dequeue path. It is kept
+/// distinct from a same-shaped refusal returned by the Handler so
+/// only custody-origin errors take the wrapper's full-mask
+/// fallback.
+struct MaskedOutcome {
+    result: Result<Outcome, RunError>,
+    poll_custody_error: bool,
+}
+
 /// Take custody of *every* pending async signal: dequeue all
 /// queued instances of each pending number while still blocked,
 /// so restoring the caller's mask cannot deliver a leftover
@@ -1091,14 +1102,10 @@ impl Executable {
             }
             libc::pthread_sigmask(libc::SIG_BLOCK, &set, &mut old);
         }
-        let mut poll_custody_error = false;
-        let mut r = self.run_masked(
-            state,
-            handler,
-            mem,
-            return_sentinel,
-            &mut poll_custody_error,
-        );
+        let MaskedOutcome {
+            result: mut r,
+            poll_custody_error,
+        } = self.run_masked(state, handler, mem, return_sentinel);
         // Custody transition for *every* return after this run
         // installed the blocked mask. Until pending async signals
         // are proven absent, dequeued/reported, or explicitly
@@ -1214,6 +1221,27 @@ impl Executable {
     }
 
     fn run_masked(
+        &mut self,
+        state: GuestState,
+        handler: &mut dyn Handler,
+        mem: &dyn GuestMemory,
+        return_sentinel: u64,
+    ) -> MaskedOutcome {
+        let mut poll_custody_error = false;
+        let result = self.run_masked_inner(
+            state,
+            handler,
+            mem,
+            return_sentinel,
+            &mut poll_custody_error,
+        );
+        MaskedOutcome {
+            result,
+            poll_custody_error,
+        }
+    }
+
+    fn run_masked_inner(
         &mut self,
         mut state: GuestState,
         handler: &mut dyn Handler,
