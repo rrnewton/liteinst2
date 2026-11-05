@@ -264,6 +264,137 @@ fn refused_opcode_space(bytes: &[u8]) -> Option<&'static str> {
         _ => None,
     }
 }
+
+/// Positive admission list for Ordinary instructions: every
+/// mnemonic here has effects only on GPRs, RFLAGS, the guest
+/// stack, and ordinary memory operands, which copied native
+/// execution reproduces exactly. Anything not listed refuses by
+/// name — a denylist of hidden-state families cannot prove
+/// totality (round-3/5 reviews), so admission is allowlist-first
+/// and the family guards below are a second layer.
+fn allowed_ordinary(m: Mnemonic) -> bool {
+    matches!(
+        m,
+        Mnemonic::Mov
+            | Mnemonic::Movzx
+            | Mnemonic::Movsx
+            | Mnemonic::Movsxd
+            | Mnemonic::Movbe
+            | Mnemonic::Lea
+            | Mnemonic::Xchg
+            | Mnemonic::Xadd
+            | Mnemonic::Cmpxchg
+            | Mnemonic::Push
+            | Mnemonic::Pop
+            | Mnemonic::Leave
+            | Mnemonic::Nop
+            | Mnemonic::Pause
+            | Mnemonic::Endbr64
+            | Mnemonic::Endbr32
+            | Mnemonic::Add
+            | Mnemonic::Adc
+            | Mnemonic::Sub
+            | Mnemonic::Sbb
+            | Mnemonic::And
+            | Mnemonic::Or
+            | Mnemonic::Xor
+            | Mnemonic::Cmp
+            | Mnemonic::Test
+            | Mnemonic::Inc
+            | Mnemonic::Dec
+            | Mnemonic::Neg
+            | Mnemonic::Not
+            | Mnemonic::Imul
+            | Mnemonic::Mul
+            | Mnemonic::Div
+            | Mnemonic::Idiv
+            | Mnemonic::Shl
+            | Mnemonic::Shr
+            | Mnemonic::Sar
+            | Mnemonic::Rol
+            | Mnemonic::Ror
+            | Mnemonic::Rcl
+            | Mnemonic::Rcr
+            | Mnemonic::Bt
+            | Mnemonic::Bts
+            | Mnemonic::Btr
+            | Mnemonic::Btc
+            | Mnemonic::Bsf
+            | Mnemonic::Bsr
+            | Mnemonic::Tzcnt
+            | Mnemonic::Lzcnt
+            | Mnemonic::Popcnt
+            | Mnemonic::Bswap
+            | Mnemonic::Cbw
+            | Mnemonic::Cwde
+            | Mnemonic::Cdqe
+            | Mnemonic::Cwd
+            | Mnemonic::Cdq
+            | Mnemonic::Cqo
+            | Mnemonic::Lahf
+            | Mnemonic::Sahf
+            | Mnemonic::Cld
+            | Mnemonic::Std
+            | Mnemonic::Cmova
+            | Mnemonic::Cmovae
+            | Mnemonic::Cmovb
+            | Mnemonic::Cmovbe
+            | Mnemonic::Cmove
+            | Mnemonic::Cmovg
+            | Mnemonic::Cmovge
+            | Mnemonic::Cmovl
+            | Mnemonic::Cmovle
+            | Mnemonic::Cmovne
+            | Mnemonic::Cmovno
+            | Mnemonic::Cmovnp
+            | Mnemonic::Cmovns
+            | Mnemonic::Cmovo
+            | Mnemonic::Cmovp
+            | Mnemonic::Cmovs
+            | Mnemonic::Seta
+            | Mnemonic::Setae
+            | Mnemonic::Setb
+            | Mnemonic::Setbe
+            | Mnemonic::Sete
+            | Mnemonic::Setg
+            | Mnemonic::Setge
+            | Mnemonic::Setl
+            | Mnemonic::Setle
+            | Mnemonic::Setne
+            | Mnemonic::Setno
+            | Mnemonic::Setnp
+            | Mnemonic::Setns
+            | Mnemonic::Seto
+            | Mnemonic::Setp
+            | Mnemonic::Sets
+            | Mnemonic::Movsb
+            | Mnemonic::Movsw
+            | Mnemonic::Movsd
+            | Mnemonic::Movsq
+            | Mnemonic::Stosb
+            | Mnemonic::Stosw
+            | Mnemonic::Stosd
+            | Mnemonic::Stosq
+            | Mnemonic::Lodsb
+            | Mnemonic::Lodsw
+            | Mnemonic::Lodsd
+            | Mnemonic::Lodsq
+            | Mnemonic::Cmpsb
+            | Mnemonic::Cmpsw
+            | Mnemonic::Cmpsd
+            | Mnemonic::Cmpsq
+            | Mnemonic::Scasb
+            | Mnemonic::Scasw
+            | Mnemonic::Scasd
+            | Mnemonic::Scasq
+            | Mnemonic::Prefetchnta
+            | Mnemonic::Prefetcht0
+            | Mnemonic::Prefetcht1
+            | Mnemonic::Prefetcht2
+            | Mnemonic::Prefetchw
+    )
+}
+
 /// Decode one instruction and admit it only if its effects are
 /// inside the explicit P1a envelope. Ordinary instructions must be
 /// plain next-instruction flow over GPRs/memory: no privilege, no
@@ -277,6 +408,41 @@ pub fn decode_supported(bytes: &[u8], pc: u64) -> Result<DecodedInsn, Refuse> {
     let ins = &d.instruction;
     match d.class {
         InsnClass::Ordinary => {
+            if !allowed_ordinary(ins.mnemonic()) {
+                return Err(Refuse::Unrelocatable {
+                    src_pc: pc,
+                    reason: "mnemonic outside modeled P1a envelope",
+                });
+            }
+            for i in 0..ins.op_count() {
+                match ins.op_kind(i) {
+                    OpKind::Register
+                    | OpKind::Memory
+                    | OpKind::MemorySegSI
+                    | OpKind::MemorySegESI
+                    | OpKind::MemorySegRSI
+                    | OpKind::MemoryESDI
+                    | OpKind::MemoryESEDI
+                    | OpKind::MemorySegDI
+                    | OpKind::MemorySegEDI
+                    | OpKind::MemorySegRDI
+                    | OpKind::MemoryESRDI
+                    | OpKind::Immediate8
+                    | OpKind::Immediate16
+                    | OpKind::Immediate32
+                    | OpKind::Immediate64
+                    | OpKind::Immediate8to16
+                    | OpKind::Immediate8to32
+                    | OpKind::Immediate8to64
+                    | OpKind::Immediate32to64 => {}
+                    _ => {
+                        return Err(Refuse::Unrelocatable {
+                            src_pc: pc,
+                            reason: "operand kind outside modeled P1a envelope",
+                        });
+                    }
+                }
+            }
             if ins.flow_control() != FlowControl::Next {
                 return Err(Refuse::Unrelocatable {
                     src_pc: pc,
@@ -346,6 +512,45 @@ pub fn decode_supported(bytes: &[u8], pc: u64) -> Result<DecodedInsn, Refuse> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn broad_decode_corpus_admits_only_allowlisted_mnemonics() {
+        // Walk legacy, 0F, prefix-repeated, VEX2/VEX3 and EVEX
+        // template spaces. Any Ordinary instruction the envelope
+        // admits from this corpus must be on the positive list;
+        // anything else must have refused in decode_supported.
+        let mut admitted = 0u32;
+        let mut check = |bytes: &[u8]| {
+            if let Ok(d) = decode_supported(bytes, 0x1000)
+                && matches!(d.class, InsnClass::Ordinary)
+            {
+                admitted += 1;
+                assert!(
+                    allowed_ordinary(d.instruction.mnemonic()),
+                    "admitted non-allowlisted {:?} from {bytes:02x?}",
+                    d.instruction.mnemonic()
+                );
+            }
+        };
+        for b0 in 0u16..=0xff {
+            let b = b0 as u8;
+            check(&[b, 0, 0, 0, 0, 0, 0, 0, 0xc3]);
+            check(&[0x48, b, 0, 0, 0, 0, 0, 0, 0xc3]);
+            check(&[0xf3, b, 0, 0, 0, 0, 0, 0, 0xc3]);
+            check(&[0x0f, b, 0, 0, 0, 0, 0, 0, 0xc3]);
+            check(&[0x0f, 0x38, b, 0, 0, 0, 0, 0, 0xc3]);
+            check(&[0x0f, 0x3a, b, 0, 0, 0, 0, 0, 0xc3]);
+            check(&[0x40, 0x40, b, 0, 0, 0, 0, 0, 0xc3]);
+            check(&[0xc5, 0xf8, b, 0, 0, 0, 0xc3]);
+            check(&[0xc4, 0xe1, 0x78, b, 0, 0xc3]);
+            check(&[0xc4, 0xe2, 0x79, b, 0, 0xc3]);
+            check(&[0x62, 0xf1, 0x7c, 0x48, b, 0, 0xc3]);
+        }
+        for b0 in 0u16..=0xff {
+            check(&[0xd8 + (b0 % 8) as u8, b0 as u8, 0, 0, 0xc3]);
+        }
+        assert!(admitted > 100, "corpus walk is vacuous: {admitted}");
+    }
 
     #[test]
     fn classifies_common_forms() {
