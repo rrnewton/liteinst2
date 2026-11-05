@@ -55,17 +55,21 @@ fn elf_text(f: &[u8]) -> Result<TextSegment, &'static str> {
     // truncated input returns Err so the driver can report
     // BLOCKED (still with zero speed cells) instead of panicking.
     let u16le = |o: usize| -> Option<usize> {
-        f.get(o..o + 2)
+        f.get(o..o.checked_add(2)?)
             .map(|b| u16::from_le_bytes(b.try_into().unwrap()) as usize)
     };
-    let u32le = |o: usize| -> Option<u32> {
-        f.get(o..o + 4)
-            .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
-    };
     let u64le = |o: usize| -> Option<u64> {
-        f.get(o..o + 8)
+        f.get(o..o.checked_add(8)?)
             .map(|b| u64::from_le_bytes(b.try_into().unwrap()))
     };
+    // Complete-range check: the endpoint itself is computed
+    // with checked arithmetic before any range is constructed.
+    let range = |off: usize, len: usize| -> Option<&[u8]> { f.get(off..off.checked_add(len)?) };
+    // Field reads from an already range-checked header slice:
+    // offsets are small constants within that slice, so no
+    // absolute-offset arithmetic remains after validation.
+    let rd32 = |b: &[u8], o: usize| u32::from_le_bytes(b[o..o + 4].try_into().unwrap());
+    let rd64 = |b: &[u8], o: usize| u64::from_le_bytes(b[o..o + 8].try_into().unwrap());
     let slice = |off: u64, size: u64| -> Option<&[u8]> {
         let off = usize::try_from(off).ok()?;
         let end = off.checked_add(usize::try_from(size).ok()?)?;
@@ -74,7 +78,8 @@ fn elf_text(f: &[u8]) -> Result<TextSegment, &'static str> {
     if f.len() < 64 || &f[0..4] != b"\x7fELF" || f[4] != 2 || f[5] != 1 {
         return Err("not a little-endian ELF64 file");
     }
-    let shoff = u64le(40).ok_or("truncated ELF header")? as usize;
+    let shoff = usize::try_from(u64le(40).ok_or("truncated ELF header")?)
+        .map_err(|_| "section header offset out of range")?;
     let shentsize = u16le(58).ok_or("truncated ELF header")?;
     let shnum = u16le(60).ok_or("truncated ELF header")?;
     let shstrndx = u16le(62).ok_or("truncated ELF header")?;
@@ -89,30 +94,27 @@ fn elf_text(f: &[u8]) -> Result<TextSegment, &'static str> {
                     .ok_or("section header overflow")?,
             )
             .ok_or("section header overflow")?;
-        if f.get(str_hdr..str_hdr + 64).is_none() {
+        let Some(str_hdr_bytes) = range(str_hdr, 64) else {
             return Err("truncated section headers");
-        }
-        let names = slice(
-            u64le(str_hdr + 24).ok_or("truncated section headers")?,
-            u64le(str_hdr + 32).ok_or("truncated section headers")?,
-        )
-        .ok_or("section string table out of bounds")?;
+        };
+        let names = slice(rd64(str_hdr_bytes, 24), rd64(str_hdr_bytes, 32))
+            .ok_or("section string table out of bounds")?;
         for i in 0..shnum {
             let h = shoff
                 .checked_add(i.checked_mul(shentsize).ok_or("section header overflow")?)
                 .ok_or("section header overflow")?;
-            if f.get(h..h + 64).is_none() {
+            let Some(hdr) = range(h, 64) else {
                 return Err("truncated section headers");
-            }
-            let name_off = u32le(h).ok_or("truncated section headers")? as usize;
+            };
+            let name_off = rd32(hdr, 0) as usize;
             let Some(name) = names.get(name_off..) else {
                 continue;
             };
             let end = name.iter().position(|&b| b == 0).unwrap_or(name.len());
             if &name[..end] == b".text" {
-                let addr = u64le(h + 16).ok_or("truncated section headers")?;
-                let off = u64le(h + 24).ok_or("truncated section headers")?;
-                let size = u64le(h + 32).ok_or("truncated section headers")?;
+                let addr = rd64(hdr, 16);
+                let off = rd64(hdr, 24);
+                let size = rd64(hdr, 32);
                 return Ok(TextSegment {
                     bytes: slice(off, size)
                         .ok_or(".text section out of bounds")?
@@ -123,7 +125,8 @@ fn elf_text(f: &[u8]) -> Result<TextSegment, &'static str> {
             }
         }
     }
-    let phoff = u64le(32).ok_or("truncated ELF header")? as usize;
+    let phoff = usize::try_from(u64le(32).ok_or("truncated ELF header")?)
+        .map_err(|_| "program header offset out of range")?;
     let phentsize = u16le(54).ok_or("truncated ELF header")?;
     let phnum = u16le(56).ok_or("truncated ELF header")?;
     if phnum > 0 && phentsize < 56 {
@@ -134,13 +137,13 @@ fn elf_text(f: &[u8]) -> Result<TextSegment, &'static str> {
         let p = phoff
             .checked_add(i.checked_mul(phentsize).ok_or("program header overflow")?)
             .ok_or("program header overflow")?;
-        if f.get(p..p + 56).is_none() {
+        let Some(ph) = range(p, 56) else {
             return Err("truncated program headers");
-        }
-        if u32le(p) == Some(1) && u32le(p + 4).is_some_and(|flags| flags & 1 != 0) {
-            let off = u64le(p + 8).ok_or("truncated program headers")?;
-            let vaddr = u64le(p + 16).ok_or("truncated program headers")?;
-            let filesz = u64le(p + 32).ok_or("truncated program headers")?;
+        };
+        if rd32(ph, 0) == 1 && rd32(ph, 4) & 1 != 0 {
+            let off = rd64(ph, 8);
+            let vaddr = rd64(ph, 16);
+            let filesz = rd64(ph, 32);
             if best.is_none_or(|(_, _, l)| filesz > l) {
                 best = Some((off, vaddr, filesz));
             }

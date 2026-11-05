@@ -433,6 +433,63 @@ fn driver_fails_closed_on_invalid_boundary() {
     );
     let _ = std::fs::remove_file(&trunc);
 
+    // Near-maximum header offsets must not overflow endpoint
+    // arithmetic in overflow-checked (debug) builds: both the
+    // section-header and program-header forms take BLOCKED.
+    for (label, section_form) in [("section", true), ("program", false)] {
+        let path = std::env::temp_dir().join(format!(
+            "minijit-scanner-overflow-{}-{label}.elf",
+            std::process::id()
+        ));
+        let mut f = vec![0u8; 64];
+        f[0..4].copy_from_slice(b"\x7fELF");
+        f[4] = 2;
+        f[5] = 1;
+        f[6] = 1;
+        let put16 = |f: &mut [u8], o: usize, v: u16| {
+            f[o..o + 2].copy_from_slice(&v.to_le_bytes());
+        };
+        let put64 = |f: &mut [u8], o: usize, v: u64| {
+            f[o..o + 8].copy_from_slice(&v.to_le_bytes());
+        };
+        put16(&mut f, 16, 2);
+        put16(&mut f, 18, 62);
+        if section_form {
+            put64(&mut f, 40, u64::MAX - 31);
+            put16(&mut f, 58, 64);
+            put16(&mut f, 60, 1);
+            put16(&mut f, 62, 0);
+        } else {
+            put64(&mut f, 32, u64::MAX - 31);
+            put16(&mut f, 54, 56);
+            put16(&mut f, 56, 1);
+        }
+        std::fs::write(&path, f).expect("write overflow ELF");
+        let out = std::process::Command::new(bin)
+            .arg(&path)
+            .output()
+            .expect("run driver");
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(
+            !out.status.success(),
+            "{label} overflow ELF must fail: {stdout}"
+        );
+        assert!(
+            stdout.contains("BLOCKED"),
+            "{label} overflow ELF must report BLOCKED: {stdout}"
+        );
+        assert!(
+            !stdout.contains(",scanner,"),
+            "no speed cells on {label} overflow ELF: {stdout}"
+        );
+        assert!(
+            !stderr.contains("panicked"),
+            "{label} overflow ELF must not panic: {stderr}"
+        );
+        let _ = std::fs::remove_file(&path);
+    }
+
     let good = write_minimal_elf(&[0x90, 0xc3]);
     let out = std::process::Command::new(bin)
         .arg(&good)
