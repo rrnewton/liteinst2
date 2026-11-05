@@ -3,8 +3,12 @@
 [who-am-i: musejit, host withheld. Owner: musejit (muse, host withheld) since 2026-11-05T12:03:34Z]
 
 Command: `sh crates/liteinst-jit/mutants/run.sh` from the
-workspace root, 2026-11-05; last re-executed at the head below, on liteinst2 branch
-`musejit/work-20261105` at base head `7fe27a25b990d71a303e463c01db9570591a385a`, re-executed there after the round-9 taken-ordering repair
+workspace root, 2026-11-05; last re-executed for the P1b I1-A
+recovery-core extraction on liteinst2 branch
+`musejit/i1a-20261105` (off main
+`46e6e8f3cc6a5cfce0e4b1bf4d7aec93a0e0f336`), after mutants 01
+and 04 were regenerated against the moved recovery code in
+`src/recovery.rs` — same one-line defects, new file/context
 (the patches in this directory, applied and reversed one at a
 time; the script first requires a green baseline, then requires
 each mutant run to fail with its named causal assertion — a
@@ -12,7 +16,7 @@ compile/infrastructure error is explicitly not a kill — and each
 restoration to return green on a clean tree). Script exit code:
 **0**.
 
-Patch SHA-256 are printed by the script at every run and were re-verified at this head (mutant 04 regenerated for context drift; same one-line defect).
+Patch SHA-256 are printed by the script at every run and were re-verified at this head (mutants 01 and 04 regenerated for the recovery-core move; same one-line defects).
 
 | Mutant | Defect simulated | Killing evidence (mutant run) | Restored |
 |---|---|---|---|

@@ -1,8 +1,7 @@
-diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
-index 67597134..adea5830 100644
---- a/crates/liteinst-jit/src/exec.rs
-+++ b/crates/liteinst-jit/src/exec.rs
-@@ -630,6 +630,8 @@ pub fn recover_fault(
+diff --git a/crates/liteinst-jit/src/recovery.rs b/crates/liteinst-jit/src/recovery.rs
+--- a/crates/liteinst-jit/src/recovery.rs
++++ b/crates/liteinst-jit/src/recovery.rs
+@@ -299,6 +299,8 @@
          Recovery::Fallthrough { next } => next,
      };
      state.rip = src_pc;

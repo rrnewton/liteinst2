@@ -20,6 +20,7 @@ pub mod handler;
 pub mod harness;
 pub mod o1;
 pub mod pcmap;
+pub mod recovery;
 pub mod refuse;
 pub mod state;
 pub mod translate;
@@ -30,6 +31,7 @@ pub use exec::{
     Executable, Fault, FaultKind, GuestMemory, Handler, Outcome, ProcessMemory, Resume, RunError,
 };
 pub use pcmap::{CallStage, CommonStage, ExitStage, PcMap, PcMapEntry, Phase, Recovery, StubStage};
+pub use recovery::{FaultInput, RecoveredStop, RecoveryInput, recover};
 pub use refuse::Refuse;
 pub use state::GuestState;
 pub use translate::{Block, Terminator, Translation, translate};

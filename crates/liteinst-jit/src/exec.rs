@@ -11,8 +11,12 @@
 use std::sync::atomic::{AtomicPtr, Ordering};
 
 use crate::cache::{CacheIndex, CacheRecord};
-use crate::pcmap::{CallStage, CommonStage, ExitStage, Recovery, StubStage};
+#[cfg(test)]
+use crate::pcmap::{CallStage, CommonStage, Recovery, StubStage};
+use crate::recovery::RecoveryInput;
 use crate::refuse::Refuse;
+
+pub use crate::recovery::{FaultInput, FaultKind};
 use crate::state::{
     GuestState, JitData, OFF_HOST_R12, OFF_HOST_R13, OFF_HOST_R14, OFF_HOST_R15, OFF_HOST_RBP,
     OFF_HOST_RBX, OFF_HOST_RSP, OFF_STATE, ST_R8, ST_R9, ST_R10, ST_R11, ST_R12, ST_R13, ST_R14,
@@ -170,18 +174,6 @@ pub struct Outcome {
     /// Pending async signals taken into custody during the return
     /// transition (dequeued while blocked, reported, not lost).
     pub also_pending: Vec<i32>,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum FaultKind {
-    /// Synchronous guest fault at the recovered source PC.
-    GuestFault,
-    /// Asynchronously sent signal (si_code <= 0) stopped the run;
-    /// state is recovered but no guest delivery is claimed.
-    AsyncSignal,
-    /// The executor's own machinery faulted (common exit, data
-    /// page, unmapped generated PC): not a guest-visible fault.
-    ExecutorError,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -413,251 +405,44 @@ extern "C" fn fault_handler(sig: i32, info: *mut libc::siginfo_t, ctx: *mut libc
     }
 }
 
-/// Reconstruct status flags from the SETO/LAHF spill image:
-/// AH holds SF/ZF/AF/PF/CF at their flags positions, AL bit 0 is OF.
-/// All non-status bits come from the interrupted flags (stub
-/// instructions never modify them).
-fn flags_from_spill(saved: u64, current: u64) -> u64 {
-    const STATUS: u64 = 0x8d5; // OF|SF|ZF|AF|PF|CF
-    (current & !STATUS) | ((saved >> 8) & 0xd5) | ((saved & 1) << 11)
-}
-
-fn block_retired_before(t: &Translation, src_pc: u64) -> Option<(u64, u64)> {
-    for block in t.blocks.values() {
-        let pcs = block.insn_pcs();
-        if let Some(pos) = pcs.iter().position(|&p| p == src_pc) {
-            return Some((pos as u64, block.instruction_total()));
-        }
-        if block.term_pc() == Some(src_pc) {
-            return Some((pcs.len() as u64, block.instruction_total()));
-        }
-    }
-    None
-}
-
-/// Exact interrupted-state reconstruction for a stop at generated
-/// PC `gen_pc` (an entry start). This is the single place where
-/// pending branch/instruction credit is resolved; the dispatcher
-/// and the boundary tests both go through it.
-/// Interrupted-PC provenance supplied by the fault handler.
-#[derive(Clone, Copy, Debug)]
-pub struct FaultInput {
-    pub gen_pc: u64,
-    pub addr: u64,
-    pub signum: i32,
-    pub si_code: i32,
-    /// Page-fault error code (`REG_ERR`); bit 0x10 = fetch.
-    pub err: u64,
-}
-
+/// In-process adapter over the backend-neutral recovery core
+/// in [`crate::recovery`]: snapshots the cache data page into a
+/// plain [`RecoveryInput`], runs the shared recovery rules, and
+/// maps the recovered stop into this dispatcher's
+/// custody-carrying [`Fault`] (with no additional pending
+/// signals recorded yet; the return transition in
+/// [`Executable::run`] owns custody bookkeeping). Output is
+/// identical to the pre-extraction in-process implementation.
 pub fn recover_fault(
     t: &Translation,
     profile: CountProfile,
     data: &JitData,
     input: FaultInput,
 ) -> Fault {
-    let (gen_pc, addr, signum, si_code, fault_err) = (
-        input.gen_pc,
-        input.addr,
-        input.signum,
-        input.si_code,
-        input.err,
-    );
-    let raw = data.interrupted;
-    let mut state = raw;
-    let mut branches = data.branch_count;
-    let mut instructions = data.instruction_count;
-    let async_kind = si_code <= 0;
-    let Some(entry) = t.pcmap.lookup(gen_pc) else {
-        state.rip = 0;
-        return Fault {
-            also_pending: Vec::new(),
-            kind: FaultKind::ExecutorError,
-            src_pc: 0,
-            addr,
-            signum,
-            state,
-            branches,
-            instructions,
-        };
-    };
-    let retired_at = |counted: u64, src: u64| -> u64 {
-        if profile != CountProfile::BranchesAndInstructions {
-            return counted;
-        }
-        match block_retired_before(t, src) {
-            Some((pos, total)) => counted - (total - pos),
-            None => counted,
-        }
-    };
-    let kind = if async_kind {
-        FaultKind::AsyncSignal
-    } else if matches!(
-        entry.recovery,
-        Recovery::BranchStub { .. }
-            | Recovery::InsnCountStub { .. }
-            | Recovery::PollStub { .. }
-            | Recovery::ExitStub { .. }
-            | Recovery::PollExitStub { .. }
-            | Recovery::CommonExit { .. }
-    ) || matches!(
-        entry.recovery,
-        Recovery::Call {
-            stage: CallStage::Pristine | CallStage::CommittedSpilled,
-            ..
-        }
-    ) {
-        // Private spill/counter/exit/state accesses are executor
-        // machinery, whatever source successor they recover to.
-        FaultKind::ExecutorError
-    } else {
-        FaultKind::GuestFault
-    };
-    let src_pc = match entry.recovery {
-        Recovery::Copied => {
-            instructions = retired_at(instructions, entry.src_pc);
-            entry.src_pc
-        }
-        Recovery::BranchStub {
-            successor, stage, ..
-        } => {
-            match stage {
-                StubStage::BeforeCreditPristine => branches += 1,
-                StubStage::BeforeCreditSpilled => {
-                    state.rax = data.spill_rax;
-                    branches += 1;
-                }
-                StubStage::AfterCreditSpilled => {
-                    state.rax = data.spill_rax;
-                    state.rflags = flags_from_spill(data.spill_flags, raw.rflags);
-                }
-                StubStage::AfterCreditFlagsRestored => {
-                    state.rax = data.spill_rax;
-                }
-                StubStage::Committed => {}
-            }
-            successor
-        }
-        Recovery::InsnCountStub { block, stage } => {
-            let total = t
-                .blocks
-                .get(&block)
-                .map(|b| b.instruction_total())
-                .unwrap_or(0);
-            match stage {
-                StubStage::BeforeCreditPristine => {}
-                StubStage::BeforeCreditSpilled => state.rax = data.spill_rax,
-                StubStage::AfterCreditSpilled => {
-                    state.rax = data.spill_rax;
-                    state.rflags = flags_from_spill(data.spill_flags, raw.rflags);
-                    instructions -= total;
-                }
-                StubStage::AfterCreditFlagsRestored => {
-                    state.rax = data.spill_rax;
-                    instructions -= total;
-                }
-                StubStage::Committed => instructions -= total,
-            }
-            block
-        }
-        Recovery::PollExitStub { stage } => {
-            if stage == ExitStage::Spilled {
-                state.rax = data.spill_rax;
-            }
-            // No retirement adjustment: the poll stub precedes
-            // the block's instruction precredit by construction.
-            entry.src_pc
-        }
-        Recovery::PollStub { block, stage } => {
-            match stage {
-                StubStage::BeforeCreditPristine => {}
-                StubStage::BeforeCreditSpilled => state.rax = data.spill_rax,
-                StubStage::AfterCreditSpilled => {
-                    state.rax = data.spill_rax;
-                    state.rflags = flags_from_spill(data.spill_flags, raw.rflags);
-                }
-                StubStage::AfterCreditFlagsRestored => {
-                    state.rax = data.spill_rax;
-                }
-                StubStage::Committed => {}
-            }
-            block
-        }
-        Recovery::Call {
-            call_pc,
-            target,
-            stage,
-        } => match stage {
-            CallStage::Pristine => {
-                instructions = retired_at(instructions, call_pc);
-                call_pc
-            }
-            CallStage::RaxSpilled => {
-                state.rax = data.spill_rax;
-                instructions = retired_at(instructions, call_pc);
-                call_pc
-            }
-            CallStage::RspDecremented => {
-                state.rax = data.spill_rax;
-                state.rsp = state.rsp.wrapping_add(8);
-                instructions = retired_at(instructions, call_pc);
-                call_pc
-            }
-            CallStage::CommittedSpilled => {
-                state.rax = data.spill_rax;
-                target
-            }
-            CallStage::Committed => target,
+    let stop = crate::recovery::recover(
+        t,
+        profile,
+        RecoveryInput {
+            provenance: input,
+            interrupted: data.interrupted,
+            saved: data.state,
+            spill_rax: data.spill_rax,
+            spill_flags: data.spill_flags,
+            branches: data.branch_count,
+            instructions: data.instruction_count,
+            exit_kind: data.exit_kind,
+            exit_src: data.exit_src,
         },
-        Recovery::ExitStub { stage } => {
-            if stage == ExitStage::Spilled {
-                state.rax = data.spill_rax;
-            }
-            instructions = retired_at(instructions, entry.src_pc);
-            entry.src_pc
-        }
-        Recovery::CommonExit { stage } => {
-            // Kind already decided by provenance above: a positive
-            // synchronous code here is machinery; an asynchronous
-            // signal stays AsyncSignal at any location.
-            match stage {
-                CommonStage::BeforeRspSave => {}
-                CommonStage::RspSaved => state.rsp = data.state.rsp,
-                CommonStage::FlagsSaved => {
-                    state.rsp = data.state.rsp;
-                    state.rflags = data.state.rflags;
-                }
-                CommonStage::AllSaved => state = data.state,
-            }
-            if data.exit_kind != exit_kind::POLL {
-                instructions = retired_at(instructions, data.exit_src);
-            }
-            data.exit_src
-        }
-        Recovery::Fallthrough { next } => next,
-    };
-    state.rip = src_pc;
-    // Preserve siginfo address semantics by access provenance,
-    // never by numerical equality: SIGFPE/SIGILL name the
-    // faulting instruction, and a page-fault error code with the
-    // instruction-fetch bit (0x10) names the fetch PC. Those
-    // translate to source addresses; a guest data-operand
-    // address — even one numerically equal to a generated PC —
-    // never does.
-    let addr = if signum == libc::SIGFPE || signum == libc::SIGILL || fault_err & 0x10 != 0 {
-        t.pcmap.lookup(addr).map_or(src_pc, |e| e.recover(addr))
-    } else {
-        addr
-    };
+    );
     Fault {
         also_pending: Vec::new(),
-        kind,
-        src_pc,
-        addr,
-        signum,
-        state,
-        branches,
-        instructions,
+        kind: stop.kind,
+        src_pc: stop.src_pc,
+        addr: stop.addr,
+        signum: stop.signum,
+        state: stop.state,
+        branches: stop.branches,
+        instructions: stop.instructions,
     }
 }
 
@@ -1032,13 +817,7 @@ impl Executable {
     /// the instruction at `src_pc`, correcting the block-head
     /// pre-credit under the instruction-counting profile.
     fn retired_instructions_at(&self, counted: u64, src_pc: u64) -> u64 {
-        if self.profile != CountProfile::BranchesAndInstructions {
-            return counted;
-        }
-        match block_retired_before(&self.translation, src_pc) {
-            Some((pos, total)) => counted - (total - pos),
-            None => counted,
-        }
+        crate::recovery::instructions_retired_at(&self.translation, self.profile, counted, src_pc)
     }
 
     pub fn translation(&self) -> &Translation {
@@ -1841,5 +1620,79 @@ mod recovery_tests {
             },
         );
         assert_eq!(f.kind, FaultKind::AsyncSignal);
+    }
+
+    #[test]
+    fn recovery_core_matches_adapter_at_every_boundary() {
+        // I1-A boundary pin: the backend-neutral core and the
+        // in-process JitData adapter must produce identical
+        // recovered stops at every PC-map entry (plus an
+        // unmapped PC), across sync/async/fetch provenances and
+        // both common-exit exit kinds. Any future backend that
+        // fills RecoveryInput from another snapshot source gets
+        // exactly these recovery rules.
+        for fixture in ["call_helper", "sum_loop"] {
+            let fix = crate::fixtures::by_name(fixture);
+            for profile in [
+                CountProfile::Branches,
+                CountProfile::BranchesAndInstructions,
+            ] {
+                let t = setup(&fix.bytes, profile);
+                for exit_kind_word in [0, crate::state::exit_kind::POLL] {
+                    let mut data = fake_data();
+                    data.exit_src = 0x10_0000;
+                    data.exit_kind = exit_kind_word;
+                    data.state.rax = 0x7777;
+                    data.state.rsp = 0x6000;
+                    data.state.rflags = 0x246;
+                    let mut gen_pcs: Vec<u64> =
+                        t.pcmap.entries().iter().map(|e| e.gen_start).collect();
+                    gen_pcs.push(0xdead_0000);
+                    for gen_pc in gen_pcs {
+                        for (signum, si_code, err) in [
+                            (libc::SIGSEGV, 1, 0u64),
+                            (libc::SIGUSR1, 0, 0),
+                            (libc::SIGSEGV, 1, 0x10),
+                            (libc::SIGFPE, 1, 0),
+                        ] {
+                            let input = FaultInput {
+                                gen_pc,
+                                addr: gen_pc,
+                                signum,
+                                si_code,
+                                err,
+                            };
+                            let via_adapter = recover_fault(&t, profile, &data, input);
+                            let via_core = crate::recovery::recover(
+                                &t,
+                                profile,
+                                RecoveryInput {
+                                    provenance: input,
+                                    interrupted: data.interrupted,
+                                    saved: data.state,
+                                    spill_rax: data.spill_rax,
+                                    spill_flags: data.spill_flags,
+                                    branches: data.branch_count,
+                                    instructions: data.instruction_count,
+                                    exit_kind: data.exit_kind,
+                                    exit_src: data.exit_src,
+                                },
+                            );
+                            assert_eq!(via_adapter.kind, via_core.kind, "{fixture} {gen_pc:#x}");
+                            assert_eq!(
+                                via_adapter.src_pc, via_core.src_pc,
+                                "{fixture} {gen_pc:#x}"
+                            );
+                            assert_eq!(via_adapter.addr, via_core.addr, "{fixture} {gen_pc:#x}");
+                            assert_eq!(via_adapter.signum, via_core.signum);
+                            assert_eq!(via_adapter.state, via_core.state, "{fixture} {gen_pc:#x}");
+                            assert_eq!(via_adapter.branches, via_core.branches);
+                            assert_eq!(via_adapter.instructions, via_core.instructions);
+                            assert!(via_adapter.also_pending.is_empty());
+                        }
+                    }
+                }
+            }
+        }
     }
 }
