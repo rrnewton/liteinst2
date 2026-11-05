@@ -10,6 +10,16 @@ loader/tool belongs in Reverie. P1b target is architecture cell V10
 remains **unbuilt until M4 is met**, and merging to liteinst2 main
 remains barred under the owner's DBT hold regardless of this note.
 
+**Scope decision recorded 2026-11-05 via coord7:** for **P1a**, the
+disclosed asynchronous-signal reduction is accepted (admission
+refuses installed async handlers; poll-bounded `AsyncSignal`
+stops; no transparency claim). That acceptance is **for P1a only**.
+Transparent asynchronous delivery per original §6.3 is a required
+gate before any P1b whole-program claim and is therefore item 1
+below. The genuine Linux signal-frame, compiled-C static/dynamic/
+PIE variant, and SINGLEBLOCK-corroboration gaps remain disclosed;
+none is satisfied by this note.
+
 Goal (M4 shape, final wording is the owner's): the standalone driver
 counts every retired conditional branch (then every instruction) of
 a real dynamically-linked program (`/bin/ls` or coord7 equivalent),
@@ -18,7 +28,50 @@ rule (DR-null ratio, run count, machine; dense counting labelled
 vs a DR counting client). Everything P1a refuses that P1b still
 cannot do keeps refusing by name.
 
-## 1. Indirect control flow
+## 1. Required gate: transparent asynchronous delivery
+
+No P1b stage may be presented as a whole-program result — including
+any `/bin/ls`, M4-shaped, or staged-driver claim — until this gate
+is implemented and independently validated. Indirect control flow,
+mapping discovery, and driver work below do not bypass it.
+
+Required behavior, at the level frozen for P1b authorization:
+
+- An asynchronous signal may arrive at any guest-live generated PC,
+  including copied instructions, counter/poll stubs, call/exit
+  machinery, common exit, and the entry bridge. The executor first
+  reconstructs exact source state: next source PC, registers,
+  flags, stack effects, and pending versus committed branch and
+  instruction credit, with no lost or double credit.
+- Delivery uses a genuine Linux signal frame at the recovered
+  source PC with source-faithful `siginfo` address semantics. No
+  cache/generated PC, machinery register, spill value, or
+  executor-private address may be exposed as guest state.
+- The guest handler itself executes under the same counting,
+  syscall/nondet exit, mapping-admission, and refusal contract as
+  other guest code. Signal masks, alternate-stack ownership,
+  nested and real-time signal ordering/coalescing, restart of
+  interrupted syscalls, and `rt_sigreturn` resume to the recovered
+  source PC each need an explicit rule before implementation is
+  claimed complete.
+- Synchronous faults retain precise source PC/state and
+  signal-specific address semantics; asynchronous provenance is
+  never relabelled by the emitted location at which it arrives.
+- Acceptance evidence must include asynchronous interruption at
+  copied and machinery boundaries, a guest loop that progresses
+  only when its handler runs, a handler that mutates architectural
+  state and returns through `rt_sigreturn`, source-PC/siginfo
+  assertions inside the handler, and full-state/count comparison
+  against the independent native oracle. Genuine-frame evidence is
+  currently absent and remains an explicit gap until those tests
+  exist.
+
+This gate changes the driver sequence in §4: its staged programs
+may be used as development fixtures, but no stage is a
+whole-program claim while asynchronous delivery is only blocked,
+reported, or confined to dispatcher boundaries.
+
+## 2. Indirect control flow
 
 Two stages, separately landable:
 
@@ -32,8 +85,9 @@ Two stages, separately landable:
   or enter the existing block; target outside every admitted region
   → `Refuse::IndirectUnresolved` as today. `ret` already resolves
   this way in P1a and is unchanged. Cost: one dispatcher exit per
-  indirect transfer — acceptable for M4 correctness, measured
-  honestly, removed only by P1b.2.
+  indirect transfer — acceptable as the correctness-first
+  development stage, measured honestly, removed only by P1b.2;
+  any resulting whole-program claim still requires §1.
 - **P1b.2 in-cache hash-lookup exit stub (speed).** An
   allocation-resident open-addressing table `orig_pc → gen_pc`
   (power-of-two, linear probe, generation-stamped entries). The
@@ -52,7 +106,7 @@ Two stages, separately landable:
   the target is whatever value memory/register holds at run time.
   Lazy binding means the dynamic linker's resolver is itself
   reached by an indirect transfer and gets translated like any
-  other code once its mapping is admitted (§2). `jmp *GOT` through
+  other code once its mapping is admitted (§3). `jmp *GOT` through
   a not-yet-bound slot therefore works or refuses by the same rule
   as every other indirect edge — there is no PLT-aware shortcut.
 
@@ -61,7 +115,7 @@ increment the RCB counter; only the conditional branch that retires
 does (unchanged from P1a). The lookup stub's internal conditional
 branches are machinery and are not guest branches.
 
-## 2. Code discovery: dlopen, ld.so, fresh mappings
+## 3. Code discovery: dlopen, ld.so, fresh mappings
 
 P1a admits one immutable private region up front. P1b admits
 **lazily, on first control transfer in**, under these rules:
@@ -93,12 +147,12 @@ P1a admits one immutable private region up front. P1b admits
   hash table entries pointing into it (whole-table flush is the
   P1b-simple correct choice).
 - Saved-context retention across `dlclose`/`munmap` is unchanged
-  from the §6 design: return/signal PCs into an unmapped library
+  from the first report's §6 design: return/signal PCs into an unmapped library
   remain recorded; resuming to one faults/refuses by name, never
   silently lands in a reused mapping (generation, not address,
   decides).
 
-## 3. The `/bin/ls` driver (standalone, no Reverie binding)
+## 4. The `/bin/ls` driver (standalone, no Reverie binding)
 
 Recommended shape: **ptrace-launched child with an injected cache**
 (reusing the exec-stop ideas from `crates/liteinst-launch` at the
@@ -121,12 +175,16 @@ design level, not its code):
    rendezvous proof is not ready, multi-threaded guests keep
    refusing `ThreadLifecycle` — `/bin/ls` is single-threaded in
    practice, and P1b must say so rather than imply coverage.
-4. Signals: asynchronous signals are delivered only at dispatcher
-   boundaries in P1b.1 (state is at a source PC there by
-   construction); a signal arriving mid-cache in P1b.2 requires the
-   §6 frame-rewrite (PC-map translation of the interrupted PC plus
-   spill-phase resolution) before mid-cache delivery is enabled.
-   Synchronous faults keep P1a's rewind-to-source-PC rule.
+4. Signals: §1 is a hard gate, not a later transparency upgrade.
+   Dispatcher-boundary delivery, signal blocking, poll-bounded
+   `AsyncSignal` stops, or a state rewrite without a genuine Linux
+   frame may be used while developing the mechanism, but none
+   satisfies §1 and none supports a whole-program claim. The
+   driver cannot call a stage complete until arbitrary-PC async
+   interruption, genuine-frame delivery, handler execution under
+   the counting contract, and `rt_sigreturn` resume are validated
+   as specified in §1. Synchronous faults keep precise source
+   PC/state and signal-specific address semantics.
 5. `execve` from the guest refuses `ExecSuccessor` in P1b
    (successor retranslation is named future work), as do `ptrace`
    by the guest, personality changes that alter decode, and
@@ -134,11 +192,18 @@ design level, not its code):
 
 Staging inside the driver: static hello → dynamic hello (ld.so
 translated) → `/bin/true` → `/bin/ls -d .` → `/bin/ls` on a real
-directory. Each stage's counts validate per §4 before the next is
-claimed.
+directory. Each stage's counts validate per §5 before the next is
+used as a development fixture, but **no stage may be claimed as a
+whole-program result until §1 also passes on that stage**.
 
-## 4. Oracles for P1b (freeze before implementation)
+## 5. Oracles for P1b (freeze before implementation)
 
+- **§1 async-delivery evidence (new, required):** an independent
+  native oracle must observe handler-visible source PC/`siginfo`,
+  full state, counts, and resume behavior at copied and machinery
+  boundaries, including a loop that progresses only through its
+  handler. A genuine Linux frame is not currently demonstrated;
+  this remains a gap until those tests exist and pass.
 - **O1 (existing)** keeps covering every P1a fixture plus new
   indirect/call/ret/jump-table fixtures at fixture scale, exact
   equality, no tolerance. P1b.2's hash stub must produce
@@ -154,8 +219,12 @@ claimed.
   lookup table disabled) must be caught by a dlopen/dlclose/reopen
   fixture; stub-branch-counting mutant (machinery branches leaking
   into the RCB count) must be caught by O1 equality.
+- Still-disclosed evidence gaps: compiled-C static/dynamic/PIE
+  variants and SINGLEBLOCK corroboration are not established by
+  the current corpus and must either be added to the frozen P1b
+  corpus or explicitly carried as non-claims in every result.
 
-## 5. Explicit non-goals and refusals carried into P1b
+## 6. Explicit non-goals and refusals carried into P1b
 
 Self-modifying/JIT code (M5), `execve` successors, attach (A4),
 external-debugger coexistence (the P1b driver *is* the tracer),
@@ -166,7 +235,7 @@ per-page or per-admission work — discovery is per first-transfer
 into a block, and every reported number carries DR-null ratio +
 exactly-10 median + IQR + machine or is labelled UNMEASURED.
 
-## 6. Open questions for the Astra review
+## 7. Open questions for the Astra review
 
 1. Is dispatcher-side indirect resolution (P1b.1) an acceptable M4
    shape if its measured cost is honest, with the hash stub as a
@@ -174,14 +243,21 @@ exactly-10 median + IQR + machine or is labelled UNMEASURED.
 2. Per-region generations vs one global generation with
    flush-on-any-mapping-event: is the simpler global flush
    acceptable for M4 if `dlopen`-heavy reruns retranslate?
-3. Mid-cache async signal delivery: gate P1b exit on it, or is
-   dispatcher-boundary delivery (with the bound stated) enough
-   for the `/bin/ls` M4 claim?
+3. **Resolved 2026-11-05 via coord7:** mid-cache transparent
+   async delivery **does** gate every P1b whole-program claim
+   (§1). The remaining questions are mechanism-specific: exact
+   genuine-frame construction and resume rule, nested/RT ordering
+   and coalescing rules, interrupted-syscall restart semantics,
+   and how much of that surface must be validated before the first
+   staged `/bin/ls` result may be called whole-program.
 4. Remote-arena injection at exec-stop vs a preload-shaped child
    bootstrap: any objection to ptrace syscall injection as the
    *driver-only* mechanism (explicitly not the future V10 loader)?
 
 Estimated against L10 §6.4's P1b stage (15–30 agent-days, estimate):
-this note's P1b.1 + driver staging is the bulk of it; P1b.2's hash
-stub is the tail risk if flag-neutral probing resists the simple
-template.
+transparent delivery is now scope item 1 and a claim gate, so
+that stage estimate must be repriced after the Astra verdict and
+P1b authorization rather than treated as already covering §1.
+Within the remaining scope, P1b.1 + driver staging is the bulk of
+the work; P1b.2's hash stub is the tail risk if flag-neutral
+probing resists the simple template.
