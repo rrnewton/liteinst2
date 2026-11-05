@@ -3,7 +3,7 @@
 use super::*;
 use crate::frontend::{ActionKind, PayloadOutcome};
 use crate::generation::{Disposition, Terminal};
-use liteinst2::contracts::SourceIdentity;
+use liteinst::contracts::SourceIdentity;
 
 const IDS: [FunctionId; 2] = [FunctionId(11), FunctionId(29)];
 const ENTRY: [u64; 2] = [0x1000, 0x1100];

@@ -1,8 +1,8 @@
 //! Closed frontend whole-function geometry; no loader or publication authority.
 use super::{BlockActions, SiteError};
-use liteinst2::contracts::{AddressRange, Refusal};
-use liteinst2::quiescent::PlannedInstall;
-use liteinst2::trampoline::ObservationStackProfile;
+use liteinst::contracts::{AddressRange, Refusal};
+use liteinst::quiescent::PlannedInstall;
+use liteinst::trampoline::ObservationStackProfile;
 
 pub(super) fn groups(
     scope: AddressRange,

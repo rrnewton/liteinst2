@@ -1,14 +1,14 @@
 //! Fixed pure-planner evidence puzzles. No native coverage is claimed here.
-use liteinst2::contracts::*;
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::contracts::*;
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     self, AllocationPolicy, InstallRequest, PlannedInstall, PlanningFailure, SearchPolicy,
     TacticPolicy,
 };
-use liteinst2::search::{CandidateProof, RefusalClass, SearchDomain, SearchStop};
+use liteinst::search::{CandidateProof, RefusalClass, SearchDomain, SearchStop};
 
 const PC: u64 = 0x2000_0000;
-unsafe extern "C" fn noop(_: *mut liteinst2::trampoline::HookContext) {}
+unsafe extern "C" fn noop(_: *mut liteinst::trampoline::HookContext) {}
 
 fn entries(code: &[u8]) -> LegalEntrySet {
     let identity = CodeIdentity {
@@ -304,12 +304,12 @@ fn accepted_leaf_and_outer_capacity_refusal_remain_an_engine_failure() {
         allocation: &allocation,
         search: relocation(),
     };
-    let failure = liteinst2::engine::plan(
+    let failure = liteinst::engine::plan(
         &request,
         &allocation,
-        liteinst2::engine::EnginePolicy {
-            forced: Some(liteinst2::engine::Tactic::Relocation),
-            bundle: liteinst2::bundle::BundleBudget {
+        liteinst::engine::EnginePolicy {
+            forced: Some(liteinst::engine::Tactic::Relocation),
+            bundle: liteinst::bundle::BundleBudget {
                 max_mappings: 0,
                 ..Default::default()
             },
@@ -385,7 +385,7 @@ fn one_site_cutoff_then_two_site_success_preserves_order_and_positive_plan() {
 
 #[test]
 fn coalesced_zero_candidate_budget_uses_the_same_exact_generator_evidence() {
-    use liteinst2::controls::{ControlledAction, ProbeControl};
+    use liteinst::controls::{ControlledAction, ProbeControl};
     let code = [0xb8, 7, 0, 0, 0, 0xb8, 9, 0, 0, 0, 0xc3];
     let entries = entries(&code);
     let allocation = policy(0);

@@ -10,11 +10,11 @@ use std::sync::RwLock;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
+use liteinst::contracts::{AddressRange, CodeIdentity, SourceIdentity};
 use liteinst_launch::{
     ExecCheckpoint, FirstImage, LaunchCommand, LaunchError, MAX_MEMORY_READ, ProcessEvent,
     SignalStop, StoppedProcess,
 };
-use liteinst2::contracts::{AddressRange, CodeIdentity, SourceIdentity};
 
 const SEGV_ACCERR: i32 = 2;
 const ENTRY_OFFSET: usize = 4096;

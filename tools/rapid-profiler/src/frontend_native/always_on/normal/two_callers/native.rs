@@ -10,8 +10,8 @@ use crate::frontend_native::{
     TwoCallerNormalLeafContract, TwoCallerNormalSitePreparation,
 };
 use crate::generation::{Disposition, Terminal};
-use liteinst2::bundle::WritableAlias;
-use liteinst2::contracts::*;
+use liteinst::bundle::WritableAlias;
+use liteinst::contracts::*;
 use std::collections::BTreeSet;
 use std::path::Path;
 use std::sync::mpsc::{self, Receiver, SyncSender, TrySendError};

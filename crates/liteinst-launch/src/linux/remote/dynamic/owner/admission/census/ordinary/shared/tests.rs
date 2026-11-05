@@ -3,7 +3,7 @@
 use super::*;
 use crate::lifecycle::LifecycleRegistry;
 use crate::linux::remote::dynamic::owner::trusted::AdmissionStop;
-use liteinst2::contracts::SourceIdentity;
+use liteinst::contracts::SourceIdentity;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::time::Duration;
 const PANIC: u32 = 0x5348_5231;

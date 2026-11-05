@@ -23,7 +23,7 @@ pub(in super::super) struct SourceBinding(u64);
 
 struct BasisImage {
     mapping_index: usize,
-    core_identity: liteinst2::contracts::CodeIdentity,
+    core_identity: liteinst::contracts::CodeIdentity,
     snapshot: Snapshot,
     entries: LegalEntrySet,
 }

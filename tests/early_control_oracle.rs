@@ -12,20 +12,20 @@
 #[path = "support/quiescent_oracle.rs"]
 mod oracle;
 
-use liteinst2::bundle::{BundleBudget, PlannedBundle, WritableAlias};
-use liteinst2::contracts::{
+use liteinst::bundle::{BundleBudget, PlannedBundle, WritableAlias};
+use liteinst::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryObligation, EntryProvenance, ExpectedBytes,
     LegalEntry, LegalEntrySet, PlanKind, QuiescenceLease, Refusal, ResumeObligation,
     SourceIdentity,
 };
-use liteinst2::controls::{ControlledAction, PointObservationAction, ProbeControl};
-use liteinst2::grouping::{BackingKind, GroupingBudget};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::controls::{ControlledAction, PointObservationAction, ProbeControl};
+use liteinst::grouping::{BackingKind, GroupingBudget};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy, plan_point_observations_detailed,
 };
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::{HookCallback, HookContext, TrampolinePlan};
+use liteinst::scanner::InstructionScanner;
+use liteinst::trampoline::{HookCallback, HookContext, TrampolinePlan};
 use oracle::{
     HookEvent, HookEventLog, HookExpectation, Mapping, NativeOracle, NativeTrace, TraceMap,
 };
@@ -981,7 +981,7 @@ fn point_actions(actions: &[ControlledAction]) -> Vec<PointObservationAction> {
         .collect()
 }
 
-fn assert_gate_layouts(image: &liteinst2::trampoline::TrampolineImage, pcs: &[u64]) {
+fn assert_gate_layouts(image: &liteinst::trampoline::TrampolineImage, pcs: &[u64]) {
     let gates = image.early_control_gates();
     assert_eq!(
         gates.iter().map(|gate| gate.logical_pc).collect::<Vec<_>>(),

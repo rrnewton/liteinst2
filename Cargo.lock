@@ -90,60 +90,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
 
 [[package]]
-name = "liteinst-admission"
-version = "0.2.0"
-dependencies = [
- "iced-x86",
- "liteinst2",
-]
-
-[[package]]
-name = "liteinst-artifact"
-version = "0.2.0"
-dependencies = [
- "sha2",
-]
-
-[[package]]
-name = "liteinst-inprocess"
-version = "0.2.0"
-dependencies = [
- "iced-x86",
- "libc",
- "liteinst2",
-]
-
-[[package]]
-name = "liteinst-launch"
-version = "0.2.0"
-dependencies = [
- "iced-x86",
- "libc",
- "liteinst-admission",
- "liteinst-launch",
- "liteinst2",
- "sha2",
-]
-
-[[package]]
-name = "liteinst-rewrite"
-version = "0.1.0"
-dependencies = [
- "iced-x86",
- "libc",
- "liteinst-artifact",
- "liteinst2",
-]
-
-[[package]]
-name = "liteinst-x86"
-version = "0.2.0"
-dependencies = [
- "iced-x86",
-]
-
-[[package]]
-name = "liteinst2"
+name = "liteinst"
 version = "0.2.0"
 dependencies = [
  "iced-x86",
@@ -155,12 +102,65 @@ dependencies = [
 ]
 
 [[package]]
+name = "liteinst-admission"
+version = "0.2.1"
+dependencies = [
+ "iced-x86",
+ "liteinst",
+]
+
+[[package]]
+name = "liteinst-artifact"
+version = "0.2.0"
+dependencies = [
+ "sha2",
+]
+
+[[package]]
+name = "liteinst-inprocess"
+version = "0.2.1"
+dependencies = [
+ "iced-x86",
+ "libc",
+ "liteinst",
+]
+
+[[package]]
+name = "liteinst-launch"
+version = "0.2.1"
+dependencies = [
+ "iced-x86",
+ "libc",
+ "liteinst",
+ "liteinst-admission",
+ "liteinst-launch",
+ "sha2",
+]
+
+[[package]]
+name = "liteinst-rewrite"
+version = "0.1.0"
+dependencies = [
+ "iced-x86",
+ "libc",
+ "liteinst",
+ "liteinst-artifact",
+]
+
+[[package]]
+name = "liteinst-x86"
+version = "0.2.0"
+dependencies = [
+ "iced-x86",
+]
+
+[[package]]
 name = "liteinst2-exception-oracle"
 version = "0.1.0"
 dependencies = [
  "iced-x86",
  "libc",
- "liteinst2",
+ "liteinst",
 ]
 
 [[package]]
@@ -214,7 +214,7 @@ version = "0.1.0"
 dependencies = [
  "iced-x86",
  "libc",
- "liteinst2",
+ "liteinst",
  "object",
  "perf-event-open-sys",
 ]

@@ -1,10 +1,10 @@
 // Private additive support. This closed fixture does not make the publisher
 // generally async-signal-safe. See DESIGN.md for its actual-frame gate proof.
 use super::*;
-use liteinst2::contracts::{
+use liteinst::contracts::{
     AddressRange, FailureStage, PlanKind, QuiescenceLease, Refusal, ResumeObligation,
 };
-use liteinst2::quiescent::PlannedInstall;
+use liteinst::quiescent::PlannedInstall;
 use std::sync::atomic::{AtomicPtr, AtomicU64, Ordering};
 
 const STACK_LEN: usize = 16 * PAGE;

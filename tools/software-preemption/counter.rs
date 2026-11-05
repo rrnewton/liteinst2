@@ -1,7 +1,7 @@
 //! Synchronous BEFORE-taken-backedge clock. No callback changes saved state.
 use crate::corpus::taken;
-use liteinst2::controls::{ControlIdentity, ProbeControl};
-use liteinst2::trampoline::HookContext;
+use liteinst::controls::{ControlIdentity, ProbeControl};
+use liteinst::trampoline::HookContext;
 use std::cell::{Cell, UnsafeCell};
 use std::sync::{
     Arc,

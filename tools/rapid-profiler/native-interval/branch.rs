@@ -1,6 +1,6 @@
 //! Fixed two-return native subject. Old single-return cases are independent.
 use super::*;
-use liteinst2::bundle::{BundleBudget, PlannedBundle, WritableAlias};
+use liteinst::bundle::{BundleBudget, PlannedBundle, WritableAlias};
 use oracle::native_interval::native_branch::BorrowedTwoExitOracle;
 use rapid_profiler::frontend_native::{BranchAttach, BranchSubjectContract, LoadedBranchLeaf};
 const BRANCH_SUBJECT: &[u8] = include_bytes!(env!("NATIVE_BRANCH_DSO"));

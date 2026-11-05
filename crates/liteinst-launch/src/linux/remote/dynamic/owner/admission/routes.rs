@@ -528,7 +528,7 @@ pub(super) fn publish(
     let identity = domain.image(plan.target().start())?.core_identity;
     let image = domain.image(plan.target().start())?;
     let ranges = vec![
-        liteinst2::contracts::AddressRange::new(image.mapping.start, image.snapshot.bytes().len())
+        liteinst::contracts::AddressRange::new(image.mapping.start, image.snapshot.bytes().len())
             .map_err(GateError::Core)?,
     ];
     // SAFETY: the borrowed native hold owns every live mm task; complete immutable

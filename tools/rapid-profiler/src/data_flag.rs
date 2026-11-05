@@ -14,11 +14,11 @@ use crate::frontend::{
 };
 use crate::frontend_tls::{self, PointObservation, ThreadRegistration};
 use crate::generation::{Config, DeactivationRequest, FunctionId};
-use liteinst2::contracts::{Epoch, Refusal, ToggleProbe, Visibility};
-use liteinst2::controls::{
+use liteinst::contracts::{Epoch, Refusal, ToggleProbe, Visibility};
+use liteinst::controls::{
     ControlIdentity, ControlWriter, ControlledAction, PointObservationAction, ProbeControl,
 };
-use liteinst2::trampoline::{HookCallback, HookContext};
+use liteinst::trampoline::{HookCallback, HookContext};
 use std::cell::{Cell, RefCell};
 use std::marker::PhantomData;
 use std::rc::Rc;

@@ -4,17 +4,17 @@
 use super::*;
 use super::artifact_window_native::{event, events, observe};
 use super::router_witness::{Router, Budget, assert_hook_context, counter, deliver, finish};
-use liteinst2::composition::Composition;
-use liteinst2::contracts::*;
-use liteinst2::emission::{ArtifactEmission, ArtifactFieldEncoding, ArtifactRequest, PlanningSite, SymbolicHook, TargetProfile};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{AllocationPolicy, ArtifactObservationSearchRequest, ArtifactRelocationPlacement, SearchPolicy, TacticPolicy,
+use liteinst::composition::Composition;
+use liteinst::contracts::*;
+use liteinst::emission::{ArtifactEmission, ArtifactFieldEncoding, ArtifactRequest, PlanningSite, SymbolicHook, TargetProfile};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{AllocationPolicy, ArtifactObservationSearchRequest, ArtifactRelocationPlacement, SearchPolicy, TacticPolicy,
     plan_artifact_observation_window_upstream_after, plan_artifact_observation_window_upstream_after_with_placement,
     seal_artifact_observation_window_min5, seal_artifact_observation_windows_upstream_min5,
     plan_artifact_observation_windows_upstream_after_with_placement};
-use liteinst2::search::{SearchDomain, SearchStop};
-use liteinst2::sync_core::SyncCore;
-use liteinst2::trampoline::{SavedExtendedStateLayout, HOOK_CONTEXT_STACK_PREFIX_BYTES};
+use liteinst::search::{SearchDomain, SearchStop};
+use liteinst::sync_core::SyncCore;
+use liteinst::trampoline::{SavedExtendedStateLayout, HOOK_CONTEXT_STACK_PREFIX_BYTES};
 
 const BODY: [u8; 5] = [0x5b, 0x5d, 0x41, 0x5c, 0xc3];
 const HEADS: [usize; 4] = [0, 1, 2, 4];
@@ -376,7 +376,7 @@ impl Owner {
 // The actual PreparedArtifact adapter supplies a bound, never substitute bytes.
 fn physical_plan(
     request: &ArtifactRequest<'_>, predecessor: &Composition, selected: &[u64], certificate: SizeCertificate,
-) -> (liteinst2::quiescent::ArtifactObservationPlan, usize) {
+) -> (liteinst::quiescent::ArtifactObservationPlan, usize) {
     let body = request.site.base_address;
     assert_eq!(request.site.code, PHYSICAL_BODY); assert_eq!(selected, [body + 2, body + 3]);
     let unchanged = predecessor.clone();
@@ -425,11 +425,11 @@ fn physical_plan(
     assert_eq!(planned.search().runs[1].candidates, None);
     assert!(planned.search().accepted && !planned.search().classification_complete);
     assert_eq!(planned.search().refusals, schedule.rows()[0].qualification(), "qualification recorded once");
-    let liteinst2::emission::ArtifactMetrics::Single(metrics) = planned.artifact().metrics() else { panic!("one actual shared relocation result") };
+    let liteinst::emission::ArtifactMetrics::Single(metrics) = planned.artifact().metrics() else { panic!("one actual shared relocation result") };
     assert_eq!((metrics.upstream_bytes, metrics.displaced_bytes, metrics.prefix_instructions, metrics.allocation_attempts), (2, 5, 1, 1));
     assert_eq!(metrics.attempts.iter().map(|attempt| (attempt.physical_pc, attempt.refusal.as_ref())).collect::<Vec<_>>(),
         [(body + 2, Some(&Refusal::NoPatchWindow)), (body, None)]);
-    assert!(metrics.attempts.iter().all(|attempt| attempt.tactic == liteinst2::quiescent::PatchTactic::Relocation));
+    assert!(metrics.attempts.iter().all(|attempt| attempt.tactic == liteinst::quiescent::PatchTactic::Relocation));
     (planned, size_bound)
 }
 

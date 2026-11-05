@@ -1,6 +1,6 @@
 [package]
 name = "liteinst-inprocess"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 rust-version = "1.94"
 license = "BSD-2-Clause"
@@ -9,7 +9,7 @@ readme = "README.md"
 description = "Caller-owned in-process NX first-touch gate"
 
 [dependencies]
-liteinst2 = { version = "0.2.0", path = "../.." }
+liteinst = { version = "0.2.0", path = "../.." }
 libc = "0.2.186"
 iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder"] }
 

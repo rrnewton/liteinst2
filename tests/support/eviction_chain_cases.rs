@@ -1,11 +1,11 @@
 //! Handwritten original heads, lengths, target deltas and final source bytes.
 //! No production decoder or planner computes the expected geometry.
-use liteinst2::bundle::BundleBudget;
-use liteinst2::contracts::*;
-use liteinst2::eviction_chain::{ChainSearch, PlannedChain};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy};
-use liteinst2::trampoline::HookCallback;
+use liteinst::bundle::BundleBudget;
+use liteinst::contracts::*;
+use liteinst::eviction_chain::{ChainSearch, PlannedChain};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy};
+use liteinst::trampoline::HookCallback;
 
 pub struct Case {
     pub name: &'static str,

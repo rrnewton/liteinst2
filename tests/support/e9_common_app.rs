@@ -3,8 +3,8 @@
 //! every subsequent kernel instruction executes normally under SINGLESTEP.
 //! The enclosing recipe authenticates original/inventory/runtime-owner inputs.
 use super::*;
-use liteinst2::cache_line::CacheLineSize;
-use liteinst2::scanner::InstructionScanner;
+use liteinst::cache_line::CacheLineSize;
+use liteinst::scanner::InstructionScanner;
 use std::collections::BTreeMap;
 use std::os::unix::fs::DirBuilderExt;
 

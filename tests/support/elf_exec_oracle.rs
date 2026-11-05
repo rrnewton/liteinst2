@@ -6,7 +6,7 @@
 //! file set before invocation. This driver checks their consumed syntax and
 //! actual byte/owner/state relationships; it does not implement a hash verifier.
 use super::*;
-use liteinst2::trampoline::{SavedExtendedStateFormat, SavedExtendedStateLayout};
+use liteinst::trampoline::{SavedExtendedStateFormat, SavedExtendedStateLayout};
 use std::collections::BTreeSet;
 use std::ffi::CString;
 use std::fs::{File, OpenOptions};

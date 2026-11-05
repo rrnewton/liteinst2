@@ -6,7 +6,7 @@ impl FunctionPlanning<'_> {
         typed: &[EntryAdmissionAction],
         predecessor: &mut Composition,
         reserved: &mut Vec<AddressRange>,
-        members: &mut Vec<liteinst2::quiescent::PlannedInstall>,
+        members: &mut Vec<liteinst::quiescent::PlannedInstall>,
         overlay: &mut [u8],
         full_overlay: &mut [u8],
     ) -> Result<(), SiteError> {

@@ -11,8 +11,8 @@
 use std::collections::{BTreeMap, VecDeque};
 
 use iced_x86::Register;
+use liteinst::x86::{self, SelectedClass};
 use liteinst_admission::scan::SiteClass;
-use liteinst2::x86::{self, SelectedClass};
 
 use crate::RegisterSnapshot;
 

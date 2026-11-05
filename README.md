@@ -1,6 +1,11 @@
-# liteinst2
+# liteinst
 
-`liteinst2` is a Rust library for **hooking machine code in a running program**.
+> **Canonical crate:** `liteinst` on crates.io. This repository
+> (`rrnewton/liteinst2`) is its home; the package was renamed from
+> `liteinst2` to `liteinst` at version 0.2.0 (same code, new name).
+> The former `liteinst2` crate is deprecated — use `liteinst`.
+
+`liteinst` is a Rust library for **hooking machine code in a running program**.
 It lets you intercept a chosen point in already-loaded x86-64 code — redirecting
 execution into your own function and then back — by rewriting instructions in
 place while the program keeps running, with no recompilation and no need to stop
@@ -16,7 +21,7 @@ client that embeds it.
 ## Instruction punning
 
 Overwriting live code is dangerous: another thread can fetch an instruction
-mid-edit and execute half of the old bytes and half of the new. `liteinst2`
+mid-edit and execute half of the old bytes and half of the new. `liteinst`
 avoids this with *instruction punning* — a technique for x86-64 where a patch is
 published as a single atomic store that reuses ("puns") existing bytes so that
 every possible concurrent instruction fetch sees either the complete old
@@ -36,7 +41,7 @@ introduced them:
   [doi:10.1145/3062341.3062344](https://doi.org/10.1145/3062341.3062344)) —
   instruction punning and the generalized WordPatch++ protocol.
 
-`liteinst2` is a Rust reimplementation of that work.
+`liteinst` is a Rust reimplementation of that work.
 
 ## A first hook
 
@@ -240,7 +245,7 @@ cargo test --release --lib rapid::tests::live::benchmark_single_byte_toggle_late
 
 The workspace also contains [liteinst-admission](crates/liteinst-admission/README.md),
 a standalone all-start instruction scanner, versioned entry facts and a mock
-page/dependency ledger. It exports facts through `liteinst2::contracts`. The
+page/dependency ledger. It exports facts through `liteinst::contracts`. The
 model never changes executable memory and is not a live admission gate.
 
 [liteinst-inprocess](crates/liteinst-inprocess/README.md) provides a singleton

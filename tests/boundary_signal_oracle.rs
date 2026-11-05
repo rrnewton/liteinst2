@@ -9,12 +9,12 @@ mod isolation;
 #[path = "support/quiescent_oracle.rs"]
 mod oracle;
 
-use liteinst2::contracts::*;
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::contracts::*;
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy, plan_install,
 };
-use liteinst2::trampoline::{HookContext, translate_program_counter};
+use liteinst::trampoline::{HookContext, translate_program_counter};
 use oracle::{
     HookEvent, HookEventLog, HookExpectation, NativeOracle, NativeTrace, SignalResume, TraceMap,
 };
@@ -109,7 +109,7 @@ fn check_trace(
     }
     generated
 }
-fn check_image(image: &liteinst2::trampoline::TrampolineImage) {
+fn check_image(image: &liteinst::trampoline::TrampolineImage) {
     assert_eq!(
         unsafe {
             std::slice::from_raw_parts(image.address() as usize as *const u8, image.bytes().len())

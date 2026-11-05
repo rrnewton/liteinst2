@@ -3,8 +3,8 @@
 #![forbid(unsafe_op_in_unsafe_fn)]
 
 use joined_task::Handle as JoinHandle;
-use liteinst2::bundle::WritableAlias;
-use liteinst2::contracts::*;
+use liteinst::bundle::WritableAlias;
+use liteinst::contracts::*;
 use rapid_profiler::frontend::{Limits, Observation, PayloadOutcome, RecordObservation, Report};
 use rapid_profiler::frontend_native::{
     CallGate, CallResult, IntegerLeafContract, IntervalJournal, LoadedIntegerLeaf,

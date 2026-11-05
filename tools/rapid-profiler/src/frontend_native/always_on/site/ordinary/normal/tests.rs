@@ -1,19 +1,19 @@
 //! Pure block planning and byte composition only. No loader certificate is
 //! fabricated, and no source/image is mapped, published or executed.
 use super::super::{SiteError, groups, whole};
-use liteinst2::bundle::{BundleBudget, PlannedBundle};
-use liteinst2::composition::Composition;
-use liteinst2::contracts::*;
-use liteinst2::controls::{ControlledAction, ProbeControl};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::bundle::{BundleBudget, PlannedBundle};
+use liteinst::composition::Composition;
+use liteinst::contracts::*;
+use liteinst::controls::{ControlledAction, ProbeControl};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy, plan_coalesced_detailed_after,
 };
-use liteinst2::trampoline::ObservationStackProfile;
+use liteinst::trampoline::ObservationStackProfile;
 
 const PAGE: u64 = 0x2800_0000;
 const ENTRY: u64 = PAGE + 128;
-unsafe extern "C" fn callback(_: *mut liteinst2::trampoline::HookContext) {}
+unsafe extern "C" fn callback(_: *mut liteinst::trampoline::HookContext) {}
 fn range(start: u64, len: usize) -> AddressRange {
     AddressRange::new(start, len).unwrap()
 }

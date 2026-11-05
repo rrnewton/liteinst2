@@ -3,14 +3,14 @@
 #![deny(warnings)]
 #![forbid(unsafe_op_in_unsafe_fn)]
 
-extern crate liteinst2;
+extern crate liteinst;
 
-use liteinst2::patcher::synchronized::{
+use liteinst::patcher::synchronized::{
     Direction, Phase, SyncJumpPatch, SyncPatchError, SynchronizedBatch,
 };
-use liteinst2::patcher::{JumpPatchPlan, PatchError, PatchStrategy};
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::sync_core::SyncCore;
+use liteinst::patcher::{JumpPatchPlan, PatchError, PatchStrategy};
+use liteinst::scanner::InstructionScanner;
+use liteinst::sync_core::SyncCore;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
@@ -653,8 +653,8 @@ fn poisoned_barrier(capability: SyncCore, barrier: usize) {
     let failure = unsafe { batch.advance().unwrap_err() };
     assert_eq!(
         failure.error,
-        SyncPatchError::Synchronize(liteinst2::sync_core::SyncCoreError::SystemCall {
-            operation: liteinst2::sync_core::SyncCoreOperation::Synchronize,
+        SyncPatchError::Synchronize(liteinst::sync_core::SyncCoreError::SystemCall {
+            operation: liteinst::sync_core::SyncCoreOperation::Synchronize,
             errno: libc::EPERM
         })
     );

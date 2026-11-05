@@ -11,7 +11,7 @@ static PREPARED: AtomicBool = AtomicBool::new(false);
 
 unsafe extern "C" fn initialize() {
     PREPARED.store(
-        liteinst2::patcher::prepare_live_patching().is_ok(),
+        liteinst::patcher::prepare_live_patching().is_ok(),
         Ordering::Release,
     );
 }

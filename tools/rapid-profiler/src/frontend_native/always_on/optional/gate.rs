@@ -1,8 +1,8 @@
 //! Real CALL gate for the separate optional profile. Scratch is never callback state.
 use super::super::{GateError, OriginalCallResult, ReadableStack, tid};
 use crate::frontend_native::IntegerLeafCertificate;
-use liteinst2::precontext::{CallScratch, Disposition, ScratchPhase, ScratchSnapshot};
-use liteinst2::trampoline::HookContext;
+use liteinst::precontext::{CallScratch, Disposition, ScratchPhase, ScratchSnapshot};
+use liteinst::trampoline::HookContext;
 use std::cell::UnsafeCell;
 use std::sync::Arc;
 

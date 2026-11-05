@@ -30,7 +30,7 @@ impl Deref for BindingEnvelope {
 #[cfg(test)]
 mod tests {
     use super::super::*;
-    use liteinst2::contracts::{CodeIdentity, SourceIdentity};
+    use liteinst::contracts::{CodeIdentity, SourceIdentity};
 
     const IDS: [FunctionId; 2] = [FunctionId(11), FunctionId(29)];
 

@@ -11,13 +11,13 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::time::{Duration, Instant};
 
 use iced_x86::{Decoder, DecoderOptions};
+use liteinst::contracts as core;
 use liteinst_admission::AddressRange;
 use liteinst_admission::oracle_chain::{
     CacheCorruption, CacheLimits, CacheUsage, Inspection, InspectionSource, OracleMiss,
 };
 use liteinst_admission::returns::CallReturnLedger;
 use liteinst_admission::scan::{AdmissionOracle, Candidate, Policy, Verdict};
-use liteinst2::contracts as core;
 
 use crate::core_remote::CpuidPublisher;
 

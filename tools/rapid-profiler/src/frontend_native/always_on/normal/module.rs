@@ -1,7 +1,7 @@
 //! Two sequential leaves share the normal TLS/receipt/controller runtime.
 //! This finite facade grants neither a gate nor nested/concurrent execution.
 use super::*;
-use liteinst2::contracts::CodeIdentity;
+use liteinst::contracts::CodeIdentity;
 pub(in crate::frontend_native::always_on) mod owned;
 pub use owned::{
     EarlyEntryModuleClient, EarlyEntryModuleObservations, EarlyEntryModulePhysicalRow,

@@ -1,7 +1,7 @@
 //! Four finite ordinary CALL/RET state pairs; separate from the old fixed modes.
 use super::{Path, STATE_SEEDS, current_single_main, exact_truth as truth, oracle};
-use liteinst2::bundle::WritableAlias;
-use liteinst2::contracts::*;
+use liteinst::bundle::WritableAlias;
+use liteinst::contracts::*;
 use oracle::native_ordinary::{
     ChildContext, GATE_BYTES, OrdinaryOracle, OriginalObservation, Ready,
 };

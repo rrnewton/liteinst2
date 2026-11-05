@@ -2,9 +2,9 @@
 use super::*;
 use crate::frontend::{Payload, PayloadOutcome};
 use crate::generation::{Admission, Completion, Disposition, Terminal};
-use liteinst2::contracts::CodeIdentity;
-use liteinst2::controls::ManagedCallback;
-use liteinst2::trampoline::{ObservationStackProfile, SavedExtendedStateLayout};
+use liteinst::contracts::CodeIdentity;
+use liteinst::controls::ManagedCallback;
+use liteinst::trampoline::{ObservationStackProfile, SavedExtendedStateLayout};
 use site::ordinary::call_pair::{CallPairSite, NormalCallPairRoleKind as Role};
 pub(super) mod runtime;
 mod session;

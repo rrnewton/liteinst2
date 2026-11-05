@@ -8,18 +8,18 @@ mod isolated_native_test;
 #[path = "support/quiescent_oracle.rs"]
 mod oracle;
 
-use liteinst2::bundle::{BundleBudget, PlannedBundle, WritableAlias};
-use liteinst2::composition::Composition;
-use liteinst2::contracts::{
+use liteinst::bundle::{BundleBudget, PlannedBundle, WritableAlias};
+use liteinst::composition::Composition;
+use liteinst::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryObligation, EntryProvenance, ExpectedBytes,
     LegalEntry, LegalEntrySet, PlanKind, QuiescenceLease, Refusal, ResumeObligation,
     SourceIdentity,
 };
-use liteinst2::controls::{ControlIdentity, ControlledAction, ProbeControl};
-use liteinst2::quiescent::{
+use liteinst::controls::{ControlIdentity, ControlledAction, ProbeControl};
+use liteinst::quiescent::{
     AllocationPolicy, WholeFunctionRequest, plan_whole_function_controlled_detailed_after,
 };
-use liteinst2::trampoline::{HookContext, translate_program_counter};
+use liteinst::trampoline::{HookContext, translate_program_counter};
 use oracle::{
     CompiledLeafExpectation, HookEvent, HookEventLog, HookExpectation, NativeOracle, TraceMap,
 };

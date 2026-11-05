@@ -5,15 +5,15 @@
 #[path = "../../../tests/support/quiescent_oracle.rs"]
 mod oracle;
 
-use liteinst2::contracts::{
+use liteinst::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryProvenance, FailureStage, LegalEntry,
     LegalEntrySet, PlanKind, QuiescenceLease, Refusal, ResumeObligation, SourceIdentity,
 };
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy, plan_install,
 };
-use liteinst2::trampoline::HookContext;
+use liteinst::trampoline::HookContext;
 use oracle::process_text::ProcessTextOracle;
 use oracle::{HookEvent, HookEventLog, HookExpectation, TraceMap};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -353,7 +353,7 @@ fn exception_landing_actual_unwind_and_exact_prefix_state() {
             .parts()
             .obligations
             .iter()
-            .any(|item| matches!(item, liteinst2::contracts::EntryObligation::Routed(_)))
+            .any(|item| matches!(item, liteinst::contracts::EntryObligation::Routed(_)))
     );
     let pointer = function as usize as *mut u8;
     let mut owner = ();

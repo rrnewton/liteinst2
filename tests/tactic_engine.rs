@@ -2,16 +2,16 @@
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 //! Forced and preferred engine outcomes, exercised through its returned bundle.
 
-use liteinst2::bundle::{BundleBudget, PlannedBundle, WritableAlias};
-use liteinst2::contracts::*;
-use liteinst2::engine::{
+use liteinst::bundle::{BundleBudget, PlannedBundle, WritableAlias};
+use liteinst::contracts::*;
+use liteinst::engine::{
     self, CandidateEvidence, EnginePlan, EnginePolicy, SelectedMetrics, Tactic,
 };
-use liteinst2::eviction;
-use liteinst2::neighbor::{self, NeighborSearch};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{self, AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy};
-use liteinst2::trampoline::HookContext;
+use liteinst::eviction;
+use liteinst::neighbor::{self, NeighborSearch};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{self, AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy};
+use liteinst::trampoline::HookContext;
 use std::os::unix::process::CommandExt;
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};

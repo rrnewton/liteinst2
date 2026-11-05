@@ -1,12 +1,12 @@
 // Admission for this one frozen fixture, before any executable publication.
 use super::*;
-use liteinst2::bundle::BundleBudget;
-use liteinst2::composition::Composition;
-use liteinst2::emission::{ArtifactEmission, ArtifactField, ArtifactFieldEncoding, ArtifactPlan,
+use liteinst::bundle::BundleBudget;
+use liteinst::composition::Composition;
+use liteinst::emission::{ArtifactEmission, ArtifactField, ArtifactFieldEncoding, ArtifactPlan,
     ArtifactRequest, ArtifactRequirement, PlanningSite, SymbolicHook, TargetProfile};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{self, AllocationPolicy, PairCounts, RoutedJmpBudget, SearchPolicy, TacticPolicy};
-use liteinst2::scanner::InstructionScanner;
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{self, AllocationPolicy, PairCounts, RoutedJmpBudget, SearchPolicy, TacticPolicy};
+use liteinst::scanner::InstructionScanner;
 
 #[derive(Clone)]
 pub struct Image {

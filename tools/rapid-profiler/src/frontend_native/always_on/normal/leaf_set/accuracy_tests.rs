@@ -1,7 +1,7 @@
 //! Real Session/bank/receipt controls with inert geometry; no native entry.
 use super::tests::{ENTRY, Fixture, IDS};
 use super::*;
-use liteinst2::contracts::SourceIdentity;
+use liteinst::contracts::SourceIdentity;
 
 fn site(n: usize) -> Arc<site::ordinary::LeafSetSite> {
     let geometry: Vec<_> = ENTRY[..n]

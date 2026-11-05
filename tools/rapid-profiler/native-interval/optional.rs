@@ -1,7 +1,7 @@
 //! Genuine loaded optional frontend, independently traced through its real TLS gate.
 use super::{Path, STATE_SEEDS, current_single_main, oracle};
-use liteinst2::bundle::WritableAlias;
-use liteinst2::contracts::*;
+use liteinst::bundle::WritableAlias;
+use liteinst::contracts::*;
 use oracle::native_ordinary::optional_frontend::{
     self as native, ChildContext, GATE, Helper, Ready,
 };

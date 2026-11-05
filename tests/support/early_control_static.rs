@@ -2,7 +2,7 @@
 // reuses its exact Tracee, CHILD_BUDGET, MAX_STEPS, event log and assert_state;
 // no ownership/cleanup implementation or architectural comparator is copied.
 use super::*;
-use liteinst2::controls::EarlyControlGateLayout;
+use liteinst::controls::EarlyControlGateLayout;
 
 const _: () = assert!(PAGE.is_power_of_two());
 

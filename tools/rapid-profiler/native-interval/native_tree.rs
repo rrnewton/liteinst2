@@ -1,15 +1,15 @@
 //! Qualify the exact private baseline caller against a real no-op rewrite.
 use super::{Path, STATE_SEEDS, current_single_main, oracle, tree};
-use liteinst2::bundle::{BundleBudget, PlannedBundle, WritableAlias};
-use liteinst2::composition::Composition;
-use liteinst2::contracts::*;
-use liteinst2::controls::{ControlledAction, ProbeControl};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::bundle::{BundleBudget, PlannedBundle, WritableAlias};
+use liteinst::composition::Composition;
+use liteinst::contracts::*;
+use liteinst::controls::{ControlledAction, ProbeControl};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy,
     plan_coalesced_detailed_after_with_stack_profile,
 };
-use liteinst2::trampoline::{HookContext, ObservationStackProfile};
+use liteinst::trampoline::{HookContext, ObservationStackProfile};
 use oracle::native_ordinary::{ChildContext, OrdinaryOracle, Profile, Ready, call_tree};
 use rapid_profiler::frontend_native::{LoadedCallTree, TreeContract};
 #[path = "../tree-work/native_call.rs"]

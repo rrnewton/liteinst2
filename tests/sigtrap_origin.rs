@@ -3,8 +3,8 @@
 
 //! Application-generated SIGTRAP must not be mistaken for a patch guard.
 
-use liteinst2::patcher::{JumpPatchPlan, LiveJumpPatch, PatchStrategy, StalenessBudget};
-use liteinst2::scanner::InstructionScanner;
+use liteinst::patcher::{JumpPatchPlan, LiveJumpPatch, PatchStrategy, StalenessBudget};
+use liteinst::scanner::InstructionScanner;
 use std::io::Write;
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
 use std::os::unix::process::{CommandExt, ExitStatusExt};

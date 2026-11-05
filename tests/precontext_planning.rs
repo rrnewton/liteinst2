@@ -1,19 +1,19 @@
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 //! Planning/encoding only: no mapping, publication, callback or native execution.
-use liteinst2::bundle::{BundleBudget, PlannedBundle};
-use liteinst2::composition::Composition;
-use liteinst2::contracts::*;
-use liteinst2::controls::ControlIdentity;
-use liteinst2::grouping::{GroupingBudget, GroupingPlan};
-use liteinst2::planner::HookSemantics;
-use liteinst2::precontext::{PreContextAction, PreContextRole, PreContextSelector};
-use liteinst2::quiescent::{
+use liteinst::bundle::{BundleBudget, PlannedBundle};
+use liteinst::composition::Composition;
+use liteinst::contracts::*;
+use liteinst::controls::ControlIdentity;
+use liteinst::grouping::{GroupingBudget, GroupingPlan};
+use liteinst::planner::HookSemantics;
+use liteinst::precontext::{PreContextAction, PreContextRole, PreContextSelector};
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, PlannedInstall, PlanningFailure, SearchPolicy, TacticPolicy,
     plan_precontext_coalesced_detailed, plan_precontext_coalesced_detailed_after,
 };
-use liteinst2::scanner::{InstructionScanner, ScanError};
-use liteinst2::search::{RefusalClass, SearchDomain, SearchStop};
-use liteinst2::trampoline::{HookContext, TrampolineImage};
+use liteinst::scanner::{InstructionScanner, ScanError};
+use liteinst::search::{RefusalClass, SearchDomain, SearchStop};
+use liteinst::trampoline::{HookContext, TrampolineImage};
 
 const PAGE: u64 = 0x2000_0000;
 const PC: u64 = PAGE + 128;

@@ -4,7 +4,7 @@ use super::normal_module::{
 };
 use super::*;
 use crate::frontend_native::LoadedNormalLeafSet;
-use liteinst2::controls::ControlIdentity;
+use liteinst::controls::ControlIdentity;
 
 pub(in crate::frontend_native::always_on) struct LeafSetSite {
     identity: CodeIdentity,

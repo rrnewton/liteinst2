@@ -1,14 +1,14 @@
 #![deny(warnings)]
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 //! Bounded native two-image publication and transactional-failure fixtures.
-use liteinst2::bundle::{BundleBudget, PlannedBundle, WritableAlias};
-use liteinst2::contracts::*;
-use liteinst2::grouping::{BackingKind, GroupingBudget};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::bundle::{BundleBudget, PlannedBundle, WritableAlias};
+use liteinst::contracts::*;
+use liteinst::grouping::{BackingKind, GroupingBudget};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, PlannedInstall, SearchPolicy, TacticPolicy, plan_install,
 };
-use liteinst2::trampoline::HookContext;
+use liteinst::trampoline::HookContext;
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
@@ -383,7 +383,7 @@ fn assert_live_grouping(bundle: &PlannedBundle) {
                 let at_alias =
                     alias.start() + mapping.generated_start() - (image.address() & !4095);
                 assert_eq!(
-                    liteinst2::trampoline::translate_program_counter(at_alias),
+                    liteinst::trampoline::translate_program_counter(at_alias),
                     if at_alias == mapping.generated_start() {
                         Some(mapping.logical_address())
                     } else {
@@ -558,7 +558,7 @@ fn grouped_child(mode: &str) {
         for image in bundle.images() {
             for pc in image.program_counter_mappings() {
                 assert_eq!(
-                    liteinst2::trampoline::translate_program_counter(pc.generated_start()),
+                    liteinst::trampoline::translate_program_counter(pc.generated_start()),
                     None
                 );
             }

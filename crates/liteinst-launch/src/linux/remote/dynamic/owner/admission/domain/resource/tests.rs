@@ -49,8 +49,8 @@ fn image(start: u64, mapping_id: u64) -> Image {
         mapping,
         snapshot,
         entries,
-        core_identity: liteinst2::contracts::CodeIdentity {
-            source: liteinst2::contracts::SourceIdentity([0x45; 32]),
+        core_identity: liteinst::contracts::CodeIdentity {
+            source: liteinst::contracts::SourceIdentity([0x45; 32]),
             mapping: mapping_id,
             generation: 0,
         },
@@ -105,7 +105,7 @@ struct Retained {
     policy: Policy,
     images: Vec<(
         usize,
-        liteinst2::contracts::CodeIdentity,
+        liteinst::contracts::CodeIdentity,
         Snapshot,
         LegalEntrySet,
     )>,

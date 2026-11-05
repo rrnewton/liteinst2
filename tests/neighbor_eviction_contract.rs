@@ -3,16 +3,16 @@
 //! Draft required T3 contracts. No native result is claimed until this runs.
 //! Four explicit body heads are exercised; filler NOP heads are not counted.
 
-use liteinst2::bundle::{BundleBudget, InstalledBundle, PlannedBundle, WritableAlias};
-use liteinst2::contracts::*;
-use liteinst2::neighbor::{
+use liteinst::bundle::{BundleBudget, InstalledBundle, PlannedBundle, WritableAlias};
+use liteinst::contracts::*;
+use liteinst::neighbor::{
     NeighborAttemptStage, NeighborSearch, PlannedNeighbor, plan_neighbor, plan_neighbor_detailed,
 };
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy, plan_install,
 };
-use liteinst2::trampoline::{HookContext, translate_program_counter};
+use liteinst::trampoline::{HookContext, translate_program_counter};
 use std::os::unix::process::CommandExt;
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};

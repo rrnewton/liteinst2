@@ -1,16 +1,16 @@
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 //! Pure source planning: no executable mappings, publication or native calls.
-use liteinst2::bundle::{BundleBudget, PlannedBundle};
-use liteinst2::composition::Composition;
-use liteinst2::contracts::*;
-use liteinst2::controls::{ControlledAction, ProbeControl};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::bundle::{BundleBudget, PlannedBundle};
+use liteinst::composition::Composition;
+use liteinst::contracts::*;
+use liteinst::controls::{ControlledAction, ProbeControl};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy, plan_coalesced_detailed,
     plan_coalesced_detailed_after_with_stack_profile, plan_coalesced_detailed_with_stack_profile,
 };
-use liteinst2::search::SearchDomain;
-use liteinst2::trampoline::{HookContext, ObservationStackProfile};
+use liteinst::search::SearchDomain;
+use liteinst::trampoline::{HookContext, ObservationStackProfile};
 
 const PAGE: u64 = 0x2000_0000;
 const PC: u64 = PAGE + 128;

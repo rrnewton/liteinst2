@@ -251,8 +251,8 @@ impl Publisher {
         Self::for_images(preparation.plan().images())
     }
 
-    fn for_images(images: &[liteinst2::trampoline::TrampolineImage]) -> Self {
-        use liteinst2::trampoline::SavedExtendedStateLayout;
+    fn for_images(images: &[liteinst::trampoline::TrampolineImage]) -> Self {
+        use liteinst::trampoline::SavedExtendedStateLayout;
 
         // std's detector includes OS support for XMM/YMM state. Equality also
         // binds every actual emitted image to this worker's current full save
@@ -290,8 +290,8 @@ impl Publisher {
     }
 }
 
-fn covers_ymm(layout: liteinst2::trampoline::SavedExtendedStateLayout) -> bool {
-    use liteinst2::trampoline::SavedExtendedStateFormat;
+fn covers_ymm(layout: liteinst::trampoline::SavedExtendedStateLayout) -> bool {
+    use liteinst::trampoline::SavedExtendedStateFormat;
 
     // The full upper halves of all16 YMM registers must be saved, not only the
     // four explicit asm outputs: LLVM may emit vzeroupper at the ISA boundary.
@@ -354,8 +354,8 @@ unsafe fn publish_words_avx2<const N: usize>(destination: &mut [u64; N], source:
 #[cfg(test)]
 mod avx2_tests {
     use super::*;
-    use liteinst2::scanner::InstructionScanner;
-    use liteinst2::trampoline::{
+    use liteinst::scanner::InstructionScanner;
+    use liteinst::trampoline::{
         HookContext, SavedExtendedStateLayout, TrampolineImage, TrampolinePlan,
     };
 

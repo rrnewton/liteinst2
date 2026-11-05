@@ -4,7 +4,7 @@
 #![warn(missing_docs)]
 
 #[cfg(test)]
-extern crate self as liteinst2;
+extern crate self as liteinst;
 
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 #[path = "../tests/support/isolated_native_test.rs"]

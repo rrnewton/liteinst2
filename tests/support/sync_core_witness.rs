@@ -1,5 +1,5 @@
 //! Required Linux x86-64 capability witness; an unsupported host is a failure.
-use liteinst2::sync_core::{SyncCore, SyncCoreError};
+use liteinst::sync_core::{SyncCore, SyncCoreError};
 
 pub fn run() {
     const { assert!(cfg!(all(target_os = "linux", target_arch = "x86_64"))) };

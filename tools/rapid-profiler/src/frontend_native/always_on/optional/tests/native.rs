@@ -7,8 +7,8 @@ use crate::frontend_native::always_on::tests::concurrent_native::{
     CONTRACT, FUNCTION, check_report, expected_file, guarded, identity, model, pin, protect, stack,
 };
 use crate::generation::GenerationId;
-use liteinst2::bundle::WritableAlias;
-use liteinst2::contracts::{AddressRange, QuiescenceLease, Refusal};
+use liteinst::bundle::WritableAlias;
+use liteinst::contracts::{AddressRange, QuiescenceLease, Refusal};
 use std::collections::BTreeSet;
 use std::path::Path;
 use std::sync::Arc;

@@ -5,19 +5,19 @@ extern crate li2core as liteinst2;
 #[allow(dead_code)]
 #[path = "../../../tests/support/quiescent_oracle.rs"]
 mod oracle;
-use liteinst2::bundle::{BundleBudget, BundleMemory};
-use liteinst2::composition::Composition;
-use liteinst2::contracts::*;
-use liteinst2::emission::{
+use liteinst::bundle::{BundleBudget, BundleMemory};
+use liteinst::composition::Composition;
+use liteinst::contracts::*;
+use liteinst::emission::{
     ArtifactEmission, ArtifactPlan, ArtifactRequest, PlanningSite, SymbolicHook, TargetProfile,
 };
-use liteinst2::engine::{self, EnginePolicy, Tactic};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::engine::{self, EnginePolicy, Tactic};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     self, AdjacentB2ArtifactPlan, AdjacentB2Budget, AdjacentB2Failure, AllocationPolicy,
     PairCounts, PairStage, PairStop, SearchPolicy, TacticPolicy,
 };
-use liteinst2::trampoline::SavedExtendedStateLayout;
+use liteinst::trampoline::SavedExtendedStateLayout;
 use oracle::elf_exec_oracle::adjacent_b2::{self as native, fixture as f};
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -278,7 +278,7 @@ fn same(actual: &ArtifactPlan, expected: &ArtifactPlan) {
         assert_eq!(a.metadata(), b.metadata());
     }
 }
-fn image_rows(out: &mut String, index: usize, image: liteinst2::emission::ArtifactImageView<'_>) {
+fn image_rows(out: &mut String, index: usize, image: liteinst::emission::ArtifactImageView<'_>) {
     writeln!(
         out,
         "image\t{index}\t{}\t{}\t{}",

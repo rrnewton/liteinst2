@@ -8,15 +8,15 @@
 #[path = "support/quiescent_oracle.rs"]
 mod oracle;
 
-use liteinst2::contracts::{
+use liteinst::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryObligation, EntryProvenance, LegalEntry,
     LegalEntrySet, PlanKind, QuiescenceLease, Refusal, ResumeObligation, SourceIdentity,
 };
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, PlannedInstall, SearchPolicy, TacticPolicy, plan_install,
 };
-use liteinst2::trampoline::{HookCallback, HookContext};
+use liteinst::trampoline::{HookCallback, HookContext};
 use oracle::{HookEvent, HookEventLog, HookExpectation, NativeOracle, TraceMap};
 use std::os::unix::process::CommandExt;
 use std::process::{Command, Stdio};
@@ -349,7 +349,7 @@ fn assert_image(prepared: &PlannedInstall) {
 fn publish(
     native: &mut NativeOracle,
     prepared: &PlannedInstall,
-) -> liteinst2::quiescent::InstalledOnce {
+) -> liteinst::quiescent::InstalledOnce {
     let parts = prepared.plan().parts();
     let writable = native.code.writable();
     let result = {
@@ -382,7 +382,7 @@ fn publish(
 fn retire(
     native: &mut NativeOracle,
     prepared: &PlannedInstall,
-    installed: &mut liteinst2::quiescent::InstalledOnce,
+    installed: &mut liteinst::quiescent::InstalledOnce,
 ) {
     let parts = prepared.plan().parts();
     let mut ranges = parts.dependencies.clone();

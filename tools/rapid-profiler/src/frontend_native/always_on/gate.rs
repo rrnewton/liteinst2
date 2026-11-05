@@ -6,7 +6,7 @@
 
 use super::ReadableStack;
 use crate::frontend_native::IntegerLeafCertificate;
-use liteinst2::trampoline::HookContext;
+use liteinst::trampoline::HookContext;
 use std::cell::UnsafeCell;
 use std::sync::Arc;
 

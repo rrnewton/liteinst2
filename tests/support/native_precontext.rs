@@ -2,17 +2,17 @@
 //! Child module deliberately reuses private wire/step/cleanup helpers. Its frame
 //! and whole gate bytes are distinct from the enclosing mandatory adapter.
 use super::*;
-use liteinst2::bundle::{BundleBudget, PlannedBundle, WritableAlias};
-use liteinst2::composition::Composition;
-use liteinst2::contracts::*;
-use liteinst2::controls::ControlIdentity;
-use liteinst2::planner::HookSemantics;
-use liteinst2::precontext::{CallScratch, PreContextAction, PreContextRole, PreContextSelector};
-use liteinst2::quiescent::{
+use liteinst::bundle::{BundleBudget, PlannedBundle, WritableAlias};
+use liteinst::composition::Composition;
+use liteinst::contracts::*;
+use liteinst::controls::ControlIdentity;
+use liteinst::planner::HookSemantics;
+use liteinst::precontext::{CallScratch, PreContextAction, PreContextRole, PreContextSelector};
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy,
     plan_precontext_coalesced_detailed_after,
 };
-use liteinst2::trampoline::HookContext;
+use liteinst::trampoline::HookContext;
 use std::os::fd::{AsRawFd, OwnedFd};
 
 // Linux UAPI asm-generic/siginfo.h: illegal-operand si_code (libc does not export it).
@@ -712,7 +712,7 @@ fn child(
     assert_eq!(malformed, 0, "malformed entry returned");
     assert_eq!(value, f.result(mode));
     let snapshot = unsafe { (*frame).scratch.snapshot() }.unwrap();
-    use liteinst2::precontext::{Disposition, ScratchPhase};
+    use liteinst::precontext::{Disposition, ScratchPhase};
     assert_eq!(
         snapshot.phase,
         if candidate {

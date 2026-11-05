@@ -26,8 +26,8 @@ use crate::frontend::{
     SetupError, ThreadModel, UnsampledSummary,
 };
 use crate::generation::{Config, FunctionId, GenerationId};
-use liteinst2::controls::ControlIdentity;
-use liteinst2::trampoline::HookContext;
+use liteinst::controls::ControlIdentity;
+use liteinst::trampoline::HookContext;
 use std::cell::{Cell, RefCell};
 use std::marker::PhantomData;
 use std::rc::Rc;

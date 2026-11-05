@@ -1,8 +1,8 @@
 //! Typed operand decoding. This is not an entry/head or CPU-capability proof.
 
 use iced_x86::Register;
-use liteinst2::contracts::Refusal;
-use liteinst2::x86::{self, SelectedClass};
+use liteinst::contracts::Refusal;
+use liteinst::x86::{self, SelectedClass};
 
 use super::SelectedKind;
 

@@ -153,12 +153,12 @@ pub(crate) const SLOW: u64 = 2;
 /// a RET executed, a worker joined, or input/code can be reclaimed.
 ///
 /// ```compile_fail
-/// use liteinst2::precontext::CallScratch;
+/// use liteinst::precontext::CallScratch;
 /// fn send<T: Send>() {}
 /// send::<CallScratch>();
 /// ```
 /// ```compile_fail
-/// use liteinst2::precontext::CallScratch;
+/// use liteinst::precontext::CallScratch;
 /// fn share<T: Sync>() {}
 /// share::<CallScratch>();
 /// ```

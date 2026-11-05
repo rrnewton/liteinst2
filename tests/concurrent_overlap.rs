@@ -3,12 +3,10 @@
 
 //! Adjacent instruction windows must preserve one another's physical store tails.
 
-use liteinst2::patcher::{
-    JumpPatchPlan, LiveJumpPatch, PatchError, PatchStrategy, StalenessBudget,
-};
-use liteinst2::rapid::{RapidProbe, RapidToggleError, RapidTogglePlan};
-use liteinst2::scanner::{InstructionScanner, ScanResult};
-use liteinst2::trampoline::{HookCallback, HookContext, HookSite, InstalledHook};
+use liteinst::patcher::{JumpPatchPlan, LiveJumpPatch, PatchError, PatchStrategy, StalenessBudget};
+use liteinst::rapid::{RapidProbe, RapidToggleError, RapidTogglePlan};
+use liteinst::scanner::{InstructionScanner, ScanResult};
+use liteinst::trampoline::{HookCallback, HookContext, HookSite, InstalledHook};
 use std::io::{Read, Write};
 use std::os::unix::process::CommandExt;
 use std::process::{Command, Stdio};

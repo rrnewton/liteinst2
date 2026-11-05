@@ -2,12 +2,12 @@
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 //! Required T2 successor-eviction puzzles. No arbitrary victim tail is an entry.
 
-use liteinst2::bundle::{BundleBudget, InstalledBundle, PlannedBundle, WritableAlias};
-use liteinst2::contracts::*;
-use liteinst2::eviction::{EvictionKind, PlannedEviction, plan_successor, plan_successor_detailed};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy};
-use liteinst2::trampoline::{HookContext, translate_program_counter};
+use liteinst::bundle::{BundleBudget, InstalledBundle, PlannedBundle, WritableAlias};
+use liteinst::contracts::*;
+use liteinst::eviction::{EvictionKind, PlannedEviction, plan_successor, plan_successor_detailed};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy};
+use liteinst::trampoline::{HookContext, translate_program_counter};
 use std::os::unix::process::CommandExt;
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};

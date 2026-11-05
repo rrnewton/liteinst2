@@ -1,7 +1,7 @@
 // Shared bounded witness for the actual private production router.
 // Moving these bodies does not change their budget or delivery checks.
 use super::*;
-use liteinst2::contracts::EntryRoute;
+use liteinst::contracts::EntryRoute;
 
 // Implemented only inside entry_router::imp's cfg(test) child. The counter
 // coordinate is read from the stopped child, never dereferenced in the parent.
@@ -71,7 +71,7 @@ pub(super) fn finish(child: &Tracee) {
     let status=child.wait();
     assert!(libc::WIFSIGNALED(status) && libc::WTERMSIG(status)==libc::SIGKILL && child.reaped.get());
 }
-pub(super) fn assert_hook_context(oracle: &NativeOracle, state: liteinst2::trampoline::SavedExtendedStateLayout, hook: u64, child: &Tracee, expected: &Snapshot, returned: u64) {
+pub(super) fn assert_hook_context(oracle: &NativeOracle, state: liteinst::trampoline::SavedExtendedStateLayout, hook: u64, child: &Tracee, expected: &Snapshot, returned: u64) {
     let r=child.registers(); let e=&expected.registers;
     assert_eq!(r.rip,hook); assert_eq!(r.rsp%16,8);
     let reserve=oracle.initial_rsp-128;

@@ -2,12 +2,12 @@
 //! Worker lease + begin_call exclude concurrency/reentry BEFORE the first spill.
 use super::*;
 use counter::{MAX_STOPS, Memory, Stop, WAIT};
-use liteinst2::backedge_clock::{
+use liteinst::backedge_clock::{
     BackedgeClock, BackedgeClockAction, CLOCK_CANARY, ClockGateLayout, ClockMode, ClockWords,
 };
-use liteinst2::controls::ControlIdentity;
-use liteinst2::quiescent::plan_backedge_clock_detailed;
-use liteinst2::trampoline::HookContext;
+use liteinst::controls::ControlIdentity;
+use liteinst::quiescent::plan_backedge_clock_detailed;
+use liteinst::trampoline::HookContext;
 use std::cell::Cell;
 use std::io::Write;
 use std::sync::{Arc, mpsc};

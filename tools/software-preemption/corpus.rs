@@ -1,6 +1,6 @@
 //! Four fully authored call-free loops. No arbitrary-byte admission is implied.
 use iced_x86::{FlowControl, Mnemonic};
-use liteinst2::scanner::InstructionScanner;
+use liteinst::scanner::InstructionScanner;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Case {

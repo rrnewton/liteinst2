@@ -2,7 +2,7 @@
 //! No live gate phase is set, no native CALL/RET or source publication is credited.
 use super::*;
 use crate::frontend::PayloadOutcome;
-use liteinst2::controls::ProbeControl;
+use liteinst::controls::ProbeControl;
 const ROOT_RSP: u64 = 0x8008;
 fn context(mut c: HookContext, pc: u64, rsp: u64, value: u64) -> HookContext {
     c.instruction_pointer = pc;

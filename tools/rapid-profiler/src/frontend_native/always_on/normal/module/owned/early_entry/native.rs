@@ -8,8 +8,8 @@ use crate::frontend_native::{
     EarlyEntryModuleSitePreparation, InstalledEarlyEntryModuleSite, LoadedNormalModule,
     NormalModuleContract, NormalModulePreparationPolicy, TrustedFunctionSelection,
 };
-use liteinst2::bundle::WritableAlias;
-use liteinst2::contracts::{AddressRange, QuiescenceLease};
+use liteinst::bundle::WritableAlias;
+use liteinst::contracts::{AddressRange, QuiescenceLease};
 use std::path::Path;
 use std::time::{Duration, Instant};
 

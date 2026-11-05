@@ -9,12 +9,12 @@ use super::{
     impossible_ordinary_dispatch, same_bundle,
 };
 use crate::frontend_native::{LoadedIntegerLeaf, LoadedNormalLeaf};
-use liteinst2::bundle::{BundleBudget, BundleReceipt, InstalledBundle, PlannedBundle};
-use liteinst2::composition::Composition;
-use liteinst2::contracts::*;
-use liteinst2::controls::{ControlledAction, ProbeControl};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::bundle::{BundleBudget, BundleReceipt, InstalledBundle, PlannedBundle};
+use liteinst::composition::Composition;
+use liteinst::contracts::*;
+use liteinst::controls::{ControlledAction, ProbeControl};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     InstallRequest, SearchPolicy, TacticPolicy, WholeFunctionRequest,
     plan_coalesced_detailed_after, plan_whole_function_controlled_detailed_after,
 };
@@ -607,7 +607,7 @@ impl FunctionPlanning<'_> {
         self,
         predecessor: &mut Composition,
         reserved: &mut Vec<AddressRange>,
-        members: &mut Vec<liteinst2::quiescent::PlannedInstall>,
+        members: &mut Vec<liteinst::quiescent::PlannedInstall>,
         overlay: &mut [u8],
         full_overlay: &mut [u8],
     ) -> Result<(), SiteError> {

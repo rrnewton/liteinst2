@@ -8,7 +8,7 @@
 use std::ops::Range;
 use std::time::Duration;
 
-use liteinst2::contracts::{AddressRange, CodeIdentity, QuiescenceLease};
+use liteinst::contracts::{AddressRange, CodeIdentity, QuiescenceLease};
 
 use crate::{
     LaunchError, MemoryMapping, RegisterSnapshot, RemoteLeaseOps, SignalStop, SingleThreadStop,

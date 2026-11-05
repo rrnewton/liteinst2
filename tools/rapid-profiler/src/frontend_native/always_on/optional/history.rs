@@ -192,7 +192,7 @@ pub(super) fn pair_matches_absolute(
 // no native return, gate completion, fabricated raw row or receipt is supplied.
 #[cfg(test)]
 pub(crate) fn metadata_site() -> InstalledOptionalSite {
-    use liteinst2::precontext::{PreContextAction, PreContextRole, PreContextSelector};
+    use liteinst::precontext::{PreContextAction, PreContextRole, PreContextSelector};
     let gate = gate::tests::descriptor();
     let (selector, writer) = PreContextSelector::new(false);
     let roles = vec![

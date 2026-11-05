@@ -1,6 +1,6 @@
 //! Actual canonical-neighbor operations, separate from the old 35-cycle suite.
 use super::*;
-use liteinst2::patcher::synchronized::SyncPatchError;
+use liteinst::patcher::synchronized::SyncPatchError;
 
 fn call(address: usize) -> u64 {
     let result: u64;

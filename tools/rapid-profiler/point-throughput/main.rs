@@ -3,10 +3,10 @@
 #![deny(warnings)]
 #![forbid(unsafe_op_in_unsafe_fn)]
 
-use liteinst2::contracts::{Epoch, ToggleProbe, Visibility};
-use liteinst2::controls::{PointObservationAction, ProbeControl};
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::{ExecutableTrampoline, HookContext, TrampolinePlan};
+use liteinst::contracts::{Epoch, ToggleProbe, Visibility};
+use liteinst::controls::{PointObservationAction, ProbeControl};
+use liteinst::scanner::InstructionScanner;
+use liteinst::trampoline::{ExecutableTrampoline, HookContext, TrampolinePlan};
 use rapid_profiler::data_flag::{
     AdmissionBoundary, DataFlagSession, PointOutcome, PointSpec, PointThread,
 };

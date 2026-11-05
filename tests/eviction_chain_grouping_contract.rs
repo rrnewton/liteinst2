@@ -6,15 +6,15 @@
 #[path = "support/eviction_chain_cases.rs"]
 mod cases;
 use cases::{CASES, Fixture};
-use liteinst2::bundle::{BundleBudget, BundleMemory};
-use liteinst2::contracts::{AddressRange, Refusal};
-use liteinst2::eviction_chain::{
+use liteinst::bundle::{BundleBudget, BundleMemory};
+use liteinst::contracts::{AddressRange, Refusal};
+use liteinst::eviction_chain::{
     PlannedChain, plan_successor_chain, plan_successor_chain_detailed,
     plan_successor_chain_grouped, plan_successor_chain_grouped_detailed,
 };
-use liteinst2::grouping::{BackingKind, GroupingBudget, GroupingMemory};
-use liteinst2::search::SearchStop;
-use liteinst2::trampoline::HookContext;
+use liteinst::grouping::{BackingKind, GroupingBudget, GroupingMemory};
+use liteinst::search::SearchStop;
+use liteinst::trampoline::HookContext;
 
 const BASE: u64 = 0x3000_0000_0000;
 const SPAN: u64 = 0x6d69_9000;

@@ -9,16 +9,16 @@
 //! and after retirement. Architectural state is checked separately by the
 //! independent native oracle; these tests do not claim concurrent atomicity.
 
-use liteinst2::contracts::{
+use liteinst::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryProvenance, FailureStage, LegalEntry,
     LegalEntrySet, PatchPlan, PlanKind, QuiescenceLease, Refusal, ResumeObligation, SourceIdentity,
 };
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, InstalledOnce, PatchTactic, PlannedInstall, SearchPolicy,
     TacticPolicy, plan_install,
 };
-use liteinst2::trampoline::HookContext;
+use liteinst::trampoline::HookContext;
 use std::os::unix::process::CommandExt;
 use std::process::{Command, Output, Stdio};
 use std::ptr;

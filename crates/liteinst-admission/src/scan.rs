@@ -3,7 +3,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::time::{Duration, Instant};
 
-use liteinst2::x86::{self, Instruction, SelectedClass};
+use liteinst::x86::{self, Instruction, SelectedClass};
 
 use crate::entries::{Completeness, LegalEntrySet};
 use crate::{AddressRange, Generation, MappingId};

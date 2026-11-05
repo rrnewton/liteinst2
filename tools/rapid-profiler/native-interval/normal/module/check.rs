@@ -2,7 +2,7 @@
 use crate::oracle::native_ordinary::normal_caller::module::{
     self as native_module, Case, Ready, bytes,
 };
-use liteinst2::contracts::{CodeIdentity, SourceIdentity};
+use liteinst::contracts::{CodeIdentity, SourceIdentity};
 use rapid_profiler::frontend::{Observation, PayloadOutcome};
 use rapid_profiler::frontend_native::{NormalTotals, RawIntervalOwner};
 use rapid_profiler::generation::{Disposition, FunctionId, Terminal};

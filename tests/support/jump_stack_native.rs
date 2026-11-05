@@ -2,8 +2,8 @@
 // arbitrary stack instructions. Handwritten opcodes/heads and ISA expectations
 // are independent of the scanner/emitter used only to construct each candidate.
 use super::*;
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::{HookCallback, HookContext, TrampolineImage, TrampolinePlan};
+use liteinst::scanner::InstructionScanner;
+use liteinst::trampoline::{HookCallback, HookContext, TrampolineImage, TrampolinePlan};
 
 const SEEDS: [u64; 2] = [0x1234_5678_8765_4320, 0xfedc_ba98_0123_4567];
 

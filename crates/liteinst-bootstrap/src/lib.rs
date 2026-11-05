@@ -65,7 +65,7 @@ unsafe extern "C" fn initialize() {
     // quiescence, semantic/lifetime facts, or the hook lease. This DSO must never
     // be distributed as a generic safe preload or dlopen library.
     unsafe {
-        initialize_terminal(|| liteinst2::offline_router::initialize_static_exec(CATALOG));
+        initialize_terminal(|| liteinst::offline_router::initialize_static_exec(CATALOG));
     }
 }
 

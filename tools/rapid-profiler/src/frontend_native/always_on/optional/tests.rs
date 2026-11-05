@@ -2,7 +2,7 @@
 use super::*;
 use crate::frontend::PayloadOutcome;
 use gate::tests as frames;
-use liteinst2::precontext::{PreContextAction, PreContextRole, PreContextSelector};
+use liteinst::precontext::{PreContextAction, PreContextRole, PreContextSelector};
 fn state<R>(f: impl FnOnce(&mut State) -> R) -> R {
     STATE.with(|c| f(c.borrow_mut().as_mut().unwrap()))
 }

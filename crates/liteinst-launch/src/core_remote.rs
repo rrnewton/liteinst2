@@ -21,19 +21,19 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use iced_x86::{Decoder, DecoderOptions};
-use liteinst_admission::scan::{Candidate, CandidateKind, SiteClass};
-use liteinst2::contracts::{
+use liteinst::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryObligation, LegalEntrySet, PatchPlan,
     PlanKind, PublicationReceipt, QuiescenceLease, Refusal, ResumeObligation,
 };
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, PlannedInstall, SearchPolicy, TacticPolicy, plan_install,
 };
-use liteinst2::trampoline::{
+use liteinst::trampoline::{
     HookCallback, HookContext, SavedExtendedStateDescriptor, SavedExtendedStateFormat,
     SavedExtendedStateLayout,
 };
+use liteinst_admission::scan::{Candidate, CandidateKind, SiteClass};
 
 use crate::publication::{PublicationOperations, PublicationStop};
 use crate::{LaunchError, MemoryMapping, RegisterSnapshot, SignalStop};
@@ -622,7 +622,7 @@ fn check_disjoint(left: &PatchPlan, right: &PatchPlan) -> Result<(), LaunchError
     Ok(())
 }
 
-fn pun_store(plan: &PatchPlan) -> Result<&liteinst2::contracts::ByteEdit, LaunchError> {
+fn pun_store(plan: &PatchPlan) -> Result<&liteinst::contracts::ByteEdit, LaunchError> {
     match &plan.parts().kind {
         PlanKind::GeneralizedPun(pun) if pun.instruction_len == 2 => Ok(&pun.store),
         _ => invalid("remote CPUID adapter requires a two-byte generalized pun"),

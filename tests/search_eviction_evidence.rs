@@ -1,13 +1,13 @@
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 //! Four additive pure-planner puzzles using the existing T2/T3 contract geometry.
 //! No executable mappings or native/publication coverage are created here.
-use liteinst2::bundle::BundleBudget;
-use liteinst2::contracts::*;
-use liteinst2::eviction::plan_successor_detailed;
-use liteinst2::neighbor::{NeighborAttemptStage, NeighborSearch, plan_neighbor_detailed};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy};
-use liteinst2::search::{
+use liteinst::bundle::BundleBudget;
+use liteinst::contracts::*;
+use liteinst::eviction::plan_successor_detailed;
+use liteinst::neighbor::{NeighborAttemptStage, NeighborSearch, plan_neighbor_detailed};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy};
+use liteinst::search::{
     CandidateProof, RefusalClass, SearchDomain, SearchEvidence, SearchRun, SearchStop,
 };
 
@@ -16,7 +16,7 @@ const PAD: usize = 16;
 const BASE: u64 = 0x3800_0000_0000;
 const VICTIM_DISPLACEMENT: i32 = 0x0012_3456;
 const VICTIM_VALUE: u64 = 0x1937_5a82_4b6c_d0e1;
-unsafe extern "C" fn noop(_: *mut liteinst2::trampoline::HookContext) {}
+unsafe extern "C" fn noop(_: *mut liteinst::trampoline::HookContext) {}
 
 fn identity(case: u64) -> CodeIdentity {
     CodeIdentity {
@@ -296,14 +296,14 @@ impl NeighborFixture {
             max_pairs: 2,
         }
     }
-    fn assert_first(&self, attempt: &liteinst2::neighbor::NeighborAttempt) {
+    fn assert_first(&self, attempt: &liteinst::neighbor::NeighborAttempt) {
         assert_eq!(attempt.stage, NeighborAttemptStage::SelectedPlacement);
         assert_eq!(attempt.victim, self.upper);
         assert_eq!(attempt.victim_target, Some(self.first_target));
         assert_eq!(attempt.selected_target, Some(self.first_target));
         assert_eq!(attempt.refusal, Some(Refusal::AllocationUnavailable));
     }
-    fn assert_winner(&self, plan: &liteinst2::neighbor::PlannedNeighbor) {
+    fn assert_winner(&self, plan: &liteinst::neighbor::PlannedNeighbor) {
         assert_eq!(plan.metrics().victims_examined, 2);
         assert_eq!(plan.metrics().pairs_examined, 2);
         assert_eq!(plan.metrics().attempts.len(), 2);

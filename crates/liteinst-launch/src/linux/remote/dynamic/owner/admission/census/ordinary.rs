@@ -6,7 +6,7 @@ use super::super::runtime_capture::SourceWindowId;
 use super::super::runtime_instruction::{CandidateKind, InstructionCandidate};
 use super::super::runtime_native::{NativeCheckpoint, NativeTrace, OwnedInstructionCompletion};
 use super::*;
-use liteinst2::contracts::CodeIdentity;
+use liteinst::contracts::CodeIdentity;
 use std::mem::size_of;
 use std::time::Instant;
 

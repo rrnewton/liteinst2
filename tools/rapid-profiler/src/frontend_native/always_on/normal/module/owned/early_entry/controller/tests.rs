@@ -1,6 +1,6 @@
 //! Real model/epoch metadata controls, not native or publication qualification.
 use super::*;
-use liteinst2::contracts::{CodeIdentity, SourceIdentity};
+use liteinst::contracts::{CodeIdentity, SourceIdentity};
 
 const ENTRIES: [u64; 2] = [0x1000, 0x1100];
 const IDS: [FunctionId; 2] = [FunctionId(11), FunctionId(29)];

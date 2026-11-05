@@ -2,7 +2,7 @@
 use super::super::tests::{ENTRY, Fixture, IDS, controller, reclaim};
 use super::*;
 use crate::frontend::ActionKind;
-use liteinst2::contracts::SourceIdentity;
+use liteinst::contracts::SourceIdentity;
 fn copy(batch: &NormalLeafSetHistoryBatch) -> NormalLeafSetHistoryBatch {
     NormalLeafSetHistoryBatch {
         stream: batch.stream.clone(),

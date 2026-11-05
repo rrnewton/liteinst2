@@ -5,8 +5,8 @@ use crate::frontend_native::{
     CallGate, CallResult, IntegerLeafContract, LoadedIntegerLeaf, OrdinarySitePreparation,
 };
 use crate::generation::{Config, Disposition, FunctionId, Terminal};
-use liteinst2::bundle::WritableAlias;
-use liteinst2::contracts::*;
+use liteinst::bundle::WritableAlias;
+use liteinst::contracts::*;
 use std::collections::BTreeSet;
 use std::fs::File;
 use std::io::Read;

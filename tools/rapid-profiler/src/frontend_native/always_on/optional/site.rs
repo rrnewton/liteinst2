@@ -6,18 +6,18 @@ use super::super::site::{
 use super::super::{GateError, OriginalCallResult, ReadableStack, timing};
 use super::{OptionalCallGate, entry_callback, exit_callback};
 use crate::frontend_native::LoadedIntegerLeaf;
-use liteinst2::bundle::{BundleBudget, BundleReceipt, InstalledBundle, PlannedBundle};
-use liteinst2::composition::Composition;
-use liteinst2::contracts::*;
-use liteinst2::controls::ControlIdentity;
-use liteinst2::planner::HookSemantics;
-use liteinst2::precontext::{
+use liteinst::bundle::{BundleBudget, BundleReceipt, InstalledBundle, PlannedBundle};
+use liteinst::composition::Composition;
+use liteinst::contracts::*;
+use liteinst::controls::ControlIdentity;
+use liteinst::planner::HookSemantics;
+use liteinst::precontext::{
     PreContextAction, PreContextRole, PreContextSelector, PreContextWriter,
 };
-use liteinst2::quiescent::{
+use liteinst::quiescent::{
     InstallRequest, SearchPolicy, TacticPolicy, plan_precontext_coalesced_detailed_after,
 };
-use liteinst2::trampoline::TrampolineImage;
+use liteinst::trampoline::TrampolineImage;
 use std::marker::PhantomData;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -463,7 +463,7 @@ impl OptionalSitePreparation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use liteinst2::{scanner::InstructionScanner, trampoline::TrampolinePlan};
+    use liteinst::{scanner::InstructionScanner, trampoline::TrampolinePlan};
     #[test]
     fn image_join_requires_exact_selector_controls_complete_roles_and_order() {
         let pc = 0x0100_0000;

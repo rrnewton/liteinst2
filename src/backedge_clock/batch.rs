@@ -80,17 +80,17 @@ impl ClockLease {
 /// only `finish` performs the closing owner check and clears that latch.
 ///
 /// ```compile_fail
-/// use liteinst2::backedge_clock::ClockBatch;
+/// use liteinst::backedge_clock::ClockBatch;
 /// fn require_send<T: Send>() {}
 /// require_send::<ClockBatch<'static>>();
 /// ```
 /// ```compile_fail
-/// use liteinst2::backedge_clock::ClockBatch;
+/// use liteinst::backedge_clock::ClockBatch;
 /// fn require_sync<T: Sync>() {}
 /// require_sync::<ClockBatch<'static>>();
 /// ```
 /// ```compile_fail
-/// use liteinst2::backedge_clock::ClockBatch;
+/// use liteinst::backedge_clock::ClockBatch;
 /// fn require_clone<T: Clone>() {}
 /// require_clone::<ClockBatch<'static>>();
 /// ```
@@ -115,7 +115,7 @@ impl<'lease> ClockBatch<'lease> {
     /// whole-batch interval obligations remain the caller's responsibility.
     ///
     /// ```compile_fail
-    /// use liteinst2::backedge_clock::ClockBatch;
+    /// use liteinst::backedge_clock::ClockBatch;
     /// fn overlapping(batch: &mut ClockBatch<'_>) {
     ///     let first = batch.begin_call().unwrap();
     ///     let second = batch.begin_call().unwrap();
@@ -173,22 +173,22 @@ impl<'lease> ClockBatch<'lease> {
 /// not be declared early or used to authorize more than this one invocation.
 ///
 /// ```compile_fail
-/// use liteinst2::backedge_clock::ClockBatchCall;
+/// use liteinst::backedge_clock::ClockBatchCall;
 /// fn require_send<T: Send>() {}
 /// require_send::<ClockBatchCall<'static, 'static>>();
 /// ```
 /// ```compile_fail
-/// use liteinst2::backedge_clock::ClockBatchCall;
+/// use liteinst::backedge_clock::ClockBatchCall;
 /// fn require_sync<T: Sync>() {}
 /// require_sync::<ClockBatchCall<'static, 'static>>();
 /// ```
 /// ```compile_fail
-/// use liteinst2::backedge_clock::ClockBatchCall;
+/// use liteinst::backedge_clock::ClockBatchCall;
 /// fn require_clone<T: Clone>() {}
 /// require_clone::<ClockBatchCall<'static, 'static>>();
 /// ```
 /// ```compile_fail
-/// use liteinst2::backedge_clock::{ClockBatchCall, ClockLease};
+/// use liteinst::backedge_clock::{ClockBatchCall, ClockLease};
 /// fn escape<'a>(lease: &'a ClockLease) -> ClockBatchCall<'a, 'a> {
 ///     let mut batch = unsafe { lease.begin_batch(1, 1).unwrap() };
 ///     batch.begin_call().unwrap()

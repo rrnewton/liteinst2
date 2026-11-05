@@ -2,7 +2,7 @@
 use super::module::TwoExitCertificate;
 use crate::frontend::{EntryError, ModelReturnSlot, Observation, Session, ThreadModel};
 use crate::generation::{Admission, AdmissionRefusal, FunctionId};
-use liteinst2::trampoline::HookContext;
+use liteinst::trampoline::HookContext;
 use std::cell::{Cell, RefCell};
 use std::marker::PhantomData;
 use std::rc::Rc;

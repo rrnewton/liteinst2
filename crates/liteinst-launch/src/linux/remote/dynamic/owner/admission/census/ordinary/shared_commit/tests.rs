@@ -2,7 +2,7 @@
 use super::*;
 use crate::lifecycle::LifecycleRegistry;
 use crate::linux::remote::dynamic::owner::trusted::AdmissionStop;
-use liteinst2::contracts::SourceIdentity;
+use liteinst::contracts::SourceIdentity;
 use std::time::Duration;
 
 const PC: u64 = 0x401000;

@@ -5,10 +5,8 @@ use super::{DualMapping, next_random, run_isolated};
 use core::arch::asm;
 use core::arch::x86_64::{__cpuid, __cpuid_count, __rdtscp, CpuidResult};
 use core::sync::atomic::{AtomicBool, AtomicU64, Ordering, compiler_fence};
-use liteinst2::patcher::{
-    JumpPatchPlan, LiveJumpPatch, PatchError, PatchStrategy, StalenessBudget,
-};
-use liteinst2::scanner::InstructionScanner;
+use liteinst::patcher::{JumpPatchPlan, LiveJumpPatch, PatchError, PatchStrategy, StalenessBudget};
+use liteinst::scanner::InstructionScanner;
 use std::ffi::OsString;
 use std::fs::{self, File};
 use std::hint::{black_box, spin_loop};

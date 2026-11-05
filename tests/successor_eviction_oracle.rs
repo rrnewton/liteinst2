@@ -10,17 +10,17 @@
 #[path = "support/quiescent_oracle.rs"]
 mod oracle;
 
-use liteinst2::bundle::{BundleBudget, WritableAlias};
-use liteinst2::contracts::{
+use liteinst::bundle::{BundleBudget, WritableAlias};
+use liteinst::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryObligation, EntryProvenance, LegalEntry,
     LegalEntrySet, PlanKind, QuiescenceLease, Refusal, ResumeObligation, SourceIdentity,
 };
-use liteinst2::eviction::{EvictionKind, plan_successor};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::eviction::{EvictionKind, plan_successor};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy, plan_install,
 };
-use liteinst2::trampoline::HookContext;
+use liteinst::trampoline::HookContext;
 use oracle::{HookEvent, HookEventLog, HookExpectation, NativeOracle, TraceMap};
 
 const SEEDS: [u64; 2] = [0x1234_5678_8765_4320, 0xfedc_ba98_0123_4567];

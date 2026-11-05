@@ -12,7 +12,7 @@ use super::super::admission::{
 use super::super::bootstrap::Request;
 use super::*;
 use crate::linux::remote::dynamic::admission::RuntimePendingToken;
-use liteinst2::contracts::CodeIdentity;
+use liteinst::contracts::CodeIdentity;
 use std::mem::size_of;
 
 #[cfg(feature = "dev-owned-stack-consumer-oracle")]

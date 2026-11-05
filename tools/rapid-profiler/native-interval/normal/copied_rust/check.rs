@@ -1,6 +1,6 @@
 //! One selected-function admission; complete copied data, no callback authority.
 use crate::oracle::native_ordinary::normal_caller::copied_rust::{self as copied, Ready};
-use liteinst2::contracts::{CodeIdentity, SourceIdentity};
+use liteinst::contracts::{CodeIdentity, SourceIdentity};
 use rapid_profiler::frontend::{
     ActionKind, ControllerSnapshot, ControllerStatus, Observation, PayloadOutcome,
     RecordObservation,

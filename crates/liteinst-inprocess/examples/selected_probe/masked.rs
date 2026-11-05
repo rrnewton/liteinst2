@@ -5,11 +5,11 @@ use super::{
 };
 use core::arch::asm;
 use core::sync::atomic::{AtomicU64, Ordering};
+use liteinst::contracts::{AddressRange, PlanKind, QuiescenceLease};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{AllocationPolicy, InstallRequest, plan_install};
+use liteinst::trampoline::HookContext;
 use liteinst_inprocess::selected::SelectedKind;
-use liteinst2::contracts::{AddressRange, PlanKind, QuiescenceLease};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{AllocationPolicy, InstallRequest, plan_install};
-use liteinst2::trampoline::HookContext;
 use std::mem::ManuallyDrop;
 static CALLS: AtomicU64 = AtomicU64::new(0);
 static LAST_PC: AtomicU64 = AtomicU64::new(0);

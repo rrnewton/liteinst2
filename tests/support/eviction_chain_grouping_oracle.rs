@@ -4,11 +4,11 @@
 use super::cases::{CASES, Fixture};
 use super::oracle::{HookEvent, HookEventLog, HookExpectation, NativeOracle, TraceMap};
 use super::{ID, Occupied, SEEDS, allocations, image_bytes, is_mapped, observe, permissions};
-use liteinst2::bundle::{BundleMemory, WritableAlias};
-use liteinst2::contracts::*;
-use liteinst2::eviction_chain::plan_successor_chain_grouped_detailed;
-use liteinst2::grouping::{BackingKind, GroupingBudget};
-use liteinst2::trampoline::translate_program_counter;
+use liteinst::bundle::{BundleMemory, WritableAlias};
+use liteinst::contracts::*;
+use liteinst::eviction_chain::plan_successor_chain_grouped_detailed;
+use liteinst::grouping::{BackingKind, GroupingBudget};
+use liteinst::trampoline::translate_program_counter;
 use std::path::Path;
 
 const PAGE: usize = 4096;

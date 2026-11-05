@@ -2,13 +2,13 @@
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 //! Structural planner qualification; no generated code is executed here.
 
-use liteinst2::contracts::*;
-use liteinst2::controls::{ControlledAction, PointObservationAction, ProbeControl};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::contracts::*;
+use liteinst::controls::{ControlledAction, PointObservationAction, ProbeControl};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy, plan_point_observations_detailed,
 };
-use liteinst2::trampoline::HookContext;
+use liteinst::trampoline::HookContext;
 
 const BASE: u64 = 0x5c00_0000_0000;
 const TARGET: u64 = BASE + 0x0400_0100;

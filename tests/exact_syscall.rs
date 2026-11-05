@@ -6,8 +6,8 @@
 use core::arch::{asm, global_asm};
 use core::sync::atomic::{AtomicU32, AtomicU64, AtomicUsize, Ordering};
 use iced_x86::{Code, Decoder, DecoderOptions, Mnemonic, Register};
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::{
+use liteinst::scanner::InstructionScanner;
+use liteinst::trampoline::{
     ExecutableTrampoline, HookCallback, HookContext, SavedExtendedStateFormat,
     SavedExtendedStateLayout, TrampolineArena, TrampolineError, TrampolineImage, TrampolinePlan,
 };
@@ -528,7 +528,7 @@ fn exact_execution_uses_the_live_tail_and_preserves_abi_flags_and_red_zone() {
     assert_eq!(trampoline.layout().relocated_len, 0);
     trampoline.publish_program_counter_mappings();
     assert_eq!(
-        liteinst2::trampoline::translate_program_counter(trampoline.address()),
+        liteinst::trampoline::translate_program_counter(trampoline.address()),
         Some(mapping.address())
     );
 }

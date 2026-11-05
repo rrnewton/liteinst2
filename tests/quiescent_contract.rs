@@ -8,18 +8,18 @@
 //! selected child completed every required row. This is additional native
 //! evidence, not a replacement for the independent architectural-state oracle.
 
-use liteinst2::contracts::{
+use liteinst::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryObligation, EntryProvenance, FailureStage,
     LegalEntry, LegalEntrySet, PublicationFailure, QuiescenceLease, Refusal, ResumeObligation,
     SourceIdentity,
 };
-use liteinst2::patcher::{JumpPatchPlan, LiveJumpPatch, StalenessBudget};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::patcher::{JumpPatchPlan, LiveJumpPatch, StalenessBudget};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, InstalledOnce, PlannedInstall, SearchPolicy, plan_install,
 };
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::HookContext;
+use liteinst::scanner::InstructionScanner;
+use liteinst::trampoline::HookContext;
 use std::io::Write;
 use std::os::unix::process::CommandExt;
 use std::process::{Command, Output, Stdio};
@@ -187,7 +187,7 @@ impl Fixture {
             semantics: HookSemantics::Observe,
             allocation,
             search: SearchPolicy {
-                tactics: liteinst2::quiescent::TacticPolicy::RelocationOnly,
+                tactics: liteinst::quiescent::TacticPolicy::RelocationOnly,
                 max_upstream_bytes: 0,
                 max_sites: 1,
                 max_displaced_bytes: block_len,

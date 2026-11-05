@@ -1196,9 +1196,7 @@ fn core_pun_cache_line_constraint_refuses_without_source_changes_or_execution() 
     );
     assert!(matches!(
         gate.next_event(),
-        Err(GateError::Core(
-            liteinst2::contracts::Refusal::NoPatchWindow
-        ))
+        Err(GateError::Core(liteinst::contracts::Refusal::NoPatchWindow))
     ));
     let after = gate.read_registers().unwrap();
     assert_eq!(after.rip, before.rip);

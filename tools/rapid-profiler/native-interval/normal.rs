@@ -1,7 +1,7 @@
 //! Ordinary compiled C callers, with no per-call SDK invoke or CALL-gate frame.
 use super::{Path, current_single_main, oracle};
-use liteinst2::bundle::WritableAlias;
-use liteinst2::contracts::*;
+use liteinst::bundle::WritableAlias;
+use liteinst::contracts::*;
 use native::caller_bytes;
 use oracle::native_ordinary::normal_caller::{
     self as native, ControlStatus, JournalReady, Mode, NormalContext, NormalOracle, NormalReady,

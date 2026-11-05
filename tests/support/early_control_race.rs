@@ -1,11 +1,11 @@
 // Included beneath ordered_trace solely to reuse its unchanged private ptrace,
 // XSAVE, event-recording and complete architectural comparison primitives.
 use super::*;
-use liteinst2::controls::{
+use liteinst::controls::{
     ControlIdentity, ControlledAction, PointObservationAction, ProbeControl,
 };
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::{HookContext, TrampolinePlan};
+use liteinst::scanner::InstructionScanner;
+use liteinst::trampoline::{HookContext, TrampolinePlan};
 use std::cell::RefCell;
 use std::io::{Read, Write};
 use std::mem::ManuallyDrop;

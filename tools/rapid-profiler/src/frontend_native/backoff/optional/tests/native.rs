@@ -14,7 +14,7 @@ use crate::frontend_native::{
     LoadedIntegerLeaf, OptionalCallGate, OptionalSitePreparation, RawInterval,
 };
 use crate::generation::{Disposition, GenerationId, Terminal};
-use liteinst2::contracts::Refusal;
+use liteinst::contracts::Refusal;
 use std::collections::BTreeSet;
 use std::path::Path;
 use std::thread::{self, JoinHandle};

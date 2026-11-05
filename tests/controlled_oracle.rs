@@ -9,18 +9,18 @@
 #[path = "support/quiescent_oracle.rs"]
 mod oracle;
 
-use liteinst2::bundle::{BundleBudget, PlannedBundle, WritableAlias};
-use liteinst2::contracts::{
+use liteinst::bundle::{BundleBudget, PlannedBundle, WritableAlias};
+use liteinst::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryObligation, EntryProvenance, ExpectedBytes,
     LegalEntry, LegalEntrySet, PlanKind, QuiescenceLease, Refusal, ResumeObligation,
     SourceIdentity,
 };
-use liteinst2::controls::{ControlledAction, ProbeControl};
-use liteinst2::grouping::{BackingKind, GroupingBudget};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{AllocationPolicy, InstallRequest, SearchPolicy, plan_coalesced};
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::{HookCallback, HookContext, TrampolinePlan};
+use liteinst::controls::{ControlledAction, ProbeControl};
+use liteinst::grouping::{BackingKind, GroupingBudget};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{AllocationPolicy, InstallRequest, SearchPolicy, plan_coalesced};
+use liteinst::scanner::InstructionScanner;
+use liteinst::trampoline::{HookCallback, HookContext, TrampolinePlan};
 use oracle::{
     HookEvent, HookEventLog, HookExpectation, Mapping, NativeOracle, NativeTrace, TraceMap,
 };

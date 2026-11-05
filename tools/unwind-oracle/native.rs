@@ -1,5 +1,5 @@
 #![deny(warnings)]
-extern crate liteinst2;
+extern crate liteinst;
 mod consumer;
 mod elf;
 #[allow(dead_code)]

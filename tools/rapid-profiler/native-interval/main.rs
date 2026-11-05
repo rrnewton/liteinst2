@@ -20,10 +20,10 @@ mod ordinary;
 mod reference;
 mod tree;
 
-use liteinst2::contracts::*;
-use liteinst2::controls::{ControlledAction, ProbeControl};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::contracts::*;
+use liteinst::controls::{ControlledAction, ProbeControl};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy, plan_coalesced_detailed,
 };
 use oracle::TraceMap;

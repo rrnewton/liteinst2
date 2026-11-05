@@ -3,8 +3,8 @@
 //! This adapter retains all input bytes and checks their exact closed-kernel,
 //! LOAD, seed, target, mapping and stopped-state relationships itself.
 use super::*;
-use liteinst2::cache_line::CacheLineSize;
-use liteinst2::scanner::InstructionScanner;
+use liteinst::cache_line::CacheLineSize;
+use liteinst::scanner::InstructionScanner;
 
 #[path = "e9_common_seed.rs"]
 mod seed;

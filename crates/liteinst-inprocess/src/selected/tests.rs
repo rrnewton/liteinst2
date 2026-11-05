@@ -2,7 +2,7 @@
 use super::{
     SelectedDestination, SelectedKind, SelectedWidth, callbacks, decode_selected, metrics::Counters,
 };
-use liteinst2::trampoline::HookContext;
+use liteinst::trampoline::HookContext;
 
 fn fields(c: &HookContext) -> [u64; 18] {
     [

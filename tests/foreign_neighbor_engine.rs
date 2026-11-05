@@ -1,16 +1,16 @@
 //! Pure source-planning controls; no executable mappings or CPU observations.
-use liteinst2::bundle::BundleBudget;
-use liteinst2::composition::Composition;
-use liteinst2::contracts::*;
-use liteinst2::emission::*;
-use liteinst2::engine::{
+use liteinst::bundle::BundleBudget;
+use liteinst::composition::Composition;
+use liteinst::contracts::*;
+use liteinst::emission::*;
+use liteinst::engine::{
     self, CandidateEvidence, EngineAttempt, EnginePolicy, SelectedMetrics, Tactic,
 };
-use liteinst2::neighbor::NeighborSearch;
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{AllocationPolicy, SearchPolicy};
-use liteinst2::search::SearchDomain;
-use liteinst2::trampoline::SavedExtendedStateLayout;
+use liteinst::neighbor::NeighborSearch;
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{AllocationPolicy, SearchPolicy};
+use liteinst::search::SearchDomain;
+use liteinst::trampoline::SavedExtendedStateLayout;
 
 const S: u64 = 0x40186c;
 const V: u64 = 0x4018e6;

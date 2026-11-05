@@ -6,18 +6,18 @@
 #[path = "support/eviction_chain_cases.rs"]
 mod cases;
 use cases::{CASES, Fixture};
-use liteinst2::contracts::*;
-use liteinst2::eviction_chain::{MAX_SHORT_SUCCESSORS, plan_successor_chain_detailed};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{TacticPolicy, plan_install};
-use liteinst2::search::SearchStop;
-use liteinst2::trampoline::HookContext;
+use liteinst::contracts::*;
+use liteinst::eviction_chain::{MAX_SHORT_SUCCESSORS, plan_successor_chain_detailed};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{TacticPolicy, plan_install};
+use liteinst::search::SearchStop;
+use liteinst::trampoline::HookContext;
 
 const BASE: u64 = 0x3000_0000_0000;
 unsafe extern "C" fn observe(_: *mut HookContext) {}
 fn plan(
     f: &Fixture<'_>,
-) -> Result<liteinst2::eviction_chain::PlannedChain, liteinst2::eviction_chain::ChainFailure> {
+) -> Result<liteinst::eviction_chain::PlannedChain, liteinst::eviction_chain::ChainFailure> {
     plan_successor_chain_detailed(
         &f.request(observe),
         &f.policies[1..],
@@ -35,7 +35,7 @@ fn exact_depth_two_and_three_genuine_reverse_compositions() {
             Refusal::AllocationUnavailable
         );
         assert_eq!(
-            liteinst2::eviction::plan_successor(&f.request(observe), &f.policies[1], f.budget())
+            liteinst::eviction::plan_successor(&f.request(observe), &f.policies[1], f.budget())
                 .unwrap_err(),
             Refusal::NoPatchWindow
         );

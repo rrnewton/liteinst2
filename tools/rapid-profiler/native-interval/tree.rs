@@ -1,7 +1,7 @@
 //! Four fixed loaded CALL-tree pairs; no hardware-cache or timing claim.
 use super::{Path, STATE_SEEDS, current_single_main, oracle};
-use liteinst2::bundle::WritableAlias;
-use liteinst2::contracts::*;
+use liteinst::bundle::WritableAlias;
+use liteinst::contracts::*;
 use oracle::native_ordinary::{
     ChildContext, GATE_BYTES, OrdinaryOracle, Profile, Ready, call_tree,
 };

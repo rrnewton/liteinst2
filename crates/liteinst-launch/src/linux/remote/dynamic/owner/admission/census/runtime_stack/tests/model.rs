@@ -16,8 +16,8 @@ use super::super::super::super::source_identity::{
 use super::*;
 use crate::lifecycle::LifecycleRegistry;
 use crate::linux::remote::dynamic::owner::bootstrap::{Request, StateSlot};
+use liteinst::contracts::{CodeIdentity, SourceIdentity};
 use liteinst_admission::scan::{Boundary, Snapshot, WriteControl};
-use liteinst2::contracts::{CodeIdentity, SourceIdentity};
 use std::time::Duration;
 
 pub(in crate::linux::remote::dynamic::owner::admission::census) const PC: u64 = 0x400ffb;

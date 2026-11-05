@@ -6,7 +6,7 @@ rust-version = "1.94"
 license = "BSD-2-Clause"
 repository = "https://github.com/rrnewton/liteinst2"
 readme = "README.md"
-description = "Bounded content metadata and sparse overlays for liteinst2"
+description = "Bounded content metadata and sparse overlays for liteinst"
 
 [dependencies]
 sha2 = "=0.10.9"

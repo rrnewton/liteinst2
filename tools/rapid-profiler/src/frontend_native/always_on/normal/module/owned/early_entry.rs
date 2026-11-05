@@ -2,7 +2,7 @@
 //! Sparse intervals never stand in for the four physical application calls.
 use super::*;
 use crate::frontend_native::always_on::site::ordinary::InstalledEarlyEntryModuleSite;
-use liteinst2::controls::ControlWriter;
+use liteinst::controls::ControlWriter;
 use std::sync::atomic::AtomicBool;
 mod binding_envelope;
 use binding_envelope::BindingEnvelope;

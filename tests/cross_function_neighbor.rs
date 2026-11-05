@@ -1,12 +1,12 @@
 //! Pure artifact-planner checks. No executable mapping, CPU query or native call.
-use liteinst2::bundle::BundleBudget;
-use liteinst2::composition::Composition;
-use liteinst2::contracts::*;
-use liteinst2::emission::*;
-use liteinst2::neighbor::{self, NeighborSearch};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{AllocationPolicy, SearchPolicy};
-use liteinst2::trampoline::SavedExtendedStateLayout;
+use liteinst::bundle::BundleBudget;
+use liteinst::composition::Composition;
+use liteinst::contracts::*;
+use liteinst::emission::*;
+use liteinst::neighbor::{self, NeighborSearch};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{AllocationPolicy, SearchPolicy};
+use liteinst::trampoline::SavedExtendedStateLayout;
 
 const S: u64 = 0x40186c;
 const V: u64 = 0x4018e6;

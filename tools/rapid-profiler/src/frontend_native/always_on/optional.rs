@@ -25,7 +25,7 @@ mod site;
 use super::*;
 pub use drain::OptionalIntervalBatch;
 pub use gate::OptionalCallGate;
-use liteinst2::precontext::{Disposition, PreContextWriter};
+use liteinst::precontext::{Disposition, PreContextWriter};
 pub use site::{InstalledOptionalSite, OptionalSitePreparation, PreparedOptionalOriginalCall};
 use std::sync::atomic::{AtomicBool, Ordering};
 

@@ -4,7 +4,7 @@ use super::*;
 use crate::frontend::RecordObservation;
 use crate::generation::storage::allocation_probe;
 use crate::generation::{Disposition, Terminal};
-use liteinst2::contracts::SourceIdentity;
+use liteinst::contracts::SourceIdentity;
 
 pub(super) const IDS: [FunctionId; 4] = [
     FunctionId(0),

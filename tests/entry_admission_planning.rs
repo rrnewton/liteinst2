@@ -2,20 +2,20 @@
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 //! Source/role/planner checks only: never publish or execute generated code.
 
-use liteinst2::composition::Composition;
-use liteinst2::contracts::*;
-use liteinst2::controls::{
+use liteinst::composition::Composition;
+use liteinst::contracts::*;
+use liteinst::controls::{
     ControlIdentity, EntryAdmissionAction, EntryAdmissionRole, ManagedControl,
 };
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy, WholeFunctionRequest,
     plan_entry_admission_detailed, plan_entry_admission_detailed_after,
     plan_whole_function_entry_admission_detailed,
     plan_whole_function_entry_admission_detailed_after,
 };
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::{HookContext, TrampolinePlan};
+use liteinst::scanner::InstructionScanner;
+use liteinst::trampoline::{HookContext, TrampolinePlan};
 
 const BASE: u64 = 0x5d40_0000_0000;
 const TARGET: u64 = BASE + 0x0400_0100;

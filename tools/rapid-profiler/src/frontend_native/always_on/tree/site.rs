@@ -3,15 +3,15 @@ use super::super::site::ordinary::exclude;
 use super::super::site::{base_allocation, check_image, impossible_ordinary_dispatch, same_bundle};
 use super::*;
 use crate::frontend_native::LoadedCallTree;
-use liteinst2::bundle::{BundleBudget, BundleReceipt, InstalledBundle, PlannedBundle};
-use liteinst2::composition::Composition;
-use liteinst2::contracts::*;
-use liteinst2::controls::{ControlledAction, ProbeControl};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::bundle::{BundleBudget, BundleReceipt, InstalledBundle, PlannedBundle};
+use liteinst::composition::Composition;
+use liteinst::contracts::*;
+use liteinst::controls::{ControlledAction, ProbeControl};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     InstallRequest, SearchPolicy, TacticPolicy, plan_coalesced_detailed_after_with_stack_profile,
 };
-use liteinst2::trampoline::ObservationStackProfile;
+use liteinst::trampoline::ObservationStackProfile;
 
 pub(super) struct Role {
     pub pc: u64,

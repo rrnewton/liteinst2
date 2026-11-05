@@ -6,15 +6,15 @@ mod machine;
 #[path = "native_probe/program.rs"]
 mod program;
 
+use liteinst::contracts::{
+    AddressRange, CodeIdentity, EntryCompleteness, EntryProvenance, LegalEntry, LegalEntrySet,
+    PlanKind, QuiescenceLease, Refusal, ResumeObligation, SourceIdentity,
+};
+use liteinst::quiescent::{AllocationPolicy, SearchPolicy, TacticPolicy};
 use liteinst_inprocess::selected::{
     InstalledSelected, PreparedSelected, SelectedKind, SelectedSite,
 };
 use liteinst_inprocess::{InstructionExtent, PageBundle, PreparedGate};
-use liteinst2::contracts::{
-    AddressRange, CodeIdentity, EntryCompleteness, EntryProvenance, LegalEntry, LegalEntrySet,
-    PlanKind, QuiescenceLease, Refusal, ResumeObligation, SourceIdentity,
-};
-use liteinst2::quiescent::{AllocationPolicy, SearchPolicy, TacticPolicy};
 use machine::{Machine, Snapshot, tsc};
 use program::{Kind, Program, Region};
 use std::mem::ManuallyDrop;

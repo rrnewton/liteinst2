@@ -2,8 +2,8 @@ use core::cell::RefCell;
 use core::ptr;
 use core::sync::atomic::{AtomicBool, AtomicPtr, AtomicU64, Ordering};
 
-use liteinst2::rapid::RapidProbe;
-use liteinst2::trampoline::HookContext;
+use liteinst::rapid::RapidProbe;
+use liteinst::trampoline::HookContext;
 
 use crate::BoxError;
 use crate::pmu::{CounterDelta, CounterSet, CounterSnapshot};

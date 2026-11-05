@@ -1,10 +1,10 @@
 // Finite native execution of read-only artifact-window images. The authored
 // prefix owns its five-byte E9; this does not test planner/router admission.
 use super::*;
-use liteinst2::contracts::AddressRange;
-use liteinst2::emission::{ArtifactEmission, SymbolicHook, TargetProfile};
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::{
+use liteinst::contracts::AddressRange;
+use liteinst::emission::{ArtifactEmission, SymbolicHook, TargetProfile};
+use liteinst::scanner::InstructionScanner;
+use liteinst::trampoline::{
     ArtifactObservationWindow, ArtifactWindowImage, HookContext, SavedExtendedStateLayout,
     HOOK_CONTEXT_STACK_PREFIX_BYTES,
 };

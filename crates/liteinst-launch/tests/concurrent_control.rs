@@ -8,12 +8,12 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
+use liteinst::contracts::{AddressRange, CodeIdentity, SourceIdentity};
 use liteinst_launch::publication::PublicationStop;
 use liteinst_launch::{
     ExecCheckpoint, FIXED_CLONE_FLAGS, LaunchCommand, LaunchError, ProcessEvent, SharedMmProcess,
     SignalStop,
 };
-use liteinst2::contracts::{AddressRange, CodeIdentity, SourceIdentity};
 
 const PAGE: usize = 4096;
 const BASE: u64 = 0x400000;

@@ -2,7 +2,7 @@
 //! This is a finite architectural prefix oracle; never used in timed execution.
 use super::inline_clock::InlineProgram;
 use super::{CASES, Case, single_main};
-use liteinst2::backedge_clock::{CLOCK_CANARY, ClockMode, ClockWords};
+use liteinst::backedge_clock::{CLOCK_CANARY, ClockMode, ClockWords};
 use std::arch::x86_64::{__cpuid_count, _xgetbv};
 use std::cell::Cell;
 use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};

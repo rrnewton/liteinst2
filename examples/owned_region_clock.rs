@@ -7,14 +7,14 @@
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
 compile_error!("owned_region_clock requires Linux x86-64");
 
-use liteinst2::backedge_clock::{
+use liteinst::backedge_clock::{
     BackedgeClock, BackedgeClockRegion, CLOCK_CANARY, ClockMode, ClockWords, MAX_WORK,
 };
-use liteinst2::contracts::*;
-use liteinst2::controls::{ControlIdentity, ProbeControl};
-use liteinst2::quiescent::{AllocationPolicy, InstalledOnce, plan_owned_clock_region_detailed};
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::HookContext;
+use liteinst::contracts::*;
+use liteinst::controls::{ControlIdentity, ProbeControl};
+use liteinst::quiescent::{AllocationPolicy, InstalledOnce, plan_owned_clock_region_detailed};
+use liteinst::scanner::InstructionScanner;
+use liteinst::trampoline::HookContext;
 use std::cell::Cell;
 use std::sync::mpsc;
 use std::time::{Duration, Instant};

@@ -257,19 +257,19 @@ fn thread_id() -> i64 {
 /// Non-Clone, non-Send worker lease. Drop is not an execution-drain proof.
 ///
 /// ```compile_fail
-/// use liteinst2::backedge_clock::ClockLease;
+/// use liteinst::backedge_clock::ClockLease;
 /// fn require_send<T: Send>() {}
 /// require_send::<ClockLease>();
 /// ```
 ///
 /// ```compile_fail
-/// use liteinst2::backedge_clock::ClockLease;
+/// use liteinst::backedge_clock::ClockLease;
 /// fn require_clone<T: Clone>() {}
 /// require_clone::<ClockLease>();
 /// ```
 ///
 /// ```compile_fail
-/// use liteinst2::backedge_clock::ClockLease;
+/// use liteinst::backedge_clock::ClockLease;
 /// fn require_shared_unwind<T: std::panic::RefUnwindSafe>() {}
 /// require_shared_unwind::<ClockLease>();
 /// ```

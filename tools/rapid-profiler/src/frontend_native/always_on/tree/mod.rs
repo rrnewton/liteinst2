@@ -2,7 +2,7 @@
 pub use super::gate::tree::{OriginalTreeCallResult, TreeCallGate, TreeCallResult};
 pub use super::site::SiteError;
 use super::*;
-use liteinst2::controls::ManagedCallback;
+use liteinst::controls::ManagedCallback;
 mod batch;
 mod drain;
 #[cfg(test)]

@@ -6,8 +6,8 @@ use super::*;
 use crate::lifecycle::LifecycleRegistry;
 use crate::linux::remote::SignalStop;
 use crate::selected::SyscallAliases;
+use liteinst::contracts::SourceIdentity;
 use liteinst_admission::scan::{Boundary, Snapshot, WriteControl};
-use liteinst2::contracts::SourceIdentity;
 use std::time::Duration;
 
 const PC: u64 = 0x401000;

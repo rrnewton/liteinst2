@@ -78,7 +78,7 @@ impl Fixture {
         )
     }
 }
-fn first_member(f: &Fixture) -> liteinst2::quiescent::PlannedInstall {
+fn first_member(f: &Fixture) -> liteinst::quiescent::PlannedInstall {
     let scope = AddressRange::new(f.parent.entry(), f.pcode.len()).unwrap();
     let block = AddressRange::new(f.parent.entry(), 9).unwrap();
     let entries = LegalEntrySet {
@@ -352,19 +352,19 @@ fn call_pair_budget_refuses_excess_members_without_widening_old_paths() {
     ));
     assert!(PlannedBundle::compose(f.pages.clone(), vec![member.clone()], module_budget()).is_ok());
     for budget in [
-        liteinst2::bundle::BundleBudget {
+        liteinst::bundle::BundleBudget {
             max_mappings: 0,
             ..module_budget()
         },
-        liteinst2::bundle::BundleBudget {
+        liteinst::bundle::BundleBudget {
             max_virtual_bytes: 0,
             ..module_budget()
         },
-        liteinst2::bundle::BundleBudget {
+        liteinst::bundle::BundleBudget {
             max_backing_bytes: 0,
             ..module_budget()
         },
-        liteinst2::bundle::BundleBudget {
+        liteinst::bundle::BundleBudget {
             max_virtual_span: 0,
             ..module_budget()
         },

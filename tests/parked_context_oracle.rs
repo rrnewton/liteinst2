@@ -6,15 +6,15 @@
 #[path = "support/quiescent_oracle.rs"]
 mod oracle;
 
-use liteinst2::contracts::{
+use liteinst::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryObligation, EntryProvenance, LegalEntry,
     LegalEntrySet, PlanKind, ResumeObligation, SourceIdentity,
 };
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy, plan_install,
 };
-use liteinst2::trampoline::HookContext;
+use liteinst::trampoline::HookContext;
 use oracle::{HookEvent, HookEventLog, HookExpectation, NativeOracle, ParkedPublication, TraceMap};
 use std::os::unix::process::CommandExt;
 use std::process::{Command, Stdio};

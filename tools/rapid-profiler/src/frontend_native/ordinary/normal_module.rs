@@ -3,7 +3,7 @@ use super::{
     IntegerLeafCertificate, Parsed, Retained, SetupRefusal, TrustedFunctionSelection, cfg,
     retain_loader, retain_sealed_loader, selection, verify_live_source, verify_source_provenance,
 };
-use liteinst2::contracts::ExpectedBytes;
+use liteinst::contracts::ExpectedBytes;
 use std::path::Path;
 
 /// External facts, not evidence of physical calls, returns or quiescence.

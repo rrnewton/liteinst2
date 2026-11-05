@@ -13,15 +13,15 @@ mod isolated_native_test;
 #[path = "support/quiescent_oracle.rs"]
 mod oracle;
 
-use liteinst2::contracts::{
+use liteinst::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryObligation, EntryProvenance, LegalEntry,
     LegalEntrySet, PlanKind, QuiescenceLease, Refusal, ResumeObligation, SourceIdentity,
 };
-use liteinst2::controls::{ControlledAction, ProbeControl};
-use liteinst2::quiescent::{
+use liteinst::controls::{ControlledAction, ProbeControl};
+use liteinst::quiescent::{
     AllocationPolicy, WholeFunctionRequest, plan_whole_function_controlled_detailed,
 };
-use liteinst2::trampoline::HookContext;
+use liteinst::trampoline::HookContext;
 use oracle::{HookEvent, HookEventLog, HookExpectation, NativeOracle, TraceMap};
 
 const PROBE_ID: u64 = 0xadc;

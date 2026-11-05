@@ -2,8 +2,8 @@
 use super::observation::registers_bytes;
 use super::storage::{check_shape, empty_attempt, prepare_owned};
 use super::*;
+use liteinst::contracts::SourceIdentity;
 use liteinst_admission::{Generation, MappingId};
-use liteinst2::contracts::SourceIdentity;
 
 fn binding() -> Binding {
     let old = super::super::tests::binding();

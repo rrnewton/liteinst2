@@ -1,8 +1,8 @@
 //! Closed optional-entry module factory. Every RET remains permanently enabled.
 use super::*;
-use liteinst2::controls::EarlyControlGateLayout;
-use liteinst2::controls::{ControlWriter, EntryAdmissionAction};
-use liteinst2::quiescent::{
+use liteinst::controls::EarlyControlGateLayout;
+use liteinst::controls::{ControlWriter, EntryAdmissionAction};
+use liteinst::quiescent::{
     plan_entry_admission_detailed_after, plan_whole_function_entry_admission_detailed_after,
 };
 mod append;

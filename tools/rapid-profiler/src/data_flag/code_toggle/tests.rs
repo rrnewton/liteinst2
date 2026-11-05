@@ -4,8 +4,8 @@
 use super::*;
 use crate::frontend_tls::{self, PointObservation};
 use crate::generation::{Completion, FunctionId};
-use liteinst2::rapid::RapidTogglePlan;
-use liteinst2::scanner::InstructionScanner;
+use liteinst::rapid::RapidTogglePlan;
+use liteinst::scanner::InstructionScanner;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 type Inject = Arc<dyn Fn(&[(usize, bool)], &mut Progress) -> PhysicalResult + Send + Sync>;
@@ -37,7 +37,7 @@ impl Contract {
 const A: FunctionId = FunctionId(11);
 const B: FunctionId = FunctionId(12);
 const C: FunctionId = FunctionId(13);
-unsafe extern "C" fn optional(_: *mut liteinst2::trampoline::HookContext) {}
+unsafe extern "C" fn optional(_: *mut liteinst::trampoline::HookContext) {}
 fn specs() -> [PointSpec; 4] {
     [
         PointSpec {

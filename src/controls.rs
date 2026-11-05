@@ -58,7 +58,7 @@ impl EnabledLoad<'_> {
 /// It conveys neither write authority nor a dereferenceable pointer.
 ///
 /// ```compile_fail
-/// use liteinst2::controls::ControlIdentity;
+/// use liteinst::controls::ControlIdentity;
 /// fn escape<'dispatch>(token: ControlIdentity<'dispatch>) -> ControlIdentity<'static> {
 ///     token
 /// }
@@ -68,8 +68,8 @@ impl EnabledLoad<'_> {
 ///
 /// ```compile_fail
 /// use std::cell::Cell;
-/// use liteinst2::controls::{ControlIdentity, ProbeControl};
-/// use liteinst2::trampoline::HookContext;
+/// use liteinst::controls::{ControlIdentity, ProbeControl};
+/// use liteinst::trampoline::HookContext;
 /// thread_local! { static SAVED: Cell<Option<ControlIdentity<'static>>> = const { Cell::new(None) }; }
 /// unsafe extern "C" fn retain<'dispatch>(_: *mut HookContext, token: ControlIdentity<'dispatch>) {
 ///     SAVED.with(|slot| slot.set(Some(token)));
@@ -112,7 +112,7 @@ pub struct ManagedControl;
 /// conversion from a planner-readable ProbeControl back to this capability.
 ///
 /// ```compile_fail,E0277
-/// use liteinst2::controls::ControlWriter;
+/// use liteinst::controls::ControlWriter;
 /// fn needs_clone<T: Clone>() {}
 /// fn duplicate() { needs_clone::<ControlWriter>(); }
 /// ```

@@ -6,7 +6,7 @@ use std::cell::RefCell;
 use std::ops::Range;
 
 use iced_x86::{Code, Decoder, DecoderOptions};
-use liteinst2::contracts::{AddressRange, CodeIdentity, QuiescenceLease};
+use liteinst::contracts::{AddressRange, CodeIdentity, QuiescenceLease};
 
 mod group;
 pub use group::*;

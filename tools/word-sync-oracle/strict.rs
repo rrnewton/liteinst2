@@ -2,13 +2,13 @@
 #![deny(warnings)]
 #![forbid(unsafe_op_in_unsafe_fn)]
 
-extern crate liteinst2;
+extern crate liteinst;
 
-use liteinst2::patcher::synchronized::{Direction, Phase, SyncJumpPatch, SynchronizedBatch};
-use liteinst2::patcher::{JumpPatchPlan, PatchStrategy};
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::sync_core::SyncCore;
-use liteinst2::trampoline::{TrampolineImage, TrampolinePlan};
+use liteinst::patcher::synchronized::{Direction, Phase, SyncJumpPatch, SynchronizedBatch};
+use liteinst::patcher::{JumpPatchPlan, PatchStrategy};
+use liteinst::scanner::InstructionScanner;
+use liteinst::sync_core::SyncCore;
+use liteinst::trampoline::{TrampolineImage, TrampolinePlan};
 mod neighbors;
 #[path = "../../tests/support/quiescent_oracle.rs"]
 pub mod oracle;

@@ -1,14 +1,14 @@
 //! Private finite component adapter. It does not publish source patches or grant
 //! arbitrary entry, exception, rseq, alias, mapping or application authority.
 #![deny(unsafe_op_in_unsafe_fn)]
-use liteinst2::contracts::{
+use liteinst::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryProvenance, LegalEntry, LegalEntrySet,
     ResumeObligation, SourceIdentity,
 };
-use liteinst2::controls::{ControlledAction, ProbeControl};
-use liteinst2::quiescent::{AllocationPolicy, PlannedInstall};
-use liteinst2::quiescent::{WholeFunctionRequest, plan_whole_function_controlled_detailed};
-use liteinst2::trampoline::{HookContext, ObservationStackProfile};
+use liteinst::controls::{ControlledAction, ProbeControl};
+use liteinst::quiescent::{AllocationPolicy, PlannedInstall};
+use liteinst::quiescent::{WholeFunctionRequest, plan_whole_function_controlled_detailed};
+use liteinst::trampoline::{HookContext, ObservationStackProfile};
 use std::sync::atomic::{AtomicU64, Ordering};
 static CALLBACKS: AtomicU64 = AtomicU64::new(0);
 unsafe extern "C" fn forbidden_callback(_: *mut HookContext) {

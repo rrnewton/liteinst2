@@ -8,16 +8,16 @@
 //! BeforeWrite refusal, two KeepGated failures and two poisoned retries.
 //! Every fixture body head is exercised; no internal CFG is certified as a block.
 
-use liteinst2::bundle::{BundleBudget, BundlePlan, InstalledBundle, PlannedBundle, WritableAlias};
-use liteinst2::contracts::*;
-use liteinst2::controls::{ControlledAction, ProbeControl};
-use liteinst2::grouping::GroupingBudget;
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::bundle::{BundleBudget, BundlePlan, InstalledBundle, PlannedBundle, WritableAlias};
+use liteinst::contracts::*;
+use liteinst::controls::{ControlledAction, ProbeControl};
+use liteinst::grouping::GroupingBudget;
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, PlannedInstall, SearchPolicy, TacticPolicy, plan_coalesced,
     plan_install,
 };
-use liteinst2::trampoline::{HookCallback, HookContext, translate_program_counter};
+use liteinst::trampoline::{HookCallback, HookContext, translate_program_counter};
 use std::os::unix::process::CommandExt;
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};

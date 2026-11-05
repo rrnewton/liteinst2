@@ -1,7 +1,7 @@
 //! Separate same-function short-victim cohort. All mappings are required;
 //! allocation refusal is a failure, never a skip or a retried layout.
 use super::*;
-use liteinst2::neighbor::{plan_neighbor_short, plan_neighbor_short_detailed};
+use liteinst::neighbor::{plan_neighbor_short, plan_neighbor_short_detailed};
 use oracle::ShortSourceRelay;
 use oracle::neighbor_fixture_arena::NeighborFixtureArena;
 use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
@@ -1171,7 +1171,7 @@ fn short_reject_fetch_or_bound_violation() {
 // Engine dispatch bridge; the direct planner and NativeOracle remain unchanged.
 #[test]
 fn short_engine_overlap_bundle_matches_direct_and_native() {
-    use liteinst2::engine::{self, CandidateEvidence, EnginePolicy, SelectedMetrics, Tactic};
+    use liteinst::engine::{self, CandidateEvidence, EnginePolicy, SelectedMetrics, Tactic};
     // Independent five-head bridge; do not enroll in the old 1102-head census.
     let puzzle = ShortPuzzle::overlap();
     let expected_heads = 5;

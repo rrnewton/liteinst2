@@ -3,9 +3,9 @@
 
 //! An observing hook must preserve addresses computed by displaced instructions.
 
-use liteinst2::patcher::StalenessBudget;
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::{HookContext, HookSite, InstalledHook};
+use liteinst::patcher::StalenessBudget;
+use liteinst::scanner::InstructionScanner;
+use liteinst::trampoline::{HookContext, HookSite, InstalledHook};
 use std::io::Write;
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
 use std::os::unix::process::{CommandExt, ExitStatusExt};

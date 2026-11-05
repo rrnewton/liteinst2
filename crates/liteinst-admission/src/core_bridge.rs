@@ -1,6 +1,6 @@
 //! Lossless fact export to the A0 core contract. This exports no execution
 //! capability, never fabricates a quiescence lease and never publishes code.
-use liteinst2::contracts as core;
+use liteinst::contracts as core;
 
 use crate::entries::{Completeness, EntryProvenance};
 use crate::scan::{Candidate, Policy, ScanReport, Verdict};

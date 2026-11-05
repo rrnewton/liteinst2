@@ -9,7 +9,7 @@ use super::super::super::runtime_native::ControlProfile;
 use super::*;
 use crate::lifecycle::{ExitStatus, LifecycleRegistry};
 use crate::selected::{SelectedResult, SyscallAliases, decode};
-use liteinst2::contracts::SourceIdentity;
+use liteinst::contracts::SourceIdentity;
 use std::time::Duration;
 
 const PC: u64 = 0x401000;

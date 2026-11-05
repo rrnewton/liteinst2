@@ -1,22 +1,22 @@
 //! Canonical actual facts and separately authored finite expectations.
 //! No planner calls; no Debug parsing; native expected state never comes from here.
 use super::{allocation, digest, f, occupancy, range, request_text};
-use liteinst2::bundle::BundleBudget;
-use liteinst2::composition::Composition;
-use liteinst2::contracts::{
+use liteinst::bundle::BundleBudget;
+use liteinst::composition::Composition;
+use liteinst::contracts::{
     AddressRange, ApplicationProfile, EntryCompleteness, EntryObligation, EntryProvenance,
     PlanKind, Refusal, ResumeObligation,
 };
-use liteinst2::emission::{
+use liteinst::emission::{
     ArtifactFieldEncoding, ArtifactImageView, ArtifactMetrics, ArtifactPlan, ArtifactRequirement,
 };
-use liteinst2::engine::{self, Tactic};
-use liteinst2::quiescent::{
+use liteinst::engine::{self, Tactic};
+use liteinst::quiescent::{
     AdjacentB2ArtifactPlan, AdjacentB2Budget, AdjacentB2Failure, AllocationPolicy, PairEvidence,
     PairOutcome, PairSchedule, PairStage, PairStop, PatchTactic, PlanMetrics, SiteAttempt,
 };
-use liteinst2::search::{CandidateProof, RefusalClass, SearchDomain, SearchEvidence, SearchStop};
-use liteinst2::trampoline::SavedExtendedStateLayout;
+use liteinst::search::{CandidateProof, RefusalClass, SearchDomain, SearchEvidence, SearchStop};
+use liteinst::trampoline::SavedExtendedStateLayout;
 use std::fmt::Write as _;
 
 macro_rules! row {

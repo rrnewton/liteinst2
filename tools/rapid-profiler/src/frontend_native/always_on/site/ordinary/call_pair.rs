@@ -6,15 +6,15 @@ use crate::frontend_native::{
     IntegerLeafCertificate, LoadedNormalCallPair, NormalCallPairEdge,
     NormalCallPairParentCertificate,
 };
-use liteinst2::bundle::{BundleReceipt, InstalledBundle, PlannedBundle};
-use liteinst2::composition::Composition;
-use liteinst2::contracts::*;
-use liteinst2::controls::{ControlIdentity, ControlledAction, ProbeControl};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::bundle::{BundleReceipt, InstalledBundle, PlannedBundle};
+use liteinst::composition::Composition;
+use liteinst::contracts::*;
+use liteinst::controls::{ControlIdentity, ControlledAction, ProbeControl};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     InstallRequest, SearchPolicy, TacticPolicy, plan_coalesced_detailed_after_with_stack_profile,
 };
-use liteinst2::trampoline::{ObservationStackProfile, SavedExtendedStateLayout};
+use liteinst::trampoline::{ObservationStackProfile, SavedExtendedStateLayout};
 use std::sync::Arc;
 #[cfg(test)]
 mod tests;
@@ -109,7 +109,7 @@ impl CallPairSite {
 // Original planner controls retain their inert callback without exposing a runtime route.
 #[cfg(test)]
 unsafe extern "C" fn unavailable<'a>(
-    _: *mut liteinst2::trampoline::HookContext,
+    _: *mut liteinst::trampoline::HookContext,
     _: ControlIdentity<'a>,
 ) {
     unsafe { libc::_exit(123) }

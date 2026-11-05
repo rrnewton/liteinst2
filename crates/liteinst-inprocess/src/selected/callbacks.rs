@@ -1,8 +1,8 @@
 //! Native class-specific callbacks. No registry, allocator or trapping shim.
 
 use core::arch::asm;
-use liteinst2::contracts::Refusal;
-use liteinst2::trampoline::{HookCallback, HookContext};
+use liteinst::contracts::Refusal;
+use liteinst::trampoline::{HookCallback, HookContext};
 
 use super::{
     REJECTED_SYSCALL_EXIT_STATUS, SelectedDestination, SelectedInstruction, SelectedKind,

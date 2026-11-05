@@ -2,7 +2,7 @@
 //! publication or callback identity is fabricated; no subject instruction runs.
 use super::*;
 use crate::frontend_native::module::ordinary::admit_for_planner_test;
-use liteinst2::trampoline::ObservationStackProfile;
+use liteinst::trampoline::ObservationStackProfile;
 
 const PAGE: u64 = 0x2800_0000;
 const ENTRIES: [u64; 2] = [PAGE + 128, PAGE + 512];

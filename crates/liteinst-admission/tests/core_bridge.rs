@@ -1,8 +1,8 @@
+use liteinst::contracts::{CodeIdentity, EntryCompleteness, ResumeObligation, SourceIdentity};
 use liteinst_admission::core_bridge::{self, ExportError, ResumeCoverage};
 use liteinst_admission::entries::{Completeness, EntryProvenance, LegalEntrySet};
 use liteinst_admission::scan::*;
 use liteinst_admission::{Generation, MappingId};
-use liteinst2::contracts::{CodeIdentity, EntryCompleteness, ResumeObligation, SourceIdentity};
 
 #[test]
 fn core_export_preserves_identity_bytes_policy_and_does_not_invent_resume_proof() {

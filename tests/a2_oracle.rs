@@ -8,8 +8,8 @@
 #[path = "support/quiescent_oracle.rs"]
 mod oracle;
 
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::{HookCallback, HookContext, TrampolinePlan};
+use liteinst::scanner::InstructionScanner;
+use liteinst::trampoline::{HookCallback, HookContext, TrampolinePlan};
 use oracle::{HookEvent, HookEventLog, HookExpectation, Mapping, NativeOracle, TraceMap};
 
 const SEEDS: [u64; 2] = [0x1234_5678_8765_4320, 0xfedc_ba98_0123_4567];
@@ -345,14 +345,14 @@ fn grouped_bundle_publication_and_retirement_preserve_complete_state() {
 }
 
 fn mixed_bundle_state(grouped: bool) {
-    use liteinst2::bundle::{BundleBudget, PlannedBundle, WritableAlias};
-    use liteinst2::contracts::{
+    use liteinst::bundle::{BundleBudget, PlannedBundle, WritableAlias};
+    use liteinst::contracts::{
         AddressRange, CodeIdentity, EntryCompleteness, EntryProvenance, ExpectedBytes, LegalEntry,
         LegalEntrySet, PlanKind, QuiescenceLease, Refusal, ResumeObligation, SourceIdentity,
     };
-    use liteinst2::grouping::{BackingKind, GroupingBudget};
-    use liteinst2::planner::HookSemantics;
-    use liteinst2::quiescent::{
+    use liteinst::grouping::{BackingKind, GroupingBudget};
+    use liteinst::planner::HookSemantics;
+    use liteinst::quiescent::{
         AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy, plan_install,
     };
 

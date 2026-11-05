@@ -10,14 +10,14 @@
 use super::{Binding, PointSpec, PointThread, attach_binding, point_callback};
 use crate::frontend::{self, EpochHandle, FailurePoint, FunctionSpec, GroupSpec, Session};
 use crate::generation::{Config, DeactivationRequest};
-use liteinst2::contracts::{Epoch, Refusal, ToggleProbe, Visibility};
-use liteinst2::controls::{ControlWriter, ControlledAction, ProbeControl};
-use liteinst2::patcher::synchronized::{
+use liteinst::contracts::{Epoch, Refusal, ToggleProbe, Visibility};
+use liteinst::controls::{ControlWriter, ControlledAction, ProbeControl};
+use liteinst::patcher::synchronized::{
     Direction, Phase, Receipt, SyncJumpPatch, SyncPatchError, SynchronizedBatch,
 };
-use liteinst2::rapid::RapidProbe;
-use liteinst2::sync_core::{SyncCore, SyncCoreError};
-use liteinst2::trampoline::{ExecutableTrampoline, TrampolinePlan};
+use liteinst::rapid::RapidProbe;
+use liteinst::sync_core::{SyncCore, SyncCoreError};
+use liteinst::trampoline::{ExecutableTrampoline, TrampolinePlan};
 use std::any::Any;
 use std::mem::ManuallyDrop;
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};

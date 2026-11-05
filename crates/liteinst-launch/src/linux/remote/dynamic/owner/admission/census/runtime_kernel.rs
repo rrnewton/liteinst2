@@ -15,7 +15,7 @@ use super::super::runtime_native::NativeCheckpoint;
 use super::*;
 use crate::linux::remote::dynamic::admission::RuntimePendingToken;
 use crate::{DynamicEvent, DynamicEventKind};
-use liteinst2::contracts::CodeIdentity;
+use liteinst::contracts::CodeIdentity;
 use std::mem::size_of;
 use std::time::Instant;
 

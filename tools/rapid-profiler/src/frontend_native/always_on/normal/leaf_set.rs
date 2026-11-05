@@ -1,7 +1,7 @@
 //! Bounded leaf-set profile using the existing NORMAL receipt and bank paths.
 use super::*;
 use crate::frontend_native::backoff::Policy;
-use liteinst2::contracts::CodeIdentity;
+use liteinst::contracts::CodeIdentity;
 mod history;
 pub use history::{
     NormalLeafSetHistoryBatch, NormalLeafSetHistoryStream, NormalLeafSetHistoryWindow,

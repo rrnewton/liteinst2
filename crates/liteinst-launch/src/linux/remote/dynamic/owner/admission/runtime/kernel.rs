@@ -180,7 +180,7 @@ impl RuntimeKernelIdentity {
     }
     pub(in crate::linux::remote::dynamic::owner) fn journal_source(
         &self,
-    ) -> (liteinst2::contracts::CodeIdentity, usize) {
+    ) -> (liteinst::contracts::CodeIdentity, usize) {
         (self.source.identity(), self.source.index())
     }
     pub(in crate::linux::remote::dynamic::owner) fn journal_origin(&self) -> (u64, u64) {

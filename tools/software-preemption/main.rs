@@ -10,10 +10,10 @@ mod region_clock;
 
 use corpus::{CASES, Case, Site};
 use counter::{Mode, ResultRow, Run};
-use liteinst2::contracts::*;
-use liteinst2::controls::{ControlledAction, ProbeControl};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::contracts::*;
+use liteinst::controls::{ControlledAction, ProbeControl};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, InstalledOnce, SearchPolicy, TacticPolicy,
     plan_coalesced_detailed,
 };
@@ -367,7 +367,7 @@ impl Program {
         std::mem::forget(installed);
     }
 }
-fn result_ranges(p: &liteinst2::quiescent::PlannedInstall) -> Vec<AddressRange> {
+fn result_ranges(p: &liteinst::quiescent::PlannedInstall) -> Vec<AddressRange> {
     p.plan()
         .parts()
         .dependencies
@@ -376,7 +376,7 @@ fn result_ranges(p: &liteinst2::quiescent::PlannedInstall) -> Vec<AddressRange> 
         .chain(p.plan().parts().allocations.iter().map(|a| a.range))
         .collect()
 }
-unsafe extern "C" fn unused_hook(_: *mut liteinst2::trampoline::HookContext) {
+unsafe extern "C" fn unused_hook(_: *mut liteinst::trampoline::HookContext) {
     unsafe { libc::_exit(123) }
 }
 
@@ -613,12 +613,12 @@ fn inline_qualify(output: &Path, transport: inline_clock::Transport) {
     for case in CASES {
         let mut counted_program = inline_clock::InlineProgram::with_transport(
             case,
-            liteinst2::backedge_clock::ClockMode::Counter,
+            liteinst::backedge_clock::ClockMode::Counter,
             transport,
         );
         let mut program = inline_clock::InlineProgram::with_transport(
             case,
-            liteinst2::backedge_clock::ClockMode::Stop,
+            liteinst::backedge_clock::ClockMode::Stop,
             transport,
         );
         for n in [1, 2, 7, 17] {
@@ -689,12 +689,12 @@ fn inline_qualify(output: &Path, transport: inline_clock::Transport) {
 fn inline_benchmark(case: Case, output: &Path, transport: inline_clock::Transport) {
     let mut counted_program = inline_clock::InlineProgram::with_transport(
         case,
-        liteinst2::backedge_clock::ClockMode::Counter,
+        liteinst::backedge_clock::ClockMode::Counter,
         transport,
     );
     let mut program = inline_clock::InlineProgram::with_transport(
         case,
-        liteinst2::backedge_clock::ClockMode::Stop,
+        liteinst::backedge_clock::ClockMode::Stop,
         transport,
     );
     let mut csv = String::from(

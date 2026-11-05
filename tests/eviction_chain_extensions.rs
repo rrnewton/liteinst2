@@ -13,10 +13,10 @@ mod isolation;
 mod oracle;
 
 use cases::{Case, Fixture};
-use liteinst2::bundle::{InstalledBundle, WritableAlias};
-use liteinst2::contracts::*;
-use liteinst2::eviction_chain::{PlannedChain, plan_successor_chain_detailed};
-use liteinst2::trampoline::HookContext;
+use liteinst::bundle::{InstalledBundle, WritableAlias};
+use liteinst::contracts::*;
+use liteinst::eviction_chain::{PlannedChain, plan_successor_chain_detailed};
+use liteinst::trampoline::HookContext;
 use oracle::{HookEvent, HookEventLog, HookExpectation, Mapping, NativeOracle, TraceMap};
 use std::sync::atomic::{AtomicBool, Ordering};
 

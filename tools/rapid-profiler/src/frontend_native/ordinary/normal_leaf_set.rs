@@ -3,7 +3,7 @@ use super::{
     NormalModuleContract, NormalModuleFunction, SetupRefusal, TrustedFunctionSelection,
     normal_module::{self, LoadedParts},
 };
-use liteinst2::contracts::ExpectedBytes;
+use liteinst::contracts::ExpectedBytes;
 use std::path::Path;
 
 /// One independently authenticated file/loader and immutable function/page union.

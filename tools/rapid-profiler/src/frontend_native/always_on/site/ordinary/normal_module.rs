@@ -1,7 +1,7 @@
 //! One transaction for two complete scalar leaves, with immutable function roles.
 use super::*;
 use crate::frontend_native::{IntegerLeafCertificate, LoadedNormalModule};
-use liteinst2::controls::ControlIdentity;
+use liteinst::controls::ControlIdentity;
 mod early_entry;
 pub use early_entry::{EarlyEntryModuleSitePreparation, InstalledEarlyEntryModuleSite};
 

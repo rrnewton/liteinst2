@@ -211,7 +211,7 @@ fn child(
         for image in plan.images() {
             assert_eq!(
                 image.layout().observation_stack_profile,
-                liteinst2::trampoline::ObservationStackProfile::CallPair240
+                liteinst::trampoline::ObservationStackProfile::CallPair240
             );
             for &(a, b) in image.instruction_boundaries() {
                 let matches: Vec<_> = ready

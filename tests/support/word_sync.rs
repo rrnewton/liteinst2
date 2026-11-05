@@ -1,10 +1,10 @@
 // Child-owned deterministic publication schedules; not general async admission.
 use super::*;
-use liteinst2::contracts::AddressRange;
-use liteinst2::patcher::synchronized::{Direction, Phase, SyncJumpPatch, SynchronizedBatch};
-use liteinst2::patcher::{JumpPatchPlan, PatchStrategy};
-use liteinst2::sync_core::SyncCore;
-use liteinst2::trampoline::TrampolineImage;
+use liteinst::contracts::AddressRange;
+use liteinst::patcher::synchronized::{Direction, Phase, SyncJumpPatch, SynchronizedBatch};
+use liteinst::patcher::{JumpPatchPlan, PatchStrategy};
+use liteinst::sync_core::SyncCore;
+use liteinst::trampoline::TrampolineImage;
 use std::ops::Deref;
 use std::sync::atomic::{AtomicPtr, AtomicU64, Ordering};
 

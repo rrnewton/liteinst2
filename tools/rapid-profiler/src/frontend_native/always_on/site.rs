@@ -2,15 +2,15 @@
 use super::{entry_callback, exit_callback};
 pub mod ordinary;
 use crate::frontend_native::{LoadedBranchLeaf, LoadedLeaf, SetupRefusal};
-use liteinst2::bundle::{BundleBudget, BundlePlan, BundleReceipt, InstalledBundle, PlannedBundle};
-use liteinst2::contracts::*;
-use liteinst2::controls::{ControlIdentity, ControlledAction, ProbeControl};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::bundle::{BundleBudget, BundlePlan, BundleReceipt, InstalledBundle, PlannedBundle};
+use liteinst::contracts::*;
+use liteinst::controls::{ControlIdentity, ControlledAction, ProbeControl};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, InstalledOnce, PlannedInstall, PlanningFailure, SearchPolicy,
     TacticPolicy, plan_coalesced_detailed,
 };
-use liteinst2::trampoline::{ExecutableTrampoline, HookContext, TrampolineImage};
+use liteinst::trampoline::{ExecutableTrampoline, HookContext, TrampolineImage};
 use std::sync::Arc;
 
 #[derive(Debug)]

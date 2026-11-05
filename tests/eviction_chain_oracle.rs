@@ -12,10 +12,10 @@ mod isolation;
 mod oracle;
 
 use cases::{CASES, Fixture};
-use liteinst2::bundle::WritableAlias;
-use liteinst2::contracts::*;
-use liteinst2::eviction_chain::{PlannedChain, plan_successor_chain_detailed};
-use liteinst2::trampoline::HookContext;
+use liteinst::bundle::WritableAlias;
+use liteinst::contracts::*;
+use liteinst::eviction_chain::{PlannedChain, plan_successor_chain_detailed};
+use liteinst::trampoline::HookContext;
 use oracle::{HookEvent, HookEventLog, HookExpectation, NativeOracle, TraceMap};
 
 const SEEDS: [u64; 2] = [0x1234_5678_8765_4320, 0xfedc_ba98_0123_4567];

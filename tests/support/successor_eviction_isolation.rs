@@ -82,9 +82,9 @@ fn record_single_main_thread(capture: &std::path::Path, phase: &str) {
 }
 
 fn occupied_victim_refusal(capture: &std::path::Path) {
-    use liteinst2::contracts::*;
-    use liteinst2::planner::HookSemantics;
-    use liteinst2::quiescent::{AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy};
+    use liteinst::contracts::*;
+    use liteinst::planner::HookSemantics;
+    use liteinst::quiescent::{AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy};
     // Separate pure-planner negative: no native execution and no skipped old
     // case. The held page is deliberately occupied for the entire request.
     let code = [0x89, 0xc0, 0xb8, 0x11, 0x22, 0x33, 0x44, 0xc3];
@@ -141,10 +141,10 @@ fn occupied_victim_refusal(capture: &std::path::Path) {
         unsafe { std::slice::from_raw_parts(native.code.writable(), 4096) }.to_vec();
     let owner_before = unsafe { std::slice::from_raw_parts(owner.writable(), 4096) }.to_vec();
     let before = std::fs::read_to_string("/proc/self/maps").unwrap();
-    let failure = liteinst2::eviction::plan_successor_detailed(
+    let failure = liteinst::eviction::plan_successor_detailed(
         &request,
         &victim,
-        liteinst2::bundle::BundleBudget::default(),
+        liteinst::bundle::BundleBudget::default(),
     )
     .unwrap_err();
     assert_eq!(failure.reason, Refusal::AllocationUnavailable);
@@ -160,7 +160,7 @@ fn occupied_victim_refusal(capture: &std::path::Path) {
     assert_eq!(failure.search.runs.len(), 1);
     assert_eq!(
         failure.search.runs[0].domain,
-        liteinst2::search::SearchDomain::VictimImages
+        liteinst::search::SearchDomain::VictimImages
     );
     assert_eq!(failure.search.runs[0].examined, 1);
     native.assert_publication(&[]);

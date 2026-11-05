@@ -1,4 +1,4 @@
-use liteinst2::generated_unwind::{OriginalCfi, Refusal, SourceOwner};
+use liteinst::generated_unwind::{OriginalCfi, Refusal, SourceOwner};
 use std::path::PathBuf;
 use std::sync::Arc;
 

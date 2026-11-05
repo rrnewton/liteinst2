@@ -1,16 +1,16 @@
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 //! Live-profile planning only: no executable mappings, publication or native calls.
-use liteinst2::bundle::{BundleBudget, PlannedBundle};
-use liteinst2::composition::Composition;
-use liteinst2::contracts::*;
-use liteinst2::controls::{ControlledAction, ProbeControl};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::bundle::{BundleBudget, PlannedBundle};
+use liteinst::composition::Composition;
+use liteinst::contracts::*;
+use liteinst::controls::{ControlledAction, ProbeControl};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, PlanningFailure, SearchPolicy, TacticPolicy,
     plan_coalesced_detailed, plan_coalesced_detailed_after,
 };
-use liteinst2::scanner::{InstructionScanner, ScanError};
-use liteinst2::search::{SearchDomain, SearchStop};
+use liteinst::scanner::{InstructionScanner, ScanError};
+use liteinst::search::{SearchDomain, SearchStop};
 
 const PAGE: u64 = 0x2000_0000;
 const PC: u64 = PAGE + 128;
@@ -18,7 +18,7 @@ const PC: u64 = PAGE + 128;
 const BODY: [u8; 16] = [
     0x31, 0xc0, 0x31, 0xd2, 0x0f, 0x1f, 0x40, 0x00, 0xeb, 0x00, 0xb8, 42, 0, 0, 0, 0xc3,
 ];
-unsafe extern "C" fn callback(_: *mut liteinst2::trampoline::HookContext) {}
+unsafe extern "C" fn callback(_: *mut liteinst::trampoline::HookContext) {}
 fn range(start: u64, len: usize) -> AddressRange {
     AddressRange::new(start, len).unwrap()
 }

@@ -1,6 +1,6 @@
 //! Finite adjacent-B2 fixture vocabulary. No host queries, planning or execution.
 //! The image witness is a byte recognizer, never a source of producer images.
-use liteinst2::trampoline::{SavedExtendedStateFormat, SavedExtendedStateLayout};
+use liteinst::trampoline::{SavedExtendedStateFormat, SavedExtendedStateLayout};
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 

@@ -1,12 +1,12 @@
 use super::machine::PAGE;
-use liteinst_inprocess::selected::{
-    InstalledSelected, PreparedSelected, SelectedKind, SelectedSite,
-};
-use liteinst2::contracts::{
+use liteinst::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryProvenance, LegalEntry, LegalEntrySet,
     PlanKind, QuiescenceLease, Refusal, ResumeObligation, SourceIdentity,
 };
-use liteinst2::quiescent::{AllocationPolicy, SearchPolicy, TacticPolicy};
+use liteinst::quiescent::{AllocationPolicy, SearchPolicy, TacticPolicy};
+use liteinst_inprocess::selected::{
+    InstalledSelected, PreparedSelected, SelectedKind, SelectedSite,
+};
 use std::ptr::NonNull;
 
 pub const REGISTERS: [&str; 16] = [

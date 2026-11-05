@@ -1,5 +1,5 @@
 //! Failure-only stack formatting. No source bytes, error strings or attempt dump.
-use liteinst2::contracts::Refusal;
+use liteinst::contracts::Refusal;
 use rapid_profiler::frontend_native::SiteError;
 
 const CAP: usize = 256;
@@ -126,8 +126,8 @@ pub(super) fn abort(error: &SiteError) -> ! {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use liteinst2::quiescent::{PatchTactic, PlanningFailure, SiteAttempt};
-    use liteinst2::search::{
+    use liteinst::quiescent::{PatchTactic, PlanningFailure, SiteAttempt};
+    use liteinst::search::{
         RefusalClass, RefusalEvidence, SearchDomain, SearchEvidence, SearchRun, SearchScope,
         SearchStop,
     };

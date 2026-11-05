@@ -16,7 +16,7 @@ build = "build.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
-liteinst2 = { path = "../..", features = ["offline-router"] }
+liteinst = { path = "../..", features = ["offline-router"] }
 libc = "0.2.186"
 
 [build-dependencies]

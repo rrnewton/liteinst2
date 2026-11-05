@@ -8,22 +8,22 @@ use super::oracle::{
     NativeOracle, ShortSourceRelay, TraceMap,
 };
 use super::{SEEDS, exact_e9};
-use liteinst2::composition::Composition;
-use liteinst2::contracts::{
+use liteinst::composition::Composition;
+use liteinst::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryProvenance, ExpectedBytes, LegalEntry,
     LegalEntrySet, Refusal, ResumeObligation, SourceIdentity,
 };
-use liteinst2::emission::{
+use liteinst::emission::{
     ArtifactEmission, ArtifactFieldEncoding, ArtifactMetrics, ArtifactRequest, ArtifactRequirement,
     PlanningSite, SymbolicHook, TargetProfile,
 };
-use liteinst2::engine::{self, EnginePolicy, SelectedMetrics, Tactic};
-use liteinst2::neighbor::{NeighborAttemptStage, NeighborSearch};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{AllocationPolicy, SearchPolicy};
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::search::SearchDomain;
-use liteinst2::trampoline::{HookContext, SavedExtendedStateLayout};
+use liteinst::engine::{self, EnginePolicy, SelectedMetrics, Tactic};
+use liteinst::neighbor::{NeighborAttemptStage, NeighborSearch};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{AllocationPolicy, SearchPolicy};
+use liteinst::scanner::InstructionScanner;
+use liteinst::search::SearchDomain;
+use liteinst::trampoline::{HookContext, SavedExtendedStateLayout};
 
 const PAGE: usize = 4096;
 const VICTIM: usize = 551;

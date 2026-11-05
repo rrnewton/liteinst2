@@ -2,13 +2,13 @@
 //! Source/native/clock pages stay held. The planner-selected image is acquired
 //! once with NOREPLACE; no hole, replacement, retry or occupied-range exception.
 use super::*;
-use liteinst2::backedge_clock::{
+use liteinst::backedge_clock::{
     BackedgeClock, BackedgeClockRegion, CLOCK_CANARY, ClockMode, ClockRegionGateLayout, ClockWords,
 };
-use liteinst2::controls::ControlIdentity;
-use liteinst2::quiescent::{PlannedInstall, plan_owned_clock_region_detailed};
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::HookContext;
+use liteinst::controls::ControlIdentity;
+use liteinst::quiescent::{PlannedInstall, plan_owned_clock_region_detailed};
+use liteinst::scanner::InstructionScanner;
+use liteinst::trampoline::HookContext;
 use std::cell::Cell;
 use std::mem::ManuallyDrop;
 use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
@@ -59,7 +59,7 @@ impl RegionProgram {
 
     pub(super) fn new_with_hook(
         mode: ClockMode,
-        hook: liteinst2::controls::ManagedCallback,
+        hook: liteinst::controls::ManagedCallback,
     ) -> Self {
         single_main();
         // One fresh anonymous owner partitioned without unmapping: native RX,

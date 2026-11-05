@@ -6,15 +6,15 @@
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
 compile_error!("owned_loop_clock requires Linux x86-64");
 
-use liteinst2::backedge_clock::{BackedgeClock, BackedgeClockAction, CLOCK_CANARY, ClockMode};
-use liteinst2::contracts::*;
-use liteinst2::controls::{ControlIdentity, ProbeControl};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::backedge_clock::{BackedgeClock, BackedgeClockAction, CLOCK_CANARY, ClockMode};
+use liteinst::contracts::*;
+use liteinst::controls::{ControlIdentity, ProbeControl};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy, plan_backedge_clock_detailed,
 };
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::HookContext;
+use liteinst::scanner::InstructionScanner;
+use liteinst::trampoline::HookContext;
 use std::cell::{Cell, UnsafeCell};
 use std::sync::{Arc, mpsc};
 use std::time::{Duration, Instant};

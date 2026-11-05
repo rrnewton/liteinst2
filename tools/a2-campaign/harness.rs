@@ -6,22 +6,22 @@
 #[path = "../../tests/support/quiescent_oracle.rs"]
 mod oracle;
 
-use liteinst2::bundle::{BundleBudget, InstalledBundle, PlannedBundle, WritableAlias};
-use liteinst2::contracts::{
+use liteinst::bundle::{BundleBudget, InstalledBundle, PlannedBundle, WritableAlias};
+use liteinst::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryObligation, EntryProvenance, ExpectedBytes,
     FailureStage, LegalEntry, LegalEntrySet, PlanKind, QuiescenceLease, Refusal, ResumeObligation,
     SourceIdentity,
 };
-use liteinst2::controls::{ControlledAction, ProbeControl};
-use liteinst2::engine::{self, EnginePolicy, Tactic};
-use liteinst2::grouping::{BackingKind, GroupingBudget};
-use liteinst2::neighbor::{NeighborGeometry, NeighborSearch};
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::controls::{ControlledAction, ProbeControl};
+use liteinst::engine::{self, EnginePolicy, Tactic};
+use liteinst::grouping::{BackingKind, GroupingBudget};
+use liteinst::neighbor::{NeighborGeometry, NeighborSearch};
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy, plan_coalesced_detailed,
     plan_install_detailed,
 };
-use liteinst2::trampoline::{
+use liteinst::trampoline::{
     HookCallback, HookContext, TrampolineError, translate_program_counter,
 };
 use oracle::{
@@ -804,7 +804,7 @@ fn publish(
     identity: CodeIdentity,
     source: AddressRange,
     bundle: &PlannedBundle,
-) -> Result<InstalledBundle, liteinst2::contracts::PublicationFailure> {
+) -> Result<InstalledBundle, liteinst::contracts::PublicationFailure> {
     let page = oracle.code.address();
     let pointer = (source.start()) as usize as *mut u8;
     let alias = unsafe { WritableAlias::new(source, pointer) }.unwrap();

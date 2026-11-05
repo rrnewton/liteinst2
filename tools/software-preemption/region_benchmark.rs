@@ -6,9 +6,9 @@ pub(super) fn compare_admission(text: &str, output: &std::path::Path) {
 }
 
 use super::{counter, joined_worker_retired, region_clock::RegionProgram, single_main};
-use liteinst2::backedge_clock::{BackedgeClock, CLOCK_CANARY, ClockMode, ClockWords};
-use liteinst2::controls::{ControlIdentity, ProbeControl};
-use liteinst2::trampoline::HookContext;
+use liteinst::backedge_clock::{BackedgeClock, CLOCK_CANARY, ClockMode, ClockWords};
+use liteinst::controls::{ControlIdentity, ProbeControl};
+use liteinst::trampoline::HookContext;
 use std::cell::Cell;
 use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
 use std::path::Path;
@@ -388,7 +388,7 @@ fn batch(
     single_main();
     assert_eq!(affinity(), [controller_cpu]);
     program.assert_code();
-    const { assert!(ENCOUNTERS <= liteinst2::backedge_clock::MAX_WORK) };
+    const { assert!(ENCOUNTERS <= liteinst::backedge_clock::MAX_WORK) };
     let before_clock = unsafe { program.clock.snapshot_parked() };
     let (tx, rx) = mpsc::sync_channel(1);
     let (resume_tx, resume_rx) = mpsc::sync_channel(1);
@@ -738,7 +738,7 @@ fn rejected_resumes(output: &Path, controller: usize, worker: usize, admission: 
 // it must refuse both the new batch boundary and the existing ordinary guard.
 // A live-batch fork is forbidden by the batch contract and is not exercised.
 fn rejected_fork_entry(output: &Path) {
-    use liteinst2::backedge_clock::ClockError;
+    use liteinst::backedge_clock::ClockError;
     single_main();
     let program = RegionProgram::new(ClockMode::Counter);
     let lease = unsafe { program.clock.acquire(1, 15) }.unwrap();

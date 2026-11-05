@@ -4,16 +4,16 @@
 //! must finish under real exclusion before a lazy execution gate is armed.
 //! No planner, allocator, publisher, or registry lookup runs in these callbacks.
 
-use liteinst2::contracts::{
+use liteinst::contracts::{
     AddressRange, CodeIdentity, FailureStage, LegalEntrySet, PatchPlan, PublicationFailure,
     PublicationReceipt, QuiescenceLease, Refusal,
 };
-use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{
+use liteinst::planner::HookSemantics;
+use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, InstalledOnce, PlanMetrics, PlannedInstall, SearchPolicy,
     plan_install,
 };
-use liteinst2::trampoline::TrampolineImage;
+use liteinst::trampoline::TrampolineImage;
 
 mod callbacks;
 mod encoding;

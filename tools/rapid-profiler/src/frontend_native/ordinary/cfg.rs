@@ -2,11 +2,11 @@
 //! prove pointer provenance, the checksum result, or termination.
 use super::{IntegerLeafCertificate, SetupRefusal};
 use iced_x86::{FlowControl, Mnemonic, OpKind, Register};
-use liteinst2::control_flow::{self, Coverage};
-use liteinst2::scanner::InstructionScanner;
+use liteinst::control_flow::{self, Coverage};
+use liteinst::scanner::InstructionScanner;
 
 fn ordinary(i: &iced_x86::Instruction) -> bool {
-    liteinst2::scalar_profile::read_only_caller_saved(i)
+    liteinst::scalar_profile::read_only_caller_saved(i)
 }
 
 pub(super) fn admit(bytes: &[u8], base: u64) -> Result<IntegerLeafCertificate, SetupRefusal> {

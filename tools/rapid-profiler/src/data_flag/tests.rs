@@ -1,7 +1,7 @@
 use super::*;
 use crate::generation::{AdmissionRefusal, Disposition, Terminal};
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::{ExecutableTrampoline, TrampolinePlan};
+use liteinst::scanner::InstructionScanner;
+use liteinst::trampoline::{ExecutableTrampoline, TrampolinePlan};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Mutex, mpsc};
 use std::time::Duration;

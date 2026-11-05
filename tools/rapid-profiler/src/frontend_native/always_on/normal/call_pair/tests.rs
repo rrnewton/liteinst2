@@ -2,7 +2,7 @@
 //! No loaded/publication owner, opaque ControlIdentity, native execution or stack
 //! mapping is fabricated. Metadata contexts do not exercise the dispatch token.
 use super::*;
-use liteinst2::contracts::SourceIdentity;
+use liteinst::contracts::SourceIdentity;
 use runtime::{View, with_context};
 const IDS: [FunctionId; 2] = [FunctionId(71), FunctionId(93)];
 const ENTRY: [u64; 2] = [0x1000, 0x1200];

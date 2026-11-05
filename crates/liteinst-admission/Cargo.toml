@@ -1,6 +1,6 @@
 [package]
 name = "liteinst-admission"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 rust-version = "1.94"
 description = "Conservative x86-64 admission facts and publication model for LiteInst"
@@ -10,4 +10,4 @@ readme = "README.md"
 
 [dependencies]
 iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder"] }
-liteinst2 = { version = "0.2.0", path = "../.." }
+liteinst = { version = "0.2.0", path = "../.." }

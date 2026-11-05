@@ -1,6 +1,6 @@
 //! Real TLS/model metadata controls; no native execution or publication.
 use super::*;
-use liteinst2::contracts::{CodeIdentity, SourceIdentity};
+use liteinst::contracts::{CodeIdentity, SourceIdentity};
 use std::mem::MaybeUninit;
 
 const ENTRIES: [u64; 2] = [0x1000, 0x1100];

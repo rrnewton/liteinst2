@@ -49,8 +49,8 @@ fn image(version: u64, opcode: [u8; 2]) -> Image {
         },
         snapshot,
         entries,
-        core_identity: liteinst2::contracts::CodeIdentity {
-            source: liteinst2::contracts::SourceIdentity(source),
+        core_identity: liteinst::contracts::CodeIdentity {
+            source: liteinst::contracts::SourceIdentity(source),
             mapping: 100 + version,
             generation: version,
         },
@@ -279,7 +279,7 @@ fn immutable_identity_cannot_be_reused_for_changed_bytes_heads_mapping_or_policy
                 .unwrap()
             }
             2 => changed.mapping.file_offset = PAGE,
-            _ => changed.core_identity.source = liteinst2::contracts::SourceIdentity([0x7a; 32]),
+            _ => changed.core_identity.source = liteinst::contracts::SourceIdentity([0x7a; 32]),
         }
         refused(
             catalog.stage(

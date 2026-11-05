@@ -12,6 +12,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 use iced_x86::{Code, Decoder, DecoderOptions};
+use liteinst::contracts as core;
+use liteinst::quiescent::AllocationPolicy;
 use liteinst_admission::entries::{Completeness, EntryProvenance, LegalEntrySet};
 use liteinst_admission::oracle_chain::{
     CacheCorruption, CacheLimits, CacheUsage, Inspection, OracleChain,
@@ -22,8 +24,6 @@ use liteinst_admission::scan::{
     WriteControl,
 };
 use liteinst_admission::{AddressRange, Generation, MappingId};
-use liteinst2::contracts as core;
-use liteinst2::quiescent::AllocationPolicy;
 
 use super::{GateError, GateOracleMetrics, ImageFacts};
 use crate::core_remote::{CpuidPlanRequest, CpuidPublisher, MAX_CPUID_BUNDLE, PreparedCpuid};

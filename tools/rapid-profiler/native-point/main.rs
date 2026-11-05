@@ -11,12 +11,12 @@ mod native_fixture_registration;
 #[path = "../../../tests/support/native_interval_oracle.rs"]
 mod oracle;
 
-use liteinst2::contracts::{Epoch, Refusal, ToggleProbe, Visibility};
-use liteinst2::controls::ControlledAction;
-use liteinst2::rapid::{RapidProbe, RapidTogglePlan};
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::sync_core::{SyncCore, SyncCoreError, SyncCoreOperation};
-use liteinst2::trampoline::{HookContext, TrampolinePlan};
+use liteinst::contracts::{Epoch, Refusal, ToggleProbe, Visibility};
+use liteinst::controls::ControlledAction;
+use liteinst::rapid::{RapidProbe, RapidTogglePlan};
+use liteinst::scanner::InstructionScanner;
+use liteinst::sync_core::{SyncCore, SyncCoreError, SyncCoreOperation};
+use liteinst::trampoline::{HookContext, TrampolinePlan};
 use oracle::native_point::{PointOracle, Published};
 use oracle::{HookEvent, record_hook_event};
 use rapid_profiler::data_flag::code_toggle::{
@@ -105,7 +105,7 @@ fn config() -> Config {
     }
 }
 fn specs(base: u64) -> [PointSpec; 4] {
-    let callbacks: [liteinst2::trampoline::HookCallback; 4] = [a, b, c, mandatory];
+    let callbacks: [liteinst::trampoline::HookCallback; 4] = [a, b, c, mandatory];
     std::array::from_fn(|i| PointSpec {
         pc: base + OFFSETS[i] as u64,
         group: i / 2,
