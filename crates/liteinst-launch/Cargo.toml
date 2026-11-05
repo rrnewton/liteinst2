@@ -1,16 +1,18 @@
 [package]
 name = "liteinst-launch"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.94"
 description = "Stopped first-instruction launch checkpoints for standalone LiteInst"
 license = "BSD-2-Clause"
+repository = "https://github.com/rrnewton/liteinst2"
+readme = "README.md"
 
 [dependencies]
 libc = "0.2.186"
 sha2 = { version = "0.10.9", optional = true }
-liteinst-admission = { version = "0.1.0", path = "../liteinst-admission" }
-liteinst2 = { version = "0.1.0", path = "../.." }
+liteinst-admission = { version = "0.2.0", path = "../liteinst-admission" }
+liteinst2 = { version = "0.2.0", path = "../.." }
 iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder"] }
 
 # Fixed development-only native resource controls; no default runtime API.
@@ -19,7 +21,7 @@ dev-exec-backing-cleanup = []
 dev-owned-stack-consumer-oracle = ["dep:sha2"]
 
 [dev-dependencies]
-liteinst-launch = { version = "=0.1.0", path = ".", features = ["dev-exec-backing-cleanup"] }
+liteinst-launch = { version = "=0.2.0", path = ".", features = ["dev-exec-backing-cleanup"] }
 
 [[test]]
 name = "exec_backing_cleanup"
