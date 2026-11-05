@@ -22,6 +22,7 @@ struct JitResult {
     stack_window: Vec<u8>,
     base: u64,
     stack_top: u64,
+    dst_ptr: u64,
     ranges: [(u64, u64); 4],
 }
 
@@ -105,6 +106,7 @@ fn run_jit_bytes(
         stack_window,
         base: guest.base,
         stack_top: guest.stack_top(),
+        dst_ptr: guarded.as_ref().map_or(dst.as_ptr() as u64, |g| g.ptr),
         ranges,
     }
 }
@@ -139,11 +141,10 @@ fn assert_full_state(name: &str, jit: &Outcome, jr: &JitResult, o1: &OracleOutco
         if name == "rep_stosb_partial" && (r == "rdi" || r == "rsi") {
             continue;
         }
-        // The oracle single-steps with TF set; a stepped syscall
-        // therefore leaves TF in the kernel-saved r11 flags image.
-        // TF is a tracer artifact here (the JIT guest runs with
-        // TF as loaded), so mask it out of the r11 comparison.
-        let (jv, ov) = if r == "r11" {
+        // Only a stepped syscall leaves the tracer's TF in the
+        // kernel-saved R11 flags image; mask TF there and nowhere
+        // else (ordinary R11 data compares exactly, bit 8 too).
+        let (jv, ov) = if r == "r11" && name == "syscall_write" {
             (jv & !0x100, ov & !0x100)
         } else {
             (jv, ov)
@@ -178,6 +179,14 @@ fn assert_full_state(name: &str, jit: &Outcome, jr: &JitResult, o1: &OracleOutco
         norm_window(&o1.stack_window, &o1_ranges),
         "{name}: stack window (incl. red zone)"
     );
+}
+
+fn off(pc: u64, base: u64) -> u64 {
+    assert!(
+        pc >= base && pc < base + 4096,
+        "pc {pc:#x} outside source range from {base:#x}"
+    );
+    pc - base
 }
 
 fn compare(name: &str) -> (Outcome, OracleOutcome) {
@@ -218,6 +227,11 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         "compiled_c",
         "redzone_reentry",
         "ret_imm16",
+        "loopne_insn",
+        "loope_insn",
+        "rep_stosb_ok",
+        "repne_scasb",
+        "r11_data",
     ] {
         let (jit, _o1) = compare(name);
         match name {
@@ -226,6 +240,10 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
             }
             "branchy_even_sum" => assert_eq!(jit.state.rax, 56),
             "compiled_c" => assert_eq!(jit.state.rax as i64, 64 - 8),
+            "rip_data" => assert_eq!(jit.state.rax, 42),
+            "loop_insn" => assert_eq!(jit.state.rax, 7),
+            "jrcxz" => assert_eq!(jit.state.rax, 2),
+            "r11_data" => assert_eq!(jit.state.rax, 0x100),
             "redzone_reentry" => assert_eq!(jit.state.rax, 0, "red-zone marker disturbed"),
             "ret_imm16" => {}
             _ => {}
@@ -279,14 +297,17 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
 
     // Exhaustive Jcc: every condition code, short and near
     // encodings, six flag-setting operand pairs, exact counts.
-    let pairs: [(u64, u64); 6] = [
+    let pairs: [(u64, u64); 7] = [
         (1, 2),
         (2, 1),
         (1, 1),
         (u64::MAX, 1),
         (1, u64::MAX),
-        ((i64::MIN as u64) & 0xffff_ffff, 1),
+        (0x8000_0000, 1),
+        (0x7fff_ffff, 0xffff_ffff),
     ];
+    let mut jcc_seen: std::collections::HashMap<(u8, bool), std::collections::HashSet<u64>> =
+        std::collections::HashMap::new();
     for cc in 0u8..16 {
         for near in [false, true] {
             let bytes: Vec<u8> = if near {
@@ -329,15 +350,22 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
                 });
                 assert_eq!(o1.fault, None, "jcc cc={cc}");
                 assert_eq!(out.branches, 1, "jcc cc={cc} branches");
-                assert_eq!(out.branches, o1.branches, "jcc cc={cc} ({a},{b})");
-                assert_eq!(out.instructions, o1.instructions, "jcc cc={cc} ({a},{b})");
-                assert_eq!(out.state.rax, o1.state.rax, "jcc cc={cc} ({a},{b}) result");
-                assert_eq!(
-                    out.state.rflags & STATUS_MASK,
-                    o1.state.rflags & STATUS_MASK,
-                    "jcc cc={cc} ({a},{b}) flags"
-                );
+                assert_full_state("jcc_gen", &out, &jr, &o1);
+                jcc_seen
+                    .entry((cc, near))
+                    .or_default()
+                    .insert(out.state.rax);
             }
+        }
+    }
+
+    for cc in 0u8..16 {
+        for near in [false, true] {
+            let seen = &jcc_seen[&(cc, near)];
+            assert!(
+                seen.contains(&0) && seen.contains(&1),
+                "jcc cc={cc} near={near} outcomes {seen:?} (want both taken and not)"
+            );
         }
     }
 
@@ -356,7 +384,11 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         assert_eq!(f.branches, o1.branches);
         assert_eq!(f.instructions, o1.instructions);
         assert_eq!(f.branches, 3);
-        assert_eq!(f.src_pc - jr.base, o1_pc - o1.base, "fault pc offset");
+        assert_eq!(
+            off(f.src_pc, jr.base),
+            off(o1_pc, o1.base),
+            "fault pc offset"
+        );
         assert_eq!(f.state.rcx, o1.state.rcx);
         assert_eq!(f.state.rdi, o1.state.rdi);
         assert_eq!(f.kind, liteinst_jit::exec::FaultKind::GuestFault);
@@ -373,11 +405,11 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         // R3: SIGFPE si_addr is an instruction address and must be
         // reported as the source PC, never the cache PC.
         assert_eq!(f.addr, f.src_pc, "div fault addr is source pc");
-        assert_eq!(f.addr - jr.base, 9, "div offset");
+        assert_eq!(off(f.addr, jr.base), 9, "div offset");
         let o1 = run_o1(std::path::Path::new(CHILD), "div_zero", |_, _| {});
         assert_eq!(o1.fault.map(|x| x.1), Some(libc::SIGFPE));
         assert_eq!(o1.instructions, 3);
-        assert_eq!(o1.fault_addr - o1.base, 9, "o1 div addr offset");
+        assert_eq!(off(o1.fault_addr, o1.base), 9, "o1 div addr offset");
     }
     // REP STOSB partial progress into a guard page: 16 bytes land,
     // RCX/RDI stop exactly at the boundary on both engines.
@@ -389,11 +421,17 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         };
         assert_eq!(f.instructions, 2, "mov+mov retired, rep did not");
         assert_eq!(f.state.rcx, 48, "64-16 iterations remain");
+        assert_eq!(f.state.rdi - jr.dst_ptr, 16, "destination advanced 16");
+        assert_eq!(f.addr - jr.dst_ptr, 16, "fault at guard boundary");
         assert_eq!(jr.dst, vec![0x5au8; 16]);
         let o1 = run_o1(std::path::Path::new(CHILD), "rep_stosb_partial", |_, _| {});
         assert_eq!(o1.fault.map(|x| x.1), Some(f.signum));
         assert_eq!(o1.instructions, 2);
         assert_eq!(o1.state.rcx, 48);
+        assert_eq!(o1.state.rdi - o1.info.dst, 16);
+        assert_eq!(o1.state.rsi, f.state.rsi);
+        assert_eq!(o1.state.rflags & STATUS_MASK, f.state.rflags & STATUS_MASK);
+        assert_eq!(o1.fault_addr - o1.info.dst, 16);
         assert_eq!(o1.dst_bytes, jr.dst);
     }
     // Faulting call store: exact pre-call state (Astra F1 shape).
@@ -408,7 +446,7 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         };
         assert_eq!(f.state.rax, 0x1122_3344_5566_7788);
         assert_eq!(f.state.rsp - jr.base, 16);
-        assert_eq!(f.src_pc - jr.base, 3);
+        assert_eq!(off(f.src_pc, jr.base), 3);
         assert_eq!(f.instructions, 1);
         let o1 = run_o1(
             std::path::Path::new(CHILD),
@@ -422,7 +460,7 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         assert_eq!(o1.instructions, 1);
         assert_eq!(o1.state.rax, f.state.rax);
         assert_eq!(o1.state.rsp - o1.base, 16);
-        assert_eq!(o1_pc - o1.base, 3);
+        assert_eq!(off(o1_pc, o1.base), 3);
     }
     // Faulting return stack read: only the mov retired (F3).
     {
@@ -515,6 +553,55 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
             Err(RunError::Refuse(Refuse::NoHandler { .. }))
         ));
     }
+    // A fault before a block's conditional branch credits no branch.
+    {
+        let jr = run_jit("fault_before_branch", |s| s.rdi = 0x0dea_d000);
+        let f = match jr.outcome {
+            Err(RunError::Fault(f)) => f,
+            other => panic!("fault_before_branch jit: {other:?}"),
+        };
+        assert_eq!(f.branches, 0, "fault_before_branch branches");
+        assert_eq!(f.instructions, 0);
+        let o1 = run_o1(
+            std::path::Path::new(CHILD),
+            "fault_before_branch",
+            |r, _| {
+                r.rdi = 0x0dea_d000;
+            },
+        );
+        assert_eq!(o1.branches, 0);
+        assert_eq!(o1.instructions, 0);
+    }
+
+    // Indirect call and jump-table edges refuse by name too.
+    for name in ["indirect_call", "jump_table"] {
+        let jr = run_jit(name, |_| {});
+        assert!(
+            matches!(
+                jr.outcome,
+                Err(RunError::Refuse(Refuse::IndirectUnresolved { .. }))
+            ),
+            "{name}: {:?}",
+            jr.outcome
+        );
+    }
+    // RIP-relative store faults identically on the RX guest page.
+    {
+        let jr = run_jit("rip_store_fault", |s| s.rdi = 0x2a);
+        let f = match jr.outcome {
+            Err(RunError::Fault(f)) => f,
+            other => panic!("rip_store_fault jit: {other:?}"),
+        };
+        assert_eq!(f.instructions, 0);
+        assert_eq!(off(f.addr, jr.base), 15);
+        let o1 = run_o1(std::path::Path::new(CHILD), "rip_store_fault", |r, _| {
+            r.rdi = 0x2a;
+        });
+        assert_eq!(o1.instructions, 0);
+        assert_eq!(off(o1.fault_addr, o1.base), 15);
+        assert_eq!(o1.fault.map(|x| x.1), Some(f.signum));
+    }
+
     // Indirect control flow refuses by name (P1a boundary).
     {
         let jr = run_jit("indirect_jmp", |_| {});

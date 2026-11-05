@@ -265,6 +265,63 @@ pub fn all() -> Vec<Fixture> {
             bytes: vec![0xfd, 0x31, 0xc0, 0x0f, 0xa2, 0xfc, 0xc3],
         },
         Fixture {
+            // xor eax; mov rcx,rsi; L: inc rax; loopne L; ret
+            name: "loopne_insn",
+            bytes: vec![0x31, 0xc0, 0x48, 0x89, 0xf1, 0xff, 0xc0, 0xe0, 0xfc, 0xc3],
+        },
+        Fixture {
+            // xor eax; mov rcx,rsi; L: inc rax; test al,0; loope L; ret
+            name: "loope_insn",
+            bytes: vec![
+                0x31, 0xc0, 0x48, 0x89, 0xf1, 0xff, 0xc0, 0xf6, 0xc0, 0x00, 0xe1, 0xf9, 0xc3,
+            ],
+        },
+        Fixture {
+            // mov rcx,rdx; mov al,0x5a; rep stosb; ret (rdi=dst)
+            name: "rep_stosb_ok",
+            bytes: vec![0x48, 0x89, 0xd1, 0xb0, 0x5a, 0xf3, 0xaa, 0xc3],
+        },
+        Fixture {
+            // mov rcx,rdx; xor eax,eax; repne scasb; mov rax,rdx;
+            // sub rax,rcx; ret (rdi=src buffer, scans for NUL)
+            name: "repne_scasb",
+            bytes: vec![
+                0x48, 0x89, 0xd1, 0x31, 0xc0, 0xf2, 0xae, 0x48, 0x89, 0xd0, 0x48, 0x29, 0xc8, 0xc3,
+            ],
+        },
+        Fixture {
+            // mov r11,0x100; mov rax,r11; ret — ordinary R11 data
+            // must compare exactly, bit 8 included.
+            name: "r11_data",
+            bytes: vec![
+                0x49, 0xc7, 0xc3, 0x00, 0x01, 0x00, 0x00, 0x4c, 0x89, 0xd8, 0xc3,
+            ],
+        },
+        Fixture {
+            // mov rax,[rip+8]; store/load fault vs RX page:
+            // mov [rip+8],rdi; mov rax,[rip+1]; ret; dq 0
+            name: "rip_store_fault",
+            bytes: vec![
+                0x48, 0x89, 0x3d, 0x08, 0x00, 0x00, 0x00, 0x48, 0x8b, 0x05, 0x01, 0x00, 0x00, 0x00,
+                0xc3, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
+        },
+        Fixture {
+            name: "indirect_call",
+            bytes: vec![0xff, 0xd0, 0xc3],
+        },
+        Fixture {
+            // jmp qword [rip+0] with an inline table entry.
+            name: "jump_table",
+            bytes: vec![0xff, 0x25, 0x00, 0x00, 0x00, 0x00, 0, 0, 0, 0, 0, 0, 0, 0],
+        },
+        Fixture {
+            // mov rax,[rdi]; cmp rax,0; jne done; done: ret — a
+            // fault on the load must not credit the later branch.
+            name: "fault_before_branch",
+            bytes: vec![0x48, 0x8b, 0x07, 0x48, 0x83, 0xf8, 0x00, 0x75, 0x00, 0xc3],
+        },
+        Fixture {
             name: "indirect_jmp",
             bytes: asm(|a| {
                 a.mov(rax, rdi)?;

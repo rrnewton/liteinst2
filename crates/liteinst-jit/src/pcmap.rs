@@ -229,6 +229,7 @@ mod tests {
         let m = sample();
         assert_eq!(m.recover(0x8000), Some(0x1000));
         assert_eq!(m.recover(0x8003), Some(0x1003));
+        assert_eq!(m.recover(0x8004), Some(0x1004));
     }
 
     #[test]

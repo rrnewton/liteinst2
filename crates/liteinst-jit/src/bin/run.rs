@@ -23,8 +23,15 @@ fn main() -> std::process::ExitCode {
         let region = guest.region(&fixture.bytes, Generation(1));
         guest.plant_below_rsp(liteinst_jit::harness::REDZONE_MARKER);
         let expected = match fixture.name {
-            "indirect_jmp" | "rdtsc_exit" | "int3_trap" => "REFUSED",
-            "fault_ret" | "call_store_fault" | "div_zero" | "rep_stosb_partial" => "FAULT",
+            "indirect_jmp" | "indirect_call" | "jump_table" | "rdtsc_exit" | "int3_trap" => {
+                "REFUSED"
+            }
+            "fault_ret"
+            | "call_store_fault"
+            | "div_zero"
+            | "rep_stosb_partial"
+            | "rip_store_fault"
+            | "fault_before_branch" => "FAULT",
             _ => "OK",
         };
         let mut exec =

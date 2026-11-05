@@ -73,7 +73,7 @@ pub struct OracleOutcome {
     pub stdout_tail: Vec<u8>,
 }
 
-const STEP_CAP: u64 = 4_000_000;
+const STEP_CAP: u64 = 2_000_000;
 const TRAP_TRACE: i32 = 2;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -115,7 +115,26 @@ fn decode_step(bytes: &[u8], pc: u64) -> Instruction {
 /// True when `ins` carries a REP/REPE/REPNE prefix (any prefix
 /// order), for the partially-stepped-REP retirement rule.
 pub fn instruction_has_rep(ins: &Instruction) -> bool {
-    ins.has_rep_prefix() || ins.has_repne_prefix()
+    let string_op = matches!(
+        ins.mnemonic(),
+        Mnemonic::Movsb
+            | Mnemonic::Movsw
+            | Mnemonic::Movsd
+            | Mnemonic::Movsq
+            | Mnemonic::Stosb
+            | Mnemonic::Stosw
+            | Mnemonic::Stosd
+            | Mnemonic::Stosq
+            | Mnemonic::Lodsb
+            | Mnemonic::Cmpsb
+            | Mnemonic::Scasb
+            | Mnemonic::Scasw
+            | Mnemonic::Scasd
+            | Mnemonic::Scasq
+            | Mnemonic::Insb
+            | Mnemonic::Outsb
+    );
+    string_op && (ins.has_rep_prefix() || ins.has_repne_prefix())
 }
 
 fn ptrace(req: u32, pid: i32, addr: *mut u8, data: *mut u8) -> i64 {
@@ -326,9 +345,13 @@ fn run_o1_impl(
         if sig == libc::SIGTRAP {
             let si_code = get_siginfo(pid).si_code;
             // Observed on this kernel: an ordinary step reports
-            // TRAP_TRACE, a stepped-over syscall reports si_code 1.
-            // A guest int3 (class Other) reports neither as a step.
-            let stepped = si_code == TRAP_TRACE || class == StepClass::Syscall;
+            // TRAP_TRACE, a stepped-over syscall reports si_code 1
+            // with RIP advanced exactly past the syscall. Anything
+            // else at a syscall is a signal stop, not retirement.
+            let stepped = si_code == TRAP_TRACE
+                || (class == StepClass::Syscall
+                    && si_code == 1
+                    && after.rip == prev_pc + insn.len() as u64);
             if !stepped {
                 // A guest trap (int3/hardware trap), not our step:
                 // the instruction does not retire.
