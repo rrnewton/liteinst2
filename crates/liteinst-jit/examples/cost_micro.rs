@@ -1,7 +1,8 @@
 //! Fixture cost micro-benchmark (li2adm format inputs).
 //!
 //! Prints CSV: fixture,mode,median_us_per_run,iqr_us,samples,reps
-//! Modes: `prepare` (translate+install once), `jit` (steady-state
+//! Modes: `prepare` (translate+install once), `translate`
+//! (translate only, repeated per sample), `jit` (steady-state
 //! translated execution, both counters on), `native` (same bytes
 //! called directly). Exactly 10 timed samples per cell after one
 //! warmup sample; medians and IQRs are over the 10 samples.
@@ -19,6 +20,7 @@ const SAMPLES: usize = 10;
 /// Bench working-set size (distinct from test parameters, labelled).
 const N: u64 = 4096;
 const REPS: u64 = 2000;
+const TRANSLATE_REPS: u64 = 1000;
 
 fn median_iqr(mut v: Vec<f64>) -> (f64, f64) {
     v.sort_by(|a, b| a.partial_cmp(b).unwrap());
@@ -75,6 +77,36 @@ fn main() {
         }
         let (med, iqr) = median_iqr(times.split_off(1));
         println!("{name},prepare,{med:.3},{iqr:.3},{SAMPLES},1");
+
+        // translate only: block discovery plus emission, without
+        // cache install or execution. Generated/data bases sit
+        // near the mapped guest so RIP-relative re-encodes stay
+        // within rel32 reach.
+        let translate_gen_base = guest.base.wrapping_add(0x0010_0000);
+        let translate_data_addr = translate_gen_base.wrapping_add(0x0001_0000);
+        let mut times = Vec::new();
+        for _ in 0..=SAMPLES {
+            let t = Instant::now();
+            let mut acc: u64 = 0;
+            for _ in 0..TRANSLATE_REPS {
+                let tr = liteinst_jit::translate::translate(
+                    &region,
+                    guest.base,
+                    CountProfile::BranchesAndInstructions,
+                    translate_gen_base,
+                    translate_data_addr,
+                )
+                .expect("translate");
+                acc = acc
+                    .wrapping_add(tr.code.len() as u64)
+                    .wrapping_add(tr.pcmap.len() as u64)
+                    .wrapping_add(tr.blocks.len() as u64);
+            }
+            std::hint::black_box(acc);
+            times.push(t.elapsed().as_secs_f64() * 1e6 / TRANSLATE_REPS as f64);
+        }
+        let (med, iqr) = median_iqr(times.split_off(1));
+        println!("{name},translate,{med:.3},{iqr:.3},{SAMPLES},{TRANSLATE_REPS}");
 
         // jit steady state.
         let mut exec =

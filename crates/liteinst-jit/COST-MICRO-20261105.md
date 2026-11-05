@@ -81,3 +81,38 @@ Failures retained: none in either invocation (all cells completed;
 `indirect_jmp` are correctness-only fixtures with no native-timing
 cell because their ABI/handler needs make a naked native call
 meaningless; they are covered by the O1 test, not omitted silently).
+
+## Addendum: S3-A streaming-decoder reuse (2026-11-05)
+
+S3-A keeps one iced decoder and one instruction-info factory for
+block discovery and carries the decoded terminator forward instead
+of decoding it again. The cost example gained a `translate` mode
+(discovery + emission only, 1,000 translations per timed sample) so
+this change can be measured separately from cache installation and
+execution. Baseline production code is liteinst2 `main` at
+`f229b290532f991a9ec99d98d6bee0a22f401c15`; the after run is the
+same bench mode plus the S3-A decoder reuse. Command for both:
+`CARGO_INCREMENTAL=0 cargo run --locked --release -p liteinst-jit --example cost_micro`.
+Machine: host withheld; AMD EPYC 9D85 158-Core Processor, Linux
+`7.1.3-0_fbk0_0_g295ad0959f34`, x86-64, shared and unpinned.
+Exactly 10 timed samples follow one warmup sample. These are
+fixture component costs only, not a whole-program or DynamoRIO
+comparison.
+
+| fixture | prepare before → after µs | prepare speedup | translate before → after µs | translate speedup |
+|---|---:|---:|---:|---:|
+| `sum_loop` | 8.442 → 7.662 | 1.102× | 4.522 → 4.081 | 1.108× |
+| `branchy_even_sum` | 9.239 → 8.428 | 1.096× | 6.315 → 5.671 | 1.114× |
+| `call_helper` | 9.088 → 8.693 | 1.045× | 6.235 → 5.546 | 1.124× |
+| `rip_data` | 4.322 → 4.207 | 1.027× | 1.928 → 1.813 | 1.063× |
+| `loop_insn` | 6.830 → 6.259 | 1.091× | 3.917 → 3.593 | 1.090× |
+| `rep_movsb` | 5.969 → 5.918 | 1.009× | 3.475 → 3.345 | 1.039× |
+
+Median speedup across the six fixtures is 1.068× for `prepare`
+and 1.099× for `translate`. The translate IQRs were at most
+0.134 µs in both runs; prepare remains noisier because each timed
+sample performs one fresh executable installation. A maintained
+golden-hash test pins emitted bytes, PC maps, block layout, and
+decoded terminators for representative fixtures to the
+pre-streaming implementation, so this is a decoder-reuse cost
+change, not an emission-semantics change.

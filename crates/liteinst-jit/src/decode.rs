@@ -82,19 +82,9 @@ fn is_loop_like(code: Code, mnemonic: Mnemonic) -> bool {
     ) || matches!(code, Code::Jecxz_rel8_64 | Code::Jrcxz_rel8_64)
 }
 
-/// Decode one instruction at `pc` from `bytes` (the bytes at `pc`).
-/// Returns `None` for invalid or truncated encodings.
-pub fn decode_one(bytes: &[u8], pc: u64) -> Option<DecodedInsn> {
-    let mut decoder = Decoder::with_ip(64, bytes, pc, DecoderOptions::NONE);
-    if !decoder.can_decode() {
-        return None;
-    }
-    let ins = decoder.decode();
-    if ins.is_invalid() || ins.len() == 0 || ins.len() > bytes.len() {
-        return None;
-    }
+fn classify(ins: &Instruction) -> InsnClass {
     let code = ins.code();
-    let class = if is_syscall_class(code, ins.mnemonic()) {
+    if is_syscall_class(code, ins.mnemonic()) {
         InsnClass::Syscall
     } else if let Some(kind) = nondet_kind(code) {
         InsnClass::Nondet(kind)
@@ -129,13 +119,29 @@ pub fn decode_one(bytes: &[u8], pc: u64) -> Option<DecodedInsn> {
         InsnClass::Indirect
     } else {
         InsnClass::Ordinary
-    };
+    }
+}
+
+fn decoded_from(ins: Instruction, pc: u64, remaining_len: usize) -> Option<DecodedInsn> {
+    if ins.is_invalid() || ins.len() == 0 || ins.len() > remaining_len {
+        return None;
+    }
     Some(DecodedInsn {
         pc,
         len: ins.len(),
-        class,
+        class: classify(&ins),
         instruction: ins,
     })
+}
+
+/// Decode one instruction at `pc` from `bytes` (the bytes at `pc`).
+/// Returns `None` for invalid or truncated encodings.
+pub fn decode_one(bytes: &[u8], pc: u64) -> Option<DecodedInsn> {
+    let mut decoder = Decoder::with_ip(64, bytes, pc, DecoderOptions::NONE);
+    if !decoder.can_decode() {
+        return None;
+    }
+    decoded_from(decoder.decode(), pc, bytes.len())
 }
 
 /// Instructions whose effects are outside the P1a envelope even
@@ -405,6 +411,16 @@ fn allowed_ordinary(m: Mnemonic) -> bool {
 /// permissive decoder fallback is not a relocation proof.
 pub fn decode_supported(bytes: &[u8], pc: u64) -> Result<DecodedInsn, Refuse> {
     let d = decode_one(bytes, pc).ok_or(Refuse::Decode { src_pc: pc })?;
+    let mut factory = InstructionInfoFactory::new();
+    admit_supported(d, bytes, &mut factory)
+}
+
+fn admit_supported(
+    d: DecodedInsn,
+    bytes: &[u8],
+    factory: &mut InstructionInfoFactory,
+) -> Result<DecodedInsn, Refuse> {
+    let pc = d.pc;
     let ins = &d.instruction;
     match d.class {
         InsnClass::Ordinary => {
@@ -485,7 +501,6 @@ pub fn decode_supported(bytes: &[u8], pc: u64) -> Result<DecodedInsn, Refuse> {
                     reason: "transactional prefix outside P1a envelope",
                 });
             }
-            let mut factory = InstructionInfoFactory::new();
             let info = factory.info(ins);
             for used in info.used_registers() {
                 let r: Register = used.register();
@@ -507,6 +522,63 @@ pub fn decode_supported(bytes: &[u8], pc: u64) -> Result<DecodedInsn, Refuse> {
         _ => {}
     }
     Ok(d)
+}
+
+/// Reusable streaming form of [`decode_supported`] over one source
+/// region. It retains a single iced decoder and instruction-info
+/// factory across block discovery; `reset` repositions both the
+/// byte cursor and IP for a new block start. Admission semantics
+/// are shared with `decode_supported` through `admit_supported`.
+pub struct SupportedDecoder<'a> {
+    decoder: Decoder<'a>,
+    factory: InstructionInfoFactory,
+    bytes: &'a [u8],
+    base: u64,
+}
+
+impl<'a> SupportedDecoder<'a> {
+    pub fn new(bytes: &'a [u8], base: u64) -> Self {
+        Self {
+            decoder: Decoder::with_ip(64, bytes, base, DecoderOptions::NONE),
+            factory: InstructionInfoFactory::new(),
+            bytes,
+            base,
+        }
+    }
+
+    /// Position the stream at source PC `pc` inside the region.
+    pub fn reset(&mut self, pc: u64) -> Result<(), Refuse> {
+        let offset = pc
+            .checked_sub(self.base)
+            .and_then(|o| usize::try_from(o).ok())
+            .ok_or(Refuse::Decode { src_pc: pc })?;
+        self.decoder
+            .set_position(offset)
+            .map_err(|_| Refuse::Decode { src_pc: pc })?;
+        self.decoder.set_ip(pc);
+        Ok(())
+    }
+
+    /// Decode and admit the next instruction in the stream.
+    pub fn next_supported(&mut self) -> Result<DecodedInsn, Refuse> {
+        let pc = self.decoder.ip();
+        let offset = self.decoder.position();
+        let all: &'a [u8] = self.bytes;
+        let Some(bytes) = all.get(offset..) else {
+            return Err(Refuse::Decode { src_pc: pc });
+        };
+        if !self.decoder.can_decode() {
+            return Err(Refuse::Decode { src_pc: pc });
+        }
+        let d = decoded_from(self.decoder.decode(), pc, bytes.len())
+            .ok_or(Refuse::Decode { src_pc: pc })?;
+        if self.decoder.position() != offset + d.len
+            || self.decoder.ip() != pc.wrapping_add(d.len as u64)
+        {
+            return Err(Refuse::Decode { src_pc: pc });
+        }
+        admit_supported(d, bytes, &mut self.factory)
+    }
 }
 
 #[cfg(test)]
@@ -599,5 +671,54 @@ mod tests {
         );
         // invalid: truncated mov rax,imm64
         assert!(decode_one(&[0x48, 0xb8, 0x01], 0x1000).is_none());
+    }
+
+    #[test]
+    fn streaming_decoder_matches_supported_reference() {
+        fn assert_same(actual: &DecodedInsn, expected: &DecodedInsn) {
+            assert_eq!(actual.pc, expected.pc);
+            assert_eq!(actual.len, expected.len);
+            assert_eq!(actual.class, expected.class);
+            assert_eq!(actual.instruction.code(), expected.instruction.code());
+            assert_eq!(
+                actual.instruction.mnemonic(),
+                expected.instruction.mnemonic()
+            );
+            assert_eq!(actual.instruction.ip(), expected.instruction.ip());
+            assert_eq!(actual.instruction.next_ip(), expected.instruction.next_ip());
+            assert_eq!(
+                actual.instruction.op_count(),
+                expected.instruction.op_count()
+            );
+        }
+
+        // xor eax,eax; inc eax; cmp eax,3; jne -6; ret
+        let bytes = [0x31, 0xc0, 0xff, 0xc0, 0x83, 0xf8, 0x03, 0x75, 0xf9, 0xc3];
+        let mut stream = SupportedDecoder::new(&bytes, 0x1000);
+        let mut offset = 0usize;
+        for _ in 0..5 {
+            let pc = 0x1000 + offset as u64;
+            let expected = decode_supported(&bytes[offset..], pc).unwrap();
+            let actual = stream.next_supported().unwrap();
+            assert_same(&actual, &expected);
+            offset += expected.len;
+        }
+        assert_eq!(offset, bytes.len());
+
+        // Reset repositions both byte cursor and IP to a later
+        // block start, matching a fresh supported decode there.
+        stream.reset(0x1002).unwrap();
+        let expected = decode_supported(&bytes[2..], 0x1002).unwrap();
+        let actual = stream.next_supported().unwrap();
+        assert_same(&actual, &expected);
+
+        // Admission errors are also shared, not just successes:
+        // EMMS is outside the Ordinary envelope.
+        let emms = [0x0f, 0x77, 0xc3];
+        let mut stream = SupportedDecoder::new(&emms, 0x1000);
+        assert_eq!(
+            stream.next_supported().unwrap_err(),
+            decode_supported(&emms, 0x1000).unwrap_err()
+        );
     }
 }

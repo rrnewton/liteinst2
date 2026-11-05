@@ -13,7 +13,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use iced_x86::{ConditionCode, Encoder};
 
-use crate::decode::{DecodedInsn, InsnClass, decode_supported};
+use crate::decode::{DecodedInsn, InsnClass, SupportedDecoder};
 use crate::pcmap::{
     CallStage, CommonStage, ExitStage, PcMap, PcMapEntry, Phase, Recovery, StubStage,
 };
@@ -133,6 +133,7 @@ pub fn discover(region: &RegionFacts, entry: u64) -> Result<BTreeMap<u64, Block>
     let mut starts: BTreeSet<u64> = BTreeSet::from([entry]);
     let mut work: Vec<u64> = vec![entry];
     let mut decoded: BTreeMap<u64, usize> = BTreeMap::new();
+    let mut decoder = SupportedDecoder::new(&region.bytes, region.base);
     while let Some(start) = work.pop() {
         if blocks.contains_key(&start) {
             continue;
@@ -160,9 +161,10 @@ pub fn discover(region: &RegionFacts, entry: u64) -> Result<BTreeMap<u64, Block>
             return Err(Refuse::BudgetExceeded { what: "blocks" });
         }
         check_interior(&decoded, start)?;
+        decoder.reset(start)?;
         let mut insns: Vec<DecodedInsn> = Vec::new();
         let mut pc = start;
-        let (term_pc, terminator, successors): (Option<u64>, Terminator, Vec<u64>) = loop {
+        let (term, terminator, successors): (Option<DecodedInsn>, Terminator, Vec<u64>) = loop {
             if insns.len() >= MAX_INSNS_PER_BLOCK {
                 return Err(Refuse::BudgetExceeded {
                     what: "insns per block",
@@ -171,10 +173,7 @@ pub fn discover(region: &RegionFacts, entry: u64) -> Result<BTreeMap<u64, Block>
             if pc != start && starts.contains(&pc) {
                 break (None, Terminator::Fallthrough { next: pc }, vec![pc]);
             }
-            let Some(bytes) = region.slice_from(pc) else {
-                return Err(Refuse::Decode { src_pc: pc });
-            };
-            let d = decode_supported(bytes, pc)?;
+            let d = decoder.next_supported()?;
             decoded.insert(pc, d.len);
             let next = pc.wrapping_add(d.len as u64);
             // A queued or built block start strictly inside this
@@ -193,24 +192,21 @@ pub fn discover(region: &RegionFacts, entry: u64) -> Result<BTreeMap<u64, Block>
                 }
                 InsnClass::CondBranch { target, loop_like } => {
                     break (
-                        Some(pc),
+                        Some(d),
                         Terminator::Cond {
                             target,
                             fallthrough: next,
                             loop_like,
                         },
-                        // The branch instruction itself is needed at
-                        // emission time; keep it in `insns` via a
-                        // sentinel handled by the caller below.
                         vec![target, next],
                     );
                 }
                 InsnClass::DirectJump { target } => {
-                    break (Some(pc), Terminator::Jump { target }, vec![target]);
+                    break (Some(d), Terminator::Jump { target }, vec![target]);
                 }
                 InsnClass::DirectCall { target } => {
                     break (
-                        Some(pc),
+                        Some(d),
                         Terminator::Call {
                             target,
                             return_pc: next,
@@ -224,26 +220,18 @@ pub fn discover(region: &RegionFacts, entry: u64) -> Result<BTreeMap<u64, Block>
                     } else {
                         0
                     };
-                    break (Some(pc), Terminator::Return { pop_extra }, vec![]);
+                    break (Some(d), Terminator::Return { pop_extra }, vec![]);
                 }
-                InsnClass::Indirect => break (Some(pc), Terminator::Indirect, vec![]),
+                InsnClass::Indirect => break (Some(d), Terminator::Indirect, vec![]),
                 InsnClass::Syscall => {
-                    break (Some(pc), Terminator::SyscallExit { next }, vec![next]);
+                    break (Some(d), Terminator::SyscallExit { next }, vec![next]);
                 }
                 InsnClass::Nondet(_) => {
-                    break (Some(pc), Terminator::NondetExit { next }, vec![next]);
+                    break (Some(d), Terminator::NondetExit { next }, vec![next]);
                 }
             }
         };
-        // Re-decode the terminator instruction for emission needs
-        // (condition code, loop-like re-encode).
-        let term = match term_pc {
-            Some(tp) => Some(decode_supported(
-                region.slice_from(tp).ok_or(Refuse::Decode { src_pc: tp })?,
-                tp,
-            )?),
-            None => None,
-        };
+        let term_pc = term.as_ref().map(|t| t.pc);
         blocks.insert(
             start,
             Block {
@@ -1011,6 +999,53 @@ mod tests {
         }
     }
 
+    fn fnv_mix(h: &mut u64, bytes: &[u8]) {
+        for &b in bytes {
+            *h ^= u64::from(b);
+            *h = h.wrapping_mul(0x0000_0100_0000_01b3);
+        }
+    }
+
+    fn mix_u64(h: &mut u64, v: u64) {
+        fnv_mix(h, &v.to_le_bytes());
+    }
+
+    fn mix_debug<T: core::fmt::Debug>(h: &mut u64, v: &T) {
+        fnv_mix(h, format!("{v:?}").as_bytes());
+        fnv_mix(h, b"\n");
+    }
+
+    fn translation_golden_hash(t: &Translation) -> u64 {
+        let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+        mix_u64(&mut h, t.entry_src);
+        mix_u64(&mut h, t.gen_base);
+        mix_u64(&mut h, t.code.len() as u64);
+        fnv_mix(&mut h, &t.code);
+        for (&src, &generated) in &t.block_gen {
+            mix_u64(&mut h, src);
+            mix_u64(&mut h, generated);
+        }
+        for e in t.pcmap.entries() {
+            mix_u64(&mut h, e.gen_start);
+            mix_u64(&mut h, e.gen_end);
+            mix_u64(&mut h, e.src_pc);
+            mix_debug(&mut h, &e.phase);
+            mix_debug(&mut h, &e.recovery);
+        }
+        for (&start, b) in &t.blocks {
+            mix_u64(&mut h, start);
+            mix_u64(&mut h, b.start);
+            mix_debug(&mut h, &b.terminator);
+            for insn in b.insns.iter().chain(b.term.iter()) {
+                mix_u64(&mut h, insn.pc);
+                mix_u64(&mut h, insn.len as u64);
+                mix_debug(&mut h, &insn.class);
+                mix_debug(&mut h, &insn.instruction);
+            }
+        }
+        h
+    }
+
     #[test]
     fn writable_region_refuses() {
         let mut r = region(vec![0xc3]);
@@ -1140,6 +1175,42 @@ mod tests {
             (0..t.code.len() as u64).all(|i| t.pcmap.lookup(0x80_0000 + i).is_some()),
             "call_helper has unmapped emitted bytes"
         );
+    }
+
+    #[test]
+    fn streaming_translation_matches_golden_emission() {
+        // S3-A is a decoder-reuse change only: emitted bytes, PC
+        // maps, block layout, and decoded terminators for these
+        // representative fixtures must remain byte-identical to
+        // the pre-streaming implementation captured by these
+        // golden hashes.
+        let cases: &[(&str, u64)] = &[
+            ("sum_loop", 0x7e5c_5b3d_7321_6795),
+            ("branchy_even_sum", 0x0a5a_f7e7_f3fa_453f),
+            ("flags_adc", 0x2d92_ca28_0452_24e1),
+            ("call_helper", 0x3cf4_4083_d71e_d9d1),
+            ("rip_data", 0x281b_f55a_e9f4_65d0),
+            ("loop_insn", 0xb60a_7a68_7b6a_4073),
+            ("syscall_write", 0x484e_5ea6_d0f8_ffa7),
+            ("cpuid_leaf", 0x6e72_991d_2632_07d6),
+        ];
+        let actual: Vec<(&str, u64)> = cases
+            .iter()
+            .map(|&(name, _)| {
+                let fix = crate::fixtures::by_name(name);
+                let r = region(fix.bytes);
+                let t = translate(
+                    &r,
+                    0x10_0000,
+                    CountProfile::BranchesAndInstructions,
+                    0x80_0000,
+                    0x81_0000,
+                )
+                .unwrap_or_else(|e| panic!("{name} must translate for golden hash: {e:?}"));
+                (name, translation_golden_hash(&t))
+            })
+            .collect();
+        assert_eq!(actual, cases);
     }
 
     #[test]
