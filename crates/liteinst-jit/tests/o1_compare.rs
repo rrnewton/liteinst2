@@ -167,8 +167,10 @@ fn assert_full_state(name: &str, jit: &Outcome, jr: &JitResult, o1: &OracleOutco
     assert_eq!(jit.state.rip, o1.state.rip, "{name}: rip (sentinel)");
     assert_eq!(jr.data_bytes, o1.data_bytes, "{name}: data buffer");
     let norm_window = |w: &[u8], ranges: &[(u64, u64); 4]| -> Vec<u64> {
-        w.chunks_exact(8)
-            .map(|c| norm(u64::from_le_bytes(c.try_into().unwrap()), ranges))
+        w.as_chunks::<8>()
+            .0
+            .iter()
+            .map(|c| norm(u64::from_le_bytes(*c), ranges))
             .collect()
     };
     assert_eq!(
