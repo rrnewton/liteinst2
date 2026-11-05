@@ -13,14 +13,16 @@ and when to reach for it.
 If you can exclude every other thread, signal handler, instruction
 fetch, and code writer for the duration of the call, use the quiescent
 entrypoints. They prefer generalized short-instruction puns —
-install-once, no trap registration, no guarded splits — under a held
-`QuiescenceLease`. This is the right default at launch time, under a
+install-once, no guarded splits — under a held `QuiescenceLease`.
+Publication still prepares Linux sync-core and reserves trap routing
+internally; "quiescent" removes the *concurrency* proof burden, not
+all machinery. This is the right default at launch time, under a
 stopped-task controller, or in a single-threaded preload constructor.
 
-The quiescent methods are `unsafe`: the exclusion is your proof to
-uphold, and the lease type exists to make that proof explicit and
-scoped. They must not be used as a faster default for threaded
-applications.
+Planning is safe (`plan_install`); the *publication* entrypoints are
+`unsafe`: the exclusion is your proof to uphold, and the lease type
+exists to make that proof explicit and scoped. They must not be used
+as a faster default for threaded applications.
 
 ## Concurrent publication (WordPatch++)
 
@@ -56,7 +58,10 @@ approximate rapid mode.
 ## Synchronized (sync-core) publication
 
 The experimental `patcher::synchronized` API publishes words and
-batches behind sync-core barriers instead of trap guards. Its
+batches behind sync-core barriers. Note precisely what changes:
+split members still publish `0xCC` front-fragment guards
+(`GuardsPublished` phase) — the barriers replace the *staleness
+waits*, not the guards. Its
 supported geometry, caller obligations, and terminal-failure behaviour
 are narrower than WordPatch++'s; treat it as a specialist tool and read
 its contract before use.
@@ -67,7 +72,7 @@ its contract before use.
 |---|---|
 | All fetchers/writers excluded (launch, stopped task, single thread) | Quiescent |
 | Live multithreaded program, install-once or rare changes | Concurrent (WordPatch++) |
-| Same site toggled at very high frequency | Rapid (after one concurrent/quiescent install) |
+| Same site toggled at very high frequency | Rapid (`RapidProbe::install` is standalone; no prior general install needed) |
 | Batch publication where trap guards are unavailable | Synchronized (experimental) |
 | No tactic's preconditions hold | **Trap fallback** (`PunPlan::TrapRequired`) — your controller (e.g. ptrace) handles the site |
 

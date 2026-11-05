@@ -43,9 +43,10 @@ $ cargo run --example replace_first
 
 The example builds its target function in a dual-mapped page (one
 writable alias, one executable alias), so it needs no other program to
-instrument. It prints the function's result before the hook, with the
-hook active, and after removal. The next chapter takes this example
-apart line by line.
+instrument. It prints the function's result with the hook installed
+but inactive, then active, then deactivated
+(`inactive=1 active=41 restored=1`). The next chapter takes this
+example apart line by line.
 
 Two more examples show the shapes real clients take:
 
@@ -75,8 +76,10 @@ The workspace publishes six crates. Most programs need only the first:
 * `liteinst-launch` — stopped first-instruction launch checkpoints.
 
 [Appendix A](appendix-crates.md) maps each crate to the chapter that
-covers it. API documentation for every crate is on
-[docs.rs](https://docs.rs/liteinst).
+covers it. API documentation is published to
+[docs.rs](https://docs.rs/liteinst) per release (if that page 404s for
+a brand-new release, docs.rs has not built it yet — `cargo doc`
+locally is the same content).
 
 > 🚧 **Under construction — expected output transcripts.** TODO: paste
 > the exact stdout of `replace_first`, `preload_consumer`, and

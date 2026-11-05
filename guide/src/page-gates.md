@@ -23,8 +23,9 @@ nested faults, changed bytes, and uncertain permission restoration
 poison and terminate rather than guess.
 
 The `selected` module uses the genuine core planner and publisher to
-replace CPUID, RDTSC, selected returning syscalls (`read`, `write`,
-`getpid`, `gettid`), RDRAND, and RDSEED before execution. Fixed bounds
+replace CPUID, RDTSC, RDTSCP, RDRAND, RDSEED, RDPID, and selected
+returning syscalls (`read`, `write`, `getpid`, `gettid`) before
+execution. Fixed bounds
 (16,384 source pages, 262,144 final heads, a guarded 256 KiB
 altstack) are this leaf crate's limits, stated so you can plan against
 them.

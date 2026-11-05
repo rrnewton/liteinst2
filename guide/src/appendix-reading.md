@@ -13,7 +13,7 @@
 * In this repository: `INTERFACES.md` (core contract),
   `A1-QUIESCENT.md`, `A2-COMPOSITION.md`, `A3-OFFLINE.md`,
   `A4-SYNCHRONIZED.md`, `PATCH_SITE_DECISION_TREE.md`,
-  `COALESCED-CONTROLS.md`, and each crate's README.
+  `COALESCED-CONTROLS.md`, and the published crates' READMEs.
 * The Reverie guide — for building complete tools on these blocks.
 * API reference: [docs.rs/liteinst](https://docs.rs/liteinst) and the
   sibling crates linked from there.

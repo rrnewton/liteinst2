@@ -43,6 +43,10 @@ exact identity/generation with all obligations resolved.
 B2 SUD, B3 patching, B4 page gates, B5 offline, B6 translation, B7
 ptrace). A *cell* combines one mechanism with one activation (A1–A5)
 and one tool placement; the Reverie guide uses the same names.
+⚠️ Name collision inside this crate: `src/engine.rs` uses `B1`/`B2`
+for internal *tactic tiers* (Relocation, GeneralizedPun). Those are
+unrelated to the architecture B-axis; context (engine vs toolkit)
+disambiguates until one is renamed.
 
 **Refusal** — a named, typed declination to patch or admit
 (`TrapRequired`, and `R-*` names at the Reverie layer). Refusals are

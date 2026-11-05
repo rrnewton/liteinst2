@@ -34,7 +34,11 @@ instruction entries, and dynamic resume obligations. Symbols, ENDBR
 markers, unwind data, and loader discoveries are *positive* evidence
 only. The strong claim, `AllInstructionHeads`, is a caller assertion
 that no overlapping stream is enterable — constructing the type does
-not prove it. `Incomplete` cannot authorize publication.
+not prove it. Two similarly-named types live at two layers and must
+not be conflated: the admission crate's `Completeness::Partial`
+(facts are still being gathered) and the core contracts'
+`EntryCompleteness::Incomplete` (a plan-level state that cannot
+authorize publication). The exporter maps between them explicitly.
 
 A mapping owner must also account for the entries nobody lists in a
 symbol table: signal frames, syscall returns, parked threads, and

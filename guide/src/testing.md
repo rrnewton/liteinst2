@@ -15,11 +15,14 @@ one `#[test]` oracle often performs hundreds of state comparisons.
 Borrow that shape even at small scale: one workload, two modes, exact
 comparison.
 
-Run the library's suite the way CI does:
+Run the library's suite the way CI does (`.github/workflows/ci.yml`:
+format and clippy gates, then debug *and* release workspace tests):
 
 ```console
-$ cargo test --all-targets --all-features --locked
-$ cargo clippy --all-targets --all-features --locked -- -D warnings
+$ cargo fmt --all -- --check
+$ cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
+$ cargo test --locked --workspace --all-targets --all-features
+$ cargo test --locked --release --workspace --all-targets --all-features
 $ cargo package --locked
 ```
 

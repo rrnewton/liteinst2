@@ -9,12 +9,6 @@ license = "BSD-2-Clause"
 keywords = ["instrumentation", "x86-64", "patching", "trampoline"]
 categories = ["development-tools", "os::linux-apis"]
 rust-version = "1.94"
-
-# The library is Linux x86-64 only; build docs for that target and include
-# the offline-router surface, which is empty under default features.
-[package.metadata.docs.rs]
-targets = ["x86_64-unknown-linux-gnu"]
-features = ["offline-router"]
 # Root anchors keep explicit documentation names out of private work directories.
 include = [
     "/Cargo.lock",
@@ -53,6 +47,14 @@ include = [
     "/tools/unwind-oracle/*.h",
     "/tools/unwind-oracle/runtime/*.py",
 ]
+
+# The library is Linux x86-64 only; build docs for that target and include
+# the offline-router surface, which is empty under default features.
+# This table must stay AFTER `include` above: TOML would otherwise
+# reassign the allowlist into docs.rs metadata (see guide CI guard).
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+features = ["offline-router"]
 
 # Explicit native client: compile with all-target checks; run only when requested.
 [[example]]

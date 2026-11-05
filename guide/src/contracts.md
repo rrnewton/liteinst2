@@ -42,7 +42,9 @@ and signal ownership before writing. Generated code and immutable
 routes precede source edits. On success you receive a
 `PublicationReceipt`: the exact plan and generation, the resolved
 obligations, and instruction-stream completion. A receipt is evidence
-from a trusted publisher, not a boolean you can fabricate; gates check
+from a trusted publisher — its constructor is `pub unsafe fn completed`,
+so fabricating one is an explicit unsafe act by a would-be publisher,
+not something a boolean can drift into; gates check
 receipt identity and coverage before admitting that generation.
 
 Failure is typed by timing:
@@ -57,13 +59,16 @@ Failure is typed by timing:
 
 ## Lifetimes: install-once vs toggle
 
-`InstallOnce` exposes no arm/disarm operation; retirement requires a
-fresh generation-bound lease and draining every executable and saved
-reference. `ToggleProbe` separately exposes epoch-labelled arm/disarm
-with visibility completion and close/drain. Raw eventual visibility
-never means "activation completed" or "in-flight callbacks cancelled" —
-if your logic needs those guarantees, wait for the completion the API
-names.
+The `ApplicationProfile::InstallOnce` profile has no arm/disarm
+operation; retirement requires a fresh generation-bound lease and
+draining every executable and saved reference. The `ToggleProbe`
+*trait* separately defines epoch-labelled arm/disarm with visibility
+completion and close/drain. Raw eventual visibility never means
+"activation completed" or "in-flight callbacks cancelled" — if your
+logic needs those guarantees, wait for the completion the API names.
+(These are the contract-layer profiles; the concrete `InstalledHook`
+of [your first hook](first-hook.md) has the simpler
+inactive → `activate()` → `deactivate()` lifecycle.)
 
 ## Composition
 

@@ -14,7 +14,7 @@ iced-x86's `std` support. A freestanding consumer disables defaults and must
 select iced-x86's `no_std` support in its own dependency graph. This crate
 adds no allocator or decoder-table policy.
 
-Most users want the main [`liteinst`](../) crate. Depend on `liteinst-x86`
+Most users want the main [`liteinst`](../../) crate. Depend on `liteinst-x86`
 directly only if you need the same decode facts the core publisher uses —
 for example to build your own admission scanner — without the patching
 machinery.

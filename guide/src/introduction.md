@@ -66,8 +66,9 @@ Three kinds of boxes appear throughout:
   refusal is a feature: the library fails closed outside its envelope
   instead of corrupting the program it instruments.
 * **Listing** — numbered code taken from a real file in this repository.
-  Every listing names its file, and every project chapter ends with a
-  command you can run and the output you should see.
+  Listings name their source file, and project chapters show the
+  command to run; where the exact output is not yet quoted, an Under
+  construction box says so.
 
 
 ## Platform envelope, up front

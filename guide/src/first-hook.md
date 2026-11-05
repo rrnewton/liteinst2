@@ -23,9 +23,12 @@ the same five steps:
 3. **Plan** — choose a tactic (direct pun, relocation, guarded split,
    or an explicit trap fallback) without touching executable memory.
 4. **Publish** — write the patch with the protocol that tactic demands,
-   and receive a receipt.
-5. **Run, then retire** — execute through the hook; later drain and
-   remove it under a fresh proof that nothing still references it.
+   and receive a receipt. An `InstalledHook` is published **inactive**:
+   nothing detours yet.
+5. **Activate, run, deactivate** — call `activate()` to arm the hook,
+   execute through it, and `deactivate()` to restore the original
+   behaviour. There is no remove/retire API on `InstalledHook` today;
+   deactivation is the end of its lifecycle.
 
 Steps 1–3 never modify the program. Only publication writes, and it
 re-checks everything before it does. That split — *plan purely, publish
@@ -63,16 +66,25 @@ let hook = unsafe {
 * `TrampolineArena::allocate_near` reserves dual-mapped memory (separate
   RW and RX aliases — never one RWX mapping) close enough for a
   five-byte relative jump to reach.
-* `install_replacing_first_in_arena` plans and publishes. It is
+* `install_replacing_first_in_arena` plans and publishes — **inactive**
+  (`src/trampoline.rs`: hooks bind in the inactive state). It is
   `unsafe` because *you* assert the envelope: the aliases stay live,
   no other writer touches the region, and no control-flow entry targets
-  the interior of the relocated window.
+  the interior of the relocated window. The example then calls the
+  target (still returns 1), `hook.activate()?` (now returns 41: the
+  callback's 40 plus the relocated `inc eax`), and
+  `hook.deactivate()?` (back to 1) — `examples/replace_first.rs:87-92`.
+  The full run prints exactly:
+
+  ```console
+  inactive=1 active=41 restored=1
+  ```
 
 The hook callback receives the saved register context and may mutate
 it — here it sets `rax`, which is why the function's return value
 changes:
 
-<span class="filename">Listing FH-2: the callback</span>
+<span class="filename">Listing FH-2: examples/replace_first.rs — the callback</span>
 
 ```rust
 unsafe extern "C" fn replace_zero(context: *mut HookContext) {
@@ -103,7 +115,8 @@ because in instrumentation they are *different* bugs:
 
 ## Summary
 
-You installed a replace-first hook: scan, plan, publish, run, retire.
+You installed a replace-first hook: scan, plan, publish (inactive),
+activate, run, deactivate.
 The next chapter explains why publishing a patch into live code is safe
 at all — the instruction-punning idea the whole library rests on.
 

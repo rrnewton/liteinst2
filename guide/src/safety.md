@@ -49,16 +49,23 @@ handler (unless the host supplies exact callbacks). Installed
 trampolines publish immutable generated-to-application PC ranges;
 signal handlers and unwind front ends translate a faulting PC with
 `trampoline::translate_program_counter` — allocation-free and
-lock-free — before reporting or unwinding. The library does not
-synthesize DWARF call-frame metadata. Trampoline arenas seal their
+lock-free — before reporting or unwinding. That translation path
+synthesizes no DWARF; separately, the opt-in `generated_unwind`
+module can publish source-certified CFI for normal backtracing
+(no exception or signal admission). Trampoline arenas seal their
 memfd against new writable mappings, writes, resizing, and policy
 changes, and arena creation *fails closed* when the backing store
 cannot provide the required seal set.
 
 ## The envelope, in one list
 
-* **Platform:** Linux x86-64. Non-Linux-x86-64 builds get empty or
-  refused surfaces; two leaf crates are `compile_error!` elsewhere.
+* **Platform:** Linux x86-64 for anything that patches or gates. Per
+  crate: the core's live modules are cfg-gated (empty/refused
+  surfaces elsewhere); `liteinst-inprocess` is `compile_error!` off
+  Linux x86-64 and `liteinst-launch` exposes its API only there. The
+  fact-only crates (`liteinst-x86`, `liteinst-artifact`, and the
+  admission model) carry no such gate — decode facts alone buy no
+  execution authority anywhere.
 * **Kernel:** no SUD required. ptrace is required only where a
   controller drives another process (`liteinst-launch`, hybrid
   clients); pure in-process use needs none.

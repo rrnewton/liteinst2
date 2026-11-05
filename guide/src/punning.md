@@ -10,9 +10,12 @@ possible concurrent instruction fetch sees either the complete old
 instruction or the complete new one — never a torn mix. Two ideas make
 this work on x86-64:
 
-1. **A single aligned word store is atomic with respect to instruction
-   fetch.** If the whole patch fits in one such store, no fetch can
-   observe a partial patch.
+1. **One store inside a single cache line is untearable by a racing
+   fetch.** The atomic-word strategy publishes an 8-byte store fully
+   inside one cache line (alignment is not required; *not straddling
+   the line* is), and a pun's actual store may be 1, 2, or 4 bytes.
+   If the whole patch fits in one such store, no fetch can observe a
+   partial patch.
 2. **x86 instructions are variable-length and self-synchronising from a
    known entry.** Bytes that are the tail of the old instruction can
    become the displacement bytes of the new jump. The new instruction
@@ -42,8 +45,9 @@ no third, quieter option: an unguarded split patch is exactly the torn
 fetch this library refuses to risk.
 
 A third publication mode, **sync-core**, uses serializing barriers
-instead of guards for word publication and batches, under its own
-geometry and caller obligations.
+for word publication and batches — split sites still publish `0xCC`
+front-fragment guards; the barriers replace the staleness waits, not
+the guards — under its own geometry and caller obligations.
 
 ## Where the ideas come from
 
