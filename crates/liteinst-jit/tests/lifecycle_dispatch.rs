@@ -11,16 +11,18 @@ use liteinst_jit::{GuestState, Refuse};
 #[derive(Default)]
 struct CountingHandler {
     calls: usize,
+    last_rax: u64,
 }
 
 impl Handler for CountingHandler {
     fn syscall(
         &mut self,
-        _state: &mut GuestState,
+        state: &mut GuestState,
         _insn_pc: u64,
         _next_pc: u64,
     ) -> Result<Resume, Refuse> {
         self.calls += 1;
+        self.last_rax = state.rax;
         Ok(Resume::Done)
     }
 }
@@ -32,8 +34,23 @@ fn syscall_bytes(nr: u32) -> Vec<u8> {
     v
 }
 
+fn entry_bytes_movabs(value: u64, tail: &[u8]) -> Vec<u8> {
+    let mut v = vec![0x48, 0xb8];
+    v.extend_from_slice(&value.to_le_bytes());
+    v.extend_from_slice(tail);
+    v
+}
+
+fn syscall_bytes_movabs(value: u64) -> Vec<u8> {
+    entry_bytes_movabs(value, &[0x0f, 0x05, 0xc3])
+}
+
 fn run_syscall(nr: u32) -> (Result<liteinst_jit::Outcome, RunError>, usize) {
-    let bytes = syscall_bytes(nr);
+    let (result, calls, _) = run_guest(syscall_bytes(nr));
+    (result, calls)
+}
+
+fn run_guest(bytes: Vec<u8>) -> (Result<liteinst_jit::Outcome, RunError>, usize, u64) {
     let guest = MappedGuest::map(&bytes).expect("map guest");
     let region = guest.region(&bytes, Generation(1));
     let mut exec =
@@ -45,7 +62,7 @@ fn run_syscall(nr: u32) -> (Result<liteinst_jit::Outcome, RunError>, usize) {
         &ProcessMemory,
         RETURN_SENTINEL,
     );
-    (result, handler.calls)
+    (result, handler.calls, handler.last_rax)
 }
 
 #[test]
@@ -77,4 +94,68 @@ fn lifecycle_syscalls_refuse_before_handler() {
             }
         }
     }
+
+    // Native aliases: Linux dispatch examines the low 32 bits, so
+    // a nonzero high dword must not bypass the reservation.
+    let reserved: [(u32, Refuse); 6] = [
+        (59, Refuse::ExecSuccessor),
+        (322, Refuse::ExecSuccessor),
+        (56, Refuse::ThreadLifecycle { what: "clone" }),
+        (57, Refuse::ThreadLifecycle { what: "fork" }),
+        (58, Refuse::ThreadLifecycle { what: "vfork" }),
+        (435, Refuse::ThreadLifecycle { what: "clone3" }),
+    ];
+    for (nr, refusal) in reserved {
+        let value = (1u64 << 32) | u64::from(nr);
+        let (result, calls, _) = run_guest(syscall_bytes_movabs(value));
+        assert_eq!(
+            result,
+            Err(RunError::Refuse(refusal)),
+            "syscall alias {value:#x} exact refusal"
+        );
+        assert_eq!(calls, 0, "syscall alias {value:#x} handler calls");
+    }
+
+    // High bits alone do not refuse an ordinary syscall, and the
+    // handler still observes the raw 64-bit RAX.
+    let value = (1u64 << 32) | 1;
+    let (result, calls, last_rax) = run_guest(syscall_bytes_movabs(value));
+    assert!(result.is_ok(), "ordinary alias control: {result:?}");
+    assert_eq!(calls, 1, "ordinary alias positive control");
+    assert_eq!(last_rax, value, "raw RAX retained for handler");
+
+    // Entry kind decides the number space. An int 0x80 carrying
+    // the ia32 execve number (11, with a nonzero high dword) is
+    // not judged as x86-64 munmap and never reaches the handler.
+    let ia32_execve = (1u64 << 32) | 11;
+    let (result, calls, _) = run_guest(entry_bytes_movabs(ia32_execve, &[0xcd, 0x80, 0xc3]));
+    assert_eq!(
+        result,
+        Err(RunError::Refuse(Refuse::Arch {
+            what: "ia32 compat syscall entry outside P1a envelope"
+        })),
+        "int 0x80 must refuse as compat entry, not native munmap"
+    );
+    assert_eq!(calls, 0, "int 0x80 handler must not be called");
+
+    // Sysenter uses this dispatcher's native-number contract:
+    // a reserved alias refuses before the handler, while an
+    // ordinary alias still dispatches with raw RAX intact.
+    let execve_alias = (1u64 << 32) | 59;
+    let (result, calls, _) = run_guest(entry_bytes_movabs(execve_alias, &[0x0f, 0x34, 0xc3]));
+    assert_eq!(
+        result,
+        Err(RunError::Refuse(Refuse::ExecSuccessor)),
+        "sysenter execve alias exact refusal"
+    );
+    assert_eq!(calls, 0, "sysenter execve alias handler calls");
+
+    let write_alias = (1u64 << 32) | 1;
+    let (result, calls, last_rax) = run_guest(entry_bytes_movabs(write_alias, &[0x0f, 0x34, 0xc3]));
+    assert!(
+        result.is_ok(),
+        "sysenter ordinary alias control: {result:?}"
+    );
+    assert_eq!(calls, 1, "sysenter ordinary alias positive control");
+    assert_eq!(last_rax, write_alias, "sysenter raw RAX retained");
 }

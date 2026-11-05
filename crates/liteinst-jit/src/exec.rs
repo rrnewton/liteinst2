@@ -1421,6 +1421,37 @@ impl Executable {
                 }
                 exit_kind::SYSCALL => {
                     state.rip = data.exit_src;
+                    // The syscall-class also contains ia32 entry
+                    // instructions, whose numbers are a different
+                    // ABI (for example int 0x80 execve is 11, the
+                    // x86-64 munmap number). Resolve the actual
+                    // entry kind from the decoded terminator before
+                    // interpreting RAX. Syscall and Sysenter use
+                    // this dispatcher's established x86-64 handler
+                    // contract; int entries are refused by name
+                    // rather than judged under native numbers.
+                    let entry_mnemonic = self.translation.blocks.values().find_map(|b| {
+                        b.term
+                            .as_ref()
+                            .filter(|t| t.pc == data.exit_src)
+                            .map(|t| t.instruction.mnemonic())
+                    });
+                    match entry_mnemonic {
+                        Some(iced_x86::Mnemonic::Syscall | iced_x86::Mnemonic::Sysenter) => {}
+                        Some(iced_x86::Mnemonic::Int) => {
+                            return Err(Refuse::Arch {
+                                what: "ia32 compat syscall entry outside P1a envelope",
+                            }
+                            .into());
+                        }
+                        _ => {
+                            return Err(Refuse::Unrelocatable {
+                                src_pc: data.exit_src,
+                                reason: "syscall entry kind outside P1a envelope",
+                            }
+                            .into());
+                        }
+                    }
                     // Lifecycle syscalls are reserved by the
                     // executor envelope: refuse them by name before
                     // the handler can observe or service them. The
@@ -1429,20 +1460,26 @@ impl Executable {
                     // exec or clone-family call here would be
                     // unsafe, not merely unsupported. Clone-family
                     // calls are reserved regardless of flags.
-                    let lifecycle = match state.rax {
-                        x if x == libc::SYS_execve as u64 || x == libc::SYS_execveat as u64 => {
+                    // Linux native syscall dispatch examines only
+                    // the low 32 bits of RAX. Classify from those
+                    // bits for the guard alone; retain the raw
+                    // 64-bit RAX untouched for handler/state
+                    // semantics on the ordinary path.
+                    let syscall_nr = state.rax as u32;
+                    let lifecycle = match syscall_nr {
+                        x if x == libc::SYS_execve as u32 || x == libc::SYS_execveat as u32 => {
                             Some(Refuse::ExecSuccessor)
                         }
-                        x if x == libc::SYS_clone as u64 => {
+                        x if x == libc::SYS_clone as u32 => {
                             Some(Refuse::ThreadLifecycle { what: "clone" })
                         }
-                        x if x == libc::SYS_fork as u64 => {
+                        x if x == libc::SYS_fork as u32 => {
                             Some(Refuse::ThreadLifecycle { what: "fork" })
                         }
-                        x if x == libc::SYS_vfork as u64 => {
+                        x if x == libc::SYS_vfork as u32 => {
                             Some(Refuse::ThreadLifecycle { what: "vfork" })
                         }
-                        x if x == libc::SYS_clone3 as u64 => {
+                        x if x == libc::SYS_clone3 as u32 => {
                             Some(Refuse::ThreadLifecycle { what: "clone3" })
                         }
                         _ => None,
