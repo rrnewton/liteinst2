@@ -1,6 +1,6 @@
 # Required mutation chains — execution receipts
 
-[who-am-i: musejit, host withheld. Owner: musejit (muse, devbig030) since 2026-11-05T12:03:34Z]
+[who-am-i: musejit, host withheld. Owner: musejit (muse, host withheld) since 2026-11-05T12:03:34Z]
 
 Command: `sh crates/liteinst-jit/mutants/run.sh` from the
 workspace root, 2026-11-05; last re-executed at the head below, on liteinst2 branch

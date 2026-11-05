@@ -1,16 +1,16 @@
 # liteinst-jit P1b design note (draft, awaiting Astra verdict)
 
-[who-am-i: musejit, host withheld. Owner: musejit (muse, devbig030) since 2026-11-05T12:03:34Z]
+[who-am-i: musejit, host withheld. Owner: musejit (muse, host withheld) since 2026-11-05T12:03:34Z]
 
 Status: **DESIGN ONLY.** P1b implementation is gated on hl-ff-a's
 adversarial review of the P1a code + §6 invalidation design, plus
-coord7's go. Nothing here is built, selectable, or claimed. Layering
+the coordinator's go. Nothing here is built, selectable, or claimed. Layering
 rule carried over: liteinst owns translation primitives; a complete
 loader/tool belongs in Reverie. P1b target is architecture cell V10
 remains **unbuilt until M4 is met**, and merging to liteinst2 main
 remains barred under the owner's DBT hold regardless of this note.
 
-**Scope decision recorded 2026-11-05 via coord7:** for **P1a**, the
+**Scope decision recorded 2026-11-05 via the coordinator:** for **P1a**, the
 disclosed asynchronous-signal reduction is accepted (admission
 refuses installed async handlers; poll-bounded `AsyncSignal`
 stops; no transparency claim). That acceptance is **for P1a only**.
@@ -22,7 +22,7 @@ none is satisfied by this note.
 
 Goal (M4 shape, final wording is the owner's): the standalone driver
 counts every retired conditional branch (then every instruction) of
-a real dynamically-linked program (`/bin/ls` or coord7 equivalent),
+a real dynamically-linked program (`/bin/ls` or a coordinator-approved equivalent),
 with the refusal list explicit and costs reported per the owner
 rule (DR-null ratio, run count, machine; dense counting labelled
 vs a DR counting client). Everything P1a refuses that P1b still
@@ -230,7 +230,7 @@ Self-modifying/JIT code (M5), `execve` successors, attach (A4),
 external-debugger coexistence (the P1b driver *is* the tracer),
 CET shadow-stack call rewriting, aarch64, any Reverie core change,
 and any V10-selectable or product claim before M4 exit is declared
-by coord7/owner. Cost guardrail from li2adm: steady state does no
+by the coordinator/owner. Cost guardrail from li2adm: steady state does no
 per-page or per-admission work — discovery is per first-transfer
 into a block, and every reported number carries DR-null ratio +
 exactly-10 median + IQR + machine or is labelled UNMEASURED.
@@ -243,7 +243,7 @@ exactly-10 median + IQR + machine or is labelled UNMEASURED.
 2. Per-region generations vs one global generation with
    flush-on-any-mapping-event: is the simpler global flush
    acceptable for M4 if `dlopen`-heavy reruns retranslate?
-3. **Resolved 2026-11-05 via coord7:** mid-cache transparent
+3. **Resolved 2026-11-05 via the coordinator:** mid-cache transparent
    async delivery **does** gate every P1b whole-program claim
    (§1). The remaining questions are mechanism-specific: exact
    genuine-frame construction and resume rule, nested/RT ordering

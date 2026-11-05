@@ -1,6 +1,6 @@
 # liteinst-jit P1a cost micro-report (fixtures only)
 
-[who-am-i: musejit, host withheld. Owner: musejit (muse, devbig030) since 2026-11-05T12:03:34Z]
+[who-am-i: musejit, host withheld. Owner: musejit (muse, host withheld) since 2026-11-05T12:03:34Z]
 
 **Label: fixtures, not whole-program.** These numbers measure six
 corpus-v1 fixture functions executed in-process, comparing the P1a
