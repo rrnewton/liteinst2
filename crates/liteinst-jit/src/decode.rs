@@ -163,8 +163,17 @@ fn refused_mnemonic(m: Mnemonic) -> Option<&'static str> {
         | Mnemonic::Umwait
         | Mnemonic::Tpause
         | Mnemonic::Rdpru => "counter/wait instruction outside P1a envelope",
-        Mnemonic::Rdpkru => "PKRU access outside P1a envelope",
-        Mnemonic::Ldmxcsr | Mnemonic::Stmxcsr => "MXCSR access outside P1a envelope",
+        Mnemonic::Rdpkru | Mnemonic::Wrpkru => "PKRU access outside P1a envelope",
+        Mnemonic::Ldmxcsr | Mnemonic::Stmxcsr | Mnemonic::Vldmxcsr | Mnemonic::Vstmxcsr => {
+            "MXCSR access outside P1a envelope"
+        }
+        Mnemonic::Ldtilecfg
+        | Mnemonic::Sttilecfg
+        | Mnemonic::Tileloadd
+        | Mnemonic::Tileloaddt1
+        | Mnemonic::Tilestored
+        | Mnemonic::Tilezero
+        | Mnemonic::Tilerelease => "AMX tile state outside P1a envelope",
         Mnemonic::In | Mnemonic::Out => "port I/O outside P1a envelope",
         Mnemonic::Encls | Mnemonic::Serialize => "system instruction outside P1a envelope",
         Mnemonic::Clflush | Mnemonic::Clflushopt | Mnemonic::Clwb | Mnemonic::Cldemote => {
@@ -196,16 +205,18 @@ fn refused_mnemonic(m: Mnemonic) -> Option<&'static str> {
 /// First opcode byte(s) after legacy/REX prefixes, for the
 /// opcode-space partition below.
 fn refused_opcode_space(bytes: &[u8]) -> Option<&'static str> {
+    // Skip every legacy prefix and REX byte in any order or
+    // repetition: the validated decoder accepts redundant forms
+    // (e.g. `40 40`, `40 66`), so a single-REX walk disagrees
+    // with it and is unsound. Only the instruction's own decoded
+    // byte extent is scanned by callers.
     let mut i = 0;
     while i < bytes.len()
-        && matches!(
+        && (matches!(
             bytes[i],
             0xf0 | 0xf2 | 0xf3 | 0x26 | 0x2e | 0x36 | 0x3e | 0x64 | 0x65 | 0x66 | 0x67
-        )
+        ) || (0x40..=0x4f).contains(&bytes[i]))
     {
-        i += 1;
-    }
-    if i < bytes.len() && (0x40..=0x4f).contains(&bytes[i]) {
         i += 1;
     }
     match bytes.get(i) {
@@ -215,10 +226,41 @@ fn refused_opcode_space(bytes: &[u8]) -> Option<&'static str> {
             _ => None,
         },
         Some(0xd8..=0xdf) => Some("x87 opcode space outside P1a envelope"),
+        // Two-byte VEX: implied 0F map, opcode follows.
+        Some(0xc5) => match bytes.get(i + 2) {
+            Some(0x01) => Some("VEX 0F 01 system opcode space outside P1a envelope"),
+            Some(0xae) => Some("VEX 0F AE system/save opcode space outside P1a envelope"),
+            _ => None,
+        },
+        // Three-byte VEX / XOP: low five bits of byte 1 select the map.
+        Some(0xc4) | Some(0x8f) => {
+            let map = bytes.get(i + 1).map_or(0, |b| b & 0x1f);
+            if map == 1 {
+                match bytes.get(i + 3) {
+                    Some(0x01) => Some("VEX 0F 01 system opcode space outside P1a envelope"),
+                    Some(0xae) => Some("VEX 0F AE system/save opcode space outside P1a envelope"),
+                    _ => None,
+                }
+            } else {
+                None
+            }
+        }
+        // EVEX: mm bits (byte 2, bits 1:0) select the map.
+        Some(0x62) => {
+            let map = bytes.get(i + 1).map_or(0, |b| b & 0x03);
+            if map == 1 {
+                match bytes.get(i + 4) {
+                    Some(0x01) => Some("EVEX 0F 01 system opcode space outside P1a envelope"),
+                    Some(0xae) => Some("EVEX 0F AE system/save opcode space outside P1a envelope"),
+                    _ => None,
+                }
+            } else {
+                None
+            }
+        }
         _ => None,
     }
 }
-
 /// Decode one instruction and admit it only if its effects are
 /// inside the explicit P1a envelope. Ordinary instructions must be
 /// plain next-instruction flow over GPRs/memory: no privilege, no

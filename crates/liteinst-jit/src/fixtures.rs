@@ -322,6 +322,15 @@ pub fn all() -> Vec<Fixture> {
             bytes: vec![0x48, 0x8b, 0x07, 0x48, 0x83, 0xf8, 0x00, 0x75, 0x00, 0xc3],
         },
         Fixture {
+            // mov r12,rsi; L: xor eax,eax; cpuid; dec r12; jne L; ret
+            // One handler exit per iteration: poll-budget resets on
+            // re-entry would defer a pending signal forever (T2).
+            name: "cpuid_loop",
+            bytes: vec![
+                0x49, 0x89, 0xf4, 0x31, 0xc0, 0x0f, 0xa2, 0x49, 0xff, 0xcc, 0x75, 0xf7, 0xc3,
+            ],
+        },
+        Fixture {
             name: "indirect_jmp",
             bytes: asm(|a| {
                 a.mov(rax, rdi)?;

@@ -285,6 +285,7 @@ struct ActiveRun {
     fault_addr: u64,
     fault_sig: i32,
     fault_si_code: i32,
+    fault_err: u64,
 }
 
 // SAFETY discipline: `ACTIVE` is set only by the single-threaded P1a
@@ -366,6 +367,7 @@ extern "C" fn fault_handler(sig: i32, info: *mut libc::siginfo_t, ctx: *mut libc
         return;
     }
     run.fault_gen_pc = rip;
+    run.fault_err = gregs[libc::REG_ERR as usize] as u64;
     run.fault_sig = sig;
     run.fault_si_code = if info.is_null() {
         0
@@ -431,15 +433,30 @@ fn block_retired_before(t: &Translation, src_pc: u64) -> Option<(u64, u64)> {
 /// PC `gen_pc` (an entry start). This is the single place where
 /// pending branch/instruction credit is resolved; the dispatcher
 /// and the boundary tests both go through it.
+/// Interrupted-PC provenance supplied by the fault handler.
+#[derive(Clone, Copy, Debug)]
+pub struct FaultInput {
+    pub gen_pc: u64,
+    pub addr: u64,
+    pub signum: i32,
+    pub si_code: i32,
+    /// Page-fault error code (`REG_ERR`); bit 0x10 = fetch.
+    pub err: u64,
+}
+
 pub fn recover_fault(
     t: &Translation,
     profile: CountProfile,
-    gen_pc: u64,
     data: &JitData,
-    addr: u64,
-    signum: i32,
-    si_code: i32,
+    input: FaultInput,
 ) -> Fault {
+    let (gen_pc, addr, signum, si_code, fault_err) = (
+        input.gen_pc,
+        input.addr,
+        input.signum,
+        input.si_code,
+        input.err,
+    );
     let raw = data.interrupted;
     let mut state = raw;
     let mut branches = data.branch_count;
@@ -474,7 +491,14 @@ pub fn recover_fault(
             | Recovery::InsnCountStub { .. }
             | Recovery::PollStub { .. }
             | Recovery::ExitStub { .. }
+            | Recovery::PollExitStub { .. }
             | Recovery::CommonExit { .. }
+    ) || matches!(
+        entry.recovery,
+        Recovery::Call {
+            stage: CallStage::Pristine | CallStage::CommittedSpilled,
+            ..
+        }
     ) {
         // Private spill/counter/exit/state accesses are executor
         // machinery, whatever source successor they recover to.
@@ -528,6 +552,14 @@ pub fn recover_fault(
                 StubStage::Committed => instructions -= total,
             }
             block
+        }
+        Recovery::PollExitStub { stage } => {
+            if stage == ExitStage::Spilled {
+                state.rax = data.spill_rax;
+            }
+            // No retirement adjustment: the poll stub precedes
+            // the block's instruction precredit by construction.
+            entry.src_pc
         }
         Recovery::PollStub { block, stage } => {
             match stage {
@@ -590,17 +622,22 @@ pub fn recover_fault(
                 }
                 CommonStage::AllSaved => state = data.state,
             }
-            instructions = retired_at(instructions, data.exit_src);
+            if data.exit_kind != exit_kind::POLL {
+                instructions = retired_at(instructions, data.exit_src);
+            }
             data.exit_src
         }
         Recovery::Fallthrough { next } => next,
     };
     state.rip = src_pc;
-    // Preserve siginfo address semantics: SIGFPE/SIGILL name the
-    // faulting instruction (a generated address), and a fetch
-    // fault names the interrupted PC. Those translate to source
-    // addresses; a guest data-operand address never does.
-    let addr = if signum == libc::SIGFPE || signum == libc::SIGILL || addr == gen_pc {
+    // Preserve siginfo address semantics by access provenance,
+    // never by numerical equality: SIGFPE/SIGILL name the
+    // faulting instruction, and a page-fault error code with the
+    // instruction-fetch bit (0x10) names the fetch PC. Those
+    // translate to source addresses; a guest data-operand
+    // address — even one numerically equal to a generated PC —
+    // never does.
+    let addr = if signum == libc::SIGFPE || signum == libc::SIGILL || fault_err & 0x10 != 0 {
         t.pcmap.lookup(addr).map_or(src_pc, |e| e.recover(addr))
     } else {
         addr
@@ -620,31 +657,32 @@ pub fn recover_fault(
 /// signal frame could not be built on the guest stack at all) still
 /// reach the recovery handler.
 fn ensure_altstack() -> Result<(), Refuse> {
-    static STATE: std::sync::OnceLock<Result<(), Refuse>> = std::sync::OnceLock::new();
+    // Revalidated on every call: a first successful setup is not
+    // permanent ownership proof if the thread later disables or
+    // replaces its alternate stack.
     static ALT_BASE: std::sync::atomic::AtomicPtr<u8> =
         std::sync::atomic::AtomicPtr::new(core::ptr::null_mut());
-    *STATE.get_or_init(|| {
-        const ALT_LEN: usize = 1 << 20;
-        let mut old: libc::stack_t = unsafe { core::mem::zeroed() };
-        // SAFETY: query-only sigaltstack with a null new stack.
-        if unsafe { libc::sigaltstack(core::ptr::null(), &mut old) } != 0 {
-            return Err(Refuse::MappingPolicy {
-                operation: "sigaltstack query",
-                errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
-            });
+    const ALT_LEN: usize = 1 << 20;
+    let mut old: libc::stack_t = unsafe { core::mem::zeroed() };
+    // SAFETY: query-only sigaltstack with a null new stack.
+    if unsafe { libc::sigaltstack(core::ptr::null(), &mut old) } != 0 {
+        return Err(Refuse::MappingPolicy {
+            operation: "sigaltstack query",
+            errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
+        });
+    }
+    if old.ss_flags & libc::SS_DISABLE == 0 {
+        // An enabled stack (ours, or the Rust runtime's): preserve
+        // and reuse it, never replace it.
+        if old.ss_size >= 8192 {
+            return Ok(());
         }
-        if old.ss_flags & libc::SS_DISABLE == 0 {
-            // An alternate stack we did not install (the Rust
-            // runtime installs one for its stack-overflow handler):
-            // preserve and reuse it, never replace it.
-            if old.ss_size >= 8192 {
-                ALT_BASE.store(old.ss_sp as *mut u8, Ordering::SeqCst);
-                return Ok(());
-            }
-            return Err(Refuse::SignalOwnership { signum: 0 });
-        }
+        return Err(Refuse::SignalOwnership { signum: 0 });
+    }
+    let mut base = ALT_BASE.load(Ordering::SeqCst);
+    if base.is_null() {
         // SAFETY: leaked anonymous mapping used only as sigaltstack.
-        let base = unsafe {
+        let mapped = unsafe {
             libc::mmap(
                 core::ptr::null_mut(),
                 ALT_LEN,
@@ -654,64 +692,29 @@ fn ensure_altstack() -> Result<(), Refuse> {
                 0,
             )
         };
-        if base == libc::MAP_FAILED {
+        if mapped == libc::MAP_FAILED {
             return Err(Refuse::MappingPolicy {
                 operation: "mmap altstack",
                 errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
             });
         }
-        ALT_BASE.store(base as *mut u8, Ordering::SeqCst);
-        let stack = libc::stack_t {
-            ss_sp: base,
-            ss_flags: 0,
-            ss_size: ALT_LEN,
-        };
-        // SAFETY: installing our leaked mapping after proving no
-        // foreign alternate stack is active.
-        if unsafe { libc::sigaltstack(&stack, core::ptr::null_mut()) } != 0 {
-            return Err(Refuse::MappingPolicy {
-                operation: "sigaltstack install",
-                errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
-            });
-        }
-        Ok(())
-    })
-}
-/// P1a signal envelope admission: asynchronous signals are
-/// blocked (not guest-delivered) during a run, so a process that
-/// has installed a handler for one is refused before execution
-/// rather than having delivery silently deferred. Default and
-/// ignore dispositions are admitted (and preserved on restore).
-fn check_async_handlers() -> Result<(), Refuse> {
-    for sig in 1..=31 {
-        if sig == libc::SIGKILL || sig == libc::SIGSTOP || FAULT_SIGNALS.contains(&sig) {
-            continue;
-        }
-        let mut old: libc::sigaction = unsafe { core::mem::zeroed() };
-        // SAFETY: query-only sigaction.
-        if unsafe { libc::sigaction(sig, core::ptr::null(), &mut old) } != 0 {
-            continue;
-        }
-        if old.sa_sigaction != libc::SIG_DFL && old.sa_sigaction != libc::SIG_IGN {
-            return Err(Refuse::SignalOwnership { signum: sig });
-        }
+        base = mapped as *mut u8;
+        ALT_BASE.store(base, Ordering::SeqCst);
+    }
+    let stack = libc::stack_t {
+        ss_sp: base.cast(),
+        ss_flags: 0,
+        ss_size: ALT_LEN,
+    };
+    // SAFETY: installing our leaked mapping while disabled.
+    if unsafe { libc::sigaltstack(&stack, core::ptr::null_mut()) } != 0 {
+        return Err(Refuse::MappingPolicy {
+            operation: "sigaltstack install",
+            errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
+        });
     }
     Ok(())
 }
-
-fn pending_async_signal() -> Option<i32> {
-    let mut set: libc::sigset_t = unsafe { core::mem::zeroed() };
-    // SAFETY: sigpending fills the set.
-    if unsafe { libc::sigpending(&mut set) } != 0 {
-        return None;
-    }
-    (1..=31).find(|&sig| {
-        sig != libc::SIGKILL && sig != libc::SIGSTOP && !FAULT_SIGNALS.contains(&sig)
-            // SAFETY: membership query on a filled set.
-            && unsafe { libc::sigismember(&set, sig) } == 1
-    })
-}
-
 fn install_fault_handlers() -> Result<(), Refuse> {
     ensure_altstack()?;
     for (idx, sig) in FAULT_SIGNALS.into_iter().enumerate() {
@@ -947,6 +950,7 @@ impl Executable {
         // Counters accumulate across dispatcher re-entries: each
         // entry seeds JitData with the running totals.
         let (mut tot_branches, mut tot_instructions) = (0u64, 0u64);
+        let mut poll_remaining = POLL_BUDGET;
         loop {
             let Some(&gen_entry) = self.translation.block_gen.get(&state.rip) else {
                 return Err(Refuse::IndirectUnresolved { src_pc: state.rip }.into());
@@ -956,7 +960,7 @@ impl Executable {
                 let mut fresh = JitData::new(state);
                 fresh.branch_count = tot_branches;
                 fresh.instruction_count = tot_instructions;
-                fresh.poll_remaining = POLL_BUDGET;
+                fresh.poll_remaining = poll_remaining;
                 core::ptr::write(self.data, fresh);
             }
             let (bridge_lo, bridge_hi) = bridge_range();
@@ -973,6 +977,7 @@ impl Executable {
                 fault_addr: 0,
                 fault_sig: 0,
                 fault_si_code: 0,
+                fault_err: 0,
             };
             ACTIVE.store(&mut active, Ordering::SeqCst);
             // SAFETY: sigsetjmp arms the fault return; liteinst_jit_enter
@@ -1012,14 +1017,18 @@ impl Executable {
                 return Err(RunError::Fault(Box::new(recover_fault(
                     &self.translation,
                     self.profile,
-                    active.fault_gen_pc,
                     &data,
-                    active.fault_addr,
-                    active.fault_sig,
-                    active.fault_si_code,
+                    FaultInput {
+                        gen_pc: active.fault_gen_pc,
+                        addr: active.fault_addr,
+                        signum: active.fault_sig,
+                        si_code: active.fault_si_code,
+                        err: active.fault_err,
+                    },
                 ))));
             }
             exits += 1;
+            poll_remaining = data.poll_remaining;
             tot_branches = data.branch_count;
             tot_instructions = data.instruction_count;
             let done = Outcome {
@@ -1057,7 +1066,7 @@ impl Executable {
                 }
                 exit_kind::POLL => {
                     state.rip = data.exit_src;
-                    if let Some(sig) = pending_async_signal() {
+                    if let Some(sig) = take_pending_async()? {
                         return Err(RunError::Fault(Box::new(Fault {
                             kind: FaultKind::AsyncSignal,
                             src_pc: data.exit_src,
@@ -1069,6 +1078,7 @@ impl Executable {
                         })));
                     }
                     // No signal pending: re-enter with a fresh budget.
+                    poll_remaining = POLL_BUDGET;
                 }
                 exit_kind::INDIRECT => {
                     return Err(Refuse::IndirectUnresolved {
@@ -1193,11 +1203,14 @@ mod recovery_tests {
         let f = recover_fault(
             &t,
             CountProfile::BranchesAndInstructions,
-            e.gen_start,
             &fake_data(),
-            0,
-            libc::SIGSEGV,
-            1,
+            FaultInput {
+                gen_pc: e.gen_start,
+                addr: 0,
+                signum: libc::SIGSEGV,
+                si_code: 1,
+                err: 0,
+            },
         );
         assert_eq!(f.branches, 11, "retired branch credited exactly once");
         assert_eq!(f.state.rax, 0x1111);
@@ -1217,11 +1230,14 @@ mod recovery_tests {
         let f = recover_fault(
             &t,
             CountProfile::BranchesAndInstructions,
-            e.gen_start,
             &fake_data(),
-            0,
-            libc::SIGSEGV,
-            1,
+            FaultInput {
+                gen_pc: e.gen_start,
+                addr: 0,
+                signum: libc::SIGSEGV,
+                si_code: 1,
+                err: 0,
+            },
         );
         assert_eq!(f.branches, 10, "no double credit after INC");
         assert_eq!(f.state.rax, 0x1111);
@@ -1234,11 +1250,14 @@ mod recovery_tests {
         let f = recover_fault(
             &t,
             CountProfile::BranchesAndInstructions,
-            e.gen_start,
             &fake_data(),
-            0,
-            libc::SIGSEGV,
-            0,
+            FaultInput {
+                gen_pc: e.gen_start,
+                addr: 0,
+                signum: libc::SIGSEGV,
+                si_code: 0,
+                err: 0,
+            },
         );
         assert_eq!(f.kind, FaultKind::AsyncSignal);
     }
@@ -1262,17 +1281,86 @@ mod recovery_tests {
         let f = recover_fault(
             &t,
             CountProfile::BranchesAndInstructions,
-            e.gen_start,
             &fake_data(),
-            0x7000,
-            libc::SIGSEGV,
-            1,
+            FaultInput {
+                gen_pc: e.gen_start,
+                addr: 0x7000,
+                signum: libc::SIGSEGV,
+                si_code: 1,
+                err: 0,
+            },
         );
         assert_eq!(f.state.rax, 0x1111, "guest rax from spill, not return pc");
         assert_eq!(f.state.rsp, 0x7008, "decrement undone");
         assert_eq!(f.state.rip, call_pc);
         // Entry block is exactly the call: pre-credit removed.
         assert_eq!(f.instructions, 999);
+    }
+
+    #[test]
+    fn data_address_equal_to_gen_pc_is_preserved() {
+        // T7: numerical equality with a generated PC does not make
+        // a data address an instruction address; only the
+        // page-fault fetch bit (or FPE/ILL class) translates it.
+        let fix = crate::fixtures::by_name("sum_loop");
+        let t = setup(&fix.bytes, CountProfile::Branches);
+        let e = t
+            .pcmap
+            .entries()
+            .iter()
+            .find(|e| matches!(e.recovery, Recovery::Copied))
+            .expect("copied entry");
+        let data = fake_data();
+        let f = recover_fault(
+            &t,
+            CountProfile::Branches,
+            &data,
+            FaultInput {
+                gen_pc: e.gen_start,
+                addr: e.gen_start,
+                signum: libc::SIGSEGV,
+                si_code: 1,
+                err: 0x7, // present | write | user: a data store, no fetch bit
+            },
+        );
+        assert_eq!(f.addr, e.gen_start, "raw data address preserved");
+        let f = recover_fault(
+            &t,
+            CountProfile::Branches,
+            &data,
+            FaultInput {
+                gen_pc: e.gen_start,
+                addr: e.gen_start,
+                signum: libc::SIGSEGV,
+                si_code: 1,
+                err: 0x14, // user | instruction-fetch
+            },
+        );
+        assert_eq!(f.addr, e.src_pc, "fetch address translated");
+    }
+
+    #[test]
+    fn poll_budget_fires_without_signal() {
+        use crate::handler::CaptureHandler;
+        use crate::harness::{MappedGuest, RETURN_SENTINEL};
+        let fix = crate::fixtures::by_name("loop_insn");
+        let guest = MappedGuest::map(&fix.bytes).expect("map");
+        let region = RegionFacts {
+            base: guest.base,
+            bytes: fix.bytes.clone(),
+            generation: Generation(1),
+            immutable_private: true,
+        };
+        let mut exec =
+            Executable::prepare(&region, guest.base, CountProfile::Branches).expect("prepare");
+        let mut state = guest.initial_state();
+        state.rsi = 40_000;
+        let mut handler = CaptureHandler::default();
+        let out = exec
+            .run(state, &mut handler, &ProcessMemory, RETURN_SENTINEL)
+            .expect("run");
+        assert_eq!(out.branches, 40_000);
+        assert!(out.exits >= 3, "poll exits fired, got {} exits", out.exits);
     }
 
     #[test]
@@ -1286,11 +1374,14 @@ mod recovery_tests {
             let f = recover_fault(
                 &t,
                 CountProfile::BranchesAndInstructions,
-                e.gen_start,
                 &data,
-                0,
-                libc::SIGSEGV,
-                1,
+                FaultInput {
+                    gen_pc: e.gen_start,
+                    addr: 0,
+                    signum: libc::SIGSEGV,
+                    si_code: 1,
+                    err: 0,
+                },
             );
             let is_machinery = matches!(
                 e.recovery,
@@ -1298,7 +1389,12 @@ mod recovery_tests {
                     | Recovery::InsnCountStub { .. }
                     | Recovery::PollStub { .. }
                     | Recovery::ExitStub { .. }
+                    | Recovery::PollExitStub { .. }
                     | Recovery::CommonExit { .. }
+                    | Recovery::Call {
+                        stage: CallStage::Pristine | CallStage::CommittedSpilled,
+                        ..
+                    }
             );
             assert_eq!(
                 f.kind == FaultKind::ExecutorError,
@@ -1328,11 +1424,14 @@ mod recovery_tests {
         let f = recover_fault(
             &t,
             CountProfile::BranchesAndInstructions,
-            e.gen_start,
             &data,
-            0,
-            libc::SIGSEGV,
-            0,
+            FaultInput {
+                gen_pc: e.gen_start,
+                addr: 0,
+                signum: libc::SIGSEGV,
+                si_code: 0,
+                err: 0,
+            },
         );
         assert_eq!(f.kind, FaultKind::AsyncSignal);
     }

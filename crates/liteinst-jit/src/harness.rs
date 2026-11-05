@@ -116,6 +116,7 @@ impl MappedGuest {
             "rep_zero" => (dst, src, 0, 0, 0),
             "rep_movsw_prefix" => (dst, src, 16, 0, 0),
             "compiled_c" => (data, 16, 0, 0, 0),
+            "cpuid_loop" => (0, 20_000, 0, 0, 0),
             "loop_insn" | "loopne_insn" | "loope_insn" => (0, 7, 0, 0, 0),
             "rep_stosb_ok" => (dst, 0, 32, 0, 0),
             "repne_scasb" => (src, 0, 32, 0, 0),

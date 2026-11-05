@@ -573,6 +573,36 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         assert_eq!(o1.instructions, 0);
     }
 
+    // T7 live: a store whose target numerically equals its own
+    // generated PC keeps the raw data address (no fetch bit).
+    {
+        let bytes = [0x89u8, 0x07, 0xc3]; // mov [rdi],eax; ret
+        let guest = MappedGuest::map(&bytes).expect("map");
+        guest.plant_below_rsp(liteinst_jit::harness::REDZONE_MARKER);
+        let region = guest.region(&bytes, Generation(1));
+        let mut exec =
+            Executable::prepare(&region, guest.base, CountProfile::Branches).expect("prepare");
+        let gen_mov = exec
+            .translation()
+            .pcmap
+            .entries()
+            .iter()
+            .find(|e| e.src_pc == guest.base && e.phase == liteinst_jit::Phase::Copied)
+            .map(|e| e.gen_start)
+            .expect("copied mov entry");
+        let mut state = guest.initial_state();
+        state.rdi = gen_mov;
+        let mut handler = CaptureHandler::default();
+        let out = exec.run(state, &mut handler, &ProcessMemory, RETURN_SENTINEL);
+        let f = match out {
+            Err(RunError::Fault(f)) => f,
+            other => panic!("data_addr jit: {other:?}"),
+        };
+        assert_eq!(f.addr, gen_mov, "data address preserved raw");
+        assert_eq!(f.src_pc, guest.base);
+        assert_eq!(f.kind, liteinst_jit::exec::FaultKind::GuestFault);
+    }
+
     // Indirect call and jump-table edges refuse by name too.
     for name in ["indirect_call", "jump_table"] {
         let jr = run_jit(name, |_| {});
@@ -667,6 +697,96 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
             libc::sigtimedwait(&set, &mut info, &ts);
             libc::pthread_sigmask(libc::SIG_SETMASK, &old, core::ptr::null_mut());
         }
+    }
+
+    // T1/T2/T3 signal-envelope regressions.
+    {
+        extern "C" fn noop_handler(_sig: i32) {}
+        let rt = libc::SIGRTMIN();
+        // Installed RT handler must refuse admission by name.
+        let mut act: libc::sigaction = unsafe { core::mem::zeroed() };
+        act.sa_sigaction = noop_handler as *const () as usize;
+        let mut prev: libc::sigaction = unsafe { core::mem::zeroed() };
+        assert_eq!(unsafe { libc::sigaction(rt, &act, &mut prev) }, 0);
+        let jr = run_jit("sum_loop", |_| {});
+        assert!(
+            matches!(
+                jr.outcome,
+                Err(RunError::Refuse(Refuse::SignalOwnership { signum })) if signum == rt
+            ),
+            "rt admission: {:?}",
+            jr.outcome
+        );
+        assert_eq!(
+            unsafe { libc::sigaction(rt, &prev, core::ptr::null_mut()) },
+            0
+        );
+
+        // Pending RT signal is found by the poll (full range).
+        let mut set: libc::sigset_t = unsafe { core::mem::zeroed() };
+        let mut old: libc::sigset_t = unsafe { core::mem::zeroed() };
+        unsafe {
+            libc::sigemptyset(&mut set);
+            libc::sigaddset(&mut set, rt);
+            libc::sigaddset(&mut set, libc::SIGUSR1);
+            libc::pthread_sigmask(libc::SIG_BLOCK, &set, &mut old);
+            libc::raise(rt);
+        }
+        let jr = run_jit("loop_insn", |s| s.rsi = 400_000_000);
+        match jr.outcome {
+            Err(RunError::Fault(f)) => {
+                assert_eq!(f.kind, liteinst_jit::exec::FaultKind::AsyncSignal);
+                assert_eq!(f.signum, rt, "rt pending signum");
+            }
+            other => panic!("rt pending outcome: {other:?}"),
+        }
+        // T2: CPUID exits must not renew the poll budget.
+        unsafe {
+            libc::raise(libc::SIGUSR1);
+        }
+        let jr = run_jit("cpuid_loop", |_| {});
+        match jr.outcome {
+            Err(RunError::Fault(f)) => {
+                assert_eq!(f.kind, liteinst_jit::exec::FaultKind::AsyncSignal);
+                assert_eq!(f.signum, libc::SIGUSR1);
+                assert!(f.branches < 20_000, "cpuid loop stopped early: {f:?}");
+            }
+            other => panic!("pending_cpuid outcome: {other:?}"),
+        }
+        let mut info: libc::siginfo_t = unsafe { core::mem::zeroed() };
+        let ts = libc::timespec {
+            tv_sec: 0,
+            tv_nsec: 0,
+        };
+        unsafe {
+            libc::sigtimedwait(&set, &mut info, &ts);
+            libc::pthread_sigmask(libc::SIG_SETMASK, &old, core::ptr::null_mut());
+        }
+    }
+    // T3: an originally unblocked default-terminate signal must
+    // return as AsyncSignal, not kill the caller on mask restore.
+    {
+        unsafe {
+            libc::signal(libc::SIGUSR1, libc::SIG_DFL);
+        }
+        let me = unsafe { libc::pthread_self() };
+        let killer = std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            unsafe {
+                libc::pthread_kill(me, libc::SIGUSR1);
+            }
+        });
+        let jr = run_jit("loop_insn", |s| s.rsi = 400_000_000);
+        killer.join().expect("killer");
+        match jr.outcome {
+            Err(RunError::Fault(f)) => {
+                assert_eq!(f.kind, liteinst_jit::exec::FaultKind::AsyncSignal);
+                assert_eq!(f.signum, libc::SIGUSR1);
+            }
+            other => panic!("default_stop outcome: {other:?}"),
+        }
+        // Reaching here at all proves custody: the pending fatal
+        // signal was dequeued before the mask was restored.
     }
 
     // Driver binary agrees with its per-fixture expectations (F6).

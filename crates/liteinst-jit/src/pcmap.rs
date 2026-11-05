@@ -108,6 +108,11 @@ pub enum Recovery {
     },
     /// Exit stub for the terminator at the entry's source PC.
     ExitStub { stage: ExitStage },
+    /// Poll exit stub for the block at the entry's source PC.
+    /// The block's instruction precredit has NOT happened yet
+    /// (the poll stub precedes it), so no retirement adjustment
+    /// applies — unlike a terminator exit for the same PC.
+    PollExitStub { stage: ExitStage },
     /// Common epilogue; the terminator source PC is `exit_src` in
     /// the data block, and a stop here is an executor error.
     CommonExit { stage: CommonStage },
@@ -250,15 +255,25 @@ mod tests {
     #[test]
     fn overlap_and_empty_refuse() {
         let mut m = sample();
-        assert!(
+        assert!(matches!(
             m.push(PcMapEntry {
                 gen_start: 0x8010,
                 gen_end: 0x8020,
                 src_pc: 0x1006,
                 phase: Phase::Copied,
                 recovery: Recovery::Copied,
-            })
-            .is_err()
-        );
+            }),
+            Err(Refuse::Unrelocatable { .. })
+        ));
+        assert!(matches!(
+            m.push(PcMapEntry {
+                gen_start: 0x8020,
+                gen_end: 0x8020,
+                src_pc: 0x1006,
+                phase: Phase::Copied,
+                recovery: Recovery::Copied,
+            }),
+            Err(Refuse::Unrelocatable { .. })
+        ));
     }
 }

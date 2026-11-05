@@ -554,11 +554,18 @@ impl Emitter {
         )
     }
     fn exit_stub(&mut self, kind: u64, src: u64, next: u64) -> Result<(), Refuse> {
+        self.exit_stub_poll(kind, src, next, false)
+    }
+    fn exit_stub_poll(&mut self, kind: u64, src: u64, next: u64, poll: bool) -> Result<(), Refuse> {
         use ExitStage::*;
         self.seg(
             src,
             Phase::ExitSequence,
-            Recovery::ExitStub { stage: Pristine },
+            if poll {
+                Recovery::PollExitStub { stage: Pristine }
+            } else {
+                Recovery::ExitStub { stage: Pristine }
+            },
             |e| e.mov_mem_rax(OFF_SPILL_RAX),
         )?;
         for (off, val) in [
@@ -569,7 +576,11 @@ impl Emitter {
             self.seg(
                 src,
                 Phase::ExitSequence,
-                Recovery::ExitStub { stage: Spilled },
+                if poll {
+                    Recovery::PollExitStub { stage: Spilled }
+                } else {
+                    Recovery::ExitStub { stage: Spilled }
+                },
                 |e| {
                     e.buf.extend_from_slice(&[0x48, 0xb8]);
                     e.buf.extend_from_slice(&val.to_le_bytes());
@@ -579,20 +590,32 @@ impl Emitter {
             self.seg(
                 src,
                 Phase::ExitSequence,
-                Recovery::ExitStub { stage: Spilled },
+                if poll {
+                    Recovery::PollExitStub { stage: Spilled }
+                } else {
+                    Recovery::ExitStub { stage: Spilled }
+                },
                 |e| e.mov_mem_rax(off),
             )?;
         }
         self.seg(
             src,
             Phase::ExitSequence,
-            Recovery::ExitStub { stage: Spilled },
+            if poll {
+                Recovery::PollExitStub { stage: Spilled }
+            } else {
+                Recovery::ExitStub { stage: Spilled }
+            },
             |e| e.mov_rax_mem(OFF_SPILL_RAX),
         )?;
         self.seg(
             src,
             Phase::ExitSequence,
-            Recovery::ExitStub { stage: Pristine },
+            if poll {
+                Recovery::PollExitStub { stage: Pristine }
+            } else {
+                Recovery::ExitStub { stage: Pristine }
+            },
             |e| {
                 e.jmp_fix(FixTarget::CommonExit);
                 Ok(())
@@ -940,7 +963,7 @@ pub fn translate(
     let pending_polls: Vec<u64> = e.poll_exits.clone();
     for block in pending_polls {
         poll_gen.insert(block, e.pc());
-        e.exit_stub(exit_kind::POLL, block, block)?;
+        e.exit_stub_poll(exit_kind::POLL, block, block, true)?;
     }
     let common_exit = emit_common_exit(&mut e)?;
     for (at, target) in std::mem::take(&mut e.fixups) {
@@ -1055,6 +1078,13 @@ mod tests {
             ("xrstor64", &[0x48, 0x0f, 0xae, 0x28, 0xc3]),
             ("xsavec", &[0x0f, 0xc7, 0x20, 0xc3]),
             ("umonitor", &[0xf3, 0x48, 0x0f, 0xae, 0xf0, 0xc3]),
+            // Round-3 alternate encodings of the same families.
+            ("wrpkru-rerex", &[0x40, 0x40, 0x0f, 0x01, 0xef, 0xc3]),
+            ("fninit-rerex", &[0x40, 0x40, 0xdb, 0xe3, 0xc3]),
+            ("fninit-rex-legacy", &[0x40, 0x66, 0xdb, 0xe3, 0xc3]),
+            ("vldmxcsr", &[0xc5, 0xf8, 0xae, 0x10, 0xc3]),
+            ("vstmxcsr", &[0xc5, 0xf8, 0xae, 0x18, 0xc3]),
+            ("sttilecfg", &[0xc4, 0xe2, 0x79, 0x49, 0x00, 0xc3]),
         ];
         for (name, bytes) in cases {
             let r = region(bytes.to_vec());
