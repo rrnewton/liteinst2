@@ -211,6 +211,53 @@ pub fn all() -> Vec<Fixture> {
             bytes: vec![0x48, 0x89, 0xfc, 0xe8, 0x01, 0x00, 0x00, 0x00, 0xc3, 0xc3],
         },
         Fixture {
+            // mov rcx,rdx; rep movsb; mov eax,7; ret — REP itself
+            // retires (not branched around) when rdx=0.
+            name: "rep_zero",
+            bytes: vec![
+                0x48, 0x89, 0xd1, 0xf3, 0xa4, 0xb8, 0x07, 0x00, 0x00, 0x00, 0xc3,
+            ],
+        },
+        Fixture {
+            // mov rcx,rdx; rep movsw (66 f3 a5 prefix order); ret
+            name: "rep_movsw_prefix",
+            bytes: vec![0x48, 0x89, 0xd1, 0x66, 0xf3, 0xa5, 0xc3],
+        },
+        Fixture {
+            // mov ecx,64; mov al,0x5a; rep stosb; ret — faults
+            // 16 bytes in against the guarded destination.
+            name: "rep_stosb_partial",
+            bytes: vec![0xb9, 0x40, 0x00, 0x00, 0x00, 0xb0, 0x5a, 0xf3, 0xaa, 0xc3],
+        },
+        Fixture {
+            // mov eax,1; xor edx,edx; xor ecx,ecx; div ecx; ret
+            name: "div_zero",
+            bytes: vec![
+                0xb8, 0x01, 0x00, 0x00, 0x00, 0x31, 0xd2, 0x31, 0xc9, 0xf7, 0xf1, 0xc3,
+            ],
+        },
+        Fixture {
+            name: "int3_trap",
+            bytes: vec![0xcc, 0xc3],
+        },
+        Fixture {
+            // cc_sum compiled 2026-11-05, gcc 11.5.0:
+            // gcc -O1 -fno-tree-vectorize -mno-sse -mno-mmx
+            //   -fno-stack-protector -fcf-protection=none -c
+            // long cc_sum(const long *a, long n) { long s = 0;
+            //   for (long i = 0; i < n; i++)
+            //     s = (a[i] & 1) ? s + a[i] : s - 1; return s; }
+            // .text extracted with objcopy -O binary.
+            name: "compiled_c",
+            bytes: vec![
+                0x48, 0x85, 0xf6, 0x7e, 0x28, 0x48, 0x89, 0xfa, 0x48, 0x8d, 0x3c, 0xf7, //
+                0xb8, 0x00, 0x00, 0x00, 0x00, 0x48, 0x8b, 0x0a, 0x48, 0x8d, 0x34, 0x08, //
+                0x48, 0x83, 0xe8, 0x01, 0xf6, 0xc1, 0x01, 0x48, 0x0f, 0x45, 0xc6, 0x48, //
+                0x83, 0xc2, 0x08, 0x48, 0x39, 0xfa, 0x75, 0xe5, 0xc3, 0xb8, 0x00, 0x00, //
+                0x00, 0x00, 0xc3,
+            ],
+        },
+        Fixture {
             name: "indirect_jmp",
             bytes: asm(|a| {
                 a.mov(rax, rdi)?;

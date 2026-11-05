@@ -3,11 +3,21 @@
 //! traced child. This is the primary correctness oracle for P1a;
 //! counts come from the stepped instruction stream itself, never
 //! from PMU counters (skid makes those a witness, not an oracle).
+//!
+//! Independence: step classification here is local to this module
+//! (iced decoder directly, own branch/return/syscall tests); it does
+//! not reuse the translator's `decode` classification or envelope.
+//! Step traps are qualified by `PTRACE_GETSIGINFO` provenance: only
+//! `TRAP_TRACE` counts as a completed step (a stepped-over syscall
+//! may report `SI_KERNEL`); any other SIGTRAP is a guest trap and
+//! the instruction does not retire. REP recognition uses iced's
+//! prefix flags, not a first-byte test.
 
-use std::io::{Read, Write};
+use std::io::Read;
 use std::process::{Child, Command, Stdio};
 
-use crate::decode::{InsnClass, decode_one};
+use iced_x86::{Code, Decoder, DecoderOptions, Instruction, Mnemonic};
+
 use crate::harness::{MappedGuest, RETURN_SENTINEL};
 use crate::state::GuestState;
 
@@ -47,22 +57,64 @@ impl ChildInfo {
 
 #[derive(Clone, Debug)]
 pub struct OracleOutcome {
-    /// Child fixture load base (for PC offset comparisons).
     pub base: u64,
-    /// Child initial stack top (for RSP delta comparisons).
     pub stack_top: u64,
+    pub info: ChildInfo,
     pub branches: u64,
     pub instructions: u64,
     pub state: GuestState,
-    /// `(faulting source pc, signum)` when the guest faulted.
+    /// `(faulting source pc, signum)` when the guest faulted/trapped.
     pub fault: Option<(u64, i32)>,
-    /// Contents of the rep destination buffer after the run.
     pub dst_bytes: Vec<u8>,
-    /// Bytes the guest wrote to its stdout after the setup report.
+    pub data_bytes: Vec<u8>,
+    pub stack_window: Vec<u8>,
     pub stdout_tail: Vec<u8>,
 }
 
-const STEP_CAP: u64 = 2_000_000;
+const STEP_CAP: u64 = 4_000_000;
+const TRAP_TRACE: i32 = 2;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum StepClass {
+    Branch,
+    Return,
+    Syscall,
+    Other,
+}
+
+fn classify_step(ins: &Instruction) -> StepClass {
+    let code = ins.code();
+    if code == Code::Syscall {
+        return StepClass::Syscall;
+    }
+    if ins.mnemonic() == Mnemonic::Ret {
+        return StepClass::Return;
+    }
+    if code.is_jcc_short()
+        || code.is_jcc_near()
+        || matches!(
+            ins.mnemonic(),
+            Mnemonic::Loop | Mnemonic::Loope | Mnemonic::Loopne
+        )
+        || matches!(code, Code::Jecxz_rel8_64 | Code::Jrcxz_rel8_64)
+    {
+        return StepClass::Branch;
+    }
+    StepClass::Other
+}
+
+fn decode_step(bytes: &[u8], pc: u64) -> Instruction {
+    let mut decoder = Decoder::with_ip(64, bytes, pc, DecoderOptions::NONE);
+    let ins = decoder.decode();
+    assert!(!ins.is_invalid(), "oracle decode at {pc:#x}");
+    ins
+}
+
+/// True when `ins` carries a REP/REPE/REPNE prefix (any prefix
+/// order), for the partially-stepped-REP retirement rule.
+pub fn instruction_has_rep(ins: &Instruction) -> bool {
+    ins.has_rep_prefix() || ins.has_repne_prefix()
+}
 
 fn ptrace(req: u32, pid: i32, addr: *mut u8, data: *mut u8) -> i64 {
     // SAFETY: raw ptrace passthrough; callers pass valid operands
@@ -90,6 +142,23 @@ fn set_regs(pid: i32, regs: &libc::user_regs_struct) {
         (regs as *const libc::user_regs_struct).cast_mut().cast(),
     );
     assert_eq!(r, 0, "PTRACE_SETREGS: {}", std::io::Error::last_os_error());
+}
+
+fn get_siginfo(pid: i32) -> libc::siginfo_t {
+    let mut info: libc::siginfo_t = unsafe { core::mem::zeroed() };
+    let r = ptrace(
+        libc::PTRACE_GETSIGINFO,
+        pid,
+        core::ptr::null_mut(),
+        core::ptr::addr_of_mut!(info).cast(),
+    );
+    assert_eq!(
+        r,
+        0,
+        "PTRACE_GETSIGINFO: {}",
+        std::io::Error::last_os_error()
+    );
+    info
 }
 
 fn read_mem(pid: i32, addr: u64, buf: &mut [u8]) -> bool {
@@ -129,16 +198,39 @@ fn regs_to_state(r: &libc::user_regs_struct) -> GuestState {
     }
 }
 
-/// Run one fixture natively under the oracle. `child_bin` is the
-/// `liteinst-jit-o1-child` helper; `tweaks` may override argument
-/// registers after the shared setup (e.g. a bad load address).
+/// Run one named fixture natively under the oracle.
 pub fn run_o1(
     child_bin: &std::path::Path,
     fixture_name: &str,
     tweaks: impl FnOnce(&mut libc::user_regs_struct, &ChildInfo),
 ) -> OracleOutcome {
+    run_o1_impl(
+        child_bin,
+        fixture_name.to_string(),
+        Some(fixture_name),
+        tweaks,
+    )
+}
+
+/// Run arbitrary bytes natively under the oracle (generated cases).
+/// Argument registers start zeroed; `tweaks` sets what it needs.
+pub fn run_o1_bytes(
+    child_bin: &std::path::Path,
+    bytes: &[u8],
+    tweaks: impl FnOnce(&mut libc::user_regs_struct, &ChildInfo),
+) -> OracleOutcome {
+    let hex: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
+    run_o1_impl(child_bin, format!("hex:{hex}"), None, tweaks)
+}
+
+fn run_o1_impl(
+    child_bin: &std::path::Path,
+    spawn_arg: String,
+    named: Option<&str>,
+    tweaks: impl FnOnce(&mut libc::user_regs_struct, &ChildInfo),
+) -> OracleOutcome {
     let mut child: Child = Command::new(child_bin)
-        .arg(fixture_name)
+        .arg(&spawn_arg)
         .stdout(Stdio::piped())
         .spawn()
         .expect("spawn o1 child");
@@ -156,7 +248,7 @@ pub fn run_o1(
     let mut regs = get_regs(pid);
     regs.rip = info.base;
     regs.rsp = info.stack_top;
-    regs.eflags = 0x202; // IF set: ptrace rejects clearing it; status bits zero
+    regs.eflags = 0x202; // IF set (ptrace rejects clearing it); status zero
     regs.rax = 0;
     regs.rbx = 0;
     regs.rcx = 0;
@@ -172,13 +264,18 @@ pub fn run_o1(
     regs.r13 = 0;
     regs.r14 = 0;
     regs.r15 = 0;
-    let (rdi, rsi, rdx, rax, rcx) =
-        MappedGuest::fixture_args(fixture_name, info.base, info.data, info.dst, info.src);
-    regs.rdi = rdi;
-    regs.rsi = rsi;
-    regs.rdx = rdx;
-    regs.rax = rax;
-    regs.rcx = rcx;
+    if let Some(name) = named {
+        let (rdi, rsi, rdx, rax, rcx) =
+            MappedGuest::fixture_args(name, info.base, info.data, info.dst, info.src);
+        regs.rdi = rdi;
+        regs.rsi = rsi;
+        regs.rdx = rdx;
+        regs.rax = rax;
+        regs.rcx = rcx;
+        if name == "rep_stosb_partial" {
+            regs.rdi = info.dst;
+        }
+    }
     tweaks(&mut regs, &info);
     set_regs(pid, &regs);
 
@@ -197,9 +294,8 @@ pub fn run_o1(
             "read insn at {:#x}",
             cur.rip
         );
-        let insn = decode_one(&bytes, cur.rip).expect("oracle decode");
-        let was_branch = matches!(insn.class, InsnClass::CondBranch { .. });
-        let was_ret = matches!(insn.class, InsnClass::Return);
+        let insn = decode_step(&bytes, cur.rip);
+        let class = classify_step(&insn);
         let prev_pc = cur.rip;
         let r = ptrace(
             libc::PTRACE_SINGLESTEP,
@@ -225,22 +321,27 @@ pub fn run_o1(
         let sig = libc::WSTOPSIG(status);
         let after = get_regs(pid);
         if sig == libc::SIGTRAP {
-            // A REP string instruction stopped at the same PC has
-            // not retired yet; every other completed step retires
-            // exactly one instruction.
-            let rep_still_running = after.rip == prev_pc && bytes[0] == 0xf3;
+            let si_code = get_siginfo(pid).si_code;
+            // Observed on this kernel: an ordinary step reports
+            // TRAP_TRACE, a stepped-over syscall reports si_code 1.
+            // A guest int3 (class Other) reports neither as a step.
+            let stepped = si_code == TRAP_TRACE || class == StepClass::Syscall;
+            if !stepped {
+                // A guest trap (int3/hardware trap), not our step:
+                // the instruction does not retire.
+                fault = Some((prev_pc, sig));
+                break regs_to_state(&after);
+            }
+            let rep_still_running = after.rip == prev_pc && instruction_has_rep(&insn);
             if !rep_still_running {
                 instructions += 1;
-                if was_branch {
+                if class == StepClass::Branch {
                     branches += 1;
                 }
             }
             continue;
         }
-        // A real signal: the stepped instruction faulted, except the
-        // return-to-sentinel shape (ret pops 0 into RIP and the
-        // fetch faults; the ret itself retired).
-        if was_ret && after.rip == RETURN_SENTINEL {
+        if class == StepClass::Return && after.rip == RETURN_SENTINEL {
             instructions += 1;
             break regs_to_state(&after);
         }
@@ -248,8 +349,17 @@ pub fn run_o1(
         break regs_to_state(&after);
     };
 
-    let mut dst_bytes = vec![0u8; 32];
+    let dst_len = if named == Some("rep_stosb_partial") {
+        16
+    } else {
+        32
+    };
+    let mut dst_bytes = vec![0u8; dst_len];
     let _ = read_mem(pid, info.dst, &mut dst_bytes);
+    let mut data_bytes = vec![0u8; 128];
+    let _ = read_mem(pid, info.data, &mut data_bytes);
+    let mut stack_window = vec![0u8; 136];
+    let _ = read_mem(pid, info.stack_top - 128, &mut stack_window);
     ptrace(
         libc::PTRACE_KILL,
         pid,
@@ -262,18 +372,19 @@ pub fn run_o1(
     }
     let mut stdout_tail = Vec::new();
     let _ = out.read_to_end(&mut stdout_tail);
-    // Already reaped via waitpid above; this only releases the
-    // std handle (it reports ECHILD, which is expected here).
+    // Already reaped via waitpid above; releases the std handle.
     let _ = child.wait();
-    let _ = Write::flush(&mut std::io::stdout());
     OracleOutcome {
         base: info.base,
         stack_top: info.stack_top,
+        info,
         branches,
         instructions,
         state: final_state,
         fault,
         dst_bytes,
+        data_bytes,
+        stack_window,
         stdout_tail,
     }
 }

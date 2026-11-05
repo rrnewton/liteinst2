@@ -23,8 +23,8 @@ fn main() -> std::process::ExitCode {
         let region = guest.region(&fixture.bytes, Generation(1));
         guest.plant_below_rsp(liteinst_jit::harness::REDZONE_MARKER);
         let expected = match fixture.name {
-            "indirect_jmp" | "rdtsc_exit" => "REFUSED",
-            "fault_ret" | "call_store_fault" => "FAULT",
+            "indirect_jmp" | "rdtsc_exit" | "int3_trap" => "REFUSED",
+            "fault_ret" | "call_store_fault" | "div_zero" | "rep_stosb_partial" => "FAULT",
             _ => "OK",
         };
         let mut exec =
@@ -50,6 +50,11 @@ fn main() -> std::process::ExitCode {
         );
         state.rdi = rdi;
         state.rsi = rsi;
+        let _guarded;
+        if fixture.name == "rep_stosb_partial" {
+            _guarded = liteinst_jit::harness::GuardedDst::new().expect("guarded dst");
+            state.rdi = _guarded.ptr;
+        }
         state.rdx = rdx;
         state.rax = rax;
         state.rcx = rcx;

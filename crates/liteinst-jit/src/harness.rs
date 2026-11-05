@@ -88,6 +88,12 @@ impl MappedGuest {
         }
     }
 
+    /// Stack bytes `[top-128, top+8]` for full-state comparison.
+    pub fn stack_window(&self) -> Vec<u8> {
+        // SAFETY: inside the owned stack mapping.
+        unsafe { core::slice::from_raw_parts((self.stack_top() - 128) as *const u8, 136).to_vec() }
+    }
+
     pub fn stack_top(&self) -> u64 {
         (self.stack as u64) + (self.stack_len as u64) - 8
     }
@@ -107,6 +113,9 @@ impl MappedGuest {
             "flags_adc" => (3, 5, 0, 10, 0),
             "rip_data" => (1, 0, 0, 0, 0),
             "rep_movsb" => (dst, src, 32, 0, 0),
+            "rep_zero" => (dst, src, 0, 0, 0),
+            "rep_movsw_prefix" => (dst, src, 16, 0, 0),
+            "compiled_c" => (data, 16, 0, 0, 0),
             "loop_insn" => (0, 7, 0, 0, 0),
             "jrcxz" => (0, 0, 0, 0, 0),
             "syscall_write" => (0, src, 5, 0, 0),
@@ -137,6 +146,57 @@ impl Drop for MappedGuest {
         unsafe {
             libc::munmap(self.code.cast(), self.code_len);
             libc::munmap(self.stack.cast(), self.stack_len);
+        }
+    }
+}
+
+/// A destination buffer whose writable tail ends exactly at a
+/// PROT_NONE page, for partial-progress REP fault fixtures.
+pub struct GuardedDst {
+    base: *mut u8,
+    pub ptr: u64,
+}
+
+impl GuardedDst {
+    pub fn new() -> Result<GuardedDst, Refuse> {
+        // SAFETY: two-page anonymous mapping owned by the result.
+        let base = unsafe {
+            libc::mmap(
+                core::ptr::null_mut(),
+                8192,
+                libc::PROT_READ | libc::PROT_WRITE,
+                libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
+                -1,
+                0,
+            )
+        };
+        if base == libc::MAP_FAILED {
+            return Err(Refuse::MappingPolicy {
+                operation: "mmap guarded dst",
+                errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
+            });
+        }
+        // SAFETY: second page of our fresh mapping.
+        let rc =
+            unsafe { libc::mprotect((base as *mut u8).add(4096).cast(), 4096, libc::PROT_NONE) };
+        assert_eq!(rc, 0, "mprotect guard page");
+        let base = base as *mut u8;
+        Ok(GuardedDst {
+            ptr: base as u64 + 4096 - 16,
+            base,
+        })
+    }
+    pub fn head16(&self) -> Vec<u8> {
+        // SAFETY: the 16 bytes before the guard page are ours.
+        unsafe { core::slice::from_raw_parts(self.ptr as *const u8, 16).to_vec() }
+    }
+}
+
+impl Drop for GuardedDst {
+    fn drop(&mut self) {
+        // SAFETY: owned mapping from `new`.
+        unsafe {
+            libc::munmap(self.base.cast(), 8192);
         }
     }
 }
