@@ -1,8 +1,8 @@
 diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
-index 3b061d29..9df2ae8e 100644
+index 4219c7f3..04b4b5bb 100644
 --- a/crates/liteinst-jit/src/exec.rs
 +++ b/crates/liteinst-jit/src/exec.rs
-@@ -452,10 +452,10 @@ pub fn recover_fault(
+@@ -491,10 +491,10 @@ pub fn recover_fault(
              successor, stage, ..
          } => {
              match stage {

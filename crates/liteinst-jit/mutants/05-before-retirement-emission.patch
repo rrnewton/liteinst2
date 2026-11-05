@@ -1,0 +1,26 @@
+diff --git a/crates/liteinst-jit/src/translate.rs b/crates/liteinst-jit/src/translate.rs
+index 129a268d..e19b7d00 100644
+--- a/crates/liteinst-jit/src/translate.rs
++++ b/crates/liteinst-jit/src/translate.rs
+@@ -469,7 +469,8 @@ impl Emitter {
+         Ok(())
+     }
+     fn count_stub_body(&mut self, branch: u64, successor: u64) -> Result<(), Refuse> {
+-        self.credit_stub(OFF_BRANCH_COUNT, 1, Some((branch, successor)), 0)
++        // MUTANT 05 (part 1): successor stubs credit a dead field.
++        self.credit_stub(OFF_EXIT_NEXT, 1, Some((branch, successor)), 0)
+     }
+     fn block_head_add(&mut self, src: u64, n: u64) -> Result<(), Refuse> {
+         if n == 0 {
+@@ -739,6 +740,11 @@ pub fn translate(
+     for block in blocks.values() {
+         block_gen.insert(block.start, e.pc());
+         e.poll_stub(block.start)?;
++        // MUTANT 05 (part 2): credit this block's branch at block
++        // entry, before any instruction (or the branch) retires.
++        if matches!(block.terminator, Terminator::Cond { .. }) {
++            e.credit_stub(OFF_BRANCH_COUNT, 1, None, block.start)?;
++        }
+         if profile == CountProfile::BranchesAndInstructions {
+             e.block_head_add(block.start, block.instruction_total())?;
+         }
