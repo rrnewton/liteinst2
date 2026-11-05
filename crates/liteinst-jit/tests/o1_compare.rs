@@ -106,7 +106,7 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         let (jit, o1) = compare(name);
         match name {
             "sum_loop" => assert_eq!(jit.state.rax, 120),
-            "branchy_even_sum" => assert_eq!(jit.state.rax, 0 + 2 + 4 + 6 + 8 + 10 + 12 + 14),
+            "branchy_even_sum" => assert_eq!(jit.state.rax, 2 + 4 + 6 + 8 + 10 + 12 + 14),
             "call_helper" => assert_eq!(jit.state.rax, 121),
             "rip_data" => assert_eq!(jit.state.rax, 42),
             "loop_insn" => assert_eq!(jit.state.rax, 7),
@@ -158,13 +158,13 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
 
     // Fault: both engines must name the same faulting instruction
     // with the same retired counts before it.
-    let jit = run_jit("fault_load", |s| s.rdi = 0xdead_000);
+    let jit = run_jit("fault_load", |s| s.rdi = 0x0dea_d000);
     let jit_fault = match jit.outcome {
         Err(RunError::Fault(f)) => f,
         other => panic!("fault_load jit: {other:?}"),
     };
     let o1 = run_o1(std::path::Path::new(CHILD), "fault_load", |r, _| {
-        r.rdi = 0xdead_000;
+        r.rdi = 0x0dea_d000;
     });
     let (o1_pc, o1_sig) = o1.fault.expect("oracle fault");
     assert_eq!(jit_fault.signum, o1_sig);

@@ -122,7 +122,7 @@ fn regs_to_state(r: &libc::user_regs_struct) -> GuestState {
         r13: r.r13,
         r14: r.r14,
         r15: r.r15,
-        rflags: r.eflags as u64,
+        rflags: r.eflags,
         rip: r.rip,
     }
 }
@@ -260,6 +260,9 @@ pub fn run_o1(
     }
     let mut stdout_tail = Vec::new();
     let _ = out.read_to_end(&mut stdout_tail);
+    // Already reaped via waitpid above; this only releases the
+    // std handle (it reports ECHILD, which is expected here).
+    let _ = child.wait();
     let _ = Write::flush(&mut std::io::stdout());
     OracleOutcome {
         base: info.base,
