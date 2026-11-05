@@ -43,7 +43,7 @@ the dual-mapped page that holds the target code):
 
 <span class="filename">Listing FH-1: examples/replace_first.rs (excerpt)</span>
 
-```rust
+```rust,ignore
 // xor eax,eax; inc eax; nop; ret; padding
 let code = [0x31, 0xC0, 0xFF, 0xC0, 0x90, 0xC3, 0x90, 0x90];
 let address = executable as usize as u64;
@@ -87,7 +87,7 @@ changes:
 
 <span class="filename">Listing FH-2: examples/replace_first.rs — the callback</span>
 
-```rust
+```rust,ignore
 unsafe extern "C" fn replace_zero(context: *mut HookContext) {
     unsafe {
         (*context).rax = 40;
