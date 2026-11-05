@@ -14,7 +14,8 @@
 | `liteinst-bootstrap` (`crates/`, *not* a workspace member) | no | Per-product static `ET_EXEC` router bootstrap | [Safety](safety.md) |
 
 Inside `liteinst`, the public modules (`src/lib.rs`, regenerated for
-this appendix; the API reference on docs.rs is authoritative):
+this appendix; rustdoc — docs.rs per release, `cargo doc` locally —
+is authoritative):
 
 * Planning and publication: `contracts` (plans/leases/receipts),
   `quiescent`, `composition`, `bundle`, `engine` (bounded tactic

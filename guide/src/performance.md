@@ -1,11 +1,13 @@
 # Performance
 
 This chapter separates three things that performance chapters too
-often merge: what we have **measured** in this tree, what we **cite**
-from the literature, and what is **unmeasured**. Claims beyond the
-measurements are roadmap, not results.
+often merge: prior project **measurements** whose receipts live
+outside this repository (cited with provenance, not reproduced by any
+in-tree test), numbers **cited** from the literature, and what is
+**unmeasured**. Claims beyond the measurements are roadmap, not
+results.
 
-## Measured (with provenance)
+## Cited: prior project measurements (no in-tree receipt)
 
 * **Patch-apply latency:** median ≈0.49 µs for a cache-line-aligned
   site and ≈4.15 µs for a cache-line-crossing (guarded) site,
@@ -19,12 +21,12 @@ measurements are roadmap, not results.
   Provenance for both bullets: measured 2026-10-18 on a project
   development host and recorded outside this repository in the
   project's patch-latency note (`2026-10-18-liteinst-patch-latency.md`,
-  tree at `837456e`), as cited by the 0.2.0 checkpoint (§6). No
-  in-tree test reproduces these exact figures today — that is part of
-  the benchmark-suite gap below, and this paragraph is the receipt
-  pointer until it closes. Relative to a DynamoRIO null client
-  (DR-null), no same-machine ratio exists yet: UNMEASURED (see
-  "Unmeasured").
+  tree at `837456e`), as cited by the 0.2.0 checkpoint (§6). Treat
+  them as *cited* values: no test or receipt in this tree reproduces
+  them, and they move back to "measured" only when the benchmark
+  suite below lands an in-tree reproduction. Relative to a DynamoRIO
+  null client (DR-null), no same-machine ratio exists yet:
+  UNMEASURED (see "Unmeasured").
 
 * **Owned-clock throughput:** the two-backedge owned-region profile
   measures native, counting, and quantum-stop costs across 12

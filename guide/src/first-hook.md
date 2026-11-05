@@ -8,9 +8,10 @@ it first:
 $ cargo run --example replace_first
 ```
 
-You should see the target function return one value before the hook is
-installed, a different value while it is active, and the original value
-again after it is removed. Everything below explains how that happened.
+You should see the target function return one value with the hook
+installed but inactive, a different value while it is active, and the
+original value again after it is deactivated. Everything below
+explains how that happened.
 
 ## The shape of every LiteInst program
 

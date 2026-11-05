@@ -79,7 +79,8 @@ The workspace publishes six crates. Most programs need only the first:
 covers it. API documentation is published to
 [docs.rs](https://docs.rs/liteinst) per release (if that page 404s for
 a brand-new release, docs.rs has not built it yet — `cargo doc`
-locally is the same content).
+locally covers the default surface; add `--features offline-router`
+for the module docs.rs also builds).
 
 > 🚧 **Under construction — expected output transcripts.** TODO: paste
 > the exact stdout of `replace_first`, `preload_consumer`, and

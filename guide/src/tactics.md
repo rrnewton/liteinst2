@@ -73,7 +73,7 @@ its contract before use.
 | All fetchers/writers excluded (launch, stopped task, single thread) | Quiescent |
 | Live multithreaded program, install-once or rare changes | Concurrent (WordPatch++) |
 | Same site toggled at very high frequency | Rapid (`RapidProbe::install` is standalone; no prior general install needed) |
-| Batch publication where trap guards are unavailable | Synchronized (experimental) |
+| Batched split-site publication without caller staleness budgets | Synchronized (experimental; front guards still published — barriers replace the waits) |
 | No tactic's preconditions hold | **Trap fallback** (`PunPlan::TrapRequired`) — your controller (e.g. ptrace) handles the site |
 
 The last row is load-bearing: refusing to patch and trapping instead is

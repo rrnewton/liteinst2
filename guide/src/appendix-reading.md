@@ -15,8 +15,10 @@
   `A4-SYNCHRONIZED.md`, `PATCH_SITE_DECISION_TREE.md`,
   `COALESCED-CONTROLS.md`, and the published crates' READMEs.
 * The Reverie guide — for building complete tools on these blocks.
-* API reference: [docs.rs/liteinst](https://docs.rs/liteinst) and the
-  sibling crates linked from there.
+* API reference: docs.rs per release
+  ([docs.rs/liteinst](https://docs.rs/liteinst) once docs.rs has built
+  the release you want) and the sibling crates linked from there;
+  `cargo doc` locally is the fallback.
 
 > 🚧 **Under construction — annotated bibliography.** TODO: one-paragraph
 > annotations for the neighbouring systems this book compares against
