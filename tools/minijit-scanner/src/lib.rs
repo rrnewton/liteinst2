@@ -28,47 +28,130 @@ pub struct Scan {
     pub needs_full_decode: bool,
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy)]
 struct Prefix {
     len: usize,
+    /// Effective operand size in bits after prefix ordering:
+    /// a legacy prefix cancels a preceding REX, and an effective
+    /// REX.W after 66 selects 64, matching iced's prefix state.
+    operand_size: u8,
+    has66: bool,
     rex_w: bool,
-    op66: bool,
-    addr67: bool,
+    addr32: bool,
+    lock: bool,
     rep: bool,
     repne: bool,
     segment: bool,
 }
 
-impl Prefix {
-    fn os_imm(self) -> usize {
-        if self.op66 { 2 } else { 4 }
+impl Default for Prefix {
+    fn default() -> Self {
+        Self {
+            len: 0,
+            operand_size: 32,
+            has66: false,
+            rex_w: false,
+            addr32: false,
+            lock: false,
+            rep: false,
+            repne: false,
+            segment: false,
+        }
     }
+}
+
+impl Prefix {
+    /// Sign-extended IW/ID immediate size: 2 for effective
+    /// operand size 16, otherwise 4 (including REX.W 64).
+    #[inline]
+    fn os_imm(self) -> usize {
+        if self.operand_size == 16 { 2 } else { 4 }
+    }
+    #[inline]
     fn mov_imm(self) -> usize {
         if self.rex_w {
             8
-        } else if self.op66 {
+        } else if self.operand_size == 16 {
             2
         } else {
             4
         }
     }
+    #[inline]
     fn moffs(self) -> usize {
-        if self.addr67 { 4 } else { 8 }
+        if self.addr32 { 4 } else { 8 }
     }
+    #[inline]
+    fn reset_rex(&mut self) {
+        self.rex_w = false;
+        self.operand_size = if self.has66 { 16 } else { 32 };
+    }
+}
+
+#[inline]
+fn is_prefix_byte(b: u8) -> bool {
+    matches!(
+        b,
+        0xf0 | 0xf2 | 0xf3 | 0x26 | 0x2e | 0x36 | 0x3e | 0x64 | 0x65 | 0x66 | 0x67 | 0x40..=0x4f
+    )
 }
 
 #[inline]
 fn parse_prefix(bytes: &[u8]) -> Prefix {
     let mut p = Prefix::default();
+    // Fast paths: no prefix, or one effective REX immediately
+    // before the opcode (the overwhelmingly common shapes).
+    match bytes.first() {
+        Some(&b0) if (0x40..=0x4f).contains(&b0) => {
+            if bytes.get(1).is_some_and(|&n| !is_prefix_byte(n)) {
+                p.len = 1;
+                if b0 & 8 != 0 {
+                    p.rex_w = true;
+                    p.operand_size = 64;
+                }
+                return p;
+            }
+        }
+        Some(&b0) if !is_prefix_byte(b0) => return p,
+        _ => {}
+    }
     while let Some(&b) = bytes.get(p.len) {
         match b {
-            0xf0 => {}
-            0xf2 => p.repne = true,
-            0xf3 => p.rep = true,
-            0x26 | 0x2e | 0x36 | 0x3e | 0x64 | 0x65 => p.segment = true,
-            0x66 => p.op66 = true,
-            0x67 => p.addr67 = true,
-            0x40..=0x4f => p.rex_w = b & 8 != 0,
+            0xf0 => {
+                p.lock = true;
+                p.reset_rex();
+            }
+            0xf2 => {
+                p.repne = true;
+                p.rep = false;
+                p.reset_rex();
+            }
+            0xf3 => {
+                p.rep = true;
+                p.repne = false;
+                p.reset_rex();
+            }
+            0x26 | 0x2e | 0x36 | 0x3e | 0x64 | 0x65 => {
+                p.segment = true;
+                p.reset_rex();
+            }
+            0x66 => {
+                p.has66 = true;
+                p.reset_rex();
+            }
+            0x67 => {
+                p.addr32 = true;
+                p.reset_rex();
+            }
+            0x40..=0x4f => {
+                if b & 8 != 0 {
+                    p.rex_w = true;
+                    p.operand_size = 64;
+                } else {
+                    p.rex_w = false;
+                    p.operand_size = if p.has66 { 16 } else { 32 };
+                }
+            }
             _ => break,
         }
         p.len += 1;
@@ -82,6 +165,7 @@ fn parse_prefix(bytes: &[u8]) -> Prefix {
 struct ModRm {
     len: usize,
     reg: u8,
+    is_mem: bool,
     rip_relative: bool,
 }
 
@@ -96,6 +180,7 @@ fn modrm(bytes: &[u8], pos: usize) -> Option<ModRm> {
         return Some(ModRm {
             len: 1,
             reg,
+            is_mem: false,
             rip_relative: false,
         });
     }
@@ -123,6 +208,7 @@ fn modrm(bytes: &[u8], pos: usize) -> Option<ModRm> {
     Some(ModRm {
         len,
         reg,
+        is_mem: true,
         rip_relative,
     })
 }
@@ -191,8 +277,13 @@ fn legacy_form(op: u8) -> Option<(bool, Imm, bool, bool)> {
         0xc9 => (false, Imm::None, false, false),
         0xcc => (false, Imm::None, false, false),
         0xcd => (false, Imm::B, false, true),
-        0xce | 0xcf => (false, Imm::None, false, true),
-        0xd0..=0xd3 | 0xd6 | 0xd7 => (true, Imm::None, false, false),
+        // INTO is invalid in 64-bit mode; IRET is in the
+        // liteinst syscall class only for the 16-bit mnemonic
+        // form (iced distinguishes Iret/Iretd/Iretq), applied
+        // by operand size in scan_one.
+        0xce | 0xcf => (false, Imm::None, false, false),
+        0xd0..=0xd3 => (true, Imm::None, false, false),
+        0xd6 | 0xd7 => (false, Imm::None, false, false),
         0xd8..=0xdf => (true, Imm::None, false, false),
         0xe0..=0xe3 | 0xeb => (false, Imm::B, true, false),
         0xe4..=0xe7 => (false, Imm::B, false, false),
@@ -204,6 +295,25 @@ fn legacy_form(op: u8) -> Option<(bool, Imm, bool, bool)> {
         _ => return None,
     };
     Some(f)
+}
+
+/// Whether the modelled form can carry XACQUIRE/XRELEASE
+/// semantics under iced's opcode-aware rules (mirrored by
+/// liteinst-jit admission). `legacy_op` is set only for the
+/// one-byte map, where the no-LOCK HLE forms live.
+#[inline]
+fn transactional(p: Prefix, is_mem: bool, legacy_op: Option<u8>) -> bool {
+    if !is_mem || (!p.lock && !p.rep && !p.repne) {
+        return false;
+    }
+    if p.lock {
+        return p.rep || p.repne;
+    }
+    match legacy_op {
+        Some(0x86 | 0x87) => p.rep || p.repne,
+        Some(0x88 | 0x89 | 0xc6 | 0xc7) => p.rep,
+        _ => false,
+    }
 }
 
 #[inline]
@@ -237,8 +347,10 @@ fn legacy_movable(op: u8, reg: Option<u8>) -> bool {
 #[inline]
 fn map0f_form(op: u8) -> (bool, Imm, bool, bool) {
     match op {
-        0x05 | 0x07 | 0x34 | 0x35 => (false, Imm::None, false, true),
-        0x0b | 0x0e | 0x77 => (false, Imm::None, false, false),
+        0x05 | 0x07 | 0x34 => (false, Imm::None, false, true),
+        0x06 | 0x08 | 0x09 | 0x0b | 0x0e | 0x30 | 0x35 | 0x77 | 0xa0 | 0xa1 => {
+            (false, Imm::None, false, false)
+        }
         0x0f => (true, Imm::B, false, false), // 3DNow: ModRM + imm8
         0x31 | 0xa2 => (false, Imm::None, false, true),
         0x32 | 0x33 | 0x37 | 0xa8 | 0xa9 | 0xaa => (false, Imm::None, false, false),
@@ -275,14 +387,15 @@ fn map0f_movable(op: u8, reg: Option<u8>, p: Prefix, modrm_byte: Option<u8>) -> 
 fn vex_evex_imm_len(map: u8, op: u8) -> usize {
     match map {
         3 => 1,
-        1 if matches!(op, 0x70..=0x73 | 0xc2 | 0xc6) => 1,
+        1 if matches!(op, 0x70..=0x73 | 0xc2 | 0xc4 | 0xc5 | 0xc6) => 1,
         _ => 0,
     }
 }
 
-fn vex_evex_has_modrm(op: u8) -> bool {
-    // VZEROUPPER/VZEROALL (VEX 0F 77) are the common no-ModRM forms.
-    op != 0x77
+fn vex_evex_has_modrm(is_evex: bool, map: u8, op: u8) -> bool {
+    // Only VEX map-1 opcode 77 (VZEROUPPER/VZEROALL) lacks a
+    // ModRM byte. EVEX opcode 77 in maps 1/2 is a ModRM form.
+    is_evex || !(map == 1 && op == 0x77)
 }
 
 fn unknown() -> Scan {
@@ -323,7 +436,7 @@ pub fn scan_one(bytes: &[u8], _pc: u64) -> Scan {
         }
         let op = bytes[2];
         let mut cur = 3usize;
-        if vex_evex_has_modrm(op) {
+        if vex_evex_has_modrm(false, 1, op) {
             let Some(m) = modrm(bytes, cur) else { return s };
             s.rip_relative = m.rip_relative;
             cur += m.len;
@@ -342,7 +455,7 @@ pub fn scan_one(bytes: &[u8], _pc: u64) -> Scan {
         }
         let op = bytes[3];
         let mut cur = 4usize;
-        if vex_evex_has_modrm(op) {
+        if vex_evex_has_modrm(false, map, op) {
             let Some(m) = modrm(bytes, cur) else { return s };
             s.rip_relative = m.rip_relative;
             cur += m.len;
@@ -361,7 +474,7 @@ pub fn scan_one(bytes: &[u8], _pc: u64) -> Scan {
         }
         let op = bytes[4];
         let mut cur = 5usize;
-        if vex_evex_has_modrm(op) {
+        if vex_evex_has_modrm(true, map, op) {
             let Some(m) = modrm(bytes, cur) else { return s };
             s.rip_relative = m.rip_relative;
             cur += m.len;
@@ -398,21 +511,44 @@ pub fn scan_one(bytes: &[u8], _pc: u64) -> Scan {
         let mut cur = pos + 2;
         let mut reg = None;
         let mut modrm_byte = None;
-        if has_modrm {
+        let mut is_mem = false;
+        // MOV to/from control/debug/test registers carry a
+        // register-only ModRM byte: no SIB, displacement, or
+        // RIP-relative form exists in the encoding.
+        let register_only_modrm = matches!(op2, 0x20 | 0x21 | 0x22 | 0x23 | 0x24 | 0x26);
+        if has_modrm && register_only_modrm {
+            let Some(&mb) = bytes.get(cur) else { return s };
+            reg = Some((mb >> 3) & 7);
+            modrm_byte = Some(mb);
+            cur += 1;
+        } else if has_modrm {
             let Some(m) = modrm(bytes, cur) else { return s };
             reg = Some(m.reg);
             modrm_byte = bytes.get(cur).copied();
+            is_mem = m.is_mem;
             s.rip_relative = m.rip_relative;
             cur += m.len;
             if op2 == 0x01 && matches!(modrm_byte, Some(0xf9 | 0xd0)) {
                 s.interception_target = true; // RDTSCP / XGETBV
             }
-            if op2 == 0xc7 && matches!(reg, Some(6 | 7)) {
-                s.interception_target = true; // RDRAND / RDSEED / RDPID
+            if op2 == 0xc7 && !is_mem {
+                // Register forms only: /6 RDRAND (no F2/F3),
+                // /7 RDSEED (no F3) or RDPID (F3, 64-bit form
+                // is the one liteinst-jit classes as nondet).
+                s.interception_target = match reg {
+                    Some(6) => !p.rep && !p.repne,
+                    Some(7) => !p.rep || p.operand_size == 64,
+                    _ => false,
+                };
+            }
+            // SSE4a EXTRQ/INSERTQ immediate forms: 66/F2 0F 78
+            // carry two imm8 bytes after the ModRM byte.
+            if op2 == 0x78 && !p.rep && (p.repne || p.has66) {
+                cur += 2;
             }
         }
         cur += imm.len(p);
-        let movable = map0f_movable(op2, reg, p, modrm_byte);
+        let movable = map0f_movable(op2, reg, p, modrm_byte) && !transactional(p, is_mem, None);
         return finish(s, cur, bytes.len(), movable, p.segment);
     }
 
@@ -420,12 +556,14 @@ pub fn scan_one(bytes: &[u8], _pc: u64) -> Scan {
         return s;
     };
     s.relative_branch_or_call = relative;
-    s.interception_target = intercept;
+    s.interception_target = intercept || (op == 0xcf && p.operand_size == 16);
     let mut cur = pos + 1;
     let mut reg = None;
+    let mut is_mem = false;
     if has_modrm {
         let Some(m) = modrm(bytes, cur) else { return s };
         reg = Some(m.reg);
+        is_mem = m.is_mem;
         s.rip_relative = m.rip_relative;
         cur += m.len;
         if matches!(op, 0xf6 | 0xf7) && matches!(reg, Some(0 | 1)) {
@@ -433,7 +571,8 @@ pub fn scan_one(bytes: &[u8], _pc: u64) -> Scan {
         }
     }
     cur += imm.len(p);
-    finish(s, cur, bytes.len(), legacy_movable(op, reg), p.segment)
+    let movable = legacy_movable(op, reg) && !transactional(p, is_mem, Some(op));
+    finish(s, cur, bytes.len(), movable, p.segment)
 }
 
 #[cfg(test)]

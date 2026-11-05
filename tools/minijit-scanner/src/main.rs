@@ -126,6 +126,9 @@ struct OracleStats {
     length_disagreements: u64,
     false_movable: u64,
     missed_movable: u64,
+    relative_mismatches: u64,
+    rip_mismatches: u64,
+    intercept_mismatches: u64,
     scanner_movable_insns: u64,
     scanner_movable_bytes: u64,
     oracle_movable_insns: u64,
@@ -152,15 +155,25 @@ fn validate(seg: &TextSegment) -> OracleStats {
         dec.set_position(off).expect("oracle position");
         dec.set_ip(seg.vaddr + off as u64);
         if !dec.can_decode() {
+            // Fail closed: an invalid/truncated boundary is not
+            // resynchronized by guessing the next byte.
             st.skipped_bytes += 1;
-            off += 1;
-            continue;
+            st.examples.push(format!(
+                "invalid-boundary pc={:#x} bytes={:02x?}",
+                seg.vaddr + off as u64,
+                &bytes[off..(off + 15).min(bytes.len())]
+            ));
+            break;
         }
         let ins = dec.decode();
         if ins.is_invalid() || ins.len() == 0 || off + ins.len() > bytes.len() {
             st.skipped_bytes += 1;
-            off += 1;
-            continue;
+            st.examples.push(format!(
+                "invalid-boundary pc={:#x} bytes={:02x?}",
+                seg.vaddr + off as u64,
+                &bytes[off..(off + 15).min(bytes.len())]
+            ));
+            break;
         }
         let pc = seg.vaddr + off as u64;
         let scan: Scan = scan_one(&bytes[off..], pc);
@@ -184,7 +197,7 @@ fn validate(seg: &TextSegment) -> OracleStats {
         }
         if scan.len != ins.len() {
             st.length_disagreements += 1;
-            if st.examples.len() < 8 {
+            if st.examples.len() < 12 {
                 st.examples.push(format!(
                     "len pc={pc:#x} iced={} scan={} bytes={:02x?}",
                     ins.len(),
@@ -193,9 +206,40 @@ fn validate(seg: &TextSegment) -> OracleStats {
                 ));
             }
         }
+        if scan.relative_branch_or_call != o_relative {
+            st.relative_mismatches += 1;
+            if st.examples.len() < 12 {
+                st.examples.push(format!(
+                    "relative pc={pc:#x} oracle={o_relative} scan={} bytes={:02x?}",
+                    scan.relative_branch_or_call,
+                    &bytes[off..(off + ins.len()).min(bytes.len())]
+                ));
+            }
+        }
+        if scan.rip_relative != o_rip {
+            st.rip_mismatches += 1;
+            if st.examples.len() < 12 {
+                st.examples.push(format!(
+                    "rip pc={pc:#x} oracle={o_rip} scan={} bytes={:02x?}",
+                    scan.rip_relative,
+                    &bytes[off..(off + ins.len()).min(bytes.len())]
+                ));
+            }
+        }
+        if scan.interception_target != o_intercept {
+            st.intercept_mismatches += 1;
+            if st.examples.len() < 12 {
+                st.examples.push(format!(
+                    "intercept pc={pc:#x} oracle={o_intercept} scan={} class={:?} bytes={:02x?}",
+                    scan.interception_target,
+                    reference.class,
+                    &bytes[off..(off + ins.len()).min(bytes.len())]
+                ));
+            }
+        }
         if scan.allowlisted_movable && !o_movable {
             st.false_movable += 1;
-            if st.examples.len() < 8 {
+            if st.examples.len() < 12 {
                 st.examples.push(format!(
                     "false-movable pc={pc:#x} bytes={:02x?} class={:?} rip={o_rip}",
                     &bytes[off..(off + ins.len()).min(bytes.len())],
@@ -215,10 +259,13 @@ fn scanner_seq(bytes: &[u8], base: u64) -> u64 {
     let mut acc = 0u64;
     while off < bytes.len() {
         let s = scan_one(&bytes[off..], base + off as u64);
+        if s.len == 0 {
+            break; // no guessed resynchronization
+        }
         acc = acc
             .wrapping_add(s.len as u64)
             .wrapping_add(u64::from(s.allowlisted_movable));
-        off += if s.len == 0 { 1 } else { s.len };
+        off += s.len;
     }
     acc
 }
@@ -229,12 +276,9 @@ fn iced_stream(bytes: &[u8], base: u64) -> u64 {
     while dec.can_decode() {
         let ins = dec.decode();
         if ins.is_invalid() || ins.len() == 0 {
-            let pos = (dec.position() + 1).min(bytes.len());
-            let _ = dec.set_position(pos);
-            dec.set_ip(base + pos as u64);
-        } else {
-            acc = acc.wrapping_add(ins.len() as u64);
+            break; // benches run only after the fail-closed gate
         }
+        acc = acc.wrapping_add(ins.len() as u64);
     }
     acc
 }
@@ -266,10 +310,19 @@ fn fast_end_to_end(bytes: &[u8], base: u64, dst: &mut [u8]) -> u64 {
         if run < off {
             dst[run..off].copy_from_slice(&bytes[run..off]);
         }
-        let step = if s.len == 0 { 1 } else { s.len };
+        // The next boundary comes from the full decoder, never
+        // from a guessed scanner step: use its admitted length,
+        // or iced's decoded length when admission refuses.
         let supported = full
             .reset(base + off as u64)
             .and_then(|()| full.next_supported());
+        let step = match &supported {
+            Ok(d) => d.len,
+            Err(_) => match decode_one(&bytes[off..], base + off as u64) {
+                Some(d) => d.len,
+                None => break,
+            },
+        };
         acc = acc
             .wrapping_add(u64::from(supported.is_ok()))
             .wrapping_add(step as u64);
@@ -291,15 +344,11 @@ fn full_end_to_end(bytes: &[u8], base: u64, dst: &mut [u8]) -> u64 {
         dec.set_position(off).expect("full position");
         dec.set_ip(base + off as u64);
         if !dec.can_decode() {
-            dst[off] = bytes[off];
-            off += 1;
-            continue;
+            break;
         }
         let ins = dec.decode();
         if ins.is_invalid() || ins.len() == 0 {
-            dst[off] = bytes[off];
-            off += 1;
-            continue;
+            break;
         }
         let supported = decode_supported(&bytes[off..], base + off as u64);
         acc = acc
@@ -331,7 +380,7 @@ fn main() -> ExitCode {
     };
     println!("constraint=known-boundaries-only samples={SAMPLES} warmup=1");
     println!(
-        "corpus,kind,vaddr,bytes,file_fnv1a64,boundaries,skipped,length_disagreements,false_movable,missed_movable,fallback_fraction,scanner_movable_insn_fraction,scanner_movable_byte_fraction,relative_sites,rip_sites,intercept_sites"
+        "corpus,kind,vaddr,bytes,file_fnv1a64,boundaries,skipped,length_disagreements,false_movable,missed_movable,relative_mismatches,rip_mismatches,intercept_mismatches,fallback_fraction,scanner_movable_insn_fraction,scanner_movable_byte_fraction,relative_sites,rip_sites,intercept_sites"
     );
     let mut blocked = false;
     let mut segments = Vec::new();
@@ -346,7 +395,7 @@ fn main() -> ExitCode {
             1.0 - st.scanner_movable_insns as f64 / st.boundaries as f64
         };
         println!(
-            "{path},{},{:#x},{},{hash:#018x},{},{},{},{},{},{:.6},{:.6},{:.6},{},{},{}",
+            "{path},{},{:#x},{},{hash:#018x},{},{},{},{},{},{},{},{},{:.6},{:.6},{:.6},{},{},{}",
             seg.kind,
             seg.vaddr,
             seg.bytes.len(),
@@ -355,6 +404,9 @@ fn main() -> ExitCode {
             st.length_disagreements,
             st.false_movable,
             st.missed_movable,
+            st.relative_mismatches,
+            st.rip_mismatches,
+            st.intercept_mismatches,
             fallback,
             st.scanner_movable_insns as f64 / st.boundaries.max(1) as f64,
             st.scanner_movable_bytes as f64 / seg.bytes.len().max(1) as f64,
@@ -365,13 +417,21 @@ fn main() -> ExitCode {
         for e in &st.examples {
             println!("example,{path},{e}");
         }
-        if st.length_disagreements != 0 || st.false_movable != 0 {
+        if st.skipped_bytes != 0
+            || st.length_disagreements != 0
+            || st.false_movable != 0
+            || st.relative_mismatches != 0
+            || st.rip_mismatches != 0
+            || st.intercept_mismatches != 0
+        {
             blocked = true;
         }
         segments.push((path.clone(), seg, st));
     }
     if blocked {
-        println!("BLOCKED: length disagreement or non-conservative movable classification");
+        println!(
+            "BLOCKED: skipped/invalid boundary, length or class-flag disagreement, or non-conservative movable classification"
+        );
         return ExitCode::FAILURE;
     }
     println!("corpus,mode,median_s_per_rep,iqr_s,mb_s,minsn_s,reps_per_sample");
