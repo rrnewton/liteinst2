@@ -41,42 +41,56 @@ jobs:
           --all-targets --all-features -- -D warnings
 
   test:
-    name: Linux x86_64 tests
+    name: Linux x86_64 tests (${{ matrix.group.name }}, ${{ matrix.profile }})
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: ${{ matrix.group.timeout }}
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [debug, release]
+        group:
+          - name: liteinst
+            packages: "-p liteinst"
+            timeout: 30
+          - name: liteinst-launch
+            packages: "-p liteinst-launch"
+            timeout: 30
+          - name: small-crates
+            packages: "-p liteinst-x86 -p liteinst-artifact -p liteinst-admission -p liteinst-inprocess"
+            timeout: 15
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.94.1
-      # Scoped to the six published crates (rapid-profiler's broken test
-      # target must not red this signal; full-workspace is not promised).
+      # Build artifacts only (registry + target); never test outcomes.
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ matrix.group.name }}-${{ matrix.profile }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.group.name }}-${{ matrix.profile }}-
+      # Scoped to the six published crates across the matrix groups
+      # (rapid-profiler's broken test target must not red this signal;
+      # full-workspace is not promised). No skip/ignore/filter anywhere:
+      # long oracles stay in the liteinst group and get its 30m budget.
       # The fixture-driver env vars point the main-thread oracle cohorts
       # at the just-built driver binaries; without them those cohorts
       # fail closed instead of running.
-      - name: Debug tests
+      - name: Tests (${{ matrix.group.name }}, ${{ matrix.profile }})
         env:
-          LITEINST_BOUNDARY_SIGNAL_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/debug/boundary-signal-oracle-driver
-          LITEINST_CHAIN_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/debug/eviction-chain-oracle-driver
-          LITEINST_CHAIN_EXTENSION_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/debug/eviction-chain-extension-driver
-          LITEINST_SYNC_CORE_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/debug/sync-core-capability-driver
-          LITEINST_T2_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/debug/successor-eviction-oracle-driver
+          LITEINST_BOUNDARY_SIGNAL_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/${{ matrix.profile }}/boundary-signal-oracle-driver
+          LITEINST_CHAIN_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/${{ matrix.profile }}/eviction-chain-oracle-driver
+          LITEINST_CHAIN_EXTENSION_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/${{ matrix.profile }}/eviction-chain-extension-driver
+          LITEINST_SYNC_CORE_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/${{ matrix.profile }}/sync-core-capability-driver
+          LITEINST_T2_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/${{ matrix.profile }}/successor-eviction-oracle-driver
         run: >
-          cargo test --locked
-          -p liteinst -p liteinst-x86 -p liteinst-artifact
-          -p liteinst-admission -p liteinst-inprocess -p liteinst-launch
-          --all-targets --all-features
-      - name: Release tests
-        env:
-          LITEINST_BOUNDARY_SIGNAL_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/release/boundary-signal-oracle-driver
-          LITEINST_CHAIN_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/release/eviction-chain-oracle-driver
-          LITEINST_CHAIN_EXTENSION_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/release/eviction-chain-extension-driver
-          LITEINST_SYNC_CORE_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/release/sync-core-capability-driver
-          LITEINST_T2_MAIN_THREAD_DRIVER: ${{ github.workspace }}/target/release/successor-eviction-oracle-driver
-        run: >
-          cargo test --locked --release
-          -p liteinst -p liteinst-x86 -p liteinst-artifact
-          -p liteinst-admission -p liteinst-inprocess -p liteinst-launch
+          cargo test --locked ${{ matrix.profile == 'release' && '--release' || '' }}
+          ${{ matrix.group.packages }}
           --all-targets --all-features
       - name: Verify published package consumer
+        if: matrix.group.name == 'liteinst' && matrix.profile == 'release'
         run: |
           package_root="$(mktemp -d)"
           cargo package --locked
@@ -86,10 +100,12 @@ jobs:
           cd "$package_dir"
           cargo build --locked --example preload_consumer
       - name: Live patching stress
+        if: matrix.group.name == 'liteinst' && matrix.profile == 'release'
         run: >-
           cargo test --locked --release --test stress live_probe_stress_matrix
           -- --ignored --exact --nocapture
       - name: Active-hook callback loop
+        if: matrix.group.name == 'liteinst' && matrix.profile == 'release'
         env:
           LITEINST_BENCH_ITERATIONS: "1000000"
         run: >-
