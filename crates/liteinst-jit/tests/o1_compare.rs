@@ -724,7 +724,7 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         assert!(
             matches!(
                 jr.outcome,
-                Err(RunError::Refuse(Refuse::SignalOwnership { signum })) if signum == rt
+                Err(RunError::Refuse(Refuse::SignalOwnership { signum, .. })) if signum == rt
             ),
             "rt admission: {:?}",
             jr.outcome

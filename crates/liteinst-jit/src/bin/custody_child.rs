@@ -7,8 +7,12 @@
 //! blocked. `refuse` returns NoHandler from that callback;
 //! `denied` installs a child-only seccomp filter that makes
 //! `rt_sigpending` fail with EPERM and then lets the CPUID be
-//! serviced so execution reaches the guest null load. The child
-//! exits 0 only on the exact promised result for its mode.
+//! serviced so execution reaches the guest null load;
+//! `partial_ok`/`partial_poll` arm a sigtimedwait interposer that
+//! really drains SIGUSR1, then injects EPERM for SIGUSR2;
+//! `dequeue_poll` seccomp-denies rt_sigtimedwait and reaches the
+//! poll. The child exits 0 only on the exact promised result,
+//! pending set, and mask for its mode.
 
 use liteinst_jit::decode::NondetKind;
 use liteinst_jit::exec::{Handler, ProcessMemory, Resume};
@@ -21,6 +25,9 @@ use liteinst_jit::{Executable, GuestState, Refuse, RunError};
 enum Mode {
     Refuse,
     Denied,
+    PartialOk,
+    PartialPoll,
+    DequeuePoll,
 }
 
 struct Queued {
@@ -29,8 +36,95 @@ struct Queued {
     queued: bool,
 }
 
+fn asyncs() -> Vec<i32> {
+    (1..=64)
+        .filter(|s| {
+            ![
+                9,
+                19,
+                32,
+                33,
+                libc::SIGSEGV,
+                libc::SIGBUS,
+                libc::SIGILL,
+                libc::SIGFPE,
+            ]
+            .contains(s)
+        })
+        .collect()
+}
+
+fn bits(set: &libc::sigset_t) -> Vec<i32> {
+    (1..=64)
+        // SAFETY: membership queries on initialized sets.
+        .filter(|n| unsafe { libc::sigismember(set, *n) == 1 })
+        .collect()
+}
+
+fn current_mask() -> Vec<i32> {
+    let mut set: libc::sigset_t = unsafe { core::mem::zeroed() };
+    // SAFETY: query-only mask read on this thread.
+    unsafe {
+        assert_eq!(
+            libc::pthread_sigmask(libc::SIG_SETMASK, core::ptr::null(), &mut set),
+            0
+        );
+    }
+    bits(&set)
+}
+
+fn pending_now() -> Vec<i32> {
+    let mut set: libc::sigset_t = unsafe { core::mem::zeroed() };
+    // SAFETY: pending query on this thread (not used in denied mode).
+    unsafe {
+        assert_eq!(libc::sigpending(&mut set), 0);
+    }
+    bits(&set)
+}
+
+fn full_async_mask() -> Vec<i32> {
+    let mut expected = vec![libc::SIGALRM];
+    expected.extend(asyncs());
+    expected.sort_unstable();
+    expected.dedup();
+    expected
+}
+
+static PARTIAL: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Child-only interposer: really drain SIGUSR1 through the kernel
+/// syscall, then fail a SIGUSR2 wait. This makes partial custody
+/// progress observable rather than simulating a dequeue.
+///
+/// # Safety
+/// This replaces the process's `sigtimedwait` symbol. Pointers must
+/// satisfy the usual `sigtimedwait` contract; non-injected calls
+/// delegate directly to the kernel syscall.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn sigtimedwait(
+    set: *const libc::sigset_t,
+    info: *mut libc::siginfo_t,
+    ts: *const libc::timespec,
+) -> libc::c_int {
+    // SAFETY: the caller passes a live sigset; the direct syscall
+    // uses the kernel's 8-byte sigset size on x86-64.
+    unsafe {
+        if PARTIAL.load(std::sync::atomic::Ordering::SeqCst)
+            && libc::sigismember(set, libc::SIGUSR2) == 1
+        {
+            *libc::__errno_location() = libc::EPERM;
+            return -1;
+        }
+        libc::syscall(libc::SYS_rt_sigtimedwait, set, info, ts, 8usize) as libc::c_int
+    }
+}
+
 fn deny_pending_query() {
-    // seccomp: return EPERM only for rt_sigpending, allow the rest.
+    deny_syscall(libc::SYS_rt_sigpending);
+}
+
+fn deny_syscall(sys: libc::c_long) {
+    // seccomp: return EPERM only for the chosen syscall.
     let mut filter = [
         libc::sock_filter {
             code: 0x20,
@@ -42,7 +136,7 @@ fn deny_pending_query() {
             code: 0x15,
             jt: 0,
             jf: 1,
-            k: libc::SYS_rt_sigpending as u32,
+            k: sys as u32,
         },
         libc::sock_filter {
             code: 0x06,
@@ -103,69 +197,93 @@ impl Handler for Queued {
                 deny_pending_query();
                 self.inner.nondet(state, kind, pc, next)
             }
+            Mode::PartialOk => {
+                PARTIAL.store(true, std::sync::atomic::Ordering::SeqCst);
+                Ok(Resume::Done)
+            }
+            Mode::PartialPoll => {
+                PARTIAL.store(true, std::sync::atomic::Ordering::SeqCst);
+                self.inner.nondet(state, kind, pc, next)
+            }
+            Mode::DequeuePoll => {
+                deny_syscall(libc::SYS_rt_sigtimedwait);
+                self.inner.nondet(state, kind, pc, next)
+            }
         }
     }
 }
 
-fn expect_refuse_custody() {
-    // The refusal returned; both signals must still be pending
-    // and blocked, exactly as the run() custody contract states.
-    let mut pending: libc::sigset_t = unsafe { core::mem::zeroed() };
-    let mut current: libc::sigset_t = unsafe { core::mem::zeroed() };
-    // SAFETY: queries on this thread after the run returned.
-    unsafe {
-        assert_eq!(libc::sigpending(&mut pending), 0);
-        assert_eq!(
-            libc::pthread_sigmask(libc::SIG_SETMASK, core::ptr::null(), &mut current),
-            0
-        );
-        assert_eq!(libc::sigismember(&pending, libc::SIGUSR1), 1);
-        assert_eq!(libc::sigismember(&pending, libc::SIGUSR2), 1);
-        assert_eq!(libc::sigismember(&current, libc::SIGUSR1), 1);
-        assert_eq!(libc::sigismember(&current, libc::SIGUSR2), 1);
-        // The caller owns them now: consume them explicitly.
-        let mut set: libc::sigset_t = core::mem::zeroed();
-        libc::sigemptyset(&mut set);
-        libc::sigaddset(&mut set, libc::SIGUSR1);
-        libc::sigaddset(&mut set, libc::SIGUSR2);
-        let ts = libc::timespec {
-            tv_sec: 0,
-            tv_nsec: 0,
-        };
-        for want in [libc::SIGUSR1, libc::SIGUSR2] {
-            let mut info: libc::siginfo_t = core::mem::zeroed();
-            assert_eq!(libc::sigtimedwait(&set, &mut info, &ts), want);
-        }
-    }
+fn expect_full_mask_and_pending(pending_want: &[i32]) {
+    assert_eq!(current_mask(), full_async_mask(), "full async mask");
+    assert_eq!(pending_now(), pending_want, "exact pending set");
 }
 
+fn expect_refuse_custody(guest_base: u64) {
+    // Exact refusal custody: pending exactly [USR1, USR2], mask
+    // exactly the exact start mask plus those two bits.
+    let mut expected_mask = vec![libc::SIGALRM, libc::SIGUSR1, libc::SIGUSR2];
+    expected_mask.sort_unstable();
+    assert_eq!(pending_now(), vec![libc::SIGUSR1, libc::SIGUSR2]);
+    assert_eq!(current_mask(), expected_mask, "old + exact pending mask");
+
+    // Second run: the inherited pending set is reported once by
+    // the Ok custody transition and the inherited mask is kept.
+    let b = [0xc3u8];
+    let g2 = MappedGuest::map(&b).expect("map second guest");
+    let r2 = g2.region(&b, Generation(2));
+    let mut e2 = Executable::prepare(&r2, g2.base, CountProfile::BranchesAndInstructions)
+        .expect("prepare second");
+    let mut h2 = CaptureHandler::default();
+    let later = e2
+        .run(g2.initial_state(), &mut h2, &ProcessMemory, RETURN_SENTINEL)
+        .expect("second run reports custody");
+    assert_eq!(later.also_pending, vec![libc::SIGUSR1, libc::SIGUSR2]);
+    assert_eq!(
+        current_mask(),
+        expected_mask,
+        "later run keeps inherited mask"
+    );
+    assert!(pending_now().is_empty());
+    let _ = guest_base;
+
+    // Third run: no duplicate custody record, mask unchanged.
+    let third = e2
+        .run(g2.initial_state(), &mut h2, &ProcessMemory, RETURN_SENTINEL)
+        .expect("third run");
+    assert!(third.also_pending.is_empty(), "no duplicate signal credit");
+    assert_eq!(current_mask(), expected_mask);
+}
 fn main() {
     let mode = match std::env::args().nth(1).as_deref() {
         Some("refuse") => Mode::Refuse,
         Some("denied") => Mode::Denied,
+        Some("partial_ok") => Mode::PartialOk,
+        Some("partial_poll") => Mode::PartialPoll,
+        Some("dequeue_poll") => Mode::DequeuePoll,
         other => panic!("unknown mode {other:?}"),
     };
-    // Reviewer-probe initial condition for the two signals used:
-    // default disposition, explicitly unblocked.
+    // Exact reviewer-probe initial condition: every application
+    // async signal at default disposition, blocked set exactly
+    // {SIGALRM}, nothing pending.
     // SAFETY: resetting this owned child's dispositions/mask.
     unsafe {
-        for sig in [libc::SIGUSR1, libc::SIGUSR2] {
+        for sig in asyncs() {
             assert_ne!(libc::signal(sig, libc::SIG_DFL), libc::SIG_ERR);
         }
         let mut set: libc::sigset_t = core::mem::zeroed();
         libc::sigemptyset(&mut set);
-        libc::sigaddset(&mut set, libc::SIGUSR1);
-        libc::sigaddset(&mut set, libc::SIGUSR2);
+        libc::sigaddset(&mut set, libc::SIGALRM);
         assert_eq!(
-            libc::pthread_sigmask(libc::SIG_UNBLOCK, &set, core::ptr::null_mut()),
+            libc::pthread_sigmask(libc::SIG_SETMASK, &set, core::ptr::null_mut()),
             0
         );
     }
+    assert_eq!(current_mask(), vec![libc::SIGALRM]);
+    assert!(pending_now().is_empty());
     let bytes: &[u8] = match mode {
         // xor eax,eax; cpuid; jmp $
-        Mode::Refuse => &[0x31, 0xc0, 0x0f, 0xa2, 0xeb, 0xfe],
-        // xor eax,eax; cpuid; xor eax,eax; mov rax,[rax]; ret
         Mode::Denied => &[0x31, 0xc0, 0x0f, 0xa2, 0x31, 0xc0, 0x48, 0x8b, 0x00, 0xc3],
+        _ => &[0x31, 0xc0, 0x0f, 0xa2, 0xeb, 0xfe],
     };
     let guest = MappedGuest::map(bytes).expect("map guest");
     let region = guest.region(bytes, Generation(1));
@@ -182,17 +300,38 @@ fn main() {
         &ProcessMemory,
         RETURN_SENTINEL,
     );
-    eprintln!("{mode:?} returned {got:?}");
+    eprintln!("{mode:?} returned {got:?} mask={:?}", current_mask());
     let good = match (mode, &got) {
-        (Mode::Refuse, Err(RunError::Refuse(Refuse::NoHandler { .. }))) => true,
-        (Mode::Refuse, Err(RunError::Fault(f))) => {
-            f.kind == liteinst_jit::exec::FaultKind::AsyncSignal
+        (Mode::Refuse, Err(RunError::Refuse(Refuse::NoHandler { src_pc }))) => {
+            *src_pc == guest.base + 2
         }
-        (Mode::Denied, Err(RunError::Refuse(Refuse::SignalOwnership { .. }))) => true,
+        (Mode::Denied, Err(RunError::Refuse(Refuse::SignalOwnership { signum: 0, taken }))) => {
+            taken.is_empty()
+        }
+        (
+            Mode::PartialOk | Mode::PartialPoll,
+            Err(RunError::Refuse(Refuse::SignalOwnership { signum, taken })),
+        ) => *signum == libc::SIGUSR2 && taken == &vec![libc::SIGUSR1],
+        (Mode::DequeuePoll, Err(RunError::Refuse(Refuse::SignalOwnership { signum, taken }))) => {
+            *signum == libc::SIGUSR1 && taken.is_empty()
+        }
         _ => false,
     };
-    if good && mode == Mode::Refuse {
-        expect_refuse_custody();
+    if good {
+        match mode {
+            Mode::Refuse => expect_refuse_custody(guest.base),
+            Mode::Denied => {
+                // rt_sigpending itself is denied in this mode, so
+                // only the returned mask can be inspected here.
+                assert_eq!(current_mask(), full_async_mask(), "denied full async mask");
+            }
+            Mode::PartialOk | Mode::PartialPoll => {
+                expect_full_mask_and_pending(&[libc::SIGUSR2]);
+            }
+            Mode::DequeuePoll => {
+                expect_full_mask_and_pending(&[libc::SIGUSR1, libc::SIGUSR2]);
+            }
+        }
     }
     // SAFETY: exit without running destructors or unblocking.
     unsafe {

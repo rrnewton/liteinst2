@@ -3,7 +3,7 @@
 
 /// A named refusal to translate or continue. The guest is always left
 /// stopped at (or before) the named source PC, never mid-block.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Refuse {
     /// Indirect jump/call reached the dispatcher; P1a resolves direct
     /// control flow only.
@@ -20,8 +20,12 @@ pub enum Refuse {
     InteriorEntry { target: u64 },
     /// A block or cache budget was exceeded.
     BudgetExceeded { what: &'static str },
-    /// Required signal-handler ownership is unavailable.
-    SignalOwnership { signum: i32 },
+    /// Required signal-handler ownership is unavailable, or a
+    /// signal-custody observation/dequeue failed. `taken` lists
+    /// distinct async signal numbers already dequeued into
+    /// executor custody before the failure, in ascending order;
+    /// it is empty when no dequeue had succeeded.
+    SignalOwnership { signum: i32, taken: Vec<i32> },
     /// The OS mapping policy forbids the cache allocation shape.
     MappingPolicy { operation: &'static str, errno: i32 },
     /// `execve` successor images are not re-armed in P1a.

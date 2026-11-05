@@ -31,6 +31,33 @@ fn custody_query_denied_child_returns_signal_ownership() {
 }
 
 #[test]
+fn custody_partial_ok_reports_consumed_signal() {
+    let status = std::process::Command::new(CHILD)
+        .arg("partial_ok")
+        .status()
+        .expect("run custody partial-ok child");
+    assert!(status.success(), "custody partial-ok child: {status}");
+}
+
+#[test]
+fn custody_partial_poll_reports_consumed_signal() {
+    let status = std::process::Command::new(CHILD)
+        .arg("partial_poll")
+        .status()
+        .expect("run custody partial-poll child");
+    assert!(status.success(), "custody partial-poll child: {status}");
+}
+
+#[test]
+fn custody_dequeue_poll_returns_full_async_mask() {
+    let status = std::process::Command::new(CHILD)
+        .arg("dequeue_poll")
+        .status()
+        .expect("run custody dequeue-poll child");
+    assert!(status.success(), "custody dequeue-poll child: {status}");
+}
+
+#[test]
 fn custody_ok_return_reports_also_pending() {
     // Pre-block and queue one signal ourselves: it belongs to no
     // poll stop (the fixture finishes in one entry), so only the

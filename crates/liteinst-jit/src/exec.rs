@@ -685,7 +685,10 @@ fn ensure_altstack() -> Result<(), Refuse> {
         if old.ss_size >= 8192 {
             return Ok(());
         }
-        return Err(Refuse::SignalOwnership { signum: 0 });
+        return Err(Refuse::SignalOwnership {
+            signum: 0,
+            taken: Vec::new(),
+        });
     }
     let mut base = ALT_BASE.load(Ordering::SeqCst);
     if base.is_null() {
@@ -741,7 +744,10 @@ fn pending_async_signals() -> Result<Vec<i32>, Refuse> {
     let mut set: libc::sigset_t = unsafe { core::mem::zeroed() };
     // SAFETY: sigpending fills the set.
     if unsafe { libc::sigpending(&mut set) } != 0 {
-        return Err(Refuse::SignalOwnership { signum: 0 });
+        return Err(Refuse::SignalOwnership {
+            signum: 0,
+            taken: Vec::new(),
+        });
     }
     Ok(async_signal_range()
         .filter(|&sig| {
@@ -763,13 +769,21 @@ fn pending_async_signal() -> Result<Option<i32>, Refuse> {
 fn take_all_pending_async() -> Result<Vec<i32>, Refuse> {
     let mut taken = Vec::new();
     loop {
-        let Some(sig) = pending_async_signal()? else {
+        let Some(sig) = pending_async_signal().map_err(|mut e| {
+            // A later observation failure must not erase custody
+            // already taken in earlier iterations.
+            if let Refuse::SignalOwnership { taken: prior, .. } = &mut e {
+                *prior = taken.clone();
+            }
+            e
+        })?
+        else {
             return Ok(taken);
         };
         if taken.contains(&sig) {
             // Dequeue below must make progress; bail out rather
             // than spin if the kernel keeps reporting it.
-            return Err(Refuse::SignalOwnership { signum: sig });
+            return Err(Refuse::SignalOwnership { signum: sig, taken });
         }
         let mut set: libc::sigset_t = unsafe { core::mem::zeroed() };
         unsafe {
@@ -785,6 +799,12 @@ fn take_all_pending_async() -> Result<Vec<i32>, Refuse> {
             // SAFETY: dequeue one pending instance of the blocked sig.
             let r = unsafe { libc::sigtimedwait(&set, &mut info, &ts) };
             if r == sig {
+                // Record custody immediately, before waiting for
+                // any further instance: a failure on the *next*
+                // wait must still report this consumed signal.
+                if !taken.contains(&sig) {
+                    taken.push(sig);
+                }
                 continue;
             }
             let errno = std::io::Error::last_os_error().raw_os_error();
@@ -794,9 +814,14 @@ fn take_all_pending_async() -> Result<Vec<i32>, Refuse> {
             if r == -1 && errno == Some(libc::EINTR) {
                 continue;
             }
-            return Err(Refuse::SignalOwnership { signum: sig });
+            return Err(Refuse::SignalOwnership { signum: sig, taken });
         }
-        taken.push(sig);
+        if !taken.contains(&sig) {
+            // The pending query reported this number but no wait
+            // consumed it; do not spin on a contradictory custody
+            // observation, and do not claim it as taken.
+            return Err(Refuse::SignalOwnership { signum: sig, taken });
+        }
     }
 }
 /// P1a signal envelope admission: asynchronous signals are
@@ -809,10 +834,16 @@ fn check_async_handlers() -> Result<(), Refuse> {
         let mut old: libc::sigaction = unsafe { core::mem::zeroed() };
         // SAFETY: query-only sigaction.
         if unsafe { libc::sigaction(sig, core::ptr::null(), &mut old) } != 0 {
-            return Err(Refuse::SignalOwnership { signum: sig });
+            return Err(Refuse::SignalOwnership {
+                signum: sig,
+                taken: Vec::new(),
+            });
         }
         if old.sa_sigaction != libc::SIG_DFL && old.sa_sigaction != libc::SIG_IGN {
-            return Err(Refuse::SignalOwnership { signum: sig });
+            return Err(Refuse::SignalOwnership {
+                signum: sig,
+                taken: Vec::new(),
+            });
         }
     }
     Ok(())
@@ -824,7 +855,10 @@ fn install_fault_handlers() -> Result<(), Refuse> {
         let mut old: libc::sigaction = unsafe { core::mem::zeroed() };
         // SAFETY: query-only sigaction with a null new action.
         if unsafe { libc::sigaction(sig, core::ptr::null(), &mut old) } != 0 {
-            return Err(Refuse::SignalOwnership { signum: sig });
+            return Err(Refuse::SignalOwnership {
+                signum: sig,
+                taken: Vec::new(),
+            });
         }
         if old.sa_sigaction == fault_handler as *const () as usize {
             continue;
@@ -844,7 +878,10 @@ fn install_fault_handlers() -> Result<(), Refuse> {
         act.sa_flags = libc::SA_SIGINFO | libc::SA_ONSTACK;
         // SAFETY: previous disposition recorded above for chaining.
         if unsafe { libc::sigaction(sig, &act, core::ptr::null_mut()) } != 0 {
-            return Err(Refuse::SignalOwnership { signum: sig });
+            return Err(Refuse::SignalOwnership {
+                signum: sig,
+                taken: Vec::new(),
+            });
         }
     }
     Ok(())
@@ -1054,7 +1091,14 @@ impl Executable {
             }
             libc::pthread_sigmask(libc::SIG_BLOCK, &set, &mut old);
         }
-        let mut r = self.run_masked(state, handler, mem, return_sentinel);
+        let mut poll_custody_error = false;
+        let mut r = self.run_masked(
+            state,
+            handler,
+            mem,
+            return_sentinel,
+            &mut poll_custody_error,
+        );
         // Custody transition for *every* return after this run
         // installed the blocked mask. Until pending async signals
         // are proven absent, dequeued/reported, or explicitly
@@ -1063,6 +1107,26 @@ impl Executable {
         // observe this return.
         let mut restore = old;
         let mut custody_error: Option<Refuse> = None;
+        if poll_custody_error {
+            // Provenance is retained across run_masked: a
+            // poll-origin custody failure uses the same full-mask
+            // fallback as a wrapper-origin failure below, instead
+            // of being flattened into the ordinary Refuse arm
+            // (which would retain only the pending bits). The
+            // error itself already carries signals consumed
+            // before the failure.
+            for sig in async_signal_range() {
+                // SAFETY: adding one signal to a local set.
+                unsafe {
+                    libc::sigaddset(&mut restore, sig);
+                }
+            }
+            // SAFETY: install old mask plus the custody bits.
+            unsafe {
+                libc::pthread_sigmask(libc::SIG_SETMASK, &restore, core::ptr::null_mut());
+            }
+            return r;
+        }
         match pending_async_signals() {
             Err(e) => {
                 // Without a reliable pending set, the only safe
@@ -1126,7 +1190,24 @@ impl Executable {
         unsafe {
             libc::pthread_sigmask(libc::SIG_SETMASK, &restore, core::ptr::null_mut());
         }
-        if let Some(e) = custody_error {
+        if let Some(mut e) = custody_error {
+            // Superseding an earlier stop must not erase custody
+            // it already recorded (e.g. a Poll AsyncSignal fault).
+            if let Err(RunError::Fault(f)) = &r
+                && let Refuse::SignalOwnership { taken, .. } = &mut e
+            {
+                let prior = taken.clone();
+                taken.clear();
+                if f.kind == FaultKind::AsyncSignal {
+                    taken.push(f.signum);
+                }
+                for sig in f.also_pending.iter().chain(prior.iter()) {
+                    if !taken.contains(sig) {
+                        taken.push(*sig);
+                    }
+                }
+                taken.sort_unstable();
+            }
             return Err(e.into());
         }
         r
@@ -1138,6 +1219,7 @@ impl Executable {
         handler: &mut dyn Handler,
         mem: &dyn GuestMemory,
         return_sentinel: u64,
+        poll_custody_error: &mut bool,
     ) -> Result<Outcome, RunError> {
         let mut exits: u64 = 0;
         // Counters accumulate across dispatcher re-entries: each
@@ -1262,7 +1344,13 @@ impl Executable {
                 }
                 exit_kind::POLL => {
                     state.rip = data.exit_src;
-                    let taken = take_all_pending_async()?;
+                    let taken = match take_all_pending_async() {
+                        Ok(taken) => taken,
+                        Err(e) => {
+                            *poll_custody_error = true;
+                            return Err(e.into());
+                        }
+                    };
                     if let Some((&sig, rest)) = taken.split_first() {
                         return Err(RunError::Fault(Box::new(Fault {
                             also_pending: rest.to_vec(),
