@@ -1,0 +1,273 @@
+//! O1 oracle: exact retired-branch and retired-instruction counts
+//! by ptrace single-stepping the same fixture bytes natively in a
+//! traced child. This is the primary correctness oracle for P1a;
+//! counts come from the stepped instruction stream itself, never
+//! from PMU counters (skid makes those a witness, not an oracle).
+
+use std::io::{Read, Write};
+use std::process::{Child, Command, Stdio};
+
+use crate::decode::{InsnClass, decode_one};
+use crate::harness::{MappedGuest, RETURN_SENTINEL};
+use crate::state::GuestState;
+
+/// Child-to-parent setup report: code base, stack top, data buffer,
+/// rep destination, rep/syscall source buffer (8 bytes each, LE).
+#[derive(Clone, Copy, Debug, Default)]
+pub struct ChildInfo {
+    pub base: u64,
+    pub stack_top: u64,
+    pub data: u64,
+    pub dst: u64,
+    pub src: u64,
+}
+
+impl ChildInfo {
+    pub fn to_bytes(&self) -> [u8; 40] {
+        let mut b = [0u8; 40];
+        for (i, v) in [self.base, self.stack_top, self.data, self.dst, self.src]
+            .iter()
+            .enumerate()
+        {
+            b[i * 8..i * 8 + 8].copy_from_slice(&v.to_le_bytes());
+        }
+        b
+    }
+    pub fn from_bytes(b: &[u8; 40]) -> ChildInfo {
+        let get = |i: usize| u64::from_le_bytes(b[i * 8..i * 8 + 8].try_into().unwrap());
+        ChildInfo {
+            base: get(0),
+            stack_top: get(1),
+            data: get(2),
+            dst: get(3),
+            src: get(4),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct OracleOutcome {
+    /// Child fixture load base (for PC offset comparisons).
+    pub base: u64,
+    pub branches: u64,
+    pub instructions: u64,
+    pub state: GuestState,
+    /// `(faulting source pc, signum)` when the guest faulted.
+    pub fault: Option<(u64, i32)>,
+    /// Contents of the rep destination buffer after the run.
+    pub dst_bytes: Vec<u8>,
+    /// Bytes the guest wrote to its stdout after the setup report.
+    pub stdout_tail: Vec<u8>,
+}
+
+const STEP_CAP: u64 = 2_000_000;
+
+fn ptrace(req: u32, pid: i32, addr: *mut u8, data: *mut u8) -> i64 {
+    // SAFETY: raw ptrace passthrough; callers pass valid operands
+    // for the specific request.
+    unsafe { libc::ptrace(req as libc::c_uint, pid, addr, data) }
+}
+
+fn get_regs(pid: i32) -> libc::user_regs_struct {
+    let mut regs: libc::user_regs_struct = unsafe { core::mem::zeroed() };
+    let r = ptrace(
+        libc::PTRACE_GETREGS,
+        pid,
+        core::ptr::null_mut(),
+        core::ptr::addr_of_mut!(regs).cast(),
+    );
+    assert_eq!(r, 0, "PTRACE_GETREGS: {}", std::io::Error::last_os_error());
+    regs
+}
+
+fn set_regs(pid: i32, regs: &libc::user_regs_struct) {
+    let r = ptrace(
+        libc::PTRACE_SETREGS,
+        pid,
+        core::ptr::null_mut(),
+        (regs as *const libc::user_regs_struct).cast_mut().cast(),
+    );
+    assert_eq!(r, 0, "PTRACE_SETREGS: {}", std::io::Error::last_os_error());
+}
+
+fn read_mem(pid: i32, addr: u64, buf: &mut [u8]) -> bool {
+    let local = libc::iovec {
+        iov_base: buf.as_mut_ptr().cast(),
+        iov_len: buf.len(),
+    };
+    let remote = libc::iovec {
+        iov_base: addr as usize as *mut libc::c_void,
+        iov_len: buf.len(),
+    };
+    // SAFETY: both iovecs are live for the call.
+    let n = unsafe { libc::process_vm_readv(pid, &local, 1, &remote, 1, 0) };
+    n == buf.len() as isize
+}
+
+fn regs_to_state(r: &libc::user_regs_struct) -> GuestState {
+    GuestState {
+        rax: r.rax,
+        rbx: r.rbx,
+        rcx: r.rcx,
+        rdx: r.rdx,
+        rsi: r.rsi,
+        rdi: r.rdi,
+        rbp: r.rbp,
+        rsp: r.rsp,
+        r8: r.r8,
+        r9: r.r9,
+        r10: r.r10,
+        r11: r.r11,
+        r12: r.r12,
+        r13: r.r13,
+        r14: r.r14,
+        r15: r.r15,
+        rflags: r.eflags as u64,
+        rip: r.rip,
+    }
+}
+
+/// Run one fixture natively under the oracle. `child_bin` is the
+/// `liteinst-jit-o1-child` helper; `tweaks` may override argument
+/// registers after the shared setup (e.g. a bad load address).
+pub fn run_o1(
+    child_bin: &std::path::Path,
+    fixture_name: &str,
+    tweaks: impl FnOnce(&mut libc::user_regs_struct, &ChildInfo),
+) -> OracleOutcome {
+    let mut child: Child = Command::new(child_bin)
+        .arg(fixture_name)
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("spawn o1 child");
+    let pid = child.id() as i32;
+    let mut out = child.stdout.take().expect("child stdout");
+    let mut raw = [0u8; 40];
+    out.read_exact(&mut raw).expect("child setup report");
+    let info = ChildInfo::from_bytes(&raw);
+    let mut status: i32 = 0;
+    // SAFETY: waiting for our own traced child.
+    let w = unsafe { libc::waitpid(pid, &mut status, 0) };
+    assert_eq!(w, pid, "waitpid for initial stop");
+    assert!(libc::WIFSTOPPED(status), "child did not stop: {status:#x}");
+
+    let mut regs = get_regs(pid);
+    regs.rip = info.base;
+    regs.rsp = info.stack_top;
+    regs.eflags = 0x202; // IF set: ptrace rejects clearing it; status bits zero
+    regs.rax = 0;
+    regs.rbx = 0;
+    regs.rcx = 0;
+    regs.rdx = 0;
+    regs.rsi = 0;
+    regs.rdi = 0;
+    regs.rbp = 0;
+    regs.r8 = 0;
+    regs.r9 = 0;
+    regs.r10 = 0;
+    regs.r11 = 0;
+    regs.r12 = 0;
+    regs.r13 = 0;
+    regs.r14 = 0;
+    regs.r15 = 0;
+    let (rdi, rsi, rdx, rax, rcx) =
+        MappedGuest::fixture_args(fixture_name, info.base, info.data, info.dst, info.src);
+    regs.rdi = rdi;
+    regs.rsi = rsi;
+    regs.rdx = rdx;
+    regs.rax = rax;
+    regs.rcx = rcx;
+    tweaks(&mut regs, &info);
+    set_regs(pid, &regs);
+
+    let mut branches: u64 = 0;
+    let mut instructions: u64 = 0;
+    let mut fault: Option<(u64, i32)> = None;
+    let mut steps: u64 = 0;
+    let final_state = loop {
+        let cur = get_regs(pid);
+        if cur.rip == RETURN_SENTINEL {
+            break regs_to_state(&cur);
+        }
+        let mut bytes = [0u8; 15];
+        assert!(
+            read_mem(pid, cur.rip, &mut bytes),
+            "read insn at {:#x}",
+            cur.rip
+        );
+        let insn = decode_one(&bytes, cur.rip).expect("oracle decode");
+        let was_branch = matches!(insn.class, InsnClass::CondBranch { .. });
+        let was_ret = matches!(insn.class, InsnClass::Return);
+        let prev_pc = cur.rip;
+        let r = ptrace(
+            libc::PTRACE_SINGLESTEP,
+            pid,
+            core::ptr::null_mut(),
+            core::ptr::null_mut(),
+        );
+        assert_eq!(
+            r,
+            0,
+            "PTRACE_SINGLESTEP: {}",
+            std::io::Error::last_os_error()
+        );
+        steps += 1;
+        assert!(steps < STEP_CAP, "oracle step cap exceeded");
+        // SAFETY: waiting for our own traced child.
+        let w = unsafe { libc::waitpid(pid, &mut status, 0) };
+        assert_eq!(w, pid);
+        if libc::WIFEXITED(status) || libc::WIFSIGNALED(status) {
+            panic!("child ended unexpectedly mid-run: {status:#x}");
+        }
+        assert!(libc::WIFSTOPPED(status));
+        let sig = libc::WSTOPSIG(status);
+        let after = get_regs(pid);
+        if sig == libc::SIGTRAP {
+            // A REP string instruction stopped at the same PC has
+            // not retired yet; every other completed step retires
+            // exactly one instruction.
+            let rep_still_running = after.rip == prev_pc && bytes[0] == 0xf3;
+            if !rep_still_running {
+                instructions += 1;
+                if was_branch {
+                    branches += 1;
+                }
+            }
+            continue;
+        }
+        // A real signal: the stepped instruction faulted, except the
+        // return-to-sentinel shape (ret pops 0 into RIP and the
+        // fetch faults; the ret itself retired).
+        if was_ret && after.rip == RETURN_SENTINEL {
+            instructions += 1;
+            break regs_to_state(&after);
+        }
+        fault = Some((prev_pc, sig));
+        break regs_to_state(&after);
+    };
+
+    let mut dst_bytes = vec![0u8; 32];
+    let _ = read_mem(pid, info.dst, &mut dst_bytes);
+    ptrace(
+        libc::PTRACE_KILL,
+        pid,
+        core::ptr::null_mut(),
+        core::ptr::null_mut(),
+    );
+    // SAFETY: reaping our own child.
+    unsafe {
+        libc::waitpid(pid, &mut status, 0);
+    }
+    let mut stdout_tail = Vec::new();
+    let _ = out.read_to_end(&mut stdout_tail);
+    let _ = Write::flush(&mut std::io::stdout());
+    OracleOutcome {
+        base: info.base,
+        branches,
+        instructions,
+        state: final_state,
+        fault,
+        dst_bytes,
+        stdout_tail,
+    }
+}

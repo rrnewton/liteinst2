@@ -30,35 +30,21 @@ fn main() -> std::process::ExitCode {
                     continue;
                 }
             };
-        let mut state = guest.initial_state();
         let mut dst = vec![0u8; 32];
         let src: Vec<u8> = (0..32u8).collect();
-        match fixture.name {
-            "sum_loop" | "branchy_even_sum" | "call_helper" => {
-                state.rdi = data.as_ptr() as u64;
-                state.rsi = data.len() as u64;
-            }
-            "flags_adc" => {
-                state.rax = 10;
-                state.rdi = 3;
-                state.rsi = 5;
-            }
-            "rip_data" => state.rdi = 1,
-            "rep_movsb" => {
-                state.rdi = dst.as_mut_ptr() as u64;
-                state.rsi = src.as_ptr() as u64;
-                state.rdx = 32;
-            }
-            "loop_insn" => state.rsi = 7,
-            "jrcxz" => state.rcx = 0,
-            "syscall_write" => {
-                state.rsi = src.as_ptr() as u64;
-                state.rdx = 5;
-            }
-            "fault_load" => state.rdi = data.as_ptr() as u64,
-            "indirect_jmp" => state.rdi = guest.base,
-            _ => {}
-        }
+        let mut state = guest.initial_state();
+        let (rdi, rsi, rdx, rax, rcx) = MappedGuest::fixture_args(
+            fixture.name,
+            guest.base,
+            data.as_ptr() as u64,
+            dst.as_mut_ptr() as u64,
+            src.as_ptr() as u64,
+        );
+        state.rdi = rdi;
+        state.rsi = rsi;
+        state.rdx = rdx;
+        state.rax = rax;
+        state.rcx = rcx;
         let mut handler = CaptureHandler::default();
         match exec.run(state, &mut handler, &ProcessMemory, RETURN_SENTINEL) {
             Ok(out) => println!(

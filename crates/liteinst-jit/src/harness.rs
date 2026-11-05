@@ -82,13 +82,39 @@ impl MappedGuest {
         (self.stack as u64) + (self.stack_len as u64) - 8
     }
 
+    /// Per-fixture argument registers `(rdi, rsi, rdx, rax, rcx)`,
+    /// shared verbatim by the JIT driver, the oracle child setup,
+    /// and the tests so both engines see identical inputs.
+    pub fn fixture_args(
+        name: &str,
+        base: u64,
+        data: u64,
+        dst: u64,
+        src: u64,
+    ) -> (u64, u64, u64, u64, u64) {
+        match name {
+            "sum_loop" | "branchy_even_sum" | "call_helper" => (data, 16, 0, 0, 0),
+            "flags_adc" => (3, 5, 0, 10, 0),
+            "rip_data" => (1, 0, 0, 0, 0),
+            "rep_movsb" => (dst, src, 32, 0, 0),
+            "loop_insn" => (0, 7, 0, 0, 0),
+            "jrcxz" => (0, 0, 0, 0, 0),
+            "syscall_write" => (0, src, 5, 0, 0),
+            "fault_load" => (data, 0, 0, 0, 0),
+            "indirect_jmp" => (base, 0, 0, 0, 0),
+            _ => (0, 0, 0, 0, 0),
+        }
+    }
+
     /// Initial guest state: entry at the fixture base, stack planted
     /// with the return sentinel, flags at the architectural reset
-    /// value used by the oracle child as well (`0x2`).
+    /// value used by the oracle child as well (`0x202`).
     pub fn initial_state(&self) -> GuestState {
         GuestState {
             rsp: self.stack_top(),
-            rflags: 0x2,
+            // IF set, all status bits clear: matches the oracle,
+            // whose ptrace SETREGS rejects a cleared IF.
+            rflags: 0x202,
             rip: self.base,
             ..GuestState::default()
         }

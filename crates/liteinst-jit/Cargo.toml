@@ -26,3 +26,10 @@ path = "src/bin/run.rs"
 test = false
 bench = false
 doc = false
+
+[[bin]]
+name = "liteinst-jit-o1-child"
+path = "src/bin/o1_child.rs"
+test = false
+bench = false
+doc = false
