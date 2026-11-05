@@ -108,6 +108,16 @@ fn external_regression_cases_match_oracle() {
         ("xrelease-xchg", &[0xf3, 0x87, 0x08]),
         ("xrelease-mov-store", &[0xf3, 0x89, 0x08]),
         ("vmptrld-not-intercept", &[0x0f, 0xc7, 0x30]),
+        ("rdpid-no-rex", &[0xf3, 0x0f, 0xc7, 0xf8]),
+        ("rdpid-66", &[0x66, 0xf3, 0x0f, 0xc7, 0xf8]),
+        ("rdpid-cancelled-rex", &[0x48, 0xf3, 0x0f, 0xc7, 0xf8]),
+        ("rdpid-effective-rexw", &[0xf3, 0x48, 0x0f, 0xc7, 0xf8]),
+        ("sal-c0-imm", &[0xc0, 0xf0, 0x01]),
+        ("sal-d0-mem", &[0xd0, 0x30]),
+        ("shl-c0-control", &[0xc0, 0xe0, 0x01]),
+        ("shl-d1-control", &[0xd1, 0xe0]),
+        ("reservednop-0f1f-reg6", &[0x0f, 0x1f, 0x30]),
+        ("nop-0f1f-reg0-control", &[0x0f, 0x1f, 0x00]),
         ("control-ordinary-add", &[0x01, 0x08]),
         ("control-lock-add", &[0xf0, 0x01, 0x08]),
         ("control-66-rel32-call", &[0x66, 0xe8, 1, 2, 3, 4]),
@@ -158,6 +168,33 @@ fn external_regression_cases_match_oracle() {
         !scan_one(&[0x0f, 0xc7, 0x30], 0x1000).interception_target,
         "VMPTRLD class"
     );
+    for bytes in [
+        &[0xf3, 0x0f, 0xc7, 0xf8][..],
+        &[0x66, 0xf3, 0x0f, 0xc7, 0xf8][..],
+        &[0x48, 0xf3, 0x0f, 0xc7, 0xf8][..],
+        &[0xf3, 0x48, 0x0f, 0xc7, 0xf8][..],
+    ] {
+        assert!(
+            scan_one(bytes, 0x1000).interception_target,
+            "RDPID {bytes:02x?}"
+        );
+    }
+    assert!(
+        !scan_one(&[0xc0, 0xf0, 0x01], 0x1000).allowlisted_movable,
+        "SAL C0 not movable"
+    );
+    assert!(
+        !scan_one(&[0xd0, 0x30], 0x1000).allowlisted_movable,
+        "SAL D0 not movable"
+    );
+    assert!(
+        scan_one(&[0xc0, 0xe0, 0x01], 0x1000).allowlisted_movable,
+        "SHL C0 control"
+    );
+    assert!(
+        scan_one(&[0xd1, 0xe0], 0x1000).allowlisted_movable,
+        "SHL D1 control"
+    );
 }
 
 fn generated(prefix: &[u8], opcode: &[u8], tail: &[u8]) -> Vec<u8> {
@@ -197,11 +234,16 @@ fn generated_encoding_cross_check() {
         &[0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88],
         &[0x05, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88],
         &[0x84, 0x24, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77],
+        // Reg-variant tails so reg-sensitive classes (shift /6,
+        // group opcodes) are covered, not only reg-0 forms.
+        &[0x30, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88],
+        &[0xf0, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88],
+        &[0xe0, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88],
     ];
     let mut counts = Counts::default();
     for (pi, prefix) in prefixes.iter().enumerate() {
         for op in 0u16..=0xff {
-            for (ti, tail) in tails.iter().take(3).enumerate() {
+            for (ti, tail) in tails.iter().enumerate() {
                 let bytes = generated(prefix, &[op as u8], tail);
                 check(
                     &bytes,
@@ -214,7 +256,7 @@ fn generated_encoding_cross_check() {
     }
     for (pi, prefix) in prefixes.iter().take(10).enumerate() {
         for op in 0u16..=0xff {
-            for (ti, tail) in tails.iter().take(2).enumerate() {
+            for (ti, tail) in tails.iter().enumerate() {
                 let bytes = generated(prefix, &[0x0f, op as u8], tail);
                 check(
                     &bytes,
@@ -253,10 +295,36 @@ fn generated_encoding_cross_check() {
         for op in 0u16..=0xff {
             let v3 = generated(&[], &[0xc4, 0xe0 | map, 0x78, op as u8], tails[0]);
             check(&v3, &format!("vex3 m{map} op{op:02x}"), &mut counts, false);
-            let ev = generated(&[], &[0x62, 0xf0 | map, 0x78, 0x48, op as u8], tails[0]);
-            check(&ev, &format!("evex m{map} op{op:02x}"), &mut counts, false);
         }
     }
+    // EVEX P1 bit 2 is a mandatory fixed 1 bit: 0x7c, not 0x78.
+    // Track this family separately so aggregate floors cannot
+    // hide a vacuous EVEX sweep (the pre-fix generator yielded
+    // 0 valid EVEX cases out of 768 attempts).
+    let mut evex_counts = Counts::default();
+    for map in 1u8..=3 {
+        for op in 0u16..=0xff {
+            let ev = generated(&[], &[0x62, 0xf0 | map, 0x7c, 0x48, op as u8], tails[0]);
+            check(
+                &ev,
+                &format!("evex m{map} op{op:02x}"),
+                &mut evex_counts,
+                false,
+            );
+        }
+    }
+    eprintln!(
+        "generated EVEX cross-check: valid={} modelled={} movable={} (of 768 attempts)",
+        evex_counts.valid, evex_counts.modelled, evex_counts.movable
+    );
+    assert!(
+        evex_counts.valid >= 10,
+        "EVEX generated family is vacuous: valid={}",
+        evex_counts.valid
+    );
+    counts.valid += evex_counts.valid;
+    counts.modelled += evex_counts.modelled;
+    counts.movable += evex_counts.movable;
     eprintln!(
         "generated cross-check: valid={} modelled={} movable={}",
         counts.valid, counts.modelled, counts.movable
@@ -338,6 +406,32 @@ fn driver_fails_closed_on_invalid_boundary() {
         "no speed cells on blocked input: {stdout}"
     );
     let _ = std::fs::remove_file(&bad);
+
+    // Truncated headers must also take the BLOCKED path, not panic.
+    let trunc = write_minimal_elf(&[0x90, 0x90, 0xc3]);
+    let mut truncated = std::fs::read(&trunc).expect("read minimal ELF");
+    truncated.truncate(80);
+    std::fs::write(&trunc, truncated).expect("truncate minimal ELF");
+    let out = std::process::Command::new(bin)
+        .arg(&trunc)
+        .output()
+        .expect("run driver");
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!out.status.success(), "truncated ELF must fail: {stdout}");
+    assert!(
+        stdout.contains("BLOCKED"),
+        "truncated ELF must report BLOCKED: {stdout}"
+    );
+    assert!(
+        !stdout.contains(",scanner,"),
+        "no speed cells on truncated ELF: {stdout}"
+    );
+    assert!(
+        !stderr.contains("panicked"),
+        "truncated ELF must not panic: {stderr}"
+    );
+    let _ = std::fs::remove_file(&trunc);
 
     let good = write_minimal_elf(&[0x90, 0xc3]);
     let out = std::process::Command::new(bin)

@@ -50,64 +50,110 @@ struct TextSegment {
     kind: &'static str,
 }
 
-fn elf_text(path: &str) -> TextSegment {
-    let f = std::fs::read(path).unwrap_or_else(|e| panic!("read {path}: {e}"));
-    assert!(
-        f.len() >= 64 && &f[0..4] == b"\x7fELF" && f[4] == 2,
-        "ELF64"
-    );
-    let u16le = |o: usize| u16::from_le_bytes(f[o..o + 2].try_into().unwrap()) as usize;
-    let u32le = |o: usize| u32::from_le_bytes(f[o..o + 4].try_into().unwrap());
-    let u64le = |o: usize| u64::from_le_bytes(f[o..o + 8].try_into().unwrap());
-    let shoff = u64le(40) as usize;
-    let shentsize = u16le(58);
-    let shnum = u16le(60);
-    let shstrndx = u16le(62);
+fn elf_text(f: &[u8]) -> Result<TextSegment, &'static str> {
+    // All header/section slicing is bounds-checked: malformed or
+    // truncated input returns Err so the driver can report
+    // BLOCKED (still with zero speed cells) instead of panicking.
+    let u16le = |o: usize| -> Option<usize> {
+        f.get(o..o + 2)
+            .map(|b| u16::from_le_bytes(b.try_into().unwrap()) as usize)
+    };
+    let u32le = |o: usize| -> Option<u32> {
+        f.get(o..o + 4)
+            .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
+    };
+    let u64le = |o: usize| -> Option<u64> {
+        f.get(o..o + 8)
+            .map(|b| u64::from_le_bytes(b.try_into().unwrap()))
+    };
+    let slice = |off: u64, size: u64| -> Option<&[u8]> {
+        let off = usize::try_from(off).ok()?;
+        let end = off.checked_add(usize::try_from(size).ok()?)?;
+        f.get(off..end)
+    };
+    if f.len() < 64 || &f[0..4] != b"\x7fELF" || f[4] != 2 || f[5] != 1 {
+        return Err("not a little-endian ELF64 file");
+    }
+    let shoff = u64le(40).ok_or("truncated ELF header")? as usize;
+    let shentsize = u16le(58).ok_or("truncated ELF header")?;
+    let shnum = u16le(60).ok_or("truncated ELF header")?;
+    let shstrndx = u16le(62).ok_or("truncated ELF header")?;
     if shoff != 0 && shnum > 0 && shstrndx < shnum {
-        let str_hdr = shoff + shstrndx * shentsize;
-        let str_off = u64le(str_hdr + 24) as usize;
-        let str_size = u64le(str_hdr + 32) as usize;
-        let names = &f[str_off..str_off + str_size];
+        if shentsize < 64 {
+            return Err("section header entry too small");
+        }
+        let str_hdr = shoff
+            .checked_add(
+                shstrndx
+                    .checked_mul(shentsize)
+                    .ok_or("section header overflow")?,
+            )
+            .ok_or("section header overflow")?;
+        if f.get(str_hdr..str_hdr + 64).is_none() {
+            return Err("truncated section headers");
+        }
+        let names = slice(
+            u64le(str_hdr + 24).ok_or("truncated section headers")?,
+            u64le(str_hdr + 32).ok_or("truncated section headers")?,
+        )
+        .ok_or("section string table out of bounds")?;
         for i in 0..shnum {
-            let h = shoff + i * shentsize;
-            let name_off = u32le(h) as usize;
-            let end = names[name_off..]
-                .iter()
-                .position(|&b| b == 0)
-                .map_or(names.len(), |p| name_off + p);
-            if &names[name_off..end] == b".text" {
-                let addr = u64le(h + 16);
-                let off = u64le(h + 24) as usize;
-                let size = u64le(h + 32) as usize;
-                return TextSegment {
-                    bytes: f[off..off + size].to_vec(),
+            let h = shoff
+                .checked_add(i.checked_mul(shentsize).ok_or("section header overflow")?)
+                .ok_or("section header overflow")?;
+            if f.get(h..h + 64).is_none() {
+                return Err("truncated section headers");
+            }
+            let name_off = u32le(h).ok_or("truncated section headers")? as usize;
+            let Some(name) = names.get(name_off..) else {
+                continue;
+            };
+            let end = name.iter().position(|&b| b == 0).unwrap_or(name.len());
+            if &name[..end] == b".text" {
+                let addr = u64le(h + 16).ok_or("truncated section headers")?;
+                let off = u64le(h + 24).ok_or("truncated section headers")?;
+                let size = u64le(h + 32).ok_or("truncated section headers")?;
+                return Ok(TextSegment {
+                    bytes: slice(off, size)
+                        .ok_or(".text section out of bounds")?
+                        .to_vec(),
                     vaddr: addr,
                     kind: ".text section",
-                };
+                });
             }
         }
     }
-    let phoff = u64le(32) as usize;
-    let phentsize = u16le(54);
-    let phnum = u16le(56);
+    let phoff = u64le(32).ok_or("truncated ELF header")? as usize;
+    let phentsize = u16le(54).ok_or("truncated ELF header")?;
+    let phnum = u16le(56).ok_or("truncated ELF header")?;
+    if phnum > 0 && phentsize < 56 {
+        return Err("program header entry too small");
+    }
     let mut best = None;
     for i in 0..phnum {
-        let p = phoff + i * phentsize;
-        if u32le(p) == 1 && u32le(p + 4) & 1 != 0 {
-            let off = u64le(p + 8) as usize;
-            let vaddr = u64le(p + 16);
-            let filesz = u64le(p + 32) as usize;
+        let p = phoff
+            .checked_add(i.checked_mul(phentsize).ok_or("program header overflow")?)
+            .ok_or("program header overflow")?;
+        if f.get(p..p + 56).is_none() {
+            return Err("truncated program headers");
+        }
+        if u32le(p) == Some(1) && u32le(p + 4).is_some_and(|flags| flags & 1 != 0) {
+            let off = u64le(p + 8).ok_or("truncated program headers")?;
+            let vaddr = u64le(p + 16).ok_or("truncated program headers")?;
+            let filesz = u64le(p + 32).ok_or("truncated program headers")?;
             if best.is_none_or(|(_, _, l)| filesz > l) {
                 best = Some((off, vaddr, filesz));
             }
         }
     }
-    let (off, vaddr, len) = best.expect("executable PT_LOAD");
-    TextSegment {
-        bytes: f[off..off + len].to_vec(),
+    let (off, vaddr, len) = best.ok_or("no executable PT_LOAD or .text section")?;
+    Ok(TextSegment {
+        bytes: slice(off, len)
+            .ok_or("executable PT_LOAD out of bounds")?
+            .to_vec(),
         vaddr,
         kind: "executable PT_LOAD",
-    }
+    })
 }
 
 fn fnv1a(bytes: &[u8]) -> u64 {
@@ -385,9 +431,23 @@ fn main() -> ExitCode {
     let mut blocked = false;
     let mut segments = Vec::new();
     for path in &paths {
-        let file_bytes = std::fs::read(path).unwrap_or_else(|e| panic!("read {path}: {e}"));
+        let file_bytes = match std::fs::read(path) {
+            Ok(b) => b,
+            Err(e) => {
+                println!("example,{path},read-error {e}");
+                println!("BLOCKED: unreadable or malformed ELF input");
+                return ExitCode::FAILURE;
+            }
+        };
         let hash = fnv1a(&file_bytes);
-        let seg = elf_text(path);
+        let seg = match elf_text(&file_bytes) {
+            Ok(seg) => seg,
+            Err(msg) => {
+                println!("example,{path},malformed-elf {msg}");
+                println!("BLOCKED: unreadable or malformed ELF input");
+                return ExitCode::FAILURE;
+            }
+        };
         let st = validate(&seg);
         let fallback = if st.boundaries == 0 {
             0.0

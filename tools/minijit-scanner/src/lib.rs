@@ -329,10 +329,12 @@ fn legacy_movable(op: u8, reg: Option<u8>) -> bool {
         0x90..=0x99 | 0x9e | 0x9f => true,
         0xa0..=0xaf => true,
         0xb0..=0xbf => true,
-        0xc0 | 0xc1 => matches!(reg, Some(0..=7)),
+        // Shift groups: /6 decodes as distinct mnemonic SAL in
+        // iced, which liteinst-jit does not allowlist (only SHL).
+        0xc0 | 0xc1 => matches!(reg, Some(0..=5 | 7)),
         0xc6 | 0xc7 => reg == Some(0),
         0xc9 => true,
-        0xd0..=0xd3 => true,
+        0xd0..=0xd3 => matches!(reg, Some(0..=5 | 7)),
         0xf6 | 0xf7 => matches!(reg, Some(0..=7)),
         0xfc | 0xfd => true,
         0xfe => matches!(reg, Some(0 | 1)),
@@ -365,13 +367,13 @@ fn map0f_form(op: u8) -> (bool, Imm, bool, bool) {
 #[inline]
 fn map0f_movable(op: u8, reg: Option<u8>, p: Prefix, modrm_byte: Option<u8>) -> bool {
     match op {
-        0x1f => true,                                    // NOP Ev
-        0x40..=0x4f => true,                             // CMOVcc
-        0x90..=0x9f => true,                             // SETcc
+        0x1f => reg == Some(0), // NOP Ev only /0; other regs are Reservednop
+        0x40..=0x4f => true,    // CMOVcc
+        0x90..=0x9f => true,    // SETcc
         0xa3 | 0xab | 0xb0 | 0xb1 | 0xb3 | 0xbb => true, // BT/BTS/CMPXCHG/BTR/BTC
-        0xaf => true,                                    // IMUL
-        0xb6 | 0xb7 | 0xbe | 0xbf => true,               // MOVZX/MOVSX
-        0xb8 => p.rep, // POPCNT only with F3; bare 0F B8 is not admitted
+        0xaf => true,           // IMUL
+        0xb6 | 0xb7 | 0xbe | 0xbf => true, // MOVZX/MOVSX
+        0xb8 => p.rep,          // POPCNT only with F3; bare 0F B8 is not admitted
         0xba => matches!(reg, Some(4..=7)),
         0xbc | 0xbd => true, // BSF/TZCNT, BSR/LZCNT (F3 forms included)
         0xc0 | 0xc1 => true, // XADD
@@ -533,11 +535,13 @@ pub fn scan_one(bytes: &[u8], _pc: u64) -> Scan {
             }
             if op2 == 0xc7 && !is_mem {
                 // Register forms only: /6 RDRAND (no F2/F3),
-                // /7 RDSEED (no F3) or RDPID (F3, 64-bit form
-                // is the one liteinst-jit classes as nondet).
+                // /7 RDSEED (no F3) or RDPID (F3). RDPID's
+                // 64-bit code is selected by 64-bit execution
+                // mode in liteinst-jit/iced, not by effective
+                // operand size, so no REX.W condition applies.
                 s.interception_target = match reg {
                     Some(6) => !p.rep && !p.repne,
-                    Some(7) => !p.rep || p.operand_size == 64,
+                    Some(7) => true,
                     _ => false,
                 };
             }
