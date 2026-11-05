@@ -184,6 +184,9 @@ pub enum FaultKind {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Fault {
     pub kind: FaultKind,
+    /// Additional pending async signals taken into custody with
+    /// this stop (dequeued while blocked, reported, not lost).
+    pub also_pending: Vec<i32>,
     pub src_pc: u64,
     pub addr: u64,
     pub signum: i32,
@@ -465,6 +468,7 @@ pub fn recover_fault(
     let Some(entry) = t.pcmap.lookup(gen_pc) else {
         state.rip = 0;
         return Fault {
+            also_pending: Vec::new(),
             kind: FaultKind::ExecutorError,
             src_pc: 0,
             addr,
@@ -643,6 +647,7 @@ pub fn recover_fault(
         addr
     };
     Fault {
+        also_pending: Vec::new(),
         kind,
         src_pc,
         addr,
@@ -741,34 +746,42 @@ fn pending_async_signal() -> Result<Option<i32>, Refuse> {
     }))
 }
 
-/// Take custody of a pending async signal: dequeue every queued
-/// instance while it is still blocked, so restoring the caller's
-/// mask cannot deliver it (a default-terminate signal must not
-/// kill the caller before it can observe the AsyncSignal result).
-fn take_pending_async() -> Result<Option<i32>, Refuse> {
-    let Some(sig) = pending_async_signal()? else {
-        return Ok(None);
-    };
-    let mut set: libc::sigset_t = unsafe { core::mem::zeroed() };
-    unsafe {
-        libc::sigemptyset(&mut set);
-        libc::sigaddset(&mut set, sig);
-    }
-    let ts = libc::timespec {
-        tv_sec: 0,
-        tv_nsec: 0,
-    };
+/// Take custody of *every* pending async signal: dequeue all
+/// queued instances of each pending number while still blocked,
+/// so restoring the caller's mask cannot deliver a leftover
+/// default-terminate signal before the stop is observable.
+/// Returns the taken numbers in ascending order (each once).
+fn take_all_pending_async() -> Result<Vec<i32>, Refuse> {
+    let mut taken = Vec::new();
     loop {
-        let mut info: libc::siginfo_t = unsafe { core::mem::zeroed() };
-        // SAFETY: dequeue one pending instance of the blocked sig.
-        let r = unsafe { libc::sigtimedwait(&set, &mut info, &ts) };
-        if r != sig {
-            break;
+        let Some(sig) = pending_async_signal()? else {
+            return Ok(taken);
+        };
+        if taken.contains(&sig) {
+            // Dequeue below must make progress; bail out rather
+            // than spin if the kernel keeps reporting it.
+            return Err(Refuse::SignalOwnership { signum: sig });
         }
+        let mut set: libc::sigset_t = unsafe { core::mem::zeroed() };
+        unsafe {
+            libc::sigemptyset(&mut set);
+            libc::sigaddset(&mut set, sig);
+        }
+        let ts = libc::timespec {
+            tv_sec: 0,
+            tv_nsec: 0,
+        };
+        loop {
+            let mut info: libc::siginfo_t = unsafe { core::mem::zeroed() };
+            // SAFETY: dequeue one pending instance of the blocked sig.
+            let r = unsafe { libc::sigtimedwait(&set, &mut info, &ts) };
+            if r != sig {
+                break;
+            }
+        }
+        taken.push(sig);
     }
-    Ok(Some(sig))
 }
-
 /// P1a signal envelope admission: asynchronous signals are
 /// blocked (not guest-delivered) during a run, so a process that
 /// has installed a handler for one is refused before execution
@@ -1004,7 +1017,20 @@ impl Executable {
             }
             libc::pthread_sigmask(libc::SIG_BLOCK, &set, &mut old);
         }
-        let r = self.run_masked(state, handler, mem, return_sentinel);
+        let mut r = self.run_masked(state, handler, mem, return_sentinel);
+        // Custody sweep: any Fault return takes every still-pending
+        // async signal before the caller's mask is restored, so a
+        // default-terminate signal cannot kill the caller before
+        // it observes the stop. Taken numbers are reported.
+        if let Err(RunError::Fault(f)) = &mut r {
+            if let Ok(extra) = take_all_pending_async() {
+                for sig in extra {
+                    if sig != f.signum && !f.also_pending.contains(&sig) {
+                        f.also_pending.push(sig);
+                    }
+                }
+            }
+        }
         // SAFETY: restoring the caller's previous mask.
         unsafe {
             libc::pthread_sigmask(libc::SIG_SETMASK, &old, core::ptr::null_mut());
@@ -1074,6 +1100,7 @@ impl Executable {
                     // this entry, so the seeded entry state in
                     // data.state is the exact guest state.
                     return Err(RunError::Fault(Box::new(Fault {
+                        also_pending: Vec::new(),
                         kind: if active.fault_si_code <= 0 {
                             FaultKind::AsyncSignal
                         } else {
@@ -1117,6 +1144,7 @@ impl Executable {
                         // block-head pre-credit (F3).
                         state.rip = data.exit_src;
                         return Err(RunError::Fault(Box::new(Fault {
+                            also_pending: Vec::new(),
                             kind: FaultKind::GuestFault,
                             src_pc: data.exit_src,
                             addr: state.rsp,
@@ -1139,8 +1167,10 @@ impl Executable {
                 }
                 exit_kind::POLL => {
                     state.rip = data.exit_src;
-                    if let Some(sig) = take_pending_async()? {
+                    let taken = take_all_pending_async()?;
+                    if let Some((&sig, rest)) = taken.split_first() {
                         return Err(RunError::Fault(Box::new(Fault {
+                            also_pending: rest.to_vec(),
                             kind: FaultKind::AsyncSignal,
                             src_pc: data.exit_src,
                             addr: 0,

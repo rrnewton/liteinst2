@@ -801,6 +801,40 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         // signal was dequeued before the mask was restored.
     }
 
+    // T3 two-signal custody: SIGUSR1+SIGUSR2 both pending and
+    // default-disposition; both must be taken into custody and
+    // reported, and the caller must survive mask restoration.
+    {
+        unsafe {
+            libc::signal(libc::SIGUSR1, libc::SIG_DFL);
+            libc::signal(libc::SIGUSR2, libc::SIG_DFL);
+        }
+        let me = unsafe { libc::pthread_self() };
+        let killer = std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            unsafe {
+                libc::pthread_kill(me, libc::SIGUSR1);
+                libc::pthread_kill(me, libc::SIGUSR2);
+            }
+        });
+        let jr = run_jit("loop_insn", |s| s.rsi = 400_000_000);
+        killer.join().expect("killer");
+        match jr.outcome {
+            Err(RunError::Fault(f)) => {
+                assert_eq!(f.kind, liteinst_jit::exec::FaultKind::AsyncSignal);
+                assert_eq!(f.signum, libc::SIGUSR1, "first custody signal reported");
+                assert_eq!(
+                    f.also_pending,
+                    vec![libc::SIGUSR2],
+                    "second pending signal in custody, not delivered"
+                );
+            }
+            other => panic!("two-signal custody outcome: {other:?}"),
+        }
+        // Reaching here proves neither default signal killed us
+        // when run() restored the original (unblocked) mask.
+    }
+
     // Driver binary agrees with its per-fixture expectations (F6).
     {
         let status = std::process::Command::new(env!("CARGO_BIN_EXE_liteinst-jit-run"))
