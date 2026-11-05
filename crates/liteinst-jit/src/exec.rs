@@ -1421,6 +1421,35 @@ impl Executable {
                 }
                 exit_kind::SYSCALL => {
                     state.rip = data.exit_src;
+                    // Lifecycle syscalls are reserved by the
+                    // executor envelope: refuse them by name before
+                    // the handler can observe or service them. The
+                    // active-run, bridge, cache, and JitData state
+                    // are process/thread-global, so servicing an
+                    // exec or clone-family call here would be
+                    // unsafe, not merely unsupported. Clone-family
+                    // calls are reserved regardless of flags.
+                    let lifecycle = match state.rax {
+                        x if x == libc::SYS_execve as u64 || x == libc::SYS_execveat as u64 => {
+                            Some(Refuse::ExecSuccessor)
+                        }
+                        x if x == libc::SYS_clone as u64 => {
+                            Some(Refuse::ThreadLifecycle { what: "clone" })
+                        }
+                        x if x == libc::SYS_fork as u64 => {
+                            Some(Refuse::ThreadLifecycle { what: "fork" })
+                        }
+                        x if x == libc::SYS_vfork as u64 => {
+                            Some(Refuse::ThreadLifecycle { what: "vfork" })
+                        }
+                        x if x == libc::SYS_clone3 as u64 => {
+                            Some(Refuse::ThreadLifecycle { what: "clone3" })
+                        }
+                        _ => None,
+                    };
+                    if let Some(refusal) = lifecycle {
+                        return Err(refusal.into());
+                    }
                     let resume = handler.syscall(&mut state, data.exit_src, data.exit_next)?;
                     tot_instructions += 1;
                     match resume {
