@@ -22,6 +22,7 @@ pub mod o1;
 pub mod pcmap;
 pub mod recovery;
 pub mod refuse;
+pub mod remote;
 pub mod state;
 pub mod translate;
 pub mod types;
@@ -34,5 +35,7 @@ pub use pcmap::{CallStage, CommonStage, ExitStage, PcMap, PcMapEntry, Phase, Rec
 pub use recovery::{FaultInput, RecoveredStop, RecoveryInput, recover};
 pub use refuse::Refuse;
 pub use state::GuestState;
-pub use translate::{Block, Terminator, Translation, translate};
+pub use translate::{
+    Block, ExitStyle, Terminator, Translation, translate, translate_with_exit_style,
+};
 pub use types::{CacheKey, CountProfile, Generation, RegionFacts, byte_hash};

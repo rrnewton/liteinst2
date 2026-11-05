@@ -515,7 +515,7 @@ fn ensure_altstack() -> Result<(), Refuse> {
 /// Application signal range: standard signals plus the real-time
 /// range. 32/33 are reserved internally by glibc and cannot carry
 /// application handlers, so they are the only documented skip.
-fn async_signal_range() -> impl Iterator<Item = i32> {
+pub(crate) fn async_signal_range() -> impl Iterator<Item = i32> {
     (1..=64).filter(|&sig| {
         sig != libc::SIGKILL
             && sig != libc::SIGSTOP
@@ -738,6 +738,65 @@ fn check_cet_inactive() -> Result<(), Refuse> {
         });
     }
     Ok(())
+}
+
+/// Shared syscall entry-kind + lifecycle guard, used by every
+/// dispatcher backend before a syscall-class exit is served or
+/// stepped. The syscall-class also contains compat entry
+/// instructions, whose numbers are a different ABI (for example
+/// int 0x80 execve is 11, the x86-64 munmap number). Linux
+/// routes SYSENTER to the IA32 compat entry (or an invalid/#UD
+/// path where compat is unavailable), never to native x86-64
+/// dispatch. The actual entry kind is therefore resolved from
+/// the decoded terminator before interpreting RAX: only Syscall
+/// proceeds to the native-number guard; Sysenter and Int are
+/// refused by distinct names. Lifecycle syscalls are then
+/// reserved by the executor envelope and refused by name before
+/// any backend can observe or service them; clone-family calls
+/// are reserved regardless of flags. Linux native dispatch
+/// examines only the low 32 bits of RAX, so classification uses
+/// those bits for the guard alone and leaves raw RAX untouched.
+pub(crate) fn syscall_guard(t: &Translation, exit_src: u64, rax: u64) -> Result<(), Refuse> {
+    let entry_mnemonic = t.blocks.values().find_map(|b| {
+        b.term
+            .as_ref()
+            .filter(|term| term.pc == exit_src)
+            .map(|term| term.instruction.mnemonic())
+    });
+    match entry_mnemonic {
+        Some(iced_x86::Mnemonic::Syscall) => {}
+        Some(iced_x86::Mnemonic::Sysenter) => {
+            return Err(Refuse::Arch {
+                what: "sysenter compat entry outside P1a envelope",
+            });
+        }
+        Some(iced_x86::Mnemonic::Int) => {
+            return Err(Refuse::Arch {
+                what: "ia32 compat syscall entry outside P1a envelope",
+            });
+        }
+        _ => {
+            return Err(Refuse::Unrelocatable {
+                src_pc: exit_src,
+                reason: "syscall entry kind outside P1a envelope",
+            });
+        }
+    }
+    let syscall_nr = rax as u32;
+    let lifecycle = match syscall_nr {
+        x if x == libc::SYS_execve as u32 || x == libc::SYS_execveat as u32 => {
+            Some(Refuse::ExecSuccessor)
+        }
+        x if x == libc::SYS_clone as u32 => Some(Refuse::ThreadLifecycle { what: "clone" }),
+        x if x == libc::SYS_fork as u32 => Some(Refuse::ThreadLifecycle { what: "fork" }),
+        x if x == libc::SYS_vfork as u32 => Some(Refuse::ThreadLifecycle { what: "vfork" }),
+        x if x == libc::SYS_clone3 as u32 => Some(Refuse::ThreadLifecycle { what: "clone3" }),
+        _ => None,
+    };
+    match lifecycle {
+        Some(refusal) => Err(refusal),
+        None => Ok(()),
+    }
 }
 
 fn lahf_available() -> bool {
@@ -1200,80 +1259,7 @@ impl Executable {
                 }
                 exit_kind::SYSCALL => {
                     state.rip = data.exit_src;
-                    // The syscall-class also contains compat entry
-                    // instructions, whose numbers are a different
-                    // ABI (for example int 0x80 execve is 11, the
-                    // x86-64 munmap number). Linux routes SYSENTER
-                    // to the IA32 compat entry (or an invalid/#UD
-                    // path where compat is unavailable), never to
-                    // native x86-64 dispatch. Resolve the actual
-                    // entry kind from the decoded terminator before
-                    // interpreting RAX: only Syscall proceeds to the
-                    // native-number guard below; Sysenter and Int
-                    // are refused by distinct names.
-                    let entry_mnemonic = self.translation.blocks.values().find_map(|b| {
-                        b.term
-                            .as_ref()
-                            .filter(|t| t.pc == data.exit_src)
-                            .map(|t| t.instruction.mnemonic())
-                    });
-                    match entry_mnemonic {
-                        Some(iced_x86::Mnemonic::Syscall) => {}
-                        Some(iced_x86::Mnemonic::Sysenter) => {
-                            return Err(Refuse::Arch {
-                                what: "sysenter compat entry outside P1a envelope",
-                            }
-                            .into());
-                        }
-                        Some(iced_x86::Mnemonic::Int) => {
-                            return Err(Refuse::Arch {
-                                what: "ia32 compat syscall entry outside P1a envelope",
-                            }
-                            .into());
-                        }
-                        _ => {
-                            return Err(Refuse::Unrelocatable {
-                                src_pc: data.exit_src,
-                                reason: "syscall entry kind outside P1a envelope",
-                            }
-                            .into());
-                        }
-                    }
-                    // Lifecycle syscalls are reserved by the
-                    // executor envelope: refuse them by name before
-                    // the handler can observe or service them. The
-                    // active-run, bridge, cache, and JitData state
-                    // are process/thread-global, so servicing an
-                    // exec or clone-family call here would be
-                    // unsafe, not merely unsupported. Clone-family
-                    // calls are reserved regardless of flags.
-                    // Linux native syscall dispatch examines only
-                    // the low 32 bits of RAX. Classify from those
-                    // bits for the guard alone; retain the raw
-                    // 64-bit RAX untouched for handler/state
-                    // semantics on the ordinary path.
-                    let syscall_nr = state.rax as u32;
-                    let lifecycle = match syscall_nr {
-                        x if x == libc::SYS_execve as u32 || x == libc::SYS_execveat as u32 => {
-                            Some(Refuse::ExecSuccessor)
-                        }
-                        x if x == libc::SYS_clone as u32 => {
-                            Some(Refuse::ThreadLifecycle { what: "clone" })
-                        }
-                        x if x == libc::SYS_fork as u32 => {
-                            Some(Refuse::ThreadLifecycle { what: "fork" })
-                        }
-                        x if x == libc::SYS_vfork as u32 => {
-                            Some(Refuse::ThreadLifecycle { what: "vfork" })
-                        }
-                        x if x == libc::SYS_clone3 as u32 => {
-                            Some(Refuse::ThreadLifecycle { what: "clone3" })
-                        }
-                        _ => None,
-                    };
-                    if let Some(refusal) = lifecycle {
-                        return Err(refusal.into());
-                    }
+                    syscall_guard(&self.translation, data.exit_src, state.rax)?;
                     let resume = handler.syscall(&mut state, data.exit_src, data.exit_next)?;
                     tot_instructions += 1;
                     match resume {

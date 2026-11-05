@@ -40,3 +40,10 @@ path = "src/bin/custody_child.rs"
 test = false
 bench = false
 doc = false
+
+[[bin]]
+name = "liteinst-jit-remote-child"
+path = "src/bin/remote_child.rs"
+test = false
+bench = false
+doc = false

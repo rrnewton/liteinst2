@@ -639,7 +639,19 @@ fn cc_value(cc: ConditionCode) -> Option<u8> {
     })
 }
 
-fn emit_common_exit(e: &mut Emitter) -> Result<u64, Refuse> {
+/// How the common exit returns control to its dispatcher.
+/// The trap form differs from the return form in exactly the
+/// final common-exit byte (`int3` vs `ret`, same length and
+/// PC-map stage); every other emitted byte is shared.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ExitStyle {
+    /// In-process dispatcher: `ret` to the entry bridge caller.
+    ReturnToDispatcher,
+    /// Remote tracer dispatcher: `int3` trap after state export.
+    TrapToDispatcher,
+}
+
+fn emit_common_exit(e: &mut Emitter, exit_style: ExitStyle) -> Result<u64, Refuse> {
     use CommonStage::*;
     let at = e.pc();
     let rec = |stage: CommonStage| Recovery::CommonExit { stage };
@@ -720,20 +732,45 @@ fn emit_common_exit(e: &mut Emitter) -> Result<u64, Refuse> {
         e.mov_reg_mem(OFF_HOST_R15, 15)
     })?;
     e.seg(0, Phase::CommonExit, rec(AllSaved), |e| {
-        e.buf.push(0xc3); // ret to dispatcher
+        e.buf.push(match exit_style {
+            ExitStyle::ReturnToDispatcher => 0xc3, // ret to dispatcher
+            ExitStyle::TrapToDispatcher => 0xcc,   // int3 to tracer
+        });
         Ok(())
     })?;
     Ok(at)
 }
-/// Translate every block reachable from `entry`. `gen_base` is the
-/// address the emitted bytes will execute at; `data_addr` is the
-/// address of the allocation's `JitData`.
+/// Translate every block reachable from `entry` for the
+/// in-process dispatcher. `gen_base` is the address the emitted
+/// bytes will execute at; `data_addr` is the address of the
+/// allocation's `JitData`.
 pub fn translate(
     region: &RegionFacts,
     entry: u64,
     profile: CountProfile,
     gen_base: u64,
     data_addr: u64,
+) -> Result<Translation, Refuse> {
+    translate_with_exit_style(
+        region,
+        entry,
+        profile,
+        gen_base,
+        data_addr,
+        ExitStyle::ReturnToDispatcher,
+    )
+}
+
+/// As [`translate`], with an explicit common-exit style. The
+/// in-process style is byte-identical to historical emission;
+/// the trap style is for a tracer dispatcher (remote backend).
+pub fn translate_with_exit_style(
+    region: &RegionFacts,
+    entry: u64,
+    profile: CountProfile,
+    gen_base: u64,
+    data_addr: u64,
+    exit_style: ExitStyle,
 ) -> Result<Translation, Refuse> {
     let blocks = discover(region, entry)?;
     let mut e = Emitter {
@@ -953,7 +990,7 @@ pub fn translate(
         poll_gen.insert(block, e.pc());
         e.exit_stub_poll(exit_kind::POLL, block, block, true)?;
     }
-    let common_exit = emit_common_exit(&mut e)?;
+    let common_exit = emit_common_exit(&mut e, exit_style)?;
     for (at, target) in std::mem::take(&mut e.fixups) {
         let dest = match target {
             FixTarget::Block(src) => *block_gen

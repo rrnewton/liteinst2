@@ -38,6 +38,10 @@ pub enum Refuse {
     Decode { src_pc: u64 },
     /// A cache entry was offered under a superseded generation.
     StaleGeneration { expected: u64, found: u64 },
+    /// The remote (ptrace) substrate could not complete the named
+    /// operation; the guest was left stopped or terminated, never
+    /// resumed on partial state.
+    RemoteSubstrate { operation: &'static str, errno: i32 },
 }
 
 impl Refuse {
@@ -59,6 +63,7 @@ impl Refuse {
             Refuse::ExecSuccessor => "R-EXEC",
             Refuse::ThreadLifecycle { .. } => "R-LIFECYCLE",
             Refuse::Arch { .. } => "R-ARCH",
+            Refuse::RemoteSubstrate { .. } => "R-REMOTE",
         }
     }
 }
