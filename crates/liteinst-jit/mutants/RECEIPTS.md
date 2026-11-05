@@ -4,7 +4,7 @@
 
 Command: `sh crates/liteinst-jit/mutants/run.sh` from the
 workspace root, 2026-11-05; last re-executed at the head below, on liteinst2 branch
-`musejit/work-20261105` at base head `5f40617b419e3c5b7b60bd1de8b9ef832fd3b56d`, re-executed there after the round-8 partial-custody repair
+`musejit/work-20261105` at base head `7fe27a25b990d71a303e463c01db9570591a385a`, re-executed there after the round-9 taken-ordering repair
 (the patches in this directory, applied and reversed one at a
 time; the script first requires a green baseline, then requires
 each mutant run to fail with its named causal assertion — a
