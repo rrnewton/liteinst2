@@ -203,6 +203,14 @@ pub fn all() -> Vec<Fixture> {
             bytes: vec![0x0f, 0x31, 0xc3],
         },
         Fixture {
+            // mov rsp,rdi; call helper; ret; helper: ret
+            // With rdi naming a read-only page the call's own
+            // stack store faults; recovery must restore the
+            // pre-call RAX/RSP exactly.
+            name: "call_store_fault",
+            bytes: vec![0x48, 0x89, 0xfc, 0xe8, 0x01, 0x00, 0x00, 0x00, 0xc3, 0xc3],
+        },
+        Fixture {
             name: "indirect_jmp",
             bytes: asm(|a| {
                 a.mov(rax, rdi)?;

@@ -26,8 +26,10 @@ pub mod translate;
 pub mod types;
 
 pub use cache::{CacheIndex, CacheRecord};
-pub use exec::{Executable, Fault, GuestMemory, Handler, Outcome, ProcessMemory, Resume, RunError};
-pub use pcmap::{PcMap, PcMapEntry, Phase};
+pub use exec::{
+    Executable, Fault, FaultKind, GuestMemory, Handler, Outcome, ProcessMemory, Resume, RunError,
+};
+pub use pcmap::{CallStage, CommonStage, ExitStage, PcMap, PcMapEntry, Phase, Recovery, StubStage};
 pub use refuse::Refuse;
 pub use state::GuestState;
 pub use translate::{Block, Terminator, Translation, translate};

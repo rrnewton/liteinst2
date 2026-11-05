@@ -14,8 +14,11 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use iced_x86::{ConditionCode, Encoder};
 
 use crate::decode::{DecodedInsn, InsnClass, decode_supported};
-use crate::pcmap::{PcMap, PcMapEntry, Phase};
+use crate::pcmap::{
+    CallStage, CommonStage, ExitStage, PcMap, PcMapEntry, Phase, Recovery, StubStage,
+};
 use crate::refuse::Refuse;
+use crate::state::SCRATCH_LEN;
 use crate::state::{
     OFF_BRANCH_COUNT, OFF_EXIT_KIND, OFF_EXIT_NEXT, OFF_EXIT_SRC, OFF_HOST_R12, OFF_HOST_R13,
     OFF_HOST_R14, OFF_HOST_R15, OFF_HOST_RBP, OFF_HOST_RBX, OFF_HOST_RSP, OFF_INSTRUCTION_COUNT,
@@ -280,6 +283,12 @@ enum FixTarget {
     CommonExit,
 }
 
+#[derive(Clone, Copy)]
+enum StubKind {
+    Branch { branch: u64, successor: u64 },
+    Insn { block: u64 },
+}
+
 struct Emitter {
     buf: Vec<u8>,
     gen_base: u64,
@@ -307,13 +316,35 @@ impl Emitter {
             reason: "cache data out of rel32 reach",
         })
     }
-    fn map(&mut self, start: u64, len: u64, src_pc: u64, phase: Phase) -> Result<(), Refuse> {
+    fn map(
+        &mut self,
+        start: u64,
+        len: u64,
+        src_pc: u64,
+        phase: Phase,
+        recovery: Recovery,
+    ) -> Result<(), Refuse> {
         self.pcmap.push(PcMapEntry {
             gen_start: start,
             gen_end: start.wrapping_add(len),
             src_pc,
             phase,
+            recovery,
         })
+    }
+    /// Emit one machinery instruction and map exactly its bytes
+    /// with the recovery recipe for a stop at its first byte.
+    fn seg(
+        &mut self,
+        src_pc: u64,
+        phase: Phase,
+        recovery: Recovery,
+        emit: impl FnOnce(&mut Self) -> Result<(), Refuse>,
+    ) -> Result<(), Refuse> {
+        let start = self.pc();
+        emit(self)?;
+        let len = self.pc().wrapping_sub(start);
+        self.map(start, len, src_pc, phase, recovery)
     }
     fn mov_mem_rax(&mut self, off: usize) -> Result<(), Refuse> {
         let d = self.disp(off, 7)?;
@@ -349,74 +380,146 @@ impl Emitter {
         self.buf.extend_from_slice(&[0; 4]);
         self.fixups.push((at, target));
     }
-    /// Save RAX + all status flags (via SETO/LAHF) into spill slots.
-    /// Every instruction here is itself flag-neutral.
-    fn save_rax_flags(&mut self) -> Result<(), Refuse> {
-        self.mov_mem_rax(OFF_SPILL_RAX)?;
-        self.buf.extend_from_slice(&[0x0f, 0x90, 0xc0]); // seto al
-        self.buf.push(0x9f); // lahf
-        self.mov_mem_rax(OFF_SPILL_FLAGS)
-    }
-    /// Restore flags then RAX. `add al,0x7f` re-derives OF from the
-    /// saved OF byte; SAHF (which does not touch OF) restores the
-    /// remaining status flags.
-    fn restore_rax_flags(&mut self) -> Result<(), Refuse> {
-        self.mov_rax_mem(OFF_SPILL_FLAGS)?;
-        self.buf.extend_from_slice(&[0x04, 0x7f]); // add al,0x7f
-        self.buf.push(0x9e); // sahf
-        self.mov_rax_mem(OFF_SPILL_RAX)
+    /// Flag-neutral spill/count stub, mapped per instruction.
+    /// `branch` is Some for a branch-credit stub (successor jump
+    /// appended), None for a block-head instruction-credit stub.
+    fn credit_stub(
+        &mut self,
+        counter_off: usize,
+        amount: u64,
+        branch: Option<(u64, u64)>,
+        block: u64,
+    ) -> Result<(), Refuse> {
+        let (src, mk) = match branch {
+            Some((b, succ)) => (
+                succ,
+                StubKind::Branch {
+                    branch: b,
+                    successor: succ,
+                },
+            ),
+            None => (block, StubKind::Insn { block }),
+        };
+        let rec = |stage: StubStage| match mk {
+            StubKind::Branch { branch, successor } => Recovery::BranchStub {
+                branch,
+                successor,
+                stage,
+            },
+            StubKind::Insn { block } => Recovery::InsnCountStub { block, stage },
+        };
+        use StubStage::*;
+        self.seg(src, Phase::CountStub, rec(BeforeCreditPristine), |e| {
+            e.mov_mem_rax(OFF_SPILL_RAX)
+        })?;
+        self.seg(src, Phase::CountStub, rec(BeforeCreditPristine), |e| {
+            e.buf.extend_from_slice(&[0x0f, 0x90, 0xc0]); // seto al
+            Ok(())
+        })?;
+        self.seg(src, Phase::CountStub, rec(BeforeCreditSpilled), |e| {
+            e.buf.push(0x9f); // lahf
+            Ok(())
+        })?;
+        self.seg(src, Phase::CountStub, rec(BeforeCreditSpilled), |e| {
+            e.mov_mem_rax(OFF_SPILL_FLAGS)
+        })?;
+        self.seg(src, Phase::CountStub, rec(BeforeCreditSpilled), |e| {
+            if amount == 1 {
+                let d = e.disp(counter_off, 7)?;
+                e.buf.extend_from_slice(&[0x48, 0xff, 0x05]);
+                e.buf.extend_from_slice(&d.to_le_bytes());
+            } else if let Ok(v) = i8::try_from(i64::try_from(amount).unwrap_or(i64::MAX)) {
+                let d = e.disp(counter_off, 8)?;
+                e.buf.extend_from_slice(&[0x48, 0x83, 0x05]);
+                e.buf.extend_from_slice(&d.to_le_bytes());
+                e.buf.push(v as u8);
+            } else {
+                let v = i32::try_from(amount).map_err(|_| Refuse::BudgetExceeded {
+                    what: "block instruction count",
+                })?;
+                let d = e.disp(counter_off, 11)?;
+                e.buf.extend_from_slice(&[0x48, 0x81, 0x05]);
+                e.buf.extend_from_slice(&d.to_le_bytes());
+                e.buf.extend_from_slice(&v.to_le_bytes());
+            }
+            Ok(())
+        })?;
+        self.seg(src, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+            e.mov_rax_mem(OFF_SPILL_FLAGS)
+        })?;
+        self.seg(src, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+            e.buf.extend_from_slice(&[0x04, 0x7f]); // add al,0x7f (OF)
+            Ok(())
+        })?;
+        self.seg(src, Phase::CountStub, rec(AfterCreditSpilled), |e| {
+            e.buf.push(0x9e); // sahf
+            Ok(())
+        })?;
+        self.seg(src, Phase::CountStub, rec(AfterCreditFlagsRestored), |e| {
+            e.mov_rax_mem(OFF_SPILL_RAX)
+        })?;
+        if let StubKind::Branch { successor, .. } = mk {
+            self.seg(src, Phase::CountStub, rec(Committed), |e| {
+                e.jmp_fix(FixTarget::Block(successor));
+                Ok(())
+            })?;
+        }
+        Ok(())
     }
     fn count_stub_body(&mut self, branch: u64, successor: u64) -> Result<(), Refuse> {
-        let start = self.pc();
-        self.save_rax_flags()?;
-        let d = self.disp(OFF_BRANCH_COUNT, 7)?;
-        self.buf.extend_from_slice(&[0x48, 0xff, 0x05]); // inc qword [rip+d]
-        self.buf.extend_from_slice(&d.to_le_bytes());
-        self.restore_rax_flags()?;
-        self.jmp_fix(FixTarget::Block(successor));
-        let len = self.pc().wrapping_sub(start);
-        self.map(start, len, branch, Phase::CountStub)
+        self.credit_stub(OFF_BRANCH_COUNT, 1, Some((branch, successor)), 0)
     }
     fn block_head_add(&mut self, src: u64, n: u64) -> Result<(), Refuse> {
         if n == 0 {
             return Ok(());
         }
-        let start = self.pc();
-        self.save_rax_flags()?;
-        if let Ok(v) = i8::try_from(i64::try_from(n).unwrap_or(i64::MAX)) {
-            let d = self.disp(OFF_INSTRUCTION_COUNT, 8)?;
-            self.buf.extend_from_slice(&[0x48, 0x83, 0x05]);
-            self.buf.extend_from_slice(&d.to_le_bytes());
-            self.buf.push(v as u8);
-        } else {
-            let v = i32::try_from(n).map_err(|_| Refuse::BudgetExceeded {
-                what: "block instruction count",
-            })?;
-            let d = self.disp(OFF_INSTRUCTION_COUNT, 11)?;
-            self.buf.extend_from_slice(&[0x48, 0x81, 0x05]);
-            self.buf.extend_from_slice(&d.to_le_bytes());
-            self.buf.extend_from_slice(&v.to_le_bytes());
-        }
-        self.restore_rax_flags()?;
-        let len = self.pc().wrapping_sub(start);
-        self.map(start, len, src, Phase::CountStub)
+        self.credit_stub(OFF_INSTRUCTION_COUNT, n, None, src)
     }
     fn exit_stub(&mut self, kind: u64, src: u64, next: u64) -> Result<(), Refuse> {
-        let start = self.pc();
-        self.mov_mem_rax(OFF_SPILL_RAX)?;
+        use ExitStage::*;
+        self.seg(
+            src,
+            Phase::ExitSequence,
+            Recovery::ExitStub { stage: Pristine },
+            |e| e.mov_mem_rax(OFF_SPILL_RAX),
+        )?;
         for (off, val) in [
             (OFF_EXIT_KIND, kind),
             (OFF_EXIT_SRC, src),
             (OFF_EXIT_NEXT, next),
         ] {
-            self.buf.extend_from_slice(&[0x48, 0xb8]);
-            self.buf.extend_from_slice(&val.to_le_bytes());
-            self.mov_mem_rax(off)?;
+            self.seg(
+                src,
+                Phase::ExitSequence,
+                Recovery::ExitStub { stage: Spilled },
+                |e| {
+                    e.buf.extend_from_slice(&[0x48, 0xb8]);
+                    e.buf.extend_from_slice(&val.to_le_bytes());
+                    Ok(())
+                },
+            )?;
+            self.seg(
+                src,
+                Phase::ExitSequence,
+                Recovery::ExitStub { stage: Spilled },
+                |e| e.mov_mem_rax(off),
+            )?;
         }
-        self.mov_rax_mem(OFF_SPILL_RAX)?;
-        self.jmp_fix(FixTarget::CommonExit);
-        let len = self.pc().wrapping_sub(start);
-        self.map(start, len, src, Phase::ExitSequence)
+        self.seg(
+            src,
+            Phase::ExitSequence,
+            Recovery::ExitStub { stage: Spilled },
+            |e| e.mov_rax_mem(OFF_SPILL_RAX),
+        )?;
+        self.seg(
+            src,
+            Phase::ExitSequence,
+            Recovery::ExitStub { stage: Pristine },
+            |e| {
+                e.jmp_fix(FixTarget::CommonExit);
+                Ok(())
+            },
+        )
     }
     fn request_stub(&mut self, branch: u64, successor: u64) {
         if !self.stubs.contains(&(branch, successor)) {
@@ -448,22 +551,36 @@ fn cc_value(cc: ConditionCode) -> Option<u8> {
 }
 
 fn emit_common_exit(e: &mut Emitter) -> Result<u64, Refuse> {
+    use CommonStage::*;
     let at = e.pc();
-    e.mov_mem_reg(OFF_STATE + ST_RSP, 4)?;
-    // lea rsp, [rip + scratch_top]
-    let target = e.field(OFF_SCRATCH).wrapping_add(256);
-    let d = i32::try_from(target.wrapping_sub(e.pc().wrapping_add(7)) as i64).map_err(|_| {
-        Refuse::Unrelocatable {
-            src_pc: 0,
-            reason: "scratch stack out of reach",
-        }
+    let rec = |stage: CommonStage| Recovery::CommonExit { stage };
+    e.seg(0, Phase::CommonExit, rec(BeforeRspSave), |e| {
+        e.mov_mem_reg(OFF_STATE + ST_RSP, 4)
     })?;
-    e.buf.extend_from_slice(&[0x48, 0x8d, 0x25]);
-    e.buf.extend_from_slice(&d.to_le_bytes());
-    e.buf.push(0x9c); // pushfq (private scratch stack)
-    let d = e.disp(OFF_STATE + ST_RFLAGS, 6)?;
-    e.buf.extend_from_slice(&[0x8f, 0x05]); // pop qword [rip+d]
-    e.buf.extend_from_slice(&d.to_le_bytes());
+    e.seg(0, Phase::CommonExit, rec(RspSaved), |e| {
+        // lea rsp, [rip + scratch_top]
+        let target = e.field(OFF_SCRATCH).wrapping_add(SCRATCH_LEN as u64);
+        let d =
+            i32::try_from(target.wrapping_sub(e.pc().wrapping_add(7)) as i64).map_err(|_| {
+                Refuse::Unrelocatable {
+                    src_pc: 0,
+                    reason: "scratch stack out of reach",
+                }
+            })?;
+        e.buf.extend_from_slice(&[0x48, 0x8d, 0x25]);
+        e.buf.extend_from_slice(&d.to_le_bytes());
+        Ok(())
+    })?;
+    e.seg(0, Phase::CommonExit, rec(RspSaved), |e| {
+        e.buf.push(0x9c); // pushfq (private scratch stack)
+        Ok(())
+    })?;
+    e.seg(0, Phase::CommonExit, rec(RspSaved), |e| {
+        let d = e.disp(OFF_STATE + ST_RFLAGS, 6)?;
+        e.buf.extend_from_slice(&[0x8f, 0x05]); // pop qword [rip+d]
+        e.buf.extend_from_slice(&d.to_le_bytes());
+        Ok(())
+    })?;
     for (off, reg) in [
         (ST_RAX, 0u8),
         (ST_RCX, 1),
@@ -481,19 +598,37 @@ fn emit_common_exit(e: &mut Emitter) -> Result<u64, Refuse> {
         (ST_R14, 14),
         (ST_R15, 15),
     ] {
-        e.mov_mem_reg(OFF_STATE + off, reg)?;
+        e.seg(0, Phase::CommonExit, rec(RspSaved), |e| {
+            e.mov_mem_reg(OFF_STATE + off, reg)
+        })?;
     }
-    e.mov_reg_mem(OFF_HOST_RSP, 4)?;
-    e.mov_reg_mem(OFF_HOST_RBX, 3)?;
-    e.mov_reg_mem(OFF_HOST_RBP, 5)?;
-    e.mov_reg_mem(OFF_HOST_R12, 12)?;
-    e.mov_reg_mem(OFF_HOST_R13, 13)?;
-    e.mov_reg_mem(OFF_HOST_R14, 14)?;
-    e.mov_reg_mem(OFF_HOST_R15, 15)?;
-    e.buf.push(0xc3); // ret to dispatcher
+    e.seg(0, Phase::CommonExit, rec(AllSaved), |e| {
+        e.mov_reg_mem(OFF_HOST_RSP, 4)
+    })?;
+    e.seg(0, Phase::CommonExit, rec(AllSaved), |e| {
+        e.mov_reg_mem(OFF_HOST_RBX, 3)
+    })?;
+    e.seg(0, Phase::CommonExit, rec(AllSaved), |e| {
+        e.mov_reg_mem(OFF_HOST_RBP, 5)
+    })?;
+    e.seg(0, Phase::CommonExit, rec(AllSaved), |e| {
+        e.mov_reg_mem(OFF_HOST_R12, 12)
+    })?;
+    e.seg(0, Phase::CommonExit, rec(AllSaved), |e| {
+        e.mov_reg_mem(OFF_HOST_R13, 13)
+    })?;
+    e.seg(0, Phase::CommonExit, rec(AllSaved), |e| {
+        e.mov_reg_mem(OFF_HOST_R14, 14)
+    })?;
+    e.seg(0, Phase::CommonExit, rec(AllSaved), |e| {
+        e.mov_reg_mem(OFF_HOST_R15, 15)
+    })?;
+    e.seg(0, Phase::CommonExit, rec(AllSaved), |e| {
+        e.buf.push(0xc3); // ret to dispatcher
+        Ok(())
+    })?;
     Ok(at)
 }
-
 /// Translate every block reachable from `entry`. `gen_base` is the
 /// address the emitted bytes will execute at; `data_addr` is the
 /// address of the allocation's `JitData`.
@@ -543,7 +678,13 @@ pub fn translate(
                     .ok_or(Refuse::Decode { src_pc: insn.pc })?;
                 e.buf.extend_from_slice(&src[..insn.len]);
             }
-            e.map(start, insn.len as u64, insn.pc, Phase::Copied)?;
+            e.map(
+                start,
+                insn.len as u64,
+                insn.pc,
+                Phase::Copied,
+                Recovery::Copied,
+            )?;
         }
         let term_pc = block.term_pc().unwrap_or(block.start);
         match block.terminator {
@@ -574,14 +715,39 @@ pub fn translate(
                         });
                     }
                     e.buf.extend_from_slice(&enc.take_buffer());
+                    e.map(start, 2, term_pc, Phase::Copied, Recovery::Copied)?;
+                    let ft = e.pc();
                     e.jmp_fix(FixTarget::CountStub {
                         branch: term_pc,
                         successor: fallthrough,
                     });
+                    e.map(
+                        ft,
+                        5,
+                        fallthrough,
+                        Phase::CountStub,
+                        Recovery::BranchStub {
+                            branch: term_pc,
+                            successor: fallthrough,
+                            stage: StubStage::BeforeCreditPristine,
+                        },
+                    )?;
+                    let tk = e.pc();
                     e.jmp_fix(FixTarget::CountStub {
                         branch: term_pc,
                         successor: target,
                     });
+                    e.map(
+                        tk,
+                        5,
+                        target,
+                        Phase::CountStub,
+                        Recovery::BranchStub {
+                            branch: term_pc,
+                            successor: target,
+                            stage: StubStage::BeforeCreditPristine,
+                        },
+                    )?;
                 } else {
                     let term = block
                         .term
@@ -603,33 +769,66 @@ pub fn translate(
                             successor: target,
                         },
                     ));
+                    e.map(start, 6, term_pc, Phase::Copied, Recovery::Copied)?;
+                    let ft = e.pc();
                     e.jmp_fix(FixTarget::CountStub {
                         branch: term_pc,
                         successor: fallthrough,
                     });
+                    e.map(
+                        ft,
+                        5,
+                        fallthrough,
+                        Phase::CountStub,
+                        Recovery::BranchStub {
+                            branch: term_pc,
+                            successor: fallthrough,
+                            stage: StubStage::BeforeCreditPristine,
+                        },
+                    )?;
                 }
-                let len = e.pc().wrapping_sub(start);
-                e.map(start, len, term_pc, Phase::Copied)?;
             }
             Terminator::Jump { target } => {
                 let start = e.pc();
                 e.jmp_fix(FixTarget::Block(target));
-                e.map(start, 5, term_pc, Phase::Copied)?;
+                e.map(start, 5, term_pc, Phase::Copied, Recovery::Copied)?;
             }
             Terminator::Call { target, return_pc } => {
-                let start = e.pc();
-                e.mov_mem_rax(OFF_SPILL_RAX)?;
-                e.buf.extend_from_slice(&[0x48, 0xb8]);
-                e.buf.extend_from_slice(&return_pc.to_le_bytes());
-                e.buf.extend_from_slice(&[0x48, 0x8d, 0x64, 0x24, 0xf8]); // lea rsp,[rsp-8]
-                e.buf.extend_from_slice(&[0x48, 0x89, 0x04, 0x24]); // mov [rsp],rax
-                e.mov_rax_mem(OFF_SPILL_RAX)?;
-                e.jmp_fix(FixTarget::Block(target));
-                let len = e.pc().wrapping_sub(start);
-                e.map(start, len, term_pc, Phase::CallSequence)?;
+                use CallStage::*;
+                let rec = |stage: CallStage| Recovery::Call {
+                    call_pc: term_pc,
+                    target,
+                    stage,
+                };
+                e.seg(term_pc, Phase::CallSequence, rec(Pristine), |e| {
+                    e.mov_mem_rax(OFF_SPILL_RAX)
+                })?;
+                e.seg(term_pc, Phase::CallSequence, rec(Pristine), |e| {
+                    e.buf.extend_from_slice(&[0x48, 0xb8]);
+                    e.buf.extend_from_slice(&return_pc.to_le_bytes());
+                    Ok(())
+                })?;
+                e.seg(term_pc, Phase::CallSequence, rec(RaxSpilled), |e| {
+                    e.buf.extend_from_slice(&[0x48, 0x8d, 0x64, 0x24, 0xf8]);
+                    Ok(())
+                })?;
+                e.seg(term_pc, Phase::CallSequence, rec(RspDecremented), |e| {
+                    e.buf.extend_from_slice(&[0x48, 0x89, 0x04, 0x24]);
+                    Ok(())
+                })?;
+                e.seg(target, Phase::CallSequence, rec(CommittedSpilled), |e| {
+                    e.mov_rax_mem(OFF_SPILL_RAX)
+                })?;
+                e.seg(target, Phase::CallSequence, rec(Committed), |e| {
+                    e.jmp_fix(FixTarget::Block(target));
+                    Ok(())
+                })?;
             }
             Terminator::Fallthrough { next } => {
-                e.jmp_fix(FixTarget::Block(next));
+                e.seg(next, Phase::Copied, Recovery::Fallthrough { next }, |e| {
+                    e.jmp_fix(FixTarget::Block(next));
+                    Ok(())
+                })?;
             }
             Terminator::Return { pop_extra } => {
                 e.exit_stub(exit_kind::RETURN, term_pc, u64::from(pop_extra))?;
@@ -755,6 +954,44 @@ mod tests {
                 "{name}: got {out:?}"
             );
         }
+    }
+
+    #[test]
+    fn every_emitted_byte_is_mapped_contiguously() {
+        // The exact Astra F1 counterexample shape, both profiles.
+        let bytes = vec![0x31, 0xc0, 0xff, 0xc0, 0x83, 0xf8, 0x03, 0x75, 0xf9, 0xc3];
+        for profile in [
+            CountProfile::Branches,
+            CountProfile::BranchesAndInstructions,
+        ] {
+            let r = region(bytes.clone());
+            let t = translate(&r, 0x10_0000, profile, 0x80_0000, 0x81_0000).unwrap();
+            let unmapped = (0..t.code.len() as u64)
+                .filter(|&i| t.pcmap.lookup(0x80_0000 + i).is_none())
+                .count();
+            assert_eq!(unmapped, 0, "profile {profile:?}");
+            let mut expect = 0x80_0000u64;
+            for e in t.pcmap.entries() {
+                assert_eq!(e.gen_start, expect, "gap before {e:?}");
+                expect = e.gen_end;
+            }
+            assert_eq!(expect, 0x80_0000 + t.code.len() as u64);
+        }
+        // Machinery-heavy translation (calls, stubs, exits).
+        let fix = crate::fixtures::by_name("call_helper");
+        let r = region(fix.bytes);
+        let t = translate(
+            &r,
+            0x10_0000,
+            CountProfile::BranchesAndInstructions,
+            0x80_0000,
+            0x81_0000,
+        )
+        .unwrap();
+        assert!(
+            (0..t.code.len() as u64).all(|i| t.pcmap.lookup(0x80_0000 + i).is_some()),
+            "call_helper has unmapped emitted bytes"
+        );
     }
 
     #[test]

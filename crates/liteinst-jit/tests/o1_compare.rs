@@ -228,6 +228,37 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         ));
     }
 
+    // F1: fault on the call sequence's own stack store recovers
+    // the exact pre-call state (Astra counterexample shape).
+    {
+        let jit = run_jit("call_store_fault", |s| {
+            s.rax = 0x1122_3344_5566_7788;
+            s.rdi = s.rip + 16; // inside the RX code page
+        });
+        let f = match jit.outcome {
+            Err(RunError::Fault(f)) => f,
+            other => panic!("call_store_fault jit: {other:?}"),
+        };
+        assert_eq!(f.state.rax, 0x1122_3344_5566_7788, "pre-call rax");
+        assert_eq!(f.state.rsp - jit.base, 16, "pre-call rsp");
+        assert_eq!(f.src_pc - jit.base, 3, "call pc offset");
+        assert_eq!(f.instructions, 1, "only the mov retired");
+        let o1 = run_o1(
+            std::path::Path::new(CHILD),
+            "call_store_fault",
+            |r, info| {
+                r.rax = 0x1122_3344_5566_7788;
+                r.rdi = info.base + 16;
+            },
+        );
+        let (o1_pc, o1_sig) = o1.fault.expect("o1 call fault");
+        assert_eq!(o1_sig, f.signum);
+        assert_eq!(o1.instructions, 1);
+        assert_eq!(o1.state.rax, f.state.rax);
+        assert_eq!(o1.state.rsp - o1.base, f.state.rsp - jit.base);
+        assert_eq!(o1_pc - o1.base, 3);
+    }
+
     // Indirect control flow refuses by name (P1a boundary).
     let jit = run_jit("indirect_jmp", |_| {});
     assert!(matches!(

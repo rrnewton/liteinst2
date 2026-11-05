@@ -24,7 +24,7 @@ fn main() -> std::process::ExitCode {
         guest.plant_below_rsp(liteinst_jit::harness::REDZONE_MARKER);
         let expected = match fixture.name {
             "indirect_jmp" | "rdtsc_exit" => "REFUSED",
-            "fault_ret" => "FAULT",
+            "fault_ret" | "call_store_fault" => "FAULT",
             _ => "OK",
         };
         let mut exec =

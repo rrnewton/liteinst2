@@ -11,6 +11,7 @@
 use std::sync::atomic::{AtomicPtr, Ordering};
 
 use crate::cache::{CacheIndex, CacheRecord};
+use crate::pcmap::{CallStage, CommonStage, ExitStage, Recovery, StubStage};
 use crate::refuse::Refuse;
 use crate::state::{
     GuestState, JitData, OFF_HOST_R12, OFF_HOST_R13, OFF_HOST_R14, OFF_HOST_R15, OFF_HOST_RBP,
@@ -156,8 +157,21 @@ pub struct Outcome {
     pub exits: u64,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FaultKind {
+    /// Synchronous guest fault at the recovered source PC.
+    GuestFault,
+    /// Asynchronously sent signal (si_code <= 0) stopped the run;
+    /// state is recovered but no guest delivery is claimed.
+    AsyncSignal,
+    /// The executor's own machinery faulted (common exit, data
+    /// page, unmapped generated PC): not a guest-visible fault.
+    ExecutorError,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Fault {
+    pub kind: FaultKind,
     pub src_pc: u64,
     pub addr: u64,
     pub signum: i32,
@@ -191,7 +205,7 @@ struct Arena {
 
 impl Arena {
     fn new() -> Result<Arena, Refuse> {
-        let total = CODE_CAP + PAGE;
+        let total = CODE_CAP + 64 * PAGE;
         // SAFETY: anonymous private mapping of `total` bytes.
         let p = unsafe {
             libc::mmap(
@@ -256,6 +270,7 @@ struct ActiveRun {
     fault_gen_pc: u64,
     fault_addr: u64,
     fault_sig: i32,
+    fault_si_code: i32,
 }
 
 // SAFETY discipline: `ACTIVE` is set only by the single-threaded P1a
@@ -277,8 +292,8 @@ unsafe extern "C" {
 /// Previous dispositions, chained for faults outside the cache
 /// (notably the Rust runtime's stack-overflow SIGSEGV handler).
 /// Entries are `(handler, flags)` per signal in `FAULT_SIGNALS`.
-static mut PREV_HANDLERS: [(usize, i32); 3] = [(usize::MAX, 0); 3];
-const FAULT_SIGNALS: [i32; 3] = [libc::SIGSEGV, libc::SIGBUS, libc::SIGILL];
+static mut PREV_HANDLERS: [(usize, i32); 4] = [(usize::MAX, 0); 4];
+const FAULT_SIGNALS: [i32; 4] = [libc::SIGSEGV, libc::SIGBUS, libc::SIGILL, libc::SIGFPE];
 
 fn chain_previous(sig: i32, info: *mut libc::siginfo_t, ctx: *mut libc::c_void) {
     let idx = FAULT_SIGNALS.iter().position(|&s| s == sig).unwrap_or(0);
@@ -324,6 +339,12 @@ extern "C" fn fault_handler(sig: i32, info: *mut libc::siginfo_t, ctx: *mut libc
     }
     run.fault_gen_pc = rip;
     run.fault_sig = sig;
+    run.fault_si_code = if info.is_null() {
+        0
+    } else {
+        // SAFETY: info is kernel-provided for this signal.
+        unsafe { (*info).si_code }
+    };
     run.fault_addr = if info.is_null() {
         0
     } else {
@@ -331,7 +352,7 @@ extern "C" fn fault_handler(sig: i32, info: *mut libc::siginfo_t, ctx: *mut libc
         unsafe { (*info).si_addr() as usize as u64 }
     };
     // SAFETY: `data` points at the allocation-resident JitData.
-    let st = unsafe { &mut (*run.data).state };
+    let st = unsafe { &mut (*run.data).interrupted };
     st.rax = gregs[libc::REG_RAX as usize] as u64;
     st.rbx = gregs[libc::REG_RBX as usize] as u64;
     st.rcx = gregs[libc::REG_RCX as usize] as u64;
@@ -356,7 +377,212 @@ extern "C" fn fault_handler(sig: i32, info: *mut libc::siginfo_t, ctx: *mut libc
     }
 }
 
+/// Reconstruct status flags from the SETO/LAHF spill image:
+/// AH holds SF/ZF/AF/PF/CF at their flags positions, AL bit 0 is OF.
+/// All non-status bits come from the interrupted flags (stub
+/// instructions never modify them).
+fn flags_from_spill(saved: u64, current: u64) -> u64 {
+    const STATUS: u64 = 0x8d5; // OF|SF|ZF|AF|PF|CF
+    (current & !STATUS) | ((saved >> 8) & 0xd5) | ((saved & 1) << 11)
+}
+
+fn block_retired_before(t: &Translation, src_pc: u64) -> Option<(u64, u64)> {
+    for block in t.blocks.values() {
+        let pcs = block.insn_pcs();
+        if let Some(pos) = pcs.iter().position(|&p| p == src_pc) {
+            return Some((pos as u64, block.instruction_total()));
+        }
+        if block.term_pc() == Some(src_pc) {
+            return Some((pcs.len() as u64, block.instruction_total()));
+        }
+    }
+    None
+}
+
+/// Exact interrupted-state reconstruction for a stop at generated
+/// PC `gen_pc` (an entry start). This is the single place where
+/// pending branch/instruction credit is resolved; the dispatcher
+/// and the boundary tests both go through it.
+pub fn recover_fault(
+    t: &Translation,
+    profile: CountProfile,
+    gen_pc: u64,
+    data: &JitData,
+    addr: u64,
+    signum: i32,
+    si_code: i32,
+) -> Fault {
+    let raw = data.interrupted;
+    let mut state = raw;
+    let mut branches = data.branch_count;
+    let mut instructions = data.instruction_count;
+    let async_kind = si_code <= 0;
+    let Some(entry) = t.pcmap.lookup(gen_pc) else {
+        state.rip = 0;
+        return Fault {
+            kind: FaultKind::ExecutorError,
+            src_pc: 0,
+            addr,
+            signum,
+            state,
+            branches,
+            instructions,
+        };
+    };
+    let retired_at = |counted: u64, src: u64| -> u64 {
+        if profile != CountProfile::BranchesAndInstructions {
+            return counted;
+        }
+        match block_retired_before(t, src) {
+            Some((pos, total)) => counted - (total - pos),
+            None => counted,
+        }
+    };
+    let mut kind = if async_kind {
+        FaultKind::AsyncSignal
+    } else {
+        FaultKind::GuestFault
+    };
+    let src_pc = match entry.recovery {
+        Recovery::Copied => {
+            instructions = retired_at(instructions, entry.src_pc);
+            entry.src_pc
+        }
+        Recovery::BranchStub {
+            successor, stage, ..
+        } => {
+            match stage {
+                StubStage::BeforeCreditPristine => branches += 1,
+                StubStage::BeforeCreditSpilled => {
+                    state.rax = data.spill_rax;
+                    branches += 1;
+                }
+                StubStage::AfterCreditSpilled => {
+                    state.rax = data.spill_rax;
+                    state.rflags = flags_from_spill(data.spill_flags, raw.rflags);
+                }
+                StubStage::AfterCreditFlagsRestored => {
+                    state.rax = data.spill_rax;
+                }
+                StubStage::Committed => {}
+            }
+            successor
+        }
+        Recovery::InsnCountStub { block, stage } => {
+            let total = t
+                .blocks
+                .get(&block)
+                .map(|b| b.instruction_total())
+                .unwrap_or(0);
+            match stage {
+                StubStage::BeforeCreditPristine => {}
+                StubStage::BeforeCreditSpilled => state.rax = data.spill_rax,
+                StubStage::AfterCreditSpilled => {
+                    state.rax = data.spill_rax;
+                    state.rflags = flags_from_spill(data.spill_flags, raw.rflags);
+                    instructions -= total;
+                }
+                StubStage::AfterCreditFlagsRestored => {
+                    state.rax = data.spill_rax;
+                    instructions -= total;
+                }
+                StubStage::Committed => instructions -= total,
+            }
+            block
+        }
+        Recovery::Call {
+            call_pc,
+            target,
+            stage,
+        } => match stage {
+            CallStage::Pristine => {
+                instructions = retired_at(instructions, call_pc);
+                call_pc
+            }
+            CallStage::RaxSpilled => {
+                state.rax = data.spill_rax;
+                instructions = retired_at(instructions, call_pc);
+                call_pc
+            }
+            CallStage::RspDecremented => {
+                state.rax = data.spill_rax;
+                state.rsp = state.rsp.wrapping_add(8);
+                instructions = retired_at(instructions, call_pc);
+                call_pc
+            }
+            CallStage::CommittedSpilled => {
+                state.rax = data.spill_rax;
+                target
+            }
+            CallStage::Committed => target,
+        },
+        Recovery::ExitStub { stage } => {
+            if stage == ExitStage::Spilled {
+                state.rax = data.spill_rax;
+            }
+            instructions = retired_at(instructions, entry.src_pc);
+            entry.src_pc
+        }
+        Recovery::CommonExit { stage } => {
+            kind = FaultKind::ExecutorError;
+            match stage {
+                CommonStage::BeforeRspSave => {}
+                CommonStage::RspSaved => state.rsp = data.state.rsp,
+                CommonStage::AllSaved => state = data.state,
+            }
+            instructions = retired_at(instructions, data.exit_src);
+            data.exit_src
+        }
+        Recovery::Fallthrough { next } => next,
+    };
+    state.rip = src_pc;
+    Fault {
+        kind,
+        src_pc,
+        addr,
+        signum,
+        state,
+        branches,
+        instructions,
+    }
+}
+
+/// Alternate signal stack so faults with a wild guest RSP (whose
+/// signal frame could not be built on the guest stack at all) still
+/// reach the recovery handler.
+fn ensure_altstack() {
+    static ONCE: std::sync::Once = std::sync::Once::new();
+    ONCE.call_once(|| {
+        const ALT_LEN: usize = 1 << 20;
+        // SAFETY: leaked anonymous mapping used only as sigaltstack.
+        let base = unsafe {
+            libc::mmap(
+                core::ptr::null_mut(),
+                ALT_LEN,
+                libc::PROT_READ | libc::PROT_WRITE,
+                libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
+                -1,
+                0,
+            )
+        };
+        if base == libc::MAP_FAILED {
+            return;
+        }
+        let stack = libc::stack_t {
+            ss_sp: base,
+            ss_flags: 0,
+            ss_size: ALT_LEN,
+        };
+        // SAFETY: installing the leaked mapping as this thread's
+        // alternate signal stack (single-threaded P1a dispatcher).
+        unsafe {
+            libc::sigaltstack(&stack, core::ptr::null_mut());
+        }
+    });
+}
+
 fn install_fault_handlers() -> Result<(), Refuse> {
+    ensure_altstack();
     for (idx, sig) in FAULT_SIGNALS.into_iter().enumerate() {
         let mut old: libc::sigaction = unsafe { core::mem::zeroed() };
         // SAFETY: query-only sigaction with a null new action.
@@ -378,7 +604,7 @@ fn install_fault_handlers() -> Result<(), Refuse> {
         }
         let mut act: libc::sigaction = unsafe { core::mem::zeroed() };
         act.sa_sigaction = fault_handler as *const () as usize;
-        act.sa_flags = libc::SA_SIGINFO;
+        act.sa_flags = libc::SA_SIGINFO | libc::SA_ONSTACK;
         // SAFETY: previous disposition recorded above for chaining.
         if unsafe { libc::sigaction(sig, &act, core::ptr::null_mut()) } != 0 {
             return Err(Refuse::SignalOwnership { signum: sig });
@@ -490,16 +716,10 @@ impl Executable {
         if self.profile != CountProfile::BranchesAndInstructions {
             return counted;
         }
-        for block in self.translation.blocks.values() {
-            let pcs = block.insn_pcs();
-            if let Some(pos) = pcs.iter().position(|&p| p == src_pc) {
-                return counted - (block.instruction_total() - pos as u64);
-            }
-            if block.term_pc() == Some(src_pc) {
-                return counted - (block.instruction_total() - pcs.len() as u64);
-            }
+        match block_retired_before(&self.translation, src_pc) {
+            Some((pos, total)) => counted - (total - pos),
+            None => counted,
         }
-        counted
     }
 
     pub fn translation(&self) -> &Translation {
@@ -522,9 +742,16 @@ impl Executable {
 
     /// Run from `state.rip` until a return pops `return_sentinel`, a
     /// handler says `Done`, a named refusal, or a fault.
+    ///
+    /// Signal envelope (explicit, P1a): all blockable signals
+    /// except the synchronous fault set are blocked for the
+    /// duration of each run and restored after; an asynchronously
+    /// sent fault-set signal stops the run as
+    /// `FaultKind::AsyncSignal` (recovered, not guest-delivered).
+    /// No asynchronous guest-signal transparency is claimed.
     pub fn run(
         &mut self,
-        mut state: GuestState,
+        state: GuestState,
         handler: &mut dyn Handler,
         mem: &dyn GuestMemory,
         return_sentinel: u64,
@@ -537,6 +764,34 @@ impl Executable {
             .into());
         }
         install_fault_handlers()?;
+        // SAFETY: sigset locals live for both mask calls.
+        let (mut set, mut old): (libc::sigset_t, libc::sigset_t) =
+            unsafe { (core::mem::zeroed(), core::mem::zeroed()) };
+        unsafe {
+            libc::sigfillset(&mut set);
+            for sig in FAULT_SIGNALS
+                .into_iter()
+                .chain([libc::SIGKILL, libc::SIGSTOP])
+            {
+                libc::sigdelset(&mut set, sig);
+            }
+            libc::pthread_sigmask(libc::SIG_BLOCK, &set, &mut old);
+        }
+        let r = self.run_masked(state, handler, mem, return_sentinel);
+        // SAFETY: restoring the caller's previous mask.
+        unsafe {
+            libc::pthread_sigmask(libc::SIG_SETMASK, &old, core::ptr::null_mut());
+        }
+        r
+    }
+
+    fn run_masked(
+        &mut self,
+        mut state: GuestState,
+        handler: &mut dyn Handler,
+        mem: &dyn GuestMemory,
+        return_sentinel: u64,
+    ) -> Result<Outcome, RunError> {
         let mut exits: u64 = 0;
         // Counters accumulate across dispatcher re-entries: each
         // entry seeds JitData with the running totals.
@@ -562,6 +817,7 @@ impl Executable {
                 fault_gen_pc: 0,
                 fault_addr: 0,
                 fault_sig: 0,
+                fault_si_code: 0,
             };
             ACTIVE.store(&mut active, Ordering::SeqCst);
             // SAFETY: sigsetjmp arms the fault return; liteinst_jit_enter
@@ -578,31 +834,15 @@ impl Executable {
             let data = unsafe { core::ptr::read(self.data) };
             state = data.state;
             if jumped != 0 {
-                let src_pc = self
-                    .translation
-                    .pcmap
-                    .lookup(active.fault_gen_pc)
-                    .map(|e| e.src_pc)
-                    .unwrap_or(0);
-                state.rip = src_pc;
-                let mut instructions = data.instruction_count;
-                if self.profile == CountProfile::BranchesAndInstructions {
-                    for block in self.translation.blocks.values() {
-                        let pcs = block.insn_pcs();
-                        if let Some(pos) = pcs.iter().position(|&p| p == src_pc) {
-                            instructions -= block.instruction_total() - pos as u64;
-                            break;
-                        }
-                    }
-                }
-                return Err(RunError::Fault(Box::new(Fault {
-                    src_pc,
-                    addr: active.fault_addr,
-                    signum: active.fault_sig,
-                    state,
-                    branches: data.branch_count,
-                    instructions,
-                })));
+                return Err(RunError::Fault(Box::new(recover_fault(
+                    &self.translation,
+                    self.profile,
+                    active.fault_gen_pc,
+                    &data,
+                    active.fault_addr,
+                    active.fault_sig,
+                    active.fault_si_code,
+                ))));
             }
             exits += 1;
             tot_branches = data.branch_count;
@@ -620,6 +860,7 @@ impl Executable {
                         // block-head pre-credit (F3).
                         state.rip = data.exit_src;
                         return Err(RunError::Fault(Box::new(Fault {
+                            kind: FaultKind::GuestFault,
                             src_pc: data.exit_src,
                             addr: state.rsp,
                             signum: libc::SIGSEGV,
@@ -702,6 +943,175 @@ impl Executable {
                     }
                     .into());
                 }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod recovery_tests {
+    use super::*;
+    use crate::types::{Generation, RegionFacts};
+
+    fn setup(fix_bytes: &[u8], profile: CountProfile) -> Translation {
+        let region = RegionFacts {
+            base: 0x10_0000,
+            bytes: fix_bytes.to_vec(),
+            generation: Generation(1),
+            immutable_private: true,
+        };
+        translate(&region, 0x10_0000, profile, 0x80_0000, 0x81_0000).unwrap()
+    }
+
+    fn fake_data() -> JitData {
+        let mut d = JitData::new(GuestState::default());
+        d.branch_count = 10;
+        d.instruction_count = 1000;
+        d.spill_rax = 0x1111;
+        d.spill_flags = (0x80 << 8) | 1; // AH: SF, AL: OF=1
+        d.interrupted.rax = 0xdead;
+        d.interrupted.rflags = 0x202;
+        d.interrupted.rsp = 0x7000;
+        d
+    }
+
+    fn find(t: &Translation, pred: impl Fn(&Recovery) -> bool) -> &crate::pcmap::PcMapEntry {
+        t.pcmap
+            .entries()
+            .iter()
+            .find(|e| pred(&e.recovery))
+            .expect("entry exists")
+    }
+
+    #[test]
+    fn branch_stub_credit_timing_and_spill_recovery() {
+        let fix = crate::fixtures::by_name("call_helper");
+        let t = setup(&fix.bytes, CountProfile::BranchesAndInstructions);
+        // Before the credit store: pending branch counts, RAX from spill.
+        let e = find(&t, |r| {
+            matches!(
+                r,
+                Recovery::BranchStub {
+                    stage: StubStage::BeforeCreditSpilled,
+                    ..
+                }
+            )
+        });
+        let Recovery::BranchStub { successor, .. } = e.recovery else {
+            unreachable!()
+        };
+        let f = recover_fault(
+            &t,
+            CountProfile::BranchesAndInstructions,
+            e.gen_start,
+            &fake_data(),
+            0,
+            libc::SIGSEGV,
+            1,
+        );
+        assert_eq!(f.branches, 11, "retired branch credited exactly once");
+        assert_eq!(f.state.rax, 0x1111);
+        assert_eq!(f.state.rip, successor);
+        assert_eq!(f.state.rflags, 0x202, "flags pristine before INC");
+        assert_eq!(f.kind, FaultKind::GuestFault);
+        // After the credit store: no second credit, flags rebuilt.
+        let e = find(&t, |r| {
+            matches!(
+                r,
+                Recovery::BranchStub {
+                    stage: StubStage::AfterCreditSpilled,
+                    ..
+                }
+            )
+        });
+        let f = recover_fault(
+            &t,
+            CountProfile::BranchesAndInstructions,
+            e.gen_start,
+            &fake_data(),
+            0,
+            libc::SIGSEGV,
+            1,
+        );
+        assert_eq!(f.branches, 10, "no double credit after INC");
+        assert_eq!(f.state.rax, 0x1111);
+        assert_eq!(
+            f.state.rflags,
+            0x202 | 0x80 | 0x800,
+            "SF+OF from spill image"
+        );
+        // Asynchronous provenance is classified, not called a fault.
+        let f = recover_fault(
+            &t,
+            CountProfile::BranchesAndInstructions,
+            e.gen_start,
+            &fake_data(),
+            0,
+            libc::SIGSEGV,
+            0,
+        );
+        assert_eq!(f.kind, FaultKind::AsyncSignal);
+    }
+
+    #[test]
+    fn call_store_boundary_restores_pre_call_state() {
+        let fix = crate::fixtures::by_name("call_helper");
+        let t = setup(&fix.bytes, CountProfile::BranchesAndInstructions);
+        let e = find(&t, |r| {
+            matches!(
+                r,
+                Recovery::Call {
+                    stage: CallStage::RspDecremented,
+                    ..
+                }
+            )
+        });
+        let Recovery::Call { call_pc, .. } = e.recovery else {
+            unreachable!()
+        };
+        let f = recover_fault(
+            &t,
+            CountProfile::BranchesAndInstructions,
+            e.gen_start,
+            &fake_data(),
+            0x7000,
+            libc::SIGSEGV,
+            1,
+        );
+        assert_eq!(f.state.rax, 0x1111, "guest rax from spill, not return pc");
+        assert_eq!(f.state.rsp, 0x7008, "decrement undone");
+        assert_eq!(f.state.rip, call_pc);
+        // Entry block is exactly the call: pre-credit removed.
+        assert_eq!(f.instructions, 999);
+    }
+
+    #[test]
+    fn every_entry_boundary_recovers_and_common_is_executor_error() {
+        let fix = crate::fixtures::by_name("call_helper");
+        let t = setup(&fix.bytes, CountProfile::BranchesAndInstructions);
+        let mut data = fake_data();
+        data.exit_src = 0x10_0000;
+        data.state.rax = 0x7777;
+        for e in t.pcmap.entries() {
+            let f = recover_fault(
+                &t,
+                CountProfile::BranchesAndInstructions,
+                e.gen_start,
+                &data,
+                0,
+                libc::SIGSEGV,
+                1,
+            );
+            let is_common = matches!(e.recovery, Recovery::CommonExit { .. });
+            assert_eq!(f.kind == FaultKind::ExecutorError, is_common, "entry {e:?}");
+            assert_ne!(f.state.rip, 0, "entry {e:?} recovers a source pc");
+            if matches!(
+                e.recovery,
+                Recovery::CommonExit {
+                    stage: CommonStage::AllSaved
+                }
+            ) {
+                assert_eq!(f.state.rax, 0x7777, "saved state wins over host regs");
             }
         }
     }

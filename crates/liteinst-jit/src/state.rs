@@ -38,10 +38,16 @@ pub struct GuestState {
 
 /// Data living at a fixed offset in every cache allocation. Emitted
 /// stubs reach it RIP-relatively; the dispatcher reaches it directly.
+pub const SCRATCH_LEN: usize = 65536;
+
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct JitData {
     pub state: GuestState,
+    /// Raw interrupted registers written by the fault handler.
+    /// Kept separate from `state` so common-exit saves already made
+    /// into `state` survive a fault mid-epilogue.
+    pub interrupted: GuestState,
     pub branch_count: u64,
     pub instruction_count: u64,
     pub spill_rax: u64,
@@ -57,13 +63,14 @@ pub struct JitData {
     pub host_r14: u64,
     pub host_r15: u64,
     pub tmp_entry: u64,
-    pub scratch: [u8; 256],
+    pub scratch: [u8; SCRATCH_LEN],
 }
 
 impl JitData {
     pub fn new(state: GuestState) -> JitData {
         JitData {
             state,
+            interrupted: GuestState::default(),
             branch_count: 0,
             instruction_count: 0,
             spill_rax: 0,
@@ -79,7 +86,7 @@ impl JitData {
             host_r14: 0,
             host_r15: 0,
             tmp_entry: 0,
-            scratch: [0; 256],
+            scratch: [0; SCRATCH_LEN],
         }
     }
     /// Address of the private scratch stack top (inside `scratch`).
@@ -89,7 +96,9 @@ impl JitData {
     pub unsafe fn scratch_top(this: *const JitData) -> u64 {
         // SAFETY: caller guarantees `this` is live; the offset is
         // inside the struct by construction.
-        unsafe { (this as *const u8).add(core::mem::offset_of!(JitData, scratch) + 256) as u64 }
+        unsafe {
+            (this as *const u8).add(core::mem::offset_of!(JitData, scratch) + SCRATCH_LEN) as u64
+        }
     }
 }
 

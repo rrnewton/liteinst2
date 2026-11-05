@@ -225,14 +225,13 @@ pub fn decode_supported(bytes: &[u8], pc: u64) -> Result<DecodedInsn, Refuse> {
                 }
             }
         }
-        InsnClass::Return => {
-            if !matches!(ins.code(), Code::Retnq | Code::Retnq_imm16) {
-                return Err(Refuse::Unrelocatable {
-                    src_pc: pc,
-                    reason: "far/other return outside P1a envelope",
-                });
-            }
+        InsnClass::Return if !matches!(ins.code(), Code::Retnq | Code::Retnq_imm16) => {
+            return Err(Refuse::Unrelocatable {
+                src_pc: pc,
+                reason: "far/other return outside P1a envelope",
+            });
         }
+        InsnClass::Return => {}
         _ => {}
     }
     Ok(d)
