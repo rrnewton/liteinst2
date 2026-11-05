@@ -1,0 +1,17 @@
+diff --git a/crates/liteinst-jit/src/translate.rs b/crates/liteinst-jit/src/translate.rs
+index 97374760..66538697 100644
+--- a/crates/liteinst-jit/src/translate.rs
++++ b/crates/liteinst-jit/src/translate.rs
+@@ -771,10 +771,8 @@ pub fn translate(
+                     ));
+                     e.map(start, 6, term_pc, Phase::Copied, Recovery::Copied)?;
+                     let ft = e.pc();
+-                    e.jmp_fix(FixTarget::CountStub {
+-                        branch: term_pc,
+-                        successor: fallthrough,
+-                    });
++                    // MUTANT 02: fallthrough edge bypasses its stub.
++                    e.jmp_fix(FixTarget::Block(fallthrough));
+                     e.map(
+                         ft,
+                         5,

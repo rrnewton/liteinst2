@@ -1,0 +1,17 @@
+diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
+index 3b061d29..9df2ae8e 100644
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -452,10 +452,10 @@ pub fn recover_fault(
+             successor, stage, ..
+         } => {
+             match stage {
+-                StubStage::BeforeCreditPristine => branches += 1,
++                // MUTANT 01: pending retirement credit dropped.
++                StubStage::BeforeCreditPristine => {}
+                 StubStage::BeforeCreditSpilled => {
+                     state.rax = data.spill_rax;
+-                    branches += 1;
+                 }
+                 StubStage::AfterCreditSpilled => {
+                     state.rax = data.spill_rax;

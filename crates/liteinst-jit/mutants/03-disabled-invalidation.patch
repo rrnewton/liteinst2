@@ -1,0 +1,14 @@
+diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
+index 3b061d29..7a36111b 100644
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -736,7 +736,8 @@ impl Executable {
+         new_generation: Generation,
+     ) -> Result<usize, Refuse> {
+         let n = self.index.invalidate(src_start, src_end, new_generation)?;
+-        self.valid = false;
++        // MUTANT 03: invalidation does not stop execution.
++        self.valid = true;
+         Ok(n)
+     }
+ 

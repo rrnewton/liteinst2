@@ -1,0 +1,13 @@
+diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
+index 3b061d29..a528754a 100644
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -536,6 +536,8 @@ pub fn recover_fault(
+         Recovery::Fallthrough { next } => next,
+     };
+     state.rip = src_pc;
++    // MUTANT 04: report the raw generated PC.
++    let src_pc = gen_pc;
+     Fault {
+         kind,
+         src_pc,
