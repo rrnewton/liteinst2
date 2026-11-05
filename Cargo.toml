@@ -1,8 +1,8 @@
 [package]
 name = "liteinst2"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
-description = "Online x86-64 instrumentation using instruction punning"
+description = "DEPRECATED: renamed to liteinst; use the liteinst crate (>= 0.2). Online x86-64 instrumentation using instruction punning"
 repository = "https://github.com/rrnewton/liteinst2"
 readme = "README.md"
 license = "BSD-2-Clause"

@@ -1,4 +1,13 @@
-# liteinst2
+# liteinst2 (deprecated — renamed to `liteinst`)
+
+> **This crate is deprecated.** It was renamed to
+> [`liteinst`](https://crates.io/crates/liteinst) at version 0.2.0
+> (same code, bare name). Depend on `liteinst` instead:
+> `liteinst = "0.2"`, then `use liteinst::...`. Subcrates keep their
+> names (`liteinst-x86`, `liteinst-admission`, `liteinst-inprocess`,
+> `liteinst-launch`, `liteinst-artifact`); root-dependent ones are at
+> 0.2.1+ repointed at `liteinst`. `liteinst2` 0.2.x remains available
+> (not yanked) for existing pins and receives no further releases.
 
 `liteinst2` is a Rust library for **hooking machine code in a running program**.
 It lets you intercept a chosen point in already-loaded x86-64 code — redirecting
