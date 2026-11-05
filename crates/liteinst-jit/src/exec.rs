@@ -715,6 +715,79 @@ fn ensure_altstack() -> Result<(), Refuse> {
     }
     Ok(())
 }
+
+/// Application signal range: standard signals plus the real-time
+/// range. 32/33 are reserved internally by glibc and cannot carry
+/// application handlers, so they are the only documented skip.
+fn async_signal_range() -> impl Iterator<Item = i32> {
+    (1..=64).filter(|&sig| {
+        sig != libc::SIGKILL
+            && sig != libc::SIGSTOP
+            && sig != 32
+            && sig != 33
+            && !FAULT_SIGNALS.contains(&sig)
+    })
+}
+
+fn pending_async_signal() -> Result<Option<i32>, Refuse> {
+    let mut set: libc::sigset_t = unsafe { core::mem::zeroed() };
+    // SAFETY: sigpending fills the set.
+    if unsafe { libc::sigpending(&mut set) } != 0 {
+        return Err(Refuse::SignalOwnership { signum: 0 });
+    }
+    Ok(async_signal_range().find(|&sig| {
+        // SAFETY: membership query on a filled set.
+        (unsafe { libc::sigismember(&set, sig) } == 1)
+    }))
+}
+
+/// Take custody of a pending async signal: dequeue every queued
+/// instance while it is still blocked, so restoring the caller's
+/// mask cannot deliver it (a default-terminate signal must not
+/// kill the caller before it can observe the AsyncSignal result).
+fn take_pending_async() -> Result<Option<i32>, Refuse> {
+    let Some(sig) = pending_async_signal()? else {
+        return Ok(None);
+    };
+    let mut set: libc::sigset_t = unsafe { core::mem::zeroed() };
+    unsafe {
+        libc::sigemptyset(&mut set);
+        libc::sigaddset(&mut set, sig);
+    }
+    let ts = libc::timespec {
+        tv_sec: 0,
+        tv_nsec: 0,
+    };
+    loop {
+        let mut info: libc::siginfo_t = unsafe { core::mem::zeroed() };
+        // SAFETY: dequeue one pending instance of the blocked sig.
+        let r = unsafe { libc::sigtimedwait(&set, &mut info, &ts) };
+        if r != sig {
+            break;
+        }
+    }
+    Ok(Some(sig))
+}
+
+/// P1a signal envelope admission: asynchronous signals are
+/// blocked (not guest-delivered) during a run, so a process that
+/// has installed a handler for one is refused before execution
+/// rather than having delivery silently deferred. Default and
+/// ignore dispositions are admitted (and preserved on restore).
+fn check_async_handlers() -> Result<(), Refuse> {
+    for sig in async_signal_range() {
+        let mut old: libc::sigaction = unsafe { core::mem::zeroed() };
+        // SAFETY: query-only sigaction.
+        if unsafe { libc::sigaction(sig, core::ptr::null(), &mut old) } != 0 {
+            return Err(Refuse::SignalOwnership { signum: sig });
+        }
+        if old.sa_sigaction != libc::SIG_DFL && old.sa_sigaction != libc::SIG_IGN {
+            return Err(Refuse::SignalOwnership { signum: sig });
+        }
+    }
+    Ok(())
+}
+
 fn install_fault_handlers() -> Result<(), Refuse> {
     ensure_altstack()?;
     for (idx, sig) in FAULT_SIGNALS.into_iter().enumerate() {
