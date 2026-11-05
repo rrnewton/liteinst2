@@ -1,7 +1,7 @@
 # Standalone core contract, version 3
 
 This is the A0 boundary shared by the core and admission clients. The public
-types live in `liteinst2::contracts`; no loader, scheduler, or syscall policy
+types live in `liteinst::contracts`; no loader, scheduler, or syscall policy
 belongs in this module. Existing `InstalledHook` and `RapidProbe` APIs retain
 their existing contracts. This document does not qualify their live publication
 protocols for a new application.

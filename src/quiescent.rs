@@ -143,7 +143,7 @@ pub struct InstallRequest<'a> {
     pub identity: CodeIdentity,
     /// Exact bytes; the entire supplied range becomes a read dependency.
     pub code: &'a [u8],
-    /// Executable address corresponding to code[0].
+    /// Executable address corresponding to `code[0]`.
     pub base_address: u64,
     /// Caller-certified containing function.
     pub function: AddressRange,

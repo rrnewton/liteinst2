@@ -9,6 +9,12 @@ license = "BSD-2-Clause"
 keywords = ["instrumentation", "x86-64", "patching", "trampoline"]
 categories = ["development-tools", "os::linux-apis"]
 rust-version = "1.94"
+
+# The library is Linux x86-64 only; build docs for that target and include
+# the offline-router surface, which is empty under default features.
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+features = ["offline-router"]
 # Root anchors keep explicit documentation names out of private work directories.
 include = [
     "/Cargo.lock",

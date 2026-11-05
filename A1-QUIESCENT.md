@@ -1,6 +1,6 @@
 # Quiescent install-once core
 
-`liteinst2::quiescent` plans and publishes standalone interception under a
+`liteinst::quiescent` plans and publishes standalone interception under a
 caller-owned rendezvous or admission gate. It is separate from the existing
 concurrent `InstalledHook`/`RapidProbe` interfaces. It has no scheduler, loader,
 or syscall-policy dependency.

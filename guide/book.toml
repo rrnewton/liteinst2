@@ -1,0 +1,13 @@
+[book]
+title = "The LiteInst Guide"
+authors = ["The LiteInst contributors"]
+description = "A guide to in-place x86-64 instrumentation with liteinst: instruction punning, WordPatch++, page gates, and offline rewriting."
+src = "src"
+language = "en"
+
+[output.html]
+git-repository-url = "https://github.com/rrnewton/liteinst2"
+edit-url-template = "https://github.com/rrnewton/liteinst2/edit/main/guide/{path}"
+
+[rust]
+edition = "2024"

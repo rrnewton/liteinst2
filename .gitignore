@@ -1,2 +1,4 @@
 /target
 /ignored/
+# mdBook output (built in CI, deployed to GitHub Pages)
+/guide/book/

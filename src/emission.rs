@@ -21,7 +21,7 @@ pub struct PlanningSite<'a> {
     pub identity: CodeIdentity,
     /// Exact immutable source snapshot.
     pub code: &'a [u8],
-    /// Coordinate corresponding to code[0].
+    /// Coordinate corresponding to `code[0]`.
     pub base_address: u64,
     /// Authenticated containing function for live/function-based frontends.
     /// A distinct artifact-only frontend may instead bind a contiguous original

@@ -18,7 +18,7 @@ pub struct WholeFunctionRequest<'a> {
     pub identity: CodeIdentity,
     /// Complete original function, without adjacent padding or omitted suffix.
     pub code: &'a [u8],
-    /// Actual function entry and coordinate of code[0].
+    /// Actual function entry and coordinate of `code[0]`.
     pub base_address: u64,
     /// Complete entries in this exact function and generation. Positive facts
     /// include all decoded reachable leaders: entry, direct branch targets and

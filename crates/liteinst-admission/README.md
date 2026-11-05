@@ -3,7 +3,7 @@
 Standalone x86-64 admission **facts and a mock publication model**. This B0
 crate does not change memory permissions, emit patches or execute callbacks.
 It adds no runtime framework dependency. Its fact exporter consumes the A0
-`liteinst2::contracts` boundary; the model publisher remains deliberately separate
+`liteinst::contracts` boundary; the model publisher remains deliberately separate
 from the unsafe live publisher.
 
 `RuntimeScan` decodes at every byte offset with iced-x86 1.21, including starts

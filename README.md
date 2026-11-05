@@ -163,7 +163,7 @@ installation admits only prior `SIG_DFL` or `SIG_IGN` dispositions and refuses a
 custom SIGTRAP handler without replacing it. A filtered host can instead call
 `prepare_live_patching_with_signal_runtime` with exact installation and default
 redelivery callbacks, subject to the same prior-disposition rule. The host
-installer retains a blocked SIGTRAP mask until LiteInst2 publishes the prior
+installer retains a blocked SIGTRAP mask until LiteInst publishes the prior
 action and asks the host to restore the exact mask. This avoids pretending that
 a direct Rust call can reproduce kernel signal-mask,
 alternate-stack, reset, and restart semantics. The preparation entrypoint is

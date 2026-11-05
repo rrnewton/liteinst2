@@ -6,6 +6,11 @@ rust-version = "1.94"
 license = "BSD-2-Clause"
 repository = "https://github.com/rrnewton/liteinst2"
 description = "Shared descriptive x86 decode and selected-operand facts"
+readme = "README.md"
+
+# x86-64 only; keep docs.rs off targets where the crate is meaningless.
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 iced-x86 = { version = "=1.21.0", default-features = false, features = ["decoder"] }

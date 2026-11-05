@@ -8,6 +8,10 @@ license = "BSD-2-Clause"
 repository = "https://github.com/rrnewton/liteinst2"
 readme = "README.md"
 
+# Linux x86-64 only (ptrace launch checkpoints); restrict docs.rs targets.
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
 [dependencies]
 libc = "0.2.186"
 sha2 = { version = "0.10.9", optional = true }
