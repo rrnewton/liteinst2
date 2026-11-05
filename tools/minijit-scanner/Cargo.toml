@@ -1,0 +1,19 @@
+[package]
+name = "minijit-scanner"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94"
+license = "BSD-2-Clause"
+description = "Table-driven x86-64 length+class scanner prototype for liteinst mini-JIT S3"
+publish = false
+
+# Standalone prototype: not a member of the liteinst2 workspace and
+# not used by liteinst-jit production code.
+[workspace]
+
+[dependencies]
+iced-x86 = { version = "=1.21.0", default-features = false, features = ["std", "decoder", "instr_info"] }
+liteinst-jit = { path = "../../crates/liteinst-jit" }
+
+[profile.release]
+debug = false
