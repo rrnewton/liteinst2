@@ -3,8 +3,8 @@
 [who-am-i: musejit, host withheld. Owner: musejit (muse, devbig030) since 2026-11-05T12:03:34Z]
 
 Command: `sh crates/liteinst-jit/mutants/run.sh` from the
-workspace root, 2026-11-05T14:25Z, on liteinst2 branch
-`musejit/work-20261105` at base head `28bb2ba87c0ef5f5b2041a68d050aa7cc7523f13`
+workspace root, 2026-11-05T14:25Z; re-executed at the round-3 head below, on liteinst2 branch
+`musejit/work-20261105` at base head `a9f4bb29` (full hash in the hand-back status)
 (the patches in this directory, applied and reversed one at a
 time; the script first requires a green baseline, then requires
 each mutant run to fail with its named causal assertion — a
@@ -12,9 +12,7 @@ compile/infrastructure error is explicitly not a kill — and each
 restoration to return green on a clean tree). Script exit code:
 **0**.
 
-Patch SHA-256: `01` `1d2935166a9e…`, `02` `a106a28b9c96…`,
-`03` `06f4fe481ff1…`, `04` `d4876c7daec4…`, `05` `f13746f838ff…`
-(full values printed by the script at every run).
+Patch SHA-256 are printed by the script at every run and were re-verified at this head (mutant 04 regenerated for context drift; same one-line defect).
 
 | Mutant | Defect simulated | Killing evidence (mutant run) | Restored |
 |---|---|---|---|

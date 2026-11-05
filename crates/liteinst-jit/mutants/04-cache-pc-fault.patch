@@ -1,13 +1,13 @@
 diff --git a/crates/liteinst-jit/src/exec.rs b/crates/liteinst-jit/src/exec.rs
-index 4219c7f3..3b89f938 100644
+index 67597134..adea5830 100644
 --- a/crates/liteinst-jit/src/exec.rs
 +++ b/crates/liteinst-jit/src/exec.rs
-@@ -596,6 +596,8 @@ pub fn recover_fault(
+@@ -630,6 +630,8 @@ pub fn recover_fault(
          Recovery::Fallthrough { next } => next,
      };
      state.rip = src_pc;
 +    // MUTANT 04: report the raw generated PC.
 +    let src_pc = gen_pc;
-     // Preserve siginfo address semantics: SIGFPE/SIGILL name the
-     // faulting instruction (a generated address), and a fetch
-     // fault names the interrupted PC. Those translate to source
+     // Preserve siginfo address semantics by access provenance,
+     // never by numerical equality: SIGFPE/SIGILL name the
+     // faulting instruction, and a page-fault error code with the
