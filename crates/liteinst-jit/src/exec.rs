@@ -772,6 +772,14 @@ struct MaskedOutcome {
     poll_custody_error: bool,
 }
 
+/// Canonical custody-record form promised by `SignalOwnership`:
+/// distinct signal numbers in ascending order, at every exit.
+fn canonicalize_taken(mut taken: Vec<i32>) -> Vec<i32> {
+    taken.sort_unstable();
+    taken.dedup();
+    taken
+}
+
 /// Take custody of *every* pending async signal: dequeue all
 /// queued instances of each pending number while still blocked,
 /// so restoring the caller's mask cannot deliver a leftover
@@ -784,17 +792,20 @@ fn take_all_pending_async() -> Result<Vec<i32>, Refuse> {
             // A later observation failure must not erase custody
             // already taken in earlier iterations.
             if let Refuse::SignalOwnership { taken: prior, .. } = &mut e {
-                *prior = taken.clone();
+                *prior = canonicalize_taken(taken.clone());
             }
             e
         })?
         else {
-            return Ok(taken);
+            return Ok(canonicalize_taken(taken));
         };
         if taken.contains(&sig) {
             // Dequeue below must make progress; bail out rather
             // than spin if the kernel keeps reporting it.
-            return Err(Refuse::SignalOwnership { signum: sig, taken });
+            return Err(Refuse::SignalOwnership {
+                signum: sig,
+                taken: canonicalize_taken(taken),
+            });
         }
         let mut set: libc::sigset_t = unsafe { core::mem::zeroed() };
         unsafe {
@@ -813,8 +824,10 @@ fn take_all_pending_async() -> Result<Vec<i32>, Refuse> {
                 // Record custody immediately, before waiting for
                 // any further instance: a failure on the *next*
                 // wait must still report this consumed signal.
-                if !taken.contains(&sig) {
-                    taken.push(sig);
+                // Insert in canonical position so a lower number
+                // arriving later cannot make the record descend.
+                if let Err(position) = taken.binary_search(&sig) {
+                    taken.insert(position, sig);
                 }
                 continue;
             }
@@ -825,13 +838,19 @@ fn take_all_pending_async() -> Result<Vec<i32>, Refuse> {
             if r == -1 && errno == Some(libc::EINTR) {
                 continue;
             }
-            return Err(Refuse::SignalOwnership { signum: sig, taken });
+            return Err(Refuse::SignalOwnership {
+                signum: sig,
+                taken: canonicalize_taken(taken),
+            });
         }
         if !taken.contains(&sig) {
             // The pending query reported this number but no wait
             // consumed it; do not spin on a contradictory custody
             // observation, and do not claim it as taken.
-            return Err(Refuse::SignalOwnership { signum: sig, taken });
+            return Err(Refuse::SignalOwnership {
+                signum: sig,
+                taken: canonicalize_taken(taken),
+            });
         }
     }
 }

@@ -58,6 +58,15 @@ fn custody_dequeue_poll_returns_full_async_mask() {
 }
 
 #[test]
+fn custody_ordering_reports_taken_ascending() {
+    let status = std::process::Command::new(CHILD)
+        .arg("ordering")
+        .status()
+        .expect("run custody ordering child");
+    assert!(status.success(), "custody ordering child: {status}");
+}
+
+#[test]
 fn custody_ok_return_reports_also_pending() {
     // Pre-block and queue one signal ourselves: it belongs to no
     // poll stop (the fixture finishes in one entry), so only the

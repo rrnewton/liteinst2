@@ -28,6 +28,7 @@ enum Mode {
     PartialOk,
     PartialPoll,
     DequeuePoll,
+    Ordering,
 }
 
 struct Queued {
@@ -91,6 +92,8 @@ fn full_async_mask() -> Vec<i32> {
 }
 
 static PARTIAL: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static ORDERING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static ORDER_RAISED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Child-only interposer: really drain SIGUSR1 through the kernel
 /// syscall, then fail a SIGUSR2 wait. This makes partial custody
@@ -115,7 +118,22 @@ pub unsafe extern "C" fn sigtimedwait(
             *libc::__errno_location() = libc::EPERM;
             return -1;
         }
-        libc::syscall(libc::SYS_rt_sigtimedwait, set, info, ts, 8usize) as libc::c_int
+        if ORDERING.load(std::sync::atomic::Ordering::SeqCst)
+            && libc::sigismember(set, libc::SIGTERM) == 1
+        {
+            *libc::__errno_location() = libc::EPERM;
+            return -1;
+        }
+        let result = libc::syscall(libc::SYS_rt_sigtimedwait, set, info, ts, 8usize) as libc::c_int;
+        if result == libc::SIGUSR2
+            && ORDERING.load(std::sync::atomic::Ordering::SeqCst)
+            && !ORDER_RAISED.swap(true, std::sync::atomic::Ordering::SeqCst)
+        {
+            // A lower number arrives only after the higher number
+            // has really been dequeued: encounter order is 12,10.
+            assert_eq!(libc::raise(libc::SIGUSR1), 0);
+        }
+        result
     }
 }
 
@@ -169,11 +187,18 @@ impl Queued {
             return;
         }
         self.queued = true;
-        // SAFETY: raising two standard signals to this process
-        // while run() has them blocked.
+        // SAFETY: raising standard signals to this process while
+        // run() has them blocked. Ordering mode starts with the
+        // higher number plus the wait that will fail; SIGUSR1 is
+        // queued by the interposer only after SIGUSR2 is consumed.
         unsafe {
-            assert_eq!(libc::raise(libc::SIGUSR1), 0);
-            assert_eq!(libc::raise(libc::SIGUSR2), 0);
+            if self.mode == Mode::Ordering {
+                assert_eq!(libc::raise(libc::SIGUSR2), 0);
+                assert_eq!(libc::raise(libc::SIGTERM), 0);
+            } else {
+                assert_eq!(libc::raise(libc::SIGUSR1), 0);
+                assert_eq!(libc::raise(libc::SIGUSR2), 0);
+            }
         }
     }
 }
@@ -208,6 +233,10 @@ impl Handler for Queued {
             Mode::DequeuePoll => {
                 deny_syscall(libc::SYS_rt_sigtimedwait);
                 self.inner.nondet(state, kind, pc, next)
+            }
+            Mode::Ordering => {
+                ORDERING.store(true, std::sync::atomic::Ordering::SeqCst);
+                Ok(Resume::Done)
             }
         }
     }
@@ -260,6 +289,7 @@ fn main() {
         Some("partial_ok") => Mode::PartialOk,
         Some("partial_poll") => Mode::PartialPoll,
         Some("dequeue_poll") => Mode::DequeuePoll,
+        Some("ordering") => Mode::Ordering,
         other => panic!("unknown mode {other:?}"),
     };
     // Exact reviewer-probe initial condition: every application
@@ -315,6 +345,9 @@ fn main() {
         (Mode::DequeuePoll, Err(RunError::Refuse(Refuse::SignalOwnership { signum, taken }))) => {
             *signum == libc::SIGUSR1 && taken.is_empty()
         }
+        (Mode::Ordering, Err(RunError::Refuse(Refuse::SignalOwnership { signum, taken }))) => {
+            *signum == libc::SIGTERM && taken == &vec![libc::SIGUSR1, libc::SIGUSR2]
+        }
         _ => false,
     };
     if good {
@@ -330,6 +363,9 @@ fn main() {
             }
             Mode::DequeuePoll => {
                 expect_full_mask_and_pending(&[libc::SIGUSR1, libc::SIGUSR2]);
+            }
+            Mode::Ordering => {
+                expect_full_mask_and_pending(&[libc::SIGTERM]);
             }
         }
     }
