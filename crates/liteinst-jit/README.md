@@ -14,6 +14,12 @@ P1a envelope, honestly bounded:
 - Private, non-writable source mappings only; writable or
   self-modifying code is refused, not tracked.
 - Single-threaded guests; `execve` successors refuse by name.
+- Asynchronous signals are never guest-delivered mid-cache: they
+  are blocked during a run, a per-block poll stops the run with a
+  recovered async outcome once one is pending, and a process with
+  an installed async handler is refused at admission. This is a
+  disclosed reduction from transparent delivery, pending an
+  explicit owner scope decision.
 - Counts are software counts validated by the `o1` ptrace single-step
   oracle in the integration tests, never PMU-equivalence claims.
 
