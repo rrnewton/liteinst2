@@ -80,6 +80,7 @@ struct SudState {
     active_tids: [AtomicU64; MAX_ACTIVE_THREADS],
     traps: AtomicU64,
     forwarded: AtomicU64,
+    signal_returns: AtomicU64,
     refused: AtomicU64,
     nested: AtomicU64,
     active_overflow: AtomicU64,
@@ -106,6 +107,9 @@ pub struct SudCounters {
     pub traps: u64,
     /// Traps whose genuine syscall completed through the gateway.
     pub forwarded: u64,
+    /// Nested application-signal `rt_sigreturn`s redirected to the gateway
+    /// restorer so the original signal frame can resume the forwarded call.
+    pub signal_returns: u64,
     /// Authenticated traps refused by the first-profile or registry policy.
     pub refused: u64,
     /// Same-thread nested-handler detections.
@@ -239,6 +243,15 @@ enum ActiveClaim {
 }
 
 fn claim_active_slot(state: &SudState, tid: u64) -> ActiveClaim {
+    // Scan the whole active set first: an earlier hole must not hide this
+    // same thread in a later slot and admit a nested handler invocation.
+    if state
+        .active_tids
+        .iter()
+        .any(|slot| slot.load(Ordering::Acquire) == tid)
+    {
+        return ActiveClaim::Nested;
+    }
     for (index, slot) in state.active_tids.iter().enumerate() {
         match slot.compare_exchange(0, tid, Ordering::AcqRel, Ordering::Acquire) {
             Ok(_) => return ActiveClaim::Claimed(index),
@@ -296,6 +309,50 @@ unsafe extern "C" fn sud_handler(signal: i32, info: *mut KernelSiginfo, context:
         unsafe { fail_stop(Some(state)) }
     }
     let tid = tid as u64;
+
+    // An ordinary application-signal restorer outside the gateway traps its
+    // own rt_sigreturn while this thread's first SUD handler is still active.
+    // Do not forward that call from this nested frame (it would pop the wrong
+    // signal frame). Instead redirect the trapped restorer context to the
+    // gateway restorer; when this nested handler returns, that rt_sigreturn
+    // consumes the application-signal frame and resumes the first handler.
+    {
+        // SAFETY: kernel signal ABI arguments were checked nonnull above.
+        let info_ref = unsafe { &*info };
+        let context_ref = unsafe { &mut *context.cast::<libc::ucontext_t>() };
+        let registers = &mut context_ref.uc_mcontext.gregs;
+        let rip = registers[libc::REG_RIP as usize] as u64;
+        let rax = registers[libc::REG_RAX as usize] as u64;
+        let rcx = registers[libc::REG_RCX as usize] as u64;
+        let same_thread_active = state
+            .active_tids
+            .iter()
+            .any(|slot| slot.load(Ordering::Acquire) == tid);
+        if same_thread_active
+            && signal == libc::SIGSYS
+            && info_ref.signo == libc::SIGSYS
+            && info_ref.code == SYS_USER_DISPATCH_CODE
+            && info_ref.arch == AUDIT_ARCH_X86_64
+            && info_ref.call_addr as u64 == rip
+            && rip >= 2
+            && rax == u64::from(info_ref.syscall as u32)
+            && rcx == rip
+            && info_ref.syscall as u32 == libc::SYS_rt_sigreturn as u32
+        {
+            // SAFETY: the authenticated trap identifies the mapped restorer
+            // syscall site and the installation keeps admitted code mapped.
+            let opcode = unsafe { std::ptr::read_unaligned((rip - 2) as *const u16) };
+            if opcode == 0x050f {
+                registers[libc::REG_RIP as usize] = (state.gateway_start.load(Ordering::Acquire)
+                    + GATEWAY_RESTORER_OFFSET as u64)
+                    as libc::greg_t;
+                state.signal_returns.fetch_add(1, Ordering::AcqRel);
+                SUD_HANDLER_ACTIVE.fetch_sub(1, Ordering::AcqRel);
+                return;
+            }
+        }
+    }
+
     let active_index = match claim_active_slot(state, tid) {
         ActiveClaim::Claimed(index) => index,
         ActiveClaim::Nested => {
@@ -631,6 +688,7 @@ impl SudInstallation {
             active_tids: [const { AtomicU64::new(0) }; MAX_ACTIVE_THREADS],
             traps: AtomicU64::new(0),
             forwarded: AtomicU64::new(0),
+            signal_returns: AtomicU64::new(0),
             refused: AtomicU64::new(0),
             nested: AtomicU64::new(0),
             active_overflow: AtomicU64::new(0),
@@ -734,6 +792,7 @@ impl SudInstallation {
         SudCounters {
             traps: state.traps.load(Ordering::Acquire),
             forwarded: state.forwarded.load(Ordering::Acquire),
+            signal_returns: state.signal_returns.load(Ordering::Acquire),
             refused: state.refused.load(Ordering::Acquire),
             nested: state.nested.load(Ordering::Acquire),
             active_overflow: state.active_overflow.load(Ordering::Acquire),
@@ -1001,6 +1060,33 @@ impl Drop for SudThreadRegistration {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn active_claim_scans_all_slots_before_taking_an_earlier_hole() {
+        let state = SudState {
+            gateway_start: AtomicU64::new(0),
+            gateway_end: AtomicU64::new(0),
+            sites: Box::new([]),
+            site_count: AtomicUsize::new(0),
+            registered_tids: [const { AtomicU64::new(0) }; MAX_ACTIVE_THREADS],
+            active_tids: [const { AtomicU64::new(0) }; MAX_ACTIVE_THREADS],
+            traps: AtomicU64::new(0),
+            forwarded: AtomicU64::new(0),
+            signal_returns: AtomicU64::new(0),
+            refused: AtomicU64::new(0),
+            nested: AtomicU64::new(0),
+            active_overflow: AtomicU64::new(0),
+            foreign: AtomicU64::new(0),
+            overflow: AtomicU64::new(0),
+        };
+        state.active_tids[1].store(77, Ordering::Release);
+        assert!(matches!(claim_active_slot(&state, 77), ActiveClaim::Nested));
+        assert_eq!(state.active_tids[0].load(Ordering::Acquire), 0);
+        assert!(matches!(
+            claim_active_slot(&state, 78),
+            ActiveClaim::Claimed(0)
+        ));
+    }
 
     #[test]
     fn gateway_image_has_exact_raw_and_restorer_bytes() {

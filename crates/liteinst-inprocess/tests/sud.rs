@@ -362,33 +362,13 @@ fn interrupt_child_main() -> Result<(), SyscallRefusal> {
     });
 
     let installation = SudInstallation::install(config())?;
-    // The interrupting handler returns through the substrate gateway
-    // restorer; an arbitrary libc restorer outside the gateway would itself
-    // be dispatched as an unsupported rt_sigreturn site. Flags remain zero:
-    // no SA_RESTART, so the forwarded read must observe -EINTR.
-    #[repr(C)]
-    struct KernelAction {
-        handler: usize,
-        flags: usize,
-        restorer: usize,
-        mask: u64,
-    }
-    let action = KernelAction {
-        handler: usr1_handler as *const () as usize,
-        flags: 0x0400_0000,
-        restorer: (installation.gateway_range().0 + 32) as usize,
-        mask: 0,
-    };
+    // Preserve the original ordinary shape: libc installs this handler and
+    // its own restorer, with no SA_RESTART. The substrate must redirect that
+    // restorer's nested rt_sigreturn trap rather than fail it closed.
+    let mut action: libc::sigaction = unsafe { std::mem::zeroed() };
+    action.sa_sigaction = usr1_handler as *const () as usize;
     assert_eq!(
-        unsafe {
-            libc::syscall(
-                libc::SYS_rt_sigaction,
-                libc::SIGUSR1,
-                &action as *const KernelAction,
-                std::ptr::null_mut::<KernelAction>(),
-                8_usize,
-            )
-        },
+        unsafe { libc::sigaction(libc::SIGUSR1, &action, std::ptr::null_mut()) },
         0
     );
     let registration = installation.register_current_thread()?;
@@ -403,6 +383,9 @@ fn interrupt_child_main() -> Result<(), SyscallRefusal> {
     assert_eq!(state[3], entry as u64 + 2);
     assert_eq!(state[4], state[5]);
     assert_eq!(USR1_SEEN.load(std::sync::atomic::Ordering::Acquire), 1);
+    let counters = installation.counters();
+    assert_eq!(counters.signal_returns, 1, "{counters:?}");
+    assert_eq!((counters.traps, counters.forwarded), (1, 1), "{counters:?}");
     registration.unregister()?;
     installation.uninstall()?;
     signaler.join().unwrap();
