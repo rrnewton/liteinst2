@@ -36,7 +36,14 @@ context draining stay out (prior design non-goals carry over).
    stores the facts; `requalify(facts)` is the only way to advance a
    site's generation, and flip refuses a generation mismatch when
    fresh facts are presented.
-3. Store seam, patcher-internal: `begin_write(site) -> WriteGuard`
+3. Store seam: an `unsafe trait SiteStore` defined by the patch crate
+   and implemented by reverie-liteinst for foreign text (owner
+   correction: hookup builds inside reverie-liteinst, consuming this
+   crate as its library; the patch crate ships only the `DualAlias`
+   impl). `Site` holds `Box<dyn SiteStore>`; the trait contract
+   mirrors `StopControl` (the store must name the same physical word
+   the CPU executes at the site RX address for the qualified
+   generation). Surface: `begin_write() -> WriteGuard`
    (mprotect: minimal page span -> RW, recording exact original
    protections; writev fallback: no window), `guard.store(word)`
    (volatile store or one `process_vm_writev` of 4 bytes, partial
@@ -58,14 +65,14 @@ context draining stay out (prior design non-goals carry over).
    new wrinkle is the mprotect window living inside that lease,
    spanning step "store..sync", restored before resume.
 
-## Promoter placement and ownership (the musearch question)
+## Promoter placement and ownership (settled by owner correction)
 
-PROMOTER = the draining/checkpoint object. Recommendation: the
-*mechanism* types above live in `liteinst-aarch64-patch`; the
-*promoter* (drain loop, census/generation authority, arena pool of
-`Island`s with entry allocator, retry/dead lists, `StopControl` impl)
-lives with the backend that owns scheduling — integration owner
-musepage — not in reverie-inguest and not in the patch crate. Arena
+PROMOTER = the draining/checkpoint object, living **inside the
+reverie-liteinst AArch64 implementation** (the LiteInst in-process
+backend; integration owner musepage), which also implements the
+foreign `SiteStore` backends against its own mapping census. The
+patch crate keeps the mechanism types, the `SiteStore` trait, and the
+`DualAlias` impl. Arena
 sizing: one page = 256 entries at 16 B (4 KiB) / 1024 (16 KiB Android
 pages — page size is always queried); config cap on arenas, exhaustion
 leaves sites trapped (deterministic function of recorded config +
@@ -103,20 +110,21 @@ obligations are already enumerated in the landed design note.
 
 ## Proof shape (slice H1, after this note is accepted)
 
-`liteinst-aarch64-patch/tests/lazy_promote_exec.rs` (dual-alias and
-foreign backings): test-local S5a-shaped handler + pending table +
-test promoter; one SVC helper trapped once, promoted at an ordinary
-checkpoint via mprotect backend, then: first result forwarded, handler
-count stays 1 across repeats, results/register effects identical,
-site word is the expected branch, protections restored byte-exact
-(per maps), rollback returns to the trap path. Controls: shared-mapping
-and out-of-range sites stay trapped; writev backend repeats the happy
+Patch-crate mechanics proof in `liteinst-aarch64-patch/tests/` (store
+seam against test-local backings), then the linked lazy-promotion
+proof in reverie-liteinst's own tests once its foreign store lands:
+one SVC helper trapped once, promoted at an ordinary checkpoint via
+the mprotect backend, then: first result forwarded, handler count
+stays 1 across repeats, results/register effects identical, site word
+is the expected branch, protections restored byte-exact (per maps),
+rollback returns to the trap path. Controls: shared-mapping and
+out-of-range sites stay trapped; writev backend repeats the happy
 path where permitted. Same static-binary metal (64 KiB) + guest
 (4 KiB) route as prior slices; 16 KiB geometry covered by host unit
 tests until a 16 KiB guest exists.
 
 Open for musearch: (i) exact §5.2 wording and any Android-domain
-matrix beyond the assumptions above; (ii) production promoter home
-registry (inprocess vs backend crate) — the boundary does not change
-either way; (iii) whether post-store mprotect-restore failure folds
-into `SyncPending` as proposed or needs its own custody variant.
+matrix beyond the assumptions above; (ii) whether post-store
+mprotect-restore failure folds into `SyncPending` as proposed or
+needs its own custody variant. (Promoter home is settled: inside
+reverie-liteinst, per owner correction.)
