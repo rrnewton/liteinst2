@@ -301,6 +301,15 @@ fn is_breakpoint_cause(si_code: i32) -> bool {
     matches!(si_code, TRAP_BRKPT | SI_KERNEL)
 }
 
+/// Linux syscall-restart results visible at a ptrace
+/// syscall-exit stop while a signal is pending
+/// (`-ERESTARTSYS`, `-ERESTARTNOINTR`, `-ERESTARTNOHAND`,
+/// `-ERESTART_RESTARTBLOCK`). The syscall has not completed
+/// and would restart on resume; it must never be credited.
+fn is_syscall_restart(rax: u64) -> bool {
+    matches!(rax as i64, -512 | -513 | -514 | -516)
+}
+
 /// Classify one ptrace stop from wait status **and** siginfo
 /// cause. `exact_exit_trap` is the caller-computed exactness
 /// proof for the common-exit trap byte (PC-map entry is the
@@ -841,7 +850,17 @@ impl RemoteExecutable {
                 _ => return Err(self.unexpected_stop("unexpected syscall stop provenance")),
             }
         }
-        Ok(regs_to_state(&get_regs(self.guard.pid)?))
+        // A syscall-exit stop whose result is a kernel restart
+        // code is not completion: a signal interrupted the
+        // syscall in the kernel and it would restart on resume.
+        // Fail closed before any credit or re-entry; do not
+        // translate it into an async fault and do not resume
+        // the child on presumed completion.
+        let regs = get_regs(self.guard.pid)?;
+        if is_syscall_restart(regs.rax) {
+            return Err(self.unexpected_stop("syscall restart pending at exit stop"));
+        }
+        Ok(regs_to_state(&regs))
     }
 
     /// Run from `state.rip` until a return pops
@@ -1168,5 +1187,15 @@ mod tests {
             classify_stop(Phase::Generated, libc::SIGUSR1, 1, user_usr1, false),
             StopClass::Unexpected
         );
+    }
+
+    #[test]
+    fn syscall_restart_family_is_not_completion() {
+        for code in [512u64, 513, 514, 516] {
+            assert!(is_syscall_restart(code.wrapping_neg()), "-{code}");
+        }
+        for rax in [0u64, 1, 5, (-9i64) as u64, (-4i64) as u64, (-11i64) as u64] {
+            assert!(!is_syscall_restart(rax), "rax {rax:#x}");
+        }
     }
 }

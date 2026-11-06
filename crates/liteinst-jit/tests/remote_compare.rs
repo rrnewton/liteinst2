@@ -575,6 +575,73 @@ fn check_immediate_and_poll_async_stops() {
     }
 }
 
+fn check_blocked_write_restart_fails_closed() {
+    // Blocked-pipe syscall restart: the guest loops
+    // SYS_write(1, src, 8192) into its stdout pipe, which
+    // nobody drains after the handshake, so a write soon
+    // blocks in the kernel. A helper thread then delivers
+    // SIGUSR1. The syscall-exit stop for the interrupted write
+    // carries a kernel restart result, which must fail closed
+    // as the named substrate refusal — never AsyncSignal,
+    // never completion credit, never resumed.
+    //
+    // Timing control (stated honestly): the killer sleeps
+    // 250 ms before its first signal so the first writes fill
+    // the 64 KiB pipe (nine writes at tracer-stepping speed is
+    // well under that bound), then repeats every 50 ms until
+    // the run returns. The 64-iteration bound plus the first
+    // signal landing in the blocked exit wait make the outcome
+    // deterministic in practice; the assertions below would
+    // fail loudly (not pass vacuously) if it landed elsewhere.
+    let bytes: &[u8] = &[
+        0xb8, 0x01, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0xff, 0xc9, 0x75, 0xf4, 0xc3,
+    ];
+    let mut remote =
+        RemoteExecutable::spawn_bytes(std::path::Path::new(CHILD), bytes).expect("spawn");
+    let info = remote.info();
+    let region = liteinst_jit::types::RegionFacts {
+        base: info.base,
+        bytes: bytes.to_vec(),
+        generation: Generation(1),
+        immutable_private: true,
+    };
+    remote
+        .prepare(&region, info.base, CountProfile::BranchesAndInstructions)
+        .expect("prepare blocked write");
+    let pid = remote.child_pid_for_test();
+    let done = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let done2 = done.clone();
+    let killer = std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(250));
+        for _ in 0..40 {
+            if done2.load(std::sync::atomic::Ordering::SeqCst) {
+                break;
+            }
+            // SAFETY: signalling the test's traced child.
+            unsafe { libc::kill(pid, libc::SIGUSR1) };
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+    });
+    let mut state = remote.initial_state();
+    state.rdi = 1; // child stdout pipe: fills, then blocks
+    state.rsi = info.src;
+    state.rdx = 8192;
+    state.rcx = 64;
+    let r = remote.run(state, RETURN_SENTINEL);
+    done.store(true, std::sync::atomic::Ordering::SeqCst);
+    killer.join().expect("killer thread");
+    match r {
+        Err(RunError::Refuse(Refuse::RemoteSubstrate { operation, .. })) => {
+            assert_eq!(operation, "syscall restart pending at exit stop");
+        }
+        other => panic!("blocked write: expected restart refusal, got {other:?}"),
+    }
+    drop(remote);
+    // SAFETY: existence probe with signal 0.
+    let alive = unsafe { libc::kill(pid, 0) } == 0;
+    assert!(!alive, "child {pid} leaked after restart refusal drop");
+}
+
 /// One sequential test: the in-process executor and the O1/
 /// remote children all use process-global signal/ptrace state,
 /// so cases must not run concurrently (same constraint as
@@ -585,4 +652,5 @@ fn remote_compare_all() {
     check_faults_and_refusals();
     check_no_leaked_child();
     check_immediate_and_poll_async_stops();
+    check_blocked_write_restart_fails_closed();
 }
