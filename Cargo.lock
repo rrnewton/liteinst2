@@ -129,6 +129,7 @@ dependencies = [
 name = "liteinst-aarch64"
 version = "0.2.0"
 dependencies = [
+ "libc",
  "yaxpeax-arch",
  "yaxpeax-arm",
 ]

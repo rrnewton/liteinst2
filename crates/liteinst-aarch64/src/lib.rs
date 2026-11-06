@@ -800,6 +800,13 @@ pub fn movz_shifted(sf: bool, rd: Reg, imm16: u32, hw: u32) -> u32 {
     sf_bit(sf) | 0x5280_0000 | ((hw & 0x3) << 21) | ((imm16 & 0xffff) << 5) | f5(rd)
 }
 
+/// `MOVK Rd, #imm16, LSL #(16 * hw)`. Requires `hw < 4` and
+/// `imm16 <= 0xffff` (debug-asserted), like the register bound.
+pub fn movk_shifted(sf: bool, rd: Reg, imm16: u32, hw: u32) -> u32 {
+    debug_assert!(hw < 4 && imm16 <= 0xffff);
+    sf_bit(sf) | 0x7280_0000 | ((hw & 0x3) << 21) | ((imm16 & 0xffff) << 5) | f5(rd)
+}
+
 /// The single MOVZ that materialises `value`, if one exists: the
 /// immediate is 16 bits at a multiple-of-16 shift, so only a value whose
 /// nonzero bits fall inside one such window fits one instruction.
@@ -954,6 +961,13 @@ pub fn adr(page: bool, rd: Reg, offset: i64) -> Option<u32> {
             | rd,
     )
 }
+
+/// Patch-word and island emission facts built on the decoder:
+/// SVC replacement words, landing pads, far-jump veneers, copied
+/// instruction relocation and page-size layout arithmetic. Emission is
+/// pure byte construction; mapping, writing and cache maintenance stay
+/// with the caller.
+pub mod emit;
 
 #[cfg(test)]
 mod differential_tests;

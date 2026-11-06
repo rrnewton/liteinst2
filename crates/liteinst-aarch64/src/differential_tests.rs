@@ -79,6 +79,27 @@ fn directed_encoders_agree_with_oracle() {
 }
 
 #[test]
+fn emitted_far_jump_words_decode_under_oracle() {
+    use crate::emit::{EntryReach, far_jump_words};
+    let (words, n) = far_jump_words(EntryReach::Dual, 16, 0xdead_beef_cafe_f00d).unwrap();
+    assert_eq!(n, 6);
+    let opcodes: [Opcode; 5] = [
+        Opcode::MOVZ,
+        Opcode::MOVK,
+        Opcode::MOVK,
+        Opcode::MOVK,
+        Opcode::BR,
+    ];
+    for (word, opcode) in words[1..6].iter().zip(opcodes) {
+        let theirs = oracle(*word).unwrap_or_else(|| panic!("oracle rejected {word:#010x}"));
+        assert_eq!(theirs.opcode, opcode, "word {word:#010x}");
+    }
+    // The pad word itself only needs to decode; its identity is pinned
+    // against this crate's own BTI constants in emit unit tests.
+    assert!(oracle(words[0]).is_some());
+}
+
+#[test]
 fn svc_and_brk_agree_with_oracle_exactly() {
     for imm in [0u16, 1, 0x1234, 0x8000, 0xffff] {
         for (word, opcode) in [(svc(imm), Opcode::SVC), (brk(imm), Opcode::BRK)] {

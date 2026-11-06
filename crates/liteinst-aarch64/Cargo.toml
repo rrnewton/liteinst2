@@ -18,3 +18,8 @@ targets = ["aarch64-unknown-linux-gnu"]
 [dev-dependencies]
 yaxpeax-arch = "0.3"
 yaxpeax-arm = "0.5"
+
+# Execution tests (tests/emit_exec.rs) run only on AArch64 targets and
+# need raw mmap/memfd/sigaction access. Test code only, like the oracle.
+[target.'cfg(target_arch = "aarch64")'.dev-dependencies]
+libc = "0.2"
