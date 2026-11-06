@@ -28,8 +28,16 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-/// A general-purpose register number; 31 is XZR/WZR in these encodings, and
-/// SP only in base-register positions this decoder does not produce.
+/// A general-purpose register number. Architectural values are 0..=31;
+/// the alias itself does not enforce that range. Value 31 reads as SP or
+/// as the zero register depending on the instruction and operand
+/// position (for example ADD-immediate and exclusive base positions are
+/// SP positions, most value positions are zero-register positions); the
+/// decoder reports the raw number and never chooses between them.
+///
+/// Checked (`Option`-returning) encoders reject values above 31 with
+/// `None`. Infallible encoders require in-range registers and
+/// debug-assert the bound.
 pub type Reg = u8;
 
 /// The zero register, XZR or WZR, in the positions these encodings use it.
@@ -739,6 +747,22 @@ fn sf_bit(sf: bool) -> u32 {
     if sf { 1 << 31 } else { 0 }
 }
 
+/// The five-bit encoding field for `reg` in an infallible encoder.
+/// Callers must pass an architectural register number (see [`Reg`]);
+/// debug builds assert the bound.
+fn f5(reg: Reg) -> u32 {
+    debug_assert!(reg < 32);
+    (reg as u32) & 0x1f
+}
+
+/// The five-bit encoding field for `reg` in a checked encoder, or `None`
+/// when `reg` is not an architectural register number. Rejecting here,
+/// rather than masking, keeps an invalid register from silently
+/// becoming a different operand (or spilling into an immediate).
+fn checked_reg(reg: Reg) -> Option<u32> {
+    if reg < 32 { Some(reg as u32) } else { None }
+}
+
 /// `SVC #imm16`.
 pub fn svc(imm16: u16) -> u32 {
     SVC_BASE | ((imm16 as u32) << 5)
@@ -761,7 +785,7 @@ pub fn bti(target: BtiTarget) -> u32 {
 
 /// `MOV Rd, Rm` (ORR Rd, ZR, Rm).
 pub fn mov_reg(sf: bool, rd: Reg, rm: Reg) -> u32 {
-    sf_bit(sf) | 0x2a00_03e0 | ((rm as u32) << 16) | rd as u32
+    sf_bit(sf) | 0x2a00_03e0 | (f5(rm) << 16) | f5(rd)
 }
 
 /// `MOV Rd, #imm16` (MOVZ, no shift).
@@ -769,15 +793,18 @@ pub fn movz(sf: bool, rd: Reg, imm16: u32) -> u32 {
     movz_shifted(sf, rd, imm16, 0)
 }
 
-/// `MOVZ Rd, #imm16, LSL #(16 * hw)`.
+/// `MOVZ Rd, #imm16, LSL #(16 * hw)`. Requires `hw < 4` and
+/// `imm16 <= 0xffff` (debug-asserted), like the register bound.
 pub fn movz_shifted(sf: bool, rd: Reg, imm16: u32, hw: u32) -> u32 {
-    sf_bit(sf) | 0x5280_0000 | (hw << 21) | ((imm16 & 0xffff) << 5) | rd as u32
+    debug_assert!(hw < 4 && imm16 <= 0xffff);
+    sf_bit(sf) | 0x5280_0000 | ((hw & 0x3) << 21) | ((imm16 & 0xffff) << 5) | f5(rd)
 }
 
 /// The single MOVZ that materialises `value`, if one exists: the
 /// immediate is 16 bits at a multiple-of-16 shift, so only a value whose
 /// nonzero bits fall inside one such window fits one instruction.
 pub fn movz_for(sf: bool, rd: Reg, value: u64) -> Option<u32> {
+    checked_reg(rd)?;
     for hw in 0..if sf { 4 } else { 2 } {
         let shift = 16 * hw;
         if value >> shift << shift == value && (value >> shift) <= 0xffff {
@@ -788,18 +815,20 @@ pub fn movz_for(sf: bool, rd: Reg, value: u64) -> Option<u32> {
 }
 
 /// `MOVN Rd, #imm16`: Rd = !imm16, so `movn(imm - 1)` materialises `-imm`.
+/// Requires `imm16 <= 0xffff` (debug-asserted).
 pub fn movn(sf: bool, rd: Reg, imm16: u32) -> u32 {
-    sf_bit(sf) | 0x1280_0000 | ((imm16 & 0xffff) << 5) | rd as u32
+    debug_assert!(imm16 <= 0xffff);
+    sf_bit(sf) | 0x1280_0000 | ((imm16 & 0xffff) << 5) | f5(rd)
 }
 
 /// `NEG Rd, Rm` (SUB Rd, ZR, Rm).
 pub fn neg(sf: bool, rd: Reg, rm: Reg) -> u32 {
-    sf_bit(sf) | 0x4b00_03e0 | ((rm as u32) << 16) | rd as u32
+    sf_bit(sf) | 0x4b00_03e0 | (f5(rm) << 16) | f5(rd)
 }
 
 /// `MVN Rd, Rm` (ORN Rd, ZR, Rm).
 pub fn mvn(sf: bool, rd: Reg, rm: Reg) -> u32 {
-    sf_bit(sf) | 0x2a20_03e0 | ((rm as u32) << 16) | rd as u32
+    sf_bit(sf) | 0x2a20_03e0 | (f5(rm) << 16) | f5(rd)
 }
 
 /// The FEAT_LSE atomic memory operations emitters may need (C3.2.12).
@@ -829,11 +858,11 @@ pub fn atomic(op: AtomicOp, size: Size, ord: Ordering, rs: Reg, rt: Reg, rn: Reg
         | ((ord.acquire as u32) << 23)
         | ((ord.release as u32) << 22)
         | (1 << 21)
-        | ((rs as u32) << 16)
+        | (f5(rs) << 16)
         | (o3 << 15)
         | (opc << 12)
-        | ((rn as u32) << 5)
-        | rt as u32
+        | (f5(rn) << 5)
+        | f5(rt)
 }
 
 /// `CAS{A}{L}<size> Rs, Rt, [Rn]`: Rs carries the expected value in and
@@ -844,11 +873,11 @@ pub fn cas(size: Size, ord: Ordering, rs: Reg, rt: Reg, rn: Reg) -> u32 {
         | (1 << 23)
         | ((ord.acquire as u32) << 22)
         | (1 << 21)
-        | ((rs as u32) << 16)
+        | (f5(rs) << 16)
         | ((ord.release as u32) << 15)
         | (0b11111 << 10)
-        | ((rn as u32) << 5)
-        | rt as u32
+        | (f5(rn) << 5)
+        | f5(rt)
 }
 
 /// A scaled PC-relative field of `bits` bits for byte `offset`, or `None`
@@ -870,19 +899,24 @@ pub fn branch(link: bool, offset: i64) -> Option<u32> {
     imm_scaled(offset, 26).map(|imm| (if link { 0x9400_0000 } else { 0x1400_0000 }) | imm)
 }
 
-/// `B.<cond> .+offset`, re-encoded at a new address.
+/// `B.<cond> .+offset`, re-encoded at a new address. `cond` must fit
+/// the four-bit condition field; larger values are refused, not masked.
 pub fn cond_branch(cond: u32, offset: i64) -> Option<u32> {
-    imm19(offset).map(|imm| 0x5400_0000 | (imm << 5) | (cond & 0xf))
+    if cond > 0xf {
+        return None;
+    }
+    imm19(offset).map(|imm| 0x5400_0000 | (imm << 5) | cond)
 }
 
 /// `CBZ`/`CBNZ Rt, .+offset`, re-encoded at a new address.
 pub fn compare_branch(nonzero: bool, sf: bool, rt: Reg, offset: i64) -> Option<u32> {
-    imm19(offset)
-        .map(|imm| sf_bit(sf) | 0x3400_0000 | ((nonzero as u32) << 24) | (imm << 5) | rt as u32)
+    let rt = checked_reg(rt)?;
+    imm19(offset).map(|imm| sf_bit(sf) | 0x3400_0000 | ((nonzero as u32) << 24) | (imm << 5) | rt)
 }
 
 /// `TBZ`/`TBNZ Rt, #bit, .+offset` (signed imm14, times 4).
 pub fn test_branch(nonzero: bool, rt: Reg, bit: u32, offset: i64) -> Option<u32> {
+    let rt = checked_reg(rt)?;
     if bit > 63 {
         return None;
     }
@@ -892,13 +926,14 @@ pub fn test_branch(nonzero: bool, rt: Reg, bit: u32, offset: i64) -> Option<u32>
             | ((nonzero as u32) << 24)
             | ((bit & 0x1f) << 19)
             | (imm << 5)
-            | rt as u32
+            | rt
     })
 }
 
 /// `ADR Rd, .+offset` or `ADRP Rd, .+offset` (page offset for ADRP, a
 /// multiple of 4096), or `None` when unencodable.
 pub fn adr(page: bool, rd: Reg, offset: i64) -> Option<u32> {
+    let rd = checked_reg(rd)?;
     let imm = if page {
         if offset % 4096 != 0 {
             return None;
@@ -916,7 +951,7 @@ pub fn adr(page: bool, rd: Reg, offset: i64) -> Option<u32> {
             | ((imm & 0x3) << 29)
             | 0x1000_0000
             | ((imm >> 2) << 5)
-            | rd as u32,
+            | rd,
     )
 }
 

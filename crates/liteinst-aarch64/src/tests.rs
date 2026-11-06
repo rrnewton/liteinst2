@@ -339,6 +339,68 @@ fn decode_le_needs_a_full_word() {
 }
 
 #[test]
+fn checked_encoders_reject_out_of_range_registers() {
+    // Reg is an unrestricted u8; checked encoders must refuse values
+    // that do not fit the five-bit field instead of spilling into the
+    // neighbouring immediate (review witness: adr(false, 32, 0) once
+    // emitted 0x1000_0020, which decodes as rd 0, offset +4).
+    assert_eq!(
+        decode(0x1000_0020),
+        Insn::Adr {
+            page: false,
+            rd: 0,
+            offset: 4
+        }
+    );
+    for reg in [32u8, 33, 63, 255] {
+        assert_eq!(adr(false, reg, 0), None, "adr rd {reg}");
+        assert_eq!(adr(true, reg, 0), None, "adrp rd {reg}");
+        assert_eq!(compare_branch(false, true, reg, 0), None, "cbz rt {reg}");
+        assert_eq!(compare_branch(true, false, reg, 0), None, "cbnz rt {reg}");
+        assert_eq!(test_branch(false, reg, 0, 0), None, "tbz rt {reg}");
+        assert_eq!(test_branch(true, reg, 63, 0), None, "tbnz rt {reg}");
+        assert_eq!(movz_for(true, reg, 1), None, "movz_for rd {reg}");
+    }
+    // The condition field gets the same treatment: 4 bits, no masking.
+    assert_eq!(cond_branch(16, 0), None);
+    assert_eq!(cond_branch(u32::MAX, 0), None);
+}
+
+#[test]
+fn checked_encoders_accept_register_31() {
+    // Boundary just below refusal: every checked family still encodes
+    // register 31 and decodes it back unchanged.
+    assert_eq!(
+        decode(adr(false, 31, 0).unwrap()),
+        Insn::Adr {
+            page: false,
+            rd: 31,
+            offset: 0
+        }
+    );
+    assert_eq!(
+        decode(compare_branch(true, true, 31, 8).unwrap()),
+        Insn::CompareBranch {
+            nonzero: true,
+            sf: true,
+            rt: 31,
+            offset: 8
+        }
+    );
+    assert_eq!(
+        decode(test_branch(false, 31, 63, -4).unwrap()),
+        Insn::TestBranch {
+            nonzero: false,
+            rt: 31,
+            bit: 63,
+            offset: -4
+        }
+    );
+    assert!(movz_for(true, 31, 1).is_some());
+    assert!(cond_branch(15, 0).is_some());
+}
+
+#[test]
 fn unknown_encodings_decode_as_other() {
     for word in [0xf900_0000, 0x9ac0_0800, 0xd400_0002, 0xd400_0003] {
         assert_eq!(decode(word), Insn::Other, "word {word:#010x}");

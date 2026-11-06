@@ -104,8 +104,11 @@ fn cmpbr_offsets_agree_where_oracle_decodes() {
     }
 }
 
-/// Deterministic xorshift sweep: no disagreement is allowed on any word
-/// both decoders classify.
+/// Deterministic xorshift sweep over the comparator this suite actually
+/// has: SVC/BRK identity plus immediate must match in both directions,
+/// and PC-relative offsets must match wherever both decoders expose one.
+/// This is not full decode equivalence (other operand fields are not
+/// compared), and oracle rejections skip the word.
 #[test]
 fn seeded_sweep_agrees_where_oracle_decodes() {
     let mut state: u64 = 0x9e37_79b9_7f4a_7c15;
