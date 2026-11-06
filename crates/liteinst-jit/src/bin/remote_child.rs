@@ -37,6 +37,26 @@ fn map_rw(len: usize) -> *mut u8 {
 
 fn main() {
     let arg = std::env::args().nth(1).expect("fixture name or hex arg");
+    // Optional guest initial signal mask: `block:<signum>,...`
+    // blocks those signals before anything else, so queued
+    // signals stay pending until the tracer's poll check.
+    if let Some(block) = std::env::args()
+        .nth(2)
+        .and_then(|a| a.strip_prefix("block:").map(str::to_string))
+    {
+        // SAFETY: building and applying a signal mask in our
+        // own single-threaded process before any guest code.
+        unsafe {
+            let mut set: libc::sigset_t = core::mem::zeroed();
+            libc::sigemptyset(&mut set);
+            for part in block.split(',') {
+                if let Ok(sig) = part.parse::<i32>() {
+                    libc::sigaddset(&mut set, sig);
+                }
+            }
+            libc::pthread_sigmask(libc::SIG_BLOCK, &set, core::ptr::null_mut());
+        }
+    }
     let bytes: Vec<u8> = if let Some(hex) = arg.strip_prefix("hex:") {
         (0..hex.len())
             .step_by(2)

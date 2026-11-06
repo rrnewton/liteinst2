@@ -45,6 +45,26 @@ struct BothResult {
     jit_written: Vec<u8>,
 }
 
+/// RSP comparison that works for both stack-relative values
+/// (compare delta from each engine's stack top) and absolute
+/// values a fixture installed itself (compare verbatim).
+fn norm_rsp(v: u64, stack_top: u64, ranges: &[(u64, u64); 4]) -> i64 {
+    let n = norm(v, ranges);
+    if n != v {
+        return n as i64;
+    }
+    let delta = v as i64 - stack_top as i64;
+    if delta.abs() <= 8192 { delta } else { v as i64 }
+}
+
+fn norm_window(w: &[u8], ranges: &[(u64, u64); 4]) -> Vec<u64> {
+    w.as_chunks::<8>()
+        .0
+        .iter()
+        .map(|c| norm(u64::from_le_bytes(*c), ranges))
+        .collect()
+}
+
 /// Per-fixture state tweaks, identical to o1_compare's fault
 /// cases so both engines fault at the same guest instruction.
 fn apply_tweak(name: &str, state: &mut GuestState, base: u64) {
@@ -131,6 +151,11 @@ fn run_both(name: &str) -> BothResult {
                 rstate.rdx = rdx;
                 rstate.rax = rax;
                 rstate.rcx = rcx;
+                if name == "rep_stosb_partial" {
+                    // Same equivalent input as in-process: the
+                    // remote child's guarded destination pointer.
+                    rstate.rdi = info.dst;
+                }
                 apply_tweak(name, &mut rstate, info.base);
                 let out = remote.run(rstate, RETURN_SENTINEL);
                 let mut rdst = vec![0u8; if guarded.is_some() { 16 } else { 32 }];
@@ -153,11 +178,16 @@ fn run_both(name: &str) -> BothResult {
             Err(e) => (Err(e.into()), Vec::new(), Vec::new(), Vec::new()),
         }
     };
+    let remote_dst_base = if name == "rep_stosb_partial" {
+        info.dst - 4080
+    } else {
+        info.dst
+    };
     BothResult {
         jit,
         remote: remote.0,
         jit_ranges,
-        remote_ranges: ranges_of(info.base, info.data, info.dst, info.src),
+        remote_ranges: ranges_of(info.base, info.data, remote_dst_base, info.src),
         jit_stack_top,
         remote_stack_top: info.stack_top,
         jit_dst,
@@ -200,16 +230,6 @@ fn assert_same_outcome(name: &str, b: &BothResult) {
         ("r15", rem.state.r15, jit.state.r15),
     ];
     for (r, rv, jv) in regs {
-        if name == "rep_stosb_partial" && (r == "rdi" || r == "rsi") {
-            continue;
-        }
-        // The kernel syscall path leaves TF in the saved R11
-        // flags image after a stepped syscall; mask it there only.
-        let (rv, jv) = if r == "r11" && name == "syscall_write" {
-            (rv & !0x100, jv & !0x100)
-        } else {
-            (rv, jv)
-        };
         assert_eq!(
             norm(rv, &b.remote_ranges),
             norm(jv, &b.jit_ranges),
@@ -229,20 +249,11 @@ fn assert_same_outcome(name: &str, b: &BothResult) {
     assert_eq!(rem.state.rip, jit.state.rip, "{name}: rip");
     assert_eq!(b.remote_data, b.jit_data, "{name}: data buffer");
     assert_eq!(b.remote_dst, b.jit_dst, "{name}: dst buffer");
-    let norm_window = |w: &[u8], ranges: &[(u64, u64); 4]| -> Vec<u64> {
-        w.as_chunks::<8>()
-            .0
-            .iter()
-            .map(|c| norm(u64::from_le_bytes(*c), ranges))
-            .collect()
-    };
-    if name != "rep_stosb_partial" {
-        assert_eq!(
-            norm_window(&b.remote_stack, &b.remote_ranges),
-            norm_window(&b.jit_stack, &b.jit_ranges),
-            "{name}: stack window"
-        );
-    }
+    assert_eq!(
+        norm_window(&b.remote_stack, &b.remote_ranges),
+        norm_window(&b.jit_stack, &b.jit_ranges),
+        "{name}: stack window"
+    );
 }
 
 fn fault_of<'a>(r: &'a Result<Outcome, RunError>, name: &str, side: &str) -> &'a Fault {
@@ -315,6 +326,64 @@ fn check_faults_and_refusals() {
             jf.src_pc - b.jit_ranges[0].0,
             "{name}: fault src offset"
         );
+        // Full recovered state, fault address, and effects —
+        // the same strength as the outcome comparator, so a
+        // wrong-input or wrong-recovery case cannot hide behind
+        // kind/count equality (the delta-review F3 defect).
+        let regs: [(&str, u64, u64); 15] = [
+            ("rax", rf.state.rax, jf.state.rax),
+            ("rbx", rf.state.rbx, jf.state.rbx),
+            ("rcx", rf.state.rcx, jf.state.rcx),
+            ("rdx", rf.state.rdx, jf.state.rdx),
+            ("rsi", rf.state.rsi, jf.state.rsi),
+            ("rdi", rf.state.rdi, jf.state.rdi),
+            ("rbp", rf.state.rbp, jf.state.rbp),
+            ("r8", rf.state.r8, jf.state.r8),
+            ("r9", rf.state.r9, jf.state.r9),
+            ("r10", rf.state.r10, jf.state.r10),
+            ("r11", rf.state.r11, jf.state.r11),
+            ("r12", rf.state.r12, jf.state.r12),
+            ("r13", rf.state.r13, jf.state.r13),
+            ("r14", rf.state.r14, jf.state.r14),
+            ("r15", rf.state.r15, jf.state.r15),
+        ];
+        for (r, rv, jv) in regs {
+            assert_eq!(
+                norm(rv, &b.remote_ranges),
+                norm(jv, &b.jit_ranges),
+                "{name}: fault register {r} (remote {rv:#x} vs jit {jv:#x})"
+            );
+        }
+        assert_eq!(
+            norm_rsp(rf.state.rsp, b.remote_stack_top, &b.remote_ranges),
+            norm_rsp(jf.state.rsp, b.jit_stack_top, &b.jit_ranges),
+            "{name}: fault rsp (remote {:#x} vs jit {:#x})",
+            rf.state.rsp,
+            jf.state.rsp
+        );
+        assert_eq!(
+            rf.state.rflags & STATUS_MASK,
+            jf.state.rflags & STATUS_MASK,
+            "{name}: fault status flags"
+        );
+        assert_eq!(
+            rf.state.rip, rf.src_pc,
+            "{name}: recovered rip is the source pc"
+        );
+        assert_eq!(
+            norm(rf.addr, &b.remote_ranges),
+            norm(jf.addr, &b.jit_ranges),
+            "{name}: normalized fault address (remote {:#x} vs jit {:#x})",
+            rf.addr,
+            jf.addr
+        );
+        assert_eq!(b.remote_data, b.jit_data, "{name}: fault data buffer");
+        assert_eq!(b.remote_dst, b.jit_dst, "{name}: fault dst effects");
+        assert_eq!(
+            norm_window(&b.remote_stack, &b.remote_ranges),
+            norm_window(&b.jit_stack, &b.jit_ranges),
+            "{name}: fault stack window"
+        );
     }
     // Named refusals: rdtsc is outside the corpus-bounded
     // pass-through set in both engines; indirect targets and
@@ -369,13 +438,17 @@ fn check_no_leaked_child() {
     assert!(!alive, "child {pid} leaked after early-return drop");
 }
 
-fn check_poll_async_stop() {
-    // A signal pending in the child at a poll exit stops the
-    // run as a recovered AsyncSignal fault; it is never
-    // delivered to a guest handler in I1-B.
-    let fixture = fixtures::by_name("cpuid_loop");
-    let mut remote =
-        RemoteExecutable::spawn_named(std::path::Path::new(CHILD), "cpuid_loop").expect("spawn");
+fn prepare_remote(
+    name: &str,
+    blocked: &[i32],
+) -> (RemoteExecutable, liteinst_jit::remote::RemoteChildInfo) {
+    let fixture = fixtures::by_name(name);
+    let mut remote = if blocked.is_empty() {
+        RemoteExecutable::spawn_named(std::path::Path::new(CHILD), name).expect("spawn")
+    } else {
+        RemoteExecutable::spawn_named_with_blocked(std::path::Path::new(CHILD), name, blocked)
+            .expect("spawn blocked")
+    };
     let info = remote.info();
     let region = liteinst_jit::types::RegionFacts {
         base: info.base,
@@ -386,18 +459,120 @@ fn check_poll_async_stop() {
     remote
         .prepare(&region, info.base, CountProfile::BranchesAndInstructions)
         .expect("prepare");
-    // Queue SIGUSR1 to the stopped child before entry; it stays
-    // pending (not delivered while stopped) until the poll exit
-    // observes it.
-    let pid = remote.child_pid_for_test();
-    // SAFETY: signalling our own traced child.
-    assert_eq!(unsafe { libc::kill(pid, libc::SIGUSR1) }, 0);
-    let mut state = remote.initial_state();
-    state.rsi = 20_000;
-    let r = remote.run(state, RETURN_SENTINEL);
-    let f = fault_of(&r, "cpuid_loop poll", "remote");
-    assert_eq!(f.kind, liteinst_jit::exec::FaultKind::AsyncSignal);
-    assert_eq!(f.signum, libc::SIGUSR1);
+    (remote, info)
+}
+
+fn check_immediate_and_poll_async_stops() {
+    // Immediate pre-entry stops: a user signal queued while the
+    // child is stopped is delivered at the first resume, before
+    // any guest instruction retires. Genuine SIGTRAP here is
+    // asynchronous by siginfo cause, never a dispatcher exit.
+    for sig in [libc::SIGUSR1, libc::SIGTRAP] {
+        let (mut remote, info) = prepare_remote("cpuid_leaf", &[]);
+        let pid = remote.child_pid_for_test();
+        // SAFETY: signalling our own traced child.
+        assert_eq!(unsafe { libc::kill(pid, sig) }, 0);
+        let r = remote.run(remote.initial_state(), RETURN_SENTINEL);
+        let f = fault_of(&r, "immediate async", "remote");
+        assert_eq!(
+            f.kind,
+            liteinst_jit::exec::FaultKind::AsyncSignal,
+            "sig {sig}"
+        );
+        assert_eq!(f.signum, sig);
+        assert_eq!(f.src_pc, info.base, "sig {sig}: entry source pc");
+        assert_eq!(f.branches, 0, "sig {sig}");
+        assert_eq!(f.instructions, 0, "sig {sig}");
+    }
+    // Genuine poll boundary: with SIGUSR1+SIGUSR2 blocked in
+    // the child's initial mask, queued signals stay pending
+    // through cache execution and are reported exactly (first
+    // by number, rest in also_pending) at the first poll exit,
+    // with real progress and no delivery.
+    {
+        let (mut remote, info) = prepare_remote("cpuid_loop", &[libc::SIGUSR1, libc::SIGUSR2]);
+        let pid = remote.child_pid_for_test();
+        // SAFETY: signalling our own traced child.
+        assert_eq!(unsafe { libc::kill(pid, libc::SIGUSR2) }, 0);
+        assert_eq!(unsafe { libc::kill(pid, libc::SIGUSR1) }, 0);
+        let mut state = remote.initial_state();
+        state.rsi = 200_000;
+        let r = remote.run(state, RETURN_SENTINEL);
+        let f = fault_of(&r, "cpuid_loop poll", "remote");
+        assert_eq!(f.kind, liteinst_jit::exec::FaultKind::AsyncSignal);
+        assert_eq!(f.signum, libc::SIGUSR1);
+        assert_eq!(f.also_pending, vec![libc::SIGUSR2], "exact pending set");
+        assert!(
+            f.branches >= 1_000,
+            "poll provenance requires budget-scale progress, got {}",
+            f.branches
+        );
+        assert!(f.instructions > f.branches, "poll progress in instructions");
+        assert_eq!(f.state.rip, f.src_pc);
+        assert!(
+            f.src_pc >= info.base && f.src_pc < info.base + 64,
+            "poll src inside fixture: {:#x}",
+            f.src_pc
+        );
+    }
+    // Stepping-phase asynchronous interruption (live): a write
+    // loop passes through the tracer's syscall stepping on
+    // every iteration; a helper thread queues SIGUSR1 mid-run.
+    // Whichever resume it lands on (generated entry, syscall
+    // entry, or single-step equivalent), the outcome must be
+    // an exact AsyncSignal at a source PC with progress, never
+    // an executor error or a credited-but-unexecuted step.
+    // (Deterministic phase-by-phase provenance is pinned by
+    // the classifier unit tests in remote.rs.)
+    {
+        // mov eax,1; syscall; dec rcx; jne loop; ret
+        let bytes: &[u8] = &[
+            0xb8, 0x01, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0xff, 0xc9, 0x75, 0xf4, 0xc3,
+        ];
+        let mut remote =
+            RemoteExecutable::spawn_bytes(std::path::Path::new(CHILD), bytes).expect("spawn");
+        let info = remote.info();
+        let region = liteinst_jit::types::RegionFacts {
+            base: info.base,
+            bytes: bytes.to_vec(),
+            generation: Generation(1),
+            immutable_private: true,
+        };
+        remote
+            .prepare(&region, info.base, CountProfile::BranchesAndInstructions)
+            .expect("prepare write loop");
+        let pid = remote.child_pid_for_test();
+        let killer = std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(30));
+            // SAFETY: signalling the test's traced child; the
+            // run is still in its long stepping loop here.
+            unsafe { libc::kill(pid, libc::SIGUSR1) };
+        });
+        let mut state = remote.initial_state();
+        state.rdi = 9999; // invalid fd: write fails fast, loops on stepping path
+        state.rsi = info.src;
+        state.rdx = 1;
+        state.rcx = 5_000_000;
+        let r = remote.run(state, RETURN_SENTINEL);
+        killer.join().expect("killer thread");
+        let f = fault_of(&r, "write-loop stepping async", "remote");
+        assert_eq!(f.kind, liteinst_jit::exec::FaultKind::AsyncSignal);
+        assert_eq!(f.signum, libc::SIGUSR1);
+        assert!(
+            f.src_pc == info.base || f.src_pc == info.base + 5,
+            "stepping async src is the loop or syscall pc: {:#x}",
+            f.src_pc
+        );
+        assert!(
+            f.branches > 0,
+            "stepping async progress: branches {}",
+            f.branches
+        );
+        assert!(
+            f.instructions > f.branches,
+            "stepping async instruction progress"
+        );
+    }
 }
 
 /// One sequential test: the in-process executor and the O1/
@@ -409,5 +584,5 @@ fn remote_compare_all() {
     check_direct_corpus();
     check_faults_and_refusals();
     check_no_leaked_child();
-    check_poll_async_stop();
+    check_immediate_and_poll_async_stops();
 }

@@ -18,6 +18,7 @@ use std::process::{Child, Command, Stdio};
 
 use crate::decode::{InsnClass, NondetKind};
 use crate::exec::{CODE_CAP, Fault, Outcome, POLL_BUDGET, RunError, syscall_guard};
+use crate::pcmap::{CommonStage, Recovery as MapRecovery};
 use crate::recovery::{FaultInput, RecoveryInput};
 use crate::refuse::Refuse;
 use crate::state::{GuestState, JitData, exit_kind};
@@ -254,6 +255,136 @@ fn apply_state(r: &mut libc::user_regs_struct, s: &GuestState) {
     r.rip = s.rip;
 }
 
+/// Which address space the child was executing when a stop
+/// arrived. Generated stops are recovered through the shared
+/// recovery core against the generated PC map; original stops
+/// are recovered as exact source state and never touch that
+/// map. Mixing the two was the delta-review provenance defect.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Phase {
+    Generated,
+    OriginalStep,
+    SyscallEntry,
+    SyscallExit,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum StopClass {
+    /// Proven common-exit breakpoint trap (Generated only).
+    ExitTrap,
+    /// Proven single-step completion (OriginalStep only).
+    StepComplete,
+    /// Proven syscall entry/exit stop (syscall phases only).
+    SyscallStop,
+    /// User-sent signal (`si_code <= 0`): asynchronous in
+    /// every phase that can establish its exact state.
+    Async,
+    /// Kernel fault/trap while executing generated code.
+    GeneratedFault,
+    /// Kernel fault/trap while executing an original
+    /// instruction or its syscall entry.
+    SourceFault,
+    /// Provenance cannot be established: fail closed.
+    Unexpected,
+}
+
+const TRAP_BRKPT: i32 = 1;
+const TRAP_TRACE: i32 = 2;
+/// Ptrace-report int3 stops carry SI_KERNEL on this kernel
+/// (observed live), while the in-process signal frame names
+/// the same breakpoint cause TRAP_BRKPT. Both are kernel
+/// breakpoint conventions with RIP after the trap byte; no
+/// user-sent signal can forge a positive kernel si_code.
+const SI_KERNEL: i32 = 128;
+
+fn is_breakpoint_cause(si_code: i32) -> bool {
+    matches!(si_code, TRAP_BRKPT | SI_KERNEL)
+}
+
+/// Classify one ptrace stop from wait status **and** siginfo
+/// cause. `exact_exit_trap` is the caller-computed exactness
+/// proof for the common-exit trap byte (PC-map entry is the
+/// final `AllSaved` common-exit segment and `rip - 1` is its
+/// exact start); it is only consulted for a kernel breakpoint
+/// trap in the generated phase. User-sent SIGTRAP
+/// (`si_code <= 0`) is asynchronous in every phase and never
+/// completes a step, a syscall, or a dispatcher exit.
+fn classify_stop(
+    phase: Phase,
+    sig: i32,
+    event: i32,
+    si: Option<(i32, i32)>,
+    exact_exit_trap: bool,
+) -> StopClass {
+    if event != 0 {
+        return StopClass::Unexpected;
+    }
+    if sig == (libc::SIGTRAP | 0x80) {
+        return if matches!(phase, Phase::SyscallEntry | Phase::SyscallExit) {
+            StopClass::SyscallStop
+        } else {
+            StopClass::Unexpected
+        };
+    }
+    let Some((si_signo, si_code)) = si else {
+        return StopClass::Unexpected;
+    };
+    if si_signo != sig {
+        return StopClass::Unexpected;
+    }
+    if si_code <= 0 {
+        // At syscall-exit the kernel orders the exit stop
+        // before signal delivery on this substrate; an async
+        // stop here cannot establish whether the syscall
+        // completed, so it fails closed instead of guessing.
+        return if phase == Phase::SyscallExit {
+            StopClass::Unexpected
+        } else {
+            StopClass::Async
+        };
+    }
+    match phase {
+        Phase::Generated => {
+            if sig == libc::SIGTRAP && is_breakpoint_cause(si_code) && exact_exit_trap {
+                StopClass::ExitTrap
+            } else if sig == libc::SIGTRAP && si_code == TRAP_TRACE {
+                StopClass::Unexpected // no step was issued
+            } else {
+                StopClass::GeneratedFault
+            }
+        }
+        Phase::OriginalStep => {
+            if sig == libc::SIGTRAP && si_code == TRAP_TRACE {
+                StopClass::StepComplete
+            } else {
+                StopClass::SourceFault
+            }
+        }
+        Phase::SyscallEntry => {
+            if sig == libc::SIGTRAP {
+                StopClass::Unexpected // not a syscall-enter stop
+            } else {
+                StopClass::SourceFault
+            }
+        }
+        Phase::SyscallExit => StopClass::Unexpected,
+    }
+}
+
+/// Siginfo cause for a stop, as `(si_signo, si_code, si_addr)`.
+/// Syscall stops carry no siginfo and return `None` by design;
+/// any other stop without retrievable siginfo also returns
+/// `None` and classifies `Unexpected` (fail closed).
+fn stop_siginfo(pid: i32, sig: i32) -> Option<(i32, i32, u64)> {
+    if sig == (libc::SIGTRAP | 0x80) {
+        return None;
+    }
+    let info = get_siginfo(pid).ok()?;
+    // SAFETY: filled by PTRACE_GETSIGINFO above.
+    let addr = unsafe { info.si_addr() } as usize as u64;
+    Some((info.si_signo, info.si_code, addr))
+}
+
 /// Owns the traced child: every drop path — success, refusal,
 /// fault, or substrate error — kills and reaps it, so no early
 /// return can leak a process.
@@ -301,17 +432,37 @@ pub struct RemoteExecutable {
 
 impl RemoteExecutable {
     pub fn spawn_named(child_bin: &std::path::Path, fixture_name: &str) -> Result<Self, Refuse> {
-        Self::spawn(child_bin, fixture_name.to_string())
+        Self::spawn(child_bin, vec![fixture_name.to_string()])
+    }
+
+    /// Spawn with the named signals blocked in the child from
+    /// the start (a legitimate guest initial mask): queued
+    /// signals then stay pending until a poll exit observes
+    /// them, which is how tests arrange a genuine poll-boundary
+    /// stop deterministically.
+    pub fn spawn_named_with_blocked(
+        child_bin: &std::path::Path,
+        fixture_name: &str,
+        blocked: &[i32],
+    ) -> Result<Self, Refuse> {
+        let list: Vec<String> = blocked.iter().map(i32::to_string).collect();
+        Self::spawn(
+            child_bin,
+            vec![
+                fixture_name.to_string(),
+                format!("block:{}", list.join(",")),
+            ],
+        )
     }
 
     pub fn spawn_bytes(child_bin: &std::path::Path, bytes: &[u8]) -> Result<Self, Refuse> {
         let hex: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
-        Self::spawn(child_bin, format!("hex:{hex}"))
+        Self::spawn(child_bin, vec![format!("hex:{hex}")])
     }
 
-    fn spawn(child_bin: &std::path::Path, spawn_arg: String) -> Result<Self, Refuse> {
+    fn spawn(child_bin: &std::path::Path, spawn_args: Vec<String>) -> Result<Self, Refuse> {
         let child = Command::new(child_bin)
-            .arg(&spawn_arg)
+            .args(&spawn_args)
             .stdout(Stdio::piped())
             .spawn()
             .map_err(|_| remote_err("spawn remote child"))?;
@@ -499,27 +650,24 @@ impl RemoteExecutable {
             .collect())
     }
 
-    fn fault_from_stop(
+    /// Generated-phase fault: recover through the shared core
+    /// against the generated PC map. `gen_pc` has already had
+    /// the cause-specific breakpoint adjustment applied by the
+    /// caller (subtract one only for a proven TRAP_BRKPT).
+    /// Ptrace has no REG_ERR, so fetch-provenance address
+    /// translation is unavailable on this substrate (err stays
+    /// 0); the I1-B fault fixtures are data faults and FPE,
+    /// which do not need it.
+    fn generated_fault(
         &self,
         sig: i32,
+        si_code: i32,
+        addr: u64,
+        gen_pc: u64,
         regs: &libc::user_regs_struct,
         data: &JitData,
-    ) -> Result<Fault, Refuse> {
+    ) -> Fault {
         let t = self.translation.as_ref().expect("prepared");
-        let info = get_siginfo(self.guard.pid)?;
-        // SAFETY: siginfo was filled by PTRACE_GETSIGINFO.
-        let addr = unsafe { info.si_addr() } as usize as u64;
-        // An int3 stop reports the PC after the trap byte; other
-        // stops report the interrupted PC directly. Ptrace has
-        // no REG_ERR, so fetch-provenance address translation is
-        // unavailable on this substrate (err stays 0); the I1-B
-        // fault fixtures are data faults and FPE, which do not
-        // need it.
-        let gen_pc = if sig == libc::SIGTRAP {
-            regs.rip.saturating_sub(1)
-        } else {
-            regs.rip
-        };
         let stop = crate::recovery::recover(
             t,
             self.profile,
@@ -528,7 +676,7 @@ impl RemoteExecutable {
                     gen_pc,
                     addr,
                     signum: sig,
-                    si_code: info.si_code,
+                    si_code,
                     err: 0,
                 },
                 interrupted: regs_to_state(regs),
@@ -541,7 +689,7 @@ impl RemoteExecutable {
                 exit_src: data.exit_src,
             },
         );
-        Ok(Fault {
+        Fault {
             also_pending: Vec::new(),
             kind: stop.kind,
             src_pc: stop.src_pc,
@@ -550,7 +698,53 @@ impl RemoteExecutable {
             state: stop.state,
             branches: stop.branches,
             instructions: stop.instructions,
-        })
+        }
+    }
+
+    /// Original-phase stop: exact source state at `src_pc`,
+    /// never a generated-map lookup. The stepped instruction
+    /// has not retired, so instruction credit is the exact
+    /// retired-before total for its block; branches stand as
+    /// credited at the preceding exit trap.
+    fn source_fault(
+        &self,
+        class: StopClass,
+        sig: i32,
+        addr: u64,
+        src_pc: u64,
+        regs: &libc::user_regs_struct,
+        data: &JitData,
+    ) -> Fault {
+        let t = self.translation.as_ref().expect("prepared");
+        let mut state = regs_to_state(regs);
+        state.rip = src_pc;
+        Fault {
+            also_pending: Vec::new(),
+            kind: if class == StopClass::Async {
+                crate::recovery::FaultKind::AsyncSignal
+            } else {
+                crate::recovery::FaultKind::GuestFault
+            },
+            src_pc,
+            addr,
+            signum: sig,
+            state,
+            branches: data.branch_count,
+            instructions: crate::recovery::instructions_retired_at(
+                t,
+                self.profile,
+                data.instruction_count,
+                src_pc,
+            ),
+        }
+    }
+
+    fn unexpected_stop(&self, operation: &'static str) -> RunError {
+        Refuse::RemoteSubstrate {
+            operation,
+            errno: 0,
+        }
+        .into()
     }
 
     /// Single-step one original instruction at `pc` in the child
@@ -580,12 +774,20 @@ impl RemoteExecutable {
         }
         let regs = get_regs(self.guard.pid)?;
         let sig = libc::WSTOPSIG(status);
-        if sig == libc::SIGTRAP {
-            return Ok(regs_to_state(&regs));
+        let si = stop_siginfo(self.guard.pid, sig);
+        match classify_stop(
+            Phase::OriginalStep,
+            sig,
+            status >> 16,
+            si.map(|(signo, code, _)| (signo, code)),
+            false,
+        ) {
+            StopClass::StepComplete => Ok(regs_to_state(&regs)),
+            class @ (StopClass::Async | StopClass::SourceFault) => Err(RunError::Fault(Box::new(
+                self.source_fault(class, sig, si.map_or(0, |s| s.2), pc, &regs, data),
+            ))),
+            _ => Err(self.unexpected_stop("unexpected original-step stop provenance")),
         }
-        Err(RunError::Fault(Box::new(
-            self.fault_from_stop(sig, &regs, data)?,
-        )))
     }
 
     /// Execute one genuine guest syscall at `pc` via
@@ -599,7 +801,7 @@ impl RemoteExecutable {
     ) -> Result<GuestState, RunError> {
         state.rip = pc;
         self.set_guest_regs(&state)?;
-        for _ in 0..2 {
+        for phase in [Phase::SyscallEntry, Phase::SyscallExit] {
             ptrace_ok(
                 libc::PTRACE_SYSCALL,
                 self.guard.pid,
@@ -616,11 +818,27 @@ impl RemoteExecutable {
                 .into());
             }
             let sig = libc::WSTOPSIG(status);
-            if sig != (libc::SIGTRAP | 0x80) {
-                let regs = get_regs(self.guard.pid)?;
-                return Err(RunError::Fault(Box::new(
-                    self.fault_from_stop(sig, &regs, data)?,
-                )));
+            let si = stop_siginfo(self.guard.pid, sig);
+            match classify_stop(
+                phase,
+                sig,
+                status >> 16,
+                si.map(|(signo, code, _)| (signo, code)),
+                false,
+            ) {
+                StopClass::SyscallStop => {}
+                class @ (StopClass::Async | StopClass::SourceFault) => {
+                    let regs = get_regs(self.guard.pid)?;
+                    return Err(RunError::Fault(Box::new(self.source_fault(
+                        class,
+                        sig,
+                        si.map_or(0, |s| s.2),
+                        pc,
+                        &regs,
+                        data,
+                    ))));
+                }
+                _ => return Err(self.unexpected_stop("unexpected syscall stop provenance")),
             }
         }
         Ok(regs_to_state(&get_regs(self.guard.pid)?))
@@ -678,14 +896,40 @@ impl RemoteExecutable {
             let sig = libc::WSTOPSIG(status);
             let regs = get_regs(self.guard.pid)?;
             let data = self.read_jit_data()?;
-            let is_exit_trap = sig == libc::SIGTRAP
-                && t.pcmap.lookup(regs.rip.saturating_sub(1)).is_some_and(|e| {
-                    matches!(e.recovery, crate::pcmap::Recovery::CommonExit { .. })
-                });
-            if !is_exit_trap {
-                return Err(RunError::Fault(Box::new(
-                    self.fault_from_stop(sig, &regs, &data)?,
-                )));
+            let si = stop_siginfo(self.guard.pid, sig);
+            // Exact exit-trap proof: the byte before the stopped
+            // RIP is itself the final AllSaved common-exit
+            // segment (complete save by construction), not
+            // merely somewhere inside the common-exit recipe.
+            let exact_exit_trap = t.pcmap.lookup(regs.rip.saturating_sub(1)).is_some_and(|e| {
+                e.gen_start == regs.rip.saturating_sub(1)
+                    && matches!(
+                        e.recovery,
+                        MapRecovery::CommonExit {
+                            stage: CommonStage::AllSaved
+                        }
+                    )
+            });
+            match classify_stop(
+                Phase::Generated,
+                sig,
+                status >> 16,
+                si.map(|(signo, code, _)| (signo, code)),
+                exact_exit_trap,
+            ) {
+                StopClass::ExitTrap => {}
+                StopClass::Async | StopClass::GeneratedFault => {
+                    let (si_code, addr) = si.map_or((0, 0), |(_, c, a)| (c, a));
+                    let gen_pc = if sig == libc::SIGTRAP && is_breakpoint_cause(si_code) {
+                        regs.rip.saturating_sub(1)
+                    } else {
+                        regs.rip
+                    };
+                    return Err(RunError::Fault(Box::new(
+                        self.generated_fault(sig, si_code, addr, gen_pc, &regs, &data),
+                    )));
+                }
+                _ => return Err(self.unexpected_stop("unexpected generated stop provenance")),
             }
             state = data.state;
             exits += 1;
@@ -795,5 +1039,134 @@ impl RemoteExecutable {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn class(phase: Phase, sig: i32, si: Option<(i32, i32)>, exact: bool) -> StopClass {
+        classify_stop(phase, sig, 0, si, exact)
+    }
+
+    #[test]
+    fn stop_classification_requires_proven_cause() {
+        let user_trap = Some((libc::SIGTRAP, 0)); // SI_USER via kill
+        let tkill_trap = Some((libc::SIGTRAP, -6)); // SI_TKILL
+        let brk = Some((libc::SIGTRAP, TRAP_BRKPT));
+        let trace = Some((libc::SIGTRAP, TRAP_TRACE));
+        let user_usr1 = Some((libc::SIGUSR1, 0));
+        let kern_segv = Some((libc::SIGSEGV, 1));
+        // Genuine user SIGTRAP is asynchronous in every phase
+        // that can establish its state; never an exit or a step.
+        assert_eq!(
+            class(Phase::Generated, libc::SIGTRAP, user_trap, true),
+            StopClass::Async
+        );
+        assert_eq!(
+            class(Phase::Generated, libc::SIGTRAP, tkill_trap, true),
+            StopClass::Async
+        );
+        assert_eq!(
+            class(Phase::OriginalStep, libc::SIGTRAP, user_trap, false),
+            StopClass::Async
+        );
+        assert_eq!(
+            class(Phase::SyscallEntry, libc::SIGTRAP, user_trap, false),
+            StopClass::Async
+        );
+        assert_eq!(
+            class(Phase::SyscallExit, libc::SIGTRAP, user_trap, false),
+            StopClass::Unexpected
+        );
+        // Breakpoint traps need the exact final-byte proof.
+        assert_eq!(
+            class(Phase::Generated, libc::SIGTRAP, brk, true),
+            StopClass::ExitTrap
+        );
+        assert_eq!(
+            class(
+                Phase::Generated,
+                libc::SIGTRAP,
+                Some((libc::SIGTRAP, SI_KERNEL)),
+                true
+            ),
+            StopClass::ExitTrap
+        );
+        assert_eq!(
+            class(Phase::Generated, libc::SIGTRAP, brk, false),
+            StopClass::GeneratedFault
+        );
+        assert_eq!(
+            class(Phase::OriginalStep, libc::SIGTRAP, brk, false),
+            StopClass::SourceFault
+        );
+        // Step completion requires TRAP_TRACE in the step phase.
+        assert_eq!(
+            class(Phase::OriginalStep, libc::SIGTRAP, trace, false),
+            StopClass::StepComplete
+        );
+        assert_eq!(
+            class(Phase::Generated, libc::SIGTRAP, trace, false),
+            StopClass::Unexpected
+        );
+        assert_eq!(
+            class(Phase::SyscallEntry, libc::SIGTRAP, trace, false),
+            StopClass::Unexpected
+        );
+        // Syscall stops are phase-bound; async at entry is exact,
+        // async at exit cannot establish completion.
+        assert_eq!(
+            class(Phase::SyscallEntry, libc::SIGTRAP | 0x80, None, false),
+            StopClass::SyscallStop
+        );
+        assert_eq!(
+            class(Phase::SyscallExit, libc::SIGTRAP | 0x80, None, false),
+            StopClass::SyscallStop
+        );
+        assert_eq!(
+            class(Phase::Generated, libc::SIGTRAP | 0x80, None, false),
+            StopClass::Unexpected
+        );
+        assert_eq!(
+            class(Phase::SyscallEntry, libc::SIGUSR1, user_usr1, false),
+            StopClass::Async
+        );
+        assert_eq!(
+            class(Phase::SyscallExit, libc::SIGUSR1, user_usr1, false),
+            StopClass::Unexpected
+        );
+        // Kernel faults split by executing address space.
+        assert_eq!(
+            class(Phase::Generated, libc::SIGSEGV, kern_segv, false),
+            StopClass::GeneratedFault
+        );
+        assert_eq!(
+            class(Phase::OriginalStep, libc::SIGSEGV, kern_segv, false),
+            StopClass::SourceFault
+        );
+        assert_eq!(
+            class(Phase::SyscallEntry, libc::SIGSEGV, kern_segv, false),
+            StopClass::SourceFault
+        );
+        // No siginfo, mismatched signo, or a ptrace event fails closed.
+        assert_eq!(
+            class(Phase::Generated, libc::SIGUSR1, None, false),
+            StopClass::Unexpected
+        );
+        assert_eq!(
+            class(
+                Phase::Generated,
+                libc::SIGUSR1,
+                Some((libc::SIGUSR2, 0)),
+                false
+            ),
+            StopClass::Unexpected
+        );
+        assert_eq!(
+            classify_stop(Phase::Generated, libc::SIGUSR1, 1, user_usr1, false),
+            StopClass::Unexpected
+        );
     }
 }
