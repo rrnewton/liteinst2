@@ -15,8 +15,8 @@ fn state(pc: u64) -> TaskStateSnapshot {
     registers.orig_rax = u64::MAX;
     registers.eflags = 0x202;
     // A well-formed standard XSAVE image (init legacy state, BV clear)
-    // so control predicates exercise their semantic path, not the
-    // format-refusal path.
+    // matching the shape real captures present to the (raw) control
+    // predicates in this module.
     let mut xstate = vec![0u8; 832];
     xstate[0..2].copy_from_slice(&[0x7f, 0x03]); // FCW
     xstate[24..28].copy_from_slice(&0x1f80_u32.to_le_bytes()); // MXCSR
