@@ -231,6 +231,7 @@ pub struct Architecture {
     pub xstate: Vec<u8>,
     pub mask: u64,
 }
+
 impl Architecture {
     pub fn captured(value: &KernelCapturedState) -> Self {
         Self {
@@ -440,6 +441,8 @@ pub struct Stack {
 /// capture path is still caught. This adapter contains no component
 /// logic of its own: the single definition is
 /// `SavedExtendedStateLayout::xstate_semantic_eq` in liteinst.
+// Test-oracle only; unused in the dev-exec-backing-cleanup lib build.
+#[allow(dead_code)]
 pub fn assert_xstate_eq_cross_capture(a: &[u8], b: &[u8]) {
     assert_eq!(
         liteinst::trampoline::SavedExtendedStateLayout::xstate_semantic_eq(a, b),
@@ -450,6 +453,8 @@ pub fn assert_xstate_eq_cross_capture(a: &[u8], b: &[u8]) {
 
 /// Cross-capture Architecture equality: registers and mask raw, xstate
 /// semantic (see [`assert_xstate_eq_cross_capture`]).
+// Test-oracle only; unused in the dev-exec-backing-cleanup lib build.
+#[allow(dead_code)]
 pub fn assert_architecture_eq_cross_capture(a: &Architecture, b: &Architecture) {
     assert_eq!(a.registers, b.registers);
     assert_eq!(a.mask, b.mask);
