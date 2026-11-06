@@ -36,6 +36,28 @@ fn map_rw(len: usize) -> *mut u8 {
 }
 
 fn main() {
+    // Normalize guest initial signal state so the tracer's
+    // registry zero state is exact by construction: default
+    // dispositions, empty blocked mask, no altstack. The
+    // optional `block:` argument below then applies the
+    // requested initial mask on top of that zero state.
+    // SAFETY: single-threaded setup before any guest code.
+    unsafe {
+        for sig in 1..=64 {
+            if sig != libc::SIGKILL && sig != libc::SIGSTOP && sig != 32 && sig != 33 {
+                libc::signal(sig, libc::SIG_DFL);
+            }
+        }
+        let mut empty: libc::sigset_t = core::mem::zeroed();
+        libc::sigemptyset(&mut empty);
+        libc::pthread_sigmask(libc::SIG_SETMASK, &empty, core::ptr::null_mut());
+        let disabled = libc::stack_t {
+            ss_sp: core::ptr::null_mut(),
+            ss_flags: libc::SS_DISABLE,
+            ss_size: 0,
+        };
+        libc::sigaltstack(&disabled, core::ptr::null_mut());
+    }
     let arg = std::env::args().nth(1).expect("fixture name or hex arg");
     // Optional guest initial signal mask: `block:<signum>,...`
     // blocks those signals before anything else, so queued

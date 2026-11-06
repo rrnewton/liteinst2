@@ -33,13 +33,141 @@ pub const ARENA_LEN: usize = CODE_CAP + 64 * PAGE;
 pub const MAILBOX_PUBLISH: u64 = 1;
 /// Mailbox acknowledgement written by the child after publish.
 pub const MAILBOX_PUBLISHED: u64 = 2;
-/// The only syscall number the I1-B fixture corpus uses and the
-/// only one pass-through stepping may execute (`SYS_write` from
-/// `syscall_write`). The lifecycle guard always runs first;
-/// any other number stops by name (`NoHandler`) rather than
-/// executing. This is a stage bound, not a generic
+/// The exact syscall numbers pass-through stepping may execute
+/// in this stage: `SYS_write` (the sole corpus syscall from
+/// I1-B) plus the I1-C registry set (`rt_sigaction`,
+/// `rt_sigprocmask`, `rt_sigpending`, `sigaltstack`), each
+/// observed for the tracer mirror. The lifecycle guard always
+/// runs first; any other number stops by name (`NoHandler`)
+/// rather than executing. This is a stage bound, not a generic
 /// guest-syscall claim.
-const PASS_THROUGH_SYSCALLS: &[u32] = &[libc::SYS_write as u32];
+const PASS_THROUGH_SYSCALLS: &[u32] = &[
+    libc::SYS_write as u32,
+    libc::SYS_rt_sigaction as u32,
+    libc::SYS_rt_sigprocmask as u32,
+    libc::SYS_rt_sigpending as u32,
+    libc::SYS_sigaltstack as u32,
+];
+
+/// One guest signal action as installed in the child kernel.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum GuestAction {
+    Default,
+    Ignore,
+    Handler {
+        addr: u64,
+        flags: u64,
+        sa_mask: u64,
+        restorer: u64,
+    },
+}
+
+/// Guest alternate signal stack triple (`SS_DISABLE` in flags
+/// means disabled, with zeroed sp/size as the kernel reports).
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct GuestAltstack {
+    pub sp: u64,
+    pub flags: i32,
+    pub size: u64,
+}
+
+/// Tracer mirror of the guest's kernel-owned signal registry.
+/// The child kernel is authoritative; this mirror only follows
+/// successful stepped registry syscalls observed by the tracer
+/// (see `SyscallObs`), so it can answer dispatcher queries
+/// with the same values the guest kernel holds. Index 0 is
+/// unused; signals are 1..=64.
+#[derive(Clone, Debug)]
+pub struct SignalRegistry {
+    actions: [GuestAction; 65],
+    mask: u64,
+    altstack: GuestAltstack,
+}
+
+impl Default for SignalRegistry {
+    fn default() -> Self {
+        Self {
+            actions: [GuestAction::Default; 65],
+            mask: 0,
+            altstack: GuestAltstack {
+                sp: 0,
+                flags: libc::SS_DISABLE,
+                size: 0,
+            },
+        }
+    }
+}
+
+impl SignalRegistry {
+    pub fn action(&self, sig: i32) -> GuestAction {
+        self.actions
+            .get(sig as usize)
+            .copied()
+            .unwrap_or(GuestAction::Default)
+    }
+    pub fn is_blocked(&self, sig: i32) -> bool {
+        (1..=64).contains(&sig) && self.mask & (1u64 << (sig - 1)) != 0
+    }
+    pub fn mask(&self) -> u64 {
+        self.mask
+    }
+    pub fn altstack(&self) -> GuestAltstack {
+        self.altstack
+    }
+
+    /// Apply one *successful* registry syscall to the mirror.
+    /// Callers must not call this for failed calls: kernel and
+    /// mirror then both retain the prior state.
+    fn apply_success(&mut self, obs: &SyscallObs) {
+        match *obs {
+            SyscallObs::Sigaction {
+                sig,
+                act: Some(act),
+            } => {
+                // The kernel silently leaves SIGKILL/SIGSTOP
+                // dispositions unchanged while returning success.
+                if (1..=64).contains(&sig) && sig != libc::SIGKILL && sig != libc::SIGSTOP {
+                    self.actions[sig as usize] = act;
+                }
+            }
+            SyscallObs::Sigprocmask {
+                how,
+                set: Some(set),
+            } => {
+                const UNBLOCKABLE: u64 =
+                    (1u64 << (libc::SIGKILL - 1)) | (1u64 << (libc::SIGSTOP - 1));
+                let set = set & !UNBLOCKABLE;
+                match how {
+                    0 => self.mask |= set,  // SIG_BLOCK
+                    1 => self.mask &= !set, // SIG_UNBLOCK
+                    2 => self.mask = set,   // SIG_SETMASK
+                    _ => {}
+                }
+                self.mask &= !UNBLOCKABLE;
+            }
+            SyscallObs::Sigaltstack { new: Some(mut alt) } => {
+                if alt.flags & libc::SS_DISABLE != 0 {
+                    alt.sp = 0;
+                    alt.flags = libc::SS_DISABLE;
+                    alt.size = 0;
+                }
+                self.altstack = alt;
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Registry-relevant argument snapshot captured at a syscall
+/// entry stop (before stepping), applied to the mirror only if
+/// the stepped syscall then succeeds.
+#[derive(Clone, Copy, Debug)]
+enum SyscallObs {
+    None,
+    Sigaction { sig: i32, act: Option<GuestAction> },
+    Sigprocmask { how: i32, set: Option<u64> },
+    Sigaltstack { new: Option<GuestAltstack> },
+}
 
 /// Child-to-tracer setup report (7 little-endian u64s): fixture
 /// base, stack top, data buffer, rep destination, rep source,
@@ -437,6 +565,7 @@ pub struct RemoteExecutable {
     info: RemoteChildInfo,
     translation: Option<Translation>,
     profile: CountProfile,
+    registry: SignalRegistry,
 }
 
 impl RemoteExecutable {
@@ -455,13 +584,21 @@ impl RemoteExecutable {
         blocked: &[i32],
     ) -> Result<Self, Refuse> {
         let list: Vec<String> = blocked.iter().map(i32::to_string).collect();
-        Self::spawn(
+        let mut exe = Self::spawn(
             child_bin,
             vec![
                 fixture_name.to_string(),
                 format!("block:{}", list.join(",")),
             ],
-        )
+        )?;
+        // The child's initial mask is part of its kernel-owned
+        // registry state; seed the mirror with exactly it.
+        for &sig in blocked {
+            if (1..=64).contains(&sig) && sig != libc::SIGKILL && sig != libc::SIGSTOP {
+                exe.registry.mask |= 1u64 << (sig - 1);
+            }
+        }
+        Ok(exe)
     }
 
     pub fn spawn_bytes(child_bin: &std::path::Path, bytes: &[u8]) -> Result<Self, Refuse> {
@@ -514,11 +651,77 @@ impl RemoteExecutable {
             info,
             translation: None,
             profile: CountProfile::BranchesAndInstructions,
+            registry: SignalRegistry::default(),
         })
     }
 
     pub fn info(&self) -> RemoteChildInfo {
         self.info
+    }
+
+    /// Tracer mirror of the guest's kernel-owned signal
+    /// registry (see module docs for the ownership rules).
+    pub fn registry(&self) -> &SignalRegistry {
+        &self.registry
+    }
+
+    /// Capture registry-relevant syscall arguments from guest
+    /// memory *before* stepping. Applied to the mirror by the
+    /// caller only when the stepped syscall then succeeds.
+    fn observe_syscall_entry(&self, nr: u32, state: &GuestState) -> Result<SyscallObs, Refuse> {
+        fn rd64(pid: i32, addr: u64, off: u64) -> Result<u64, Refuse> {
+            let mut b = [0u8; 8];
+            read_mem(pid, addr + off, &mut b)?;
+            Ok(u64::from_le_bytes(b))
+        }
+        let pid = self.guard.pid;
+        Ok(match nr {
+            x if x == libc::SYS_rt_sigaction as u32 => {
+                let act = if state.rsi == 0 {
+                    None
+                } else {
+                    // Kernel rt_sigaction layout: handler,
+                    // flags, restorer, one-word mask (32 bytes).
+                    let handler = rd64(pid, state.rsi, 0)?;
+                    Some(match handler {
+                        0 => GuestAction::Default,
+                        1 => GuestAction::Ignore,
+                        addr => GuestAction::Handler {
+                            addr,
+                            flags: rd64(pid, state.rsi, 8)?,
+                            restorer: rd64(pid, state.rsi, 16)?,
+                            sa_mask: rd64(pid, state.rsi, 24)?,
+                        },
+                    })
+                };
+                SyscallObs::Sigaction {
+                    sig: state.rdi as i32,
+                    act,
+                }
+            }
+            x if x == libc::SYS_rt_sigprocmask as u32 => SyscallObs::Sigprocmask {
+                how: state.rdi as i32,
+                set: if state.rsi == 0 {
+                    None
+                } else {
+                    Some(rd64(pid, state.rsi, 0)?)
+                },
+            },
+            x if x == libc::SYS_sigaltstack as u32 => SyscallObs::Sigaltstack {
+                new: if state.rdi == 0 {
+                    None
+                } else {
+                    let mut raw = [0u8; 24];
+                    read_mem(pid, state.rdi, &mut raw)?;
+                    Some(GuestAltstack {
+                        sp: u64::from_le_bytes(raw[0..8].try_into().unwrap()),
+                        flags: i32::from_le_bytes(raw[8..12].try_into().unwrap()),
+                        size: u64::from_le_bytes(raw[16..24].try_into().unwrap()),
+                    })
+                },
+            },
+            _ => SyscallObs::None,
+        })
     }
 
     #[doc(hidden)]
@@ -1024,7 +1227,13 @@ impl RemoteExecutable {
                         }
                         .into());
                     }
+                    // Capture registry arguments before stepping;
+                    // the mirror follows only a successful call.
+                    let obs = self.observe_syscall_entry(state.rax as u32, &state)?;
                     state = self.step_syscall(state, data.exit_src, &data)?;
+                    if state.rax == 0 {
+                        self.registry.apply_success(&obs);
+                    }
                     tot_instructions += 1;
                 }
                 exit_kind::NONDET => {
@@ -1186,6 +1395,82 @@ mod tests {
         assert_eq!(
             classify_stop(Phase::Generated, libc::SIGUSR1, 1, user_usr1, false),
             StopClass::Unexpected
+        );
+    }
+
+    #[test]
+    fn registry_mirror_transitions() {
+        let mut reg = SignalRegistry::default();
+        let handler = GuestAction::Handler {
+            addr: 0x401000,
+            flags: 0x0400_0004,
+            sa_mask: 1u64 << (libc::SIGUSR2 - 1),
+            restorer: 0x401008,
+        };
+        reg.apply_success(&SyscallObs::Sigaction {
+            sig: libc::SIGUSR1,
+            act: Some(handler),
+        });
+        assert_eq!(reg.action(libc::SIGUSR1), handler);
+        // Query-only (null act) and SIGKILL installs change nothing.
+        reg.apply_success(&SyscallObs::Sigaction {
+            sig: libc::SIGUSR1,
+            act: None,
+        });
+        reg.apply_success(&SyscallObs::Sigaction {
+            sig: libc::SIGKILL,
+            act: Some(handler),
+        });
+        assert_eq!(reg.action(libc::SIGUSR1), handler);
+        assert_eq!(reg.action(libc::SIGKILL), GuestAction::Default);
+        reg.apply_success(&SyscallObs::Sigaction {
+            sig: libc::SIGUSR1,
+            act: Some(GuestAction::Default),
+        });
+        assert_eq!(reg.action(libc::SIGUSR1), GuestAction::Default);
+        // Mask arithmetic: block, unblock, set; KILL/STOP never enter.
+        let both = (1u64 << (libc::SIGUSR1 - 1)) | (1u64 << (libc::SIGKILL - 1));
+        reg.apply_success(&SyscallObs::Sigprocmask {
+            how: 0,
+            set: Some(both),
+        });
+        assert!(reg.is_blocked(libc::SIGUSR1));
+        assert!(!reg.is_blocked(libc::SIGKILL));
+        reg.apply_success(&SyscallObs::Sigprocmask {
+            how: 1,
+            set: Some(1u64 << (libc::SIGUSR1 - 1)),
+        });
+        assert!(!reg.is_blocked(libc::SIGUSR1));
+        reg.apply_success(&SyscallObs::Sigprocmask {
+            how: 2,
+            set: Some(1u64 << (libc::SIGUSR2 - 1)),
+        });
+        assert_eq!(reg.mask(), 1u64 << (libc::SIGUSR2 - 1));
+        reg.apply_success(&SyscallObs::Sigprocmask { how: 0, set: None });
+        assert_eq!(reg.mask(), 1u64 << (libc::SIGUSR2 - 1));
+        // Altstack install then kernel-shaped disable.
+        reg.apply_success(&SyscallObs::Sigaltstack {
+            new: Some(GuestAltstack {
+                sp: 0x500000,
+                flags: 0,
+                size: 8192,
+            }),
+        });
+        assert_eq!(reg.altstack().sp, 0x500000);
+        reg.apply_success(&SyscallObs::Sigaltstack {
+            new: Some(GuestAltstack {
+                sp: 0x500000,
+                flags: libc::SS_DISABLE,
+                size: 8192,
+            }),
+        });
+        assert_eq!(
+            reg.altstack(),
+            GuestAltstack {
+                sp: 0,
+                flags: libc::SS_DISABLE,
+                size: 0
+            }
         );
     }
 
