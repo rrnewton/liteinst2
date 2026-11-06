@@ -67,13 +67,21 @@ struct FixtureBytes {
     restorer_off: u64,
     main_off: u64,
     resume_off: u64,
+    done_off: u64,
+    fault_off: u64,
 }
 
 fn fixture(flags: u32) -> FixtureBytes {
-    fixture_v(flags, libc::SIGUSR1 as u8, RESTORER, false)
+    fixture_v(flags, libc::SIGUSR1 as u8, RESTORER, false, 0)
 }
 
-fn fixture_v(flags: u32, sig: u8, restorer: &[u8], alias_install: bool) -> FixtureBytes {
+fn fixture_v(
+    flags: u32,
+    sig: u8,
+    restorer: &[u8],
+    alias_install: bool,
+    body_repeats: usize,
+) -> FixtureBytes {
     let mut v = Vec::new();
     v.extend_from_slice(HANDLER);
     let restorer_off = v.len() as u64;
@@ -120,18 +128,44 @@ fn fixture_v(flags: u32, sig: u8, restorer: &[u8], alias_install: bool) -> Fixtu
     ]);
     let resume_off = v.len() as u64;
     v.extend_from_slice(&[0x48, 0x89, 0x43, 0x50]); // mov [rbx+80], rax
-    v.extend_from_slice(&[0xb9, 0xa0, 0x86, 0x01, 0x00]); // mov ecx, 100000
+    if body_repeats > 0 {
+        v.extend_from_slice(&[0xb9, 0x80, 0xf0, 0xaf, 0x02]); // mov ecx, 50000000
+    } else {
+        v.extend_from_slice(&[0xb9, 0xa0, 0x86, 0x01, 0x00]); // mov ecx, 100000
+    }
     let loop_pos = v.len();
     v.extend_from_slice(&[0x48, 0x83, 0xbb, 0x40, 0x02, 0x00, 0x00, 0x00]); // cmp flag, 0
+    let near = body_repeats > 0;
     let jne_done = v.len();
-    v.extend_from_slice(&[0x75, 0]); // jne DONE
+    if near {
+        v.extend_from_slice(&[0x0f, 0x85, 0, 0, 0, 0]); // jne DONE (near)
+    } else {
+        v.extend_from_slice(&[0x75, 0]); // jne DONE
+    }
+    for _ in 0..body_repeats {
+        // Idempotent body insn: final state is timing-free.
+        v.extend_from_slice(&[
+            0x48, 0xc7, 0x83, 0x68, 0x02, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00,
+        ]); // mov qword [rbx+616], 7
+    }
     v.extend_from_slice(&[0x48, 0xff, 0xc9]); // dec rcx
     let jne_loop = v.len();
-    v.extend_from_slice(&[0x75, 0]); // jne LOOP
+    if near {
+        v.extend_from_slice(&[0x0f, 0x85, 0, 0, 0, 0]); // jne LOOP (near)
+    } else {
+        v.extend_from_slice(&[0x75, 0]); // jne LOOP
+    }
     v.extend_from_slice(&[0xb8, 0xf9, 0xff, 0xff, 0xff, 0xc3]); // timeout: eax=-7; ret
     let done_pos = v.len();
-    v[jne_done + 1] = (done_pos - (jne_done + 2)) as u8;
-    v[jne_loop + 1] = ((loop_pos as i64 - (jne_loop as i64 + 2)) as i8) as u8;
+    if near {
+        let d1 = (done_pos as i64 - (jne_done as i64 + 6)) as i32;
+        v[jne_done + 2..jne_done + 6].copy_from_slice(&d1.to_le_bytes());
+        let d2 = (loop_pos as i64 - (jne_loop as i64 + 6)) as i32;
+        v[jne_loop + 2..jne_loop + 6].copy_from_slice(&d2.to_le_bytes());
+    } else {
+        v[jne_done + 1] = (done_pos - (jne_done + 2)) as u8;
+        v[jne_loop + 1] = ((loop_pos as i64 - (jne_loop as i64 + 2)) as i8) as u8;
+    }
     // DONE: record post-resume rax/r13/rsp, return 42. (5 insns)
     v.extend_from_slice(&[
         0x48, 0x89, 0x83, 0x48, 0x02, 0x00, 0x00, 0x4c, 0x89, 0xab, 0x50, 0x02, 0x00, 0x00, 0x48,
@@ -142,6 +176,105 @@ fn fixture_v(flags: u32, sig: u8, restorer: &[u8], alias_install: bool) -> Fixtu
         restorer_off,
         main_off,
         resume_off,
+        done_off: done_pos as u64,
+        fault_off: 0,
+    }
+}
+
+// Synchronous-fault handlers: record the kernel witness,
+// repair the faulting operand register inside the ucontext,
+// set the progress flag, return to the restorer.
+const SEGV_HANDLER: &[u8] = &[
+    0x48, 0xff, 0x83, 0x00, 0x02, 0x00, 0x00, // inc [rbx+512]
+    0x48, 0x89, 0xbb, 0x08, 0x02, 0x00, 0x00, // mov [rbx+520], rdi
+    0x8b, 0x46, 0x08, // mov eax, [rsi+8]
+    0x48, 0x89, 0x83, 0x10, 0x02, 0x00, 0x00, // mov [rbx+528], rax
+    0x48, 0x8b, 0x46, 0x10, // mov rax, [rsi+16] (si_addr)
+    0x48, 0x89, 0x83, 0x18, 0x02, 0x00, 0x00, // mov [rbx+536], rax
+    0x48, 0x8b, 0x82, 0xa8, 0x00, 0x00, 0x00, // mov rax, [rdx+168] (uc rip)
+    0x48, 0x89, 0x83, 0x20, 0x02, 0x00, 0x00, // mov [rbx+544], rax
+    0x48, 0x8b, 0x82, 0x68, 0x00, 0x00, 0x00, // mov rax, [rdx+104] (uc rdi)
+    0x48, 0x89, 0x83, 0x38, 0x02, 0x00, 0x00, // mov [rbx+568], rax
+    0x4c, 0x89, 0xb2, 0x68, 0x00, 0x00, 0x00, // mov [rdx+104], r14
+    0x48, 0xc7, 0x83, 0x40, 0x02, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, // flag=1
+    0xc3,
+];
+const FPE_HANDLER: &[u8] = &[
+    0x48, 0xff, 0x83, 0x00, 0x02, 0x00, 0x00, 0x48, 0x89, 0xbb, 0x08, 0x02, 0x00, 0x00, 0x8b, 0x46,
+    0x08, 0x48, 0x89, 0x83, 0x10, 0x02, 0x00, 0x00, 0x48, 0x8b, 0x46, 0x10, 0x48, 0x89, 0x83, 0x18,
+    0x02, 0x00, 0x00, 0x48, 0x8b, 0x82, 0xa8, 0x00, 0x00, 0x00, 0x48, 0x89, 0x83, 0x20, 0x02, 0x00,
+    0x00, 0x48, 0x8b, 0x82, 0x98, 0x00, 0x00, 0x00, // uc rcx
+    0x48, 0x89, 0x83, 0x38, 0x02, 0x00, 0x00, 0x48, 0xc7, 0x82, 0x98, 0x00, 0x00, 0x00, 0x02, 0x00,
+    0x00, 0x00, // uc rcx=2
+    0x48, 0xc7, 0x83, 0x40, 0x02, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0xc3,
+];
+
+fn fault_prefix(sig: u8, handler: &[u8]) -> (Vec<u8>, u64, u64) {
+    let mut v = Vec::new();
+    v.extend_from_slice(handler);
+    let restorer_off = v.len() as u64;
+    v.extend_from_slice(RESTORER);
+    let main_off = v.len() as u64;
+    v.extend_from_slice(&[0x48, 0x89, 0x2b]);
+    v.extend_from_slice(&[0x48, 0xc7, 0x43, 0x08]);
+    v.extend_from_slice(&FLAGS_SIGINFO.to_le_bytes());
+    v.extend_from_slice(&[0x4c, 0x89, 0x63, 0x10]);
+    v.extend_from_slice(&[0x48, 0xc7, 0x43, 0x18, 0, 0, 0, 0]);
+    v.extend_from_slice(&[0xbf, sig, 0x00, 0x00, 0x00]);
+    v.extend_from_slice(&[
+        0x48, 0x89, 0xde, 0x48, 0x8d, 0x53, 0x20, 0x41, 0xba, 0x08, 0x00, 0x00, 0x00, 0xb8, 0x0d,
+        0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89, 0x43, 0x40,
+    ]);
+    v.extend_from_slice(&[0xbf, sig, 0x00, 0x00, 0x00]);
+    v.extend_from_slice(&[
+        0x31, 0xf6, 0x48, 0x8d, 0x93, 0x10, 0x01, 0x00, 0x00, 0x41, 0xba, 0x08, 0x00, 0x00, 0x00,
+        0xb8, 0x0d, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89, 0x43, 0x48,
+    ]);
+    v.extend_from_slice(&[0x48, 0x39, 0xc9]); // cmp rcx, rcx
+    let jne_pos = v.len();
+    v.extend_from_slice(&[0x0f, 0x85, 0, 0, 0, 0]);
+    let rel = (0i64 - (jne_pos as i64 + 6)) as i32;
+    v[jne_pos + 2..jne_pos + 6].copy_from_slice(&rel.to_le_bytes());
+    (v, restorer_off, main_off)
+}
+
+fn segv_fixture() -> FixtureBytes {
+    let (mut v, restorer_off, main_off) = fault_prefix(libc::SIGSEGV as u8, SEGV_HANDLER);
+    v.extend_from_slice(&[0x4d, 0x89, 0xee]); // mov r14, r13 (valid src)
+    v.extend_from_slice(&[0xbf, 0x10, 0x00, 0x00, 0x00]); // mov edi, 16
+    let fault_off = v.len() as u64;
+    v.extend_from_slice(&[0x48, 0x8b, 0x07]); // mov rax, [rdi] ; faults
+    v.extend_from_slice(&[
+        0x48, 0x89, 0x83, 0x48, 0x02, 0x00, 0x00, 0x48, 0x89, 0xbb, 0x50, 0x02, 0x00, 0x00, 0xb8,
+        0x2a, 0x00, 0x00, 0x00, 0xc3,
+    ]);
+    FixtureBytes {
+        bytes: v,
+        restorer_off,
+        main_off,
+        resume_off: fault_off,
+        done_off: 0,
+        fault_off,
+    }
+}
+
+fn fpe_fixture() -> FixtureBytes {
+    let (mut v, restorer_off, main_off) = fault_prefix(libc::SIGFPE as u8, FPE_HANDLER);
+    v.extend_from_slice(&[0xb8, 0x54, 0x00, 0x00, 0x00]); // mov eax, 84
+    v.extend_from_slice(&[0x31, 0xd2]); // xor edx, edx
+    v.extend_from_slice(&[0x31, 0xc9]); // xor ecx, ecx
+    let fault_off = v.len() as u64;
+    v.extend_from_slice(&[0xf7, 0xf1]); // div ecx ; faults
+    v.extend_from_slice(&[
+        0x48, 0x89, 0x83, 0x48, 0x02, 0x00, 0x00, 0xb8, 0x09, 0x00, 0x00, 0x00, 0xc3,
+    ]);
+    FixtureBytes {
+        bytes: v,
+        restorer_off,
+        main_off,
+        resume_off: fault_off,
+        done_off: 0,
+        fault_off,
     }
 }
 
@@ -258,7 +391,16 @@ fn run_translated_sig(
 }
 
 // Native info needed for witness normalization on that side.
-fn native_witness(fix: &FixtureBytes, send: bool) -> (u64, Witness) {
+struct NativeOut {
+    result: u64,
+    data: Vec<u8>,
+    base: u64,
+    dst: u64,
+    stack_top: u64,
+    src: u64,
+}
+
+fn native_run(fix: &FixtureBytes, send_sig: Option<i32>) -> NativeOut {
     let hex: String = fix.bytes.iter().map(|b| format!("{b:02x}")).collect();
     let mut child = Command::new(NATIVE_CHILD)
         .args([
@@ -275,10 +417,10 @@ fn native_witness(fix: &FixtureBytes, send: bool) -> (u64, Witness) {
     let mut raw = [0u8; 32];
     stdout.read_exact(&mut raw).expect("native info");
     let get = |i: usize| u64::from_le_bytes(raw[i * 8..i * 8 + 8].try_into().unwrap());
-    let (base, stack_top, dst) = (get(0), get(1), get(2));
-    if send {
+    let (base, stack_top, dst, src) = (get(0), get(1), get(2), get(3));
+    if let Some(sig) = send_sig {
         // SAFETY: signalling the test's native child (blocked).
-        let rc = unsafe { libc::kill(pid, libc::SIGUSR1) };
+        let rc = unsafe { libc::kill(pid, sig) };
         assert_eq!(rc, 0, "kill native child");
     }
     child
@@ -292,7 +434,52 @@ fn native_witness(fix: &FixtureBytes, send: bool) -> (u64, Witness) {
     let status = child.wait().expect("wait native child");
     assert!(status.success(), "native child status {status}");
     let result = u64::from_le_bytes(out[0..8].try_into().unwrap());
-    (result, witness(&out[8..], base, dst, stack_top))
+    NativeOut {
+        result,
+        data: out[8..].to_vec(),
+        base,
+        dst,
+        stack_top,
+        src,
+    }
+}
+
+fn native_witness(fix: &FixtureBytes, send: bool) -> (u64, Witness) {
+    let n = native_run(fix, send.then_some(libc::SIGUSR1));
+    let w = witness(&n.data, n.base, n.dst, n.stack_top);
+    (n.result, w)
+}
+
+/// Translated run without any blocked/sent signal (sync
+/// fault fixtures generate their own signal).
+fn run_translated_plain(
+    fix: &FixtureBytes,
+) -> (
+    RemoteExecutable,
+    RemoteChildInfo,
+    Result<liteinst_jit::exec::Outcome, RunError>,
+    Vec<u8>,
+) {
+    let mut remote = RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &fix.bytes)
+        .expect("spawn remote");
+    let info = remote.info();
+    let region = RegionFacts {
+        base: info.base,
+        bytes: fix.bytes.clone(),
+        generation: Generation(1),
+        immutable_private: true,
+    };
+    remote
+        .prepare(
+            &region,
+            info.base + fix.main_off,
+            CountProfile::BranchesAndInstructions,
+        )
+        .expect("prepare remote");
+    let out = remote.run(guest_state(&remote, info, fix), RETURN_SENTINEL);
+    let mut data = vec![0u8; 640];
+    assert!(remote.read_mem(info.dst, &mut data));
+    (remote, info, out, data)
 }
 
 fn check_round_trip() {
@@ -464,7 +651,7 @@ fn check_alias_install_mirrored() {
     // kernel disposition can complete it under cache control
     // with exact counts; an unstubbed handler escapes to
     // native execution and the run faults at the sentinel.
-    let fix = fixture_v(FLAGS_SIGINFO, libc::SIGUSR1 as u8, RESTORER, true);
+    let fix = fixture_v(FLAGS_SIGINFO, libc::SIGUSR1 as u8, RESTORER, true, 0);
     let (remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
     let out = out.expect("alias round trip");
     assert_eq!(out.state.rax, 42, "alias result");
@@ -485,6 +672,132 @@ fn check_alias_install_mirrored() {
     );
 }
 
+/// I1-E sync SEGV: data fault at a mid-block copied load,
+/// handler repairs the pointer register in the ucontext,
+/// the same load re-executes. Native child is the oracle
+/// for witness/final-state words; counts are enumerated:
+/// main 27 + handler 13 + restorer 2 = 42 insns, 1 branch.
+fn check_sync_segv() {
+    let fix = segv_fixture();
+    let (_remote, info, out, data) = run_translated_plain(&fix);
+    let out = out.expect("translated sync SEGV round trip");
+    assert_eq!(out.state.rax, 42, "translated segv result");
+    assert_eq!(out.instructions, 42, "segv instructions");
+    assert_eq!(out.branches, 1, "segv branches");
+    let n = native_run(&fix, None);
+    assert_eq!(n.result, 42, "native segv result");
+    for (label, d, base, src) in [
+        ("translated", &data, info.base, info.src),
+        ("native", &n.data, n.base, n.src),
+    ] {
+        assert_eq!(word(d, 64), 0, "{label} install");
+        assert_eq!(word(d, 272), base, "{label} queried handler");
+        assert_eq!(word(d, 512), 1, "{label} handler runs");
+        assert_eq!(word(d, 520), libc::SIGSEGV as u64, "{label} signum");
+        assert_eq!(word(d, 528), 1, "{label} si_code SEGV_MAPERR");
+        assert_eq!(word(d, 536), 16, "{label} si_addr is raw fault addr");
+        assert_eq!(word(d, 544) - base, fix.fault_off, "{label} uc rip at load");
+        assert_eq!(word(d, 568), 16, "{label} uc old rdi");
+        assert_eq!(word(d, 576), 1, "{label} flag");
+        assert_eq!(word(d, 584), 0x0706_0504_0302_0100, "{label} loaded value");
+        assert_eq!(word(d, 592), src, "{label} repaired rdi after resume");
+    }
+}
+
+/// I1-E sync FPE: div-by-zero, handler repairs the divisor
+/// in the ucontext; `si_addr` must name the SOURCE div PC,
+/// not the generated copy. Counts: main 27 + handler 13 +
+/// restorer 2 = 42 insns, 1 branch.
+fn check_sync_fpe() {
+    let fix = fpe_fixture();
+    let (_remote, info, out, data) = run_translated_plain(&fix);
+    let out = out.expect("translated sync FPE round trip");
+    assert_eq!(out.state.rax, 9, "translated fpe result");
+    assert_eq!(out.instructions, 42, "fpe instructions");
+    assert_eq!(out.branches, 1, "fpe branches");
+    let n = native_run(&fix, None);
+    assert_eq!(n.result, 9, "native fpe result");
+    for (label, d, base) in [
+        ("translated", &data, info.base),
+        ("native", &n.data, n.base),
+    ] {
+        assert_eq!(word(d, 512), 1, "{label} handler runs");
+        assert_eq!(word(d, 520), libc::SIGFPE as u64, "{label} signum");
+        assert_eq!(word(d, 528), 1, "{label} si_code FPE_INTDIV");
+        assert_eq!(
+            word(d, 536) - base,
+            fix.fault_off,
+            "{label} si_addr at source div"
+        );
+        assert_eq!(word(d, 544) - base, fix.fault_off, "{label} uc rip at div");
+        assert_eq!(word(d, 568), 0, "{label} uc old rcx");
+        assert_eq!(word(d, 584), 42, "{label} quotient 84/2");
+    }
+}
+
+/// I1-E async arbitrary phase: USR1 sent repeatedly while a
+/// long copied-instruction loop runs; delivery may land at
+/// block-head stubs, copied insns, branch stubs, or exit
+/// machinery. Timing makes counts non-pin-able, so this is a
+/// completion + witness-PC-range check (exact counts stay
+/// with the deterministic I1-D/sync cases above).
+fn check_async_arbitrary_phase() {
+    let fix = fixture_v(FLAGS_SIGINFO, libc::SIGUSR1 as u8, RESTORER, false, 64);
+    let mut remote = RemoteExecutable::spawn_bytes_with_blocked(
+        std::path::Path::new(REMOTE_CHILD),
+        &fix.bytes,
+        &[libc::SIGUSR1],
+    )
+    .expect("spawn remote");
+    let info = remote.info();
+    let region = RegionFacts {
+        base: info.base,
+        bytes: fix.bytes.clone(),
+        generation: Generation(1),
+        immutable_private: true,
+    };
+    remote
+        .prepare(
+            &region,
+            info.base + fix.main_off,
+            CountProfile::BranchesAndInstructions,
+        )
+        .expect("prepare remote");
+    let pid = remote.child_pid_for_test();
+    let done = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let done2 = done.clone();
+    let killer = std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        for _ in 0..600 {
+            if done2.load(std::sync::atomic::Ordering::SeqCst) {
+                break;
+            }
+            // SAFETY: signalling the test's traced child.
+            unsafe {
+                libc::kill(pid, libc::SIGUSR1);
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+    });
+    let out = remote.run(guest_state(&remote, info, &fix), RETURN_SENTINEL);
+    done.store(true, std::sync::atomic::Ordering::SeqCst);
+    killer.join().expect("killer thread");
+    let out = out.expect("arbitrary-phase round trip");
+    assert_eq!(out.state.rax, 42, "arbitrary-phase result");
+    let mut data = vec![0u8; 640];
+    assert!(remote.read_mem(info.dst, &mut data));
+    assert!(word(&data, 512) >= 1, "handler ran: {}", word(&data, 512));
+    assert_eq!(word(&data, 576), 1, "progress through handler");
+    assert_eq!(word(&data, 616), 7, "idempotent body value");
+    let rip_off = word(&data, 544) - info.base;
+    assert!(
+        (fix.resume_off..fix.done_off).contains(&rip_off),
+        "uc rip offset {rip_off:#x} in loop range {:#x}..{:#x}",
+        fix.resume_off,
+        fix.done_off
+    );
+}
+
 #[test]
 fn remote_signal_all() {
     check_round_trip();
@@ -498,14 +811,17 @@ fn remote_signal_all() {
     let mut nop_restorer = vec![0x90u8];
     nop_restorer.extend_from_slice(RESTORER);
     check_ineligible_fixture(
-        &fixture_v(FLAGS_SIGINFO, libc::SIGUSR1 as u8, &nop_restorer, false),
+        &fixture_v(FLAGS_SIGINFO, libc::SIGUSR1 as u8, &nop_restorer, false, 0),
         libc::SIGUSR1,
         "NOP-prefixed restorer",
     );
     // P2: only the tested signal (SIGUSR1) is admitted.
     check_ineligible_fixture(
-        &fixture_v(FLAGS_SIGINFO, libc::SIGUSR2 as u8, RESTORER, false),
+        &fixture_v(FLAGS_SIGINFO, libc::SIGUSR2 as u8, RESTORER, false, 0),
         libc::SIGUSR2,
         "SIGUSR2 not in tested set",
     );
+    check_sync_segv();
+    check_sync_fpe();
+    check_async_arbitrary_phase();
 }
