@@ -261,11 +261,23 @@ fn force_order(child_first: bool) {
         "sibling identity cannot be substituted"
     );
     assert_eq!(read_registers(entry.tid).unwrap(), before);
-    assert_eq!(xstate(entry.tid).unwrap(), extended);
+    assert_eq!(
+        liteinst::trampoline::SavedExtendedStateLayout::xstate_semantic_eq(
+            &xstate(entry.tid).unwrap(),
+            &extended
+        ),
+        liteinst::trampoline::XstateSemanticEq::Equal
+    );
     let mut expected = before;
     expected.rax = 0;
     assert_eq!(read_registers(stops.child.0).unwrap(), expected);
-    assert_eq!(xstate(stops.child.0).unwrap(), extended);
+    assert_eq!(
+        liteinst::trampoline::SavedExtendedStateLayout::xstate_semantic_eq(
+            &xstate(stops.child.0).unwrap(),
+            &extended
+        ),
+        liteinst::trampoline::XstateSemanticEq::Equal
+    );
     assert_eq!(launch::task_mask(stops.child.0).unwrap(), mask);
     for task in lifecycle.tasks.values() {
         assert!(matches!(task.state, State::Held(_)));

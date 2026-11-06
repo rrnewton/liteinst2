@@ -5,6 +5,22 @@
 //! real publication remains in the separate whole-mm native guard.
 use super::*;
 
+/// Fail-closed semantic xstate check for live-vs-pending authentication:
+/// `NotComparable` and `Different` both refuse, with the helper's named
+/// reason or the caller's message.
+fn require_xstate_semantic_eq(
+    actual: &[u8],
+    expected: &[u8],
+    differs: &'static str,
+) -> Result<(), LaunchError> {
+    use liteinst::trampoline::{SavedExtendedStateLayout, XstateSemanticEq};
+    match SavedExtendedStateLayout::xstate_semantic_eq(actual, expected) {
+        XstateSemanticEq::Equal => Ok(()),
+        XstateSemanticEq::Different => Err(LaunchError::Invalid(differs)),
+        XstateSemanticEq::NotComparable(reason) => Err(LaunchError::Invalid(reason)),
+    }
+}
+
 pub(crate) mod admission;
 mod exec;
 mod thread;
@@ -636,7 +652,6 @@ impl NativeLifecycle {
                 } else if let Some(returned) = self.tasks.get_mut(&tid).unwrap().fork_return.take()
                 {
                     if registers != returned.registers
-                        || xstate(tid)? != returned.xstate
                         || returned
                             .mask
                             .is_some_and(|mask| launch::task_mask(tid).ok() != Some(mask))
@@ -644,6 +659,11 @@ impl NativeLifecycle {
                     {
                         return Err(LaunchError::Invalid("native fork return state differs"));
                     }
+                    require_xstate_semantic_eq(
+                        &xstate(tid)?,
+                        &returned.xstate,
+                        "native fork return state differs",
+                    )?;
                     recorded(self.registry.observe_creation_exit(
                         returned.ticket,
                         sequence,
@@ -669,12 +689,16 @@ impl NativeLifecycle {
                     let mut expected = pending.entry;
                     expected.rax = exit.sval as u64;
                     if registers != expected
-                        || xstate(tid)? != pending.xstate
                         || (matches!(pending.kind, CreationKind::Thread { .. })
                             && launch::task_mask(tid)? != pending.mask)
                     {
                         return Err(LaunchError::Invalid("failed fork changed unrelated state"));
                     }
+                    require_xstate_semantic_eq(
+                        &xstate(tid)?,
+                        &pending.xstate,
+                        "failed fork changed unrelated state",
+                    )?;
                     recorded(self.registry.observe_creation_exit(
                         pending.ticket,
                         sequence,
@@ -733,11 +757,16 @@ impl NativeLifecycle {
         // Authenticate this candidate in the original tracer's wait domain
         // before retaining any numeric authority or performing later reads.
         owner.pin_creation_candidate(child)?;
-        if read_registers(tid)? != pending.entry || xstate(tid)? != pending.xstate {
+        if read_registers(tid)? != pending.entry {
             return Err(LaunchError::Invalid(
                 "fork parent event changed entry state",
             ));
         }
+        require_xstate_semantic_eq(
+            &xstate(tid)?,
+            &pending.xstate,
+            "fork parent event changed entry state",
+        )?;
         if matches!(pending.kind, CreationKind::Thread { .. }) {
             thread::shadow_stack_disabled(tid)?;
             if launch::task_mask(tid)? != pending.mask {
