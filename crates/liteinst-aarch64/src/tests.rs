@@ -400,6 +400,22 @@ fn checked_encoders_accept_register_31() {
     assert!(cond_branch(15, 0).is_some());
 }
 
+#[cfg(debug_assertions)]
+#[test]
+#[should_panic]
+fn movk_w_form_rejects_unallocated_shifts_in_debug() {
+    // 32-bit MOVK allocates only hw 0/1 (shifts 0/16); hw 2/3 with
+    // sf=false are unallocated and debug-asserted.
+    let _ = movk_shifted(false, 0, 1, 2);
+}
+
+#[cfg(debug_assertions)]
+#[test]
+#[should_panic]
+fn movz_w_form_rejects_unallocated_shifts_in_debug() {
+    let _ = movz_shifted(false, 0, 1, 3);
+}
+
 #[test]
 fn unknown_encodings_decode_as_other() {
     for word in [0xf900_0000, 0x9ac0_0800, 0xd400_0002, 0xd400_0003] {

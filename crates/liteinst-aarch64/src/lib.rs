@@ -793,17 +793,21 @@ pub fn movz(sf: bool, rd: Reg, imm16: u32) -> u32 {
     movz_shifted(sf, rd, imm16, 0)
 }
 
-/// `MOVZ Rd, #imm16, LSL #(16 * hw)`. Requires `hw < 4` and
-/// `imm16 <= 0xffff` (debug-asserted), like the register bound.
+/// `MOVZ Rd, #imm16, LSL #(16 * hw)`. Requires an allocated shift
+/// (`hw < 4` for 64-bit, `hw < 2` for 32-bit; 32-bit shifts of 32/48 are
+/// unallocated) and `imm16 <= 0xffff` (debug-asserted), like the
+/// register bound.
 pub fn movz_shifted(sf: bool, rd: Reg, imm16: u32, hw: u32) -> u32 {
-    debug_assert!(hw < 4 && imm16 <= 0xffff);
+    debug_assert!(hw < if sf { 4 } else { 2 } && imm16 <= 0xffff);
     sf_bit(sf) | 0x5280_0000 | ((hw & 0x3) << 21) | ((imm16 & 0xffff) << 5) | f5(rd)
 }
 
-/// `MOVK Rd, #imm16, LSL #(16 * hw)`. Requires `hw < 4` and
-/// `imm16 <= 0xffff` (debug-asserted), like the register bound.
+/// `MOVK Rd, #imm16, LSL #(16 * hw)`. Requires an allocated shift
+/// (`hw < 4` for 64-bit, `hw < 2` for 32-bit; 32-bit shifts of 32/48 are
+/// unallocated) and `imm16 <= 0xffff` (debug-asserted), like the
+/// register bound.
 pub fn movk_shifted(sf: bool, rd: Reg, imm16: u32, hw: u32) -> u32 {
-    debug_assert!(hw < 4 && imm16 <= 0xffff);
+    debug_assert!(hw < if sf { 4 } else { 2 } && imm16 <= 0xffff);
     sf_bit(sf) | 0x7280_0000 | ((hw & 0x3) << 21) | ((imm16 & 0xffff) << 5) | f5(rd)
 }
 

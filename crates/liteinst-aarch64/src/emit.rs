@@ -68,14 +68,21 @@ pub fn svc_fallback_word(site_word: u32, brk_imm: u16) -> Option<u32> {
 
 /// Choose a patch for an `SVC` site: branch to `island_entry` when an
 /// island is offered and reachable, otherwise the `BRK` trap fallback
-/// (the placement chain never dead-ends). `None` only when the site
-/// word is not `SVC`.
+/// (the placement chain never dead-ends). `None` when the site word is
+/// not `SVC` or the site address is not word aligned.
 pub fn patch_svc(
     site_word: u32,
     site_addr: u64,
     island_entry: Option<u64>,
     brk_imm: u16,
 ) -> Option<Patch> {
+    // A misaligned site cannot name an aligned A64 instruction word to
+    // replace; that defect is not repairable by either strategy, so it
+    // is refused before the fallback is even considered. (A missing or
+    // unreachable island at an aligned site still falls back to BRK.)
+    if !site_addr.is_multiple_of(4) {
+        return None;
+    }
     if let Some(entry) = island_entry
         && let Some(word) = svc_patch_word(site_word, site_addr, entry)
     {
@@ -104,9 +111,11 @@ pub enum EntryReach {
 }
 
 /// The landing-pad word for `reach`, or `None` for direct-only entries
-/// (emit no pad). A `BR` landing on a `BTI c` pad has been observed to
-/// pass on some systems; that anomaly is not architectural and is never
-/// relied on or emitted deliberately here.
+/// (emit no pad). Landing expectations for `BR` in guarded pages depend
+/// on the branch register (X16/X17 are jump-class; other registers are
+/// jump-or-call class), so some `BR` landings on a `BTI c` pad are
+/// architectural. This matrix stays conservative regardless: a call-only
+/// pad is never selected for jump reach.
 pub fn landing_pad(reach: EntryReach) -> Option<u32> {
     match reach {
         EntryReach::Direct => None,
@@ -124,8 +133,13 @@ pub fn landing_pad(reach: EntryReach) -> Option<u32> {
 /// special case (`MOVZ` zeroes the register first). `scratch` is
 /// clobbered: callers restoring the SVC register contract must preserve
 /// it (X16/X17 are the conventional veneer registers). `None` when
-/// `scratch` is not an architectural register number.
+/// `scratch` is not a writable architectural register: register 31 is
+/// the zero register in these positions, so its materialisation writes
+/// would be discarded and no requested target could result.
 pub fn far_jump_words(reach: EntryReach, scratch: Reg, target: u64) -> Option<([u32; 6], usize)> {
+    if scratch >= 31 {
+        return None;
+    }
     let field = checked_reg(scratch)?;
     let mut words = [0u32; 6];
     let mut n = 0;
@@ -320,6 +334,51 @@ mod tests {
             assert_eq!(decode(patch.word), Insn::Brk { imm16: 0x4c00 });
         }
         assert_eq!(patch_svc(0xd65f_03c0, SITE, None, 0), None);
+    }
+
+    #[test]
+    fn far_jump_refuses_the_zero_register_as_scratch() {
+        // Register 31 is XZR here, not SP: MOVZ/MOVK writes to it are
+        // discarded, so no nonzero target could ever materialise
+        // (review probe: far_jump_words(Direct, 31, 0x12345678)).
+        for reach in [
+            EntryReach::Direct,
+            EntryReach::Call,
+            EntryReach::Jump,
+            EntryReach::Dual,
+        ] {
+            for target in [0u64, 0x1234_5678, u64::MAX] {
+                assert_eq!(
+                    far_jump_words(reach, 31, target),
+                    None,
+                    "target {target:#x}"
+                );
+            }
+        }
+        // Writable boundaries stay accepted.
+        assert!(far_jump_words(EntryReach::Direct, 0, 0x1234_5678).is_some());
+        assert!(far_jump_words(EntryReach::Direct, 30, 0x1234_5678).is_some());
+    }
+
+    #[test]
+    fn patch_svc_refuses_misaligned_sites_before_fallback() {
+        // A missing island is repairable by trapping; a site that cannot
+        // name an aligned A64 word is not (review probe: site 0x1001
+        // once returned a Trap patch). All residues refuse, with and
+        // without an island on offer.
+        for residue in [1u64, 2, 3] {
+            let site = SITE + residue;
+            assert_eq!(patch_svc(svc(0), site, None, 0), None, "residue {residue}");
+            assert_eq!(
+                patch_svc(svc(0), site, Some(SITE + 0x1000), 0),
+                None,
+                "residue {residue} with island"
+            );
+        }
+        // Aligned control: distant island still falls back to BRK.
+        let patch = patch_svc(svc(0), SITE, Some(SITE + (1 << 28)), 7).unwrap();
+        assert_eq!(patch.strategy, Strategy::Trap);
+        assert_eq!(decode(patch.word), Insn::Brk { imm16: 7 });
     }
 
     #[test]
