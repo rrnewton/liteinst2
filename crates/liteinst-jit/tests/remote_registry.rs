@@ -279,9 +279,15 @@ fn check_poll_with_handler_installed() {
         1,
         "only main's own increment landed; handler must not run in I1-C"
     );
-    assert!(
-        !remote.registry().action(libc::SIGUSR1).is_default(),
-        "handler still installed after poll stop"
+    assert_eq!(
+        remote.registry().action(libc::SIGUSR1),
+        GuestAction {
+            handler: info.base,
+            flags: 0x0400_0004,
+            restorer: info.base + 8,
+            sa_mask: 0x800,
+        },
+        "exact installed handler tuple still mirrored after poll stop"
     );
     assert!(remote.registry().is_blocked(libc::SIGUSR1));
 }
