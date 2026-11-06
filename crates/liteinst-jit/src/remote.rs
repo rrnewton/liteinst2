@@ -1,5 +1,5 @@
 //! Remote ptrace direct-block substrate (P1b I1-B through
-//! I1-E, internal and unstable).
+//! I1-F, internal and unstable).
 //!
 //! A traced fixture child executes the same translations as
 //! the in-process executor, with this tracer as dispatcher:
@@ -9,11 +9,12 @@
 //! syscalls/nondeterministic instructions the stage admits are
 //! serviced by stepping the original instruction in the child.
 //! I1-C mirrors the guest signal registry from kernel
-//! readback. I1-D/I1-E add genuine delivery on top of that
-//! mirror (async SIGUSR1 and synchronous SIGSEGV/SIGFPE at
-//! copied insns, an `SA_SIGINFO` handler at a translated
-//! block start, recovery to a block start or an exact
-//! mid-block generated re-entry, no altstack/nesting/RT —
+//! readback. I1-D/I1-E/I1-F add genuine delivery on top of
+//! that mirror (async SIGUSR1/SIGUSR2 with masks, altstack,
+//! and nesting to an 8-frame cap, synchronous SIGSEGV/SIGFPE
+//! at copied insns on an empty frame stack, an `SA_SIGINFO`
+//! handler at a translated block start, recovery to a block
+//! start or an exact mid-block generated re-entry, no RT —
 //! see `P1B-DESIGN.md` §8): custom handlers are stubbed in
 //! the kernel disposition, the kernel builds the frame at
 //! the recovered source PC, the handler runs translated, and
@@ -50,11 +51,14 @@ pub const MAILBOX_PUBLISH: u64 = 1;
 pub const MAILBOX_PUBLISHED: u64 = 2;
 /// The exact syscall numbers pass-through stepping may execute
 /// in this stage: `SYS_write` (the sole corpus syscall from
-/// I1-B) plus the I1-C registry set (`rt_sigaction`,
-/// `rt_sigprocmask`, `rt_sigpending`, `sigaltstack`), each
-/// observed for the tracer mirror. The lifecycle guard always
-/// runs first; any other number stops by name (`NoHandler`)
-/// rather than executing. This is a stage bound, not a generic
+/// I1-B), the I1-C registry set (`rt_sigaction`,
+/// `rt_sigprocmask`, `rt_sigpending`, `sigaltstack`, each
+/// observed for the tracer mirror), and the I1-F self-send
+/// pair (`getpid`, `kill` — kill is additionally gated at the
+/// dispatch site to the traced child's own pid, so a guest
+/// can only signal itself). The lifecycle guard always runs
+/// first; any other number stops by name (`NoHandler`) rather
+/// than executing. This is a stage bound, not a generic
 /// guest-syscall claim.
 const PASS_THROUGH_SYSCALLS: &[u32] = &[
     libc::SYS_write as u32,
@@ -62,6 +66,8 @@ const PASS_THROUGH_SYSCALLS: &[u32] = &[
     libc::SYS_rt_sigprocmask as u32,
     libc::SYS_rt_sigpending as u32,
     libc::SYS_sigaltstack as u32,
+    libc::SYS_getpid as u32,
+    libc::SYS_kill as u32,
 ];
 
 /// Bytes reserved at the tail of the child code arena for the
@@ -280,7 +286,6 @@ fn visible_handler(
 /// words; popped exactly once by the restorer sigreturn flow.
 #[derive(Clone, Copy, Debug)]
 struct ActiveFrame {
-    signum: i32,
     restorer: u64,
     frame_rsp: u64,
     uc_addr: u64,
@@ -1466,39 +1471,53 @@ impl RemoteExecutable {
     fn delivery_action(
         &self,
         sig: i32,
-        active: &Option<ActiveFrame>,
+        active: &[ActiveFrame],
         synchronous: bool,
     ) -> Option<GuestAction> {
-        if active.is_some() {
+        // Explicit frame-stack cap (I1-F bound) and, in this
+        // slice, synchronous delivery only on an empty stack.
+        const MAX_ACTIVE_FRAMES: usize = 8;
+        if active.len() >= MAX_ACTIVE_FRAMES || (synchronous && !active.is_empty()) {
             return None;
         }
         // Tested sets only: asynchronous delivery admits
-        // exactly SIGUSR1 (I1-D); synchronous fault delivery
-        // admits exactly SIGSEGV/SIGFPE at copied insns
-        // (I1-E, phase checked by the caller). Broadening
-        // either set needs its own witnesses.
+        // exactly SIGUSR1/SIGUSR2 (I1-D/I1-F); synchronous
+        // fault delivery admits exactly SIGSEGV/SIGFPE at
+        // copied insns (I1-E, phase checked by the caller).
+        // Broadening either set needs its own witnesses.
         let admitted = if synchronous {
             sig == libc::SIGSEGV || sig == libc::SIGFPE
         } else {
-            sig == libc::SIGUSR1
+            sig == libc::SIGUSR1 || sig == libc::SIGUSR2
         };
         if !admitted {
             return None;
         }
         let action = self.registry.action(sig);
-        if !action.is_custom() || action.restorer == 0 || action.sa_mask != 0 {
+        if !action.is_custom() || action.restorer == 0 {
             return None;
         }
-        // Exactly the tested flag word: anything else
-        // (ONSTACK, NODEFER, RESTART, RESETHAND, NOCLD*) is
-        // an I1-F/G shape; RESETHAND in particular would
-        // also stale the mirror when the kernel resets the
-        // disposition on delivery.
-        if action.flags != SA_RESTORER_FLAG | (libc::SA_SIGINFO as u64) {
+        // Tested flag words only: the I1-D base plus,
+        // independently, SA_NODEFER and/or SA_ONSTACK (I1-F).
+        // Anything else (RESTART is I1-G; RESETHAND would also
+        // stale the mirror when the kernel resets the
+        // disposition on delivery; NOCLD*) keeps the stop.
+        // sa_mask is arbitrary: the kernel applies it and the
+        // mirror retains its readback verbatim.
+        let base_flags = SA_RESTORER_FLAG | (libc::SA_SIGINFO as u64);
+        let allowed_flags = base_flags | (libc::SA_NODEFER as u64) | (libc::SA_ONSTACK as u64);
+        if action.flags & base_flags != base_flags || action.flags & !allowed_flags != 0 {
             return None;
         }
-        if self.registry.altstack().flags & libc::SS_DISABLE == 0 {
-            return None;
+        // SA_ONSTACK onto an enabled altstack needs the
+        // witnessed size floor; onto a disabled altstack the
+        // kernel's normal-stack fallback is admitted as-is.
+        if action.flags & (libc::SA_ONSTACK as u64) != 0 {
+            let alt = self.registry.altstack();
+            let enabled = alt.flags & libc::SS_DISABLE == 0;
+            if enabled && (alt.sp == 0 || alt.size < 8192) {
+                return None;
+            }
         }
         let t = self.translation.as_ref()?;
         if !t.block_gen.contains_key(&action.handler) {
@@ -1570,7 +1589,6 @@ impl RemoteExecutable {
         Ok((
             handler_state,
             ActiveFrame {
-                signum: sig,
                 restorer: action.restorer,
                 frame_rsp,
                 uc_addr,
@@ -1635,10 +1653,9 @@ impl RemoteExecutable {
     ) -> Result<(GuestState, Option<u64>), RunError> {
         let t = self.translation.as_ref().expect("prepared");
         let resume = self.frame_resume_state(frame.uc_addr)?;
-        // No disposition change under a live frame (I1-F).
-        if registry.action(frame.signum).restorer != frame.restorer {
-            return Err(self.unexpected_stop("disposition changed under live frame"));
-        }
+        // Disposition changes under a live frame (I1-F)
+        // affect future deliveries only; this frame's
+        // recorded restorer stays authoritative for its pop.
         // Re-prove the exact restorer shape at resume time:
         // admission-time proof alone would credit +2 to
         // whatever the handler left at the restorer address.
@@ -1921,7 +1938,7 @@ impl RemoteExecutable {
         let mut exits: u64 = 0;
         let (mut tot_branches, mut tot_instructions) = (0u64, 0u64);
         let mut poll_remaining = POLL_BUDGET;
-        let mut active: Option<ActiveFrame> = None;
+        let mut active: Vec<ActiveFrame> = Vec::new();
         let mut pending_gen: Option<u64> = None;
         loop {
             // A mid-block sigreturn resume supplies its exact
@@ -2011,7 +2028,7 @@ impl RemoteExecutable {
                     if let Some(action) = action {
                         let (handler_state, frame) =
                             self.deliver_signal(action, &recovered, &data, gen_mid)?;
-                        active = Some(frame);
+                        active.push(frame);
                         state = handler_state;
                         exits += 1;
                         poll_remaining = data.poll_remaining;
@@ -2058,7 +2075,7 @@ impl RemoteExecutable {
                         }
                         let (handler_state, frame) =
                             self.deliver_signal(action, &recovered, &data, gen_mid)?;
-                        active = Some(frame);
+                        active.push(frame);
                         state = handler_state;
                         exits += 1;
                         poll_remaining = data.poll_remaining;
@@ -2108,16 +2125,16 @@ impl RemoteExecutable {
                     // the sigreturn interception point, proven
                     // by target, exact frame RSP, and a plain
                     // `ret` (no imm16 pop).
-                    if let Some(frame) = active
+                    if let Some(frame) = active.last().copied()
                         && target == frame.restorer
                         && state.rsp == frame.frame_rsp
                         && data.exit_next == 0
                     {
-                        active = None;
                         let mut registry = std::mem::take(&mut self.registry);
                         let resumed = self.sigreturn_resume(&mut registry, &frame, &state);
                         self.registry = registry;
                         let (resume_state, gen_override) = resumed?;
+                        active.pop();
                         state = resume_state;
                         if let Some(gpc) = gen_override {
                             // Mid-block re-entry: the block's
@@ -2156,7 +2173,11 @@ impl RemoteExecutable {
                     // recovered stop (mask completion is I1-F).
                     state.rip = data.exit_src;
                     let pending = self.pending_async()?;
-                    let defer = pending.first().is_some_and(|&sig| {
+                    // The kernel presents the lowest-numbered
+                    // UNBLOCKED pending signal first, so any
+                    // eligible unblocked pending entry defers,
+                    // even behind a blocked lower signal.
+                    let defer = pending.iter().any(|&sig| {
                         !self.registry.is_blocked(sig)
                             && self.delivery_action(sig, &active, false).is_some()
                     });
@@ -2184,6 +2205,16 @@ impl RemoteExecutable {
                     state.rip = data.exit_src;
                     syscall_guard(t, data.exit_src, state.rax)?;
                     if !PASS_THROUGH_SYSCALLS.contains(&(state.rax as u32)) {
+                        return Err(Refuse::NoHandler {
+                            src_pc: data.exit_src,
+                        }
+                        .into());
+                    }
+                    // Self-send bound: kill may target only
+                    // the traced child's own pid in this stage.
+                    if state.rax as u32 == libc::SYS_kill as u32
+                        && state.rdi != self.guard.pid as u64
+                    {
                         return Err(Refuse::NoHandler {
                             src_pc: data.exit_src,
                         }

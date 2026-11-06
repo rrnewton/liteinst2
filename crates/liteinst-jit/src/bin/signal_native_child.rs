@@ -101,6 +101,9 @@ fn main() {
         .expect("restorer offset")
         .parse()
         .expect("restorer offset decimal");
+    let block_sig: i32 = std::env::args()
+        .nth(4)
+        .map_or(libc::SIGUSR1, |a| a.parse().expect("block signum decimal"));
     let hex = arg.strip_prefix("hex:").expect("hex bytes only");
     let bytes: Vec<u8> = (0..hex.len())
         .step_by(2)
@@ -118,14 +121,16 @@ fn main() {
             restorer: 0,
             mask: 0,
         };
-        let rc = libc::syscall(
-            libc::SYS_rt_sigaction,
-            libc::SIGUSR1,
-            &zero as *const KernelSigaction,
-            core::ptr::null_mut::<KernelSigaction>(),
-            8usize,
-        );
-        assert_eq!(rc, 0, "normalize SIGUSR1");
+        for sig in [libc::SIGUSR1, libc::SIGUSR2] {
+            let rc = libc::syscall(
+                libc::SYS_rt_sigaction,
+                sig,
+                &zero as *const KernelSigaction,
+                core::ptr::null_mut::<KernelSigaction>(),
+                8usize,
+            );
+            assert_eq!(rc, 0, "normalize signal");
+        }
         let disabled = libc::stack_t {
             ss_sp: core::ptr::null_mut(),
             ss_flags: libc::SS_DISABLE,
@@ -138,11 +143,11 @@ fn main() {
         );
         let mut set: libc::sigset_t = core::mem::zeroed();
         libc::sigemptyset(&mut set);
-        libc::sigaddset(&mut set, libc::SIGUSR1);
+        libc::sigaddset(&mut set, block_sig);
         assert_eq!(
             libc::pthread_sigmask(libc::SIG_BLOCK, &set, core::ptr::null_mut()),
             0,
-            "block SIGUSR1"
+            "block signal"
         );
     }
     let guest = MappedGuest::map(&bytes).expect("map fixture");
