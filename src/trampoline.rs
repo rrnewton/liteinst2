@@ -196,6 +196,125 @@ pub enum XstateSemanticEq {
     NotComparable(&'static str),
 }
 
+/// BV|XCOMP_BV bits claimed by an image header (0 when too short to hold one).
+fn xstate_claimed(bytes: &[u8]) -> u64 {
+    if bytes.len() < 528 {
+        return 0;
+    }
+    u64::from_le_bytes(bytes[512..520].try_into().unwrap())
+        | u64::from_le_bytes(bytes[520..528].try_into().unwrap())
+}
+
+/// Pure semantic-equality core over explicit component descriptors.
+///
+/// `descriptors` holds `(bit index, offset, end)` for allowlisted
+/// extended components; `supported` is the CPUID user-component mask.
+/// Format validation of BOTH inputs precedes any equality conclusion:
+/// malformed inputs are `NotComparable` even when byte-identical.
+fn semantic_eq_with(
+    a: &[u8],
+    b: &[u8],
+    supported: u64,
+    descriptors: &[(u32, usize, usize)],
+) -> XstateSemanticEq {
+    if a.len() != b.len() {
+        return XstateSemanticEq::Different;
+    }
+    let mxcsr_reserved = |bytes: &[u8]| {
+        bytes.len() >= 28
+            && u32::from_le_bytes(bytes[24..28].try_into().unwrap()) & 0xFFFF_0000 != 0
+    };
+    if mxcsr_reserved(a) || mxcsr_reserved(b) {
+        return XstateSemanticEq::NotComparable("reserved MXCSR bits set");
+    }
+    if a.len() == 512 {
+        // FXSAVE64: no BV header exists; validated above, compare raw.
+        return if a == b {
+            XstateSemanticEq::Equal
+        } else {
+            XstateSemanticEq::Different
+        };
+    }
+    if a.len() < 576 {
+        return XstateSemanticEq::NotComparable("truncated XSAVE header");
+    }
+    let bv_a = u64::from_le_bytes(a[512..520].try_into().unwrap());
+    let bv_b = u64::from_le_bytes(b[512..520].try_into().unwrap());
+    let xcomp_a = u64::from_le_bytes(a[520..528].try_into().unwrap());
+    let xcomp_b = u64::from_le_bytes(b[520..528].try_into().unwrap());
+    // Standard-format XRSTOR requires XCOMP_BV exactly zero (every word,
+    // not only the compacted bit 63); anything else is unmodelled here.
+    if xcomp_a != 0 || xcomp_b != 0 {
+        return XstateSemanticEq::NotComparable("nonzero XCOMP_BV");
+    }
+    if a[528..576].iter().any(|byte| *byte != 0) || b[528..576].iter().any(|byte| *byte != 0) {
+        return XstateSemanticEq::NotComparable("nonzero reserved xstate header");
+    }
+    let claimed = bv_a | bv_b;
+    if claimed & !supported != 0 {
+        return XstateSemanticEq::NotComparable("unknown xstate component");
+    }
+    // Reviewed allowlist (see xstate_semantic_eq): bits outside it,
+    // missing descriptors, and BV-set absent extents all fail closed
+    // BEFORE the byte-identical shortcut below.
+    const ALLOWLIST: u64 = (1 << 2)
+        | (1 << 3)
+        | (1 << 4)
+        | (1 << 5)
+        | (1 << 6)
+        | (1 << 7)
+        | (1 << 9)
+        | (1 << 17)
+        | (1 << 18);
+    for index in 2..64_u32 {
+        let bit = 1_u64 << index;
+        if claimed & bit == 0 {
+            continue;
+        }
+        if ALLOWLIST & bit == 0 {
+            return XstateSemanticEq::NotComparable("unreviewed xstate component");
+        }
+        let Some(&(_, _, end)) = descriptors
+            .iter()
+            .find(|&&(bit_index, _, _)| bit_index == index)
+        else {
+            return XstateSemanticEq::NotComparable("unmodelled xstate component extent");
+        };
+        if end > a.len() {
+            return XstateSemanticEq::NotComparable("BV-set component extent absent");
+        }
+    }
+    if a == b {
+        return XstateSemanticEq::Equal;
+    }
+    if !legacy_semantic_eq(a, b, bv_a, bv_b) {
+        return XstateSemanticEq::Different;
+    }
+    for &(index, offset, end) in descriptors {
+        let bit = 1_u64 << index;
+        if claimed & bit == 0 {
+            continue;
+        }
+        let in_a = bv_a & bit != 0;
+        let in_b = bv_b & bit != 0;
+        if in_a && in_b {
+            if a[offset..end] != b[offset..end] {
+                return XstateSemanticEq::Different;
+            }
+        } else {
+            let present = if in_a {
+                &a[offset..end]
+            } else {
+                &b[offset..end]
+            };
+            if present.iter().any(|byte| *byte != 0) {
+                return XstateSemanticEq::Different;
+            }
+        }
+    }
+    XstateSemanticEq::Equal
+}
+
 /// Legacy-area (x87/SSE) semantic equality for XSAVE images.
 ///
 /// FTW is the 8-bit abridged tag at byte 4 (0 = all empty); the 16-bit
@@ -545,93 +664,27 @@ impl SavedExtendedStateLayout {
     // CPUID intrinsics were unsafe at the crate's Rust 1.85 minimum version.
     #[allow(unused_unsafe)]
     pub fn xstate_semantic_eq(a: &[u8], b: &[u8]) -> XstateSemanticEq {
-        if a == b {
-            return XstateSemanticEq::Equal;
-        }
-        if a.len() != b.len() {
-            return XstateSemanticEq::Different;
-        }
-        if a.len() == 512 {
-            // FXSAVE64: no BV header exists; bytes already known unequal.
-            return XstateSemanticEq::Different;
-        }
-        if a.len() < 576 {
-            return XstateSemanticEq::NotComparable("truncated XSAVE header");
-        }
-        let bv_a = u64::from_le_bytes(a[512..520].try_into().unwrap());
-        let bv_b = u64::from_le_bytes(b[512..520].try_into().unwrap());
-        let xcomp_a = u64::from_le_bytes(a[520..528].try_into().unwrap());
-        let xcomp_b = u64::from_le_bytes(b[520..528].try_into().unwrap());
-        if xcomp_a != xcomp_b {
-            return XstateSemanticEq::Different;
-        }
-        if xcomp_a >> 63 != 0 {
-            return XstateSemanticEq::NotComparable("compacted XSAVE format");
-        }
-        if a[528..576].iter().any(|byte| *byte != 0) || b[528..576].iter().any(|byte| *byte != 0) {
-            return XstateSemanticEq::NotComparable("nonzero reserved xstate header");
-        }
         // SAFETY: CPUID is available in x86-64 mode.
         let root = unsafe { core::arch::x86_64::__cpuid_count(0xD, 0) };
         let supported = u64::from(root.eax) | (u64::from(root.edx) << 32);
-        let claimed = bv_a | bv_b | xcomp_a;
-        if claimed & !supported != 0 {
-            return XstateSemanticEq::NotComparable("unknown xstate component");
-        }
-        if !legacy_semantic_eq(a, b, bv_a, bv_b) {
-            return XstateSemanticEq::Different;
-        }
-        // Reviewed allowlist of user components whose architectural init
-        // state is an all-zero payload: AVX (2), MPX bounds/config (3/4),
-        // AVX-512 opmask/ZMM_Hi256/Hi16_ZMM (5/6/7), PKRU (9, security
-        // state: init is the all-zero permissive value; any nonzero
-        // PKRU byte remains a real difference below), AMX
-        // XTILECFG/XTILEDATA (17/18). Anything else (e.g. CET, PASID)
-        // is never guessed.
-        const ALLOWLIST: u64 = (1 << 2)
-            | (1 << 3)
-            | (1 << 4)
-            | (1 << 5)
-            | (1 << 6)
-            | (1 << 7)
-            | (1 << 9)
-            | (1 << 17)
-            | (1 << 18);
-        for index in 2..64_u32 {
-            let bit = 1_u64 << index;
-            if claimed & bit == 0 {
+        // Derive extents only for allowlisted bits claimed by either
+        // header; anything else is refused inside the pure core.
+        let claimed = xstate_claimed(a) | xstate_claimed(b);
+        let mut descriptors = [(0_u32, 0_usize, 0_usize); 9];
+        let mut count = 0_usize;
+        for index in [2_u32, 3, 4, 5, 6, 7, 9, 17, 18] {
+            if claimed & (1_u64 << index) == 0 {
                 continue;
-            }
-            if ALLOWLIST & bit == 0 {
-                return XstateSemanticEq::NotComparable("unreviewed xstate component");
             }
             // component_extent also rejects supervisor (XSS) components,
             // whose CPUID leaf marks ECX bit 0.
             let Ok((offset, _size, end)) = Self::component_extent(index) else {
                 return XstateSemanticEq::NotComparable("unmodelled xstate component extent");
             };
-            let (offset, end) = (offset as usize, end as usize);
-            if end > a.len() {
-                return XstateSemanticEq::NotComparable("BV-set component extent absent");
-            }
-            let in_a = bv_a & bit != 0;
-            let in_b = bv_b & bit != 0;
-            if in_a && in_b {
-                if a[offset..end] != b[offset..end] {
-                    return XstateSemanticEq::Different;
-                }
-            } else {
-                let present = if in_a {
-                    &a[offset..end]
-                } else {
-                    &b[offset..end]
-                };
-                if present.iter().any(|byte| *byte != 0) {
-                    return XstateSemanticEq::Different;
-                }
-            }
+            descriptors[count] = (index, offset as usize, end as usize);
+            count += 1;
         }
-        XstateSemanticEq::Equal
+        semantic_eq_with(a, b, supported, &descriptors[..count])
     }
 
     /// Validated CPUID extent `(offset, size, end)` for one user-state
@@ -6219,6 +6272,7 @@ mod tests {
     use super::TrampolinePlan;
     use super::XstateSemanticEq;
     use super::encode_return_jump;
+    use super::semantic_eq_with;
     use crate::scanner::InstructionScanner;
 
     unsafe extern "C" fn noop_hook(_context: *mut HookContext) {}
@@ -6303,6 +6357,96 @@ mod tests {
             eq(&reserved, &clear),
             XstateSemanticEq::NotComparable(_)
         ));
+        // Identical malformed inputs are NotComparable, never Equal:
+        // format validation precedes the byte-identical shortcut.
+        assert!(matches!(
+            eq(&compacted, &compacted),
+            XstateSemanticEq::NotComparable(_)
+        ));
+        assert!(matches!(
+            eq(&unknown, &unknown),
+            XstateSemanticEq::NotComparable(_)
+        ));
+        assert!(matches!(
+            eq(&reserved, &reserved),
+            XstateSemanticEq::NotComparable(_)
+        ));
+        let mut mxcsr_bit31 = clear.clone();
+        mxcsr_bit31[27] |= 0x80;
+        assert!(matches!(
+            eq(&mxcsr_bit31, &mxcsr_bit31),
+            XstateSemanticEq::NotComparable(_)
+        ));
+        let mut xcomp_one = clear.clone();
+        xcomp_one[520..528].copy_from_slice(&1_u64.to_le_bytes());
+        assert!(matches!(
+            eq(&xcomp_one, &xcomp_one),
+            XstateSemanticEq::NotComparable(_)
+        ));
+        assert!(matches!(eq(&[], &[]), XstateSemanticEq::NotComparable(_)));
+        // TOP/status/control corruption stays detectable (FSW nonzero).
+        let mut status = init.clone();
+        status[2] = 0x20; // FSW TOP field
+        assert_eq!(eq(&status, &clear), XstateSemanticEq::Different);
+        // Reserved legacy padding corruption stays detectable.
+        let mut padding = init.clone();
+        padding[500] = 1;
+        assert_eq!(eq(&padding, &init), XstateSemanticEq::Different);
+    }
+
+    #[test]
+    fn semantic_eq_synthetic_component_matrix() {
+        // Host-independent: explicit descriptors for every allowlisted
+        // extended class (MPX 3/4, AVX-512 5/6/7, PKRU 9, AMX 17/18)
+        // plus AVX 2, so classes unavailable on this host are still
+        // proven synthetically in both BV directions.
+        let descriptors: [(u32, usize, usize); 9] = [
+            (2, 576, 832),
+            (3, 832, 896),
+            (4, 896, 960),
+            (5, 960, 1024),
+            (6, 1024, 1280),
+            (7, 1280, 1792),
+            (9, 1792, 1800),
+            (17, 1800, 1864),
+            (18, 1864, 10056),
+        ];
+        let supported: u64 = descriptors
+            .iter()
+            .fold(0b111, |mask, &(bit, _, _)| mask | (1_u64 << bit));
+        let base = |bv: u64| {
+            let mut bytes = vec![0u8; 10056];
+            bytes[0..2].copy_from_slice(&[0x7f, 0x03]);
+            bytes[24..28].copy_from_slice(&0x1f80_u32.to_le_bytes());
+            bytes[512..520].copy_from_slice(&bv.to_le_bytes());
+            bytes
+        };
+        for &(bit, offset, _end) in &descriptors {
+            let set = base(0b11 | (1 << bit));
+            let clear = base(0b11);
+            assert_eq!(
+                semantic_eq_with(&set, &clear, supported, &descriptors),
+                XstateSemanticEq::Equal,
+                "bit {bit} set-vs-clear"
+            );
+            assert_eq!(
+                semantic_eq_with(&clear, &set, supported, &descriptors),
+                XstateSemanticEq::Equal,
+                "bit {bit} clear-vs-set"
+            );
+            let mut nonzero = set.clone();
+            nonzero[offset] = 1;
+            assert_eq!(
+                semantic_eq_with(&nonzero, &clear, supported, &descriptors),
+                XstateSemanticEq::Different,
+                "bit {bit} nonzero payload"
+            );
+            // BV-set component whose extent is absent fails closed.
+            assert!(matches!(
+                semantic_eq_with(&set[..576], &clear[..576], supported, &descriptors),
+                XstateSemanticEq::NotComparable(_)
+            ));
+        }
     }
 
     #[test]
