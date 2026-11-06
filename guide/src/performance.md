@@ -36,7 +36,15 @@ results.
 Performance evidence in this repository is campaign-style — ignored
 stress/benchmark tests run explicitly, plus the `evaluation/` tree —
 not a `cargo bench` suite. That is a known gap (below), and it is why
-every number here carries its provenance.
+every number here carries its provenance. Two harnesses are runnable
+as-is: the ignored rapid-toggle benchmark in `src/rapid.rs`
+(`cargo test --release -p liteinst --lib
+benchmark_single_byte_toggle_latency -- --ignored --exact`), whose
+`ns/store` figure bounds how fast one core can *issue* the flipping
+store — not when its effect becomes visible to the toggled thread —
+and the gate probes, whose self-reported publication, first-touch,
+and steady-state costs are read from one captured run in
+[Page gates](page-gates.md).
 
 ## Cited (literature, same scale)
 
@@ -76,10 +84,15 @@ until the bake-off below lands.
   gates: admission faults are one-off costs and should not be averaged
   into per-call overhead.
 
-> 🚧 **Under construction — benchmark suite.** TODO: curate the
-> campaign evidence into 4–6 `cargo bench` benchmarks (toggle,
-> hook steady state, first touch, offline rewrite) with a results
-> table in this chapter, then land the same-machine bake-off against
-> e9patch/lazypoline/DynamoRIO and replace the cited numbers with
-> measured ones. <!-- UC: perf-benches -->
+> 🚧 **Under construction — benchmark suite and bake-off.** What
+> exists today is named above: campaign evidence plus runnable
+> harnesses (the rapid-toggle benchmark and the self-reporting gate
+> probes), none of it curated. TODO: build the 4–6 `cargo bench`
+> benchmarks (toggle, hook steady state, first touch, offline
+> rewrite) with a results table in this chapter, then the
+> same-machine bake-off against e9patch, lazypoline, and
+> DynamoRIO-null, and replace the cited numbers with measured ones.
+> The bake-off needs those external systems installed and driven on
+> one machine; until that campaign runs, the cited rows stay cited.
+> <!-- UC: perf-benches -->
 > Tracking: [liteinst2#38](https://github.com/rrnewton/liteinst2/issues/38) (`perf-benches`).
