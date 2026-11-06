@@ -6384,10 +6384,54 @@ mod tests {
             XstateSemanticEq::NotComparable(_)
         ));
         assert!(matches!(eq(&[], &[]), XstateSemanticEq::NotComparable(_)));
-        // TOP/status/control corruption stays detectable (FSW nonzero).
-        let mut status = init.clone();
-        status[2] = 0x20; // FSW TOP field
-        assert_eq!(eq(&status, &clear), XstateSemanticEq::Different);
+        // Full legacy control/status/pointer matrix: every field a
+        // non-init x87 state can carry must keep the images Different
+        // in both BV directions.
+        for (name, corrupt) in [
+            ("FCW", 0usize),
+            ("FSW exception flag", 2),
+            ("FSW TOP (byte 3 bits 3-5)", 3),
+            ("FOP", 6),
+            ("FIP", 8),
+            ("FDP", 16),
+        ] {
+            let mut bad = init.clone();
+            bad[corrupt] = match name {
+                "FSW TOP (byte 3 bits 3-5)" => 0b001 << 3,
+                "FSW exception flag" => 0x20,
+                _ => 0x5a,
+            };
+            if name == "FCW" {
+                bad[0] = 0x7e; // control word differs from 0x037f
+            }
+            assert_eq!(
+                eq(&bad, &clear),
+                XstateSemanticEq::Different,
+                "{name} set-vs-clear"
+            );
+            assert_eq!(
+                eq(&clear, &bad),
+                XstateSemanticEq::Different,
+                "{name} clear-vs-set"
+            );
+            // Also differs from an otherwise identical BV-set image.
+            assert_eq!(
+                eq(&bad, &init),
+                XstateSemanticEq::Different,
+                "{name} set-vs-set"
+            );
+        }
+        // Partial FTW occupancy is occupied state, not init.
+        let mut partial = x87_init_image();
+        partial[4] = 0b1010_1010;
+        assert_eq!(
+            eq(&semantic_image(0b01, &partial, &[0; 256]), &clear),
+            XstateSemanticEq::Different
+        );
+        assert_eq!(
+            eq(&clear, &semantic_image(0b01, &partial, &[0; 256])),
+            XstateSemanticEq::Different
+        );
         // Reserved legacy padding corruption stays detectable.
         let mut padding = init.clone();
         padding[500] = 1;
