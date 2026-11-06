@@ -84,9 +84,13 @@ impl TrapRoute {
     /// A handler for `BRK #brk_imm` at `addr` (site `generation`) must
     /// already be installed, must preserve guest state apart from its
     /// documented result/continuation, and must remain installed and
-    /// owned for as long as any `Site` retains this route (including
-    /// across rollback retirement). Deregistering early makes a
-    /// published `BRK` word trap into an unowned handler.
+    /// owned **until the published BRK word itself is retired**
+    /// (rollback/rewrite has landed and possible delivery is
+    /// discharged) or the session ends. That obligation is tied to the
+    /// published word, not to any Rust value's lifetime: dropping this
+    /// token, the retaining `Site`, or a registry discharges nothing,
+    /// and deregistering while the BRK remains reachable leaves it
+    /// trapping into an unowned handler.
     pub unsafe fn arm(addr: u64, brk_imm: u16, generation: u64) -> Self {
         Self {
             addr,
@@ -302,7 +306,12 @@ impl Drop for Site {
         // still reference the island, unmapping it would leave a live
         // branch into unmapped memory. Leak the island deliberately
         // (bounded by the session) instead. This also covers unwind
-        // paths, which run the same destructor.
+        // paths, which run the same destructor. The trap-route token
+        // needs no code here precisely because its handler obligation
+        // is tied to the published BRK word's lifetime, not to this
+        // value: dropping the token deregisters nothing, and the
+        // caller must keep the handler installed until the BRK is
+        // retired (see TrapRoute::arm).
         let published = !matches!(self.state, SiteState::Unpatched);
         if published && let Some(island) = self.island.take() {
             island.disarm();

@@ -96,9 +96,15 @@ single-copy atomic), never a branch to a half-built island, never a
    **before** the store (step 6), so the persistent site state — not a
    caller borrow that ends with the call — retains the owning island
    handle and, on the Trap path, the trap-route registration for as
-   long as the site is `Flipped`. The patcher refuses unless
-   `island_reaches` holds in both directions. Near allocation probing
-   stays caller policy in this slice.
+   long as the site is `Flipped`. The handler obligation itself is
+   tied to the published BRK word's lifetime (until retirement or
+   session end), never to any Rust value's lifetime: dropping a site,
+   a route token, or a registry discharges nothing and deregisters
+   nothing. The patcher refuses unless `island_reaches` holds in both
+   directions **against the actual payload extent** (last payload
+   word as the return-branch location), never the page-rounded
+   mapping length. Near allocation probing stays caller policy in
+   this slice.
 2. **Prepare Trap target (if Trap may be selected).** The handler
    route — site address, `BRK` immediate, and site generation recorded
    in an owned registration, continuation preserves guest state — must
@@ -164,7 +170,12 @@ Failure custody (no state is just "error" after the store):
 - `Drop` never unmaps an island or deregisters a trap route that a
   `Flipped` site still references; dropping a `Flipped` site without
   rollback leaks the island deliberately (documented, bounded by the
-  session) rather than risk a live branch into unmapped memory.
+  session) rather than risk a live branch into unmapped memory. The
+  trap handler itself likewise outlives the site value: its
+  deregistration is a separate caller act permitted only after the
+  BRK word is retired (rollback landed and delivery discharged) —
+  which is why teardown order in callers is rollback first, handler
+  restore second.
 
 ## API and unsafe contracts (complete surface)
 

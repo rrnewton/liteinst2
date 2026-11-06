@@ -42,12 +42,19 @@ impl core::fmt::Debug for FlipRequest {
     }
 }
 
+/// Both-directions reach for a payload extent: site -> entry and the
+/// payload's last word -> resume (site+4) must both encode. Kept pure
+/// so both boundary edges are host-testable with synthetic addresses.
+fn return_reach_ok(site_addr: u64, entry: u64, payload_len: u64) -> bool {
+    island_reaches(site_addr, entry, payload_len)
+}
+
 /// Branch word only when the island serves the site in BOTH
-/// directions: site -> entry and last island word -> resume (site+4).
-/// The forward check inside `svc_patch_word` alone would admit an
-/// island whose continuation cannot branch back.
+/// directions, validated against the actual payload extent — not the
+/// page-rounded mapping length, whose padding would move the nominal
+/// return PC and both wrongly accept and wrongly refuse edge sites.
 fn branch_word_checked(original: u32, site_addr: u64, island: &Island) -> Option<u32> {
-    if !island_reaches(site_addr, island.entry_addr(), island.mapped_len() as u64) {
+    if !return_reach_ok(site_addr, island.entry_addr(), island.payload_len()) {
         return None;
     }
     svc_patch_word(original, site_addr, island.entry_addr())
@@ -645,22 +652,33 @@ mod tests {
 
     #[test]
     fn branch_word_requires_return_direction_reach() {
-        // Reviewer's geometry: entry at the forward limit fits B, but
-        // a return branch from the island's last word falls 4 bytes
-        // short. Exercised through the checked helper with a real
-        // island where the target supports building one.
+        // Both reviewer edges, through the actual selection helper the
+        // flip calls: at the forward limit an 8-byte payload's return
+        // branch is 4 bytes out of range (refuse), while the padded
+        // mapping length would wrongly accept it — and conversely
+        // wrongly refuse the in-range payload at the other edge.
+        let site = 0x4000_0000u64;
+        for mapped in [4096u64, 16384, 65536] {
+            assert!(
+                !return_reach_ok(site, site - (1 << 27), 8),
+                "payload return out of range must refuse (mapped {mapped})"
+            );
+            assert!(
+                liteinst_aarch64::emit::island_reaches(site, site - (1 << 27), mapped),
+                "padded predicate documents the old wrong-accept (mapped {mapped})"
+            );
+            assert!(
+                return_reach_ok(site, site + (1 << 27) - 4, 8),
+                "payload return in range must accept (mapped {mapped})"
+            );
+            assert!(
+                !liteinst_aarch64::emit::island_reaches(site, site + (1 << 27) - 4, mapped),
+                "padded predicate documents the old wrong-refuse (mapped {mapped})"
+            );
+        }
         #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
         {
             let island = Island::build(&[0; 4]).unwrap();
-            // The fact-level return-direction refusal at the forward
-            // limit (synthetic addresses), plus the checked helper
-            // accepting this real island at its own address.
-            let site = 0x4000_0000u64;
-            assert!(!liteinst_aarch64::emit::island_reaches(
-                site,
-                site + (1 << 27) - 4,
-                16
-            ));
             let here = island.entry_addr();
             assert!(branch_word_checked(svc(0), here, &island).is_some());
         }

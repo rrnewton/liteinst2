@@ -187,6 +187,14 @@ impl Island {
         self.words
     }
 
+    /// Payload extent in bytes (`words * 4`), distinct from the
+    /// page-rounded [`mapped_len`](Self::mapped_len): return-reach
+    /// validation must use the actual last payload word as the return
+    /// branch location, never the padded mapping end.
+    pub fn payload_len(&self) -> u64 {
+        self.words as u64 * 4
+    }
+
     /// Read one word back through the RX alias (contents check; never
     /// used to decide publication by itself).
     pub fn read_rx_word(&self, index: usize) -> Option<u32> {

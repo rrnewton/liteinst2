@@ -285,6 +285,13 @@ fn brk_fallback_flip_reaches_owned_handler() {
         .unwrap();
     assert_eq!(strategy, Strategy::Trap);
     let result = map.call();
+    // Retire the BRK word before deregistering its handler: handler
+    // custody outlives the flipped site, never the reverse.
+    patcher.rollback(&mut site, &mut SelfStop).unwrap();
+    assert_eq!(
+        unsafe { (map.rx.add(4) as *const u32).read_volatile() },
+        svc(0)
+    );
     assert_eq!(
         unsafe { libc::sigaction(libc::SIGTRAP, &old, std::ptr::null_mut()) },
         0
