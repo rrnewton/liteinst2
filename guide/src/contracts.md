@@ -85,9 +85,58 @@ rather than site-by-site improvisation.
 > <!-- UC: contracts-walkthrough -->
 > Tracking: [liteinst2#38](https://github.com/rrnewton/liteinst2/issues/38) (`contracts-walkthrough`).
 >
-> 🚧 **Under construction — composition depth.** TODO: expand the
-> composition section with the bundle transaction lifecycle once the
-> tactic-engine remainder noted in `A2-COMPOSITION.md` lands; today
-> this section describes the staging model only.
-> <!-- UC: contracts-composition -->
-> Tracking: [liteinst2#38](https://github.com/rrnewton/liteinst2/issues/38) (`contracts-composition`).
+### The bundle transaction lifecycle
+
+`PlannedBundle` (`bundle` module) is that transaction as a value,
+in five phases with different failure meanings:
+
+1. **Compose** (`compose` / `compose_grouped`) is pure — no store
+   has happened, so every refusal here is free. Members are
+   `PlannedInstall` values from the tactic engine, never arbitrary
+   structural `PatchPlan`s: this constructor is the only way in.
+   Composition is *order-explicit* and *overlay-checked*: each
+   member must have been planned against the bytes the preceding
+   members produce, so a member planned against stale originals is
+   refused even if its own writes are disjoint — replan it against
+   the overlay. Grouping (`compose_grouped`) additionally seals
+   images into immutable shared backing; sharing reduces *backing*
+   bytes only, never virtual charges.
+2. **Budget** is checked at composition, not publication:
+   `BundleBudget` caps steps, mappings, virtual bytes, backing
+   bytes, and total span, and `plan().memory()` reports the exact
+   accounting (backing pages counted once across aliases) before
+   anything is staged.
+3. **Publish** (`publish` / `publish_with`, unsafe) stages
+   *everything* before the first source store: lease and identity
+   checks, host qualification, alias overlap and snapshot
+   authentication, lock reservations, executable images, and entry
+   routes. Only then does it poison the lease, write every source
+   store, run the caller's permission finalizer, and issue one
+   sync-core for the whole transaction. The failure type splits at
+   exactly that boundary: `FailureStage::BeforeWrite` means nothing
+   was published and a corrected transaction may retry;
+   `FailureStage::KeepGated` means stores may have happened — the
+   whole transaction stays behind the poisoned lease, permanently
+   gated, and there is no resume.
+4. **Installed** is deliberately boring: an `InstalledBundle` is
+   permanently active (no arm/disarm sampling), owns its source
+   writes, consumed pun bytes, store padding, routes, and
+   trampolines, and its `BundleReceipt` — issued only after every
+   store, permission operation, and the sync — names the exact
+   completed `BundlePlan`, originals and final bytes included.
+   Dropping the handle discharges nothing.
+5. **Retire** (`retire` / `retire_with`, unsafe) is the mirror
+   transaction: re-check the plan against a fresh lease (which must
+   also cover the generated allocations), authenticate the *final*
+   bytes, restore every store in reverse order, finalize
+   permissions, one sync-core, deactivate routes, release
+   reservations. A post-store failure is again `KeepGated` — never
+   a half-restored bundle left executing. Retirement releases
+   source ownership; generated code and metadata remain
+   process-lifetime.
+
+What this does not claim: the full A2 exit gate (enabled
+IBT/shadow-stack fixtures, an Intel cross-check of the supported
+subset) is still open in `A2-COMPOSITION.md`, and concurrent
+toggle visibility remains A4 work. The lifecycle above is the
+landed install-once transaction, no more and no less.
