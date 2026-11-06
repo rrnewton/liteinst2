@@ -51,19 +51,24 @@ the guards — under its own geometry and caller obligations.
 
 ## Worked examples, byte by byte
 
-These three diagrams use the planner's own overlay fixtures
-(`src/artifact_overlay_tests.rs`), so every byte below is one the
+These three diagrams rebuild the planner's own overlay fixtures
+(`src/artifact_overlay_tests.rs`): the starting byte streams are the
+fixtures' literal bodies, and each store/target value is one the
 test suite asserts. Addresses are offsets from the patch site `S`;
 stored bytes are the single atomic store, inherited bytes are
 successor bytes that are already there and become high displacement
-bytes of the new jump.
+bytes of the new jump. Both pun fixtures apply one predecessor edit
+before planning — shown as its own row, because the edit is what
+turns the successor into `mov ecx, 43` and supplies the inherited
+bytes.
 
 **Generalized pun** — displace a 3-byte `nop` whose successor is
 `mov ecx, 43`:
 
 ```text
-before   0f 1f 00 | b9 2b 00 00 00 | c3
-         \_ nop _/   mov ecx, 43      ret
+fixture  0f 1f 00 | b8 2a 00 00 00 | c3
+         \_ nop _/   mov eax, 42      ret
+edited   0f 1f 00 | b9 2b 00 00 00 | c3    (bytes at S+3, S+4)
 store    e9 00 80 b9                        (one 4-byte store at S)
 after    e9 00 80 b9 2b 00 00 00 c3
          \____ jmp rel32 = 0x2bb9_8000 ___/
@@ -83,7 +88,8 @@ that the *forced* top byte still names the trampoline
 byte, and *two* displacement bytes are inherited:
 
 ```text
-before   89 c0 | b8 b9 2b 00 00 00 c3
+fixture  89 c0 | b8 2a 00 00 00 c3
+edited   89 c0 | b8 b9 2b 00 00 c3    (bytes at S+3, S+4)
 store    2e e9 80 b9                        (one 4-byte store at S)
 after    2e e9 80 b9 2b 00 | 00 c3
          \___ jmp rel32 = 0x002b_b980 ___/
