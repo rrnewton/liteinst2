@@ -15,6 +15,10 @@ mod raw;
 mod signal;
 
 pub mod selected;
+/// Typed syscall-strategy selection, placement, outcome, and refusal names.
+/// Runtime installation is added by later slices; selecting a config here
+/// does not alter process state.
+pub mod syscall;
 
 pub use gate::{ArmedGate, GateMetrics, PreparedGate};
 pub use plan::{InstructionExtent, PageBundle};

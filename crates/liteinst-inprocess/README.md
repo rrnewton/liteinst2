@@ -36,6 +36,12 @@ checked against the actual kernel signal-frame minimum before activation. These
 are this leaf's bounds, not a claim about whole-program memory or B3 capacity.
 Core publication/trampoline ownership remains external and must outlive disarm.
 
+The `syscall` module currently provides only the typed strategy vocabulary
+for the approved x86 zpoline/lazypoline series: `trap|zpoline|lazypoline`,
+per-site trap/refuse fallback, pluggable `sud|seccomp-ret-trap` discovery,
+placement bounds, outcomes, and named refusals. Constructing that config
+installs nothing; runtime mechanisms land in later slices.
+
 The `selected` module uses the genuine core planner and publisher to replace
 CPUID, RDTSC, returning read/write/getpid/gettid syscalls, RDRAND, RDSEED,
 RDPID and RDTSCP. Register-output classes support all 15 non-RSP destinations;

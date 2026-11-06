@@ -1,3 +1,20 @@
+# Syscall strategy vocabulary
+
+The `syscall` module freezes the selection language for the x86
+zpoline/lazypoline series before any runtime mechanism lands. The liteinst
+tokens are `trap`, `zpoline`, and `lazypoline`; their S4
+`REVERIE_INTERCEPT` refinements are trap/`sud-trap`, `patch-eager`, and
+`trap-and-patch`, respectively. Lazypoline discovery is explicitly pluggable
+between SUD and seccomp `RET_TRAP`; neither substrate is installed by slice 1.
+
+A validated config is a frozen selection, not an installation receipt. A
+missing run-level prerequisite later refuses by name. Per-site failures use
+`Trap` by default, with `Refuse` as the strict opt-in, and `SiteOutcome`
+keeps rewritten, trap, and refused counts distinct. The first forwarding
+profile is native `read`, `write`, `getpid`, and `gettid` only. No config
+construction or parsing maps memory, changes signal/seccomp/SUD state, or
+patches code.
+
 # Selected-site leaf
 
 The `selected` module publishes CPUID, RDTSC, returning-SYSCALL, RDRAND, RDSEED,
