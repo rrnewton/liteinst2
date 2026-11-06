@@ -1,5 +1,6 @@
 //! Exact inherited oracle calibrations, separately counted from native cohorts.
 #![deny(warnings)]
+#![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[path = "normal/check.rs"]
 mod normal_check;
 // Preserve this entrypoint's original fixture module registrations.

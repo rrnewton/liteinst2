@@ -8,7 +8,7 @@ use rapid_profiler::frontend_native::{
     NormalModuleSitePreparation, PreparedNormalModuleController,
 };
 mod check;
-use check::{FUNCTIONS, INSTALL, identity};
+use self::check::{FUNCTIONS, INSTALL, identity};
 const CONTRACT: NormalModuleContract = NormalModuleContract {
     single_external_entry_per_function: true,
     sequential_call_ret_only: true,

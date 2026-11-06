@@ -13,7 +13,7 @@ mod check;
 pub(crate) mod early_entry;
 mod owner;
 pub(crate) mod session;
-use check::{FUNCTIONS, INSTALL, identity};
+use self::check::{FUNCTIONS, INSTALL, identity};
 const CONTRACT: NormalModuleContract = NormalModuleContract {
     single_external_entry_per_function: true,
     sequential_call_ret_only: true,

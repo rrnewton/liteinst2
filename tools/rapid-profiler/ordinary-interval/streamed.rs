@@ -8,7 +8,7 @@ use rapid_profiler::frontend_native::{
 use std::sync::OnceLock;
 #[path = "streamed/check.rs"]
 mod check;
-use check::{BATCHES, Batch, CALLS, Call, EPOCHS, Error, Expected, INSTALL, Retired, Transition};
+use self::check::{BATCHES, Batch, CALLS, Call, EPOCHS, Error, Expected, INSTALL, Retired, Transition};
 
 fn two_cpus() -> [usize; 2] {
     const WORDS: usize = std::mem::size_of::<libc::cpu_set_t>() / std::mem::size_of::<usize>();
