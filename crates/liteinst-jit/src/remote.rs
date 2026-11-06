@@ -632,6 +632,18 @@ impl RemoteExecutable {
         Self::spawn(child_bin, vec![format!("hex:{hex}")])
     }
 
+    /// Spawn with the child's destination buffer backed by an
+    /// explicit two-page guarded allocation (usable tail plus
+    /// an inaccessible second page), for partial-input tests
+    /// that must prove an exact readable byte count.
+    pub fn spawn_bytes_guarded(child_bin: &std::path::Path, bytes: &[u8]) -> Result<Self, Refuse> {
+        let hex: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
+        Self::spawn(
+            child_bin,
+            vec![format!("hex:{hex}"), "guarded-dst".to_string()],
+        )
+    }
+
     fn spawn(child_bin: &std::path::Path, spawn_args: Vec<String>) -> Result<Self, Refuse> {
         let child = Command::new(child_bin)
             .args(&spawn_args)

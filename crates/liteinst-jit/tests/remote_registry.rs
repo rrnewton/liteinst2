@@ -461,38 +461,78 @@ fn check_normalization_and_bad_inputs() {
 
     // Bad and partial inputs reach the kernel and return its
     // -EFAULT to the guest (never an observer refusal); a later
-    // valid install still lands and is mirrored.
-    let bad_then_partial_then_valid: &[u8] = &[
+    // valid install still lands and is mirrored. Partial cases
+    // place the act struct in the child's owned guarded
+    // allocation: exactly the first 8 bytes are readable, the
+    // second page is explicitly PROT_NONE.
+    let bad_act: &[u8] = &[
         // bad: rt_sigaction(USR1, act=1, NULL, 8) -> [rbx+80]
         0xbf, 0x0a, 0x00, 0x00, 0x00, 0xbe, 0x01, 0x00, 0x00, 0x00, 0x31, 0xd2, 0x41, 0xba, 0x08,
         0x00, 0x00, 0x00, 0xb8, 0x0d, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89, 0x43, 0x50,
-        // partial: act=r12 (test sets it to code-page tail)
+    ];
+    let partial_call: &[u8] = &[
+        // partial: rt_sigaction(USR1, act=r12, NULL, 8) -> [rbx+88]
         0xbf, 0x0a, 0x00, 0x00, 0x00, 0x4c, 0x89, 0xe6, 0x31, 0xd2, 0x41, 0xba, 0x08, 0x00, 0x00,
         0x00, 0xb8, 0x0d, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89, 0x43, 0x58,
     ];
-    let bytes = guest_bytes(&[bad_then_partial_then_valid, BUILD_ACT, INSTALL, &[0xc3]]);
-    let (mut remote, info) = prepare_bytes(&bytes);
-    let mut state = guest_state(&remote, info);
-    // Only the handler word is readable at page tail; the rest
-    // crosses into the fixture mapping's guard page.
-    state.r12 = info.base + 4088;
-    remote
-        .run(state, RETURN_SENTINEL)
-        .expect("bad/partial inputs complete as guest errnos");
-    let mut data = vec![0u8; 576];
-    assert!(remote.read_mem(info.dst, &mut data));
-    assert_eq!(
-        word(&data, 80) as i64,
-        -14,
-        "bad act pointer is guest -EFAULT"
-    );
-    assert_eq!(word(&data, 88) as i64, -14, "partial act is guest -EFAULT");
-    assert_eq!(word(&data, 64), 0, "later valid install succeeds");
-    assert_eq!(
-        remote.registry().action(libc::SIGUSR1).handler,
-        info.base,
-        "mirror holds the valid install only"
-    );
+    let write_default_word: &[u8] = &[0x49, 0xc7, 0x04, 0x24, 0x00, 0x00, 0x00, 0x00];
+    let write_handler_word: &[u8] = &[0x49, 0x89, 0x2c, 0x24];
+    for (label, write_word) in [
+        ("partial-default", write_default_word),
+        ("partial-handler", write_handler_word),
+    ] {
+        let bytes = guest_bytes(&[
+            bad_act,
+            write_word,
+            partial_call,
+            BUILD_ACT,
+            INSTALL,
+            &[0xc3],
+        ]);
+        let mut remote = RemoteExecutable::spawn_bytes_guarded(std::path::Path::new(CHILD), &bytes)
+            .expect("spawn guarded");
+        let info = remote.info();
+        let region = RegionFacts {
+            base: info.base,
+            bytes: bytes.clone(),
+            generation: Generation(1),
+            immutable_private: true,
+        };
+        remote
+            .prepare(
+                &region,
+                info.base + MAIN_OFF,
+                CountProfile::BranchesAndInstructions,
+            )
+            .expect("prepare partial fixture");
+        let mut state = guest_state(&remote, info);
+        // Records and the valid act live in the 128-byte data
+        // box; only the partial act sits in the guarded tail
+        // (dst usable tail is 16 bytes, so +8 leaves exactly 8).
+        state.rbx = info.data;
+        state.r12 = info.dst + 8;
+        remote
+            .run(state, RETURN_SENTINEL)
+            .expect("bad/partial inputs complete as guest errnos");
+        let mut data = vec![0u8; 128];
+        assert!(remote.read_mem(info.data, &mut data));
+        assert_eq!(
+            word(&data, 80) as i64,
+            -14,
+            "{label}: bad act pointer is guest -EFAULT"
+        );
+        assert_eq!(
+            word(&data, 88) as i64,
+            -14,
+            "{label}: partial act is guest -EFAULT"
+        );
+        assert_eq!(word(&data, 64), 0, "{label}: later valid install succeeds");
+        assert_eq!(
+            remote.registry().action(libc::SIGUSR1).handler,
+            info.base,
+            "{label}: mirror holds the valid install only"
+        );
+    }
 }
 
 fn check_seed_controls() {
