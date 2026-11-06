@@ -6,7 +6,7 @@
 
 use std::ffi::c_void;
 use std::marker::PhantomData;
-use std::sync::atomic::{AtomicPtr, AtomicU8, AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicPtr, AtomicU8, AtomicU64, AtomicUsize, Ordering};
 
 use crate::raw;
 use crate::syscall::zpoline::DualMapping;
@@ -32,6 +32,14 @@ const OWNER_INSTALLED: u8 = 2;
 const OWNER_POISONED: u8 = 3;
 
 static SUD_OWNER: AtomicU8 = AtomicU8::new(OWNER_EMPTY);
+static SUD_HANDLER_ACTIVE: AtomicUsize = AtomicUsize::new(0);
+static SUD_CLOSING: AtomicBool = AtomicBool::new(false);
+
+fn wait_for_handler_quiescence() {
+    while SUD_HANDLER_ACTIVE.load(Ordering::Acquire) != 0 {
+        std::thread::yield_now();
+    }
+}
 static SUD_STATE: AtomicPtr<SudState> = AtomicPtr::new(std::ptr::null_mut());
 
 type GatewaySyscall = unsafe extern "C" fn(i64, i64, i64, i64, i64, i64, i64) -> i64;
@@ -266,6 +274,12 @@ fn record_site(state: &SudState, site_pc: u64, nr: u32) -> bool {
 }
 
 unsafe extern "C" fn sud_handler(signal: i32, info: *mut KernelSiginfo, context: *mut c_void) {
+    SUD_HANDLER_ACTIVE.fetch_add(1, Ordering::AcqRel);
+    if SUD_CLOSING.load(Ordering::Acquire) {
+        SUD_HANDLER_ACTIVE.fetch_sub(1, Ordering::AcqRel);
+        // SAFETY: teardown is in progress; do not dereference handler state.
+        unsafe { fail_stop(None) }
+    }
     let state_ptr = SUD_STATE.load(Ordering::Acquire);
     if state_ptr.is_null() || info.is_null() || context.is_null() {
         // SAFETY: an unauthenticated delivery has no genuine forwarding path.
@@ -353,6 +367,7 @@ unsafe extern "C" fn sud_handler(signal: i32, info: *mut KernelSiginfo, context:
     registers[libc::REG_R11 as usize] = registers[libc::REG_EFL as usize];
     state.forwarded.fetch_add(1, Ordering::AcqRel);
     state.active_tids[active_index].store(0, Ordering::Release);
+    SUD_HANDLER_ACTIVE.fetch_sub(1, Ordering::AcqRel);
 }
 
 fn claim_owner() -> Result<(), SyscallRefusal> {
@@ -565,6 +580,11 @@ impl SudInstallation {
             return Err(SyscallRefusal::SignalContract);
         }
         claim_owner()?;
+        if SUD_HANDLER_ACTIVE.load(Ordering::Acquire) != 0 {
+            SUD_OWNER.store(OWNER_POISONED, Ordering::Release);
+            return Err(SyscallRefusal::PublicationPoisoned);
+        }
+        SUD_CLOSING.store(false, Ordering::Release);
         let mut owner = Self {
             config,
             state: std::ptr::null_mut(),
@@ -579,8 +599,15 @@ impl SudInstallation {
             closed: false,
         };
         if let Err(error) = owner.install_inner(page) {
-            owner.rollback_partial();
-            release_owner();
+            if owner.rollback_partial().is_ok() {
+                release_owner();
+            } else {
+                // Restoration is uncertain: retain every kernel-referenced
+                // mapping/state and poison the process-wide owner instead of
+                // freeing storage or releasing custody.
+                SUD_OWNER.store(OWNER_POISONED, Ordering::Release);
+                std::mem::forget(owner);
+            }
             return Err(error);
         }
         SUD_OWNER.store(OWNER_INSTALLED, Ordering::Release);
@@ -646,7 +673,10 @@ impl SudInstallation {
                 | libc::SA_NODEFER as usize
                 | SA_RESTORER,
             restorer: (gateway_start as usize) + GATEWAY_RESTORER_OFFSET,
-            mask: !signal_bit(libc::SIGSYS),
+            // Preserve the interrupted thread's ordinary signal mask while a
+            // forwarded syscall blocks. SA_NODEFER still lets a nested SIGSYS
+            // reach the authentication path and fail closed.
+            mask: 0,
         };
         install_action(libc::SIGSYS, &action)?;
         self.action_installed = true;
@@ -660,24 +690,33 @@ impl SudInstallation {
         Ok(())
     }
 
-    fn rollback_partial(&mut self) {
+    fn rollback_partial(&mut self) -> Result<(), SyscallRefusal> {
+        SUD_CLOSING.store(true, Ordering::Release);
         if self.action_installed {
-            let _ = install_action(libc::SIGSYS, &self.prior_action);
+            install_action(libc::SIGSYS, &self.prior_action)?;
+            if query_action(libc::SIGSYS)? != self.prior_action {
+                return Err(SyscallRefusal::SignalContract);
+            }
             self.action_installed = false;
         }
+        // No handler may still reference state, gateway, or alternate stack
+        // storage before any of it is unmapped or freed.
+        wait_for_handler_quiescence();
         SUD_STATE.store(std::ptr::null_mut(), Ordering::Release);
         if let Some(stack) = &mut self.installer_stack {
-            let _ = stack.restore();
+            stack.restore()?;
         }
         if let Some(gateway) = &mut self.gateway {
-            let _ = gateway.unmap();
+            gateway.unmap()?;
         }
         if !self.state.is_null() {
-            // SAFETY: state was allocated by install_inner and is unpublished.
+            // SAFETY: action is restored, state is unpublished, and active
+            // handler count is zero.
             unsafe { drop(Box::from_raw(self.state)) };
             self.state = std::ptr::null_mut();
         }
         self.closed = true;
+        Ok(())
     }
 
     /// Gateway `[start, end)` range registered with SUD for each thread.
@@ -846,6 +885,7 @@ impl SudInstallation {
         if self.closed {
             return Ok(());
         }
+        SUD_CLOSING.store(true, Ordering::Release);
         if query_action(libc::SIGSYS)? != self.installed_action {
             return Err(SyscallRefusal::SignalContract);
         }
@@ -854,6 +894,10 @@ impl SudInstallation {
             return Err(SyscallRefusal::SignalContract);
         }
         self.action_installed = false;
+        // A pending foreign SIGSYS may already have entered the handler
+        // before disposition restoration. Drain it before clearing state or
+        // unmapping any storage it can reference.
+        wait_for_handler_quiescence();
         SUD_STATE.store(std::ptr::null_mut(), Ordering::Release);
 
         if let Some(stack) = &mut self.installer_stack {

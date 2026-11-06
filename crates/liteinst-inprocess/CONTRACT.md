@@ -43,7 +43,10 @@ After a thread registers, ordinary Rust/libc syscalls outside the gateway
 also trap and can fail closed. The caller therefore owns the registered
 thread's code contract, keeps admitted code mapped, prevents handler
 recursion except through the authenticated path, and drains every token
-before uninstalling from the installing thread. Uninstall verifies and
+before uninstalling from the installing thread. A signal handler that can
+interrupt a forwarded call must return through the substrate gateway
+restorer; a restorer outside the gateway is itself an unsupported dispatch
+site. Uninstall verifies and
 restores the exact prior SIGSYS action and alternate stack, then unmaps the
 gateway and stack. This substrate records sites only; it never rewrites
 them. Lazypoline patch-and-restart is slice 5.

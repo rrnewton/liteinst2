@@ -16,6 +16,13 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 const CHILD_ENV: &str = "LITEINST_SUD_CHILD";
 const UNSUPPORTED_ENV: &str = "LITEINST_SUD_UNSUPPORTED_CHILD";
+const INTERRUPT_ENV: &str = "LITEINST_SUD_INTERRUPT_CHILD";
+static POSITIVE_STARTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static USR1_SEEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+extern "C" fn usr1_handler(_signal: i32) {
+    USR1_SEEN.fetch_add(1, std::sync::atomic::Ordering::AcqRel);
+}
 const CODE: [u8; 12] = [
     0x0f, 0x05, 0xc3, 0x0f, 0x05, 0xc3, 0x0f, 0x05, 0xc3, 0x0f, 0x05, 0xc3,
 ];
@@ -191,6 +198,15 @@ fn child_main() -> Result<(), SyscallRefusal> {
         // SAFETY: main retains the installation until this thread is joined
         // after both registrations drain in the ordered sequence below.
         let installation = unsafe { &*(installation_addr as *const SudInstallation) };
+        let disabled = libc::stack_t {
+            ss_sp: std::ptr::null_mut(),
+            ss_flags: libc::SS_DISABLE,
+            ss_size: 0,
+        };
+        assert_eq!(
+            unsafe { libc::sigaltstack(&disabled, std::ptr::null_mut()) },
+            0
+        );
         let token = installation.register_current_thread().unwrap();
         SECOND_READY.store(true, Ordering::Release);
         while !RELEASE_SECOND.load(Ordering::Acquire) {
@@ -199,6 +215,12 @@ fn child_main() -> Result<(), SyscallRefusal> {
         let state = invoke(second_entry, libc::SYS_getpid as u32, [0; 6]);
         SECOND_RESULT.store(state[2], Ordering::Release);
         token.unregister().unwrap();
+        let mut restored: libc::stack_t = unsafe { std::mem::zeroed() };
+        assert_eq!(
+            unsafe { libc::sigaltstack(std::ptr::null(), &mut restored) },
+            0
+        );
+        assert_ne!(restored.ss_flags & libc::SS_DISABLE, 0);
         SECOND_DONE.store(true, Ordering::Release);
         state
     });
@@ -207,6 +229,7 @@ fn child_main() -> Result<(), SyscallRefusal> {
     }
 
     let registration = installation.register_current_thread()?;
+    POSITIVE_STARTED.store(true, std::sync::atomic::Ordering::Release);
     assert_eq!(registration.tid(), tid);
     match installation.register_current_thread() {
         Err(SyscallRefusal::ConflictingStrategyInstalled) => {}
@@ -319,14 +342,89 @@ fn child_main() -> Result<(), SyscallRefusal> {
     Ok(())
 }
 
+fn interrupt_child_main() -> Result<(), SyscallRefusal> {
+    let page = usize::try_from(unsafe { libc::sysconf(libc::_SC_PAGESIZE) }).unwrap();
+    let region = Region::new(page);
+    let entry = region.address as usize;
+    let (read_fd, write_fd) = pipe_pair();
+    let mut byte = [0_u8; 1];
+    let main_thread = unsafe { libc::pthread_self() } as u64;
+    let signaler = std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        assert_eq!(
+            unsafe { libc::pthread_kill(main_thread as libc::pthread_t, libc::SIGUSR1) },
+            0
+        );
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        // Fallback only: an incorrectly masked handler returns data instead
+        // of -EINTR and the assertions below fail rather than hanging.
+        unsafe { libc::write(write_fd, DATA.as_ptr().cast(), 1) };
+    });
+
+    let installation = SudInstallation::install(config())?;
+    // The interrupting handler returns through the substrate gateway
+    // restorer; an arbitrary libc restorer outside the gateway would itself
+    // be dispatched as an unsupported rt_sigreturn site. Flags remain zero:
+    // no SA_RESTART, so the forwarded read must observe -EINTR.
+    #[repr(C)]
+    struct KernelAction {
+        handler: usize,
+        flags: usize,
+        restorer: usize,
+        mask: u64,
+    }
+    let action = KernelAction {
+        handler: usr1_handler as *const () as usize,
+        flags: 0x0400_0000,
+        restorer: (installation.gateway_range().0 + 32) as usize,
+        mask: 0,
+    };
+    assert_eq!(
+        unsafe {
+            libc::syscall(
+                libc::SYS_rt_sigaction,
+                libc::SIGUSR1,
+                &action as *const KernelAction,
+                std::ptr::null_mut::<KernelAction>(),
+                8_usize,
+            )
+        },
+        0
+    );
+    let registration = installation.register_current_thread()?;
+    POSITIVE_STARTED.store(true, std::sync::atomic::Ordering::Release);
+    let state = invoke(
+        entry,
+        libc::SYS_read as u32,
+        [read_fd as u64, byte.as_mut_ptr() as u64, 1, 0, 0, 0],
+    );
+    assert_eq!(state[0], state[1]);
+    assert_eq!(state[2], (-libc::EINTR as i64) as u64);
+    assert_eq!(state[3], entry as u64 + 2);
+    assert_eq!(state[4], state[5]);
+    assert_eq!(USR1_SEEN.load(std::sync::atomic::Ordering::Acquire), 1);
+    registration.unregister()?;
+    installation.uninstall()?;
+    signaler.join().unwrap();
+    unsafe {
+        libc::close(read_fd);
+        libc::close(write_fd);
+    }
+    println!("SUD_INTERRUPT_POSITIVE eintr=-4 usr1=1");
+    Ok(())
+}
+
 fn unsupported_child_main() -> Result<(), SyscallRefusal> {
     let page = usize::try_from(unsafe { libc::sysconf(libc::_SC_PAGESIZE) }).unwrap();
     let region = Region::new(page);
     let installation = SudInstallation::install(config())?;
-    let _registration = installation.register_current_thread()?;
+    let registration = installation.register_current_thread()?;
+    POSITIVE_STARTED.store(true, std::sync::atomic::Ordering::Release);
     // getuid is outside the first forwarding profile; handler must fail closed
     // with the selected refusal exit instead of forwarding it.
     let _ = invoke(region.address as usize, libc::SYS_getuid as u32, [0; 6]);
+    registration.unregister()?;
+    installation.uninstall()?;
     eprintln!("SUD_UNSUPPORTED_RETURNED");
     std::process::exit(44);
 }
@@ -346,10 +444,25 @@ fn run_child(env: &str) -> std::process::Output {
 
 #[test]
 fn sud_probe_positive_or_named_environment_refusal() {
+    if std::env::var_os(INTERRUPT_ENV).is_some() {
+        match interrupt_child_main() {
+            Ok(()) => std::process::exit(0),
+            Err(error) => {
+                if POSITIVE_STARTED.load(std::sync::atomic::Ordering::Acquire) {
+                    panic!("late interrupt-child failure after registration: {error:?}");
+                }
+                eprintln!("SUD_ENV_REFUSAL {error:?}");
+                std::process::exit(42);
+            }
+        }
+    }
     if std::env::var_os(UNSUPPORTED_ENV).is_some() {
         match unsupported_child_main() {
             Ok(()) => std::process::exit(44),
             Err(error) => {
+                if POSITIVE_STARTED.load(std::sync::atomic::Ordering::Acquire) {
+                    panic!("late unsupported-child failure after registration: {error:?}");
+                }
                 eprintln!("SUD_ENV_REFUSAL {error:?}");
                 std::process::exit(42);
             }
@@ -359,6 +472,9 @@ fn sud_probe_positive_or_named_environment_refusal() {
         match child_main() {
             Ok(()) => std::process::exit(0),
             Err(error) => {
+                if POSITIVE_STARTED.load(std::sync::atomic::Ordering::Acquire) {
+                    panic!("late SUD child failure after registration: {error:?}");
+                }
                 eprintln!("SUD_ENV_REFUSAL {error:?}");
                 std::process::exit(42);
             }
@@ -397,4 +513,44 @@ fn sud_probe_positive_or_named_environment_refusal() {
         String::from_utf8_lossy(&unsupported.stdout),
         String::from_utf8_lossy(&unsupported.stderr)
     );
+    assert!(
+        !String::from_utf8_lossy(&unsupported.stderr).contains("SUD_UNSUPPORTED_RETURNED"),
+        "unsupported child returned instead of failing closed"
+    );
+}
+
+#[test]
+fn sud_blocking_read_preserves_signal_interruption() {
+    if std::env::var_os(INTERRUPT_ENV).is_some() {
+        match interrupt_child_main() {
+            Ok(()) => std::process::exit(0),
+            Err(error) => {
+                if POSITIVE_STARTED.load(std::sync::atomic::Ordering::Acquire) {
+                    panic!("late interrupt-child failure after registration: {error:?}");
+                }
+                eprintln!("SUD_ENV_REFUSAL {error:?}");
+                std::process::exit(42);
+            }
+        }
+    }
+    let output = run_child(INTERRUPT_ENV);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    if output.status.success() {
+        assert!(
+            stdout.contains("SUD_INTERRUPT_POSITIVE eintr=-4 usr1=1"),
+            "stdout={stdout} stderr={stderr}"
+        );
+        return;
+    }
+    assert_eq!(
+        output.status.code(),
+        Some(42),
+        "stdout={stdout} stderr={stderr}"
+    );
+    assert!(
+        stderr.contains("SUD_ENV_REFUSAL"),
+        "stdout={stdout} stderr={stderr}"
+    );
+    eprintln!("sud interrupt positive not run: {stderr}");
 }
