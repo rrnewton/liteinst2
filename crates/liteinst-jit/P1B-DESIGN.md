@@ -291,7 +291,14 @@ Status at this section's commit (liteinst2 `main`
   **not** install the common signal-entry stub and does not
   virtualize old-action results; that half of the mechanism
   below belongs to I1-D.
-- **I1-D next.** I1-E through I1-H unstarted.
+- **I1-D implemented on branch `musejit2/i1d-20261106`,**
+  pending its two signal-frame reviews (not landed at this
+  writing): stub install + old-action virtualization, genuine
+  frame delivery at recovered block starts, translated
+  handler, kernel `rt_sigreturn` resume, native-child
+  differential — bounded exactly to the admitted shape in the
+  I1-D detail below, with mid-block resume splitting left to
+  I1-E. I1-E through I1-H unstarted.
 
 Each stage is its own branch off then-current liteinst2 `main`,
 signed, with exact-head `fmt`, Clippy, locked debug/release

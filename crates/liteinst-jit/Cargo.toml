@@ -48,3 +48,10 @@ path = "src/bin/remote_child.rs"
 test = false
 bench = false
 doc = false
+
+[[bin]]
+name = "liteinst-jit-signal-native-child"
+path = "src/bin/signal_native_child.rs"
+test = false
+bench = false
+doc = false
