@@ -48,16 +48,23 @@ fn memfd_exec() -> Result<libc::c_int, PatchError> {
     if fd >= 0 {
         return Ok(fd);
     }
-    let err = std::io::Error::last_os_error();
-    if err.raw_os_error() == Some(libc::EINVAL) {
+    let first_err = std::io::Error::last_os_error();
+    if first_err.raw_os_error() == Some(libc::EINVAL) {
         let fd = unsafe { libc::memfd_create(name.as_ptr(), base) };
         if fd >= 0 {
             return Ok(fd);
         }
+        // Report the retry's errno: it, not the flag rejection, is why
+        // creation ultimately failed.
+        let retry_err = std::io::Error::last_os_error();
+        return Err(PatchError::Os {
+            op: "memfd_create (no MFD_EXEC retry)",
+            errno: retry_err.raw_os_error().unwrap_or(0),
+        });
     }
     Err(PatchError::Os {
         op: "memfd_create",
-        errno: err.raw_os_error().unwrap_or(0),
+        errno: first_err.raw_os_error().unwrap_or(0),
     })
 }
 

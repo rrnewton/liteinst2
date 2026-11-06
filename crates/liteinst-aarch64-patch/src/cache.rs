@@ -139,9 +139,21 @@ pub fn probe_environment() -> Result<CacheAttested, PatchError> {
         unsafe { libc::_exit(if ok { 0 } else { 3 }) };
     }
     let mut status: libc::c_int = 0;
-    let waited = unsafe { libc::waitpid(pid, &mut status, 0) };
-    if waited < 0 {
-        return Err(PatchError::os("waitpid"));
+    // A signal may interrupt waitpid; retry so an interrupted probe
+    // neither withholds attestation spuriously nor leaves the child
+    // unreaped. A finished child guarantees this loop terminates.
+    loop {
+        let waited = unsafe { libc::waitpid(pid, &mut status, 0) };
+        if waited >= 0 {
+            break;
+        }
+        let err = std::io::Error::last_os_error();
+        if err.raw_os_error() != Some(libc::EINTR) {
+            return Err(PatchError::Os {
+                op: "waitpid",
+                errno: err.raw_os_error().unwrap_or(0),
+            });
+        }
     }
     if libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0 {
         Ok(CacheAttested(()))
