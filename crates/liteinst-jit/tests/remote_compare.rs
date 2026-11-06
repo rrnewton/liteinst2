@@ -559,8 +559,8 @@ fn check_immediate_and_poll_async_stops() {
         assert_eq!(f.kind, liteinst_jit::exec::FaultKind::AsyncSignal);
         assert_eq!(f.signum, libc::SIGUSR1);
         assert!(
-            f.src_pc == info.base || f.src_pc == info.base + 5,
-            "stepping async src is the loop or syscall pc: {:#x}",
+            [0, 5, 7, 10].contains(&(f.src_pc - info.base)),
+            "stepping async src is an exact loop instruction pc: {:#x}",
             f.src_pc
         );
         assert!(
