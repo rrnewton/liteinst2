@@ -22,6 +22,13 @@ pub struct LineSizes {
 #[derive(Debug, Clone, Copy)]
 pub struct CacheAttested(());
 
+#[cfg(test)]
+impl CacheAttested {
+    pub(crate) fn for_test() -> Self {
+        Self(())
+    }
+}
+
 /// Read CTR_EL0 line geometry. `PatchError::Unsupported` off AArch64.
 #[cfg(target_arch = "aarch64")]
 pub fn line_sizes() -> Result<LineSizes, PatchError> {

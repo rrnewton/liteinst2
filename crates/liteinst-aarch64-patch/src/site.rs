@@ -58,15 +58,58 @@ pub enum ResumeState {
     Unknown,
 }
 
-/// Owned trap-route registration for one site (handler wiring itself
-/// is the caller's machinery; this record is the provenance the flip
-/// checks before any Trap write).
+/// Proof token inside [`TrapRoute`], constructible only by the
+/// unsafe [`TrapRoute::arm`] constructor.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TrapArmed(());
+
+/// Owned trap-route registration for one exact site. A plain
+/// `{brk_imm, generation}` pair proves nothing — it could be
+/// fabricated in safe code with no handler installed — so the only
+/// constructor is unsafe and binds address + immediate + generation
+/// to a handler the caller guarantees is installed and remains owned
+/// for as long as any site retains this route.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TrapRoute {
+    addr: u64,
+    brk_imm: u16,
+    generation: u64,
+    armed: TrapArmed,
+}
+
+impl TrapRoute {
+    /// Arm a route for exactly one site.
+    ///
+    /// # Safety
+    /// A handler for `BRK #brk_imm` at `addr` (site `generation`) must
+    /// already be installed, must preserve guest state apart from its
+    /// documented result/continuation, and must remain installed and
+    /// owned for as long as any `Site` retains this route (including
+    /// across rollback retirement). Deregistering early makes a
+    /// published `BRK` word trap into an unowned handler.
+    pub unsafe fn arm(addr: u64, brk_imm: u16, generation: u64) -> Self {
+        Self {
+            addr,
+            brk_imm,
+            generation,
+            armed: TrapArmed(()),
+        }
+    }
+
+    /// The exact site address this route was armed for.
+    pub fn addr(&self) -> u64 {
+        self.addr
+    }
+
     /// The reserved `BRK` immediate for this site.
-    pub brk_imm: u16,
+    pub fn brk_imm(&self) -> u16 {
+        self.brk_imm
+    }
+
     /// Site generation the registration was armed for.
-    pub generation: u64,
+    pub fn generation(&self) -> u64 {
+        self.generation
+    }
 }
 
 /// One patchable site: identity, retained original word, state, and —
@@ -253,6 +296,20 @@ pub unsafe trait StopControl {
     fn resume(&mut self) -> Result<Vec<ResumeState>, PatchError>;
 }
 
+impl Drop for Site {
+    fn drop(&mut self) {
+        // Retention-on-Drop (design): while any published word may
+        // still reference the island, unmapping it would leave a live
+        // branch into unmapped memory. Leak the island deliberately
+        // (bounded by the session) instead. This also covers unwind
+        // paths, which run the same destructor.
+        let published = !matches!(self.state, SiteState::Unpatched);
+        if published && let Some(island) = self.island.take() {
+            island.disarm();
+        }
+    }
+}
+
 /// Site-owning registry: a second live [`Site`] for one address is
 /// refused. (This detects duplicates built through the patcher; the
 /// unsafe construction contract remains the primary guarantee.)
@@ -331,17 +388,12 @@ mod tests {
         // transitions, retained trap route, and the writable alias.
         let mut word = 0xd400_0001u32;
         let mut site = site_at(&mut word, 0x8000);
-        site.retain_trap_route(TrapRoute {
-            brk_imm: 0x4c00,
-            generation: 1,
-        });
-        assert_eq!(
-            site.trap_route(),
-            Some(TrapRoute {
-                brk_imm: 0x4c00,
-                generation: 1
-            })
-        );
+        // SAFETY (test): claims an armed route for this stack site.
+        site.retain_trap_route(unsafe { TrapRoute::arm(0x8000, 0x4c00, 1) });
+        let route = site.trap_route().unwrap();
+        assert_eq!(route.addr(), 0x8000);
+        assert_eq!(route.brk_imm(), 0x4c00);
+        assert_eq!(route.generation(), 1);
         for state in [
             SiteState::Flipped,
             SiteState::SyncPending {

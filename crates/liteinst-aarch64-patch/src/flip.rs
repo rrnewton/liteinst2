@@ -10,9 +10,9 @@ use crate::site::{
     FallbackPermission, PendingWord, ResumeState, Site, SiteState, StopControl, StrategyPreference,
     TrapRoute,
 };
-use crate::{PatchError, Patcher, cache};
+use crate::{PatchError, Patcher};
 use liteinst_aarch64::Insn;
-use liteinst_aarch64::emit::{Strategy, svc_fallback_word, svc_patch_word};
+use liteinst_aarch64::emit::{Strategy, island_reaches, svc_fallback_word, svc_patch_word};
 
 /// Explicit inputs for one flip. The island (when present) moves into
 /// site custody by value before the store; on a pre-store refusal
@@ -42,6 +42,17 @@ impl core::fmt::Debug for FlipRequest {
     }
 }
 
+/// Branch word only when the island serves the site in BOTH
+/// directions: site -> entry and last island word -> resume (site+4).
+/// The forward check inside `svc_patch_word` alone would admit an
+/// island whose continuation cannot branch back.
+fn branch_word_checked(original: u32, site_addr: u64, island: &Island) -> Option<u32> {
+    if !island_reaches(site_addr, island.entry_addr(), island.mapped_len() as u64) {
+        return None;
+    }
+    svc_patch_word(original, site_addr, island.entry_addr())
+}
+
 fn all_acknowledged(states: &[ResumeState]) -> bool {
     !states.is_empty()
         && states
@@ -53,7 +64,20 @@ impl Patcher {
     fn sync_site(&self, site: &Site) -> Result<(), PatchError> {
         // SAFETY: Site construction guarantees both aliases name the
         // same valid word; the range is exactly that word.
-        unsafe { cache::sync_icache(site.rw_word_const() as *mut u8, site.addr() as *mut u8, 4) }
+        self.sync_range(site.rw_word_const() as *mut u8, site.addr() as *mut u8, 4)
+    }
+
+    /// Best-effort lease release after a pre-store refusal under the
+    /// lease. Returns true only when every executor acknowledged.
+    fn release_after_refusal(&self, site: &mut Site, stop: &mut dyn StopControl) -> bool {
+        match stop.resume() {
+            Ok(states) => {
+                let done = all_acknowledged(&states);
+                site.set_resume_states(states);
+                done
+            }
+            Err(_) => false,
+        }
     }
 
     /// Resume under the current lease and settle `pending` if every
@@ -110,8 +134,9 @@ impl Patcher {
             } else {
                 SiteState::SyncPending { pending }
             });
-            let _ = e;
-            return Err(PatchError::SyncFailed);
+            return Err(PatchError::SyncFailed {
+                source: Box::new(e),
+            });
         }
         self.resume_and_settle(site, stop, pending, false)
     }
@@ -125,6 +150,12 @@ impl Patcher {
         request: FlipRequest,
         stop: &mut dyn StopControl,
     ) -> Result<Strategy, PatchError> {
+        // Capability gate (design): cache maintenance must be
+        // established before the first store, for EVERY strategy. An
+        // unattested patcher writes nothing, whatever the strategy.
+        if self.attested_token().is_none() {
+            return Err(PatchError::CacheOpsUnavailable);
+        }
         if site.state() != SiteState::Unpatched {
             return Err(PatchError::WrongState {
                 state: site.state(),
@@ -146,10 +177,10 @@ impl Patcher {
         // Strategy selection is fully decided before the lease/store.
         let branch_word = island
             .as_ref()
-            .and_then(|i| svc_patch_word(original, site.addr(), i.entry_addr()));
-        let trap_armed = trap_route
-            .as_ref()
-            .is_some_and(|route| route.generation == site.generation());
+            .and_then(|i| branch_word_checked(original, site.addr(), i));
+        let trap_armed = trap_route.as_ref().is_some_and(|route| {
+            route.addr() == site.addr() && route.generation() == site.generation()
+        });
         let (selected, patch_word) = match strategy {
             StrategyPreference::BranchOnly => match branch_word {
                 Some(w) => (Strategy::Branch, w),
@@ -165,7 +196,7 @@ impl Patcher {
                 }
                 (
                     Strategy::Trap,
-                    svc_fallback_word(original, trap_route.expect("armed").brk_imm)
+                    svc_fallback_word(original, trap_route.expect("armed").brk_imm())
                         .ok_or(PatchError::NotSvc { word: original })?,
                 )
             }
@@ -182,7 +213,7 @@ impl Patcher {
                     }
                     (
                         Strategy::Trap,
-                        svc_fallback_word(original, trap_route.expect("armed").brk_imm)
+                        svc_fallback_word(original, trap_route.expect("armed").brk_imm())
                             .ok_or(PatchError::NotSvc { word: original })?,
                     )
                 }
@@ -199,17 +230,21 @@ impl Patcher {
                 .publish(attested)?;
         }
         stop.acquire()?;
-        // Everything below runs under the lease; pre-store exits must
-        // release it (best-effort resume, outcome recorded if visible).
+        // Everything below runs under the lease; a pre-store exit must
+        // release it and surface the cleanup outcome, never discard it.
         let found = site.read_word();
         if found != original {
-            if let Ok(states) = stop.resume() {
-                site.set_resume_states(states);
-            }
-            return Err(PatchError::SiteWordChanged {
-                expected: original,
-                found,
-            });
+            return if self.release_after_refusal(site, stop) {
+                Err(PatchError::SiteWordChanged {
+                    expected: original,
+                    found,
+                })
+            } else {
+                Err(PatchError::CleanupFailed {
+                    expected: original,
+                    found,
+                })
+            };
         }
         // Custody transfer before the store: from here the site owns
         // the island/route across every later outcome.
@@ -243,6 +278,17 @@ impl Patcher {
             state => return Err(PatchError::WrongState { state }),
         };
         stop.acquire()?;
+        // Re-read under the lease: syncing a word other than the one
+        // publication stored would settle custody on garbage. On
+        // mismatch the state is left untouched (still stopped).
+        let expected = match pending {
+            PendingWord::Patch(word) => word,
+            PendingWord::Original => site.original_word(),
+        };
+        let found = site.read_word();
+        if found != expected {
+            return Err(PatchError::SiteWordChanged { expected, found });
+        }
         self.finish_publication(site, stop, pending)
     }
 
@@ -257,6 +303,11 @@ impl Patcher {
         site: &mut Site,
         stop: &mut dyn StopControl,
     ) -> Result<(), PatchError> {
+        // Rollback performs a store, so the same capability gate as
+        // flip applies before it.
+        if self.attested_token().is_none() {
+            return Err(PatchError::CacheOpsUnavailable);
+        }
         let flipped = match site.state() {
             SiteState::Flipped | SiteState::SyncPending { .. } | SiteState::RetainedStop { .. } => {
                 site.flipped_word().ok_or(PatchError::WrongState {
@@ -270,13 +321,17 @@ impl Patcher {
         // In SyncPending the stored word may be either side of an
         // interrupted transition; accept exactly the two known words.
         if found != flipped && found != site.original_word() {
-            if let Ok(states) = stop.resume() {
-                site.set_resume_states(states);
-            }
-            return Err(PatchError::SiteWordChanged {
-                expected: flipped,
-                found,
-            });
+            return if self.release_after_refusal(site, stop) {
+                Err(PatchError::SiteWordChanged {
+                    expected: flipped,
+                    found,
+                })
+            } else {
+                Err(PatchError::CleanupFailed {
+                    expected: flipped,
+                    found,
+                })
+            };
         }
         site.set_state(SiteState::SyncPending {
             pending: PendingWord::Original,
@@ -318,26 +373,37 @@ mod tests {
         }
     }
 
+    unsafe fn sync_ok(_rw: *mut u8, _rx: *mut u8, _len: usize) -> Result<(), PatchError> {
+        Ok(())
+    }
+    unsafe fn sync_fail(_rw: *mut u8, _rx: *mut u8, _len: usize) -> Result<(), PatchError> {
+        Err(PatchError::Unsupported("injected sync failure"))
+    }
+
     fn site_on(word: &mut u32, addr: u64) -> Site {
         // SAFETY (test): the backing word outlives the site in each test.
         unsafe { Site::from_aliases(addr, std::ptr::from_mut(word), *word, 7) }
     }
 
     fn trap_request() -> FlipRequest {
+        trap_request_at(0x1000)
+    }
+
+    fn trap_request_at(addr: u64) -> FlipRequest {
+        // SAFETY (test): claims a handler for this exact site; the
+        // fake stop never executes the word.
+        let route = unsafe { TrapRoute::arm(addr, 0x4c00, 7) };
         FlipRequest {
             island: None,
             strategy: StrategyPreference::TrapOnly,
             fallback: FallbackPermission::RefuseTrap,
-            trap_route: Some(TrapRoute {
-                brk_imm: 0x4c00,
-                generation: 7,
-            }),
+            trap_route: Some(route),
         }
     }
 
     #[test]
     fn misaligned_and_non_svc_sites_refuse_before_lease() {
-        let mut patcher = Patcher::new();
+        let mut patcher = Patcher::for_test(sync_fail);
         let mut stop = FakeStop::default();
         let mut word = svc(0);
         let mut site = site_on(&mut word, 0x1001);
@@ -357,7 +423,7 @@ mod tests {
 
     #[test]
     fn strategy_refusals_write_nothing() {
-        let mut patcher = Patcher::new();
+        let mut patcher = Patcher::for_test(sync_fail);
         let mut stop = FakeStop::default();
         let mut word = svc(0);
         let mut site = site_on(&mut word, 0x1000);
@@ -385,10 +451,8 @@ mod tests {
             island: None,
             strategy: StrategyPreference::TrapOnly,
             fallback: FallbackPermission::AllowTrap,
-            trap_route: Some(TrapRoute {
-                brk_imm: 0x4c00,
-                generation: 99,
-            }),
+            // SAFETY (test): claims a route for a wrong generation.
+            trap_route: Some(unsafe { TrapRoute::arm(0x1000, 0x4c00, 99) }),
         };
         assert_eq!(
             patcher.flip(&mut site, wrong_gen, &mut stop),
@@ -401,7 +465,7 @@ mod tests {
 
     #[test]
     fn changed_word_under_lease_refuses_and_releases() {
-        let mut patcher = Patcher::new();
+        let mut patcher = Patcher::for_test(sync_fail);
         let mut stop = FakeStop::default();
         let mut word = svc(0);
         let mut site = site_on(&mut word, 0x1000);
@@ -420,29 +484,40 @@ mod tests {
     }
 
     #[test]
-    fn trap_flip_on_this_host_lands_in_sync_pending_custody() {
-        // On non-AArch64 hosts the sync step returns Unsupported, which
-        // the protocol must surface as SyncPending(Patch) with the BRK
-        // word stored — never as "not flipped". (On AArch64 the same
-        // path settles Flipped; that leg is the exec proof's job.)
+    fn unattested_patcher_refuses_before_any_store() {
+        // The reviewer's exact witness shape: Patcher::new() plus a
+        // Trap flip must write nothing, whatever the strategy.
         let mut patcher = Patcher::new();
         let mut stop = FakeStop::default();
         let mut word = svc(0);
         let mut site = site_on(&mut word, 0x1000);
+        assert_eq!(
+            patcher.flip(&mut site, trap_request(), &mut stop),
+            Err(PatchError::CacheOpsUnavailable)
+        );
+        assert_eq!(word, svc(0));
+        assert_eq!(site.state(), SiteState::Unpatched);
+        assert_eq!(stop.acquires, 0);
+    }
+
+    #[test]
+    fn trap_flip_with_failing_sync_lands_in_sync_pending_custody() {
+        // Injected sync failure after the store must surface as
+        // SyncPending(Patch) with the BRK word stored and the source
+        // error preserved — never as "not flipped".
+        let mut patcher = Patcher::for_test(sync_fail);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let mut site = site_on(&mut word, 0x1000);
         let result = patcher.flip(&mut site, trap_request(), &mut stop);
-        if cfg!(target_arch = "aarch64") {
-            assert_eq!(result, Ok(Strategy::Trap));
-            assert_eq!(site.state(), SiteState::Flipped);
-        } else {
-            assert_eq!(result, Err(PatchError::SyncFailed));
-            assert_eq!(
-                site.state(),
-                SiteState::SyncPending {
-                    pending: PendingWord::Patch(liteinst_aarch64::brk(0x4c00))
-                }
-            );
-            assert_eq!(stop.resumes, 0, "no resume before sync completes");
-        }
+        assert!(matches!(result, Err(PatchError::SyncFailed { .. })));
+        assert_eq!(
+            site.state(),
+            SiteState::SyncPending {
+                pending: PendingWord::Patch(liteinst_aarch64::brk(0x4c00))
+            }
+        );
+        assert_eq!(stop.resumes, 0, "no resume before sync completes");
         assert_eq!(word, liteinst_aarch64::brk(0x4c00));
         assert_eq!(site.flipped_word(), Some(liteinst_aarch64::brk(0x4c00)));
         // Second flip from a post-store state is refused by state.
@@ -455,11 +530,7 @@ mod tests {
 
     #[test]
     fn rollback_from_sync_pending_restores_original_word() {
-        if cfg!(target_arch = "aarch64") {
-            return; // host path settles Flipped; rollback-from-Flipped
-            // is covered by the AArch64 execution proofs.
-        }
-        let mut patcher = Patcher::new();
+        let mut patcher = Patcher::for_test(sync_fail);
         let mut stop = FakeStop::default();
         let mut word = svc(0);
         let mut site = site_on(&mut word, 0x1000);
@@ -467,10 +538,10 @@ mod tests {
         assert!(matches!(site.state(), SiteState::SyncPending { .. }));
         // Direct rollback transition: original restored synchronously,
         // settlement stays pending on Original (host sync refuses).
-        assert_eq!(
+        assert!(matches!(
             patcher.rollback(&mut site, &mut stop),
-            Err(PatchError::SyncFailed)
-        );
+            Err(PatchError::SyncFailed { .. })
+        ));
         assert_eq!(word, svc(0));
         assert_eq!(
             site.state(),
@@ -482,23 +553,116 @@ mod tests {
 
     #[test]
     fn complete_sync_keeps_pending_custody_when_sync_still_fails() {
-        if cfg!(target_arch = "aarch64") {
-            return; // sync succeeds there; settlement is exec-proof scope
-        }
-        let mut patcher = Patcher::new();
+        let mut patcher = Patcher::for_test(sync_fail);
         let mut stop = FakeStop::default();
         let mut word = svc(0);
         let mut site = site_on(&mut word, 0x1000);
         let _ = patcher.flip(&mut site, trap_request(), &mut stop);
-        assert_eq!(
+        assert!(matches!(
             patcher.complete_sync(&mut site, &mut stop),
-            Err(PatchError::SyncFailed)
-        );
+            Err(PatchError::SyncFailed { .. })
+        ));
         assert!(matches!(
             site.state(),
             SiteState::SyncPending {
                 pending: PendingWord::Patch(_)
             }
         ));
+    }
+
+    #[test]
+    fn trap_flip_settles_and_rolls_back_with_working_sync() {
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let mut site = site_on(&mut word, 0x1000);
+        assert_eq!(
+            patcher.flip(&mut site, trap_request(), &mut stop),
+            Ok(Strategy::Trap)
+        );
+        assert_eq!(site.state(), SiteState::Flipped);
+        assert_eq!(word, liteinst_aarch64::brk(0x4c00));
+        patcher.rollback(&mut site, &mut stop).unwrap();
+        assert_eq!(site.state(), SiteState::Unpatched);
+        assert_eq!(word, svc(0));
+        assert_eq!(site.flipped_word(), None);
+    }
+
+    #[test]
+    fn route_for_another_address_is_not_armed_for_this_site() {
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let mut site = site_on(&mut word, 0x1000);
+        // Armed token exists, but for a different site address.
+        assert_eq!(
+            patcher.flip(&mut site, trap_request_at(0x2000), &mut stop),
+            Err(PatchError::TrapNotArmed)
+        );
+        assert_eq!(word, svc(0));
+        assert_eq!(stop.acquires, 0);
+    }
+
+    #[test]
+    fn incomplete_cleanup_after_changed_word_is_named() {
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop {
+            resume_plan: vec![Ok(vec![ResumeState::Unknown])],
+            ..FakeStop::default()
+        };
+        let mut word = svc(0);
+        let mut site = site_on(&mut word, 0x1000);
+        unsafe { std::ptr::addr_of_mut!(word).write_volatile(svc(9)) };
+        assert_eq!(
+            patcher.flip(&mut site, trap_request(), &mut stop),
+            Err(PatchError::CleanupFailed {
+                expected: svc(0),
+                found: svc(9)
+            })
+        );
+        assert_eq!(site.state(), SiteState::Unpatched);
+        assert_eq!(site.resume_states(), &[ResumeState::Unknown]);
+    }
+
+    #[test]
+    fn complete_sync_refuses_to_settle_a_changed_word() {
+        let mut patcher = Patcher::for_test(sync_fail);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let mut site = site_on(&mut word, 0x1000);
+        let _ = patcher.flip(&mut site, trap_request(), &mut stop);
+        // Corrupt the pending word; completion must not sync garbage.
+        unsafe { std::ptr::addr_of_mut!(word).write_volatile(0xdead_beef) };
+        assert_eq!(
+            patcher.complete_sync(&mut site, &mut stop),
+            Err(PatchError::SiteWordChanged {
+                expected: liteinst_aarch64::brk(0x4c00),
+                found: 0xdead_beef
+            })
+        );
+        assert!(matches!(site.state(), SiteState::SyncPending { .. }));
+    }
+
+    #[test]
+    fn branch_word_requires_return_direction_reach() {
+        // Reviewer's geometry: entry at the forward limit fits B, but
+        // a return branch from the island's last word falls 4 bytes
+        // short. Exercised through the checked helper with a real
+        // island where the target supports building one.
+        #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+        {
+            let island = Island::build(&[0; 4]).unwrap();
+            // The fact-level return-direction refusal at the forward
+            // limit (synthetic addresses), plus the checked helper
+            // accepting this real island at its own address.
+            let site = 0x4000_0000u64;
+            assert!(!liteinst_aarch64::emit::island_reaches(
+                site,
+                site + (1 << 27) - 4,
+                16
+            ));
+            let here = island.entry_addr();
+            assert!(branch_word_checked(svc(0), here, &island).is_some());
+        }
     }
 }

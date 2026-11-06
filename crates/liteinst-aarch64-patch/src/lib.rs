@@ -97,7 +97,21 @@ pub enum PatchError {
     TrapNotArmed,
     /// The store landed but cache synchronization failed; the site is
     /// in `SyncPending`/`RetainedStop` custody, never "not flipped".
-    SyncFailed,
+    /// The underlying sync error is preserved, not swallowed.
+    SyncFailed {
+        /// The synchronization error that left publication pending.
+        source: Box<PatchError>,
+    },
+    /// A pre-store refusal under the lease could not cleanly release
+    /// it (resume errored or left an executor unacknowledged). The
+    /// site was not written; stop custody outcome is named, not
+    /// silently treated as released.
+    CleanupFailed {
+        /// The word revalidation expected.
+        expected: u32,
+        /// The word found instead.
+        found: u32,
+    },
     /// Resume did not produce a synchronization acknowledgement from
     /// every executor; custody (and any retained stop) persists.
     ResumeIncomplete,
@@ -142,7 +156,16 @@ impl core::fmt::Display for PatchError {
             Self::WrongState { state } => write!(f, "site is in state {state:?}"),
             Self::StrategyUnavailable(why) => write!(f, "no strategy available: {why}"),
             Self::TrapNotArmed => write!(f, "trap selected without an armed owned route"),
-            Self::SyncFailed => write!(f, "post-store cache synchronization failed"),
+            Self::SyncFailed { source } => {
+                write!(f, "post-store cache synchronization failed: {source}")
+            }
+            Self::CleanupFailed { expected, found } => {
+                write!(
+                    f,
+                    "site word changed (expected {expected:#010x}, found {found:#010x}) \
+                     and lease cleanup did not fully acknowledge"
+                )
+            }
             Self::ResumeIncomplete => {
                 write!(f, "resume without full synchronization acknowledgement")
             }
@@ -173,17 +196,37 @@ pub fn page_size() -> Result<u64, PatchError> {
 /// Patcher session: cache attestation plus the site registry. Flip
 /// execution arrives in the next slice; construction already occupies
 /// the design's attestation point so call sites do not change shape.
-#[derive(Debug, Default)]
 pub struct Patcher {
     registry: SiteRegistry,
     attested: Option<cache::CacheAttested>,
+    sync: unsafe fn(*mut u8, *mut u8, usize) -> Result<(), PatchError>,
+}
+
+impl core::fmt::Debug for Patcher {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("Patcher")
+            .field("registry", &self.registry)
+            .field("is_attested", &self.is_attested())
+            .finish_non_exhaustive()
+    }
+}
+
+impl Default for Patcher {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Patcher {
-    /// New patcher without cache attestation (protocol-host use and
-    /// tests; execution paths will require attestation).
+    /// New patcher without cache attestation. Flip and rollback
+    /// refuse before any store until attested (the capability gate is
+    /// production behavior, not a test bypass).
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            registry: SiteRegistry::new(),
+            attested: None,
+            sync: cache::sync_icache,
+        }
     }
 
     /// New patcher after establishing the cache-op environment
@@ -192,7 +235,33 @@ impl Patcher {
         Ok(Self {
             registry: SiteRegistry::new(),
             attested: Some(cache::probe_environment()?),
+            sync: cache::sync_icache,
         })
+    }
+
+    /// Test-only seam: attested patcher with an injected sync function,
+    /// so host fault injection exercises post-store custody without
+    /// bypassing the production attestation gate or real sync.
+    #[cfg(test)]
+    pub(crate) fn for_test(
+        sync: unsafe fn(*mut u8, *mut u8, usize) -> Result<(), PatchError>,
+    ) -> Self {
+        Self {
+            registry: SiteRegistry::new(),
+            attested: Some(cache::CacheAttested::for_test()),
+            sync,
+        }
+    }
+
+    pub(crate) fn sync_range(
+        &self,
+        rw: *mut u8,
+        rx: *mut u8,
+        len: usize,
+    ) -> Result<(), PatchError> {
+        // SAFETY: forwarded to the configured sync with its contract;
+        // callers pass dual aliases of one valid range.
+        unsafe { (self.sync)(rw, rx, len) }
     }
 
     /// Whether construction attested cache-op availability.

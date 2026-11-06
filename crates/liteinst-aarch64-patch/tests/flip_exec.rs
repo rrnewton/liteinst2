@@ -276,10 +276,9 @@ fn brk_fallback_flip_reaches_owned_handler() {
                 island: None,
                 strategy: StrategyPreference::TrapOnly,
                 fallback: FallbackPermission::RefuseTrap,
-                trap_route: Some(TrapRoute {
-                    brk_imm: 0x4c01,
-                    generation: 3,
-                }),
+                // SAFETY: the SIGTRAP handler above is installed for
+                // exactly this site and stays installed across the call.
+                trap_route: Some(unsafe { TrapRoute::arm(map.rx as u64 + 4, 0x4c01, 3) }),
             },
             &mut SelfStop,
         )

@@ -152,6 +152,19 @@ impl Island {
         Err(PatchError::Unsupported("islands require AArch64 Linux"))
     }
 
+    /// Deliberately leak this island's mappings and fd forever
+    /// (bounded by the session). Used by `Site` custody when a live
+    /// branch may still target the island: unmapping would be a
+    /// correctness defect, leaking is the documented safe outcome.
+    pub(crate) fn disarm(self) {
+        #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+        core::mem::forget(self);
+        #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
+        {
+            // No mappings exist off-target; consuming self is enough.
+        }
+    }
+
     /// Executable (RX) address of the island entry (offset 0).
     pub fn entry_addr(&self) -> u64 {
         #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
