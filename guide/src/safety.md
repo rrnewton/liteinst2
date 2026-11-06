@@ -88,7 +88,7 @@ conflict `R-SIGNAL`, a strict-W^X policy `R-WX` — so a tool author
 sees one taxonomy no matter which layer refused.
 
 > 🚧 **Under construction — refusal catalogue.** TODO: a per-refusal
-> reference (Bevy-Errors style): every public refusal/error variant,
+> reference: every public refusal/error variant,
 > what triggers it, and the supported remedy — generated or checked
 > against the source so it cannot go stale. External users will hit
 > envelope refusals first; they deserve product-quality guidance, not

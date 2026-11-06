@@ -122,7 +122,7 @@ The next chapter explains why publishing a patch into live code is safe
 at all — the instruction-punning idea the whole library rests on.
 
 > 🚧 **Under construction — grow the project.** TODO: extend this
-> project across later chapters in Tokio style — the same target
+> project across later chapters — the same target
 > program gains a rapid toggle (Chapter on tactics), a second site
 > under one bundle (composition), and a page-gated variant — with a
 > "full code at this step" link per stage. <!-- UC: fh-grow -->

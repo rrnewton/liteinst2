@@ -10,7 +10,7 @@ mdbook serve guide     # live preview
 
 Conventions:
 
-- Rust Book style: concept chapters alternate with project chapters;
+- Structure: concept chapters alternate with project chapters;
   every listing names its source file; every project chapter ends with
   a runnable command and expected output.
 - Unfinished or unimplemented material gets an Under construction box:

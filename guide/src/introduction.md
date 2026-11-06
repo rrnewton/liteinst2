@@ -73,8 +73,8 @@ Three kinds of boxes appear throughout:
 
 ## Platform envelope, up front
 
-Bevy's guide opens with a stability warning; ours opens with a platform
-warning, because getting this wrong wastes the most time:
+This guide opens with a platform warning, because getting this wrong
+wastes the most time:
 
 * **Linux, x86-64 only.** Instruction punning relies on x86's
   variable-length encoding and atomic word stores. There is no aarch64
