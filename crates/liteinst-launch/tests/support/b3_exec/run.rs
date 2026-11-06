@@ -855,6 +855,23 @@ pub fn timeout(f: Arc<Fixture>, reference: Arc<raw::Transcript>) {
     });
     let witness = match waiting.recv_timeout(3 * TIMEOUT) {
         Ok(v) => v,
+        // A dropped witness sender means the worker unwound before the
+        // resolver could send: surface its real outcome instead of
+        // masking it behind this abort. Only a live-but-silent worker
+        // (Timeout) keeps the abort.
+        Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+            if worker.join().is_err() {
+                abort_named("run-witness-worker-join", "worker thread panicked");
+            }
+            match finished.recv_timeout(TIMEOUT) {
+                Ok(Ok(())) => abort_named(
+                    "run-witness-recv",
+                    "err=Disconnected but worker reported success",
+                ),
+                Ok(Err(payload)) => std::panic::resume_unwind(payload),
+                Err(e) => abort_named("run-witness-finished-recv", &format!("err={e:?}")),
+            }
+        }
         Err(e) => abort_named("run-witness-recv", &format!("err={e:?}")),
     };
     let cleanup_until = witness.until + TIMEOUT;
