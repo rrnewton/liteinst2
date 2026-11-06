@@ -193,7 +193,7 @@ pub fn check(
         "complete original ENTRY maps changed"
     );
     assert_eq!(a.raw[0].status, reference.entry_status);
-    assert_eq!(raw_arch[0], reference.entry.architecture);
+    super::assert_architecture_eq_cross_capture(&raw_arch[0], &reference.entry.architecture);
     info(&a.raw[0], 1, Some(&reference.entry_info));
     assert_eq!(
         a.raw[1].status,
@@ -208,13 +208,13 @@ pub fn check(
         compare::exec_registers(&context.stack, f.first_cpu)
     );
     assert_eq!(raw_arch[1].mask, APP_MASK);
-    assert_eq!(raw_arch[1].xstate, reference.exec.architecture.xstate);
+    super::assert_xstate_eq_cross_capture(&raw_arch[1].xstate, &reference.exec.architecture.xstate);
     assert_eq!(a.raw[2].status, ((libc::SIGTRAP | 0x80) << 8) | 0x7f);
     info(&a.raw[2], 2, None);
     let mut expected_exit = raw_arch[1].clone();
     expected_exit.registers.rax = 0;
     assert_eq!(raw_arch[2], expected_exit);
-    assert_eq!(raw_arch[2].xstate, reference.exit.architecture.xstate);
+    super::assert_xstate_eq_cross_capture(&raw_arch[2].xstate, &reference.exit.architecture.xstate);
     assert!(raw_maps[1] == raw_maps[2], "complete EXEC/EXIT maps differ");
     assert!(
         raw_maps[2] == raw_maps[3],
@@ -236,12 +236,12 @@ pub fn check(
     expected_trap.orig_rax = u64::MAX;
     assert_eq!(raw_arch[3].registers, expected_trap);
     assert_eq!(raw_arch[3].mask, APP_MASK);
-    assert_eq!(raw_arch[3].xstate, reference.trap.architecture.xstate);
+    super::assert_xstate_eq_cross_capture(&raw_arch[3].xstate, &reference.trap.architecture.xstate);
     let mut restored = raw_arch[3].clone();
     restored.registers.rip = f.first_cpu;
-    assert_eq!(
-        Architecture::captured(a.restored_entry.as_ref().unwrap()),
-        restored
+    super::assert_architecture_eq_cross_capture(
+        &Architecture::captured(a.restored_entry.as_ref().unwrap()),
+        &restored,
     );
     assert_eq!(
         Architecture::captured(a.final_state.as_ref().unwrap()),

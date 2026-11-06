@@ -495,10 +495,10 @@ fn completion(
         }
     );
     assert_eq!(*done.selected.input.registers(), before.registers);
-    assert_eq!(done.selected.before_xstate, before.xstate);
+    super::assert_xstate_eq_cross_capture(&done.selected.before_xstate, &before.xstate);
     assert_eq!(done.before_signal_mask, before.mask);
     assert_eq!(done.selected.after, after.registers);
-    assert_eq!(done.selected.xstate, after.xstate);
+    super::assert_xstate_eq_cross_capture(&done.selected.xstate, &after.xstate);
     assert_eq!(done.signal_mask, after.mask);
     assert_eq!(
         (
@@ -664,7 +664,7 @@ fn lane(f: Arc<Fixture>, reference: Arc<raw::Transcript>, replay: bool) -> Obser
     assert_eq!(replaced.attempt, snapshot.attempt.as_ref().unwrap().id);
     assert_eq!(replaced.input, owner.session().provider().inputs[1]);
     assert_eq!(replaced.ready.task, context.candidate);
-    assert_eq!(Architecture::admitted(&replaced.ready), ready);
+    super::assert_architecture_eq_cross_capture(&Architecture::admitted(&replaced.ready), &ready);
     let state = owner.session().state(replaced.ready.task.task).unwrap();
     assert_eq!(state, replaced.ready);
     assert_eq!(
