@@ -45,8 +45,8 @@ fn stage_sources(
     planning::remaining(until)?;
     if range.start == 0
         || range.start >= range.end
-        || range.start % PAGE != 0
-        || range.end % PAGE != 0
+        || !range.start.is_multiple_of(PAGE)
+        || !range.end.is_multiple_of(PAGE)
         || range.end - range.start > 64 * 1024
         || domain.generation != census.generation()
         || domain.images.iter().any(|image| {

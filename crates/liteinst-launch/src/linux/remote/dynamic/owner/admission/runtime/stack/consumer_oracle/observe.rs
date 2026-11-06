@@ -76,7 +76,7 @@ pub(super) struct RawStackDescription {
     pub(super) original_rsp: u64,
 }
 fn stack_description(maps: &[u8], rsp: u64) -> Result<RawStackDescription, OracleError> {
-    if rsp == 0 || rsp % 16 != 0 || rsp >= 0x0000_8000_0000_0000 {
+    if rsp == 0 || !rsp.is_multiple_of(16) || rsp >= 0x0000_8000_0000_0000 {
         return Err(OracleError::Invalid("oracle initial stack ABI differs"));
     }
     let parsed = source_identity::parse(maps)?;
@@ -449,7 +449,10 @@ pub(super) struct LaneShape {
 }
 impl LaneShape {
     pub(super) fn for_plan(plan: &ArtifactPlan, stack_bytes: usize) -> Result<Self, OracleError> {
-        if stack_bytes == 0 || stack_bytes > STACK_CAP || stack_bytes % 4096 != 0 || plan.len() > 35
+        if stack_bytes == 0
+            || stack_bytes > STACK_CAP
+            || !stack_bytes.is_multiple_of(4096)
+            || plan.len() > 35
         {
             return Err(OracleError::Invalid("oracle lane shape differs"));
         }

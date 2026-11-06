@@ -422,10 +422,10 @@ impl<'a> Builder<'a> {
             return Ok(());
         }
         let original_bytes = self.decode_head(address)?;
-        if let TrapGuardRole::Selected(candidate) = role {
-            if usize::from(candidate.len) != original_bytes.len() {
-                return Err(TrapCoverageRefusal::CandidateDecodeMismatch(address));
-            }
+        if let TrapGuardRole::Selected(candidate) = role
+            && usize::from(candidate.len) != original_bytes.len()
+        {
+            return Err(TrapCoverageRefusal::CandidateDecodeMismatch(address));
         }
         if self.guards.len() >= self.budget.max_guards {
             return Err(TrapCoverageRefusal::BudgetExceeded(
@@ -489,12 +489,12 @@ impl<'a> Builder<'a> {
                     .obligations()
                     .iter()
                     .filter(|obligation| {
-                        !matches!(
+                        !(matches!(
                             obligation,
                             Obligation::EmbeddedCandidate(_)
                                 | Obligation::UnresolvedCandidate(_)
                                 | Obligation::OverlappingInstructions(_)
-                        ) && !(resumes == ResumeMode::Pending
+                        ) || resumes == ResumeMode::Pending
                             && matches!(obligation, Obligation::SavedResume(_)))
                     })
                     .cloned()
@@ -638,11 +638,11 @@ fn merged(mut ranges: Vec<AddressRange>) -> Vec<AddressRange> {
     ranges.sort_unstable();
     let mut result: Vec<AddressRange> = Vec::new();
     for range in ranges {
-        if let Some(last) = result.last_mut() {
-            if range.start() <= last.end() {
-                *last = AddressRange::new(last.start(), last.end().max(range.end())).unwrap();
-                continue;
-            }
+        if let Some(last) = result.last_mut()
+            && range.start() <= last.end()
+        {
+            *last = AddressRange::new(last.start(), last.end().max(range.end())).unwrap();
+            continue;
         }
         result.push(range);
     }

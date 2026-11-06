@@ -52,7 +52,7 @@ impl AdmissionOwner {
 }
 
 fn checked_range_pages(range_bytes: usize) -> Result<usize, GateError> {
-    if range_bytes == 0 || range_bytes > 64 * 1024 || range_bytes % PAGE as usize != 0 {
+    if range_bytes == 0 || range_bytes > 64 * 1024 || !range_bytes.is_multiple_of(PAGE as usize) {
         return Err(GateError::Refused(
             "mapping source budget requires one complete bounded VMA",
         ));

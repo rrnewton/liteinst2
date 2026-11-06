@@ -789,7 +789,7 @@ const OF: u64 = 1 << 11;
 const ARITHMETIC: u64 = CF | PF | AF | ZF | SF | OF;
 fn common_flags(value: u64, width: usize) -> u64 {
     let sign = 1u64 << (width * 8 - 1);
-    (u64::from((value as u8).count_ones() % 2 == 0) * PF)
+    (u64::from((value as u8).count_ones().is_multiple_of(2)) * PF)
         | (u64::from(value == 0) * ZF)
         | (u64::from(value & sign != 0) * SF)
 }

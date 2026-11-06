@@ -394,10 +394,10 @@ impl ResumeCensus {
             }
         }
         for row in &self.state.history {
-            if let HistoryRecord::SignalDelivered(delivered) = row {
-                if !obligations.contains(&delivered.obligation) {
-                    return Err(CensusError::PersistentUnknown);
-                }
+            if let HistoryRecord::SignalDelivered(delivered) = row
+                && !obligations.contains(&delivered.obligation)
+            {
+                return Err(CensusError::PersistentUnknown);
             }
         }
         for obligation in obligations {

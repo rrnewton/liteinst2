@@ -505,21 +505,20 @@ impl SingleThreadPageGate {
                             }
                             continue;
                         }
-                        if let Some(publisher) = &self.core {
-                            if publisher
+                        if let Some(publisher) = &self.core
+                            && publisher
                                 .callback_address()
                                 .and_then(|pc| pc.checked_add(1))
                                 == Some(signal.instruction_pointer)
-                            {
-                                let mut stop = self.process.hold()?;
-                                let observed = publisher.observe(&mut stop, &signal)?;
-                                self.metrics.observations += 1;
-                                return Ok(GateEvent::Observe(Observation {
-                                    site: observed.site,
-                                    registers: observed.registers,
-                                    xstate: observed.xstate,
-                                }));
-                            }
+                        {
+                            let mut stop = self.process.hold()?;
+                            let observed = publisher.observe(&mut stop, &signal)?;
+                            self.metrics.observations += 1;
+                            return Ok(GateEvent::Observe(Observation {
+                                site: observed.site,
+                                registers: observed.registers,
+                                xstate: observed.xstate,
+                            }));
                         }
                         if let Some(site) = signal
                             .instruction_pointer

@@ -346,12 +346,12 @@ impl ArtifactOwner {
             .as_ref()
             .and_then(|value| value.as_ref().ok())
             .ok_or(OracleError::Invalid("oracle cleanup receipt is absent"))?;
-        if let Some(initial) = &self.initial {
-            if cleanup.reaped.as_slice() != [initial.pid] {
-                return Err(OracleError::Invalid(
-                    "oracle cleanup application set differs",
-                ));
-            }
+        if let Some(initial) = &self.initial
+            && cleanup.reaped.as_slice() != [initial.pid]
+        {
+            return Err(OracleError::Invalid(
+                "oracle cleanup application set differs",
+            ));
         }
         // Only pins actually installed are observed. A launch failure with no
         // auxiliary pin cannot fabricate a two-pin success, even after drain.

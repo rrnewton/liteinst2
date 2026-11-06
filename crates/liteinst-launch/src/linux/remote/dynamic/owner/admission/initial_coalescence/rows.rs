@@ -97,13 +97,13 @@ impl<'a> PairRows<'a> {
         upper: MapEntry<'a>,
     ) -> Result<Self, LaunchError> {
         if lower.start == 0
-            || lower.start % PAGE != 0
+            || !lower.start.is_multiple_of(PAGE)
             || lower.end.checked_sub(lower.start) != Some(PAGE)
             || upper.end.checked_sub(upper.start) != Some(PAGE)
             || lower.end != upper.start
             || lower.permissions.bytes() != *b"r--p"
             || upper.permissions.bytes() != *b"r-xp"
-            || lower.file_offset % PAGE != 0
+            || !lower.file_offset.is_multiple_of(PAGE)
             || lower.file_offset.checked_add(PAGE) != Some(upper.file_offset)
             || upper.file_offset.checked_add(PAGE).is_none()
             || lower.inode == 0

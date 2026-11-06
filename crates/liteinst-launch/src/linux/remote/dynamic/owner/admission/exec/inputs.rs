@@ -532,35 +532,35 @@ impl ExecInputs {
     }
 
     fn retain_failure(&mut self, phase: InputPhase, result: &Result<(), GateError>) {
-        if self.failure.is_none() {
-            if let Err(error) = result {
-                let cause = match error {
-                    GateError::Refused(reason) => InputFailureCause::Refused(reason),
-                    GateError::Control(LaunchError::Invalid(reason)) => {
-                        InputFailureCause::NativeInvalid(reason)
+        if self.failure.is_none()
+            && let Err(error) = result
+        {
+            let cause = match error {
+                GateError::Refused(reason) => InputFailureCause::Refused(reason),
+                GateError::Control(LaunchError::Invalid(reason)) => {
+                    InputFailureCause::NativeInvalid(reason)
+                }
+                GateError::Control(LaunchError::System { operation, source }) => {
+                    InputFailureCause::NativeSystem {
+                        operation,
+                        errno: source.raw_os_error(),
+                        kind: source.kind(),
                     }
-                    GateError::Control(LaunchError::System { operation, source }) => {
-                        InputFailureCause::NativeSystem {
-                            operation,
-                            errno: source.raw_os_error(),
-                            kind: source.kind(),
-                        }
-                    }
-                    GateError::Control(LaunchError::Child { status }) => {
-                        InputFailureCause::NativeChild(*status)
-                    }
-                    GateError::Control(LaunchError::Timeout(reason)) => {
-                        InputFailureCause::Timeout(reason)
-                    }
-                    // This leaf constructs only Refused or Control failures.
-                    _ => InputFailureCause::Refused("exec input unexpected internal failure"),
-                };
-                self.failure = Some(InputFailure {
-                    phase,
-                    location: self.active_read,
-                    cause,
-                });
-            }
+                }
+                GateError::Control(LaunchError::Child { status }) => {
+                    InputFailureCause::NativeChild(*status)
+                }
+                GateError::Control(LaunchError::Timeout(reason)) => {
+                    InputFailureCause::Timeout(reason)
+                }
+                // This leaf constructs only Refused or Control failures.
+                _ => InputFailureCause::Refused("exec input unexpected internal failure"),
+            };
+            self.failure = Some(InputFailure {
+                phase,
+                location: self.active_read,
+                cause,
+            });
         }
     }
 }

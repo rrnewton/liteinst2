@@ -254,7 +254,7 @@ fn task_records(
             .get(offset..offset + 19)
             .ok_or_else(|| refused("initial source task record is truncated"))?;
         let length = u16::from_ne_bytes([header[16], header[17]]) as usize;
-        if length < 20 || length % 8 != 0 {
+        if length < 20 || !length.is_multiple_of(8) {
             return Err(refused("initial source task record length differs"));
         }
         let record = bytes

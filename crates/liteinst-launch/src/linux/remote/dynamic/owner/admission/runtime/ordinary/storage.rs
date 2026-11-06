@@ -298,15 +298,15 @@ fn after(_record: &AllocationRecord, _ordinal: usize) {
 }
 fn point(_record: &AllocationRecord, _point: usize) -> Result<(), GateError> {
     #[cfg(test)]
-    if let Some((point, panic)) = _record.fault.point {
-        if point == _point {
-            if panic {
-                std::panic::panic_any(PANIC);
-            }
-            return Err(GateError::Refused(
-                "injected ordinary preparation boundary failure",
-            ));
+    if let Some((point, panic)) = _record.fault.point
+        && point == _point
+    {
+        if panic {
+            std::panic::panic_any(PANIC);
         }
+        return Err(GateError::Refused(
+            "injected ordinary preparation boundary failure",
+        ));
     }
     Ok(())
 }
@@ -501,10 +501,10 @@ fn finish_failure(
     pending: &mut Option<PendingOrdinaryPreparation>,
     census: &mut ResumeCensus,
 ) {
-    if let Ok(record) = record_mut(attempts, pending) {
-        if record.finish.is_none() {
-            record.finish = Some(census.finish_reservation(record.reservation));
-        }
+    if let Ok(record) = record_mut(attempts, pending)
+        && record.finish.is_none()
+    {
+        record.finish = Some(census.finish_reservation(record.reservation));
     }
 }
 

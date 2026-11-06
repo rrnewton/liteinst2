@@ -451,7 +451,10 @@ fn capture_frame(
         "anchor FP frame precedes native frame",
     ))?)
     .map_err(|_| LaunchError::Invalid("anchor FP offset overflow"))?;
-    if fp % 64 != 0 || offset < 440 || offset.checked_add(512).is_none_or(|end| end > length) {
+    if !fp.is_multiple_of(64)
+        || offset < 440
+        || offset.checked_add(512).is_none_or(|end| end > length)
+    {
         return Err(LaunchError::Invalid(
             "anchor FP frame is outside bounded normal stack",
         ));

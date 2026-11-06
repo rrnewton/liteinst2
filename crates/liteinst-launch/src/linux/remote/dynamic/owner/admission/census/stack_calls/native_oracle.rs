@@ -171,7 +171,7 @@ impl RecordedCall<'_> {
         );
         // In particular, when next_pc is page-aligned this exclusive return
         // page is not included in the CALL instruction's opened fetch range.
-        if geometry.next_pc % 4096 == 0 {
+        if geometry.next_pc.is_multiple_of(4096) {
             assert_eq!(binding.fetch.pages().end(), geometry.next_pc);
             assert!(!binding.fetch.pages().contains(geometry.next_pc));
         }

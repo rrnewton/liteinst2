@@ -123,9 +123,9 @@ pub(super) fn verify(
         || spec.observer == spec.body
         || spec.disabled == spec.observer
         || spec.disabled == spec.body
-        || !original
+        || original
             .get(entry)
-            .is_some_and(|i| i.code() == Code::Zero_bytes)
+            .is_none_or(|i| i.code() != Code::Zero_bytes)
     {
         return Err(encoding_error("early gate owner/entry metadata differs"));
     }

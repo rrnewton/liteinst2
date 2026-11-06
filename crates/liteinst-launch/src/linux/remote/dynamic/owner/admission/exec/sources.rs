@@ -97,9 +97,11 @@ fn bounds(profile: &DynamicExecProfile) -> Result<(), GateError> {
     if !(1..=64).contains(&profile.max_capture_images)
         || profile.max_capture_bytes == 0
         || profile.max_capture_bytes > MAP_BYTES
-        || profile.max_capture_bytes % PAGE as usize != 0
+        || !profile.max_capture_bytes.is_multiple_of(PAGE as usize)
         || profile.max_total_capture_bytes < profile.max_capture_bytes
-        || profile.max_total_capture_bytes % PAGE as usize != 0
+        || !profile
+            .max_total_capture_bytes
+            .is_multiple_of(PAGE as usize)
         || checked_mul(profile.max_capture_images, profile.max_capture_bytes)?
             < profile.max_total_capture_bytes
     {

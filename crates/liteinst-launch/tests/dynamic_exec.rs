@@ -379,13 +379,13 @@ fn release(s: &mut DynamicSession, e: &DynamicEvent) {
 fn next(s: &mut DynamicSession) -> DynamicEvent {
     for _ in 0..16 {
         let e = s.next_event(TIMEOUT).unwrap();
-        if let DynamicEventKind::SignalDelivery(ref i) = e.kind {
-            if i.signal() == libc::SIGCHLD {
-                assert_eq!(i.code(), libc::CLD_EXITED);
-                s.resume(e.stop_token().unwrap(), DynamicResume::DeliverOriginal)
-                    .unwrap();
-                continue;
-            }
+        if let DynamicEventKind::SignalDelivery(ref i) = e.kind
+            && i.signal() == libc::SIGCHLD
+        {
+            assert_eq!(i.code(), libc::CLD_EXITED);
+            s.resume(e.stop_token().unwrap(), DynamicResume::DeliverOriginal)
+                .unwrap();
+            continue;
         }
         return e;
     }

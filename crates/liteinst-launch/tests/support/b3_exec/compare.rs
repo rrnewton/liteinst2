@@ -107,7 +107,11 @@ fn string(stack: &Stack, address: u64) -> &[u8] {
 pub fn initial_stack(f: &Fixture, stack: &Stack) {
     assert_eq!(stack.map.path.as_deref(), Some("[stack]"));
     assert_eq!(stack.map.permissions, "rw-p");
-    assert!(stack.map.start <= stack.start && stack.start % 16 == 0 && stack.bytes.len() <= 65536);
+    assert!(
+        stack.map.start <= stack.start
+            && stack.start.is_multiple_of(16)
+            && stack.bytes.len() <= 65536
+    );
     assert_eq!(
         stack.start.checked_add(stack.bytes.len() as u64),
         Some(stack.map.end)

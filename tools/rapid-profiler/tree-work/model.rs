@@ -103,7 +103,7 @@ pub fn check(case: Case, data: u64, root_rsp: u64, events: &[Event]) -> Result<S
     let child_rsp = root_rsp.checked_sub(16).ok_or(Error::Address)?;
     let stack_end = root_rsp.checked_add(8).ok_or(Error::Address)?;
     let stack_line = child_rsp / LINE;
-    if data % LINE != 0
+    if !data.is_multiple_of(LINE)
         || data / LINE % SETS as u64 != 2
         || root_rsp % 16 != 8
         || stack_line != (stack_end - 1) / LINE

@@ -230,18 +230,18 @@ impl RuntimeOwner {
                     None
                 };
                 #[cfg(any(test, feature = "dev-owned-stack-consumer-oracle"))]
-                if let Some(record) = &recorded {
-                    if let Some(observe) = state.before_opening {
-                        observe(
-                            owner,
-                            native,
-                            record,
-                            &binding,
-                            &attempt.native,
-                            census,
-                            &self.sources,
-                        )?;
-                    }
+                if let Some(record) = &recorded
+                    && let Some(observe) = state.before_opening
+                {
+                    observe(
+                        owner,
+                        native,
+                        record,
+                        &binding,
+                        &attempt.native,
+                        census,
+                        &self.sources,
+                    )?;
                 }
                 #[cfg(test)]
                 if recorded.is_some()

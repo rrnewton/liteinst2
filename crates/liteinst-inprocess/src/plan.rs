@@ -36,7 +36,7 @@ impl Plan {
         instructions: &[InstructionExtent],
         bundles: &[PageBundle],
     ) -> Result<Self, GateError> {
-        if base == 0 || base % PAGE != 0 || len == 0 || len % PAGE != 0 {
+        if base == 0 || !base.is_multiple_of(PAGE) || len == 0 || !len.is_multiple_of(PAGE) {
             return Err(GateError::Invalid("source is not a nonempty page range"));
         }
         base.checked_add(len)

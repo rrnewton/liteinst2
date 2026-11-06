@@ -341,7 +341,7 @@ unsafe fn record_descriptor(context: &HookContext) {
     let aligned = saved
         .format()
         .required_alignment()
-        .is_some_and(|alignment| saved.address() % alignment == 0);
+        .is_some_and(|alignment| saved.address().is_multiple_of(alignment));
     DESCRIPTOR_VALID.store(
         usize::from(aligned && saved.len() >= 512),
         Ordering::Relaxed,

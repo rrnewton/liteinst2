@@ -205,13 +205,13 @@ fn common(this: &Experiment, lane: &PreparedLane, completed: usize) -> [Number; 
                 values[index] = values[index].map(|n| n + 1);
             }
         }
-        if let Ok(frame) = lane.frame(plan.syscalls[2], false) {
-            if frame.state.complete {
-                // This is the full actual before-terminal RAX/RDI, including a
-                // failed invocation. It is never derived from an eight-bit exit.
-                values[6] = Some(frame.state.state.registers.rax);
-                values[7] = Some(frame.state.state.registers.rdi);
-            }
+        if let Ok(frame) = lane.frame(plan.syscalls[2], false)
+            && frame.state.complete
+        {
+            // This is the full actual before-terminal RAX/RDI, including a
+            // failed invocation. It is never derived from an eight-bit exit.
+            values[6] = Some(frame.state.state.registers.rax);
+            values[7] = Some(frame.state.state.registers.rdi);
         }
     }
     values

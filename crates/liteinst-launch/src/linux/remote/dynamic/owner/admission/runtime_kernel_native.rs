@@ -307,7 +307,7 @@ impl RuntimeKernelShape {
         geometry: &FetchGeometry,
     ) -> Result<Self, LaunchError> {
         let pages = geometry.pages();
-        if pages.start() % 4096 != 0
+        if !pages.start().is_multiple_of(4096)
             || !matches!(pages.end().checked_sub(pages.start()), Some(4096 | 8192))
         {
             return Err(LaunchError::Invalid("runtime kernel fetch shape differs"));

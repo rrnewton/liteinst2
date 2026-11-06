@@ -1204,16 +1204,16 @@ impl OrdinaryOracle {
         let mut next = 0;
         loop {
             let pc = b.child.registers().rip;
-            if let Some(noop) = native_noop {
-                if pc == noop {
-                    native_call::callback(
-                        b.child,
-                        &candidate,
-                        noop,
-                        self.gate_rsp(),
-                        &mut native_callbacks,
-                    );
-                }
+            if let Some(noop) = native_noop
+                && pc == noop
+            {
+                native_call::callback(
+                    b.child,
+                    &candidate,
+                    noop,
+                    self.gate_rsp(),
+                    &mut native_callbacks,
+                );
             }
             let logical = if profile.heads().iter().any(|p| candidate.gate + p == pc) {
                 Some(pc)

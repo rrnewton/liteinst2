@@ -705,10 +705,10 @@ fn preflight(
     {
         return Err(domain("all-heads-no-cet"));
     }
-    if let ResumeObligation::Enumerated(pcs) = &entries.resumes {
-        if pcs.windows(2).any(|p| p[0] >= p[1]) {
-            return Err(domain("resumes"));
-        }
+    if let ResumeObligation::Enumerated(pcs) = &entries.resumes
+        && pcs.windows(2).any(|p| p[0] >= p[1])
+    {
+        return Err(domain("resumes"));
     }
     for (index, request) in requests.iter().enumerate() {
         if request.semantics != HookSemantics::Observe

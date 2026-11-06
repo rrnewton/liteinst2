@@ -99,7 +99,7 @@ impl<'a> InitialCheckpointSourceRead<'a> {
             || self.stop.identity.generation != 0
             || self.island.generation != 0
             || self.island.range.start == 0
-            || self.island.range.start % PAGE != 0
+            || !self.island.range.start.is_multiple_of(PAGE)
             || self.island.range.end.checked_sub(self.island.range.start) != Some(PAGE)
             || self.state.registers.cs != 0x33
             || self.state.xstate.len() < 512

@@ -637,13 +637,13 @@ impl<'a> Elf64<'a> {
                             alignment: item.alignment,
                         });
                     }
-                    if let Some(before) = previous_load {
-                        if program_headers[before].vaddr > item.vaddr {
-                            return Err(Error::InvalidLoadOrder {
-                                before,
-                                after: index,
-                            });
-                        }
+                    if let Some(before) = previous_load
+                        && program_headers[before].vaddr > item.vaddr
+                    {
+                        return Err(Error::InvalidLoadOrder {
+                            before,
+                            after: index,
+                        });
                     }
                     previous_load = Some(index);
                 }

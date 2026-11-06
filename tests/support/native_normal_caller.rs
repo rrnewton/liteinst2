@@ -1981,17 +1981,17 @@ impl NormalOracle {
                 .map(|_| call_pair::Phase::new(r.call_pair()));
             loop {
                 let pc = walk.child.registers().rip;
-                if index == 1 {
-                    if let Some(witness) = early_walk.as_mut() {
-                        witness.before(
-                            self,
-                            walk.child,
-                            r,
-                            &returns[index],
-                            &mut early_parent,
-                            walk.steps,
-                        );
-                    }
+                if index == 1
+                    && let Some(witness) = early_walk.as_mut()
+                {
+                    witness.before(
+                        self,
+                        walk.child,
+                        r,
+                        &returns[index],
+                        &mut early_parent,
+                        walk.steps,
+                    );
                 }
                 let caller_pc = if let Some(dispatch) = &copied_dispatch {
                     dispatch[index].is_head(pc)
@@ -2011,10 +2011,10 @@ impl NormalOracle {
                     if let Some(nested) = nested.as_mut() {
                         nested.logical(self, walk.child, r.call_pair(), logical);
                     }
-                    if index == 1 {
-                        if let Some(witness) = early_walk.as_ref() {
-                            witness.boundary(walk.child, r);
-                        }
+                    if index == 1
+                        && let Some(witness) = early_walk.as_ref()
+                    {
+                        witness.boundary(walk.child, r);
                     }
                     let point = self.snapshot(walk.child, r, logical);
                     if let Some(witnesses) = witnesses.as_mut() {
@@ -2511,7 +2511,7 @@ fn arithmetic_flags(old: u64, a: u64, b: u64, subtract: bool) -> u64 {
     const FLAGS: u64 = 1 | (1 << 2) | (1 << 4) | (1 << 6) | (1 << 7) | (1 << 11);
     (old & !FLAGS)
         | u64::from(carry)
-        | (u64::from((result as u8).count_ones() % 2 == 0) << 2)
+        | (u64::from((result as u8).count_ones().is_multiple_of(2)) << 2)
         | (u64::from((a ^ b ^ result) & 0x10 != 0) << 4)
         | (u64::from(result == 0) << 6)
         | ((result >> 63) << 7)

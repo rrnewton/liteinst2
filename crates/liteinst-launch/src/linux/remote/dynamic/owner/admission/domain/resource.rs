@@ -306,7 +306,7 @@ impl ResourceBasis {
     }
 
     fn page_in_inventory(&self, page: u64) -> bool {
-        page % PAGE == 0
+        page.is_multiple_of(PAGE)
             && page.checked_add(PAGE).is_some_and(|end| {
                 self.original_executables
                     .iter()

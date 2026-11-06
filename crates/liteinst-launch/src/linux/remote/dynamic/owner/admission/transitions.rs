@@ -56,7 +56,7 @@ impl StatePayload {
     }
 
     fn from_retained_extent(bytes: usize) -> Result<Self, GateError> {
-        if !(512..MAX_XSTATE).contains(&bytes) || bytes % 8 != 0 {
+        if !(512..MAX_XSTATE).contains(&bytes) || !bytes.is_multiple_of(8) {
             return Err(GateError::Refused(
                 "signal retained XSTATE extent geometry differs",
             ));
@@ -960,40 +960,40 @@ impl AdmissionOwner {
                 }
             }
             Err(_) => {
-                if self.signals.is_some() {
-                    if let Ok((event, _)) = self.native.admission_original_signal(task) {
-                        let DynamicEventKind::SignalDelivery(signal) = &event.kind else {
-                            unreachable!()
-                        };
-                        let mut raw_signal = [0_u8; 128];
-                        ptrace(
-                            libc::PTRACE_GETSIGINFO,
-                            token.tid,
-                            0,
-                            raw_signal.as_mut_ptr() as usize,
-                        )?;
-                        if event.stop_token() != Some(&token)
-                            || event.task != Some(identity)
-                            || status >> 16 != 0
-                            || libc::WSTOPSIG(status) != signal.signal()
-                            || signal.raw_bytes() != &raw_signal
-                        {
-                            return Err(GateError::Refused(
-                                "signal observation lost its exact original held delivery",
-                            ));
-                        }
-                        self.domain.original_decode(raw.registers.rip)?;
-                        return Ok(ObservedStop {
-                            token,
-                            task: identity,
-                            logical_pc: raw.registers.rip,
-                            registers: raw.registers,
-                            xstate: raw.xstate,
-                            signal_mask: raw.mask,
-                            phase: StopPhase::OriginalSignal,
-                            signal: Some(signal.clone()),
-                        });
+                if self.signals.is_some()
+                    && let Ok((event, _)) = self.native.admission_original_signal(task)
+                {
+                    let DynamicEventKind::SignalDelivery(signal) = &event.kind else {
+                        unreachable!()
+                    };
+                    let mut raw_signal = [0_u8; 128];
+                    ptrace(
+                        libc::PTRACE_GETSIGINFO,
+                        token.tid,
+                        0,
+                        raw_signal.as_mut_ptr() as usize,
+                    )?;
+                    if event.stop_token() != Some(&token)
+                        || event.task != Some(identity)
+                        || status >> 16 != 0
+                        || libc::WSTOPSIG(status) != signal.signal()
+                        || signal.raw_bytes() != &raw_signal
+                    {
+                        return Err(GateError::Refused(
+                            "signal observation lost its exact original held delivery",
+                        ));
                     }
+                    self.domain.original_decode(raw.registers.rip)?;
+                    return Ok(ObservedStop {
+                        token,
+                        task: identity,
+                        logical_pc: raw.registers.rip,
+                        registers: raw.registers,
+                        xstate: raw.xstate,
+                        signal_mask: raw.mask,
+                        phase: StopPhase::OriginalSignal,
+                        signal: Some(signal.clone()),
+                    });
                 }
                 let event = self.native.admission_original_interrupt(task)?;
                 if event.stop_token() != Some(&token)

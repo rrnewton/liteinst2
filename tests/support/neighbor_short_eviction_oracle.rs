@@ -74,9 +74,9 @@ impl ShortPuzzle {
         let function_len = function_len.unwrap_or(code.len());
         let heads = (0..function_len)
             .filter(|&pc| {
-                !(selected < pc && pc < selected + selected_len)
-                    && !(victim < pc && pc < victim + victim_len)
-                    && !(conditional && pc == 4)
+                !(selected < pc && pc < selected + selected_len
+                    || victim < pc && pc < victim + victim_len
+                    || conditional && pc == 4)
             })
             .collect();
         Self {

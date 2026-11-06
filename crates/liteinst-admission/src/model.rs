@@ -220,7 +220,7 @@ impl ModelGate {
         entries: LegalEntrySet,
         policy: Policy,
     ) -> Result<(), ModelError> {
-        if range.start() % PAGE_BYTES != 0
+        if !range.start().is_multiple_of(PAGE_BYTES)
             || range.end() - range.start() != PAGE_BYTES
             || !snapshot.range().covers(range)
         {

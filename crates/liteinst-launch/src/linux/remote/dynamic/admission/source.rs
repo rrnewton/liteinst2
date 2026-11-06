@@ -49,7 +49,7 @@ impl DynamicMappingProfile {
             || self.max_source_requests > self.max_operations
             || self.max_capture_bytes == 0
             || self.max_capture_bytes > MAX_IMAGE_BYTES
-            || self.max_capture_bytes % PAGE as usize != 0
+            || !self.max_capture_bytes.is_multiple_of(PAGE as usize)
             || self.max_capture_bytes > options.limits.source_fact_bytes
         {
             return Err(GateError::Refused(
@@ -96,8 +96,8 @@ impl DynamicMappingProfile {
     pub(in super::super) fn contains_range(&self, range: &Range<u64>) -> bool {
         range.start != 0
             && range.start < range.end
-            && range.start % PAGE == 0
-            && range.end % PAGE == 0
+            && range.start.is_multiple_of(PAGE)
+            && range.end.is_multiple_of(PAGE)
             && range.end - range.start <= self.max_capture_bytes as u64
             && self
                 .allowed_ranges
@@ -136,9 +136,9 @@ impl DynamicExecProfile {
             || !(1..=MAX_IMAGES).contains(&self.max_capture_images)
             || self.max_capture_bytes == 0
             || self.max_capture_bytes > MAX_IMAGE_BYTES
-            || self.max_capture_bytes % PAGE as usize != 0
+            || !self.max_capture_bytes.is_multiple_of(PAGE as usize)
             || self.max_total_capture_bytes < self.max_capture_bytes
-            || self.max_total_capture_bytes % PAGE as usize != 0
+            || !self.max_total_capture_bytes.is_multiple_of(PAGE as usize)
             || maximum_total.is_none_or(|maximum| self.max_total_capture_bytes > maximum)
             || self.max_total_capture_bytes > options.limits.source_fact_bytes
             || !(2..=4096).contains(&self.max_argument_pointers)
@@ -557,8 +557,8 @@ impl DynamicSourceRequest {
 
 fn valid_nx_neighbor(mapping: &MemoryMapping) -> bool {
     let permissions = mapping.permissions.as_bytes();
-    mapping.start % PAGE == 0
-        && mapping.end % PAGE == 0
+    mapping.start.is_multiple_of(PAGE)
+        && mapping.end.is_multiple_of(PAGE)
         && permissions.len() == 4
         && matches!(permissions[0], b'r' | b'-')
         && matches!(permissions[1], b'w' | b'-')

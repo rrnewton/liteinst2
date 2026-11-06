@@ -131,7 +131,7 @@ fn addresses(root: u64, data: u64, rsp: u64) -> Result<u64, Error> {
     let input_end = data.checked_add(INPUT_BYTES as u64).ok_or(Error::Address)?;
     let stack_end = rsp.checked_add(8).ok_or(Error::Address)?;
     let child_rsp = rsp.checked_sub(16).ok_or(Error::Address)?;
-    if data % 64 != 0 || rsp % 16 != 8 || !(input_end <= child_rsp || stack_end <= data) {
+    if !data.is_multiple_of(64) || rsp % 16 != 8 || !(input_end <= child_rsp || stack_end <= data) {
         return Err(Error::Address);
     }
     Ok(child_rsp)

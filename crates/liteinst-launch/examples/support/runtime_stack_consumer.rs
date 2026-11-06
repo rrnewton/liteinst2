@@ -343,7 +343,10 @@ fn drive(session: &mut DynamicAdmissionSession<Provider>, report: &mut Report) -
     require(pid > 0 && initial.task.generation == 0, "initial_identity")?;
     // This public boundary observation does not expose the intervening CALL/RET.
     // The separately inspected artifact must make no other explicit RSP writes.
-    require(initial.registers.rsp % 16 == 0, "initial_stack_alignment")?;
+    require(
+        initial.registers.rsp.is_multiple_of(16),
+        "initial_stack_alignment",
+    )?;
     require(
         session
             .state(initial.task.task)

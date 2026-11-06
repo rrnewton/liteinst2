@@ -336,7 +336,7 @@ pub(in crate::linux::remote::dynamic::owner::admission) fn projection(
 ) -> Result<FileIdentity, GateError> {
     let end = address
         .checked_add(PAGE)
-        .filter(|_| address != 0 && address % PAGE == 0)
+        .filter(|_| address != 0 && address.is_multiple_of(PAGE))
         .ok_or_else(|| refused("exec identity probe geometry differs"))?;
     let maps = parse(raw)?;
     let row = maps

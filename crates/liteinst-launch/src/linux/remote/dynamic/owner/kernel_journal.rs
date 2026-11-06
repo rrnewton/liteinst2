@@ -617,13 +617,12 @@ impl Drop for JournalUnwind {
             }
         };
         archive.runtime.fail_active(KernelFailureKind::CaughtPanic);
-        if let Some(attempt) = archive.attempts.last_mut() {
-            if !attempt
+        if let Some(attempt) = archive.attempts.last_mut()
+            && !attempt
                 .facts()
                 .any(|fact| matches!(fact, KernelJournalFact::AdmissionComplete { .. }))
-            {
-                attempt.fail(KernelFailureKind::CaughtPanic);
-            }
+        {
+            attempt.fail(KernelFailureKind::CaughtPanic);
         }
     }
 }
@@ -895,10 +894,10 @@ impl KernelJournalWriter {
             return;
         };
         let mut archive = self.lock();
-        if let Some(attempt) = archive.attempts.get_mut(handle.index) {
-            if attempt.id == handle.id {
-                attempt.fail(kind);
-            }
+        if let Some(attempt) = archive.attempts.get_mut(handle.index)
+            && attempt.id == handle.id
+        {
+            attempt.fail(kind);
         }
     }
     pub(super) fn close(&mut self, status: KernelWriterStatus, kind: Option<KernelFailureKind>) {

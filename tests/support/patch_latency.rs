@@ -1289,18 +1289,18 @@ fn collect(
                         .push("configured wall budget exhausted before throughput batch");
                     break;
                 }
-                if patched {
-                    if let Err(error) = state(
+                if patched
+                    && let Err(error) = state(
                         &shared,
                         &mut serial,
                         deadline,
                         site,
                         true,
                         &mut data.state_changes,
-                    ) {
-                        data.errors.push(error);
-                        break;
-                    }
+                    )
+                {
+                    data.errors.push(error);
+                    break;
                 }
                 let row = batched(functions[site], config, repeat, site, patched);
                 let valid = row.checksum == row.calls as u64
@@ -1309,18 +1309,18 @@ fn collect(
                     && row.raw_last > row.raw_first;
                 data.throughput.push(row);
                 // The complete batch has returned before restoration starts.
-                if patched {
-                    if let Err(error) = state(
+                if patched
+                    && let Err(error) = state(
                         &shared,
                         &mut serial,
                         deadline,
                         site,
                         false,
                         &mut data.state_changes,
-                    ) {
-                        data.errors.push(error);
-                        break;
-                    }
+                    )
+                {
+                    data.errors.push(error);
+                    break;
                 }
                 if !valid {
                     data.errors

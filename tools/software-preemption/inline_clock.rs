@@ -466,14 +466,13 @@ unsafe extern "C" fn hook(context: *mut HookContext, identity: ControlIdentity<'
                 if before == registers(c)
                     && unsafe { state.clock.snapshot_parked() } == (clock, tail)
                     && current_words == words
+                    && let Some(witness) = refusal_witness(outcome, state.offset, clock, words)
                 {
-                    if let Some(witness) = refusal_witness(outcome, state.offset, clock, words) {
-                        // One fixed write, with no retry or substitute evidence.
-                        // A short/error result leaves a nonmatching witness.
-                        let complete = matches!(file.write(&witness), Ok(104));
-                        if !complete {
-                            fatal();
-                        }
+                    // One fixed write, with no retry or substitute evidence.
+                    // A short/error result leaves a nonmatching witness.
+                    let complete = matches!(file.write(&witness), Ok(104));
+                    if !complete {
+                        fatal();
                     }
                 }
             }

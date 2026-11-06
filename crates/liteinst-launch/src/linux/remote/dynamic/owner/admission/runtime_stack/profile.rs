@@ -116,7 +116,7 @@ impl PreparedStackProfile {
                 AdmissionPhase::EntryReady | AdmissionPhase::Restored
             )
             || boot.island.page_size != PAGE as usize
-            || boot.island.range.start % PAGE != 0
+            || !boot.island.range.start.is_multiple_of(PAGE)
             || boot.island.range.end.checked_sub(boot.island.range.start) != Some(PAGE)
         {
             return Err(StackError::Provenance);

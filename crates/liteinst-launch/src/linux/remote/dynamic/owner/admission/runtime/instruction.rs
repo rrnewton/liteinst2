@@ -56,7 +56,7 @@ impl<'a> RuntimeInstructionBinding<'a> {
             || island.generation != 0
             || census.generation() != 0
             || island.page_size != 4096
-            || island.range.start % 4096 != 0
+            || !island.range.start.is_multiple_of(4096)
             || island.range.end.checked_sub(island.range.start) != Some(4096)
         {
             return Err(GateError::Refused(

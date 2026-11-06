@@ -246,8 +246,8 @@ impl Maps {
         self.rows
             .iter()
             .filter(|map| {
-                !(map.start < BASE + SOURCE_BYTES as u64 && BASE < map.end)
-                    && !(map.start < TARGET + PAGE as u64 && TARGET < map.end)
+                !(map.start < BASE + SOURCE_BYTES as u64 && BASE < map.end
+                    || map.start < TARGET + PAGE as u64 && TARGET < map.end)
             })
             .cloned()
             .collect()

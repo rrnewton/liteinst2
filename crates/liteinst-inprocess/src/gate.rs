@@ -265,10 +265,10 @@ impl ArmedGate<'_> {
         if self.closed {
             return;
         }
-        if let Some(signals) = self.signals.as_mut() {
-            if signals.block().is_err() {
-                self.state.poison();
-            }
+        if let Some(signals) = self.signals.as_mut()
+            && signals.block().is_err()
+        {
+            self.state.poison();
         }
         if self.nx_started {
             if raw::tid() != self.state.tid
@@ -290,10 +290,10 @@ impl ArmedGate<'_> {
             }
             self.nx_started = false;
         }
-        if let Some(signals) = self.signals.as_mut() {
-            if signals.close().is_err() {
-                self.state.poison();
-            }
+        if let Some(signals) = self.signals.as_mut()
+            && signals.close().is_err()
+        {
+            self.state.poison();
         }
         if self.registered {
             let pointer = &mut *self.state as *mut State;

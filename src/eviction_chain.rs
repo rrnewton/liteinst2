@@ -413,10 +413,10 @@ fn original_chain(
             .pc
             .checked_add(previous.len as u64)
             .ok_or(Refusal::InvalidRange)?;
-        if let Some(forced) = search.forced_successors {
-            if forced.get(nodes.len() - 1).copied() != Some(pc) {
-                return Err(Refusal::InvalidPlan);
-            }
+        if let Some(forced) = search.forced_successors
+            && forced.get(nodes.len() - 1).copied() != Some(pc)
+        {
+            return Err(Refusal::InvalidPlan);
         }
         let item = scan
             .instructions()

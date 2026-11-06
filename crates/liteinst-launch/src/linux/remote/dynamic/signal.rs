@@ -127,17 +127,16 @@ impl DynamicSignalProfile {
                 return Err(GateError::Refused("signal stack overlaps original source"));
             }
         }
-        if let Some(edits) = &self.frame_edits {
-            if !head(edits.landing_pc)
+        if let Some(edits) = &self.frame_edits
+            && (!head(edits.landing_pc)
                 || edits.landing_pc == self.delivery_pc
                 || edits.landing_pc == self.handler
                 || edits.landing_pc == self.restorer
-                || edits.signal_mask & unmaskable() != 0
-            {
-                return Err(GateError::Refused(
-                    "signal edits exceed the exact declared profile",
-                ));
-            }
+                || edits.signal_mask & unmaskable() != 0)
+        {
+            return Err(GateError::Refused(
+                "signal edits exceed the exact declared profile",
+            ));
         }
         Ok(())
     }
@@ -150,8 +149,8 @@ fn valid_stack(range: &Range<u64>) -> bool {
     range.start >= 4096
         && range.start < range.end
         && range.end < (1_u64 << 47)
-        && range.start % 4096 == 0
-        && range.end % 4096 == 0
+        && range.start.is_multiple_of(4096)
+        && range.end.is_multiple_of(4096)
         && range.end - range.start >= 4 * 4096
         && range.end - range.start <= 1024 * 1024
 }

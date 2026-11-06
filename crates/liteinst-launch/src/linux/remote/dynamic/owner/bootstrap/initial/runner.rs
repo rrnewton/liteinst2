@@ -256,7 +256,7 @@ pub(super) fn protect_observed(
     let stop = native.admission_current(site.root)?;
     ready(owner, native, p, &stop, Some(island))?;
     if length == 0
-        || range.start % PAGE as u64 != 0
+        || !range.start.is_multiple_of(PAGE as u64)
         || length % PAGE != 0
         || protection & !(libc::PROT_READ | libc::PROT_WRITE | libc::PROT_EXEC) != 0
         || protection & (libc::PROT_WRITE | libc::PROT_EXEC) == (libc::PROT_WRITE | libc::PROT_EXEC)

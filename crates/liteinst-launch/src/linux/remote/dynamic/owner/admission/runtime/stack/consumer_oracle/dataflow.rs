@@ -131,7 +131,11 @@ pub(super) fn require_frame(
     initial: &TaskStateSnapshot,
 ) -> Result<FrameObservation, OracleError> {
     let s = initial.registers.rsp;
-    if s == 0 || s % 16 != 0 || s >= 0x0000_8000_0000_0000 || initial.registers.rip != plan.entry {
+    if s == 0
+        || !s.is_multiple_of(16)
+        || s >= 0x0000_8000_0000_0000
+        || initial.registers.rip != plan.entry
+    {
         return Err(bad());
     }
     Ok(FrameObservation {
@@ -444,7 +448,7 @@ fn flags(before: u64, left: u64, right: u64, result: u64, width: u32, subtract: 
         (!(l ^ r)) & (l ^ v) & sign != 0
     };
     let produced = u64::from(carry)
-        | (u64::from((v as u8).count_ones() % 2 == 0) << 2)
+        | (u64::from((v as u8).count_ones().is_multiple_of(2)) << 2)
         | (u64::from((l ^ r ^ v) & 16 != 0) << 4)
         | (u64::from(v == 0) << 6)
         | (u64::from(v & sign != 0) << 7)

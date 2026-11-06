@@ -69,7 +69,7 @@ impl Case {
     ) -> Self {
         assert!(form < 2 && matches!(k, 10 | 1000) && SEEDS.contains(&seed));
         assert!(operation < 2 && index < 12);
-        assert!(selections[0].elf_va != 0 && selections[0].elf_va % 4096 == 0);
+        assert!(selections[0].elf_va != 0 && selections[0].elf_va.is_multiple_of(4096));
         assert_eq!(
             selections[1].elf_va,
             selections[0].elf_va.checked_add(48).unwrap()

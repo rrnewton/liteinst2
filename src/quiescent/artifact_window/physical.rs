@@ -100,10 +100,10 @@ impl ArtifactPhysicalWindowSchedule {
         {
             return Err(Refusal::InvalidPlan);
         }
-        if let Some((range, bytes)) = &self.dependency {
-            if retained_source_bytes(site.code, self.source, *range)? != bytes.as_ref() {
-                return Err(Refusal::ExpectedBytesChanged);
-            }
+        if let Some((range, bytes)) = &self.dependency
+            && retained_source_bytes(site.code, self.source, *range)? != bytes.as_ref()
+        {
+            return Err(Refusal::ExpectedBytesChanged);
         }
         Ok(())
     }

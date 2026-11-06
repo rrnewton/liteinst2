@@ -429,7 +429,8 @@ impl JumpPatchPlan {
         let cache_line = scanner.cache_line_size();
         let strategy = classify_word_patch(native_address, cache_line);
         if matches!(strategy, PatchStrategy::GuardedSplit { .. })
-            && (cache_line.get() < WORD_PATCH_BYTES || cache_line.get() % WORD_PATCH_BYTES != 0)
+            && (cache_line.get() < WORD_PATCH_BYTES
+                || !cache_line.get().is_multiple_of(WORD_PATCH_BYTES))
         {
             return Err(PatchError::UnsupportedCacheLineSize {
                 bytes: cache_line.get(),

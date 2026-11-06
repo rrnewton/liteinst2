@@ -400,12 +400,12 @@ impl<'a, 'owner> HeldRoutes<'a, 'owner> {
         // RetainedNx is backed by the native mapping above, not by the domain's
         // Boolean alone. Every such page must remain outside the final X set.
         for route in &routes {
-            if let Route::RetainedNx { page } = route.route {
-                if final_executable.contains(&page) || domain.pages.get(&page) != Some(&false) {
-                    return Err(GateError::Refused(
-                        "retained NX route would become executable",
-                    ));
-                }
+            if let Route::RetainedNx { page } = route.route
+                && (final_executable.contains(&page) || domain.pages.get(&page) != Some(&false))
+            {
+                return Err(GateError::Refused(
+                    "retained NX route would become executable",
+                ));
             }
         }
         Ok(Self {
@@ -473,10 +473,9 @@ impl<'a, 'owner> HeldRoutes<'a, 'owner> {
                     ));
                 }
                 if let Some((_, facts)) = census.active_frames().find(|(row, _)| row.row.id == *id)
+                    && read_memory(current.tid, facts.address, facts.bytes.len())? != facts.bytes
                 {
-                    if read_memory(current.tid, facts.address, facts.bytes.len())? != facts.bytes {
-                        return Err(GateError::Refused("dynamic final saved frame bytes differ"));
-                    }
+                    return Err(GateError::Refused("dynamic final saved frame bytes differ"));
                 }
                 if current.session != token.session
                     || current.task != token.task

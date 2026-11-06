@@ -279,7 +279,7 @@ impl Population {
         }
         self.comparisons = self.comparisons.checked_add(pair.comparisons).unwrap();
         self.next += 1;
-        if self.next % 16 != 0 {
+        if !self.next.is_multiple_of(16) {
             return None;
         }
         let csv = &self.csv.as_ref().unwrap().1;

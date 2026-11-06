@@ -39,7 +39,7 @@ impl Query {
     pub(super) fn identity(&self, address: u64, storage: &[u8]) -> Result<FileIdentity, GateError> {
         let end = address
             .checked_add(PAGE)
-            .filter(|_| address != 0 && address % PAGE == 0)
+            .filter(|_| address != 0 && address.is_multiple_of(PAGE))
             .ok_or_else(|| refused("exec identity probe geometry differs"))?;
         if self.size != size_of::<Self>() as u64
             || self.query_flags != 0

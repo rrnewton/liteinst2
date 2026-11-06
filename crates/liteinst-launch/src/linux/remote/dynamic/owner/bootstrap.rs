@@ -137,10 +137,10 @@ impl Owner {
             result
         })();
         if result.is_err() {
-            if !self.anchor_exit_authenticated {
-                if let (Some(archive), Err(error)) = (&self.anchor_archive, &result) {
-                    archive.record_failure(error);
-                }
+            if !self.anchor_exit_authenticated
+                && let (Some(archive), Err(error)) = (&self.anchor_archive, &result)
+            {
+                archive.record_failure(error);
             }
             self.closing = true;
             self.cancel.store(true, Ordering::Release);

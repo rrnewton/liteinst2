@@ -494,12 +494,12 @@ impl Domain {
                         "dynamic retired guard lost its source identity",
                     ));
                 }
-                if let TrapGuardRole::Selected(site) = guard.role() {
-                    if retired.sites.get(&pc) != Some(&site) {
-                        return Err(GateError::Refused(
-                            "dynamic retired selected site differs from its guard",
-                        ));
-                    }
+                if let TrapGuardRole::Selected(site) = guard.role()
+                    && retired.sites.get(&pc) != Some(&site)
+                {
+                    return Err(GateError::Refused(
+                        "dynamic retired selected site differs from its guard",
+                    ));
                 }
             }
             if retired.sites.iter().any(|(&pc, site)| {

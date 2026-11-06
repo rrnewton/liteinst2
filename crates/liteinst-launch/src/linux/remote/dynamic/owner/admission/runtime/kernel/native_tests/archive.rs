@@ -438,7 +438,7 @@ pub(super) fn native(
         if let Some(slot) = published_raw.state_slot {
             assert_eq!(public_state(state_slot(published, slot)), actual);
         }
-        if !selected && !(returned.is_none() && ordinal == 4) {
+        if !(selected || returned.is_none() && ordinal == 4) {
             assert_eq!(raw.fixed.signal_request, Some(zero()));
             let signal = unsafe {
                 std::ptr::read_unaligned(raw.fixed.signal.as_ptr().cast::<libc::siginfo_t>())

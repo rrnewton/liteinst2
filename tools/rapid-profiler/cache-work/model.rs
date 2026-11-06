@@ -71,7 +71,7 @@ pub fn check(case: Case, data: u64, entry_rsp: u64, reads: &[Read]) -> Result<Su
     let end = data.checked_add(INPUT_BYTES as u64).ok_or(Error::Address)?;
     let stack_end = entry_rsp.checked_add(8).ok_or(Error::Address)?;
     let stack_line = entry_rsp / LINE;
-    if data % LINE != 0
+    if !data.is_multiple_of(LINE)
         || stack_line != (stack_end - 1) / LINE
         || (data / LINE..=(end - 1) / LINE).contains(&stack_line)
     {

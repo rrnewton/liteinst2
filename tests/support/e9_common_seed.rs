@@ -1444,10 +1444,11 @@ impl Inventory {
                 );
             }
         }
-        if let Some(m) = effect {
-            if m.domain == Domain::Stack && (m.address < e - 128 || m.address + 8 > e + 8) {
-                return Err(Refusal::OperandDomain);
-            }
+        if let Some(m) = effect
+            && m.domain == Domain::Stack
+            && (m.address < e - 128 || m.address + 8 > e + 8)
+        {
+            return Err(Refusal::OperandDomain);
         }
         let next = head.pc + u64::from(head.length);
         let cf = registers.rflags & 1 != 0;

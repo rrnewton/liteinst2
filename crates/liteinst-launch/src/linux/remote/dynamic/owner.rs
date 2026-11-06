@@ -159,10 +159,10 @@ pub(super) fn run(start: TracerStart) {
             if let Some(journal) = &owner.signal_journal {
                 journal.fail_error(&error);
             }
-            if !owner.anchor_exit_authenticated {
-                if let Some(archive) = &owner.anchor_archive {
-                    archive.record_failure(&error);
-                }
+            if !owner.anchor_exit_authenticated
+                && let Some(archive) = &owner.anchor_archive
+            {
+                archive.record_failure(&error);
             }
             Some(error)
         }
@@ -173,10 +173,10 @@ pub(super) fn run(start: TracerStart) {
             if let Some(journal) = &owner.signal_journal {
                 journal.fail(signal_journal::SignalJournalFailure::CaughtPanic);
             }
-            if !owner.anchor_exit_authenticated {
-                if let Some(archive) = &owner.anchor_archive {
-                    archive.record_panic();
-                }
+            if !owner.anchor_exit_authenticated
+                && let Some(archive) = &owner.anchor_archive
+            {
+                archive.record_panic();
             }
             owner
                 .kernel_journal
@@ -746,8 +746,8 @@ impl Owner {
                 ));
             }
         };
-        if let DynamicEventKind::SyscallEntry { number, .. } = &event.kind {
-            if matches!(
+        if let DynamicEventKind::SyscallEntry { number, .. } = &event.kind
+            && matches!(
                 *number as libc::c_long,
                 libc::SYS_clone
                     | libc::SYS_clone3
@@ -755,12 +755,12 @@ impl Owner {
                     | libc::SYS_vfork
                     | libc::SYS_execve
                     | libc::SYS_execveat
-            ) {
-                self.closing = true;
-                return Err(LaunchError::Invalid(
-                    "dynamic creation and later exec are not yet qualified",
-                ));
-            }
+            )
+        {
+            self.closing = true;
+            return Err(LaunchError::Invalid(
+                "dynamic creation and later exec are not yet qualified",
+            ));
         }
         if let Err(error) = ptrace(request, self.pid, 0, signal as usize) {
             self.closing = true;
@@ -863,10 +863,10 @@ impl Owner {
     fn syscall_event(&mut self) -> Result<DynamicEvent, LaunchError> {
         // Capture the actual initial syscall stop before syscall-info parsing,
         // ABI/phase checks or the old EXEC->EXIT equality can refuse it.
-        if self.initial_exec.is_some() {
-            if let Some(receipt) = &self.anchor_receipt {
-                receipt.capture_exec_exit(self.pid)?;
-            }
+        if self.initial_exec.is_some()
+            && let Some(receipt) = &self.anchor_receipt
+        {
+            receipt.capture_exec_exit(self.pid)?;
         }
         let info = syscall_info(self.pid)?;
         let registers = read_registers(self.pid)?;
@@ -952,17 +952,17 @@ impl Owner {
             return;
         }
         let mut child = 0_u64;
-        if ptrace(libc::PTRACE_GETEVENTMSG, tid, 0, (&raw mut child) as usize).is_ok() {
-            if let Ok(child) = libc::pid_t::try_from(child) {
-                // Child terminal and parent creation statuses may be consumed
-                // in either order. A late payload must not recreate numeric
-                // signalling authority after the child has already been reaped.
-                // Default policy refuses creation; the opt-in policy has at
-                // most two lifetime records, including retired tasks. Cleanup
-                // never resumes original code, so a retired number cannot
-                // legitimately gain a second creation incarnation here.
-                let _ = self.pin_creation_candidate(child);
-            }
+        if ptrace(libc::PTRACE_GETEVENTMSG, tid, 0, (&raw mut child) as usize).is_ok()
+            && let Ok(child) = libc::pid_t::try_from(child)
+        {
+            // Child terminal and parent creation statuses may be consumed
+            // in either order. A late payload must not recreate numeric
+            // signalling authority after the child has already been reaped.
+            // Default policy refuses creation; the opt-in policy has at
+            // most two lifetime records, including retired tasks. Cleanup
+            // never resumes original code, so a retired number cannot
+            // legitimately gain a second creation incarnation here.
+            let _ = self.pin_creation_candidate(child);
         }
     }
     /// GETEVENTMSG supplies a candidate, not an identity witness. A fatal

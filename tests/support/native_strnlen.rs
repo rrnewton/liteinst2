@@ -384,15 +384,14 @@ fn inspect_body(
                 "actual decoded successor"
             );
             trace.observed.edges.insert((pc, next));
-            if i.flow_control() == FlowControl::Next {
-                if let Some((address, width)) =
+            if i.flow_control() == FlowControl::Next
+                && let Some((address, width)) =
                     input_operand(i, &step.before, input_address, case.bound)
-                {
-                    // Read the complete operand from the actual captured page.
-                    let _bytes = bytes_at(step.data, step.data_address, address, width);
-                    trace.input_reads = trace.input_reads.checked_add(1).unwrap();
-                    trace.input_bytes = trace.input_bytes.checked_add(width).unwrap();
-                }
+            {
+                // Read the complete operand from the actual captured page.
+                let _bytes = bytes_at(step.data, step.data_address, address, width);
+                trace.input_reads = trace.input_reads.checked_add(1).unwrap();
+                trace.input_bytes = trace.input_bytes.checked_add(width).unwrap();
             }
         }
     }

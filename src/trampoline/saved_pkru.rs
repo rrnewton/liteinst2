@@ -173,7 +173,8 @@ fn geometry(
         .required_alignment()
         .ok_or_else(|| invalid("saved-state format is unavailable"))?;
     require(
-        context_address != 0 && context_address % core::mem::align_of::<HookContext>() as u64 == 0,
+        context_address != 0
+            && context_address.is_multiple_of(core::mem::align_of::<HookContext>() as u64),
         "saved-state context is unaligned or unavailable",
     )?;
     context_address
@@ -186,7 +187,7 @@ fn geometry(
     require(
         expected != 0
             && descriptor.address() == expected
-            && descriptor.address() % alignment == 0
+            && descriptor.address().is_multiple_of(alignment)
             && descriptor.address().checked_add(layout.len()) == Some(frame_end),
         "saved-state address is not the emitted invocation frame",
     )?;

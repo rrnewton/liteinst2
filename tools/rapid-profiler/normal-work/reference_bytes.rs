@@ -300,7 +300,7 @@ pub fn validate_layout(entry: u64, actual_labels: &[u64], code: &[u8]) -> Result
     validate_body(code)?;
     require(
         entry != 0
-            && entry % 4096 == 0
+            && entry.is_multiple_of(4096)
             && entry.checked_add(END).is_some()
             && actual_labels.len() == LABELS.len(),
         Error::Geometry,
@@ -424,7 +424,7 @@ pub fn fresh_cells(first_sequence: u64, external_ids: [u64; 2]) -> Result<[Refer
 /// arithmetic does not discover mappings or prove that a list is complete.
 pub fn validate_cell_area(address: u64, protected: &[(u64, u64)]) -> Result<()> {
     require(
-        address != 0 && address % 8 == 0 && !protected.is_empty(),
+        address != 0 && address.is_multiple_of(8) && !protected.is_empty(),
         Error::Range,
     )?;
     let end = address
@@ -470,7 +470,7 @@ impl ReferenceCell {
             self.phase == END_READER_STORED
                 && self.canary == CANARY
                 && pre_call_rsp != 0
-                && pre_call_rsp % 16 == 0
+                && pre_call_rsp.is_multiple_of(16)
                 && self.pre_call_rsp == pre_call_rsp
                 && self.resumed_rsp == pre_call_rsp
                 && self.after_rax == value,

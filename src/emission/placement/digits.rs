@@ -137,10 +137,10 @@ fn minimum_offset(low: u64, high: u64, domains: &[ByteDomain; 4], next_low: u64)
     let last_page = high / PAGE;
     let mut best = None;
     let mut consider = |page, left, right| {
-        if let Some(q) = partial(page, left, right, domains, next_low) {
-            if best.is_none_or(|old| ((q + next_low) % PAGE, q) < ((old + next_low) % PAGE, old)) {
-                best = Some(q);
-            }
+        if let Some(q) = partial(page, left, right, domains, next_low)
+            && best.is_none_or(|old| ((q + next_low) % PAGE, q) < ((old + next_low) % PAGE, old))
+        {
+            best = Some(q);
         }
     };
     consider(

@@ -123,7 +123,7 @@ pub fn answer(width: u32, form: Form, left: u64, right: u64, carry: bool) -> (u6
     let sum = u128::from(left) + u128::from(right) + u128::from(carry);
     let value = (sum & u128::from(maximum)) as u64;
     let flags = u64::from(sum > u128::from(maximum))
-        | (u64::from((value as u8).count_ones() % 2 == 0) << 2)
+        | (u64::from((value as u8).count_ones().is_multiple_of(2)) << 2)
         | (u64::from((left ^ right ^ value) & 0x10 != 0) << 4)
         | (u64::from(value == 0) << 6)
         | (u64::from(value & sign != 0) << 7)

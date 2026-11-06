@@ -879,10 +879,10 @@ impl NativeTrace {
 
 impl Drop for NativeTrace {
     fn drop(&mut self) {
-        if !self.reaped {
-            if let Some(child) = self.child.take() {
-                reap_native_child(child);
-            }
+        if !self.reaped
+            && let Some(child) = self.child.take()
+        {
+            reap_native_child(child);
         }
     }
 }

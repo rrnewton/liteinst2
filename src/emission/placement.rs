@@ -247,12 +247,12 @@ pub(crate) fn entry_veneer_for_pun(
     }
     let free = free_pages(policy, occupied, source)?;
     let layout = |entry: u64| EntryVeneerPlacement::new(entry & !(PAGE - 1), entry, bound);
-    if let Some(seed) = policy.preferred_address {
-        if window.contains(seed) && available(seed, &free) {
-            if let Ok(placement) = layout(seed) {
-                return Ok(placement);
-            }
-        }
+    if let Some(seed) = policy.preferred_address
+        && window.contains(seed)
+        && available(seed, &free)
+        && let Ok(placement) = layout(seed)
+    {
+        return Ok(placement);
     }
     let mut best: Option<u64> = None;
     for range in &free {

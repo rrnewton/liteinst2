@@ -61,8 +61,8 @@ impl Fixture {
             completeness: EntryCompleteness::AllInstructionHeads,
             entries: (0..code.len())
                 .filter(|&i| {
-                    !(selected < i && i < selected + selected_len)
-                        && !(victim < i && i < victim + victim_len)
+                    !(selected < i && i < selected + selected_len
+                        || victim < i && i < victim + victim_len)
                 })
                 .map(|i| LegalEntry {
                     address: base + i as u64,

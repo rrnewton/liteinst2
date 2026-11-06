@@ -115,12 +115,12 @@ impl DynamicAdmissionOptions {
                 "fork address spaces require separate admission qualification",
             ));
         }
-        if let DynamicAdmissionBackend::CoverageTrap(budget) = self.backend {
-            if budget.page_size != 4096 {
-                return Err(GateError::Refused(
-                    "dynamic admission requires native page geometry",
-                ));
-            }
+        if let DynamicAdmissionBackend::CoverageTrap(budget) = self.backend
+            && budget.page_size != 4096
+        {
+            return Err(GateError::Refused(
+                "dynamic admission requires native page geometry",
+            ));
         }
         // The full cache and coverage geometry checks remain in the original
         // constructors. No invalid option is fixed up or silently substituted.

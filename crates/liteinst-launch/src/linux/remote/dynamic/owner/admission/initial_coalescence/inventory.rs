@@ -47,7 +47,7 @@ impl InitialMapPlan {
         let new = parse(actual)?;
         if quarantined_executable_prefix > self.executable_count
             || island.start == 0
-            || island.start % PAGE != 0
+            || !island.start.is_multiple_of(PAGE)
             || island.end.checked_sub(island.start) != Some(PAGE)
             || island.end > USER_END
             || old

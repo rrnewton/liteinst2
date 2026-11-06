@@ -935,10 +935,10 @@ fn validate_syscall(
             return Err(OracleError::Invalid("raw syscall payload differs"));
         }
     }
-    if let Some(result) = result {
-        if u64_raw(raw, 24) != result as u64 || raw[32] != 0 {
-            return Err(OracleError::Invalid("raw syscall result differs"));
-        }
+    if let Some(result) = result
+        && (u64_raw(raw, 24) != result as u64 || raw[32] != 0)
+    {
+        return Err(OracleError::Invalid("raw syscall result differs"));
     }
     Ok(())
 }

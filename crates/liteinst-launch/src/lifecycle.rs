@@ -701,12 +701,10 @@ impl LifecycleRegistry {
                 child: Some(child),
                 ..
             }) = record.pending
+                && ticket.request.sharing()?.vfork
+                && !matches!(state.task(child)?.state, TaskState::Terminal(_))
             {
-                if ticket.request.sharing()?.vfork
-                    && !matches!(state.task(child)?.state, TaskState::Terminal(_))
-                {
-                    return Err(LifecycleError::VforkBlocked);
-                }
+                return Err(LifecycleError::VforkBlocked);
             }
             state.tasks.get_mut(&task).unwrap().state = TaskState::Running;
             Ok(())

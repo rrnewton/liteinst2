@@ -1060,15 +1060,14 @@ impl TrampolineImage {
         self.artifact.as_ref()
     }
     pub(crate) fn require_artifact_router(&mut self) {
-        if let Some(metadata) = self.artifact.as_mut() {
-            if !metadata
+        if let Some(metadata) = self.artifact.as_mut()
+            && !metadata
                 .requirements
                 .contains(&ArtifactRequirement::EntryRouterBootstrap)
-            {
-                metadata
-                    .requirements
-                    .push(ArtifactRequirement::EntryRouterBootstrap);
-            }
+        {
+            metadata
+                .requirements
+                .push(ArtifactRequirement::EntryRouterBootstrap);
         }
     }
 
@@ -3137,17 +3136,16 @@ impl TrampolinePlan {
         {
             return Err(encoding_error("clock region lost a required gate"));
         }
-        if let Some(modes) = self.early_control_modes() {
-            if action_index != modes.len()
+        if let Some(modes) = self.early_control_modes()
+            && (action_index != modes.len()
                 || !modes
                     .iter()
                     .enumerate()
                     .filter(|(_, early)| **early)
                     .map(|(index, _)| index)
-                    .eq(early_control_specs.iter().map(|(index, _, _, _)| *index))
-            {
-                return Err(encoding_error("early point gate population differs"));
-            }
+                    .eq(early_control_specs.iter().map(|(index, _, _, _)| *index)))
+        {
+            return Err(encoding_error("early point gate population differs"));
         }
         let preparation = OrderedPreparation {
             extended_state,

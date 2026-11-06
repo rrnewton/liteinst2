@@ -318,10 +318,10 @@ impl<'a> HeldMmStop<'a> {
             .checked_add(image.len() as u64)
             .ok_or(LaunchError::Invalid("private image overflow"))?;
         if address == 0
-            || address % self.island.page_size as u64 != 0
+            || !address.is_multiple_of(self.island.page_size as u64)
             || image.is_empty()
             || image.len() > MAX_MEMORY_READ
-            || image.len() % self.island.page_size != 0
+            || !image.len().is_multiple_of(self.island.page_size)
             || self.maps.iter().any(|m| address < m.end && m.start < end)
         {
             return Err(LaunchError::Invalid("invalid or occupied private image"));
@@ -458,8 +458,8 @@ impl<'a> HeldMmStop<'a> {
         self.ready()?;
         let until = self.operation_deadline(timeout)?;
         if len == 0
-            || address % self.island.page_size as u64 != 0
-            || len % self.island.page_size != 0
+            || !address.is_multiple_of(self.island.page_size as u64)
+            || !len.is_multiple_of(self.island.page_size)
             || protection & !(libc::PROT_READ | libc::PROT_WRITE | libc::PROT_EXEC) != 0
             || protection & (libc::PROT_WRITE | libc::PROT_EXEC)
                 == libc::PROT_WRITE | libc::PROT_EXEC

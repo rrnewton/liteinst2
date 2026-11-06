@@ -153,11 +153,10 @@ fn validated(attempt: &JournalAttemptView<'_>, stage: Stage) -> Result<KernelSto
             stage: actual,
             stop,
         } = fact
+            && *actual == stage
         {
-            if *actual == stage {
-                require(found.is_none(), "journal_validated")?;
-                found = Some(*stop);
-            }
+            require(found.is_none(), "journal_validated")?;
+            found = Some(*stop);
         }
     }
     found.ok_or(OracleError::Invalid("journal_validated"))

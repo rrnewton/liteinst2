@@ -506,25 +506,21 @@ impl RuntimeStackAttempt {
         if let Err(error) = root {
             failure = Some(error);
         }
-        if let Some(prepared) = &mut self.census {
-            if let Err(error) = prepared
+        if let Some(prepared) = &mut self.census
+            && let Err(error) = prepared
                 .settle_storage(census, self.reservation)
                 .map_err(census_error)
-            {
-                if failure.is_none() {
-                    failure = Some(error);
-                }
-            }
+            && failure.is_none()
+        {
+            failure = Some(error);
         }
-        if let Some(call) = &mut self.call {
-            if let Err(error) = call
+        if let Some(call) = &mut self.call
+            && let Err(error) = call
                 .settle_storage(census, self.reservation)
                 .map_err(census_error)
-            {
-                if failure.is_none() {
-                    failure = Some(error);
-                }
-            }
+            && failure.is_none()
+        {
+            failure = Some(error);
         }
         match failure {
             None => Ok(()),

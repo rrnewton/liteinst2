@@ -255,23 +255,22 @@ impl SharedMmProcess {
                 continue;
             }
             let event = self.signal_event(leader, status)?;
-            if let ProcessEvent::Signal(signal) = event {
-                if self.tasks.len() == count + 1
-                    && clone_stack.is_none()
-                    && signal.signal == libc::SIGTRAP
-                    && matches!(signal.code, libc::SI_KERNEL | libc::TRAP_BRKPT)
-                    && signal.instruction_pointer
-                        == freeze_pc
-                            .checked_add(1)
-                            .ok_or(LaunchError::Invalid("freeze PC overflow"))?
-                    && read_memory(leader, freeze_pc, 1)? == [0xcc]
-                {
-                    self.tasks.get_mut(&leader).unwrap().state = State::Stopped(Phase::Signal {
-                        stop: signal,
-                        owned: true,
-                    });
-                    return Ok(());
-                }
+            if let ProcessEvent::Signal(signal) = event
+                && self.tasks.len() == count + 1
+                && clone_stack.is_none()
+                && signal.signal == libc::SIGTRAP
+                && matches!(signal.code, libc::SI_KERNEL | libc::TRAP_BRKPT)
+                && signal.instruction_pointer
+                    == freeze_pc
+                        .checked_add(1)
+                        .ok_or(LaunchError::Invalid("freeze PC overflow"))?
+                && read_memory(leader, freeze_pc, 1)? == [0xcc]
+            {
+                self.tasks.get_mut(&leader).unwrap().state = State::Stopped(Phase::Signal {
+                    stop: signal,
+                    owned: true,
+                });
+                return Ok(());
             }
             return Err(LaunchError::Invalid(
                 "factory did not reach its declared freeze",
@@ -280,7 +279,7 @@ impl SharedMmProcess {
     }
 
     fn check_clone(&mut self, args: [u64; 6]) -> Result<Range<u64>, LaunchError> {
-        if args[0] != FIXED_CLONE_FLAGS || args[2..5] != [0; 3] || args[1] % 16 != 0 {
+        if args[0] != FIXED_CLONE_FLAGS || args[2..5] != [0; 3] || !args[1].is_multiple_of(16) {
             return Err(LaunchError::Invalid(
                 "clone flags, optional pointers, or stack are unsupported",
             ));
@@ -811,10 +810,10 @@ impl AllThreadsStop<'_> {
             .checked_add(image.len() as u64)
             .ok_or(LaunchError::Invalid("code allocation overflow"))?;
         if address == 0
-            || address % self.page_size() as u64 != 0
+            || !address.is_multiple_of(self.page_size() as u64)
             || image.is_empty()
             || image.len() > MAX_MEMORY_READ
-            || image.len() % self.page_size() != 0
+            || !image.len().is_multiple_of(self.page_size())
         {
             return Err(LaunchError::Invalid("invalid private code image range"));
         }
@@ -975,8 +974,8 @@ impl AllThreadsStop<'_> {
     ) -> Result<(), LaunchError> {
         self.ready()?;
         if len == 0
-            || address % self.page_size() as u64 != 0
-            || len % self.page_size() != 0
+            || !address.is_multiple_of(self.page_size() as u64)
+            || !len.is_multiple_of(self.page_size())
             || protection & !(libc::PROT_READ | libc::PROT_WRITE | libc::PROT_EXEC) != 0
             || protection & (libc::PROT_WRITE | libc::PROT_EXEC)
                 == libc::PROT_WRITE | libc::PROT_EXEC
@@ -1239,10 +1238,10 @@ impl ReapGroup {
         &mut self,
         discover: impl FnOnce(libc::pid_t) -> Result<BTreeSet<libc::pid_t>, LaunchError>,
     ) {
-        if self.discover_members {
-            if let Ok(tasks) = discover(self.tgid) {
-                self.tids.extend(tasks);
-            }
+        if self.discover_members
+            && let Ok(tasks) = discover(self.tgid)
+        {
+            self.tids.extend(tasks);
         }
     }
 

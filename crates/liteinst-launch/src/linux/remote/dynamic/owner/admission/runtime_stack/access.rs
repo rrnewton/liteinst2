@@ -81,7 +81,7 @@ pub(in crate::linux::remote::dynamic::owner::admission) fn validate_state(
         || slot.requested_pointer != slot.state.xstate.as_ptr() as usize
         || slot.returned_pointer != slot.requested_pointer
         || !(576..BYTES).contains(&slot.returned_length)
-        || slot.returned_length % 8 != 0
+        || !slot.returned_length.is_multiple_of(8)
         || slot.state.xstate.len() != slot.returned_length
     {
         return Err(StackError::Request);

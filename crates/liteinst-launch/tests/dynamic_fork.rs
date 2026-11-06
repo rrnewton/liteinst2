@@ -391,14 +391,14 @@ fn next_entry(session: &mut DynamicSession, number: u64) -> DynamicEvent {
 fn next_forward_sigchld(session: &mut DynamicSession) -> DynamicEvent {
     for _ in 0..16 {
         let event = session.next_event(TIMEOUT).unwrap();
-        if let DynamicEventKind::SignalDelivery(info) = &event.kind {
-            if info.signal() == libc::SIGCHLD {
-                assert_eq!(info.code(), libc::CLD_EXITED);
-                session
-                    .resume(event.stop_token().unwrap(), DynamicResume::DeliverOriginal)
-                    .unwrap();
-                continue;
-            }
+        if let DynamicEventKind::SignalDelivery(info) = &event.kind
+            && info.signal() == libc::SIGCHLD
+        {
+            assert_eq!(info.code(), libc::CLD_EXITED);
+            session
+                .resume(event.stop_token().unwrap(), DynamicResume::DeliverOriginal)
+                .unwrap();
+            continue;
         }
         return event;
     }
@@ -831,12 +831,11 @@ impl Raw {
                         0,
                     )
                 } == 0;
-                if let Some(&status) = self.stopped.get(&tid) {
-                    if (killed || status >> 16 == libc::PTRACE_EVENT_EXIT)
-                        && unsafe { libc::ptrace(libc::PTRACE_CONT, tid, 0, 0) } != -1
-                    {
-                        self.stopped.remove(&tid);
-                    }
+                if let Some(&status) = self.stopped.get(&tid)
+                    && (killed || status >> 16 == libc::PTRACE_EVENT_EXIT)
+                    && unsafe { libc::ptrace(libc::PTRACE_CONT, tid, 0, 0) } != -1
+                {
+                    self.stopped.remove(&tid);
                 }
             }
             let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };

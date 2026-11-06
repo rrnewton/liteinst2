@@ -198,13 +198,12 @@ impl Raw {
                         0,
                     )
                 } == 0;
-                if let Some(&status) = self.stopped.get(&tid) {
-                    if (killed || status >> 16 == libc::PTRACE_EVENT_EXIT)
+                if let Some(&status) = self.stopped.get(&tid)
+                    && (killed || status >> 16 == libc::PTRACE_EVENT_EXIT)
                         && unsafe { libc::ptrace(libc::PTRACE_CONT, tid, 0, 0) } != -1
                     {
                         self.stopped.remove(&tid);
                     }
-                }
             }
             let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
             let result = unsafe {

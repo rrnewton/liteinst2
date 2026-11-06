@@ -30,10 +30,10 @@ impl WindowGeometry {
         maximum: usize,
     ) -> Result<Self, GateError> {
         if vma.range.start() == 0
-            || vma.range.start() % PAGE != 0
-            || vma.range.end() % PAGE != 0
-            || target.start() % PAGE != 0
-            || target.end() % PAGE != 0
+            || !vma.range.start().is_multiple_of(PAGE)
+            || !vma.range.end().is_multiple_of(PAGE)
+            || !target.start().is_multiple_of(PAGE)
+            || !target.end().is_multiple_of(PAGE)
             || !vma.range.covers(target)
             || maximum == 0
             || maximum > MAX_WINDOW_BYTES
@@ -124,7 +124,11 @@ pub(super) fn next_target(
     start: u64,
     stride: u64,
 ) -> Result<AddressRange, GateError> {
-    if !vma.contains(start) || start % PAGE != 0 || stride == 0 || stride % PAGE != 0 {
+    if !vma.contains(start)
+        || !start.is_multiple_of(PAGE)
+        || stride == 0
+        || !stride.is_multiple_of(PAGE)
+    {
         return Err(refused("initial runtime target partition differs"));
     }
     let end = start

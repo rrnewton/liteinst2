@@ -291,7 +291,7 @@ impl Parent {
 fn szp(value: u64) -> u64 {
     u64::from(value == 0) << 6
         | (value >> 63) << 7
-        | u64::from((value as u8).count_ones() % 2 == 0) << 2
+        | u64::from((value as u8).count_ones().is_multiple_of(2)) << 2
 }
 pub(super) fn effect(
     p: &Parent,

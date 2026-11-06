@@ -291,7 +291,7 @@ fn validate_query(query: &MaximumXstateQuery, state: &TaskStateSnapshot) -> Resu
         || query.errno.is_some()
         || query.reported_bytes < 512
         || query.reported_bytes >= MAX_XSTATE
-        || query.reported_bytes % 8 != 0
+        || !query.reported_bytes.is_multiple_of(8)
         || state.registers.cs != 0x33
         || state.xstate.len() != query.reported_bytes
         || state.xstate != query.initialized[..query.reported_bytes]

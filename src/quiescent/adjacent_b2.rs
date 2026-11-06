@@ -382,10 +382,10 @@ fn validate_site(
             "adjacent B2 excludes CET entry requirements",
         ));
     }
-    if let ResumeObligation::Enumerated(pcs) = &request.entries.resumes {
-        if pcs.windows(2).any(|pair| pair[0] >= pair[1]) {
-            return Err(eligibility(E::ResumeShape, Refusal::InvalidRange));
-        }
+    if let ResumeObligation::Enumerated(pcs) = &request.entries.resumes
+        && pcs.windows(2).any(|pair| pair[0] >= pair[1])
+    {
+        return Err(eligibility(E::ResumeShape, Refusal::InvalidRange));
     }
     if request.semantics != HookSemantics::Observe {
         return Err(unsupported(

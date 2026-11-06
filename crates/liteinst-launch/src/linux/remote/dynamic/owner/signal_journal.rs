@@ -765,10 +765,10 @@ impl SignalJournalWriter {
             (Ok(info), Ok(state)) => Ok((info, state)),
             (Err(error), _) | (_, Err(error)) => Err(error),
         };
-        if let Err(error) = &result {
-            if archive.failure.is_none() {
-                archive.failure = Some((archive.phase, failure(error)));
-            }
+        if let Err(error) = &result
+            && archive.failure.is_none()
+        {
+            archive.failure = Some((archive.phase, failure(error)));
         }
         result
     }

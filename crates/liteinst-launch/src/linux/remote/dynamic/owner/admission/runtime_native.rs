@@ -145,7 +145,7 @@ impl InstructionAttemptShape {
             .end()
             .checked_sub(pages.start())
             .ok_or(LaunchError::Invalid("owned fetch extent underflows"))?;
-        if pages.start() % 4096 != 0 || !matches!(length, 4096 | 8192) {
+        if !pages.start().is_multiple_of(4096) || !matches!(length, 4096 | 8192) {
             return Err(LaunchError::Invalid("owned fetch extent differs"));
         }
         Ok(Self {

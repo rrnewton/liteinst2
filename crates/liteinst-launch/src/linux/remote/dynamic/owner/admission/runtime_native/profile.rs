@@ -262,8 +262,8 @@ impl ControlLineage {
                 "owned instruction control lineage is stale",
             ));
         }
-        if let Some(origin) = &self.kernel {
-            if origin.attempt.session != stop.token.session
+        if let Some(origin) = &self.kernel
+            && (origin.attempt.session != stop.token.session
                 || origin.attempt.invocation == 0
                 || origin.returned.identity != stop.identity
                 || origin.returned.token.session != stop.token.session
@@ -275,12 +275,11 @@ impl ControlLineage {
                 || stop.phase != AdmissionPhase::Restored
                 || stop.signal.is_some()
                 || (origin.number != libc::SYS_getpid as u64
-                    && origin.number != libc::SYS_gettid as u64)
-            {
-                return Err(LaunchError::Invalid(
-                    "owned instruction kernel control provenance differs",
-                ));
-            }
+                    && origin.number != libc::SYS_gettid as u64))
+        {
+            return Err(LaunchError::Invalid(
+                "owned instruction kernel control provenance differs",
+            ));
         }
         if actual != self.inherited_orig_rax() {
             return Err(LaunchError::Invalid(

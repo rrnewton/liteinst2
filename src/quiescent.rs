@@ -1668,8 +1668,8 @@ fn emit_relocation_window(
         } => Some((proof, ordinal, target)),
         _ => None,
     };
-    if let Some((proof, _, _)) = routed {
-        if controls.is_some()
+    if let Some((proof, _, _)) = routed
+        && (controls.is_some()
             || clock.is_some()
             || physical != proof.upper()
             || end != proof.end()
@@ -1683,13 +1683,12 @@ fn emit_relocation_window(
             || !matches!(
                 request.emission,
                 crate::emission::EmissionContext::Artifact(_)
-            )
-        {
-            return Err(Refusal::InvalidPlan);
-        }
+            ))
+    {
+        return Err(Refusal::InvalidPlan);
     }
-    if let Some((proof, region)) = clock_region {
-        if controls.is_some()
+    if let Some((proof, region)) = clock_region
+        && (controls.is_some()
             || clock.is_some()
             || physical != source.start()
             || end != source.end()
@@ -1697,10 +1696,9 @@ fn emit_relocation_window(
             || source != request.function
             || instructions.len() != scan.instructions().len()
             || !proof.matches_request(request, scan, region)
-            || !matches!(request.emission, crate::emission::EmissionContext::Live(_))
-        {
-            return Err(Refusal::InvalidPlan);
-        }
+            || !matches!(request.emission, crate::emission::EmissionContext::Live(_)))
+    {
+        return Err(Refusal::InvalidPlan);
     }
     let scope = SearchScope {
         physical_pc: Some(physical),
@@ -2023,7 +2021,7 @@ fn emit_relocation_window(
                 if head % 4096 > 4096 - 15
                     || source.end() - head < 15
                     || following(1).is_none()
-                    || !following(2).is_some_and(|p1| p1 & 4 == 0)
+                    || following(2).is_none_or(|p1| p1 & 4 != 0)
                 {
                     patch[at] = 0x60; // PUSHA is unconditionally #UD in 64-bit mode.
                 }

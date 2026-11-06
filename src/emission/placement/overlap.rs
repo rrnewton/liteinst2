@@ -34,27 +34,27 @@ pub(crate) fn joint_overlapping_targets(
         selected_bound,
         victim_bound,
     };
-    if let Some(seed) = selected_policy.preferred_address {
-        if let Ok(d) = i32::try_from(i128::from(seed) - i128::from(space.selected_next)) {
-            let d = i128::from(d);
-            if let Some(pair) = space.targets(d.div_euclid(CLASS), d.rem_euclid(CLASS)) {
-                if space.allowed(pair) {
-                    return Ok(pair);
-                }
-            }
+    if let Some(seed) = selected_policy.preferred_address
+        && let Ok(d) = i32::try_from(i128::from(seed) - i128::from(space.selected_next))
+    {
+        let d = i128::from(d);
+        if let Some(pair) = space.targets(d.div_euclid(CLASS), d.rem_euclid(CLASS))
+            && space.allowed(pair)
+        {
+            return Ok(pair);
         }
     }
-    if let Some(seed) = victim_policy.preferred_address {
-        if let Ok(d) = i32::try_from(i128::from(seed) - i128::from(space.victim_next)) {
-            let encoded = d as u32;
-            if encoded & 255 == 0xe9 {
-                let r = i128::from(encoded >> 8);
-                for k in -128..=127 {
-                    if let Some(pair) = space.targets(k, r) {
-                        if space.allowed(pair) {
-                            return Ok(pair);
-                        }
-                    }
+    if let Some(seed) = victim_policy.preferred_address
+        && let Ok(d) = i32::try_from(i128::from(seed) - i128::from(space.victim_next))
+    {
+        let encoded = d as u32;
+        if encoded & 255 == 0xe9 {
+            let r = i128::from(encoded >> 8);
+            for k in -128..=127 {
+                if let Some(pair) = space.targets(k, r)
+                    && space.allowed(pair)
+                {
+                    return Ok(pair);
                 }
             }
         }
@@ -68,14 +68,14 @@ pub(crate) fn joint_overlapping_targets(
             while a < selected.len() && b < victim_ranges.len() {
                 let low = selected[a].0.max(victim_ranges[b].0);
                 let high = selected[a].1.min(victim_ranges[b].1);
-                if low <= high {
-                    if let Some(r) = space.first_distinct(low, high, k, negative != 0) {
-                        let pair = space.targets(k, r).ok_or(Refusal::InvalidPlan)?;
-                        if !space.allowed(pair) {
-                            return Err(Refusal::InvalidPlan);
-                        }
-                        return Ok(pair);
+                if low <= high
+                    && let Some(r) = space.first_distinct(low, high, k, negative != 0)
+                {
+                    let pair = space.targets(k, r).ok_or(Refusal::InvalidPlan)?;
+                    if !space.allowed(pair) {
+                        return Err(Refusal::InvalidPlan);
                     }
+                    return Ok(pair);
                 }
                 if selected[a].1 <= victim_ranges[b].1 {
                     a += 1;
@@ -100,11 +100,11 @@ fn normalized_free(
     ranges.sort_unstable();
     let mut merged: Vec<(u64, u64)> = Vec::new();
     for (start, end) in ranges {
-        if let Some(last) = merged.last_mut() {
-            if start <= last.1 {
-                last.1 = last.1.max(end);
-                continue;
-            }
+        if let Some(last) = merged.last_mut()
+            && start <= last.1
+        {
+            last.1 = last.1.max(end);
+            continue;
         }
         merged.push((start, end));
     }

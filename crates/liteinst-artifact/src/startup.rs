@@ -662,7 +662,7 @@ fn validate(x: &Input, class: StartupClass) -> Result<()> {
     {
         return Err(Error::Target);
     }
-    if x.policy.app_stack.len != 65536 || x.policy.app_stack.start % 16 != 0 {
+    if x.policy.app_stack.len != 65536 || !x.policy.app_stack.start.is_multiple_of(16) {
         return Err(Error::Target);
     }
     let stack = main

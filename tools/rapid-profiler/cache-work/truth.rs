@@ -166,7 +166,7 @@ fn word(bytes: &[u8], offset: usize) -> Result<u64, Error> {
     ))
 }
 fn addresses(data: u64, rsp: u64) -> Result<u64, Error> {
-    if data % 64 != 0 {
+    if !data.is_multiple_of(64) {
         return Err(Error::Address);
     }
     data.checked_add(INPUT_BYTES as u64).ok_or(Error::Address)?;

@@ -42,7 +42,7 @@ pub(super) fn near_start_bounds(
     len: usize,
     page_size: usize,
 ) -> Result<(usize, usize), TrampolineError> {
-    if !page_size.is_power_of_two() || len == 0 || len % page_size != 0 {
+    if !page_size.is_power_of_two() || len == 0 || !len.is_multiple_of(page_size) {
         return Err(TrampolineError::InvalidPageSize);
     }
     let low = (next_ip as i128 + i32::MIN as i128).max(page_size as i128);

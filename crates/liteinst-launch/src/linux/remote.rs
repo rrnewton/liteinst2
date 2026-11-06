@@ -684,10 +684,10 @@ impl StoppedProcess {
                 return self.fail(error);
             }
         }
-        if request == libc::PTRACE_SINGLESTEP {
-            if let Err(error) = qualify_single_step(self.pid()) {
-                return self.fail(error);
-            }
+        if request == libc::PTRACE_SINGLESTEP
+            && let Err(error) = qualify_single_step(self.pid())
+        {
+            return self.fail(error);
         }
         ptrace(request, self.pid(), 0, 0)?;
         self.state = State::Running;
@@ -984,10 +984,10 @@ impl SingleThreadStop<'_> {
             .checked_add(image.len() as u64)
             .ok_or(LaunchError::Invalid("code allocation address overflow"))?;
         if address == 0
-            || address % self.process.page_size as u64 != 0
+            || !address.is_multiple_of(self.process.page_size as u64)
             || image.is_empty()
             || image.len() > MAX_MEMORY_READ
-            || image.len() % self.process.page_size != 0
+            || !image.len().is_multiple_of(self.process.page_size)
         {
             return Err(LaunchError::Invalid("invalid private code image range"));
         }
@@ -1173,8 +1173,8 @@ impl SingleThreadStop<'_> {
     ) -> Result<(), LaunchError> {
         self.process.ensure_stopped()?;
         if len == 0
-            || address % self.process.page_size as u64 != 0
-            || len % self.process.page_size != 0
+            || !address.is_multiple_of(self.process.page_size as u64)
+            || !len.is_multiple_of(self.process.page_size)
             || protection & !(libc::PROT_READ | libc::PROT_WRITE | libc::PROT_EXEC) != 0
             || protection & (libc::PROT_WRITE | libc::PROT_EXEC)
                 == libc::PROT_WRITE | libc::PROT_EXEC

@@ -126,7 +126,7 @@ impl BackedgeClock {
         if !cfg!(all(target_os = "linux", target_arch = "x86_64"))
             || len != CLOCK_PAGE_BYTES
             || address == 0
-            || address % 4096 != 0
+            || !address.is_multiple_of(4096)
             || address.checked_add(4096).is_none()
             || usize::try_from(address).is_err()
         {

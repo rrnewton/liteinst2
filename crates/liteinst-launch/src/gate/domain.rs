@@ -482,25 +482,24 @@ fn prepare_admission_geometry(
             candidates.insert(site.address, *site);
             bundle.insert(site.address & !(PAGE - 1));
             bundle.insert((site.address + u64::from(site.len) - 1) & !(PAGE - 1));
-            if let Some(publisher) = publisher {
-                if !publisher
+            if let Some(publisher) = publisher
+                && !publisher
                     .installed()
                     .iter()
                     .any(|installed| installed.plan().parts().logical_pc == site.address)
-                    && !prepared.contains_key(&site.address)
-                {
-                    if prepared.len() == MAX_CPUID_BUNDLE {
-                        return Err(GateError::Refused(
-                            "core publication bundle budget exceeded",
-                        ));
-                    }
-                    let plan = prepare_cpuid(image, *site)?;
-                    remaining(deadline)?;
-                    let consumed = plan.consumed();
-                    bundle.insert(consumed.start() & !(PAGE - 1));
-                    bundle.insert((consumed.end() - 1) & !(PAGE - 1));
-                    prepared.insert(site.address, plan);
+                && !prepared.contains_key(&site.address)
+            {
+                if prepared.len() == MAX_CPUID_BUNDLE {
+                    return Err(GateError::Refused(
+                        "core publication bundle budget exceeded",
+                    ));
                 }
+                let plan = prepare_cpuid(image, *site)?;
+                remaining(deadline)?;
+                let consumed = plan.consumed();
+                bundle.insert(consumed.start() & !(PAGE - 1));
+                bundle.insert((consumed.end() - 1) & !(PAGE - 1));
+                prepared.insert(site.address, plan);
             }
         }
         scanned.insert(next);
@@ -944,7 +943,7 @@ fn validate_pending_selection(
             "pending trap path supports only default selected classes",
         ));
     }
-    if page % PAGE != 0
+    if !page.is_multiple_of(PAGE)
         || page
             .checked_add(PAGE)
             .and_then(|end| AddressRange::new(page, end))

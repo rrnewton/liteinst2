@@ -468,12 +468,11 @@ impl RuntimeArchive {
                 .all(|value| value.binding.id().invocation < id.invocation)
     }
     pub(super) fn fail_active(&mut self, kind: KernelFailureKind) {
-        if let Some(handle) = self.active {
-            if let Some(attempt) = self.attempts.get_mut(handle.index) {
-                if attempt.binding.id() == handle.id {
-                    attempt.fail(kind);
-                }
-            }
+        if let Some(handle) = self.active
+            && let Some(attempt) = self.attempts.get_mut(handle.index)
+            && attempt.binding.id() == handle.id
+        {
+            attempt.fail(kind);
         }
     }
     pub(super) fn snapshot(&self) -> Vec<RuntimeKernelAttemptSnapshot> {
@@ -602,11 +601,12 @@ impl RuntimeJournalSink {
                 value
             }
         };
-        if let Some(attempt) = archive.runtime.attempts.get_mut(self.handle.index) {
-            if attempt.binding.id() == self.handle.id && !attempt.completed {
-                attempt.stage = stage;
-                attempt.fail(kind);
-            }
+        if let Some(attempt) = archive.runtime.attempts.get_mut(self.handle.index)
+            && attempt.binding.id() == self.handle.id
+            && !attempt.completed
+        {
+            attempt.stage = stage;
+            attempt.fail(kind);
         }
     }
 }

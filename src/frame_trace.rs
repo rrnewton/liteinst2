@@ -754,21 +754,21 @@ impl HelperFrames {
                     after: state.clone(),
                 },
             ));
-            if let Some((call_index, kind)) = self.call {
-                if index == call_index {
-                    if instruction.mnemonic() != iced_x86::Mnemonic::Call
-                        || match direct_target {
-                            None => instruction.op0_register() != Register::RAX,
-                            Some(target) => {
-                                instruction.code() != iced_x86::Code::Call_rel32_64
-                                    || instruction.near_branch_target() != target
-                            }
+            if let Some((call_index, kind)) = self.call
+                && index == call_index
+            {
+                if instruction.mnemonic() != iced_x86::Mnemonic::Call
+                    || match direct_target {
+                        None => instruction.op0_register() != Register::RAX,
+                        Some(target) => {
+                            instruction.code() != iced_x86::Code::Call_rel32_64
+                                || instruction.near_branch_target() != target
                         }
-                    {
-                        return Err(FrameTraceRefusal::InvalidProducerAnnotation);
                     }
-                    call = Some((start, end, kind));
+                {
+                    return Err(FrameTraceRefusal::InvalidProducerAnnotation);
                 }
+                call = Some((start, end, kind));
             }
         }
         let expected = match self.stage {

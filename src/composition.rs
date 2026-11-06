@@ -189,12 +189,11 @@ impl Composition {
             }
             for other in &edits[..index] {
                 let other_range = byte_range(other.address, &other.bytes)?;
-                if let Some(shared) = intersection(range, other_range) {
-                    if bytes_at(edit.address, &edit.bytes, shared)
+                if let Some(shared) = intersection(range, other_range)
+                    && bytes_at(edit.address, &edit.bytes, shared)
                         != bytes_at(other.address, &other.bytes, shared)
-                    {
-                        return Err(Refusal::OwnershipConflict);
-                    }
+                {
+                    return Err(Refusal::OwnershipConflict);
                 }
             }
             new_locks.push(range);
@@ -225,19 +224,19 @@ impl Composition {
             apply(&mut self.final_bytes, edit)?;
         }
         for obligation in &parts.obligations {
-            if let EntryObligation::Routed(route) = obligation {
-                if bytes_match(&self.final_bytes, route.original, &[0x62])? {
-                    // The qualified invalid-EVEX marker depends on its P1 byte
-                    // and may fetch a full architectural instruction before
-                    // #UD. Preserve the entire authenticated fetch envelope,
-                    // including bytes beyond the displaced interval. Inspect
-                    // the complete post-step overlay, not the original opcode.
-                    let fetch = AddressRange::new(route.original, 15)?;
-                    if !covered(&self.originals, fetch)? {
-                        return Err(Refusal::DependencyNotHeld);
-                    }
-                    new_locks.push(fetch);
+            if let EntryObligation::Routed(route) = obligation
+                && bytes_match(&self.final_bytes, route.original, &[0x62])?
+            {
+                // The qualified invalid-EVEX marker depends on its P1 byte
+                // and may fetch a full architectural instruction before
+                // #UD. Preserve the entire authenticated fetch envelope,
+                // including bytes beyond the displaced interval. Inspect
+                // the complete post-step overlay, not the original opcode.
+                let fetch = AddressRange::new(route.original, 15)?;
+                if !covered(&self.originals, fetch)? {
+                    return Err(Refusal::DependencyNotHeld);
                 }
+                new_locks.push(fetch);
             }
         }
         self.locks.extend(new_locks);
@@ -295,12 +294,11 @@ fn bytes_match(
         return Err(Refusal::DependencyNotHeld);
     }
     for snapshot in snapshots {
-        if let Some(shared) = intersection(byte_range(snapshot.address, &snapshot.bytes)?, wanted) {
-            if bytes_at(snapshot.address, &snapshot.bytes, shared)
+        if let Some(shared) = intersection(byte_range(snapshot.address, &snapshot.bytes)?, wanted)
+            && bytes_at(snapshot.address, &snapshot.bytes, shared)
                 != bytes_at(address, expected, shared)
-            {
-                return Ok(false);
-            }
+        {
+            return Ok(false);
         }
     }
     Ok(true)

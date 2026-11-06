@@ -92,8 +92,8 @@ impl Puzzle {
         code[victim + victim_len] = 0xc3;
         let heads = (0..code.len())
             .filter(|&pc| {
-                !(selected < pc && pc < selected + selected_len)
-                    && !(victim < pc && pc < victim + victim_len)
+                !(selected < pc && pc < selected + selected_len
+                    || victim < pc && pc < victim + victim_len)
             })
             .collect();
         Self {
@@ -952,8 +952,8 @@ fn refuses_neighbor_relay_just_outside_both_signed_endpoints() {
             }
             puzzle.heads = (0..puzzle.code.len())
                 .filter(|&pc| {
-                    !(puzzle.selected < pc && pc < puzzle.selected + selected_len)
-                        && !(puzzle.victim < pc && pc < puzzle.victim + victim_len)
+                    !(puzzle.selected < pc && pc < puzzle.selected + selected_len
+                        || puzzle.victim < pc && pc < puzzle.victim + victim_len)
                 })
                 .collect();
             let oracle = NativeOracle::new(&puzzle.code);
@@ -1168,10 +1168,10 @@ impl FamilyPuzzle {
         code[victim_ret] = 0xc3;
         let heads: Vec<_> = (0..function_len)
             .filter(|&pc| {
-                !(selected < pc && pc < selected + 2)
-                    && !(victim < pc && pc < victim + victim_len)
-                    && !(kind == Family::Jnz && pc == 3)
-                    && !(kind == Family::RipLoad && victim + victim_len < pc && pc < victim_ret)
+                !(selected < pc && pc < selected + 2
+                    || victim < pc && pc < victim + victim_len
+                    || kind == Family::Jnz && pc == 3
+                    || kind == Family::RipLoad && victim + victim_len < pc && pc < victim_ret)
             })
             .collect();
         let (expected_heads, expected_events) = match kind {

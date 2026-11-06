@@ -22,8 +22,8 @@ impl FetchGeometry {
         let length = instruction.end() - instruction.start();
         let source_range = AddressRange::new(source.start, source.end)
             .ok_or(GateError::Refused("runtime fetch source range differs"))?;
-        if source.start % PAGE != 0
-            || source.end % PAGE != 0
+        if !source.start.is_multiple_of(PAGE)
+            || !source.end.is_multiple_of(PAGE)
             || !(1..=15).contains(&length)
             || !source_range.covers(instruction)
         {
@@ -65,8 +65,8 @@ impl FetchGeometry {
             || container.current_span != original.current_span
             || container.start > original.start
             || container.end < original.end
-            || container.start % PAGE != 0
-            || container.end % PAGE != 0
+            || !container.start.is_multiple_of(PAGE)
+            || !container.end.is_multiple_of(PAGE)
             || container.file != original.file
             || container
                 .offset

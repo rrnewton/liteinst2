@@ -176,7 +176,7 @@ impl Case {
     }
     pub fn bound(self, call: usize) -> usize {
         assert!(call < 4);
-        if call % 2 == 0 {
+        if call.is_multiple_of(2) {
             self.csv.length()
         } else {
             self.length.bound
@@ -184,7 +184,7 @@ impl Case {
     }
     pub fn value(self, call: usize) -> u64 {
         assert!(call < 4);
-        if call % 2 == 0 {
+        if call.is_multiple_of(2) {
             self.csv.expected()
         } else {
             strnlen::cases::scalar(self.length)
@@ -908,7 +908,12 @@ pub(super) fn ret_order(calls: usize, returns: usize) {
 }
 pub(super) fn call_bytes(index: usize) -> [u8; 4] {
     assert!(index < 4);
-    [0x41, 0xff, 0x55, if index % 2 == 0 { 0 } else { 8 }]
+    [
+        0x41,
+        0xff,
+        0x55,
+        if index.is_multiple_of(2) { 0 } else { 8 },
+    ]
 }
 pub(super) fn call_before(
     r: &libc::user_regs_struct,
@@ -926,7 +931,11 @@ pub(super) fn call_before(
             data + TARGETS as u64,
             data + REQUESTS as u64,
             data + RESULTS as u64,
-            data + (if index % 2 == 0 { INPUT } else { LENGTH_INPUT }) as u64,
+            data + (if index.is_multiple_of(2) {
+                INPUT
+            } else {
+                LENGTH_INPUT
+            }) as u64,
             bound as u64,
             rsp - bytes::SUBJECT_RSP_DELTA + 8
         )

@@ -289,13 +289,13 @@ fn link(
                 len,
             });
         }
-        if let Some((earlier, previous_end)) = previous {
-            if field.offset < previous_end {
-                return Err(Error::OverlappingFields {
-                    earlier,
-                    later: field.offset,
-                });
-            }
+        if let Some((earlier, previous_end)) = previous
+            && field.offset < previous_end
+        {
+            return Err(Error::OverlappingFields {
+                earlier,
+                later: field.offset,
+            });
         }
         previous = Some((field.offset, end));
         if field.expected.len() != width {

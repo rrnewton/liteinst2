@@ -58,7 +58,9 @@ impl InitialCaptureProfile {
         if !(1..=MAX_VMAS).contains(&self.max_vmas)
             || !(1..=MAX_WINDOWS).contains(&self.max_windows)
             || self.max_window_bytes > MAX_WINDOW_BYTES
-            || self.max_window_bytes % geometry::PAGE as usize != 0
+            || !self
+                .max_window_bytes
+                .is_multiple_of(geometry::PAGE as usize)
             || self.max_total_capture_bytes < self.max_window_bytes
             || self.max_total_capture_bytes > mul(self.max_windows, self.max_window_bytes)?
         {
