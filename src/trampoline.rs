@@ -181,6 +181,62 @@ impl SavedExtendedStateComponent {
     }
 }
 
+/// Outcome of an architectural (restoration-semantics) xstate comparison.
+///
+/// `NotComparable` carries the named reason the input format could not
+/// be fully modelled; callers must feed it into their existing
+/// fail-closed refusal path, never treat it as equality.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum XstateSemanticEq {
+    /// XRSTOR from either image yields identical architectural state.
+    Equal,
+    /// The architectural states provably differ.
+    Different,
+    /// The format could not be fully modelled; equality is unproven.
+    NotComparable(&'static str),
+}
+
+/// Legacy-area (x87/SSE) semantic equality for XSAVE images.
+///
+/// FTW is the 8-bit abridged tag at byte 4 (0 = all empty); the 16-bit
+/// FSAVE 0xffff form is not an XSAVE init encoding and is treated as
+/// occupied state here. MXCSR/MXCSR_MASK at [24..32] compare raw.
+/// Any other legacy difference (FSW/FOP/FIP/FDP, payloads, padding
+/// [416..512]) is a real difference.
+fn legacy_semantic_eq(a: &[u8], b: &[u8], bv_a: u64, bv_b: u64) -> bool {
+    fn x87_init(bytes: &[u8]) -> bool {
+        bytes[0..2] == [0x7f, 0x03]
+            && bytes[2..6] == [0, 0, 0, 0]
+            && bytes[6..24].iter().all(|byte| *byte == 0)
+            && bytes[32..160].iter().all(|byte| *byte == 0)
+    }
+    fn sse_init(bytes: &[u8]) -> bool {
+        bytes[160..416].iter().all(|byte| *byte == 0)
+    }
+    if a[24..32] != b[24..32] || a[416..512] != b[416..512] {
+        return false;
+    }
+    let x87_equal = if bv_a & 1 != 0 && bv_b & 1 != 0 {
+        a[0..24] == b[0..24] && a[32..160] == b[32..160]
+    } else if bv_a & 1 != 0 {
+        x87_init(a)
+    } else if bv_b & 1 != 0 {
+        x87_init(b)
+    } else {
+        true
+    };
+    let sse_equal = if bv_a & 2 != 0 && bv_b & 2 != 0 {
+        a[160..416] == b[160..416]
+    } else if bv_a & 2 != 0 {
+        sse_init(a)
+    } else if bv_b & 2 != 0 {
+        sse_init(b)
+    } else {
+        true
+    };
+    x87_equal && sse_equal
+}
+
 /// Per-trampoline extended-state save layout and authenticated component map.
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -432,6 +488,175 @@ impl SavedExtendedStateLayout {
         Self::detect_with_mask(PRESERVED_USER_STATE_MASK)
     }
 
+    /// Whether an XCR0 value enables only components this layout preserves.
+    ///
+    /// Pure value form of [`Self::xcr0_within_preserved_mask`], for callers
+    /// (and tests) that already hold an XCR0 reading.
+    pub fn xcr0_within_preserved_mask_value(xcr0: u64) -> bool {
+        xcr0 & !PRESERVED_USER_STATE_MASK == 0
+    }
+
+    /// Whether this thread's XCR0 stays within the preserved user-state mask.
+    ///
+    /// Patch-window trampolines save and restore only the components in
+    /// `PRESERVED_USER_STATE_MASK` (through PKRU; AMX tile state is left to
+    /// its explicit owner — see `detect_with_mask`). Byte-exact comparisons
+    /// between a full kernel xstate image and a preserved-layout image can
+    /// therefore only agree when XCR0 enables nothing beyond the mask
+    /// (in practice: AMX bits 17/18 clear). Test oracles that make such
+    /// comparisons use this as their capability probe.
+    ///
+    /// Without XSAVE/OSXSAVE there are no extended components to preserve,
+    /// so the answer is vacuously true (the FXSAVE64 path).
+    // CPUID intrinsics were unsafe at the crate's Rust 1.85 minimum version.
+    #[allow(unused_unsafe)]
+    pub fn xcr0_within_preserved_mask() -> bool {
+        use core::arch::x86_64::__cpuid;
+        use core::arch::x86_64::_xgetbv;
+        // SAFETY: CPUID is available in x86-64 mode.
+        let features = unsafe { __cpuid(1) };
+        let has_xsave = features.ecx & (1 << 26) != 0;
+        let has_osxsave = features.ecx & (1 << 27) != 0;
+        if !has_xsave || !has_osxsave {
+            return true;
+        }
+        // SAFETY: OSXSAVE proves XGETBV is enabled for XCR0.
+        Self::xcr0_within_preserved_mask_value(unsafe { _xgetbv(0) })
+    }
+
+    /// Architectural (restoration) equality of two XSAVE images.
+    ///
+    /// `XSTATE_BV` selects load-vs-initialize per component, so two
+    /// captures of the *same* architectural state can differ as byte
+    /// strings exactly where a component is in its architectural init
+    /// state. This predicate answers "would XRSTOR from either image
+    /// yield identical architectural state" — it does **not** attest
+    /// raw snapshot identity, capture pairing, or journal integrity,
+    /// and must not be used where stored bytes are themselves the
+    /// record.
+    ///
+    /// Fail-safe axiom: `Equal` results only from byte-identical
+    /// inputs or a complete per-component proof. Any format this
+    /// function cannot fully model — compacted images, supervisor
+    /// (XSS) components, unknown/reserved components, malformed
+    /// extents, nonzero reserved header words, or a BV-set component
+    /// whose extent is absent — yields `NotComparable`, never a guess.
+    /// Allocation-free; stored bytes are never rewritten.
+    // CPUID intrinsics were unsafe at the crate's Rust 1.85 minimum version.
+    #[allow(unused_unsafe)]
+    pub fn xstate_semantic_eq(a: &[u8], b: &[u8]) -> XstateSemanticEq {
+        if a == b {
+            return XstateSemanticEq::Equal;
+        }
+        if a.len() != b.len() {
+            return XstateSemanticEq::Different;
+        }
+        if a.len() == 512 {
+            // FXSAVE64: no BV header exists; bytes already known unequal.
+            return XstateSemanticEq::Different;
+        }
+        if a.len() < 576 {
+            return XstateSemanticEq::NotComparable("truncated XSAVE header");
+        }
+        let bv_a = u64::from_le_bytes(a[512..520].try_into().unwrap());
+        let bv_b = u64::from_le_bytes(b[512..520].try_into().unwrap());
+        let xcomp_a = u64::from_le_bytes(a[520..528].try_into().unwrap());
+        let xcomp_b = u64::from_le_bytes(b[520..528].try_into().unwrap());
+        if xcomp_a != xcomp_b {
+            return XstateSemanticEq::Different;
+        }
+        if xcomp_a >> 63 != 0 {
+            return XstateSemanticEq::NotComparable("compacted XSAVE format");
+        }
+        if a[528..576].iter().any(|byte| *byte != 0) || b[528..576].iter().any(|byte| *byte != 0) {
+            return XstateSemanticEq::NotComparable("nonzero reserved xstate header");
+        }
+        // SAFETY: CPUID is available in x86-64 mode.
+        let root = unsafe { core::arch::x86_64::__cpuid_count(0xD, 0) };
+        let supported = u64::from(root.eax) | (u64::from(root.edx) << 32);
+        let claimed = bv_a | bv_b | xcomp_a;
+        if claimed & !supported != 0 {
+            return XstateSemanticEq::NotComparable("unknown xstate component");
+        }
+        if !legacy_semantic_eq(a, b, bv_a, bv_b) {
+            return XstateSemanticEq::Different;
+        }
+        // Reviewed allowlist of user components whose architectural init
+        // state is an all-zero payload: AVX (2), MPX bounds/config (3/4),
+        // AVX-512 opmask/ZMM_Hi256/Hi16_ZMM (5/6/7), PKRU (9, security
+        // state: init is the all-zero permissive value; any nonzero
+        // PKRU byte remains a real difference below), AMX
+        // XTILECFG/XTILEDATA (17/18). Anything else (e.g. CET, PASID)
+        // is never guessed.
+        const ALLOWLIST: u64 = (1 << 2)
+            | (1 << 3)
+            | (1 << 4)
+            | (1 << 5)
+            | (1 << 6)
+            | (1 << 7)
+            | (1 << 9)
+            | (1 << 17)
+            | (1 << 18);
+        for index in 2..64_u32 {
+            let bit = 1_u64 << index;
+            if claimed & bit == 0 {
+                continue;
+            }
+            if ALLOWLIST & bit == 0 {
+                return XstateSemanticEq::NotComparable("unreviewed xstate component");
+            }
+            // component_extent also rejects supervisor (XSS) components,
+            // whose CPUID leaf marks ECX bit 0.
+            let Ok((offset, _size, end)) = Self::component_extent(index) else {
+                return XstateSemanticEq::NotComparable("unmodelled xstate component extent");
+            };
+            let (offset, end) = (offset as usize, end as usize);
+            if end > a.len() {
+                return XstateSemanticEq::NotComparable("BV-set component extent absent");
+            }
+            let in_a = bv_a & bit != 0;
+            let in_b = bv_b & bit != 0;
+            if in_a && in_b {
+                if a[offset..end] != b[offset..end] {
+                    return XstateSemanticEq::Different;
+                }
+            } else {
+                let present = if in_a {
+                    &a[offset..end]
+                } else {
+                    &b[offset..end]
+                };
+                if present.iter().any(|byte| *byte != 0) {
+                    return XstateSemanticEq::Different;
+                }
+            }
+        }
+        XstateSemanticEq::Equal
+    }
+
+    /// Validated CPUID extent `(offset, size, end)` for one user-state
+    /// component: the single extent derivation shared by layout detection
+    /// and semantic comparison.
+    #[allow(unused_unsafe)]
+    fn component_extent(index: u32) -> Result<(u64, u64, u64), TrampolineError> {
+        use core::arch::x86_64::__cpuid_count;
+        // SAFETY: CPUID is available in x86-64 mode.
+        let leaf = unsafe { __cpuid_count(0xD, index) };
+        let offset = u64::from(leaf.ebx);
+        let size = u64::from(leaf.eax);
+        let Some(end) = offset.checked_add(size) else {
+            return Err(TrampolineError::InvalidExtendedStateLayout {
+                message: "XSAVE component extent overflows",
+            });
+        };
+        if size == 0 || offset < 576 || leaf.ecx & 1 != 0 {
+            return Err(TrampolineError::InvalidExtendedStateLayout {
+                message: "XSAVE component lacks a standard user-state layout",
+            });
+        }
+        Ok((offset, size, end))
+    }
+
     #[allow(unused_unsafe)]
     fn detect_with_mask(preservation_mask: u64) -> Result<Self, TrampolineError> {
         use core::arch::x86_64::__cpuid;
@@ -473,19 +698,7 @@ impl SavedExtendedStateLayout {
                     message: "XSAVE component table capacity is insufficient",
                 });
             }
-            let leaf = unsafe { __cpuid_count(0xD, index) };
-            let offset = u64::from(leaf.ebx);
-            let size = u64::from(leaf.eax);
-            let Some(end) = offset.checked_add(size) else {
-                return Err(TrampolineError::InvalidExtendedStateLayout {
-                    message: "XSAVE component extent overflows",
-                });
-            };
-            if size == 0 || offset < 576 || leaf.ecx & 1 != 0 {
-                return Err(TrampolineError::InvalidExtendedStateLayout {
-                    message: "XSAVE component lacks a standard user-state layout",
-                });
-            }
+            let (offset, size, end) = Self::component_extent(index)?;
             if components[..component_count].iter().any(|component| {
                 let prior_end = component.offset + component.size;
                 offset < prior_end && component.offset < end
@@ -6004,10 +6217,120 @@ mod tests {
     use super::TrampolineError;
     use super::TrampolineLayout;
     use super::TrampolinePlan;
+    use super::XstateSemanticEq;
     use super::encode_return_jump;
     use crate::scanner::InstructionScanner;
 
     unsafe extern "C" fn noop_hook(_context: *mut HookContext) {}
+
+    #[test]
+    fn xcr0_within_preserved_mask_value_per_bit() {
+        let within = SavedExtendedStateLayout::xcr0_within_preserved_mask_value;
+        assert!(within(0b10_1110_0111));
+        assert!(within(0b11));
+        assert!(within(0));
+        assert!(!within(0b10_1110_0111 | (1 << 17)));
+        assert!(!within(0b10_1110_0111 | (1 << 18)));
+        assert!(!within(1 << 17));
+        assert!(!within(1 << 18));
+        assert!(!within(1 << 10));
+    }
+
+    fn semantic_image(bv: u64, x87: &[u8; 160], xmm: &[u8; 256]) -> Vec<u8> {
+        let mut bytes = vec![0u8; 576];
+        bytes[0..160].copy_from_slice(x87);
+        bytes[24..28].copy_from_slice(&0x1f80_u32.to_le_bytes());
+        bytes[160..416].copy_from_slice(xmm);
+        bytes[512..520].copy_from_slice(&bv.to_le_bytes());
+        bytes
+    }
+
+    fn x87_init_image() -> [u8; 160] {
+        let mut x87 = [0u8; 160];
+        x87[0..2].copy_from_slice(&[0x7f, 0x03]);
+        x87
+    }
+
+    #[test]
+    fn semantic_eq_fail_safe_and_legacy_matrix() {
+        let eq = SavedExtendedStateLayout::xstate_semantic_eq;
+        let init = semantic_image(0b11, &x87_init_image(), &[0; 256]);
+        let clear = semantic_image(0, &x87_init_image(), &[0; 256]);
+        // Byte-identical fast path, then BV representation equivalence.
+        assert_eq!(eq(&init, &init), XstateSemanticEq::Equal);
+        assert_eq!(eq(&init, &clear), XstateSemanticEq::Equal);
+        // Non-init payload under a set bit is a real difference.
+        let mut nonzero = init.clone();
+        nonzero[160] = 0x5a;
+        assert_eq!(eq(&nonzero, &clear), XstateSemanticEq::Different);
+        let mut other = init.clone();
+        other[160] = 0x6b;
+        assert_eq!(eq(&nonzero, &other), XstateSemanticEq::Different);
+        // Occupied x87 stack (abridged FTW nonzero) is not init state.
+        let mut occupied = x87_init_image();
+        occupied[4] = 0b01;
+        assert_eq!(
+            eq(&semantic_image(0b01, &occupied, &[0; 256]), &clear),
+            XstateSemanticEq::Different
+        );
+        // MXCSR is live state in both representations.
+        let mut mxcsr = clear.clone();
+        mxcsr[24] ^= 1;
+        assert_eq!(eq(&mxcsr, &clear), XstateSemanticEq::Different);
+        // Length and format guards never guess.
+        assert_eq!(
+            eq(&init[..575], &clear[..575]),
+            XstateSemanticEq::NotComparable("truncated XSAVE header")
+        );
+        assert_eq!(eq(&init, &clear[..512]), XstateSemanticEq::Different);
+        let mut compacted = init.clone();
+        compacted[520..528].copy_from_slice(&(1_u64 << 63).to_le_bytes());
+        let mut compacted_b = compacted.clone();
+        compacted_b[160] = 1;
+        assert!(matches!(
+            eq(&compacted, &compacted_b),
+            XstateSemanticEq::NotComparable(_)
+        ));
+        let mut unknown = clear.clone();
+        unknown[512..520].copy_from_slice(&(1_u64 << 40).to_le_bytes());
+        assert!(matches!(
+            eq(&unknown, &clear),
+            XstateSemanticEq::NotComparable(_)
+        ));
+        let mut reserved = clear.clone();
+        reserved[528] = 1;
+        assert!(matches!(
+            eq(&reserved, &clear),
+            XstateSemanticEq::NotComparable(_)
+        ));
+    }
+
+    #[test]
+    fn semantic_eq_extended_component_matrix() {
+        // Uses this host's AVX (bit 2) extent via the shared derivation;
+        // hosts without a standard-layout AVX component have nothing to
+        // prove here and the synthetic matrix above still applies.
+        let Ok((offset, _size, end)) = SavedExtendedStateLayout::component_extent(2) else {
+            return;
+        };
+        let (offset, end) = (offset as usize, end as usize);
+        let mut set = vec![0u8; end];
+        set[0..2].copy_from_slice(&[0x7f, 0x03]);
+        set[24..28].copy_from_slice(&0x1f80_u32.to_le_bytes());
+        set[512..520].copy_from_slice(&0b111_u64.to_le_bytes());
+        let mut clear = set.clone();
+        clear[512..520].copy_from_slice(&0_u64.to_le_bytes());
+        let eq = SavedExtendedStateLayout::xstate_semantic_eq;
+        assert_eq!(eq(&set, &clear), XstateSemanticEq::Equal);
+        let mut nonzero = set.clone();
+        nonzero[offset] = 1;
+        assert_eq!(eq(&nonzero, &clear), XstateSemanticEq::Different);
+        // BV-set component whose extent is absent fails closed.
+        assert!(matches!(
+            eq(&set[..576], &clear[..576]),
+            XstateSemanticEq::NotComparable(_)
+        ));
+    }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     mod process_maps_io_regressions {

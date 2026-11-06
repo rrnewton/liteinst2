@@ -780,11 +780,20 @@ impl NativeLifecycle {
                 return Err(LaunchError::Invalid("thread newborn lacks a task pidfd"));
             }
         }
-        if registers != expected
-            || xstate(tid)? != pending.xstate
-            || launch::task_mask(tid)? != pending.mask
-        {
+        if registers != expected || launch::task_mask(tid)? != pending.mask {
             return Err(LaunchError::Invalid("fork newborn initial state differs"));
+        }
+        match liteinst::trampoline::SavedExtendedStateLayout::xstate_semantic_eq(
+            &xstate(tid)?,
+            &pending.xstate,
+        ) {
+            liteinst::trampoline::XstateSemanticEq::Equal => {}
+            liteinst::trampoline::XstateSemanticEq::Different => {
+                return Err(LaunchError::Invalid("fork newborn initial xstate differs"));
+            }
+            liteinst::trampoline::XstateSemanticEq::NotComparable(reason) => {
+                return Err(LaunchError::Invalid(reason));
+            }
         }
         let status = std::fs::read_to_string(format!("/proc/{tid}/status"))
             .map_err(|error| io_error("read fork newborn thread group", error))?;

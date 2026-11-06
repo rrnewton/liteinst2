@@ -4,6 +4,33 @@
 //! ChildOwner, transfers ptrace ownership, or executes an original instruction.
 use super::*;
 use crate::lifecycle::AddressSpaceId;
+use liteinst::trampoline::{SavedExtendedStateLayout, XstateSemanticEq};
+
+/// Fail-closed semantic xstate check: `NotComparable` and `Different`
+/// both refuse, with the helper's named reason or the caller's message.
+fn require_xstate_semantic_eq(
+    actual: &[u8],
+    expected: &[u8],
+    differs: &'static str,
+) -> Result<(), LaunchError> {
+    match SavedExtendedStateLayout::xstate_semantic_eq(actual, expected) {
+        XstateSemanticEq::Equal => Ok(()),
+        XstateSemanticEq::Different => Err(LaunchError::Invalid(differs)),
+        XstateSemanticEq::NotComparable(reason) => Err(LaunchError::Invalid(reason)),
+    }
+}
+
+/// Whole-snapshot continuity: registers and mask raw, xstate semantic.
+fn require_snapshot_semantic_eq(
+    actual: &TaskStateSnapshot,
+    expected: &TaskStateSnapshot,
+    differs: &'static str,
+) -> Result<(), LaunchError> {
+    if actual.registers != expected.registers || actual.mask != expected.mask {
+        return Err(LaunchError::Invalid(differs));
+    }
+    require_xstate_semantic_eq(&actual.xstate, &expected.xstate, differs)
+}
 
 /// A private current stop, distinct from an application signal or syscall stop.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -68,9 +95,7 @@ impl TaskStateSnapshot {
                 (&raw const self.mask) as usize,
             )?;
         }
-        if Self::read(tid)? != *self {
-            return Err(LaunchError::Invalid("trusted state restoration differs"));
-        }
+        require_snapshot_semantic_eq(&Self::read(tid)?, self, "trusted state restoration differs")?;
         Ok(())
     }
 }
@@ -198,14 +223,16 @@ pub(in crate::linux::remote::dynamic) fn execute(
     }
     let result = (|| {
         set_registers(tid, &registers)?;
-        if read_registers(tid)? != registers
-            || xstate(tid)? != saved.xstate
-            || launch::task_mask(tid)? != saved.mask
-        {
+        if read_registers(tid)? != registers || launch::task_mask(tid)? != saved.mask {
             return Err(LaunchError::Invalid(
                 "trusted setup changed unrelated state",
             ));
         }
+        require_xstate_semantic_eq(
+            &xstate(tid)?,
+            &saved.xstate,
+            "trusted setup changed unrelated state",
+        )?;
         let mut current = token.clone();
         loop {
             owner.time_left(until, "trusted admission execution")?;
@@ -225,17 +252,15 @@ pub(in crate::linux::remote::dynamic) fn execute(
                 && libc::WSTOPSIG(status) == libc::SIGTRAP
                 && status >> 16 == libc::PTRACE_EVENT_STOP
             {
-                if TaskStateSnapshot::read(tid)?
-                    != (TaskStateSnapshot {
+                require_snapshot_semantic_eq(
+                    &TaskStateSnapshot::read(tid)?,
+                    &TaskStateSnapshot {
                         registers,
                         xstate: saved.xstate.clone(),
                         mask: saved.mask,
-                    })
-                {
-                    return Err(LaunchError::Invalid(
-                        "neutral interruption changed private setup",
-                    ));
-                }
+                    },
+                    "neutral interruption changed private setup",
+                )?;
                 current = native.finish_admission_execution(
                     tid,
                     registers.rip,
@@ -474,11 +499,11 @@ pub(in crate::linux::remote::dynamic) fn return_bridge(
             xstate: saved.xstate.clone(),
             mask: saved.mask,
         };
-        if TaskStateSnapshot::read(token.tid)? != setup {
-            return Err(LaunchError::Invalid(
-                "return bridge setup changed unrelated state",
-            ));
-        }
+        require_snapshot_semantic_eq(
+            &TaskStateSnapshot::read(token.tid)?,
+            &setup,
+            "return bridge setup changed unrelated state",
+        )?;
         loop {
             owner.time_left(until, "admission return bridge")?;
             ptrace(libc::PTRACE_CONT, token.tid, 0, 0)?;
