@@ -80,8 +80,150 @@ The last row is load-bearing: refusing to patch and trapping instead is
 a supported, expected outcome, not an error path to hide. Clients that
 keep a ptrace slow path follow the decision tree site by site.
 
-> 🚧 **Under construction — per-tactic listings.** TODO: one runnable
-> listing per family (quiescent install, concurrent install, rapid
-> toggle loop with timing, synchronized batch), each compiled in CI
-> from `examples/` or `tests/` sources. <!-- UC: tactics-listings -->
-> Tracking: [liteinst2#38](https://github.com/rrnewton/liteinst2/issues/38) (`tactics-listings`).
+## The four families in code
+
+Each listing below is excerpted from a source CI already compiles —
+an example or the tactic's own tests — so the shapes cannot drift
+from the APIs they teach.
+
+**Quiescent** (`examples/owned_loop_clock.rs`): plan first, then
+publish inside a `QuiescenceLease` whose constructor is the caller's
+exclusion proof. The callback performs the caller's half of the
+hand-off (here, flipping the page to RX) *inside* the lease:
+
+```rust,ignore
+        let (installed, receipt) = {
+            // SAFETY: sole thread, exact private source/image owners and no
+            // invocation/resume. The only callable pointers are made later.
+            let mut lease = unsafe { QuiescenceLease::new(&mut candidate, identity, ranges) };
+            let result = unsafe {
+                planned.publish_with(base as usize as *mut u8, &mut lease, || {
+                    if libc::mprotect(
+                        base as usize as *mut libc::c_void,
+                        4096,
+                        libc::PROT_READ | libc::PROT_EXEC,
+                    ) != 0
+                    {
+                        return Err(Refusal::Backend(
+                            std::io::Error::last_os_error().to_string(),
+                        ));
+                    }
+                    Ok(())
+                })
+            }
+            .expect("publication must succeed before entry");
+            assert!(!lease.is_poisoned());
+            result
+        };
+```
+
+**Concurrent** (`examples/replace_first.rs`): the ordinary
+`InstalledHook` entrypoints need no lease and no stopped world —
+install once, then activate/deactivate while other threads fetch:
+
+```rust,ignore
+    let scanner = InstructionScanner::default();
+    let scan = scanner.scan(&code, address)?;
+    let arena = TrampolineArena::allocate_near(address, 1)?;
+    // SAFETY: both aliases and the arena remain live through every function call.
+    let hook = unsafe {
+        InstalledHook::install_replacing_first_in_arena(
+            HookSite::new(&scanner, &scan, &code, address, address, writable.cast()),
+            replace_zero,
+            StalenessBudget::new(3_000).unwrap(),
+            &arena,
+        )?
+    };
+    // SAFETY: code is an extern C function returning u32.
+    let function: unsafe extern "C" fn() -> u32 = unsafe { std::mem::transmute(executable) };
+
+    assert_eq!(unsafe { function() }, 1);
+    hook.activate()?;
+    assert_eq!(unsafe { function() }, 41);
+    hook.deactivate()?;
+    assert_eq!(unsafe { function() }, 1);
+    println!("inactive=1 active=41 restored=1");
+```
+
+**Rapid** (`src/rapid.rs` tests): the one-byte pun only exists
+because the original instruction *is* the jump encoding with its
+opcode byte changed — here `mov eax, <disp32>` whose immediate is
+chosen as the displacement to a reserved trampoline page. Planning
+proves that exactness or refuses; toggling is then one atomic
+opcode store, which the benchmark times in a plain loop:
+
+```rust,ignore
+        fn plan_fixture(mapping: &DualMapping) -> (RapidTogglePlan, Placeholder, Vec<u8>, u32) {
+            let execute_address = mapping.executable_address(SITE_OFFSET);
+            let placeholder = Placeholder::reserve_near(execute_address + 5);
+            let target_address = placeholder.address + TARGET_OFFSET;
+            let displacement =
+                i32::try_from(target_address as i128 - i128::from(execute_address + 5)).unwrap();
+            let mut code = vec![0xB8];
+            code.extend_from_slice(&displacement.to_le_bytes());
+            code.extend_from_slice(&[0xC3, 0x90, 0x90]);
+            mapping.write(SITE_OFFSET, &code);
+            let scanner = InstructionScanner::default();
+            let scan = scanner.scan(&code, execute_address).unwrap();
+            let plan = RapidTogglePlan::from_scan(
+                &scanner,
+                &scan,
+                &code,
+                execute_address,
+                execute_address,
+                record_hook,
+            )
+            .unwrap();
+            assert_eq!(plan.target_address(), target_address as u64);
+            (plan, placeholder, code, displacement as u32)
+        }
+
+```
+
+```rust,ignore
+        fn benchmark_single_byte_toggle_latency() {
+            let _guard = serial_guard();
+            let mapping = DualMapping::new();
+            let (probe, _code, _expected) = install_fixture(&mapping);
+            for _ in 0..100_000 {
+                probe.enable();
+                probe.disable();
+            }
+
+            let iterations = 10_000_000_u64;
+            let start = Instant::now();
+            for _ in 0..iterations {
+                probe.enable();
+                probe.disable();
+            }
+            let elapsed = start.elapsed();
+            let nanos_per_toggle = elapsed.as_nanos() as f64 / (iterations * 2) as f64;
+            eprintln!(
+                "rapid toggle: {nanos_per_toggle:.3} ns/store over {} stores",
+                iterations * 2
+            );
+            assert!(
+```
+
+**Synchronized** (`src/patcher/synchronized.rs`): bind each
+`SyncJumpPatch` first (its contract is the long safety list on
+`SyncJumpPatch::bind`), then prepare the batch and advance it one
+phase at a time. Three process-wide barriers total, however many
+members the batch has; every failure is terminal for the handle and
+retains writer ownership:
+
+```rust,ignore
+// SAFETY: every bind/prepare contract holds for both members.
+let mut batch = unsafe {
+    SynchronizedBatch::prepare(&[&patch_a, &patch_b], Direction::Apply)
+}?;
+loop {
+    // SAFETY: same contracts, still true at each phase boundary.
+    let receipt = unsafe { batch.advance() }?;
+    // GuardsPublished -> GuardsSynchronized -> BacksPublished ->
+    // BacksSynchronized -> FrontsPublished -> Complete
+    if receipt.phase == Phase::Complete {
+        break;
+    }
+}
+```
