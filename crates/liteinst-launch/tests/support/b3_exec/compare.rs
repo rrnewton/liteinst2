@@ -12,7 +12,9 @@ pub fn cpu(before: &Architecture, after: &Architecture) {
     expected.registers.rcx = u64::from(h.ecx);
     expected.registers.rdx = u64::from(h.edx);
     expected.registers.rip += 2;
-    assert_eq!(*after, expected);
+    // before/after are independent raw captures of the same child at
+    // different stops: cross-capture, so xstate compares semantically.
+    super::assert_architecture_eq_cross_capture(after, &expected);
 }
 pub fn seeded(a: &Architecture, pc: u64, data: u64, stack: u64) {
     let mut r: RegisterSnapshot = unsafe { std::mem::zeroed::<libc::user_regs_struct>() }.into();
@@ -60,7 +62,8 @@ pub fn entry(before: &Architecture, actual: &Architecture, pc: u64) {
     r.r11 = r.eflags;
     r.orig_rax = libc::SYS_execve as u64;
     r.rax = (-libc::ENOSYS as i64) as u64;
-    assert_eq!(*actual, expected);
+    // before/actual are independent raw captures: cross-capture.
+    super::assert_architecture_eq_cross_capture(actual, &expected);
 }
 pub fn arguments(f: &Fixture, r: &RegisterSnapshot, maps: &Maps, bytes: &[u8]) {
     assert_eq!([r.rdi, r.rsi, r.rdx], [INPUT, f.argv, f.envp]);

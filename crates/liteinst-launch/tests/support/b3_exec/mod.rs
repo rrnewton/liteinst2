@@ -371,3 +371,28 @@ pub struct Stack {
     pub bytes: Vec<u8>,
     pub map: Map,
 }
+
+/// Cross-capture xstate equality via the production semantic predicate.
+///
+/// Use ONLY where the two sides come from different capture paths or
+/// different processes (journal/production records vs the independent
+/// raw reference trajectory). Same-record internal consistency asserts
+/// must keep raw equality so BV representation drift within one
+/// capture path is still caught. This adapter contains no component
+/// logic of its own: the single definition is
+/// `SavedExtendedStateLayout::xstate_semantic_eq` in liteinst.
+pub fn assert_xstate_eq_cross_capture(a: &[u8], b: &[u8]) {
+    assert_eq!(
+        liteinst::trampoline::SavedExtendedStateLayout::xstate_semantic_eq(a, b),
+        liteinst::trampoline::XstateSemanticEq::Equal,
+        "cross-capture xstate differs beyond BV init-state representation"
+    );
+}
+
+/// Cross-capture Architecture equality: registers and mask raw, xstate
+/// semantic (see [`assert_xstate_eq_cross_capture`]).
+pub fn assert_architecture_eq_cross_capture(a: &Architecture, b: &Architecture) {
+    assert_eq!(a.registers, b.registers);
+    assert_eq!(a.mask, b.mask);
+    assert_xstate_eq_cross_capture(&a.xstate, &b.xstate);
+}

@@ -42,6 +42,12 @@ fn selected_control_full_state_comparison_keeps_orig_xstate_and_mask_exact() {
     let state = &mut value.states[BEFORE].state;
     state.registers = registers;
     state.xstate.truncate(832);
+    // Well-formed standard XSAVE image with x87 marked live (BV bit 0),
+    // so the FDP corruption below is a live-state difference, not a
+    // stale byte under a clear BV bit.
+    state.xstate[0..2].copy_from_slice(&[0x7f, 0x03]);
+    state.xstate[24..28].copy_from_slice(&0x1f80_u32.to_le_bytes());
+    state.xstate[512] |= 0b01;
     state.mask = 0x200;
     let registry = crate::lifecycle::LifecycleRegistry::new(
         crate::lifecycle::Limits {

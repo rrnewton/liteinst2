@@ -364,11 +364,20 @@ fn require_state(
     registers: &RegisterSnapshot,
     before: &ObservedStop,
 ) -> Result<(), GateError> {
-    if state.registers != *registers
-        || state.xstate != before.xstate
-        || state.mask != before.signal_mask
-    {
+    if state.registers != *registers || state.mask != before.signal_mask {
         return Err(refused("runtime selected complete native state differs"));
+    }
+    match liteinst::trampoline::SavedExtendedStateLayout::xstate_semantic_eq(
+        &state.xstate,
+        &before.xstate,
+    ) {
+        liteinst::trampoline::XstateSemanticEq::Equal => {}
+        liteinst::trampoline::XstateSemanticEq::Different => {
+            return Err(refused("runtime selected complete native state differs"));
+        }
+        liteinst::trampoline::XstateSemanticEq::NotComparable(reason) => {
+            return Err(refused(reason));
+        }
     }
     Ok(())
 }

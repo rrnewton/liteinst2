@@ -14,9 +14,15 @@ fn state(pc: u64) -> TaskStateSnapshot {
     registers.ss = 0x2b;
     registers.orig_rax = u64::MAX;
     registers.eflags = 0x202;
+    // A well-formed standard XSAVE image (init legacy state, BV clear)
+    // so control predicates exercise their semantic path, not the
+    // format-refusal path.
+    let mut xstate = vec![0u8; 832];
+    xstate[0..2].copy_from_slice(&[0x7f, 0x03]); // FCW
+    xstate[24..28].copy_from_slice(&0x1f80_u32.to_le_bytes()); // MXCSR
     TaskStateSnapshot {
         registers,
-        xstate: vec![0x5a; 832],
+        xstate,
         mask: 0x200,
     }
 }
@@ -278,8 +284,16 @@ fn owned_native_whole_control_comparison_retains_xstate_mask_and_flags() {
     for index in [0, 831] {
         let mut changed = after.clone();
         changed.xstate[index] ^= 1;
+        // Both bytes are live state only with their BV bit set in both
+        // images (a stale byte under a clear BV bit is architecturally
+        // init state by definition): bit 0 (x87) for the FCW byte,
+        // bit 2 (AVX, payload at 576..832) for byte 831.
+        let bv_bit: u8 = if index == 0 { 0b001 } else { 0b100 };
+        changed.xstate[512] |= bv_bit;
+        let mut before_live = before.clone();
+        before_live.xstate[512] |= bv_bit;
         invalid(
-            runner::control_unchanged(&before, &changed),
+            runner::control_unchanged(&before_live, &changed),
             "owned ordinary changed non-arithmetic control state",
         );
     }
