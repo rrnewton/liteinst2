@@ -426,6 +426,12 @@ fn after_first_user(
 }
 
 fn run_failure(case: FailureCase) {
+    // Same byte-exact xstate records as the happy-path cases (see
+    // native_support::run); same PKU xstate requirement.
+    if crate::native_capability::skip_without_caps(crate::native_capability::CaseKind::ExecFailure)
+    {
+        return;
+    }
     let fixture = {
         let guard = crate::TEST_FILE_FORK.lock().unwrap();
         let fixture = Fixture::new();

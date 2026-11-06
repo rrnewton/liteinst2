@@ -551,20 +551,11 @@ fn run_parent(name: &str) {
 
 pub(super) fn run(name: &'static str, body: impl FnOnce()) {
     assert!(CASES.contains(&name), "unlisted runtime isolation case");
-    // Stack cases compare pagemap-backed native records byte-exactly;
-    // they require PFN-bearing pagemap entries and the PKU xstate
-    // component on this host (see crate::native_capability).
-    if name.contains("::stack::native_tests::") {
-        let caps = crate::native_capability::probe();
-        if crate::native_capability::skip_without(
-            "PFN-bearing pagemap (present bit + nonzero PFN for a resident page)",
-            caps.pagemap_pfn,
-        ) || crate::native_capability::skip_without(
-            "PKU xstate component (CPUID leaf 7 PKU/OSPKE + leaf 0xD subleaf 9)",
-            caps.pku_xstate,
-        ) {
-            return;
-        }
+    // Stack and selected-syscall cases compare native records
+    // byte-exactly; gate them on the capabilities those records assume
+    // (see crate::native_capability::required_caps).
+    if crate::native_capability::skip_without_caps(crate::native_capability::isolation_kind(name)) {
+        return;
     }
     match (std::env::var(ROLE), std::env::var(RECEIPT_FD)) {
         (Ok(role), Ok(descriptor)) => run_body(name, &role, &descriptor, body),

@@ -49,6 +49,80 @@ pub(crate) fn skip_without(what: &'static str, present: bool) -> bool {
     true
 }
 
+/// Capability bits a case kind may require (see [`required_caps`]).
+pub(crate) const CAP_PAGEMAP_PFN: u8 = 1;
+/// See [`CAP_PAGEMAP_PFN`].
+pub(crate) const CAP_PKU_XSTATE: u8 = 2;
+
+/// Native-test case families with distinct capability requirements.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CaseKind {
+    /// admitted-exec happy-path native cases (byte-exact xstate).
+    ExecNative,
+    /// admitted-exec failure-injection native cases (same records).
+    ExecFailure,
+    /// gate coverage-failure cases (byte-exact xstate evidence).
+    GateCoverage,
+    /// runtime selected-syscall native case (control-state xstate first).
+    SelectedSyscall,
+    /// runtime-stack native cases (pagemap-backed records).
+    StackNative,
+    /// ordinary runtime native cases (no environment-shaped records).
+    OrdinaryRuntime,
+}
+
+/// The capabilities each case kind's record comparisons assume. Pure
+/// decision: pinned by unit tests so gating placement cannot drift
+/// silently when cases move.
+pub(crate) fn required_caps(kind: CaseKind) -> u8 {
+    match kind {
+        CaseKind::ExecNative
+        | CaseKind::ExecFailure
+        | CaseKind::GateCoverage
+        | CaseKind::SelectedSyscall => CAP_PKU_XSTATE,
+        CaseKind::StackNative => CAP_PAGEMAP_PFN | CAP_PKU_XSTATE,
+        CaseKind::OrdinaryRuntime => 0,
+    }
+}
+
+/// Classify an isolation case name into its kind (pure).
+pub(crate) fn isolation_kind(name: &str) -> CaseKind {
+    if name.contains("::stack::native_tests::") {
+        CaseKind::StackNative
+    } else if name.ends_with("::runtime_selected_syscall_refuses_without_ordinary_fallback") {
+        CaseKind::SelectedSyscall
+    } else {
+        CaseKind::OrdinaryRuntime
+    }
+}
+
+/// Whether `caps` satisfies `required` (pure).
+pub(crate) fn caps_satisfied(caps: Capabilities, required: u8) -> bool {
+    (required & CAP_PAGEMAP_PFN == 0 || caps.pagemap_pfn)
+        && (required & CAP_PKU_XSTATE == 0 || caps.pku_xstate)
+}
+
+/// Skip (with named printed reasons) when this host lacks a required
+/// capability for `kind`. Returns true when the caller must return.
+pub(crate) fn skip_without_caps(kind: CaseKind) -> bool {
+    let caps = probe();
+    let required = required_caps(kind);
+    let mut skip = false;
+    if required & CAP_PAGEMAP_PFN != 0 {
+        skip |= skip_without(
+            "PFN-bearing pagemap (present bit + nonzero PFN for a resident page)",
+            caps.pagemap_pfn,
+        );
+    }
+    if required & CAP_PKU_XSTATE != 0 {
+        skip |= skip_without(
+            "PKU xstate component (CPUID leaf 7 PKU/OSPKE + leaf 0xD subleaf 9)",
+            caps.pku_xstate,
+        );
+    }
+    skip
+}
+
 fn cpuid7_ecx() -> u32 {
     core::arch::x86_64::__cpuid_count(7, 0).ecx
 }
@@ -97,7 +171,10 @@ fn read_pagemap_entry(address: u64) -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use super::classify;
+    use super::{
+        CAP_PAGEMAP_PFN, CAP_PKU_XSTATE, Capabilities, CaseKind, caps_satisfied, classify,
+        isolation_kind, required_caps,
+    };
 
     const PRESENT: u64 = 1 << 63;
     const PKU_OSPKE: u32 = (1 << 3) | (1 << 4);
@@ -116,5 +193,69 @@ mod tests {
         assert!(!classify(PRESENT | 1, 1 << 3, 8).pku_xstate);
         assert!(!classify(PRESENT | 1, 1 << 4, 8).pku_xstate);
         assert!(!classify(PRESENT | 1, PKU_OSPKE, 0).pku_xstate);
+    }
+
+    #[test]
+    fn required_caps_enumeration_is_pinned() {
+        assert_eq!(required_caps(CaseKind::ExecNative), CAP_PKU_XSTATE);
+        assert_eq!(required_caps(CaseKind::ExecFailure), CAP_PKU_XSTATE);
+        assert_eq!(required_caps(CaseKind::GateCoverage), CAP_PKU_XSTATE);
+        assert_eq!(required_caps(CaseKind::SelectedSyscall), CAP_PKU_XSTATE);
+        assert_eq!(
+            required_caps(CaseKind::StackNative),
+            CAP_PAGEMAP_PFN | CAP_PKU_XSTATE
+        );
+        assert_eq!(required_caps(CaseKind::OrdinaryRuntime), 0);
+    }
+
+    #[test]
+    fn isolation_kind_enumeration_is_pinned() {
+        assert_eq!(
+            isolation_kind(
+                "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_after_a_ac_refuses_before_private_effects"
+            ),
+            CaseKind::StackNative
+        );
+        assert_eq!(
+            isolation_kind(
+                "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_selected_syscall_refuses_without_ordinary_fallback"
+            ),
+            CaseKind::SelectedSyscall
+        );
+        assert_eq!(
+            isolation_kind(
+                "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_allocation_errors_retain_actual_pending_custody"
+            ),
+            CaseKind::OrdinaryRuntime
+        );
+    }
+
+    #[test]
+    fn caps_satisfied_checks_each_conjunct() {
+        let none = Capabilities {
+            pagemap_pfn: false,
+            pku_xstate: false,
+        };
+        let pfn_only = Capabilities {
+            pagemap_pfn: true,
+            pku_xstate: false,
+        };
+        let pku_only = Capabilities {
+            pagemap_pfn: false,
+            pku_xstate: true,
+        };
+        let both = Capabilities {
+            pagemap_pfn: true,
+            pku_xstate: true,
+        };
+        assert!(caps_satisfied(none, 0));
+        assert!(!caps_satisfied(none, CAP_PAGEMAP_PFN));
+        assert!(!caps_satisfied(none, CAP_PKU_XSTATE));
+        assert!(caps_satisfied(pfn_only, CAP_PAGEMAP_PFN));
+        assert!(!caps_satisfied(pfn_only, CAP_PKU_XSTATE));
+        assert!(!caps_satisfied(pfn_only, CAP_PAGEMAP_PFN | CAP_PKU_XSTATE));
+        assert!(caps_satisfied(pku_only, CAP_PKU_XSTATE));
+        assert!(!caps_satisfied(pku_only, CAP_PAGEMAP_PFN | CAP_PKU_XSTATE));
+        assert!(caps_satisfied(both, CAP_PAGEMAP_PFN | CAP_PKU_XSTATE));
     }
 }

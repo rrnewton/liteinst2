@@ -465,10 +465,7 @@ pub(in crate::linux::remote::dynamic::owner::admission::exec) enum Case {
 pub(in crate::linux::remote::dynamic::owner::admission::exec) fn run(case: Case) {
     // These cases compare recorded xstate byte-exactly; without the PKU
     // xstate component the record cannot match on this host.
-    if crate::native_capability::skip_without(
-        "PKU xstate component (CPUID leaf 7 PKU/OSPKE + leaf 0xD subleaf 9)",
-        crate::native_capability::probe().pku_xstate,
-    ) {
+    if crate::native_capability::skip_without_caps(crate::native_capability::CaseKind::ExecNative) {
         return;
     }
     let (fixture, reference) = prepare(case, raw::original);
