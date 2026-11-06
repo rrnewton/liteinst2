@@ -76,13 +76,37 @@ outside it — which is exactly what the layer above needs from a
 building block (architecture §4.1: plan-before-publish, exact
 context, confinement, explicit signal ownership, no policy).
 
-> 🚧 **Under construction — terminology alignment (pending owner
-> approval of L0).** This chapter now uses the architecture
-> document's A/B-axis and cell vocabulary
-> ([§1–§2](https://github.com/rrnewton/dev-hermit/blob/main/ai_docs/2026-11-04-liteinst-reverie-architecture.md)).
-> TODO: re-verify every name against the approved contract once the
-> owner decides
-> [§6.3](https://github.com/rrnewton/dev-hermit/blob/main/ai_docs/2026-11-04-liteinst-reverie-architecture.md#63-decisions-requested-from-the-owner-via-coord7)
-> (items A/B/D), and add the valid-cell table (V1–V11) here if it
-> survives review unchanged. <!-- UC: mech-terms -->
-> Tracking: [liteinst2#38](https://github.com/rrnewton/liteinst2/issues/38) (`mech-terms`).
+## The valid cells, and which exist
+
+The vocabulary above is the architecture document's, approved with
+amendments on 2026-11-05
+([§6.3](https://github.com/rrnewton/dev-hermit/blob/main/ai_docs/plans/2026-11-04-liteinst-reverie-architecture.md),
+decisions A–E resolved). Its valid combinations are:
+
+| Cell | Combination | Status |
+|---|---|---|
+| V1 | A1 × B7 × out — ptrace reference | Runs |
+| V2 | A1 × B1 × in — exec-stop loader + seccomp trap | Buildable |
+| V3 | A1 × B3 × in — exec-stop loader + patching | Buildable (mode runs; generic loader does not yet) |
+| V4 | A2 × B1 × in — preload + seccomp trap | Runs |
+| V5 | A2 × B3 × in — preload + patching | Runs |
+| V6 | A1/A3 × B4 × in — page-gate admission, then B3/B1 inside | Buildable |
+| V7 | A1/A3 × B5 × in — offline-rewritten image | Buildable |
+| V8 | A3 × B1/B3/B4 × in — no-ptrace custom loader | Unbuilt |
+| V9 | A5 — V8 with an external tracer present | Unbuilt |
+| V10 | A1/A3 × B6 × in — translation | Unbuilt |
+| V11 | KVM substrate (VM exits replace A/B) | Runs |
+
+Three approval amendments matter when reading that table. A
+**Buildable** row is a design obligation, not a selectable cell —
+*required guarantees* and *demonstrated eligibility* are different
+things, and only the latter may be selected. Optional hardware or
+kernel support may be a particular cell's prerequisite (the amended
+I6); its absence must yield a named refusal or another fully adequate
+cell, never lost instruction coverage — SUD in particular stays
+optional acceleration inside V2/V4/V6 rather than a cell of its own.
+And the M1 conformance corpus is frozen to V1–V5 on a declared
+non-exec corpus, so "runs" claims elsewhere should be read against
+that scope until later milestones widen it. Per-cell guarantees and
+the invalid combinations (I1–I8) live in §2.2–§2.3 of the
+architecture document; the Reverie guide carries the selection side.
