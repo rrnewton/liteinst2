@@ -135,6 +135,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "liteinst-aarch64-patch"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "liteinst-aarch64",
+]
+
+[[package]]
 name = "liteinst-admission"
 version = "0.2.1"
 dependencies = [

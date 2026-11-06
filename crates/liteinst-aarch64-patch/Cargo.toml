@@ -1,0 +1,21 @@
+[package]
+name = "liteinst-aarch64-patch"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94"
+license = "BSD-2-Clause"
+repository = "https://github.com/rrnewton/liteinst2"
+readme = "README.md"
+description = "Stopped-executor runtime patching over liteinst-aarch64 facts"
+# Not published until the fact crate version carrying emit is published
+# and the patcher design slices complete (liteinst-jit precedent).
+publish = false
+
+[package.metadata.docs.rs]
+targets = ["aarch64-unknown-linux-gnu"]
+
+[dependencies]
+liteinst-aarch64 = { version = "0.2.0", path = "../liteinst-aarch64" }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2.186"
