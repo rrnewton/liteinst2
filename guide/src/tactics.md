@@ -203,27 +203,41 @@ opcode store, which the benchmark times in a plain loop:
                 iterations * 2
             );
             assert!(
+                nanos_per_toggle < 100.0,
+                "toggle latency {nanos_per_toggle:.3} ns exceeds 100 ns"
+            );
+            probe.disable();
+        }
 ```
 
-**Synchronized** (`src/patcher/synchronized.rs`): bind each
+**Synchronized** (`tests/support/word_sync.rs`): bind each
 `SyncJumpPatch` first (its contract is the long safety list on
-`SyncJumpPatch::bind`), then prepare the batch and advance it one
-phase at a time. Three process-wide barriers total, however many
+`SyncJumpPatch::bind` in `src/patcher/synchronized.rs`), then
+prepare the batch and advance it one phase at a time — the
+`transition` helper in the same file calls `batch.advance()` once
+per phase and asserts the receipt after each step. Three
+process-wide barriers total (`synchronizations == 3`), however many
 members the batch has; every failure is terminal for the handle and
 retains writer ownership:
 
 ```rust,ignore
-// SAFETY: every bind/prepare contract holds for both members.
-let mut batch = unsafe {
-    SynchronizedBatch::prepare(&[&patch_a, &patch_b], Direction::Apply)
-}?;
-loop {
-    // SAFETY: same contracts, still true at each phase boundary.
-    let receipt = unsafe { batch.advance() }?;
-    // GuardsPublished -> GuardsSynchronized -> BacksPublished ->
-    // BacksSynchronized -> FrontsPublished -> Complete
-    if receipt.phase == Phase::Complete {
-        break;
+    fn full_transition(&self, direction: Direction, initial: &[u8]) {
+        let refs = [self.patch()];
+        let mut batch = unsafe { SynchronizedBatch::prepare(&refs, direction).unwrap() };
+        assert_eq!(batch.receipt().phase, Phase::Prepared);
+        self.transition(
+            direction,
+            initial,
+            &[
+                Phase::GuardsPublished,
+                Phase::GuardsSynchronized,
+                Phase::BacksPublished,
+                Phase::BacksSynchronized,
+                Phase::FrontsPublished,
+                Phase::Complete,
+            ],
+            &mut batch,
+        );
+        assert_eq!(batch.receipt().synchronizations, 3);
     }
-}
 ```
