@@ -303,8 +303,10 @@ Status at this section's commit (liteinst2 `main`
   generated re-entry (raw precredit re-based, not a new
   translation), synchronous SIGSEGV/SIGFPE delivery at
   copied insns with source-form instruction addresses, same
-  admitted flag/mask/restorer bounds. Stepped-syscall and
-  original-step async stops, blocked-poll delivery,
+  admitted flag/mask/restorer bounds. Async stops in
+  common-exit spilled stages and at generated PCs with no
+  pcmap entry (entry-loader bridge class), stepped-syscall
+  and original-step async stops, blocked-poll delivery,
   sync faults outside copied insns, and handler-mutated
   mid-block resume PCs still stop by name (see I1-E detail).
   I1-F through I1-H unstarted.
@@ -429,7 +431,9 @@ SIGSEGV/SIGFPE guest faults at copied insns only, preserves
 original fault fields (instruction-address `si_addr`
 rewritten to source form via `PTRACE_SETSIGINFO`, data
 addresses raw). Still refused in this stage's
-implementation: async stops while stepping original/syscall
+implementation: async stops in common-exit spilled stages
+or at generated PCs with no pcmap entry (entry-loader
+bridge class), async stops while stepping original/syscall
 insns, blocked-signal poll delivery, sync faults outside
 copied insns and other sync signals, nested delivery,
 alternate stack, real-time queueing semantics, uncovered

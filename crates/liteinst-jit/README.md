@@ -20,10 +20,13 @@ P1a envelope, honestly bounded:
   an installed async handler is refused at admission. This is a
   disclosed reduction from transparent delivery, pending an
   explicit owner scope decision. The remote ptrace substrate
-  (`src/remote.rs`, P1B-DESIGN §8) additionally performs one
+  (`src/remote.rs`, P1B-DESIGN §8) additionally performs
   tested genuine delivery shapes (I1-D SIGUSR1 plus I1-E synchronous SIGSEGV/SIGFPE and exact mid-block resume); every
-  other shape there still stops as a recovered outcome, and no
-  asynchronous-transparency claim is made beyond that test.
+  other shape there — including async stops in common-exit
+  spilled stages and at generated PCs with no pcmap entry
+  (entry-loader bridge class) — still stops as a recovered
+  outcome, and no asynchronous-transparency claim is made
+  beyond those tests.
 - Counts are software counts validated by the `o1` ptrace single-step
   oracle in the integration tests, never PMU-equivalence claims.
 

@@ -19,8 +19,11 @@
 //! the recovered source PC, the handler runs translated, and
 //! the guest restorer's `rt_sigreturn` resumes in cache.
 //! Every other delivery shape still stops as a recovered
-//! outcome by name; no transparency claim is made beyond the
-//! tested shapes. Indirect resolution, threads, and exec
+//! outcome by name — including async stops in common-exit
+//! spilled stages and at generated PCs with no pcmap entry
+//! (entry-loader bridge class), which arbitrary-phase
+//! delivery here explicitly does not cover; no transparency
+//! claim is made beyond the tested shapes. Indirect resolution, threads, and exec
 //! successors stay refused exactly as in-process. This module
 //! is a substrate for later P1b stages, not a public API
 //! contract, and makes no whole-program claim.
@@ -671,6 +674,30 @@ fn classify_stop(
 /// Block starts are served by `block_gen` and return `None`
 /// here only in the sense that callers check those first;
 /// machinery interiors have no exact re-entry and miss.
+/// Resume entry for an asynchronous stop at generated PC
+/// `gen_pc` recovered to source PC `src`: `Some(None)` =
+/// block-start entry through the block index,
+/// `Some(Some(gen))` = exact mid-block re-entry, `None` =
+/// not resumable in I1-E. Common-exit machinery stops and
+/// generated PCs with no pcmap entry at all (entry-loader
+/// bridge / executor-error stops, recovered src 0) are
+/// excluded here by construction: arbitrary-phase delivery
+/// in this stage means every *guest-instruction* phase
+/// (copied, count/poll stubs, call and exit sequences via
+/// their recovered successors), not the dispatcher's own
+/// epilogue or unmapped entry bytes. Those keep the
+/// recovered named stop.
+fn resume_gen(t: &Translation, gen_pc: u64, src: u64) -> Option<Option<u64>> {
+    let entry = t.pcmap.lookup(gen_pc)?;
+    if matches!(entry.recovery, MapRecovery::CommonExit { .. }) {
+        return None;
+    }
+    if t.block_gen.contains_key(&src) {
+        return Some(None);
+    }
+    gen_for_midblock(t, src).map(Some)
+}
+
 fn gen_for_midblock(t: &Translation, src: u64) -> Option<u64> {
     t.pcmap.entries().iter().find_map(|e| match e.recovery {
         MapRecovery::Copied if e.src_pc == src => Some(e.gen_start),
@@ -1612,6 +1639,15 @@ impl RemoteExecutable {
         if registry.action(frame.signum).restorer != frame.restorer {
             return Err(self.unexpected_stop("disposition changed under live frame"));
         }
+        // Re-prove the exact restorer shape at resume time:
+        // admission-time proof alone would credit +2 to
+        // whatever the handler left at the restorer address.
+        let mut restorer_now = [0u8; 7];
+        if read_mem(self.guard.pid, frame.restorer, &mut restorer_now).is_err()
+            || restorer_now != SIGRETURN_RESTORER
+        {
+            return Err(self.unexpected_stop("restorer shape changed under live frame"));
+        }
         // Block-start resume (including a handler-mutated RIP
         // that lands on a block start) re-enters through the
         // normal dispatcher credit path. Mid-block resume is
@@ -1963,15 +1999,12 @@ impl RemoteExecutable {
                     // I1-E: block-start recovery resumes through
                     // the block index; any other recovered PC
                     // needs an exact mid-block generated
-                    // re-entry. Anything else keeps the
-                    // recovered outcome below.
-                    let gen_mid = if t.block_gen.contains_key(&recovered.src_pc) {
-                        None
-                    } else {
-                        gen_for_midblock(t, recovered.src_pc)
-                    };
-                    let resumable =
-                        t.block_gen.contains_key(&recovered.src_pc) || gen_mid.is_some();
+                    // re-entry. Common-exit machinery stops
+                    // and unmapped generated PCs are excluded
+                    // by `resume_gen` and keep the outcome below.
+                    let resume = resume_gen(t, gen_pc, recovered.src_pc);
+                    let gen_mid = resume.unwrap_or_default();
+                    let resumable = resume.is_some();
                     let action = self.delivery_action(sig, &active, false).filter(|_| {
                         recovered.kind == crate::recovery::FaultKind::AsyncSignal && resumable
                     });
@@ -2467,6 +2500,37 @@ mod tests {
         }
         assert!(checked > 0, "fixture has mid-block insns");
         assert_eq!(gen_for_midblock(&t, 0xdead_0000), None);
+        // Named exclusions by construction: a common-exit
+        // machinery stop never resumes (even for a source PC
+        // that otherwise has an exact re-entry), and an
+        // unmapped generated PC (entry-loader bridge class)
+        // never resumes.
+        let common = t
+            .pcmap
+            .entries()
+            .iter()
+            .find(|e| matches!(e.recovery, MapRecovery::CommonExit { .. }))
+            .expect("translation has common exit");
+        let mut any_mid = None;
+        for block in t.blocks.values() {
+            for pc in block.insn_pcs().iter().skip(1) {
+                if !t.block_gen.contains_key(pc) {
+                    any_mid = Some(*pc);
+                    break;
+                }
+            }
+            if any_mid.is_some() {
+                break;
+            }
+        }
+        let any_mid = any_mid.expect("a mid-block insn");
+        assert_eq!(resume_gen(&t, common.gen_start, any_mid), None);
+        assert_eq!(resume_gen(&t, 0xdead_0000, any_mid), None);
+        let copied_gen = gen_for_midblock(&t, any_mid).expect("midblock gen");
+        assert_eq!(resume_gen(&t, copied_gen, any_mid), Some(Some(copied_gen)));
+        let block_src = *t.block_gen.keys().next().expect("a block");
+        let block_gen_pc = t.block_gen[&block_src];
+        assert_eq!(resume_gen(&t, block_gen_pc, block_src), Some(None));
     }
 
     #[test]
