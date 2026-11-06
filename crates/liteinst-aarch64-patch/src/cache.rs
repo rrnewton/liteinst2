@@ -120,46 +120,149 @@ fn probe_verdict(got_magic: bool, status: libc::c_int) -> bool {
     got_magic && libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0
 }
 
-/// Reap exactly `pid`, retrying interruptions, with a bounded wait: on
-/// timeout the child is killed and reaped before the error returns, so
-/// no error path loses custody of the PID.
+/// One nonblocking wait attempt: `Ok(Some(status))` reaped,
+/// `Ok(None)` still running or a retryable wait error (custody keeps
+/// priority over error fidelity; `last_errno` records the cause),
+/// `Err(CacheOpsUnavailable)` only for genuine `ECHILD` discharge.
+#[cfg(target_os = "linux")]
+fn wait_once(pid: libc::pid_t) -> Result<Option<libc::c_int>, PatchError> {
+    let mut status: libc::c_int = 0;
+    let waited = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG) };
+    if waited == pid {
+        return Ok(Some(status));
+    }
+    if waited < 0 && std::io::Error::last_os_error().raw_os_error() == Some(libc::ECHILD) {
+        return Err(PatchError::CacheOpsUnavailable);
+    }
+    Ok(None)
+}
+
+/// Kill `pid` and discharge custody: retry reaping through any wait
+/// error short of `ECHILD` (already discharged) until a second bounded
+/// window expires, after which custody is reported retained by name
+/// instead of being silently lost.
+#[cfg(target_os = "linux")]
+fn kill_and_discharge(pid: libc::pid_t) -> Result<(), PatchError> {
+    unsafe { libc::kill(pid, libc::SIGKILL) };
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    loop {
+        match wait_once(pid) {
+            Ok(Some(_)) => return Ok(()),
+            Ok(None) => {}
+            Err(PatchError::CacheOpsUnavailable) => return Ok(()),
+            Err(e) => return Err(e),
+        }
+        if std::time::Instant::now() >= deadline {
+            return Err(PatchError::ChildCustodyRetained { pid });
+        }
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+}
+
+/// Reap exactly `pid` within `timeout_ms`. Any wait error other than
+/// genuine `ECHILD` discharge is retried until the deadline (custody
+/// outranks error fidelity); on timeout the child is killed and
+/// discharged via [`kill_and_discharge`] before the timeout error
+/// returns, so no path — timeout, injected wait error, or final-wait
+/// error — returns while still silently owning a live PID.
 #[cfg(target_os = "linux")]
 #[allow(dead_code)]
 fn reap_child(pid: libc::pid_t, timeout_ms: u64) -> Result<libc::c_int, PatchError> {
     let deadline = std::time::Instant::now() + std::time::Duration::from_millis(timeout_ms);
     loop {
-        let mut status: libc::c_int = 0;
-        let waited = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG) };
-        if waited == pid {
+        if let Some(status) = wait_once(pid)? {
             return Ok(status);
         }
-        if waited < 0 {
-            let err = std::io::Error::last_os_error();
-            if err.raw_os_error() == Some(libc::ECHILD) {
-                // Already reaped elsewhere: custody is discharged but
-                // no status exists to attest from; caller refuses.
-                return Err(PatchError::CacheOpsUnavailable);
-            }
-            if err.raw_os_error() != Some(libc::EINTR) {
-                return Err(PatchError::Os {
-                    op: "waitpid",
-                    errno: err.raw_os_error().unwrap_or(0),
-                });
-            }
-        }
         if std::time::Instant::now() >= deadline {
-            unsafe {
-                libc::kill(pid, libc::SIGKILL);
-                let mut kill_status: libc::c_int = 0;
-                while libc::waitpid(pid, &mut kill_status, 0) < 0 {
-                    if std::io::Error::last_os_error().raw_os_error() != Some(libc::EINTR) {
-                        break;
-                    }
-                }
-            }
+            kill_and_discharge(pid)?;
             return Err(PatchError::CacheOpsUnavailable);
         }
         std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+}
+
+/// Unified probe-parent custody loop: completion-byte acquisition and
+/// exact-child status share ONE deadline, so a child stopped before
+/// writing cannot block the parent past the reaper timeout (the prior
+/// blocking-read bypass). On timeout or any hard poll/read/wait error
+/// the child is killed and discharged before the error returns.
+/// Returns `(got_magic, status)` only with custody fully discharged.
+#[cfg(target_os = "linux")]
+#[allow(dead_code)]
+fn collect_probe_child(
+    pid: libc::pid_t,
+    read_fd: libc::c_int,
+    timeout_ms: u64,
+) -> Result<(bool, libc::c_int), PatchError> {
+    let flags = unsafe { libc::fcntl(read_fd, libc::F_GETFL) };
+    if flags < 0 || unsafe { libc::fcntl(read_fd, libc::F_SETFL, flags | libc::O_NONBLOCK) } < 0 {
+        let e = PatchError::os("fcntl(O_NONBLOCK)");
+        return match kill_and_discharge(pid) {
+            Ok(()) => Err(e),
+            Err(retained) => Err(retained),
+        };
+    }
+    let deadline = std::time::Instant::now() + std::time::Duration::from_millis(timeout_ms);
+    let mut byte: Option<u8> = None;
+    let mut eof = false;
+    loop {
+        if let Some(status) = match wait_once(pid) {
+            Ok(s) => s,
+            Err(e) => {
+                // ECHILD discharge without a status: byte (if any) is
+                // still readable from the pipe, but no status exists
+                // to attest from.
+                return Err(e);
+            }
+        } {
+            // Reaped: drain one last byte already in the pipe buffer.
+            if byte.is_none() && !eof {
+                let mut b = [0u8; 1];
+                let n = unsafe { libc::read(read_fd, b.as_mut_ptr() as *mut libc::c_void, 1) };
+                if n == 1 {
+                    byte = Some(b[0]);
+                }
+            }
+            return Ok((byte == Some(PROBE_MAGIC), status));
+        }
+        if std::time::Instant::now() >= deadline {
+            kill_and_discharge(pid)?;
+            return Err(PatchError::CacheOpsUnavailable);
+        }
+        if !eof && byte.is_none() {
+            let mut pfd = libc::pollfd {
+                fd: read_fd,
+                events: libc::POLLIN,
+                revents: 0,
+            };
+            let ready = unsafe { libc::poll(&mut pfd, 1, 10) };
+            if ready < 0 && std::io::Error::last_os_error().raw_os_error() != Some(libc::EINTR) {
+                let e = PatchError::os("poll");
+                return match kill_and_discharge(pid) {
+                    Ok(()) => Err(e),
+                    Err(retained) => Err(retained),
+                };
+            }
+            if ready > 0 && pfd.revents & (libc::POLLIN | libc::POLLHUP) != 0 {
+                let mut b = [0u8; 1];
+                let n = unsafe { libc::read(read_fd, b.as_mut_ptr() as *mut libc::c_void, 1) };
+                if n == 1 {
+                    byte = Some(b[0]);
+                } else if n == 0 {
+                    eof = true;
+                } else if std::io::Error::last_os_error().raw_os_error() == Some(libc::EAGAIN) {
+                    // Spurious readiness; loop re-checks the child.
+                } else if std::io::Error::last_os_error().raw_os_error() != Some(libc::EINTR) {
+                    let e = PatchError::os("read(probe pipe)");
+                    return match kill_and_discharge(pid) {
+                        Ok(()) => Err(e),
+                        Err(retained) => Err(retained),
+                    };
+                }
+            }
+        } else {
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
     }
 }
 
@@ -195,6 +298,10 @@ pub fn probe_environment() -> Result<CacheAttested, PatchError> {
             libc::close(fds[0]);
             // Inherited handlers must not convert a maintenance fault
             // into a clean exit: default dispositions, empty mask.
+            // Every setup result is required: a denied reset or unblock
+            // exits (without the completion byte) before maintenance,
+            // so an inherited skipping handler can neither survive the
+            // reset nor publish the magic for skipped work.
             let dfl: libc::sigaction = core::mem::zeroed();
             for sig in [
                 libc::SIGILL,
@@ -203,11 +310,23 @@ pub fn probe_environment() -> Result<CacheAttested, PatchError> {
                 libc::SIGTRAP,
                 libc::SIGABRT,
             ] {
-                libc::sigaction(sig, &dfl, core::ptr::null_mut());
+                if libc::sigaction(sig, &dfl, core::ptr::null_mut()) != 0 {
+                    libc::_exit(5);
+                }
+                let mut seen: libc::sigaction = core::mem::zeroed();
+                if libc::sigaction(sig, core::ptr::null(), &mut seen) != 0 || seen.sa_sigaction != 0
+                {
+                    libc::_exit(5);
+                }
             }
             let mut empty: libc::sigset_t = core::mem::zeroed();
-            libc::sigemptyset(&mut empty);
-            libc::pthread_sigmask(libc::SIG_SETMASK, &empty, core::ptr::null_mut());
+            if libc::sigemptyset(&mut empty) != 0 {
+                libc::_exit(5);
+            }
+            // pthread_sigmask returns the error number itself, not -1.
+            if libc::pthread_sigmask(libc::SIG_SETMASK, &empty, core::ptr::null_mut()) != 0 {
+                libc::_exit(5);
+            }
             let len = page as usize;
             let p = libc::mmap(
                 core::ptr::null_mut(),
@@ -231,19 +350,11 @@ pub fn probe_environment() -> Result<CacheAttested, PatchError> {
         }
     }
     unsafe { libc::close(fds[1]) };
-    let mut byte = [0u8; 1];
-    let got = loop {
-        let n = unsafe { libc::read(fds[0], byte.as_mut_ptr() as *mut libc::c_void, 1) };
-        if n >= 0 {
-            break n;
-        }
-        if std::io::Error::last_os_error().raw_os_error() != Some(libc::EINTR) {
-            break -1;
-        }
-    };
+    // One bounded custody protocol for byte + status (see collect).
+    let collected = collect_probe_child(pid, fds[0], 5_000);
     unsafe { libc::close(fds[0]) };
-    let status = reap_child(pid, 5_000)?;
-    if probe_verdict(got == 1 && byte[0] == PROBE_MAGIC, status) {
+    let (got_magic, status) = collected?;
+    if probe_verdict(got_magic, status) {
         Ok(CacheAttested(()))
     } else {
         Err(PatchError::CacheOpsUnavailable)
@@ -339,6 +450,41 @@ mod tests {
         // Exercises the full fork/reset/sync/completion-byte/reap path
         // where EL0 maintenance is permitted (metal/guest runs).
         probe_environment().unwrap();
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn stopped_child_collect_times_out_with_custody() {
+        // The exact stopped-child watchdog scenario: a child stopped
+        // before writing must not bypass the bounded reaper. Collect
+        // must time out, kill, and discharge custody (ECHILD proof).
+        let mut fds = [0 as libc::c_int; 2];
+        assert_eq!(unsafe { libc::pipe2(fds.as_mut_ptr(), libc::O_CLOEXEC) }, 0);
+        let pid = unsafe { libc::fork() };
+        assert!(pid >= 0);
+        if pid == 0 {
+            unsafe {
+                libc::close(fds[0]);
+                libc::raise(libc::SIGSTOP);
+                loop {
+                    libc::pause();
+                }
+            }
+        }
+        unsafe { libc::close(fds[1]) };
+        let started = std::time::Instant::now();
+        let result = collect_probe_child(pid, fds[0], 150);
+        let elapsed = started.elapsed();
+        unsafe { libc::close(fds[0]) };
+        assert_eq!(result.unwrap_err(), PatchError::CacheOpsUnavailable);
+        assert!(elapsed < std::time::Duration::from_secs(3), "{elapsed:?}");
+        let mut status: libc::c_int = 0;
+        let again = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG) };
+        assert_eq!(again, -1);
+        assert_eq!(
+            std::io::Error::last_os_error().raw_os_error(),
+            Some(libc::ECHILD)
+        );
     }
 
     #[cfg(target_arch = "aarch64")]

@@ -53,6 +53,14 @@ pub enum PatchError {
         /// The duplicated site address.
         addr: u64,
     },
+    /// A helper child could not be reaped even after `SIGKILL` and a
+    /// bounded retry window; custody of `pid` is explicitly retained
+    /// by the caller (it will be reaped by init at process exit).
+    /// Returned instead of silently losing the PID.
+    ChildCustodyRetained {
+        /// The unreaped child process id.
+        pid: i32,
+    },
 }
 
 impl PatchError {
@@ -74,6 +82,12 @@ impl core::fmt::Display for PatchError {
             Self::RangeOverflow => write!(f, "address range overflow"),
             Self::DuplicateSite { addr } => {
                 write!(f, "a live site already names address {addr:#x}")
+            }
+            Self::ChildCustodyRetained { pid } => {
+                write!(
+                    f,
+                    "helper child {pid} could not be reaped; custody retained"
+                )
             }
         }
     }
