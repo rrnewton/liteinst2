@@ -37,6 +37,11 @@ use crate::syscall::{
 const ORIGINAL_SYSCALL: [u8; 2] = [0x0f, 0x05];
 const ZPOLINE_CALL_RAX: [u8; 2] = [0xff, 0xd0];
 const COMMON_STUB_LEN: usize = 19;
+// The writable alias is unmapped before sealing. Do not add F_SEAL_WRITE
+// here: Linux returns EBUSY for that transition while the RX alias remains
+// mapped. FUTURE_WRITE prevents any later writable alias or write.
+const SLED_SEALS: c_int =
+    libc::F_SEAL_FUTURE_WRITE | libc::F_SEAL_SHRINK | libc::F_SEAL_GROW | libc::F_SEAL_SEAL;
 const OWNER_EMPTY: u8 = 0;
 const OWNER_INSTALLING: u8 = 1;
 const OWNER_INSTALLED: u8 = 2;
@@ -233,11 +238,7 @@ impl SledMapping {
             });
         }
         self.writable = std::ptr::null_mut();
-        let seals = libc::F_SEAL_WRITE
-            | libc::F_SEAL_FUTURE_WRITE
-            | libc::F_SEAL_SHRINK
-            | libc::F_SEAL_GROW
-            | libc::F_SEAL_SEAL;
+        let seals = SLED_SEALS;
         // SAFETY: fd remains the owned memfd and no writable alias remains.
         if unsafe { libc::fcntl(self.fd, libc::F_ADD_SEALS, seals) } != 0 {
             return Err(SyscallRefusal::MemfdDualMapFailed {
@@ -1203,6 +1204,15 @@ mod tests {
         assert_eq!(second.error, liteinst::x86::DecoderError::None);
         assert_eq!(second.instruction.mnemonic(), liteinst::x86::Mnemonic::Jmp);
         assert_eq!(second.instruction.len(), 6);
+    }
+
+    #[test]
+    fn sled_seals_allow_the_retained_rx_alias() {
+        assert_ne!(SLED_SEALS & libc::F_SEAL_FUTURE_WRITE, 0);
+        assert_ne!(SLED_SEALS & libc::F_SEAL_SHRINK, 0);
+        assert_ne!(SLED_SEALS & libc::F_SEAL_GROW, 0);
+        assert_ne!(SLED_SEALS & libc::F_SEAL_SEAL, 0);
+        assert_eq!(SLED_SEALS & libc::F_SEAL_WRITE, 0);
     }
 
     #[test]
