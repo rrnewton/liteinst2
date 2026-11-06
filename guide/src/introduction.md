@@ -12,7 +12,7 @@ to trace, profile, intercept, or modify a program's behaviour at runtime.
 A common use is hooking a `syscall` instruction to observe or redirect the
 call.
 
-> **Under-construction regions in this guide: 7.** This guide was started
+> **Under-construction regions in this guide: 6.** This guide was started
 > early, on purpose: writing it is how we check that our own concepts are
 > clear. Every unfinished or unimplemented part is marked with an
 > *Under construction* box carrying a TODO. The count above is the number

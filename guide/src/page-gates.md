@@ -113,8 +113,25 @@ stops `/bin/true` before its interpreter's first instruction
 and terminates it unexecuted. There is no steady state to price —
 the checkpoint *is* the product.
 >
-> 🚧 **Under construction — lifecycle coverage.** TODO: document
-> fork/thread/signal behaviour per gate as that support lands; today
-> both gates refuse most lifecycle operations, and this chapter must
-> not outrun the code. <!-- UC: gates-lifecycle -->
-> Tracking: [liteinst2#38](https://github.com/rrnewton/liteinst2/issues/38) (`gates-lifecycle`).
+## Lifecycle, per gate
+
+Lifecycle support is where the two gates differ most, and mostly by
+refusing. This matrix is the current code's behaviour, not a
+roadmap: where a cell says *refuses*, the operation is rejected by
+name or contract before it can run unobserved.
+
+| Operation | In-process gate | Launch gate (single-thread) | Launch gate (concurrent) |
+|---|---|---|---|
+| Threads | Singleton only: `arm()` verifies the kernel task registry holds exactly this main thread; creating threads while armed breaks the contract | One task only; `clone` is outside the syscall policy and refuses | Bounded registration only: a factory page creates 2–8 native threads under one exact clone-flags set, each captured before its first instruction; the leader stays held at its declared `INT3` |
+| `fork`/`vfork` | Prohibited while armed (the armed contract excludes fork) | Refuses before kernel execution | Refuses after registration |
+| `exec` successor | Not followed: the gate owns this process's source image; disarm before exec | The *initial* exec is the checkpoint itself; a successor `execve` is outside the policy and refuses | Refuses after registration |
+| Signals | The gate owns `SIGSEGV`, the signal mask, and a guarded altstack while armed; disarm/Drop restores the exact prior disposition, mask, and altstack. Foreign or nested faults poison and terminate | An unowned application signal is reported at its original PC and closes the loop — the session ends rather than delivering it | Signal syscalls after registration refuse; workers may call only `getpid`, `gettid`, and individual `exit` |
+| Mapping churn (`dlopen`, remap) | Prohibited while armed: no mapping, byte, or executable-owner changes | Unsupported: the census is the initial mappings; churn has no admission path | Refuses after registration |
+| Exit | `disarm()` (or Drop) restores RX and signal state; leaking an armed gate does not discharge its obligations | `exit`/`exit_group` are inside the tiny policy and run; `checkpoint.terminate()` ends a checkpointed child unexecuted | Individual worker `exit` is the one lifecycle call registration permits |
+
+Adjacent finite profiles exist outside the gates' own lifecycle —
+a one-queued-real-time-signal admission profile and a bounded
+singleton mapping-lifecycle profile in `liteinst-launch` — each with
+its own validation protocol. They do not widen any row above:
+general thread, signal, fork/exec, and mapping-churn support
+remains refused until a gate claims it with evidence.
