@@ -260,6 +260,14 @@ fn assert_reaped(handle: &OwnedFd) {
 }
 
 fn exercise(phase: Phase) {
+    // The evidence comparison includes byte-exact xstate; without the
+    // PKU xstate component it cannot match on this host.
+    if crate::native_capability::skip_without(
+        "PKU xstate component (CPUID leaf 7 PKU/OSPKE + leaf 0xD subleaf 9)",
+        crate::native_capability::probe().pku_xstate,
+    ) {
+        return;
+    }
     let fixture = Fixture::new(phase);
     let mut gate = fixture.launch(phase);
     let handle = pidfd(gate.pid());

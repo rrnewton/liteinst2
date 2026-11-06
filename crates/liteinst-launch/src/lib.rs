@@ -26,6 +26,9 @@ pub mod trap_coverage;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub mod lifecycle;
 
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod native_capability;
+
 // Unit fixtures exclude writable executable FDs from concurrent fork inheritance.
 #[cfg(all(
     any(test, feature = "dev-exec-backing-cleanup"),
