@@ -645,6 +645,7 @@ impl RemoteExecutable {
             reaped: false,
         };
         let mut raw = [0u8; 56];
+        let mut dump = [0u8; 65 * 32];
         {
             let out = guard.child.stdout.as_mut().ok_or(Refuse::RemoteSubstrate {
                 operation: "remote child stdout",
@@ -655,8 +656,29 @@ impl RemoteExecutable {
                     operation: "read remote child setup",
                     errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
                 })?;
+            out.read_exact(&mut dump)
+                .map_err(|_| Refuse::RemoteSubstrate {
+                    operation: "read remote child action dump",
+                    errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
+                })?;
         }
         let info = RemoteChildInfo::from_bytes(&raw);
+        // Seed every action from the child's kernel answers
+        // verbatim, before the initial stop is serviced. No
+        // action word is invented by the tracer.
+        let mut seeded_actions = [GuestAction::default(); 65];
+        for (sig, slot) in seeded_actions.iter_mut().enumerate().skip(1) {
+            let w = |word: usize| {
+                let o = sig * 32 + word * 8;
+                u64::from_le_bytes(dump[o..o + 8].try_into().unwrap())
+            };
+            *slot = GuestAction {
+                handler: w(0),
+                flags: w(1),
+                restorer: w(2),
+                sa_mask: w(3),
+            };
+        }
         let status = wait_stop(pid)?;
         if !libc::WIFSTOPPED(status) || libc::WSTOPSIG(status) != libc::SIGTRAP {
             return Err(Refuse::RemoteSubstrate {
@@ -674,7 +696,10 @@ impl RemoteExecutable {
         )?;
         // Seed the mirror mask from the stopped child's actual
         // kernel state, never from the request that produced it.
-        let mut registry = SignalRegistry::default();
+        let mut registry = SignalRegistry {
+            actions: seeded_actions,
+            ..SignalRegistry::default()
+        };
         registry.set_mask(read_sigblk(pid)?);
         Ok(RemoteExecutable {
             guard,

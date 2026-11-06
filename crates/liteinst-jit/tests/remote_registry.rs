@@ -98,6 +98,22 @@ fn word(data: &[u8], off: usize) -> u64 {
     u64::from_le_bytes(data[off..off + 8].try_into().unwrap())
 }
 
+fn run_registry_bytes(
+    bytes: &[u8],
+) -> (
+    RemoteExecutable,
+    liteinst_jit::remote::RemoteChildInfo,
+    Vec<u8>,
+) {
+    let (mut remote, info) = prepare_bytes(bytes);
+    remote
+        .run(guest_state(&remote, info), RETURN_SENTINEL)
+        .expect("registry guest run");
+    let mut data = vec![0u8; 576];
+    assert!(remote.read_mem(info.dst, &mut data));
+    (remote, info, data)
+}
+
 fn check_registry_round_trip() {
     let query_act: &[u8] = &[
         0xbf, 0x0a, 0x00, 0x00, 0x00, // mov edi, 10
@@ -273,37 +289,48 @@ fn check_poll_with_handler_installed() {
 fn check_oldfault_mutations() {
     // Valid new state with a bad old-output pointer: the
     // kernel installs first, then returns -EFAULT on copy-out.
-    // Guest results stay -EFAULT and the mirror must still
-    // reconcile to the installed state (all three syscalls).
+    // Each EFAULT case is its own run that ENDS right after
+    // the failed call, and the mirror is asserted with no
+    // subsequent guest syscall in that run (a following guest
+    // query would itself reconcile and could heal a
+    // success-only mirror). Kernel-state controls are the
+    // paired runs with a query appended.
     let build_b: &[u8] = &[
         0x4c, 0x89, 0x23, // mov [rbx], r12 (handler B)
         0x48, 0xc7, 0x43, 0x08, 0x04, 0x00, 0x00, 0x04, // flags
         0x4c, 0x89, 0x63, 0x10, // mov [rbx+16], r12
         0x48, 0xc7, 0x43, 0x18, 0x00, 0x00, 0x00, 0x00, // mask 0
     ];
-    let action_old1: &[u8] = &[
+    // Install with oldact=1, record rax at [rbx+288]; END.
+    let action_old1_end: &[u8] = &[
         0xbf, 0x0a, 0x00, 0x00, 0x00, // edi=10
         0x48, 0x89, 0xde, // rsi=rbx
         0xba, 0x01, 0x00, 0x00, 0x00, // edx=1 (bad oldact)
         0x41, 0xba, 0x08, 0x00, 0x00, 0x00, 0xb8, 0x0d, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89,
         0x83, 0x20, 0x01, 0x00, 0x00, // mov [rbx+288], rax
-        0xbf, 0x0a, 0x00, 0x00, 0x00, 0x31, 0xf6, // query: edi=10, rsi=0
+    ];
+    let action_query_320: &[u8] = &[
+        0xbf, 0x0a, 0x00, 0x00, 0x00, 0x31, 0xf6, // edi=10, rsi=0
         0x48, 0x8d, 0x93, 0x40, 0x01, 0x00, 0x00, // lea rdx, [rbx+320]
         0x41, 0xba, 0x08, 0x00, 0x00, 0x00, 0xb8, 0x0d, 0x00, 0x00, 0x00, 0x0f, 0x05,
     ];
-    let mask_old1: &[u8] = &[
+    // Mask with oldset=1, record rax at [rbx+296]; END.
+    let mask_old1_end: &[u8] = &[
         0x48, 0xc7, 0x83, 0x80, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00,
-        0x00, // mov qword [rbx+128], 0x200 (SIGUSR1)
+        0x00, // mov qword [rbx+128], 0x200
         0x31, 0xff, // edi=SIG_BLOCK
         0x48, 0x8d, 0xb3, 0x80, 0x00, 0x00, 0x00, // lea rsi, [rbx+128]
         0xba, 0x01, 0x00, 0x00, 0x00, // edx=1 (bad oldset)
         0x41, 0xba, 0x08, 0x00, 0x00, 0x00, 0xb8, 0x0e, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89,
         0x83, 0x28, 0x01, 0x00, 0x00, // mov [rbx+296], rax
+    ];
+    let mask_query_304: &[u8] = &[
         0x31, 0xff, 0x31, 0xf6, // query mask
         0x48, 0x8d, 0x93, 0x30, 0x01, 0x00, 0x00, // lea rdx, [rbx+304]
         0x41, 0xba, 0x08, 0x00, 0x00, 0x00, 0xb8, 0x0e, 0x00, 0x00, 0x00, 0x0f, 0x05,
     ];
-    let alt_old1: &[u8] = &[
+    // Altstack install with old=1, record rax at [rbx+312]; END.
+    let alt_old1_end: &[u8] = &[
         0x4c, 0x89, 0xab, 0xa0, 0x00, 0x00, 0x00, // mov [rbx+160], r13
         0x48, 0xc7, 0x83, 0xa8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // flags 0
         0x48, 0xc7, 0x83, 0xb0, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, // size 8192
@@ -311,61 +338,72 @@ fn check_oldfault_mutations() {
         0xbe, 0x01, 0x00, 0x00, 0x00, // esi=1 (bad old stack)
         0xb8, 0x83, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89, 0x83, 0x38, 0x01, 0x00,
         0x00, // mov [rbx+312], rax
+    ];
+    let alt_query_352: &[u8] = &[
         0x31, 0xff, // query altstack
         0x48, 0x8d, 0xb3, 0x60, 0x01, 0x00, 0x00, // lea rsi, [rbx+352]
         0xb8, 0x83, 0x00, 0x00, 0x00, 0x0f, 0x05,
     ];
-    let bytes = guest_bytes(&[
-        BUILD_ACT,
-        INSTALL,
-        build_b,
-        action_old1,
-        mask_old1,
-        alt_old1,
-        &[0xc3],
-    ]);
-    let (mut remote, info) = prepare_bytes(&bytes);
-    remote
-        .run(guest_state(&remote, info), RETURN_SENTINEL)
-        .expect("oldfault guest completions are genuine guest results");
-    let mut data = vec![0u8; 576];
-    assert!(remote.read_mem(info.dst, &mut data));
-    assert_eq!(word(&data, 64), 0, "first install succeeds");
+
+    // Action: run ends at the copy-out EFAULT; mirror already B.
+    let bytes = guest_bytes(&[BUILD_ACT, INSTALL, build_b, action_old1_end, &[0xc3]]);
+    let (remote, info, data) = run_registry_bytes(&bytes);
     assert_eq!(
         word(&data, 288) as i64,
         -14,
         "action copy-out EFAULT preserved"
     );
     assert_eq!(
+        remote.registry().action(libc::SIGUSR1).handler,
+        info.base + 8,
+        "mirror handler B before any later guest syscall"
+    );
+    // Action control: same bytes plus a guest query (separate run).
+    let bytes = guest_bytes(&[
+        BUILD_ACT,
+        INSTALL,
+        build_b,
+        action_old1_end,
+        action_query_320,
+        &[0xc3],
+    ]);
+    let (_remote, info2, data) = run_registry_bytes(&bytes);
+    assert_eq!(word(&data, 320), info2.base + 8, "kernel has handler B");
+
+    // Mask: run ends at the copy-out EFAULT; mirror already set.
+    let bytes = guest_bytes(&[mask_old1_end, &[0xc3]]);
+    let (remote, _info, data) = run_registry_bytes(&bytes);
+    assert_eq!(
         word(&data, 296) as i64,
         -14,
         "mask copy-out EFAULT preserved"
     );
+    assert!(
+        remote.registry().is_blocked(libc::SIGUSR1),
+        "mirror mask before any later guest syscall"
+    );
+    // Mask control: + guest mask query.
+    let bytes = guest_bytes(&[mask_old1_end, mask_query_304, &[0xc3]]);
+    let (_remote, _info, data) = run_registry_bytes(&bytes);
+    assert_eq!(word(&data, 304), 0x200, "kernel mask has SIGUSR1");
+
+    // Altstack: run ends at the copy-out EFAULT; mirror set.
+    let bytes = guest_bytes(&[alt_old1_end, &[0xc3]]);
+    let (remote, info, data) = run_registry_bytes(&bytes);
     assert_eq!(
         word(&data, 312) as i64,
         -14,
         "altstack copy-out EFAULT preserved"
     );
-    // Kernel queries in-guest show the mutations landed.
-    assert_eq!(word(&data, 320), info.base + 8, "kernel has handler B");
-    assert_eq!(word(&data, 304), 0x200, "kernel mask has SIGUSR1");
-    assert_eq!(word(&data, 352), info.src, "kernel altstack sp");
-    // And the mirror reconciled to the same installed state.
-    let reg = remote.registry();
     assert_eq!(
-        reg.action(libc::SIGUSR1).handler,
-        info.base + 8,
-        "mirror handler B"
-    );
-    assert!(
-        reg.is_blocked(libc::SIGUSR1),
-        "mirror mask after copy-out failure"
-    );
-    assert_eq!(
-        reg.altstack().sp,
+        remote.registry().altstack().sp,
         info.src,
-        "mirror altstack after copy-out failure"
+        "mirror altstack before any later guest syscall"
     );
+    // Altstack control: + guest query.
+    let bytes = guest_bytes(&[alt_old1_end, alt_query_352, &[0xc3]]);
+    let (_remote, info2, data) = run_registry_bytes(&bytes);
+    assert_eq!(word(&data, 352), info2.src, "kernel altstack sp");
 }
 
 fn check_normalization_and_bad_inputs() {
@@ -484,6 +522,20 @@ fn check_seed_controls() {
     assert!(
         remote.registry().action(libc::SIGPIPE).is_default(),
         "SIGPIPE reset to default"
+    );
+    // Snapshot before any guest query: full four-word tuples
+    // seeded from the child's kernel dump are exactly zero
+    // (the child verified the same via raw rt_sigaction
+    // before the handshake, so spawn itself is the proof).
+    assert_eq!(
+        remote.registry().action(libc::SIGUSR1),
+        GuestAction::default(),
+        "initial SIGUSR1 tuple from kernel dump"
+    );
+    assert_eq!(
+        remote.registry().action(libc::SIGPIPE),
+        GuestAction::default(),
+        "initial SIGPIPE tuple from kernel dump"
     );
     assert!(
         remote.registry().is_blocked(libc::SIGUSR1),

@@ -35,22 +35,76 @@ fn map_rw(len: usize) -> *mut u8 {
     p.cast()
 }
 
+/// Kernel `rt_sigaction` layout (32 bytes): handler, flags,
+/// restorer, one-word mask. Raw syscalls with an all-zero
+/// struct install a true four-zero-word default — unlike
+/// libc's `signal()`, which installs its own flags/restorer —
+/// and the queried tuple is verified exactly zero right after
+/// each install, before the handshake reports the dump below.
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+struct KernelSigaction {
+    handler: u64,
+    flags: u64,
+    restorer: u64,
+    mask: u64,
+}
+
+fn rt_sigaction(sig: i32, act: Option<&KernelSigaction>, old: Option<&mut KernelSigaction>) -> i64 {
+    // SAFETY: raw syscall through libc's variadic stub with
+    // exactly the kernel's [signum, act, oldact, sigsetsize=8]
+    // argument shape; pointers are null or to the live structs.
+    unsafe {
+        libc::syscall(
+            libc::SYS_rt_sigaction,
+            sig,
+            act.map_or(core::ptr::null(), |a| a as *const KernelSigaction),
+            old.map_or(core::ptr::null_mut(), |o| o as *mut KernelSigaction),
+            8usize,
+        )
+    }
+}
+
+/// Query one action tuple from the kernel (used for
+/// normalization verification and for the initial dump).
+fn query_action(sig: i32) -> KernelSigaction {
+    let mut old = KernelSigaction {
+        handler: u64::MAX,
+        flags: u64::MAX,
+        restorer: u64::MAX,
+        mask: u64::MAX,
+    };
+    if rt_sigaction(sig, None, Some(&mut old)) != 0 {
+        std::process::exit(2);
+    }
+    old
+}
+
 fn main() {
-    // Normalize guest initial signal state so the tracer's
-    // registry zero state is exact by construction: default
-    // dispositions, empty blocked mask, no altstack. The
-    // optional `block:` argument below then applies the
-    // requested initial mask on top of that zero state.
+    // Normalize guest initial signal state with raw zeroed
+    // kernel sigaction structs and verify each queried tuple
+    // is exactly zero before any handshake byte is written, so
+    // the tracer's zero mirror is a verified fact for every
+    // normalized signal rather than an assumption about libc.
+    // SIGKILL/SIGSTOP dispositions cannot change, and the
+    // glibc-reserved 32/33 are not installed into; their
+    // tuples are still reported verbatim in the dump below.
     // SAFETY: single-threaded setup before any guest code.
     unsafe {
+        let zero = KernelSigaction {
+            handler: 0,
+            flags: 0,
+            restorer: 0,
+            mask: 0,
+        };
         for sig in 1..=64 {
-            if sig != libc::SIGKILL
-                && sig != libc::SIGSTOP
-                && sig != 32
-                && sig != 33
-                && libc::signal(sig, libc::SIG_DFL) == libc::SIG_ERR
-            {
-                std::process::exit(2);
+            if sig != libc::SIGKILL && sig != libc::SIGSTOP && sig != 32 && sig != 33 {
+                if rt_sigaction(sig, Some(&zero), None) != 0 {
+                    std::process::exit(2);
+                }
+                if query_action(sig) != zero {
+                    std::process::exit(2);
+                }
             }
         }
         let mut empty: libc::sigset_t = core::mem::zeroed();
@@ -101,7 +155,7 @@ fn main() {
     let data: &'static mut [u64; 16] = Box::leak(Box::new(core::array::from_fn(|i| i as u64)));
     let dst: &'static mut [u8; 8192] = Box::leak(Box::new([0u8; 8192]));
     let src: &'static mut [u8; 8192] = Box::leak(Box::new(core::array::from_fn(|i| i as u8)));
-    let dst_addr = if arg == "rep_stosb_partial" {
+    let dst_addr = if arg == "rep_stosb_partial" || std::env::args().any(|a| a == "guarded-dst") {
         Box::leak(Box::new(GuardedDst::new().expect("guarded dst"))).ptr
     } else {
         dst.as_mut_ptr() as u64
@@ -117,8 +171,29 @@ fn main() {
         arena_base: arena as u64,
         mailbox: mailbox_page as u64,
     };
+    // Initial kernel action dump: tuples for signals 1..=64
+    // as queried after normalization (2,080 bytes; index 0
+    // zero). The tracer seeds its mirror from these kernel
+    // answers verbatim, never from an assumed zero state.
+    let mut dump = Vec::with_capacity(65 * 32);
+    for sig in 0..=64 {
+        let act = if sig == 0 {
+            KernelSigaction {
+                handler: 0,
+                flags: 0,
+                restorer: 0,
+                mask: 0,
+            }
+        } else {
+            query_action(sig)
+        };
+        for word in [act.handler, act.flags, act.restorer, act.mask] {
+            dump.extend_from_slice(&word.to_le_bytes());
+        }
+    }
     let mut out = std::io::stdout().lock();
     out.write_all(&info.to_bytes()).expect("write info");
+    out.write_all(&dump).expect("write action dump");
     out.flush().expect("flush info");
     drop(out);
     // SAFETY: standard self-trace handshake; the parent is our
