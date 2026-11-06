@@ -55,12 +55,23 @@ sleep or a best-effort request.
 
 Resume requires a **context-synchronization acknowledgement from each
 consuming thread** after cache maintenance; the patching core's own
-ISB does not synchronize another PE. Per implementation: ptrace stops
-resume via ptrace continue (exception return is the synchronizing
-event, acknowledged by the wait status); a cooperative park executes
-an explicit `isb` after observing the release flag and before
-re-entering the site, then acknowledges. No thread re-enters the site
-until its acknowledgement protocol has run.
+ISB does not synchronize another PE. Each executor is tracked
+separately as `Parked`, `SyncAcked`, `Released`, or `Unknown`.
+`PTRACE_CONT` produces no wait status acknowledging that the tracee
+executed its exception return, and the earlier stop's status cannot
+acknowledge a later resume — so ptrace resume needs a concrete
+rendezvous before site re-entry: the tracee is parked in a
+patcher-owned park stub, and resume is continue-to-rendezvous, where
+the stub executes `isb` and then signals (a rendezvous breakpoint
+whose stop wait-status the tracer observes, or an acknowledgement
+store the tracer reads back). Only that rendezvous observation counts
+as the acknowledgement. A cooperative park is the same shape: observe
+parked flag, flip, set release flag, worker executes `isb`, stores its
+acknowledgement, and only then may re-enter the site. If any executor's
+acknowledgement is lost after another has been `Released`, the rest
+stay in retained custody (below), every executable/handler resource is
+retained, no executor is assumed still parked, and resume is not
+blindly retried: recovery re-acquires a stop of the full set first.
 
 ## Flip protocol
 
@@ -75,9 +86,17 @@ single-copy atomic), never a branch to a half-built island, never a
    island in its dual RW/RX memfd mapping (`MFD_EXEC` requested;
    `EACCES` under `vm.memfd_noexec=2` removes Branch from the menu for
    this flip, see step 3). Entry starts with the `landing_pad` for its
-   reach; body ends branching back to site+4. Placement is the
-   caller's `Island` input: the patcher allocates from the offered
-   island (or builds one at a caller-provided base) and refuses unless
+   reach; body ends branching back to site+4. Writing an offered
+   island **before** the lease (step 4) is sound only while that
+   island is fresh (created for this flip), unreachable (no site,
+   branch, or executor can reference its RX mapping yet), and
+   exclusively owned by the patcher; an island that fails any of the
+   three is built or rewritten only under the lease. Placement:
+   `flip` consumes the offered `Island` by value into site custody
+   **before** the store (step 6), so the persistent site state — not a
+   caller borrow that ends with the call — retains the owning island
+   handle and, on the Trap path, the trap-route registration for as
+   long as the site is `Flipped`. The patcher refuses unless
    `island_reaches` holds in both directions. Near allocation probing
    stays caller policy in this slice.
 2. **Prepare Trap target (if Trap may be selected).** The handler
@@ -127,13 +146,21 @@ Failure custody (no state is just "error" after the store):
   registration, and stop authority stay alive; the API does not
   auto-resume and nothing unmaps. Recovery is an explicit
   `complete_sync`/`resume` retry from that state.
-- Rollback (`rollback()`, only from `Flipped` under a fresh lease)
-  re-stores the retained original word, syncs the restored site the
-  same way, and retires the island only after proving no stopped PC
-  and no in-flight or parked executor can still enter it. Slice 1
+- State transitions are exactly: `Unpatched` —store→ `Flipped`;
+  `Flipped` —sync or acknowledgement failure→ `SyncPending` (with
+  `RetainedStop` while stop authority must persist);
+  `SyncPending` —`complete_sync` + all acknowledgements→ `Flipped`;
+  `Flipped` —`rollback`→ `Unpatched`; and `SyncPending` —direct
+  `rollback` under the retained (or freshly re-acquired full) lease→
+  `Unpatched` on success, staying `SyncPending` on failure. Direct
+  rollback from `SyncPending` is a first-class transition, not a
+  shortcut through `Flipped`: it re-stores the retained original word
+  and syncs the restored site with its own post-store custody rules,
+  so the rollback-after-failed-sync test exercises this edge by name.
+  Every rollback retires the island only after proving no stopped PC
+  and no in-flight or parked executor can still enter it; slice 1
   chooses **permanent island retention until session teardown** after
-  any rollback uncertainty, and says so here: retirement is deferred,
-  never optimistic.
+  any rollback uncertainty: retirement is deferred, never optimistic.
 - `Drop` never unmaps an island or deregisters a trap route that a
   `Flipped` site still references; dropping a `Flipped` site without
   rollback leaks the island deliberately (documented, bounded by the
@@ -156,18 +183,26 @@ Failure custody (no state is just "error" after the store):
   context-sync on resume as defined above. Safe wrappers may exist
   only where the guarantee is structural (single-threaded harness).
 - `flip(&mut self, site: &mut Site, request: FlipRequest, stop: &mut dyn StopControl)`
-  with `FlipRequest { island: Option<&Island>, strategy:
+  with `FlipRequest { island: Option<Island>, strategy:
   StrategyPreference (BranchOnly | TrapOnly | BranchThenTrap),
   brk_imm: u16, fallback: FallbackPermission }` — every protocol input
-  is explicit; `PatchError` distinguishes pre-store refusals from
-  post-store custody states and never reports post-store failure as
-  "not flipped".
+  is explicit, and the island moves **by value** into the site's
+  retained custody before the store, so no caller borrow lifetime can
+  end under a live branch. On a pre-store refusal after that transfer
+  the site keeps the island in custody (retrievable at teardown); it
+  is never silently dropped. Per-executor `Parked | SyncAcked |
+  Released | Unknown` states are part of the site/session record, not
+  local variables of one call. `PatchError` distinguishes pre-store
+  refusals from post-store custody states and never reports post-store
+  failure as "not flipped".
 - Cache-op availability is an explicit environment precondition (EL0
-  `DC CVAU`/`IC IVAU` permitted), plus an optional
-  `probe_environment()` that forks a child performing the ops on its
-  own buffer and reports `Unsupported` if the child dies by signal —
-  detection that cannot kill the calling process. A same-core
-  self-test alone never proves cross-core acknowledgement.
+  `DC CVAU`/`IC IVAU` permitted) **established before the first
+  store** — patcher construction runs the detection or requires a
+  caller attestation token from having run it. Detection is the
+  optional `probe_environment()`: a forked child performs the ops on
+  its own buffer and the parent reports `Unsupported` if the child
+  dies by signal — detection that cannot kill the calling process. A
+  same-core self-test alone never proves cross-core acknowledgement.
 
 ## Test plan
 
