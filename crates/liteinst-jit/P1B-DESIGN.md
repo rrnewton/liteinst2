@@ -291,14 +291,25 @@ Status at this section's commit (liteinst2 `main`
   **not** install the common signal-entry stub and does not
   virtualize old-action results; that half of the mechanism
   below belongs to I1-D.
-- **I1-D implemented on branch `musejit2/i1d-20261106`,**
-  pending its two signal-frame reviews (not landed at this
-  writing): stub install + old-action virtualization, genuine
-  frame delivery at recovered block starts, translated
-  handler, kernel `rt_sigreturn` resume, native-child
-  differential — bounded exactly to the admitted shape in the
-  I1-D detail below, with mid-block resume splitting left to
-  I1-E. I1-E through I1-H unstarted.
+- **I1-D landed** ([PR 65](https://github.com/rrnewton/liteinst2/pull/65),
+  `db60f1d1f421337406e3281fab06ecf45e9a5d6c`): stub install +
+  old-action virtualization, genuine frame delivery at
+  recovered block starts, translated handler, kernel
+  `rt_sigreturn` resume, native-child differential — bounded
+  exactly to the admitted shape in the I1-D detail below.
+- **I1-E implemented on branch `musejit2/i1e-20261106`,**
+  pending its two signal-frame reviews: arbitrary
+  generated-phase async recovery with exact mid-block
+  generated re-entry (raw precredit re-based, not a new
+  translation), synchronous SIGSEGV/SIGFPE delivery at
+  copied insns with source-form instruction addresses, same
+  admitted flag/mask/restorer bounds. Async stops in
+  common-exit spilled stages and at generated PCs with no
+  pcmap entry (entry-loader bridge class), stepped-syscall
+  and original-step async stops, blocked-poll delivery,
+  sync faults outside copied insns, and handler-mutated
+  mid-block resume PCs still stop by name (see I1-E detail).
+  I1-F through I1-H unstarted.
 
 Each stage is its own branch off then-current liteinst2 `main`,
 signed, with exact-head `fmt`, Clippy, locked debug/release
@@ -407,14 +418,26 @@ asynchronous-transparency claim beyond what I1-D tests.
 **I1-E — Arbitrary phases, synchronous faults, partial
 blocks.** Generalize I1-D across copied instructions,
 branch/count/poll stubs, call sequences, exit stubs, common
-exit, entry loader, and syscall entry/exit. Owns resume-PC
-block splitting: a resumed source PC mid-block gets an
-exact-start translation whose pre-credit excludes the retired
-prefix. Synchronous SIGSEGV/SIGBUS/SIGILL/SIGFPE preserve
-original fault fields; only instruction-address semantics
-translate to source form, data addresses stay raw. Still
-refused: nested delivery, alternate stack, real-time queueing
-semantics, uncovered restart cases.
+exit, entry loader, and syscall entry/exit. Resume-PC
+splitting as implemented: a mid-block resume re-enters the
+already-emitted generated insn exactly (copied/call-pristine/
+exit-pristine entries only) with the interrupted raw
+counters — which already carry the block precredit —
+re-based by the handler delta, so the retired prefix is
+never re-credited and no new translation is published; a
+handler-mutated resume PC must land on a block start or it
+fails closed. Synchronous delivery as implemented admits
+SIGSEGV/SIGFPE guest faults at copied insns only, preserves
+original fault fields (instruction-address `si_addr`
+rewritten to source form via `PTRACE_SETSIGINFO`, data
+addresses raw). Still refused in this stage's
+implementation: async stops in common-exit spilled stages
+or at generated PCs with no pcmap entry (entry-loader
+bridge class), async stops while stepping original/syscall
+insns, blocked-signal poll delivery, sync faults outside
+copied insns and other sync signals, nested delivery,
+alternate stack, real-time queueing semantics, uncovered
+restart cases.
 
 **I1-F — Masks, alternate stack, nesting.** Guest kernel
 state authoritative, mirror proven after every relevant

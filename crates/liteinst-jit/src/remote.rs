@@ -1,5 +1,5 @@
 //! Remote ptrace direct-block substrate (P1b I1-B through
-//! I1-D, internal and unstable).
+//! I1-E, internal and unstable).
 //!
 //! A traced fixture child executes the same translations as
 //! the in-process executor, with this tracer as dispatcher:
@@ -9,17 +9,21 @@
 //! syscalls/nondeterministic instructions the stage admits are
 //! serviced by stepping the original instruction in the child.
 //! I1-C mirrors the guest signal registry from kernel
-//! readback. I1-D adds exactly one genuine delivery shape on
-//! top of that mirror (SIGUSR1 only, an
-//! `SA_SIGINFO` handler at a translated block start, delivery
-//! recovered to a block start, no altstack/nesting/RT — see
-//! `P1B-DESIGN.md` §8): custom handlers are stubbed in the
-//! kernel disposition, the kernel builds the frame at the
-//! recovered source PC, the handler runs translated, and the
-//! guest restorer's `rt_sigreturn` resumes in cache. Every
-//! other delivery shape still stops as a recovered outcome
-//! by name; no asynchronous-transparency claim is made beyond
-//! the tested shape. Indirect resolution, threads, and exec
+//! readback. I1-D/I1-E add genuine delivery on top of that
+//! mirror (async SIGUSR1 and synchronous SIGSEGV/SIGFPE at
+//! copied insns, an `SA_SIGINFO` handler at a translated
+//! block start, recovery to a block start or an exact
+//! mid-block generated re-entry, no altstack/nesting/RT —
+//! see `P1B-DESIGN.md` §8): custom handlers are stubbed in
+//! the kernel disposition, the kernel builds the frame at
+//! the recovered source PC, the handler runs translated, and
+//! the guest restorer's `rt_sigreturn` resumes in cache.
+//! Every other delivery shape still stops as a recovered
+//! outcome by name — including async stops in common-exit
+//! spilled stages and at generated PCs with no pcmap entry
+//! (entry-loader bridge class), which arbitrary-phase
+//! delivery here explicitly does not cover; no transparency
+//! claim is made beyond the tested shapes. Indirect resolution, threads, and exec
 //! successors stay refused exactly as in-process. This module
 //! is a substrate for later P1b stages, not a public API
 //! contract, and makes no whole-program claim.
@@ -29,7 +33,7 @@ use std::process::{Child, Command, Stdio};
 
 use crate::decode::{InsnClass, NondetKind};
 use crate::exec::{CODE_CAP, Fault, Outcome, POLL_BUDGET, RunError, syscall_guard};
-use crate::pcmap::{CommonStage, Recovery as MapRecovery};
+use crate::pcmap::{CallStage, CommonStage, ExitStage, Phase as MapPhase, Recovery as MapRecovery};
 use crate::recovery::{FaultInput, RecoveryInput};
 use crate::refuse::Refuse;
 use crate::state::{GuestState, JitData, exit_kind};
@@ -281,6 +285,21 @@ struct ActiveFrame {
     frame_rsp: u64,
     uc_addr: u64,
     resume_src_pc: u64,
+    /// Counters exactly as credited in `JitData` at the
+    /// interruption (block precredit included), for exact
+    /// mid-block generated re-entry.
+    raw_branches: u64,
+    raw_instructions: u64,
+    raw_poll: u64,
+    /// Recovery-resolved counters the handler run was
+    /// seeded from; the handler delta is re-based onto the
+    /// raw totals for a mid-block resume.
+    resolved_branches: u64,
+    resolved_instructions: u64,
+    /// Generated entry for `resume_src_pc` when it is not a
+    /// block start (exact insn re-entry); `None` for the
+    /// normal block-start resume.
+    gen_mid: Option<u64>,
 }
 
 /// Child-to-tracer setup report (7 little-endian u64s): fixture
@@ -648,6 +667,77 @@ fn classify_stop(
 /// Syscall stops carry no siginfo and return `None` by design;
 /// any other stop without retrievable siginfo also returns
 /// `None` and classifies `Unexpected` (fail closed).
+/// Generated entry that re-executes exactly the source
+/// instruction at `src` from its pre-insn state, for a
+/// mid-block resume: a copied insn start, a pristine direct
+/// call sequence start, or a pristine exit-stub start.
+/// Block starts are served by `block_gen` and return `None`
+/// here only in the sense that callers check those first;
+/// machinery interiors have no exact re-entry and miss.
+/// Resume entry for an asynchronous stop at generated PC
+/// `gen_pc` recovered to source PC `src`: `Some(None)` =
+/// block-start entry through the block index,
+/// `Some(Some(gen))` = exact mid-block re-entry, `None` =
+/// not resumable in I1-E. Common-exit machinery stops and
+/// generated PCs with no pcmap entry at all (entry-loader
+/// bridge / executor-error stops, recovered src 0) are
+/// excluded here by construction: arbitrary-phase delivery
+/// in this stage means every *guest-instruction* phase
+/// (copied, count/poll stubs, call and exit sequences via
+/// their recovered successors), not the dispatcher's own
+/// epilogue or unmapped entry bytes. Those keep the
+/// recovered named stop.
+fn resume_gen(t: &Translation, gen_pc: u64, src: u64) -> Option<Option<u64>> {
+    let entry = t.pcmap.lookup(gen_pc)?;
+    if matches!(entry.recovery, MapRecovery::CommonExit { .. }) {
+        return None;
+    }
+    if t.block_gen.contains_key(&src) {
+        return Some(None);
+    }
+    gen_for_midblock(t, src).map(Some)
+}
+
+fn gen_for_midblock(t: &Translation, src: u64) -> Option<u64> {
+    t.pcmap.entries().iter().find_map(|e| match e.recovery {
+        MapRecovery::Copied if e.src_pc == src => Some(e.gen_start),
+        MapRecovery::Call {
+            call_pc,
+            stage: CallStage::Pristine,
+            ..
+        } if call_pc == src => Some(e.gen_start),
+        MapRecovery::ExitStub {
+            stage: ExitStage::Pristine,
+        } if e.src_pc == src => Some(e.gen_start),
+        _ => None,
+    })
+}
+
+/// Rewrite the pending signal's `si_addr` (offset 16 in the
+/// kernel `siginfo` layout) via `PTRACE_SETSIGINFO`, for
+/// instruction-address faults whose generated address must
+/// be presented in source form. All other siginfo words are
+/// preserved byte-for-byte from the kernel's own record.
+fn set_siginfo_addr(pid: i32, addr: u64) -> Result<(), Refuse> {
+    let mut info = get_siginfo(pid)?;
+    // SAFETY: byte view over the plain-data siginfo record;
+    // its size covers the si_addr word by the ABI layout.
+    let bytes = unsafe {
+        core::slice::from_raw_parts_mut(
+            core::ptr::addr_of_mut!(info).cast::<u8>(),
+            core::mem::size_of::<libc::siginfo_t>(),
+        )
+    };
+    bytes[16..24].copy_from_slice(&addr.to_le_bytes());
+    ptrace_ok(
+        libc::PTRACE_SETSIGINFO,
+        pid,
+        core::ptr::null_mut(),
+        core::ptr::addr_of_mut!(info).cast(),
+        "PTRACE_SETSIGINFO",
+    )
+}
+
 fn stop_siginfo(pid: i32, sig: i32) -> Option<(i32, i32, u64)> {
     if sig == (libc::SIGTRAP | 0x80) {
         return None;
@@ -1350,16 +1440,7 @@ impl RemoteExecutable {
         )
     }
 
-    fn generated_fault(
-        &self,
-        sig: i32,
-        si_code: i32,
-        addr: u64,
-        gen_pc: u64,
-        regs: &libc::user_regs_struct,
-        data: &JitData,
-    ) -> Fault {
-        let stop = self.recovered_stop(sig, si_code, addr, gen_pc, regs, data);
+    fn fault_from(stop: crate::recovery::RecoveredStop) -> Fault {
         Fault {
             also_pending: Vec::new(),
             kind: stop.kind,
@@ -1382,15 +1463,26 @@ impl RemoteExecutable {
     /// alternate stack, non-`SA_SIGINFO`/`SA_NODEFER` forms,
     /// synchronous faults (never classified `Async`), and
     /// handlers outside the translated block set.
-    fn delivery_action(&self, sig: i32, active: &Option<ActiveFrame>) -> Option<GuestAction> {
+    fn delivery_action(
+        &self,
+        sig: i32,
+        active: &Option<ActiveFrame>,
+        synchronous: bool,
+    ) -> Option<GuestAction> {
         if active.is_some() {
             return None;
         }
-        // The tested signal set is exactly SIGUSR1 in I1-D;
-        // broadening to other standard signals needs their
-        // own witnesses (I1-E/H), whatever the other checks
-        // below would otherwise admit.
-        if sig != libc::SIGUSR1 {
+        // Tested sets only: asynchronous delivery admits
+        // exactly SIGUSR1 (I1-D); synchronous fault delivery
+        // admits exactly SIGSEGV/SIGFPE at copied insns
+        // (I1-E, phase checked by the caller). Broadening
+        // either set needs its own witnesses.
+        let admitted = if synchronous {
+            sig == libc::SIGSEGV || sig == libc::SIGFPE
+        } else {
+            sig == libc::SIGUSR1
+        };
+        if !admitted {
             return None;
         }
         let action = self.registry.action(sig);
@@ -1439,6 +1531,8 @@ impl RemoteExecutable {
         &self,
         action: GuestAction,
         recovered: &crate::recovery::RecoveredStop,
+        data: &JitData,
+        gen_mid: Option<u64>,
     ) -> Result<(GuestState, ActiveFrame), RunError> {
         let sig = recovered.signum;
         let mut regs = get_regs(self.guard.pid)?;
@@ -1481,6 +1575,12 @@ impl RemoteExecutable {
                 frame_rsp,
                 uc_addr,
                 resume_src_pc: recovered.src_pc,
+                raw_branches: data.branch_count,
+                raw_instructions: data.instruction_count,
+                raw_poll: data.poll_remaining,
+                resolved_branches: recovered.branches,
+                resolved_instructions: recovered.instructions,
+                gen_mid,
             },
         ))
     }
@@ -1524,25 +1624,48 @@ impl RemoteExecutable {
     /// The restorer's two retired instructions (`mov` +
     /// `syscall`) are credited by the caller: they are guest
     /// code the kernel really executed.
+    /// Returns the resume source state plus the one-shot
+    /// generated-entry override for an exact mid-block
+    /// re-entry (`None` = normal block-start entry).
     fn sigreturn_resume(
         &self,
         registry: &mut SignalRegistry,
         frame: &ActiveFrame,
         handler_state: &GuestState,
-    ) -> Result<GuestState, RunError> {
+    ) -> Result<(GuestState, Option<u64>), RunError> {
         let t = self.translation.as_ref().expect("prepared");
         let resume = self.frame_resume_state(frame.uc_addr)?;
-        // I1-D admits no disposition change under a live
-        // frame (I1-F) and no resume-PC mutation (splitting
-        // is I1-E); both fail closed by name here.
+        // No disposition change under a live frame (I1-F).
         if registry.action(frame.signum).restorer != frame.restorer {
             return Err(self.unexpected_stop("disposition changed under live frame"));
         }
-        if resume.rip != frame.resume_src_pc {
-            return Err(self.unexpected_stop("sigreturn resume PC mutated"));
+        // Re-prove the exact restorer shape at resume time:
+        // admission-time proof alone would credit +2 to
+        // whatever the handler left at the restorer address.
+        let mut restorer_now = [0u8; 7];
+        if read_mem(self.guard.pid, frame.restorer, &mut restorer_now).is_err()
+            || restorer_now != SIGRETURN_RESTORER
+        {
+            return Err(self.unexpected_stop("restorer shape changed under live frame"));
         }
-        let Some(&gen_entry) = t.block_gen.get(&resume.rip) else {
-            return Err(self.unexpected_stop("sigreturn resume not at block start"));
+        // Block-start resume (including a handler-mutated RIP
+        // that lands on a block start) re-enters through the
+        // normal dispatcher credit path. Mid-block resume is
+        // admitted only at the exact interrupted insn, whose
+        // block precredit is already in the raw totals the
+        // caller re-bases onto; a mutated mid-block RIP would
+        // miscount the skipped prefix and fails closed.
+        let (gen_entry, gen_override) = if let Some(&gpc) = t.block_gen.get(&resume.rip) {
+            (gpc, None)
+        } else if resume.rip == frame.resume_src_pc {
+            match frame.gen_mid {
+                Some(gpc) => (gpc, Some(gpc)),
+                None => {
+                    return Err(self.unexpected_stop("sigreturn resume has no exact re-entry"));
+                }
+            }
+        } else {
+            return Err(self.unexpected_stop("sigreturn resume PC mutated off block start"));
         };
         write_mem(
             self.guard.pid,
@@ -1624,7 +1747,7 @@ impl RemoteExecutable {
         // frame; re-mirror it from authoritative readback.
         let mask = read_sigblk(self.guard.pid)?;
         registry.set_mask(mask);
-        Ok(resume)
+        Ok((resume, gen_override))
     }
 
     /// Original-phase stop: exact source state at `src_pc`,
@@ -1799,9 +1922,19 @@ impl RemoteExecutable {
         let (mut tot_branches, mut tot_instructions) = (0u64, 0u64);
         let mut poll_remaining = POLL_BUDGET;
         let mut active: Option<ActiveFrame> = None;
+        let mut pending_gen: Option<u64> = None;
         loop {
-            let Some(&gen_entry) = t.block_gen.get(&state.rip) else {
-                return Err(Refuse::IndirectUnresolved { src_pc: state.rip }.into());
+            // A mid-block sigreturn resume supplies its exact
+            // generated entry once; every other entry resolves
+            // through the block index.
+            let gen_entry = match pending_gen.take() {
+                Some(gpc) => gpc,
+                None => {
+                    let Some(&gpc) = t.block_gen.get(&state.rip) else {
+                        return Err(Refuse::IndirectUnresolved { src_pc: state.rip }.into());
+                    };
+                    gpc
+                }
             };
             let mut fresh = JitData::new(state);
             fresh.branch_count = tot_branches;
@@ -1863,16 +1996,21 @@ impl RemoteExecutable {
                         regs.rip
                     };
                     let recovered = self.recovered_stop(sig, si_code, addr, gen_pc, &regs, &data);
-                    // I1-D delivers only the admitted shape at
-                    // a recovered block start (splitting is
-                    // I1-E); every other async stop keeps the
-                    // pre-I1-D recovered outcome below.
-                    let action = self.delivery_action(sig, &active).filter(|_| {
-                        recovered.kind == crate::recovery::FaultKind::AsyncSignal
-                            && t.block_gen.contains_key(&recovered.src_pc)
+                    // I1-E: block-start recovery resumes through
+                    // the block index; any other recovered PC
+                    // needs an exact mid-block generated
+                    // re-entry. Common-exit machinery stops
+                    // and unmapped generated PCs are excluded
+                    // by `resume_gen` and keep the outcome below.
+                    let resume = resume_gen(t, gen_pc, recovered.src_pc);
+                    let gen_mid = resume.unwrap_or_default();
+                    let resumable = resume.is_some();
+                    let action = self.delivery_action(sig, &active, false).filter(|_| {
+                        recovered.kind == crate::recovery::FaultKind::AsyncSignal && resumable
                     });
                     if let Some(action) = action {
-                        let (handler_state, frame) = self.deliver_signal(action, &recovered)?;
+                        let (handler_state, frame) =
+                            self.deliver_signal(action, &recovered, &data, gen_mid)?;
                         active = Some(frame);
                         state = handler_state;
                         exits += 1;
@@ -1881,16 +2019,7 @@ impl RemoteExecutable {
                         tot_instructions = recovered.instructions;
                         continue;
                     }
-                    return Err(RunError::Fault(Box::new(Fault {
-                        also_pending: Vec::new(),
-                        kind: recovered.kind,
-                        src_pc: recovered.src_pc,
-                        addr: recovered.addr,
-                        signum: recovered.signum,
-                        state: recovered.state,
-                        branches: recovered.branches,
-                        instructions: recovered.instructions,
-                    })));
+                    return Err(RunError::Fault(Box::new(Self::fault_from(recovered))));
                 }
                 StopClass::GeneratedFault => {
                     let (si_code, addr) = si.map_or((0, 0), |(_, c, a)| (c, a));
@@ -1899,9 +2028,45 @@ impl RemoteExecutable {
                     } else {
                         regs.rip
                     };
-                    return Err(RunError::Fault(Box::new(
-                        self.generated_fault(sig, si_code, addr, gen_pc, &regs, &data),
-                    )));
+                    // I1-E synchronous delivery: guest faults
+                    // (never executor/machinery faults) at
+                    // copied insns with an exact resume entry
+                    // go through the same genuine frame flow;
+                    // instruction-address siginfo is first
+                    // rewritten to source form so the kernel
+                    // frame the handler sees is source-faithful.
+                    let recovered = self.recovered_stop(sig, si_code, addr, gen_pc, &regs, &data);
+                    let copied_fault = t
+                        .pcmap
+                        .lookup(gen_pc)
+                        .is_some_and(|e| e.phase == MapPhase::Copied);
+                    let gen_mid = if t.block_gen.contains_key(&recovered.src_pc) {
+                        None
+                    } else {
+                        gen_for_midblock(t, recovered.src_pc)
+                    };
+                    let resumable =
+                        t.block_gen.contains_key(&recovered.src_pc) || gen_mid.is_some();
+                    let action = self.delivery_action(sig, &active, true).filter(|_| {
+                        recovered.kind == crate::recovery::FaultKind::GuestFault
+                            && copied_fault
+                            && resumable
+                    });
+                    if let Some(action) = action {
+                        if recovered.addr != addr {
+                            set_siginfo_addr(self.guard.pid, recovered.addr)?;
+                        }
+                        let (handler_state, frame) =
+                            self.deliver_signal(action, &recovered, &data, gen_mid)?;
+                        active = Some(frame);
+                        state = handler_state;
+                        exits += 1;
+                        poll_remaining = data.poll_remaining;
+                        tot_branches = recovered.branches;
+                        tot_instructions = recovered.instructions;
+                        continue;
+                    }
+                    return Err(RunError::Fault(Box::new(Self::fault_from(recovered))));
                 }
                 _ => return Err(self.unexpected_stop("unexpected generated stop provenance")),
             }
@@ -1952,7 +2117,22 @@ impl RemoteExecutable {
                         let mut registry = std::mem::take(&mut self.registry);
                         let resumed = self.sigreturn_resume(&mut registry, &frame, &state);
                         self.registry = registry;
-                        state = resumed?;
+                        let (resume_state, gen_override) = resumed?;
+                        state = resume_state;
+                        if let Some(gpc) = gen_override {
+                            // Mid-block re-entry: the block's
+                            // precredit is already inside the
+                            // raw totals, so re-base the handler
+                            // delta onto them (no double credit,
+                            // no lost credit) and restore the
+                            // interrupted poll budget.
+                            tot_branches =
+                                frame.raw_branches + (tot_branches - frame.resolved_branches);
+                            tot_instructions = frame.raw_instructions
+                                + (tot_instructions - frame.resolved_instructions);
+                            poll_remaining = frame.raw_poll;
+                            pending_gen = Some(gpc);
+                        }
                         tot_instructions += 2;
                         continue;
                     }
@@ -1965,14 +2145,22 @@ impl RemoteExecutable {
                     }
                 }
                 exit_kind::POLL => {
-                    // I1-D delivers only from ptrace
-                    // signal-delivery stops in generated code;
-                    // poll-observed pending signals keep the
-                    // recovered stop (mask/poll completion is
-                    // I1-F), eligible shape or not.
+                    // Delivery happens only from ptrace
+                    // signal-delivery stops. An eligible
+                    // UNBLOCKED pending signal observed here is
+                    // therefore deferred one entry: re-entering
+                    // the cache makes the kernel present its
+                    // delivery stop at the block head, where the
+                    // Async arm delivers it. Blocked or
+                    // ineligible pending signals keep the
+                    // recovered stop (mask completion is I1-F).
                     state.rip = data.exit_src;
                     let pending = self.pending_async()?;
-                    if let Some((&sig, rest)) = pending.split_first() {
+                    let defer = pending.first().is_some_and(|&sig| {
+                        !self.registry.is_blocked(sig)
+                            && self.delivery_action(sig, &active, false).is_some()
+                    });
+                    if !defer && let Some((&sig, rest)) = pending.split_first() {
                         return Err(RunError::Fault(Box::new(Fault {
                             also_pending: rest.to_vec(),
                             kind: crate::recovery::FaultKind::AsyncSignal,
@@ -2278,6 +2466,71 @@ mod tests {
         );
         assert_eq!(uc_greg_addr(0x1000, GREG_RIP), 0x1000 + 168);
         assert_eq!(uc_greg_addr(0x1000, GREG_R13), 0x1000 + 80);
+    }
+
+    #[test]
+    fn midblock_gen_entry_recovers_exact_insn() {
+        let fix = crate::fixtures::by_name("sum_loop");
+        let region = crate::types::RegionFacts {
+            base: 0x10_0000,
+            bytes: fix.bytes,
+            generation: crate::types::Generation(1),
+            immutable_private: true,
+        };
+        let t = crate::translate::translate(
+            &region,
+            0x10_0000,
+            CountProfile::BranchesAndInstructions,
+            0x80_0000,
+            0x81_0000,
+        )
+        .unwrap();
+        // Every non-block-start copied insn in the fixture
+        // has an exact generated re-entry recovering to it.
+        let mut checked = 0;
+        for block in t.blocks.values() {
+            for &pc in block.insn_pcs().iter().skip(1) {
+                if t.block_gen.contains_key(&pc) {
+                    continue;
+                }
+                let gpc = gen_for_midblock(&t, pc).expect("midblock entry");
+                assert_eq!(t.pcmap.recover(gpc), Some(pc));
+                checked += 1;
+            }
+        }
+        assert!(checked > 0, "fixture has mid-block insns");
+        assert_eq!(gen_for_midblock(&t, 0xdead_0000), None);
+        // Named exclusions by construction: a common-exit
+        // machinery stop never resumes (even for a source PC
+        // that otherwise has an exact re-entry), and an
+        // unmapped generated PC (entry-loader bridge class)
+        // never resumes.
+        let common = t
+            .pcmap
+            .entries()
+            .iter()
+            .find(|e| matches!(e.recovery, MapRecovery::CommonExit { .. }))
+            .expect("translation has common exit");
+        let mut any_mid = None;
+        for block in t.blocks.values() {
+            for pc in block.insn_pcs().iter().skip(1) {
+                if !t.block_gen.contains_key(pc) {
+                    any_mid = Some(*pc);
+                    break;
+                }
+            }
+            if any_mid.is_some() {
+                break;
+            }
+        }
+        let any_mid = any_mid.expect("a mid-block insn");
+        assert_eq!(resume_gen(&t, common.gen_start, any_mid), None);
+        assert_eq!(resume_gen(&t, 0xdead_0000, any_mid), None);
+        let copied_gen = gen_for_midblock(&t, any_mid).expect("midblock gen");
+        assert_eq!(resume_gen(&t, copied_gen, any_mid), Some(Some(copied_gen)));
+        let block_src = *t.block_gen.keys().next().expect("a block");
+        let block_gen_pc = t.block_gen[&block_src];
+        assert_eq!(resume_gen(&t, block_gen_pc, block_src), Some(None));
     }
 
     #[test]
