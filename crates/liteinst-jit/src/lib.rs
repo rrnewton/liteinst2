@@ -7,7 +7,7 @@
 //! nondeterministic instructions end their block and exit to a
 //! caller-supplied handler; they never execute natively from the
 //! cache. The remote substrate (`remote`) adds one tested
-//! genuine signal-delivery shape (P1B I1-D, see
+//! genuine signal-delivery shapes (P1B I1-D/I1-E, see
 //! `P1B-DESIGN.md` §8) and stops every other shape as a
 //! recovered outcome. This crate makes no whole-program claim.
 #![deny(unsafe_op_in_unsafe_fn)]

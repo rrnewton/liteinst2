@@ -21,8 +21,7 @@ P1a envelope, honestly bounded:
   disclosed reduction from transparent delivery, pending an
   explicit owner scope decision. The remote ptrace substrate
   (`src/remote.rs`, P1B-DESIGN §8) additionally performs one
-  tested genuine delivery shape (I1-D: one standard signal,
-  `SA_SIGINFO` handler, block-start recovery and resume); every
+  tested genuine delivery shapes (I1-D SIGUSR1 plus I1-E synchronous SIGSEGV/SIGFPE and exact mid-block resume); every
   other shape there still stops as a recovered outcome, and no
   asynchronous-transparency claim is made beyond that test.
 - Counts are software counts validated by the `o1` ptrace single-step
