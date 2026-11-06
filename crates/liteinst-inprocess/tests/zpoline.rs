@@ -10,13 +10,16 @@ use liteinst::contracts::{
     QuiescenceLease, ResumeObligation, SourceIdentity,
 };
 use liteinst_inprocess::selected::{SelectedKind, selected_counters};
-use liteinst_inprocess::syscall::zpoline::{PreparedZpoline, ZpolineSite};
+use liteinst_inprocess::syscall::zpoline::{PreparedZpoline, PreparedZpolineSet, ZpolineSite};
 use liteinst_inprocess::syscall::{SyscallRefusal, SyscallStrategy, SyscallStrategyConfig};
+use std::collections::BTreeMap;
 use std::ffi::c_void;
 use std::process::Command;
 
 const CHILD_ENV: &str = "LITEINST_ZPOLINE_CHILD";
+const BATCH_CHILD_ENV: &str = "LITEINST_ZPOLINE_BATCH_CHILD";
 const CODE: [u8; 3] = [0x0f, 0x05, 0xc3];
+const BATCH_CODE: [u8; 6] = [0x0f, 0x05, 0xc3, 0x0f, 0x05, 0xc3];
 const PATCHED: [u8; 3] = [0xff, 0xd0, 0xc3];
 
 core::arch::global_asm!(
@@ -117,6 +120,10 @@ struct Region {
 
 impl Region {
     fn new(page: usize) -> Self {
+        Self::with_code(page, &CODE)
+    }
+
+    fn with_code(page: usize, code: &[u8]) -> Self {
         let raw = unsafe {
             libc::mmap(
                 std::ptr::null_mut(),
@@ -129,7 +136,7 @@ impl Region {
         };
         assert_ne!(raw, libc::MAP_FAILED);
         let address = raw.cast::<u8>();
-        unsafe { std::ptr::copy_nonoverlapping(CODE.as_ptr(), address, CODE.len()) };
+        unsafe { std::ptr::copy_nonoverlapping(code.as_ptr(), address, code.len()) };
         let region = Self { address, len: page };
         region.permissions(libc::PROT_READ | libc::PROT_EXEC);
         region
@@ -144,6 +151,10 @@ impl Region {
 
     fn bytes(&self) -> [u8; CODE.len()] {
         unsafe { std::ptr::read(self.address.cast::<[u8; CODE.len()]>()) }
+    }
+
+    fn snapshot(&self, len: usize) -> Vec<u8> {
+        unsafe { std::slice::from_raw_parts(self.address, len).to_vec() }
     }
 }
 
@@ -285,8 +296,147 @@ fn child_main() -> ! {
     std::process::exit(0);
 }
 
+fn batch_child_main() -> ! {
+    let _signals = ApplicationSignals::block();
+    let page = usize::try_from(unsafe { libc::sysconf(libc::_SC_PAGESIZE) }).unwrap();
+    let mut region = Region::with_code(page, &BATCH_CODE);
+    let entry = region.address as usize;
+    let second = entry + 3;
+    let pid = u64::try_from(unsafe { libc::getpid() }).unwrap();
+    check_output(invoke(entry), entry, pid);
+    check_output(invoke(second), second, pid);
+
+    let identity = CodeIdentity {
+        source: SourceIdentity([0xb7; 32]),
+        mapping: entry as u64,
+        generation: 1,
+    };
+    let source_range = AddressRange::new(entry as u64, BATCH_CODE.len()).unwrap();
+    let entries = LegalEntrySet {
+        identity,
+        scope: source_range,
+        provenance: EntryProvenance::Declared("zpoline batch syscall;ret x2".into()),
+        completeness: EntryCompleteness::Complete,
+        entries: [
+            entry as u64,
+            entry as u64 + 2,
+            second as u64,
+            second as u64 + 2,
+        ]
+        .into_iter()
+        .map(|address| LegalEntry {
+            address,
+            requires_endbr: false,
+        })
+        .collect(),
+        resumes: ResumeObligation::NoneExist,
+    };
+    let config = SyscallStrategyConfig::new(SyscallStrategy::Zpoline)
+        .with_placement(
+            liteinst_inprocess::syscall::PlacementBudget::new(256, 16, 1_048_576).unwrap(),
+        )
+        .unwrap();
+    let certificates = BTreeMap::from([
+        (entry as u64, libc::SYS_getpid as u32),
+        (second as u64, libc::SYS_getpid as u32),
+    ]);
+    let prepared = PreparedZpolineSet::census(
+        config,
+        identity,
+        &BATCH_CODE,
+        entry as u64,
+        &entries,
+        &certificates,
+    )
+    .unwrap();
+    assert_eq!(prepared.sites().len(), 2);
+    assert_eq!(prepared.metrics().trap, 2);
+    assert_eq!(selected_counters(SelectedKind::Syscall).entered, 0);
+
+    region.permissions(libc::PROT_READ | libc::PROT_WRITE);
+    let address = region.address;
+    let len = region.len;
+    let mut lease = unsafe { QuiescenceLease::new(&mut region, identity, vec![source_range]) };
+    let installed = unsafe {
+        prepared.publish_with(address, &mut lease, || {
+            if libc::mprotect(
+                address.cast::<c_void>(),
+                len,
+                libc::PROT_READ | libc::PROT_EXEC,
+            ) == 0
+            {
+                Ok(())
+            } else {
+                Err(SyscallRefusal::AllocationUnavailable)
+            }
+        })
+    };
+    let installed = match installed {
+        Ok(value) => value,
+        Err(failure) => {
+            let unchanged = failure.retained.observed_source() == Some(BATCH_CODE.as_slice());
+            eprintln!(
+                "ZPOLINE_BATCH_ENV_REFUSAL {:?} stage={:?} source_unchanged={unchanged}",
+                failure.failure.reason, failure.failure.stage
+            );
+            if matches!(
+                failure.failure.reason,
+                SyscallRefusal::LowPageUnavailable { .. } | SyscallRefusal::LowPageOccupied
+            ) && failure.failure.stage == liteinst::contracts::FailureStage::BeforeWrite
+                && unchanged
+            {
+                std::process::exit(43);
+            }
+            std::process::abort();
+        }
+    };
+    assert!(installed.verified());
+    let patched = [0xff, 0xd0, 0xc3, 0xff, 0xd0, 0xc3];
+    assert_eq!(region.snapshot(BATCH_CODE.len()), patched);
+    assert_eq!(installed.observed_source().unwrap(), patched);
+    assert_eq!(installed.metrics().rewritten_zpoline, 2);
+    assert_eq!(installed.metrics().placement.low_page, 1);
+    assert_eq!(installed.metrics().placement.two_hop_veneer, 1);
+    assert!(installed.dispatcher_address() != 0);
+
+    check_output(invoke(entry), entry, pid);
+    check_output(invoke(second), second, pid);
+    let counters = selected_counters(SelectedKind::Syscall);
+    assert_eq!((counters.entered, counters.completed), (2, 2));
+
+    region.permissions(libc::PROT_READ | libc::PROT_WRITE);
+    let address = region.address;
+    let len = region.len;
+    let mut lease = unsafe { QuiescenceLease::new(&mut region, identity, vec![source_range]) };
+    if let Err(failure) = unsafe {
+        installed.retire(address, &mut lease, || {
+            if libc::mprotect(
+                address.cast::<c_void>(),
+                len,
+                libc::PROT_READ | libc::PROT_EXEC,
+            ) == 0
+            {
+                Ok(())
+            } else {
+                Err(SyscallRefusal::AllocationUnavailable)
+            }
+        })
+    } {
+        eprintln!("ZPOLINE_BATCH_RETIRE_FAILURE {:?}", failure.failure);
+        std::process::abort();
+    }
+    assert_eq!(region.snapshot(BATCH_CODE.len()), BATCH_CODE);
+    check_output(invoke(entry), entry, pid);
+    check_output(invoke(second), second, pid);
+    println!("ZPOLINE_BATCH_POSITIVE sites=2 pid={pid} entry={entry:#x}");
+    std::process::exit(0);
+}
+
 #[test]
 fn zpoline_probe_positive_or_named_environment_refusal() {
+    if std::env::var_os(BATCH_CHILD_ENV).is_some() {
+        batch_child_main();
+    }
     if std::env::var_os(CHILD_ENV).is_some() {
         child_main();
     }
@@ -331,4 +481,50 @@ fn zpoline_probe_positive_or_named_environment_refusal() {
         "VA0 was advertised available but zpoline still refused: {stderr}"
     );
     eprintln!("zpoline positive not run: mmap_min_addr={mmap_min_addr}; {stderr}");
+}
+
+#[test]
+fn zpoline_batch_positive_or_named_environment_refusal() {
+    if std::env::var_os(BATCH_CHILD_ENV).is_some() {
+        batch_child_main();
+    }
+    let output = Command::new(std::env::current_exe().unwrap())
+        .env(BATCH_CHILD_ENV, "1")
+        .args([
+            "--exact",
+            "zpoline_probe_positive_or_named_environment_refusal",
+            "--nocapture",
+            "--test-threads=1",
+        ])
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let mmap_min_addr = std::fs::read_to_string("/proc/sys/vm/mmap_min_addr")
+        .unwrap()
+        .trim()
+        .to_string();
+    if output.status.success() {
+        assert!(
+            stdout.contains("ZPOLINE_BATCH_POSITIVE sites=2"),
+            "stdout={stdout} stderr={stderr}"
+        );
+        return;
+    }
+    assert_eq!(
+        output.status.code(),
+        Some(43),
+        "stdout={stdout} stderr={stderr}"
+    );
+    assert!(
+        stderr.contains("ZPOLINE_BATCH_ENV_REFUSAL LowPageUnavailable")
+            || stderr.contains("ZPOLINE_BATCH_ENV_REFUSAL LowPageOccupied"),
+        "stdout={stdout} stderr={stderr}"
+    );
+    assert!(stderr.contains("source_unchanged=true"), "stderr={stderr}");
+    assert_ne!(
+        mmap_min_addr, "0",
+        "VA0 was advertised available but batch zpoline still refused: {stderr}"
+    );
+    eprintln!("zpoline batch positive not run: mmap_min_addr={mmap_min_addr}; {stderr}");
 }

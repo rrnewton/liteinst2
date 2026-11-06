@@ -12,8 +12,9 @@
 //! whole-program mechanism. Mapping virtual address zero is a run-level
 //! prerequisite and is reported as a named environment refusal when denied.
 
+use std::collections::BTreeMap;
 use std::ffi::{c_int, c_void};
-use std::sync::atomic::{AtomicU8, AtomicU32, AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicPtr, AtomicU8, AtomicUsize, Ordering};
 
 use liteinst::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, FailureStage, LegalEntrySet, QuiescenceLease,
@@ -51,10 +52,22 @@ const OWNER_INSTALLED: u8 = 2;
 const OWNER_POISONED: u8 = 3;
 
 static ZPOLINE_OWNER: AtomicU8 = AtomicU8::new(OWNER_EMPTY);
-static ZPOLINE_EXPECTED_SITE: AtomicU64 = AtomicU64::new(0);
-static ZPOLINE_EXPECTED_RETURN: AtomicU64 = AtomicU64::new(0);
-static ZPOLINE_EXPECTED_NR: AtomicU32 = AtomicU32::new(0);
-static ZPOLINE_DELEGATE: AtomicUsize = AtomicUsize::new(0);
+
+#[derive(Clone, Copy)]
+struct HookSite {
+    logical_pc: u64,
+    return_pc: u64,
+    syscall_nr: u32,
+    delegate: HookCallback,
+}
+
+static ZPOLINE_HOOK_SITES: AtomicPtr<HookSite> = AtomicPtr::new(std::ptr::null_mut());
+static ZPOLINE_HOOK_SITES_LEN: AtomicUsize = AtomicUsize::new(0);
+
+fn publish_hook_sites(sites: &[HookSite]) {
+    ZPOLINE_HOOK_SITES_LEN.store(sites.len(), Ordering::Release);
+    ZPOLINE_HOOK_SITES.store(sites.as_ptr().cast_mut(), Ordering::Release);
+}
 
 /// Exact low-page sled geometry for one validated config and host page.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -129,24 +142,59 @@ fn host_page_size() -> Result<usize, SyscallRefusal> {
     ZpolineSledLayout::new(page_size, 0).map(|_| page_size)
 }
 
-struct SledMapping {
+struct DualMapping {
     fd: c_int,
     writable: *mut u8,
     executable: *mut u8,
     executable_mapped: bool,
+    address: u64,
     len: usize,
     committed: bool,
 }
 
-impl SledMapping {
-    fn probe_and_map(len: usize) -> Result<Self, SyscallRefusal> {
-        const NAME: &[u8] = b"liteinst-zpoline-sled\0";
+impl DualMapping {
+    fn probe_sled(len: usize) -> Result<Self, SyscallRefusal> {
+        Self::probe_at(len, 0, b"liteinst-zpoline-sled\0")
+    }
+
+    fn probe_at(len: usize, address: u64, name: &[u8]) -> Result<Self, SyscallRefusal> {
+        let mut mapping = Self::new_memfd(len, address, name)?;
+        mapping.map_executable()?;
+        Ok(mapping)
+    }
+
+    fn probe_anywhere(len: usize, name: &[u8]) -> Result<Self, SyscallRefusal> {
+        let mut mapping = Self::new_memfd(len, 0, name)?;
+        // SAFETY: a fresh shared executable alias of the sized owned memfd;
+        // the kernel chooses its address.
+        let executable = unsafe {
+            libc::mmap(
+                std::ptr::null_mut(),
+                len,
+                libc::PROT_READ | libc::PROT_EXEC,
+                libc::MAP_SHARED,
+                mapping.fd,
+                0,
+            )
+        };
+        if executable == libc::MAP_FAILED {
+            return Err(SyscallRefusal::MemfdDualMapFailed {
+                errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
+            });
+        }
+        mapping.address = executable as u64;
+        mapping.executable = executable.cast::<u8>();
+        mapping.executable_mapped = true;
+        Ok(mapping)
+    }
+
+    fn new_memfd(len: usize, address: u64, name: &[u8]) -> Result<Self, SyscallRefusal> {
         // SAFETY: the name is NUL-terminated and memfd creation returns either
         // a new owned descriptor or -1 with errno.
         let fd = unsafe {
             libc::syscall(
                 libc::SYS_memfd_create,
-                NAME.as_ptr(),
+                name.as_ptr(),
                 libc::MFD_CLOEXEC | 0x0002,
             )
         };
@@ -161,6 +209,7 @@ impl SledMapping {
             writable: std::ptr::null_mut(),
             executable: std::ptr::null_mut(),
             executable_mapped: false,
+            address,
             len,
             committed: false,
         };
@@ -187,8 +236,6 @@ impl SledMapping {
             });
         }
         mapping.writable = writable.cast::<u8>();
-
-        mapping.map_executable()?;
         Ok(mapping)
     }
 
@@ -196,11 +243,11 @@ impl SledMapping {
         if self.executable_mapped || self.fd < 0 {
             return Err(SyscallRefusal::AllocationUnavailable);
         }
-        // SAFETY: MAP_FIXED_NOREPLACE asks for exactly VA 0 and cannot replace
-        // an existing mapping on supported kernels.
+        // SAFETY: MAP_FIXED_NOREPLACE asks for exactly self.address and
+        // cannot replace an existing mapping on supported kernels.
         let executable = unsafe {
             libc::mmap(
-                std::ptr::null_mut(),
+                self.address as *mut c_void,
                 self.len,
                 libc::PROT_READ | libc::PROT_EXEC,
                 libc::MAP_SHARED | libc::MAP_FIXED_NOREPLACE,
@@ -210,19 +257,25 @@ impl SledMapping {
         };
         if executable == libc::MAP_FAILED {
             let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(0);
-            return Err(if errno == libc::EEXIST {
+            return Err(if self.address == 0 && errno == libc::EEXIST {
                 SyscallRefusal::LowPageOccupied
-            } else {
+            } else if self.address == 0 {
                 SyscallRefusal::LowPageUnavailable { errno }
+            } else {
+                SyscallRefusal::AllocationUnavailable
             });
         }
-        if !executable.is_null() {
+        if executable as u64 != self.address {
             // An old kernel ignoring NOREPLACE could relocate or replace; do
-            // not retain a mapping anywhere except exactly VA 0.
+            // not retain a mapping anywhere except the exact requested page.
             // SAFETY: executable is the mapping just returned.
             unsafe { libc::munmap(executable, self.len) };
-            return Err(SyscallRefusal::LowPageUnavailable {
-                errno: libc::EADDRNOTAVAIL,
+            return Err(if self.address == 0 {
+                SyscallRefusal::LowPageUnavailable {
+                    errno: libc::EADDRNOTAVAIL,
+                }
+            } else {
+                SyscallRefusal::AllocationUnavailable
             });
         }
         self.executable = executable.cast::<u8>();
@@ -349,13 +402,225 @@ impl SledMapping {
         writable.and(executable)
     }
 
+    fn len(&self) -> usize {
+        self.len
+    }
+
     fn commit(mut self) -> Self {
         self.committed = true;
         self
     }
 }
 
-impl Drop for SledMapping {
+fn align_up(value: u64, align: u64) -> Option<u64> {
+    value
+        .checked_add(align - 1)
+        .map(|value| value & !(align - 1))
+}
+
+fn align_down(value: u64, align: u64) -> u64 {
+    value & !(align - 1)
+}
+
+/// Builds the sled-to-handler dispatcher for a batch. The sled jumps here;
+/// this veneer authenticates only routing by the call return address, then
+/// restores flags/R11 and the pre-call RSP before entering the exact
+/// per-site trampoline. Temporary state is below the red zone, in the same
+/// writable stack area the exact trampoline is already certified to use.
+fn build_dispatcher(sites: &[(u64, u64)]) -> Result<Vec<u8>, SyscallRefusal> {
+    if sites.is_empty() {
+        return Err(SyscallRefusal::InvalidConfig {
+            field: "sites",
+            reason: "dispatcher requires at least one site",
+        });
+    }
+    let header_len = 19usize;
+    let compare_len = 13usize;
+    let fail_len = 13usize;
+    let found_len = 17usize;
+    let fail_offset = header_len + compare_len * sites.len();
+    let found_offset = fail_offset + fail_len;
+    let constants_offset = (found_offset + found_len * sites.len()).next_multiple_of(8);
+    let handler_constants = constants_offset + sites.len() * 8;
+    let total = handler_constants + sites.len() * 8;
+    let mut bytes = vec![0x90; total];
+    // lea rsp,[rsp-144]; pushfq; push r11; mov r11,[rsp+160]
+    bytes[0..8].copy_from_slice(&[0x48, 0x8d, 0xa4, 0x24, 0x70, 0xff, 0xff, 0xff]);
+    bytes[8] = 0x9c;
+    bytes[9..11].copy_from_slice(&[0x41, 0x53]);
+    bytes[11..19].copy_from_slice(&[0x4c, 0x8b, 0x9c, 0x24, 0x98, 0x00, 0x00, 0x00]);
+
+    for (index, &(return_pc, handler)) in sites.iter().enumerate() {
+        let compare = header_len + index * compare_len;
+        bytes[compare..compare + 3].copy_from_slice(&[0x4d, 0x3b, 0x1d]);
+        let constant = constants_offset + index * 8;
+        let disp = i32::try_from(constant as i64 - (compare + 7) as i64)
+            .map_err(|_| SyscallRefusal::AllocationUnavailable)?;
+        bytes[compare + 3..compare + 7].copy_from_slice(&disp.to_le_bytes());
+        bytes[compare + 7..compare + 9].copy_from_slice(&[0x0f, 0x84]);
+        let found = found_offset + index * found_len;
+        let rel = i32::try_from(found as i64 - (compare + compare_len) as i64)
+            .map_err(|_| SyscallRefusal::AllocationUnavailable)?;
+        bytes[compare + 9..compare + 13].copy_from_slice(&rel.to_le_bytes());
+        bytes[constant..constant + 8].copy_from_slice(&return_pc.to_le_bytes());
+        let handler_constant = handler_constants + index * 8;
+        bytes[handler_constant..handler_constant + 8].copy_from_slice(&handler.to_le_bytes());
+
+        bytes[found..found + 2].copy_from_slice(&[0x41, 0x5b]);
+        bytes[found + 2] = 0x9d;
+        bytes[found + 3..found + 11]
+            .copy_from_slice(&[0x48, 0x8d, 0xa4, 0x24, 0x90, 0x00, 0x00, 0x00]);
+        bytes[found + 11..found + 13].copy_from_slice(&[0xff, 0x25]);
+        let jump_disp = i32::try_from(handler_constant as i64 - (found + found_len) as i64)
+            .map_err(|_| SyscallRefusal::AllocationUnavailable)?;
+        bytes[found + 13..found + 17].copy_from_slice(&jump_disp.to_le_bytes());
+    }
+
+    // pop r11; popfq; lea rsp,[rsp+152]; ud2
+    bytes[fail_offset..fail_offset + 2].copy_from_slice(&[0x41, 0x5b]);
+    bytes[fail_offset + 2] = 0x9d;
+    bytes[fail_offset + 3..fail_offset + 11]
+        .copy_from_slice(&[0x48, 0x8d, 0xa4, 0x24, 0x90, 0x00, 0x00, 0x00]);
+    bytes[fail_offset + 11..fail_offset + 13].copy_from_slice(&[0x0f, 0x0b]);
+    Ok(bytes)
+}
+
+struct DispatcherAllocation {
+    mapping: DualMapping,
+    family: crate::syscall::PlacementFamily,
+    attempts: usize,
+}
+
+fn occupied_and_executable_ranges() -> Result<(Vec<AddressRange>, Vec<AddressRange>), SyscallRefusal>
+{
+    let text = std::fs::read_to_string("/proc/self/maps")
+        .map_err(|_| SyscallRefusal::AllocationUnavailable)?;
+    if text.len() > 2 * 1024 * 1024 {
+        return Err(SyscallRefusal::AllocationUnavailable);
+    }
+    let mut occupied = Vec::new();
+    let mut executable = Vec::new();
+    for line in text.lines() {
+        let mut fields = line.split_whitespace();
+        let Some(addresses) = fields.next() else {
+            continue;
+        };
+        let Some((start, end)) = addresses.split_once('-') else {
+            continue;
+        };
+        let Ok(start) = u64::from_str_radix(start, 16) else {
+            continue;
+        };
+        let Ok(end) = u64::from_str_radix(end, 16) else {
+            continue;
+        };
+        let Some(len) = end
+            .checked_sub(start)
+            .and_then(|len| usize::try_from(len).ok())
+        else {
+            continue;
+        };
+        let Ok(range) = AddressRange::new(start, len) else {
+            continue;
+        };
+        occupied.push(range);
+        if fields.next().is_some_and(|perms| perms.contains('x')) {
+            executable.push(range);
+        }
+    }
+    Ok((occupied, executable))
+}
+
+fn near_candidates(
+    objects: &[AddressRange],
+    occupied: &[AddressRange],
+    executable: &[AddressRange],
+    len: usize,
+    page_size: usize,
+    max_candidates: usize,
+) -> Vec<u64> {
+    let page = page_size as u64;
+    let aligned_len = align_up(len as u64, page).unwrap_or(u64::MAX);
+    let candidate_range = |start: u64| AddressRange::new(start, len).ok();
+    let mut out: Vec<u64> = Vec::new();
+    let push = |candidate: u64, out: &mut Vec<u64>| {
+        if out.len() >= max_candidates || candidate < page || out.contains(&candidate) {
+            return;
+        }
+        let Some(range) = candidate_range(candidate) else {
+            return;
+        };
+        if occupied.iter().any(|used| used.overlaps(range)) {
+            return;
+        }
+        out.push(candidate);
+    };
+    let mut anchors: Vec<AddressRange> = objects.to_vec();
+    anchors.extend_from_slice(executable);
+    for anchor in anchors {
+        for delta_pages in [0_u64, 1, 2, 4, 8, 16, 32, 64, 256] {
+            if let Some(after) = anchor
+                .end()
+                .checked_add(delta_pages * page)
+                .and_then(|value| align_up(value, page))
+            {
+                push(after, &mut out);
+            }
+            if let Some(end_before) = anchor.start().checked_sub(delta_pages * page) {
+                let before = align_down(end_before.saturating_sub(aligned_len), page);
+                push(before, &mut out);
+            }
+            if out.len() >= max_candidates {
+                return out;
+            }
+        }
+    }
+    out
+}
+
+fn allocate_dispatcher(
+    len: usize,
+    objects: &[AddressRange],
+    budget: crate::syscall::PlacementBudget,
+    page_size: usize,
+) -> Result<DispatcherAllocation, SyscallRefusal> {
+    let aligned_len = align_up(len as u64, page_size as u64)
+        .and_then(|value| usize::try_from(value).ok())
+        .ok_or(SyscallRefusal::AllocationUnavailable)?;
+    let (occupied, executable) = occupied_and_executable_ranges()?;
+    let candidates = near_candidates(
+        objects,
+        &occupied,
+        &executable,
+        aligned_len,
+        page_size,
+        budget.max_candidates(),
+    );
+    let mut attempts = 0usize;
+    for candidate in candidates {
+        attempts += 1;
+        match DualMapping::probe_at(aligned_len, candidate, b"liteinst-zpoline-dispatcher\0") {
+            Ok(mapping) => {
+                return Ok(DispatcherAllocation {
+                    mapping,
+                    family: crate::syscall::PlacementFamily::NearAllocation,
+                    attempts,
+                });
+            }
+            Err(SyscallRefusal::AllocationUnavailable) => {}
+            Err(error) => return Err(error),
+        }
+    }
+    attempts += 1;
+    let mapping = DualMapping::probe_anywhere(aligned_len, b"liteinst-zpoline-dispatcher\0")?;
+    Ok(DispatcherAllocation {
+        mapping,
+        family: crate::syscall::PlacementFamily::MemfdDualMap,
+        attempts,
+    })
+}
+
+impl Drop for DualMapping {
     fn drop(&mut self) {
         if !self.committed {
             let _ = self.unmap();
@@ -404,10 +669,22 @@ unsafe extern "C" fn zpoline_hook(context: *mut HookContext) {
     // restored the original RSP; the zpoline call return remains at RSP-8 in
     // the untouched red zone for authentication here.
     let context = unsafe { &mut *context };
-    let expected_site = ZPOLINE_EXPECTED_SITE.load(Ordering::Acquire);
-    let expected_return = ZPOLINE_EXPECTED_RETURN.load(Ordering::Acquire);
-    let expected_nr = ZPOLINE_EXPECTED_NR.load(Ordering::Acquire);
-    let delegate_bits = ZPOLINE_DELEGATE.load(Ordering::Acquire);
+    let sites_ptr = ZPOLINE_HOOK_SITES.load(Ordering::Acquire);
+    let sites_len = ZPOLINE_HOOK_SITES_LEN.load(Ordering::Acquire);
+    if sites_ptr.is_null() || sites_len == 0 {
+        // SAFETY: authentication failed before any genuine syscall.
+        unsafe { refuse_hook() }
+    }
+    // SAFETY: publication stores the length before the pointer and retains
+    // the boxed sorted table in the installed owner for every admitted route.
+    let sites = unsafe { std::slice::from_raw_parts(sites_ptr, sites_len) };
+    let Ok(index) =
+        sites.binary_search_by_key(&context.instruction_pointer, |site| site.logical_pc)
+    else {
+        // SAFETY: unauthenticated sled entry is refused before forwarding.
+        unsafe { refuse_hook() }
+    };
+    let expected = sites[index];
     let Some(return_slot) = context.stack_pointer.checked_sub(8) else {
         // SAFETY: authentication failed before any genuine syscall.
         unsafe { refuse_hook() }
@@ -415,19 +692,12 @@ unsafe extern "C" fn zpoline_hook(context: *mut HookContext) {
     // SAFETY: the publish contract keeps the original red-zone word readable
     // and the exact trampoline does not overwrite it.
     let observed_return = unsafe { std::ptr::read_volatile(return_slot as *const u64) };
-    if context.instruction_pointer != expected_site
-        || context.rax != u64::from(expected_nr)
-        || observed_return != expected_return
-        || delegate_bits == 0
-    {
+    if context.rax != u64::from(expected.syscall_nr) || observed_return != expected.return_pc {
         // SAFETY: unauthenticated sled entry is refused before forwarding.
         unsafe { refuse_hook() }
     }
-    // SAFETY: publish stores the selected callback address before patching
-    // the only admitted source route to this wrapper.
-    let delegate: HookCallback = unsafe { core::mem::transmute(delegate_bits) };
     // SAFETY: context remains the live trampoline context for this call.
-    unsafe { delegate(context) }
+    unsafe { (expected.delegate)(context) }
 }
 
 fn claim_owner() -> Result<(), SyscallRefusal> {
@@ -476,9 +746,9 @@ fn trampoline_refusal(error: TrampolineError) -> SyscallRefusal {
     match error {
         TrampolineError::SiteNotFound { .. } => SyscallRefusal::NotInstructionHead,
         TrampolineError::NotExactSyscall { .. } => SyscallRefusal::NotSyscallSite,
+        TrampolineError::NoReachableMapping => SyscallRefusal::NearAllocationExhausted,
         TrampolineError::BackingStore { .. }
         | TrampolineError::ProcessMaps { .. }
-        | TrampolineError::NoReachableMapping
         | TrampolineError::ExactAddressUnavailable { .. }
         | TrampolineError::ArenaFull
         | TrampolineError::CodeTooLarge { .. }
@@ -751,10 +1021,8 @@ unsafe fn write_site_word(address: *mut u8, bytes: [u8; 2]) {
 }
 
 fn clear_hook_state() {
-    ZPOLINE_DELEGATE.store(0, Ordering::Release);
-    ZPOLINE_EXPECTED_RETURN.store(0, Ordering::Release);
-    ZPOLINE_EXPECTED_SITE.store(0, Ordering::Release);
-    ZPOLINE_EXPECTED_NR.store(0, Ordering::Release);
+    ZPOLINE_HOOK_SITES.store(std::ptr::null_mut(), Ordering::Release);
+    ZPOLINE_HOOK_SITES_LEN.store(0, Ordering::Release);
 }
 
 /// Exact zpoline publication failure, retaining the strategy-level name.
@@ -804,8 +1072,9 @@ impl std::error::Error for ZpolinePublicationFailure {}
 /// verified owner intentionally does not unmap reachable handler or sled code.
 pub struct InstalledZpoline {
     prepared: PreparedZpoline,
+    hook_sites: Box<[HookSite]>,
     trampoline: Option<ExecutableTrampoline>,
-    sled: Option<SledMapping>,
+    sled: Option<DualMapping>,
     observed_source: Vec<u8>,
     observed_handler: Vec<u8>,
     observed_sled: Vec<u8>,
@@ -874,8 +1143,16 @@ impl PreparedZpoline {
     ) -> Result<Box<InstalledZpoline>, ZpolinePublicationFailure> {
         let source_len = self.source.len();
         let page_size = self.sled_layout.page_size();
+        let hook_sites = vec![HookSite {
+            logical_pc: self.logical_pc,
+            return_pc: self.return_pc,
+            syscall_nr: self.syscall_nr,
+            delegate: self.delegate,
+        }]
+        .into_boxed_slice();
         let mut retained = Box::new(InstalledZpoline {
             prepared: self,
+            hook_sites,
             trampoline: None,
             sled: None,
             observed_source: vec![0; source_len],
@@ -966,7 +1243,7 @@ unsafe fn publish_inner(
         return Err(before(SyscallRefusal::ExpectedBytesChanged));
     }
 
-    let sled = SledMapping::probe_and_map(prepared.sled_layout.page_size()).map_err(before)?;
+    let sled = DualMapping::probe_sled(prepared.sled_layout.page_size()).map_err(before)?;
     retained.sled = Some(sled);
     let trampoline = ExecutableTrampoline::allocate(&retained.prepared.plan)
         .map_err(|error| before(trampoline_refusal(error)))?;
@@ -1002,10 +1279,7 @@ unsafe fn publish_inner(
         .publish_bytes(&sled_bytes)
         .map_err(before)?;
 
-    ZPOLINE_EXPECTED_SITE.store(retained.prepared.logical_pc, Ordering::Release);
-    ZPOLINE_EXPECTED_RETURN.store(retained.prepared.return_pc, Ordering::Release);
-    ZPOLINE_EXPECTED_NR.store(retained.prepared.syscall_nr, Ordering::Release);
-    ZPOLINE_DELEGATE.store(retained.prepared.delegate as usize, Ordering::Release);
+    publish_hook_sites(&retained.hook_sites);
 
     // SAFETY: the lease still excludes every observer of the live alias.
     unsafe { read_live(writable_base, &mut retained.observed_source) };
@@ -1169,6 +1443,839 @@ unsafe fn retire_inner(
         return Err(keep(reason));
     }
     retained.captured = true;
+    retained.verified = false;
+    retained.write_attempted = false;
+    Ok(())
+}
+
+/// Counts of placement families actually used by an installed batch.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct PlacementCounts {
+    /// Near handler/dispatcher allocations.
+    pub near_allocation: usize,
+    /// Memfd dual-mapped sled/dispatcher backings.
+    pub memfd_dual_map: usize,
+    /// Low-page sled mappings (zero or one in this slice).
+    pub low_page: usize,
+    /// Sled-to-dispatcher-to-handler veneers.
+    pub two_hop_veneer: usize,
+    /// Sites left to the trap outcome.
+    pub trap: usize,
+}
+
+/// Outcome and placement summary for a prepared or installed batch.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct ZpolineMetrics {
+    /// Sites currently rewritten by zpoline.
+    pub rewritten_zpoline: usize,
+    /// Sites currently rewritten by lazypoline (always zero in slice 3).
+    pub rewritten_lazypoline: usize,
+    /// Sites left to a trap substrate.
+    pub trap: usize,
+    /// Sites refused by exact name.
+    pub refused: usize,
+    /// Installed rewritten sites whose generation has been marked stale.
+    pub stale_sites: usize,
+    /// Placement families used by the installed batch.
+    pub placement: PlacementCounts,
+}
+
+fn metrics_for(
+    outcomes: &[(u64, crate::syscall::SiteOutcome)],
+    stale: bool,
+    placement: PlacementCounts,
+) -> ZpolineMetrics {
+    let mut metrics = ZpolineMetrics {
+        placement,
+        ..ZpolineMetrics::default()
+    };
+    for (_, outcome) in outcomes {
+        match outcome {
+            crate::syscall::SiteOutcome::RewrittenZpoline => metrics.rewritten_zpoline += 1,
+            crate::syscall::SiteOutcome::RewrittenLazypoline => metrics.rewritten_lazypoline += 1,
+            crate::syscall::SiteOutcome::Trap => metrics.trap += 1,
+            crate::syscall::SiteOutcome::Refused(_) => metrics.refused += 1,
+        }
+    }
+    if stale {
+        metrics.stale_sites = metrics.rewritten_zpoline + metrics.rewritten_lazypoline;
+    }
+    metrics
+}
+
+/// Prepared multi-site batch for one snapshot and one code identity.
+pub struct PreparedZpolineSet {
+    config: SyscallStrategyConfig,
+    identity: CodeIdentity,
+    base_address: u64,
+    source: Vec<u8>,
+    expected_source: Vec<u8>,
+    sled_layout: ZpolineSledLayout,
+    sites: Vec<PreparedZpoline>,
+    outcomes: Vec<(u64, crate::syscall::SiteOutcome)>,
+}
+
+impl PreparedZpolineSet {
+    fn from_prepared(
+        config: SyscallStrategyConfig,
+        identity: CodeIdentity,
+        base_address: u64,
+        source: Vec<u8>,
+        sled_layout: ZpolineSledLayout,
+        mut sites: Vec<PreparedZpoline>,
+        mut outcomes: Vec<(u64, crate::syscall::SiteOutcome)>,
+    ) -> Result<Self, SyscallRefusal> {
+        sites.sort_by_key(|site| site.logical_pc);
+        if sites.len() > config.max_sites() {
+            return Err(SyscallRefusal::RegistryExhausted);
+        }
+        let mut expected_source = source.clone();
+        for site in &sites {
+            if site.config != config
+                || site.identity != identity
+                || site.base_address != base_address
+                || site.source != source
+            {
+                return Err(SyscallRefusal::DependencyNotHeld);
+            }
+            expected_source[site.offset()..site.offset() + 2].copy_from_slice(&ZPOLINE_CALL_RAX);
+        }
+        outcomes.sort_by_key(|(address, _)| *address);
+        Ok(Self {
+            config,
+            identity,
+            base_address,
+            source,
+            expected_source,
+            sled_layout,
+            sites,
+            outcomes,
+        })
+    }
+
+    /// Prepares an explicitly certified batch in one snapshot/identity.
+    /// Every named site must be eligible; use `census` for mixed outcomes.
+    pub fn prepare_batch(mut sites: Vec<ZpolineSite<'_>>) -> Result<Self, SyscallRefusal> {
+        let first = sites.first().ok_or(SyscallRefusal::InvalidConfig {
+            field: "sites",
+            reason: "batch requires at least one site",
+        })?;
+        let config = first.config;
+        let identity = first.identity;
+        let base_address = first.base_address;
+        let source = first.code.to_vec();
+        sites.sort_by_key(|site| site.logical_pc);
+        if sites
+            .windows(2)
+            .any(|pair| pair[0].logical_pc == pair[1].logical_pc)
+        {
+            return Err(SyscallRefusal::OwnershipConflict);
+        }
+        let mut prepared = Vec::with_capacity(sites.len());
+        let mut outcomes = Vec::with_capacity(sites.len());
+        for site in sites {
+            if site.config != config
+                || site.identity != identity
+                || site.base_address != base_address
+                || site.code != source.as_slice()
+            {
+                return Err(SyscallRefusal::DependencyNotHeld);
+            }
+            outcomes.push((site.logical_pc, crate::syscall::SiteOutcome::Trap));
+            prepared.push(PreparedZpoline::prepare(site)?);
+        }
+        let sled_layout = prepared[0].sled_layout;
+        Self::from_prepared(
+            config,
+            identity,
+            base_address,
+            source,
+            sled_layout,
+            prepared,
+            outcomes,
+        )
+    }
+
+    /// Scans one snapshot, prepares every certified eligible native syscall,
+    /// and records a trap/refused outcome for every other syscall-class site.
+    pub fn census(
+        config: SyscallStrategyConfig,
+        identity: CodeIdentity,
+        code: &[u8],
+        base_address: u64,
+        entries: &LegalEntrySet,
+        certificates: &BTreeMap<u64, u32>,
+    ) -> Result<Self, SyscallRefusal> {
+        config.validate()?;
+        if config.strategy() != SyscallStrategy::Zpoline {
+            return Err(SyscallRefusal::InvalidConfig {
+                field: "strategy",
+                reason: "zpoline census requires the zpoline strategy",
+            });
+        }
+        let page_size = qualify_host()?;
+        let sled_layout = ZpolineSledLayout::new(page_size, config.max_syscall_nr())?;
+        let scan = InstructionScanner::default()
+            .scan(code, base_address)
+            .map_err(scan_refusal)?;
+        let mut prepared = Vec::new();
+        let mut outcomes = Vec::new();
+        let fallback = |reason: SyscallRefusal| {
+            if config.fallback() == crate::syscall::FallbackPolicy::Trap {
+                crate::syscall::SiteOutcome::Trap
+            } else {
+                crate::syscall::SiteOutcome::Refused(reason)
+            }
+        };
+        for scanned in scan.instructions() {
+            let instruction = scanned.instruction();
+            let Some(class) = liteinst::x86::selected_code(instruction) else {
+                continue;
+            };
+            if !matches!(
+                class,
+                liteinst::x86::SelectedClass::Syscall
+                    | liteinst::x86::SelectedClass::Sysenter
+                    | liteinst::x86::SelectedClass::Int80
+            ) {
+                continue;
+            }
+            let address = instruction.ip();
+            if outcomes.len() >= config.max_sites() {
+                return Err(SyscallRefusal::RegistryExhausted);
+            }
+            if class != liteinst::x86::SelectedClass::Syscall {
+                outcomes.push((address, fallback(SyscallRefusal::UnsupportedSyscallEntry)));
+                continue;
+            }
+            let Some(&syscall_nr) = certificates.get(&address) else {
+                outcomes.push((
+                    address,
+                    fallback(SyscallRefusal::SyscallNumberRangeUnproven),
+                ));
+                continue;
+            };
+            if syscall_nr > config.max_syscall_nr() {
+                outcomes.push((
+                    address,
+                    fallback(SyscallRefusal::SyscallNumberRangeUnproven),
+                ));
+                continue;
+            }
+            if !first_profile_supports(syscall_nr) {
+                outcomes.push((
+                    address,
+                    fallback(SyscallRefusal::UnsupportedSyscallSemantics { nr: syscall_nr }),
+                ));
+                continue;
+            }
+            match PreparedZpoline::prepare(ZpolineSite {
+                config,
+                identity,
+                code,
+                base_address,
+                logical_pc: address,
+                entries,
+                syscall_nr,
+            }) {
+                Ok(site) => {
+                    outcomes.push((address, crate::syscall::SiteOutcome::Trap));
+                    prepared.push(site);
+                }
+                Err(
+                    reason @ (SyscallRefusal::DependencyNotHeld
+                    | SyscallRefusal::CetUnsupported
+                    | SyscallRefusal::StrategyUnavailableOnArch),
+                ) => {
+                    return Err(reason);
+                }
+                Err(reason) => outcomes.push((address, fallback(reason))),
+            }
+        }
+        Self::from_prepared(
+            config,
+            identity,
+            base_address,
+            code.to_vec(),
+            sled_layout,
+            prepared,
+            outcomes,
+        )
+    }
+
+    /// Frozen batch config.
+    pub const fn config(&self) -> SyscallStrategyConfig {
+        self.config
+    }
+
+    /// Prepared eligible sites in logical-PC order.
+    pub fn sites(&self) -> &[PreparedZpoline] {
+        &self.sites
+    }
+
+    /// Census outcomes; eligible sites remain `Trap` until installed.
+    pub fn outcomes(&self) -> &[(u64, crate::syscall::SiteOutcome)] {
+        &self.outcomes
+    }
+
+    /// Outcome summary before installation.
+    pub fn metrics(&self) -> ZpolineMetrics {
+        metrics_for(&self.outcomes, false, PlacementCounts::default())
+    }
+}
+
+struct InstalledSiteState {
+    trampoline: Option<ExecutableTrampoline>,
+    observed_handler: Vec<u8>,
+}
+
+/// Process-lifetime owner for one installed multi-site zpoline batch.
+pub struct InstalledZpolineSet {
+    prepared: PreparedZpolineSet,
+    hook_sites: Box<[HookSite]>,
+    sled: Option<DualMapping>,
+    dispatcher: Option<DualMapping>,
+    dispatcher_address: u64,
+    dispatcher_family: crate::syscall::PlacementFamily,
+    dispatcher_attempts: usize,
+    sites: Vec<InstalledSiteState>,
+    observed_source: Vec<u8>,
+    observed_sled: Vec<u8>,
+    observed_dispatcher: Vec<u8>,
+    outcomes: Vec<(u64, crate::syscall::SiteOutcome)>,
+    placement: PlacementCounts,
+    stale: bool,
+    captured: bool,
+    verified: bool,
+    write_attempted: bool,
+}
+
+/// Batch publication/retirement failure retaining all genuine owners.
+pub struct ZpolineSetPublicationFailure {
+    /// Exact named failure and stage.
+    pub failure: ZpolineFailure,
+    /// Retained batch owners and observations.
+    pub retained: Box<InstalledZpolineSet>,
+}
+
+impl std::fmt::Debug for ZpolineSetPublicationFailure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ZpolineSetPublicationFailure")
+            .field("failure", &self.failure)
+            .field("sites", &self.retained.prepared.sites.len())
+            .field("verified", &self.retained.verified)
+            .finish()
+    }
+}
+
+impl std::fmt::Display for ZpolineSetPublicationFailure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "zpoline batch publication {:?}: {}",
+            self.failure.stage, self.failure.reason
+        )
+    }
+}
+
+impl std::error::Error for ZpolineSetPublicationFailure {}
+
+impl InstalledZpolineSet {
+    /// Prepared batch retained with the genuine owners.
+    pub const fn prepared(&self) -> &PreparedZpolineSet {
+        &self.prepared
+    }
+
+    /// Dispatcher veneer address, when allocation was reached.
+    pub const fn dispatcher_address(&self) -> u64 {
+        self.dispatcher_address
+    }
+
+    /// Placement family used for the dispatcher island.
+    pub const fn dispatcher_family(&self) -> crate::syscall::PlacementFamily {
+        self.dispatcher_family
+    }
+
+    /// Exact dispatcher candidate attempts, including the anywhere attempt.
+    pub const fn dispatcher_attempts(&self) -> usize {
+        self.dispatcher_attempts
+    }
+
+    /// Current outcomes for every census candidate.
+    pub fn outcomes(&self) -> &[(u64, crate::syscall::SiteOutcome)] {
+        &self.outcomes
+    }
+
+    /// Outcome and placement summary.
+    pub fn metrics(&self) -> ZpolineMetrics {
+        let mut placement = self.placement;
+        placement.trap = self
+            .outcomes
+            .iter()
+            .filter(|(_, outcome)| *outcome == crate::syscall::SiteOutcome::Trap)
+            .count();
+        metrics_for(&self.outcomes, self.stale, placement)
+    }
+
+    /// Whether source, handler, sled, and dispatcher observations matched.
+    pub const fn verified(&self) -> bool {
+        self.verified
+    }
+
+    /// Whether this installed batch has been marked generation-stale.
+    pub const fn is_stale(&self) -> bool {
+        self.stale
+    }
+
+    /// Marks the batch stale when the caller observes a different current
+    /// code identity. Installed bytes are not changed; retire under a fresh
+    /// lease before admitting the new generation.
+    pub fn mark_stale_if(&mut self, current_identity: CodeIdentity) -> bool {
+        if current_identity != self.prepared.identity {
+            self.stale = true;
+        }
+        self.stale
+    }
+
+    /// Actual complete source bytes after the latest captured state.
+    pub fn observed_source(&self) -> Option<&[u8]> {
+        self.captured.then_some(self.observed_source.as_slice())
+    }
+
+    /// Actual sled bytes read back with `pread`.
+    pub fn observed_sled(&self) -> Option<&[u8]> {
+        self.captured.then_some(self.observed_sled.as_slice())
+    }
+
+    /// Actual dispatcher bytes read back with `pread`.
+    pub fn observed_dispatcher(&self) -> Option<&[u8]> {
+        self.captured.then_some(self.observed_dispatcher.as_slice())
+    }
+
+    /// Actual handler bytes for an eligible logical PC.
+    pub fn observed_handler(&self, logical_pc: u64) -> Option<&[u8]> {
+        if !self.captured {
+            return None;
+        }
+        self.prepared
+            .sites
+            .iter()
+            .position(|site| site.logical_pc == logical_pc)
+            .map(|index| self.sites[index].observed_handler.as_slice())
+    }
+}
+
+impl PreparedZpolineSet {
+    /// Allocates handlers, dispatcher, and sled; publishes every eligible
+    /// site in this one snapshot; and verifies all actual images.
+    ///
+    /// # Safety
+    /// The same alias, lease, finalizer, stack, signal, CET, recursion, and
+    /// lifetime obligations as the one-site publisher apply to every site in
+    /// the batch. All sites share the set's one identity and snapshot. Only
+    /// one zpoline owner may be installed process-wide.
+    pub unsafe fn publish_with(
+        self,
+        writable_base: *mut u8,
+        lease: &mut QuiescenceLease<'_>,
+        finalize: impl FnMut() -> Result<(), SyscallRefusal>,
+    ) -> Result<Box<InstalledZpolineSet>, ZpolineSetPublicationFailure> {
+        let hook_sites: Vec<HookSite> = self
+            .sites
+            .iter()
+            .map(|site| HookSite {
+                logical_pc: site.logical_pc,
+                return_pc: site.return_pc,
+                syscall_nr: site.syscall_nr,
+                delegate: site.delegate,
+            })
+            .collect();
+        let outcomes = self.outcomes.clone();
+        let source_len = self.source.len();
+        let site_count = self.sites.len();
+        let mut retained = Box::new(InstalledZpolineSet {
+            prepared: self,
+            hook_sites: hook_sites.into_boxed_slice(),
+            sled: None,
+            dispatcher: None,
+            dispatcher_address: 0,
+            dispatcher_family: crate::syscall::PlacementFamily::Trap,
+            dispatcher_attempts: 0,
+            sites: (0..site_count)
+                .map(|_| InstalledSiteState {
+                    trampoline: None,
+                    observed_handler: Vec::new(),
+                })
+                .collect(),
+            observed_source: vec![0; source_len],
+            observed_sled: Vec::new(),
+            observed_dispatcher: Vec::new(),
+            outcomes,
+            placement: PlacementCounts::default(),
+            stale: false,
+            captured: false,
+            verified: false,
+            write_attempted: false,
+        });
+        if retained.prepared.sites.is_empty() {
+            return Err(ZpolineSetPublicationFailure {
+                failure: ZpolineFailure {
+                    reason: SyscallRefusal::InvalidConfig {
+                        field: "sites",
+                        reason: "batch requires at least one eligible site",
+                    },
+                    stage: FailureStage::BeforeWrite,
+                },
+                retained,
+            });
+        }
+        if let Err(reason) = claim_owner() {
+            return Err(ZpolineSetPublicationFailure {
+                failure: ZpolineFailure {
+                    reason,
+                    stage: FailureStage::BeforeWrite,
+                },
+                retained,
+            });
+        }
+        // SAFETY: the caller supplies the complete contract above.
+        let result = unsafe { publish_set_inner(&mut retained, writable_base, lease, finalize) };
+        match result {
+            Ok(()) => {
+                ZPOLINE_OWNER.store(OWNER_INSTALLED, Ordering::Release);
+                Ok(retained)
+            }
+            Err(failure) => {
+                if failure.stage == FailureStage::KeepGated || retained.write_attempted {
+                    ZPOLINE_OWNER.store(OWNER_POISONED, Ordering::Release);
+                } else {
+                    clear_hook_state();
+                    release_owner();
+                }
+                Err(ZpolineSetPublicationFailure { failure, retained })
+            }
+        }
+    }
+}
+
+unsafe fn publish_set_inner(
+    retained: &mut InstalledZpolineSet,
+    writable_base: *mut u8,
+    lease: &mut QuiescenceLease<'_>,
+    mut finalize: impl FnMut() -> Result<(), SyscallRefusal>,
+) -> Result<(), ZpolineFailure> {
+    let before = |reason| ZpolineFailure {
+        reason,
+        stage: FailureStage::BeforeWrite,
+    };
+    let keep = |reason| ZpolineFailure {
+        reason,
+        stage: FailureStage::KeepGated,
+    };
+    let page_size = qualify_host().map_err(before)?;
+    if page_size != retained.prepared.sled_layout.page_size() {
+        return Err(before(SyscallRefusal::AllocationUnavailable));
+    }
+    let sync = SyncCore::prepare().map_err(|error| before(sync_refusal(error)))?;
+    let source_range = AddressRange::new(
+        retained.prepared.base_address,
+        retained.prepared.source.len(),
+    )
+    .map_err(|error| before(core_refusal(error)))?;
+    if writable_base.is_null() {
+        return Err(before(SyscallRefusal::InvalidConfig {
+            field: "writable_alias",
+            reason: "must not be null",
+        }));
+    }
+    if writable_base as usize % 64 != retained.prepared.base_address as usize % 64 {
+        return Err(before(SyscallRefusal::InvalidConfig {
+            field: "writable_alias",
+            reason: "cache-line offset differs from executable alias",
+        }));
+    }
+    if lease.is_poisoned()
+        || lease.identity() != retained.prepared.identity
+        || !lease.covers(source_range)
+    {
+        return Err(before(SyscallRefusal::DependencyNotHeld));
+    }
+    let budget = retained.prepared.config.placement();
+    let dispatcher_pairs: Vec<(u64, u64)> = retained
+        .prepared
+        .sites
+        .iter()
+        .map(|site| (site.return_pc, 0))
+        .collect();
+    let dispatcher_len = build_dispatcher(&dispatcher_pairs).map_err(before)?.len();
+    let dispatcher_aligned = align_up(dispatcher_len as u64, page_size as u64)
+        .and_then(|value| usize::try_from(value).ok())
+        .ok_or(SyscallRefusal::AllocationUnavailable)
+        .map_err(before)?;
+    let handler_upper = page_size.max(16_384);
+    let mapped_upper = page_size
+        .checked_add(dispatcher_aligned)
+        .and_then(|value| {
+            value.checked_add(handler_upper.checked_mul(retained.prepared.sites.len())?)
+        })
+        .ok_or(SyscallRefusal::AllocationUnavailable)
+        .map_err(before)?;
+    if budget.max_mappings() < retained.prepared.sites.len() + 2
+        || mapped_upper > budget.max_mapped_bytes()
+    {
+        return Err(before(SyscallRefusal::AllocationUnavailable));
+    }
+    // SAFETY: the lease and alias cover the complete snapshot.
+    unsafe { read_live(writable_base, &mut retained.observed_source) };
+    retained.captured = true;
+    if retained.observed_source != retained.prepared.source {
+        return Err(before(SyscallRefusal::ExpectedBytesChanged));
+    }
+
+    // Probe VA0 first so a low-page refusal allocates no handlers/dispatcher.
+    retained.sled = Some(DualMapping::probe_sled(page_size).map_err(before)?);
+
+    let mut handler_addresses = Vec::with_capacity(retained.prepared.sites.len());
+    for index in 0..retained.prepared.sites.len() {
+        let trampoline = ExecutableTrampoline::allocate(&retained.prepared.sites[index].plan)
+            .map_err(|error| before(trampoline_refusal(error)))?;
+        handler_addresses.push(trampoline.address());
+        retained.sites[index].trampoline = Some(trampoline);
+    }
+    let pairs: Vec<(u64, u64)> = retained
+        .prepared
+        .sites
+        .iter()
+        .map(|site| site.return_pc)
+        .zip(handler_addresses.iter().copied())
+        .collect();
+    let mut dispatcher_bytes = build_dispatcher(&pairs).map_err(before)?;
+    let allocation =
+        allocate_dispatcher(dispatcher_bytes.len(), &[source_range], budget, page_size)
+            .map_err(before)?;
+    dispatcher_bytes.resize(allocation.mapping.len(), 0x90);
+    retained.dispatcher_address = allocation.mapping.address;
+    retained.dispatcher_family = allocation.family;
+    retained.dispatcher_attempts = allocation.attempts;
+    retained.dispatcher = Some(allocation.mapping);
+    retained.observed_dispatcher = retained
+        .dispatcher
+        .as_mut()
+        .expect("dispatcher was just retained")
+        .publish_bytes(&dispatcher_bytes)
+        .map_err(before)?;
+
+    for ((prepared, state), handler_address) in retained
+        .prepared
+        .sites
+        .iter()
+        .zip(retained.sites.iter_mut())
+        .zip(handler_addresses.iter().copied())
+    {
+        let image = prepared
+            .plan
+            .emit_at(handler_address)
+            .map_err(|error| before(trampoline_refusal(error)))?;
+        state.observed_handler = vec![0; state.trampoline.as_ref().unwrap().code_len()];
+        // SAFETY: the retained handler mapping is readable for code_len bytes.
+        unsafe { read_live(handler_address as *const u8, &mut state.observed_handler) };
+        if state.observed_handler != image.bytes() {
+            return Err(before(SyscallRefusal::ExpectedBytesChanged));
+        }
+    }
+
+    let sled_bytes = retained
+        .prepared
+        .sled_layout
+        .build(retained.dispatcher_address);
+    retained.observed_sled = retained
+        .sled
+        .as_mut()
+        .expect("sled was just retained")
+        .publish_bytes(&sled_bytes)
+        .map_err(before)?;
+    publish_hook_sites(&retained.hook_sites);
+
+    // SAFETY: the lease still excludes every observer of the live alias.
+    unsafe { read_live(writable_base, &mut retained.observed_source) };
+    if retained.observed_source != retained.prepared.source {
+        return Err(before(SyscallRefusal::ExpectedBytesChanged));
+    }
+
+    retained.write_attempted = true;
+    for site in &retained.prepared.sites {
+        // SAFETY: the writable alias covers every site and fetch is excluded.
+        unsafe { write_site_word(writable_base.add(site.offset()), ZPOLINE_CALL_RAX) };
+    }
+    if let Some(sled) = retained.sled.take() {
+        retained.sled = Some(sled.commit());
+    }
+    if let Some(dispatcher) = retained.dispatcher.take() {
+        retained.dispatcher = Some(dispatcher.commit());
+    }
+    if let Err(error) = sync.synchronize() {
+        lease.poison();
+        return Err(keep(sync_refusal(error)));
+    }
+    if let Err(reason) = finalize() {
+        lease.poison();
+        return Err(keep(reason));
+    }
+    // SAFETY: the lease remains held through aggregate final observation.
+    unsafe { read_live(writable_base, &mut retained.observed_source) };
+    if retained.observed_source != retained.prepared.expected_source {
+        lease.poison();
+        return Err(keep(SyscallRefusal::ExpectedBytesChanged));
+    }
+    for site in &retained.sites {
+        site.trampoline
+            .as_ref()
+            .expect("handler was retained through publication")
+            .publish_program_counter_mappings();
+    }
+    for outcome in &mut retained.outcomes {
+        if retained
+            .prepared
+            .sites
+            .iter()
+            .any(|site| site.logical_pc == outcome.0)
+        {
+            outcome.1 = crate::syscall::SiteOutcome::RewrittenZpoline;
+        }
+    }
+    retained.placement = PlacementCounts {
+        near_allocation: retained.prepared.sites.len()
+            + usize::from(
+                retained.dispatcher_family == crate::syscall::PlacementFamily::NearAllocation,
+            ),
+        memfd_dual_map: 2,
+        low_page: 1,
+        two_hop_veneer: 1,
+        trap: retained
+            .outcomes
+            .iter()
+            .filter(|(_, outcome)| *outcome == crate::syscall::SiteOutcome::Trap)
+            .count(),
+    };
+    retained.verified = true;
+    retained.write_attempted = false;
+    Ok(())
+}
+
+impl InstalledZpolineSet {
+    /// Restores every rewritten site, synchronizes, verifies the original
+    /// aggregate snapshot, and unmaps sled plus dispatcher under a fresh lease.
+    ///
+    /// # Safety
+    /// The same obligations as batch publication apply until retirement
+    /// returns.
+    pub unsafe fn retire(
+        mut self: Box<Self>,
+        writable_base: *mut u8,
+        lease: &mut QuiescenceLease<'_>,
+        finalize: impl FnMut() -> Result<(), SyscallRefusal>,
+    ) -> Result<(), ZpolineSetPublicationFailure> {
+        // SAFETY: the caller supplies the same complete contract as publish.
+        let result = unsafe { retire_set_inner(&mut self, writable_base, lease, finalize) };
+        match result {
+            Ok(()) => {
+                clear_hook_state();
+                ZPOLINE_OWNER.store(OWNER_EMPTY, Ordering::Release);
+                Ok(())
+            }
+            Err(failure) => {
+                if failure.stage == FailureStage::KeepGated || self.write_attempted {
+                    ZPOLINE_OWNER.store(OWNER_POISONED, Ordering::Release);
+                }
+                Err(ZpolineSetPublicationFailure {
+                    failure,
+                    retained: self,
+                })
+            }
+        }
+    }
+}
+
+unsafe fn retire_set_inner(
+    retained: &mut InstalledZpolineSet,
+    writable_base: *mut u8,
+    lease: &mut QuiescenceLease<'_>,
+    mut finalize: impl FnMut() -> Result<(), SyscallRefusal>,
+) -> Result<(), ZpolineFailure> {
+    let before = |reason| ZpolineFailure {
+        reason,
+        stage: FailureStage::BeforeWrite,
+    };
+    let keep = |reason| ZpolineFailure {
+        reason,
+        stage: FailureStage::KeepGated,
+    };
+    if !retained.verified {
+        return Err(before(SyscallRefusal::StrategyUnavailableOnBackend));
+    }
+    qualify_host().map_err(before)?;
+    let sync = SyncCore::prepare().map_err(|error| before(sync_refusal(error)))?;
+    let source_range = AddressRange::new(
+        retained.prepared.base_address,
+        retained.prepared.source.len(),
+    )
+    .map_err(|error| before(core_refusal(error)))?;
+    if writable_base.is_null()
+        || writable_base as usize % 64 != retained.prepared.base_address as usize % 64
+    {
+        return Err(before(SyscallRefusal::InvalidConfig {
+            field: "writable_alias",
+            reason: "must be non-null with the executable cache-line offset",
+        }));
+    }
+    if lease.is_poisoned()
+        || lease.identity() != retained.prepared.identity
+        || !lease.covers(source_range)
+    {
+        return Err(before(SyscallRefusal::DependencyNotHeld));
+    }
+    // SAFETY: the lease and alias cover the complete snapshot.
+    unsafe { read_live(writable_base, &mut retained.observed_source) };
+    retained.captured = true;
+    if retained.observed_source != retained.prepared.expected_source {
+        return Err(before(SyscallRefusal::ExpectedBytesChanged));
+    }
+    retained.write_attempted = true;
+    for site in retained.prepared.sites.iter().rev() {
+        // SAFETY: the alias covers every site and fetch is excluded.
+        unsafe { write_site_word(writable_base.add(site.offset()), ORIGINAL_SYSCALL) };
+    }
+    if let Err(error) = sync.synchronize() {
+        lease.poison();
+        return Err(keep(sync_refusal(error)));
+    }
+    if let Err(reason) = finalize() {
+        lease.poison();
+        return Err(keep(reason));
+    }
+    // SAFETY: the lease remains held through restored-byte observation.
+    unsafe { read_live(writable_base, &mut retained.observed_source) };
+    if retained.observed_source != retained.prepared.source {
+        lease.poison();
+        return Err(keep(SyscallRefusal::ExpectedBytesChanged));
+    }
+    if let Some(sled) = retained.sled.as_mut()
+        && let Err(reason) = sled.unmap()
+    {
+        lease.poison();
+        return Err(keep(reason));
+    }
+    if let Some(dispatcher) = retained.dispatcher.as_mut()
+        && let Err(reason) = dispatcher.unmap()
+    {
+        lease.poison();
+        return Err(keep(reason));
+    }
+    for outcome in &mut retained.outcomes {
+        if outcome.1 == crate::syscall::SiteOutcome::RewrittenZpoline {
+            outcome.1 = crate::syscall::SiteOutcome::Trap;
+        }
+    }
     retained.verified = false;
     retained.write_attempted = false;
     Ok(())
@@ -1339,5 +2446,165 @@ mod tests {
             PreparedZpoline::prepare(site(&shifted, &missing, BASE + 1, 39)).err(),
             Some(SyscallRefusal::NotInstructionHead)
         );
+    }
+
+    #[test]
+    fn dispatcher_bytes_route_each_return_to_its_handler() {
+        let sites = [(BASE + 2, 0x500000), (BASE + 0x1002, 0x600000)];
+        let bytes = build_dispatcher(&sites).unwrap();
+        assert_eq!(
+            &bytes[0..8],
+            &[0x48, 0x8d, 0xa4, 0x24, 0x70, 0xff, 0xff, 0xff]
+        );
+        assert_eq!(&bytes[8..11], &[0x9c, 0x41, 0x53]);
+        let load_return = liteinst::x86::decode64(0x70000b, &bytes[11..]);
+        assert_eq!(load_return.error, liteinst::x86::DecoderError::None);
+        assert_eq!(
+            load_return.instruction.mnemonic(),
+            liteinst::x86::Mnemonic::Mov
+        );
+        assert_eq!(
+            load_return.instruction.op0_register(),
+            liteinst::x86::Register::R11
+        );
+        assert_eq!(
+            load_return.instruction.memory_base(),
+            liteinst::x86::Register::RSP
+        );
+        assert_eq!(load_return.instruction.memory_displacement64(), 152);
+        let constants = (19 + 13 * sites.len() + 13 + 17 * sites.len()).next_multiple_of(8);
+        for (index, &(return_pc, handler)) in sites.iter().enumerate() {
+            let constant = constants + index * 8;
+            assert_eq!(
+                u64::from_le_bytes(bytes[constant..constant + 8].try_into().unwrap()),
+                return_pc
+            );
+            let handler_constant = constants + sites.len() * 8 + index * 8;
+            assert_eq!(
+                u64::from_le_bytes(
+                    bytes[handler_constant..handler_constant + 8]
+                        .try_into()
+                        .unwrap()
+                ),
+                handler
+            );
+            let compare = 19 + index * 13;
+            let disp = i32::from_le_bytes(bytes[compare + 3..compare + 7].try_into().unwrap());
+            assert_eq!((compare + 7) as i64 + i64::from(disp), constant as i64);
+            let rel = i32::from_le_bytes(bytes[compare + 9..compare + 13].try_into().unwrap());
+            let found = 19 + 13 * sites.len() + 13 + index * 17;
+            assert_eq!((compare + 13) as i64 + i64::from(rel), found as i64);
+            let jump_disp = i32::from_le_bytes(bytes[found + 13..found + 17].try_into().unwrap());
+            assert_eq!(
+                (found + 17) as i64 + i64::from(jump_disp),
+                handler_constant as i64
+            );
+        }
+    }
+
+    #[test]
+    fn dispatcher_allocation_publishes_and_unmaps() {
+        let object = AddressRange::new(BASE, 4096).unwrap();
+        let budget = crate::syscall::PlacementBudget::new(256, 4, 1_048_576).unwrap();
+        let mut bytes = build_dispatcher(&[(BASE + 2, 0x500000)]).unwrap();
+        let mut allocation = allocate_dispatcher(bytes.len(), &[object], budget, 4096).unwrap();
+        assert!(allocation.mapping.address != 0);
+        assert!(allocation.attempts >= 1);
+        bytes.resize(allocation.mapping.len(), 0x90);
+        let observed = allocation.mapping.publish_bytes(&bytes).unwrap();
+        assert_eq!(observed, bytes);
+        allocation.mapping.unmap().unwrap();
+    }
+
+    #[test]
+    fn near_candidates_probe_around_objects_without_overlap() {
+        let object = AddressRange::new(BASE, 4096).unwrap();
+        let candidates = near_candidates(&[object], &[object], &[object], 4096, 4096, 4);
+        assert_eq!(&candidates[..2], &[BASE + 4096, BASE - 4096]);
+        assert!(candidates.iter().all(|candidate| {
+            let range = AddressRange::new(*candidate, 4096).unwrap();
+            !range.overlaps(object)
+        }));
+    }
+
+    #[test]
+    fn census_records_mixed_outcomes_and_strict_refusals() {
+        let code = [0x0f, 0x05, 0x0f, 0x05, 0x0f, 0x34, 0x0f, 0x05, 0xc3];
+        let entries = entries(&code, &[BASE, BASE + 2, BASE + 4, BASE + 6, BASE + 8]);
+        let certificates = BTreeMap::from([(BASE, 39), (BASE + 6, 59)]);
+        let config = SyscallStrategyConfig::new(SyscallStrategy::Zpoline)
+            .with_placement(crate::syscall::PlacementBudget::new(256, 16, 1_048_576).unwrap())
+            .unwrap();
+        let prepared =
+            PreparedZpolineSet::census(config, identity(), &code, BASE, &entries, &certificates)
+                .unwrap();
+        assert_eq!(prepared.sites().len(), 1);
+        assert_eq!(
+            prepared.outcomes(),
+            [
+                (BASE, crate::syscall::SiteOutcome::Trap),
+                (BASE + 2, crate::syscall::SiteOutcome::Trap),
+                (BASE + 4, crate::syscall::SiteOutcome::Trap),
+                (BASE + 6, crate::syscall::SiteOutcome::Trap),
+            ]
+        );
+        assert_eq!(prepared.metrics().trap, 4);
+        assert_eq!(prepared.expected_source[..2], [0xff, 0xd0]);
+
+        let strict = config
+            .with_fallback(crate::syscall::FallbackPolicy::Refuse)
+            .unwrap();
+        let prepared =
+            PreparedZpolineSet::census(strict, identity(), &code, BASE, &entries, &certificates)
+                .unwrap();
+        assert_eq!(
+            prepared.outcomes()[1].1,
+            crate::syscall::SiteOutcome::Refused(SyscallRefusal::SyscallNumberRangeUnproven)
+        );
+        assert_eq!(
+            prepared.outcomes()[2].1,
+            crate::syscall::SiteOutcome::Refused(SyscallRefusal::UnsupportedSyscallEntry)
+        );
+        assert_eq!(
+            prepared.outcomes()[3].1,
+            crate::syscall::SiteOutcome::Refused(SyscallRefusal::UnsupportedSyscallSemantics {
+                nr: 59
+            })
+        );
+    }
+
+    #[test]
+    fn explicit_batch_aggregates_expected_bytes() {
+        let code = [0x0f, 0x05, 0x0f, 0x05, 0xc3];
+        let entries = entries(&code, &[BASE, BASE + 2, BASE + 4]);
+        let config = SyscallStrategyConfig::new(SyscallStrategy::Zpoline)
+            .with_placement(crate::syscall::PlacementBudget::new(256, 16, 1_048_576).unwrap())
+            .unwrap();
+        let mut first = site(&code, &entries, BASE, 39);
+        first.config = config;
+        let mut second = site(&code, &entries, BASE + 2, 186);
+        second.config = config;
+        let prepared = PreparedZpolineSet::prepare_batch(vec![second, first]).unwrap();
+        assert_eq!(prepared.sites().len(), 2);
+        assert_eq!(prepared.sites()[0].logical_pc, BASE);
+        assert_eq!(prepared.expected_source, [0xff, 0xd0, 0xff, 0xd0, 0xc3]);
+        assert_eq!(prepared.metrics().trap, 2);
+    }
+
+    #[test]
+    fn stale_metrics_count_only_rewritten_sites() {
+        let outcomes = [
+            (BASE, crate::syscall::SiteOutcome::RewrittenZpoline),
+            (BASE + 2, crate::syscall::SiteOutcome::Trap),
+            (
+                BASE + 4,
+                crate::syscall::SiteOutcome::Refused(SyscallRefusal::NotSyscallSite),
+            ),
+        ];
+        let metrics = metrics_for(&outcomes, true, PlacementCounts::default());
+        assert_eq!(metrics.rewritten_zpoline, 1);
+        assert_eq!(metrics.trap, 1);
+        assert_eq!(metrics.refused, 1);
+        assert_eq!(metrics.stale_sites, 1);
     }
 }

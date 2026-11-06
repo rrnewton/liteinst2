@@ -16,41 +16,51 @@ profile is native `read`, `write`, `getpid`, and `gettid` only. No config
 construction or parsing maps memory, changes signal/seccomp/SUD state, or
 patches code.
 
-# One-site zpoline mechanism
+# Zpoline mechanism
 
-`syscall::zpoline` publishes exactly one caller-certified eager native
-`syscall` site in this slice. The caller certifies a complete instruction
-snapshot, entry/resume facts, one exact first-profile syscall number for
-every execution, and that RAX is canonical zero-extended within the sled
-bound. Preparation rejects other entry ABIs, non-heads, second-byte targets,
-unsupported dynamic semantics, and incomplete entry facts.
+`syscall::zpoline` publishes caller-certified eager native `syscall`
+sites: either one site or one batch in a single snapshot and identity. The
+caller certifies a complete instruction snapshot, entry/resume facts, one
+exact first-profile syscall number for every execution of each site, and
+that RAX is canonical zero-extended within the sled bound. Census records a
+trap or named refused outcome for every uncertified or unsupported
+syscall-class candidate; explicit batches require every named site to be
+eligible. Preparation rejects other entry ABIs, non-heads, second-byte
+targets, unsupported dynamic semantics, and incomplete entry facts.
 
 Publication first probes a memfd dual-mapped RX sled at virtual address
 zero; denial returns `LowPageUnavailable` or `LowPageOccupied` before any
 source write. The sled is filled with NOPs through the RW alias and verified
 by `pread` on the memfd, never by dereferencing VA 0 as a Rust pointer. Both
 aliases are then unmapped, the backing is sealed including `F_SEAL_WRITE`,
-VA 0 is remapped RX, and the bytes are read back again with `pread`. Its
-common stub
-restores only the `call *%rax` stack displacement and jumps to a core
-exact-syscall trampoline. That trampoline's zpoline wrapper authenticates
-the saved site, dynamic number, and call return word at `RSP-8`, then
-delegates to the same fixed selected-syscall callback used by the selected
-leaf. The genuine result and raw errno are forwarded; RCX is the original
-fallthrough and R11 is the original flags word.
+VA 0 is remapped RX, and the bytes are read back again with `pread`. For one
+site its common stub restores the `call *%rax` stack displacement and jumps
+directly to that site's core exact-syscall trampoline. A batch instead jumps
+to a sealed dispatcher veneer: handlers are near-allocated by core, the
+dispatcher is probed around mapped objects with a memfd dual mapping (or an
+anywhere dual mapping if no near candidate is claimable), routes by return
+address while preserving flags/R11 and the pre-call RSP, and then enters the
+matching handler. Each trampoline wrapper authenticates the saved site,
+dynamic number, and call return word at `RSP-8`, then delegates to the same
+fixed selected-syscall callback used by the selected leaf. The genuine
+result and raw errno are forwarded; RCX is the original fallthrough and R11
+is the original flags word.
 
-Only one zpoline owner may be installed in a process. The caller owns actual
-quiescence, a writable alias, a writable System V stack satisfying the exact
-trampoline, no active CET, no signal delivery or nonlocal exit through
-generated code, and no buffers overlapping code/runtime/saved state. The
-rewritten call necessarily writes its return address at `RSP-8`, so that one
-red-zone word is not byte-transparent. Retirement under a fresh lease
-restores `0f 05`, synchronizes, verifies the complete snapshot, and unmaps
-the sled; the handler mapping follows core process-lifetime retention.
+Only one zpoline owner (single or batch) may be installed in a process. The
+caller owns actual quiescence, a writable alias, a writable System V stack
+satisfying the exact trampoline, no active CET, no signal delivery or
+nonlocal exit through generated code, and no buffers overlapping
+code/runtime/saved state. The rewritten call necessarily writes its return
+address at `RSP-8`, so that one red-zone word is not byte-transparent.
+Retirement under a fresh lease restores every `0f 05`, synchronizes,
+verifies the complete snapshot, and unmaps the sled (and dispatcher for a
+batch); handler mappings follow core process-lifetime retention. A batch may
+be marked stale when the caller observes a new code identity; stale metrics
+do not change installed bytes and retirement is still required.
 
-This is not a census, lazypoline, SUD/seccomp installation, generic syscall
-interceptor, lifecycle mechanism, signal-transparency claim, or
-whole-program claim.
+This is not lazypoline, SUD/seccomp installation, a multi-object batch,
+generic syscall interceptor, lifecycle mechanism, signal-transparency claim,
+or whole-program claim.
 
 # Selected-site leaf
 
