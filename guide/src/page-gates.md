@@ -71,12 +71,47 @@ census escapes in-place patching by construction. That gap is one
 reason the roadmap keeps an out-of-place translation path — see
 [Interception mechanisms compared](mechanisms.md).
 
-> 🚧 **Under construction — gate listings.** TODO: runnable listings
-> for `native_probe`/`selected_probe` (in-process) and the
-> `checkpoint` example (launch), each separating publication,
-> first-touch, and steady-state costs as their own probes report
-> them. <!-- UC: gates-listings -->
-> Tracking: [liteinst2#38](https://github.com/rrnewton/liteinst2/issues/38) (`gates-listings`).
+## The three probes, run
+
+Both gate crates ship probes that report their own costs as JSON;
+run them before believing any number in this chapter. The
+in-process probes demand their measurement preconditions loudly:
+release build, one thread, pinned to a single reserved CPU (hence
+`taskset`), and no seccomp filter. A run that cannot meet them
+refuses instead of timing something else.
+
+```console
+$ cargo build --release -p liteinst-inprocess --examples -p liteinst-launch --example checkpoint
+$ taskset -c 3 target/release/examples/native_probe cpuid 1000
+$ taskset -c 3 target/release/examples/selected_probe masked_rdrand 1000
+$ target/release/examples/checkpoint /bin/true
+checkpoint_only=true resumed=false startup_ns=2461771 first_image=Interpreter initial_pc=0x7f45072eb010 executable_entry=0x562ca40478c0 mappings=13
+```
+
+The costs separate exactly as the probes report them — nothing here
+is a benchmark claim beyond this host and run (batch medians over
+17×1000 iterations):
+
+* **Publication** (`publication_ns`, `gate_preparation_ns`,
+  `arm_ns`): one-time, before any guest instruction — 55 µs + 5 µs +
+  203 µs for the `cpuid` gate, 22 µs + 5 µs + 158 µs for the selected
+  `rdrand` replacement. Arming dominates; it is also amortized by
+  never recurring.
+* **First touch** (`handler_first_touch_ns`, `faults`,
+  `admitted_pages`): one fault, one admitted page, ≈7 µs (native) /
+  ≈5 µs (selected) for the handler that verifies final bytes and
+  opens RX. This is the lazy-admission bill, paid once per page.
+* **Steady state** (`native_steady_ns` vs `gated_`/`patched_`):
+  ≈47 ns/iteration native against ≈287 ns gated for `cpuid`, and
+  ≈30 ns against ≈256 ns for the patched `rdrand` — the per-call
+  price that remains after admission, which is the number your
+  workload actually multiplies.
+
+The launch probe makes the opposite trade visible: `checkpoint`
+stops `/bin/true` before its interpreter's first instruction
+(`first_image=Interpreter`, 13 mappings recorded, `resumed=false`)
+and terminates it unexecuted. There is no steady state to price —
+the checkpoint *is* the product.
 >
 > 🚧 **Under construction — lifecycle coverage.** TODO: document
 > fork/thread/signal behaviour per gate as that support lands; today
