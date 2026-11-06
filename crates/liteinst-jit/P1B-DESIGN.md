@@ -261,3 +261,169 @@ P1b authorization rather than treated as already covering §1.
 Within the remaining scope, P1b.1 + driver staging is the bulk of
 the work; P1b.2's hash stub is the tail risk if flag-neutral
 probing resists the simple template.
+
+## 8. Item-1 staging: I1-A through I1-H
+
+Staging source: musejit's P1b scoping report stage map (I1-A
+recovery core through I1-G RT/payloads/restart, plus I1-H gate
+evidence), committed here so the staging survives outside the
+untracked report. This section sequences §1's gate only; it does
+not weaken §1, and no stage below — including I1-D — is a
+whole-program, `/bin/ls`, or M4 claim. In the mini-JIT plan
+(`ai_docs/2026-11-05-minijit-plan.md`) this is stage S1; S2 driver
+work (§§2–4 above) may use these stages as development fixtures
+but may not be claimed whole-program until I1-H review passes.
+
+Status at this section's commit (liteinst2 `main`
+`c4217e8965eaff5a209dbd9902cf3d64dfc7e2b5`):
+
+- **I1-A landed** (`2b46ed54a14839513ebc122246e7926333c6f499`):
+  backend-neutral recovery core in `src/recovery.rs`.
+- **I1-B landed** (`a0db922be1295f467be54fb812d7dce9dc173bd6`,
+  with provenance/restart hardening): remote ptrace substrate in
+  `src/remote.rs`; async signals still stop as recovered outcomes,
+  custom-handler delivery absent.
+- **I1-C landed** ([PR 50](https://github.com/rrnewton/liteinst2/pull/50), head
+  `0f3f569fcac677d4c2b25b683f14a4052b749e43`, from
+  `983b2029a31770322eea096b62b5600a7bffd3a5`): guest signal
+  registry **mirror** — stepped genuine registry syscalls with
+  post-call kernel readback reconciliation. Landed I1-C does
+  **not** install the common signal-entry stub and does not
+  virtualize old-action results; that half of the mechanism
+  below belongs to I1-D.
+- **I1-D next.** I1-E through I1-H unstarted.
+
+Each stage is its own branch off then-current liteinst2 `main`,
+signed, with exact-head `fmt`, Clippy, locked debug/release
+package tests, and mutants as applicable. Signal-frame stages
+(I1-D onward) keep two approving reviews.
+
+### Mechanism for the genuine frame
+
+Delivery substrate is the remote ptrace guest of §4, not the
+in-process bridge. The tracer intercepts `rt_sigaction`: for a
+custom handler it records the guest's source handler, flags,
+restorer, and mask as the guest-visible action, then installs
+one common cache-resident signal-entry stub as the kernel
+handler (querying an existing action is virtualized back to the
+recorded source values). When a signal stops the guest before
+delivery, the tracer reads `PTRACE_GETSIGINFO` and the
+interrupted registers, reconstructs exact source state from the
+PC map through the I1-A recovery core, writes that recovered
+state back as the tracee registers, and injects the signal —
+so the **kernel** builds the real `rt_sigframe` with visible
+ucontext RIP at the recovered source PC and enters the stub.
+At the stub trap the tracer records the frame address, leaves
+frame and handler arguments intact, and redirects RIP to the
+translated entry for the recorded source handler. At handler
+return it intercepts the restorer's `rt_sigreturn`: reads the
+(possibly handler-modified) frame resume state, ensures a
+block starts exactly at the resume source PC, rewrites only
+the frame resume RIP to that translated entry, and lets the
+kernel execute `rt_sigreturn`. Frame layout, restorer,
+siginfo, alternate-stack selection, and restoration stay
+kernel-produced and kernel-consumed; synthesizing a frame in
+the tracer or invoking the handler as a host callback is
+rejected for exactly that reason.
+
+### Stage map
+
+| PR | Exit witness | Still refused / not claimed |
+|---|---|---|
+| I1-A Recovery core | Existing suites byte/semantics-stable | Any delivery |
+| I1-B Remote substrate | Direct fixtures match in-process/O1 | Indirect, async delivery, whole program |
+| I1-C Signal registry | Install/query matrix matches native | Custom-handler delivery |
+| I1-D One-signal round trip | Handler sees source PC/state; resume exact | Nesting, RT, altstack, mutation edge cases |
+| I1-E Arbitrary phases + sync faults | Boundary matrix matches native oracle | Nested/RT/restart completion |
+| I1-F Masks, altstack, nesting | Signal-state matrix matches native | RT queue payload/restart gaps named |
+| I1-G RT, payloads, restart | Ordering/coalescing matrix matches native | Only undisclosed gaps block claim |
+| I1-H Gate evidence | Differential + fuzz + mutants causal | Item-1 claim only after review |
+
+### Stage detail
+
+**I1-A — Pure recovery core (landed, no behavior change).**
+Generated-PC recovery behind a backend-neutral input record
+(raw interrupted registers, counters/spills, fault provenance)
+with the in-process `Fault` output unchanged, so the remote
+tracer consumes the same authored rules. Exit was existing
+package, custody, oracle, and mutant suites unchanged and
+green, plus unit tests pinning the extracted boundary.
+
+**I1-B — Remote direct-block substrate (landed).** Remote
+fixture child and tracer-side cache allocation, entry, common
+trap exit, and direct-block dispatcher reusing `translate()`
+blocks/PC map (emission differs only in exit/entry style).
+Admitted syscalls pass through at the original instruction
+under ptrace or refuse by the existing named envelope; async
+signals remain stopped/reported under the accepted P1a
+reduction. Exit was direct-corpus and synchronous-fault
+equality with in-process and native O1 counts/state.
+
+**I1-C — Guest signal registry mirror (landed).** Stepped
+`rt_sigaction`/`rt_sigprocmask`/`rt_sigpending`/`sigaltstack`
+for the single remote thread; per-signal source dispositions
+for catchable signals (1–64 excluding SIGKILL, SIGSTOP, and
+glibc-reserved 32/33) mirrored only from verified kernel
+readback — including copy-out `EFAULT` after a real mutation —
+never from raw guest input. Exit was the
+install/query/default/ignore matrix matching a native guest
+(flags/mask/restorer words exact), with custom-handler
+delivery still stopping as a recovered async outcome.
+
+**I1-D — One standard signal, genuine round trip.** The frame
+flow above for one non-fault standard signal with an
+`SA_SIGINFO` handler, default mask, no alternate stack, no
+nesting, and no handler mutation of the ucontext except a
+scratch register explicitly covered by the test. This stage
+adds the common-stub install and old-action virtualization
+I1-C did not land. The guest witness records signal number,
+`si_code`, handler-visible RIP/register values, and a value
+only reachable if the handler ran; the main guest loop
+progresses only through that handler. Exit: native-child and
+translated runs agree on witness fields, final full state,
+counts, fault/no-fault outcome, and the exact resume block.
+Still refused: synchronous custom-fault delivery beyond
+existing recovered outcomes, alternate stack, nested and
+real-time delivery, handler `longjmp`/`siglongjmp`, any second
+thread, and any delivery shape outside the tested set — no
+asynchronous-transparency claim beyond what I1-D tests.
+
+**I1-E — Arbitrary phases, synchronous faults, partial
+blocks.** Generalize I1-D across copied instructions,
+branch/count/poll stubs, call sequences, exit stubs, common
+exit, entry loader, and syscall entry/exit. Owns resume-PC
+block splitting: a resumed source PC mid-block gets an
+exact-start translation whose pre-credit excludes the retired
+prefix. Synchronous SIGSEGV/SIGBUS/SIGILL/SIGFPE preserve
+original fault fields; only instruction-address semantics
+translate to source form, data addresses stay raw. Still
+refused: nested delivery, alternate stack, real-time queueing
+semantics, uncovered restart cases.
+
+**I1-F — Masks, alternate stack, nesting.** Guest kernel
+state authoritative, mirror proven after every relevant
+syscall: `rt_sigprocmask` block/unblock/setmask, handler-entry
+mask (`sa_mask` plus delivered signal unless `SA_NODEFER`),
+`sigaltstack` on both stacks, nested standard signals and
+same-signal reentry where Linux permits, dispositions changing
+under a live frame. Active frames form an explicit tracer
+records stack; `rt_sigreturn` pops exactly one. Still refused:
+queued RT payload ordering beyond one pending instance,
+multi-threaded guests, uncovered restarted syscalls.
+
+**I1-G — Real-time ordering, payloads, syscall restart.**
+`SIGRTMIN..SIGRTMAX` kernel ordering (lowest first, FIFO
+within a number), standard coalescing vs RT queue retention,
+`sigqueue`/`rt_tgsigqueueinfo` payload and sender fields, and
+signals during pass-through syscalls with and without
+`SA_RESTART`. The kernel queue remains authoritative; guest
+signals are not dequeued into tracer custody as the normal
+mechanism. Still refused: multi-threaded guests, `execve`
+successors (separately scoped), any unadmitted signal feature.
+
+**I1-H — Gate evidence and envelope rewrite.** Freeze the
+signal corpus, run the assigned differential/fuzz slices, and
+replace per-stage statements in `README.md`, `src/lib.rs`, and
+dispatcher documentation with one positive claim bounded
+exactly by the admitted matrix. Only after this stage's
+review may any result be called whole-program under §1.
