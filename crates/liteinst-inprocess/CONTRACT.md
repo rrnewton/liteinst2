@@ -23,11 +23,14 @@ requires the `trap` strategy with `DiscoverySubstrate::Sud`; seccomp remains
 the default vocabulary selection and is not installed by this slice. The
 owner probes a sealed memfd gateway page containing only a six-argument
 genuine-syscall stub and an `rt_sigreturn` restorer, installs a guarded
-alternate signal stack and one SIGSYS handler, and retains exact prior
-action/stack custody. Installation alone enables dispatch on no thread.
+alternate signal stack for the installing thread and one SIGSYS handler,
+and retains exact prior action/stack custody. Installation alone enables
+dispatch on no thread.
 
-Each participating thread explicitly registers through the gateway and
-receives a non-`Send` token; unregistering also goes through the gateway.
+Each participating thread explicitly registers through the gateway,
+installs and verifies its own guarded alternate stack before dispatch is
+enabled, and receives a non-`Send` token; unregistering disables dispatch
+through the gateway and then restores that thread's prior stack.
 The handler authenticates SUD siginfo, architecture, call address, saved
 RAX/RCX, and the two native syscall bytes before recording the site. Only
 the first profile (`read`, `write`, `getpid`, `gettid`) is forwarded,

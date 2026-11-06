@@ -632,7 +632,7 @@ impl Drop for DualMapping {
     }
 }
 
-fn qualify_host() -> Result<usize, SyscallRefusal> {
+pub(crate) fn qualify_host() -> Result<usize, SyscallRefusal> {
     let page_size = host_page_size()?;
     let leaf = core::arch::x86_64::__cpuid_count(7, 1);
     if leaf.edx & (1 << 21) != 0 {

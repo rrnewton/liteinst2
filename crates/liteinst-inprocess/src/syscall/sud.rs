@@ -74,6 +74,7 @@ struct SudState {
     forwarded: AtomicU64,
     refused: AtomicU64,
     nested: AtomicU64,
+    active_overflow: AtomicU64,
     foreign: AtomicU64,
     overflow: AtomicU64,
 }
@@ -99,8 +100,10 @@ pub struct SudCounters {
     pub forwarded: u64,
     /// Authenticated traps refused by the first-profile or registry policy.
     pub refused: u64,
-    /// Nested-handler detections.
+    /// Same-thread nested-handler detections.
     pub nested: u64,
+    /// Handler entries rejected because every active-thread slot was busy.
+    pub active_overflow: u64,
     /// SIGSYS deliveries that were not authenticated SUD contexts.
     pub foreign: u64,
     /// Authenticated traps whose site could not fit in the registry.
@@ -136,40 +139,9 @@ pub fn build_gateway_image(page_size: usize) -> Vec<u8> {
     image
 }
 
-fn page_size() -> Result<usize, SyscallRefusal> {
-    let value = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
-    let page = usize::try_from(value).map_err(|_| SyscallRefusal::AllocationUnavailable)?;
-    if !page.is_power_of_two() || page < 4096 {
-        return Err(SyscallRefusal::AllocationUnavailable);
-    }
-    Ok(page)
-}
-
 fn qualify_host() -> Result<usize, SyscallRefusal> {
-    let page = page_size()?;
-    let leaf = core::arch::x86_64::__cpuid_count(7, 1);
-    if leaf.edx & (1 << 21) != 0 {
-        return Err(SyscallRefusal::StrategyUnavailableOnArch);
-    }
-    let cpu = core::arch::x86_64::__cpuid(1).eax;
-    let model = ((cpu >> 4) & 15) | ((cpu >> 12) & 0xf0);
-    if ((cpu >> 8) & 15) == 6 && matches!(model, 0x57 | 0x85) {
-        return Err(SyscallRefusal::StrategyUnavailableOnArch);
-    }
-    let mut status = 0_u64;
-    // SAFETY: arch_prctl writes one status word to the initialized slot.
-    let result = unsafe {
-        raw::syscall3(
-            libc::SYS_arch_prctl as usize,
-            0x5005,
-            (&mut status as *mut u64) as usize,
-            0,
-        )
-    };
-    if result == 0 && status != 0 {
-        return Err(SyscallRefusal::CetUnsupported);
-    }
-    Ok(page)
+    // One shared APX/MVEX/CET/page envelope for zpoline and SUD.
+    crate::syscall::zpoline::qualify_host()
 }
 
 fn signal_bit(signal: i32) -> u64 {
@@ -252,15 +224,21 @@ unsafe fn fail_stop(state: Option<&SudState>) -> ! {
     unsafe { core::arch::asm!("ud2", options(noreturn, nostack)) }
 }
 
-fn claim_active_slot(state: &SudState, tid: u64) -> Option<usize> {
+enum ActiveClaim {
+    Claimed(usize),
+    Nested,
+    Full,
+}
+
+fn claim_active_slot(state: &SudState, tid: u64) -> ActiveClaim {
     for (index, slot) in state.active_tids.iter().enumerate() {
         match slot.compare_exchange(0, tid, Ordering::AcqRel, Ordering::Acquire) {
-            Ok(_) => return Some(index),
-            Err(existing) if existing == tid => return None,
+            Ok(_) => return ActiveClaim::Claimed(index),
+            Err(existing) if existing == tid => return ActiveClaim::Nested,
             Err(_) => {}
         }
     }
-    None
+    ActiveClaim::Full
 }
 
 fn record_site(state: &SudState, site_pc: u64, nr: u32) -> bool {
@@ -304,10 +282,18 @@ unsafe extern "C" fn sud_handler(signal: i32, info: *mut KernelSiginfo, context:
         unsafe { fail_stop(Some(state)) }
     }
     let tid = tid as u64;
-    let Some(active_index) = claim_active_slot(state, tid) else {
-        state.nested.fetch_add(1, Ordering::AcqRel);
-        // SAFETY: nested or over-capacity handler execution is fail-closed.
-        unsafe { fail_stop(Some(state)) }
+    let active_index = match claim_active_slot(state, tid) {
+        ActiveClaim::Claimed(index) => index,
+        ActiveClaim::Nested => {
+            state.nested.fetch_add(1, Ordering::AcqRel);
+            // SAFETY: same-thread nested handler execution is fail-closed.
+            unsafe { fail_stop(Some(state)) }
+        }
+        ActiveClaim::Full => {
+            state.active_overflow.fetch_add(1, Ordering::AcqRel);
+            // SAFETY: over-capacity handler execution is fail-closed.
+            unsafe { fail_stop(Some(state)) }
+        }
     };
 
     // SAFETY: kernel signal ABI arguments were checked nonnull above.
@@ -392,6 +378,141 @@ fn release_owner() {
     );
 }
 
+// Linux UAPI AT_MINSIGSTKSZ.
+const AT_MINSIGSTKSZ: libc::c_ulong = 51;
+
+/// One thread's guarded alternate signal stack and exact prior custody.
+struct AltStackOwner {
+    prior: libc::stack_t,
+    mapping: *mut c_void,
+    mapping_len: usize,
+    stack: *mut c_void,
+    installed: bool,
+}
+
+impl AltStackOwner {
+    fn install(page: usize) -> Result<Self, SyscallRefusal> {
+        let mut prior: libc::stack_t = unsafe { std::mem::zeroed() };
+        // SAFETY: sigaltstack query writes one complete native stack_t.
+        if unsafe { libc::sigaltstack(std::ptr::null(), &mut prior) } != 0
+            || prior.ss_flags & libc::SS_ONSTACK != 0
+        {
+            return Err(SyscallRefusal::SignalContract);
+        }
+        let minimum = unsafe { libc::getauxval(AT_MINSIGSTKSZ) } as usize;
+        if minimum == 0
+            || minimum
+                .checked_mul(2)
+                .and_then(|bytes| bytes.checked_add(64 * 1024))
+                .is_none_or(|bytes| bytes > ALT_STACK_BYTES)
+        {
+            return Err(SyscallRefusal::SignalContract);
+        }
+        let total = ALT_STACK_BYTES + 2 * page;
+        // SAFETY: a fresh anonymous guard mapping owned by this owner.
+        let mapping = unsafe {
+            libc::mmap(
+                std::ptr::null_mut(),
+                total,
+                libc::PROT_NONE,
+                libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
+                -1,
+                0,
+            )
+        };
+        if mapping == libc::MAP_FAILED {
+            return Err(SyscallRefusal::AllocationUnavailable);
+        }
+        let mut owner = Self {
+            prior,
+            mapping,
+            mapping_len: total,
+            stack: std::ptr::null_mut(),
+            installed: false,
+        };
+        let stack = unsafe { mapping.cast::<u8>().add(page).cast::<c_void>() };
+        owner.stack = stack;
+        // SAFETY: the middle ALT_STACK_BYTES are inside the owned mapping.
+        if unsafe { libc::mprotect(stack, ALT_STACK_BYTES, libc::PROT_READ | libc::PROT_WRITE) }
+            != 0
+        {
+            return Err(SyscallRefusal::AllocationUnavailable);
+        }
+        // SAFETY: touch every owned writable page before signal delivery.
+        for offset in (0..ALT_STACK_BYTES).step_by(page) {
+            unsafe { std::ptr::write_volatile(stack.cast::<u8>().add(offset), 0) };
+        }
+        let next = libc::stack_t {
+            ss_sp: stack,
+            ss_flags: 0,
+            ss_size: ALT_STACK_BYTES,
+        };
+        // SAFETY: owned stack storage remains retained through restoration.
+        if unsafe { libc::sigaltstack(&next, std::ptr::null_mut()) } != 0 {
+            return Err(SyscallRefusal::SignalContract);
+        }
+        owner.installed = true;
+        if let Err(error) = owner.verify_current() {
+            let _ = owner.restore();
+            return Err(error);
+        }
+        Ok(owner)
+    }
+
+    fn verify_current(&self) -> Result<(), SyscallRefusal> {
+        let mut actual: libc::stack_t = unsafe { std::mem::zeroed() };
+        // SAFETY: sigaltstack query writes one complete native stack_t.
+        if unsafe { libc::sigaltstack(std::ptr::null(), &mut actual) } != 0
+            || actual.ss_sp != self.stack
+            || actual.ss_size != ALT_STACK_BYTES
+            || actual.ss_flags != 0
+        {
+            return Err(SyscallRefusal::SignalContract);
+        }
+        Ok(())
+    }
+
+    fn restore(&mut self) -> Result<(), SyscallRefusal> {
+        if self.installed {
+            self.verify_current()?;
+            // SAFETY: the owning thread is not executing on this stack now.
+            if unsafe { libc::sigaltstack(&self.prior, std::ptr::null_mut()) } != 0 {
+                return Err(SyscallRefusal::SignalContract);
+            }
+            let mut restored: libc::stack_t = unsafe { std::mem::zeroed() };
+            // SAFETY: sigaltstack query writes one complete native stack_t.
+            if unsafe { libc::sigaltstack(std::ptr::null(), &mut restored) } != 0
+                || restored.ss_sp != self.prior.ss_sp
+                || restored.ss_size != self.prior.ss_size
+                || restored.ss_flags != self.prior.ss_flags
+            {
+                return Err(SyscallRefusal::SignalContract);
+            }
+            self.installed = false;
+        }
+        if !self.mapping.is_null() {
+            // SAFETY: the restored stack no longer names this mapping.
+            if unsafe { libc::munmap(self.mapping, self.mapping_len) } != 0 {
+                return Err(SyscallRefusal::AllocationUnavailable);
+            }
+            self.mapping = std::ptr::null_mut();
+            self.mapping_len = 0;
+            self.stack = std::ptr::null_mut();
+        }
+        Ok(())
+    }
+}
+
+impl Drop for AltStackOwner {
+    fn drop(&mut self) {
+        if self.installed || !self.mapping.is_null() {
+            // Partial-install cleanup only; successful owners restore through
+            // their explicit token/installation paths and mark installed false.
+            let _ = self.restore();
+        }
+    }
+}
+
 /// Process-lifetime owner of the SUD gateway, handler, altstack, and site
 /// registry. Retain it until every thread token is unregistered and
 /// `uninstall` succeeds; dropping it intentionally leaks live custody.
@@ -402,13 +523,10 @@ pub struct SudInstallation {
     gateway_range: (u64, usize),
     prior_action: KernelAction,
     installed_action: KernelAction,
-    prior_stack: libc::stack_t,
-    alt_mapping: *mut c_void,
-    alt_mapping_len: usize,
-    alt_stack: *mut c_void,
+    installer_stack: Option<AltStackOwner>,
+    page_size: usize,
     installer_tid: u64,
     action_installed: bool,
-    stack_installed: bool,
     closed: bool,
 }
 
@@ -446,24 +564,6 @@ impl SudInstallation {
         if query_mask()? & signal_bit(libc::SIGSYS) != 0 {
             return Err(SyscallRefusal::SignalContract);
         }
-        let mut prior_stack: libc::stack_t = unsafe { std::mem::zeroed() };
-        // SAFETY: sigaltstack query writes one complete native stack_t.
-        if unsafe { libc::sigaltstack(std::ptr::null(), &mut prior_stack) } != 0 {
-            return Err(SyscallRefusal::SignalContract);
-        }
-        if prior_stack.ss_flags & libc::SS_ONSTACK != 0 {
-            return Err(SyscallRefusal::SignalContract);
-        }
-        let minimum = unsafe { libc::getauxval(51) } as usize;
-        if minimum == 0
-            || minimum
-                .checked_mul(2)
-                .and_then(|bytes| bytes.checked_add(64 * 1024))
-                .is_none_or(|bytes| bytes > ALT_STACK_BYTES)
-        {
-            return Err(SyscallRefusal::SignalContract);
-        }
-
         claim_owner()?;
         let mut owner = Self {
             config,
@@ -472,13 +572,10 @@ impl SudInstallation {
             gateway_range: (0, 0),
             prior_action,
             installed_action: KernelAction::default(),
-            prior_stack,
-            alt_mapping: std::ptr::null_mut(),
-            alt_mapping_len: 0,
-            alt_stack: std::ptr::null_mut(),
+            installer_stack: None,
+            page_size: page,
             installer_tid: 0,
             action_installed: false,
-            stack_installed: false,
             closed: false,
         };
         if let Err(error) = owner.install_inner(page) {
@@ -509,6 +606,7 @@ impl SudInstallation {
             forwarded: AtomicU64::new(0),
             refused: AtomicU64::new(0),
             nested: AtomicU64::new(0),
+            active_overflow: AtomicU64::new(0),
             foreign: AtomicU64::new(0),
             overflow: AtomicU64::new(0),
         });
@@ -530,7 +628,7 @@ impl SudInstallation {
         }
         self.gateway = Some(gateway.commit());
 
-        self.install_altstack(page)?;
+        self.installer_stack = Some(AltStackOwner::install(page)?);
         // Publish state before installing the action so no delivered SIGSYS
         // can observe a null handler state.
         SUD_STATE.store(self.state, Ordering::Release);
@@ -562,65 +660,14 @@ impl SudInstallation {
         Ok(())
     }
 
-    fn install_altstack(&mut self, page: usize) -> Result<(), SyscallRefusal> {
-        let total = ALT_STACK_BYTES + 2 * page;
-        // SAFETY: a fresh anonymous guard mapping owned by this installation.
-        let mapping = unsafe {
-            libc::mmap(
-                std::ptr::null_mut(),
-                total,
-                libc::PROT_NONE,
-                libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
-                -1,
-                0,
-            )
-        };
-        if mapping == libc::MAP_FAILED {
-            return Err(SyscallRefusal::AllocationUnavailable);
-        }
-        self.alt_mapping = mapping;
-        self.alt_mapping_len = total;
-        let stack = unsafe { mapping.cast::<u8>().add(page).cast::<c_void>() };
-        // SAFETY: the middle ALT_STACK_BYTES are inside the owned mapping.
-        if unsafe { libc::mprotect(stack, ALT_STACK_BYTES, libc::PROT_READ | libc::PROT_WRITE) }
-            != 0
-        {
-            return Err(SyscallRefusal::AllocationUnavailable);
-        }
-        self.alt_stack = stack;
-        // SAFETY: touch every data page before any thread can take a signal.
-        for offset in (0..ALT_STACK_BYTES).step_by(page) {
-            unsafe { std::ptr::write_volatile(stack.cast::<u8>().add(offset), 0) };
-        }
-        let next = libc::stack_t {
-            ss_sp: stack,
-            ss_flags: 0,
-            ss_size: ALT_STACK_BYTES,
-        };
-        // SAFETY: owned stack storage remains retained through restoration.
-        if unsafe { libc::sigaltstack(&next, std::ptr::null_mut()) } != 0 {
-            return Err(SyscallRefusal::SignalContract);
-        }
-        self.stack_installed = true;
-        Ok(())
-    }
-
     fn rollback_partial(&mut self) {
         if self.action_installed {
             let _ = install_action(libc::SIGSYS, &self.prior_action);
             self.action_installed = false;
         }
         SUD_STATE.store(std::ptr::null_mut(), Ordering::Release);
-        if self.stack_installed {
-            // SAFETY: partial install did not enable SUD or admit execution.
-            unsafe { libc::sigaltstack(&self.prior_stack, std::ptr::null_mut()) };
-            self.stack_installed = false;
-        }
-        if !self.alt_mapping.is_null() {
-            // SAFETY: altstack storage is owned only by this partial owner.
-            unsafe { libc::munmap(self.alt_mapping, self.alt_mapping_len) };
-            self.alt_mapping = std::ptr::null_mut();
-            self.alt_mapping_len = 0;
+        if let Some(stack) = &mut self.installer_stack {
+            let _ = stack.restore();
         }
         if let Some(gateway) = &mut self.gateway {
             let _ = gateway.unmap();
@@ -650,6 +697,7 @@ impl SudInstallation {
             forwarded: state.forwarded.load(Ordering::Acquire),
             refused: state.refused.load(Ordering::Acquire),
             nested: state.nested.load(Ordering::Acquire),
+            active_overflow: state.active_overflow.load(Ordering::Acquire),
             foreign: state.foreign.load(Ordering::Acquire),
             overflow: state.overflow.load(Ordering::Acquire),
             recorded_sites: self.sites().len(),
@@ -698,14 +746,30 @@ impl SudInstallation {
         if self.closed || SUD_OWNER.load(Ordering::Acquire) != OWNER_INSTALLED {
             return Err(SyscallRefusal::StrategyUnavailableOnBackend);
         }
+        // SAFETY: state remains retained for the installation lifetime.
+        let state = unsafe { &*self.state };
+        // SAFETY: gettid through the genuine gateway has no pointers. This is
+        // safe on both new and already-registered threads because the gateway
+        // range is always allowed by SUD.
+        let tid = unsafe { gateway_syscall(state, libc::SYS_gettid, [0; 6]) };
+        let tid = u64::try_from(tid).map_err(|_| SyscallRefusal::SudUnavailable { errno: 0 })?;
+        // Duplicate detection is atomic-only and deliberately precedes every
+        // un-gated syscall below, so a duplicate call from an already
+        // dispatched thread returns this named refusal instead of trapping in
+        // its own mask query.
+        if state
+            .registered_tids
+            .iter()
+            .any(|slot| slot.load(Ordering::Acquire) == tid)
+        {
+            return Err(SyscallRefusal::ConflictingStrategyInstalled);
+        }
         if query_mask()? & signal_bit(libc::SIGSYS) != 0 {
             return Err(SyscallRefusal::SignalContract);
         }
-        // SAFETY: state remains retained for the installation lifetime.
-        let state = unsafe { &*self.state };
-        // SAFETY: gettid through the genuine gateway has no pointers.
-        let tid = unsafe { gateway_syscall(state, libc::SYS_gettid, [0; 6]) };
-        let tid = u64::try_from(tid).map_err(|_| SyscallRefusal::SudUnavailable { errno: 0 })?;
+        // Install this thread's own guarded stack while it is not yet
+        // dispatched; all setup syscalls above are therefore still genuine.
+        let alt_stack = AltStackOwner::install(self.page_size)?;
         let mut slot_index = None;
         for (index, slot) in state.registered_tids.iter().enumerate() {
             match slot.compare_exchange(0, tid, Ordering::AcqRel, Ordering::Acquire) {
@@ -745,6 +809,7 @@ impl SudInstallation {
         Ok(SudThreadRegistration {
             tid,
             slot_index,
+            alt_stack: Some(alt_stack),
             active: true,
             _not_send: PhantomData,
         })
@@ -791,36 +856,8 @@ impl SudInstallation {
         self.action_installed = false;
         SUD_STATE.store(std::ptr::null_mut(), Ordering::Release);
 
-        let mut actual: libc::stack_t = unsafe { std::mem::zeroed() };
-        // SAFETY: sigaltstack query writes one complete native stack_t.
-        if unsafe { libc::sigaltstack(std::ptr::null(), &mut actual) } != 0
-            || actual.ss_sp != self.alt_stack
-            || actual.ss_size != ALT_STACK_BYTES
-            || actual.ss_flags != 0
-        {
-            return Err(SyscallRefusal::SignalContract);
-        }
-        // SAFETY: installer thread is not executing on the alternate stack.
-        if unsafe { libc::sigaltstack(&self.prior_stack, std::ptr::null_mut()) } != 0 {
-            return Err(SyscallRefusal::SignalContract);
-        }
-        let mut restored: libc::stack_t = unsafe { std::mem::zeroed() };
-        // SAFETY: sigaltstack query writes one complete native stack_t.
-        if unsafe { libc::sigaltstack(std::ptr::null(), &mut restored) } != 0
-            || restored.ss_sp != self.prior_stack.ss_sp
-            || restored.ss_size != self.prior_stack.ss_size
-            || restored.ss_flags != self.prior_stack.ss_flags
-        {
-            return Err(SyscallRefusal::SignalContract);
-        }
-        self.stack_installed = false;
-        if !self.alt_mapping.is_null() {
-            // SAFETY: the restored stack no longer names this mapping.
-            if unsafe { libc::munmap(self.alt_mapping, self.alt_mapping_len) } != 0 {
-                return Err(SyscallRefusal::AllocationUnavailable);
-            }
-            self.alt_mapping = std::ptr::null_mut();
-            self.alt_mapping_len = 0;
+        if let Some(stack) = &mut self.installer_stack {
+            stack.restore()?;
         }
         if let Some(gateway) = &mut self.gateway {
             gateway.unmap()?;
@@ -839,6 +876,7 @@ impl SudInstallation {
 pub struct SudThreadRegistration {
     tid: u64,
     slot_index: usize,
+    alt_stack: Option<AltStackOwner>,
     active: bool,
     _not_send: PhantomData<*mut ()>,
 }
@@ -859,41 +897,44 @@ impl SudThreadRegistration {
     }
 
     fn unregister_inner(&mut self) -> Result<(), SyscallRefusal> {
-        if !self.active {
-            return Ok(());
+        if self.active {
+            let state_ptr = SUD_STATE.load(Ordering::Acquire);
+            if state_ptr.is_null() {
+                return Err(SyscallRefusal::StrategyUnavailableOnBackend);
+            }
+            // SAFETY: installation retains state until all tokens drain.
+            let state = unsafe { &*state_ptr };
+            // SAFETY: gettid/prctl through the genuine gateway have integer args.
+            let current = unsafe { gateway_syscall(state, libc::SYS_gettid, [0; 6]) };
+            if current != self.tid as i64 {
+                return Err(SyscallRefusal::ThreadNotRegistered);
+            }
+            // SAFETY: disabling SUD for this thread through its allowed gateway.
+            let result = unsafe {
+                gateway_syscall(
+                    state,
+                    libc::SYS_prctl,
+                    [
+                        PR_SET_SYSCALL_USER_DISPATCH as i64,
+                        PR_SYS_DISPATCH_OFF as i64,
+                        0,
+                        0,
+                        0,
+                        0,
+                    ],
+                )
+            };
+            if result != 0 {
+                let errno = i32::try_from(-result).unwrap_or(0);
+                return Err(SyscallRefusal::SudUnavailable { errno });
+            }
+            state.registered_tids[self.slot_index].store(0, Ordering::Release);
+            self.active = false;
         }
-        let state_ptr = SUD_STATE.load(Ordering::Acquire);
-        if state_ptr.is_null() {
-            return Err(SyscallRefusal::StrategyUnavailableOnBackend);
+        if let Some(stack) = &mut self.alt_stack {
+            stack.restore()?;
         }
-        // SAFETY: installation retains state until all tokens drain.
-        let state = unsafe { &*state_ptr };
-        // SAFETY: gettid/prctl through the genuine gateway have integer args.
-        let current = unsafe { gateway_syscall(state, libc::SYS_gettid, [0; 6]) };
-        if current != self.tid as i64 {
-            return Err(SyscallRefusal::ThreadNotRegistered);
-        }
-        // SAFETY: disabling SUD for this thread through its allowed gateway.
-        let result = unsafe {
-            gateway_syscall(
-                state,
-                libc::SYS_prctl,
-                [
-                    PR_SET_SYSCALL_USER_DISPATCH as i64,
-                    PR_SYS_DISPATCH_OFF as i64,
-                    0,
-                    0,
-                    0,
-                    0,
-                ],
-            )
-        };
-        if result != 0 {
-            let errno = i32::try_from(-result).unwrap_or(0);
-            return Err(SyscallRefusal::SudUnavailable { errno });
-        }
-        state.registered_tids[self.slot_index].store(0, Ordering::Release);
-        self.active = false;
+        self.alt_stack = None;
         Ok(())
     }
 }

@@ -208,6 +208,14 @@ fn child_main() -> Result<(), SyscallRefusal> {
 
     let registration = installation.register_current_thread()?;
     assert_eq!(registration.tid(), tid);
+    match installation.register_current_thread() {
+        Err(SyscallRefusal::ConflictingStrategyInstalled) => {}
+        Err(error) => panic!("duplicate registration returned wrong refusal: {error:?}"),
+        Ok(token) => {
+            let _ = token.unregister();
+            panic!("duplicate registration unexpectedly succeeded");
+        }
+    }
     // From here until unregister, avoid ordinary libc/Rust syscalls: only
     // the preallocated fixture invokes below and atomic spins.
     check(
