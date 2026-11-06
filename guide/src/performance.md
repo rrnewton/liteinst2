@@ -39,7 +39,9 @@ not a `cargo bench` suite. That is a known gap (below), and it is why
 every number here carries its provenance. Two harnesses are runnable
 as-is: the ignored rapid-toggle benchmark in `src/rapid.rs`
 (`cargo test --release -p liteinst --lib
-benchmark_single_byte_toggle_latency -- --ignored --exact`), whose
+rapid::tests::live::benchmark_single_byte_toggle_latency --
+--ignored --exact` — the full test path matters: with `--exact`,
+the short name silently matches zero tests and still exits 0), whose
 `ns/store` figure bounds how fast one core can *issue* the flipping
 store — not when its effect becomes visible to the toggled thread —
 and the gate probes, whose self-reported publication, first-touch,
