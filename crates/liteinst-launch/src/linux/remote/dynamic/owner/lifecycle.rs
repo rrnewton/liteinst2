@@ -809,8 +809,13 @@ impl NativeLifecycle {
                 return Err(LaunchError::Invalid("thread newborn lacks a task pidfd"));
             }
         }
-        if registers != expected || launch::task_mask(tid)? != pending.mask {
-            return Err(LaunchError::Invalid("fork newborn initial state differs"));
+        if registers != expected {
+            return Err(LaunchError::Invalid(
+                "fork newborn initial registers differ",
+            ));
+        }
+        if launch::task_mask(tid)? != pending.mask {
+            return Err(LaunchError::Invalid("fork newborn initial mask differs"));
         }
         match liteinst::trampoline::SavedExtendedStateLayout::xstate_semantic_eq(
             &xstate(tid)?,
