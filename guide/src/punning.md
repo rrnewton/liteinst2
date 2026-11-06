@@ -49,6 +49,64 @@ for word publication and batches — split sites still publish `0xCC`
 front-fragment guards; the barriers replace the staleness waits, not
 the guards — under its own geometry and caller obligations.
 
+## Worked examples, byte by byte
+
+These three diagrams use the planner's own overlay fixtures
+(`src/artifact_overlay_tests.rs`), so every byte below is one the
+test suite asserts. Addresses are offsets from the patch site `S`;
+stored bytes are the single atomic store, inherited bytes are
+successor bytes that are already there and become high displacement
+bytes of the new jump.
+
+**Generalized pun** — displace a 3-byte `nop` whose successor is
+`mov ecx, 43`:
+
+```text
+before   0f 1f 00 | b9 2b 00 00 00 | c3
+         \_ nop _/   mov ecx, 43      ret
+store    e9 00 80 b9                        (one 4-byte store at S)
+after    e9 00 80 b9 2b 00 00 00 c3
+         \____ jmp rel32 = 0x2bb9_8000 ___/
+                      ^
+                      inherited: the successor's 0x2b immediate
+                      byte is the jump's top displacement byte
+```
+
+The store writes the `E9` opcode and the displacement's free low
+bytes (`00 80 b9`); its top byte, `2b`, was already in memory. That
+is why placement is part of planning: the arena must be allocated so
+that the *forced* top byte still names the trampoline
+(`target = S + 5 + 0x2bb9_8000` in the fixture).
+
+**Prefixed pun** — the same trick one byte longer, for a 2-byte
+`mov eax, eax` head. A redundant `0x2E` (CS) prefix buys the extra
+byte, and *two* displacement bytes are inherited:
+
+```text
+before   89 c0 | b8 b9 2b 00 00 00 c3
+store    2e e9 80 b9                        (one 4-byte store at S)
+after    2e e9 80 b9 2b 00 | 00 c3
+         \___ jmp rel32 = 0x002b_b980 ___/
+```
+
+**WordPatch++ guarded split** — an 8-byte patch window starting four
+bytes before a cache-line boundary (`|`), so no single store covers
+it. `o` = old byte, `n` = new byte:
+
+```text
+before    ... o o o o | o o o o ...
+guard     ... CC CC CC CC | o o o o ...   CAS front word, then wait
+back      ... CC CC CC CC | n n n n ...   store back word, then wait
+front     ... n n n n | n n n n ...       store front word
+```
+
+Every front-fragment byte is guarded with `0xCC` first. A racing
+fetch during the window traps into the library's SIGTRAP router
+instead of executing a torn mix; the two bounded staleness waits
+(the caller's `StalenessBudget`) separate the three atomic
+publications. Only the finished streams — all old, or all new —
+ever execute as instructions.
+
 ## Where the ideas come from
 
 The techniques are from two PLDI papers and the original C++ library
@@ -66,9 +124,3 @@ plan/lease/receipt discipline of the next chapters. This book explains
 the ideas well enough to use the library soundly; the papers carry the
 proofs.
 
-> 🚧 **Under construction — worked byte-level examples.** TODO: add
-> annotated before/after byte diagrams for a generalized pun, a
-> prefixed pun, and a WordPatch++ guarded split, generated from the
-> planner's own test fixtures so the diagrams cannot drift from the
-> implementation. <!-- UC: pun-diagrams -->
-> Tracking: [liteinst2#38](https://github.com/rrnewton/liteinst2/issues/38) (`pun-diagrams`).
