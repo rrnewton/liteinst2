@@ -18,6 +18,22 @@ pub(in crate::linux::remote::dynamic::owner) use exec::{
     ExecExitReady, ExecInvocation, ExecObservation, ExecRelease, ExecTransition, execute_exec,
 };
 
+/// Fail-closed semantic xstate check for live-vs-live authentication:
+/// `NotComparable` and `Different` both refuse, with the helper's named
+/// reason or the caller's message.
+fn require_xstate_semantic_eq(
+    actual: &[u8],
+    expected: &[u8],
+    differs: &'static str,
+) -> Result<(), LaunchError> {
+    use liteinst::trampoline::{SavedExtendedStateLayout, XstateSemanticEq};
+    match SavedExtendedStateLayout::xstate_semantic_eq(actual, expected) {
+        XstateSemanticEq::Equal => Ok(()),
+        XstateSemanticEq::Different => Err(LaunchError::Invalid(differs)),
+        XstateSemanticEq::NotComparable(reason) => Err(LaunchError::Invalid(reason)),
+    }
+}
+
 pub(in crate::linux::remote::dynamic) struct OriginalInvocation<'a> {
     pub(in crate::linux::remote::dynamic) stop: &'a AdmissionStop,
     pub(in crate::linux::remote::dynamic) input: &'a SelectedInput,
@@ -623,11 +639,16 @@ fn run_cpu(
         if signal.signal() == libc::SIGTRAP && signal.code() == libc::TRAP_TRACE {
             let after = TaskStateSnapshot::read(tid)?;
             validate(&after.registers)?;
-            if after.xstate != before.xstate || after.mask != before.mask {
+            if after.mask != before.mask {
                 return Err(LaunchError::Invalid(
                     "native selected CPU changed XSTATE or signal mask",
                 ));
             }
+            require_xstate_semantic_eq(
+                &after.xstate,
+                &before.xstate,
+                "native selected CPU changed XSTATE or signal mask",
+            )?;
             let stop = native.finish_admission_execution(
                 tid,
                 after.registers.rip,
@@ -721,13 +742,17 @@ fn run_syscall(
             arguments: arguments(&before.registers),
         })
         || entry_state.registers != expected
-        || entry_state.xstate != before.xstate
         || entry_state.mask != before.mask
     {
         return Err(LaunchError::Invalid(
             "native selected syscall ENTRY full state differs",
         ));
     }
+    require_xstate_semantic_eq(
+        &entry_state.xstate,
+        &before.xstate,
+        "native selected syscall ENTRY full state differs",
+    )?;
     owner
         .kernel_journal
         .validated_entry(journal, &entry, &entry_state)?;

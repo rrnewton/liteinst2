@@ -174,9 +174,14 @@ fn control_state(number: u64) -> TaskStateSnapshot {
     registers.ss = 0x2b;
     registers.eflags = 0x202;
     registers.orig_rax = number;
+    // Well-formed standard XSAVE image (init legacy, BV clear) so the
+    // semantic control path is exercised, not format refusal.
+    let mut xstate = vec![0u8; 832];
+    xstate[0..2].copy_from_slice(&[0x7f, 0x03]);
+    xstate[24..28].copy_from_slice(&0x1f80_u32.to_le_bytes());
     TaskStateSnapshot {
         registers,
-        xstate: vec![0x5a; 832],
+        xstate,
         mask: 0x200,
     }
 }
