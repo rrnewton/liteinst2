@@ -534,13 +534,7 @@ fn missing_kill_success_never_releases_original_instructions() {
     assert!(killed.is_empty());
     harness.owner().release_killed_stops(&killed);
     assert_eq!(read_registers(ready.pid).unwrap(), registers);
-    assert_eq!(
-        liteinst::trampoline::SavedExtendedStateLayout::xstate_semantic_eq(
-            &xstate(ready.pid).unwrap(),
-            &state
-        ),
-        liteinst::trampoline::XstateSemanticEq::Equal
-    );
+    assert_eq!(xstate(ready.pid).unwrap(), state);
     assert_eq!(
         read_memory(ready.pid, registers.rip, 2).unwrap(),
         [0xeb, 0xfe]

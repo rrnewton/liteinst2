@@ -329,13 +329,7 @@ fn actual_exec_queued_before_interrupt_returns_replacement_and_consumes_credits(
     let registers = read_registers(entry.tid).unwrap();
     let extended = xstate(entry.tid).unwrap();
     assert_eq!(read_registers(entry.tid).unwrap(), registers);
-    assert_eq!(
-        liteinst::trampoline::SavedExtendedStateLayout::xstate_semantic_eq(
-            &xstate(entry.tid).unwrap(),
-            &extended
-        ),
-        liteinst::trampoline::XstateSemanticEq::Equal
-    );
+    assert_eq!(xstate(entry.tid).unwrap(), extended);
     assert_eq!(read_memory(entry.tid, ENTRY, SPIN.len()).unwrap(), SPIN);
     h.finish(entry.tid);
 }
@@ -356,13 +350,7 @@ fn explicit_cleanup_at_exec_entry_event_and_exit_physically_reaps_one_incarnatio
         let extended = xstate(entry.tid).unwrap();
         assert!(held.stop_token().is_some());
         assert_eq!(read_registers(entry.tid).unwrap(), before);
-        assert_eq!(
-            liteinst::trampoline::SavedExtendedStateLayout::xstate_semantic_eq(
-                &xstate(entry.tid).unwrap(),
-                &extended
-            ),
-            liteinst::trampoline::XstateSemanticEq::Equal
-        );
+        assert_eq!(xstate(entry.tid).unwrap(), extended);
         let source = if phase == 0 { &fixture.code[..] } else { SPIN };
         assert_eq!(read_memory(entry.tid, ENTRY, source.len()).unwrap(), source);
         h.owner().cancel.store(true, Ordering::Release);
