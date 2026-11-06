@@ -55,8 +55,11 @@ pub enum PatchError {
     },
     /// A helper child could not be reaped even after `SIGKILL` and a
     /// bounded retry window; custody of `pid` is explicitly retained
-    /// by the caller (it will be reaped by init at process exit).
-    /// Returned instead of silently losing the PID.
+    /// by the caller, who keeps termination/reaping responsibility for
+    /// it. (Caller exit merely reparents a still-live child to init or
+    /// a subreaper, which reaps it only when it eventually terminates;
+    /// nothing is auto-reaped on the caller's behalf.) Returned instead
+    /// of silently losing the PID.
     ChildCustodyRetained {
         /// The unreaped child process id.
         pid: i32,

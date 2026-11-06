@@ -122,8 +122,9 @@ fn probe_verdict(got_magic: bool, status: libc::c_int) -> bool {
 
 /// One nonblocking wait attempt: `Ok(Some(status))` reaped,
 /// `Ok(None)` still running or a retryable wait error (custody keeps
-/// priority over error fidelity; `last_errno` records the cause),
-/// `Err(CacheOpsUnavailable)` only for genuine `ECHILD` discharge.
+/// priority over error fidelity: the wait errno is deliberately not
+/// recorded), `Err(CacheOpsUnavailable)` only for genuine `ECHILD`
+/// discharge.
 #[cfg(target_os = "linux")]
 fn wait_once(pid: libc::pid_t) -> Result<Option<libc::c_int>, PatchError> {
     let mut status: libc::c_int = 0;
@@ -138,9 +139,11 @@ fn wait_once(pid: libc::pid_t) -> Result<Option<libc::c_int>, PatchError> {
 }
 
 /// Kill `pid` and discharge custody: retry reaping through any wait
-/// error short of `ECHILD` (already discharged) until a second bounded
-/// window expires, after which custody is reported retained by name
-/// instead of being silently lost.
+/// error short of `ECHILD` (already discharged) until its own separate
+/// 5-second discharge window expires, after which custody is reported
+/// retained by name instead of being silently lost. Callers therefore
+/// face a collection window plus this discharge window (plus scheduling
+/// overhead), not a single total bound.
 #[cfg(target_os = "linux")]
 fn kill_and_discharge(pid: libc::pid_t) -> Result<(), PatchError> {
     unsafe { libc::kill(pid, libc::SIGKILL) };
@@ -182,11 +185,14 @@ fn reap_child(pid: libc::pid_t, timeout_ms: u64) -> Result<libc::c_int, PatchErr
 }
 
 /// Unified probe-parent custody loop: completion-byte acquisition and
-/// exact-child status share ONE deadline, so a child stopped before
-/// writing cannot block the parent past the reaper timeout (the prior
-/// blocking-read bypass). On timeout or any hard poll/read/wait error
-/// the child is killed and discharged before the error returns.
-/// Returns `(got_magic, status)` only with custody fully discharged.
+/// exact-child status share ONE collection deadline, so a child
+/// stopped before writing cannot block the parent past it (the prior
+/// blocking-read bypass). On collection timeout or any hard
+/// poll/read/wait error the child is killed and discharged (under the
+/// separate discharge window of [`kill_and_discharge`]) before the
+/// error returns; total worst case is the collection window plus the
+/// discharge window plus scheduling overhead. Returns
+/// `(got_magic, status)` only with custody fully discharged.
 #[cfg(target_os = "linux")]
 #[allow(dead_code)]
 fn collect_probe_child(
