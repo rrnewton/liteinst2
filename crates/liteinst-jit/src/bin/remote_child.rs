@@ -44,19 +44,28 @@ fn main() {
     // SAFETY: single-threaded setup before any guest code.
     unsafe {
         for sig in 1..=64 {
-            if sig != libc::SIGKILL && sig != libc::SIGSTOP && sig != 32 && sig != 33 {
-                libc::signal(sig, libc::SIG_DFL);
+            if sig != libc::SIGKILL
+                && sig != libc::SIGSTOP
+                && sig != 32
+                && sig != 33
+                && libc::signal(sig, libc::SIG_DFL) == libc::SIG_ERR
+            {
+                std::process::exit(2);
             }
         }
         let mut empty: libc::sigset_t = core::mem::zeroed();
         libc::sigemptyset(&mut empty);
-        libc::pthread_sigmask(libc::SIG_SETMASK, &empty, core::ptr::null_mut());
+        if libc::pthread_sigmask(libc::SIG_SETMASK, &empty, core::ptr::null_mut()) != 0 {
+            std::process::exit(2);
+        }
         let disabled = libc::stack_t {
             ss_sp: core::ptr::null_mut(),
             ss_flags: libc::SS_DISABLE,
             ss_size: 0,
         };
-        libc::sigaltstack(&disabled, core::ptr::null_mut());
+        if libc::sigaltstack(&disabled, core::ptr::null_mut()) != 0 {
+            std::process::exit(2);
+        }
     }
     let arg = std::env::args().nth(1).expect("fixture name or hex arg");
     // Optional guest initial signal mask: `block:<signum>,...`
