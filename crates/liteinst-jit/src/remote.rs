@@ -10,7 +10,7 @@
 //! serviced by stepping the original instruction in the child.
 //! I1-C mirrors the guest signal registry from kernel
 //! readback. I1-D adds exactly one genuine delivery shape on
-//! top of that mirror (one non-fault standard signal, an
+//! top of that mirror (SIGUSR1 only, an
 //! `SA_SIGINFO` handler at a translated block start, delivery
 //! recovered to a block start, no altstack/nesting/RT — see
 //! `P1B-DESIGN.md` §8): custom handlers are stubbed in the
@@ -102,6 +102,14 @@ const fn uc_greg_addr(uc: u64, greg: u64) -> u64 {
 /// `SA_RESTORER` flag word (not exported by libc on this
 /// target; value from the kernel `signal.h` ABI).
 const SA_RESTORER_FLAG: u64 = 0x0400_0000;
+
+/// The only restorer shape I1-D ever executes: exactly
+/// `mov eax, __NR_rt_sigreturn (15); syscall` (7 bytes). Its
+/// two retired instructions are the sigreturn credit; any
+/// other restorer bytes make the action ineligible before
+/// anything is injected (translating arbitrary restorers is
+/// later-stage work).
+const SIGRETURN_RESTORER: [u8; 7] = [0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05];
 
 /// One guest signal action exactly as the kernel reports it:
 /// all four `rt_sigaction` words are retained for every
@@ -951,7 +959,10 @@ impl RemoteExecutable {
         step_rax: u64,
         gadget_pc: u64,
     ) -> Result<(), Refuse> {
-        if step.oldact_addr != 0 && step.prev_visible.is_custom() {
+        // Only a successful call copied the previous kernel
+        // action out; an errored call (EINVAL/EFAULT) left
+        // guest oldact memory untouched and so must we.
+        if step_rax == 0 && step.oldact_addr != 0 && step.prev_visible.is_custom() {
             let _ = write_mem(
                 self.guard.pid,
                 step.oldact_addr,
@@ -1363,8 +1374,9 @@ impl RemoteExecutable {
 
     /// I1-D admitted delivery shape for `sig`, or `None` when
     /// this stop must keep the pre-I1-D recovered-async
-    /// outcome. Pure registry/translation checks; frame and
-    /// resume facts are validated in `deliver_signal` itself.
+    /// outcome. Registry/translation checks plus the exact
+    /// restorer-bytes proof; frame and resume facts are
+    /// validated in `deliver_signal`/`sigreturn_resume`.
     /// Every exclusion here is an I1-E/F/G stage boundary, not
     /// a silent fallback: nesting, real-time signals,
     /// alternate stack, non-`SA_SIGINFO`/`SA_NODEFER` forms,
@@ -1374,11 +1386,11 @@ impl RemoteExecutable {
         if active.is_some() {
             return None;
         }
-        if !(1..=31).contains(&sig)
-            || sig == libc::SIGTRAP
-            || sig == libc::SIGKILL
-            || sig == libc::SIGSTOP
-        {
+        // The tested signal set is exactly SIGUSR1 in I1-D;
+        // broadening to other standard signals needs their
+        // own witnesses (I1-E/H), whatever the other checks
+        // below would otherwise admit.
+        if sig != libc::SIGUSR1 {
             return None;
         }
         let action = self.registry.action(sig);
@@ -1398,6 +1410,17 @@ impl RemoteExecutable {
         }
         let t = self.translation.as_ref()?;
         if !t.block_gen.contains_key(&action.handler) {
+            return None;
+        }
+        // The restorer is the only guest code the sigreturn
+        // flow executes untranslated, so its bytes are proven
+        // to be exactly the two-instruction sigreturn
+        // trampoline here, before injection. Any other shape
+        // (extra insns, unreadable) keeps the recovered stop.
+        let mut restorer_bytes = [0u8; 7];
+        if read_mem(self.guard.pid, action.restorer, &mut restorer_bytes).is_err()
+            || restorer_bytes != SIGRETURN_RESTORER
+        {
             return None;
         }
         Some(action)
@@ -1987,7 +2010,12 @@ impl RemoteExecutable {
                     // follows it. `rt_sigaction` additionally
                     // stubs custom handlers through scratch
                     // (I1-D) and virtualizes the old action.
-                    if state.rax == libc::SYS_rt_sigaction as u64 {
+                    // Same low-32 syscall-number classification
+                    // as admission (`syscall_guard` and the
+                    // pass-through list): a high-32 alias like
+                    // 0x1_0000000d is rt_sigaction to the kernel
+                    // and must take the stubbing path too.
+                    if state.rax as u32 == libc::SYS_rt_sigaction as u32 {
                         let step = self.prepare_sigaction_step(&state)?;
                         let orig_rsi = state.rsi;
                         let mut step_state = state;

@@ -70,10 +70,14 @@ struct FixtureBytes {
 }
 
 fn fixture(flags: u32) -> FixtureBytes {
+    fixture_v(flags, libc::SIGUSR1 as u8, RESTORER, false)
+}
+
+fn fixture_v(flags: u32, sig: u8, restorer: &[u8], alias_install: bool) -> FixtureBytes {
     let mut v = Vec::new();
     v.extend_from_slice(HANDLER);
     let restorer_off = v.len() as u64;
-    v.extend_from_slice(RESTORER);
+    v.extend_from_slice(restorer);
     let main_off = v.len() as u64;
     // Build act at [rbx]: handler=rbp, flags, restorer=r12,
     // mask=0. (4 insns)
@@ -82,16 +86,23 @@ fn fixture(flags: u32) -> FixtureBytes {
     v.extend_from_slice(&flags.to_le_bytes());
     v.extend_from_slice(&[0x4c, 0x89, 0x63, 0x10]);
     v.extend_from_slice(&[0x48, 0xc7, 0x43, 0x18, 0, 0, 0, 0]);
-    // rt_sigaction(USR1, rbx, rbx+32, 8); [rbx+64]=rax. (7)
+    // rt_sigaction(sig, rbx, rbx+32, 8); [rbx+64]=rax. (7)
+    v.extend_from_slice(&[0xbf, sig, 0x00, 0x00, 0x00]);
     v.extend_from_slice(&[
-        0xbf, 0x0a, 0x00, 0x00, 0x00, 0x48, 0x89, 0xde, 0x48, 0x8d, 0x53, 0x20, 0x41, 0xba, 0x08,
-        0x00, 0x00, 0x00, 0xb8, 0x0d, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89, 0x43, 0x40,
+        0x48, 0x89, 0xde, 0x48, 0x8d, 0x53, 0x20, 0x41, 0xba, 0x08, 0x00, 0x00, 0x00,
     ]);
+    if alias_install {
+        // movabs rax, 0x1_0000000d (high-32 alias of 13)
+        v.extend_from_slice(&[0x48, 0xb8, 0x0d, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]);
+    } else {
+        v.extend_from_slice(&[0xb8, 0x0d, 0x00, 0x00, 0x00]);
+    }
+    v.extend_from_slice(&[0x0f, 0x05, 0x48, 0x89, 0x43, 0x40]);
     // Query act to [rbx+272]; [rbx+72]=rax. (7 insns)
+    v.extend_from_slice(&[0xbf, sig, 0x00, 0x00, 0x00]);
     v.extend_from_slice(&[
-        0xbf, 0x0a, 0x00, 0x00, 0x00, 0x31, 0xf6, 0x48, 0x8d, 0x93, 0x10, 0x01, 0x00, 0x00, 0x41,
-        0xba, 0x08, 0x00, 0x00, 0x00, 0xb8, 0x0d, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89, 0x43,
-        0x48,
+        0x31, 0xf6, 0x48, 0x8d, 0x93, 0x10, 0x01, 0x00, 0x00, 0x41, 0xba, 0x08, 0x00, 0x00, 0x00,
+        0xb8, 0x0d, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89, 0x43, 0x48,
     ]);
     v.extend_from_slice(&[0x49, 0xc7, 0xc5, 0x01, 0x00, 0xed, 0x5e]); // mov r13, OLD_R13
     v.extend_from_slice(&[0x48, 0x39, 0xc9]); // cmp rcx, rcx
@@ -99,11 +110,13 @@ fn fixture(flags: u32) -> FixtureBytes {
     v.extend_from_slice(&[0x0f, 0x85, 0, 0, 0, 0]); // jne handler (never taken)
     let rel = (0i64 - (jne_pos as i64 + 6)) as i32;
     v[jne_pos + 2..jne_pos + 6].copy_from_slice(&rel.to_le_bytes());
-    // rt_sigprocmask(SIG_UNBLOCK=1, {USR1}, old, 8). (7 insns)
+    // rt_sigprocmask(SIG_UNBLOCK=1, {sig}, old, 8). (7 insns)
+    v.extend_from_slice(&[0x48, 0xc7, 0x83, 0x80, 0x00, 0x00, 0x00]);
+    v.extend_from_slice(&(1u32 << (sig - 1)).to_le_bytes());
     v.extend_from_slice(&[
-        0x48, 0xc7, 0x83, 0x80, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0xbf, 0x01, 0x00, 0x00,
-        0x00, 0x48, 0x8d, 0xb3, 0x80, 0x00, 0x00, 0x00, 0x48, 0x8d, 0x93, 0x88, 0x00, 0x00, 0x00,
-        0x41, 0xba, 0x08, 0x00, 0x00, 0x00, 0xb8, 0x0e, 0x00, 0x00, 0x00, 0x0f, 0x05,
+        0xbf, 0x01, 0x00, 0x00, 0x00, 0x48, 0x8d, 0xb3, 0x80, 0x00, 0x00, 0x00, 0x48, 0x8d, 0x93,
+        0x88, 0x00, 0x00, 0x00, 0x41, 0xba, 0x08, 0x00, 0x00, 0x00, 0xb8, 0x0e, 0x00, 0x00, 0x00,
+        0x0f, 0x05,
     ]);
     let resume_off = v.len() as u64;
     v.extend_from_slice(&[0x48, 0x89, 0x43, 0x50]); // mov [rbx+80], rax
@@ -202,8 +215,9 @@ fn guest_state(
     s
 }
 
-fn run_translated(
+fn run_translated_sig(
     fix: &FixtureBytes,
+    blocked_sig: i32,
     send: bool,
 ) -> (
     RemoteExecutable,
@@ -214,7 +228,7 @@ fn run_translated(
     let mut remote = RemoteExecutable::spawn_bytes_with_blocked(
         std::path::Path::new(REMOTE_CHILD),
         &fix.bytes,
-        &[libc::SIGUSR1],
+        &[blocked_sig],
     )
     .expect("spawn remote");
     let info = remote.info();
@@ -233,8 +247,8 @@ fn run_translated(
         .expect("prepare remote");
     if send {
         // SAFETY: signalling the test's traced child, which
-        // has SIGUSR1 blocked, so it stays pending.
-        let rc = unsafe { libc::kill(remote.child_pid_for_test(), libc::SIGUSR1) };
+        // has the signal blocked, so it stays pending.
+        let rc = unsafe { libc::kill(remote.child_pid_for_test(), blocked_sig) };
         assert_eq!(rc, 0, "kill remote child");
     }
     let out = remote.run(guest_state(&remote, info, fix), RETURN_SENTINEL);
@@ -283,7 +297,7 @@ fn native_witness(fix: &FixtureBytes, send: bool) -> (u64, Witness) {
 
 fn check_round_trip() {
     let fix = fixture(FLAGS_SIGINFO);
-    let (remote, info, out, data) = run_translated(&fix, true);
+    let (remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
     let out = out.expect("translated round trip");
     let tw = witness(&data, info.base, info.dst, info.stack_top);
     let (native_result, nw) = native_witness(&fix, true);
@@ -340,7 +354,7 @@ fn check_no_send_control() {
     // expire with the handler never run — progress causally
     // requires delivery.
     let fix = fixture(FLAGS_SIGINFO);
-    let (_remote, _info, out, data) = run_translated(&fix, false);
+    let (_remote, _info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, false);
     let out = out.expect("control run");
     assert_eq!(out.state.rax, 0xffff_fff9, "wait expired (mov eax, -7)");
     assert_eq!(out.instructions, 400_032, "control instructions");
@@ -351,7 +365,7 @@ fn check_no_send_control() {
 
 fn check_ineligible_shape(flags: u32, label: &str) {
     let fix = fixture(flags);
-    let (_remote, info, out, data) = run_translated(&fix, true);
+    let (_remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
     let f = match out {
         Err(RunError::Fault(f)) => f,
         other => panic!("{label}: expected recovered async fault, got {other:?}"),
@@ -364,10 +378,134 @@ fn check_ineligible_shape(flags: u32, label: &str) {
     assert_eq!(word(&data, 576), 0, "{label}: flag must not be set");
 }
 
+fn check_ineligible_fixture(fix: &FixtureBytes, sig: i32, label: &str) {
+    let (_remote, info, out, data) = run_translated_sig(fix, sig, true);
+    let f = match out {
+        Err(RunError::Fault(f)) => f,
+        other => panic!("{label}: expected recovered async fault, got {other:?}"),
+    };
+    assert_eq!(f.kind, FaultKind::AsyncSignal, "{label}");
+    assert_eq!(f.signum, sig, "{label}");
+    assert_eq!(f.src_pc, info.base + fix.resume_off, "{label}");
+    assert_eq!(word(&data, 512), 0, "{label}: handler must not run");
+    assert_eq!(word(&data, 576), 0, "{label}: flag must not be set");
+}
+
+/// P1 probe: a failed `rt_sigaction` copies nothing out, so
+/// oldact virtualization must leave guest memory untouched.
+fn check_oldact_sentinel_on_error() {
+    const SENTINEL: u64 = 0xa5a5_a5a5_a5a5_a5a5;
+    let mut bytes: Vec<u8> = vec![
+        0x48, 0xff, 0x83, 0x00, 0x02, 0x00, 0x00, 0xc3, // 0 handler: inc + ret
+        0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05, // 8 restorer
+    ];
+    let main_off = bytes.len() as u64; // 15
+    // Build + install custom action (mask 0).
+    bytes.extend_from_slice(&[
+        0x48, 0x89, 0x2b, 0x48, 0xc7, 0x43, 0x08, 0x04, 0x00, 0x00, 0x04, 0x4c, 0x89, 0x63, 0x10,
+        0x48, 0xc7, 0x43, 0x18, 0x00, 0x00, 0x00, 0x00, 0xbf, 0x0a, 0x00, 0x00, 0x00, 0x48, 0x89,
+        0xde, 0x48, 0x8d, 0x53, 0x20, 0x41, 0xba, 0x08, 0x00, 0x00, 0x00, 0xb8, 0x0d, 0x00, 0x00,
+        0x00, 0x0f, 0x05, 0x48, 0x89, 0x43, 0x40,
+    ]);
+    bytes.extend_from_slice(&[0x48, 0xb8]);
+    bytes.extend_from_slice(&SENTINEL.to_le_bytes());
+    for disp in [272u32, 280, 288, 296] {
+        bytes.extend_from_slice(&[0x48, 0x89, 0x83]);
+        bytes.extend_from_slice(&disp.to_le_bytes());
+    }
+    // Failed query: sigsetsize 0 -> EINVAL, no copy-out.
+    bytes.extend_from_slice(&[
+        0xbf, 0x0a, 0x00, 0x00, 0x00, 0x31, 0xf6, 0x48, 0x8d, 0x93, 0x10, 0x01, 0x00, 0x00, 0x41,
+        0xba, 0x00, 0x00, 0x00, 0x00, 0xb8, 0x0d, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89, 0x43,
+        0x48, 0xc3,
+    ]);
+    let mut remote =
+        RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &bytes).expect("spawn");
+    let info = remote.info();
+    let region = RegionFacts {
+        base: info.base,
+        bytes: bytes.clone(),
+        generation: Generation(1),
+        immutable_private: true,
+    };
+    remote
+        .prepare(
+            &region,
+            info.base + main_off,
+            CountProfile::BranchesAndInstructions,
+        )
+        .expect("prepare");
+    let mut state = remote.initial_state();
+    state.rip = info.base + main_off;
+    state.rbx = info.dst;
+    state.rbp = info.base;
+    state.r12 = info.base + 8;
+    state.r13 = info.src;
+    remote
+        .run(state, RETURN_SENTINEL)
+        .expect("sentinel guest run");
+    let mut data = vec![0u8; 640];
+    assert!(remote.read_mem(info.dst, &mut data));
+    assert_eq!(word(&data, 64), 0, "install result");
+    assert_eq!(word(&data, 72) as i64, -22, "failed query is EINVAL");
+    for off in [272, 280, 288, 296] {
+        assert_eq!(
+            word(&data, off),
+            SENTINEL,
+            "oldact sentinel at {off} untouched on error"
+        );
+    }
+}
+
+/// P1 probe: a high-32 RAX alias of the syscall number must
+/// take the same stubbing/mirror path as the plain form.
+fn check_alias_install_mirrored() {
+    // Full round trip on the alias install: only a stubbed
+    // kernel disposition can complete it under cache control
+    // with exact counts; an unstubbed handler escapes to
+    // native execution and the run faults at the sentinel.
+    let fix = fixture_v(FLAGS_SIGINFO, libc::SIGUSR1 as u8, RESTORER, true);
+    let (remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
+    let out = out.expect("alias round trip");
+    assert_eq!(out.state.rax, 42, "alias result");
+    assert_eq!(out.instructions, 60, "alias instructions");
+    assert_eq!(out.branches, 2, "alias branches");
+    assert_eq!(word(&data, 64), 0, "alias install result");
+    assert_eq!(word(&data, 512), 1, "alias handler ran translated");
+    assert_eq!(word(&data, 272), info.base, "alias queried handler");
+    assert_eq!(
+        remote.registry().action(libc::SIGUSR1),
+        GuestAction {
+            handler: info.base,
+            flags: u64::from(FLAGS_SIGINFO),
+            restorer: info.base + fix.restorer_off,
+            sa_mask: 0,
+        },
+        "alias install reconciled in mirror"
+    );
+}
+
 #[test]
 fn remote_signal_all() {
     check_round_trip();
     check_no_send_control();
     check_ineligible_shape(FLAGS_NO_SIGINFO, "no SA_SIGINFO");
     check_ineligible_shape(FLAGS_ONSTACK, "SA_ONSTACK");
+    check_oldact_sentinel_on_error();
+    check_alias_install_mirrored();
+    // P1 probe: a restorer that is not exactly
+    // `mov eax,15; syscall` must never execute natively.
+    let mut nop_restorer = vec![0x90u8];
+    nop_restorer.extend_from_slice(RESTORER);
+    check_ineligible_fixture(
+        &fixture_v(FLAGS_SIGINFO, libc::SIGUSR1 as u8, &nop_restorer, false),
+        libc::SIGUSR1,
+        "NOP-prefixed restorer",
+    );
+    // P2: only the tested signal (SIGUSR1) is admitted.
+    check_ineligible_fixture(
+        &fixture_v(FLAGS_SIGINFO, libc::SIGUSR2 as u8, RESTORER, false),
+        libc::SIGUSR2,
+        "SIGUSR2 not in tested set",
+    );
 }

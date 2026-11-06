@@ -378,7 +378,9 @@ install/query/default/ignore matrix matching a native guest
 delivery still stopping as a recovered async outcome.
 
 **I1-D — One standard signal, genuine round trip.** The frame
-flow above for one non-fault standard signal with an
+flow above for one non-fault standard signal — the tested
+and admitted set in the implementation is exactly SIGUSR1 —
+with an
 `SA_SIGINFO` handler, default mask, no alternate stack, no
 nesting, and no handler mutation of the ucontext except a
 scratch register explicitly covered by the test. This stage
@@ -387,8 +389,15 @@ I1-C did not land. The guest witness records signal number,
 `si_code`, handler-visible RIP/register values, and a value
 only reachable if the handler ran; the main guest loop
 progresses only through that handler. Exit: native-child and
-translated runs agree on witness fields, final full state,
-counts, fault/no-fault outcome, and the exact resume block.
+translated runs agree on the witness fields and the recorded
+final-state words the native child actually returns (result
+RAX plus the witness buffer; flags compared on status/DF
+bits), on fault/no-fault outcome, and on the exact resume
+block; translated counts are pinned separately to the
+fixture's enumerated instruction/branch semantics — the
+native child is not a count oracle, and no native
+count/full-register-image agreement is claimed at this stage
+(that completion belongs to I1-H evidence).
 Still refused: synchronous custom-fault delivery beyond
 existing recovered outcomes, alternate stack, nested and
 real-time delivery, handler `longjmp`/`siglongjmp`, any second
