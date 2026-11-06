@@ -11,7 +11,8 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
-use iced_x86::{ConditionCode, Encoder};
+use iced_x86::Encoder;
+use liteinst_x86::ConditionCode;
 
 use crate::decode::{DecodedInsn, InsnClass, SupportedDecoder};
 use crate::pcmap::{

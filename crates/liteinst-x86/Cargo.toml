@@ -19,6 +19,7 @@ iced-x86 = { version = "=1.21.0", default-features = false, features = ["decoder
 [features]
 default = ["std"]
 std = ["iced-x86/std"]
+instr-info = ["iced-x86/instr_info"]
 
 # A freestanding consumer disables defaults and selects iced-x86/no_std in
 # its independent dependency graph. Do not expose an opposing no_std feature:

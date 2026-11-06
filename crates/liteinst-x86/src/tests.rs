@@ -186,3 +186,67 @@ fn register_stack_union_keeps_all_registers_and_exact_code_boundaries() {
         assert_eq!(jump_or_register_stack(&decoded.instruction), Some(class));
     }
 }
+
+#[cfg(feature = "instr-info")]
+#[test]
+fn instruction_info_preserves_register_memory_and_operand_facts() {
+    extern crate std;
+    // add [rdi+r12*8-0x5aa5edcc], esi
+    let decoded = decode64(0x1000, &[0x42, 0x01, 0xb4, 0xe7, 0x34, 0x12, 0x5a, 0xa5]);
+    assert_eq!(decoded.error, DecoderError::None);
+
+    let mut factory = InstructionInfoFactory::new();
+    let info = factory.info(&decoded.instruction);
+    let registers: std::vec::Vec<_> = info
+        .used_registers()
+        .map(|used| (used.register(), used.access()))
+        .collect();
+    assert_eq!(
+        registers,
+        [
+            (Register::RDI, OpAccess::Read),
+            (Register::R12, OpAccess::Read),
+            (Register::ESI, OpAccess::Read),
+        ]
+    );
+    assert!(!info.has_non_gpr_register_effect());
+    assert_eq!(info.op_access(0), OpAccess::ReadWrite);
+    assert_eq!(info.op_access(1), OpAccess::Read);
+
+    let memory: std::vec::Vec<_> = info.used_memory().collect();
+    assert_eq!(memory.len(), 1);
+    let memory = memory[0];
+    assert_eq!(memory.segment(), Register::DS);
+    assert_eq!(memory.base(), Register::RDI);
+    assert_eq!(memory.index(), Register::R12);
+    assert_eq!(memory.scale(), 8);
+    assert_eq!(memory.displacement(), 0xffff_ffff_a55a_1234);
+    assert_eq!(memory.memory_size(), MemorySize::UInt32);
+    assert_eq!(memory.access(), OpAccess::ReadWrite);
+    assert_eq!(memory.address_size(), CodeSize::Code64);
+    assert_eq!(memory.vsib_size(), 0);
+
+    let registers_only =
+        factory.info_options(&decoded.instruction, InstructionInfoOptions::REGISTERS_ONLY);
+    assert_eq!(registers_only.used_registers().len(), 3);
+    assert_eq!(registers_only.used_memory().len(), 0);
+    let memory_only =
+        factory.info_options(&decoded.instruction, InstructionInfoOptions::MEMORY_ONLY);
+    assert_eq!(memory_only.used_registers().len(), 0);
+    assert_eq!(memory_only.used_memory().len(), 1);
+
+    // Reusing the factory replaces, rather than accumulates, prior facts.
+    let mov = decode64(0x1000, &[0x89, 0xd8]);
+    let info = factory.info(&mov.instruction);
+    assert_eq!(info.used_memory().len(), 0);
+    assert_eq!(info.used_registers().len(), 2);
+
+    // movaps xmm0, xmm1
+    let vector = decode64(0x1000, &[0x0f, 0x28, 0xc1]);
+    let info = factory.info(&vector.instruction);
+    assert!(info.has_non_gpr_register_effect());
+    assert!(
+        info.used_registers()
+            .any(|used| used.register() == Register::XMM1)
+    );
+}

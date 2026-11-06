@@ -5,8 +5,9 @@
 //! from PMU counters (skid makes those a witness, not an oracle).
 //!
 //! Independence: step classification here is local to this module
-//! (iced decoder directly, own branch/return/syscall tests); it does
-//! not reuse the translator's `decode` classification or envelope.
+//! (shared liteinst::x86 decoder construction, own
+//! branch/return/syscall tests); it does not reuse the translator's
+//! `decode` classification or envelope.
 //! Step traps are qualified by `PTRACE_GETSIGINFO` provenance: only
 //! `TRAP_TRACE` counts as a completed step (a stepped-over syscall
 //! may report `SI_KERNEL`); any other SIGTRAP is a guest trap and
@@ -16,7 +17,7 @@
 use std::io::Read;
 use std::process::{Child, Command, Stdio};
 
-use iced_x86::{Code, Decoder, DecoderOptions, Instruction, Mnemonic};
+use liteinst_x86::{Code, Instruction, Mnemonic, decoder64};
 
 use crate::harness::{MappedGuest, RETURN_SENTINEL};
 use crate::state::GuestState;
@@ -106,7 +107,7 @@ fn classify_step(ins: &Instruction) -> StepClass {
 }
 
 fn decode_step(bytes: &[u8], pc: u64) -> Instruction {
-    let mut decoder = Decoder::with_ip(64, bytes, pc, DecoderOptions::NONE);
+    let mut decoder = decoder64(bytes, pc);
     let ins = decoder.decode();
     assert!(!ins.is_invalid(), "oracle decode at {pc:#x}");
     ins

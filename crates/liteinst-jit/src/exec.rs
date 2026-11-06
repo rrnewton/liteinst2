@@ -764,13 +764,13 @@ pub(crate) fn syscall_guard(t: &Translation, exit_src: u64, rax: u64) -> Result<
             .map(|term| term.instruction.mnemonic())
     });
     match entry_mnemonic {
-        Some(iced_x86::Mnemonic::Syscall) => {}
-        Some(iced_x86::Mnemonic::Sysenter) => {
+        Some(liteinst_x86::Mnemonic::Syscall) => {}
+        Some(liteinst_x86::Mnemonic::Sysenter) => {
             return Err(Refuse::Arch {
                 what: "sysenter compat entry outside P1a envelope",
             });
         }
-        Some(iced_x86::Mnemonic::Int) => {
+        Some(liteinst_x86::Mnemonic::Int) => {
             return Err(Refuse::Arch {
                 what: "ia32 compat syscall entry outside P1a envelope",
             });

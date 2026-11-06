@@ -82,7 +82,7 @@ test = false
 members = ["tools/rapid-profiler", "tools/exception-oracle", "crates/liteinst-admission", "crates/liteinst-launch", "crates/liteinst-artifact", "tools/elf-rewrite", "crates/liteinst-inprocess", "crates/liteinst-x86", "crates/liteinst-aarch64", "crates/liteinst-jit"]
 
 [dependencies]
-liteinst-x86 = { version = "0.2.0", path = "crates/liteinst-x86" }
+liteinst-x86 = { version = "0.2.0", path = "crates/liteinst-x86", features = ["instr-info"] }
 iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder", "encoder", "block_encoder", "code_asm", "instr_info"] }
 libc = "0.2.186"
 memmap2 = "0.9.11"

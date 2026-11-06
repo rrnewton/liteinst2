@@ -12,8 +12,13 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-use iced_x86::{Code, Mnemonic, Register};
-pub use iced_x86::{Decoder, DecoderError, DecoderOptions, Instruction};
+#[cfg(feature = "instr-info")]
+use iced_x86::InstructionInfoFactory as IcedInstructionInfoFactory;
+pub use iced_x86::{
+    Code, Decoder, DecoderError, DecoderOptions, Instruction, Mnemonic, OpKind, Register,
+};
+#[cfg(feature = "instr-info")]
+pub use iced_x86::{CodeSize, ConditionCode, FlowControl, MemorySize, OpAccess};
 
 /// Creates the ordinary 64-bit decoder without changing sequential traversal.
 pub fn decoder64(bytes: &[u8], pc: u64) -> Decoder<'_> {
@@ -251,6 +256,237 @@ pub fn gpr(register: Register) -> Option<GprOperand> {
         R9 => (R9W, R9D, R9), R10 => (R10W, R10D, R10), R11 => (R11W, R11D, R11),
         R12 => (R12W, R12D, R12), R13 => (R13W, R13D, R13),
         R14 => (R14W, R14D, R14), R15 => (R15W, R15D, R15),
+    }
+}
+
+/// Which descriptive instruction-use facts a reusable factory collects.
+///
+/// This selects decoder metadata only. It does not change instruction
+/// admission, CPU support, or execution policy.
+#[cfg(feature = "instr-info")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct InstructionInfoOptions {
+    include_registers: bool,
+    include_memory: bool,
+}
+
+#[cfg(feature = "instr-info")]
+impl InstructionInfoOptions {
+    /// Collect register and memory facts.
+    pub const ALL: Self = Self {
+        include_registers: true,
+        include_memory: true,
+    };
+    /// Collect register facts and omit memory facts.
+    pub const REGISTERS_ONLY: Self = Self {
+        include_registers: true,
+        include_memory: false,
+    };
+    /// Collect memory facts and omit register facts. Registers used only by
+    /// memory operands remain visible through those memory facts.
+    pub const MEMORY_ONLY: Self = Self {
+        include_registers: false,
+        include_memory: true,
+    };
+    /// Collect only operand-access facts.
+    pub const NONE: Self = Self {
+        include_registers: false,
+        include_memory: false,
+    };
+
+    fn to_iced(self) -> u32 {
+        let mut options = iced_x86::InstructionInfoOptions::NONE;
+        if !self.include_registers {
+            options |= iced_x86::InstructionInfoOptions::NO_REGISTER_USAGE;
+        }
+        if !self.include_memory {
+            options |= iced_x86::InstructionInfoOptions::NO_MEMORY_USAGE;
+        }
+        options
+    }
+}
+
+/// One register access reported for an instruction.
+#[cfg(feature = "instr-info")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+pub struct UsedRegister {
+    register: Register,
+    access: OpAccess,
+}
+
+#[cfg(feature = "instr-info")]
+impl UsedRegister {
+    /// Returns the accessed register.
+    pub const fn register(self) -> Register {
+        self.register
+    }
+
+    /// Returns how the instruction accesses the register.
+    pub const fn access(self) -> OpAccess {
+        self.access
+    }
+}
+
+/// One memory access reported for an instruction.
+///
+/// Segment, base, and index registers are reported exactly as iced reports
+/// them; `Register::None` means that component is absent or ignored.
+#[cfg(feature = "instr-info")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+pub struct UsedMemory {
+    segment: Register,
+    base: Register,
+    index: Register,
+    scale: u32,
+    displacement: u64,
+    memory_size: MemorySize,
+    access: OpAccess,
+    address_size: CodeSize,
+    vsib_size: u32,
+}
+
+#[cfg(feature = "instr-info")]
+impl UsedMemory {
+    /// Returns the effective segment register.
+    pub const fn segment(self) -> Register {
+        self.segment
+    }
+
+    /// Returns the base register.
+    pub const fn base(self) -> Register {
+        self.base
+    }
+
+    /// Returns the index register.
+    pub const fn index(self) -> Register {
+        self.index
+    }
+
+    /// Returns the index scale.
+    pub const fn scale(self) -> u32 {
+        self.scale
+    }
+
+    /// Returns the displacement.
+    pub const fn displacement(self) -> u64 {
+        self.displacement
+    }
+
+    /// Returns the accessed memory size.
+    pub const fn memory_size(self) -> MemorySize {
+        self.memory_size
+    }
+
+    /// Returns how the instruction accesses memory.
+    pub const fn access(self) -> OpAccess {
+        self.access
+    }
+
+    /// Returns the addressing code size.
+    pub const fn address_size(self) -> CodeSize {
+        self.address_size
+    }
+
+    /// Returns the VSIB element size in bytes, or zero when not applicable.
+    pub const fn vsib_size(self) -> u32 {
+        self.vsib_size
+    }
+}
+
+/// Descriptive register, memory, and operand-access facts for one instruction.
+///
+/// The facts borrow reusable storage owned by [`InstructionInfoFactory`]; they
+/// remain valid until that factory analyzes another instruction.
+#[cfg(feature = "instr-info")]
+#[derive(Clone, Copy, Debug)]
+pub struct InstructionInfo<'a> {
+    inner: &'a iced_x86::InstructionInfo,
+}
+
+#[cfg(feature = "instr-info")]
+impl InstructionInfo<'_> {
+    /// Returns every reported register access in iced's order.
+    pub fn used_registers(&self) -> impl ExactSizeIterator<Item = UsedRegister> + '_ {
+        self.inner.used_registers().iter().map(|used| UsedRegister {
+            register: used.register(),
+            access: used.access(),
+        })
+    }
+
+    /// Returns every reported memory access in iced's order.
+    pub fn used_memory(&self) -> impl ExactSizeIterator<Item = UsedMemory> + '_ {
+        self.inner.used_memory().iter().map(|used| UsedMemory {
+            segment: used.segment(),
+            base: used.base(),
+            index: used.index(),
+            scale: used.scale(),
+            displacement: used.displacement(),
+            memory_size: used.memory_size(),
+            access: used.access(),
+            address_size: used.address_size(),
+            vsib_size: used.vsib_size(),
+        })
+    }
+
+    /// Returns the access for operand `operand`, or `OpAccess::None` when the
+    /// operand index is outside iced's tracked range.
+    pub fn op_access(&self, operand: u32) -> OpAccess {
+        self.inner.op_access(operand)
+    }
+
+    /// Returns true when any reported register is neither `Register::None`, a
+    /// general-purpose register, nor an instruction-pointer register.
+    pub fn has_non_gpr_register_effect(&self) -> bool {
+        self.used_registers().any(|used| {
+            let register = used.register();
+            register != Register::None && !register.is_gpr() && !register.is_ip()
+        })
+    }
+}
+
+/// Reusable factory for descriptive instruction-use facts.
+///
+/// Reusing one factory retains iced's internal result storage across calls;
+/// each returned [`InstructionInfo`] borrows that storage until the next call.
+#[cfg(feature = "instr-info")]
+#[derive(Debug)]
+pub struct InstructionInfoFactory {
+    inner: IcedInstructionInfoFactory,
+}
+
+#[cfg(feature = "instr-info")]
+impl Default for InstructionInfoFactory {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(feature = "instr-info")]
+impl InstructionInfoFactory {
+    /// Creates a reusable instruction-info factory.
+    pub fn new() -> Self {
+        Self {
+            inner: IcedInstructionInfoFactory::new(),
+        }
+    }
+
+    /// Returns all register, memory, and operand-access facts for
+    /// `instruction`.
+    pub fn info(&mut self, instruction: &Instruction) -> InstructionInfo<'_> {
+        InstructionInfo {
+            inner: self.inner.info(instruction),
+        }
+    }
+
+    /// Returns the facts selected by `options` for `instruction`.
+    pub fn info_options(
+        &mut self,
+        instruction: &Instruction,
+        options: InstructionInfoOptions,
+    ) -> InstructionInfo<'_> {
+        InstructionInfo {
+            inner: self.inner.info_options(instruction, options.to_iced()),
+        }
     }
 }
 

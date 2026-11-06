@@ -3,9 +3,9 @@
 //! Classification is descriptive only; the translator decides what it
 //! can copy and refuses everything else by name.
 
-use iced_x86::InstructionInfoFactory;
-use iced_x86::{
-    Code, Decoder, DecoderOptions, FlowControl, Instruction, Mnemonic, OpKind, Register,
+use liteinst_x86::{
+    Code, Decoder, FlowControl, Instruction, InstructionInfoFactory, Mnemonic, OpKind, Register,
+    decoder64,
 };
 
 use crate::refuse::Refuse;
@@ -137,7 +137,7 @@ fn decoded_from(ins: Instruction, pc: u64, remaining_len: usize) -> Option<Decod
 /// Decode one instruction at `pc` from `bytes` (the bytes at `pc`).
 /// Returns `None` for invalid or truncated encodings.
 pub fn decode_one(bytes: &[u8], pc: u64) -> Option<DecodedInsn> {
-    let mut decoder = Decoder::with_ip(64, bytes, pc, DecoderOptions::NONE);
+    let mut decoder = decoder64(bytes, pc);
     if !decoder.can_decode() {
         return None;
     }
@@ -539,7 +539,7 @@ pub struct SupportedDecoder<'a> {
 impl<'a> SupportedDecoder<'a> {
     pub fn new(bytes: &'a [u8], base: u64) -> Self {
         Self {
-            decoder: Decoder::with_ip(64, bytes, base, DecoderOptions::NONE),
+            decoder: decoder64(bytes, base),
             factory: InstructionInfoFactory::new(),
             bytes,
             base,

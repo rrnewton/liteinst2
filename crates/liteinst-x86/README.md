@@ -12,7 +12,9 @@ freshness or a complete control-flow graph.
 It is `no_std` and forbids `unsafe` code. The default feature selects
 iced-x86's `std` support. A freestanding consumer disables defaults and must
 select iced-x86's `no_std` support in its own dependency graph. This crate
-adds no allocator or decoder-table policy.
+adds no allocator or decoder-table policy. The optional `instr-info`
+feature adds reusable descriptive register, memory, and operand-access
+facts for decoded instructions.
 
 Most users want the main [`liteinst`](../../) crate. Depend on `liteinst-x86`
 directly only if you need the same decode facts the core publisher uses —
