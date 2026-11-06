@@ -4,6 +4,7 @@
 |---|---|---|---|
 | `liteinst` | 0.2.0 | Patching core: punning, WordPatch++, trampolines, rapid toggles, emission, contracts | [Punning](punning.md), [Tactics](tactics.md), [Contracts](contracts.md) |
 | `liteinst-x86` | 0.2.0 | Descriptive decode + selected-operand facts (`no_std`, fact-only) | [Admission](admission.md) |
+| `liteinst-aarch64` | 0.2.0 | Descriptive A64 decode + selected-operand facts (`no_std`, fact-only) | — |
 | `liteinst-artifact` | 0.2.0 | Content identity, metadata, sparse overlays | [Offline rewriting](offline.md) |
 | `liteinst-admission` | 0.2.1 | Admission facts + mock publication model | [Admission](admission.md) |
 | `liteinst-inprocess` | 0.2.1 | In-process NX first-touch gate | [Page gates](page-gates.md) |
