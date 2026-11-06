@@ -142,7 +142,7 @@ fn host_page_size() -> Result<usize, SyscallRefusal> {
     ZpolineSledLayout::new(page_size, 0).map(|_| page_size)
 }
 
-struct DualMapping {
+pub(crate) struct DualMapping {
     fd: c_int,
     writable: *mut u8,
     executable: *mut u8,
@@ -157,13 +157,13 @@ impl DualMapping {
         Self::probe_at(len, 0, b"liteinst-zpoline-sled\0")
     }
 
-    fn probe_at(len: usize, address: u64, name: &[u8]) -> Result<Self, SyscallRefusal> {
+    pub(crate) fn probe_at(len: usize, address: u64, name: &[u8]) -> Result<Self, SyscallRefusal> {
         let mut mapping = Self::new_memfd(len, address, name)?;
         mapping.map_executable()?;
         Ok(mapping)
     }
 
-    fn probe_anywhere(len: usize, name: &[u8]) -> Result<Self, SyscallRefusal> {
+    pub(crate) fn probe_anywhere(len: usize, name: &[u8]) -> Result<Self, SyscallRefusal> {
         let mut mapping = Self::new_memfd(len, 0, name)?;
         // SAFETY: a fresh shared executable alias of the sized owned memfd;
         // the kernel chooses its address.
@@ -344,7 +344,7 @@ impl DualMapping {
         Ok(observed)
     }
 
-    fn publish_bytes(&mut self, bytes: &[u8]) -> Result<Vec<u8>, SyscallRefusal> {
+    pub(crate) fn publish_bytes(&mut self, bytes: &[u8]) -> Result<Vec<u8>, SyscallRefusal> {
         if bytes.len() != self.len
             || self.writable.is_null()
             || !self.executable_mapped
@@ -391,7 +391,7 @@ impl DualMapping {
         Ok(observed)
     }
 
-    fn unmap(&mut self) -> Result<(), SyscallRefusal> {
+    pub(crate) fn unmap(&mut self) -> Result<(), SyscallRefusal> {
         let writable = self.unmap_writable();
         let executable = self.unmap_executable();
         if self.fd >= 0 {
@@ -402,11 +402,15 @@ impl DualMapping {
         writable.and(executable)
     }
 
-    fn len(&self) -> usize {
+    pub(crate) fn address(&self) -> u64 {
+        self.address
+    }
+
+    pub(crate) fn len(&self) -> usize {
         self.len
     }
 
-    fn commit(mut self) -> Self {
+    pub(crate) fn commit(mut self) -> Self {
         self.committed = true;
         self
     }
@@ -1453,7 +1457,8 @@ unsafe fn retire_inner(
 pub struct PlacementCounts {
     /// Near handler/dispatcher allocations.
     pub near_allocation: usize,
-    /// Memfd dual-mapped sled/dispatcher backings.
+    /// Memfd dual-mapped backings retained for the sled, dispatcher, and
+    /// each per-site handler trampoline.
     pub memfd_dual_map: usize,
     /// Low-page sled mappings (zero or one in this slice).
     pub low_page: usize,
@@ -2148,7 +2153,7 @@ unsafe fn publish_set_inner(
             + usize::from(
                 retained.dispatcher_family == crate::syscall::PlacementFamily::NearAllocation,
             ),
-        memfd_dual_map: 2,
+        memfd_dual_map: retained.prepared.sites.len() + 2,
         low_page: 1,
         two_hop_veneer: 1,
         trap: retained

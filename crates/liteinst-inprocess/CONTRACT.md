@@ -16,6 +16,35 @@ profile is native `read`, `write`, `getpid`, and `gettid` only. No config
 construction or parsing maps memory, changes signal/seccomp/SUD state, or
 patches code.
 
+# SUD trap substrate
+
+`syscall::sud::SudInstallation` is the first discovery substrate. It
+requires the `trap` strategy with `DiscoverySubstrate::Sud`; seccomp remains
+the default vocabulary selection and is not installed by this slice. The
+owner probes a sealed memfd gateway page containing only a six-argument
+genuine-syscall stub and an `rt_sigreturn` restorer, installs a guarded
+alternate signal stack and one SIGSYS handler, and retains exact prior
+action/stack custody. Installation alone enables dispatch on no thread.
+
+Each participating thread explicitly registers through the gateway and
+receives a non-`Send` token; unregistering also goes through the gateway.
+The handler authenticates SUD siginfo, architecture, call address, saved
+RAX/RCX, and the two native syscall bytes before recording the site. Only
+the first profile (`read`, `write`, `getpid`, `gettid`) is forwarded,
+exactly once, with raw result, RCX set to the fallthrough, and R11 set to
+the saved flags. Unsupported, foreign, nested, or registry-overflow traps
+fail closed. Site slots and counters are preallocated and handler updates
+are atomic; snapshots merge any concurrent duplicate first-trap slots.
+
+After a thread registers, ordinary Rust/libc syscalls outside the gateway
+also trap and can fail closed. The caller therefore owns the registered
+thread's code contract, keeps admitted code mapped, prevents handler
+recursion except through the authenticated path, and drains every token
+before uninstalling from the installing thread. Uninstall verifies and
+restores the exact prior SIGSYS action and alternate stack, then unmaps the
+gateway and stack. This substrate records sites only; it never rewrites
+them. Lazypoline patch-and-restart is slice 5.
+
 # Zpoline mechanism
 
 `syscall::zpoline` publishes caller-certified eager native `syscall`

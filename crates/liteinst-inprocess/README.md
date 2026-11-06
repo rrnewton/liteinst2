@@ -43,7 +43,10 @@ per-site trap/refuse fallback, pluggable `sud|seccomp-ret-trap` discovery
 bounds, outcomes, and named refusals. Its `zpoline` submodule implements
 certified eager sites—single or one multi-site batch in one snapshot—through
 a low-page sled, dispatcher veneer, and core exact-syscall trampolines.
-Lazypoline and discovery-substrate installation remain later slices.
+The `sud` submodule installs the SUD gateway/restorer and SIGSYS custody,
+registers participating threads individually, forwards first-profile
+syscalls, and records authenticated sites without rewriting them.
+Lazypoline itself remains a later slice.
 
 The `selected` module uses the genuine core planner and publisher to replace
 CPUID, RDTSC, returning read/write/getpid/gettid syscalls, RDRAND, RDSEED,

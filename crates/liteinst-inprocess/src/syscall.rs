@@ -9,6 +9,7 @@
 use std::ffi::OsStr;
 use std::fmt;
 
+pub mod sud;
 pub mod zpoline;
 
 /// Concrete in-process syscall interception mechanism selected for one run.
