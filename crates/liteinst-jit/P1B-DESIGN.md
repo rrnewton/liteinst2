@@ -309,7 +309,9 @@ Status at this section's commit (liteinst2 `main`
   and original-step async stops, blocked-poll delivery,
   sync faults outside copied insns, and handler-mutated
   mid-block resume PCs still stop by name (see I1-E detail).
-  I1-F through I1-H unstarted.
+  I1-F through I1-H unstarted at that writing; I1-F is
+  implemented on branch `musejit2/i1f-20261106` (see its
+  detail below), pending dual review.
 
 Each stage is its own branch off then-current liteinst2 `main`,
 signed, with exact-head `fmt`, Clippy, locked debug/release
@@ -449,6 +451,21 @@ under a live frame. Active frames form an explicit tracer
 records stack; `rt_sigreturn` pops exactly one. Still refused:
 queued RT payload ordering beyond one pending instance,
 multi-threaded guests, uncovered restarted syscalls.
+As implemented on `musejit2/i1f-20261106`: async set is
+exactly SIGUSR1/SIGUSR2 (sync stays SIGSEGV/SIGFPE, empty
+frame stack only); flags are the I1-D base plus optional
+`SA_NODEFER`/`SA_ONSTACK` only, `sa_mask` arbitrary; the
+frame stack is capped at 8; `SA_ONSTACK` onto an enabled
+altstack needs size ≥ 8192 (disabled altstack keeps the
+kernel normal-stack fallback); poll deferral picks the
+lowest-numbered unblocked eligible pending signal; and the
+self-send syscalls `getpid`/`kill` pass through with `kill`
+gated to the traced child's own pid. Evidence: mask matrix
+with in-handler mask query (NODEFER on/off), altstack frame
+placement, distinct-signal nesting and `SA_NODEFER`
+same-signal reentry by self-send with LIFO order words, and
+disposition change under a live frame, each translated vs
+the native child.
 
 **I1-G — Real-time ordering, payloads, syscall restart.**
 `SIGRTMIN..SIGRTMAX` kernel ordering (lowest first, FIFO

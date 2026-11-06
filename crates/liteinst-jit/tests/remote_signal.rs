@@ -62,6 +62,31 @@ const HANDLER: &[u8] = &[
 ];
 const RESTORER: &[u8] = &[0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05];
 
+// I1-F mask handler: records fields, queries its own current
+// mask via rt_sigprocmask into [rbx+624] (rc at [rbx+616],
+// saved uc pointer at [rbx+632]), repairs R13, sets flag.
+const MASK_HANDLER: &[u8] = &[
+    0x48, 0xff, 0x83, 0x00, 0x02, 0x00, 0x00, // inc [rbx+512]
+    0x48, 0x89, 0xbb, 0x08, 0x02, 0x00, 0x00, // mov [rbx+520], rdi
+    0x48, 0x89, 0x93, 0x78, 0x02, 0x00, 0x00, // mov [rbx+632], rdx
+    0x31, 0xff, // xor edi, edi
+    0x31, 0xf6, // xor esi, esi
+    0x48, 0x8d, 0x93, 0x70, 0x02, 0x00, 0x00, // lea rdx, [rbx+624]
+    0x41, 0xba, 0x08, 0x00, 0x00, 0x00, // mov r10d, 8
+    0xb8, 0x0e, 0x00, 0x00, 0x00, // mov eax, 14
+    0x0f, 0x05, // syscall
+    0x48, 0x89, 0x83, 0x68, 0x02, 0x00, 0x00, // mov [rbx+616], rax
+    0x48, 0x8b, 0x93, 0x78, 0x02, 0x00, 0x00, // mov rdx, [rbx+632]
+    0x48, 0x8b, 0x82, 0xa8, 0x00, 0x00, 0x00, // mov rax, [rdx+168]
+    0x48, 0x89, 0x83, 0x20, 0x02, 0x00, 0x00, // mov [rbx+544], rax
+    0x48, 0x8b, 0x42, 0x50, // mov rax, [rdx+80]
+    0x48, 0x89, 0x83, 0x38, 0x02, 0x00, 0x00, // mov [rbx+568], rax
+    0x48, 0xb8, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, // mov rax, NEW_R13
+    0x48, 0x89, 0x42, 0x50, // mov [rdx+80], rax
+    0x48, 0xc7, 0x83, 0x40, 0x02, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, // flag=1
+    0xc3,
+];
+
 struct FixtureBytes {
     bytes: Vec<u8>,
     restorer_off: u64,
@@ -72,18 +97,31 @@ struct FixtureBytes {
 }
 
 fn fixture(flags: u32) -> FixtureBytes {
-    fixture_v(flags, libc::SIGUSR1 as u8, RESTORER, false, 0)
+    fixture_v(
+        flags,
+        libc::SIGUSR1 as u8,
+        RESTORER,
+        false,
+        0,
+        0,
+        HANDLER,
+        false,
+    )
 }
 
+#[allow(clippy::too_many_arguments)] // test fixture axes, all call-site explicit
 fn fixture_v(
     flags: u32,
     sig: u8,
     restorer: &[u8],
     alias_install: bool,
     body_repeats: usize,
+    sa_mask: u32,
+    handler_bytes: &[u8],
+    alt_install: bool,
 ) -> FixtureBytes {
     let mut v = Vec::new();
-    v.extend_from_slice(HANDLER);
+    v.extend_from_slice(handler_bytes);
     let restorer_off = v.len() as u64;
     v.extend_from_slice(restorer);
     let main_off = v.len() as u64;
@@ -93,7 +131,8 @@ fn fixture_v(
     v.extend_from_slice(&[0x48, 0xc7, 0x43, 0x08]);
     v.extend_from_slice(&flags.to_le_bytes());
     v.extend_from_slice(&[0x4c, 0x89, 0x63, 0x10]);
-    v.extend_from_slice(&[0x48, 0xc7, 0x43, 0x18, 0, 0, 0, 0]);
+    v.extend_from_slice(&[0x48, 0xc7, 0x43, 0x18]);
+    v.extend_from_slice(&sa_mask.to_le_bytes());
     // rt_sigaction(sig, rbx, rbx+32, 8); [rbx+64]=rax. (7)
     v.extend_from_slice(&[0xbf, sig, 0x00, 0x00, 0x00]);
     v.extend_from_slice(&[
@@ -112,6 +151,15 @@ fn fixture_v(
         0x31, 0xf6, 0x48, 0x8d, 0x93, 0x10, 0x01, 0x00, 0x00, 0x41, 0xba, 0x08, 0x00, 0x00, 0x00,
         0xb8, 0x0d, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89, 0x43, 0x48,
     ]);
+    if alt_install {
+        // sigaltstack(src in r13, 8192) at [rbx+160]; rc at [rbx+96]. (8 insns)
+        v.extend_from_slice(&[
+            0x4c, 0x89, 0xab, 0xa0, 0x00, 0x00, 0x00, 0x48, 0xc7, 0x83, 0xa8, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x48, 0xc7, 0x83, 0xb0, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00,
+            0x00, 0x48, 0x8d, 0xbb, 0xa0, 0x00, 0x00, 0x00, 0x48, 0x8d, 0xb3, 0xb8, 0x00, 0x00,
+            0x00, 0xb8, 0x83, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89, 0x43, 0x60,
+        ]);
+    }
     v.extend_from_slice(&[0x49, 0xc7, 0xc5, 0x01, 0x00, 0xed, 0x5e]); // mov r13, OLD_R13
     v.extend_from_slice(&[0x48, 0x39, 0xc9]); // cmp rcx, rcx
     let jne_pos = v.len();
@@ -407,6 +455,7 @@ fn native_run(fix: &FixtureBytes, send_sig: Option<i32>) -> NativeOut {
             format!("hex:{hex}"),
             fix.main_off.to_string(),
             fix.restorer_off.to_string(),
+            send_sig.unwrap_or(libc::SIGUSR1).to_string(),
         ])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -651,7 +700,16 @@ fn check_alias_install_mirrored() {
     // kernel disposition can complete it under cache control
     // with exact counts; an unstubbed handler escapes to
     // native execution and the run faults at the sentinel.
-    let fix = fixture_v(FLAGS_SIGINFO, libc::SIGUSR1 as u8, RESTORER, true, 0);
+    let fix = fixture_v(
+        FLAGS_SIGINFO,
+        libc::SIGUSR1 as u8,
+        RESTORER,
+        true,
+        0,
+        0,
+        HANDLER,
+        false,
+    );
     let (remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
     let out = out.expect("alias round trip");
     assert_eq!(out.state.rax, 42, "alias result");
@@ -742,7 +800,16 @@ fn check_sync_fpe() {
 /// completion + witness-PC-range check (exact counts stay
 /// with the deterministic I1-D/sync cases above).
 fn check_async_arbitrary_phase() {
-    let fix = fixture_v(FLAGS_SIGINFO, libc::SIGUSR1 as u8, RESTORER, false, 64);
+    let fix = fixture_v(
+        FLAGS_SIGINFO,
+        libc::SIGUSR1 as u8,
+        RESTORER,
+        false,
+        64,
+        0,
+        HANDLER,
+        false,
+    );
     let mut remote = RemoteExecutable::spawn_bytes_with_blocked(
         std::path::Path::new(REMOTE_CHILD),
         &fix.bytes,
@@ -798,12 +865,467 @@ fn check_async_arbitrary_phase() {
     );
 }
 
+/// I1-F second async signal: the plain SIGUSR2 round trip
+/// has the same enumerated counts as SIGUSR1 (60/2) and a
+/// matching native witness with signum 12.
+fn check_usr2_round_trip() {
+    let fix = fixture_v(
+        FLAGS_SIGINFO,
+        libc::SIGUSR2 as u8,
+        RESTORER,
+        false,
+        0,
+        0,
+        HANDLER,
+        false,
+    );
+    let (_remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR2, true);
+    let out = out.expect("translated USR2 round trip");
+    assert_eq!(out.state.rax, 42, "usr2 result");
+    assert_eq!(out.instructions, 60, "usr2 instructions");
+    assert_eq!(out.branches, 2, "usr2 branches");
+    let n = native_run(&fix, Some(libc::SIGUSR2));
+    assert_eq!(n.result, 42, "native usr2 result");
+    let tw = witness(&data, info.base, info.dst, info.stack_top);
+    let nw = witness(&n.data, n.base, n.dst, n.stack_top);
+    assert_eq!(tw, nw, "usr2 translated vs native witness");
+    assert_eq!(tw.signum, libc::SIGUSR2 as u64);
+}
+
+/// I1-F mask matrix: handler-entry mask is the kernel's
+/// (baseline + sa_mask + delivered unless SA_NODEFER),
+/// queried by the handler itself; sigreturn restores the
+/// pre-delivery mask in the mirror. Counts: main 37 +
+/// mask handler 19 + restorer 2 = 58 insns, 2 branches.
+fn check_mask(nodefer: bool) {
+    let flags = FLAGS_SIGINFO | if nodefer { 0x4000_0000 } else { 0 };
+    let sa_mask: u32 = 0x2800; // SIGUSR2 | SIGALRM bits
+    let fix = fixture_v(
+        flags,
+        libc::SIGUSR1 as u8,
+        RESTORER,
+        false,
+        0,
+        sa_mask,
+        MASK_HANDLER,
+        false,
+    );
+    let expected_entry = u64::from(sa_mask) | if nodefer { 0 } else { 0x200 };
+    let (remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
+    let out = out.expect("translated mask round trip");
+    assert_eq!(out.state.rax, 42, "mask result nodefer={nodefer}");
+    assert_eq!(out.instructions, 58, "mask instructions");
+    assert_eq!(out.branches, 2, "mask branches");
+    let n = native_run(&fix, Some(libc::SIGUSR1));
+    assert_eq!(n.result, 42, "native mask result");
+    for (label, d, base) in [
+        ("translated", &data, info.base),
+        ("native", &n.data, n.base),
+    ] {
+        assert_eq!(word(d, 280), u64::from(flags), "{label} queried flags");
+        assert_eq!(word(d, 296), u64::from(sa_mask), "{label} queried sa_mask");
+        assert_eq!(word(d, 512), 1, "{label} handler runs");
+        assert_eq!(word(d, 616), 0, "{label} mask query rc");
+        assert_eq!(word(d, 624), expected_entry, "{label} handler-entry mask");
+        assert_eq!(word(d, 544) - base, fix.resume_off, "{label} uc rip");
+        assert_eq!(word(d, 592), NEW_R13, "{label} repaired r13");
+    }
+    assert_eq!(remote.registry().mask(), 0, "mirror mask restored");
+    assert_eq!(
+        remote.registry().action(libc::SIGUSR1).sa_mask,
+        u64::from(sa_mask),
+        "mirror sa_mask retained"
+    );
+}
+
+/// I1-F altstack: SA_ONSTACK delivery lands the frame on
+/// the guest altstack (src buffer) while the interrupted
+/// RSP stays the main stack. Counts: main 45 (incl. 8-insn
+/// altstack install) + handler 22 (rsp store + I1-D handler)
+/// + restorer 2 = 69 insns, 2 branches.
+fn check_altstack() {
+    let mut alt_handler = vec![0x48, 0x89, 0xa3, 0x68, 0x02, 0x00, 0x00]; // mov [rbx+616], rsp
+    alt_handler.extend_from_slice(HANDLER);
+    let fix = fixture_v(
+        FLAGS_ONSTACK,
+        libc::SIGUSR1 as u8,
+        RESTORER,
+        false,
+        0,
+        0,
+        &alt_handler,
+        true,
+    );
+    let (remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
+    let out = out.expect("translated altstack round trip");
+    assert_eq!(out.state.rax, 42, "altstack result");
+    assert_eq!(out.instructions, 69, "altstack instructions");
+    assert_eq!(out.branches, 2, "altstack branches");
+    assert_eq!(word(&data, 96), 0, "sigaltstack install rc");
+    let n = native_run(&fix, Some(libc::SIGUSR1));
+    assert_eq!(n.result, 42, "native altstack result");
+    for (label, d, src, stack_top) in [
+        ("translated", &data, info.src, info.stack_top),
+        ("native", &n.data, n.src, n.stack_top),
+    ] {
+        let frame_rsp = word(d, 616);
+        assert!(
+            (src..src + 8192).contains(&frame_rsp),
+            "{label} frame rsp {frame_rsp:#x} on altstack {src:#x}..{:#x}",
+            src + 8192
+        );
+        assert_eq!(word(d, 560), stack_top, "{label} uc rsp stays main stack");
+        assert_eq!(word(d, 512), 1, "{label} handler runs");
+    }
+    assert_eq!(remote.registry().altstack().sp, info.src);
+    assert_eq!(remote.registry().altstack().size, 8192);
+}
+
+fn seq_store(slot: u32) -> Vec<u8> {
+    // mov rax,[rbx+600]; inc rax; mov [rbx+600],rax; mov [rbx+slot],rax
+    let mut v = vec![
+        0x48, 0x8b, 0x83, 0x58, 0x02, 0x00, 0x00, 0x48, 0xff, 0xc0, 0x48, 0x89, 0x83, 0x58, 0x02,
+        0x00, 0x00, 0x48, 0x89, 0x83,
+    ];
+    v.extend_from_slice(&slot.to_le_bytes());
+    v
+}
+
+fn send_self(sig: u8) -> Vec<u8> {
+    // getpid; kill(pid, sig) — 6 insns, rc left in rax.
+    vec![
+        0xb8, 0x27, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89, 0xc7, 0xbe, sig, 0x00, 0x00, 0x00,
+        0xb8, 0x3e, 0x00, 0x00, 0x00, 0x0f, 0x05,
+    ]
+}
+
+/// Distinct-signal nesting: USR1 handler self-sends USR2;
+/// USR2 handler runs nested inside it (seq 1,2,3,4).
+fn nest_fixture() -> FixtureBytes {
+    let mut inner: Vec<u8> = vec![0x48, 0xff, 0x83, 0x08, 0x02, 0x00, 0x00]; // inc [rbx+520]
+    inner.extend(seq_store(616));
+    inner.extend_from_slice(&[
+        0x48, 0x8b, 0x82, 0xa8, 0x00, 0x00, 0x00, 0x48, 0x89, 0x83, 0x28, 0x02, 0x00, 0x00,
+    ]); // uc rip -> [rbx+552]
+    inner.extend_from_slice(&[
+        0x48, 0xc7, 0x83, 0x48, 0x02, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+    ]); // inner_done=1
+    inner.extend(seq_store(624));
+    inner.push(0xc3);
+    let mut outer: Vec<u8> = vec![0x48, 0xff, 0x83, 0x00, 0x02, 0x00, 0x00]; // inc [rbx+512]
+    outer.extend(seq_store(608));
+    outer.extend_from_slice(&[
+        0x48, 0xc7, 0x83, 0x40, 0x02, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+    ]); // entered=1
+    outer.extend(send_self(libc::SIGUSR2 as u8));
+    outer.extend_from_slice(&[0x48, 0x89, 0x83, 0x18, 0x02, 0x00, 0x00]); // mov [rbx+536], rax
+    outer.extend_from_slice(&[
+        0x48, 0x8b, 0x82, 0xa8, 0x00, 0x00, 0x00, 0x48, 0x89, 0x83, 0x20, 0x02, 0x00, 0x00,
+    ]); // uc rip -> [rbx+544]
+    outer.extend_from_slice(&[0xb9, 0x40, 0x42, 0x0f, 0x00]); // mov ecx, 1000000
+    outer.extend_from_slice(&[
+        0x48, 0x83, 0xbb, 0x48, 0x02, 0x00, 0x00, 0x00, 0x75, 0x05, 0x48, 0xff, 0xc9, 0x75, 0xf1,
+    ]); // spin until inner_done
+    outer.extend(seq_store(632));
+    outer.extend_from_slice(&[
+        0x48, 0xc7, 0x83, 0x50, 0x02, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0xc3,
+    ]); // outer_done=1; ret
+    let mut v = Vec::new();
+    v.extend_from_slice(&outer);
+    let inner_off = v.len() as u64;
+    v.extend_from_slice(&inner);
+    let restorer_off = v.len() as u64;
+    v.extend_from_slice(RESTORER);
+    let main_off = v.len() as u64;
+    // Build act (handler=rbp=outer, flags, restorer=r12, mask 0); install USR1.
+    v.extend_from_slice(&[0x48, 0x89, 0x2b, 0x48, 0xc7, 0x43, 0x08]);
+    v.extend_from_slice(&FLAGS_SIGINFO.to_le_bytes());
+    v.extend_from_slice(&[
+        0x4c, 0x89, 0x63, 0x10, 0x48, 0xc7, 0x43, 0x18, 0, 0, 0, 0, 0xbf, 0x0a, 0x00, 0x00, 0x00,
+        0x48, 0x89, 0xde, 0x48, 0x8d, 0x53, 0x20, 0x41, 0xba, 0x08, 0x00, 0x00, 0x00, 0xb8, 0x0d,
+        0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89, 0x43, 0x40,
+    ]);
+    // Point act at inner handler; install USR2.
+    v.extend_from_slice(&[0x48, 0x8d, 0x85]);
+    v.extend_from_slice(&(inner_off as u32).to_le_bytes());
+    v.extend_from_slice(&[
+        0x48, 0x89, 0x03, 0xbf, 0x0c, 0x00, 0x00, 0x00, 0x48, 0x89, 0xde, 0x48, 0x8d, 0x53, 0x20,
+        0x41, 0xba, 0x08, 0x00, 0x00, 0x00, 0xb8, 0x0d, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89,
+        0x43, 0x48,
+    ]);
+    // Reachability devices for both handlers.
+    for target in [0u64, inner_off] {
+        v.extend_from_slice(&[0x48, 0x39, 0xc9]);
+        let pos = v.len();
+        v.extend_from_slice(&[0x0f, 0x85, 0, 0, 0, 0]);
+        let rel = (target as i64 - (pos as i64 + 6)) as i32;
+        v[pos + 2..pos + 6].copy_from_slice(&rel.to_le_bytes());
+    }
+    // Unblock USR1|USR2.
+    v.extend_from_slice(&[
+        0x48, 0xc7, 0x83, 0x80, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x00,
+    ]);
+    v.extend_from_slice(&[
+        0xbf, 0x01, 0x00, 0x00, 0x00, 0x48, 0x8d, 0xb3, 0x80, 0x00, 0x00, 0x00, 0x48, 0x8d, 0x93,
+        0x88, 0x00, 0x00, 0x00, 0x41, 0xba, 0x08, 0x00, 0x00, 0x00, 0xb8, 0x0e, 0x00, 0x00, 0x00,
+        0x0f, 0x05,
+    ]);
+    let resume_off = v.len() as u64;
+    v.extend_from_slice(&[
+        0x48, 0x89, 0x43, 0x50, 0xb9, 0x80, 0xf0, 0xaf, 0x02, 0x48, 0x83, 0xbb, 0x50, 0x02, 0x00,
+        0x00, 0x00, 0x75, 0x0b, 0x48, 0xff, 0xc9, 0x75, 0xf1, 0xb8, 0xf9, 0xff, 0xff, 0xff, 0xc3,
+        0xb8, 0x2a, 0x00, 0x00, 0x00, 0xc3,
+    ]);
+    FixtureBytes {
+        bytes: v,
+        restorer_off,
+        main_off,
+        resume_off,
+        done_off: inner_off,
+        fault_off: 0,
+    }
+}
+
+fn check_nested_distinct() {
+    let fix = nest_fixture();
+    let (_remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
+    let out = out.expect("translated nested round trip");
+    assert_eq!(out.state.rax, 42, "nested result");
+    // Enumerated: main 37 + outer 24 + inner 13 + 2 sigreturn restorers.
+    assert_eq!(out.instructions, 78, "nested instructions");
+    assert_eq!(out.branches, 4, "nested branches");
+    let n = native_run(&fix, Some(libc::SIGUSR1));
+    assert_eq!(n.result, 42, "native nested result");
+    for (label, d) in [("translated", &data), ("native", &n.data)] {
+        assert_eq!(word(d, 64), 0, "{label} install USR1");
+        assert_eq!(word(d, 72), 0, "{label} install USR2");
+        assert_eq!(word(d, 536), 0, "{label} self-kill rc");
+        assert_eq!(word(d, 512), 1, "{label} outer runs");
+        assert_eq!(word(d, 520), 1, "{label} inner runs");
+        assert_eq!(word(d, 608), 1, "{label} outer enter seq");
+        assert_eq!(word(d, 616), 2, "{label} inner enter seq");
+        assert_eq!(word(d, 624), 3, "{label} inner exit seq");
+        assert_eq!(word(d, 632), 4, "{label} outer exit seq (LIFO)");
+    }
+    let inner_rip_off = word(&data, 552) - info.base;
+    assert!(
+        inner_rip_off < fix.done_off,
+        "inner uc rip in outer handler range: {inner_rip_off:#x}"
+    );
+    assert_eq!(
+        word(&data, 552) - info.base,
+        word(&n.data, 552) - n.base,
+        "inner uc rip offset match"
+    );
+}
+
+/// Same-signal reentry: with SA_NODEFER the handler
+/// self-sends SIGUSR1 and its second instance runs nested
+/// inside the first (count reaches 2 before outer return).
+fn same_reentry_fixture() -> FixtureBytes {
+    let mut handler: Vec<u8> = vec![
+        0x48, 0xff, 0x83, 0x00, 0x02, 0x00, 0x00, // inc [rbx+512]
+        0x48, 0x83, 0xbb, 0x00, 0x02, 0x00, 0x00, 0x01, // cmp qword [rbx+512], 1
+    ];
+    let jne_pos = handler.len();
+    handler.extend_from_slice(&[0x75, 0]); // jne INNER
+    handler.extend(send_self(libc::SIGUSR1 as u8));
+    handler.extend_from_slice(&[0x48, 0x89, 0x83, 0x18, 0x02, 0x00, 0x00]); // mov [rbx+536], rax
+    handler.extend_from_slice(&[0xb9, 0x40, 0x42, 0x0f, 0x00]); // mov ecx, 1000000
+    handler.extend_from_slice(&[
+        0x48, 0x83, 0xbb, 0x48, 0x02, 0x00, 0x00, 0x00, 0x75, 0x05, 0x48, 0xff, 0xc9, 0x75, 0xf1,
+    ]); // spin until inner flag
+    handler.extend_from_slice(&[
+        0x48, 0xc7, 0x83, 0x50, 0x02, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0xc3,
+    ]); // outer done; ret
+    let inner_pos = handler.len();
+    handler[jne_pos + 1] = (inner_pos - (jne_pos + 2)) as u8;
+    handler.extend_from_slice(&[
+        0x48, 0xc7, 0x83, 0x48, 0x02, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0xc3,
+    ]); // INNER: flag; ret
+    let mut v = Vec::new();
+    v.extend_from_slice(&handler);
+    let restorer_off = v.len() as u64;
+    v.extend_from_slice(RESTORER);
+    let main_off = v.len() as u64;
+    v.extend_from_slice(&[0x48, 0x89, 0x2b, 0x48, 0xc7, 0x43, 0x08]);
+    v.extend_from_slice(&(FLAGS_SIGINFO | 0x4000_0000).to_le_bytes());
+    v.extend_from_slice(&[
+        0x4c, 0x89, 0x63, 0x10, 0x48, 0xc7, 0x43, 0x18, 0, 0, 0, 0, 0xbf, 0x0a, 0x00, 0x00, 0x00,
+        0x48, 0x89, 0xde, 0x48, 0x8d, 0x53, 0x20, 0x41, 0xba, 0x08, 0x00, 0x00, 0x00, 0xb8, 0x0d,
+        0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89, 0x43, 0x40, 0x48, 0x39, 0xc9,
+    ]);
+    let pos = v.len();
+    v.extend_from_slice(&[0x0f, 0x85, 0, 0, 0, 0]);
+    let rel = (0i64 - (pos as i64 + 6)) as i32;
+    v[pos + 2..pos + 6].copy_from_slice(&rel.to_le_bytes());
+    v.extend_from_slice(&[
+        0x48, 0xc7, 0x83, 0x80, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00,
+    ]);
+    v.extend_from_slice(&[
+        0xbf, 0x01, 0x00, 0x00, 0x00, 0x48, 0x8d, 0xb3, 0x80, 0x00, 0x00, 0x00, 0x48, 0x8d, 0x93,
+        0x88, 0x00, 0x00, 0x00, 0x41, 0xba, 0x08, 0x00, 0x00, 0x00, 0xb8, 0x0e, 0x00, 0x00, 0x00,
+        0x0f, 0x05,
+    ]);
+    let resume_off = v.len() as u64;
+    v.extend_from_slice(&[
+        0x48, 0x89, 0x43, 0x50, 0xb9, 0x80, 0xf0, 0xaf, 0x02, 0x48, 0x83, 0xbb, 0x50, 0x02, 0x00,
+        0x00, 0x00, 0x75, 0x0b, 0x48, 0xff, 0xc9, 0x75, 0xf1, 0xb8, 0xf9, 0xff, 0xff, 0xff, 0xc3,
+        0xb8, 0x2a, 0x00, 0x00, 0x00, 0xc3,
+    ]);
+    FixtureBytes {
+        bytes: v,
+        restorer_off,
+        main_off,
+        resume_off,
+        done_off: 0,
+        fault_off: 0,
+    }
+}
+
+fn check_same_signal_reentry() {
+    let fix = same_reentry_fixture();
+    let (_remote, _info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
+    let out = out.expect("translated same-signal reentry");
+    assert_eq!(out.state.rax, 42, "reentry result");
+    // Main 26 + outer handler 15 + inner instance 5 + 2 restorers.
+    assert_eq!(out.instructions, 50, "reentry instructions");
+    assert_eq!(out.branches, 5, "reentry branches");
+    let n = native_run(&fix, Some(libc::SIGUSR1));
+    assert_eq!(n.result, 42, "native reentry result");
+    for (label, d) in [("translated", &data), ("native", &n.data)] {
+        assert_eq!(word(d, 512), 2, "{label} handler entered twice (nested)");
+        assert_eq!(word(d, 536), 0, "{label} self-kill rc");
+        assert_eq!(word(d, 584), 1, "{label} inner ran");
+        assert_eq!(word(d, 592), 1, "{label} outer completed after inner");
+    }
+}
+
+/// Disposition change under a live frame: handler 1 installs
+/// handler 2 (different handler + restorer) for its own
+/// signal, still returns through the ORIGINAL restorer; the
+/// next delivery uses handler 2. done_off holds the second
+/// delivery's expected uc-rip offset (wait-2 block head).
+fn disposition_fixture() -> FixtureBytes {
+    let h1: &[u8] = &[
+        0x48, 0xff, 0x83, 0x00, 0x02, 0x00, 0x00, // inc [rbx+512]
+        0x48, 0x8b, 0x82, 0xa8, 0x00, 0x00, 0x00, 0x48, 0x89, 0x83, 0x20, 0x02, 0x00,
+        0x00, // uc rip -> [544]
+        0x4c, 0x89, 0xbb, 0x80, 0x01, 0x00, 0x00, // mov [rbx+384], r15
+        0x48, 0xc7, 0x83, 0x88, 0x01, 0x00, 0x00, 0x04, 0x00, 0x00, 0x04, // flags
+        0x4c, 0x89, 0xb3, 0x90, 0x01, 0x00, 0x00, // mov [rbx+400], r14
+        0x48, 0xc7, 0x83, 0x98, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mask 0
+        0xbf, 0x0a, 0x00, 0x00, 0x00, 0x48, 0x8d, 0xb3, 0x80, 0x01, 0x00, 0x00, 0x48, 0x8d, 0x93,
+        0xa0, 0x01, 0x00, 0x00, 0x41, 0xba, 0x08, 0x00, 0x00, 0x00, 0xb8, 0x0d, 0x00, 0x00, 0x00,
+        0x0f, 0x05, 0x48, 0x89, 0x83, 0x18, 0x02, 0x00, 0x00, // install; rc -> [536]
+        0x48, 0xc7, 0x83, 0x40, 0x02, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0xc3, // flag1; ret
+    ];
+    let h2: &[u8] = &[
+        0x48, 0xff, 0x83, 0x08, 0x02, 0x00, 0x00, // inc [rbx+520]
+        0x48, 0x8b, 0x82, 0xa8, 0x00, 0x00, 0x00, 0x48, 0x89, 0x83, 0x28, 0x02, 0x00,
+        0x00, // uc rip -> [552]
+        0x48, 0xc7, 0x83, 0x48, 0x02, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0xc3, // flag2; ret
+    ];
+    let mut v = Vec::new();
+    v.extend_from_slice(h1);
+    let h2_off = v.len() as u64;
+    v.extend_from_slice(h2);
+    let restorer_off = v.len() as u64;
+    v.extend_from_slice(RESTORER);
+    let restorer2_off = v.len() as u64;
+    v.extend_from_slice(RESTORER);
+    let main_off = v.len() as u64;
+    v.extend_from_slice(&[0x48, 0x89, 0x2b, 0x48, 0xc7, 0x43, 0x08]);
+    v.extend_from_slice(&FLAGS_SIGINFO.to_le_bytes());
+    v.extend_from_slice(&[
+        0x4c, 0x89, 0x63, 0x10, 0x48, 0xc7, 0x43, 0x18, 0, 0, 0, 0, 0xbf, 0x0a, 0x00, 0x00, 0x00,
+        0x48, 0x89, 0xde, 0x48, 0x8d, 0x53, 0x20, 0x41, 0xba, 0x08, 0x00, 0x00, 0x00, 0xb8, 0x0d,
+        0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89, 0x43, 0x40,
+    ]);
+    v.extend_from_slice(&[0x4c, 0x8d, 0xbd]);
+    v.extend_from_slice(&(h2_off as u32).to_le_bytes());
+    v.extend_from_slice(&[0x4c, 0x8d, 0xb5]);
+    v.extend_from_slice(&(restorer2_off as u32).to_le_bytes());
+    for target in [0u64, h2_off] {
+        v.extend_from_slice(&[0x48, 0x39, 0xc9]);
+        let pos = v.len();
+        v.extend_from_slice(&[0x0f, 0x85, 0, 0, 0, 0]);
+        let rel = (target as i64 - (pos as i64 + 6)) as i32;
+        v[pos + 2..pos + 6].copy_from_slice(&rel.to_le_bytes());
+    }
+    v.extend_from_slice(&[
+        0x48, 0xc7, 0x83, 0x80, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00,
+    ]);
+    v.extend_from_slice(&[
+        0xbf, 0x01, 0x00, 0x00, 0x00, 0x48, 0x8d, 0xb3, 0x80, 0x00, 0x00, 0x00, 0x48, 0x8d, 0x93,
+        0x88, 0x00, 0x00, 0x00, 0x41, 0xba, 0x08, 0x00, 0x00, 0x00, 0xb8, 0x0e, 0x00, 0x00, 0x00,
+        0x0f, 0x05,
+    ]);
+    let resume_off = v.len() as u64;
+    // wait flag1 (mov rc store, mov ecx, cmp [576], jne, dec, jne, timeout)
+    v.extend_from_slice(&[
+        0x48, 0x89, 0x43, 0x50, 0xb9, 0x80, 0xf0, 0xaf, 0x02, 0x48, 0x83, 0xbb, 0x40, 0x02, 0x00,
+        0x00, 0x00, 0x75, 0x0b, 0x48, 0xff, 0xc9, 0x75, 0xf1, 0xb8, 0xf9, 0xff, 0xff, 0xff, 0xc3,
+    ]);
+    v.extend(send_self(libc::SIGUSR1 as u8));
+    let done_off = v.len() as u64;
+    v.extend_from_slice(&[0x48, 0x89, 0x43, 0x60]); // mov [rbx+96], rax
+    v.extend_from_slice(&[
+        0xb9, 0x80, 0xf0, 0xaf, 0x02, 0x48, 0x83, 0xbb, 0x48, 0x02, 0x00, 0x00, 0x00, 0x75, 0x0b,
+        0x48, 0xff, 0xc9, 0x75, 0xf1, 0xb8, 0xf9, 0xff, 0xff, 0xff, 0xc3, 0xb8, 0x2a, 0x00, 0x00,
+        0x00, 0xc3,
+    ]);
+    FixtureBytes {
+        bytes: v,
+        restorer_off,
+        main_off,
+        resume_off,
+        done_off,
+        fault_off: h2_off,
+    }
+}
+
+fn check_disposition_change() {
+    let fix = disposition_fixture();
+    let h2_off = fix.fault_off;
+    let (remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
+    let out = out.expect("translated disposition change");
+    assert_eq!(out.state.rax, 42, "disposition result");
+    assert_eq!(out.instructions, 65, "disposition instructions");
+    assert_eq!(out.branches, 4, "disposition branches");
+    let n = native_run(&fix, Some(libc::SIGUSR1));
+    assert_eq!(n.result, 42, "native disposition result");
+    for (label, d, base) in [
+        ("translated", &data, info.base),
+        ("native", &n.data, n.base),
+    ] {
+        assert_eq!(word(d, 512), 1, "{label} handler1 runs");
+        assert_eq!(word(d, 520), 1, "{label} handler2 runs");
+        assert_eq!(word(d, 536), 0, "{label} in-handler install rc");
+        assert_eq!(word(d, 416), base, "{label} oldact is handler1");
+        assert_eq!(word(d, 544) - base, fix.resume_off, "{label} h1 uc rip");
+        assert_eq!(word(d, 552) - base, fix.done_off, "{label} h2 uc rip");
+        assert_eq!(word(d, 96), 0, "{label} second self-kill rc");
+    }
+    let act = remote.registry().action(libc::SIGUSR1);
+    assert_eq!(
+        act.handler,
+        info.base + h2_off,
+        "mirror follows new handler"
+    );
+    assert_eq!(
+        act.restorer,
+        info.base + fix.restorer_off + 7,
+        "mirror follows new restorer"
+    );
+}
+
 #[test]
 fn remote_signal_all() {
     check_round_trip();
     check_no_send_control();
     check_ineligible_shape(FLAGS_NO_SIGINFO, "no SA_SIGINFO");
-    check_ineligible_shape(FLAGS_ONSTACK, "SA_ONSTACK");
+    check_ineligible_shape(FLAGS_SIGINFO | 0x8000_0000, "SA_RESETHAND");
     check_oldact_sentinel_on_error();
     check_alias_install_mirrored();
     // P1 probe: a restorer that is not exactly
@@ -811,17 +1333,27 @@ fn remote_signal_all() {
     let mut nop_restorer = vec![0x90u8];
     nop_restorer.extend_from_slice(RESTORER);
     check_ineligible_fixture(
-        &fixture_v(FLAGS_SIGINFO, libc::SIGUSR1 as u8, &nop_restorer, false, 0),
+        &fixture_v(
+            FLAGS_SIGINFO,
+            libc::SIGUSR1 as u8,
+            &nop_restorer,
+            false,
+            0,
+            0,
+            HANDLER,
+            false,
+        ),
         libc::SIGUSR1,
         "NOP-prefixed restorer",
     );
-    // P2: only the tested signal (SIGUSR1) is admitted.
-    check_ineligible_fixture(
-        &fixture_v(FLAGS_SIGINFO, libc::SIGUSR2 as u8, RESTORER, false, 0),
-        libc::SIGUSR2,
-        "SIGUSR2 not in tested set",
-    );
+    check_usr2_round_trip();
     check_sync_segv();
     check_sync_fpe();
     check_async_arbitrary_phase();
+    check_mask(false);
+    check_mask(true);
+    check_altstack();
+    check_same_signal_reentry();
+    check_disposition_change();
+    check_nested_distinct();
 }
