@@ -13,7 +13,7 @@ use liteinst::quiescent::{
     AllocationPolicy, InstallRequest, InstalledOnce, PlanMetrics, PlannedInstall, SearchPolicy,
     plan_install,
 };
-use liteinst::trampoline::TrampolineImage;
+use liteinst::trampoline::{HookCallback, TrampolineImage};
 
 mod callbacks;
 mod encoding;
@@ -24,6 +24,13 @@ pub use metrics::{SelectedClassCounters, selected_counters};
 
 #[cfg(test)]
 mod tests;
+
+/// Returns the fixed genuine-syscall callback for an authenticated selected
+/// syscall instruction. This is shared with zpoline so both mechanisms use
+/// the same first-profile completion rules.
+pub(crate) fn syscall_callback(instruction: &SelectedInstruction) -> Result<HookCallback, Refusal> {
+    callbacks::for_instruction(instruction)
+}
 
 /// Exit status used when the closed syscall callback refuses an operation.
 pub const REJECTED_SYSCALL_EXIT_STATUS: i32 = 126;

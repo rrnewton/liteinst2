@@ -16,6 +16,39 @@ profile is native `read`, `write`, `getpid`, and `gettid` only. No config
 construction or parsing maps memory, changes signal/seccomp/SUD state, or
 patches code.
 
+# One-site zpoline mechanism
+
+`syscall::zpoline` publishes exactly one caller-certified eager native
+`syscall` site in this slice. The caller certifies a complete instruction
+snapshot, entry/resume facts, one exact first-profile syscall number for
+every execution, and that RAX is canonical zero-extended within the sled
+bound. Preparation rejects other entry ABIs, non-heads, second-byte targets,
+unsupported dynamic semantics, and incomplete entry facts.
+
+Publication first probes a memfd dual-mapped RX sled at virtual address
+zero; denial returns `LowPageUnavailable` or `LowPageOccupied` before any
+source write. The sled is filled with NOPs through the RW alias, verified
+through the RX alias, sealed, and retained process-wide. Its common stub
+restores only the `call *%rax` stack displacement and jumps to a core
+exact-syscall trampoline. That trampoline's zpoline wrapper authenticates
+the saved site, dynamic number, and call return word at `RSP-8`, then
+delegates to the same fixed selected-syscall callback used by the selected
+leaf. The genuine result and raw errno are forwarded; RCX is the original
+fallthrough and R11 is the original flags word.
+
+Only one zpoline owner may be installed in a process. The caller owns actual
+quiescence, a writable alias, a writable System V stack satisfying the exact
+trampoline, no active CET, no signal delivery or nonlocal exit through
+generated code, and no buffers overlapping code/runtime/saved state. The
+rewritten call necessarily writes its return address at `RSP-8`, so that one
+red-zone word is not byte-transparent. Retirement under a fresh lease
+restores `0f 05`, synchronizes, verifies the complete snapshot, and unmaps
+the sled; the handler mapping follows core process-lifetime retention.
+
+This is not a census, lazypoline, SUD/seccomp installation, generic syscall
+interceptor, lifecycle mechanism, signal-transparency claim, or
+whole-program claim.
+
 # Selected-site leaf
 
 The `selected` module publishes CPUID, RDTSC, returning-SYSCALL, RDRAND, RDSEED,

@@ -1,13 +1,15 @@
 //! Typed syscall-interception strategy vocabulary for the x86-64
 //! zpoline/lazypoline series.
 //!
-//! This module is intentionally selection-only in slice 1: constructing or
-//! parsing a config does not install a handler, map a low page, enable a
-//! discovery substrate, or patch a syscall site. Runtime slices consume these
-//! names without inventing a second vocabulary.
+//! Constructing or parsing a config does not install a handler, map a low
+//! page, enable a discovery substrate, or patch a syscall site. The
+//! `zpoline` submodule is the first runtime consumer of these names;
+//! lazypoline and discovery-substrate installation remain later slices.
 
 use std::ffi::OsStr;
 use std::fmt;
+
+pub mod zpoline;
 
 /// Concrete in-process syscall interception mechanism selected for one run.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

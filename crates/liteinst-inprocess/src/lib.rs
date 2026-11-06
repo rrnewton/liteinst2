@@ -15,9 +15,9 @@ mod raw;
 mod signal;
 
 pub mod selected;
-/// Typed syscall-strategy selection, placement, outcome, and refusal names.
-/// Runtime installation is added by later slices; selecting a config here
-/// does not alter process state.
+/// Typed syscall-strategy selection, placement, outcome, and refusal names,
+/// plus the one-site zpoline runtime. Selecting a config alone does not alter
+/// process state; only zpoline publication does.
 pub mod syscall;
 
 pub use gate::{ArmedGate, GateMetrics, PreparedGate};
