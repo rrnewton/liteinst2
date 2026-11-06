@@ -8,8 +8,8 @@ use rapid_profiler::frontend_native::{
 mod check;
 mod exact;
 mod worker;
-use check::Ledger;
-use exact::Subject;
+use self::check::Ledger;
+use self::exact::Subject;
 
 struct Engine {
     controller: IntervalController,

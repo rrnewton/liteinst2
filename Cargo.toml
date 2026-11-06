@@ -74,6 +74,7 @@ bench = false
 name = "preload_consumer"
 path = "examples/preload_consumer.rs"
 crate-type = ["cdylib"]
+required-features = ["preload-consumer"]
 test = false
 
 # Make the tools/ crates part of the workspace so, e.g.,
@@ -96,6 +97,10 @@ path = "tests/support/arena_fork_fixture.rs"
 # Explicit host-only physical evidence; no runtime activation or default code.
 [features]
 saved-pkru-probe = []
+# The preload_consumer example is a cdylib, which musl targets cannot
+# produce; opt-in so default musl workspace builds skip it by name
+# instead of failing. Build it with --features preload-consumer.
+preload-consumer = []
 # Explicit offline startup authority; absent from default core builds.
 offline-router = ["dep:liteinst-artifact"]
 

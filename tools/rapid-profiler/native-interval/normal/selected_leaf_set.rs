@@ -12,7 +12,7 @@ use rapid_profiler::frontend_native::{
 mod accuracy;
 mod check;
 pub(crate) mod exact;
-use check::{INSTALL, identity};
+use self::check::{INSTALL, identity};
 const CONTRACT: NormalModuleContract = NormalModuleContract {
     single_external_entry_per_function: true,
     sequential_call_ret_only: true,

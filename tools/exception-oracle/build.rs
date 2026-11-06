@@ -9,8 +9,17 @@ fn main() {
     println!("cargo:rerun-if-changed=fixtures/fixture.cpp");
     println!("cargo:rerun-if-changed=fixtures/fixture.S");
     println!("cargo:rerun-if-env-changed=CXX");
-    assert_eq!(env::var("CARGO_CFG_TARGET_OS").unwrap(), "linux");
-    assert_eq!(env::var("CARGO_CFG_TARGET_ARCH").unwrap(), "x86_64");
+    // The C++ exception fixture is an x86-64 object; off Linux x86-64 the
+    // package's only test is already wholly cfg-gated, so skip the fixture
+    // build by name instead of failing every non-x86 workspace build.
+    if env::var("CARGO_CFG_TARGET_OS").unwrap() != "linux"
+        || env::var("CARGO_CFG_TARGET_ARCH").unwrap() != "x86_64"
+    {
+        println!(
+            "cargo:warning=exception oracle fixture skipped: requires Linux x86-64 (exception_landing test is cfg-gated to it)"
+        );
+        return;
+    }
     let compiler = env::var_os("CXX").unwrap_or_else(|| "g++".into());
     let root = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap());
     let output = PathBuf::from(env::var_os("OUT_DIR").unwrap());
