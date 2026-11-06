@@ -27,40 +27,62 @@ use iced_x86::InstructionBlock;
 use iced_x86::Mnemonic;
 use iced_x86::OpKind;
 use iced_x86::RelocKind;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::CodeAssembler;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::eax;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::edx;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::qword_ptr;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::r8;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::r9;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::r10;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::r11;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::r12;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::r13;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::r14;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::r15;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::rax;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::rbp;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::rbx;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::rcx;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::rdi;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::rdx;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::rsi;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use iced_x86::code_asm::rsp;
 
 use crate::artifact_fixups::{
     self as fixups, BiasDomain, Encoding, Fixup, ImageId, ImagePlacement, RelativeAddress, Role,
     Target,
 };
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use crate::artifact_fragments;
 use crate::controls::{ControlledAction, PointObservationAction, ProbeControl};
 use crate::emission::{
     ArtifactEmission, ArtifactField, ArtifactFieldEncoding, ArtifactImageMetadata,
     ArtifactRequirement, FixedOperandSource,
 };
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+use crate::frame_trace::{FrameCallKind, FrameEffect, FrameStage, HelperFrames};
 use crate::frame_trace::{
-    FrameCallKind, FrameEffect, FrameEmission, FrameEntryOrigin, FrameRecorder, FrameStage,
-    FrameTraceLimits, FrameTraceRefusal, HelperFrames,
+    FrameEmission, FrameEntryOrigin, FrameRecorder, FrameTraceLimits, FrameTraceRefusal,
 };
 use crate::patcher::JumpPatchPlan;
 use crate::patcher::LiveJumpPatch;
@@ -779,6 +801,30 @@ impl SavedExtendedStateLayout {
             component_count as u64,
             components,
         ))
+    }
+}
+
+#[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+impl SavedExtendedStateLayout {
+    /// There is no x86 extended state to detect off Linux x86-64; callers
+    /// that publish hooks refuse through the returned error instead of a
+    /// missing method. The layout types themselves stay portable so
+    /// arch-agnostic planning and artifact code keeps compiling.
+    pub fn detect() -> Result<Self, TrampolineError> {
+        Err(TrampolineError::InvalidExtendedStateLayout {
+            message: "saved extended-state detection requires Linux x86-64",
+        })
+    }
+
+    /// No XCR0 exists off x86-64, so no byte-exact xstate comparison may
+    /// proceed on the strength of this probe.
+    pub fn xcr0_within_preserved_mask() -> bool {
+        false
+    }
+
+    /// Xstate images cannot be modelled off Linux x86-64.
+    pub fn xstate_semantic_eq(_a: &[u8], _b: &[u8]) -> XstateSemanticEq {
+        XstateSemanticEq::NotComparable("xstate comparison requires Linux x86-64")
     }
 }
 
@@ -3897,7 +3943,7 @@ fn record_relocated_frames(
     }
 }
 
-#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[cfg(target_os = "linux")]
 fn encoding_error(error: impl fmt::Display) -> TrampolineError {
     TrampolineError::Encoding {
         message: error.to_string(),

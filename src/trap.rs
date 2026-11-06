@@ -1520,6 +1520,7 @@ pub(crate) use imp::prepare;
 pub(crate) use imp::prepare_with_signal_runtime;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 pub(crate) use imp::register;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub(crate) use imp::register_jump;
 pub(crate) use imp::reserve;
 

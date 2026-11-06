@@ -12,7 +12,9 @@ mod isolated_native_test;
 
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod artifact_emission_tests;
+#[cfg_attr(not(all(target_os = "linux", target_arch = "x86_64")), allow(dead_code))]
 mod artifact_fixups;
+#[cfg_attr(not(all(target_os = "linux", target_arch = "x86_64")), allow(dead_code))]
 mod artifact_fragments;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod artifact_overlay_tests;
@@ -28,6 +30,7 @@ pub mod engine;
 mod entry_router;
 pub mod eviction;
 pub mod eviction_chain;
+#[cfg_attr(not(all(target_os = "linux", target_arch = "x86_64")), allow(dead_code))]
 pub mod frame_trace;
 /// Optional source-certified generated CFI and normal backtrace publication.
 pub mod generated_unwind;
@@ -39,17 +42,22 @@ pub mod neighbor;
     target_arch = "x86_64"
 ))]
 pub mod offline_router;
+#[cfg_attr(not(all(target_os = "linux", target_arch = "x86_64")), allow(dead_code))]
 pub mod patcher;
 pub mod planner;
 pub mod precontext;
 pub mod probe;
 pub mod quiescent;
+#[cfg_attr(not(all(target_os = "linux", target_arch = "x86_64")), allow(dead_code))]
 pub mod rapid;
 pub mod scalar_profile;
 pub mod scanner;
 /// Shared descriptive decoder, selected-opcode and full-GPR facts.
 pub use liteinst_x86 as x86;
 pub mod search;
+#[cfg_attr(not(all(target_os = "linux", target_arch = "x86_64")), allow(dead_code))]
 pub mod sync_core;
+#[cfg_attr(not(all(target_os = "linux", target_arch = "x86_64")), allow(dead_code))]
 pub mod trampoline;
+#[cfg_attr(not(all(target_os = "linux", target_arch = "x86_64")), allow(dead_code))]
 mod trap;
