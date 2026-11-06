@@ -16,6 +16,7 @@
 #![warn(missing_docs)]
 
 pub mod cache;
+pub mod flip;
 pub mod island;
 pub mod site;
 
@@ -64,6 +65,42 @@ pub enum PatchError {
         /// The unreaped child process id.
         pid: i32,
     },
+    /// The site address is not word aligned; no strategy can repair
+    /// that, so the flip refuses before any fallback is considered.
+    MisalignedSite {
+        /// The offending site address.
+        addr: u64,
+    },
+    /// The word recorded at construction is not an `SVC`.
+    NotSvc {
+        /// The recorded site word.
+        word: u32,
+    },
+    /// Under the lease the site no longer holds the exact word (or,
+    /// for rollback, the flipped word) revalidation requires.
+    SiteWordChanged {
+        /// The word revalidation expected.
+        expected: u32,
+        /// The word found instead.
+        found: u32,
+    },
+    /// The site is not in a state this operation may start from.
+    WrongState {
+        /// The state the site was found in.
+        state: site::SiteState,
+    },
+    /// No permitted strategy can serve this site (for example
+    /// BranchOnly with no reachable island).
+    StrategyUnavailable(&'static str),
+    /// Trap was selected (or needed as fallback) without a pre-armed
+    /// owned route for this site/generation.
+    TrapNotArmed,
+    /// The store landed but cache synchronization failed; the site is
+    /// in `SyncPending`/`RetainedStop` custody, never "not flipped".
+    SyncFailed,
+    /// Resume did not produce a synchronization acknowledgement from
+    /// every executor; custody (and any retained stop) persists.
+    ResumeIncomplete,
 }
 
 impl PatchError {
@@ -91,6 +128,23 @@ impl core::fmt::Display for PatchError {
                     f,
                     "helper child {pid} could not be reaped; custody retained"
                 )
+            }
+            Self::MisalignedSite { addr } => {
+                write!(f, "patch site {addr:#x} is not word aligned")
+            }
+            Self::NotSvc { word } => write!(f, "site word {word:#010x} is not SVC"),
+            Self::SiteWordChanged { expected, found } => {
+                write!(
+                    f,
+                    "site word changed: expected {expected:#010x}, found {found:#010x}"
+                )
+            }
+            Self::WrongState { state } => write!(f, "site is in state {state:?}"),
+            Self::StrategyUnavailable(why) => write!(f, "no strategy available: {why}"),
+            Self::TrapNotArmed => write!(f, "trap selected without an armed owned route"),
+            Self::SyncFailed => write!(f, "post-store cache synchronization failed"),
+            Self::ResumeIncomplete => {
+                write!(f, "resume without full synchronization acknowledgement")
             }
         }
     }
@@ -144,6 +198,11 @@ impl Patcher {
     /// Whether construction attested cache-op availability.
     pub fn is_attested(&self) -> bool {
         self.attested.is_some()
+    }
+
+    /// The attestation token publication requires, when present.
+    pub(crate) fn attested_token(&self) -> Option<cache::CacheAttested> {
+        self.attested
     }
 
     /// The owned site registry.

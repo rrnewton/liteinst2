@@ -80,6 +80,8 @@ pub struct Site {
     original_word: u32,
     generation: u64,
     state: SiteState,
+    flipped_word: Option<u32>,
+    resume_states: Vec<ResumeState>,
     island: Option<Island>,
     trap_route: Option<TrapRoute>,
 }
@@ -119,6 +121,8 @@ impl Site {
             original_word,
             generation,
             state: SiteState::Unpatched,
+            flipped_word: None,
+            resume_states: Vec::new(),
             island: None,
             trap_route: None,
         }
@@ -168,6 +172,37 @@ impl Site {
         self.trap_route
     }
 
+    /// The patch word stored by the in-flight or completed flip.
+    pub fn flipped_word(&self) -> Option<u32> {
+        self.flipped_word
+    }
+
+    /// Per-executor resume states from the latest resume attempt.
+    pub fn resume_states(&self) -> &[ResumeState] {
+        &self.resume_states
+    }
+
+    /// Protocol-internal: record the word about to be stored.
+    pub(crate) fn set_flipped_word(&mut self, word: Option<u32>) {
+        self.flipped_word = word;
+    }
+
+    /// Protocol-internal: record per-executor resume outcomes.
+    pub(crate) fn set_resume_states(&mut self, states: Vec<ResumeState>) {
+        self.resume_states = states;
+    }
+
+    /// Protocol-internal: read the current site word through the alias.
+    pub(crate) fn read_word(&self) -> u32 {
+        // SAFETY: construction contract keeps the alias valid.
+        unsafe { self.rw_alias.read_volatile() }
+    }
+
+    /// Writable alias word, shared-reference form for sync ranges.
+    pub(crate) fn rw_word_const(&self) -> *mut u32 {
+        self.rw_alias
+    }
+
     /// Writable alias word (protocol-internal; the design's one store).
     #[allow(dead_code)]
     pub(crate) fn rw_word(&mut self) -> *mut u32 {
@@ -196,7 +231,10 @@ pub enum FallbackPermission {
     RefuseTrap,
 }
 
-/// The stop/lease authority a flip runs under.
+/// The stop/lease authority a flip runs under. `acquire` must be
+/// idempotent-confirming: calling it while a stop from an earlier
+/// flip attempt is still retained (post-store custody) succeeds
+/// without releasing anyone.
 ///
 /// # Safety
 /// Implementors guarantee the exclusive publication lease: every
