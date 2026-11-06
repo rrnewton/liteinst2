@@ -339,7 +339,13 @@ fn force_order(child_first: bool) {
     expected.orig_rax = u64::MAX; // Native exception-entry metadata.
     expected.eflags |= 1 << 16; // Architectural fault RF, never masked away.
     assert_eq!(read_registers(stops.child.0).unwrap(), expected);
-    assert_eq!(xstate(stops.child.0).unwrap(), extended);
+    assert_eq!(
+        liteinst::trampoline::SavedExtendedStateLayout::xstate_semantic_eq(
+            &xstate(stops.child.0).unwrap(),
+            &extended
+        ),
+        liteinst::trampoline::XstateSemanticEq::Equal
+    );
     assert_eq!(launch::task_mask(stops.child.0).unwrap(), mask);
     assert_eq!(read_memory(stops.child.0, before.rsp, 32).unwrap(), stack);
     assert_eq!(

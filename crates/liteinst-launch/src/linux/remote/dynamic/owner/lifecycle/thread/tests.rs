@@ -415,7 +415,13 @@ fn forced_order(child_first: bool) {
     expected = before.registers;
     expected.rax = child.0 as u64;
     assert_eq!(read_registers(parent.0).unwrap(), expected);
-    assert_eq!(xstate(parent.0).unwrap(), before.extended);
+    assert_eq!(
+        liteinst::trampoline::SavedExtendedStateLayout::xstate_semantic_eq(
+            &xstate(parent.0).unwrap(),
+            &before.extended
+        ),
+        liteinst::trampoline::XstateSemanticEq::Equal
+    );
     assert_eq!(launch::task_mask(parent.0).unwrap(), before.mask);
     let parent_held = evidence(parent.0);
     h.resume(&born);

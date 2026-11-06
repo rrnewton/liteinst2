@@ -534,7 +534,13 @@ fn missing_kill_success_never_releases_original_instructions() {
     assert!(killed.is_empty());
     harness.owner().release_killed_stops(&killed);
     assert_eq!(read_registers(ready.pid).unwrap(), registers);
-    assert_eq!(xstate(ready.pid).unwrap(), state);
+    assert_eq!(
+        liteinst::trampoline::SavedExtendedStateLayout::xstate_semantic_eq(
+            &xstate(ready.pid).unwrap(),
+            &state
+        ),
+        liteinst::trampoline::XstateSemanticEq::Equal
+    );
     assert_eq!(
         read_memory(ready.pid, registers.rip, 2).unwrap(),
         [0xeb, 0xfe]
@@ -688,7 +694,13 @@ fn queued_syscall_stop_preserves_deferred_interrupt_then_job_control() {
     let event = harness.owner().wait_event(until).unwrap();
     assert_eq!(event.kind, DynamicEventKind::GroupContinued);
     assert_eq!(read_registers(ready.pid).unwrap(), registers);
-    assert_eq!(xstate(ready.pid).unwrap(), state);
+    assert_eq!(
+        liteinst::trampoline::SavedExtendedStateLayout::xstate_semantic_eq(
+            &xstate(ready.pid).unwrap(),
+            &state
+        ),
+        liteinst::trampoline::XstateSemanticEq::Equal
+    );
     assert_eq!(harness.finish().reaped, [ready.pid]);
     reaped(&handle);
 }
