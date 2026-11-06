@@ -39,6 +39,7 @@ returns a different value, and toggles the hook off again:
 
 ```console
 $ cargo run --example replace_first
+inactive=1 active=41 restored=1
 ```
 
 The example builds its target function in a dual-mapped page (one
@@ -52,13 +53,18 @@ Two more examples show the shapes real clients take:
 
 ```console
 $ cargo build --example preload_consumer   # an LD_PRELOAD cdylib client
+$ python3 -c 'import ctypes; f = ctypes.CDLL("./target/debug/examples/libpreload_consumer.so").liteinst2_preload_is_prepared; f.restype = ctypes.c_bool; print("prepared=true" if f() else "prepared=false")'
+prepared=true
 $ cargo run --example owned_loop_clock     # a stop/resume clock client
+owned-loop PASS bytes=64 stops=16,32,48 taken=63 encounters=64 parked=3 joined=true data_reclaimed=true checksum=8352
 ```
 
 `preload_consumer` shows how a consumer can own `LD_PRELOAD` delivery
-while depending only on the policy-free core. `owned_loop_clock` is a
-standalone stop/resume client with an owned buffer; run it without
-arguments.
+while depending only on the policy-free core. As a shared object it
+prints nothing itself; the Python line merely loads it and asks its
+exported `liteinst2_preload_is_prepared` question, so that you can
+confirm the constructor ran. `owned_loop_clock` is a standalone
+stop/resume client with an owned buffer; run it without arguments.
 
 ## What you just linked
 
@@ -81,9 +87,3 @@ covers it. API documentation is published to
 a brand-new release, docs.rs has not built it yet — `cargo doc`
 locally covers the default surface; add `--features offline-router`
 for the module docs.rs also builds).
-
-> 🚧 **Under construction — expected output transcripts.** TODO: paste
-> the exact stdout of `replace_first`, `preload_consumer`, and
-> `owned_loop_clock` from a clean run on this release, so readers can
-> diff their output against the book's. <!-- UC: gs-transcripts -->
-> Tracking: [liteinst2#38](https://github.com/rrnewton/liteinst2/issues/38) (`gs-transcripts`).
