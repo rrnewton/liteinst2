@@ -102,60 +102,148 @@ pub unsafe fn sync_icache(_rw: *mut u8, _rx: *mut u8, len: usize) -> Result<(), 
     ))
 }
 
+/// Completion byte the probe child writes only after its sync has
+/// returned. Exit status alone never attests: an inherited fault
+/// handler that exits 0 early cannot have written this byte after a
+/// maintenance sequence it skipped, and the child additionally resets
+/// fault dispositions to `SIG_DFL` so a real trap kills it by signal.
+/// Consumed by the AArch64 probe (and Linux verdict/reap tests).
+#[cfg(target_os = "linux")]
+#[allow(dead_code)]
+const PROBE_MAGIC: u8 = 0xa5;
+
+/// Attestation verdict from the probe child's completion byte and wait
+/// status. Both are required; either alone refuses.
+#[cfg(target_os = "linux")]
+#[allow(dead_code)]
+fn probe_verdict(got_magic: bool, status: libc::c_int) -> bool {
+    got_magic && libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0
+}
+
+/// Reap exactly `pid`, retrying interruptions, with a bounded wait: on
+/// timeout the child is killed and reaped before the error returns, so
+/// no error path loses custody of the PID.
+#[cfg(target_os = "linux")]
+#[allow(dead_code)]
+fn reap_child(pid: libc::pid_t, timeout_ms: u64) -> Result<libc::c_int, PatchError> {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_millis(timeout_ms);
+    loop {
+        let mut status: libc::c_int = 0;
+        let waited = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG) };
+        if waited == pid {
+            return Ok(status);
+        }
+        if waited < 0 {
+            let err = std::io::Error::last_os_error();
+            if err.raw_os_error() == Some(libc::ECHILD) {
+                // Already reaped elsewhere: custody is discharged but
+                // no status exists to attest from; caller refuses.
+                return Err(PatchError::CacheOpsUnavailable);
+            }
+            if err.raw_os_error() != Some(libc::EINTR) {
+                return Err(PatchError::Os {
+                    op: "waitpid",
+                    errno: err.raw_os_error().unwrap_or(0),
+                });
+            }
+        }
+        if std::time::Instant::now() >= deadline {
+            unsafe {
+                libc::kill(pid, libc::SIGKILL);
+                let mut kill_status: libc::c_int = 0;
+                while libc::waitpid(pid, &mut kill_status, 0) < 0 {
+                    if std::io::Error::last_os_error().raw_os_error() != Some(libc::EINTR) {
+                        break;
+                    }
+                }
+            }
+            return Err(PatchError::CacheOpsUnavailable);
+        }
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+}
+
 /// Establish that EL0 cache maintenance does not trap, without risking
-/// the calling process: on AArch64 Linux a forked child runs the full
-/// sync over its own anonymous page and the parent converts death by
-/// signal into `CacheOpsUnavailable`. Call at initialization, before
-/// extra threads exist (fork in a multithreaded process restricts the
-/// child to async-signal-safe calls, which is all the child performs).
-/// A passing probe says nothing about cross-core acknowledgement.
+/// the calling process and without trusting inherited signal state:
+/// the forked child resets fault dispositions to `SIG_DFL`, unblocks
+/// signals, runs the full sync over its own anonymous page, writes a
+/// completion byte, and exits; the parent attests only on the byte
+/// plus a clean exit (see [`probe_verdict`]). Call at initialization,
+/// before extra threads exist (the child performs only
+/// async-signal-safe calls). A passing probe says nothing about
+/// cross-core acknowledgement.
 #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
 pub fn probe_environment() -> Result<CacheAttested, PatchError> {
     let page = crate::page_size()?;
+    let mut fds = [0 as libc::c_int; 2];
+    if unsafe { libc::pipe2(fds.as_mut_ptr(), libc::O_CLOEXEC) } != 0 {
+        return Err(PatchError::os("pipe2"));
+    }
     // SAFETY: fork with an immediately-_exit-ing child that only calls
-    // mmap/munmap/asm before exiting; no Rust allocation after fork.
+    // sigaction/sigprocmask/mmap/write/asm before exiting; no Rust
+    // allocation after fork in the child.
     let pid = unsafe { libc::fork() };
     if pid < 0 {
+        unsafe {
+            libc::close(fds[0]);
+            libc::close(fds[1]);
+        }
         return Err(PatchError::os("fork"));
     }
     if pid == 0 {
-        let len = page as usize;
-        let p = unsafe {
-            libc::mmap(
-                std::ptr::null_mut(),
+        unsafe {
+            libc::close(fds[0]);
+            // Inherited handlers must not convert a maintenance fault
+            // into a clean exit: default dispositions, empty mask.
+            let dfl: libc::sigaction = core::mem::zeroed();
+            for sig in [
+                libc::SIGILL,
+                libc::SIGSEGV,
+                libc::SIGBUS,
+                libc::SIGTRAP,
+                libc::SIGABRT,
+            ] {
+                libc::sigaction(sig, &dfl, core::ptr::null_mut());
+            }
+            let mut empty: libc::sigset_t = core::mem::zeroed();
+            libc::sigemptyset(&mut empty);
+            libc::pthread_sigmask(libc::SIG_SETMASK, &empty, core::ptr::null_mut());
+            let len = page as usize;
+            let p = libc::mmap(
+                core::ptr::null_mut(),
                 len,
                 libc::PROT_READ | libc::PROT_WRITE | libc::PROT_EXEC,
                 libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
                 -1,
                 0,
-            )
-        };
-        if p == libc::MAP_FAILED {
-            unsafe { libc::_exit(2) };
-        }
-        let buf = p as *mut u8;
-        unsafe { buf.write_volatile(0x1f) };
-        let ok = unsafe { sync_icache(buf, buf, len) }.is_ok();
-        unsafe { libc::_exit(if ok { 0 } else { 3 }) };
-    }
-    let mut status: libc::c_int = 0;
-    // A signal may interrupt waitpid; retry so an interrupted probe
-    // neither withholds attestation spuriously nor leaves the child
-    // unreaped. A finished child guarantees this loop terminates.
-    loop {
-        let waited = unsafe { libc::waitpid(pid, &mut status, 0) };
-        if waited >= 0 {
-            break;
-        }
-        let err = std::io::Error::last_os_error();
-        if err.raw_os_error() != Some(libc::EINTR) {
-            return Err(PatchError::Os {
-                op: "waitpid",
-                errno: err.raw_os_error().unwrap_or(0),
-            });
+            );
+            if p == libc::MAP_FAILED {
+                libc::_exit(2);
+            }
+            let buf = p as *mut u8;
+            buf.write_volatile(0x1f);
+            if sync_icache(buf, buf, len).is_err() {
+                libc::_exit(3);
+            }
+            let magic = [PROBE_MAGIC];
+            let written = libc::write(fds[1], magic.as_ptr() as *const libc::c_void, 1);
+            libc::_exit(if written == 1 { 0 } else { 4 });
         }
     }
-    if libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0 {
+    unsafe { libc::close(fds[1]) };
+    let mut byte = [0u8; 1];
+    let got = loop {
+        let n = unsafe { libc::read(fds[0], byte.as_mut_ptr() as *mut libc::c_void, 1) };
+        if n >= 0 {
+            break n;
+        }
+        if std::io::Error::last_os_error().raw_os_error() != Some(libc::EINTR) {
+            break -1;
+        }
+    };
+    unsafe { libc::close(fds[0]) };
+    let status = reap_child(pid, 5_000)?;
+    if probe_verdict(got == 1 && byte[0] == PROBE_MAGIC, status) {
         Ok(CacheAttested(()))
     } else {
         Err(PatchError::CacheOpsUnavailable)
@@ -196,6 +284,61 @@ mod tests {
             unsafe { sync_icache(p, p, 4) },
             Err(PatchError::Unsupported(_))
         ));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn probe_verdict_requires_completion_byte_and_clean_exit() {
+        // The inherited-handler forgery shape: exit 0 without the
+        // post-sync completion byte must never attest.
+        assert!(!probe_verdict(false, 0));
+        assert!(probe_verdict(true, 0));
+        // Signaled (SIGILL=4 in the low status byte) never attests,
+        // with or without a byte.
+        assert!(!probe_verdict(true, 4));
+        assert!(!probe_verdict(false, 4));
+        // Nonzero exit never attests.
+        assert!(!probe_verdict(true, 3 << 8));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn reap_child_reaps_exactly_and_times_out_with_custody() {
+        // Fast child: status returned, custody discharged.
+        let pid = unsafe { libc::fork() };
+        assert!(pid >= 0);
+        if pid == 0 {
+            unsafe { libc::_exit(7) };
+        }
+        let status = reap_child(pid, 5_000).unwrap();
+        assert!(libc::WIFEXITED(status));
+        assert_eq!(libc::WEXITSTATUS(status), 7);
+
+        // Hanging child: timeout kills and reaps it; a second wait
+        // proves no zombie custody was lost (ECHILD).
+        let pid = unsafe { libc::fork() };
+        assert!(pid >= 0);
+        if pid == 0 {
+            loop {
+                unsafe { libc::pause() };
+            }
+        }
+        assert_eq!(reap_child(pid, 50), Err(PatchError::CacheOpsUnavailable));
+        let mut status: libc::c_int = 0;
+        let again = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG) };
+        assert_eq!(again, -1);
+        assert_eq!(
+            std::io::Error::last_os_error().raw_os_error(),
+            Some(libc::ECHILD)
+        );
+    }
+
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    #[test]
+    fn probe_environment_attests_on_this_host() {
+        // Exercises the full fork/reset/sync/completion-byte/reap path
+        // where EL0 maintenance is permitted (metal/guest runs).
+        probe_environment().unwrap();
     }
 
     #[cfg(target_arch = "aarch64")]

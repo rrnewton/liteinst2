@@ -4,10 +4,13 @@
 //! virtual address is ever writable and executable at once.
 
 use crate::PatchError;
-use crate::cache::{CacheAttested, sync_icache};
+use crate::cache::CacheAttested;
+#[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+use crate::cache::sync_icache;
+#[cfg(all(target_arch = "aarch64", target_os = "linux"))]
 use liteinst_aarch64::emit::page_span;
 
-#[cfg(target_os = "linux")]
+#[cfg(all(target_arch = "aarch64", target_os = "linux"))]
 /// `MFD_EXEC` (kernel 6.3+); defined locally so the locked libc version
 /// need not carry the constant. Retried without it on `EINVAL`
 /// (pre-6.3 kernels reject the unknown flag; their memfds are
@@ -20,11 +23,11 @@ const L_MFD_EXEC: libc::c_uint = 0x0010;
 /// permanent retention on uncertainty) are the caller's protocol duty
 /// until the flip slice binds lifetimes in the type.
 pub struct Island {
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
     fd: libc::c_int,
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
     rw: *mut u8,
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
     rx: *mut u8,
     len: usize,
     words: usize,
@@ -40,7 +43,7 @@ impl core::fmt::Debug for Island {
     }
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(all(target_arch = "aarch64", target_os = "linux"))]
 fn memfd_exec() -> Result<libc::c_int, PatchError> {
     let name = c"liteinst-island";
     let base = libc::MFD_CLOEXEC | libc::MFD_ALLOW_SEALING;
@@ -74,7 +77,7 @@ impl Island {
     /// here), unreachable (nothing branches to it yet), and exclusively
     /// owned — the three conditions under which pre-lease writes are
     /// sound. Call [`Island::publish`] before any branch targets it.
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
     pub fn build(words: &[u32]) -> Result<Self, PatchError> {
         if words.is_empty() {
             return Err(PatchError::EmptyIsland);
@@ -124,44 +127,38 @@ impl Island {
 
     /// Map a fresh island (see the Linux form).
     /// `PatchError::Unsupported` off Linux.
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
     pub fn build(_words: &[u32]) -> Result<Self, PatchError> {
-        Err(PatchError::Unsupported("islands require Linux memfd"))
+        Err(PatchError::Unsupported("islands require AArch64 Linux"))
     }
 
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
     fn write_word(&self, byte_off: usize, word: u32) {
-        #[cfg(target_os = "linux")]
         // SAFETY: byte_off+4 lies inside the island by construction and
         // the island is exclusively owned and unreachable here.
-        unsafe {
-            (self.rw.add(byte_off) as *mut u32).write_volatile(word)
-        };
-        #[cfg(not(target_os = "linux"))]
-        {
-            let _ = (byte_off, word);
-        }
+        unsafe { (self.rw.add(byte_off) as *mut u32).write_volatile(word) };
     }
 
     /// Publish the written words for execution: dual-alias cache sync
     /// over the whole mapping. Requires the construction-time cache
     /// attestation token (environment established before any store).
     pub fn publish(&self, _attested: CacheAttested) -> Result<(), PatchError> {
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
         // SAFETY: both aliases name this island's full shared range.
         unsafe {
             sync_icache(self.rw, self.rx, self.len)
         }
-        #[cfg(not(target_os = "linux"))]
-        Err(PatchError::Unsupported("islands require Linux memfd"))
+        #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
+        Err(PatchError::Unsupported("islands require AArch64 Linux"))
     }
 
     /// Executable (RX) address of the island entry (offset 0).
     pub fn entry_addr(&self) -> u64 {
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
         {
             self.rx as u64
         }
-        #[cfg(not(target_os = "linux"))]
+        #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
         {
             0
         }
@@ -183,18 +180,18 @@ impl Island {
         if index >= self.words {
             return None;
         }
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
         {
             Some(unsafe { (self.rx.add(index * 4) as *const u32).read_volatile() })
         }
-        #[cfg(not(target_os = "linux"))]
+        #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
         {
             None
         }
     }
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(all(target_arch = "aarch64", target_os = "linux"))]
 impl Drop for Island {
     fn drop(&mut self) {
         unsafe {
@@ -209,7 +206,7 @@ impl Drop for Island {
 mod tests {
     use super::*;
 
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
     #[test]
     fn island_round_trips_words_through_both_aliases() {
         let words = [0xd400_0001, 0xd503_24df, 42];
@@ -223,7 +220,7 @@ mod tests {
         assert_eq!(Island::build(&[]).unwrap_err(), PatchError::EmptyIsland);
     }
 
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
     #[test]
     fn island_refuses_off_linux() {
         assert!(matches!(

@@ -322,7 +322,7 @@ mod tests {
         }
         // SAFETY (test): alias names `word`, which outlives the site.
         assert_eq!(unsafe { site.rw_word().read_volatile() }, 0xd400_0001);
-        #[cfg(target_os = "linux")]
+        #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
         {
             let island = crate::island::Island::build(&[0xd503_24df]).unwrap();
             site.retain_island(island);
