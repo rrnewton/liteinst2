@@ -306,8 +306,8 @@ impl DynamicSourceResolver for Resolver {
                 let remaining = (request.expires_at() + TIMEOUT)
                     .checked_duration_since(Instant::now())
                     .unwrap();
-                if release.recv_timeout(remaining).is_err() {
-                    std::process::abort();
+                if let Err(e) = release.recv_timeout(remaining) {
+                    abort_named("run-blocked-release-recv", &format!("err={e:?}"));
                 }
             }
             Mode::Correct | Mode::Stale(_) => {}
@@ -403,7 +403,7 @@ impl Owned {
             Some(value) => value,
             None => {
                 let _ = session.terminate(TIMEOUT);
-                std::process::abort();
+                abort_named("run-exec-progress-none", &format!("pid={pid}"));
             }
         };
         let mut owned = Self {
@@ -432,10 +432,10 @@ impl Owned {
     pub fn finish(&mut self) {
         let receipt = match self.session.take().unwrap().terminate(TIMEOUT) {
             Ok(v) => v,
-            Err(_) => std::process::abort(),
+            Err(e) => abort_named("run-finish-terminate", &format!("err={e:?}")),
         };
         if !gone(&self.pin) {
-            std::process::abort();
+            abort_named("run-finish-not-gone", &format!("pid={}", self.pid));
         }
         assert_eq!(receipt.reaped, [self.pid]);
         reaped(&self.pin);
@@ -445,8 +445,11 @@ impl Owned {
 impl Drop for Owned {
     fn drop(&mut self) {
         if let Some(session) = self.session.take() {
-            if session.terminate(TIMEOUT).is_err() || !gone(&self.pin) {
-                std::process::abort();
+            if let Err(e) = session.terminate(TIMEOUT) {
+                abort_named("run-drop-terminate", &format!("err={e:?}"));
+            }
+            if !gone(&self.pin) {
+                abort_named("run-drop-not-gone", &format!("pid={}", self.pid));
             }
             reaped(&self.pin);
         }
@@ -852,14 +855,21 @@ pub fn timeout(f: Arc<Fixture>, reference: Arc<raw::Transcript>) {
     });
     let witness = match waiting.recv_timeout(3 * TIMEOUT) {
         Ok(v) => v,
-        Err(_) => std::process::abort(),
+        Err(e) => abort_named("run-witness-recv", &format!("err={e:?}")),
     };
     let cleanup_until = witness.until + TIMEOUT;
     while !gone(&witness.pin) || witness.reader.snapshot().cleanup_complete != Some(true) {
         if Instant::now() >= cleanup_until
             || witness.reader.snapshot().cleanup_complete == Some(false)
         {
-            std::process::abort();
+            abort_named(
+                "run-cleanup-wait",
+                &format!(
+                    "gone={} cleanup_complete={:?}",
+                    gone(&witness.pin),
+                    witness.reader.snapshot().cleanup_complete
+                ),
+            );
         }
         std::thread::sleep(Duration::from_millis(1));
     }
@@ -870,14 +880,14 @@ pub fn timeout(f: Arc<Fixture>, reference: Arc<raw::Transcript>) {
     reaped(&witness.pin);
     assert_eq!(witness.reader.snapshot().cleanup_complete, Some(true));
     if release.send(()).is_err() {
-        std::process::abort();
+        abort_named("run-release-send", "receiver dropped");
     }
     let result = match finished.recv_timeout(TIMEOUT) {
         Ok(v) => v,
-        Err(_) => std::process::abort(),
+        Err(e) => abort_named("run-finished-recv", &format!("err={e:?}")),
     };
     if worker.join().is_err() {
-        std::process::abort();
+        abort_named("run-worker-join", "worker thread panicked");
     }
     if let Err(payload) = result {
         std::panic::resume_unwind(payload);

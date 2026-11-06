@@ -268,7 +268,7 @@ impl Raw {
             }
         }
         if pid > 0 && fd < 0 {
-            std::process::abort();
+            abort_named("raw-spawn-pidfd", &format!("pid={pid} fd={fd}"));
         }
         assert!(pid > 0 && fd >= 0);
         let mut raw = Self {
@@ -589,7 +589,13 @@ impl Raw {
             std::thread::sleep(Duration::from_millis(1));
         }
         // The validation command must not survive with an unproved raw owner.
-        std::process::abort();
+        abort_named(
+            "raw-reap-exhausted",
+            &format!(
+                "pid={} stopped={} terminal={} complete={}",
+                self.pid, self.stopped, self.terminal, self.complete
+            ),
+        );
     }
 }
 impl Drop for Raw {
@@ -623,10 +629,10 @@ pub fn original(fixture: Arc<Fixture>) -> Transcript {
     // Constructor + old CPU + exec transaction + two new CPU calls + cleanup.
     let result = match receive.recv_timeout(6 * TIMEOUT) {
         Ok(v) => v,
-        Err(_) => std::process::abort(),
+        Err(e) => abort_named("raw-worker-recv", &format!("err={e:?}")),
     };
     if worker.join().is_err() {
-        std::process::abort();
+        abort_named("raw-worker-join", "worker thread panicked");
     }
     match result {
         Ok(value) => value,

@@ -42,6 +42,62 @@ pub fn sp(base: u64) -> u64 {
     base + DATA_LEN as u64 - 128
 }
 
+/// Format the one diagnostic line every abort path in this support module
+/// writes before dying. Pure so the format is unit-pinned; the abort itself
+/// is exercised only by the hosted legs.
+fn abort_line(site: &str, detail: &str, errno: i32, nofile: (u64, u64), nproc: usize) -> String {
+    format!(
+        "B3_ABORT site={site} errno={errno} detail={detail} nofile={}/{} nproc={nproc}\n",
+        nofile.0, nofile.1
+    )
+}
+
+/// Write [`abort_line`] to fd 2 unbuffered, then abort. A bare `abort()`
+/// leaves no site evidence in CI logs: libtest captures per-test output
+/// and the capture dies with the process. Every abort path in this module
+/// names itself first; the abort conditions themselves are unchanged.
+pub fn abort_named(site: &'static str, detail: &str) -> ! {
+    // errno first: the getrlimit below would clobber it.
+    let errno = io::Error::last_os_error().raw_os_error().unwrap_or(0);
+    let mut limits = libc::rlimit {
+        rlim_cur: 0,
+        rlim_max: 0,
+    };
+    let nofile = if unsafe { libc::getrlimit(libc::RLIMIT_NOFILE, &mut limits) } == 0 {
+        (limits.rlim_cur, limits.rlim_max)
+    } else {
+        (0, 0)
+    };
+    let nproc = std::thread::available_parallelism().map_or(0, |n| n.get());
+    let line = abort_line(site, detail, errno, nofile, nproc);
+    let mut rest = line.as_bytes();
+    while !rest.is_empty() {
+        let written = unsafe { libc::write(2, rest.as_ptr().cast(), rest.len()) };
+        if written <= 0 {
+            break;
+        }
+        rest = &rest[written as usize..];
+    }
+    std::process::abort()
+}
+
+#[cfg(test)]
+mod abort_named_tests {
+    use super::abort_line;
+
+    #[test]
+    fn abort_line_names_site_errno_detail_limits_and_nproc() {
+        assert_eq!(
+            abort_line("pin-pidfd-open", "pid=42", 24, (1024, 1_048_576), 8),
+            "B3_ABORT site=pin-pidfd-open errno=24 detail=pid=42 nofile=1024/1048576 nproc=8\n"
+        );
+        assert_eq!(
+            abort_line("raw-worker-recv", "err=Disconnected", 0, (0, 0), 0),
+            "B3_ABORT site=raw-worker-recv errno=0 detail=err=Disconnected nofile=0/0 nproc=0\n"
+        );
+    }
+}
+
 #[cfg(test)]
 struct Mask(u64);
 #[cfg(test)]
@@ -67,7 +123,7 @@ impl Mask {
 #[cfg(test)]
 impl Drop for Mask {
     fn drop(&mut self) {
-        if unsafe {
+        let restore = unsafe {
             libc::syscall(
                 libc::SYS_rt_sigprocmask,
                 libc::SIG_SETMASK,
@@ -75,10 +131,13 @@ impl Drop for Mask {
                 std::ptr::null_mut::<u64>(),
                 8,
             )
-        } != 0
-            || mask() != self.0
-        {
-            std::process::abort();
+        };
+        let got = if restore == 0 { Some(mask()) } else { None };
+        if got != Some(self.0) {
+            abort_named(
+                "mask-drop-restore",
+                &format!("want={:#x} got={got:?} restore={restore}", self.0),
+            );
         }
     }
 }
@@ -120,7 +179,7 @@ pub fn pin(pid: i32) -> OwnedFd {
     // A successful session exists, but no independently owned pin guard yet.
     // Abort the validation command on allocation failure; never detach cleanup.
     if value < 0 {
-        std::process::abort();
+        abort_named("pin-pidfd-open", &format!("pid={pid}"));
     }
     unsafe { OwnedFd::from_raw_fd(value as i32) }
 }
