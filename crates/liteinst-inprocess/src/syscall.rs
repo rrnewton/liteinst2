@@ -112,13 +112,14 @@ impl FallbackPolicy {
 /// runtime; it does not by itself authorize rewriting that site.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub enum DiscoverySubstrate {
-    /// Linux Syscall User Dispatch. The x86-64 implementation is a later
-    /// slice and must be runtime-probed before use.
-    #[default]
+    /// Linux Syscall User Dispatch. This is a runtime-probed x86-64-only
+    /// option, retained for its selector-allow fast path; it is not the
+    /// default because only one owner can enable it per thread.
     Sud,
     /// Seccomp `RET_TRAP`, with an instruction-pointer allow range for the
-    /// private gateway. This is the portable substrate shared with the W3
-    /// trap runtime in a later slice.
+    /// private gateway. This is the default portable substrate shared with
+    /// the W3 trap runtime in a later slice.
+    #[default]
     SeccompRetTrap,
 }
 
@@ -313,13 +314,13 @@ impl SyscallStrategyConfig {
     pub const MAX_SYSCALL_NR_LIMIT: u32 = 4_079;
 
     /// Creates the approved first-profile defaults for `strategy`:
-    /// per-site trap fallback, SUD discovery, at most 16,384 sites, and an
-    /// inclusive sled syscall-number bound of 1,023.
+    /// per-site trap fallback, seccomp discovery, at most 16,384 sites, and
+    /// an inclusive sled syscall-number bound of 1,023.
     pub const fn new(strategy: SyscallStrategy) -> Self {
         Self {
             strategy,
             fallback: FallbackPolicy::Trap,
-            discovery: DiscoverySubstrate::Sud,
+            discovery: DiscoverySubstrate::SeccompRetTrap,
             max_sites: 16_384,
             max_syscall_nr: 1_023,
             placement: PlacementBudget::DEFAULT,
@@ -674,7 +675,11 @@ mod tests {
         let config = SyscallStrategyConfig::new(SyscallStrategy::Lazypoline);
         assert_eq!(config.strategy(), SyscallStrategy::Lazypoline);
         assert_eq!(config.fallback(), FallbackPolicy::Trap);
-        assert_eq!(config.discovery(), DiscoverySubstrate::Sud);
+        assert_eq!(config.discovery(), DiscoverySubstrate::SeccompRetTrap);
+        assert_eq!(
+            DiscoverySubstrate::default(),
+            DiscoverySubstrate::SeccompRetTrap
+        );
         assert_eq!(config.max_sites(), 16_384);
         assert_eq!(config.max_syscall_nr(), 1_023);
         assert_eq!(config.placement(), PlacementBudget::DEFAULT);
@@ -683,10 +688,10 @@ mod tests {
         let strict = config
             .with_fallback(FallbackPolicy::Refuse)
             .unwrap()
-            .with_discovery(DiscoverySubstrate::SeccompRetTrap)
+            .with_discovery(DiscoverySubstrate::Sud)
             .unwrap();
         assert_eq!(strict.fallback(), FallbackPolicy::Refuse);
-        assert_eq!(strict.discovery(), DiscoverySubstrate::SeccompRetTrap);
+        assert_eq!(strict.discovery(), DiscoverySubstrate::Sud);
 
         assert_eq!(
             config.with_max_sites(0),

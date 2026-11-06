@@ -38,8 +38,9 @@ Core publication/trampoline ownership remains external and must outlive disarm.
 
 The `syscall` module currently provides only the typed strategy vocabulary
 for the approved x86 zpoline/lazypoline series: `trap|zpoline|lazypoline`,
-per-site trap/refuse fallback, pluggable `sud|seccomp-ret-trap` discovery,
-placement bounds, outcomes, and named refusals. Constructing that config
+per-site trap/refuse fallback, pluggable `sud|seccomp-ret-trap` discovery
+(seccomp by default; SUD is a runtime-probed x86-only option), placement
+bounds, outcomes, and named refusals. Constructing that config
 installs nothing; runtime mechanisms land in later slices.
 
 The `selected` module uses the genuine core planner and publisher to replace

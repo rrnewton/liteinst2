@@ -5,7 +5,8 @@ zpoline/lazypoline series before any runtime mechanism lands. The liteinst
 tokens are `trap`, `zpoline`, and `lazypoline`; their S4
 `REVERIE_INTERCEPT` refinements are trap/`sud-trap`, `patch-eager`, and
 `trap-and-patch`, respectively. Lazypoline discovery is explicitly pluggable
-between SUD and seccomp `RET_TRAP`; neither substrate is installed by slice 1.
+between SUD and seccomp `RET_TRAP`; seccomp is the default, SUD remains a
+runtime-probed x86-only option, and neither substrate is installed by slice 1.
 
 A validated config is a frozen selection, not an installation receipt. A
 missing run-level prerequisite later refuses by name. Per-site failures use
