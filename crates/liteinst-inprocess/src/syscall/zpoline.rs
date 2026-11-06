@@ -37,11 +37,14 @@ use crate::syscall::{
 const ORIGINAL_SYSCALL: [u8; 2] = [0x0f, 0x05];
 const ZPOLINE_CALL_RAX: [u8; 2] = [0xff, 0xd0];
 const COMMON_STUB_LEN: usize = 19;
-// The writable alias is unmapped before sealing. Do not add F_SEAL_WRITE
-// here: Linux returns EBUSY for that transition while the RX alias remains
-// mapped. FUTURE_WRITE prevents any later writable alias or write.
-const SLED_SEALS: c_int =
-    libc::F_SEAL_FUTURE_WRITE | libc::F_SEAL_SHRINK | libc::F_SEAL_GROW | libc::F_SEAL_SEAL;
+// Both aliases are unmapped before this seal set is added, so retaining
+// F_SEAL_WRITE leaves no writable path: the RW alias is gone, future writes
+// and writable mappings are sealed, and only then is VA 0 remapped RX.
+const SLED_SEALS: c_int = libc::F_SEAL_WRITE
+    | libc::F_SEAL_FUTURE_WRITE
+    | libc::F_SEAL_SHRINK
+    | libc::F_SEAL_GROW
+    | libc::F_SEAL_SEAL;
 const OWNER_EMPTY: u8 = 0;
 const OWNER_INSTALLING: u8 = 1;
 const OWNER_INSTALLED: u8 = 2;
@@ -185,15 +188,23 @@ impl SledMapping {
         }
         mapping.writable = writable.cast::<u8>();
 
+        mapping.map_executable()?;
+        Ok(mapping)
+    }
+
+    fn map_executable(&mut self) -> Result<(), SyscallRefusal> {
+        if self.executable_mapped || self.fd < 0 {
+            return Err(SyscallRefusal::AllocationUnavailable);
+        }
         // SAFETY: MAP_FIXED_NOREPLACE asks for exactly VA 0 and cannot replace
         // an existing mapping on supported kernels.
         let executable = unsafe {
             libc::mmap(
                 std::ptr::null_mut(),
-                len,
+                self.len,
                 libc::PROT_READ | libc::PROT_EXEC,
                 libc::MAP_SHARED | libc::MAP_FIXED_NOREPLACE,
-                fd,
+                self.fd,
                 0,
             )
         };
@@ -209,96 +220,133 @@ impl SledMapping {
             // An old kernel ignoring NOREPLACE could relocate or replace; do
             // not retain a mapping anywhere except exactly VA 0.
             // SAFETY: executable is the mapping just returned.
-            unsafe { libc::munmap(executable, len) };
+            unsafe { libc::munmap(executable, self.len) };
             return Err(SyscallRefusal::LowPageUnavailable {
                 errno: libc::EADDRNOTAVAIL,
             });
         }
-        mapping.executable = executable.cast::<u8>();
-        mapping.executable_mapped = true;
-        Ok(mapping)
+        self.executable = executable.cast::<u8>();
+        self.executable_mapped = true;
+        Ok(())
     }
 
-    fn publish_bytes(&mut self, bytes: &[u8]) -> Result<Vec<u8>, SyscallRefusal> {
-        if bytes.len() != self.len || self.writable.is_null() || self.committed {
-            return Err(SyscallRefusal::AllocationUnavailable);
+    fn unmap_writable(&mut self) -> Result<(), SyscallRefusal> {
+        if self.writable.is_null() {
+            return Ok(());
         }
-        // SAFETY: both aliases cover exactly len bytes from the owned memfd.
-        unsafe {
-            std::ptr::copy_nonoverlapping(bytes.as_ptr(), self.writable, bytes.len());
-        }
-        let observed = self.observed();
-        if observed != bytes {
-            return Err(SyscallRefusal::ExpectedBytesChanged);
-        }
-        // SAFETY: the writable alias is still the mapping created above.
+        // SAFETY: writable is still this mapping's owned alias.
         if unsafe { libc::munmap(self.writable.cast::<c_void>(), self.len) } != 0 {
             return Err(SyscallRefusal::MemfdDualMapFailed {
                 errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
             });
         }
         self.writable = std::ptr::null_mut();
+        Ok(())
+    }
+
+    fn unmap_executable(&mut self) -> Result<(), SyscallRefusal> {
+        if !self.executable_mapped {
+            return Ok(());
+        }
+        // SAFETY: executable is exactly address zero for len bytes. The
+        // separate boolean distinguishes it from an absent mapping.
+        if unsafe { libc::munmap(self.executable.cast::<c_void>(), self.len) } != 0 {
+            return Err(SyscallRefusal::MemfdDualMapFailed {
+                errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
+            });
+        }
+        self.executable_mapped = false;
+        Ok(())
+    }
+
+    fn read_back(&self) -> Result<Vec<u8>, SyscallRefusal> {
+        if self.fd < 0 {
+            return Err(SyscallRefusal::AllocationUnavailable);
+        }
+        let mut observed = vec![0; self.len];
+        let mut offset = 0_usize;
+        while offset < self.len {
+            // SAFETY: fd is the owned memfd; the output slice and file offset
+            // cover exactly the remaining sled bytes. This deliberately does
+            // not form or dereference a Rust pointer at VA 0.
+            let read = unsafe {
+                libc::pread(
+                    self.fd,
+                    observed[offset..].as_mut_ptr().cast::<c_void>(),
+                    self.len - offset,
+                    offset as libc::off_t,
+                )
+            };
+            if read > 0 {
+                offset += read as usize;
+            } else if read == 0 {
+                return Err(SyscallRefusal::MemfdDualMapFailed { errno: libc::EIO });
+            } else {
+                let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(0);
+                if errno != libc::EINTR {
+                    return Err(SyscallRefusal::MemfdDualMapFailed { errno });
+                }
+            }
+        }
+        Ok(observed)
+    }
+
+    fn publish_bytes(&mut self, bytes: &[u8]) -> Result<Vec<u8>, SyscallRefusal> {
+        if bytes.len() != self.len
+            || self.writable.is_null()
+            || !self.executable_mapped
+            || self.committed
+        {
+            return Err(SyscallRefusal::AllocationUnavailable);
+        }
+        // SAFETY: the writable alias covers exactly len bytes from the owned
+        // memfd. Verification below uses pread, never a VA-0 pointer read.
+        unsafe {
+            std::ptr::copy_nonoverlapping(bytes.as_ptr(), self.writable, bytes.len());
+        }
+        if self.read_back()? != bytes {
+            return Err(SyscallRefusal::ExpectedBytesChanged);
+        }
+
+        // F_SEAL_WRITE requires both shared aliases to be gone. Remove RW
+        // first, then RX, seal the backing, and only then remap RX at VA 0.
+        self.unmap_writable()?;
+        self.unmap_executable()?;
         let seals = SLED_SEALS;
-        // SAFETY: fd remains the owned memfd and no writable alias remains.
+        // SAFETY: fd remains the owned memfd and neither alias remains.
         if unsafe { libc::fcntl(self.fd, libc::F_ADD_SEALS, seals) } != 0 {
             return Err(SyscallRefusal::MemfdDualMapFailed {
                 errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
             });
         }
-        // SAFETY: querying seals does not mutate the mapping.
+        // SAFETY: querying seals does not mutate the backing.
         let observed_seals = unsafe { libc::fcntl(self.fd, libc::F_GET_SEALS) };
         if observed_seals < 0 || observed_seals & seals != seals {
             return Err(SyscallRefusal::MemfdDualMapFailed {
                 errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
             });
         }
-        // SAFETY: the executable alias retains the backing after descriptor close.
+        self.map_executable()?;
+        let observed = self.read_back()?;
+        // SAFETY: the remapped executable alias retains the backing after
+        // descriptor close.
         unsafe { libc::close(self.fd) };
         self.fd = -1;
-        if self.observed() != bytes {
+        if observed != bytes {
             return Err(SyscallRefusal::ExpectedBytesChanged);
         }
         Ok(observed)
     }
 
-    fn observed(&self) -> Vec<u8> {
-        let mut observed = vec![0; self.len];
-        // SAFETY: executable alias is readable for exactly len bytes.
-        unsafe {
-            std::ptr::copy_nonoverlapping(self.executable, observed.as_mut_ptr(), self.len);
-        }
-        observed
-    }
-
     fn unmap(&mut self) -> Result<(), SyscallRefusal> {
-        let mut result = Ok(());
-        if !self.writable.is_null() {
-            // SAFETY: writable is still this mapping's owned alias.
-            if unsafe { libc::munmap(self.writable.cast::<c_void>(), self.len) } != 0 {
-                result = Err(SyscallRefusal::MemfdDualMapFailed {
-                    errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
-                });
-            } else {
-                self.writable = std::ptr::null_mut();
-            }
-        }
-        if self.executable_mapped {
-            // SAFETY: executable is exactly address zero for len bytes. The
-            // separate boolean distinguishes it from an absent mapping.
-            if unsafe { libc::munmap(self.executable.cast::<c_void>(), self.len) } != 0 {
-                result = Err(SyscallRefusal::MemfdDualMapFailed {
-                    errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
-                });
-            } else {
-                self.executable_mapped = false;
-            }
-        }
+        let writable = self.unmap_writable();
+        let executable = self.unmap_executable();
         if self.fd >= 0 {
             // SAFETY: fd is still owned here.
             unsafe { libc::close(self.fd) };
             self.fd = -1;
         }
-        result
+        writable.and(executable)
     }
 
     fn commit(mut self) -> Self {
@@ -794,7 +842,7 @@ impl InstalledZpoline {
         self.captured.then_some(self.observed_handler.as_slice())
     }
 
-    /// Actual sled bytes read through the executable VA-zero alias.
+    /// Actual sled bytes read back with `pread` on the sealed memfd.
     pub fn observed_sled(&self) -> Option<&[u8]> {
         self.captured.then_some(self.observed_sled.as_slice())
     }
@@ -1207,12 +1255,12 @@ mod tests {
     }
 
     #[test]
-    fn sled_seals_allow_the_retained_rx_alias() {
+    fn sled_seals_retain_write_seal_for_unmapped_backing() {
+        assert_ne!(SLED_SEALS & libc::F_SEAL_WRITE, 0);
         assert_ne!(SLED_SEALS & libc::F_SEAL_FUTURE_WRITE, 0);
         assert_ne!(SLED_SEALS & libc::F_SEAL_SHRINK, 0);
         assert_ne!(SLED_SEALS & libc::F_SEAL_GROW, 0);
         assert_ne!(SLED_SEALS & libc::F_SEAL_SEAL, 0);
-        assert_eq!(SLED_SEALS & libc::F_SEAL_WRITE, 0);
     }
 
     #[test]

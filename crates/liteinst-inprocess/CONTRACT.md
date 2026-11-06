@@ -27,8 +27,11 @@ unsupported dynamic semantics, and incomplete entry facts.
 
 Publication first probes a memfd dual-mapped RX sled at virtual address
 zero; denial returns `LowPageUnavailable` or `LowPageOccupied` before any
-source write. The sled is filled with NOPs through the RW alias, verified
-through the RX alias, sealed, and retained process-wide. Its common stub
+source write. The sled is filled with NOPs through the RW alias and verified
+by `pread` on the memfd, never by dereferencing VA 0 as a Rust pointer. Both
+aliases are then unmapped, the backing is sealed including `F_SEAL_WRITE`,
+VA 0 is remapped RX, and the bytes are read back again with `pread`. Its
+common stub
 restores only the `call *%rax` stack displacement and jumps to a core
 exact-syscall trampoline. That trampoline's zpoline wrapper authenticates
 the saved site, dynamic number, and call return word at `RSP-8`, then
