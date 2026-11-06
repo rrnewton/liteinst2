@@ -1,10 +1,15 @@
 // One sibling registration set, sharing the existing oracle and production router.
 // Required actual physical-window controls; no corpus/ELF/runtime qualification.
-use super::routed_jmp_native_tests::{ProductionRoutes, min5_size_certificate, oracle};
+use super::routed_jmp_native_tests::{
+    ProductionRoutes, min5_size_certificate, oracle, skip_unless_xcr0_within_preserved,
+};
 use crate::isolated_native_test as isolated;
 
 #[test]
 fn physical_min5_every_entry_routes_through_production() {
+    if skip_unless_xcr0_within_preserved() {
+        return;
+    }
     isolated::run(
         "entry_router::imp::physical_window_native_tests::physical_min5_every_entry_routes_through_production",
         "LI2_PHYSICAL_WINDOW_MIN5_NATIVE_ENTRIES_V1",
@@ -13,6 +18,9 @@ fn physical_min5_every_entry_routes_through_production() {
 }
 #[test]
 fn physical_min5_ret_fault_preserves_prior_pop_and_callbacks() {
+    if skip_unless_xcr0_within_preserved() {
+        return;
+    }
     isolated::run(
         "entry_router::imp::physical_window_native_tests::physical_min5_ret_fault_preserves_prior_pop_and_callbacks",
         "LI2_PHYSICAL_WINDOW_MIN5_NATIVE_RET_FAULT_V1",
@@ -21,6 +29,9 @@ fn physical_min5_ret_fault_preserves_prior_pop_and_callbacks() {
 }
 #[test]
 fn physical_min5_non06_pop_fault_preserves_uncommitted_state() {
+    if skip_unless_xcr0_within_preserved() {
+        return;
+    }
     isolated::run(
         "entry_router::imp::physical_window_native_tests::physical_min5_non06_pop_fault_preserves_uncommitted_state",
         "LI2_PHYSICAL_WINDOW_MIN5_NATIVE_POP_FAULT_V1",

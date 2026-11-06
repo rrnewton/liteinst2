@@ -1,6 +1,22 @@
 // Actual private production router, not a test handler or public live API.
 use super::*;
 use crate::isolated_native_test as isolated;
+
+/// Min5/row cases compare hook-context xstate byte-exactly against a full
+/// kernel xstate image; that identity only holds when XCR0 enables no
+/// component beyond the trampoline's preserved mask (AMX bits 17/18).
+/// Returns true (with a named printed reason) when the caller must return
+/// without running its body. Inactive/readiness cases make no such
+/// comparison and are deliberately not gated.
+pub(super) fn skip_unless_xcr0_within_preserved() -> bool {
+    if crate::trampoline::SavedExtendedStateLayout::xcr0_within_preserved_mask() {
+        return false;
+    }
+    eprintln!(
+        "SKIP: capability absent: XCR0 within preserved user-state mask (no AMX bits 17/18); hook-context xstate comparison requires it"
+    );
+    true
+}
 // Shared support has intentionally unused legacy entry APIs in this test binary;
 // its complete bodies and assertions are retained.
 #[allow(dead_code)]
@@ -35,6 +51,9 @@ impl Router for ProductionRoutes {
 }
 #[test]
 fn min5_every_entry_routes_through_production_and_preserves_ret_state() {
+    if skip_unless_xcr0_within_preserved() {
+        return;
+    }
     isolated::run(
         "entry_router::imp::routed_jmp_native_tests::min5_every_entry_routes_through_production_and_preserves_ret_state",
         "LI2_MIN5_NATIVE_ENTRIES_V1",
@@ -43,6 +62,9 @@ fn min5_every_entry_routes_through_production_and_preserves_ret_state() {
 }
 #[test]
 fn min5_unselected_ret_fault_preserves_prior_pop_and_callback_state() {
+    if skip_unless_xcr0_within_preserved() {
+        return;
+    }
     isolated::run(
         "entry_router::imp::routed_jmp_native_tests::min5_unselected_ret_fault_preserves_prior_pop_and_callback_state",
         "LI2_MIN5_NATIVE_RET_FAULT_V1",
@@ -53,6 +75,9 @@ macro_rules! row {
     ($name:ident, $index:expr) => {
         #[test]
         fn $name() {
+            if skip_unless_xcr0_within_preserved() {
+                return;
+            }
             isolated::run(
                 concat!(
                     "entry_router::imp::routed_jmp_native_tests::",

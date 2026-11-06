@@ -17,6 +17,10 @@ pub(crate) struct Capabilities {
     /// PKU is exposed and enabled: CPUID leaf 7 ECX.PKU + ECX.OSPKE and
     /// the PKRU xstate component (leaf 0xD subleaf 9) has nonzero size.
     pub pku_xstate: bool,
+    /// XCR0 enables no user component beyond liteinst's preserved mask
+    /// (in practice AMX bits 17/18 clear), via
+    /// `liteinst::trampoline::SavedExtendedStateLayout::xcr0_within_preserved_mask`.
+    pub xcr0_within_preserved: bool,
 }
 
 /// Pure decision from raw observations, unit-testable without hardware.
@@ -24,20 +28,36 @@ pub(crate) struct Capabilities {
 /// `pagemap_entry` is the raw 64-bit entry for a just-touched anonymous
 /// page (bit 63 = present, bits 0..55 = PFN). `cpuid7_ecx` is
 /// CPUID.(EAX=7, ECX=0):ECX. `xstate9_eax` is CPUID.(EAX=0xD, ECX=9):EAX
-/// (PKRU component size in bytes, 0 when absent).
-pub(crate) fn classify(pagemap_entry: u64, cpuid7_ecx: u32, xstate9_eax: u32) -> Capabilities {
+/// (PKRU component size in bytes, 0 when absent). `xcr0_within_preserved`
+/// is liteinst's own value-form verdict for this thread's XCR0
+/// (`SavedExtendedStateLayout::xcr0_within_preserved_mask_value`); the
+/// mask itself is defined once in liteinst, never duplicated here.
+pub(crate) fn classify(
+    pagemap_entry: u64,
+    cpuid7_ecx: u32,
+    xstate9_eax: u32,
+    xcr0_within_preserved: bool,
+) -> Capabilities {
     let present = pagemap_entry >> 63 == 1;
     let pfn = pagemap_entry & ((1u64 << 55) - 1);
     Capabilities {
         pagemap_pfn: present && pfn != 0,
         pku_xstate: cpuid7_ecx & (1 << 3) != 0 && cpuid7_ecx & (1 << 4) != 0 && xstate9_eax != 0,
+        xcr0_within_preserved,
     }
 }
 
 /// Probe this host once and cache the result.
 pub(crate) fn probe() -> Capabilities {
     static CACHE: std::sync::OnceLock<Capabilities> = std::sync::OnceLock::new();
-    *CACHE.get_or_init(|| classify(own_pagemap_entry(), cpuid7_ecx(), xstate9_eax()))
+    *CACHE.get_or_init(|| {
+        classify(
+            own_pagemap_entry(),
+            cpuid7_ecx(),
+            xstate9_eax(),
+            liteinst::trampoline::SavedExtendedStateLayout::xcr0_within_preserved_mask(),
+        )
+    })
 }
 
 /// Print the named skip reason and report whether the caller must return.
@@ -53,6 +73,8 @@ pub(crate) fn skip_without(what: &'static str, present: bool) -> bool {
 pub(crate) const CAP_PAGEMAP_PFN: u8 = 1;
 /// See [`CAP_PAGEMAP_PFN`].
 pub(crate) const CAP_PKU_XSTATE: u8 = 2;
+/// See [`CAP_PAGEMAP_PFN`].
+pub(crate) const CAP_XCR0_WITHIN_PRESERVED: u8 = 4;
 
 /// Native-test case families with distinct capability requirements.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -63,8 +85,8 @@ pub(crate) enum CaseKind {
     ExecFailure,
     /// gate coverage-failure cases (byte-exact xstate evidence).
     GateCoverage,
-    /// runtime selected-syscall native case (control-state xstate first).
-    SelectedSyscall,
+    /// runtime selected native cases (control-state xstate first).
+    SelectedNative,
     /// runtime-stack native cases (pagemap-backed records).
     StackNative,
     /// ordinary runtime native cases (no environment-shaped records).
@@ -79,8 +101,8 @@ pub(crate) fn required_caps(kind: CaseKind) -> u8 {
         CaseKind::ExecNative
         | CaseKind::ExecFailure
         | CaseKind::GateCoverage
-        | CaseKind::SelectedSyscall => CAP_PKU_XSTATE,
-        CaseKind::StackNative => CAP_PAGEMAP_PFN | CAP_PKU_XSTATE,
+        | CaseKind::SelectedNative => CAP_PKU_XSTATE | CAP_XCR0_WITHIN_PRESERVED,
+        CaseKind::StackNative => CAP_PAGEMAP_PFN | CAP_PKU_XSTATE | CAP_XCR0_WITHIN_PRESERVED,
         CaseKind::OrdinaryRuntime => 0,
     }
 }
@@ -89,8 +111,13 @@ pub(crate) fn required_caps(kind: CaseKind) -> u8 {
 pub(crate) fn isolation_kind(name: &str) -> CaseKind {
     if name.contains("::stack::native_tests::") {
         CaseKind::StackNative
-    } else if name.ends_with("::runtime_selected_syscall_refuses_without_ordinary_fallback") {
-        CaseKind::SelectedSyscall
+    } else if name.ends_with("::runtime_selected_syscall_refuses_without_ordinary_fallback")
+        || name.ends_with("::runtime_selected_cpu_and_ordinary_keep_exact_control_lineage")
+    {
+        // Both selected cases assert complete-state equality whose first
+        // compared field is the full xstate byte string
+        // (control_unchanged, runtime_native/runner.rs).
+        CaseKind::SelectedNative
     } else {
         CaseKind::OrdinaryRuntime
     }
@@ -100,6 +127,7 @@ pub(crate) fn isolation_kind(name: &str) -> CaseKind {
 pub(crate) fn caps_satisfied(caps: Capabilities, required: u8) -> bool {
     (required & CAP_PAGEMAP_PFN == 0 || caps.pagemap_pfn)
         && (required & CAP_PKU_XSTATE == 0 || caps.pku_xstate)
+        && (required & CAP_XCR0_WITHIN_PRESERVED == 0 || caps.xcr0_within_preserved)
 }
 
 /// Skip (with named printed reasons) when this host lacks a required
@@ -118,6 +146,12 @@ pub(crate) fn skip_without_caps(kind: CaseKind) -> bool {
         skip |= skip_without(
             "PKU xstate component (CPUID leaf 7 PKU/OSPKE + leaf 0xD subleaf 9)",
             caps.pku_xstate,
+        );
+    }
+    if required & CAP_XCR0_WITHIN_PRESERVED != 0 {
+        skip |= skip_without(
+            "XCR0 within preserved user-state mask (no AMX bits 17/18)",
+            caps.xcr0_within_preserved,
         );
     }
     skip
@@ -172,8 +206,8 @@ fn read_pagemap_entry(address: u64) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::{
-        CAP_PAGEMAP_PFN, CAP_PKU_XSTATE, Capabilities, CaseKind, caps_satisfied, classify,
-        isolation_kind, required_caps,
+        CAP_PAGEMAP_PFN, CAP_PKU_XSTATE, CAP_XCR0_WITHIN_PRESERVED, Capabilities, CaseKind,
+        caps_satisfied, classify, isolation_kind, required_caps,
     };
 
     const PRESENT: u64 = 1 << 63;
@@ -181,29 +215,41 @@ mod tests {
 
     #[test]
     fn classify_requires_present_and_nonzero_pfn() {
-        assert!(classify(PRESENT | 0x1234, PKU_OSPKE, 8).pagemap_pfn);
-        assert!(!classify(PRESENT, PKU_OSPKE, 8).pagemap_pfn);
-        assert!(!classify(0x1234, PKU_OSPKE, 8).pagemap_pfn);
-        assert!(!classify(0, PKU_OSPKE, 8).pagemap_pfn);
+        assert!(classify(PRESENT | 0x1234, PKU_OSPKE, 8, true).pagemap_pfn);
+        assert!(!classify(PRESENT, PKU_OSPKE, 8, true).pagemap_pfn);
+        assert!(!classify(0x1234, PKU_OSPKE, 8, true).pagemap_pfn);
+        assert!(!classify(0, PKU_OSPKE, 8, true).pagemap_pfn);
     }
 
     #[test]
     fn classify_requires_pku_ospke_and_component() {
-        assert!(classify(PRESENT | 1, PKU_OSPKE, 8).pku_xstate);
-        assert!(!classify(PRESENT | 1, 1 << 3, 8).pku_xstate);
-        assert!(!classify(PRESENT | 1, 1 << 4, 8).pku_xstate);
-        assert!(!classify(PRESENT | 1, PKU_OSPKE, 0).pku_xstate);
+        assert!(classify(PRESENT | 1, PKU_OSPKE, 8, true).pku_xstate);
+        assert!(!classify(PRESENT | 1, 1 << 3, 8, true).pku_xstate);
+        assert!(!classify(PRESENT | 1, 1 << 4, 8, true).pku_xstate);
+        assert!(!classify(PRESENT | 1, PKU_OSPKE, 0, true).pku_xstate);
     }
 
     #[test]
     fn required_caps_enumeration_is_pinned() {
-        assert_eq!(required_caps(CaseKind::ExecNative), CAP_PKU_XSTATE);
-        assert_eq!(required_caps(CaseKind::ExecFailure), CAP_PKU_XSTATE);
-        assert_eq!(required_caps(CaseKind::GateCoverage), CAP_PKU_XSTATE);
-        assert_eq!(required_caps(CaseKind::SelectedSyscall), CAP_PKU_XSTATE);
+        assert_eq!(
+            required_caps(CaseKind::ExecNative),
+            CAP_PKU_XSTATE | CAP_XCR0_WITHIN_PRESERVED
+        );
+        assert_eq!(
+            required_caps(CaseKind::ExecFailure),
+            CAP_PKU_XSTATE | CAP_XCR0_WITHIN_PRESERVED
+        );
+        assert_eq!(
+            required_caps(CaseKind::GateCoverage),
+            CAP_PKU_XSTATE | CAP_XCR0_WITHIN_PRESERVED
+        );
+        assert_eq!(
+            required_caps(CaseKind::SelectedNative),
+            CAP_PKU_XSTATE | CAP_XCR0_WITHIN_PRESERVED
+        );
         assert_eq!(
             required_caps(CaseKind::StackNative),
-            CAP_PAGEMAP_PFN | CAP_PKU_XSTATE
+            CAP_PAGEMAP_PFN | CAP_PKU_XSTATE | CAP_XCR0_WITHIN_PRESERVED
         );
         assert_eq!(required_caps(CaseKind::OrdinaryRuntime), 0);
     }
@@ -220,13 +266,19 @@ mod tests {
             isolation_kind(
                 "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_selected_syscall_refuses_without_ordinary_fallback"
             ),
-            CaseKind::SelectedSyscall
+            CaseKind::SelectedNative
         );
         assert_eq!(
             isolation_kind(
                 "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_allocation_errors_retain_actual_pending_custody"
             ),
             CaseKind::OrdinaryRuntime
+        );
+        assert_eq!(
+            isolation_kind(
+                "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_selected_cpu_and_ordinary_keep_exact_control_lineage"
+            ),
+            CaseKind::SelectedNative
         );
     }
 
@@ -235,18 +287,22 @@ mod tests {
         let none = Capabilities {
             pagemap_pfn: false,
             pku_xstate: false,
+            xcr0_within_preserved: false,
         };
         let pfn_only = Capabilities {
             pagemap_pfn: true,
             pku_xstate: false,
+            xcr0_within_preserved: false,
         };
         let pku_only = Capabilities {
             pagemap_pfn: false,
             pku_xstate: true,
+            xcr0_within_preserved: false,
         };
         let both = Capabilities {
             pagemap_pfn: true,
             pku_xstate: true,
+            xcr0_within_preserved: true,
         };
         assert!(caps_satisfied(none, 0));
         assert!(!caps_satisfied(none, CAP_PAGEMAP_PFN));
@@ -257,5 +313,20 @@ mod tests {
         assert!(caps_satisfied(pku_only, CAP_PKU_XSTATE));
         assert!(!caps_satisfied(pku_only, CAP_PAGEMAP_PFN | CAP_PKU_XSTATE));
         assert!(caps_satisfied(both, CAP_PAGEMAP_PFN | CAP_PKU_XSTATE));
+        assert!(caps_satisfied(both, CAP_XCR0_WITHIN_PRESERVED));
+        assert!(!caps_satisfied(none, CAP_XCR0_WITHIN_PRESERVED));
+        assert!(!caps_satisfied(pfn_only, CAP_XCR0_WITHIN_PRESERVED));
+        assert!(!caps_satisfied(pku_only, CAP_XCR0_WITHIN_PRESERVED));
+        assert!(!caps_satisfied(
+            pku_only,
+            CAP_PKU_XSTATE | CAP_XCR0_WITHIN_PRESERVED
+        ));
+        assert!(caps_satisfied(
+            both,
+            CAP_PAGEMAP_PFN | CAP_PKU_XSTATE | CAP_XCR0_WITHIN_PRESERVED
+        ));
+        // The XCR0 input passes through classify unchanged.
+        assert!(classify(PRESENT | 1, PKU_OSPKE, 8, true).xcr0_within_preserved);
+        assert!(!classify(PRESENT | 1, PKU_OSPKE, 8, false).xcr0_within_preserved);
     }
 }
