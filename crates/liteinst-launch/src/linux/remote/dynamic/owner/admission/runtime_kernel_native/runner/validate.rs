@@ -85,14 +85,28 @@ pub(super) fn entry_state(
             number: identity.number(),
             arguments: identity.arguments(),
         })
-        || !same_architecture(
-            actual,
-            entry_registers(before.registers, identity.next_pc(), identity.number()),
-            before,
-        )
     {
         return Err(LaunchError::Invalid(
-            "runtime kernel original ENTRY full state differs",
+            "runtime kernel original ENTRY event kind differs",
+        ));
+    }
+    // Same comparisons, same order as the former conflated full-state
+    // check; each sub-field names itself so a hosted failure attributes
+    // the differing field instead of only the whole state.
+    if actual.registers != entry_registers(before.registers, identity.next_pc(), identity.number())
+    {
+        return Err(LaunchError::Invalid(
+            "runtime kernel original ENTRY registers differ",
+        ));
+    }
+    if actual.xstate != before.xstate {
+        return Err(LaunchError::Invalid(
+            "runtime kernel original ENTRY xstate differs",
+        ));
+    }
+    if actual.mask != before.mask {
+        return Err(LaunchError::Invalid(
+            "runtime kernel original ENTRY mask differs",
         ));
     }
     Ok(())
