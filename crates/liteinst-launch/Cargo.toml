@@ -16,7 +16,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 libc = "0.2.186"
 sha2 = { version = "0.10.9", optional = true }
 liteinst-admission = { version = "0.2.1", path = "../liteinst-admission" }
-liteinst = { version = "0.2.0", path = "../.." }
+liteinst = { version = "0.3.0", path = "../.." }
 iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder"] }
 
 # Fixed development-only native resource controls; no default runtime API.

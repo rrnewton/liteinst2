@@ -1,6 +1,6 @@
 [package]
 name = "liteinst"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 description = "Online x86-64 instrumentation using instruction punning"
 repository = "https://github.com/rrnewton/liteinst2"
@@ -13,6 +13,7 @@ rust-version = "1.94"
 include = [
     "/Cargo.lock",
     "/Cargo.toml",
+    "/CHANGELOG.md",
     "/LICENSE",
     "/INTERFACES.md",
     "/A1-QUIESCENT.md",

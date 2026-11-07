@@ -14,7 +14,7 @@ description = "Caller-owned in-process NX first-touch gate"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-liteinst = { version = "0.2.0", path = "../.." }
+liteinst = { version = "0.3.0", path = "../.." }
 libc = "0.2.186"
 iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder"] }
 

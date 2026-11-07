@@ -2,7 +2,7 @@
 
 | Crate | Published | Role | Chapter |
 |---|---|---|---|
-| `liteinst` | 0.2.0 | Patching core: punning, WordPatch++, trampolines, rapid toggles, emission, contracts | [Punning](punning.md), [Tactics](tactics.md), [Contracts](contracts.md) |
+| `liteinst` | 0.3.0 | Patching core: punning, WordPatch++, trampolines, rapid toggles, emission, contracts | [Punning](punning.md), [Tactics](tactics.md), [Contracts](contracts.md) |
 | `liteinst-x86` | 0.2.0 | Descriptive decode + selected-operand facts (`no_std`, fact-only) | [Admission](admission.md) |
 | `liteinst-aarch64` | 0.2.0 | Descriptive A64 decode + selected-operand facts (`no_std`, fact-only) | — |
 | `liteinst-aarch64-patch` | no | Stopped-executor AArch64 runtime patching over `liteinst-aarch64` facts | — |
