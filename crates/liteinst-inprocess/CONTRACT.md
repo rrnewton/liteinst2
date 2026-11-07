@@ -19,8 +19,9 @@ patches code.
 # SUD trap substrate
 
 `syscall::sud::SudInstallation` is the first discovery substrate. It
-requires the `trap` strategy with `DiscoverySubstrate::Sud`; seccomp remains
-the default vocabulary selection and is not installed by this slice. The
+requires the `trap` or `lazypoline` strategy with `DiscoverySubstrate::Sud`;
+seccomp remains the default vocabulary selection and is not installed by
+this crate (lazypoline with seccomp discovery is refused by name here). The
 owner probes a sealed memfd gateway page containing only a six-argument
 genuine-syscall stub and an `rt_sigreturn` restorer, installs a guarded
 alternate signal stack for the installing thread and one SIGSYS handler,
@@ -49,8 +50,41 @@ handler interrupts a forwarded call and its outside-gateway restorer traps
 return through the gateway restorer and resumes the forwarded call; other
 nested dispatch remains fail-closed. Uninstall verifies and
 restores the exact prior SIGSYS action and alternate stack, then unmaps the
-gateway and stack. This substrate records sites only; it never rewrites
-them. Lazypoline patch-and-restart is slice 5.
+gateway and stack. With the `trap` strategy this substrate records sites
+only and never rewrites them.
+
+# Lazypoline (trap-and-patch over SUD)
+
+With the `lazypoline` strategy the same installation additionally marks
+each newly recorded site `Pending` on its first trap; every execution still
+traps and forwards exactly once until patched. `apply_pending_patches` is
+the explicit normal-context patch step: it runs on the unregistered
+installing thread, takes caller certificates (`ZpolineSite`, one snapshot
+and identity per batch), and requires each certificate to name a `Pending`
+site whose certified syscall number equals the number the trap last
+observed there. Eligible certificates are published through the reviewed
+zpoline batch publisher with one substitution: the genuine-syscall
+delegate forwards through the SUD gateway page (the selected callback's
+own syscall instruction would trap under SUD), mirroring its closed
+first-profile completion rules and counted separately as `fast_path_calls`
+rather than in the selected class counters. Publication is deferred
+patching, not in-handler patch-and-restart: the signal handler never
+writes code.
+
+At most one patch batch is live (the shared single zpoline owner);
+`retire_lazy_batch` restores the original bytes and returns its sites to
+`Pending`, and uninstall refuses while a batch is live or patch state is
+poisoned, because patched sites route through the gateway. Per-site
+eligibility and before-write publication failures are ledgered: under the
+default trap fallback the site becomes `TrapPermanent` with a `Trap`
+outcome and keeps trapping; under `Refuse` the named refusal returns
+before any write with pending states unchanged. `finalize` runs only after
+a successful source write, so after a ledgered or refused apply the caller
+still owns restoring the source mapping's final permissions before
+executing it again. The low page remains a hard apply-time prerequisite;
+installing and discovering do not require it. Sites discovered after a
+batch keep re-trapping; dynamic multi-batch growth, in-handler patching,
+and a seccomp discovery substrate are not in this slice.
 
 # Zpoline mechanism
 

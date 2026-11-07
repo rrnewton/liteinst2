@@ -45,8 +45,11 @@ certified eager sites—single or one multi-site batch in one snapshot—through
 a low-page sled, dispatcher veneer, and core exact-syscall trampolines.
 The `sud` submodule installs the SUD gateway/restorer and SIGSYS custody,
 registers participating threads individually, forwards first-profile
-syscalls, and records authenticated sites without rewriting them.
-Lazypoline itself remains a later slice.
+syscalls, and records authenticated sites without rewriting them. With the
+`lazypoline` strategy it additionally marks first-trap sites pending and
+publishes caller-certified rewrites for them on an explicit normal-context
+apply call (one live batch, ledgered trap fallback, gateway forwarding from
+patched sites); see the lazypoline section of the execution contract.
 
 The `selected` module uses the genuine core planner and publisher to replace
 CPUID, RDTSC, returning read/write/getpid/gettid syscalls, RDRAND, RDSEED,

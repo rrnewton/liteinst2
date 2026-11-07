@@ -1,18 +1,28 @@
 //! Linux Syscall User Dispatch trap substrate.
 //!
-//! This slice installs the gateway/restorer, SIGSYS custody, per-thread
-//! registration, first-profile trap forwarding, and site recording. It never
-//! rewrites a syscall site; lazypoline patch-on-first-trap is a later slice.
+//! This module installs the gateway/restorer, SIGSYS custody, per-thread
+//! registration, first-profile trap forwarding, and site recording. With the
+//! `trap` strategy it never rewrites a syscall site. With the `lazypoline`
+//! strategy, each first trap additionally marks the recorded site pending;
+//! a later explicit normal-context [`SudInstallation::apply_pending_patches`]
+//! call publishes caller-certified zpoline rewrites for pending sites (the
+//! handler itself never patches), and patched sites then execute through
+//! the sled with genuine forwarding through this substrate's gateway.
 
 use std::ffi::c_void;
 use std::marker::PhantomData;
 use std::sync::atomic::{AtomicBool, AtomicPtr, AtomicU8, AtomicU64, AtomicUsize, Ordering};
 
+use liteinst::contracts::{FailureStage, QuiescenceLease};
+use liteinst::trampoline::{HookCallback, HookContext};
+
 use crate::raw;
-use crate::syscall::zpoline::DualMapping;
+use crate::syscall::zpoline::{
+    DualMapping, InstalledZpolineSet, PreparedZpolineSet, ZpolineMetrics, ZpolineSite,
+};
 use crate::syscall::{
-    DiscoverySubstrate, SyscallRefusal, SyscallStrategy, SyscallStrategyConfig,
-    first_profile_supports,
+    DiscoverySubstrate, FallbackPolicy, SiteOutcome, SyscallRefusal, SyscallStrategy,
+    SyscallStrategyConfig, first_profile_supports,
 };
 
 const PR_SET_SYSCALL_USER_DISPATCH: i32 = 59;
@@ -65,13 +75,20 @@ struct KernelSiginfo {
     _rest: [u8; 96],
 }
 
+const PATCH_TRAPPING: u8 = 0;
+const PATCH_PENDING: u8 = 1;
+const PATCH_REWRITTEN: u8 = 2;
+const PATCH_TRAP_PERMANENT: u8 = 3;
+
 struct SudSiteSlot {
     site_pc: AtomicU64,
     last_nr: AtomicU64,
     hits: AtomicU64,
+    patch_state: AtomicU8,
 }
 
 struct SudState {
+    lazy: bool,
     gateway_start: AtomicU64,
     gateway_end: AtomicU64,
     sites: Box<[SudSiteSlot]>,
@@ -81,6 +98,7 @@ struct SudState {
     traps: AtomicU64,
     forwarded: AtomicU64,
     signal_returns: AtomicU64,
+    fast_path_calls: AtomicU64,
     refused: AtomicU64,
     nested: AtomicU64,
     active_overflow: AtomicU64,
@@ -99,6 +117,53 @@ pub struct SudSiteRecord {
     pub hits: u64,
 }
 
+/// Lazypoline disposition of one recorded site.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum LazyPatchState {
+    /// Trap strategy (or lazypoline before the first-trap transition is
+    /// observed): the site only traps and forwards.
+    Trapping,
+    /// Discovered by a first trap and awaiting certified patch application.
+    Pending,
+    /// Rewritten by a successful patch batch; executions take the sled.
+    Rewritten,
+    /// Patch application left this site to the trap outcome permanently
+    /// (ineligible or a before-write failure under the trap fallback).
+    TrapPermanent,
+}
+
+fn lazy_patch_state(byte: u8) -> LazyPatchState {
+    match byte {
+        PATCH_PENDING => LazyPatchState::Pending,
+        PATCH_REWRITTEN => LazyPatchState::Rewritten,
+        PATCH_TRAP_PERMANENT => LazyPatchState::TrapPermanent,
+        _ => LazyPatchState::Trapping,
+    }
+}
+
+/// One recorded site with its lazypoline disposition.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct LazySiteRecord {
+    /// Native `syscall` instruction address (`call_addr - 2`).
+    pub site_pc: u64,
+    /// Most recent low-32-bit syscall number observed at this site.
+    pub last_syscall_nr: u32,
+    /// Number of authenticated traps recorded for this site.
+    pub hits: u64,
+    /// Current lazypoline disposition.
+    pub patch_state: LazyPatchState,
+}
+
+/// Ledgered result of one `apply_pending_patches` call that did not fail.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LazyApplyReport {
+    /// One outcome per certified site, in submission order.
+    pub outcomes: Vec<(u64, SiteOutcome)>,
+    /// Batch outcome/placement summary when a batch was installed; zeroes
+    /// with `trap` set from `outcomes` when every site stayed trapping.
+    pub metrics: ZpolineMetrics,
+}
+
 /// Signal-handler counters. `traps` counts authenticated first-profile traps;
 /// a refused authentication or policy failure is counted before fail-stop.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -110,6 +175,15 @@ pub struct SudCounters {
     /// Nested application-signal `rt_sigreturn`s redirected to the gateway
     /// restorer so the original signal frame can resume the forwarded call.
     pub signal_returns: u64,
+    /// Patched-site executions forwarded through the gateway delegate
+    /// without a SUD trap (lazypoline fast path).
+    pub fast_path_calls: u64,
+    /// Distinct recorded sites currently awaiting patch application.
+    pub pending_patches: usize,
+    /// Distinct recorded sites currently rewritten by a patch batch.
+    pub rewritten_sites: usize,
+    /// Distinct recorded sites left permanently to the trap outcome.
+    pub trap_permanent_sites: usize,
     /// Authenticated traps refused by the first-profile or registry policy.
     pub refused: u64,
     /// Same-thread nested-handler detections.
@@ -236,6 +310,70 @@ unsafe fn fail_stop(state: Option<&SudState>) -> ! {
     unsafe { core::arch::asm!("ud2", options(noreturn, nostack)) }
 }
 
+/// Genuine-syscall delegate for lazypoline-patched sites.
+///
+/// This mirrors the selected syscall callback's closed first-profile
+/// completion rules exactly (number and flags validation, all six arguments
+/// forwarded, raw result in RAX, RCX = site + 2, R11 = saved flags), except
+/// the genuine syscall executes through the SUD gateway page: while SUD is
+/// enabled on the executing thread, the selected callback's own syscall
+/// instruction would trap, but the gateway range is always allowed. No
+/// allocation, locking, TLS errno, or other syscall happens here.
+unsafe extern "C" fn lazy_gateway_delegate(context: *mut HookContext) {
+    let state_ptr = SUD_STATE.load(Ordering::Acquire);
+    if state_ptr.is_null() || context.is_null() {
+        // SAFETY: no genuine gateway exists; fail closed.
+        unsafe { fail_stop(None) }
+    }
+    // SAFETY: the installation retains state while any patched site can
+    // route here; uninstall refuses until the batch is retired.
+    let state = unsafe { &*state_ptr };
+    // SAFETY: the exact trampoline passes one live HookContext.
+    let context = unsafe { &mut *context };
+    let number = context.rax;
+    if !first_profile_supports(number as u32) || number != u64::from(number as u32) {
+        // SAFETY: refused before any genuine syscall.
+        unsafe { fail_stop(Some(state)) }
+    }
+    // Same admitted-flags envelope as the selected syscall callback.
+    const FLAGS: u64 = (1 << 0)
+        | (1 << 1)
+        | (1 << 2)
+        | (1 << 4)
+        | (1 << 6)
+        | (1 << 7)
+        | (1 << 9)
+        | (1 << 10)
+        | (1 << 11);
+    const REQUIRED: u64 = (1 << 1) | (1 << 9);
+    let flags = context.rflags;
+    if flags & !FLAGS != 0 || flags & REQUIRED != REQUIRED {
+        // SAFETY: refused before any genuine syscall.
+        unsafe { fail_stop(Some(state)) }
+    }
+    let Some(next) = context.instruction_pointer.checked_add(2) else {
+        // SAFETY: refused before any genuine syscall.
+        unsafe { fail_stop(Some(state)) }
+    };
+    let args = [
+        context.rdi as i64,
+        context.rsi as i64,
+        context.rdx as i64,
+        context.r10 as i64,
+        context.r8 as i64,
+        context.r9 as i64,
+    ];
+    // SAFETY: number is first-profile and the context carries the genuine
+    // syscall arguments under the installation contract.
+    let result = unsafe { gateway_syscall(state, number as i64, args) };
+    context.rax = result as u64;
+    context.rcx = next;
+    context.r11 = flags;
+    state.fast_path_calls.fetch_add(1, Ordering::AcqRel);
+}
+
+const LAZY_GATEWAY_DELEGATE: HookCallback = lazy_gateway_delegate;
+
 enum ActiveClaim {
     Claimed(usize),
     Nested,
@@ -282,8 +420,36 @@ fn record_site(state: &SudState, site_pc: u64, nr: u32) -> bool {
     let slot = &state.sites[index];
     slot.last_nr.store(u64::from(nr), Ordering::Release);
     slot.hits.store(1, Ordering::Release);
+    if state.lazy {
+        slot.patch_state.store(PATCH_PENDING, Ordering::Release);
+    }
     slot.site_pc.store(site_pc, Ordering::Release);
     true
+}
+
+/// Validates one lazypoline certificate against the trapped observation.
+/// `slot` is `(patch-state byte, last observed syscall number)` for the
+/// certified address, or `None` when no trap recorded that address. The
+/// trap proves one execution's number only; the certificate asserts every
+/// execution's number, so a disagreement means the certificate does not
+/// describe the discovered site and refuses by name.
+fn classify_lazy_cert(slot: Option<(u8, u32)>, certified_nr: u32) -> Result<(), SyscallRefusal> {
+    let Some((patch_state, last_nr)) = slot else {
+        return Err(SyscallRefusal::InvalidConfig {
+            field: "logical_pc",
+            reason: "site was not discovered by a lazypoline first trap",
+        });
+    };
+    if patch_state != PATCH_PENDING {
+        return Err(SyscallRefusal::InvalidConfig {
+            field: "logical_pc",
+            reason: "site is not pending lazypoline patch application",
+        });
+    }
+    if certified_nr != last_nr {
+        return Err(SyscallRefusal::SyscallNumberRangeUnproven);
+    }
+    Ok(())
 }
 
 unsafe extern "C" fn sud_handler(signal: i32, info: *mut KernelSiginfo, context: *mut c_void) {
@@ -600,6 +766,12 @@ pub struct SudInstallation {
     installer_tid: u64,
     action_installed: bool,
     closed: bool,
+    lazy_batch: Option<Box<InstalledZpolineSet>>,
+    // Publication failures hand back `Box<InstalledZpolineSet>` owners whose
+    // custody must be retained verbatim, hence the boxed element type.
+    #[allow(clippy::vec_box)]
+    lazy_retained: Vec<Box<InstalledZpolineSet>>,
+    lazy_poisoned: bool,
 }
 
 // SAFETY: shared references only read immutable custody data, call the
@@ -612,14 +784,13 @@ impl SudInstallation {
     /// thread. Call `register_current_thread` on each participating thread.
     pub fn install(config: SyscallStrategyConfig) -> Result<Self, SyscallRefusal> {
         config.validate()?;
-        if config.strategy() != SyscallStrategy::Trap {
-            return Err(if config.strategy() == SyscallStrategy::Lazypoline {
-                SyscallRefusal::StrategyUnavailableOnBackend
-            } else {
-                SyscallRefusal::InvalidConfig {
-                    field: "strategy",
-                    reason: "SUD substrate slice requires the trap strategy",
-                }
+        if !matches!(
+            config.strategy(),
+            SyscallStrategy::Trap | SyscallStrategy::Lazypoline
+        ) {
+            return Err(SyscallRefusal::InvalidConfig {
+                field: "strategy",
+                reason: "SUD substrate requires the trap or lazypoline strategy",
             });
         }
         if config.discovery() != DiscoverySubstrate::Sud {
@@ -654,6 +825,9 @@ impl SudInstallation {
             installer_tid: 0,
             action_installed: false,
             closed: false,
+            lazy_batch: None,
+            lazy_retained: Vec::new(),
+            lazy_poisoned: false,
         };
         if let Err(error) = owner.install_inner(page) {
             if owner.rollback_partial().is_ok() {
@@ -677,9 +851,11 @@ impl SudInstallation {
                 site_pc: AtomicU64::new(0),
                 last_nr: AtomicU64::new(0),
                 hits: AtomicU64::new(0),
+                patch_state: AtomicU8::new(PATCH_TRAPPING),
             })
             .collect();
         let state = Box::new(SudState {
+            lazy: self.config.strategy() == SyscallStrategy::Lazypoline,
             gateway_start: AtomicU64::new(0),
             gateway_end: AtomicU64::new(0),
             sites: sites.into_boxed_slice(),
@@ -689,6 +865,7 @@ impl SudInstallation {
             traps: AtomicU64::new(0),
             forwarded: AtomicU64::new(0),
             signal_returns: AtomicU64::new(0),
+            fast_path_calls: AtomicU64::new(0),
             refused: AtomicU64::new(0),
             nested: AtomicU64::new(0),
             active_overflow: AtomicU64::new(0),
@@ -789,16 +966,353 @@ impl SudInstallation {
     pub fn counters(&self) -> SudCounters {
         // SAFETY: state remains retained until uninstall after drain.
         let state = unsafe { &*self.state };
+        let lazy = self.lazy_sites();
         SudCounters {
             traps: state.traps.load(Ordering::Acquire),
             forwarded: state.forwarded.load(Ordering::Acquire),
             signal_returns: state.signal_returns.load(Ordering::Acquire),
+            fast_path_calls: state.fast_path_calls.load(Ordering::Acquire),
+            pending_patches: lazy
+                .iter()
+                .filter(|record| record.patch_state == LazyPatchState::Pending)
+                .count(),
+            rewritten_sites: lazy
+                .iter()
+                .filter(|record| record.patch_state == LazyPatchState::Rewritten)
+                .count(),
+            trap_permanent_sites: lazy
+                .iter()
+                .filter(|record| record.patch_state == LazyPatchState::TrapPermanent)
+                .count(),
             refused: state.refused.load(Ordering::Acquire),
             nested: state.nested.load(Ordering::Acquire),
             active_overflow: state.active_overflow.load(Ordering::Acquire),
             foreign: state.foreign.load(Ordering::Acquire),
             overflow: state.overflow.load(Ordering::Acquire),
-            recorded_sites: self.sites().len(),
+            recorded_sites: lazy.len(),
+        }
+    }
+
+    /// Sorted snapshot of recorded sites with lazypoline dispositions,
+    /// merging any concurrent duplicate slot allocations for the same site.
+    /// Duplicate slots for one address can only coexist transiently before
+    /// patch application; the strongest disposition wins the merge
+    /// (Rewritten, then TrapPermanent, then Pending).
+    pub fn lazy_sites(&self) -> Vec<LazySiteRecord> {
+        // SAFETY: state remains retained until uninstall after drain.
+        let state = unsafe { &*self.state };
+        let count = state
+            .site_count
+            .load(Ordering::Acquire)
+            .min(state.sites.len());
+        let rank = |value: LazyPatchState| match value {
+            LazyPatchState::Trapping => 0,
+            LazyPatchState::Pending => 1,
+            LazyPatchState::TrapPermanent => 2,
+            LazyPatchState::Rewritten => 3,
+        };
+        let mut merged: Vec<LazySiteRecord> = Vec::new();
+        for slot in &state.sites[..count] {
+            let site_pc = slot.site_pc.load(Ordering::Acquire);
+            if site_pc == 0 {
+                continue;
+            }
+            let record = LazySiteRecord {
+                site_pc,
+                last_syscall_nr: slot.last_nr.load(Ordering::Acquire) as u32,
+                hits: slot.hits.load(Ordering::Acquire),
+                patch_state: lazy_patch_state(slot.patch_state.load(Ordering::Acquire)),
+            };
+            if let Some(existing) = merged.iter_mut().find(|item| item.site_pc == site_pc) {
+                existing.hits += record.hits;
+                existing.last_syscall_nr = record.last_syscall_nr;
+                if rank(record.patch_state) > rank(existing.patch_state) {
+                    existing.patch_state = record.patch_state;
+                }
+            } else {
+                merged.push(record);
+            }
+        }
+        merged.sort_by_key(|record| record.site_pc);
+        merged
+    }
+
+    fn slot_for(&self, site_pc: u64) -> Option<(u8, u32)> {
+        // SAFETY: state remains retained until uninstall after drain.
+        let state = unsafe { &*self.state };
+        let count = state
+            .site_count
+            .load(Ordering::Acquire)
+            .min(state.sites.len());
+        let mut found = None;
+        for slot in &state.sites[..count] {
+            if slot.site_pc.load(Ordering::Acquire) == site_pc {
+                let candidate = (
+                    slot.patch_state.load(Ordering::Acquire),
+                    slot.last_nr.load(Ordering::Acquire) as u32,
+                );
+                // Prefer a pending duplicate so certification can proceed;
+                // any duplicate left behind is merged in snapshots.
+                if candidate.0 == PATCH_PENDING {
+                    return Some(candidate);
+                }
+                found = Some(candidate);
+            }
+        }
+        found
+    }
+
+    fn set_patch_state(&self, site_pc: u64, patch_state: u8) {
+        // SAFETY: state remains retained until uninstall after drain.
+        let state = unsafe { &*self.state };
+        let count = state
+            .site_count
+            .load(Ordering::Acquire)
+            .min(state.sites.len());
+        for slot in &state.sites[..count] {
+            if slot.site_pc.load(Ordering::Acquire) == site_pc {
+                slot.patch_state.store(patch_state, Ordering::Release);
+            }
+        }
+    }
+
+    fn require_lazy_applier(&self) -> Result<(), SyscallRefusal> {
+        if self.config.strategy() != SyscallStrategy::Lazypoline {
+            return Err(SyscallRefusal::InvalidConfig {
+                field: "strategy",
+                reason: "patch application requires the lazypoline strategy",
+            });
+        }
+        if self.lazy_poisoned {
+            return Err(SyscallRefusal::PublicationPoisoned);
+        }
+        // SAFETY: state remains retained until uninstall after drain.
+        let state = unsafe { &*self.state };
+        // SAFETY: gettid through the genuine gateway has no pointers and is
+        // allowed whether or not this thread is dispatched.
+        let tid = unsafe { gateway_syscall(state, libc::SYS_gettid, [0; 6]) };
+        if tid != self.installer_tid as i64
+            || state
+                .registered_tids
+                .iter()
+                .any(|slot| slot.load(Ordering::Acquire) == tid as u64)
+        {
+            // Patch publication performs ordinary syscalls; it must run on
+            // the unregistered installing thread.
+            return Err(SyscallRefusal::ThreadNotRegistered);
+        }
+        Ok(())
+    }
+
+    /// Publishes zpoline rewrites for caller-certified pending sites.
+    ///
+    /// Every certificate must name a site this installation discovered by a
+    /// first trap and still holds `Pending`, must carry this installation's
+    /// exact config, and its certified syscall number must equal the number
+    /// the trap last observed at that site. Certificates must form one
+    /// batch (one snapshot and code identity, as `PreparedZpolineSet`
+    /// requires). At most one batch is live at a time; retire it before
+    /// applying another.
+    ///
+    /// Per-site eligibility or before-write publication failures follow the
+    /// configured fallback policy: `Trap` marks the site `TrapPermanent`
+    /// and reports the `Trap` outcome; `Refuse` returns the named refusal
+    /// before any write with pending states unchanged. A keep-gated
+    /// publication failure poisons patch application under either policy.
+    /// Sites discovered after a successful batch keep trapping and
+    /// forwarding; they are pending for a later batch only after the live
+    /// batch is retired.
+    ///
+    /// `finalize` runs inside publication only after the source write, so
+    /// when this call ledgers a before-write failure as `Trap` (or returns
+    /// a refusal) the caller still owns restoring the source mapping's
+    /// final permissions before executing it again.
+    ///
+    /// The config placement budget must cover the batch (one handler
+    /// mapping per site plus sled and dispatcher, and their mapped bytes);
+    /// the vocabulary default budget only fits the single eager site, so a
+    /// lazypoline installation that will patch needs an explicit larger
+    /// `PlacementBudget`, or every apply is ledgered/refused as
+    /// `AllocationUnavailable`.
+    ///
+    /// # Safety
+    /// The same alias, lease-exclusion, finalizer, stack, signal, CET, and
+    /// saved-continuation contract as eager zpoline publication applies.
+    /// The calling thread must be the unregistered installing thread; the
+    /// lease must exclude execution of the certified code by every thread
+    /// (registered threads included) until this call returns.
+    pub unsafe fn apply_pending_patches(
+        &mut self,
+        certs: Vec<ZpolineSite<'_>>,
+        writable_base: *mut u8,
+        lease: &mut QuiescenceLease<'_>,
+        finalize: impl FnMut() -> Result<(), SyscallRefusal>,
+    ) -> Result<LazyApplyReport, SyscallRefusal> {
+        self.require_lazy_applier()?;
+        if self.lazy_batch.is_some() {
+            return Err(SyscallRefusal::StrategyAlreadyInstalled);
+        }
+        if certs.is_empty() {
+            return Err(SyscallRefusal::InvalidConfig {
+                field: "sites",
+                reason: "patch application requires at least one certificate",
+            });
+        }
+        let refuse = self.config.fallback() == FallbackPolicy::Refuse;
+        let mut outcomes: Vec<Option<(u64, SiteOutcome)>> = certs.iter().map(|_| None).collect();
+        let mut eligible: Vec<(usize, ZpolineSite<'_>)> = Vec::new();
+        let mut seen: Vec<u64> = Vec::new();
+        for (position, cert) in certs.into_iter().enumerate() {
+            let pc = cert.logical_pc;
+            let ineligible = if seen.contains(&pc) {
+                Some(SyscallRefusal::OwnershipConflict)
+            } else if cert.config != self.config {
+                Some(SyscallRefusal::InvalidConfig {
+                    field: "config",
+                    reason: "certificate config differs from the installation",
+                })
+            } else if let Err(reason) = classify_lazy_cert(self.slot_for(pc), cert.syscall_nr) {
+                Some(reason)
+            } else {
+                seen.push(pc);
+                // Probe per-site eligibility with a rebuilt certificate so
+                // the batch preparation below only sees eligible sites.
+                let probe = ZpolineSite {
+                    config: cert.config,
+                    identity: cert.identity,
+                    code: cert.code,
+                    base_address: cert.base_address,
+                    logical_pc: cert.logical_pc,
+                    entries: cert.entries,
+                    syscall_nr: cert.syscall_nr,
+                };
+                crate::syscall::zpoline::PreparedZpoline::prepare_lazy(probe, LAZY_GATEWAY_DELEGATE)
+                    .map(|_| ())
+                    .err()
+            };
+            match ineligible {
+                Some(reason) => {
+                    if refuse {
+                        return Err(reason);
+                    }
+                    self.set_patch_state(pc, PATCH_TRAP_PERMANENT);
+                    outcomes[position] = Some((pc, SiteOutcome::Trap));
+                }
+                None => eligible.push((position, cert)),
+            }
+        }
+        let finish = |outcomes: Vec<Option<(u64, SiteOutcome)>>,
+                      metrics: ZpolineMetrics|
+         -> LazyApplyReport {
+            LazyApplyReport {
+                outcomes: outcomes
+                    .into_iter()
+                    .map(|outcome| outcome.expect("every certificate receives an outcome"))
+                    .collect(),
+                metrics,
+            }
+        };
+        if eligible.is_empty() {
+            let trap = outcomes.len();
+            return Ok(finish(
+                outcomes,
+                ZpolineMetrics {
+                    trap,
+                    ..ZpolineMetrics::default()
+                },
+            ));
+        }
+        let eligible_pcs: Vec<u64> = eligible.iter().map(|(_, cert)| cert.logical_pc).collect();
+        let (positions, batch_certs): (Vec<usize>, Vec<ZpolineSite<'_>>) =
+            eligible.into_iter().unzip();
+        let prepared = PreparedZpolineSet::prepare_lazy_batch(batch_certs, LAZY_GATEWAY_DELEGATE)?;
+        // SAFETY: the caller supplies the complete contract above.
+        match unsafe { prepared.publish_with(writable_base, lease, finalize) } {
+            Ok(installed) => {
+                for (position, &pc) in positions.iter().zip(&eligible_pcs) {
+                    let outcome = installed
+                        .outcomes()
+                        .iter()
+                        .find(|(address, _)| *address == pc)
+                        .map(|(_, outcome)| *outcome)
+                        .expect("installed batch reports every prepared site");
+                    outcomes[*position] = Some((pc, outcome));
+                }
+                for &pc in &eligible_pcs {
+                    self.set_patch_state(pc, PATCH_REWRITTEN);
+                }
+                let metrics = installed.metrics();
+                self.lazy_batch = Some(installed);
+                Ok(finish(outcomes, metrics))
+            }
+            Err(failure) => {
+                let reason = failure.failure.reason;
+                let stage = failure.failure.stage;
+                self.lazy_retained.push(failure.retained);
+                if stage == FailureStage::KeepGated {
+                    self.lazy_poisoned = true;
+                    return Err(reason);
+                }
+                if refuse {
+                    return Err(reason);
+                }
+                for (position, &pc) in positions.iter().zip(&eligible_pcs) {
+                    self.set_patch_state(pc, PATCH_TRAP_PERMANENT);
+                    outcomes[*position] = Some((pc, SiteOutcome::Trap));
+                }
+                let trap = outcomes.len();
+                Ok(finish(
+                    outcomes,
+                    ZpolineMetrics {
+                        trap,
+                        ..ZpolineMetrics::default()
+                    },
+                ))
+            }
+        }
+    }
+
+    /// Restores the live patch batch's original `syscall` bytes and sled,
+    /// returning its sites to `Pending` so they trap (and can be certified
+    /// again) on next execution.
+    ///
+    /// # Safety
+    /// The same contract as [`Self::apply_pending_patches`] applies.
+    pub unsafe fn retire_lazy_batch(
+        &mut self,
+        writable_base: *mut u8,
+        lease: &mut QuiescenceLease<'_>,
+        finalize: impl FnMut() -> Result<(), SyscallRefusal>,
+    ) -> Result<(), SyscallRefusal> {
+        self.require_lazy_applier()?;
+        let Some(batch) = self.lazy_batch.take() else {
+            return Err(SyscallRefusal::InvalidConfig {
+                field: "lazy_batch",
+                reason: "no lazypoline patch batch is installed",
+            });
+        };
+        let pcs: Vec<u64> = batch
+            .outcomes()
+            .iter()
+            .filter(|(_, outcome)| *outcome == SiteOutcome::RewrittenLazypoline)
+            .map(|(pc, _)| *pc)
+            .collect();
+        // SAFETY: the caller supplies the complete contract above.
+        match unsafe { batch.retire(writable_base, lease, finalize) } {
+            Ok(()) => {
+                for pc in pcs {
+                    self.set_patch_state(pc, PATCH_PENDING);
+                }
+                Ok(())
+            }
+            Err(failure) => {
+                let reason = failure.failure.reason;
+                if failure.failure.stage == FailureStage::KeepGated {
+                    self.lazy_poisoned = true;
+                }
+                self.lazy_batch = Some(failure.retained);
+                Err(reason)
+            }
         }
     }
 
@@ -922,11 +1436,16 @@ impl SudInstallation {
         // installing thread must already have unregistered itself.
         let tid = unsafe { gateway_syscall(state, libc::SYS_gettid, [0; 6]) };
         if tid != self.installer_tid as i64
+            || self.lazy_batch.is_some()
+            || self.lazy_poisoned
             || state
                 .registered_tids
                 .iter()
                 .any(|slot| slot.load(Ordering::Acquire) != 0)
         {
+            // A live lazypoline batch routes patched sites through this
+            // gateway; retire it before uninstalling. Poisoned patch state
+            // likewise retains every mapping.
             std::mem::forget(self);
             return Err(SyscallRefusal::SignalContract);
         }
@@ -1064,6 +1583,7 @@ mod tests {
     #[test]
     fn active_claim_scans_all_slots_before_taking_an_earlier_hole() {
         let state = SudState {
+            lazy: false,
             gateway_start: AtomicU64::new(0),
             gateway_end: AtomicU64::new(0),
             sites: Box::new([]),
@@ -1073,6 +1593,7 @@ mod tests {
             traps: AtomicU64::new(0),
             forwarded: AtomicU64::new(0),
             signal_returns: AtomicU64::new(0),
+            fast_path_calls: AtomicU64::new(0),
             refused: AtomicU64::new(0),
             nested: AtomicU64::new(0),
             active_overflow: AtomicU64::new(0),
@@ -1086,6 +1607,83 @@ mod tests {
             claim_active_slot(&state, 78),
             ActiveClaim::Claimed(0)
         ));
+    }
+
+    #[test]
+    fn lazy_cert_classification_matches_trap_observation() {
+        assert_eq!(classify_lazy_cert(Some((PATCH_PENDING, 39)), 39), Ok(()));
+        assert_eq!(
+            classify_lazy_cert(Some((PATCH_PENDING, 39)), 186),
+            Err(SyscallRefusal::SyscallNumberRangeUnproven)
+        );
+        assert_eq!(
+            classify_lazy_cert(None, 39),
+            Err(SyscallRefusal::InvalidConfig {
+                field: "logical_pc",
+                reason: "site was not discovered by a lazypoline first trap",
+            })
+        );
+        for state in [PATCH_TRAPPING, PATCH_REWRITTEN, PATCH_TRAP_PERMANENT] {
+            assert_eq!(
+                classify_lazy_cert(Some((state, 39)), 39),
+                Err(SyscallRefusal::InvalidConfig {
+                    field: "logical_pc",
+                    reason: "site is not pending lazypoline patch application",
+                })
+            );
+        }
+    }
+
+    #[test]
+    fn lazy_record_site_marks_only_new_slots_pending() {
+        let mut state = SudState {
+            lazy: true,
+            gateway_start: AtomicU64::new(0),
+            gateway_end: AtomicU64::new(0),
+            sites: (0..2)
+                .map(|_| SudSiteSlot {
+                    site_pc: AtomicU64::new(0),
+                    last_nr: AtomicU64::new(0),
+                    hits: AtomicU64::new(0),
+                    patch_state: AtomicU8::new(PATCH_TRAPPING),
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            site_count: AtomicUsize::new(0),
+            registered_tids: [const { AtomicU64::new(0) }; MAX_ACTIVE_THREADS],
+            active_tids: [const { AtomicU64::new(0) }; MAX_ACTIVE_THREADS],
+            traps: AtomicU64::new(0),
+            forwarded: AtomicU64::new(0),
+            signal_returns: AtomicU64::new(0),
+            fast_path_calls: AtomicU64::new(0),
+            refused: AtomicU64::new(0),
+            nested: AtomicU64::new(0),
+            active_overflow: AtomicU64::new(0),
+            foreign: AtomicU64::new(0),
+            overflow: AtomicU64::new(0),
+        };
+        assert!(record_site(&state, 0x4000, 39));
+        assert_eq!(
+            state.sites[0].patch_state.load(Ordering::Acquire),
+            PATCH_PENDING
+        );
+        state.sites[0]
+            .patch_state
+            .store(PATCH_TRAP_PERMANENT, Ordering::Release);
+        assert!(record_site(&state, 0x4000, 39));
+        assert_eq!(
+            state.sites[0].patch_state.load(Ordering::Acquire),
+            PATCH_TRAP_PERMANENT,
+            "a re-trap must not resurrect a trap-permanent site to pending"
+        );
+        assert_eq!(state.sites[0].hits.load(Ordering::Acquire), 2);
+        state.lazy = false;
+        assert!(record_site(&state, 0x5000, 39));
+        assert_eq!(
+            state.sites[1].patch_state.load(Ordering::Acquire),
+            PATCH_TRAPPING,
+            "trap strategy never marks sites pending"
+        );
     }
 
     #[test]
@@ -1140,8 +1738,17 @@ mod tests {
             SudInstallation::install(zpoline).err(),
             Some(SyscallRefusal::InvalidConfig {
                 field: "strategy",
-                reason: "SUD substrate slice requires the trap strategy",
+                reason: "SUD substrate requires the trap or lazypoline strategy",
             })
+        );
+        let lazy_seccomp = SyscallStrategyConfig::new(SyscallStrategy::Lazypoline);
+        assert_eq!(
+            SudInstallation::install(lazy_seccomp).err(),
+            Some(SyscallRefusal::InvalidConfig {
+                field: "discovery",
+                reason: "SUD substrate requires DiscoverySubstrate::Sud",
+            }),
+            "lazypoline has no in-process seccomp substrate in this slice"
         );
         let seccomp = SyscallStrategyConfig::new(SyscallStrategy::Trap);
         assert_eq!(

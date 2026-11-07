@@ -792,7 +792,9 @@ fn scan_refusal(error: ScanError) -> SyscallRefusal {
 /// dynamic syscall wrapper therefore needs a stronger future certificate and
 /// is not admitted by merely naming one observed number as a guess.
 pub struct ZpolineSite<'a> {
-    /// Frozen strategy selection; its strategy must be `Zpoline`.
+    /// Frozen strategy selection; `Zpoline` for eager preparation, or
+    /// `Lazypoline` when the site is certified for lazypoline patch
+    /// application through the SUD substrate.
     pub config: SyscallStrategyConfig,
     /// Actual mapping incarnation and generation.
     pub identity: CodeIdentity,
@@ -828,8 +830,30 @@ pub struct PreparedZpoline {
 impl PreparedZpoline {
     /// Validates the certified site and builds the exact-syscall handler plan.
     pub fn prepare(site: ZpolineSite<'_>) -> Result<Self, SyscallRefusal> {
+        Self::prepare_inner(site, None)
+    }
+
+    /// Lazypoline preparation: identical certification and plan to
+    /// [`Self::prepare`], but the strategy may be `Lazypoline` and the
+    /// genuine-syscall delegate is supplied by the discovery substrate (the
+    /// SUD gateway forwarder), because the selected callback's own syscall
+    /// instruction would itself be dispatched while SUD is enabled.
+    pub(crate) fn prepare_lazy(
+        site: ZpolineSite<'_>,
+        delegate: HookCallback,
+    ) -> Result<Self, SyscallRefusal> {
+        Self::prepare_inner(site, Some(delegate))
+    }
+
+    fn prepare_inner(
+        site: ZpolineSite<'_>,
+        delegate_override: Option<HookCallback>,
+    ) -> Result<Self, SyscallRefusal> {
         site.config.validate()?;
-        if site.config.strategy() != SyscallStrategy::Zpoline {
+        let lazy = delegate_override.is_some();
+        if site.config.strategy() != SyscallStrategy::Zpoline
+            && !(lazy && site.config.strategy() == SyscallStrategy::Lazypoline)
+        {
             return Err(SyscallRefusal::InvalidConfig {
                 field: "strategy",
                 reason: "zpoline site requires the zpoline strategy",
@@ -919,7 +943,10 @@ impl PreparedZpoline {
                 })?,
         )
         .map_err(core_refusal)?;
-        let delegate = syscall_callback(&instruction).map_err(core_refusal)?;
+        let delegate = match delegate_override {
+            Some(delegate) => delegate,
+            None => syscall_callback(&instruction).map_err(core_refusal)?,
+        };
 
         let scan = InstructionScanner::default()
             .scan(site.code, site.base_address)
@@ -1473,7 +1500,7 @@ pub struct PlacementCounts {
 pub struct ZpolineMetrics {
     /// Sites currently rewritten by zpoline.
     pub rewritten_zpoline: usize,
-    /// Sites currently rewritten by lazypoline (always zero in slice 3).
+    /// Sites currently rewritten by lazypoline.
     pub rewritten_lazypoline: usize,
     /// Sites left to a trap substrate.
     pub trap: usize,
@@ -1560,7 +1587,23 @@ impl PreparedZpolineSet {
 
     /// Prepares an explicitly certified batch in one snapshot/identity.
     /// Every named site must be eligible; use `census` for mixed outcomes.
-    pub fn prepare_batch(mut sites: Vec<ZpolineSite<'_>>) -> Result<Self, SyscallRefusal> {
+    pub fn prepare_batch(sites: Vec<ZpolineSite<'_>>) -> Result<Self, SyscallRefusal> {
+        Self::prepare_batch_inner(sites, None)
+    }
+
+    /// Lazypoline batch preparation with the substrate gateway delegate;
+    /// see [`PreparedZpoline::prepare_lazy`].
+    pub(crate) fn prepare_lazy_batch(
+        sites: Vec<ZpolineSite<'_>>,
+        delegate: HookCallback,
+    ) -> Result<Self, SyscallRefusal> {
+        Self::prepare_batch_inner(sites, Some(delegate))
+    }
+
+    fn prepare_batch_inner(
+        mut sites: Vec<ZpolineSite<'_>>,
+        delegate_override: Option<HookCallback>,
+    ) -> Result<Self, SyscallRefusal> {
         let first = sites.first().ok_or(SyscallRefusal::InvalidConfig {
             field: "sites",
             reason: "batch requires at least one site",
@@ -1587,7 +1630,7 @@ impl PreparedZpolineSet {
                 return Err(SyscallRefusal::DependencyNotHeld);
             }
             outcomes.push((site.logical_pc, crate::syscall::SiteOutcome::Trap));
-            prepared.push(PreparedZpoline::prepare(site)?);
+            prepared.push(PreparedZpoline::prepare_inner(site, delegate_override)?);
         }
         let sled_layout = prepared[0].sled_layout;
         Self::from_prepared(
@@ -2138,6 +2181,11 @@ unsafe fn publish_set_inner(
             .expect("handler was retained through publication")
             .publish_program_counter_mappings();
     }
+    let rewritten = if retained.prepared.config.strategy() == SyscallStrategy::Lazypoline {
+        crate::syscall::SiteOutcome::RewrittenLazypoline
+    } else {
+        crate::syscall::SiteOutcome::RewrittenZpoline
+    };
     for outcome in &mut retained.outcomes {
         if retained
             .prepared
@@ -2145,7 +2193,7 @@ unsafe fn publish_set_inner(
             .iter()
             .any(|site| site.logical_pc == outcome.0)
         {
-            outcome.1 = crate::syscall::SiteOutcome::RewrittenZpoline;
+            outcome.1 = rewritten;
         }
     }
     retained.placement = PlacementCounts {
@@ -2277,7 +2325,11 @@ unsafe fn retire_set_inner(
         return Err(keep(reason));
     }
     for outcome in &mut retained.outcomes {
-        if outcome.1 == crate::syscall::SiteOutcome::RewrittenZpoline {
+        if matches!(
+            outcome.1,
+            crate::syscall::SiteOutcome::RewrittenZpoline
+                | crate::syscall::SiteOutcome::RewrittenLazypoline
+        ) {
             outcome.1 = crate::syscall::SiteOutcome::Trap;
         }
     }
