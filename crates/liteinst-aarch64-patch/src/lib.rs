@@ -140,6 +140,14 @@ pub enum PatchError {
         /// The synchronization error that left publication pending.
         source: Box<PatchError>,
     },
+    /// The store window itself was refused at open, before any
+    /// store issued (for example a platform-policy mprotect
+    /// denial). Downstream store selection keys on exactly this
+    /// variant; it is never produced after a store.
+    WindowRefused {
+        /// The window-open error from the store backend.
+        source: Box<PatchError>,
+    },
     /// The store landed and synced, but restoring the window's
     /// original protections failed; the site is in
     /// `SyncPending`/`RetainedStop` custody with the window still
@@ -215,6 +223,9 @@ impl core::fmt::Display for PatchError {
             }
             Self::RestoreFailed { source } => {
                 write!(f, "post-store protection restore failed: {source}")
+            }
+            Self::WindowRefused { source } => {
+                write!(f, "store window refused before any store: {source}")
             }
             Self::CleanupFailed { expected, found } => {
                 write!(

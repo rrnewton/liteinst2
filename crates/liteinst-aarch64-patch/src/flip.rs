@@ -411,7 +411,9 @@ impl Patcher {
         // failure is pre-store and releases the lease cleanly.
         if let Err(e) = site.begin_write() {
             return if self.release_after_refusal(site, stop) {
-                Err(e)
+                Err(PatchError::WindowRefused {
+                    source: Box::new(e),
+                })
             } else {
                 Err(PatchError::ResumeIncomplete)
             };
@@ -512,7 +514,9 @@ impl Patcher {
         }
         if let Err(e) = site.begin_write() {
             return if self.release_after_refusal(site, stop) {
-                Err(e)
+                Err(PatchError::WindowRefused {
+                    source: Box::new(e),
+                })
             } else {
                 Err(PatchError::ResumeIncomplete)
             };
@@ -869,6 +873,7 @@ mod tests {
         begins: core::sync::atomic::AtomicU32,
         finishes: core::sync::atomic::AtomicU32,
         fail_store: core::sync::atomic::AtomicBool,
+        fail_begin: core::sync::atomic::AtomicBool,
         finish_failures_left: core::sync::atomic::AtomicU32,
     }
 
@@ -904,6 +909,12 @@ mod tests {
         fn begin_write(&mut self) -> Result<(), PatchError> {
             use core::sync::atomic::Ordering;
             self.counts.begins.fetch_add(1, Ordering::SeqCst);
+            if self.counts.fail_begin.load(Ordering::SeqCst) {
+                return Err(PatchError::Os {
+                    op: "fake window open",
+                    errno: libc::EACCES,
+                });
+            }
             Ok(())
         }
         fn store_word(&mut self, word: u32) -> Result<(), PatchError> {
@@ -1161,5 +1172,24 @@ mod tests {
             patcher2.complete_sync(&mut site2, &mut stop),
             Err(PatchError::ForkedRegistry)
         );
+    }
+    #[test]
+    fn begin_failure_is_window_refused_before_any_store() {
+        use core::sync::atomic::Ordering;
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let (store, counts) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        counts.fail_begin.store(true, Ordering::SeqCst);
+        let mut site =
+            unsafe { Site::from_rx(0x1000, svc(0), foreign_facts(7), Box::new(store)) }.unwrap();
+        assert!(matches!(
+            patcher.flip(&mut site, trap_request(), &mut stop),
+            Err(PatchError::WindowRefused { .. })
+        ));
+        assert_eq!(site.state(), SiteState::Unpatched);
+        assert_eq!(word, svc(0));
+        assert_eq!(counts.begins.load(Ordering::SeqCst), 1);
+        assert_eq!(counts.finishes.load(Ordering::SeqCst), 0);
     }
 }
