@@ -55,6 +55,99 @@ Rapid puns are also the least general tactic: when the exact pun does
 not exist, the planner says so and you pick another family. There is no
 approximate rapid mode.
 
+### Project stage: the first-hook target, at rapid speed
+
+[your first hook](first-hook.md) grows here. The first thing the
+rapid planner teaches is that it cannot take that target as-is:
+its five-byte window (`xor eax,eax; inc eax; nop`) contains two
+more instruction heads, and planning refuses by name. Listing
+FH-3 is the whole experiment — plan the original eight bytes and
+read the refusal (`PatchWindowContainsInstructionHead`, head at
+`address + 2`, the `inc`).
+
+<span class="filename">Listing FH-3: the original target, refused by name</span>
+
+```rust,ignore
+    /// The first-hook target, unchanged: `xor eax,eax; inc eax; nop; ret`.
+    pub const ORIGINAL_TARGET: [u8; 8] = [0x31, 0xC0, 0xFF, 0xC0, 0x90, 0xC3, 0x90, 0x90];
+
+    /// Plans a rapid probe on the original eight bytes. This is the step
+    /// that teaches the tactic's limit: planning *refuses*, by name,
+    /// because `inc eax` begins inside the five-byte pun window.
+    pub fn plan_original(
+        mapping: &DualMapping,
+    ) -> Result<RapidTogglePlan, RapidToggleError> {
+        mapping.write(0, &ORIGINAL_TARGET);
+        let address = mapping.executable_address(0);
+        let scanner = InstructionScanner::default();
+        let scan = scanner
+            .scan(&ORIGINAL_TARGET, address)
+            .expect("the original target decodes");
+        RapidTogglePlan::from_scan(&scanner, &scan, &ORIGINAL_TARGET, address, address, record)
+    }
+```
+
+So the stage reshapes the target instead of arguing: one
+`mov eax, imm32; ret`, where you choose the imm32 to *be* the
+rel32 displacement from the window to a page you first reserve
+(`PROT_NONE`, `MAP_FIXED_NOREPLACE`) and then release for the
+trampoline allocator. The pun is now exact by construction —
+inactive, the instruction loads the displacement as its return
+value; active, byte 0 alone flips to the near-jump opcode and
+the same four bytes become that jump's displacement. Listing
+FH-4 is the reshaping and install (`DualMapping` is the
+first-hook chapter's dual-mapped page, unchanged; the
+placeholder is the reservation just described). Toggling is then
+`probe.enable()` / `probe.disable()` — one atomic byte store
+each, tail bytes verified unchanged, the function returning the
+same value in both states with the callback counted only while
+active (2 tests, `cargo test -- --test-threads=1`, including the
+FH-3 refusal).
+
+<span class="filename">Listing FH-4: reshaped so its first instruction can pun</span>
+
+```rust,ignore
+    /// The same tiny function, reshaped so its first instruction can pun:
+    /// one `mov eax, imm32; ret`, whose imm32 *is* the rel32 displacement
+    /// to the trampoline. Inactive, the function returns that imm32;
+    /// active, byte 0 becomes the near-jump opcode and the remaining
+    /// four bytes - unchanged - become its displacement. Returns the
+    /// installed (inactive) probe and the value the function returns
+    /// in both states.
+    pub fn install_reshaped(mapping: &DualMapping) -> (RapidProbe, u32) {
+        let address = mapping.executable_address(0);
+        let placeholder = Placeholder::reserve_near(address + 5);
+        let target_address = placeholder.address + 128;
+        let displacement =
+            i32::try_from(target_address as i128 - i128::from(address + 5)).unwrap();
+        let mut code = vec![0xB8];
+        code.extend_from_slice(&displacement.to_le_bytes());
+        code.extend_from_slice(&[0xC3, 0x90, 0x90]);
+        mapping.write(0, &code);
+        let scanner = InstructionScanner::default();
+        let scan = scanner.scan(&code, address).expect("reshaped target decodes");
+        let plan = RapidTogglePlan::from_scan(&scanner, &scan, &code, address, address, record)
+            .expect("the reshaped target plans");
+        assert_eq!(plan.target_address(), target_address as u64);
+        placeholder.release();
+        // SAFETY: both aliases and the callback are process-lifetime in
+        // this program, the writable alias shares the window's
+        // cache-line offset, and no other writer touches the window.
+        let probe = unsafe { RapidProbe::install(plan, mapping.writable_address(0)) }
+            .expect("rapid probe installs inactive");
+        (probe, displacement as u32)
+    }
+```
+
+Three obligations in that listing are the tactic's whole safety
+story, and they are on you: the trampoline must land at the
+*exact* address the original tail bytes name (hence the
+reserve-then-release dance); the writable alias must share the
+window's cache-line offset and stay mapped for the process
+lifetime; and no instruction head or direct branch target may
+enter bytes 1–4 — the planner checks the ones a linear scan can
+see, and external or indirect entries are yours to exclude.
+
 ## Synchronized (sync-core) publication
 
 The experimental `patcher::synchronized` API publishes words and

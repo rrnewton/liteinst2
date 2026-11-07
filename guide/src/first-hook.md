@@ -114,6 +114,23 @@ because in instrumentation they are *different* bugs:
   [Page gates](page-gates.md) exist, and why the
   [safety contract](safety.md) puts entry evidence on the caller.
 
+## Growing this project
+
+This target is the book's running project; later chapters return
+to it and change one thing at a time:
+
+| Stage | What changes | Full code at this step |
+|---|---|---|
+| 1. Replace-first hook | this chapter | `examples/replace_first.rs` |
+| 2. Rapid toggle | the target is reshaped so its first instruction can pun; toggling becomes one atomic byte store | [Tactics](tactics.md#project-stage-the-first-hook-target-at-rapid-speed), Listings FH-3/FH-4 plus this chapter's dual-mapped page |
+| 3. One bundle, two sites | composition | under construction below |
+| 4. Page-gated variant | admission by mapping, not by scan alone | under construction below |
+
+Stage 2 carries the growth lesson in miniature: the planner —
+not the author — decides whether a growth step is available,
+and when it refuses, the honest move is to reshape the program
+or pick another tactic, never to approximate.
+
 ## Summary
 
 You installed a replace-first hook: scan, plan, publish (inactive),
@@ -121,9 +138,11 @@ activate, run, deactivate.
 The next chapter explains why publishing a patch into live code is safe
 at all — the instruction-punning idea the whole library rests on.
 
-> 🚧 **Under construction — grow the project.** TODO: extend this
-> project across later chapters — the same target
-> program gains a rapid toggle (Chapter on tactics), a second site
-> under one bundle (composition), and a page-gated variant — with a
-> "full code at this step" link per stage. <!-- UC: fh-grow -->
+> 🚧 **Under construction — grow the project (stages 3–4).** The
+> rapid-toggle stage above landed in
+> [Tactics](tactics.md#project-stage-the-first-hook-target-at-rapid-speed).
+> Still TODO, in order: a second site under one bundle
+> (composition, with Listings in the contracts chapter), then a
+> page-gated variant of the same target — each with its full
+> code proven before it is printed. <!-- UC: fh-grow -->
 > Tracking: [liteinst2#38](https://github.com/rrnewton/liteinst2/issues/38) (`fh-grow`).
