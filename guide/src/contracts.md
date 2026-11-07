@@ -140,3 +140,213 @@ IBT/shadow-stack fixtures, an Intel cross-check of the supported
 subset) is still open in `A2-COMPOSITION.md`, and concurrent
 toggle visibility remains A4 work. The lifecycle above is the
 landed install-once transaction, no more and no less.
+
+### Project stage: two sites, one bundle
+
+The [first-hook project](first-hook.md) grows here — and changes
+publication model as it does. Two copies of its six-byte body
+(`xor eax,eax; inc eax; nop; ret`, no padding) sit in one
+dual-mapped page. Each is planned as an install-once,
+relocation-only `PlannedInstall`; both are composed into one
+`PlannedBundle`, published under one lease, and retired as one
+transaction. There is no `activate()`/`deactivate()` pair:
+an `InstalledBundle` is permanently active until retired. The
+callbacks only count, so both functions return 1 before, during,
+and after the bundle — what changes is whether their counters move.
+
+Listing FH-5 is the member construction. Both members share one
+`CodeIdentity` for the page generation and plan against their
+own six-byte ranges. The entry claim is deliberately narrow:
+a closed body whose sole external entry is its first byte, with
+no saved continuations. Interior instruction heads are reached
+only by fallthrough inside that closed body. Generated placement
+is pinned to a distinct one-page range per member, so the two
+images are disjoint by construction rather than by search luck.
+
+<span class="filename">Listing FH-5: plan each body as one bundle member</span>
+
+```rust,ignore
+    /// The first-hook function without its padding: return 1.
+    pub const BODY: [u8; 6] = [0x31, 0xC0, 0xFF, 0xC0, 0x90, 0xC3];
+    pub const OFFSETS: [usize; 2] = [128, 640];
+
+    pub static FIRST_CALLBACKS: AtomicU64 = AtomicU64::new(0);
+    pub static SECOND_CALLBACKS: AtomicU64 = AtomicU64::new(0);
+
+    unsafe extern "C" fn record_first(_context: *mut HookContext) {
+        FIRST_CALLBACKS.fetch_add(1, Ordering::Relaxed);
+    }
+
+    unsafe extern "C" fn record_second(_context: *mut HookContext) {
+        SECOND_CALLBACKS.fetch_add(1, Ordering::Relaxed);
+    }
+
+    fn identity(mapping: &DualMapping) -> CodeIdentity {
+        CodeIdentity {
+            source: SourceIdentity([0xB0; 32]),
+            mapping: mapping.executable_address(0),
+            generation: 1,
+        }
+    }
+
+    fn body_range(mapping: &DualMapping, body: usize) -> AddressRange {
+        AddressRange::new(mapping.executable_address(OFFSETS[body]), BODY.len())
+            .expect("body range is nonempty")
+    }
+
+    fn allocation(mapping: &DualMapping, body: usize) -> AllocationPolicy {
+        let pc = mapping.executable_address(OFFSETS[body]);
+        let target = mapping
+            .executable_address(0)
+            .checked_add(0x0400_0000 + body as u64 * 0x0010_0000)
+            .expect("generated-image target is in range");
+        let mut allocation = AllocationPolicy::near(pc).expect("near allocation policy");
+        allocation.preferred_address = Some(target);
+        allocation.ranges = vec![
+            AddressRange::new(target, PAGE_BYTES).expect("generated-image page is nonempty"),
+        ];
+        allocation.max_candidates = 1;
+        allocation.max_mapped_bytes = PAGE_BYTES;
+        allocation
+    }
+
+    fn member(
+        mapping: &DualMapping,
+        identity: CodeIdentity,
+        body: usize,
+        hook: HookCallback,
+    ) -> PlannedInstall {
+        let range = body_range(mapping, body);
+        let entries = LegalEntrySet {
+            identity,
+            scope: range,
+            provenance: EntryProvenance::Declared(
+                "closed six-byte proof function; sole external entry".into(),
+            ),
+            completeness: EntryCompleteness::Complete,
+            entries: vec![LegalEntry {
+                address: range.start(),
+                requires_endbr: false,
+            }],
+            resumes: ResumeObligation::NoneExist,
+        };
+        let allocation = allocation(mapping, body);
+        plan_install(&InstallRequest {
+            identity,
+            code: &BODY,
+            base_address: range.start(),
+            function: range,
+            block: range,
+            logical_pc: range.start(),
+            entries: &entries,
+            hook,
+            semantics: HookSemantics::Observe,
+            allocation: &allocation,
+            search: SearchPolicy {
+                tactics: TacticPolicy::RelocationOnly,
+                max_upstream_bytes: 0,
+                max_displaced_bytes: 5,
+                max_sites: 1,
+            },
+        })
+        .expect("each proof body plans as a relocation")
+    }
+```
+
+Composition is where “two hooks” becomes one transaction.
+The two members are disjoint, so neither needs replanning
+against the other's edits; `compose` still authenticates each
+step against the preceding virtual overlay, and both originals
+stay byte-exact until publication. Publication holds one lease
+over the whole source page and one `WritableAlias` for it.
+The lease is not a formality in this code: the proof process is
+single-threaded, owns both aliases, and calls neither body while
+either lease is held. Retirement takes a *fresh* lease that also
+covers every generated allocation, because generated code and
+saved references must drain too — not only the source bytes.
+
+<span class="filename">Listing FH-6: compose, publish, retire as one transaction</span>
+
+```rust,ignore
+    /// Writes two copies of the first-hook body, plans each one
+    /// independently, and composes both members before any source store.
+    pub fn compose(mapping: &DualMapping) -> PlannedBundle {
+        for offset in OFFSETS {
+            mapping.write(offset, &BODY);
+        }
+        let identity = identity(mapping);
+        let members = vec![
+            member(mapping, identity, 0, record_first),
+            member(mapping, identity, 1, record_second),
+        ];
+        let originals = OFFSETS
+            .iter()
+            .map(|&offset| ExpectedBytes {
+                address: mapping.executable_address(offset),
+                bytes: BODY.to_vec(),
+            })
+            .collect();
+        PlannedBundle::compose(originals, members, BundleBudget::default())
+            .expect("two disjoint members compose")
+    }
+
+    /// Publishes both members as one transaction under a caller-held lease.
+    pub fn publish(
+        mapping: &DualMapping,
+        bundle: &PlannedBundle,
+    ) -> (InstalledBundle, BundleReceipt) {
+        let page = AddressRange::new(mapping.executable_address(0), PAGE_BYTES)
+            .expect("page range is nonempty");
+        let mut guard = ();
+        // SAFETY: this proof process is single-threaded, exclusively owns
+        // both aliases, and admits no call into either body while the
+        // lease is held.
+        let mut lease = unsafe { QuiescenceLease::new(&mut guard, identity(mapping), vec![page]) };
+        // SAFETY: the writable pointer is the same memfd page at the same
+        // offsets as the executable alias and remains mapped for the
+        // process lifetime.
+        let alias = unsafe { WritableAlias::new(page, mapping.writable_address(0)) }
+            .expect("page alias is in range");
+        // SAFETY: the lease above supplies the exclusion this proof owns;
+        // final RX permissions were established when the mapping was made.
+        let installed = unsafe { bundle.publish(&[alias], &mut lease) }
+            .expect("bundle publication succeeds");
+        assert!(!lease.is_poisoned());
+        installed
+    }
+
+    /// Retires both members under a fresh lease covering the source page
+    /// and every generated allocation named by the installed plan.
+    pub fn retire(mapping: &DualMapping, installed: &mut InstalledBundle) {
+        let page = AddressRange::new(mapping.executable_address(0), PAGE_BYTES)
+            .expect("page range is nonempty");
+        let mut held = vec![page];
+        held.extend(
+            installed
+                .plan()
+                .steps()
+                .iter()
+                .flat_map(|step| step.parts().allocations.iter().map(|a| a.range)),
+        );
+        let mut guard = ();
+        // SAFETY: the same single-threaded exclusion as publication, now
+        // extended to every generated allocation that must drain.
+        let mut lease = unsafe { QuiescenceLease::new(&mut guard, identity(mapping), held) };
+        // SAFETY: no call is admitted during retirement and the original
+        // aliases remain writable and mapped.
+        unsafe { installed.retire(&mut lease) }.expect("bundle retirement succeeds");
+        assert!(!lease.is_poisoned());
+        assert!(installed.is_retired());
+    }
+```
+
+The acceptance run is deliberately plain (1 test, with the
+rapid stage's 2 tests as regression): both bodies return 1 with
+zero callbacks before publication; after the one publish, each
+call moves only its own counter; after the one retire, both
+six-byte ranges are byte-identical to `BODY` again and the
+counters stop. That is the observable difference between two
+independent installs and one bundle — composition, publication,
+and retirement each succeed or refuse for the transaction as
+a whole, and a post-write failure would leave the whole bundle
+`KeepGated`, never half of it executing.

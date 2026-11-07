@@ -123,7 +123,7 @@ to it and change one thing at a time:
 |---|---|---|
 | 1. Replace-first hook | this chapter | `examples/replace_first.rs` |
 | 2. Rapid toggle | the target is reshaped so its first instruction can pun; toggling becomes one atomic byte store | [Tactics](tactics.md#project-stage-the-first-hook-target-at-rapid-speed), Listings FH-3/FH-4 plus this chapter's dual-mapped page |
-| 3. One bundle, two sites | composition | under construction below |
+| 3. One bundle, two sites | two copies of the target, planned independently and published/retired as one install-once transaction | [Contracts](contracts.md#project-stage-two-sites-one-bundle), Listings FH-5/FH-6 plus this chapter's dual-mapped page |
 | 4. Page-gated variant | admission by mapping, not by scan alone | under construction below |
 
 Stage 2 carries the growth lesson in miniature: the planner —
@@ -138,11 +138,11 @@ activate, run, deactivate.
 The next chapter explains why publishing a patch into live code is safe
 at all — the instruction-punning idea the whole library rests on.
 
-> 🚧 **Under construction — grow the project (stages 3–4).** The
-> rapid-toggle stage above landed in
-> [Tactics](tactics.md#project-stage-the-first-hook-target-at-rapid-speed).
-> Still TODO, in order: a second site under one bundle
-> (composition, with Listings in the contracts chapter), then a
-> page-gated variant of the same target — each with its full
-> code proven before it is printed. <!-- UC: fh-grow -->
+> 🚧 **Under construction — grow the project (stage 4).** The
+> rapid-toggle stage landed in
+> [Tactics](tactics.md#project-stage-the-first-hook-target-at-rapid-speed)
+> and the two-site bundle in
+> [Contracts](contracts.md#project-stage-two-sites-one-bundle).
+> Still TODO: a page-gated variant of the same target, with its
+> full code proven before it is printed. <!-- UC: fh-grow -->
 > Tracking: [liteinst2#38](https://github.com/rrnewton/liteinst2/issues/38) (`fh-grow`).
