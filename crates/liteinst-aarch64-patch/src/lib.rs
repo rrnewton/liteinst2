@@ -18,7 +18,9 @@
 pub mod cache;
 pub mod flip;
 pub mod island;
+pub mod mapping;
 pub mod site;
+pub mod store;
 
 pub use island::Island;
 pub use site::{
@@ -47,6 +49,8 @@ pub enum PatchError {
     CacheOpsUnavailable,
     /// An island must contain at least one word.
     EmptyIsland,
+    /// Words were offered to an island that is already published.
+    AlreadyPublished,
     /// Address/length arithmetic overflowed.
     RangeOverflow,
     /// A second live site already names this address.
@@ -95,6 +99,29 @@ pub enum PatchError {
     /// Trap was selected (or needed as fallback) without a pre-armed
     /// owned route for this site/generation.
     TrapNotArmed,
+    /// The site's mapping may not be windowed (shared, unknown,
+    /// non-executable, or absent). Named before any construction.
+    MappingRefused(&'static str),
+    /// Presented mapping facts belong to a different generation than
+    /// the site was qualified under.
+    StaleGeneration {
+        /// The site's recorded generation.
+        site: u64,
+        /// The generation of the presented facts.
+        facts: u64,
+    },
+    /// This patcher was constructed before a fork; its registry and
+    /// custodies are the parent's. The child must construct a new
+    /// patcher instead of operating this one.
+    ForkedRegistry,
+    /// A store operation after the window opened failed before the
+    /// word could be issued (or a partial writev neither landed nor
+    /// can be proven absent is reported through custody instead; see
+    /// the design note).
+    StoreFailed {
+        /// The underlying store error.
+        source: Box<PatchError>,
+    },
     /// The store landed but cache synchronization failed; the site is
     /// in `SyncPending`/`RetainedStop` custody, never "not flipped".
     /// The underlying sync error is preserved, not swallowed.
@@ -133,6 +160,7 @@ impl core::fmt::Display for PatchError {
             Self::Os { op, errno } => write!(f, "{op} failed (errno {errno})"),
             Self::CacheOpsUnavailable => write!(f, "EL0 cache maintenance unavailable"),
             Self::EmptyIsland => write!(f, "island must contain at least one word"),
+            Self::AlreadyPublished => write!(f, "island is already published"),
             Self::RangeOverflow => write!(f, "address range overflow"),
             Self::DuplicateSite { addr } => {
                 write!(f, "a live site already names address {addr:#x}")
@@ -156,6 +184,17 @@ impl core::fmt::Display for PatchError {
             Self::WrongState { state } => write!(f, "site is in state {state:?}"),
             Self::StrategyUnavailable(why) => write!(f, "no strategy available: {why}"),
             Self::TrapNotArmed => write!(f, "trap selected without an armed owned route"),
+            Self::MappingRefused(why) => write!(f, "mapping refused: {why}"),
+            Self::StaleGeneration { site, facts } => {
+                write!(f, "mapping generation mismatch: site {site}, facts {facts}")
+            }
+            Self::ForkedRegistry => {
+                write!(
+                    f,
+                    "patcher registry predates a fork; construct a new patcher"
+                )
+            }
+            Self::StoreFailed { source } => write!(f, "site store failed: {source}"),
             Self::SyncFailed { source } => {
                 write!(f, "post-store cache synchronization failed: {source}")
             }
@@ -200,6 +239,7 @@ pub struct Patcher {
     registry: SiteRegistry,
     attested: Option<cache::CacheAttested>,
     sync: unsafe fn(*mut u8, *mut u8, usize) -> Result<(), PatchError>,
+    owner_pid: u32,
 }
 
 impl core::fmt::Debug for Patcher {
@@ -226,6 +266,7 @@ impl Patcher {
             registry: SiteRegistry::new(),
             attested: None,
             sync: cache::sync_icache,
+            owner_pid: std::process::id(),
         }
     }
 
@@ -236,6 +277,7 @@ impl Patcher {
             registry: SiteRegistry::new(),
             attested: Some(cache::probe_environment()?),
             sync: cache::sync_icache,
+            owner_pid: std::process::id(),
         })
     }
 
@@ -250,7 +292,13 @@ impl Patcher {
             registry: SiteRegistry::new(),
             attested: Some(cache::CacheAttested::for_test()),
             sync,
+            owner_pid: std::process::id(),
         }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_owner_pid_for_test(&mut self, pid: u32) {
+        self.owner_pid = pid;
     }
 
     pub(crate) fn sync_range(
@@ -272,6 +320,15 @@ impl Patcher {
     /// The attestation token publication requires, when present.
     pub(crate) fn attested_token(&self) -> Option<cache::CacheAttested> {
         self.attested
+    }
+
+    /// Refuse if this patcher outlived a fork: registries, islands,
+    /// and custodies are parent-image state (see the design note).
+    pub(crate) fn check_fork(&self) -> Result<(), PatchError> {
+        if std::process::id() != self.owner_pid {
+            return Err(PatchError::ForkedRegistry);
+        }
+        Ok(())
     }
 
     /// The owned site registry.

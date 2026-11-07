@@ -118,6 +118,60 @@ pub enum EntryReach {
 /// pads accept a given `BR` landing is therefore register-dependent.
 /// This matrix stays conservative regardless: a call-only pad is never
 /// selected for jump reach.
+/// The complete lazy-promotion island for one SVC site:
+/// `[original SVC, B resume]` where resume is `site_addr + 4`.
+/// `None` when `original` is not an `SVC`, either address is
+/// misaligned, or the return branch cannot encode. Executing the
+/// original SVC inside the island preserves its immediate and every
+/// register/memory effect; only the indirect control flow differs.
+pub fn svc_island_words(original: u32, site_addr: u64, entry: u64) -> Option<[u32; 2]> {
+    if !matches!(decode(original), Insn::Svc { .. }) {
+        return None;
+    }
+    if !site_addr.is_multiple_of(4) || !entry.is_multiple_of(4) {
+        return None;
+    }
+    let resume = site_addr.checked_add(4)?;
+    let back = branch(
+        false,
+        i64::try_from(resume as i128 - (entry as i128 + 4)).ok()?,
+    )?;
+    Some([original, back])
+}
+
+/// As [`svc_island_words`], prefixed with the landing pad for
+/// `reach` when one is required (indirect entries). Returns the
+/// words and their live count (2 without a pad, 3 with).
+pub fn svc_island_words_padded(
+    reach: EntryReach,
+    original: u32,
+    site_addr: u64,
+    entry: u64,
+) -> Option<([u32; 3], usize)> {
+    match landing_pad(reach) {
+        None => {
+            let pair = svc_island_words(original, site_addr, entry)?;
+            Some(([pair[0], pair[1], 0], 2))
+        }
+        Some(pad) => {
+            if !matches!(decode(original), Insn::Svc { .. }) {
+                return None;
+            }
+            if !site_addr.is_multiple_of(4) || !entry.is_multiple_of(4) {
+                return None;
+            }
+            let resume = site_addr.checked_add(4)?;
+            let back = branch(
+                false,
+                i64::try_from(resume as i128 - (entry as i128 + 8)).ok()?,
+            )?;
+            Some(([pad, original, back], 3))
+        }
+    }
+}
+
+/// The `BTI` landing-pad word a branch of this reach class requires,
+/// or `None` for a direct-branch-only entry (emit no pad).
 pub fn landing_pad(reach: EntryReach) -> Option<u32> {
     match reach {
         EntryReach::Direct => None,
@@ -301,6 +355,40 @@ mod tests {
     use super::*;
 
     const SITE: u64 = 0x4000_0000;
+
+    #[test]
+    fn svc_island_words_preserve_original_and_return() {
+        let original = svc(0x1234);
+        let entry = SITE + 0x1000;
+        let words = svc_island_words(original, SITE, entry).unwrap();
+        assert_eq!(words[0], original);
+        assert_eq!(
+            decode(words[1]),
+            Insn::Branch {
+                link: false,
+                offset: (SITE as i64 + 4) - (entry as i64 + 4)
+            }
+        );
+        assert_eq!(svc_island_words(brk(0), SITE, entry), None);
+        assert_eq!(svc_island_words(original, SITE + 1, entry), None);
+        assert_eq!(svc_island_words(original, SITE, SITE + (1 << 28)), None);
+        let (padded, n) = svc_island_words_padded(EntryReach::Dual, original, SITE, entry).unwrap();
+        assert_eq!(n, 3);
+        assert_eq!(
+            decode(padded[0]),
+            Insn::Bti {
+                target: BtiTarget::JumpCall
+            }
+        );
+        assert_eq!(padded[1], original);
+        assert_eq!(
+            decode(padded[2]),
+            Insn::Branch {
+                link: false,
+                offset: (SITE as i64 + 4) - (entry as i64 + 8)
+            }
+        );
+    }
 
     #[test]
     fn svc_patch_word_respects_branch_range_edges() {

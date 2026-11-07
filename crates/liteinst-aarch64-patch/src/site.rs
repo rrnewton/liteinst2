@@ -5,6 +5,8 @@
 
 use crate::PatchError;
 use crate::island::Island;
+use crate::mapping::MappingFacts;
+use crate::store::{DualAliasStore, SiteStore};
 use liteinst_aarch64::Reg;
 
 /// Which stored word a pending sync will settle on completion. After a
@@ -123,7 +125,8 @@ impl TrapRoute {
 /// [`Site::from_aliases`]; there is no safe constructor from integers.
 pub struct Site {
     rx_addr: u64,
-    rw_alias: *mut u32,
+    store: Box<dyn SiteStore>,
+    facts: Option<MappingFacts>,
     original_word: u32,
     generation: u64,
     state: SiteState,
@@ -164,7 +167,8 @@ impl Site {
     ) -> Self {
         Self {
             rx_addr,
-            rw_alias,
+            store: Box::new(DualAliasStore::new(rw_alias)),
+            facts: None,
             original_word,
             generation,
             state: SiteState::Unpatched,
@@ -173,6 +177,65 @@ impl Site {
             island: None,
             trap_route: None,
         }
+    }
+
+    /// Construct a foreign-text site from its RX address, qualified
+    /// mapping facts, and the downstream store that will write it.
+    /// Refuses facts that do not contain the address or are not
+    /// windowable; the generation is taken from the facts.
+    ///
+    /// # Safety
+    /// `store` must name the same physical word the CPU executes at
+    /// `rx_addr` for `facts.generation`; the word at `rx_addr` must
+    /// currently equal `original_word`; and no other live `Site` or
+    /// writer may name this address (see [`SiteStore`]).
+    pub unsafe fn from_rx(
+        rx_addr: u64,
+        original_word: u32,
+        facts: MappingFacts,
+        store: Box<dyn SiteStore>,
+    ) -> Result<Self, PatchError> {
+        if !facts.contains(rx_addr) {
+            return Err(PatchError::MappingRefused(
+                "site address outside qualified page span",
+            ));
+        }
+        if !facts.windowable() {
+            return Err(PatchError::MappingRefused(
+                "shared or indeterminate mapping provenance",
+            ));
+        }
+        Ok(Self {
+            rx_addr,
+            store,
+            generation: facts.generation,
+            facts: Some(facts),
+            original_word,
+            state: SiteState::Unpatched,
+            flipped_word: None,
+            resume_states: Vec::new(),
+            island: None,
+            trap_route: None,
+        })
+    }
+
+    /// Refresh mapping facts (the only way a site's generation
+    /// advances). Refuses facts for a different site span.
+    pub fn requalify(&mut self, facts: MappingFacts) -> Result<(), PatchError> {
+        if !facts.contains(self.rx_addr) {
+            return Err(PatchError::MappingRefused(
+                "refreshed facts do not contain the site",
+            ));
+        }
+        self.generation = facts.generation;
+        self.facts = Some(facts);
+        Ok(())
+    }
+
+    /// The qualified mapping facts, when constructed via `from_rx`
+    /// or refreshed via `requalify`.
+    pub fn mapping_facts(&self) -> Option<MappingFacts> {
+        self.facts
     }
 
     /// Executable address of the site word.
@@ -239,21 +302,27 @@ impl Site {
         self.resume_states = states;
     }
 
-    /// Protocol-internal: read the current site word through the alias.
+    /// Protocol-internal: read the current site word through the
+    /// store's RX view of the same physical word.
     pub(crate) fn read_word(&self) -> u32 {
-        // SAFETY: construction contract keeps the alias valid.
-        unsafe { self.rw_alias.read_volatile() }
+        self.store.read_word()
     }
 
-    /// Writable alias word, shared-reference form for sync ranges.
-    pub(crate) fn rw_word_const(&self) -> *mut u32 {
-        self.rw_alias
+    /// Protocol-internal: the store's write address for sync ranges.
+    pub(crate) fn write_addr(&self) -> u64 {
+        self.store.write_addr()
     }
 
-    /// Writable alias word (protocol-internal; the design's one store).
-    #[allow(dead_code)]
-    pub(crate) fn rw_word(&mut self) -> *mut u32 {
-        self.rw_alias
+    pub(crate) fn begin_write(&mut self) -> Result<(), PatchError> {
+        self.store.begin_write()
+    }
+
+    pub(crate) fn store_word(&mut self, word: u32) -> Result<(), PatchError> {
+        self.store.store_word(word)
+    }
+
+    pub(crate) fn finish_write(&mut self) -> Result<(), PatchError> {
+        self.store.finish_write()
     }
 }
 
@@ -420,7 +489,7 @@ mod tests {
             assert_eq!(site.state(), state);
         }
         // SAFETY (test): alias names `word`, which outlives the site.
-        assert_eq!(unsafe { site.rw_word().read_volatile() }, 0xd400_0001);
+        assert_eq!(site.read_word(), 0xd400_0001);
         #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
         {
             let island = crate::island::Island::build(&[0xd503_24df]).unwrap();

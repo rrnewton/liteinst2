@@ -31,6 +31,8 @@ pub struct Island {
     rx: *mut u8,
     len: usize,
     words: usize,
+    capacity_words: usize,
+    published: bool,
 }
 
 impl core::fmt::Debug for Island {
@@ -82,8 +84,22 @@ impl Island {
         if words.is_empty() {
             return Err(PatchError::EmptyIsland);
         }
+        let mut island = Self::reserve(words.len())?;
+        island.fill(words)?;
+        Ok(island)
+    }
+
+    /// Map a fresh island with room for `capacity_words` words and no
+    /// payload yet, so entry-dependent words (branches back to a site)
+    /// can be computed from the real entry address and then filled
+    /// with [`fill`](Self::fill) before publication.
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    pub fn reserve(capacity_words: usize) -> Result<Self, PatchError> {
+        if capacity_words == 0 {
+            return Err(PatchError::EmptyIsland);
+        }
         let page = crate::page_size()?;
-        let payload = (words.len() as u64)
+        let payload = (capacity_words as u64)
             .checked_mul(4)
             .ok_or(PatchError::RangeOverflow)?;
         let len = page_span(page, payload).ok_or(PatchError::RangeOverflow)? as usize;
@@ -112,17 +128,47 @@ impl Island {
             }
             return Err(e);
         }
-        let island = Self {
+        Ok(Self {
             fd,
             rw: rw as *mut u8,
             rx: rx as *mut u8,
             len,
-            words: words.len(),
-        };
-        for (i, word) in words.iter().enumerate() {
-            island.write_word(i * 4, *word);
+            words: 0,
+            capacity_words,
+            published: false,
+        })
+    }
+
+    /// Reserve a fresh island (see the Linux form).
+    #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
+    pub fn reserve(_capacity_words: usize) -> Result<Self, PatchError> {
+        Err(PatchError::Unsupported("islands require AArch64 Linux"))
+    }
+
+    /// Write the payload words of a reserved island (may be called
+    /// repeatedly before publication to revise them). After
+    /// [`publish`](Self::publish) this returns
+    /// `PatchError::AlreadyPublished`: published text is immutable.
+    pub fn fill(&mut self, words: &[u32]) -> Result<(), PatchError> {
+        if self.published {
+            return Err(PatchError::AlreadyPublished);
         }
-        Ok(island)
+        if words.is_empty() {
+            return Err(PatchError::EmptyIsland);
+        }
+        if words.len() > self.capacity_words {
+            return Err(PatchError::RangeOverflow);
+        }
+        #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+        {
+            for (i, word) in words.iter().enumerate() {
+                self.write_word(i * 4, *word);
+            }
+            self.words = words.len();
+            Ok(())
+        }
+        #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
+        Err(PatchError::Unsupported("islands require AArch64 Linux"))
     }
 
     /// Map a fresh island (see the Linux form).
@@ -142,13 +188,17 @@ impl Island {
     /// Publish the written words for execution: dual-alias cache sync
     /// over the whole mapping. Requires the construction-time cache
     /// attestation token (environment established before any store).
-    pub fn publish(&self, _attested: CacheAttested) -> Result<(), PatchError> {
-        #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    pub fn publish(&mut self, _attested: CacheAttested) -> Result<(), PatchError> {
         // SAFETY: both aliases name this island's full shared range.
-        unsafe {
-            sync_icache(self.rw, self.rx, self.len)
-        }
-        #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
+        unsafe { sync_icache(self.rw, self.rx, self.len)? };
+        self.published = true;
+        Ok(())
+    }
+
+    /// Publish the written words (see the AArch64 Linux form).
+    #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
+    pub fn publish(&mut self, _attested: CacheAttested) -> Result<(), PatchError> {
         Err(PatchError::Unsupported("islands require AArch64 Linux"))
     }
 

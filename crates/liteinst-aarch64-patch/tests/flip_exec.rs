@@ -187,6 +187,7 @@ fn stopped_thread_flip_and_rollback_change_live_behavior() {
                 strategy: StrategyPreference::BranchOnly,
                 fallback: FallbackPermission::RefuseTrap,
                 trap_route: None,
+                mapping_facts: None,
             },
             &mut stop,
         )
@@ -279,6 +280,7 @@ fn brk_fallback_flip_reaches_owned_handler() {
                 // SAFETY: the SIGTRAP handler above is installed for
                 // exactly this site and stays installed across the call.
                 trap_route: Some(unsafe { TrapRoute::arm(map.rx as u64 + 4, 0x4c01, 3) }),
+                mapping_facts: None,
             },
             &mut SelfStop,
         )
