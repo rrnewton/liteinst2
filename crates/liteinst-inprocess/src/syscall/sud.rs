@@ -157,7 +157,9 @@ pub struct LazySiteRecord {
 /// Ledgered result of one `apply_pending_patches` call that did not fail.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct LazyApplyReport {
-    /// One outcome per certified site, in submission order.
+    /// One outcome per distinct certified site PC, in first-submission
+    /// order. Duplicate certificates for one PC collapse to that single
+    /// outcome (or refuse the call under the strict fallback).
     pub outcomes: Vec<(u64, SiteOutcome)>,
     /// Batch outcome/placement summary when a batch was installed; zeroes
     /// with `trap` set from `outcomes` when every site stayed trapping.
@@ -779,6 +781,23 @@ pub struct SudInstallation {
 // mapping ownership remain behind `&mut self`/consuming APIs.
 unsafe impl Sync for SudInstallation {}
 
+impl Drop for SudInstallation {
+    fn drop(&mut self) {
+        // Live lazypoline owners are deliberately leaked, never dropped:
+        // publication stored the batch hook-table address in process-global
+        // state that every patched call still reads, and the sled,
+        // dispatcher, and rewritten `ff d0` bytes intentionally survive.
+        // Only a verified `retire_lazy_batch` (which clears that global
+        // state and restores the source bytes first) may release them.
+        if let Some(batch) = self.lazy_batch.take() {
+            std::mem::forget(batch);
+        }
+        for retained in self.lazy_retained.drain(..) {
+            std::mem::forget(retained);
+        }
+    }
+}
+
 impl SudInstallation {
     /// Installs the SUD handler/gateway without enabling dispatch on any
     /// thread. Call `register_current_thread` on each participating thread.
@@ -1112,7 +1131,10 @@ impl SudInstallation {
     /// the trap last observed at that site. Certificates must form one
     /// batch (one snapshot and code identity, as `PreparedZpolineSet`
     /// requires). At most one batch is live at a time; retire it before
-    /// applying another.
+    /// applying another. Duplicate certificates for one PC are preflighted
+    /// before any state mutation: under `Refuse` the call refuses with
+    /// `OwnershipConflict`; under `Trap` every occurrence is removed from
+    /// eligibility and the one physical site is ledgered once as trapping.
     ///
     /// Per-site eligibility or before-write publication failures follow the
     /// configured fallback policy: `Trap` marks the site `TrapPermanent`
@@ -1159,12 +1181,37 @@ impl SudInstallation {
             });
         }
         let refuse = self.config.fallback() == FallbackPolicy::Refuse;
-        let mut outcomes: Vec<Option<(u64, SiteOutcome)>> = certs.iter().map(|_| None).collect();
+        // Duplicate preflight, before any state mutation: one physical PC
+        // gets exactly one disposition. Under Refuse any duplicate refuses
+        // the whole call; under Trap every occurrence is removed from
+        // eligibility and the site is ledgered once as physically trapping.
+        let mut duplicate_pcs: Vec<u64> = Vec::new();
+        for (index, cert) in certs.iter().enumerate() {
+            if certs[..index]
+                .iter()
+                .any(|prior| prior.logical_pc == cert.logical_pc)
+                && !duplicate_pcs.contains(&cert.logical_pc)
+            {
+                duplicate_pcs.push(cert.logical_pc);
+            }
+        }
+        if refuse && !duplicate_pcs.is_empty() {
+            return Err(SyscallRefusal::OwnershipConflict);
+        }
+        let mut unique: Vec<ZpolineSite<'_>> = Vec::with_capacity(certs.len());
+        for cert in certs {
+            if !unique
+                .iter()
+                .any(|prior| prior.logical_pc == cert.logical_pc)
+            {
+                unique.push(cert);
+            }
+        }
+        let mut outcomes: Vec<Option<(u64, SiteOutcome)>> = unique.iter().map(|_| None).collect();
         let mut eligible: Vec<(usize, ZpolineSite<'_>)> = Vec::new();
-        let mut seen: Vec<u64> = Vec::new();
-        for (position, cert) in certs.into_iter().enumerate() {
+        for (position, cert) in unique.into_iter().enumerate() {
             let pc = cert.logical_pc;
-            let ineligible = if seen.contains(&pc) {
+            let ineligible = if duplicate_pcs.contains(&pc) {
                 Some(SyscallRefusal::OwnershipConflict)
             } else if cert.config != self.config {
                 Some(SyscallRefusal::InvalidConfig {
@@ -1174,7 +1221,6 @@ impl SudInstallation {
             } else if let Err(reason) = classify_lazy_cert(self.slot_for(pc), cert.syscall_nr) {
                 Some(reason)
             } else {
-                seen.push(pc);
                 // Probe per-site eligibility with a rebuilt certificate so
                 // the batch preparation below only sees eligible sites.
                 let probe = ZpolineSite {
@@ -1632,6 +1678,101 @@ mod tests {
                 })
             );
         }
+    }
+
+    fn empty_state() -> *mut SudState {
+        Box::into_raw(Box::new(SudState {
+            lazy: true,
+            gateway_start: AtomicU64::new(0),
+            gateway_end: AtomicU64::new(0),
+            sites: Box::new([]),
+            site_count: AtomicUsize::new(0),
+            registered_tids: [const { AtomicU64::new(0) }; MAX_ACTIVE_THREADS],
+            active_tids: [const { AtomicU64::new(0) }; MAX_ACTIVE_THREADS],
+            traps: AtomicU64::new(0),
+            forwarded: AtomicU64::new(0),
+            signal_returns: AtomicU64::new(0),
+            fast_path_calls: AtomicU64::new(0),
+            refused: AtomicU64::new(0),
+            nested: AtomicU64::new(0),
+            active_overflow: AtomicU64::new(0),
+            foreign: AtomicU64::new(0),
+            overflow: AtomicU64::new(0),
+        }))
+    }
+
+    fn bare_installation() -> SudInstallation {
+        SudInstallation {
+            config: SyscallStrategyConfig::new(SyscallStrategy::Lazypoline),
+            state: empty_state(),
+            gateway: None,
+            gateway_range: (0, 0),
+            prior_action: KernelAction::default(),
+            installed_action: KernelAction::default(),
+            installer_stack: None,
+            page_size: 4096,
+            installer_tid: 0,
+            action_installed: false,
+            closed: false,
+            lazy_batch: None,
+            lazy_retained: Vec::new(),
+            lazy_poisoned: false,
+        }
+    }
+
+    #[test]
+    fn drop_leaks_live_lazy_owners_instead_of_freeing_hook_tables() {
+        use crate::syscall::zpoline::{InstalledZpolineSet, clear_hook_state_for_test};
+        // Detector control: an owner dropped directly (the only legitimate
+        // release shape, as after a verified retire clears the global hook
+        // state) really is observed freeing its table.
+        let (control, control_ptr) = InstalledZpolineSet::retained_for_test(LAZY_GATEWAY_DELEGATE);
+        crate::test_alloc::watch(control_ptr);
+        drop(control);
+        assert!(
+            crate::test_alloc::target_freed(),
+            "tracking allocator must observe the control deallocation"
+        );
+        clear_hook_state_for_test();
+
+        // Live batch: ordinary scope-exit Drop must leak, never free.
+        let (batch, batch_ptr) = InstalledZpolineSet::retained_for_test(LAZY_GATEWAY_DELEGATE);
+        crate::test_alloc::watch(batch_ptr);
+        let mut installation = bare_installation();
+        installation.lazy_batch = Some(batch);
+        drop(installation);
+        assert!(
+            !crate::test_alloc::target_freed(),
+            "Drop freed a published hook table"
+        );
+
+        // Retained publication-failure owners: same custody on Drop.
+        let (retained, retained_ptr) =
+            InstalledZpolineSet::retained_for_test(LAZY_GATEWAY_DELEGATE);
+        crate::test_alloc::watch(retained_ptr);
+        let mut installation = bare_installation();
+        installation.lazy_retained.push(retained);
+        drop(installation);
+        assert!(
+            !crate::test_alloc::target_freed(),
+            "Drop freed a retained hook table"
+        );
+
+        // Unwind: Drop during panic unwind must also leak.
+        let (batch, unwind_ptr) = InstalledZpolineSet::retained_for_test(LAZY_GATEWAY_DELEGATE);
+        crate::test_alloc::watch(unwind_ptr);
+        let mut installation = bare_installation();
+        installation.lazy_batch = Some(batch);
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _installation = installation;
+            panic!("custody unwind probe");
+        }));
+        assert!(result.is_err());
+        assert!(
+            !crate::test_alloc::target_freed(),
+            "unwind Drop freed a published hook table"
+        );
+        clear_hook_state_for_test();
     }
 
     #[test]

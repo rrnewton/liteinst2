@@ -226,19 +226,64 @@ fn child_main() -> Result<(), SyscallRefusal> {
         ],
         resumes: ResumeObligation::NoneExist,
     };
-    let cert = ZpolineSite {
+    let make_cert = |logical_pc: u64| ZpolineSite {
         config: lazy_config(FallbackPolicy::Trap),
         identity,
         code: &CODE,
         base_address: base as u64,
-        logical_pc: site_a as u64,
+        logical_pc,
         entries: &entries,
         syscall_nr: libc::SYS_getpid as u32,
     };
+    let finalize_rx = |address: *mut u8, len: usize| {
+        move || {
+            if unsafe {
+                libc::mprotect(
+                    address.cast::<c_void>(),
+                    len,
+                    libc::PROT_READ | libc::PROT_EXEC,
+                )
+            } == 0
+            {
+                Ok(())
+            } else {
+                Err(SyscallRefusal::AllocationUnavailable)
+            }
+        }
+    };
 
+    // Duplicate certificates for one physical PC: every occurrence leaves
+    // eligibility and the site is ledgered exactly once as trapping.
     region.permissions(libc::PROT_READ | libc::PROT_WRITE);
     let address = region.address;
     let len = region.len;
+    {
+        let mut lease = unsafe { QuiescenceLease::new(&mut region, identity, vec![source_range]) };
+        let duplicate = unsafe {
+            installation.apply_pending_patches(
+                vec![make_cert(site_b as u64), make_cert(site_b as u64)],
+                address,
+                &mut lease,
+                finalize_rx(address, len),
+            )
+        }
+        .expect("duplicate under trap fallback ledgers one Trap outcome");
+        assert_eq!(
+            duplicate.outcomes,
+            vec![(site_b as u64, SiteOutcome::Trap)],
+            "one physical PC, one outcome"
+        );
+        assert_eq!(duplicate.metrics.trap, 1);
+        assert_eq!(duplicate.metrics.rewritten_lazypoline, 0);
+    }
+    region.permissions(libc::PROT_READ | libc::PROT_EXEC);
+    assert_eq!(region.bytes(), CODE);
+    let lazy = installation.lazy_sites();
+    assert_eq!(lazy[0].patch_state, LazyPatchState::Pending);
+    assert_eq!(lazy[1].patch_state, LazyPatchState::TrapPermanent);
+
+    let cert = make_cert(site_a as u64);
+    region.permissions(libc::PROT_READ | libc::PROT_WRITE);
     let mut lease = unsafe { QuiescenceLease::new(&mut region, identity, vec![source_range]) };
     let report = unsafe {
         installation.apply_pending_patches(vec![cert], address, &mut lease, || {
@@ -267,7 +312,7 @@ fn child_main() -> Result<(), SyscallRefusal> {
         let after = installation.counters();
         assert_eq!(after.traps, before.traps, "patched site must not re-trap");
         assert_eq!(after.fast_path_calls, before.fast_path_calls + 1);
-        // The uncertified site discovered before the batch still re-traps.
+        // The duplicate-ledgered trap-permanent site still re-traps.
         run_registered(&installation, &[(site_b, pid)]);
         assert_eq!(installation.counters().traps, before.traps + 1);
 
@@ -299,7 +344,7 @@ fn child_main() -> Result<(), SyscallRefusal> {
         assert_eq!(region.bytes(), CODE);
         let lazy = installation.lazy_sites();
         assert_eq!(lazy[0].patch_state, LazyPatchState::TrapPermanent);
-        assert_eq!(lazy[1].patch_state, LazyPatchState::Pending);
+        assert_eq!(lazy[1].patch_state, LazyPatchState::TrapPermanent);
         let before = installation.counters();
         run_registered(&installation, &[(site_a, pid)]);
         let after = installation.counters();
@@ -348,33 +393,65 @@ fn refuse_child_main() -> Result<(), SyscallRefusal> {
         ],
         resumes: ResumeObligation::NoneExist,
     };
-    // The trap observed getpid; certifying gettid must refuse by name.
-    let cert = ZpolineSite {
+    let make_cert = |syscall_nr: u32| ZpolineSite {
         config: lazy_config(FallbackPolicy::Refuse),
         identity,
         code: &CODE,
         base_address: base as u64,
         logical_pc: base as u64,
         entries: &entries,
-        syscall_nr: libc::SYS_gettid as u32,
+        syscall_nr,
     };
-    region.permissions(libc::PROT_READ | libc::PROT_WRITE);
-    let address = region.address;
-    let len = region.len;
-    let mut lease = unsafe { QuiescenceLease::new(&mut region, identity, vec![source_range]) };
-    let result = unsafe {
-        installation.apply_pending_patches(vec![cert], address, &mut lease, || {
-            if libc::mprotect(
-                address.cast::<c_void>(),
-                len,
-                libc::PROT_READ | libc::PROT_EXEC,
-            ) == 0
+    let finalize_rx = |address: *mut u8, len: usize| {
+        move || {
+            if unsafe {
+                libc::mprotect(
+                    address.cast::<c_void>(),
+                    len,
+                    libc::PROT_READ | libc::PROT_EXEC,
+                )
+            } == 0
             {
                 Ok(())
             } else {
                 Err(SyscallRefusal::AllocationUnavailable)
             }
-        })
+        }
+    };
+    region.permissions(libc::PROT_READ | libc::PROT_WRITE);
+    let address = region.address;
+    let len = region.len;
+    // Duplicate correct certificates refuse the whole call before any
+    // state mutation; the site stays Pending for the mismatch check below.
+    {
+        let mut lease = unsafe { QuiescenceLease::new(&mut region, identity, vec![source_range]) };
+        let duplicate = unsafe {
+            installation.apply_pending_patches(
+                vec![
+                    make_cert(libc::SYS_getpid as u32),
+                    make_cert(libc::SYS_getpid as u32),
+                ],
+                address,
+                &mut lease,
+                finalize_rx(address, len),
+            )
+        };
+        assert_eq!(duplicate.unwrap_err(), SyscallRefusal::OwnershipConflict);
+        assert_eq!(
+            installation.lazy_sites()[0].patch_state,
+            LazyPatchState::Pending
+        );
+    }
+    // The trap observed getpid; certifying gettid must refuse by name.
+    let cert = make_cert(libc::SYS_gettid as u32);
+    let mut lease = unsafe { QuiescenceLease::new(&mut region, identity, vec![source_range]) };
+    let result = unsafe {
+        installation.apply_pending_patches(
+            vec![cert],
+            address,
+            &mut lease,
+            finalize_rx(address, len),
+        )
     };
     assert_eq!(
         result.unwrap_err(),

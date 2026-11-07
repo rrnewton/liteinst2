@@ -2339,6 +2339,88 @@ unsafe fn retire_set_inner(
 }
 
 #[cfg(test)]
+impl InstalledZpolineSet {
+    /// Builds a retained batch with its hook table published, without
+    /// mapping or writing anything, so wrapper-custody tests can watch the
+    /// table allocation. Returns the owner and the hook-table address.
+    pub(crate) fn retained_for_test(delegate: HookCallback) -> (Box<Self>, usize) {
+        use liteinst::contracts::{EntryProvenance, LegalEntry, SourceIdentity};
+        const BASE: u64 = 0x40_0000;
+        let code: &[u8] = &[0x0f, 0x05, 0xc3];
+        let identity = CodeIdentity {
+            source: SourceIdentity([7; 32]),
+            mapping: 11,
+            generation: 3,
+        };
+        let entries = LegalEntrySet {
+            identity,
+            scope: AddressRange::new(BASE, code.len()).unwrap(),
+            provenance: EntryProvenance::Declared("retained-for-test fixture".into()),
+            completeness: EntryCompleteness::Complete,
+            entries: vec![LegalEntry {
+                address: BASE,
+                requires_endbr: false,
+            }],
+            resumes: ResumeObligation::NoneExist,
+        };
+        let prepared = PreparedZpolineSet::prepare_lazy_batch(
+            vec![ZpolineSite {
+                config: SyscallStrategyConfig::new(SyscallStrategy::Lazypoline),
+                identity,
+                code,
+                base_address: BASE,
+                logical_pc: BASE,
+                entries: &entries,
+                syscall_nr: 39,
+            }],
+            delegate,
+        )
+        .unwrap();
+        let hook_sites: Vec<HookSite> = prepared
+            .sites
+            .iter()
+            .map(|site| HookSite {
+                logical_pc: site.logical_pc,
+                return_pc: site.return_pc,
+                syscall_nr: site.syscall_nr,
+                delegate: site.delegate,
+            })
+            .collect();
+        let outcomes = vec![(BASE, crate::syscall::SiteOutcome::RewrittenLazypoline)];
+        let retained = Box::new(Self {
+            prepared,
+            hook_sites: hook_sites.into_boxed_slice(),
+            sled: None,
+            dispatcher: None,
+            dispatcher_address: 0,
+            dispatcher_family: crate::syscall::PlacementFamily::Trap,
+            dispatcher_attempts: 0,
+            sites: vec![InstalledSiteState {
+                trampoline: None,
+                observed_handler: Vec::new(),
+            }],
+            observed_source: vec![0; code.len()],
+            observed_sled: Vec::new(),
+            observed_dispatcher: Vec::new(),
+            outcomes,
+            placement: PlacementCounts::default(),
+            stale: false,
+            captured: false,
+            verified: true,
+            write_attempted: false,
+        });
+        publish_hook_sites(&retained.hook_sites);
+        let hook_ptr = retained.hook_sites.as_ptr() as usize;
+        (retained, hook_ptr)
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn clear_hook_state_for_test() {
+    clear_hook_state();
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use liteinst::contracts::{EntryProvenance, LegalEntry, SourceIdentity};

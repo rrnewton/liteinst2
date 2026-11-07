@@ -74,7 +74,12 @@ writes code.
 At most one patch batch is live (the shared single zpoline owner);
 `retire_lazy_batch` restores the original bytes and returns its sites to
 `Pending`, and uninstall refuses while a batch is live or patch state is
-poisoned, because patched sites route through the gateway. Per-site
+poisoned, because patched sites route through the gateway. Dropping the
+installation with live or retained batch owners deliberately leaks them:
+the published hook table remains referenced by patched calls, and only a
+verified retirement may release it. Duplicate certificates for one PC are
+preflighted before any state mutation (refused under the strict policy;
+removed from eligibility with one trapping outcome under trap fallback). Per-site
 eligibility and before-write publication failures are ledgered: under the
 default trap fallback the site becomes `TrapPermanent` with a `Trap`
 outcome and keeps trapping; under `Refuse` the named refusal returns
