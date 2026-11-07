@@ -124,12 +124,14 @@ to it and change one thing at a time:
 | 1. Replace-first hook | this chapter | `examples/replace_first.rs` |
 | 2. Rapid toggle | the target is reshaped so its first instruction can pun; toggling becomes one atomic byte store | [Tactics](tactics.md#project-stage-the-first-hook-target-at-rapid-speed), Listings FH-3/FH-4 plus this chapter's dual-mapped page |
 | 3. One bundle, two sites | two copies of the target, planned independently and published/retired as one install-once transaction | [Contracts](contracts.md#project-stage-two-sites-one-bundle), Listings FH-5/FH-6 plus this chapter's dual-mapped page |
-| 4. Page-gated variant | admission by mapping, not by scan alone | under construction below |
+| 4. Page-gated variant | one private page; eager core publication, then first-touch admission | [Page gates](page-gates.md#project-stage-the-first-hook-target-behind-a-page-gate), Listing FH-7 with the FH-5/FH-6 planning and lease patterns |
 
-Stage 2 carries the growth lesson in miniature: the planner —
-not the author — decides whether a growth step is available,
-and when it refuses, the honest move is to reshape the program
-or pick another tactic, never to approximate.
+The stages carry one lesson in widening forms. The planner — not
+the author — decides whether the rapid step is available, and when
+it refuses, the honest move is to reshape the program; the bundle
+then changes publication from one hook to one transaction; and
+the gate changes the source-ownership model itself. Growth is
+never just “the same code with more flags.”
 
 ## Summary
 
@@ -138,11 +140,3 @@ activate, run, deactivate.
 The next chapter explains why publishing a patch into live code is safe
 at all — the instruction-punning idea the whole library rests on.
 
-> 🚧 **Under construction — grow the project (stage 4).** The
-> rapid-toggle stage landed in
-> [Tactics](tactics.md#project-stage-the-first-hook-target-at-rapid-speed)
-> and the two-site bundle in
-> [Contracts](contracts.md#project-stage-two-sites-one-bundle).
-> Still TODO: a page-gated variant of the same target, with its
-> full code proven before it is printed. <!-- UC: fh-grow -->
-> Tracking: [liteinst2#38](https://github.com/rrnewton/liteinst2/issues/38) (`fh-grow`).

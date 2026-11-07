@@ -35,6 +35,127 @@ entry coverage. The caller owns the immutable region and certifies
 complete entries and instruction extents; nothing is inferred from a
 symbol table.
 
+### Project stage: the first-hook target behind a page gate
+
+The [first-hook project](first-hook.md) ends here, but not by putting
+its `InstalledHook` behind the gate unchanged. That hook toggles by
+rewriting source bytes through a writable alias; an armed
+`PreparedGate` instead requires a private, immutable RX source and
+an independent final-byte snapshot, and the gate itself patches
+nothing. The honest variant therefore rebuilds the same six-byte
+body (`xor eax,eax; inc eax; nop; ret`) in one private anonymous
+page and publishes one install-once relocation *before* the gate is
+prepared.
+
+Planning follows [Listing FH-5](contracts.md#project-stage-two-sites-one-bundle)
+with one member instead of two: the same complete sole-entry claim,
+`RelocationOnly`, at most five displaced bytes, and one pinned
+generated page. Two details change. The semantics are
+`HookSemantics::ReplaceFirst`, and the callback sets `rax` to 40, so
+the relocated `inc` tail makes the published function return 41,
+as in the first hook. Publication makes the single page writable,
+holds a quiescence lease over it, and calls
+`PlannedInstall::publish_with` with a finalizer that restores RX;
+there is no second alias to keep writable afterwards.
+
+Only then does the gate enter. The whole final page — the body at
+offset 128 and `0xCC` filler elsewhere — is copied into an
+independent snapshot. The certified final fetches are not the
+original instruction list: they are the published five-byte jump at
+the body entry and the one-byte `ret` after it, both assigned to a
+one-page `PageBundle`. Any other source fetch would have to be
+named here; an unlisted or foreign fault is not admitted by
+approximation.
+
+<span class="filename">Listing FH-7: publish eagerly, admit on first touch</span>
+
+```rust,ignore
+    /// Runs one complete gate cycle. This must be a process entry point,
+    /// not a libtest thread: `PreparedGate::arm` verifies that the kernel
+    /// task registry contains exactly this main thread.
+    pub fn run() -> GateMetrics {
+        CALLBACKS.store(0, Ordering::Relaxed);
+        let mapping = SingleMapping::new();
+        mapping
+            .protect(libc::PROT_READ | libc::PROT_EXEC)
+            .expect("source page becomes executable");
+        assert_eq!(unsafe { mapping.function()() }, 1);
+        assert_eq!(CALLBACKS.load(Ordering::Relaxed), 0);
+
+        let planned = plan(&mapping, identity(&mapping));
+        let installed = publish(&mapping, &planned);
+        assert_eq!(unsafe { mapping.function()() }, 41);
+        assert_eq!(CALLBACKS.load(Ordering::Relaxed), 1);
+
+        let final_bytes = mapping.bytes().to_vec();
+        let address = mapping.address;
+        let function = mapping.function();
+        let mut owner = Owner {
+            mapping,
+            installed: Some(installed),
+        };
+        let extents = [
+            InstructionExtent {
+                offset: OFFSET,
+                len: 5,
+                bundle: 0,
+            },
+            InstructionExtent {
+                offset: OFFSET + 5,
+                len: 1,
+                bundle: 0,
+            },
+        ];
+        let bundles = [PageBundle {
+            first_page: 0,
+            page_count: 1,
+        }];
+        // SAFETY: the owner retains the private RX source and installed
+        // core patch; the snapshot is an independent immutable copy and
+        // the extents name both final fetches in the source page.
+        let prepared = unsafe { PreparedGate::new(&mut owner, address, &final_bytes, &extents, &bundles) }
+            .expect("gate preparation succeeds");
+        // SAFETY: this main thread is the singleton and no source call is
+        // in flight while permissions change.
+        let armed = unsafe { prepared.arm() }.expect("gate arm succeeds");
+        assert_eq!(armed.metrics().faults, 0);
+        assert_eq!(unsafe { function() }, 41);
+        let first_metrics = armed.metrics();
+        assert_eq!(first_metrics.faults, 1);
+        assert_eq!(first_metrics.admitted_pages, 1);
+        assert_eq!(CALLBACKS.load(Ordering::Relaxed), 2);
+        assert_eq!(unsafe { function() }, 41);
+        assert_eq!(armed.metrics(), first_metrics);
+        assert_eq!(CALLBACKS.load(Ordering::Relaxed), 3);
+        let metrics = armed.disarm().expect("gate disarm succeeds");
+        assert_eq!(metrics, first_metrics);
+
+        retire(&mut owner);
+        assert_eq!(&owner.mapping.bytes()[OFFSET..OFFSET + BODY.len()], &BODY);
+        assert_eq!(unsafe { owner.mapping.function()() }, 1);
+        assert_eq!(CALLBACKS.load(Ordering::Relaxed), 3);
+        metrics
+    }
+```
+
+This code runs as a dedicated child binary, not inside a libtest
+thread: `arm()` verifies that the kernel task registry contains
+exactly the main thread. The binary first establishes the gate's
+signal profile exactly as the shipped `native_probe` and
+`selected_probe` do — block every signal except `SIGSEGV` and
+`SIGILL`, reset Rust's stack-overflow `SIGSEGV` handler to the
+default disposition for the gate's lifetime, and restore both
+afterwards. Without that transfer, arming refuses with
+`Invalid("SIGSEGV/default/unblocked/altstack contract")`.
+
+The observed cycle is `native=1 published=41 gated=41 retired=1
+faults=1 admitted_pages=1`: the first gated call pays the one
+admission fault, the next changes no gate counter, and disarming
+alone does not remove the hook. Removal is the separate core
+retirement after disarm, under a fresh lease (as in
+[Listing FH-6](contracts.md#project-stage-two-sites-one-bundle));
+it restores all six source bytes and the counters stop.
+
 ## At launch: `liteinst-launch`
 
 `ExecCheckpoint::launch` owns an ELF child from its kernel exec event,
