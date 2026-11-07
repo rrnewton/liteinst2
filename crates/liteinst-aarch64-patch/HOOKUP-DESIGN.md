@@ -2,12 +2,30 @@
 
 Status: design only, for architecture review before code. Inputs:
 musearm1's S5b note (sha256 74cd5525…), musearm2's Q1–Q8 answers via
-museli-lt, and the landed patcher design/slices 2–3 contracts. The
-Android correctness requirement (press doc §5.2, relayed by museli-lt;
-text not in this repo — musearch to pin the exact wording) is treated
-as: **promoted execution must be guest-visibly identical to the trap
-path** (same syscall result, register, and memory effects), under
-Android's platform constraints below. If §5.2 says more, it wins.
+museli-lt, and the landed patcher design/slices 2–3 contracts.
+Musearch's S5.2 decision, dispatched through museli-lt, is canonical:
+
+> Promoted execution must be guest-visibly identical to the trap path
+> (same syscall result, register, and memory effects), under Android
+> platform constraints (W^X/SELinux, memfd exec policy, 16 KiB pages),
+> with platform-policy denials degrading to permanent trap execution --
+> never to policy circumvention.
+
+The strategy matrix is owned by selection cells outside patcher code:
+
+| Environment | Trap | SudTrap | TrapAndPatch | PatchEager |
+|---|---|---|---|---|
+| Linux userland | yes | x86_64-only, probed | yes; lazy default | where census is complete |
+| Wine in-process | yes | refused | only FEX-JIT-excluded ranges; unknown ranges pass through unpatched | refused in v1 |
+| Android app sandbox | yes | refused by name | only where a memfd dual mapping passes the execmem probe; otherwise permanent Trap | refused in v1 |
+
+The patcher does not classify the environment, choose among Trap,
+SudTrap, TrapAndPatch, or PatchEager, or encode this matrix. Its
+`StrategyPreference` is the narrower choice a selector hands to an
+already-selected TrapAndPatch operation: branch-island word, BRK trap
+word, or branch with trap fallback. Selector cells supply the site set,
+checkpoint, and platform-policy outcome; the patcher either executes the
+bounded flip contract or refuses it without trying to bypass a denial.
 
 ## What is being hooked up
 
@@ -22,11 +40,12 @@ context draining stay out (prior design non-goals carry over).
 
 ## API additions this requires (patch crate, slice H1)
 
-1. `SiteBacking` dispatch inside `Site` (no dyn, no generic):
-   `DualAlias { rw }` (today) and `Foreign` (store through a leased
-   store window). Reads always via the RX address. New constructor
-   `unsafe Site::from_rx(rx_addr, original_word, facts)`; the existing
-   `from_aliases` is untouched for managed mappings.
+1. A foreign-text construction path alongside today's managed one:
+   `unsafe Site::from_rx(rx_addr, original_word, facts, store)`, where
+   `store: Box<dyn SiteStore>` is the seam in item 3. Reads always use
+   the RX address. The existing `from_aliases` remains for managed
+   mappings and constructs the shipped dual-alias store internally; no
+   generic parameter is added to `Site`.
 2. `MappingFacts { page_span: (u64,u64), orig_prot: i32, provenance:
    Provenance, generation: u64 }` with `Provenance::{PrivateFile,
    PrivateAnon, Shared, Unknown}` and `qualify_mapping(addr)` parsing
@@ -48,10 +67,17 @@ context draining stay out (prior design non-goals carry over).
    protections; writev fallback: no window), `guard.store(word)`
    (volatile store or one `process_vm_writev` of 4 bytes, partial
    writes are errors, never retried blindly), `guard.finish()`
-   (restore exact protections; post-store failure enters the existing
-   `SyncPending` custody, deliberately modelling restore failure
-   after the store like sync failure — slice-3 reviewers to confirm
-   this mapping). Try order: mprotect window, then writev, each
+   (restore exact protections). Musearch settles the transition:
+   reuse `SyncPending`, with no restore-specific variant. In patcher
+   terms, issuing the store records `SyncPending` with its pending
+   word; only sync **and** protection restore succeeding (followed by
+   the existing acknowledged resume) settles `Flipped` — the
+   selection layer's Promoted outcome. If either sync or restore
+   fails, the new word may be live and protections may be unrestored,
+   so resume is forbidden and the site remains `SyncPending` (or
+   `RetainedStop` on the existing partial-resume path). The only exits
+   are a successful `complete_sync` retry — which must retry any
+   outstanding restore as part of completion — or session abort. Try order: mprotect window, then writev, each
    refusal named. Fork guard: `Patcher` records `getpid()` at
    construction; flip/rollback/complete_sync refuse
    `PatchError::ForkedRegistry` on mismatch (existing flipped sites
@@ -91,11 +117,13 @@ obligations are already enumerated in the landed design note.
 
 - W^X/SELinux: app-domain processes commonly cannot turn writable
   pages executable or vice versa, and `PROT_EXEC` memfd may be denied
-  (never-execmem policies, `vm.memfd_noexec`). Consequence: island
-  creation failing with `EACCES` is an expected fleet outcome, not an
-  error path surprise — promotion quietly never happens there and the
-  trap path remains the correct execution. No fallback may attempt to
-  defeat platform policy.
+  (never-execmem policies, `vm.memfd_noexec`). Per the matrix, the
+  Android selection cell admits TrapAndPatch only where its memfd
+  dual-mapping execmem probe passes; SudTrap is refused by name and
+  PatchEager is refused in v1. Otherwise the outcome is permanent
+  Trap, which is correct execution rather than an error path. No
+  fallback may attempt to defeat platform policy, and the patcher does
+  not perform the environment classification or probe itself.
 - `mprotect` on linker/shared-library text: only `MAP_PRIVATE` text is
   ever windowed (COW keeps the file and other processes untouched);
   `MAP_SHARED` (incl. some Android shared RELRO-adjacent mappings) is
@@ -119,12 +147,13 @@ stays 1 across repeats, results/register effects identical, site word
 is the expected branch, protections restored byte-exact (per maps),
 rollback returns to the trap path. Controls: shared-mapping and
 out-of-range sites stay trapped; writev backend repeats the happy
-path where permitted. Same static-binary metal (64 KiB) + guest
-(4 KiB) route as prior slices; 16 KiB geometry covered by host unit
-tests until a 16 KiB guest exists.
+path where permitted, plus injected sync-failure and restore-failure
+cases proving `SyncPending`, forbidden resume, and retry-to-settle.
+Same static-binary metal (64 KiB) + guest (4 KiB) route as prior
+slices; 16 KiB geometry covered by host unit tests until a 16 KiB
+guest exists.
 
-Open for musearch: (i) exact §5.2 wording and any Android-domain
-matrix beyond the assumptions above; (ii) whether post-store
-mprotect-restore failure folds into `SyncPending` as proposed or
-needs its own custody variant. (Promoter home is settled: inside
-reverie-liteinst, per owner correction.)
+Musearch's two routed questions are closed above: §5.2 and its matrix
+are canonical as quoted, and restore failure reuses `SyncPending`
+with no new variant. Remaining work is routing/implementation, not a
+design decision in this note.
