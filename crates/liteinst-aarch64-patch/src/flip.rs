@@ -93,6 +93,22 @@ impl Patcher {
         }
     }
 
+    /// A refusal before the store, on a lease the CALLER acquired
+    /// (flip_preacquired): resume first; a resume shortfall replaces
+    /// the refusal, because executors may still be stopped.
+    fn refuse_pre_store(
+        &self,
+        site: &mut Site,
+        stop: &mut dyn StopControl,
+        lease_held: bool,
+        err: PatchError,
+    ) -> PatchError {
+        if lease_held && !self.release_after_refusal(site, stop) {
+            return PatchError::ResumeIncomplete;
+        }
+        err
+    }
+
     /// Resume under the current lease and settle `pending` if every
     /// executor acknowledged. On any shortfall the site stays in its
     /// pending custody state (stop retained for RetainedStop cases is
@@ -172,24 +188,70 @@ impl Patcher {
         request: FlipRequest,
         stop: &mut dyn StopControl,
     ) -> Result<Strategy, PatchError> {
+        self.flip_inner(site, request, stop, false)
+    }
+
+    /// Flip with the lease ALREADY held by the caller (who acquired
+    /// it to qualify mappings and read the site word under the stop,
+    /// closing the qualify-to-store TOCTOU). The flip resumes on
+    /// every exit path exactly as [`flip`](Self::flip) does; the
+    /// caller must not resume again. Custody states after the store
+    /// are identical.
+    pub fn flip_preacquired(
+        &mut self,
+        site: &mut Site,
+        request: FlipRequest,
+        stop: &mut dyn StopControl,
+    ) -> Result<Strategy, PatchError> {
+        self.flip_inner(site, request, stop, true)
+    }
+
+    fn flip_inner(
+        &mut self,
+        site: &mut Site,
+        request: FlipRequest,
+        stop: &mut dyn StopControl,
+        lease_held: bool,
+    ) -> Result<Strategy, PatchError> {
         // Capability gate (design): cache maintenance must be
         // established before the first store, for EVERY strategy. An
         // unattested patcher writes nothing, whatever the strategy.
-        self.check_fork()?;
+        self.check_fork()
+            .map_err(|e| self.refuse_pre_store(site, stop, lease_held, e))?;
         if self.attested_token().is_none() {
-            return Err(PatchError::CacheOpsUnavailable);
+            return Err(self.refuse_pre_store(
+                site,
+                stop,
+                lease_held,
+                PatchError::CacheOpsUnavailable,
+            ));
         }
         if site.state() != SiteState::Unpatched {
-            return Err(PatchError::WrongState {
-                state: site.state(),
-            });
+            return Err(self.refuse_pre_store(
+                site,
+                stop,
+                lease_held,
+                PatchError::WrongState {
+                    state: site.state(),
+                },
+            ));
         }
         if !site.addr().is_multiple_of(4) {
-            return Err(PatchError::MisalignedSite { addr: site.addr() });
+            return Err(self.refuse_pre_store(
+                site,
+                stop,
+                lease_held,
+                PatchError::MisalignedSite { addr: site.addr() },
+            ));
         }
         let original = site.original_word();
         if !matches!(liteinst_aarch64::decode(original), Insn::Svc { .. }) {
-            return Err(PatchError::NotSvc { word: original });
+            return Err(self.refuse_pre_store(
+                site,
+                stop,
+                lease_held,
+                PatchError::NotSvc { word: original },
+            ));
         }
         let FlipRequest {
             island,
@@ -201,15 +263,23 @@ impl Patcher {
         let mut island = island;
         if let Some(facts) = mapping_facts {
             if !facts.contains(site.addr()) {
-                return Err(PatchError::MappingRefused(
-                    "presented facts do not contain the site",
+                return Err(self.refuse_pre_store(
+                    site,
+                    stop,
+                    lease_held,
+                    PatchError::MappingRefused("presented facts do not contain the site"),
                 ));
             }
             if facts.generation != site.generation() {
-                return Err(PatchError::StaleGeneration {
-                    site: site.generation(),
-                    facts: facts.generation,
-                });
+                return Err(self.refuse_pre_store(
+                    site,
+                    stop,
+                    lease_held,
+                    PatchError::StaleGeneration {
+                        site: site.generation(),
+                        facts: facts.generation,
+                    },
+                ));
             }
         }
         // Strategy selection is fully decided before the lease/store.
@@ -223,36 +293,69 @@ impl Patcher {
             StrategyPreference::BranchOnly => match branch_word {
                 Some(w) => (Strategy::Branch, w),
                 None => {
-                    return Err(PatchError::StrategyUnavailable(
-                        "BranchOnly without a reachable island",
+                    return Err(self.refuse_pre_store(
+                        site,
+                        stop,
+                        lease_held,
+                        PatchError::StrategyUnavailable("BranchOnly without a reachable island"),
                     ));
                 }
             },
             StrategyPreference::TrapOnly => {
                 if !trap_armed {
-                    return Err(PatchError::TrapNotArmed);
+                    return Err(self.refuse_pre_store(
+                        site,
+                        stop,
+                        lease_held,
+                        PatchError::TrapNotArmed,
+                    ));
                 }
                 (
                     Strategy::Trap,
-                    svc_fallback_word(original, trap_route.expect("armed").brk_imm())
-                        .ok_or(PatchError::NotSvc { word: original })?,
+                    svc_fallback_word(original, trap_route.expect("armed").brk_imm()).ok_or_else(
+                        || {
+                            self.refuse_pre_store(
+                                site,
+                                stop,
+                                lease_held,
+                                PatchError::NotSvc { word: original },
+                            )
+                        },
+                    )?,
                 )
             }
             StrategyPreference::BranchThenTrap => match branch_word {
                 Some(w) => (Strategy::Branch, w),
                 None => {
                     if fallback == FallbackPermission::RefuseTrap {
-                        return Err(PatchError::StrategyUnavailable(
-                            "no reachable island and trap fallback refused",
+                        return Err(self.refuse_pre_store(
+                            site,
+                            stop,
+                            lease_held,
+                            PatchError::StrategyUnavailable(
+                                "no reachable island and trap fallback refused",
+                            ),
                         ));
                     }
                     if !trap_armed {
-                        return Err(PatchError::TrapNotArmed);
+                        return Err(self.refuse_pre_store(
+                            site,
+                            stop,
+                            lease_held,
+                            PatchError::TrapNotArmed,
+                        ));
                     }
                     (
                         Strategy::Trap,
                         svc_fallback_word(original, trap_route.expect("armed").brk_imm())
-                            .ok_or(PatchError::NotSvc { word: original })?,
+                            .ok_or_else(|| {
+                                self.refuse_pre_store(
+                                    site,
+                                    stop,
+                                    lease_held,
+                                    PatchError::NotSvc { word: original },
+                                )
+                            })?,
                     )
                 }
             },
@@ -262,12 +365,17 @@ impl Patcher {
             let attested = self
                 .attested_token()
                 .ok_or(PatchError::CacheOpsUnavailable)?;
-            island
+            if let Err(e) = island
                 .as_mut()
                 .expect("branch selected with island")
-                .publish(attested)?;
+                .publish(attested)
+            {
+                return Err(self.refuse_pre_store(site, stop, lease_held, e));
+            }
         }
-        stop.acquire()?;
+        if !lease_held {
+            stop.acquire()?;
+        }
         // Everything below runs under the lease; a pre-store exit must
         // release it and surface the cleanup outcome, never discard it.
         let found = site.read_word();
@@ -484,6 +592,36 @@ mod tests {
             Err(PatchError::NotSvc { word: 0xd65f_03c0 })
         );
         assert_eq!(stop.acquires, 0);
+    }
+
+    #[test]
+    fn preacquired_flip_never_acquires_and_resumes_once() {
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let mut site = site_on(&mut word, 0x1000);
+        assert_eq!(
+            patcher.flip_preacquired(&mut site, trap_request(), &mut stop),
+            Ok(Strategy::Trap)
+        );
+        assert_eq!(stop.acquires, 0);
+        assert_eq!(stop.resumes, 1);
+        assert_eq!(site.state(), SiteState::Flipped);
+    }
+
+    #[test]
+    fn preacquired_pre_store_refusal_resumes_the_held_lease() {
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut other = 0xd65f_03c0u32; // RET, not SVC
+        let mut site = site_on(&mut other, 0x1000);
+        assert_eq!(
+            patcher.flip_preacquired(&mut site, trap_request(), &mut stop),
+            Err(PatchError::NotSvc { word: 0xd65f_03c0 })
+        );
+        assert_eq!(stop.acquires, 0);
+        assert_eq!(stop.resumes, 1);
+        assert_eq!(other, 0xd65f_03c0);
     }
 
     #[test]
@@ -754,6 +892,7 @@ mod tests {
             orig_prot: 0,
             provenance: Provenance::PrivateFile,
             generation: 7,
+            bti: false,
         };
         let store = Box::new(FakeForeignStore {
             word: std::ptr::from_mut(&mut word),

@@ -35,6 +35,12 @@ pub struct MappingFacts {
     pub provenance: Provenance,
     /// Promoter-owned mapping generation these facts belong to.
     pub generation: u64,
+    /// Whether the mapping is BTI-guarded (`bt` in smaps VmFlags).
+    /// `/proc/self/maps` perms cannot express this and an
+    /// `mprotect` that omits `PROT_BTI` clears `VM_ARM64_BTI`, so
+    /// window backends must OR the flag back into both the window
+    /// and the restore protections when this is set.
+    pub bti: bool,
 }
 
 impl MappingFacts {
@@ -87,7 +93,11 @@ fn parse_maps_line(line: &str, addr: u64, generation: u64) -> Option<MappingFact
     }
     let provenance = match bytes[3] {
         b's' => Provenance::Shared,
-        b'p' if pathname.is_empty() || pathname.starts_with('[') => Provenance::PrivateAnon,
+        b'p' if pathname.is_empty() => Provenance::PrivateAnon,
+        // Bracketed names are kernel pseudo-mappings ([vdso],
+        // [vvar], [heap], [stack], ...): never windowed, whatever
+        // their perms claim.
+        b'p' if pathname.starts_with('[') => Provenance::Unknown,
         b'p' => Provenance::PrivateFile,
         _ => Provenance::Unknown,
     };
@@ -102,22 +112,101 @@ fn parse_maps_line(line: &str, addr: u64, generation: u64) -> Option<MappingFact
         orig_prot: prot,
         provenance,
         generation,
+        // Filled from smaps by the caller; maps perms cannot say.
+        bti: false,
     })
 }
 
-/// Qualify the mapping containing `addr` from `/proc/self/maps`, in
-/// promoter ordinary context only (never a handler). Refusals are
-/// named: shared/unknown provenance, non-executable mappings, and
-/// addresses no mapping contains all return
-/// `PatchError::MappingRefused`.
+/// Read a small `/proc/self` file through the syscall gate (the
+/// std::fs path would issue the same syscalls from libc PLT
+/// addresses a guest filter does not admit).
+#[cfg(target_os = "linux")]
+fn read_proc_file(path: &core::ffi::CStr) -> Result<String, PatchError> {
+    // SAFETY: path is a valid C string; flags are O_RDONLY|O_CLOEXEC.
+    let fd = unsafe {
+        crate::gate::gate6(
+            libc::SYS_openat,
+            [
+                libc::AT_FDCWD as u64,
+                path.as_ptr() as u64,
+                (libc::O_RDONLY | libc::O_CLOEXEC) as u64,
+                0,
+                0,
+                0,
+            ],
+        )
+    };
+    let fd = crate::gate::check(fd, "openat /proc/self maps")? as libc::c_int;
+    let mut out = Vec::new();
+    let mut chunk = [0u8; 8192];
+    let result = loop {
+        // SAFETY: chunk is a valid out buffer of its full length.
+        let n = unsafe {
+            crate::gate::gate6(
+                libc::SYS_read,
+                [
+                    fd as u64,
+                    chunk.as_mut_ptr() as u64,
+                    chunk.len() as u64,
+                    0,
+                    0,
+                    0,
+                ],
+            )
+        };
+        if n < 0 {
+            if n == -(libc::EINTR as i64) {
+                continue;
+            }
+            break Err(crate::gate::check(n, "read /proc/self maps").unwrap_err());
+        }
+        if n == 0 {
+            break Ok(());
+        }
+        out.extend_from_slice(&chunk[..n as usize]);
+        if out.len() > 64 * 1024 * 1024 {
+            break Err(PatchError::MappingRefused("maps image implausibly large"));
+        }
+    };
+    // SAFETY: fd is the one just opened, closed exactly once.
+    unsafe {
+        crate::gate::gate6(libc::SYS_close, [fd as u64, 0, 0, 0, 0, 0]);
+    }
+    result?;
+    String::from_utf8(out).map_err(|_| PatchError::MappingRefused("maps image is not UTF-8"))
+}
+
+/// Whether the smaps block containing `addr` carries the `bt`
+/// (BTI-guarded) VmFlag. Pure parse over a smaps image.
+#[cfg(target_os = "linux")]
+fn smaps_bti(smaps: &str, addr: u64) -> bool {
+    let mut inside = false;
+    for line in smaps.lines() {
+        if let Some((range, _)) = line.split_once(' ')
+            && let Some((lo, hi)) = range.split_once('-')
+            && let (Ok(lo), Ok(hi)) = (u64::from_str_radix(lo, 16), u64::from_str_radix(hi, 16))
+        {
+            inside = addr >= lo && addr < hi;
+            continue;
+        }
+        if inside && let Some(flags) = line.strip_prefix("VmFlags:") {
+            return flags.split_whitespace().any(|f| f == "bt");
+        }
+    }
+    false
+}
+
+/// Qualify the mapping containing `addr` from `/proc/self/maps`
+/// (plus the smaps VmFlags for BTI), in promoter ordinary context
+/// only (never a handler). Refusals are named: shared/unknown or
+/// pseudo-mapping provenance, non-executable or non-readable
+/// (execute-only) mappings, and addresses no mapping contains
+/// all return `PatchError::MappingRefused`.
 #[cfg(target_os = "linux")]
 pub fn qualify_mapping(addr: u64, generation: u64) -> Result<MappingFacts, PatchError> {
-    let maps = std::fs::read_to_string("/proc/self/maps").map_err(|_| PatchError::Os {
-        op: "read /proc/self/maps",
-        errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
-    })?;
+    let maps = read_proc_file(c"/proc/self/maps")?;
     for line in maps.lines() {
-        if let Some(facts) = parse_maps_line(line, addr, generation) {
+        if let Some(mut facts) = parse_maps_line(line, addr, generation) {
             if !facts.windowable() {
                 return Err(match facts.provenance {
                     Provenance::Shared => {
@@ -129,6 +218,15 @@ pub fn qualify_mapping(addr: u64, generation: u64) -> Result<MappingFacts, Patch
             if facts.orig_prot & libc::PROT_EXEC == 0 {
                 return Err(PatchError::MappingRefused("mapping is not executable"));
             }
+            if facts.orig_prot & libc::PROT_READ == 0 {
+                return Err(PatchError::MappingRefused(
+                    "execute-only mapping cannot be revalidated",
+                ));
+            }
+            // BTI lives only in smaps. A smaps read failure refuses:
+            // silently assuming unguarded could strip BTI.
+            let smaps = read_proc_file(c"/proc/self/smaps")?;
+            facts.bti = smaps_bti(&smaps, addr);
             return Ok(facts);
         }
     }
@@ -161,5 +259,25 @@ mod tests {
         assert_eq!(facts.provenance, Provenance::Shared);
         assert!(!facts.windowable());
         assert!(parse_maps_line(line, 0x1234, 9).is_none());
+    }
+
+    #[test]
+    fn parses_vdso_as_refused_unknown() {
+        let line = "7f000000-7f001000 r-xp 00000000 00:00 0 [vdso]";
+        let facts = parse_maps_line(line, 0x7f00_0800, 9).unwrap();
+        assert_eq!(facts.provenance, Provenance::Unknown);
+        assert!(!facts.windowable());
+    }
+
+    #[test]
+    fn smaps_bti_flag_is_per_vma() {
+        let smaps = "1000-2000 r-xp 00000000 08:02 1 /a\n\
+                     Size: 4 kB\nVmFlags: rd ex bt mr\n\
+                     2000-3000 r-xp 00000000 08:02 1 /b\n\
+                     Size: 4 kB\nVmFlags: rd ex mr\n";
+        assert!(smaps_bti(smaps, 0x1000));
+        assert!(smaps_bti(smaps, 0x1ffc));
+        assert!(!smaps_bti(smaps, 0x2000));
+        assert!(!smaps_bti(smaps, 0x9000));
     }
 }

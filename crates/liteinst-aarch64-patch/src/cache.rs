@@ -135,11 +135,24 @@ fn probe_verdict(got_magic: bool, status: libc::c_int) -> bool {
 #[cfg(target_os = "linux")]
 fn wait_once(pid: libc::pid_t) -> Result<Option<libc::c_int>, PatchError> {
     let mut status: libc::c_int = 0;
-    let waited = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG) };
-    if waited == pid {
+    // SAFETY: status is a valid out pointer; rusage is null.
+    let waited = unsafe {
+        crate::gate::gate6(
+            libc::SYS_wait4,
+            [
+                pid as u64,
+                core::ptr::addr_of_mut!(status) as u64,
+                libc::WNOHANG as u64,
+                0,
+                0,
+                0,
+            ],
+        )
+    };
+    if waited == pid as i64 {
         return Ok(Some(status));
     }
-    if waited < 0 && std::io::Error::last_os_error().raw_os_error() == Some(libc::ECHILD) {
+    if waited == -(libc::ECHILD as i64) {
         return Err(PatchError::CacheOpsUnavailable);
     }
     Ok(None)
@@ -153,7 +166,13 @@ fn wait_once(pid: libc::pid_t) -> Result<Option<libc::c_int>, PatchError> {
 /// overhead), not a single total bound.
 #[cfg(target_os = "linux")]
 fn kill_and_discharge(pid: libc::pid_t) -> Result<(), PatchError> {
-    unsafe { libc::kill(pid, libc::SIGKILL) };
+    // SAFETY: pid is the probe child this custody protocol owns.
+    unsafe {
+        crate::gate::gate6(
+            libc::SYS_kill,
+            [pid as u64, libc::SIGKILL as u64, 0, 0, 0, 0],
+        );
+    };
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
     loop {
         match wait_once(pid) {
@@ -191,6 +210,31 @@ fn reap_child(pid: libc::pid_t, timeout_ms: u64) -> Result<libc::c_int, PatchErr
     }
 }
 
+/// Poll one fd through the gate (`ppoll` where `poll` does not
+/// exist, i.e. AArch64). Returns the raw gate result.
+#[cfg(target_os = "linux")]
+unsafe fn gate_poll(pfd: *mut libc::pollfd, timeout_ms: i64) -> i64 {
+    #[cfg(target_arch = "aarch64")]
+    {
+        let ts = libc::timespec {
+            tv_sec: (timeout_ms / 1000) as _,
+            tv_nsec: ((timeout_ms % 1000) * 1_000_000) as _,
+        };
+        // SAFETY: pfd/ts valid for the call; no signal mask change.
+        unsafe {
+            crate::gate::gate6(
+                libc::SYS_ppoll,
+                [pfd as u64, 1, core::ptr::addr_of!(ts) as u64, 0, 0, 0],
+            )
+        }
+    }
+    #[cfg(not(target_arch = "aarch64"))]
+    {
+        // SAFETY: pfd valid for the call.
+        unsafe { crate::gate::gate6(libc::SYS_poll, [pfd as u64, 1, timeout_ms as u64, 0, 0, 0]) }
+    }
+}
+
 /// Unified probe-parent custody loop: completion-byte acquisition and
 /// exact-child status share ONE collection deadline, so a child
 /// stopped before writing cannot block the parent past it (the prior
@@ -207,9 +251,32 @@ fn collect_probe_child(
     read_fd: libc::c_int,
     timeout_ms: u64,
 ) -> Result<(bool, libc::c_int), PatchError> {
-    let flags = unsafe { libc::fcntl(read_fd, libc::F_GETFL) };
-    if flags < 0 || unsafe { libc::fcntl(read_fd, libc::F_SETFL, flags | libc::O_NONBLOCK) } < 0 {
-        let e = PatchError::os("fcntl(O_NONBLOCK)");
+    // SAFETY: read_fd is the probe pipe's read end, owned here.
+    let flags = unsafe {
+        crate::gate::gate6(
+            libc::SYS_fcntl,
+            [read_fd as u64, libc::F_GETFL as u64, 0, 0, 0, 0],
+        )
+    };
+    // SAFETY: same fd; setting O_NONBLOCK on it.
+    let set_rc = unsafe {
+        crate::gate::gate6(
+            libc::SYS_fcntl,
+            [
+                read_fd as u64,
+                libc::F_SETFL as u64,
+                (flags | libc::O_NONBLOCK as i64) as u64,
+                0,
+                0,
+                0,
+            ],
+        )
+    };
+    if flags < 0 || set_rc < 0 {
+        let e = PatchError::Os {
+            op: "fcntl(O_NONBLOCK)",
+            errno: 0,
+        };
         return match kill_and_discharge(pid) {
             Ok(()) => Err(e),
             Err(retained) => Err(retained),
@@ -231,7 +298,12 @@ fn collect_probe_child(
             // Reaped: drain one last byte already in the pipe buffer.
             if byte.is_none() && !eof {
                 let mut b = [0u8; 1];
-                let n = unsafe { libc::read(read_fd, b.as_mut_ptr() as *mut libc::c_void, 1) };
+                let n = unsafe {
+                    crate::gate::gate6(
+                        libc::SYS_read,
+                        [read_fd as u64, b.as_mut_ptr() as u64, 1, 0, 0, 0],
+                    )
+                };
                 if n == 1 {
                     byte = Some(b[0]);
                 }
@@ -248,9 +320,10 @@ fn collect_probe_child(
                 events: libc::POLLIN,
                 revents: 0,
             };
-            let ready = unsafe { libc::poll(&mut pfd, 1, 10) };
-            if ready < 0 && std::io::Error::last_os_error().raw_os_error() != Some(libc::EINTR) {
-                let e = PatchError::os("poll");
+            // SAFETY: pfd names the probe pipe read end for 10 ms.
+            let ready = unsafe { gate_poll(&mut pfd, 10) };
+            if ready < 0 && ready != -(libc::EINTR as i64) {
+                let e = crate::gate::check(ready, "poll").unwrap_err();
                 return match kill_and_discharge(pid) {
                     Ok(()) => Err(e),
                     Err(retained) => Err(retained),
@@ -258,15 +331,20 @@ fn collect_probe_child(
             }
             if ready > 0 && pfd.revents & (libc::POLLIN | libc::POLLHUP) != 0 {
                 let mut b = [0u8; 1];
-                let n = unsafe { libc::read(read_fd, b.as_mut_ptr() as *mut libc::c_void, 1) };
+                let n = unsafe {
+                    crate::gate::gate6(
+                        libc::SYS_read,
+                        [read_fd as u64, b.as_mut_ptr() as u64, 1, 0, 0, 0],
+                    )
+                };
                 if n == 1 {
                     byte = Some(b[0]);
                 } else if n == 0 {
                     eof = true;
-                } else if std::io::Error::last_os_error().raw_os_error() == Some(libc::EAGAIN) {
+                } else if n == -(libc::EAGAIN as i64) {
                     // Spurious readiness; loop re-checks the child.
-                } else if std::io::Error::last_os_error().raw_os_error() != Some(libc::EINTR) {
-                    let e = PatchError::os("read(probe pipe)");
+                } else if n != -(libc::EINTR as i64) {
+                    let e = crate::gate::check(n, "read(probe pipe)").unwrap_err();
                     return match kill_and_discharge(pid) {
                         Ok(()) => Err(e),
                         Err(retained) => Err(retained),
@@ -289,33 +367,55 @@ fn collect_probe_child(
 /// async-signal-safe calls). A passing probe says nothing about
 /// cross-core acknowledgement.
 #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+#[repr(C)]
+struct KernelSigaction {
+    handler: usize,
+    flags: u64,
+    restorer: usize,
+    mask: u64,
+}
+
+#[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+fn probe_child_exit(code: i64) -> ! {
+    // SAFETY: exit_group terminates the probe child only.
+    unsafe {
+        crate::gate::gate6(libc::SYS_exit_group, [code as u64, 0, 0, 0, 0, 0]);
+    }
+    loop {
+        core::hint::spin_loop();
+    }
+}
+
+#[cfg(all(target_arch = "aarch64", target_os = "linux"))]
 pub fn probe_environment() -> Result<CacheAttested, PatchError> {
     let page = crate::page_size()?;
     let mut fds = [0 as libc::c_int; 2];
-    if unsafe { libc::pipe2(fds.as_mut_ptr(), libc::O_CLOEXEC) } != 0 {
-        return Err(PatchError::os("pipe2"));
-    }
-    // SAFETY: fork with an immediately-_exit-ing child that only calls
-    // sigaction/sigprocmask/mmap/write/asm before exiting; no Rust
-    // allocation after fork in the child.
-    let pid = unsafe { libc::fork() };
+    // SAFETY: fds is a valid 2-int out array.
+    let rc = unsafe {
+        crate::gate::gate6(
+            libc::SYS_pipe2,
+            [fds.as_mut_ptr() as u64, libc::O_CLOEXEC as u64, 0, 0, 0, 0],
+        )
+    };
+    crate::gate::check(rc, "pipe2")?;
+    // SAFETY: clone with SIGCHLD and a shared (zero) stack is the
+    // fork contract: the child returns 0 here and only makes raw
+    // gate syscalls before exit_group; no Rust allocation in child.
+    let pid = unsafe { crate::gate::gate6(libc::SYS_clone, [libc::SIGCHLD as u64, 0, 0, 0, 0, 0]) };
     if pid < 0 {
+        // SAFETY: both pipe ends are live and closed exactly once.
         unsafe {
-            libc::close(fds[0]);
-            libc::close(fds[1]);
+            crate::gate::gate6(libc::SYS_close, [fds[0] as u64, 0, 0, 0, 0, 0]);
+            crate::gate::gate6(libc::SYS_close, [fds[1] as u64, 0, 0, 0, 0, 0]);
         }
-        return Err(PatchError::os("fork"));
+        return Err(crate::gate::check(pid, "clone(fork)").unwrap_err());
     }
     if pid == 0 {
+        // Probe child. Every call goes through the gate so an
+        // installed in-guest gate admits them; dispositions/mask
+        // reset as before, with every setup result required.
         unsafe {
-            libc::close(fds[0]);
-            // Inherited handlers must not convert a maintenance fault
-            // into a clean exit: default dispositions, empty mask.
-            // Every setup result is required: a denied reset or unblock
-            // exits (without the completion byte) before maintenance,
-            // so an inherited skipping handler can neither survive the
-            // reset nor publish the magic for skipped work.
-            let dfl: libc::sigaction = core::mem::zeroed();
+            crate::gate::gate6(libc::SYS_close, [fds[0] as u64, 0, 0, 0, 0, 0]);
             for sig in [
                 libc::SIGILL,
                 libc::SIGSEGV,
@@ -323,49 +423,86 @@ pub fn probe_environment() -> Result<CacheAttested, PatchError> {
                 libc::SIGTRAP,
                 libc::SIGABRT,
             ] {
-                if libc::sigaction(sig, &dfl, core::ptr::null_mut()) != 0 {
-                    libc::_exit(5);
+                let dfl = KernelSigaction {
+                    handler: 0,
+                    flags: 0,
+                    restorer: 0,
+                    mask: 0,
+                };
+                let rc = crate::gate::gate6(
+                    libc::SYS_rt_sigaction,
+                    [sig as u64, core::ptr::addr_of!(dfl) as u64, 0, 8, 0, 0],
+                );
+                if rc != 0 {
+                    probe_child_exit(5);
                 }
-                let mut seen: libc::sigaction = core::mem::zeroed();
-                if libc::sigaction(sig, core::ptr::null(), &mut seen) != 0 || seen.sa_sigaction != 0
-                {
-                    libc::_exit(5);
+                let mut seen = KernelSigaction {
+                    handler: 0,
+                    flags: 0,
+                    restorer: 0,
+                    mask: 0,
+                };
+                let rc = crate::gate::gate6(
+                    libc::SYS_rt_sigaction,
+                    [sig as u64, 0, core::ptr::addr_of_mut!(seen) as u64, 8, 0, 0],
+                );
+                if rc != 0 || seen.handler != 0 {
+                    probe_child_exit(5);
                 }
             }
-            let mut empty: libc::sigset_t = core::mem::zeroed();
-            if libc::sigemptyset(&mut empty) != 0 {
-                libc::_exit(5);
-            }
-            // pthread_sigmask returns the error number itself, not -1.
-            if libc::pthread_sigmask(libc::SIG_SETMASK, &empty, core::ptr::null_mut()) != 0 {
-                libc::_exit(5);
+            let empty: u64 = 0;
+            let rc = crate::gate::gate6(
+                libc::SYS_rt_sigprocmask,
+                [
+                    libc::SIG_SETMASK as u64,
+                    core::ptr::addr_of!(empty) as u64,
+                    0,
+                    8,
+                    0,
+                    0,
+                ],
+            );
+            if rc != 0 {
+                probe_child_exit(5);
             }
             let len = page as usize;
-            let p = libc::mmap(
-                core::ptr::null_mut(),
-                len,
-                libc::PROT_READ | libc::PROT_WRITE | libc::PROT_EXEC,
-                libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
-                -1,
-                0,
+            let p = crate::gate::gate6(
+                libc::SYS_mmap,
+                [
+                    0,
+                    len as u64,
+                    (libc::PROT_READ | libc::PROT_WRITE | libc::PROT_EXEC) as u64,
+                    (libc::MAP_PRIVATE | libc::MAP_ANONYMOUS) as u64,
+                    u64::MAX,
+                    0,
+                ],
             );
-            if p == libc::MAP_FAILED {
-                libc::_exit(2);
+            if (-4095..0).contains(&p) {
+                probe_child_exit(2);
             }
             let buf = p as *mut u8;
             buf.write_volatile(0x1f);
             if sync_icache(buf, buf, len).is_err() {
-                libc::_exit(3);
+                probe_child_exit(3);
             }
             let magic = [PROBE_MAGIC];
-            let written = libc::write(fds[1], magic.as_ptr() as *const libc::c_void, 1);
-            libc::_exit(if written == 1 { 0 } else { 4 });
+            let written = crate::gate::gate6(
+                libc::SYS_write,
+                [fds[1] as u64, magic.as_ptr() as u64, 1, 0, 0, 0],
+            );
+            probe_child_exit(if written == 1 { 0 } else { 4 });
         }
     }
-    unsafe { libc::close(fds[1]) };
+    // SAFETY: parent keeps only the read end from here.
+    unsafe {
+        crate::gate::gate6(libc::SYS_close, [fds[1] as u64, 0, 0, 0, 0, 0]);
+    }
     // One bounded custody protocol for byte + status (see collect).
-    let collected = collect_probe_child(pid, fds[0], 5_000);
-    unsafe { libc::close(fds[0]) };
+    let collected = collect_probe_child(pid as libc::pid_t, fds[0], 5_000);
+    // SAFETY: read end closed exactly once, after collection.
+    unsafe {
+        crate::gate::gate6(libc::SYS_close, [fds[0] as u64, 0, 0, 0, 0, 0]);
+    }
     let (got_magic, status) = collected?;
     if probe_verdict(got_magic, status) {
         Ok(CacheAttested(()))

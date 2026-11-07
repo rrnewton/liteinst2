@@ -24,8 +24,6 @@ const L_MFD_EXEC: libc::c_uint = 0x0010;
 /// until the flip slice binds lifetimes in the type.
 pub struct Island {
     #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
-    fd: libc::c_int,
-    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
     rw: *mut u8,
     #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
     rx: *mut u8,
@@ -48,29 +46,42 @@ impl core::fmt::Debug for Island {
 #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
 fn memfd_exec() -> Result<libc::c_int, PatchError> {
     let name = c"liteinst-island";
-    let base = libc::MFD_CLOEXEC | libc::MFD_ALLOW_SEALING;
-    let fd = unsafe { libc::memfd_create(name.as_ptr(), base | L_MFD_EXEC) };
+    let base = (libc::MFD_CLOEXEC | libc::MFD_ALLOW_SEALING) as u64;
+    // SAFETY: name is a valid C string; flags are the kernel's.
+    let fd = unsafe {
+        crate::gate::gate6(
+            libc::SYS_memfd_create,
+            [name.as_ptr() as u64, base | L_MFD_EXEC as u64, 0, 0, 0, 0],
+        )
+    };
     if fd >= 0 {
-        return Ok(fd);
+        return Ok(fd as libc::c_int);
     }
-    let first_err = std::io::Error::last_os_error();
-    if first_err.raw_os_error() == Some(libc::EINVAL) {
-        let fd = unsafe { libc::memfd_create(name.as_ptr(), base) };
+    if fd == -(libc::EINVAL as i64) {
+        // SAFETY: same name; retry without the post-6.3 flag.
+        let fd = unsafe {
+            crate::gate::gate6(
+                libc::SYS_memfd_create,
+                [name.as_ptr() as u64, base, 0, 0, 0, 0],
+            )
+        };
         if fd >= 0 {
-            return Ok(fd);
+            return Ok(fd as libc::c_int);
         }
         // Report the retry's errno: it, not the flag rejection, is why
         // creation ultimately failed.
-        let retry_err = std::io::Error::last_os_error();
-        return Err(PatchError::Os {
-            op: "memfd_create (no MFD_EXEC retry)",
-            errno: retry_err.raw_os_error().unwrap_or(0),
-        });
+        return crate::gate::check(fd, "memfd_create (no MFD_EXEC retry)")
+            .map(|v| v as libc::c_int);
     }
-    Err(PatchError::Os {
-        op: "memfd_create",
-        errno: first_err.raw_os_error().unwrap_or(0),
-    })
+    crate::gate::check(fd, "memfd_create").map(|v| v as libc::c_int)
+}
+
+#[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+fn gate_close(fd: libc::c_int) {
+    // SAFETY: fd was just created above and is closed exactly once.
+    unsafe {
+        crate::gate::gate6(libc::SYS_close, [fd as u64, 0, 0, 0, 0, 0]);
+    }
 }
 
 impl Island {
@@ -104,32 +115,50 @@ impl Island {
             .ok_or(PatchError::RangeOverflow)?;
         let len = page_span(page, payload).ok_or(PatchError::RangeOverflow)? as usize;
         let fd = memfd_exec()?;
-        let rc = unsafe { libc::ftruncate(fd, len as libc::off_t) };
+        // SAFETY: fd is the memfd just created; len is its size.
+        let rc =
+            unsafe { crate::gate::gate6(libc::SYS_ftruncate, [fd as u64, len as u64, 0, 0, 0, 0]) };
         if rc != 0 {
-            let e = PatchError::os("ftruncate");
-            unsafe { libc::close(fd) };
+            let e = crate::gate::check(rc, "ftruncate").unwrap_err();
+            gate_close(fd);
             return Err(e);
         }
+        // SAFETY: fresh sized memfd; the two shared mappings are the
+        // island's dual aliases for `len` bytes.
         let map = |prot: libc::c_int| unsafe {
-            libc::mmap(std::ptr::null_mut(), len, prot, libc::MAP_SHARED, fd, 0)
+            crate::gate::gate6(
+                libc::SYS_mmap,
+                [
+                    0,
+                    len as u64,
+                    prot as u64,
+                    libc::MAP_SHARED as u64,
+                    fd as u64,
+                    0,
+                ],
+            )
         };
         let rw = map(libc::PROT_READ | libc::PROT_WRITE);
-        if rw == libc::MAP_FAILED {
-            let e = PatchError::os("mmap rw");
-            unsafe { libc::close(fd) };
+        if (-4095..0).contains(&rw) {
+            let e = crate::gate::check(rw, "mmap rw").unwrap_err();
+            gate_close(fd);
             return Err(e);
         }
         let rx = map(libc::PROT_READ | libc::PROT_EXEC);
-        if rx == libc::MAP_FAILED {
-            let e = PatchError::os("mmap rx");
+        if (-4095..0).contains(&rx) {
+            let e = crate::gate::check(rx, "mmap rx").unwrap_err();
+            // SAFETY: rw is the live mapping just created above.
             unsafe {
-                libc::munmap(rw, len);
-                libc::close(fd);
+                crate::gate::gate6(libc::SYS_munmap, [rw as u64, len as u64, 0, 0, 0, 0]);
             }
+            gate_close(fd);
             return Err(e);
         }
+        // The mappings keep the memfd alive; close the fd now so a
+        // published island (retained for process lifetime) never
+        // leaks a guest-visible fd number per flipped site.
+        gate_close(fd);
         Ok(Self {
-            fd,
             rw: rw as *mut u8,
             rx: rx as *mut u8,
             len,
@@ -202,7 +231,8 @@ impl Island {
         Err(PatchError::Unsupported("islands require AArch64 Linux"))
     }
 
-    /// Deliberately leak this island's mappings and fd forever
+    /// Deliberately leak this island's mappings forever (its fd was
+    /// already closed at reserve time)
     /// (bounded by the session). Used by `Site` custody when a live
     /// branch may still target the island: unmapping would be a
     /// correctness defect, leaking is the documented safe outcome.
@@ -265,10 +295,16 @@ impl Island {
 #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
 impl Drop for Island {
     fn drop(&mut self) {
+        // SAFETY: both aliases are this island's own live mappings.
         unsafe {
-            libc::munmap(self.rw as *mut libc::c_void, self.len);
-            libc::munmap(self.rx as *mut libc::c_void, self.len);
-            libc::close(self.fd);
+            crate::gate::gate6(
+                libc::SYS_munmap,
+                [self.rw as u64, self.len as u64, 0, 0, 0, 0],
+            );
+            crate::gate::gate6(
+                libc::SYS_munmap,
+                [self.rx as u64, self.len as u64, 0, 0, 0, 0],
+            );
         }
     }
 }

@@ -17,6 +17,7 @@
 
 pub mod cache;
 pub mod flip;
+pub mod gate;
 pub mod island;
 pub mod mapping;
 pub mod site;
@@ -144,15 +145,6 @@ pub enum PatchError {
     ResumeIncomplete,
 }
 
-impl PatchError {
-    pub(crate) fn os(op: &'static str) -> Self {
-        Self::Os {
-            op,
-            errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
-        }
-    }
-}
-
 impl core::fmt::Display for PatchError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
@@ -219,11 +211,13 @@ impl std::error::Error for PatchError {}
 /// a parameter; nothing here hardcodes 4 KiB or 64 KiB.
 #[cfg(target_os = "linux")]
 pub fn page_size() -> Result<u64, PatchError> {
-    let value = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
-    if value <= 0 {
-        return Err(PatchError::os("sysconf(_SC_PAGESIZE)"));
+    // AT_PAGESZ from the auxiliary vector: getauxval reads process
+    // memory only, issuing no syscall a guest filter could see.
+    let value = unsafe { libc::getauxval(libc::AT_PAGESZ) };
+    if value == 0 {
+        return Err(PatchError::Unsupported("AT_PAGESZ absent"));
     }
-    Ok(value as u64)
+    Ok(value)
 }
 
 /// Runtime OS page size (see the Linux form).
@@ -266,7 +260,7 @@ impl Patcher {
             registry: SiteRegistry::new(),
             attested: None,
             sync: cache::sync_icache,
-            owner_pid: std::process::id(),
+            owner_pid: gate::getpid(),
         }
     }
 
@@ -277,8 +271,21 @@ impl Patcher {
             registry: SiteRegistry::new(),
             attested: Some(cache::probe_environment()?),
             sync: cache::sync_icache,
-            owner_pid: std::process::id(),
+            owner_pid: gate::getpid(),
         })
+    }
+
+    /// Attested patcher with an injected cache-sync function, so
+    /// downstream custody tests can drive sync/restore failures
+    /// through production flip paths. The attestation gate is not
+    /// bypassed: construction still probes the environment.
+    #[doc(hidden)]
+    pub fn attested_with_sync(
+        sync: unsafe fn(*mut u8, *mut u8, usize) -> Result<(), PatchError>,
+    ) -> Result<Self, PatchError> {
+        let mut patcher = Self::attested()?;
+        patcher.sync = sync;
+        Ok(patcher)
     }
 
     /// Test-only seam: attested patcher with an injected sync function,
@@ -292,7 +299,7 @@ impl Patcher {
             registry: SiteRegistry::new(),
             attested: Some(cache::CacheAttested::for_test()),
             sync,
-            owner_pid: std::process::id(),
+            owner_pid: gate::getpid(),
         }
     }
 
@@ -325,7 +332,7 @@ impl Patcher {
     /// Refuse if this patcher outlived a fork: registries, islands,
     /// and custodies are parent-image state (see the design note).
     pub(crate) fn check_fork(&self) -> Result<(), PatchError> {
-        if std::process::id() != self.owner_pid {
+        if gate::getpid() != self.owner_pid {
             return Err(PatchError::ForkedRegistry);
         }
         Ok(())
