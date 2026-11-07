@@ -110,14 +110,6 @@ pub enum EntryReach {
     Dual,
 }
 
-/// The landing-pad word for `reach`, or `None` for direct-only entries
-/// (emit no pad). In guarded pages `BR` sets the expected landing type
-/// (`BTypeNext`) to `0b01` when branching through X16/X17 and to `0b11`
-/// through any other register, and the X16/X17 veneer pattern (entered
-/// as a call, continuing with `BR`) interacts with call pads; which
-/// pads accept a given `BR` landing is therefore register-dependent.
-/// This matrix stays conservative regardless: a call-only pad is never
-/// selected for jump reach.
 /// The complete lazy-promotion island for one SVC site:
 /// `[original SVC, B resume]` where resume is `site_addr + 4`.
 /// `None` when `original` is not an `SVC`, either address is
@@ -171,7 +163,14 @@ pub fn svc_island_words_padded(
 }
 
 /// The `BTI` landing-pad word a branch of this reach class requires,
-/// or `None` for a direct-branch-only entry (emit no pad).
+/// or `None` for a direct-branch-only entry (emit no pad). In guarded
+/// pages `BR` sets the expected landing type (`BTypeNext`) to `0b01`
+/// when branching through X16/X17 and to `0b11` through any other
+/// register, and the X16/X17 veneer pattern (entered as a call,
+/// continuing with `BR`) interacts with call pads; which pads accept
+/// a given `BR` landing is therefore register-dependent. This matrix
+/// stays conservative regardless: a call-only pad is never selected
+/// for jump reach.
 pub fn landing_pad(reach: EntryReach) -> Option<u32> {
     match reach {
         EntryReach::Direct => None,

@@ -219,21 +219,7 @@ impl Site {
         })
     }
 
-    /// Refresh mapping facts (the only way a site's generation
-    /// advances). Refuses facts for a different site span.
-    pub fn requalify(&mut self, facts: MappingFacts) -> Result<(), PatchError> {
-        if !facts.contains(self.rx_addr) {
-            return Err(PatchError::MappingRefused(
-                "refreshed facts do not contain the site",
-            ));
-        }
-        self.generation = facts.generation;
-        self.facts = Some(facts);
-        Ok(())
-    }
-
-    /// The qualified mapping facts, when constructed via `from_rx`
-    /// or refreshed via `requalify`.
+    /// The qualified mapping facts, when constructed via `from_rx`.
     pub fn mapping_facts(&self) -> Option<MappingFacts> {
         self.facts
     }

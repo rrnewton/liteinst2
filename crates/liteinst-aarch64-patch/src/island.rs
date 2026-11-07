@@ -186,7 +186,10 @@ impl Island {
             return Err(PatchError::EmptyIsland);
         }
         if words.len() > self.capacity_words {
-            return Err(PatchError::RangeOverflow);
+            return Err(PatchError::CapacityExceeded {
+                capacity_words: self.capacity_words,
+                offered: words.len(),
+            });
         }
         #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
         {
@@ -325,6 +328,39 @@ mod tests {
         }
         assert_eq!(island.read_rx_word(3), None);
         assert_eq!(Island::build(&[]).unwrap_err(), PatchError::EmptyIsland);
+    }
+
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    #[test]
+    fn reserve_closes_the_memfd() {
+        fn fd_count() -> usize {
+            std::fs::read_dir("/proc/self/fd").unwrap().count()
+        }
+        let before = fd_count();
+        let island = Island::reserve(2).unwrap();
+        assert_eq!(fd_count(), before, "reserve leaked the memfd");
+        drop(island);
+        assert_eq!(fd_count(), before);
+    }
+
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    #[test]
+    fn fill_after_publish_is_already_published() {
+        let patcher = crate::Patcher::attested().unwrap();
+        let token = patcher.attested_token().expect("attested");
+        let mut island = Island::build(&[0xd400_0001, 0xd65f_03c0]).unwrap();
+        island.publish(token).unwrap();
+        assert_eq!(
+            island.fill(&[0xd503_201f]),
+            Err(PatchError::AlreadyPublished)
+        );
+        assert_eq!(
+            Island::reserve(1).unwrap().fill(&[1, 2]),
+            Err(PatchError::CapacityExceeded {
+                capacity_words: 1,
+                offered: 2
+            })
+        );
     }
 
     #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]

@@ -166,15 +166,22 @@ impl Patcher {
         } else {
             Ok(())
         };
-        if let Err(e) = sync_result.and(finish_result) {
+        let failed = match (sync_result, finish_result) {
+            (Ok(()), Ok(())) => None,
+            (Err(e), _) => Some(PatchError::SyncFailed {
+                source: Box::new(e),
+            }),
+            (Ok(()), Err(e)) => Some(PatchError::RestoreFailed {
+                source: Box::new(e),
+            }),
+        };
+        if let Some(e) = failed {
             site.set_state(if matches!(site.state(), SiteState::RetainedStop { .. }) {
                 SiteState::RetainedStop { pending }
             } else {
                 SiteState::SyncPending { pending }
             });
-            return Err(PatchError::SyncFailed {
-                source: Box::new(e),
-            });
+            return Err(e);
         }
         self.resume_and_settle(site, stop, pending, false)
     }
@@ -448,6 +455,14 @@ impl Patcher {
         };
         let found = site.read_word();
         if found != expected {
+            // A store that never landed (e.g. StoreFailed custody)
+            // leaves the original word: settle back to Unpatched
+            // through the same sync+finish+resume tail instead of
+            // stranding the site in SyncPending forever. Any third
+            // word is foreign writes: refuse, still stopped.
+            if matches!(pending, PendingWord::Patch(_)) && found == site.original_word() {
+                return self.finish_publication(site, stop, PendingWord::Original);
+            }
             return Err(PatchError::SiteWordChanged { expected, found });
         }
         self.finish_publication(site, stop, pending)
@@ -849,17 +864,36 @@ mod tests {
         assert!(matches!(site.state(), SiteState::SyncPending { .. }));
     }
 
+    #[derive(Default)]
+    struct StoreCounts {
+        begins: core::sync::atomic::AtomicU32,
+        finishes: core::sync::atomic::AtomicU32,
+        fail_store: core::sync::atomic::AtomicBool,
+        finish_failures_left: core::sync::atomic::AtomicU32,
+    }
+
     struct FakeForeignStore {
         word: *mut u32,
-        begins: u32,
-        finishes: u32,
+        counts: std::sync::Arc<StoreCounts>,
+    }
+    impl FakeForeignStore {
+        fn counts(word: *mut u32) -> (Self, std::sync::Arc<StoreCounts>) {
+            let counts = std::sync::Arc::new(StoreCounts::default());
+            (
+                Self {
+                    word,
+                    counts: counts.clone(),
+                },
+                counts,
+            )
+        }
     }
     // SAFETY (test): tests never move the store across threads; the
     // pointer names the stack word each test owns for the site's
     // whole lifetime.
     unsafe impl Send for FakeForeignStore {}
     // SAFETY (test): see the Send note; begin/finish model a window
-    // that always succeeds.
+    // whose failures tests can script through the shared counts.
     unsafe impl crate::store::SiteStore for FakeForeignStore {
         fn read_word(&self) -> u32 {
             unsafe { self.word.read_volatile() }
@@ -868,15 +902,35 @@ mod tests {
             self.word as u64
         }
         fn begin_write(&mut self) -> Result<(), PatchError> {
-            self.begins += 1;
+            use core::sync::atomic::Ordering;
+            self.counts.begins.fetch_add(1, Ordering::SeqCst);
             Ok(())
         }
         fn store_word(&mut self, word: u32) -> Result<(), PatchError> {
+            use core::sync::atomic::Ordering;
+            if self.counts.fail_store.load(Ordering::SeqCst) {
+                return Err(PatchError::Os {
+                    op: "fake store",
+                    errno: libc::EIO,
+                });
+            }
             unsafe { self.word.write_volatile(word) };
             Ok(())
         }
         fn finish_write(&mut self) -> Result<(), PatchError> {
-            self.finishes += 1;
+            use core::sync::atomic::Ordering;
+            self.counts.finishes.fetch_add(1, Ordering::SeqCst);
+            if self
+                .counts
+                .finish_failures_left
+                .try_update(Ordering::SeqCst, Ordering::SeqCst, |n| n.checked_sub(1))
+                .is_ok()
+            {
+                return Err(PatchError::Os {
+                    op: "fake restore",
+                    errno: libc::EIO,
+                });
+            }
             Ok(())
         }
     }
@@ -894,11 +948,8 @@ mod tests {
             generation: 7,
             bti: false,
         };
-        let store = Box::new(FakeForeignStore {
-            word: std::ptr::from_mut(&mut word),
-            begins: 0,
-            finishes: 0,
-        });
+        let (store, counts) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        let store = Box::new(store);
         let mut site = unsafe { Site::from_rx(0x1000, svc(0), facts, store) }.unwrap();
         // Unattested-by-construction fork check passes (same process);
         // trap flip exercises begin/store/finish through the seam.
@@ -908,16 +959,19 @@ mod tests {
         );
         assert_eq!(word, liteinst_aarch64::brk(0x4c00));
         assert_eq!(site.state(), SiteState::Flipped);
+        // One window per flip, opened and finished exactly once.
+        assert_eq!(counts.begins.load(core::sync::atomic::Ordering::SeqCst), 1);
+        assert_eq!(
+            counts.finishes.load(core::sync::atomic::Ordering::SeqCst),
+            1
+        );
         // Shared provenance refuses construction by name.
         let shared = MappingFacts {
             provenance: Provenance::Shared,
             ..facts
         };
-        let store2 = Box::new(FakeForeignStore {
-            word: std::ptr::from_mut(&mut word),
-            begins: 0,
-            finishes: 0,
-        });
+        let (store2, _counts2) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        let store2 = Box::new(store2);
         assert!(matches!(
             unsafe { Site::from_rx(0x1000, svc(0), shared, store2) },
             Err(PatchError::MappingRefused(_))
@@ -971,5 +1025,141 @@ mod tests {
             let here = island.entry_addr();
             assert!(branch_word_checked(svc(0), here, &island).is_some());
         }
+    }
+    fn foreign_facts(generation: u64) -> crate::mapping::MappingFacts {
+        use crate::mapping::{MappingFacts, Provenance};
+        MappingFacts {
+            page_span: (0x1000, 0x1000),
+            orig_prot: 0,
+            provenance: Provenance::PrivateFile,
+            generation,
+            bti: false,
+        }
+    }
+
+    #[test]
+    fn stale_generation_and_uncontained_facts_refuse_before_lease() {
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let (store, _c) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        let mut site =
+            unsafe { Site::from_rx(0x1000, svc(0), foreign_facts(7), Box::new(store)) }.unwrap();
+        let mut stale = trap_request();
+        stale.mapping_facts = Some(foreign_facts(8));
+        assert_eq!(
+            patcher.flip(&mut site, stale, &mut stop),
+            Err(PatchError::StaleGeneration { site: 7, facts: 8 })
+        );
+        let mut outside = trap_request();
+        let mut facts = foreign_facts(7);
+        facts.page_span = (0x8000, 0x1000);
+        outside.mapping_facts = Some(facts);
+        assert!(matches!(
+            patcher.flip(&mut site, outside, &mut stop),
+            Err(PatchError::MappingRefused(_))
+        ));
+        assert_eq!(stop.acquires, 0);
+        // from_rx itself refuses facts not containing the site.
+        let (store, _c) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        assert!(matches!(
+            unsafe { Site::from_rx(0x1000, svc(0), facts, Box::new(store)) },
+            Err(PatchError::MappingRefused(_))
+        ));
+    }
+
+    #[test]
+    fn store_failure_is_custody_and_completes_to_unpatched() {
+        use core::sync::atomic::Ordering;
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let (store, counts) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        counts.fail_store.store(true, Ordering::SeqCst);
+        let mut site =
+            unsafe { Site::from_rx(0x1000, svc(0), foreign_facts(7), Box::new(store)) }.unwrap();
+        assert!(matches!(
+            patcher.flip(&mut site, trap_request(), &mut stop),
+            Err(PatchError::StoreFailed { .. })
+        ));
+        assert!(matches!(site.state(), SiteState::SyncPending { .. }));
+        assert_eq!(word, svc(0));
+        // The word never landed: completion settles Unpatched, it
+        // does not strand the site (L6).
+        counts.fail_store.store(false, Ordering::SeqCst);
+        assert_eq!(patcher.complete_sync(&mut site, &mut stop), Ok(()));
+        assert_eq!(site.state(), SiteState::Unpatched);
+        assert_eq!(word, svc(0));
+    }
+
+    #[test]
+    fn restore_failure_is_named_and_retried_by_completion() {
+        use core::sync::atomic::Ordering;
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let (store, counts) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        counts.finish_failures_left.store(1, Ordering::SeqCst);
+        let mut site =
+            unsafe { Site::from_rx(0x1000, svc(0), foreign_facts(7), Box::new(store)) }.unwrap();
+        assert!(matches!(
+            patcher.flip(&mut site, trap_request(), &mut stop),
+            Err(PatchError::RestoreFailed { .. })
+        ));
+        assert!(matches!(site.state(), SiteState::SyncPending { .. }));
+        assert_eq!(patcher.complete_sync(&mut site, &mut stop), Ok(()));
+        assert_eq!(site.state(), SiteState::Flipped);
+        // finish ran twice: the failed restore plus completion retry.
+        assert_eq!(counts.finishes.load(Ordering::SeqCst), 2);
+        assert_eq!(counts.begins.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn rollback_reopens_window_idempotently() {
+        use core::sync::atomic::Ordering;
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let (store, counts) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        counts.finish_failures_left.store(1, Ordering::SeqCst);
+        let mut site =
+            unsafe { Site::from_rx(0x1000, svc(0), foreign_facts(7), Box::new(store)) }.unwrap();
+        // Flip lands in SyncPending (restore failed); rollback from
+        // there must begin_write again on the still-open window.
+        assert!(patcher.flip(&mut site, trap_request(), &mut stop).is_err());
+        assert_eq!(patcher.rollback(&mut site, &mut stop), Ok(()));
+        assert_eq!(site.state(), SiteState::Unpatched);
+        assert_eq!(word, svc(0));
+        assert_eq!(counts.begins.load(Ordering::SeqCst), 2);
+    }
+
+    #[test]
+    fn forked_registry_refuses_complete_sync_and_rollback() {
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let mut site = site_on(&mut word, 0x1000);
+        assert_eq!(
+            patcher.flip(&mut site, trap_request(), &mut stop),
+            Ok(Strategy::Trap)
+        );
+        patcher.set_owner_pid_for_test(std::process::id() + 1_000_000);
+        assert_eq!(
+            patcher.rollback(&mut site, &mut stop),
+            Err(PatchError::ForkedRegistry)
+        );
+        let mut patcher2 = Patcher::for_test(sync_fail);
+        let mut word2 = svc(0);
+        let mut site2 = site_on(&mut word2, 0x1000);
+        assert!(
+            patcher2
+                .flip(&mut site2, trap_request(), &mut stop)
+                .is_err()
+        );
+        patcher2.set_owner_pid_for_test(std::process::id() + 1_000_000);
+        assert_eq!(
+            patcher2.complete_sync(&mut site2, &mut stop),
+            Err(PatchError::ForkedRegistry)
+        );
     }
 }

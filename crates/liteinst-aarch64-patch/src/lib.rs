@@ -8,10 +8,12 @@
 //! exclusive publication lease, both-valid invariant, retained custody
 //! on post-store failure, and no lock-free or BLR low-page claim.
 //!
-//! Slice 2 surface: error taxonomy, page-size query, [`cache`]
-//! maintenance + environment probe, [`island::Island`] RAII, and the
-//! [`site`] custody/state types the flip slice will drive. Flip and
-//! rollback execution are intentionally not present yet.
+//! The surface covers the error taxonomy, page-size query,
+//! [`cache`] maintenance and environment probe,
+//! [`island::Island`], the [`site`] custody types, the [`store`]
+//! seam, mapping qualification, and the [`flip`] protocol
+//! (flip / complete_sync / rollback), all driven through the
+//! [`gate`] syscall entry.
 
 #![warn(missing_docs)]
 
@@ -54,6 +56,13 @@ pub enum PatchError {
     AlreadyPublished,
     /// Address/length arithmetic overflowed.
     RangeOverflow,
+    /// More words were offered than a reserved island can hold.
+    CapacityExceeded {
+        /// Words the island was reserved for.
+        capacity_words: usize,
+        /// Words offered to fill.
+        offered: usize,
+    },
     /// A second live site already names this address.
     DuplicateSite {
         /// The duplicated site address.
@@ -115,10 +124,11 @@ pub enum PatchError {
     /// custodies are the parent's. The child must construct a new
     /// patcher instead of operating this one.
     ForkedRegistry,
-    /// A store operation after the window opened failed before the
-    /// word could be issued (or a partial writev neither landed nor
-    /// can be proven absent is reported through custody instead; see
-    /// the design note).
+    /// The single site store failed after the window opened. The
+    /// word may or may not have landed; the site stays in
+    /// `SyncPending` custody and `complete_sync` settles it by
+    /// re-reading (original word -> back to `Unpatched`, patch word
+    /// -> `Flipped`, anything else refuses still stopped).
     StoreFailed {
         /// The underlying store error.
         source: Box<PatchError>,
@@ -128,6 +138,15 @@ pub enum PatchError {
     /// The underlying sync error is preserved, not swallowed.
     SyncFailed {
         /// The synchronization error that left publication pending.
+        source: Box<PatchError>,
+    },
+    /// The store landed and synced, but restoring the window's
+    /// original protections failed; the site is in
+    /// `SyncPending`/`RetainedStop` custody with the window still
+    /// open. The custody STATE still reuses SyncPending (settled
+    /// design); only the error names the failing stage.
+    RestoreFailed {
+        /// The restore error that left publication pending.
         source: Box<PatchError>,
     },
     /// A pre-store refusal under the lease could not cleanly release
@@ -154,6 +173,10 @@ impl core::fmt::Display for PatchError {
             Self::EmptyIsland => write!(f, "island must contain at least one word"),
             Self::AlreadyPublished => write!(f, "island is already published"),
             Self::RangeOverflow => write!(f, "address range overflow"),
+            Self::CapacityExceeded {
+                capacity_words,
+                offered,
+            } => write!(f, "island holds {capacity_words} words, {offered} offered"),
             Self::DuplicateSite { addr } => {
                 write!(f, "a live site already names address {addr:#x}")
             }
@@ -189,6 +212,9 @@ impl core::fmt::Display for PatchError {
             Self::StoreFailed { source } => write!(f, "site store failed: {source}"),
             Self::SyncFailed { source } => {
                 write!(f, "post-store cache synchronization failed: {source}")
+            }
+            Self::RestoreFailed { source } => {
+                write!(f, "post-store protection restore failed: {source}")
             }
             Self::CleanupFailed { expected, found } => {
                 write!(
@@ -279,6 +305,7 @@ impl Patcher {
     /// downstream custody tests can drive sync/restore failures
     /// through production flip paths. The attestation gate is not
     /// bypassed: construction still probes the environment.
+    #[cfg(feature = "test-support")]
     #[doc(hidden)]
     pub fn attested_with_sync(
         sync: unsafe fn(*mut u8, *mut u8, usize) -> Result<(), PatchError>,

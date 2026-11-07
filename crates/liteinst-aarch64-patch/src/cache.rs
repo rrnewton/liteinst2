@@ -173,7 +173,7 @@ fn kill_and_discharge(pid: libc::pid_t) -> Result<(), PatchError> {
             [pid as u64, libc::SIGKILL as u64, 0, 0, 0, 0],
         );
     };
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    let deadline = crate::gate::now_ms() + 5_000;
     loop {
         match wait_once(pid) {
             Ok(Some(_)) => return Ok(()),
@@ -181,10 +181,10 @@ fn kill_and_discharge(pid: libc::pid_t) -> Result<(), PatchError> {
             Err(PatchError::CacheOpsUnavailable) => return Ok(()),
             Err(e) => return Err(e),
         }
-        if std::time::Instant::now() >= deadline {
+        if crate::gate::now_ms() >= deadline {
             return Err(PatchError::ChildCustodyRetained { pid });
         }
-        std::thread::sleep(std::time::Duration::from_millis(1));
+        crate::gate::sleep_ms(1);
     }
 }
 
@@ -197,16 +197,16 @@ fn kill_and_discharge(pid: libc::pid_t) -> Result<(), PatchError> {
 #[cfg(target_os = "linux")]
 #[allow(dead_code)]
 fn reap_child(pid: libc::pid_t, timeout_ms: u64) -> Result<libc::c_int, PatchError> {
-    let deadline = std::time::Instant::now() + std::time::Duration::from_millis(timeout_ms);
+    let deadline = crate::gate::now_ms() + timeout_ms;
     loop {
         if let Some(status) = wait_once(pid)? {
             return Ok(status);
         }
-        if std::time::Instant::now() >= deadline {
+        if crate::gate::now_ms() >= deadline {
             kill_and_discharge(pid)?;
             return Err(PatchError::CacheOpsUnavailable);
         }
-        std::thread::sleep(std::time::Duration::from_millis(1));
+        crate::gate::sleep_ms(1);
     }
 }
 
@@ -282,7 +282,7 @@ fn collect_probe_child(
             Err(retained) => Err(retained),
         };
     }
-    let deadline = std::time::Instant::now() + std::time::Duration::from_millis(timeout_ms);
+    let deadline = crate::gate::now_ms() + timeout_ms;
     let mut byte: Option<u8> = None;
     let mut eof = false;
     loop {
@@ -310,7 +310,7 @@ fn collect_probe_child(
             }
             return Ok((byte == Some(PROBE_MAGIC), status));
         }
-        if std::time::Instant::now() >= deadline {
+        if crate::gate::now_ms() >= deadline {
             kill_and_discharge(pid)?;
             return Err(PatchError::CacheOpsUnavailable);
         }
@@ -352,20 +352,13 @@ fn collect_probe_child(
                 }
             }
         } else {
-            std::thread::sleep(std::time::Duration::from_millis(1));
+            crate::gate::sleep_ms(1);
         }
     }
 }
 
-/// Establish that EL0 cache maintenance does not trap, without risking
-/// the calling process and without trusting inherited signal state:
-/// the forked child resets fault dispositions to `SIG_DFL`, unblocks
-/// signals, runs the full sync over its own anonymous page, writes a
-/// completion byte, and exits; the parent attests only on the byte
-/// plus a clean exit (see [`probe_verdict`]). Call at initialization,
-/// before extra threads exist (the child performs only
-/// async-signal-safe calls). A passing probe says nothing about
-/// cross-core acknowledgement.
+/// Kernel `rt_sigaction` layout (handler, flags, restorer, one-word
+/// mask) for the raw gate form; libc's wrapper struct differs.
 #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
 #[repr(C)]
 struct KernelSigaction {
@@ -387,6 +380,15 @@ fn probe_child_exit(code: i64) -> ! {
 }
 
 #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+/// Establish that EL0 cache maintenance does not trap, without risking
+/// the calling process and without trusting inherited signal state:
+/// the forked child resets fault dispositions to `SIG_DFL`, unblocks
+/// signals, runs the full sync over its own anonymous page, writes a
+/// completion byte, and exits; the parent attests only on the byte
+/// plus a clean exit (see [`probe_verdict`]). Call at initialization,
+/// before extra threads exist (the child performs only
+/// async-signal-safe calls). A passing probe says nothing about
+/// cross-core acknowledgement.
 pub fn probe_environment() -> Result<CacheAttested, PatchError> {
     let page = crate::page_size()?;
     let mut fds = [0 as libc::c_int; 2];

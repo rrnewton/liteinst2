@@ -1,6 +1,6 @@
 # Patcher hookup design (W3 S5b lazy trap-and-patch, for musearch)
 
-Status: design only, for architecture review before code. Inputs:
+Status: implemented in slice S5b (patch-crate seam on musearm2/arm-patcher-s5b-20261106; promoter in reverie-liteinst on the S5a stack). This note remains the contract; amendments from the coord7 Opus reviews are folded below. Inputs:
 musearm1's S5b note (sha256 74cd5525…), musearm2's Q1–Q8 answers via
 museli-lt, and the landed patcher design/slices 2–3 contracts.
 Musearch's S5.2 decision, dispatched through museli-lt, is canonical:
@@ -34,7 +34,12 @@ A downstream promoter, called explicitly at a deterministic
 ordinary-context checkpoint, drains FIFO pending addresses (ownership
 transfer), qualifies each site's mapping, builds a two-word island
 `[original SVC, B resume]`, and flips the site `SVC -> B island` with
-the landed `Patcher::flip`. Later calls skip SIGSYS. Branch only in
+the landed `Patcher::flip`. NOTE: the current island shape re-runs
+the SVC, so later calls still trap once per call at the island;
+this slice buys custody/plumbing, not trap avoidance (island
+ranges are denylisted in S5a's pending table so those re-traps
+consume no slots). An island entering dispatch directly is
+future work. Branch only in
 hookup slice 1; BRK fallback, far veneers, eager scanning, and handler-
 context draining stay out (prior design non-goals carry over).
 
@@ -52,9 +57,11 @@ context draining stay out (prior design non-goals carry over).
    `/proc/self/maps` (promoter ordinary context only). Refusals are
    named before construction: `PatchError::MappingRefused` for shared,
    unaligned, non-executable, or indeterminate mappings. `Site`
-   stores the facts; `requalify(facts)` is the only way to advance a
-   site's generation, and flip refuses a generation mismatch when
-   fresh facts are presented.
+   stores the facts; flip refuses a generation mismatch when fresh
+   facts are presented. (The `requalify` mutator was deleted in
+   review: it could not update the store's captured span, so a
+   generation advance constructs a fresh site against fresh facts
+   qualified under the lease.)
 3. Store seam: an `unsafe trait SiteStore` defined by the patch crate
    and implemented by reverie-liteinst for foreign text (owner
    correction: hookup builds inside reverie-liteinst, consuming this
@@ -77,8 +84,14 @@ context draining stay out (prior design non-goals carry over).
    so resume is forbidden and the site remains `SyncPending` (or
    `RetainedStop` on the existing partial-resume path). The only exits
    are a successful `complete_sync` retry — which must retry any
-   outstanding restore as part of completion — or session abort. Try order: mprotect window, then writev, each
-   refusal named. Fork guard: `Patcher` records `getpid()` at
+   outstanding restore as part of completion — or session abort. Try order: mprotect window first. A refused window (including
+   platform-policy errnos: MDWE/SELinux execmem, W^X filters)
+   means Refused with the site left trapping — never a fallback
+   triggered by the refusal itself. The /proc/self/mem store may
+   be selected only by explicit selector permission
+   (StoreFallback::AllowProcMem), never as an errno-triggered
+   bypass. (process_vm_writev was deleted: it cannot write R-X
+   text on any architecture.) Fork guard: `Patcher` records `getpid()` at
    construction; flip/rollback/complete_sync refuse
    `PatchError::ForkedRegistry` on mismatch (existing flipped sites
    keep executing in the child; nobody rolls back there).
@@ -131,7 +144,7 @@ obligations are already enumerated in the landed design note.
   additionally refused by promoter policy (denylist by mapping
   provenance), matching musearm1's non-goal.
 - 16 KiB-page Android devices: page span of the mprotect window and
-  arena geometry derive from `sysconf` only.
+  arena geometry derive from the queried runtime page size only (AT_PAGESZ).
 - Existing filters: the trap source is W3's own seccomp filter;
   promotion never installs/uninstalls filters and never runs inside
   the SIGSYS handler.
@@ -142,12 +155,14 @@ Patch-crate mechanics proof in `liteinst-aarch64-patch/tests/` (store
 seam against test-local backings), then the linked lazy-promotion
 proof in reverie-liteinst's own tests once its foreign store lands:
 one SVC helper trapped once, promoted at an ordinary checkpoint via
-the mprotect backend, then: first result forwarded, handler count
-stays 1 across repeats, results/register effects identical, site word
+the mprotect backend, then: first result forwarded, results/register
+effects identical across repeats (each repeat traps at the island
+SVC with the current island shape), site word
 is the expected branch, protections restored byte-exact (per maps),
 rollback returns to the trap path. Controls: shared-mapping and
-out-of-range sites stay trapped; writev backend repeats the happy
-path where permitted, plus injected sync-failure and restore-failure
+out-of-range sites stay trapped; the proc-mem backend (where the
+selector permits it) repeats the happy
+path, plus injected sync-failure and restore-failure
 cases proving `SyncPending`, forbidden resume, and retry-to-settle.
 Same static-binary metal (64 KiB) + guest (4 KiB) route as prior
 slices; 16 KiB geometry covered by host unit tests until a 16 KiB

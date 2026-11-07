@@ -177,35 +177,37 @@ fn read_proc_file(path: &core::ffi::CStr) -> Result<String, PatchError> {
 }
 
 /// Whether the smaps block containing `addr` carries the `bt`
-/// (BTI-guarded) VmFlag. Pure parse over a smaps image.
+/// (BTI-guarded) VmFlag, or `None` when no VMA contains `addr` or
+/// the block has no VmFlags line. Callers must refuse on `None`:
+/// assuming unguarded could strip BTI from a guarded page.
 #[cfg(target_os = "linux")]
-fn smaps_bti(smaps: &str, addr: u64) -> bool {
+fn smaps_bti(smaps: &str, addr: u64) -> Option<bool> {
     let mut inside = false;
     for line in smaps.lines() {
         if let Some((range, _)) = line.split_once(' ')
             && let Some((lo, hi)) = range.split_once('-')
             && let (Ok(lo), Ok(hi)) = (u64::from_str_radix(lo, 16), u64::from_str_radix(hi, 16))
         {
+            if inside {
+                // The target block ended without a VmFlags line.
+                return None;
+            }
             inside = addr >= lo && addr < hi;
             continue;
         }
         if inside && let Some(flags) = line.strip_prefix("VmFlags:") {
-            return flags.split_whitespace().any(|f| f == "bt");
+            return Some(flags.split_whitespace().any(|f| f == "bt"));
         }
     }
-    false
+    None
 }
 
-/// Qualify the mapping containing `addr` from `/proc/self/maps`
-/// (plus the smaps VmFlags for BTI), in promoter ordinary context
-/// only (never a handler). Refusals are named: shared/unknown or
-/// pseudo-mapping provenance, non-executable or non-readable
-/// (execute-only) mappings, and addresses no mapping contains
-/// all return `PatchError::MappingRefused`.
+/// Qualify from one smaps image: header perms/pathname give the
+/// maps facts and the same block's VmFlags give BTI, so perms and
+/// flags can never disagree about which VMA they describe.
 #[cfg(target_os = "linux")]
-pub fn qualify_mapping(addr: u64, generation: u64) -> Result<MappingFacts, PatchError> {
-    let maps = read_proc_file(c"/proc/self/maps")?;
-    for line in maps.lines() {
+fn qualify_from_smaps(smaps: &str, addr: u64, generation: u64) -> Result<MappingFacts, PatchError> {
+    for line in smaps.lines() {
         if let Some(mut facts) = parse_maps_line(line, addr, generation) {
             if !facts.windowable() {
                 return Err(match facts.provenance {
@@ -223,14 +225,26 @@ pub fn qualify_mapping(addr: u64, generation: u64) -> Result<MappingFacts, Patch
                     "execute-only mapping cannot be revalidated",
                 ));
             }
-            // BTI lives only in smaps. A smaps read failure refuses:
-            // silently assuming unguarded could strip BTI.
-            let smaps = read_proc_file(c"/proc/self/smaps")?;
-            facts.bti = smaps_bti(&smaps, addr);
+            facts.bti = smaps_bti(smaps, addr).ok_or(PatchError::MappingRefused(
+                "BTI state indeterminate (no smaps VmFlags for the site VMA)",
+            ))?;
             return Ok(facts);
         }
     }
     Err(PatchError::MappingRefused("no mapping contains the site"))
+}
+
+/// Qualify the mapping containing `addr` from a single
+/// `/proc/self/smaps` read (perms, pathname and BTI VmFlags from
+/// the same VMA block), in promoter ordinary context only (never
+/// a handler). Refusals are named: shared/unknown or
+/// pseudo-mapping provenance, non-executable or non-readable
+/// (execute-only) mappings, indeterminate BTI, and addresses no
+/// mapping contains all return `PatchError::MappingRefused`.
+#[cfg(target_os = "linux")]
+pub fn qualify_mapping(addr: u64, generation: u64) -> Result<MappingFacts, PatchError> {
+    let smaps = read_proc_file(c"/proc/self/smaps")?;
+    qualify_from_smaps(&smaps, addr, generation)
 }
 
 /// Qualify a mapping (see the Linux form). Unsupported off Linux.
@@ -269,15 +283,108 @@ mod tests {
         assert!(!facts.windowable());
     }
 
+    #[cfg(target_os = "linux")]
+    fn map_page(prot: libc::c_int) -> u64 {
+        let page = crate::page_size().unwrap();
+        // SAFETY: fresh anonymous page for this test.
+        let p = unsafe {
+            crate::gate::gate6(
+                libc::SYS_mmap,
+                [
+                    0,
+                    page,
+                    prot as u64,
+                    (libc::MAP_PRIVATE | libc::MAP_ANONYMOUS) as u64,
+                    u64::MAX,
+                    0,
+                ],
+            )
+        };
+        assert!(p > 0, "mmap failed: {p}");
+        p as u64
+    }
+
+    #[cfg(target_os = "linux")]
+    fn unmap(addr: u64) {
+        let page = crate::page_size().unwrap();
+        // SAFETY: addr is this test's own mapping above.
+        unsafe {
+            crate::gate::gate6(libc::SYS_munmap, [addr, page, 0, 0, 0, 0]);
+        }
+    }
+
+    #[test]
+    fn qualify_real_rx_rw_and_xonly_pages() {
+        let rx = map_page(libc::PROT_READ | libc::PROT_EXEC);
+        let facts = qualify_mapping(rx, 3).unwrap();
+        assert!(facts.windowable());
+        assert_eq!(facts.generation, 3);
+        unmap(rx);
+        let rw = map_page(libc::PROT_READ | libc::PROT_WRITE);
+        assert_eq!(
+            qualify_mapping(rw, 3),
+            Err(PatchError::MappingRefused("mapping is not executable"))
+        );
+        unmap(rw);
+        let xo = map_page(libc::PROT_EXEC);
+        assert_eq!(
+            qualify_mapping(xo, 3),
+            Err(PatchError::MappingRefused(
+                "execute-only mapping cannot be revalidated"
+            ))
+        );
+        unmap(xo);
+    }
+
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn qualify_bti_page_agrees_with_smaps() {
+        const PROT_BTI: libc::c_int = 0x10;
+        let page = crate::page_size().unwrap();
+        // SAFETY: fresh anonymous page; PROT_BTI may be EINVAL on
+        // kernels/hosts without BTI.
+        let p = unsafe {
+            crate::gate::gate6(
+                libc::SYS_mmap,
+                [
+                    0,
+                    page,
+                    (libc::PROT_READ | libc::PROT_EXEC | PROT_BTI) as u64,
+                    (libc::MAP_PRIVATE | libc::MAP_ANONYMOUS) as u64,
+                    u64::MAX,
+                    0,
+                ],
+            )
+        };
+        if p <= 0 {
+            return; // host/kernel has no BTI mmap; nothing to agree on
+        }
+        let addr = p as u64;
+        let smaps = std::fs::read_to_string("/proc/self/smaps").unwrap();
+        match smaps_bti(&smaps, addr) {
+            // Host exposes the flag: qualification must report it.
+            Some(true) => assert!(qualify_mapping(addr, 1).unwrap().bti),
+            Some(false) => assert!(!qualify_mapping(addr, 1).unwrap().bti),
+            // Emulator smaps without VmFlags: refuse, never guess.
+            None => assert!(matches!(
+                qualify_mapping(addr, 1),
+                Err(PatchError::MappingRefused(_))
+            )),
+        }
+        unmap(addr);
+    }
+
     #[test]
     fn smaps_bti_flag_is_per_vma() {
         let smaps = "1000-2000 r-xp 00000000 08:02 1 /a\n\
                      Size: 4 kB\nVmFlags: rd ex bt mr\n\
                      2000-3000 r-xp 00000000 08:02 1 /b\n\
                      Size: 4 kB\nVmFlags: rd ex mr\n";
-        assert!(smaps_bti(smaps, 0x1000));
-        assert!(smaps_bti(smaps, 0x1ffc));
-        assert!(!smaps_bti(smaps, 0x2000));
-        assert!(!smaps_bti(smaps, 0x9000));
+        assert_eq!(smaps_bti(smaps, 0x1000), Some(true));
+        assert_eq!(smaps_bti(smaps, 0x1ffc), Some(true));
+        assert_eq!(smaps_bti(smaps, 0x2000), Some(false));
+        assert_eq!(smaps_bti(smaps, 0x9000), None);
+        let noflags = "1000-2000 r-xp 00000000 08:02 1 /a\nSize: 4 kB\n";
+        assert_eq!(smaps_bti(noflags, 0x1000), None);
     }
 }
