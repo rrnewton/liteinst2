@@ -222,20 +222,27 @@ impl Island {
     /// attestation token (environment established before any store).
     #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
     pub fn publish(&mut self, _attested: CacheAttested) -> Result<(), PatchError> {
+        if self.published {
+            return Err(PatchError::AlreadyPublished);
+        }
         // SAFETY: both aliases name this island's full shared range.
         unsafe { sync_icache(self.rw, self.rx, self.len)? };
         self.published = true;
         // Published text is immutable (fill now refuses), so the
         // RW alias has no remaining purpose: unmap it so a live
         // island is never writable through any VA. The RX alias
-        // keeps the backing alive.
-        // SAFETY: rw is this island's own mapping, unmapped once.
-        unsafe {
+        // keeps the backing alive. The munmap result is CHECKED:
+        // on failure the alias address is retained (Drop retries
+        // the unmap) and the error surfaces — publishing must not
+        // claim immutability it did not achieve.
+        // SAFETY: rw is this island's own mapping.
+        let ret = unsafe {
             crate::gate::gate6(
                 libc::SYS_munmap,
                 [self.rw as u64, self.len as u64, 0, 0, 0, 0],
-            );
-        }
+            )
+        };
+        crate::gate::check(ret, "munmap island rw alias")?;
         self.rw = core::ptr::null_mut();
         Ok(())
     }
@@ -347,24 +354,43 @@ mod tests {
     #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
     #[test]
     fn reserve_closes_the_memfd() {
-        // Count ONLY island memfds: the whole-table census races
-        // sibling tests opening unrelated fds in parallel.
-        fn island_fd_count() -> usize {
-            std::fs::read_dir("/proc/self/fd")
-                .unwrap()
-                .filter_map(|e| e.ok())
-                .filter(|e| {
-                    std::fs::read_link(e.path())
-                        .map(|t| t.to_string_lossy().contains("memfd:liteinst-island"))
-                        .unwrap_or(false)
-                })
-                .count()
+        // Census in a forked child: even a name-filtered count
+        // races sibling tests constructing islands in parallel.
+        // The child has the table to itself, so its exact counts
+        // are deterministic; it reports by exit code.
+        // SAFETY: fork with an immediately-exiting child that only
+        // reserves/drops one island and counts its own fds.
+        let pid = unsafe { libc::fork() };
+        assert!(pid >= 0);
+        if pid == 0 {
+            let count = || {
+                std::fs::read_dir("/proc/self/fd")
+                    .map(|d| {
+                        d.filter_map(|e| e.ok())
+                            .filter(|e| {
+                                std::fs::read_link(e.path())
+                                    .map(|t| t.to_string_lossy().contains("memfd:liteinst-island"))
+                                    .unwrap_or(false)
+                            })
+                            .count()
+                    })
+                    .unwrap_or(usize::MAX)
+            };
+            let before = count();
+            let island = Island::reserve(2);
+            let reserved = island.is_ok();
+            let during = count();
+            drop(island);
+            let after = count();
+            let ok = reserved && during == before && after == before;
+            unsafe { libc::_exit(if ok { 0 } else { 3 }) };
         }
-        let before = island_fd_count();
-        let island = Island::reserve(2).unwrap();
-        assert_eq!(island_fd_count(), before, "reserve leaked the memfd");
-        drop(island);
-        assert_eq!(island_fd_count(), before);
+        let mut status: libc::c_int = 0;
+        assert_eq!(unsafe { libc::waitpid(pid, &mut status, 0) }, pid);
+        assert!(
+            libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0,
+            "fd census child status={status:#x}"
+        );
     }
 
     #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
@@ -384,6 +410,17 @@ mod tests {
                 offered: 2
             })
         );
+    }
+
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    #[test]
+    fn second_publish_is_already_published_not_a_null_sync() {
+        let token = crate::cache::CacheAttested::for_test();
+        let mut island = Island::build(&[0xd400_0001, 0xd65f_03c0]).unwrap();
+        island.publish(token).unwrap();
+        // Regression: the second publish must refuse by name, not
+        // sync through the cleared (null) RW pointer.
+        assert_eq!(island.publish(token), Err(PatchError::AlreadyPublished));
     }
 
     #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]

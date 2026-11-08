@@ -267,6 +267,7 @@ mod tests {
         clocks: std::sync::atomic::AtomicU64,
         waits: std::sync::atomic::AtomicU64,
         clones: std::sync::atomic::AtomicU64,
+        fail_munmap: std::sync::atomic::AtomicBool,
     }
     #[cfg(target_os = "linux")]
     static COUNTING: CountingGate = CountingGate {
@@ -274,6 +275,7 @@ mod tests {
         clocks: std::sync::atomic::AtomicU64::new(0),
         waits: std::sync::atomic::AtomicU64::new(0),
         clones: std::sync::atomic::AtomicU64::new(0),
+        fail_munmap: std::sync::atomic::AtomicBool::new(false),
     };
     // SAFETY: forwards exactly to the direct entry after counting.
     #[cfg(target_os = "linux")]
@@ -289,6 +291,9 @@ mod tests {
             }
             if nr == libc::SYS_clone {
                 self.clones.fetch_add(1, Ordering::SeqCst);
+            }
+            if nr == libc::SYS_munmap && self.fail_munmap.load(Ordering::SeqCst) {
+                return -(libc::EACCES as i64);
             }
             // SAFETY: same contract, forwarded.
             unsafe { DirectGate.syscall6(nr, args) }
@@ -343,5 +348,56 @@ mod tests {
         sleep_ms(15);
         let t1 = now_ms().unwrap();
         assert!(t1 >= t0 + 10, "sleep_ms(15) advanced only {}", t1 - t0);
+    }
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    #[test]
+    fn denied_unmap_at_publish_refuses_and_retains_ownership() {
+        use std::sync::atomic::Ordering;
+        // SAFETY: the counting gate forwards exactly like the
+        // direct entry (test-only munmap denial aside).
+        let _ = unsafe { install_gate(&COUNTING) };
+        // Fork-isolated like the fd census: sibling tests reuse
+        // addresses, so maps assertions are only deterministic in
+        // a child whose address space is a frozen copy.
+        // SAFETY: fork with an immediately-exiting child.
+        let pid = unsafe { libc::fork() };
+        assert!(pid >= 0);
+        if pid == 0 {
+            let code = (|| -> i32 {
+                let token = crate::cache::CacheAttested::for_test();
+                let mut island = crate::island::Island::build(&[0xd400_0001, 0xd65f_03c0]).unwrap();
+                let entry = island.entry_addr();
+                COUNTING.fail_munmap.store(true, Ordering::SeqCst);
+                let err = island.publish(token).unwrap_err();
+                COUNTING.fail_munmap.store(false, Ordering::SeqCst);
+                if !matches!(err, PatchError::Os { op, .. } if op == "munmap island rw alias") {
+                    return 3;
+                }
+                if island.read_rx_word(0) != Some(0xd400_0001) {
+                    return 4;
+                }
+                let mapped = |e: u64| {
+                    std::fs::read_to_string("/proc/self/maps")
+                        .unwrap()
+                        .lines()
+                        .any(|l| l.starts_with(&format!("{e:x}-")))
+                };
+                if !mapped(entry) {
+                    return 5;
+                }
+                drop(island);
+                if mapped(entry) {
+                    return 6;
+                }
+                0
+            })();
+            unsafe { libc::_exit(code) };
+        }
+        let mut status: libc::c_int = 0;
+        assert_eq!(unsafe { libc::waitpid(pid, &mut status, 0) }, pid);
+        assert!(
+            libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0,
+            "denied-unmap child status={status:#x} (3=wrong error, 4=read, 5=not mapped, 6=leaked)"
+        );
     }
 }
