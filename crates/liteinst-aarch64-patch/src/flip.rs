@@ -6,6 +6,7 @@
 //! the store lands and only settles it through the named transitions.
 
 use crate::island::Island;
+use crate::mapping::MappingFacts;
 use crate::site::{
     FallbackPermission, PendingWord, ResumeState, Site, SiteState, StopControl, StrategyPreference,
     TrapRoute,
@@ -29,6 +30,10 @@ pub struct FlipRequest {
     /// Pre-armed owned trap route (required for any Trap selection);
     /// its generation must match the site's.
     pub trap_route: Option<TrapRoute>,
+    /// Fresh mapping facts for foreign sites, when the caller has
+    /// re-qualified since construction; a generation mismatch with
+    /// the site refuses before the lease.
+    pub mapping_facts: Option<MappingFacts>,
 }
 
 impl core::fmt::Debug for FlipRequest {
@@ -38,6 +43,7 @@ impl core::fmt::Debug for FlipRequest {
             .field("strategy", &self.strategy)
             .field("fallback", &self.fallback)
             .field("trap_route", &self.trap_route)
+            .field("mapping_facts", &self.mapping_facts)
             .finish()
     }
 }
@@ -71,7 +77,7 @@ impl Patcher {
     fn sync_site(&self, site: &Site) -> Result<(), PatchError> {
         // SAFETY: Site construction guarantees both aliases name the
         // same valid word; the range is exactly that word.
-        self.sync_range(site.rw_word_const() as *mut u8, site.addr() as *mut u8, 4)
+        self.sync_range(site.write_addr() as *mut u8, site.addr() as *mut u8, 4)
     }
 
     /// Best-effort lease release after a pre-store refusal under the
@@ -85,6 +91,22 @@ impl Patcher {
             }
             Err(_) => false,
         }
+    }
+
+    /// A refusal before the store, on a lease the CALLER acquired
+    /// (flip_preacquired): resume first; a resume shortfall replaces
+    /// the refusal, because executors may still be stopped.
+    fn refuse_pre_store(
+        &self,
+        site: &mut Site,
+        stop: &mut dyn StopControl,
+        lease_held: bool,
+        err: PatchError,
+    ) -> PatchError {
+        if lease_held && !self.release_after_refusal(site, stop) {
+            return PatchError::ResumeIncomplete;
+        }
+        err
     }
 
     /// Resume under the current lease and settle `pending` if every
@@ -135,15 +157,31 @@ impl Patcher {
         stop: &mut dyn StopControl,
         pending: PendingWord,
     ) -> Result<(), PatchError> {
-        if let Err(e) = self.sync_site(site) {
+        // Order per design: sync while the store window is open, then
+        // restore (finish), then acknowledged resume. Either failure
+        // leaves SyncPending custody; completion retries both.
+        let sync_result = self.sync_site(site);
+        let finish_result = if sync_result.is_ok() {
+            site.finish_write()
+        } else {
+            Ok(())
+        };
+        let failed = match (sync_result, finish_result) {
+            (Ok(()), Ok(())) => None,
+            (Err(e), _) => Some(PatchError::SyncFailed {
+                source: Box::new(e),
+            }),
+            (Ok(()), Err(e)) => Some(PatchError::RestoreFailed {
+                source: Box::new(e),
+            }),
+        };
+        if let Some(e) = failed {
             site.set_state(if matches!(site.state(), SiteState::RetainedStop { .. }) {
                 SiteState::RetainedStop { pending }
             } else {
                 SiteState::SyncPending { pending }
             });
-            return Err(PatchError::SyncFailed {
-                source: Box::new(e),
-            });
+            return Err(e);
         }
         self.resume_and_settle(site, stop, pending, false)
     }
@@ -157,30 +195,100 @@ impl Patcher {
         request: FlipRequest,
         stop: &mut dyn StopControl,
     ) -> Result<Strategy, PatchError> {
+        self.flip_inner(site, request, stop, false)
+    }
+
+    /// Flip with the lease ALREADY held by the caller (who acquired
+    /// it to qualify mappings and read the site word under the stop,
+    /// closing the qualify-to-store TOCTOU). The flip resumes on
+    /// every exit path exactly as [`flip`](Self::flip) does; the
+    /// caller must not resume again. Custody states after the store
+    /// are identical.
+    pub fn flip_preacquired(
+        &mut self,
+        site: &mut Site,
+        request: FlipRequest,
+        stop: &mut dyn StopControl,
+    ) -> Result<Strategy, PatchError> {
+        self.flip_inner(site, request, stop, true)
+    }
+
+    fn flip_inner(
+        &mut self,
+        site: &mut Site,
+        request: FlipRequest,
+        stop: &mut dyn StopControl,
+        lease_held: bool,
+    ) -> Result<Strategy, PatchError> {
         // Capability gate (design): cache maintenance must be
         // established before the first store, for EVERY strategy. An
         // unattested patcher writes nothing, whatever the strategy.
+        self.check_fork()
+            .map_err(|e| self.refuse_pre_store(site, stop, lease_held, e))?;
         if self.attested_token().is_none() {
-            return Err(PatchError::CacheOpsUnavailable);
+            return Err(self.refuse_pre_store(
+                site,
+                stop,
+                lease_held,
+                PatchError::CacheOpsUnavailable,
+            ));
         }
         if site.state() != SiteState::Unpatched {
-            return Err(PatchError::WrongState {
-                state: site.state(),
-            });
+            return Err(self.refuse_pre_store(
+                site,
+                stop,
+                lease_held,
+                PatchError::WrongState {
+                    state: site.state(),
+                },
+            ));
         }
         if !site.addr().is_multiple_of(4) {
-            return Err(PatchError::MisalignedSite { addr: site.addr() });
+            return Err(self.refuse_pre_store(
+                site,
+                stop,
+                lease_held,
+                PatchError::MisalignedSite { addr: site.addr() },
+            ));
         }
         let original = site.original_word();
         if !matches!(liteinst_aarch64::decode(original), Insn::Svc { .. }) {
-            return Err(PatchError::NotSvc { word: original });
+            return Err(self.refuse_pre_store(
+                site,
+                stop,
+                lease_held,
+                PatchError::NotSvc { word: original },
+            ));
         }
         let FlipRequest {
             island,
             strategy,
             fallback,
             trap_route,
+            mapping_facts,
         } = request;
+        let mut island = island;
+        if let Some(facts) = mapping_facts {
+            if !facts.contains(site.addr()) {
+                return Err(self.refuse_pre_store(
+                    site,
+                    stop,
+                    lease_held,
+                    PatchError::MappingRefused("presented facts do not contain the site"),
+                ));
+            }
+            if facts.generation != site.generation() {
+                return Err(self.refuse_pre_store(
+                    site,
+                    stop,
+                    lease_held,
+                    PatchError::StaleGeneration {
+                        site: site.generation(),
+                        facts: facts.generation,
+                    },
+                ));
+            }
+        }
         // Strategy selection is fully decided before the lease/store.
         let branch_word = island
             .as_ref()
@@ -192,36 +300,69 @@ impl Patcher {
             StrategyPreference::BranchOnly => match branch_word {
                 Some(w) => (Strategy::Branch, w),
                 None => {
-                    return Err(PatchError::StrategyUnavailable(
-                        "BranchOnly without a reachable island",
+                    return Err(self.refuse_pre_store(
+                        site,
+                        stop,
+                        lease_held,
+                        PatchError::StrategyUnavailable("BranchOnly without a reachable island"),
                     ));
                 }
             },
             StrategyPreference::TrapOnly => {
                 if !trap_armed {
-                    return Err(PatchError::TrapNotArmed);
+                    return Err(self.refuse_pre_store(
+                        site,
+                        stop,
+                        lease_held,
+                        PatchError::TrapNotArmed,
+                    ));
                 }
                 (
                     Strategy::Trap,
-                    svc_fallback_word(original, trap_route.expect("armed").brk_imm())
-                        .ok_or(PatchError::NotSvc { word: original })?,
+                    svc_fallback_word(original, trap_route.expect("armed").brk_imm()).ok_or_else(
+                        || {
+                            self.refuse_pre_store(
+                                site,
+                                stop,
+                                lease_held,
+                                PatchError::NotSvc { word: original },
+                            )
+                        },
+                    )?,
                 )
             }
             StrategyPreference::BranchThenTrap => match branch_word {
                 Some(w) => (Strategy::Branch, w),
                 None => {
                     if fallback == FallbackPermission::RefuseTrap {
-                        return Err(PatchError::StrategyUnavailable(
-                            "no reachable island and trap fallback refused",
+                        return Err(self.refuse_pre_store(
+                            site,
+                            stop,
+                            lease_held,
+                            PatchError::StrategyUnavailable(
+                                "no reachable island and trap fallback refused",
+                            ),
                         ));
                     }
                     if !trap_armed {
-                        return Err(PatchError::TrapNotArmed);
+                        return Err(self.refuse_pre_store(
+                            site,
+                            stop,
+                            lease_held,
+                            PatchError::TrapNotArmed,
+                        ));
                     }
                     (
                         Strategy::Trap,
                         svc_fallback_word(original, trap_route.expect("armed").brk_imm())
-                            .ok_or(PatchError::NotSvc { word: original })?,
+                            .ok_or_else(|| {
+                                self.refuse_pre_store(
+                                    site,
+                                    stop,
+                                    lease_held,
+                                    PatchError::NotSvc { word: original },
+                                )
+                            })?,
                     )
                 }
             },
@@ -231,12 +372,17 @@ impl Patcher {
             let attested = self
                 .attested_token()
                 .ok_or(PatchError::CacheOpsUnavailable)?;
-            island
-                .as_ref()
+            if let Err(e) = island
+                .as_mut()
                 .expect("branch selected with island")
-                .publish(attested)?;
+                .publish(attested)
+            {
+                return Err(self.refuse_pre_store(site, stop, lease_held, e));
+            }
         }
-        stop.acquire()?;
+        if !lease_held {
+            stop.acquire()?;
+        }
         // Everything below runs under the lease; a pre-store exit must
         // release it and surface the cleanup outcome, never discard it.
         let found = site.read_word();
@@ -261,13 +407,29 @@ impl Patcher {
         if let Some(route) = trap_route {
             site.retain_trap_route(route);
         }
+        // Open the store window before the state transition: a begin
+        // failure is pre-store and releases the lease cleanly.
+        if let Err(e) = site.begin_write() {
+            return if self.release_after_refusal(site, stop) {
+                Err(PatchError::WindowRefused {
+                    source: Box::new(e),
+                })
+            } else {
+                Err(PatchError::ResumeIncomplete)
+            };
+        }
         site.set_flipped_word(Some(patch_word));
         site.set_state(SiteState::SyncPending {
             pending: PendingWord::Patch(patch_word),
         });
-        // The design's one aligned store.
-        // SAFETY: lease held, word revalidated, alias per Site contract.
-        unsafe { site.rw_word().write_volatile(patch_word) };
+        // The design's one aligned store, through the store seam. A
+        // store error is post-issuance custody: the word may have
+        // landed, so the state stays SyncPending for completion.
+        if let Err(e) = site.store_word(patch_word) {
+            return Err(PatchError::StoreFailed {
+                source: Box::new(e),
+            });
+        }
         self.finish_publication(site, stop, PendingWord::Patch(patch_word))?;
         Ok(selected)
     }
@@ -280,6 +442,7 @@ impl Patcher {
         site: &mut Site,
         stop: &mut dyn StopControl,
     ) -> Result<(), PatchError> {
+        self.check_fork()?;
         let pending = match site.state() {
             SiteState::SyncPending { pending } | SiteState::RetainedStop { pending } => pending,
             state => return Err(PatchError::WrongState { state }),
@@ -294,6 +457,24 @@ impl Patcher {
         };
         let found = site.read_word();
         if found != expected {
+            // A store that never landed (e.g. StoreFailed custody,
+            // in either direction) leaves the OTHER known word:
+            // settle to that side through the same
+            // sync+finish+resume tail instead of stranding the
+            // site in SyncPending forever. Any third word is
+            // foreign writes: refuse, still stopped.
+            let other = match pending {
+                PendingWord::Patch(_) => Some(PendingWord::Original),
+                PendingWord::Original => site.flipped_word().map(PendingWord::Patch),
+            };
+            let other_word = match other {
+                Some(PendingWord::Original) => Some(site.original_word()),
+                Some(PendingWord::Patch(w)) => Some(w),
+                None => None,
+            };
+            if other_word == Some(found) {
+                return self.finish_publication(site, stop, other.expect("word mapped"));
+            }
             return Err(PatchError::SiteWordChanged { expected, found });
         }
         self.finish_publication(site, stop, pending)
@@ -312,6 +493,7 @@ impl Patcher {
     ) -> Result<(), PatchError> {
         // Rollback performs a store, so the same capability gate as
         // flip applies before it.
+        self.check_fork()?;
         if self.attested_token().is_none() {
             return Err(PatchError::CacheOpsUnavailable);
         }
@@ -323,11 +505,24 @@ impl Patcher {
             }
             state => return Err(PatchError::WrongState { state }),
         };
+        let from_pending = matches!(
+            site.state(),
+            SiteState::SyncPending { .. } | SiteState::RetainedStop { .. }
+        );
         stop.acquire()?;
         let found = site.read_word();
         // In SyncPending the stored word may be either side of an
         // interrupted transition; accept exactly the two known words.
         if found != flipped && found != site.original_word() {
+            if from_pending {
+                // The stop was already held into this custody: a
+                // torn/foreign word must NOT be resumed onto.
+                // Refuse still stopped, exactly like complete_sync.
+                return Err(PatchError::SiteWordChanged {
+                    expected: flipped,
+                    found,
+                });
+            }
             return if self.release_after_refusal(site, stop) {
                 Err(PatchError::SiteWordChanged {
                     expected: flipped,
@@ -340,11 +535,32 @@ impl Patcher {
                 })
             };
         }
+        if let Err(e) = site.begin_write() {
+            if from_pending {
+                // Retained custody: the window never opened and
+                // executors are still stopped on a possibly torn
+                // page. Refuse without resuming, exactly like the
+                // word-mismatch branch above.
+                return Err(PatchError::WindowRefused {
+                    source: Box::new(e),
+                });
+            }
+            return if self.release_after_refusal(site, stop) {
+                Err(PatchError::WindowRefused {
+                    source: Box::new(e),
+                })
+            } else {
+                Err(PatchError::ResumeIncomplete)
+            };
+        }
         site.set_state(SiteState::SyncPending {
             pending: PendingWord::Original,
         });
-        // SAFETY: lease held, word revalidated, alias per Site contract.
-        unsafe { site.rw_word().write_volatile(site.original_word()) };
+        if let Err(e) = site.store_word(site.original_word()) {
+            return Err(PatchError::StoreFailed {
+                source: Box::new(e),
+            });
+        }
         self.finish_publication(site, stop, PendingWord::Original)
     }
 }
@@ -405,6 +621,7 @@ mod tests {
             strategy: StrategyPreference::TrapOnly,
             fallback: FallbackPermission::RefuseTrap,
             trap_route: Some(route),
+            mapping_facts: None,
         }
     }
 
@@ -429,6 +646,36 @@ mod tests {
     }
 
     #[test]
+    fn preacquired_flip_never_acquires_and_resumes_once() {
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let mut site = site_on(&mut word, 0x1000);
+        assert_eq!(
+            patcher.flip_preacquired(&mut site, trap_request(), &mut stop),
+            Ok(Strategy::Trap)
+        );
+        assert_eq!(stop.acquires, 0);
+        assert_eq!(stop.resumes, 1);
+        assert_eq!(site.state(), SiteState::Flipped);
+    }
+
+    #[test]
+    fn preacquired_pre_store_refusal_resumes_the_held_lease() {
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut other = 0xd65f_03c0u32; // RET, not SVC
+        let mut site = site_on(&mut other, 0x1000);
+        assert_eq!(
+            patcher.flip_preacquired(&mut site, trap_request(), &mut stop),
+            Err(PatchError::NotSvc { word: 0xd65f_03c0 })
+        );
+        assert_eq!(stop.acquires, 0);
+        assert_eq!(stop.resumes, 1);
+        assert_eq!(other, 0xd65f_03c0);
+    }
+
+    #[test]
     fn strategy_refusals_write_nothing() {
         let mut patcher = Patcher::for_test(sync_fail);
         let mut stop = FakeStop::default();
@@ -439,6 +686,7 @@ mod tests {
             strategy: StrategyPreference::BranchOnly,
             fallback: FallbackPermission::AllowTrap,
             trap_route: None,
+            mapping_facts: None,
         };
         assert!(matches!(
             patcher.flip(&mut site, branch_only, &mut stop),
@@ -449,6 +697,7 @@ mod tests {
             strategy: StrategyPreference::TrapOnly,
             fallback: FallbackPermission::AllowTrap,
             trap_route: None,
+            mapping_facts: None,
         };
         assert_eq!(
             patcher.flip(&mut site, unarmed, &mut stop),
@@ -460,6 +709,7 @@ mod tests {
             fallback: FallbackPermission::AllowTrap,
             // SAFETY (test): claims a route for a wrong generation.
             trap_route: Some(unsafe { TrapRoute::arm(0x1000, 0x4c00, 99) }),
+            mapping_facts: None,
         };
         assert_eq!(
             patcher.flip(&mut site, wrong_gen, &mut stop),
@@ -650,6 +900,143 @@ mod tests {
         assert!(matches!(site.state(), SiteState::SyncPending { .. }));
     }
 
+    #[derive(Default)]
+    struct StoreCounts {
+        begins: core::sync::atomic::AtomicU32,
+        finishes: core::sync::atomic::AtomicU32,
+        fail_store: core::sync::atomic::AtomicBool,
+        fail_begin: core::sync::atomic::AtomicBool,
+        finish_failures_left: core::sync::atomic::AtomicU32,
+    }
+
+    struct FakeForeignStore {
+        word: *mut u32,
+        counts: std::sync::Arc<StoreCounts>,
+    }
+    impl FakeForeignStore {
+        fn counts(word: *mut u32) -> (Self, std::sync::Arc<StoreCounts>) {
+            let counts = std::sync::Arc::new(StoreCounts::default());
+            (
+                Self {
+                    word,
+                    counts: counts.clone(),
+                },
+                counts,
+            )
+        }
+    }
+    // SAFETY (test): tests never move the store across threads; the
+    // pointer names the stack word each test owns for the site's
+    // whole lifetime.
+    unsafe impl Send for FakeForeignStore {}
+    // SAFETY (test): see the Send note; begin/finish model a window
+    // whose failures tests can script through the shared counts.
+    unsafe impl crate::store::SiteStore for FakeForeignStore {
+        fn read_word(&self) -> u32 {
+            unsafe { self.word.read_volatile() }
+        }
+        fn write_addr(&self) -> u64 {
+            self.word as u64
+        }
+        fn begin_write(&mut self) -> Result<(), PatchError> {
+            use core::sync::atomic::Ordering;
+            self.counts.begins.fetch_add(1, Ordering::SeqCst);
+            if self.counts.fail_begin.load(Ordering::SeqCst) {
+                return Err(PatchError::Os {
+                    op: "fake window open",
+                    errno: libc::EACCES,
+                });
+            }
+            Ok(())
+        }
+        fn store_word(&mut self, word: u32) -> Result<(), PatchError> {
+            use core::sync::atomic::Ordering;
+            if self.counts.fail_store.load(Ordering::SeqCst) {
+                return Err(PatchError::Os {
+                    op: "fake store",
+                    errno: libc::EIO,
+                });
+            }
+            unsafe { self.word.write_volatile(word) };
+            Ok(())
+        }
+        #[allow(deprecated)]
+        fn finish_write(&mut self) -> Result<(), PatchError> {
+            use core::sync::atomic::Ordering;
+            self.counts.finishes.fetch_add(1, Ordering::SeqCst);
+            if self
+                .counts
+                .finish_failures_left
+                .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |n| n.checked_sub(1))
+                .is_ok()
+            {
+                return Err(PatchError::Os {
+                    op: "fake restore",
+                    errno: libc::EIO,
+                });
+            }
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn foreign_site_flips_through_store_seam() {
+        use crate::mapping::{MappingFacts, Provenance};
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let facts = MappingFacts {
+            page_span: (0x1000, 0x1000),
+            orig_prot: 0,
+            provenance: Provenance::PrivateFile,
+            generation: 7,
+            bti: false,
+        };
+        let (store, counts) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        let store = Box::new(store);
+        let mut site = unsafe { Site::from_rx(0x1000, svc(0), facts, store) }.unwrap();
+        // Unattested-by-construction fork check passes (same process);
+        // trap flip exercises begin/store/finish through the seam.
+        assert_eq!(
+            patcher.flip(&mut site, trap_request(), &mut stop),
+            Ok(Strategy::Trap)
+        );
+        assert_eq!(word, liteinst_aarch64::brk(0x4c00));
+        assert_eq!(site.state(), SiteState::Flipped);
+        // One window per flip, opened and finished exactly once.
+        assert_eq!(counts.begins.load(core::sync::atomic::Ordering::SeqCst), 1);
+        assert_eq!(
+            counts.finishes.load(core::sync::atomic::Ordering::SeqCst),
+            1
+        );
+        // Shared provenance refuses construction by name.
+        let shared = MappingFacts {
+            provenance: Provenance::Shared,
+            ..facts
+        };
+        let (store2, _counts2) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        let store2 = Box::new(store2);
+        assert!(matches!(
+            unsafe { Site::from_rx(0x1000, svc(0), shared, store2) },
+            Err(PatchError::MappingRefused(_))
+        ));
+    }
+
+    #[test]
+    fn forked_registry_refuses_before_lease() {
+        let mut patcher = Patcher::for_test(sync_ok);
+        patcher.set_owner_pid_for_test(std::process::id() + 99999);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let mut site = site_on(&mut word, 0x1000);
+        assert_eq!(
+            patcher.flip(&mut site, trap_request(), &mut stop),
+            Err(PatchError::ForkedRegistry)
+        );
+        assert_eq!(word, svc(0));
+        assert_eq!(stop.acquires, 0);
+    }
+
     #[test]
     fn branch_word_requires_return_direction_reach() {
         // Both reviewer edges, through the actual selection helper the
@@ -682,5 +1069,270 @@ mod tests {
             let here = island.entry_addr();
             assert!(branch_word_checked(svc(0), here, &island).is_some());
         }
+    }
+    fn foreign_facts(generation: u64) -> crate::mapping::MappingFacts {
+        use crate::mapping::{MappingFacts, Provenance};
+        MappingFacts {
+            page_span: (0x1000, 0x1000),
+            orig_prot: 0,
+            provenance: Provenance::PrivateFile,
+            generation,
+            bti: false,
+        }
+    }
+
+    #[test]
+    fn stale_generation_and_uncontained_facts_refuse_before_lease() {
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let (store, _c) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        let mut site =
+            unsafe { Site::from_rx(0x1000, svc(0), foreign_facts(7), Box::new(store)) }.unwrap();
+        let mut stale = trap_request();
+        stale.mapping_facts = Some(foreign_facts(8));
+        assert_eq!(
+            patcher.flip(&mut site, stale, &mut stop),
+            Err(PatchError::StaleGeneration { site: 7, facts: 8 })
+        );
+        let mut outside = trap_request();
+        let mut facts = foreign_facts(7);
+        facts.page_span = (0x8000, 0x1000);
+        outside.mapping_facts = Some(facts);
+        assert!(matches!(
+            patcher.flip(&mut site, outside, &mut stop),
+            Err(PatchError::MappingRefused(_))
+        ));
+        assert_eq!(stop.acquires, 0);
+        // from_rx itself refuses facts not containing the site.
+        let (store, _c) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        assert!(matches!(
+            unsafe { Site::from_rx(0x1000, svc(0), facts, Box::new(store)) },
+            Err(PatchError::MappingRefused(_))
+        ));
+    }
+
+    #[test]
+    fn store_failure_is_custody_and_completes_to_unpatched() {
+        use core::sync::atomic::Ordering;
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let (store, counts) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        counts.fail_store.store(true, Ordering::SeqCst);
+        let mut site =
+            unsafe { Site::from_rx(0x1000, svc(0), foreign_facts(7), Box::new(store)) }.unwrap();
+        assert!(matches!(
+            patcher.flip(&mut site, trap_request(), &mut stop),
+            Err(PatchError::StoreFailed { .. })
+        ));
+        // Post-store custody: nobody was resumed (MA2).
+        assert_eq!(stop.resumes, 0);
+        assert!(matches!(site.state(), SiteState::SyncPending { .. }));
+        assert_eq!(word, svc(0));
+        // The word never landed: completion settles Unpatched, it
+        // does not strand the site (L6).
+        counts.fail_store.store(false, Ordering::SeqCst);
+        assert_eq!(patcher.complete_sync(&mut site, &mut stop), Ok(()));
+        assert_eq!(site.state(), SiteState::Unpatched);
+        assert_eq!(word, svc(0));
+        // Completion ran the sync+finish tail exactly once (MA3).
+        assert_eq!(counts.finishes.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn restore_failure_is_named_and_retried_by_completion() {
+        use core::sync::atomic::Ordering;
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let (store, counts) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        counts.finish_failures_left.store(1, Ordering::SeqCst);
+        let mut site =
+            unsafe { Site::from_rx(0x1000, svc(0), foreign_facts(7), Box::new(store)) }.unwrap();
+        assert!(matches!(
+            patcher.flip(&mut site, trap_request(), &mut stop),
+            Err(PatchError::RestoreFailed { .. })
+        ));
+        // Window still open, executors still stopped (MA12b).
+        assert_eq!(stop.resumes, 0, "restore failure must not resume (MA12b)");
+        assert!(matches!(site.state(), SiteState::SyncPending { .. }));
+        assert_eq!(patcher.complete_sync(&mut site, &mut stop), Ok(()));
+        assert_eq!(site.state(), SiteState::Flipped);
+        // finish ran twice: the failed restore plus completion retry.
+        assert_eq!(counts.finishes.load(Ordering::SeqCst), 2);
+        assert_eq!(counts.begins.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn rollback_reopens_window_idempotently() {
+        use core::sync::atomic::Ordering;
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let (store, counts) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        counts.finish_failures_left.store(1, Ordering::SeqCst);
+        let mut site =
+            unsafe { Site::from_rx(0x1000, svc(0), foreign_facts(7), Box::new(store)) }.unwrap();
+        // Flip lands in SyncPending (restore failed); rollback from
+        // there must begin_write again on the still-open window.
+        assert!(patcher.flip(&mut site, trap_request(), &mut stop).is_err());
+        assert_eq!(patcher.rollback(&mut site, &mut stop), Ok(()));
+        assert_eq!(site.state(), SiteState::Unpatched);
+        assert_eq!(word, svc(0));
+        assert_eq!(counts.begins.load(Ordering::SeqCst), 2);
+    }
+
+    #[test]
+    fn forked_registry_refuses_complete_sync_and_rollback() {
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let mut site = site_on(&mut word, 0x1000);
+        assert_eq!(
+            patcher.flip(&mut site, trap_request(), &mut stop),
+            Ok(Strategy::Trap)
+        );
+        patcher.set_owner_pid_for_test(std::process::id() + 1_000_000);
+        assert_eq!(
+            patcher.rollback(&mut site, &mut stop),
+            Err(PatchError::ForkedRegistry)
+        );
+        let mut patcher2 = Patcher::for_test(sync_fail);
+        let mut word2 = svc(0);
+        let mut site2 = site_on(&mut word2, 0x1000);
+        assert!(
+            patcher2
+                .flip(&mut site2, trap_request(), &mut stop)
+                .is_err()
+        );
+        patcher2.set_owner_pid_for_test(std::process::id() + 1_000_000);
+        assert_eq!(
+            patcher2.complete_sync(&mut site2, &mut stop),
+            Err(PatchError::ForkedRegistry)
+        );
+    }
+    #[test]
+    fn begin_failure_is_window_refused_before_any_store() {
+        use core::sync::atomic::Ordering;
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let (store, counts) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        counts.fail_begin.store(true, Ordering::SeqCst);
+        let mut site =
+            unsafe { Site::from_rx(0x1000, svc(0), foreign_facts(7), Box::new(store)) }.unwrap();
+        assert!(matches!(
+            patcher.flip(&mut site, trap_request(), &mut stop),
+            Err(PatchError::WindowRefused { .. })
+        ));
+        assert_eq!(site.state(), SiteState::Unpatched);
+        assert_eq!(word, svc(0));
+        assert_eq!(counts.begins.load(Ordering::SeqCst), 1);
+        assert_eq!(counts.finishes.load(Ordering::SeqCst), 0);
+        assert_eq!(
+            stop.resumes, 1,
+            "begin failure must release the lease (MA17)"
+        );
+    }
+    #[test]
+    fn rollback_begin_failure_is_window_refused() {
+        use core::sync::atomic::Ordering;
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let (store, counts) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        let mut site =
+            unsafe { Site::from_rx(0x1000, svc(0), foreign_facts(7), Box::new(store)) }.unwrap();
+        assert_eq!(
+            patcher.flip(&mut site, trap_request(), &mut stop),
+            Ok(Strategy::Trap)
+        );
+        counts.fail_begin.store(true, Ordering::SeqCst);
+        assert!(matches!(
+            patcher.rollback(&mut site, &mut stop),
+            Err(PatchError::WindowRefused { .. })
+        ));
+        assert_eq!(
+            stop.resumes, 2,
+            "flip resume + rollback begin-failure release (MA9)"
+        );
+        assert_eq!(site.state(), SiteState::Flipped);
+    }
+
+    #[test]
+    fn rollback_on_torn_word_refuses_without_resuming() {
+        let mut patcher = Patcher::for_test(sync_fail);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let mut site = site_on(&mut word, 0x1000);
+        // Land in SyncPending with the branch word stored.
+        assert!(patcher.flip(&mut site, trap_request(), &mut stop).is_err());
+        assert!(matches!(site.state(), SiteState::SyncPending { .. }));
+        assert_eq!(stop.resumes, 0);
+        // A torn/foreign word: neither flipped nor original.
+        unsafe { std::ptr::write_volatile(&mut word, 0xd400_8000) };
+        assert_eq!(
+            patcher.rollback(&mut site, &mut stop),
+            Err(PatchError::SiteWordChanged {
+                expected: liteinst_aarch64::brk(0x4c00),
+                found: 0xd400_8000
+            })
+        );
+        // No resume onto the torn word (LV2).
+        assert_eq!(stop.resumes, 0);
+    }
+
+    #[test]
+    fn rollback_store_failure_completes_back_to_flipped() {
+        use core::sync::atomic::Ordering;
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let (store, counts) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        let mut site =
+            unsafe { Site::from_rx(0x1000, svc(0), foreign_facts(7), Box::new(store)) }.unwrap();
+        assert_eq!(
+            patcher.flip(&mut site, trap_request(), &mut stop),
+            Ok(Strategy::Trap)
+        );
+        counts.fail_store.store(true, Ordering::SeqCst);
+        let resumes_before_rollback = stop.resumes;
+        assert!(matches!(
+            patcher.rollback(&mut site, &mut stop),
+            Err(PatchError::StoreFailed { .. })
+        ));
+        // A rollback whose restoring store failed must not resume
+        // anyone: the count is exactly what the flip left (RBR).
+        assert_eq!(stop.resumes, resumes_before_rollback);
+        counts.fail_store.store(false, Ordering::SeqCst);
+        // The restoring store never landed, so completion settles
+        // back to Flipped instead of stranding (LV7).
+        assert_eq!(patcher.complete_sync(&mut site, &mut stop), Ok(()));
+        assert_eq!(site.state(), SiteState::Flipped);
+        assert_eq!(word, liteinst_aarch64::brk(0x4c00));
+    }
+    #[test]
+    fn rollback_begin_failure_from_pending_never_resumes() {
+        use core::sync::atomic::Ordering;
+        let mut patcher = Patcher::for_test(sync_fail);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let (store, counts) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        let mut site =
+            unsafe { Site::from_rx(0x1000, svc(0), foreign_facts(7), Box::new(store)) }.unwrap();
+        assert!(patcher.flip(&mut site, trap_request(), &mut stop).is_err());
+        assert!(matches!(site.state(), SiteState::SyncPending { .. }));
+        assert_eq!(stop.resumes, 0);
+        counts.fail_begin.store(true, Ordering::SeqCst);
+        assert!(matches!(
+            patcher.rollback(&mut site, &mut stop),
+            Err(PatchError::WindowRefused { .. })
+        ));
+        assert_eq!(
+            stop.resumes, 0,
+            "begin failure from pending must not resume"
+        );
+        assert!(matches!(site.state(), SiteState::SyncPending { .. }));
     }
 }

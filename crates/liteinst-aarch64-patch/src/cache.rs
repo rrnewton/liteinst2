@@ -22,7 +22,7 @@ pub struct LineSizes {
 #[derive(Debug, Clone, Copy)]
 pub struct CacheAttested(());
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-support"))]
 impl CacheAttested {
     pub(crate) fn for_test() -> Self {
         Self(())
@@ -127,6 +127,27 @@ fn probe_verdict(got_magic: bool, status: libc::c_int) -> bool {
     got_magic && libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0
 }
 
+/// Deadline in gated monotonic ms, or None when the clock itself
+/// failed — callers treat None as already expired (fail closed),
+/// never as "no deadline". Loops additionally carry iteration
+/// caps so a broken clock can never spin forever.
+#[cfg(target_os = "linux")]
+fn deadline_from(timeout_ms: u64) -> Option<u64> {
+    crate::gate::now_ms().map(|n| n.saturating_add(timeout_ms))
+}
+
+#[cfg(target_os = "linux")]
+fn deadline_expired(deadline: Option<u64>, iterations: u64, cap: u64) -> bool {
+    if iterations >= cap {
+        return true;
+    }
+    match (deadline, crate::gate::now_ms()) {
+        (Some(d), Some(n)) => n >= d,
+        // A failing clock expires the deadline (fail closed).
+        _ => true,
+    }
+}
+
 /// One nonblocking wait attempt: `Ok(Some(status))` reaped,
 /// `Ok(None)` still running or a retryable wait error (custody keeps
 /// priority over error fidelity: the wait errno is deliberately not
@@ -135,11 +156,24 @@ fn probe_verdict(got_magic: bool, status: libc::c_int) -> bool {
 #[cfg(target_os = "linux")]
 fn wait_once(pid: libc::pid_t) -> Result<Option<libc::c_int>, PatchError> {
     let mut status: libc::c_int = 0;
-    let waited = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG) };
-    if waited == pid {
+    // SAFETY: status is a valid out pointer; rusage is null.
+    let waited = unsafe {
+        crate::gate::gate6(
+            libc::SYS_wait4,
+            [
+                pid as u64,
+                core::ptr::addr_of_mut!(status) as u64,
+                libc::WNOHANG as u64,
+                0,
+                0,
+                0,
+            ],
+        )
+    };
+    if waited == pid as i64 {
         return Ok(Some(status));
     }
-    if waited < 0 && std::io::Error::last_os_error().raw_os_error() == Some(libc::ECHILD) {
+    if waited == -(libc::ECHILD as i64) {
         return Err(PatchError::CacheOpsUnavailable);
     }
     Ok(None)
@@ -153,19 +187,36 @@ fn wait_once(pid: libc::pid_t) -> Result<Option<libc::c_int>, PatchError> {
 /// overhead), not a single total bound.
 #[cfg(target_os = "linux")]
 fn kill_and_discharge(pid: libc::pid_t) -> Result<(), PatchError> {
-    unsafe { libc::kill(pid, libc::SIGKILL) };
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    // SAFETY: pid is the probe child this custody protocol owns.
+    unsafe {
+        crate::gate::gate6(
+            libc::SYS_kill,
+            [pid as u64, libc::SIGKILL as u64, 0, 0, 0, 0],
+        );
+    };
+    let deadline = deadline_from(5_000);
+    let mut iterations = 0u64;
     loop {
+        iterations += 1;
         match wait_once(pid) {
             Ok(Some(_)) => return Ok(()),
             Ok(None) => {}
             Err(PatchError::CacheOpsUnavailable) => return Ok(()),
             Err(e) => return Err(e),
         }
-        if std::time::Instant::now() >= deadline {
+        // The child was just SIGKILLed, so reaping should be prompt
+        // in iterations even when the clock has failed. Do not let a
+        // missing clock observation abandon it on the first pass:
+        // only a real observed deadline or the iteration cap ends
+        // the discharge attempt.
+        let past_deadline = matches!(
+            (deadline, crate::gate::now_ms()),
+            (Some(deadline), Some(now)) if now >= deadline
+        );
+        if iterations >= 10_000 || past_deadline {
             return Err(PatchError::ChildCustodyRetained { pid });
         }
-        std::thread::sleep(std::time::Duration::from_millis(1));
+        crate::gate::sleep_ms(1);
     }
 }
 
@@ -178,16 +229,47 @@ fn kill_and_discharge(pid: libc::pid_t) -> Result<(), PatchError> {
 #[cfg(target_os = "linux")]
 #[allow(dead_code)]
 fn reap_child(pid: libc::pid_t, timeout_ms: u64) -> Result<libc::c_int, PatchError> {
-    let deadline = std::time::Instant::now() + std::time::Duration::from_millis(timeout_ms);
+    let deadline = deadline_from(timeout_ms);
+    let mut iterations = 0u64;
     loop {
+        iterations += 1;
         if let Some(status) = wait_once(pid)? {
             return Ok(status);
         }
-        if std::time::Instant::now() >= deadline {
+        if deadline_expired(
+            deadline,
+            iterations,
+            timeout_ms.saturating_mul(2).max(10_000),
+        ) {
             kill_and_discharge(pid)?;
             return Err(PatchError::CacheOpsUnavailable);
         }
-        std::thread::sleep(std::time::Duration::from_millis(1));
+        crate::gate::sleep_ms(1);
+    }
+}
+
+/// Poll one fd through the gate (`ppoll` where `poll` does not
+/// exist, i.e. AArch64). Returns the raw gate result.
+#[cfg(target_os = "linux")]
+unsafe fn gate_poll(pfd: *mut libc::pollfd, timeout_ms: i64) -> i64 {
+    #[cfg(target_arch = "aarch64")]
+    {
+        let ts = libc::timespec {
+            tv_sec: (timeout_ms / 1000) as _,
+            tv_nsec: ((timeout_ms % 1000) * 1_000_000) as _,
+        };
+        // SAFETY: pfd/ts valid for the call; no signal mask change.
+        unsafe {
+            crate::gate::gate6(
+                libc::SYS_ppoll,
+                [pfd as u64, 1, core::ptr::addr_of!(ts) as u64, 0, 0, 0],
+            )
+        }
+    }
+    #[cfg(not(target_arch = "aarch64"))]
+    {
+        // SAFETY: pfd valid for the call.
+        unsafe { crate::gate::gate6(libc::SYS_poll, [pfd as u64, 1, timeout_ms as u64, 0, 0, 0]) }
     }
 }
 
@@ -207,15 +289,37 @@ fn collect_probe_child(
     read_fd: libc::c_int,
     timeout_ms: u64,
 ) -> Result<(bool, libc::c_int), PatchError> {
-    let flags = unsafe { libc::fcntl(read_fd, libc::F_GETFL) };
-    if flags < 0 || unsafe { libc::fcntl(read_fd, libc::F_SETFL, flags | libc::O_NONBLOCK) } < 0 {
-        let e = PatchError::os("fcntl(O_NONBLOCK)");
+    // SAFETY: read_fd is the probe pipe's read end, owned here.
+    let flags = unsafe {
+        crate::gate::gate6(
+            libc::SYS_fcntl,
+            [read_fd as u64, libc::F_GETFL as u64, 0, 0, 0, 0],
+        )
+    };
+    // SAFETY: same fd; setting O_NONBLOCK on it.
+    let set_rc = unsafe {
+        crate::gate::gate6(
+            libc::SYS_fcntl,
+            [
+                read_fd as u64,
+                libc::F_SETFL as u64,
+                (flags | libc::O_NONBLOCK as i64) as u64,
+                0,
+                0,
+                0,
+            ],
+        )
+    };
+    if flags < 0 || set_rc < 0 {
+        let e = crate::gate::check(if flags < 0 { flags } else { set_rc }, "fcntl(O_NONBLOCK)")
+            .unwrap_err();
         return match kill_and_discharge(pid) {
             Ok(()) => Err(e),
             Err(retained) => Err(retained),
         };
     }
-    let deadline = std::time::Instant::now() + std::time::Duration::from_millis(timeout_ms);
+    let deadline = deadline_from(timeout_ms);
+    let mut iterations = 0u64;
     let mut byte: Option<u8> = None;
     let mut eof = false;
     loop {
@@ -231,14 +335,24 @@ fn collect_probe_child(
             // Reaped: drain one last byte already in the pipe buffer.
             if byte.is_none() && !eof {
                 let mut b = [0u8; 1];
-                let n = unsafe { libc::read(read_fd, b.as_mut_ptr() as *mut libc::c_void, 1) };
+                let n = unsafe {
+                    crate::gate::gate6(
+                        libc::SYS_read,
+                        [read_fd as u64, b.as_mut_ptr() as u64, 1, 0, 0, 0],
+                    )
+                };
                 if n == 1 {
                     byte = Some(b[0]);
                 }
             }
             return Ok((byte == Some(PROBE_MAGIC), status));
         }
-        if std::time::Instant::now() >= deadline {
+        iterations += 1;
+        if deadline_expired(
+            deadline,
+            iterations,
+            timeout_ms.saturating_mul(4).max(20_000),
+        ) {
             kill_and_discharge(pid)?;
             return Err(PatchError::CacheOpsUnavailable);
         }
@@ -248,9 +362,10 @@ fn collect_probe_child(
                 events: libc::POLLIN,
                 revents: 0,
             };
-            let ready = unsafe { libc::poll(&mut pfd, 1, 10) };
-            if ready < 0 && std::io::Error::last_os_error().raw_os_error() != Some(libc::EINTR) {
-                let e = PatchError::os("poll");
+            // SAFETY: pfd names the probe pipe read end for 10 ms.
+            let ready = unsafe { gate_poll(&mut pfd, 10) };
+            if ready < 0 && ready != -(libc::EINTR as i64) {
+                let e = crate::gate::check(ready, "poll").unwrap_err();
                 return match kill_and_discharge(pid) {
                     Ok(()) => Err(e),
                     Err(retained) => Err(retained),
@@ -258,15 +373,20 @@ fn collect_probe_child(
             }
             if ready > 0 && pfd.revents & (libc::POLLIN | libc::POLLHUP) != 0 {
                 let mut b = [0u8; 1];
-                let n = unsafe { libc::read(read_fd, b.as_mut_ptr() as *mut libc::c_void, 1) };
+                let n = unsafe {
+                    crate::gate::gate6(
+                        libc::SYS_read,
+                        [read_fd as u64, b.as_mut_ptr() as u64, 1, 0, 0, 0],
+                    )
+                };
                 if n == 1 {
                     byte = Some(b[0]);
                 } else if n == 0 {
                     eof = true;
-                } else if std::io::Error::last_os_error().raw_os_error() == Some(libc::EAGAIN) {
+                } else if n == -(libc::EAGAIN as i64) {
                     // Spurious readiness; loop re-checks the child.
-                } else if std::io::Error::last_os_error().raw_os_error() != Some(libc::EINTR) {
-                    let e = PatchError::os("read(probe pipe)");
+                } else if n != -(libc::EINTR as i64) {
+                    let e = crate::gate::check(n, "read(probe pipe)").unwrap_err();
                     return match kill_and_discharge(pid) {
                         Ok(()) => Err(e),
                         Err(retained) => Err(retained),
@@ -274,11 +394,34 @@ fn collect_probe_child(
                 }
             }
         } else {
-            std::thread::sleep(std::time::Duration::from_millis(1));
+            crate::gate::sleep_ms(1);
         }
     }
 }
 
+/// Kernel `rt_sigaction` layout (handler, flags, restorer, one-word
+/// mask) for the raw gate form; libc's wrapper struct differs.
+#[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+#[repr(C)]
+struct KernelSigaction {
+    handler: usize,
+    flags: u64,
+    restorer: usize,
+    mask: u64,
+}
+
+#[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+fn probe_child_exit(code: i64) -> ! {
+    // SAFETY: exit_group terminates the probe child only.
+    unsafe {
+        crate::gate::gate6(libc::SYS_exit_group, [code as u64, 0, 0, 0, 0, 0]);
+    }
+    loop {
+        core::hint::spin_loop();
+    }
+}
+
+#[cfg(all(target_arch = "aarch64", target_os = "linux"))]
 /// Establish that EL0 cache maintenance does not trap, without risking
 /// the calling process and without trusting inherited signal state:
 /// the forked child resets fault dispositions to `SIG_DFL`, unblocks
@@ -288,34 +431,41 @@ fn collect_probe_child(
 /// before extra threads exist (the child performs only
 /// async-signal-safe calls). A passing probe says nothing about
 /// cross-core acknowledgement.
-#[cfg(all(target_arch = "aarch64", target_os = "linux"))]
 pub fn probe_environment() -> Result<CacheAttested, PatchError> {
+    // Custody deadlines need a working gated clock. Refuse before
+    // creating a probe child rather than discover that only after
+    // custody has been taken.
+    if crate::gate::now_ms().is_none() {
+        return Err(PatchError::CacheOpsUnavailable);
+    }
     let page = crate::page_size()?;
     let mut fds = [0 as libc::c_int; 2];
-    if unsafe { libc::pipe2(fds.as_mut_ptr(), libc::O_CLOEXEC) } != 0 {
-        return Err(PatchError::os("pipe2"));
-    }
-    // SAFETY: fork with an immediately-_exit-ing child that only calls
-    // sigaction/sigprocmask/mmap/write/asm before exiting; no Rust
-    // allocation after fork in the child.
-    let pid = unsafe { libc::fork() };
+    // SAFETY: fds is a valid 2-int out array.
+    let rc = unsafe {
+        crate::gate::gate6(
+            libc::SYS_pipe2,
+            [fds.as_mut_ptr() as u64, libc::O_CLOEXEC as u64, 0, 0, 0, 0],
+        )
+    };
+    crate::gate::check(rc, "pipe2")?;
+    // SAFETY: clone with SIGCHLD and a shared (zero) stack is the
+    // fork contract: the child returns 0 here and only makes raw
+    // gate syscalls before exit_group; no Rust allocation in child.
+    let pid = unsafe { crate::gate::gate6(libc::SYS_clone, [libc::SIGCHLD as u64, 0, 0, 0, 0, 0]) };
     if pid < 0 {
+        // SAFETY: both pipe ends are live and closed exactly once.
         unsafe {
-            libc::close(fds[0]);
-            libc::close(fds[1]);
+            crate::gate::gate6(libc::SYS_close, [fds[0] as u64, 0, 0, 0, 0, 0]);
+            crate::gate::gate6(libc::SYS_close, [fds[1] as u64, 0, 0, 0, 0, 0]);
         }
-        return Err(PatchError::os("fork"));
+        return Err(crate::gate::check(pid, "clone(fork)").unwrap_err());
     }
     if pid == 0 {
+        // Probe child. Every call goes through the gate so an
+        // installed in-guest gate admits them; dispositions/mask
+        // reset as before, with every setup result required.
         unsafe {
-            libc::close(fds[0]);
-            // Inherited handlers must not convert a maintenance fault
-            // into a clean exit: default dispositions, empty mask.
-            // Every setup result is required: a denied reset or unblock
-            // exits (without the completion byte) before maintenance,
-            // so an inherited skipping handler can neither survive the
-            // reset nor publish the magic for skipped work.
-            let dfl: libc::sigaction = core::mem::zeroed();
+            crate::gate::gate6(libc::SYS_close, [fds[0] as u64, 0, 0, 0, 0, 0]);
             for sig in [
                 libc::SIGILL,
                 libc::SIGSEGV,
@@ -323,49 +473,86 @@ pub fn probe_environment() -> Result<CacheAttested, PatchError> {
                 libc::SIGTRAP,
                 libc::SIGABRT,
             ] {
-                if libc::sigaction(sig, &dfl, core::ptr::null_mut()) != 0 {
-                    libc::_exit(5);
+                let dfl = KernelSigaction {
+                    handler: 0,
+                    flags: 0,
+                    restorer: 0,
+                    mask: 0,
+                };
+                let rc = crate::gate::gate6(
+                    libc::SYS_rt_sigaction,
+                    [sig as u64, core::ptr::addr_of!(dfl) as u64, 0, 8, 0, 0],
+                );
+                if rc != 0 {
+                    probe_child_exit(5);
                 }
-                let mut seen: libc::sigaction = core::mem::zeroed();
-                if libc::sigaction(sig, core::ptr::null(), &mut seen) != 0 || seen.sa_sigaction != 0
-                {
-                    libc::_exit(5);
+                let mut seen = KernelSigaction {
+                    handler: 0,
+                    flags: 0,
+                    restorer: 0,
+                    mask: 0,
+                };
+                let rc = crate::gate::gate6(
+                    libc::SYS_rt_sigaction,
+                    [sig as u64, 0, core::ptr::addr_of_mut!(seen) as u64, 8, 0, 0],
+                );
+                if rc != 0 || seen.handler != 0 {
+                    probe_child_exit(5);
                 }
             }
-            let mut empty: libc::sigset_t = core::mem::zeroed();
-            if libc::sigemptyset(&mut empty) != 0 {
-                libc::_exit(5);
-            }
-            // pthread_sigmask returns the error number itself, not -1.
-            if libc::pthread_sigmask(libc::SIG_SETMASK, &empty, core::ptr::null_mut()) != 0 {
-                libc::_exit(5);
+            let empty: u64 = 0;
+            let rc = crate::gate::gate6(
+                libc::SYS_rt_sigprocmask,
+                [
+                    libc::SIG_SETMASK as u64,
+                    core::ptr::addr_of!(empty) as u64,
+                    0,
+                    8,
+                    0,
+                    0,
+                ],
+            );
+            if rc != 0 {
+                probe_child_exit(5);
             }
             let len = page as usize;
-            let p = libc::mmap(
-                core::ptr::null_mut(),
-                len,
-                libc::PROT_READ | libc::PROT_WRITE | libc::PROT_EXEC,
-                libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
-                -1,
-                0,
+            let p = crate::gate::gate6(
+                libc::SYS_mmap,
+                [
+                    0,
+                    len as u64,
+                    (libc::PROT_READ | libc::PROT_WRITE | libc::PROT_EXEC) as u64,
+                    (libc::MAP_PRIVATE | libc::MAP_ANONYMOUS) as u64,
+                    u64::MAX,
+                    0,
+                ],
             );
-            if p == libc::MAP_FAILED {
-                libc::_exit(2);
+            if (-4095..0).contains(&p) {
+                probe_child_exit(2);
             }
             let buf = p as *mut u8;
             buf.write_volatile(0x1f);
             if sync_icache(buf, buf, len).is_err() {
-                libc::_exit(3);
+                probe_child_exit(3);
             }
             let magic = [PROBE_MAGIC];
-            let written = libc::write(fds[1], magic.as_ptr() as *const libc::c_void, 1);
-            libc::_exit(if written == 1 { 0 } else { 4 });
+            let written = crate::gate::gate6(
+                libc::SYS_write,
+                [fds[1] as u64, magic.as_ptr() as u64, 1, 0, 0, 0],
+            );
+            probe_child_exit(if written == 1 { 0 } else { 4 });
         }
     }
-    unsafe { libc::close(fds[1]) };
+    // SAFETY: parent keeps only the read end from here.
+    unsafe {
+        crate::gate::gate6(libc::SYS_close, [fds[1] as u64, 0, 0, 0, 0, 0]);
+    }
     // One bounded custody protocol for byte + status (see collect).
-    let collected = collect_probe_child(pid, fds[0], 5_000);
-    unsafe { libc::close(fds[0]) };
+    let collected = collect_probe_child(pid as libc::pid_t, fds[0], 5_000);
+    // SAFETY: read end closed exactly once, after collection.
+    unsafe {
+        crate::gate::gate6(libc::SYS_close, [fds[0] as u64, 0, 0, 0, 0, 0]);
+    }
     let (got_magic, status) = collected?;
     if probe_verdict(got_magic, status) {
         Ok(CacheAttested(()))
@@ -491,6 +678,34 @@ mod tests {
         unsafe { libc::close(fds[0]) };
         assert_eq!(result.unwrap_err(), PatchError::CacheOpsUnavailable);
         assert!(elapsed < std::time::Duration::from_secs(3), "{elapsed:?}");
+        let mut status: libc::c_int = 0;
+        let again = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG) };
+        assert_eq!(again, -1);
+        assert_eq!(
+            std::io::Error::last_os_error().raw_os_error(),
+            Some(libc::ECHILD)
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn collect_reports_the_real_fcntl_errno() {
+        // A bad read fd makes the first gated fcntl fail with
+        // EBADF. The error must carry that real errno (not 0 or a
+        // stale thread-local errno), after the child is discharged.
+        let pid = unsafe { libc::fork() };
+        assert!(pid >= 0);
+        if pid == 0 {
+            unsafe { libc::_exit(0) };
+        }
+        assert_eq!(
+            collect_probe_child(pid, -1, 150),
+            Err(PatchError::Os {
+                op: "fcntl(O_NONBLOCK)",
+                errno: libc::EBADF,
+            })
+        );
+        // The error path killed and discharged custody exactly.
         let mut status: libc::c_int = 0;
         let again = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG) };
         assert_eq!(again, -1);

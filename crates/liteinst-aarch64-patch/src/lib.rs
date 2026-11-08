@@ -2,23 +2,28 @@
 //! fact-only `liteinst-aarch64` decoder/emitter.
 //!
 //! This crate owns the unsafe runtime surface (dual RW/RX mappings,
-//! cache maintenance, and — in a later slice — the aligned site store)
+//! cache maintenance, and the aligned site store)
 //! so the fact crate stays `no_std` and `forbid(unsafe_code)`. The
 //! protocol contract is `crates/liteinst-aarch64/RUNTIME-PATCHER-DESIGN.md`:
 //! exclusive publication lease, both-valid invariant, retained custody
 //! on post-store failure, and no lock-free or BLR low-page claim.
 //!
-//! Slice 2 surface: error taxonomy, page-size query, [`cache`]
-//! maintenance + environment probe, [`island::Island`] RAII, and the
-//! [`site`] custody/state types the flip slice will drive. Flip and
-//! rollback execution are intentionally not present yet.
+//! The surface covers the error taxonomy, page-size query,
+//! [`cache`] maintenance and environment probe,
+//! [`island::Island`], the [`site`] custody types, the [`store`]
+//! seam, mapping qualification, and the [`flip`] protocol
+//! (flip / complete_sync / rollback), all driven through the
+//! [`gate`] syscall entry.
 
 #![warn(missing_docs)]
 
 pub mod cache;
 pub mod flip;
+pub mod gate;
 pub mod island;
+pub mod mapping;
 pub mod site;
+pub mod store;
 
 pub use island::Island;
 pub use site::{
@@ -47,8 +52,17 @@ pub enum PatchError {
     CacheOpsUnavailable,
     /// An island must contain at least one word.
     EmptyIsland,
+    /// Words were offered to an island that is already published.
+    AlreadyPublished,
     /// Address/length arithmetic overflowed.
     RangeOverflow,
+    /// More words were offered than a reserved island can hold.
+    CapacityExceeded {
+        /// Words the island was reserved for.
+        capacity_words: usize,
+        /// Words offered to fill.
+        offered: usize,
+    },
     /// A second live site already names this address.
     DuplicateSite {
         /// The duplicated site address.
@@ -95,11 +109,59 @@ pub enum PatchError {
     /// Trap was selected (or needed as fallback) without a pre-armed
     /// owned route for this site/generation.
     TrapNotArmed,
+    /// The site's mapping may not be windowed (shared, unknown,
+    /// non-executable, or absent). Named before any construction.
+    MappingRefused(&'static str),
+    /// Presented mapping facts belong to a different generation than
+    /// the site was qualified under.
+    StaleGeneration {
+        /// The site's recorded generation.
+        site: u64,
+        /// The generation of the presented facts.
+        facts: u64,
+    },
+    /// This patcher was constructed before a fork; its registry and
+    /// custodies are the parent's. The child must construct a new
+    /// patcher instead of operating this one.
+    ForkedRegistry,
+    /// The single site store failed after the window opened. The
+    /// word may or may not have landed; the site stays in
+    /// `SyncPending` custody and `complete_sync` settles it by
+    /// re-reading (original word -> back to `Unpatched`, patch word
+    /// -> `Flipped`, anything else refuses still stopped).
+    StoreFailed {
+        /// The underlying store error.
+        source: Box<PatchError>,
+    },
     /// The store landed but cache synchronization failed; the site is
     /// in `SyncPending`/`RetainedStop` custody, never "not flipped".
     /// The underlying sync error is preserved, not swallowed.
     SyncFailed {
         /// The synchronization error that left publication pending.
+        source: Box<PatchError>,
+    },
+    /// The store window itself was refused at open, before this
+    /// operation issued a store (for example a platform-policy
+    /// mprotect denial). Downstream store selection keys on
+    /// exactly this variant. A rollback of an already-flipped
+    /// site can also produce it when re-opening the window for
+    /// the restoring store. Executor state depends on the site's
+    /// state: from `Unpatched`/`Flipped` the lease was released
+    /// before this error returns, but a rollback out of
+    /// `SyncPending`/`RetainedStop` custody returns it with the
+    /// stop still HELD — executors remain stopped and the caller
+    /// must not resume them onto the pending page.
+    WindowRefused {
+        /// The window-open error from the store backend.
+        source: Box<PatchError>,
+    },
+    /// The store landed and synced, but restoring the window's
+    /// original protections failed; the site is in
+    /// `SyncPending`/`RetainedStop` custody with the window still
+    /// open. The custody STATE still reuses SyncPending (settled
+    /// design); only the error names the failing stage.
+    RestoreFailed {
+        /// The restore error that left publication pending.
         source: Box<PatchError>,
     },
     /// A pre-store refusal under the lease could not cleanly release
@@ -117,15 +179,6 @@ pub enum PatchError {
     ResumeIncomplete,
 }
 
-impl PatchError {
-    pub(crate) fn os(op: &'static str) -> Self {
-        Self::Os {
-            op,
-            errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
-        }
-    }
-}
-
 impl core::fmt::Display for PatchError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
@@ -133,7 +186,12 @@ impl core::fmt::Display for PatchError {
             Self::Os { op, errno } => write!(f, "{op} failed (errno {errno})"),
             Self::CacheOpsUnavailable => write!(f, "EL0 cache maintenance unavailable"),
             Self::EmptyIsland => write!(f, "island must contain at least one word"),
+            Self::AlreadyPublished => write!(f, "island is already published"),
             Self::RangeOverflow => write!(f, "address range overflow"),
+            Self::CapacityExceeded {
+                capacity_words,
+                offered,
+            } => write!(f, "island holds {capacity_words} words, {offered} offered"),
             Self::DuplicateSite { addr } => {
                 write!(f, "a live site already names address {addr:#x}")
             }
@@ -156,8 +214,28 @@ impl core::fmt::Display for PatchError {
             Self::WrongState { state } => write!(f, "site is in state {state:?}"),
             Self::StrategyUnavailable(why) => write!(f, "no strategy available: {why}"),
             Self::TrapNotArmed => write!(f, "trap selected without an armed owned route"),
+            Self::MappingRefused(why) => write!(f, "mapping refused: {why}"),
+            Self::StaleGeneration { site, facts } => {
+                write!(f, "mapping generation mismatch: site {site}, facts {facts}")
+            }
+            Self::ForkedRegistry => {
+                write!(
+                    f,
+                    "patcher registry predates a fork; construct a new patcher"
+                )
+            }
+            Self::StoreFailed { source } => write!(f, "site store failed: {source}"),
             Self::SyncFailed { source } => {
                 write!(f, "post-store cache synchronization failed: {source}")
+            }
+            Self::RestoreFailed { source } => {
+                write!(f, "post-store protection restore failed: {source}")
+            }
+            Self::WindowRefused { source } => {
+                write!(
+                    f,
+                    "store window refused before this operation's store: {source}"
+                )
             }
             Self::CleanupFailed { expected, found } => {
                 write!(
@@ -175,16 +253,18 @@ impl core::fmt::Display for PatchError {
 
 impl std::error::Error for PatchError {}
 
-/// Runtime OS page size (`sysconf(_SC_PAGESIZE)` on Linux), queried
+/// Runtime OS page size (`AT_PAGESZ` on Linux), queried
 /// never assumed. The emit facts' page arithmetic takes this value as
 /// a parameter; nothing here hardcodes 4 KiB or 64 KiB.
 #[cfg(target_os = "linux")]
 pub fn page_size() -> Result<u64, PatchError> {
-    let value = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
-    if value <= 0 {
-        return Err(PatchError::os("sysconf(_SC_PAGESIZE)"));
+    // AT_PAGESZ from the auxiliary vector: getauxval reads process
+    // memory only, issuing no syscall a guest filter could see.
+    let value = unsafe { libc::getauxval(libc::AT_PAGESZ) };
+    if value == 0 {
+        return Err(PatchError::Unsupported("AT_PAGESZ absent"));
     }
-    Ok(value as u64)
+    Ok(value)
 }
 
 /// Runtime OS page size (see the Linux form).
@@ -193,13 +273,15 @@ pub fn page_size() -> Result<u64, PatchError> {
     Err(PatchError::Unsupported("page size query requires Linux"))
 }
 
-/// Patcher session: cache attestation plus the site registry. Flip
-/// execution arrives in the next slice; construction already occupies
-/// the design's attestation point so call sites do not change shape.
+/// Patcher session: cache attestation plus the site registry.
+/// Construction occupies the design's attestation point, so flip,
+/// completion, and rollback callers do not change shape when the
+/// environment probe result changes.
 pub struct Patcher {
     registry: SiteRegistry,
     attested: Option<cache::CacheAttested>,
     sync: unsafe fn(*mut u8, *mut u8, usize) -> Result<(), PatchError>,
+    owner_pid: u32,
 }
 
 impl core::fmt::Debug for Patcher {
@@ -226,6 +308,7 @@ impl Patcher {
             registry: SiteRegistry::new(),
             attested: None,
             sync: cache::sync_icache,
+            owner_pid: gate::getpid(),
         }
     }
 
@@ -236,7 +319,22 @@ impl Patcher {
             registry: SiteRegistry::new(),
             attested: Some(cache::probe_environment()?),
             sync: cache::sync_icache,
+            owner_pid: gate::getpid(),
         })
+    }
+
+    /// Attested patcher with an injected cache-sync function, so
+    /// downstream custody tests can drive sync/restore failures
+    /// through production flip paths. The attestation gate is not
+    /// bypassed: construction still probes the environment.
+    #[cfg(feature = "test-support")]
+    #[doc(hidden)]
+    pub fn attested_with_sync(
+        sync: unsafe fn(*mut u8, *mut u8, usize) -> Result<(), PatchError>,
+    ) -> Result<Self, PatchError> {
+        let mut patcher = Self::attested()?;
+        patcher.sync = sync;
+        Ok(patcher)
     }
 
     /// Test-only seam: attested patcher with an injected sync function,
@@ -246,11 +344,34 @@ impl Patcher {
     pub(crate) fn for_test(
         sync: unsafe fn(*mut u8, *mut u8, usize) -> Result<(), PatchError>,
     ) -> Self {
+        Self::with_test_token(sync)
+    }
+
+    /// Downstream test-support seam: the same synthetic attestation
+    /// as `for_test`, available only with the `test-support`
+    /// feature so downstream custody tests can construct pending
+    /// sites on hosts where the real probe is unsupported.
+    #[cfg(feature = "test-support")]
+    #[doc(hidden)]
+    pub fn test_with_sync(
+        sync: unsafe fn(*mut u8, *mut u8, usize) -> Result<(), PatchError>,
+    ) -> Self {
+        Self::with_test_token(sync)
+    }
+
+    #[cfg(any(test, feature = "test-support"))]
+    fn with_test_token(sync: unsafe fn(*mut u8, *mut u8, usize) -> Result<(), PatchError>) -> Self {
         Self {
             registry: SiteRegistry::new(),
             attested: Some(cache::CacheAttested::for_test()),
             sync,
+            owner_pid: gate::getpid(),
         }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_owner_pid_for_test(&mut self, pid: u32) {
+        self.owner_pid = pid;
     }
 
     pub(crate) fn sync_range(
@@ -272,6 +393,15 @@ impl Patcher {
     /// The attestation token publication requires, when present.
     pub(crate) fn attested_token(&self) -> Option<cache::CacheAttested> {
         self.attested
+    }
+
+    /// Refuse if this patcher outlived a fork: registries, islands,
+    /// and custodies are parent-image state (see the design note).
+    pub(crate) fn check_fork(&self) -> Result<(), PatchError> {
+        if gate::getpid() != self.owner_pid {
+            return Err(PatchError::ForkedRegistry);
+        }
+        Ok(())
     }
 
     /// The owned site registry.
