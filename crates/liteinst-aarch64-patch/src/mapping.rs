@@ -364,7 +364,20 @@ mod tests {
         match smaps_bti(&smaps, addr) {
             // Host exposes the flag: qualification must report it.
             Some(true) => assert!(qualify_mapping(addr, 1).unwrap().bti),
-            Some(false) => assert!(!qualify_mapping(addr, 1).unwrap().bti),
+            // A page THIS test mapped PROT_BTI cannot honestly
+            // report bti=false when the CPU advertises BTI: that
+            // is the L4 fail-open shape. Without HWCAP2_BTI the
+            // kernel silently dropped the flag, so false is fine.
+            Some(false) => {
+                const HWCAP2_BTI: u64 = 1 << 17;
+                let hwcap2 = unsafe { libc::getauxval(libc::AT_HWCAP2) };
+                assert_eq!(
+                    hwcap2 & HWCAP2_BTI,
+                    0,
+                    "BTI-mapped page reported bti=false on a BTI host"
+                );
+                assert!(!qualify_mapping(addr, 1).unwrap().bti);
+            }
             // Emulator smaps without VmFlags: refuse, never guess.
             None => assert!(matches!(
                 qualify_mapping(addr, 1),
@@ -386,5 +399,13 @@ mod tests {
         assert_eq!(smaps_bti(smaps, 0x9000), None);
         let noflags = "1000-2000 r-xp 00000000 08:02 1 /a\nSize: 4 kB\n";
         assert_eq!(smaps_bti(noflags, 0x1000), None);
+        // Middle VMA of three, its own block without VmFlags: the
+        // NEXT header must close the block (None), not fall
+        // through to a later VMA's flags.
+        let mid = "1000-2000 r-xp 0 08:02 1 /a\nVmFlags: rd ex bt\n\
+                   2000-3000 r-xp 0 08:02 1 /b\nSize: 4 kB\n\
+                   3000-4000 r-xp 0 08:02 1 /c\nVmFlags: rd ex bt\n";
+        assert_eq!(smaps_bti(mid, 0x2000), None);
+        assert_eq!(smaps_bti(mid, 0x3000), Some(true));
     }
 }

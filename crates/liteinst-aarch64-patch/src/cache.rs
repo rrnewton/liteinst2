@@ -133,6 +133,25 @@ fn probe_verdict(got_magic: bool, status: libc::c_int) -> bool {
 /// recorded), `Err(CacheOpsUnavailable)` only for genuine `ECHILD`
 /// discharge.
 #[cfg(target_os = "linux")]
+/// Deadline in gated monotonic ms, or None when the clock itself
+/// failed — callers treat None as already expired (fail closed),
+/// never as "no deadline". Loops additionally carry iteration
+/// caps so a broken clock can never spin forever.
+fn deadline_from(timeout_ms: u64) -> Option<u64> {
+    crate::gate::now_ms().map(|n| n.saturating_add(timeout_ms))
+}
+
+fn deadline_expired(deadline: Option<u64>, iterations: u64, cap: u64) -> bool {
+    if iterations >= cap {
+        return true;
+    }
+    match (deadline, crate::gate::now_ms()) {
+        (Some(d), Some(n)) => n >= d,
+        // A failing clock expires the deadline (fail closed).
+        _ => true,
+    }
+}
+
 fn wait_once(pid: libc::pid_t) -> Result<Option<libc::c_int>, PatchError> {
     let mut status: libc::c_int = 0;
     // SAFETY: status is a valid out pointer; rusage is null.
@@ -173,15 +192,17 @@ fn kill_and_discharge(pid: libc::pid_t) -> Result<(), PatchError> {
             [pid as u64, libc::SIGKILL as u64, 0, 0, 0, 0],
         );
     };
-    let deadline = crate::gate::now_ms() + 5_000;
+    let deadline = deadline_from(5_000);
+    let mut iterations = 0u64;
     loop {
+        iterations += 1;
         match wait_once(pid) {
             Ok(Some(_)) => return Ok(()),
             Ok(None) => {}
             Err(PatchError::CacheOpsUnavailable) => return Ok(()),
             Err(e) => return Err(e),
         }
-        if crate::gate::now_ms() >= deadline {
+        if deadline_expired(deadline, iterations, 10_000) {
             return Err(PatchError::ChildCustodyRetained { pid });
         }
         crate::gate::sleep_ms(1);
@@ -197,12 +218,18 @@ fn kill_and_discharge(pid: libc::pid_t) -> Result<(), PatchError> {
 #[cfg(target_os = "linux")]
 #[allow(dead_code)]
 fn reap_child(pid: libc::pid_t, timeout_ms: u64) -> Result<libc::c_int, PatchError> {
-    let deadline = crate::gate::now_ms() + timeout_ms;
+    let deadline = deadline_from(timeout_ms);
+    let mut iterations = 0u64;
     loop {
+        iterations += 1;
         if let Some(status) = wait_once(pid)? {
             return Ok(status);
         }
-        if crate::gate::now_ms() >= deadline {
+        if deadline_expired(
+            deadline,
+            iterations,
+            timeout_ms.saturating_mul(2).max(10_000),
+        ) {
             kill_and_discharge(pid)?;
             return Err(PatchError::CacheOpsUnavailable);
         }
@@ -282,7 +309,8 @@ fn collect_probe_child(
             Err(retained) => Err(retained),
         };
     }
-    let deadline = crate::gate::now_ms() + timeout_ms;
+    let deadline = deadline_from(timeout_ms);
+    let mut iterations = 0u64;
     let mut byte: Option<u8> = None;
     let mut eof = false;
     loop {
@@ -310,7 +338,12 @@ fn collect_probe_child(
             }
             return Ok((byte == Some(PROBE_MAGIC), status));
         }
-        if crate::gate::now_ms() >= deadline {
+        iterations += 1;
+        if deadline_expired(
+            deadline,
+            iterations,
+            timeout_ms.saturating_mul(4).max(20_000),
+        ) {
             kill_and_discharge(pid)?;
             return Err(PatchError::CacheOpsUnavailable);
         }

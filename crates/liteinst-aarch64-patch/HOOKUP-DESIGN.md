@@ -52,9 +52,9 @@ context draining stay out (prior design non-goals carry over).
    mappings and constructs the shipped dual-alias store internally; no
    generic parameter is added to `Site`.
 2. `MappingFacts { page_span: (u64,u64), orig_prot: i32, provenance:
-   Provenance, generation: u64 }` with `Provenance::{PrivateFile,
+   Provenance, generation: u64, bti: bool }` (bti from smaps VmFlags) with `Provenance::{PrivateFile,
    PrivateAnon, Shared, Unknown}` and `qualify_mapping(addr)` parsing
-   `/proc/self/maps` (promoter ordinary context only). Refusals are
+   one gated `/proc/self/smaps` read (perms, pathname, VmFlags) (promoter ordinary context only). Refusals are
    named before construction: `PatchError::MappingRefused` for shared,
    unaligned, non-executable, or indeterminate mappings. `Site`
    stores the facts; flip refuses a generation mismatch when fresh
@@ -69,12 +69,12 @@ context draining stay out (prior design non-goals carry over).
    impl). `Site` holds `Box<dyn SiteStore>`; the trait contract
    mirrors `StopControl` (the store must name the same physical word
    the CPU executes at the site RX address for the qualified
-   generation). Surface: `begin_write() -> WriteGuard`
-   (mprotect: minimal page span -> RW, recording exact original
-   protections; writev fallback: no window), `guard.store(word)`
-   (volatile store or one `process_vm_writev` of 4 bytes, partial
-   writes are errors, never retried blindly), `guard.finish()`
-   (restore exact protections). Musearch settles the transition:
+   generation). Surface as built: `begin_write` / `store_word` / `finish_write`
+   on the store itself (no guard type): mprotect minimal page
+   span -> RWX recording exact original protections (incl. BTI);
+   /proc/self/mem store: one pwrite64 of 4 bytes, partial writes
+   are errors, never retried blindly; finish restores exact
+   protections and is idempotent, as is begin. Musearch settles the transition:
    reuse `SyncPending`, with no restore-specific variant. In patcher
    terms, issuing the store records `SyncPending` with its pending
    word; only sync **and** protection restore succeeding (followed by
@@ -111,14 +111,15 @@ reverie-liteinst AArch64 implementation** (the LiteInst in-process
 backend; integration owner musepage), which also implements the
 foreign `SiteStore` backends against its own mapping census. The
 patch crate keeps the mechanism types, the `SiteStore` trait, and the
-`DualAlias` impl. Arena
-sizing: one page = 256 entries at 16 B (4 KiB) / 1024 (16 KiB Android
-pages — page size is always queried); config cap on arenas, exhaustion
-leaves sites trapped (deterministic function of recorded config +
-drain order). Retirement stays session-permanent; rollback reuses the
-site's retained entry. Fork seals the pool (existing entries keep
-working because memfd arenas are `MAP_SHARED`; new allocation in
-either image would race the shared bump state, so: none).
+`DualAlias` impl. Arena status AS BUILT: there is no entry arena pool yet — the
+promoter allocates one memfd island per flipped site, retained
+for process lifetime (fd closed at reserve). The pooled-arena
+geometry below remains the sizing plan for the follow-up, not
+shipped behavior: one page = 256 entries at 16 B (4 KiB) / 1024
+(16 KiB Android pages — page size is always queried); config cap
+on arenas, exhaustion leaves sites trapped. Retirement stays
+session-permanent; rollback reuses the site's retained entry.
+Fork sealing of a future shared pool is likewise future work.
 
 Determinism: shape A only for hookup slice 1 — flip eligibility is a
 function of recorded first-trap order + checkpoint order + recorded

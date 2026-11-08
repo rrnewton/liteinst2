@@ -21,7 +21,7 @@ const L_MFD_EXEC: libc::c_uint = 0x0010;
 /// owning `Site` custody holds this value; `Drop` unmaps both aliases,
 /// so slice-1 retirement rules (deferred until no executor can enter,
 /// permanent retention on uncertainty) are the caller's protocol duty
-/// until the flip slice binds lifetimes in the type.
+/// the flip protocol binds lifetimes in the Site type.
 pub struct Island {
     #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
     rw: *mut u8,
@@ -225,6 +225,18 @@ impl Island {
         // SAFETY: both aliases name this island's full shared range.
         unsafe { sync_icache(self.rw, self.rx, self.len)? };
         self.published = true;
+        // Published text is immutable (fill now refuses), so the
+        // RW alias has no remaining purpose: unmap it so a live
+        // island is never writable through any VA. The RX alias
+        // keeps the backing alive.
+        // SAFETY: rw is this island's own mapping, unmapped once.
+        unsafe {
+            crate::gate::gate6(
+                libc::SYS_munmap,
+                [self.rw as u64, self.len as u64, 0, 0, 0, 0],
+            );
+        }
+        self.rw = core::ptr::null_mut();
         Ok(())
     }
 
@@ -300,10 +312,12 @@ impl Drop for Island {
     fn drop(&mut self) {
         // SAFETY: both aliases are this island's own live mappings.
         unsafe {
-            crate::gate::gate6(
-                libc::SYS_munmap,
-                [self.rw as u64, self.len as u64, 0, 0, 0, 0],
-            );
+            if !self.rw.is_null() {
+                crate::gate::gate6(
+                    libc::SYS_munmap,
+                    [self.rw as u64, self.len as u64, 0, 0, 0, 0],
+                );
+            }
             crate::gate::gate6(
                 libc::SYS_munmap,
                 [self.rx as u64, self.len as u64, 0, 0, 0, 0],
@@ -333,21 +347,30 @@ mod tests {
     #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
     #[test]
     fn reserve_closes_the_memfd() {
-        fn fd_count() -> usize {
-            std::fs::read_dir("/proc/self/fd").unwrap().count()
+        // Count ONLY island memfds: the whole-table census races
+        // sibling tests opening unrelated fds in parallel.
+        fn island_fd_count() -> usize {
+            std::fs::read_dir("/proc/self/fd")
+                .unwrap()
+                .filter_map(|e| e.ok())
+                .filter(|e| {
+                    std::fs::read_link(e.path())
+                        .map(|t| t.to_string_lossy().contains("memfd:liteinst-island"))
+                        .unwrap_or(false)
+                })
+                .count()
         }
-        let before = fd_count();
+        let before = island_fd_count();
         let island = Island::reserve(2).unwrap();
-        assert_eq!(fd_count(), before, "reserve leaked the memfd");
+        assert_eq!(island_fd_count(), before, "reserve leaked the memfd");
         drop(island);
-        assert_eq!(fd_count(), before);
+        assert_eq!(island_fd_count(), before);
     }
 
     #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
     #[test]
     fn fill_after_publish_is_already_published() {
-        let patcher = crate::Patcher::attested().unwrap();
-        let token = patcher.attested_token().expect("attested");
+        let token = crate::cache::CacheAttested::for_test();
         let mut island = Island::build(&[0xd400_0001, 0xd65f_03c0]).unwrap();
         island.publish(token).unwrap();
         assert_eq!(

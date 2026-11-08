@@ -457,13 +457,23 @@ impl Patcher {
         };
         let found = site.read_word();
         if found != expected {
-            // A store that never landed (e.g. StoreFailed custody)
-            // leaves the original word: settle back to Unpatched
-            // through the same sync+finish+resume tail instead of
-            // stranding the site in SyncPending forever. Any third
-            // word is foreign writes: refuse, still stopped.
-            if matches!(pending, PendingWord::Patch(_)) && found == site.original_word() {
-                return self.finish_publication(site, stop, PendingWord::Original);
+            // A store that never landed (e.g. StoreFailed custody,
+            // in either direction) leaves the OTHER known word:
+            // settle to that side through the same
+            // sync+finish+resume tail instead of stranding the
+            // site in SyncPending forever. Any third word is
+            // foreign writes: refuse, still stopped.
+            let other = match pending {
+                PendingWord::Patch(_) => Some(PendingWord::Original),
+                PendingWord::Original => site.flipped_word().map(PendingWord::Patch),
+            };
+            let other_word = match other {
+                Some(PendingWord::Original) => Some(site.original_word()),
+                Some(PendingWord::Patch(w)) => Some(w),
+                None => None,
+            };
+            if other_word == Some(found) {
+                return self.finish_publication(site, stop, other.expect("word mapped"));
             }
             return Err(PatchError::SiteWordChanged { expected, found });
         }
@@ -495,11 +505,24 @@ impl Patcher {
             }
             state => return Err(PatchError::WrongState { state }),
         };
+        let from_pending = matches!(
+            site.state(),
+            SiteState::SyncPending { .. } | SiteState::RetainedStop { .. }
+        );
         stop.acquire()?;
         let found = site.read_word();
         // In SyncPending the stored word may be either side of an
         // interrupted transition; accept exactly the two known words.
         if found != flipped && found != site.original_word() {
+            if from_pending {
+                // The stop was already held into this custody: a
+                // torn/foreign word must NOT be resumed onto.
+                // Refuse still stopped, exactly like complete_sync.
+                return Err(PatchError::SiteWordChanged {
+                    expected: flipped,
+                    found,
+                });
+            }
             return if self.release_after_refusal(site, stop) {
                 Err(PatchError::SiteWordChanged {
                     expected: flipped,
@@ -928,13 +951,14 @@ mod tests {
             unsafe { self.word.write_volatile(word) };
             Ok(())
         }
+        #[allow(deprecated)]
         fn finish_write(&mut self) -> Result<(), PatchError> {
             use core::sync::atomic::Ordering;
             self.counts.finishes.fetch_add(1, Ordering::SeqCst);
             if self
                 .counts
                 .finish_failures_left
-                .try_update(Ordering::SeqCst, Ordering::SeqCst, |n| n.checked_sub(1))
+                .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |n| n.checked_sub(1))
                 .is_ok()
             {
                 return Err(PatchError::Os {
@@ -1093,6 +1117,8 @@ mod tests {
             patcher.flip(&mut site, trap_request(), &mut stop),
             Err(PatchError::StoreFailed { .. })
         ));
+        // Post-store custody: nobody was resumed (MA2).
+        assert_eq!(stop.resumes, 0);
         assert!(matches!(site.state(), SiteState::SyncPending { .. }));
         assert_eq!(word, svc(0));
         // The word never landed: completion settles Unpatched, it
@@ -1101,6 +1127,8 @@ mod tests {
         assert_eq!(patcher.complete_sync(&mut site, &mut stop), Ok(()));
         assert_eq!(site.state(), SiteState::Unpatched);
         assert_eq!(word, svc(0));
+        // Completion ran the sync+finish tail exactly once (MA3).
+        assert_eq!(counts.finishes.load(Ordering::SeqCst), 1);
     }
 
     #[test]
@@ -1117,6 +1145,8 @@ mod tests {
             patcher.flip(&mut site, trap_request(), &mut stop),
             Err(PatchError::RestoreFailed { .. })
         ));
+        // Window still open, executors still stopped (MA12b).
+        assert_eq!(stop.resumes, 0);
         assert!(matches!(site.state(), SiteState::SyncPending { .. }));
         assert_eq!(patcher.complete_sync(&mut site, &mut stop), Ok(()));
         assert_eq!(site.state(), SiteState::Flipped);
@@ -1191,5 +1221,74 @@ mod tests {
         assert_eq!(word, svc(0));
         assert_eq!(counts.begins.load(Ordering::SeqCst), 1);
         assert_eq!(counts.finishes.load(Ordering::SeqCst), 0);
+    }
+    #[test]
+    fn rollback_begin_failure_is_window_refused() {
+        use core::sync::atomic::Ordering;
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let (store, counts) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        let mut site =
+            unsafe { Site::from_rx(0x1000, svc(0), foreign_facts(7), Box::new(store)) }.unwrap();
+        assert_eq!(
+            patcher.flip(&mut site, trap_request(), &mut stop),
+            Ok(Strategy::Trap)
+        );
+        counts.fail_begin.store(true, Ordering::SeqCst);
+        assert!(matches!(
+            patcher.rollback(&mut site, &mut stop),
+            Err(PatchError::WindowRefused { .. })
+        ));
+        assert_eq!(site.state(), SiteState::Flipped);
+    }
+
+    #[test]
+    fn rollback_on_torn_word_refuses_without_resuming() {
+        let mut patcher = Patcher::for_test(sync_fail);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let mut site = site_on(&mut word, 0x1000);
+        // Land in SyncPending with the branch word stored.
+        assert!(patcher.flip(&mut site, trap_request(), &mut stop).is_err());
+        assert!(matches!(site.state(), SiteState::SyncPending { .. }));
+        assert_eq!(stop.resumes, 0);
+        // A torn/foreign word: neither flipped nor original.
+        unsafe { std::ptr::write_volatile(&mut word, 0xd400_8000) };
+        assert_eq!(
+            patcher.rollback(&mut site, &mut stop),
+            Err(PatchError::SiteWordChanged {
+                expected: liteinst_aarch64::brk(0x4c00),
+                found: 0xd400_8000
+            })
+        );
+        // No resume onto the torn word (LV2).
+        assert_eq!(stop.resumes, 0);
+    }
+
+    #[test]
+    fn rollback_store_failure_completes_back_to_flipped() {
+        use core::sync::atomic::Ordering;
+        let mut patcher = Patcher::for_test(sync_ok);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let (store, counts) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        let mut site =
+            unsafe { Site::from_rx(0x1000, svc(0), foreign_facts(7), Box::new(store)) }.unwrap();
+        assert_eq!(
+            patcher.flip(&mut site, trap_request(), &mut stop),
+            Ok(Strategy::Trap)
+        );
+        counts.fail_store.store(true, Ordering::SeqCst);
+        assert!(matches!(
+            patcher.rollback(&mut site, &mut stop),
+            Err(PatchError::StoreFailed { .. })
+        ));
+        counts.fail_store.store(false, Ordering::SeqCst);
+        // The restoring store never landed, so completion settles
+        // back to Flipped instead of stranding (LV7).
+        assert_eq!(patcher.complete_sync(&mut site, &mut stop), Ok(()));
+        assert_eq!(site.state(), SiteState::Flipped);
+        assert_eq!(word, liteinst_aarch64::brk(0x4c00));
     }
 }

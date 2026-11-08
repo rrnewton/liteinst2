@@ -1,5 +1,5 @@
 //! Patch-site identity, custody state, and the stop contract.
-//! Flip/rollback execution lands in a later slice; this module fixes
+//! Flip/rollback execution lands by the flip protocol; this module fixes
 //! the types those transitions will move between, exactly as named in
 //! the design note.
 

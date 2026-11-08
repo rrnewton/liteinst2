@@ -163,7 +163,7 @@ unsafe fn direct_syscall6(nr: i64, args: [u64; 6]) -> i64 {
 /// custody loops uses this (plus an iteration cap), never
 /// `Instant::now` (an ungated libc clock call).
 #[cfg(target_os = "linux")]
-pub fn now_ms() -> u64 {
+pub fn now_ms() -> Option<u64> {
     let mut ts = libc::timespec {
         tv_sec: 0,
         tv_nsec: 0,
@@ -183,11 +183,13 @@ pub fn now_ms() -> u64 {
         )
     };
     if ret != 0 {
-        return 0;
+        return None;
     }
-    (ts.tv_sec as u64)
-        .saturating_mul(1000)
-        .saturating_add((ts.tv_nsec as u64) / 1_000_000)
+    Some(
+        (ts.tv_sec as u64)
+            .saturating_mul(1000)
+            .saturating_add((ts.tv_nsec as u64) / 1_000_000),
+    )
 }
 
 /// Sleep `ms` milliseconds through the gate (EINTR-resumed).
@@ -337,9 +339,9 @@ mod tests {
     #[cfg(target_os = "linux")]
     #[test]
     fn gated_time_advances_and_sleep_waits() {
-        let t0 = now_ms();
+        let t0 = now_ms().unwrap();
         sleep_ms(15);
-        let t1 = now_ms();
+        let t1 = now_ms().unwrap();
         assert!(t1 >= t0 + 10, "sleep_ms(15) advanced only {}", t1 - t0);
     }
 }

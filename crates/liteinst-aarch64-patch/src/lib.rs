@@ -243,7 +243,7 @@ impl core::fmt::Display for PatchError {
 
 impl std::error::Error for PatchError {}
 
-/// Runtime OS page size (`sysconf(_SC_PAGESIZE)` on Linux), queried
+/// Runtime OS page size (`AT_PAGESZ` on Linux), queried
 /// never assumed. The emit facts' page arithmetic takes this value as
 /// a parameter; nothing here hardcodes 4 KiB or 64 KiB.
 #[cfg(target_os = "linux")]
