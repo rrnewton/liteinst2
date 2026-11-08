@@ -268,6 +268,34 @@ mod tests {
         waits: std::sync::atomic::AtomicU64,
         clones: std::sync::atomic::AtomicU64,
         fail_munmap: std::sync::atomic::AtomicBool,
+        fail_clock: std::sync::atomic::AtomicBool,
+        fail_clock_after: std::sync::atomic::AtomicU64,
+        last_munmap_addr: std::sync::atomic::AtomicU64,
+        munmaps: std::sync::atomic::AtomicU64,
+        counts: [std::sync::atomic::AtomicU64; 512],
+        seen: [std::sync::atomic::AtomicU64; 8],
+    }
+
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    impl CountingGate {
+        fn reset(&self) {
+            use std::sync::atomic::Ordering;
+            self.total.store(0, Ordering::SeqCst);
+            self.clocks.store(0, Ordering::SeqCst);
+            self.waits.store(0, Ordering::SeqCst);
+            self.clones.store(0, Ordering::SeqCst);
+            self.fail_munmap.store(false, Ordering::SeqCst);
+            self.fail_clock.store(false, Ordering::SeqCst);
+            self.fail_clock_after.store(u64::MAX, Ordering::SeqCst);
+            self.last_munmap_addr.store(0, Ordering::SeqCst);
+            self.munmaps.store(0, Ordering::SeqCst);
+            for count in &self.counts {
+                count.store(0, Ordering::SeqCst);
+            }
+            for word in &self.seen {
+                word.store(0, Ordering::SeqCst);
+            }
+        }
     }
     #[cfg(target_os = "linux")]
     static COUNTING: CountingGate = CountingGate {
@@ -276,6 +304,12 @@ mod tests {
         waits: std::sync::atomic::AtomicU64::new(0),
         clones: std::sync::atomic::AtomicU64::new(0),
         fail_munmap: std::sync::atomic::AtomicBool::new(false),
+        fail_clock: std::sync::atomic::AtomicBool::new(false),
+        fail_clock_after: std::sync::atomic::AtomicU64::new(u64::MAX),
+        last_munmap_addr: std::sync::atomic::AtomicU64::new(0),
+        munmaps: std::sync::atomic::AtomicU64::new(0),
+        counts: [const { std::sync::atomic::AtomicU64::new(0) }; 512],
+        seen: [const { std::sync::atomic::AtomicU64::new(0) }; 8],
     };
     // SAFETY: forwards exactly to the direct entry after counting.
     #[cfg(target_os = "linux")]
@@ -283,8 +317,18 @@ mod tests {
         unsafe fn syscall6(&self, nr: i64, args: [u64; 6]) -> i64 {
             use std::sync::atomic::Ordering;
             self.total.fetch_add(1, Ordering::SeqCst);
+            if (0..512).contains(&nr) {
+                let nr = nr as usize;
+                self.counts[nr].fetch_add(1, Ordering::SeqCst);
+                self.seen[nr / 64].fetch_or(1u64 << (nr % 64), Ordering::SeqCst);
+            }
             if nr == libc::SYS_clock_gettime {
-                self.clocks.fetch_add(1, Ordering::SeqCst);
+                let clock_calls = self.clocks.fetch_add(1, Ordering::SeqCst) + 1;
+                if self.fail_clock.load(Ordering::SeqCst)
+                    || clock_calls > self.fail_clock_after.load(Ordering::SeqCst)
+                {
+                    return -(libc::EFAULT as i64);
+                }
             }
             if nr == libc::SYS_wait4 {
                 self.waits.fetch_add(1, Ordering::SeqCst);
@@ -292,8 +336,12 @@ mod tests {
             if nr == libc::SYS_clone {
                 self.clones.fetch_add(1, Ordering::SeqCst);
             }
-            if nr == libc::SYS_munmap && self.fail_munmap.load(Ordering::SeqCst) {
-                return -(libc::EACCES as i64);
+            if nr == libc::SYS_munmap {
+                self.munmaps.fetch_add(1, Ordering::SeqCst);
+                self.last_munmap_addr.store(args[0], Ordering::SeqCst);
+                if self.fail_munmap.load(Ordering::SeqCst) {
+                    return -(libc::EACCES as i64);
+                }
             }
             // SAFETY: same contract, forwarded.
             unsafe { DirectGate.syscall6(nr, args) }
@@ -321,23 +369,109 @@ mod tests {
         use std::sync::atomic::Ordering;
         // SAFETY: as above; the counting gate forwards faithfully.
         let _ = unsafe { install_gate(&COUNTING) };
-        let (c0, w0, k0) = (
-            COUNTING.clocks.load(Ordering::SeqCst),
-            COUNTING.waits.load(Ordering::SeqCst),
-            COUNTING.clones.load(Ordering::SeqCst),
-        );
-        let _ = crate::Patcher::attested().unwrap();
+        // Fork-isolate the census: resetting and accounting
+        // process-global counters is only deterministic when this
+        // child is the only thread issuing gated calls. Only the
+        // clone count below is asserted exactly; the rest is an
+        // allowlist plus total accounting.
+        // SAFETY: fork with an immediately-exiting child.
+        let pid = unsafe { libc::fork() };
+        assert!(pid >= 0);
+        if pid == 0 {
+            let code = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| -> i32 {
+                if unsafe { install_gate(&COUNTING) }.is_err() {
+                    return 10;
+                }
+                let before = COUNTING.total.load(Ordering::SeqCst);
+                let _ = getpid();
+                if COUNTING.total.load(Ordering::SeqCst) == before {
+                    return 10;
+                }
+                COUNTING.reset();
+                if crate::Patcher::attested().is_err() {
+                    return 11;
+                }
+                let allowed: [i64; 11] = [
+                    libc::SYS_pipe2,
+                    libc::SYS_clone,
+                    libc::SYS_close,
+                    libc::SYS_wait4,
+                    libc::SYS_kill,
+                    libc::SYS_read,
+                    libc::SYS_ppoll,
+                    libc::SYS_fcntl,
+                    libc::SYS_clock_gettime,
+                    libc::SYS_clock_nanosleep,
+                    libc::SYS_getpid,
+                ];
+                let mut accounted = 0u64;
+                for nr in 0..512usize {
+                    let count = COUNTING.counts[nr].load(Ordering::SeqCst);
+                    if count != 0 && !allowed.contains(&(nr as i64)) {
+                        return 12;
+                    }
+                    accounted += count;
+                }
+                if accounted != COUNTING.total.load(Ordering::SeqCst) {
+                    return 13;
+                }
+                if COUNTING.clones.load(Ordering::SeqCst) != 1 {
+                    return 14;
+                }
+                // Latent assumption, documented: only the clone
+                // count is exact; waits/clocks assert presence, not
+                // counts (the parent's first wait4 may or may not
+                // miss the child depending on scheduling).
+                if COUNTING.waits.load(Ordering::SeqCst) == 0
+                    || COUNTING.clocks.load(Ordering::SeqCst) == 0
+                {
+                    return 15;
+                }
+                // A clock that fails only after the probe clone
+                // must fail the collection custody path, not spin
+                // or attest from an expired-on-arrival deadline.
+                // Allow the pre-clone check and collection
+                // deadline construction, then fail the next read.
+                let clocks_before_post_clone = COUNTING.clocks.load(Ordering::SeqCst);
+                COUNTING
+                    .fail_clock_after
+                    .store(clocks_before_post_clone + 2, Ordering::SeqCst);
+                if crate::Patcher::attested().is_ok() {
+                    return 18;
+                }
+                if COUNTING.clones.load(Ordering::SeqCst) != 2 {
+                    return 19;
+                }
+                // Custody: the post-clone clock failure must still
+                // REAP its probe child (MKD) — no child of this
+                // process may remain, zombie or running.
+                let mut reap_status: libc::c_int = 0;
+                let reaped = unsafe { libc::waitpid(-1, &mut reap_status, libc::WNOHANG) };
+                if reaped != -1
+                    || std::io::Error::last_os_error().raw_os_error() != Some(libc::ECHILD)
+                {
+                    return 20;
+                }
+                COUNTING.fail_clock_after.store(u64::MAX, Ordering::SeqCst);
+                // A failing gated clock must make attestation fail
+                // before another probe clone is issued.
+                COUNTING.fail_clock.store(true, Ordering::SeqCst);
+                if crate::Patcher::attested().is_ok() {
+                    return 16;
+                }
+                if COUNTING.clones.load(Ordering::SeqCst) != 2 {
+                    return 17;
+                }
+                0
+            }))
+            .unwrap_or(9);
+            unsafe { libc::_exit(code) };
+        }
+        let mut status: libc::c_int = 0;
+        assert_eq!(unsafe { libc::waitpid(pid, &mut status, 0) }, pid);
         assert!(
-            COUNTING.clones.load(Ordering::SeqCst) > k0,
-            "probe clone ungated"
-        );
-        assert!(
-            COUNTING.waits.load(Ordering::SeqCst) > w0,
-            "probe wait ungated"
-        );
-        assert!(
-            COUNTING.clocks.load(Ordering::SeqCst) > c0,
-            "probe clock ungated"
+            libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0,
+            "attested census child status={status:#x} (9=panic, 10=gate absent, 11=attested, 12=unexpected syscall, 13=accounting, 14=clone count, 15=wait/clock, 16=clock failure accepted, 17=clock failure cloned, 18=post-clone clock failure accepted, 19=post-clone clone count, 20=post-clone child unreaped)"
         );
     }
 
@@ -363,15 +497,56 @@ mod tests {
         let pid = unsafe { libc::fork() };
         assert!(pid >= 0);
         if pid == 0 {
-            let code = (|| -> i32 {
+            let code = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| -> i32 {
+                // A panic after fork would otherwise unwind into the
+                // copied libtest harness and can be reported as exit
+                // 0. Every test-body assertion is inside this closure;
+                // the catch below converts any panic to exit 9.
+                if unsafe { install_gate(&COUNTING) }.is_err() {
+                    return 10;
+                }
+                let before_gate_calls = COUNTING.total.load(Ordering::SeqCst);
+                let _ = getpid();
+                if COUNTING.total.load(Ordering::SeqCst) == before_gate_calls {
+                    return 10;
+                }
+                fn rw_island_maps() -> Result<usize, ()> {
+                    let maps = std::fs::read_to_string("/proc/self/maps").map_err(|_| ())?;
+                    Ok(maps
+                        .lines()
+                        .filter(|line| {
+                            let mut fields = line.split_whitespace();
+                            let _range = fields.next();
+                            let perms = fields.next();
+                            perms == Some("rw-s") && line.contains("memfd:liteinst-island")
+                        })
+                        .count())
+                }
+                let Ok(baseline) = rw_island_maps() else {
+                    return 7;
+                };
                 let token = crate::cache::CacheAttested::for_test();
                 let mut island = crate::island::Island::build(&[0xd400_0001, 0xd65f_03c0]).unwrap();
                 let entry = island.entry_addr();
+                let Ok(built) = rw_island_maps() else {
+                    return 7;
+                };
+                if built != baseline + 1 {
+                    return 11;
+                }
                 COUNTING.fail_munmap.store(true, Ordering::SeqCst);
                 let err = island.publish(token).unwrap_err();
                 COUNTING.fail_munmap.store(false, Ordering::SeqCst);
-                if !matches!(err, PatchError::Os { op, .. } if op == "munmap island rw alias") {
+                if !matches!(err, PatchError::Os { op, errno } if op == "munmap island rw alias" && errno == libc::EACCES)
+                {
                     return 3;
+                }
+                // The DENIED call named the RW alias (not the RX
+                // entry): capture that exact address — its mapping
+                // must still exist now and be gone after Drop.
+                let rw = COUNTING.last_munmap_addr.load(Ordering::SeqCst);
+                if rw == 0 || rw == entry {
+                    return 8;
                 }
                 if island.read_rx_word(0) != Some(0xd400_0001) {
                     return 4;
@@ -382,22 +557,29 @@ mod tests {
                         .lines()
                         .any(|l| l.starts_with(&format!("{e:x}-")))
                 };
-                if !mapped(entry) {
+                let Ok(denied) = rw_island_maps() else {
+                    return 7;
+                };
+                if denied != baseline + 1 || !mapped(entry) || !mapped(rw) {
                     return 5;
                 }
                 drop(island);
-                if mapped(entry) {
+                let Ok(after) = rw_island_maps() else {
+                    return 7;
+                };
+                if after != baseline || mapped(entry) || mapped(rw) {
                     return 6;
                 }
                 0
-            })();
+            }))
+            .unwrap_or(9);
             unsafe { libc::_exit(code) };
         }
         let mut status: libc::c_int = 0;
         assert_eq!(unsafe { libc::waitpid(pid, &mut status, 0) }, pid);
         assert!(
             libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0,
-            "denied-unmap child status={status:#x} (3=wrong error, 4=read, 5=not mapped, 6=leaked)"
+            "denied-unmap child status={status:#x} (3=wrong error, 4=read, 5=not mapped, 6=leaked, 7=maps census, 8=wrong munmap address, 9=panic, 10=counting gate absent, 11=build map count)"
         );
     }
 }

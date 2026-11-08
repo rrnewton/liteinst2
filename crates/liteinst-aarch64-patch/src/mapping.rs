@@ -202,11 +202,99 @@ fn smaps_bti(smaps: &str, addr: u64) -> Option<bool> {
     None
 }
 
+/// Whether the CPU advertises BTI (HWCAP2_BTI, bit 17). Reads
+/// the auxv only; no syscall.
+#[cfg(all(target_os = "linux", target_arch = "aarch64"))]
+fn hwcap2_bti_advertised() -> bool {
+    // SAFETY: getauxval reads the process auxiliary vector.
+    unsafe { libc::getauxval(libc::AT_HWCAP2) & (1 << 17) != 0 }
+}
+
+#[cfg(not(all(target_os = "linux", target_arch = "aarch64")))]
+fn hwcap2_bti_advertised() -> bool {
+    false
+}
+
+/// Whether this kernel's smaps BTI reporting can be trusted:
+/// map one PROT_BTI page and ask smaps about it. A mapped BTI
+/// page that smaps does NOT report bt for means the reporting
+/// channel itself lies (emulator host kernel) — untrusted. Only
+/// definitive probe outcomes are cached (the probe page mapped
+/// and smaps answered for its VMA); a transient probe failure
+/// answers untrusted for this call and is retried next time, so
+/// one unlucky mmap cannot poison the process for life.
+#[cfg(target_os = "linux")]
+fn bti_reporting_trusted() -> bool {
+    static TRUSTED: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(0);
+    match TRUSTED.load(std::sync::atomic::Ordering::Acquire) {
+        1 => return true,
+        2 => return false,
+        _ => {}
+    }
+    let Some(trusted) = bti_probe() else {
+        return false;
+    };
+    TRUSTED.store(
+        if trusted { 1 } else { 2 },
+        std::sync::atomic::Ordering::Release,
+    );
+    trusted
+}
+
+/// Probe BTI reporting once. `Some` is a definitive outcome
+/// (cacheable); `None` is transient — every probe mmap failure
+/// (including EINVAL: mmap does not validate PROT_BTI, so an
+/// EINVAL says nothing about BTI support), a smaps read failure,
+/// or a probe VMA with no VmFlags.
+#[cfg(target_os = "linux")]
+fn bti_probe() -> Option<bool> {
+    let page = crate::page_size().ok()?;
+    const PROT_BTI: u64 = 0x10;
+    // SAFETY: one anonymous page, unmapped below on every path.
+    let p = unsafe {
+        crate::gate::gate6(
+            libc::SYS_mmap,
+            [
+                0,
+                page,
+                (libc::PROT_READ | libc::PROT_EXEC) as u64 | PROT_BTI,
+                (libc::MAP_PRIVATE | libc::MAP_ANONYMOUS) as u64,
+                u64::MAX,
+                0,
+            ],
+        )
+    };
+    if (-4095..0).contains(&p) {
+        // Every probe mmap failure is transient/untrusted,
+        // EINVAL included: mmap does not validate PROT_BTI.
+        return None;
+    }
+    let trusted = read_proc_file(c"/proc/self/smaps")
+        .ok()
+        .and_then(|smaps| smaps_bti(&smaps, p as u64));
+    // SAFETY: p is the probe page just mapped above.
+    unsafe {
+        crate::gate::gate6(libc::SYS_munmap, [p as u64, page, 0, 0, 0, 0]);
+    }
+    trusted
+}
+
 /// Qualify from one smaps image: header perms/pathname give the
 /// maps facts and the same block's VmFlags give BTI, so perms and
-/// flags can never disagree about which VMA they describe.
+/// flags can never disagree about which VMA they describe. The
+/// BTI cross-check inputs are injected (`hwcap_bti`: whether the
+/// CPU advertises BTI; `bti_trusted`: whether smaps BTI reporting
+/// is probe-verified, evaluated lazily only when the cross-check
+/// can fire) so tests can pin every combination without depending
+/// on the host CPU or kernel.
 #[cfg(target_os = "linux")]
-fn qualify_from_smaps(smaps: &str, addr: u64, generation: u64) -> Result<MappingFacts, PatchError> {
+fn qualify_from_smaps(
+    smaps: &str,
+    addr: u64,
+    generation: u64,
+    hwcap_bti: bool,
+    bti_trusted: impl FnOnce() -> bool,
+) -> Result<MappingFacts, PatchError> {
     for line in smaps.lines() {
         if let Some(mut facts) = parse_maps_line(line, addr, generation) {
             if !facts.windowable() {
@@ -228,6 +316,18 @@ fn qualify_from_smaps(smaps: &str, addr: u64, generation: u64) -> Result<Mapping
             facts.bti = smaps_bti(smaps, addr).ok_or(PatchError::MappingRefused(
                 "BTI state indeterminate (no smaps VmFlags for the site VMA)",
             ))?;
+            // Cross-check the emulator lie: the CPU advertises
+            // BTI (qemu -cpu max sets HWCAP2_BTI) but the HOST
+            // kernel's smaps cannot report bt, so a plain false
+            // may be untrustworthy. Settle it with a probe VMA
+            // (see bti_reporting_trusted): only a kernel that
+            // demonstrably reports bt for a PROT_BTI mapping is
+            // trusted; every other probe outcome refuses.
+            if !facts.bti && hwcap_bti && !bti_trusted() {
+                return Err(PatchError::MappingRefused(
+                    "BTI state indeterminate (HWCAP2_BTI set but smaps cannot report bt)",
+                ));
+            }
             return Ok(facts);
         }
     }
@@ -244,7 +344,13 @@ fn qualify_from_smaps(smaps: &str, addr: u64, generation: u64) -> Result<Mapping
 #[cfg(target_os = "linux")]
 pub fn qualify_mapping(addr: u64, generation: u64) -> Result<MappingFacts, PatchError> {
     let smaps = read_proc_file(c"/proc/self/smaps")?;
-    qualify_from_smaps(&smaps, addr, generation)
+    qualify_from_smaps(
+        &smaps,
+        addr,
+        generation,
+        hwcap2_bti_advertised(),
+        bti_reporting_trusted,
+    )
 }
 
 /// Qualify a mapping (see the Linux form). Unsupported off Linux.
@@ -314,11 +420,97 @@ mod tests {
     }
 
     #[test]
+    fn qualify_bti_cross_check_seam_combinations() {
+        // Synthetic smaps + injected cross-check inputs: every
+        // combination is pinned on any host (kills the cross-check
+        // forms of MBTI0/MBTIT; the probe forms are pinned by
+        // bti_reporting_trust_agrees_with_own_probe_page below).
+        let plain = "1000-2000 r-xp 00000000 08:02 1 /a\n\
+                     Size: 4 kB\nVmFlags: rd ex mr\n";
+        let guarded = "1000-2000 r-xp 00000000 08:02 1 /a\n\
+                       Size: 4 kB\nVmFlags: rd ex bt mr\n";
+        // CPU advertises BTI, smaps BTI reporting untrusted, page
+        // reports bti=false: the false may be a lie — refuse with
+        // the exact production message.
+        assert_eq!(
+            qualify_from_smaps(plain, 0x1000, 1, true, || false),
+            Err(PatchError::MappingRefused(
+                "BTI state indeterminate (HWCAP2_BTI set but smaps cannot report bt)"
+            ))
+        );
+        // Same page, probe-verified reporting: qualify, bti=false.
+        let facts = qualify_from_smaps(plain, 0x1000, 1, true, || true).unwrap();
+        assert!(!facts.bti);
+        // No BTI in HWCAP: no guard can exist, trust irrelevant.
+        let facts = qualify_from_smaps(plain, 0x1000, 1, false, || false).unwrap();
+        assert!(!facts.bti);
+        // Page reports bti=true: the cross-check never fires.
+        let facts = qualify_from_smaps(guarded, 0x1000, 1, true, || false).unwrap();
+        assert!(facts.bti);
+    }
+
+    /// Independent test oracle for BTI reporting trust: map this
+    /// test's OWN PROT_BTI page and ask smaps about it, without
+    /// calling the production probe. Some(true)/Some(false) when
+    /// smaps answers for the VMA; None when the mmap fails or the
+    /// block has no VmFlags.
+    fn test_bti_probe_outcome() -> Option<bool> {
+        const PROT_BTI: u64 = 0x10;
+        let page = crate::page_size().ok()?;
+        // SAFETY: one anonymous page, unmapped below on every path.
+        let p = unsafe {
+            crate::gate::gate6(
+                libc::SYS_mmap,
+                [
+                    0,
+                    page,
+                    (libc::PROT_READ | libc::PROT_EXEC) as u64 | PROT_BTI,
+                    (libc::MAP_PRIVATE | libc::MAP_ANONYMOUS) as u64,
+                    u64::MAX,
+                    0,
+                ],
+            )
+        };
+        if (-4095..0).contains(&p) {
+            return None;
+        }
+        let outcome = std::fs::read_to_string("/proc/self/smaps")
+            .ok()
+            .and_then(|smaps| smaps_bti(&smaps, p as u64));
+        unmap(p as u64);
+        outcome
+    }
+
+    #[test]
+    fn bti_reporting_trust_agrees_with_own_probe_page() {
+        // The production probe's verdict must equal what smaps
+        // says about a PROT_BTI page this test mapped itself.
+        // MBTITprobe (probe always trusts) fails wherever the own
+        // page does not report bt; MBTIF (always distrusts) fails
+        // on honest BTI hosts where it does.
+        assert_eq!(
+            bti_reporting_trusted(),
+            test_bti_probe_outcome() == Some(true)
+        );
+    }
+
+    #[test]
     fn qualify_real_rx_rw_and_xonly_pages() {
         let rx = map_page(libc::PROT_READ | libc::PROT_EXEC);
-        let facts = qualify_mapping(rx, 3).unwrap();
-        assert!(facts.windowable());
-        assert_eq!(facts.generation, 3);
+        if hwcap2_bti_advertised() && test_bti_probe_outcome() != Some(true) {
+            // BTI host whose smaps cannot report bt (emulator):
+            // qualification must refuse exactly, never guess false.
+            assert_eq!(
+                qualify_mapping(rx, 3),
+                Err(PatchError::MappingRefused(
+                    "BTI state indeterminate (HWCAP2_BTI set but smaps cannot report bt)"
+                ))
+            );
+        } else {
+            let facts = qualify_mapping(rx, 3).unwrap();
+            assert!(facts.windowable());
+            assert_eq!(facts.generation, 3);
+        }
         unmap(rx);
         let rw = map_page(libc::PROT_READ | libc::PROT_WRITE);
         assert_eq!(
@@ -364,19 +556,23 @@ mod tests {
         match smaps_bti(&smaps, addr) {
             // Host exposes the flag: qualification must report it.
             Some(true) => assert!(qualify_mapping(addr, 1).unwrap().bti),
-            // A page THIS test mapped PROT_BTI cannot honestly
-            // report bti=false when the CPU advertises BTI: that
-            // is the L4 fail-open shape. Without HWCAP2_BTI the
-            // kernel silently dropped the flag, so false is fine.
+            // A page THIS test mapped PROT_BTI reporting bti=false
+            // on a BTI host means smaps BTI reporting is untrusted:
+            // qualification must refuse with the exact cross-check
+            // message (the probe VMA cannot verify reporting here
+            // either). Without HWCAP2_BTI the kernel silently
+            // dropped the flag, so an honest false qualifies.
             Some(false) => {
-                const HWCAP2_BTI: u64 = 1 << 17;
-                let hwcap2 = unsafe { libc::getauxval(libc::AT_HWCAP2) };
-                assert_eq!(
-                    hwcap2 & HWCAP2_BTI,
-                    0,
-                    "BTI-mapped page reported bti=false on a BTI host"
-                );
-                assert!(!qualify_mapping(addr, 1).unwrap().bti);
+                if hwcap2_bti_advertised() {
+                    assert_eq!(
+                        qualify_mapping(addr, 1),
+                        Err(PatchError::MappingRefused(
+                            "BTI state indeterminate (HWCAP2_BTI set but smaps cannot report bt)"
+                        ))
+                    );
+                } else {
+                    assert!(!qualify_mapping(addr, 1).unwrap().bti);
+                }
             }
             // Emulator smaps without VmFlags: refuse, never guess.
             None => assert!(matches!(
@@ -385,6 +581,64 @@ mod tests {
             )),
         }
         unmap(addr);
+    }
+
+    struct MmapFailOnceGate {
+        mmaps: std::sync::atomic::AtomicU64,
+    }
+
+    static MMAP_FAIL_ONCE: MmapFailOnceGate = MmapFailOnceGate {
+        mmaps: std::sync::atomic::AtomicU64::new(0),
+    };
+
+    // SAFETY: forwards every syscall faithfully except the first
+    // mmap, which fails transiently with EAGAIN.
+    unsafe impl crate::gate::GateSyscall for MmapFailOnceGate {
+        unsafe fn syscall6(&self, nr: i64, args: [u64; 6]) -> i64 {
+            use std::sync::atomic::Ordering;
+            if nr == libc::SYS_mmap && self.mmaps.fetch_add(1, Ordering::SeqCst) == 0 {
+                return -(libc::EAGAIN as i64);
+            }
+            // SAFETY: same raw contract, forwarded.
+            unsafe { libc::syscall(nr, args[0], args[1], args[2], args[3], args[4], args[5]) }
+        }
+    }
+
+    #[test]
+    fn bti_probe_transient_failure_is_not_cached() {
+        // Re-exec child: the gate and probe cache are
+        // process-global (a fork would inherit both). A transient
+        // probe mmap failure answers untrusted for that call only;
+        // the next call must RE-PROBE (a second mmap), not serve a
+        // cached distrust (MCACHE).
+        const CHILD: &str = "LITEINST_BTI_PROBE_CACHE_CHILD";
+        if std::env::var_os(CHILD).is_some() {
+            use std::sync::atomic::Ordering;
+            // SAFETY: first gate install in this fresh process.
+            unsafe { crate::gate::install_gate(&MMAP_FAIL_ONCE) }.unwrap();
+            assert!(!bti_reporting_trusted(), "transient failure must not trust");
+            assert_eq!(MMAP_FAIL_ONCE.mmaps.load(Ordering::SeqCst), 1);
+            let _ = bti_reporting_trusted();
+            assert!(
+                MMAP_FAIL_ONCE.mmaps.load(Ordering::SeqCst) >= 2,
+                "transient probe failure was cached (no second probe mmap)"
+            );
+            std::process::exit(0);
+        }
+        let out = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "mapping::tests::bti_probe_transient_failure_is_not_cached",
+                "--nocapture",
+            ])
+            .env(CHILD, "1")
+            .output()
+            .unwrap();
+        assert!(
+            String::from_utf8_lossy(&out.stdout).contains("running 1 test"),
+            "re-exec child ran no test (wrong --exact path?): {out:?}"
+        );
+        assert!(out.status.success(), "{out:?}");
     }
 
     #[test]

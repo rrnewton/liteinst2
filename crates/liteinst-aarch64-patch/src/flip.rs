@@ -536,6 +536,15 @@ impl Patcher {
             };
         }
         if let Err(e) = site.begin_write() {
+            if from_pending {
+                // Retained custody: the window never opened and
+                // executors are still stopped on a possibly torn
+                // page. Refuse without resuming, exactly like the
+                // word-mismatch branch above.
+                return Err(PatchError::WindowRefused {
+                    source: Box::new(e),
+                });
+            }
             return if self.release_after_refusal(site, stop) {
                 Err(PatchError::WindowRefused {
                     source: Box::new(e),
@@ -1146,7 +1155,7 @@ mod tests {
             Err(PatchError::RestoreFailed { .. })
         ));
         // Window still open, executors still stopped (MA12b).
-        assert_eq!(stop.resumes, 0);
+        assert_eq!(stop.resumes, 0, "restore failure must not resume (MA12b)");
         assert!(matches!(site.state(), SiteState::SyncPending { .. }));
         assert_eq!(patcher.complete_sync(&mut site, &mut stop), Ok(()));
         assert_eq!(site.state(), SiteState::Flipped);
@@ -1221,6 +1230,10 @@ mod tests {
         assert_eq!(word, svc(0));
         assert_eq!(counts.begins.load(Ordering::SeqCst), 1);
         assert_eq!(counts.finishes.load(Ordering::SeqCst), 0);
+        assert_eq!(
+            stop.resumes, 1,
+            "begin failure must release the lease (MA17)"
+        );
     }
     #[test]
     fn rollback_begin_failure_is_window_refused() {
@@ -1240,6 +1253,10 @@ mod tests {
             patcher.rollback(&mut site, &mut stop),
             Err(PatchError::WindowRefused { .. })
         ));
+        assert_eq!(
+            stop.resumes, 2,
+            "flip resume + rollback begin-failure release (MA9)"
+        );
         assert_eq!(site.state(), SiteState::Flipped);
     }
 
@@ -1280,15 +1297,42 @@ mod tests {
             Ok(Strategy::Trap)
         );
         counts.fail_store.store(true, Ordering::SeqCst);
+        let resumes_before_rollback = stop.resumes;
         assert!(matches!(
             patcher.rollback(&mut site, &mut stop),
             Err(PatchError::StoreFailed { .. })
         ));
+        // A rollback whose restoring store failed must not resume
+        // anyone: the count is exactly what the flip left (RBR).
+        assert_eq!(stop.resumes, resumes_before_rollback);
         counts.fail_store.store(false, Ordering::SeqCst);
         // The restoring store never landed, so completion settles
         // back to Flipped instead of stranding (LV7).
         assert_eq!(patcher.complete_sync(&mut site, &mut stop), Ok(()));
         assert_eq!(site.state(), SiteState::Flipped);
         assert_eq!(word, liteinst_aarch64::brk(0x4c00));
+    }
+    #[test]
+    fn rollback_begin_failure_from_pending_never_resumes() {
+        use core::sync::atomic::Ordering;
+        let mut patcher = Patcher::for_test(sync_fail);
+        let mut stop = FakeStop::default();
+        let mut word = svc(0);
+        let (store, counts) = FakeForeignStore::counts(std::ptr::from_mut(&mut word));
+        let mut site =
+            unsafe { Site::from_rx(0x1000, svc(0), foreign_facts(7), Box::new(store)) }.unwrap();
+        assert!(patcher.flip(&mut site, trap_request(), &mut stop).is_err());
+        assert!(matches!(site.state(), SiteState::SyncPending { .. }));
+        assert_eq!(stop.resumes, 0);
+        counts.fail_begin.store(true, Ordering::SeqCst);
+        assert!(matches!(
+            patcher.rollback(&mut site, &mut stop),
+            Err(PatchError::WindowRefused { .. })
+        ));
+        assert_eq!(
+            stop.resumes, 0,
+            "begin failure from pending must not resume"
+        );
+        assert!(matches!(site.state(), SiteState::SyncPending { .. }));
     }
 }

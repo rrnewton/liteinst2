@@ -1,7 +1,6 @@
 //! Patch-site identity, custody state, and the stop contract.
-//! Flip/rollback execution lands by the flip protocol; this module fixes
-//! the types those transitions will move between, exactly as named in
-//! the design note.
+//! The flip protocol moves sites between the states defined here,
+//! exactly as named in the design note.
 
 use crate::PatchError;
 use crate::island::Island;

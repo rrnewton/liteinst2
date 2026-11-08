@@ -19,9 +19,9 @@ const L_MFD_EXEC: libc::c_uint = 0x0010;
 
 /// An owned island mapping. While any flipped site branches here, the
 /// owning `Site` custody holds this value; `Drop` unmaps both aliases,
-/// so slice-1 retirement rules (deferred until no executor can enter,
-/// permanent retention on uncertainty) are the caller's protocol duty
-/// the flip protocol binds lifetimes in the Site type.
+/// so retirement rules (deferred until no executor can enter, permanent
+/// retention on uncertainty) are the caller's protocol duty; the flip
+/// protocol binds lifetimes in the Site type.
 pub struct Island {
     #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
     rw: *mut u8,
@@ -357,39 +357,46 @@ mod tests {
         // Census in a forked child: even a name-filtered count
         // races sibling tests constructing islands in parallel.
         // The child has the table to itself, so its exact counts
-        // are deterministic; it reports by exit code.
+        // are deterministic; it reports by exit code. Every
+        // observation must SUCCEED: a failed census exits 7 and
+        // is never a comparable count.
         // SAFETY: fork with an immediately-exiting child that only
         // reserves/drops one island and counts its own fds.
         let pid = unsafe { libc::fork() };
         assert!(pid >= 0);
         if pid == 0 {
-            let count = || {
-                std::fs::read_dir("/proc/self/fd")
-                    .map(|d| {
-                        d.filter_map(|e| e.ok())
-                            .filter(|e| {
-                                std::fs::read_link(e.path())
-                                    .map(|t| t.to_string_lossy().contains("memfd:liteinst-island"))
-                                    .unwrap_or(false)
-                            })
-                            .count()
-                    })
-                    .unwrap_or(usize::MAX)
+            let count = || -> Result<usize, ()> {
+                let dir = std::fs::read_dir("/proc/self/fd").map_err(|_| ())?;
+                let mut n = 0;
+                for entry in dir {
+                    let entry = entry.map_err(|_| ())?;
+                    let target = std::fs::read_link(entry.path()).map_err(|_| ())?;
+                    if target.to_string_lossy().contains("memfd:liteinst-island") {
+                        n += 1;
+                    }
+                }
+                Ok(n)
             };
-            let before = count();
-            let island = Island::reserve(2);
-            let reserved = island.is_ok();
-            let during = count();
-            drop(island);
-            let after = count();
-            let ok = reserved && during == before && after == before;
-            unsafe { libc::_exit(if ok { 0 } else { 3 }) };
+            let code = (|| -> i32 {
+                let Ok(before) = count() else { return 7 };
+                let island = Island::reserve(2);
+                let reserved = island.is_ok();
+                let Ok(during) = count() else { return 7 };
+                drop(island);
+                let Ok(after) = count() else { return 7 };
+                if reserved && during == before && after == before {
+                    0
+                } else {
+                    3
+                }
+            })();
+            unsafe { libc::_exit(code) };
         }
         let mut status: libc::c_int = 0;
         assert_eq!(unsafe { libc::waitpid(pid, &mut status, 0) }, pid);
         assert!(
             libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0,
-            "fd census child status={status:#x}"
+            "fd census child status={status:#x} (7=census unavailable)"
         );
     }
 

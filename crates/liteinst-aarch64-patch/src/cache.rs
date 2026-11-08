@@ -22,7 +22,7 @@ pub struct LineSizes {
 #[derive(Debug, Clone, Copy)]
 pub struct CacheAttested(());
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-support"))]
 impl CacheAttested {
     pub(crate) fn for_test() -> Self {
         Self(())
@@ -127,20 +127,16 @@ fn probe_verdict(got_magic: bool, status: libc::c_int) -> bool {
     got_magic && libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0
 }
 
-/// One nonblocking wait attempt: `Ok(Some(status))` reaped,
-/// `Ok(None)` still running or a retryable wait error (custody keeps
-/// priority over error fidelity: the wait errno is deliberately not
-/// recorded), `Err(CacheOpsUnavailable)` only for genuine `ECHILD`
-/// discharge.
-#[cfg(target_os = "linux")]
 /// Deadline in gated monotonic ms, or None when the clock itself
 /// failed — callers treat None as already expired (fail closed),
 /// never as "no deadline". Loops additionally carry iteration
 /// caps so a broken clock can never spin forever.
+#[cfg(target_os = "linux")]
 fn deadline_from(timeout_ms: u64) -> Option<u64> {
     crate::gate::now_ms().map(|n| n.saturating_add(timeout_ms))
 }
 
+#[cfg(target_os = "linux")]
 fn deadline_expired(deadline: Option<u64>, iterations: u64, cap: u64) -> bool {
     if iterations >= cap {
         return true;
@@ -152,6 +148,12 @@ fn deadline_expired(deadline: Option<u64>, iterations: u64, cap: u64) -> bool {
     }
 }
 
+/// One nonblocking wait attempt: `Ok(Some(status))` reaped,
+/// `Ok(None)` still running or a retryable wait error (custody keeps
+/// priority over error fidelity: the wait errno is deliberately not
+/// recorded), `Err(CacheOpsUnavailable)` only for genuine `ECHILD`
+/// discharge.
+#[cfg(target_os = "linux")]
 fn wait_once(pid: libc::pid_t) -> Result<Option<libc::c_int>, PatchError> {
     let mut status: libc::c_int = 0;
     // SAFETY: status is a valid out pointer; rusage is null.
@@ -202,7 +204,16 @@ fn kill_and_discharge(pid: libc::pid_t) -> Result<(), PatchError> {
             Err(PatchError::CacheOpsUnavailable) => return Ok(()),
             Err(e) => return Err(e),
         }
-        if deadline_expired(deadline, iterations, 10_000) {
+        // The child was just SIGKILLed, so reaping should be prompt
+        // in iterations even when the clock has failed. Do not let a
+        // missing clock observation abandon it on the first pass:
+        // only a real observed deadline or the iteration cap ends
+        // the discharge attempt.
+        let past_deadline = matches!(
+            (deadline, crate::gate::now_ms()),
+            (Some(deadline), Some(now)) if now >= deadline
+        );
+        if iterations >= 10_000 || past_deadline {
             return Err(PatchError::ChildCustodyRetained { pid });
         }
         crate::gate::sleep_ms(1);
@@ -300,10 +311,8 @@ fn collect_probe_child(
         )
     };
     if flags < 0 || set_rc < 0 {
-        let e = PatchError::Os {
-            op: "fcntl(O_NONBLOCK)",
-            errno: 0,
-        };
+        let e = crate::gate::check(if flags < 0 { flags } else { set_rc }, "fcntl(O_NONBLOCK)")
+            .unwrap_err();
         return match kill_and_discharge(pid) {
             Ok(()) => Err(e),
             Err(retained) => Err(retained),
@@ -423,6 +432,12 @@ fn probe_child_exit(code: i64) -> ! {
 /// async-signal-safe calls). A passing probe says nothing about
 /// cross-core acknowledgement.
 pub fn probe_environment() -> Result<CacheAttested, PatchError> {
+    // Custody deadlines need a working gated clock. Refuse before
+    // creating a probe child rather than discover that only after
+    // custody has been taken.
+    if crate::gate::now_ms().is_none() {
+        return Err(PatchError::CacheOpsUnavailable);
+    }
     let page = crate::page_size()?;
     let mut fds = [0 as libc::c_int; 2];
     // SAFETY: fds is a valid 2-int out array.
@@ -663,6 +678,34 @@ mod tests {
         unsafe { libc::close(fds[0]) };
         assert_eq!(result.unwrap_err(), PatchError::CacheOpsUnavailable);
         assert!(elapsed < std::time::Duration::from_secs(3), "{elapsed:?}");
+        let mut status: libc::c_int = 0;
+        let again = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG) };
+        assert_eq!(again, -1);
+        assert_eq!(
+            std::io::Error::last_os_error().raw_os_error(),
+            Some(libc::ECHILD)
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn collect_reports_the_real_fcntl_errno() {
+        // A bad read fd makes the first gated fcntl fail with
+        // EBADF. The error must carry that real errno (not 0 or a
+        // stale thread-local errno), after the child is discharged.
+        let pid = unsafe { libc::fork() };
+        assert!(pid >= 0);
+        if pid == 0 {
+            unsafe { libc::_exit(0) };
+        }
+        assert_eq!(
+            collect_probe_child(pid, -1, 150),
+            Err(PatchError::Os {
+                op: "fcntl(O_NONBLOCK)",
+                errno: libc::EBADF,
+            })
+        );
+        // The error path killed and discharged custody exactly.
         let mut status: libc::c_int = 0;
         let again = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG) };
         assert_eq!(again, -1);

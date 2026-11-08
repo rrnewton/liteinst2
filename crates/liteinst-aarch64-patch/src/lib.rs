@@ -2,7 +2,7 @@
 //! fact-only `liteinst-aarch64` decoder/emitter.
 //!
 //! This crate owns the unsafe runtime surface (dual RW/RX mappings,
-//! cache maintenance, and — in a later slice — the aligned site store)
+//! cache maintenance, and the aligned site store)
 //! so the fact crate stays `no_std` and `forbid(unsafe_code)`. The
 //! protocol contract is `crates/liteinst-aarch64/RUNTIME-PATCHER-DESIGN.md`:
 //! exclusive publication lease, both-valid invariant, retained custody
@@ -140,10 +140,17 @@ pub enum PatchError {
         /// The synchronization error that left publication pending.
         source: Box<PatchError>,
     },
-    /// The store window itself was refused at open, before any
-    /// store issued (for example a platform-policy mprotect
-    /// denial). Downstream store selection keys on exactly this
-    /// variant; it is never produced after a store.
+    /// The store window itself was refused at open, before this
+    /// operation issued a store (for example a platform-policy
+    /// mprotect denial). Downstream store selection keys on
+    /// exactly this variant. A rollback of an already-flipped
+    /// site can also produce it when re-opening the window for
+    /// the restoring store. Executor state depends on the site's
+    /// state: from `Unpatched`/`Flipped` the lease was released
+    /// before this error returns, but a rollback out of
+    /// `SyncPending`/`RetainedStop` custody returns it with the
+    /// stop still HELD — executors remain stopped and the caller
+    /// must not resume them onto the pending page.
     WindowRefused {
         /// The window-open error from the store backend.
         source: Box<PatchError>,
@@ -225,7 +232,10 @@ impl core::fmt::Display for PatchError {
                 write!(f, "post-store protection restore failed: {source}")
             }
             Self::WindowRefused { source } => {
-                write!(f, "store window refused before any store: {source}")
+                write!(
+                    f,
+                    "store window refused before this operation's store: {source}"
+                )
             }
             Self::CleanupFailed { expected, found } => {
                 write!(
@@ -263,9 +273,10 @@ pub fn page_size() -> Result<u64, PatchError> {
     Err(PatchError::Unsupported("page size query requires Linux"))
 }
 
-/// Patcher session: cache attestation plus the site registry. Flip
-/// execution arrives in the next slice; construction already occupies
-/// the design's attestation point so call sites do not change shape.
+/// Patcher session: cache attestation plus the site registry.
+/// Construction occupies the design's attestation point, so flip,
+/// completion, and rollback callers do not change shape when the
+/// environment probe result changes.
 pub struct Patcher {
     registry: SiteRegistry,
     attested: Option<cache::CacheAttested>,
@@ -333,6 +344,23 @@ impl Patcher {
     pub(crate) fn for_test(
         sync: unsafe fn(*mut u8, *mut u8, usize) -> Result<(), PatchError>,
     ) -> Self {
+        Self::with_test_token(sync)
+    }
+
+    /// Downstream test-support seam: the same synthetic attestation
+    /// as `for_test`, available only with the `test-support`
+    /// feature so downstream custody tests can construct pending
+    /// sites on hosts where the real probe is unsupported.
+    #[cfg(feature = "test-support")]
+    #[doc(hidden)]
+    pub fn test_with_sync(
+        sync: unsafe fn(*mut u8, *mut u8, usize) -> Result<(), PatchError>,
+    ) -> Self {
+        Self::with_test_token(sync)
+    }
+
+    #[cfg(any(test, feature = "test-support"))]
+    fn with_test_token(sync: unsafe fn(*mut u8, *mut u8, usize) -> Result<(), PatchError>) -> Self {
         Self {
             registry: SiteRegistry::new(),
             attested: Some(cache::CacheAttested::for_test()),

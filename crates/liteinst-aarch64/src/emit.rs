@@ -211,7 +211,7 @@ pub fn far_jump_words(reach: EntryReach, scratch: Reg, target: u64) -> Option<([
 }
 
 /// The bytes an island occupies for `payload_bytes` of words under the
-/// caller's page size (queried at runtime, for example via `sysconf`;
+/// caller's page size (queried at runtime, for example via `AT_PAGESZ`;
 /// 4 KiB and 64 KiB systems both occur). `None` when `page_size` is not
 /// a nonzero power of two or the rounding overflows.
 pub fn page_span(page_size: u64, payload_bytes: u64) -> Option<u64> {
