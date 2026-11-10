@@ -4,6 +4,8 @@
 > (`rrnewton/liteinst2`) is its home; the package was renamed from
 > `liteinst2` to `liteinst` at version 0.2.0 (same code, new name).
 > The former `liteinst2` crate is deprecated — use `liteinst`.
+>
+> Release notes: [CHANGELOG.md](https://github.com/rrnewton/liteinst2/blob/main/CHANGELOG.md).
 
 `liteinst` is a Rust library for **hooking machine code in a running program**.
 It lets you intercept a chosen point in already-loaded x86-64 code — redirecting
