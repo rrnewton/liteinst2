@@ -172,6 +172,7 @@ version = "0.1.0"
 dependencies = [
  "iced-x86",
  "libc",
+ "liteinst-jit",
  "liteinst-x86",
 ]
 

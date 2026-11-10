@@ -275,7 +275,8 @@ work (§§2–4 above) may use these stages as development fixtures
 but may not be claimed whole-program until I1-H review passes.
 
 Status at this section's commit (liteinst2 `main`
-`c4217e8965eaff5a209dbd9902cf3d64dfc7e2b5`):
+`c4217e8965eaff5a209dbd9902cf3d64dfc7e2b5`), updated for I1-E
+through I1-G1 on `main` `1b95913cee7023ae1d545bca10f3f6fc78db96e1`:
 
 - **I1-A landed** (`2b46ed54a14839513ebc122246e7926333c6f499`):
   backend-neutral recovery core in `src/recovery.rs`.
@@ -297,8 +298,8 @@ Status at this section's commit (liteinst2 `main`
   recovered block starts, translated handler, kernel
   `rt_sigreturn` resume, native-child differential — bounded
   exactly to the admitted shape in the I1-D detail below.
-- **I1-E implemented on branch `musejit2/i1e-20261106`,**
-  pending its two signal-frame reviews: arbitrary
+- **I1-E landed** (`cbd319d83fb006d8866d8541c7bb913893f20af1`,
+  then `2edcd80eab955e476b1c281dbbd680a37dd175c5`): arbitrary
   generated-phase async recovery with exact mid-block
   generated re-entry (raw precredit re-based, not a new
   translation), synchronous SIGSEGV/SIGFPE delivery at
@@ -309,9 +310,17 @@ Status at this section's commit (liteinst2 `main`
   and original-step async stops, blocked-poll delivery,
   sync faults outside copied insns, and handler-mutated
   mid-block resume PCs still stop by name (see I1-E detail).
-  I1-F through I1-H unstarted at that writing; I1-F is
-  implemented on branch `musejit2/i1f-20261106` (see its
-  detail below), pending dual review.
+- **I1-F landed** (`736454bcaff828689cc7f97ec962d495d3015399`):
+  masks, alternate stack, capped nesting (see its detail).
+- **I1-G split** (coordinator decision 2026-11-10): **I1-G1**
+  (RT ordering, RT retention vs standard coalescing,
+  `rt_(tg)sigqueueinfo` payloads and sender words, kernel
+  back-to-back frame setup) is implemented on branch
+  `jit6-cl/slice6-20261110`, pending two signal-frame
+  reviews; **I1-G2** (syscall restart, `SA_RESTART`) is
+  unstarted, needs its own scope, and until then
+  `SA_RESTART` actions stay ineligible by name. I1-H
+  unstarted.
 
 Each stage is its own branch off then-current liteinst2 `main`,
 signed, with exact-head `fmt`, Clippy, locked debug/release
@@ -356,7 +365,8 @@ rejected for exactly that reason.
 | I1-D One-signal round trip | Handler sees source PC/state; resume exact | Nesting, RT, altstack, mutation edge cases |
 | I1-E Arbitrary phases + sync faults | Boundary matrix matches native oracle | Nested/RT/restart completion |
 | I1-F Masks, altstack, nesting | Signal-state matrix matches native | RT queue payload/restart gaps named |
-| I1-G RT, payloads, restart | Ordering/coalescing matrix matches native | Only undisclosed gaps block claim |
+| I1-G1 RT, payloads, back-to-back | Ordering/coalescing/payload matrix matches native | Syscall restart, `SA_RESTART` |
+| I1-G2 Syscall restart | Restart matrix matches native | Only undisclosed gaps block claim |
 | I1-H Gate evidence | Differential + fuzz + mutants causal | Item-1 claim only after review |
 
 ### Stage detail
@@ -476,6 +486,120 @@ signals during pass-through syscalls with and without
 signals are not dequeued into tracer custody as the normal
 mechanism. Still refused: multi-threaded guests, `execve`
 successors (separately scoped), any unadmitted signal feature.
+Split into I1-G1 (everything but restart) and I1-G2
+(syscall restart).
+
+As implemented for I1-G1 on `jit6-cl/slice6-20261110`
+(kernel citations are `kernel/signal.c` in the Linux 7.1.3
+source at `199c9959d3a9b53f346c221757fc7ac507fbac50`, the
+running kernel's version; the native child confirms each
+behaviour on the host):
+
+- *Delivery set.* Async delivery admits SIGUSR1/SIGUSR2 and
+  the RT range 34..=64 (glibc SIGRTMIN..SIGRTMAX) under the
+  unchanged I1-F flag/mask/altstack/8-frame bounds. 32 and 33
+  (reserved by glibc/NPTL) stay outside, for delivery and for
+  queueing: one predicate serves both. `SA_RESTART` actions
+  stay ineligible (I1-G2).
+- *Ordering is the kernel's.* The tracer only injects the
+  signal the kernel presents at each delivery stop, with the
+  kernel's own siginfo (no rebuild, no rewrite for async
+  signals), so lowest-first, FIFO within an RT number,
+  private-before-shared dequeue (`:629`, `:632`), and
+  standard-signal coalescing (`legacy_queue`, `:1061`, which
+  keeps the first payload and still returns 0) all come from
+  the kernel.
+- *Back-to-back frames.* With several unblocked signals
+  pending, the kernel builds the next frame before the
+  stub runs and reports that delivery stop at the stub entry.
+  The tracer validates the frame just built, records it, and
+  injects the next signal over that frame's guest-visible
+  handler entry (the source handler, never the stub), so the
+  second frame's ucontext names the first signal's source
+  handler exactly as natively. An ineligible next signal is a
+  recovered `AsyncSignal` stop at that source handler entry.
+- *Queueing gate.* `rt_sigqueueinfo` and `rt_tgsigqueueinfo`
+  pass through, stepped over a tracer-staged copy of the guest
+  siginfo, so the kernel copies exactly the bytes classified.
+  The gate reads and stages the whole 128-byte record as a
+  conservative policy; the kernel copies the 48-byte
+  `kernel_siginfo` prefix and checks the rest only for unknown
+  layouts (`__copy_siginfo_from_user`, `:3535`). Every
+  returned guest state — including a recovered asynchronous
+  stop before syscall entry — carries the guest's own pointer
+  argument, never the staging address. The I1-D
+  `rt_sigaction` stub redirect shares that restore path; it
+  previously leaked the scratch address in `rsi` on the same
+  stop (fixed here, pre-existing on `main`). A failed scratch
+  restore is a named refusal.
+  Calls the kernel provably refuses with no side effect step,
+  so the guest sees the kernel's own errno, equal to native:
+  a forged code (`si_code >= 0` or `SI_TKILL`) whose compared
+  target (`pid`, or `tid` for the tg form, as a 32-bit
+  `pid_t`) is not the caller gets `-EPERM` before any lookup
+  (`:4199`, tg `:4246`, after the tg form's `-EINVAL` for a
+  non-positive id at `:4240`); and the tg form with the
+  caller's own TID but a foreign TGID gets `-ESRCH` from
+  `do_send_specific` (`:4124`, `:4128`) whatever the code.
+  `si_signo` is not checked: the kernel overwrites it with the
+  requested signal (`:3540`), as natively.
+  **Deliberate divergences from native, all failing closed by
+  name (`NoHandler`):** (1) a forged code aimed at the caller
+  itself (own pid, or own TID and TGID) is accepted by Linux
+  but refused here, because delivering it would forge kernel
+  provenance (`SI_KERNEL` SIGTRAP reads as an exit trap, a
+  positive SIGSEGV code as a synchronous fault); (2) a
+  non-forged call aimed at another task (foreign pid, or a
+  foreign TID) is refused even where native would fail (a
+  nonexistent pid gets `ESRCH`), because nothing proves the
+  kernel would not queue it; (3) an unreadable 128-byte
+  siginfo is refused, though native could succeed when only
+  the tail beyond the 48-byte prefix is unreadable. Otherwise
+  only the tested shape steps: `SI_QUEUE`, an admitted
+  signal, and every target word (full 64-bit register) equal
+  to the child's own pid, proven to be its own-namespace pid
+  through `NSpid` (the guest is single-threaded, so its TID
+  and TGID equal its pid).
+  *Invariant:* staging is sound only while `mprotect` and
+  `pkey_*` are not passed through. The kernel reads the
+  tracer-written copy, so readability of the guest buffer is
+  decided by the tracer's `process_vm_readv` (which applies no
+  protection keys), not by the guest's `copy_from_user`;
+  recheck when either syscall family is admitted.
+- *Follow-ups (not blockers):* (a) the I1-F `kill` self-send
+  gate still compares the target with the tracer's view of
+  the child pid without the `NSpid` proof the queueing gate
+  uses; the child is spawned by this tracer in the tracer's
+  own pid namespace and guest namespace changes are refused,
+  so no foreign send is reachable today — route `kill`
+  through the same proof later. (b) For native `EFAULT`
+  parity on an unreadable siginfo, a later stage may step
+  with the guest's original pointer only when the first 48
+  bytes are unreadable to the tracer, require `-EFAULT` as
+  the result (named stop otherwise), and never step when 48
+  bytes are readable but 128 are not.
+- *Evidence* (`tests/remote_signal_rt.rs`, translated vs the
+  native child): the RT order/retention/coalescing matrix
+  with kill-sent and forged-sender entries; back-to-back
+  frames for standard and RT pairs with a distinct handler
+  per signal (the second frame names the first signal's
+  handler, not its own); private-first `rt_tgsigqueueinfo`
+  with a 64-bit `sival_ptr`; kernel-refused calls with the
+  native errno (`EPERM`, `ESRCH`); a mismatched `si_signo`
+  overwritten as natively; the pointer argument registers
+  (`rsi`, `rdx`, `r10`) after every redirected syscall
+  compared with native; named refusals for forged self-sends,
+  foreign `SI_QUEUE` targets (including a tg call with both
+  ids naming a real process the test spawns, with nothing
+  queued in it), 32/33, `SA_RESTART`, unreadable siginfo, and
+  unadmitted signals; and, through a test seam compiled only
+  with the test-only `test-seams` cargo feature (enabled for
+  the crate's own tests through a self dev-dependency, inert
+  unless a test sets it, and restoring scratch before it
+  reports its own failure) that signals the traced child
+  between staging and the step, the guest pointer argument in
+  recovered pre-entry stops for both queue forms and
+  `rt_sigaction`. No claim beyond the tested shapes.
 
 **I1-H — Gate evidence and envelope rewrite.** Freeze the
 signal corpus, run the assigned differential/fuzz slices, and
