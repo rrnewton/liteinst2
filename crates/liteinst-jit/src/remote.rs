@@ -1,5 +1,5 @@
 //! Remote ptrace direct-block substrate (P1b I1-B through
-//! I1-F, internal and unstable).
+//! I1-G1, internal and unstable).
 //!
 //! A traced fixture child executes the same translations as
 //! the in-process executor, with this tracer as dispatcher:
@@ -9,16 +9,20 @@
 //! syscalls/nondeterministic instructions the stage admits are
 //! serviced by stepping the original instruction in the child.
 //! I1-C mirrors the guest signal registry from kernel
-//! readback. I1-D/I1-E/I1-F add genuine delivery on top of
-//! that mirror (async SIGUSR1/SIGUSR2 with masks, altstack,
-//! and nesting to an 8-frame cap, synchronous SIGSEGV/SIGFPE
-//! at copied insns on an empty frame stack, an `SA_SIGINFO`
-//! handler at a translated block start, recovery to a block
-//! start or an exact mid-block generated re-entry, no RT —
-//! see `P1B-DESIGN.md` §8): custom handlers are stubbed in
-//! the kernel disposition, the kernel builds the frame at
-//! the recovered source PC, the handler runs translated, and
-//! the guest restorer's `rt_sigreturn` resumes in cache.
+//! readback. I1-D through I1-G1 add genuine delivery on top
+//! of that mirror (async SIGUSR1/SIGUSR2 and the real-time
+//! range 34..=64 with masks, altstack, nesting to an 8-frame
+//! cap, and kernel back-to-back frame setup; guest
+//! self-queueing through `rt_sigqueueinfo` /
+//! `rt_tgsigqueueinfo` with `SI_QUEUE` payloads; synchronous
+//! SIGSEGV/SIGFPE at copied insns on an empty frame stack; an
+//! `SA_SIGINFO` handler at a translated block start; recovery
+//! to a block start or an exact mid-block generated re-entry;
+//! no syscall restart — see `P1B-DESIGN.md` §8): custom
+//! handlers are stubbed in the kernel disposition, the kernel
+//! queues, orders, and builds the frame at the recovered
+//! source PC, the handler runs translated, and the guest
+//! restorer's `rt_sigreturn` resumes in cache.
 //! Every other delivery shape still stops as a recovered
 //! outcome by name — including async stops in common-exit
 //! spilled stages and at generated PCs with no pcmap entry
@@ -53,13 +57,16 @@ pub const MAILBOX_PUBLISHED: u64 = 2;
 /// in this stage: `SYS_write` (the sole corpus syscall from
 /// I1-B), the I1-C registry set (`rt_sigaction`,
 /// `rt_sigprocmask`, `rt_sigpending`, `sigaltstack`, each
-/// observed for the tracer mirror), and the I1-F self-send
+/// observed for the tracer mirror), the I1-F self-send
 /// pair (`getpid`, `kill` — kill is additionally gated at the
 /// dispatch site to the traced child's own pid, so a guest
-/// can only signal itself). The lifecycle guard always runs
-/// first; any other number stops by name (`NoHandler`) rather
-/// than executing. This is a stage bound, not a generic
-/// guest-syscall claim.
+/// can only signal itself), and the I1-G1 queueing pair
+/// (`rt_sigqueueinfo`, `rt_tgsigqueueinfo` — gated by
+/// `prepare_sigqueue_step` to `SI_QUEUE` self-sends of an
+/// admitted signal, or to forged-code calls the kernel itself
+/// refuses). The lifecycle guard always runs first; any other
+/// number stops by name (`NoHandler`) rather than executing.
+/// This is a stage bound, not a generic guest-syscall claim.
 const PASS_THROUGH_SYSCALLS: &[u32] = &[
     libc::SYS_write as u32,
     libc::SYS_rt_sigaction as u32,
@@ -68,7 +75,34 @@ const PASS_THROUGH_SYSCALLS: &[u32] = &[
     libc::SYS_sigaltstack as u32,
     libc::SYS_getpid as u32,
     libc::SYS_kill as u32,
+    libc::SYS_rt_sigqueueinfo as u32,
+    libc::SYS_rt_tgsigqueueinfo as u32,
 ];
+
+/// Real-time signals admitted for delivery and self-queueing
+/// (I1-G1): glibc's SIGRTMIN (34) through SIGRTMAX (64). The
+/// kernel's 32 and 33 are reserved by glibc/NPTL and stay
+/// outside, for delivery and for queueing alike.
+const RT_ADMITTED: core::ops::RangeInclusive<i32> = 34..=64;
+
+/// The asynchronous signals this stage delivers, and the only
+/// signals a guest may queue with `rt_(tg)sigqueueinfo`:
+/// SIGUSR1/SIGUSR2 (I1-D/I1-F) and `RT_ADMITTED` (I1-G1). One
+/// predicate for both, so delivery and queueing cannot drift.
+fn async_delivery_admitted(sig: i32) -> bool {
+    sig == libc::SIGUSR1 || sig == libc::SIGUSR2 || RT_ADMITTED.contains(&sig)
+}
+
+/// Kernel `si_code` values (`asm-generic/siginfo.h`) the
+/// sigqueue gate distinguishes: `SI_QUEUE` is what `sigqueue(3)`
+/// sends; `SI_TKILL` is the code the kernel reserves for
+/// `tkill`/`tgkill`, which `rt_(tg)sigqueueinfo` treats as forged
+/// like any `si_code >= 0`.
+const SI_QUEUE: i32 = -1;
+const SI_TKILL: i32 = -6;
+/// Bytes of a user `siginfo_t` the kernel copies in for
+/// `rt_(tg)sigqueueinfo` (`__copy_siginfo_from_user`).
+const SIGINFO_LEN: usize = 128;
 
 /// Bytes reserved at the tail of the child code arena for the
 /// I1-D common signal-entry stub (a single `int3` at the tail
@@ -251,6 +285,26 @@ struct SigactionStep {
     requested: Option<u64>,
     step_rsi: Option<u64>,
     saved_scratch: Option<[u8; 32]>,
+}
+
+/// Prepared `rt_sigqueueinfo` / `rt_tgsigqueueinfo` step
+/// (I1-G1). The guest siginfo is copied verbatim into tracer
+/// scratch and the call steps with its pointer argument
+/// (`rdx`, or `r10` for the tg form) replaced by `staged`, so
+/// the kernel copies in exactly the bytes the gate classified
+/// — no later write to guest memory can change `si_code`
+/// between the check and the copy. `orig_info` is restored
+/// into the guest register after the step and `saved` into
+/// scratch on every path. `kernel_refuses` marks a forged-code
+/// call aimed at a foreign target, which the kernel must
+/// answer with an error.
+#[derive(Clone, Copy, Debug)]
+struct SigqueueStep {
+    tg: bool,
+    orig_info: u64,
+    staged: u64,
+    saved: [u8; SIGINFO_LEN],
+    kernel_refuses: bool,
 }
 
 /// Kernel handler word -> guest-visible handler word. A
@@ -581,8 +635,14 @@ const TRAP_TRACE: i32 = 2;
 /// Ptrace-report int3 stops carry SI_KERNEL on this kernel
 /// (observed live), while the in-process signal frame names
 /// the same breakpoint cause TRAP_BRKPT. Both are kernel
-/// breakpoint conventions with RIP after the trap byte; no
-/// user-sent signal can forge a positive kernel si_code.
+/// breakpoint conventions with RIP after the trap byte.
+/// A signal another process sends cannot carry a positive
+/// si_code (the kernel refuses `si_code >= 0` aimed at another
+/// task), but a task's `rt_(tg)sigqueueinfo` aimed at itself
+/// can carry any code, including SI_KERNEL. Positive codes
+/// stay unforgeable here only because the pass-through gate
+/// (`prepare_sigqueue_step`) admits self-queueing with exactly
+/// `SI_QUEUE` and refuses every forged self-send by name.
 const SI_KERNEL: i32 = 128;
 
 fn is_breakpoint_cause(si_code: i32) -> bool {
@@ -1039,6 +1099,99 @@ impl RemoteExecutable {
         Ok(step)
     }
 
+    /// The traced child's own pid exactly as its kernel
+    /// compares it (`task_pid_vnr(current)`), proven equal to
+    /// the tracer's view: `/proc/<pid>/status` `NSpid` must list
+    /// exactly one pid, ours. Any other shape (a nested pid
+    /// namespace, unreadable status) is `None` and the caller
+    /// fails closed.
+    fn own_pid_in_child_ns(&self) -> Option<i32> {
+        let text = std::fs::read_to_string(format!("/proc/{}/status", self.guard.pid)).ok()?;
+        let line = text.lines().find_map(|l| l.strip_prefix("NSpid:"))?;
+        let mut fields = line.split_whitespace();
+        let first: i32 = fields.next()?.parse().ok()?;
+        (fields.next().is_none() && first == self.guard.pid).then_some(first)
+    }
+
+    /// Gate one guest `rt_sigqueueinfo` (`pid, sig, info`) or
+    /// `rt_tgsigqueueinfo` (`tgid, tid, sig, info`) at its
+    /// syscall exit, before anything steps (I1-G1).
+    ///
+    /// The kernel (`kernel/signal.c` `do_rt_sigqueueinfo`,
+    /// `do_rt_tgsigqueueinfo`) answers a forged code
+    /// (`si_code >= 0` or `SI_TKILL`) with `-EPERM` before any
+    /// target lookup when the target it compares (`pid`, or
+    /// `tid` for the tg form, as a 32-bit `pid_t`) is not the
+    /// caller, and the tg form answers `-EINVAL` first for a
+    /// non-positive `tgid`/`tid`; nothing is queued either
+    /// way. Such calls step genuinely so the guest sees the
+    /// kernel's own errno. A forged code aimed at the caller
+    /// itself is accepted by Linux but would forge kernel
+    /// provenance on delivery (`SI_KERNEL` SIGTRAP reads as an
+    /// exit trap, a positive SIGSEGV code as a synchronous
+    /// fault), so it is refused by name — a deliberate
+    /// divergence from native. Every other call steps only as
+    /// the tested shape: `si_code == SI_QUEUE`, `si_signo`
+    /// equal to the requested signal, the signal admitted for
+    /// delivery, and every target word (full 64-bit register)
+    /// equal to the child's own pid; a non-forged call to
+    /// another task would really queue there and is refused by
+    /// name, as is an unreadable siginfo.
+    fn prepare_sigqueue_step(
+        &self,
+        state: &GuestState,
+        src_pc: u64,
+    ) -> Result<SigqueueStep, Refuse> {
+        let refuse = Refuse::NoHandler { src_pc };
+        let tg = state.rax as u32 == libc::SYS_rt_tgsigqueueinfo as u32;
+        let (sig_word, info_addr) = if tg {
+            (state.rdx, state.r10)
+        } else {
+            (state.rsi, state.rdx)
+        };
+        let mut info = [0u8; SIGINFO_LEN];
+        if read_mem(self.guard.pid, info_addr, &mut info).is_err() {
+            return Err(refuse);
+        }
+        let si_signo = i32::from_le_bytes(info[0..4].try_into().unwrap());
+        let si_code = i32::from_le_bytes(info[8..12].try_into().unwrap());
+        let own = self.own_pid_in_child_ns().ok_or(refuse.clone())?;
+        let forged = si_code >= 0 || si_code == SI_TKILL;
+        // The pid the kernel's forged-code test compares with
+        // the caller: the low 32 bits as `pid_t`, `tid` for tg.
+        let kernel_target = if tg {
+            state.rsi as u32 as i32
+        } else {
+            state.rdi as u32 as i32
+        };
+        let kernel_refuses = if forged {
+            if kernel_target == own {
+                return Err(refuse);
+            }
+            true
+        } else {
+            let own_word = own as u64;
+            let self_target = state.rdi == own_word && (!tg || state.rsi == own_word);
+            let sig_ok = i32::try_from(sig_word)
+                .is_ok_and(|sig| async_delivery_admitted(sig) && sig == si_signo);
+            if si_code != SI_QUEUE || !self_target || !sig_ok {
+                return Err(refuse);
+            }
+            false
+        };
+        let staged = self.scratch_addr();
+        let mut saved = [0u8; SIGINFO_LEN];
+        read_mem(self.guard.pid, staged, &mut saved)?;
+        write_mem(self.guard.pid, staged, &info)?;
+        Ok(SigqueueStep {
+            tg,
+            orig_info: info_addr,
+            staged,
+            saved,
+            kernel_refuses,
+        })
+    }
+
     /// Finish one stepped `rt_sigaction` (the caller restores
     /// scratch on every path first): virtualize the old-action
     /// handler word the guest observes, and reconcile the
@@ -1463,11 +1616,14 @@ impl RemoteExecutable {
     /// outcome. Registry/translation checks plus the exact
     /// restorer-bytes proof; frame and resume facts are
     /// validated in `deliver_signal`/`sigreturn_resume`.
-    /// Every exclusion here is an I1-E/F/G stage boundary, not
-    /// a silent fallback: nesting, real-time signals,
-    /// alternate stack, non-`SA_SIGINFO`/`SA_NODEFER` forms,
-    /// synchronous faults (never classified `Async`), and
-    /// handlers outside the translated block set.
+    /// Every exclusion here is a named stage boundary, not a
+    /// silent fallback: frames past the 8-frame cap, signals
+    /// outside the admitted sets (including the glibc-reserved
+    /// 32/33), flag words beyond `SA_SIGINFO` plus optional
+    /// `SA_NODEFER`/`SA_ONSTACK` (`SA_RESTART` is I1-G2), an
+    /// enabled altstack below the size floor, synchronous
+    /// delivery on a non-empty stack, and handlers outside the
+    /// translated block set.
     fn delivery_action(
         &self,
         sig: i32,
@@ -1481,14 +1637,15 @@ impl RemoteExecutable {
             return None;
         }
         // Tested sets only: asynchronous delivery admits
-        // exactly SIGUSR1/SIGUSR2 (I1-D/I1-F); synchronous
-        // fault delivery admits exactly SIGSEGV/SIGFPE at
-        // copied insns (I1-E, phase checked by the caller).
-        // Broadening either set needs its own witnesses.
+        // exactly SIGUSR1/SIGUSR2 (I1-D/I1-F) and the RT range
+        // 34..=64 (I1-G1); synchronous fault delivery admits
+        // exactly SIGSEGV/SIGFPE at copied insns (I1-E, phase
+        // checked by the caller). Broadening either set needs
+        // its own witnesses.
         let admitted = if synchronous {
             sig == libc::SIGSEGV || sig == libc::SIGFPE
         } else {
-            sig == libc::SIGUSR1 || sig == libc::SIGUSR2
+            async_delivery_admitted(sig)
         };
         if !admitted {
             return None;
@@ -1499,7 +1656,7 @@ impl RemoteExecutable {
         }
         // Tested flag words only: the I1-D base plus,
         // independently, SA_NODEFER and/or SA_ONSTACK (I1-F).
-        // Anything else (RESTART is I1-G; RESETHAND would also
+        // Anything else (RESTART is I1-G2; RESETHAND would also
         // stale the mirror when the kernel resets the
         // disposition on delivery; NOCLD*) keeps the stop.
         // sa_mask is arbitrary: the kernel applies it and the
@@ -1537,70 +1694,133 @@ impl RemoteExecutable {
         Some(action)
     }
 
-    /// One genuine delivery round trip's front half: rewrite
-    /// the stopped tracee to exact recovered source state,
-    /// inject the signal so the kernel builds the real frame
-    /// and enters the common stub, validate the frame against
-    /// recovery, and return the handler-entry source state
-    /// (kernel arguments intact, RIP at the source handler).
-    /// `Err(RunError::Fault)` is never produced here: once
-    /// injection starts, any provenance mismatch is a named
-    /// substrate refusal with the guest left stopped.
+    /// One genuine delivery's front half: rewrite the stopped
+    /// tracee to exact recovered source state, inject the
+    /// signal so the kernel builds the real frame and enters
+    /// the common stub, validate the frame against recovery,
+    /// and return the handler-entry source state (kernel
+    /// arguments intact, RIP at the source handler) together
+    /// with the frames built, bottom first.
+    ///
+    /// Back-to-back setup (I1-G1): when another signal is
+    /// pending and unblocked under the handler-entry mask, the
+    /// kernel builds that signal's frame immediately on top,
+    /// before the stub ever runs, and reports its delivery
+    /// stop with RIP at the stub entry. The frame just built is
+    /// validated and recorded exactly as at a stub trap; its
+    /// guest-visible handler entry (the source handler, never
+    /// the stub address) becomes the interrupted state the next
+    /// signal is injected over, so the next frame's ucontext
+    /// names the source handler as Linux would natively. An
+    /// ineligible next signal is a recovered `AsyncSignal`
+    /// stop at that handler entry (no handler insn retired);
+    /// any other provenance mismatch once injection starts is
+    /// a named substrate refusal with the guest left stopped.
     fn deliver_signal(
         &self,
         action: GuestAction,
         recovered: &crate::recovery::RecoveredStop,
         data: &JitData,
         gen_mid: Option<u64>,
-    ) -> Result<(GuestState, ActiveFrame), RunError> {
-        let sig = recovered.signum;
+        active: &[ActiveFrame],
+    ) -> Result<(GuestState, Vec<ActiveFrame>), RunError> {
         let mut regs = get_regs(self.guard.pid)?;
         apply_state(&mut regs, &recovered.state);
         set_regs(self.guard.pid, &regs)?;
+        let stub = self.signal_stub_addr();
+        let mut frames: Vec<ActiveFrame> = Vec::new();
+        // What the frame about to be built must record: the
+        // signal, its action, and the interrupted source PC/RSP
+        // (plus the exact mid-block re-entry for the first).
+        let (mut sig, mut action) = (recovered.signum, action);
+        let (mut resume_src, mut resume_rsp) = (recovered.src_pc, recovered.state.rsp);
+        let mut resume_gen_mid = gen_mid;
         self.cont(sig)?;
-        let status = wait_stop(self.guard.pid)?;
-        if !libc::WIFSTOPPED(status) || libc::WSTOPSIG(status) != libc::SIGTRAP {
-            return Err(self.unexpected_stop("signal stub stop provenance"));
-        }
-        let stub_regs = get_regs(self.guard.pid)?;
-        let si = stop_siginfo(self.guard.pid, libc::SIGTRAP);
-        let stub_ok = stub_regs.rip == self.signal_stub_addr() + 1
-            && si.is_some_and(|(signo, code, _)| {
-                signo == libc::SIGTRAP && is_breakpoint_cause(code)
-            });
-        if !stub_ok {
-            return Err(self.unexpected_stop("signal stub stop provenance"));
-        }
-        let frame_rsp = stub_regs.rsp;
-        let uc_addr = stub_regs.rdx;
-        let frame_rip = self.read_word(uc_greg_addr(uc_addr, GREG_RIP))?;
-        let frame_rsp_word = self.read_word(uc_greg_addr(uc_addr, GREG_RSP))?;
-        let pretcode = self.read_word(frame_rsp)?;
-        if uc_addr != frame_rsp + 8
-            || frame_rip != recovered.src_pc
-            || frame_rsp_word != recovered.state.rsp
-            || pretcode != action.restorer
-            || stub_regs.rdi != sig as u64
-        {
-            return Err(self.unexpected_stop("signal frame state mismatch"));
-        }
-        let mut handler_state = regs_to_state(&stub_regs);
-        handler_state.rip = action.handler;
-        Ok((
-            handler_state,
-            ActiveFrame {
+        loop {
+            let status = wait_stop(self.guard.pid)?;
+            if !libc::WIFSTOPPED(status) {
+                return Err(self.unexpected_stop("signal stub stop provenance"));
+            }
+            let stop_sig = libc::WSTOPSIG(status);
+            let stub_regs = get_regs(self.guard.pid)?;
+            let si = stop_siginfo(self.guard.pid, stop_sig);
+            let stub_trap = stop_sig == libc::SIGTRAP
+                && stub_regs.rip == stub + 1
+                && si.is_some_and(|(signo, code, _)| {
+                    signo == libc::SIGTRAP && is_breakpoint_cause(code)
+                });
+            let back_to_back = !stub_trap
+                && stub_regs.rip == stub
+                && classify_stop(
+                    Phase::Generated,
+                    stop_sig,
+                    status >> 16,
+                    si.map(|(signo, code, _)| (signo, code)),
+                    false,
+                ) == StopClass::Async;
+            if !stub_trap && !back_to_back {
+                return Err(self.unexpected_stop("signal stub stop provenance"));
+            }
+            // Either way the kernel has just built `sig`'s frame
+            // and set up its handler arguments: validate it.
+            let frame_rsp = stub_regs.rsp;
+            let uc_addr = stub_regs.rdx;
+            let frame_rip = self.read_word(uc_greg_addr(uc_addr, GREG_RIP))?;
+            let frame_rsp_word = self.read_word(uc_greg_addr(uc_addr, GREG_RSP))?;
+            let pretcode = self.read_word(frame_rsp)?;
+            if uc_addr != frame_rsp + 8
+                || frame_rip != resume_src
+                || frame_rsp_word != resume_rsp
+                || pretcode != action.restorer
+                || stub_regs.rdi != sig as u64
+            {
+                return Err(self.unexpected_stop("signal frame state mismatch"));
+            }
+            frames.push(ActiveFrame {
                 restorer: action.restorer,
                 frame_rsp,
                 uc_addr,
-                resume_src_pc: recovered.src_pc,
+                resume_src_pc: resume_src,
                 raw_branches: data.branch_count,
                 raw_instructions: data.instruction_count,
                 raw_poll: data.poll_remaining,
                 resolved_branches: recovered.branches,
                 resolved_instructions: recovered.instructions,
-                gen_mid,
-            },
-        ))
+                gen_mid: resume_gen_mid,
+            });
+            let mut handler_state = regs_to_state(&stub_regs);
+            handler_state.rip = action.handler;
+            if stub_trap {
+                return Ok((handler_state, frames));
+            }
+            // Back-to-back: `stop_sig` interrupts `sig`'s handler
+            // before its first instruction. Same eligibility as
+            // any async stop, against the stack including every
+            // frame built so far.
+            let mut stack = active.to_vec();
+            stack.extend_from_slice(&frames);
+            let Some(next_action) = self.delivery_action(stop_sig, &stack, false) else {
+                return Err(RunError::Fault(Box::new(Fault {
+                    also_pending: Vec::new(),
+                    kind: crate::recovery::FaultKind::AsyncSignal,
+                    src_pc: action.handler,
+                    addr: si.map_or(0, |s| s.2),
+                    signum: stop_sig,
+                    state: handler_state,
+                    branches: recovered.branches,
+                    instructions: recovered.instructions,
+                })));
+            };
+            let mut next_regs = stub_regs;
+            next_regs.rip = action.handler;
+            set_regs(self.guard.pid, &next_regs)?;
+            resume_src = action.handler;
+            resume_rsp = frame_rsp;
+            resume_gen_mid = None;
+            sig = stop_sig;
+            action = next_action;
+            self.cont(sig)?;
+        }
     }
 
     /// Read the full resume state from a live signal frame's
@@ -2026,9 +2246,9 @@ impl RemoteExecutable {
                         recovered.kind == crate::recovery::FaultKind::AsyncSignal && resumable
                     });
                     if let Some(action) = action {
-                        let (handler_state, frame) =
-                            self.deliver_signal(action, &recovered, &data, gen_mid)?;
-                        active.push(frame);
+                        let (handler_state, frames) =
+                            self.deliver_signal(action, &recovered, &data, gen_mid, &active)?;
+                        active.extend(frames);
                         state = handler_state;
                         exits += 1;
                         poll_remaining = data.poll_remaining;
@@ -2073,9 +2293,9 @@ impl RemoteExecutable {
                         if recovered.addr != addr {
                             set_siginfo_addr(self.guard.pid, recovered.addr)?;
                         }
-                        let (handler_state, frame) =
-                            self.deliver_signal(action, &recovered, &data, gen_mid)?;
-                        active.push(frame);
+                        let (handler_state, frames) =
+                            self.deliver_signal(action, &recovered, &data, gen_mid, &active)?;
+                        active.extend(frames);
                         state = handler_state;
                         exits += 1;
                         poll_remaining = data.poll_remaining;
@@ -2257,6 +2477,31 @@ impl RemoteExecutable {
                         );
                         self.registry = registry;
                         finished?;
+                    } else if state.rax as u32 == libc::SYS_rt_sigqueueinfo as u32
+                        || state.rax as u32 == libc::SYS_rt_tgsigqueueinfo as u32
+                    {
+                        let step = self.prepare_sigqueue_step(&state, data.exit_src)?;
+                        let mut step_state = state;
+                        if step.tg {
+                            step_state.r10 = step.staged;
+                        } else {
+                            step_state.rdx = step.staged;
+                        }
+                        let stepped = self.step_syscall(step_state, data.exit_src, &data);
+                        let _ = write_mem(self.guard.pid, step.staged, &step.saved);
+                        state = stepped?;
+                        if step.tg {
+                            state.r10 = step.orig_info;
+                        } else {
+                            state.rdx = step.orig_info;
+                        }
+                        // A forged-code call to a foreign target
+                        // stepped only on the kernel's documented
+                        // refusal; an accepted one means the model
+                        // is wrong and fails closed by name.
+                        if step.kernel_refuses && (state.rax as i64) >= 0 {
+                            return Err(self.unexpected_stop("kernel accepted forged sigqueue"));
+                        }
                     } else {
                         let obs = self.observe_syscall_entry(state.rax as u32, &state);
                         state = self.step_syscall(state, data.exit_src, &data)?;

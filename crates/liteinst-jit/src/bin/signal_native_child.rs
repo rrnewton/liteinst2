@@ -109,10 +109,13 @@ fn main() {
         .step_by(2)
         .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).expect("hex bytes"))
         .collect();
-    // Normalize SIGUSR1 to a true zero default, disable the
-    // altstack, and block SIGUSR1 so the parent's signal
-    // stays pending until the guest unblocks it — the same
-    // arrangement the remote child starts from.
+    // Normalize SIGUSR1/SIGUSR2 and the RT range 34..=64 to a
+    // true zero default (the remote child zeroes every
+    // catchable signal), disable the altstack, and set the
+    // mask to exactly the blocked signal so the parent's
+    // signal stays pending until the guest unblocks it — the
+    // same arrangement the remote child starts from, with no
+    // inherited mask bits.
     // SAFETY: single-threaded setup before any guest code.
     unsafe {
         let zero = KernelSigaction {
@@ -121,7 +124,7 @@ fn main() {
             restorer: 0,
             mask: 0,
         };
-        for sig in [libc::SIGUSR1, libc::SIGUSR2] {
+        for sig in [libc::SIGUSR1, libc::SIGUSR2].into_iter().chain(34..=64) {
             let rc = libc::syscall(
                 libc::SYS_rt_sigaction,
                 sig,
@@ -145,7 +148,7 @@ fn main() {
         libc::sigemptyset(&mut set);
         libc::sigaddset(&mut set, block_sig);
         assert_eq!(
-            libc::pthread_sigmask(libc::SIG_BLOCK, &set, core::ptr::null_mut()),
+            libc::pthread_sigmask(libc::SIG_SETMASK, &set, core::ptr::null_mut()),
             0,
             "block signal"
         );
