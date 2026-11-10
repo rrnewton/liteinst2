@@ -16,10 +16,19 @@ publish = false
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
+[features]
+# Test-only hooks (the remote pre-step signal seam). Enabled for
+# this crate's own tests through the self dev-dependency below;
+# never part of a production build.
+test-seams = []
+
 [dependencies]
 iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "encoder", "code_asm"] }
 libc = "0.2.186"
 liteinst-x86 = { version = "0.2.0", path = "../liteinst-x86", features = ["instr-info"] }
+
+[dev-dependencies]
+liteinst-jit = { path = ".", features = ["test-seams"] }
 
 [[bin]]
 name = "liteinst-jit-run"

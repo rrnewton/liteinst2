@@ -589,12 +589,17 @@ behaviour on the host):
   overwritten as natively; the pointer argument registers
   (`rsi`, `rdx`, `r10`) after every redirected syscall
   compared with native; named refusals for forged self-sends,
-  foreign `SI_QUEUE` targets, 32/33, `SA_RESTART`, unreadable
-  siginfo, and unadmitted signals; and, through a test-only
-  seam (inert unless a test sets it) that signals the traced
-  child between staging and the step, the guest pointer
-  argument in recovered pre-entry stops for both queue forms
-  and `rt_sigaction`. No claim beyond the tested shapes.
+  foreign `SI_QUEUE` targets (including a tg call with both
+  ids naming a real process the test spawns, with nothing
+  queued in it), 32/33, `SA_RESTART`, unreadable siginfo, and
+  unadmitted signals; and, through a test seam compiled only
+  with the test-only `test-seams` cargo feature (enabled for
+  the crate's own tests through a self dev-dependency, inert
+  unless a test sets it, and restoring scratch before it
+  reports its own failure) that signals the traced child
+  between staging and the step, the guest pointer argument in
+  recovered pre-entry stops for both queue forms and
+  `rt_sigaction`. No claim beyond the tested shapes.
 
 **I1-H — Gate evidence and envelope rewrite.** Freeze the
 signal corpus, run the assigned differential/fuzz slices, and

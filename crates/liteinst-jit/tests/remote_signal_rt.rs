@@ -32,7 +32,7 @@
 //! different tests must not overlap.
 
 use std::io::{Read, Write};
-use std::process::{Command, Stdio};
+use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 
 use iced_x86::BlockEncoderOptions;
@@ -914,6 +914,14 @@ fn kernel_refused_queue_calls_get_native_errno() {
                 forged_sender: false,
                 value: 0x99,
             },
+            Send::TgQueue {
+                tgid: Pid::Raw(FOREIGN_PID),
+                tid: Pid::Raw(FOREIGN_PID),
+                sig: RTMIN,
+                code: SI_USER,
+                forged_sender: false,
+                value: 0x99,
+            },
         ],
         unblock: false,
         pending_probe: true,
@@ -936,8 +944,8 @@ fn kernel_refused_queue_calls_get_native_errno() {
     let eperm = (-(libc::EPERM as i64)) as u64;
     let esrch = (-(libc::ESRCH as i64)) as u64;
     assert_eq!(
-        nw.rcs[1..6],
-        [eperm, eperm, eperm, esrch, esrch],
+        nw.rcs[1..7],
+        [eperm, eperm, eperm, esrch, esrch, eperm],
         "E4a native errno"
     );
     assert_eq!(tw.rcs, nw.rcs, "E4a translated errno equals native");
@@ -1010,14 +1018,104 @@ fn forged_sicode_to_self_refused_by_name_diverging_from_native() {
     );
 }
 
+/// A real foreign target this test spawns itself: the signal
+/// native child with `sig` blocked (so a wrongly queued signal
+/// stays pending and observable instead of killing it), parked
+/// reading a go byte that is never sent. Its 32-byte setup
+/// report is read first, which proves the mask is in place.
+/// Killed and reaped on drop, so a failed assert cannot leak it.
+struct Helper(Child);
+
+impl Helper {
+    fn spawn(sig: i32) -> Helper {
+        let child = Command::new(NATIVE_CHILD)
+            .args(["hex:c3", "0", "0", &sig.to_string()])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("spawn helper");
+        let mut h = Helper(child);
+        let mut raw = [0u8; 32];
+        h.0.stdout
+            .as_mut()
+            .expect("helper stdout")
+            .read_exact(&mut raw)
+            .expect("helper setup report");
+        h
+    }
+
+    fn pid(&self) -> u32 {
+        self.0.id()
+    }
+
+    /// Process-level and thread-level pending words.
+    fn pending(&self) -> (u64, u64) {
+        let pid = self.pid();
+        let words = |path: String| {
+            let text = std::fs::read_to_string(&path).expect("helper status");
+            text.lines()
+                .filter_map(|l| {
+                    l.strip_prefix("SigPnd:")
+                        .or_else(|| l.strip_prefix("ShdPnd:"))
+                })
+                .map(|v| u64::from_str_radix(v.trim(), 16).expect("pending hex"))
+                .fold(0, |acc, v| acc | v)
+        };
+        (
+            words(format!("/proc/{pid}/status")),
+            words(format!("/proc/{pid}/task/{pid}/status")),
+        )
+    }
+}
+
+impl Drop for Helper {
+    fn drop(&mut self) {
+        let _ = self.0.kill();
+        let _ = self.0.wait();
+    }
+}
+
 /// E4c: SI_QUEUE aimed at another task (pid, or TID for the
 /// tg form) could really queue there, so the pid gate refuses
 /// it by name — even for this nonexistent pid, where native
 /// gets ESRCH (a conservative, disclosed divergence: the
-/// tracer cannot prove the kernel would not queue).
+/// tracer cannot prove the kernel would not queue). The tg
+/// form with BOTH ids foreign is aimed at a real process the
+/// test spawned: nothing may be queued in it.
 #[test]
 fn sigqueue_to_foreign_target_refused_by_name_even_where_native_errs() {
     let _g = lock();
+    let helper = Helper::spawn(RTMIN);
+    let hp = helper.pid();
+    let fx = build(&single(Send::TgQueue {
+        tgid: Pid::Raw(hp),
+        tid: Pid::Raw(hp),
+        sig: RTMIN,
+        code: SI_QUEUE,
+        forged_sender: false,
+        value: 0x77,
+    }));
+    let t = run_translated(&fx);
+    assert_eq!(
+        helper.pending(),
+        (0, 0),
+        "E4c real foreign tgid+tid: nothing queued in the helper"
+    );
+    let want = RunError::Refuse(Refuse::NoHandler {
+        src_pc: t.info.base + fx.send_pcs[0],
+    });
+    assert_eq!(
+        t.out.as_ref().err(),
+        Some(&want),
+        "E4c real foreign tgid+tid: outcome"
+    );
+    assert_eq!(
+        proc_pending(t.remote.child_pid_for_test()),
+        0,
+        "E4c real foreign tgid+tid: nothing queued in the child"
+    );
+    drop(t);
+    drop(helper);
     expect_refused(
         &single(queue_to(Pid::Raw(FOREIGN_PID), RTMIN, SI_QUEUE)),
         0,

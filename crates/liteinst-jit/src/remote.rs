@@ -891,6 +891,7 @@ pub struct RemoteExecutable {
     registry: SignalRegistry,
     /// Test seam, inert unless set: see
     /// `set_pre_redirected_step_signal_for_test`.
+    #[cfg(feature = "test-seams")]
     pre_redirected_step_signal: Option<i32>,
 }
 
@@ -1058,6 +1059,7 @@ impl RemoteExecutable {
             translation: None,
             profile: CountProfile::BranchesAndInstructions,
             registry,
+            #[cfg(feature = "test-seams")]
             pre_redirected_step_signal: None,
         })
     }
@@ -1450,13 +1452,16 @@ impl RemoteExecutable {
     /// been staged and immediately before the step resumes the
     /// child, so an asynchronous stop lands deterministically
     /// at that boundary (before syscall entry). Inert (`None`)
-    /// by default; it never signals any other process.
+    /// by default; it never signals any other process. Compiled
+    /// only with the test-only `test-seams` feature.
+    #[cfg(feature = "test-seams")]
     #[doc(hidden)]
     pub fn set_pre_redirected_step_signal_for_test(&mut self, sig: Option<i32>) {
         self.pre_redirected_step_signal = sig;
     }
 
     /// Current test-seam setting (`None` unless a test set it).
+    #[cfg(feature = "test-seams")]
     #[doc(hidden)]
     pub fn pre_redirected_step_signal_for_test(&self) -> Option<i32> {
         self.pre_redirected_step_signal
@@ -1483,9 +1488,12 @@ impl RemoteExecutable {
     ) -> Result<GuestState, RunError> {
         let mut step_state = state;
         reg.set(&mut step_state, staged);
+        #[cfg(feature = "test-seams")]
         if let Some(sig) = self.pre_redirected_step_signal {
             // SAFETY: signalling this tracer's own traced child.
             if unsafe { libc::kill(self.guard.pid, sig) } != 0 {
+                // Cleanup first: the staged bytes never stay.
+                write_mem(self.guard.pid, self.scratch_addr(), saved)?;
                 return Err(remote_err("test pre-step signal").into());
             }
         }
