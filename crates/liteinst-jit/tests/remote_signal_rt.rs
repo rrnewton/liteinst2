@@ -10,13 +10,20 @@
 //! and the forged-code-to-foreign-pid case asserts the native
 //! errno, not a refusal.
 //!
+//! I1-G2 (the last group of tests): syscall restart. A signal
+//! interrupts `rt_sigsuspend`, `FUTEX_WAIT_PRIVATE` or
+//! `nanosleep`, sent either before an `rt_sigsuspend` unblocks
+//! it or by a test thread once the child is blocked (see
+//! `Sender`); the frame's ucontext RIP, RAX and saved mask and
+//! the syscall result must match native.
+//!
 //! Fixtures are assembled with iced-x86 `CodeAssembler`.
 //! Layout: one `SA_SIGINFO` handler per installed signal (same
 //! body, distinct offsets, so a frame naming the wrong handler
 //! is visible), the restorer (`mov eax,15; syscall`), then
 //! straight-line main code (every main instruction retires
 //! exactly once). Buffer offsets are `[rbx]` (rbx = dst; only
-//! `dst[0..640]` is reported by the native child):
+//! `dst[0..1024]` is reported by the native child):
 //! - `0..32` act, `0x80` new mask, `0x88` old mask,
 //!   `0x90` rt_sigpending set;
 //! - `152 + 8*k` the pointer argument register (`rsi` for
@@ -24,16 +31,22 @@
 //!   after the k-th redirected syscall;
 //! - `256 + 8*k` result of the k-th recorded syscall;
 //! - `376` next log entry pointer, `384` log entry count,
-//!   `392 + 40*i` entry i: siginfo words 0, 8, 16, 24 and the
-//!   ucontext RIP;
+//!   `392 + 56*i` entry i: siginfo words 0, 8, 16, 24, then the
+//!   ucontext RIP, RAX, and saved signal mask;
+//! - I1-G2: `944` rt_sigsuspend mask, `960` nanosleep request,
+//!   `984` futex word (every handler sets it to 1), `1000`
+//!   nanosleep remainder (sentinel-filled, compared by range);
 //! - `1024..1152` the siginfo a queue call sends (unreported).
 //!
 //! Each test holds `SERIAL`: ptrace children and signals from
 //! different tests must not overlap.
 
 use std::io::{Read, Write};
+use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
 use std::process::{Child, Command, Stdio};
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 use iced_x86::BlockEncoderOptions;
 use iced_x86::code_asm::*;
@@ -56,6 +69,8 @@ const RTMAX: i32 = 64;
 /// SA_RESTORER | SA_SIGINFO, the I1-D base flag word.
 const FLAGS: u32 = 0x0400_0004;
 const SA_RESTART: u32 = 0x1000_0000;
+/// Unmodelled by the tracer: keeps an action ineligible.
+const SA_RESETHAND: u32 = 0x8000_0000;
 const SI_USER: i32 = 0;
 const SI_QUEUE: i32 = -1;
 const SI_TKILL: i32 = -6;
@@ -75,7 +90,12 @@ const RC_BASE: i32 = 256;
 const LOG_PTR: i32 = 376;
 const LOG_COUNT: i32 = 384;
 const LOG_BASE: i32 = 392;
-const ENTRY_LEN: i32 = 40;
+const ENTRY_LEN: i32 = 56;
+const REPORT: usize = 1024;
+const SUSPEND_MASK: i32 = 944;
+const NANO_REQ: i32 = 960;
+const FUTEX_WORD: i32 = 984;
+const NANO_REM: i32 = 1000;
 const INFO: i32 = 1024;
 
 fn sig_bit(sig: i32) -> u64 {
@@ -109,6 +129,33 @@ enum Send {
     },
     /// rt_sigqueueinfo with an unreadable siginfo pointer.
     QueueBadPtr(i32),
+    /// I1-G2: rt_sigsuspend with this temporary mask.
+    Suspend(u64),
+    /// I1-G2: futex(FUTEX_WORD, op, 0, timeout) — the admitted
+    /// shape is op FUTEX_WAIT_PRIVATE (128) with no timeout.
+    Futex {
+        op: u32,
+        timeout: bool,
+    },
+    /// The admitted futex wait reached by a direct `jmp` to the
+    /// syscall, so the syscall starts its own block (a restart
+    /// resumes through the block-start path, not the mid-block
+    /// re-entry whose re-base would hide a miscredit).
+    FutexWaitAtBlockStart,
+    /// I1-G2: nanosleep({secs, 0}, &rem).
+    Nanosleep(u32),
+    /// clock_nanosleep(CLOCK_MONOTONIC, 0, &req, &rem): never
+    /// passed through.
+    ClockNanosleep,
+    /// rt_sigprocmask(SIG_BLOCK, NULL, &old at 0x88): query.
+    QueryMask,
+}
+
+fn futex_wait() -> Send {
+    Send::Futex {
+        op: 128,
+        timeout: false,
+    }
 }
 
 struct Spec {
@@ -160,6 +207,11 @@ fn emit_handler(a: &mut CodeAssembler) {
     }
     a.mov(r8, qword_ptr(rdx + 168)).unwrap(); // uc_mcontext RIP
     a.mov(qword_ptr(rcx + 32), r8).unwrap();
+    a.mov(r8, qword_ptr(rdx + 144)).unwrap(); // uc_mcontext RAX
+    a.mov(qword_ptr(rcx + 40), r8).unwrap();
+    a.mov(r8, qword_ptr(rdx + 296)).unwrap(); // uc_sigmask
+    a.mov(qword_ptr(rcx + 48), r8).unwrap();
+    a.mov(qword_ptr(rbx + FUTEX_WORD), 1).unwrap();
     a.add(rcx, ENTRY_LEN).unwrap();
     a.mov(qword_ptr(rbx + LOG_PTR), rcx).unwrap();
     a.inc(qword_ptr(rbx + LOG_COUNT)).unwrap();
@@ -222,7 +274,8 @@ fn build(spec: &Spec) -> Fx {
         a.lea(rax, qword_ptr(rbp + (i as u64 * hlen) as i32))
             .unwrap();
         a.mov(qword_ptr(rbx), rax).unwrap();
-        a.mov(qword_ptr(rbx + 8), flags as i32).unwrap();
+        a.mov(dword_ptr(rbx + 8), flags).unwrap();
+        a.mov(dword_ptr(rbx + 12), 0u32).unwrap();
         a.mov(qword_ptr(rbx + 16), r12).unwrap();
         a.mov(dword_ptr(rbx + 24), mask as u32).unwrap();
         a.mov(dword_ptr(rbx + 28), (mask >> 32) as u32).unwrap();
@@ -322,6 +375,59 @@ fn build(spec: &Spec) -> Fx {
                 a.mov(edx, 0x10u32).unwrap();
                 a.mov(eax, libc::SYS_rt_sigqueueinfo as u32).unwrap();
             }
+            Send::Suspend(mask) => {
+                a.mov(dword_ptr(rbx + SUSPEND_MASK), mask as u32).unwrap();
+                a.mov(dword_ptr(rbx + (SUSPEND_MASK + 4)), (mask >> 32) as u32)
+                    .unwrap();
+                a.lea(rdi, qword_ptr(rbx + SUSPEND_MASK)).unwrap();
+                a.mov(esi, 8u32).unwrap();
+                a.mov(eax, libc::SYS_rt_sigsuspend as u32).unwrap();
+            }
+            Send::FutexWaitAtBlockStart => {
+                a.lea(rdi, qword_ptr(rbx + FUTEX_WORD)).unwrap();
+                a.mov(esi, 128u32).unwrap();
+                a.xor(edx, edx).unwrap();
+                a.xor(r10d, r10d).unwrap();
+                a.mov(eax, libc::SYS_futex as u32).unwrap();
+                a.jmp(at).unwrap();
+            }
+            Send::Futex { op, timeout } => {
+                a.lea(rdi, qword_ptr(rbx + FUTEX_WORD)).unwrap();
+                a.mov(esi, op).unwrap();
+                a.xor(edx, edx).unwrap();
+                if timeout {
+                    a.mov(qword_ptr(rbx + NANO_REQ), 1).unwrap();
+                    a.lea(r10, qword_ptr(rbx + NANO_REQ)).unwrap();
+                } else {
+                    a.xor(r10d, r10d).unwrap();
+                }
+                a.mov(eax, libc::SYS_futex as u32).unwrap();
+            }
+            Send::Nanosleep(secs) => {
+                a.mov(qword_ptr(rbx + NANO_REQ), secs as i32).unwrap();
+                a.mov(qword_ptr(rbx + (NANO_REQ + 8)), 0).unwrap();
+                a.mov(qword_ptr(rbx + NANO_REM), -1).unwrap();
+                a.mov(qword_ptr(rbx + (NANO_REM + 8)), -1).unwrap();
+                a.lea(rdi, qword_ptr(rbx + NANO_REQ)).unwrap();
+                a.lea(rsi, qword_ptr(rbx + NANO_REM)).unwrap();
+                a.mov(eax, libc::SYS_nanosleep as u32).unwrap();
+            }
+            Send::ClockNanosleep => {
+                a.mov(qword_ptr(rbx + NANO_REQ), 1).unwrap();
+                a.mov(qword_ptr(rbx + (NANO_REQ + 8)), 0).unwrap();
+                a.mov(edi, 1u32).unwrap(); // CLOCK_MONOTONIC
+                a.xor(esi, esi).unwrap();
+                a.lea(rdx, qword_ptr(rbx + NANO_REQ)).unwrap();
+                a.lea(r10, qword_ptr(rbx + NANO_REM)).unwrap();
+                a.mov(eax, libc::SYS_clock_nanosleep as u32).unwrap();
+            }
+            Send::QueryMask => {
+                a.mov(edi, libc::SIG_BLOCK as u32).unwrap();
+                a.xor(esi, esi).unwrap();
+                a.lea(rdx, qword_ptr(rbx + 0x88)).unwrap();
+                a.mov(r10d, 8u32).unwrap();
+                a.mov(eax, libc::SYS_rt_sigprocmask as u32).unwrap();
+            }
         }
         a.set_label(&mut at).unwrap();
         send_before.push((a.instructions().len() - m0) as u64);
@@ -330,7 +436,7 @@ fn build(spec: &Spec) -> Fx {
         let arg = match send {
             Send::Queue { .. } => Some(rdx),
             Send::TgQueue { .. } => Some(r10),
-            Send::Kill(_) | Send::QueueBadPtr(_) => None,
+            _ => None,
         };
         if let Some(reg) = arg {
             a.mov(qword_ptr(rbx + (ARG_BASE + 8 * args)), reg).unwrap();
@@ -415,11 +521,16 @@ struct Entry {
 /// Normalized witness: recorded syscall results, the pointer
 /// argument registers after redirected syscalls (as offsets
 /// from dst), the old mask at unblock, the rt_sigpending probe,
-/// and the handler log.
+/// the handler log, per entry the ucontext RAX and saved mask
+/// (`frames`), and the I1-G2 words (suspend mask, nanosleep
+/// request, futex word). The nanosleep remainder is elapsed-
+/// time dependent and compared separately by range.
 #[derive(Debug, Eq, PartialEq)]
 struct Witness {
     rcs: Vec<u64>,
     args: Vec<u64>,
+    frames: Vec<(u64, u64)>,
+    g2: [u64; 4],
     old_mask: u64,
     pending: u64,
     log: Vec<Entry>,
@@ -447,7 +558,20 @@ fn witness(data: &[u8], spec: &Spec, base: u64, dst: u64, own_pid: u32) -> Witne
             }
         })
         .collect();
+    let frames = (0..count as i32)
+        .map(|i| {
+            let e = LOG_BASE + ENTRY_LEN * i;
+            (word(data, e + 40), word(data, e + 48))
+        })
+        .collect();
     Witness {
+        frames,
+        g2: [
+            word(data, SUSPEND_MASK),
+            word(data, NANO_REQ),
+            word(data, NANO_REQ + 8),
+            word(data, FUTEX_WORD),
+        ],
         rcs: (0..n_rc(spec) as i32)
             .map(|k| word(data, RC_BASE + 8 * k))
             .collect(),
@@ -488,10 +612,141 @@ fn run_translated(fx: &Fx) -> Translated {
     run_translated_with(fx, None)
 }
 
+fn run_translated_with(fx: &Fx, pre_step_signal: Option<i32>) -> Translated {
+    run_translated_full(fx, pre_step_signal, Ext::None)
+}
+
+/// What a test thread does to a running child (I1-G2).
+#[derive(Clone, Copy)]
+enum Ext {
+    None,
+    /// Only bound the run: 10 s, then fail by name.
+    Watchdog,
+    /// Send `sig` once the child is blocked in syscall `nr`.
+    Send(i64, i32),
+}
+
+/// I1-G2 external interruption. Once the child is blocked in
+/// syscall `nr` (the first field of `/proc/<pid>/syscall`),
+/// this test process sends it `sig` through a pidfd opened
+/// while the child was known alive and unreaped, so no signal
+/// can reach a reused pid. Bounded both ways, failing by name:
+/// a child that never blocks in `nr` within 5 s is SIGKILLed
+/// through the same pidfd (so the run returns) and the test
+/// fails; so is a run still going 10 s after the send. A run
+/// that ends before the child ever blocked fails too. As a
+/// bare watchdog (no `nr`), the 10 s bound runs from start.
+struct Sender {
+    done: Arc<AtomicBool>,
+    handle: std::thread::JoinHandle<Result<(), String>>,
+}
+
+fn blocked_in(pid: u32, nr: i64) -> bool {
+    std::fs::read_to_string(format!("/proc/{pid}/syscall"))
+        .ok()
+        .and_then(|t| t.split_whitespace().next()?.parse::<i64>().ok())
+        == Some(nr)
+}
+
+impl Sender {
+    /// Call while `pid` is this test's own live, unreaped child.
+    fn start(pid: u32, ext: Ext) -> Option<Sender> {
+        let send = match ext {
+            Ext::None => return None,
+            Ext::Watchdog => None,
+            Ext::Send(nr, sig) => Some((nr, sig)),
+        };
+        // SAFETY: pidfd_open has no memory arguments.
+        let fd = unsafe { libc::syscall(libc::SYS_pidfd_open, pid as libc::pid_t, 0) };
+        assert!(
+            fd >= 0,
+            "G2 sender: pidfd_open {pid}: {}",
+            std::io::Error::last_os_error()
+        );
+        // SAFETY: a fresh descriptor this test now owns.
+        let pidfd = unsafe { OwnedFd::from_raw_fd(fd as i32) };
+        let done = Arc::new(AtomicBool::new(false));
+        let flag = Arc::clone(&done);
+        let handle = std::thread::spawn(move || {
+            let signal = |s: i32| {
+                // SAFETY: pidfd_send_signal with a NULL siginfo
+                // (kernel-filled SI_USER, like kill(2)).
+                unsafe {
+                    libc::syscall(
+                        libc::SYS_pidfd_send_signal,
+                        pidfd.as_raw_fd(),
+                        s,
+                        core::ptr::null::<libc::siginfo_t>(),
+                        0,
+                    )
+                }
+            };
+            let t0 = Instant::now();
+            let sig = if let Some((nr, sig)) = send {
+                while !blocked_in(pid, nr) {
+                    if flag.load(Ordering::SeqCst) {
+                        return Err(format!(
+                            "G2 sender: run ended before the guest blocked in syscall {nr}"
+                        ));
+                    }
+                    if t0.elapsed() > Duration::from_secs(5) {
+                        signal(libc::SIGKILL);
+                        return Err(format!(
+                            "G2 sender: guest never blocked in syscall {nr} within 5 s"
+                        ));
+                    }
+                    std::thread::sleep(Duration::from_millis(1));
+                }
+                if signal(sig) != 0 {
+                    return Err(format!(
+                        "G2 sender: pidfd_send_signal {sig}: {}",
+                        std::io::Error::last_os_error()
+                    ));
+                }
+                sig
+            } else {
+                0
+            };
+            let t1 = Instant::now();
+            while !flag.load(Ordering::SeqCst) {
+                if t1.elapsed() > Duration::from_secs(10) {
+                    signal(libc::SIGKILL);
+                    return Err(if send.is_some() {
+                        format!("G2 sender: run still going 10 s after sending signal {sig}")
+                    } else {
+                        "G2 watchdog: run still going after 10 s".to_string()
+                    });
+                }
+                std::thread::sleep(Duration::from_millis(1));
+            }
+            Ok(())
+        });
+        Some(Sender { done, handle })
+    }
+
+    /// Stop the sender and report its verdict; call before the
+    /// child is reaped.
+    fn finish(self) -> Result<(), String> {
+        self.done.store(true, Ordering::SeqCst);
+        self.handle.join().expect("sender thread")
+    }
+}
+
+fn ext(send: Option<(i64, i32)>) -> Ext {
+    send.map_or(Ext::None, |(nr, sig)| Ext::Send(nr, sig))
+}
+
+fn finish_sender(sender: Option<Sender>) {
+    if let Some(Err(e)) = sender.map(Sender::finish) {
+        panic!("{e}");
+    }
+}
+
 /// `pre_step_signal`: the tracer's test seam sends this signal
 /// to its own child after a redirected syscall argument is
 /// staged and just before the step resumes the child.
-fn run_translated_with(fx: &Fx, pre_step_signal: Option<i32>) -> Translated {
+/// `ext`: what a [`Sender`] thread does to the child.
+fn run_translated_full(fx: &Fx, pre_step_signal: Option<i32>, ext: Ext) -> Translated {
     let mut remote = RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &fx.bytes)
         .expect("spawn remote");
     assert_eq!(
@@ -520,8 +775,10 @@ fn run_translated_with(fx: &Fx, pre_step_signal: Option<i32>) -> Translated {
     s.rbp = info.base;
     s.r12 = info.base + fx.restorer_off;
     s.r13 = info.src;
+    let sender = Sender::start(remote.child_pid_for_test() as u32, ext);
     let out = remote.run(s, RETURN_SENTINEL);
-    let mut data = vec![0u8; 640];
+    finish_sender(sender);
+    let mut data = vec![0u8; REPORT];
     assert!(remote.read_mem(info.dst, &mut data));
     Translated {
         remote,
@@ -540,6 +797,10 @@ struct Native {
 }
 
 fn run_native(fx: &Fx) -> Native {
+    run_native_sent(fx, Ext::None)
+}
+
+fn run_native_sent(fx: &Fx, ext: Ext) -> Native {
     let hex: String = fx.bytes.iter().map(|b| format!("{b:02x}")).collect();
     let mut child = Command::new(NATIVE_CHILD)
         .args([
@@ -552,6 +813,7 @@ fn run_native(fx: &Fx) -> Native {
         .spawn()
         .expect("spawn native child");
     let pid = child.id();
+    let sender = Sender::start(pid, ext);
     let mut stdout = child.stdout.take().expect("native stdout");
     let mut raw = [0u8; 32];
     stdout.read_exact(&mut raw).expect("native info");
@@ -563,8 +825,12 @@ fn run_native(fx: &Fx) -> Native {
         .expect("native stdin")
         .write_all(&[1u8])
         .expect("native go byte");
-    let mut out = vec![0u8; 8 + 640];
-    stdout.read_exact(&mut out).expect("native result");
+    let mut out = vec![0u8; 8 + REPORT];
+    let read = stdout.read_exact(&mut out);
+    // The sender's verdict (a named bound) explains a short
+    // read better than the read error; both precede the reap.
+    finish_sender(sender);
+    read.expect("native result");
     let status = child.wait().expect("wait native child");
     assert!(status.success(), "native child status {status}");
     Native {
@@ -596,14 +862,26 @@ fn real_uid() -> u32 {
 /// Run both children; assert both returned 42 with equal
 /// witnesses, pin translated counts, and return the witness.
 fn differential(spec: &Spec, deliveries: u64, label: &str) -> (Fx, Witness, Translated) {
+    let (fx, w, t, _) = differential_sent(spec, deliveries, label, None);
+    (fx, w, t)
+}
+
+/// [`differential`] with an optional [`Sender`] `(nr, sig)`
+/// aimed at each child; also returns the native report.
+fn differential_sent(
+    spec: &Spec,
+    deliveries: u64,
+    label: &str,
+    send: Option<(i64, i32)>,
+) -> (Fx, Witness, Translated, Vec<u8>) {
     let fx = build(spec);
-    let n = run_native(&fx);
+    let n = run_native_sent(&fx, ext(send));
     assert_eq!(n.result, 42, "{label}: native result");
     let nw = witness(&n.data, spec, n.base, n.dst, n.pid);
     // Guest-visible witness first, whatever the translated
     // outcome: a tracer that stops early or corrupts a frame
     // fails on the substantive difference, not on an unwrap.
-    let t = run_translated(&fx);
+    let t = run_translated_full(&fx, None, ext(send));
     let own = t.remote.child_pid_for_test() as u32;
     let tw = witness(&t.data, spec, t.info.base, t.info.dst, own);
     assert_eq!(
@@ -627,7 +905,7 @@ fn differential(spec: &Spec, deliveries: u64, label: &str) -> (Fx, Witness, Tran
         "{label}: instructions"
     );
     assert_eq!(out.branches, fx.main_branches, "{label}: branches");
-    (fx, tw, t)
+    (fx, tw, t, n.data)
 }
 
 fn queue(sig: i32, value: u64) -> Send {
@@ -784,15 +1062,15 @@ fn back_to_back_rt_frames_match_native() {
 }
 
 /// E2c: back-to-back onto an ineligible second action
-/// (SA_RESTART stays refused until I1-G2): a recovered async
-/// stop at the first handler's source entry, before any
-/// handler instruction retired.
+/// (SA_RESETHAND is unmodelled): a recovered async stop at the
+/// first handler's source entry, before any handler
+/// instruction retired.
 #[test]
 fn back_to_back_ineligible_stops_at_source_handler_entry() {
     let _g = lock();
     let both = sig_bit(USR1) | sig_bit(USR2);
     let spec = Spec {
-        installs: vec![(USR1, FLAGS, 0), (USR2, FLAGS | SA_RESTART, 0)],
+        installs: vec![(USR1, FLAGS, 0), (USR2, FLAGS | SA_RESETHAND, 0)],
         block: both,
         sends: vec![Send::Kill(USR1), Send::Kill(USR2)],
         unblock: true,
@@ -965,8 +1243,12 @@ fn kernel_refused_queue_calls_get_native_errno() {
 /// Translated run that must stop with `NoHandler` at the
 /// syscall of send `idx`, with nothing queued.
 fn expect_refused(spec: &Spec, idx: usize, label: &str) {
+    expect_refused_ext(spec, idx, label, Ext::None);
+}
+
+fn expect_refused_ext(spec: &Spec, idx: usize, label: &str, ext: Ext) {
     let fx = build(spec);
-    let t = run_translated(&fx);
+    let t = run_translated_full(&fx, None, ext);
     let want = RunError::Refuse(Refuse::NoHandler {
         src_pc: t.info.base + fx.send_pcs[idx],
     });
@@ -1162,14 +1444,29 @@ fn reserved_32_33_refused_for_queue_and_delivery() {
     }
 }
 
-/// E4f, E4g, E4i: an RT handler with SA_RESTART (I1-G2) keeps
-/// the recovered stop; an unreadable siginfo and an unadmitted
-/// signal (SIGTERM) are refused by name.
+/// E4f, E4g, E4i: an RT handler with SA_RESETHAND (unmodelled)
+/// keeps the recovered stop; an unreadable siginfo and an
+/// unadmitted signal (SIGTERM) are refused by name. E4f+: with
+/// I1-G2, SA_RESTART alone is admitted and changes nothing
+/// outside a syscall restart (delivery matches native).
 #[test]
-fn rt_restart_unreadable_unadmitted_refused() {
+fn rt_resethand_unreadable_unadmitted_refused() {
     let _g = lock();
     let spec = Spec {
         installs: vec![(RTMIN, FLAGS | SA_RESTART, 0)],
+        block: sig_bit(RTMIN),
+        sends: vec![queue(RTMIN, 0x5b)],
+        unblock: true,
+        pending_probe: false,
+    };
+    let (fx, w, _t) = differential(&spec, 1, "E4f+ SA_RESTART admitted");
+    assert_eq!(
+        w.log,
+        vec![queued(RTMIN, 0x5b, fx.resume_off)],
+        "E4f+ SA_RESTART RT delivery"
+    );
+    let spec = Spec {
+        installs: vec![(RTMIN, FLAGS | SA_RESETHAND, 0)],
         block: 0,
         sends: vec![queue(RTMIN, 0x5a)],
         unblock: false,
@@ -1183,7 +1480,7 @@ fn rt_restart_unreadable_unadmitted_refused() {
     assert_eq!(
         (f.kind, f.signum),
         (FaultKind::AsyncSignal, RTMIN),
-        "E4f SA_RESTART RT"
+        "E4f SA_RESETHAND RT"
     );
     expect_refused(&single(Send::QueueBadPtr(RTMIN)), 0, "E4g unreadable");
     expect_refused(
@@ -1335,4 +1632,255 @@ fn pre_step_test_seam_is_inert_by_default() {
     );
     remote.set_pre_redirected_step_signal_for_test(Some(USR2));
     assert_eq!(remote.pre_redirected_step_signal_for_test(), Some(USR2));
+}
+
+// ---- I1-G2: syscall restart (SA_RESTART and -ERESTART* codes) ----
+//
+// Kernel rules with a handler (arch/x86/kernel/signal.c
+// `handle_signal`): -ERESTARTNOHAND and -ERESTART_RESTARTBLOCK
+// become -EINTR; -ERESTARTSYS restarts (ip -= 2, ax = orig_ax)
+// only under SA_RESTART. The interrupted syscall is credited
+// once, at completion: an EINTR return counts, a restarted
+// attempt does not, so counts keep the differential formula.
+
+/// A signal this test process sent with a NULL-siginfo
+/// pidfd_send_signal (kernel SI_USER words, sender = us).
+fn sent(signo: i32, uc_rip_off: u64) -> Entry {
+    Entry {
+        signo: signo as u64,
+        code: SI_USER,
+        pid: SenderPid::Other(std::process::id()),
+        uid: real_uid(),
+        value: 0,
+        uc_rip_off,
+    }
+}
+
+fn neg(errno: i32) -> u64 {
+    (-(errno as i64)) as u64
+}
+
+const NR_SUSPEND: i64 = libc::SYS_rt_sigsuspend;
+const NR_FUTEX: i64 = libc::SYS_futex;
+const NR_NANOSLEEP: i64 = libc::SYS_nanosleep;
+
+/// The nanosleep remainder the kernel wrote on interruption:
+/// written (the sentinel is gone), at most the request, and
+/// within 10 s of it.
+fn check_rem(data: &[u8], secs: u64, label: &str) {
+    let (s, ns) = (word(data, NANO_REM), word(data, NANO_REM + 8));
+    assert!(
+        s <= secs && s + 10 > secs && ns < 1_000_000_000,
+        "{label}: nanosleep remainder {s}.{ns:09} for request {secs}"
+    );
+}
+
+/// G2a: rt_sigsuspend blocked in the kernel and interrupted by
+/// an external signal returns -ERESTARTNOHAND, which a handler
+/// turns into -EINTR with or without SA_RESTART. The frame
+/// saves the pre-suspend mask (USR1), the handler runs with
+/// that mask's replacement, and sigreturn restores USR1.
+#[test]
+fn sigsuspend_interrupted_returns_eintr_like_native() {
+    let _g = lock();
+    for (flags, label) in [(FLAGS, "G2a"), (FLAGS | SA_RESTART, "G2a SA_RESTART")] {
+        let spec = Spec {
+            installs: vec![(USR1, flags, 0)],
+            block: sig_bit(USR1),
+            sends: vec![Send::Suspend(0), Send::QueryMask],
+            unblock: false,
+            pending_probe: false,
+        };
+        let (fx, w, _t, _) = differential_sent(&spec, 1, label, Some((NR_SUSPEND, USR1)));
+        let pc = fx.send_pcs[0];
+        assert_eq!(w.log, vec![sent(USR1, pc + 2)], "{label}: log");
+        assert_eq!(
+            w.frames,
+            vec![(neg(libc::EINTR), sig_bit(USR1))],
+            "{label}: uc RAX and saved mask"
+        );
+        assert_eq!(w.rcs[2], neg(libc::EINTR), "{label}: rt_sigsuspend result");
+        assert_eq!(w.old_mask, sig_bit(USR1), "{label}: mask after sigreturn");
+    }
+}
+
+/// G2e: two signals already pending when rt_sigsuspend
+/// unblocks them: the syscall returns at once, USR1's frame
+/// records -EINTR and the saved mask, and USR2's frame is
+/// built back to back on top (handler mask USR1, RAX 0 as the
+/// kernel leaves it at handler entry) naming USR1's source
+/// handler.
+#[test]
+fn sigsuspend_back_to_back_frames_match_native() {
+    let _g = lock();
+    let both = sig_bit(USR1) | sig_bit(USR2);
+    let spec = Spec {
+        installs: vec![(USR1, FLAGS, 0), (USR2, FLAGS, 0)],
+        block: both,
+        sends: vec![
+            Send::Kill(USR1),
+            Send::Kill(USR2),
+            Send::Suspend(0),
+            Send::QueryMask,
+        ],
+        unblock: false,
+        pending_probe: false,
+    };
+    let (fx, w, _t) = differential(&spec, 2, "G2e");
+    let pc = fx.send_pcs[2];
+    assert_eq!(
+        w.log,
+        vec![killed(USR2, fx.handler_offs[0]), killed(USR1, pc + 2)],
+        "G2e handler order and ucontext RIPs"
+    );
+    assert_eq!(
+        w.frames,
+        vec![(0, sig_bit(USR1)), (neg(libc::EINTR), both)],
+        "G2e uc RAX and saved masks"
+    );
+    assert_eq!(w.rcs[5], neg(libc::EINTR), "G2e rt_sigsuspend result");
+    assert_eq!(w.old_mask, both, "G2e mask after sigreturn");
+}
+
+/// G2b/G2c: FUTEX_WAIT_PRIVATE with no timeout, interrupted,
+/// returns -ERESTARTSYS. With SA_RESTART the kernel rewinds to
+/// the syscall (uc RIP = the syscall, uc RAX = its number); the
+/// handler changed the futex word, so the restarted wait
+/// returns -EAGAIN. Without SA_RESTART it returns -EINTR. The
+/// restart runs both mid-block (exact re-entry) and with the
+/// syscall at a block start; the pinned count credits the
+/// syscall once in each.
+#[test]
+fn futex_wait_restarts_only_with_sa_restart_like_native() {
+    let _g = lock();
+    for (flags, send, restart, label) in [
+        (FLAGS | SA_RESTART, futex_wait(), true, "G2b restart"),
+        (
+            FLAGS | SA_RESTART,
+            Send::FutexWaitAtBlockStart,
+            true,
+            "G2b restart at block start",
+        ),
+        (FLAGS, futex_wait(), false, "G2c no SA_RESTART"),
+    ] {
+        let spec = Spec {
+            installs: vec![(USR1, flags, 0)],
+            block: 0,
+            sends: vec![send],
+            unblock: false,
+            pending_probe: false,
+        };
+        let (fx, w, _t, _) = differential_sent(&spec, 1, label, Some((NR_FUTEX, USR1)));
+        let pc = fx.send_pcs[0];
+        let (uc_rip, uc_rax, rc) = if restart {
+            (pc, NR_FUTEX as u64, neg(libc::EAGAIN))
+        } else {
+            (pc + 2, neg(libc::EINTR), neg(libc::EINTR))
+        };
+        assert_eq!(w.log, vec![sent(USR1, uc_rip)], "{label}: log");
+        assert_eq!(w.frames, vec![(uc_rax, 0)], "{label}: uc RAX and mask");
+        assert_eq!(w.rcs[2], rc, "{label}: futex result");
+        assert_eq!(w.g2[3], 1, "{label}: handler set the futex word");
+    }
+}
+
+/// G2d (review addition a): nanosleep returns
+/// -ERESTART_RESTARTBLOCK, which is NOT -ERESTARTSYS: with a
+/// handler it is -EINTR even under SA_RESTART, and the kernel
+/// writes the remainder (checked by range in both children).
+#[test]
+fn nanosleep_restartblock_is_eintr_even_with_sa_restart() {
+    let _g = lock();
+    let spec = Spec {
+        installs: vec![(USR1, FLAGS | SA_RESTART, 0)],
+        block: 0,
+        sends: vec![Send::Nanosleep(1000)],
+        unblock: false,
+        pending_probe: false,
+    };
+    let (fx, w, t, native) = differential_sent(&spec, 1, "G2d", Some((NR_NANOSLEEP, USR1)));
+    let pc = fx.send_pcs[0];
+    assert_eq!(w.log, vec![sent(USR1, pc + 2)], "G2d log");
+    assert_eq!(w.frames, vec![(neg(libc::EINTR), 0)], "G2d uc RAX and mask");
+    assert_eq!(w.rcs[2], neg(libc::EINTR), "G2d nanosleep result");
+    check_rem(&native, 1000, "G2d native");
+    check_rem(&t.data, 1000, "G2d translated");
+}
+
+/// G2f (review addition a, Q4 deferral): an interrupting
+/// signal with no handler (SIGWINCH, default ignore; queued
+/// only because the child is traced) is a named refusal at the
+/// restart exit, never injected. For nanosleep the kernel
+/// would set up restart_syscall; for the futex it would
+/// rewind. Neither is modelled yet.
+#[test]
+fn no_handler_restart_refused_by_name() {
+    let _g = lock();
+    for (send, nr, label) in [
+        (
+            Send::Nanosleep(1000),
+            NR_NANOSLEEP,
+            "G2f nanosleep RESTARTBLOCK",
+        ),
+        (futex_wait(), NR_FUTEX, "G2f futex RESTARTSYS"),
+    ] {
+        let fx = build(&single(send));
+        let t = run_translated_full(&fx, None, Ext::Send(nr, libc::SIGWINCH));
+        let want = RunError::Refuse(Refuse::RemoteSubstrate {
+            operation: "syscall restart: signal not eligible for delivery",
+            errno: 0,
+        });
+        assert_eq!(t.out.as_ref().err(), Some(&want), "{label}: outcome");
+        assert_eq!(word(&t.data, LOG_COUNT), 0, "{label}: no handler ran");
+        assert_eq!(word(&t.data, RC_BASE + 8), 0, "{label}: no result stored");
+        assert_eq!(
+            proc_state(t.remote.child_pid_for_test()),
+            't',
+            "{label}: child still in its delivery stop (nothing injected)"
+        );
+    }
+}
+
+/// Scheduler state letter of a live child (`/proc/<pid>/stat`
+/// field 3; `t` is a ptrace stop).
+fn proc_state(pid: i32) -> char {
+    let stat = std::fs::read_to_string(format!("/proc/{pid}/stat")).expect("child stat");
+    let after = &stat[stat.rfind(')').expect("stat comm") + 1..];
+    after.trim_start().chars().next().expect("stat state")
+}
+
+/// G2g: only FUTEX_WAIT_PRIVATE with a NULL timeout and plain
+/// nanosleep pass through; other futex shapes and
+/// clock_nanosleep are refused at the syscall before it runs.
+/// Watchdog-bounded: a gate that let the shared FUTEX_WAIT run
+/// would block forever on the zero word.
+#[test]
+fn unadmitted_blocking_shapes_refused_at_syscall() {
+    let _g = lock();
+    for (send, label) in [
+        (
+            Send::Futex {
+                op: 0,
+                timeout: false,
+            },
+            "G2g FUTEX_WAIT (shared)",
+        ),
+        (
+            Send::Futex {
+                op: 128,
+                timeout: true,
+            },
+            "G2g FUTEX_WAIT_PRIVATE with timeout",
+        ),
+        (
+            Send::Futex {
+                op: 129,
+                timeout: false,
+            },
+            "G2g FUTEX_WAKE_PRIVATE",
+        ),
+        (Send::ClockNanosleep, "G2g clock_nanosleep"),
+    ] {
+        expect_refused_ext(&single(send), 0, label, Ext::Watchdog);
+    }
 }

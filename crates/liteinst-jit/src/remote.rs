@@ -1,5 +1,5 @@
 //! Remote ptrace direct-block substrate (P1b I1-B through
-//! I1-G1, internal and unstable).
+//! I1-G2, internal and unstable).
 //!
 //! A traced fixture child executes the same translations as
 //! the in-process executor, with this tracer as dispatcher:
@@ -18,7 +18,9 @@
 //! SIGSEGV/SIGFPE at copied insns on an empty frame stack; an
 //! `SA_SIGINFO` handler at a translated block start; recovery
 //! to a block start or an exact mid-block generated re-entry;
-//! no syscall restart — see `P1B-DESIGN.md` §8): custom
+//! and, I1-G2, delivery at a stepped syscall's exit when a
+//! signal interrupted it, with the kernel applying the
+//! `SA_RESTART`/`-EINTR` rule — see `P1B-DESIGN.md` §8): custom
 //! handlers are stubbed in the kernel disposition, the kernel
 //! queues, orders, and builds the frame at the recovered
 //! source PC, the handler runs translated, and the guest
@@ -64,9 +66,13 @@ pub const MAILBOX_PUBLISHED: u64 = 2;
 /// (`rt_sigqueueinfo`, `rt_tgsigqueueinfo` — gated by
 /// `prepare_sigqueue_step` to `SI_QUEUE` self-sends of an
 /// admitted signal, or to forged-code calls the kernel itself
-/// refuses). The lifecycle guard always runs first; any other
-/// number stops by name (`NoHandler`) rather than executing.
-/// This is a stage bound, not a generic guest-syscall claim.
+/// refuses), and the I1-G2 blocking set that a signal can
+/// interrupt (`rt_sigsuspend`; `futex` gated at the dispatch
+/// site to `FUTEX_WAIT_PRIVATE` with a NULL timeout; plain
+/// relative `nanosleep` — `clock_nanosleep` is not listed).
+/// The lifecycle guard always runs first; any other number
+/// stops by name (`NoHandler`) rather than executing. This is
+/// a stage bound, not a generic guest-syscall claim.
 const PASS_THROUGH_SYSCALLS: &[u32] = &[
     libc::SYS_write as u32,
     libc::SYS_rt_sigaction as u32,
@@ -77,7 +83,32 @@ const PASS_THROUGH_SYSCALLS: &[u32] = &[
     libc::SYS_kill as u32,
     libc::SYS_rt_sigqueueinfo as u32,
     libc::SYS_rt_tgsigqueueinfo as u32,
+    libc::SYS_rt_sigsuspend as u32,
+    libc::SYS_futex as u32,
+    libc::SYS_nanosleep as u32,
 ];
+
+/// The only `futex` operation passed through (I1-G2):
+/// `FUTEX_WAIT | FUTEX_PRIVATE_FLAG`, and only with a NULL
+/// timeout (a timed wait would restart through
+/// `restart_syscall`, which stays refused).
+const FUTEX_WAIT_PRIVATE: u64 = 128;
+
+/// The syscalls whose interruption is delivered (I1-G2): the
+/// tested blocking set. Any other pass-through call that
+/// returns a restart code (a blocking `write`, say) keeps the
+/// named stop at its exit.
+const RESTART_DELIVERY_SYSCALLS: &[u64] = &[
+    libc::SYS_rt_sigsuspend as u64,
+    libc::SYS_futex as u64,
+    libc::SYS_nanosleep as u64,
+];
+
+/// Kernel syscall-restart codes (`include/linux/errno.h`).
+const ERESTARTSYS: i64 = -512;
+const ERESTARTNOINTR: i64 = -513;
+const ERESTARTNOHAND: i64 = -514;
+const ERESTART_RESTARTBLOCK: i64 = -516;
 
 /// Real-time signals admitted for delivery and self-queueing
 /// (I1-G1): glibc's SIGRTMIN (34) through SIGRTMAX (64). The
@@ -260,6 +291,14 @@ impl SignalRegistry {
     fn set_altstack(&mut self, alt: GuestAltstack) {
         self.altstack = alt;
     }
+}
+
+/// Outcome of one stepped guest syscall.
+enum Stepped {
+    Done(GuestState),
+    /// Exit stop with a kernel restart code; the child is still
+    /// stopped there (I1-G2).
+    Interrupted(libc::user_regs_struct),
 }
 
 /// Which registry state (if any) a stepped syscall must have
@@ -1736,7 +1775,7 @@ impl RemoteExecutable {
     /// silent fallback: frames past the 8-frame cap, signals
     /// outside the admitted sets (including the glibc-reserved
     /// 32/33), flag words beyond `SA_SIGINFO` plus optional
-    /// `SA_NODEFER`/`SA_ONSTACK` (`SA_RESTART` is I1-G2), an
+    /// `SA_NODEFER`/`SA_ONSTACK`/`SA_RESTART`, an
     /// enabled altstack below the size floor, synchronous
     /// delivery on a non-empty stack, and handlers outside the
     /// translated block set.
@@ -1771,14 +1810,19 @@ impl RemoteExecutable {
             return None;
         }
         // Tested flag words only: the I1-D base plus,
-        // independently, SA_NODEFER and/or SA_ONSTACK (I1-F).
-        // Anything else (RESTART is I1-G2; RESETHAND would also
-        // stale the mirror when the kernel resets the
-        // disposition on delivery; NOCLD*) keeps the stop.
-        // sa_mask is arbitrary: the kernel applies it and the
-        // mirror retains its readback verbatim.
+        // independently, SA_NODEFER and/or SA_ONSTACK (I1-F)
+        // and SA_RESTART (I1-G2: it only decides whether an
+        // interrupted `-ERESTARTSYS` call restarts). Anything
+        // else (RESETHAND would stale the mirror when the
+        // kernel resets the disposition on delivery; NOCLD*)
+        // keeps the stop. sa_mask is arbitrary: the kernel
+        // applies it and the mirror retains its readback
+        // verbatim.
         let base_flags = SA_RESTORER_FLAG | (libc::SA_SIGINFO as u64);
-        let allowed_flags = base_flags | (libc::SA_NODEFER as u64) | (libc::SA_ONSTACK as u64);
+        let allowed_flags = base_flags
+            | (libc::SA_NODEFER as u64)
+            | (libc::SA_ONSTACK as u64)
+            | (libc::SA_RESTART as u64);
         if action.flags & base_flags != base_flags || action.flags & !allowed_flags != 0 {
             return None;
         }
@@ -2194,13 +2238,35 @@ impl RemoteExecutable {
 
     /// Execute one genuine guest syscall at `pc` via
     /// PTRACE_SYSCALL entry/exit stops. Returns the resulting
-    /// guest state (kernel-produced clobbers included).
+    /// guest state (kernel-produced clobbers included). An
+    /// interrupted call (restart code at the exit stop) fails
+    /// closed by name here; only the I1-G2 pass-through arm
+    /// handles it, through `step_syscall_or_interrupt`.
     fn step_syscall(
+        &self,
+        state: GuestState,
+        pc: u64,
+        data: &JitData,
+    ) -> Result<GuestState, RunError> {
+        match self.step_syscall_or_interrupt(state, pc, data)? {
+            Stepped::Done(s) => Ok(s),
+            Stepped::Interrupted(_) => {
+                Err(self.unexpected_stop("syscall restart pending at exit stop"))
+            }
+        }
+    }
+
+    /// `step_syscall`, but an exit stop whose result is a
+    /// kernel restart code returns `Stepped::Interrupted` with
+    /// the child still at that stop: a signal interrupted the
+    /// call in the kernel, which has not yet decided between
+    /// restarting it and `-EINTR`. Nothing is credited.
+    fn step_syscall_or_interrupt(
         &self,
         mut state: GuestState,
         pc: u64,
         data: &JitData,
-    ) -> Result<GuestState, RunError> {
+    ) -> Result<Stepped, RunError> {
         state.rip = pc;
         self.set_guest_regs(&state)?;
         for phase in [Phase::SyscallEntry, Phase::SyscallExit] {
@@ -2246,14 +2312,108 @@ impl RemoteExecutable {
         // A syscall-exit stop whose result is a kernel restart
         // code is not completion: a signal interrupted the
         // syscall in the kernel and it would restart on resume.
-        // Fail closed before any credit or re-entry; do not
-        // translate it into an async fault and do not resume
-        // the child on presumed completion.
+        // Never credit it, never translate it into an async
+        // fault, and never resume the child on presumed
+        // completion: the caller either delivers the signal
+        // (I1-G2) or fails closed.
         let regs = get_regs(self.guard.pid)?;
         if is_syscall_restart(regs.rax) {
-            return Err(self.unexpected_stop("syscall restart pending at exit stop"));
+            return Ok(Stepped::Interrupted(regs));
         }
-        Ok(regs_to_state(&regs))
+        Ok(Stepped::Done(regs_to_state(&regs)))
+    }
+
+    /// I1-G2: deliver the signal that interrupted the syscall
+    /// at `pc`, from its exit stop (`regs`, result a restart
+    /// code). The child resumes once and must stop for the
+    /// interrupting signal with the restart code intact; that
+    /// signal must be eligible for delivery, or the run stops
+    /// by name without injecting anything (no transparent
+    /// no-handler restart, no `restart_syscall`). It is
+    /// injected with RAX still holding the restart code, so the
+    /// kernel's `handle_signal` applies the restart rule itself:
+    /// `-ERESTARTNOHAND`/`-ERESTART_RESTARTBLOCK` become
+    /// `-EINTR`, `-ERESTARTSYS` restarts only under
+    /// `SA_RESTART`. The tracer predicts the outcome and the
+    /// frame must match it: ucontext RIP at the syscall (restart)
+    /// or after it (`-EINTR`), ucontext RAX the syscall number
+    /// or `-EINTR`. A `-EINTR` completion credits the syscall
+    /// instruction once (returned as `credit`); a restarted
+    /// attempt is not credited, and its frame resumes at the
+    /// syscall through the existing exact re-entry (the exit
+    /// stub's pristine entry, counters exact) so the call steps
+    /// again after the handler.
+    fn deliver_at_syscall_exit(
+        &self,
+        regs: libc::user_regs_struct,
+        pc: u64,
+        data: &JitData,
+        active: &[ActiveFrame],
+    ) -> Result<(GuestState, Vec<ActiveFrame>, u64), RunError> {
+        let t = self.translation.as_ref().expect("prepared");
+        let code = regs.rax as i64;
+        let nr = regs.orig_rax;
+        // PTRACE_SYSCALL, not CONT: if no signal were pending,
+        // the kernel's no-handler restart must stop at the next
+        // syscall entry instead of running the guest.
+        ptrace_ok(
+            libc::PTRACE_SYSCALL,
+            self.guard.pid,
+            core::ptr::null_mut(),
+            core::ptr::null_mut(),
+            "PTRACE_SYSCALL restart",
+        )?;
+        let status = wait_stop(self.guard.pid)?;
+        if !libc::WIFSTOPPED(status) || libc::WSTOPSIG(status) == (libc::SIGTRAP | 0x80) {
+            return Err(self.unexpected_stop("syscall restart without a delivery stop"));
+        }
+        let sig = libc::WSTOPSIG(status);
+        let si = stop_siginfo(self.guard.pid, sig);
+        let stop = get_regs(self.guard.pid)?;
+        let async_stop =
+            status >> 16 == 0 && si.is_some_and(|(signo, si_code, _)| signo == sig && si_code <= 0);
+        if !async_stop || stop.rip != pc + 2 || stop.rax != regs.rax || stop.orig_rax != nr {
+            return Err(self.unexpected_stop("syscall restart stop provenance"));
+        }
+        let Some(action) = self.delivery_action(sig, active, false) else {
+            return Err(self.unexpected_stop("syscall restart: signal not eligible for delivery"));
+        };
+        let restart = match code {
+            ERESTARTSYS => action.flags & (libc::SA_RESTART as u64) != 0,
+            ERESTARTNOHAND | ERESTART_RESTARTBLOCK => false,
+            // Always restarts, even with a handler; no admitted
+            // syscall produces it.
+            ERESTARTNOINTR => {
+                return Err(self.unexpected_stop("syscall restart code not admitted"));
+            }
+            _ => return Err(self.unexpected_stop("syscall restart code unknown")),
+        };
+        let eintr = (-(libc::EINTR as i64)) as u64;
+        let (resume_pc, uc_rax) = if restart { (pc, nr) } else { (pc + 2, eintr) };
+        let gen_mid = if restart && !t.block_gen.contains_key(&pc) {
+            let Some(gpc) = gen_for_midblock(t, pc) else {
+                return Err(self.unexpected_stop("syscall restart has no exact re-entry"));
+            };
+            Some(gpc)
+        } else {
+            None
+        };
+        let credit = u64::from(!restart);
+        let recovered = crate::recovery::RecoveredStop {
+            kind: crate::recovery::FaultKind::AsyncSignal,
+            src_pc: resume_pc,
+            addr: si.map_or(0, |s| s.2),
+            signum: sig,
+            state: regs_to_state(&stop),
+            branches: data.branch_count,
+            instructions: data.instruction_count + credit,
+        };
+        let (handler_state, frames) =
+            self.deliver_signal(action, &recovered, data, gen_mid, active)?;
+        if self.read_word(uc_greg_addr(frames[0].uc_addr, GREG_RAX))? != uc_rax {
+            return Err(self.unexpected_stop("syscall restart frame state mismatch"));
+        }
+        Ok((handler_state, frames, credit))
     }
 
     /// Run from `state.rip` until a return pops
@@ -2556,6 +2716,16 @@ impl RemoteExecutable {
                         }
                         .into());
                     }
+                    // futex bound (I1-G2): FUTEX_WAIT_PRIVATE
+                    // with a NULL timeout only, full words.
+                    if state.rax as u32 == libc::SYS_futex as u32
+                        && (state.rsi != FUTEX_WAIT_PRIVATE || state.r10 != 0)
+                    {
+                        return Err(Refuse::NoHandler {
+                            src_pc: data.exit_src,
+                        }
+                        .into());
+                    }
                     // Step the call genuinely whatever its
                     // arguments point at, then reconcile the
                     // mirror from post-call kernel readback —
@@ -2617,7 +2787,29 @@ impl RemoteExecutable {
                         }
                     } else {
                         let obs = self.observe_syscall_entry(state.rax as u32, &state);
-                        state = self.step_syscall(state, data.exit_src, &data)?;
+                        match self.step_syscall_or_interrupt(state, data.exit_src, &data)? {
+                            Stepped::Done(s) => state = s,
+                            Stepped::Interrupted(regs)
+                                if !RESTART_DELIVERY_SYSCALLS.contains(&regs.orig_rax) =>
+                            {
+                                return Err(
+                                    self.unexpected_stop("syscall restart pending at exit stop")
+                                );
+                            }
+                            Stepped::Interrupted(regs) => {
+                                // I1-G2: deliver the interrupting
+                                // signal at the syscall exit; the
+                                // credit is 1 for -EINTR, 0 for a
+                                // restart (the call steps again).
+                                let (handler_state, frames, credit) = self
+                                    .deliver_at_syscall_exit(regs, data.exit_src, &data, &active)?;
+                                active.extend(frames);
+                                state = handler_state;
+                                exits += 1;
+                                tot_instructions += credit;
+                                continue;
+                            }
+                        }
                         let pid = self.guard.pid;
                         let da = self.data_addr();
                         Self::reconcile_registry(&mut self.registry, pid, da, &obs, data.exit_src)?;

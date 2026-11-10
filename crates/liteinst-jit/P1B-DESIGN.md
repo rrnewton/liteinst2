@@ -276,7 +276,8 @@ but may not be claimed whole-program until I1-H review passes.
 
 Status at this section's commit (liteinst2 `main`
 `c4217e8965eaff5a209dbd9902cf3d64dfc7e2b5`), updated for I1-E
-through I1-G1 on `main` `1b95913cee7023ae1d545bca10f3f6fc78db96e1`:
+through I1-G1 on `main` `4210776c6485989dfb6ead7e61c745912d04e191`
+and for I1-G2 on its branch:
 
 - **I1-A landed** (`2b46ed54a14839513ebc122246e7926333c6f499`):
   backend-neutral recovery core in `src/recovery.rs`.
@@ -315,12 +316,13 @@ through I1-G1 on `main` `1b95913cee7023ae1d545bca10f3f6fc78db96e1`:
 - **I1-G split** (coordinator decision 2026-11-10): **I1-G1**
   (RT ordering, RT retention vs standard coalescing,
   `rt_(tg)sigqueueinfo` payloads and sender words, kernel
-  back-to-back frame setup) is implemented on branch
-  `jit6-cl/slice6-20261110`, pending two signal-frame
-  reviews; **I1-G2** (syscall restart, `SA_RESTART`) is
-  unstarted, needs its own scope, and until then
-  `SA_RESTART` actions stay ineligible by name. I1-H
-  unstarted.
+  back-to-back frame setup) **landed**
+  ([PR 76](https://github.com/rrnewton/liteinst2/pull/76),
+  merge `4210776c6485989dfb6ead7e61c745912d04e191`).
+  **I1-G2** (syscall restart, `SA_RESTART`, scoped and
+  approved 2026-11-10) is implemented on branch
+  `jit6-cl/i1g2-20261110`, pending two signal-frame reviews.
+  I1-H unstarted.
 
 Each stage is its own branch off then-current liteinst2 `main`,
 signed, with exact-head `fmt`, Clippy, locked debug/release
@@ -500,7 +502,7 @@ behaviour on the host):
   unchanged I1-F flag/mask/altstack/8-frame bounds. 32 and 33
   (reserved by glibc/NPTL) stay outside, for delivery and for
   queueing: one predicate serves both. `SA_RESTART` actions
-  stay ineligible (I1-G2).
+  stay ineligible (admitted by I1-G2, below).
 - *Ordering is the kernel's.* The tracer only injects the
   signal the kernel presents at each delivery stop, with the
   kernel's own siginfo (no rebuild, no rewrite for async
@@ -591,8 +593,10 @@ behaviour on the host):
   compared with native; named refusals for forged self-sends,
   foreign `SI_QUEUE` targets (including a tg call with both
   ids naming a real process the test spawns, with nothing
-  queued in it), 32/33, `SA_RESTART`, unreadable siginfo, and
-  unadmitted signals; and, through a test seam compiled only
+  queued in it), 32/33, an unmodelled flag word (`SA_RESTART`
+  at I1-G1, `SA_RESETHAND` since I1-G2 admitted `SA_RESTART`),
+  unreadable siginfo, and unadmitted signals; and, through a
+  test seam compiled only
   with the test-only `test-seams` cargo feature (enabled for
   the crate's own tests through a self dev-dependency, inert
   unless a test sets it, and restoring scratch before it
@@ -600,6 +604,103 @@ behaviour on the host):
   between staging and the step, the guest pointer argument in
   recovered pre-entry stops for both queue forms and
   `rt_sigaction`. No claim beyond the tested shapes.
+
+As implemented for I1-G2 on `jit6-cl/i1g2-20261110`, from
+`main` `4210776c6485989dfb6ead7e61c745912d04e191` (kernel
+citations are `arch/x86/kernel/signal.c` in the same Linux
+7.1.3 source unless another file is named; the native child
+confirms each behaviour on the host):
+
+- *Interruptible set.* The pass-through set adds
+  `rt_sigsuspend`, `futex` and `nanosleep`. `futex` steps only
+  as `FUTEX_WAIT_PRIVATE` (128) with a NULL timeout, comparing
+  the full 64-bit `rsi` and `r10`; any other operation and any
+  timeout is refused by name before it runs (`NoHandler`),
+  because a timed wait returns `-ERESTART_RESTARTBLOCK`
+  (`kernel/futex/waitwake.c:728`) and would restart through
+  `restart_syscall`. `nanosleep` is the plain relative sleep;
+  `clock_nanosleep` is not passed through. Delivery at a
+  restart exit applies to these three calls only. Any other
+  pass-through call whose exit carries a restart code (a
+  blocking `write`, say) keeps the named stop `syscall restart
+  pending at exit stop`. No fixture reaches that path yet, so
+  it is disclosed and untested.
+- *Delivery at the syscall exit.* An exit stop carrying
+  `-ERESTARTSYS`, `-ERESTARTNOHAND` or `-ERESTART_RESTARTBLOCK`
+  is not completion. The tracer resumes once with
+  `PTRACE_SYSCALL` and requires the interrupting signal's
+  delivery stop, with the restart code, `orig_rax` and RIP
+  (just after the syscall) unchanged. It injects an eligible
+  action with RAX still holding the code, so the kernel's own
+  `handle_signal` (`:264`-`:283`) applies the rule:
+  `NOHAND` and `RESTARTBLOCK` become `-EINTR`, and `SYS`
+  restarts (`ip -= 2`, `ax = orig_ax`) only under
+  `SA_RESTART`. The tracer predicts the outcome and the frame
+  must match it: ucontext RIP at the syscall (restart) or just
+  after it (`-EINTR`), and ucontext RAX the syscall number or
+  `-EINTR`. A mismatch is a named substrate refusal.
+  `rt_sigsuspend`'s saved mask lands in the frame's
+  `uc_sigmask` and sigreturn restores it. That is the kernel's
+  doing, compared with native.
+- *Restart resume and counts.* A restarted frame resumes at
+  the syscall through the I1-E exact mid-block re-entry. That
+  entry is the syscall's exit stub at its pristine stage,
+  which retires nothing, so counters need no rebasing; the
+  call then steps again. The syscall instruction is credited
+  once, at completion: an `-EINTR` return credits it at
+  delivery, a restarted attempt is not credited, and the
+  completed restart is.
+- *Back-to-back.* With several unblocked signals pending at
+  the exit (for example, `rt_sigsuspend` unblocking two), the
+  I1-G1 loop builds back-to-back frames. The first frame
+  records the restart outcome; the next names the first
+  signal's source handler, with RAX 0 as the kernel leaves it
+  at handler entry.
+- *Flags.* `SA_RESTART` joins the admitted flag words. Outside
+  a syscall restart it changes nothing, which is tested for an
+  RT handler. `SA_RESETHAND` and `SA_NOCLD*` stay ineligible.
+- **Not modelled, failing closed by name:** an interrupting
+  signal with no eligible action (no handler, default-ignored,
+  or otherwise ineligible) at a restart exit stops as
+  `syscall restart: signal not eligible for delivery`, with
+  nothing injected. Natively the kernel would restart the
+  call: a rewind for `SYS`, `NOHAND` and `NOINTR`, and
+  `restart_syscall` for `RESTARTBLOCK`
+  (`arch_do_signal_or_restart`, `:344`-`:359`). A
+  default-ignored signal reaches this stop only because the
+  child is traced (`sig_ignored`, `kernel/signal.c:121`);
+  natively it would be discarded at send.
+  `-ERESTARTNOINTR` (it always restarts, and no admitted
+  syscall produces it) and any unknown code are named stops.
+  So is a restart exit followed by a syscall stop instead of a
+  delivery stop.
+- *Evidence* (`tests/remote_signal_rt.rs`). Interruption is
+  external and deterministic. A test thread polls
+  `/proc/<pid>/syscall` until the child (translated or native)
+  is blocked in the expected syscall, then signals it through
+  a pidfd opened while the child was known alive and unreaped,
+  so a reused pid cannot be hit. A 5 s bound on blocking and a
+  10 s bound after the send each fail the test by name.
+  Translated vs native:
+  - `rt_sigsuspend` interrupted returns `-EINTR`, with and
+    without `SA_RESTART`, and the saved mask is restored;
+  - two pending signals released by `rt_sigsuspend` build
+    back-to-back frames;
+  - `FUTEX_WAIT_PRIVATE` restarts under `SA_RESTART` (the
+    handler changes the word, so the restarted wait returns
+    `-EAGAIN`) and returns `-EINTR` without it;
+  - `nanosleep` returns `-EINTR` even under `SA_RESTART`
+    (`RESTARTBLOCK` is not `RESTARTSYS`), and the
+    kernel-written remainder is range-checked in both
+    children;
+  - every case compares the frame's ucontext RIP, RAX and
+    saved mask.
+
+  Named refusals: the no-handler restart (SIGWINCH) for
+  `nanosleep` and for `futex`, the `futex` shapes outside the
+  bound, and `clock_nanosleep`. Counts are pinned to the
+  fixture formula, with each interrupted syscall credited
+  once. No claim beyond the tested shapes.
 
 **I1-H — Gate evidence and envelope rewrite.** Freeze the
 signal corpus, run the assigned differential/fuzz slices, and
