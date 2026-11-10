@@ -100,8 +100,14 @@ fn async_delivery_admitted(sig: i32) -> bool {
 /// like any `si_code >= 0`.
 const SI_QUEUE: i32 = -1;
 const SI_TKILL: i32 = -6;
-/// Bytes of a user `siginfo_t` the kernel copies in for
-/// `rt_(tg)sigqueueinfo` (`__copy_siginfo_from_user`).
+/// Bytes of a user `siginfo_t` the sigqueue gate reads and
+/// stages: the whole 128-byte user record. This is a
+/// conservative admission policy, not the kernel's copy size:
+/// `__copy_siginfo_from_user` copies the 48-byte
+/// `kernel_siginfo` prefix and checks the remaining expansion
+/// bytes only for an unknown layout, so a failed 128-byte read
+/// here does not establish that the kernel would fail with
+/// `EFAULT` (hence `NoHandler`, not a stepped call).
 const SIGINFO_LEN: usize = 128;
 
 /// Bytes reserved at the tail of the child code arena for the
@@ -293,18 +299,44 @@ struct SigactionStep {
 /// (`rdx`, or `r10` for the tg form) replaced by `staged`, so
 /// the kernel copies in exactly the bytes the gate classified
 /// — no later write to guest memory can change `si_code`
-/// between the check and the copy. `orig_info` is restored
-/// into the guest register after the step and `saved` into
-/// scratch on every path. `kernel_refuses` marks a forged-code
-/// call aimed at a foreign target, which the kernel must
-/// answer with an error.
+/// between the check and the copy. `step_redirected_syscall`
+/// puts the guest's own pointer back into every returned guest
+/// state and `saved` into scratch on every path.
+/// `kernel_refuses` marks a call the kernel must answer with
+/// an error (forged code to a foreign target, or the tg form
+/// with the caller's TID and a foreign TGID).
 #[derive(Clone, Copy, Debug)]
 struct SigqueueStep {
     tg: bool,
-    orig_info: u64,
     staged: u64,
     saved: [u8; SIGINFO_LEN],
     kernel_refuses: bool,
+}
+
+/// Syscall argument register a redirected step rewrites.
+#[derive(Clone, Copy, Debug)]
+enum ArgReg {
+    Rsi,
+    Rdx,
+    R10,
+}
+
+impl ArgReg {
+    fn get(self, s: &GuestState) -> u64 {
+        match self {
+            ArgReg::Rsi => s.rsi,
+            ArgReg::Rdx => s.rdx,
+            ArgReg::R10 => s.r10,
+        }
+    }
+
+    fn set(self, s: &mut GuestState, v: u64) {
+        match self {
+            ArgReg::Rsi => s.rsi = v,
+            ArgReg::Rdx => s.rdx = v,
+            ArgReg::R10 => s.r10 = v,
+        }
+    }
 }
 
 /// Kernel handler word -> guest-visible handler word. A
@@ -857,6 +889,9 @@ pub struct RemoteExecutable {
     translation: Option<Translation>,
     profile: CountProfile,
     registry: SignalRegistry,
+    /// Test seam, inert unless set: see
+    /// `set_pre_redirected_step_signal_for_test`.
+    pre_redirected_step_signal: Option<i32>,
 }
 
 impl RemoteExecutable {
@@ -1023,6 +1058,7 @@ impl RemoteExecutable {
             translation: None,
             profile: CountProfile::BranchesAndInstructions,
             registry,
+            pre_redirected_step_signal: None,
         })
     }
 
@@ -1115,28 +1151,43 @@ impl RemoteExecutable {
 
     /// Gate one guest `rt_sigqueueinfo` (`pid, sig, info`) or
     /// `rt_tgsigqueueinfo` (`tgid, tid, sig, info`) at its
-    /// syscall exit, before anything steps (I1-G1).
+    /// syscall exit, before anything steps (I1-G1). Target ids
+    /// are compared as the kernel sees them (low 32 bits as
+    /// `pid_t`); the guest is single-threaded (thread creation
+    /// is refused), so its own TID and TGID both equal its pid.
     ///
-    /// The kernel (`kernel/signal.c` `do_rt_sigqueueinfo`,
-    /// `do_rt_tgsigqueueinfo`) answers a forged code
-    /// (`si_code >= 0` or `SI_TKILL`) with `-EPERM` before any
-    /// target lookup when the target it compares (`pid`, or
-    /// `tid` for the tg form, as a 32-bit `pid_t`) is not the
-    /// caller, and the tg form answers `-EINVAL` first for a
-    /// non-positive `tgid`/`tid`; nothing is queued either
-    /// way. Such calls step genuinely so the guest sees the
-    /// kernel's own errno. A forged code aimed at the caller
+    /// Calls the kernel provably refuses with no side effect
+    /// step genuinely, so the guest sees the kernel's own errno
+    /// (`kernel/signal.c`): a forged code (`si_code >= 0` or
+    /// `SI_TKILL`) whose compared target (`pid`, or `tid` for
+    /// the tg form) is not the caller gets `-EPERM` before any
+    /// lookup (`do_rt_sigqueueinfo`, `do_rt_tgsigqueueinfo`;
+    /// the tg form answers `-EINVAL` first for a non-positive
+    /// id); and the tg form with the caller's own TID but a
+    /// foreign TGID gets `-ESRCH` from `do_send_specific`
+    /// whatever the code. A forged code aimed at the caller
     /// itself is accepted by Linux but would forge kernel
     /// provenance on delivery (`SI_KERNEL` SIGTRAP reads as an
     /// exit trap, a positive SIGSEGV code as a synchronous
     /// fault), so it is refused by name — a deliberate
     /// divergence from native. Every other call steps only as
-    /// the tested shape: `si_code == SI_QUEUE`, `si_signo`
-    /// equal to the requested signal, the signal admitted for
-    /// delivery, and every target word (full 64-bit register)
-    /// equal to the child's own pid; a non-forged call to
-    /// another task would really queue there and is refused by
-    /// name, as is an unreadable siginfo.
+    /// the tested shape: `si_code == SI_QUEUE`, an admitted
+    /// signal, and every target word (full 64-bit register)
+    /// equal to the child's own pid. `si_signo` is not checked:
+    /// the kernel overwrites it with the requested signal
+    /// (`__copy_siginfo_from_user`), as natively. A non-forged
+    /// call to another task is refused by name even where
+    /// native might fail (a nonexistent pid gets `ESRCH`),
+    /// because nothing proves the kernel would not queue it; so
+    /// is an unreadable siginfo.
+    ///
+    /// Invariant: staging is sound only while the guest cannot
+    /// change the arena's or its own pages' protections —
+    /// `mprotect` and `pkey_*` are not passed through. The
+    /// kernel reads the tracer-written copy, so readability of
+    /// the guest buffer is decided by this tracer's
+    /// `process_vm_readv` (which does not apply protection
+    /// keys), not by the guest's own `copy_from_user`.
     fn prepare_sigqueue_step(
         &self,
         state: &GuestState,
@@ -1153,39 +1204,32 @@ impl RemoteExecutable {
         if read_mem(self.guard.pid, info_addr, &mut info).is_err() {
             return Err(refuse);
         }
-        let si_signo = i32::from_le_bytes(info[0..4].try_into().unwrap());
         let si_code = i32::from_le_bytes(info[8..12].try_into().unwrap());
         let own = self.own_pid_in_child_ns().ok_or(refuse.clone())?;
         let forged = si_code >= 0 || si_code == SI_TKILL;
-        // The pid the kernel's forged-code test compares with
-        // the caller: the low 32 bits as `pid_t`, `tid` for tg.
-        let kernel_target = if tg {
-            state.rsi as u32 as i32
-        } else {
-            state.rdi as u32 as i32
-        };
-        let kernel_refuses = if forged {
-            if kernel_target == own {
+        // Kernel views: `pid` (tgid for the tg form) and `tid`.
+        let k_pid = state.rdi as u32 as i32;
+        let k_tid = state.rsi as u32 as i32;
+        let kernel_target = if tg { k_tid } else { k_pid };
+        let kernel_refuses =
+            (forged && kernel_target != own) || (tg && k_tid == own && k_pid != own);
+        if !kernel_refuses {
+            if forged {
                 return Err(refuse);
             }
-            true
-        } else {
             let own_word = own as u64;
             let self_target = state.rdi == own_word && (!tg || state.rsi == own_word);
-            let sig_ok = i32::try_from(sig_word)
-                .is_ok_and(|sig| async_delivery_admitted(sig) && sig == si_signo);
+            let sig_ok = i32::try_from(sig_word).is_ok_and(async_delivery_admitted);
             if si_code != SI_QUEUE || !self_target || !sig_ok {
                 return Err(refuse);
             }
-            false
-        };
+        }
         let staged = self.scratch_addr();
         let mut saved = [0u8; SIGINFO_LEN];
         read_mem(self.guard.pid, staged, &mut saved)?;
         write_mem(self.guard.pid, staged, &info)?;
         Ok(SigqueueStep {
             tg,
-            orig_info: info_addr,
             staged,
             saved,
             kernel_refuses,
@@ -1399,6 +1443,70 @@ impl RemoteExecutable {
     #[doc(hidden)]
     pub fn child_pid_for_test(&self) -> i32 {
         self.guard.pid
+    }
+
+    /// Test seam: when set, the tracer sends `sig` to its own
+    /// traced child after a redirected syscall's argument has
+    /// been staged and immediately before the step resumes the
+    /// child, so an asynchronous stop lands deterministically
+    /// at that boundary (before syscall entry). Inert (`None`)
+    /// by default; it never signals any other process.
+    #[doc(hidden)]
+    pub fn set_pre_redirected_step_signal_for_test(&mut self, sig: Option<i32>) {
+        self.pre_redirected_step_signal = sig;
+    }
+
+    /// Current test-seam setting (`None` unless a test set it).
+    #[doc(hidden)]
+    pub fn pre_redirected_step_signal_for_test(&self) -> Option<i32> {
+        self.pre_redirected_step_signal
+    }
+
+    /// Step one guest syscall at `pc` whose pointer argument in
+    /// `reg` was redirected to tracer scratch (`staged`):
+    /// `rt_sigaction` stubbing (I1-D) and `rt_(tg)sigqueueinfo`
+    /// staging (I1-G1). On every path the saved scratch bytes
+    /// are restored first, and the guest's own register value is
+    /// put back into the returned guest state — including a
+    /// recovered `Fault` (an asynchronous stop before syscall
+    /// entry), whose live registers would otherwise carry the
+    /// private scratch address. A failed scratch restore is a
+    /// named substrate refusal, never a clean step.
+    fn step_redirected_syscall(
+        &self,
+        state: GuestState,
+        reg: ArgReg,
+        staged: u64,
+        saved: &[u8],
+        pc: u64,
+        data: &JitData,
+    ) -> Result<GuestState, RunError> {
+        let mut step_state = state;
+        reg.set(&mut step_state, staged);
+        if let Some(sig) = self.pre_redirected_step_signal {
+            // SAFETY: signalling this tracer's own traced child.
+            if unsafe { libc::kill(self.guard.pid, sig) } != 0 {
+                return Err(remote_err("test pre-step signal").into());
+            }
+        }
+        let stepped = self.step_syscall(step_state, pc, data);
+        let restored = write_mem(self.guard.pid, self.scratch_addr(), saved);
+        let orig = reg.get(&state);
+        let stepped = match stepped {
+            Ok(mut s) => {
+                reg.set(&mut s, orig);
+                Ok(s)
+            }
+            Err(RunError::Fault(mut f)) => {
+                reg.set(&mut f.state, orig);
+                Err(RunError::Fault(f))
+            }
+            Err(e) => Err(e),
+        };
+        if restored.is_err() {
+            return Err(remote_err("restore staged scratch").into());
+        }
+        stepped
     }
 
     pub fn initial_state(&self) -> GuestState {
@@ -2456,17 +2564,17 @@ impl RemoteExecutable {
                     // and must take the stubbing path too.
                     if state.rax as u32 == libc::SYS_rt_sigaction as u32 {
                         let step = self.prepare_sigaction_step(&state)?;
-                        let orig_rsi = state.rsi;
-                        let mut step_state = state;
-                        if let Some(rsi) = step.step_rsi {
-                            step_state.rsi = rsi;
-                        }
-                        let stepped = self.step_syscall(step_state, data.exit_src, &data);
-                        if let Some(saved) = step.saved_scratch {
-                            let _ = write_mem(self.guard.pid, self.scratch_addr(), &saved);
-                        }
-                        state = stepped?;
-                        state.rsi = orig_rsi;
+                        state = match (step.step_rsi, step.saved_scratch) {
+                            (Some(rsi), Some(saved)) => self.step_redirected_syscall(
+                                state,
+                                ArgReg::Rsi,
+                                rsi,
+                                &saved,
+                                data.exit_src,
+                                &data,
+                            )?,
+                            _ => self.step_syscall(state, data.exit_src, &data)?,
+                        };
                         let step_rax = state.rax;
                         let mut registry = std::mem::take(&mut self.registry);
                         let finished = self.finish_sigaction_step(
@@ -2481,24 +2589,21 @@ impl RemoteExecutable {
                         || state.rax as u32 == libc::SYS_rt_tgsigqueueinfo as u32
                     {
                         let step = self.prepare_sigqueue_step(&state, data.exit_src)?;
-                        let mut step_state = state;
-                        if step.tg {
-                            step_state.r10 = step.staged;
-                        } else {
-                            step_state.rdx = step.staged;
-                        }
-                        let stepped = self.step_syscall(step_state, data.exit_src, &data);
-                        let _ = write_mem(self.guard.pid, step.staged, &step.saved);
-                        state = stepped?;
-                        if step.tg {
-                            state.r10 = step.orig_info;
-                        } else {
-                            state.rdx = step.orig_info;
-                        }
-                        // A forged-code call to a foreign target
-                        // stepped only on the kernel's documented
-                        // refusal; an accepted one means the model
-                        // is wrong and fails closed by name.
+                        let reg = if step.tg { ArgReg::R10 } else { ArgReg::Rdx };
+                        state = self.step_redirected_syscall(
+                            state,
+                            reg,
+                            step.staged,
+                            &step.saved,
+                            data.exit_src,
+                            &data,
+                        )?;
+                        // A kernel-refused call (forged code to a
+                        // foreign target, or own TID with a foreign
+                        // TGID) stepped only on the kernel's
+                        // documented refusal; an accepted one means
+                        // the model is wrong and fails closed by
+                        // name.
                         if step.kernel_refuses && (state.rax as i64) >= 0 {
                             return Err(self.unexpected_stop("kernel accepted forged sigqueue"));
                         }
