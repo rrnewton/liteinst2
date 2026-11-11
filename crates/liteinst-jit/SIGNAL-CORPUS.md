@@ -1,4 +1,4 @@
-# Signal corpus (frozen at I1-H H1)
+# Signal corpus (frozen at I1-H H1; rows added in H2a)
 
 Every signal fixture of P1b I1-C through I1-G2, plus the I1-H
 fixtures, under a stable ID. Each row gives the rule-matrix cell
@@ -65,8 +65,8 @@ inputs").
     (bytes 0-31 of 128), the 18 `uc_mcontext` general registers
     r8-r15, rdi, rsi, rbp, rbx, rdx, rax, rcx, rsp, rip and
     eflags (RFLAGS exact, no mask), and the 64-bit `uc_sigmask`
-    (in O1-S that log must also equal O1-S's own read of the
-    frame);
+    (in O1-S the logged siginfo, 18 gregs and mask must also
+    each equal O1-S's own read of the frame, checked directly);
   - the guest report buffer, destination bytes 0-1023, which
     holds that log and the fixture's results;
   - the final 16 GPRs, RIP and RFLAGS (exact), and the final
@@ -83,6 +83,28 @@ inputs").
   checked: O1-S signalled after the recovered retired count must
   deliver once, with the same totals, at a frame RIP equal to the
   recovered source PC.
+
+  **Arrival instance (H2a).** The survey's counting run records,
+  at every hit of every PC-map entry, what recovery names there:
+  the source offset, the retired totals and the dispatcher's exit
+  kind. Every arrival, delivered or refused, must recover exactly
+  the survey's record for its (PC, hit). The checks run in a
+  fixed order, so the first failure names the cause: the seam
+  reached the hit, then it fired on exactly that hit, then the
+  instance matches the survey, then the comparisons above. The
+  instance check does not trust the seam's own hit counter (a
+  seam firing one hit late fails it at any PC with a later hit).
+  It shares `recover` with the arrival, so it pins which dynamic
+  instance was hit; recovery correctness is the O1-S comparison.
+
+  **Kernel rules pinned (H2a).** At every arrival-breakpoint hit
+  the kernel has set RFLAGS.RF (`hw_breakpoint_handler`), and the
+  tests assert it, so the seam's own "ensure RF" step is an
+  equivalent mutant on this kernel. O1-S takes a stop as a
+  handler entry only with `si_code` SIGTRAP (5): `signal_delivered`
+  calls `ptrace_notify(SIGTRAP, 0)` for a stepping tracee. A stop
+  with the handler-argument frame shape and any other non-step
+  `si_code` fails the oracle by name.
 
 ### Known common-mode risk (coord7 Q4(a))
 
@@ -131,22 +153,27 @@ What the check cannot catch:
 Capstone cross-decoding stays optional, for the case where the
 check ever disagrees (coord7 Q4(c)).
 
-## Allowed refusal windows at H1
+## Allowed refusal windows (H1, still at H2a)
 
 The sweep classifies each arrival's generated PC by its PC-map
 class. Every planned `(PC, hit)` was observed executed by the
 survey, so an arrival that never sends fails the sweep, and every
 executed class must get at least one sent arrival (delivered and
 equal, or a W1 refusal checked against O1-S as above). The seam
-must fire on exactly the planned hit. At H1 the only named
-refusals the sweep allows are:
+must fire on exactly the planned hit. A sweep that reaches its
+60 s cap fails (measured runs take under 3 s). The plan sizes are
+pinned (mixed: 633 PC-map entries, 448 arrivals; loop: 365
+entries, a 4338-pair population, 256 sampled plus 5 top-ups), and
+so are the outcome totals (mixed 336 equal and 112 W1; loop 244
+and 17). The only named refusals the sweep allows are:
 
 - **W1**, the common exit: `resume_gen` refuses common-exit
   stages, so the run ends with a recovered AsyncSignal at the
   exit's source PC. `w1_common_exit_arrival_is_named_refusal_today`
   pins this at each of the mixed body's four post-install exits
   (the helper's `ret`, `write`, `cpuid`, main's `ret`), which are
-  the common exit's hits 2 to 5; there is no hit 6;
+  the common exit's hits 2 to 5; there is no hit 6 (exactly five
+  executions);
 - **W2**, generated PCs with no PC-map entry. This class is
   **empty** in the remote substrate:
   `w2_remote_translation_maps_every_generated_byte` shows that
@@ -157,9 +184,60 @@ refusals the sweep allows are:
   `cpuid`. The breakpoint cannot place this one; it is held by
   the pre-original-step seam.
 
-W5 (a stale mirrored mask during a handler) is held by
-`w5_stale_mirror_stops_in_handler_today`. W1, W3 and W5 are closed
-in H2, and their held tests then flip to delivered-and-equal.
+W1 and W3 close in H2b, and their held tests then flip to
+delivered-and-equal.
+
+## Closed in H2a
+
+- **W5**, a stale mirrored mask during a handler. The poll takes
+  blocking from the kernel's `SigBlk`, parsed from the same
+  `/proc` status read as the pending sets by the one fail-closed
+  parser (`status_masks`; a missing or malformed line is a named
+  refusal), never from the mirror. Inside a handler that counts
+  its `sa_mask` and its own signal. Three fixtures, each crossing
+  several polls inside the handler while the signal is pending
+  and blocked:
+  - `w5_sa_mask_blocked_signal_waits_for_sigreturn_like_native`:
+    SIGUSR2 in `sa_mask`, no handler for it. The run no longer
+    stops in the handler; after sigreturn it stops by name at
+    main's resume point, where the native child dies of SIGUSR2,
+    with equal counts and registers;
+  - `w5_sa_mask_blocked_rt_signal_delivers_after_sigreturn`:
+    signal 34 in `sa_mask`, with a handler: delivered after
+    sigreturn, equal to O1-S;
+  - `w5_own_signal_without_nodefer_delivers_after_sigreturn`: the
+    handler's own SIGUSR1: delivered again after sigreturn, equal
+    to O1-S.
+- **A poll budget of 0 handed to a handler** (found reading the
+  code in the H2 scope review). The poll stub is `dec; jnz`, so
+  the budget is 0 at every stop on the poll path; a delivery from
+  there used to start the handler at 0, the next `dec` wrapped it
+  to 2^64 - 1, and no poll fired for the rest of the run. A
+  delivery from a raw budget of 0 now restarts the full budget (a
+  pure function of the stop state). The seam counts poll exits:
+  `poll_budget_restarts_after_a_delivery_at_a_poll_exit` delivers
+  at the loop's first post-install poll exit and requires polls
+  in the handler's wake, after sigreturn, at least the quiet
+  run's count minus the one interrupted poll, and identical
+  counts on a repeated run. A mid-block sigreturn restore never
+  sees a raw 0 (every budget-0 stop is on the poll path and
+  resumes at its block start), so a 0 there is a broken
+  invariant and refuses by name ("poll budget zero at mid-block
+  restore") rather than being reset;
+  `poll_budget_zero_at_midblock_restore_refuses_by_name` presents
+  that 0 through a seam at a mid-block delivery's restore.
+- **NSpid proof for `kill`.** The `kill` self-send gate now takes
+  the same `NSpid` proof as the queueing gate (exactly one pid,
+  ours). `self_sends_refused_by_name_when_nspid_shows_a_nested_namespace`
+  presents a nested-namespace line through a test seam that only
+  the proof reads: both gates refuse by name, nothing is queued,
+  and without the seam the same fixtures deliver. A plain
+  `kill(other)` was already refused by the same gate; what needs
+  the seam is `rdi` equal to the tracer's pid while `NSpid`
+  disagrees, which this substrate cannot produce (the child is
+  spawned in the tracer's pid namespace and guest namespace
+  changes are refused). On a host whose `/proc` shows nested
+  `NSpid` entries, every self-send refuses by name.
 
 ## Run-dependent inputs
 
@@ -174,7 +252,8 @@ exceptions:
   one `mov edi, imm32`, and the layout unchanged.
 
 Pids and addresses reach a fixture only at run time, through
-`getpid` and the base registers, never as immediates. Evidence:
+`getpid` and the base registers, never as immediates in a pinned
+fixture (`E4c`, unpinned, is the one exception above). Evidence:
 two record passes with different inherited descriptor tables
 (and so different pipe fds, pids and mappings) produce identical
 hashes for all pinned IDs.
@@ -182,11 +261,14 @@ hashes for all pinned IDs.
 ## Regenerating hashes
 
 Run the tests with `LITEINST_CORPUS_RECORD=/abs/path/file`. Each
-pin then appends `ID SHA256` to that file instead of asserting,
-and each of the four pinning test binaries fails its
-`corpus_record_mode_checks_no_pins` test, so a record run is never
-green. Diff the result against the table and edit only the rows
-whose fixture change was intended.
+pin then appends `ID SHA256` to that file instead of asserting.
+A record run is never green, even filtered: every pinning test
+holds a corpus guard (`corpus::check` refuses to run without
+one), and the guard fails a test that recorded, after it has
+recorded all of its fixtures; each of the four pinning binaries
+also fails its `corpus_record_mode_checks_no_pins` test. Diff the
+result against the table and edit only the rows whose fixture
+change was intended.
 
 ## Fixtures
 
@@ -265,6 +347,10 @@ whose fixture change was intended.
 | `W4-RT` | I1-H W4 | remote_signal_rt.rs blocked_pending_rt_signal_survives_polls_and_delivers_on_unblock | same with SIGRTMIN | native child + O1-S | `17d7f54be7ef5ac91c6b825fe033cddf165061eb8b74cba9879be41fdcbb1a2a` |
 | `H1 sweep mixed` | I1-H H1 | remote_signal_gate.rs sweep_mixed_exhaustive, w1_*, w3_* | every (generated PC, hit) after the install, every PC-map class; W1 and W3 held | O1-S at k | `52756a1c79aac1284ee0d419f562733ac492ec6bae225392491c3aefc2834248` |
 | `H1 sweep loop 120` | I1-H H1 | remote_signal_gate.rs sweep_poll_loop_sampled | N=256 seeded (PC, hit) sample, plus the first pair of each executed class the sample missed, over a poll-crossing loop (poll budget 16) | O1-S at k | `33eaa465bc6d8c088f5e15a131aca8f4e36d218a9543b22ee67c1303d31823d9` |
-| `H1 W5 stale mirror` | I1-H H1 | remote_signal_gate.rs w5_stale_mirror_stops_in_handler_today | handler sa_mask blocks USR2, self-sent, poll inside the handler | held named stop (flips in H2) | `05ffae9f92ddc2612063f2fad41ba3c0e431b802e208a74e57b6adc529cde1df` |
+| `H2 W5 sa_mask default` | I1-H H2a | remote_signal_gate.rs w5_sa_mask_blocked_signal_waits_for_sigreturn_like_native | handler sa_mask blocks USR2 (no handler), self-sent in the handler, polls crossed; acts after sigreturn | O1-S (native death point) | `01d5cdd582cf08a9bc35a03870de5db738ca6c5b808ef2ee222b2ce78cdfaf03` |
+| `H2 W5 sa_mask RT` | I1-H H2a | remote_signal_gate.rs w5_sa_mask_blocked_rt_signal_delivers_after_sigreturn | handler sa_mask blocks signal 34 (handled), self-sent in the handler, polls crossed; delivered after sigreturn | O1-S | `2607d7ccc9d69c7c0483b2eb6c6223d3d115af88143621f5e5d0961c64d8479b` |
+| `H2 W5 own signal` | I1-H H2a | remote_signal_gate.rs w5_own_signal_without_nodefer_delivers_after_sigreturn | handler's own USR1 (no SA_NODEFER) self-sent in the handler, polls crossed; delivered after sigreturn | O1-S | `d3a7ac78340541f03ed83c84d941381aa823c7b59f88cf366eb7b46920c34a43` |
+| `H2 NSpid kill` | I1-H H2a | remote_signal_rt.rs self_sends_refused_by_name_when_nspid_shows_a_nested_namespace | kill self-send with a nested NSpid presented to the proof | named refusal; delivers without the seam | `f7ea0ecdc03b6835e4e38ee0d0a0ce2e4faea38f98e51fce226f3cdc2062f241` |
+| `H2 NSpid queue` | I1-H H2a | remote_signal_rt.rs self_sends_refused_by_name_when_nspid_shows_a_nested_namespace | SI_QUEUE self-send with a nested NSpid presented to the proof | named refusal; delivers without the seam | `f90ec963307d9d57f6b784717dae6d5b92631cbdfdbe4fcedf7ba1ac9b40b635` |
 
 Unpinned: `E4c real foreign helper` (I1-G1, remote_signal_rt.rs sigqueue_to_foreign_target_refused_by_name_even_where_native_errs): the bytes embed the live helper's pid.
