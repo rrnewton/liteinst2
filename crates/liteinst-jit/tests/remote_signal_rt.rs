@@ -50,10 +50,14 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+#[path = "common/corpus.rs"]
+mod corpus;
+
 use iced_x86::BlockEncoderOptions;
 use iced_x86::code_asm::*;
 use liteinst_jit::exec::{FaultKind, Outcome, RunError};
 use liteinst_jit::harness::RETURN_SENTINEL;
+use liteinst_jit::o1::{O1sEnd, run_o1s};
 use liteinst_jit::refuse::Refuse;
 use liteinst_jit::remote::{RemoteChildInfo, RemoteExecutable};
 use liteinst_jit::types::{CountProfile, Generation, RegionFacts};
@@ -250,7 +254,18 @@ impl Rc {
     }
 }
 
-fn build(spec: &Spec) -> Fx {
+/// Assemble `spec` and pin its bytes under corpus ID `id`
+/// (SIGNAL-CORPUS.md) before anything runs.
+fn build(spec: &Spec, id: &str) -> Fx {
+    let fx = build_unpinned(spec);
+    corpus::check(id, &fx.bytes);
+    fx
+}
+
+/// [`build`] without the pin, only for fixtures whose bytes embed
+/// a run-dependent value (a live helper's pid); SIGNAL-CORPUS.md
+/// lists them as unpinned.
+fn build_unpinned(spec: &Spec) -> Fx {
     let (hlen, handler_insns) = {
         let mut h = CodeAssembler::new(64).unwrap();
         emit_handler(&mut h);
@@ -1020,7 +1035,7 @@ fn differential_sent(
     label: &str,
     send: Option<(i64, i32)>,
 ) -> (Fx, Witness, Translated, Native) {
-    let fx = build(spec);
+    let fx = build(spec, label);
     let n = run_native_sent(&fx, ext(send));
     assert_eq!(n.result, 42, "{label}: native result");
     let nw = witness(&n.data, spec, n.base, n.dst, n.pid);
@@ -1060,7 +1075,130 @@ fn differential_sent(
         assert_slept(&n.seen, "native", label);
         assert_slept(&t.seen, "translated", label);
     }
+    o1s_check(&fx, spec, deliveries, label, send, &nw, &t, &out);
     (fx, tw, t, n)
+}
+
+/// I1-H, the I1-D completion: O1-S steps the same bytes natively
+/// in the remote child, with every delivery made by the kernel
+/// for real. It must reproduce the native child's witness (a
+/// sanity check of O1-S itself), match the fixture enumeration
+/// on its own (its self-check), and equal the translated counts
+/// and final register image (addresses as region offsets; the
+/// child's pid as a token).
+#[allow(clippy::too_many_arguments)]
+fn o1s_check(
+    fx: &Fx,
+    spec: &Spec,
+    deliveries: u64,
+    label: &str,
+    send: Option<(i64, i32)>,
+    nw: &Witness,
+    t: &Translated,
+    out: &Outcome,
+) {
+    let mut sender = None;
+    let (main, restorer) = (fx.main_off, fx.restorer_off);
+    let o = run_o1s(
+        std::path::Path::new(REMOTE_CHILD),
+        &fx.bytes,
+        &[],
+        |r, info| {
+            r.rip = info.base + main;
+            r.rbx = info.dst;
+            r.rbp = info.base;
+            r.r12 = info.base + restorer;
+            r.r13 = info.src;
+        },
+        None,
+        |pid| sender = Sender::start(pid as u32, ext(send)),
+    );
+    let seen = finish_sender(sender);
+    assert_eq!(o.end, O1sEnd::Returned, "{label}: O1-S end");
+    let ow = witness(
+        &o.dst_bytes[..REPORT],
+        spec,
+        o.info.base,
+        o.info.dst,
+        o.pid as u32,
+    );
+    assert_eq!(&ow, nw, "{label}: O1-S vs native witness");
+    assert_eq!(
+        o.deliveries.len() as u64,
+        deliveries,
+        "{label}: O1-S deliveries"
+    );
+    assert_eq!(
+        o.instructions,
+        fx.main_insns + fx.spin_extra_insns + deliveries * (fx.handler_insns + 2),
+        "{label}: O1-S instructions vs enumeration"
+    );
+    assert_eq!(
+        o.branches,
+        fx.main_branches + fx.spin_branches,
+        "{label}: O1-S branches vs enumeration"
+    );
+    assert_eq!(
+        (out.instructions, out.branches),
+        (o.instructions, o.branches),
+        "{label}: translated vs O1-S counts"
+    );
+    let code_len = fx.bytes.len().div_ceil(4096) as u64 * 4096;
+    let own = t.remote.child_pid_for_test() as u32;
+    let tn = norm_state(&out.state, &t.info, own, code_len);
+    let on = norm_state(&o.state, &o.info, o.pid as u32, code_len);
+    for (i, name) in GREG_NAMES.iter().enumerate() {
+        assert_eq!(
+            tn[i], on[i],
+            "{label}: final {name}: translated vs O1-S (normalized)"
+        );
+    }
+    if send.is_some() {
+        assert_slept(&seen, "O1-S", label);
+    }
+}
+
+const GREG_NAMES: [&str; 18] = [
+    "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "rdi", "rsi", "rbp", "rbx", "rdx", "rax",
+    "rcx", "rsp", "rip", "rflags",
+];
+
+/// A register image with addresses as `(region << 56) | offset`
+/// (code, stack, dst, src, data) and the child's own pid as a
+/// token. RFLAGS compares exactly (no observer flag may leak).
+fn norm_state(
+    s: &liteinst_jit::GuestState,
+    info: &RemoteChildInfo,
+    pid: u32,
+    code_len: u64,
+) -> [u64; 18] {
+    let regs = [
+        s.r8, s.r9, s.r10, s.r11, s.r12, s.r13, s.r14, s.r15, s.rdi, s.rsi, s.rbp, s.rbx, s.rdx,
+        s.rax, s.rcx, s.rsp, s.rip, s.rflags,
+    ];
+    let stack_lo = info.stack_top - 64 * 1024 + 8;
+    let regions = [
+        (info.base, code_len),
+        (stack_lo, info.stack_top + 8 - stack_lo),
+        (info.dst, 8192),
+        (info.src, 8192),
+        (info.data, 128),
+    ];
+    core::array::from_fn(|i| {
+        let v = regs[i];
+        if i == 17 {
+            return v;
+        }
+        if v == u64::from(pid) {
+            return 0x7e00_0000_0000_0000;
+        }
+        for (r, &(lo, len)) in regions.iter().enumerate() {
+            if v >= lo && v <= lo + len {
+                return ((r as u64 + 1) << 56) | (v - lo);
+            }
+        }
+        v
+    })
 }
 
 /// Positive sleep witness: the sender saw the child asleep in
@@ -1269,7 +1407,7 @@ fn back_to_back_ineligible_stops_at_source_handler_entry() {
         unblock: true,
         pending_probe: false,
     };
-    let fx = build(&spec);
+    let fx = build(&spec, "E2c");
     let t = run_translated(&fx);
     let Err(RunError::Fault(f)) = t.out else {
         panic!("E2c: expected recovered stop, got {:?}", t.out);
@@ -1400,7 +1538,7 @@ fn kernel_refused_queue_calls_get_native_errno() {
     // Errno first, from guest memory whatever the outcome: a
     // tracer that refused instead of stepping leaves the
     // result slots unwritten and fails here, not later.
-    let fx = build(&spec);
+    let fx = build(&spec, "E3b kernel-refused queues");
     let n = run_native(&fx);
     assert_eq!(n.result, 42, "E4a native result");
     let nw = witness(&n.data, &spec, n.base, n.dst, n.pid);
@@ -1440,7 +1578,7 @@ fn expect_refused(spec: &Spec, idx: usize, label: &str) {
 }
 
 fn expect_refused_ext(spec: &Spec, idx: usize, label: &str, ext: Ext) {
-    let fx = build(spec);
+    let fx = build(spec, label);
     let t = run_translated_full(&fx, None, ext);
     let want = RunError::Refuse(Refuse::NoHandler {
         src_pc: t.info.base + fx.send_pcs[idx],
@@ -1562,7 +1700,8 @@ fn sigqueue_to_foreign_target_refused_by_name_even_where_native_errs() {
     let _g = lock();
     let helper = Helper::spawn(RTMIN);
     let hp = helper.pid();
-    let fx = build(&single(Send::TgQueue {
+    // Not pinned: the bytes embed this run's helper pid.
+    let fx = build_unpinned(&single(Send::TgQueue {
         tgid: Pid::Raw(hp),
         tid: Pid::Raw(hp),
         sig: RTMIN,
@@ -1626,7 +1765,7 @@ fn reserved_32_33_refused_for_queue_and_delivery() {
             unblock: false,
             pending_probe: false,
         };
-        let fx = build(&spec);
+        let fx = build(&spec, &format!("E4e deliver {sig}"));
         let t = run_translated(&fx);
         let Err(RunError::Fault(f)) = &t.out else {
             panic!("E4e {sig}: expected recovered stop, got {:?}", t.out);
@@ -1665,7 +1804,7 @@ fn rt_resethand_unreadable_unadmitted_refused() {
         unblock: false,
         pending_probe: false,
     };
-    let fx = build(&spec);
+    let fx = build(&spec, "E4f RESETHAND");
     let t = run_translated(&fx);
     let Err(RunError::Fault(f)) = &t.out else {
         panic!("E4f: expected recovered stop, got {:?}", t.out);
@@ -1725,7 +1864,7 @@ fn check_pre_entry_stop(
 #[test]
 fn async_stop_before_sigqueue_entry_keeps_guest_info_pointer() {
     let _g = lock();
-    let fx = build(&single(queue(RTMIN, 0x5a)));
+    let fx = build(&single(queue(RTMIN, 0x5a)), "E5a rt_sigqueueinfo rdx");
     check_pre_entry_stop(
         &fx,
         fx.send_pcs[0],
@@ -1739,14 +1878,17 @@ fn async_stop_before_sigqueue_entry_keeps_guest_info_pointer() {
 #[test]
 fn async_stop_before_tgsigqueue_entry_keeps_guest_info_pointer() {
     let _g = lock();
-    let fx = build(&single(Send::TgQueue {
-        tgid: Pid::Own,
-        tid: Pid::Own,
-        sig: RTMIN,
-        code: SI_QUEUE,
-        forged_sender: false,
-        value: 0x5a,
-    }));
+    let fx = build(
+        &single(Send::TgQueue {
+            tgid: Pid::Own,
+            tid: Pid::Own,
+            sig: RTMIN,
+            code: SI_QUEUE,
+            forged_sender: false,
+            value: 0x5a,
+        }),
+        "E5b rt_tgsigqueueinfo r10",
+    );
     check_pre_entry_stop(
         &fx,
         fx.send_pcs[0],
@@ -1763,13 +1905,16 @@ fn async_stop_before_tgsigqueue_entry_keeps_guest_info_pointer() {
 #[test]
 fn async_stop_before_sigaction_entry_keeps_guest_act_pointer() {
     let _g = lock();
-    let fx = build(&Spec {
-        installs: vec![(RTMIN, FLAGS, 0)],
-        block: 0,
-        sends: vec![],
-        unblock: false,
-        pending_probe: false,
-    });
+    let fx = build(
+        &Spec {
+            installs: vec![(RTMIN, FLAGS, 0)],
+            block: 0,
+            sends: vec![],
+            unblock: false,
+            pending_probe: false,
+        },
+        "E5c rt_sigaction rsi",
+    );
     check_pre_entry_stop(
         &fx,
         fx.install_pcs[0],
@@ -1815,7 +1960,7 @@ fn mismatched_si_signo_is_overwritten_like_native() {
 #[test]
 fn pre_step_test_seam_is_inert_by_default() {
     let _g = lock();
-    let fx = build(&single(queue(RTMIN, 0)));
+    let fx = build(&single(queue(RTMIN, 0)), "E5d seam inert");
     let mut remote = RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &fx.bytes)
         .expect("spawn remote");
     assert_eq!(
@@ -2087,7 +2232,7 @@ fn no_handler_restart_refused_by_name() {
         ),
         (futex_wait(), NR_FUTEX, "G2f futex RESTARTSYS"),
     ] {
-        let fx = build(&single(send));
+        let fx = build(&single(send), label);
         let t = run_translated_full(&fx, None, Ext::Send(nr, libc::SIGWINCH));
         assert_slept(&t.seen, "translated", label);
         let want = RunError::Refuse(Refuse::RemoteSubstrate {
@@ -2232,7 +2377,7 @@ fn interrupted_write_outside_restart_set_keeps_named_stop() {
     let _g = lock();
     let pipe = FullPipe::new();
     let spec = single_with_handler(Send::WriteFd(pipe.write_fd()));
-    let fx = build(&spec);
+    let fx = build(&spec, "G2h interrupted write");
     let n = run_native_sent(&fx, Ext::Send(libc::SYS_write, USR1));
     assert_eq!(n.result, 42, "G2h native result");
     let nw = witness(&n.data, &spec, n.base, n.dst, n.pid);
@@ -2301,7 +2446,7 @@ fn futex_high_alias_restarts_like_native() {
 #[test]
 fn sender_waits_for_sleep_not_syscall_entry_stop() {
     let _g = lock();
-    let fx = build(&single(futex_wait()));
+    let fx = build(&single(futex_wait()), "G2j sender sleep proof");
     let remote = RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &fx.bytes)
         .expect("spawn remote");
     let pid = remote.child_pid_for_test();
@@ -2392,4 +2537,31 @@ fn blocked_pending_signal_survives_polls_and_delivers_on_unblock() {
     );
     assert!(w.rcs.iter().all(|&rc| rc == 0), "W4 results {:x?}", w.rcs);
     assert_eq!(w.old_mask, sig_bit(USR1), "W4 mask before unblock");
+}
+
+/// W4, real-time variant (coord7 P3): the same shape with
+/// SIGRTMIN, whose pending instance is queued rather than a bit.
+/// It stays pending across two poll exits and is delivered at
+/// the unblock resume point, as natively.
+#[test]
+fn blocked_pending_rt_signal_survives_polls_and_delivers_on_unblock() {
+    let _g = lock();
+    let spins = 40_000;
+    assert!(u64::from(spins) > 2 * liteinst_jit::exec::POLL_BUDGET);
+    let spec = Spec {
+        installs: vec![(RTMIN, FLAGS, 0)],
+        block: sig_bit(RTMIN),
+        sends: vec![Send::Kill(RTMIN), Send::Spin(spins), Send::PendingNow],
+        unblock: true,
+        pending_probe: false,
+    };
+    let (fx, w, _t) = differential(&spec, 1, "W4-RT");
+    assert_eq!(w.pending_mid, sig_bit(RTMIN), "W4-RT still pending");
+    assert_eq!(
+        w.log,
+        vec![killed(RTMIN, fx.resume_off)],
+        "W4-RT delivered at the unblock resume point"
+    );
+    assert_eq!(w.frames, vec![(0, 0)], "W4-RT uc RAX and saved mask");
+    assert_eq!(w.old_mask, sig_bit(RTMIN), "W4-RT mask before unblock");
 }
