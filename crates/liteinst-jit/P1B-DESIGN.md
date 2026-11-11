@@ -276,8 +276,7 @@ but may not be claimed whole-program until I1-H review passes.
 
 Status at this section's commit (liteinst2 `main`
 `c4217e8965eaff5a209dbd9902cf3d64dfc7e2b5`), updated for I1-E
-through I1-G1 on `main` `4210776c6485989dfb6ead7e61c745912d04e191`
-and for I1-G2 on its branch:
+through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
 
 - **I1-A landed** (`2b46ed54a14839513ebc122246e7926333c6f499`):
   backend-neutral recovery core in `src/recovery.rs`.
@@ -319,10 +318,18 @@ and for I1-G2 on its branch:
   back-to-back frame setup) **landed**
   ([PR 76](https://github.com/rrnewton/liteinst2/pull/76),
   merge `4210776c6485989dfb6ead7e61c745912d04e191`).
-  **I1-G2** (syscall restart, `SA_RESTART`, scoped and
-  approved 2026-11-10) is implemented on branch
-  `jit6-cl/i1g2-20261110`, pending two signal-frame reviews.
-  I1-H unstarted.
+  **I1-G2** (syscall restart, `SA_RESTART`) **landed**
+  ([PR 77](https://github.com/rrnewton/liteinst2/pull/77),
+  merge `ca1152214e221b437caa11fb48c3e36d5069da21`).
+- **I1-H** (scope approved by coord7 2026-11-10) runs as four
+  PRs in order: a standalone poll fix (W4: a blocked pending
+  signal stopped the run at a poll exit; fixed, see I1-F
+  below), then H1 evidence (an O1 signal oracle, deterministic
+  arrival at any generated PC, a differential sweep, the frozen
+  corpus), H2 (deliver arrivals in common-exit stages, the
+  entry bridge, and original-instruction steps, plus the `kill`
+  gate's NSpid proof), and H3 (the S1 overhead breakdown, a
+  replay of every retained mutant, and the one bounded claim).
 
 Each stage is its own branch off then-current liteinst2 `main`,
 signed, with exact-head `fmt`, Clippy, locked debug/release
@@ -470,7 +477,12 @@ frame stack only); flags are the I1-D base plus optional
 frame stack is capped at 8; `SA_ONSTACK` onto an enabled
 altstack needs size ≥ 8192 (disabled altstack keeps the
 kernel normal-stack fallback); poll deferral picks the
-lowest-numbered unblocked eligible pending signal; and the
+lowest-numbered unblocked eligible pending signal (a BLOCKED
+pending signal never stops the run at a poll: it stays
+pending, as natively, until the guest unblocks it and the
+kernel presents it; fixed after I1-G2 as the I1-H "W4" PR,
+whose test blocks SIGUSR1, receives it, runs past two poll
+exits, probes `rt_sigpending`, and then unblocks it); and the
 self-send syscalls `getpid`/`kill` pass through with `kill`
 gated to the traced child's own pid. Evidence: mask matrix
 with in-handler mask query (NODEFER on/off), altstack frame

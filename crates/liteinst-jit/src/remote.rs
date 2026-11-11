@@ -2705,22 +2705,30 @@ impl RemoteExecutable {
                     // therefore deferred one entry: re-entering
                     // the cache makes the kernel present its
                     // delivery stop at the block head, where the
-                    // Async arm delivers it. Blocked or
-                    // ineligible pending signals keep the
-                    // recovered stop (mask completion is I1-F).
+                    // Async arm delivers it. A BLOCKED pending
+                    // signal is not an event: natively it just
+                    // stays pending until the guest unblocks it,
+                    // and the kernel then presents it (the I1-F
+                    // unblock path), so it never stops the run.
+                    // Only an ineligible UNBLOCKED pending signal
+                    // keeps the recovered stop.
                     state.rip = data.exit_src;
                     let pending = self.pending_async()?;
+                    let unblocked: Vec<i32> = pending
+                        .iter()
+                        .copied()
+                        .filter(|&sig| !self.registry.is_blocked(sig))
+                        .collect();
                     // The kernel presents the lowest-numbered
                     // UNBLOCKED pending signal first, so any
                     // eligible unblocked pending entry defers,
                     // even behind a blocked lower signal.
-                    let defer = pending.iter().any(|&sig| {
-                        !self.registry.is_blocked(sig)
-                            && self.delivery_action(sig, &active, false).is_some()
-                    });
-                    if !defer && let Some((&sig, rest)) = pending.split_first() {
+                    let defer = unblocked
+                        .iter()
+                        .any(|&sig| self.delivery_action(sig, &active, false).is_some());
+                    if !defer && let Some(&sig) = unblocked.first() {
                         return Err(RunError::Fault(Box::new(Fault {
-                            also_pending: rest.to_vec(),
+                            also_pending: pending.iter().copied().filter(|&s| s != sig).collect(),
                             kind: crate::recovery::FaultKind::AsyncSignal,
                             src_pc: data.exit_src,
                             addr: 0,
