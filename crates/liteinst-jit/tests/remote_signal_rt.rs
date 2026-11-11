@@ -25,7 +25,8 @@
 //! exactly once). Buffer offsets are `[rbx]` (rbx = dst; only
 //! `dst[0..1024]` is reported by the native child):
 //! - `0..32` act, `0x80` new mask, `0x88` old mask,
-//!   `0x90` rt_sigpending set;
+//!   `0x90` rt_sigpending set (end probe), `0x40`
+//!   rt_sigpending set (mid-run probe);
 //! - `152 + 8*k` the pointer argument register (`rsi` for
 //!   `rt_sigaction`, `rdx`/`r10` for the queue calls, `rsi`
 //!   for `nanosleep`'s remainder) right after the k-th such
@@ -86,6 +87,7 @@ const UID_WORD: u32 = 0x0000_5151;
 const FORGED_PID: u32 = 0x7777_0001;
 const FORGED_UID: u32 = 0x7777_0002;
 
+const PENDING_MID: i32 = 0x40;
 const ARG_BASE: i32 = 152;
 const RC_BASE: i32 = 256;
 const LOG_PTR: i32 = 376;
@@ -154,6 +156,14 @@ enum Send {
     ClockNanosleep,
     /// rt_sigprocmask(SIG_BLOCK, NULL, &old at 0x88): query.
     QueryMask,
+    /// No syscall: a counted loop `mov ecx, n; top: dec ecx;
+    /// jnz top`, entering its block `n` times (W4: runs past
+    /// poll exits, one every `POLL_BUDGET` = 16384 block
+    /// entries). Records no result.
+    Spin(u32),
+    /// rt_sigpending into `PENDING_MID` (a pending probe placed
+    /// among the sends, before any unblock).
+    PendingNow,
     /// write(fd, dst + INFO, 1) to a test-owned inherited fd.
     WriteFd(i32),
 }
@@ -202,6 +212,11 @@ struct Fx {
     /// Never-taken `jne handler` devices in main (one per
     /// handler).
     main_branches: u64,
+    /// `Spin` loops: retired instructions beyond the straight-line
+    /// count, and retired conditional branches (one `jnz` per
+    /// iteration).
+    spin_extra_insns: u64,
+    spin_branches: u64,
 }
 
 /// One `SA_SIGINFO` handler body: append one log entry. No
@@ -339,8 +354,21 @@ fn build(spec: &Spec) -> Fx {
     };
     let mut send_labels = Vec::new();
     let mut send_before = Vec::new();
+    let (mut spin_extra_insns, mut spin_branches) = (0u64, 0u64);
     for send in &spec.sends {
         let mut at = a.create_label();
+        if let Send::Spin(n) = *send {
+            assert!(n >= 1, "spin count");
+            a.mov(ecx, n).unwrap();
+            a.set_label(&mut at).unwrap();
+            send_before.push((a.instructions().len() - m0) as u64);
+            a.dec(ecx).unwrap();
+            a.jnz(at).unwrap();
+            spin_extra_insns += 2 * (u64::from(n) - 1);
+            spin_branches += u64::from(n);
+            send_labels.push(at);
+            continue;
+        }
         match *send {
             Send::Kill(sig) => {
                 a.mov(rdi, r14).unwrap();
@@ -441,6 +469,12 @@ fn build(spec: &Spec) -> Fx {
                 a.mov(edx, 1u32).unwrap();
                 a.mov(eax, libc::SYS_write as u32).unwrap();
             }
+            Send::Spin(_) => unreachable!("handled above"),
+            Send::PendingNow => {
+                a.lea(rdi, qword_ptr(rbx + PENDING_MID)).unwrap();
+                a.mov(esi, 8u32).unwrap();
+                a.mov(eax, libc::SYS_rt_sigpending as u32).unwrap();
+            }
             Send::QueryMask => {
                 a.mov(edi, libc::SIG_BLOCK as u32).unwrap();
                 a.xor(esi, esi).unwrap();
@@ -516,6 +550,8 @@ fn build(spec: &Spec) -> Fx {
         main_insns_before_resume: before_resume as u64,
         handler_insns,
         main_branches,
+        spin_extra_insns,
+        spin_branches,
     }
 }
 
@@ -556,6 +592,8 @@ struct Witness {
     g2: [u64; 4],
     old_mask: u64,
     pending: u64,
+    /// rt_sigpending set from a `PendingNow` probe.
+    pending_mid: u64,
     log: Vec<Entry>,
 }
 
@@ -603,6 +641,7 @@ fn witness(data: &[u8], spec: &Spec, base: u64, dst: u64, own_pid: u32) -> Witne
             .collect(),
         old_mask: word(data, 0x88),
         pending: word(data, 0x90),
+        pending_mid: word(data, PENDING_MID),
         log,
     }
 }
@@ -624,7 +663,11 @@ fn n_args(spec: &Spec) -> usize {
 fn n_rc(spec: &Spec) -> usize {
     spec.installs.len()
         + 1
-        + spec.sends.len()
+        + spec
+            .sends
+            .iter()
+            .filter(|s| !matches!(s, Send::Spin(_)))
+            .count()
         + usize::from(spec.unblock)
         + usize::from(spec.pending_probe)
 }
@@ -1005,10 +1048,14 @@ fn differential_sent(
     // reachability devices only (the handler has none).
     assert_eq!(
         out.instructions,
-        fx.main_insns + deliveries * (fx.handler_insns + 2),
+        fx.main_insns + fx.spin_extra_insns + deliveries * (fx.handler_insns + 2),
         "{label}: instructions"
     );
-    assert_eq!(out.branches, fx.main_branches, "{label}: branches");
+    assert_eq!(
+        out.branches,
+        fx.main_branches + fx.spin_branches,
+        "{label}: branches"
+    );
     if send.is_some() {
         assert_slept(&n.seen, "native", label);
         assert_slept(&t.seen, "translated", label);
@@ -2300,4 +2347,49 @@ fn sender_waits_for_sleep_not_syscall_entry_stop() {
         None,
         "not asleep: no signal may be sent"
     );
+}
+
+/// W4 (I1-H review order, standalone fix): a BLOCKED pending
+/// signal is not an event. The guest blocks USR1, sends it to
+/// itself (so it is pending), then runs a loop entering its
+/// block 40000 times, past two poll exits (one every 16384
+/// block entries). Natively USR1 just stays pending: the
+/// mid-run rt_sigpending probe shows it, in both children.
+/// Only then does the guest unblock it, and the kernel delivers
+/// it at the unblock's resume point, as natively. Before the
+/// fix the translated run stopped at the first poll with a
+/// recovered AsyncSignal.
+#[test]
+fn blocked_pending_signal_survives_polls_and_delivers_on_unblock() {
+    let _g = lock();
+    let spins = 40_000;
+    assert!(
+        u64::from(spins) > 2 * liteinst_jit::exec::POLL_BUDGET,
+        "the loop crosses at least two poll exits"
+    );
+    let spec = Spec {
+        installs: vec![(USR1, FLAGS, 0)],
+        block: sig_bit(USR1),
+        sends: vec![Send::Kill(USR1), Send::Spin(spins), Send::PendingNow],
+        unblock: true,
+        pending_probe: false,
+    };
+    let (fx, w, _t) = differential(&spec, 1, "W4");
+    assert_eq!(
+        w.pending_mid,
+        sig_bit(USR1),
+        "W4 USR1 still pending after the loop"
+    );
+    assert_eq!(
+        w.log,
+        vec![killed(USR1, fx.resume_off)],
+        "W4 delivered at the unblock resume point"
+    );
+    assert_eq!(
+        w.frames,
+        vec![(0, 0)],
+        "W4 uc RAX (unblock result) and saved mask"
+    );
+    assert!(w.rcs.iter().all(|&rc| rc == 0), "W4 results {:x?}", w.rcs);
+    assert_eq!(w.old_mask, sig_bit(USR1), "W4 mask before unblock");
 }

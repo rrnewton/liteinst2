@@ -484,35 +484,75 @@ fn check_immediate_and_poll_async_stops() {
         assert_eq!(f.branches, 0, "sig {sig}");
         assert_eq!(f.instructions, 0, "sig {sig}");
     }
-    // Genuine poll boundary: with SIGUSR1+SIGUSR2 blocked in
-    // the child's initial mask, queued signals stay pending
-    // through cache execution and are reported exactly (first
-    // by number, rest in also_pending) at the first poll exit,
-    // with real progress and no delivery.
+    // Genuine poll boundary with BLOCKED pending signals (I1-H
+    // W4): with SIGUSR1+SIGUSR2 blocked in the child's initial
+    // mask, queued signals stay pending through cache execution
+    // AND through every poll exit, because natively a blocked
+    // pending signal is not an event. The run completes exactly
+    // like the same input with nothing pending, crossing many
+    // poll exits; nothing is delivered and nothing is lost: both
+    // are still pending in the kernel afterwards. (Until W4 the
+    // first poll exit stopped this run with a recovered
+    // AsyncSignal, which coord7 ruled a bug.)
     {
-        let (mut remote, info) = prepare_remote("cpuid_loop", &[libc::SIGUSR1, libc::SIGUSR2]);
+        // 40000 iterations: more than two poll exits (16384
+        // block entries each), at one cpuid exit per iteration.
+        let state_of = |remote: &RemoteExecutable| {
+            let mut state = remote.initial_state();
+            state.rsi = 40_000;
+            state
+        };
+        let (mut quiet, _) = prepare_remote("cpuid_loop", &[libc::SIGUSR1, libc::SIGUSR2]);
+        let q = quiet
+            .run(state_of(&quiet), RETURN_SENTINEL)
+            .expect("cpuid_loop with nothing pending");
+        let (mut remote, _info) = prepare_remote("cpuid_loop", &[libc::SIGUSR1, libc::SIGUSR2]);
         let pid = remote.child_pid_for_test();
         // SAFETY: signalling our own traced child.
         assert_eq!(unsafe { libc::kill(pid, libc::SIGUSR2) }, 0);
         assert_eq!(unsafe { libc::kill(pid, libc::SIGUSR1) }, 0);
-        let mut state = remote.initial_state();
-        state.rsi = 200_000;
-        let r = remote.run(state, RETURN_SENTINEL);
-        let f = fault_of(&r, "cpuid_loop poll", "remote");
-        assert_eq!(f.kind, liteinst_jit::exec::FaultKind::AsyncSignal);
-        assert_eq!(f.signum, libc::SIGUSR1);
-        assert_eq!(f.also_pending, vec![libc::SIGUSR2], "exact pending set");
+        let out = remote
+            .run(state_of(&remote), RETURN_SENTINEL)
+            .unwrap_or_else(|e| panic!("cpuid_loop with blocked pending signals completes: {e:?}"));
         assert!(
-            f.branches >= 1_000,
-            "poll provenance requires budget-scale progress, got {}",
-            f.branches
+            out.branches > 2 * liteinst_jit::exec::POLL_BUDGET,
+            "crossed poll exits: {} branches",
+            out.branches
         );
-        assert!(f.instructions > f.branches, "poll progress in instructions");
-        assert_eq!(f.state.rip, f.src_pc);
-        assert!(
-            f.src_pc >= info.base && f.src_pc < info.base + 64,
-            "poll src inside fixture: {:#x}",
-            f.src_pc
+        assert_eq!(
+            (out.branches, out.instructions),
+            (q.branches, q.instructions),
+            "counts equal the run with nothing pending"
+        );
+        assert_eq!(
+            (
+                out.state.rsi,
+                out.state.rdi,
+                out.state.rip,
+                out.state.rflags & STATUS_MASK
+            ),
+            (
+                q.state.rsi,
+                q.state.rdi,
+                q.state.rip,
+                q.state.rflags & STATUS_MASK
+            ),
+            "final state equals the run with nothing pending"
+        );
+        let both = (1u64 << (libc::SIGUSR1 - 1)) | (1u64 << (libc::SIGUSR2 - 1));
+        let status = std::fs::read_to_string(format!("/proc/{pid}/status")).expect("child status");
+        let pending = status
+            .lines()
+            .filter_map(|l| {
+                l.strip_prefix("SigPnd:")
+                    .or_else(|| l.strip_prefix("ShdPnd:"))
+            })
+            .map(|v| u64::from_str_radix(v.trim(), 16).expect("pending hex"))
+            .fold(0, |acc, v| acc | v);
+        assert_eq!(
+            pending & both,
+            both,
+            "both still pending in the kernel, none delivered"
         );
     }
     // Stepping-phase asynchronous interruption (live): a write
