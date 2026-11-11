@@ -620,11 +620,16 @@ confirms each behaviour on the host):
   (`kernel/futex/waitwake.c:728`) and would restart through
   `restart_syscall`. `nanosleep` is the plain relative sleep;
   `clock_nanosleep` is not passed through. Delivery at a
-  restart exit applies to these three calls only. Any other
-  pass-through call whose exit carries a restart code (a
-  blocking `write`, say) keeps the named stop `syscall restart
-  pending at exit stop`. No fixture reaches that path yet, so
-  it is disclosed and untested.
+  restart exit applies to these three calls only, classified
+  by the low 32 bits of `orig_rax` as the kernel dispatches
+  and as pass-through admission classifies (`0x1_000000ca`
+  runs futex and is delivered like it; the full `orig_rax`
+  stays the provenance check and a restart's frame RAX). Any
+  other pass-through call whose exit carries a restart code
+  keeps the named stop `syscall restart pending at exit stop`.
+  This is tested with a blocking `write`: the test harness
+  hands the child a pipe it has already filled to
+  `F_GETPIPE_SZ`.
 - *Delivery at the syscall exit.* An exit stop carrying
   `-ERESTARTSYS`, `-ERESTARTNOHAND` or `-ERESTART_RESTARTBLOCK`
   is not completion. The tracer resumes once with
@@ -638,24 +643,45 @@ confirms each behaviour on the host):
   `SA_RESTART`. The tracer predicts the outcome and the frame
   must match it: ucontext RIP at the syscall (restart) or just
   after it (`-EINTR`), and ucontext RAX the syscall number or
-  `-EINTR`. A mismatch is a named substrate refusal.
+  `-EINTR`. A mismatch is a named substrate refusal. With a
+  handler, `handle_signal` sets RIP and RAX together, so a
+  wrong prediction already fails the frame-RIP check; the RAX
+  check is defence in depth (it turns a tracer that corrupted
+  RAX before injection into a named stop instead of a wrong
+  syscall result).
   `rt_sigsuspend`'s saved mask lands in the frame's
   `uc_sigmask` and sigreturn restores it. That is the kernel's
-  doing, compared with native.
+  doing, compared with native. On this path the tracer writes
+  only its own data page and, at sigreturn, the frame's saved
+  RIP (rewritten to the generated re-entry). `nanosleep`'s
+  remainder, like every syscall result, is written by the
+  kernel through the guest's own pointer.
 - *Restart resume and counts.* A restarted frame resumes at
-  the syscall through the I1-E exact mid-block re-entry. That
-  entry is the syscall's exit stub at its pristine stage,
-  which retires nothing, so counters need no rebasing; the
-  call then steps again. The syscall instruction is credited
-  once, at completion: an `-EINTR` return credits it at
-  delivery, a restarted attempt is not credited, and the
-  completed restart is.
+  the syscall and the call steps again. When the syscall is
+  mid-block, the resume is the I1-E exact mid-block re-entry:
+  the syscall's exit stub at its pristine stage, which retires
+  nothing, and the dispatcher re-bases the counters at
+  sigreturn (`tot = raw + (tot - resolved)`, with `raw` the
+  count before the syscall). When the syscall starts its own
+  block, the resume goes through the normal block index with
+  no re-base. The syscall instruction is credited once, at
+  completion: an `-EINTR` return credits it at delivery, a
+  restarted attempt is not credited, and the completed
+  restart is. A wrong restart credit is invisible on the
+  mid-block path (the re-base cancels it), so the block-start
+  path is tested too.
 - *Back-to-back.* With several unblocked signals pending at
   the exit (for example, `rt_sigsuspend` unblocking two), the
   I1-G1 loop builds back-to-back frames. The first frame
   records the restart outcome; the next names the first
   signal's source handler, with RAX 0 as the kernel leaves it
-  at handler entry.
+  at handler entry. This widens the I1-G2 scope as first
+  proposed (several signals at a restart exit refused); coord7
+  acknowledged the widening explicitly in review. Tested only
+  with an `-EINTR` bottom frame: a restarting bottom frame
+  under another frame is untested, because nothing makes two
+  signals reliably pending at a futex exit natively
+  (`rt_sigsuspend` has a mask but never restarts).
 - *Flags.* `SA_RESTART` joins the admitted flag words. Outside
   a syscall restart it changes nothing, which is tested for an
   RT handler. `SA_RESETHAND` and `SA_NOCLD*` stay ineligible.
@@ -675,12 +701,19 @@ confirms each behaviour on the host):
   So is a restart exit followed by a syscall stop instead of a
   delivery stop.
 - *Evidence* (`tests/remote_signal_rt.rs`). Interruption is
-  external and deterministic. A test thread polls
-  `/proc/<pid>/syscall` until the child (translated or native)
-  is blocked in the expected syscall, then signals it through
-  a pidfd opened while the child was known alive and unreaped,
-  so a reused pid cannot be hit. A 5 s bound on blocking and a
-  10 s bound after the send each fail the test by name.
+  external, and the signal lands only while the call sleeps.
+  A test thread polls until the child (translated or native)
+  is asleep in the expected syscall: `/proc/<pid>/syscall`
+  names it, the scheduler state is `S`, and `wchan` names a
+  kernel sleep site. The syscall number alone is not enough,
+  since it is already visible at a ptrace syscall-entry stop
+  (state `t`); a test holds a child there and checks that it
+  is not taken for asleep. The thread then waits 50 ms,
+  checks that the child is still asleep there, and signals
+  it through a pidfd opened while the child was known alive
+  and unreaped, so a reused pid cannot be hit. A 5 s bound on
+  sleeping and a 10 s bound after the send each fail the test
+  by name.
   Translated vs native:
   - `rt_sigsuspend` interrupted returns `-EINTR`, with and
     without `SA_RESTART`, and the saved mask is restored;
@@ -690,11 +723,27 @@ confirms each behaviour on the host):
     handler changes the word, so the restarted wait returns
     `-EAGAIN`) and returns `-EINTR` without it;
   - `nanosleep` returns `-EINTR` even under `SA_RESTART`
-    (`RESTARTBLOCK` is not `RESTARTSYS`), and the
-    kernel-written remainder is range-checked in both
-    children;
+    (`RESTARTBLOCK` is not `RESTARTSYS`). Each child's
+    kernel-written remainder is bracketed by that child's
+    measured times: at most the request plus timer slack and
+    clock resolution minus the time from first seeing the
+    child asleep to sending (at least 50 ms), and at least the
+    request minus the whole run. A copied request fails;
+  - the futex wait issued as `0x1_000000ca` restarts like
+    native, with the full value as the frame's RAX;
   - every case compares the frame's ucontext RIP, RAX and
-    saved mask.
+    saved mask;
+  - an interrupted blocking `write` (outside the delivery set)
+    keeps the named stop translated, while native shows the
+    handler and `-EINTR`.
+
+  A record-only test seam (`test-seams` feature) logs every
+  call to `write_mem`, the tracer's only guest-memory write
+  path. Every differential test asserts that the tracer wrote
+  nothing into the guest's data buffer. The `nanosleep` test
+  also asserts that the remainder pointer reaching the kernel
+  is the guest's own, so the remainder is the kernel's value,
+  never rewritten or synthesized.
 
   Named refusals: the no-handler restart (SIGWINCH) for
   `nanosleep` and for `futex`, the `futex` shapes outside the

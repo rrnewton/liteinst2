@@ -97,11 +97,15 @@ const FUTEX_WAIT_PRIVATE: u64 = 128;
 /// The syscalls whose interruption is delivered (I1-G2): the
 /// tested blocking set. Any other pass-through call that
 /// returns a restart code (a blocking `write`, say) keeps the
-/// named stop at its exit.
-const RESTART_DELIVERY_SYSCALLS: &[u64] = &[
-    libc::SYS_rt_sigsuspend as u64,
-    libc::SYS_futex as u64,
-    libc::SYS_nanosleep as u64,
+/// named stop at its exit. Classified by the low 32 bits of
+/// `orig_rax`, as the kernel dispatches and as pass-through
+/// admission classifies (`0x1_000000ca` runs futex); the full
+/// `orig_rax` stays the provenance check and the predicted
+/// frame RAX of a restart.
+const RESTART_DELIVERY_SYSCALLS: &[u32] = &[
+    libc::SYS_rt_sigsuspend as u32,
+    libc::SYS_futex as u32,
+    libc::SYS_nanosleep as u32,
 ];
 
 /// Kernel syscall-restart codes (`include/linux/errno.h`).
@@ -561,7 +565,21 @@ fn read_mem(pid: i32, addr: u64, buf: &mut [u8]) -> Result<(), Refuse> {
     Ok(())
 }
 
+/// Test seam (record only): every attempted tracer write into
+/// a child, as `(pid, addr, len)`. `write_mem` is the tracer's
+/// only guest-memory write path, so a test can prove the tracer
+/// never wrote a guest range (for example the `nanosleep`
+/// remainder, which must be the kernel's own value). Compiled
+/// only with the test-only `test-seams` feature.
+#[cfg(feature = "test-seams")]
+static TRACER_WRITES: std::sync::Mutex<Vec<(i32, u64, usize)>> = std::sync::Mutex::new(Vec::new());
+
 fn write_mem(pid: i32, addr: u64, buf: &[u8]) -> Result<(), Refuse> {
+    #[cfg(feature = "test-seams")]
+    TRACER_WRITES
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .push((pid, addr, buf.len()));
     let mut done = 0usize;
     while done < buf.len() {
         let local = libc::iovec {
@@ -1030,6 +1048,13 @@ impl RemoteExecutable {
             .spawn()
             .map_err(|_| remote_err("spawn remote child"))?;
         let pid = child.id() as i32;
+        // A reused pid must not inherit an earlier child's
+        // recorded writes.
+        #[cfg(feature = "test-seams")]
+        TRACER_WRITES
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .retain(|w| w.0 != pid);
         let mut guard = ChildGuard {
             child,
             pid,
@@ -1504,6 +1529,22 @@ impl RemoteExecutable {
     #[doc(hidden)]
     pub fn pre_redirected_step_signal_for_test(&self) -> Option<i32> {
         self.pre_redirected_step_signal
+    }
+
+    /// Test seam: every guest-memory write this tracer attempted
+    /// into its child since spawn, as `(addr, len)`, in order
+    /// (see `TRACER_WRITES`). Compiled only with the test-only
+    /// `test-seams` feature.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn tracer_writes_for_test(&self) -> Vec<(u64, usize)> {
+        TRACER_WRITES
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .filter(|w| w.0 == self.guard.pid)
+            .map(|w| (w.1, w.2))
+            .collect()
     }
 
     /// Step one guest syscall at `pc` whose pointer argument in
@@ -2790,7 +2831,7 @@ impl RemoteExecutable {
                         match self.step_syscall_or_interrupt(state, data.exit_src, &data)? {
                             Stepped::Done(s) => state = s,
                             Stepped::Interrupted(regs)
-                                if !RESTART_DELIVERY_SYSCALLS.contains(&regs.orig_rax) =>
+                                if !RESTART_DELIVERY_SYSCALLS.contains(&(regs.orig_rax as u32)) =>
                             {
                                 return Err(
                                     self.unexpected_stop("syscall restart pending at exit stop")
