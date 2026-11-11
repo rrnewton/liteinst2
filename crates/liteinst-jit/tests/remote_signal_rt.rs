@@ -947,6 +947,17 @@ fn finish_sender(sender: Option<Sender>) -> Option<Seen> {
 /// staged and just before the step resumes the child.
 /// `ext`: what a [`Sender`] thread does to the child.
 fn run_translated_full(fx: &Fx, pre_step_signal: Option<i32>, ext: Ext) -> Translated {
+    run_translated_cfg(fx, pre_step_signal, ext, |_| {})
+}
+
+/// [`run_translated_full`], with `configure` applied to the
+/// spawned executable before it is prepared (other test seams).
+fn run_translated_cfg(
+    fx: &Fx,
+    pre_step_signal: Option<i32>,
+    ext: Ext,
+    configure: impl FnOnce(&mut RemoteExecutable),
+) -> Translated {
     let mut remote = RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &fx.bytes)
         .expect("spawn remote");
     assert_eq!(
@@ -955,6 +966,7 @@ fn run_translated_full(fx: &Fx, pre_step_signal: Option<i32>, ext: Ext) -> Trans
         "test seam inert at spawn"
     );
     remote.set_pre_redirected_step_signal_for_test(pre_step_signal);
+    configure(&mut remote);
     let info = remote.info();
     let region = RegionFacts {
         base: info.base,
@@ -1322,8 +1334,18 @@ fn killed(signo: i32, uc_rip_off: u64) -> Entry {
     }
 }
 
-fn lock() -> std::sync::MutexGuard<'static, ()> {
-    SERIAL.lock().unwrap_or_else(|e| e.into_inner())
+/// One test's hold: the serial lock, and the corpus guard every
+/// pinning test carries (see `corpus`).
+struct Serial {
+    _corpus: corpus::Guard,
+    _lock: std::sync::MutexGuard<'static, ()>,
+}
+
+fn lock() -> Serial {
+    Serial {
+        _lock: SERIAL.lock().unwrap_or_else(|e| e.into_inner()),
+        _corpus: corpus::guard(),
+    }
 }
 
 /// E1: lowest-numbered first, FIFO within an RT number, a
@@ -2626,4 +2648,57 @@ fn blocked_pending_rt_signal_survives_polls_and_delivers_on_unblock() {
     );
     assert_eq!(w.frames, vec![(0, 0)], "W4-RT uc RAX and saved mask");
     assert_eq!(w.old_mask, sig_bit(RTMIN), "W4-RT mask before unblock");
+}
+
+/// I1-H H2 (NSpid proof): the `kill` self-send gate takes the
+/// same `NSpid` proof as the queueing gate. Through the test
+/// seam, the proof reads a nested-namespace line (our pid, then
+/// 1: the shape a child in a nested pid namespace shows), and
+/// both gates must then refuse the self-send by name, with
+/// nothing queued. Only the proof reads the seam's text. Without
+/// the seam the same shapes deliver (the kill and queue
+/// differentials above). Unreachable for real here: the tracer
+/// spawns the child in its own pid namespace and guest namespace
+/// changes are refused, so `rdi` equal to the tracer's pid while
+/// `NSpid` disagrees needs the seam.
+#[test]
+fn self_sends_refused_by_name_when_nspid_shows_a_nested_namespace() {
+    let _g = lock();
+    for (label, send) in [
+        ("H2 NSpid kill", Send::Kill(USR1)),
+        ("H2 NSpid queue", queue(USR1, 0x5eed)),
+    ] {
+        let spec = single_with_handler(send);
+        let fx = build(&spec, label);
+        let t = run_translated_cfg(&fx, None, Ext::None, |r| {
+            let pid = r.child_pid_for_test();
+            r.set_nspid_status_for_test(Some(format!("Name:\tchild\nNSpid:\t{pid}\t1\n")));
+        });
+        let want = RunError::Refuse(Refuse::NoHandler {
+            src_pc: t.info.base + fx.send_pcs[0],
+        });
+        assert_eq!(t.out.as_ref().err(), Some(&want), "{label}: outcome");
+        assert_eq!(
+            proc_pending(t.remote.child_pid_for_test()),
+            0,
+            "{label}: nothing queued"
+        );
+        assert_eq!(
+            word(&t.data, LOG_COUNT),
+            0,
+            "{label}: the handler never ran"
+        );
+        // The same fixture without the seam delivers.
+        let quiet = run_translated(&fx);
+        assert!(
+            quiet.out.is_ok(),
+            "{label}: delivers without the seam: {:?}",
+            quiet.out
+        );
+        assert_eq!(
+            word(&quiet.data, LOG_COUNT),
+            1,
+            "{label}: one delivery without the seam"
+        );
+    }
 }

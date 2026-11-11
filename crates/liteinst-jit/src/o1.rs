@@ -100,6 +100,12 @@ pub struct OracleOutcome {
 const STEP_CAP: u64 = 2_000_000;
 const TRAP_BRKPT: i32 = 1;
 const TRAP_TRACE: i32 = 2;
+/// `si_code` of the step stop at a handler's entry after an
+/// injected delivery: `signal_delivered` calls
+/// `ptrace_notify(SIGTRAP, 0)` for a stepping tracee and
+/// `ptrace_do_notify` reports the exit code as `si_code`, so it
+/// is SIGTRAP (5), never TRAP_TRACE (2) or TRAP_BRKPT (1).
+const SI_CODE_HANDLER_ENTRY: i32 = libc::SIGTRAP;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum StepClass {
@@ -753,12 +759,25 @@ pub fn run_o1s(
         // Handler entry after an injection: the kernel built the
         // frame, set RDI/RSI/RDX to the handler arguments and RSP
         // to the frame, and reports the step before the handler's
-        // first instruction (no instruction retired).
+        // first instruction (no instruction retired), with
+        // si_code SIGTRAP (pinned, I1-H H2). A stop with that
+        // frame shape and any other non-step si_code fails here
+        // by name instead of falling through as something else.
+        let entry_shape = after.rdi == delivering as u64 && after.rdx == after.rsp.wrapping_add(8);
         let handler_entry = delivering != 0
             && sig == libc::SIGTRAP
-            && si_code != TRAP_TRACE
-            && after.rdi == delivering as u64
-            && after.rdx == after.rsp.wrapping_add(8);
+            && si_code == SI_CODE_HANDLER_ENTRY
+            && entry_shape;
+        assert!(
+            handler_entry
+                || delivering == 0
+                || sig != libc::SIGTRAP
+                || si_code == TRAP_TRACE
+                || !entry_shape,
+            "o1s: handler-entry-shaped stop after injecting {delivering} at {:#x} has si_code \
+             {si_code}, not SIGTRAP ({SI_CODE_HANDLER_ENTRY})",
+            cur.rip
+        );
         if handler_entry {
             let mut frame = [0u8; 8 * 18];
             assert!(

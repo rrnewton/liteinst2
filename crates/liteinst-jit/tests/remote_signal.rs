@@ -1464,6 +1464,8 @@ fn check_disposition_change() {
 
 #[test]
 fn remote_signal_all() {
+    // Every fixture this test builds is pinned (see `corpus`).
+    let _corpus = corpus::guard();
     check_round_trip();
     check_no_send_control();
     check_ineligible_shape(FLAGS_NO_SIGINFO, "no SA_SIGINFO");

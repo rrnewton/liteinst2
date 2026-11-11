@@ -330,23 +330,46 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   arrival at any generated PC, a differential sweep, the frozen
   corpus), H2 (deliver arrivals in common-exit stages and
   original-instruction steps; W5; plus the `kill` gate's NSpid
-  proof; the entry-bridge class W2 turned out empty, see below), and H3 (the S1 overhead
+  proof; the entry-bridge class W2 turned out empty, see below;
+  H1 landed as [PR 79](https://github.com/rrnewton/liteinst2/pull/79),
+  merge `e207a8ea`; H2 runs as two PRs, H2a = W5, the NSpid
+  proof, the poll-budget fix and the H1 review follow-ups, then
+  H2b = W1 and W3), and H3 (the S1 overhead
   breakdown, a replay of every retained mutant, and the one
   bounded claim).
-- **W5** (found in the W4 review, pre-existing; closed in H2):
-  the mirrored signal mask is refreshed after a stepped
+- **W5** (found in the W4 review, pre-existing; **closed in
+  H2a**): the mirrored signal mask is refreshed after a stepped
   `rt_sigprocmask` and at sigreturn, but not at handler entry,
   so during a handler a signal blocked only by its `sa_mask`
-  (or its own signal without `SA_NODEFER`) reads as unblocked
-  at a poll, and an ineligible one stops the run early. H2
-  reads `SigBlk` from the same `/proc/<pid>/status` text the
-  poll already reads, so the poll's mask is the kernel's at
-  every poll. Test: a USR1 handler with SIGUSR2 in `sa_mask`
-  self-sends USR2 and spins past two polls; the run must not
-  stop in the handler, and after sigreturn it must stop (or,
-  for an eligible RT variant, deliver) at the same source PC
-  where the native child acts. Mutant: drop the poll-time
-  `SigBlk` read.
+  (or its own signal without `SA_NODEFER`) read as unblocked
+  at a poll, and an ineligible one stopped the run early. The
+  poll now takes `SigBlk` from the same `/proc/<pid>/status`
+  text it reads for the pending sets, through the one
+  fail-closed parser (`status_masks`, which also serves mirror
+  seeding and `rt_sigprocmask` reconciliation), so the poll's
+  mask is the kernel's at every poll; there is no handler-entry
+  refresh. Discriminating tests (the old poll stopped inside the
+  handler): SIGUSR2 in a USR1 handler's `sa_mask` with no
+  handler, and the handler's own USR1 reset to `SIG_DFL` and
+  self-sent; after sigreturn each stops where the native child
+  dies. Regression tests (eligible signals were deferred under
+  the old poll too): signal 34 in `sa_mask` and the handler's own
+  USR1 with its handler, each delivered after sigreturn, equal to
+  O1-S. Each crosses several polls inside the handler. Mutant:
+  the poll reads the mirror again.
+- **Poll budget 0 handed to a handler** (found reading the code
+  in the H2 scope review; latent since I1-E; fixed in H2a). The
+  poll stub is `dec qword [poll]; jnz`, so every stop on the
+  poll path has a raw budget of 0. A delivery from there passed
+  the 0 to the handler, whose first `dec` wrapped it to 2^64 - 1:
+  no poll fired for the rest of the run. Every delivery from a
+  raw 0 now restarts the full budget (`resume_budget`, a pure
+  function of the stop state). The mid-block sigreturn re-base
+  refuses a raw 0 by name instead (coord7): every budget-0 stop
+  recovers to its block start and resumes through the block
+  index, so a 0 restored mid-block is a broken invariant, and
+  resetting it would hide the bug; a test seam presents it. The
+  seam counts poll exits so the fix is observable.
 - **W2 is closed by evidence, not code** (H1). The scope named
   W2 as "generated PCs with no pcmap entry (the entry-loader
   bridge class)", but the remote substrate has no such PCs. The
@@ -360,8 +383,13 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   stub, which only a kernel delivery enters; an arrival there is
   the I1-G1 back-to-back case. `resume_gen`'s unmapped-PC refusal
   therefore has no reachable input in this substrate.
-- **H2 follow-ups from the H1 reviews** (recorded here, no code
-  in H1):
+- **H2 follow-ups from the H1 reviews** (recorded in H1; **done
+  in H2a**: `rf_at_hits` asserted at every hit, R5 recorded as
+  equivalent, and O1-S's handler entry pinned to `si_code ==
+  SIGTRAP` with the `!= TRAP_TRACE` clause dropped; the pin is
+  load-bearing, not redundant: an ignored signal re-injected over
+  a step whose registers happen to have the handler-argument
+  shape reports TRAP_TRACE, and a regression test covers it):
   - The arrival seam's "ensure RF" step on non-final hits is
     defence in depth. For an execute breakpoint the kernel's
     `hw_breakpoint_handler` already sets `X86_EFLAGS_RF`
@@ -528,18 +556,19 @@ frame stack is capped at 8; `SA_ONSTACK` onto an enabled
 altstack needs size ≥ 8192 (disabled altstack keeps the
 kernel normal-stack fallback); poll deferral picks the
 lowest-numbered unblocked eligible pending signal (a pending
-signal the tracer's mirrored mask shows as blocked does not
-stop the run at a poll: it stays pending, as natively, until
-the guest unblocks it and the kernel presents it; fixed after
-I1-G2 as the I1-H "W4" PR, whose test blocks SIGUSR1,
-receives it, runs past two poll exits, probes `rt_sigpending`,
-and then unblocks it. Known limit, I1-H W5: the mirror is not
-refreshed at handler entry, so a signal blocked only by a
-running handler's `sa_mask`, or by its own signal without
-`SA_NODEFER`, reads as unblocked at a poll and, if
-ineligible, still stops the run early); and the
-self-send syscalls `getpid`/`kill` pass through with `kill`
-gated to the traced child's own pid. Evidence: mask matrix
+signal the kernel shows as blocked does not stop the run at a
+poll: it stays pending, as natively, until the guest unblocks
+it and the kernel presents it; fixed after I1-G2 as the I1-H
+"W4" PR, whose test blocks SIGUSR1, receives it, runs past two
+poll exits, probes `rt_sigpending`, and then unblocks it. The
+blocked mask is the kernel's `SigBlk` at every poll since
+I1-H H2a, which closed W5: before, the poll used the mirror,
+which is not refreshed at handler entry, so a signal blocked
+only by a running handler's `sa_mask`, or by its own signal
+without `SA_NODEFER`, read as unblocked and, if ineligible,
+stopped the run early); and the self-send syscalls
+`getpid`/`kill` pass through with `kill` gated to the traced
+child's own pid (proven through `NSpid` since I1-H H2a). Evidence: mask matrix
 with in-handler mask query (NODEFER on/off), altstack frame
 placement, distinct-signal nesting and `SA_NODEFER`
 same-signal reentry by self-send with LIFO order words, and
@@ -635,13 +664,12 @@ behaviour on the host):
   decided by the tracer's `process_vm_readv` (which applies no
   protection keys), not by the guest's `copy_from_user`;
   recheck when either syscall family is admitted.
-- *Follow-ups (not blockers):* (a) the I1-F `kill` self-send
-  gate still compares the target with the tracer's view of
-  the child pid without the `NSpid` proof the queueing gate
-  uses; the child is spawned by this tracer in the tracer's
-  own pid namespace and guest namespace changes are refused,
-  so no foreign send is reachable today — route `kill`
-  through the same proof later. (b) For native `EFAULT`
+- *Follow-ups (not blockers):* (a) **closed in I1-H H2a**: the
+  I1-F `kill` self-send gate compared the target with the
+  tracer's view of the child pid without the `NSpid` proof the
+  queueing gate uses; it now takes the same proof (exactly one
+  `NSpid` entry, ours), shown through a test seam that presents
+  a nested namespace to the proof only. (b) For native `EFAULT`
   parity on an unreadable siginfo, a later stage may step
   with the guest's original pointer only when the first 48
   bytes are unreadable to the tracer, require `-EFAULT` as

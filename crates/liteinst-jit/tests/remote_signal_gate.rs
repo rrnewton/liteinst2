@@ -23,6 +23,14 @@
 //!   class of its generated PC: delivered-and-equal, a named
 //!   refusal in an allowed window (W1: the common exit; W2: no
 //!   PC-map entry), or a failure.
+//! - **Instance (H2a).** The survey's counting runs record what
+//!   recovery names at every hit; each arrival must recover
+//!   exactly that record for its (PC, hit), independent of the
+//!   seam's own hit counter. Plan sizes and outcome totals are
+//!   pinned, and a sweep that reaches its cap fails.
+//! - **Closed in H2a.** W5 (the poll's blocked mask is the
+//!   kernel's `SigBlk`) and the poll budget after a delivery from
+//!   a budget-0 stop (polls are counted by the seam).
 //!
 //! Fixture layout (buffer at r13 = dst; r13 is never written by
 //! guest code):
@@ -46,7 +54,9 @@ use iced_x86::code_asm::*;
 use liteinst_jit::exec::{FaultKind, Outcome, RunError};
 use liteinst_jit::harness::RETURN_SENTINEL;
 use liteinst_jit::o1::{O1sEnd, O1sOutcome, run_o1s};
-use liteinst_jit::remote::{ArrivalReport, ArrivalSeam, RemoteChildInfo, RemoteExecutable};
+use liteinst_jit::remote::{
+    ArrivalReport, ArrivalSeam, RemoteChildInfo, RemoteExecutable, SeamHit,
+};
 use liteinst_jit::types::{CountProfile, Generation, RegionFacts};
 use liteinst_jit::{CallStage, CommonStage, ExitStage, PcMapEntry, Recovery, StubStage};
 
@@ -54,8 +64,18 @@ const REMOTE_CHILD: &str = env!("CARGO_BIN_EXE_liteinst-jit-remote-child");
 
 static SERIAL: Mutex<()> = Mutex::new(());
 
-fn lock() -> std::sync::MutexGuard<'static, ()> {
-    SERIAL.lock().unwrap_or_else(|e| e.into_inner())
+/// One test's hold: the serial lock, and the corpus guard every
+/// pinning test carries (see `corpus`).
+struct Serial {
+    _corpus: corpus::Guard,
+    _lock: std::sync::MutexGuard<'static, ()>,
+}
+
+fn lock() -> Serial {
+    Serial {
+        _lock: SERIAL.lock().unwrap_or_else(|e| e.into_inner()),
+        _corpus: corpus::guard(),
+    }
 }
 
 const USR1: i32 = libc::SIGUSR1;
@@ -307,6 +327,8 @@ struct TArrival {
     entries: usize,
     /// DR0/DR7 read back after the run.
     debug_regs: Option<(u64, u64)>,
+    /// The child's pid.
+    pid: i32,
 }
 
 /// Knobs for one translated run.
@@ -316,6 +338,8 @@ struct Knobs {
     arrival: Option<(usize, u64)>,
     poll_budget: Option<u64>,
     pre_original_step_signal: Option<i32>,
+    /// Seam: a raw poll budget of 0 at every mid-block restore.
+    zero_raw_poll_at_restore: bool,
 }
 
 fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
@@ -354,6 +378,7 @@ fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
     );
     remote.set_poll_budget_for_test(k.poll_budget);
     remote.set_pre_original_step_signal_for_test(k.pre_original_step_signal);
+    remote.set_zero_raw_poll_at_restore_for_test(k.zero_raw_poll_at_restore);
     let mut s = remote.initial_state();
     s.rip = info.base + gx.main_off;
     s.rbp = info.base + gx.handler_off;
@@ -362,6 +387,7 @@ fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
     let out = remote.run(s, RETURN_SENTINEL);
     let report = remote.arrival_report_for_test();
     let debug_regs = remote.debug_regs_for_test();
+    let pid = remote.child_pid_for_test();
     let mut data = vec![0u8; REPORT];
     assert!(remote.read_mem(info.dst, &mut data), "read translated dst");
     TArrival {
@@ -372,6 +398,7 @@ fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
         target,
         entries,
         debug_regs,
+        pid,
     }
 }
 
@@ -455,8 +482,59 @@ enum Verdict {
     RefusedW1,
 }
 
+/// One survey hit of a PC-map entry, as recovery names it: the
+/// recovered source offset (from the fixture base), totals, and
+/// the dispatcher's exit kind there.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct HitRec {
+    src_off: u64,
+    instructions: u64,
+    branches: u64,
+    exit_kind: u64,
+}
+
+fn hit_rec(h: &SeamHit, info: &RemoteChildInfo) -> HitRec {
+    HitRec {
+        src_off: h.src_pc.wrapping_sub(info.base),
+        instructions: h.instructions,
+        branches: h.branches,
+        exit_kind: h.exit_kind,
+    }
+}
+
+/// The kernel sets RFLAGS.RF at every execute-breakpoint stop
+/// (`hw_breakpoint_handler`), before the tracer reads it; pinned
+/// here as a kernel rule (the seam's own "ensure RF" step is
+/// therefore an equivalent mutant on this kernel).
+fn assert_rf_at_every_hit(report: &ArrivalReport, label: &str) {
+    assert_eq!(
+        report.rf_at_hits.len() as u64,
+        report.hits,
+        "{label}: one RF sample per hit"
+    );
+    assert!(
+        report.rf_at_hits.iter().all(|&rf| rf),
+        "{label}: RF set by the kernel at every hit: {:?}",
+        report.rf_at_hits
+    );
+}
+
 /// Run one arrival in both engines; panic on any mismatch.
-fn check_arrival(gx: &Gx, idx: usize, hit: u64, poll_budget: Option<u64>, label: &str) -> Verdict {
+/// `want` is the survey's recovery at this (PC, hit).
+///
+/// Check order is fixed, so the first failing assertion names
+/// the cause deterministically: the seam reached the hit (the
+/// unsent branch), then it fired on exactly that hit, then the
+/// arrival's instance matches the survey's recovery there, then
+/// the outcome comparisons.
+fn check_arrival(
+    gx: &Gx,
+    idx: usize,
+    hit: u64,
+    poll_budget: Option<u64>,
+    label: &str,
+    want: HitRec,
+) -> Verdict {
     let t = run_translated(
         gx,
         Knobs {
@@ -488,6 +566,26 @@ fn check_arrival(gx: &Gx, idx: usize, hit: u64, poll_budget: Option<u64>, label:
     }
     // The seam fired on the requested hit, not later.
     assert_eq!(t.report.hits, hit, "{label}: arrival fired on hit");
+    // Instance identity, independent of the seam's own hit
+    // counter: the arrival recovers exactly what the survey's
+    // counting run recorded at this (PC, hit). It shares
+    // `recover` with the arrival, so it pins which dynamic
+    // instance was hit, not recovery correctness (the O1-S
+    // comparisons below do that).
+    let got = match (&t.out, t.report.deliveries.first()) {
+        (Err(RunError::Fault(f)), _) if f.kind == FaultKind::AsyncSignal => {
+            (f.src_pc, f.instructions, f.branches)
+        }
+        (_, Some(d)) => (d.src_pc, d.instructions, d.branches),
+        (out, None) => panic!("{label}: sent, but neither delivered nor refused: {out:?}"),
+    };
+    assert_eq!(
+        (got.0.wrapping_sub(t.info.base), got.1, got.2),
+        (want.src_off, want.instructions, want.branches),
+        "{label}: arrival instance (source offset, instructions, branches) vs the survey's \
+         recovery at hit {hit}"
+    );
+    assert_rf_at_every_hit(&t.report, label);
     let clen = code_len(gx);
     match &t.out {
         Err(RunError::Fault(f)) if f.kind == FaultKind::AsyncSignal => {
@@ -568,7 +666,16 @@ fn check_arrival(gx: &Gx, idx: usize, hit: u64, poll_budget: Option<u64>, label:
             .collect()
     };
     let n_slot = slot(&n.dst_bytes);
+    assert_eq!(
+        &n_slot[0..4],
+        &nd.siginfo[..],
+        "{label}: O1-S logged siginfo vs frame"
+    );
     assert_eq!(&n_slot[4..22], &nd.gregs[..], "{label}: O1-S log vs frame");
+    assert_eq!(
+        n_slot[22], nd.uc_sigmask,
+        "{label}: O1-S logged mask vs frame"
+    );
     // Handler-visible frame, register by register.
     let tg: [u64; 18] = slot(&t.data)[4..22].try_into().unwrap();
     let (tn, nn) = (
@@ -638,29 +745,49 @@ fn quiet(gx: &Gx, poll_budget: Option<u64>, label: &str) -> (TArrival, O1sOutcom
     (t, n)
 }
 
-/// Hits of one PC-map entry over a whole quiet run: the arrival
-/// breakpoint stays armed and never fires.
-fn hit_counts(gx: &Gx, poll_budget: Option<u64>, entries: usize, label: &str) -> Vec<u64> {
+/// Every hit of one PC-map entry over a whole quiet run (the
+/// arrival breakpoint stays armed and never fires), each as
+/// recovery names it.
+fn entry_hits(
+    gx: &Gx,
+    poll_budget: Option<u64>,
+    idx: usize,
+    entries: usize,
+    label: &str,
+) -> Vec<HitRec> {
+    let t = run_translated(
+        gx,
+        Knobs {
+            arrival: Some((idx, u64::MAX)),
+            poll_budget,
+            ..Knobs::default()
+        },
+    );
+    assert_eq!(t.entries, entries, "{label}: PC-map size is stable");
+    let out = t
+        .out
+        .as_ref()
+        .unwrap_or_else(|e| panic!("{label}: counting run {idx}: {e:?}"));
+    assert_eq!(out.state.rax, 42, "{label}: counting run {idx}");
+    assert!(!t.report.sent, "{label}: counting run never fires");
+    assert_eq!(t.debug_regs, Some((0, 0)), "{label}: DR cleared");
+    assert_rf_at_every_hit(&t.report, label);
+    assert_eq!(
+        t.report.hit_stops.len() as u64,
+        t.report.hits,
+        "{label}: one recovery per hit"
+    );
+    t.report
+        .hit_stops
+        .iter()
+        .map(|h| hit_rec(h, &t.info))
+        .collect()
+}
+
+/// [`entry_hits`] for every PC-map entry.
+fn hit_records(gx: &Gx, poll_budget: Option<u64>, entries: usize, label: &str) -> Vec<Vec<HitRec>> {
     (0..entries)
-        .map(|idx| {
-            let t = run_translated(
-                gx,
-                Knobs {
-                    arrival: Some((idx, u64::MAX)),
-                    poll_budget,
-                    ..Knobs::default()
-                },
-            );
-            assert_eq!(t.entries, entries, "{label}: PC-map size is stable");
-            let out = t
-                .out
-                .as_ref()
-                .unwrap_or_else(|e| panic!("{label}: counting run {idx}: {e:?}"));
-            assert_eq!(out.state.rax, 42, "{label}: counting run {idx}");
-            assert!(!t.report.sent, "{label}: counting run never fires");
-            assert_eq!(t.debug_regs, Some((0, 0)), "{label}: DR cleared");
-            t.report.hits
-        })
+        .map(|idx| entry_hits(gx, poll_budget, idx, entries, label))
         .collect()
 }
 
@@ -718,7 +845,9 @@ impl SplitMix {
 }
 
 /// Wall-clock cap for each sweep (coord7 Q5: about 2 minutes in
-/// total across the two); any truncation is printed with counts.
+/// total across the two). A sweep that reaches it FAILS (I1-H H2,
+/// coord7 Q3): a truncated sweep would claim coverage it did not
+/// run. Measured runs take 1.7-2.8 s.
 const SWEEP_CAP: Duration = Duration::from_secs(60);
 const SWEEP_SEED: u64 = 0x11e4_5eed_2026_1111;
 /// Sample size for the poll-crossing loop (coord7 Q5).
@@ -726,31 +855,47 @@ const LOOP_SAMPLES: usize = 256;
 /// Poll budget for the loop sweep: 120 iterations cross several
 /// poll exits instead of needing 16384 block entries.
 const LOOP_POLL_BUDGET: u64 = 16;
+/// Pinned plan sizes (I1-H H2, coord7 P3): what the planner
+/// derives from the pinned fixture bytes. A changed translation,
+/// fixture or survey fails here visibly.
+const MIXED_ENTRIES: usize = 633;
+const MIXED_PLAN: usize = 448;
+const LOOP_ENTRIES: usize = 365;
+const LOOP_POPULATION: usize = 4338;
+const LOOP_TOPUPS: usize = 5;
 
-/// Run `plan` (entry index, hit) under the cap; return the
-/// per-class table, with every arrival checked.
+/// Run `plan` (entry index, hit) under the cap, filling the
+/// per-class table, with every arrival checked against the
+/// survey's recovery `hits[idx][hit - 1]`. Reaching the cap fails.
 fn run_plan(
     gx: &Gx,
     poll_budget: Option<u64>,
     plan: &[(usize, u64)],
     table: &mut BTreeMap<String, Tally>,
     classes: &[String],
+    hits: &[Vec<HitRec>],
     label: &str,
-) -> bool {
+) {
     let started = Instant::now();
     let mut ran = 0;
     for &(idx, hit) in plan {
-        if started.elapsed() > SWEEP_CAP {
-            eprintln!(
-                "{label}: TRUNCATED at the {SWEEP_CAP:?} cap: ran {ran} of {} planned arrivals; \
-                 {} not run",
-                plan.len(),
-                plan.len() - ran
-            );
-            break;
-        }
+        assert!(
+            started.elapsed() <= SWEEP_CAP,
+            "{label}: TRUNCATED at the {SWEEP_CAP:?} cap: ran {ran} of {} planned arrivals; \
+             {} not run",
+            plan.len(),
+            plan.len() - ran
+        );
         ran += 1;
-        let v = check_arrival(gx, idx, hit, poll_budget, &format!("{label} #{idx}@{hit}"));
+        let want = hits[idx][hit as usize - 1];
+        let v = check_arrival(
+            gx,
+            idx,
+            hit,
+            poll_budget,
+            &format!("{label} #{idx}@{hit}"),
+            want,
+        );
         let t = table.get_mut(&classes[idx]).expect("class row");
         t.arrivals += 1;
         match v {
@@ -764,7 +909,6 @@ fn run_plan(
         plan.len(),
         started.elapsed()
     );
-    ran < plan.len()
 }
 
 /// Outcomes of a survey-derived plan. Every planned (PC, hit)
@@ -773,18 +917,13 @@ fn run_plan(
 /// coverage (the deliberately unreachable W1 hit-6 control runs
 /// outside any plan). And every class with an executed entry got
 /// at least one SENT arrival, delivered and equal or a W1
-/// refusal. A truncated sweep cannot claim the coverage half; it
-/// says so instead.
-fn assert_plan_outcomes(label: &str, table: &BTreeMap<String, Tally>, truncated: bool) {
+/// refusal. (A truncated sweep has already failed in `run_plan`.)
+fn assert_plan_outcomes(label: &str, table: &BTreeMap<String, Tally>) {
     for (class, t) in table {
         assert_eq!(
             t.not_reached, 0,
             "{label}: {class}: survey-observed arrivals not reached"
         );
-    }
-    if truncated {
-        eprintln!("{label}: class coverage NOT asserted (sweep truncated)");
-        return;
     }
     for (class, t) in table {
         assert!(
@@ -800,13 +939,13 @@ fn survey(
     gx: &Gx,
     poll_budget: Option<u64>,
     label: &str,
-) -> (Vec<String>, Vec<PcMapEntry>, Vec<u64>, u64) {
+) -> (Vec<String>, Vec<PcMapEntry>, Vec<Vec<HitRec>>, u64) {
     let (t, _) = quiet(gx, poll_budget, label);
     let entries = t.entries;
     let (map, base) = pcmap_of(gx);
     assert_eq!(map.len(), entries, "{label}: PC-map size");
     let classes: Vec<String> = map.iter().map(class_of).collect();
-    let hits = hit_counts(gx, poll_budget, entries, label);
+    let hits = hit_records(gx, poll_budget, entries, label);
     (classes, map, hits, base)
 }
 
@@ -854,7 +993,7 @@ fn sweep_mixed_exhaustive() {
     for (idx, e) in map.iter().enumerate() {
         let row = table.entry(classes[idx].clone()).or_default();
         row.entries += 1;
-        let range = post_install_hits(&gx, e, base, hits[idx]);
+        let range = post_install_hits(&gx, e, base, hits[idx].len() as u64);
         if !range.is_empty() {
             row.executed += 1;
         }
@@ -866,12 +1005,19 @@ fn sweep_mixed_exhaustive() {
         plan.len(),
         started.elapsed()
     );
-    let truncated = run_plan(&gx, None, &plan, &mut table, &classes, label);
+    assert_eq!(map.len(), MIXED_ENTRIES, "{label}: pinned PC-map size");
+    assert_eq!(plan.len(), MIXED_PLAN, "{label}: pinned plan size");
+    run_plan(&gx, None, &plan, &mut table, &classes, &hits, label);
     print_table(label, &table);
-    assert_plan_outcomes(label, &table, truncated);
+    assert_plan_outcomes(label, &table);
     let equal: u64 = table.values().map(|t| t.equal).sum();
     let refused: u64 = table.values().map(|t| t.refused_w1).sum();
-    assert!(equal > 0 && refused > 0, "{label}: both outcomes seen");
+    // Non-vacuity, exactly (flips to 448 / 0 when W1 closes).
+    assert_eq!(
+        (equal, refused),
+        (336, 112),
+        "{label}: equal and W1-refused arrivals"
+    );
     for (class, t) in &table {
         if class.starts_with("CommonExit/") {
             assert_eq!(t.equal, 0, "{label}: {class} delivers nothing today");
@@ -896,7 +1042,7 @@ fn sweep_poll_loop_sampled() {
     for (idx, e) in map.iter().enumerate() {
         let row = table.entry(classes[idx].clone()).or_default();
         row.entries += 1;
-        let range = post_install_hits(&gx, e, base, hits[idx]);
+        let range = post_install_hits(&gx, e, base, hits[idx].len() as u64);
         if !range.is_empty() {
             row.executed += 1;
         }
@@ -925,9 +1071,28 @@ fn sweep_poll_loop_sampled() {
         population.len(),
         plan.len() - sampled
     );
-    let truncated = run_plan(&gx, budget, &plan, &mut table, &classes, label);
+    assert_eq!(map.len(), LOOP_ENTRIES, "{label}: pinned PC-map size");
+    assert_eq!(
+        population.len(),
+        LOOP_POPULATION,
+        "{label}: pinned population"
+    );
+    assert_eq!(
+        (sampled, plan.len() - sampled),
+        (LOOP_SAMPLES, LOOP_TOPUPS),
+        "{label}: pinned sample and top-ups"
+    );
+    run_plan(&gx, budget, &plan, &mut table, &classes, &hits, label);
     print_table(label, &table);
-    assert_plan_outcomes(label, &table, truncated);
+    assert_plan_outcomes(label, &table);
+    let equal: u64 = table.values().map(|t| t.equal).sum();
+    let refused: u64 = table.values().map(|t| t.refused_w1).sum();
+    // Non-vacuity, exactly (flips to 261 / 0 when W1 closes).
+    assert_eq!(
+        (equal, refused),
+        (244, 17),
+        "{label}: equal and W1-refused arrivals"
+    );
     for (class, t) in &table {
         if !class.starts_with("CommonExit/") {
             assert_eq!(t.refused_w1, 0, "{label}: {class} refusals");
@@ -964,6 +1129,23 @@ fn w1_common_exit_arrival_is_named_refusal_today() {
         })
         .expect("common exit entry");
     let names = ["helper ret", "write", "cpuid", "main ret"];
+    // The survey's per-hit record names each exit: its source PC
+    // and the exit kind the dispatcher data holds (H2a).
+    let recs = entry_hits(&gx, None, idx, map.len(), "W1 survey");
+    assert_eq!(recs.len(), 5, "W1 survey: five common-exit hits");
+    use liteinst_jit::state::exit_kind::{NONDET, RETURN, SYSCALL};
+    assert_eq!(
+        recs[1..]
+            .iter()
+            .map(|r| (r.src_off, r.exit_kind))
+            .collect::<Vec<_>>(),
+        gx.exit_offs
+            .unwrap()
+            .into_iter()
+            .zip([RETURN, SYSCALL, NONDET, RETURN])
+            .collect::<Vec<_>>(),
+        "W1 survey: post-install hits name the four exits and their kinds"
+    );
     for (k, (off, name)) in gx.exit_offs.unwrap().into_iter().zip(names).enumerate() {
         let hit = k as u64 + 2;
         let t = run_translated(
@@ -1006,6 +1188,7 @@ fn w1_common_exit_arrival_is_named_refusal_today() {
         },
     );
     assert!(!t.report.sent, "W1: no sixth common-exit execution");
+    assert_eq!(t.report.hits, 5, "W1: exactly five common-exit executions");
     assert_eq!(t.out.as_ref().map(|o| o.state.rax).ok(), Some(42));
     assert_eq!(t.debug_regs, Some((0, 0)), "W1: DR cleared, unreached");
 }
@@ -1056,6 +1239,8 @@ fn w3_original_step_arrival_is_named_refusal_today() {
 /// that translates.
 #[test]
 fn w2_remote_translation_maps_every_generated_byte() {
+    // Builds (and so pins) both sweep fixtures without `lock()`.
+    let _corpus = corpus::guard();
     use liteinst_jit::exec::CODE_CAP;
     use liteinst_jit::{ExitStyle, translate_with_exit_style};
     let base = 0x10_0000_0000u64;
@@ -1117,29 +1302,80 @@ fn w2_remote_translation_maps_every_generated_byte() {
     eprintln!("W2: {checked} translations, every generated byte mapped");
 }
 
-/// W5 held behaviour (flips in H2): the mirrored mask is stale
-/// during a handler. The SIGUSR1 handler has SIGUSR2 in its
-/// `sa_mask`, sends SIGUSR2 (no handler, so not deliverable in
-/// this stage) to itself, and spins past a poll exit. Today the
-/// poll reads SIGUSR2 as unblocked and stops the run inside the
-/// handler, although the kernel has SIGUSR2 blocked there.
-#[test]
-fn w5_stale_mirror_stops_in_handler_today() {
-    let _g = lock();
-    const USR2: i32 = libc::SIGUSR2;
+/// The three W5 shapes (I1-H H2). In each, main installs a
+/// SIGUSR1 handler and sends SIGUSR1 to itself; the handler's
+/// first USR1 run sends a second signal that the kernel keeps
+/// blocked for the handler's duration, then spins past several
+/// poll exits (budget `W5_POLL_BUDGET`) and returns.
+#[derive(Clone, Copy, Debug)]
+enum W5 {
+    /// SIGUSR2 in the handler's `sa_mask`, no handler for it:
+    /// after sigreturn its default action ends the native child.
+    MaskDefault,
+    /// SIGRTMIN+2 (34) in `sa_mask`, with the same handler: after
+    /// sigreturn it is delivered.
+    MaskRt,
+    /// SIGUSR1 itself, no `SA_NODEFER`: the kernel blocks a
+    /// handler's own signal; after sigreturn it is delivered
+    /// again (the handler sends only on its first run).
+    OwnSignal,
+    /// SIGUSR1 itself, but the handler first resets it to
+    /// `SIG_DFL`: ineligible, so the pre-H2a mirror poll stopped
+    /// in the handler; after sigreturn its default action ends
+    /// the native child.
+    OwnSignalDefault,
+}
+
+const W5_POLL_BUDGET: u64 = 16;
+/// D7: poll exits of the quiet loop 120 at budget 16 (pinned).
+const D7_QUIET_POLLS: u64 = 8;
+/// Handler spin iterations: each is a block entry, so the
+/// handler crosses several poll exits.
+const W5_SPIN: u32 = 64;
+const RT34: i32 = 34;
+
+/// A W5 fixture, and the offset of main's resume point after its
+/// own `kill` (where the post-sigreturn signal acts).
+fn build_w5(case: W5) -> (Gx, u64) {
+    let (masked, mask_bits) = match case {
+        W5::MaskDefault => (libc::SIGUSR2, 1u64 << (libc::SIGUSR2 - 1)),
+        W5::MaskRt => (RT34, 1u64 << (RT34 - 1)),
+        W5::OwnSignal | W5::OwnSignalDefault => (USR1, 0),
+    };
     let mut a = CodeAssembler::new(64).unwrap();
     let mut handler = a.create_label();
     let mut restorer = a.create_label();
     let mut main = a.create_label();
+    let mut no_send = a.create_label();
     let mut spin = a.create_label();
+    let mut after_kill = a.create_label();
     a.set_label(&mut handler).unwrap();
+    // Only the first SIGUSR1 run sends.
+    a.cmp(edi, USR1 as u32).unwrap();
+    a.jne(no_send).unwrap();
+    a.cmp(qword_ptr(r13 + COUNT), 0).unwrap();
+    a.jne(no_send).unwrap();
+    if matches!(case, W5::OwnSignalDefault) {
+        // rt_sigaction(SIGUSR1, {SIG_DFL}, NULL, 8)
+        a.mov(qword_ptr(r13 + ACT), 0).unwrap();
+        a.mov(qword_ptr(r13 + (ACT + 8)), 0).unwrap();
+        a.mov(qword_ptr(r13 + (ACT + 16)), 0).unwrap();
+        a.mov(qword_ptr(r13 + (ACT + 24)), 0).unwrap();
+        a.mov(edi, USR1 as u32).unwrap();
+        a.lea(rsi, qword_ptr(r13 + ACT)).unwrap();
+        a.xor(edx, edx).unwrap();
+        a.mov(r10d, 8u32).unwrap();
+        a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+        a.syscall().unwrap();
+    }
     a.mov(eax, libc::SYS_getpid as u32).unwrap();
     a.syscall().unwrap();
     a.mov(rdi, rax).unwrap();
-    a.mov(esi, USR2 as u32).unwrap();
+    a.mov(esi, masked as u32).unwrap();
     a.mov(eax, libc::SYS_kill as u32).unwrap();
     a.syscall().unwrap();
-    a.mov(ecx, 40_000u32).unwrap();
+    a.set_label(&mut no_send).unwrap();
+    a.mov(ecx, W5_SPIN).unwrap();
     a.set_label(&mut spin).unwrap();
     a.dec(ecx).unwrap();
     a.jnz(spin).unwrap();
@@ -1148,19 +1384,25 @@ fn w5_stale_mirror_stops_in_handler_today() {
     a.set_label(&mut restorer).unwrap();
     a.db(&[0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05]).unwrap();
     a.set_label(&mut main).unwrap();
-    a.lea(rax, qword_ptr(rbp)).unwrap();
-    a.mov(qword_ptr(r13 + ACT), rax).unwrap();
-    a.mov(dword_ptr(r13 + (ACT + 8)), FLAGS).unwrap();
-    a.mov(dword_ptr(r13 + (ACT + 12)), 0u32).unwrap();
-    a.mov(qword_ptr(r13 + (ACT + 16)), r12).unwrap();
-    a.mov(qword_ptr(r13 + (ACT + 24)), 1i32 << (USR2 - 1))
-        .unwrap();
-    a.mov(edi, USR1 as u32).unwrap();
-    a.lea(rsi, qword_ptr(r13 + ACT)).unwrap();
-    a.xor(edx, edx).unwrap();
-    a.mov(r10d, 8u32).unwrap();
-    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
-    a.syscall().unwrap();
+    let install = |a: &mut CodeAssembler, sig: i32, mask: u64| {
+        a.lea(rax, qword_ptr(rbp)).unwrap();
+        a.mov(qword_ptr(r13 + ACT), rax).unwrap();
+        a.mov(dword_ptr(r13 + (ACT + 8)), FLAGS).unwrap();
+        a.mov(dword_ptr(r13 + (ACT + 12)), 0u32).unwrap();
+        a.mov(qword_ptr(r13 + (ACT + 16)), r12).unwrap();
+        a.mov(rax, mask).unwrap();
+        a.mov(qword_ptr(r13 + (ACT + 24)), rax).unwrap();
+        a.mov(edi, sig as u32).unwrap();
+        a.lea(rsi, qword_ptr(r13 + ACT)).unwrap();
+        a.xor(edx, edx).unwrap();
+        a.mov(r10d, 8u32).unwrap();
+        a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+        a.syscall().unwrap();
+    };
+    install(&mut a, USR1, mask_bits);
+    if matches!(case, W5::MaskRt) {
+        install(&mut a, RT34, 0);
+    }
     a.cmp(rcx, rcx).unwrap();
     a.jne(handler).unwrap();
     a.mov(eax, libc::SYS_getpid as u32).unwrap();
@@ -1169,82 +1411,441 @@ fn w5_stale_mirror_stops_in_handler_today() {
     a.mov(esi, USR1 as u32).unwrap();
     a.mov(eax, libc::SYS_kill as u32).unwrap();
     a.syscall().unwrap();
+    a.set_label(&mut after_kill).unwrap();
     a.mov(eax, 42u32).unwrap();
     a.ret().unwrap();
     let res = a
         .assemble_options(0, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
         .unwrap();
-    let restorer_off = res.label_ip(&restorer).unwrap();
-    corpus::check("H1 W5 stale mirror", &res.inner.code_buffer);
+    assert_eq!(res.label_ip(&handler).unwrap(), 0, "handler at 0");
+    let id = match case {
+        W5::MaskDefault => "H2 W5 sa_mask default",
+        W5::MaskRt => "H2 W5 sa_mask RT",
+        W5::OwnSignal => "H2 W5 own signal",
+        W5::OwnSignalDefault => "H2 W5 own signal default",
+    };
+    corpus::check(id, &res.inner.code_buffer);
+    let main_off = res.label_ip(&main).unwrap();
+    (
+        Gx {
+            bytes: res.inner.code_buffer.clone(),
+            handler_off: 0,
+            restorer_off: res.label_ip(&restorer).unwrap(),
+            main_off,
+            body_off: main_off,
+            cpuid_off: None,
+            exit_offs: None,
+        },
+        res.label_ip(&after_kill).unwrap(),
+    )
+}
+
+/// Normalized registers with the child's own pid as one token in
+/// RDI only: the W5 fixtures' `getpid; mov rdi, rax` leave it
+/// there, and every run has its own child. No other slot is
+/// touched; RFLAGS stays exact (review rev-h2a-cx P2-1).
+fn norm_gregs_pid(g: &[u64; 18], info: &RemoteChildInfo, code_len: u64, pid: i32) -> [u64; 18] {
+    const PID_TOKEN: u64 = 0x7e00_0000_0000_0001;
+    const RDI: usize = 8;
+    let mut n = norm_gregs(g, info, code_len);
+    if g[RDI] == pid as u64 {
+        n[RDI] = PID_TOKEN;
+    }
+    n
+}
+
+/// Polls that ran before the last intercepted sigreturn: here,
+/// the handler's own.
+fn polls_before_sigreturn(report: &ArrivalReport) -> u64 {
+    report.poll_exits - report.poll_exits_after_sigreturn
+}
+
+/// A W5 shape whose blocked signal has no handler when the
+/// handler returns (`sig`): the poll takes blocking from the
+/// kernel's `SigBlk`, so the run no longer stops inside the
+/// handler (it crosses several polls there); after sigreturn the
+/// kernel unblocks it and its default action ends the native
+/// child, and the translated run stops by name at the same source
+/// PC, with equal counts and registers. The pre-H2a poll, which
+/// read the mirror, stopped inside the handler in both shapes
+/// (the W5-mirror mutant).
+fn w5_default_waits_for_sigreturn(case: W5, sig: i32, label: &str) {
+    let (gx, after_kill) = build_w5(case);
+    let t = run_translated(
+        &gx,
+        Knobs {
+            poll_budget: Some(W5_POLL_BUDGET),
+            ..Knobs::default()
+        },
+    );
+    let n = run_native(&gx, None);
+    assert_eq!(n.end, O1sEnd::Killed(sig), "{label}: native end");
+    let f = match &t.out {
+        Err(RunError::Fault(f)) => f,
+        other => panic!("{label}: expected a stop after sigreturn, got {other:?}"),
+    };
+    assert_eq!(
+        (f.kind, f.signum),
+        (FaultKind::AsyncSignal, sig),
+        "{label}: kind and signal"
+    );
+    assert_eq!(
+        f.src_pc,
+        t.info.base + after_kill,
+        "{label}: stop at main's resume point, not in the handler"
+    );
+    let clen = code_len(&gx);
+    assert_eq!(
+        norm(n.state.rip, &n.info, clen),
+        norm(f.src_pc, &t.info, clen),
+        "{label}: the native child ends at the same source PC"
+    );
+    assert_eq!(
+        (f.instructions, f.branches),
+        (n.instructions, n.branches),
+        "{label}: counts at the stop vs native"
+    );
+    assert_eq!(
+        norm_gregs_pid(&state_gregs(&f.state), &t.info, clen, t.pid),
+        norm_gregs_pid(&state_gregs(&n.state), &n.info, clen, n.pid),
+        "{label}: registers at the stop vs native"
+    );
+    assert_eq!(
+        word(&t.data, COUNT as usize),
+        1,
+        "{label}: the handler finished"
+    );
+    assert!(
+        polls_before_sigreturn(&t.report) >= 2,
+        "{label}: the handler crossed polls while the signal was pending and blocked ({:?})",
+        t.report
+    );
+}
+
+/// W5: SIGUSR2 in the handler's `sa_mask`, no handler for it.
+#[test]
+fn w5_sa_mask_blocked_signal_waits_for_sigreturn_like_native() {
+    let _g = lock();
+    w5_default_waits_for_sigreturn(W5::MaskDefault, libc::SIGUSR2, "W5 sa_mask default");
+}
+
+/// W5, the handler's own signal (no `SA_NODEFER`) made ineligible
+/// inside the handler (reset to `SIG_DFL`), then sent: blocked by
+/// the kernel for the handler's duration, so no stop in the
+/// handler (review coord7 P3-2: the discriminating own-signal
+/// case).
+#[test]
+fn w5_own_signal_default_waits_for_sigreturn_like_native() {
+    let _g = lock();
+    w5_default_waits_for_sigreturn(W5::OwnSignalDefault, USR1, "W5 own signal default");
+}
+
+/// Translated vs O1-S for a W5 shape whose blocked signal is
+/// delivered after sigreturn: equal counts, final registers and
+/// guest buffer, two deliveries each, and the handler crossed
+/// polls. Regression and O1-S-equality coverage only: an
+/// eligible pending signal was deferred, never a stop, under the
+/// pre-H2a mirror poll as well (review coord7 P3-2), so these
+/// shapes do not tell the fix from the old code; the two
+/// default-action shapes above do.
+fn w5_delivered_after_sigreturn(case: W5, label: &str) {
+    let (gx, _) = build_w5(case);
+    let t = run_translated(
+        &gx,
+        Knobs {
+            poll_budget: Some(W5_POLL_BUDGET),
+            ..Knobs::default()
+        },
+    );
+    let out = t
+        .out
+        .as_ref()
+        .unwrap_or_else(|e| panic!("{label}: translated: {e:?}"));
+    let n = run_native(&gx, None);
+    assert_eq!(n.end, O1sEnd::Returned, "{label}: O1-S end");
+    assert_eq!(out.state.rax, 42, "{label}: translated result");
+    assert_eq!(
+        (out.instructions, out.branches),
+        (n.instructions, n.branches),
+        "{label}: final counts vs O1-S"
+    );
+    let clen = code_len(&gx);
+    assert_eq!(
+        norm_gregs_pid(&state_gregs(&out.state), &t.info, clen, t.pid),
+        norm_gregs_pid(&state_gregs(&n.state), &n.info, clen, n.pid),
+        "{label}: final registers vs O1-S"
+    );
+    assert_eq!(
+        norm_buffer(&t.data, &t.info, clen),
+        norm_buffer(&n.dst_bytes, &n.info, clen),
+        "{label}: guest buffer vs O1-S"
+    );
+    assert_eq!(
+        word(&t.data, COUNT as usize),
+        2,
+        "{label}: two handler runs"
+    );
+    assert_eq!(
+        (t.report.deliveries.len(), n.deliveries.len()),
+        (2, 2),
+        "{label}: deliveries"
+    );
+    assert!(
+        polls_before_sigreturn(&t.report) >= 2,
+        "{label}: the handler crossed polls ({:?})",
+        t.report
+    );
+}
+
+/// W5 regression, eligible RT variant: signal 34 blocked by
+/// `sa_mask` is delivered after sigreturn, equal to O1-S.
+#[test]
+fn w5_sa_mask_blocked_rt_signal_delivers_after_sigreturn() {
+    let _g = lock();
+    w5_delivered_after_sigreturn(W5::MaskRt, "W5 sa_mask RT");
+}
+
+/// W5 regression, eligible own signal: the handler's own signal
+/// (no `SA_NODEFER`) sent inside it stays blocked through the
+/// handler's polls and is delivered after sigreturn, equal to
+/// O1-S.
+#[test]
+fn w5_own_signal_without_nodefer_delivers_after_sigreturn() {
+    let _g = lock();
+    w5_delivered_after_sigreturn(W5::OwnSignal, "W5 own signal");
+}
+
+/// D7 (I1-H H2): a delivery from a stop whose raw poll budget is
+/// 0 (the poll path: here the first post-install PollExitStub
+/// hit of the loop) restarts the budget, so polls keep firing in
+/// the handler and after sigreturn. Before H2 the handler took
+/// the 0, its first `dec` wrapped it to 2^64 - 1, and no poll
+/// fired for the rest of the run. Polls are counted by the seam;
+/// the reset is a pure function of the stop state, so a repeated
+/// run counts identically.
+#[test]
+fn poll_budget_restarts_after_a_delivery_at_a_poll_exit() {
+    let _g = lock();
+    let gx = build(Body::Loop(120));
+    let label = "D7 poll budget";
+    let budget = Some(LOOP_POLL_BUDGET);
+    let (map, base) = pcmap_of(&gx);
+    let quiet = run_translated(
+        &gx,
+        Knobs {
+            poll_budget: budget,
+            ..Knobs::default()
+        },
+    );
+    let quiet_polls = quiet.report.poll_exits;
+    // Pinned (review coord7 P3-1): the quiet loop 120 at budget 16
+    // takes 8 poll exits.
+    assert_eq!(quiet_polls, D7_QUIET_POLLS, "{label}: quiet poll exits");
+    // The first PollExitStub/Pristine entry executed after the
+    // install, at its first hit.
+    let (idx, want) = map
+        .iter()
+        .enumerate()
+        .filter(|(_, e)| {
+            e.recovery
+                == Recovery::PollExitStub {
+                    stage: ExitStage::Pristine,
+                }
+        })
+        .find_map(|(idx, e)| {
+            let recs = entry_hits(&gx, budget, idx, map.len(), label);
+            (!post_install_hits(&gx, e, base, recs.len() as u64).is_empty()).then(|| (idx, recs[0]))
+        })
+        .expect("an executed poll exit stub");
+    assert_eq!(
+        check_arrival(&gx, idx, 1, budget, label, want),
+        Verdict::Equal,
+        "{label}: the arrival delivers, equal to O1-S"
+    );
+    let runs: Vec<ArrivalReport> = (0..2)
+        .map(|_| {
+            run_translated(
+                &gx,
+                Knobs {
+                    arrival: Some((idx, 1)),
+                    poll_budget: budget,
+                    ..Knobs::default()
+                },
+            )
+            .report
+        })
+        .collect();
+    let r = &runs[0];
+    assert!(
+        r.sent && r.deliveries.len() == 1,
+        "{label}: one delivery: {r:?}"
+    );
+    // Exact (review coord7 P3-1): the arrival replaces the first
+    // poll exit it interrupts; the handler (under 16 block
+    // entries) polls 0 times; every later poll of the quiet run
+    // still happens, all after sigreturn. A budget wrapped to
+    // 2^64 - 1 gives 0, and a budget restored wrongly at the
+    // block-start resume moves this count.
+    assert_eq!(
+        (r.poll_exits, r.poll_exits_after_sigreturn),
+        (quiet_polls - 1, quiet_polls - 1),
+        "{label}: poll exits (total, after sigreturn): {r:?}"
+    );
+    assert_eq!(
+        (runs[1].poll_exits, runs[1].poll_exits_after_sigreturn),
+        (r.poll_exits, r.poll_exits_after_sigreturn),
+        "{label}: a repeated run polls identically"
+    );
+}
+
+/// D7 rule 2 (scope rev 1.1, coord7): a raw poll budget of 0 at a
+/// mid-block sigreturn restore is a broken invariant (every
+/// budget-0 stop is on the poll path and resumes at its block
+/// start), so the restore refuses it by name instead of resetting
+/// it. The seam presents that 0 at the restore of a delivery
+/// whose resume is a mid-block re-entry (a copied instruction
+/// that does not start its block): the run must refuse by name.
+/// Without the seam the same arrival delivers, equal to O1-S.
+#[test]
+fn poll_budget_zero_at_midblock_restore_refuses_by_name() {
+    let _g = lock();
+    let gx = build(Body::Mixed);
+    let label = "D7 restore invariant";
+    let (map, base, starts) = {
+        let mut remote =
+            RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &gx.bytes)
+                .expect("spawn remote");
+        let info = remote.info();
+        let region = RegionFacts {
+            base: info.base,
+            bytes: gx.bytes.clone(),
+            generation: Generation(1),
+            immutable_private: true,
+        };
+        remote
+            .prepare(
+                &region,
+                info.base + gx.main_off,
+                CountProfile::BranchesAndInstructions,
+            )
+            .expect("prepare");
+        let t = remote.translation_for_test().expect("prepared");
+        let starts: std::collections::BTreeSet<u64> =
+            t.block_gen.keys().map(|pc| pc - info.base).collect();
+        (t.pcmap.entries().to_vec(), info.base, starts)
+    };
+    // The first post-install copied instruction that does not
+    // start its block, at its first hit.
+    let (idx, want) = map
+        .iter()
+        .enumerate()
+        .filter(|(_, e)| {
+            let off = e.src_pc.wrapping_sub(base);
+            e.recovery == Recovery::Copied
+                && off >= gx.body_off
+                && off < gx.bytes.len() as u64
+                && !starts.contains(&off)
+        })
+        .find_map(|(idx, _)| {
+            let recs = entry_hits(&gx, None, idx, map.len(), label);
+            recs.first().map(|r| (idx, *r))
+        })
+        .expect("an executed mid-block copied instruction");
+    assert_eq!(
+        check_arrival(&gx, idx, 1, None, label, want),
+        Verdict::Equal,
+        "{label}: without the seam the arrival delivers, equal to O1-S"
+    );
+    let t = run_translated(
+        &gx,
+        Knobs {
+            arrival: Some((idx, 1)),
+            zero_raw_poll_at_restore: true,
+            ..Knobs::default()
+        },
+    );
+    assert!(
+        t.report.sent && t.report.deliveries.len() == 1,
+        "{label}: delivered"
+    );
+    assert_eq!(
+        t.out.as_ref().err(),
+        Some(&RunError::Refuse(liteinst_jit::Refuse::RemoteSubstrate {
+            operation: "poll budget zero at mid-block restore",
+            errno: 0,
+        })),
+        "{label}: the restore refuses by name"
+    );
+    assert_eq!(t.debug_regs, Some((0, 0)), "{label}: DR cleared");
+}
+
+/// O1-S negative case (review rev-h2a-cx P2-2): a stop that has
+/// the handler-argument register shape but is an ordinary step.
+/// SIGUSR1 is ignored (`SIG_IGN`); RDI holds 10 (SIGUSR1) and RDX
+/// holds RSP + 8 as plain guest values. O1-S sends SIGUSR1 before
+/// the first `nop`, re-injects it with the step, the kernel
+/// discards it, the `nop` retires, and the trap reports si_code
+/// TRAP_TRACE (2) with that shape still in the registers. O1-S
+/// must count a retirement, not record a delivery: only the
+/// si_code SIGTRAP pin tells the two apart.
+#[test]
+fn o1s_ignored_signal_with_handler_shaped_registers_is_a_retirement() {
+    let _g = lock();
+    let mut a = CodeAssembler::new(64).unwrap();
+    let mut main = a.create_label();
+    a.set_label(&mut main).unwrap();
+    // rt_sigaction(SIGUSR1, {SIG_IGN}, NULL, 8)
+    a.mov(qword_ptr(r13 + ACT), 1).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 8)), 0).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 16)), 0).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 24)), 0).unwrap();
+    a.mov(edi, USR1 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    // The handler-argument shape, as ordinary values.
+    a.mov(edi, USR1 as u32).unwrap();
+    a.lea(rdx, qword_ptr(rsp + 8)).unwrap();
+    a.nop().unwrap();
+    a.nop().unwrap();
+    a.mov(eax, 42u32).unwrap();
+    a.ret().unwrap();
+    let res = a
+        .assemble_options(0, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
+        .unwrap();
+    corpus::check("H2 O1-S ignored signal shape", &res.inner.code_buffer);
     let gx = Gx {
         bytes: res.inner.code_buffer.clone(),
         handler_off: 0,
-        restorer_off,
+        restorer_off: 0,
         main_off: res.label_ip(&main).unwrap(),
-        body_off: res.label_ip(&main).unwrap(),
+        body_off: 0,
         cpuid_off: None,
         exit_offs: None,
     };
-    let mut remote = RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &gx.bytes)
-        .expect("spawn remote");
-    let info = remote.info();
-    let region = RegionFacts {
-        base: info.base,
-        bytes: gx.bytes.clone(),
-        generation: Generation(1),
-        immutable_private: true,
-    };
-    remote
-        .prepare(
-            &region,
-            info.base + gx.main_off,
-            CountProfile::BranchesAndInstructions,
-        )
-        .expect("prepare");
-    let mut s = remote.initial_state();
-    s.rip = info.base + gx.main_off;
-    s.rbp = info.base;
-    s.r12 = info.base + restorer_off;
-    s.r13 = info.dst;
-    let out = remote.run(s, RETURN_SENTINEL);
-    let f = match out {
-        Err(RunError::Fault(f)) => f,
-        other => panic!("W5: expected today's stop in the handler, got {other:?}"),
-    };
-    assert_eq!(f.kind, FaultKind::AsyncSignal, "W5: kind");
-    assert_eq!(f.signum, USR2, "W5: the sa_mask-blocked signal");
+    let label = "O1-S ignored signal shape";
+    let quiet = run_native(&gx, None);
+    assert_eq!(quiet.end, O1sEnd::Returned, "{label}: quiet end");
+    assert!(quiet.deliveries.is_empty(), "{label}: quiet deliveries");
+    // Arrive before the first `nop` (the last four instructions are
+    // nop, nop, mov, ret).
+    let k = quiet.instructions - 4;
+    let n = run_native(&gx, Some((k, USR1)));
+    assert!(n.arrival_sent, "{label}: arrival sent at k = {k}");
+    assert_eq!(n.end, O1sEnd::Returned, "{label}: end");
     assert!(
-        f.src_pc >= info.base && f.src_pc < info.base + restorer_off,
-        "W5: stop inside the handler (src {:#x})",
-        f.src_pc - info.base
+        n.deliveries.is_empty(),
+        "{label}: an ignored signal's step is not a delivery: {:?}",
+        n.deliveries
     );
-    let status = std::fs::read_to_string(format!("/proc/{}/status", remote.child_pid_for_test()))
-        .expect("child status");
-    let field = |name: &str| -> u64 {
-        let v = status
-            .lines()
-            .find_map(|l| l.strip_prefix(name))
-            .expect("status field");
-        u64::from_str_radix(v.trim(), 16).expect("hex")
-    };
-    let bit = 1u64 << (USR2 - 1);
-    assert_ne!(
-        field("SigBlk:") & bit,
-        0,
-        "W5: the kernel had SIGUSR2 blocked"
-    );
-    assert_ne!(
-        (field("SigPnd:") | field("ShdPnd:")) & bit,
-        0,
-        "W5: SIGUSR2 still pending"
-    );
-    let mut count = [0u8; 8];
-    assert!(remote.read_mem(info.dst + COUNT as u64, &mut count));
     assert_eq!(
-        u64::from_le_bytes(count),
-        0,
-        "W5: the handler did not finish"
+        (n.instructions, n.branches),
+        (quiet.instructions, quiet.branches),
+        "{label}: the stepped nop is counted as retired"
     );
+    assert_eq!(n.state.rax, 42, "{label}: result");
 }
 
 /// coord7 Q4: O1-S shares no classification code with the
@@ -1386,5 +1987,5 @@ fn corpus_hash_known_answers_and_table() {
     // reviewed edit here too. (Each test's own `check` proves its
     // IDs are present and current.)
     let table = corpus::table();
-    assert_eq!(table.len(), 74, "pinned fixtures");
+    assert_eq!(table.len(), 80, "pinned fixtures");
 }

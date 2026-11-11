@@ -5,16 +5,24 @@
 //! before any behavioural assertion. Updating a row is a visible,
 //! reviewed edit of that file.
 //!
+//! Every test that pins fixtures holds a [`guard`] for its whole
+//! body (each binary's `lock()` takes one); `check` refuses to run
+//! without one, so no caller can be missed.
+//!
 //! Regenerating: set `LITEINST_CORPUS_RECORD` to a file path and
 //! run the tests. `check` then appends `ID SHA256` lines there
 //! instead of asserting. Review the diff before copying the
 //! hashes into the table. Record mode is never a pass: every test
+//! that recorded a fixture fails when its guard drops (after it
+//! has recorded all of its fixtures), so even a filtered record
+//! run that touches one pinned fixture fails; and every test
 //! binary that pins fixtures also runs
 //! [`corpus_record_mode_checks_no_pins`], which fails while the
-//! variable is set (the other tests still run and record).
+//! variable is set.
 
 #![allow(dead_code)]
 
+use std::cell::{Cell, RefCell};
 use std::collections::BTreeMap;
 use std::sync::Mutex;
 
@@ -23,6 +31,47 @@ const TABLE: &str = include_str!("../../SIGNAL-CORPUS.md");
 /// IDs already checked in this process, with their hash: one ID
 /// must always name the same bytes.
 static SEEN: Mutex<BTreeMap<String, String>> = Mutex::new(BTreeMap::new());
+
+thread_local! {
+    /// Live [`Guard`]s on this test thread.
+    static GUARDS: Cell<u32> = const { Cell::new(0) };
+    /// A `check` on this thread recorded instead of asserting.
+    static RECORDED: Cell<bool> = const { Cell::new(false) };
+    /// Test-only record target, in place of the environment
+    /// variable (the guard's own unit test).
+    static RECORD_TO: RefCell<Option<std::path::PathBuf>> = const { RefCell::new(None) };
+}
+
+/// Held for the whole of every test that pins fixtures; see the
+/// module doc.
+pub struct Guard(());
+
+pub fn guard() -> Guard {
+    GUARDS.with(|g| g.set(g.get() + 1));
+    Guard(())
+}
+
+impl Drop for Guard {
+    fn drop(&mut self) {
+        let left = GUARDS.with(|g| {
+            let n = g.get() - 1;
+            g.set(n);
+            n
+        });
+        if left == 0 && RECORDED.with(|r| r.replace(false)) && !std::thread::panicking() {
+            panic!(
+                "corpus record mode: this test recorded fixture hashes and checked no pin \
+                 (record runs never pass)"
+            );
+        }
+    }
+}
+
+fn record_target() -> Option<std::path::PathBuf> {
+    RECORD_TO
+        .with(|r| r.borrow().clone())
+        .or_else(|| std::env::var_os("LITEINST_CORPUS_RECORD").map(Into::into))
+}
 
 /// SHA-256 (FIPS 180-4), for fixture pinning only.
 pub fn sha256(data: &[u8]) -> [u8; 32] {
@@ -124,6 +173,10 @@ pub fn table() -> BTreeMap<String, String> {
 /// Pin `bytes` under `id`: the table's hash must match, and one
 /// ID must never name two different fixtures in one process.
 pub fn check(id: &str, bytes: &[u8]) {
+    assert!(
+        GUARDS.with(|g| g.get()) > 0,
+        "corpus::check({id}) without a corpus guard: every pinning test must hold one"
+    );
     let got = hex(&sha256(bytes));
     {
         let mut seen = SEEN.lock().unwrap_or_else(|e| e.into_inner());
@@ -131,8 +184,9 @@ pub fn check(id: &str, bytes: &[u8]) {
             assert_eq!(prev, got, "corpus ID {id} names two different fixtures");
         }
     }
-    if let Ok(path) = std::env::var("LITEINST_CORPUS_RECORD") {
+    if let Some(path) = record_target() {
         use std::io::Write;
+        RECORDED.with(|r| r.set(true));
         let mut f = std::fs::OpenOptions::new()
             .create(true)
             .append(true)
@@ -159,4 +213,37 @@ fn corpus_record_mode_checks_no_pins() {
     if let Ok(path) = std::env::var("LITEINST_CORPUS_RECORD") {
         panic!("LITEINST_CORPUS_RECORD={path}: record mode, no corpus pin was checked");
     }
+}
+
+/// The guard's two rules, in-process: a test that recorded fails
+/// when its guard drops, and `check` without a guard fails.
+#[test]
+fn corpus_guard_fails_recording_tests_and_unguarded_checks() {
+    let path = std::env::temp_dir().join(format!(
+        "liteinst-corpus-guard-probe-{}-{:?}.txt",
+        std::process::id(),
+        std::thread::current().id()
+    ));
+    RECORD_TO.with(|r| *r.borrow_mut() = Some(path.clone()));
+    let recorded = std::panic::catch_unwind(|| {
+        let _g = guard();
+        check("corpus guard probe", b"probe");
+    });
+    RECORD_TO.with(|r| *r.borrow_mut() = None);
+    let _ = std::fs::remove_file(&path);
+    let msg = recorded.expect_err("a recording test must fail");
+    let text = msg
+        .downcast_ref::<String>()
+        .cloned()
+        .or_else(|| msg.downcast_ref::<&str>().map(|s| s.to_string()))
+        .unwrap_or_default();
+    assert!(text.contains("corpus record mode"), "guard panic: {text}");
+    assert!(!RECORDED.with(|r| r.get()), "flag cleared by the guard");
+    let unguarded = std::panic::catch_unwind(|| check("corpus guard probe", b"probe"));
+    let msg = unguarded.expect_err("an unguarded check must fail");
+    let text = msg.downcast_ref::<String>().cloned().unwrap_or_default();
+    assert!(
+        text.contains("without a corpus guard"),
+        "unguarded panic: {text}"
+    );
 }

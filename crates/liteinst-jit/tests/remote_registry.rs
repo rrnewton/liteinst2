@@ -622,6 +622,8 @@ fn check_seed_controls() {
 /// signal state must not overlap.
 #[test]
 fn remote_registry_all() {
+    // Every fixture this test builds is pinned (see `corpus`).
+    let _corpus = corpus::guard();
     check_registry_round_trip();
     check_poll_with_handler_installed();
     check_oldfault_mutations();

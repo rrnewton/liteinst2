@@ -602,26 +602,86 @@ fn write_mem(pid: i32, addr: u64, buf: &[u8]) -> Result<(), Refuse> {
     Ok(())
 }
 
-/// The child thread's actual blocked mask from procfs
-/// (`SigBlk`), the authoritative kernel answer used both for
-/// initial mirror seeding and post-`rt_sigprocmask`
-/// reconciliation. Reading it neither dequeues nor delivers
-/// anything.
-fn read_sigblk(pid: i32) -> Result<u64, Refuse> {
-    let text = std::fs::read_to_string(format!("/proc/{pid}/status"))
-        .map_err(|_| remote_err("read child SigBlk"))?;
-    for line in text.lines() {
-        if let Some(v) = line.strip_prefix("SigBlk:") {
-            return u64::from_str_radix(v.trim(), 16).map_err(|_| Refuse::RemoteSubstrate {
-                operation: "parse child SigBlk",
-                errno: 0,
-            });
+/// The child's signal masks from one `/proc/<pid>/status` text
+/// (I1-H H2 W5): the pending set (`SigPnd | ShdPnd`) and the
+/// blocked set (`SigBlk`), the authoritative kernel answers.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct StatusMasks {
+    pub pending: u64,
+    pub blocked: u64,
+}
+
+/// The single parser of the status mask lines. Each of
+/// `SigPnd:`, `ShdPnd:` and `SigBlk:` must appear exactly once
+/// with a hex value; anything else is a named refusal, never an
+/// empty mask (a fail-open parse would read a blocked signal as
+/// unblocked, or a pending one as absent).
+pub fn status_masks(text: &str) -> Result<StatusMasks, Refuse> {
+    let field = |name: &str| -> Result<u64, Refuse> {
+        let mut found = None;
+        for line in text.lines() {
+            if let Some(v) = line.strip_prefix(name) {
+                if found.is_some() {
+                    return Err(Refuse::RemoteSubstrate {
+                        operation: "child status mask line repeated",
+                        errno: 0,
+                    });
+                }
+                let v = v.trim();
+                if v.is_empty() || !v.bytes().all(|b| b.is_ascii_hexdigit()) {
+                    return Err(Refuse::RemoteSubstrate {
+                        operation: "parse child status mask",
+                        errno: 0,
+                    });
+                }
+                found = Some(
+                    u64::from_str_radix(v, 16).map_err(|_| Refuse::RemoteSubstrate {
+                        operation: "parse child status mask",
+                        errno: 0,
+                    })?,
+                );
+            }
         }
-    }
-    Err(Refuse::RemoteSubstrate {
-        operation: "child SigBlk absent",
-        errno: 0,
+        found.ok_or(Refuse::RemoteSubstrate {
+            operation: "child status mask line absent",
+            errno: 0,
+        })
+    };
+    Ok(StatusMasks {
+        pending: field("SigPnd:")? | field("ShdPnd:")?,
+        blocked: field("SigBlk:")?,
     })
+}
+
+/// The `NSpid:` proof over one status text: exactly one pid on
+/// the line (no nested pid namespace), equal to `pid` (the
+/// tracer's view). Anything else, including a missing or
+/// malformed line, is `None`, and callers fail closed.
+pub fn parse_nspid(text: &str, pid: i32) -> Option<i32> {
+    let mut lines = text.lines().filter_map(|l| l.strip_prefix("NSpid:"));
+    let line = lines.next()?;
+    if lines.next().is_some() {
+        return None;
+    }
+    let mut fields = line.split_whitespace();
+    let first: i32 = fields.next()?.parse().ok()?;
+    (fields.next().is_none() && first == pid).then_some(first)
+}
+
+/// One read of the child's `/proc/<pid>/status`, parsed by
+/// [`status_masks`]. Reading it neither dequeues nor delivers
+/// anything.
+fn read_status_masks(pid: i32) -> Result<StatusMasks, Refuse> {
+    let text = std::fs::read_to_string(format!("/proc/{pid}/status"))
+        .map_err(|_| remote_err("read child status"))?;
+    status_masks(&text)
+}
+
+/// The child thread's actual blocked mask (`SigBlk`), used both
+/// for initial mirror seeding and post-`rt_sigprocmask`
+/// reconciliation; the same parser as the poll's.
+fn read_sigblk(pid: i32) -> Result<u64, Refuse> {
+    Ok(read_status_masks(pid)?.blocked)
 }
 
 fn wait_stop(pid: i32) -> Result<i32, Refuse> {
@@ -970,6 +1030,20 @@ pub struct SeamDelivery {
     pub branches: u64,
 }
 
+/// One arrival-breakpoint hit as recovery names it (I1-H H2):
+/// the source state an asynchronous arrival at that generated
+/// PC, at that hit, recovers to (the same `recover` call the
+/// arrival itself takes), and the exit kind the dispatcher data
+/// holds there (meaningful in the common exit).
+#[cfg(feature = "test-seams")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SeamHit {
+    pub src_pc: u64,
+    pub instructions: u64,
+    pub branches: u64,
+    pub exit_kind: u64,
+}
+
 /// What the test seams observed during the last run.
 #[cfg(feature = "test-seams")]
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -980,8 +1054,14 @@ pub struct ArrivalReport {
     pub sent: bool,
     /// RFLAGS.RF as the kernel left it at each hit, in order.
     pub rf_at_hits: Vec<bool>,
+    /// Recovery at each hit, in order (firing hit included).
+    pub hit_stops: Vec<SeamHit>,
     /// Every delivery from a generated-phase stop, in order.
     pub deliveries: Vec<SeamDelivery>,
+    /// POLL-kind dispatcher exits that did not stop the run.
+    pub poll_exits: u64,
+    /// Of those, the ones after the last intercepted sigreturn.
+    pub poll_exits_after_sigreturn: u64,
 }
 
 /// `PTRACE_POKEUSER` offset of debug register `n`.
@@ -1069,6 +1149,14 @@ pub struct RemoteExecutable {
     arrival_report: std::cell::RefCell<ArrivalReport>,
     #[cfg(feature = "test-seams")]
     poll_budget: Option<u64>,
+    /// Test seam, inert unless set: see
+    /// `set_nspid_status_for_test`.
+    #[cfg(feature = "test-seams")]
+    nspid_status_override: Option<String>,
+    /// Test seam, inert unless set: see
+    /// `set_zero_raw_poll_at_restore_for_test`.
+    #[cfg(feature = "test-seams")]
+    zero_raw_poll_at_restore: bool,
 }
 
 impl RemoteExecutable {
@@ -1252,6 +1340,10 @@ impl RemoteExecutable {
             arrival_report: std::cell::RefCell::new(ArrivalReport::default()),
             #[cfg(feature = "test-seams")]
             poll_budget: None,
+            #[cfg(feature = "test-seams")]
+            nspid_status_override: None,
+            #[cfg(feature = "test-seams")]
+            zero_raw_poll_at_restore: false,
         })
     }
 
@@ -1334,12 +1426,18 @@ impl RemoteExecutable {
     /// exactly one pid, ours. Any other shape (a nested pid
     /// namespace, unreadable status) is `None` and the caller
     /// fails closed.
+    ///
+    /// Both self-send gates use it: queueing (I1-G1) and `kill`
+    /// (I1-H H2). A host whose `/proc` shows nested `NSpid`
+    /// entries for the child therefore refuses every self-send
+    /// by name.
     fn own_pid_in_child_ns(&self) -> Option<i32> {
+        #[cfg(feature = "test-seams")]
+        if let Some(text) = &self.nspid_status_override {
+            return parse_nspid(text, self.guard.pid);
+        }
         let text = std::fs::read_to_string(format!("/proc/{}/status", self.guard.pid)).ok()?;
-        let line = text.lines().find_map(|l| l.strip_prefix("NSpid:"))?;
-        let mut fields = line.split_whitespace();
-        let first: i32 = fields.next()?.parse().ok()?;
-        (fields.next().is_none() && first == self.guard.pid).then_some(first)
+        parse_nspid(&text, self.guard.pid)
     }
 
     /// Gate one guest `rt_sigqueueinfo` (`pid, sig, info`) or
@@ -1688,6 +1786,48 @@ impl RemoteExecutable {
         self.poll_budget = budget;
     }
 
+    /// Test seam (I1-H H2): replace the status text the `NSpid`
+    /// self-send proof reads (both the `kill` and the queueing
+    /// gate), so a nested pid namespace can be presented. Only
+    /// that proof reads it: the pending and blocked masks still
+    /// come from the real `/proc` status. `None` (the default)
+    /// reads the real status.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn set_nspid_status_for_test(&mut self, text: Option<String>) {
+        self.nspid_status_override = text;
+    }
+
+    /// Test seam (I1-H H2a): present a raw poll budget of 0 at
+    /// every mid-block sigreturn restore, the broken invariant
+    /// that path refuses by name. Inert (`false`) by default.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn set_zero_raw_poll_at_restore_for_test(&mut self, on: bool) {
+        self.zero_raw_poll_at_restore = on;
+    }
+
+    /// The poll budget a context resumed after a delivery starts
+    /// with (I1-H H2a). The poll stub is
+    /// `dec qword [poll]; jnz` and exits to the dispatcher's
+    /// poll when the budget reaches 0, so a stop anywhere from
+    /// that `dec` to the poll exit has a raw budget of 0. Handed
+    /// on, the next `dec` would wrap it to 2^64 - 1 and no poll
+    /// would fire for the rest of the run; it restarts at the
+    /// full budget instead, as the poll exit it interrupted
+    /// would have. It is a pure function of the stop state (the
+    /// raw budget in the dispatcher data, and the run's fixed
+    /// budget), so a repeated run resets identically.
+    ///
+    /// Only deliveries take it. The sigreturn re-base (a
+    /// mid-block resume) refuses a raw 0 by name instead: every
+    /// stop with a raw budget of 0 lies on the poll path, whose
+    /// PC-map entries recover to the block start, so a mid-block
+    /// restore of a 0 is a broken invariant, not a case to repair.
+    fn resume_budget(&self, raw: u64) -> u64 {
+        if raw == 0 { self.poll_budget() } else { raw }
+    }
+
     /// Block entries between poll exits for a run.
     fn poll_budget(&self) -> u64 {
         #[cfg(feature = "test-seams")]
@@ -1759,12 +1899,24 @@ impl RemoteExecutable {
                 return Ok(status);
             }
             let mut regs = get_regs(pid)?;
-            let mut report = self.arrival_report.borrow_mut();
-            if regs.rip != seam.gen_pc || report.sent {
+            if regs.rip != seam.gen_pc || self.arrival_report.borrow().sent {
                 return Err(remote_err("arrival breakpoint stop at an unexpected pc"));
             }
+            // What an arrival at this hit would recover to: the
+            // registers and dispatcher data here are exactly the
+            // ones the delivery stop of a signal sent now presents
+            // (RF aside), and `kill` sends it with si_code SI_USER.
+            let data = self.read_jit_data()?;
+            let at = self.recovered_stop(seam.sig, 0, 0, regs.rip, &regs, &data);
+            let mut report = self.arrival_report.borrow_mut();
             report.hits += 1;
             report.rf_at_hits.push(regs.eflags & RFLAGS_RF != 0);
+            report.hit_stops.push(SeamHit {
+                src_pc: at.src_pc,
+                instructions: at.instructions,
+                branches: at.branches,
+                exit_kind: data.exit_kind,
+            });
             if report.hits < seam.hit {
                 // Not yet: let the instruction run once without
                 // re-trapping, and suppress the SIGTRAP.
@@ -2015,23 +2167,16 @@ impl RemoteExecutable {
         set_regs(self.guard.pid, &regs)
     }
 
-    fn pending_async(&self) -> Result<Vec<i32>, Refuse> {
-        // Pending masks are observer-visible in /proc status;
-        // this neither dequeues nor delivers anything.
-        let text = std::fs::read_to_string(format!("/proc/{}/status", self.guard.pid))
-            .map_err(|_| remote_err("read child pending mask"))?;
-        let mut mask: u64 = 0;
-        for line in text.lines() {
-            if let Some(v) = line
-                .strip_prefix("SigPnd:")
-                .or_else(|| line.strip_prefix("ShdPnd:"))
-            {
-                mask |= u64::from_str_radix(v.trim(), 16).unwrap_or(0);
-            }
-        }
-        Ok(crate::exec::async_signal_range()
-            .filter(|&sig| mask & (1u64 << (sig - 1)) != 0)
-            .collect())
+    /// The pending async signals (ascending) and the kernel's
+    /// blocked mask, from one `/proc` status read (W5: the poll
+    /// takes blocking from `SigBlk`, never from the mirror, so a
+    /// running handler's `sa_mask` and its own signal count).
+    fn pending_and_blocked(&self) -> Result<(Vec<i32>, u64), Refuse> {
+        let masks = read_status_masks(self.guard.pid)?;
+        let pending = crate::exec::async_signal_range()
+            .filter(|&sig| masks.pending & (1u64 << (sig - 1)) != 0)
+            .collect();
+        Ok((pending, masks.blocked))
     }
 
     /// Generated-phase fault: recover through the shared core
@@ -2862,7 +3007,7 @@ impl RemoteExecutable {
                         active.extend(frames);
                         state = handler_state;
                         exits += 1;
-                        poll_remaining = data.poll_remaining;
+                        poll_remaining = self.resume_budget(data.poll_remaining);
                         tot_branches = recovered.branches;
                         tot_instructions = recovered.instructions;
                         continue;
@@ -2911,7 +3056,7 @@ impl RemoteExecutable {
                         active.extend(frames);
                         state = handler_state;
                         exits += 1;
-                        poll_remaining = data.poll_remaining;
+                        poll_remaining = self.resume_budget(data.poll_remaining);
                         tot_branches = recovered.branches;
                         tot_instructions = recovered.instructions;
                         continue;
@@ -2968,6 +3113,10 @@ impl RemoteExecutable {
                         self.registry = registry;
                         let (resume_state, gen_override) = resumed?;
                         active.pop();
+                        #[cfg(feature = "test-seams")]
+                        {
+                            self.arrival_report.borrow_mut().poll_exits_after_sigreturn = 0;
+                        }
                         state = resume_state;
                         if let Some(gpc) = gen_override {
                             // Mid-block re-entry: the block's
@@ -2980,7 +3129,31 @@ impl RemoteExecutable {
                                 frame.raw_branches + (tot_branches - frame.resolved_branches);
                             tot_instructions = frame.raw_instructions
                                 + (tot_instructions - frame.resolved_instructions);
-                            poll_remaining = frame.raw_poll;
+                            // A raw budget of 0 exists only on the
+                            // poll path, whose PC-map entries
+                            // (PollStub, PollExitStub) recover to
+                            // the block start, which resumes
+                            // through the block index, never a
+                            // mid-block re-entry. A 0 here is a
+                            // broken invariant: refuse by name
+                            // rather than reset it, which would
+                            // hide the bug (I1-H H2a, coord7).
+                            #[cfg(feature = "test-seams")]
+                            let raw_poll = if self.zero_raw_poll_at_restore {
+                                0
+                            } else {
+                                frame.raw_poll
+                            };
+                            #[cfg(not(feature = "test-seams"))]
+                            let raw_poll = frame.raw_poll;
+                            if raw_poll == 0 {
+                                return Err(Refuse::RemoteSubstrate {
+                                    operation: "poll budget zero at mid-block restore",
+                                    errno: 0,
+                                }
+                                .into());
+                            }
+                            poll_remaining = raw_poll;
                             pending_gen = Some(gpc);
                         }
                         tot_instructions += 2;
@@ -3002,25 +3175,27 @@ impl RemoteExecutable {
                     // the cache makes the kernel present its
                     // delivery stop at the block head, where the
                     // Async arm delivers it. A pending signal the
-                    // MIRROR shows as blocked is not an event:
+                    // kernel shows as blocked is not an event:
                     // natively it just stays pending until the
                     // guest unblocks it, and the kernel then
                     // presents it (the I1-F unblock path), so it
                     // does not stop the run here. An ineligible
-                    // pending signal the mirror shows as
-                    // unblocked keeps the recovered stop. Known
-                    // limit (I1-H W5, closed in H2): the mirror
-                    // is not refreshed at handler entry, so a
-                    // signal blocked only by a running handler's
-                    // `sa_mask` (or its own signal without
-                    // `SA_NODEFER`) reads as unblocked here and,
-                    // if ineligible, still stops the run early.
+                    // pending signal the kernel shows as
+                    // unblocked keeps the recovered stop.
+                    // Blocking comes from the kernel's `SigBlk`
+                    // in the same status read as the pending
+                    // sets, never from the mirror (I1-H W5): the
+                    // mirror is not refreshed at handler entry,
+                    // so inside a handler it would miss the
+                    // handler's `sa_mask` and its own signal
+                    // (without `SA_NODEFER`), which the kernel
+                    // blocks for the handler's duration.
                     state.rip = data.exit_src;
-                    let pending = self.pending_async()?;
+                    let (pending, blocked) = self.pending_and_blocked()?;
                     let unblocked: Vec<i32> = pending
                         .iter()
                         .copied()
-                        .filter(|&sig| !self.registry.is_blocked(sig))
+                        .filter(|&sig| blocked & (1u64 << (sig - 1)) == 0)
                         .collect();
                     // The kernel presents the lowest-numbered
                     // UNBLOCKED pending signal first, so any
@@ -3041,6 +3216,12 @@ impl RemoteExecutable {
                             instructions: done.instructions,
                         })));
                     }
+                    #[cfg(feature = "test-seams")]
+                    {
+                        let mut report = self.arrival_report.borrow_mut();
+                        report.poll_exits += 1;
+                        report.poll_exits_after_sigreturn += 1;
+                    }
                     poll_remaining = self.poll_budget();
                 }
                 exit_kind::INDIRECT => {
@@ -3059,9 +3240,15 @@ impl RemoteExecutable {
                         .into());
                     }
                     // Self-send bound: kill may target only
-                    // the traced child's own pid in this stage.
+                    // the traced child's own pid, proven to be
+                    // its own-namespace pid through `NSpid`
+                    // exactly as the queueing gate proves it
+                    // (I1-H H2), and compared as the full 64-bit
+                    // register.
                     if state.rax as u32 == libc::SYS_kill as u32
-                        && state.rdi != self.guard.pid as u64
+                        && self
+                            .own_pid_in_child_ns()
+                            .is_none_or(|own| state.rdi != own as u64)
                     {
                         return Err(Refuse::NoHandler {
                             src_pc: data.exit_src,
@@ -3205,6 +3392,100 @@ impl RemoteExecutable {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A `/proc/<pid>/status` excerpt with the three mask lines.
+    fn status(pnd: &str, shd: &str, blk: &str) -> String {
+        format!(
+            "Name:\tchild\nNSpid:\t4242\nSigQ:\t0/63426\nSigPnd:\t{pnd}\nShdPnd:\t{shd}\n\
+             SigBlk:\t{blk}\nSigIgn:\t0000000000000000\n"
+        )
+    }
+
+    #[test]
+    fn status_masks_parse_fail_closed() {
+        // Pending is SigPnd | ShdPnd; blocked is SigBlk.
+        assert_eq!(
+            status_masks(&status(
+                "0000000000000200",
+                "0000000000000800",
+                "0000000000000a00"
+            )),
+            Ok(StatusMasks {
+                pending: 0xa00,
+                blocked: 0xa00
+            })
+        );
+        assert_eq!(
+            status_masks(&status("0", "8000000000000000", "ffffffffffffffff")),
+            Ok(StatusMasks {
+                pending: 1 << 63,
+                blocked: u64::MAX
+            })
+        );
+        let refused = |op: &'static str| -> Result<StatusMasks, Refuse> {
+            Err(Refuse::RemoteSubstrate {
+                operation: op,
+                errno: 0,
+            })
+        };
+        // A missing line is never an empty mask.
+        let no_blk = status("0", "0", "0").replace("SigBlk:\t0\n", "");
+        assert_eq!(
+            status_masks(&no_blk),
+            refused("child status mask line absent")
+        );
+        let no_shd = status("0", "0", "0").replace("ShdPnd:\t0\n", "");
+        assert_eq!(
+            status_masks(&no_shd),
+            refused("child status mask line absent")
+        );
+        // Malformed or empty values, and repeated lines, refuse.
+        assert_eq!(
+            status_masks(&status("0", "0", "00zz")),
+            refused("parse child status mask")
+        );
+        assert_eq!(
+            status_masks(&status("", "0", "0")),
+            refused("parse child status mask")
+        );
+        assert_eq!(
+            status_masks(&status("-1", "0", "0")),
+            refused("parse child status mask")
+        );
+        assert_eq!(
+            status_masks(&status("0", "0", "10000000000000000")),
+            refused("parse child status mask")
+        );
+        let twice = format!("{}SigBlk:\t0\n", status("0", "0", "0"));
+        assert_eq!(
+            status_masks(&twice),
+            refused("child status mask line repeated")
+        );
+    }
+
+    #[test]
+    fn nspid_proof_requires_one_entry_equal_to_ours() {
+        assert_eq!(parse_nspid("Name:\tx\nNSpid:\t4242\n", 4242), Some(4242));
+        assert_eq!(
+            parse_nspid("NSpid:\t4242\t1\n", 4242),
+            None,
+            "nested pid namespace"
+        );
+        assert_eq!(
+            parse_nspid("NSpid:\t1\t4242\n", 4242),
+            None,
+            "nested, ours second"
+        );
+        assert_eq!(parse_nspid("NSpid:\t4243\n", 4242), None, "another pid");
+        assert_eq!(parse_nspid("Name:\tx\n", 4242), None, "no NSpid line");
+        assert_eq!(parse_nspid("NSpid:\n", 4242), None, "empty line");
+        assert_eq!(parse_nspid("NSpid:\tabc\n", 4242), None, "garbage");
+        assert_eq!(
+            parse_nspid("NSpid:\t4242\nNSpid:\t4242\n", 4242),
+            None,
+            "repeated line"
+        );
+    }
 
     fn class(phase: Phase, sig: i32, si: Option<(i32, i32)>, exact: bool) -> StopClass {
         classify_stop(phase, sig, 0, si, exact)
