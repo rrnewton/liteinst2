@@ -22,9 +22,12 @@ P1a envelope, honestly bounded:
   explicit owner scope decision. The remote ptrace substrate
   (`src/remote.rs`, P1B-DESIGN §8) additionally performs
   tested genuine delivery shapes (I1-D/I1-E, I1-F masks,
-  altstack, and capped nesting, and I1-G1 real-time ordering,
+  altstack, and capped nesting, I1-G1 real-time ordering,
   `SI_QUEUE` self-queueing, and back-to-back frames, for
-  SIGUSR1/SIGUSR2 and signals 34..=64); every
+  SIGUSR1/SIGUSR2 and signals 34..=64, and I1-G2 delivery when
+  a signal interrupts `rt_sigsuspend`, `FUTEX_WAIT_PRIVATE`
+  without a timeout, or `nanosleep`, with the kernel applying
+  `SA_RESTART`/`-EINTR`); every
   other shape there — including async stops in common-exit
   spilled stages and at generated PCs with no pcmap entry
   (entry-loader bridge class) — still stops as a recovered

@@ -10,7 +10,7 @@
 //! go byte from stdin (the parent sends the pending signal
 //! first), enters the fixture on the guest stack with
 //! `rbx=dst, rbp=base, r12=base+restorer_off, r13=src`, then
-//! writes `(result rax, dst[0..640])` and exits. The handler
+//! writes `(result rax, dst[0..1024])` and exits. The handler
 //! and restorer offsets are fixture conventions shared with
 //! the test: handler at 0, restorer immediately after it —
 //! the entry trampoline only needs `rbp`/`r12` values the
@@ -190,6 +190,6 @@ fn main() {
         unsafe { liteinst_native_enter(guest.base + entry_off, guest.stack_top(), regs.as_ptr()) };
     let mut out = std::io::stdout().lock();
     out.write_all(&result.to_le_bytes()).expect("write result");
-    out.write_all(&dst[0..640]).expect("write witness");
+    out.write_all(&dst[0..1024]).expect("write witness");
     out.flush().expect("flush output");
 }

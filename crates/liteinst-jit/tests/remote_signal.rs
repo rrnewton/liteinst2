@@ -478,14 +478,15 @@ fn native_run(fix: &FixtureBytes, send_sig: Option<i32>) -> NativeOut {
         .expect("native stdin")
         .write_all(&[1u8])
         .expect("native go byte");
-    let mut out = vec![0u8; 8 + 640];
+    // The child reports dst[0..1024]; these fixtures use 640.
+    let mut out = vec![0u8; 8 + 1024];
     stdout.read_exact(&mut out).expect("native result");
     let status = child.wait().expect("wait native child");
     assert!(status.success(), "native child status {status}");
     let result = u64::from_le_bytes(out[0..8].try_into().unwrap());
     NativeOut {
         result,
-        data: out[8..].to_vec(),
+        data: out[8..8 + 640].to_vec(),
         base,
         dst,
         stack_top,
