@@ -9,7 +9,7 @@ readme = "README.md"
 description = "Stopped-executor runtime patching over liteinst-aarch64 facts"
 # Not published until the fact crate version carrying emit is published
 # and the patcher design slices complete (liteinst-jit precedent).
-publish = false
+publish = true
 
 [package.metadata.docs.rs]
 targets = ["aarch64-unknown-linux-gnu"]
