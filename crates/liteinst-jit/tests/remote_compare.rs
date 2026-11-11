@@ -495,8 +495,11 @@ fn check_immediate_and_poll_async_stops() {
     // first poll exit stopped this run with a recovered
     // AsyncSignal, which coord7 ruled a bug.)
     {
-        // 40000 iterations: more than two poll exits (16384
-        // block entries each), at one cpuid exit per iteration.
+        // 40000 iterations of `xor; cpuid; dec r12; jne`. The
+        // cpuid exit splits each iteration into two block
+        // entries, so the run makes about 80000 block entries
+        // and crosses several poll exits (one per 16384 block
+        // entries), as well as one cpuid exit per iteration.
         let state_of = |remote: &RemoteExecutable| {
             let mut state = remote.initial_state();
             state.rsi = 40_000;
@@ -524,6 +527,16 @@ fn check_immediate_and_poll_async_stops() {
             (q.branches, q.instructions),
             "counts equal the run with nothing pending"
         );
+        // Exact (coord7 P3): one `jne` per iteration, four
+        // instructions per iteration plus the entry `mov` and
+        // the final `ret`, and the counter run down to zero.
+        assert_eq!(
+            (out.branches, out.instructions, out.state.r12),
+            (40_000, 160_002, 0),
+            "exact counts and final counter"
+        );
+        assert_eq!(out.exits, q.exits, "same dispatcher exits as the quiet run");
+        eprintln!("W4 cpuid_loop: {} dispatcher exits", out.exits);
         assert_eq!(
             (
                 out.state.rsi,

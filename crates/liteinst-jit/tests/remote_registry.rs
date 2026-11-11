@@ -4,6 +4,9 @@
 //! equal those answers exactly. One sequential test: ptrace
 //! children and process-global signal state must not overlap.
 
+#[path = "common/corpus.rs"]
+mod corpus;
+
 use liteinst_jit::Refuse;
 use liteinst_jit::harness::RETURN_SENTINEL;
 use liteinst_jit::remote::{GuestAction, RemoteExecutable};
@@ -58,7 +61,12 @@ fn guest_bytes(main: &[&[u8]]) -> Vec<u8> {
     v
 }
 
-fn prepare_bytes(bytes: &[u8]) -> (RemoteExecutable, liteinst_jit::remote::RemoteChildInfo) {
+/// `id`: the fixture's SIGNAL-CORPUS.md ID, checked first.
+fn prepare_bytes(
+    id: &str,
+    bytes: &[u8],
+) -> (RemoteExecutable, liteinst_jit::remote::RemoteChildInfo) {
+    corpus::check(id, bytes);
     let mut remote =
         RemoteExecutable::spawn_bytes(std::path::Path::new(CHILD), bytes).expect("spawn");
     let info = remote.info();
@@ -98,13 +106,14 @@ fn word(data: &[u8], off: usize) -> u64 {
 }
 
 fn run_registry_bytes(
+    id: &str,
     bytes: &[u8],
 ) -> (
     RemoteExecutable,
     liteinst_jit::remote::RemoteChildInfo,
     Vec<u8>,
 ) {
-    let (mut remote, info) = prepare_bytes(bytes);
+    let (mut remote, info) = prepare_bytes(id, bytes);
     remote
         .run(guest_state(&remote, info), RETURN_SENTINEL)
         .expect("registry guest run");
@@ -168,7 +177,7 @@ fn check_registry_round_trip() {
         failed_install_and_requery,
         sigpending,
     ]);
-    let (mut remote, info) = prepare_bytes(&bytes);
+    let (mut remote, info) = prepare_bytes("C1 registry round trip", &bytes);
     let out = remote
         .run(guest_state(&remote, info), RETURN_SENTINEL)
         .expect("registry round trip run");
@@ -268,7 +277,7 @@ fn check_poll_with_handler_installed() {
         inc_counter,
         loop_tail,
     ]);
-    let (mut remote, info) = prepare_bytes(&bytes);
+    let (mut remote, info) = prepare_bytes("C2 poll with handler", &bytes);
     let pid = remote.child_pid_for_test();
     let out = remote
         .run(guest_state(&remote, info), RETURN_SENTINEL)
@@ -371,7 +380,7 @@ fn check_oldfault_mutations() {
 
     // Action: run ends at the copy-out EFAULT; mirror already B.
     let bytes = guest_bytes(&[BUILD_ACT, INSTALL, build_b, action_old1_end, &[0xc3]]);
-    let (remote, info, data) = run_registry_bytes(&bytes);
+    let (remote, info, data) = run_registry_bytes("C3 oldact EFAULT action", &bytes);
     assert_eq!(
         word(&data, 288) as i64,
         -14,
@@ -391,12 +400,12 @@ fn check_oldfault_mutations() {
         action_query_320,
         &[0xc3],
     ]);
-    let (_remote, info2, data) = run_registry_bytes(&bytes);
+    let (_remote, info2, data) = run_registry_bytes("C3 oldact EFAULT action control", &bytes);
     assert_eq!(word(&data, 320), info2.base + 8, "kernel has handler B");
 
     // Mask: run ends at the copy-out EFAULT; mirror already set.
     let bytes = guest_bytes(&[mask_old1_end, &[0xc3]]);
-    let (remote, _info, data) = run_registry_bytes(&bytes);
+    let (remote, _info, data) = run_registry_bytes("C3 oldmask EFAULT", &bytes);
     assert_eq!(
         word(&data, 296) as i64,
         -14,
@@ -408,12 +417,12 @@ fn check_oldfault_mutations() {
     );
     // Mask control: + guest mask query.
     let bytes = guest_bytes(&[mask_old1_end, mask_query_304, &[0xc3]]);
-    let (_remote, _info, data) = run_registry_bytes(&bytes);
+    let (_remote, _info, data) = run_registry_bytes("C3 oldmask EFAULT control", &bytes);
     assert_eq!(word(&data, 304), 0x200, "kernel mask has SIGUSR1");
 
     // Altstack: run ends at the copy-out EFAULT; mirror set.
     let bytes = guest_bytes(&[alt_old1_end, &[0xc3]]);
-    let (remote, info, data) = run_registry_bytes(&bytes);
+    let (remote, info, data) = run_registry_bytes("C3 oldalt EFAULT", &bytes);
     assert_eq!(
         word(&data, 312) as i64,
         -14,
@@ -426,7 +435,7 @@ fn check_oldfault_mutations() {
     );
     // Altstack control: + guest query.
     let bytes = guest_bytes(&[alt_old1_end, alt_query_352, &[0xc3]]);
-    let (_remote, info2, data) = run_registry_bytes(&bytes);
+    let (_remote, info2, data) = run_registry_bytes("C3 oldalt EFAULT control", &bytes);
     assert_eq!(word(&data, 352), info2.src, "kernel altstack sp");
 }
 
@@ -457,7 +466,7 @@ fn check_normalization_and_bad_inputs() {
         0xb8, 0x83, 0x00, 0x00, 0x00, 0x0f, 0x05,
     ];
     let bytes = guest_bytes(&[build_dirty, INSTALL, query_act_272, alt_onstack, &[0xc3]]);
-    let (mut remote, info) = prepare_bytes(&bytes);
+    let (mut remote, info) = prepare_bytes("C4 normalization", &bytes);
     remote
         .run(guest_state(&remote, info), RETURN_SENTINEL)
         .expect("normalization run");
@@ -513,6 +522,7 @@ fn check_normalization_and_bad_inputs() {
             INSTALL,
             &[0xc3],
         ]);
+        corpus::check(&format!("C5 partial act {label}"), &bytes);
         let mut remote = RemoteExecutable::spawn_bytes_guarded(std::path::Path::new(CHILD), &bytes)
             .expect("spawn guarded");
         let info = remote.info();

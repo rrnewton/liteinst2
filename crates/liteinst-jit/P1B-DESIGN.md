@@ -323,13 +323,43 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   merge `ca1152214e221b437caa11fb48c3e36d5069da21`).
 - **I1-H** (scope approved by coord7 2026-11-10) runs as four
   PRs in order: a standalone poll fix (W4: a blocked pending
-  signal stopped the run at a poll exit; fixed, see I1-F
+  signal stopped the run at a poll exit; **landed**,
+  [PR 78](https://github.com/rrnewton/liteinst2/pull/78),
+  merge `ec2a98f8eaf0b959b1acb6430abd0c7e578a051d`; see I1-F
   below), then H1 evidence (an O1 signal oracle, deterministic
   arrival at any generated PC, a differential sweep, the frozen
-  corpus), H2 (deliver arrivals in common-exit stages, the
-  entry bridge, and original-instruction steps, plus the `kill`
-  gate's NSpid proof), and H3 (the S1 overhead breakdown, a
-  replay of every retained mutant, and the one bounded claim).
+  corpus), H2 (deliver arrivals in common-exit stages and
+  original-instruction steps; W5; plus the `kill` gate's NSpid
+  proof; the entry-bridge class W2 turned out empty, see below), and H3 (the S1 overhead
+  breakdown, a replay of every retained mutant, and the one
+  bounded claim).
+- **W5** (found in the W4 review, pre-existing; closed in H2):
+  the mirrored signal mask is refreshed after a stepped
+  `rt_sigprocmask` and at sigreturn, but not at handler entry,
+  so during a handler a signal blocked only by its `sa_mask`
+  (or its own signal without `SA_NODEFER`) reads as unblocked
+  at a poll, and an ineligible one stops the run early. H2
+  reads `SigBlk` from the same `/proc/<pid>/status` text the
+  poll already reads, so the poll's mask is the kernel's at
+  every poll. Test: a USR1 handler with SIGUSR2 in `sa_mask`
+  self-sends USR2 and spins past two polls; the run must not
+  stop in the handler, and after sigreturn it must stop (or,
+  for an eligible RT variant, deliver) at the same source PC
+  where the native child acts. Mutant: drop the poll-time
+  `SigBlk` read.
+- **W2 is closed by evidence, not code** (H1). The scope named
+  W2 as "generated PCs with no pcmap entry (the entry-loader
+  bridge class)", but the remote substrate has no such PCs. The
+  tracer enters every block by setting registers, so no
+  generated entry bridge exists, and every byte the remote
+  translation emits (exit style `TrapToDispatcher`) lies in
+  exactly one PC-map entry, contiguously. The H1 test
+  `w2_remote_translation_maps_every_generated_byte` checks this
+  for both sweep fixtures and every corpus-v1 fixture that
+  translates. The arena's only other code is the signal-entry
+  stub, which only a kernel delivery enters; an arrival there is
+  the I1-G1 back-to-back case. `resume_gen`'s unmapped-PC refusal
+  therefore has no reachable input in this substrate.
 
 Each stage is its own branch off then-current liteinst2 `main`,
 signed, with exact-head `fmt`, Clippy, locked debug/release
@@ -477,12 +507,17 @@ frame stack only); flags are the I1-D base plus optional
 frame stack is capped at 8; `SA_ONSTACK` onto an enabled
 altstack needs size ≥ 8192 (disabled altstack keeps the
 kernel normal-stack fallback); poll deferral picks the
-lowest-numbered unblocked eligible pending signal (a BLOCKED
-pending signal never stops the run at a poll: it stays
-pending, as natively, until the guest unblocks it and the
-kernel presents it; fixed after I1-G2 as the I1-H "W4" PR,
-whose test blocks SIGUSR1, receives it, runs past two poll
-exits, probes `rt_sigpending`, and then unblocks it); and the
+lowest-numbered unblocked eligible pending signal (a pending
+signal the tracer's mirrored mask shows as blocked does not
+stop the run at a poll: it stays pending, as natively, until
+the guest unblocks it and the kernel presents it; fixed after
+I1-G2 as the I1-H "W4" PR, whose test blocks SIGUSR1,
+receives it, runs past two poll exits, probes `rt_sigpending`,
+and then unblocks it. Known limit, I1-H W5: the mirror is not
+refreshed at handler entry, so a signal blocked only by a
+running handler's `sa_mask`, or by its own signal without
+`SA_NODEFER`, reads as unblocked at a poll and, if
+ineligible, still stops the run early); and the
 self-send syscalls `getpid`/`kill` pass through with `kill`
 gated to the traced child's own pid. Evidence: mask matrix
 with in-handler mask query (NODEFER on/off), altstack frame

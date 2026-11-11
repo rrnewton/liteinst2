@@ -938,6 +938,114 @@ impl Drop for ChildGuard {
     }
 }
 
+/// Test seam (I1-H H1): deterministic signal arrival at a
+/// generated PC. One hardware execute breakpoint (DR0, local
+/// enable in DR7) is armed at `gen_pc` for the run; on its
+/// `hit`-th execution the tracer disarms it, clears the RF flag
+/// the breakpoint left in RFLAGS, sends `sig` to its own traced
+/// child, and resumes, so the kernel presents that signal's
+/// delivery stop exactly at `gen_pc` before the instruction
+/// there executes. No trace flag is used, so nothing can leak
+/// into spilled guest flags. Earlier hits only resume (with RF
+/// set, so the instruction runs once without re-trapping).
+#[cfg(feature = "test-seams")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ArrivalSeam {
+    pub gen_pc: u64,
+    pub hit: u64,
+    pub sig: i32,
+}
+
+/// One genuine delivery made from a generated-phase stop,
+/// recorded by the test seam (records only).
+#[cfg(feature = "test-seams")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SeamDelivery {
+    pub signum: i32,
+    pub gen_pc: u64,
+    /// The recovered source state's PC and the retired totals
+    /// before it, as the frame was built.
+    pub src_pc: u64,
+    pub instructions: u64,
+    pub branches: u64,
+}
+
+/// What the test seams observed during the last run.
+#[cfg(feature = "test-seams")]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct ArrivalReport {
+    /// Arrival breakpoint hits, firing hit included.
+    pub hits: u64,
+    /// The arrival signal was sent.
+    pub sent: bool,
+    /// RFLAGS.RF as the kernel left it at each hit, in order.
+    pub rf_at_hits: Vec<bool>,
+    /// Every delivery from a generated-phase stop, in order.
+    pub deliveries: Vec<SeamDelivery>,
+}
+
+/// `PTRACE_POKEUSER` offset of debug register `n`.
+#[cfg(feature = "test-seams")]
+fn debugreg_offset(n: usize) -> usize {
+    core::mem::offset_of!(libc::user, u_debugreg) + 8 * n
+}
+
+#[cfg(feature = "test-seams")]
+fn poke_debugreg(pid: i32, n: usize, value: u64) -> Result<(), Refuse> {
+    ptrace_ok(
+        libc::PTRACE_POKEUSER,
+        pid,
+        debugreg_offset(n) as *mut u8,
+        value as usize as *mut u8,
+        "PTRACE_POKEUSER debug register",
+    )
+}
+
+#[cfg(feature = "test-seams")]
+fn peek_debugreg(pid: i32, n: usize) -> Option<u64> {
+    // SAFETY: errno is thread-local; cleared so a legitimate
+    // all-ones value is told apart from a failed peek.
+    unsafe { *libc::__errno_location() = 0 };
+    let v = ptrace(
+        libc::PTRACE_PEEKUSER,
+        pid,
+        debugreg_offset(n) as *mut u8,
+        core::ptr::null_mut(),
+    );
+    // SAFETY: as above.
+    let errno = unsafe { *libc::__errno_location() };
+    (v != -1 || errno == 0).then_some(v as u64)
+}
+
+/// DR7 local-enable bit for DR0 (execute, length 1: RW0 and
+/// LEN0 both zero).
+#[cfg(feature = "test-seams")]
+const DR7_L0: u64 = 1;
+/// RFLAGS.RF: suppresses an instruction breakpoint for one
+/// instruction.
+#[cfg(feature = "test-seams")]
+const RFLAGS_RF: u64 = 0x1_0000;
+/// `si_code` of a hardware-breakpoint SIGTRAP.
+#[cfg(feature = "test-seams")]
+const TRAP_HWBKPT: i32 = 4;
+
+/// Clears DR7 then DR0 on every exit path of a run that armed
+/// the arrival breakpoint: success, refusal, fault, substrate
+/// error, and panic unwinding. Errors are ignored (a child that
+/// already ended has no debug registers left to clear).
+#[cfg(feature = "test-seams")]
+struct DebugRegGuard {
+    pid: i32,
+}
+
+#[cfg(feature = "test-seams")]
+impl Drop for DebugRegGuard {
+    fn drop(&mut self) {
+        let _ = poke_debugreg(self.pid, 7, 0);
+        let _ = poke_debugreg(self.pid, 0, 0);
+    }
+}
+
 /// A prepared remote direct-block executable. Dropping it
 /// kills and reaps the child on every path.
 pub struct RemoteExecutable {
@@ -950,6 +1058,17 @@ pub struct RemoteExecutable {
     /// `set_pre_redirected_step_signal_for_test`.
     #[cfg(feature = "test-seams")]
     pre_redirected_step_signal: Option<i32>,
+    /// Test seams, inert unless set: see
+    /// `set_pre_original_step_signal_for_test` and
+    /// `set_arrival_for_test`.
+    #[cfg(feature = "test-seams")]
+    pre_original_step_signal: Option<i32>,
+    #[cfg(feature = "test-seams")]
+    arrival: Option<ArrivalSeam>,
+    #[cfg(feature = "test-seams")]
+    arrival_report: std::cell::RefCell<ArrivalReport>,
+    #[cfg(feature = "test-seams")]
+    poll_budget: Option<u64>,
 }
 
 impl RemoteExecutable {
@@ -1125,6 +1244,14 @@ impl RemoteExecutable {
             registry,
             #[cfg(feature = "test-seams")]
             pre_redirected_step_signal: None,
+            #[cfg(feature = "test-seams")]
+            pre_original_step_signal: None,
+            #[cfg(feature = "test-seams")]
+            arrival: None,
+            #[cfg(feature = "test-seams")]
+            arrival_report: std::cell::RefCell::new(ArrivalReport::default()),
+            #[cfg(feature = "test-seams")]
+            poll_budget: None,
         })
     }
 
@@ -1529,6 +1656,160 @@ impl RemoteExecutable {
     #[doc(hidden)]
     pub fn pre_redirected_step_signal_for_test(&self) -> Option<i32> {
         self.pre_redirected_step_signal
+    }
+
+    /// Test seam (I1-H W3 evidence): when set, the tracer sends
+    /// `sig` to its own traced child immediately before it
+    /// single-steps an original (nondeterministic) instruction,
+    /// so an asynchronous stop lands deterministically in that
+    /// step. Inert (`None`) by default.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn set_pre_original_step_signal_for_test(&mut self, sig: Option<i32>) {
+        self.pre_original_step_signal = sig;
+    }
+
+    /// Test seam: arm (or clear) the [`ArrivalSeam`] for the
+    /// next run, and reset the [`ArrivalReport`].
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn set_arrival_for_test(&mut self, arrival: Option<ArrivalSeam>) {
+        self.arrival = arrival;
+        *self.arrival_report.borrow_mut() = ArrivalReport::default();
+    }
+
+    /// Test seam: replace `POLL_BUDGET` (block entries between
+    /// poll exits) for later runs, so a short loop crosses many
+    /// poll exits; the poll machinery is otherwise unchanged.
+    /// `None` restores the production budget.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn set_poll_budget_for_test(&mut self, budget: Option<u64>) {
+        self.poll_budget = budget;
+    }
+
+    /// Block entries between poll exits for a run.
+    fn poll_budget(&self) -> u64 {
+        #[cfg(feature = "test-seams")]
+        {
+            self.poll_budget.unwrap_or(POLL_BUDGET)
+        }
+        #[cfg(not(feature = "test-seams"))]
+        {
+            POLL_BUDGET
+        }
+    }
+
+    /// Test seam: what the seams observed during the last run.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn arrival_report_for_test(&self) -> ArrivalReport {
+        self.arrival_report.borrow().clone()
+    }
+
+    /// Test seam: the child's DR0 and DR7 as `PTRACE_PEEKUSER`
+    /// reads them now (`None` if the child cannot be read).
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn debug_regs_for_test(&self) -> Option<(u64, u64)> {
+        Some((
+            peek_debugreg(self.guard.pid, 0)?,
+            peek_debugreg(self.guard.pid, 7)?,
+        ))
+    }
+
+    /// Test seam: the prepared translation (read-only), for
+    /// enumerating generated PCs by PC-map class.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn translation_for_test(&self) -> Option<&Translation> {
+        self.translation.as_ref()
+    }
+
+    /// Arm the arrival breakpoint for one run; the guard clears
+    /// it on every exit path.
+    #[cfg(feature = "test-seams")]
+    fn arm_arrival(&self) -> Result<Option<DebugRegGuard>, Refuse> {
+        let Some(seam) = self.arrival else {
+            return Ok(None);
+        };
+        let guard = DebugRegGuard {
+            pid: self.guard.pid,
+        };
+        poke_debugreg(self.guard.pid, 0, seam.gen_pc)?;
+        poke_debugreg(self.guard.pid, 7, DR7_L0)?;
+        Ok(Some(guard))
+    }
+
+    /// Consume arrival-breakpoint stops after a generated-phase
+    /// wait and return the first other stop. Fails closed on a
+    /// hardware-breakpoint stop at any other PC.
+    #[cfg(feature = "test-seams")]
+    fn filter_arrival_stops(&self, mut status: i32) -> Result<i32, Refuse> {
+        let Some(seam) = self.arrival else {
+            return Ok(status);
+        };
+        let pid = self.guard.pid;
+        loop {
+            if !libc::WIFSTOPPED(status)
+                || libc::WSTOPSIG(status) != libc::SIGTRAP
+                || status >> 16 != 0
+                || stop_siginfo(pid, libc::SIGTRAP).map(|s| s.1) != Some(TRAP_HWBKPT)
+            {
+                return Ok(status);
+            }
+            let mut regs = get_regs(pid)?;
+            let mut report = self.arrival_report.borrow_mut();
+            if regs.rip != seam.gen_pc || report.sent {
+                return Err(remote_err("arrival breakpoint stop at an unexpected pc"));
+            }
+            report.hits += 1;
+            report.rf_at_hits.push(regs.eflags & RFLAGS_RF != 0);
+            if report.hits < seam.hit {
+                // Not yet: let the instruction run once without
+                // re-trapping, and suppress the SIGTRAP.
+                if regs.eflags & RFLAGS_RF == 0 {
+                    regs.eflags |= RFLAGS_RF;
+                    set_regs(pid, &regs)?;
+                }
+            } else {
+                poke_debugreg(pid, 7, 0)?;
+                poke_debugreg(pid, 0, 0)?;
+                if regs.eflags & RFLAGS_RF != 0 {
+                    regs.eflags &= !RFLAGS_RF;
+                    set_regs(pid, &regs)?;
+                }
+                // SAFETY: signalling this tracer's own traced,
+                // stopped, unreaped child.
+                if unsafe { libc::kill(pid, seam.sig) } != 0 {
+                    return Err(remote_err("arrival seam signal"));
+                }
+                report.sent = true;
+            }
+            drop(report);
+            self.cont(0)?;
+            status = wait_stop(pid)?;
+        }
+    }
+
+    /// Test seam log: one delivery from a generated-phase stop.
+    #[cfg(feature = "test-seams")]
+    fn record_seam_delivery(
+        &self,
+        signum: i32,
+        gen_pc: u64,
+        recovered: &crate::recovery::RecoveredStop,
+    ) {
+        self.arrival_report
+            .borrow_mut()
+            .deliveries
+            .push(SeamDelivery {
+                signum,
+                gen_pc,
+                src_pc: recovered.src_pc,
+                instructions: recovered.instructions,
+                branches: recovered.branches,
+            });
     }
 
     /// Test seam: every guest-memory write this tracer attempted
@@ -2244,6 +2525,13 @@ impl RemoteExecutable {
     ) -> Result<GuestState, RunError> {
         state.rip = pc;
         self.set_guest_regs(&state)?;
+        #[cfg(feature = "test-seams")]
+        if let Some(sig) = self.pre_original_step_signal {
+            // SAFETY: signalling this tracer's own traced child.
+            if unsafe { libc::kill(self.guard.pid, sig) } != 0 {
+                return Err(remote_err("test pre-original-step signal").into());
+            }
+        }
         ptrace_ok(
             libc::PTRACE_SINGLESTEP,
             self.guard.pid,
@@ -2474,9 +2762,11 @@ impl RemoteExecutable {
         };
         let mut exits: u64 = 0;
         let (mut tot_branches, mut tot_instructions) = (0u64, 0u64);
-        let mut poll_remaining = POLL_BUDGET;
+        let mut poll_remaining = self.poll_budget();
         let mut active: Vec<ActiveFrame> = Vec::new();
         let mut pending_gen: Option<u64> = None;
+        #[cfg(feature = "test-seams")]
+        let _debug_regs = self.arm_arrival()?;
         loop {
             // A mid-block sigreturn resume supplies its exact
             // generated entry once; every other entry resolves
@@ -2502,6 +2792,8 @@ impl RemoteExecutable {
             self.set_guest_regs(&entry_state)?;
             self.cont(0)?;
             let status = wait_stop(self.guard.pid)?;
+            #[cfg(feature = "test-seams")]
+            let status = self.filter_arrival_stops(status)?;
             if libc::WIFEXITED(status) || libc::WIFSIGNALED(status) {
                 self.guard.reaped = true;
                 return Err(Refuse::RemoteSubstrate {
@@ -2563,6 +2855,8 @@ impl RemoteExecutable {
                         recovered.kind == crate::recovery::FaultKind::AsyncSignal && resumable
                     });
                     if let Some(action) = action {
+                        #[cfg(feature = "test-seams")]
+                        self.record_seam_delivery(sig, gen_pc, &recovered);
                         let (handler_state, frames) =
                             self.deliver_signal(action, &recovered, &data, gen_mid, &active)?;
                         active.extend(frames);
@@ -2610,6 +2904,8 @@ impl RemoteExecutable {
                         if recovered.addr != addr {
                             set_siginfo_addr(self.guard.pid, recovered.addr)?;
                         }
+                        #[cfg(feature = "test-seams")]
+                        self.record_seam_delivery(sig, gen_pc, &recovered);
                         let (handler_state, frames) =
                             self.deliver_signal(action, &recovered, &data, gen_mid, &active)?;
                         active.extend(frames);
@@ -2705,13 +3001,20 @@ impl RemoteExecutable {
                     // therefore deferred one entry: re-entering
                     // the cache makes the kernel present its
                     // delivery stop at the block head, where the
-                    // Async arm delivers it. A BLOCKED pending
-                    // signal is not an event: natively it just
-                    // stays pending until the guest unblocks it,
-                    // and the kernel then presents it (the I1-F
-                    // unblock path), so it never stops the run.
-                    // Only an ineligible UNBLOCKED pending signal
-                    // keeps the recovered stop.
+                    // Async arm delivers it. A pending signal the
+                    // MIRROR shows as blocked is not an event:
+                    // natively it just stays pending until the
+                    // guest unblocks it, and the kernel then
+                    // presents it (the I1-F unblock path), so it
+                    // does not stop the run here. An ineligible
+                    // pending signal the mirror shows as
+                    // unblocked keeps the recovered stop. Known
+                    // limit (I1-H W5, closed in H2): the mirror
+                    // is not refreshed at handler entry, so a
+                    // signal blocked only by a running handler's
+                    // `sa_mask` (or its own signal without
+                    // `SA_NODEFER`) reads as unblocked here and,
+                    // if ineligible, still stops the run early.
                     state.rip = data.exit_src;
                     let pending = self.pending_async()?;
                     let unblocked: Vec<i32> = pending
@@ -2738,7 +3041,7 @@ impl RemoteExecutable {
                             instructions: done.instructions,
                         })));
                     }
-                    poll_remaining = POLL_BUDGET;
+                    poll_remaining = self.poll_budget();
                 }
                 exit_kind::INDIRECT => {
                     return Err(Refuse::IndirectUnresolved {
