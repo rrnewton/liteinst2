@@ -360,6 +360,26 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   stub, which only a kernel delivery enters; an arrival there is
   the I1-G1 back-to-back case. `resume_gen`'s unmapped-PC refusal
   therefore has no reachable input in this substrate.
+- **H2 follow-ups from the H1 reviews** (recorded here, no code
+  in H1):
+  - The arrival seam's "ensure RF" step on non-final hits is
+    defence in depth. For an execute breakpoint the kernel's
+    `hw_breakpoint_handler` already sets `X86_EFLAGS_RF`
+    (`arch/x86/kernel/hw_breakpoint.c`, about line 562) before
+    the tracer reads RFLAGS, so a mutant that drops the step is
+    **equivalent** on this kernel (coord7's R5 passes every
+    test). H2 records it as equivalent, and may assert that the
+    recorded `rf_at_hits` are all set, as a pin of the kernel
+    rule rather than of the seam.
+  - O1-S recognises the handler-entry stop without pinning its
+    `si_code`. Per the kernel source, `signal_delivered` calls
+    `ptrace_notify(SIGTRAP, 0)` when the tracee is stepping, and
+    `ptrace_do_notify` sets `si_code` to the exit code, so the
+    stop reports `si_code == SIGTRAP` (5), distinct from
+    `TRAP_TRACE` (2) and `TRAP_BRKPT` (1). H2 pins
+    `si_code == SIGTRAP` there; today's `si_code != TRAP_TRACE`
+    clause is redundant with the `rdi`/`rdx` frame tests (R3
+    survives).
 
 Each stage is its own branch off then-current liteinst2 `main`,
 signed, with exact-head `fmt`, Clippy, locked debug/release

@@ -473,6 +473,11 @@ fn check_arrival(gx: &Gx, idx: usize, hit: u64, poll_budget: Option<u64>, label:
     let (gen_pc, entry) = t.target.expect("arrival target");
     let class = class_of(&entry);
     if !t.report.sent {
+        assert!(
+            t.report.hits < hit,
+            "{label}: unsent after {} of {hit} hits",
+            t.report.hits
+        );
         let out = t
             .out
             .as_ref()
@@ -481,6 +486,8 @@ fn check_arrival(gx: &Gx, idx: usize, hit: u64, poll_budget: Option<u64>, label:
         assert!(t.report.deliveries.is_empty(), "{label}: no delivery");
         return Verdict::NotReached;
     }
+    // The seam fired on the requested hit, not later.
+    assert_eq!(t.report.hits, hit, "{label}: arrival fired on hit");
     let clen = code_len(gx);
     match &t.out {
         Err(RunError::Fault(f)) if f.kind == FaultKind::AsyncSignal => {
@@ -492,6 +499,29 @@ fn check_arrival(gx: &Gx, idx: usize, hit: u64, poll_budget: Option<u64>, label:
             assert!(
                 t.report.deliveries.is_empty(),
                 "{label}: refused, no delivery"
+            );
+            // W1 is refused today, but its recovered stop must still
+            // name the right source state: O1-S signalled after the
+            // recovered retired count delivers at the recovered
+            // source PC with the same totals.
+            let n = run_native(gx, Some((f.instructions, USR1)));
+            assert_eq!(n.end, O1sEnd::Returned, "{label}: W1 O1-S end");
+            assert!(
+                n.arrival_sent,
+                "{label}: W1 O1-S reached k = {}",
+                f.instructions
+            );
+            assert_eq!(n.deliveries.len(), 1, "{label}: W1 O1-S deliveries");
+            let nd = &n.deliveries[0];
+            assert_eq!(
+                (nd.instructions, nd.branches),
+                (f.instructions, f.branches),
+                "{label}: W1 recovered totals vs O1-S at delivery"
+            );
+            assert_eq!(
+                norm(nd.gregs[16], &n.info, clen),
+                norm(f.src_pc, &t.info, clen),
+                "{label}: W1 recovered source PC vs O1-S frame RIP"
             );
             return Verdict::RefusedW1;
         }
@@ -737,17 +767,29 @@ fn run_plan(
     ran < plan.len()
 }
 
-/// Every class with an executed entry got at least one arrival.
-/// A truncated sweep cannot claim this; it says so instead.
-fn assert_executed_classes_arrived(label: &str, table: &BTreeMap<String, Tally>, truncated: bool) {
+/// Outcomes of a survey-derived plan. Every planned (PC, hit)
+/// was observed executed by the survey's counting run, so an
+/// arrival that never sent is a seam or plan defect, never
+/// coverage (the deliberately unreachable W1 hit-6 control runs
+/// outside any plan). And every class with an executed entry got
+/// at least one SENT arrival, delivered and equal or a W1
+/// refusal. A truncated sweep cannot claim the coverage half; it
+/// says so instead.
+fn assert_plan_outcomes(label: &str, table: &BTreeMap<String, Tally>, truncated: bool) {
+    for (class, t) in table {
+        assert_eq!(
+            t.not_reached, 0,
+            "{label}: {class}: survey-observed arrivals not reached"
+        );
+    }
     if truncated {
         eprintln!("{label}: class coverage NOT asserted (sweep truncated)");
         return;
     }
     for (class, t) in table {
         assert!(
-            t.executed == 0 || t.arrivals > 0,
-            "{label}: executed class {class} got no arrival"
+            t.executed == 0 || t.equal + t.refused_w1 > 0,
+            "{label}: executed class {class} got no sent arrival"
         );
     }
 }
@@ -826,7 +868,7 @@ fn sweep_mixed_exhaustive() {
     );
     let truncated = run_plan(&gx, None, &plan, &mut table, &classes, label);
     print_table(label, &table);
-    assert_executed_classes_arrived(label, &table, truncated);
+    assert_plan_outcomes(label, &table, truncated);
     let equal: u64 = table.values().map(|t| t.equal).sum();
     let refused: u64 = table.values().map(|t| t.refused_w1).sum();
     assert!(equal > 0 && refused > 0, "{label}: both outcomes seen");
@@ -885,7 +927,7 @@ fn sweep_poll_loop_sampled() {
     );
     let truncated = run_plan(&gx, budget, &plan, &mut table, &classes, label);
     print_table(label, &table);
-    assert_executed_classes_arrived(label, &table, truncated);
+    assert_plan_outcomes(label, &table, truncated);
     for (class, t) in &table {
         if !class.starts_with("CommonExit/") {
             assert_eq!(t.refused_w1, 0, "{label}: {class} refusals");

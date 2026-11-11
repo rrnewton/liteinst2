@@ -8,7 +8,10 @@
 //! Regenerating: set `LITEINST_CORPUS_RECORD` to a file path and
 //! run the tests. `check` then appends `ID SHA256` lines there
 //! instead of asserting. Review the diff before copying the
-//! hashes into the table.
+//! hashes into the table. Record mode is never a pass: every test
+//! binary that pins fixtures also runs
+//! [`corpus_record_mode_checks_no_pins`], which fails while the
+//! variable is set (the other tests still run and record).
 
 #![allow(dead_code)]
 
@@ -146,4 +149,14 @@ pub fn check(id: &str, bytes: &[u8]) {
         Some(got.as_str()),
         "SIGNAL-CORPUS.md hash for fixture {id} (computed {got})"
     );
+}
+
+/// Fails the binary while `LITEINST_CORPUS_RECORD` is set: in
+/// record mode no `check` in it asserted anything, so a green run
+/// would claim pins that were never checked.
+#[test]
+fn corpus_record_mode_checks_no_pins() {
+    if let Ok(path) = std::env::var("LITEINST_CORPUS_RECORD") {
+        panic!("LITEINST_CORPUS_RECORD={path}: record mode, no corpus pin was checked");
+    }
 }

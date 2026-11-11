@@ -6,8 +6,10 @@ the fixture covers, the oracle its test checks against, and the
 SHA-256 of its exact bytes. Every test pins its fixture through
 `tests/common/corpus.rs` before running anything, so changing a
 fixture fails by ID until its row here is updated in a reviewed
-edit. Fixtures whose bytes embed a run-dependent value are listed
-as unpinned, with the reason.
+edit. A fixture whose bytes would embed a run-dependent value is
+either unpinned, with the reason, or pinned as a template whose
+runtime patch its test checks byte for byte (see "Run-dependent
+inputs").
 
 ## Oracles
 
@@ -27,9 +29,11 @@ as unpinned, with the reason.
   - It credits an interrupted syscall the way the translated
     substrate does: once, at completion. A rewound restart is
     not credited; `-EINTR` is credited at the delivery.
-  - It checks every step's decoded length and branch target
-    against the next RIP the trap reports (the per-step RIP-delta
-    check, coord7 Q4(b)). A mismatch fails the oracle.
+  - It checks every retired step's observed successor (the next
+    RIP the trap reports) against its decode: the per-step
+    RIP-delta check, coord7 Q4(b). A mismatch fails the oracle.
+    What that does and does not verify is listed under the
+    common-mode risk below.
   - Every differential test also runs O1-S and requires the
     following.
     - Its witness equals the native child's (a sanity check of
@@ -37,7 +41,9 @@ as unpinned, with the reason.
     - Its counts equal the fixture's own instruction
       enumeration (its self-check).
     - The translated counts and final register image equal its
-      own, with addresses compared as (region, offset).
+      own, with addresses compared as (region, offset). In
+      `remote_signal.rs` the whole 640-byte guest buffer is also
+      compared, address-normalized.
 - **pinned enumeration**: translated counts pinned to the
   fixture's instruction list, for shapes O1-S does not run:
   refusals, which have no native completion to compare.
@@ -50,12 +56,33 @@ as unpinned, with the reason.
   PC by the hardware-breakpoint seam is delivered translated.
   The seam records the recovered `(src_pc, instructions,
   branches)`. O1-S then sends the same signal after exactly
-  `instructions` retired steps. Both runs must agree on:
-  - the full handler-visible frame (siginfo, all 18 ucontext
-    registers, the saved mask);
-  - the final register image;
-  - the counts;
-  - the guest buffer.
+  `instructions` retired steps. "Equal" means exactly these
+  comparisons, with addresses as (region, offset) and generated
+  arena addresses never normalized (one leaking is a mismatch):
+  - retired instructions and conditional branches at delivery;
+  - O1-S's frame RIP against the recovered source PC;
+  - what the handler logged from its frame: siginfo words 0-3
+    (bytes 0-31 of 128), the 18 `uc_mcontext` general registers
+    r8-r15, rdi, rsi, rbp, rbx, rdx, rax, rcx, rsp, rip and
+    eflags (RFLAGS exact, no mask), and the 64-bit `uc_sigmask`
+    (in O1-S that log must also equal O1-S's own read of the
+    frame);
+  - the guest report buffer, destination bytes 0-1023, which
+    holds that log and the fixture's results;
+  - the final 16 GPRs, RIP and RFLAGS (exact), and the final
+    retired totals.
+
+  Not compared: `uc_flags`, `uc_link`, `uc_stack`; the mcontext
+  `csgsfs`, `err`, `trapno`, `oldmask` and `cr2` words; the
+  fpstate pointer and all FP/SIMD state; siginfo bytes 32-127;
+  memory outside destination bytes 0-1023. Some of these differ
+  legitimately (`trapno`, `err` and `cr2` describe the last
+  debug exception), and the fixtures use no FP state.
+
+  A W1 refusal is not delivered, but its recovered stop is still
+  checked: O1-S signalled after the recovered retired count must
+  deliver once, with the same totals, at a frame RIP equal to the
+  recovered source PC.
 
 ### Known common-mode risk (coord7 Q4(a))
 
@@ -68,11 +95,34 @@ from single-step traps and need no decoding. Branch counts use
 O1's own classification applied to the shared decode, so a shared
 decoder error is a **common-mode risk for branch counts only**.
 
-The per-step RIP-delta check bounds that risk:
-- a wrong length on any retired instruction fails;
-- so does a real branch, decoded as a non-branch, that is taken.
+The per-step RIP-delta check bounds that risk. It checks each
+retired step's observed successor: before the step the oracle
+predicts, from the decode, where the instruction must land, and
+the next RIP the trap reports must match. That verifies the
+decoded length only where the successor depends on it:
+- a non-control instruction, a syscall other than `rt_sigreturn`,
+  and a REP string instruction's final retirement must land at
+  `pc + len`: the length is checked;
+- a conditional branch must land at `pc + len` or its decoded
+  target: not taken checks the length, taken checks the target;
+- a direct `jmp`/`call` must land at its decoded target: the
+  target is checked, not the length;
+- `ret` must land at the word at `[rsp]`, and `rt_sigreturn` at
+  the frame's saved RIP: neither checks the decode;
+- an indirect `jmp`/`call` has no independent prediction and
+  fails if it retires.
+
+So a real branch decoded as a non-branch fails when it is taken.
+The mutant Mf (`Inc_rm64` decoded one byte long) demonstrates the
+straight-line case.
 
 What the check cannot catch:
+- a wrong length on a taken conditional branch, a direct
+  `jmp`/`call`, a `ret` or `rt_sigreturn`. The oracle decodes
+  each step at the RIP the trap reports, so its own counts do not
+  depend on those lengths;
+- a conditional branch whose wrong length or wrong target lands
+  on the other edge;
 - a non-branch decoded as a branch (its fall-through looks
   correct);
 - a real branch decoded as a non-branch that is never taken in
@@ -84,7 +134,12 @@ check ever disagrees (coord7 Q4(c)).
 ## Allowed refusal windows at H1
 
 The sweep classifies each arrival's generated PC by its PC-map
-class. At H1 the only named refusals it allows are:
+class. Every planned `(PC, hit)` was observed executed by the
+survey, so an arrival that never sends fails the sweep, and every
+executed class must get at least one sent arrival (delivered and
+equal, or a W1 refusal checked against O1-S as above). The seam
+must fire on exactly the planned hit. At H1 the only named
+refusals the sweep allows are:
 
 - **W1**, the common exit: `resume_gen` refuses common-exit
   stages, so the run ends with a recovered AsyncSignal at the
@@ -106,12 +161,32 @@ W5 (a stale mirrored mask during a handler) is held by
 `w5_stale_mirror_stops_in_handler_today`. W1, W3 and W5 are closed
 in H2, and their held tests then flip to delivered-and-equal.
 
+## Run-dependent inputs
+
+Every immediate the fixture builders emit is a constant, with two
+exceptions:
+- `E4c real foreign helper` embeds a live helper's pid and is
+  unpinned;
+- `G2h interrupted write` writes to a pipe whose fd is whatever
+  `pipe` returns in the test process. Its row pins the fixture
+  built with fd -1; the test then requires the bytes that run to
+  equal that template with only the runtime fd patched into the
+  one `mov edi, imm32`, and the layout unchanged.
+
+Pids and addresses reach a fixture only at run time, through
+`getpid` and the base registers, never as immediates. Evidence:
+two record passes with different inherited descriptor tables
+(and so different pipe fds, pids and mappings) produce identical
+hashes for all pinned IDs.
+
 ## Regenerating hashes
 
 Run the tests with `LITEINST_CORPUS_RECORD=/abs/path/file`. Each
-pin then appends `ID SHA256` to that file instead of asserting.
-Diff the result against the table and edit only the rows whose
-fixture change was intended.
+pin then appends `ID SHA256` to that file instead of asserting,
+and each of the four pinning test binaries fails its
+`corpus_record_mode_checks_no_pins` test, so a record run is never
+green. Diff the result against the table and edit only the rows
+whose fixture change was intended.
 
 ## Fixtures
 
@@ -183,7 +258,7 @@ fixture change was intended.
 | `G2g FUTEX_WAIT_PRIVATE with timeout` | I1-G2 | remote_signal_rt.rs unadmitted_blocking_shapes_refused_at_syscall | timed futex wait not passed through | named refusal | `a01452650e2af9b0727dfd8088f2a8aa5d280ebb9dcc5a1a1c83be63c84b0475` |
 | `G2g FUTEX_WAIT (shared)` | I1-G2 | remote_signal_rt.rs unadmitted_blocking_shapes_refused_at_syscall | shared futex wait not passed through | named refusal | `bbac947e767f22314a1095cc61805166c81efbc2a5bea1bc7870bf2ff7cb0ff7` |
 | `G2g FUTEX_WAKE_PRIVATE` | I1-G2 | remote_signal_rt.rs unadmitted_blocking_shapes_refused_at_syscall | futex wake not passed through | named refusal | `5d85a1e242a4abf681d659912dbb5b5b06082d6003ef14c43326be9619540da1` |
-| `G2h interrupted write` | I1-G2 | remote_signal_rt.rs interrupted_write_outside_restart_set_keeps_named_stop | blocking write outside the restart set, interrupted | named refusal + native child | `e89f47b0bedc1d3b8bf1f8c252f40cd2095a75964e4ae28089723c5fe0e2d1a5` |
+| `G2h interrupted write` | I1-G2 | remote_signal_rt.rs interrupted_write_outside_restart_set_keeps_named_stop | blocking write outside the restart set, interrupted; pinned as the fd -1 template, the runtime pipe fd checked as a one-immediate patch | named refusal + native child | `90cbb6a26c6f8ad8b54992d28cf996b6fc0d7f47ab53a8f74702f48fd65c3e69` |
 | `G2i` | I1-G2 | remote_signal_rt.rs futex_high_alias_restarts_like_native | futex through the 0x1_000000ca alias, SA_RESTART restart | native child + O1-S | `ef11c049a2f467287700d4b86c26855b6eb2a49f5a64562d14f72e84e7699da4` |
 | `G2j sender sleep proof` | I1-G2 | remote_signal_rt.rs sender_waits_for_sleep_not_syscall_entry_stop | harness: the sender waits for a real sleep, not a syscall-entry stop | harness proof | `43d9829c25e08b656ad458c1a8e9fbd5e3264b02ab85214996f91718d1624c50` |
 | `W4` | I1-H W4 | remote_signal_rt.rs blocked_pending_signal_survives_polls_and_delivers_on_unblock | USR1 blocked, self-sent, run past two polls, delivered at unblock | native child + O1-S | `255c6e3ed97e595b77221232acf4c6e73aceb82e4358aa44b98d3803a1ebba5b` |

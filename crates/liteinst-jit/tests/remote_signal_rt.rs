@@ -168,9 +168,16 @@ enum Send {
     /// rt_sigpending into `PENDING_MID` (a pending probe placed
     /// among the sends, before any unblock).
     PendingNow,
-    /// write(fd, dst + INFO, 1) to a test-owned inherited fd.
+    /// write(fd, dst + INFO, 1) to a test-owned inherited fd. The
+    /// fd is an immediate (`mov edi, imm32`), so a runtime fd makes
+    /// run-dependent bytes: pin a [`FD_TEMPLATE`] build and check
+    /// the runtime build with [`assert_fd_patch`].
     WriteFd(i32),
 }
+
+/// The fd a pinned `WriteFd` template carries. If template bytes
+/// ever ran, `write(-1, ..)` would only fail with EBADF.
+const FD_TEMPLATE: i32 = -1;
 
 fn futex_wait() -> Send {
     Send::Futex {
@@ -221,6 +228,8 @@ struct Fx {
     /// iteration).
     spin_extra_insns: u64,
     spin_branches: u64,
+    /// Offset of a `WriteFd` send's `mov edi, imm32` (at most one).
+    write_fd_mov: Option<u64>,
 }
 
 /// One `SA_SIGINFO` handler body: append one log entry. No
@@ -263,8 +272,9 @@ fn build(spec: &Spec, id: &str) -> Fx {
 }
 
 /// [`build`] without the pin, only for fixtures whose bytes embed
-/// a run-dependent value (a live helper's pid); SIGNAL-CORPUS.md
-/// lists them as unpinned.
+/// a run-dependent value: a live helper's pid (SIGNAL-CORPUS.md
+/// lists it as unpinned), or a runtime fd, whose pinned
+/// [`FD_TEMPLATE`] build [`assert_fd_patch`] checks it against.
 fn build_unpinned(spec: &Spec) -> Fx {
     let (hlen, handler_insns) = {
         let mut h = CodeAssembler::new(64).unwrap();
@@ -369,6 +379,7 @@ fn build_unpinned(spec: &Spec) -> Fx {
     };
     let mut send_labels = Vec::new();
     let mut send_before = Vec::new();
+    let mut write_fd_mov = None;
     let (mut spin_extra_insns, mut spin_branches) = (0u64, 0u64);
     for send in &spec.sends {
         let mut at = a.create_label();
@@ -479,7 +490,11 @@ fn build_unpinned(spec: &Spec) -> Fx {
                 a.mov(eax, libc::SYS_clock_nanosleep as u32).unwrap();
             }
             Send::WriteFd(fd) => {
+                assert!(write_fd_mov.is_none(), "one WriteFd per fixture");
+                let mut l = a.create_label();
+                a.set_label(&mut l).unwrap();
                 a.mov(edi, fd as u32).unwrap();
+                write_fd_mov = Some(l);
                 a.lea(rsi, qword_ptr(rbx + INFO)).unwrap();
                 a.mov(edx, 1u32).unwrap();
                 a.mov(eax, libc::SYS_write as u32).unwrap();
@@ -567,7 +582,42 @@ fn build_unpinned(spec: &Spec) -> Fx {
         main_branches,
         spin_extra_insns,
         spin_branches,
+        write_fd_mov: write_fd_mov.map(|l| res.label_ip(&l).unwrap()),
     }
+}
+
+/// `runtime` is the pinned `template` (built with
+/// [`FD_TEMPLATE`]) with exactly one change: `fd` patched into the
+/// imm32 of the `WriteFd` send's `mov edi, imm32` (encoding `BF
+/// imm32`). Every other byte and every recorded offset is equal.
+fn assert_fd_patch(template: &Fx, runtime: &Fx, fd: i32, label: &str) {
+    let at = template.write_fd_mov.expect("template has a WriteFd") as usize;
+    assert_eq!(runtime.write_fd_mov, Some(at as u64), "{label}: mov offset");
+    assert_eq!(template.bytes[at], 0xbf, "{label}: mov edi, imm32 opcode");
+    assert_eq!(
+        template.bytes[at + 1..at + 5],
+        FD_TEMPLATE.to_le_bytes(),
+        "{label}: template immediate"
+    );
+    let mut want = template.bytes.clone();
+    want[at + 1..at + 5].copy_from_slice(&fd.to_le_bytes());
+    assert_eq!(
+        runtime.bytes, want,
+        "{label}: runtime bytes = template + fd patch"
+    );
+    let offs = |f: &Fx| {
+        (
+            f.handler_offs.clone(),
+            f.restorer_off,
+            f.main_off,
+            f.resume_off,
+            f.send_pcs.clone(),
+            f.send_before.clone(),
+            f.install_pcs.clone(),
+            f.main_insns,
+        )
+    };
+    assert_eq!(offs(runtime), offs(template), "{label}: layout");
 }
 
 fn word(data: &[u8], off: i32) -> u64 {
@@ -2372,12 +2422,24 @@ impl FullPipe {
 /// really blocked and was interrupted with -ERESTARTSYS;
 /// translated, the guard stops by name. A deliberate,
 /// fail-closed divergence until another call is admitted.
+///
+/// The pipe's fd is whatever `pipe` returns in this process, so
+/// the corpus pins the fixture built with [`FD_TEMPLATE`], and the
+/// bytes that run must be that template with only the fd patched
+/// in ([`assert_fd_patch`]).
 #[test]
 fn interrupted_write_outside_restart_set_keeps_named_stop() {
     let _g = lock();
+    let template = build(
+        &single_with_handler(Send::WriteFd(FD_TEMPLATE)),
+        "G2h interrupted write",
+    );
     let pipe = FullPipe::new();
-    let spec = single_with_handler(Send::WriteFd(pipe.write_fd()));
-    let fx = build(&spec, "G2h interrupted write");
+    let fd = pipe.write_fd();
+    let spec = single_with_handler(Send::WriteFd(fd));
+    let fx = build_unpinned(&spec);
+    assert_fd_patch(&template, &fx, fd, "G2h");
+    eprintln!("G2h: runtime write fd {fd} patched into the pinned template");
     let n = run_native_sent(&fx, Ext::Send(libc::SYS_write, USR1));
     assert_eq!(n.result, 42, "G2h native result");
     let nw = witness(&n.data, &spec, n.base, n.dst, n.pid);

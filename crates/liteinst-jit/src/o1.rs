@@ -15,15 +15,17 @@
 //! prefix flags, not a first-byte test.
 //!
 //! RIP-delta check (coord7 Q4(b), I1-H): every retired step's
-//! decoded length and branch target are checked against the next
-//! RIP the trap reports, so a shared-decoder length or target
-//! error cannot pass silently. A non-control instruction must
-//! land at `pc + len`; a conditional branch at `pc + len` or its
-//! decoded target; a direct `jmp`/`call` at its target; `ret` at
-//! the word at `[rsp]` before the step; a syscall at `pc + len`,
-//! except `rt_sigreturn`, which lands at the frame's saved RIP.
-//! Indirect `jmp`/`call` has no independent prediction and fails
-//! if it retires. A mismatch panics (never skipped).
+//! observed successor is checked against its decode. A
+//! non-control instruction must land at `pc + len`; a conditional
+//! branch at `pc + len` or its decoded target; a direct
+//! `jmp`/`call` at its target; `ret` at the word at `[rsp]` before
+//! the step; a syscall at `pc + len`, except `rt_sigreturn`, which
+//! lands at the frame's saved RIP. Indirect `jmp`/`call` has no
+//! independent prediction and fails if it retires. A mismatch
+//! panics (never skipped). This verifies the decoded length only
+//! where the successor depends on it (not on a taken branch, a
+//! direct `jmp`/`call`, `ret` or `rt_sigreturn`); SIGNAL-CORPUS.md
+//! lists the limits.
 //!
 //! O1-S (I1-H): [`run_o1s`] steps the same bytes in the remote
 //! fixture child (so the process signal state matches a
