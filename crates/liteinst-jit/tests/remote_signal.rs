@@ -21,8 +21,12 @@
 use std::io::{Read, Write};
 use std::process::{Command, Stdio};
 
+#[path = "common/corpus.rs"]
+mod corpus;
+
 use liteinst_jit::exec::{FaultKind, RunError};
 use liteinst_jit::harness::RETURN_SENTINEL;
+use liteinst_jit::o1::{O1sEnd, run_o1s};
 use liteinst_jit::remote::{GuestAction, RemoteChildInfo, RemoteExecutable};
 use liteinst_jit::types::{CountProfile, Generation, RegionFacts};
 
@@ -396,7 +400,9 @@ fn guest_state(
     s
 }
 
+/// `id`: the fixture's SIGNAL-CORPUS.md ID, checked first.
 fn run_translated_sig(
+    id: &str,
     fix: &FixtureBytes,
     blocked_sig: i32,
     send: bool,
@@ -406,6 +412,7 @@ fn run_translated_sig(
     Result<liteinst_jit::exec::Outcome, RunError>,
     Vec<u8>,
 ) {
+    corpus::check(id, &fix.bytes);
     let mut remote = RemoteExecutable::spawn_bytes_with_blocked(
         std::path::Path::new(REMOTE_CHILD),
         &fix.bytes,
@@ -435,7 +442,120 @@ fn run_translated_sig(
     let out = remote.run(guest_state(&remote, info, fix), RETURN_SENTINEL);
     let mut data = vec![0u8; 640];
     assert!(remote.read_mem(info.dst, &mut data));
+    if send && let Ok(o) = &out {
+        let pid = remote.child_pid_for_test() as u32;
+        o1s_agrees(fix, Some(blocked_sig), &info, pid, o, &data);
+    }
     (remote, info, out, data)
+}
+
+/// I1-H, the I1-D completion: O1-S steps the same bytes natively
+/// in the remote child with the same signal arrangement (the
+/// signal blocked at spawn and sent by this parent before the
+/// first step, or none for the synchronous fixtures), every
+/// delivery made by the kernel for real. A completed translated
+/// run must equal it: retired instructions and branches, the
+/// number of deliveries, the final register image (addresses as
+/// region offsets, RFLAGS exact), and the whole 640-byte guest
+/// buffer, address-normalized.
+fn o1s_agrees(
+    fix: &FixtureBytes,
+    sent: Option<i32>,
+    info: &RemoteChildInfo,
+    pid: u32,
+    out: &liteinst_jit::exec::Outcome,
+    data: &[u8],
+) {
+    let block = sent.map(|s| format!("block:{s}"));
+    let args: Vec<&str> = block.iter().map(String::as_str).collect();
+    let (main, restorer) = (fix.main_off, fix.restorer_off);
+    let o = run_o1s(
+        std::path::Path::new(REMOTE_CHILD),
+        &fix.bytes,
+        &args,
+        |r, i| {
+            r.rip = i.base + main;
+            r.rbx = i.dst;
+            r.rbp = i.base;
+            r.r12 = i.base + restorer;
+            r.r13 = i.src;
+        },
+        None,
+        |pid| {
+            if let Some(sig) = sent {
+                // SAFETY: signalling this test's own stopped,
+                // unreaped O1-S child, which has it blocked.
+                assert_eq!(unsafe { libc::kill(pid, sig) }, 0, "kill O1-S child");
+            }
+        },
+    );
+    assert_eq!(o.end, O1sEnd::Returned, "O1-S end");
+    assert_eq!(
+        (out.instructions, out.branches),
+        (o.instructions, o.branches),
+        "translated vs O1-S counts"
+    );
+    assert!(!o.deliveries.is_empty(), "O1-S delivered");
+    let code_len = fix.bytes.len().div_ceil(4096) as u64 * 4096;
+    let tn = norm_state(&out.state, info, pid, code_len);
+    let on = norm_state(&o.state, &o.info, o.pid as u32, code_len);
+    assert_eq!(tn, on, "translated vs O1-S final state (normalized)");
+    // The whole guest buffer, address-normalized (every fixture
+    // layout, not only the base witness).
+    let buf = |d: &[u8], i: &RemoteChildInfo| -> Vec<u64> {
+        (0..640 / 8)
+            .map(|k| norm_word(word(d, 8 * k), i, code_len))
+            .collect()
+    };
+    assert_eq!(
+        buf(data, info),
+        buf(&o.dst_bytes[..640], &o.info),
+        "translated vs O1-S guest buffer (normalized)"
+    );
+}
+
+/// A value as `(region << 56) | offset` when it points into one
+/// of the child's regions (code, stack, dst, src, data); other
+/// values stay raw.
+fn norm_word(v: u64, info: &RemoteChildInfo, code_len: u64) -> u64 {
+    let stack_lo = info.stack_top - 64 * 1024 + 8;
+    let regions = [
+        (info.base, code_len),
+        (stack_lo, info.stack_top + 8 - stack_lo),
+        (info.dst, 8192),
+        (info.src, 8192),
+        (info.data, 128),
+    ];
+    for (r, &(lo, len)) in regions.iter().enumerate() {
+        if v >= lo && v <= lo + len {
+            return ((r as u64 + 1) << 56) | (v - lo);
+        }
+    }
+    v
+}
+
+/// Registers in ucontext order, addresses normalized by
+/// [`norm_word`], the child's own pid (left in a register by a
+/// self-send) as one token; RFLAGS compares exactly.
+fn norm_state(
+    s: &liteinst_jit::GuestState,
+    info: &RemoteChildInfo,
+    pid: u32,
+    code_len: u64,
+) -> [u64; 18] {
+    let regs = [
+        s.r8, s.r9, s.r10, s.r11, s.r12, s.r13, s.r14, s.r15, s.rdi, s.rsi, s.rbp, s.rbx, s.rdx,
+        s.rax, s.rcx, s.rsp, s.rip, s.rflags,
+    ];
+    core::array::from_fn(|i| {
+        if i == 17 {
+            regs[i]
+        } else if regs[i] == u64::from(pid) {
+            0x7e00_0000_0000_0000
+        } else {
+            norm_word(regs[i], info, code_len)
+        }
+    })
 }
 
 // Native info needed for witness normalization on that side.
@@ -503,6 +623,7 @@ fn native_witness(fix: &FixtureBytes, send: bool) -> (u64, Witness) {
 /// Translated run without any blocked/sent signal (sync
 /// fault fixtures generate their own signal).
 fn run_translated_plain(
+    id: &str,
     fix: &FixtureBytes,
 ) -> (
     RemoteExecutable,
@@ -510,6 +631,7 @@ fn run_translated_plain(
     Result<liteinst_jit::exec::Outcome, RunError>,
     Vec<u8>,
 ) {
+    corpus::check(id, &fix.bytes);
     let mut remote = RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &fix.bytes)
         .expect("spawn remote");
     let info = remote.info();
@@ -529,12 +651,16 @@ fn run_translated_plain(
     let out = remote.run(guest_state(&remote, info, fix), RETURN_SENTINEL);
     let mut data = vec![0u8; 640];
     assert!(remote.read_mem(info.dst, &mut data));
+    if let Ok(o) = &out {
+        let pid = remote.child_pid_for_test() as u32;
+        o1s_agrees(fix, None, &info, pid, o, &data);
+    }
     (remote, info, out, data)
 }
 
 fn check_round_trip() {
     let fix = fixture(FLAGS_SIGINFO);
-    let (remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
+    let (remote, info, out, data) = run_translated_sig("D1 round trip", &fix, libc::SIGUSR1, true);
     let out = out.expect("translated round trip");
     let tw = witness(&data, info.base, info.dst, info.stack_top);
     let (native_result, nw) = native_witness(&fix, true);
@@ -591,7 +717,8 @@ fn check_no_send_control() {
     // expire with the handler never run — progress causally
     // requires delivery.
     let fix = fixture(FLAGS_SIGINFO);
-    let (_remote, _info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, false);
+    let (_remote, _info, out, data) =
+        run_translated_sig("D1 round trip", &fix, libc::SIGUSR1, false);
     let out = out.expect("control run");
     assert_eq!(out.state.rax, 0xffff_fff9, "wait expired (mov eax, -7)");
     assert_eq!(out.instructions, 400_032, "control instructions");
@@ -602,7 +729,8 @@ fn check_no_send_control() {
 
 fn check_ineligible_shape(flags: u32, label: &str) {
     let fix = fixture(flags);
-    let (_remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
+    let (_remote, info, out, data) =
+        run_translated_sig(&format!("D2 ineligible {label}"), &fix, libc::SIGUSR1, true);
     let f = match out {
         Err(RunError::Fault(f)) => f,
         other => panic!("{label}: expected recovered async fault, got {other:?}"),
@@ -616,7 +744,8 @@ fn check_ineligible_shape(flags: u32, label: &str) {
 }
 
 fn check_ineligible_fixture(fix: &FixtureBytes, sig: i32, label: &str) {
-    let (_remote, info, out, data) = run_translated_sig(fix, sig, true);
+    let (_remote, info, out, data) =
+        run_translated_sig(&format!("D2 ineligible {label}"), fix, sig, true);
     let f = match out {
         Err(RunError::Fault(f)) => f,
         other => panic!("{label}: expected recovered async fault, got {other:?}"),
@@ -656,6 +785,7 @@ fn check_oldact_sentinel_on_error() {
         0xba, 0x00, 0x00, 0x00, 0x00, 0xb8, 0x0d, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0x89, 0x43,
         0x48, 0xc3,
     ]);
+    corpus::check("D4 oldact sentinel", &bytes);
     let mut remote =
         RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &bytes).expect("spawn");
     let info = remote.info();
@@ -711,7 +841,8 @@ fn check_alias_install_mirrored() {
         HANDLER,
         false,
     );
-    let (remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
+    let (remote, info, out, data) =
+        run_translated_sig("D3 alias install", &fix, libc::SIGUSR1, true);
     let out = out.expect("alias round trip");
     assert_eq!(out.state.rax, 42, "alias result");
     assert_eq!(out.instructions, 60, "alias instructions");
@@ -738,7 +869,7 @@ fn check_alias_install_mirrored() {
 /// main 27 + handler 13 + restorer 2 = 42 insns, 1 branch.
 fn check_sync_segv() {
     let fix = segv_fixture();
-    let (_remote, info, out, data) = run_translated_plain(&fix);
+    let (_remote, info, out, data) = run_translated_plain("E1 sync SIGSEGV", &fix);
     let out = out.expect("translated sync SEGV round trip");
     assert_eq!(out.state.rax, 42, "translated segv result");
     assert_eq!(out.instructions, 42, "segv instructions");
@@ -769,7 +900,7 @@ fn check_sync_segv() {
 /// restorer 2 = 42 insns, 1 branch.
 fn check_sync_fpe() {
     let fix = fpe_fixture();
-    let (_remote, info, out, data) = run_translated_plain(&fix);
+    let (_remote, info, out, data) = run_translated_plain("E2 sync SIGFPE", &fix);
     let out = out.expect("translated sync FPE round trip");
     assert_eq!(out.state.rax, 9, "translated fpe result");
     assert_eq!(out.instructions, 42, "fpe instructions");
@@ -811,6 +942,7 @@ fn check_async_arbitrary_phase() {
         HANDLER,
         false,
     );
+    corpus::check("E3 async arbitrary phase", &fix.bytes);
     let mut remote = RemoteExecutable::spawn_bytes_with_blocked(
         std::path::Path::new(REMOTE_CHILD),
         &fix.bytes,
@@ -880,7 +1012,8 @@ fn check_usr2_round_trip() {
         HANDLER,
         false,
     );
-    let (_remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR2, true);
+    let (_remote, info, out, data) =
+        run_translated_sig("F1 SIGUSR2 round trip", &fix, libc::SIGUSR2, true);
     let out = out.expect("translated USR2 round trip");
     assert_eq!(out.state.rax, 42, "usr2 result");
     assert_eq!(out.instructions, 60, "usr2 instructions");
@@ -912,7 +1045,12 @@ fn check_mask(nodefer: bool) {
         false,
     );
     let expected_entry = u64::from(sa_mask) | if nodefer { 0 } else { 0x200 };
-    let (remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
+    let (remote, info, out, data) = run_translated_sig(
+        &format!("F2 mask nodefer={nodefer}"),
+        &fix,
+        libc::SIGUSR1,
+        true,
+    );
     let out = out.expect("translated mask round trip");
     assert_eq!(out.state.rax, 42, "mask result nodefer={nodefer}");
     assert_eq!(out.instructions, 58, "mask instructions");
@@ -957,7 +1095,7 @@ fn check_altstack() {
         &alt_handler,
         true,
     );
-    let (remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
+    let (remote, info, out, data) = run_translated_sig("F3 altstack", &fix, libc::SIGUSR1, true);
     let out = out.expect("translated altstack round trip");
     assert_eq!(out.state.rax, 42, "altstack result");
     assert_eq!(out.instructions, 69, "altstack instructions");
@@ -1089,7 +1227,8 @@ fn nest_fixture() -> FixtureBytes {
 
 fn check_nested_distinct() {
     let fix = nest_fixture();
-    let (_remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
+    let (_remote, info, out, data) =
+        run_translated_sig("F4 nested distinct", &fix, libc::SIGUSR1, true);
     let out = out.expect("translated nested round trip");
     assert_eq!(out.state.rax, 42, "nested result");
     // Enumerated: main 37 + outer 24 + inner 13 + 2 sigreturn restorers.
@@ -1186,7 +1325,8 @@ fn same_reentry_fixture() -> FixtureBytes {
 
 fn check_same_signal_reentry() {
     let fix = same_reentry_fixture();
-    let (_remote, _info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
+    let (_remote, _info, out, data) =
+        run_translated_sig("F5 same-signal reentry", &fix, libc::SIGUSR1, true);
     let out = out.expect("translated same-signal reentry");
     assert_eq!(out.state.rax, 42, "reentry result");
     // Main 26 + outer handler 15 + inner instance 5 + 2 restorers.
@@ -1289,7 +1429,8 @@ fn disposition_fixture() -> FixtureBytes {
 fn check_disposition_change() {
     let fix = disposition_fixture();
     let h2_off = fix.fault_off;
-    let (remote, info, out, data) = run_translated_sig(&fix, libc::SIGUSR1, true);
+    let (remote, info, out, data) =
+        run_translated_sig("F6 disposition change", &fix, libc::SIGUSR1, true);
     let out = out.expect("translated disposition change");
     assert_eq!(out.state.rax, 42, "disposition result");
     assert_eq!(out.instructions, 65, "disposition instructions");
