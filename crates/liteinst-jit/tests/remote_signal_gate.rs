@@ -1319,9 +1319,16 @@ enum W5 {
     /// handler's own signal; after sigreturn it is delivered
     /// again (the handler sends only on its first run).
     OwnSignal,
+    /// SIGUSR1 itself, but the handler first resets it to
+    /// `SIG_DFL`: ineligible, so the pre-H2a mirror poll stopped
+    /// in the handler; after sigreturn its default action ends
+    /// the native child.
+    OwnSignalDefault,
 }
 
 const W5_POLL_BUDGET: u64 = 16;
+/// D7: poll exits of the quiet loop 120 at budget 16 (pinned).
+const D7_QUIET_POLLS: u64 = 8;
 /// Handler spin iterations: each is a block entry, so the
 /// handler crosses several poll exits.
 const W5_SPIN: u32 = 64;
@@ -1333,7 +1340,7 @@ fn build_w5(case: W5) -> (Gx, u64) {
     let (masked, mask_bits) = match case {
         W5::MaskDefault => (libc::SIGUSR2, 1u64 << (libc::SIGUSR2 - 1)),
         W5::MaskRt => (RT34, 1u64 << (RT34 - 1)),
-        W5::OwnSignal => (USR1, 0),
+        W5::OwnSignal | W5::OwnSignalDefault => (USR1, 0),
     };
     let mut a = CodeAssembler::new(64).unwrap();
     let mut handler = a.create_label();
@@ -1348,6 +1355,19 @@ fn build_w5(case: W5) -> (Gx, u64) {
     a.jne(no_send).unwrap();
     a.cmp(qword_ptr(r13 + COUNT), 0).unwrap();
     a.jne(no_send).unwrap();
+    if matches!(case, W5::OwnSignalDefault) {
+        // rt_sigaction(SIGUSR1, {SIG_DFL}, NULL, 8)
+        a.mov(qword_ptr(r13 + ACT), 0).unwrap();
+        a.mov(qword_ptr(r13 + (ACT + 8)), 0).unwrap();
+        a.mov(qword_ptr(r13 + (ACT + 16)), 0).unwrap();
+        a.mov(qword_ptr(r13 + (ACT + 24)), 0).unwrap();
+        a.mov(edi, USR1 as u32).unwrap();
+        a.lea(rsi, qword_ptr(r13 + ACT)).unwrap();
+        a.xor(edx, edx).unwrap();
+        a.mov(r10d, 8u32).unwrap();
+        a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+        a.syscall().unwrap();
+    }
     a.mov(eax, libc::SYS_getpid as u32).unwrap();
     a.syscall().unwrap();
     a.mov(rdi, rax).unwrap();
@@ -1402,6 +1422,7 @@ fn build_w5(case: W5) -> (Gx, u64) {
         W5::MaskDefault => "H2 W5 sa_mask default",
         W5::MaskRt => "H2 W5 sa_mask RT",
         W5::OwnSignal => "H2 W5 own signal",
+        W5::OwnSignalDefault => "H2 W5 own signal default",
     };
     corpus::check(id, &res.inner.code_buffer);
     let main_off = res.label_ip(&main).unwrap();
@@ -1419,13 +1440,18 @@ fn build_w5(case: W5) -> (Gx, u64) {
     )
 }
 
-/// Normalized registers with the child's own pid (left in RDI by
-/// the fixtures' `getpid`; every run has its own child) as one
-/// token.
+/// Normalized registers with the child's own pid as one token in
+/// RDI only: the W5 fixtures' `getpid; mov rdi, rax` leave it
+/// there, and every run has its own child. No other slot is
+/// touched; RFLAGS stays exact (review rev-h2a-cx P2-1).
 fn norm_gregs_pid(g: &[u64; 18], info: &RemoteChildInfo, code_len: u64, pid: i32) -> [u64; 18] {
     const PID_TOKEN: u64 = 0x7e00_0000_0000_0001;
-    let g = g.map(|v| if v == pid as u64 { PID_TOKEN } else { v });
-    norm_gregs(&g, info, code_len)
+    const RDI: usize = 8;
+    let mut n = norm_gregs(g, info, code_len);
+    if g[RDI] == pid as u64 {
+        n[RDI] = PID_TOKEN;
+    }
+    n
 }
 
 /// Polls that ran before the last intercepted sigreturn: here,
@@ -1434,18 +1460,17 @@ fn polls_before_sigreturn(report: &ArrivalReport) -> u64 {
     report.poll_exits - report.poll_exits_after_sigreturn
 }
 
-/// W5 (I1-H H2): a signal blocked only by the running handler's
-/// `sa_mask`, with no handler of its own. The poll takes blocking
-/// from the kernel's `SigBlk`, so the run no longer stops inside
-/// the handler (it crosses several polls there); after sigreturn
-/// the kernel unblocks it and its default action ends the native
+/// A W5 shape whose blocked signal has no handler when the
+/// handler returns (`sig`): the poll takes blocking from the
+/// kernel's `SigBlk`, so the run no longer stops inside the
+/// handler (it crosses several polls there); after sigreturn the
+/// kernel unblocks it and its default action ends the native
 /// child, and the translated run stops by name at the same source
-/// PC, with equal counts and registers.
-#[test]
-fn w5_sa_mask_blocked_signal_waits_for_sigreturn_like_native() {
-    let _g = lock();
-    let (gx, after_kill) = build_w5(W5::MaskDefault);
-    let label = "W5 sa_mask default";
+/// PC, with equal counts and registers. The pre-H2a poll, which
+/// read the mirror, stopped inside the handler in both shapes
+/// (the W5-mirror mutant).
+fn w5_default_waits_for_sigreturn(case: W5, sig: i32, label: &str) {
+    let (gx, after_kill) = build_w5(case);
     let t = run_translated(
         &gx,
         Knobs {
@@ -1454,14 +1479,14 @@ fn w5_sa_mask_blocked_signal_waits_for_sigreturn_like_native() {
         },
     );
     let n = run_native(&gx, None);
-    assert_eq!(n.end, O1sEnd::Killed(libc::SIGUSR2), "{label}: native end");
+    assert_eq!(n.end, O1sEnd::Killed(sig), "{label}: native end");
     let f = match &t.out {
         Err(RunError::Fault(f)) => f,
         other => panic!("{label}: expected a stop after sigreturn, got {other:?}"),
     };
     assert_eq!(
         (f.kind, f.signum),
-        (FaultKind::AsyncSignal, libc::SIGUSR2),
+        (FaultKind::AsyncSignal, sig),
         "{label}: kind and signal"
     );
     assert_eq!(
@@ -1492,15 +1517,37 @@ fn w5_sa_mask_blocked_signal_waits_for_sigreturn_like_native() {
     );
     assert!(
         polls_before_sigreturn(&t.report) >= 2,
-        "{label}: the handler crossed polls ({:?})",
+        "{label}: the handler crossed polls while the signal was pending and blocked ({:?})",
         t.report
     );
+}
+
+/// W5: SIGUSR2 in the handler's `sa_mask`, no handler for it.
+#[test]
+fn w5_sa_mask_blocked_signal_waits_for_sigreturn_like_native() {
+    let _g = lock();
+    w5_default_waits_for_sigreturn(W5::MaskDefault, libc::SIGUSR2, "W5 sa_mask default");
+}
+
+/// W5, the handler's own signal (no `SA_NODEFER`) made ineligible
+/// inside the handler (reset to `SIG_DFL`), then sent: blocked by
+/// the kernel for the handler's duration, so no stop in the
+/// handler (review coord7 P3-2: the discriminating own-signal
+/// case).
+#[test]
+fn w5_own_signal_default_waits_for_sigreturn_like_native() {
+    let _g = lock();
+    w5_default_waits_for_sigreturn(W5::OwnSignalDefault, USR1, "W5 own signal default");
 }
 
 /// Translated vs O1-S for a W5 shape whose blocked signal is
 /// delivered after sigreturn: equal counts, final registers and
 /// guest buffer, two deliveries each, and the handler crossed
-/// polls while the signal was pending and blocked.
+/// polls. Regression and O1-S-equality coverage only: an
+/// eligible pending signal was deferred, never a stop, under the
+/// pre-H2a mirror poll as well (review coord7 P3-2), so these
+/// shapes do not tell the fix from the old code; the two
+/// default-action shapes above do.
 fn w5_delivered_after_sigreturn(case: W5, label: &str) {
     let (gx, _) = build_w5(case);
     let t = run_translated(
@@ -1550,15 +1597,15 @@ fn w5_delivered_after_sigreturn(case: W5, label: &str) {
     );
 }
 
-/// W5, eligible RT variant: SIGRTMIN+2 blocked by `sa_mask` is
-/// delivered after sigreturn, equal to O1-S.
+/// W5 regression, eligible RT variant: signal 34 blocked by
+/// `sa_mask` is delivered after sigreturn, equal to O1-S.
 #[test]
 fn w5_sa_mask_blocked_rt_signal_delivers_after_sigreturn() {
     let _g = lock();
     w5_delivered_after_sigreturn(W5::MaskRt, "W5 sa_mask RT");
 }
 
-/// W5, the other half of the limit: the handler's own signal
+/// W5 regression, eligible own signal: the handler's own signal
 /// (no `SA_NODEFER`) sent inside it stays blocked through the
 /// handler's polls and is delivered after sigreturn, equal to
 /// O1-S.
@@ -1591,10 +1638,9 @@ fn poll_budget_restarts_after_a_delivery_at_a_poll_exit() {
         },
     );
     let quiet_polls = quiet.report.poll_exits;
-    assert!(
-        quiet_polls >= 4,
-        "{label}: the quiet loop polls ({quiet_polls})"
-    );
+    // Pinned (review coord7 P3-1): the quiet loop 120 at budget 16
+    // takes 8 poll exits.
+    assert_eq!(quiet_polls, D7_QUIET_POLLS, "{label}: quiet poll exits");
     // The first PollExitStub/Pristine entry executed after the
     // install, at its first hit.
     let (idx, want) = map
@@ -1634,14 +1680,16 @@ fn poll_budget_restarts_after_a_delivery_at_a_poll_exit() {
         r.sent && r.deliveries.len() == 1,
         "{label}: one delivery: {r:?}"
     );
-    assert!(
-        r.poll_exits_after_sigreturn >= 1,
-        "{label}: polls continue after sigreturn: {r:?}"
-    );
-    assert!(
-        r.poll_exits + 1 >= quiet_polls,
-        "{label}: the arrival replaced at most the poll it interrupted: {} vs quiet {quiet_polls}",
-        r.poll_exits
+    // Exact (review coord7 P3-1): the arrival replaces the first
+    // poll exit it interrupts; the handler (under 16 block
+    // entries) polls 0 times; every later poll of the quiet run
+    // still happens, all after sigreturn. A budget wrapped to
+    // 2^64 - 1 gives 0, and a budget restored wrongly at the
+    // block-start resume moves this count.
+    assert_eq!(
+        (r.poll_exits, r.poll_exits_after_sigreturn),
+        (quiet_polls - 1, quiet_polls - 1),
+        "{label}: poll exits (total, after sigreturn): {r:?}"
     );
     assert_eq!(
         (runs[1].poll_exits, runs[1].poll_exits_after_sigreturn),
@@ -1729,6 +1777,75 @@ fn poll_budget_zero_at_midblock_restore_refuses_by_name() {
         "{label}: the restore refuses by name"
     );
     assert_eq!(t.debug_regs, Some((0, 0)), "{label}: DR cleared");
+}
+
+/// O1-S negative case (review rev-h2a-cx P2-2): a stop that has
+/// the handler-argument register shape but is an ordinary step.
+/// SIGUSR1 is ignored (`SIG_IGN`); RDI holds 10 (SIGUSR1) and RDX
+/// holds RSP + 8 as plain guest values. O1-S sends SIGUSR1 before
+/// the first `nop`, re-injects it with the step, the kernel
+/// discards it, the `nop` retires, and the trap reports si_code
+/// TRAP_TRACE (2) with that shape still in the registers. O1-S
+/// must count a retirement, not record a delivery: only the
+/// si_code SIGTRAP pin tells the two apart.
+#[test]
+fn o1s_ignored_signal_with_handler_shaped_registers_is_a_retirement() {
+    let _g = lock();
+    let mut a = CodeAssembler::new(64).unwrap();
+    let mut main = a.create_label();
+    a.set_label(&mut main).unwrap();
+    // rt_sigaction(SIGUSR1, {SIG_IGN}, NULL, 8)
+    a.mov(qword_ptr(r13 + ACT), 1).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 8)), 0).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 16)), 0).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 24)), 0).unwrap();
+    a.mov(edi, USR1 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    // The handler-argument shape, as ordinary values.
+    a.mov(edi, USR1 as u32).unwrap();
+    a.lea(rdx, qword_ptr(rsp + 8)).unwrap();
+    a.nop().unwrap();
+    a.nop().unwrap();
+    a.mov(eax, 42u32).unwrap();
+    a.ret().unwrap();
+    let res = a
+        .assemble_options(0, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
+        .unwrap();
+    corpus::check("H2 O1-S ignored signal shape", &res.inner.code_buffer);
+    let gx = Gx {
+        bytes: res.inner.code_buffer.clone(),
+        handler_off: 0,
+        restorer_off: 0,
+        main_off: res.label_ip(&main).unwrap(),
+        body_off: 0,
+        cpuid_off: None,
+        exit_offs: None,
+    };
+    let label = "O1-S ignored signal shape";
+    let quiet = run_native(&gx, None);
+    assert_eq!(quiet.end, O1sEnd::Returned, "{label}: quiet end");
+    assert!(quiet.deliveries.is_empty(), "{label}: quiet deliveries");
+    // Arrive before the first `nop` (the last four instructions are
+    // nop, nop, mov, ret).
+    let k = quiet.instructions - 4;
+    let n = run_native(&gx, Some((k, USR1)));
+    assert!(n.arrival_sent, "{label}: arrival sent at k = {k}");
+    assert_eq!(n.end, O1sEnd::Returned, "{label}: end");
+    assert!(
+        n.deliveries.is_empty(),
+        "{label}: an ignored signal's step is not a delivery: {:?}",
+        n.deliveries
+    );
+    assert_eq!(
+        (n.instructions, n.branches),
+        (quiet.instructions, quiet.branches),
+        "{label}: the stepped nop is counted as retired"
+    );
+    assert_eq!(n.state.rax, 42, "{label}: result");
 }
 
 /// coord7 Q4: O1-S shares no classification code with the
@@ -1870,5 +1987,5 @@ fn corpus_hash_known_answers_and_table() {
     // reviewed edit here too. (Each test's own `check` proves its
     // IDs are present and current.)
     let table = corpus::table();
-    assert_eq!(table.len(), 78, "pinned fixtures");
+    assert_eq!(table.len(), 80, "pinned fixtures");
 }

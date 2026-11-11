@@ -348,13 +348,15 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   fail-closed parser (`status_masks`, which also serves mirror
   seeding and `rt_sigprocmask` reconciliation), so the poll's
   mask is the kernel's at every poll; there is no handler-entry
-  refresh. Tests: SIGUSR2 in a USR1 handler's `sa_mask` (no
-  handler: after sigreturn the run stops where the native child
-  dies), signal 34 in `sa_mask` (handled: delivered after
-  sigreturn, equal to O1-S), and the handler's own USR1 without
-  `SA_NODEFER` (delivered again after sigreturn); each crosses
-  several polls inside the handler. Mutant: the poll reads the
-  mirror again.
+  refresh. Discriminating tests (the old poll stopped inside the
+  handler): SIGUSR2 in a USR1 handler's `sa_mask` with no
+  handler, and the handler's own USR1 reset to `SIG_DFL` and
+  self-sent; after sigreturn each stops where the native child
+  dies. Regression tests (eligible signals were deferred under
+  the old poll too): signal 34 in `sa_mask` and the handler's own
+  USR1 with its handler, each delivered after sigreturn, equal to
+  O1-S. Each crosses several polls inside the handler. Mutant:
+  the poll reads the mirror again.
 - **Poll budget 0 handed to a handler** (found reading the code
   in the H2 scope review; latent since I1-E; fixed in H2a). The
   poll stub is `dec qword [poll]; jnz`, so every stop on the
@@ -384,7 +386,10 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
 - **H2 follow-ups from the H1 reviews** (recorded in H1; **done
   in H2a**: `rf_at_hits` asserted at every hit, R5 recorded as
   equivalent, and O1-S's handler entry pinned to `si_code ==
-  SIGTRAP` with the `!= TRAP_TRACE` clause dropped):
+  SIGTRAP` with the `!= TRAP_TRACE` clause dropped; the pin is
+  load-bearing, not redundant: an ignored signal re-injected over
+  a step whose registers happen to have the handler-argument
+  shape reports TRAP_TRACE, and a regression test covers it):
   - The arrival seam's "ensure RF" step on non-final hits is
     defence in depth. For an execute breakpoint the kernel's
     `hw_breakpoint_handler` already sets `X86_EFLAGS_RF`

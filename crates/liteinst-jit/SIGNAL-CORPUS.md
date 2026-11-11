@@ -88,7 +88,9 @@ inputs").
   at every hit of every PC-map entry, what recovery names there:
   the source offset, the retired totals and the dispatcher's exit
   kind. Every arrival, delivered or refused, must recover exactly
-  the survey's record for its (PC, hit). The checks run in a
+  the survey's (source offset, instructions, branches) for its
+  (PC, hit); the exit kind is pinned by the W1 survey (the four
+  exits' kinds in order), not per arrival. The checks run in a
   fixed order, so the first failure names the cause: the seam
   reached the hit, then it fired on exactly that hit, then the
   instance matches the survey, then the comparisons above. The
@@ -104,7 +106,12 @@ inputs").
   handler entry only with `si_code` SIGTRAP (5): `signal_delivered`
   calls `ptrace_notify(SIGTRAP, 0)` for a stepping tracee. A stop
   with the handler-argument frame shape and any other non-step
-  `si_code` fails the oracle by name.
+  `si_code` fails the oracle by name. The pin also rejects the
+  negative case: `o1s_ignored_signal_with_handler_shaped_registers_is_a_retirement`
+  re-injects an ignored SIGUSR1 while RDI is 10 and RDX is RSP + 8
+  as ordinary values; the kernel discards it, the stepped `nop`
+  retires with si_code TRAP_TRACE (2), and O1-S must count it, not
+  record a delivery (review rev-h2a-cx).
 
 ### Known common-mode risk (coord7 Q4(a))
 
@@ -194,14 +201,23 @@ delivered-and-equal.
   `/proc` status read as the pending sets by the one fail-closed
   parser (`status_masks`; a missing or malformed line is a named
   refusal), never from the mirror. Inside a handler that counts
-  its `sa_mask` and its own signal. Three fixtures, each crossing
-  several polls inside the handler while the signal is pending
-  and blocked:
+  its `sa_mask` and its own signal. Each fixture crosses several
+  polls inside the handler while the signal is pending and
+  blocked. Two shapes discriminate the fix from the old mirror
+  poll, which stopped inside the handler on an ineligible
+  unblocked-looking signal (the W5-mirror mutant fails both):
   - `w5_sa_mask_blocked_signal_waits_for_sigreturn_like_native`:
-    SIGUSR2 in `sa_mask`, no handler for it. The run no longer
-    stops in the handler; after sigreturn it stops by name at
-    main's resume point, where the native child dies of SIGUSR2,
-    with equal counts and registers;
+    SIGUSR2 in `sa_mask`, no handler for it;
+  - `w5_own_signal_default_waits_for_sigreturn_like_native`: the
+    handler resets its own SIGUSR1 to `SIG_DFL` (no
+    `SA_NODEFER`), then sends it.
+
+  In both, the run no longer stops in the handler; after
+  sigreturn it stops by name at main's resume point, where the
+  native child dies of that signal, with equal counts and
+  registers. Two more are regression and O1-S-equality coverage
+  only, because an eligible pending signal was deferred, not a
+  stop, under the old poll too (review coord7 P3-2):
   - `w5_sa_mask_blocked_rt_signal_delivers_after_sigreturn`:
     signal 34 in `sa_mask`, with a handler: delivered after
     sigreturn, equal to O1-S;
@@ -216,10 +232,11 @@ delivered-and-equal.
   delivery from a raw budget of 0 now restarts the full budget (a
   pure function of the stop state). The seam counts poll exits:
   `poll_budget_restarts_after_a_delivery_at_a_poll_exit` delivers
-  at the loop's first post-install poll exit and requires polls
-  in the handler's wake, after sigreturn, at least the quiet
-  run's count minus the one interrupted poll, and identical
-  counts on a repeated run. A mid-block sigreturn restore never
+  at the loop's first post-install poll exit and pins the counts
+  exactly: the quiet run takes 8 poll exits; with the arrival
+  the run takes 7, all 7 after sigreturn (the arrival replaces
+  the poll it interrupted, and the short handler polls 0 times);
+  a repeated run counts identically. A mid-block sigreturn restore never
   sees a raw 0 (every budget-0 stop is on the poll path and
   resumes at its block start), so a 0 there is a broken
   invariant and refuses by name ("poll budget zero at mid-block
@@ -350,7 +367,9 @@ change was intended.
 | `H2 W5 sa_mask default` | I1-H H2a | remote_signal_gate.rs w5_sa_mask_blocked_signal_waits_for_sigreturn_like_native | handler sa_mask blocks USR2 (no handler), self-sent in the handler, polls crossed; acts after sigreturn | O1-S (native death point) | `01d5cdd582cf08a9bc35a03870de5db738ca6c5b808ef2ee222b2ce78cdfaf03` |
 | `H2 W5 sa_mask RT` | I1-H H2a | remote_signal_gate.rs w5_sa_mask_blocked_rt_signal_delivers_after_sigreturn | handler sa_mask blocks signal 34 (handled), self-sent in the handler, polls crossed; delivered after sigreturn | O1-S | `2607d7ccc9d69c7c0483b2eb6c6223d3d115af88143621f5e5d0961c64d8479b` |
 | `H2 W5 own signal` | I1-H H2a | remote_signal_gate.rs w5_own_signal_without_nodefer_delivers_after_sigreturn | handler's own USR1 (no SA_NODEFER) self-sent in the handler, polls crossed; delivered after sigreturn | O1-S | `d3a7ac78340541f03ed83c84d941381aa823c7b59f88cf366eb7b46920c34a43` |
+| `H2 W5 own signal default` | I1-H H2a | remote_signal_gate.rs w5_own_signal_default_waits_for_sigreturn_like_native | handler resets its own USR1 to SIG_DFL (no SA_NODEFER) and self-sends it, polls crossed; acts after sigreturn | O1-S (native death point) | `c43ecb920434f6b1e56e065a6284fb478b5922d40ebb63813a617f775567a8d3` |
 | `H2 NSpid kill` | I1-H H2a | remote_signal_rt.rs self_sends_refused_by_name_when_nspid_shows_a_nested_namespace | kill self-send with a nested NSpid presented to the proof | named refusal; delivers without the seam | `f7ea0ecdc03b6835e4e38ee0d0a0ce2e4faea38f98e51fce226f3cdc2062f241` |
 | `H2 NSpid queue` | I1-H H2a | remote_signal_rt.rs self_sends_refused_by_name_when_nspid_shows_a_nested_namespace | SI_QUEUE self-send with a nested NSpid presented to the proof | named refusal; delivers without the seam | `f90ec963307d9d57f6b784717dae6d5b92631cbdfdbe4fcedf7ba1ac9b40b635` |
+| `H2 O1-S ignored signal shape` | I1-H H2a | remote_signal_gate.rs o1s_ignored_signal_with_handler_shaped_registers_is_a_retirement | SIGUSR1 ignored, re-injected over a step whose registers have the handler-argument shape | O1-S self-check (retirement, no delivery) | `c99cf2de97086b84c549ea64fecaed6bff3bb18f8eaecb5753cb899e2a943224` |
 
 Unpinned: `E4c real foreign helper` (I1-G1, remote_signal_rt.rs sigqueue_to_foreign_target_refused_by_name_even_where_native_errs): the bytes embed the live helper's pid.
