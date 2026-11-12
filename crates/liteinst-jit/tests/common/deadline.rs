@@ -1786,9 +1786,12 @@ pub fn bound_census(src: &str, file: &str, exempt: &[&str]) {
 /// a `use` that names `test` (a renamed test attribute), and any
 /// out-of-line module other than exactly
 /// `#[path = "common/deadline.rs"] mod deadline;` (the probes) or the
-/// same for `corpus` (censused by the gate). After each `#[test]`, past
-/// its other attributes, must come `fn <name>`, and the first token of
-/// its body must start a line that is exactly one of
+/// same for `corpus` (censused by the gate), each at the crate root,
+/// outside every brace. The identifier `path` may appear in no other
+/// attribute, so neither an earlier `#[path]` nor a
+/// `cfg_attr(.., path = ..)` can point a pinned module at another file.
+/// After each `#[test]`, past its other attributes, must come
+/// `fn <name>`, and the first token of its body must start a line that is exactly one of
 /// `BOUND_FIRST_LINES`. A test name may appear only once in the file,
 /// because exemptions match bare names. Comments between tokens are
 /// skipped by every one of these checks; only inside an attribute are
@@ -1824,7 +1827,17 @@ fn census_violations(src: &str, file: &str, exempt: &[&str]) -> Vec<String> {
     let punct = |k: usize, c: u8| code.get(k).is_some_and(|t| t.kind == Tk::Punct(c));
     let mut bad = Vec::new();
     let mut seen = BTreeSet::new();
+    // Open braces around the current token: a pinned helper module is
+    // allowed only at 0, the crate root. Inside an inline `mod` (or any
+    // block) its `#[path]` resolves relative to that module, to another
+    // file.
+    let mut braces = 0usize;
     for (k, tok) in code.iter().enumerate() {
+        match tok.kind {
+            Tk::Punct(b'{') => braces += 1,
+            Tk::Punct(b'}') => braces = braces.saturating_sub(1),
+            _ => {}
+        }
         match word(k) {
             Some("macro_rules") => bad.push(refuse(tok.line, "`macro_rules!`")),
             Some("include") => bad.push(refuse(tok.line, "the identifier `include`")),
@@ -1843,7 +1856,8 @@ fn census_violations(src: &str, file: &str, exempt: &[&str]) -> Vec<String> {
             Some("mod") if punct(k + 2, b';') => {
                 let name = word(k + 1).unwrap_or("");
                 let path = format!("\"common/{name}.rs\"");
-                let pinned = k >= 6
+                let pinned = braces == 0
+                    && k >= 6
                     && matches!(name, "deadline" | "corpus")
                     && punct(k - 6, b'#')
                     && punct(k - 5, b'[')
@@ -1897,6 +1911,32 @@ fn census_violations(src: &str, file: &str, exempt: &[&str]) -> Vec<String> {
                 "an attribute with a comment or `$` inside, or tokens after it",
             ));
             continue;
+        }
+        // `path` is allowed in one attribute only: the whole of
+        // `#[path = "common/<helper>.rs"]`, directly followed by
+        // `mod <helper>;`. Anywhere else (an earlier `#[path]` on the
+        // same module, a `cfg_attr(.., path = ..)`) it could point a
+        // pinned module at another file.
+        let helper = word(close + 2).filter(|n| matches!(*n, "deadline" | "corpus"));
+        let pin_attr = helper.is_some_and(|name| {
+            open == k + 1
+                && close == k + 5
+                && word(k + 2) == Some("path")
+                && punct(k + 3, b'=')
+                && code[k + 4].kind == Tk::Lit
+                && src[code[k + 4].start..code[k + 4].end] == format!("\"common/{name}.rs\"")
+                && word(close + 1) == Some("mod")
+                && punct(close + 3, b';')
+        });
+        if !pin_attr
+            && inner
+                .iter()
+                .any(|t| t.kind == Tk::Ident && tok_word(src, t) == "path")
+        {
+            bad.push(refuse(
+                tok.line,
+                "a `path` outside the pinned helper attribute",
+            ));
         }
         let exact = open == k + 1
             && close == k + 3
@@ -1963,8 +2003,9 @@ fn census_violations(src: &str, file: &str, exempt: &[&str]) -> Vec<String> {
 /// pinned module form, a lifetime, a raw string, character literals) is
 /// accepted. A second test with an exempt test's name is refused as a
 /// duplicate. Every listed form is refused, including the ones that name
-/// no test. A file exercising every literal and comment form reports
-/// exactly its one unbound test, with LF and with CRLF line endings.
+/// no test. A file exercising every literal and comment form, with a
+/// block comment and strings that span lines, reports exactly its one
+/// unbound test at its own line, with LF and with CRLF line endings.
 pub fn bound_census_witness() {
     let body = |first: &str| format!("fn t() {{\n    {first}\n}}\n");
     let arm = "let _bound = deadline::TestBound::arm();";
@@ -1990,7 +2031,7 @@ pub fn bound_census_witness() {
         "`test` inside a string literal must not be refused: {v:?}"
     );
     let code = format!(
-        "#[path = \"common/deadline.rs\"]\nmod deadline;\n/// A doc comment.\n#[test]\nfn t() {{\n    {arm}\n    let _s: &'static str = r#\"a \"]\" b\"#;\n    let _c = ('\"', b'\\'');\n}}\n"
+        "#[path = \"common/deadline.rs\"]\nmod deadline;\n#[path = \"common/corpus.rs\"]\nmod corpus;\n/// A doc comment.\n#[test]\nfn t() {{\n    {arm}\n    let _s: &'static str = r#\"a \"]\" b\"#;\n    let _c = ('\"', b'\\'');\n}}\n"
     );
     let v = census_violations(&code, "witness.rs", &[]);
     assert!(
@@ -2013,7 +2054,10 @@ pub fn bound_census_witness() {
     // the end of a line inside a block comment. 23-27 can bring in tests
     // the census cannot read. 28 cannot be lexed. 29-35 put a comment
     // between the tokens of an out-of-line module or an `include!`.
-    // 36-37 rename the test attribute or `include` with `use`.
+    // 36-37 rename the test attribute or `include` with `use`. 38-39 pin
+    // a helper module inside an inline module, which loads another file.
+    // 40-41 point a pinned module at another file with an earlier `path`
+    // attribute.
     let missed: Vec<&str> = [
         "#[test] fn t() {}",
         "#[test] #[ignore]",
@@ -2049,9 +2093,13 @@ pub fn bound_census_witness() {
         "std::include\n    /* x */ !(\"x.rs\");",
         "mod /* c */ other;",
         "mod\n    evil\n    // why\n    ;",
-        "#[path = \"common/evil.rs\"] mod deadline /* c */;",
+        "#[path = \"common/evil.rs\"]\nmod deadline /* c */;",
         "use std::prelude::v1::test as t;\n#[t]\nfn f() {}",
         "use std::include as inc;\ninc!(\"f.rs\");",
+        "mod added {\n    #[path = \"common/deadline.rs\"]\n    mod deadline;\n}",
+        "mod added {\n    #[path = \"common/corpus.rs\"]\n    mod corpus;\n}",
+        "#[path = \"common/evil.rs\"]\n#[allow(unused_attributes)]\n#[path = \"common/deadline.rs\"]\nmod deadline;",
+        "#[cfg_attr(all(), path = \"common/evil.rs\")]\n#[allow(unused_attributes)]\n#[path = \"common/deadline.rs\"]\nmod deadline;",
     ]
     .into_iter()
     .filter(|form| {
@@ -2066,17 +2114,25 @@ pub fn bound_census_witness() {
     );
     // Lexer coverage: every literal and comment form, then an armed test
     // and an unbound one, with LF and with CRLF line endings. Exactly the
-    // unbound test must be reported, at its own line.
+    // unbound test must be reported, at its own line. A block comment, a
+    // plain string (with and without an escaped newline) and a raw string
+    // each span lines, so that line depends on the lexer counting the
+    // newlines inside each.
     let tricky = r####"//! Inner doc with non-ASCII: é ✓ #[test]
 /*! Inner block doc #[test] */
 /** Outer block doc with a nested /* comment */ and #[test] */
-/* nested /* twice /* thrice */ */ still a comment #[test] */
+/* nested /* twice
+   /* thrice */ */ still a comment
+#[test] */
 const S1: &str = "escapes \" \\ \u{1F600} ] #[test]";
 const S2: &str = "a line \
     continuation #[test]";
+const S3: &str = "a string over
+#[test] two lines ]";
 const B: &[u8] = b"bytes \" ] #[test]";
 const C: &core::ffi::CStr = c"cstr \" ] #[test]";
-const R: &str = r##"raw "# still raw ] #[test] "##;
+const R: &str = r##"raw "# still raw ]
+#[test] "##;
 const N: &str = "non-ASCII ü ✓ 😀";
 const CH: [char; 4] = ['\'', '"', '😀', '\u{1F600}'];
 fn lt<'a>(x: &'a str) -> &'a str {
