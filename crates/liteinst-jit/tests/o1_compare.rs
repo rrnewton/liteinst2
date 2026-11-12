@@ -447,7 +447,7 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         assert_eq!(o1.fault_addr - o1.info.dst, 16);
         assert_eq!(o1.dst_bytes, jr.dst);
     }
-    // Faulting call store: exact pre-call state (Astra F1 shape).
+    // Faulting call store: exact pre-call state (review F1 shape).
     {
         let jr = run_jit("call_store_fault", |s| {
             s.rax = 0x1122_3344_5566_7788;

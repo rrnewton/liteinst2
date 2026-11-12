@@ -2643,7 +2643,7 @@ fn blocked_pending_signal_survives_polls_and_delivers_on_unblock() {
     assert_eq!(w.old_mask, sig_bit(USR1), "W4 mask before unblock");
 }
 
-/// W4, real-time variant (coord7 P3): the same shape with
+/// W4, real-time variant (review P3): the same shape with
 /// SIGRTMIN, whose pending instance is queued rather than a bit.
 /// It stays pending across two poll exits and is delivered at
 /// the unblock resume point, as natively.

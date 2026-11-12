@@ -1079,19 +1079,19 @@ impl SplitMix {
     }
 }
 
-/// Wall-clock cap for each sweep (coord7 Q5: about 2 minutes in
+/// Wall-clock cap for each sweep (design review Q5: about 2 minutes in
 /// total across the two). A sweep that reaches it FAILS (I1-H H2,
-/// coord7 Q3): a truncated sweep would claim coverage it did not
+/// design review Q3): a truncated sweep would claim coverage it did not
 /// run. Measured at H2a (446dc02b, release): mixed 2.5 s survey +
 /// 3.4 s, loop 3.4 s; H2b re-measures with W1 delivering.
 const SWEEP_CAP: Duration = Duration::from_secs(60);
 const SWEEP_SEED: u64 = 0x11e4_5eed_2026_1111;
-/// Sample size for the poll-crossing loop (coord7 Q5).
+/// Sample size for the poll-crossing loop (design review Q5).
 const LOOP_SAMPLES: usize = 256;
 /// Poll budget for the loop sweep: 120 iterations cross several
 /// poll exits instead of needing 16384 block entries.
 const LOOP_POLL_BUDGET: u64 = 16;
-/// Pinned plan sizes (I1-H H2, coord7 P3): what the planner
+/// Pinned plan sizes (I1-H H2, review P3): what the planner
 /// derives from the pinned fixture bytes. A changed translation,
 /// fixture or survey fails here visibly.
 const MIXED_ENTRIES: usize = 633;
@@ -1213,7 +1213,7 @@ fn pcmap_of(gx: &Gx) -> (Vec<PcMapEntry>, u64) {
     (map, info.base)
 }
 
-/// Exhaustive sweep (coord7 Q5): every (generated PC, hit) of the
+/// Exhaustive sweep (design review Q5): every (generated PC, hit) of the
 /// mixed fixture that executes after the handler install, through
 /// every PC-map class. Every arrival must be delivered and equal
 /// O1-S exactly: since I1-H H2b (W1) no class refuses, the common
@@ -1261,7 +1261,7 @@ fn sweep_mixed_exhaustive() {
     }
 }
 
-/// Seeded sample (coord7 Q5: N = 256, seed recorded) over the
+/// Seeded sample (design review Q5: N = 256, seed recorded) over the
 /// poll-crossing loop's (generated PC, hit) pairs after the
 /// install, including the poll-exit path.
 #[test]
@@ -1557,7 +1557,7 @@ fn w3_provenance_guard_refuses_by_name() {
 /// `W3_RETRY_LIMIT` in remote.rs, pinned as a literal (I1-H H2c):
 /// a change there must change this pin.
 const W3_RETRY_LIMIT: u32 = 64;
-/// The bound's exact named reason (coord7, H2c design review Q2):
+/// The bound's exact named reason (H2c design review Q2):
 /// it keeps the refusal distinguishable from every other
 /// `BudgetExceeded`.
 const W3_RETRY_REFUSAL: &str = "original step interrupted without progress";
@@ -1977,7 +1977,7 @@ fn build_live_frame() -> (Gx, u64, u64) {
     )
 }
 
-/// W1 in a live handler frame (I1-H H2b, coord7 item 3): SIGUSR2
+/// W1 in a live handler frame (I1-H H2b, design review item 3): SIGUSR2
 /// arrives in the common exit of the SIGUSR1 handler's own `ret`
 /// exit, the sigreturn interception exit, at each of its 28
 /// entries. The path: a nested frame built on the live SIGUSR1
@@ -2076,7 +2076,7 @@ fn w1_common_exit_arrival_in_live_handler() {
 
 /// The INDIRECT refusal's retired totals (instructions, branches),
 /// counted by hand from `build_indirect`, never derived from the
-/// recovery code (coord7, H2b review P3-2). Main retires 15
+/// recovery code (H2b review P3-2). Main retires 15
 /// instructions before the `jmp`: the 11 that build and pass the
 /// sigaction (lea, 5 movs, mov edi, lea rsi, xor, mov r10d, mov
 /// eax), then `syscall`, `cmp`, `jne` and `lea rax`. The `jmp`
@@ -2153,7 +2153,7 @@ fn build_indirect() -> (Gx, u64) {
 /// checks the totals independently. There is no O1-S leg: the O1
 /// oracle refuses to verify an indirect `jmp`, so the native run
 /// cannot get past it (H2b record-pass finding: the leg panicked
-/// in O1's RIP-delta check; coord7 approved the exemption on the
+/// in O1's RIP-delta check; the review approved the exemption on the
 /// condition of the literal pin). Without an arrival the run
 /// refuses IndirectUnresolved at the `jmp`.
 #[test]
@@ -2676,7 +2676,7 @@ fn w5_sa_mask_blocked_signal_waits_for_sigreturn_like_native() {
 /// W5, the handler's own signal (no `SA_NODEFER`) made ineligible
 /// inside the handler (reset to `SIG_DFL`), then sent: blocked by
 /// the kernel for the handler's duration, so no stop in the
-/// handler (review coord7 P3-2: the discriminating own-signal
+/// handler (review P3-2: the discriminating own-signal
 /// case).
 #[test]
 fn w5_own_signal_default_waits_for_sigreturn_like_native() {
@@ -2689,7 +2689,7 @@ fn w5_own_signal_default_waits_for_sigreturn_like_native() {
 /// guest buffer, two deliveries each, and the handler crossed
 /// polls. Regression and O1-S-equality coverage only: an
 /// eligible pending signal was deferred, never a stop, under the
-/// pre-H2a mirror poll as well (review coord7 P3-2), so these
+/// pre-H2a mirror poll as well (review P3-2), so these
 /// shapes do not tell the fix from the old code; the two
 /// default-action shapes above do.
 fn w5_delivered_after_sigreturn(case: W5, label: &str) {
@@ -2782,7 +2782,7 @@ fn poll_budget_restarts_after_a_delivery_at_a_poll_exit() {
         },
     );
     let quiet_polls = quiet.report.poll_exits;
-    // Pinned (review coord7 P3-1): the quiet loop 120 at budget 16
+    // Pinned (review P3-1): the quiet loop 120 at budget 16
     // takes 8 poll exits.
     assert_eq!(quiet_polls, D7_QUIET_POLLS, "{label}: quiet poll exits");
     // The first PollExitStub/Pristine entry executed after the
@@ -2824,7 +2824,7 @@ fn poll_budget_restarts_after_a_delivery_at_a_poll_exit() {
         r.sent && r.deliveries.len() == 1,
         "{label}: one delivery: {r:?}"
     );
-    // Exact (review coord7 P3-1): the arrival replaces the first
+    // Exact (review P3-1): the arrival replaces the first
     // poll exit it interrupts; the handler (under 16 block
     // entries) polls 0 times; every later poll of the quiet run
     // still happens, all after sigreturn. A budget wrapped to
@@ -2842,7 +2842,7 @@ fn poll_budget_restarts_after_a_delivery_at_a_poll_exit() {
     );
 }
 
-/// D7 rule 2 (scope rev 1.1, coord7): a raw poll budget of 0 at a
+/// D7 rule 2 (scope rev 1.1, design review): a raw poll budget of 0 at a
 /// mid-block sigreturn restore is a broken invariant (every
 /// budget-0 stop is on the poll path and resumes at its block
 /// start), so the restore refuses it by name instead of resetting
@@ -3014,7 +3014,7 @@ fn o1s_ignored_signal_with_handler_shaped_registers_is_a_retirement() {
     assert_eq!(n.state.rax, 42, "{label}: result");
 }
 
-/// coord7 Q4: O1-S shares no classification code with the
+/// Design review Q4: O1-S shares no classification code with the
 /// translator, shown from the source module graph rather than
 /// asserted. `src/o1.rs` may name only `crate::harness`,
 /// `crate::state`, and, from `crate::remote`, the plain

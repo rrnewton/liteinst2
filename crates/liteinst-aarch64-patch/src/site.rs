@@ -10,7 +10,7 @@ use liteinst_aarch64::Reg;
 
 /// Which stored word a pending sync will settle on completion. After a
 /// rollback store lands but its sync fails, completion must settle
-/// `Unpatched`, not `Flipped` — hence the payload (musereview P3 at
+/// `Unpatched`, not `Flipped` — hence the payload (review P3 at
 /// the design re-confirmation).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PendingWord {

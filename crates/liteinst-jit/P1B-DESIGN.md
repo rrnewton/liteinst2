@@ -1,16 +1,14 @@
-# liteinst-jit P1b design note (draft, awaiting Astra verdict)
+# liteinst-jit P1b design note (draft, awaiting the external review verdict)
 
-[who-am-i: musejit, host withheld. Owner: musejit (muse, host withheld) since 2026-11-05T12:03:34Z]
-
-Status: **DESIGN ONLY.** P1b implementation is gated on hl-ff-a's
+Status: **DESIGN ONLY.** P1b implementation is gated on an
 adversarial review of the P1a code + §6 invalidation design, plus
-the coordinator's go. Nothing here is built, selectable, or claimed. Layering
+a project go-ahead. Nothing here is built, selectable, or claimed. Layering
 rule carried over: liteinst owns translation primitives; a complete
 loader/tool belongs in Reverie. P1b target is architecture cell V10
 remains **unbuilt until M4 is met**, and merging to liteinst2 main
 remains barred under the owner's DBT hold regardless of this note.
 
-**Scope decision recorded 2026-11-05 via the coordinator:** for **P1a**, the
+**Scope decision recorded 2026-11-05 in project review:** for **P1a**, the
 disclosed asynchronous-signal reduction is accepted (admission
 refuses installed async handlers; poll-bounded `AsyncSignal`
 stops; no transparency claim). That acceptance is **for P1a only**.
@@ -22,7 +20,7 @@ none is satisfied by this note.
 
 Goal (M4 shape, final wording is the owner's): the standalone driver
 counts every retired conditional branch (then every instruction) of
-a real dynamically-linked program (`/bin/ls` or a coordinator-approved equivalent),
+a real dynamically-linked program (`/bin/ls` or a review-approved equivalent),
 with the refusal list explicit and costs reported per the owner
 rule (DR-null ratio, run count, machine; dense counting labelled
 vs a DR counting client). Everything P1a refuses that P1b still
@@ -230,12 +228,12 @@ Self-modifying/JIT code (M5), `execve` successors, attach (A4),
 external-debugger coexistence (the P1b driver *is* the tracer),
 CET shadow-stack call rewriting, aarch64, any Reverie core change,
 and any V10-selectable or product claim before M4 exit is declared
-by the coordinator/owner. Cost guardrail from li2adm: steady state does no
+by the project owner. Cost guardrail from the admission work: steady state does no
 per-page or per-admission work — discovery is per first-transfer
 into a block, and every reported number carries DR-null ratio +
 exactly-10 median + IQR + machine or is labelled UNMEASURED.
 
-## 7. Open questions for the Astra review
+## 7. Open questions for the external review
 
 1. Is dispatcher-side indirect resolution (P1b.1) an acceptable M4
    shape if its measured cost is honest, with the hash stub as a
@@ -243,7 +241,7 @@ exactly-10 median + IQR + machine or is labelled UNMEASURED.
 2. Per-region generations vs one global generation with
    flush-on-any-mapping-event: is the simpler global flush
    acceptable for M4 if `dlopen`-heavy reruns retranslate?
-3. **Resolved 2026-11-05 via the coordinator:** mid-cache transparent
+3. **Resolved 2026-11-05 in project review:** mid-cache transparent
    async delivery **does** gate every P1b whole-program claim
    (§1). The remaining questions are mechanism-specific: exact
    genuine-frame construction and resume rule, nested/RT ordering
@@ -256,7 +254,7 @@ exactly-10 median + IQR + machine or is labelled UNMEASURED.
 
 Estimated against L10 §6.4's P1b stage (15–30 agent-days, estimate):
 transparent delivery is now scope item 1 and a claim gate, so
-that stage estimate must be repriced after the Astra verdict and
+that stage estimate must be repriced after the external review verdict and
 P1b authorization rather than treated as already covering §1.
 Within the remaining scope, P1b.1 + driver staging is the bulk of
 the work; P1b.2's hash stub is the tail risk if flag-neutral
@@ -264,7 +262,7 @@ probing resists the simple template.
 
 ## 8. Item-1 staging: I1-A through I1-H
 
-Staging source: musejit's P1b scoping report stage map (I1-A
+Staging source: the P1b scoping report's stage map (I1-A
 recovery core through I1-G RT/payloads/restart, plus I1-H gate
 evidence), committed here so the staging survives outside the
 untracked report. This section sequences §1's gate only; it does
@@ -315,7 +313,7 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   stepped-syscall stop before syscall entry stays open.
 - **I1-F landed** (`736454bcaff828689cc7f97ec962d495d3015399`):
   masks, alternate stack, capped nesting (see its detail).
-- **I1-G split** (coordinator decision 2026-11-10): **I1-G1**
+- **I1-G split** (project decision 2026-11-10): **I1-G1**
   (RT ordering, RT retention vs standard coalescing,
   `rt_(tg)sigqueueinfo` payloads and sender words, kernel
   back-to-back frame setup) **landed**
@@ -324,7 +322,7 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   **I1-G2** (syscall restart, `SA_RESTART`) **landed**
   ([PR 77](https://github.com/rrnewton/liteinst2/pull/77),
   merge `ca1152214e221b437caa11fb48c3e36d5069da21`).
-- **I1-H** (scope approved by coord7 2026-11-10) runs as four
+- **I1-H** (scope approved in design review 2026-11-10) runs as four
   PRs in order: a standalone poll fix (W4: a blocked pending
   signal stopped the run at a poll exit; **landed**,
   [PR 78](https://github.com/rrnewton/liteinst2/pull/78),
@@ -368,7 +366,7 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   no poll fired for the rest of the run. Every delivery from a
   raw 0 now restarts the full budget (`resume_budget`, a pure
   function of the stop state). The mid-block sigreturn re-base
-  refuses a raw 0 by name instead (coord7): every budget-0 stop
+  refuses a raw 0 by name instead (design review): every budget-0 stop
   recovers to its block start and resumes through the block
   index, so a 0 restored mid-block is a broken invariant, and
   resetting it would hide the bug; a test seam presents it. The
@@ -433,7 +431,7 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
     `hw_breakpoint_handler` already sets `X86_EFLAGS_RF`
     (`arch/x86/kernel/hw_breakpoint.c`, about line 562) before
     the tracer reads RFLAGS, so a mutant that drops the step is
-    **equivalent** on this kernel (coord7's R5 passes every
+    **equivalent** on this kernel (the design review's R5 passes every
     test). H2 records it as equivalent, and may assert that the
     recorded `rf_at_hits` are all set, as a pin of the kernel
     rule rather than of the seam.
@@ -586,7 +584,7 @@ under a live frame. Active frames form an explicit tracer
 records stack; `rt_sigreturn` pops exactly one. Still refused:
 queued RT payload ordering beyond one pending instance,
 multi-threaded guests, uncovered restarted syscalls.
-As implemented on `musejit2/i1f-20261106`: async set is
+As implemented in commit `736454bc`: async set is
 exactly SIGUSR1/SIGUSR2 (sync stays SIGSEGV/SIGFPE, empty
 frame stack only); flags are the I1-D base plus optional
 `SA_NODEFER`/`SA_ONSTACK` only, `sa_mask` arbitrary; the
@@ -625,7 +623,8 @@ successors (separately scoped), any unadmitted signal feature.
 Split into I1-G1 (everything but restart) and I1-G2
 (syscall restart).
 
-As implemented for I1-G1 on `jit6-cl/slice6-20261110`
+As implemented for I1-G1 in
+[PR 76](https://github.com/rrnewton/liteinst2/pull/76)
 (kernel citations are `kernel/signal.c` in the Linux 7.1.3
 source at `199c9959d3a9b53f346c221757fc7ac507fbac50`, the
 running kernel's version; the native child confirms each
@@ -738,7 +737,8 @@ behaviour on the host):
   recovered pre-entry stops for both queue forms and
   `rt_sigaction`. No claim beyond the tested shapes.
 
-As implemented for I1-G2 on `jit6-cl/i1g2-20261110`, from
+As implemented for I1-G2 in
+[PR 77](https://github.com/rrnewton/liteinst2/pull/77), from
 `main` `4210776c6485989dfb6ead7e61c745912d04e191` (kernel
 citations are `arch/x86/kernel/signal.c` in the same Linux
 7.1.3 source unless another file is named; the native child
@@ -809,8 +809,8 @@ confirms each behaviour on the host):
   records the restart outcome; the next names the first
   signal's source handler, with RAX 0 as the kernel leaves it
   at handler entry. This widens the I1-G2 scope as first
-  proposed (several signals at a restart exit refused); coord7
-  acknowledged the widening explicitly in review. Tested only
+  proposed (several signals at a restart exit refused); the
+  design review acknowledged the widening explicitly. Tested only
   with an `-EINTR` bottom frame: a restarting bottom frame
   under another frame is untested, because nothing makes two
   signals reliably pending at a futex exit natively

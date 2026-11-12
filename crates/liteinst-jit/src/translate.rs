@@ -1132,7 +1132,7 @@ mod tests {
 
     #[test]
     fn every_emitted_byte_is_mapped_contiguously() {
-        // The exact Astra F1 counterexample shape, both profiles.
+        // The exact review F1 counterexample shape, both profiles.
         let bytes = vec![0x31, 0xc0, 0xff, 0xc0, 0x83, 0xf8, 0x03, 0x75, 0xf9, 0xc3];
         for profile in [
             CountProfile::Branches,

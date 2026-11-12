@@ -1,9 +1,9 @@
-# Patcher hookup design (W3 S5b lazy trap-and-patch, for musearch)
+# Patcher hookup design (W3 S5b lazy trap-and-patch)
 
-Status: implemented in slice S5b (patch-crate seam on musearm2/arm-patcher-s5b-20261106; promoter in reverie-liteinst on the S5a stack). This note remains the contract; amendments from the coord7 Opus reviews are folded below. Inputs:
-musearm1's S5b note (sha256 74cd5525…), musearm2's Q1–Q8 answers via
-museli-lt, and the landed patcher design/slices 2–3 contracts.
-Musearch's S5.2 decision, dispatched through museli-lt, is canonical:
+Status: implemented in slice S5b (patch-crate seam in [PR 74](https://github.com/rrnewton/liteinst2/pull/74); promoter in reverie-liteinst on the S5a stack). This note remains the contract; amendments from the design reviews are folded below. Inputs:
+the S5b note (sha256 74cd5525…), the Q1–Q8 answers from review,
+and the landed patcher design/slices 2–3 contracts.
+The S5.2 architecture decision is canonical:
 
 > Promoted execution must be guest-visibly identical to the trap path
 > (same syscall result, register, and memory effects), under Android
@@ -74,7 +74,7 @@ context draining stay out (prior design non-goals carry over).
    span -> RWX recording exact original protections (incl. BTI);
    /proc/self/mem store: one pwrite64 of 4 bytes, partial writes
    are errors, never retried blindly; finish restores exact
-   protections and is idempotent, as is begin. Musearch settles the transition:
+   protections and is idempotent, as is begin. The architecture decision settles the transition:
    reuse `SyncPending`, with no restore-specific variant. In patcher
    terms, issuing the store records `SyncPending` with its pending
    word; only sync **and** protection restore succeeding (followed by
@@ -108,7 +108,7 @@ context draining stay out (prior design non-goals carry over).
 
 PROMOTER = the draining/checkpoint object, living **inside the
 reverie-liteinst AArch64 implementation** (the LiteInst in-process
-backend; integration owner musepage), which also implements the
+backend), which also implements the
 foreign `SiteStore` backends against its own mapping census. The
 patch crate keeps the mechanism types, the `SiteStore` trait, and the
 `DualAlias` impl. Arena status AS BUILT: there is no entry arena pool yet — the
@@ -143,7 +143,7 @@ obligations are already enumerated in the landed design note.
   `MAP_SHARED` (incl. some Android shared RELRO-adjacent mappings) is
   refused by name. Sites in the runtime's own gate/handler text are
   additionally refused by promoter policy (denylist by mapping
-  provenance), matching musearm1's non-goal.
+  provenance), matching the S5b note's non-goal.
 - 16 KiB-page Android devices: page span of the mprotect window and
   arena geometry derive from the queried runtime page size only (AT_PAGESZ).
 - Existing filters: the trap source is W3's own seccomp filter;
@@ -169,7 +169,7 @@ Same static-binary metal (64 KiB) + guest (4 KiB) route as prior
 slices; 16 KiB geometry covered by host unit tests until a 16 KiB
 guest exists.
 
-Musearch's two routed questions are closed above: §5.2 and its matrix
+The architecture review's two routed questions are closed above: §5.2 and its matrix
 are canonical as quoted, and restore failure reuses `SyncPending`
 with no new variant. Remaining work is routing/implementation, not a
 design decision in this note.

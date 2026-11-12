@@ -1,4 +1,4 @@
-//! Fixture cost micro-benchmark (li2adm format inputs).
+//! Fixture cost micro-benchmark (10-sample benchmark format inputs).
 //!
 //! Prints CSV: fixture,mode,median_us_per_run,iqr_us,samples,reps
 //! Modes: `prepare` (translate+install once), `translate`
