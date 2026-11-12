@@ -48,6 +48,7 @@
 //! also carries a run deadline (`common/deadline.rs`).
 
 use std::collections::BTreeMap;
+use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
@@ -62,7 +63,8 @@ use liteinst_jit::exec::{FaultKind, Outcome, RunError};
 use liteinst_jit::harness::RETURN_SENTINEL;
 use liteinst_jit::o1::{O1sEnd, O1sOutcome};
 use liteinst_jit::remote::{
-    ArrivalReport, ArrivalSeam, RemoteChildInfo, RemoteExecutable, SeamHit, W3Perturb,
+    ArrivalReport, ArrivalSeam, DeliveryClass, GuestAction, RemoteChildInfo, RemoteExecutable,
+    SeamHit, StepKind, W3Perturb,
 };
 use liteinst_jit::types::{CountProfile, Generation, RegionFacts};
 use liteinst_jit::{CallStage, CommonStage, ExitStage, PcMapEntry, Recovery, StubStage};
@@ -398,6 +400,13 @@ struct TArrival {
     debug_regs: Option<(u64, u64)>,
     /// The child's pid.
     pid: i32,
+    /// The translation's block starts (`block_gen` keys), read right
+    /// after `prepare` (I1-H H2d redirect preconditions).
+    block_starts: Vec<u64>,
+    /// The tracer's mirror of the SIGUSR2 action after the run.
+    usr2_action: GuestAction,
+    /// The child's pending signals after the run (`SigPnd | ShdPnd`).
+    pending: u64,
 }
 
 /// Knobs for one translated run.
@@ -416,7 +425,20 @@ struct Knobs {
     zero_raw_poll_at_restore: bool,
     /// Seam: perturb one comparand of the W3 provenance guard.
     w3_perturb: Option<W3Perturb>,
+    /// Seam (I1-H H2d): step plans, each `(kind, depth, signal,
+    /// per-step counts)`, set after `pre_original_step_plan`.
+    step_plans: Plans,
+    /// Seam (I1-H H2d): pre-fill the staging scratch with this byte
+    /// and read it back after each restore.
+    scratch_canary: Option<u8>,
+    /// Seam (I1-H H2d): fail the restore after an interrupted step.
+    fail_scratch_restore: bool,
+    /// Seam (I1-H H2d): `(depth, [(enter-stop index, signal)])`.
+    enter_stop_signals: Option<(usize, &'static [(usize, i32)])>,
 }
+
+/// Step plans for [`Knobs::step_plans`].
+type Plans = &'static [(StepKind, usize, i32, &'static [u32])];
 
 fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
     let (mut remote, deadline) = spawn_remote(&gx.bytes);
@@ -434,13 +456,13 @@ fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
             CountProfile::BranchesAndInstructions,
         )
         .expect("prepare remote");
-    let (entries, target) = {
+    let (entries, target, block_starts) = {
         let t = remote.translation_for_test().expect("prepared");
         let target = k.arrival.map(|(idx, _)| {
             let e = t.pcmap.entries()[idx];
             (e.gen_start, e)
         });
-        (t.pcmap.len(), target)
+        (t.pcmap.len(), target, t.block_gen.keys().copied().collect())
     };
     remote.set_arrival_for_test(
         k.arrival
@@ -458,6 +480,14 @@ fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
     }
     remote.set_zero_raw_poll_at_restore_for_test(k.zero_raw_poll_at_restore);
     remote.set_w3_guard_perturb_for_test(k.w3_perturb);
+    for &(kind, depth, sig, per_step) in k.step_plans {
+        remote.set_step_plan_for_test(kind, depth, sig, per_step.to_vec());
+    }
+    remote.set_scratch_canary_for_test(k.scratch_canary);
+    remote.set_fail_scratch_restore_for_test(k.fail_scratch_restore);
+    if let Some((depth, signals)) = k.enter_stop_signals {
+        remote.set_enter_stop_signals_for_test(depth, signals);
+    }
     let mut s = remote.initial_state();
     s.rip = info.base + gx.main_off;
     s.rbp = info.base + gx.handler_off;
@@ -469,6 +499,17 @@ fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
     let report = remote.arrival_report_for_test();
     let debug_regs = remote.debug_regs_for_test();
     let pid = remote.child_pid_for_test();
+    let usr2_action = remote.registry().action(libc::SIGUSR2);
+    // u64::MAX when the child's status cannot be read (no claim).
+    let pending = std::fs::read_to_string(format!("/proc/{pid}/status")).map_or(u64::MAX, |s| {
+        s.lines()
+            .filter_map(|l| {
+                l.strip_prefix("SigPnd:")
+                    .or_else(|| l.strip_prefix("ShdPnd:"))
+            })
+            .filter_map(|v| u64::from_str_radix(v.trim(), 16).ok())
+            .fold(0, |acc, v| acc | v)
+    });
     let mut data = vec![0u8; REPORT];
     assert!(remote.read_mem(info.dst, &mut data), "read translated dst");
     TArrival {
@@ -480,6 +521,9 @@ fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
         entries,
         debug_regs,
         pid,
+        block_starts,
+        usr2_action,
+        pending,
     }
 }
 
@@ -1968,6 +2012,2682 @@ fn build_w3_w1() -> (Gx, u64, u64) {
         res.label_ip(&usr1_ret).unwrap(),
         cpuid,
     )
+}
+
+/// The two per-depth reasons of the H2d step bound (remote.rs),
+/// pinned as literals. The aggregate keeps `W3_RETRY_REFUSAL`.
+const PDC_REFUSAL: &str = "frame-depth bound: cpuid step interrupted without progress";
+const PDS_REFUSAL: &str = "frame-depth bound: syscall step interrupted without progress";
+/// FX1's counter of completed handler `cpuid`s (dst offset).
+const HDONE: i32 = 88;
+
+/// `fx` is the pinned `template` with exactly the listed imm32 words
+/// patched (I1-H H2d, the G2h pattern generalized): each `(offset,
+/// value)` names the imm32 of a `mov r32, imm32` (`B8+r`), and every
+/// other byte and every recorded offset is equal.
+fn assert_patch(template: &Gx, fx: &Gx, patches: &[(u64, u32)], label: &str) {
+    let mut want = template.bytes.clone();
+    for &(at, v) in patches {
+        let at = at as usize;
+        assert!(
+            (0xb8..=0xbf).contains(&template.bytes[at - 1]),
+            "{label}: the word at {at} is a mov r32, imm32 immediate"
+        );
+        want[at..at + 4].copy_from_slice(&v.to_le_bytes());
+    }
+    assert_eq!(
+        fx.bytes, want,
+        "{label}: runtime bytes = template + patches"
+    );
+    let offs = |g: &Gx| {
+        (
+            g.handler_off,
+            g.restorer_off,
+            g.main_off,
+            g.body_off,
+            g.cpuid_off,
+        )
+    };
+    assert_eq!(offs(fx), offs(template), "{label}: layout");
+}
+
+/// FX1, "H2d handler step" (I1-H H2d): main installs the SIGUSR1
+/// handler, then runs one `cpuid` leaf 0 (the target) and returns 42.
+/// The handler logs and counts as `emit_handler`, then by its mode
+/// word (a patched `mov eax, imm32`): 0 returns, 1 makes one `getpid`,
+/// 2 runs one `cpuid` and counts it at `HDONE`. Returns the fixture
+/// and the mode word's offset; the template (mode 0) is pinned.
+fn build_fx1(mode: u32) -> (Gx, u64) {
+    let mut a = CodeAssembler::new(64).unwrap();
+    let mut handler = a.create_label();
+    let mut restorer = a.create_label();
+    let mut main = a.create_label();
+    let mut body_l = a.create_label();
+    let mut target = a.create_label();
+    let mut mode_l = a.create_label();
+    let mut h_getpid = a.create_label();
+    let mut h_cpuid = a.create_label();
+    a.set_label(&mut handler).unwrap();
+    emit_handler_body(&mut a, SLOT, COUNT);
+    a.set_label(&mut mode_l).unwrap();
+    a.mov(eax, mode).unwrap();
+    a.cmp(eax, 1).unwrap();
+    a.je(h_getpid).unwrap();
+    a.cmp(eax, 2).unwrap();
+    a.je(h_cpuid).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut h_getpid).unwrap();
+    a.mov(eax, libc::SYS_getpid as u32).unwrap();
+    a.syscall().unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut h_cpuid).unwrap();
+    a.xor(eax, eax).unwrap();
+    a.xor(ecx, ecx).unwrap();
+    a.cpuid().unwrap();
+    a.inc(qword_ptr(r13 + HDONE)).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut restorer).unwrap();
+    a.db(&[0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05]).unwrap();
+    a.set_label(&mut main).unwrap();
+    a.lea(rax, qword_ptr(rbp)).unwrap();
+    a.mov(qword_ptr(r13 + ACT), rax).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 8)), FLAGS).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 12)), 0u32).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 16)), r12).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 24)), 0).unwrap();
+    a.mov(edi, USR1 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    a.set_label(&mut body_l).unwrap();
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(handler).unwrap();
+    a.xor(eax, eax).unwrap();
+    a.xor(ecx, ecx).unwrap();
+    a.set_label(&mut target).unwrap();
+    a.cpuid().unwrap();
+    a.mov(qword_ptr(r13 + (SCRATCH + 16)), rbx).unwrap();
+    a.mov(eax, 42u32).unwrap();
+    a.ret().unwrap();
+    let res = a
+        .assemble_options(0, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
+        .unwrap();
+    assert_eq!(res.label_ip(&handler).unwrap(), 0, "handler at 0");
+    if mode == 0 {
+        corpus::check("H2d handler step", &res.inner.code_buffer);
+    }
+    (
+        Gx {
+            bytes: res.inner.code_buffer.clone(),
+            handler_off: 0,
+            restorer_off: res.label_ip(&restorer).unwrap(),
+            main_off: res.label_ip(&main).unwrap(),
+            body_off: res.label_ip(&body_l).unwrap(),
+            cpuid_off: Some(res.label_ip(&target).unwrap()),
+            exit_offs: None,
+        },
+        res.label_ip(&mode_l).unwrap() + 1,
+    )
+}
+
+/// FX1 at `mode`, checked against the pinned mode-0 template.
+fn fx1(mode: u32, label: &str) -> Gx {
+    let (template, at) = build_fx1(0);
+    let (gx, at2) = build_fx1(mode);
+    assert_eq!(at, at2, "{label}: mode word offset");
+    assert_patch(&template, &gx, &[(at, mode)], label);
+    gx
+}
+
+/// `n delivered`, counted twice (design §4.7): the delivery log and
+/// the existing `SeamDelivery` records.
+fn delivered(t: &TArrival) -> (usize, usize) {
+    (t.report.delivery_log.len(), t.report.deliveries.len())
+}
+
+const PLAN_65: [u32; 1] = [W3_RETRY_LIMIT + 1];
+const FX1_PLAN_65: [(StepKind, usize, i32, &[u32]); 1] = [(StepKind::Cpuid, 0, USR1, &PLAN_65)];
+
+/// (a) A handler's syscalls are not progress for the interrupted
+/// `cpuid` (I1-H H2d): FX1 mode 1, `cpuid` plan [65] at depth 0. The
+/// aggregate and the depth-0 counter both reach 65 at the same
+/// interrupt; the aggregate is checked first.
+#[test]
+fn w3_retry_bound_ignores_handler_syscalls() {
+    let _g = lock();
+    let label = "W3 bound, handler getpid";
+    let gx = fx1(1, label);
+    let n = W3_RETRY_LIMIT as usize;
+    let t = run_translated(
+        &gx,
+        Knobs {
+            step_plans: &FX1_PLAN_65,
+            ..Knobs::default()
+        },
+    );
+    assert_eq!(
+        t.out.as_ref().err(),
+        Some(&RunError::Refuse(liteinst_jit::Refuse::BudgetExceeded {
+            what: W3_RETRY_REFUSAL,
+        })),
+        "{label}: the aggregate's exact reason"
+    );
+    assert_eq!(
+        t.report.deliveries.len(),
+        n,
+        "{label}: 64 delivered (records)"
+    );
+    assert_eq!(
+        t.report.delivery_log.len(),
+        n,
+        "{label}: 64 delivered (log)"
+    );
+    assert_eq!(
+        word(&t.data, COUNT as usize),
+        n as u64,
+        "{label}: handler ran 64 times"
+    );
+    let cpuid = t.info.base + gx.cpuid_off.unwrap();
+    assert!(
+        t.report
+            .delivery_log
+            .iter()
+            .all(|d| d.class == DeliveryClass::OriginalStep && d.src_pc == cpuid),
+        "{label}: every delivery before the target cpuid: {:?}",
+        t.report.delivery_log
+    );
+    assert!(
+        t.report
+            .deliveries
+            .iter()
+            .all(|d| d.signum == USR1 && d.src_pc == cpuid),
+        "{label}: every record before the target cpuid: {:?}",
+        t.report.deliveries
+    );
+}
+
+/// (c) A handler's own completed `cpuid` resets the aggregate (H2c's
+/// rule) but not the depth-0 counter (I1-H H2d): FX1 mode 2, plan
+/// [65] at depth 0. The aggregate never passes 1, so the per-depth
+/// bound refuses, by its own reason, after 64 deliveries.
+#[test]
+fn w3_retry_bound_ignores_handler_cpuid() {
+    let _g = lock();
+    let label = "W3 bound, handler cpuid";
+    let gx = fx1(2, label);
+    let n = W3_RETRY_LIMIT as usize;
+    let t = run_translated(
+        &gx,
+        Knobs {
+            step_plans: &FX1_PLAN_65,
+            ..Knobs::default()
+        },
+    );
+    assert_eq!(
+        t.out.as_ref().err(),
+        Some(&RunError::Refuse(liteinst_jit::Refuse::BudgetExceeded {
+            what: PDC_REFUSAL,
+        })),
+        "{label}: the per-depth cpuid reason"
+    );
+    assert_eq!(
+        t.report.deliveries.len(),
+        n,
+        "{label}: 64 delivered (records)"
+    );
+    assert_eq!(
+        t.report.delivery_log.len(),
+        n,
+        "{label}: 64 delivered (log)"
+    );
+    assert_eq!(
+        (word(&t.data, COUNT as usize), word(&t.data, HDONE as usize)),
+        (n as u64, n as u64),
+        "{label}: 64 handler runs, each completing its own cpuid"
+    );
+}
+
+/// The pipe fd the pinned FX2 template is built with (patched at run
+/// time, as G2h does).
+const FD_TEMPLATE: i32 = -1;
+/// FX2's two write buffers (dst offsets) and their contents.
+const BUF1: i32 = SCRATCH + 64;
+const BUF2: i32 = SCRATCH + 72;
+const BUF1_BYTES: u64 = 0x3141_5926_5358_9793;
+const BUF2_BYTES: u64 = 0x2718_2818_2845_9045;
+/// `uc_mcontext` RSI and RAX (gregs 9 and 13).
+const UC_RSI: i32 = 40 + 9 * 8;
+const UC_RAX: i32 = 40 + 13 * 8;
+
+/// A test-owned empty pipe (I1-H H2d). The write end has no
+/// `FD_CLOEXEC`, so a child spawned while it lives (only under
+/// `SERIAL`) inherits it at the same number. The read end is
+/// close-on-exec and non-blocking, and is drained after the run.
+struct Pipe {
+    read: OwnedFd,
+    write: OwnedFd,
+}
+
+impl Pipe {
+    fn new() -> Pipe {
+        let mut fds = [0i32; 2];
+        // SAFETY: pipe writes two new descriptors into `fds`.
+        assert_eq!(unsafe { libc::pipe(fds.as_mut_ptr()) }, 0, "pipe");
+        // SAFETY: both descriptors are fresh and owned here.
+        let (read, write) = unsafe { (OwnedFd::from_raw_fd(fds[0]), OwnedFd::from_raw_fd(fds[1])) };
+        let r = read.as_raw_fd();
+        // SAFETY: fcntl on a descriptor owned here.
+        unsafe {
+            assert_eq!(
+                libc::fcntl(r, libc::F_SETFD, libc::FD_CLOEXEC),
+                0,
+                "read end cloexec"
+            );
+            let fl = libc::fcntl(r, libc::F_GETFL);
+            assert_eq!(
+                libc::fcntl(r, libc::F_SETFL, fl | libc::O_NONBLOCK),
+                0,
+                "read end nonblocking"
+            );
+        }
+        Pipe { read, write }
+    }
+
+    fn write_fd(&self) -> i32 {
+        self.write.as_raw_fd()
+    }
+
+    /// Everything written so far.
+    fn drain(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        let mut buf = [0u8; 4096];
+        loop {
+            // SAFETY: read into a buffer owned here.
+            let n =
+                unsafe { libc::read(self.read.as_raw_fd(), buf.as_mut_ptr().cast(), buf.len()) };
+            if n <= 0 {
+                break;
+            }
+            out.extend_from_slice(&buf[..n as usize]);
+        }
+        out
+    }
+}
+
+/// FX2 and the offsets its tests name.
+struct Fx2 {
+    gx: Gx,
+    /// The imm32 of `mov edi, fd` and of the handler's `mov eax, mode`.
+    fd_at: u64,
+    mode_at: u64,
+    /// The `syscall` of #1 (`getpid`) and of #2 (`write`).
+    getpid_off: u64,
+    write_off: u64,
+}
+
+/// FX2, "H2d W3s write" (I1-H H2d): main installs the SIGUSR1 handler
+/// (#0), fills both buffers, makes one `getpid` (#1), then writes
+/// buffer 1's 8 bytes to the pipe (#2), keeps the result at
+/// `SCRATCH + 8` and returns 42. The handler logs and counts as
+/// `emit_handler` (so the slot holds the saved RIP, RAX and RSI), then
+/// by its mode word: 0 returns, 1 makes one `getpid`, 2 points the
+/// saved RSI at buffer 2, 3 sets the saved RAX to `getppid`, which is
+/// not passed through. The template (`FD_TEMPLATE`, mode 0) is pinned.
+fn build_fx2(fd: i32, mode: u32) -> Fx2 {
+    let mut a = CodeAssembler::new(64).unwrap();
+    let mut handler = a.create_label();
+    let mut restorer = a.create_label();
+    let mut main = a.create_label();
+    let mut body_l = a.create_label();
+    let mut mode_l = a.create_label();
+    let mut fd_l = a.create_label();
+    let mut getpid_l = a.create_label();
+    let mut write_l = a.create_label();
+    let mut h_getpid = a.create_label();
+    let mut h_rsi = a.create_label();
+    let mut h_rax = a.create_label();
+    a.set_label(&mut handler).unwrap();
+    emit_handler_body(&mut a, SLOT, COUNT);
+    a.set_label(&mut mode_l).unwrap();
+    a.mov(eax, mode).unwrap();
+    a.cmp(eax, 1).unwrap();
+    a.je(h_getpid).unwrap();
+    a.cmp(eax, 2).unwrap();
+    a.je(h_rsi).unwrap();
+    a.cmp(eax, 3).unwrap();
+    a.je(h_rax).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut h_getpid).unwrap();
+    a.mov(eax, libc::SYS_getpid as u32).unwrap();
+    a.syscall().unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut h_rsi).unwrap();
+    a.lea(rax, qword_ptr(r13 + BUF2)).unwrap();
+    a.mov(qword_ptr(rdx + UC_RSI), rax).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut h_rax).unwrap();
+    a.mov(qword_ptr(rdx + UC_RAX), libc::SYS_getppid as i32)
+        .unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut restorer).unwrap();
+    a.db(&[0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05]).unwrap();
+    a.set_label(&mut main).unwrap();
+    a.lea(rax, qword_ptr(rbp)).unwrap();
+    a.mov(qword_ptr(r13 + ACT), rax).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 8)), FLAGS).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 12)), 0u32).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 16)), r12).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 24)), 0).unwrap();
+    a.mov(edi, USR1 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    a.set_label(&mut body_l).unwrap();
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(handler).unwrap();
+    a.mov(rax, BUF1_BYTES).unwrap();
+    a.mov(qword_ptr(r13 + BUF1), rax).unwrap();
+    a.mov(rax, BUF2_BYTES).unwrap();
+    a.mov(qword_ptr(r13 + BUF2), rax).unwrap();
+    a.mov(eax, libc::SYS_getpid as u32).unwrap();
+    a.set_label(&mut getpid_l).unwrap();
+    a.syscall().unwrap();
+    a.mov(qword_ptr(r13 + SCRATCH), rax).unwrap();
+    a.set_label(&mut fd_l).unwrap();
+    a.mov(edi, fd as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + BUF1)).unwrap();
+    a.mov(edx, 8u32).unwrap();
+    a.mov(eax, libc::SYS_write as u32).unwrap();
+    a.set_label(&mut write_l).unwrap();
+    a.syscall().unwrap();
+    a.mov(qword_ptr(r13 + (SCRATCH + 8)), rax).unwrap();
+    a.mov(eax, 42u32).unwrap();
+    a.ret().unwrap();
+    let res = a
+        .assemble_options(0, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
+        .unwrap();
+    assert_eq!(res.label_ip(&handler).unwrap(), 0, "handler at 0");
+    if (fd, mode) == (FD_TEMPLATE, 0) {
+        corpus::check("H2d W3s write", &res.inner.code_buffer);
+    }
+    Fx2 {
+        gx: Gx {
+            bytes: res.inner.code_buffer.clone(),
+            handler_off: 0,
+            restorer_off: res.label_ip(&restorer).unwrap(),
+            main_off: res.label_ip(&main).unwrap(),
+            body_off: res.label_ip(&body_l).unwrap(),
+            cpuid_off: None,
+            exit_offs: None,
+        },
+        fd_at: res.label_ip(&fd_l).unwrap() + 1,
+        mode_at: res.label_ip(&mode_l).unwrap() + 1,
+        getpid_off: res.label_ip(&getpid_l).unwrap(),
+        write_off: res.label_ip(&write_l).unwrap(),
+    }
+}
+
+/// FX2 with the pipe's fd and `mode`, checked against the pinned
+/// template: exactly the two words differ.
+fn fx2(fd: i32, mode: u32, label: &str) -> Fx2 {
+    let template = build_fx2(FD_TEMPLATE, 0);
+    let fx = build_fx2(fd, mode);
+    assert_eq!(
+        (fx.fd_at, fx.mode_at, fx.getpid_off, fx.write_off),
+        (
+            template.fd_at,
+            template.mode_at,
+            template.getpid_off,
+            template.write_off
+        ),
+        "{label}: FX2 offsets"
+    );
+    assert_patch(
+        &template.gx,
+        &fx.gx,
+        &[(fx.fd_at, fd as u32), (fx.mode_at, mode)],
+        label,
+    );
+    fx
+}
+
+const FX2_PLAN_65: [(StepKind, usize, i32, &[u32]); 1] =
+    [(StepKind::Syscall, 0, USR1, &[0, 0, W3_RETRY_LIMIT + 1])];
+
+/// (b) A handler's syscalls are not progress for the interrupted
+/// `write` either (I1-H H2d): FX2 mode 1, syscall plan [0, 0, 65] at
+/// depth 0. The depth-0 syscall counter refuses at its 65th interrupt
+/// by its own reason; the `write` never runs.
+#[test]
+fn w3s_retry_bound_ignores_handler_syscalls() {
+    let _g = lock();
+    let label = "W3s bound, handler getpid";
+    let pipe = Pipe::new();
+    let fx = fx2(pipe.write_fd(), 1, label);
+    let n = W3_RETRY_LIMIT as usize;
+    let t = run_translated(
+        &fx.gx,
+        Knobs {
+            step_plans: &FX2_PLAN_65,
+            ..Knobs::default()
+        },
+    );
+    assert_eq!(
+        t.out.as_ref().err(),
+        Some(&RunError::Refuse(liteinst_jit::Refuse::BudgetExceeded {
+            what: PDS_REFUSAL,
+        })),
+        "{label}: the per-depth syscall reason"
+    );
+    assert_eq!(delivered(&t), (n, n), "{label}: 64 delivered");
+    assert_eq!(
+        word(&t.data, COUNT as usize),
+        n as u64,
+        "{label}: handler ran 64 times"
+    );
+    let write = t.info.base + fx.write_off;
+    assert!(
+        t.report
+            .delivery_log
+            .iter()
+            .all(|d| d.class == DeliveryClass::EntryInterrupted && d.src_pc == write),
+        "{label}: every delivery before the write: {:?}",
+        t.report.delivery_log
+    );
+    assert_eq!(
+        pipe.drain(),
+        Vec::<u8>::new(),
+        "{label}: nothing written to the pipe"
+    );
+}
+
+/// FX8's stored mode word (dst offset), read by both handlers.
+const MODEW: i32 = 96;
+/// `SA_NODEFER`: the handler's own signal stays unblocked in it.
+const SA_NODEFER: u32 = 0x4000_0000;
+/// The H1 invocation that attempts H1's one `cpuid` (FX8).
+const FX8_CPUID_AT: u64 = 33;
+
+/// FX8 and the offsets its tests name.
+struct Fx8 {
+    gx: Gx,
+    /// The imm32 of main's `mov eax, mode`.
+    mode_at: u64,
+    /// Main's `cpuid` A and H1's `cpuid`.
+    a_off: u64,
+    h1_cpuid_off: u64,
+}
+
+/// FX8, "H2d cross-depth" (I1-H H2d). Main stores its mode word at
+/// `MODEW`, installs H1 for SIGUSR1 (#0, with `SA_NODEFER` in mode 1)
+/// and H2 for SIGUSR2 (#1), both with an empty mask, runs `cpuid` A and
+/// returns 42. H1 counts at `COUNT` and attempts its one `cpuid` only on
+/// invocation 33 (counted at `HDONE` when it completes); H2 counts at
+/// `COUNT2`. In mode 2 each H1 and H2 invocation first makes one
+/// `getpid`. No handler uses the stack. The template (mode 0) is
+/// pinned.
+fn build_fx8(mode: u32) -> Fx8 {
+    let mut a = CodeAssembler::new(64).unwrap();
+    let mut h1 = a.create_label();
+    let mut h2 = a.create_label();
+    let mut h1_count = a.create_label();
+    let mut h1_ret = a.create_label();
+    let mut h1_cpuid = a.create_label();
+    let mut h2_count = a.create_label();
+    let mut restorer = a.create_label();
+    let mut main = a.create_label();
+    let mut flags_l = a.create_label();
+    let mut body_l = a.create_label();
+    let mut a_l = a.create_label();
+    a.set_label(&mut h1).unwrap();
+    a.cmp(dword_ptr(r13 + MODEW), 2).unwrap();
+    a.jne(h1_count).unwrap();
+    a.mov(eax, libc::SYS_getpid as u32).unwrap();
+    a.syscall().unwrap();
+    a.set_label(&mut h1_count).unwrap();
+    a.inc(qword_ptr(r13 + COUNT)).unwrap();
+    a.cmp(qword_ptr(r13 + COUNT), FX8_CPUID_AT as i32).unwrap();
+    a.jne(h1_ret).unwrap();
+    a.xor(eax, eax).unwrap();
+    a.xor(ecx, ecx).unwrap();
+    a.set_label(&mut h1_cpuid).unwrap();
+    a.cpuid().unwrap();
+    a.inc(qword_ptr(r13 + HDONE)).unwrap();
+    a.set_label(&mut h1_ret).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut h2).unwrap();
+    a.cmp(dword_ptr(r13 + MODEW), 2).unwrap();
+    a.jne(h2_count).unwrap();
+    a.mov(eax, libc::SYS_getpid as u32).unwrap();
+    a.syscall().unwrap();
+    a.set_label(&mut h2_count).unwrap();
+    a.inc(qword_ptr(r13 + COUNT2)).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut restorer).unwrap();
+    a.db(&[0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05]).unwrap();
+    // Main's first instruction is `mov eax, mode` (B8 imm32).
+    a.set_label(&mut main).unwrap();
+    a.mov(eax, mode).unwrap();
+    a.mov(dword_ptr(r13 + MODEW), eax).unwrap();
+    a.mov(ecx, FLAGS).unwrap();
+    a.cmp(eax, 1).unwrap();
+    a.jne(flags_l).unwrap();
+    a.or(ecx, SA_NODEFER as i32).unwrap();
+    a.set_label(&mut flags_l).unwrap();
+    // rt_sigaction(SIGUSR1, {H1, flags, restorer, mask 0}).
+    a.lea(rax, qword_ptr(rbp)).unwrap();
+    a.mov(qword_ptr(r13 + ACT), rax).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 8)), ecx).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 12)), 0u32).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 16)), r12).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 24)), 0).unwrap();
+    a.mov(edi, USR1 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    // rt_sigaction(SIGUSR2, {H2, FLAGS, restorer, mask 0}).
+    a.lea(rax, qword_ptr(h2)).unwrap();
+    a.mov(qword_ptr(r13 + ACT2), rax).unwrap();
+    a.mov(dword_ptr(r13 + (ACT2 + 8)), FLAGS).unwrap();
+    a.mov(dword_ptr(r13 + (ACT2 + 12)), 0u32).unwrap();
+    a.mov(qword_ptr(r13 + (ACT2 + 16)), r12).unwrap();
+    a.mov(qword_ptr(r13 + (ACT2 + 24)), 0).unwrap();
+    a.mov(edi, USR2 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT2)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    a.set_label(&mut body_l).unwrap();
+    // Translator reachability for both handlers.
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(h1).unwrap();
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(h2).unwrap();
+    a.xor(eax, eax).unwrap();
+    a.xor(ecx, ecx).unwrap();
+    a.set_label(&mut a_l).unwrap();
+    a.cpuid().unwrap();
+    a.mov(qword_ptr(r13 + (SCRATCH + 16)), rbx).unwrap();
+    a.mov(eax, 42u32).unwrap();
+    a.ret().unwrap();
+    let res = a
+        .assemble_options(0, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
+        .unwrap();
+    assert_eq!(res.label_ip(&h1).unwrap(), 0, "H1 at 0");
+    if mode == 0 {
+        corpus::check("H2d cross-depth", &res.inner.code_buffer);
+    }
+    Fx8 {
+        gx: Gx {
+            bytes: res.inner.code_buffer.clone(),
+            handler_off: 0,
+            restorer_off: res.label_ip(&restorer).unwrap(),
+            main_off: res.label_ip(&main).unwrap(),
+            body_off: res.label_ip(&body_l).unwrap(),
+            cpuid_off: Some(res.label_ip(&a_l).unwrap()),
+            exit_offs: None,
+        },
+        mode_at: res.label_ip(&main).unwrap() + 1,
+        a_off: res.label_ip(&a_l).unwrap(),
+        h1_cpuid_off: res.label_ip(&h1_cpuid).unwrap(),
+    }
+}
+
+/// FX8 at `mode`, checked against the pinned mode-0 template.
+fn fx8(mode: u32, label: &str) -> Fx8 {
+    let template = build_fx8(0);
+    let fx = build_fx8(mode);
+    assert_eq!(
+        (fx.mode_at, fx.a_off, fx.h1_cpuid_off),
+        (template.mode_at, template.a_off, template.h1_cpuid_off),
+        "{label}: FX8 offsets"
+    );
+    assert_patch(&template.gx, &fx.gx, &[(fx.mode_at, mode)], label);
+    fx
+}
+
+const FX8_PLANS_SPLIT: [(StepKind, usize, i32, &[u32]); 2] = [
+    (StepKind::Cpuid, 0, USR1, &[33]),
+    (StepKind::Cpuid, 1, USR2, &[32]),
+];
+const FX8_PLANS_NODEFER: [(StepKind, usize, i32, &[u32]); 2] = [
+    (StepKind::Cpuid, 0, USR1, &[33]),
+    (StepKind::Cpuid, 1, USR1, &[32]),
+];
+
+/// The aggregate counts interrupts across depths (I1-H H2d): on FX8,
+/// 33 interrupts of main's `cpuid` A at depth 0, then 32 of H1-33's
+/// `cpuid` at depth 1. The per-depth counters reach only 33 and 32;
+/// the aggregate reaches 65 at the last one and refuses it by
+/// `W3_RETRY_REFUSAL`, after 64 deliveries. (i) mode 0, USR1 then
+/// USR2: H1 = 33, H2 = 31. (ii) mode 1 (`SA_NODEFER`), USR1 at both
+/// depths: nested H1s at depth 2, H1 = 64. (iii) mode 2, signals as
+/// (i), every handler making a `getpid` first: handler syscalls do not
+/// reset the aggregate, so the result is that of (i).
+#[test]
+fn w3_retry_bound_counts_across_depths() {
+    let _g = lock();
+    let n = W3_RETRY_LIMIT as usize;
+    let at = FX8_CPUID_AT as usize;
+    for (case, mode, plans, h1_want, h2_want, depth1_sig) in [
+        ("(i)", 0, &FX8_PLANS_SPLIT, at as u64, (n - at) as u64, USR2),
+        ("(ii)", 1, &FX8_PLANS_NODEFER, n as u64, 0, USR1),
+        (
+            "(iii)",
+            2,
+            &FX8_PLANS_SPLIT,
+            at as u64,
+            (n - at) as u64,
+            USR2,
+        ),
+    ] {
+        let label = format!("W3 bound across depths {case}");
+        let fx = fx8(mode, &label);
+        let t = run_translated(
+            &fx.gx,
+            Knobs {
+                step_plans: plans,
+                ..Knobs::default()
+            },
+        );
+        assert_eq!(
+            t.out.as_ref().err(),
+            Some(&RunError::Refuse(liteinst_jit::Refuse::BudgetExceeded {
+                what: W3_RETRY_REFUSAL,
+            })),
+            "{label}: the aggregate's exact reason"
+        );
+        assert_eq!(
+            t.report.deliveries.len(),
+            n,
+            "{label}: 64 delivered (records)"
+        );
+        assert_eq!(
+            t.report.delivery_log.len(),
+            n,
+            "{label}: 64 delivered (log)"
+        );
+        let (a_pc, h1_pc) = (t.info.base + fx.a_off, t.info.base + fx.h1_cpuid_off);
+        let got: Vec<(DeliveryClass, i32, u64)> = t
+            .report
+            .delivery_log
+            .iter()
+            .map(|d| (d.class, d.signum, d.src_pc))
+            .collect();
+        let mut want = vec![(DeliveryClass::OriginalStep, USR1, a_pc); at];
+        want.extend(vec![
+            (DeliveryClass::OriginalStep, depth1_sig, h1_pc);
+            n - at
+        ]);
+        assert_eq!(got, want, "{label}: 33 at A, then 31 at H1's cpuid");
+        let got_records: Vec<(i32, u64)> = t
+            .report
+            .deliveries
+            .iter()
+            .map(|d| (d.signum, d.src_pc))
+            .collect();
+        let mut want_records = vec![(USR1, a_pc); at];
+        want_records.extend(vec![(depth1_sig, h1_pc); n - at]);
+        assert_eq!(got_records, want_records, "{label}: the records agree");
+        assert_eq!(
+            (
+                word(&t.data, COUNT as usize),
+                word(&t.data, COUNT2 as usize),
+                word(&t.data, HDONE as usize)
+            ),
+            (h1_want, h2_want, 0),
+            "{label}: H1 and H2 invocations; H1's cpuid never completed"
+        );
+    }
+}
+
+/// `uc_mcontext` RIP (greg 16).
+const UC_RIP: i32 = 40 + 16 * 8;
+/// FX9's marker after `cpuid` A (dst offset): A completed.
+const ADONE: i32 = 104;
+
+/// FX9 and the offsets its tests name.
+struct Fx9 {
+    gx: Gx,
+    /// The imm32 of H's `mov eax, N`.
+    n_at: u64,
+    /// Main's `cpuid` A, the jump target `SYS` and its `syscall`.
+    a_off: u64,
+    sys_off: u64,
+    sys_syscall_off: u64,
+}
+
+/// FX9, "H2d same-depth redirect" (I1-H H2d). Main installs H for
+/// SIGUSR1 (#0), then runs `cpuid` A, `inc ADONE`, `jmp SYS`, and at
+/// `SYS`: `mov eax, SYS_getpid` (5 bytes), `syscall` at `SYS + 5` (#1),
+/// return 42. `SYS` is a block start because it is a jump target, and
+/// its block loads getpid's number itself, so a redirect there needs no
+/// other register edit. H counts at `COUNT` and, on invocation N (a
+/// patched `mov eax, imm32`), sets its saved RIP to `SYS`: A and its
+/// marker are skipped. H uses no stack. The template (N = 0, never
+/// redirecting) is pinned.
+fn build_fx9(n: u32) -> Fx9 {
+    let mut a = CodeAssembler::new(64).unwrap();
+    let mut handler = a.create_label();
+    let mut h_ret = a.create_label();
+    let mut n_l = a.create_label();
+    let mut restorer = a.create_label();
+    let mut main = a.create_label();
+    let mut body_l = a.create_label();
+    let mut a_l = a.create_label();
+    let mut sys_l = a.create_label();
+    let mut sys_syscall = a.create_label();
+    a.set_label(&mut handler).unwrap();
+    a.inc(qword_ptr(r13 + COUNT)).unwrap();
+    a.set_label(&mut n_l).unwrap();
+    a.mov(eax, n).unwrap();
+    a.cmp(qword_ptr(r13 + COUNT), rax).unwrap();
+    a.jne(h_ret).unwrap();
+    a.lea(rax, qword_ptr(sys_l)).unwrap();
+    a.mov(qword_ptr(rdx + UC_RIP), rax).unwrap();
+    a.set_label(&mut h_ret).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut restorer).unwrap();
+    a.db(&[0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05]).unwrap();
+    a.set_label(&mut main).unwrap();
+    a.lea(rax, qword_ptr(rbp)).unwrap();
+    a.mov(qword_ptr(r13 + ACT), rax).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 8)), FLAGS).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 12)), 0u32).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 16)), r12).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 24)), 0).unwrap();
+    a.mov(edi, USR1 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    a.set_label(&mut body_l).unwrap();
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(handler).unwrap();
+    a.xor(eax, eax).unwrap();
+    a.xor(ecx, ecx).unwrap();
+    a.set_label(&mut a_l).unwrap();
+    a.cpuid().unwrap();
+    a.inc(qword_ptr(r13 + ADONE)).unwrap();
+    a.jmp(sys_l).unwrap();
+    a.set_label(&mut sys_l).unwrap();
+    a.mov(eax, libc::SYS_getpid as u32).unwrap();
+    a.set_label(&mut sys_syscall).unwrap();
+    a.syscall().unwrap();
+    a.mov(qword_ptr(r13 + SCRATCH), rax).unwrap();
+    a.mov(eax, 42u32).unwrap();
+    a.ret().unwrap();
+    let res = a
+        .assemble_options(0, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
+        .unwrap();
+    assert_eq!(res.label_ip(&handler).unwrap(), 0, "handler at 0");
+    let (sys_off, sys_syscall_off) = (
+        res.label_ip(&sys_l).unwrap(),
+        res.label_ip(&sys_syscall).unwrap(),
+    );
+    assert_eq!(sys_syscall_off, sys_off + 5, "the syscall at SYS + 5");
+    if n == 0 {
+        corpus::check("H2d same-depth redirect", &res.inner.code_buffer);
+    }
+    Fx9 {
+        gx: Gx {
+            bytes: res.inner.code_buffer.clone(),
+            handler_off: 0,
+            restorer_off: res.label_ip(&restorer).unwrap(),
+            main_off: res.label_ip(&main).unwrap(),
+            body_off: res.label_ip(&body_l).unwrap(),
+            cpuid_off: Some(res.label_ip(&a_l).unwrap()),
+            exit_offs: None,
+        },
+        n_at: res.label_ip(&n_l).unwrap() + 1,
+        a_off: res.label_ip(&a_l).unwrap(),
+        sys_off,
+        sys_syscall_off,
+    }
+}
+
+/// FX9 redirecting on invocation `n`, checked against the template.
+fn fx9(n: u32, label: &str) -> Fx9 {
+    let template = build_fx9(0);
+    let fx = build_fx9(n);
+    assert_eq!(
+        (fx.n_at, fx.a_off, fx.sys_off),
+        (template.n_at, template.a_off, template.sys_off),
+        "{label}: FX9 offsets"
+    );
+    assert_patch(&template.gx, &fx.gx, &[(fx.n_at, n)], label);
+    fx
+}
+
+const FX9_PLANS_40_25: [(StepKind, usize, i32, &[u32]); 2] = [
+    (StepKind::Cpuid, 0, USR1, &[40]),
+    (StepKind::Syscall, 0, USR1, &[0, 25]),
+];
+const FX9_PLANS_64_1: [(StepKind, usize, i32, &[u32]); 2] = [
+    (StepKind::Cpuid, 0, USR1, &[64]),
+    (StepKind::Syscall, 0, USR1, &[0, 1]),
+];
+
+/// E1 (I1-H H2d): one depth counts the step retries of every step it
+/// runs. On FX9, `cpuid` A is interrupted N times at depth 0; H's Nth
+/// invocation resumes main at `SYS`, abandoning A without a frame pop;
+/// the `syscall` at `SYS + 5` is then interrupted up to M times at the
+/// same depth. N + M = 65 refuses by the per-depth syscall reason after
+/// 64 deliveries, while the aggregate ends at N and never fires.
+/// Cases (N, M): (40, 25) and (64, 1).
+#[test]
+fn step_bound_accumulates_across_handler_redirect() {
+    let _g = lock();
+    let limit = W3_RETRY_LIMIT as usize;
+    for (n, m, plans) in [(40u32, 25usize, &FX9_PLANS_40_25), (64, 1, &FX9_PLANS_64_1)] {
+        let label = format!("E1 ({n}, {m})");
+        let fx = fx9(n, &label);
+        let t = run_translated(
+            &fx.gx,
+            Knobs {
+                step_plans: plans,
+                ..Knobs::default()
+            },
+        );
+        let sys = t.info.base + fx.sys_off;
+        assert!(
+            t.block_starts.contains(&sys),
+            "{label}: SYS is a translated block start (else the redirected resume is refused)"
+        );
+        assert_eq!(
+            t.out.as_ref().err(),
+            Some(&RunError::Refuse(liteinst_jit::Refuse::BudgetExceeded {
+                what: PDS_REFUSAL,
+            })),
+            "{label}: the per-depth syscall reason"
+        );
+        assert_eq!(delivered(&t), (limit, limit), "{label}: 64 delivered");
+        let (a_pc, sys_pc) = (t.info.base + fx.a_off, t.info.base + fx.sys_syscall_off);
+        let got: Vec<(DeliveryClass, u64)> = t
+            .report
+            .delivery_log
+            .iter()
+            .map(|d| (d.class, d.src_pc))
+            .collect();
+        let mut want = vec![(DeliveryClass::OriginalStep, a_pc); n as usize];
+        want.extend(vec![(DeliveryClass::EntryInterrupted, sys_pc); m - 1]);
+        assert_eq!(got, want, "{label}: N at A, then M - 1 at SYS + 5");
+        assert_eq!(
+            (word(&t.data, ADONE as usize), word(&t.data, COUNT as usize)),
+            (0, limit as u64),
+            "{label}: A never completed; H ran 64 times"
+        );
+        assert_eq!(
+            t.report.sigreturn_pops, limit as u64,
+            "{label}: every frame of H returned through the sigreturn interception"
+        );
+    }
+}
+
+/// FX10's stored shape word and its markers (dst offsets).
+const SHAPEW: i32 = MODEW;
+const BDONE: i32 = 112;
+const GDONE: i32 = 120;
+
+/// FX10 and the offsets its tests name.
+struct Fx10 {
+    gx: Gx,
+    /// The imm32 of main's `mov eax, shape` and of H2's
+    /// `mov eax, skip_at`.
+    shape_at: u64,
+    skip_at_at: u64,
+    /// Main's `cpuid` A, `cpuid` C (shape 1) and `syscall` S (shape 2);
+    /// H1's `cpuid` B, `syscall` G and its epilogue `EPI`.
+    a_off: u64,
+    c_off: u64,
+    s_off: u64,
+    b_off: u64,
+    g_off: u64,
+    epi_off: u64,
+}
+
+/// FX10, "H2d abandoned frame" (I1-H H2d). Main stores its shape word
+/// at `SHAPEW`, installs H1 for SIGUSR1 (#0) and H2 for SIGUSR2 (#1),
+/// both with an empty mask, runs `cpuid` A, then `cpuid` C in shape 1
+/// or `getpid` S (#2) in shape 2, and returns 42. H1 counts at `COUNT`,
+/// then runs `cpuid` B and `inc BDONE`, except that in shape 2 its
+/// second invocation runs `getpid` G and `inc GDONE` instead; either
+/// way it ends with `jmp EPI`, `EPI: ret`. H2 counts at `COUNT2` and on
+/// invocation SKIP_AT sets its saved RIP to `EPI`, a block start
+/// because it is a jump target. Neither handler uses the stack, so H1
+/// reaches `EPI` with `rsp == frame_rsp` and its `ret` is the
+/// sigreturn interception. Patched: shape and SKIP_AT; the template
+/// (shape 1, SKIP_AT 0) is pinned.
+fn build_fx10(shape: u32, skip_at: u32) -> Fx10 {
+    let mut a = CodeAssembler::new(64).unwrap();
+    let mut h1 = a.create_label();
+    let mut h1_b = a.create_label();
+    let mut b_l = a.create_label();
+    let mut g_l = a.create_label();
+    let mut epi = a.create_label();
+    let mut h2 = a.create_label();
+    let mut h2_ret = a.create_label();
+    let mut skip_l = a.create_label();
+    let mut restorer = a.create_label();
+    let mut main = a.create_label();
+    let mut body_l = a.create_label();
+    let mut a_l = a.create_label();
+    let mut c_l = a.create_label();
+    let mut m_s = a.create_label();
+    let mut s_l = a.create_label();
+    let mut m_end = a.create_label();
+    a.set_label(&mut h1).unwrap();
+    a.inc(qword_ptr(r13 + COUNT)).unwrap();
+    a.cmp(dword_ptr(r13 + SHAPEW), 2).unwrap();
+    a.jne(h1_b).unwrap();
+    a.cmp(qword_ptr(r13 + COUNT), 2).unwrap();
+    a.jne(h1_b).unwrap();
+    a.mov(eax, libc::SYS_getpid as u32).unwrap();
+    a.set_label(&mut g_l).unwrap();
+    a.syscall().unwrap();
+    a.inc(qword_ptr(r13 + GDONE)).unwrap();
+    a.jmp(epi).unwrap();
+    a.set_label(&mut h1_b).unwrap();
+    a.xor(eax, eax).unwrap();
+    a.xor(ecx, ecx).unwrap();
+    a.set_label(&mut b_l).unwrap();
+    a.cpuid().unwrap();
+    a.inc(qword_ptr(r13 + BDONE)).unwrap();
+    a.jmp(epi).unwrap();
+    a.set_label(&mut epi).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut h2).unwrap();
+    a.inc(qword_ptr(r13 + COUNT2)).unwrap();
+    a.set_label(&mut skip_l).unwrap();
+    a.mov(eax, skip_at).unwrap();
+    a.cmp(qword_ptr(r13 + COUNT2), rax).unwrap();
+    a.jne(h2_ret).unwrap();
+    a.lea(rax, qword_ptr(epi)).unwrap();
+    a.mov(qword_ptr(rdx + UC_RIP), rax).unwrap();
+    a.set_label(&mut h2_ret).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut restorer).unwrap();
+    a.db(&[0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05]).unwrap();
+    // Main's first instruction is `mov eax, shape` (B8 imm32).
+    a.set_label(&mut main).unwrap();
+    a.mov(eax, shape).unwrap();
+    a.mov(dword_ptr(r13 + SHAPEW), eax).unwrap();
+    // rt_sigaction(SIGUSR1, {H1, FLAGS, restorer, mask 0}).
+    a.lea(rax, qword_ptr(rbp)).unwrap();
+    a.mov(qword_ptr(r13 + ACT), rax).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 8)), FLAGS).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 12)), 0u32).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 16)), r12).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 24)), 0).unwrap();
+    a.mov(edi, USR1 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    // rt_sigaction(SIGUSR2, {H2, FLAGS, restorer, mask 0}).
+    a.lea(rax, qword_ptr(h2)).unwrap();
+    a.mov(qword_ptr(r13 + ACT2), rax).unwrap();
+    a.mov(dword_ptr(r13 + (ACT2 + 8)), FLAGS).unwrap();
+    a.mov(dword_ptr(r13 + (ACT2 + 12)), 0u32).unwrap();
+    a.mov(qword_ptr(r13 + (ACT2 + 16)), r12).unwrap();
+    a.mov(qword_ptr(r13 + (ACT2 + 24)), 0).unwrap();
+    a.mov(edi, USR2 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT2)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    a.set_label(&mut body_l).unwrap();
+    // Translator reachability for both handlers.
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(h1).unwrap();
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(h2).unwrap();
+    a.xor(eax, eax).unwrap();
+    a.xor(ecx, ecx).unwrap();
+    a.set_label(&mut a_l).unwrap();
+    a.cpuid().unwrap();
+    a.cmp(dword_ptr(r13 + SHAPEW), 2).unwrap();
+    a.je(m_s).unwrap();
+    a.xor(eax, eax).unwrap();
+    a.xor(ecx, ecx).unwrap();
+    a.set_label(&mut c_l).unwrap();
+    a.cpuid().unwrap();
+    a.jmp(m_end).unwrap();
+    a.set_label(&mut m_s).unwrap();
+    a.mov(eax, libc::SYS_getpid as u32).unwrap();
+    a.set_label(&mut s_l).unwrap();
+    a.syscall().unwrap();
+    a.set_label(&mut m_end).unwrap();
+    a.mov(eax, 42u32).unwrap();
+    a.ret().unwrap();
+    let res = a
+        .assemble_options(0, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
+        .unwrap();
+    assert_eq!(res.label_ip(&h1).unwrap(), 0, "H1 at 0");
+    if (shape, skip_at) == (1, 0) {
+        corpus::check("H2d abandoned frame", &res.inner.code_buffer);
+    }
+    let ip = |l: &CodeLabel| res.label_ip(l).unwrap();
+    Fx10 {
+        gx: Gx {
+            bytes: res.inner.code_buffer.clone(),
+            handler_off: 0,
+            restorer_off: ip(&restorer),
+            main_off: ip(&main),
+            body_off: ip(&body_l),
+            cpuid_off: Some(ip(&a_l)),
+            exit_offs: None,
+        },
+        shape_at: ip(&main) + 1,
+        skip_at_at: ip(&skip_l) + 1,
+        a_off: ip(&a_l),
+        c_off: ip(&c_l),
+        s_off: ip(&s_l),
+        b_off: ip(&b_l),
+        g_off: ip(&g_l),
+        epi_off: ip(&epi),
+    }
+}
+
+/// FX10 at (`shape`, `skip_at`), checked against the template.
+fn fx10(shape: u32, skip_at: u32, label: &str) -> Fx10 {
+    let template = build_fx10(1, 0);
+    let fx = build_fx10(shape, skip_at);
+    let offs = |f: &Fx10| {
+        (
+            f.shape_at,
+            f.skip_at_at,
+            f.a_off,
+            f.c_off,
+            f.s_off,
+            f.b_off,
+            f.g_off,
+            f.epi_off,
+        )
+    };
+    assert_eq!(offs(&fx), offs(&template), "{label}: FX10 offsets");
+    assert_patch(
+        &template.gx,
+        &fx.gx,
+        &[(fx.shape_at, shape), (fx.skip_at_at, skip_at)],
+        label,
+    );
+    fx
+}
+
+const FX10_PLANS_I: [(StepKind, usize, i32, &[u32]); 2] = [
+    (StepKind::Cpuid, 0, USR1, &[1, 1]),
+    (StepKind::Cpuid, 1, USR2, &[40, 25]),
+];
+const FX10_PLANS_II: [(StepKind, usize, i32, &[u32]); 4] = [
+    (StepKind::Cpuid, 0, USR1, &[1]),
+    (StepKind::Syscall, 0, USR1, &[0, 0, 1]),
+    (StepKind::Cpuid, 1, USR2, &[1]),
+    (StepKind::Syscall, 1, USR2, &[64]),
+];
+
+/// E2 (I1-H H2d): a frame's step retries end with the frame. On FX10,
+/// H2 resumes H1-1 at `EPI`, abandoning B; H1-1 returns through the
+/// sigreturn interception, which truncates depth 1, so its retries do
+/// not count against H1-2's step at the same depth. Both cases are
+/// admitted with 67 deliveries and 67 pops.
+/// (i) shape 1, SKIP_AT 40: A once (USR1), H1-1's B 40 times (USR2),
+/// skipped; A completes; C once, H1-2's B 25 times. Without the
+/// truncation depth 1 reaches 65 and refuses.
+/// (ii) shape 2, SKIP_AT 1: A once, H1-1's B once, skipped; S once,
+/// H1-2's G 64 times. Without the truncation, 65.
+#[test]
+fn step_bound_discards_abandoned_frame_retries() {
+    let _g = lock();
+    use DeliveryClass::{EntryInterrupted as Ei, OriginalStep as Os};
+    for (case, shape, skip_at, plans) in [
+        ("(i)", 1u32, 40u32, &FX10_PLANS_I as Plans),
+        ("(ii)", 2, 1, &FX10_PLANS_II as Plans),
+    ] {
+        let label = format!("E2 {case}");
+        let fx = fx10(shape, skip_at, &label);
+        let t = run_translated(
+            &fx.gx,
+            Knobs {
+                step_plans: plans,
+                ..Knobs::default()
+            },
+        );
+        let pc = |off: u64| t.info.base + off;
+        assert!(
+            t.block_starts.contains(&pc(fx.epi_off)),
+            "{label}: EPI is a translated block start (else the redirected resume is refused)"
+        );
+        let out = t
+            .out
+            .as_ref()
+            .unwrap_or_else(|e| panic!("{label}: run refused: {e:?}"));
+        assert_eq!(out.state.rax, 42, "{label}: the run completed");
+        assert_eq!(delivered(&t), (67, 67), "{label}: 67 delivered");
+        let got: Vec<(DeliveryClass, i32, u64)> = t
+            .report
+            .delivery_log
+            .iter()
+            .map(|d| (d.class, d.signum, d.src_pc))
+            .collect();
+        let mut want = vec![(Os, USR1, pc(fx.a_off))];
+        if shape == 1 {
+            want.extend(vec![(Os, USR2, pc(fx.b_off)); 40]);
+            want.push((Os, USR1, pc(fx.c_off)));
+            want.extend(vec![(Os, USR2, pc(fx.b_off)); 25]);
+        } else {
+            want.push((Os, USR2, pc(fx.b_off)));
+            want.push((Ei, USR1, pc(fx.s_off)));
+            want.extend(vec![(Ei, USR2, pc(fx.g_off)); 64]);
+        }
+        assert_eq!(got, want, "{label}: the delivery sequence");
+        let (bdone, gdone, h2) = if shape == 1 { (1, 0, 65) } else { (0, 1, 65) };
+        assert_eq!(
+            (
+                word(&t.data, BDONE as usize),
+                word(&t.data, GDONE as usize),
+                word(&t.data, COUNT as usize),
+                word(&t.data, COUNT2 as usize)
+            ),
+            (bdone, gdone, 2, h2),
+            "{label}: BDONE, GDONE, H1 and H2 invocations"
+        );
+        assert_eq!(
+            t.report.sigreturn_pops, 67,
+            "{label}: every frame returned through the sigreturn interception, H1-1's from EPI"
+        );
+    }
+}
+
+/// The W3s provenance guard's exact operation string (remote.rs).
+const W3S_GUARD_REFUSAL: &str = "syscall step: signal stop not at the pre-step state";
+/// FX2's exit count with one W3s delivery before #2 (design §4.7):
+/// E_U = 4 (the same run uninterrupted: #0, #1 and #2's SYSCALL common
+/// exits and main's final return) plus the derived terms, +1 for the
+/// delivery's own exit, +1 for the handler's one block (h), +1 for the
+/// retried `write`'s common exit, +0 for polls (p). The record pass
+/// measured E_U 4 and E_I 7, a difference equal to that sum, so the pin
+/// is frozen at 4 + 3.
+const EXITS_FX2_W3S: u64 = 7;
+/// The derived E_I - E_U for FX2 mode 0: 1 + h + 1 + p.
+const FX2_W3S_EXTRA_EXITS: u64 = 3;
+
+const FX2_PLAN_NONE: [(StepKind, usize, i32, &[u32]); 1] =
+    [(StepKind::Syscall, 0, USR1, &[0, 0, 0])];
+const FX2_PLAN_ONE: [(StepKind, usize, i32, &[u32]); 1] =
+    [(StepKind::Syscall, 0, USR1, &[0, 0, 1])];
+const FX2_PLAN_64: [(StepKind, usize, i32, &[u32]); 1] =
+    [(StepKind::Syscall, 0, USR1, &[0, 0, W3_RETRY_LIMIT])];
+const FX2_PLAN_RESET: [(StepKind, usize, i32, &[u32]); 1] =
+    [(StepKind::Syscall, 0, USR1, &[0, W3_RETRY_LIMIT, 1])];
+
+/// Frame word indices in a handler log slot (siginfo words first).
+const F_RDI: usize = 4 + 8;
+const F_RSI: usize = 4 + 9;
+const F_RDX: usize = 4 + 12;
+const F_RAX: usize = 4 + 13;
+const F_RIP: usize = 4 + 16;
+
+/// The delivery log as (class, signal, source PC).
+fn log_of(t: &TArrival) -> Vec<(DeliveryClass, i32, u64)> {
+    t.report
+        .delivery_log
+        .iter()
+        .map(|d| (d.class, d.signum, d.src_pc))
+        .collect()
+}
+
+/// W3s (I1-H H2d): SIGUSR1 sent before the `write` (#2) enters the
+/// kernel is delivered at the `write`'s source PC, from the entry
+/// stop, with the call not made: the frame holds the pre-step
+/// registers (RIP the `syscall`, RAX `SYS_write`, RDI the pipe, RSI
+/// buffer 1, RDX 8). After sigreturn the `write` runs once. The run
+/// equals O1-S arriving at the same retired count, and its exit count
+/// is the derived pin.
+#[test]
+fn w3s_syscall_entry_arrival_delivers() {
+    let _g = lock();
+    let label = "W3s";
+    let pipe = Pipe::new();
+    let fx = fx2(pipe.write_fd(), 0, label);
+    let u = run_translated(
+        &fx.gx,
+        Knobs {
+            step_plans: &FX2_PLAN_NONE,
+            ..Knobs::default()
+        },
+    );
+    let wrote_u = pipe.drain();
+    let t = run_translated(
+        &fx.gx,
+        Knobs {
+            step_plans: &FX2_PLAN_ONE,
+            ..Knobs::default()
+        },
+    );
+    let wrote_t = pipe.drain();
+    let write = t.info.base + fx.write_off;
+    assert_eq!(
+        log_of(&t),
+        vec![(DeliveryClass::EntryInterrupted, USR1, write)],
+        "{label}: exactly one delivery, before the write"
+    );
+    assert_eq!(
+        t.report.delivery_log[0].raw_rax,
+        libc::SYS_write as u64,
+        "{label}: RAX at the stop is the call number"
+    );
+    let frame = slot_words(&t.data, SLOT);
+    assert_eq!(
+        (
+            frame[F_RIP],
+            frame[F_RAX],
+            frame[F_RDI],
+            frame[F_RSI],
+            frame[F_RDX]
+        ),
+        (
+            write,
+            libc::SYS_write as u64,
+            pipe.write_fd() as u64,
+            t.info.dst + BUF1 as u64,
+            8
+        ),
+        "{label}: the frame holds the pre-step registers"
+    );
+    let buf1 = BUF1_BYTES.to_le_bytes().to_vec();
+    assert_eq!(
+        wrote_u, buf1,
+        "{label}: uninterrupted, buffer 1 written once"
+    );
+    assert_eq!(
+        wrote_t, buf1,
+        "{label}: interrupted, buffer 1 written once, after sigreturn"
+    );
+    let exits = |r: &TArrival, what: &str| {
+        r.out
+            .as_ref()
+            .unwrap_or_else(|e| panic!("{label}: {what} run failed: {e:?}"))
+            .exits
+    };
+    let (e_u, e_i) = (exits(&u, "uninterrupted"), exits(&t, "interrupted"));
+    eprintln!(
+        "{label}: E_U {e_u}, E_I {e_i}; derived: +1 delivery, +1 handler block (h), +1 retry common exit, +0 polls (p)"
+    );
+    assert_eq!(
+        e_i - e_u,
+        FX2_W3S_EXTRA_EXITS,
+        "{label}: E_I - E_U equals the derived terms"
+    );
+    assert_eq!(e_i, EXITS_FX2_W3S, "{label}: the exit-count pin");
+    let spec = Spec {
+        sig: USR1,
+        deliveries: &[Want {
+            signo: USR1,
+            gen_pc: GenPc::Exactly(0),
+            slot: SLOT,
+            count: COUNT,
+        }],
+        arrival: 0,
+        own_pid_words: &[(SCRATCH / 8) as usize],
+        pid_in_rdi: false,
+        o1s: true,
+    };
+    compare_delivered(&fx.gx, &t, &spec, None, label);
+}
+
+/// W3s provenance guard (I1-H H2d): one perturbed comparand per case
+/// (the PC, one GPR, RFLAGS, the expected `orig_rax`) refuses by the
+/// exact operation, with nothing delivered and the handler never run.
+/// Unperturbed, the same stop delivers.
+#[test]
+fn w3s_provenance_guard_refuses_by_name() {
+    let _g = lock();
+    let pipe = Pipe::new();
+    let fx = fx2(pipe.write_fd(), 0, "W3s guard");
+    for p in [
+        W3Perturb::Pc,
+        W3Perturb::Gpr,
+        W3Perturb::Rflags,
+        W3Perturb::OrigRax,
+    ] {
+        let label = format!("W3s guard {p:?}");
+        let t = run_translated(
+            &fx.gx,
+            Knobs {
+                step_plans: &FX2_PLAN_ONE,
+                w3_perturb: Some(p),
+                ..Knobs::default()
+            },
+        );
+        assert_eq!(
+            t.out.as_ref().err(),
+            Some(&RunError::Refuse(liteinst_jit::Refuse::RemoteSubstrate {
+                operation: W3S_GUARD_REFUSAL,
+                errno: 0,
+            })),
+            "{label}: the guard refuses by name"
+        );
+        assert_eq!(delivered(&t), (0, 0), "{label}: no delivery");
+        assert_eq!(
+            word(&t.data, COUNT as usize),
+            0,
+            "{label}: handler never ran"
+        );
+        assert_eq!(pipe.drain(), Vec::<u8>::new(), "{label}: nothing written");
+    }
+    let t = run_translated(
+        &fx.gx,
+        Knobs {
+            step_plans: &FX2_PLAN_ONE,
+            ..Knobs::default()
+        },
+    );
+    assert_eq!(t.out.as_ref().map(|o| o.state.rax).ok(), Some(42));
+    assert_eq!(delivered(&t), (1, 1), "W3s guard: unperturbed, delivered");
+}
+
+/// The W3s bound admits exactly `W3_RETRY_LIMIT` interrupts of one
+/// `write` (I1-H H2d): 64 deliveries before it, then it runs once and
+/// the run completes; totals are quiet + 64 x (single - quiet). Prints
+/// the time per delivery.
+#[test]
+fn w3s_bound_admits_the_limit() {
+    let _g = lock();
+    let label = "W3s bound admits";
+    let pipe = Pipe::new();
+    let fx = fx2(pipe.write_fd(), 0, label);
+    let n = u64::from(W3_RETRY_LIMIT);
+    let run = |plans: Plans| {
+        let t = run_translated(
+            &fx.gx,
+            Knobs {
+                step_plans: plans,
+                ..Knobs::default()
+            },
+        );
+        let wrote = pipe.drain();
+        (t, wrote)
+    };
+    let (quiet, _) = run(&FX2_PLAN_NONE);
+    let (one, _) = run(&FX2_PLAN_ONE);
+    let t0 = Instant::now();
+    let (t, wrote) = run(&FX2_PLAN_64);
+    let elapsed = t0.elapsed();
+    let out = |r: &TArrival, what: &str| -> Outcome {
+        r.out
+            .clone()
+            .unwrap_or_else(|e| panic!("{label}: {what} run failed: {e:?}"))
+    };
+    let (q, o, f) = (
+        out(&quiet, "quiet"),
+        out(&one, "single"),
+        out(&t, "bounded"),
+    );
+    let write = t.info.base + fx.write_off;
+    assert_eq!(
+        log_of(&t),
+        vec![(DeliveryClass::EntryInterrupted, USR1, write); n as usize],
+        "{label}: 64 deliveries before the write"
+    );
+    assert_eq!(
+        delivered(&t),
+        (n as usize, n as usize),
+        "{label}: 64 delivered"
+    );
+    assert_eq!(
+        (f.state.rax, word(&t.data, COUNT as usize)),
+        (42, n),
+        "{label}: completed; handler ran 64 times"
+    );
+    assert_eq!(
+        wrote,
+        BUF1_BYTES.to_le_bytes().to_vec(),
+        "{label}: one write"
+    );
+    assert_eq!(
+        (f.instructions, f.branches),
+        (
+            q.instructions + n * (o.instructions - q.instructions),
+            q.branches + n * (o.branches - q.branches)
+        ),
+        "{label}: totals = quiet + 64 x (single delivery - quiet)"
+    );
+    eprintln!(
+        "{label}: {:.1} us per delivery ({} deliveries in {:?})",
+        elapsed.as_secs_f64() * 1e6 / n as f64,
+        n,
+        elapsed
+    );
+}
+
+/// The 65th interrupt of one `write` refuses by the per-depth
+/// syscall reason (I1-H H2d): 64 delivered, the `write` never runs.
+#[test]
+fn w3s_bound_refuses_by_name() {
+    let _g = lock();
+    let label = "W3s bound refuses";
+    let pipe = Pipe::new();
+    let fx = fx2(pipe.write_fd(), 0, label);
+    let n = W3_RETRY_LIMIT as usize;
+    let t = run_translated(
+        &fx.gx,
+        Knobs {
+            step_plans: &FX2_PLAN_65,
+            ..Knobs::default()
+        },
+    );
+    assert_eq!(
+        t.out.as_ref().err(),
+        Some(&RunError::Refuse(liteinst_jit::Refuse::BudgetExceeded {
+            what: PDS_REFUSAL,
+        })),
+        "{label}: the per-depth syscall reason"
+    );
+    assert_eq!(delivered(&t), (n, n), "{label}: 64 delivered");
+    assert_eq!(
+        word(&t.data, COUNT as usize),
+        n as u64,
+        "{label}: handler ran 64 times"
+    );
+    assert_eq!(pipe.drain(), Vec::<u8>::new(), "{label}: nothing written");
+}
+
+/// A syscall's entry resets the W3s count (I1-H H2d): 64 interrupts
+/// before `getpid` (#1), which then enters, and 1 before the `write`
+/// (#2). All 65 are delivered and the run completes.
+#[test]
+fn w3s_bound_resets_on_entry() {
+    let _g = lock();
+    let label = "W3s bound resets";
+    let pipe = Pipe::new();
+    let fx = fx2(pipe.write_fd(), 0, label);
+    let n = W3_RETRY_LIMIT as usize;
+    let t = run_translated(
+        &fx.gx,
+        Knobs {
+            step_plans: &FX2_PLAN_RESET,
+            ..Knobs::default()
+        },
+    );
+    let out = t
+        .out
+        .as_ref()
+        .unwrap_or_else(|e| panic!("{label}: run failed: {e:?}"));
+    assert_eq!(out.state.rax, 42, "{label}: the run completed");
+    let (getpid, write) = (t.info.base + fx.getpid_off, t.info.base + fx.write_off);
+    let mut want = vec![(DeliveryClass::EntryInterrupted, USR1, getpid); n];
+    want.push((DeliveryClass::EntryInterrupted, USR1, write));
+    assert_eq!(
+        log_of(&t),
+        want,
+        "{label}: 64 before getpid, then 1 before the write"
+    );
+    assert_eq!(delivered(&t), (n + 1, n + 1), "{label}: 65 delivered");
+    assert_eq!(
+        word(&t.data, COUNT as usize),
+        n as u64 + 1,
+        "{label}: handler ran 65 times"
+    );
+    assert_eq!(
+        pipe.drain(),
+        BUF1_BYTES.to_le_bytes().to_vec(),
+        "{label}: one write"
+    );
+}
+
+/// The retried `write` is checked afresh against what the handler
+/// left in the frame (I1-H H2d): mode 2 points the saved RSI at buffer
+/// 2, whose bytes are then written; mode 3 sets the saved RAX to a
+/// call that is not passed through, which refuses exactly as an
+/// unadmitted call does, `NoHandler` at the `syscall`.
+#[test]
+fn w3s_entry_rechecks_mutated_registers() {
+    let _g = lock();
+    let pipe = Pipe::new();
+    let label = "W3s recheck RSI";
+    let fx = fx2(pipe.write_fd(), 2, label);
+    let t = run_translated(
+        &fx.gx,
+        Knobs {
+            step_plans: &FX2_PLAN_ONE,
+            ..Knobs::default()
+        },
+    );
+    assert_eq!(
+        t.out.as_ref().map(|o| o.state.rax).ok(),
+        Some(42),
+        "{label}: completed"
+    );
+    assert_eq!(delivered(&t), (1, 1), "{label}: one delivery");
+    assert_eq!(
+        pipe.drain(),
+        BUF2_BYTES.to_le_bytes().to_vec(),
+        "{label}: buffer 2 written"
+    );
+    let label = "W3s recheck RAX";
+    let fx = fx2(pipe.write_fd(), 3, label);
+    let t = run_translated(
+        &fx.gx,
+        Knobs {
+            step_plans: &FX2_PLAN_ONE,
+            ..Knobs::default()
+        },
+    );
+    assert_eq!(
+        t.out.as_ref().err(),
+        Some(&RunError::Refuse(liteinst_jit::Refuse::NoHandler {
+            src_pc: t.info.base + fx.write_off,
+        })),
+        "{label}: the unadmitted call's exact refusal"
+    );
+    assert_eq!(
+        delivered(&t),
+        (1, 1),
+        "{label}: the one delivery happened first"
+    );
+    assert_eq!(pipe.drain(), Vec::<u8>::new(), "{label}: nothing written");
+}
+
+/// W3s matches W1 (I1-H H2d): SIGUSR1 at the `write`'s SYSCALL common
+/// exit (a W1 arrival, from the generated phase) and SIGUSR1 before the
+/// same `write` enters the kernel (the W3s plan) are the same guest
+/// event. The two runs deliver once each, at the `write`'s source PC,
+/// and their buffers (the handler's frame log included), totals and
+/// final states are equal word for word, under the region and own-pid
+/// normalization.
+#[test]
+fn w3s_matches_w1_at_the_same_syscall() {
+    let _g = lock();
+    let label = "W3s vs W1";
+    let pipe = Pipe::new();
+    let fx = fx2(pipe.write_fd(), 0, label);
+    let (map, _) = pcmap_of(&fx.gx);
+    let idx = map
+        .iter()
+        .position(|e| {
+            e.recovery
+                == Recovery::CommonExit {
+                    stage: CommonStage::AllSaved,
+                }
+        })
+        .expect("common exit AllSaved entry");
+    let recs = entry_hits(&fx.gx, None, idx, map.len(), label);
+    pipe.drain();
+    use liteinst_jit::state::exit_kind::SYSCALL;
+    let k = recs
+        .iter()
+        .position(|r| (r.src_off, r.exit_kind) == (fx.write_off, SYSCALL))
+        .unwrap_or_else(|| panic!("{label}: the write's common-exit hit in {recs:?}"));
+    let w1 = run_translated(
+        &fx.gx,
+        Knobs {
+            arrival: Some((idx, k as u64 + 1)),
+            ..Knobs::default()
+        },
+    );
+    let w1_wrote = pipe.drain();
+    let w3s = run_translated(
+        &fx.gx,
+        Knobs {
+            step_plans: &FX2_PLAN_ONE,
+            ..Knobs::default()
+        },
+    );
+    let w3s_wrote = pipe.drain();
+    // Each run has its own child, so each PC is taken from its own base.
+    assert_eq!(
+        (log_of(&w1), log_of(&w3s)),
+        (
+            vec![(DeliveryClass::Generated, USR1, w1.info.base + fx.write_off)],
+            vec![(
+                DeliveryClass::EntryInterrupted,
+                USR1,
+                w3s.info.base + fx.write_off
+            )]
+        ),
+        "{label}: one delivery each, at the write"
+    );
+    let buf1 = BUF1_BYTES.to_le_bytes().to_vec();
+    assert_eq!(
+        (&w1_wrote, &w3s_wrote),
+        (&buf1, &buf1),
+        "{label}: one write each"
+    );
+    let clen = code_len(&fx.gx);
+    let out = |r: &TArrival, what: &str| -> Outcome {
+        r.out
+            .clone()
+            .unwrap_or_else(|e| panic!("{label}: {what} run failed: {e:?}"))
+    };
+    let (a, b) = (out(&w1, "W1"), out(&w3s, "W3s"));
+    let pid_word = [(SCRATCH / 8) as usize];
+    assert_eq!(
+        norm_buffer_pid(&w1.data, &w1.info, clen, w1.pid, &pid_word),
+        norm_buffer_pid(&w3s.data, &w3s.info, clen, w3s.pid, &pid_word),
+        "{label}: buffers, frame log included"
+    );
+    assert_eq!(
+        (a.instructions, a.branches),
+        (b.instructions, b.branches),
+        "{label}: totals"
+    );
+    assert_eq!(
+        norm_gregs(&state_gregs(&a.state), &w1.info, clen),
+        norm_gregs(&state_gregs(&b.state), &w3s.info, clen),
+        "{label}: final state"
+    );
+}
+
+/// FX3's buffers (dst offsets): #1's old action, the final query's
+/// answer, H1's own action (mode 1) and H2B's counter.
+const OLD2: i32 = SCRATCH + 128;
+const QUERY: i32 = SCRATCH + 160;
+const ACT3: i32 = SCRATCH + 192;
+const COUNT3: i32 = SCRATCH + 240;
+
+/// FX3 and the offsets its tests name.
+struct Fx3 {
+    gx: Gx,
+    /// The imm32 of H1's `mov eax, mode`.
+    mode_at: u64,
+    /// The `syscall` of #1, and H2 and H2B.
+    s1_off: u64,
+    h2_off: u64,
+    h2b_off: u64,
+}
+
+/// FX3, "H2d W3s sigaction" (I1-H H2d). Main installs H1 for SIGUSR1
+/// (#0), then H2 for SIGUSR2 from the act at `ACT2` with the old action
+/// to `OLD2` (#1, whose act the tracer stages), sends itself SIGUSR2
+/// (`getpid` #2, `kill` #3), queries the SIGUSR2 action into `QUERY`
+/// (#4) and returns 42. H1 logs and counts as `emit_handler`, then by
+/// its mode word: 0 returns; 1 installs H2B for SIGUSR2 from `ACT3`
+/// (one `rt_sigaction` at depth 1); 2 rewrites the handler word of the
+/// interrupted act at `ACT2` to H2B. H2 counts at `COUNT2`, H2B at
+/// `COUNT3`. The self-sent SIGUSR2 shows which handler #1 installed,
+/// and its delivery record carries the finish count after #1. The
+/// template (mode 0) is pinned.
+fn build_fx3(mode: u32) -> Fx3 {
+    let mut a = CodeAssembler::new(64).unwrap();
+    let mut h1 = a.create_label();
+    let mut mode_l = a.create_label();
+    let mut h1_install = a.create_label();
+    let mut h1_rewrite = a.create_label();
+    let mut h2 = a.create_label();
+    let mut h2b = a.create_label();
+    let mut restorer = a.create_label();
+    let mut main = a.create_label();
+    let mut body_l = a.create_label();
+    let mut s1 = a.create_label();
+    a.set_label(&mut h1).unwrap();
+    emit_handler_body(&mut a, SLOT, COUNT);
+    a.set_label(&mut mode_l).unwrap();
+    a.mov(eax, mode).unwrap();
+    a.cmp(eax, 1).unwrap();
+    a.je(h1_install).unwrap();
+    a.cmp(eax, 2).unwrap();
+    a.je(h1_rewrite).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut h1_install).unwrap();
+    a.lea(rax, qword_ptr(h2b)).unwrap();
+    a.mov(qword_ptr(r13 + ACT3), rax).unwrap();
+    a.mov(dword_ptr(r13 + (ACT3 + 8)), FLAGS).unwrap();
+    a.mov(dword_ptr(r13 + (ACT3 + 12)), 0u32).unwrap();
+    a.mov(qword_ptr(r13 + (ACT3 + 16)), r12).unwrap();
+    a.mov(qword_ptr(r13 + (ACT3 + 24)), 0).unwrap();
+    a.mov(edi, USR2 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT3)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut h1_rewrite).unwrap();
+    a.lea(rax, qword_ptr(h2b)).unwrap();
+    a.mov(qword_ptr(r13 + ACT2), rax).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut h2).unwrap();
+    a.inc(qword_ptr(r13 + COUNT2)).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut h2b).unwrap();
+    a.inc(qword_ptr(r13 + COUNT3)).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut restorer).unwrap();
+    a.db(&[0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05]).unwrap();
+    a.set_label(&mut main).unwrap();
+    // #0: rt_sigaction(SIGUSR1, {H1, FLAGS, restorer, mask 0}).
+    a.lea(rax, qword_ptr(rbp)).unwrap();
+    a.mov(qword_ptr(r13 + ACT), rax).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 8)), FLAGS).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 12)), 0u32).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 16)), r12).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 24)), 0).unwrap();
+    a.mov(edi, USR1 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    a.set_label(&mut body_l).unwrap();
+    // Translator reachability for the three handlers.
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(h1).unwrap();
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(h2).unwrap();
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(h2b).unwrap();
+    // #1: rt_sigaction(SIGUSR2, {H2, FLAGS, restorer, mask 0}, OLD2).
+    a.lea(rax, qword_ptr(h2)).unwrap();
+    a.mov(qword_ptr(r13 + ACT2), rax).unwrap();
+    a.mov(dword_ptr(r13 + (ACT2 + 8)), FLAGS).unwrap();
+    a.mov(dword_ptr(r13 + (ACT2 + 12)), 0u32).unwrap();
+    a.mov(qword_ptr(r13 + (ACT2 + 16)), r12).unwrap();
+    a.mov(qword_ptr(r13 + (ACT2 + 24)), 0).unwrap();
+    a.mov(edi, USR2 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT2)).unwrap();
+    a.lea(rdx, qword_ptr(r13 + OLD2)).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.set_label(&mut s1).unwrap();
+    a.syscall().unwrap();
+    a.mov(qword_ptr(r13 + RC), rax).unwrap();
+    // #2, #3: kill(getpid(), SIGUSR2).
+    a.mov(eax, libc::SYS_getpid as u32).unwrap();
+    a.syscall().unwrap();
+    a.mov(rdi, rax).unwrap();
+    a.mov(esi, USR2 as u32).unwrap();
+    a.mov(eax, libc::SYS_kill as u32).unwrap();
+    a.syscall().unwrap();
+    // #4: rt_sigaction(SIGUSR2, NULL, QUERY).
+    a.mov(edi, USR2 as u32).unwrap();
+    a.xor(esi, esi).unwrap();
+    a.lea(rdx, qword_ptr(r13 + QUERY)).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    a.mov(eax, 42u32).unwrap();
+    a.ret().unwrap();
+    let res = a
+        .assemble_options(0, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
+        .unwrap();
+    assert_eq!(res.label_ip(&h1).unwrap(), 0, "H1 at 0");
+    if mode == 0 {
+        corpus::check("H2d W3s sigaction", &res.inner.code_buffer);
+    }
+    let ip = |l: &CodeLabel| res.label_ip(l).unwrap();
+    Fx3 {
+        gx: Gx {
+            bytes: res.inner.code_buffer.clone(),
+            handler_off: 0,
+            restorer_off: ip(&restorer),
+            main_off: ip(&main),
+            body_off: ip(&body_l),
+            cpuid_off: None,
+            exit_offs: None,
+        },
+        mode_at: ip(&mode_l) + 1,
+        s1_off: ip(&s1),
+        h2_off: ip(&h2),
+        h2b_off: ip(&h2b),
+    }
+}
+
+/// FX3 at `mode`, checked against the pinned mode-0 template.
+fn fx3(mode: u32, label: &str) -> Fx3 {
+    let template = build_fx3(0);
+    let fx = build_fx3(mode);
+    assert_eq!(
+        (fx.mode_at, fx.s1_off, fx.h2_off, fx.h2b_off),
+        (
+            template.mode_at,
+            template.s1_off,
+            template.h2_off,
+            template.h2b_off
+        ),
+        "{label}: FX3 offsets"
+    );
+    assert_patch(&template.gx, &fx.gx, &[(fx.mode_at, mode)], label);
+    fx
+}
+
+const FX3_PLAN: [(StepKind, usize, i32, &[u32]); 1] = [(StepKind::Syscall, 0, USR1, &[0, 1])];
+
+/// An action as four buffer words (handler, flags, restorer, mask).
+fn action_at(data: &[u8], off: i32) -> GuestAction {
+    let w = |i: i32| word(data, (off + 8 * i) as usize);
+    GuestAction {
+        handler: w(0),
+        flags: w(1),
+        restorer: w(2),
+        sa_mask: w(3),
+    }
+}
+
+/// The one SIGUSR2 delivery record (the self-sent signal after #1).
+fn usr2_record(t: &TArrival, label: &str) -> liteinst_jit::remote::DeliveryRecord {
+    let v: Vec<_> = t
+        .report
+        .delivery_log
+        .iter()
+        .filter(|d| d.signum == USR2)
+        .copied()
+        .collect();
+    assert_eq!(v.len(), 1, "{label}: one SIGUSR2 delivery: {v:?}");
+    v[0]
+}
+
+/// FX3 checks shared by the sigaction tests, delivery-time facts first:
+/// the interrupted #1 is delivered first, from its entry stop, with one
+/// finish (main's #0), and the frame's RSI is the guest's act, not the
+/// staged copy. Then the run completes, and the mirror equals the
+/// kernel's answer to the final query.
+fn check_fx3_interrupted(fx: &Fx3, t: &TArrival, label: &str) {
+    let s1 = t.info.base + fx.s1_off;
+    assert_eq!(
+        t.report
+            .delivery_log
+            .first()
+            .map(|d| (d.class, d.signum, d.src_pc, d.sigaction_finishes)),
+        Some((DeliveryClass::EntryInterrupted, USR1, s1, 1)),
+        "{label}: #1 interrupted at entry, after one finish"
+    );
+    let frame = slot_words(&t.data, SLOT);
+    assert_eq!(
+        frame[F_RSI],
+        t.info.dst + ACT2 as u64,
+        "{label}: the frame's RSI is the guest's act"
+    );
+    let out = t
+        .out
+        .as_ref()
+        .unwrap_or_else(|e| panic!("{label}: run failed: {e:?}"));
+    assert_eq!(out.state.rax, 42, "{label}: the run completed");
+    assert_eq!(
+        action_at(&t.data, QUERY),
+        t.usr2_action,
+        "{label}: the mirror equals the kernel's answer"
+    );
+}
+
+/// W3s at a staged `rt_sigaction` (I1-H H2d): FX3, #1 interrupted once
+/// at entry. The retry prepares afresh: every completed guest
+/// `rt_sigaction` finishes once, at any depth, and the interrupted
+/// attempt does not. Mode 0: 1 finish at the delivery, 2 after #1. Mode
+/// 1 (H1 installs its own SIGUSR2 action first): 3 after #1, and #1's
+/// old action is H1's, so the retry read the registry H1 changed. In
+/// both, #1's action is the one installed (the self-sent SIGUSR2
+/// reaches H2). The final query adds one finish.
+#[test]
+fn w3s_sigaction_entry_arrival_restages() {
+    let _g = lock();
+    for mode in [0u32, 1] {
+        let label = format!("W3s sigaction mode {mode}");
+        let fx = fx3(mode, &label);
+        let t = run_translated(
+            &fx.gx,
+            Knobs {
+                step_plans: &FX3_PLAN,
+                ..Knobs::default()
+            },
+        );
+        check_fx3_interrupted(&fx, &t, &label);
+        let base = t.info.base;
+        let installed = |h: u64| GuestAction {
+            handler: base + h,
+            flags: u64::from(FLAGS),
+            restorer: base + fx.gx.restorer_off,
+            sa_mask: 0,
+        };
+        let after_s1 = if mode == 0 { 2 } else { 3 };
+        assert_eq!(
+            usr2_record(&t, &label).sigaction_finishes,
+            after_s1,
+            "{label}: finishes after the retried #1"
+        );
+        assert_eq!(
+            t.report.sigaction_finishes,
+            after_s1 + 1,
+            "{label}: finishes at the end (the query adds one)"
+        );
+        assert_eq!(
+            t.usr2_action,
+            installed(fx.h2_off),
+            "{label}: #1 installed H2"
+        );
+        let old = action_at(&t.data, OLD2);
+        if mode == 0 {
+            assert_eq!(old.handler, 0, "{label}: #1's old action is the default");
+        } else {
+            assert_eq!(
+                old,
+                installed(fx.h2b_off),
+                "{label}: #1's old action is H1's"
+            );
+        }
+        assert_eq!(
+            (
+                word(&t.data, COUNT as usize),
+                word(&t.data, COUNT2 as usize),
+                word(&t.data, COUNT3 as usize)
+            ),
+            (1, 1, 0),
+            "{label}: H1 once; the SIGUSR2 reached H2"
+        );
+    }
+}
+
+/// The retried `rt_sigaction` reads its act afresh (I1-H H2d): FX3
+/// mode 2, where H1 rewrites the interrupted act's handler to H2B
+/// without a call. H2B is installed, the mirror and the kernel agree,
+/// and the self-sent SIGUSR2 reaches H2B. Finishes: 1 at the
+/// interrupted delivery, 2 after #1, 3 with the final query.
+#[test]
+fn w3s_sigaction_entry_rereads_changed_act() {
+    let _g = lock();
+    let label = "W3s sigaction reread";
+    let fx = fx3(2, label);
+    let t = run_translated(
+        &fx.gx,
+        Knobs {
+            step_plans: &FX3_PLAN,
+            ..Knobs::default()
+        },
+    );
+    check_fx3_interrupted(&fx, &t, label);
+    assert_eq!(
+        usr2_record(&t, label).sigaction_finishes,
+        2,
+        "{label}: after #1"
+    );
+    assert_eq!(t.report.sigaction_finishes, 3, "{label}: at the end");
+    assert_eq!(
+        t.usr2_action.handler,
+        t.info.base + fx.h2b_off,
+        "{label}: the rewritten act was installed"
+    );
+    assert_eq!(
+        (
+            word(&t.data, COUNT as usize),
+            word(&t.data, COUNT2 as usize),
+            word(&t.data, COUNT3 as usize)
+        ),
+        (1, 0, 1),
+        "{label}: H1 once; the SIGUSR2 reached H2B"
+    );
+}
+
+/// A failed restore of the staged scratch refuses before delivery
+/// (I1-H H2d): FX3, #1 interrupted at entry with the restore forced to
+/// fail. The refusal is the restore's, by its exact operation; nothing
+/// is delivered and H1 never runs.
+#[test]
+fn w3s_restore_failure_refuses_before_delivery() {
+    let _g = lock();
+    let label = "W3s restore failure";
+    let fx = fx3(0, label);
+    let t = run_translated(
+        &fx.gx,
+        Knobs {
+            step_plans: &FX3_PLAN,
+            fail_scratch_restore: true,
+            ..Knobs::default()
+        },
+    );
+    match t.out.as_ref() {
+        Err(RunError::Refuse(liteinst_jit::Refuse::RemoteSubstrate { operation, errno })) => {
+            assert_eq!(
+                *operation, "restore staged scratch",
+                "{label}: the restore's refusal"
+            );
+            eprintln!("{label}: errno {errno} (last OS error; not pinned)");
+        }
+        other => panic!("{label}: want the restore's refusal, got {other:?}"),
+    }
+    assert_eq!(delivered(&t), (0, 0), "{label}: nothing delivered");
+    assert_eq!(word(&t.data, COUNT as usize), 0, "{label}: H1 never ran");
+}
+
+/// FX4/FX5's siginfo buffer (dst offset, 128 bytes) and payloads.
+const INFO: i32 = SCRATCH + 256;
+const PAYLOAD1: u64 = 0x5eed_0001_cafe_f00d;
+const PAYLOAD2: u64 = 0x5eed_0002_beef_d00d;
+/// `si_code` values: `SI_QUEUE` (what `sigqueue(3)` sends) and
+/// `SI_KERNEL`, which a self-send may not forge.
+const SI_QUEUE: i32 = -1;
+const SI_KERNEL: i32 = 0x80;
+/// Frame word of R10 (greg 2) in a handler log slot.
+const F_R10: usize = 4 + 2;
+
+/// FX4/FX5 and the offsets their tests name.
+struct FxQ {
+    gx: Gx,
+    /// The imm32 of H1's `mov eax, mode`.
+    mode_at: u64,
+    /// The queue call's `syscall` (#3).
+    q_off: u64,
+}
+
+/// FX4 "H2d W3s sigqueue" (`tg` false) and FX5 "H2d W3s tgsigqueue"
+/// (`tg` true) (I1-H H2d). Main installs H1 for SIGUSR1 (#0) and H2
+/// for SIGUSR2 (#1), takes its own pid (`getpid` #2, kept at
+/// `SCRATCH`), fills a siginfo at `INFO` (SIGUSR2, `SI_QUEUE`, its own
+/// pid, `PAYLOAD1`) and queues SIGUSR2 to itself (#3):
+/// `rt_sigqueueinfo` with the siginfo in RDX, or `rt_tgsigqueueinfo`
+/// with it in R10. It returns 42. H1 logs and counts as `emit_handler`,
+/// then by its mode word: 0 returns; 1 changes the payload to
+/// `PAYLOAD2`; 2 forges `si_code` to `SI_KERNEL`. H2 logs and counts at
+/// `SLOT2`/`COUNT2`. The templates (mode 0) are pinned.
+fn build_fxq(tg: bool, mode: u32) -> FxQ {
+    let mut a = CodeAssembler::new(64).unwrap();
+    let mut h1 = a.create_label();
+    let mut mode_l = a.create_label();
+    let mut h1_payload = a.create_label();
+    let mut h1_forge = a.create_label();
+    let mut h2 = a.create_label();
+    let mut restorer = a.create_label();
+    let mut main = a.create_label();
+    let mut body_l = a.create_label();
+    let mut q = a.create_label();
+    a.set_label(&mut h1).unwrap();
+    emit_handler_body(&mut a, SLOT, COUNT);
+    a.set_label(&mut mode_l).unwrap();
+    a.mov(eax, mode).unwrap();
+    a.cmp(eax, 1).unwrap();
+    a.je(h1_payload).unwrap();
+    a.cmp(eax, 2).unwrap();
+    a.je(h1_forge).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut h1_payload).unwrap();
+    a.mov(rax, PAYLOAD2).unwrap();
+    a.mov(qword_ptr(r13 + (INFO + 24)), rax).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut h1_forge).unwrap();
+    a.mov(dword_ptr(r13 + (INFO + 8)), SI_KERNEL).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut h2).unwrap();
+    emit_handler_body(&mut a, SLOT2, COUNT2);
+    a.ret().unwrap();
+    a.set_label(&mut restorer).unwrap();
+    a.db(&[0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05]).unwrap();
+    a.set_label(&mut main).unwrap();
+    for (act, sig, handler) in [(ACT, USR1, None), (ACT2, USR2, Some(h2))] {
+        match handler {
+            None => a.lea(rax, qword_ptr(rbp)).unwrap(),
+            Some(h) => a.lea(rax, qword_ptr(h)).unwrap(),
+        }
+        a.mov(qword_ptr(r13 + act), rax).unwrap();
+        a.mov(dword_ptr(r13 + (act + 8)), FLAGS).unwrap();
+        a.mov(dword_ptr(r13 + (act + 12)), 0u32).unwrap();
+        a.mov(qword_ptr(r13 + (act + 16)), r12).unwrap();
+        a.mov(qword_ptr(r13 + (act + 24)), 0).unwrap();
+        a.mov(edi, sig as u32).unwrap();
+        a.lea(rsi, qword_ptr(r13 + act)).unwrap();
+        a.xor(edx, edx).unwrap();
+        a.mov(r10d, 8u32).unwrap();
+        a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+        a.syscall().unwrap();
+        if handler.is_none() {
+            a.set_label(&mut body_l).unwrap();
+        }
+    }
+    // Translator reachability for both handlers.
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(h1).unwrap();
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(h2).unwrap();
+    // #2: the own pid.
+    a.mov(eax, libc::SYS_getpid as u32).unwrap();
+    a.syscall().unwrap();
+    a.mov(qword_ptr(r13 + SCRATCH), rax).unwrap();
+    // The siginfo: signo, errno 0, code, pid, uid 0, value.
+    a.mov(dword_ptr(r13 + INFO), USR2 as u32).unwrap();
+    a.mov(dword_ptr(r13 + (INFO + 4)), 0u32).unwrap();
+    a.mov(dword_ptr(r13 + (INFO + 8)), SI_QUEUE).unwrap();
+    a.mov(dword_ptr(r13 + (INFO + 12)), 0u32).unwrap();
+    a.mov(dword_ptr(r13 + (INFO + 16)), eax).unwrap();
+    a.mov(dword_ptr(r13 + (INFO + 20)), 0u32).unwrap();
+    a.mov(rcx, PAYLOAD1).unwrap();
+    a.mov(qword_ptr(r13 + (INFO + 24)), rcx).unwrap();
+    // #3: queue SIGUSR2 to itself.
+    a.mov(rdi, rax).unwrap();
+    if tg {
+        a.mov(rsi, rax).unwrap();
+        a.mov(edx, USR2 as u32).unwrap();
+        a.lea(r10, qword_ptr(r13 + INFO)).unwrap();
+        a.mov(eax, libc::SYS_rt_tgsigqueueinfo as u32).unwrap();
+    } else {
+        a.mov(esi, USR2 as u32).unwrap();
+        a.lea(rdx, qword_ptr(r13 + INFO)).unwrap();
+        a.mov(eax, libc::SYS_rt_sigqueueinfo as u32).unwrap();
+    }
+    a.set_label(&mut q).unwrap();
+    a.syscall().unwrap();
+    a.mov(qword_ptr(r13 + (SCRATCH + 8)), rax).unwrap();
+    a.mov(eax, 42u32).unwrap();
+    a.ret().unwrap();
+    let res = a
+        .assemble_options(0, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
+        .unwrap();
+    assert_eq!(res.label_ip(&h1).unwrap(), 0, "H1 at 0");
+    if mode == 0 {
+        let id = if tg {
+            "H2d W3s tgsigqueue"
+        } else {
+            "H2d W3s sigqueue"
+        };
+        corpus::check(id, &res.inner.code_buffer);
+    }
+    let ip = |l: &CodeLabel| res.label_ip(l).unwrap();
+    FxQ {
+        gx: Gx {
+            bytes: res.inner.code_buffer.clone(),
+            handler_off: 0,
+            restorer_off: ip(&restorer),
+            main_off: ip(&main),
+            body_off: ip(&body_l),
+            cpuid_off: None,
+            exit_offs: None,
+        },
+        mode_at: ip(&mode_l) + 1,
+        q_off: ip(&q),
+    }
+}
+
+/// FX4/FX5 at `mode`, checked against the pinned mode-0 template.
+fn fxq(tg: bool, mode: u32, label: &str) -> FxQ {
+    let template = build_fxq(tg, 0);
+    let fx = build_fxq(tg, mode);
+    assert_eq!(
+        (fx.mode_at, fx.q_off),
+        (template.mode_at, template.q_off),
+        "{label}: offsets"
+    );
+    assert_patch(&template.gx, &fx.gx, &[(fx.mode_at, mode)], label);
+    fx
+}
+
+const FXQ_PLAN: [(StepKind, usize, i32, &[u32]); 1] = [(StepKind::Syscall, 0, USR1, &[0, 0, 0, 1])];
+
+/// W3s at a staged queue call (I1-H H2d): FX4 (siginfo in RDX) and FX5
+/// (in R10), the queue call (#3) interrupted once at entry. The frame
+/// holds the guest's own siginfo pointer, not the staged copy; after
+/// sigreturn the call queues SIGUSR2, which arrives with its exact
+/// words: `SI_QUEUE`, the own pid, `PAYLOAD1`.
+#[test]
+fn w3s_sigqueue_entry_arrival_restages() {
+    let _g = lock();
+    for (tg, name, reg) in [(false, "FX4", F_RDX), (true, "FX5", F_R10)] {
+        let label = format!("W3s queue {name}");
+        let fx = fxq(tg, 0, &label);
+        let t = run_translated(
+            &fx.gx,
+            Knobs {
+                step_plans: &FXQ_PLAN,
+                ..Knobs::default()
+            },
+        );
+        let q = t.info.base + fx.q_off;
+        assert_eq!(
+            log_of(&t).first().copied(),
+            Some((DeliveryClass::EntryInterrupted, USR1, q)),
+            "{label}: the queue call interrupted at entry"
+        );
+        let frame = slot_words(&t.data, SLOT);
+        assert_eq!(
+            frame[reg],
+            t.info.dst + INFO as u64,
+            "{label}: the frame holds the guest's siginfo pointer"
+        );
+        let out = t
+            .out
+            .as_ref()
+            .unwrap_or_else(|e| panic!("{label}: run failed: {e:?}"));
+        assert_eq!(out.state.rax, 42, "{label}: the run completed");
+        assert_eq!(
+            usr2_record(&t, &label).signum,
+            USR2,
+            "{label}: SIGUSR2 delivered"
+        );
+        let info_words = slot_words(&t.data, SLOT2);
+        let pid = word(&t.data, SCRATCH as usize);
+        assert_eq!(
+            (
+                info_words[1] as u32 as i32,
+                info_words[2] & 0xffff_ffff,
+                info_words[3]
+            ),
+            (SI_QUEUE, pid, PAYLOAD1),
+            "{label}: the queued siginfo's exact words"
+        );
+        assert_eq!(
+            (
+                word(&t.data, COUNT as usize),
+                word(&t.data, COUNT2 as usize)
+            ),
+            (1, 1),
+            "{label}: H1 and H2 once each"
+        );
+    }
+}
+
+/// The retried queue call reads its siginfo afresh (I1-H H2d): FX4 and
+/// FX5 with H1 changing the guest's siginfo during the interrupt.
+/// Mode 1: the new payload is the one delivered. Mode 2 (a forged
+/// `SI_KERNEL`): the gate refuses the retried call by name, `NoHandler`
+/// at the call, and nothing is left pending.
+#[test]
+fn w3s_sigqueue_entry_rereads_changed_info() {
+    let _g = lock();
+    for (tg, name) in [(false, "FX4"), (true, "FX5")] {
+        let label = format!("W3s queue reread {name} payload");
+        let fx = fxq(tg, 1, &label);
+        let t = run_translated(
+            &fx.gx,
+            Knobs {
+                step_plans: &FXQ_PLAN,
+                ..Knobs::default()
+            },
+        );
+        assert_eq!(
+            t.out.as_ref().map(|o| o.state.rax).ok(),
+            Some(42),
+            "{label}: completed"
+        );
+        assert_eq!(
+            slot_words(&t.data, SLOT2)[3],
+            PAYLOAD2,
+            "{label}: the changed payload was delivered"
+        );
+        let label = format!("W3s queue reread {name} forged code");
+        let fx = fxq(tg, 2, &label);
+        let t = run_translated(
+            &fx.gx,
+            Knobs {
+                step_plans: &FXQ_PLAN,
+                ..Knobs::default()
+            },
+        );
+        assert_eq!(
+            t.out.as_ref().err(),
+            Some(&RunError::Refuse(liteinst_jit::Refuse::NoHandler {
+                src_pc: t.info.base + fx.q_off,
+            })),
+            "{label}: the forged self-send is refused at the call"
+        );
+        assert_eq!(
+            delivered(&t),
+            (1, 1),
+            "{label}: only the interrupt was delivered"
+        );
+        assert_eq!(word(&t.data, COUNT2 as usize), 0, "{label}: H2 never ran");
+        assert_eq!(t.pending, 0, "{label}: nothing pending");
+    }
+}
+
+/// The staging scratch is restored before a W3s delivery (I1-H H2d):
+/// with the scratch pre-filled with a canary byte, every readback after
+/// a restore is all canary, for the 32-byte act of FX3's interrupted
+/// `rt_sigaction` and the 128-byte siginfo of FX4's and FX5's
+/// interrupted queue calls.
+#[test]
+fn w3s_scratch_restored_before_delivery() {
+    let _g = lock();
+    const CANARY: u8 = 0xa5;
+    let runs: [(&str, Gx, Plans, usize); 3] = [
+        ("FX3", fx3(0, "canary FX3").gx, &FX3_PLAN, 32),
+        ("FX4", fxq(false, 0, "canary FX4").gx, &FXQ_PLAN, 128),
+        ("FX5", fxq(true, 0, "canary FX5").gx, &FXQ_PLAN, 128),
+    ];
+    for (name, gx, plans, len) in runs {
+        let label = format!("W3s canary {name}");
+        let t = run_translated(
+            &gx,
+            Knobs {
+                step_plans: plans,
+                scratch_canary: Some(CANARY),
+                ..Knobs::default()
+            },
+        );
+        assert_eq!(
+            t.out.as_ref().map(|o| o.state.rax).ok(),
+            Some(42),
+            "{label}: completed"
+        );
+        let lens: Vec<usize> = t
+            .report
+            .scratch_after_cleanup
+            .iter()
+            .map(Vec::len)
+            .collect();
+        eprintln!("{label}: readback lengths {lens:?}");
+        assert!(
+            t.report
+                .scratch_after_cleanup
+                .iter()
+                .all(|b| b.iter().all(|&c| c == CANARY)),
+            "{label}: every readback is all canary"
+        );
+        assert!(
+            lens.iter().filter(|&&l| l == len).count() >= 2,
+            "{label}: the interrupted and the retried call each restored {len} bytes: {lens:?}"
+        );
+    }
+}
+
+/// `SA_RESTART`.
+const SA_RESTART: u32 = 0x1000_0000;
+/// FX6's futex word and mismatch counter (dst offsets).
+const FUTEXW: i32 = SCRATCH + 384;
+const BAD: i32 = SCRATCH + 392;
+/// `FUTEX_WAIT | FUTEX_PRIVATE_FLAG`.
+const FUTEX_WAIT_PRIVATE: u32 = 128;
+/// `-ERESTARTSYS`, as the raw RAX at a restart exit stop.
+const ERESTARTSYS: i64 = -512;
+
+/// FX6, "H2d W3s futex" (I1-H H2d). Main installs H1 for SIGUSR1 with
+/// `SA_RESTART` (#0) and H2 for SIGUSR2 without it (#1), then waits on
+/// a zero futex word with `FUTEX_WAIT_PRIVATE`, value 0 and no timeout
+/// (#2; its restart is #3), so only a signal ends the wait. It returns
+/// 42 if the futex returned `-EINTR`, else 7. H1 counts and checks that
+/// its saved RIP and RAX are the futex and 202 (`SYS_futex`), counting
+/// any mismatch at `BAD`; it also logs as `emit_handler`. H2 logs and
+/// counts at `SLOT2`/`COUNT2`. Pinned. Returns the fixture and the
+/// futex `syscall`'s offset.
+fn build_fx6() -> (Gx, u64) {
+    let mut a = CodeAssembler::new(64).unwrap();
+    let mut h1 = a.create_label();
+    let mut h1_bad = a.create_label();
+    let mut h2 = a.create_label();
+    let mut restorer = a.create_label();
+    let mut main = a.create_label();
+    let mut body_l = a.create_label();
+    let mut futex_l = a.create_label();
+    let mut fail = a.create_label();
+    a.set_label(&mut h1).unwrap();
+    emit_handler_body(&mut a, SLOT, COUNT);
+    a.lea(rax, qword_ptr(futex_l)).unwrap();
+    a.cmp(qword_ptr(rdx + UC_RIP), rax).unwrap();
+    a.jne(h1_bad).unwrap();
+    a.cmp(qword_ptr(rdx + UC_RAX), libc::SYS_futex as i32)
+        .unwrap();
+    a.jne(h1_bad).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut h1_bad).unwrap();
+    a.inc(qword_ptr(r13 + BAD)).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut h2).unwrap();
+    emit_handler_body(&mut a, SLOT2, COUNT2);
+    a.ret().unwrap();
+    a.set_label(&mut restorer).unwrap();
+    a.db(&[0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05]).unwrap();
+    a.set_label(&mut main).unwrap();
+    for (act, sig, handler, flags) in [
+        (ACT, USR1, None, FLAGS | SA_RESTART),
+        (ACT2, USR2, Some(h2), FLAGS),
+    ] {
+        match handler {
+            None => a.lea(rax, qword_ptr(rbp)).unwrap(),
+            Some(h) => a.lea(rax, qword_ptr(h)).unwrap(),
+        }
+        a.mov(qword_ptr(r13 + act), rax).unwrap();
+        a.mov(dword_ptr(r13 + (act + 8)), flags).unwrap();
+        a.mov(dword_ptr(r13 + (act + 12)), 0u32).unwrap();
+        a.mov(qword_ptr(r13 + (act + 16)), r12).unwrap();
+        a.mov(qword_ptr(r13 + (act + 24)), 0).unwrap();
+        a.mov(edi, sig as u32).unwrap();
+        a.lea(rsi, qword_ptr(r13 + act)).unwrap();
+        a.xor(edx, edx).unwrap();
+        a.mov(r10d, 8u32).unwrap();
+        a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+        a.syscall().unwrap();
+        if handler.is_none() {
+            a.set_label(&mut body_l).unwrap();
+        }
+    }
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(h1).unwrap();
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(h2).unwrap();
+    a.mov(dword_ptr(r13 + FUTEXW), 0u32).unwrap();
+    a.lea(rdi, qword_ptr(r13 + FUTEXW)).unwrap();
+    a.mov(esi, FUTEX_WAIT_PRIVATE).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.xor(r10d, r10d).unwrap();
+    a.mov(eax, libc::SYS_futex as u32).unwrap();
+    a.set_label(&mut futex_l).unwrap();
+    a.syscall().unwrap();
+    a.mov(qword_ptr(r13 + SCRATCH), rax).unwrap();
+    a.cmp(rax, -libc::EINTR).unwrap();
+    a.jne(fail).unwrap();
+    a.mov(eax, 42u32).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut fail).unwrap();
+    a.mov(eax, 7u32).unwrap();
+    a.ret().unwrap();
+    let res = a
+        .assemble_options(0, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
+        .unwrap();
+    assert_eq!(res.label_ip(&h1).unwrap(), 0, "H1 at 0");
+    corpus::check("H2d W3s futex", &res.inner.code_buffer);
+    let ip = |l: &CodeLabel| res.label_ip(l).unwrap();
+    (
+        Gx {
+            bytes: res.inner.code_buffer.clone(),
+            handler_off: 0,
+            restorer_off: ip(&restorer),
+            main_off: ip(&main),
+            body_off: ip(&body_l),
+            cpuid_off: None,
+            exit_offs: None,
+        },
+        ip(&futex_l),
+    )
+}
+
+const FX6_PLAN: [(StepKind, usize, i32, &[u32]); 1] =
+    [(StepKind::Syscall, 0, USR1, &[0, 0, W3_RETRY_LIMIT, 1])];
+const FX6_ENTER_STOPS: [(usize, i32); 2] = [(2, USR1), (3, USR2)];
+
+/// The W3s count resets when a syscall enters, not when it completes
+/// (I1-H H2d, the enter-stop seam): on FX6 the futex (#2) is interrupted 64
+/// times at entry, then enters and is interrupted in the kernel by
+/// SIGUSR1 (`SA_RESTART`), so it restarts as #3; #3 is interrupted once
+/// at entry, enters, and SIGUSR2 (no `SA_RESTART`) ends it with
+/// `-EINTR`. The log holds exactly 67 deliveries, every one at the futex
+/// source PC; all 66 SIGUSR1 frames resume at the futex with RAX 202,
+/// the restart frame included; the SIGUSR2 frame resumes after it with
+/// `-EINTR`. A count reset only at completion would refuse #3's
+/// interrupt as the 65th.
+#[test]
+fn w3s_bound_resets_at_entry_not_completion() {
+    let _g = lock();
+    let label = "W3s resets at entry";
+    let (gx, futex_off) = build_fx6();
+    let n = W3_RETRY_LIMIT as usize;
+    let t = run_translated(
+        &gx,
+        Knobs {
+            step_plans: &FX6_PLAN,
+            enter_stop_signals: Some((0, &FX6_ENTER_STOPS)),
+            ..Knobs::default()
+        },
+    );
+    let out = t
+        .out
+        .as_ref()
+        .unwrap_or_else(|e| panic!("{label}: run failed: {e:?}"));
+    assert_eq!(out.state.rax, 42, "{label}: the futex returned -EINTR");
+    let pc = t.info.base + futex_off;
+    let futex = libc::SYS_futex as u64;
+    let restart = ERESTARTSYS as u64;
+    use DeliveryClass::{EntryInterrupted as Ei, SyscallExit as Sx};
+    let mut want = vec![(Ei, USR1, pc, futex); n];
+    want.push((Sx, USR1, pc, restart));
+    want.push((Ei, USR1, pc, futex));
+    want.push((Sx, USR2, pc, restart));
+    let got: Vec<(DeliveryClass, i32, u64, u64)> = t
+        .report
+        .delivery_log
+        .iter()
+        .map(|d| (d.class, d.signum, d.src_pc, d.raw_rax))
+        .collect();
+    assert_eq!(got, want, "{label}: the 67-entry delivery log");
+    assert_eq!(
+        (word(&t.data, COUNT as usize), word(&t.data, BAD as usize)),
+        (n as u64 + 2, 0),
+        "{label}: 66 SIGUSR1 frames, each at (futex PC, 202)"
+    );
+    let f2 = slot_words(&t.data, SLOT2);
+    assert_eq!(
+        (f2[F_RIP], f2[F_RAX], word(&t.data, COUNT2 as usize)),
+        (pc + 2, (-libc::EINTR) as i64 as u64, 1),
+        "{label}: the SIGUSR2 frame resumes after the futex with -EINTR"
+    );
+}
+
+/// FX7's counted loop (iterations) after the `write`.
+const FX7_LOOP: u32 = 64;
+/// FX7's `report.poll_exits` under poll budget 16 (design §4.7). The
+/// run enters about 70 blocks (main's three, the handler's one, the
+/// loop setup, 64 loop iterations and the tail), so the budget runs out
+/// four times, at the 17th, 33rd, 49th and 65th block entries. The
+/// count is the same without the delivery: a W3s delivery resumes with
+/// the stop's own nonzero budget (`resume_budget`).
+const POLL_EXITS_FX7: u64 = 4;
+
+/// FX7, "H2d poll budget" (I1-H H2d): main installs the SIGUSR1
+/// handler (#0), writes buffer 1's 8 bytes to the pipe (#1), runs a
+/// counted loop of `FX7_LOOP` iterations and returns 42. The handler is
+/// `emit_handler`. The template (`FD_TEMPLATE`) is pinned. Returns the
+/// fixture, the fd word's offset and the `write`'s offset.
+fn build_fx7(fd: i32) -> (Gx, u64, u64) {
+    let mut a = CodeAssembler::new(64).unwrap();
+    let mut handler = a.create_label();
+    let mut restorer = a.create_label();
+    let mut main = a.create_label();
+    let mut body_l = a.create_label();
+    let mut fd_l = a.create_label();
+    let mut write_l = a.create_label();
+    let mut lp = a.create_label();
+    a.set_label(&mut handler).unwrap();
+    emit_handler(&mut a);
+    a.set_label(&mut restorer).unwrap();
+    a.db(&[0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05]).unwrap();
+    a.set_label(&mut main).unwrap();
+    a.lea(rax, qword_ptr(rbp)).unwrap();
+    a.mov(qword_ptr(r13 + ACT), rax).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 8)), FLAGS).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 12)), 0u32).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 16)), r12).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 24)), 0).unwrap();
+    a.mov(edi, USR1 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    a.set_label(&mut body_l).unwrap();
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(handler).unwrap();
+    a.mov(rax, BUF1_BYTES).unwrap();
+    a.mov(qword_ptr(r13 + BUF1), rax).unwrap();
+    a.set_label(&mut fd_l).unwrap();
+    a.mov(edi, fd as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + BUF1)).unwrap();
+    a.mov(edx, 8u32).unwrap();
+    a.mov(eax, libc::SYS_write as u32).unwrap();
+    a.set_label(&mut write_l).unwrap();
+    a.syscall().unwrap();
+    a.xor(r15d, r15d).unwrap();
+    a.mov(ecx, FX7_LOOP).unwrap();
+    a.set_label(&mut lp).unwrap();
+    a.add(r15, rcx).unwrap();
+    a.dec(ecx).unwrap();
+    a.jnz(lp).unwrap();
+    a.mov(qword_ptr(r13 + SCRATCH), r15).unwrap();
+    a.mov(eax, 42u32).unwrap();
+    a.ret().unwrap();
+    let res = a
+        .assemble_options(0, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
+        .unwrap();
+    assert_eq!(res.label_ip(&handler).unwrap(), 0, "handler at 0");
+    if fd == FD_TEMPLATE {
+        corpus::check("H2d poll budget", &res.inner.code_buffer);
+    }
+    let ip = |l: &CodeLabel| res.label_ip(l).unwrap();
+    (
+        Gx {
+            bytes: res.inner.code_buffer.clone(),
+            handler_off: 0,
+            restorer_off: ip(&restorer),
+            main_off: ip(&main),
+            body_off: ip(&body_l),
+            cpuid_off: None,
+            exit_offs: None,
+        },
+        ip(&fd_l) + 1,
+        ip(&write_l),
+    )
+}
+
+const FX7_PLAN: [(StepKind, usize, i32, &[u32]); 1] = [(StepKind::Syscall, 0, USR1, &[0, 1])];
+
+/// A W3s delivery keeps the poll accounting (I1-H H2d): FX7 with the
+/// `write` interrupted once at entry, under poll budget 16. The
+/// delivery resumes with the budget the stop held, so
+/// `report.poll_exits` is the pinned count, the same as without it.
+#[test]
+fn w3s_delivery_restarts_poll_budget() {
+    let _g = lock();
+    let label = "W3s poll budget";
+    let pipe = Pipe::new();
+    let (template, at, write_off) = build_fx7(FD_TEMPLATE);
+    let (gx, at2, write2) = build_fx7(pipe.write_fd());
+    assert_eq!((at, write_off), (at2, write2), "{label}: offsets");
+    assert_patch(&template, &gx, &[(at, pipe.write_fd() as u32)], label);
+    let t = run_translated(
+        &gx,
+        Knobs {
+            step_plans: &FX7_PLAN,
+            poll_budget: Some(LOOP_POLL_BUDGET),
+            ..Knobs::default()
+        },
+    );
+    assert_eq!(
+        t.out.as_ref().map(|o| o.state.rax).ok(),
+        Some(42),
+        "{label}: completed"
+    );
+    assert_eq!(
+        log_of(&t),
+        vec![(
+            DeliveryClass::EntryInterrupted,
+            USR1,
+            t.info.base + write_off
+        )],
+        "{label}: one delivery, before the write"
+    );
+    assert_eq!(
+        pipe.drain(),
+        BUF1_BYTES.to_le_bytes().to_vec(),
+        "{label}: one write"
+    );
+    eprintln!("{label}: poll_exits {}", t.report.poll_exits);
+    assert_eq!(
+        t.report.poll_exits, POLL_EXITS_FX7,
+        "{label}: the pinned poll count"
+    );
 }
 
 /// Every deadline helper arms the child it starts, with
@@ -3744,5 +6464,5 @@ fn corpus_hash_known_answers_and_table() {
     // reviewed edit here too. (Each test's own `check` proves its
     // IDs are present and current.)
     let table = corpus::table();
-    assert_eq!(table.len(), 84, "pinned fixtures");
+    assert_eq!(table.len(), 94, "pinned fixtures");
 }

@@ -1,4 +1,4 @@
-# Signal corpus (frozen at I1-H H1; rows added in H2a and H2b)
+# Signal corpus (frozen at I1-H H1; rows added in H2a, H2b, H2c and H2d)
 
 Every signal fixture of P1b I1-C through I1-G2, plus the I1-H
 fixtures, under a stable ID. Each row gives the rule-matrix cell
@@ -401,7 +401,7 @@ calling ptrace or waiting).
 ## Run-dependent inputs
 
 Every immediate the fixture builders emit is a constant, with two
-exceptions:
+exceptions (and the H2d templates below):
 - `E4c real foreign helper` embeds a live helper's pid and is
   unpinned;
 - `G2h interrupted write` writes to a pipe whose fd is whatever
@@ -409,6 +409,16 @@ exceptions:
   built with fd -1; the test then requires the bytes that run to
   equal that template with only the runtime fd patched into the
   one `mov edi, imm32`, and the layout unchanged.
+
+The H2d fixtures are templates too. Each test builds the pinned
+template and its runtime fixture and requires that exactly the listed
+`mov r32, imm32` words differ (`assert_patch`), with the layout
+unchanged: the pipe fd (`H2d W3s write`, `H2d poll budget`, built with
+fd -1); the handler mode word (`H2d handler step`, `H2d W3s write`,
+`H2d W3s sigaction`, `H2d W3s sigqueue`, `H2d W3s tgsigqueue`, built
+with mode 0); main's mode word (`H2d cross-depth`, mode 0); the
+redirecting invocation N (`H2d same-depth redirect`, 0); and the shape
+and skip index (`H2d abandoned frame`, shape 1 and 0).
 
 Pids and addresses reach a fixture only at run time, through
 `getpid` and the base registers, never as immediates in a pinned
@@ -517,5 +527,15 @@ change was intended.
 | `H2 W1 indirect` | I1-H H2b | remote_signal_gate.rs w1_indirect_kind_arrival_is_named_refusal | arrival in the common exit of an INDIRECT exit (`jmp rax`) | named refusal + the survey's recovery + literal totals (15, 1); no O1-S leg (O1 cannot verify an indirect `jmp`) | `3d964a4cf91f0ce515d6152d5d3ae6d16d047ac6ef9aa9ea1dde95cd20dad06a` |
 | `H2c W3 two cpuid` | I1-H H2c | remote_signal_gate.rs w3_retry_bound_resets_on_progress | 64 interrupts at the first `cpuid` (which then steps), 1 at the second | all 65 delivered at the right `cpuid`; the bound resets on progress | `35527a75fdc6723e170dde9ab3ff59e37ba1a049bc09fba3ed0eb3ec09caa24d` |
 | `H2c W3 W1 in handler` | I1-H H2c follow-up | remote_signal_gate.rs w3_retry_bound_counts_across_w1_delivery | 65 interrupts at the `cpuid`; on the 10th SIGUSR1 handler run, SIGUSR2 arrives in the common exit of the handler's ret | the exact named refusal after 64 SIGUSR1 and 1 SIGUSR2 deliveries: a W1 delivery does not reset the count | `9ddf94d590c2f30b292a1335175294f7020dff2c8f8166e7501651328dd199e8` |
+| `H2d handler step` | I1-H H2d | remote_signal_gate.rs w3_retry_bound_ignores_handler_syscalls, w3_retry_bound_ignores_handler_cpuid | 65 interrupts at main's `cpuid`; each handler run makes one `getpid` (mode 1) or one `cpuid` (mode 2) | the aggregate's reason (mode 1) or the per-depth `cpuid` reason (mode 2) after 64 deliveries | `8590fb3245f8acd83996ad35b931a6829cad3cc4321539a6469b8290021c7ffe` |
+| `H2d W3s write` | I1-H H2d | remote_signal_gate.rs w3s_syscall_entry_arrival_delivers and the other FX2 W3s tests | a signal before a `write` (#2) to a test pipe enters the kernel; handler modes change nothing, call `getpid`, or rewrite the saved RSI or RAX | O1-S at k; W1 at the same syscall; the exit-count pin; named refusals; the syscall bound | `ce2e94a54304a830b29b5050dd0f7a46e6a95c891bd3282ae7b24ea101298af1` |
+| `H2d W3s sigaction` | I1-H H2d | remote_signal_gate.rs w3s_sigaction_entry_arrival_restages, w3s_sigaction_entry_rereads_changed_act, w3s_restore_failure_refuses_before_delivery, w3s_scratch_restored_before_delivery | a signal before a staged `rt_sigaction` (#1) enters the kernel; the handler installs its own action or rewrites the act | finish counts, the old action, the mirror against a kernel query, the scratch canary, the restore refusal | `597239f9e0a1935c19307ae086472b037a30affe0672fd69321d886336126ee3` |
+| `H2d W3s sigqueue` | I1-H H2d | remote_signal_gate.rs w3s_sigqueue_entry_arrival_restages, w3s_sigqueue_entry_rereads_changed_info, w3s_scratch_restored_before_delivery | a signal before `rt_sigqueueinfo` (#3, siginfo in RDX) enters the kernel; the handler changes the payload or forges `si_code` | the queued siginfo's exact words; `NoHandler` for a forged code, nothing pending | `bb8f503d936a1bcb17ea253e934639e27c1a1458a9facfc7337eb91085135249` |
+| `H2d W3s tgsigqueue` | I1-H H2d | remote_signal_gate.rs as `H2d W3s sigqueue` | as `H2d W3s sigqueue`, with `rt_tgsigqueueinfo` (siginfo in R10) | as `H2d W3s sigqueue` | `ff06eeb762fe23f9e7377afc98805b0fd49c525fdb6b8e57265e5b75e34118fc` |
+| `H2d W3s futex` | I1-H H2d | remote_signal_gate.rs w3s_bound_resets_at_entry_not_completion | 64 entry interrupts of a `FUTEX_WAIT_PRIVATE`; SIGUSR1 (`SA_RESTART`) at its enter stop; on the restart, 1 entry interrupt and SIGUSR2 at the enter stop | the exact 67-entry delivery log; the frames' saved RIP and RAX; `-EINTR` | `39b9fd44499d9a6fe0ab4dcd89741e6adada83653d43e6458f61b5683d2db220` |
+| `H2d poll budget` | I1-H H2d | remote_signal_gate.rs w3s_delivery_restarts_poll_budget | a signal before a `write` enters the kernel, then a 64-iteration loop under poll budget 16 | the pinned poll-exit count (4) | `9bab49f384992a3336113d09a19d51c976315db8b93fddc8181340bfed69ca93` |
+| `H2d cross-depth` | I1-H H2d | remote_signal_gate.rs w3_retry_bound_counts_across_depths | 33 interrupts of main's `cpuid`, then 32 of the handler's own on its 33rd run; SIGUSR2 nested, `SA_NODEFER`, or a `getpid` in every handler run | the aggregate's reason after 64 deliveries, in the exact order | `edb4c3ee5b802500beb9c933dd26d5e5f8bad5085e9cc63243faa9203b87e460` |
+| `H2d same-depth redirect` | I1-H H2d | remote_signal_gate.rs step_bound_accumulates_across_handler_redirect | N interrupts of `cpuid` A; the handler's Nth run resumes main at `SYS`; then interrupts of the `syscall` at `SYS + 5` | the per-depth `syscall` reason after 64 deliveries; every frame popped through the interception | `f7ef7f26d5010d64a1c5ef3477aea7849905acc685d6206e261e417e2b0a40fd` |
+| `H2d abandoned frame` | I1-H H2d | remote_signal_gate.rs step_bound_discards_abandoned_frame_retries | H2 resumes H1 at its epilogue, abandoning its `cpuid` B or, in shape 2, its `getpid` G | admitted with 67 deliveries and 67 pops, in the exact order | `9b24ca57745a3cab255d1c6c862e67e2c37e51333dbe2b77d6fb2123bd58b5c4` |
 
 Unpinned: `E4c real foreign helper` (I1-G1, remote_signal_rt.rs sigqueue_to_foreign_target_refused_by_name_even_where_native_errs): the bytes embed the live helper's pid.
