@@ -2094,7 +2094,8 @@ fn spawn_census() {
 }
 
 /// Bound census (I1-H H2d): every test here arms a `TestBound`
-/// (`common/deadline.rs`).
+/// (`common/deadline.rs`), and so do the shared tests in
+/// `common/corpus.rs`, which four binaries compile in.
 #[test]
 fn bound_census() {
     deadline::bound_census(
@@ -2102,6 +2103,15 @@ fn bound_census() {
         "remote_signal_gate.rs",
         &["spawn_census", "bound_census", "bound_inventory"],
     );
+    deadline::bound_census(include_str!("common/corpus.rs"), "common/corpus.rs", &[]);
+}
+
+/// The census parser's negative witnesses (I1-H H2d): a commented
+/// `#[test]` is counted, and other test attribute forms are refused.
+#[test]
+fn bound_census_refuses_unsupported_attributes() {
+    let _bound = deadline::TestBound::arm();
+    deadline::bound_census_witness();
 }
 
 /// Bound inventory (I1-H H2d): `tests/*.rs` against the reviewed
@@ -2130,6 +2140,22 @@ fn bound_inventory() {
 fn test_bound_self_test() {
     let _g = lock();
     deadline::bound_self_test();
+}
+
+/// A child whose process name is not UTF-8 is still found and killed
+/// by the expiring bound's sweep (`common/deadline.rs`).
+#[test]
+fn test_bound_sweeps_non_utf8_child() {
+    let _g = lock();
+    deadline::odd_name_sweep_test();
+}
+
+/// An orphan whose process name is not UTF-8 is still found, killed
+/// and reaped by the subreaper harness at its limit.
+#[test]
+fn harness_kills_non_utf8_orphan() {
+    let _g = lock();
+    deadline::odd_name_orphan_test();
 }
 
 /// A child forked after the first sweep, by a custody section that

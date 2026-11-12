@@ -725,10 +725,13 @@ struct ProcStat {
 }
 
 /// Fields 3, 4 and 22 of `/proc/<pid>/stat` (state, ppid, start
-/// time), parsed after the last `)` of the command name.
+/// time). Field 2, the command name, is raw bytes: it need not be
+/// UTF-8 and may contain spaces and `)`. So the file is read as
+/// bytes and only the ASCII tail after its last `)` is parsed.
 fn proc_stat(pid: i32) -> Option<ProcStat> {
-    let s = std::fs::read_to_string(format!("/proc/{pid}/stat")).ok()?;
-    let rest = s.get(s.rfind(')')? + 1..)?;
+    let b = std::fs::read(format!("/proc/{pid}/stat")).ok()?;
+    let tail = &b[b.iter().rposition(|&c| c == b')')? + 1..];
+    let rest = std::str::from_utf8(tail).ok()?;
     let f: Vec<&str> = rest.split_whitespace().collect();
     Some(ProcStat {
         state: f.first()?.chars().next()?,
@@ -840,8 +843,11 @@ pub enum StderrMode {
     Hold,
 }
 
-/// One child record: pid, start time (or `unlisted` for an adoptee
-/// the probe never recorded) and status.
+/// One child record: pid, start time (`unknown` if the probe could
+/// not read it, `unlisted` for an adoptee the probe never recorded)
+/// and status (`signaled <n>`, `exited <n>`, `killed-by-harness`,
+/// `harness-kill-unreaped`, `harness-unkilled-unreaped` or
+/// `missing`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ChildRecord {
     pub pid: String,
@@ -852,7 +858,8 @@ pub struct ChildRecord {
 /// The intermediate's report, parsed from its records.
 #[derive(Clone, Debug, Default)]
 pub struct SubreaperReport {
-    /// `signaled <n>`, `exited <n>` or `killed-by-harness`.
+    /// `signaled <n>`, `exited <n>`, `killed-by-harness` or one of
+    /// the harness's unreaped statuses (see [`ChildRecord`]).
     pub probe: String,
     pub children: Vec<ChildRecord>,
     pub stderr: Vec<String>,
@@ -968,28 +975,48 @@ fn reap_ready(reaped: &mut BTreeMap<i32, String>) -> bool {
 
 /// Kill `pid` through a pidfd if it is still this process's child
 /// (and, when known, still has start time `start`); then reap it,
-/// polling for at most 1 s.
+/// polling for at most 1 s. A zombie is not signalled. The status is
+/// `killed-by-harness` only when the kill was sent and the child was
+/// reaped. A child reaped without a kill gets its own wait status;
+/// one not reaped in time gets `harness-kill-unreaped` or
+/// `harness-unkilled-unreaped`.
 fn harness_kill(pid: i32, start: Option<u64>, reaped: &mut BTreeMap<i32, String>) {
     let me = std::process::id() as i32;
-    if let Some(fd) = pidfd(pid) {
-        let same =
-            proc_stat(pid).is_some_and(|s| s.ppid == me && start.is_none_or(|t| t == s.start));
-        if same {
-            pidfd_kill(&fd);
-        }
+    let killed = pidfd(pid).is_some_and(|fd| {
+        proc_stat(pid)
+            .is_some_and(|s| s.ppid == me && s.state != 'Z' && start.is_none_or(|t| t == s.start))
+            && pidfd_kill(&fd)
+    });
+    let mut status = if killed {
+        "harness-kill-unreaped"
+    } else {
+        "harness-unkilled-unreaped"
     }
+    .to_owned();
     let until = Instant::now() + Duration::from_secs(1);
     while Instant::now() < until {
         let mut st = 0;
         // SAFETY: waitpid on this process's own child, WNOHANG.
         let rc = unsafe { libc::waitpid(pid, &mut st, libc::WNOHANG) };
-        if rc == pid || rc < 0 {
+        if rc == pid {
+            status = if killed {
+                "killed-by-harness".to_owned()
+            } else {
+                describe_status(st)
+            };
+            break;
+        }
+        if rc < 0 {
             break;
         }
         std::thread::sleep(HARNESS_POLL);
     }
-    reaped.insert(pid, "killed-by-harness".to_owned());
+    reaped.insert(pid, status);
 }
+
+/// The children a probe recorded: pid and start time (`None` when the
+/// probe could not read it).
+type Listed = Arc<Mutex<Vec<(i32, Option<u64>)>>>;
 
 /// Wait on `done` until `until`, at least `min` from now.
 fn wait_reader(done: &mpsc::Receiver<()>, until: Instant, min: Duration) {
@@ -1000,9 +1027,9 @@ fn wait_reader(done: &mpsc::Receiver<()>, until: Instant, min: Duration) {
 /// The intermediate subreaper: see [`subreaper_run`]. It runs the
 /// probe under its own supervised limits (10 s for the probe, then
 /// 10 s for the adopted orphans) and kills what is left at either
-/// limit, marking it `killed-by-harness`. No blocking read or wait
-/// runs outside a limit: reader threads own the probe's pipes, and
-/// the main thread only polls.
+/// limit, marking it `killed-by-harness` once it is reaped. No
+/// blocking read or wait runs outside a limit: reader threads own the
+/// probe's pipes, and the main thread only polls.
 #[test]
 #[ignore = "run only by deadline::subreaper_run"]
 fn subreaper_intermediate() {
@@ -1030,7 +1057,9 @@ fn subreaper_intermediate() {
     let probe_pid = child.id() as i32;
     let probe_start = proc_start(probe_pid);
 
-    let listed: Arc<Mutex<Vec<(i32, u64)>>> = Arc::default();
+    // A child the probe recorded without a readable start time
+    // (`unknown`) is still listed: it is never treated as absent.
+    let listed: Listed = Arc::default();
     let (out_done_tx, out_done) = mpsc::channel::<()>();
     let stdout = child.stdout.take().expect("the probe's stdout");
     let sink = Arc::clone(&listed);
@@ -1040,13 +1069,10 @@ fn subreaper_intermediate() {
                 continue;
             };
             let mut f = rest.split(' ');
-            if let (Some(Ok(pid)), Some(Ok(start))) = (
-                f.next().map(str::parse::<i32>),
-                f.next().map(str::parse::<u64>),
-            ) {
+            if let (Some(Ok(pid)), Some(start)) = (f.next().map(str::parse::<i32>), f.next()) {
                 sink.lock()
                     .unwrap_or_else(|e| e.into_inner())
-                    .push((pid, start));
+                    .push((pid, start.parse::<u64>().ok()));
             }
         }
         let _ = out_done_tx.send(());
@@ -1079,8 +1105,9 @@ fn subreaper_intermediate() {
         }
         if Instant::now() >= first_limit {
             harness_kill(probe_pid, probe_start, &mut reaped);
-            reaped.remove(&probe_pid);
-            break "killed-by-harness".to_owned();
+            break reaped
+                .remove(&probe_pid)
+                .unwrap_or_else(|| "missing".to_owned());
         }
         std::thread::sleep(HARNESS_POLL);
     };
@@ -1089,7 +1116,7 @@ fn subreaper_intermediate() {
         if Instant::now() >= second_limit {
             let listed = listed.lock().unwrap_or_else(|e| e.into_inner()).clone();
             for pid in direct_children() {
-                let start = listed.iter().find(|(p, _)| *p == pid).map(|&(_, s)| s);
+                let start = listed.iter().find(|(p, _)| *p == pid).and_then(|&(_, s)| s);
                 harness_kill(pid, start, &mut reaped);
             }
             break;
@@ -1110,6 +1137,7 @@ fn subreaper_intermediate() {
             .get(&pid)
             .cloned()
             .unwrap_or_else(|| "missing".to_owned());
+        let start = start.map_or_else(|| "unknown".to_owned(), |s| s.to_string());
         record(&format!("child {pid} {start} {status}"));
     }
     for (pid, status) in &reaped {
@@ -1148,15 +1176,49 @@ fn probe_enabled() -> bool {
     on
 }
 
+/// How long a probe and its sleepers last if nothing kills them. It
+/// outlives the intermediate's limits (10 s, then 10 s) and the
+/// parent's 30 s bound on the intermediate, so every harness
+/// observation is made while they are alive. It also bounds how long
+/// they can outlive a failed intermediate: they end by themselves.
+const SLEEPER_SECS: u64 = 60;
+
 /// A sleeper with no inherited stdio, so a survivor never holds the
 /// probe's pipes open.
 fn sleeper() -> Command {
-    let mut c = Command::new("/bin/sleep");
-    c.arg("3600")
+    sleeper_at(std::path::Path::new("/bin/sleep"))
+}
+
+fn sleeper_at(path: &std::path::Path) -> Command {
+    let mut c = Command::new(path);
+    c.arg(SLEEPER_SECS.to_string())
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
     c
+}
+
+/// Spawn, inside custody, a sleeper whose process name (`comm`) is
+/// not valid UTF-8. It runs `/bin/sleep` through a symlink whose name
+/// has a 0xff byte; `comm` is the base name of the path given to
+/// exec. The symlink is removed once the exec has happened. Panics
+/// unless the child's `comm` really is not UTF-8.
+fn spawn_odd_name_sleeper() -> Child {
+    use std::os::unix::ffi::OsStrExt;
+    let mut name = b"odd\xffname-".to_vec();
+    name.extend_from_slice(std::process::id().to_string().as_bytes());
+    let link =
+        std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join(std::ffi::OsStr::from_bytes(&name));
+    let _ = std::fs::remove_file(&link);
+    std::os::unix::fs::symlink("/bin/sleep", &link).expect("symlink the odd-name sleeper");
+    let child = custody(|| sleeper_at(&link).spawn()).expect("spawn the odd-name sleeper");
+    let _ = std::fs::remove_file(&link);
+    let comm = std::fs::read(format!("/proc/{}/comm", child.id())).expect("read the child's comm");
+    assert!(
+        std::str::from_utf8(&comm).is_err(),
+        "the odd-name sleeper's comm must not be UTF-8: {comm:?}"
+    );
+    child
 }
 
 fn record_child(pid: u32) {
@@ -1181,7 +1243,7 @@ fn bound_probe() {
     #[allow(clippy::zombie_processes)]
     let unarmed = custody(|| sleeper().spawn()).expect("spawn the unarmed sleeper");
     record_child(unarmed.id());
-    std::thread::sleep(Duration::from_secs(3600));
+    std::thread::sleep(Duration::from_secs(SLEEPER_SECS));
 }
 
 /// The late-spawn probe: a thread holds a custody section from before
@@ -1216,7 +1278,7 @@ fn late_spawn_probe() {
         let _ = forked.recv_timeout(Duration::from_secs(2));
     }));
     let _bound = TestBound::arm_for(Duration::from_millis(300));
-    std::thread::sleep(Duration::from_secs(3600));
+    std::thread::sleep(Duration::from_secs(SLEEPER_SECS));
 }
 
 /// Fill the pipe behind fd 2 through a second, non-blocking open file
@@ -1250,7 +1312,39 @@ fn bound_probe_blocked() {
     let _bound = TestBound::arm_for(Duration::from_millis(300));
     let (armed, _deadline) = command_child(&mut sleeper()).expect("spawn the armed sleeper");
     record_child(armed.id());
-    std::thread::sleep(Duration::from_secs(3600));
+    std::thread::sleep(Duration::from_secs(SLEEPER_SECS));
+}
+
+/// The non-UTF-8 sweep probe: one sleeper whose process name is not
+/// UTF-8, then a 300 ms bound. The expiring bound's sweep must find
+/// and kill the sleeper.
+#[test]
+#[ignore = "run only under deadline::subreaper_run"]
+fn bound_probe_odd_name() {
+    if !probe_enabled() {
+        return;
+    }
+    // Never waited on here, as in `bound_probe`.
+    #[allow(clippy::zombie_processes)]
+    let child = spawn_odd_name_sleeper();
+    record_child(child.id());
+    let _bound = TestBound::arm_for(Duration::from_millis(300));
+    std::thread::sleep(Duration::from_secs(SLEEPER_SECS));
+}
+
+/// The non-UTF-8 orphan probe: one sleeper whose process name is not
+/// UTF-8, left running when the probe returns. No bound expires; the
+/// intermediate must find, kill and reap the orphan at its limit.
+#[test]
+#[ignore = "run only under deadline::subreaper_run"]
+fn orphan_probe_odd_name() {
+    if !probe_enabled() {
+        return;
+    }
+    // Never waited on: it must outlive this probe.
+    #[allow(clippy::zombie_processes)]
+    let child = spawn_odd_name_sleeper();
+    record_child(child.id());
 }
 
 /// `test_bound_self_test` (gate, rt): the probe aborts, both its
@@ -1284,6 +1378,58 @@ pub fn bound_self_test() {
     );
 }
 
+/// The one child record of a non-UTF-8 probe, after its status.
+fn odd_name_child<'a>(r: &'a SubreaperReport, what: &str, want: &str) -> &'a ChildRecord {
+    assert_eq!(r.children.len(), 1, "expected one child record:\n{}", r.raw);
+    let c = &r.children[0];
+    assert_eq!(
+        c.status, want,
+        "expected the non-UTF-8 {what} `{want}`:\n{}",
+        r.raw
+    );
+    let pid: i32 = c.pid.parse().expect("the child's pid");
+    let start: u64 = c
+        .start
+        .parse()
+        .unwrap_or_else(|_| panic!("expected the child listed with its start time:\n{}", r.raw));
+    assert_ne!(
+        proc_start(pid),
+        Some(start),
+        "child {pid} (start {start}) is still alive:\n{}",
+        r.raw
+    );
+    c
+}
+
+/// `test_bound_sweeps_non_utf8_child` (gate): a child whose process
+/// name is not UTF-8 is still found and killed by the expiring bound's
+/// sweep, and it is gone afterwards.
+pub fn odd_name_sweep_test() {
+    let r = subreaper_run("deadline::bound_probe_odd_name", &[], StderrMode::Drain);
+    assert_eq!(
+        r.probe, "signaled 6",
+        "expected `probe signaled 6`:\n{}",
+        r.raw
+    );
+    odd_name_child(&r, "child", "signaled 9");
+    let line = "TEST BOUND: deadline::bound_probe_odd_name still running after 300 ms; \
+                swept 1 children; aborting";
+    assert!(
+        r.stderr.iter().any(|l| l == line),
+        "expected the exact line `{line}`:\n{}",
+        r.raw
+    );
+}
+
+/// `harness_kills_non_utf8_orphan` (gate): an orphan whose process
+/// name is not UTF-8 is found, killed and reaped by the intermediate,
+/// and it is gone afterwards.
+pub fn odd_name_orphan_test() {
+    let r = subreaper_run("deadline::orphan_probe_odd_name", &[], StderrMode::Drain);
+    assert_eq!(r.probe, "exited 0", "expected `probe exited 0`:\n{}", r.raw);
+    odd_name_child(&r, "orphan", "killed-by-harness");
+}
+
 /// The kinds of `tests/*.rs` file in [`bound_inventory`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BoundRole {
@@ -1299,11 +1445,45 @@ const BOUND_FIRST_LINES: [&str; 2] = [
     "let _bound = deadline::TestBound::arm();",
 ];
 
+/// Classify one source line for the census. `Some(true)`: the one
+/// supported test attribute, `#[test]` alone on its line, optionally
+/// followed by a `//` comment. `Some(false)`: any other attribute
+/// line naming a test attribute (a path whose last segment contains
+/// `test`, such as `#[test] fn f() {}`, `#[ignore] #[test]`,
+/// `# [test]` or `#[tokio::test]`); the census refuses it rather than
+/// skip a test it cannot follow. `None`: anything else.
+fn test_attribute(line: &str) -> Option<bool> {
+    let code = line.trim().split("//").next().unwrap_or("").trim_end();
+    if !code.starts_with('#') {
+        return None;
+    }
+    if code == "#[test]" {
+        return Some(true);
+    }
+    let squeezed: String = code.chars().filter(|c| !c.is_whitespace()).collect();
+    let names_test = squeezed.split("#[").skip(1).any(|attr| {
+        let path = attr.split(['(', ')', ']', '=']).next().unwrap_or("");
+        path.rsplit("::").next().unwrap_or("").contains("test")
+    });
+    names_test.then_some(false)
+}
+
 /// The bound census (I1-H H2d): every `#[test]` fn in `src` must
 /// start, after blank and `//` lines, with exactly one of
 /// `BOUND_FIRST_LINES`, except the pure tests named in `exempt`
-/// (each of which must exist).
+/// (each of which must exist). Unsupported test attribute forms are
+/// refused (see [`test_attribute`]).
 pub fn bound_census(src: &str, file: &str, exempt: &[&str]) {
+    let bad = census_violations(src, file, exempt);
+    assert!(
+        bad.is_empty(),
+        "bound census: tests without a TestBound:\n{}",
+        bad.join("\n")
+    );
+}
+
+/// The census's findings for `src`, one line each.
+fn census_violations(src: &str, file: &str, exempt: &[&str]) -> Vec<String> {
     let lines: Vec<&str> = src.lines().collect();
     let skipped = |l: &str| {
         let t = l.trim();
@@ -1313,9 +1493,21 @@ pub fn bound_census(src: &str, file: &str, exempt: &[&str]) {
     let mut seen = BTreeSet::new();
     let mut i = 0;
     while i < lines.len() {
-        if lines[i].trim() != "#[test]" {
-            i += 1;
-            continue;
+        match test_attribute(lines[i]) {
+            Some(true) => {}
+            Some(false) => {
+                bad.push(format!(
+                    "{file}:{}: unsupported test attribute `{}`",
+                    i + 1,
+                    lines[i].trim()
+                ));
+                i += 1;
+                continue;
+            }
+            None => {
+                i += 1;
+                continue;
+            }
         }
         let mut j = i + 1;
         while j < lines.len() && lines[j].trim_start().starts_with("#[") {
@@ -1353,11 +1545,49 @@ pub fn bound_census(src: &str, file: &str, exempt: &[&str]) {
             bad.push(format!("{file}: exempt test {e} not found"));
         }
     }
+    bad
+}
+
+/// `bound_census_refuses_unsupported_attributes` (gate): negative
+/// witnesses for the census parser on synthetic sources. A test
+/// whose `#[test]` carries a trailing comment is counted (and
+/// refused when unbound, accepted when armed); every other test
+/// attribute form is refused.
+pub fn bound_census_witness() {
+    let body = |first: &str| format!("fn t() {{\n    {first}\n}}\n");
+    let unbound = format!("#[test] // regression case\n{}", body("loop {}"));
+    let v = census_violations(&unbound, "witness.rs", &[]);
     assert!(
-        bad.is_empty(),
-        "bound census: tests without a TestBound:\n{}",
-        bad.join("\n")
+        v.iter().any(|l| l.contains("t: first body line `loop {}`")),
+        "a `#[test] // comment` test without a bound must be counted and refused: {v:?}"
     );
+    let armed = format!(
+        "#[test] // regression case\n{}",
+        body("let _bound = deadline::TestBound::arm();")
+    );
+    let v = census_violations(&armed, "witness.rs", &[]);
+    assert!(
+        v.is_empty(),
+        "an armed `#[test] // comment` test must be accepted: {v:?}"
+    );
+    for form in [
+        "#[test] fn t() {}",
+        "#[test] #[ignore]",
+        "#[ignore] #[test]",
+        "# [test]",
+        "#[tokio::test]",
+        "#[test_case(1)]",
+    ] {
+        let src = format!(
+            "{form}\n{}",
+            body("let _bound = deadline::TestBound::arm();")
+        );
+        let v = census_violations(&src, "witness.rs", &[]);
+        assert!(
+            v.iter().any(|l| l.contains("unsupported test attribute")),
+            "`{form}` must be refused: {v:?}"
+        );
+    }
 }
 
 /// The bound inventory (gate): `tests/*.rs` must equal the reviewed
@@ -1371,6 +1601,16 @@ pub fn bound_inventory(table: &[(&str, BoundRole)]) {
         .filter(|n| n.ends_with(".rs"))
         .collect();
     found.sort();
+    let nested: Vec<String> = std::fs::read_dir(&dir)
+        .expect("list tests/")
+        .flatten()
+        .filter(|e| e.path().join("main.rs").exists())
+        .filter_map(|e| e.file_name().into_string().ok())
+        .collect();
+    assert!(
+        nested.is_empty(),
+        "bound inventory: test targets outside tests/*.rs (tests/<dir>/main.rs): {nested:?}"
+    );
     let mut listed: Vec<String> = table.iter().map(|(f, _)| (*f).to_owned()).collect();
     listed.sort();
     assert_eq!(
