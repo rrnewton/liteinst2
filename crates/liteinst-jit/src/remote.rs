@@ -25,11 +25,13 @@
 //! queues, orders, and builds the frame at the recovered
 //! source PC, the handler runs translated, and the guest
 //! restorer's `rt_sigreturn` resumes in cache.
+//! I1-H H2b also delivers async stops in the common exit of a
+//! RETURN, SYSCALL, NONDET or POLL exit (W1), and during the
+//! single-stepped original cpuid (W3).
 //! Every other delivery shape still stops as a recovered
-//! outcome by name — including async stops in common-exit
-//! spilled stages and at generated PCs with no pcmap entry
-//! (entry-loader bridge class), which arbitrary-phase
-//! delivery here explicitly does not cover; no transparency
+//! outcome by name — including async stops in the common exit
+//! of an INDIRECT exit, before a stepped syscall's entry, and
+//! at generated PCs with no pcmap entry; no transparency
 //! claim is made beyond the tested shapes. Indirect resolution, threads, and exec
 //! successors stay refused exactly as in-process. This module
 //! is a substrate for later P1b stages, not a public API
@@ -295,6 +297,20 @@ impl SignalRegistry {
     fn set_altstack(&mut self, alt: GuestAltstack) {
         self.altstack = alt;
     }
+}
+
+/// Outcome of one single-stepped original instruction
+/// (I1-H H2b, W3).
+enum OrigStep {
+    Done(GuestState),
+    /// A signal-delivery stop presented before the instruction
+    /// ran, proven by `step_original`'s provenance guard; the
+    /// child is still stopped there and the instruction has not
+    /// retired.
+    Interrupted {
+        sig: i32,
+        addr: u64,
+    },
 }
 
 /// Outcome of one stepped guest syscall.
@@ -877,10 +893,46 @@ fn classify_stop(
     }
 }
 
-/// Siginfo cause for a stop, as `(si_signo, si_code, si_addr)`.
-/// Syscall stops carry no siginfo and return `None` by design;
-/// any other stop without retrievable siginfo also returns
-/// `None` and classifies `Unexpected` (fail closed).
+/// Resume entry for an asynchronous stop at generated PC
+/// `gen_pc` recovered to source PC `src`: `Some(None)` =
+/// block-start entry through the block index,
+/// `Some(Some(gen))` = exact mid-block re-entry, `None` =
+/// not resumable (the recovered stop stays a named fault).
+///
+/// Generated PCs with no PC-map entry (recovered src 0) are
+/// never resumable. A common-exit stop (I1-H H2b, W1) is
+/// resumable only for the exit kinds whose source state
+/// recovery makes exact: RETURN, SYSCALL and NONDET resume at
+/// `exit_src` (the terminator has not run; the exit stub's
+/// pristine entry, or the block index, re-runs it once), and
+/// POLL resumes at its block start. INDIRECT (refused right
+/// after the exit anyway), 0 and unknown kinds keep the named
+/// refusal: every `jmp CommonExit` follows a stub that has
+/// just written its kind, so the last two are unreachable.
+fn resume_gen(t: &Translation, gen_pc: u64, src: u64, kind: u64) -> Option<Option<u64>> {
+    let entry = t.pcmap.lookup(gen_pc)?;
+    if matches!(entry.recovery, MapRecovery::CommonExit { .. })
+        && !matches!(
+            kind,
+            exit_kind::RETURN | exit_kind::SYSCALL | exit_kind::NONDET | exit_kind::POLL
+        )
+    {
+        return None;
+    }
+    src_resume_entry(t, src)
+}
+
+/// Resume entry for source PC `src`: the block index when
+/// `src` is a block start, else the exact mid-block re-entry
+/// from `gen_for_midblock`, else `None`. The block index is
+/// checked first, like `sigreturn_resume` does.
+fn src_resume_entry(t: &Translation, src: u64) -> Option<Option<u64>> {
+    if t.block_gen.contains_key(&src) {
+        return Some(None);
+    }
+    gen_for_midblock(t, src).map(Some)
+}
+
 /// Generated entry that re-executes exactly the source
 /// instruction at `src` from its pre-insn state, for a
 /// mid-block resume: a copied insn start, a pristine direct
@@ -888,30 +940,6 @@ fn classify_stop(
 /// Block starts are served by `block_gen` and return `None`
 /// here only in the sense that callers check those first;
 /// machinery interiors have no exact re-entry and miss.
-/// Resume entry for an asynchronous stop at generated PC
-/// `gen_pc` recovered to source PC `src`: `Some(None)` =
-/// block-start entry through the block index,
-/// `Some(Some(gen))` = exact mid-block re-entry, `None` =
-/// not resumable in I1-E. Common-exit machinery stops and
-/// generated PCs with no pcmap entry at all (entry-loader
-/// bridge / executor-error stops, recovered src 0) are
-/// excluded here by construction: arbitrary-phase delivery
-/// in this stage means every *guest-instruction* phase
-/// (copied, count/poll stubs, call and exit sequences via
-/// their recovered successors), not the dispatcher's own
-/// epilogue or unmapped entry bytes. Those keep the
-/// recovered named stop.
-fn resume_gen(t: &Translation, gen_pc: u64, src: u64) -> Option<Option<u64>> {
-    let entry = t.pcmap.lookup(gen_pc)?;
-    if matches!(entry.recovery, MapRecovery::CommonExit { .. }) {
-        return None;
-    }
-    if t.block_gen.contains_key(&src) {
-        return Some(None);
-    }
-    gen_for_midblock(t, src).map(Some)
-}
-
 fn gen_for_midblock(t: &Translation, src: u64) -> Option<u64> {
     t.pcmap.entries().iter().find_map(|e| match e.recovery {
         MapRecovery::Copied if e.src_pc == src => Some(e.gen_start),
@@ -952,6 +980,10 @@ fn set_siginfo_addr(pid: i32, addr: u64) -> Result<(), Refuse> {
     )
 }
 
+/// Siginfo cause for a stop, as `(si_signo, si_code, si_addr)`.
+/// Syscall stops carry no siginfo and return `None` by design;
+/// any other stop without retrievable siginfo also returns
+/// `None` and classifies `Unexpected` (fail closed).
 fn stop_siginfo(pid: i32, sig: i32) -> Option<(i32, i32, u64)> {
     if sig == (libc::SIGTRAP | 0x80) {
         return None;
@@ -1014,6 +1046,23 @@ pub struct ArrivalSeam {
     pub gen_pc: u64,
     pub hit: u64,
     pub sig: i32,
+}
+
+/// Test seam (I1-H H2b, W3 provenance guard): perturb one
+/// comparand of `step_original`'s guard, never the child's
+/// registers. A real stop can never fail the guard (the kernel
+/// dequeues the step's synchronous SIGTRAP ahead of any
+/// asynchronous signal), so only this seam can show that each
+/// conjunct refuses by name.
+#[cfg(feature = "test-seams")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum W3Perturb {
+    /// The PC the stop's RIP is compared against.
+    Pc,
+    /// One GPR (rbx) of the recorded pre-step copy.
+    Gpr,
+    /// RFLAGS (CF) of the recorded pre-step copy.
+    Rflags,
 }
 
 /// One genuine delivery made from a generated-phase stop,
@@ -1139,10 +1188,10 @@ pub struct RemoteExecutable {
     #[cfg(feature = "test-seams")]
     pre_redirected_step_signal: Option<i32>,
     /// Test seams, inert unless set: see
-    /// `set_pre_original_step_signal_for_test` and
-    /// `set_arrival_for_test`.
+    /// `set_pre_original_step_signal_for_test` (one-shot: taken
+    /// by the first original step) and `set_arrival_for_test`.
     #[cfg(feature = "test-seams")]
-    pre_original_step_signal: Option<i32>,
+    pre_original_step_signal: core::cell::Cell<Option<i32>>,
     #[cfg(feature = "test-seams")]
     arrival: Option<ArrivalSeam>,
     #[cfg(feature = "test-seams")]
@@ -1157,6 +1206,10 @@ pub struct RemoteExecutable {
     /// `set_zero_raw_poll_at_restore_for_test`.
     #[cfg(feature = "test-seams")]
     zero_raw_poll_at_restore: bool,
+    /// Test seam, inert unless set: see
+    /// `set_w3_guard_perturb_for_test`.
+    #[cfg(feature = "test-seams")]
+    w3_guard_perturb: Option<W3Perturb>,
 }
 
 impl RemoteExecutable {
@@ -1333,7 +1386,7 @@ impl RemoteExecutable {
             #[cfg(feature = "test-seams")]
             pre_redirected_step_signal: None,
             #[cfg(feature = "test-seams")]
-            pre_original_step_signal: None,
+            pre_original_step_signal: core::cell::Cell::new(None),
             #[cfg(feature = "test-seams")]
             arrival: None,
             #[cfg(feature = "test-seams")]
@@ -1344,6 +1397,8 @@ impl RemoteExecutable {
             nspid_status_override: None,
             #[cfg(feature = "test-seams")]
             zero_raw_poll_at_restore: false,
+            #[cfg(feature = "test-seams")]
+            w3_guard_perturb: None,
         })
     }
 
@@ -1758,13 +1813,18 @@ impl RemoteExecutable {
 
     /// Test seam (I1-H W3 evidence): when set, the tracer sends
     /// `sig` to its own traced child immediately before it
-    /// single-steps an original (nondeterministic) instruction,
-    /// so an asynchronous stop lands deterministically in that
-    /// step. Inert (`None`) by default.
+    /// single-steps the next original (nondeterministic)
+    /// instruction, so an asynchronous stop lands
+    /// deterministically in that step. One-shot: the first
+    /// original step takes it. Since I1-H H2b that stop is
+    /// delivered and the step retried, so a persistent seam
+    /// would re-signal every retry without end (the I1-H H2b
+    /// record pass hung on exactly that). Inert (`None`) by
+    /// default.
     #[cfg(feature = "test-seams")]
     #[doc(hidden)]
     pub fn set_pre_original_step_signal_for_test(&mut self, sig: Option<i32>) {
-        self.pre_original_step_signal = sig;
+        self.pre_original_step_signal.set(sig);
     }
 
     /// Test seam: arm (or clear) the [`ArrivalSeam`] for the
@@ -1783,6 +1843,13 @@ impl RemoteExecutable {
     #[cfg(feature = "test-seams")]
     #[doc(hidden)]
     pub fn set_poll_budget_for_test(&mut self, budget: Option<u64>) {
+        // A budget of 0 would hand every poll a raw 0 to `dec`
+        // (wrap to 2^64-1) and break the invariant the mid-block
+        // restore check relies on (I1-H H2b, P3-5): refuse it.
+        assert!(
+            budget != Some(0),
+            "poll budget seam: 0 breaks the raw-0-only-on-the-poll-path invariant"
+        );
         self.poll_budget = budget;
     }
 
@@ -1807,6 +1874,16 @@ impl RemoteExecutable {
         self.zero_raw_poll_at_restore = on;
     }
 
+    /// Test seam (I1-H H2b): perturb one comparand of the W3
+    /// provenance guard in `step_original` (see [`W3Perturb`]),
+    /// so the guard's named refusal can be shown per conjunct.
+    /// Inert (`None`) by default.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn set_w3_guard_perturb_for_test(&mut self, perturb: Option<W3Perturb>) {
+        self.w3_guard_perturb = perturb;
+    }
+
     /// The poll budget a context resumed after a delivery starts
     /// with (I1-H H2a). The poll stub is
     /// `dec qword [poll]; jnz` and exits to the dispatcher's
@@ -1821,9 +1898,10 @@ impl RemoteExecutable {
     ///
     /// Only deliveries take it. The sigreturn re-base (a
     /// mid-block resume) refuses a raw 0 by name instead: every
-    /// stop with a raw budget of 0 lies on the poll path, whose
-    /// PC-map entries recover to the block start, so a mid-block
-    /// restore of a 0 is a broken invariant, not a case to repair.
+    /// stop with a raw budget of 0 lies on the poll path (PollStub,
+    /// PollExitStub, or a POLL-kind common exit since I1-H H2b),
+    /// all recovering to the block start, so a mid-block restore
+    /// of a 0 is a broken invariant, not a case to repair.
     fn resume_budget(&self, raw: u64) -> u64 {
         if raw == 0 { self.poll_budget() } else { raw }
     }
@@ -2661,17 +2739,35 @@ impl RemoteExecutable {
     }
 
     /// Single-step one original instruction at `pc` in the child
-    /// (nondet pass-through). Returns the resulting guest state.
+    /// (nondet pass-through). Returns the resulting guest state,
+    /// or `OrigStep::Interrupted` when the kernel presented an
+    /// asynchronous signal-delivery stop before the instruction
+    /// ran (I1-H H2b, W3).
+    ///
+    /// Provenance guard for `Interrupted`, all three of:
+    /// (g1) the stop's RIP is `pc`; (g2) every GPR equals the
+    /// recorded copy; (g3) RFLAGS equals the recorded copy
+    /// exactly. The recorded copy is the state written just
+    /// below, kept in a local: never a re-read of the child's
+    /// registers (I1-H H2 note c). There is no TF exception:
+    /// the kernel's `get_flags` hides a ptrace-forced TF, so a
+    /// TF difference is the guest's own and refuses by name.
+    /// Any other asynchronous stop is that named refusal.
     fn step_original(
         &self,
         mut state: GuestState,
         pc: u64,
         data: &JitData,
-    ) -> Result<GuestState, RunError> {
+    ) -> Result<OrigStep, RunError> {
         state.rip = pc;
         self.set_guest_regs(&state)?;
+        let recorded = state;
         #[cfg(feature = "test-seams")]
-        if let Some(sig) = self.pre_original_step_signal {
+        let (guard_pc, recorded) = self.perturb_w3_guard(pc, recorded);
+        #[cfg(not(feature = "test-seams"))]
+        let guard_pc = pc;
+        #[cfg(feature = "test-seams")]
+        if let Some(sig) = self.pre_original_step_signal.take() {
             // SAFETY: signalling this tracer's own traced child.
             if unsafe { libc::kill(self.guard.pid, sig) } != 0 {
                 return Err(remote_err("test pre-original-step signal").into());
@@ -2702,12 +2798,54 @@ impl RemoteExecutable {
             si.map(|(signo, code, _)| (signo, code)),
             false,
         ) {
-            StopClass::StepComplete => Ok(regs_to_state(&regs)),
-            class @ (StopClass::Async | StopClass::SourceFault) => Err(RunError::Fault(Box::new(
-                self.source_fault(class, sig, si.map_or(0, |s| s.2), pc, &regs, data),
-            ))),
+            StopClass::StepComplete => Ok(OrigStep::Done(regs_to_state(&regs))),
+            StopClass::Async => {
+                let got = regs_to_state(&regs);
+                let rip_ok = got.rip == guard_pc;
+                let gprs_ok = GuestState {
+                    rip: 0,
+                    rflags: 0,
+                    ..got
+                } == GuestState {
+                    rip: 0,
+                    rflags: 0,
+                    ..recorded
+                };
+                let rflags_ok = got.rflags == recorded.rflags;
+                if rip_ok && gprs_ok && rflags_ok {
+                    Ok(OrigStep::Interrupted {
+                        sig,
+                        addr: si.map_or(0, |s| s.2),
+                    })
+                } else {
+                    Err(self
+                        .unexpected_stop("original step: signal stop not at the pre-step state"))
+                }
+            }
+            StopClass::SourceFault => Err(RunError::Fault(Box::new(self.source_fault(
+                StopClass::SourceFault,
+                sig,
+                si.map_or(0, |s| s.2),
+                pc,
+                &regs,
+                data,
+            )))),
             _ => Err(self.unexpected_stop("unexpected original-step stop provenance")),
         }
+    }
+
+    /// Test seam (I1-H H2b): apply `set_w3_guard_perturb_for_test`
+    /// to the W3 guard's comparands only: the PC the stop's RIP
+    /// is compared against, or the recorded pre-step copy.
+    #[cfg(feature = "test-seams")]
+    fn perturb_w3_guard(&self, pc: u64, mut recorded: GuestState) -> (u64, GuestState) {
+        match self.w3_guard_perturb {
+            Some(W3Perturb::Pc) => return (pc ^ 1, recorded),
+            Some(W3Perturb::Gpr) => recorded.rbx ^= 1,
+            Some(W3Perturb::Rflags) => recorded.rflags ^= 1,
+            None => {}
+        }
+        (pc, recorded)
     }
 
     /// Execute one genuine guest syscall at `pc` via
@@ -2990,10 +3128,12 @@ impl RemoteExecutable {
                     // I1-E: block-start recovery resumes through
                     // the block index; any other recovered PC
                     // needs an exact mid-block generated
-                    // re-entry. Common-exit machinery stops
-                    // and unmapped generated PCs are excluded
-                    // by `resume_gen` and keep the outcome below.
-                    let resume = resume_gen(t, gen_pc, recovered.src_pc);
+                    // re-entry. Unmapped generated PCs, and
+                    // common-exit stops of an INDIRECT (or
+                    // unknown) exit, are excluded by
+                    // `resume_gen` and keep the outcome below
+                    // (I1-H H2b, W1).
+                    let resume = resume_gen(t, gen_pc, recovered.src_pc, data.exit_kind);
                     let gen_mid = resume.unwrap_or_default();
                     let resumable = resume.is_some();
                     let action = self.delivery_action(sig, &active, false).filter(|_| {
@@ -3129,15 +3269,31 @@ impl RemoteExecutable {
                                 frame.raw_branches + (tot_branches - frame.resolved_branches);
                             tot_instructions = frame.raw_instructions
                                 + (tot_instructions - frame.resolved_instructions);
-                            // A raw budget of 0 exists only on the
-                            // poll path, whose PC-map entries
-                            // (PollStub, PollExitStub) recover to
-                            // the block start, which resumes
-                            // through the block index, never a
-                            // mid-block re-entry. A 0 here is a
-                            // broken invariant: refuse by name
-                            // rather than reset it, which would
-                            // hide the bug (I1-H H2a, coord7).
+                            // Unreachable with a raw 0 on any real
+                            // path (I1-H H2a rule 2; proof extended
+                            // in H2b, P3-5):
+                            // (A) `sigreturn_resume` gives a
+                            //     `gen_override` only for a resume
+                            //     PC that is not a block start; that
+                            //     alone blocks every block-start PC.
+                            // (B) `gen_mid` is set only for a
+                            //     delivery's first frame, and every
+                            //     caller tries the block index first.
+                            // (C) `raw_poll` is the delivering
+                            //     stop's `data.poll_remaining`.
+                            // (D) That is 0 only from the poll
+                            //     stub's `dec` to the next reset;
+                            //     the only stops there are PollStub,
+                            //     PollExitStub and a POLL-kind
+                            //     common exit, all recovering to the
+                            //     block start. Other exits hold >= 1
+                            //     (the I1-G2 syscall-exit delivery
+                            //     writes no budget and keeps that).
+                            // (E) Every poll stub's block is a
+                            //     `block_gen` key (translate.rs).
+                            // A 0 here is a broken invariant: refuse
+                            // by name rather than reset it, which
+                            // would hide the bug (coord7).
                             #[cfg(feature = "test-seams")]
                             let raw_poll = if self.zero_raw_poll_at_restore {
                                 0
@@ -3370,8 +3526,63 @@ impl RemoteExecutable {
                         }
                         .into());
                     }
-                    state = self.step_original(state, data.exit_src, &data)?;
-                    tot_instructions += 1;
+                    match self.step_original(state, data.exit_src, &data)? {
+                        OrigStep::Done(stepped) => {
+                            state = stepped;
+                            tot_instructions += 1;
+                        }
+                        OrigStep::Interrupted { sig, addr } => {
+                            // I1-H H2b, W3: a signal arrived before
+                            // the cpuid ran. Recover exactly what a
+                            // NONDET common-exit stop recovers (the
+                            // source state at the cpuid, nothing
+                            // credited for it) and deliver through
+                            // the Async arm's path; after sigreturn
+                            // the exit stub re-exits and the cpuid
+                            // is stepped once. The raw poll budget
+                            // here is at least 1 (the block body was
+                            // entered past a non-zero `jnz`).
+                            let src = data.exit_src;
+                            let recovered = crate::recovery::RecoveredStop {
+                                kind: crate::recovery::FaultKind::AsyncSignal,
+                                src_pc: src,
+                                addr,
+                                signum: sig,
+                                state: GuestState { rip: src, ..state },
+                                branches: data.branch_count,
+                                instructions: crate::recovery::instructions_retired_at(
+                                    t,
+                                    self.profile,
+                                    data.instruction_count,
+                                    src,
+                                ),
+                            };
+                            let resume = src_resume_entry(t, src);
+                            let action = self
+                                .delivery_action(sig, &active, false)
+                                .filter(|_| resume.is_some());
+                            let Some(action) = action else {
+                                return Err(RunError::Fault(Box::new(Self::fault_from(recovered))));
+                            };
+                            // Original step: no generated PC.
+                            #[cfg(feature = "test-seams")]
+                            self.record_seam_delivery(sig, 0, &recovered);
+                            let (handler_state, frames) = self.deliver_signal(
+                                action,
+                                &recovered,
+                                &data,
+                                resume.unwrap_or_default(),
+                                &active,
+                            )?;
+                            active.extend(frames);
+                            state = handler_state;
+                            exits += 1;
+                            poll_remaining = self.resume_budget(data.poll_remaining);
+                            tot_branches = recovered.branches;
+                            tot_instructions = recovered.instructions;
+                            continue;
+                        }
+                    }
                 }
                 other => {
                     return Err(Refuse::Unrelocatable {
@@ -3714,11 +3925,12 @@ mod tests {
         }
         assert!(checked > 0, "fixture has mid-block insns");
         assert_eq!(gen_for_midblock(&t, 0xdead_0000), None);
-        // Named exclusions by construction: a common-exit
-        // machinery stop never resumes (even for a source PC
-        // that otherwise has an exact re-entry), and an
+        // Named exclusions: a common-exit stop resumes only for
+        // RETURN, SYSCALL, NONDET and POLL exits (I1-H H2b, W1),
+        // never for INDIRECT, 0 or an unknown kind, even for a
+        // source PC that otherwise has an exact re-entry; an
         // unmapped generated PC (entry-loader bridge class)
-        // never resumes.
+        // never resumes, whatever the kind.
         let common = t
             .pcmap
             .entries()
@@ -3738,13 +3950,47 @@ mod tests {
             }
         }
         let any_mid = any_mid.expect("a mid-block insn");
-        assert_eq!(resume_gen(&t, common.gen_start, any_mid), None);
-        assert_eq!(resume_gen(&t, 0xdead_0000, any_mid), None);
         let copied_gen = gen_for_midblock(&t, any_mid).expect("midblock gen");
-        assert_eq!(resume_gen(&t, copied_gen, any_mid), Some(Some(copied_gen)));
         let block_src = *t.block_gen.keys().next().expect("a block");
         let block_gen_pc = t.block_gen[&block_src];
-        assert_eq!(resume_gen(&t, block_gen_pc, block_src), Some(None));
+        for kind in [exit_kind::INDIRECT, 0, 99] {
+            assert_eq!(
+                resume_gen(&t, common.gen_start, any_mid, kind),
+                None,
+                "kind {kind}"
+            );
+            assert_eq!(
+                resume_gen(&t, common.gen_start, block_src, kind),
+                None,
+                "kind {kind}"
+            );
+        }
+        for kind in [
+            exit_kind::RETURN,
+            exit_kind::SYSCALL,
+            exit_kind::NONDET,
+            exit_kind::POLL,
+        ] {
+            assert_eq!(
+                resume_gen(&t, common.gen_start, any_mid, kind),
+                Some(Some(copied_gen)),
+                "kind {kind}"
+            );
+            assert_eq!(
+                resume_gen(&t, common.gen_start, block_src, kind),
+                Some(None),
+                "kind {kind}"
+            );
+            assert_eq!(resume_gen(&t, common.gen_start, 0xdead_0000, kind), None);
+        }
+        for kind in [0, exit_kind::RETURN, exit_kind::INDIRECT] {
+            assert_eq!(resume_gen(&t, 0xdead_0000, any_mid, kind), None);
+            assert_eq!(
+                resume_gen(&t, copied_gen, any_mid, kind),
+                Some(Some(copied_gen))
+            );
+            assert_eq!(resume_gen(&t, block_gen_pc, block_src, kind), Some(None));
+        }
     }
 
     #[test]
