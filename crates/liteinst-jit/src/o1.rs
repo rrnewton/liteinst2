@@ -576,6 +576,25 @@ pub struct O1Delivery {
     pub branches: u64,
 }
 
+/// One step O1-S took while injecting a signal (I1-H H2b, P3-A),
+/// recorded whatever the step turned out to be: a handler entry,
+/// or a retirement when the kernel dropped the signal (ignored
+/// disposition). Records only; O1-S behaves the same.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct O1Injection {
+    pub signo: i32,
+    /// The PC before the step.
+    pub rip: u64,
+    /// Retired instructions before the step.
+    pub instructions: u64,
+    /// The stop's si_code (SIGTRAP 5 at a handler entry,
+    /// TRAP_TRACE 2 for an ordinary step).
+    pub si_code: i32,
+    /// The handler-argument register shape after the step, the
+    /// same value the handler-entry check uses.
+    pub entry_shape: bool,
+}
+
 /// How an O1-S run ended.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum O1sEnd {
@@ -603,6 +622,8 @@ pub struct O1sOutcome {
     /// Final registers (meaningful for `Returned` and `Trap`).
     pub state: GuestState,
     pub deliveries: Vec<O1Delivery>,
+    /// Every step taken with a signal injected, in order.
+    pub injections: Vec<O1Injection>,
     /// Whether the arrival signal was sent (its `k` was reached).
     pub arrival_sent: bool,
     /// The 8 KiB destination buffer at the end (empty when the
@@ -694,6 +715,7 @@ pub fn run_o1s(
 
     let (mut branches, mut instructions) = (0u64, 0u64);
     let mut deliveries: Vec<O1Delivery> = Vec::new();
+    let mut injections: Vec<O1Injection> = Vec::new();
     let mut arrival_sent = false;
     // Signal to inject with the next step (0 = none), and the
     // syscall `(pc, orig_rax)` whose restart code awaits its
@@ -778,6 +800,15 @@ pub fn run_o1s(
              {si_code}, not SIGTRAP ({SI_CODE_HANDLER_ENTRY})",
             cur.rip
         );
+        if delivering != 0 {
+            injections.push(O1Injection {
+                signo: delivering,
+                rip: cur.rip,
+                instructions,
+                si_code,
+                entry_shape,
+            });
+        }
         if handler_entry {
             let mut frame = [0u8; 8 * 18];
             assert!(
@@ -903,6 +934,7 @@ pub fn run_o1s(
         instructions,
         state: regs_to_state(&final_regs),
         deliveries,
+        injections,
         arrival_sent,
         dst_bytes,
     }

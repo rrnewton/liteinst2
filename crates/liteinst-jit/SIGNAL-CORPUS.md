@@ -1,4 +1,4 @@
-# Signal corpus (frozen at I1-H H1; rows added in H2a)
+# Signal corpus (frozen at I1-H H1; rows added in H2a and H2b)
 
 Every signal fixture of P1b I1-C through I1-G2, plus the I1-H
 fixtures, under a stable ID. Each row gives the rule-matrix cell
@@ -58,7 +58,14 @@ inputs").
   branches)`. O1-S then sends the same signal after exactly
   `instructions` retired steps. "Equal" means exactly these
   comparisons, with addresses as (region, offset) and generated
-  arena addresses never normalized (one leaking is a mismatch):
+  arena addresses never normalized (one leaking is a mismatch).
+  Since H2b the normalized words are tagged (raw, region offset,
+  own pid), so a raw value never equals a token; the child's own
+  pid is tagged only in RDI where a fixture's `getpid` leaves it,
+  and in a self-sent siginfo sender word named by exact buffer
+  position. When a run makes several deliveries, both engines'
+  delivery lists must match exactly (signal numbers in order) and
+  each pair is compared as below, from its handler's own log slot:
   - retired instructions and conditional branches at delivery;
   - O1-S's frame RIP against the recovered source PC;
   - what the handler logged from its frame: siginfo words 0-3
@@ -79,10 +86,16 @@ inputs").
   legitimately (`trapno`, `err` and `cr2` describe the last
   debug exception), and the fixtures use no FP state.
 
-  A W1 refusal is not delivered, but its recovered stop is still
-  checked: O1-S signalled after the recovered retired count must
-  deliver once, with the same totals, at a frame RIP equal to the
-  recovered source PC.
+  A common-exit refusal (since H2b only for an INDIRECT or unknown
+  exit kind) is not delivered, but its recovered stop is still
+  checked wherever O1-S can run the fixture: O1-S signalled after
+  the recovered retired count must deliver once, with the same
+  totals, at a frame RIP equal to the recovered source PC. The
+  INDIRECT fixture is the one exception: the O1 oracle cannot
+  verify an indirect `jmp`, so that refusal is checked against
+  the fixture's `jmp` offset and literal retired totals counted
+  from the fixture, with no O1-S leg (approved by coord7 in the
+  H2b review, P3-2).
 
   **Arrival instance (H2a).** The survey's counting run records,
   at every hit of every PC-map entry, what recovery names there:
@@ -111,7 +124,12 @@ inputs").
   re-injects an ignored SIGUSR1 while RDI is 10 and RDX is RSP + 8
   as ordinary values; the kernel discards it, the stepped `nop`
   retires with si_code TRAP_TRACE (2), and O1-S must count it, not
-  record a delivery (review rev-h2a-cx).
+  record a delivery (review rev-h2a-cx). Since H2b O1-S records
+  every step it takes with a signal injected (`injections`), and
+  that test asserts the step itself first: the handler-entry
+  register shape, then si_code 2, then the signal and the arrival
+  count, so an arrival moved off the shaped step fails by name
+  instead of passing vacuously (review coord7 P3-A).
 
 ### Known common-mode risk (coord7 Q4(a))
 
@@ -160,39 +178,32 @@ What the check cannot catch:
 Capstone cross-decoding stays optional, for the case where the
 check ever disagrees (coord7 Q4(c)).
 
-## Allowed refusal windows (H1, still at H2a)
+## Refusal windows (H1 through H2b)
 
 The sweep classifies each arrival's generated PC by its PC-map
 class. Every planned `(PC, hit)` was observed executed by the
 survey, so an arrival that never sends fails the sweep, and every
-executed class must get at least one sent arrival (delivered and
-equal, or a W1 refusal checked against O1-S as above). The seam
-must fire on exactly the planned hit. A sweep that reaches its
-60 s cap fails (measured runs take under 3 s). The plan sizes are
-pinned (mixed: 633 PC-map entries, 448 arrivals; loop: 365
-entries, a 4338-pair population, 256 sampled plus 5 top-ups), and
-so are the outcome totals (mixed 336 equal and 112 W1; loop 244
-and 17). The only named refusals the sweep allows are:
+executed class must get at least one sent arrival. The seam must
+fire on exactly the planned hit. A sweep that reaches its 60 s cap
+fails. The plan sizes are pinned (mixed: 633 PC-map entries, 448
+arrivals; loop: 365 entries, a 4338-pair population, 256 sampled
+plus 5 top-ups), and so are the outcome totals: since H2b every
+arrival is delivered and equal, mixed 448 and loop 261, with no
+refusal in any class (H1 and H2a pinned 336 equal and 112 W1
+refusals, and 244 and 17, while W1 was held).
 
-- **W1**, the common exit: `resume_gen` refuses common-exit
-  stages, so the run ends with a recovered AsyncSignal at the
-  exit's source PC. `w1_common_exit_arrival_is_named_refusal_today`
-  pins this at each of the mixed body's four post-install exits
-  (the helper's `ret`, `write`, `cpuid`, main's `ret`), which are
-  the common exit's hits 2 to 5; there is no hit 6 (exactly five
-  executions);
+- **W1**, the common exit: closed in H2b (below) for RETURN,
+  SYSCALL, NONDET and POLL exits. An INDIRECT exit keeps the named
+  refusal, pinned by `w1_indirect_kind_arrival_is_named_refusal`.
 - **W2**, generated PCs with no PC-map entry. This class is
   **empty** in the remote substrate:
   `w2_remote_translation_maps_every_generated_byte` shows that
   every byte the remote translation emits lies in exactly one
   PC-map entry, because the tracer enters blocks by setting
-  registers and there is no generated entry bridge;
+  registers and there is no generated entry bridge.
 - **W3**, an arrival while the tracer steps an original
-  `cpuid`. The breakpoint cannot place this one; it is held by
-  the pre-original-step seam.
-
-W1 and W3 close in H2b, and their held tests then flip to
-delivered-and-equal.
+  `cpuid`: closed in H2b (below). The breakpoint cannot place this
+  one; the pre-original-step seam does.
 
 ## Closed in H2a
 
@@ -238,7 +249,8 @@ delivered-and-equal.
   the poll it interrupted, and the short handler polls 0 times);
   a repeated run counts identically. A mid-block sigreturn restore never
   sees a raw 0 (every budget-0 stop is on the poll path and
-  resumes at its block start), so a 0 there is a broken
+  resumes at its block start; H2b extends the proof to POLL-kind
+  common-exit stops, below), so a 0 there is a broken
   invariant and refuses by name ("poll budget zero at mid-block
   restore") rather than being reset;
   `poll_budget_zero_at_midblock_restore_refuses_by_name` presents
@@ -255,6 +267,83 @@ delivered-and-equal.
   spawned in the tracer's pid namespace and guest namespace
   changes are refused). On a host whose `/proc` shows nested
   `NSpid` entries, every self-send refuses by name.
+
+## Closed in H2b
+
+- **W1**, arrivals in the common exit. A common-exit stop is
+  resumable for a RETURN, SYSCALL, NONDET or POLL exit: it recovers
+  to the exit's source PC with the terminator not yet run (RETURN
+  re-based to exclude its precredited `ret`), and resumes through
+  the exit stub's pristine entry, or the block index when that PC
+  starts a block, so the terminator runs once after the handler.
+  A POLL exit recovers to its block start and resumes through the
+  block index; the handler starts at the full poll budget (D7).
+  - `w1_common_exit_arrival_delivers`: at the mixed body's four
+    post-install exits (the helper's `ret`, `write`, `cpuid`,
+    main's `ret`: hits 2 to 5, no hit 6), the first entry of each
+    recovery stage and the final `int3`, 20 arrivals, each
+    delivered and equal.
+  - `w1_poll_kind_common_exit_arrivals`: all 28 common-exit
+    entries at the loop's first poll exit: delivered, equal, no
+    restore refusal, and exactly 7 poll exits, all after
+    sigreturn (the quiet 8, less the replaced one).
+  - `w1_common_exit_arrival_in_live_handler`: SIGUSR2 at all 28
+    entries of the SIGUSR1 handler's own `ret` exit (the sigreturn
+    interception exit): a nested frame, the re-entry into the
+    outer handler's exit stub, both restorer pops. Both engines
+    deliver SIGUSR1 then SIGUSR2, compared pair by pair; SIGUSR2's
+    frame mask is exactly {SIGUSR1}. The SIGUSR1 handler sets DF
+    before its `ret`, so the FlagsSaved stage's RFLAGS restore is
+    observable there (the common exit's `cld` is the only flag it
+    changes; no other fixture has DF set at an exit).
+  - `w1_indirect_kind_arrival_is_named_refusal`: the INDIRECT
+    boundary. All 28 entries refuse by name at the `jmp`, with the
+    handler never run and literal retired totals counted from the
+    fixture (15 instructions, 1 branch). There is no O1-S leg: the
+    O1 oracle cannot verify an indirect `jmp`. Without an arrival,
+    the run refuses IndirectUnresolved.
+- **W3**, an arrival before the original `cpuid` step. A
+  signal-delivery stop presented before the instruction runs is
+  delivered at the `cpuid` with nothing credited for it, and the
+  `cpuid` is stepped once after sigreturn. The provenance guard
+  requires all three of: the stop's RIP is the `cpuid` PC; every
+  GPR equals the pre-step state the tracer wrote, kept as a
+  recorded copy (never re-read); RFLAGS equals it exactly, with no
+  TF exception (the kernel hides a ptrace-forced TF). Any other
+  asynchronous stop refuses by name ("original step: signal stop
+  not at the pre-step state").
+  - `w3_original_step_arrival_delivers`: the full comparator
+    against O1-S at k (frame registers with RFLAGS exact, siginfo,
+    mask, buffer, final state and totals).
+  - `w3_provenance_guard_refuses_by_name`: the guard cannot fail
+    on a real stop (the kernel dequeues the step's synchronous
+    SIGTRAP first), so a seam perturbs one comparand per case, the
+    compared PC, a GPR or RFLAGS of the recorded copy; each refuses
+    by name.
+- **The restore invariant, after W1** (P3-5). A raw poll budget
+  of 0 still never reaches the mid-block restore: that restore
+  needs a resume PC that does not start a block, and every stop
+  that can hold the 0 (PollStub, PollExitStub, and now a POLL-kind
+  common exit) recovers to a block start. Pinned on the PC map by
+  `poll_paths_recover_to_block_starts` (every poll-stub block and
+  poll-exit source is a block start, one poll exit per block),
+  and the poll-budget seam refuses a budget of 0
+  (`poll_budget_seam_refuses_zero`).
+
+Still open after H2b: an asynchronous stop before a stepped
+syscall's entry (the W3 sibling; still a recovered AsyncSignal);
+kernel-generated (`si_code > 0`) signals during the original step;
+INDIRECT common-exit arrivals (pinned refusal); FP/SIMD state. The
+live-frame test inherits the NSpid host dependency of every
+self-send.
+
+No progress claim at an original step under asynchronous arrival
+faster than the tracer's deliver-and-retry round trip (H2b review
+P3-1). If a signal source such as a short-period POSIX timer fires
+again before the retried `cpuid` is stepped, W3 delivers and
+retries without bound, where a native run makes progress between
+signals. Before H2b this case was a named refusal. A bounded retry
+ending in a named refusal is an H2c item.
 
 ## Run-dependent inputs
 
@@ -362,7 +451,7 @@ change was intended.
 | `G2j sender sleep proof` | I1-G2 | remote_signal_rt.rs sender_waits_for_sleep_not_syscall_entry_stop | harness: the sender waits for a real sleep, not a syscall-entry stop | harness proof | `43d9829c25e08b656ad458c1a8e9fbd5e3264b02ab85214996f91718d1624c50` |
 | `W4` | I1-H W4 | remote_signal_rt.rs blocked_pending_signal_survives_polls_and_delivers_on_unblock | USR1 blocked, self-sent, run past two polls, delivered at unblock | native child + O1-S | `255c6e3ed97e595b77221232acf4c6e73aceb82e4358aa44b98d3803a1ebba5b` |
 | `W4-RT` | I1-H W4 | remote_signal_rt.rs blocked_pending_rt_signal_survives_polls_and_delivers_on_unblock | same with SIGRTMIN | native child + O1-S | `17d7f54be7ef5ac91c6b825fe033cddf165061eb8b74cba9879be41fdcbb1a2a` |
-| `H1 sweep mixed` | I1-H H1 | remote_signal_gate.rs sweep_mixed_exhaustive, w1_*, w3_* | every (generated PC, hit) after the install, every PC-map class; W1 and W3 held | O1-S at k | `52756a1c79aac1284ee0d419f562733ac492ec6bae225392491c3aefc2834248` |
+| `H1 sweep mixed` | I1-H H1 | remote_signal_gate.rs sweep_mixed_exhaustive, w1_*, w3_* | every (generated PC, hit) after the install, every PC-map class; W1 and W3 delivered since H2b | O1-S at k | `52756a1c79aac1284ee0d419f562733ac492ec6bae225392491c3aefc2834248` |
 | `H1 sweep loop 120` | I1-H H1 | remote_signal_gate.rs sweep_poll_loop_sampled | N=256 seeded (PC, hit) sample, plus the first pair of each executed class the sample missed, over a poll-crossing loop (poll budget 16) | O1-S at k | `33eaa465bc6d8c088f5e15a131aca8f4e36d218a9543b22ee67c1303d31823d9` |
 | `H2 W5 sa_mask default` | I1-H H2a | remote_signal_gate.rs w5_sa_mask_blocked_signal_waits_for_sigreturn_like_native | handler sa_mask blocks USR2 (no handler), self-sent in the handler, polls crossed; acts after sigreturn | O1-S (native death point) | `01d5cdd582cf08a9bc35a03870de5db738ca6c5b808ef2ee222b2ce78cdfaf03` |
 | `H2 W5 sa_mask RT` | I1-H H2a | remote_signal_gate.rs w5_sa_mask_blocked_rt_signal_delivers_after_sigreturn | handler sa_mask blocks signal 34 (handled), self-sent in the handler, polls crossed; delivered after sigreturn | O1-S | `2607d7ccc9d69c7c0483b2eb6c6223d3d115af88143621f5e5d0961c64d8479b` |
@@ -371,5 +460,7 @@ change was intended.
 | `H2 NSpid kill` | I1-H H2a | remote_signal_rt.rs self_sends_refused_by_name_when_nspid_shows_a_nested_namespace | kill self-send with a nested NSpid presented to the proof | named refusal; delivers without the seam | `f7ea0ecdc03b6835e4e38ee0d0a0ce2e4faea38f98e51fce226f3cdc2062f241` |
 | `H2 NSpid queue` | I1-H H2a | remote_signal_rt.rs self_sends_refused_by_name_when_nspid_shows_a_nested_namespace | SI_QUEUE self-send with a nested NSpid presented to the proof | named refusal; delivers without the seam | `f90ec963307d9d57f6b784717dae6d5b92631cbdfdbe4fcedf7ba1ac9b40b635` |
 | `H2 O1-S ignored signal shape` | I1-H H2a | remote_signal_gate.rs o1s_ignored_signal_with_handler_shaped_registers_is_a_retirement | SIGUSR1 ignored, re-injected over a step whose registers have the handler-argument shape | O1-S self-check (retirement, no delivery) | `c99cf2de97086b84c549ea64fecaed6bff3bb18f8eaecb5753cb899e2a943224` |
+| `H2 W1 live frame` | I1-H H2b | remote_signal_gate.rs w1_common_exit_arrival_in_live_handler | SIGUSR2 arriving in the common exit of the SIGUSR1 handler's ret (sigreturn interception exit), DF set; nested frame | O1-S at k (two deliveries, paired) | `0ddc0dc5b0ff254d5e461ad3584f69beaad48254470cff19c4963217d9dd71bc` |
+| `H2 W1 indirect` | I1-H H2b | remote_signal_gate.rs w1_indirect_kind_arrival_is_named_refusal | arrival in the common exit of an INDIRECT exit (`jmp rax`) | named refusal + the survey's recovery (no O1-S leg: O1 cannot verify an indirect `jmp`) | `3d964a4cf91f0ce515d6152d5d3ae6d16d047ac6ef9aa9ea1dde95cd20dad06a` |
 
 Unpinned: `E4c real foreign helper` (I1-G1, remote_signal_rt.rs sigqueue_to_foreign_target_refused_by_name_even_where_native_errs): the bytes embed the live helper's pid.
