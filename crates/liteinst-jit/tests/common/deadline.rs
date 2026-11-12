@@ -397,8 +397,11 @@ pub const TEST_BOUND: Duration = Duration::from_secs(300);
 /// How long the expiring watchdog waits for open custody sections.
 pub const DRAIN_CAP: Duration = Duration::from_secs(5);
 
-/// How long the watchdog waits for the writer's acknowledgement.
-const WRITER_ACK: Duration = Duration::from_secs(1);
+/// How long the watchdog waits for the writer's acknowledgement
+/// before it aborts anyway. An idle writer thread must wake and write
+/// the line within it, even on a loaded host; a writer blocked on a
+/// full stderr pipe costs exactly this long.
+const WRITER_ACK: Duration = Duration::from_secs(3);
 
 /// Watchdog period.
 const WATCHDOG_TICK: Duration = Duration::from_secs(1);
@@ -1546,9 +1549,13 @@ const BOUND_FIRST_LINES: [&str; 2] = [
 ];
 
 /// One attribute as the census reads it, from a line that starts one
-/// (`#[`, `#![`, or a lone `#`): its text with comments, whitespace and
-/// string contents removed, the index of its last line, and whether its
-/// brackets closed within 20 lines.
+/// (`#[`, `#![`, or a lone `#`): its text with `//` comments,
+/// whitespace and string contents removed, the index of its last line,
+/// and whether the reader followed it to its closing bracket within 20
+/// lines. The reader follows only brackets, plain string literals,
+/// `//` comments and other tokens. It stops at a form it cannot follow
+/// (a block comment, a raw or prefixed string literal, or a character
+/// literal) and leaves the attribute unclosed, so the census refuses it.
 struct Attr {
     text: String,
     last: usize,
@@ -1567,6 +1574,7 @@ fn read_attribute(lines: &[&str], i: usize) -> Option<Attr> {
     let mut j = i;
     while j < lines.len() && j <= i + 20 {
         let mut chars = lines[j].chars().peekable();
+        let mut prev = None;
         while let Some(c) = chars.next() {
             if in_str {
                 if esc {
@@ -1576,9 +1584,27 @@ fn read_attribute(lines: &[&str], i: usize) -> Option<Attr> {
                 } else if c == '"' {
                     in_str = false;
                     text.push('"');
+                    prev = Some('"');
                 }
                 continue;
             }
+            // `/*` opens a block comment, `'` a character literal, and a
+            // quote right after a letter, digit, `_` or `#` a prefixed or
+            // raw string (`b"`, `r"`, `r#"`); the reader follows none.
+            let opaque = match c {
+                '/' => chars.peek() == Some(&'*'),
+                '\'' => true,
+                '"' => prev.is_some_and(|p: char| p.is_alphanumeric() || p == '_' || p == '#'),
+                _ => false,
+            };
+            if opaque {
+                return Some(Attr {
+                    text,
+                    last: j,
+                    closed: false,
+                });
+            }
+            prev = Some(c);
             match c {
                 '/' if chars.peek() == Some(&'/') => break,
                 '"' => {
@@ -1622,8 +1648,9 @@ fn read_attribute(lines: &[&str], i: usize) -> Option<Attr> {
 ///   with an identifier containing `test` outside string literals,
 ///   such as `#[test] fn f() {}`, `#[ignore] #[test]`, `# [test]`,
 ///   `#[tokio::test]`, `#[cfg_attr(unix, test)]`, `#[cfg(test)]` or a
-///   multiline `#[` / `test` / `]`; and any attribute whose brackets do
-///   not close within 20 lines;
+///   multiline `#[` / `test` / `]`; any attribute whose brackets do
+///   not close within 20 lines; and any attribute containing a form the
+///   reader cannot follow (see [`Attr`]), whatever else it names;
 /// - `None`: not an attribute, or one without a `test` identifier.
 fn test_attribute(lines: &[&str], i: usize) -> (Option<bool>, usize) {
     let Some(a) = read_attribute(lines, i) else {
@@ -1756,7 +1783,12 @@ pub fn bound_census_witness() {
         v.is_empty(),
         "`test` inside a string literal must not be refused: {v:?}"
     );
-    for form in [
+    // The last three hide `test` from a reader that follows only
+    // brackets, strings and `//`: the `]` in the block comment, or the
+    // string the reader would open at the raw string's inner quote or at
+    // the character literal's quote (closed by the `"` on the next line),
+    // closes the attribute before its `test`.
+    let missed: Vec<&str> = [
         "#[test] fn t() {}",
         "#[test] #[ignore]",
         "#[ignore] #[test]",
@@ -1767,17 +1799,24 @@ pub fn bound_census_witness() {
         "#[cfg_attr(unix, tokio::test)]",
         "#[\ntest\n]",
         "#\n[test]",
-    ] {
+        "#[cfg_attr(\n    target_os = \"linux\",\n    /* ] */\n    test\n)]",
+        "#[cfg_attr(unix, doc = r#\"a\"b\"#, test)]\n// \"]",
+        "#[cfg_attr(unix, cfg_attr(any(), x('\"')), test)]\n// \"]",
+    ]
+    .into_iter()
+    .filter(|form| {
         let src = format!(
             "{form}\n{}",
             body("let _bound = deadline::TestBound::arm();")
         );
         let v = census_violations(&src, "witness.rs", &[]);
-        assert!(
-            v.iter().any(|l| l.contains("unsupported test attribute")),
-            "`{form}` must be refused: {v:?}"
-        );
-    }
+        !v.iter().any(|l| l.contains("unsupported test attribute"))
+    })
+    .collect();
+    assert!(
+        missed.is_empty(),
+        "these test attribute forms must be refused: {missed:?}"
+    );
 }
 
 /// The bound inventory (gate): `tests/*.rs` must equal the reviewed
