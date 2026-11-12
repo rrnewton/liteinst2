@@ -24,15 +24,23 @@ P1a envelope, honestly bounded:
   tested genuine delivery shapes (I1-D/I1-E, I1-F masks,
   altstack, and capped nesting, I1-G1 real-time ordering,
   `SI_QUEUE` self-queueing, and back-to-back frames, for
-  SIGUSR1/SIGUSR2 and signals 34..=64, and I1-G2 delivery when
+  SIGUSR1/SIGUSR2 and signals 34..=64; I1-G2 delivery when
   a signal interrupts `rt_sigsuspend`, `FUTEX_WAIT_PRIVATE`
   without a timeout, or `nanosleep`, with the kernel applying
-  `SA_RESTART`/`-EINTR`); every
-  other shape there — including async stops in common-exit
-  spilled stages and at generated PCs with no pcmap entry
-  (entry-loader bridge class) — still stops as a recovered
-  outcome, and no asynchronous-transparency claim is made
-  beyond those tests.
+  `SA_RESTART`/`-EINTR`; I1-H H2b delivery of async stops in
+  the common exit of a RETURN, SYSCALL, NONDET or POLL exit
+  (W1) and before a single-stepped original `cpuid` (W3); and
+  I1-H H2d delivery of an async stop before a stepped syscall
+  enters the kernel (W3s), when a four-part provenance guard
+  shows the exact pre-step state, with the call retried after
+  sigreturn; W3 and W3s retries are bounded and refuse by
+  name past the bound); every other shape there — including
+  async stops in the common exit of an INDIRECT exit, at
+  generated PCs with no pcmap entry, an entry-phase syscall
+  stop that fails the guard, and the sigreturn interception's
+  own entry stop — still stops as a recovered outcome or
+  refuses by name, and no asynchronous-transparency claim is
+  made beyond those tests.
 - Counts are software counts validated by the `o1` ptrace single-step
   oracle in the integration tests, never PMU-equivalence claims.
 

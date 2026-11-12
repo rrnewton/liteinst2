@@ -261,6 +261,26 @@ fn ptrace(req: u32, pid: i32, addr: *mut u8, data: *mut u8) -> i64 {
     unsafe { libc::ptrace(req as libc::c_uint, pid, addr, data) }
 }
 
+/// Make the traced child die with this tracer: with
+/// `PTRACE_O_EXITKILL` the kernel sends it SIGKILL when the tracer
+/// exits (kernel/ptrace.c, `exit_ptrace`), so a tracer that dies never
+/// leaves its child to run on untraced. Set at the initial stop, before
+/// the registers are written and before `on_spawn`.
+fn set_exitkill(pid: i32) {
+    let r = ptrace(
+        libc::PTRACE_SETOPTIONS,
+        pid,
+        core::ptr::null_mut(),
+        libc::PTRACE_O_EXITKILL as usize as *mut u8,
+    );
+    assert_eq!(
+        r,
+        0,
+        "PTRACE_SETOPTIONS: {}",
+        std::io::Error::last_os_error()
+    );
+}
+
 fn get_regs(pid: i32) -> libc::user_regs_struct {
     let mut regs: libc::user_regs_struct = unsafe { core::mem::zeroed() };
     let r = ptrace(
@@ -407,6 +427,7 @@ fn run_o1_impl(
     let w = unsafe { libc::waitpid(pid, &mut status, 0) };
     assert_eq!(w, pid, "waitpid for initial stop");
     assert!(libc::WIFSTOPPED(status), "child did not stop: {status:#x}");
+    set_exitkill(pid);
 
     let mut regs = get_regs(pid);
     regs.rip = info.base;
@@ -714,6 +735,7 @@ pub fn run_o1s(
         libc::WIFSTOPPED(status) && libc::WSTOPSIG(status) == libc::SIGTRAP,
         "o1s child did not stop: {status:#x}"
     );
+    set_exitkill(pid);
 
     let mut regs = get_regs(pid);
     regs.rip = info.base;

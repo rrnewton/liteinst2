@@ -1533,6 +1533,92 @@ pub fn harness_status_witness() {
     );
 }
 
+/// Set in the EXITKILL probe's environment: `remote`, `o1` or `o1s`.
+const EXITKILL_SITE_ENV: &str = "LITEINST_EXITKILL_SITE";
+
+/// Record the tracee and abort with it parked in a ptrace stop.
+fn exitkill_park(pid: i32) -> ! {
+    record_child(pid as u32);
+    std::process::abort();
+}
+
+/// The EXITKILL probe (I1-H H2d), run only by [`exitkill_test`]. It
+/// starts exactly one tracee through the site that
+/// `LITEINST_EXITKILL_SITE` names, records it, and aborts while the
+/// tracee is parked in a ptrace stop. With `PTRACE_O_EXITKILL` the
+/// tracee dies of SIGKILL. Without it, the detach wakes it, and it dies
+/// of its pending SIGTRAP (kernel/ptrace.c `__ptrace_unlink` keeps the
+/// stored stop signal). The probe arms no TestBound and no Deadline and
+/// runs no sweep, so only the tracer's exit can kill the tracee before
+/// the intermediate reaps it. Core dumps are off (`probe_enabled`).
+#[test]
+#[ignore = "run only by deadline::subreaper_run"]
+fn exitkill_probe() {
+    if !probe_enabled() {
+        return;
+    }
+    let site = std::env::var(EXITKILL_SITE_ENV).expect("LITEINST_EXITKILL_SITE");
+    let remote_child = std::path::Path::new(env!("CARGO_BIN_EXE_liteinst-jit-remote-child"));
+    match site.as_str() {
+        // The constructor returns with the child at its initial trap,
+        // after its SETOPTIONS.
+        "remote" => {
+            let remote = RemoteExecutable::spawn_named(remote_child, "sum_loop")
+                .expect("spawn the remote tracee");
+            exitkill_park(remote.child_pid_for_test());
+        }
+        // `on_spawn` runs with the child stopped, after the SETOPTIONS
+        // at its initial stop.
+        "o1" => {
+            let o1_child = std::path::Path::new(env!("CARGO_BIN_EXE_liteinst-jit-o1-child"));
+            let _ = run_o1_observed(o1_child, "sum_loop", |_, _| {}, |pid| exitkill_park(pid));
+        }
+        "o1s" => {
+            let bytes = liteinst_jit::fixtures::by_name("sum_loop").bytes;
+            let _ = run_o1s(
+                remote_child,
+                &bytes,
+                &[],
+                |_, _| {},
+                None,
+                |pid| exitkill_park(pid),
+            );
+        }
+        other => panic!("unknown EXITKILL site `{other}`"),
+    }
+    unreachable!("the probe aborts at its site");
+}
+
+/// `exitkill_remote_tracee`, `exitkill_o1_tracee` and
+/// `exitkill_o1s_tracee` (gate): the one tracee the probe starts
+/// through `site` must die with its tracer, of SIGKILL (`signaled 9`).
+/// `signaled 5` is the pending SIGTRAP of a site without EXITKILL;
+/// `killed-by-harness` would mean it outlived the probe until the
+/// harness's own limit; `missing` that it was never seen.
+pub fn exitkill_test(site: &str) {
+    let r = subreaper_run(
+        "deadline::exitkill_probe",
+        &[(EXITKILL_SITE_ENV, site)],
+        StderrMode::Drain,
+    );
+    assert_eq!(
+        r.probe, "signaled 6",
+        "expected `probe signaled 6`:\n{}",
+        r.raw
+    );
+    assert_eq!(
+        r.children.len(),
+        1,
+        "expected exactly one tracee:\n{}",
+        r.raw
+    );
+    assert_eq!(
+        r.children[0].status, "signaled 9",
+        "expected the {site} tracee `signaled 9` (EXITKILL), not `signaled 5` (its pending SIGTRAP):\n{}",
+        r.raw
+    );
+}
+
 /// The kinds of `tests/*.rs` file in [`bound_inventory`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BoundRole {

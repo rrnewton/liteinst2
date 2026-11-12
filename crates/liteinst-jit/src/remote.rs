@@ -27,11 +27,15 @@
 //! restorer's `rt_sigreturn` resumes in cache.
 //! I1-H H2b also delivers async stops in the common exit of a
 //! RETURN, SYSCALL, NONDET or POLL exit (W1), and during the
-//! single-stepped original cpuid (W3).
+//! single-stepped original cpuid (W3). I1-H H2d delivers an
+//! async stop before a stepped syscall enters the kernel (W3s)
+//! when a four-part provenance guard (RIP, every GPR, RFLAGS,
+//! and `orig_rax` still -1) shows the exact pre-step state; the
+//! call is stepped again after sigreturn, and any other stop at
+//! that point is refused by name.
 //! Every other delivery shape still stops as a recovered
 //! outcome by name — including async stops in the common exit
-//! of an INDIRECT exit, before a stepped syscall's entry, and
-//! at generated PCs with no pcmap entry; no transparency
+//! of an INDIRECT exit and at generated PCs with no pcmap entry; no transparency
 //! claim is made beyond the tested shapes. Indirect resolution, threads, and exec
 //! successors stay refused exactly as in-process. This module
 //! is a substrate for later P1b stages, not a public API
@@ -299,22 +303,40 @@ impl SignalRegistry {
     }
 }
 
-/// Consecutive W3 deliveries allowed at original-instruction
-/// steps with no completed original step between them (I1-H H2c).
-/// The next interrupt refuses by name instead
-/// (`BudgetExceeded`, "original step interrupted without
-/// progress"), so a signal source that fires faster than the
-/// tracer's deliver-and-retry round trip ends the run fail-closed
-/// rather than retrying the instruction forever.
+/// Interrupts allowed at a pending original-instruction step with
+/// no progress between them. Two kinds of counter use it:
+/// - H2c's aggregate (I1-H H2c): consecutive W3 deliveries at
+///   `cpuid` steps with no completed original step between them.
+///   Over the limit it refuses with "original step interrupted
+///   without progress".
+/// - The per-frame-depth counters (I1-H H2d): interrupts of the
+///   step pending at one depth, a `cpuid` (W3) or a `syscall`
+///   stopped before the call entered (W3s). Over the limit they
+///   refuse with "frame-depth bound: cpuid step ..." or
+///   "frame-depth bound: syscall step interrupted without
+///   progress".
 ///
-/// Derivation: one interrupt, delivery, sigreturn and retry
-/// round trip measured about 84 us (11,946 per second, release
-/// build, in the I1-H H2b record-pass hang). 64 round trips is
-/// about 5.4 ms without progress at one instruction, so only a
-/// source re-interrupting the same instruction at about 12 kHz or
-/// more, sustained, reaches the bound. Profiling timers
-/// (100-1000 Hz) and interval timers of 1 ms or more pass through
-/// unchanged.
+/// Each refusal is a named `BudgetExceeded`, so a step that keeps
+/// being interrupted before it makes progress ends the run
+/// fail-closed rather than retrying the instruction forever.
+///
+/// 64 is an interruption-count policy only. The counters look at
+/// neither signal rates nor time, so whether a given signal source
+/// reaches the bound depends on handler work and on how the tracer
+/// and the guest are scheduled. Even a slow source can leave a
+/// signal pending before every attempt if the tracer is delayed
+/// between attempts, so no timer rate is guaranteed to pass.
+///
+/// Recorded averages, for scale only; their reciprocals are
+/// examples from those runs, not thresholds:
+/// - `cpuid` (W3): one interrupt, delivery, sigreturn and retry
+///   round trip averaged about 84 us (11,946 per second, release
+///   build, in the I1-H H2b record-pass hang). The reciprocal is
+///   about 12 kHz, and 64 round trips at that average is about
+///   5.4 ms.
+/// - `syscall` (W3s): one delivery averaged about 118.7 us (one
+///   release run, 64 deliveries in 7.6 ms with setup included, so
+///   not an isolated latency). The reciprocal is about 8.4 kHz.
 ///
 /// This is a liveness bound, not a determinism change: given the
 /// same delivery sequence, the refusal is deterministic. It is a
@@ -341,6 +363,24 @@ enum Stepped {
     /// Exit stop with a kernel restart code; the child is still
     /// stopped there (I1-G2).
     Interrupted(libc::user_regs_struct),
+    /// A signal-delivery stop before the `syscall` ran (I1-H H2d,
+    /// W3s), proven by `w3s_provenance` (g1-g4). The child is still
+    /// stopped there, the call was not made, and nothing is
+    /// credited. A redirected step has already restored its staged
+    /// scratch; the frame is built from the caller's guest state.
+    EntryInterrupted {
+        sig: i32,
+        addr: u64,
+    },
+}
+
+/// The run loop's totals that a delivery before a step replaces
+/// (I1-H H2d, `deliver_before_step`).
+struct RunTotals<'a> {
+    exits: &'a mut u64,
+    branches: &'a mut u64,
+    instructions: &'a mut u64,
+    poll_remaining: &'a mut u64,
 }
 
 /// Which registry state (if any) a stepped syscall must have
@@ -1085,18 +1125,63 @@ pub enum W3Perturb {
     Gpr,
     /// RFLAGS (CF) of the recorded pre-step copy.
     Rflags,
+    /// The `orig_rax` value g4 expects of a W3s stop (I1-H H2d).
+    OrigRax,
 }
 
-/// Test seam state (I1-H H2c): signals to inject before
-/// successive original-instruction steps. `per_insn[0]` is how
-/// many are still to be sent before attempts at the current
-/// original instruction; a completed step pops it, moving to the
-/// next instruction. Empty means inert.
+/// Which steps a [`StepPlan`] signals before (I1-H H2d).
 #[cfg(feature = "test-seams")]
-#[derive(Debug, Default)]
-struct OriginalStepPlan {
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum StepKind {
+    /// Original `cpuid` steps (the NONDET arm).
+    Cpuid,
+    /// Guest `syscall` steps of the SYSCALL arm (never the sigreturn
+    /// interception's own stepping).
+    Syscall,
+}
+
+/// Test seam state (I1-H H2c, H2d): signals to send before the steps
+/// of one kind at one frame depth. `per_step[0]` is how many are
+/// still to be sent before attempts at the current step; the front
+/// pops when that step makes progress (`cpuid` done; a syscall's enter
+/// stop), or when a sigreturn pop truncates its depth while it is
+/// marked attempted (the abandoned step of a resume-RIP skip).
+#[cfg(feature = "test-seams")]
+#[derive(Debug)]
+struct StepPlan {
+    kind: StepKind,
+    depth: usize,
     sig: i32,
-    per_insn: std::collections::VecDeque<u32>,
+    per_step: std::collections::VecDeque<u32>,
+    attempted: bool,
+}
+
+/// Which call site delivered a signal (I1-H H2d delivery log).
+#[cfg(feature = "test-seams")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum DeliveryClass {
+    /// A generated-phase stop (the Async arm).
+    Generated,
+    /// Before an original `cpuid` step (W3).
+    OriginalStep,
+    /// Before a `syscall` entered the kernel (W3s).
+    EntryInterrupted,
+    /// At a syscall's exit stop with a restart code (I1-G2).
+    SyscallExit,
+}
+
+/// One delivery as the log records it: its call site, signal, the
+/// source instruction's PC and RAX at the stop.
+#[cfg(feature = "test-seams")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct DeliveryRecord {
+    pub class: DeliveryClass,
+    pub signum: i32,
+    pub src_pc: u64,
+    pub raw_rax: u64,
+    /// `sigaction_finishes` when this delivery was made (the FX3
+    /// counts "at the interrupted delivery").
+    pub sigaction_finishes: u64,
 }
 
 /// One genuine delivery made from a generated-phase stop,
@@ -1145,6 +1230,15 @@ pub struct ArrivalReport {
     pub poll_exits: u64,
     /// Of those, the ones after the last intercepted sigreturn.
     pub poll_exits_after_sigreturn: u64,
+    /// Every delivery, from every call site, in order (I1-H H2d).
+    pub delivery_log: Vec<DeliveryRecord>,
+    /// Frames popped by the sigreturn interception (I1-H H2d).
+    pub sigreturn_pops: u64,
+    /// Completed `rt_sigaction` steps (`finish_sigaction_step`).
+    pub sigaction_finishes: u64,
+    /// The staged scratch bytes read back right after each restore,
+    /// when the canary seam is on (I1-H H2d).
+    pub scratch_after_cleanup: Vec<Vec<u8>>,
 }
 
 /// `PTRACE_POKEUSER` offset of debug register `n`.
@@ -1227,7 +1321,24 @@ pub struct RemoteExecutable {
     /// `set_pre_original_step_signal_for_test` is the plan [1])
     /// and `set_arrival_for_test`.
     #[cfg(feature = "test-seams")]
-    pre_original_step_plan: core::cell::RefCell<OriginalStepPlan>,
+    step_plans: core::cell::RefCell<Vec<StepPlan>>,
+    /// The frame depth of the step being attempted (I1-H H2d seams).
+    #[cfg(feature = "test-seams")]
+    seam_depth: core::cell::Cell<usize>,
+    /// `(depth, index, sig)`: signals to send at SYSCALL-arm enter
+    /// stops (I1-H H2d), and the enter stops seen per depth this run.
+    #[cfg(feature = "test-seams")]
+    enter_stop_signals: core::cell::RefCell<Vec<(usize, usize, i32)>>,
+    #[cfg(feature = "test-seams")]
+    enter_stops: core::cell::RefCell<Vec<usize>>,
+    /// Fill the scratch with this byte before staging and read it back
+    /// after each restore (I1-H H2d).
+    #[cfg(feature = "test-seams")]
+    scratch_canary: Option<u8>,
+    /// Fail the staged-scratch restore after a step that ended
+    /// `EntryInterrupted` (I1-H H2d).
+    #[cfg(feature = "test-seams")]
+    fail_scratch_restore: bool,
     #[cfg(feature = "test-seams")]
     arrival: Option<ArrivalSeam>,
     #[cfg(feature = "test-seams")]
@@ -1398,12 +1509,15 @@ impl RemoteExecutable {
                 errno: 0,
             });
         }
-        // Syscall stops must be distinguishable from plain traps.
+        // Syscall stops must be distinguishable from plain traps. With
+        // EXITKILL the kernel sends the child SIGKILL when this tracer
+        // exits (kernel/ptrace.c, `exit_ptrace`), so a tracer that dies
+        // never leaves its child to run on untraced.
         ptrace_ok(
             libc::PTRACE_SETOPTIONS,
             pid,
             core::ptr::null_mut(),
-            libc::PTRACE_O_TRACESYSGOOD as usize as *mut u8,
+            (libc::PTRACE_O_TRACESYSGOOD | libc::PTRACE_O_EXITKILL) as usize as *mut u8,
             "PTRACE_SETOPTIONS",
         )?;
         // Seed the mirror mask from the stopped child's actual
@@ -1422,7 +1536,17 @@ impl RemoteExecutable {
             #[cfg(feature = "test-seams")]
             pre_redirected_step_signal: core::cell::Cell::new(None),
             #[cfg(feature = "test-seams")]
-            pre_original_step_plan: core::cell::RefCell::new(OriginalStepPlan::default()),
+            step_plans: core::cell::RefCell::new(Vec::new()),
+            #[cfg(feature = "test-seams")]
+            seam_depth: core::cell::Cell::new(0),
+            #[cfg(feature = "test-seams")]
+            enter_stop_signals: core::cell::RefCell::new(Vec::new()),
+            #[cfg(feature = "test-seams")]
+            enter_stops: core::cell::RefCell::new(Vec::new()),
+            #[cfg(feature = "test-seams")]
+            scratch_canary: None,
+            #[cfg(feature = "test-seams")]
+            fail_scratch_restore: false,
             #[cfg(feature = "test-seams")]
             arrival: None,
             #[cfg(feature = "test-seams")]
@@ -1501,6 +1625,10 @@ impl RemoteExecutable {
             });
         }
         let scratch = self.scratch_addr();
+        #[cfg(feature = "test-seams")]
+        if let Some(c) = self.scratch_canary {
+            write_mem(self.guard.pid, scratch, &[c; 32])?;
+        }
         let mut saved = [0u8; 32];
         read_mem(self.guard.pid, scratch, &mut saved)?;
         raw[0..8].copy_from_slice(&self.signal_stub_addr().to_le_bytes());
@@ -1607,6 +1735,10 @@ impl RemoteExecutable {
             }
         }
         let staged = self.scratch_addr();
+        #[cfg(feature = "test-seams")]
+        if let Some(c) = self.scratch_canary {
+            write_mem(self.guard.pid, staged, &[c; SIGINFO_LEN])?;
+        }
         let mut saved = [0u8; SIGINFO_LEN];
         read_mem(self.guard.pid, staged, &mut saved)?;
         write_mem(self.guard.pid, staged, &info)?;
@@ -1633,6 +1765,10 @@ impl RemoteExecutable {
         step_rax: u64,
         gadget_pc: u64,
     ) -> Result<(), Refuse> {
+        #[cfg(feature = "test-seams")]
+        {
+            self.arrival_report.borrow_mut().sigaction_finishes += 1;
+        }
         // Only a successful call copied the previous kernel
         // action out; an errored call (EINVAL/EFAULT) left
         // guest oldact memory untouched and so must we.
@@ -1883,10 +2019,61 @@ impl RemoteExecutable {
     #[cfg(feature = "test-seams")]
     #[doc(hidden)]
     pub fn set_pre_original_step_plan_for_test(&mut self, sig: i32, per_insn: Vec<u32>) {
-        *self.pre_original_step_plan.get_mut() = OriginalStepPlan {
+        self.step_plans.get_mut().clear();
+        self.set_step_plan_for_test(StepKind::Cpuid, 0, sig, per_insn);
+    }
+
+    /// Test seam (I1-H H2d): add (or replace) the plan for steps of
+    /// `kind` at frame `depth`. `per_step[i]` is the number of signals
+    /// sent before the i-th such step at that depth, counted from the
+    /// start of the run, prologue steps included. Plans with distinct
+    /// `(kind, depth)` coexist, each with its own signal.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn set_step_plan_for_test(
+        &mut self,
+        kind: StepKind,
+        depth: usize,
+        sig: i32,
+        per_step: Vec<u32>,
+    ) {
+        let plans = self.step_plans.get_mut();
+        plans.retain(|p| (p.kind, p.depth) != (kind, depth));
+        plans.push(StepPlan {
+            kind,
+            depth,
             sig,
-            per_insn: per_insn.into(),
-        };
+            per_step: per_step.into(),
+            attempted: false,
+        });
+    }
+
+    /// Test seam (I1-H H2d): at the `index`-th SYSCALL-arm enter stop
+    /// at `depth` (counted from 0 at the run start), send `sig` to the
+    /// traced child with `tkill` before resuming into the call.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn set_enter_stop_signals_for_test(&mut self, depth: usize, signals: &[(usize, i32)]) {
+        let v = self.enter_stop_signals.get_mut();
+        v.retain(|e| e.0 != depth);
+        v.extend(signals.iter().map(|&(index, sig)| (depth, index, sig)));
+    }
+
+    /// Test seam (I1-H H2d): fill the scratch with `canary` before each
+    /// staging and record its readback after each restore.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn set_scratch_canary_for_test(&mut self, canary: Option<u8>) {
+        self.scratch_canary = canary;
+    }
+
+    /// Test seam (I1-H H2d): make the staged-scratch restore fail after
+    /// a step that ended `EntryInterrupted` (completed steps restore
+    /// normally), so the refusal is the one on the delivery path.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn set_fail_scratch_restore_for_test(&mut self, fail: bool) {
+        self.fail_scratch_restore = fail;
     }
 
     /// Test seam: arm (or clear) the [`ArrivalSeam`] for the
@@ -2125,11 +2312,20 @@ impl RemoteExecutable {
     /// `rt_sigaction` stubbing (I1-D) and `rt_(tg)sigqueueinfo`
     /// staging (I1-G1). On every path the saved scratch bytes
     /// are restored first, and the guest's own register value is
-    /// put back into the returned guest state — including a
-    /// recovered `Fault` (an asynchronous stop before syscall
-    /// entry), whose live registers would otherwise carry the
-    /// private scratch address. A failed scratch restore is a
-    /// named substrate refusal, never a clean step.
+    /// put back into any guest state returned, `Done` or a
+    /// recovered `Fault`, whose live registers would otherwise
+    /// carry the private scratch address. A failed scratch restore
+    /// is a named substrate refusal, never a clean step.
+    ///
+    /// An asynchronous stop before syscall entry (I1-H H2d, W3s)
+    /// returns `Stepped::EntryInterrupted` when the provenance
+    /// guard holds; it carries no state, and the caller builds the
+    /// frame from its own copy, which holds the guest's register.
+    /// When the guard fails it is a named `RemoteSubstrate`
+    /// refusal. Before W3s every such stop came back as a `Fault`;
+    /// both refuse, so the change fails closed. A recovered
+    /// `Fault` now comes only from a kernel-generated signal at
+    /// entry (`SourceFault`).
     fn step_redirected_syscall(
         &self,
         state: GuestState,
@@ -2138,7 +2334,7 @@ impl RemoteExecutable {
         saved: &[u8],
         pc: u64,
         data: &JitData,
-    ) -> Result<GuestState, RunError> {
+    ) -> Result<Stepped, RunError> {
         let mut step_state = state;
         reg.set(&mut step_state, staged);
         #[cfg(feature = "test-seams")]
@@ -2152,12 +2348,34 @@ impl RemoteExecutable {
         }
         let stepped = self.step_syscall(step_state, pc, data);
         let restored = write_mem(self.guard.pid, self.scratch_addr(), saved);
+        #[cfg(feature = "test-seams")]
+        let restored = if self.fail_scratch_restore
+            && matches!(stepped, Ok(Stepped::EntryInterrupted { .. }))
+        {
+            Err(remote_err("test forced restore failure"))
+        } else {
+            restored
+        };
+        #[cfg(feature = "test-seams")]
+        if self.scratch_canary.is_some() {
+            let mut back = vec![0u8; saved.len()];
+            if read_mem(self.guard.pid, self.scratch_addr(), &mut back).is_ok() {
+                self.arrival_report
+                    .borrow_mut()
+                    .scratch_after_cleanup
+                    .push(back);
+            }
+        }
         let orig = reg.get(&state);
         let stepped = match stepped {
-            Ok(mut s) => {
+            Ok(Stepped::Done(mut s)) => {
                 reg.set(&mut s, orig);
-                Ok(s)
+                Ok(Stepped::Done(s))
             }
+            // W3s (I1-H H2d): the scratch is restored below before this
+            // returns, and the caller builds the frame from its own guest
+            // state, which holds the guest's register, not `staged`.
+            Ok(stepped) => Ok(stepped),
             Err(RunError::Fault(mut f)) => {
                 reg.set(&mut f.state, orig);
                 Err(RunError::Fault(f))
@@ -2301,6 +2519,11 @@ impl RemoteExecutable {
         Ok(())
     }
 
+    /// GETREGS, then `apply_state`, then SETREGS. `apply_state` never
+    /// writes `orig_rax`, so the kernel's value is written back
+    /// unchanged. The W3s guard's g4 relies on this (the invariant in
+    /// `w3s_provenance`'s doc): keep `orig_rax` out of what this
+    /// writes.
     fn set_guest_regs(&self, state: &GuestState) -> Result<(), Refuse> {
         let mut regs = get_regs(self.guard.pid)?;
         apply_state(&mut regs, state);
@@ -2829,7 +3052,7 @@ impl RemoteExecutable {
         #[cfg(not(feature = "test-seams"))]
         let guard_pc = pc;
         #[cfg(feature = "test-seams")]
-        if let Some(sig) = self.take_pre_original_step_signal() {
+        if let Some(sig) = self.take_step_plan_signal(StepKind::Cpuid) {
             // SAFETY: signalling this tracer's own traced child.
             if unsafe { libc::kill(self.guard.pid, sig) } != 0 {
                 return Err(remote_err("test pre-original-step signal").into());
@@ -2862,10 +3085,7 @@ impl RemoteExecutable {
         ) {
             StopClass::StepComplete => {
                 #[cfg(feature = "test-seams")]
-                self.pre_original_step_plan
-                    .borrow_mut()
-                    .per_insn
-                    .pop_front();
+                self.step_plan_progress(StepKind::Cpuid);
                 Ok(OrigStep::Done(regs_to_state(&regs)))
             }
             StopClass::Async => {
@@ -2903,20 +3123,104 @@ impl RemoteExecutable {
         }
     }
 
-    /// Test seam (I1-H H2c): the signal to send before this
-    /// original-step attempt, if the plan still owes one for the
-    /// current instruction.
+    /// Test seam (I1-H H2c, H2d): the signal to send before this
+    /// attempt at a step of `kind`, if the plan for this kind at the
+    /// current depth still owes one for the current step. Either way
+    /// the front entry is marked attempted.
     #[cfg(feature = "test-seams")]
-    fn take_pre_original_step_signal(&self) -> Option<i32> {
-        let mut plan = self.pre_original_step_plan.borrow_mut();
+    fn take_step_plan_signal(&self, kind: StepKind) -> Option<i32> {
+        let depth = self.seam_depth.get();
+        let mut plans = self.step_plans.borrow_mut();
+        let plan = plans
+            .iter_mut()
+            .find(|p| p.kind == kind && p.depth == depth)?;
         let sig = plan.sig;
-        match plan.per_insn.front_mut() {
-            Some(owed) if *owed > 0 => {
-                *owed -= 1;
-                Some(sig)
-            }
-            _ => None,
+        let owed = plan.per_step.front_mut()?;
+        plan.attempted = true;
+        if *owed > 0 {
+            *owed -= 1;
+            Some(sig)
+        } else {
+            None
         }
+    }
+
+    /// Test seam (I1-H H2d): the step of `kind` at the current depth
+    /// made progress, so its plan moves to the next step.
+    #[cfg(feature = "test-seams")]
+    fn step_plan_progress(&self, kind: StepKind) {
+        let depth = self.seam_depth.get();
+        for p in self.step_plans.borrow_mut().iter_mut() {
+            if p.kind == kind && p.depth == depth {
+                p.per_step.pop_front();
+                p.attempted = false;
+            }
+        }
+    }
+
+    /// Test seam (I1-H H2d): a sigreturn pop left `depth` frames. A
+    /// plan deeper than that whose front step was attempted lost that
+    /// step (a resume-RIP skip abandoned it), so its front pops. This
+    /// is independent of the production counters.
+    #[cfg(feature = "test-seams")]
+    fn plans_on_frame_pop(&self, depth: usize) {
+        for p in self.step_plans.borrow_mut().iter_mut() {
+            if p.depth > depth && p.attempted {
+                p.per_step.pop_front();
+                p.attempted = false;
+            }
+        }
+    }
+
+    /// Test seam (I1-H H2d): send the enter-stop signal planned for
+    /// this SYSCALL-arm enter stop at the current depth, if any.
+    #[cfg(feature = "test-seams")]
+    fn enter_stop_signal(&self) -> Result<(), Refuse> {
+        let depth = self.seam_depth.get();
+        let index = {
+            let mut seen = self.enter_stops.borrow_mut();
+            if seen.len() <= depth {
+                seen.resize(depth + 1, 0);
+            }
+            seen[depth] += 1;
+            seen[depth] - 1
+        };
+        let mut planned = self.enter_stop_signals.borrow_mut();
+        if let Some(at) = planned.iter().position(|e| e.0 == depth && e.1 == index) {
+            let (_, _, sig) = planned.remove(at);
+            // SAFETY: tkill to this tracer's own traced (single-threaded) child.
+            let rc = unsafe { libc::syscall(libc::SYS_tkill, self.guard.pid, sig) };
+            if rc != 0 {
+                return Err(remote_err("test enter-stop signal"));
+            }
+        }
+        Ok(())
+    }
+
+    /// Test seam (I1-H H2d): record one delivery in the log.
+    #[cfg(feature = "test-seams")]
+    fn log_delivery(&self, class: DeliveryClass, signum: i32, src_pc: u64, raw_rax: u64) {
+        let mut report = self.arrival_report.borrow_mut();
+        let sigaction_finishes = report.sigaction_finishes;
+        report.delivery_log.push(DeliveryRecord {
+            class,
+            signum,
+            src_pc,
+            raw_rax,
+            sigaction_finishes,
+        });
+    }
+
+    /// Test seam (I1-H H2d): the signals the step plans still owe.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn plan_unsent_for_test(&self) -> u64 {
+        self.step_plans
+            .borrow()
+            .iter()
+            .flat_map(|p| p.per_step.iter())
+            .map(|&n| u64::from(n))
+            .sum()
     }
 
     /// Test seam (I1-H H2b): apply `set_w3_guard_perturb_for_test`
@@ -2928,9 +3232,66 @@ impl RemoteExecutable {
             Some(W3Perturb::Pc) => return (pc ^ 1, recorded),
             Some(W3Perturb::Gpr) => recorded.rbx ^= 1,
             Some(W3Perturb::Rflags) => recorded.rflags ^= 1,
-            None => {}
+            Some(W3Perturb::OrigRax) | None => {}
         }
         (pc, recorded)
+    }
+
+    /// Test seam (I1-H H2d): `perturb_w3_guard` for the W3s guard,
+    /// plus the `orig_rax` value g4 expects.
+    #[cfg(feature = "test-seams")]
+    fn perturb_w3s_guard(&self, pc: u64, recorded: GuestState) -> (u64, GuestState, u64) {
+        let (pc, recorded) = self.perturb_w3_guard(pc, recorded);
+        let orig_rax = if self.w3_guard_perturb == Some(W3Perturb::OrigRax) {
+            u64::MAX ^ 1
+        } else {
+            u64::MAX
+        };
+        (pc, recorded, orig_rax)
+    }
+
+    /// The W3s provenance guard (I1-H H2d, g1-g4). An entry-phase
+    /// signal stop is the unexecuted `syscall` at `pc` only if: RIP
+    /// is `pc` (g1); every general register equals the recorded copy
+    /// of the state this step wrote (g2); RFLAGS are equal (g3); and
+    /// the raw `orig_rax` is -1 (g4). The interrupt and exception
+    /// entries in scope set `orig_rax` to -1, `apply_state` never
+    /// writes it, and an entered syscall holds its number there
+    /// (arch/x86/entry/entry_64.S idtentry; asm/syscall.h).
+    ///
+    /// g4 rests on an invariant that the rest of this file must keep.
+    /// In a restart-rewound state (RIP back at `pc`) g1-g3 can all
+    /// pass, and `orig_rax` holding the call number is what tells it
+    /// apart. That works only because the stop before this step was
+    /// an exception entry (the common exit's int3), which leaves
+    /// `orig_rax` at -1, and because `set_guest_regs` never writes
+    /// `orig_rax` (see the note there). If a path ever stepped a
+    /// `syscall` straight after a syscall-exit stop, `orig_rax` would
+    /// still hold the old number and W3s would refuse: fail-closed,
+    /// at a cost in liveness only.
+    fn w3s_provenance(
+        &self,
+        pc: u64,
+        recorded: &GuestState,
+        regs: &libc::user_regs_struct,
+    ) -> bool {
+        #[cfg(feature = "test-seams")]
+        let (pc, recorded, orig_rax) = self.perturb_w3s_guard(pc, *recorded);
+        #[cfg(not(feature = "test-seams"))]
+        let (recorded, orig_rax) = (*recorded, u64::MAX);
+        let got = regs_to_state(regs);
+        let gprs = |s: GuestState| GuestState {
+            rip: 0,
+            rflags: 0,
+            ..s
+        };
+        let rip_ok = got.rip == pc;
+        let gprs_ok = gprs(got) == gprs(recorded);
+        let rflags_ok = got.rflags == recorded.rflags;
+        // g4: sound only while `set_guest_regs` never writes
+        // `orig_rax` (the invariant in this function's doc).
+        let orig_rax_ok = regs.orig_rax == orig_rax;
+        rip_ok && gprs_ok && rflags_ok && orig_rax_ok
     }
 
     /// Execute one genuine guest syscall at `pc` via
@@ -2944,12 +3305,12 @@ impl RemoteExecutable {
         state: GuestState,
         pc: u64,
         data: &JitData,
-    ) -> Result<GuestState, RunError> {
+    ) -> Result<Stepped, RunError> {
         match self.step_syscall_or_interrupt(state, pc, data)? {
-            Stepped::Done(s) => Ok(s),
             Stepped::Interrupted(_) => {
                 Err(self.unexpected_stop("syscall restart pending at exit stop"))
             }
+            stepped => Ok(stepped),
         }
     }
 
@@ -2966,6 +3327,16 @@ impl RemoteExecutable {
     ) -> Result<Stepped, RunError> {
         state.rip = pc;
         self.set_guest_regs(&state)?;
+        // The copy the W3s guard compares against: exactly the state
+        // written, staged argument included (I1-H H2d, g2).
+        let recorded = state;
+        #[cfg(feature = "test-seams")]
+        if let Some(sig) = self.take_step_plan_signal(StepKind::Syscall) {
+            // SAFETY: signalling this tracer's own traced child.
+            if unsafe { libc::kill(self.guard.pid, sig) } != 0 {
+                return Err(remote_err("test pre-syscall-step signal").into());
+            }
+        }
         for phase in [Phase::SyscallEntry, Phase::SyscallExit] {
             ptrace_ok(
                 libc::PTRACE_SYSCALL,
@@ -2991,7 +3362,29 @@ impl RemoteExecutable {
                 si.map(|(signo, code, _)| (signo, code)),
                 false,
             ) {
-                StopClass::SyscallStop => {}
+                StopClass::SyscallStop =>
+                {
+                    #[cfg(feature = "test-seams")]
+                    if phase == Phase::SyscallEntry {
+                        self.step_plan_progress(StepKind::Syscall);
+                        self.enter_stop_signal()?;
+                    }
+                }
+                // I1-H H2d, W3s: a signal reported before the `syscall`
+                // ran (on return to user at `pc`). Delivered by the
+                // caller only with the full provenance proof.
+                StopClass::Async if phase == Phase::SyscallEntry => {
+                    let regs = get_regs(self.guard.pid)?;
+                    if self.w3s_provenance(pc, &recorded, &regs) {
+                        return Ok(Stepped::EntryInterrupted {
+                            sig,
+                            addr: si.map_or(0, |s| s.2),
+                        });
+                    }
+                    return Err(
+                        self.unexpected_stop("syscall step: signal stop not at the pre-step state")
+                    );
+                }
                 class @ (StopClass::Async | StopClass::SourceFault) => {
                     let regs = get_regs(self.guard.pid)?;
                     return Err(RunError::Fault(Box::new(self.source_fault(
@@ -3018,6 +3411,69 @@ impl RemoteExecutable {
             return Ok(Stepped::Interrupted(regs));
         }
         Ok(Stepped::Done(regs_to_state(&regs)))
+    }
+
+    /// Deliver `sig`, which stopped the child before the step at
+    /// `data.exit_src` ran: an original `cpuid` step (I1-H H2b, W3) or
+    /// a `syscall` that never entered the kernel (I1-H H2d, W3s). It
+    /// recovers exactly what a common-exit stop at that instruction
+    /// recovers: the source state there, nothing credited for it. It
+    /// owns every effect of the transition: the delivery, the new
+    /// frames, the exit count, the resumed poll budget and both totals.
+    /// Without an eligible action (or a resume entry) it returns the
+    /// recovered `Fault` and changes nothing. After sigreturn the exit
+    /// stub re-exits, and the whole step runs again against the
+    /// handler's registers, memory and registry. The raw poll budget
+    /// here is at least 1 (the block body was entered past a non-zero
+    /// `jnz`).
+    fn deliver_before_step(
+        &self,
+        sig: i32,
+        addr: u64,
+        state: &GuestState,
+        data: &JitData,
+        active: &mut Vec<ActiveFrame>,
+        totals: RunTotals<'_>,
+    ) -> Result<GuestState, RunError> {
+        let Some(t) = self.translation.as_ref() else {
+            return Err(Refuse::Arch {
+                what: "remote executable not prepared",
+            }
+            .into());
+        };
+        let src = data.exit_src;
+        let recovered = crate::recovery::RecoveredStop {
+            kind: crate::recovery::FaultKind::AsyncSignal,
+            src_pc: src,
+            addr,
+            signum: sig,
+            state: GuestState { rip: src, ..*state },
+            branches: data.branch_count,
+            instructions: crate::recovery::instructions_retired_at(
+                t,
+                self.profile,
+                data.instruction_count,
+                src,
+            ),
+        };
+        let resume = src_resume_entry(t, src);
+        let action = self
+            .delivery_action(sig, active, false)
+            .filter(|_| resume.is_some());
+        let Some(action) = action else {
+            return Err(RunError::Fault(Box::new(Self::fault_from(recovered))));
+        };
+        // Before a step: no generated PC.
+        #[cfg(feature = "test-seams")]
+        self.record_seam_delivery(sig, 0, &recovered);
+        let (handler_state, frames) =
+            self.deliver_signal(action, &recovered, data, resume.unwrap_or_default(), active)?;
+        active.extend(frames);
+        *totals.exits += 1;
+        *totals.poll_remaining = self.resume_budget(data.poll_remaining);
+        *totals.branches = recovered.branches;
+        *totals.instructions = recovered.instructions;
+        Ok(handler_state)
     }
 
     /// I1-G2: deliver the signal that interrupted the syscall
@@ -3107,6 +3563,8 @@ impl RemoteExecutable {
         };
         let (handler_state, frames) =
             self.deliver_signal(action, &recovered, data, gen_mid, active)?;
+        #[cfg(feature = "test-seams")]
+        self.log_delivery(DeliveryClass::SyscallExit, sig, pc, regs.rax);
         if self.read_word(uc_greg_addr(frames[0].uc_addr, GREG_RAX))? != uc_rax {
             return Err(self.unexpected_stop("syscall restart frame state mismatch"));
         }
@@ -3134,10 +3592,16 @@ impl RemoteExecutable {
         // W3 deliveries since the last completed original step
         // (I1-H H2c, `W3_RETRY_LIMIT`).
         let mut w3_consecutive: u32 = 0;
+        // Interrupts of the step pending at each frame depth since that
+        // step's last progress (I1-H H2d, `W3_RETRY_LIMIT`). Indexed by
+        // `active.len()` at the attempt; zero-filled before any index.
+        let mut step_retries: Vec<u32> = Vec::new();
         let mut active: Vec<ActiveFrame> = Vec::new();
         let mut pending_gen: Option<u64> = None;
         #[cfg(feature = "test-seams")]
         let _debug_regs = self.arm_arrival()?;
+        #[cfg(feature = "test-seams")]
+        self.enter_stops.borrow_mut().clear();
         loop {
             // A mid-block sigreturn resume supplies its exact
             // generated entry once; every other entry resolves
@@ -3230,6 +3694,13 @@ impl RemoteExecutable {
                     if let Some(action) = action {
                         #[cfg(feature = "test-seams")]
                         self.record_seam_delivery(sig, gen_pc, &recovered);
+                        #[cfg(feature = "test-seams")]
+                        self.log_delivery(
+                            DeliveryClass::Generated,
+                            sig,
+                            recovered.src_pc,
+                            regs.rax,
+                        );
                         let (handler_state, frames) =
                             self.deliver_signal(action, &recovered, &data, gen_mid, &active)?;
                         active.extend(frames);
@@ -3279,6 +3750,13 @@ impl RemoteExecutable {
                         }
                         #[cfg(feature = "test-seams")]
                         self.record_seam_delivery(sig, gen_pc, &recovered);
+                        #[cfg(feature = "test-seams")]
+                        self.log_delivery(
+                            DeliveryClass::Generated,
+                            sig,
+                            recovered.src_pc,
+                            regs.rax,
+                        );
                         let (handler_state, frames) =
                             self.deliver_signal(action, &recovered, &data, gen_mid, &active)?;
                         active.extend(frames);
@@ -3341,9 +3819,15 @@ impl RemoteExecutable {
                         self.registry = registry;
                         let (resume_state, gen_override) = resumed?;
                         active.pop();
+                        // Counters of abandoned deeper steps go with
+                        // their frames (I1-H H2d).
+                        step_retries.truncate(active.len() + 1);
                         #[cfg(feature = "test-seams")]
                         {
-                            self.arrival_report.borrow_mut().poll_exits_after_sigreturn = 0;
+                            self.plans_on_frame_pop(active.len());
+                            let mut report = self.arrival_report.borrow_mut();
+                            report.poll_exits_after_sigreturn = 0;
+                            report.sigreturn_pops += 1;
                         }
                         state = resume_state;
                         if let Some(gpc) = gen_override {
@@ -3523,9 +4007,17 @@ impl RemoteExecutable {
                     // pass-through list): a high-32 alias like
                     // 0x1_0000000d is rt_sigaction to the kernel
                     // and must take the stubbing path too.
-                    if state.rax as u32 == libc::SYS_rt_sigaction as u32 {
+                    // The frame depth of this step, for the per-depth
+                    // bound (I1-H H2d).
+                    let d = active.len();
+                    if step_retries.len() <= d {
+                        step_retries.resize(d + 1, 0);
+                    }
+                    #[cfg(feature = "test-seams")]
+                    self.seam_depth.set(d);
+                    let interrupted = if state.rax as u32 == libc::SYS_rt_sigaction as u32 {
                         let step = self.prepare_sigaction_step(&state)?;
-                        state = match (step.step_rsi, step.saved_scratch) {
+                        let stepped = match (step.step_rsi, step.saved_scratch) {
                             (Some(rsi), Some(saved)) => self.step_redirected_syscall(
                                 state,
                                 ArgReg::Rsi,
@@ -3536,42 +4028,79 @@ impl RemoteExecutable {
                             )?,
                             _ => self.step_syscall(state, data.exit_src, &data)?,
                         };
-                        let step_rax = state.rax;
-                        let mut registry = std::mem::take(&mut self.registry);
-                        let finished = self.finish_sigaction_step(
-                            &mut registry,
-                            &step,
-                            step_rax,
-                            data.exit_src,
-                        );
-                        self.registry = registry;
-                        finished?;
+                        match stepped {
+                            Stepped::Done(s) => {
+                                state = s;
+                                let step_rax = state.rax;
+                                let mut registry = std::mem::take(&mut self.registry);
+                                let finished = self.finish_sigaction_step(
+                                    &mut registry,
+                                    &step,
+                                    step_rax,
+                                    data.exit_src,
+                                );
+                                self.registry = registry;
+                                finished?;
+                                None
+                            }
+                            Stepped::EntryInterrupted { sig, addr } => Some((sig, addr)),
+                            Stepped::Interrupted(_) => {
+                                return Err(
+                                    self.unexpected_stop("syscall restart pending at exit stop")
+                                );
+                            }
+                        }
                     } else if state.rax as u32 == libc::SYS_rt_sigqueueinfo as u32
                         || state.rax as u32 == libc::SYS_rt_tgsigqueueinfo as u32
                     {
                         let step = self.prepare_sigqueue_step(&state, data.exit_src)?;
                         let reg = if step.tg { ArgReg::R10 } else { ArgReg::Rdx };
-                        state = self.step_redirected_syscall(
+                        match self.step_redirected_syscall(
                             state,
                             reg,
                             step.staged,
                             &step.saved,
                             data.exit_src,
                             &data,
-                        )?;
-                        // A kernel-refused call (forged code to a
-                        // foreign target, or own TID with a foreign
-                        // TGID) stepped only on the kernel's
-                        // documented refusal; an accepted one means
-                        // the model is wrong and fails closed by
-                        // name.
-                        if step.kernel_refuses && (state.rax as i64) >= 0 {
-                            return Err(self.unexpected_stop("kernel accepted forged sigqueue"));
+                        )? {
+                            Stepped::Done(s) => {
+                                state = s;
+                                // A kernel-refused call (forged code to a
+                                // foreign target, or own TID with a foreign
+                                // TGID) stepped only on the kernel's
+                                // documented refusal; an accepted one means
+                                // the model is wrong and fails closed by
+                                // name.
+                                if step.kernel_refuses && (state.rax as i64) >= 0 {
+                                    return Err(
+                                        self.unexpected_stop("kernel accepted forged sigqueue")
+                                    );
+                                }
+                                None
+                            }
+                            Stepped::EntryInterrupted { sig, addr } => Some((sig, addr)),
+                            Stepped::Interrupted(_) => {
+                                return Err(
+                                    self.unexpected_stop("syscall restart pending at exit stop")
+                                );
+                            }
                         }
                     } else {
                         let obs = self.observe_syscall_entry(state.rax as u32, &state);
                         match self.step_syscall_or_interrupt(state, data.exit_src, &data)? {
-                            Stepped::Done(s) => state = s,
+                            Stepped::Done(s) => {
+                                state = s;
+                                let pid = self.guard.pid;
+                                let da = self.data_addr();
+                                Self::reconcile_registry(
+                                    &mut self.registry,
+                                    pid,
+                                    da,
+                                    &obs,
+                                    data.exit_src,
+                                )?;
+                                None
+                            }
                             Stepped::Interrupted(regs)
                                 if !RESTART_DELIVERY_SYSCALLS.contains(&(regs.orig_rax as u32)) =>
                             {
@@ -3583,7 +4112,9 @@ impl RemoteExecutable {
                                 // I1-G2: deliver the interrupting
                                 // signal at the syscall exit; the
                                 // credit is 1 for -EINTR, 0 for a
-                                // restart (the call steps again).
+                                // restart (the call steps again). The
+                                // call entered: progress at this depth.
+                                step_retries[d] = 0;
                                 let (handler_state, frames, credit) = self
                                     .deliver_at_syscall_exit(regs, data.exit_src, &data, &active)?;
                                 active.extend(frames);
@@ -3592,11 +4123,48 @@ impl RemoteExecutable {
                                 tot_instructions += credit;
                                 continue;
                             }
+                            Stepped::EntryInterrupted { sig, addr } => Some((sig, addr)),
                         }
-                        let pid = self.guard.pid;
-                        let da = self.data_addr();
-                        Self::reconcile_registry(&mut self.registry, pid, da, &obs, data.exit_src)?;
+                    };
+                    if let Some((sig, addr)) = interrupted {
+                        // I1-H H2d, W3s: this depth's bound on the pending
+                        // syscall. H2c's aggregate is not touched, and a
+                        // refused interrupt is not delivered.
+                        step_retries[d] += 1;
+                        if step_retries[d] > W3_RETRY_LIMIT {
+                            return Err(Refuse::BudgetExceeded {
+                                what: "frame-depth bound: syscall step interrupted without progress",
+                            }
+                            .into());
+                        }
+                        #[cfg(feature = "test-seams")]
+                        let raw_rax = state.rax;
+                        let totals = RunTotals {
+                            exits: &mut exits,
+                            branches: &mut tot_branches,
+                            instructions: &mut tot_instructions,
+                            poll_remaining: &mut poll_remaining,
+                        };
+                        state = self.deliver_before_step(
+                            sig,
+                            addr,
+                            &state,
+                            &data,
+                            &mut active,
+                            totals,
+                        )?;
+                        #[cfg(feature = "test-seams")]
+                        self.log_delivery(
+                            DeliveryClass::EntryInterrupted,
+                            sig,
+                            data.exit_src,
+                            raw_rax,
+                        );
+                        continue;
                     }
+                    // The call entered and completed: progress at this
+                    // depth.
+                    step_retries[d] = 0;
                     tot_instructions += 1;
                 }
                 exit_kind::NONDET => {
@@ -3614,72 +4182,64 @@ impl RemoteExecutable {
                         }
                         .into());
                     }
+                    let d = active.len();
+                    if step_retries.len() <= d {
+                        step_retries.resize(d + 1, 0);
+                    }
+                    #[cfg(feature = "test-seams")]
+                    self.seam_depth.set(d);
                     match self.step_original(state, data.exit_src, &data)? {
                         OrigStep::Done(stepped) => {
                             state = stepped;
                             tot_instructions += 1;
                             w3_consecutive = 0;
+                            step_retries[d] = 0;
                         }
                         OrigStep::Interrupted { sig, addr } => {
-                            // I1-H H2c: the liveness bound. Past
-                            // `W3_RETRY_LIMIT` consecutive deliveries
-                            // with no completed original step, refuse
-                            // by name; this interrupt is not delivered.
+                            // I1-H H2c, H2d: the liveness bound. H2c's
+                            // aggregate is checked first, with its own
+                            // string; then this depth's counter. A
+                            // refused interrupt is not delivered.
                             w3_consecutive += 1;
+                            step_retries[d] += 1;
                             if w3_consecutive > W3_RETRY_LIMIT {
                                 return Err(Refuse::BudgetExceeded {
                                     what: "original step interrupted without progress",
                                 }
                                 .into());
                             }
-                            // I1-H H2b, W3: a signal arrived before
-                            // the cpuid ran. Recover exactly what a
-                            // NONDET common-exit stop recovers (the
-                            // source state at the cpuid, nothing
-                            // credited for it) and deliver through
-                            // the Async arm's path; after sigreturn
-                            // the exit stub re-exits and the cpuid
-                            // is stepped once. The raw poll budget
-                            // here is at least 1 (the block body was
-                            // entered past a non-zero `jnz`).
-                            let src = data.exit_src;
-                            let recovered = crate::recovery::RecoveredStop {
-                                kind: crate::recovery::FaultKind::AsyncSignal,
-                                src_pc: src,
-                                addr,
-                                signum: sig,
-                                state: GuestState { rip: src, ..state },
-                                branches: data.branch_count,
-                                instructions: crate::recovery::instructions_retired_at(
-                                    t,
-                                    self.profile,
-                                    data.instruction_count,
-                                    src,
-                                ),
-                            };
-                            let resume = src_resume_entry(t, src);
-                            let action = self
-                                .delivery_action(sig, &active, false)
-                                .filter(|_| resume.is_some());
-                            let Some(action) = action else {
-                                return Err(RunError::Fault(Box::new(Self::fault_from(recovered))));
-                            };
-                            // Original step: no generated PC.
+                            if step_retries[d] > W3_RETRY_LIMIT {
+                                return Err(Refuse::BudgetExceeded {
+                                    what: "frame-depth bound: cpuid step interrupted without progress",
+                                }
+                                .into());
+                            }
+                            // I1-H H2b, W3: a signal arrived before the
+                            // cpuid ran; after sigreturn the cpuid is
+                            // stepped again.
                             #[cfg(feature = "test-seams")]
-                            self.record_seam_delivery(sig, 0, &recovered);
-                            let (handler_state, frames) = self.deliver_signal(
-                                action,
-                                &recovered,
+                            let raw_rax = state.rax;
+                            let totals = RunTotals {
+                                exits: &mut exits,
+                                branches: &mut tot_branches,
+                                instructions: &mut tot_instructions,
+                                poll_remaining: &mut poll_remaining,
+                            };
+                            state = self.deliver_before_step(
+                                sig,
+                                addr,
+                                &state,
                                 &data,
-                                resume.unwrap_or_default(),
-                                &active,
+                                &mut active,
+                                totals,
                             )?;
-                            active.extend(frames);
-                            state = handler_state;
-                            exits += 1;
-                            poll_remaining = self.resume_budget(data.poll_remaining);
-                            tot_branches = recovered.branches;
-                            tot_instructions = recovered.instructions;
+                            #[cfg(feature = "test-seams")]
+                            self.log_delivery(
+                                DeliveryClass::OriginalStep,
+                                sig,
+                                data.exit_src,
+                                raw_rax,
+                            );
                             continue;
                         }
                     }
