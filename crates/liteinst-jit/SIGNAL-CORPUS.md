@@ -31,7 +31,7 @@ inputs").
     not credited; `-EINTR` is credited at the delivery.
   - It checks every retired step's observed successor (the next
     RIP the trap reports) against its decode: the per-step
-    RIP-delta check, coord7 Q4(b). A mismatch fails the oracle.
+    RIP-delta check, lead review Q4(b). A mismatch fails the oracle.
     What that does and does not verify is listed under the
     common-mode risk below.
   - Every differential test also runs O1-S and requires the
@@ -94,8 +94,8 @@ inputs").
   INDIRECT fixture is the one exception: the O1 oracle cannot
   verify an indirect `jmp`, so that refusal is checked against
   the fixture's `jmp` offset and literal retired totals counted
-  from the fixture, with no O1-S leg (approved by coord7 in the
-  H2b review, P3-2).
+  from the fixture, with no O1-S leg (approved in the H2b
+  lead review, P3-2).
 
   **Arrival instance (H2a).** The survey's counting run records,
   at every hit of every PC-map entry, what recovery names there:
@@ -124,14 +124,14 @@ inputs").
   re-injects an ignored SIGUSR1 while RDI is 10 and RDX is RSP + 8
   as ordinary values; the kernel discards it, the stepped `nop`
   retires with si_code TRAP_TRACE (2), and O1-S must count it, not
-  record a delivery (review rev-h2a-cx). Since H2b O1-S records
+  record a delivery (H2a code review). Since H2b O1-S records
   every step it takes with a signal injected (`injections`), and
   that test asserts the step itself first: the handler-entry
   register shape, then si_code 2, then the signal and the arrival
   count, so an arrival moved off the shaped step fails by name
-  instead of passing vacuously (review coord7 P3-A).
+  instead of passing vacuously (H2a lead review P3-A).
 
-### Known common-mode risk (coord7 Q4(a))
+### Known common-mode risk (lead review Q4(a))
 
 O1 and O1-S build their decoder with the same shared
 `liteinst_x86::decoder64` as the translator. Their step
@@ -176,7 +176,7 @@ What the check cannot catch:
   the run.
 
 Capstone cross-decoding stays optional, for the case where the
-check ever disagrees (coord7 Q4(c)).
+check ever disagrees (lead review Q4(c)).
 
 ## Refusal windows (H1 through H2b)
 
@@ -228,7 +228,7 @@ refusals, and 244 and 17, while W1 was held).
   native child dies of that signal, with equal counts and
   registers. Two more are regression and O1-S-equality coverage
   only, because an eligible pending signal was deferred, not a
-  stop, under the old poll too (review coord7 P3-2):
+  stop, under the old poll too (H2a lead review P3-2):
   - `w5_sa_mask_blocked_rt_signal_delivers_after_sigreturn`:
     signal 34 in `sa_mask`, with a handler: delivered after
     sigreturn, equal to O1-S;
@@ -338,7 +338,7 @@ live-frame test inherits the NSpid host dependency of every
 self-send.
 
 No progress claim at an original step under asynchronous arrival
-faster than the tracer's deliver-and-retry round trip (H2b review
+faster than the tracer's deliver-and-retry round trip (H2b lead review
 P3-1). If a signal source such as a short-period POSIX timer fires
 again before the retried `cpuid` is stepped, W3 delivers and
 retries, where a native run makes progress between signals. Since
@@ -363,7 +363,7 @@ That is fail-closed liveness, not progress.
 - **One-shot test seams.** `pre_redirected_step_signal` is now
   one-shot, like `pre_original_step_signal` since H2b; E5 asserts
   the seam is spent after its run. This is the prerequisite for
-  closing the stepped-syscall stop (H2b review P3-3).
+  closing the stepped-syscall stop (H2b lead review P3-3).
 - **The run deadline in every ptrace test binary.** The 120 s
   pidfd watchdog moved to `tests/common/deadline.rs`, with one
   helper per way of starting a child. Each of the seven binaries

@@ -9,7 +9,7 @@
 //! so a recycled pid can never be reached. The test's next wait or
 //! ptrace call then fails, and `Drop` fails the test by name.
 //!
-//! Limit (H2b review P3-4): this bounds only loops that keep calling
+//! Limit (H2b lead review P3-4): this bounds only loops that keep calling
 //! ptrace or waiting on the child. A tracer-internal loop that never
 //! touches the child again is not bounded; a process-level bound is
 //! the next follow-up after H2c.

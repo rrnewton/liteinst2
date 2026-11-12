@@ -498,7 +498,7 @@ fn check_immediate_and_poll_async_stops() {
     // poll exits; nothing is delivered and nothing is lost: both
     // are still pending in the kernel afterwards. (Until W4 the
     // first poll exit stopped this run with a recovered
-    // AsyncSignal, which coord7 ruled a bug.)
+    // AsyncSignal, which the lead review ruled a bug.)
     {
         // 40000 iterations of `xor; cpuid; dec r12; jne`. The
         // cpuid exit splits each iteration into two block
@@ -534,7 +534,7 @@ fn check_immediate_and_poll_async_stops() {
             (q.branches, q.instructions),
             "counts equal the run with nothing pending"
         );
-        // Exact (coord7 P3): one `jne` per iteration, four
+        // Exact (lead review P3): one `jne` per iteration, four
         // instructions per iteration plus the entry `mov` and
         // the final `ret`, and the counter run down to zero.
         assert_eq!(
