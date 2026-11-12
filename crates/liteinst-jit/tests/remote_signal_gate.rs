@@ -2167,6 +2167,28 @@ fn harness_keeps_status_of_child_that_exited_first() {
     deadline::harness_status_witness();
 }
 
+/// EXITKILL (I1-H H2d): a tracee started through `RemoteExecutable`
+/// dies of SIGKILL when its tracer dies at the initial trap.
+#[test]
+fn exitkill_remote_tracee() {
+    let _g = lock();
+    deadline::exitkill_test("remote");
+}
+
+/// EXITKILL: the same for `run_o1_impl` (`run_o1_observed`).
+#[test]
+fn exitkill_o1_tracee() {
+    let _g = lock();
+    deadline::exitkill_test("o1");
+}
+
+/// EXITKILL: the same for `run_o1s`.
+#[test]
+fn exitkill_o1s_tracee() {
+    let _g = lock();
+    deadline::exitkill_test("o1s");
+}
+
 /// A child forked after the first sweep, by a custody section that
 /// was open at expiry, is still killed: by a drain-loop sweep or by
 /// the final sweep, which waits for the section to close.

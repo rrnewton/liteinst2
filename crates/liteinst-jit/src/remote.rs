@@ -1398,12 +1398,15 @@ impl RemoteExecutable {
                 errno: 0,
             });
         }
-        // Syscall stops must be distinguishable from plain traps.
+        // Syscall stops must be distinguishable from plain traps. With
+        // EXITKILL the kernel sends the child SIGKILL when this tracer
+        // exits (kernel/ptrace.c, `exit_ptrace`), so a tracer that dies
+        // never leaves its child to run on untraced.
         ptrace_ok(
             libc::PTRACE_SETOPTIONS,
             pid,
             core::ptr::null_mut(),
-            libc::PTRACE_O_TRACESYSGOOD as usize as *mut u8,
+            (libc::PTRACE_O_TRACESYSGOOD | libc::PTRACE_O_EXITKILL) as usize as *mut u8,
             "PTRACE_SETOPTIONS",
         )?;
         // Seed the mirror mask from the stopped child's actual
