@@ -706,6 +706,7 @@ fn check_blocked_write_restart_fails_closed() {
 /// o1_compare).
 #[test]
 fn remote_compare_all() {
+    let _bound = deadline::TestBound::arm();
     check_direct_corpus();
     check_faults_and_refusals();
     check_no_leaked_child();
@@ -718,4 +719,15 @@ fn remote_compare_all() {
 #[test]
 fn spawn_census() {
     deadline::spawn_census(include_str!("remote_compare.rs"), "remote_compare.rs");
+}
+
+/// Bound census (I1-H H2d): every test here arms a `TestBound`
+/// (`common/deadline.rs`).
+#[test]
+fn bound_census() {
+    deadline::bound_census(
+        include_str!("remote_compare.rs"),
+        "remote_compare.rs",
+        &["spawn_census", "bound_census"],
+    );
 }

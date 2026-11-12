@@ -17,6 +17,7 @@ const CHILD: &str = env!("CARGO_BIN_EXE_liteinst-jit-custody-child");
 
 #[test]
 fn custody_refuse_child_retains_pending_set() {
+    let _bound = deadline::TestBound::arm();
     let status = deadline::command_status(std::process::Command::new(CHILD).arg("refuse"))
         .expect("run custody refuse child");
     assert!(status.success(), "custody refuse child: {status}");
@@ -24,6 +25,7 @@ fn custody_refuse_child_retains_pending_set() {
 
 #[test]
 fn custody_query_denied_child_returns_signal_ownership() {
+    let _bound = deadline::TestBound::arm();
     let status = deadline::command_status(std::process::Command::new(CHILD).arg("denied"))
         .expect("run custody denied child");
     assert!(status.success(), "custody denied child: {status}");
@@ -31,6 +33,7 @@ fn custody_query_denied_child_returns_signal_ownership() {
 
 #[test]
 fn custody_partial_ok_reports_consumed_signal() {
+    let _bound = deadline::TestBound::arm();
     let status = deadline::command_status(std::process::Command::new(CHILD).arg("partial_ok"))
         .expect("run custody partial-ok child");
     assert!(status.success(), "custody partial-ok child: {status}");
@@ -38,6 +41,7 @@ fn custody_partial_ok_reports_consumed_signal() {
 
 #[test]
 fn custody_partial_poll_reports_consumed_signal() {
+    let _bound = deadline::TestBound::arm();
     let status = deadline::command_status(std::process::Command::new(CHILD).arg("partial_poll"))
         .expect("run custody partial-poll child");
     assert!(status.success(), "custody partial-poll child: {status}");
@@ -45,6 +49,7 @@ fn custody_partial_poll_reports_consumed_signal() {
 
 #[test]
 fn custody_dequeue_poll_returns_full_async_mask() {
+    let _bound = deadline::TestBound::arm();
     let status = deadline::command_status(std::process::Command::new(CHILD).arg("dequeue_poll"))
         .expect("run custody dequeue-poll child");
     assert!(status.success(), "custody dequeue-poll child: {status}");
@@ -52,6 +57,7 @@ fn custody_dequeue_poll_returns_full_async_mask() {
 
 #[test]
 fn custody_ordering_reports_taken_ascending() {
+    let _bound = deadline::TestBound::arm();
     let status = deadline::command_status(std::process::Command::new(CHILD).arg("ordering"))
         .expect("run custody ordering child");
     assert!(status.success(), "custody ordering child: {status}");
@@ -59,6 +65,7 @@ fn custody_ordering_reports_taken_ascending() {
 
 #[test]
 fn custody_ok_return_reports_also_pending() {
+    let _bound = deadline::TestBound::arm();
     // Pre-block and queue one signal ourselves: it belongs to no
     // poll stop (the fixture finishes in one entry), so only the
     // wrapper return transition can take custody of it.
@@ -103,4 +110,15 @@ fn custody_ok_return_reports_also_pending() {
 #[test]
 fn spawn_census() {
     deadline::spawn_census(include_str!("custody.rs"), "custody.rs");
+}
+
+/// Bound census (I1-H H2d): every test here arms a `TestBound`
+/// (`common/deadline.rs`).
+#[test]
+fn bound_census() {
+    deadline::bound_census(
+        include_str!("custody.rs"),
+        "custody.rs",
+        &["spawn_census", "bound_census"],
+    );
 }

@@ -72,15 +72,21 @@ const REMOTE_CHILD: &str = env!("CARGO_BIN_EXE_liteinst-jit-remote-child");
 static SERIAL: Mutex<()> = Mutex::new(());
 
 /// One test's hold: the serial lock, and the corpus guard every
-/// pinning test carries (see `corpus`).
+/// pinning test carries (see `corpus`), and the test's process-level
+/// bound (see `common/deadline.rs`). The fields are built in source
+/// order, so the bound starts only after the lock is held (time spent
+/// waiting behind a sibling test is not charged to it), and dropped in
+/// declaration order, so the bound outlives the serial hold.
 struct Serial {
     _corpus: corpus::Guard,
     _lock: std::sync::MutexGuard<'static, ()>,
+    _bound: deadline::TestBound,
 }
 
 fn lock() -> Serial {
     Serial {
-        _lock: SERIAL.lock().unwrap_or_else(|e| e.into_inner()),
+        _lock: deadline::serial_lock(&SERIAL),
+        _bound: deadline::TestBound::arm(),
         _corpus: corpus::guard(),
     }
 }
@@ -2073,6 +2079,7 @@ fn deadline_helpers_arm_their_child() {
 /// name (I1-H H2c; see `deadline::self_test`).
 #[test]
 fn deadline_self_test() {
+    let _bound = deadline::TestBound::arm();
     deadline::self_test();
 }
 
@@ -2084,6 +2091,273 @@ fn spawn_census() {
         include_str!("remote_signal_gate.rs"),
         "remote_signal_gate.rs",
     );
+}
+
+/// Bound census (I1-H H2d): every test here arms a `TestBound`
+/// (`common/deadline.rs`), and so do the shared tests in
+/// `common/corpus.rs`, which four binaries compile in.
+#[test]
+fn bound_census() {
+    deadline::bound_census(
+        include_str!("remote_signal_gate.rs"),
+        "remote_signal_gate.rs",
+        &["spawn_census", "bound_census", "bound_inventory"],
+    );
+    deadline::bound_census(include_str!("common/corpus.rs"), "common/corpus.rs", &[]);
+}
+
+/// The census parser's negative witnesses (I1-H H2d): a commented
+/// `#[test]` is counted, and other test attribute forms are refused.
+#[test]
+fn bound_census_refuses_unsupported_attributes() {
+    let _bound = deadline::TestBound::arm();
+    deadline::bound_census_witness();
+}
+
+/// Bound inventory (I1-H H2d): `tests/*.rs` against the reviewed
+/// table. Armed files run their own `bound_census`; streaming_golden
+/// starts no child and is exempt.
+#[test]
+fn bound_inventory() {
+    use deadline::BoundRole::{Armed, Exempt};
+    deadline::bound_inventory(&[
+        ("custody.rs", Armed),
+        ("lifecycle_dispatch.rs", Armed),
+        ("o1_compare.rs", Armed),
+        ("remote_compare.rs", Armed),
+        ("remote_registry.rs", Armed),
+        ("remote_signal.rs", Armed),
+        ("remote_signal_gate.rs", Armed),
+        ("remote_signal_rt.rs", Armed),
+        ("streaming_golden.rs", Exempt),
+    ]);
+}
+
+/// Process-level bound self-test (I1-H H2d): a probe whose bound
+/// expires aborts, its armed and unarmed sleepers die by the sweep's
+/// SIGKILL, and the line names the probe (`common/deadline.rs`).
+#[test]
+fn test_bound_self_test() {
+    let _g = lock();
+    deadline::bound_self_test();
+}
+
+/// A child whose process name is not UTF-8 is still found and killed
+/// by the expiring bound's sweep (`common/deadline.rs`).
+#[test]
+fn test_bound_sweeps_non_utf8_child() {
+    let _g = lock();
+    deadline::odd_name_sweep_test();
+}
+
+/// An orphan whose process name is not UTF-8 is still found, killed
+/// and reaped by the subreaper harness at its limit.
+#[test]
+fn harness_kills_non_utf8_orphan() {
+    let _g = lock();
+    deadline::odd_name_orphan_test();
+}
+
+/// The harness keeps the wait status of a child that exited on its
+/// own before the harness's SIGKILL reached it: a zombie accepts the
+/// signal, so a successful send alone proves nothing.
+#[test]
+fn harness_keeps_status_of_child_that_exited_first() {
+    let _g = lock();
+    deadline::harness_status_witness();
+}
+
+/// A child forked after the first sweep, by a custody section that
+/// was open at expiry, is still killed: by a drain-loop sweep or by
+/// the final sweep, which waits for the section to close.
+#[test]
+fn test_bound_sweeps_late_spawn() {
+    let _g = lock();
+    let r = deadline::subreaper_run(
+        "deadline::late_spawn_probe",
+        &[],
+        deadline::StderrMode::Drain,
+    );
+    assert_eq!(
+        r.probe, "signaled 6",
+        "expected `probe signaled 6`:\n{}",
+        r.raw
+    );
+    let late: Vec<_> = r
+        .children
+        .iter()
+        .filter(|c| c.start != "unlisted")
+        .collect();
+    assert_eq!(late.len(), 1, "expected one late child record:\n{}", r.raw);
+    assert_eq!(
+        late[0].status, "signaled 9",
+        "expected the late child `signaled 9`, not `killed-by-harness` or `missing`:\n{}",
+        r.raw
+    );
+    assert_eq!(
+        late.len(),
+        r.children.len(),
+        "no unlisted adoptee:\n{}",
+        r.raw
+    );
+}
+
+/// The custody gate excludes the final sweep: while a worker is
+/// inside a custody section, the drain's own `try_write` would block.
+/// The worker's child goes through the armed helper inside the same
+/// section, which takes no second guard. Order comes from channels,
+/// not timing, and cleanup completes before the assertion.
+#[test]
+fn custody_blocks_final_sweep_while_spawn_pending() {
+    let _g = lock();
+    let (entered_tx, entered_rx) = std::sync::mpsc::channel::<()>();
+    let (release_tx, release_rx) = std::sync::mpsc::channel::<()>();
+    let worker = std::thread::spawn(move || {
+        deadline::custody(|| {
+            let _ = entered_tx.send(());
+            let released = release_rx.recv_timeout(Duration::from_secs(10)).is_ok();
+            let mut truecmd = std::process::Command::new("/bin/true");
+            let exited_0 = deadline::command_status(&mut truecmd).is_ok_and(|s| s.success());
+            (released, exited_0)
+        })
+    });
+    let entered = entered_rx.recv_timeout(Duration::from_secs(10)).is_ok();
+    let attempt = deadline::custody_gate_try_write();
+    let _ = release_tx.send(());
+    let joined = deadline::join_within(worker, Duration::from_secs(10));
+    assert!(entered, "the worker entered its custody section");
+    assert_eq!(
+        attempt,
+        deadline::GateTry::WouldBlock,
+        "`try_write` must be `WouldBlock` while a custody section is open"
+    );
+    assert_eq!(
+        joined,
+        Some((true, true)),
+        "the worker was released and its child exited 0"
+    );
+}
+
+/// The drain half of the gate: a drain started while a custody
+/// section is open runs only `Loop` sweeps until the section closes,
+/// then exactly one `Final` sweep. Events are counted; no time is
+/// compared. The drain's write guard is not `Send`, so the drain
+/// thread drops it itself and returns a plain status.
+#[test]
+fn drain_waits_for_open_custody_section() {
+    let _g = lock();
+    use deadline::SweepKind::{Final, Loop};
+    use std::sync::atomic::{AtomicBool, Ordering::SeqCst};
+    let (entered_tx, entered_rx) = std::sync::mpsc::channel::<()>();
+    let (release_tx, release_rx) = std::sync::mpsc::channel::<()>();
+    let worker = std::thread::spawn(move || {
+        deadline::custody(|| {
+            let _ = entered_tx.send(());
+            release_rx.recv_timeout(Duration::from_secs(10)).is_ok()
+        })
+    });
+    let entered = entered_rx.recv_timeout(Duration::from_secs(10)).is_ok();
+    let released = std::sync::Arc::new(AtomicBool::new(false));
+    let flag = std::sync::Arc::clone(&released);
+    let (event_tx, event_rx) = std::sync::mpsc::channel::<(deadline::SweepKind, bool)>();
+    let drain = std::thread::spawn(move || {
+        let mut events = Vec::new();
+        let drained = {
+            let mut recorder = |kind: deadline::SweepKind| {
+                let e = (kind, flag.load(SeqCst));
+                events.push(e);
+                let _ = event_tx.send(e);
+            };
+            match deadline::drain_then_final_sweep(
+                deadline::spawn_gate(),
+                &mut recorder,
+                deadline::DRAIN_CAP,
+            ) {
+                deadline::Drain::Drained(guard) => {
+                    drop(guard);
+                    true
+                }
+                deadline::Drain::NotDrained => false,
+            }
+        };
+        (drained, events)
+    });
+    let mut loops = 0;
+    while loops < 3 {
+        match event_rx.recv_timeout(Duration::from_secs(10)) {
+            Ok((Loop, _)) => loops += 1,
+            Ok((Final, _)) | Err(_) => break,
+        }
+    }
+    released.store(true, SeqCst);
+    let _ = release_tx.send(());
+    let worker = deadline::join_within(worker, Duration::from_secs(10));
+    let drain = deadline::join_within(drain, Duration::from_secs(10));
+    assert!(entered, "the worker entered its custody section");
+    let (drained, events) = drain.expect("the drain thread finished");
+    assert!(
+        !events.iter().any(|&(k, r)| k == Final && !r),
+        "no final sweep while a custody section is open: {events:?}"
+    );
+    let open_loops = events.iter().filter(|&&(k, r)| k == Loop && !r).count();
+    assert!(
+        open_loops >= 3,
+        "at least 3 Loop sweeps while the section was open: {events:?}"
+    );
+    let finals: Vec<_> = events.iter().filter(|e| e.0 == Final).collect();
+    assert_eq!(
+        finals,
+        [&(Final, true)],
+        "exactly one Final sweep, after the release: {events:?}"
+    );
+    assert!(drained, "the drain returned Drained: {events:?}");
+    assert_eq!(worker, Some(true), "the worker was released");
+}
+
+/// A full stderr pipe cannot stop the abort: the line goes through
+/// the writer thread, and the watchdog waits at most 1 s for it.
+#[test]
+fn test_bound_aborts_with_blocked_stderr() {
+    let _g = lock();
+    let r = deadline::subreaper_run(
+        "deadline::bound_probe_blocked",
+        &[],
+        deadline::StderrMode::Hold,
+    );
+    assert_eq!(
+        r.probe, "signaled 6",
+        "expected `probe signaled 6` with stderr blocked:\n{}",
+        r.raw
+    );
+    assert_eq!(r.children.len(), 1, "expected one child record:\n{}", r.raw);
+    assert_eq!(
+        r.children[0].status, "signaled 9",
+        "expected the child `signaled 9`:\n{}",
+        r.raw
+    );
+}
+
+/// `lock()` arms the current test's bound.
+#[test]
+fn test_bound_armed_by_lock() {
+    let _g = lock();
+    let me = std::thread::current()
+        .name()
+        .expect("libtest names the test thread")
+        .to_owned();
+    let names = deadline::armed_names();
+    assert!(
+        names.contains(&me),
+        "lock() armed a TestBound named {me}: {names:?}"
+    );
+}
+
+/// The bound starts after the serial lock is held (ordering, not
+/// timing).
+#[test]
+fn test_bound_starts_after_lock() {
+    let _g = lock();
+    deadline::assert_bound_started_after_lock();
 }
 
 /// POLL pass (I1-H H2b, D1): poll exits after a POLL-kind
@@ -2539,6 +2813,7 @@ fn w1_indirect_kind_arrival_is_named_refusal() {
 /// that translates.
 #[test]
 fn w2_remote_translation_maps_every_generated_byte() {
+    let _bound = deadline::TestBound::arm();
     // Builds (and so pins) both sweep fixtures without `lock()`.
     let _corpus = corpus::guard();
     let gen_base = TRANSLATION_GEN_BASE;
@@ -2627,6 +2902,7 @@ fn remote_translations() -> Vec<(String, liteinst_jit::Translation)> {
 /// are equal (one poll exit per poll-stub block).
 #[test]
 fn poll_paths_recover_to_block_starts() {
+    let _bound = deadline::TestBound::arm();
     let _corpus = corpus::guard();
     use std::collections::BTreeSet;
     let mut checked = 0;
@@ -2686,6 +2962,7 @@ fn poll_budget_seam_refuses_zero() {
 /// The own-pid tag applies at a named buffer word only.
 #[test]
 fn tagged_normalization_never_equates_raw_and_token() {
+    let _bound = deadline::TestBound::arm();
     let info = RemoteChildInfo {
         base: 0x10_0000_0000,
         stack_top: 0x7fff_0000_0000,
@@ -3317,6 +3594,7 @@ fn o1s_ignored_signal_with_handler_shaped_registers_is_a_retirement() {
 /// the per-step RIP-delta check bounds.
 #[test]
 fn o1_oracle_imports_no_translator_classification() {
+    let _bound = deadline::TestBound::arm();
     use std::collections::BTreeSet;
     let sources: BTreeMap<&str, &str> = BTreeMap::from([
         ("o1", include_str!("../src/o1.rs")),
@@ -3425,6 +3703,7 @@ fn o1_oracle_imports_no_translator_classification() {
 /// every pinned row a 64-digit hash).
 #[test]
 fn corpus_hash_known_answers_and_table() {
+    let _bound = deadline::TestBound::arm();
     assert_eq!(
         corpus::hex(&corpus::sha256(b"")),
         "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"

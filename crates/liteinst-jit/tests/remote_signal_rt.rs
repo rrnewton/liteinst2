@@ -1341,15 +1341,21 @@ fn killed(signo: i32, uc_rip_off: u64) -> Entry {
 }
 
 /// One test's hold: the serial lock, and the corpus guard every
-/// pinning test carries (see `corpus`).
+/// pinning test carries (see `corpus`), and the test's process-level
+/// bound (see `common/deadline.rs`). The fields are built in source
+/// order, so the bound starts only after the lock is held (time spent
+/// waiting behind a sibling test is not charged to it), and dropped in
+/// declaration order, so the bound outlives the serial hold.
 struct Serial {
     _corpus: corpus::Guard,
     _lock: std::sync::MutexGuard<'static, ()>,
+    _bound: deadline::TestBound,
 }
 
 fn lock() -> Serial {
     Serial {
-        _lock: SERIAL.lock().unwrap_or_else(|e| e.into_inner()),
+        _lock: deadline::serial_lock(&SERIAL),
+        _bound: deadline::TestBound::arm(),
         _corpus: corpus::guard(),
     }
 }
@@ -2727,6 +2733,7 @@ fn self_sends_refused_by_name_when_nspid_shows_a_nested_namespace() {
 /// name (I1-H H2c; see `deadline::self_test`).
 #[test]
 fn deadline_self_test() {
+    let _bound = deadline::TestBound::arm();
     deadline::self_test();
 }
 
@@ -2735,4 +2742,30 @@ fn deadline_self_test() {
 #[test]
 fn spawn_census() {
     deadline::spawn_census(include_str!("remote_signal_rt.rs"), "remote_signal_rt.rs");
+}
+
+/// Bound census (I1-H H2d): every test here arms a `TestBound`
+/// (`common/deadline.rs`).
+#[test]
+fn bound_census() {
+    deadline::bound_census(
+        include_str!("remote_signal_rt.rs"),
+        "remote_signal_rt.rs",
+        &["spawn_census", "bound_census"],
+    );
+}
+
+/// Process-level bound self-test (I1-H H2d; see the gate's copy).
+#[test]
+fn test_bound_self_test() {
+    let _g = lock();
+    deadline::bound_self_test();
+}
+
+/// The bound starts after the serial lock is held (ordering, not
+/// timing).
+#[test]
+fn test_bound_starts_after_lock() {
+    let _g = lock();
+    deadline::assert_bound_started_after_lock();
 }

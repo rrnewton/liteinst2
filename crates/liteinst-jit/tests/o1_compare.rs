@@ -207,6 +207,7 @@ fn compare(name: &str) -> (Outcome, OracleOutcome) {
 
 #[test]
 fn jit_matches_o1_oracle_on_corpus_v1() {
+    let _bound = deadline::TestBound::arm();
     // Oracle self-check against hand-computed counts (an off-by-one
     // oracle must fail here, not silently agree with a wrong JIT).
     let o1 = deadline::o1(CHILD, "sum_loop", |_, _| {});
@@ -845,4 +846,15 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
 #[test]
 fn spawn_census() {
     deadline::spawn_census(include_str!("o1_compare.rs"), "o1_compare.rs");
+}
+
+/// Bound census (I1-H H2d): every test here arms a `TestBound`
+/// (`common/deadline.rs`).
+#[test]
+fn bound_census() {
+    deadline::bound_census(
+        include_str!("o1_compare.rs"),
+        "o1_compare.rs",
+        &["spawn_census", "bound_census"],
+    );
 }

@@ -26,6 +26,8 @@ use std::cell::{Cell, RefCell};
 use std::collections::BTreeMap;
 use std::sync::Mutex;
 
+use crate::deadline;
+
 const TABLE: &str = include_str!("../../SIGNAL-CORPUS.md");
 
 /// IDs already checked in this process, with their hash: one ID
@@ -210,6 +212,7 @@ pub fn check(id: &str, bytes: &[u8]) {
 /// would claim pins that were never checked.
 #[test]
 fn corpus_record_mode_checks_no_pins() {
+    let _bound = deadline::TestBound::arm();
     if let Ok(path) = std::env::var("LITEINST_CORPUS_RECORD") {
         panic!("LITEINST_CORPUS_RECORD={path}: record mode, no corpus pin was checked");
     }
@@ -219,6 +222,7 @@ fn corpus_record_mode_checks_no_pins() {
 /// when its guard drops, and `check` without a guard fails.
 #[test]
 fn corpus_guard_fails_recording_tests_and_unguarded_checks() {
+    let _bound = deadline::TestBound::arm();
     let path = std::env::temp_dir().join(format!(
         "liteinst-corpus-guard-probe-{}-{:?}.txt",
         std::process::id(),

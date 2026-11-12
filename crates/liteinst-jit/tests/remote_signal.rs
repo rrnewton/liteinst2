@@ -1461,6 +1461,7 @@ fn check_disposition_change() {
 
 #[test]
 fn remote_signal_all() {
+    let _bound = deadline::TestBound::arm();
     // Every fixture this test builds is pinned (see `corpus`).
     let _corpus = corpus::guard();
     check_round_trip();
@@ -1504,4 +1505,15 @@ fn remote_signal_all() {
 #[test]
 fn spawn_census() {
     deadline::spawn_census(include_str!("remote_signal.rs"), "remote_signal.rs");
+}
+
+/// Bound census (I1-H H2d): every test here arms a `TestBound`
+/// (`common/deadline.rs`).
+#[test]
+fn bound_census() {
+    deadline::bound_census(
+        include_str!("remote_signal.rs"),
+        "remote_signal.rs",
+        &["spawn_census", "bound_census"],
+    );
 }
