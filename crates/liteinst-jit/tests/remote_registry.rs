@@ -6,6 +6,8 @@
 
 #[path = "common/corpus.rs"]
 mod corpus;
+#[path = "common/deadline.rs"]
+mod deadline;
 
 use liteinst_jit::Refuse;
 use liteinst_jit::harness::RETURN_SENTINEL;
@@ -61,14 +63,18 @@ fn guest_bytes(main: &[&[u8]]) -> Vec<u8> {
     v
 }
 
-/// `id`: the fixture's SIGNAL-CORPUS.md ID, checked first.
+/// `id`: the fixture's SIGNAL-CORPUS.md ID, checked first. The
+/// caller holds the returned deadline across its run.
 fn prepare_bytes(
     id: &str,
     bytes: &[u8],
-) -> (RemoteExecutable, liteinst_jit::remote::RemoteChildInfo) {
+) -> (
+    RemoteExecutable,
+    liteinst_jit::remote::RemoteChildInfo,
+    deadline::Deadline,
+) {
     corpus::check(id, bytes);
-    let mut remote =
-        RemoteExecutable::spawn_bytes(std::path::Path::new(CHILD), bytes).expect("spawn");
+    let (mut remote, deadline) = deadline::remote_bytes(CHILD, bytes).expect("spawn");
     let info = remote.info();
     let region = RegionFacts {
         base: info.base,
@@ -83,7 +89,7 @@ fn prepare_bytes(
             CountProfile::BranchesAndInstructions,
         )
         .expect("prepare");
-    (remote, info)
+    (remote, info, deadline)
 }
 
 fn guest_state(
@@ -113,7 +119,7 @@ fn run_registry_bytes(
     liteinst_jit::remote::RemoteChildInfo,
     Vec<u8>,
 ) {
-    let (mut remote, info) = prepare_bytes(id, bytes);
+    let (mut remote, info, _deadline) = prepare_bytes(id, bytes);
     remote
         .run(guest_state(&remote, info), RETURN_SENTINEL)
         .expect("registry guest run");
@@ -177,7 +183,7 @@ fn check_registry_round_trip() {
         failed_install_and_requery,
         sigpending,
     ]);
-    let (mut remote, info) = prepare_bytes("C1 registry round trip", &bytes);
+    let (mut remote, info, _deadline) = prepare_bytes("C1 registry round trip", &bytes);
     let out = remote
         .run(guest_state(&remote, info), RETURN_SENTINEL)
         .expect("registry round trip run");
@@ -277,7 +283,7 @@ fn check_poll_with_handler_installed() {
         inc_counter,
         loop_tail,
     ]);
-    let (mut remote, info) = prepare_bytes("C2 poll with handler", &bytes);
+    let (mut remote, info, _deadline) = prepare_bytes("C2 poll with handler", &bytes);
     let pid = remote.child_pid_for_test();
     let out = remote
         .run(guest_state(&remote, info), RETURN_SENTINEL)
@@ -466,7 +472,7 @@ fn check_normalization_and_bad_inputs() {
         0xb8, 0x83, 0x00, 0x00, 0x00, 0x0f, 0x05,
     ];
     let bytes = guest_bytes(&[build_dirty, INSTALL, query_act_272, alt_onstack, &[0xc3]]);
-    let (mut remote, info) = prepare_bytes("C4 normalization", &bytes);
+    let (mut remote, info, _deadline) = prepare_bytes("C4 normalization", &bytes);
     remote
         .run(guest_state(&remote, info), RETURN_SENTINEL)
         .expect("normalization run");
@@ -523,8 +529,8 @@ fn check_normalization_and_bad_inputs() {
             &[0xc3],
         ]);
         corpus::check(&format!("C5 partial act {label}"), &bytes);
-        let mut remote = RemoteExecutable::spawn_bytes_guarded(std::path::Path::new(CHILD), &bytes)
-            .expect("spawn guarded");
+        let (mut remote, _deadline) =
+            deadline::remote_bytes_guarded(CHILD, &bytes).expect("spawn guarded");
         let info = remote.info();
         let region = RegionFacts {
             base: info.base,
@@ -572,11 +578,7 @@ fn check_normalization_and_bad_inputs() {
 fn check_seed_controls() {
     // Reserved 32/33 cannot be honored by libc mask APIs: the
     // request is refused by name instead of mirrored as set.
-    let refused = RemoteExecutable::spawn_named_with_blocked(
-        std::path::Path::new(CHILD),
-        "sum_loop",
-        &[32, 33],
-    );
+    let refused = deadline::remote_named_with_blocked(CHILD, "sum_loop", &[32, 33]);
     match refused {
         Err(Refuse::RemoteSubstrate { operation, .. }) => {
             assert_eq!(operation, "initial blocked mask not honored");
@@ -587,12 +589,9 @@ fn check_seed_controls() {
     // Positive controls: normalization reset the inherited
     // ignored SIGPIPE, and an ordinary requested mask seeds
     // exactly from the child's actual SigBlk.
-    let remote = RemoteExecutable::spawn_named_with_blocked(
-        std::path::Path::new(CHILD),
-        "sum_loop",
-        &[libc::SIGUSR1],
-    )
-    .expect("spawn with USR1 blocked");
+    let (remote, _deadline) =
+        deadline::remote_named_with_blocked(CHILD, "sum_loop", &[libc::SIGUSR1])
+            .expect("spawn with USR1 blocked");
     assert!(
         remote.registry().action(libc::SIGPIPE).is_default(),
         "SIGPIPE reset to default"
@@ -629,4 +628,11 @@ fn remote_registry_all() {
     check_oldfault_mutations();
     check_normalization_and_bad_inputs();
     check_seed_controls();
+}
+
+/// Spawn census (I1-H H2c): every child this binary starts carries
+/// a run deadline (`common/deadline.rs`).
+#[test]
+fn spawn_census() {
+    deadline::spawn_census(include_str!("remote_registry.rs"), "remote_registry.rs");
 }

@@ -52,12 +52,14 @@ use std::time::{Duration, Instant};
 
 #[path = "common/corpus.rs"]
 mod corpus;
+#[path = "common/deadline.rs"]
+mod deadline;
 
 use iced_x86::BlockEncoderOptions;
 use iced_x86::code_asm::*;
 use liteinst_jit::exec::{FaultKind, Outcome, RunError};
 use liteinst_jit::harness::RETURN_SENTINEL;
-use liteinst_jit::o1::{O1sEnd, run_o1s};
+use liteinst_jit::o1::O1sEnd;
 use liteinst_jit::refuse::Refuse;
 use liteinst_jit::remote::{RemoteChildInfo, RemoteExecutable};
 use liteinst_jit::types::{CountProfile, Generation, RegionFacts};
@@ -958,8 +960,8 @@ fn run_translated_cfg(
     ext: Ext,
     configure: impl FnOnce(&mut RemoteExecutable),
 ) -> Translated {
-    let mut remote = RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &fx.bytes)
-        .expect("spawn remote");
+    let (mut remote, deadline) =
+        deadline::remote_bytes(REMOTE_CHILD, &fx.bytes).expect("spawn remote");
     assert_eq!(
         remote.pre_redirected_step_signal_for_test(),
         None,
@@ -991,6 +993,8 @@ fn run_translated_cfg(
     let started = Instant::now();
     let out = remote.run(s, RETURN_SENTINEL);
     let ended = Instant::now();
+    // A run past its deadline fails here, by name.
+    drop(deadline);
     let seen = finish_sender(sender);
     let mut data = vec![0u8; REPORT];
     assert!(remote.read_mem(info.dst, &mut data));
@@ -1022,16 +1026,17 @@ fn run_native(fx: &Fx) -> Native {
 fn run_native_sent(fx: &Fx, ext: Ext) -> Native {
     let hex: String = fx.bytes.iter().map(|b| format!("{b:02x}")).collect();
     let started = Instant::now();
-    let mut child = Command::new(NATIVE_CHILD)
-        .args([
-            format!("hex:{hex}"),
-            fx.main_off.to_string(),
-            fx.restorer_off.to_string(),
-        ])
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("spawn native child");
+    let (mut child, deadline) = deadline::command_child(
+        Command::new(NATIVE_CHILD)
+            .args([
+                format!("hex:{hex}"),
+                fx.main_off.to_string(),
+                fx.restorer_off.to_string(),
+            ])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped()),
+    )
+    .expect("spawn native child");
     let pid = child.id();
     let sender = Sender::start(pid, ext);
     let mut stdout = child.stdout.take().expect("native stdout");
@@ -1053,6 +1058,7 @@ fn run_native_sent(fx: &Fx, ext: Ext) -> Native {
     let seen = finish_sender(sender);
     read.expect("native result");
     let status = child.wait().expect("wait native child");
+    drop(deadline);
     assert!(status.success(), "native child status {status}");
     Native {
         result: u64::from_le_bytes(out[0..8].try_into().unwrap()),
@@ -1161,8 +1167,8 @@ fn o1s_check(
 ) {
     let mut sender = None;
     let (main, restorer) = (fx.main_off, fx.restorer_off);
-    let o = run_o1s(
-        std::path::Path::new(REMOTE_CHILD),
+    let o = deadline::o1s(
+        REMOTE_CHILD,
         &fx.bytes,
         &[],
         |r, info| {
@@ -1709,19 +1715,28 @@ fn forged_sicode_to_self_refused_by_name_diverging_from_native() {
 /// reading a go byte that is never sent. Its 32-byte setup
 /// report is read first, which proves the mask is in place.
 /// Killed and reaped on drop, so a failed assert cannot leak it.
-struct Helper(Child);
+/// `_deadline` is held only for its Drop (the run deadline).
+struct Helper {
+    child: Child,
+    _deadline: deadline::Deadline,
+}
 
 impl Helper {
     fn spawn(sig: i32) -> Helper {
-        let child = Command::new(NATIVE_CHILD)
-            .args(["hex:c3", "0", "0", &sig.to_string()])
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn()
-            .expect("spawn helper");
-        let mut h = Helper(child);
+        let (child, deadline) = deadline::command_child(
+            Command::new(NATIVE_CHILD)
+                .args(["hex:c3", "0", "0", &sig.to_string()])
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped()),
+        )
+        .expect("spawn helper");
+        let mut h = Helper {
+            child,
+            _deadline: deadline,
+        };
         let mut raw = [0u8; 32];
-        h.0.stdout
+        h.child
+            .stdout
             .as_mut()
             .expect("helper stdout")
             .read_exact(&mut raw)
@@ -1730,7 +1745,7 @@ impl Helper {
     }
 
     fn pid(&self) -> u32 {
-        self.0.id()
+        self.child.id()
     }
 
     /// Process-level and thread-level pending words.
@@ -1755,8 +1770,8 @@ impl Helper {
 
 impl Drop for Helper {
     fn drop(&mut self) {
-        let _ = self.0.kill();
-        let _ = self.0.wait();
+        let _ = self.child.kill();
+        let _ = self.child.wait();
     }
 }
 
@@ -1931,6 +1946,11 @@ fn check_pre_entry_stop(
         0,
         "{label}: syscall did not execute"
     );
+    assert_eq!(
+        t.remote.pre_redirected_step_signal_for_test(),
+        None,
+        "{label}: seam spent (one-shot, I1-H H2c)"
+    );
 }
 
 #[test]
@@ -2033,8 +2053,8 @@ fn mismatched_si_signo_is_overwritten_like_native() {
 fn pre_step_test_seam_is_inert_by_default() {
     let _g = lock();
     let fx = build(&single(queue(RTMIN, 0)), "E5d seam inert");
-    let mut remote = RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &fx.bytes)
-        .expect("spawn remote");
+    let (mut remote, _deadline) =
+        deadline::remote_bytes(REMOTE_CHILD, &fx.bytes).expect("spawn remote");
     assert_eq!(
         remote.pre_redirected_step_signal_for_test(),
         None,
@@ -2531,8 +2551,8 @@ fn futex_high_alias_restarts_like_native() {
 fn sender_waits_for_sleep_not_syscall_entry_stop() {
     let _g = lock();
     let fx = build(&single(futex_wait()), "G2j sender sleep proof");
-    let remote = RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &fx.bytes)
-        .expect("spawn remote");
+    let (remote, _deadline) =
+        deadline::remote_bytes(REMOTE_CHILD, &fx.bytes).expect("spawn remote");
     let pid = remote.child_pid_for_test();
     let info = remote.info();
     // SAFETY: ptrace on this thread's own stopped tracee, with a
@@ -2701,4 +2721,18 @@ fn self_sends_refused_by_name_when_nspid_shows_a_nested_namespace() {
             "{label}: one delivery without the seam"
         );
     }
+}
+
+/// The run deadline kills a child that outlives it and fails by
+/// name (I1-H H2c; see `deadline::self_test`).
+#[test]
+fn deadline_self_test() {
+    deadline::self_test();
+}
+
+/// Spawn census (I1-H H2c): every child this binary starts carries
+/// a run deadline (`common/deadline.rs`).
+#[test]
+fn spawn_census() {
+    deadline::spawn_census(include_str!("remote_signal_rt.rs"), "remote_signal_rt.rs");
 }

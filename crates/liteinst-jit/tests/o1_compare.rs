@@ -7,9 +7,12 @@ use liteinst_jit::exec::{Executable, Outcome, ProcessMemory, RunError};
 use liteinst_jit::fixtures;
 use liteinst_jit::handler::CaptureHandler;
 use liteinst_jit::harness::{GuardedDst, MappedGuest, RETURN_SENTINEL};
-use liteinst_jit::o1::{OracleOutcome, run_o1, run_o1_bytes};
+use liteinst_jit::o1::OracleOutcome;
 use liteinst_jit::types::{CountProfile, Generation};
 use liteinst_jit::{GuestState, Refuse};
+
+#[path = "common/deadline.rs"]
+mod deadline;
 
 const CHILD: &str = env!("CARGO_BIN_EXE_liteinst-jit-o1-child");
 const STATUS_MASK: u64 = 0xcd5; // OF|DF|SF|ZF|AF|PF|CF
@@ -196,7 +199,7 @@ fn compare(name: &str) -> (Outcome, OracleOutcome) {
         .as_ref()
         .unwrap_or_else(|e| panic!("{name} jit: {e:?}"))
         .clone();
-    let o1 = run_o1(std::path::Path::new(CHILD), name, |_, _| {});
+    let o1 = deadline::o1(CHILD, name, |_, _| {});
     assert_eq!(o1.fault, None, "{name}: oracle faulted");
     assert_full_state(name, &out, &jr, &o1);
     (out, o1)
@@ -206,7 +209,7 @@ fn compare(name: &str) -> (Outcome, OracleOutcome) {
 fn jit_matches_o1_oracle_on_corpus_v1() {
     // Oracle self-check against hand-computed counts (an off-by-one
     // oracle must fail here, not silently agree with a wrong JIT).
-    let o1 = run_o1(std::path::Path::new(CHILD), "sum_loop", |_, _| {});
+    let o1 = deadline::o1(CHILD, "sum_loop", |_, _| {});
     assert_eq!(o1.branches, 17);
     assert_eq!(o1.instructions, 2 + 16 * 5 + 2 + 1);
     assert_eq!(o1.state.rax, 120);
@@ -264,12 +267,12 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
     for name in ["rep_movsb", "rep_zero", "rep_movsw_prefix"] {
         let jr = run_jit(name, |_| {});
         assert!(jr.outcome.is_ok(), "{name}");
-        let o1 = run_o1(std::path::Path::new(CHILD), name, |_, _| {});
+        let o1 = deadline::o1(CHILD, name, |_, _| {});
         assert_eq!(jr.dst, o1.dst_bytes, "{name} dst");
     }
     {
         let jr = run_jit("syscall_write", |_| {});
-        let o1 = run_o1(std::path::Path::new(CHILD), "syscall_write", |_, _| {});
+        let o1 = deadline::o1(CHILD, "syscall_write", |_, _| {});
         assert_eq!(jr.written, o1.stdout_tail);
         assert_eq!(jr.written.len(), 5);
     }
@@ -281,7 +284,7 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
             s.rsi = 5;
         });
         let out = jr.outcome.as_ref().expect("flags_adc taken").clone();
-        let o1 = run_o1(std::path::Path::new(CHILD), "flags_adc", |r, _| {
+        let o1 = deadline::o1(CHILD, "flags_adc", |r, _| {
             r.rdi = 5;
             r.rsi = 5;
         });
@@ -293,14 +296,14 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         let jr = run_jit("jrcxz", |s| s.rcx = 9);
         let out = jr.outcome.as_ref().expect("jrcxz nonzero").clone();
         assert_eq!(out.state.rax, 1);
-        let o1 = run_o1(std::path::Path::new(CHILD), "jrcxz", |r, _| r.rcx = 9);
+        let o1 = deadline::o1(CHILD, "jrcxz", |r, _| r.rcx = 9);
         assert_full_state("jrcxz(nonzero)", &out, &jr, &o1);
     }
     // rep_zero with a nonzero count as well as zero.
     {
         let jr = run_jit("rep_zero", |s| s.rdx = 5);
         let out = jr.outcome.as_ref().expect("rep_zero 5").clone();
-        let o1 = run_o1(std::path::Path::new(CHILD), "rep_zero", |r, _| r.rdx = 5);
+        let o1 = deadline::o1(CHILD, "rep_zero", |r, _| r.rdx = 5);
         assert_full_state("rep_zero(5)", &out, &jr, &o1);
         assert_eq!(jr.dst[..5], o1.dst_bytes[..5]);
     }
@@ -354,7 +357,7 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
                     .as_ref()
                     .unwrap_or_else(|e| panic!("jcc cc={cc} near={near} ({a},{b}): {e:?}"))
                     .clone();
-                let o1 = run_o1_bytes(std::path::Path::new(CHILD), &bytes, |r, _| {
+                let o1 = deadline::o1_bytes(CHILD, &bytes, |r, _| {
                     r.rdi = a;
                     r.rsi = b;
                 });
@@ -386,7 +389,7 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
             Err(RunError::Fault(f)) => f,
             other => panic!("fault_load jit: {other:?}"),
         };
-        let o1 = run_o1(std::path::Path::new(CHILD), "fault_load", |r, _| {
+        let o1 = deadline::o1(CHILD, "fault_load", |r, _| {
             r.rdi = 0x0dea_d000;
         });
         let (o1_pc, o1_sig) = o1.fault.expect("oracle fault");
@@ -416,7 +419,7 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         // reported as the source PC, never the cache PC.
         assert_eq!(f.addr, f.src_pc, "div fault addr is source pc");
         assert_eq!(off(f.addr, jr.base), 9, "div offset");
-        let o1 = run_o1(std::path::Path::new(CHILD), "div_zero", |_, _| {});
+        let o1 = deadline::o1(CHILD, "div_zero", |_, _| {});
         assert_eq!(o1.fault.map(|x| x.1), Some(libc::SIGFPE));
         assert_eq!(o1.instructions, 3);
         assert_eq!(off(o1.fault_addr, o1.base), 9, "o1 div addr offset");
@@ -434,7 +437,7 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         assert_eq!(f.state.rdi - jr.dst_ptr, 16, "destination advanced 16");
         assert_eq!(f.addr - jr.dst_ptr, 16, "fault at guard boundary");
         assert_eq!(jr.dst, vec![0x5au8; 16]);
-        let o1 = run_o1(std::path::Path::new(CHILD), "rep_stosb_partial", |_, _| {});
+        let o1 = deadline::o1(CHILD, "rep_stosb_partial", |_, _| {});
         assert_eq!(o1.fault.map(|x| x.1), Some(f.signum));
         assert_eq!(o1.instructions, 2);
         assert_eq!(o1.state.rcx, 48);
@@ -458,14 +461,10 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         assert_eq!(f.state.rsp - jr.base, 16);
         assert_eq!(off(f.src_pc, jr.base), 3);
         assert_eq!(f.instructions, 1);
-        let o1 = run_o1(
-            std::path::Path::new(CHILD),
-            "call_store_fault",
-            |r, info| {
-                r.rax = 0x1122_3344_5566_7788;
-                r.rdi = info.base + 16;
-            },
-        );
+        let o1 = deadline::o1(CHILD, "call_store_fault", |r, info| {
+            r.rax = 0x1122_3344_5566_7788;
+            r.rdi = info.base + 16;
+        });
         let (o1_pc, _) = o1.fault.expect("o1 call fault");
         assert_eq!(o1.instructions, 1);
         assert_eq!(o1.state.rax, f.state.rax);
@@ -481,7 +480,7 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         };
         assert_eq!(f.instructions, 1);
         assert_eq!(f.state.rsp, 0x0dea_d000);
-        let o1 = run_o1(std::path::Path::new(CHILD), "fault_ret", |r, _| {
+        let o1 = deadline::o1(CHILD, "fault_ret", |r, _| {
             r.rdi = 0x0dea_d000;
         });
         assert_eq!(o1.instructions, 1);
@@ -544,7 +543,7 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
     // Oracle trap provenance: a native int3 is a guest trap, not a
     // completed step; the JIT refuses int3 at translation (F4).
     {
-        let o1 = run_o1(std::path::Path::new(CHILD), "int3_trap", |_, _| {});
+        let o1 = deadline::o1(CHILD, "int3_trap", |_, _| {});
         assert_eq!(o1.fault, Some((o1.base, libc::SIGTRAP)));
         assert_eq!(o1.instructions, 0);
         let fixture = fixtures::by_name("int3_trap");
@@ -567,13 +566,9 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
     // branch. The native arm runs first so a JIT-side failure
     // (e.g. mutant 05) can never suppress the oracle comparison.
     {
-        let o1 = run_o1(
-            std::path::Path::new(CHILD),
-            "fault_before_branch",
-            |r, _| {
-                r.rdi = 0x0dea_d000;
-            },
-        );
+        let o1 = deadline::o1(CHILD, "fault_before_branch", |r, _| {
+            r.rdi = 0x0dea_d000;
+        });
         assert_eq!(o1.branches, 0, "native arm branches");
         assert_eq!(o1.instructions, 0, "native arm instructions");
         let jr = run_jit("fault_before_branch", |s| s.rdi = 0x0dea_d000);
@@ -636,7 +631,7 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
         };
         assert_eq!(f.instructions, 0);
         assert_eq!(off(f.addr, jr.base), 15);
-        let o1 = run_o1(std::path::Path::new(CHILD), "rip_store_fault", |r, _| {
+        let o1 = deadline::o1(CHILD, "rip_store_fault", |r, _| {
             r.rdi = 0x2a;
         });
         assert_eq!(o1.instructions, 0);
@@ -837,9 +832,17 @@ fn jit_matches_o1_oracle_on_corpus_v1() {
 
     // Driver binary agrees with its per-fixture expectations (F6).
     {
-        let status = std::process::Command::new(env!("CARGO_BIN_EXE_liteinst-jit-run"))
-            .status()
-            .expect("run driver");
+        let status = deadline::command_status(&mut std::process::Command::new(env!(
+            "CARGO_BIN_EXE_liteinst-jit-run"
+        )))
+        .expect("run driver");
         assert!(status.success(), "driver rc: {status}");
     }
+}
+
+/// Spawn census (I1-H H2c): every child this binary starts carries
+/// a run deadline (`common/deadline.rs`).
+#[test]
+fn spawn_census() {
+    deadline::spawn_census(include_str!("o1_compare.rs"), "o1_compare.rs");
 }

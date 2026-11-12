@@ -45,22 +45,22 @@
 //!
 //! Each test holds `SERIAL`, so ptrace children and signals from
 //! different tests never overlap. Every child, remote or O1-S,
-//! also carries a run deadline (`Deadline`, `RUN_DEADLINE`).
+//! also carries a run deadline (`common/deadline.rs`).
 
 use std::collections::BTreeMap;
-use std::os::fd::{AsRawFd, FromRawFd, OwnedFd, RawFd};
 use std::sync::Mutex;
-use std::sync::mpsc::RecvTimeoutError;
 use std::time::{Duration, Instant};
 
 #[path = "common/corpus.rs"]
 mod corpus;
+#[path = "common/deadline.rs"]
+mod deadline;
 
 use iced_x86::BlockEncoderOptions;
 use iced_x86::code_asm::*;
 use liteinst_jit::exec::{FaultKind, Outcome, RunError};
 use liteinst_jit::harness::RETURN_SENTINEL;
-use liteinst_jit::o1::{O1sEnd, O1sOutcome, run_o1s};
+use liteinst_jit::o1::{O1sEnd, O1sOutcome};
 use liteinst_jit::remote::{
     ArrivalReport, ArrivalSeam, RemoteChildInfo, RemoteExecutable, SeamHit, W3Perturb,
 };
@@ -85,96 +85,11 @@ fn lock() -> Serial {
     }
 }
 
-/// Bound on one ptrace child's life in this suite. A whole H2a run
-/// of this binary took under 6 s, and one run takes milliseconds.
-const RUN_DEADLINE: Duration = Duration::from_secs(120);
-
-/// Per-run deadline (I1-H H2b record-pass finding: a persistent
-/// pre-step seam made one run loop for 59 minutes, and nothing
-/// bounded it). Every child this suite spawns, remote or O1-S, is
-/// armed once it is stopped and ready, before any guest
-/// instruction runs. If the run still holds the deadline
-/// `RUN_DEADLINE` later, the watchdog SIGKILLs exactly that child
-/// through a pidfd opened while it was this test's unreaped child,
-/// so a recycled pid can never be reached. The tracer's next wait
-/// or ptrace call then fails, and `Drop` fails the test by name.
-/// Limit (H2b review P3-4): this bounds only loops that keep
-/// calling ptrace or waiting on the child. A tracer-internal loop
-/// that never touches the child again is not bounded; a
-/// process-level bound is an H2c item.
-struct Deadline {
-    pid: i32,
-    done: Option<std::sync::mpsc::Sender<()>>,
-    watchdog: Option<std::thread::JoinHandle<bool>>,
-}
-
-impl Deadline {
-    fn arm(pid: i32) -> Deadline {
-        // SAFETY: pidfd_open on this test's own child, spawned just
-        // now and not reaped (it waits in its initial stop).
-        let fd = unsafe { libc::syscall(libc::SYS_pidfd_open, pid, 0) };
-        assert!(
-            fd >= 0,
-            "deadline: pidfd_open({pid}): {}",
-            std::io::Error::last_os_error()
-        );
-        // SAFETY: a fresh descriptor that only this owner closes.
-        let fd = unsafe { OwnedFd::from_raw_fd(fd as RawFd) };
-        let (done, rx) = std::sync::mpsc::channel::<()>();
-        let watchdog = std::thread::spawn(move || {
-            let fired = matches!(
-                rx.recv_timeout(RUN_DEADLINE),
-                Err(RecvTimeoutError::Timeout)
-            );
-            if fired {
-                // SAFETY: SIGKILL to the one process this pidfd names.
-                let rc = unsafe {
-                    libc::syscall(
-                        libc::SYS_pidfd_send_signal,
-                        fd.as_raw_fd(),
-                        libc::SIGKILL,
-                        core::ptr::null::<libc::siginfo_t>(),
-                        0,
-                    )
-                };
-                eprintln!(
-                    "DEADLINE: child {pid} outlived {RUN_DEADLINE:?}; SIGKILL via pidfd rc={rc}"
-                );
-            }
-            fired
-        });
-        Deadline {
-            pid,
-            done: Some(done),
-            watchdog: Some(watchdog),
-        }
-    }
-}
-
-impl Drop for Deadline {
-    fn drop(&mut self) {
-        drop(self.done.take());
-        let fired = self
-            .watchdog
-            .take()
-            .is_some_and(|w| w.join().unwrap_or(true));
-        if fired && !std::thread::panicking() {
-            panic!(
-                "child {} outlived the {RUN_DEADLINE:?} run deadline and was killed",
-                self.pid
-            );
-        }
-    }
-}
-
-/// A remote child for `bytes`, armed with its run deadline. Hold
-/// the deadline as long as the executable (the pidfd makes the drop
-/// order irrelevant to safety).
-fn spawn_remote(bytes: &[u8]) -> (RemoteExecutable, Deadline) {
-    let remote = RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), bytes)
-        .expect("spawn remote");
-    let deadline = Deadline::arm(remote.child_pid_for_test());
-    (remote, deadline)
+/// A remote child for `bytes`, armed with its run deadline (see
+/// `common/deadline.rs`). Hold the deadline as long as the
+/// executable (the pidfd makes the drop order irrelevant to safety).
+fn spawn_remote(bytes: &[u8]) -> (RemoteExecutable, deadline::Deadline) {
+    deadline::remote_bytes(REMOTE_CHILD, bytes).expect("spawn remote")
 }
 
 const USR1: i32 = libc::SIGUSR1;
@@ -488,6 +403,9 @@ struct Knobs {
     arrival_sig: Option<i32>,
     poll_budget: Option<u64>,
     pre_original_step_signal: Option<i32>,
+    /// Seam (I1-H H2c): SIGUSR1 interrupts per successive original
+    /// instruction (overrides `pre_original_step_signal`).
+    pre_original_step_plan: Option<&'static [u32]>,
     /// Seam: a raw poll budget of 0 at every mid-block restore.
     zero_raw_poll_at_restore: bool,
     /// Seam: perturb one comparand of the W3 provenance guard.
@@ -528,7 +446,10 @@ fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
             }),
     );
     remote.set_poll_budget_for_test(k.poll_budget);
-    remote.set_pre_original_step_signal_for_test(k.pre_original_step_signal);
+    match k.pre_original_step_plan {
+        Some(plan) => remote.set_pre_original_step_plan_for_test(USR1, plan.to_vec()),
+        None => remote.set_pre_original_step_signal_for_test(k.pre_original_step_signal),
+    }
     remote.set_zero_raw_poll_at_restore_for_test(k.zero_raw_poll_at_restore);
     remote.set_w3_guard_perturb_for_test(k.w3_perturb);
     let mut s = remote.initial_state();
@@ -558,9 +479,8 @@ fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
 
 fn run_native(gx: &Gx, arrival: Option<(u64, i32)>) -> O1sOutcome {
     let (main, restorer, handler) = (gx.main_off, gx.restorer_off, gx.handler_off);
-    let mut deadline = None;
-    let n = run_o1s(
-        std::path::Path::new(REMOTE_CHILD),
+    deadline::o1s(
+        REMOTE_CHILD,
         &gx.bytes,
         &[],
         |r, info| {
@@ -570,10 +490,8 @@ fn run_native(gx: &Gx, arrival: Option<(u64, i32)>) -> O1sOutcome {
             r.r13 = info.dst;
         },
         arrival,
-        |pid| deadline = Some(Deadline::arm(pid)),
-    );
-    drop(deadline);
-    n
+        |_| {},
+    )
 }
 
 fn code_len(gx: &Gx) -> u64 {
@@ -1636,6 +1554,248 @@ fn w3_provenance_guard_refuses_by_name() {
     );
 }
 
+/// `W3_RETRY_LIMIT` in remote.rs, pinned as a literal (I1-H H2c):
+/// a change there must change this pin.
+const W3_RETRY_LIMIT: u32 = 64;
+/// The bound's exact named reason (coord7, H2c design review Q2):
+/// it keeps the refusal distinguishable from every other
+/// `BudgetExceeded`.
+const W3_RETRY_REFUSAL: &str = "original step interrupted without progress";
+/// Seam plans for the bound tests (named constants, so each is
+/// `'static`).
+const PLAN_AT_LIMIT: [u32; 1] = [W3_RETRY_LIMIT];
+const PLAN_OVER_LIMIT: [u32; 1] = [W3_RETRY_LIMIT + 1];
+const PLAN_RESET: [u32; 2] = [W3_RETRY_LIMIT, 1];
+
+/// The W3 retry bound admits exactly `W3_RETRY_LIMIT` consecutive
+/// deliveries (I1-H H2c): the mixed fixture's `cpuid` is interrupted
+/// 64 times in a row, then steps and the run completes. Each
+/// delivery is at the `cpuid` source PC. O1-S injects one arrival
+/// only, so the 64-delivery totals are checked by linearity against
+/// the same binary's quiet and single-delivery runs: each delivery
+/// adds the same handler and restorer path and nothing for the
+/// interrupted `cpuid`. R15 carries one R15_MARK per delivery.
+#[test]
+fn w3_retry_bound_admits_the_limit() {
+    let _g = lock();
+    let gx = build(Body::Mixed);
+    let label = "W3 bound admits";
+    let n = u64::from(W3_RETRY_LIMIT);
+    let quiet = run_translated(&gx, Knobs::default());
+    let one = run_translated(
+        &gx,
+        Knobs {
+            pre_original_step_signal: Some(USR1),
+            ..Knobs::default()
+        },
+    );
+    let t = run_translated(
+        &gx,
+        Knobs {
+            pre_original_step_plan: Some(&PLAN_AT_LIMIT),
+            ..Knobs::default()
+        },
+    );
+    let cpuid = t.info.base + gx.cpuid_off.unwrap();
+    let out = |r: &TArrival, what: &str| -> Outcome {
+        r.out
+            .clone()
+            .unwrap_or_else(|e| panic!("{label}: {what} run failed: {e:?}"))
+    };
+    let (q, o, f) = (
+        out(&quiet, "quiet"),
+        out(&one, "single"),
+        out(&t, "bounded"),
+    );
+    assert_eq!(
+        (
+            t.report.deliveries.len() as u64,
+            word(&t.data, COUNT as usize)
+        ),
+        (n, n),
+        "{label}: exactly 64 deliveries, handler ran 64 times"
+    );
+    assert!(
+        t.report.deliveries.iter().all(|d| d.src_pc == cpuid),
+        "{label}: every delivery at the cpuid source PC: {:?}",
+        t.report.deliveries
+    );
+    assert_eq!(f.state.rax, 42, "{label}: the run completed");
+    assert_eq!(
+        word(&t.data, (SCRATCH + 16) as usize),
+        word(&quiet.data, (SCRATCH + 16) as usize),
+        "{label}: the cpuid ran once, after the last sigreturn (vendor word)"
+    );
+    assert_eq!(
+        f.state.r15,
+        q.state.r15 + n * R15_MARK as u64,
+        "{label}: one R15_MARK per delivery"
+    );
+    assert_eq!(
+        (f.instructions, f.branches),
+        (
+            q.instructions + n * (o.instructions - q.instructions),
+            q.branches + n * (o.branches - q.branches)
+        ),
+        "{label}: totals = quiet + 64 x (single delivery - quiet)"
+    );
+}
+
+/// The 65th consecutive interrupt refuses by the exact named reason
+/// (I1-H H2c): 64 deliveries, then `BudgetExceeded` with
+/// `W3_RETRY_REFUSAL`, and that interrupt is not delivered.
+#[test]
+fn w3_retry_bound_refuses_by_name() {
+    let _g = lock();
+    let gx = build(Body::Mixed);
+    let label = "W3 bound refuses";
+    let n = u64::from(W3_RETRY_LIMIT);
+    let t = run_translated(
+        &gx,
+        Knobs {
+            pre_original_step_plan: Some(&PLAN_OVER_LIMIT),
+            ..Knobs::default()
+        },
+    );
+    assert_eq!(
+        t.out.as_ref().err(),
+        Some(&RunError::Refuse(liteinst_jit::Refuse::BudgetExceeded {
+            what: W3_RETRY_REFUSAL,
+        })),
+        "{label}: the exact named reason"
+    );
+    assert_eq!(
+        (
+            t.report.deliveries.len() as u64,
+            word(&t.data, COUNT as usize)
+        ),
+        (n, n),
+        "{label}: 64 delivered; the 65th interrupt is not"
+    );
+}
+
+/// A completed original step resets the bound (I1-H H2c): on the
+/// two-`cpuid` fixture, 64 interrupts at the first `cpuid`, which
+/// then steps, and one at the second. All 65 are delivered and the
+/// run completes.
+#[test]
+fn w3_retry_bound_resets_on_progress() {
+    let _g = lock();
+    let (gx, [first, second]) = build_two_cpuid();
+    let label = "W3 bound resets";
+    let n = u64::from(W3_RETRY_LIMIT);
+    let t = run_translated(
+        &gx,
+        Knobs {
+            pre_original_step_plan: Some(&PLAN_RESET),
+            ..Knobs::default()
+        },
+    );
+    let out = t
+        .out
+        .as_ref()
+        .unwrap_or_else(|e| panic!("{label}: run failed: {e:?}"));
+    assert_eq!(out.state.rax, 42, "{label}: the run completed");
+    let srcs: Vec<u64> = t
+        .report
+        .deliveries
+        .iter()
+        .map(|d| d.src_pc - t.info.base)
+        .collect();
+    let mut want = vec![first; n as usize];
+    want.push(second);
+    assert_eq!(
+        srcs, want,
+        "{label}: 64 deliveries at the first cpuid, then 1 at the second"
+    );
+    assert_eq!(
+        word(&t.data, COUNT as usize),
+        n + 1,
+        "{label}: handler ran 65 times"
+    );
+}
+
+/// The two-`cpuid` fixture (I1-H H2c): main installs the SIGUSR1
+/// handler, then runs `cpuid` leaf 0 twice (each result's EBX to
+/// scratch) and returns 42. Returns the fixture and both `cpuid`
+/// offsets.
+fn build_two_cpuid() -> (Gx, [u64; 2]) {
+    let mut a = CodeAssembler::new(64).unwrap();
+    let mut handler = a.create_label();
+    let mut restorer = a.create_label();
+    let mut main = a.create_label();
+    let mut body_l = a.create_label();
+    let mut c1 = a.create_label();
+    let mut c2 = a.create_label();
+    a.set_label(&mut handler).unwrap();
+    emit_handler(&mut a);
+    a.set_label(&mut restorer).unwrap();
+    a.db(&[0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05]).unwrap();
+    a.set_label(&mut main).unwrap();
+    a.lea(rax, qword_ptr(rbp)).unwrap();
+    a.mov(qword_ptr(r13 + ACT), rax).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 8)), FLAGS).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 12)), 0u32).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 16)), r12).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 24)), 0).unwrap();
+    a.mov(edi, USR1 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    a.set_label(&mut body_l).unwrap();
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(handler).unwrap();
+    a.xor(eax, eax).unwrap();
+    a.xor(ecx, ecx).unwrap();
+    a.set_label(&mut c1).unwrap();
+    a.cpuid().unwrap();
+    a.mov(qword_ptr(r13 + (SCRATCH + 16)), rbx).unwrap();
+    a.xor(eax, eax).unwrap();
+    a.xor(ecx, ecx).unwrap();
+    a.set_label(&mut c2).unwrap();
+    a.cpuid().unwrap();
+    a.mov(qword_ptr(r13 + (SCRATCH + 24)), rbx).unwrap();
+    a.mov(eax, 42u32).unwrap();
+    a.ret().unwrap();
+    let res = a
+        .assemble_options(0, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
+        .unwrap();
+    assert_eq!(res.label_ip(&handler).unwrap(), 0, "handler at 0");
+    corpus::check("H2c W3 two cpuid", &res.inner.code_buffer);
+    let main_off = res.label_ip(&main).unwrap();
+    (
+        Gx {
+            bytes: res.inner.code_buffer.clone(),
+            handler_off: 0,
+            restorer_off: res.label_ip(&restorer).unwrap(),
+            main_off,
+            body_off: res.label_ip(&body_l).unwrap(),
+            cpuid_off: Some(res.label_ip(&c1).unwrap()),
+            exit_offs: None,
+        },
+        [res.label_ip(&c1).unwrap(), res.label_ip(&c2).unwrap()],
+    )
+}
+
+/// The run deadline kills a child that outlives it and fails by
+/// name (I1-H H2c; see `deadline::self_test`).
+#[test]
+fn deadline_self_test() {
+    deadline::self_test();
+}
+
+/// Spawn census (I1-H H2c): every child this binary starts carries
+/// a run deadline (`common/deadline.rs`).
+#[test]
+fn spawn_census() {
+    deadline::spawn_census(
+        include_str!("remote_signal_gate.rs"),
+        "remote_signal_gate.rs",
+    );
+}
+
 /// POLL pass (I1-H H2b, D1): poll exits after a POLL-kind
 /// common-exit arrival. The quiet loop 120 at budget 16 takes
 /// `D7_QUIET_POLLS` (8) poll exits; the arrival replaces the first
@@ -1914,12 +2074,6 @@ fn w1_common_exit_arrival_in_live_handler() {
     }
 }
 
-/// The INDIRECT fixture (I1-H H2b, Q-c): main installs the SIGUSR1
-/// handler, then `lea rax, [rip + t]; jmp rax`; `t` returns 42.
-/// The translated run refuses at the `jmp` (IndirectUnresolved).
-/// O1-S cannot run it: the O1 oracle refuses to verify an indirect
-/// `jmp`, so the INDIRECT test pins `INDIRECT_REFUSAL_TOTALS`
-/// instead. Returns the fixture and the `jmp` offset.
 /// The INDIRECT refusal's retired totals (instructions, branches),
 /// counted by hand from `build_indirect`, never derived from the
 /// recovery code (coord7, H2b review P3-2). Main retires 15
@@ -1930,6 +2084,12 @@ fn w1_common_exit_arrival_in_live_handler() {
 /// not-taken `jne` (O1-S counts Jcc/loop/jrcxz only).
 const INDIRECT_REFUSAL_TOTALS: (u64, u64) = (15, 1);
 
+/// The INDIRECT fixture (I1-H H2b, Q-c): main installs the SIGUSR1
+/// handler, then `lea rax, [rip + t]; jmp rax`; `t` returns 42.
+/// The translated run refuses at the `jmp` (IndirectUnresolved).
+/// O1-S cannot run it: the O1 oracle refuses to verify an indirect
+/// `jmp`, so the INDIRECT test pins `INDIRECT_REFUSAL_TOTALS`
+/// instead. Returns the fixture and the `jmp` offset.
 fn build_indirect() -> (Gx, u64) {
     let mut a = CodeAssembler::new(64).unwrap();
     let mut handler = a.create_label();
@@ -2993,5 +3153,5 @@ fn corpus_hash_known_answers_and_table() {
     // reviewed edit here too. (Each test's own `check` proves its
     // IDs are present and current.)
     let table = corpus::table();
-    assert_eq!(table.len(), 82, "pinned fixtures");
+    assert_eq!(table.len(), 83, "pinned fixtures");
 }

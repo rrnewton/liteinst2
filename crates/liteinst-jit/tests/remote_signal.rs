@@ -23,10 +23,12 @@ use std::process::{Command, Stdio};
 
 #[path = "common/corpus.rs"]
 mod corpus;
+#[path = "common/deadline.rs"]
+mod deadline;
 
 use liteinst_jit::exec::{FaultKind, RunError};
 use liteinst_jit::harness::RETURN_SENTINEL;
-use liteinst_jit::o1::{O1sEnd, run_o1s};
+use liteinst_jit::o1::O1sEnd;
 use liteinst_jit::remote::{GuestAction, RemoteChildInfo, RemoteExecutable};
 use liteinst_jit::types::{CountProfile, Generation, RegionFacts};
 
@@ -413,12 +415,9 @@ fn run_translated_sig(
     Vec<u8>,
 ) {
     corpus::check(id, &fix.bytes);
-    let mut remote = RemoteExecutable::spawn_bytes_with_blocked(
-        std::path::Path::new(REMOTE_CHILD),
-        &fix.bytes,
-        &[blocked_sig],
-    )
-    .expect("spawn remote");
+    let (mut remote, _deadline) =
+        deadline::remote_bytes_with_blocked(REMOTE_CHILD, &fix.bytes, &[blocked_sig])
+            .expect("spawn remote");
     let info = remote.info();
     let region = RegionFacts {
         base: info.base,
@@ -469,8 +468,8 @@ fn o1s_agrees(
     let block = sent.map(|s| format!("block:{s}"));
     let args: Vec<&str> = block.iter().map(String::as_str).collect();
     let (main, restorer) = (fix.main_off, fix.restorer_off);
-    let o = run_o1s(
-        std::path::Path::new(REMOTE_CHILD),
+    let o = deadline::o1s(
+        REMOTE_CHILD,
         &fix.bytes,
         &args,
         |r, i| {
@@ -570,17 +569,18 @@ struct NativeOut {
 
 fn native_run(fix: &FixtureBytes, send_sig: Option<i32>) -> NativeOut {
     let hex: String = fix.bytes.iter().map(|b| format!("{b:02x}")).collect();
-    let mut child = Command::new(NATIVE_CHILD)
-        .args([
-            format!("hex:{hex}"),
-            fix.main_off.to_string(),
-            fix.restorer_off.to_string(),
-            send_sig.unwrap_or(libc::SIGUSR1).to_string(),
-        ])
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("spawn native child");
+    let (mut child, deadline) = deadline::command_child(
+        Command::new(NATIVE_CHILD)
+            .args([
+                format!("hex:{hex}"),
+                fix.main_off.to_string(),
+                fix.restorer_off.to_string(),
+                send_sig.unwrap_or(libc::SIGUSR1).to_string(),
+            ])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped()),
+    )
+    .expect("spawn native child");
     let pid = child.id() as i32;
     let mut stdout = child.stdout.take().expect("native stdout");
     let mut raw = [0u8; 32];
@@ -602,6 +602,7 @@ fn native_run(fix: &FixtureBytes, send_sig: Option<i32>) -> NativeOut {
     let mut out = vec![0u8; 8 + 1024];
     stdout.read_exact(&mut out).expect("native result");
     let status = child.wait().expect("wait native child");
+    drop(deadline);
     assert!(status.success(), "native child status {status}");
     let result = u64::from_le_bytes(out[0..8].try_into().unwrap());
     NativeOut {
@@ -632,8 +633,8 @@ fn run_translated_plain(
     Vec<u8>,
 ) {
     corpus::check(id, &fix.bytes);
-    let mut remote = RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &fix.bytes)
-        .expect("spawn remote");
+    let (mut remote, _deadline) =
+        deadline::remote_bytes(REMOTE_CHILD, &fix.bytes).expect("spawn remote");
     let info = remote.info();
     let region = RegionFacts {
         base: info.base,
@@ -786,8 +787,7 @@ fn check_oldact_sentinel_on_error() {
         0x48, 0xc3,
     ]);
     corpus::check("D4 oldact sentinel", &bytes);
-    let mut remote =
-        RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &bytes).expect("spawn");
+    let (mut remote, _deadline) = deadline::remote_bytes(REMOTE_CHILD, &bytes).expect("spawn");
     let info = remote.info();
     let region = RegionFacts {
         base: info.base,
@@ -943,12 +943,9 @@ fn check_async_arbitrary_phase() {
         false,
     );
     corpus::check("E3 async arbitrary phase", &fix.bytes);
-    let mut remote = RemoteExecutable::spawn_bytes_with_blocked(
-        std::path::Path::new(REMOTE_CHILD),
-        &fix.bytes,
-        &[libc::SIGUSR1],
-    )
-    .expect("spawn remote");
+    let (mut remote, _deadline) =
+        deadline::remote_bytes_with_blocked(REMOTE_CHILD, &fix.bytes, &[libc::SIGUSR1])
+            .expect("spawn remote");
     let info = remote.info();
     let region = RegionFacts {
         base: info.base,
@@ -1500,4 +1497,11 @@ fn remote_signal_all() {
     check_same_signal_reentry();
     check_disposition_change();
     check_nested_distinct();
+}
+
+/// Spawn census (I1-H H2c): every child this binary starts carries
+/// a run deadline (`common/deadline.rs`).
+#[test]
+fn spawn_census() {
+    deadline::spawn_census(include_str!("remote_signal.rs"), "remote_signal.rs");
 }

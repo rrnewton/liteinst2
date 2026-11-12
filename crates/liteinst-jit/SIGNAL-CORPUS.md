@@ -341,9 +341,41 @@ No progress claim at an original step under asynchronous arrival
 faster than the tracer's deliver-and-retry round trip (H2b review
 P3-1). If a signal source such as a short-period POSIX timer fires
 again before the retried `cpuid` is stepped, W3 delivers and
-retries without bound, where a native run makes progress between
-signals. Before H2b this case was a named refusal. A bounded retry
-ending in a named refusal is an H2c item.
+retries, where a native run makes progress between signals. Since
+H2c the retry is bounded: after 64 consecutive W3 deliveries with
+no completed original step, the next interrupt refuses by name
+(`BudgetExceeded`, "original step interrupted without progress").
+That is fail-closed liveness, not progress.
+
+## Closed in H2c
+
+- **The W3 retry bound** (`W3_RETRY_LIMIT` = 64 in remote.rs, with
+  its derivation: one round trip measured about 84 us, so 64 is
+  about 5.4 ms without progress, and only a source at about 12 kHz
+  or more reaches it). It is a liveness bound, not a determinism
+  change: the refusal is deterministic given the same delivery
+  sequence. A seam plan (signals per successive original
+  instruction) drives three tests: 64 consecutive deliveries are
+  admitted and the run completes, with totals linear in the
+  delivery count; the 65th interrupt refuses by the exact reason
+  string, undelivered; a completed step resets the count (the
+  two-`cpuid` fixture).
+- **One-shot test seams.** `pre_redirected_step_signal` is now
+  one-shot, like `pre_original_step_signal` since H2b; E5 asserts
+  the seam is spent after its run. This is the prerequisite for
+  closing the stepped-syscall stop (H2b review P3-3).
+- **The run deadline in every ptrace test binary.** The 120 s
+  pidfd watchdog moved to `tests/common/deadline.rs`, with one
+  helper per way of starting a child. Each of the seven binaries
+  runs a spawn census over its own source, which fails on any raw
+  spawn that bypasses the helpers. The deadline's self-test runs
+  in the two ptrace-only binaries (its child's SIGCHLD is harmless
+  there).
+
+Still open after H2c: the stepped-syscall stop (next slice, H2d,
+which reuses the guard, the bound and the one-shot seam); a
+process-level test bound (the deadline bounds only loops that keep
+calling ptrace or waiting).
 
 ## Run-dependent inputs
 
@@ -461,6 +493,7 @@ change was intended.
 | `H2 NSpid queue` | I1-H H2a | remote_signal_rt.rs self_sends_refused_by_name_when_nspid_shows_a_nested_namespace | SI_QUEUE self-send with a nested NSpid presented to the proof | named refusal; delivers without the seam | `f90ec963307d9d57f6b784717dae6d5b92631cbdfdbe4fcedf7ba1ac9b40b635` |
 | `H2 O1-S ignored signal shape` | I1-H H2a | remote_signal_gate.rs o1s_ignored_signal_with_handler_shaped_registers_is_a_retirement | SIGUSR1 ignored, re-injected over a step whose registers have the handler-argument shape | O1-S self-check (retirement, no delivery) | `c99cf2de97086b84c549ea64fecaed6bff3bb18f8eaecb5753cb899e2a943224` |
 | `H2 W1 live frame` | I1-H H2b | remote_signal_gate.rs w1_common_exit_arrival_in_live_handler | SIGUSR2 arriving in the common exit of the SIGUSR1 handler's ret (sigreturn interception exit), DF set; nested frame | O1-S at k (two deliveries, paired) | `0ddc0dc5b0ff254d5e461ad3584f69beaad48254470cff19c4963217d9dd71bc` |
-| `H2 W1 indirect` | I1-H H2b | remote_signal_gate.rs w1_indirect_kind_arrival_is_named_refusal | arrival in the common exit of an INDIRECT exit (`jmp rax`) | named refusal + the survey's recovery (no O1-S leg: O1 cannot verify an indirect `jmp`) | `3d964a4cf91f0ce515d6152d5d3ae6d16d047ac6ef9aa9ea1dde95cd20dad06a` |
+| `H2 W1 indirect` | I1-H H2b | remote_signal_gate.rs w1_indirect_kind_arrival_is_named_refusal | arrival in the common exit of an INDIRECT exit (`jmp rax`) | named refusal + the survey's recovery + literal totals (15, 1); no O1-S leg (O1 cannot verify an indirect `jmp`) | `3d964a4cf91f0ce515d6152d5d3ae6d16d047ac6ef9aa9ea1dde95cd20dad06a` |
+| `H2c W3 two cpuid` | I1-H H2c | remote_signal_gate.rs w3_retry_bound_resets_on_progress | 64 interrupts at the first `cpuid` (which then steps), 1 at the second | all 65 delivered at the right `cpuid`; the bound resets on progress | `35527a75fdc6723e170dde9ab3ff59e37ba1a049bc09fba3ed0eb3ec09caa24d` |
 
 Unpinned: `E4c real foreign helper` (I1-G1, remote_signal_rt.rs sigqueue_to_foreign_target_refused_by_name_even_where_native_errs): the bytes embed the live helper's pid.

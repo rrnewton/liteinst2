@@ -13,6 +13,9 @@ use liteinst_jit::remote::RemoteExecutable;
 use liteinst_jit::types::{CountProfile, Generation};
 use liteinst_jit::{GuestState, Refuse};
 
+#[path = "common/deadline.rs"]
+mod deadline;
+
 const CHILD: &str = env!("CARGO_BIN_EXE_liteinst-jit-remote-child");
 const STATUS_MASK: u64 = 0xcd5;
 
@@ -130,8 +133,7 @@ fn run_both(name: &str) -> BothResult {
     drop(guest);
 
     // Remote run in a fresh traced child.
-    let mut remote =
-        RemoteExecutable::spawn_named(std::path::Path::new(CHILD), name).expect("spawn remote");
+    let (mut remote, _deadline) = deadline::remote_named(CHILD, name).expect("spawn remote");
     let info = remote.info();
     let rregion = liteinst_jit::types::RegionFacts {
         base: info.base,
@@ -417,8 +419,7 @@ fn check_no_leaked_child() {
     // not-prepared run both return errors; dropping the
     // executable must kill and reap the child on every path.
     let fixture = fixtures::by_name("sum_loop");
-    let mut remote =
-        RemoteExecutable::spawn_named(std::path::Path::new(CHILD), "sum_loop").expect("spawn");
+    let (mut remote, _deadline) = deadline::remote_named(CHILD, "sum_loop").expect("spawn");
     let pid = remote.child_pid_for_test();
     let bad_region = liteinst_jit::types::RegionFacts {
         base: 0xdead_0000,
@@ -438,16 +439,20 @@ fn check_no_leaked_child() {
     assert!(!alive, "child {pid} leaked after early-return drop");
 }
 
+/// The caller holds the returned deadline across its run.
 fn prepare_remote(
     name: &str,
     blocked: &[i32],
-) -> (RemoteExecutable, liteinst_jit::remote::RemoteChildInfo) {
+) -> (
+    RemoteExecutable,
+    liteinst_jit::remote::RemoteChildInfo,
+    deadline::Deadline,
+) {
     let fixture = fixtures::by_name(name);
-    let mut remote = if blocked.is_empty() {
-        RemoteExecutable::spawn_named(std::path::Path::new(CHILD), name).expect("spawn")
+    let (mut remote, deadline) = if blocked.is_empty() {
+        deadline::remote_named(CHILD, name).expect("spawn")
     } else {
-        RemoteExecutable::spawn_named_with_blocked(std::path::Path::new(CHILD), name, blocked)
-            .expect("spawn blocked")
+        deadline::remote_named_with_blocked(CHILD, name, blocked).expect("spawn blocked")
     };
     let info = remote.info();
     let region = liteinst_jit::types::RegionFacts {
@@ -459,7 +464,7 @@ fn prepare_remote(
     remote
         .prepare(&region, info.base, CountProfile::BranchesAndInstructions)
         .expect("prepare");
-    (remote, info)
+    (remote, info, deadline)
 }
 
 fn check_immediate_and_poll_async_stops() {
@@ -468,7 +473,7 @@ fn check_immediate_and_poll_async_stops() {
     // any guest instruction retires. Genuine SIGTRAP here is
     // asynchronous by siginfo cause, never a dispatcher exit.
     for sig in [libc::SIGUSR1, libc::SIGTRAP] {
-        let (mut remote, info) = prepare_remote("cpuid_leaf", &[]);
+        let (mut remote, info, _deadline) = prepare_remote("cpuid_leaf", &[]);
         let pid = remote.child_pid_for_test();
         // SAFETY: signalling our own traced child.
         assert_eq!(unsafe { libc::kill(pid, sig) }, 0);
@@ -505,11 +510,13 @@ fn check_immediate_and_poll_async_stops() {
             state.rsi = 40_000;
             state
         };
-        let (mut quiet, _) = prepare_remote("cpuid_loop", &[libc::SIGUSR1, libc::SIGUSR2]);
+        let (mut quiet, _, _quiet_deadline) =
+            prepare_remote("cpuid_loop", &[libc::SIGUSR1, libc::SIGUSR2]);
         let q = quiet
             .run(state_of(&quiet), RETURN_SENTINEL)
             .expect("cpuid_loop with nothing pending");
-        let (mut remote, _info) = prepare_remote("cpuid_loop", &[libc::SIGUSR1, libc::SIGUSR2]);
+        let (mut remote, _info, _deadline) =
+            prepare_remote("cpuid_loop", &[libc::SIGUSR1, libc::SIGUSR2]);
         let pid = remote.child_pid_for_test();
         // SAFETY: signalling our own traced child.
         assert_eq!(unsafe { libc::kill(pid, libc::SIGUSR2) }, 0);
@@ -582,8 +589,7 @@ fn check_immediate_and_poll_async_stops() {
         let bytes: &[u8] = &[
             0xb8, 0x01, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0xff, 0xc9, 0x75, 0xf4, 0xc3,
         ];
-        let mut remote =
-            RemoteExecutable::spawn_bytes(std::path::Path::new(CHILD), bytes).expect("spawn");
+        let (mut remote, _deadline) = deadline::remote_bytes(CHILD, bytes).expect("spawn");
         let info = remote.info();
         let region = liteinst_jit::types::RegionFacts {
             base: info.base,
@@ -649,8 +655,7 @@ fn check_blocked_write_restart_fails_closed() {
     let bytes: &[u8] = &[
         0xb8, 0x01, 0x00, 0x00, 0x00, 0x0f, 0x05, 0x48, 0xff, 0xc9, 0x75, 0xf4, 0xc3,
     ];
-    let mut remote =
-        RemoteExecutable::spawn_bytes(std::path::Path::new(CHILD), bytes).expect("spawn");
+    let (mut remote, _deadline) = deadline::remote_bytes(CHILD, bytes).expect("spawn");
     let info = remote.info();
     let region = liteinst_jit::types::RegionFacts {
         base: info.base,
@@ -706,4 +711,11 @@ fn remote_compare_all() {
     check_no_leaked_child();
     check_immediate_and_poll_async_stops();
     check_blocked_write_restart_fails_closed();
+}
+
+/// Spawn census (I1-H H2c): every child this binary starts carries
+/// a run deadline (`common/deadline.rs`).
+#[test]
+fn spawn_census() {
+    deadline::spawn_census(include_str!("remote_compare.rs"), "remote_compare.rs");
 }
