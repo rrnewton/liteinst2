@@ -310,6 +310,9 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   and original-step async stops, blocked-poll delivery,
   sync faults outside copied insns, and handler-mutated
   mid-block resume PCs still stop by name (see I1-E detail).
+  I1-H H2b later closes the common-exit stages (except an
+  INDIRECT exit's) and the original-step stop; the
+  stepped-syscall stop before syscall entry stays open.
 - **I1-F landed** (`736454bcaff828689cc7f97ec962d495d3015399`):
   masks, alternate stack, capped nesting (see its detail).
 - **I1-G split** (coordinator decision 2026-11-10): **I1-G1**
@@ -370,6 +373,36 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   index, so a 0 restored mid-block is a broken invariant, and
   resetting it would hide the bug; a test seam presents it. The
   seam counts poll exits so the fix is observable.
+- **W1 and W3** (**closed in H2b**). W1: a common-exit stop of a
+  RETURN, SYSCALL, NONDET or POLL exit is resumable. It recovers
+  to the exit's source PC with the terminator not yet run and
+  resumes through the exit stub's pristine entry (or the block
+  index), so the terminator runs once after the handler; a POLL
+  exit recovers to its block start. An INDIRECT (or unknown)
+  kind keeps the named refusal, pinned by a `jmp rax` fixture.
+  W3: a signal-delivery stop presented before the original
+  `cpuid` step runs is delivered at the `cpuid`, nothing
+  credited, and the `cpuid` is stepped once after sigreturn; a
+  three-part provenance guard (RIP, GPRs, RFLAGS exactly, against
+  the recorded pre-step copy, no TF exception) refuses any other
+  asynchronous stop by name, shown per part through a seam. The
+  restore invariant above extends to POLL-kind common-exit stops
+  (they recover to a block start), pinned on the PC map. Still
+  open: an asynchronous stop before a stepped syscall's entry
+  (the W3 sibling), and kernel-generated signals during the
+  original step. Liveness non-claim: W3 can retry the `cpuid`
+  without bound where a native run progresses, if an
+  asynchronous signal (a short-period timer, say) fires faster
+  than the deliver-and-retry round trip; before H2b that case
+  was refused by name. A bounded retry with a named refusal is
+  an H2c item. Ordering condition (H2b review P3-3): the H2c
+  test-hygiene items, a one-shot `pre_redirected_step_signal`
+  seam and the per-run deadline in the other six ptrace test
+  binaries (remote_signal_rt, remote_signal, remote_registry,
+  remote_compare, o1_compare, custody), land in or before the
+  slice that closes the stepped-syscall stop. Closing that stop
+  with the seam still persistent would bring back the H2b
+  record-pass hang, in a binary with no deadline.
 - **W2 is closed by evidence, not code** (H1). The scope named
   W2 as "generated PCs with no pcmap entry (the entry-loader
   bridge class)", but the remote substrate has no such PCs. The

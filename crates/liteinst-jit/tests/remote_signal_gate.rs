@@ -31,6 +31,10 @@
 //! - **Closed in H2a.** W5 (the poll's blocked mask is the
 //!   kernel's `SigBlk`) and the poll budget after a delivery from
 //!   a budget-0 stop (polls are counted by the seam).
+//! - **Closed in H2b.** W1 (arrivals in the common exit of a
+//!   RETURN, SYSCALL, NONDET or POLL exit deliver; INDIRECT keeps
+//!   the named refusal) and W3 (an arrival before the original
+//!   `cpuid` step delivers). Comparisons use tagged normalization.
 //!
 //! Fixture layout (buffer at r13 = dst; r13 is never written by
 //! guest code):
@@ -40,10 +44,13 @@
 //! - the body, which starts at the next block.
 //!
 //! Each test holds `SERIAL`, so ptrace children and signals from
-//! different tests never overlap.
+//! different tests never overlap. Every child, remote or O1-S,
+//! also carries a run deadline (`Deadline`, `RUN_DEADLINE`).
 
 use std::collections::BTreeMap;
+use std::os::fd::{AsRawFd, FromRawFd, OwnedFd, RawFd};
 use std::sync::Mutex;
+use std::sync::mpsc::RecvTimeoutError;
 use std::time::{Duration, Instant};
 
 #[path = "common/corpus.rs"]
@@ -55,7 +62,7 @@ use liteinst_jit::exec::{FaultKind, Outcome, RunError};
 use liteinst_jit::harness::RETURN_SENTINEL;
 use liteinst_jit::o1::{O1sEnd, O1sOutcome, run_o1s};
 use liteinst_jit::remote::{
-    ArrivalReport, ArrivalSeam, RemoteChildInfo, RemoteExecutable, SeamHit,
+    ArrivalReport, ArrivalSeam, RemoteChildInfo, RemoteExecutable, SeamHit, W3Perturb,
 };
 use liteinst_jit::types::{CountProfile, Generation, RegionFacts};
 use liteinst_jit::{CallStage, CommonStage, ExitStage, PcMapEntry, Recovery, StubStage};
@@ -76,6 +83,98 @@ fn lock() -> Serial {
         _lock: SERIAL.lock().unwrap_or_else(|e| e.into_inner()),
         _corpus: corpus::guard(),
     }
+}
+
+/// Bound on one ptrace child's life in this suite. A whole H2a run
+/// of this binary took under 6 s, and one run takes milliseconds.
+const RUN_DEADLINE: Duration = Duration::from_secs(120);
+
+/// Per-run deadline (I1-H H2b record-pass finding: a persistent
+/// pre-step seam made one run loop for 59 minutes, and nothing
+/// bounded it). Every child this suite spawns, remote or O1-S, is
+/// armed once it is stopped and ready, before any guest
+/// instruction runs. If the run still holds the deadline
+/// `RUN_DEADLINE` later, the watchdog SIGKILLs exactly that child
+/// through a pidfd opened while it was this test's unreaped child,
+/// so a recycled pid can never be reached. The tracer's next wait
+/// or ptrace call then fails, and `Drop` fails the test by name.
+/// Limit (H2b review P3-4): this bounds only loops that keep
+/// calling ptrace or waiting on the child. A tracer-internal loop
+/// that never touches the child again is not bounded; a
+/// process-level bound is an H2c item.
+struct Deadline {
+    pid: i32,
+    done: Option<std::sync::mpsc::Sender<()>>,
+    watchdog: Option<std::thread::JoinHandle<bool>>,
+}
+
+impl Deadline {
+    fn arm(pid: i32) -> Deadline {
+        // SAFETY: pidfd_open on this test's own child, spawned just
+        // now and not reaped (it waits in its initial stop).
+        let fd = unsafe { libc::syscall(libc::SYS_pidfd_open, pid, 0) };
+        assert!(
+            fd >= 0,
+            "deadline: pidfd_open({pid}): {}",
+            std::io::Error::last_os_error()
+        );
+        // SAFETY: a fresh descriptor that only this owner closes.
+        let fd = unsafe { OwnedFd::from_raw_fd(fd as RawFd) };
+        let (done, rx) = std::sync::mpsc::channel::<()>();
+        let watchdog = std::thread::spawn(move || {
+            let fired = matches!(
+                rx.recv_timeout(RUN_DEADLINE),
+                Err(RecvTimeoutError::Timeout)
+            );
+            if fired {
+                // SAFETY: SIGKILL to the one process this pidfd names.
+                let rc = unsafe {
+                    libc::syscall(
+                        libc::SYS_pidfd_send_signal,
+                        fd.as_raw_fd(),
+                        libc::SIGKILL,
+                        core::ptr::null::<libc::siginfo_t>(),
+                        0,
+                    )
+                };
+                eprintln!(
+                    "DEADLINE: child {pid} outlived {RUN_DEADLINE:?}; SIGKILL via pidfd rc={rc}"
+                );
+            }
+            fired
+        });
+        Deadline {
+            pid,
+            done: Some(done),
+            watchdog: Some(watchdog),
+        }
+    }
+}
+
+impl Drop for Deadline {
+    fn drop(&mut self) {
+        drop(self.done.take());
+        let fired = self
+            .watchdog
+            .take()
+            .is_some_and(|w| w.join().unwrap_or(true));
+        if fired && !std::thread::panicking() {
+            panic!(
+                "child {} outlived the {RUN_DEADLINE:?} run deadline and was killed",
+                self.pid
+            );
+        }
+    }
+}
+
+/// A remote child for `bytes`, armed with its run deadline. Hold
+/// the deadline as long as the executable (the pidfd makes the drop
+/// order irrelevant to safety).
+fn spawn_remote(bytes: &[u8]) -> (RemoteExecutable, Deadline) {
+    let remote = RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), bytes)
+        .expect("spawn remote");
+    let deadline = Deadline::arm(remote.child_pid_for_test());
+    (remote, deadline)
 }
 
 const USR1: i32 = libc::SIGUSR1;
@@ -131,19 +230,27 @@ struct Gx {
 }
 
 fn emit_handler(a: &mut CodeAssembler) {
+    emit_handler_body(a, SLOT, COUNT);
+    a.ret().unwrap();
+}
+
+/// The logging handler without its `ret`: siginfo words 0..4, uc
+/// gregs and mask into `slot`, the R15 mark in the frame, and one
+/// increment of the counter at `count`. With `SLOT` and `COUNT`
+/// these are exactly `emit_handler`'s bytes (pinned fixtures).
+fn emit_handler_body(a: &mut CodeAssembler, slot: i32, count: i32) {
     for i in 0..4 {
         a.mov(rax, qword_ptr(rsi + 8 * i)).unwrap();
-        a.mov(qword_ptr(r13 + (SLOT + 8 * i)), rax).unwrap();
+        a.mov(qword_ptr(r13 + (slot + 8 * i)), rax).unwrap();
     }
     for i in 0..18 {
         a.mov(rax, qword_ptr(rdx + (40 + 8 * i))).unwrap();
-        a.mov(qword_ptr(r13 + (SLOT + 32 + 8 * i)), rax).unwrap();
+        a.mov(qword_ptr(r13 + (slot + 32 + 8 * i)), rax).unwrap();
     }
     a.mov(rax, qword_ptr(rdx + 296)).unwrap();
-    a.mov(qword_ptr(r13 + (SLOT + 176)), rax).unwrap();
+    a.mov(qword_ptr(r13 + (slot + 176)), rax).unwrap();
     a.add(qword_ptr(rdx + UC_R15), R15_MARK).unwrap();
-    a.inc(qword_ptr(r13 + COUNT)).unwrap();
-    a.ret().unwrap();
+    a.inc(qword_ptr(r13 + count)).unwrap();
 }
 
 fn build(body: Body) -> Gx {
@@ -260,11 +367,29 @@ fn build(body: Body) -> Gx {
     }
 }
 
-/// Normalize a value to `(region id << 56) | offset` when it
-/// points into one of the child's known regions; other values
-/// stay raw. Generated (arena) addresses are deliberately not a
-/// region: one leaking into guest state is a mismatch.
-fn norm(v: u64, info: &RemoteChildInfo, code_len: u64) -> u64 {
+/// A normalized word (I1-H H2b, Q-d): tagged, so a raw value can
+/// never compare equal to a region offset or the own-pid token,
+/// whatever its bits. Equal tagged words are equal under the old
+/// untagged encoding too, so tagging only adds failures, and only
+/// where a raw value collides with a token.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Norm {
+    Raw(u64),
+    /// (region id, offset).
+    Region(u8, u64),
+    /// The child's own pid in the low half (each run has its own
+    /// child); `high` is the word's upper half (0 in RDI, the uid
+    /// in a siginfo sender word).
+    OwnPid {
+        high: u64,
+    },
+}
+
+/// Normalize a value to its (region, offset) when it points into
+/// one of the child's known regions; other values stay raw.
+/// Generated (arena) addresses are deliberately not a region: one
+/// leaking into guest state is a mismatch.
+fn norm(v: u64, info: &RemoteChildInfo, code_len: u64) -> Norm {
     let stack_lo = info.stack_top - 64 * 1024 + 8;
     let regions = [
         (info.base, code_len),
@@ -275,10 +400,10 @@ fn norm(v: u64, info: &RemoteChildInfo, code_len: u64) -> u64 {
     ];
     for (i, &(lo, len)) in regions.iter().enumerate() {
         if v >= lo && v <= lo + len {
-            return ((i as u64 + 1) << 56) | (v - lo);
+            return Norm::Region(i as u8 + 1, v - lo);
         }
     }
-    v
+    Norm::Raw(v)
 }
 
 fn word(data: &[u8], off: usize) -> u64 {
@@ -297,10 +422,10 @@ fn state_gregs(s: &liteinst_jit::GuestState) -> [u64; 18] {
 /// engine's guest sets TF or RF, so an observer flag leaking into
 /// guest-visible state (the seam's RF, the oracle's TF) is a
 /// mismatch, not noise.
-fn norm_gregs(g: &[u64; 18], info: &RemoteChildInfo, code_len: u64) -> [u64; 18] {
+fn norm_gregs(g: &[u64; 18], info: &RemoteChildInfo, code_len: u64) -> [Norm; 18] {
     core::array::from_fn(|i| {
         if i == 17 {
-            g[i]
+            Norm::Raw(g[i])
         } else {
             norm(g[i], info, code_len)
         }
@@ -308,12 +433,35 @@ fn norm_gregs(g: &[u64; 18], info: &RemoteChildInfo, code_len: u64) -> [u64; 18]
 }
 
 /// Normalized guest buffer: `REPORT` bytes as words.
-/// The siginfo sender word (pid | uid << 32) needs no special
-/// case: both engines' arrival signal comes from this test
-/// process, and the word lies in no address region.
-fn norm_buffer(d: &[u8], info: &RemoteChildInfo, code_len: u64) -> Vec<u64> {
+/// A siginfo sender word (pid | uid << 32) logged for an arrival
+/// needs no special case: both engines' arrival signal comes from
+/// this test process, and the word lies in no address region. A
+/// signal the guest sends itself carries its own child's pid, so
+/// that one word is named by exact position (`norm_buffer_pid`).
+fn norm_buffer(d: &[u8], info: &RemoteChildInfo, code_len: u64) -> Vec<Norm> {
+    norm_buffer_pid(d, info, code_len, 0, &[])
+}
+
+/// [`norm_buffer`], with the words at `own_pid_words` (buffer word
+/// indices of self-sent siginfo sender words) tagged as the own
+/// pid when their low half is `pid` (I1-H H2b, Q-d). No other word
+/// is pid-normalized.
+fn norm_buffer_pid(
+    d: &[u8],
+    info: &RemoteChildInfo,
+    code_len: u64,
+    pid: i32,
+    own_pid_words: &[usize],
+) -> Vec<Norm> {
     (0..REPORT / 8)
-        .map(|i| norm(word(d, i * 8), info, code_len))
+        .map(|i| {
+            let w = word(d, i * 8);
+            if own_pid_words.contains(&i) && (w & 0xffff_ffff) == u64::from(pid as u32) {
+                Norm::OwnPid { high: w >> 32 }
+            } else {
+                norm(w, info, code_len)
+            }
+        })
         .collect()
 }
 
@@ -336,15 +484,18 @@ struct TArrival {
 struct Knobs {
     /// Arrival at PC-map entry `index`, on hit `hit`.
     arrival: Option<(usize, u64)>,
+    /// The arrival's signal (`None`: SIGUSR1).
+    arrival_sig: Option<i32>,
     poll_budget: Option<u64>,
     pre_original_step_signal: Option<i32>,
     /// Seam: a raw poll budget of 0 at every mid-block restore.
     zero_raw_poll_at_restore: bool,
+    /// Seam: perturb one comparand of the W3 provenance guard.
+    w3_perturb: Option<W3Perturb>,
 }
 
 fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
-    let mut remote = RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &gx.bytes)
-        .expect("spawn remote");
+    let (mut remote, deadline) = spawn_remote(&gx.bytes);
     let info = remote.info();
     let region = RegionFacts {
         base: info.base,
@@ -373,18 +524,21 @@ fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
             .map(|((_, hit), (gen_pc, _))| ArrivalSeam {
                 gen_pc,
                 hit,
-                sig: USR1,
+                sig: k.arrival_sig.unwrap_or(USR1),
             }),
     );
     remote.set_poll_budget_for_test(k.poll_budget);
     remote.set_pre_original_step_signal_for_test(k.pre_original_step_signal);
     remote.set_zero_raw_poll_at_restore_for_test(k.zero_raw_poll_at_restore);
+    remote.set_w3_guard_perturb_for_test(k.w3_perturb);
     let mut s = remote.initial_state();
     s.rip = info.base + gx.main_off;
     s.rbp = info.base + gx.handler_off;
     s.r12 = info.base + gx.restorer_off;
     s.r13 = info.dst;
     let out = remote.run(s, RETURN_SENTINEL);
+    // A run past its deadline fails here, by name.
+    drop(deadline);
     let report = remote.arrival_report_for_test();
     let debug_regs = remote.debug_regs_for_test();
     let pid = remote.child_pid_for_test();
@@ -404,7 +558,8 @@ fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
 
 fn run_native(gx: &Gx, arrival: Option<(u64, i32)>) -> O1sOutcome {
     let (main, restorer, handler) = (gx.main_off, gx.restorer_off, gx.handler_off);
-    run_o1s(
+    let mut deadline = None;
+    let n = run_o1s(
         std::path::Path::new(REMOTE_CHILD),
         &gx.bytes,
         &[],
@@ -415,8 +570,10 @@ fn run_native(gx: &Gx, arrival: Option<(u64, i32)>) -> O1sOutcome {
             r.r13 = info.dst;
         },
         arrival,
-        |_| {},
-    )
+        |pid| deadline = Some(Deadline::arm(pid)),
+    );
+    drop(deadline);
+    n
 }
 
 fn code_len(gx: &Gx) -> u64 {
@@ -477,8 +634,9 @@ enum Verdict {
     Equal,
     /// The `hit`-th execution never happened.
     NotReached,
-    /// W1: an asynchronous stop in the common exit stays a
-    /// recovered AsyncSignal (today's named refusal).
+    /// An asynchronous stop in the common exit stayed a recovered
+    /// AsyncSignal: since I1-H H2b only for an INDIRECT (or
+    /// unknown) exit kind. The sweeps require none.
     RefusedW1,
 }
 
@@ -519,14 +677,72 @@ fn assert_rf_at_every_hit(report: &ArrivalReport, label: &str) {
     );
 }
 
+/// Which generated PC an expected delivery must carry.
+#[derive(Clone, Copy, Debug)]
+enum GenPc {
+    /// The arrival seam's target PC.
+    Arrival,
+    /// Any: a delivery the guest caused itself (a self-sent signal
+    /// presented at the next block head).
+    Any,
+    /// Exactly this value (0: from an original step, W3).
+    Exactly(u64),
+}
+
+/// One expected delivery, in delivery order, and where its handler
+/// logs (siginfo, gregs, mask at `slot`; a counter at `count`).
+#[derive(Clone, Copy, Debug)]
+struct Want {
+    signo: i32,
+    gen_pc: GenPc,
+    slot: i32,
+    count: i32,
+}
+
+/// What `compare_delivered` checks a delivered run against (I1-H
+/// H2b): the exact delivery list in both engines, paired by index,
+/// with the full H1 equality for each pair.
+#[derive(Clone, Copy, Debug)]
+struct Spec<'a> {
+    /// The arrival signal (seam and O1-S).
+    sig: i32,
+    deliveries: &'a [Want],
+    /// Index in `deliveries` of the arrival: O1-S is signalled at
+    /// its recovered count.
+    arrival: usize,
+    /// Buffer word indices holding the child's own pid in their
+    /// low half (a self-sent siginfo sender word `pid | uid << 32`,
+    /// or a logged RDI after `getpid`), compared as the tagged own
+    /// pid.
+    own_pid_words: &'a [usize],
+    /// The fixture leaves the child's own pid in RDI (`getpid`):
+    /// RDI compares as the tagged own pid wherever it holds it.
+    pid_in_rdi: bool,
+    /// O1-S can run the fixture. False only for an indirect `jmp`,
+    /// which the O1 oracle refuses to verify (its RIP-delta check
+    /// predicts `Unverifiable`): a refusal is then checked against
+    /// the survey's recovery only, with no O1-S leg.
+    o1s: bool,
+}
+
+/// The H1 single-arrival shape: one SIGUSR1 delivery at the seam's
+/// target, logged by the one handler.
+const SINGLE: Spec<'static> = Spec {
+    sig: USR1,
+    deliveries: &[Want {
+        signo: USR1,
+        gen_pc: GenPc::Arrival,
+        slot: SLOT,
+        count: COUNT,
+    }],
+    arrival: 0,
+    own_pid_words: &[],
+    pid_in_rdi: false,
+    o1s: true,
+};
+
 /// Run one arrival in both engines; panic on any mismatch.
 /// `want` is the survey's recovery at this (PC, hit).
-///
-/// Check order is fixed, so the first failing assertion names
-/// the cause deterministically: the seam reached the hit (the
-/// unsent branch), then it fired on exactly that hit, then the
-/// arrival's instance matches the survey's recovery there, then
-/// the outcome comparisons.
 fn check_arrival(
     gx: &Gx,
     idx: usize,
@@ -535,14 +751,31 @@ fn check_arrival(
     label: &str,
     want: HitRec,
 ) -> Verdict {
-    let t = run_translated(
-        gx,
-        Knobs {
-            arrival: Some((idx, hit)),
-            poll_budget,
-            ..Knobs::default()
-        },
-    );
+    let knobs = Knobs {
+        arrival: Some((idx, hit)),
+        poll_budget,
+        ..Knobs::default()
+    };
+    check_arrival_full(gx, knobs, label, want, &SINGLE).0
+}
+
+/// [`check_arrival`] for any knobs and delivery spec; also returns
+/// the translated run (its seam report counts polls).
+///
+/// Check order is fixed, so the first failing assertion names
+/// the cause deterministically: the seam reached the hit (the
+/// unsent branch), then it fired on exactly that hit, then the
+/// arrival's instance matches the survey's recovery there, then
+/// the outcome comparisons.
+fn check_arrival_full(
+    gx: &Gx,
+    knobs: Knobs,
+    label: &str,
+    want: HitRec,
+    spec: &Spec,
+) -> (Verdict, TArrival) {
+    let (_, hit) = knobs.arrival.expect("an arrival");
+    let t = run_translated(gx, knobs);
     assert_eq!(
         t.debug_regs,
         Some((0, 0)),
@@ -561,8 +794,12 @@ fn check_arrival(
             .as_ref()
             .unwrap_or_else(|e| panic!("{label}: unreached arrival, run failed: {e:?}"));
         assert_eq!(out.state.rax, 42, "{label}: unreached arrival result");
-        assert!(t.report.deliveries.is_empty(), "{label}: no delivery");
-        return Verdict::NotReached;
+        assert_eq!(
+            t.report.deliveries.len(),
+            spec.arrival,
+            "{label}: only the deliveries before the arrival"
+        );
+        return (Verdict::NotReached, t);
     }
     // The seam fired on the requested hit, not later.
     assert_eq!(t.report.hits, hit, "{label}: arrival fired on hit");
@@ -572,7 +809,7 @@ fn check_arrival(
     // `recover` with the arrival, so it pins which dynamic
     // instance was hit, not recovery correctness (the O1-S
     // comparisons below do that).
-    let got = match (&t.out, t.report.deliveries.first()) {
+    let got = match (&t.out, t.report.deliveries.get(spec.arrival)) {
         (Err(RunError::Fault(f)), _) if f.kind == FaultKind::AsyncSignal => {
             (f.src_pc, f.instructions, f.branches)
         }
@@ -587,131 +824,211 @@ fn check_arrival(
     );
     assert_rf_at_every_hit(&t.report, label);
     let clen = code_len(gx);
-    match &t.out {
-        Err(RunError::Fault(f)) if f.kind == FaultKind::AsyncSignal => {
-            assert_eq!(f.signum, USR1, "{label}: refused signal");
-            assert!(
-                class.starts_with("CommonExit/"),
-                "{label}: refusal outside W1-W3 at {class} (gen {gen_pc:#x}): {f:?}"
-            );
-            assert!(
-                t.report.deliveries.is_empty(),
-                "{label}: refused, no delivery"
-            );
-            // W1 is refused today, but its recovered stop must still
-            // name the right source state: O1-S signalled after the
-            // recovered retired count delivers at the recovered
-            // source PC with the same totals.
-            let n = run_native(gx, Some((f.instructions, USR1)));
-            assert_eq!(n.end, O1sEnd::Returned, "{label}: W1 O1-S end");
-            assert!(
-                n.arrival_sent,
-                "{label}: W1 O1-S reached k = {}",
-                f.instructions
-            );
-            assert_eq!(n.deliveries.len(), 1, "{label}: W1 O1-S deliveries");
-            let nd = &n.deliveries[0];
-            assert_eq!(
-                (nd.instructions, nd.branches),
-                (f.instructions, f.branches),
-                "{label}: W1 recovered totals vs O1-S at delivery"
-            );
-            assert_eq!(
-                norm(nd.gregs[16], &n.info, clen),
-                norm(f.src_pc, &t.info, clen),
-                "{label}: W1 recovered source PC vs O1-S frame RIP"
-            );
-            return Verdict::RefusedW1;
+    if let Err(RunError::Fault(f)) = &t.out
+        && f.kind == FaultKind::AsyncSignal
+    {
+        assert_eq!(f.signum, spec.sig, "{label}: refused signal");
+        assert!(
+            class.starts_with("CommonExit/"),
+            "{label}: refusal outside the common exit at {class} (gen {gen_pc:#x}): {f:?}"
+        );
+        assert_eq!(
+            t.report.deliveries.len(),
+            spec.arrival,
+            "{label}: refused, no arrival delivery"
+        );
+        // A common-exit refusal (since I1-H H2b only for an
+        // INDIRECT or unknown exit kind; the sweeps require none)
+        // must still name the right source state: O1-S signalled
+        // after the recovered retired count delivers at the
+        // recovered source PC with the same totals. Not for a
+        // fixture O1-S cannot run (`spec.o1s`).
+        if !spec.o1s {
+            return (Verdict::RefusedW1, t);
         }
-        Err(e) => panic!("{label}: arrival at {class} hit {hit}: translated error {e:?}"),
-        Ok(_) => {}
+        let n = run_native(gx, Some((f.instructions, spec.sig)));
+        assert_eq!(n.end, O1sEnd::Returned, "{label}: refused, O1-S end");
+        assert!(
+            n.arrival_sent,
+            "{label}: refused, O1-S reached k = {}",
+            f.instructions
+        );
+        assert_eq!(
+            n.deliveries.len(),
+            spec.arrival + 1,
+            "{label}: refused, O1-S deliveries"
+        );
+        let nd = &n.deliveries[spec.arrival];
+        assert_eq!(
+            (nd.instructions, nd.branches),
+            (f.instructions, f.branches),
+            "{label}: refused, recovered totals vs O1-S at delivery"
+        );
+        assert_eq!(
+            norm(nd.gregs[16], &n.info, clen),
+            norm(f.src_pc, &t.info, clen),
+            "{label}: refused, recovered source PC vs O1-S frame RIP"
+        );
+        return (Verdict::RefusedW1, t);
     }
-    let out = t.out.as_ref().unwrap();
-    assert_eq!(out.state.rax, 42, "{label}: translated result");
-    assert_eq!(
-        t.report.deliveries.len(),
-        1,
-        "{label}: one delivery recorded: {:?}",
+    if let Err(e) = &t.out {
+        panic!("{label}: arrival at {class} hit {hit}: translated error {e:?}");
+    }
+    assert!(
+        spec.o1s,
+        "{label}: arrival at {class} hit {hit} delivered where only a refusal is checkable \
+         (O1-S cannot run this fixture): {:?}",
         t.report.deliveries
     );
-    let d = t.report.deliveries[0];
+    compare_delivered(
+        gx,
+        &t,
+        spec,
+        Some(gen_pc),
+        &format!("{label}: arrival at {class} hit {hit}"),
+    );
+    (Verdict::Equal, t)
+}
+
+/// One handler's log: siginfo words 0..4, uc gregs 0..18, mask.
+fn slot_words(data: &[u8], slot: i32) -> Vec<u64> {
+    (0..SLOT_WORDS)
+        .map(|i| word(data, slot as usize + 8 * i))
+        .collect()
+}
+
+/// A delivered translated run against O1-S, per `spec`: the exact
+/// delivery list in both engines (signal numbers in order, and
+/// each translated delivery's generated PC), paired by index; per
+/// pair, the retired totals at delivery, frame RIP against the
+/// recovered source PC, O1-S's handler log against its own frame
+/// read, and the handler-visible frame register by register
+/// (RFLAGS exact); each handler's counter; then the guest buffer,
+/// the final registers and the final counts. `arrival_gen` is the
+/// seam's target PC (`GenPc::Arrival`).
+fn compare_delivered(gx: &Gx, t: &TArrival, spec: &Spec, arrival_gen: Option<u64>, ctx: &str) {
+    let clen = code_len(gx);
+    let out = t
+        .out
+        .as_ref()
+        .unwrap_or_else(|e| panic!("{ctx}: translated run failed: {e:?}"));
+    assert_eq!(out.state.rax, 42, "{ctx}: translated result");
+    let want_sigs: Vec<i32> = spec.deliveries.iter().map(|w| w.signo).collect();
     assert_eq!(
-        (d.signum, d.gen_pc),
-        (USR1, gen_pc),
-        "{label}: delivery provenance"
+        t.report
+            .deliveries
+            .iter()
+            .map(|d| d.signum)
+            .collect::<Vec<_>>(),
+        want_sigs,
+        "{ctx}: translated deliveries in order: {:?}",
+        t.report.deliveries
     );
-    let n = run_native(gx, Some((d.instructions, USR1)));
-    assert_eq!(n.end, O1sEnd::Returned, "{label}: O1-S end");
-    assert!(
-        n.arrival_sent,
-        "{label}: O1-S reached k = {}",
-        d.instructions
-    );
-    assert_eq!(n.deliveries.len(), 1, "{label}: O1-S deliveries");
-    let nd = &n.deliveries[0];
+    for (d, w) in t.report.deliveries.iter().zip(spec.deliveries) {
+        let want_gen = match w.gen_pc {
+            GenPc::Arrival => arrival_gen,
+            GenPc::Any => None,
+            GenPc::Exactly(g) => Some(g),
+        };
+        if let Some(g) = want_gen {
+            assert_eq!(
+                (d.signum, d.gen_pc),
+                (w.signo, g),
+                "{ctx}: delivery provenance"
+            );
+        }
+    }
+    let a = t.report.deliveries[spec.arrival];
+    let n = run_native(gx, Some((a.instructions, spec.sig)));
+    assert_eq!(n.end, O1sEnd::Returned, "{ctx}: O1-S end");
+    assert!(n.arrival_sent, "{ctx}: O1-S reached k = {}", a.instructions);
     assert_eq!(
-        (nd.instructions, nd.branches),
-        (d.instructions, d.branches),
-        "{label}: retired totals at delivery (O1-S vs recovered)"
+        n.deliveries.iter().map(|d| d.signo).collect::<Vec<_>>(),
+        want_sigs,
+        "{ctx}: O1-S deliveries in order"
     );
-    assert_eq!(
-        norm(nd.gregs[16], &n.info, clen),
-        norm(d.src_pc, &t.info, clen),
-        "{label}: frame RIP is the recovered source PC"
-    );
-    // The handler's own log in O1-S equals O1-S's frame read.
-    let slot = |data: &[u8]| -> Vec<u64> {
-        (0..SLOT_WORDS)
-            .map(|i| word(data, SLOT as usize + 8 * i))
-            .collect()
+    let gregs = |g: &[u64; 18], info: &RemoteChildInfo, pid: i32| {
+        if spec.pid_in_rdi {
+            norm_gregs_pid(g, info, clen, pid)
+        } else {
+            norm_gregs(g, info, clen)
+        }
     };
-    let n_slot = slot(&n.dst_bytes);
-    assert_eq!(
-        &n_slot[0..4],
-        &nd.siginfo[..],
-        "{label}: O1-S logged siginfo vs frame"
-    );
-    assert_eq!(&n_slot[4..22], &nd.gregs[..], "{label}: O1-S log vs frame");
-    assert_eq!(
-        n_slot[22], nd.uc_sigmask,
-        "{label}: O1-S logged mask vs frame"
-    );
-    // Handler-visible frame, register by register.
-    let tg: [u64; 18] = slot(&t.data)[4..22].try_into().unwrap();
-    let (tn, nn) = (
-        norm_gregs(&tg, &t.info, clen),
-        norm_gregs(&nd.gregs, &n.info, clen),
-    );
-    for (i, name) in GREG_NAMES.iter().enumerate() {
+    for (i, ((d, nd), w)) in t
+        .report
+        .deliveries
+        .iter()
+        .zip(&n.deliveries)
+        .zip(spec.deliveries)
+        .enumerate()
+    {
+        let ctx = format!("{ctx}: delivery {i} (signal {})", w.signo);
         assert_eq!(
-            tn[i], nn[i],
-            "{label}: arrival at {class} hit {hit}: frame {name} translated {:#x} vs native {:#x}",
-            tg[i], nd.gregs[i]
+            (nd.instructions, nd.branches),
+            (d.instructions, d.branches),
+            "{ctx}: retired totals at delivery (O1-S vs recovered)"
+        );
+        assert_eq!(
+            norm(nd.gregs[16], &n.info, clen),
+            norm(d.src_pc, &t.info, clen),
+            "{ctx}: frame RIP is the recovered source PC"
+        );
+        // The handler's own log in O1-S equals O1-S's frame read.
+        let n_slot = slot_words(&n.dst_bytes, w.slot);
+        assert_eq!(
+            &n_slot[0..4],
+            &nd.siginfo[..],
+            "{ctx}: O1-S logged siginfo vs frame"
+        );
+        assert_eq!(&n_slot[4..22], &nd.gregs[..], "{ctx}: O1-S log vs frame");
+        assert_eq!(
+            n_slot[22], nd.uc_sigmask,
+            "{ctx}: O1-S logged mask vs frame"
+        );
+        // Handler-visible frame, register by register.
+        let tg: [u64; 18] = slot_words(&t.data, w.slot)[4..22].try_into().unwrap();
+        let (tn, nn) = (gregs(&tg, &t.info, t.pid), gregs(&nd.gregs, &n.info, n.pid));
+        for (r, name) in GREG_NAMES.iter().enumerate() {
+            assert_eq!(
+                tn[r], nn[r],
+                "{ctx}: frame {name} translated {:#x} vs native {:#x}",
+                tg[r], nd.gregs[r]
+            );
+        }
+    }
+    let mut counts: BTreeMap<i32, u64> = BTreeMap::new();
+    for w in spec.deliveries {
+        *counts.entry(w.count).or_default() += 1;
+    }
+    for (&count, &runs) in &counts {
+        assert_eq!(
+            (
+                word(&t.data, count as usize),
+                word(&n.dst_bytes, count as usize)
+            ),
+            (runs, runs),
+            "{ctx}: handler counter at {count} (translated, native)"
         );
     }
     assert_eq!(
-        norm_buffer(&t.data, &t.info, clen),
-        norm_buffer(&n.dst_bytes, &n.info, clen),
-        "{label}: arrival at {class} hit {hit}: guest buffer (siginfo, mask, results)"
+        norm_buffer_pid(&t.data, &t.info, clen, t.pid, spec.own_pid_words),
+        norm_buffer_pid(&n.dst_bytes, &n.info, clen, n.pid, spec.own_pid_words),
+        "{ctx}: guest buffer (siginfo, mask, results)"
     );
     let (ts, ns) = (state_gregs(&out.state), state_gregs(&n.state));
-    let (tsn, nsn) = (
-        norm_gregs(&ts, &t.info, clen),
-        norm_gregs(&ns, &n.info, clen),
-    );
-    for (i, name) in GREG_NAMES.iter().enumerate() {
+    let (tsn, nsn) = (gregs(&ts, &t.info, t.pid), gregs(&ns, &n.info, n.pid));
+    for (r, name) in GREG_NAMES.iter().enumerate() {
         assert_eq!(
-            tsn[i], nsn[i],
-            "{label}: arrival at {class} hit {hit}: final {name} translated {:#x} vs native {:#x}",
-            ts[i], ns[i]
+            tsn[r], nsn[r],
+            "{ctx}: final {name} translated {:#x} vs native {:#x}",
+            ts[r], ns[r]
         );
     }
     assert_eq!(
         (out.instructions, out.branches),
         (n.instructions, n.branches),
-        "{label}: arrival at {class} hit {hit}: final counts"
+        "{ctx}: final counts"
     );
-    Verdict::Equal
 }
 
 /// The quiet run (no arrival) in both engines: equal, and the
@@ -847,7 +1164,8 @@ impl SplitMix {
 /// Wall-clock cap for each sweep (coord7 Q5: about 2 minutes in
 /// total across the two). A sweep that reaches it FAILS (I1-H H2,
 /// coord7 Q3): a truncated sweep would claim coverage it did not
-/// run. Measured runs take 1.7-2.8 s.
+/// run. Measured at H2a (446dc02b, release): mixed 2.5 s survey +
+/// 3.4 s, loop 3.4 s; H2b re-measures with W1 delivering.
 const SWEEP_CAP: Duration = Duration::from_secs(60);
 const SWEEP_SEED: u64 = 0x11e4_5eed_2026_1111;
 /// Sample size for the poll-crossing loop (coord7 Q5).
@@ -916,8 +1234,9 @@ fn run_plan(
 /// arrival that never sent is a seam or plan defect, never
 /// coverage (the deliberately unreachable W1 hit-6 control runs
 /// outside any plan). And every class with an executed entry got
-/// at least one SENT arrival, delivered and equal or a W1
-/// refusal. (A truncated sweep has already failed in `run_plan`.)
+/// at least one SENT arrival, delivered and equal or a common-exit
+/// refusal (the sweeps then require no refusal at all). (A
+/// truncated sweep has already failed in `run_plan`.)
 fn assert_plan_outcomes(label: &str, table: &BTreeMap<String, Tally>) {
     for (class, t) in table {
         assert_eq!(
@@ -952,8 +1271,7 @@ fn survey(
 /// The PC map of one prepared child, and that child's fixture
 /// base (entry `src_pc`s are absolute).
 fn pcmap_of(gx: &Gx) -> (Vec<PcMapEntry>, u64) {
-    let mut remote = RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &gx.bytes)
-        .expect("spawn remote");
+    let (mut remote, _deadline) = spawn_remote(&gx.bytes);
     let info = remote.info();
     let region = RegionFacts {
         base: info.base,
@@ -979,8 +1297,9 @@ fn pcmap_of(gx: &Gx) -> (Vec<PcMapEntry>, u64) {
 
 /// Exhaustive sweep (coord7 Q5): every (generated PC, hit) of the
 /// mixed fixture that executes after the handler install, through
-/// every PC-map class. Delivered arrivals must equal O1-S exactly;
-/// the only refusal allowed today is W1 (common exit).
+/// every PC-map class. Every arrival must be delivered and equal
+/// O1-S exactly: since I1-H H2b (W1) no class refuses, the common
+/// exit included.
 #[test]
 fn sweep_mixed_exhaustive() {
     let _g = lock();
@@ -1012,18 +1331,15 @@ fn sweep_mixed_exhaustive() {
     assert_plan_outcomes(label, &table);
     let equal: u64 = table.values().map(|t| t.equal).sum();
     let refused: u64 = table.values().map(|t| t.refused_w1).sum();
-    // Non-vacuity, exactly (flips to 448 / 0 when W1 closes).
+    // Non-vacuity, exactly: every planned arrival delivered and
+    // equal (H2a pinned 336 / 112 while W1 still refused).
     assert_eq!(
         (equal, refused),
-        (336, 112),
-        "{label}: equal and W1-refused arrivals"
+        (MIXED_PLAN as u64, 0),
+        "{label}: equal and refused arrivals"
     );
     for (class, t) in &table {
-        if class.starts_with("CommonExit/") {
-            assert_eq!(t.equal, 0, "{label}: {class} delivers nothing today");
-        } else {
-            assert_eq!(t.refused_w1, 0, "{label}: {class} refusals");
-        }
+        assert_eq!(t.refused_w1, 0, "{label}: {class} refusals");
     }
 }
 
@@ -1087,16 +1403,15 @@ fn sweep_poll_loop_sampled() {
     assert_plan_outcomes(label, &table);
     let equal: u64 = table.values().map(|t| t.equal).sum();
     let refused: u64 = table.values().map(|t| t.refused_w1).sum();
-    // Non-vacuity, exactly (flips to 261 / 0 when W1 closes).
+    // Non-vacuity, exactly: every planned arrival delivered and
+    // equal (H2a pinned 244 / 17 while W1 still refused).
     assert_eq!(
         (equal, refused),
-        (244, 17),
-        "{label}: equal and W1-refused arrivals"
+        ((LOOP_SAMPLES + LOOP_TOPUPS) as u64, 0),
+        "{label}: equal and refused arrivals"
     );
     for (class, t) in &table {
-        if !class.starts_with("CommonExit/") {
-            assert_eq!(t.refused_w1, 0, "{label}: {class} refusals");
-        }
+        assert_eq!(t.refused_w1, 0, "{label}: {class} refusals");
     }
     let poll_path = table
         .iter()
@@ -1106,84 +1421,84 @@ fn sweep_poll_loop_sampled() {
     assert!(poll_path > 0, "{label}: the poll-exit path executed");
 }
 
-/// W1 held arrivals (flip in H2). The remote translation has one
-/// common exit, and its first instruction (`BeforeRspSave`) runs
+/// W1 (closed in I1-H H2b): arrivals in the common exit deliver.
+/// The remote translation has one common exit; its entries run
 /// once per dispatcher exit: hit 1 is the install's
 /// `rt_sigaction`, hits 2..=5 are the Mixed body's exits in order
-/// (the helper's `ret`, `write`, `cpuid`, main's final `ret`),
-/// and there is no hit 6. SIGUSR1 arriving at each post-install
-/// hit is today a recovered AsyncSignal at that exit's source PC,
-/// the handler never runs, and the debug registers are cleared.
+/// (the helper's `ret`, `write`, `cpuid`, main's final `ret`:
+/// RETURN, SYSCALL, NONDET, RETURN), and there is no hit 6.
+/// SIGUSR1 arriving at each post-install hit, at the first entry
+/// of each recovery stage and at the final `int3`, is delivered
+/// at that exit's source PC (the terminator not yet run) and
+/// equals O1-S arriving at the recovered count.
 #[test]
-fn w1_common_exit_arrival_is_named_refusal_today() {
+fn w1_common_exit_arrival_delivers() {
     let _g = lock();
     let gx = build(Body::Mixed);
     let (map, _) = pcmap_of(&gx);
-    let idx = map
+    let first_of = |stage: CommonStage| {
+        map.iter()
+            .position(|e| e.recovery == Recovery::CommonExit { stage })
+            .expect("common exit stage entry")
+    };
+    // The final AllSaved entry is the trap byte (`int3`).
+    let trap = map
         .iter()
-        .position(|e| {
+        .rposition(|e| {
             e.recovery
                 == Recovery::CommonExit {
-                    stage: CommonStage::BeforeRspSave,
+                    stage: CommonStage::AllSaved,
                 }
         })
-        .expect("common exit entry");
-    let names = ["helper ret", "write", "cpuid", "main ret"];
-    // The survey's per-hit record names each exit: its source PC
-    // and the exit kind the dispatcher data holds (H2a).
-    let recs = entry_hits(&gx, None, idx, map.len(), "W1 survey");
-    assert_eq!(recs.len(), 5, "W1 survey: five common-exit hits");
-    use liteinst_jit::state::exit_kind::{NONDET, RETURN, SYSCALL};
-    assert_eq!(
-        recs[1..]
-            .iter()
-            .map(|r| (r.src_off, r.exit_kind))
-            .collect::<Vec<_>>(),
-        gx.exit_offs
-            .unwrap()
-            .into_iter()
-            .zip([RETURN, SYSCALL, NONDET, RETURN])
-            .collect::<Vec<_>>(),
-        "W1 survey: post-install hits name the four exits and their kinds"
+        .expect("common exit trap byte");
+    let entries = [
+        ("BeforeRspSave", first_of(CommonStage::BeforeRspSave)),
+        ("RspSaved", first_of(CommonStage::RspSaved)),
+        ("FlagsSaved", first_of(CommonStage::FlagsSaved)),
+        ("AllSaved", first_of(CommonStage::AllSaved)),
+        ("int3", trap),
+    ];
+    assert_ne!(
+        entries[3].1, trap,
+        "W1: the trap byte is not the first AllSaved entry"
     );
-    for (k, (off, name)) in gx.exit_offs.unwrap().into_iter().zip(names).enumerate() {
-        let hit = k as u64 + 2;
-        let t = run_translated(
-            &gx,
-            Knobs {
-                arrival: Some((idx, hit)),
-                ..Knobs::default()
-            },
-        );
-        assert!(t.report.sent, "W1 hit {hit} ({name}): arrival fired");
+    let names = ["helper ret", "write", "cpuid", "main ret"];
+    let exit_offs = gx.exit_offs.unwrap();
+    use liteinst_jit::state::exit_kind::{NONDET, RETURN, SYSCALL};
+    let mut delivered = 0;
+    for (stage, idx) in entries {
+        // The survey's per-hit record names each exit: its source
+        // PC and the exit kind the dispatcher data holds (H2a).
+        let recs = entry_hits(&gx, None, idx, map.len(), "W1 survey");
+        assert_eq!(recs.len(), 5, "W1 survey at {stage}: five common-exit hits");
         assert_eq!(
-            t.debug_regs,
-            Some((0, 0)),
-            "W1 hit {hit} ({name}): DR cleared on the refusal path"
+            recs[1..]
+                .iter()
+                .map(|r| (r.src_off, r.exit_kind))
+                .collect::<Vec<_>>(),
+            exit_offs
+                .into_iter()
+                .zip([RETURN, SYSCALL, NONDET, RETURN])
+                .collect::<Vec<_>>(),
+            "W1 survey at {stage}: post-install hits name the four exits and their kinds"
         );
-        match &t.out {
-            Err(RunError::Fault(f)) => {
-                assert_eq!(f.kind, FaultKind::AsyncSignal, "W1 hit {hit}: kind");
-                assert_eq!(f.signum, USR1, "W1 hit {hit}: signal");
-                assert_eq!(
-                    f.src_pc,
-                    t.info.base + off,
-                    "W1 hit {hit}: the {name} exit's source PC"
-                );
-            }
-            other => panic!("W1 hit {hit} ({name}): expected today's named refusal, got {other:?}"),
+        for (k, name) in names.iter().enumerate() {
+            let hit = k as u64 + 2;
+            let label = format!("W1 {stage} hit {hit} ({name})");
+            assert_eq!(
+                check_arrival(&gx, idx, hit, None, &label, recs[k + 1]),
+                Verdict::Equal,
+                "{label}: delivered, equal to O1-S"
+            );
+            delivered += 1;
         }
-        assert_eq!(
-            word(&t.data, COUNT as usize),
-            0,
-            "W1 hit {hit} ({name}): handler never ran"
-        );
     }
+    assert_eq!(delivered, 20, "W1: 5 entries x 4 exits");
     // Exactly five executions: hit 6 is never reached.
     let t = run_translated(
         &gx,
         Knobs {
-            arrival: Some((idx, 6)),
+            arrival: Some((entries[0].1, 6)),
             ..Knobs::default()
         },
     );
@@ -1193,14 +1508,21 @@ fn w1_common_exit_arrival_is_named_refusal_today() {
     assert_eq!(t.debug_regs, Some((0, 0)), "W1: DR cleared, unreached");
 }
 
-/// W3 held arrival (flips in H2): SIGUSR1 sent just before the
-/// tracer single-steps the original `cpuid` is today a recovered
-/// AsyncSignal at the `cpuid` source PC, with `cpuid` not
-/// executed (RBX still zero, not a vendor word).
+/// W3 (closed in I1-H H2b): SIGUSR1 sent just before the tracer
+/// single-steps the original `cpuid` (the H1 pre-step seam) is
+/// delivered at the `cpuid` source PC with the `cpuid` not run
+/// (RAX and RBX at their source values, 0 and 0), and the run
+/// equals O1-S arriving at the same retired count, by the full
+/// comparator: frame registers with RFLAGS exact (this is the
+/// only delivery made from a stop entered by `PTRACE_SINGLESTEP`,
+/// so a leaked trace flag would show there), siginfo, mask,
+/// buffer, final state and totals. After sigreturn the `cpuid`
+/// runs once (its vendor word reaches the buffer).
 #[test]
-fn w3_original_step_arrival_is_named_refusal_today() {
+fn w3_original_step_arrival_delivers() {
     let _g = lock();
     let gx = build(Body::Mixed);
+    let label = "W3";
     let t = run_translated(
         &gx,
         Knobs {
@@ -1208,23 +1530,551 @@ fn w3_original_step_arrival_is_named_refusal_today() {
             ..Knobs::default()
         },
     );
-    match &t.out {
-        Err(RunError::Fault(f)) => {
-            assert_eq!(f.kind, FaultKind::AsyncSignal, "W3: kind");
-            assert_eq!(f.signum, USR1, "W3: signal");
-            assert_eq!(
-                f.src_pc,
-                t.info.base + gx.cpuid_off.unwrap(),
-                "W3: the cpuid source PC"
-            );
-            assert_eq!((f.state.rax, f.state.rbx), (0, 0), "W3: cpuid did not run");
-        }
-        other => panic!("W3: expected today's named refusal, got {other:?}"),
-    }
-    assert_eq!(word(&t.data, COUNT as usize), 0, "W3: handler never ran");
+    // Exactly one delivery: the pre-step seam is one-shot, so the
+    // retried `cpuid` steps again unsignalled (H2b record-pass
+    // finding: a persistent seam re-signalled every retry).
+    assert_eq!(
+        (t.report.deliveries.len(), word(&t.data, COUNT as usize)),
+        (1, 1),
+        "{label}: exactly one delivery, handler ran once: {:?}",
+        t.out.as_ref().err()
+    );
+    let cpuid = t.info.base + gx.cpuid_off.unwrap();
+    assert_eq!(
+        t.report.deliveries.first().map(|d| d.src_pc),
+        Some(cpuid),
+        "{label}: delivered at the cpuid source PC: {:?}",
+        t.report.deliveries
+    );
+    let frame = slot_words(&t.data, SLOT);
+    const RAX: usize = 4 + 13;
+    const RBX: usize = 4 + 11;
+    const RIP: usize = 4 + 16;
+    assert_eq!(
+        (frame[RIP], frame[RAX], frame[RBX]),
+        (cpuid, 0, 0),
+        "{label}: frame RIP is the cpuid, which has not run"
+    );
+    let spec = Spec {
+        sig: USR1,
+        deliveries: &[Want {
+            signo: USR1,
+            gen_pc: GenPc::Exactly(0),
+            slot: SLOT,
+            count: COUNT,
+        }],
+        arrival: 0,
+        own_pid_words: &[],
+        pid_in_rdi: false,
+        o1s: true,
+    };
+    compare_delivered(&gx, &t, &spec, None, label);
+    assert_ne!(
+        word(&t.data, (SCRATCH + 16) as usize),
+        0,
+        "{label}: the cpuid ran after sigreturn (vendor word)"
+    );
     // The seam is inert by default: the same run completes.
     let quiet = run_translated(&gx, Knobs::default());
     assert_eq!(quiet.out.as_ref().map(|o| o.state.rax).ok(), Some(42));
+    assert!(quiet.report.deliveries.is_empty(), "{label}: quiet run");
+}
+
+/// W3 provenance guard (I1-H H2b, Q-a): a real stop never fails it
+/// (the kernel dequeues the step's synchronous SIGTRAP ahead of any
+/// asynchronous signal), so a seam perturbs one comparand per case:
+/// the PC the stop's RIP is compared against, one GPR of the
+/// recorded pre-step copy, or its RFLAGS. Each must refuse by name
+/// with no delivery and the handler never run; without the seam
+/// the same stop delivers.
+#[test]
+fn w3_provenance_guard_refuses_by_name() {
+    let _g = lock();
+    let gx = build(Body::Mixed);
+    for p in [W3Perturb::Pc, W3Perturb::Gpr, W3Perturb::Rflags] {
+        let label = format!("W3 guard {p:?}");
+        let t = run_translated(
+            &gx,
+            Knobs {
+                pre_original_step_signal: Some(USR1),
+                w3_perturb: Some(p),
+                ..Knobs::default()
+            },
+        );
+        assert_eq!(
+            t.out.as_ref().err(),
+            Some(&RunError::Refuse(liteinst_jit::Refuse::RemoteSubstrate {
+                operation: "original step: signal stop not at the pre-step state",
+                errno: 0,
+            })),
+            "{label}: the guard refuses by name"
+        );
+        assert!(t.report.deliveries.is_empty(), "{label}: no delivery");
+        assert_eq!(
+            word(&t.data, COUNT as usize),
+            0,
+            "{label}: handler never ran"
+        );
+    }
+    let t = run_translated(
+        &gx,
+        Knobs {
+            pre_original_step_signal: Some(USR1),
+            ..Knobs::default()
+        },
+    );
+    assert_eq!(t.out.as_ref().map(|o| o.state.rax).ok(), Some(42));
+    assert_eq!(
+        t.report.deliveries.len(),
+        1,
+        "W3 guard: unperturbed, delivered"
+    );
+    assert_eq!(
+        word(&t.data, COUNT as usize),
+        1,
+        "W3 guard: handler ran once"
+    );
+}
+
+/// POLL pass (I1-H H2b, D1): poll exits after a POLL-kind
+/// common-exit arrival. The quiet loop 120 at budget 16 takes
+/// `D7_QUIET_POLLS` (8) poll exits; the arrival replaces the first
+/// (j = 1) and every later one still happens, all after sigreturn:
+/// 8 - 1 = 7. Not to be re-derived without a re-review.
+const POLL_PASS_AFTER: u64 = 7;
+
+/// W1 under POLL exits (I1-H H2b): at every one of the 28 common-exit
+/// entries of the loop fixture (budget 16), one arrival at the
+/// first hit whose survey record is POLL-kind: the run's first poll
+/// exit, the instance the D7 test interrupts. Each is delivered,
+/// equal to O1-S, with no "poll budget zero at mid-block restore"
+/// refusal (the POLL-kind stop recovers to its block start and
+/// resumes through the block index), and polls exactly
+/// `POLL_PASS_AFTER` times, all after sigreturn.
+#[test]
+fn w1_poll_kind_common_exit_arrivals() {
+    let _g = lock();
+    let gx = build(Body::Loop(120));
+    let label = "W1 POLL pass";
+    let budget = Some(LOOP_POLL_BUDGET);
+    let quiet = run_translated(
+        &gx,
+        Knobs {
+            poll_budget: budget,
+            ..Knobs::default()
+        },
+    );
+    let quiet_polls = quiet.report.poll_exits;
+    assert_eq!(quiet_polls, D7_QUIET_POLLS, "{label}: quiet poll exits");
+    let (map, _) = pcmap_of(&gx);
+    let common: Vec<usize> = map
+        .iter()
+        .enumerate()
+        .filter(|(_, e)| matches!(e.recovery, Recovery::CommonExit { .. }))
+        .map(|(i, _)| i)
+        .collect();
+    assert_eq!(common.len(), 28, "{label}: common-exit entries");
+    use liteinst_jit::state::exit_kind::POLL;
+    let mut ran = 0;
+    for idx in common {
+        let recs = entry_hits(&gx, budget, idx, map.len(), label);
+        // Every poll exit passes every common-exit entry once.
+        assert_eq!(
+            recs.iter().filter(|r| r.exit_kind == POLL).count() as u64,
+            quiet_polls,
+            "{label} #{idx}: POLL-kind hits are the quiet run's poll exits"
+        );
+        let h0 = recs
+            .iter()
+            .position(|r| r.exit_kind == POLL)
+            .expect("a POLL-kind hit");
+        let j = recs[..=h0].iter().filter(|r| r.exit_kind == POLL).count() as u64;
+        assert_eq!(j, 1, "{label} #{idx}: the run's first poll exit");
+        assert_eq!(POLL_PASS_AFTER, quiet_polls - j, "{label}: derivation");
+        let hit = h0 as u64 + 1;
+        let l = format!("{label} #{idx}@{hit}");
+        let (v, t) = check_arrival_full(
+            &gx,
+            Knobs {
+                arrival: Some((idx, hit)),
+                poll_budget: budget,
+                ..Knobs::default()
+            },
+            &l,
+            recs[h0],
+            &SINGLE,
+        );
+        assert_eq!(v, Verdict::Equal, "{l}: delivered, equal to O1-S");
+        assert_eq!(
+            (t.report.poll_exits, t.report.poll_exits_after_sigreturn),
+            (POLL_PASS_AFTER, POLL_PASS_AFTER),
+            "{l}: poll exits (total, after sigreturn): {:?}",
+            t.report
+        );
+        ran += 1;
+    }
+    assert_eq!(ran, 28, "{label}: pass size");
+}
+
+/// Live-frame fixture buffer layout (I1-H H2b): the USR2 handler's
+/// sigaction, log slot and counter, clear of every H1 word.
+const ACT2: i32 = 32;
+const COUNT2: i32 = 80;
+const SLOT2: i32 = SLOT + 8 * SLOT_WORDS as i32;
+const _: () = assert!(
+    SLOT2 + 8 * SLOT_WORDS as i32 <= SCRATCH,
+    "SLOT2 below SCRATCH"
+);
+const USR2: i32 = libc::SIGUSR2;
+
+/// The live-frame fixture: main installs a SIGUSR1 handler
+/// (`sa_mask` empty, so SIGUSR2 is not blocked in it) and a SIGUSR2
+/// handler, sends itself SIGUSR1 (`getpid; kill`) and returns 42.
+/// The SIGUSR1 handler logs to `SLOT`, counts at `COUNT`, then sets
+/// DF (`std`) just before its `ret`, so the FlagsSaved recovery
+/// stage's RFLAGS restore is observable at that exit (the common
+/// exit's `cld` is the only flag it changes). The SIGUSR2 handler
+/// logs to `SLOT2` and counts at `COUNT2`. Returns the fixture and
+/// the offsets of the SIGUSR1 handler's `ret` and of main's resume
+/// point after its `kill`.
+fn build_live_frame() -> (Gx, u64, u64) {
+    let mut a = CodeAssembler::new(64).unwrap();
+    let mut handler = a.create_label();
+    let mut handler2 = a.create_label();
+    let mut usr1_ret = a.create_label();
+    let mut restorer = a.create_label();
+    let mut main = a.create_label();
+    let mut after_kill = a.create_label();
+    a.set_label(&mut handler).unwrap();
+    emit_handler_body(&mut a, SLOT, COUNT);
+    a.std().unwrap();
+    a.set_label(&mut usr1_ret).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut handler2).unwrap();
+    emit_handler_body(&mut a, SLOT2, COUNT2);
+    a.ret().unwrap();
+    a.set_label(&mut restorer).unwrap();
+    a.db(&[0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05]).unwrap();
+    a.set_label(&mut main).unwrap();
+    // rt_sigaction(SIGUSR1, {handler, FLAGS, restorer, mask 0}).
+    a.lea(rax, qword_ptr(rbp)).unwrap();
+    a.mov(qword_ptr(r13 + ACT), rax).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 8)), FLAGS).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 12)), 0u32).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 16)), r12).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 24)), 0).unwrap();
+    a.mov(edi, USR1 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    // rt_sigaction(SIGUSR2, {handler2, FLAGS, restorer, mask 0}).
+    a.lea(rax, qword_ptr(handler2)).unwrap();
+    a.mov(qword_ptr(r13 + ACT2), rax).unwrap();
+    a.mov(dword_ptr(r13 + (ACT2 + 8)), FLAGS).unwrap();
+    a.mov(dword_ptr(r13 + (ACT2 + 12)), 0u32).unwrap();
+    a.mov(qword_ptr(r13 + (ACT2 + 16)), r12).unwrap();
+    a.mov(qword_ptr(r13 + (ACT2 + 24)), 0).unwrap();
+    a.mov(edi, USR2 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT2)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    // Translator reachability for both handler blocks.
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(handler).unwrap();
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(handler2).unwrap();
+    a.mov(eax, libc::SYS_getpid as u32).unwrap();
+    a.syscall().unwrap();
+    a.mov(rdi, rax).unwrap();
+    a.mov(esi, USR1 as u32).unwrap();
+    a.mov(eax, libc::SYS_kill as u32).unwrap();
+    a.syscall().unwrap();
+    a.set_label(&mut after_kill).unwrap();
+    a.mov(eax, 42u32).unwrap();
+    a.ret().unwrap();
+    let res = a
+        .assemble_options(0, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
+        .unwrap();
+    assert_eq!(res.label_ip(&handler).unwrap(), 0, "handler at 0");
+    corpus::check("H2 W1 live frame", &res.inner.code_buffer);
+    let main_off = res.label_ip(&main).unwrap();
+    (
+        Gx {
+            bytes: res.inner.code_buffer.clone(),
+            handler_off: 0,
+            restorer_off: res.label_ip(&restorer).unwrap(),
+            main_off,
+            body_off: main_off,
+            cpuid_off: None,
+            exit_offs: None,
+        },
+        res.label_ip(&usr1_ret).unwrap(),
+        res.label_ip(&after_kill).unwrap(),
+    )
+}
+
+/// W1 in a live handler frame (I1-H H2b, coord7 item 3): SIGUSR2
+/// arrives in the common exit of the SIGUSR1 handler's own `ret`
+/// exit, the sigreturn interception exit, at each of its 28
+/// entries. The path: a nested frame built on the live SIGUSR1
+/// frame, the SIGUSR2 handler, its sigreturn back into the SIGUSR1
+/// handler's exit stub (DF = 1 restored), the restorer pop, then
+/// the SIGUSR1 sigreturn to main. Both engines make exactly two
+/// deliveries, SIGUSR1 (self-sent, at main's resume point) then
+/// SIGUSR2 (at the `ret`), compared pair by pair with separate log
+/// slots; SIGUSR2's frame mask is exactly {SIGUSR1}, so a SIGUSR2
+/// held until after the outer sigreturn cannot pass. The self-sent
+/// SIGUSR1's siginfo sender word carries each run's own child pid
+/// and is compared as the tagged own pid at that word only.
+/// Host dependency: the self-sent `kill` needs the NSpid proof (one
+/// NSpid entry), as every self-send does.
+#[test]
+fn w1_common_exit_arrival_in_live_handler() {
+    let _g = lock();
+    let (gx, usr1_ret, after_kill) = build_live_frame();
+    let label = "W1 live frame";
+    let (map, _) = pcmap_of(&gx);
+    let common: Vec<usize> = map
+        .iter()
+        .enumerate()
+        .filter(|(_, e)| matches!(e.recovery, Recovery::CommonExit { .. }))
+        .map(|(i, _)| i)
+        .collect();
+    assert_eq!(common.len(), 28, "{label}: common-exit entries");
+    use liteinst_jit::state::exit_kind::RETURN;
+    let spec = Spec {
+        sig: USR2,
+        deliveries: &[
+            Want {
+                signo: USR1,
+                gen_pc: GenPc::Any,
+                slot: SLOT,
+                count: COUNT,
+            },
+            Want {
+                signo: USR2,
+                gen_pc: GenPc::Arrival,
+                slot: SLOT2,
+                count: COUNT2,
+            },
+        ],
+        arrival: 1,
+        // The SIGUSR1 siginfo sender word (si_pid at offset 16),
+        // and the RDI the SIGUSR1 handler logged (greg 8 of the
+        // slot's gregs at offset 32): SIGUSR1 interrupts the
+        // guest right after `kill(getpid(), SIGUSR1)`, so that RDI
+        // is each run's own pid (H2b record-pass finding: word 28
+        // was compared raw, 3486203 vs 3486208).
+        own_pid_words: &[(SLOT as usize + 16) / 8, (SLOT as usize + 32) / 8 + 8],
+        pid_in_rdi: true,
+        o1s: true,
+    };
+    let usr1_mask = 1u64 << (USR1 - 1);
+    for idx in common {
+        let recs = entry_hits(&gx, None, idx, map.len(), label);
+        let h0 = recs
+            .iter()
+            .position(|r| r.exit_kind == RETURN && r.src_off == usr1_ret)
+            .expect("the SIGUSR1 handler's ret exit");
+        let hit = h0 as u64 + 1;
+        let l = format!("{label} #{idx}@{hit}");
+        let (v, t) = check_arrival_full(
+            &gx,
+            Knobs {
+                arrival: Some((idx, hit)),
+                arrival_sig: Some(USR2),
+                ..Knobs::default()
+            },
+            &l,
+            recs[h0],
+            &spec,
+        );
+        assert_eq!(v, Verdict::Equal, "{l}: delivered, equal to O1-S");
+        let d = &t.report.deliveries;
+        assert_eq!(
+            (d[0].src_pc - t.info.base, d[1].src_pc - t.info.base),
+            (after_kill, usr1_ret),
+            "{l}: SIGUSR1 at main's resume point, SIGUSR2 at the handler's ret"
+        );
+        let s2 = slot_words(&t.data, SLOT2);
+        assert_eq!(
+            s2[22], usr1_mask,
+            "{l}: SIGUSR2 frame mask is exactly {{SIGUSR1}} (not deferred)"
+        );
+        assert_eq!(s2[4 + 16], t.info.base + usr1_ret, "{l}: SIGUSR2 frame RIP");
+        let out = t.out.as_ref().expect("delivered");
+        // Registers start at zero; only the SIGUSR1 mark survives
+        // (the SIGUSR2 handler marks the SIGUSR1 handler's live R15,
+        // which the SIGUSR1 sigreturn discards).
+        assert_eq!(out.state.r15, R15_MARK as u64, "{l}: final R15");
+    }
+}
+
+/// The INDIRECT fixture (I1-H H2b, Q-c): main installs the SIGUSR1
+/// handler, then `lea rax, [rip + t]; jmp rax`; `t` returns 42.
+/// The translated run refuses at the `jmp` (IndirectUnresolved).
+/// O1-S cannot run it: the O1 oracle refuses to verify an indirect
+/// `jmp`, so the INDIRECT test pins `INDIRECT_REFUSAL_TOTALS`
+/// instead. Returns the fixture and the `jmp` offset.
+/// The INDIRECT refusal's retired totals (instructions, branches),
+/// counted by hand from `build_indirect`, never derived from the
+/// recovery code (coord7, H2b review P3-2). Main retires 15
+/// instructions before the `jmp`: the 11 that build and pass the
+/// sigaction (lea, 5 movs, mov edi, lea rsi, xor, mov r10d, mov
+/// eax), then `syscall`, `cmp`, `jne` and `lea rax`. The `jmp`
+/// itself has not run. One conditional branch retires: the
+/// not-taken `jne` (O1-S counts Jcc/loop/jrcxz only).
+const INDIRECT_REFUSAL_TOTALS: (u64, u64) = (15, 1);
+
+fn build_indirect() -> (Gx, u64) {
+    let mut a = CodeAssembler::new(64).unwrap();
+    let mut handler = a.create_label();
+    let mut restorer = a.create_label();
+    let mut main = a.create_label();
+    let mut jmp_l = a.create_label();
+    let mut target = a.create_label();
+    a.set_label(&mut handler).unwrap();
+    emit_handler(&mut a);
+    a.set_label(&mut restorer).unwrap();
+    a.db(&[0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05]).unwrap();
+    a.set_label(&mut main).unwrap();
+    a.lea(rax, qword_ptr(rbp)).unwrap();
+    a.mov(qword_ptr(r13 + ACT), rax).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 8)), FLAGS).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 12)), 0u32).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 16)), r12).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 24)), 0).unwrap();
+    a.mov(edi, USR1 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(handler).unwrap();
+    a.lea(rax, qword_ptr(target)).unwrap();
+    a.set_label(&mut jmp_l).unwrap();
+    a.jmp(rax).unwrap();
+    a.set_label(&mut target).unwrap();
+    a.mov(eax, 42u32).unwrap();
+    a.ret().unwrap();
+    let res = a
+        .assemble_options(0, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
+        .unwrap();
+    assert_eq!(res.label_ip(&handler).unwrap(), 0, "handler at 0");
+    corpus::check("H2 W1 indirect", &res.inner.code_buffer);
+    let main_off = res.label_ip(&main).unwrap();
+    (
+        Gx {
+            bytes: res.inner.code_buffer.clone(),
+            handler_off: 0,
+            restorer_off: res.label_ip(&restorer).unwrap(),
+            main_off,
+            body_off: main_off,
+            cpuid_off: None,
+            exit_offs: None,
+        },
+        res.label_ip(&jmp_l).unwrap(),
+    )
+}
+
+/// W1's INDIRECT boundary (I1-H H2b, Q-c; the Q5 non-claim): an
+/// arrival in the common exit of an INDIRECT exit keeps the named
+/// refusal at every one of the 28 entries: AsyncSignal at the `jmp`
+/// (`exit_src`), the handler never run, the debug registers
+/// cleared, the arrival instance (source offset and totals) equal
+/// to the survey's recovery at that hit, and the refusal's totals
+/// equal to the literal `INDIRECT_REFUSAL_TOTALS`. The survey
+/// shares `recover` with the arrival, so only the literal pin
+/// checks the totals independently. There is no O1-S leg: the O1
+/// oracle refuses to verify an indirect `jmp`, so the native run
+/// cannot get past it (H2b record-pass finding: the leg panicked
+/// in O1's RIP-delta check; coord7 approved the exemption on the
+/// condition of the literal pin). Without an arrival the run
+/// refuses IndirectUnresolved at the `jmp`.
+#[test]
+fn w1_indirect_kind_arrival_is_named_refusal() {
+    let _g = lock();
+    let (gx, jmp_off) = build_indirect();
+    let label = "W1 indirect";
+    let quiet = run_translated(&gx, Knobs::default());
+    assert_eq!(
+        quiet.out.as_ref().err(),
+        Some(&RunError::Refuse(
+            liteinst_jit::Refuse::IndirectUnresolved {
+                src_pc: quiet.info.base + jmp_off,
+            }
+        )),
+        "{label}: no arrival: IndirectUnresolved at the jmp"
+    );
+    let (map, _) = pcmap_of(&gx);
+    let common: Vec<usize> = map
+        .iter()
+        .enumerate()
+        .filter(|(_, e)| matches!(e.recovery, Recovery::CommonExit { .. }))
+        .map(|(i, _)| i)
+        .collect();
+    assert_eq!(common.len(), 28, "{label}: common-exit entries");
+    use liteinst_jit::state::exit_kind::INDIRECT;
+    for idx in common {
+        // Survey: the counting run refuses at the jmp, so it is read
+        // directly rather than through `entry_hits`.
+        let s = run_translated(
+            &gx,
+            Knobs {
+                arrival: Some((idx, u64::MAX)),
+                ..Knobs::default()
+            },
+        );
+        assert!(!s.report.sent, "{label} #{idx}: counting run never fires");
+        let recs: Vec<HitRec> = s
+            .report
+            .hit_stops
+            .iter()
+            .map(|h| hit_rec(h, &s.info))
+            .collect();
+        let h0 = recs
+            .iter()
+            .position(|r| r.exit_kind == INDIRECT)
+            .expect("the INDIRECT exit");
+        assert_eq!(recs[h0].src_off, jmp_off, "{label} #{idx}: the jmp's exit");
+        let hit = h0 as u64 + 1;
+        let l = format!("{label} #{idx}@{hit}");
+        let (v, t) = check_arrival_full(
+            &gx,
+            Knobs {
+                arrival: Some((idx, hit)),
+                ..Knobs::default()
+            },
+            &l,
+            recs[h0],
+            &Spec {
+                o1s: false,
+                ..SINGLE
+            },
+        );
+        assert_eq!(v, Verdict::RefusedW1, "{l}: named refusal");
+        match &t.out {
+            Err(RunError::Fault(f)) => {
+                assert_eq!(
+                    (f.kind, f.src_pc),
+                    (FaultKind::AsyncSignal, t.info.base + jmp_off),
+                    "{l}: AsyncSignal at exit_src"
+                );
+                assert_eq!(
+                    (f.instructions, f.branches),
+                    INDIRECT_REFUSAL_TOTALS,
+                    "{l}: retired totals at the refusal vs the literal count from the fixture"
+                );
+            }
+            other => panic!("{l}: expected the named refusal, got {other:?}"),
+        }
+        assert_eq!(word(&t.data, COUNT as usize), 0, "{l}: handler never ran");
+    }
 }
 
 /// W2 evidence: the "generated PC with no PC-map entry" class is
@@ -1241,43 +2091,9 @@ fn w3_original_step_arrival_is_named_refusal_today() {
 fn w2_remote_translation_maps_every_generated_byte() {
     // Builds (and so pins) both sweep fixtures without `lock()`.
     let _corpus = corpus::guard();
-    use liteinst_jit::exec::CODE_CAP;
-    use liteinst_jit::{ExitStyle, translate_with_exit_style};
-    let base = 0x10_0000_0000u64;
-    let gen_base = 0x10_4000_0000u64;
-    let mut cases: Vec<(String, Vec<u8>, u64)> = vec![
-        (
-            "sweep-mixed".into(),
-            build(Body::Mixed).bytes,
-            build(Body::Mixed).main_off,
-        ),
-        (
-            "sweep-loop".into(),
-            build(Body::Loop(120)).bytes,
-            build(Body::Loop(120)).main_off,
-        ),
-    ];
-    for f in liteinst_jit::fixtures::all() {
-        cases.push((f.name.to_string(), f.bytes, 0));
-    }
+    let gen_base = TRANSLATION_GEN_BASE;
     let mut checked = 0;
-    for (name, bytes, entry_off) in cases {
-        let region = RegionFacts {
-            base,
-            bytes,
-            generation: Generation(1),
-            immutable_private: true,
-        };
-        let Ok(t) = translate_with_exit_style(
-            &region,
-            base + entry_off,
-            CountProfile::BranchesAndInstructions,
-            gen_base,
-            gen_base + CODE_CAP as u64,
-            ExitStyle::TrapToDispatcher,
-        ) else {
-            continue;
-        };
+    for (name, t) in remote_translations() {
         let e = t.pcmap.entries();
         assert_eq!(
             e.first().map(|x| x.gen_start),
@@ -1300,6 +2116,174 @@ fn w2_remote_translation_maps_every_generated_byte() {
     }
     assert!(checked >= 20, "fixtures checked: {checked}");
     eprintln!("W2: {checked} translations, every generated byte mapped");
+}
+
+const TRANSLATION_GEN_BASE: u64 = 0x10_4000_0000;
+
+/// Remote-style translations (exit style `TrapToDispatcher`) of
+/// both sweep fixtures and every corpus-v1 fixture that translates,
+/// by name. Building the sweep fixtures pins them: callers hold a
+/// corpus guard.
+fn remote_translations() -> Vec<(String, liteinst_jit::Translation)> {
+    use liteinst_jit::exec::CODE_CAP;
+    use liteinst_jit::{ExitStyle, translate_with_exit_style};
+    let base = 0x10_0000_0000u64;
+    let gen_base = TRANSLATION_GEN_BASE;
+    let mut cases: Vec<(String, Vec<u8>, u64)> = vec![
+        (
+            "sweep-mixed".into(),
+            build(Body::Mixed).bytes,
+            build(Body::Mixed).main_off,
+        ),
+        (
+            "sweep-loop".into(),
+            build(Body::Loop(120)).bytes,
+            build(Body::Loop(120)).main_off,
+        ),
+    ];
+    for f in liteinst_jit::fixtures::all() {
+        cases.push((f.name.to_string(), f.bytes, 0));
+    }
+    cases
+        .into_iter()
+        .filter_map(|(name, bytes, entry_off)| {
+            let region = RegionFacts {
+                base,
+                bytes,
+                generation: Generation(1),
+                immutable_private: true,
+            };
+            translate_with_exit_style(
+                &region,
+                base + entry_off,
+                CountProfile::BranchesAndInstructions,
+                gen_base,
+                gen_base + CODE_CAP as u64,
+                ExitStyle::TrapToDispatcher,
+            )
+            .ok()
+            .map(|t| (name, t))
+        })
+        .collect()
+}
+
+/// P3-5 guard (I1-H H2b): every poll path recovers to a block start.
+/// The mid-block restore's refusal of a raw poll budget of 0 is
+/// unreachable because every stop that can hold that 0 (PollStub,
+/// PollExitStub, a POLL-kind common exit) recovers to a block start
+/// that resumes through the block index. Pinned on the PC map, in
+/// every remote translation: each `PollStub` block and each
+/// `PollExitStub` source PC is a `block_gen` key, and the two sets
+/// are equal (one poll exit per poll-stub block).
+#[test]
+fn poll_paths_recover_to_block_starts() {
+    let _corpus = corpus::guard();
+    use std::collections::BTreeSet;
+    let mut checked = 0;
+    for (name, t) in remote_translations() {
+        let mut stub_blocks = BTreeSet::new();
+        let mut exit_srcs = BTreeSet::new();
+        for e in t.pcmap.entries() {
+            match e.recovery {
+                Recovery::PollStub { block, .. } => {
+                    stub_blocks.insert(block);
+                }
+                Recovery::PollExitStub { .. } => {
+                    exit_srcs.insert(e.src_pc);
+                }
+                _ => {}
+            }
+        }
+        assert!(!stub_blocks.is_empty(), "{name}: has poll stubs");
+        for b in &stub_blocks {
+            assert!(
+                t.block_gen.contains_key(b),
+                "{name}: poll stub block {b:#x} is a block start"
+            );
+        }
+        for src in &exit_srcs {
+            assert!(
+                t.block_gen.contains_key(src),
+                "{name}: poll exit stub source {src:#x} is a block start"
+            );
+        }
+        assert_eq!(
+            stub_blocks, exit_srcs,
+            "{name}: one poll exit per poll-stub block"
+        );
+        checked += 1;
+    }
+    assert!(checked >= 20, "translations checked: {checked}");
+}
+
+/// P3-5 guard (I1-H H2b): the poll-budget seam refuses a budget of 0,
+/// which would hand every poll a raw 0 and break the invariant the
+/// mid-block restore check rests on. The production budget is a
+/// non-zero constant.
+#[test]
+#[should_panic(expected = "poll budget seam: 0 breaks")]
+fn poll_budget_seam_refuses_zero() {
+    let _g = lock();
+    let (mut remote, _deadline) = spawn_remote(&[0xc3]);
+    remote.set_poll_budget_for_test(Some(0));
+}
+
+/// Q-d (I1-H H2b): tagged normalization never equates a raw value
+/// with a token. Each pair below compared equal under the old
+/// untagged words: a raw RDI equal to the old pid token vs the own
+/// pid; a raw value equal to the old region encoding vs a code
+/// address; a raw siginfo sender word vs the own-pid sender word.
+/// The own-pid tag applies at a named buffer word only.
+#[test]
+fn tagged_normalization_never_equates_raw_and_token() {
+    let info = RemoteChildInfo {
+        base: 0x10_0000_0000,
+        stack_top: 0x7fff_0000_0000,
+        data: 0x20_0000_0000,
+        dst: 0x21_0000_0000,
+        src: 0x22_0000_0000,
+        arena_base: 0x30_0000_0000,
+        mailbox: 0x31_0000_0000,
+    };
+    let clen = 4096;
+    let pid = 4242;
+    let (mut g, mut h) = ([0u64; 18], [0u64; 18]);
+    g[8] = 0x7e00_0000_0000_0001;
+    h[8] = pid as u64;
+    assert_eq!(
+        norm_gregs_pid(&h, &info, clen, pid)[8],
+        Norm::OwnPid { high: 0 }
+    );
+    assert_ne!(
+        norm_gregs_pid(&g, &info, clen, pid),
+        norm_gregs_pid(&h, &info, clen, pid),
+        "raw RDI vs own pid"
+    );
+    assert_eq!(norm(info.base + 0x10, &info, clen), Norm::Region(1, 0x10));
+    assert_ne!(
+        norm(0x0100_0000_0000_0010, &info, clen),
+        norm(info.base + 0x10, &info, clen),
+        "raw value vs code address"
+    );
+    let uid = 1000u64;
+    let w = 18usize;
+    let (mut raw, mut own) = (vec![0u8; REPORT], vec![0u8; REPORT]);
+    raw[w * 8..w * 8 + 8].copy_from_slice(&(0x7e00_0000_0000_0001u64 | (uid << 32)).to_le_bytes());
+    own[w * 8..w * 8 + 8].copy_from_slice(&(pid as u64 | (uid << 32)).to_le_bytes());
+    assert_eq!(
+        norm_buffer_pid(&own, &info, clen, pid, &[w])[w],
+        Norm::OwnPid { high: uid }
+    );
+    assert_ne!(
+        norm_buffer_pid(&raw, &info, clen, pid, &[w]),
+        norm_buffer_pid(&own, &info, clen, pid, &[w]),
+        "raw sender word vs own-pid sender word"
+    );
+    assert_eq!(
+        norm_buffer_pid(&own, &info, clen, pid, &[])[w],
+        Norm::Raw(pid as u64 | (uid << 32)),
+        "the own-pid tag applies at named words only"
+    );
 }
 
 /// The three W5 shapes (I1-H H2). In each, main installs a
@@ -1440,16 +2424,16 @@ fn build_w5(case: W5) -> (Gx, u64) {
     )
 }
 
-/// Normalized registers with the child's own pid as one token in
-/// RDI only: the W5 fixtures' `getpid; mov rdi, rax` leave it
-/// there, and every run has its own child. No other slot is
-/// touched; RFLAGS stays exact (review rev-h2a-cx P2-1).
-fn norm_gregs_pid(g: &[u64; 18], info: &RemoteChildInfo, code_len: u64, pid: i32) -> [u64; 18] {
-    const PID_TOKEN: u64 = 0x7e00_0000_0000_0001;
+/// Normalized registers with the child's own pid tagged in RDI
+/// only: the fixtures' `getpid; mov rdi, rax` leave it there, and
+/// every run has its own child. No other slot is touched; RFLAGS
+/// stays exact (review rev-h2a-cx P2-1). The tag cannot collide
+/// with any raw RDI value (I1-H H2b, Q-d).
+fn norm_gregs_pid(g: &[u64; 18], info: &RemoteChildInfo, code_len: u64, pid: i32) -> [Norm; 18] {
     const RDI: usize = 8;
     let mut n = norm_gregs(g, info, code_len);
     if g[RDI] == pid as u64 {
-        n[RDI] = PID_TOKEN;
+        n[RDI] = Norm::OwnPid { high: 0 };
     }
     n
 }
@@ -1712,9 +2696,7 @@ fn poll_budget_zero_at_midblock_restore_refuses_by_name() {
     let gx = build(Body::Mixed);
     let label = "D7 restore invariant";
     let (map, base, starts) = {
-        let mut remote =
-            RemoteExecutable::spawn_bytes(std::path::Path::new(REMOTE_CHILD), &gx.bytes)
-                .expect("spawn remote");
+        let (mut remote, _deadline) = spawn_remote(&gx.bytes);
         let info = remote.info();
         let region = RegionFacts {
             base: info.base,
@@ -1829,10 +2811,34 @@ fn o1s_ignored_signal_with_handler_shaped_registers_is_a_retirement() {
     let quiet = run_native(&gx, None);
     assert_eq!(quiet.end, O1sEnd::Returned, "{label}: quiet end");
     assert!(quiet.deliveries.is_empty(), "{label}: quiet deliveries");
+    assert!(quiet.injections.is_empty(), "{label}: quiet injections");
     // Arrive before the first `nop` (the last four instructions are
     // nop, nop, mov, ret).
     let k = quiet.instructions - 4;
     let n = run_native(&gx, Some((k, USR1)));
+    // P3-A (I1-H H2b): the step the arrival was injected with, shape
+    // first, so an arrival moved off the shaped step fails here by
+    // name rather than passing vacuously.
+    assert_eq!(
+        n.injections.len(),
+        1,
+        "{label}: one injected step: {:?}",
+        n.injections
+    );
+    let inj = n.injections[0];
+    assert!(
+        inj.entry_shape,
+        "{label}: arrival step has the handler-entry shape: {inj:?}"
+    );
+    assert_eq!(
+        inj.si_code, 2,
+        "{label}: the injected step reports TRAP_TRACE (2): {inj:?}"
+    );
+    assert_eq!(inj.signo, USR1, "{label}: injected signal: {inj:?}");
+    assert_eq!(
+        inj.instructions, k,
+        "{label}: injected at the arrival count: {inj:?}"
+    );
     assert!(n.arrival_sent, "{label}: arrival sent at k = {k}");
     assert_eq!(n.end, O1sEnd::Returned, "{label}: end");
     assert!(
@@ -1987,5 +2993,5 @@ fn corpus_hash_known_answers_and_table() {
     // reviewed edit here too. (Each test's own `check` proves its
     // IDs are present and current.)
     let table = corpus::table();
-    assert_eq!(table.len(), 80, "pinned fixtures");
+    assert_eq!(table.len(), 82, "pinned fixtures");
 }
