@@ -15,7 +15,10 @@
 //! the next follow-up after H2c.
 //!
 //! Coverage: each test binary runs [`spawn_census`] over its own
-//! source, which fails if a raw spawn bypasses these helpers.
+//! source, which fails on any spelling in [`RAW_SPAWNS`] outside a
+//! comment. The census checks spellings, not semantics. The gate's
+//! `deadline_helpers_arm_their_child` checks that every helper arms
+//! the child it starts, with `RUN_DEADLINE` (see [`take_last_armed`]).
 
 #![allow(dead_code)]
 
@@ -33,6 +36,21 @@ use liteinst_jit::remote::{RemoteChildInfo, RemoteExecutable};
 /// Bound on one child's life in this suite. A whole run of the
 /// largest binary takes under 10 s, and one run takes milliseconds.
 pub const RUN_DEADLINE: Duration = Duration::from_secs(120);
+
+thread_local! {
+    /// The last child this thread armed, with its bound. Helpers
+    /// arm on the calling thread (the O1 and O1-S hooks run inline),
+    /// so a test reads back exactly what its own call armed, never
+    /// a concurrent test's.
+    static LAST_ARMED: core::cell::Cell<Option<(i32, Duration)>> =
+        const { core::cell::Cell::new(None) };
+}
+
+/// Take the `(pid, bound)` this thread armed last, if any, and clear
+/// it: the arming check of every helper (H2c follow-up).
+pub fn take_last_armed() -> Option<(i32, Duration)> {
+    LAST_ARMED.with(|c| c.take())
+}
 
 /// One armed child: see the module doc.
 pub struct Deadline {
@@ -59,6 +77,7 @@ impl Deadline {
         );
         // SAFETY: a fresh descriptor that only this owner closes.
         let fd = unsafe { OwnedFd::from_raw_fd(fd as RawFd) };
+        LAST_ARMED.with(|c| c.set(Some((pid, limit))));
         let (done, rx) = std::sync::mpsc::channel::<()>();
         let watchdog = std::thread::spawn(move || {
             let fired = matches!(rx.recv_timeout(limit), Err(RecvTimeoutError::Timeout));
@@ -216,16 +235,26 @@ pub fn command_status(cmd: &mut Command) -> std::io::Result<ExitStatus> {
 /// Raw spawn spellings that bypass this module's arming. Each is
 /// how a test starts a child directly:
 /// - `RemoteExecutable::spawn` (every `spawn_*` constructor);
-/// - `run_o1(`, `run_o1_bytes(`, `run_o1s(` (the oracle runners);
+/// - `run_o1(`, `run_o1_bytes(`, `run_o1s(`, `run_o1_observed(`,
+///   `run_o1_bytes_observed(` (the oracle runners; the two
+///   `_observed` hooks came with H2c and are listed since its
+///   follow-up);
 /// - `.spawn()`, `.status()`, `.output()` (starting a built
 ///   `Command`; building one is fine, starting it must go through
 ///   `command_child` or `command_status`). `std::thread::spawn`
-///   takes a closure, so it never matches `.spawn()`.
-const RAW_SPAWNS: [&str; 7] = [
+///   takes a closure, so it never matches `.spawn()`. These start
+///   methods replace the design's `Command::new(` token: the
+///   helpers take a caller-built `Command`, and a `Command` built
+///   in one place and started in another is still caught.
+///
+/// This file is not scanned, so the helpers' own calls never match.
+const RAW_SPAWNS: [&str; 9] = [
     "RemoteExecutable::spawn",
     "run_o1(",
     "run_o1_bytes(",
     "run_o1s(",
+    "run_o1_observed(",
+    "run_o1_bytes_observed(",
     ".spawn()",
     ".status()",
     ".output()",
@@ -257,13 +286,10 @@ pub fn spawn_census(src: &str, file: &str) {
 /// which sleeps for an hour when `LITEINST_DEADLINE_SLEEPER` is set.
 /// It is not ptraced, so the caller needs no SERIAL lock.
 ///
-/// Called from a `#[test]` only in the ptrace-only binaries
-/// (remote_signal_gate, remote_signal_rt). Its child's exit sends the
-/// test process a SIGCHLD at an arbitrary time. A ptrace tracer takes
-/// one at every stop anyway, but the in-process JIT binaries
-/// (o1_compare, custody) take pending signals into custody while they
-/// are blocked, so there a concurrent SIGCHLD could show up as a
-/// spurious pending signal.
+/// Called from a `#[test]` in two binaries (remote_signal_gate,
+/// remote_signal_rt). More copies would be redundant: the self-test
+/// exercises this shared module, which compiles identically into
+/// every binary, not the binary it runs in.
 pub fn self_test() {
     use std::os::unix::process::ExitStatusExt;
     let mut child = Command::new(std::env::current_exe().expect("current exe"))

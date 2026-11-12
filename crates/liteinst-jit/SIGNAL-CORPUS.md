@@ -367,10 +367,31 @@ That is fail-closed liveness, not progress.
 - **The run deadline in every ptrace test binary.** The 120 s
   pidfd watchdog moved to `tests/common/deadline.rs`, with one
   helper per way of starting a child. Each of the seven binaries
-  runs a spawn census over its own source, which fails on any raw
-  spawn that bypasses the helpers. The deadline's self-test runs
-  in the two ptrace-only binaries (its child's SIGCHLD is harmless
-  there).
+  runs a spawn census over its own source, which fails on any
+  listed raw spawn spelling outside a comment (see the follow-ups
+  below for the list). The deadline's self-test runs in two
+  binaries; more copies would be redundant, because it exercises
+  the shared module, not the binary.
+
+## Closed in the H2c follow-ups
+
+- **Census tokens, declared.** The census matches spellings, not
+  semantics. Its list: `RemoteExecutable::spawn`, `run_o1(`,
+  `run_o1_bytes(`, `run_o1s(`, `run_o1_observed(` and
+  `run_o1_bytes_observed(` (the two hooks H2c added, missing from
+  its list), and the `Command` start methods `.spawn()`,
+  `.status()` and `.output()`. The start methods replace the
+  design's `Command::new(`: the helpers take a caller-built
+  `Command`, and a `Command` built in one place and started in
+  another is still caught.
+- **Every helper arms its child.** A deadline cannot be seen in a
+  passing run, so a helper that forgot to arm passed every test.
+  `deadline_helpers_arm_their_child` calls each helper once and
+  reads back the pid and bound it armed (`RUN_DEADLINE`).
+- **The W3 count across another delivery path.** Only a completed
+  original step resets the count. A W1 delivery between W3 retries
+  does not: `w3_retry_bound_counts_across_w1_delivery` (fixture
+  `H2c W3 W1 in handler`) still refuses at the 65th interrupt.
 
 Still open after H2c: the stepped-syscall stop (next slice, H2d,
 which reuses the guard, the bound and the one-shot seam); a
@@ -495,5 +516,6 @@ change was intended.
 | `H2 W1 live frame` | I1-H H2b | remote_signal_gate.rs w1_common_exit_arrival_in_live_handler | SIGUSR2 arriving in the common exit of the SIGUSR1 handler's ret (sigreturn interception exit), DF set; nested frame | O1-S at k (two deliveries, paired) | `0ddc0dc5b0ff254d5e461ad3584f69beaad48254470cff19c4963217d9dd71bc` |
 | `H2 W1 indirect` | I1-H H2b | remote_signal_gate.rs w1_indirect_kind_arrival_is_named_refusal | arrival in the common exit of an INDIRECT exit (`jmp rax`) | named refusal + the survey's recovery + literal totals (15, 1); no O1-S leg (O1 cannot verify an indirect `jmp`) | `3d964a4cf91f0ce515d6152d5d3ae6d16d047ac6ef9aa9ea1dde95cd20dad06a` |
 | `H2c W3 two cpuid` | I1-H H2c | remote_signal_gate.rs w3_retry_bound_resets_on_progress | 64 interrupts at the first `cpuid` (which then steps), 1 at the second | all 65 delivered at the right `cpuid`; the bound resets on progress | `35527a75fdc6723e170dde9ab3ff59e37ba1a049bc09fba3ed0eb3ec09caa24d` |
+| `H2c W3 W1 in handler` | I1-H H2c follow-up | remote_signal_gate.rs w3_retry_bound_counts_across_w1_delivery | 65 interrupts at the `cpuid`; on the 10th SIGUSR1 handler run, SIGUSR2 arrives in the common exit of the handler's ret | the exact named refusal after 64 SIGUSR1 and 1 SIGUSR2 deliveries: a W1 delivery does not reset the count | `9ddf94d590c2f30b292a1335175294f7020dff2c8f8166e7501651328dd199e8` |
 
 Unpinned: `E4c real foreign helper` (I1-G1, remote_signal_rt.rs sigqueue_to_foreign_target_refused_by_name_even_where_native_errs): the bytes embed the live helper's pid.
