@@ -10,58 +10,49 @@ use liteinst_jit::handler::CaptureHandler;
 use liteinst_jit::harness::{MappedGuest, RETURN_SENTINEL};
 use liteinst_jit::types::{CountProfile, Generation};
 
+#[path = "common/deadline.rs"]
+mod deadline;
+
 const CHILD: &str = env!("CARGO_BIN_EXE_liteinst-jit-custody-child");
 
 #[test]
 fn custody_refuse_child_retains_pending_set() {
-    let status = std::process::Command::new(CHILD)
-        .arg("refuse")
-        .status()
+    let status = deadline::command_status(std::process::Command::new(CHILD).arg("refuse"))
         .expect("run custody refuse child");
     assert!(status.success(), "custody refuse child: {status}");
 }
 
 #[test]
 fn custody_query_denied_child_returns_signal_ownership() {
-    let status = std::process::Command::new(CHILD)
-        .arg("denied")
-        .status()
+    let status = deadline::command_status(std::process::Command::new(CHILD).arg("denied"))
         .expect("run custody denied child");
     assert!(status.success(), "custody denied child: {status}");
 }
 
 #[test]
 fn custody_partial_ok_reports_consumed_signal() {
-    let status = std::process::Command::new(CHILD)
-        .arg("partial_ok")
-        .status()
+    let status = deadline::command_status(std::process::Command::new(CHILD).arg("partial_ok"))
         .expect("run custody partial-ok child");
     assert!(status.success(), "custody partial-ok child: {status}");
 }
 
 #[test]
 fn custody_partial_poll_reports_consumed_signal() {
-    let status = std::process::Command::new(CHILD)
-        .arg("partial_poll")
-        .status()
+    let status = deadline::command_status(std::process::Command::new(CHILD).arg("partial_poll"))
         .expect("run custody partial-poll child");
     assert!(status.success(), "custody partial-poll child: {status}");
 }
 
 #[test]
 fn custody_dequeue_poll_returns_full_async_mask() {
-    let status = std::process::Command::new(CHILD)
-        .arg("dequeue_poll")
-        .status()
+    let status = deadline::command_status(std::process::Command::new(CHILD).arg("dequeue_poll"))
         .expect("run custody dequeue-poll child");
     assert!(status.success(), "custody dequeue-poll child: {status}");
 }
 
 #[test]
 fn custody_ordering_reports_taken_ascending() {
-    let status = std::process::Command::new(CHILD)
-        .arg("ordering")
-        .status()
+    let status = deadline::command_status(std::process::Command::new(CHILD).arg("ordering"))
         .expect("run custody ordering child");
     assert!(status.success(), "custody ordering child: {status}");
 }
@@ -105,4 +96,11 @@ fn custody_ok_return_reports_also_pending() {
             0
         );
     }
+}
+
+/// Spawn census (I1-H H2c): every child this binary starts carries
+/// a run deadline (`common/deadline.rs`).
+#[test]
+fn spawn_census() {
+    deadline::spawn_census(include_str!("custody.rs"), "custody.rs");
 }

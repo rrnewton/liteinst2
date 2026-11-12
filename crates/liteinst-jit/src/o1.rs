@@ -343,11 +343,24 @@ pub fn run_o1(
     fixture_name: &str,
     tweaks: impl FnOnce(&mut libc::user_regs_struct, &ChildInfo),
 ) -> OracleOutcome {
+    run_o1_observed(child_bin, fixture_name, tweaks, |_| {})
+}
+
+/// [`run_o1`] with `on_spawn`, which gets the child pid once it is
+/// stopped and ready, before the first guest step (as in
+/// [`run_o1s`]); tests arm a run deadline there (I1-H H2c).
+pub fn run_o1_observed(
+    child_bin: &std::path::Path,
+    fixture_name: &str,
+    tweaks: impl FnOnce(&mut libc::user_regs_struct, &ChildInfo),
+    on_spawn: impl FnOnce(i32),
+) -> OracleOutcome {
     run_o1_impl(
         child_bin,
         fixture_name.to_string(),
         Some(fixture_name),
         tweaks,
+        on_spawn,
     )
 }
 
@@ -358,8 +371,18 @@ pub fn run_o1_bytes(
     bytes: &[u8],
     tweaks: impl FnOnce(&mut libc::user_regs_struct, &ChildInfo),
 ) -> OracleOutcome {
+    run_o1_bytes_observed(child_bin, bytes, tweaks, |_| {})
+}
+
+/// [`run_o1_bytes`] with `on_spawn` (see [`run_o1_observed`]).
+pub fn run_o1_bytes_observed(
+    child_bin: &std::path::Path,
+    bytes: &[u8],
+    tweaks: impl FnOnce(&mut libc::user_regs_struct, &ChildInfo),
+    on_spawn: impl FnOnce(i32),
+) -> OracleOutcome {
     let hex: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
-    run_o1_impl(child_bin, format!("hex:{hex}"), None, tweaks)
+    run_o1_impl(child_bin, format!("hex:{hex}"), None, tweaks, on_spawn)
 }
 
 fn run_o1_impl(
@@ -367,6 +390,7 @@ fn run_o1_impl(
     spawn_arg: String,
     named: Option<&str>,
     tweaks: impl FnOnce(&mut libc::user_regs_struct, &ChildInfo),
+    on_spawn: impl FnOnce(i32),
 ) -> OracleOutcome {
     let mut child: Child = Command::new(child_bin)
         .arg(&spawn_arg)
@@ -417,6 +441,7 @@ fn run_o1_impl(
     }
     tweaks(&mut regs, &info);
     set_regs(pid, &regs);
+    on_spawn(pid);
 
     let mut branches: u64 = 0;
     let mut instructions: u64 = 0;

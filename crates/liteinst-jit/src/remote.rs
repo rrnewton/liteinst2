@@ -299,6 +299,28 @@ impl SignalRegistry {
     }
 }
 
+/// Consecutive W3 deliveries allowed at original-instruction
+/// steps with no completed original step between them (I1-H H2c).
+/// The next interrupt refuses by name instead
+/// (`BudgetExceeded`, "original step interrupted without
+/// progress"), so a signal source that fires faster than the
+/// tracer's deliver-and-retry round trip ends the run fail-closed
+/// rather than retrying the instruction forever.
+///
+/// Derivation: one interrupt, delivery, sigreturn and retry
+/// round trip measured about 84 us (11,946 per second, release
+/// build, in the I1-H H2b record-pass hang). 64 round trips is
+/// about 5.4 ms without progress at one instruction, so only a
+/// source re-interrupting the same instruction at about 12 kHz or
+/// more, sustained, reaches the bound. Profiling timers
+/// (100-1000 Hz) and interval timers of 1 ms or more pass through
+/// unchanged.
+///
+/// This is a liveness bound, not a determinism change: given the
+/// same delivery sequence, the refusal is deterministic. It is a
+/// policy constant, not a timing claim.
+const W3_RETRY_LIMIT: u32 = 64;
+
 /// Outcome of one single-stepped original instruction
 /// (I1-H H2b, W3).
 enum OrigStep {
@@ -1065,6 +1087,18 @@ pub enum W3Perturb {
     Rflags,
 }
 
+/// Test seam state (I1-H H2c): signals to inject before
+/// successive original-instruction steps. `per_insn[0]` is how
+/// many are still to be sent before attempts at the current
+/// original instruction; a completed step pops it, moving to the
+/// next instruction. Empty means inert.
+#[cfg(feature = "test-seams")]
+#[derive(Debug, Default)]
+struct OriginalStepPlan {
+    sig: i32,
+    per_insn: std::collections::VecDeque<u32>,
+}
+
 /// One genuine delivery made from a generated-phase stop,
 /// recorded by the test seam (records only).
 #[cfg(feature = "test-seams")]
@@ -1184,14 +1218,16 @@ pub struct RemoteExecutable {
     profile: CountProfile,
     registry: SignalRegistry,
     /// Test seam, inert unless set: see
-    /// `set_pre_redirected_step_signal_for_test`.
+    /// `set_pre_redirected_step_signal_for_test` (one-shot: taken
+    /// by the first redirected step).
     #[cfg(feature = "test-seams")]
-    pre_redirected_step_signal: Option<i32>,
+    pre_redirected_step_signal: core::cell::Cell<Option<i32>>,
     /// Test seams, inert unless set: see
-    /// `set_pre_original_step_signal_for_test` (one-shot: taken
-    /// by the first original step) and `set_arrival_for_test`.
+    /// `set_pre_original_step_plan_for_test` (the one-shot
+    /// `set_pre_original_step_signal_for_test` is the plan [1])
+    /// and `set_arrival_for_test`.
     #[cfg(feature = "test-seams")]
-    pre_original_step_signal: core::cell::Cell<Option<i32>>,
+    pre_original_step_plan: core::cell::RefCell<OriginalStepPlan>,
     #[cfg(feature = "test-seams")]
     arrival: Option<ArrivalSeam>,
     #[cfg(feature = "test-seams")]
@@ -1384,9 +1420,9 @@ impl RemoteExecutable {
             profile: CountProfile::BranchesAndInstructions,
             registry,
             #[cfg(feature = "test-seams")]
-            pre_redirected_step_signal: None,
+            pre_redirected_step_signal: core::cell::Cell::new(None),
             #[cfg(feature = "test-seams")]
-            pre_original_step_signal: core::cell::Cell::new(None),
+            pre_original_step_plan: core::cell::RefCell::new(OriginalStepPlan::default()),
             #[cfg(feature = "test-seams")]
             arrival: None,
             #[cfg(feature = "test-seams")]
@@ -1795,20 +1831,25 @@ impl RemoteExecutable {
     /// traced child after a redirected syscall's argument has
     /// been staged and immediately before the step resumes the
     /// child, so an asynchronous stop lands deterministically
-    /// at that boundary (before syscall entry). Inert (`None`)
-    /// by default; it never signals any other process. Compiled
-    /// only with the test-only `test-seams` feature.
+    /// at that boundary (before syscall entry). One-shot (I1-H
+    /// H2c): the first redirected step takes it. A persistent
+    /// seam would re-signal every retry once the stepped-syscall
+    /// stop delivers and retries, the shape of the I1-H H2b
+    /// record-pass hang. Inert (`None`) by default; it never
+    /// signals any other process. Compiled only with the
+    /// test-only `test-seams` feature.
     #[cfg(feature = "test-seams")]
     #[doc(hidden)]
     pub fn set_pre_redirected_step_signal_for_test(&mut self, sig: Option<i32>) {
-        self.pre_redirected_step_signal = sig;
+        self.pre_redirected_step_signal.set(sig);
     }
 
-    /// Current test-seam setting (`None` unless a test set it).
+    /// Current test-seam setting: `None` unless a test set it, and
+    /// `None` again once a redirected step has taken it.
     #[cfg(feature = "test-seams")]
     #[doc(hidden)]
     pub fn pre_redirected_step_signal_for_test(&self) -> Option<i32> {
-        self.pre_redirected_step_signal
+        self.pre_redirected_step_signal.get()
     }
 
     /// Test seam (I1-H W3 evidence): when set, the tracer sends
@@ -1820,11 +1861,32 @@ impl RemoteExecutable {
     /// delivered and the step retried, so a persistent seam
     /// would re-signal every retry without end (the I1-H H2b
     /// record pass hung on exactly that). Inert (`None`) by
-    /// default.
+    /// default. Equivalent to the plan `[1]`
+    /// (`set_pre_original_step_plan_for_test`).
     #[cfg(feature = "test-seams")]
     #[doc(hidden)]
     pub fn set_pre_original_step_signal_for_test(&mut self, sig: Option<i32>) {
-        self.pre_original_step_signal.set(sig);
+        match sig {
+            Some(sig) => self.set_pre_original_step_plan_for_test(sig, vec![1]),
+            None => self.set_pre_original_step_plan_for_test(0, Vec::new()),
+        }
+    }
+
+    /// Test seam (I1-H H2c, the W3 retry bound): `per_insn[i]` is
+    /// how many times the tracer sends `sig` to its own traced
+    /// child before attempts at the i-th original instruction
+    /// stepped from now: one signal before each attempt until
+    /// that many are sent; a completed step moves to the next
+    /// entry. The plan `[65]` interrupts one `cpuid` 65 times in a
+    /// row; `[64, 1]` interrupts the first 64 times and the next
+    /// once. An empty plan is inert.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn set_pre_original_step_plan_for_test(&mut self, sig: i32, per_insn: Vec<u32>) {
+        *self.pre_original_step_plan.get_mut() = OriginalStepPlan {
+            sig,
+            per_insn: per_insn.into(),
+        };
     }
 
     /// Test seam: arm (or clear) the [`ArrivalSeam`] for the
@@ -2080,7 +2142,7 @@ impl RemoteExecutable {
         let mut step_state = state;
         reg.set(&mut step_state, staged);
         #[cfg(feature = "test-seams")]
-        if let Some(sig) = self.pre_redirected_step_signal {
+        if let Some(sig) = self.pre_redirected_step_signal.take() {
             // SAFETY: signalling this tracer's own traced child.
             if unsafe { libc::kill(self.guard.pid, sig) } != 0 {
                 // Cleanup first: the staged bytes never stay.
@@ -2767,7 +2829,7 @@ impl RemoteExecutable {
         #[cfg(not(feature = "test-seams"))]
         let guard_pc = pc;
         #[cfg(feature = "test-seams")]
-        if let Some(sig) = self.pre_original_step_signal.take() {
+        if let Some(sig) = self.take_pre_original_step_signal() {
             // SAFETY: signalling this tracer's own traced child.
             if unsafe { libc::kill(self.guard.pid, sig) } != 0 {
                 return Err(remote_err("test pre-original-step signal").into());
@@ -2798,7 +2860,14 @@ impl RemoteExecutable {
             si.map(|(signo, code, _)| (signo, code)),
             false,
         ) {
-            StopClass::StepComplete => Ok(OrigStep::Done(regs_to_state(&regs))),
+            StopClass::StepComplete => {
+                #[cfg(feature = "test-seams")]
+                self.pre_original_step_plan
+                    .borrow_mut()
+                    .per_insn
+                    .pop_front();
+                Ok(OrigStep::Done(regs_to_state(&regs)))
+            }
             StopClass::Async => {
                 let got = regs_to_state(&regs);
                 let rip_ok = got.rip == guard_pc;
@@ -2831,6 +2900,22 @@ impl RemoteExecutable {
                 data,
             )))),
             _ => Err(self.unexpected_stop("unexpected original-step stop provenance")),
+        }
+    }
+
+    /// Test seam (I1-H H2c): the signal to send before this
+    /// original-step attempt, if the plan still owes one for the
+    /// current instruction.
+    #[cfg(feature = "test-seams")]
+    fn take_pre_original_step_signal(&self) -> Option<i32> {
+        let mut plan = self.pre_original_step_plan.borrow_mut();
+        let sig = plan.sig;
+        match plan.per_insn.front_mut() {
+            Some(owed) if *owed > 0 => {
+                *owed -= 1;
+                Some(sig)
+            }
+            _ => None,
         }
     }
 
@@ -3046,6 +3131,9 @@ impl RemoteExecutable {
         let mut exits: u64 = 0;
         let (mut tot_branches, mut tot_instructions) = (0u64, 0u64);
         let mut poll_remaining = self.poll_budget();
+        // W3 deliveries since the last completed original step
+        // (I1-H H2c, `W3_RETRY_LIMIT`).
+        let mut w3_consecutive: u32 = 0;
         let mut active: Vec<ActiveFrame> = Vec::new();
         let mut pending_gen: Option<u64> = None;
         #[cfg(feature = "test-seams")]
@@ -3530,8 +3618,20 @@ impl RemoteExecutable {
                         OrigStep::Done(stepped) => {
                             state = stepped;
                             tot_instructions += 1;
+                            w3_consecutive = 0;
                         }
                         OrigStep::Interrupted { sig, addr } => {
+                            // I1-H H2c: the liveness bound. Past
+                            // `W3_RETRY_LIMIT` consecutive deliveries
+                            // with no completed original step, refuse
+                            // by name; this interrupt is not delivered.
+                            w3_consecutive += 1;
+                            if w3_consecutive > W3_RETRY_LIMIT {
+                                return Err(Refuse::BudgetExceeded {
+                                    what: "original step interrupted without progress",
+                                }
+                                .into());
+                            }
                             // I1-H H2b, W3: a signal arrived before
                             // the cpuid ran. Recover exactly what a
                             // NONDET common-exit stop recovers (the

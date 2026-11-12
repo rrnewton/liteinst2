@@ -390,19 +390,24 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   (they recover to a block start), pinned on the PC map. Still
   open: an asynchronous stop before a stepped syscall's entry
   (the W3 sibling), and kernel-generated signals during the
-  original step. Liveness non-claim: W3 can retry the `cpuid`
-  without bound where a native run progresses, if an
-  asynchronous signal (a short-period timer, say) fires faster
-  than the deliver-and-retry round trip; before H2b that case
-  was refused by name. A bounded retry with a named refusal is
-  an H2c item. Ordering condition (H2b review P3-3): the H2c
-  test-hygiene items, a one-shot `pre_redirected_step_signal`
-  seam and the per-run deadline in the other six ptrace test
-  binaries (remote_signal_rt, remote_signal, remote_registry,
+  original step. Liveness non-claim: W3 retries the `cpuid`
+  where a native run progresses, if an asynchronous signal (a
+  short-period timer, say) fires faster than the
+  deliver-and-retry round trip; before H2b that case was refused
+  by name. **Since H2c** the retry is bounded: after 64
+  consecutive W3 deliveries with no completed original step, the
+  next interrupt refuses by name (`BudgetExceeded`, "original
+  step interrupted without progress"); fail-closed liveness,
+  deterministic given the same delivery sequence. Ordering
+  condition (H2b review P3-3): the H2c test-hygiene items, a
+  one-shot `pre_redirected_step_signal` seam and the per-run
+  deadline in the other six ptrace test binaries
+  (remote_signal_rt, remote_signal, remote_registry,
   remote_compare, o1_compare, custody), land in or before the
   slice that closes the stepped-syscall stop. Closing that stop
   with the seam still persistent would bring back the H2b
-  record-pass hang, in a binary with no deadline.
+  record-pass hang, in a binary with no deadline. **H2c lands
+  both**, so the stepped-syscall slice (H2d) comes after it.
 - **W2 is closed by evidence, not code** (H1). The scope named
   W2 as "generated PCs with no pcmap entry (the entry-loader
   bridge class)", but the remote substrate has no such PCs. The
