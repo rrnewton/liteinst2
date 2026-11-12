@@ -415,8 +415,10 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   again after sigreturn against the handler's registers,
   memory and registry. A four-part guard (RIP, every GPR and
   RFLAGS exactly against the recorded pre-step copy, and
-  `orig_rax` still -1) refuses any other entry-phase stop by
-  name. On a redirected (staged) step the scratch is restored
+  `orig_rax` still -1) refuses by name any other asynchronous
+  entry-phase stop; a kernel-generated signal at entry
+  (positive `si_code`) still stops as a recovered fault, as
+  before. On a redirected (staged) step the scratch is restored
   before anything is delivered, a failed restore refuses, and
   the frame holds the guest's own argument register. W3 and
   W3s share one delivery path. The retry is bounded per frame

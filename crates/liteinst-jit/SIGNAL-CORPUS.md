@@ -350,10 +350,11 @@ That is fail-closed liveness, not progress.
 
 ## Closed in H2c
 
-- **The W3 retry bound** (`W3_RETRY_LIMIT` = 64 in remote.rs, with
-  its derivation: one round trip measured about 84 us, so 64 is
-  about 5.4 ms without progress, and only a source at about 12 kHz
-  or more reaches it). It is a liveness bound, not a determinism
+- **The W3 retry bound** (`W3_RETRY_LIMIT` = 64 in remote.rs, an
+  interruption count, not a rate: one round trip averaged about
+  84 us, so 64 is about 5.4 ms at that average, but whether a
+  source reaches the bound depends on handler work and scheduling,
+  and no rate is guaranteed to pass). It is a liveness bound, not a determinism
   change: the refusal is deterministic given the same delivery
   sequence. A seam plan (signals per successive original
   instruction) drives three tests: 64 consecutive deliveries are

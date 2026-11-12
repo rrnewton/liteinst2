@@ -316,26 +316,27 @@ impl SignalRegistry {
 ///   "frame-depth bound: syscall step interrupted without
 ///   progress".
 ///
-/// Each refusal is a named `BudgetExceeded`, so a signal source
-/// that fires faster than the tracer's deliver-and-retry round
-/// trip ends the run fail-closed rather than retrying the
-/// instruction forever.
+/// Each refusal is a named `BudgetExceeded`, so a step that keeps
+/// being interrupted before it makes progress ends the run
+/// fail-closed rather than retrying the instruction forever.
 ///
-/// Derivation, per step kind:
+/// 64 is an interruption-count policy only. The counters look at
+/// neither signal rates nor time, so whether a given signal source
+/// reaches the bound depends on handler work and on how the tracer
+/// and the guest are scheduled. Even a slow source can leave a
+/// signal pending before every attempt if the tracer is delayed
+/// between attempts, so no timer rate is guaranteed to pass.
+///
+/// Recorded averages, for scale only; their reciprocals are
+/// examples from those runs, not thresholds:
 /// - `cpuid` (W3): one interrupt, delivery, sigreturn and retry
-///   round trip measured about 84 us (11,946 per second, release
-///   build, in the I1-H H2b record-pass hang). 64 round trips is
-///   about 5.4 ms without progress, so only a source
-///   re-interrupting the same `cpuid` at about 12 kHz or more,
-///   sustained, reaches the bound.
-/// - `syscall` (W3s): one delivery measured about 118.7 us (one
+///   round trip averaged about 84 us (11,946 per second, release
+///   build, in the I1-H H2b record-pass hang). The reciprocal is
+///   about 12 kHz, and 64 round trips at that average is about
+///   5.4 ms.
+/// - `syscall` (W3s): one delivery averaged about 118.7 us (one
 ///   release run, 64 deliveries in 7.6 ms with setup included, so
-///   not an isolated latency). 64 round trips is about 7.6 ms, so
-///   a source re-interrupting the same `syscall` at about 8.4 kHz
-///   or more, sustained, reaches the bound.
-///
-/// Profiling timers (100-1000 Hz) and interval timers of 1 ms or
-/// more pass through unchanged at either kind.
+///   not an isolated latency). The reciprocal is about 8.4 kHz.
 ///
 /// This is a liveness bound, not a determinism change: given the
 /// same delivery sequence, the refusal is deterministic. It is a
