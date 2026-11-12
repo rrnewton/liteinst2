@@ -1779,6 +1779,296 @@ fn build_two_cpuid() -> (Gx, [u64; 2]) {
     )
 }
 
+/// The W3 count survives a delivery on another path (H2c
+/// follow-up: no test interleaved a non-W3 delivery with W3
+/// retries, so "only a completed original step resets the count"
+/// rested on review). Plan [65] at the `cpuid`; on the 10th SIGUSR1
+/// handler run, a SIGUSR2 arrival at a common-exit entry, on the
+/// handler's `ret` exit: a W1 delivery through the Async arm. A
+/// delivery is not progress, so the 65th interrupt still refuses
+/// by the exact reason, after 64 SIGUSR1 deliveries and 1 SIGUSR2.
+#[test]
+fn w3_retry_bound_counts_across_w1_delivery() {
+    let _g = lock();
+    let (gx, usr1_ret, cpuid) = build_w3_w1();
+    let label = "W3 bound across W1";
+    let n = u64::from(W3_RETRY_LIMIT);
+    const AT_RUN: usize = 10;
+    let refusal = RunError::Refuse(liteinst_jit::Refuse::BudgetExceeded {
+        what: W3_RETRY_REFUSAL,
+    });
+    let (map, _) = pcmap_of(&gx);
+    let idx = map
+        .iter()
+        .position(|e| matches!(e.recovery, Recovery::CommonExit { .. }))
+        .expect("a common-exit entry");
+    // Survey: the same plan, with the arrival armed but never firing.
+    let survey = run_translated(
+        &gx,
+        Knobs {
+            arrival: Some((idx, u64::MAX)),
+            pre_original_step_plan: Some(&PLAN_OVER_LIMIT),
+            ..Knobs::default()
+        },
+    );
+    assert_eq!(
+        survey.out.as_ref().err(),
+        Some(&refusal),
+        "{label}: survey refuses"
+    );
+    assert!(!survey.report.sent, "{label}: survey never fires");
+    use liteinst_jit::state::exit_kind::RETURN;
+    let rets: Vec<usize> = survey
+        .report
+        .hit_stops
+        .iter()
+        .enumerate()
+        .filter(|(_, h)| {
+            let r = hit_rec(h, &survey.info);
+            r.exit_kind == RETURN && r.src_off == usr1_ret
+        })
+        .map(|(i, _)| i)
+        .collect();
+    assert_eq!(
+        rets.len() as u64,
+        n,
+        "{label}: the handler's ret exit passes this entry once per delivery"
+    );
+    let hit = rets[AT_RUN - 1] as u64 + 1;
+    let t = run_translated(
+        &gx,
+        Knobs {
+            arrival: Some((idx, hit)),
+            arrival_sig: Some(USR2),
+            pre_original_step_plan: Some(&PLAN_OVER_LIMIT),
+            ..Knobs::default()
+        },
+    );
+    assert!(t.report.sent, "{label}: the W1 arrival fired");
+    assert_eq!(
+        t.out.as_ref().err(),
+        Some(&refusal),
+        "{label}: the W1 delivery does not reset the count: the exact named reason"
+    );
+    let d = &t.report.deliveries;
+    let signos: Vec<i32> = d.iter().map(|x| x.signum).collect();
+    let mut want = vec![USR1; AT_RUN];
+    want.push(USR2);
+    want.resize(n as usize + 1, USR1);
+    assert_eq!(
+        signos, want,
+        "{label}: 10 SIGUSR1, then the SIGUSR2, then 54 SIGUSR1"
+    );
+    assert_eq!(
+        d[AT_RUN].src_pc - t.info.base,
+        usr1_ret,
+        "{label}: SIGUSR2 at the SIGUSR1 handler's ret"
+    );
+    assert!(
+        d.iter()
+            .filter(|x| x.signum == USR1)
+            .all(|x| x.src_pc == t.info.base + cpuid),
+        "{label}: every SIGUSR1 at the cpuid source PC: {d:?}"
+    );
+    assert_eq!(
+        (
+            word(&t.data, COUNT as usize),
+            word(&t.data, COUNT2 as usize)
+        ),
+        (n, 1),
+        "{label}: SIGUSR1 handler ran 64 times, SIGUSR2 handler once"
+    );
+}
+
+/// The W3-with-W1 fixture (H2c follow-up): handlers for SIGUSR1 (at
+/// 0) and SIGUSR2, both with an empty `sa_mask`, so SIGUSR2 is
+/// deliverable inside the SIGUSR1 handler; then main runs `cpuid`
+/// leaf 0 (EBX to scratch) and returns 42. Returns the fixture, the
+/// SIGUSR1 handler's `ret` offset and the `cpuid` offset.
+fn build_w3_w1() -> (Gx, u64, u64) {
+    let mut a = CodeAssembler::new(64).unwrap();
+    let mut handler = a.create_label();
+    let mut handler2 = a.create_label();
+    let mut usr1_ret = a.create_label();
+    let mut restorer = a.create_label();
+    let mut main = a.create_label();
+    let mut body_l = a.create_label();
+    let mut cpuid_l = a.create_label();
+    a.set_label(&mut handler).unwrap();
+    emit_handler_body(&mut a, SLOT, COUNT);
+    a.set_label(&mut usr1_ret).unwrap();
+    a.ret().unwrap();
+    a.set_label(&mut handler2).unwrap();
+    emit_handler_body(&mut a, SLOT2, COUNT2);
+    a.ret().unwrap();
+    a.set_label(&mut restorer).unwrap();
+    a.db(&[0xb8, 0x0f, 0x00, 0x00, 0x00, 0x0f, 0x05]).unwrap();
+    a.set_label(&mut main).unwrap();
+    // rt_sigaction(SIGUSR1, {handler, FLAGS, restorer, mask 0}).
+    a.lea(rax, qword_ptr(rbp)).unwrap();
+    a.mov(qword_ptr(r13 + ACT), rax).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 8)), FLAGS).unwrap();
+    a.mov(dword_ptr(r13 + (ACT + 12)), 0u32).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 16)), r12).unwrap();
+    a.mov(qword_ptr(r13 + (ACT + 24)), 0).unwrap();
+    a.mov(edi, USR1 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    // rt_sigaction(SIGUSR2, {handler2, FLAGS, restorer, mask 0}).
+    a.lea(rax, qword_ptr(handler2)).unwrap();
+    a.mov(qword_ptr(r13 + ACT2), rax).unwrap();
+    a.mov(dword_ptr(r13 + (ACT2 + 8)), FLAGS).unwrap();
+    a.mov(dword_ptr(r13 + (ACT2 + 12)), 0u32).unwrap();
+    a.mov(qword_ptr(r13 + (ACT2 + 16)), r12).unwrap();
+    a.mov(qword_ptr(r13 + (ACT2 + 24)), 0).unwrap();
+    a.mov(edi, USR2 as u32).unwrap();
+    a.lea(rsi, qword_ptr(r13 + ACT2)).unwrap();
+    a.xor(edx, edx).unwrap();
+    a.mov(r10d, 8u32).unwrap();
+    a.mov(eax, libc::SYS_rt_sigaction as u32).unwrap();
+    a.syscall().unwrap();
+    // Translator reachability for both handler blocks.
+    a.set_label(&mut body_l).unwrap();
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(handler).unwrap();
+    a.cmp(rcx, rcx).unwrap();
+    a.jne(handler2).unwrap();
+    a.xor(eax, eax).unwrap();
+    a.xor(ecx, ecx).unwrap();
+    a.set_label(&mut cpuid_l).unwrap();
+    a.cpuid().unwrap();
+    a.mov(qword_ptr(r13 + (SCRATCH + 16)), rbx).unwrap();
+    a.mov(eax, 42u32).unwrap();
+    a.ret().unwrap();
+    let res = a
+        .assemble_options(0, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
+        .unwrap();
+    assert_eq!(res.label_ip(&handler).unwrap(), 0, "handler at 0");
+    corpus::check("H2c W3 W1 in handler", &res.inner.code_buffer);
+    let cpuid = res.label_ip(&cpuid_l).unwrap();
+    (
+        Gx {
+            bytes: res.inner.code_buffer.clone(),
+            handler_off: 0,
+            restorer_off: res.label_ip(&restorer).unwrap(),
+            main_off: res.label_ip(&main).unwrap(),
+            body_off: res.label_ip(&body_l).unwrap(),
+            cpuid_off: Some(cpuid),
+            exit_offs: None,
+        },
+        res.label_ip(&usr1_ret).unwrap(),
+        cpuid,
+    )
+}
+
+/// Every deadline helper arms the child it starts, with
+/// `RUN_DEADLINE` (H2c follow-up: a helper that forgot to arm, or
+/// armed a watchdog that never fires, passed every other test,
+/// because a deadline cannot be seen in a passing run). Each call
+/// is read back through `deadline::take_last_armed`, by pid where
+/// the helper exposes its child. One binary is enough: the helpers
+/// are the shared module, the same in every binary.
+#[test]
+fn deadline_helpers_arm_their_child() {
+    let _g = lock();
+    let o1_child = env!("CARGO_BIN_EXE_liteinst-jit-o1-child");
+    let gx = build(Body::Mixed);
+    let armed = |what: &str| -> (i32, Duration) {
+        deadline::take_last_armed().unwrap_or_else(|| panic!("{what}: armed nothing"))
+    };
+    let check_remote =
+        |what: &str, r: Result<(RemoteExecutable, deadline::Deadline), liteinst_jit::Refuse>| {
+            let (remote, d) = r.unwrap_or_else(|e| panic!("{what}: spawn: {e:?}"));
+            assert_eq!(
+                armed(what),
+                (remote.child_pid_for_test(), deadline::RUN_DEADLINE),
+                "{what}: armed its own child with RUN_DEADLINE"
+            );
+            drop(remote);
+            drop(d);
+        };
+    let _ = deadline::take_last_armed();
+    check_remote(
+        "remote_bytes",
+        deadline::remote_bytes(REMOTE_CHILD, &gx.bytes),
+    );
+    check_remote(
+        "remote_bytes_with_blocked",
+        deadline::remote_bytes_with_blocked(REMOTE_CHILD, &gx.bytes, &[USR2]),
+    );
+    check_remote(
+        "remote_bytes_guarded",
+        deadline::remote_bytes_guarded(REMOTE_CHILD, &gx.bytes),
+    );
+    check_remote(
+        "remote_named",
+        deadline::remote_named(REMOTE_CHILD, "sum_loop"),
+    );
+    check_remote(
+        "remote_named_with_blocked",
+        deadline::remote_named_with_blocked(REMOTE_CHILD, "sum_loop", &[USR2]),
+    );
+    // The O1 runners return no pid: check the bound and that a
+    // child was armed.
+    let _ = deadline::o1(o1_child, "sum_loop", |_, _| {});
+    let (pid, bound) = armed("o1");
+    assert!(
+        pid > 0 && bound == deadline::RUN_DEADLINE,
+        "o1: armed a child with RUN_DEADLINE: {pid} {bound:?}"
+    );
+    // mov eax, 42; ret
+    let _ = deadline::o1_bytes(o1_child, &[0xb8, 0x2a, 0, 0, 0, 0xc3], |_, _| {});
+    let (pid, bound) = armed("o1_bytes");
+    assert!(
+        pid > 0 && bound == deadline::RUN_DEADLINE,
+        "o1_bytes: armed a child with RUN_DEADLINE: {pid} {bound:?}"
+    );
+    let (main, restorer, handler) = (gx.main_off, gx.restorer_off, gx.handler_off);
+    let mut seen = None;
+    let _ = deadline::o1s(
+        REMOTE_CHILD,
+        &gx.bytes,
+        &[],
+        |r, info| {
+            r.rip = info.base + main;
+            r.rbp = info.base + handler;
+            r.r12 = info.base + restorer;
+            r.r13 = info.dst;
+        },
+        None,
+        |pid| seen = Some(pid),
+    );
+    assert_eq!(
+        armed("o1s"),
+        (seen.expect("o1s: on_spawn ran"), deadline::RUN_DEADLINE),
+        "o1s: armed its own child before on_spawn"
+    );
+    // A plain child: this binary, running only the sleeper probe,
+    // which returns at once without LITEINST_DEADLINE_SLEEPER.
+    let probe = || {
+        let mut c = std::process::Command::new(std::env::current_exe().expect("current exe"));
+        c.args(["--exact", "deadline::sleeper_probe", "--ignored"]);
+        c
+    };
+    let (mut child, d) = deadline::command_child(&mut probe()).expect("command_child");
+    assert_eq!(
+        armed("command_child"),
+        (child.id() as i32, deadline::RUN_DEADLINE),
+        "command_child: armed its own child"
+    );
+    child.wait().expect("probe wait");
+    drop(d);
+    deadline::command_status(&mut probe()).expect("command_status");
+    let (pid, bound) = armed("command_status");
+    assert!(
+        pid > 0 && bound == deadline::RUN_DEADLINE,
+        "command_status: armed a child with RUN_DEADLINE: {pid} {bound:?}"
+    );
+}
+
 /// The run deadline kills a child that outlives it and fails by
 /// name (I1-H H2c; see `deadline::self_test`).
 #[test]
@@ -3153,5 +3443,5 @@ fn corpus_hash_known_answers_and_table() {
     // reviewed edit here too. (Each test's own `check` proves its
     // IDs are present and current.)
     let table = corpus::table();
-    assert_eq!(table.len(), 83, "pinned fixtures");
+    assert_eq!(table.len(), 84, "pinned fixtures");
 }
