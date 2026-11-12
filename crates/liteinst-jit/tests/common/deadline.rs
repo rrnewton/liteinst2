@@ -165,6 +165,26 @@ pub fn remote_bytes_with_blocked(
     .map(armed)
 }
 
+/// `RemoteExecutable::spawn_bytes_with_args_for_test`, armed (H3k):
+/// the remote child also gets its test-only setup arguments after
+/// the block slot. A setup failure is the step's named refusal.
+pub fn remote_bytes_with_args(
+    bin: &str,
+    bytes: &[u8],
+    blocked: &[i32],
+    extra: &[&str],
+) -> Result<(RemoteExecutable, Deadline), Refuse> {
+    custody(|| {
+        RemoteExecutable::spawn_bytes_with_args_for_test(
+            std::path::Path::new(bin),
+            bytes,
+            blocked,
+            extra,
+        )
+    })
+    .map(armed)
+}
+
 /// `RemoteExecutable::spawn_bytes_guarded`, armed.
 pub fn remote_bytes_guarded(
     bin: &str,
@@ -1220,8 +1240,9 @@ fn no_core_dumps() {
 }
 
 /// True only in a probe run by the intermediate; the probe then turns
-/// core dumps off before it does anything else.
-fn probe_enabled() -> bool {
+/// core dumps off before it does anything else. Every probe, here or
+/// in a test binary, returns at once when this is false.
+pub fn probe_enabled() -> bool {
     let on = std::env::var_os(PROBE_ENV).is_some();
     if on {
         no_core_dumps();

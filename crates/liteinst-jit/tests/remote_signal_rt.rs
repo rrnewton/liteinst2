@@ -61,7 +61,9 @@ use liteinst_jit::exec::{FaultKind, Outcome, RunError};
 use liteinst_jit::harness::RETURN_SENTINEL;
 use liteinst_jit::o1::O1sEnd;
 use liteinst_jit::refuse::Refuse;
-use liteinst_jit::remote::{RemoteChildInfo, RemoteExecutable};
+use liteinst_jit::remote::{
+    ArrivalReport, RemoteChildInfo, RemoteExecutable, SeenSiginfo, SeenSite,
+};
 use liteinst_jit::types::{CountProfile, Generation, RegionFacts};
 
 const REMOTE_CHILD: &str = env!("CARGO_BIN_EXE_liteinst-jit-remote-child");
@@ -175,7 +177,24 @@ enum Send {
     /// run-dependent bytes: pin a [`FD_TEMPLATE`] build and check
     /// the runtime build with [`assert_fd_patch`].
     WriteFd(i32),
+    /// H3k barrier: rt_sigpending into `PENDING_MID` until it holds
+    /// this signal, checking each result (see `Expect`). The loop's
+    /// iteration count varies run to run: its retired instructions
+    /// and branches are not in the `Fx` counts.
+    PendingUntil(i32),
+    /// H3k: rt_sigprocmask(SIG_UNBLOCK, {sig} at 0x80, NULL).
+    Unblock(i32),
+    /// No syscall (H3k guest setup check): if RAX, the previous
+    /// send's result, is not this value, store the previous send's
+    /// index at `GUEST_STEP` and RAX at `GUEST_RAX` and return
+    /// `100 + index` from main.
+    Expect(i32),
 }
+
+/// H3k guest setup failure: the failing send's index and its RAX
+/// (see `Send::Expect`); main then returns `100 + index`.
+const GUEST_STEP: i32 = 0x48;
+const GUEST_RAX: i32 = 0x50;
 
 /// The fd a pinned `WriteFd` template carries. If template bytes
 /// ever ran, `write(-1, ..)` would only fail with EBADF.
@@ -383,8 +402,43 @@ fn build_unpinned(spec: &Spec) -> Fx {
     let mut send_before = Vec::new();
     let mut write_fd_mov = None;
     let (mut spin_extra_insns, mut spin_branches) = (0u64, 0u64);
-    for send in &spec.sends {
+    // H3k guest setup checks branch here; emitted only when used, so
+    // fixtures without them keep their bytes.
+    let mut guest_fail = a.create_label();
+    let mut checks = false;
+    for (k, send) in spec.sends.iter().enumerate() {
         let mut at = a.create_label();
+        if let Send::Expect(want) = *send {
+            assert!(k > 0, "Expect checks a previous send");
+            a.set_label(&mut at).unwrap();
+            send_before.push((a.instructions().len() - m0) as u64);
+            a.mov(ecx, (k - 1) as u32).unwrap();
+            a.cmp(rax, want).unwrap();
+            a.jne(guest_fail).unwrap();
+            checks = true;
+            send_labels.push(at);
+            continue;
+        }
+        if let Send::PendingUntil(sig) = *send {
+            let mut top = a.create_label();
+            a.set_label(&mut top).unwrap();
+            a.lea(rdi, qword_ptr(rbx + PENDING_MID)).unwrap();
+            a.mov(esi, 8u32).unwrap();
+            a.mov(eax, libc::SYS_rt_sigpending as u32).unwrap();
+            a.set_label(&mut at).unwrap();
+            send_before.push((a.instructions().len() - m0) as u64);
+            a.syscall().unwrap();
+            rc.store(&mut a);
+            a.mov(ecx, k as u32).unwrap();
+            a.cmp(rax, 0).unwrap();
+            a.jne(guest_fail).unwrap();
+            a.test(qword_ptr(rbx + PENDING_MID), sig_bit(sig) as i32)
+                .unwrap();
+            a.jz(top).unwrap();
+            checks = true;
+            send_labels.push(at);
+            continue;
+        }
         if let Send::Spin(n) = *send {
             assert!(n >= 1, "spin count");
             a.mov(ecx, n).unwrap();
@@ -501,7 +555,19 @@ fn build_unpinned(spec: &Spec) -> Fx {
                 a.mov(edx, 1u32).unwrap();
                 a.mov(eax, libc::SYS_write as u32).unwrap();
             }
-            Send::Spin(_) => unreachable!("handled above"),
+            Send::Unblock(sig) => {
+                a.mov(dword_ptr(rbx + 0x80), sig_bit(sig) as u32).unwrap();
+                a.mov(dword_ptr(rbx + 0x84), (sig_bit(sig) >> 32) as u32)
+                    .unwrap();
+                a.mov(edi, libc::SIG_UNBLOCK as u32).unwrap();
+                a.lea(rsi, qword_ptr(rbx + 0x80)).unwrap();
+                a.xor(edx, edx).unwrap();
+                a.mov(r10d, 8u32).unwrap();
+                a.mov(eax, libc::SYS_rt_sigprocmask as u32).unwrap();
+            }
+            Send::Spin(_) | Send::PendingUntil(_) | Send::Expect(_) => {
+                unreachable!("handled above")
+            }
             Send::PendingNow => {
                 a.lea(rdi, qword_ptr(rbx + PENDING_MID)).unwrap();
                 a.mov(esi, 8u32).unwrap();
@@ -554,6 +620,13 @@ fn build_unpinned(spec: &Spec) -> Fx {
     a.mov(eax, 42u32).unwrap();
     a.ret().unwrap();
     let main_insns = (a.instructions().len() - m0) as u64;
+    if checks {
+        a.set_label(&mut guest_fail).unwrap();
+        a.mov(qword_ptr(rbx + GUEST_RAX), rax).unwrap();
+        a.mov(qword_ptr(rbx + GUEST_STEP), rcx).unwrap();
+        a.lea(eax, dword_ptr(rcx + 100)).unwrap();
+        a.ret().unwrap();
+    }
     let res = a
         .assemble_options(0, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
         .unwrap();
@@ -733,7 +806,7 @@ fn n_rc(spec: &Spec) -> usize {
         + spec
             .sends
             .iter()
-            .filter(|s| !matches!(s, Send::Spin(_)))
+            .filter(|s| !matches!(s, Send::Spin(_) | Send::Expect(_)))
             .count()
         + usize::from(spec.unblock)
         + usize::from(spec.pending_probe)
@@ -2772,4 +2845,691 @@ fn test_bound_self_test() {
 fn test_bound_starts_after_lock() {
     let _g = lock();
     deadline::assert_bound_started_after_lock();
+}
+
+// ---------------------------------------------------------------
+// H3k: a positive-code signal outside the fault set keeps its
+// asynchronous provenance and is never delivered. G6 and G7 use the
+// rewrite seam on this binary's I1-G2 restart and back-to-back
+// fixtures; R1-R5 take real kernel signals with their own codes: an
+// `F_SETSIG` signal (`POLL_IN`), SIGALRM from `ITIMER_REAL`
+// (`SI_KERNEL`) and SIGCHLD (`CLD_EXITED`). The remote child arranges
+// each source before tracing (its test-only setup arguments), so the
+// guest needs only admitted calls. Every R test blocks the signal
+// before it is generated and unblocks it (or enters `rt_sigsuspend`)
+// only after `rt_sigpending` has shown it: no timing decides an
+// outcome.
+// ---------------------------------------------------------------
+
+const ALRM: i32 = libc::SIGALRM;
+const CHLD: i32 = libc::SIGCHLD;
+const WINCH: i32 = libc::SIGWINCH;
+/// The rewrite seam's code, and the kernel's code for `F_SETSIG`.
+const POLL_IN: i32 = 1;
+const CLD_EXITED: i32 = 1;
+/// The named assertions of these tests (frozen messages).
+const A_SETUP: &str = "test setup succeeded";
+const A_SEAM: &str = "seam rewrote si_code once";
+const A_NOREWRITE: &str = "rewrite seam unused";
+const A_SEEN: &str = "classifier saw the kernel's own code";
+const A_POLLS: &str = "polls crossed while blocked";
+const A_PENDING: &str = "pending bit observed before unblock";
+const A_KIND: &str = "positive-code signal outside the fault set stops as AsyncSignal";
+const A_PC: &str = "stop is at the source PC";
+const A_REF: &str = "equal to the nonpositive no-handler stop at the same arrival";
+const A_NODELIV: &str = "never delivered";
+const A_NOTELIG: &str = "restart exit refuses as not eligible";
+const A_PROBE: &str = "sigchld probe passed";
+const A_HELPER: &str = "helper reaped with its own status";
+const NOT_ELIGIBLE: &str = "syscall restart: signal not eligible for delivery";
+
+/// A_KIND: the run stopped with `RunError::Fault` of kind
+/// `AsyncSignal`, for signal `sig`.
+fn kgen_fault<'t>(
+    out: &'t Result<Outcome, RunError>,
+    sig: i32,
+    label: &str,
+) -> &'t liteinst_jit::exec::Fault {
+    match out {
+        Err(RunError::Fault(f)) if f.kind == FaultKind::AsyncSignal && f.signum == sig => f,
+        other => panic!("{label}: {A_KIND}: got {other:?}"),
+    }
+}
+
+/// A_PC: `src_pc` and `state.rip` are `want`.
+fn check_pc(f: &liteinst_jit::exec::Fault, want: u64, label: &str) {
+    assert_eq!((f.src_pc, f.state.rip), (want, want), "{label}: {A_PC}");
+}
+
+/// A_NODELIV: no delivery record, no frame, no handler ran.
+fn check_no_delivery(t: &Translated, r: &ArrivalReport, label: &str) {
+    assert!(
+        r.delivery_log.is_empty() && r.deliveries.is_empty() && word(&t.data, LOG_COUNT) == 0,
+        "{label}: {A_NODELIV}: log {:?}, deliveries {:?}, handler runs {}",
+        r.delivery_log,
+        r.deliveries,
+        word(&t.data, LOG_COUNT)
+    );
+}
+
+/// A_NOTELIG: the restart exit's named refusal, with the stop seen
+/// at that site and nothing injected.
+fn check_not_eligible(t: &Translated, r: &ArrivalReport, label: &str) {
+    assert!(
+        t.out.as_ref().err()
+            == Some(&RunError::Refuse(Refuse::RemoteSubstrate {
+                operation: NOT_ELIGIBLE,
+                errno: 0,
+            }))
+            && r.siginfo_seen.last().map(|s| s.site) == Some(SeenSite::RestartExit)
+            && r.delivery_log.is_empty()
+            && word(&t.data, LOG_COUNT) == 0,
+        "{label}: {A_NOTELIG}: {:?}, seen {:?}, log {:?}",
+        t.out,
+        r.siginfo_seen,
+        r.delivery_log
+    );
+}
+
+/// G6: an eligible SIGUSR1 (`SA_RESTART` handler), sent once the guest
+/// sleeps in `nanosleep` (the G2d fixture and sender), rewritten to
+/// `POLL_IN` at the restart exit: the restart exit's named refusal,
+/// never injected, nothing credited.
+#[test]
+fn kgen_interrupting_sleep_refuses_not_eligible() {
+    let _g = lock();
+    let label = "G6";
+    let spec = Spec {
+        installs: vec![(USR1, FLAGS | SA_RESTART, 0)],
+        block: 0,
+        sends: vec![Send::Nanosleep(1000)],
+        unblock: false,
+        pending_probe: false,
+    };
+    let fx = build(&spec, "G2d");
+    let t = run_translated_cfg(&fx, None, Ext::Send(NR_NANOSLEEP, USR1), |r| {
+        r.set_kgen_seam_for_test(Some((POLL_IN, 0)));
+    });
+    let r = t.remote.arrival_report_for_test();
+    assert!(
+        r.kgen_rewrites == 1 && r.siginfo_seen.iter().filter(|s| s.code == POLL_IN).count() == 1,
+        "{label}: {A_SEAM}: rewrites {}, seen {:?}, outcome {:?}",
+        r.kgen_rewrites,
+        r.siginfo_seen,
+        t.out
+    );
+    check_not_eligible(&t, &r, label);
+    assert_eq!(
+        r.siginfo_seen.last().map(|s| (s.signo, s.code)),
+        Some((USR1, POLL_IN)),
+        "{label}: {A_NOTELIG}: the rewritten SIGUSR1 at the restart exit"
+    );
+}
+
+/// G7's fixture: eligible SIGUSR1 and SIGUSR2 handlers, SIGUSR1,
+/// SIGUSR2 and SIGWINCH blocked, then `kill` SIGUSR1 and `second`, and
+/// unblock everything. The kernel builds SIGUSR1's frame first; the
+/// second signal stops at the executor's stub, back to back.
+fn g7_spec(second: i32) -> Spec {
+    Spec {
+        installs: vec![(USR1, FLAGS, 0), (USR2, FLAGS, 0)],
+        block: sig_bit(USR1) | sig_bit(USR2) | sig_bit(WINCH),
+        sends: vec![Send::Kill(USR1), Send::Kill(second)],
+        unblock: true,
+        pending_probe: false,
+    }
+}
+
+/// Region-normalized value for comparing two children (as the gate's
+/// `norm`): an address in one of the child's known regions becomes
+/// (region, offset); generated (arena) addresses are not a region, so
+/// one leaking into guest state is a mismatch.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Norm {
+    Raw(u64),
+    Region(u8, u64),
+    /// The child's own pid in the low half; `high` is the upper half.
+    OwnPid {
+        high: u64,
+    },
+}
+
+fn norm(v: u64, info: &RemoteChildInfo, code_len: u64) -> Norm {
+    let stack_lo = info.stack_top - 64 * 1024 + 8;
+    let regions = [
+        (info.base, code_len),
+        (stack_lo, info.stack_top + 8 - stack_lo),
+        (info.dst, 8192),
+        (info.src, 8192),
+        (info.data, 128),
+    ];
+    for (i, &(lo, len)) in regions.iter().enumerate() {
+        if v >= lo && v <= lo + len {
+            return Norm::Region(i as u8 + 1, v - lo);
+        }
+    }
+    Norm::Raw(v)
+}
+
+/// A stop's 18 registers (ucontext greg order), normalized: known
+/// regions as offsets, RFLAGS raw, and the own pid tagged only in R14,
+/// where this file's fixtures keep it (`getpid; mov r14, rax`). Unlike
+/// [`norm_state`], no other register's pid-equal value is tagged.
+fn norm_state_pid_r14(
+    s: &liteinst_jit::GuestState,
+    info: &RemoteChildInfo,
+    code_len: u64,
+    pid: i32,
+) -> [Norm; 18] {
+    let g = [
+        s.r8, s.r9, s.r10, s.r11, s.r12, s.r13, s.r14, s.r15, s.rdi, s.rsi, s.rbp, s.rbx, s.rdx,
+        s.rax, s.rcx, s.rsp, s.rip, s.rflags,
+    ];
+    const R14: usize = 6;
+    core::array::from_fn(|i| {
+        if i == 17 {
+            Norm::Raw(g[i])
+        } else if i == R14 && g[i] == pid as u64 {
+            Norm::OwnPid { high: 0 }
+        } else {
+            norm(g[i], info, code_len)
+        }
+    })
+}
+
+/// G7: SIGUSR1 is delivered (its frame built), then an eligible SIGUSR2
+/// arrives back to back at the stub and is rewritten to `POLL_IN`: an
+/// asynchronous stop at SIGUSR1's source handler entry, exactly one
+/// delivery record (SIGUSR1), SIGUSR2 never injected. Its reference
+/// is the same fixture with SIGWINCH as the second signal (patched into
+/// the second `kill`'s imm32 only): unblocked, user-sent, no handler,
+/// not admitted, so the stub's ineligible branch stops it at the same
+/// entry after the same first frame.
+#[test]
+fn kgen_back_to_back_at_stub_stops_async() {
+    let _g = lock();
+    let label = "G7";
+    let fx = build(&g7_spec(USR2), "H3k G7 back-to-back");
+    // The second `kill`'s `mov esi, imm32` (BE imm32), then
+    // `mov eax, 62` (5 bytes), then the `syscall`.
+    let at = fx.send_pcs[1] as usize - 9;
+    assert_eq!(fx.bytes[at - 1], 0xbe, "{label}: mov esi, imm32 opcode");
+    assert_eq!(
+        fx.bytes[at..at + 4],
+        USR2.to_le_bytes(),
+        "{label}: second signal"
+    );
+    let ref_fx = build_unpinned(&g7_spec(WINCH));
+    let mut want = fx.bytes.clone();
+    want[at..at + 4].copy_from_slice(&WINCH.to_le_bytes());
+    assert_eq!(
+        ref_fx.bytes, want,
+        "{label}: reference = fixture + the second signal's imm32"
+    );
+    assert_eq!(
+        (&ref_fx.handler_offs, ref_fx.resume_off, &ref_fx.send_pcs),
+        (&fx.handler_offs, fx.resume_off, &fx.send_pcs),
+        "{label}: reference layout"
+    );
+    let t = run_translated_cfg(&fx, None, Ext::None, |r| {
+        r.set_kgen_seam_for_test(Some((POLL_IN, 1)));
+    });
+    let rep = t.remote.arrival_report_for_test();
+    assert!(
+        rep.kgen_rewrites == 1
+            && rep
+                .siginfo_seen
+                .iter()
+                .filter(|s| s.code == POLL_IN)
+                .count()
+                == 1,
+        "{label}: {A_SEAM}: rewrites {}, seen {:?}, outcome {:?}",
+        rep.kgen_rewrites,
+        rep.siginfo_seen,
+        t.out
+    );
+    let f = kgen_fault(&t.out, USR2, label);
+    let entry = t.info.base + fx.handler_offs[0];
+    check_pc(f, entry, label);
+    // A_REF, after the tested leg's own assertions.
+    let r = run_translated_cfg(&ref_fx, None, Ext::None, |_| {});
+    let rrep = r.remote.arrival_report_for_test();
+    let g = match &r.out {
+        Err(RunError::Fault(g)) => g,
+        other => panic!("{label}: {A_REF}: reference outcome {other:?}"),
+    };
+    assert!(
+        rrep.kgen_rewrites == 0
+            && rrep.siginfo_seen.last().map(|s| (s.site, s.signo, s.code))
+                == Some((SeenSite::Stub, WINCH, SI_USER)),
+        "{label}: {A_REF}: reference preconditions: rewrites {}, seen {:?}",
+        rrep.kgen_rewrites,
+        rrep.siginfo_seen
+    );
+    assert_eq!(
+        (f.signum, g.signum),
+        (USR2, WINCH),
+        "{label}: {A_REF}: signal per leg"
+    );
+    let clen = fx.bytes.len().div_ceil(4096) as u64 * 4096;
+    let pid_t = t.remote.child_pid_for_test();
+    let pid_r = r.remote.child_pid_for_test();
+    // The second signal is self-sent, so `addr` is the child's own
+    // pid (low half) and uid (high half).
+    let own = |addr: u64, pid: i32| {
+        if addr & 0xffff_ffff == u64::from(pid as u32) {
+            Norm::OwnPid { high: addr >> 32 }
+        } else {
+            Norm::Raw(addr)
+        }
+    };
+    let key = |x: &liteinst_jit::exec::Fault, info: &RemoteChildInfo, pid: i32| {
+        (
+            x.kind,
+            norm(x.src_pc, info, clen),
+            norm_state_pid_r14(&x.state, info, clen, pid),
+            x.branches,
+            x.instructions,
+            own(x.addr, pid),
+            x.also_pending.clone(),
+        )
+    };
+    assert_eq!(
+        key(f, &t.info, pid_t),
+        key(g, &r.info, pid_r),
+        "{label}: {A_REF}"
+    );
+    let records = |rep: &ArrivalReport, info: &RemoteChildInfo| {
+        rep.delivery_log
+            .iter()
+            .map(|d| {
+                (
+                    d.class,
+                    d.signum,
+                    norm(d.src_pc, info, clen),
+                    d.raw_rax,
+                    d.sigaction_finishes,
+                )
+            })
+            .collect::<Vec<_>>()
+    };
+    let one = records(&rep, &t.info);
+    assert!(
+        one.len() == 1
+            && one[0].1 == USR1
+            && records(&rrep, &r.info) == one
+            && rrep.deliveries.len() == 1
+            && word(&r.data, LOG_COUNT) == 0,
+        "{label}: {A_REF}: one SIGUSR1 record in each leg, no second injection: {one:?} vs {:?}",
+        records(&rrep, &r.info)
+    );
+    // A_NODELIV for the tested signal: the one record is SIGUSR1's,
+    // one frame was built, and no handler instruction ran.
+    assert!(
+        rep.delivery_log.len() == 1
+            && rep.delivery_log[0].signum == USR1
+            && rep.deliveries.len() == 1
+            && word(&t.data, LOG_COUNT) == 0,
+        "{label}: {A_NODELIV}: log {:?}, deliveries {:?}",
+        rep.delivery_log,
+        rep.deliveries
+    );
+}
+
+/// One H3k real-kernel run: spawned with `blocked` and the setup
+/// arguments `extra` (through the armed wrapper), then A_SETUP:
+/// the spawn succeeded and, for `fsetsig:`/`sigchld-helper`, fd 201
+/// or fd 200 is a pipe. A pipe there alone is only a sanity check
+/// (descriptors can be inherited); the signal, code and site the run
+/// observes are the evidence. `configure` runs after A_SETUP and
+/// before the run.
+fn run_kgen(
+    fx: &Fx,
+    blocked: &[i32],
+    extra: &[&str],
+    label: &str,
+    configure: impl FnOnce(&mut RemoteExecutable),
+) -> (Translated, ArrivalReport) {
+    let (mut remote, deadline) =
+        deadline::remote_bytes_with_args(REMOTE_CHILD, &fx.bytes, blocked, extra)
+            .unwrap_or_else(|e| panic!("{label}: {A_SETUP}: {e:?}"));
+    let pid = remote.child_pid_for_test();
+    for (arg, fd) in [("fsetsig:", 201), ("sigchld-helper", 200)] {
+        if extra.iter().any(|a| a.starts_with(arg)) {
+            let link = std::fs::read_link(format!("/proc/{pid}/fd/{fd}"))
+                .map(|p| p.to_string_lossy().into_owned());
+            assert!(
+                link.as_deref().is_ok_and(|l| l.starts_with("pipe:")),
+                "{label}: {A_SETUP}: fd {fd}: {link:?}"
+            );
+        }
+    }
+    configure(&mut remote);
+    let info = remote.info();
+    let region = RegionFacts {
+        base: info.base,
+        bytes: fx.bytes.clone(),
+        generation: Generation(1),
+        immutable_private: true,
+    };
+    remote
+        .prepare(
+            &region,
+            info.base + fx.main_off,
+            CountProfile::BranchesAndInstructions,
+        )
+        .expect("prepare remote");
+    let mut s = remote.initial_state();
+    s.rip = info.base + fx.main_off;
+    s.rbx = info.dst;
+    s.rbp = info.base;
+    s.r12 = info.base + fx.restorer_off;
+    s.r13 = info.src;
+    let started = Instant::now();
+    let out = remote.run(s, RETURN_SENTINEL);
+    let ended = Instant::now();
+    // A run past its deadline fails here, by name.
+    drop(deadline);
+    let report = remote.arrival_report_for_test();
+    let mut data = vec![0u8; REPORT];
+    assert!(remote.read_mem(info.dst, &mut data));
+    let t = Translated {
+        remote,
+        info,
+        out,
+        data,
+        span: (started, ended),
+        seen: None,
+    };
+    (t, report)
+}
+
+/// A_GUESTSETUP: every handler install and the initial mask call
+/// returned 0 (their recorded results), and the run did not return a
+/// guest setup failure (`100 + send index`, see `Send::Expect`).
+fn check_guest_setup(t: &Translated, spec: &Spec, label: &str) {
+    for k in 0..=spec.installs.len() {
+        let rc = word(&t.data, RC_BASE + 8 * k as i32);
+        assert_eq!(rc, 0, "{label}: guest setup step {k} failed: rax {rc:#x}");
+    }
+    if let Ok(o) = &t.out {
+        assert!(
+            o.state.rax < 100,
+            "{label}: guest setup step send {} failed: rax {:#x}",
+            word(&t.data, GUEST_STEP),
+            word(&t.data, GUEST_RAX)
+        );
+    }
+}
+
+/// A_NOREWRITE and A_SEEN: no rewrite; exactly one ordinary delivery
+/// stop was seen, at `site`, with this signal and the kernel's code.
+fn check_seen(r: &ArrivalReport, site: SeenSite, sig: i32, code: i32, label: &str) -> SeenSiginfo {
+    assert_eq!(r.kgen_rewrites, 0, "{label}: {A_NOREWRITE}");
+    assert!(
+        r.siginfo_seen.len() == 1
+            && (
+                r.siginfo_seen[0].site,
+                r.siginfo_seen[0].signo,
+                r.siginfo_seen[0].code
+            ) == (site, sig, code),
+        "{label}: {A_SEEN}: {:?}",
+        r.siginfo_seen
+    );
+    r.siginfo_seen[0]
+}
+
+/// A_PENDING: the barrier's last `rt_sigpending` word and the blocked
+/// mask the guest read back both hold `sig`.
+fn check_pending(t: &Translated, sig: i32, label: &str) {
+    let (pending, mask) = (word(&t.data, PENDING_MID), word(&t.data, 0x88));
+    assert!(
+        pending & sig_bit(sig) != 0 && mask & sig_bit(sig) != 0,
+        "{label}: {A_PENDING}: pending {pending:#x}, mask {mask:#x}"
+    );
+}
+
+/// R1: an `F_SETSIG` pipe (SIGUSR1, `POLL_IN`); the guest installs an
+/// eligible SIGUSR1 handler and writes one byte. The kernel queues the
+/// signal during the `write`; it stops at the next generated entry,
+/// the block after the `write`, never delivered.
+#[test]
+fn kgen_fsetsig_usr1_stops_async_not_delivered() {
+    let _g = lock();
+    let label = "R1";
+    let spec = Spec {
+        installs: vec![(USR1, FLAGS, 0)],
+        block: 0,
+        sends: vec![Send::WriteFd(201), Send::Expect(1)],
+        unblock: false,
+        pending_probe: false,
+    };
+    let fx = build(&spec, "H3k R1 F_SETSIG");
+    let (t, r) = run_kgen(&fx, &[], &["fsetsig:10"], label, |_| {});
+    check_guest_setup(&t, &spec, label);
+    check_seen(&r, SeenSite::Generated, USR1, POLL_IN, label);
+    let f = kgen_fault(&t.out, USR1, label);
+    check_pc(f, t.info.base + fx.send_pcs[0] + 2, label);
+    check_no_delivery(&t, &r, label);
+}
+
+/// R2: the same source with SIGUSR1 blocked from spawn: the `write`
+/// queues it pending; a fixed 2,000-iteration loop at poll budget 64
+/// crosses poll exits while it stays blocked; the barrier sees it
+/// pending, the guest reads its blocked mask, then unblocks it. It
+/// stops at the next generated entry after the unblock.
+#[test]
+fn kgen_fsetsig_usr1_pending_while_blocked_stops_async_at_unblock() {
+    let _g = lock();
+    let label = "R2";
+    let spec = Spec {
+        installs: vec![(USR1, FLAGS, 0)],
+        block: sig_bit(USR1),
+        sends: vec![
+            Send::WriteFd(201),
+            Send::Expect(1),
+            Send::Spin(2000),
+            Send::PendingUntil(USR1),
+            Send::QueryMask,
+            Send::Expect(0),
+            Send::Unblock(USR1),
+        ],
+        unblock: false,
+        pending_probe: false,
+    };
+    let fx = build(&spec, "H3k R2 F_SETSIG blocked");
+    let (t, r) = run_kgen(&fx, &[USR1], &["fsetsig:10"], label, |remote| {
+        remote.set_poll_budget_for_test(Some(64));
+    });
+    check_guest_setup(&t, &spec, label);
+    check_seen(&r, SeenSite::Generated, USR1, POLL_IN, label);
+    // The poll exits between the `write` and the unblock: setup polls
+    // before the write cannot count, and no handler runs.
+    let mark = |nr: i64, arg0: u64| {
+        let m: Vec<_> = r
+            .syscall_marks
+            .iter()
+            .filter(|m| m.nr == nr as u64 && m.rdi == arg0)
+            .collect();
+        (m.len() == 1).then(|| m[0].poll_exits)
+    };
+    let write = mark(libc::SYS_write, 201);
+    let unblock = mark(libc::SYS_rt_sigprocmask, libc::SIG_UNBLOCK as u64);
+    assert!(
+        matches!((write, unblock), (Some(w), Some(u)) if u >= w + 2),
+        "{label}: {A_POLLS}: write {write:?}, unblock {unblock:?}, marks {:?}",
+        r.syscall_marks
+    );
+    eprintln!(
+        "{label}: poll exits between the write and the unblock: {}",
+        unblock.unwrap() - write.unwrap()
+    );
+    check_pending(&t, USR1, label);
+    let f = kgen_fault(&t.out, USR1, label);
+    check_pc(f, t.info.base + fx.send_pcs[6] + 2, label);
+    check_no_delivery(&t, &r, label);
+}
+
+/// R3: SIGALRM from a one-shot `ITIMER_REAL` (1 ms), blocked from spawn
+/// before the timer is armed; the guest installs a SIGALRM handler,
+/// waits in the barrier until it is pending, reads its blocked mask,
+/// and calls `rt_sigsuspend` with an empty mask. The pending SIGALRM
+/// interrupts the call in the kernel: the restart exit's named
+/// refusal.
+#[test]
+fn kgen_setitimer_alarm_in_kernel_refuses_not_eligible() {
+    let _g = lock();
+    let label = "R3";
+    let spec = Spec {
+        installs: vec![(ALRM, FLAGS, 0)],
+        block: sig_bit(ALRM),
+        sends: vec![
+            Send::PendingUntil(ALRM),
+            Send::QueryMask,
+            Send::Expect(0),
+            Send::Suspend(0),
+        ],
+        unblock: false,
+        pending_probe: false,
+    };
+    let fx = build(&spec, "H3k R3 ITIMER_REAL sigsuspend");
+    let (t, r) = run_kgen(&fx, &[ALRM], &["itimer-real-us:1000"], label, |_| {});
+    check_guest_setup(&t, &spec, label);
+    check_seen(&r, SeenSite::RestartExit, ALRM, SI_KERNEL, label);
+    check_pending(&t, ALRM, label);
+    check_not_eligible(&t, &r, label);
+}
+
+/// R4: as R3 up to the mask read, then the guest unblocks SIGALRM: it
+/// stops at the next generated entry, never delivered.
+#[test]
+fn kgen_setitimer_alarm_pending_stops_async_at_unblock() {
+    let _g = lock();
+    let label = "R4";
+    let spec = Spec {
+        installs: vec![(ALRM, FLAGS, 0)],
+        block: sig_bit(ALRM),
+        sends: vec![
+            Send::PendingUntil(ALRM),
+            Send::QueryMask,
+            Send::Expect(0),
+            Send::Unblock(ALRM),
+        ],
+        unblock: false,
+        pending_probe: false,
+    };
+    let fx = build(&spec, "H3k R4 ITIMER_REAL unblock");
+    let (t, r) = run_kgen(&fx, &[ALRM], &["itimer-real-us:1000"], label, |_| {});
+    check_guest_setup(&t, &spec, label);
+    check_seen(&r, SeenSite::Generated, ALRM, SI_KERNEL, label);
+    check_pending(&t, ALRM, label);
+    let f = kgen_fault(&t.out, ALRM, label);
+    check_pc(f, t.info.base + fx.send_pcs[3] + 2, label);
+    check_no_delivery(&t, &r, label);
+}
+
+/// The pids whose parent is `ppid`, from `/proc/*/stat` (this kernel
+/// may lack a children file).
+fn children_of(ppid: i32) -> Vec<i32> {
+    let Ok(dir) = std::fs::read_dir("/proc") else {
+        return Vec::new();
+    };
+    dir.filter_map(|e| e.ok()?.file_name().to_str()?.parse::<i32>().ok())
+        .filter(|pid| {
+            std::fs::read_to_string(format!("/proc/{pid}/stat"))
+                .ok()
+                .and_then(|s| {
+                    let rest = &s[s.rfind(')')? + 2..];
+                    rest.split(' ').nth(1)?.parse::<i32>().ok()
+                })
+                == Some(ppid)
+        })
+        .collect()
+}
+
+/// R5: the SIGCHLD probe, run under the subreaper intermediate, which
+/// owns the helper's lifetime: once the guest is gone it adopts and
+/// reaps the helper and reports its own status. The probe passes, and
+/// the report holds exactly one child, the helper the probe recorded,
+/// with status `exited 0`.
+#[test]
+fn kgen_sigchld_pending_stops_async_at_unblock() {
+    let _g = lock();
+    let r = deadline::subreaper_run("kgen_sigchld_probe", &[], deadline::StderrMode::Drain);
+    // The intermediate's whole report (probe status, the recorded
+    // helper's pid, start time and reaped status), for the record.
+    eprintln!("R5 report:\n{}", r.raw);
+    assert_eq!(
+        r.probe, "exited 0",
+        "R5: {A_PROBE} (the relayed stderr names the probe's first failing assertion):\n{}",
+        r.raw
+    );
+    assert!(
+        r.children.len() == 1
+            && !["unlisted", "unknown"].contains(&r.children[0].start.as_str())
+            && r.children[0].status == "exited 0",
+        "R5: {A_HELPER}:\n{}",
+        r.raw
+    );
+}
+
+/// R5's probe. The remote child forks one helper before tracing,
+/// with SIGCHLD blocked from spawn. The helper is the guest's only
+/// child; its pid and start time are recorded before the run, while it
+/// is alive. The guest installs a SIGCHLD handler and writes one byte
+/// to the helper's pipe; the helper exits 0; the barrier sees SIGCHLD
+/// pending; the guest reads its blocked mask and unblocks. It stops at
+/// the next generated entry with the kernel's `CLD_EXITED`, the
+/// helper's pid and status 0, never delivered. The guest never reaps
+/// the helper.
+#[test]
+#[ignore = "run only under deadline::subreaper_run"]
+fn kgen_sigchld_probe() {
+    let _g = lock();
+    if !deadline::probe_enabled() {
+        return;
+    }
+    // Relay a failing assertion to the intermediate, which reads this
+    // process's stderr (libtest captures the default panic output).
+    std::panic::set_hook(Box::new(|info| {
+        let msg = format!("{info}\n");
+        // SAFETY: a write of a live buffer to this process's stderr.
+        unsafe { libc::write(2, msg.as_ptr().cast(), msg.len()) };
+    }));
+    let label = "R5p";
+    let spec = Spec {
+        installs: vec![(CHLD, FLAGS, 0)],
+        block: sig_bit(CHLD),
+        sends: vec![
+            Send::WriteFd(200),
+            Send::Expect(1),
+            Send::PendingUntil(CHLD),
+            Send::QueryMask,
+            Send::Expect(0),
+            Send::Unblock(CHLD),
+        ],
+        unblock: false,
+        pending_probe: false,
+    };
+    let fx = build(&spec, "H3k R5 SIGCHLD");
+    let mut helper = None;
+    let (t, r) = run_kgen(&fx, &[CHLD], &["sigchld-helper"], label, |remote| {
+        let kids = children_of(remote.child_pid_for_test());
+        assert_eq!(kids.len(), 1, "{label}: {A_SETUP}: one helper: {kids:?}");
+        let start = deadline::proc_start(kids[0])
+            .unwrap_or_else(|| panic!("{label}: {A_SETUP}: helper start time"));
+        deadline::record(&format!("child {} {start}", kids[0]));
+        helper = Some(kids[0]);
+    });
+    let helper = helper.expect("recorded");
+    check_guest_setup(&t, &spec, label);
+    let seen = check_seen(&r, SeenSite::Generated, CHLD, CLD_EXITED, label);
+    assert!(
+        seen.word16 & 0xffff_ffff == u64::from(helper as u32) && seen.word24 & 0xffff_ffff == 0,
+        "{label}: {A_SEEN}: si_pid and si_status: {seen:?}, helper {helper}"
+    );
+    check_pending(&t, CHLD, label);
+    let f = kgen_fault(&t.out, CHLD, label);
+    check_pc(f, t.info.base + fx.send_pcs[5] + 2, label);
+    check_no_delivery(&t, &r, label);
 }

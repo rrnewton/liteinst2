@@ -425,7 +425,34 @@ H2d" below.
 Still open after H2d: kernel-generated (`si_code > 0`) signals
 during the original step; INDIRECT common-exit arrivals (pinned
 refusal); FP/SIMD state; the sigreturn interception's own entry
-stop (refused by name).
+stop (refused by name). The first is closed in H3k; see below.
+
+## Closed in H3k
+
+- **Positive-code signals outside the fault set.** A signal whose
+  `si_code` is positive and whose number is outside the fault set
+  (SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGTRAP, SIGSYS), such as
+  SIGALRM from `setitimer`, SIGCHLD, or an `F_SETSIG` signal, takes
+  the path of a nonpositive-code signal with no eligible handler at
+  every arrival site, and is never delivered: a recovered
+  `AsyncSignal` stop where the state is exact (generated code, the
+  W3 and W3s guarded steps, the I1-G2 restart exit's named
+  refusal, the frame-setup stub), and the existing named refusal
+  elsewhere. Before H3k the reported kind depended on where it
+  landed (`GuestFault`, `ExecutorError`, or a provenance refusal).
+  Nonpositive kernel codes (`SI_TIMER`, `SI_SIGIO`) keep the
+  existing path, and a fault-set number keeps the fault path
+  whatever its code. A test seam rewrites one stop's `si_code`
+  (G1-G7, each checked against a reference run of the same fixture
+  and arrival with an ineligible nonpositive-code signal), and
+  R1-R5 take real kernel signals with their own codes. Rows:
+  `H3k R1 F_SETSIG`, `H3k R2 F_SETSIG blocked`, `H3k R3 ITIMER_REAL
+  sigsuspend`, `H3k R4 ITIMER_REAL unblock`, `H3k R5 SIGCHLD`,
+  `H3k G7 back-to-back`; G1-G6 reuse pinned fixtures.
+
+Still open after H3k: INDIRECT common-exit arrivals (pinned refusal);
+FP/SIMD state; the sigreturn interception's own entry stop (refused by
+name).
 
 ## Run-dependent inputs
 
@@ -447,7 +474,10 @@ fd -1); the handler mode word (`H2d handler step`, `H2d W3s write`,
 `H2d W3s sigaction`, `H2d W3s sigqueue`, `H2d W3s tgsigqueue`, built
 with mode 0); main's mode word (`H2d cross-depth`, mode 0); the
 redirecting invocation N (`H2d same-depth redirect`, 0); and the shape
-and skip index (`H2d abandoned frame`, shape 1 and 0).
+and skip index (`H2d abandoned frame`, shape 1 and 0). H3k's G7
+reference run patches one word of `H3k G7 back-to-back`: the second
+`kill`'s signal (`mov esi, imm32`, SIGUSR2 to SIGWINCH), checked the
+same way.
 
 Pids and addresses reach a fixture only at run time, through
 `getpid` and the base registers, never as immediates in a pinned
@@ -566,5 +596,11 @@ change was intended.
 | `H2d cross-depth` | I1-H H2d | remote_signal_gate.rs w3_retry_bound_counts_across_depths | 33 interrupts of main's `cpuid`, then 32 of the handler's own on its 33rd run; SIGUSR2 nested, `SA_NODEFER`, or a `getpid` in every handler run | the aggregate's reason after 64 deliveries, in the exact order | `edb4c3ee5b802500beb9c933dd26d5e5f8bad5085e9cc63243faa9203b87e460` |
 | `H2d same-depth redirect` | I1-H H2d | remote_signal_gate.rs step_bound_accumulates_across_handler_redirect | N interrupts of `cpuid` A; the handler's Nth run resumes main at `SYS`; then interrupts of the `syscall` at `SYS + 5` | the per-depth `syscall` reason after 64 deliveries; every frame popped through the interception | `f7ef7f26d5010d64a1c5ef3477aea7849905acc685d6206e261e417e2b0a40fd` |
 | `H2d abandoned frame` | I1-H H2d | remote_signal_gate.rs step_bound_discards_abandoned_frame_retries | H2 resumes H1 at its epilogue, abandoning its `cpuid` B or, in shape 2, its `getpid` G | admitted with 67 deliveries and 67 pops, in the exact order | `9b24ca57745a3cab255d1c6c862e67e2c37e51333dbe2b77d6fb2123bd58b5c4` |
+| `H3k R1 F_SETSIG` | H3k | remote_signal_rt.rs kgen_fsetsig_usr1_stops_async_not_delivered | eligible SIGUSR1 handler, one byte written to an `F_SETSIG` (SIGUSR1) pipe | AsyncSignal after the `write`, never delivered | `4aaadd3d573a96f3f788b65eaee5e005dfe6f84b89ce75b693fdba192c560d6c` |
+| `H3k R2 F_SETSIG blocked` | H3k | remote_signal_rt.rs kgen_fsetsig_usr1_pending_while_blocked_stops_async_at_unblock | the same with SIGUSR1 blocked: write, 2,000-iteration loop, pending barrier, mask read, unblock | AsyncSignal after the unblock, never delivered | `cb3c0bae425de994ef13d285e786df8ccae179cf71dba68cdc6d590aad86ab82` |
+| `H3k R3 ITIMER_REAL sigsuspend` | H3k | remote_signal_rt.rs kgen_setitimer_alarm_in_kernel_refuses_not_eligible | SIGALRM handler, SIGALRM blocked and pending (barrier), mask read, `rt_sigsuspend` with an empty mask | restart exit's named refusal | `19a8c99564abd0108945e58843ac4430206c880aa4d7e7306149f24c1cd00818` |
+| `H3k R4 ITIMER_REAL unblock` | H3k | remote_signal_rt.rs kgen_setitimer_alarm_pending_stops_async_at_unblock | the same, then SIGALRM unblocked | AsyncSignal after the unblock, never delivered | `c6dd6cf6bf2ef6cbe17da4e5e841c8dd499f227435241963c7679fcb1e7a367b` |
+| `H3k R5 SIGCHLD` | H3k | remote_signal_rt.rs kgen_sigchld_probe | SIGCHLD handler, SIGCHLD blocked, wake byte to the helper, pending barrier, mask read, unblock | AsyncSignal after the unblock with the helper's `CLD_EXITED`, never delivered | `bf5cd8b86831954332d438c13e1c310ccfeeb1711c52cf1c7bb96630314963ab` |
+| `H3k G7 back-to-back` | H3k | remote_signal_rt.rs kgen_back_to_back_at_stub_stops_async | eligible SIGUSR1 and SIGUSR2 handlers, SIGUSR1/SIGUSR2/SIGWINCH blocked, both self-sent, unblock; template of the SIGWINCH reference | AsyncSignal at SIGUSR1's handler entry after one frame | `b91ce8cf4becc6f221df49b6024108859599efe6c3431e12a65b438e58634cc9` |
 
 Unpinned: `E4c real foreign helper` (I1-G1, remote_signal_rt.rs sigqueue_to_foreign_target_refused_by_name_even_where_native_errs): the bytes embed the live helper's pid.

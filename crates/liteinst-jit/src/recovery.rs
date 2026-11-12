@@ -26,12 +26,30 @@ use crate::types::CountProfile;
 pub enum FaultKind {
     /// Synchronous guest fault at the recovered source PC.
     GuestFault,
-    /// Asynchronously sent signal (si_code <= 0) stopped the run;
-    /// state is recovered but no guest delivery is claimed.
+    /// A signal with asynchronous provenance stopped the run:
+    /// either a nonpositive `si_code` (the existing asynchronous
+    /// code class), or a positive `si_code` on a number outside
+    /// the fault set (see [`is_fault_signal`]), such as SIGALRM
+    /// from `setitimer`, SIGCHLD, or an `F_SETSIG` signal. State
+    /// is recovered but no guest delivery is claimed.
     AsyncSignal,
     /// The executor's own machinery faulted (common exit, data
     /// page, unmapped generated PC): not a guest-visible fault.
     ExecutorError,
+}
+
+/// The fault set: the only signal numbers whose positive `si_code`
+/// is taken as a synchronous fault or trap. A positive code on any
+/// other number has asynchronous provenance and stops as
+/// [`FaultKind::AsyncSignal`]. This is a number-and-code policy, not
+/// a proof of synchrony: an asynchronous positive code on a
+/// fault-set number (for example SIGBUS `BUS_MCEERR_AO`) keeps the
+/// fault path.
+pub fn is_fault_signal(sig: i32) -> bool {
+    matches!(
+        sig,
+        libc::SIGSEGV | libc::SIGBUS | libc::SIGILL | libc::SIGFPE | libc::SIGTRAP | libc::SIGSYS
+    )
 }
 
 /// Interrupted-PC provenance supplied by the backend's fault
@@ -138,7 +156,7 @@ pub fn recover(t: &Translation, profile: CountProfile, input: RecoveryInput) -> 
     let mut state = raw;
     let mut branches = input.branches;
     let mut instructions = input.instructions;
-    let async_kind = si_code <= 0;
+    let async_kind = si_code <= 0 || !is_fault_signal(signum);
     let Some(entry) = t.pcmap.lookup(gen_pc) else {
         state.rip = 0;
         return RecoveredStop {
@@ -377,5 +395,110 @@ mod tests {
         assert_eq!(stop.branches, 7);
         assert_eq!(stop.instructions, 9);
         assert_eq!(stop.addr, 0x44);
+    }
+
+    /// H3k: a positive code on a number outside the fault set
+    /// recovers as `AsyncSignal` at every mapped PC class, as the
+    /// existing asynchronous-code class does; fault-set positive codes
+    /// keep `GuestFault` at copied code and `ExecutorError` in the
+    /// executor's machinery. An unmapped generated PC is
+    /// `ExecutorError` for every code. Rows in a fixed order; each
+    /// assertion names its row.
+    #[test]
+    fn recover_kernel_async_at_every_pc_class() {
+        use crate::pcmap::Recovery as R;
+        let fix = crate::fixtures::by_name("sum_loop");
+        let region = RegionFacts {
+            base: 0x10_0000,
+            bytes: fix.bytes,
+            generation: Generation(1),
+            immutable_private: true,
+        };
+        let profile = CountProfile::BranchesAndInstructions;
+        let t =
+            crate::translate::translate(&region, 0x10_0000, profile, 0x80_0000, 0x81_0000).unwrap();
+        let first = |want: fn(&R) -> bool| {
+            t.pcmap
+                .entries()
+                .iter()
+                .find(|e| want(&e.recovery))
+                .map(|e| e.gen_start)
+                .expect("sum_loop has every PC class")
+        };
+        let classes = [
+            ("Copied", first(|r| matches!(r, R::Copied))),
+            ("BranchStub", first(|r| matches!(r, R::BranchStub { .. }))),
+            ("PollStub", first(|r| matches!(r, R::PollStub { .. }))),
+            ("CommonExit", first(|r| matches!(r, R::CommonExit { .. }))),
+            ("Unmapped", 0xdead_0000),
+        ];
+        let kind = |gen_pc: u64, signum: i32, si_code: i32| {
+            recover(
+                &t,
+                profile,
+                RecoveryInput {
+                    provenance: FaultInput {
+                        gen_pc,
+                        addr: 0,
+                        signum,
+                        si_code,
+                        err: 0,
+                    },
+                    interrupted: GuestState::default(),
+                    saved: GuestState::default(),
+                    spill_rax: 0,
+                    spill_flags: 0,
+                    branches: 0,
+                    instructions: 0,
+                    exit_kind: 0,
+                    exit_src: 0x10_0000,
+                },
+            )
+            .kind
+        };
+        type Row<'a> = (&'a [(i32, i32)], [FaultKind; 5]);
+        let rows: [Row; 3] = [
+            (
+                &[(14, 128), (10, 1), (17, 1)],
+                [
+                    FaultKind::AsyncSignal,
+                    FaultKind::AsyncSignal,
+                    FaultKind::AsyncSignal,
+                    FaultKind::AsyncSignal,
+                    FaultKind::ExecutorError,
+                ],
+            ),
+            (
+                &[(11, -6), (11, 0)],
+                [
+                    FaultKind::AsyncSignal,
+                    FaultKind::AsyncSignal,
+                    FaultKind::AsyncSignal,
+                    FaultKind::AsyncSignal,
+                    FaultKind::ExecutorError,
+                ],
+            ),
+            (
+                &[(11, 1), (7, 2), (7, 5)],
+                [
+                    FaultKind::GuestFault,
+                    FaultKind::ExecutorError,
+                    FaultKind::ExecutorError,
+                    FaultKind::ExecutorError,
+                    FaultKind::ExecutorError,
+                ],
+            ),
+        ];
+        for (codes, want) in rows {
+            for &(sig, code) in codes {
+                for (i, (class, gen_pc)) in classes.iter().enumerate() {
+                    assert_eq!(
+                        kind(*gen_pc, sig, code),
+                        want[i],
+                        "recover {class} sig {sig} code {code}"
+                    );
+                }
+            }
+        }
     }
 }

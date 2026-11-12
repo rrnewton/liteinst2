@@ -652,6 +652,34 @@ fn read_mem(pid: i32, addr: u64, buf: &mut [u8]) -> Result<(), Refuse> {
 #[cfg(feature = "test-seams")]
 static TRACER_WRITES: std::sync::Mutex<Vec<(i32, u64, usize)>> = std::sync::Mutex::new(Vec::new());
 
+#[cfg(feature = "test-seams")]
+std::thread_local! {
+    /// Test seam (H3k): the wait status the last [`ChildGuard`] on
+    /// this thread reaped, with its pid, so a test spawn can name a
+    /// setup failure from the status the child's owner collected.
+    static LAST_REAP: core::cell::Cell<Option<(i32, i32)>> =
+        const { core::cell::Cell::new(None) };
+}
+
+/// The step a `remote_child` test-setup exit status names (H3k; see
+/// `spawn_bytes_with_args_for_test`).
+#[cfg(feature = "test-seams")]
+fn setup_step(status: i32) -> Option<&'static str> {
+    Some(match status {
+        80 => "test setup: helper pipe2",
+        81 => "test setup: fork",
+        82 => "test setup: helper dup2",
+        83 => "test setup: fsetsig pipe2",
+        84 => "test setup: F_SETOWN",
+        85 => "test setup: F_SETSIG",
+        86 => "test setup: F_SETFL",
+        87 => "test setup: fsetsig dup2",
+        88 => "test setup: setitimer",
+        89 => "test setup: malformed argument",
+        _ => return None,
+    })
+}
+
 fn write_mem(pid: i32, addr: u64, buf: &[u8]) -> Result<(), Refuse> {
     #[cfg(feature = "test-seams")]
     TRACER_WRITES
@@ -845,9 +873,17 @@ enum StopClass {
     StepComplete,
     /// Proven syscall entry/exit stop (syscall phases only).
     SyscallStop,
-    /// User-sent signal (`si_code <= 0`): asynchronous in
-    /// every phase that can establish its exact state.
+    /// The existing asynchronous-code class (`si_code <= 0`):
+    /// asynchronous in every phase that can establish its exact
+    /// state.
     Async,
+    /// A positive `si_code` on a number outside the fault set
+    /// (`recovery::is_fault_signal`): SIGALRM from `setitimer`,
+    /// SIGCHLD, an `F_SETSIG` signal. Asynchronous provenance;
+    /// it takes the path of an `Async` stop with no eligible
+    /// handler wherever exact state is established, and is never
+    /// delivered.
+    KernelAsync,
     /// Kernel fault/trap while executing generated code.
     GeneratedFault,
     /// Kernel fault/trap while executing an original
@@ -870,6 +906,10 @@ const TRAP_TRACE: i32 = 2;
 /// stay unforgeable here only because the pass-through gate
 /// (`prepare_sigqueue_step`) admits self-queueing with exactly
 /// `SI_QUEUE` and refuses every forged self-send by name.
+/// A positive code is a fault or trap only on a fault-set number
+/// (`recovery::is_fault_signal`); on any other number (SIGALRM
+/// with SI_KERNEL from `setitimer`, SIGCHLD's `CLD_*`, an
+/// `F_SETSIG` signal's `POLL_*`) it classifies `KernelAsync`.
 const SI_KERNEL: i32 = 128;
 
 fn is_breakpoint_cause(si_code: i32) -> bool {
@@ -927,6 +967,15 @@ fn classify_stop(
             StopClass::Async
         };
     }
+    if !crate::recovery::is_fault_signal(sig) {
+        // A positive code on a number outside the fault set is
+        // asynchronous too (same syscall-exit rule as above).
+        return if phase == Phase::SyscallExit {
+            StopClass::Unexpected
+        } else {
+            StopClass::KernelAsync
+        };
+    }
     match phase {
         Phase::Generated => {
             if sig == libc::SIGTRAP && is_breakpoint_cause(si_code) && exact_exit_trap {
@@ -953,6 +1002,26 @@ fn classify_stop(
         }
         Phase::SyscallExit => StopClass::Unexpected,
     }
+}
+
+/// W3 provenance guard (I1-H H2b) for an asynchronous stop before
+/// an original step at `guard_pc`: (g1) the stop's RIP is
+/// `guard_pc`; (g2) every GPR equals the recorded pre-step copy;
+/// (g3) RFLAGS equals it exactly. Shared by the `Async` and
+/// `KernelAsync` arms of `step_original`.
+fn w3_guard_holds(got: &GuestState, guard_pc: u64, recorded: &GuestState) -> bool {
+    let rip_ok = got.rip == guard_pc;
+    let gprs_ok = GuestState {
+        rip: 0,
+        rflags: 0,
+        ..*got
+    } == GuestState {
+        rip: 0,
+        rflags: 0,
+        ..*recorded
+    };
+    let rflags_ok = got.rflags == recorded.rflags;
+    rip_ok && gprs_ok && rflags_ok
 }
 
 /// Resume entry for an asynchronous stop at generated PC
@@ -1082,6 +1151,8 @@ impl ChildGuard {
         unsafe {
             libc::waitpid(self.pid, &mut status, 0);
         }
+        #[cfg(feature = "test-seams")]
+        LAST_REAP.with(|c| c.set(Some((self.pid, status))));
         let _ = self.child.wait();
     }
 }
@@ -1239,6 +1310,57 @@ pub struct ArrivalReport {
     /// The staged scratch bytes read back right after each restore,
     /// when the canary seam is on (I1-H H2d).
     pub scratch_after_cleanup: Vec<Vec<u8>>,
+    /// `si_code` rewrites the kgen seam made, each counted only
+    /// after its readback matched (H3k; see `set_kgen_seam_for_test`).
+    pub kgen_rewrites: u64,
+    /// Ordinary signal-delivery stops seen at the five provenance
+    /// sites, in order, with the code the classifier then read (H3k).
+    pub siginfo_seen: Vec<SeenSiginfo>,
+    /// One record per guest `syscall` step, taken at its entry stop
+    /// (H3k): no generated code runs inside a stepped call, so the
+    /// poll-exit count there is also the count when the call returns.
+    pub syscall_marks: Vec<SyscallMark>,
+}
+
+/// The provenance site an ordinary signal-delivery stop reached
+/// (H3k observation log).
+#[cfg(feature = "test-seams")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SeenSite {
+    /// A stop while generated code ran.
+    Generated,
+    /// Before an original `cpuid` step.
+    OriginalStep,
+    /// During a guest `syscall` step (entry or exit phase).
+    SyscallStep,
+    /// The delivery stop after an interrupted syscall's exit (I1-G2).
+    RestartExit,
+    /// The executor's signal stub (frame setup, back to back).
+    Stub,
+}
+
+/// One ordinary signal-delivery stop as the classifier saw it:
+/// `si_signo`, `si_code` and the siginfo words at offsets 16 and 24
+/// (`si_pid`/`si_uid` and `si_status` for SIGCHLD; `si_band` and
+/// `si_fd` for a `POLL_*` signal).
+#[cfg(feature = "test-seams")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SeenSiginfo {
+    pub site: SeenSite,
+    pub signo: i32,
+    pub code: i32,
+    pub word16: u64,
+    pub word24: u64,
+}
+
+/// One guest `syscall` step at its entry stop: the call number
+/// (`orig_rax`), its first argument, and the run's poll exits so far.
+#[cfg(feature = "test-seams")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SyscallMark {
+    pub nr: u64,
+    pub rdi: u64,
+    pub poll_exits: u64,
 }
 
 /// `PTRACE_POKEUSER` offset of debug register `n`.
@@ -1357,6 +1479,9 @@ pub struct RemoteExecutable {
     /// `set_w3_guard_perturb_for_test`.
     #[cfg(feature = "test-seams")]
     w3_guard_perturb: Option<W3Perturb>,
+    /// Test seam, inert unless set: see `set_kgen_seam_for_test`.
+    #[cfg(feature = "test-seams")]
+    kgen_seam: core::cell::Cell<Option<(i32, u32)>>,
 }
 
 impl RemoteExecutable {
@@ -1446,6 +1571,43 @@ impl RemoteExecutable {
             child_bin,
             vec![format!("hex:{hex}"), "guarded-dst".to_string()],
         )
+    }
+
+    /// Test seam (H3k): [`Self::spawn_bytes_with_blocked`] plus the
+    /// child's test-only setup arguments (`sigchld-helper`,
+    /// `fsetsig:<signo>`, `itimer-real-us:<us>`; see the remote
+    /// child). They follow the block slot, which carries an empty
+    /// `block:` when `blocked` is empty. A child that exits with a
+    /// setup status (80-89) before its handshake is refused with the
+    /// step's name, from the wait status its [`ChildGuard`] reaped.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn spawn_bytes_with_args_for_test(
+        child_bin: &std::path::Path,
+        bytes: &[u8],
+        blocked: &[i32],
+        extra: &[&str],
+    ) -> Result<Self, Refuse> {
+        let hex: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
+        let list: Vec<String> = blocked.iter().map(i32::to_string).collect();
+        let mut args = vec![format!("hex:{hex}"), format!("block:{}", list.join(","))];
+        args.extend(extra.iter().map(|a| a.to_string()));
+        LAST_REAP.with(|c| c.set(None));
+        let exe = match Self::spawn(child_bin, args) {
+            Ok(exe) => exe,
+            Err(e) => {
+                let step = LAST_REAP
+                    .with(|c| c.take())
+                    .filter(|&(_, st)| libc::WIFEXITED(st))
+                    .and_then(|(_, st)| setup_step(libc::WEXITSTATUS(st)));
+                return Err(step.map_or(e, |operation| Refuse::RemoteSubstrate {
+                    operation,
+                    errno: 0,
+                }));
+            }
+        };
+        Self::verify_initial_blocked(&exe.registry, blocked)?;
+        Ok(exe)
     }
 
     fn spawn(child_bin: &std::path::Path, spawn_args: Vec<String>) -> Result<Self, Refuse> {
@@ -1559,6 +1721,8 @@ impl RemoteExecutable {
             zero_raw_poll_at_restore: false,
             #[cfg(feature = "test-seams")]
             w3_guard_perturb: None,
+            #[cfg(feature = "test-seams")]
+            kgen_seam: core::cell::Cell::new(None),
         })
     }
 
@@ -2133,6 +2297,114 @@ impl RemoteExecutable {
         self.w3_guard_perturb = perturb;
     }
 
+    /// Test seam (H3k): `Some((code, skip))` rewrites the `si_code`
+    /// of one ordinary signal-delivery stop at the five provenance
+    /// sites to `code`, after passing over `skip` such stops. Only a
+    /// stop with event 0, a signal other than SIGTRAP (plain or
+    /// syscall), and readable siginfo naming that signal counts;
+    /// group stops, events, syscall and breakpoint traps neither
+    /// consume `skip` nor get rewritten. The rewrite is written with
+    /// `PTRACE_SETSIGINFO`, read back, and counted in
+    /// [`ArrivalReport::kgen_rewrites`] only when the readback
+    /// matches. One-shot. Inert (`None`) by default; it never
+    /// touches any other process.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn set_kgen_seam_for_test(&mut self, seam: Option<(i32, u32)>) {
+        self.kgen_seam.set(seam);
+    }
+
+    /// The siginfo of an ordinary signal-delivery stop (see
+    /// `set_kgen_seam_for_test`), or `None` for any other stop.
+    #[cfg(feature = "test-seams")]
+    fn delivery_stop_siginfo(&self, status: i32) -> Option<libc::siginfo_t> {
+        let sig = libc::WSTOPSIG(status);
+        if !libc::WIFSTOPPED(status)
+            || status >> 16 != 0
+            || sig == libc::SIGTRAP
+            || sig == (libc::SIGTRAP | 0x80)
+        {
+            return None;
+        }
+        get_siginfo(self.guard.pid)
+            .ok()
+            .filter(|info| info.si_signo == sig)
+    }
+
+    /// Test seam (H3k): apply the armed kgen seam to this stop, if
+    /// it is an ordinary signal-delivery stop. Runs before the
+    /// site's own `stop_siginfo`.
+    #[cfg(feature = "test-seams")]
+    fn apply_kgen_seam(&self, status: i32) -> Result<(), Refuse> {
+        let Some((code, skip)) = self.kgen_seam.get() else {
+            return Ok(());
+        };
+        let Some(mut info) = self.delivery_stop_siginfo(status) else {
+            return Ok(());
+        };
+        if skip > 0 {
+            self.kgen_seam.set(Some((code, skip - 1)));
+            return Ok(());
+        }
+        info.si_code = code;
+        ptrace_ok(
+            libc::PTRACE_SETSIGINFO,
+            self.guard.pid,
+            core::ptr::null_mut(),
+            core::ptr::addr_of_mut!(info).cast(),
+            "PTRACE_SETSIGINFO (test kgen seam)",
+        )?;
+        if get_siginfo(self.guard.pid)?.si_code == code {
+            self.kgen_seam.set(None);
+            self.arrival_report.borrow_mut().kgen_rewrites += 1;
+        }
+        Ok(())
+    }
+
+    /// Test seam (H3k): record an ordinary signal-delivery stop at
+    /// `site` in [`ArrivalReport::siginfo_seen`]. Runs after the
+    /// site's own `stop_siginfo`.
+    #[cfg(feature = "test-seams")]
+    fn note_siginfo(&self, site: SeenSite, status: i32) {
+        let Some(info) = self.delivery_stop_siginfo(status) else {
+            return;
+        };
+        // SAFETY: byte view over the plain-data siginfo record; its
+        // size covers offsets 16..32 by the ABI layout.
+        let bytes = unsafe {
+            core::slice::from_raw_parts(
+                core::ptr::addr_of!(info).cast::<u8>(),
+                core::mem::size_of::<libc::siginfo_t>(),
+            )
+        };
+        let word = |o: usize| u64::from_le_bytes(bytes[o..o + 8].try_into().unwrap());
+        self.arrival_report
+            .borrow_mut()
+            .siginfo_seen
+            .push(SeenSiginfo {
+                site,
+                signo: info.si_signo,
+                code: info.si_code,
+                word16: word(16),
+                word24: word(24),
+            });
+    }
+
+    /// Test seam (H3k): record this guest `syscall` step at its entry
+    /// stop in [`ArrivalReport::syscall_marks`].
+    #[cfg(feature = "test-seams")]
+    fn mark_syscall_entry(&self) {
+        if let Ok(regs) = get_regs(self.guard.pid) {
+            let mut report = self.arrival_report.borrow_mut();
+            let poll_exits = report.poll_exits;
+            report.syscall_marks.push(SyscallMark {
+                nr: regs.orig_rax,
+                rdi: regs.rdi,
+                poll_exits,
+            });
+        }
+    }
+
     /// The poll budget a context resumed after a delivery starts
     /// with (I1-H H2a). The poll stub is
     /// `dec qword [poll]; jnz` and exits to the dispatcher's
@@ -2324,8 +2596,9 @@ impl RemoteExecutable {
     /// When the guard fails it is a named `RemoteSubstrate`
     /// refusal. Before W3s every such stop came back as a `Fault`;
     /// both refuse, so the change fails closed. A recovered
-    /// `Fault` now comes only from a kernel-generated signal at
-    /// entry (`SourceFault`).
+    /// `Fault` now comes only from a fault-set signal at entry
+    /// (`SourceFault`) or, under the same provenance guard, a
+    /// positive-code signal outside the fault set (`KernelAsync`).
     fn step_redirected_syscall(
         &self,
         state: GuestState,
@@ -2702,8 +2975,9 @@ impl RemoteExecutable {
     /// the stub address) becomes the interrupted state the next
     /// signal is injected over, so the next frame's ucontext
     /// names the source handler as Linux would natively. An
-    /// ineligible next signal is a recovered `AsyncSignal`
-    /// stop at that handler entry (no handler insn retired);
+    /// ineligible next signal, or a positive-code one outside the
+    /// fault set, is a recovered `AsyncSignal` stop at that
+    /// handler entry (no handler insn retired);
     /// any other provenance mismatch once injection starts is
     /// a named substrate refusal with the guest left stopped.
     fn deliver_signal(
@@ -2733,21 +3007,26 @@ impl RemoteExecutable {
             }
             let stop_sig = libc::WSTOPSIG(status);
             let stub_regs = get_regs(self.guard.pid)?;
+            #[cfg(feature = "test-seams")]
+            self.apply_kgen_seam(status)?;
             let si = stop_siginfo(self.guard.pid, stop_sig);
+            #[cfg(feature = "test-seams")]
+            self.note_siginfo(SeenSite::Stub, status);
             let stub_trap = stop_sig == libc::SIGTRAP
                 && stub_regs.rip == stub + 1
                 && si.is_some_and(|(signo, code, _)| {
                     signo == libc::SIGTRAP && is_breakpoint_cause(code)
                 });
+            let class = classify_stop(
+                Phase::Generated,
+                stop_sig,
+                status >> 16,
+                si.map(|(signo, code, _)| (signo, code)),
+                false,
+            );
             let back_to_back = !stub_trap
                 && stub_regs.rip == stub
-                && classify_stop(
-                    Phase::Generated,
-                    stop_sig,
-                    status >> 16,
-                    si.map(|(signo, code, _)| (signo, code)),
-                    false,
-                ) == StopClass::Async;
+                && matches!(class, StopClass::Async | StopClass::KernelAsync);
             if !stub_trap && !back_to_back {
                 return Err(self.unexpected_stop("signal stub stop provenance"));
             }
@@ -2787,9 +3066,17 @@ impl RemoteExecutable {
             // before its first instruction. Same eligibility as
             // any async stop, against the stack including every
             // frame built so far.
+            // A positive-code signal outside the fault set is never
+            // delivered: it skips the lookup and takes the
+            // ineligible branch.
             let mut stack = active.to_vec();
             stack.extend_from_slice(&frames);
-            let Some(next_action) = self.delivery_action(stop_sig, &stack, false) else {
+            let next = if class == StopClass::KernelAsync {
+                None
+            } else {
+                self.delivery_action(stop_sig, &stack, false)
+            };
+            let Some(next_action) = next else {
                 return Err(RunError::Fault(Box::new(Fault {
                     also_pending: Vec::new(),
                     kind: crate::recovery::FaultKind::AsyncSignal,
@@ -2996,7 +3283,7 @@ impl RemoteExecutable {
         state.rip = src_pc;
         Fault {
             also_pending: Vec::new(),
-            kind: if class == StopClass::Async {
+            kind: if matches!(class, StopClass::Async | StopClass::KernelAsync) {
                 crate::recovery::FaultKind::AsyncSignal
             } else {
                 crate::recovery::FaultKind::GuestFault
@@ -3075,7 +3362,11 @@ impl RemoteExecutable {
         }
         let regs = get_regs(self.guard.pid)?;
         let sig = libc::WSTOPSIG(status);
+        #[cfg(feature = "test-seams")]
+        self.apply_kgen_seam(status)?;
         let si = stop_siginfo(self.guard.pid, sig);
+        #[cfg(feature = "test-seams")]
+        self.note_siginfo(SeenSite::OriginalStep, status);
         match classify_stop(
             Phase::OriginalStep,
             sig,
@@ -3089,23 +3380,28 @@ impl RemoteExecutable {
                 Ok(OrigStep::Done(regs_to_state(&regs)))
             }
             StopClass::Async => {
-                let got = regs_to_state(&regs);
-                let rip_ok = got.rip == guard_pc;
-                let gprs_ok = GuestState {
-                    rip: 0,
-                    rflags: 0,
-                    ..got
-                } == GuestState {
-                    rip: 0,
-                    rflags: 0,
-                    ..recorded
-                };
-                let rflags_ok = got.rflags == recorded.rflags;
-                if rip_ok && gprs_ok && rflags_ok {
+                if w3_guard_holds(&regs_to_state(&regs), guard_pc, &recorded) {
                     Ok(OrigStep::Interrupted {
                         sig,
                         addr: si.map_or(0, |s| s.2),
                     })
+                } else {
+                    Err(self
+                        .unexpected_stop("original step: signal stop not at the pre-step state"))
+                }
+            }
+            // The same guard; the signal is never delivered, so it
+            // stops as an asynchronous fault at the cpuid.
+            StopClass::KernelAsync => {
+                if w3_guard_holds(&regs_to_state(&regs), guard_pc, &recorded) {
+                    Err(RunError::Fault(Box::new(self.source_fault(
+                        StopClass::KernelAsync,
+                        sig,
+                        si.map_or(0, |s| s.2),
+                        pc,
+                        &regs,
+                        data,
+                    ))))
                 } else {
                     Err(self
                         .unexpected_stop("original step: signal stop not at the pre-step state"))
@@ -3354,7 +3650,11 @@ impl RemoteExecutable {
                 .into());
             }
             let sig = libc::WSTOPSIG(status);
+            #[cfg(feature = "test-seams")]
+            self.apply_kgen_seam(status)?;
             let si = stop_siginfo(self.guard.pid, sig);
+            #[cfg(feature = "test-seams")]
+            self.note_siginfo(SeenSite::SyscallStep, status);
             match classify_stop(
                 phase,
                 sig,
@@ -3366,6 +3666,7 @@ impl RemoteExecutable {
                 {
                     #[cfg(feature = "test-seams")]
                     if phase == Phase::SyscallEntry {
+                        self.mark_syscall_entry();
                         self.step_plan_progress(StepKind::Syscall);
                         self.enter_stop_signal()?;
                     }
@@ -3380,6 +3681,24 @@ impl RemoteExecutable {
                             sig,
                             addr: si.map_or(0, |s| s.2),
                         });
+                    }
+                    return Err(
+                        self.unexpected_stop("syscall step: signal stop not at the pre-step state")
+                    );
+                }
+                // The same proof; the signal is never delivered, so it
+                // stops as an asynchronous fault at the `syscall`.
+                StopClass::KernelAsync if phase == Phase::SyscallEntry => {
+                    let regs = get_regs(self.guard.pid)?;
+                    if self.w3s_provenance(pc, &recorded, &regs) {
+                        return Err(RunError::Fault(Box::new(self.source_fault(
+                            StopClass::KernelAsync,
+                            sig,
+                            si.map_or(0, |s| s.2),
+                            pc,
+                            &regs,
+                            data,
+                        ))));
                     }
                     return Err(
                         self.unexpected_stop("syscall step: signal stop not at the pre-step state")
@@ -3521,14 +3840,30 @@ impl RemoteExecutable {
             return Err(self.unexpected_stop("syscall restart without a delivery stop"));
         }
         let sig = libc::WSTOPSIG(status);
+        #[cfg(feature = "test-seams")]
+        self.apply_kgen_seam(status)?;
         let si = stop_siginfo(self.guard.pid, sig);
+        #[cfg(feature = "test-seams")]
+        self.note_siginfo(SeenSite::RestartExit, status);
         let stop = get_regs(self.guard.pid)?;
-        let async_stop =
-            status >> 16 == 0 && si.is_some_and(|(signo, si_code, _)| signo == sig && si_code <= 0);
+        // Asynchronous provenance: the existing asynchronous-code
+        // class, or a positive code outside the fault set.
+        let async_stop = status >> 16 == 0
+            && si.is_some_and(|(signo, si_code, _)| {
+                signo == sig && (si_code <= 0 || !crate::recovery::is_fault_signal(sig))
+            });
         if !async_stop || stop.rip != pc + 2 || stop.rax != regs.rax || stop.orig_rax != nr {
             return Err(self.unexpected_stop("syscall restart stop provenance"));
         }
-        let Some(action) = self.delivery_action(sig, active, false) else {
+        // A positive-code signal outside the fault set is never
+        // delivered: nothing is credited, restarted or injected.
+        let positive = si.is_some_and(|(_, si_code, _)| si_code > 0);
+        let action = if positive {
+            None
+        } else {
+            self.delivery_action(sig, active, false)
+        };
+        let Some(action) = action else {
             return Err(self.unexpected_stop("syscall restart: signal not eligible for delivery"));
         };
         let restart = match code {
@@ -3647,7 +3982,11 @@ impl RemoteExecutable {
             let sig = libc::WSTOPSIG(status);
             let regs = get_regs(self.guard.pid)?;
             let data = self.read_jit_data()?;
+            #[cfg(feature = "test-seams")]
+            self.apply_kgen_seam(status)?;
             let si = stop_siginfo(self.guard.pid, sig);
+            #[cfg(feature = "test-seams")]
+            self.note_siginfo(SeenSite::Generated, status);
             // Exact exit-trap proof: the byte before the stopped
             // RIP is itself the final AllSaved common-exit
             // segment (complete save by construction), not
@@ -3711,6 +4050,14 @@ impl RemoteExecutable {
                         tot_instructions = recovered.instructions;
                         continue;
                     }
+                    return Err(RunError::Fault(Box::new(Self::fault_from(recovered))));
+                }
+                // Never delivered: the recovered stop an `Async` one
+                // with no eligible handler gives (never SIGTRAP, so
+                // the stop PC is the generated PC).
+                StopClass::KernelAsync => {
+                    let (si_code, addr) = si.map_or((0, 0), |(_, c, a)| (c, a));
+                    let recovered = self.recovered_stop(sig, si_code, addr, regs.rip, &regs, &data);
                     return Err(RunError::Fault(Box::new(Self::fault_from(recovered))));
                 }
                 StopClass::GeneratedFault => {
@@ -4480,6 +4827,77 @@ mod tests {
             classify_stop(Phase::Generated, libc::SIGUSR1, 1, user_usr1, false),
             StopClass::Unexpected
         );
+    }
+
+    /// H3k: a positive code on a number outside the fault set is
+    /// `KernelAsync` in every phase that can establish exact state
+    /// (`Unexpected` at syscall exit, like the existing asynchronous
+    /// code class); fault-set numbers, positive SIGTRAP, nonpositive
+    /// codes and events keep their classes. Rows in a fixed order;
+    /// each assertion names its row.
+    #[test]
+    fn classify_stop_kernel_async_per_phase() {
+        use Phase::{Generated as G, OriginalStep as O, SyscallEntry as E, SyscallExit as X};
+        let check =
+            |phase: Phase, sig: i32, code: i32, event: i32, exact: bool, want: StopClass| {
+                assert_eq!(
+                    classify_stop(phase, sig, event, Some((sig, code)), exact),
+                    want,
+                    "classify {phase:?} sig {sig} code {code} event {event}"
+                );
+            };
+        // 1. The event guard comes first.
+        check(G, 10, 1, 1, false, StopClass::Unexpected);
+        // 2. The class: positive codes outside the fault set (SIGALRM
+        // SI_KERNEL, SIGCHLD CLD_EXITED, SIGUSR1 and RT 34 POLL_IN,
+        // SIGWINCH SI_KERNEL, SIGPOLL POLL_IN, SIGINT SI_KERNEL).
+        for (sig, code) in [
+            (14, 128),
+            (17, 1),
+            (10, 1),
+            (34, 1),
+            (28, 128),
+            (29, 1),
+            (2, 128),
+        ] {
+            for phase in [G, O, E] {
+                check(phase, sig, code, 0, false, StopClass::KernelAsync);
+            }
+            check(X, sig, code, 0, false, StopClass::Unexpected);
+        }
+        // 3. The fault set, positive codes: unchanged (BUS_MCEERR_AO
+        // included: a number-and-code policy, not a synchrony proof).
+        for (sig, code) in [(11, 1), (7, 2), (7, 5), (4, 2), (8, 1)] {
+            check(G, sig, code, 0, false, StopClass::GeneratedFault);
+            check(O, sig, code, 0, false, StopClass::SourceFault);
+            check(E, sig, code, 0, false, StopClass::SourceFault);
+            check(X, sig, code, 0, false, StopClass::Unexpected);
+        }
+        // 4. Seccomp SIGSYS (SYS_SECCOMP) at entry.
+        check(E, 31, 1, 0, false, StopClass::SourceFault);
+        // 5. Positive SIGTRAP keeps its phase-bound rules.
+        check(O, 5, TRAP_TRACE, 0, false, StopClass::StepComplete);
+        check(G, 5, 4, 0, false, StopClass::GeneratedFault);
+        check(G, 5, SI_KERNEL, 0, true, StopClass::ExitTrap);
+        check(G, 5, SI_KERNEL, 0, false, StopClass::GeneratedFault);
+        // 6. The existing asynchronous-code class (SI_USER, SI_QUEUE,
+        // SI_TKILL, SI_TIMER, SI_SIGIO), fault-set numbers included.
+        for (sig, code) in [
+            (10, 0),
+            (10, -1),
+            (10, -6),
+            (11, 0),
+            (11, -6),
+            (31, -6),
+            (34, -2),
+            (29, -5),
+            (14, 0),
+        ] {
+            for phase in [G, O, E] {
+                check(phase, sig, code, 0, false, StopClass::Async);
+            }
+            check(X, sig, code, 0, false, StopClass::Unexpected);
+        }
     }
 
     #[test]
