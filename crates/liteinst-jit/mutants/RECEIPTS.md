@@ -1,11 +1,9 @@
 # Required mutation chains — execution receipts
 
-[who-am-i: musejit, host withheld. Owner: musejit (muse, host withheld) since 2026-11-05T12:03:34Z]
-
 Command: `sh crates/liteinst-jit/mutants/run.sh` from the
 workspace root, 2026-11-05; last re-executed for the P1b I1-A
-recovery-core extraction on liteinst2 branch
-`musejit/i1a-20261105` (off main
+recovery-core extraction, landed as liteinst2 commit
+`2b46ed54` (off main
 `46e6e8f3cc6a5cfce0e4b1bf4d7aec93a0e0f336`), after mutants 01
 and 04 were regenerated against the moved recovery code in
 `src/recovery.rs` — same one-line defects, new file/context

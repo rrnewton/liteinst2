@@ -65,7 +65,7 @@ Configuration read denials remain explicit unknown observations, without a
 claim about hidden contents or actual Cargo configuration consumption.
 
 Hardware was the **AMD EPYC Zen 5 dev host**, model AMD EPYC 9D85 158-Core
-Processor, x86-64, kernel `7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf`, glibc 2.34.
+Processor, x86-64, kernel 7.1.3 (vendor build), glibc 2.34.
 Each campaign and control has its own hardware observation. The selected Rust
 toolchain is 1.97.1. Builds used four jobs, one target directory and disabled
 incremental compilation. Durations in the records are operational diagnostics,

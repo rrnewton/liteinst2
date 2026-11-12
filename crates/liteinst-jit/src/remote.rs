@@ -3381,7 +3381,7 @@ impl RemoteExecutable {
                             //     `block_gen` key (translate.rs).
                             // A 0 here is a broken invariant: refuse
                             // by name rather than reset it, which
-                            // would hide the bug (coord7).
+                            // would hide the bug (lead review).
                             #[cfg(feature = "test-seams")]
                             let raw_poll = if self.zero_raw_poll_at_restore {
                                 0

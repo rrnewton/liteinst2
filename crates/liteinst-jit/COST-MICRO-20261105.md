@@ -1,7 +1,5 @@
 # liteinst-jit P1a cost micro-report (fixtures only)
 
-[who-am-i: musejit, host withheld. Owner: musejit (muse, host withheld) since 2026-11-05T12:03:34Z]
-
 **Label: fixtures, not whole-program.** These numbers measure six
 corpus-v1 fixture functions executed in-process, comparing the P1a
 translator (branch + instruction counting on) against the same bytes
@@ -14,18 +12,18 @@ labelled as such.
 
 ## Provenance
 
-- Source: liteinst2 branch `musejit/work-20261105` at `cac0ca6b`
-  (+ this report's bench example, same branch).
+- Source: liteinst2 at commit `cac0ca6b`
+  (+ this report's bench example).
 - Machine: host withheld; AMD EPYC 9D85 158-Core Processor,
   governor `performance`, ~2.92 GHz sample, kernel
-  `7.1.3-0_fbk0_0_g295ad0959f34`, x86-64 Linux. Shared multi-lane
+  Linux 7.1.3 (vendor build), x86-64. Shared multi-lane
   host, **no CPU pinning** — ambient noise is visible in the native
   IQRs and in run-to-run native medians; treat ratios as
   order-of-magnitude, not stable constants.
 - Command (both measured invocations):
   `CARGO_INCREMENTAL=0 cargo run --locked --release -p liteinst-jit --example cost_micro`
   at 2026-11-05T12:49–12:50Z.
-- Method (li2adm format): exactly **10 timed samples** per cell
+- Method (the 10-sample benchmark format): exactly **10 timed samples** per cell
   after 1 discarded warmup sample; each steady-state sample is
   2,000 back-to-back runs, reported as µs/run; medians and IQRs are
   over the 10 samples. Bench working set N=4096 (deliberately larger
@@ -68,7 +66,7 @@ than translator variance.
 - **Prepare is 4.6–10 µs per fixture region** (decode + emit +
   `mmap`/`mprotect`): irrelevant at fixture scale, and by design
   paid once per mapping generation, never per page at run time
-  (the li2adm per-admission trap this architecture avoids).
+  (the per-admission trap this architecture avoids).
 - For orientation only (literature/context, not a comparison):
   DynamoRIO with branch counting ran ≈11× native on branch-heavy
   code in prior in-tree notes. The fixture ratios above (4.4–8.5×
@@ -94,7 +92,7 @@ execution. Baseline production code is liteinst2 `main` at
 same bench mode plus the S3-A decoder reuse. Command for both:
 `CARGO_INCREMENTAL=0 cargo run --locked --release -p liteinst-jit --example cost_micro`.
 Machine: host withheld; AMD EPYC 9D85 158-Core Processor, Linux
-`7.1.3-0_fbk0_0_g295ad0959f34`, x86-64, shared and unpinned.
+7.1.3 (vendor build), x86-64, shared and unpinned.
 Exactly 10 timed samples follow one warmup sample. These are
 fixture component costs only, not a whole-program or DynamoRIO
 comparison.

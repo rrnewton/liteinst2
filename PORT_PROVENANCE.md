@@ -6,7 +6,7 @@ evidence is the working tree below:
 
 - repository: Reverie
 - location: private read-only working tree (content identity recorded below)
-- branch: `codex/liteinst-bootstrap-rdtsc-01a0a13c`
+- branch: a working branch (its `HEAD` is the next line)
 - preserved base and current `HEAD`: `6e3915b70a71657a08f0028b3f70d6074116206a`
 - source subtree: `third_party/liteinst2`
 

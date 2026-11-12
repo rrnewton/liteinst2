@@ -80,7 +80,7 @@ context, confinement, explicit signal ownership, no policy).
 
 The vocabulary above is the architecture document's, approved with
 amendments on 2026-11-05
-([§6.3](https://github.com/rrnewton/dev-hermit/blob/main/ai_docs/plans/2026-11-04-liteinst-reverie-architecture.md),
+(its §6.3,
 decisions A–E resolved). Its valid combinations are:
 
 | Cell | Combination | Status |

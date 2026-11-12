@@ -14,7 +14,7 @@
 //! the instruction does not retire. REP recognition uses iced's
 //! prefix flags, not a first-byte test.
 //!
-//! RIP-delta check (coord7 Q4(b), I1-H): every retired step's
+//! RIP-delta check (lead review Q4(b), I1-H): every retired step's
 //! observed successor is checked against its decode. A
 //! non-control instruction must land at `pc + len`; a conditional
 //! branch at `pc + len` or its decoded target; a direct

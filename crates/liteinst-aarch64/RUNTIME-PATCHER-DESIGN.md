@@ -238,7 +238,7 @@ Failure custody (no state is just "error" after the store):
 Slices: (1) this note; (2) crate skeleton + cache/island RAII + host
 state-machine tests; (3) flip/rollback protocol + execution proofs;
 (4) trap-route registration + receipts. Signed local commits; push
-only on museli-lt word.
+only on review approval.
 
 Open gates carried forward: DDI0487 concurrent-modifiable primary
 text (unlocks any non-stopped flip), `PROT_BTI` guarded-mapping
