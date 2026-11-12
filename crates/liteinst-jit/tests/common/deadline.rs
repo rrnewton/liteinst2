@@ -1548,134 +1548,220 @@ const BOUND_FIRST_LINES: [&str; 2] = [
     "let _bound = deadline::TestBound::arm();",
 ];
 
-/// One attribute as the census reads it, from a line that starts one
-/// (`#[`, `#![`, or a lone `#`): its text with `//` comments,
-/// whitespace and string contents removed, the index of its last line,
-/// and whether the reader followed it to its closing bracket within 20
-/// lines. The reader follows only brackets, plain string literals,
-/// `//` comments and other tokens. It stops at a form it cannot follow
-/// (a block comment, a raw or prefixed string literal, or a character
-/// literal) and leaves the attribute unclosed, so the census refuses it.
-struct Attr {
-    text: String,
-    last: usize,
-    closed: bool,
+/// A token kind of the census lexer.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Tk {
+    Ident,
+    Punct(u8),
+    Lit,
+    Comment,
 }
 
-fn read_attribute(lines: &[&str], i: usize) -> Option<Attr> {
-    let head = lines[i].trim().split("//").next().unwrap_or("").trim_end();
-    let rest = head.strip_prefix('#')?.trim_start();
-    let rest = rest.strip_prefix('!').unwrap_or(rest).trim_start();
-    if !(rest.is_empty() || rest.starts_with('[')) {
-        return None;
-    }
-    let (mut text, mut depth, mut opened, mut in_str, mut esc) =
-        (String::new(), 0i32, false, false, false);
-    let mut j = i;
-    while j < lines.len() && j <= i + 20 {
-        let mut chars = lines[j].chars().peekable();
-        let mut prev = None;
-        while let Some(c) = chars.next() {
-            if in_str {
-                if esc {
-                    esc = false;
-                } else if c == '\\' {
-                    esc = true;
-                } else if c == '"' {
-                    in_str = false;
-                    text.push('"');
-                    prev = Some('"');
-                }
+/// One token: its kind, its byte range in the source, its 0-based line
+/// and whether it is the first token on that line.
+#[derive(Clone, Copy, Debug)]
+struct Tok {
+    kind: Tk,
+    start: usize,
+    end: usize,
+    line: usize,
+    first: bool,
+}
+
+/// Lex `src` for the census. The lexer follows identifiers (a raw one
+/// keeps its `r#`), numbers, plain, byte, C and raw strings, character
+/// literals and lifetimes, `//` and nested block comments, and one-byte
+/// punctuation. It refuses, returning the 0-based line, what it cannot
+/// follow: an unterminated literal or comment, a raw prefix followed by
+/// neither a quote nor an identifier, an apostrophe that starts neither a
+/// character literal nor a lifetime, and any non-ASCII byte outside a
+/// literal or comment (so also Unicode whitespace such as U+2028, which
+/// `str::lines` does not split on).
+fn lex(src: &str) -> Result<Vec<Tok>, usize> {
+    let b = src.as_bytes();
+    let word = |c: u8| c == b'_' || c.is_ascii_alphanumeric();
+    let (mut toks, mut i, mut line, mut last_line) = (Vec::new(), 0, 0, usize::MAX);
+    while i < b.len() {
+        let (start, at) = (i, line);
+        let kind = match b[i] {
+            b'\n' => {
+                line += 1;
+                i += 1;
                 continue;
             }
-            // `/*` opens a block comment, `'` a character literal, and a
-            // quote right after a letter, digit, `_` or `#` a prefixed or
-            // raw string (`b"`, `r"`, `r#"`); the reader follows none.
-            let opaque = match c {
-                '/' => chars.peek() == Some(&'*'),
-                '\'' => true,
-                '"' => prev.is_some_and(|p: char| p.is_alphanumeric() || p == '_' || p == '#'),
-                _ => false,
-            };
-            if opaque {
-                return Some(Attr {
-                    text,
-                    last: j,
-                    closed: false,
-                });
+            b' ' | b'\t' | b'\r' | 0x0b | 0x0c => {
+                i += 1;
+                continue;
             }
-            prev = Some(c);
-            match c {
-                '/' if chars.peek() == Some(&'/') => break,
-                '"' => {
-                    in_str = true;
-                    text.push('"');
+            b'/' if b.get(i + 1) == Some(&b'/') => {
+                while i < b.len() && b[i] != b'\n' {
+                    i += 1;
                 }
-                '[' => {
-                    depth += 1;
-                    opened = true;
-                    text.push(c);
-                }
-                ']' => {
-                    depth -= 1;
-                    text.push(c);
-                }
-                c if c.is_whitespace() => {}
-                c => text.push(c),
+                Tk::Comment
             }
-        }
-        if opened && depth <= 0 {
-            return Some(Attr {
-                text,
-                last: j,
-                closed: true,
-            });
-        }
-        j += 1;
+            b'/' if b.get(i + 1) == Some(&b'*') => {
+                let mut depth = 0;
+                loop {
+                    match (b.get(i), b.get(i + 1)) {
+                        (Some(b'/'), Some(b'*')) => {
+                            depth += 1;
+                            i += 2;
+                        }
+                        (Some(b'*'), Some(b'/')) => {
+                            depth -= 1;
+                            i += 2;
+                            if depth == 0 {
+                                break;
+                            }
+                        }
+                        (Some(&c), _) => {
+                            line += usize::from(c == b'\n');
+                            i += 1;
+                        }
+                        (None, _) => return Err(at),
+                    }
+                }
+                Tk::Comment
+            }
+            b'"' => {
+                i = lex_quoted(b, i, &mut line).ok_or(at)?;
+                Tk::Lit
+            }
+            b'\'' => {
+                i = lex_apostrophe(src, i).ok_or(at)?;
+                Tk::Lit
+            }
+            c if c.is_ascii_digit() => {
+                while i < b.len()
+                    && (word(b[i])
+                        || (b[i] == b'.' && b.get(i + 1).is_some_and(u8::is_ascii_digit)))
+                {
+                    i += 1;
+                }
+                Tk::Lit
+            }
+            c if word(c) => {
+                while i < b.len() && word(b[i]) {
+                    i += 1;
+                }
+                match (&src[start..i], b.get(i)) {
+                    ("b" | "c", Some(b'"')) => {
+                        i = lex_quoted(b, i, &mut line).ok_or(at)?;
+                        Tk::Lit
+                    }
+                    ("b", Some(b'\'')) => {
+                        i = lex_apostrophe(src, i).ok_or(at)?;
+                        Tk::Lit
+                    }
+                    ("r" | "br" | "cr", Some(b'"' | b'#')) => {
+                        let hashes = b[i..].iter().take_while(|&&c| c == b'#').count();
+                        let quote = i + hashes;
+                        if b.get(quote) == Some(&b'"') {
+                            let close = format!("\"{}", "#".repeat(hashes));
+                            let len = src[quote + 1..].find(&close).ok_or(at)?;
+                            line += src[quote + 1..quote + 1 + len].matches('\n').count();
+                            i = quote + 1 + len + close.len();
+                            Tk::Lit
+                        } else if &src[start..i] == "r"
+                            && hashes == 1
+                            && b.get(quote).is_some_and(|&c| word(c))
+                        {
+                            i = quote;
+                            while i < b.len() && word(b[i]) {
+                                i += 1;
+                            }
+                            Tk::Ident
+                        } else {
+                            return Err(at);
+                        }
+                    }
+                    _ => Tk::Ident,
+                }
+            }
+            c if c.is_ascii() => {
+                i += 1;
+                Tk::Punct(c)
+            }
+            _ => return Err(at),
+        };
+        toks.push(Tok {
+            kind,
+            start,
+            end: i,
+            line: at,
+            first: last_line != at,
+        });
+        last_line = line;
     }
-    Some(Attr {
-        text,
-        last: (j - 1).min(lines.len() - 1),
-        closed: false,
+    Ok(toks)
+}
+
+/// The end of the quoted literal whose opening quote is at `b[i]`
+/// (escapes skipped; newlines counted into `line`).
+fn lex_quoted(b: &[u8], mut i: usize, line: &mut usize) -> Option<usize> {
+    i += 1;
+    loop {
+        match *b.get(i)? {
+            b'\\' => {
+                *line += usize::from(*b.get(i + 1)? == b'\n');
+                i += 2;
+            }
+            b'"' => return Some(i + 1),
+            c => {
+                *line += usize::from(c == b'\n');
+                i += 1;
+            }
+        }
+    }
+}
+
+/// The end of the character literal or lifetime whose apostrophe is at
+/// `src[i]`.
+fn lex_apostrophe(src: &str, i: usize) -> Option<usize> {
+    let b = src.as_bytes();
+    if b.get(i + 1) == Some(&b'\\') {
+        // An escape: its character, then the closing quote within 10 bytes.
+        let n = b.get(i + 3..)?.iter().take(10).position(|&c| c == b'\'')?;
+        return Some(i + 3 + n + 1);
+    }
+    let c = src.get(i + 1..)?.chars().next()?;
+    let after = i + 1 + c.len_utf8();
+    if b.get(after) == Some(&b'\'') {
+        return Some(after + 1);
+    }
+    if c == '_' || c.is_ascii_alphabetic() {
+        let n = b[i + 1..]
+            .iter()
+            .take_while(|&&c| c == b'_' || c.is_ascii_alphanumeric())
+            .count();
+        return Some(i + 1 + n);
+    }
+    None
+}
+
+/// The text of an identifier token, without a raw `r#`.
+fn tok_word<'s>(src: &'s str, t: &Tok) -> &'s str {
+    let s = &src[t.start..t.end];
+    s.strip_prefix("r#").unwrap_or(s)
+}
+
+/// The index of the `]` that closes the `[` at `toks[open]`.
+fn group_end(toks: &[Tok], open: usize) -> Option<usize> {
+    let mut depth = 0i32;
+    (open..toks.len()).find(|&k| {
+        match toks[k].kind {
+            Tk::Punct(b'[') => depth += 1,
+            Tk::Punct(b']') => depth -= 1,
+            _ => {}
+        }
+        depth == 0
     })
 }
 
-/// Classify the attribute starting at `lines[i]` for the census, and
-/// return the index of its last line with the verdict:
-/// - `Some(true)`: the one supported test attribute, `#[test]` alone
-///   on its line, optionally followed by a `//` comment;
-/// - `Some(false)`: refused, rather than skipped: any other attribute
-///   with an identifier containing `test` outside string literals,
-///   such as `#[test] fn f() {}`, `#[ignore] #[test]`, `# [test]`,
-///   `#[tokio::test]`, `#[cfg_attr(unix, test)]`, `#[cfg(test)]` or a
-///   multiline `#[` / `test` / `]`; any attribute whose brackets do
-///   not close within 20 lines; and any attribute containing a form the
-///   reader cannot follow (see [`Attr`]), whatever else it names;
-/// - `None`: not an attribute, or one without a `test` identifier.
-fn test_attribute(lines: &[&str], i: usize) -> (Option<bool>, usize) {
-    let Some(a) = read_attribute(lines, i) else {
-        return (None, i);
-    };
-    let exact = lines[i].trim().split("//").next().unwrap_or("").trim_end() == "#[test]";
-    if exact && a.closed && a.last == i {
-        return (Some(true), i);
-    }
-    let names_test = a
-        .text
-        .split(|c: char| !(c.is_alphanumeric() || c == '_'))
-        .any(|w| w.contains("test"));
-    if names_test || !a.closed {
-        (Some(false), a.last)
-    } else {
-        (None, a.last)
-    }
-}
-
 /// The bound census (I1-H H2d): every `#[test]` fn in `src` must
-/// start, after blank and `//` lines, with exactly one of
-/// `BOUND_FIRST_LINES`, except the pure tests named in `exempt`
-/// (each of which must exist). Unsupported test attribute forms are
-/// refused (see [`test_attribute`]).
+/// start with exactly one of `BOUND_FIRST_LINES`, except the pure tests
+/// named in `exempt` (each of which must exist). What the census cannot
+/// read is refused (see [`census_violations`]).
 pub fn bound_census(src: &str, file: &str, exempt: &[&str]) {
     let bad = census_violations(src, file, exempt);
     assert!(
@@ -1686,63 +1772,146 @@ pub fn bound_census(src: &str, file: &str, exempt: &[&str]) {
 }
 
 /// The census's findings for `src`, one line each.
+///
+/// It lexes the whole source ([`lex`]) and checks every `#` outside
+/// comments and literals. The one form it follows is an attribute that
+/// starts its line as `#[` or `#![` (no space, comment or other token
+/// after the `#`), closes, holds no comment and no `$`, and has nothing
+/// after its `]` on that line except a `//` comment. Any other `#` is
+/// refused, whatever it names. A followed attribute that names a test in
+/// any form other than `#[test]` itself (`cfg_attr(.., test)`,
+/// `tokio::test`, `test_case`, `cfg(test)`, ...) is refused too. So is
+/// what could bring in tests the census cannot read: `macro_rules!`,
+/// `include!`, and any out-of-line module other than exactly
+/// `#[path = "common/deadline.rs"] mod deadline;` (the probes) or the
+/// same for `corpus` (censused by the gate). After each `#[test]`, past
+/// comments and other attributes, must come `fn <name>`, and the first
+/// token of its body must start a line that is exactly one of
+/// `BOUND_FIRST_LINES`.
+///
+/// Not covered: tests generated by a macro defined in another crate
+/// (liteinst-jit has no dev-dependency but itself).
 fn census_violations(src: &str, file: &str, exempt: &[&str]) -> Vec<String> {
     let lines: Vec<&str> = src.lines().collect();
-    let skipped = |l: &str| {
-        let t = l.trim();
-        t.is_empty() || t.starts_with("//")
+    let text = |n: usize| lines.get(n).map_or("", |l| l.trim());
+    let refuse = |n: usize, why: &str| {
+        format!(
+            "{file}:{}: unsupported test attribute ({why}) `{}`",
+            n + 1,
+            text(n)
+        )
     };
+    let toks = match lex(src) {
+        Ok(t) => t,
+        Err(n) => return vec![refuse(n, "the census cannot lex this")],
+    };
+    let word = |k: usize| {
+        toks.get(k)
+            .filter(|t| t.kind == Tk::Ident)
+            .map(|t| tok_word(src, t))
+    };
+    let punct = |k: usize, c: u8| toks.get(k).is_some_and(|t| t.kind == Tk::Punct(c));
     let mut bad = Vec::new();
     let mut seen = BTreeSet::new();
-    let mut i = 0;
-    while i < lines.len() {
-        let (verdict, last) = test_attribute(&lines, i);
-        match verdict {
-            Some(true) => {}
-            Some(false) => {
-                bad.push(format!(
-                    "{file}:{}: unsupported test attribute `{}`",
-                    i + 1,
-                    lines[i].trim()
-                ));
-                i = last + 1;
-                continue;
+    for (k, tok) in toks.iter().enumerate() {
+        match word(k) {
+            Some("macro_rules") => bad.push(refuse(tok.line, "macro_rules")),
+            Some("include") if punct(k + 1, b'!') => bad.push(refuse(tok.line, "include!")),
+            Some("mod") if punct(k + 2, b';') => {
+                let name = word(k + 1).unwrap_or("");
+                let path = format!("\"common/{name}.rs\"");
+                let pinned = k >= 6
+                    && matches!(name, "deadline" | "corpus")
+                    && punct(k - 6, b'#')
+                    && punct(k - 5, b'[')
+                    && word(k - 4) == Some("path")
+                    && punct(k - 3, b'=')
+                    && toks[k - 2].kind == Tk::Lit
+                    && src[toks[k - 2].start..toks[k - 2].end] == path
+                    && punct(k - 1, b']');
+                if !pinned {
+                    bad.push(refuse(tok.line, "out-of-line module"));
+                }
             }
-            None => {
-                i = last + 1;
-                continue;
-            }
+            _ => {}
         }
-        let mut j = i + 1;
-        while j < lines.len() && lines[j].trim_start().starts_with("#[") {
-            j += 1;
+        if tok.kind != Tk::Punct(b'#') {
+            continue;
         }
-        let Some(name) = lines
-            .get(j)
-            .and_then(|l| l.trim().strip_prefix("fn "))
-            .and_then(|r| r.split('(').next())
-        else {
-            bad.push(format!("{file}:{}: #[test] without a fn line", j + 1));
-            i = j;
+        let adjacent = |j: usize, c: u8, at: usize| punct(j, c) && toks[j].start == at;
+        let open = if adjacent(k + 1, b'[', tok.start + 1) {
+            Some(k + 1)
+        } else if adjacent(k + 1, b'!', tok.start + 1) && adjacent(k + 2, b'[', tok.start + 2) {
+            Some(k + 2)
+        } else {
+            None
+        };
+        let Some(open) = open.filter(|_| tok.first) else {
+            bad.push(refuse(tok.line, "`#` not starting a line as `#[` or `#![`"));
             continue;
         };
-        let mut k = j;
-        while k < lines.len() && !lines[k].trim_end().ends_with('{') {
-            k += 1;
+        let Some(close) = group_end(&toks, open) else {
+            bad.push(refuse(tok.line, "unclosed"));
+            continue;
+        };
+        let inner = &toks[open + 1..close];
+        let trailing = toks.get(close + 1).filter(|t| t.line == toks[close].line);
+        if inner
+            .iter()
+            .any(|t| matches!(t.kind, Tk::Comment | Tk::Punct(b'$')))
+            || trailing
+                .is_some_and(|t| !(t.kind == Tk::Comment && src[t.start..].starts_with("//")))
+        {
+            bad.push(refuse(tok.line, "comment or `$` inside, or tokens after"));
+            continue;
         }
-        k += 1;
-        while k < lines.len() && skipped(lines[k]) {
-            k += 1;
+        let exact = open == k + 1
+            && close == k + 3
+            && word(k + 2) == Some("test")
+            && toks[close].start == tok.start + 6;
+        if !exact {
+            if inner
+                .iter()
+                .any(|t| t.kind == Tk::Ident && tok_word(src, t).contains("test"))
+            {
+                bad.push(refuse(tok.line, "names a test"));
+            }
+            continue;
         }
-        let first = lines.get(k).map_or("", |l| l.trim());
+        // A test: past comments and its other attributes (each checked on
+        // its own), `fn <name>`, then the first token of the body.
+        let mut j = close + 1;
+        loop {
+            if toks.get(j).is_some_and(|t| t.kind == Tk::Comment) {
+                j += 1;
+            } else if punct(j, b'#') && punct(j + 1, b'[') {
+                match group_end(&toks, j + 1) {
+                    Some(e) => j = e + 1,
+                    None => break,
+                }
+            } else {
+                break;
+            }
+        }
+        let (Some("fn"), Some(name)) = (word(j), word(j + 1)) else {
+            let at = toks.get(j).map_or(tok.line, |t| t.line);
+            bad.push(format!("{file}:{}: #[test] without a fn line", at + 1));
+            continue;
+        };
+        let body = toks[j..]
+            .iter()
+            .position(|t| t.kind == Tk::Punct(b'{'))
+            .map(|p| j + p);
+        let first = body.and_then(|b| toks[b + 1..].iter().find(|t| t.kind != Tk::Comment));
+        let line = first.map_or(toks[j].line, |t| t.line);
         seen.insert(name.to_owned());
-        if !exempt.contains(&name) && !BOUND_FIRST_LINES.contains(&first) {
+        if !exempt.contains(&name) && !BOUND_FIRST_LINES.contains(&text(line)) {
             bad.push(format!(
-                "{file}:{}: {name}: first body line `{first}`",
-                k + 1
+                "{file}:{}: {name}: first body line `{}`",
+                line + 1,
+                text(line)
             ));
         }
-        i = k;
     }
     for e in exempt {
         if !seen.contains(*e) {
@@ -1752,23 +1921,23 @@ fn census_violations(src: &str, file: &str, exempt: &[&str]) -> Vec<String> {
     bad
 }
 
-/// `bound_census_refuses_unsupported_attributes` (gate): negative
-/// witnesses for the census parser on synthetic sources. A test
-/// whose `#[test]` carries a trailing comment is counted (and
-/// refused when unbound, accepted when armed); every other test
-/// attribute form is refused.
+/// `bound_census_refuses_unsupported_attributes` (gate): witnesses for
+/// the census on synthetic sources. A test whose `#[test]` carries a
+/// trailing `//` comment is counted (refused when unbound, accepted when
+/// armed), and an armed test with ordinary code (a doc comment, the
+/// pinned module form, a lifetime, a raw string, character literals) is
+/// accepted. Every listed form is refused, including the ones that name
+/// no test.
 pub fn bound_census_witness() {
     let body = |first: &str| format!("fn t() {{\n    {first}\n}}\n");
+    let arm = "let _bound = deadline::TestBound::arm();";
     let unbound = format!("#[test] // regression case\n{}", body("loop {}"));
     let v = census_violations(&unbound, "witness.rs", &[]);
     assert!(
         v.iter().any(|l| l.contains("t: first body line `loop {}`")),
         "a `#[test] // comment` test without a bound must be counted and refused: {v:?}"
     );
-    let armed = format!(
-        "#[test] // regression case\n{}",
-        body("let _bound = deadline::TestBound::arm();")
-    );
+    let armed = format!("#[test] // regression case\n{}", body(arm));
     let v = census_violations(&armed, "witness.rs", &[]);
     assert!(
         v.is_empty(),
@@ -1776,18 +1945,27 @@ pub fn bound_census_witness() {
     );
     let strings = format!(
         "#[ignore = \"a test reason\"]\n#[test] // regression case\n{}",
-        body("let _bound = deadline::TestBound::arm();")
+        body(arm)
     );
     let v = census_violations(&strings, "witness.rs", &[]);
     assert!(
         v.is_empty(),
         "`test` inside a string literal must not be refused: {v:?}"
     );
-    // The last three hide `test` from a reader that follows only
-    // brackets, strings and `//`: the `]` in the block comment, or the
-    // string the reader would open at the raw string's inner quote or at
-    // the character literal's quote (closed by the `"` on the next line),
-    // closes the attribute before its `test`.
+    let code = format!(
+        "#[path = \"common/deadline.rs\"]\nmod deadline;\n/// A doc comment.\n#[test]\nfn t() {{\n    {arm}\n    let _s: &'static str = r#\"a \"]\" b\"#;\n    let _c = ('\"', b'\\'');\n}}\n"
+    );
+    let v = census_violations(&code, "witness.rs", &[]);
+    assert!(
+        v.is_empty(),
+        "an armed test with ordinary code must be accepted: {v:?}"
+    );
+    // Forms 11-13 hide `test` from a reader that follows only brackets,
+    // plain strings and `//`. 14-20 put something other than `[` right
+    // after a `#`, or put a `#` after other tokens on its line (20 behind
+    // U+2028, which `str::lines` does not split on). 21 names no test. 22
+    // hides a `]` at the end of a line inside a block comment. 23-27 can
+    // bring in tests the census cannot read. 28 cannot be lexed.
     let missed: Vec<&str> = [
         "#[test] fn t() {}",
         "#[test] #[ignore]",
@@ -1802,13 +1980,25 @@ pub fn bound_census_witness() {
         "#[cfg_attr(\n    target_os = \"linux\",\n    /* ] */\n    test\n)]",
         "#[cfg_attr(unix, doc = r#\"a\"b\"#, test)]\n// \"]",
         "#[cfg_attr(unix, cfg_attr(any(), x('\"')), test)]\n// \"]",
+        "# /* explanation */ [test]",
+        "#\n/* explanation */\n[test]",
+        "#\t[test]",
+        "#\x0c[test]",
+        "fn helper() {} #\n[test]",
+        "fn helper() {} #[test]",
+        "fn helper() {}\u{2028}#[test]",
+        "# /* note */ [ignore]",
+        "#[cfg_attr(unix, /*\n]\n*/ test)]",
+        "#[$a]",
+        "macro_rules! m {\n    () => {};\n}",
+        "include!(\"more_tests.rs\");",
+        "#[path = \"common/more.rs\"]\nmod more;",
+        "#[path = \"common/other.rs\"]\nmod deadline;",
+        "/* never closed",
     ]
     .into_iter()
     .filter(|form| {
-        let src = format!(
-            "{form}\n{}",
-            body("let _bound = deadline::TestBound::arm();")
-        );
+        let src = format!("{form}\n{}", body(arm));
         let v = census_violations(&src, "witness.rs", &[]);
         !v.iter().any(|l| l.contains("unsupported test attribute"))
     })
