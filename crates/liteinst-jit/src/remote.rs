@@ -27,11 +27,15 @@
 //! restorer's `rt_sigreturn` resumes in cache.
 //! I1-H H2b also delivers async stops in the common exit of a
 //! RETURN, SYSCALL, NONDET or POLL exit (W1), and during the
-//! single-stepped original cpuid (W3).
+//! single-stepped original cpuid (W3). I1-H H2d delivers an
+//! async stop before a stepped syscall enters the kernel (W3s)
+//! when a four-part provenance guard (RIP, every GPR, RFLAGS,
+//! and `orig_rax` still -1) shows the exact pre-step state; the
+//! call is stepped again after sigreturn, and any other stop at
+//! that point is refused by name.
 //! Every other delivery shape still stops as a recovered
 //! outcome by name — including async stops in the common exit
-//! of an INDIRECT exit, before a stepped syscall's entry, and
-//! at generated PCs with no pcmap entry; no transparency
+//! of an INDIRECT exit and at generated PCs with no pcmap entry; no transparency
 //! claim is made beyond the tested shapes. Indirect resolution, threads, and exec
 //! successors stay refused exactly as in-process. This module
 //! is a substrate for later P1b stages, not a public API
@@ -299,22 +303,39 @@ impl SignalRegistry {
     }
 }
 
-/// Consecutive W3 deliveries allowed at original-instruction
-/// steps with no completed original step between them (I1-H H2c).
-/// The next interrupt refuses by name instead
-/// (`BudgetExceeded`, "original step interrupted without
-/// progress"), so a signal source that fires faster than the
-/// tracer's deliver-and-retry round trip ends the run fail-closed
-/// rather than retrying the instruction forever.
+/// Interrupts allowed at a pending original-instruction step with
+/// no progress between them. Two kinds of counter use it:
+/// - H2c's aggregate (I1-H H2c): consecutive W3 deliveries at
+///   `cpuid` steps with no completed original step between them.
+///   Over the limit it refuses with "original step interrupted
+///   without progress".
+/// - The per-frame-depth counters (I1-H H2d): interrupts of the
+///   step pending at one depth, a `cpuid` (W3) or a `syscall`
+///   stopped before the call entered (W3s). Over the limit they
+///   refuse with "frame-depth bound: cpuid step ..." or
+///   "frame-depth bound: syscall step interrupted without
+///   progress".
 ///
-/// Derivation: one interrupt, delivery, sigreturn and retry
-/// round trip measured about 84 us (11,946 per second, release
-/// build, in the I1-H H2b record-pass hang). 64 round trips is
-/// about 5.4 ms without progress at one instruction, so only a
-/// source re-interrupting the same instruction at about 12 kHz or
-/// more, sustained, reaches the bound. Profiling timers
-/// (100-1000 Hz) and interval timers of 1 ms or more pass through
-/// unchanged.
+/// Each refusal is a named `BudgetExceeded`, so a signal source
+/// that fires faster than the tracer's deliver-and-retry round
+/// trip ends the run fail-closed rather than retrying the
+/// instruction forever.
+///
+/// Derivation, per step kind:
+/// - `cpuid` (W3): one interrupt, delivery, sigreturn and retry
+///   round trip measured about 84 us (11,946 per second, release
+///   build, in the I1-H H2b record-pass hang). 64 round trips is
+///   about 5.4 ms without progress, so only a source
+///   re-interrupting the same `cpuid` at about 12 kHz or more,
+///   sustained, reaches the bound.
+/// - `syscall` (W3s): one delivery measured about 118.7 us (one
+///   release run, 64 deliveries in 7.6 ms with setup included, so
+///   not an isolated latency). 64 round trips is about 7.6 ms, so
+///   a source re-interrupting the same `syscall` at about 8.4 kHz
+///   or more, sustained, reaches the bound.
+///
+/// Profiling timers (100-1000 Hz) and interval timers of 1 ms or
+/// more pass through unchanged at either kind.
 ///
 /// This is a liveness bound, not a determinism change: given the
 /// same delivery sequence, the refusal is deterministic. It is a
@@ -2290,11 +2311,20 @@ impl RemoteExecutable {
     /// `rt_sigaction` stubbing (I1-D) and `rt_(tg)sigqueueinfo`
     /// staging (I1-G1). On every path the saved scratch bytes
     /// are restored first, and the guest's own register value is
-    /// put back into the returned guest state — including a
-    /// recovered `Fault` (an asynchronous stop before syscall
-    /// entry), whose live registers would otherwise carry the
-    /// private scratch address. A failed scratch restore is a
-    /// named substrate refusal, never a clean step.
+    /// put back into any guest state returned, `Done` or a
+    /// recovered `Fault`, whose live registers would otherwise
+    /// carry the private scratch address. A failed scratch restore
+    /// is a named substrate refusal, never a clean step.
+    ///
+    /// An asynchronous stop before syscall entry (I1-H H2d, W3s)
+    /// returns `Stepped::EntryInterrupted` when the provenance
+    /// guard holds; it carries no state, and the caller builds the
+    /// frame from its own copy, which holds the guest's register.
+    /// When the guard fails it is a named `RemoteSubstrate`
+    /// refusal. Before W3s every such stop came back as a `Fault`;
+    /// both refuse, so the change fails closed. A recovered
+    /// `Fault` now comes only from a kernel-generated signal at
+    /// entry (`SourceFault`).
     fn step_redirected_syscall(
         &self,
         state: GuestState,
@@ -2488,6 +2518,11 @@ impl RemoteExecutable {
         Ok(())
     }
 
+    /// GETREGS, then `apply_state`, then SETREGS. `apply_state` never
+    /// writes `orig_rax`, so the kernel's value is written back
+    /// unchanged. The W3s guard's g4 relies on this (the invariant in
+    /// `w3s_provenance`'s doc): keep `orig_rax` out of what this
+    /// writes.
     fn set_guest_regs(&self, state: &GuestState) -> Result<(), Refuse> {
         let mut regs = get_regs(self.guard.pid)?;
         apply_state(&mut regs, state);
@@ -3222,6 +3257,17 @@ impl RemoteExecutable {
     /// entries in scope set `orig_rax` to -1, `apply_state` never
     /// writes it, and an entered syscall holds its number there
     /// (arch/x86/entry/entry_64.S idtentry; asm/syscall.h).
+    ///
+    /// g4 rests on an invariant that the rest of this file must keep.
+    /// In a restart-rewound state (RIP back at `pc`) g1-g3 can all
+    /// pass, and `orig_rax` holding the call number is what tells it
+    /// apart. That works only because the stop before this step was
+    /// an exception entry (the common exit's int3), which leaves
+    /// `orig_rax` at -1, and because `set_guest_regs` never writes
+    /// `orig_rax` (see the note there). If a path ever stepped a
+    /// `syscall` straight after a syscall-exit stop, `orig_rax` would
+    /// still hold the old number and W3s would refuse: fail-closed,
+    /// at a cost in liveness only.
     fn w3s_provenance(
         &self,
         pc: u64,
@@ -3241,6 +3287,8 @@ impl RemoteExecutable {
         let rip_ok = got.rip == pc;
         let gprs_ok = gprs(got) == gprs(recorded);
         let rflags_ok = got.rflags == recorded.rflags;
+        // g4: sound only while `set_guest_regs` never writes
+        // `orig_rax` (the invariant in this function's doc).
         let orig_rax_ok = regs.orig_rax == orig_rax;
         rip_ok && gprs_ok && rflags_ok && orig_rax_ok
     }

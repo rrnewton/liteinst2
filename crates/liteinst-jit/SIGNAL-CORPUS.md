@@ -331,7 +331,8 @@ refusals, and 244 and 17, while W1 was held).
   (`poll_budget_seam_refuses_zero`).
 
 Still open after H2b: an asynchronous stop before a stepped
-syscall's entry (the W3 sibling; still a recovered AsyncSignal);
+syscall's entry (the W3 sibling; still a recovered AsyncSignal;
+closed in H2d, see "Closed in H2d" below);
 kernel-generated (`si_code > 0`) signals during the original step;
 INDIRECT common-exit arrivals (pinned refusal); FP/SIMD state. The
 live-frame test inherits the NSpid host dependency of every
@@ -396,7 +397,34 @@ That is fail-closed liveness, not progress.
 Still open after H2c: the stepped-syscall stop (next slice, H2d,
 which reuses the guard, the bound and the one-shot seam); a
 process-level test bound (the deadline bounds only loops that keep
-calling ptrace or waiting).
+calling ptrace or waiting). Both are closed in H2d; see "Closed in
+H2d" below.
+
+## Closed in H2d
+
+- **The stepped-syscall stop (W3s),**
+  https://github.com/rrnewton/liteinst2/pull/86. An asynchronous
+  stop after a stepped `syscall` began and before the kernel
+  entered the call is delivered at the `syscall` with the call not
+  made, when a four-part guard holds (RIP, every GPR and RFLAGS
+  exactly against the recorded pre-step copy, and `orig_rax`
+  still -1); the call is stepped again after sigreturn. Any other
+  entry-phase stop refuses by name. On a staged step the scratch
+  is restored first, and a failed restore refuses. Retries are
+  bounded per frame depth (and, for a `cpuid`, by H2c's aggregate,
+  checked first). Rows: `H2d handler step`, `H2d W3s write`,
+  `H2d W3s sigaction`, `H2d W3s sigqueue`, `H2d W3s tgsigqueue`,
+  `H2d W3s futex`, `H2d poll budget`, `H2d cross-depth`,
+  `H2d same-depth redirect`, `H2d abandoned frame`.
+- **A process-level test bound,**
+  https://github.com/rrnewton/liteinst2/pull/85: every
+  integration test that can start a child arms `TestBound`
+  (300 s), above the 120 s per-run deadline.
+
+Still open after H2d: kernel-generated (`si_code > 0`) signals
+during the original step; INDIRECT common-exit arrivals (pinned
+refusal); FP/SIMD state; the sigreturn interception's own entry
+stop (refused by name).
 
 ## Run-dependent inputs
 

@@ -309,8 +309,8 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   sync faults outside copied insns, and handler-mutated
   mid-block resume PCs still stop by name (see I1-E detail).
   I1-H H2b later closes the common-exit stages (except an
-  INDIRECT exit's) and the original-step stop; the
-  stepped-syscall stop before syscall entry stays open.
+  INDIRECT exit's) and the original-step stop, and I1-H H2d
+  the stepped-syscall stop before syscall entry (W3s below).
 - **I1-F landed** (`736454bcaff828689cc7f97ec962d495d3015399`):
   masks, alternate stack, capped nesting (see its detail).
 - **I1-G split** (project decision 2026-11-10): **I1-G1**
@@ -385,10 +385,11 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   the recorded pre-step copy, no TF exception) refuses any other
   asynchronous stop by name, shown per part through a seam. The
   restore invariant above extends to POLL-kind common-exit stops
-  (they recover to a block start), pinned on the PC map. Still
-  open: an asynchronous stop before a stepped syscall's entry
-  (the W3 sibling), and kernel-generated signals during the
-  original step. Liveness non-claim: W3 retries the `cpuid`
+  (they recover to a block start), pinned on the PC map. Left
+  open by H2b: an asynchronous stop before a stepped syscall's
+  entry (the W3 sibling, closed in H2d: W3s below), and
+  kernel-generated signals during the original step (still
+  open). Liveness non-claim: W3 retries the `cpuid`
   where a native run progresses, if an asynchronous signal (a
   short-period timer, say) fires faster than the
   deliver-and-retry round trip; before H2b that case was refused
@@ -406,6 +407,31 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   with the seam still persistent would bring back the H2b
   record-pass hang, in a binary with no deadline. **H2c lands
   both**, so the stepped-syscall slice (H2d) comes after it.
+- **W3s** (**closed in H2d**,
+  [PR 86](https://github.com/rrnewton/liteinst2/pull/86)): an
+  asynchronous stop presented after a stepped `syscall` began
+  but before the kernel entered the call is delivered at the
+  `syscall`, with the call not made, and the call is stepped
+  again after sigreturn against the handler's registers,
+  memory and registry. A four-part guard (RIP, every GPR and
+  RFLAGS exactly against the recorded pre-step copy, and
+  `orig_rax` still -1) refuses any other entry-phase stop by
+  name. On a redirected (staged) step the scratch is restored
+  before anything is delivered, a failed restore refuses, and
+  the frame holds the guest's own argument register. W3 and
+  W3s share one delivery path. The retry is bounded per frame
+  depth, and for a `cpuid` also by H2c's aggregate, which is
+  checked first: the 65th interrupted step at one depth since
+  that depth last made progress refuses by name ("frame-depth
+  bound: cpuid step interrupted without progress", "...
+  syscall step ..."); a `cpuid` makes progress when it
+  completes, a syscall when it has entered the kernel, and a
+  sigreturn that abandons frames drops their counters.
+  Non-claims: no run-wide W3s budget (nested floods across
+  depths are bounded only per depth), and the sigreturn
+  interception's own entry stop stays refused by name. The
+  same PR sets `PTRACE_O_EXITKILL` for the remote substrate's
+  and both O1 oracles' traced children.
 - **W2 is closed by evidence, not code** (H1). The scope named
   W2 as "generated PCs with no pcmap entry (the entry-loader
   bridge class)", but the remote substrate has no such PCs. The

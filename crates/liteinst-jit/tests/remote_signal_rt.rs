@@ -1920,7 +1920,11 @@ fn rt_resethand_unreadable_unadmitted_refused() {
 /// entry is a recovered `AsyncSignal` at the syscall's source
 /// PC whose state carries the guest's own pointer, never the
 /// tracer scratch address; the syscall did not execute and
-/// counts stand at the instructions retired before it.
+/// counts stand at the instructions retired before it. It is a
+/// recovered stop because these fixtures install no eligible
+/// handler for the injected SIGUSR2 (it stays at `SIG_DFL`);
+/// with an eligible handler the same stop is delivered (I1-H
+/// H2d, W3s).
 fn check_pre_entry_stop(
     fx: &Fx,
     pc_off: u64,
