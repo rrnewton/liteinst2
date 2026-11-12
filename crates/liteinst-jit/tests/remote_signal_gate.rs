@@ -2158,6 +2158,15 @@ fn harness_kills_non_utf8_orphan() {
     deadline::odd_name_orphan_test();
 }
 
+/// The harness keeps the wait status of a child that exited on its
+/// own before the harness's SIGKILL reached it: a zombie accepts the
+/// signal, so a successful send alone proves nothing.
+#[test]
+fn harness_keeps_status_of_child_that_exited_first() {
+    let _g = lock();
+    deadline::harness_status_witness();
+}
+
 /// A child forked after the first sweep, by a custody section that
 /// was open at expiry, is still killed: by a drain-loop sweep or by
 /// the final sweep, which waits for the section to close.

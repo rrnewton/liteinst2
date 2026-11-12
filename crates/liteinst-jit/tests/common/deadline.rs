@@ -867,9 +867,10 @@ pub struct SubreaperReport {
     pub raw: String,
 }
 
-/// The parent test's bound on the intermediate (its own limits are
-/// 10 s plus 10 s).
-const SUBREAPER_PARENT_BOUND: Duration = Duration::from_secs(30);
+/// The parent test's bound on the intermediate: above the sum of its
+/// own limits (10 s for the probe and 5 s to reap it, then 10 s for
+/// the adoptees and 5 s to reap them: 30 s), with 10 s to spare.
+const SUBREAPER_PARENT_BOUND: Duration = Duration::from_secs(40);
 /// The intermediate's limit on the probe, then on the adoptees.
 const HARNESS_LIMIT: Duration = Duration::from_secs(10);
 /// The intermediate's polling period.
@@ -886,7 +887,9 @@ const SUBREAPER_MODE_ENV: &str = "LITEINST_SUBREAPER_MODE";
 /// subreaper, which is this test binary running
 /// `deadline::subreaper_intermediate`. The test process itself is
 /// never a subreaper. The intermediate runs in a custody section and
-/// under a 30 s per-run deadline.
+/// under a 40 s per-run deadline. Each run prints its wall time and
+/// the probe's lifetime to stderr (`subreaper <probe>: ...`), so a
+/// `--nocapture` log shows the bound probes' timing under load.
 pub fn subreaper_run(probe: &str, env: &[(&str, &str)], mode: StderrMode) -> SubreaperReport {
     let mut cmd = Command::new(std::env::current_exe().expect("current exe"));
     cmd.args([
@@ -909,23 +912,41 @@ pub fn subreaper_run(probe: &str, env: &[(&str, &str)], mode: StderrMode) -> Sub
     for (k, v) in env {
         cmd.env(k, v);
     }
+    let t0 = Instant::now();
     let (mut child, deadline) = command_child_for(&mut cmd, SUBREAPER_PARENT_BOUND)
         .expect("spawn the subreaper intermediate");
     let mut out = child.stdout.take().expect("the intermediate's stdout");
     let reader = std::thread::spawn(move || {
-        let mut s = String::new();
-        let _ = out.read_to_string(&mut s);
-        s
+        let mut b = Vec::new();
+        let _ = out.read_to_end(&mut b);
+        String::from_utf8_lossy(&b).into_owned()
     });
     let status = child.wait();
     drop(deadline);
     let raw = reader.join().unwrap_or_default();
+    let probe_ms = raw
+        .lines()
+        .find_map(|l| l.strip_prefix("probe-ms "))
+        .unwrap_or("?");
+    eprintln!(
+        "subreaper {probe}: {} ms in all; probe lived {probe_ms} ms",
+        t0.elapsed().as_millis()
+    );
     let status = status.expect("wait for the subreaper intermediate");
     assert!(
         status.success(),
         "subreaper intermediate for {probe} failed: {status:?}\n{raw}"
     );
     parse_report(raw)
+}
+
+/// The lines of `r`, split on newline bytes and decoded lossily, so a
+/// line that is not UTF-8 neither ends the stream nor is dropped.
+fn byte_lines(r: impl Read) -> impl Iterator<Item = String> {
+    BufReader::new(r)
+        .split(b'\n')
+        .map_while(Result::ok)
+        .map(|l| String::from_utf8_lossy(&l).into_owned())
 }
 
 fn parse_report(raw: String) -> SubreaperReport {
@@ -973,45 +994,64 @@ fn reap_ready(reaped: &mut BTreeMap<i32, String>) -> bool {
     }
 }
 
-/// Kill `pid` through a pidfd if it is still this process's child
-/// (and, when known, still has start time `start`); then reap it,
-/// polling for at most 1 s. A zombie is not signalled. The status is
-/// `killed-by-harness` only when the kill was sent and the child was
-/// reaped. A child reaped without a kill gets its own wait status;
-/// one not reaped in time gets `harness-kill-unreaped` or
-/// `harness-unkilled-unreaped`.
-fn harness_kill(pid: i32, start: Option<u64>, reaped: &mut BTreeMap<i32, String>) {
+/// How long the harness polls to reap a child after its kill.
+const HARNESS_REAP: Duration = Duration::from_secs(5);
+
+/// Send SIGKILL to `pid` through a pidfd if it is still this
+/// process's live child (and, when known, still has start time
+/// `start`). A zombie is not signalled. True when the signal was sent.
+fn harness_signal(pid: i32, start: Option<u64>) -> bool {
     let me = std::process::id() as i32;
-    let killed = pidfd(pid).is_some_and(|fd| {
+    pidfd(pid).is_some_and(|fd| {
         proc_stat(pid)
             .is_some_and(|s| s.ppid == me && s.state != 'Z' && start.is_none_or(|t| t == s.start))
             && pidfd_kill(&fd)
-    });
-    let mut status = if killed {
-        "harness-kill-unreaped"
-    } else {
-        "harness-unkilled-unreaped"
-    }
-    .to_owned();
-    let until = Instant::now() + Duration::from_secs(1);
-    while Instant::now() < until {
+    })
+}
+
+/// Reap `pid`, polling until `until`, and name how it ended. The
+/// status is `killed-by-harness` only when the harness sent the kill
+/// AND the reaped status is death by SIGKILL. A child that ended some
+/// other way keeps its own wait status, even when the kill was sent:
+/// a child that exits between the harness's stat check and its signal
+/// accepts SIGKILL as a zombie, and the signal call still succeeds.
+/// A child not reaped in time gets `harness-kill-unreaped` or
+/// `harness-unkilled-unreaped`.
+fn harness_reap(pid: i32, killed: bool, until: Instant) -> String {
+    loop {
         let mut st = 0;
         // SAFETY: waitpid on this process's own child, WNOHANG.
         let rc = unsafe { libc::waitpid(pid, &mut st, libc::WNOHANG) };
         if rc == pid {
-            status = if killed {
+            return if killed && libc::WIFSIGNALED(st) && libc::WTERMSIG(st) == libc::SIGKILL {
                 "killed-by-harness".to_owned()
             } else {
                 describe_status(st)
             };
-            break;
         }
-        if rc < 0 {
-            break;
+        if rc < 0 || Instant::now() >= until {
+            return if killed {
+                "harness-kill-unreaped"
+            } else {
+                "harness-unkilled-unreaped"
+            }
+            .to_owned();
         }
         std::thread::sleep(HARNESS_POLL);
     }
-    reaped.insert(pid, status);
+}
+
+/// Kill the given children (each with its recorded start time, when
+/// known), then reap them all within one shared `HARNESS_REAP`.
+fn harness_kill(victims: &[(i32, Option<u64>)], reaped: &mut BTreeMap<i32, String>) {
+    let sent: Vec<(i32, bool)> = victims
+        .iter()
+        .map(|&(pid, start)| (pid, harness_signal(pid, start)))
+        .collect();
+    let until = Instant::now() + HARNESS_REAP;
+    for (pid, killed) in sent {
+        reaped.insert(pid, harness_reap(pid, killed, until));
+    }
 }
 
 /// The children a probe recorded: pid and start time (`None` when the
@@ -1027,7 +1067,8 @@ fn wait_reader(done: &mpsc::Receiver<()>, until: Instant, min: Duration) {
 /// The intermediate subreaper: see [`subreaper_run`]. It runs the
 /// probe under its own supervised limits (10 s for the probe, then
 /// 10 s for the adopted orphans) and kills what is left at either
-/// limit, marking it `killed-by-harness` once it is reaped. No
+/// limit, reaping it within 5 s and marking it `killed-by-harness`
+/// only if it died by that SIGKILL. No
 /// blocking read or wait runs outside a limit: reader threads own the
 /// probe's pipes, and the main thread only polls.
 #[test]
@@ -1064,7 +1105,7 @@ fn subreaper_intermediate() {
     let stdout = child.stdout.take().expect("the probe's stdout");
     let sink = Arc::clone(&listed);
     std::thread::spawn(move || {
-        for line in BufReader::new(stdout).lines().map_while(Result::ok) {
+        for line in byte_lines(stdout) {
             let Some(rest) = line.strip_prefix("child ") else {
                 continue;
             };
@@ -1087,7 +1128,7 @@ fn subreaper_intermediate() {
     } else {
         let sink = Arc::clone(&stderr_lines);
         std::thread::spawn(move || {
-            for line in BufReader::new(stderr).lines().map_while(Result::ok) {
+            for line in byte_lines(stderr) {
                 sink.lock().unwrap_or_else(|e| e.into_inner()).push(line);
             }
             let _ = err_done_tx.send(());
@@ -1104,21 +1145,26 @@ fn subreaper_intermediate() {
             break s;
         }
         if Instant::now() >= first_limit {
-            harness_kill(probe_pid, probe_start, &mut reaped);
+            harness_kill(&[(probe_pid, probe_start)], &mut reaped);
             break reaped
                 .remove(&probe_pid)
                 .unwrap_or_else(|| "missing".to_owned());
         }
         std::thread::sleep(HARNESS_POLL);
     };
+    let probe_end = Instant::now();
     let second_limit = Instant::now() + HARNESS_LIMIT;
     while reap_ready(&mut reaped) {
         if Instant::now() >= second_limit {
             let listed = listed.lock().unwrap_or_else(|e| e.into_inner()).clone();
-            for pid in direct_children() {
-                let start = listed.iter().find(|(p, _)| *p == pid).and_then(|&(_, s)| s);
-                harness_kill(pid, start, &mut reaped);
-            }
+            let victims: Vec<(i32, Option<u64>)> = direct_children()
+                .into_iter()
+                .map(|pid| {
+                    let start = listed.iter().find(|(p, _)| *p == pid).and_then(|&(_, s)| s);
+                    (pid, start)
+                })
+                .collect();
+            harness_kill(&victims, &mut reaped);
             break;
         }
         std::thread::sleep(HARNESS_POLL);
@@ -1130,6 +1176,10 @@ fn subreaper_intermediate() {
         wait_reader(&err_done, second_limit, Duration::from_secs(1));
     }
 
+    record(&format!(
+        "probe-ms {}",
+        (probe_end - (first_limit - HARNESS_LIMIT)).as_millis()
+    ));
     record(&format!("probe {probe_status}"));
     let listed = listed.lock().unwrap_or_else(|e| e.into_inner()).clone();
     for &(pid, start) in &listed {
@@ -1177,8 +1227,8 @@ fn probe_enabled() -> bool {
 }
 
 /// How long a probe and its sleepers last if nothing kills them. It
-/// outlives the intermediate's limits (10 s, then 10 s) and the
-/// parent's 30 s bound on the intermediate, so every harness
+/// outlives the intermediate's limits (30 s in all) and the parent's
+/// 40 s bound on the intermediate, so every harness
 /// observation is made while they are alive. It also bounds how long
 /// they can outlive a failed intermediate: they end by themselves.
 const SLEEPER_SECS: u64 = 60;
@@ -1235,7 +1285,6 @@ fn bound_probe() {
     if !probe_enabled() {
         return;
     }
-    let _bound = TestBound::arm_for(Duration::from_millis(300));
     let (armed, _deadline) = command_child(&mut sleeper()).expect("spawn the armed sleeper");
     record_child(armed.id());
     // Never waited on here: the sweep must kill it and the harness must
@@ -1243,6 +1292,8 @@ fn bound_probe() {
     #[allow(clippy::zombie_processes)]
     let unarmed = custody(|| sleeper().spawn()).expect("spawn the unarmed sleeper");
     record_child(unarmed.id());
+    // Armed only now, after both spawns: no spawn races the expiry.
+    let _bound = TestBound::arm_for(Duration::from_millis(300));
     std::thread::sleep(Duration::from_secs(SLEEPER_SECS));
 }
 
@@ -1309,9 +1360,10 @@ fn bound_probe_blocked() {
         return;
     }
     fill_stderr_pipe();
-    let _bound = TestBound::arm_for(Duration::from_millis(300));
     let (armed, _deadline) = command_child(&mut sleeper()).expect("spawn the armed sleeper");
     record_child(armed.id());
+    // Armed only now, after the spawn: no spawn races the expiry.
+    let _bound = TestBound::arm_for(Duration::from_millis(300));
     std::thread::sleep(Duration::from_secs(SLEEPER_SECS));
 }
 
@@ -1430,6 +1482,54 @@ pub fn odd_name_orphan_test() {
     odd_name_child(&r, "orphan", "killed-by-harness");
 }
 
+/// `harness_keeps_status_of_child_that_exited_first` (gate): the
+/// ordering the harness can meet between its stat check and its
+/// signal, made deterministic. A child exits on its own and is left an
+/// unreaped zombie; SIGKILL through its pidfd still succeeds; the
+/// harness must report the child's own `exited 0`, not
+/// `killed-by-harness`.
+pub fn harness_status_witness() {
+    let pid = custody(|| {
+        // SAFETY: fork in a multithreaded process; the child calls only
+        // the async-signal-safe `_exit`, at once.
+        let pid = unsafe { libc::fork() };
+        if pid == 0 {
+            // SAFETY: the forked child exits without running Rust code.
+            unsafe { libc::_exit(0) };
+        }
+        pid
+    });
+    assert!(pid > 0, "fork: {}", std::io::Error::last_os_error());
+    let fd = pidfd(pid).expect("pidfd_open on the child");
+    // SAFETY: an all-zero siginfo_t is a valid out-parameter.
+    let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
+    // SAFETY: waitid on this process's own child, with a live siginfo;
+    // WNOWAIT leaves the child unreaped.
+    let rc = unsafe {
+        libc::waitid(
+            libc::P_PID,
+            pid as libc::id_t,
+            &mut info,
+            libc::WEXITED | libc::WNOWAIT,
+        )
+    };
+    assert_eq!(rc, 0, "waitid: {}", std::io::Error::last_os_error());
+    assert_eq!(
+        proc_stat(pid).map(|s| s.state),
+        Some('Z'),
+        "the child must be an unreaped zombie"
+    );
+    assert!(
+        pidfd_kill(&fd),
+        "SIGKILL to an unreaped zombie through its pidfd must succeed (the race's precondition)"
+    );
+    let status = harness_reap(pid, true, Instant::now() + HARNESS_REAP);
+    assert_eq!(
+        status, "exited 0",
+        "a child that exited before the harness's SIGKILL must keep its own status"
+    );
+}
+
 /// The kinds of `tests/*.rs` file in [`bound_inventory`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BoundRole {
@@ -1445,27 +1545,103 @@ const BOUND_FIRST_LINES: [&str; 2] = [
     "let _bound = deadline::TestBound::arm();",
 ];
 
-/// Classify one source line for the census. `Some(true)`: the one
-/// supported test attribute, `#[test]` alone on its line, optionally
-/// followed by a `//` comment. `Some(false)`: any other attribute
-/// line naming a test attribute (a path whose last segment contains
-/// `test`, such as `#[test] fn f() {}`, `#[ignore] #[test]`,
-/// `# [test]` or `#[tokio::test]`); the census refuses it rather than
-/// skip a test it cannot follow. `None`: anything else.
-fn test_attribute(line: &str) -> Option<bool> {
-    let code = line.trim().split("//").next().unwrap_or("").trim_end();
-    if !code.starts_with('#') {
+/// One attribute as the census reads it, from a line that starts one
+/// (`#[`, `#![`, or a lone `#`): its text with comments, whitespace and
+/// string contents removed, the index of its last line, and whether its
+/// brackets closed within 20 lines.
+struct Attr {
+    text: String,
+    last: usize,
+    closed: bool,
+}
+
+fn read_attribute(lines: &[&str], i: usize) -> Option<Attr> {
+    let head = lines[i].trim().split("//").next().unwrap_or("").trim_end();
+    let rest = head.strip_prefix('#')?.trim_start();
+    let rest = rest.strip_prefix('!').unwrap_or(rest).trim_start();
+    if !(rest.is_empty() || rest.starts_with('[')) {
         return None;
     }
-    if code == "#[test]" {
-        return Some(true);
+    let (mut text, mut depth, mut opened, mut in_str, mut esc) =
+        (String::new(), 0i32, false, false, false);
+    let mut j = i;
+    while j < lines.len() && j <= i + 20 {
+        let mut chars = lines[j].chars().peekable();
+        while let Some(c) = chars.next() {
+            if in_str {
+                if esc {
+                    esc = false;
+                } else if c == '\\' {
+                    esc = true;
+                } else if c == '"' {
+                    in_str = false;
+                    text.push('"');
+                }
+                continue;
+            }
+            match c {
+                '/' if chars.peek() == Some(&'/') => break,
+                '"' => {
+                    in_str = true;
+                    text.push('"');
+                }
+                '[' => {
+                    depth += 1;
+                    opened = true;
+                    text.push(c);
+                }
+                ']' => {
+                    depth -= 1;
+                    text.push(c);
+                }
+                c if c.is_whitespace() => {}
+                c => text.push(c),
+            }
+        }
+        if opened && depth <= 0 {
+            return Some(Attr {
+                text,
+                last: j,
+                closed: true,
+            });
+        }
+        j += 1;
     }
-    let squeezed: String = code.chars().filter(|c| !c.is_whitespace()).collect();
-    let names_test = squeezed.split("#[").skip(1).any(|attr| {
-        let path = attr.split(['(', ')', ']', '=']).next().unwrap_or("");
-        path.rsplit("::").next().unwrap_or("").contains("test")
-    });
-    names_test.then_some(false)
+    Some(Attr {
+        text,
+        last: (j - 1).min(lines.len() - 1),
+        closed: false,
+    })
+}
+
+/// Classify the attribute starting at `lines[i]` for the census, and
+/// return the index of its last line with the verdict:
+/// - `Some(true)`: the one supported test attribute, `#[test]` alone
+///   on its line, optionally followed by a `//` comment;
+/// - `Some(false)`: refused, rather than skipped: any other attribute
+///   with an identifier containing `test` outside string literals,
+///   such as `#[test] fn f() {}`, `#[ignore] #[test]`, `# [test]`,
+///   `#[tokio::test]`, `#[cfg_attr(unix, test)]`, `#[cfg(test)]` or a
+///   multiline `#[` / `test` / `]`; and any attribute whose brackets do
+///   not close within 20 lines;
+/// - `None`: not an attribute, or one without a `test` identifier.
+fn test_attribute(lines: &[&str], i: usize) -> (Option<bool>, usize) {
+    let Some(a) = read_attribute(lines, i) else {
+        return (None, i);
+    };
+    let exact = lines[i].trim().split("//").next().unwrap_or("").trim_end() == "#[test]";
+    if exact && a.closed && a.last == i {
+        return (Some(true), i);
+    }
+    let names_test = a
+        .text
+        .split(|c: char| !(c.is_alphanumeric() || c == '_'))
+        .any(|w| w.contains("test"));
+    if names_test || !a.closed {
+        (Some(false), a.last)
+    } else {
+        (None, a.last)
+    }
 }
 
 /// The bound census (I1-H H2d): every `#[test]` fn in `src` must
@@ -1493,7 +1669,8 @@ fn census_violations(src: &str, file: &str, exempt: &[&str]) -> Vec<String> {
     let mut seen = BTreeSet::new();
     let mut i = 0;
     while i < lines.len() {
-        match test_attribute(lines[i]) {
+        let (verdict, last) = test_attribute(&lines, i);
+        match verdict {
             Some(true) => {}
             Some(false) => {
                 bad.push(format!(
@@ -1501,11 +1678,11 @@ fn census_violations(src: &str, file: &str, exempt: &[&str]) -> Vec<String> {
                     i + 1,
                     lines[i].trim()
                 ));
-                i += 1;
+                i = last + 1;
                 continue;
             }
             None => {
-                i += 1;
+                i = last + 1;
                 continue;
             }
         }
@@ -1570,6 +1747,15 @@ pub fn bound_census_witness() {
         v.is_empty(),
         "an armed `#[test] // comment` test must be accepted: {v:?}"
     );
+    let strings = format!(
+        "#[ignore = \"a test reason\"]\n#[test] // regression case\n{}",
+        body("let _bound = deadline::TestBound::arm();")
+    );
+    let v = census_violations(&strings, "witness.rs", &[]);
+    assert!(
+        v.is_empty(),
+        "`test` inside a string literal must not be refused: {v:?}"
+    );
     for form in [
         "#[test] fn t() {}",
         "#[test] #[ignore]",
@@ -1577,6 +1763,10 @@ pub fn bound_census_witness() {
         "# [test]",
         "#[tokio::test]",
         "#[test_case(1)]",
+        "#[cfg_attr(target_os = \"linux\", test)]",
+        "#[cfg_attr(unix, tokio::test)]",
+        "#[\ntest\n]",
+        "#\n[test]",
     ] {
         let src = format!(
             "{form}\n{}",
