@@ -3281,24 +3281,26 @@ impl RemoteExecutable {
         let t = self.translation.as_ref().expect("prepared");
         let mut state = regs_to_state(regs);
         state.rip = src_pc;
-        Fault {
-            also_pending: Vec::new(),
-            kind: if matches!(class, StopClass::Async | StopClass::KernelAsync) {
+        let (kind, instructions) = crate::recovery::kind_and_retired(
+            t,
+            self.profile,
+            if matches!(class, StopClass::Async | StopClass::KernelAsync) {
                 crate::recovery::FaultKind::AsyncSignal
             } else {
                 crate::recovery::FaultKind::GuestFault
             },
+            data.instruction_count,
+            src_pc,
+        );
+        Fault {
+            also_pending: Vec::new(),
+            kind,
             src_pc,
             addr,
             signum: sig,
             state,
             branches: data.branch_count,
-            instructions: crate::recovery::instructions_retired_at(
-                t,
-                self.profile,
-                data.instruction_count,
-                src_pc,
-            ),
+            instructions,
         }
     }
 
@@ -3740,7 +3742,9 @@ impl RemoteExecutable {
     /// owns every effect of the transition: the delivery, the new
     /// frames, the exit count, the resumed poll budget and both totals.
     /// Without an eligible action (or a resume entry) it returns the
-    /// recovered `Fault` and changes nothing. After sigreturn the exit
+    /// recovered `Fault` and changes nothing. It does the same, as an
+    /// `ExecutorError`, when the block-head instruction credit is
+    /// missing (`recovery::kind_and_retired`). After sigreturn the exit
     /// stub re-exits, and the whole step runs again against the
     /// handler's registers, memory and registry. The raw poll budget
     /// here is at least 1 (the block body was entered past a non-zero
@@ -3761,24 +3765,26 @@ impl RemoteExecutable {
             .into());
         };
         let src = data.exit_src;
+        let (kind, instructions) = crate::recovery::kind_and_retired(
+            t,
+            self.profile,
+            crate::recovery::FaultKind::AsyncSignal,
+            data.instruction_count,
+            src,
+        );
         let recovered = crate::recovery::RecoveredStop {
-            kind: crate::recovery::FaultKind::AsyncSignal,
+            kind,
             src_pc: src,
             addr,
             signum: sig,
             state: GuestState { rip: src, ..*state },
             branches: data.branch_count,
-            instructions: crate::recovery::instructions_retired_at(
-                t,
-                self.profile,
-                data.instruction_count,
-                src,
-            ),
+            instructions,
         };
         let resume = src_resume_entry(t, src);
         let action = self
             .delivery_action(sig, active, false)
-            .filter(|_| resume.is_some());
+            .filter(|_| resume.is_some() && kind == crate::recovery::FaultKind::AsyncSignal);
         let Some(action) = action else {
             return Err(RunError::Fault(Box::new(Self::fault_from(recovered))));
         };
@@ -4135,20 +4141,22 @@ impl RemoteExecutable {
                     let mut buf = [0u8; 8];
                     if read_mem(self.guard.pid, state.rsp, &mut buf).is_err() {
                         state.rip = data.exit_src;
+                        let (kind, instructions) = crate::recovery::kind_and_retired(
+                            t,
+                            self.profile,
+                            crate::recovery::FaultKind::GuestFault,
+                            data.instruction_count,
+                            data.exit_src,
+                        );
                         return Err(RunError::Fault(Box::new(Fault {
                             also_pending: Vec::new(),
-                            kind: crate::recovery::FaultKind::GuestFault,
+                            kind,
                             src_pc: data.exit_src,
                             addr: state.rsp,
                             signum: libc::SIGSEGV,
                             state,
                             branches: data.branch_count,
-                            instructions: crate::recovery::instructions_retired_at(
-                                t,
-                                self.profile,
-                                data.instruction_count,
-                                data.exit_src,
-                            ),
+                            instructions,
                         })));
                     }
                     let target = u64::from_ne_bytes(buf);
