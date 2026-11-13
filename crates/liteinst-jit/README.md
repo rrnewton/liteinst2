@@ -40,7 +40,12 @@ P1a envelope, honestly bounded:
   stop that fails the guard, and the sigreturn interception's
   own entry stop — still stops as a recovered outcome or
   refuses by name, and no asynchronous-transparency claim is
-  made beyond those tests.
+  made beyond those tests. A signal with a positive kernel
+  `si_code` outside the fault set (SIGALRM from `setitimer`,
+  SIGCHLD, an `F_SETSIG` signal) is never delivered there, even
+  to an installed handler: the run stops with a recovered
+  `AsyncSignal` outcome where the state is exact, and refuses by
+  name elsewhere (a capability limit; P1B-DESIGN §8, H3k).
 - Counts are software counts validated by the `o1` ptrace single-step
   oracle in the integration tests, never PMU-equivalence claims.
 
