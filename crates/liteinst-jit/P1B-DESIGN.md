@@ -458,6 +458,25 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   codes such as `BUS_MCEERR_AO`, and with a nonpositive code (a
   `tgkill`-sent SIGSEGV, `SI_TKILL`) it stays asynchronous
   (`Async`), as before.
+  **Capability limit.** A guest that installs a handler for such
+  a signal (a SIGALRM handler with `setitimer`, a SIGCHLD
+  handler, an `F_SETSIG` handler) gets that stop or refusal,
+  never its handler. That is the H3k rule, not a regression.
+  Delivering the class in a later stage would need, as the
+  delivery stages for nonpositive codes had:
+  1. provenance that stays unforgeable: a positive code is
+     kernel-only here because the pass-through gate admits
+     self-queueing only with `SI_QUEUE`;
+  2. a frame that carries the kernel's `siginfo` unchanged,
+     including its code-specific fields (`si_pid` and
+     `si_status` for `CLD_*`, `si_band` and `si_fd` for
+     `POLL_*`);
+  3. native comparisons per source (a real timer, a real child,
+     real I/O), including standard-signal coalescing and the
+     `F_SETSIG` queue;
+  4. a delivery arm with its own tests and mutants at every
+     arrival site: generated code, W3, W3s, the I1-G2 restart
+     exit and the frame-setup stub.
 - **W2 is closed by evidence, not code** (H1). The scope named
   W2 as "generated PCs with no pcmap entry (the entry-loader
   bridge class)", but the remote substrate has no such PCs. The

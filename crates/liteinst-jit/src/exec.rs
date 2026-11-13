@@ -872,11 +872,13 @@ impl Executable {
         })
     }
 
-    /// Retired-instruction total when execution stopped *before*
+    /// `kind` and the retired-instruction total for a stop before
     /// the instruction at `src_pc`, correcting the block-head
-    /// pre-credit under the instruction-counting profile.
-    fn retired_instructions_at(&self, counted: u64, src_pc: u64) -> u64 {
-        crate::recovery::instructions_retired_at(&self.translation, self.profile, counted, src_pc)
+    /// pre-credit under the instruction-counting profile; a missing
+    /// credit gives `ExecutorError` with the raw count
+    /// ([`crate::recovery::kind_and_retired`]).
+    fn kind_and_retired_at(&self, kind: FaultKind, counted: u64, src_pc: u64) -> (FaultKind, u64) {
+        crate::recovery::kind_and_retired(&self.translation, self.profile, kind, counted, src_pc)
     }
 
     pub fn translation(&self) -> &Translation {
@@ -1205,16 +1207,20 @@ impl Executable {
                         // The return did not retire: exclude its
                         // block-head pre-credit (F3).
                         state.rip = data.exit_src;
+                        let (kind, instructions) = self.kind_and_retired_at(
+                            FaultKind::GuestFault,
+                            data.instruction_count,
+                            data.exit_src,
+                        );
                         return Err(RunError::Fault(Box::new(Fault {
                             also_pending: Vec::new(),
-                            kind: FaultKind::GuestFault,
+                            kind,
                             src_pc: data.exit_src,
                             addr: state.rsp,
                             signum: libc::SIGSEGV,
                             state,
                             branches: data.branch_count,
-                            instructions: self
-                                .retired_instructions_at(data.instruction_count, data.exit_src),
+                            instructions,
                         })));
                     };
                     state.rsp = state.rsp.wrapping_add(8).wrapping_add(data.exit_next);

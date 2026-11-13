@@ -16,6 +16,25 @@ restoration to return green on a clean tree). Script exit code:
 
 Patch SHA-256 are printed by the script at every run and were re-verified at this head (mutants 01 and 04 regenerated for the recovery-core move; same one-line defects).
 
+**Re-executed 2026-11-13** for the checked block-credit subtraction in
+`instructions_retired_at` (commit `217aaf7b`). Mutant 04 no longer
+applied, because the missing-credit decision now sits above its
+context, so it was regenerated with the same two inserted lines.
+
+The five mutants were run against `bedcc8aa` (`217aaf7b` plus docs),
+each on its own `git archive` copy with its own target directory,
+under this script's criteria: the full debug suite, the named
+assertion text, `test result: FAILED`, and a compile error counts as
+no kill. The in-place script itself was not used. All five were
+KILLED by their expected assertions. The first failing tests:
+- 01: `branch_stub_credit_timing_and_spill_recovery`;
+- 02: `jit_matches_o1_oracle_on_corpus_v1`, `remote_compare_all`;
+- 03: `jit_matches_o1_oracle_on_corpus_v1`;
+- 04: `jit_matches_o1_oracle_on_corpus_v1`, `remote_compare_all`;
+- 05: `jit_matches_o1_oracle_on_corpus_v1`.
+
+Baseline and restored state: the head's debug suite, green.
+
 | Mutant | Defect simulated | Killing evidence (mutant run) | Restored |
 |---|---|---|---|
 | `01-pending-credit-loss` | Recovery drops the pending branch credit at stub boundaries before the credit store | `branch_stub_credit_timing_and_spill_recovery` FAILED: `retired branch credited exactly once` | green |

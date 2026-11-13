@@ -1,8 +1,8 @@
 diff --git a/crates/liteinst-jit/src/recovery.rs b/crates/liteinst-jit/src/recovery.rs
 --- a/crates/liteinst-jit/src/recovery.rs
 +++ b/crates/liteinst-jit/src/recovery.rs
-@@ -299,6 +299,8 @@
-         Recovery::Fallthrough { next } => next,
+@@ -356,6 +356,8 @@
+         kind
      };
      state.rip = src_pc;
 +    // MUTANT 04: report the raw generated PC.
