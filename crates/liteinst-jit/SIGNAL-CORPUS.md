@@ -441,8 +441,11 @@ stop (refused by name). The first is closed in H3k; see below.
   elsewhere. Before H3k the reported kind depended on where it
   landed (`GuestFault`, `ExecutorError`, or a provenance refusal).
   Nonpositive kernel codes (`SI_TIMER`, `SI_SIGIO`) keep the
-  existing path, and a fault-set number keeps the fault path
-  whatever its code. A test seam rewrites one stop's `si_code`
+  existing path. A fault-set number with a positive code keeps
+  the fault path, including asynchronous positive codes such as
+  `BUS_MCEERR_AO`; with a nonpositive code (a `tgkill`-sent
+  SIGSEGV, `SI_TKILL`) it stays asynchronous (`Async`), as
+  before. A test seam rewrites one stop's `si_code`
   (G1-G7, each checked against a reference run of the same fixture
   and arrival with an ineligible nonpositive-code signal), and
   R1-R5 take real kernel signals with their own codes. Rows:

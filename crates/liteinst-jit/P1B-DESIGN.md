@@ -453,8 +453,11 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   provenance refusal). Non-claims: no delivery or transparency
   for the class; nonpositive kernel codes (`SI_TIMER`,
   `SI_SIGIO`) keep the existing path, including delivery of an
-  admitted real-time number; a fault-set number keeps the fault
-  path whatever its code.
+  admitted real-time number; a fault-set number with a positive
+  code keeps the fault path, including asynchronous positive
+  codes such as `BUS_MCEERR_AO`, and with a nonpositive code (a
+  `tgkill`-sent SIGSEGV, `SI_TKILL`) it stays asynchronous
+  (`Async`), as before.
 - **W2 is closed by evidence, not code** (H1). The scope named
   W2 as "generated PCs with no pcmap entry (the entry-loader
   bridge class)", but the remote substrate has no such PCs. The
