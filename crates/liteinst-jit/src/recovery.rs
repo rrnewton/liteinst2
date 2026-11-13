@@ -449,7 +449,11 @@ mod tests {
                     spill_rax: 0,
                     spill_flags: 0,
                     branches: 0,
-                    instructions: 0,
+                    // A real stop carries at least its block's head
+                    // credit; below that, the count correction would
+                    // underflow (a debug-build panic). The kind does
+                    // not depend on the counts.
+                    instructions: 1_000,
                     exit_kind: 0,
                     exit_src: 0x10_0000,
                 },
