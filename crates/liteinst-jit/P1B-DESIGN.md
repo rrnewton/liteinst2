@@ -388,8 +388,8 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   (they recover to a block start), pinned on the PC map. Left
   open by H2b: an asynchronous stop before a stepped syscall's
   entry (the W3 sibling, closed in H2d: W3s below), and
-  kernel-generated signals during the original step (still
-  open). Liveness non-claim: W3 retries the `cpuid`
+  kernel-generated signals during the original step (closed in
+  H3k, below). Liveness non-claim: W3 retries the `cpuid`
   where a native run progresses, if an asynchronous signal (a
   short-period timer, say) fires faster than the
   deliver-and-retry round trip; before H2b that case was refused
@@ -416,9 +416,10 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   memory and registry. A four-part guard (RIP, every GPR and
   RFLAGS exactly against the recorded pre-step copy, and
   `orig_rax` still -1) refuses by name any other asynchronous
-  entry-phase stop; a kernel-generated signal at entry
-  (positive `si_code`) still stops as a recovered fault, as
-  before. On a redirected (staged) step the scratch is restored
+  entry-phase stop; a fault-set signal at entry (positive
+  `si_code`) still stops as a recovered fault, as before (since
+  H3k, a positive code on any other number stops as
+  `AsyncSignal` under the same guard). On a redirected (staged) step the scratch is restored
   before anything is delivered, a failed restore refuses, and
   the frame holds the guest's own argument register. W3 and
   W3s share one delivery path. The retry is bounded per frame
@@ -434,6 +435,29 @@ through I1-G2 on `main` `ca1152214e221b437caa11fb48c3e36d5069da21`:
   interception's own entry stop stays refused by name. The
   same PR sets `PTRACE_O_EXITKILL` for the remote substrate's
   and both O1 oracles' traced children.
+- **H3k** (positive-code signals outside the fault set): a
+  signal whose `si_code` is positive and whose number is outside
+  the fault set (SIGSEGV, SIGBUS, SIGILL, SIGFPE, SIGTRAP,
+  SIGSYS), such as SIGALRM from `setitimer`, SIGCHLD or an
+  `F_SETSIG` signal, takes the path of a nonpositive-code signal
+  with no eligible handler at every arrival site and is never
+  delivered. Where the state is exact it is a recovered
+  `AsyncSignal` stop: in generated code, before an original step
+  or a stepped call's entry (under the W3 and W3s guards, reused
+  as they are), and at the frame-setup stub (at the first
+  handler's entry, nothing injected). At the I1-G2 restart exit
+  it is the existing "not eligible" refusal; elsewhere the
+  existing named refusals stand. §1's rule now holds for this
+  class too: the reported kind no longer depends on where the
+  signal landed (before H3k: `GuestFault`, `ExecutorError` or a
+  provenance refusal). Non-claims: no delivery or transparency
+  for the class; nonpositive kernel codes (`SI_TIMER`,
+  `SI_SIGIO`) keep the existing path, including delivery of an
+  admitted real-time number; a fault-set number with a positive
+  code keeps the fault path, including asynchronous positive
+  codes such as `BUS_MCEERR_AO`, and with a nonpositive code (a
+  `tgkill`-sent SIGSEGV, `SI_TKILL`) it stays asynchronous
+  (`Async`), as before.
 - **W2 is closed by evidence, not code** (H1). The scope named
   W2 as "generated PCs with no pcmap entry (the entry-loader
   bridge class)", but the remote substrate has no such PCs. The

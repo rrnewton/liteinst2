@@ -435,6 +435,8 @@ struct Knobs {
     fail_scratch_restore: bool,
     /// Seam (I1-H H2d): `(depth, [(enter-stop index, signal)])`.
     enter_stop_signals: Option<(usize, &'static [(usize, i32)])>,
+    /// Seam (H3k): rewrite one delivery stop's `si_code`, `(code, skip)`.
+    kgen: Option<(i32, u32)>,
 }
 
 /// Step plans for [`Knobs::step_plans`].
@@ -488,6 +490,7 @@ fn run_translated(gx: &Gx, k: Knobs) -> TArrival {
     if let Some((depth, signals)) = k.enter_stop_signals {
         remote.set_enter_stop_signals_for_test(depth, signals);
     }
+    remote.set_kgen_seam_for_test(k.kgen);
     let mut s = remote.initial_state();
     s.rip = info.base + gx.main_off;
     s.rbp = info.base + gx.handler_off;
@@ -4737,6 +4740,10 @@ fn deadline_helpers_arm_their_child() {
         "remote_named_with_blocked",
         deadline::remote_named_with_blocked(REMOTE_CHILD, "sum_loop", &[USR2]),
     );
+    check_remote(
+        "remote_bytes_with_args",
+        deadline::remote_bytes_with_args(REMOTE_CHILD, &gx.bytes, &[USR2], &[]),
+    );
     // The O1 runners return no pid: check the bound and that a
     // child was armed.
     let _ = deadline::o1(o1_child, "sum_loop", |_, _| {});
@@ -6464,5 +6471,431 @@ fn corpus_hash_known_answers_and_table() {
     // reviewed edit here too. (Each test's own `check` proves its
     // IDs are present and current.)
     let table = corpus::table();
-    assert_eq!(table.len(), 94, "pinned fixtures");
+    assert_eq!(table.len(), 100, "pinned fixtures");
+}
+
+// ---------------------------------------------------------------
+// H3k: a positive-code signal outside the fault set (SIGALRM from
+// `setitimer`, SIGCHLD, an `F_SETSIG` signal) keeps its asynchronous
+// provenance at every arrival site and is never delivered. The test
+// seam rewrites the `si_code` of one ordinary signal-delivery stop to
+// `POLL_IN`; each test then checks the stop against a reference run
+// of the same fixture and arrival with an ineligible nonpositive-code
+// signal (SIGUSR2 at `SIG_DFL`, sent by the same seam, unrewritten),
+// whose outcome the rule names. The real-kernel sources are in the
+// rt binary.
+// ---------------------------------------------------------------
+
+/// The `si_code` the rewrite seam writes (`POLL_IN`).
+const POLL_IN: i32 = 1;
+/// The named assertions of these tests (frozen messages).
+const A_SEAM: &str = "seam rewrote si_code once";
+const A_KIND: &str = "positive-code signal outside the fault set stops as AsyncSignal";
+const A_PC: &str = "stop is at the source PC";
+const A_PTR: &str = "the stop holds the guest's own pointer";
+const A_REF: &str = "equal to the nonpositive no-handler stop at the same arrival";
+const A_NODELIV: &str = "never delivered";
+const A_REFUSE: &str = "guard failure refuses by name";
+
+/// A_SEAM: the seam made exactly one rewrite, and the stop it
+/// rewrote was seen with `POLL_IN`.
+fn check_seam(t: &TArrival, label: &str) {
+    assert!(
+        t.report.kgen_rewrites == 1
+            && t.report
+                .siginfo_seen
+                .iter()
+                .filter(|s| s.code == POLL_IN)
+                .count()
+                == 1,
+        "{label}: {A_SEAM}: rewrites {}, seen {:?}, outcome {:?}",
+        t.report.kgen_rewrites,
+        t.report.siginfo_seen,
+        t.out.as_ref().err()
+    );
+}
+
+/// A_KIND: the run stopped with `RunError::Fault` of kind
+/// `AsyncSignal`, for signal `sig`.
+fn kgen_fault<'t>(t: &'t TArrival, sig: i32, label: &str) -> &'t liteinst_jit::exec::Fault {
+    match &t.out {
+        Err(RunError::Fault(f)) if f.kind == FaultKind::AsyncSignal && f.signum == sig => f,
+        other => panic!("{label}: {A_KIND}: got {other:?}"),
+    }
+}
+
+/// A_PC: `src_pc` and `state.rip` are `want`.
+fn check_pc(f: &liteinst_jit::exec::Fault, want: u64, label: &str) {
+    assert_eq!((f.src_pc, f.state.rip), (want, want), "{label}: {A_PC}");
+}
+
+/// A_NODELIV: nothing delivered, no frame, the handler never ran.
+fn check_no_delivery(t: &TArrival, label: &str) {
+    assert!(
+        t.report.delivery_log.is_empty()
+            && t.report.deliveries.is_empty()
+            && word(&t.data, COUNT as usize) == 0,
+        "{label}: {A_NODELIV}: log {:?}, deliveries {:?}, count {}",
+        t.report.delivery_log,
+        t.report.deliveries,
+        word(&t.data, COUNT as usize)
+    );
+}
+
+/// A_REF: run the reference leg (`k` with SIGUSR2 at `SIG_DFL`, sent
+/// by the same seam, and the rewrite seam unarmed; `reference`
+/// applies that change) and compare. Identity fields only are
+/// normalised, with the existing helpers: known-region addresses
+/// (`norm_gregs`, generated addresses stay raw), and the own pid in
+/// RDI (`norm_gregs_pid`). The signal is checked per leg. The arrival
+/// comes from this test process in both legs, so the sender word in
+/// `addr` compares raw. Everything else is exact, RFLAGS included.
+fn check_reference(
+    gx: &Gx,
+    t: &TArrival,
+    f: &liteinst_jit::exec::Fault,
+    r: &TArrival,
+    label: &str,
+) {
+    let clen = code_len(gx);
+    let g = match &r.out {
+        Err(RunError::Fault(g)) => g,
+        other => panic!("{label}: {A_REF}: reference outcome {other:?}"),
+    };
+    assert!(
+        r.report.kgen_rewrites == 0
+            && r.report.siginfo_seen.len() == 1
+            && r.report.siginfo_seen[0].code == 0
+            && r.report.siginfo_seen[0].signo == USR2,
+        "{label}: {A_REF}: reference preconditions: rewrites {}, seen {:?}",
+        r.report.kgen_rewrites,
+        r.report.siginfo_seen
+    );
+    assert_eq!(
+        (f.signum, g.signum),
+        (USR1, USR2),
+        "{label}: {A_REF}: signal per leg"
+    );
+    let key = |x: &liteinst_jit::exec::Fault, a: &TArrival| {
+        (
+            x.kind,
+            norm(x.src_pc, &a.info, clen),
+            norm_gregs_pid(&state_gregs(&x.state), &a.info, clen, a.pid),
+            x.branches,
+            x.instructions,
+            x.addr,
+            x.also_pending.clone(),
+        )
+    };
+    assert_eq!(key(f, t), key(g, r), "{label}: {A_REF}");
+    check_no_delivery(r, &format!("{label} reference"));
+}
+
+/// One tested leg and its reference: `k` runs with SIGUSR1 and the
+/// rewrite seam armed; the reference is `k` with SIGUSR2, unarmed.
+fn kgen_leg(gx: &Gx, k: Knobs) -> TArrival {
+    run_translated(
+        gx,
+        Knobs {
+            kgen: Some((POLL_IN, 0)),
+            ..k
+        },
+    )
+}
+
+/// G1: arrival at a mid-block copied PC of the Mixed fixture (the first
+/// copied PC-map entry, in map order, whose source PC is not a block
+/// start and which runs after the SIGUSR1 install, at its first such
+/// hit), eligible SIGUSR1 handler, code rewritten to `POLL_IN`.
+#[test]
+fn kgen_mid_block_copied_stops_async() {
+    let _g = lock();
+    let label = "G1";
+    let gx = build(Body::Mixed);
+    let (map, base) = pcmap_of(&gx);
+    let quiet_run = run_translated(&gx, Knobs::default());
+    let starts: Vec<u64> = quiet_run
+        .block_starts
+        .iter()
+        .map(|s| s - quiet_run.info.base)
+        .collect();
+    let (idx, hit) = map
+        .iter()
+        .enumerate()
+        .filter(|(_, e)| e.recovery == Recovery::Copied && !starts.contains(&(e.src_pc - base)))
+        .find_map(|(idx, e)| {
+            let hits = entry_hits(&gx, None, idx, map.len(), "G1 survey");
+            let r = post_install_hits(&gx, e, base, hits.len() as u64);
+            (!r.is_empty()).then(|| (idx, *r.start()))
+        })
+        .expect("G1: a mid-block copied entry runs after the install");
+    let src_off = map[idx].src_pc - base;
+    let k = |sig| Knobs {
+        arrival: Some((idx, hit)),
+        arrival_sig: Some(sig),
+        ..Knobs::default()
+    };
+    let t = kgen_leg(&gx, k(USR1));
+    check_seam(&t, label);
+    let f = kgen_fault(&t, USR1, label);
+    check_pc(f, t.info.base + src_off, label);
+    let r = run_translated(&gx, k(USR2));
+    check_reference(&gx, &t, f, &r, label);
+    check_no_delivery(&t, label);
+}
+
+/// G2: arrival at a post-install `BranchStub` of the poll-crossing loop
+/// fixture, at poll budget `LOOP_POLL_BUDGET`. The target is chosen
+/// before any run that carries an arrival signal or a rewrite, by a
+/// fixed rule that never looks at an outcome: the first `(entry, hit)`
+/// of any `BranchStub` class in the survey's population order (PC-map
+/// index, then hit), as the loop sweep's per-class top-up picks. The
+/// survey's counting runs carry no arrival signal and leave the seam
+/// unarmed; only `BranchStub` entries are surveyed, in map order,
+/// stopping at the first with a post-install hit, which is the same
+/// selection. The choice is written to stderr before the first
+/// arrival. No other class substitutes: an unreachable target fails
+/// A_SEAM.
+#[test]
+fn kgen_at_branch_stub_stops_async() {
+    let _g = lock();
+    let label = "G2";
+    let gx = build(Body::Loop(120));
+    let budget = Some(LOOP_POLL_BUDGET);
+    let (map, base) = pcmap_of(&gx);
+    let selected = map
+        .iter()
+        .enumerate()
+        .filter(|(_, e)| matches!(e.recovery, Recovery::BranchStub { .. }))
+        .find_map(|(idx, e)| {
+            let hits = entry_hits(&gx, budget, idx, map.len(), "G2 survey");
+            let r = post_install_hits(&gx, e, base, hits.len() as u64);
+            (!r.is_empty()).then(|| (idx, *r.start()))
+        });
+    let Some((idx, hit)) = selected else {
+        panic!("{label}: {A_SEAM}: no BranchStub entry runs after the install");
+    };
+    let e = map[idx];
+    let Recovery::BranchStub { successor, .. } = e.recovery else {
+        unreachable!("selected by class");
+    };
+    eprintln!(
+        "G2 target: fixture \"H1 sweep loop 120\" sha256 {}, class {}, PC-map index {idx}, \
+         generated offset {:#x} from the first PC-map entry, source offset {:#x}, hit {hit}, \
+         poll budget {LOOP_POLL_BUDGET}",
+        corpus::hex(&corpus::sha256(&gx.bytes)),
+        class_of(&e),
+        e.gen_start - map[0].gen_start,
+        e.src_pc - base,
+    );
+    let k = |sig| Knobs {
+        arrival: Some((idx, hit)),
+        arrival_sig: Some(sig),
+        poll_budget: budget,
+        ..Knobs::default()
+    };
+    let t = kgen_leg(&gx, k(USR1));
+    check_seam(&t, label);
+    let at = t
+        .target
+        .map(|(_, te)| (class_of(&te), te.src_pc - t.info.base));
+    assert!(
+        t.report.sent && t.report.hits == hit && at == Some((class_of(&e), e.src_pc - base)),
+        "{label}: {A_SEAM}: at the recorded target: sent {}, hits {}, target {at:?}",
+        t.report.sent,
+        t.report.hits
+    );
+    let f = kgen_fault(&t, USR1, label);
+    check_pc(f, t.info.base + (successor - base), label);
+    let r = run_translated(&gx, k(USR2));
+    check_reference(&gx, &t, f, &r, label);
+    check_no_delivery(&t, label);
+}
+
+/// G3: arrival in the `AllSaved` common-exit stage at the Mixed
+/// fixture's `write` (SYSCALL) exit, hit 3 (see W1): the stop
+/// recovers to the `write`'s source PC, the terminator not yet run.
+/// Not a W1 delivery: the signal is never delivered.
+#[test]
+fn kgen_in_common_exit_stops_async_not_w1() {
+    let _g = lock();
+    let label = "G3";
+    let gx = build(Body::Mixed);
+    let (map, _) = pcmap_of(&gx);
+    let idx = map
+        .iter()
+        .position(|e| {
+            e.recovery
+                == Recovery::CommonExit {
+                    stage: CommonStage::AllSaved,
+                }
+        })
+        .expect("AllSaved common-exit entry");
+    let write_off = gx.exit_offs.expect("Mixed exits")[1];
+    let k = |sig| Knobs {
+        arrival: Some((idx, 3)),
+        arrival_sig: Some(sig),
+        ..Knobs::default()
+    };
+    let t = kgen_leg(&gx, k(USR1));
+    check_seam(&t, label);
+    let f = kgen_fault(&t, USR1, label);
+    check_pc(f, t.info.base + write_off, label);
+    let r = run_translated(&gx, k(USR2));
+    check_reference(&gx, &t, f, &r, label);
+    check_no_delivery(&t, label);
+}
+
+/// G4: the signal arrives before the original `cpuid` step (the
+/// pre-step seam) and the W3 guard holds: an asynchronous fault at the
+/// `cpuid`, whose state is the pre-step copy. Not a W3 delivery.
+#[test]
+fn kgen_before_original_cpuid_stops_async_not_w3() {
+    let _g = lock();
+    let label = "G4";
+    let gx = build(Body::Mixed);
+    let k = |sig| Knobs {
+        pre_original_step_signal: Some(sig),
+        ..Knobs::default()
+    };
+    let t = kgen_leg(&gx, k(USR1));
+    check_seam(&t, label);
+    let f = kgen_fault(&t, USR1, label);
+    check_pc(f, t.info.base + gx.cpuid_off.unwrap(), label);
+    let r = run_translated(&gx, k(USR2));
+    check_reference(&gx, &t, f, &r, label);
+    check_no_delivery(&t, label);
+}
+
+/// G4b: the same stop with the guard's RFLAGS comparand perturbed (the
+/// existing W3 seam): the guard's named refusal, nothing injected.
+#[test]
+fn kgen_original_step_guard_failure_refuses_by_name() {
+    let _g = lock();
+    let label = "G4b";
+    let gx = build(Body::Mixed);
+    let t = kgen_leg(
+        &gx,
+        Knobs {
+            pre_original_step_signal: Some(USR1),
+            w3_perturb: Some(W3Perturb::Rflags),
+            ..Knobs::default()
+        },
+    );
+    check_seam(&t, label);
+    assert!(
+        t.out.as_ref().err()
+            == Some(&RunError::Refuse(liteinst_jit::Refuse::RemoteSubstrate {
+                operation: "original step: signal stop not at the pre-step state",
+                errno: 0,
+            }))
+            && t.report.delivery_log.is_empty()
+            && word(&t.data, COUNT as usize) == 0,
+        "{label}: {A_REFUSE}: {:?}",
+        t.out
+    );
+}
+
+/// G5 / G5c's plan: one signal before FX2's `getpid` (#1).
+const FX2_PLAN_GETPID: [(StepKind, usize, i32, &[u32]); 1] =
+    [(StepKind::Syscall, 0, USR1, &[0, 1])];
+const FX2_PLAN_GETPID_USR2: [(StepKind, usize, i32, &[u32]); 1] =
+    [(StepKind::Syscall, 0, USR2, &[0, 1])];
+const FX3_PLAN_USR2: [(StepKind, usize, i32, &[u32]); 1] = [(StepKind::Syscall, 0, USR2, &[0, 1])];
+
+/// G5: the signal arrives before FX2's stepped `getpid` enters the
+/// kernel and the W3s guard holds: an asynchronous fault at the
+/// `syscall`, RAX the call number (the call not made). Not a W3s
+/// delivery.
+#[test]
+fn kgen_before_syscall_entry_stops_async_not_w3s() {
+    let _g = lock();
+    let label = "G5";
+    let pipe = Pipe::new();
+    let fx = fx2(pipe.write_fd(), 0, label);
+    let k = |plans: Plans| Knobs {
+        step_plans: plans,
+        ..Knobs::default()
+    };
+    let t = kgen_leg(&fx.gx, k(&FX2_PLAN_GETPID));
+    check_seam(&t, label);
+    let f = kgen_fault(&t, USR1, label);
+    check_pc(f, t.info.base + fx.getpid_off, label);
+    assert_eq!(f.state.rax, libc::SYS_getpid as u64, "{label}: {A_PC}: RAX");
+    let r = run_translated(&fx.gx, k(&FX2_PLAN_GETPID_USR2));
+    check_reference(&fx.gx, &t, f, &r, label);
+    check_no_delivery(&t, label);
+    assert_eq!(pipe.drain(), Vec::<u8>::new(), "{label}: nothing written");
+}
+
+/// G5b: the signal arrives before FX3's staged `rt_sigaction` (#1)
+/// enters, with the scratch pre-filled with a canary: the stop holds
+/// the guest's own act pointer in RSI (not the staged copy's), and
+/// every scratch readback after the restore is all canary.
+#[test]
+fn kgen_before_staged_syscall_entry_keeps_guest_pointer() {
+    let _g = lock();
+    let label = "G5b";
+    const CANARY: u8 = 0xa5;
+    let fx = fx3(0, label);
+    let k = |plans: Plans| Knobs {
+        step_plans: plans,
+        scratch_canary: Some(CANARY),
+        ..Knobs::default()
+    };
+    let t = kgen_leg(&fx.gx, k(&FX3_PLAN));
+    check_seam(&t, label);
+    let f = kgen_fault(&t, USR1, label);
+    check_pc(f, t.info.base + fx.s1_off, label);
+    assert_eq!(
+        f.state.rax,
+        libc::SYS_rt_sigaction as u64,
+        "{label}: {A_PC}: RAX"
+    );
+    assert!(
+        f.state.rsi == t.info.dst + ACT2 as u64
+            && !t.report.scratch_after_cleanup.is_empty()
+            && t.report
+                .scratch_after_cleanup
+                .iter()
+                .all(|b| b.iter().all(|&c| c == CANARY)),
+        "{label}: {A_PTR}: rsi {:#x}, readbacks {:?}",
+        f.state.rsi,
+        t.report.scratch_after_cleanup
+    );
+    let r = run_translated(&fx.gx, k(&FX3_PLAN_USR2));
+    check_reference(&fx.gx, &t, f, &r, label);
+    check_no_delivery(&t, label);
+}
+
+/// G5c: the G5 stop with the guard's expected `orig_rax` perturbed
+/// (the existing W3s seam): the guard's named refusal, nothing
+/// injected.
+#[test]
+fn kgen_entry_guard_failure_refuses_by_name() {
+    let _g = lock();
+    let label = "G5c";
+    let pipe = Pipe::new();
+    let fx = fx2(pipe.write_fd(), 0, label);
+    let t = kgen_leg(
+        &fx.gx,
+        Knobs {
+            step_plans: &FX2_PLAN_GETPID,
+            w3_perturb: Some(W3Perturb::OrigRax),
+            ..Knobs::default()
+        },
+    );
+    check_seam(&t, label);
+    assert!(
+        t.out.as_ref().err()
+            == Some(&RunError::Refuse(liteinst_jit::Refuse::RemoteSubstrate {
+                operation: W3S_GUARD_REFUSAL,
+                errno: 0,
+            }))
+            && t.report.delivery_log.is_empty()
+            && word(&t.data, COUNT as usize) == 0,
+        "{label}: {A_REFUSE}: {:?}",
+        t.out
+    );
+    assert_eq!(pipe.drain(), Vec::<u8>::new(), "{label}: nothing written");
 }
