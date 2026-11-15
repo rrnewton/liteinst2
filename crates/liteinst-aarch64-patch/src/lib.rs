@@ -56,6 +56,19 @@ pub enum PatchError {
     AlreadyPublished,
     /// Address/length arithmetic overflowed.
     RangeOverflow,
+    /// [`Island::reserve_at`] did not place the RX alias at exactly
+    /// `hint`, and created nothing that remains mapped. `mapped_at` is
+    /// `None` when the hint was zero or not page-aligned (refused before
+    /// any mapping), or the address the kernel chose instead (already
+    /// unmapped again), as a kernel without `MAP_FIXED_NOREPLACE`
+    /// (before 4.17) does. Never retried with `MAP_FIXED`. An occupied
+    /// hint on a newer kernel is `Os` with `EEXIST` instead.
+    IslandHintRefused {
+        /// The requested RX address.
+        hint: u64,
+        /// Where the kernel mapped it instead, if it mapped it at all.
+        mapped_at: Option<u64>,
+    },
     /// More words were offered than a reserved island can hold.
     CapacityExceeded {
         /// Words the island was reserved for.
@@ -188,6 +201,18 @@ impl core::fmt::Display for PatchError {
             Self::EmptyIsland => write!(f, "island must contain at least one word"),
             Self::AlreadyPublished => write!(f, "island is already published"),
             Self::RangeOverflow => write!(f, "address range overflow"),
+            Self::IslandHintRefused {
+                hint,
+                mapped_at: None,
+            } => write!(f, "island hint {hint:#x} is zero or not page-aligned"),
+            Self::IslandHintRefused {
+                hint,
+                mapped_at: Some(at),
+            } => write!(
+                f,
+                "island not placed at hint {hint:#x}: the kernel mapped it at {at:#x} \
+                 (no MAP_FIXED_NOREPLACE); unmapped and refused"
+            ),
             Self::CapacityExceeded {
                 capacity_words,
                 offered,
