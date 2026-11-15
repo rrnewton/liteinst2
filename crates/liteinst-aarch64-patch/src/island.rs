@@ -389,6 +389,28 @@ impl Island {
         self.len
     }
 
+    /// Address range of the RW alias, `[start, start + mapped_len())`, or
+    /// `None` when there is none (off target, where nothing is mapped).
+    ///
+    /// For custody accounting only: while the island lives, a writable
+    /// alias of executable words exists at this range, and a caller that
+    /// guards code pages must know it. It is read-only: it exposes the
+    /// addresses, never a way to write through the alias.
+    pub fn rw_range(&self) -> Option<core::ops::Range<u64>> {
+        #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+        {
+            if self.rw.is_null() {
+                return None;
+            }
+            let start = self.rw as u64;
+            Some(start..start + self.len as u64)
+        }
+        #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
+        {
+            None
+        }
+    }
+
     /// Number of instruction words written at build time.
     pub fn words(&self) -> usize {
         self.words
@@ -454,6 +476,28 @@ mod tests {
         }
         assert_eq!(island.read_rx_word(3), None);
         assert_eq!(Island::build(&[]).unwrap_err(), PatchError::EmptyIsland);
+    }
+
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    #[test]
+    fn rw_range_is_the_writable_alias_beside_rx() {
+        let words = [0xd400_0001, 0xd503_24df, 42];
+        let island = Island::build(&words).unwrap();
+        let rw = island
+            .rw_range()
+            .expect("an on-target island has an RW alias");
+        let len = island.mapped_len() as u64;
+        assert_eq!(rw.end - rw.start, len, "the RW alias spans the mapping");
+        let rx = island.entry_addr()..island.entry_addr() + len;
+        assert!(
+            rw.end <= rx.start || rx.end <= rw.start,
+            "RW {rw:x?} and RX {rx:x?} are two distinct aliases"
+        );
+        for (i, w) in words.iter().enumerate() {
+            // SAFETY: a read inside the island's own live RW mapping.
+            let through_rw = unsafe { (rw.start as *const u32).add(i).read_volatile() };
+            assert_eq!(through_rw, *w, "word {i} through the RW alias");
+        }
     }
 
     #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
@@ -737,5 +781,17 @@ mod tests {
             Island::reserve_at(2, 0x1000),
             Err(PatchError::Unsupported(_))
         ));
+    }
+
+    #[cfg(not(all(target_arch = "aarch64", target_os = "linux")))]
+    #[test]
+    fn rw_range_is_none_off_target() {
+        let island = Island {
+            len: 4096,
+            words: 0,
+            capacity_words: 0,
+            published: false,
+        };
+        assert_eq!(island.rw_range(), None);
     }
 }
