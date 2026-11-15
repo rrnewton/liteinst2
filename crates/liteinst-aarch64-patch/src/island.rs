@@ -237,21 +237,21 @@ impl Island {
             gate_close(fd);
             return Err(e);
         }
-        if let Some(hint) = rx_hint {
-            if rx as u64 != hint {
-                // A kernel without MAP_FIXED_NOREPLACE placed it
-                // elsewhere: remove both aliases and refuse by name.
-                // SAFETY: rw and rx are the live mappings just created.
-                unsafe {
-                    crate::gate::gate6(libc::SYS_munmap, [rx as u64, len as u64, 0, 0, 0, 0]);
-                    crate::gate::gate6(libc::SYS_munmap, [rw as u64, len as u64, 0, 0, 0, 0]);
-                }
-                gate_close(fd);
-                return Err(PatchError::IslandHintRefused {
-                    hint,
-                    mapped_at: Some(rx as u64),
-                });
+        if let Some(hint) = rx_hint
+            && rx as u64 != hint
+        {
+            // A kernel without MAP_FIXED_NOREPLACE placed it elsewhere:
+            // remove both aliases and refuse by name.
+            // SAFETY: rw and rx are the live mappings just created.
+            unsafe {
+                crate::gate::gate6(libc::SYS_munmap, [rx as u64, len as u64, 0, 0, 0, 0]);
+                crate::gate::gate6(libc::SYS_munmap, [rw as u64, len as u64, 0, 0, 0, 0]);
             }
+            gate_close(fd);
+            return Err(PatchError::IslandHintRefused {
+                hint,
+                mapped_at: Some(rx as u64),
+            });
         }
         // The mappings keep the memfd alive; close the fd now so a
         // published island (retained for process lifetime) never
@@ -536,16 +536,21 @@ mod tests {
     }
 
     /// One anonymous page with a marker word, for the occupied-hint
-    /// tests; returns its address.
+    /// tests; returns its address. The page is MAP_SHARED: Linux gives
+    /// each shared anonymous mapping its own backing object, so it never
+    /// merges with a neighbouring mapping and stays one /proc/self/maps
+    /// line that starts at its address. A private anonymous page can
+    /// merge into an adjacent read-write anonymous range (another test's
+    /// page, a malloc arena), and then no line starts at it.
     #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
     fn marker_page(page: usize, marker: u64) -> u64 {
-        // SAFETY: a fresh private anonymous mapping owned by the test.
+        // SAFETY: a fresh shared anonymous mapping owned by the test.
         let p = unsafe {
             libc::mmap(
                 core::ptr::null_mut(),
                 page,
                 libc::PROT_READ | libc::PROT_WRITE,
-                libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
+                libc::MAP_SHARED | libc::MAP_ANONYMOUS,
                 -1,
                 0,
             )
@@ -566,6 +571,23 @@ mod tests {
                     .next()
                     .and_then(|start| u64::from_str_radix(start, 16).ok())
                     == Some(addr)
+            })
+            .map(str::to_owned)
+    }
+
+    /// The /proc/self/maps line whose range contains `addr`, if any (for
+    /// failure messages).
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    fn maps_line_containing(addr: u64) -> Option<String> {
+        let maps = std::fs::read_to_string("/proc/self/maps").unwrap();
+        maps.lines()
+            .find(|line| {
+                let range = line.split(' ').next().unwrap_or("");
+                let mut ends = range
+                    .split('-')
+                    .map(|x| u64::from_str_radix(x, 16).unwrap_or(0));
+                let (start, end) = (ends.next().unwrap_or(0), ends.next().unwrap_or(0));
+                (start..end).contains(&addr)
             })
             .map(str::to_owned)
     }
@@ -607,7 +629,12 @@ mod tests {
         let page = crate::page_size().unwrap() as usize;
         let marker = 0x5a5a_a5a5_0123_4567;
         let hint = marker_page(page, marker);
-        let before = maps_line_at(hint).expect("the marker page is mapped");
+        let before = maps_line_at(hint).unwrap_or_else(|| {
+            panic!(
+                "the marker page {hint:#x} is its own mapping; the line containing it: {:?}",
+                maps_line_containing(hint)
+            )
+        });
         assert_eq!(
             Island::reserve_at(2, hint).unwrap_err(),
             PatchError::Os {
@@ -637,11 +664,16 @@ mod tests {
         assert!(pid >= 0);
         if pid == 0 {
             let code = (|| -> i32 {
-                let Ok(page) = crate::page_size() else { return 7 };
+                let Ok(page) = crate::page_size() else {
+                    return 7;
+                };
                 let page = page as usize;
                 let islands = || -> Result<usize, ()> {
                     let maps = std::fs::read_to_string("/proc/self/maps").map_err(|_| ())?;
-                    Ok(maps.lines().filter(|l| l.contains("liteinst-island")).count())
+                    Ok(maps
+                        .lines()
+                        .filter(|l| l.contains("liteinst-island"))
+                        .count())
                 };
                 let marker = 0x0bad_c0de_dead_beef;
                 let hint = marker_page(page, marker);
