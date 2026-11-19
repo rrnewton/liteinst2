@@ -55,6 +55,11 @@ jobs:
           - name: liteinst-launch
             packages: "-p liteinst-launch"
             timeout: 30
+          # The mini-JIT (x86-64 only; unpublished): its unit tests and
+          # integration suites. Its dev-dependency enables test-seams.
+          - name: liteinst-jit
+            packages: "-p liteinst-jit"
+            timeout: 30
           - name: small-crates
             packages: "-p liteinst-x86 -p liteinst-aarch64 -p liteinst-aarch64-patch -p liteinst-artifact -p liteinst-admission -p liteinst-inprocess"
             timeout: 15
