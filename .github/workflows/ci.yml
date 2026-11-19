@@ -71,6 +71,298 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ matrix.group.name }}-${{ matrix.profile }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-${{ matrix.group.name }}-${{ matrix.profile }}-
+      # Diagnostic only: prints the runner's CPU, its XSAVE components and
+      # how ptrace single-step behaves over CPUID, so the liteinst-launch
+      # native completion mismatch on this runner can be attributed from
+      # evidence; the passing cells are controls. It asserts nothing and
+      # cannot fail the job.
+      - name: Runner CPU, XSAVE and single-step report (diagnostic only)
+        continue-on-error: true
+        timeout-minutes: 3
+        run: |
+          set -u
+          p=liteinst-ci-diag:
+          echo "$p kernel $(uname -srvm)"
+          echo "$p virt $(systemd-detect-virt 2>/dev/null || true)"
+          echo "$p nproc $(nproc) ptrace_scope $(cat /proc/sys/kernel/yama/ptrace_scope 2>/dev/null || echo absent)"
+          awk -v p="$p cpuinfo" 'NF == 0 { exit } /^(vendor_id|cpu family|model|model name|stepping|microcode|flags)[[:space:]]*:/ { print p, $0 }' /proc/cpuinfo
+          grep '^model name' /proc/cpuinfo | sort | uniq -c | sed "s/^/$p cpus /"
+          if [ -d target/package ]; then
+            ls -la --time-style=full-iso target/package | sed "s|^|$p pre-test target/package |"
+            for f in target/package/*.crate target/package/.*.crate; do
+              [ -f "$f" ] || continue
+              echo "$p pre-test $f size=$(stat -c %s "$f") inode=$(stat -c %i "$f") birth=$(stat -c %w "$f") modify=$(stat -c %y "$f") sha256=$(sha256sum < "$f" | cut -d ' ' -f 1)"
+            done
+          else
+            echo "$p pre-test: no target/package"
+          fi
+          src="${RUNNER_TEMP:?}/runner-cpu-report.c"
+          cat > "$src" <<'EOF'
+          #define _GNU_SOURCE
+          #include <cpuid.h>
+          #include <elf.h>
+          #include <errno.h>
+          #include <signal.h>
+          #include <stdint.h>
+          #include <stdio.h>
+          #include <string.h>
+          #include <sys/ptrace.h>
+          #include <sys/uio.h>
+          #include <sys/user.h>
+          #include <sys/wait.h>
+          #include <unistd.h>
+
+          #define P "liteinst-ci-diag: "
+          typedef unsigned long long u64;
+          _Static_assert(sizeof(struct user_regs_struct) == 27 * sizeof(u64), "user_regs_struct layout");
+
+          static const char *const reg_name[27] = {
+              "r15", "r14", "r13", "r12", "rbp", "rbx", "r11", "r10", "r9", "r8",
+              "rax", "rcx", "rdx", "rsi", "rdi", "orig_rax", "rip", "cs", "eflags",
+              "rsp", "ss", "fs_base", "gs_base", "ds", "es", "fs", "gs"};
+          enum { RIP = 16, EFLAGS = 18 };
+          static const char *const xstate_name[20] = {
+              "x87", "SSE", "AVX", "MPX_BNDREGS", "MPX_BNDCSR", "AVX512_opmask",
+              "AVX512_ZMM_Hi256", "AVX512_Hi16_ZMM", "PT", "PKRU", "PASID", "CET_U",
+              "CET_S", "HDC", "UINTR", "LBR", "HWP", "AMX_TILECFG", "AMX_TILEDATA", "APX"};
+          static unsigned max_leaf, comp_offset[64], comp_size[64];
+          static unsigned char xbuf[2][65536];
+
+          static const char *component(unsigned i) { return i < 20 ? xstate_name[i] : "unnamed"; }
+
+          static void cpuid(unsigned leaf, unsigned sub, unsigned r[4]) {
+              __cpuid_count(leaf, sub, r[0], r[1], r[2], r[3]);
+          }
+
+          static void text(char *out, const unsigned *words, int n) {
+              memcpy(out, words, 4 * n);
+              for (int i = 0; i < 4 * n; i++)
+                  if (out[i] < 0x20 || out[i] > 0x7e) out[i] = '.';
+              out[4 * n] = 0;
+          }
+
+          static u64 xgetbv(unsigned index) {
+              unsigned lo, hi;
+              __asm__ volatile("xgetbv" : "=a"(lo), "=d"(hi) : "c"(index));
+              return (u64)hi << 32 | lo;
+          }
+
+          static u64 u64_at(const unsigned char *b, long off) {
+              u64 v;
+              memcpy(&v, b + off, 8);
+              return v;
+          }
+
+          static unsigned u32_at(const unsigned char *b, long off) {
+              unsigned v;
+              memcpy(&v, b + off, 4);
+              return v;
+          }
+
+          static unsigned identity(void) {
+              unsigned r[4], w[12];
+              char s[49];
+              cpuid(0, 0, r);
+              max_leaf = r[0];
+              w[0] = r[1], w[1] = r[3], w[2] = r[2];
+              text(s, w, 3);
+              printf(P "cpuid.0 max_leaf=0x%x vendor=%s\n", r[0], s);
+              cpuid(1, 0, r);
+              unsigned ecx1 = r[2];
+              printf(P "cpuid.1 eax=0x%08x ebx=0x%08x ecx=0x%08x edx=0x%08x\n", r[0], r[1], r[2], r[3]);
+              for (unsigned sub = 0; max_leaf >= 7 && sub < 2; sub++) {
+                  cpuid(7, sub, r);
+                  printf(P "cpuid.7.%u eax=0x%08x ebx=0x%08x ecx=0x%08x edx=0x%08x\n", sub, r[0], r[1], r[2], r[3]);
+              }
+              cpuid(0x80000000, 0, r);
+              if (r[0] >= 0x80000004) {
+                  for (unsigned i = 0; i < 3; i++) cpuid(0x80000002 + i, 0, w + 4 * i);
+                  text(s, w, 12);
+                  printf(P "brand=%s\n", s);
+              }
+              if (ecx1 >> 31) {
+                  cpuid(0x40000000, 0, r);
+                  w[0] = r[1], w[1] = r[2], w[2] = r[3];
+                  text(s, w, 3);
+                  printf(P "hypervisor cpuid.0x40000000 max_leaf=0x%x signature=%s\n", r[0], s);
+              } else {
+                  printf(P "hypervisor bit clear\n");
+              }
+              return ecx1;
+          }
+
+          static void xsave(unsigned ecx1) {
+              unsigned r[4];
+              int osxsave = ecx1 >> 27 & 1;
+              printf(P "xsave=%u osxsave=%d\n", ecx1 >> 26 & 1, osxsave);
+              if (max_leaf < 0xd) {
+                  printf(P "cpuid leaf 0xd absent\n");
+                  return;
+              }
+              cpuid(0xd, 0, r);
+              u64 user = (u64)r[3] << 32 | r[0];
+              printf(P "cpuid.0xd.0 supported_xcr0=0x%llx size_for_enabled_xcr0=%u max_size=%u\n", user, r[1], r[2]);
+              cpuid(0xd, 1, r);
+              unsigned flags = r[0];
+              u64 xss = (u64)r[3] << 32 | r[2];
+              printf(P "cpuid.0xd.1 eax=0x%08x xsaveopt=%u xsavec=%u xgetbv1=%u xsaves=%u xfd=%u size_for_xcr0_xss=%u supported_xss=0x%llx\n",
+                     flags, flags & 1, flags >> 1 & 1, flags >> 2 & 1, flags >> 3 & 1, flags >> 4 & 1, r[1], xss);
+              for (unsigned i = 2; i < 64; i++) {
+                  if (!((user | xss) >> i & 1)) continue;
+                  cpuid(0xd, i, r);
+                  printf(P "xstate component %u %s size=%u offset=%u ecx=0x%x %s\n", i, component(i), r[0], r[1], r[2],
+                         r[2] & 1 ? "supervisor" : "user");
+                  if (!(r[2] & 1)) comp_size[i] = r[0], comp_offset[i] = r[1];
+              }
+              if (osxsave) {
+                  printf(P "xgetbv(0) xcr0=0x%llx\n", xgetbv(0));
+                  if (flags & 4) printf(P "xgetbv(1) xinuse=0x%llx\n", xgetbv(1));
+              }
+          }
+
+          static int stopped(pid_t pid, int *status, const char *what) {
+              if (waitpid(pid, status, 0) != pid) {
+                  printf(P "%s: waitpid failed: %s\n", what, strerror(errno));
+                  return 0;
+              }
+              if (!WIFSTOPPED(*status)) {
+                  printf(P "%s: child not stopped, status=0x%x\n", what, *status);
+                  return 0;
+              }
+              return 1;
+          }
+
+          static int regs(pid_t pid, u64 out[27]) {
+              struct user_regs_struct u;
+              if (ptrace(PTRACE_GETREGS, pid, 0, &u) != 0) {
+                  printf(P "PTRACE_GETREGS failed: %s\n", strerror(errno));
+                  return 0;
+              }
+              memcpy(out, &u, sizeof u);
+              return 1;
+          }
+
+          static long xstate(pid_t pid, unsigned char *buf) {
+              struct iovec v = {buf, sizeof xbuf[0]};
+              if (ptrace(PTRACE_GETREGSET, pid, (void *)(uintptr_t)NT_X86_XSTATE, &v) != 0) {
+                  printf(P "PTRACE_GETREGSET NT_X86_XSTATE failed: %s\n", strerror(errno));
+                  return -1;
+              }
+              return (long)v.iov_len;
+          }
+
+          static void xdiff(const unsigned char *x, const unsigned char *y, long n) {
+              long count = 0, first = -1;
+              for (long i = 0; i < n; i++)
+                  if (x[i] != y[i]) {
+                      if (first < 0) first = i;
+                      count++;
+                  }
+              printf(" | xstate differing_bytes=%ld", count);
+              if (n >= 576) printf(" xstate_bv=0x%llx->0x%llx", u64_at(x, 512), u64_at(y, 512));
+              if (!count) return;
+              printf(" first_offset=%ld regions:", first);
+              if (n >= 160 && memcmp(x, y, 160)) printf(" x87_and_mxcsr");
+              if (n >= 416 && memcmp(x + 160, y + 160, 256)) printf(" xmm");
+              if (n >= 512 && memcmp(x + 416, y + 416, 96)) printf(" legacy_reserved");
+              if (n >= 576 && memcmp(x + 512, y + 512, 64)) printf(" xsave_header");
+              for (unsigned i = 2; i < 64; i++)
+                  if (comp_size[i] && (long)comp_offset[i] + comp_size[i] <= n &&
+                      memcmp(x + comp_offset[i], y + comp_offset[i], comp_size[i]))
+                      printf(" %s", component(i));
+          }
+
+          static void singlestep(void) {
+              int status = 0;
+              u64 a[27], b[27];
+              fflush(stdout);
+              pid_t pid = fork();
+              if (pid < 0) {
+                  printf(P "fork failed: %s\n", strerror(errno));
+                  return;
+              }
+              if (pid == 0) {
+                  if (ptrace(PTRACE_TRACEME, 0, 0, 0) != 0) _exit(3);
+                  raise(SIGSTOP);
+                  __asm__ volatile("xor %%eax, %%eax\n\t"
+                                   "xor %%ecx, %%ecx\n\t"
+                                   "int3\n\t"
+                                   "cpuid\n\t"
+                                   "nop\n\t"
+                                   "cpuid\n\t"
+                                   "nop\n\t"
+                                   "nop\n\t"
+                                   "nop\n\t"
+                                   "nop\n\t" ::
+                                       : "rax", "rbx", "rcx", "rdx", "cc", "memory");
+                  _exit(0);
+              }
+              if (!stopped(pid, &status, "initial stop")) goto reap;
+              ptrace(PTRACE_SETOPTIONS, pid, 0, (void *)(uintptr_t)PTRACE_O_EXITKILL);
+              if (ptrace(PTRACE_CONT, pid, 0, 0) != 0 || !stopped(pid, &status, "int3 stop") ||
+                  WSTOPSIG(status) != SIGTRAP) {
+                  printf(P "did not reach the int3 before CPUID, status=0x%x\n", status);
+                  goto reap;
+              }
+              if (!regs(pid, a)) goto reap;
+              long len0 = xstate(pid, xbuf[0]);
+              if (len0 >= 576)
+                  printf(P "ptrace NT_X86_XSTATE len=%ld sw_magic1=0x%x sw_extended_size=%u sw_xfeatures=0x%llx sw_xstate_size=%u xstate_bv=0x%llx xcomp_bv=0x%llx\n",
+                         len0, u32_at(xbuf[0], 464), u32_at(xbuf[0], 468), u64_at(xbuf[0], 472), u32_at(xbuf[0], 480),
+                         u64_at(xbuf[0], 512), u64_at(xbuf[0], 520));
+              for (int step = 1; step <= 4; step++) {
+                  siginfo_t si;
+                  errno = 0;
+                  long word = ptrace(PTRACE_PEEKTEXT, pid, (void *)(uintptr_t)a[RIP], 0);
+                  int readable = !(word == -1 && errno);
+                  if (ptrace(PTRACE_SINGLESTEP, pid, 0, 0) != 0) {
+                      printf(P "PTRACE_SINGLESTEP failed: %s\n", strerror(errno));
+                      goto reap;
+                  }
+                  if (!stopped(pid, &status, "single-step")) goto reap;
+                  int code = ptrace(PTRACE_GETSIGINFO, pid, 0, &si) == 0 ? si.si_code : -1;
+                  if (!regs(pid, b)) goto reap;
+                  long len1 = xstate(pid, xbuf[1]);
+                  printf(P "singlestep %d bytes=", step);
+                  if (readable)
+                      printf("%02x%02x", (unsigned)(word & 0xff), (unsigned)(word >> 8 & 0xff));
+                  else
+                      printf("unreadable");
+                  printf(" signal=%d si_code=%d rip_delta=%lld eflags=0x%llx->0x%llx changed:", WSTOPSIG(status), code,
+                         (long long)(b[RIP] - a[RIP]), a[EFLAGS], b[EFLAGS]);
+                  int changed = 0;
+                  for (int i = 0; i < 27; i++)
+                      if (i != RIP && i != EFLAGS && a[i] != b[i]) {
+                          printf(" %s=0x%llx->0x%llx", reg_name[i], a[i], b[i]);
+                          changed = 1;
+                      }
+                  if (!changed) printf(" none");
+                  if (len0 > 0 && len1 > 0) xdiff(xbuf[0], xbuf[1], len0 < len1 ? len0 : len1);
+                  printf("\n");
+                  memcpy(a, b, sizeof a);
+                  memcpy(xbuf[0], xbuf[1], sizeof xbuf[0]);
+                  len0 = len1;
+              }
+              if (ptrace(PTRACE_CONT, pid, 0, 0) == 0 && waitpid(pid, &status, 0) == pid && WIFEXITED(status)) {
+                  printf(P "probe child exited with status %d\n", WEXITSTATUS(status));
+                  return;
+              }
+              printf(P "probe child did not exit cleanly, status=0x%x\n", status);
+          reap:
+              kill(pid, SIGKILL);
+              waitpid(pid, &status, 0);
+          }
+
+          int main(void) {
+              setvbuf(stdout, NULL, _IOLBF, 0);
+              xsave(identity());
+              singlestep();
+              return 0;
+          }
+          EOF
+          echo "$p probe source sha256=$(sha256sum < "$src" | cut -d ' ' -f 1)"
+          cc -O1 -Wall -o "${src%.c}" "$src"
+          timeout 30 "${src%.c}"
       # Scoped to the six published crates across the matrix groups
       # (rapid-profiler's broken test target must not red this signal;
       # full-workspace is not promised). No skip/ignore/filter anywhere:
@@ -99,6 +391,39 @@ jobs:
           package_dir="$(find "$package_root" -mindepth 1 -maxdepth 1 -type d -name 'liteinst-*' -print -quit)"
           cd "$package_dir"
           cargo build --locked --example preload_consumer
+      # Diagnostic only: prints what "Verify published package consumer"
+      # packaged and tried to extract (archive path, size, type, timestamps,
+      # gzip and tar results, and the same tar -xf rerun), so its failure can
+      # be attributed from evidence. It asserts nothing and cannot fail the job.
+      - name: Package archive report (diagnostic only)
+        if: ${{ !cancelled() && matrix.group.name == 'liteinst' && matrix.profile == 'release' }}
+        continue-on-error: true
+        timeout-minutes: 3
+        run: |
+          set -u
+          p=liteinst-ci-diag:
+          echo "$p now $(date -u +%Y-%m-%dT%H:%M:%S.%NZ)"
+          echo "$p tools: $(cargo --version) | $(tar --version | head -n 1) | $(gzip --version | head -n 1)"
+          archive="$(find target/package -maxdepth 1 -name 'liteinst-*.crate' -print -quit 2>/dev/null || true)"
+          echo "$p the verify step's find picks: ${archive:-none}"
+          ls -la --time-style=full-iso target/package | sed "s|^|$p target/package |"
+          for f in target/package/*.crate target/package/.*.crate; do
+            [ -f "$f" ] || continue
+            echo "$p $f size=$(stat -c %s "$f") inode=$(stat -c %i "$f") birth=$(stat -c %w "$f") modify=$(stat -c %y "$f")"
+            echo "$p $f type: $(file -b "$f")"
+            echo "$p $f sha256=$(sha256sum < "$f" | cut -d ' ' -f 1)"
+            rc=0; out=$(gzip -t "$f" 2>&1) || rc=$?
+            echo "$p $f gzip -t rc=$rc"
+            printf '%s\n' "$out" | sed "s|^|$p $f gzip -t: |"
+            echo "$p $f decompressed_bytes=$(gzip -cd "$f" 2>/dev/null | wc -c) tar_entries=$(gzip -cd "$f" 2>/dev/null | tar -tf - 2>/dev/null | wc -l)"
+            echo "$p $f gzip_header_offsets: $(LC_ALL=C grep -obUaP '\x1f\x8b\x08' "$f" | cut -d : -f 1 | head -n 8 | tr '\n' ' ')"
+            echo "$p $f last_32_bytes: $(tail -c 32 "$f" | od -An -tx1 | tr -s ' \n' ' ')"
+          done
+          if [ -n "$archive" ] && scratch="$(mktemp -d)"; then
+            rc=0; out=$(tar -xf "$archive" -C "$scratch" 2>&1) || rc=$?
+            echo "$p rerun: tar -xf $archive -C <mktemp -d> rc=$rc"
+            printf '%s\n' "$out" | sed "s|^|$p rerun tar: |"
+          fi
       - name: Live patching stress
         if: matrix.group.name == 'liteinst' && matrix.profile == 'release'
         run: >-
