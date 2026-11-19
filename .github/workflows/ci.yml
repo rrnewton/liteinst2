@@ -93,6 +93,10 @@ jobs:
         if: matrix.group.name == 'liteinst' && matrix.profile == 'release'
         run: |
           package_root="$(mktemp -d)"
+          # cargo copies the new crate into an existing target/package crate
+          # without truncating it; a longer cache-restored crate would leave
+          # a stale tail after the new gzip stream.
+          rm -f target/package/liteinst-*.crate
           cargo package --locked
           package_archive="$(find target/package -maxdepth 1 -name 'liteinst-*.crate' -print -quit)"
           tar -xf "$package_archive" -C "$package_root"
