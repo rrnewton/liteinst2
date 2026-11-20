@@ -42,6 +42,11 @@ pub enum Refuse {
     /// operation; the guest was left stopped or terminated, never
     /// resumed on partial state.
     RemoteSubstrate { operation: &'static str, errno: i32 },
+    /// A remaining-RCB budget run (test-seams experiment) met a
+    /// shape it does not claim: a budgeted translation run
+    /// without a budget, a budget run on a translation without
+    /// budget stubs, or a signal delivery inside the stretch.
+    RcbBudget { what: &'static str },
 }
 
 impl Refuse {
@@ -56,7 +61,8 @@ impl Refuse {
             | Refuse::InteriorEntry { .. }
             | Refuse::BudgetExceeded { .. }
             | Refuse::Decode { .. }
-            | Refuse::StaleGeneration { .. } => "R-CODE",
+            | Refuse::StaleGeneration { .. }
+            | Refuse::RcbBudget { .. } => "R-CODE",
             Refuse::NoHandler { .. } => "R-INSTR",
             Refuse::SignalOwnership { .. } => "R-SIGNAL",
             Refuse::MappingPolicy { .. } => "R-WX",

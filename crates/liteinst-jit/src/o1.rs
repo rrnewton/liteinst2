@@ -95,6 +95,27 @@ pub struct OracleOutcome {
     pub data_bytes: Vec<u8>,
     pub stack_window: Vec<u8>,
     pub stdout_tail: Vec<u8>,
+    /// `PTRACE_SINGLESTEP` requests made by this run.
+    pub steps: u64,
+    /// Retired conditional branches by class:
+    /// `[Jcc, LOOP/LOOPE/LOOPNE, JECXZ/JRCXZ]`.
+    pub by_class: [u64; 3],
+    /// The run ended on its [`O1Stop`] target.
+    pub stopped_at_target: bool,
+}
+
+/// Stop condition for the k-branch oracle (remaining-RCB budget
+/// experiment). The run stops at the first state, before the next
+/// instruction, where exactly `branches` conditional branches have
+/// retired and, when `at_offset` is set, RIP equals the child's
+/// fixture base plus that offset. With `at_offset` unset that is the
+/// successor of the branch that retired last (the entry state for 0);
+/// with it set, it is a handoff point. The offset is base-relative
+/// because every child maps the fixture at its own address.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct O1Stop {
+    pub branches: u64,
+    pub at_offset: Option<u64>,
 }
 
 const STEP_CAP: u64 = 2_000_000;
@@ -134,6 +155,20 @@ fn classify_step(ins: &Instruction) -> StepClass {
         return StepClass::Branch;
     }
     StepClass::Other
+}
+
+/// Index into [`OracleOutcome::by_class`] for a retired branch.
+fn branch_class(ins: &Instruction) -> usize {
+    if matches!(
+        ins.mnemonic(),
+        Mnemonic::Loop | Mnemonic::Loope | Mnemonic::Loopne
+    ) {
+        1
+    } else if matches!(ins.code(), Code::Jecxz_rel8_64 | Code::Jrcxz_rel8_64) {
+        2
+    } else {
+        0
+    }
 }
 
 fn decode_step(bytes: &[u8], pc: u64) -> Instruction {
@@ -381,6 +416,26 @@ pub fn run_o1_observed(
         Some(fixture_name),
         tweaks,
         on_spawn,
+        None,
+    )
+}
+
+/// [`run_o1_observed`] that stops on `stop` (the k-branch oracle):
+/// see [`O1Stop`]. A run that reaches the sentinel or a fault first
+/// ends there with `stopped_at_target` false.
+pub fn run_o1_until_observed(
+    child_bin: &std::path::Path,
+    fixture_name: &str,
+    stop: O1Stop,
+    on_spawn: impl FnOnce(i32),
+) -> OracleOutcome {
+    run_o1_impl(
+        child_bin,
+        fixture_name.to_string(),
+        Some(fixture_name),
+        |_, _| {},
+        on_spawn,
+        Some(stop),
     )
 }
 
@@ -402,7 +457,14 @@ pub fn run_o1_bytes_observed(
     on_spawn: impl FnOnce(i32),
 ) -> OracleOutcome {
     let hex: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
-    run_o1_impl(child_bin, format!("hex:{hex}"), None, tweaks, on_spawn)
+    run_o1_impl(
+        child_bin,
+        format!("hex:{hex}"),
+        None,
+        tweaks,
+        on_spawn,
+        None,
+    )
 }
 
 fn run_o1_impl(
@@ -411,6 +473,7 @@ fn run_o1_impl(
     named: Option<&str>,
     tweaks: impl FnOnce(&mut libc::user_regs_struct, &ChildInfo),
     on_spawn: impl FnOnce(i32),
+    stop: Option<O1Stop>,
 ) -> OracleOutcome {
     let mut child: Child = Command::new(child_bin)
         .arg(&spawn_arg)
@@ -469,8 +532,18 @@ fn run_o1_impl(
     let mut fault: Option<(u64, i32)> = None;
     let mut fault_addr: u64 = 0;
     let mut steps: u64 = 0;
+    let mut by_class = [0u64; 3];
+    let mut stopped_at_target = false;
     let final_state = loop {
         let cur = get_regs(pid);
+        if let Some(s) = stop
+            && branches == s.branches
+            && s.at_offset
+                .is_none_or(|off| info.base.wrapping_add(off) == cur.rip)
+        {
+            stopped_at_target = true;
+            break regs_to_state(&cur);
+        }
         if cur.rip == RETURN_SENTINEL {
             break regs_to_state(&cur);
         }
@@ -529,6 +602,7 @@ fn run_o1_impl(
                 instructions += 1;
                 if class == StepClass::Branch {
                     branches += 1;
+                    by_class[branch_class(&insn)] += 1;
                 }
             }
             continue;
@@ -582,6 +656,9 @@ fn run_o1_impl(
         data_bytes,
         stack_window,
         stdout_tail,
+        steps,
+        by_class,
+        stopped_at_target,
     }
 }
 

@@ -10,6 +10,10 @@ pub mod exit_kind {
     pub const SYSCALL: u64 = 3;
     pub const NONDET: u64 = 4;
     pub const POLL: u64 = 5;
+    /// The remaining-RCB budget reached zero in a branch credit
+    /// stub: the stop is at the successor of the branch that
+    /// retired last (budgeted translations only).
+    pub const BUDGET: u64 = 6;
 }
 
 /// Full general-purpose guest state transferred at cache entry/exit.
@@ -66,6 +70,12 @@ pub struct JitData {
     pub host_r15: u64,
     pub tmp_entry: u64,
     pub scratch: [u8; SCRATCH_LEN],
+    /// Retired conditional branches left before a budgeted
+    /// translation exits with `exit_kind::BUDGET`. Only budget
+    /// stubs read it; a dispatcher never enters with 0. Placed
+    /// after `scratch` so every earlier offset, and so every
+    /// unbudgeted emitted byte, stays as it was.
+    pub budget_remaining: u64,
 }
 
 impl JitData {
@@ -90,6 +100,7 @@ impl JitData {
             host_r15: 0,
             tmp_entry: 0,
             scratch: [0; SCRATCH_LEN],
+            budget_remaining: 0,
         }
     }
     /// Address of the private scratch stack top (inside `scratch`).
@@ -123,6 +134,7 @@ pub const OFF_HOST_R14: usize = core::mem::offset_of!(JitData, host_r14);
 pub const OFF_HOST_R15: usize = core::mem::offset_of!(JitData, host_r15);
 pub const OFF_TMP_ENTRY: usize = core::mem::offset_of!(JitData, tmp_entry);
 pub const OFF_SCRATCH: usize = core::mem::offset_of!(JitData, scratch);
+pub const OFF_BUDGET: usize = core::mem::offset_of!(JitData, budget_remaining);
 
 pub const ST_RAX: usize = core::mem::offset_of!(GuestState, rax);
 pub const ST_RBX: usize = core::mem::offset_of!(GuestState, rbx);
@@ -154,6 +166,7 @@ mod tests {
         assert!(OFF_SPILL_RAX > OFF_BRANCH_COUNT);
         assert!(OFF_EXIT_KIND > OFF_SPILL_FLAGS);
         assert!(OFF_SCRATCH > OFF_TMP_ENTRY);
+        assert_eq!(OFF_BUDGET, OFF_SCRATCH + SCRATCH_LEN);
         assert_eq!(core::mem::size_of::<GuestState>(), 18 * 8);
     }
 }

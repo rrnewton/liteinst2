@@ -45,12 +45,15 @@ use std::io::Read;
 use std::process::{Child, Command, Stdio};
 
 use crate::decode::{InsnClass, NondetKind};
-use crate::exec::{CODE_CAP, Fault, Outcome, POLL_BUDGET, RunError, syscall_guard};
+use crate::exec::{
+    BudgetEnd, BudgetRun, CODE_CAP, Fault, Outcome, POLL_BUDGET, RunError, budget_finish_into,
+    outcome_at, syscall_guard,
+};
 use crate::pcmap::{CallStage, CommonStage, ExitStage, Phase as MapPhase, Recovery as MapRecovery};
 use crate::recovery::{FaultInput, RecoveryInput};
 use crate::refuse::Refuse;
 use crate::state::{GuestState, JitData, exit_kind};
-use crate::translate::{ExitStyle, Translation, translate_with_exit_style};
+use crate::translate::{ExitStyle, TranslateOptions, Translation, translate_with_options};
 use crate::types::{CountProfile, RegionFacts};
 
 const PAGE: usize = 4096;
@@ -1482,6 +1485,14 @@ pub struct RemoteExecutable {
     /// Test seam, inert unless set: see `set_kgen_seam_for_test`.
     #[cfg(feature = "test-seams")]
     kgen_seam: core::cell::Cell<Option<(i32, u32)>>,
+    /// The translation carries budget stubs (`prepare_budgeted`).
+    rcb_budget: bool,
+    /// The budget run in progress, if any (`run_budgeted`).
+    budget_run: Option<BudgetRun>,
+    /// `PTRACE_SINGLESTEP` requests made since the last budget run
+    /// started (witness W2; see `single_steps_for_test`).
+    #[cfg(feature = "test-seams")]
+    single_steps: core::cell::Cell<u64>,
 }
 
 impl RemoteExecutable {
@@ -1723,6 +1734,10 @@ impl RemoteExecutable {
             w3_guard_perturb: None,
             #[cfg(feature = "test-seams")]
             kgen_seam: core::cell::Cell::new(None),
+            rcb_budget: false,
+            budget_run: None,
+            #[cfg(feature = "test-seams")]
+            single_steps: core::cell::Cell::new(0),
         })
     }
 
@@ -2735,6 +2750,30 @@ impl RemoteExecutable {
         entry: u64,
         profile: CountProfile,
     ) -> Result<(), Refuse> {
+        self.prepare_inner(region, entry, profile, false)
+    }
+
+    /// As [`RemoteExecutable::prepare`], with the remaining-RCB
+    /// budget check in every branch credit stub. Such an executable
+    /// runs only through [`RemoteExecutable::run_budgeted`].
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn prepare_budgeted(
+        &mut self,
+        region: &RegionFacts,
+        entry: u64,
+        profile: CountProfile,
+    ) -> Result<(), Refuse> {
+        self.prepare_inner(region, entry, profile, true)
+    }
+
+    fn prepare_inner(
+        &mut self,
+        region: &RegionFacts,
+        entry: u64,
+        profile: CountProfile,
+        rcb_budget: bool,
+    ) -> Result<(), Refuse> {
         if self.translation.is_some() {
             return Err(Refuse::Arch {
                 what: "remote executable already prepared",
@@ -2746,13 +2785,16 @@ impl RemoteExecutable {
                 reason: "remote region base does not match child fixture mapping",
             });
         }
-        let translation = translate_with_exit_style(
+        let translation = translate_with_options(
             region,
             entry,
             profile,
             self.info.arena_base,
             self.data_addr(),
-            ExitStyle::TrapToDispatcher,
+            TranslateOptions {
+                exit_style: ExitStyle::TrapToDispatcher,
+                rcb_budget,
+            },
         )?;
         if translation.code.len() > CODE_CAP - STUB_TAIL {
             return Err(Refuse::BudgetExceeded { what: "code cache" });
@@ -2789,7 +2831,54 @@ impl RemoteExecutable {
         }
         self.translation = Some(translation);
         self.profile = profile;
+        self.rcb_budget = rcb_budget;
         Ok(())
+    }
+
+    /// Test seam: `PTRACE_SINGLESTEP` requests since the last
+    /// [`RemoteExecutable::run_budgeted`] started (W2 witness: a
+    /// budget stretch must make none).
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn single_steps_for_test(&self) -> u64 {
+        self.single_steps.get()
+    }
+
+    /// The remote mirror of `Executable::run_budgeted`: run until
+    /// exactly `target` RCBs are credited (`Landed`), a named
+    /// handoff at a syscall, nondet or indirect exit (`Handoff`), or
+    /// a return to the sentinel (`Ended`). A signal delivery inside
+    /// the stretch refuses as `Refuse::RcbBudget`; it never steps.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn run_budgeted(
+        &mut self,
+        state: GuestState,
+        return_sentinel: u64,
+        target: u64,
+    ) -> Result<crate::exec::BudgetStop, RunError> {
+        if !self.rcb_budget {
+            return Err(Refuse::RcbBudget {
+                what: "translation has no budget stubs",
+            }
+            .into());
+        }
+        self.single_steps.set(0);
+        self.budget_run = Some(BudgetRun::new(target));
+        let r = self.run(state, return_sentinel);
+        let run = self.budget_run.take().unwrap_or_default();
+        let outcome = r?;
+        let end = run.end.ok_or(Refuse::RcbBudget {
+            what: "budget run returned without a recorded end",
+        })?;
+        Ok(crate::exec::BudgetStop {
+            end,
+            outcome,
+            target,
+            remaining: run.remaining,
+            entries: run.entries,
+            poll_entries: run.poll_entries,
+        })
     }
 
     /// GETREGS, then `apply_state`, then SETREGS. `apply_state` never
@@ -3347,6 +3436,8 @@ impl RemoteExecutable {
                 return Err(remote_err("test pre-original-step signal").into());
             }
         }
+        #[cfg(feature = "test-seams")]
+        self.single_steps.set(self.single_steps.get() + 1);
         ptrace_ok(
             libc::PTRACE_SINGLESTEP,
             self.guard.pid,
@@ -3927,6 +4018,14 @@ impl RemoteExecutable {
             }
             .into());
         };
+        // A budgeted translation always decrements the budget; run
+        // without one, it would wrap below zero and never stop.
+        if self.rcb_budget && self.budget_run.is_none() {
+            return Err(Refuse::RcbBudget {
+                what: "budgeted translation run without a budget",
+            }
+            .into());
+        }
         let mut exits: u64 = 0;
         let (mut tot_branches, mut tot_instructions) = (0u64, 0u64);
         let mut poll_remaining = self.poll_budget();
@@ -3947,19 +4046,35 @@ impl RemoteExecutable {
             // A mid-block sigreturn resume supplies its exact
             // generated entry once; every other entry resolves
             // through the block index.
+            // Budget runs never enter with a budget of 0 (the stub's
+            // `dec` would wrap): 0 here is a landing at this point.
+            if self.budget_run.as_ref().is_some_and(|b| b.remaining == 0) {
+                let out = outcome_at(state, tot_branches, tot_instructions, exits);
+                return budget_finish_into(&mut self.budget_run, BudgetEnd::Landed, out);
+            }
             let gen_entry = match pending_gen.take() {
                 Some(gpc) => gpc,
                 None => {
                     let Some(&gpc) = t.block_gen.get(&state.rip) else {
-                        return Err(Refuse::IndirectUnresolved { src_pc: state.rip }.into());
+                        let refusal = Refuse::IndirectUnresolved { src_pc: state.rip };
+                        if self.budget_run.is_some() {
+                            let at = state.rip;
+                            let out = outcome_at(state, tot_branches, tot_instructions, exits);
+                            let end = BudgetEnd::Handoff { refusal, at };
+                            return budget_finish_into(&mut self.budget_run, end, out);
+                        }
+                        return Err(refusal.into());
                     };
                     gpc
                 }
             };
+            let seeded_poll = poll_remaining;
+            let seeded_budget = self.budget_run.as_ref().map_or(0, |b| b.remaining);
             let mut fresh = JitData::new(state);
             fresh.branch_count = tot_branches;
             fresh.instruction_count = tot_instructions;
             fresh.poll_remaining = poll_remaining;
+            fresh.budget_remaining = seeded_budget;
             self.write_jit_data(&fresh)?;
             // The guest state written by the common exit is the
             // source-PC state; only the register RIP is generated.
@@ -4036,6 +4151,12 @@ impl RemoteExecutable {
                     let action = self.delivery_action(sig, &active, false).filter(|_| {
                         recovered.kind == crate::recovery::FaultKind::AsyncSignal && resumable
                     });
+                    if action.is_some() && self.budget_run.is_some() {
+                        return Err(Refuse::RcbBudget {
+                            what: "signal delivery inside a budgeted stretch",
+                        }
+                        .into());
+                    }
                     if let Some(action) = action {
                         #[cfg(feature = "test-seams")]
                         self.record_seam_delivery(sig, gen_pc, &recovered);
@@ -4097,6 +4218,12 @@ impl RemoteExecutable {
                             && copied_fault
                             && resumable
                     });
+                    if action.is_some() && self.budget_run.is_some() {
+                        return Err(Refuse::RcbBudget {
+                            what: "signal delivery inside a budgeted stretch",
+                        }
+                        .into());
+                    }
                     if let Some(action) = action {
                         if recovered.addr != addr {
                             set_siginfo_addr(self.guard.pid, recovered.addr)?;
@@ -4126,6 +4253,9 @@ impl RemoteExecutable {
             }
             state = data.state;
             exits += 1;
+            if let Some(run) = self.budget_run.as_mut() {
+                run.exited(seeded_poll, &data);
+            }
             poll_remaining = data.poll_remaining;
             tot_branches = data.branch_count;
             tot_instructions = data.instruction_count;
@@ -4136,6 +4266,28 @@ impl RemoteExecutable {
                 exits,
                 also_pending: Vec::new(),
             };
+            // Budget runs: a landing, or an exit the cache does not
+            // execute in a tail (named handoff, exact count owed).
+            // Nothing is stepped for it.
+            if self.budget_run.is_some() {
+                let src = data.exit_src;
+                let handoff = |refusal: Refuse| BudgetEnd::Handoff { refusal, at: src };
+                let end = match data.exit_kind {
+                    exit_kind::BUDGET => Some(BudgetEnd::Landed),
+                    exit_kind::SYSCALL | exit_kind::NONDET => {
+                        Some(handoff(Refuse::NoHandler { src_pc: src }))
+                    }
+                    exit_kind::INDIRECT => {
+                        Some(handoff(Refuse::IndirectUnresolved { src_pc: src }))
+                    }
+                    _ => None,
+                };
+                if let Some(end) = end {
+                    let mut out = done;
+                    out.state.rip = src;
+                    return budget_finish_into(&mut self.budget_run, end, out);
+                }
+            }
             match data.exit_kind {
                 exit_kind::RETURN => {
                     let mut buf = [0u8; 8];
@@ -4247,6 +4399,9 @@ impl RemoteExecutable {
                     if target == return_sentinel {
                         let mut out = done;
                         out.state = state;
+                        if self.budget_run.is_some() {
+                            return budget_finish_into(&mut self.budget_run, BudgetEnd::Ended, out);
+                        }
                         return Ok(out);
                     }
                 }

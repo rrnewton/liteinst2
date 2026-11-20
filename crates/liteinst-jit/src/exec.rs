@@ -22,7 +22,9 @@ use crate::state::{
     OFF_HOST_RBX, OFF_HOST_RSP, OFF_STATE, ST_R8, ST_R9, ST_R10, ST_R11, ST_R12, ST_R13, ST_R14,
     ST_R15, ST_RAX, ST_RBP, ST_RBX, ST_RCX, ST_RDI, ST_RDX, ST_RFLAGS, ST_RSI, ST_RSP, exit_kind,
 };
-use crate::translate::{Translation, translate};
+use crate::translate::{
+    ExitStyle, TranslateOptions, Translation, translate, translate_with_options,
+};
 use crate::types::{CacheKey, CountProfile, Generation, RegionFacts, byte_hash};
 
 pub const CODE_CAP: usize = 1 << 18;
@@ -174,6 +176,150 @@ pub struct Outcome {
     /// Pending async signals taken into custody during the return
     /// transition (dequeued while blocked, reported, not lost).
     pub also_pending: Vec<i32>,
+}
+
+/// How a remaining-RCB budget stretch ended (test-seams
+/// experiment, both dispatchers).
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum BudgetEnd {
+    /// The target RCB retired: the state is at its successor,
+    /// the point a single-step tail reaches when the count first
+    /// equals the target.
+    Landed,
+    /// The stretch reached something the cache does not execute
+    /// in a tail. The state is stopped before `at`, with the
+    /// named refusal; a single-step tail finishes from there.
+    Handoff { refusal: Refuse, at: u64 },
+    /// The guest returned to the sentinel before the target.
+    Ended,
+}
+
+/// One budgeted stretch: the end, the outcome (state and the
+/// JIT-credited counts) and the exact accounting the PMU witness
+/// needs.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BudgetStop {
+    pub end: BudgetEnd,
+    pub outcome: Outcome,
+    /// The requested target RCB count.
+    pub target: u64,
+    /// RCBs still owed at the end (0 when landed).
+    pub remaining: u64,
+    /// Cache entries made.
+    pub entries: u64,
+    /// Poll-stub executions (one `jnz` each), summed over entries
+    /// as seeded minus remaining poll budget.
+    pub poll_entries: u64,
+}
+
+/// The only place a budget run's target becomes the seeded
+/// remaining count. Both dispatchers call it once per run.
+#[cfg_attr(not(feature = "test-seams"), allow(dead_code))]
+pub(crate) fn budget_seed(target: u64) -> u64 {
+    target
+}
+
+/// Budget-run bookkeeping carried across dispatcher entries.
+#[cfg_attr(not(feature = "test-seams"), allow(dead_code))]
+#[derive(Clone, Debug, Default)]
+pub(crate) struct BudgetRun {
+    pub(crate) remaining: u64,
+    pub(crate) entries: u64,
+    pub(crate) poll_entries: u64,
+    pub(crate) end: Option<BudgetEnd>,
+}
+
+impl BudgetRun {
+    #[cfg_attr(not(feature = "test-seams"), allow(dead_code))]
+    pub(crate) fn new(target: u64) -> BudgetRun {
+        BudgetRun {
+            remaining: budget_seed(target),
+            ..BudgetRun::default()
+        }
+    }
+    /// Account one clean cache exit.
+    pub(crate) fn exited(&mut self, seeded_poll: u64, data: &JitData) {
+        self.entries += 1;
+        self.poll_entries += seeded_poll.wrapping_sub(data.poll_remaining);
+        self.remaining = data.budget_remaining;
+    }
+}
+
+/// Record how a budget stretch ended in `slot` and return its
+/// outcome (a free function, so a dispatcher holding a borrow of
+/// its translation can still call it on the disjoint field).
+pub(crate) fn budget_finish_into(
+    slot: &mut Option<BudgetRun>,
+    end: BudgetEnd,
+    outcome: Outcome,
+) -> Result<Outcome, RunError> {
+    if let Some(run) = slot.as_mut() {
+        run.end = Some(end);
+    }
+    Ok(outcome)
+}
+
+/// The outcome of a budget stretch that stops between exits.
+pub(crate) fn outcome_at(
+    state: GuestState,
+    branches: u64,
+    instructions: u64,
+    exits: u64,
+) -> Outcome {
+    Outcome {
+        state,
+        branches,
+        instructions,
+        exits,
+        also_pending: Vec::new(),
+    }
+}
+
+/// Perf ioctl requests for the test-seams PMU window.
+#[cfg(feature = "test-seams")]
+const PERF_EVENT_IOC_ENABLE: u64 = 0x2400;
+#[cfg(feature = "test-seams")]
+const PERF_EVENT_IOC_DISABLE: u64 = 0x2401;
+
+/// Raw `ioctl(fd, req, 0)` with no libc wrapper, so no
+/// conditional branch of the wrapper runs inside the PMU window
+/// (the window is: this enable, the entry bridge, generated
+/// code, the common exit, the disable). The result is ignored on
+/// purpose: checking it would add a branch inside the window;
+/// the test reads the counter afterwards and judges.
+#[cfg(feature = "test-seams")]
+#[inline(always)]
+fn pmu_ioctl(fd: i32, req: u64) {
+    // SAFETY: an ioctl on a caller-owned perf fd (or a bad fd,
+    // which fails with EBADF); it touches no memory of ours.
+    unsafe {
+        core::arch::asm!(
+            "syscall",
+            inlateout("rax") libc::SYS_ioctl => _,
+            in("rdi") i64::from(fd),
+            in("rsi") req,
+            in("rdx") 0u64,
+            lateout("rcx") _,
+            lateout("r11") _,
+            options(nostack),
+        );
+    }
+}
+
+/// A handler for budget runs: syscall and nondet exits hand off
+/// before any handler is asked, so reaching it is a bug.
+#[cfg_attr(not(feature = "test-seams"), allow(dead_code))]
+struct NoServeHandler;
+
+impl Handler for NoServeHandler {
+    fn syscall(
+        &mut self,
+        _state: &mut GuestState,
+        insn_pc: u64,
+        _next_pc: u64,
+    ) -> Result<Resume, Refuse> {
+        Err(Refuse::NoHandler { src_pc: insn_pc })
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -814,6 +960,14 @@ pub struct Executable {
     data: *mut JitData,
     profile: CountProfile,
     valid: bool,
+    /// The translation carries budget stubs (`prepare_budgeted`).
+    rcb_budget: bool,
+    /// The budget run in progress, if any (`run_budgeted`).
+    budget_run: Option<BudgetRun>,
+    /// Perf fd the dispatcher enables only around cache entries
+    /// (`set_pmu_window_for_test`); -1 when unset.
+    #[cfg(feature = "test-seams")]
+    pmu_fd: i32,
 }
 
 impl Executable {
@@ -821,6 +975,28 @@ impl Executable {
         region: &RegionFacts,
         entry: u64,
         profile: CountProfile,
+    ) -> Result<Executable, Refuse> {
+        Self::prepare_inner(region, entry, profile, false)
+    }
+
+    /// As [`Executable::prepare`], with the remaining-RCB budget
+    /// check in every branch credit stub. Such an executable runs
+    /// only through [`Executable::run_budgeted`].
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn prepare_budgeted(
+        region: &RegionFacts,
+        entry: u64,
+        profile: CountProfile,
+    ) -> Result<Executable, Refuse> {
+        Self::prepare_inner(region, entry, profile, true)
+    }
+
+    fn prepare_inner(
+        region: &RegionFacts,
+        entry: u64,
+        profile: CountProfile,
+        rcb_budget: bool,
     ) -> Result<Executable, Refuse> {
         if !lahf_available() {
             return Err(Refuse::Arch {
@@ -831,7 +1007,21 @@ impl Executable {
         let mut arena = Arena::new()?;
         let base = arena.base as u64;
         let data_addr = arena.data_addr();
-        let translation = translate(region, entry, profile, base, data_addr)?;
+        let translation = if rcb_budget {
+            translate_with_options(
+                region,
+                entry,
+                profile,
+                base,
+                data_addr,
+                TranslateOptions {
+                    exit_style: ExitStyle::ReturnToDispatcher,
+                    rcb_budget: true,
+                },
+            )?
+        } else {
+            translate(region, entry, profile, base, data_addr)?
+        };
         arena.install_code(&translation.code)?;
         let mut index = CacheIndex::new(region.generation);
         for block in translation.blocks.values() {
@@ -869,7 +1059,69 @@ impl Executable {
             data: data_addr as *mut JitData,
             profile,
             valid: true,
+            rcb_budget,
+            budget_run: None,
+            #[cfg(feature = "test-seams")]
+            pmu_fd: -1,
         })
+    }
+
+    /// Test seam: a perf event fd (opened disabled by the test) that
+    /// the dispatcher enables right before each cache entry and
+    /// disables right after it returns, so the counter sees only the
+    /// entry bridge, generated code and the common exit. `None`
+    /// restores the default (no window).
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn set_pmu_window_for_test(&mut self, fd: Option<i32>) {
+        self.pmu_fd = fd.unwrap_or(-1);
+    }
+
+    /// Run a budgeted executable from `state.rip` until exactly
+    /// `target` retired conditional branches have been credited
+    /// (`BudgetEnd::Landed`, state at the successor), or until the
+    /// stretch reaches a syscall, nondet or indirect exit
+    /// (`BudgetEnd::Handoff` with the existing named refusal and the
+    /// exact count still owed), or until the guest returns to
+    /// `return_sentinel` first (`BudgetEnd::Ended`). Faults and other
+    /// refusals are returned unchanged. No handler is ever asked to
+    /// serve an exit inside the stretch.
+    #[cfg(feature = "test-seams")]
+    #[doc(hidden)]
+    pub fn run_budgeted(
+        &mut self,
+        state: GuestState,
+        mem: &dyn GuestMemory,
+        return_sentinel: u64,
+        target: u64,
+    ) -> Result<BudgetStop, RunError> {
+        if !self.rcb_budget {
+            return Err(Refuse::RcbBudget {
+                what: "translation has no budget stubs",
+            }
+            .into());
+        }
+        self.budget_run = Some(BudgetRun::new(target));
+        let mut handler = NoServeHandler;
+        let r = self.run(state, &mut handler, mem, return_sentinel);
+        let run = self.budget_run.take().unwrap_or_default();
+        let outcome = r?;
+        let end = run.end.ok_or(Refuse::RcbBudget {
+            what: "budget run returned without a recorded end",
+        })?;
+        Ok(BudgetStop {
+            end,
+            outcome,
+            target,
+            remaining: run.remaining,
+            entries: run.entries,
+            poll_entries: run.poll_entries,
+        })
+    }
+
+    /// Record how a budget stretch ended and return its outcome.
+    fn budget_finish(&mut self, end: BudgetEnd, outcome: Outcome) -> Result<Outcome, RunError> {
+        budget_finish_into(&mut self.budget_run, end, outcome)
     }
 
     /// `kind` and the retired-instruction total for a stop before
@@ -942,6 +1194,14 @@ impl Executable {
             return Err(Refuse::StaleGeneration {
                 expected: self.index.generation().0,
                 found: self.index.generation().0,
+            }
+            .into());
+        }
+        // A budgeted translation always decrements the budget; run
+        // without one, it would wrap below zero and never stop.
+        if self.rcb_budget && self.budget_run.is_none() {
+            return Err(Refuse::RcbBudget {
+                what: "budgeted translation run without a budget",
             }
             .into());
         }
@@ -1114,15 +1374,31 @@ impl Executable {
         let (mut tot_branches, mut tot_instructions) = (0u64, 0u64);
         let mut poll_remaining = POLL_BUDGET;
         loop {
+            // Budget runs never enter the cache with a budget of 0
+            // (the stub's `dec` would wrap): 0 here is a landing at
+            // this very point, which also covers a target of 0.
+            if self.budget_run.as_ref().is_some_and(|b| b.remaining == 0) {
+                let out = outcome_at(state, tot_branches, tot_instructions, exits);
+                return self.budget_finish(BudgetEnd::Landed, out);
+            }
             let Some(&gen_entry) = self.translation.block_gen.get(&state.rip) else {
-                return Err(Refuse::IndirectUnresolved { src_pc: state.rip }.into());
+                let refusal = Refuse::IndirectUnresolved { src_pc: state.rip };
+                if self.budget_run.is_some() {
+                    let at = state.rip;
+                    let out = outcome_at(state, tot_branches, tot_instructions, exits);
+                    return self.budget_finish(BudgetEnd::Handoff { refusal, at }, out);
+                }
+                return Err(refusal.into());
             };
+            let seeded_poll = poll_remaining;
+            let seeded_budget = self.budget_run.as_ref().map_or(0, |b| b.remaining);
             // SAFETY: `data` is the RW data page of the live arena.
             unsafe {
                 let mut fresh = JitData::new(state);
                 fresh.branch_count = tot_branches;
                 fresh.instruction_count = tot_instructions;
                 fresh.poll_remaining = poll_remaining;
+                fresh.budget_remaining = seeded_budget;
                 core::ptr::write(self.data, fresh);
             }
             let (bridge_lo, bridge_hi) = bridge_range();
@@ -1142,14 +1418,38 @@ impl Executable {
                 fault_err: 0,
             };
             ACTIVE.store(&mut active, Ordering::SeqCst);
+            #[cfg(feature = "test-seams")]
+            let pmu_fd = self.pmu_fd;
             // SAFETY: sigsetjmp arms the fault return; liteinst_jit_enter
             // transfers full state to generated code which returns only
             // through the common exit or the fault handler.
             let jumped = unsafe { sigsetjmp_raw(core::ptr::addr_of_mut!(JMP_BUF).cast(), 1) };
             if jumped == 0 {
+                // PMU window (test seam): no conditional branch runs
+                // between the enable and the entry, or between the
+                // common exit's return and the disable.
+                #[cfg(feature = "test-seams")]
+                if pmu_fd >= 0 {
+                    pmu_ioctl(pmu_fd, PERF_EVENT_IOC_ENABLE);
+                    // SAFETY: as for the entry below.
+                    unsafe {
+                        liteinst_jit_enter(self.data, gen_entry as *const u8);
+                    }
+                    pmu_ioctl(pmu_fd, PERF_EVENT_IOC_DISABLE);
+                } else {
+                    // SAFETY: as for the entry below.
+                    unsafe {
+                        liteinst_jit_enter(self.data, gen_entry as *const u8);
+                    }
+                }
+                #[cfg(not(feature = "test-seams"))]
                 unsafe {
                     liteinst_jit_enter(self.data, gen_entry as *const u8);
                 }
+            }
+            #[cfg(feature = "test-seams")]
+            if jumped != 0 && pmu_fd >= 0 {
+                pmu_ioctl(pmu_fd, PERF_EVENT_IOC_DISABLE);
             }
             ACTIVE.store(core::ptr::null_mut(), Ordering::SeqCst);
             // SAFETY: reading the data page after exit/fault.
@@ -1191,6 +1491,9 @@ impl Executable {
                 ))));
             }
             exits += 1;
+            if let Some(run) = self.budget_run.as_mut() {
+                run.exited(seeded_poll, &data);
+            }
             poll_remaining = data.poll_remaining;
             tot_branches = data.branch_count;
             tot_instructions = data.instruction_count;
@@ -1201,6 +1504,27 @@ impl Executable {
                 exits,
                 also_pending: Vec::new(),
             };
+            // Budget runs: a landing, or an exit the cache does not
+            // execute in a tail (named handoff, exact count owed).
+            if self.budget_run.is_some() {
+                let src = data.exit_src;
+                let handoff = |refusal: Refuse| BudgetEnd::Handoff { refusal, at: src };
+                let end = match data.exit_kind {
+                    exit_kind::BUDGET => Some(BudgetEnd::Landed),
+                    exit_kind::SYSCALL | exit_kind::NONDET => {
+                        Some(handoff(Refuse::NoHandler { src_pc: src }))
+                    }
+                    exit_kind::INDIRECT => {
+                        Some(handoff(Refuse::IndirectUnresolved { src_pc: src }))
+                    }
+                    _ => None,
+                };
+                if let Some(end) = end {
+                    let mut out = done;
+                    out.state.rip = src;
+                    return self.budget_finish(end, out);
+                }
+            }
             match data.exit_kind {
                 exit_kind::RETURN => {
                     let Some(target) = mem.read_u64(state.rsp) else {
@@ -1228,6 +1552,9 @@ impl Executable {
                     if target == return_sentinel {
                         let mut out = done;
                         out.state = state;
+                        if self.budget_run.is_some() {
+                            return self.budget_finish(BudgetEnd::Ended, out);
+                        }
                         return Ok(out);
                     }
                     // Loop: the block_gen lookup above resolves the
