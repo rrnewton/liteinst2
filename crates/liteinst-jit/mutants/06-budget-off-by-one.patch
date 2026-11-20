@@ -1,0 +1,11 @@
+--- a/crates/liteinst-jit/src/exec.rs
++++ b/crates/liteinst-jit/src/exec.rs
+@@ -214,7 +214,7 @@
+ /// remaining count. Both dispatchers call it once per run.
+ #[cfg_attr(not(feature = "test-seams"), allow(dead_code))]
+ pub(crate) fn budget_seed(target: u64) -> u64 {
+-    target
++    target + 1
+ }
+ 
+ /// Budget-run bookkeeping carried across dispatcher entries.
