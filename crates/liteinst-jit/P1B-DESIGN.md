@@ -5,8 +5,10 @@ adversarial review of the P1a code + §6 invalidation design, plus
 a project go-ahead. Nothing here is built, selectable, or claimed. Layering
 rule carried over: liteinst owns translation primitives; a complete
 loader/tool belongs in Reverie. P1b target is architecture cell V10
-remains **unbuilt until M4 is met**, and merging to liteinst2 main
-remains barred under the owner's DBT hold regardless of this note.
+remains **unbuilt until M4 is met**. Merging liteinst-jit work to
+liteinst2 main follows normal review and landing: the 2026-11-05 DBT
+hold covered only the DynamoRIO backend's refactor and never applied
+to liteinst-jit (owner ruling, 2026-11-10).
 
 **Scope decision recorded 2026-11-05 in project review:** for **P1a**, the
 disclosed asynchronous-signal reduction is accepted (admission
